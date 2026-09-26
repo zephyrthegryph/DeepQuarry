@@ -216,7 +216,7 @@
 		var/mob/living/carbon/human/protean/P = new /mob/living/carbon/human/protean
 		var/mats_cached
 		var/list/materials_cache
-		P.loc = src
+		P.forceMove(src)
 		P.name = "Unfinished Protean"
 		P.real_name = "Unfinished Protean"
 		for(var/organ in P.internal_organs_by_name)
@@ -322,7 +322,7 @@
 		src.visible_message(span_notice("\The [src] chirps, \"Protean reconstitution cycle complete!\""))
 		to_chat(P,span_notice("You feel your sense of self expanding, spreading out to inhabit your new \'body\'. You feel... <i><b>ALIVE!</b></i>"))
 		playsound(src, dingsound, 100, 1, -1)	//soup's on!
-		P.loc = src.loc
+		P.forceMove(src.loc)
 		processing_revive = FALSE
 		log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
 		update_icon()

@@ -49,7 +49,7 @@
 			return
 		var/mob/L = A
 		user.visible_message(span_notice("[user] scoops [L] into \the [src]."), span_notice("You scoop [L] into \the [src]."))
-		L.loc = src
+		L.forceMove(src)
 		contains = JAR_ANIMAL
 		update_icon()
 		return
@@ -96,7 +96,7 @@
 			return
 		if(JAR_ANIMAL)
 			for(var/mob/M in src)
-				M.loc = user.loc
+				M.forceMove(user.loc)
 				user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()

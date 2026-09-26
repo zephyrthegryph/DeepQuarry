@@ -460,7 +460,7 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	set name = "Unprison"
 	if (M.z == 2)
 		if (CONFIG_GET(flag/allow_admin_jump))
-			M.loc = get_turf(pick(GLOB.latejoin))
+			M.forceMove(get_turf(pick(GLOB.latejoin)))
 			message_admins("[key_name_admin(usr)] has unprisoned [key_name_admin(M)]", 1)
 			log_admin("[key_name(usr)] has unprisoned [key_name(M)]")
 		else

@@ -59,7 +59,7 @@
 		victims[L] = get_turf(L)
 		L.status_at_least(EFFECT_SLEEPING, rand(10,20))
 		om_run_frame_now(L, /datum/om/pipeline/life)
-		L.loc = null
+		L.moveToNullspace()
 
 	// Blow up the shuttle
 	var/list/shuttle_turfs = list()
@@ -73,7 +73,7 @@
 
 	// Put people back
 	for(var/mob/living/L as anything in victims)
-		L.loc = victims[L]
+		L.forceMove(victims[L])
 		L.injure(INJURY_BLUNT, 5, ran_zone())
 		L.injure(INJURY_BLUNT, 10, ran_zone())
 		L.injure(INJURY_BLUNT, 15, ran_zone())

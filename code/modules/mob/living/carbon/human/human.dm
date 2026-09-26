@@ -1281,6 +1281,7 @@
 		hunger_rate = initial(hunger_rate)
 
 	species = GLOB.all_species[new_species]
+	om_changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	old_species?.remove_components(src, species)
 	invalidate_factors()
 

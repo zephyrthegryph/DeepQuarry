@@ -10,6 +10,7 @@
 		/datum/om/pipeline/life,
 		/datum/om/pipeline/life_derive,
 		/datum/om/pipeline/life_present,
+		/datum/om/pipeline/life_vision,
 	)
 
 /datum/om/decl/observer
@@ -47,6 +48,19 @@
 	name = "life: present"
 	lane = LANE_PRESENTATION
 	requires = list(/datum/om/check/has_client)
+	min_interval = LIFE_PRESENT_MIN_INTERVAL
+	busy_retry = LIFE_CYCLE
+	stages = list(/datum/om/stage/life)
+	frame_type = /datum/om/frame/life
+	wake_all = LIFE_WAKE_ALL
+
+/// Sight flags (sight, see_in_dark, see_invisible) for every living mob, clients or not: run when
+/// an input changes (stat, blindness and drugs, equipment, mutations, species, modifiers, login),
+/// at most every LIFE_PRESENT_MIN_INTERVAL. Not on movement: nothing an NPC walks into changes its
+/// sight flags, and a player's view refreshes by the stage's own rewake.
+/datum/om/pipeline/life_vision
+	name = "life: vision"
+	lane = LANE_PRESENTATION
 	min_interval = LIFE_PRESENT_MIN_INTERVAL
 	busy_retry = LIFE_CYCLE
 	stages = list(/datum/om/stage/life)

@@ -365,7 +365,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		else if (self.friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
-				self.audible_emote("[verb] anxiously.")
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, audible_emote), "[verb] anxiously.")
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth/death(gibbed, deathmessage = "teleports away!")

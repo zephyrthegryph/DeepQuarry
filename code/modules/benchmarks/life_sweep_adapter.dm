@@ -3,8 +3,8 @@
 /proc/life_bench_scheduler()
 	return "object model (life pipeline, LIFE_CYCLE [LIFE_CYCLE_DS] ds)"
 
-/proc/life_bench_frames()
-	return om_pipeline_frames(/datum/om/pipeline/life)
+/proc/life_bench_frames(list/mobs)
+	return om_pipeline_frames(mobs, /datum/om/pipeline/life)
 
 /proc/life_bench_ms()
 	return SSbehaviours.bench_ms

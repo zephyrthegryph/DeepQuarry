@@ -168,7 +168,7 @@
 		else if(O.mind.special_role)
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 
-	O.loc = loc
+	O.forceMove(loc)
 	O.job = JOB_CYBORG
 	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)

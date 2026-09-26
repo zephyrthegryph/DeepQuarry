@@ -223,7 +223,7 @@
 				var/turf/T = near_wall(dir,2)
 
 				if(T)
-					src.loc = T
+					forceMove(T)
 					visible_message(span_warning("[src] is pinned to the wall by [O]!"),span_warning("You are pinned to the wall by [O]!"))
 					src.anchored = TRUE
 					LAZYADD(src.pinned, O)

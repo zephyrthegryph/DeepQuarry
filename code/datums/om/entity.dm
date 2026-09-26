@@ -64,7 +64,7 @@
 	var/list/tasks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
-	/// Pipeline state (/datum/om/pipe), indexed by the pipeline's pipe_idx. Grown on first use.
+	/// Pipeline state (/datum/om/frame), indexed by the pipeline's pipe_idx. Grown on first use.
 	var/list/pipes
 	/// Stride 2: behaviour id, time of its last on_wake (min_interval behaviours only).
 	var/list/throttle
@@ -310,7 +310,7 @@
 	if(!rec || rec.torn_down)
 		return
 	var/datum/om/scheduler/sched = rec.sched
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Tests count raises (a status change must raise its channel once, not twice).
 	if(sched.test_raises)
 		sched.test_raises += list(list(E, bits))

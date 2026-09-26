@@ -222,7 +222,7 @@
 		var/obj/structure/AIcore/deactivated/C = GLOB.empty_playable_ai_cores[1]
 		GLOB.empty_playable_ai_cores -= C
 
-		character.loc = C.loc
+		character.forceMove(C.loc)
 
 		// AIize the character, but don't move them yet
 		character = character.AIize(move = FALSE) // Dupe of code in /datum/controller/subsystem/ticker/proc/create_characters() for non-latespawn, unify?

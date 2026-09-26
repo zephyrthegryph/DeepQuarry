@@ -1722,7 +1722,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		user.drop_from_inventory(mmi_as_oc)
 		var/mob/brainmob = mmi_occupant
 		occupant = brainmob
-		brainmob.loc = src //should allow relaymove
+		brainmob.forceMove(src) //should allow relaymove
 		brainmob.canmove = 1
 		mmi_as_oc.loc = src
 		mmi_as_oc.mecha = src

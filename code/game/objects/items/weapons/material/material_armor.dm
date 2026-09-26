@@ -124,7 +124,7 @@
 		spark_system.start()
 		playsound(src, 'sound/effects/teleport.ogg', 50, 1)
 
-		user.loc = picked
+		user.forceMove(picked)
 		return PROJECTILE_FORCE_MISS
 
 	if(material.reflectivity)

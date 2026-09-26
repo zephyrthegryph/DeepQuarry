@@ -55,7 +55,7 @@
 */
 /mob/living/carbon/gib()
 	for(var/mob/M in src)
-		M.loc = src.loc
+		M.forceMove(src.loc)
 		for(var/mob/N in viewers(src, null))
 			if(N.client)
 				N.show_message(span_bolddanger("[M] bursts out of [src]!"), 2)

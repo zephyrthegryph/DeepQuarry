@@ -108,13 +108,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 	/// Pipelines (pipeline.dm), indexed by pipeline pipe_idx: free frames, parked entities
 	/// (each entity's pipe state knows its index) and the audit's round-robin cursor.
-	var/list/frame_pools = list()
+	var/list/free_frames = list()
 	var/list/parked = list()
 	var/list/audit_cursor = list()
 	/// Stage profile: "[stage type]" -> sampled ms and calls (pipeline profile_stride).
 	var/list/stage_cost = list()
 	var/list/stage_calls = list()
-	/// Frames run by every pipeline since this scheduler started (the profile sampler strides it).
+	/// Frames run by profiling pipelines (the stage profiler samples every Nth).
 	var/pipe_frames = 0
 
 	/// behaviour id -> list(OM_STAT_LEN) counters.
@@ -124,7 +124,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/expect_errors = FALSE
 	var/last_run_ms = 0
 	var/runs = 0
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// Tests: when a list, every dispatched change is logged here as list(entity, bits).
 	var/list/test_raises
 #endif
@@ -424,6 +424,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			mode = OM_SLOT_STEP
 		else if(!B.holds)
 			mode = OM_SLOT_FAST
+	// Pipelines are called straight into their runner (one dispatch per entity).
+	var/datum/om/pipeline/pipe = istype(B, /datum/om/pipeline) ? B : null
 	var/lim = limit
 	var/cp = cap
 	var/n_calls = calls
@@ -442,7 +444,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 #ifdef OM_PROFILE_CALLS
 						var/c0 = TICK_USAGE
 #endif
-						B.tick(E, dt)
+						if(pipe)
+							pipe.run_frame(E, dt)
+						else
+							B.tick(E, dt)
 #ifdef OM_PROFILE_CALLS
 						var/list/PS = stat_for(B.id)
 						PS[OM_STAT_CALL_MAX] = max(PS[OM_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
@@ -477,7 +482,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 							acc = n * step
 						A[si] = acc - n * step
 						while(n-- > 0)
-							if(holds)
+							if(pipe)
+								pipe.run_frame(E, step)
+							else if(holds)
 								call_hook(rec, B, OM_HOOK_STEP)
 							else
 								B.on_step(E)

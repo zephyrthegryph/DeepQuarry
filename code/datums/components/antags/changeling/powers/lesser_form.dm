@@ -99,7 +99,7 @@
 	for(var/obj/T in C)
 		qdel(T)
 
-	O.loc = C.loc
+	O.forceMove(C.loc)
 
 	O.UpdateAppearance()
 	domutcheck(O, null)

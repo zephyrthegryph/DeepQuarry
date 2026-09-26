@@ -226,7 +226,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 	transfer.aiRestorePowerRoutine = 0
 	transfer.control_disabled = 0
 	transfer.aiRadio.disabledAi = 0
-	transfer.loc = get_turf(src)
+	transfer.forceMove(get_turf(src))
 	transfer.create_eyeobj()
 	transfer.cancel_camera()
 	to_chat(user, span_notice("Transfer successful:") + " [transfer.name] placed within stationary core.")

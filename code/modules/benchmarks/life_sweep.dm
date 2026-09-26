@@ -2,7 +2,7 @@
 //
 // The same file runs on both schedulers being compared; each branch supplies the three
 // adapter procs in life_sweep_adapter.dm:
-//   life_bench_frames()  Life frames delivered to living mobs so far
+//   life_bench_frames(mobs)  Life frames delivered to these mobs so far
 //   life_bench_ms()      milliseconds spent so far in the subsystem that runs Life
 //   life_bench_scheduler() a label
 // One boot measures every configuration in turn: spawn, settle, measure a window, delete.
@@ -61,12 +61,12 @@
 	mark("[name]_spawned")
 	// Settle: let idle mobs hibernate and every mob reach its steady state.
 	wait_seconds(12)
-	var/frames_before = life_bench_frames()
+	var/frames_before = life_bench_frames(mobs)
 	var/ms_before = life_bench_ms()
 	begin_window()
 	wait_seconds(seconds)
 	var/list/tick = end_window(name)
-	var/frames = life_bench_frames() - frames_before
+	var/frames = life_bench_frames(mobs) - frames_before
 	var/ms = life_bench_ms() - ms_before
 	var/elapsed = max(seconds, 1)
 	metric("[name]_life_frames", frames, "frames", "none")

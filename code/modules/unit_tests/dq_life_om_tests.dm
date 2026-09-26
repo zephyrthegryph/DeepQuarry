@@ -35,7 +35,7 @@
 
 /// `L`'s state in pipeline `P`.
 /proc/life_test_pipe(mob/living/L, P = /datum/om/pipeline/life)
-	RETURN_TYPE(/datum/om/pipe)
+	RETURN_TYPE(/datum/om/frame)
 	return om_pipe_state(L, P, TRUE)
 
 /// The types of `L`'s plan in pipeline `P`, in run order.
@@ -109,7 +109,7 @@
 
 /// Sets stage family `stage_type` idle on `L` (tests only: a real idle comes from its rule).
 /proc/life_test_set_idle(mob/living/L, stage_type)
-	var/datum/om/pipe/S = life_test_pipe(L)
+	var/datum/om/frame/S = life_test_pipe(L)
 	var/i = om_plan_position(S, stage_type)
 	if(i && !(S.bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i)))
 		S.bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
@@ -357,7 +357,7 @@
 
 /datum/unit_test/dq_life_transforming_human_aborts/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/pipe/S = life_test_pipe(H)
+	var/datum/om/frame/S = life_test_pipe(H)
 	om_pipe_set_all(S, FALSE)
 	var/life_tick_before = H.life_tick
 	var/cycle_before = H.breath_cycle
@@ -525,7 +525,7 @@
 		sched.run_pass(1e9)
 		waited++
 	TEST_ASSERT(!life_test_parked(M), "the rewake unparked the mob")
-	var/datum/om/pipe/S = life_test_pipe(M)
+	var/datum/om/frame/S = life_test_pipe(M)
 	var/awake = 0
 	for(var/i in 1 to S.plan.n)
 		if(!(S.bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i)))
@@ -752,14 +752,14 @@
 		TEST_NOTICE(src, "built without the stage profiler (OM_NO_STAGE_PROFILE)")
 		return
 	var/key = "type:[A.type]"
-	var/frames_before = om_pipeline_frames(P, sched)
+	var/frames_before = om_pipeline_frames(list(A, B), P)
 	var/calls_before = sched.stage_calls[key] || 0
 	for(var/i in 1 to stride * 2)
 		om_pipe_set_all(life_test_pipe(A), FALSE)
 		om_pipe_set_all(life_test_pipe(B), FALSE)
 		om_run_frame_now(A, P)
 		om_run_frame_now(B, P)
-	var/frames = om_pipeline_frames(P, sched) - frames_before
+	var/frames = om_pipeline_frames(list(A, B), P) - frames_before
 	var/sampled = ((sched.stage_calls[key] || 0) - calls_before) / stride
 	TEST_ASSERT_EQUAL(frames, stride * 4, "every frame counted")
 	TEST_ASSERT(abs(sampled - frames / stride) <= 1, "one frame in [stride] is sampled: [sampled] of [frames]")
@@ -1043,7 +1043,7 @@
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
-	var/datum/om/pipe/S = life_test_pipe(M)
+	var/datum/om/frame/S = life_test_pipe(M)
 	om_changed(M, CHANGE_EXPLICIT)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!life_test_parked(M), "a change wakes it")
@@ -1065,6 +1065,55 @@
 		frames++
 	TEST_ASSERT(life_test_parked(M), "it parks after idle frames in a row")
 	TEST_ASSERT(frames >= LIFE_PARK_AFTER, "and not before [LIFE_PARK_AFTER] of them, took [frames]")
+
+/// Clientless mobs get correct sight flags: the vision pipeline runs for every mob when an input
+/// changes (a mutation, stat), not per frame and not on movement.
+/datum/unit_test/life_om/npc_vision_follows_inputs
+
+/datum/unit_test/life_om/npc_vision_follows_inputs/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	TEST_ASSERT(!H.client, "a clientless mob")
+	TEST_ASSERT(life_test_started(H, /datum/om/pipeline/life_vision), "vision runs for clientless mobs too")
+	sched.run_pass(1e9)
+	TEST_ASSERT(!(H.sight & SEE_MOBS), "no x-ray sight to begin with")
+	H.add_mutation(XRAY)
+	scheduler_advance(1)
+	TEST_ASSERT(H.sight & SEE_MOBS, "gaining the x-ray mutation gives an NPC x-ray sight, with no frame and no client")
+	TEST_ASSERT_EQUAL(H.see_in_dark, 8, "and darksight")
+	var/datum/om/frame/V = life_test_pipe(H, /datum/om/pipeline/life_vision)
+	var/runs = V.frames
+	for(var/i in 1 to 5)
+		H.forceMove(get_step(H, pick(GLOB.cardinal)) || H.loc)
+		sched.run_pass(1e9)
+	TEST_ASSERT_EQUAL(V.frames, runs, "walking around doesn't recompute sight")
+	H.remove_mutation(XRAY)
+	scheduler_advance(1)
+	TEST_ASSERT(!(H.sight & SEE_MOBS), "losing the mutation takes it away")
+	H.death()
+	scheduler_advance(1)
+	TEST_ASSERT(H.sight & SEE_TURFS, "the dead see everything (stat raises the vision channel)")
+
+/// Relevance follows every loc change: nullspace, forceMove, and moves inside containers.
+/datum/unit_test/life_om/relevance_follows_loc
+
+/datum/unit_test/life_om/relevance_follows_loc/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/turf/T = H.loc
+	H.set_low_priority(TRUE)
+	TEST_ASSERT_EQUAL(H.life_z, T.z, "a low-priority mob joins its z-level's presence")
+	H.moveToNullspace()
+	TEST_ASSERT_EQUAL(H.life_z, 0, "nullspace leaves it")
+	TEST_ASSERT(!(H in life_z_presence(T.z).members), "and the presence forgets it")
+	H.forceMove(T)
+	TEST_ASSERT_EQUAL(H.life_z, T.z, "forceMove() back joins again")
+	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
+	H.forceMove(C)
+	TEST_ASSERT_EQUAL(H.life_z, T.z, "inside a container on the same z-level it stays")
+	H.forceMove(T)
+	H.set_low_priority(FALSE)
+	TEST_ASSERT_EQUAL(H.life_z, 0, "a mob that isn't low priority keeps its own relevance")
 
 /// Changes to `E` logged on `sched.test_raises` that carry CHANGE_MOB_STATUS.
 /proc/life_test_status_raises(datum/om/scheduler/sched, datum/E)

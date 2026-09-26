@@ -64,7 +64,7 @@
 
 		if(M.loc == input_plate
 		)
-			M.loc = src
+			M.forceMove(src)
 			M.gib()
 
 

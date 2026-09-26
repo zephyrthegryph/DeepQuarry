@@ -498,20 +498,20 @@
 	for(var/mob/living/L as anything in mobs)
 		om_wake(L, /datum/om/pipeline/life)
 	wait_seconds(LIFE_CYCLE_SECONDS * 2)
-	var/list/before = benchmark_life_totals()
+	var/list/before = benchmark_life_totals(mobs)
 	begin_window()
 	wait_seconds(LIFE_CYCLE_SECONDS * cycles)
 	end_window("hibernation_off")
-	benchmark_life_metrics("hibernation_off", before)
+	benchmark_life_metrics("hibernation_off", before, mobs)
 	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
 
 	GLOB.om_parking_enabled = TRUE
 	wait_seconds(LIFE_CYCLE_SECONDS * 4)
-	before = benchmark_life_totals()
+	before = benchmark_life_totals(mobs)
 	begin_window()
 	wait_seconds(LIFE_CYCLE_SECONDS * cycles)
 	end_window("hibernation_on")
-	benchmark_life_metrics("hibernation_on", before)
+	benchmark_life_metrics("hibernation_on", before, mobs)
 	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
 	var/list/awake = list()
 	for(var/mob/living/L as anything in mobs)
@@ -525,14 +525,14 @@
 		CHECK_TICK
 
 /// The life pipeline's cumulative totals on the live scheduler: ms, frames.
-/proc/benchmark_life_totals()
+/proc/benchmark_life_totals(list/mobs)
 	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
 	var/list/S = GLOB.om_live_sched.stat_for(life.id)
-	return list(S[OM_STAT_MS], S[OM_STAT_FRAMES])
+	return list(S[OM_STAT_MS], om_pipeline_frames(mobs, life))
 
 /// Life cost and delivered frames since `before` (benchmark_life_totals()).
-/datum/benchmark/proc/benchmark_life_metrics(prefix, list/before)
-	var/list/after = benchmark_life_totals()
+/datum/benchmark/proc/benchmark_life_metrics(prefix, list/before, list/mobs)
+	var/list/after = benchmark_life_totals(mobs)
 	var/ms = after[1] - before[1]
 	var/frames = after[2] - before[2]
 	metric("[prefix]_life_ms", ms, "ms")

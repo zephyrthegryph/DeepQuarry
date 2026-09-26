@@ -116,12 +116,12 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 							//don't strip organs
 						H.drop_from_inventory(W)
 					//teleport person to cell
-					H.loc = pick(GLOB.prisonwarp)
+					H.forceMove(pick(GLOB.prisonwarp))
 					H.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(H), slot_w_uniform)
 					H.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(H), slot_shoes)
 				else
 					//teleport security person
-					H.loc = pick(GLOB.prisonsecuritywarp)
+					H.forceMove(pick(GLOB.prisonsecuritywarp))
 				GLOB.prisonwarped += H
 
 		if("night_shift_set")

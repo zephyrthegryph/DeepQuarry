@@ -17,6 +17,9 @@
 	var/nested = 0
 	/// test_throttle's wakes.
 	var/list/wakes = list()
+	/// Stage "slow": start slow work (0 none, 1 started, 2 finished after its sleep).
+	var/slow_work = FALSE
+	var/slow_state = 0
 
 /datum/pipe_test_entity/deep
 /datum/pipe_test_entity/deep/deeper
@@ -123,6 +126,20 @@
 		om_stage_run_now(E, /datum/om/stage/test/a)
 		F.fact("on")
 
+/// Starts slow work that sleeps: stages never sleep, so it goes through INVOKE_ASYNC.
+/datum/om/stage/test/slow
+	name = "slow"
+	order = 75
+
+/datum/om/stage/test/slow/perform(datum/pipe_test_entity/E, datum/om/frame/test/F)
+	if(E.slow_work)
+		INVOKE_ASYNC(E, TYPE_PROC_REF(/datum/pipe_test_entity, slow))
+
+/datum/pipe_test_entity/proc/slow()
+	slow_state = 1
+	sleep(1)
+	slow_state = 2
+
 /// run_if on a fact no channel reports: a skip keeps it awake. And a general run_if (a check).
 /datum/om/stage/test/h
 	name = "h"
@@ -214,7 +231,7 @@
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(jointext(E.log, ","), "c,a,b,d,e,f,g,h", "stage order")
 	E.log.Cut()
-	var/datum/om/pipe/S = pipe_test_state(E)
+	var/datum/om/frame/S = pipe_test_state(E)
 	om_pipe_set_all(S, FALSE)
 	E.on = FALSE
 	E.lit = FALSE
@@ -253,7 +270,7 @@
 
 /datum/unit_test/om_pipeline/idle_park_unpark/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
-	var/datum/om/pipe/S = pipe_test_state(E)
+	var/datum/om/frame/S = pipe_test_state(E)
 	E.busy = list("a")
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(S.asleep, S.plan.n - 1, "every stage but the busy one idles")
@@ -287,7 +304,7 @@
 
 /datum/unit_test/om_pipeline/rewake/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
-	var/datum/om/pipe/S = pipe_test_state(E)
+	var/datum/om/frame/S = pipe_test_state(E)
 	// The reactive pipeline runs its stages once on start; get that out of the log.
 	sched.run_pass(1e9)
 	var/datum/om/stage/T = om_registry().stage_by_type[/datum/om/stage/test/e]
@@ -314,7 +331,7 @@
 
 /datum/unit_test/om_pipeline/abort/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
-	var/datum/om/pipe/S = pipe_test_state(E)
+	var/datum/om/frame/S = pipe_test_state(E)
 	E.abort_now = OM_ABORT_FRAME
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT(!("g" in E.log), "an aborted frame stops after the aborting stage")
@@ -329,7 +346,7 @@
 
 /datum/unit_test/om_pipeline/catch_up/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
-	var/datum/om/pipe/S = pipe_test_state(E)
+	var/datum/om/frame/S = pipe_test_state(E)
 	E.busy = list("a")
 	scheduler_advance(2)
 	var/before = S.frames
@@ -361,7 +378,22 @@
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(jointext(E.log, ","), "c,a,b,d,e,f,g,a,h", "the nested run ran inside g, and the frame went on")
 	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
-	TEST_ASSERT_EQUAL(length(sched.frame_pools[P.pipe_idx]), 2, "both frames went back to the pool")
+	TEST_ASSERT_NOTNULL(sched.free_frames[P.pipe_idx], "the frame went back to the free slot")
+
+/// Slow work a stage starts with INVOKE_ASYNC runs inline up to its first sleep, so its effects
+/// land within the frame, and the frame goes on without waiting for the rest.
+/datum/unit_test/om_pipeline/async_work_runs_inline
+
+/datum/unit_test/om_pipeline/async_work_runs_inline/run_pipeline()
+	var/datum/pipe_test_entity/E = pipe_test_new()
+	E.slow_work = TRUE
+	om_run_frame_now(E, /datum/om/pipeline/test)
+	TEST_ASSERT_EQUAL(E.slow_state, 1, "the slow work started inside the frame")
+	TEST_ASSERT(E.log.Find("h") > 0, "and the stages after it ran without waiting")
+	var/waited = 0
+	while(E.slow_state != 2 && waited++ < 20)
+		sleep(1)
+	TEST_ASSERT_EQUAL(E.slow_state, 2, "the rest finished after its sleep")
 
 /// Multi-type decls: one decl's rows apply to every type it lists.
 /datum/unit_test/om_pipeline/multi_type_decl
@@ -378,7 +410,7 @@
 /datum/unit_test/om_pipeline/decl_stages/run_pipeline()
 	var/datum/pipe_test_other/O = new
 	om_start(O)
-	var/datum/om/pipe/S = om_pipe_state(O, /datum/om/pipeline/test)
+	var/datum/om/frame/S = om_pipe_state(O, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(S?.plan.n, 1, "the other type's plan is its decl's stage (the base stages serve another type)")
 	var/datum/om/stage/T = S?.plan.stages[1]
 	TEST_ASSERT_EQUAL(T?.type, /datum/om/stage/test/other_only, "listed by its decl")
@@ -455,7 +487,7 @@
 	TEST_ASSERT(om_attached(R, /datum/om/pipeline/machine), "a recharger runs the machine pipeline")
 	TEST_ASSERT(!(R in SSmachines.processing_machines), "and doesn't poll")
 	R.stat &= ~(NOPOWER | BROKEN)
-	var/datum/om/pipe/S = om_pipe_state(R, /datum/om/pipeline/machine, TRUE)
+	var/datum/om/frame/S = om_pipe_state(R, /datum/om/pipeline/machine, TRUE)
 	for(var/i in 1 to 3)
 		om_run_frame_now(R, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "an empty recharger parks")
@@ -495,7 +527,7 @@
 		return
 	TEST_ASSERT(om_attached(A, /datum/om/pipeline/machine), "an APC runs the machine pipeline")
 	TEST_ASSERT(!(A in SSmachines.processing_machines), "and doesn't poll")
-	var/datum/om/pipe/S = om_pipe_state(A, /datum/om/pipeline/machine, TRUE)
+	var/datum/om/frame/S = om_pipe_state(A, /datum/om/pipeline/machine, TRUE)
 	for(var/i in 1 to 3)
 		om_run_frame_now(A, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a settled APC parks")
@@ -519,7 +551,7 @@
 		sched = om_test_begin()
 		return
 	TEST_ASSERT(!(M in SSmachines.processing_machines), "an SMES doesn't poll")
-	var/datum/om/pipe/MS = om_pipe_state(M, /datum/om/pipeline/machine, TRUE)
+	var/datum/om/frame/MS = om_pipe_state(M, /datum/om/pipeline/machine, TRUE)
 	M.set_output(M.output_level)
 	for(var/i in 1 to 3)
 		om_run_frame_now(M, /datum/om/pipeline/machine)

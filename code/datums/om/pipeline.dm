@@ -97,12 +97,29 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 // ===================================================================== frames
 
-/// Per-frame facts shared by one entity's stages. Pooled per pipeline: frames never nest across
-/// entities because stages never sleep, and a nested run (om_stage_run_now() from inside a stage)
-/// takes another frame from the pool.
+/// One entity's state in one pipeline (rec.pipes[pipe_idx]), which is also the frame its stages
+/// share: the facts of the frame in progress, and the idle bits, plan and parking state that
+/// outlive it. Keeping both on one datum makes a frame one lookup. A stage run on demand
+/// (om_stage_run_now()) or audited gets a separate scratch frame of the same type.
 /datum/om/frame
 	var/datum/entity
 	var/datum/om/pipeline/pipeline
+	var/datum/om/plan/plan
+	/// Idle bits, one per plan position, OM_PIPE_WORD/OM_PIPE_BIT. All zero while all are awake.
+	var/list/bits
+	/// Stages whose idle bit is set.
+	var/asleep = 0
+	/// Frames in a row that ended with every stage idle (parking hysteresis).
+	var/idle_frames = 0
+	var/parked = FALSE
+	/// Position in the scheduler's parked list for this pipeline, and when it parked.
+	var/parked_index = 0
+	var/parked_at = 0
+	/// Stage types added to this entity only (om_stage_add()).
+	var/list/extras
+	/// Lazy: plan position -> time it last ran (min_interval stages).
+	var/list/last_run
+	var/frames = 0
 	/// Seconds this frame covers: the step (step pipelines), the ring's dt, or the pipeline's
 	/// nominal step for a stage run on demand.
 	var/dt = 0
@@ -131,6 +148,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	if(!i)
 		CRASH("om: [pipeline.name] frame has no fact [name]")
 	var/bit = 1 << (i - 1)
+	if(!values)
+		values = new /list(length(pipeline.fact_procs))
 	if(known & bit)
 		return values[i]
 	known |= bit
@@ -143,6 +162,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	if(!i)
 		CRASH("om: [pipeline.name] frame has no fact [name]")
 	known |= 1 << (i - 1)
+	if(!values)
+		values = new /list(length(pipeline.fact_procs))
 	values[i] = value
 
 /// Drops a cached fact: the next read computes it again (a stage that changed what it reads).
@@ -166,6 +187,9 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	. = 0
 	var/list/procs = pipeline.fact_procs
 	var/list/V = values
+	if(!V)
+		V = new /list(length(procs))
+		values = V
 	var/need = req | forbid
 	for(var/i in 1 to length(procs))
 		var/bit = 1 << (i - 1)
@@ -188,25 +212,6 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 // ===================================================================== per entity
 
-/// One entity's state in one pipeline (rec.pipes[pipe_idx]).
-/datum/om/pipe
-	var/datum/om/plan/plan
-	/// Idle bits, one per plan position, OM_PIPE_WORD/OM_PIPE_BIT. All zero while all are awake.
-	var/list/bits
-	/// Stages whose idle bit is set.
-	var/asleep = 0
-	/// Frames in a row that ended with every stage idle (parking hysteresis).
-	var/idle_frames = 0
-	var/parked = FALSE
-	/// Position in the scheduler's parked list for this pipeline, and when it parked.
-	var/parked_index = 0
-	var/parked_at = 0
-	/// Stage types added to this entity only (om_stage_add()).
-	var/list/extras
-	/// Lazy: plan position -> time it last ran (min_interval stages).
-	var/list/last_run
-	var/frames = 0
-
 /// An ordered stage list shared by every entity with the same plan key (type and extras).
 /datum/om/plan
 	var/key
@@ -214,6 +219,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/n = 0
 	/// Stage pos (pipeline order) -> position in `stages`, 0 when absent.
 	var/list/index_of
+	/// Parallel to `stages`: TRUE where the stage has a run_if or a min_interval.
+	var/list/gated
 
 // ===================================================================== the pipeline
 
@@ -240,6 +247,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/reactive = FALSE
 	/// The frame type is a subtype (it may override begin() and reset()).
 	var/frame_hooks = FALSE
+	/// OM_PIPE_MODE_* bits for run_frame(): one read instead of several.
+	var/run_mode = 0
 	/// Every stage def this pipeline can run, by pos.
 	var/list/stage_defs
 	/// Family roots from `stages`, in order.
@@ -254,7 +263,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/list/plans
 
 /datum/om/pipeline/on_start(datum/E)
-	var/datum/om/pipe/S = om_pipe_state(E, src, TRUE)
+	var/datum/om/frame/S = om_pipe_state(E, src, TRUE)
 	if(!S)
 		return
 	if(reactive)
@@ -265,7 +274,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		S.idle_frames = 0
 
 /datum/om/pipeline/on_stop(datum/E)
-	var/datum/om/pipe/S = om_pipe_state(E, src)
+	var/datum/om/frame/S = om_pipe_state(E, src)
 	if(S?.parked)
 		unlist_parked(E.om_rec.sched, S)
 		S.parked = FALSE
@@ -278,7 +287,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	run_frame(E, dt)
 
 /datum/om/pipeline/on_wake(datum/E, changes)
-	var/datum/om/pipe/S = om_pipe_state(E, src)
+	var/datum/om/frame/S = om_pipe_state(E, src)
 	if(!S)
 		return
 	if(S.parked)
@@ -311,7 +320,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 /// A stage's rewake deadline: wakes that stage only. A parked entity comes back for it and parks
 /// again as soon as the stage idles (it counts as one idle frame already).
 /datum/om/pipeline/on_keyed_deadline(datum/E, sub)
-	var/datum/om/pipe/S = om_pipe_state(E, src)
+	var/datum/om/frame/S = om_pipe_state(E, src)
 	if(!S)
 		return
 	var/i = S.plan.index_of[sub - OM_DL_STAGE + 1]
@@ -329,138 +338,172 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	else if(reactive)
 		run_frame(E, 0)
 
+/// Runs stage `T` (plan position `_i`, word `_w`, bit `_bit`) inside a frame. A macro so the awake
+/// fast path, the word walk and the profiled frame share one body without a proc call per stage.
+/// `_PERFORM` is the call (timed or not). Locals are few on purpose: every local costs on entry.
+#define OM_RUN_STAGE(_i, _w, _bit, _PERFORM) \
+	T = stages[_i]; \
+	if(gated[_i] && (result = gate(E, F, T, _i))) { \
+		if(result > 1) { bits[_w] |= _bit; asleep++; if(result == 2) { LAZYADD(idled, _i); } } \
+		continue; \
+	} \
+	result = _PERFORM; \
+	if(result == STAGE_ABORT || E.gc_destroyed) { stop = TRUE; break; } \
+	if(result == STAGE_IDLE || T.idle(E)) { \
+		bits[_w] |= _bit; \
+		asleep++; \
+		LAZYADD(idled, _i); \
+		if((result = T.rewake_delay(E)) > 0) { om_after(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
+	} else if(mode & OM_PIPE_MODE_REACTIVE) { \
+		bits[_w] |= _bit; \
+		asleep++; \
+		LAZYADD(idled, _i); \
+		if(busy_retry > 0) { om_after(E, busy_retry, src, OM_DL_STAGE - 1 + T.pos); } \
+	}
+
+/// The whole frame loop, parameterised by how a stage is performed.
+#define OM_RUN_FRAME(_PERFORM) \
+	if(!asleep) { \
+		for(var/i in 1 to n) { \
+			OM_RUN_STAGE(i, (((i - 1) >> 4) + 1), (1 << ((i - 1) & 15)), _PERFORM) \
+		} \
+	} else { \
+		for(var/w in 1 to length(bits)) { \
+			var/base = (w - 1) << 4; \
+			var/awake = ~bits[w] & ((1 << min(16, n - base)) - 1); \
+			var/b = 0; \
+			while(awake) { \
+				if(awake & 1) { \
+					OM_RUN_STAGE(base + b + 1, w, (1 << b), _PERFORM) \
+				} \
+				awake >>= 1; \
+				b++; \
+			} \
+			if(stop) { break; } \
+		} \
+	}
+
 /// Runs one frame of `E` now: every awake stage of its plan, in order.
 /datum/om/pipeline/proc/run_frame(datum/E, dt)
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
 		return
-	var/datum/om/pipe/S = length(rec.pipes) >= pipe_idx ? rec.pipes[pipe_idx] : null
-	if(!S)
+	var/datum/om/frame/F = length(rec.pipes) >= pipe_idx ? rec.pipes[pipe_idx] : null
+	if(!F)
 		return
-	var/datum/om/plan/plan = S.plan
-	var/list/stages = plan.stages
-	var/datum/om/scheduler/sched = rec.sched
-	// The pooled frame, inline (this runs once per entity per frame).
-	var/list/pool = length(sched.frame_pools) >= pipe_idx ? sched.frame_pools[pipe_idx] : null
-	var/datum/om/frame/F
-	if(length(pool))
-		F = pool[length(pool)]
-		pool.len--
-		F.entity = E
-		F.dt = dt
+	var/mode = run_mode
+	if(mode & OM_PIPE_MODE_PROFILING)
+		var/datum/om/scheduler/sched = rec.sched
+		if(!(++sched.pipe_frames % profile_stride))
+			return run_frame_profiled(E, dt, rec, F)
+	F.dt = dt
+	if(mode & OM_PIPE_MODE_FACTS)
 		F.known = 0
-		F.aborted = 0
-	else
-		F = frame_acquire(sched, E, dt)
-	if(frame_hooks)
+	if(mode & OM_PIPE_MODE_HOOKS)
 		F.begin()
-	S.frames++
-	var/list/stat = length(sched.stats) >= id ? sched.stats[id] : null
-	if(!stat)
-		stat = sched.stat_for(id)
-	stat[OM_STAT_FRAMES]++
-	var/profile = FALSE
-	var/frame_start
-	if(profile_stride && !(++sched.pipe_frames % profile_stride))
-		profile = TRUE
-		frame_start = TICK_USAGE
-	var/list/bits = S.bits
-	var/list/idled
+	F.frames++
+	var/datum/om/plan/plan = F.plan
+	var/list/stages = plan.stages
+	var/list/gated = plan.gated
+	var/list/bits = F.bits
+	var/asleep = F.asleep
 	var/n = plan.n
+	var/list/idled
 	var/stop = FALSE
-	// Word by word: only the awake bits of each word are visited, so idle stages cost nothing.
-	for(var/w in 1 to length(bits))
-		var/base = (w - 1) << 4
-		var/width = min(16, n - base)
-		var/awake = ~bits[w] & ((1 << width) - 1)
-		for(var/b in 0 to width - 1)
-			if(!(awake >> b))
-				break
-			var/bit = 1 << b
-			if(!(awake & bit))
-				continue
-			var/i = base + b + 1
-			var/datum/om/stage/T = stages[i]
-			if(T.gated)
-				if(T.fact_req || T.fact_forbid)
-					var/failed = F.facts_failed(T.fact_req, T.fact_forbid)
-					if(failed)
-						// It idles when every fact that blocked it is reported by a channel it wakes on.
-						if(reactive || !(failed & ~T.fact_covered) || T.idle(E))
-							bits[w] |= bit
-							S.asleep++
-							LAZYADD(idled, i)
-						continue
-				else if(T.run_if_general && !isnull(T.compiled_run_if.why_not(E, F)))
-					if(reactive || T.skip_idles || T.idle(E))
-						bits[w] |= bit
-						S.asleep++
-						LAZYADD(idled, i)
-					continue
-				if(T.min_interval)
-					var/wait = om_stage_throttle(S, i, T, sched.now())
-					if(wait > 0)
-						// Idle until the interval ends: a rewake, so a cadence entity can park meanwhile.
-						bits[w] |= bit
-						S.asleep++
-						om_after(E, wait, src, OM_DL_STAGE - 1 + T.pos)
-						continue
-			var/result
-			if(profile)
-				var/t0 = TICK_USAGE
-				result = T.perform(E, F)
-				var/key = "[T.type]"
-				sched.stage_cost[key] += TICK_DELTA_TO_MS(TICK_USAGE - t0) * profile_stride
-				sched.stage_calls[key] += profile_stride
-			else
-				result = T.perform(E, F)
-			if(result == STAGE_ABORT || rec.torn_down || S.plan != plan)
-				stop = TRUE
-				break
-			var/is_idle = result == STAGE_IDLE || T.idle(E)
-			if(is_idle || reactive)
-				bits[w] |= bit
-				S.asleep++
-				LAZYADD(idled, i)
-				var/delay = is_idle ? T.rewake_delay(E) : busy_retry
-				if(delay > 0)
-					om_after(E, delay, src, OM_DL_STAGE - 1 + T.pos)
-		if(stop)
-			break
-	if(profile)
-		var/key = "[E.type]"
-		sched.stage_cost["type:[key]"] += TICK_DELTA_TO_MS(TICK_USAGE - frame_start) * profile_stride
-		sched.stage_calls["type:[key]"] += profile_stride
+	var/datum/om/stage/T
+	var/result
+	OM_RUN_FRAME(T.perform(E, F))
+	F.asleep = asleep
+	if(stop || F.plan != plan || rec.torn_down)
+		frame_stopped(rec, F, plan, idled)
+		return
+	if(mode & OM_PIPE_MODE_PARKS)
+		if(asleep >= n)
+			if(++F.idle_frames >= park_after)
+				park(E, F)
+		else if(F.idle_frames)
+			F.idle_frames = 0
+
+/// run_frame() for a frame the profiler samples: each stage and the whole frame are timed.
+/datum/om/pipeline/proc/run_frame_profiled(datum/E, dt, datum/om/rec/rec, datum/om/frame/F)
+	var/mode = run_mode
+	var/datum/om/scheduler/sched = rec.sched
+	var/frame_start = TICK_USAGE
+	F.dt = dt
+	if(mode & OM_PIPE_MODE_FACTS)
+		F.known = 0
+	if(mode & OM_PIPE_MODE_HOOKS)
+		F.begin()
+	F.frames++
+	var/datum/om/plan/plan = F.plan
+	var/list/stages = plan.stages
+	var/list/gated = plan.gated
+	var/list/bits = F.bits
+	var/asleep = F.asleep
+	var/n = plan.n
+	var/list/idled
+	var/stop = FALSE
+	var/datum/om/stage/T
+	var/result
+	OM_RUN_FRAME(om_stage_timed(T, E, F, sched, profile_stride))
+	var/key = "type:[E.type]"
+	sched.stage_cost[key] += TICK_DELTA_TO_MS(TICK_USAGE - frame_start) * profile_stride
+	sched.stage_calls[key] += profile_stride
+	F.asleep = asleep
+	if(stop || F.plan != plan || rec.torn_down)
+		frame_stopped(rec, F, plan, idled)
+		return
+	if(mode & OM_PIPE_MODE_PARKS)
+		if(asleep >= n)
+			if(++F.idle_frames >= park_after)
+				park(E, F)
+		else if(F.idle_frames)
+			F.idle_frames = 0
+
+#undef OM_RUN_FRAME
+#undef OM_RUN_STAGE
+
+/// One timed stage run (profiled frames only).
+/proc/om_stage_timed(datum/om/stage/T, datum/E, datum/om/frame/F, datum/om/scheduler/sched, stride)
+	var/t0 = TICK_USAGE
+	. = T.perform(E, F)
+	var/key = "[T.type]"
+	sched.stage_cost[key] += TICK_DELTA_TO_MS(TICK_USAGE - t0) * stride
+	sched.stage_calls[key] += stride
+
+/// A frame that a stage stopped: it deleted the entity, aborted the frame, or changed the plan
+/// (the rest of the frame ran the old plan; nothing is booked against the new one).
+/datum/om/pipeline/proc/frame_stopped(datum/om/rec/rec, datum/om/frame/F, datum/om/plan/plan, list/idled)
+	if(rec.torn_down || QDELETED(F.entity))
+		return
 	var/aborted = F.aborted
-	if(frame_hooks || F.known)
-		frame_release(sched, F)
-	else
-		F.entity = null
-		pool = sched.frame_pools[pipe_idx]
-		if(!pool)
-			pool = list()
-			sched.frame_pools[pipe_idx] = pool
-		pool += F
-	if(rec.torn_down || S.plan != plan)
+	F.aborted = 0
+	if(F.plan != plan || aborted != OM_ABORT_FRAME)
 		return
-	if(aborted == OM_ABORT_FRAME)
-		for(var/i in idled)
-			bits[OM_PIPE_WORD(i)] &= ~OM_PIPE_BIT(i)
-			S.asleep--
-		return
-	if(reactive || !park_after)
-		return
-	// Hysteresis: park only after park_after frames in a row end with nothing awake, so an
-	// entity woken every frame doesn't leave and rejoin the ring each time.
-	if(S.asleep >= plan.n)
-		if(++S.idle_frames >= park_after)
-			park(E, S)
-	else
-		S.idle_frames = 0
+	for(var/i in idled)
+		F.bits[OM_PIPE_WORD(i)] &= ~OM_PIPE_BIT(i)
+		F.asleep--
+
+/// A gated stage (run_if or min_interval): 0 runs it; 1 skips it; 2 skips and idles it (a fact
+/// its wake mask reports blocked it, or its idle() holds); 3 skips and idles it until its
+/// min_interval ends (a rewake).
+/datum/om/pipeline/proc/gate(datum/E, datum/om/frame/F, datum/om/stage/T, i)
+	if(T.fact_req || T.fact_forbid)
+		var/failed = F.facts_failed(T.fact_req, T.fact_forbid)
+		if(failed)
+			return (reactive || !(failed & ~T.fact_covered) || T.idle(E)) ? 2 : 1
+	else if(T.run_if_general && !isnull(T.compiled_run_if.why_not(E, F)))
+		return (reactive || T.skip_idles || T.idle(E)) ? 2 : 1
+	if(T.min_interval)
+		var/wait = om_stage_throttle(F, i, T, E.om_rec.sched.now())
+		if(wait > 0)
+			om_after(E, wait, src, OM_DL_STAGE - 1 + T.pos)
+			return 3
+	return 0
 
 /// Deciseconds before stage `T` (plan position `i`) may run again, 0 when it may run now (and
 /// then it is recorded as running now).
-/proc/om_stage_throttle(datum/om/pipe/S, i, datum/om/stage/T, now)
+/proc/om_stage_throttle(datum/om/frame/S, i, datum/om/stage/T, now)
 	if(!S.last_run)
 		S.last_run = new /list(S.plan.n)
 	var/last = S.last_run[i]
@@ -469,39 +512,37 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	S.last_run[i] = now
 	return 0
 
+/// A scratch frame for a run outside the entity's own frames (on demand, the audit). The scheduler
+/// keeps one free per pipeline; a nested run makes another.
 /datum/om/pipeline/proc/frame_acquire(datum/om/scheduler/sched, datum/E, dt)
-	if(length(sched.frame_pools) < pipe_idx)
-		sched.frame_pools.len = pipe_idx
-	var/list/pool = sched.frame_pools[pipe_idx]
-	var/datum/om/frame/F
-	if(length(pool))
-		F = pool[length(pool)]
-		pool.len--
+	var/list/free = sched.free_frames
+	if(length(free) < pipe_idx)
+		free.len = pipe_idx
+	var/datum/om/frame/F = free[pipe_idx]
+	if(F)
+		free[pipe_idx] = null
 	else
 		F = new frame_type
 		F.pipeline = src
-		F.values = new /list(length(fact_procs))
 	F.entity = E
 	F.dt = dt
 	F.known = 0
 	F.aborted = 0
 	return F
 
+/// Back to the free slot, cleared. A nested run's extra frame is dropped if the slot is taken.
 /datum/om/pipeline/proc/frame_release(datum/om/scheduler/sched, datum/om/frame/F)
-	F.reset()
+	if(frame_hooks)
+		F.reset()
 	F.entity = null
-	var/list/V = F.values
-	for(var/i in 1 to length(V))
-		V[i] = null
-	var/list/pool = sched.frame_pools[pipe_idx]
-	if(!pool)
-		pool = list()
-		sched.frame_pools[pipe_idx] = pool
-	pool += F
+	F.values = null
+	var/list/free = sched.free_frames
+	if(!free[pipe_idx])
+		free[pipe_idx] = F
 
 // ---------------------------------------------------------------- parking
 
-/datum/om/pipeline/proc/park(datum/E, datum/om/pipe/S)
+/datum/om/pipeline/proc/park(datum/E, datum/om/frame/S)
 	if(S.parked || !GLOB.om_parking_enabled)
 		return
 	var/datum/om/scheduler/sched = E.om_rec.sched
@@ -522,7 +563,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		log_runtime("OM_PARK: [name] [E] ([E.type]) parked; [length(L)] parked")
 
 /// Back on the ring. `changes` (0 for a rewake) is only for the trace.
-/datum/om/pipeline/proc/unpark(datum/E, datum/om/pipe/S, changes)
+/datum/om/pipeline/proc/unpark(datum/E, datum/om/frame/S, changes)
 	if(!S.parked)
 		return
 	var/datum/om/scheduler/sched = E.om_rec.sched
@@ -534,7 +575,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		log_runtime("OM_PARK: [name] [E] ([E.type]) unparked by [changes ? "channels [changes]" : "a stage rewake"] after [DisplayTimeText(world.time - S.parked_at)]")
 
 /// Removes an entity from the parked list in O(1): the last entry takes its place.
-/datum/om/pipeline/proc/unlist_parked(datum/om/scheduler/sched, datum/om/pipe/S)
+/datum/om/pipeline/proc/unlist_parked(datum/om/scheduler/sched, datum/om/frame/S)
 	var/list/L = length(sched.parked) >= pipe_idx ? sched.parked[pipe_idx] : null
 	var/i = S.parked_index
 	S.parked_index = 0
@@ -544,7 +585,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	if(i != n)
 		var/datum/last = L[n]
 		L[i] = last
-		var/datum/om/pipe/LS = om_pipe_state(last, src)
+		var/datum/om/frame/LS = om_pipe_state(last, src)
 		if(LS)
 			LS.parked_index = i
 	L.len = n - 1
@@ -598,9 +639,11 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	plan.stages = chosen
 	plan.n = length(chosen)
 	plan.index_of = new /list(length(stage_defs))
+	plan.gated = new /list(plan.n)
 	for(var/i in 1 to plan.n)
 		var/datum/om/stage/T = chosen[i]
 		plan.index_of[T.pos] = i
+		plan.gated[i] = T.gated
 	plans[key] = plan
 	return plan
 
@@ -624,7 +667,9 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		if(!rec.pipes)
 			rec.pipes = list()
 		rec.pipes.len = idx
-	var/datum/om/pipe/S = new
+	var/datum/om/frame/S = new def.frame_type
+	S.pipeline = def
+	S.entity = E
 	S.plan = def.plan_for(E, null)
 	S.bits = om_pipe_words(S.plan.n)
 	rec.pipes[idx] = S
@@ -637,7 +682,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		L[w] = 0
 
 /// Sets every stage of `S` idle (TRUE) or awake (FALSE).
-/proc/om_pipe_set_all(datum/om/pipe/S, asleep)
+/proc/om_pipe_set_all(datum/om/frame/S, asleep)
 	var/list/bits = S.bits
 	var/n = S.plan.n
 	for(var/w in 1 to length(bits))
@@ -650,14 +695,14 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /// TRUE while stage `stage_type` (a family root or variant) is idle on `E`.
 /proc/om_stage_idle(datum/E, P, stage_type)
-	var/datum/om/pipe/S = om_pipe_state(E, P)
+	var/datum/om/frame/S = om_pipe_state(E, P)
 	if(!S)
 		return FALSE
 	var/i = om_plan_position(S, stage_type)
 	return i && (S.bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i))
 
 /// Plan position of the variant of `stage_type`'s family on `E`'s plan, or 0.
-/proc/om_plan_position(datum/om/pipe/S, stage_type)
+/proc/om_plan_position(datum/om/frame/S, stage_type)
 	var/datum/om/stage/listed = om_registry().stage_by_type[stage_type]
 	if(!listed)
 		return 0
@@ -669,7 +714,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /// TRUE while `E` is parked in pipeline `P`.
 /proc/om_pipe_parked(datum/E, P)
-	var/datum/om/pipe/S = om_pipe_state(E, P)
+	var/datum/om/frame/S = om_pipe_state(E, P)
 	return S?.parked
 
 /// Adds (or removes) a stage for this entity only: its plan is rebuilt and every stage wakes.
@@ -680,7 +725,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		CRASH("om: [stage_type] is not a stage")
 	if(!E?.om_rec || !om_attached(E, T.pipeline))
 		return
-	var/datum/om/pipe/S = om_pipe_state(E, T.pipeline, TRUE)
+	var/datum/om/frame/S = om_pipe_state(E, T.pipeline, TRUE)
 	if(!S || (stage_type in S.extras))
 		return
 	LAZYADD(S.extras, stage_type)
@@ -688,13 +733,13 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /proc/om_stage_remove(datum/E, stage_type)
 	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
-	var/datum/om/pipe/S = T && om_pipe_state(E, T.pipeline)
+	var/datum/om/frame/S = T && om_pipe_state(E, T.pipeline)
 	if(!S || !(stage_type in S.extras))
 		return
 	LAZYREMOVE(S.extras, stage_type)
 	om_pipe_replan(E, T.pipeline, S)
 
-/proc/om_pipe_replan(datum/E, P, datum/om/pipe/S)
+/proc/om_pipe_replan(datum/E, P, datum/om/frame/S)
 	var/datum/om/pipeline/def = om_registry().behaviour(P)
 	var/datum/om/plan/plan = def.plan_for(E, S.extras)
 	if(plan == S.plan)
@@ -736,11 +781,12 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	def.run_frame(E, def.step_interval || def.every / 10)
 
 /// Frames `P` has run on the live scheduler (or `sched`).
-/proc/om_pipeline_frames(P, datum/om/scheduler/sched)
-	sched = sched || GLOB.om_live_sched || om_scheduler()
-	var/datum/om/pipeline/def = om_registry().behaviour(P)
-	var/list/S = sched.stat_for(def.id)
-	return S[OM_STAT_FRAMES]
+/proc/om_pipeline_frames(list/entities, P)
+	. = 0
+	for(var/datum/E as anything in entities)
+		var/datum/om/frame/F = om_pipe_state(E, P)
+		if(F)
+			. += F.frames
 
 /// Entities parked in `P` on the live scheduler (or `sched`).
 /proc/om_pipeline_parked_count(P, datum/om/scheduler/sched)
@@ -762,7 +808,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 /// The first idle stage of `E` whose idle() no longer holds although its run_if passes and no
 /// rewake is pending: a producer changed `E` without raising a channel in its wake_on.
 /datum/om/pipeline/proc/missed_wake(datum/E)
-	var/datum/om/pipe/S = om_pipe_state(E, src)
+	var/datum/om/frame/S = om_pipe_state(E, src)
 	if(!S || !S.asleep)
 		return null
 	var/datum/om/scheduler/sched = E.om_rec.sched
@@ -812,7 +858,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 					if(taken >= awake_sample)
 						break
 					if(E && E.om_rec)
-						var/datum/om/pipe/S = om_pipe_state(E, P)
+						var/datum/om/frame/S = om_pipe_state(E, P)
 						if(S?.asleep)
 							sample += E
 							taken++
@@ -826,7 +872,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 			P.report_missed(E, T, expected)
 
 /datum/om/pipeline/proc/report_missed(datum/E, datum/om/stage/T, expected)
-	var/datum/om/pipe/S = om_pipe_state(E, src)
+	var/datum/om/frame/S = om_pipe_state(E, src)
 	var/datum/om/scheduler/sched = E.om_rec.sched
 	sched.stat_inc(id, OM_STAT_MISSED)
 	var/message = "OM_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [S.parked ? "parked since [DisplayTimeText(world.time - S.parked_at)] ago" : "awake, some stages idle"]: stage [T.type] ([T.name], wake_on [T.wake_mask]) has work but was idle. Woken by: [T.woken_by || "undeclared"]. A producer changed it without raising its channel (om_changed)."

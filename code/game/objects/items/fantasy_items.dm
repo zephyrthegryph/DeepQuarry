@@ -86,7 +86,7 @@
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		if(do_after(user, 2 SECONDS, target = G.affecting))
-			affecting.loc = loc
+			affecting.forceMove(loc)
 			spawn(0)
 				if(buckle_mob(affecting))
 					affecting.visible_message(\

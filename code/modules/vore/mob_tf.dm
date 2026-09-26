@@ -103,7 +103,7 @@
 	return_player_to_tf_holder("reverted mob transform")
 	tf_mob_holder = null
 	var/turf/get_dat_turf = get_turf(src)
-	ourmob.loc = get_dat_turf
+	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
 	if(!tf_form_mind)
 		ourmob.vore_selected = vore_selected
@@ -209,7 +209,7 @@
 				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", new_mob.tf_form_holds_key)
 			//legacy ai_holder state transfer between original and TF'd mob
 			// no longer needed; modern brain spawns fresh on the new mob.
-			src.loc = new_mob
+			forceMove(new_mob)
 			src.forceMove(new_mob)
 			new_mob.tf_mob_holder = src
 			return new_mob

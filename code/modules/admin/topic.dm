@@ -723,7 +723,7 @@
 		sleep(5)
 		if(!M)	return
 
-		M.loc = prison_cell
+		M.forceMove(prison_cell)
 		if(ishuman(M))
 			var/mob/living/carbon/human/prisoner = M
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), slot_w_uniform)
@@ -776,7 +776,7 @@
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
-		M.loc = pick(GLOB.tdome1)
+		M.forceMove(pick(GLOB.tdome1))
 		spawn(50)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 1)")
@@ -802,7 +802,7 @@
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
-		M.loc = pick(GLOB.tdome2)
+		M.forceMove(pick(GLOB.tdome2))
 		spawn(50)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 2)")
@@ -825,7 +825,7 @@
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
-		M.loc = pick(GLOB.tdomeadmin)
+		M.forceMove(pick(GLOB.tdomeadmin))
 		spawn(50)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Admin.)")
@@ -855,7 +855,7 @@
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
-		M.loc = pick(GLOB.tdomeobserve)
+		M.forceMove(pick(GLOB.tdomeobserve))
 		spawn(50)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Observer.)")

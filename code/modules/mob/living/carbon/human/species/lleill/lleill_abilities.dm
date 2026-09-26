@@ -518,7 +518,7 @@
 	return_player_to_tf_holder("reverted beast form")
 	tf_mob_holder = null
 	var/turf/beast_loc = src.loc
-	ourmob.loc = beast_loc
+	ourmob.forceMove(beast_loc)
 	ourmob.forceMove(beast_loc)
 	ourmob.vore_selected = vore_selected
 	vore_selected = null

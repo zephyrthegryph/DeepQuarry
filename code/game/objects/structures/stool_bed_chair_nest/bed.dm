@@ -127,7 +127,7 @@
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		if(do_after(user, 2 SECONDS, G.affecting, target = src))
-			affecting.loc = loc
+			affecting.forceMove(loc)
 			INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
 			qdel(W)
 	else

@@ -34,7 +34,7 @@
 			if(target.buckled)
 				target.buckled.unbuckle_mob( target, TRUE)
 			jaunt_disappear(animation, target)
-			target.loc = holder
+			target.forceMove(holder)
 			target.transforming=0 //mob is safely inside holder now, no need for protection.
 			jaunt_steam(mobloc)
 			sleep(duration)

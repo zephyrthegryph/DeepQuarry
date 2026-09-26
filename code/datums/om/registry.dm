@@ -632,6 +632,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		compile_run_if(P, T)
 		T.gated = !isnull(T.run_if) || T.min_interval > 0
 	P.wake_on |= wake
+	P.run_mode = (P.frame_hooks ? OM_PIPE_MODE_HOOKS : 0) | (length(P.fact_procs) ? OM_PIPE_MODE_FACTS : 0) \
+		| (P.profile_stride ? OM_PIPE_MODE_PROFILING : 0) | (P.reactive ? OM_PIPE_MODE_REACTIVE : 0) \
+		| (!P.reactive && P.park_after ? OM_PIPE_MODE_PARKS : 0)
 
 /// Deepest `of` first; between equal depths, the least derived stage type.
 /proc/cmp_om_stage_variant(datum/om/stage/a, datum/om/stage/b)

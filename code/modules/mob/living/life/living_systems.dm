@@ -533,11 +533,10 @@
 /datum/om/stage/life/vision
 	order = LIFE_PHASE_OUTPUT + 30
 	name = "vision"
-	pipeline = /datum/om/pipeline/life_present
-	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	run_if = LIFE_RUN_IF_PLACED
+	pipeline = /datum/om/pipeline/life_vision
+	wake_on = CHANGE_MOB_STATUS | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_CONDITIONS | CHANGE_MOB_HEALTH
 	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "equipment; set_stat; Moved; Login; refresh_vision()"
+	woken_by = "blindness and drugs (statuses); equipment (glasses, helmets); mutations, species, modifiers (conditions); set_stat; Login; refresh_vision()"
 
 /// Variants set their sight, then call ..() last to send the vision signal.
 /datum/om/stage/life/vision/perform(mob/living/self, datum/om/frame/life/ctx)
@@ -546,8 +545,10 @@
 	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_VISION)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.
+/// Every variant's inputs are channel-reported (see wake_on), so all of them idle once they have
+/// run, unless a listener (remote view) wants the signal every cycle.
 /datum/om/stage/life/vision/idle(mob/living/self)
-	return type == /datum/om/stage/life/vision && !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
+	return !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
 
 /datum/om/stage/life/vision/rewake_delay(mob/living/self)
 	return self.client ? 5 SECONDS : 0

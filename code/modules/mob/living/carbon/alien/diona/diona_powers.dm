@@ -34,7 +34,7 @@
 		return 0
 	to_chat(H, "You feel your being twine with that of \the [src] as it merges with your biomass.")
 	to_chat(src, "You feel your being twine with that of \the [H] as you merge with its biomass.")
-	loc = H
+	forceMove(H)
 	add_verb(src, /mob/living/carbon/alien/diona/proc/split)
 	remove_verb(src, /mob/living/carbon/alien/diona/proc/merge)
 	return 1
@@ -57,7 +57,7 @@
 
 	var/mob/living/M = src.loc
 
-	src.loc = get_turf(src)
+	forceMove(get_turf(src))
 	remove_verb(src, /mob/living/carbon/alien/diona/proc/split)
 	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)
 

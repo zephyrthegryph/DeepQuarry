@@ -380,7 +380,7 @@
 						if(istype(I, /obj/item/implant) || istype(I, /obj/item/nif))
 							continue
 						inserted_human.drop_from_inventory(I)
-				inserted_mob.loc = src
+				inserted_mob.forceMove(src)
 				stored_materials.Add(inserted_mob)
 				src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [inserted_mob] into \the [src]."))
 				return
@@ -623,7 +623,7 @@
 						if(istype(I, /obj/item/implant) || istype(I, /obj/item/nif))
 							continue
 						inserted_human.drop_from_inventory(I)
-				inserted_mob.loc = src
+				inserted_mob.forceMove(src)
 				stored_materials.Add(inserted_mob)
 				src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [inserted_mob] into \the [src]."))
 				return

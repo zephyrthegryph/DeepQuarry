@@ -239,6 +239,14 @@
 #define OM_ABORT_REST 2
 /// A frame fact in a run_if spec: FACT("alive"), NOT_OF(FACT("in_stasis")).
 #define FACT(name) list(/datum/om/check/fact = name)
+/// /datum/om/pipeline/var/run_mode bits (compiled at boot).
+#define OM_PIPE_MODE_HOOKS (1<<0)
+#define OM_PIPE_MODE_FACTS (1<<1)
+#define OM_PIPE_MODE_PROFILING (1<<2)
+#define OM_PIPE_MODE_REACTIVE (1<<3)
+#define OM_PIPE_MODE_PARKS (1<<4)
+/// Set for one frame by run_frame() when the profiler samples it.
+#define OM_PIPE_MODE_PROFILE (1<<5)
 /// Asleep bits: 16 stages per word.
 #define OM_PIPE_WORD(i) ((((i) - 1) >> 4) + 1)
 #define OM_PIPE_BIT(i) (1 << (((i) - 1) & 15))
@@ -273,9 +281,7 @@
 #define OM_STAT_PARKS 10
 #define OM_STAT_UNPARKS 11
 #define OM_STAT_MISSED 12
-/// Pipelines: frames run.
-#define OM_STAT_FRAMES 13
-#define OM_STAT_LEN 13
+#define OM_STAT_LEN 12
 
 // Cadence loops in /datum/om/scheduler/proc/run_slot().
 #define OM_SLOT_FAST 1

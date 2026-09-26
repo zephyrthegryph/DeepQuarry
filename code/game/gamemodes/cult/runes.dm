@@ -36,7 +36,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		user.visible_message(span_danger("[user] disappears in a flash of red light!"), \
 		span_danger("You feel as your body gets dragged through the dimension of Nar-Sie!"), \
 		span_danger("You hear a sickening crunch and sloshing of viscera."))
-		user.loc = allrunesloc[rand(1,index)]
+		user.forceMove(allrunesloc[rand(1,index)])
 		return
 	if(istype(src,/obj/effect/rune))
 		return	fizzle(user) //Use friggin manuals, Dorf, your list was of zero length.
@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(!O.anchored)
 				O.loc = IP.loc
 		for(var/mob/M in src.loc)
-			M.loc = IP.loc
+			M.forceMove(IP.loc)
 		return
 
 	return fizzle(user)
