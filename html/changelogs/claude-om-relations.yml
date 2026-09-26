@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Migrated buckling, grabbing, pulling, machine occupants (sleeper/cryo/cryopod/mecha/rechargestation/implant chair) and implants onto the object-model relations framework, fixing latent dangling-reference bugs where hard-deleting a grabbed mob or a machine occupant left a stale reference behind."
+  - refactor: "Extended the OM relation core with break_if (range/z-change checks that unlink a relation outright) and declared per-side view fields (source_ref_field/target_ref_field/source_list_field/target_list_field), so the core is the sole writer of vars like buckled, buckled_mobs, grabbed_by, pulledby and occupant."
