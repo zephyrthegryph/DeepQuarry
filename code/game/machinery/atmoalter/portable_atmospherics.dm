@@ -12,6 +12,7 @@
 	var/volume = 0
 	var/destroyed = 0
 	var/sleeping_mixture_id
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
@@ -35,12 +36,16 @@
 	QDEL_NULL(holding)
 	return ..()
 
-/obj/machinery/portable_atmospherics/process()
-	if(!connected_port) //only react when pipe_network will ont it do it for you
+// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
+// `polls = FALSE` above moves this off SSmachines' process() roster onto the OM machine
+// pipeline. The react-while-unconnected logic that used to live in process() is unchanged,
+// just relocated here (shared by the base stage and canister's override of it) and to
+// /datum/om/stage/machine/power/portable_atmospherics/perform().
+/obj/machinery/portable_atmospherics/proc/react_or_update()
+	if(!connected_port) //only react when pipe_network will do it for you
 		//Allow for reactions
 		return air_contents.react(src)
-	else
-		update_icon()
+	update_icon()
 	return NO_REACTION
 
 /obj/machinery/portable_atmospherics/proc/hibernate_until_gas_changes()
@@ -106,11 +111,14 @@
 
 	//Perform the connection
 	connected_port = new_port
-	clear_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	if(polls)
+		clear_gas_dependency()
+		START_MACHINE_PROCESSING(src)
+	else
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port.connected_device = src
 	connected_port.on = 1 //Activate port updates
-	START_MACHINE_PROCESSING(connected_port)
+	START_MACHINE_PROCESSING(connected_port) // portables_connector is a pipe device: untouched, still polls
 
 	anchored = TRUE //Prevent movement
 
@@ -130,9 +138,12 @@
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port
 	old_port.connected_device = null
 	old_port.on = 0
-	STOP_MACHINE_PROCESSING(old_port)
+	STOP_MACHINE_PROCESSING(old_port) // portables_connector is a pipe device: untouched, still polls
 	connected_port = null
-	START_MACHINE_PROCESSING(src)
+	if(polls)
+		START_MACHINE_PROCESSING(src)
+	else
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
 

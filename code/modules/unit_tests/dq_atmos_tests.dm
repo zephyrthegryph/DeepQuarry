@@ -4266,23 +4266,28 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.clear_gas_dependency()
 	C.connected_device = null
 	C.on = FALSE
+	// Canister runs the OM machine pipeline (machine_pipeline.dm), not process(): a frame
+	// stands in for the old direct .process() call, and .parked stands in for
+	// datum_flags & DF_ISPROCESSING.
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
-	TEST_ASSERT_EQUAL(canister.process(), PROCESS_KILL, "closed inert canister remained scheduled")
+	var/datum/om/frame/canister_state = om_pipe_state(canister, /datum/om/pipeline/machine, TRUE)
+	om_run_frame_now(canister, /datum/om/pipeline/machine)
+	TEST_ASSERT(canister_state.parked, "closed inert canister remained scheduled")
 	var/datum/weakref/canister_ref = WEAKREF(canister)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[canister_ref.reference], "closed canister did not subscribe to its gas mixture")
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/canister_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(canister.datum_flags & DF_ISPROCESSING)
+		if(!canister_state.parked)
 			break
 	// The live subsystem may consume the wake and settle the inert canister back
 	// to its dependency subscription before this test regains execution. Both
 	// states prove delivery; being neither active nor resubscribed is stale.
-	var/canister_active = canister.datum_flags & DF_ISPROCESSING
+	var/canister_active = !canister_state.parked
 	var/canister_resubscribed = SSmachines.sleeping_gas_devices[canister_ref.reference] && !isnull(canister.sleeping_mixture_id)
 	TEST_ASSERT(canister_active || canister_resubscribed, "closed canister was stranded after its contents changed")
-	STOP_MACHINE_PROCESSING(canister)
 	canister.connect(C)
+	om_run_frame_now(canister, /datum/om/pipeline/machine)
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "stable connected portable port remained scheduled")
 	STOP_MACHINE_PROCESSING(C)
 	var/datum/weakref/connector_ref = WEAKREF(C)
