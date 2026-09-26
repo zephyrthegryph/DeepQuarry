@@ -21,7 +21,7 @@
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
 		found_target = TRUE
 		if(L.buckled)
-			L.buckled = 0
+			L.buckled.unbuckle_mob(L, TRUE)
 			L.anchored = FALSE
 		L.forceMove(src)
 		L.sdisabilities |= MUTE

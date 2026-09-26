@@ -830,7 +830,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		))
 			to_chat(user, span_warning("The [cultist] is already free."))
 			return
-		cultist.buckled = null
+		if(cultist.buckled)
+			cultist.buckled.unbuckle_mob(cultist, TRUE)
 		if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
 			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))

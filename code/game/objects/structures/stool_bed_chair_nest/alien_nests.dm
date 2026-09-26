@@ -64,13 +64,10 @@
 			span_notice("[user.name] secretes a thick vile goo, securing [M.name] into [src]!"),\
 			span_warning("[user.name] drenches you in a foul-smelling resin, trapping you in the [src]!"),\
 			span_notice("You hear squelching..."))
-	M.buckled = src
 	M.forceMove(src.loc)
-	M.set_dir(src.dir)
-	M.update_canmove()
+	buckle_mob(M, forced = TRUE)
 	M.pixel_y = 6
 	M.old_y = 6
-	src.buckled_mobs |= M
 	src.add_fingerprint(user)
 	return
 

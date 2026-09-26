@@ -56,13 +56,7 @@
 		seed.create_spores(get_turf(victim))
 
 /obj/effect/plant/proc/unbuckle()
-	if(has_buckled_mobs())
-		for(var/mob/living/L as anything in buckled_mobs)
-			if(L.buckled == src)
-				L.buckled = null
-				L.anchored = initial(L.anchored)
-				L.update_canmove()
-		buckled_mobs = list()
+	unbuckle_all_mobs(TRUE)
 	return
 
 /obj/effect/plant/proc/manual_unbuckle(mob/user as mob)

@@ -197,6 +197,19 @@ if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[
 	FAILED=1
 fi;
 
+part "declared relation fields: core-owned"
+# A relation with source_ref_field/target_ref_field/source_list_field/target_list_field
+# (code/datums/om/defs.dm) is the sole writer of those vars, via om_field_link()/
+# om_field_unlink() (code/datums/om/relation.dm) -- everywhere else reads them but must
+# never assign to them; a bypass write goes stale the moment the relation itself changes
+# and desyncs from the edge it is supposed to mirror. Extend this field list as more
+# relations declare one (doc/rewrite/object_model_core.md, "relations").
+if $grep -n '\.(buckled|buckled_mobs)\s*[|&+*/-]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v 'var/' | grep -v 'om-field-exempt'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a declared relation field outside code/datums/om/. Establish/break the relation with om_link()/om_unlink() instead -- the core is the only writer of buckled/buckled_mobs.${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`

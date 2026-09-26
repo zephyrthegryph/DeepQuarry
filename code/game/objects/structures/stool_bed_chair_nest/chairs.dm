@@ -194,9 +194,12 @@
 
 /obj/structure/bed/chair/office/handle_buckled_mob_movement(atom/new_loc, direction, movetime)
 	for(var/mob/living/occupant as anything in buckled_mobs)
-		occupant.buckled = null
+		// Transient: not establishing/breaking the buckled_to relation, just
+		// stopping Move() from treating the occupant as still-buckled for the
+		// duration of this one forced step (om-field-exempt).
+		occupant.buckled = null // om-field-exempt
 		occupant.Move(loc, direction, movetime)
-		occupant.buckled = src
+		occupant.buckled = src // om-field-exempt
 		if (occupant && (loc != occupant.loc))
 			if (propelled)
 				for (var/mob/O in src.loc)

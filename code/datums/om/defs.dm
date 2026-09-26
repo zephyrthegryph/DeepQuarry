@@ -193,6 +193,20 @@
 	/// it fails (e.g. range or same-z checks) rather than just losing its contributions. Runs
 	/// alongside active_if off the same watched channels.
 	var/break_if
+	/// Declared per-side view fields (doc/rewrite/object_model_core.md, relations): the core
+	/// is the only writer of these vars, on link and unlink, so legacy/hot-path readers can
+	/// keep reading a plain var instead of going through om_relation_of()/om_related_to().
+	/// A single-ref field on the source, set to the target while the edge holds (pair this
+	/// with source_single so at most one edge -- and one value -- ever applies).
+	var/source_ref_field
+	/// A single-ref field on the target, set to the source (pair with target_single).
+	var/target_ref_field
+	/// A list field on the source; the target is added/removed as edges of this relation
+	/// come and go (use when a source is NOT source_single, so more than one may hold).
+	var/source_list_field
+	/// A list field on the target; the source is added/removed as edges of this relation
+	/// come and go (use when a target is NOT target_single, so more than one may hold).
+	var/target_list_field
 	/// Bundles whose relation fields (contributes, grants_*) are merged in.
 	var/list/include
 

@@ -91,18 +91,21 @@
 	source_single = TRUE
 	include = list(/datum/om/bundle/occupant_seat)
 
-/// mob -> what it is buckled to. Owns the buckle/unbuckle mechanics: on_link()
-/// and on_unlink() are the only place `buckled`/`buckled_mobs` get written, so
-/// every buckling call site keeps reading those vars but never has to
-/// hand-roll teardown again. break_if drops the edge outright (not just its
-/// EFFECT_BUCKLED contribution) the moment the mob ends up off the buckled
-/// object's tile, e.g. a forced move that didn't go through
-/// handle_buckled_mob_movement().
+/// mob -> what it is buckled to. `source_ref_field`/`target_list_field` make the
+/// core the sole writer of `buckled`/`buckled_mobs` (defs.dm, om_field_link()/
+/// om_field_unlink() in relation.dm) -- on_link()/on_unlink() below are left
+/// with only the real side effects (direction/canmove/floating/water, riding
+/// offsets, the buckled alert, the buckle signal), never the bookkeeping.
+/// break_if drops the edge outright (not just its EFFECT_BUCKLED contribution)
+/// the moment the mob ends up off the buckled object's tile, e.g. a forced
+/// move that didn't go through handle_buckled_mob_movement().
 /datum/om/relation/buckled_to
 	name = "buckle"
 	source_single = TRUE
 	source_contributes = list(EFFECT_BUCKLED = TRUE)
 	break_if = CHECK(/datum/om/check/in_range, 0)
+	source_ref_field = "buckled"
+	target_list_field = "buckled_mobs"
 	/// Set by buckle_mob() immediately before it calls om_link(), since
 	/// on_link()'s signature has no room for the `forced` flag; read and
 	/// cleared here.
@@ -113,8 +116,6 @@
 	if(!istype(source) || !istype(target))
 		return
 	var/forced = pending_forced
-	LAZYADD(target.buckled_mobs, source)
-	source.buckled = target
 	source.facing_dir = null
 	source.set_dir(target.buckle_dir ? target.buckle_dir : target.dir)
 	source.update_canmove()
@@ -129,11 +130,7 @@
 
 /datum/om/relation/buckled_to/on_unlink(mob/living/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		LAZYREMOVE(target.buckled_mobs, source)
 	if(istype(source) && !QDELETED(source))
-		if(source.buckled == target)
-			source.buckled = null
 		source.anchored = initial(source.anchored)
 		source.update_canmove()
 		source.update_floating(source.Check_Dense_Object())

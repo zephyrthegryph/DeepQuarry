@@ -139,13 +139,13 @@
 			if(istype(drop))
 				drop.tag = null
 				if(drop.buckled)
-					drop.buckled = null
+					drop.buckled.unbuckle_mob(drop, TRUE)
 				drop.forceMove(T)
 	else if(ispath(drop_type))
 		drop = new drop_type(T)
 		if(istype(drop))
 			if(drop.buckled)
-				drop.buckled = null
+				drop.buckled.unbuckle_mob(drop, TRUE)
 			drop.forceMove(T)
 
 ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on your location.", ADMIN_CATEGORY_FUN_DROP_POD)

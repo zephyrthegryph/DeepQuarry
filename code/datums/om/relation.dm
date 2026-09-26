@@ -32,6 +32,7 @@
 	edge.target = target
 	LAZYADD(srec.edges, edge)
 	LAZYADD(trec.edges, edge)
+	om_field_link(R, source, target)
 	try
 		R.on_link(source, target, edge)
 	catch(var/exception/e)
@@ -70,6 +71,7 @@
 	om_edge_teardown(edge)
 	if(trec)
 		om_agg_edge_removed(edge, trec)
+	om_field_unlink(R, source, target)
 	try
 		R.on_unlink(source, target, edge)
 	catch(var/exception/e)
@@ -87,6 +89,33 @@
 		qdel(target)
 	else if(deleting == target && R.on_target_delete == OM_END_DELETE_OTHER && !QDELETED(source))
 		qdel(source)
+
+/// Writes a relation's declared per-side view fields (source_ref_field, target_ref_field,
+/// source_list_field, target_list_field -- defs.dm) when an edge links. Core is the only
+/// writer: on_link()/on_unlink() hooks should only do side effects (alerts, offsets,
+/// signals), never touch these vars directly (tools/ci/check_grep.sh enforces this).
+/proc/om_field_link(datum/om/relation/R, datum/source, datum/target)
+	if(R.source_ref_field)
+		source.vars[R.source_ref_field] = target
+	if(R.target_ref_field)
+		target.vars[R.target_ref_field] = source
+	if(R.source_list_field)
+		LAZYADD(source.vars[R.source_list_field], target)
+	if(R.target_list_field)
+		LAZYADD(target.vars[R.target_list_field], source)
+
+/// Clears a relation's declared per-side view fields when an edge unlinks. Runs even when
+/// one end is mid-delete (QDELETED but never null here): writing to a QDELETED datum's own
+/// vars is harmless, and the surviving end's fields must still be cleared.
+/proc/om_field_unlink(datum/om/relation/R, datum/source, datum/target)
+	if(R.source_ref_field && source.vars[R.source_ref_field] == target)
+		source.vars[R.source_ref_field] = null
+	if(R.target_ref_field && target.vars[R.target_ref_field] == source)
+		target.vars[R.target_ref_field] = null
+	if(R.source_list_field)
+		LAZYREMOVE(source.vars[R.source_list_field], target)
+	if(R.target_list_field)
+		LAZYREMOVE(target.vars[R.target_list_field], source)
 
 /proc/om_edge_from(datum/om/rec/rec, datum/om/relation/R, as_source)
 	for(var/datum/om/edge/edge as anything in rec.edges)

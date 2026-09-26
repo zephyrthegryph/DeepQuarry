@@ -103,9 +103,10 @@
 	//--1---Move occupant---1--//
 	if(has_buckled_mobs())
 		for(var/mob/living/L as anything in buckled_mobs)
-			L.buckled = null
+			// Transient, not a relation change (om-field-exempt).
+			L.buckled = null // om-field-exempt
 			step(L, direction)
-			L.buckled = src
+			L.buckled = src // om-field-exempt
 	//--2----Move driver----2--//
 	if(pulling)
 		T = pulling.loc
@@ -137,9 +138,10 @@
 	if(has_buckled_mobs())
 		for(var/mob/living/occupant as anything in buckled_mobs)
 			if(!driving)
-				occupant.buckled = null
+				// Transient, not a relation change (om-field-exempt).
+				occupant.buckled = null // om-field-exempt
 				occupant.Move(src.loc)
-				occupant.buckled = src
+				occupant.buckled = src // om-field-exempt
 				if (occupant && (src.loc != occupant.loc))
 					if (propelled)
 						for (var/mob/O in src.loc)

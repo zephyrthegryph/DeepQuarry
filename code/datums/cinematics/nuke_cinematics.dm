@@ -76,12 +76,12 @@
 	//Incredibly hackish. It creates a bed within the gameticker (lol) to stop mobs running around
 	if(station_missed)
 		for(var/mob/living/M in living_mob_list)
-			M.buckled = temp_buckle				//buckles the mob so it can't do anything
+			temp_buckle.buckle_mob(M, forced = TRUE, check_loc = FALSE)	//buckles the mob so it can't do anything
 			if(M.client)
 				M.client.screen += cinematic	//show every client the cinematic
 	else	//nuke kills everyone on z-level 1 to prevent "hurr-durr I survived"
 		for(var/mob/living/M in living_mob_list)
-			M.buckled = temp_buckle
+			temp_buckle.buckle_mob(M, forced = TRUE, check_loc = FALSE)
 			if(M.client)
 				M.client.screen += cinematic
 
