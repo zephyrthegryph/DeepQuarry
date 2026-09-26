@@ -380,6 +380,26 @@ pipeline in `om_diagnostics()`: frames, parks, unparks, missed wakes.
 Cost: one ring dispatch per entity, one bit test per stage, one proc call per awake stage
 plus its `idle()` check. Parked entities cost nothing.
 
+**Periodic lanes and machine steps** (roadmap S3-S5; no processing subsystem is left). A
+datum with periodic work defines `periodic_step(delta)` and is started on a lane with
+`PERIODIC_START(E, lane)` by whatever gives it work; `PROCESS_KILL` or `PERIODIC_STOP(E)` ends
+it and it parks (`code/datums/om/periodic.dm`). The lanes are `PERIODIC_SLOW` (2 s),
+`PERIODIC_SECOND` and `PERIODIC_FAST` (0.2 s), plus declared continuous lanes, each with a
+`continuous_why` (projectiles, instruments, priority status effects, stat tab items). A machine's
+periodic work is `machine_step()` on the machine pipeline's step stage: `MACHINE_WAKE(M)` starts
+it, `PROCESS_KILL` or `MACHINE_SLEEP(M)` ends it, `sleep_until_powered()` ends it until power
+and repair return, and `step_on_power_change` types reconcile on every power change. Types in
+`/datum/om/decl/pipeline_machines` get one frame at Initialize; its `lazy` list joins only on a
+wake. Both stages are idle exactly while nothing started them, so the audit sees a lost start.
+`tools/ci/pollers_lint.py` ratchets `process()` definitions and `START_*PROCESSING` calls.
+
+**Timers and keys** (`code/datums/om/wakes.dm`). `OM_WAKE_AT(E, time)` (one per entity) and
+`OM_KEY_ON(E, kind, id, mask)` / `OM_KEY_PUBLISH(kind, id, mask)` deliver
+`om_woken(OM_WOKEN_TIMER | OM_WOKEN_KEY)`; a key is an OM entity its subscribers `om_watch()`.
+Doors, cameras, lights, status displays, looping sounds, shutoff valves, turrets, AI brains
+(mob chunk keys) and machines sleeping on keys use them; `om_woken_audit()` asks each
+sleeper's `om_sleep_violation()`.
+
 ### 4.11 One scheduler: time, sequences and asynchrony
 
 All deferred and multi-step work in gameplay code runs on the OM wheel and is owned by an entity. There is no second scheduler: SStimer, `spawn()`, `do_after` and gameplay `sleep()` go away.
