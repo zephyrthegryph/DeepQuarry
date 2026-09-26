@@ -176,9 +176,10 @@
 		span_notice("You start to clean \the [src].") \
 	)
 
-	if(!do_after(user, 2 SECONDS, target = src))
-		return TRUE
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
+	return TRUE
 
+/obj/machinery/microwave/proc/clean_done(mob/user)
 	user.visible_message( \
 		span_infoplain(span_bold("\The [user]") + " has cleaned \the [src]."),
 		span_notice("You have cleaned \the [src].") \
@@ -187,7 +188,6 @@
 	dirty = 0
 	flags |= MICROWAVE_FLAGS
 	post_state_change()
-	return TRUE
 
 /obj/machinery/microwave/proc/try_insert_item(obj/item/O, mob/user)
 	if(is_type_in_list(O, GLOB.acceptable_items))
@@ -263,15 +263,15 @@
 		span_notice("\The [user] begins [anchored ? "unsecuring" : "securing"] \the [src]."),
 		span_notice("You attempt to [anchored ? "unsecure" : "secure"] \the [src].")
 	)
-	if(do_after(user, (2 SECONDS) / tool.toolspeed, target = src))
-		user.visible_message(
-			span_notice("\The [user] [anchored ? "unsecures" : "secures"] \the [src]."),
-			span_notice("You [anchored ? "unsecure" : "secure"] \the [src].")
-		)
-		anchored = !anchored
-	else
-		to_chat(user, span_notice("You decide not to do that."))
+	om_do_after(user, (2 SECONDS) / tool.toolspeed, src, src, PROC_REF(secure_done), list(user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_notice("You decide not to do that.")))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/microwave/proc/secure_done(mob/user)
+	user.visible_message(
+		span_notice("\The [user] [anchored ? "unsecures" : "secures"] \the [src]."),
+		span_notice("You [anchored ? "unsecure" : "secure"] \the [src].")
+	)
+	anchored = !anchored
 
 /obj/machinery/microwave/tgui_status(mob/user)
 	if(user == paicard?.pai)
@@ -562,15 +562,15 @@
 	span_notice("You try to open [src] and remove its contents.")
 	)
 
-	if(!do_after(usr, 1 SECOND, target = src))
-		return
+	om_do_after(usr, 1 SECOND, src, src, PROC_REF(eject_done), list(usr))
 
+/obj/machinery/microwave/proc/eject_done(mob/user)
 	if(operating)
-		to_chat(usr, span_warning("You can't do that, [src] door is locked!"))
+		to_chat(user, span_warning("You can't do that, [src] door is locked!"))
 		return
 
-	usr.visible_message(
-	span_notice("[usr] opened [src] and has taken out [english_list(cookingContents())].") ,
+	user.visible_message(
+	span_notice("[user] opened [src] and has taken out [english_list(cookingContents())].") ,
 	span_notice("You have opened [src] and taken out [english_list(cookingContents())].")
 	)
 	dispose()

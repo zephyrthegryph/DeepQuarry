@@ -153,11 +153,15 @@
 
 	user.visible_message(span_danger("[user] starts to put [victim] into the gibber!"))
 	src.add_fingerprint(user)
-	if(do_after(user, 3 SECONDS, target = src) && victim.Adjacent(src) && user.Adjacent(src) && victim.Adjacent(user) && !occupant)
-		if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
-			return
-		user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
-		update_icon()
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
+
+/obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
+	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER))
+		return
+	if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
+		return
+	user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
+	update_icon()
 
 /obj/machinery/gibber/verb/eject()
 	set category = "Object"
