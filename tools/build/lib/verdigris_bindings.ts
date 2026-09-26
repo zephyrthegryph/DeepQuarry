@@ -246,7 +246,11 @@ type EventDecl = { name: string; variants: EventVariant[] };
 type Component = {
   domain: string;
   kind: number;
-  dmType: string;
+  /// The DM type this component binds to, or `null` for a bare-entity
+  /// component with no natural DM owner (a pipe device's flow/valve row):
+  /// that generates free-function `vg_bind_<lower>`/`get_*`/`set_*` procs
+  /// taking the entity number directly, instead of per-type ones.
+  dmType: string | null;
   structName: string;
   owner: 'main' | 'worker';
   fields: ComponentField[];
@@ -455,7 +459,7 @@ export function scanComponents(root: string): { components: Component[]; domainE
         const comp: Component = {
           domain: args.domain,
           kind: Number(args.kind),
-          dmType: stripQuotes(args.dm),
+          dmType: args.dm ? stripQuotes(args.dm) : null,
           structName,
           owner: args.owner === 'main' ? 'main' : 'worker',
           fields,
@@ -463,8 +467,8 @@ export function scanComponents(root: string): { components: Component[]; domainE
           events: [],
           file: rel,
         };
-        if (!comp.domain || !Number.isFinite(comp.kind) || !comp.dmType) {
-          throw new Error(`${rel}: #[vg::component] needs domain, kind and dm`);
+        if (!comp.domain || !Number.isFinite(comp.kind)) {
+          throw new Error(`${rel}: #[vg::component] needs domain and kind`);
         }
         components.push(comp);
         byName.set(structName, comp);
@@ -611,24 +615,31 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
     byDomain.get(c.domain)!.push(c);
   }
 
-  // Base vars every bound atom needs (rust_bindings.md §1, §13): one
+  // Base vars every bound type needs (rust_bindings.md §1, §13): one
   // `vg_entity` (the entity handle) and one `vg_<domain>` per domain that
-  // has landed a component (which kind, or 0/unset).
-  dm += `/atom/movable\n\t/// The entity handle (rust_bindings.md §1). 0: unbound.\n\tvar/tmp/vg_entity = 0\n`;
+  // has landed a component (which kind, or 0/unset). Declared on `/datum`,
+  // not `/atom/movable`: most bound types are atoms (the atom auto-bind
+  // lifecycle in atoms_movable.dm -- on_materialize()/vg_bind() -- needs
+  // `/atom/movable` specifically), but a component with no natural DM
+  // owner (a pipe device's flow/valve row, gen/layout's own "no DM type"
+  // case below) binds a bare, non-atom `/datum` instead; declaring the
+  // base plumbing on `/datum` lets both kinds share it, with atoms
+  // inheriting it exactly as before.
+  dm += `/datum\n\t/// The entity handle (rust_bindings.md §1). 0: unbound.\n\tvar/tmp/vg_entity = 0\n`;
   for (const domain of [...byDomain.keys()].sort()) {
     dm += `\t/// Which ${domain} component kind (a VG_${domain.toUpperCase()}_* define), or 0.\n\tvar/tmp/vg_${domain} = 0\n`;
   }
   dm += '\n';
 
   for (const domain of byDomain.keys()) {
-    dm += `/// Binds this atom's ${domain} component (if the type declares one) and\n`;
+    dm += `/// Binds this datum's ${domain} component (if the type declares one) and\n`;
     dm += `/// returns the (possibly newly created) entity handle. Overridden per\n`;
     dm += `/// bound type below.\n`;
-    dm += `/atom/movable/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
-    dm += `/// Reconciler (§7): mismatches between this atom's declared inputs and\n`;
+    dm += `/datum/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
+    dm += `/// Reconciler (§7): mismatches between this datum's declared inputs and\n`;
     dm += `/// what Rust has stored for its ${domain} component, repairing as it goes.\n`;
     dm += `/// Overridden per bound type below.\n`;
-    dm += `/atom/movable/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
+    dm += `/datum/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
   }
 
   for (const comp of components) {
@@ -650,13 +661,48 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
       dm += `#define VG_${upper}_FIELD_${f.name.toUpperCase()} ${f.id}\n`;
     }
     dm += '\n';
-    dm += `${dmType}\n\t${domainVar} = ${kindDefine}\n\n`;
 
     const configFields = comp.fields.filter((f) => f.role === 'config');
     const stateFields = comp.fields.filter((f) => f.role === 'state');
     const inputFields = comp.fields.filter((f) => f.role === 'input');
     const computedFields = comp.fields.filter((f) => f.role === 'computed');
     const fid = (f: ComponentField) => `VG_${upper}_FIELD_${f.name.toUpperCase()}`;
+
+    if (dmType === null) {
+      // A bare-entity component with no DM owner (a pipe device's flow/
+      // valve row, `ffi/src/pipes.rs`): free-function `vg_bind_<lower>`/
+      // `get_*`/`set_*` procs taking the entity number directly, instead
+      // of the per-type instance vars/overrides below. Config fields only
+      // -- state/computed/input/conserve/queries/events all read or push
+      // through a bound atom's own vars, which a bare entity doesn't have.
+      const other = [...stateFields, ...computedFields, ...inputFields, ...comp.queries, ...comp.events];
+      if (other.length || configFields.some((f) => f.array)) {
+        throw new Error(`${comp.file}: component ${structName} has no \`dm\` type, so it must be config-only, non-array fields`);
+      }
+      const bindArgs = configFields.map((f) => f.name).join(', ');
+      const initList = configFields.map((f) => `${fid(f)}, ${f.name}`).join(', ');
+      dm += `/// Creates (\`entity\` 0) or replaces (otherwise) a bare ${structName}\n`;
+      dm += `/// row and returns its entity handle -- never a DM object (this\n`;
+      dm += `/// component declares no \`dm\` type).\n`;
+      dm += `/proc/vg_bind_${lower}(entity, ${bindArgs})\n\treturn vg_component_bind(entity, ${codeDefine}, list(${initList}))\n\n`;
+      for (const f of configFields) {
+        const range =
+          f.min !== null && f.max !== null
+            ? ` ${f.onInvalid === 'clamp' ? 'clamped' : 'rejected'} to VG_${upper}_${f.name.toUpperCase()}_MIN..MAX.`
+            : '.';
+        if (f.min !== null && f.max !== null) {
+          dm += `#define VG_${upper}_${f.name.toUpperCase()}_MIN ${f.min}\n`;
+          dm += `#define VG_${upper}_${f.name.toUpperCase()}_MAX ${f.max}\n`;
+        }
+        dm += `/// ${f.unit ?? 'unitless'};${range}\n`;
+        dm += `/proc/get_${lower}_${f.name}(entity)\n\treturn vg_component_get(entity, ${codeDefine}, ${fid(f)}, 0)${f.unit ? ` // ${f.unit}` : ''}\n\n`;
+        dm += `/// Returns the stored value.\n`;
+        dm += `/proc/set_${lower}_${f.name}(entity, value)\n\treturn vg_component_set(entity, ${codeDefine}, ${fid(f)}, -1, value)\n\n`;
+      }
+      continue;
+    }
+
+    dm += `${dmType}\n\t${domainVar} = ${kindDefine}\n\n`;
 
     for (const f of configFields) {
       if (f.array) continue;
@@ -876,7 +922,9 @@ function docBlock(docs: string[], indent = ''): string {
 export function render(root: string): { dm: string; typesDm: string; rs: string; binds: number } {
   const { binds, defines } = scan(root);
   const { components, domainEvents } = scanComponents(root);
-  for (const c of components) checkDmTypeExists(root, c);
+  for (const c of components) {
+    if (c.dmType) checkDmTypeExists(root, c);
+  }
   const abi = abiOf(binds, defines, components, domainEvents);
   let dm = `// THIS FILE IS GENERATED by tools/build/lib/verdigris_bindings.ts from the
 // #[auxmacros::bind] functions in verdigris/. Do not edit it by hand: run

@@ -49,7 +49,12 @@ use syn::{Ident, LitInt, LitStr, Token};
 struct ComponentArgs {
     domain: Ident,
     kind: LitInt,
-    dm: LitStr,
+    /// The DM type this component binds to, or `None` for a component with
+    /// no natural DM owner (a bare-entity row like a pipe device's flow/
+    /// valve, `ffi/src/pipes.rs`): `tools/build/lib/verdigris_bindings.ts`
+    /// then generates free-function `vg_bind_<domain>`/`get_*`/`set_*`
+    /// procs taking the entity number directly, instead of per-type ones.
+    dm: Option<LitStr>,
     owner_main: bool,
     computed: Vec<Ident>,
 }
@@ -115,7 +120,7 @@ impl Parse for ComponentArgs {
                     "#[component] needs `kind = <n>` (a small integer unique within the domain)",
                 )
             })?,
-            dm: dm.ok_or_else(|| input.error("#[component] needs `dm = \"/path/to/type\"`"))?,
+            dm,
             owner_main,
             computed,
         })
@@ -368,7 +373,7 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
     let command_ident = format_ident!("{struct_ident}Command");
     let domain_str = args.domain.to_string();
     let kind_lit = &args.kind;
-    let dm_str = &args.dm;
+    let dm_str = args.dm.as_ref().map(LitStr::value).unwrap_or_default();
     let lower = snake_case(&struct_ident);
     let owner = if args.owner_main {
         quote! { ::vg_core::component::Ownership::Main }

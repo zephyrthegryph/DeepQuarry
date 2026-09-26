@@ -259,29 +259,40 @@
 /// `direction`/`stop_cmp` the `RUST_FLOW_*`/`RUST_DIR_*`/`RUST_STOP_*`
 /// wire values (`atmospherics.dm`), `stop_side` `RUST_SIDE_A`/`_B`. The row
 /// is a bare Rust entity with no backing DM object at all (never an
-/// `/obj/effect` placed on the map) -- every field, including the link to
-/// `rust_device_id`, is written in the one `vg_pipe_flow_set()` call.
+/// `/obj/effect` placed on the map): `vg_bind_device_flow()` is the
+/// bindings generator's free-function accessor for a component with no
+/// `dm` type (`DeviceFlow`, `verdigris/domains/gas/src/kind/device.rs`),
+/// taking the entity number directly instead of a per-type instance.
+/// `vg_pipe_device_index()` is the one bespoke lookup DM still needs: a
+/// pipe device's own entity is never exposed to DM as a `vg_entity` value.
 /obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
 	if(!rust_device_id)
 		return FALSE
-	rust_flow_entity = vg_pipe_flow_set(rust_flow_entity, rust_device_id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	var/device_index = vg_pipe_device_index(rust_device_id)
+	if(device_index < 0)
+		return FALSE
+	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
 	return rust_flow_entity != 0
 
 /// Sets (creating the row on first use) `machine`'s device edge's valve
 /// gate (a valve or shutoff valve: equalizes while `open`, blocks
-/// otherwise). Same bare-entity pattern as `rust_set_device_flow()`.
+/// otherwise). Same bare-entity, generated-free-proc pattern as
+/// `rust_set_device_flow()`.
 /obj/machinery/atmospherics/proc/rust_set_device_valve(open)
 	if(!rust_device_id)
 		return FALSE
-	rust_valve_entity = vg_pipe_valve_set(rust_valve_entity, rust_device_id, open)
+	var/device_index = vg_pipe_device_index(rust_device_id)
+	if(device_index < 0)
+		return FALSE
+	rust_valve_entity = vg_bind_device_valve(rust_valve_entity, device_index, open)
 	return rust_valve_entity != 0
 
 /obj/machinery/atmospherics/proc/rust_unregister_device()
 	if(rust_flow_entity)
-		vg_pipe_flow_remove(rust_flow_entity)
+		vg_entity_unbind(rust_flow_entity)
 		rust_flow_entity = 0
 	if(rust_valve_entity)
-		vg_pipe_valve_remove(rust_valve_entity)
+		vg_entity_unbind(rust_valve_entity)
 		rust_valve_entity = 0
 	if(!rust_device_id)
 		return

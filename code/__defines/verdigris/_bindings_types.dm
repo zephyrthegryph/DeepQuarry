@@ -3,7 +3,7 @@
 // Do not edit it by hand: run `tools/build/build.sh verdigris-bindings`.
 // CI fails when it is stale. See doc/rewrite/rust_bindings.md.
 
-/atom/movable
+/datum
 	/// The entity handle (rust_bindings.md §1). 0: unbound.
 	var/tmp/vg_entity = 0
 	/// Which gas component kind (a VG_GAS_* define), or 0.
@@ -13,40 +13,40 @@
 	/// Which power component kind (a VG_POWER_* define), or 0.
 	var/tmp/vg_power = 0
 
-/// Binds this atom's gas component (if the type declares one) and
+/// Binds this datum's gas component (if the type declares one) and
 /// returns the (possibly newly created) entity handle. Overridden per
 /// bound type below.
-/atom/movable/proc/vg_bind_gas(entity)
+/datum/proc/vg_bind_gas(entity)
 	return entity
 
-/// Reconciler (§7): mismatches between this atom's declared inputs and
+/// Reconciler (§7): mismatches between this datum's declared inputs and
 /// what Rust has stored for its gas component, repairing as it goes.
 /// Overridden per bound type below.
-/atom/movable/proc/vg_reconcile_gas()
+/datum/proc/vg_reconcile_gas()
 	return list()
 
-/// Binds this atom's heat component (if the type declares one) and
+/// Binds this datum's heat component (if the type declares one) and
 /// returns the (possibly newly created) entity handle. Overridden per
 /// bound type below.
-/atom/movable/proc/vg_bind_heat(entity)
+/datum/proc/vg_bind_heat(entity)
 	return entity
 
-/// Reconciler (§7): mismatches between this atom's declared inputs and
+/// Reconciler (§7): mismatches between this datum's declared inputs and
 /// what Rust has stored for its heat component, repairing as it goes.
 /// Overridden per bound type below.
-/atom/movable/proc/vg_reconcile_heat()
+/datum/proc/vg_reconcile_heat()
 	return list()
 
-/// Binds this atom's power component (if the type declares one) and
+/// Binds this datum's power component (if the type declares one) and
 /// returns the (possibly newly created) entity handle. Overridden per
 /// bound type below.
-/atom/movable/proc/vg_bind_power(entity)
+/datum/proc/vg_bind_power(entity)
 	return entity
 
-/// Reconciler (§7): mismatches between this atom's declared inputs and
+/// Reconciler (§7): mismatches between this datum's declared inputs and
 /// what Rust has stored for its power component, repairing as it goes.
 /// Overridden per bound type below.
-/atom/movable/proc/vg_reconcile_power()
+/datum/proc/vg_reconcile_power()
 	return list()
 
 // ---- Pump (gas kind 1, owner worker; verdigris/domains/gas/src/kind/pump.rs) ----
@@ -257,85 +257,75 @@
 #define VG_DEVICEFLOW_FIELD_STOP_CMP 6
 #define VG_DEVICEFLOW_FIELD_STOP_KPA 7
 
-/obj/effect/device_flow_row
-	vg_gas = VG_GAS_DEVICEFLOW
-
-/obj/effect/device_flow_row/var/tmp/init_device = 0
-/obj/effect/device_flow_row/var/tmp/init_gases = 0
-/obj/effect/device_flow_row/var/tmp/init_rate_kind = 0
-/obj/effect/device_flow_row/var/tmp/init_rate = 0.0
-/obj/effect/device_flow_row/var/tmp/init_direction = 0
-/obj/effect/device_flow_row/var/tmp/init_stop_side = 0
-/obj/effect/device_flow_row/var/tmp/init_stop_cmp = 0
-/obj/effect/device_flow_row/var/tmp/init_stop_kpa = 0.0
-
+/// Creates (`entity` 0) or replaces (otherwise) a bare DeviceFlow
+/// row and returns its entity handle -- never a DM object (this
+/// component declares no `dm` type).
+/proc/vg_bind_device_flow(entity, device, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	return vg_component_bind(entity, VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, device, VG_DEVICEFLOW_FIELD_GASES, gases, VG_DEVICEFLOW_FIELD_RATE_KIND, rate_kind, VG_DEVICEFLOW_FIELD_RATE, rate, VG_DEVICEFLOW_FIELD_DIRECTION, direction, VG_DEVICEFLOW_FIELD_STOP_SIDE, stop_side, VG_DEVICEFLOW_FIELD_STOP_CMP, stop_cmp, VG_DEVICEFLOW_FIELD_STOP_KPA, stop_kpa))
 
 /// unitless;.
-/obj/effect/device_flow_row/proc/get_device()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, 0)
+/proc/get_device_flow_device(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, 0)
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_device(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, -1, value)
+/proc/set_device_flow_device(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, -1, value)
 
 /// unitless;.
-/obj/effect/device_flow_row/proc/get_gases()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, 0)
+/proc/get_device_flow_gases(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, 0)
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_gases(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, -1, value)
+/proc/set_device_flow_gases(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, -1, value)
 
 /// unitless;.
-/obj/effect/device_flow_row/proc/get_rate_kind()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, 0)
+/proc/get_device_flow_rate_kind(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, 0)
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_rate_kind(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, -1, value)
+/proc/set_device_flow_rate_kind(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, -1, value)
 
 /// mol/s;.
-/obj/effect/device_flow_row/proc/get_rate()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, 0) // mol/s
+/proc/get_device_flow_rate(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, 0) // mol/s
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_rate(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, -1, value)
+/proc/set_device_flow_rate(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, -1, value)
 
 /// unitless;.
-/obj/effect/device_flow_row/proc/get_direction()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, 0)
+/proc/get_device_flow_direction(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, 0)
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_direction(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, -1, value)
+/proc/set_device_flow_direction(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, -1, value)
 
 /// unitless;.
-/obj/effect/device_flow_row/proc/get_stop_side()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, 0)
+/proc/get_device_flow_stop_side(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, 0)
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_stop_side(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, -1, value)
+/proc/set_device_flow_stop_side(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, -1, value)
 
 /// unitless;.
-/obj/effect/device_flow_row/proc/get_stop_cmp()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, 0)
+/proc/get_device_flow_stop_cmp(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, 0)
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_stop_cmp(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, -1, value)
+/proc/set_device_flow_stop_cmp(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, -1, value)
 
 /// kPa;.
-/obj/effect/device_flow_row/proc/get_stop_kpa()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, 0) // kPa
+/proc/get_device_flow_stop_kpa(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, 0) // kPa
 
 /// Returns the stored value.
-/obj/effect/device_flow_row/proc/set_stop_kpa(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, -1, value)
-
-/obj/effect/device_flow_row/vg_bind_gas(entity)
-	return vg_component_bind(entity, VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, init_device, VG_DEVICEFLOW_FIELD_GASES, init_gases, VG_DEVICEFLOW_FIELD_RATE_KIND, init_rate_kind, VG_DEVICEFLOW_FIELD_RATE, init_rate, VG_DEVICEFLOW_FIELD_DIRECTION, init_direction, VG_DEVICEFLOW_FIELD_STOP_SIDE, init_stop_side, VG_DEVICEFLOW_FIELD_STOP_CMP, init_stop_cmp, VG_DEVICEFLOW_FIELD_STOP_KPA, init_stop_kpa))
+/proc/set_device_flow_stop_kpa(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, -1, value)
 
 // ---- DeviceValve (gas kind 4, owner main; verdigris/domains/gas/src/kind/device.rs) ----
 
@@ -347,31 +337,27 @@
 #define VG_DEVICEVALVE_FIELD_DEVICE 0
 #define VG_DEVICEVALVE_FIELD_OPEN 1
 
-/obj/effect/device_valve_row
-	vg_gas = VG_GAS_DEVICEVALVE
-
-/obj/effect/device_valve_row/var/tmp/init_device = 0
-/obj/effect/device_valve_row/var/tmp/init_open = FALSE
-
-
-/// unitless;.
-/obj/effect/device_valve_row/proc/get_device()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, 0)
-
-/// Returns the stored value.
-/obj/effect/device_valve_row/proc/set_device(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, -1, value)
+/// Creates (`entity` 0) or replaces (otherwise) a bare DeviceValve
+/// row and returns its entity handle -- never a DM object (this
+/// component declares no `dm` type).
+/proc/vg_bind_device_valve(entity, device, open)
+	return vg_component_bind(entity, VG_KIND_DEVICEVALVE, list(VG_DEVICEVALVE_FIELD_DEVICE, device, VG_DEVICEVALVE_FIELD_OPEN, open))
 
 /// unitless;.
-/obj/effect/device_valve_row/proc/get_open()
-	return vg_component_get(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, 0)
+/proc/get_device_valve_device(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, 0)
 
 /// Returns the stored value.
-/obj/effect/device_valve_row/proc/set_open(value)
-	return vg_component_set(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, -1, value)
+/proc/set_device_valve_device(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, -1, value)
 
-/obj/effect/device_valve_row/vg_bind_gas(entity)
-	return vg_component_bind(entity, VG_KIND_DEVICEVALVE, list(VG_DEVICEVALVE_FIELD_DEVICE, init_device, VG_DEVICEVALVE_FIELD_OPEN, init_open))
+/// unitless;.
+/proc/get_device_valve_open(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, 0)
+
+/// Returns the stored value.
+/proc/set_device_valve_open(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, -1, value)
 
 // ---- HeatBody (heat kind 1, owner worker; verdigris/domains/heat/src/components.rs) ----
 

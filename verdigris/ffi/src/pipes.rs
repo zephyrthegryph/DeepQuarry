@@ -409,87 +409,23 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
     .map(ByondValue::from)
 }
 
-/// Creates (when `entity` is 0) or replaces (otherwise) one `DeviceFlow` row
-/// on device `id` and returns its entity handle for DM to hold and pass back
-/// next call. The row is a bare entity with no backing DM object at all --
-/// `DeviceFlow`/`DeviceValve` rows are Rust-internal bookkeeping, never
-/// placed as a `/obj/effect` map atom (`rust_architecture.md` §8.5 step 6's
-/// pipe-device redesign) -- so every field, including the owning device's
-/// link, is set in this one call instead of through the generated
-/// per-type `vg_component_*` accessors a bound atom would otherwise use.
-#[auxmacros::bind("/proc/vg_pipe_flow_set")]
-fn pipe_flow_set(
-    entity: ByondValue,
-    id: ByondValue,
-    gases: ByondValue,
-    rate_kind: ByondValue,
-    rate: ByondValue,
-    direction: ByondValue,
-    stop_side: ByondValue,
-    stop_cmp: ByondValue,
-    stop_kpa: ByondValue,
-) -> Result<ByondValue> {
+/// The one bespoke bind a `DeviceFlow`/`DeviceValve` row still needs: a
+/// pipe device's own entity is deliberately never exposed to DM as a
+/// `vg_entity` value (this module's own docs), so DM cannot pass it to the
+/// fully generic `vg_bind_device_flow()`/`vg_bind_device_valve()` (the
+/// bindings generator's free-function accessors for a component with no
+/// `dm` type, `tools/build/lib/verdigris_bindings.ts`) without first
+/// resolving device `id` to its raw index this way. Everything else --
+/// creating, updating and removing the row -- DM does directly with those
+/// generated procs plus `vg_entity_unbind()`; there is no other bind here.
+#[auxmacros::bind("/proc/vg_pipe_device_index")]
+fn pipe_device_index(id: ByondValue) -> Result<ByondValue> {
     let id_n = whole(&id, "id")?;
     let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
-        return Ok(ByondValue::from(0.0));
+        return Ok(ByondValue::from(-1.0));
     };
-    let existing = num(&entity)?;
-    let existing = (existing != 0.0).then(|| crate::entity::decode(existing)).transpose()?;
-    let row = DeviceFlow {
-        device: device_e.index(),
-        gases: whole(&gases, "gases")?,
-        rate_kind: u8::try_from(whole(&rate_kind, "rate_kind")?).unwrap_or_default(),
-        rate: num(&rate)?,
-        direction: u8::try_from(whole(&direction, "direction")?).unwrap_or_default(),
-        stop_side: u8::try_from(whole(&stop_side, "stop_side")?).unwrap_or_default(),
-        stop_cmp: u8::try_from(whole(&stop_cmp, "stop_cmp")?).unwrap_or_default(),
-        stop_kpa: num(&stop_kpa)?,
-    };
-    with_world(|w| {
-        let e = w.bind_value::<DeviceFlow>(existing, row).map_err(|e| eyre!("{e}"))?;
-        Ok(crate::entity::entity_value(e))
-    })
-    .map(ByondValue::from)
-}
-
-/// Removes a `DeviceFlow` row created by [`pipe_flow_set`]. `entity` is the
-/// handle that call returned; a no-op for `0`.
-#[auxmacros::bind("/proc/vg_pipe_flow_remove")]
-fn pipe_flow_remove(entity: ByondValue) -> Result<ByondValue> {
-    let entity = num(&entity)?;
-    if entity == 0.0 {
-        return Ok(false.into());
-    }
-    let e = crate::entity::decode(entity)?;
-    with_world(|w| Ok(w.despawn(e).is_ok())).map(ByondValue::from)
-}
-
-/// See [`pipe_flow_set`]'s own docs; the same for a `DeviceValve` row.
-#[auxmacros::bind("/proc/vg_pipe_valve_set")]
-fn pipe_valve_set(entity: ByondValue, id: ByondValue, open: ByondValue) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
-        return Ok(ByondValue::from(0.0));
-    };
-    let existing = num(&entity)?;
-    let existing = (existing != 0.0).then(|| crate::entity::decode(existing)).transpose()?;
-    let row = DeviceValve { device: device_e.index(), open: num(&open)? != 0.0 };
-    with_world(|w| {
-        let e = w.bind_value::<DeviceValve>(existing, row).map_err(|e| eyre!("{e}"))?;
-        Ok(crate::entity::entity_value(e))
-    })
-    .map(ByondValue::from)
-}
-
-/// See [`pipe_flow_remove`]'s own docs; the same for a `DeviceValve` row.
-#[auxmacros::bind("/proc/vg_pipe_valve_remove")]
-fn pipe_valve_remove(entity: ByondValue) -> Result<ByondValue> {
-    let entity = num(&entity)?;
-    if entity == 0.0 {
-        return Ok(false.into());
-    }
-    let e = crate::entity::decode(entity)?;
-    with_world(|w| Ok(w.despawn(e).is_ok())).map(ByondValue::from)
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(device_e.index() as f32))
 }
 
 /// Every `Flow`/valve-open bound to device entity `device_e`

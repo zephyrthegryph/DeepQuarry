@@ -62,7 +62,7 @@ pub mod stop_cmp {
 /// `simulation.md` §5's device table, unchanged, just declared instead of
 /// packed. `owner = main`: DM sets these synchronously (device settings,
 /// vent release/siphon mode switches), same as a pipe port itself.
-#[vg::component(domain = gas, kind = 3, dm = "/obj/effect/device_flow_row", owner = main)]
+#[vg::component(domain = gas, kind = 3, owner = main)]
 pub struct DeviceFlow {
 	/// The owning device entity's raw index (`LinksTo`).
 	#[vg(config, default = 0)]
@@ -128,7 +128,7 @@ impl DeviceFlow {
 /// topology merge on connect, this only gates it for the one tick before
 /// that merge's next commit catches up). At most one per device -- unlike
 /// `DeviceFlow`, a valve doesn't compose with others on the same edge.
-#[vg::component(domain = gas, kind = 4, dm = "/obj/effect/device_valve_row", owner = main)]
+#[vg::component(domain = gas, kind = 4, owner = main)]
 pub struct DeviceValve {
 	/// The owning device entity's raw index (`LinksTo`).
 	#[vg(config, default = 0)]
