@@ -53,15 +53,15 @@
 		if(H != user && prototype)
 			balloon_alert(user, "injecting [H] with \the [src]")
 			balloon_alert(H, "[user] is trying to inject you with \the [src]")
-			if(!do_after(user, 3 SECONDS, target = H))
-				return ITEM_INTERACT_FAILURE
+			om_do_after(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
+			return ITEM_INTERACT_SUCCESS
 		else if(!H.stat && !prototype)
 			if(H != user)
 				if(H.a_intent != I_HELP)
 					balloon_alert(user, "[H] resists your attempt to inject them with \the [src].")
 					balloon_alert(H, "[user] is trying to inject you with \the [src]")
-					if(!do_after(user, 3 SECONDS, target = H))
-						return ITEM_INTERACT_FAILURE
+					om_do_after(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
+					return ITEM_INTERACT_SUCCESS
 
 	do_injection(H, user)
 	return ITEM_INTERACT_SUCCESS
@@ -124,23 +124,26 @@
 	else
 		icon_state = "[initial(icon_state)]_empty"
 
+/obj/item/reagent_containers/hypospray/vial/proc/load_vial_done(mob/user, obj/item/reagent_containers/glass/beaker/vial/W)
+	if(loaded_vial || !(W in user))
+		return
+	if(W.is_open_container())
+		W.flags ^= OPENCONTAINER
+		W.update_icon()
+	user.drop_item()
+	W.loc = src
+	loaded_vial = W
+	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
+	loaded_vial.reagents.trans_to_holder(reagents,volume)
+	balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")
+	update_icon()
+	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+
 /obj/item/reagent_containers/hypospray/vial/attackby(obj/item/W, mob/user as mob)
 	if(istype(W, /obj/item/reagent_containers/glass/beaker/vial))
 		if(!loaded_vial)
 			balloon_alert_visible("[user] begins loading [W] into \the [src].", "loading [W] into \the [src].")
-			if(!do_after(user, 3 SECONDS, target = src) || loaded_vial || !(W in user))
-				return 0
-			if(W.is_open_container())
-				W.flags ^= OPENCONTAINER
-				W.update_icon()
-			user.drop_item()
-			W.loc = src
-			loaded_vial = W
-			reagents.maximum_volume = loaded_vial.reagents.maximum_volume
-			loaded_vial.reagents.trans_to_holder(reagents,volume)
-			balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")
-			update_icon()
-			playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+			om_do_after(user, 3 SECONDS, src, src, PROC_REF(load_vial_done), list(user, W))
 		else
 			balloon_alert(user, "\the [src] already has a vial.")
 	else

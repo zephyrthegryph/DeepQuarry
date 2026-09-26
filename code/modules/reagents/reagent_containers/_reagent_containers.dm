@@ -124,15 +124,18 @@
 
 	else
 		other_feed_message_start(user, target)
-		if(!do_after(user, 3 SECONDS, target))
-			return FALSE
-		other_feed_message_finish(user, target)
-
-		var/contained = reagentlist()
-		add_attack_logs(user,target,"Fed from [src.name] containing [contained]")
-		reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_INGEST)
-		feed_sound(user)
+		om_do_after(user, 3 SECONDS, target, src, PROC_REF(standard_feed_done), list(user, target))
 		return TRUE
+
+/obj/item/reagent_containers/proc/standard_feed_done(mob/user, mob/target)
+	if(!reagents?.total_volume)
+		return
+	other_feed_message_finish(user, target)
+
+	var/contained = reagentlist()
+	add_attack_logs(user,target,"Fed from [src.name] containing [contained]")
+	reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_INGEST)
+	feed_sound(user)
 
 /obj/item/reagent_containers/proc/standard_pour_into(mob/user, atom/target) // This goes into afterattack and yes, it's atom-level
 	if(!target.is_open_container() || !target.reagents)

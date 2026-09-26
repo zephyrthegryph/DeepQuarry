@@ -4,8 +4,8 @@
 spawn 660
 addtimer 791
 invoke_async 116
-do_after 597
-sleep 503
+do_after 580
+sleep 502
 stoplag 50
 prompts 2236
 set_waitfor 108

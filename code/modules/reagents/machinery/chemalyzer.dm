@@ -41,12 +41,15 @@
 	update_icon()
 	to_chat(user, span_notice("Analyzing \the [held], please stand by..."))
 
-	if(!do_after(user, 2 SECONDS, src))
-		to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
-		analyzing = FALSE
-		update_icon()
-		return TRUE
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(scan_done), list(user, held), on_fail = PROC_REF(scan_failed), fail_args = list(user))
+	return TRUE
 
+/obj/machinery/chemical_analyzer/proc/scan_failed(mob/user)
+	to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
+	analyzing = FALSE
+	update_icon()
+
+/obj/machinery/chemical_analyzer/proc/scan_done(mob/user, obj/item/held)
 	// First, identify it if it isn't already.
 	if(!held.is_identified(IDENTITY_FULL))
 		var/datum/identification/ID = held.identity
@@ -66,7 +69,6 @@
 
 	analyzing = FALSE
 	update_icon()
-	return TRUE
 
 /obj/machinery/chemical_analyzer/screwdriver_act(mob/user, obj/item/tool)
 	return ..()
