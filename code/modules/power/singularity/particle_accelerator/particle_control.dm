@@ -125,7 +125,10 @@
 		update_use_power(USE_POWER_IDLE)
 
 
+/// Emits every machine frame while active; off, it sleeps until toggle_power() turns it on.
 /obj/machinery/particle_accelerator/control_box/machine_step()
+	if(!active)
+		return PROCESS_KILL
 	if(src.active)
 		//a part is missing!
 		if( length(connected_parts) < 6 )
@@ -201,6 +204,7 @@
 	log_game("PACCEL([x],[y],[z]) [user ? key_name(user, user.client) : "outside forces"] turned [active?"ON":"OFF"].")
 	if(active)
 		update_use_power(USE_POWER_ACTIVE)
+		MACHINE_WAKE(src)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = src.strength
 			part.powered = 1

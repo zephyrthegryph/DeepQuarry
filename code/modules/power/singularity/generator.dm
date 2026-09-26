@@ -17,11 +17,13 @@
 	else
 		. += span_warning("It is not secured!")
 
+/// Collapses into a singularity once particles have charged it; each hit wakes it to check.
 /obj/machinery/the_singularitygen/machine_step()
 	var/turf/T = get_turf(src)
 	if(src.energy >= 200)
 		new creation_type(T, 50)
 		if(src) qdel(src)
+	return PROCESS_KILL
 
 /obj/machinery/the_singularitygen/declare_interactions(list/into)
 	into += list(

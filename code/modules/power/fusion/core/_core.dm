@@ -65,9 +65,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		return
 	. = 1
 
+/// Runs its field while it has one; shut down, it sleeps until Startup().
 /obj/machinery/power/fusion_core/machine_step()
 	if((stat & BROKEN) || !powernet || !owned_field)
 		Shutdown()
+		return PROCESS_KILL
 
 	SEND_SIGNAL(src, COMSIG_HOSE_FORCEPUMP)
 
@@ -99,6 +101,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		return
 	owned_field = new(loc, src)
 	owned_field.ChangeFieldStrength(field_strength)
+	MACHINE_WAKE(src)
 	icon_state = "core1"
 	update_use_power(USE_POWER_ACTIVE)
 	. = 1
