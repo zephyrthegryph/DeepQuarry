@@ -2063,7 +2063,7 @@
 			span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")
 		)
 		//wait 30 seconds, growth takes time yo
-		spawn(300)
+		spawn(300) // S7 keeps: alert() sleeps (prompts, S10)
 			//allow it to bug them again now that we've waited
 			M.gender_change_cooldown = 0
 			//check if they want this to happen for pref sake
