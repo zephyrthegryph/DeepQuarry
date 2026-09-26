@@ -27,11 +27,12 @@
 		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_notice("[user] seals \the [src] over [H]'s face and starts squeezing."), span_notice("You seal \the [src] over [H]'s face and start squeezing."))
-	if(!do_after(user, 2 SECONDS, target = H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 2 SECONDS, H, src, PROC_REF(squeeze_done), list(user, H))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/bag_valve_mask/proc/squeeze_done(mob/living/user, mob/living/carbon/human/H)
 	if(!apply_ventilation(H))
 		to_chat(user, span_warning("The bag won't empty - air isn't getting into [H]'s lungs!"))
-	return ITEM_INTERACT_SUCCESS
 
 /// Deliver a cycle of breaths: a floor under the breathing drive. It can't
 /// push past a closed airway (the airway factor still multiplies it), so the
@@ -64,13 +65,14 @@
 		to_chat(user, span_warning("You can't get into [H]'s mouth."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_notice("[user] starts working \the [src] into [H]'s airway."), span_notice("You start working \the [src] into [H]'s airway."))
-	if(!do_after(user, 4 SECONDS, target = H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 4 SECONDS, H, src, PROC_REF(airway_done), list(user, H))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/airway_kit/proc/airway_done(mob/living/user, mob/living/carbon/human/H)
 	if(clear_airway(H))
 		user.visible_message(span_notice("[user] clears [H]'s airway."), span_notice("You clear [H]'s airway."))
 	else
 		to_chat(user, span_notice("[H]'s airway is already clear."))
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/airway_kit/proc/clear_airway(mob/living/carbon/human/H)
 	return H.mend(TREAT_AIRWAY, airway_amount) > 0
@@ -98,8 +100,12 @@
 		to_chat(user, span_warning("Aim for [H]'s chest."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_warning("[user] lines \the [src] up between [H]'s ribs."), span_notice("You line \the [src] up between [H]'s ribs."))
-	if(!do_after(user, 3 SECONDS, target = H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 3 SECONDS, H, src, PROC_REF(needle_done), list(user, H))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/decompression_needle/proc/needle_done(mob/living/user, mob/living/carbon/human/H)
+	if(used)
+		return
 	used = TRUE
 	name = "used [initial(name)]"
 	H.custom_pain("Something sharp punches between your ribs!", 30)
@@ -108,7 +114,6 @@
 	else
 		user.visible_message(span_warning("[user] drives \the [src] into [H]'s chest. Nothing comes out."), span_warning("Nothing comes out. There was no trapped air."))
 		H.injure(INJURY_PIERCE, 3, BP_TORSO, src, flags = INJURE_SILENT)
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/decompression_needle/proc/decompress(mob/living/carbon/human/H)
 	return H.mend(TREAT_DECOMPRESSION, decompression_amount) > 0

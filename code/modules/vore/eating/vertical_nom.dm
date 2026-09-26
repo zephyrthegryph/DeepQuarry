@@ -34,15 +34,17 @@
 	to_chat(target, span_vwarning("You feel yourself being pulled up by something... Or someone?!"))
 	var/starting_loc = target.loc
 
-	if(do_after(src, 5 SECONDS, target = target))
-		if(target.loc != starting_loc)
-			to_chat(target, span_vwarning("You have interrupted whatever that was..."))
-			to_chat(src, span_vnotice("They got away."))
-			return
-		if(BUCKLED(target))
-			var/atom/movable/_tmp_buck_47 = BUCKLED(target)
-			_tmp_buck_47.unbuckle_mob()
-		target.visible_message(span_vwarning("\The [target] suddenly disappears somewhere above!"),\
-			span_vdanger("You are dragged above and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
-		to_chat(src, span_vnotice("You successfully snatch \the [target], slipping them into your [vore_selected.get_belly_name()]."))
-		vore_selected.nom_atom(target)
+	om_do_after(src, 5 SECONDS, target, src, PROC_REF(vertical_nom_done), list(target, starting_loc))
+
+/mob/living/proc/vertical_nom_done(mob/living/target, starting_loc)
+	if(target.loc != starting_loc)
+		to_chat(target, span_vwarning("You have interrupted whatever that was..."))
+		to_chat(src, span_vnotice("They got away."))
+		return
+	if(BUCKLED(target))
+		var/atom/movable/_tmp_buck_47 = BUCKLED(target)
+		_tmp_buck_47.unbuckle_mob()
+	target.visible_message(span_vwarning("\The [target] suddenly disappears somewhere above!"),\
+		span_vdanger("You are dragged above and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
+	to_chat(src, span_vnotice("You successfully snatch \the [target], slipping them into your [vore_selected.get_belly_name()]."))
+	vore_selected.nom_atom(target)

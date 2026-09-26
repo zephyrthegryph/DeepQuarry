@@ -127,11 +127,13 @@
 	var/missing = round((1 - vitality()) * get_endurance()) // re-read after the input prompt
 	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
 	heal_amount = CLAMP(heal_amount, 1, nutrition / 10)
-	if(do_after (src, 10 * heal_amount))
-		nutrition -= 10 * heal_amount
-		// Spend the budget mechanism by mechanism, in the old brute > burn > oxy > tox > clone order.
-		// Plating/wiring cover synthetic bodies; the body ignores tags that don't match its biology.
-		for(var/treat_tag in list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_OXYGENATION, TREAT_ANTITOXIN, TREAT_GENETIC_REPAIR))
-			if(heal_amount <= 0)
-				break
-			heal_amount -= mend(treat_tag, heal_amount)
+	om_do_after(src, 10 * heal_amount, null, src, PROC_REF(nutrition_heal_done), list(heal_amount))
+
+/mob/living/simple_mob/proc/nutrition_heal_done(heal_amount)
+	nutrition -= 10 * heal_amount
+	// Spend the budget mechanism by mechanism, in the old brute > burn > oxy > tox > clone order.
+	// Plating/wiring cover synthetic bodies; the body ignores tags that don't match its biology.
+	for(var/treat_tag in list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_OXYGENATION, TREAT_ANTITOXIN, TREAT_GENETIC_REPAIR))
+		if(heal_amount <= 0)
+			break
+		heal_amount -= mend(treat_tag, heal_amount)

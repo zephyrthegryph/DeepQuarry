@@ -1570,20 +1570,25 @@ End */
 	attack_verb = list("fluffed", "fwomped", "fuwa'd", "squirmshed")
 	special_handling = TRUE
 
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_ended()
+	searching = FALSE
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(mob/user)
+	searching = FALSE
+	if(!stored_item)
+		return
+	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
+	stored_item.forceMove(get_turf(src))
+	stored_item = null
+
 /obj/item/toy/plushie/fluff/seona_mofuorb/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
 	if(stored_item && opened && !searching)
 		searching = TRUE
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
-			stored_item.forceMove(get_turf(src))
-			stored_item = null
-			searching = FALSE
-			return
-		else
-			searching = FALSE
+		om_do_after(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), on_fail = PROC_REF(search_ended))
+		return
 
 	if(world.time - last_message <= 5 SECONDS)
 		return

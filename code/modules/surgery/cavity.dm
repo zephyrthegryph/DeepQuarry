@@ -180,9 +180,16 @@
 		var/obj/item/implant/imp = removed
 		if(!imp.islegal())
 			to_chat(user, span_notice("\The [imp] is anchored deep; you work it loose carefully..."))
-			if(!do_after(user, duration, target, max_distance = tool.reach))
-				to_chat(user, span_warning("\The [imp] slips back out of your grip."))
-				return
+			om_do_after(user, duration, target, src, PROC_REF(extract_done), list(user, target, part, removed, tool), on_fail = PROC_REF(extract_slipped), fail_args = list(user, imp), max_distance = tool.reach)
+			return
+	extract_done(user, target, part, removed, tool)
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(mob/living/user, obj/item/implant/imp)
+	to_chat(user, span_warning("\The [imp] slips back out of your grip."))
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, atom/movable/removed, obj/item/tool)
+	if(!(removed in part.implants))
+		return
 	part.implants -= removed
 	if(!target.has_embedded_objects())
 		target.clear_alert("embeddedobject")

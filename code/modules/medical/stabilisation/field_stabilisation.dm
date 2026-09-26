@@ -41,20 +41,23 @@
 		balloon_alert(user, "\the [src] doesn't go on the [affecting.name]!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts applying \the [src] to [H == user ? "their" : "[H]'s"] [affecting.name].", "applying \the [src] to the [affecting.name].")
-	if(!do_after(user, apply_time, affecting))
-		balloon_alert(user, "stand still to apply \the [src]!")
-		return ITEM_INTERACT_FAILURE
+	om_do_after(user, apply_time, affecting, src, PROC_REF(field_apply_done), list(user, H, affecting), on_fail = PROC_REF(field_apply_failed), fail_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/stack/medical/field/proc/field_apply_failed(mob/living/user)
+	balloon_alert(user, "stand still to apply \the [src]!")
+
+/obj/item/stack/medical/field/proc/field_apply_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/affecting)
 	// Re-validate after the delay.
-	if(QDELETED(src) || !get_amount() || affecting.owner != H || !user.Adjacent(H))
-		return ITEM_INTERACT_FAILURE
+	if(!get_amount() || affecting.owner != H || !user.Adjacent(H))
+		return
 	if(!apply_to_limb(H, affecting, user))
 		balloon_alert(user, "\the [src] does nothing for the [affecting.name].")
-		return ITEM_INTERACT_FAILURE
+		return
 	user.balloon_alert_visible("[user] applies \the [src] to [H == user ? "their" : "[H]'s"] [affecting.name].", "applied \the [src] to the [affecting.name].")
 	if(length(apply_sounds))
 		playsound(src, pick(apply_sounds), 25)
 	use(1)
-	return ITEM_INTERACT_SUCCESS
 
 /// Deliver every treatment to `limb`. Returns the total amount treated.
 /obj/item/stack/medical/field/proc/apply_to_limb(mob/living/carbon/human/H, obj/item/organ/external/limb, mob/user)

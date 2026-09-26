@@ -12,7 +12,8 @@
 //   - `check_proc` (was extra_checks) returns FALSE, re-checked on the same wakes and at the end
 // On completion `on_done` runs as call(callee, on_done)(done_args...) (a /proc/ path is called
 // globally); on cancel `on_fail` the same way. The callee and every datum argument are held as
-// OM handles: if any is gone when the task ends, the call is dropped.
+// OM handles: if any is gone when the task ends, on_done is dropped; on_fail still runs (while
+// the callee exists) with null for the gone arguments, so cleanup always happens.
 // The user sees a progress bar that the client animates (no per-tick updates) and others a cog.
 
 /// Re-check channels for a timed action: everything that can break one, on the user or the target.
@@ -66,12 +67,16 @@
 	return list(captured, positions)
 
 /// Calls a captured proc: FALSE if the callee or an argument is gone, else the proc's result
-/// (TRUE for a null result).
-/proc/om_call_captured(callee_h, proc_ref, list/captured, list/positions)
+/// (TRUE for a null result). `nulls_for_gone`: a gone argument is passed as null instead
+/// (cleanup that must run).
+/proc/om_call_captured(callee_h, proc_ref, list/captured, list/positions, nulls_for_gone = FALSE)
 	if(!proc_ref)
 		return TRUE
 	var/list/call_args = captured ? captured.Copy() : list()
-	if(!om_resolve_captured(call_args, positions))
+	if(nulls_for_gone)
+		for(var/i in positions)
+			call_args[i] = om_resolve(call_args[i])
+	else if(!om_resolve_captured(call_args, positions))
 		return FALSE
 	if(copytext("[proc_ref]", 1, 7) == "/proc/")
 		. = call(proc_ref)(arglist(call_args))
@@ -107,7 +112,7 @@
 		return "gone"
 	if(delay <= 0)
 		if(check_proc && !om_call_captured(callee_h, check_proc, check[1], check[2]))
-			om_call_captured(callee_h, on_fail, fail?[1], fail?[2])
+			om_call_captured(callee_h, on_fail, fail?[1], fail?[2], TRUE)
 			return "interrupted"
 		om_call_captured(callee_h, on_done, done?[1], done?[2])
 		return null
@@ -180,13 +185,13 @@
 	if(!isnull(reason))
 		T.state = OM_TASK_CANCELLED
 		T.reason = reason
-		om_call_captured(T.callee_h, T.fail_proc, T.fail_args, T.fail_pos)
+		om_call_captured(T.callee_h, T.fail_proc, T.fail_args, T.fail_pos, TRUE)
 		return
 	om_call_captured(T.callee_h, T.done_proc, T.done_args, T.done_pos)
 
 /datum/om/task_def/timed_action/on_cancel(datum/om/task/timed/T, reason)
 	timed_action_end(T, FALSE)
-	om_call_captured(T.callee_h, T.fail_proc, T.fail_args, T.fail_pos)
+	om_call_captured(T.callee_h, T.fail_proc, T.fail_args, T.fail_pos, TRUE)
 
 /datum/om/task_def/timed_action/proc/timed_action_end(datum/om/task/timed/T, success)
 	if(!QDELETED(T.progbar))

@@ -482,13 +482,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 		var/use_amt = min(src.amount, CEILING(S.get_burn()/5, 1), 5)
 		if(can_use(use_amt))
-			if(S.robo_repair(5*use_amt, BURN, "some damaged wiring", src, user))
-				src.use(use_amt)
+			if(S.robo_repair(5*use_amt, BURN, "some damaged wiring", src, user, PROC_REF(robo_repair_used), list(use_amt)))
 				return ITEM_INTERACT_SUCCESS
 		return ITEM_INTERACT_FAILURE
 
 	else
 		return ..()
+
+/// A robotic limb repair with this coil finished.
+/obj/item/stack/cable_coil/proc/robo_repair_used(mob/living/user, use_amt)
+	use(use_amt)
 
 /obj/item/stack/cable_coil/update_icon()
 	if (!color)

@@ -987,16 +987,7 @@
 			to_chat(user,span_vnotice("[span_green("You begin to push [M] to freedom!")]"))
 			to_chat(M,span_vnotice("[host] begins to push you to freedom!"))
 			to_chat(OB.owner,span_vwarning("Someone is trying to escape from inside you!"))
-			sleep(50)
-			if(prob(33))
-				OB.release_specific_contents(M)
-				to_chat(user,span_vnotice("[span_green("You manage to help [M] to safety!")]"))
-				to_chat(M, span_vnotice("[span_green("[host] pushes you free!")]"))
-				to_chat(OB.owner,span_valert("[M] forces free of the confines of your body!"))
-			else
-				to_chat(user,span_valert("[M] slips back down inside despite your efforts."))
-				to_chat(M,span_valert("Even with [host]'s help, you slip back inside again."))
-				to_chat(OB.owner,span_vnotice("[span_green("Your body efficiently shoves [M] back where they belong.")]"))
+			om_after(OB, 5 SECONDS, TYPE_PROC_REF(/obj/belly, help_out_done), user, M, host)
 			return TRUE
 
 		if("Devour") //Eat the inside mob
@@ -1013,15 +1004,33 @@
 			to_chat(M,span_vwarning("[host] begins to [lowertext(TB.vore_verb)] you into their [lowertext(TB.name)]!"))
 			to_chat(OB.owner,span_vwarning("Someone inside you is eating someone else!"))
 
-			sleep(TB.nonhuman_prey_swallow_time) //Can't do after, in a stomach, weird things abound.
-			if((host in OB) && (M in OB)) //Make sure they're still here.
-				to_chat(user,span_vwarning("You manage to [lowertext(TB.vore_verb)] [M] into your [lowertext(TB.name)]!"))
-				to_chat(M,span_vwarning("[host] manages to [lowertext(TB.vore_verb)] you into their [lowertext(TB.name)]!"))
-				to_chat(OB.owner,span_vwarning("Someone inside you has eaten someone else!"))
-				if(M.absorbed)
-					M.absorbed = FALSE
-					OB.handle_absorb_langs(M, OB.owner)
-				TB.nom_atom(M)
+			//Not a timed action: in a stomach, weird things abound.
+			om_after(OB, TB.nonhuman_prey_swallow_time, TYPE_PROC_REF(/obj/belly, inner_devour_done), user, M, host, TB)
+
+/// A mob inside this belly helped `M` out (vore panel), after the wait.
+/obj/belly/proc/help_out_done(mob/user, mob/living/M, mob/living/host)
+	if(!(M in src))
+		return
+	if(prob(33))
+		release_specific_contents(M)
+		to_chat(user,span_vnotice("[span_green("You manage to help [M] to safety!")]"))
+		to_chat(M, span_vnotice("[span_green("[host] pushes you free!")]"))
+		to_chat(owner,span_valert("[M] forces free of the confines of your body!"))
+	else
+		to_chat(user,span_valert("[M] slips back down inside despite your efforts."))
+		to_chat(M,span_valert("Even with [host]'s help, you slip back inside again."))
+		to_chat(owner,span_vnotice("[span_green("Your body efficiently shoves [M] back where they belong.")]"))
+
+/// A mob inside this belly ate `M` into its own belly `TB` (vore panel), after the wait.
+/obj/belly/proc/inner_devour_done(mob/user, mob/living/M, mob/living/host, obj/belly/TB)
+	if((host in src) && (M in src)) //Make sure they're still here.
+		to_chat(user,span_vwarning("You manage to [lowertext(TB.vore_verb)] [M] into your [lowertext(TB.name)]!"))
+		to_chat(M,span_vwarning("[host] manages to [lowertext(TB.vore_verb)] you into their [lowertext(TB.name)]!"))
+		to_chat(owner,span_vwarning("Someone inside you has eaten someone else!"))
+		if(M.absorbed)
+			M.absorbed = FALSE
+			handle_absorb_langs(M, owner)
+		TB.nom_atom(M)
 
 /datum/vore_look/proc/pick_from_outside(mob/user, params)
 	var/intent

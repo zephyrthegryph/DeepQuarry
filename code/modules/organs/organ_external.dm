@@ -652,7 +652,10 @@
 	return result
 
 //Helper proc used by various tools for repairing robot limbs
-/obj/item/organ/external/proc/robo_repair(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user)
+/// Starts repairing this robotic limb with `tool`. TRUE if the repair started; when it
+/// completes, `tool_proc` (if any) is called on the tool with `tool_args` (to use up fuel,
+/// cable, ...).
+/obj/item/organ/external/proc/robo_repair(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user, tool_proc, list/tool_args)
 	if((src.robotic < ORGAN_ROBOT))
 		return 0
 
@@ -684,10 +687,13 @@
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	if(!do_after(user, 1 SECOND, src))
-		to_chat(user, span_warning("You must stand still to do that."))
-		return 0
+	var/started = om_do_after(user, 1 SECOND, src, src, PROC_REF(robo_repair_done), list(repair_amount, damage_type, damage_desc, tool, user, damage_amount, tool_proc, tool_args), on_fail = PROC_REF(robo_repair_failed), fail_args = list(user))
+	return !istext(started)
 
+/obj/item/organ/external/proc/robo_repair_failed(mob/living/user)
+	to_chat(user, span_warning("You must stand still to do that."))
+
+/obj/item/organ/external/proc/robo_repair_done(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user, damage_amount, tool_proc, list/tool_args)
 	// Repair by mechanism: plating for structural damage, wiring for scorching.
 	if(owner)
 		if(damage_type == BRUTE || damage_type == "omni")
@@ -709,8 +715,8 @@
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [user.p_their()] [src.name] with [tool]."))
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [owner]'s [src.name] with [tool]."))
-
-	return 1
+	if(tool_proc)
+		call(tool, tool_proc)(arglist(list(user) + (tool_args || list())))
 
 
 /*
