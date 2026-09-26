@@ -568,7 +568,7 @@
 	om_stage_add(H, /datum/om/stage/life/trait/test_deleter)
 	om_stage_add(H, /datum/om/stage/life/trait/test_counter)
 	var/datum/om/stage/life/trait/test_counter/counter = om_registry().stage_by_type[/datum/om/stage/life/trait/test_counter]
-	om_after(H, 1 SECONDS, /datum/om/pipeline/life, life_test_rewake_key(/datum/om/stage/life/trait/test_timer))
+	om_deadline(H, 1 SECONDS, /datum/om/pipeline/life, life_test_rewake_key(/datum/om/stage/life/trait/test_timer))
 	om_run_frame_now(H, /datum/om/pipeline/life)
 	TEST_ASSERT(QDELETED(H), "the deleter stage deleted the mob")
 	TEST_ASSERT(!counter.runs["[REF(H)]"], "no stage runs on a deleted mob")
