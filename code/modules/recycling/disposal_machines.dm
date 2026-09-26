@@ -96,10 +96,17 @@
 	REACT_PUBLISH_OWN(src, REACT_KEY_DISPOSAL, REACT_KEY_CHANGED)
 	START_MACHINE_PROCESSING(src)
 
+/// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
-	om_watch_arm_revision(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/disposal/proc/gas_wake_condition()
+	if(mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
+		return FALSE
+	var/datum/gas_mixture/environment = loc?.return_air()
+	return environment && can_pressurize_from(environment)
 
 /obj/machinery/disposal/proc/clear_gas_dependency()
 	om_watch_disarm(src, "gas")

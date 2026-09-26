@@ -164,21 +164,30 @@
 
 	return 1
 
-/// Arms a "wake on any pressure change" watch on all three mixtures this device pumps between
-/// (its turf and both of its own ports) and stops polling. gas_dependency_mask restricts this to
-/// GAS_DEPENDENCY_PRESSURE, the only class of change that could move get_pressure_delta().
+/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over the three
+/// mixtures it pumps between -- its turf and both ports -- and stops polling. It wakes only when
+/// process() would move gas: a pressure delta past its deadband and a source worth pumping from.
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/hibernate_until_gas_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_for_state_change))
-	om_watch_arm_revision(src, "turf", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = environment?.revision())
-	om_watch_arm_revision(src, "input", air1?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = air1?.revision())
-	om_watch_arm_revision(src, "output", air2?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = air2?.revision())
+	var/list/mixture_ids = list()
+	for(var/datum/gas_mixture/air as anything in list(environment, air1, air2))
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
 	STOP_MACHINE_PROCESSING(src)
 
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()
+	if(!use_power || (stat & (NOPOWER|BROKEN)))
+		return FALSE
+	var/datum/gas_mixture/environment = loc?.return_air()
+	if(!environment || get_pressure_delta(environment) <= 0.5)
+		return FALSE
+	var/datum/gas_mixture/source = pump_direction ? air1 : environment
+	return source && source.total_moles() >= MINIMUM_MOLES_TO_PUMP
+
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/clear_gas_dependencies()
-	om_watch_disarm(src, "turf")
-	om_watch_disarm(src, "input")
-	om_watch_disarm(src, "output")
+	om_watch_disarm(src, "gas")
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/wake_for_state_change()
 	clear_gas_dependencies()

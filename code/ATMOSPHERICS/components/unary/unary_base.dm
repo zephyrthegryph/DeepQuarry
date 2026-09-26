@@ -23,17 +23,28 @@
 	air_contents = new
 	air_contents.set_volume(200)
 
-/// Arms a "wake on any change" watch on both mixtures this device cares about (its turf and its
-/// own pipe contents) and stops polling. Re-arming always replaces the previous watch, so a
-/// caller never needs to diff the mixture id itself first.
+/// Arms this device's own eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()):
+/// gas_wake_condition() re-evaluated whenever one of gas_wake_mixtures() publishes a change in
+/// gas_dependency_mask, firing only on the edge where it becomes TRUE -- a sleeping device wakes
+/// when it can act, not on every revision. Re-arming replaces the previous watch.
 /obj/machinery/atmospherics/unary/proc/register_gas_dependencies()
-	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_revision(src, "turf", environment?.arena_id(), gas_dependency_mask, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
-	om_watch_arm_revision(src, "pipe", air_contents?.arena_id(), gas_dependency_mask, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = air_contents?.revision())
+	var/list/mixture_ids = list()
+	for(var/datum/gas_mixture/air as anything in gas_wake_mixtures())
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "turf")
-	om_watch_disarm(src, "pipe")
+	om_watch_disarm(src, "gas")
+
+/// Mixtures whose changes can make gas_wake_condition() true. Its own pipe contents by default.
+/obj/machinery/atmospherics/unary/proc/gas_wake_mixtures()
+	return list(air_contents)
+
+/// TRUE when process() would have work to do. The base unary device has no DM-side work.
+/obj/machinery/atmospherics/unary/proc/gas_wake_condition()
+	return FALSE
 
 /// The wake action for both watches armed above: re-enter process() the same way the deleted
 /// gas_dependency_changed()/wake_gas_subscriber() pair used to.

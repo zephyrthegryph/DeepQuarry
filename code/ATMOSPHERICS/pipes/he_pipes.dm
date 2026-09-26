@@ -41,16 +41,18 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/get_init_dirs()
 	return ..() | initialize_directions_he
 
+/// Wakes only once heat_exchange_actionable() holds -- pipe and surroundings far enough apart to
+/// exchange -- re-evaluated on a temperature change of either mixture.
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/register_gas_dependencies()
-	var/datum/gas_mixture/environment = loc?.return_air()
-	var/datum/gas_mixture/pipe_air = parent?.air
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_gas))
-	om_watch_arm_revision(src, "turf", environment?.arena_id(), GAS_DEPENDENCY_TEMPERATURE, wake_callback = wake, current_revision = environment?.revision())
-	om_watch_arm_revision(src, "pipe", pipe_air?.arena_id(), GAS_DEPENDENCY_TEMPERATURE, wake_callback = wake, current_revision = pipe_air?.revision())
+	var/list/mixture_ids = list()
+	for(var/datum/gas_mixture/air as anything in list(loc?.return_air(), parent?.air))
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(heat_exchange_actionable)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "turf")
-	om_watch_disarm(src, "pipe")
+	om_watch_disarm(src, "gas")
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/wake_from_gas()
 	unregister_gas_dependencies()

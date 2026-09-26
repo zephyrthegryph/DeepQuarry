@@ -52,18 +52,23 @@
 	var/above // TRUE: armed when field >= value; FALSE: armed when field <= value
 	var/value
 	var/hysteresis = 0
+	/// FALSE: only entering the band fires; leaving it re-arms silently. A "can this device act
+	/// now" condition wants exactly that -- becoming ineligible is not a reason to wake.
+	var/fire_on_exit = TRUE
 
-/datum/om_watch_band/New(field, above, value, hysteresis = 0)
+/datum/om_watch_band/New(field, above, value, hysteresis = 0, fire_on_exit = TRUE)
 	src.field = field
 	src.above = above
 	src.value = value
 	src.hysteresis = hysteresis
+	src.fire_on_exit = fire_on_exit
 
 #define OM_WATCH_BANDS 1
 #define OM_WATCH_REVISION 2
 #define OM_WATCH_VALUE 3
 #define OM_WATCH_RAW 4
 #define OM_WATCH_DERIVED 5
+#define OM_WATCH_CONDITION 6
 
 /// Per-entity, per-watch_id watch state.
 /datum/om_watch
@@ -74,7 +79,7 @@
 	var/mode = OM_WATCH_BANDS
 	var/list/datum/om_watch_band/bands
 	var/list/last_side // "field:above:value" -> TRUE/FALSE at last evaluation
-	var/mixture_id // set for every gas-driven mode (bands/revision/value/raw)
+	var/list/mixture_ids // every mixture this watch is indexed on (gas-driven modes, and a gas-driven derived condition)
 	var/interest_mask = GAS_DEPENDENCY_ALL // change-mask filter for revision/value/raw modes
 	var/armed_revision = -1 // OM_WATCH_REVISION: the revision captured at arm/last-fire time
 	var/datum/callback/value_getter // OM_WATCH_VALUE: () -> comparable value; OM_WATCH_DERIVED: () -> current_value
@@ -140,7 +145,7 @@
 		if(!settled)
 			return FALSE
 	last_side[key] = edge
-	return TRUE
+	return edge || B.fire_on_exit
 
 /// Re-evaluates every band of a gas watch against one delivered observation. Returns TRUE the
 /// first time any band crosses.
@@ -191,9 +196,9 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /// Adds/replaces `W` in the per-mixture reverse index and (re)arms the underlying Rust watch
 /// with the union of every armed watch's interest mask on that mixture.
 /proc/om_watch_index_gas(datum/om_watch/W, mixture_id)
-	if(isnull(mixture_id))
+	if(isnull(mixture_id) || (mixture_id in W.mixture_ids))
 		return
-	W.mixture_id = mixture_id
+	LAZYADD(W.mixture_ids, mixture_id)
 	var/key = "[mixture_id]"
 	var/list/L = GLOB.om_gas_watches_by_mixture[key]
 	if(!L)
@@ -203,20 +208,18 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	om_watch_republish_mixture(mixture_id)
 
 /proc/om_watch_unindex_gas(datum/om_watch/W)
-	if(isnull(W.mixture_id))
-		return
-	var/mixture_id = W.mixture_id
-	var/key = "[mixture_id]"
-	var/list/L = GLOB.om_gas_watches_by_mixture[key]
-	W.mixture_id = null
-	if(!L)
-		return
-	L -= W
-	if(!length(L))
-		GLOB.om_gas_watches_by_mixture -= key
-		vg_unwatch_dirty_gas_mixture(mixture_id)
-	else
-		om_watch_republish_mixture(mixture_id)
+	for(var/mixture_id in W.mixture_ids)
+		var/key = "[mixture_id]"
+		var/list/L = GLOB.om_gas_watches_by_mixture[key]
+		if(!L)
+			continue
+		L -= W
+		if(!length(L))
+			GLOB.om_gas_watches_by_mixture -= key
+			vg_unwatch_dirty_gas_mixture(mixture_id)
+		else
+			om_watch_republish_mixture(mixture_id)
+	W.mixture_ids = null
 
 /// Recomputes and (re)publishes the aggregate interest mask Rust should watch a mixture for,
 /// from the union of every watch currently armed on it. Cheap: the watch list per mixture is
@@ -325,7 +328,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /// is invoked automatically by om_watch_recheck(); otherwise the caller passes the fresh value
 /// straight to om_watch_recheck_value(). This is the generic hook for (a) any vg/pipeline
 /// component field and (c) any other computed value: `getter` is an arbitrary proc reference.
-/proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, datum/callback/getter, datum/callback/wake_callback)
+/proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, datum/callback/getter, datum/callback/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL)
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
 	W.entity_ref = WEAKREF(entity)
@@ -335,15 +338,47 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	W.mode = OM_WATCH_DERIVED
 	W.bands = bands
 	W.value_getter = getter
+	W.interest_mask = interest_mask
 	om_watch_register(W)
 	W.evaluate_derived(getter ? getter.Invoke() : null) // seed last_side without firing on registration
+	// Optionally gas-driven: a dirty notification on any of these re-evaluates the getter, so a
+	// band over a quantity computed from several mixtures needs no caller-side recheck.
+	for(var/mixture_id in mixture_ids)
+		om_watch_index_gas(W, mixture_id)
+	return W
+
+/// "Wake me only when I can act": a boolean `condition` getter re-evaluated whenever any of
+/// `mixture_ids` publishes a change in `interest_mask`; the watch fires on a notification that
+/// finds it TRUE. Level-triggered on purpose: a device that went to sleep while the condition
+/// already held by its own coarser test (a network's settle residual) must still wake on the
+/// next change rather than wait for a FALSE-to-TRUE edge that may never come. Each wake callback
+/// disarms the watch, so one change wakes a device at most once. This is how a device states
+/// its own eligibility rule (enough moles, a pressure delta past its deadband, a temperature
+/// past its thermostat) instead of waking on every revision and deciding afterwards.
+/proc/om_watch_arm_condition(datum/entity, watch_id, list/mixture_ids, interest_mask, datum/callback/condition, channel, datum/callback/wake_callback)
+	om_watch_disarm(entity, watch_id)
+	var/datum/om_watch/W = new
+	W.entity_ref = WEAKREF(entity)
+	W.watch_id = watch_id
+	W.channel = channel
+	W.wake_callback = wake_callback
+	W.mode = OM_WATCH_CONDITION
+	W.value_getter = condition
+	W.interest_mask = interest_mask
+	om_watch_register(W)
+	for(var/mixture_id in mixture_ids)
+		om_watch_index_gas(W, mixture_id)
 	return W
 
 /proc/om_watch_recheck(datum/entity, watch_id)
 	var/datum/om_watch/W = om_watch_lookup(entity, watch_id)
-	if(!W || W.mode != OM_WATCH_DERIVED || !W.value_getter)
+	if(!W || !W.value_getter)
 		return
-	if(W.evaluate_derived(W.value_getter.Invoke()))
+	if(W.mode == OM_WATCH_CONDITION)
+		if(W.value_getter.Invoke())
+			om_watch_fire(W, entity)
+		return
+	if(W.mode == OM_WATCH_DERIVED && W.evaluate_derived(W.value_getter.Invoke()))
 		om_watch_fire(W, entity)
 
 /proc/om_watch_recheck_value(datum/entity, watch_id, current_value)
@@ -430,6 +465,14 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 				var/current_value = W.value_getter.Invoke()
 				if(current_value != W.last_value)
 					W.last_value = current_value
+					om_watch_fire(W, entity)
+			if(OM_WATCH_CONDITION)
+				if((change_mask & W.interest_mask) && W.value_getter.Invoke())
+					om_watch_fire(W, entity)
+			if(OM_WATCH_DERIVED)
+				if(!(change_mask & W.interest_mask))
+					continue
+				if(W.evaluate_derived(W.value_getter.Invoke()))
 					om_watch_fire(W, entity)
 			else // OM_WATCH_BANDS
 				if(W.evaluate_gas(observation, observation_index))

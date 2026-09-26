@@ -166,22 +166,27 @@
 /obj/machinery/atmospherics/pipe/proc/unregister_edge_pipeline(datum/pipeline/edge_owner)
 	LAZYREMOVE(edge_pipelines, edge_owner)
 
-/// Arms a "wake on any change" watch on both mixtures either side of the leak. A leaking pipe
-/// whose network is intact batches into that network's own dirty transaction on wake instead of
-/// re-entering process() itself (matching the deleted wake_gas_subscriber()'s pipe branch);
-/// otherwise it just re-enters process() directly.
+/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over both
+/// mixtures either side of the leak: it wakes only once they no longer match, which is when the
+/// network's leak transaction has something to move. A leaking pipe whose network is intact
+/// batches its wake into that network's own dirty transaction (wake_from_leak()).
 /obj/machinery/atmospherics/pipe/proc/hibernate_stable_leak()
 	clear_leak_gas_dependencies()
 	var/datum/gas_mixture/environment = loc?.return_air()
 	var/datum/gas_mixture/pipe_air = parent?.air
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_leak))
-	om_watch_arm_revision(src, "leak_turf", environment?.arena_id(), GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = environment?.revision())
-	om_watch_arm_revision(src, "leak_pipe", pipe_air?.arena_id(), GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = pipe_air?.revision())
+	var/list/mixture_ids = list()
+	for(var/datum/gas_mixture/air as anything in list(environment, pipe_air))
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(leak_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_leak)))
 	STOP_MACHINE_PROCESSING(src)
 
+/obj/machinery/atmospherics/pipe/proc/leak_wake_condition()
+	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())
+
 /obj/machinery/atmospherics/pipe/proc/clear_leak_gas_dependencies()
-	om_watch_disarm(src, "leak_turf")
-	om_watch_disarm(src, "leak_pipe")
+	om_watch_disarm(src, "leak")
 
 /obj/machinery/atmospherics/pipe/proc/wake_from_leak()
 	clear_leak_gas_dependencies()

@@ -76,19 +76,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 				circ1 = null
 				circ2 = null
 
+/// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
+/// dependency filter made.
 /obj/machinery/power/generator/proc/register_gas_dependencies()
 	clear_gas_dependencies()
 	if(!circ1 || !circ2)
 		return
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_gas))
-	var/list/mixtures = list(circ1.air1, circ1.air2, circ2.air1, circ2.air2)
-	for(var/i in 1 to length(mixtures))
-		var/datum/gas_mixture/air = mixtures[i]
-		om_watch_arm_revision(src, "circ[i]", air?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = air?.revision())
+	var/list/mixture_ids = list()
+	for(var/datum/gas_mixture/air as anything in list(circ1.air1, circ1.air2, circ2.air1, circ2.air2))
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/power/generator/proc/gas_wake_condition()
+	if(!circ1 || !circ2)
+		return FALSE
+	return (circ1.air1.return_pressure() - circ1.air2.return_pressure() > 10) || (circ2.air1.return_pressure() - circ2.air2.return_pressure() > 10)
 
 /obj/machinery/power/generator/proc/clear_gas_dependencies()
-	for(var/i in 1 to 4)
-		om_watch_disarm(src, "circ[i]")
+	om_watch_disarm(src, "gas")
 
 /obj/machinery/power/generator/proc/wake_from_gas()
 	clear_gas_dependencies()

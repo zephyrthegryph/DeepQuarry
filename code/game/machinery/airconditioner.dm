@@ -285,10 +285,16 @@
 	change_mode(MODE_IDLE)
 	update_icon()
 
+/// Wakes only once the room drifts at least a degree from its target while it is on -- the test
+/// process() makes before regulating.
 /obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
-	om_watch_arm_revision(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_TEMPERATURE, wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)), current_revision = environment?.revision())
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
 	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/power/thermoregulator/proc/gas_wake_condition()
+	var/datum/gas_mixture/environment = loc?.return_air()
+	return on && environment && abs(environment.return_temperature() - target_temp) >= 1
 
 /obj/machinery/power/thermoregulator/proc/clear_gas_dependency()
 	om_watch_disarm(src, "gas")

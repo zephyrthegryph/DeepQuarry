@@ -6,6 +6,7 @@
 	icon = 'icons/atmos/injector.dmi'
 	icon_state = "map_injector"
 	pipe_state = "injector"
+	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
 	name = "air injector"
 	desc = "Passively injects air into its surroundings. Has a valve attached to it that can control flow rate."
@@ -85,6 +86,12 @@
 	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
 		return
 	SSmachines.hibernate_vent(src)
+
+/// The same test process() makes before it pumps: powered, on, and holding enough warm gas.
+/obj/machinery/atmospherics/unary/outlet_injector/gas_wake_condition()
+	if((stat & (NOPOWER|BROKEN)) || !use_power)
+		return FALSE
+	return air_contents && air_contents.return_temperature() > 0 && air_contents.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
 	if(injecting || (stat & NOPOWER))

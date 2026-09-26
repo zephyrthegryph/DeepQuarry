@@ -81,22 +81,23 @@
 		update_icon()
 		wake_for_state_change()
 
-/// Arms a "wake on any change" watch on every port this device has gas in, keyed by the port's
-/// index so re-arming never has to diff which port used to hold which mixture.
+/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over every port
+/// mixture: it wakes only once it is on, powered and can_process_gas() says there is enough to
+/// move -- not on every revision of every port.
 /obj/machinery/atmospherics/omni/proc/hibernate_until_gas_changes()
-	clear_gas_dependencies()
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_for_state_change))
-	for(var/i in 1 to length(ports))
-		var/datum/omni_port/P = ports[i]
-		var/mixture_id = P.air?.arena_id()
-		if(isnull(mixture_id))
-			continue
-		om_watch_arm_revision(src, "port[i]", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = P.air.revision())
+	var/list/mixture_ids = list()
+	for(var/datum/omni_port/P as anything in ports)
+		var/id = P.air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
-	for(var/i in 1 to length(ports))
-		om_watch_disarm(src, "port[i]")
+	om_watch_disarm(src, "gas")
+
+/obj/machinery/atmospherics/omni/proc/gas_wake_condition()
+	return use_power && !(stat & (NOPOWER|BROKEN)) && can_process_gas()
 
 /obj/machinery/atmospherics/omni/proc/can_process_gas()
 	return TRUE

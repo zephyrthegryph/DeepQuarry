@@ -5623,14 +5623,18 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			break
 	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, "open pipe leak did not converge and hibernate within 100 cycles")
 	TEST_ASSERT(om_watch_armed(P), "equilibrated open pipe did not subscribe before sleeping")
+	var/leak_wakes = P.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/i in 1 to 4096)
+	for(var/i in 1 to 65536)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(P.parent.network.datum_flags & DF_ISPROCESSING)
+		if(P.gas_dependency_wake_count > leak_wakes)
 			break
+		if(!(i % 256))
+			stoplag()
 	// A leaking pipe batches its wake into its network's own dirty transaction
-	// (wake_from_leak(), pipe_base.dm) instead of re-entering process() itself.
-	TEST_ASSERT(P.parent.network.datum_flags & DF_ISPROCESSING, "changed turf gas did not wake an open pipe leak")
+	// (wake_from_leak(), pipe_base.dm), which the live SSair may already have run
+	// and settled by now; the wake itself is what this checks.
+	TEST_ASSERT(P.gas_dependency_wake_count > leak_wakes, "changed turf gas did not wake an open pipe leak")
 	qdel(P)
 	qdel(P2)
 
@@ -7397,3 +7401,62 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(readings[GAS_READ_MOLES(GAS_ID_OXYGEN)], 4, "batched oxygen moles")
 	TEST_ASSERT_EQUAL(readings[GAS_READ_STRIDE + GAS_READ_TOTAL_MOLES], 0, "a null mixture reads as zero")
 	qdel(mix)
+
+/// A sleeping device's gas watch is its own eligibility rule (om_watch_arm_condition()): a gas
+/// change that leaves the device with nothing to do must not wake it, and the first change that
+/// gives it work must wake it once. Counted on a thermoregulator (temperature deadband) and an
+/// outlet injector (minimum moles to pump).
+/datum/unit_test/dq_gas_watch_wakes_only_when_eligible
+
+/datum/unit_test/dq_gas_watch_wakes_only_when_eligible/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for eligibility wake test")
+	var/turf/simulated/floor/T = pair[1]
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.air_update_turf(TRUE, FALSE)
+	T.air.set_temperature(T20C)
+	dq_atmos_test_drain_dependency_queue()
+
+	var/obj/machinery/power/thermoregulator/R = new(T)
+	R.on = TRUE
+	R.target_temp = T20C
+	R.hibernate_until_temperature_changes()
+	TEST_ASSERT(om_watch_armed(R, "gas"), "settled thermoregulator did not arm its eligibility watch")
+	var/regulator_wakes = R.gas_dependency_wake_count
+	T.air.set_temperature(T20C + 0.5)
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes, "sub-degree drift inside the deadband woke a thermoregulator")
+	T.air.set_temperature(T20C + 5)
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(R.gas_dependency_wake_count > regulator_wakes)
+			break
+		if(!(i % 256))
+			stoplag()
+	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes + 1, "leaving the deadband did not wake the thermoregulator exactly once")
+	qdel(R)
+	T.air.set_temperature(T20C)
+
+	var/obj/machinery/atmospherics/unary/outlet_injector/O = new(T)
+	O.stat &= ~(NOPOWER | BROKEN)
+	O.use_power = USE_POWER_IDLE
+	O.air_contents.clear()
+	O.air_contents.set_temperature(T20C)
+	SSmachines.hibernate_vent(O)
+	TEST_ASSERT(om_watch_armed(O, "gas"), "empty outlet injector did not arm its eligibility watch")
+	var/outlet_wakes = O.gas_dependency_wake_count
+	O.air_contents.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_PUMP / 10)
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes, "a trace of gas below the pumping minimum woke an outlet injector")
+	O.air_contents.adjust_moles(/datum/gas/oxygen, 10)
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(O.gas_dependency_wake_count > outlet_wakes)
+			break
+		if(!(i % 256))
+			stoplag()
+	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes + 1, "enough gas to pump did not wake the outlet injector exactly once")
+	qdel(O)
