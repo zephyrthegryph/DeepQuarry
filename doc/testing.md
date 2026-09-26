@@ -45,11 +45,16 @@ only when you integrate** (before merging, or when asked to). A full run costs
 about 3 minutes of compile, 40 seconds of boot and three minutes of tests; a
 focused run costs the compile plus about 25 seconds.
 
-`tools/dq_focused_test.sh` is that loop. It adds `TEST_FOCUS(...)` lines to
-`code/modules/unit_tests/dq_focus.dm`, runs `dm-test`, and restores the file
-afterwards, even if the run fails. It works from any checkout, including a git
-worktree, because it runs from the directory the script lives in. You can also
-edit `dq_focus.dm` by hand and run `bin/test.cmd`.
+`tools/dq_focused_test.sh` is that loop. It runs `dm-test --focus=<names>`:
+the names reach the world as the `test-focus` param, so no source file is
+edited and every focus set reuses the same compiled `.dmb`. Each run is
+isolated from any other run on the machine: it claims a slot `data/runs/runN`,
+boots its own copy of the `.dmb`/`.rsc`, on a free port, with its own log
+directory (`data/logs/runN`) and results file. A focused run that has not
+finished after `DQ_FOCUS_TIMEOUT_MINUTES` (default 15) is killed and reported
+as a failure with the last lines of its logs. It works from any checkout,
+including a git worktree. `TEST_FOCUS(...)` lines in `dq_focus.dm` with a plain
+`bin/test.cmd` still work for manual runs.
 
 ```sh
 bash tools/dq_focused_test.sh /datum/unit_test/belly_damage /datum/unit_test/spritesheets

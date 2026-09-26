@@ -10,6 +10,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import Juke from './juke/index.js';
@@ -672,14 +673,183 @@ async function runTestWorld(
   };
 }
 
-function printLogTails(): void {
-  for (const logFile of ['data/logs/ci/tests.log', 'data/logs/ci/runtime.log']) {
+// ---------------------------------------------------------------------------
+// Isolated test worlds. Several agents run focused tests at once, from the
+// same or different worktrees. Each dm-test world gets its own run slot
+// (data/runs/runN, claimed with an atomic mkdir lock that is reclaimed when
+// its owner pid is gone), its own copy of the .dmb/.rsc (so a concurrent
+// recompile never swaps the binary under a running daemon), its own log
+// directory, results file and focus file, and a free TCP port picked by the
+// OS. Nothing is written to a shared source file.
+
+/** A free localhost TCP port, picked by the OS. */
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'object' && address ? address.port : 0;
+      server.close(() => resolve(port));
+    });
+  });
+}
+
+function pidAlive(pid: number): boolean {
+  if (!pid || Number.isNaN(pid)) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+type RunSlot = { tag: string; dir: string; release: () => void };
+
+/** Claims data/runs/runN for this process. */
+function acquireRunSlot(): RunSlot {
+  fs.mkdirSync('data/runs', { recursive: true });
+  for (let k = 1; k <= 64; k++) {
+    const tag = `run${k}`;
+    const lock = `data/runs/${tag}.lock`;
+    try {
+      fs.mkdirSync(lock);
+    } catch {
+      let owner = 0;
+      try {
+        owner = Number(fs.readFileSync(`${lock}/pid`, 'utf-8').trim());
+      } catch {
+        // lock without a pid yet: its owner is mid-claim, or died mid-claim
+        try {
+          if (Date.now() - fs.statSync(lock).mtimeMs < 60_000) continue;
+        } catch {
+          continue;
+        }
+      }
+      if (pidAlive(owner)) continue;
+      fs.rmSync(lock, { recursive: true, force: true });
+      try {
+        fs.mkdirSync(lock);
+      } catch {
+        continue;
+      }
+    }
+    fs.writeFileSync(`${lock}/pid`, String(process.pid));
+    const dir = `data/runs/${tag}`;
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.mkdirSync(dir, { recursive: true });
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      fs.rmSync(lock, { recursive: true, force: true });
+    };
+    process.on('exit', release);
+    return { tag, dir, release };
+  }
+  Juke.logger.error('No free test run slot under data/runs (64 in use).');
+  throw new Juke.ExitCode(1);
+}
+
+/** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
+const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
+
+type IsolatedRun = WorldRun & { logDir: string };
+
+/**
+ * Boots `dmbFile` in its own run slot (see above). `focus` lists test type
+ * paths to run (passed through the test-focus world param); null runs the
+ * whole suite. Always returns; a hung world is killed at the hard timeout
+ * and reported as killedByWatchdog.
+ */
+async function runIsolatedTestWorld(
+  dmbFile: string,
+  dmVersion: string | null,
+  worldParams: Record<string, string>,
+  focus: string[] | null,
+): Promise<IsolatedRun> {
+  const slot = acquireRunSlot();
+  const base = dmbFile.replace(/\.dmb$/, '');
+  const runBase = `${base}.${slot.tag}`;
+  const logDir = `data/logs/${slot.tag}`;
+  const resultsFile = `${slot.dir}/unit_tests.json`;
+  try {
+    fs.rmSync(logDir, { recursive: true, force: true });
+    fs.copyFileSync(`${base}.dmb`, `${runBase}.dmb`);
+    fs.copyFileSync(`${base}.rsc`, `${runBase}.rsc`);
+    const params: Record<string, string> = {
+      'log-directory': slot.tag,
+      'unit-tests-file': resultsFile,
+      ...worldParams,
+    };
+    if (focus) {
+      const focusFile = `${slot.dir}/focus.txt`;
+      fs.writeFileSync(focusFile, `${focus.join('\n')}\n`);
+      params['test-focus'] = focusFile;
+    }
+    const port = await freePort();
+    Juke.logger.info(`Test world ${slot.tag}: ${runBase}.dmb on port ${port}, logs in ${logDir}.`);
+    const started = Date.now();
+    let killedByWatchdog = false;
+    try {
+      const result = await DreamDaemon(
+        {
+          dmbFile: `${runBase}.dmb`,
+          namedDmVersion: dmVersion,
+          watchdogFile: resultsFile,
+          watchdogTimeoutMs: focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined,
+        },
+        String(port),
+        '-close',
+        ddSecurityFlag(),
+        '-verbose',
+        '-params',
+        new URLSearchParams(params).toString(),
+      );
+      killedByWatchdog = !!result.killedByWatchdog;
+    } catch {
+      // DreamDaemon exits non-zero even on clean runs; the files below decide.
+    }
+    let cleanText: string | null = null;
+    try {
+      cleanText = fs.readFileSync(`${logDir}/clean_run.lk`, 'utf-8');
+    } catch {
+      // not clean
+    }
+    let results: Record<string, UnitTestEntry> | null = null;
+    try {
+      results = JSON.parse(fs.readFileSync(resultsFile, 'utf-8'));
+    } catch {
+      // the world died before finishing
+    }
+    return {
+      clean: cleanText !== null,
+      cleanText,
+      results,
+      durationSeconds: (Date.now() - started) / 1000,
+      process: null,
+      samples: [],
+      killedByWatchdog,
+      logDir,
+    };
+  } finally {
+    await removeDerivedArtifacts(`${runBase}.dmb`);
+    await removeDerivedArtifacts(`${runBase}.rsc`);
+    slot.release();
+  }
+}
+
+function printLogTails(logDir = 'data/logs/ci', lineCount = 80): void {
+  for (const logFile of [`${logDir}/tests.log`, `${logDir}/runtime.log`, `${logDir}/world.log`]) {
     if (!fs.existsSync(logFile)) continue;
     const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
     Juke.logger.error(`Last output from ${logFile}:`);
-    console.error(lines.slice(-80).join('\n'));
+    console.error(lines.slice(-lineCount).join('\n'));
   }
 }
+
 
 /** Best-effort removal of build copies; DreamDaemon can hold the .rsc briefly. */
 async function removeDerivedArtifacts(pattern: string): Promise<void> {
@@ -694,7 +864,32 @@ async function removeDerivedArtifacts(pattern: string): Promise<void> {
   Juke.logger.warn(`Could not remove ${pattern}; it will be replaced on the next run.`);
 }
 
-function reportFocus(): void {
+/** `dm-test --focus=/datum/unit_test/a,/datum/unit_test/b`: run only these
+ * tests. Passed to the world as the test-focus param, so no source file is
+ * edited and the compiled .dmb is the same for every focus set. */
+export const FocusParameter = new Juke.Parameter({ type: 'string[]' });
+
+function focusedTestNames(get: any): string[] | null {
+  // Accepts full paths or bare names (dq_foo, which is what tools/dq_focused_test.sh passes).
+  const names = (get(FocusParameter) as string[])
+    .flatMap((s) => s.split(','))
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => (s.startsWith('/datum/unit_test/') ? s : `/datum/unit_test/${s.replace(/^\/+/, '')}`));
+  for (const name of names) {
+    if (!/^\/datum\/unit_test\/[A-Za-z0-9_/]+$/.test(name)) {
+      Juke.logger.error(`--focus: ${name} is not a /datum/unit_test path.`);
+      throw new Juke.ExitCode(2);
+    }
+  }
+  return names.length ? names : null;
+}
+
+function reportFocus(focus: string[] | null = null): void {
+  if (focus) {
+    Juke.logger.warn(`Focused unit-test run (${focus.length}, via --focus): ${focus.join(', ')}`);
+    return;
+  }
   const focusedTests = fs
     .readFileSync('code/modules/unit_tests/dq_focus.dm', 'utf-8')
     .split(/\r?\n/)
@@ -715,7 +910,10 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
         + `timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ${run.results ? 'Partial' : 'No'} results were captured.`,
     );
   }
-  if (!run.results) return null;
+  if (!run.results) {
+    if (!run.killedByWatchdog) Juke.logger.error('Unit-test summary: FAILED, the world exited without writing results.');
+    return null;
+  }
   recordSweepHashes(run.results);
   const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
@@ -1268,6 +1466,7 @@ export const DmTestTarget = new Juke.Target({
     WarningParameter,
     NoWarningParameter,
     LabelParameter,
+    FocusParameter,
     ShardsParameter,
     DomainsParameter,
     TierParameter,
@@ -1288,7 +1487,8 @@ export const DmTestTarget = new Juke.Target({
       await runSharded(shardCount, get);
       return;
     }
-    reportFocus();
+    const focus = focusedTestNames(get);
+    reportFocus(focus);
     await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
     const selection = resolveTestSelection(get);
     let worldParams: Record<string, string> = {};
@@ -1298,8 +1498,8 @@ export const DmTestTarget = new Juke.Target({
       fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
       worldParams = { 'test-select': selectFile };
     }
-    const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, false);
-    if (!run.clean) printLogTails();
+    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus);
+    if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
     // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an
     // unchanged rerun -- a flake recheck, a focused rerun while iterating --

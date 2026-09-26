@@ -252,8 +252,22 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			sleep(world.tick_lag)
 	return condition.Invoke()
 
+/// The focused test types: the file named by the test-focus world param
+/// (`dm-test --focus=`, tools/dq_focused_test.sh) when given, otherwise every
+/// TEST_FOCUS type compiled in. Null means the full suite.
 /proc/focused_tests()
 	var/list/focused_tests = list()
+	var/focus_file = world.params?["test-focus"]
+	if(focus_file)
+		var/list/names = dq_test_read_name_list("test-focus", focus_file)
+		for(var/path in names)
+			focused_tests += path
+		if(!length(focused_tests))
+			// A focus file that names nothing runnable must not fall back to
+			// the full suite; run one no-op test so the world reports and exits.
+			stack_trace("test-focus file [focus_file] named no known unit test")
+			focused_tests += /datum/unit_test/dq_focus_named_nothing
+		return focused_tests
 	for (var/datum/unit_test/unit_test as anything in subtypesof(/datum/unit_test))
 		if (initial(unit_test.focus))
 			focused_tests += unit_test
@@ -800,13 +814,9 @@ GLOBAL_VAR(dq_test_select_names)
 		qdel(map_bot)
 
 	var/list/tests_to_run = subtypesof(/datum/unit_test)
-	var/list/focused_tests = list()
-	for (var/_test_to_run in tests_to_run)
-		var/datum/unit_test/test_to_run = _test_to_run
-		if (initial(test_to_run.focus))
-			focused_tests += test_to_run
+	var/list/focused_tests = GLOB.focused_tests
 	if(length(focused_tests))
-		tests_to_run = focused_tests
+		tests_to_run = focused_tests.Copy()
 
 	// Sharded run: keep only this shard's assigned non-sweep tests, plus
 	// every sweep test (it always runs -- see is_sweep_test).
@@ -859,3 +869,12 @@ GLOBAL_VAR(dq_test_select_names)
 /datum/map_template/unit_tests
 	name = "Unit Tests Zone"
 	mappath = "maps/templates/unit_tests.dmm"
+
+/// Placeholder run when a test-focus file names no known test: fails loudly
+/// instead of letting the world fall back to the full suite.
+/datum/unit_test/dq_focus_named_nothing
+
+/datum/unit_test/dq_focus_named_nothing/Run()
+	if(!world.params?["test-focus"])
+		return // the full suite: nothing to check
+	TEST_FAIL("the test-focus file named no known /datum/unit_test type")
