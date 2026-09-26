@@ -262,3 +262,51 @@
 		TEST_ASSERT_EQUAL(AH.periodic_step(20), PROCESS_KILL, "a handler with no alarms kept stepping")
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// The missed-wake audits find nothing on the test map: every parked pipeline entity is idle by its
+/// own rule, and every sleeper on timers and keys is asleep for a reason.
+/datum/unit_test/dq_om_audit_finds_no_missed_wakes
+
+/datum/unit_test/dq_om_audit_finds_no_missed_wakes/Run()
+	react_test_ticks(10)
+	var/list/missed = om_pipeline_audit(null, 100000, 100000, TRUE)
+	var/list/names = list()
+	for(var/datum/om/stage/T as anything in missed)
+		names |= "[T.type]"
+	TEST_ASSERT(!length(missed), "the pipeline audit found missed wakes: [jointext(names, ", ")]")
+	var/list/woken = om_woken_audit(100000, FALSE)
+	TEST_ASSERT(!length(woken), "the timer/key audit found sleepers with work: [jointext(woken, "; ")]")
+
+/// Tanning racks and modular computers sleep when idle and wake on their producer.
+/datum/unit_test/dq_om_idle_items_sleep
+
+/datum/unit_test/dq_om_idle_items_sleep/Run()
+	var/obj/structure/tanning_rack/rack = allocate(/obj/structure/tanning_rack, test_floor())
+	TEST_ASSERT_EQUAL(rack.periodic_step(20), PROCESS_KILL, "an empty tanning rack kept stepping")
+	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
+	T.enabled = FALSE
+	TEST_ASSERT_EQUAL(T.periodic_step(20), PROCESS_KILL, "a switched-off computer kept stepping")
+	PERIODIC_STOP(T)
+	T.enable_computer()
+	TEST_ASSERT(T.periodic_pipe == PERIODIC_SLOW, "switching a computer on did not start it")
+	T.enabled = FALSE
+
+#endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// A mob holder dropped on a turf lets its mob go right after the move, with no polling.
+/datum/unit_test/dq_om_holder_cleans_up_on_drop
+
+/datum/unit_test/dq_om_holder_cleans_up_on_drop/Run()
+	var/turf/T = test_floor()
+	var/mob/living/M = allocate(/mob/living, T)
+	var/obj/item/holder/H = new(T, M)
+	TEST_ASSERT(!H.periodic_pipe, "a holder polls on a lane")
+	react_test_ticks(4)
+	TEST_ASSERT(QDELETED(H), "a holder left on a turf was not cleaned up")
+	TEST_ASSERT_EQUAL(M.loc, T, "the held mob was not released onto the turf")
+
+#endif
