@@ -1093,12 +1093,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		return
 	if(cell && cell.charge >= 20)
 		cell.use(20)
-		spawn(0)
-			for(var/obj/machinery/light/L in area)
-				if(prob(chance))
-					L.on = 1
-					L.broken()
-				sleep(1)
+		// One light a tick, each on its own clock.
+		var/delay = 0
+		for(var/obj/machinery/light/L in area)
+			if(prob(chance))
+				om_after(L, delay, TYPE_PROC_REF(/obj/machinery/light, surge_break))
+			delay++
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AI malfunction
@@ -1180,9 +1180,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(is_critical)
 		return
 	grid_check = TRUE
-	spawn(15 MINUTES)
-		if(src && grid_check == TRUE)
-			grid_check = FALSE
+	om_after(src, 15 MINUTES, TYPE_PROC_REF(/datum, om_set_var), "grid_check", FALSE)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
 	set waitfor = FALSE

@@ -101,9 +101,7 @@
 
 	update_icon()
 
-	spawn(rand(4 MINUTES, 10 MINUTES) )
-		if(power_failing) // Check to see if engineering didn't beat us to it.
-			end_power_failure(TRUE)
+	om_after(src, rand(4 MINUTES, 10 MINUTES), PROC_REF(power_failure_times_out))
 
 /obj/machinery/power/grid_checker/proc/end_power_failure(announce = TRUE)
 	if(announce)
@@ -122,3 +120,7 @@
 
 	for(var/obj/machinery/power/smes/smes in powernet.nodes) // These are "upstream"
 		smes.grid_check = FALSE
+
+/obj/machinery/power/grid_checker/proc/power_failure_times_out()
+	if(power_failing) // Check to see if engineering didn't beat us to it.
+		end_power_failure(TRUE)

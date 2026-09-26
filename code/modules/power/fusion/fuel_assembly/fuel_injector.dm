@@ -92,9 +92,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 	cur_assembly = held
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
-		spawn(30)
-			explosion(loc,2,3,4,8)
-			qdel(src)
+		om_after(src, 3 SECONDS, PROC_REF(blitz_boom))
 	return TRUE
 
 /datum/interaction/machine_item/fuel_injector_part_replace
@@ -188,3 +186,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 		flick("injector-emitting",src)
 	else
 		StopInjecting()
+
+/obj/machinery/fusion_fuel_injector/proc/blitz_boom()
+	explosion(loc,2,3,4,8)
+	qdel(src)

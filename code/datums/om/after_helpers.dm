@@ -60,3 +60,7 @@
 /// om_after() target: flips boolean var `name` on the owner (a temporary toggle undoing itself).
 /datum/proc/om_toggle_var(name)
 	vars[name] = !vars[name]
+
+/// om_after() target: one step in direction `d`.
+/atom/movable/proc/om_step(d)
+	step(src, d)

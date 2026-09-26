@@ -313,17 +313,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		G.power_failure(announce_prob) // If we found a grid checker, then all is well.
 		found_grid_checker = TRUE
 	if(!found_grid_checker) // Otherwise lets break some stuff.
-		spawn(1)
-			GLOB.command_announcement.Announce("Dangerous power spike detected in the power network.  Please check machinery \
-			for electrical damage.",
-			"Critical Power Overload",
-			ANNOUNCER_MSG_POWERSPIKE)
-			var/i = 0
-			var/limit = rand(30, 50)
-			for(var/obj/machinery/power/P in powernet_union)
-				P.overload(src)
-				i++
-				if(i % 5)
-					sleep(1)
-				if(i >= limit)
-					break
+		om_after(src, 1, PROC_REF(announce_power_spike))
+		// The overloads roll through the network a machine a tick, each on the machine's clock.
+		var/i = 0
+		var/limit = rand(30, 50)
+		for(var/obj/machinery/power/P in powernet_union)
+			i++
+			om_after(P, i, TYPE_PROC_REF(/obj/machinery/power, overload), src)
+			if(i >= limit)
+				break
+
+/obj/machinery/power/generator/proc/announce_power_spike()
+	GLOB.command_announcement.Announce("Dangerous power spike detected in the power network.  Please check machinery \
+	for electrical damage.",
+	"Critical Power Overload",
+	ANNOUNCER_MSG_POWERSPIKE)

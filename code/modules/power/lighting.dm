@@ -1193,12 +1193,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/proc/explode()
 	var/turf/T = get_turf(src.loc)
-	spawn(0)
-		broken()	// break it first to give a warning
-		sleep(2)
-		explosion(T, 0, 0, 2, 2)
-		sleep(1)
-		qdel(src)
+	broken()	// break it first to give a warning
+	om_after(src, 2, PROC_REF(explode_now), T)
+
+/obj/machinery/light/proc/explode_now(turf/T)
+	explosion(T, 0, 0, 2, 2)
+	om_qdel_after(src, 1)
 
 // the light item
 // can be tube or bulb subtypes
@@ -1724,4 +1724,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/broken/small/Initialize(mapload)
 	. = ..()
+	broken()
+
+/// A power surge blows the light.
+/obj/machinery/light/proc/surge_break()
+	on = 1
 	broken()

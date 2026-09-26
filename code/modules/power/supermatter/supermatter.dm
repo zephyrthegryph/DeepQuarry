@@ -261,19 +261,21 @@
 			S.broken()
 
 	// Effect 4: Medium scale explosion
-	spawn(0)
-		var/explosion_power = min_explosion_power
-		if(power > 0)
-			// 0-100% where 0% is at DETONATION_EXPLODE_MIN_POWER or lower and 100% is at DETONATION_EXPLODE_MAX_POWER or higher
-			var/strength_percentage = between(0, (power - DETONATION_EXPLODE_MIN_POWER) / ((DETONATION_EXPLODE_MAX_POWER - DETONATION_EXPLODE_MIN_POWER) / 100), 100)
-			explosion_power = between(min_explosion_power, (((max_explosion_power - min_explosion_power) * (strength_percentage / 100)) + min_explosion_power), max_explosion_power)
+	var/explosion_power = min_explosion_power
+	if(power > 0)
+		// 0-100% where 0% is at DETONATION_EXPLODE_MIN_POWER or lower and 100% is at DETONATION_EXPLODE_MAX_POWER or higher
+		var/strength_percentage = between(0, (power - DETONATION_EXPLODE_MIN_POWER) / ((DETONATION_EXPLODE_MAX_POWER - DETONATION_EXPLODE_MIN_POWER) / 100), 100)
+		explosion_power = between(min_explosion_power, (((max_explosion_power - min_explosion_power) * (strength_percentage / 100)) + min_explosion_power), max_explosion_power)
 
-		explosion(TS, explosion_power/2, explosion_power, max_explosion_power, explosion_power * 4, 1)
-		delamination_delete = TRUE
-		qdel(src)
-		// Allow the explosion to finish
-		spawn(5)
-			new /obj/item/broken_sm(TS)
+	explosion(TS, explosion_power/2, explosion_power, max_explosion_power, explosion_power * 4, 1)
+	delamination_delete = TRUE
+	// Allow the explosion to finish. The global owner: the crystal is deleted below and the
+	// explosion may replace the turf.
+	om_after(null, 5, /proc/leave_broken_supermatter, TS)
+	qdel(src)
+
+/proc/leave_broken_supermatter(turf/TS)
+	new /obj/item/broken_sm(TS)
 
 //Changes color and luminosity of the light to these values if they were not already set
 /obj/machinery/power/supermatter/proc/shift_light(lum, clr)

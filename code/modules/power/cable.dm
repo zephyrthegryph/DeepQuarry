@@ -890,9 +890,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 				user.put_in_hands(CC)
 				src.add_fingerprint(user)
 				CC.add_fingerprint(user)
-				spawn(0)
-					if (src && user.check_current_machine(src))
-						src.interact(user)
+				if (src && user.check_current_machine(src))
+					src.interact(user)
 		else
 			return
 	else

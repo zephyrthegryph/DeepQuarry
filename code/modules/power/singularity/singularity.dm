@@ -291,15 +291,12 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 		movement_dir = get_dir(src,target) //moves to a singulo beacon, if there is one
 
 	if(current_size >= STAGE_FIVE)//The superlarge one does not care about things in its way
-		spawn(0)
-			step(src, movement_dir)
-		spawn(1)
-			step(src, movement_dir)
+		step(src, movement_dir)
+		om_after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), movement_dir)
 		return 1
 	else if(check_turfs_in(movement_dir))
 		last_failed_movement = 0//Reset this because we moved
-		spawn(0)
-			step(src, movement_dir)
+		step(src, movement_dir)
 		return 1
 	else
 		last_failed_movement = movement_dir
@@ -493,6 +490,5 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 		var/gain = (energy/2)
 		var/dist = max((current_size - 2), 1)
 		explosion(src.loc,(dist),(dist*2),(dist*4))
-		spawn(0)
-			qdel(src)
+		om_qdel_after(src, 0)
 		return gain

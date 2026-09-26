@@ -76,13 +76,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		set_strength(target_field_strength)
 		process_material_sample()
 
-		spawn(1)
-			if(!QDELETED(owned_field))
-				owned_field.process()
-				owned_field.stability_monitor()
-				owned_field.radiation_scale()
-				owned_field.temp_dump()
-				owned_field.temp_color()
+		if(!QDELETED(owned_field))
+			om_after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
 
 /obj/machinery/power/fusion_core/Topic(href, href_list)
 	if(..())
@@ -265,3 +260,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		return FALSE
 	owned_field.plasma_temperature = field_temperature
 	return TRUE
+
+/// The field's share of a core process tick, a tick after the core's own.
+/obj/effect/fusion_em_field/proc/core_tick()
+	process()
+	stability_monitor()
+	radiation_scale()
+	temp_dump()
+	temp_color()

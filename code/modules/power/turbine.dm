@@ -429,9 +429,9 @@
 			door_status = !door_status
 			for(var/obj/machinery/door/blast/D in src.doors)
 				if (door_status)
-					spawn(0) D.close()
+					D.close()
 				else
-					spawn(0)D.open()
+					D.open()
 			. = TRUE
 
 #undef COMPFRICTION

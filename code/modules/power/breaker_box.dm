@@ -68,8 +68,7 @@
 		set_state(!on)
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
 		update_locked = 1
-		spawn(600)
-			update_locked = 0
+		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
 	busy = 0
 
 
@@ -107,8 +106,7 @@
 		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
 		span_notice("You [on ? "enabled" : "disabled"] the breaker box!"))
 		update_locked = 1
-		spawn(600)
-			update_locked = 0
+		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
 	busy = 0
 	return TRUE
 
@@ -165,8 +163,7 @@
 	if(!update_locked)
 		set_state(!on)
 		update_locked = 1
-		spawn(600)
-			update_locked = 0
+		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
 
 /obj/machinery/power/breakerbox/process()
 	return PROCESS_KILL

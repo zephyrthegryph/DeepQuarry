@@ -104,8 +104,7 @@
 
 	stat |= EMPED
 	if(duration)
-		spawn(duration)
-			stat &= ~EMPED
+		om_after(src, duration, PROC_REF(emp_recover))
 
 /obj/machinery/power/port_gen/proc/explode()
 	explosion(src.loc, -1, 3, 5, -1)
@@ -1189,3 +1188,6 @@
 	if(istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)) && Proj.damage >= 20)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
+
+/obj/machinery/power/port_gen/proc/emp_recover()
+	stat &= ~EMPED
