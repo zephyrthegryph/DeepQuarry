@@ -294,7 +294,8 @@
 	TEST_ASSERT(!(/datum/om/stage/life/canmove in types), "canmove is not in the frame")
 	TEST_ASSERT(/datum/om/stage/life/canmove in life_test_stage_types(H, /datum/om/pipeline/life_derive), "canmove is a derivation")
 	var/list/present = life_test_stage_types(H, /datum/om/pipeline/life_present)
-	TEST_ASSERT(life_test_in_order(present, list(/datum/om/stage/life/hud/carbon/human, /datum/om/stage/life/vision/carbon/human, /datum/om/stage/life/hud_refresh)), "the human HUD is presentation: [jointext(present, ", ")]")
+	TEST_ASSERT(life_test_in_order(present, list(/datum/om/stage/life/hud/carbon/human, /datum/om/stage/life/hud_refresh)), "the human HUD is presentation: [jointext(present, ", ")]")
+	TEST_ASSERT(/datum/om/stage/life/vision/carbon/human in life_test_stage_types(H, /datum/om/pipeline/life_vision), "sight is its own pipeline, client or not")
 
 /// Every human of a type shares one plan; a cyborg's plan comes from the robot set only.
 /datum/unit_test/dq_life_plan_is_shared

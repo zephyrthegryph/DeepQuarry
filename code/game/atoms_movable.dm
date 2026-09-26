@@ -477,6 +477,11 @@
 		if(old_area)
 			old_area.Exited(src, null)
 
+		// Leaving the map is a z-level change like any other.
+		var/turf/oldturf = get_turf(oldloc)
+		if(oldturf)
+			onTransitZ(oldturf.z, null)
+
 		// We moved
 		return TRUE
 
