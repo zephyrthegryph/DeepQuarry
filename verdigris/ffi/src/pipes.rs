@@ -60,6 +60,7 @@ use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::pipes::{PipeGas, Pipes};
 use vg_gas::world::MixRef;
 
+use crate::gas::{region_of_slot, REGION_SLOTS};
 use crate::world::{list, num, whole, with_world};
 
 thread_local! {
@@ -69,51 +70,6 @@ thread_local! {
     /// (`RUST_PIPE_OP_REMOVE_TO_MIXTURE`'s replacement), read back when its
     /// `Released` event drains at [`pipe_commit`].
     static RELEASE_TARGETS: RefCell<HashMap<u32, MixRef>> = RefCell::new(HashMap::new());
-    /// Region raw handle <-> DM-facing compact slot (`MixRef::Pipe`'s
-    /// 21-bit budget; a region's raw arena bits can exceed it).
-    static REGION_SLOTS: RefCell<SlotTable> = RefCell::new(SlotTable::default());
-}
-
-#[derive(Default)]
-struct SlotTable {
-    slot_of: HashMap<u32, u32>,
-    raw_of: Vec<Option<u32>>,
-    free: Vec<u32>,
-}
-
-impl SlotTable {
-    fn slot_for(&mut self, raw: u32) -> u32 {
-        if let Some(&s) = self.slot_of.get(&raw) {
-            return s;
-        }
-        let s = self.free.pop().unwrap_or_else(|| {
-            self.raw_of.push(None);
-            u32::try_from(self.raw_of.len() - 1).unwrap_or(u32::MAX)
-        });
-        self.raw_of[s as usize] = Some(raw);
-        self.slot_of.insert(raw, s);
-        s
-    }
-
-    fn retire(&mut self, raw: u32) -> Option<u32> {
-        let s = self.slot_of.remove(&raw)?;
-        self.raw_of[s as usize] = None;
-        self.free.push(s);
-        Some(s)
-    }
-
-    fn raw_slot_of(&self, raw: u32) -> Option<u32> {
-        self.slot_of.get(&raw).copied()
-    }
-
-    fn raw_of(&self, slot: u32) -> Option<u32> {
-        self.raw_of.get(slot as usize).copied().flatten()
-    }
-}
-
-fn region_of_slot(slot: u32) -> Option<RegionId<Pipes>> {
-    let raw = REGION_SLOTS.with(|s| s.borrow().raw_of(slot))?;
-    RawHandle::from_bits(raw).map(RegionId::from_raw)
 }
 
 /// The [`vg_gas::world::PipeAccess`] bridge (this module's own docs):

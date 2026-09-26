@@ -10,9 +10,73 @@
 
 use byondapi::prelude::*;
 use eyre::{eyre, Context, Result};
+use vg_core::network::RegionId;
+use vg_core::slot::RawHandle;
 use vg_gas::gas::constants::ReactionReturn;
 use vg_gas::gas::{self, with_mix};
+use vg_gas::pipes::Pipes;
 use vg_gas::reaction::{Reaction, ReactionIdentifier, ReactionPriority};
+
+// --- Pipe region slot compaction ----------------------------------------
+//
+// A pipe region's DM-facing handle is a compacted slot, not its raw arena
+// bits (which can exceed `vg_gas::world::MixRef::Pipe`'s 21-bit address
+// budget) -- the one piece of bookkeeping the old hand-rolled `PipeNet`
+// also needed for the same reason, not for revision or idle-skip
+// tracking, which `NetworkHost`/`World` already provide generically. This
+// lives here (FFI state, alongside the reaction table above and
+// `crate::world`'s `WORLD`), not in `crate::pipes`, which only reads
+// through [`region_of_slot`] -- `verdigris/ffi/src/pipes.rs`'s own docs.
+
+#[derive(Default)]
+pub(crate) struct SlotTable {
+    slot_of: std::collections::HashMap<u32, u32>,
+    raw_of: Vec<Option<u32>>,
+    free: Vec<u32>,
+}
+
+impl SlotTable {
+    pub(crate) fn slot_for(&mut self, raw: u32) -> u32 {
+        if let Some(&s) = self.slot_of.get(&raw) {
+            return s;
+        }
+        let s = self.free.pop().unwrap_or_else(|| {
+            self.raw_of.push(None);
+            u32::try_from(self.raw_of.len() - 1).unwrap_or(u32::MAX)
+        });
+        self.raw_of[s as usize] = Some(raw);
+        self.slot_of.insert(raw, s);
+        s
+    }
+
+    pub(crate) fn retire(&mut self, raw: u32) -> Option<u32> {
+        let s = self.slot_of.remove(&raw)?;
+        self.raw_of[s as usize] = None;
+        self.free.push(s);
+        Some(s)
+    }
+
+    pub(crate) fn raw_slot_of(&self, raw: u32) -> Option<u32> {
+        self.slot_of.get(&raw).copied()
+    }
+
+    pub(crate) fn raw_of(&self, slot: u32) -> Option<u32> {
+        self.raw_of.get(slot as usize).copied().flatten()
+    }
+}
+
+std::thread_local! {
+    /// Region raw handle <-> DM-facing compact slot. See the module docs
+    /// above.
+    pub(crate) static REGION_SLOTS: std::cell::RefCell<SlotTable> = std::cell::RefCell::default();
+}
+
+/// The pipe region a compacted DM-facing `slot` names, or `None` once it
+/// has been retired.
+pub(crate) fn region_of_slot(slot: u32) -> Option<RegionId<Pipes>> {
+    let raw = REGION_SLOTS.with(|s| s.borrow().raw_of(slot))?;
+    RawHandle::from_bits(raw).map(RegionId::from_raw)
+}
 
 std::thread_local! {
     /// The DM `/datum/gas_reaction` for each reaction id, keyed by the same

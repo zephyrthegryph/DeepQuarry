@@ -126,6 +126,18 @@ struct Slot {
 
 /// The main-owned mixture slab. Slots are reused; a handle is only valid
 /// while its datum lives (as before).
+///
+/// This (and [`MixRef`] above) stays here for now: `verdigris/ffi/src/
+/// gas.rs`'s own docs call moving it "the first gas slice", but unlike the
+/// reaction table and the pipe region slot compaction (both already moved
+/// there -- pure FFI-only state), `Mains` is a field `GasWorld` embeds
+/// directly (`mains: Mains` below) and every `with_mix`/`with_mix_mut`
+/// dispatch reaches through it. Relocating it means `GasWorld` reaching
+/// main-owned mixtures through an installed access trait instead (the
+/// `PipeAccess`/`GasExchange` shape this file and `heat::couple` already
+/// use), not just moving a type definition -- its own migration slice,
+/// same as the M2/gas rewrite's other GasWorld-embedded state
+/// (`tools/ci/rust_core_consolidation_allowlist.txt`'s gas section).
 #[derive(Default)]
 pub struct Mains {
 	slots: Vec<Slot>,
