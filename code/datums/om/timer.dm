@@ -9,8 +9,7 @@
 // No datum per timer: a timer is five slots in the owner's record, and the owner has one
 // deadline on the wheel (the soonest of its timers), as tasks and rates do.
 //
-// The same proc name with a behaviour as its third argument is the older keyed deadline
-// (deadline.dm): om_after(E, delay, /datum/om/behaviour/x, sub).
+// The behaviour-keyed deadline underneath is om_deadline() (deadline.dm).
 //
 // OM handles: om_handle(D) -> "id:gen", om_resolve(h) -> D or null. The same model as the
 // Rust core's handles: a slot table with a generation per slot, no per-target datum. A
@@ -116,10 +115,11 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 // ---------------------------------------------------------------- timers
 
-/// om_after() with a proc: runs `proc` after `delay` deciseconds of E's timer clock. A
+/// Runs `proc` after `delay` deciseconds of E's timer clock. A
 /// global proc (/proc/x) gets `call_args`; a type proc is called on E. Returns the timer id
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
-/proc/om_after_call(datum/E, delay, proc_ref, list/call_args)
+/proc/om_after(datum/E, delay, proc_ref, ...)
+	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
 	if(isnull(E))
 		E = om_global_owner()
 	var/datum/om/rec/rec = om_rec_of(E)
@@ -217,7 +217,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	if(rate <= 0)
 		om_cancel_after(rec.owner, B)
 		return
-	om_after(rec.owner, CEILING(max(soonest - om_timer_local(rec), 0) / rate, 1), B)
+	om_deadline(rec.owner, CEILING(max(soonest - om_timer_local(rec), 0) / rate, 1), B)
 
 /// Calls a stored proc: a global proc with the arguments, or a type proc on `E`.
 /proc/om_invoke(datum/E, proc_ref, list/call_args)

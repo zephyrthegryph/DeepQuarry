@@ -201,7 +201,7 @@ Targets are filled in after F1. Every row compares against the F1 baseline, and 
 
 ## Guardrails
 
-These are CI lint rules. Each one comes on when the item that makes it possible lands, and stays on from then.
+These are CI lint rules. Each one comes on when the item that makes it possible lands, and stays on from then. The ratcheted ones run together in `tools/ci/check_ratchets.sh` (the linters workflow), each failing when a count rises above its ceiling or allowlist.
 
 | Rule | On after |
 |---|---|

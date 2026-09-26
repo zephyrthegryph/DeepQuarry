@@ -347,7 +347,7 @@
 			soonest = exp
 	var/datum/om/registry/reg = om_registry()
 	if(soonest)
-		om_after(rec.owner, max(soonest - rec.sched.now(), 0), reg.expiry_behaviour)
+		om_deadline(rec.owner, max(soonest - rec.sched.now(), 0), reg.expiry_behaviour)
 	else
 		om_cancel_after(rec.owner, reg.expiry_behaviour)
 

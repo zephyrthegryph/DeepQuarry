@@ -357,12 +357,12 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		asleep++; \
 		LAZYADD(idled, _i); \
 		result = T.rewake_delay(E); \
-		if(result > 0) { om_after(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
+		if(result > 0) { om_deadline(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
 	} else if(mode & OM_PIPE_MODE_REACTIVE) { \
 		bits[_w] |= _bit; \
 		asleep++; \
 		LAZYADD(idled, _i); \
-		if(busy_retry > 0) { om_after(E, busy_retry, src, OM_DL_STAGE - 1 + T.pos); } \
+		if(busy_retry > 0) { om_deadline(E, busy_retry, src, OM_DL_STAGE - 1 + T.pos); } \
 	}
 
 /// The whole frame loop, parameterised by how a stage is performed.
@@ -500,7 +500,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	if(T.min_interval)
 		var/wait = om_stage_throttle(F, i, T, E.om_rec.sched.now())
 		if(wait > 0)
-			om_after(E, wait, src, OM_DL_STAGE - 1 + T.pos)
+			om_deadline(E, wait, src, OM_DL_STAGE - 1 + T.pos)
 			return 3
 	return 0
 
