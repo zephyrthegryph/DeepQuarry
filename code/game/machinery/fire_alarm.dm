@@ -21,7 +21,7 @@ FIRE ALARM
 	idle_power_usage = 2
 	active_power_usage = 6
 	power_channel = ENVIRON
-	var/last_process = 0
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	panel_open = FALSE
 	var/seclevel
 	circuit = /obj/item/circuitboard/firealarm
@@ -177,28 +177,15 @@ FIRE ALARM
 	user.visible_message(span_notice("\The [user] has [detecting ? "reconnected" : "disconnected"] [src]'s detecting unit!"), span_notice("You have [detecting ? "reconnected" : "disconnected"] [src]'s detecting unit."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/firealarm/process()//Note: this processing was mostly phased out due to other code, and only runs when needed
-	if(stat & (NOPOWER|BROKEN))
-		return
-
-	if(timing)
-		if(time > 0)
-			time = time - ((world.timeofday - last_process) / 10)
-		else
-			alarm()
-			time = 0
-			timing = 0
-			STOP_PROCESSING(SSobj, src)
-	last_process = world.timeofday
-
-	if(detecting && (locate(/obj/effect/hotspot) in loc))
-		alarm()
-
-	// Hotspots call fire_act() directly while exposing their turf, so an idle
-	// alarm does not need to poll forever. Timed alarms remain scheduled.
-	if(!timing)
-		return PROCESS_KILL
-	return
+// Machine pipeline (doc/rewrite/machine_pipeline.dm, code/game/machinery/machine_pipeline.dm):
+// `polls = FALSE` below opts this type out of SSmachines' process() roster onto
+// the OM machine pipeline instead (see the "fire alarms" section there). Hotspots
+// call fire_act() directly while exposing their turf, so an idle alarm needs no
+// poll at all; the countdown path (nothing in this fork currently sets `timing`
+// on a plain firealarm — only /obj/machinery/partyalarm does — kept for parity
+// with any future lockdown caller) has no publish/subscribe event to hook, so it
+// rewakes on the pipeline's own MACHINE_PIPELINE_INTERVAL cadence while counting
+// down instead of a dedicated timer.
 
 /obj/machinery/firealarm/power_change()
 	..()
