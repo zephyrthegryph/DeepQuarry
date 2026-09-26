@@ -58,7 +58,9 @@
 				network1.mark_dirty()
 
 				last_worldtime_transfer = world.time
-				START_MACHINE_PROCESSING(src)
+				// The "running" overlay times out 5 s after the last transfer: one timer,
+				// re-armed per transfer, instead of a machine polling the clock.
+				addtimer(CALLBACK(src, PROC_REF(expire_transfer_display)), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
 		else
 			recent_moles_transferred = 0
 
@@ -70,15 +72,11 @@
 	stored_energy = 0
 	return last_stored_energy_transferred
 
-/obj/machinery/atmospherics/binary/circulator/process()
-	..()
-
-	if(!recent_moles_transferred)
-		return PROCESS_KILL
-	if(last_worldtime_transfer < world.time - 50)
-		recent_moles_transferred = 0
-		update_icon()
-		return PROCESS_KILL
+/obj/machinery/atmospherics/binary/circulator/proc/expire_transfer_display()
+	if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50)
+		return
+	recent_moles_transferred = 0
+	update_icon()
 
 /obj/machinery/atmospherics/binary/circulator/update_icon()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"

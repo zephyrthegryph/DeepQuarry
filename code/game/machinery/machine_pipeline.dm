@@ -21,6 +21,27 @@
 		/obj/machinery/portable_atmospherics/canister,
 		/obj/machinery/portable_atmospherics/powered/pump,
 		/obj/machinery/portable_atmospherics/powered/scrubber,
+		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
+		// flow law is a Rust device edge (vent pumps and scrubbers, pumps, valves, passive gates)
+		// and plain pipes have no DM work at all and don't join.
+		/obj/machinery/atmospherics/unary/freezer,
+		/obj/machinery/atmospherics/unary/heater,
+		/obj/machinery/atmospherics/unary/heat_exchanger,
+		/obj/machinery/atmospherics/unary/outlet_injector,
+		/obj/machinery/atmospherics/unary/cryo_cell,
+		/obj/machinery/atmospherics/binary/dp_vent_pump,
+		/obj/machinery/atmospherics/binary/algae_farm,
+		/obj/machinery/atmospherics/omni,
+		/obj/machinery/atmospherics/trinary/atmos_filter,
+		/obj/machinery/atmospherics/trinary/mixer,
+		/obj/machinery/atmospherics/portables_connector,
+		/obj/machinery/atmospherics/pipeturbine,
+		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
+		/obj/machinery/power/turbinemotor,
+		/obj/machinery/power/thermoregulator,
+		/obj/machinery/air_sensor,
+		/obj/machinery/meter,
+		/obj/machinery/computer/general_air_control/fuel_injection,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
 
@@ -354,3 +375,50 @@
 
 /datum/om/stage/machine/power/portable_scrubber/idle(obj/machinery/portable_atmospherics/powered/scrubber/M)
 	return !M.on
+
+// ---------------------------------------------------------------- machine_step devices
+
+/// The generic stage for a machine whose DM-side work is one machine_step() (machinery.dm): the
+/// body its old process() had, run once per frame while it has work. PROCESS_KILL idles the stage
+/// and the machine parks; it wakes on its channels, on START_MACHINE_PROCESSING() (which raises
+/// CHANGE_EXPLICIT for a polls = FALSE machine, machines.dm), or on a gas watch it armed when it
+/// settled (code/datums/om/watch.dm) -- never on a cadence it doesn't need.
+/datum/om/stage/machine/power/step
+	of = /obj/machinery/atmospherics
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
+	woken_by = "power_change(); atom_break()/atom_fix(); wrenching; settings and topology (START_MACHINE_PROCESSING()); its gas watch"
+
+/datum/om/stage/machine/power/step/perform(obj/machinery/M, datum/om/frame/machine/F)
+	if(M.machine_step() == PROCESS_KILL)
+		return STAGE_IDLE
+
+/// Settled when it can't act (step_has_work(), each device's own eligibility rule) or when it is
+/// parked on the gas watch that states that rule -- the watch is its wake producer. A parked device
+/// with work and no armed watch is a lost wake, which the OM audit reports.
+/datum/om/stage/machine/power/step/idle(obj/machinery/M)
+	return om_watch_armed(M) || !M.step_has_work()
+
+/datum/om/stage/machine/power/step/turbinemotor
+	of = /obj/machinery/power/turbinemotor
+
+/datum/om/stage/machine/power/step/thermoregulator
+	of = /obj/machinery/power/thermoregulator
+
+/datum/om/stage/machine/power/step/air_sensor
+	of = /obj/machinery/air_sensor
+
+/datum/om/stage/machine/power/step/meter
+	of = /obj/machinery/meter
+
+/// Runs every frame while its automation is on (it re-reads the latest sensor broadcasts and
+/// commands the injectors) -- the one timed machine_step here; off, it parks.
+/datum/om/stage/machine/power/step/fuel_injection
+	of = /obj/machinery/computer/general_air_control/fuel_injection
+
+/// The stationary "huge" portable pump/scrubber: their own machine_step() (anchored/power checks
+/// every frame while on), not the base portable pump/scrubber stages above.
+/datum/om/stage/machine/power/step/huge_pump
+	of = /obj/machinery/portable_atmospherics/powered/pump/huge
+
+/datum/om/stage/machine/power/step/huge_scrubber
+	of = /obj/machinery/portable_atmospherics/powered/scrubber/huge

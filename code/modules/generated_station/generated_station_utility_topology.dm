@@ -803,7 +803,7 @@
 			var/supply_moles = MOLES_CELLSTANDARD * (network_air.return_volume() / CELL_VOLUME) * 50
 			network_air.adjust_multi(GAS_O2, supply_moles * O2STANDARD, GAS_N2, supply_moles * N2STANDARD)
 		network.mark_dirty()
-		network.process()
+		network.reconcile()
 
 /datum/expedition_site
 	var/datum/generated_station_utility_topology/station_utilities

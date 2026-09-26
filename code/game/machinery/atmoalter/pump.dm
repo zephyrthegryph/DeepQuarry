@@ -220,11 +220,8 @@
 	icon_state = "siphon:0"
 	anchored = TRUE
 	volume = 500000
-	// NOT migrated: keeps its own real process() override below (checks anchored/power every
-	// tick regardless of `on`, unlike the base pump). polls = TRUE here overrides the base
-	// pump's polls = FALSE so it isn't silently cascaded onto the OM pipeline the way
-	// portable_atmospherics' other subtypes almost were (see the NOTE in portable_atmospherics.dm).
-	polls = TRUE
+	// Its own machine_step() (anchored/power checks every frame while on), on the machine
+	// pipeline's step/huge_* stage (machine_pipeline.dm) rather than the base portable stages.
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50		//internal circuitry, friction losses and stuff
@@ -274,7 +271,7 @@
 	if (old_stat != stat)
 		update_icon()
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/process()
+/obj/machinery/portable_atmospherics/powered/pump/huge/machine_step()
 	if(!anchored || (stat & (NOPOWER|BROKEN)))
 		on = 0
 		last_flow_rate = 0
@@ -284,7 +281,7 @@
 	if(new_use_power != use_power)
 		update_use_power(new_use_power)
 	if(!on)
-		return
+		return PROCESS_KILL
 
 	var/power_draw = -1
 
@@ -359,3 +356,6 @@
 	if(!(stat & (NOPOWER|BROKEN)))
 		on = 1
 		update_icon()
+
+/obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
+	return on && anchored && !(stat & (NOPOWER|BROKEN))

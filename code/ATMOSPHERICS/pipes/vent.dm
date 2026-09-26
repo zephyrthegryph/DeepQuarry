@@ -22,7 +22,6 @@
 	// transferred in one Rust batch and can dependency-sleep when equalized.
 	leaking = TRUE
 
-	var/build_killswitch = 1
 
 /obj/machinery/atmospherics/pipe/vent/init_dir()
 	initialize_directions = dir
@@ -30,22 +29,6 @@
 /obj/machinery/atmospherics/pipe/vent/high_volume
 	name = "Larger vent"
 	volume = 1000
-
-/obj/machinery/atmospherics/pipe/vent/process()
-	if(!parent)
-		if(build_killswitch <= 0)
-			. = PROCESS_KILL
-		else
-			build_killswitch--
-		..()
-		return
-	if(parent.network)
-		parent.network.leaks |= src
-		parent.network.mark_leak_dirty()
-		return PROCESS_KILL
-	// Network construction has not attached this pipeline yet. Preserve the
-	// legacy fallback for this short initialization window only.
-	parent.mingle_with_turf(loc, volume)
 
 /obj/machinery/atmospherics/pipe/vent/Destroy()
 	if(node1)

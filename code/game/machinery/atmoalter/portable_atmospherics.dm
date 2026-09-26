@@ -41,7 +41,7 @@
 	QDEL_NULL(holding)
 	return ..()
 
-// Shared by the base process() below and by canister's OM pipeline stage
+// Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
 // (code/game/machinery/machine_pipeline.dm, "canisters" section).
 /obj/machinery/portable_atmospherics/proc/react_or_update()
 	if(!connected_port) //only react when pipe_network will do it for you
@@ -49,9 +49,6 @@
 		return air_contents.react(src)
 	update_icon()
 	return NO_REACTION
-
-/obj/machinery/portable_atmospherics/process()
-	return react_or_update()
 
 /// Arms a "wake on any change" watch on this device's own gas contents -- process() has no
 /// specific threshold for "done reacting", it just wants to run again the next time anything

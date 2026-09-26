@@ -56,14 +56,14 @@
 	if(old_stat != stat)
 		update_icon()
 
-/obj/machinery/atmospherics/unary/outlet_injector/process()
+/obj/machinery/atmospherics/unary/outlet_injector/machine_step()
 	..()
 
 	last_power_draw = 0
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	var/power_draw = -1
@@ -77,7 +77,7 @@
 		// Power, turf publication, and network dirtiness are finalized by the
 		// subsystem's single atomic Rust transfer commit.
 	else
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	return 1
@@ -85,7 +85,7 @@
 /obj/machinery/atmospherics/unary/outlet_injector/pump_transaction_committed(actual_moles)
 	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
 		return
-	SSmachines.hibernate_vent(src)
+	register_gas_dependencies()
 
 /// The same test process() makes before it pumps: powered, on, and holding enough warm gas.
 /obj/machinery/atmospherics/unary/outlet_injector/gas_wake_condition()

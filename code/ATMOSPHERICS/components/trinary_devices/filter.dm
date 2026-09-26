@@ -86,17 +86,20 @@
 		icon_state += "off"
 		update_use_power(USE_POWER_OFF)
 
-/obj/machinery/atmospherics/trinary/atmos_filter/process()
+/obj/machinery/atmospherics/trinary/atmos_filter/machine_step()
 	..()
 
 	last_power_draw = 0
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
+		return PROCESS_KILL
 
 	//Figure out the amount of moles to transfer
 	var/transfer_moles = (set_flow_rate/air1.return_volume())*air1.total_moles()
+	if(transfer_moles <= MINIMUM_MOLES_TO_FILTER)
+		hibernate_until_input_changes()
+		return PROCESS_KILL
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
@@ -195,6 +198,7 @@
 
 	add_fingerprint(ui.user)
 	update_icon()
+	START_MACHINE_PROCESSING(src) // settings: re-evaluate the filter now
 
 //
 // Mirrored Orientation - Flips the output dir to opposite side from normal.
@@ -204,3 +208,18 @@
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH|EAST
 	mirrored = TRUE
+
+/// Nothing to filter: park until the input holds enough to move (the same test machine_step()
+/// makes). Power and settings changes wake it through their own channels.
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/hibernate_until_input_changes()
+	om_watch_arm_condition(src, "gas", list(air1?.arena_id()), GAS_DEPENDENCY_COMPOSITION | GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/gas_wake_condition()
+	return use_power && !(stat & (NOPOWER|BROKEN)) && (set_flow_rate / air1.return_volume()) * air1.total_moles() > MINIMUM_MOLES_TO_FILTER
+
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/wake_from_gas()
+	om_watch_disarm(src, "gas")
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/trinary/atmos_filter/step_has_work()
+	return gas_wake_condition()

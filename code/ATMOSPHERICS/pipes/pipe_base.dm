@@ -56,8 +56,7 @@
 			else
 				parent.network.leaks -= src
 			parent.network.mark_leak_dirty()
-	if(leaking && !parent?.network)
-		START_MACHINE_PROCESSING(src)
+	// Without a network yet, network construction (rust_pipenets.dm) collects leaking pipes itself.
 
 /obj/machinery/atmospherics/pipe/proc/handle_leaking()	// Used specifically to update leaking status on different pipes.
 	set_leaking(damaged_leak)
@@ -180,7 +179,6 @@
 		if(!isnull(id))
 			mixture_ids |= id
 	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(leak_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_leak)))
-	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/proc/leak_wake_condition()
 	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())
@@ -192,8 +190,6 @@
 	clear_leak_gas_dependencies()
 	if(leaking && parent?.network)
 		parent.network.mark_leak_dirty()
-		return
-	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/proc/leak_needs_equalization(datum/gas_mixture/pipe_air, datum/gas_mixture/environment)
 	if(!pipe_air || !environment)
@@ -339,10 +335,3 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
-/obj/machinery/atmospherics/pipe/process()
-	if(!parent) //This should cut back on the overhead calling build_network thousands of times per cycle
-		..()
-	else
-		if(leaking)
-			parent.network?.mark_leak_dirty()
-		. = PROCESS_KILL

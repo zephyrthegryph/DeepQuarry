@@ -133,6 +133,8 @@ Class Procs:
 	var/material_emp_resistance = 0
 	/// Monotonic diagnostic counter for exact dependency-wake assertions.
 	var/tmp/gas_dependency_wake_count = 0
+	/// Monotonic diagnostic counter: START_MACHINE_PROCESSING() wakes of a pipeline (polls = FALSE) machine.
+	var/tmp/machine_wake_count = 0
 	/// Slot in SSmachines.processing_machines while DF_ISPROCESSING is set; lets
 	/// hibernation swap-remove in O(1).
 	var/tmp/machine_processing_index = 0
@@ -221,6 +223,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /obj/machinery/process() // Steady power usage is handled separately. If you dont use process why are you here?
 	return PROCESS_KILL
+
+/// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,
+/// /datum/om/stage/machine/power/step): the same contract process() had on SSmachines' roster.
+/// Return PROCESS_KILL when there is nothing left to do -- the stage idles and the machine parks
+/// until a channel (power_change(), settings, START_MACHINE_PROCESSING()) or a gas watch wakes it.
+/// Anything else keeps it running every MACHINE_PIPELINE_INTERVAL.
+/obj/machinery/proc/machine_step()
+	return PROCESS_KILL
+
+/// TRUE when machine_step() would have work to do right now: the device's own eligibility rule,
+/// the same test its gas watch arms. The machine pipeline's step stage reads it as its idle rule.
+/obj/machinery/proc/step_has_work()
+	return FALSE
 
 /obj/machinery/emp_act(severity, recursive)
 	if(material_emp_resistance && prob(material_emp_resistance))

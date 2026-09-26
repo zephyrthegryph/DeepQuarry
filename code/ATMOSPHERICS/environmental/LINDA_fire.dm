@@ -281,13 +281,13 @@
 #define INSUFFICIENT(gas_id) (readings[GAS_READ_MOLES(gas_id)] < 0.5)
 
 /**
- * Regular process proc for hotspots governed by the controller.
+ * One burn frame, run by /datum/om/pipeline/hotspot (below) every SSair tick while it exists.
  * Handles the calling of perform_exposure() which handles the bulk of temperature processing.
  * Heating the tile's contents is also done by perform_exposure().
  * Also handles the dying and qdeletion of the hotspot and hotspot creations on adjacent cardinal turfs.
  * And some visual stuffs too! Colors and fainter icons for specific conditions.
  */
-/obj/effect/hotspot/process()
+/obj/effect/hotspot/proc/burn_step()
 	if(just_spawned)
 		just_spawned = FALSE
 		return
@@ -485,3 +485,34 @@
 
 #undef MIN_SIZE_SOUND
 #undef INSUFFICIENT
+
+// ---------------------------------------------------------------- the hotspot pipeline
+
+/// A hotspot burns on its own object-model pipeline instead of SSair's hotspot pass: one frame
+/// every SSair tick (the cadence the pass had) for as long as it exists. It never idles -- a
+/// hotspot that has nothing left to burn deletes itself, which tears its pipeline down.
+/datum/om/decl/hotspot
+	of = /obj/effect/hotspot
+	behaviours = list(/datum/om/pipeline/hotspot)
+
+/datum/om/pipeline/hotspot
+	name = "hotspot"
+	every = 0.5 SECONDS
+	lane = LANE_SIMULATION
+	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	stages = list(/datum/om/stage/hotspot)
+	park_after = 0
+
+/datum/om/stage/hotspot
+	name = "burn"
+	category = /datum/om/stage/hotspot
+	pipeline = /datum/om/pipeline/hotspot
+	of = /obj/effect/hotspot
+
+/datum/om/stage/hotspot/perform(obj/effect/hotspot/H, datum/om/frame/F)
+	H.burn_step()
+	if(QDELETED(H))
+		return STAGE_ABORT
+
+/datum/om/stage/hotspot/idle(obj/effect/hotspot/H)
+	return FALSE

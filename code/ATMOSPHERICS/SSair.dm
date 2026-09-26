@@ -21,6 +21,8 @@ SUBSYSTEM_DEF(air)
 	// list (nothing was ever registered) so the dispatcher's hot loop only
 	// touches code that does work.
 	var/cost_turfs = 0
+	/// Always 0: hotspots burn on their own OM pipeline now (LINDA_fire.dm, /datum/om/pipeline/hotspot),
+	/// costed under its lane. Kept for the profiler/time_track columns that read it.
 	var/cost_hotspots = 0
 	var/cost_groups = 0
 	var/cost_highpressure = 0
@@ -49,7 +51,7 @@ SUBSYSTEM_DEF(air)
 	var/gas_visuals_last = 0
 	var/gas_pressure_last = 0
 
-	// hotspots stays (LINDA hotspot fires are still DM). networks stays
+	// hotspots stays as a registry (counts, admin panel); they burn on /datum/om/pipeline/hotspot. networks stays
 	// (pipe network wrappers). The rebuild/expansion queues below are unchanged.
 	var/list/hotspots = list()
 	var/list/networks = list()
@@ -96,7 +98,6 @@ SUBSYSTEM_DEF(air)
 	msg += "\n  Cost:{"
 	msg += "GAS:[round(cost_turfs,1)]|"
 	msg += "EV:[round(cost_gas_events,1)]|"
-	msg += "HS:[round(cost_hotspots,1)]|"
 	msg += "HP:[round(cost_highpressure,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "} "
@@ -188,18 +189,6 @@ SUBSYSTEM_DEF(air)
 			return
 		cost_gas_events = MC_AVERAGE(cost_gas_events, TICK_DELTA_TO_MS(cached_cost))
 		pending_gas_events = null
-		resumed = FALSE
-		currentpart = SSAIR_HOTSPOTS
-
-	if(currentpart == SSAIR_HOTSPOTS)
-		timer = TICK_USAGE_REAL
-		if(!resumed)
-			cached_cost = 0
-		process_hotspots(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_hotspots = MC_AVERAGE(cost_hotspots, TICK_DELTA_TO_MS(cached_cost))
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
 
@@ -305,10 +294,10 @@ SUBSYSTEM_DEF(air)
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun
 	while(currentrun.len)
-		var/datum/thing = currentrun[currentrun.len]
+		var/datum/pipe_network/thing = currentrun[currentrun.len]
 		currentrun.len--
 		if(thing)
-			thing.process()
+			thing.reconcile()
 		else
 			networks.Remove(thing)
 		if(MC_TICK_CHECK)
@@ -323,21 +312,6 @@ SUBSYSTEM_DEF(air)
 
 // process_super_conductivity removed — LINDA's DM superconduction engine is
 // deleted; auxmos' Rust heat subsystem is not wired.
-
-/datum/controller/subsystem/air/proc/process_hotspots(resumed = FALSE)
-	if (!resumed)
-		src.currentrun = hotspots.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/obj/effect/hotspot/H = currentrun[currentrun.len]
-		currentrun.len--
-		if (H)
-			H.process()
-		else
-			hotspots -= H
-		if(MC_TICK_CHECK)
-			return
 
 /datum/controller/subsystem/air/proc/process_high_pressure_delta(resumed = FALSE)
 	while (high_pressure_delta.len)

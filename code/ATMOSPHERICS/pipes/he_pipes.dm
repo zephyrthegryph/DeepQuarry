@@ -124,10 +124,10 @@
 	handle_leaking()
 	return
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/process()
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/machine_step()
 	if(!parent)
 		stable_temperature_cycles = 0
-		return ..()
+		return PROCESS_KILL // joining a pipeline wakes it (rust_pipenets.dm)
 	else
 		var/can_hibernate = !leaking && !has_buckled_mobs()
 		if(leaking)
@@ -190,7 +190,7 @@
 		if(can_hibernate)
 			stable_temperature_cycles++
 			if(stable_temperature_cycles >= 1)
-				SSmachines.hibernate_heat_pipe(src)
+				register_gas_dependencies()
 				return PROCESS_KILL
 		else
 			stable_temperature_cycles = 0
@@ -256,3 +256,6 @@
 	update_icon()
 	handle_leaking()
 	return
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/step_has_work()
+	return parent && heat_exchange_actionable()

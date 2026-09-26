@@ -98,12 +98,6 @@
 	update_nearby_tiles()
 	. = ..()
 
-/obj/machinery/atmospherics/unary/engine/process()
-	..()
-	// Burns are initiated synchronously by the owning ship engine datum. The
-	// nozzle has no autonomous per-tick work once its pipenet is constructed.
-	return PROCESS_KILL
-
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()
 	.+= "Location: [get_area(src)]."

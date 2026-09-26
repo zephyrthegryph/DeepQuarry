@@ -1,4 +1,5 @@
 /obj/machinery/meter
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "meter"
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
@@ -32,18 +33,19 @@
 		P = locate(/obj/machinery/atmospherics/pipe) in loc
 	return P
 
-/// Radio meters publish their numeric reading on every material pressure change (a revision
-/// watch); local-only meters need wake only when their discrete needle sprite changes (a value
-/// watch on pressure_icon_state()). Both paths are event-driven; neither needs a permanent
-/// heartbeat.
+/// A meter wakes only when what it shows or broadcasts would change: local meters when their
+/// discrete needle sprite changes, radio meters when the sprite or the rounded kPa they send
+/// changes (a value watch on current_display_signature()). Pressure noise below the display's
+/// resolution never wakes it.
 /obj/machinery/meter/proc/register_gas_dependency()
 	var/datum/gas_mixture/environment = target?.return_air()
-	var/mixture_id = environment?.arena_id()
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_gas))
-	if(frequency)
-		om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = environment?.revision())
-	else
-		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(current_pressure_icon_state)), wake_callback = wake)
+	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(current_display_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/meter/proc/current_display_signature()
+	var/datum/gas_mixture/environment = target?.return_air()
+	if(!frequency || !environment)
+		return pressure_icon_state(environment)
+	return "[pressure_icon_state(environment)]|[round(environment.return_pressure())]"
 
 /obj/machinery/meter/proc/unregister_gas_dependency()
 	om_watch_disarm(src, "gas")
@@ -72,7 +74,7 @@
 		return "meter3_[val]"
 	return "meter4"
 
-/obj/machinery/meter/process()
+/obj/machinery/meter/machine_step()
 	if(!target)
 		icon_state = "meterX"
 		return PROCESS_KILL
@@ -93,7 +95,7 @@
 		var/datum/radio_frequency/radio_connection = SSradio.return_frequency(frequency)
 
 		if(!radio_connection)
-			SSmachines.hibernate_meter(src)
+			register_gas_dependency()
 			return PROCESS_KILL
 
 		var/datum/signal/signal = new
@@ -106,7 +108,8 @@
 			"sigtype" = "status"
 		)
 		radio_connection.post_signal(src, signal)
-	SSmachines.hibernate_meter(src)
+	register_gas_dependency()
+	return PROCESS_KILL
 	return PROCESS_KILL
 
 /obj/machinery/meter/examine(mob/user)

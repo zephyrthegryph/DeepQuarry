@@ -49,7 +49,7 @@
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
-/obj/machinery/power/thermoregulator/southerncross/process()
+/obj/machinery/power/thermoregulator/southerncross/machine_step()
 	if(!on)
 		return PROCESS_KILL
 	if(!powernet)
@@ -89,6 +89,7 @@
 #define MODE_COOLING 2
 
 /obj/machinery/power/thermoregulator
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "thermal regulator"
 	desc = "A massive machine that can either add or remove thermal energy from the surrounding environment. Must be secured onto a powered wire node to function."
 	icon = 'icons/obj/machines/thermoregulator_vr.dmi'
@@ -223,7 +224,7 @@
 	wake_for_state_change()
 	update_icon()
 
-/obj/machinery/power/thermoregulator/process()
+/obj/machinery/power/thermoregulator/machine_step()
 	if(!on)
 		return PROCESS_KILL
 	if(!powernet)
@@ -341,3 +342,6 @@
 #undef MODE_IDLE
 #undef MODE_HEATING
 #undef MODE_COOLING
+
+/obj/machinery/power/thermoregulator/step_has_work()
+	return gas_wake_condition()

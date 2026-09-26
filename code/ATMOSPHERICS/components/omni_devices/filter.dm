@@ -69,9 +69,9 @@
 
 	return 0
 
-/obj/machinery/atmospherics/omni/atmos_filter/process()
+/obj/machinery/atmospherics/omni/atmos_filter/machine_step()
 	if(!..())
-		return 0
+		return PROCESS_KILL // off or unpowered: its power and settings channels wake it
 
 	var/datum/gas_mixture/output_air = output.air	//BYOND doesn't like referencing "output.air.return_pressure()" so we need to make a direct reference
 	var/datum/gas_mixture/input_air = input.air		// it's completely happy with them if they're in a loop though i.e. "P.air.return_pressure()"... *shrug*

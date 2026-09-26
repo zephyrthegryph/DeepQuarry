@@ -1,3 +1,6 @@
+/// Below this much spin a turbine has stopped and its motor has nothing to convert.
+#define TURBINE_MIN_KIN_ENERGY 1
+
 /obj/machinery/atmospherics/pipeturbine
 	name = "turbine"
 	desc = "A gas turbine. Converting pressure into energy since 1884."
@@ -52,36 +55,55 @@
 	network2 = null
 	return ..()
 
-/obj/machinery/atmospherics/pipeturbine/process()
+/obj/machinery/atmospherics/pipeturbine/machine_step()
 	..()
-	if(anchored && !(stat&BROKEN))
-		kin_energy *= 1 - kin_loss
-		dP = max(air_in.return_pressure() - air_out.return_pressure(), 0)
-		if(dP > 10)
-			kin_energy += 1/ADIABATIC_EXPONENT * dP * air_in.return_volume() * (1 - volume_ratio**ADIABATIC_EXPONENT) * efficiency
-			air_in.set_temperature(air_in.return_temperature() * volume_ratio**ADIABATIC_EXPONENT)
+	if(!anchored || (stat & BROKEN))
+		return PROCESS_KILL
+	kin_energy *= 1 - kin_loss
+	dP = max(air_in.return_pressure() - air_out.return_pressure(), 0)
+	if(dP > 10)
+		kin_energy += 1/ADIABATIC_EXPONENT * dP * air_in.return_volume() * (1 - volume_ratio**ADIABATIC_EXPONENT) * efficiency
+		air_in.set_temperature(air_in.return_temperature() * volume_ratio**ADIABATIC_EXPONENT)
 
-			var/datum/gas_mixture/air_all = new
-			air_all.set_volume(air_in.return_volume() + air_out.return_volume())
-			var/datum/gas_mixture/removed_in = air_in.remove_ratio(1)
-			var/datum/gas_mixture/removed_out = air_out.remove_ratio(1)
-			air_all.merge(removed_in)
-			air_all.merge(removed_out)
-			qdel(removed_in)
-			qdel(removed_out)
+		var/datum/gas_mixture/air_all = new
+		air_all.set_volume(air_in.return_volume() + air_out.return_volume())
+		var/datum/gas_mixture/removed_in = air_in.remove_ratio(1)
+		var/datum/gas_mixture/removed_out = air_out.remove_ratio(1)
+		air_all.merge(removed_in)
+		air_all.merge(removed_out)
+		qdel(removed_in)
+		qdel(removed_out)
 
-			var/datum/gas_mixture/returned_in = air_all.remove(volume_ratio)
-			air_in.merge(returned_in)
-			qdel(returned_in)
-			air_out.merge(air_all)
-			qdel(air_all)
+		var/datum/gas_mixture/returned_in = air_all.remove(volume_ratio)
+		air_in.merge(returned_in)
+		qdel(returned_in)
+		air_out.merge(air_all)
+		qdel(air_all)
 
-		update_icon()
+	update_icon()
 
 	if (network1)
 		network1.mark_dirty()
 	if (network2)
 		network2.mark_dirty()
+
+	// Its motor draws the spin down; wake it while there is spin to draw.
+	if(kin_energy >= TURBINE_MIN_KIN_ENERGY)
+		var/obj/machinery/power/turbinemotor/motor = locate() in get_step(src, dir)
+		if(motor)
+			START_MACHINE_PROCESSING(motor)
+		return
+	// Spun down with no pressure head: park until the head returns (the test above).
+	kin_energy = 0
+	om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	return PROCESS_KILL
+
+/obj/machinery/atmospherics/pipeturbine/proc/gas_wake_condition()
+	return anchored && !(stat & BROKEN) && air_in.return_pressure() - air_out.return_pressure() > 10
+
+/obj/machinery/atmospherics/pipeturbine/proc/wake_from_gas()
+	om_watch_disarm(src, "gas")
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipeturbine/update_icon()
 	cut_overlays()
@@ -96,6 +118,7 @@
 
 /obj/machinery/atmospherics/pipeturbine/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
+	START_MACHINE_PROCESSING(src)
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 
@@ -198,6 +221,7 @@
 
 
 /obj/machinery/power/turbinemotor
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "motor"
 	desc = "Electrogenerator. Converts rotation into power."
 	icon = 'icons/obj/pipeturbine.dmi'
@@ -223,10 +247,12 @@
 		if (turbine.stat & (BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)
 			turbine = null
 
-/obj/machinery/power/turbinemotor/process()
+/// Converts its turbine's spin while there is any; parked otherwise, the turbine's own step wakes
+/// it (pipeturbine machine_step()).
+/obj/machinery/power/turbinemotor/machine_step()
 	updateConnection()
-	if(!turbine || !anchored || stat & (BROKEN))
-		return
+	if(!turbine || !anchored || stat & (BROKEN) || turbine.kin_energy < TURBINE_MIN_KIN_ENERGY)
+		return PROCESS_KILL
 
 	var/power_generated = kin_to_el_ratio * turbine.kin_energy
 	turbine.kin_energy -= power_generated
@@ -234,8 +260,17 @@
 
 /obj/machinery/power/turbinemotor/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
+	START_MACHINE_PROCESSING(src)
 	playsound(src, W.usesound, 50, 1)
 	turbine = null
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 	updateConnection()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/pipeturbine/step_has_work()
+	return anchored && !(stat & BROKEN) && (kin_energy >= TURBINE_MIN_KIN_ENERGY || gas_wake_condition())
+
+/obj/machinery/power/turbinemotor/step_has_work()
+	return turbine && anchored && !(stat & BROKEN) && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY
+
+#undef TURBINE_MIN_KIN_ENERGY

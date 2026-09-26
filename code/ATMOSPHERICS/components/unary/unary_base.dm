@@ -78,7 +78,6 @@
 	// every watch this device holds keyed by its own ref string (code/datums/om/watch.dm) --
 	// no weakref needed, so unlike the old subscribe_gas_dependency() transport this doesn't
 	// race qdel() setting gc_destroyed before Destroy() runs.
-	SSmachines.hibernating_vents -= REF(src)
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
 	var/datum/pipe_network/old_network = network
 	if(old_network?.normal_members)
@@ -103,6 +102,8 @@
 		if(can_be_node(target, 1))
 			node = target
 			break
+	if(node)
+		START_MACHINE_PROCESSING(src) // connected: a device with DM work re-evaluates (others don't listen)
 
 	update_icon()
 	update_underlays()
@@ -179,3 +180,6 @@
 
 		else
 			to_chat(user, span_warning("Access denied."))
+
+/obj/machinery/atmospherics/unary/step_has_work()
+	return gas_wake_condition()

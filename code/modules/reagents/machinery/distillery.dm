@@ -296,7 +296,7 @@
 	A.use_power_oneoff(amount, chan)
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/process()
-	..()
+	react_or_update()
 
 	var/run_pump = FALSE
 

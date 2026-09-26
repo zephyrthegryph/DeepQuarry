@@ -63,7 +63,7 @@
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
 
-/obj/machinery/atmospherics/omni/process()
+/obj/machinery/atmospherics/omni/machine_step()
 	last_power_draw = 0
 	last_flow_rate = 0
 
@@ -337,3 +337,6 @@
 
 	else
 		to_chat(user, span_warning("Access denied."))
+
+/obj/machinery/atmospherics/omni/step_has_work()
+	return gas_wake_condition()

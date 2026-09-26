@@ -125,14 +125,14 @@
 	if(.)
 		invalidate_gas_dependencies()
 
-/obj/machinery/atmospherics/unary/freezer/process()
+/obj/machinery/atmospherics/unary/freezer/machine_step()
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	if(stat & (NOPOWER|BROKEN) || !use_power)
 		cooling = 0
 		update_icon()
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	var/air_temperature = air_contents.return_temperature()
@@ -163,7 +163,7 @@
 		network.mark_dirty()
 	else
 		cooling = 0
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		update_icon()
 		return PROCESS_KILL
 

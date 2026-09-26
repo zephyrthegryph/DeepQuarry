@@ -174,10 +174,8 @@
 	anchored = TRUE
 	volume = 500000
 	volume_rate = 7000
-	// NOT migrated: keeps its own real process() override below (checks anchored/power every
-	// tick regardless of `on`, unlike the base scrubber). polls = TRUE overrides the base
-	// scrubber's polls = FALSE so it isn't silently cascaded onto the OM pipeline.
-	polls = TRUE
+	// Its own machine_step() (anchored/power checks every frame while on), on the machine
+	// pipeline's step/huge_* stage (machine_pipeline.dm) rather than the base portable stages.
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50 // //internal circuitry, friction losses and stuff
@@ -229,7 +227,7 @@
 	if (old_stat != stat)
 		update_icon()
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/process()
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
 	if(!anchored || (stat & (NOPOWER|BROKEN)))
 		on = 0
 		last_flow_rate = 0
@@ -290,3 +288,6 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_warning("The bolts are too tight for you to unscrew!"))
 	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/step_has_work()
+	return on && anchored && !(stat & (NOPOWER|BROKEN))

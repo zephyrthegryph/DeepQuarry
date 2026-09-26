@@ -65,14 +65,14 @@
 	return
 
 
-/obj/machinery/atmospherics/unary/heater/process()
+/obj/machinery/atmospherics/unary/heater/machine_step()
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	if(stat & (NOPOWER|BROKEN) || !use_power)
 		heating = 0
 		update_icon()
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
@@ -87,7 +87,7 @@
 		network.mark_dirty()
 	else
 		heating = 0
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		update_icon()
 		return PROCESS_KILL
 

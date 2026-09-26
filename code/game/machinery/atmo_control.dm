@@ -13,6 +13,7 @@
 #define SENSOR_CH4			(1<<7)
 
 /obj/machinery/air_sensor
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "gsensor1"
 	name = "Gas Sensor"
@@ -40,42 +41,53 @@
 /obj/machinery/air_sensor/update_icon()
 	icon_state = "gsensor[on]"
 
-/obj/machinery/air_sensor/process()
-	if(on)
+/// What the sensor reports from `air_sample`, at the resolution it broadcasts.
+/obj/machinery/air_sensor/proc/sensor_readings(datum/gas_mixture/air_sample)
+	var/list/readings = list()
+	if(!air_sample)
+		return readings
+	if(output&1)
+		readings["pressure"] = num2text(round(air_sample.return_pressure(),0.1),)
+	if(output&2)
+		readings["temperature"] = round(air_sample.return_temperature(),0.1)
+	if(output>4)
+		var/total_moles = air_sample.total_moles()
+		if(total_moles > 0)
+			if(output&4)
+				readings[GAS_O2] = round(100*LINDA_GAS_AMT(air_sample, GAS_O2)/total_moles,0.1)
+			if(output&8)
+				readings[GAS_PHORON] = round(100*LINDA_GAS_AMT(air_sample, GAS_PHORON)/total_moles,0.1)
+			if(output&16)
+				readings[GAS_N2] = round(100*LINDA_GAS_AMT(air_sample, GAS_N2)/total_moles,0.1)
+			if(output&32)
+				readings[GAS_CO2] = round(100*LINDA_GAS_AMT(air_sample, GAS_CO2)/total_moles,0.1)
+			if(output&64)
+				readings[GAS_CH4] = round(100*LINDA_GAS_AMT(air_sample, GAS_CH4)/total_moles,0.1)
+		else
+			readings[GAS_O2] = 0
+			readings[GAS_PHORON] = 0
+			readings[GAS_N2] = 0
+			readings[GAS_CO2] = 0
+			readings[GAS_CH4] = 0
+	return readings
+
+/// The broadcast, flattened: the sensor's gas watch wakes it only when this changes.
+/obj/machinery/air_sensor/proc/current_reading_signature()
+	return list2params(sensor_readings(return_air()))
+
+/obj/machinery/air_sensor/machine_step()
+	if(on && radio_connection)
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
 		signal.data["timestamp"] = world.time
-
-		var/datum/gas_mixture/air_sample = return_air()
-
-		if(output&1)
-			signal.data["pressure"] = num2text(round(air_sample.return_pressure(),0.1),)
-		if(output&2)
-			signal.data["temperature"] = round(air_sample.return_temperature(),0.1)
-
-		if(output>4)
-			var/total_moles = air_sample.total_moles()
-			if(total_moles > 0)
-				if(output&4)
-					signal.data[GAS_O2] = round(100*LINDA_GAS_AMT(air_sample, GAS_O2)/total_moles,0.1)
-				if(output&8)
-					signal.data[GAS_PHORON] = round(100*LINDA_GAS_AMT(air_sample, GAS_PHORON)/total_moles,0.1)
-				if(output&16)
-					signal.data[GAS_N2] = round(100*LINDA_GAS_AMT(air_sample, GAS_N2)/total_moles,0.1)
-				if(output&32)
-					signal.data[GAS_CO2] = round(100*LINDA_GAS_AMT(air_sample, GAS_CO2)/total_moles,0.1)
-				if(output&64)
-					signal.data[GAS_CH4] = round(100*LINDA_GAS_AMT(air_sample, GAS_CH4)/total_moles,0.1)
-			else
-				signal.data[GAS_O2] = 0
-				signal.data[GAS_PHORON] = 0
-				signal.data[GAS_N2] = 0
-				signal.data[GAS_CO2] = 0
-				signal.data[GAS_CH4] = 0
+		var/list/readings = sensor_readings(return_air())
+		for(var/key in readings)
+			signal.data[key] = readings[key]
 		signal.data["sigtype"]="status"
 		radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
-	SSmachines.hibernate_air_sensor(src)
+	register_gas_dependencies()
+	return PROCESS_KILL
 
 /obj/machinery/air_sensor/proc/dependency_mask()
 	var/mask = 0
@@ -89,7 +101,8 @@
 
 /obj/machinery/air_sensor/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_revision(src, "gas", environment?.arena_id(), dependency_mask(), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
+	// Wakes only when the rounded readings it broadcasts would change, not on every revision.
+	om_watch_arm_value(src, "gas", environment?.arena_id(), dependency_mask(), CALLBACK(src, PROC_REF(current_reading_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/air_sensor/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -663,14 +676,18 @@
 	var/device_tag
 	var/list/device_info
 	var/automation = 0
+	polls = FALSE // machine pipeline (machine_pipeline.dm, step/fuel_injection)
 	var/cutoff_temperature = 2000
 	var/on_temperature = 1200
 	circuit = /obj/item/circuitboard/air_management/injector_control
 
-/obj/machinery/computer/general_air_control/fuel_injection/process()
+/// Machine pipeline (machine_pipeline.dm, step/fuel_injection): a timed stage while automation is
+/// on -- each frame re-reads the latest sensor broadcasts and commands the injectors -- and parked
+/// otherwise; toggling automation wakes it.
+/obj/machinery/computer/general_air_control/fuel_injection/machine_step()
+	if(!automation || !radio_connection)
+		return PROCESS_KILL
 	if(automation)
-		if(!radio_connection)
-			return FALSE
 
 		var/injecting = 0
 		for(var/id_tag in sensor_information)
@@ -693,8 +710,6 @@
 		)
 
 		radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
-
-	..()
 
 /obj/machinery/computer/general_air_control/fuel_injection/tgui_data(mob/user)
 	var/list/data = ..()
@@ -741,6 +756,7 @@
 
 		if("toggle_automation")
 			automation = !automation
+			START_MACHINE_PROCESSING(src)
 			. = TRUE
 
 		if("toggle_injector")
@@ -784,3 +800,6 @@
 #undef SENSOR_CO2
 #undef SENSOR_N2O
 #undef SENSOR_CH4
+
+/obj/machinery/computer/general_air_control/fuel_injection/step_has_work()
+	return automation && radio_connection

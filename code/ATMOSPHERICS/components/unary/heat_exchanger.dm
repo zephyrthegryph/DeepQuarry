@@ -41,7 +41,7 @@
 
 	..()
 
-/obj/machinery/atmospherics/unary/heat_exchanger/process()
+/obj/machinery/atmospherics/unary/heat_exchanger/machine_step()
 	..()
 	if(!partner)
 		return 0
@@ -59,7 +59,7 @@
 	var/old_temperature = air_contents.return_temperature()
 	var/other_old_temperature = partner.air_contents.return_temperature()
 	if(combined_heat_capacity <= 0 || abs(old_temperature - other_old_temperature) <= 0.1)
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	if(combined_heat_capacity > 0)
@@ -85,7 +85,7 @@
 			partner.network.mark_dirty()
 
 	if(abs(air_contents.return_temperature() - partner.air_contents.return_temperature()) <= 0.1)
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	return 1

@@ -112,7 +112,7 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/process()
+/obj/machinery/atmospherics/binary/dp_vent_pump/machine_step()
 	..()
 
 	last_power_draw = 0
@@ -311,3 +311,6 @@
 #undef PRESSURE_CHECK_EXTERNAL
 #undef PRESSURE_CHECK_INPUT
 #undef PRESSURE_CHECK_OUTPUT
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/step_has_work()
+	return gas_wake_condition()

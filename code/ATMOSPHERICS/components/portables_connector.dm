@@ -72,7 +72,7 @@
 /obj/machinery/atmospherics/portables_connector/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/portables_connector/process()
+/obj/machinery/atmospherics/portables_connector/machine_step()
 	..()
 	if(!on)
 		return PROCESS_KILL

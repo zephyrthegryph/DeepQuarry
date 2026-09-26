@@ -46,10 +46,6 @@ SUBSYSTEM_DEF(machines)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	/// Vents currently hibernating via SSmachines.hibernate_vent() -- a diagnostic set only
-	/// (profiler.dm, unit tests); gas-dependency delivery itself goes through
-	/// code/datums/om/watch.dm's own registries, not this list.
-	var/list/hibernating_vents = list()
 	/// Dirty-mixture notification batch retained while a Machines fire yields.
 	var/list/pending_dirty_gas_mixtures
 	var/pending_dirty_gas_index = 1
@@ -120,7 +116,6 @@ SUBSYSTEM_DEF(machines)
 	msg += "MC:[length(SSmachines.processing_machines)]|"
 	msg += "PN:[length(power_regions)] ev:[power_last_events][power_batch_depth ? " - BATCH" : ""]|"
 	msg += "PO:[length(SSmachines.powerobjs)]|"
-	msg += "HV:[length(SSmachines.hibernating_vents)]|"
 	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]|"
 	msg += "MC/MS:[round((cost_machinery ? length(SSmachines.processing_machines)/cost_machinery : 0),0.1)]"
 	return ..()
@@ -194,7 +189,14 @@ SUBSYSTEM_DEF(machines)
 
 /// Adds a machine to the polling roster. It is not polled until the next pass.
 /datum/controller/subsystem/machines/proc/start_machine_processing(obj/machinery/M)
-	if((M.datum_flags & DF_ISPROCESSING) || !M.polls)
+	// A machine on the machine pipeline (polls = FALSE, machine_pipeline.dm) is woken, not
+	// enrolled: every START_MACHINE_PROCESSING() producer becomes a CHANGE_EXPLICIT raise that
+	// wakes all of its stages.
+	if(!M.polls)
+		M.machine_wake_count++
+		om_changed(M, CHANGE_EXPLICIT)
+		return
+	if(M.datum_flags & DF_ISPROCESSING)
 		return
 	M.datum_flags |= DF_ISPROCESSING
 	processing_machines += M
@@ -441,7 +443,6 @@ SUBSYSTEM_DEF(machines)
 	powerobjs = SSmachines.powerobjs
 	current_run = SSmachines.current_run
 	pending_pump_transfers = SSmachines.pending_pump_transfers
-	hibernating_vents = SSmachines.hibernating_vents
 	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
 	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
 	gas_wake_complete = SSmachines.gas_wake_complete
@@ -482,46 +483,17 @@ SUBSYSTEM_DEF(machines)
 /proc/om_watch_invalidate(datum/entity)
 	om_watch_fire_all(entity)
 
-/datum/controller/subsystem/machines/proc/hibernate_vent(obj/machinery/atmospherics/unary/V)
-	if(!V)
-		return
-	hibernating_vents[REF(V)] = WEAKREF(V)
-	V.register_gas_dependencies()
-	STOP_MACHINE_PROCESSING(V)
-
-/datum/controller/subsystem/machines/proc/hibernate_heat_pipe(obj/machinery/atmospherics/pipe/simple/heat_exchanging/P)
-	if(!P)
-		return
-	P.register_gas_dependencies()
-	STOP_MACHINE_PROCESSING(P)
-
-/datum/controller/subsystem/machines/proc/hibernate_air_sensor(obj/machinery/air_sensor/S)
-	if(!S)
-		return
-	S.register_gas_dependencies()
-	STOP_MACHINE_PROCESSING(S)
-
 /datum/controller/subsystem/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)
 	if(!S)
 		return
 	S.register_gas_dependencies()
 	STOP_MACHINE_PROCESSING(S)
 
-/datum/controller/subsystem/machines/proc/hibernate_meter(obj/machinery/meter/M)
-	if(!M)
-		return
-	M.register_gas_dependency()
-	STOP_MACHINE_PROCESSING(M)
-
 /datum/controller/subsystem/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
 	if(!G)
 		return
 	G.register_gas_dependencies()
 	STOP_MACHINE_PROCESSING(G)
-
-/datum/controller/subsystem/machines/proc/wake_vent(obj/machinery/atmospherics/unary/V)
-	hibernating_vents -= REF(V)
-	om_watch_invalidate(V)
 
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS
