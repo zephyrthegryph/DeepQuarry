@@ -2,31 +2,7 @@
 #define VINE_GROWTH_STAGES 5
 
 /proc/spacevine_infestation(potency_min=70, potency_max=100, maturation_min=5, maturation_max=15)
-	spawn() //to stop the secrets panel hanging
-		var/list/turf/simulated/floor/turfs = list() // list of all the empty floor turfs in the hallway areas // start: keeping old method over upstream's landmark method
-		for(var/areapath in typesof(/area/hallway))
-			var/area/A = locate(areapath)
-			for(var/turf/simulated/floor/F in A.contents)
-				if(!F.check_density())
-					turfs += F
-
-		if(turfs.len) //Pick a turf to spawn at if we can
-			var/turf/simulated/floor/T = pick(turfs) // end
-			var/datum/seed/seed = SSplants.create_random_seed(1)
-			seed.set_trait(TRAIT_SPREAD,2)             // So it will function properly as vines.
-			seed.set_trait(TRAIT_POTENCY,rand(potency_min, potency_max)) // 70-100 potency will help guarantee a wide spread and powerful effects.
-			seed.set_trait(TRAIT_MATURATION,rand(maturation_min, maturation_max))
-			seed.display_name = "strange plants" //more thematic for the vine infestation event
-
-			//make vine zero start off fully matured
-			var/obj/effect/plant/vine = new(T,seed)
-			vine.health = vine.max_health
-			vine.mature_time = 0
-			vine.process()
-
-			message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
-			return
-		message_admins(span_notice("Event: Spacevines failed to find a viable turf."))
+	om_after(null, 0, /proc/spacevine_infestation_start, potency_min, potency_max, maturation_min, maturation_max) //to stop the secrets panel hanging (the global owner: a round event)
 
 /obj/effect/dead_plant
 	anchored = TRUE
@@ -324,3 +300,29 @@
 
 #undef DEFAULT_SEED
 #undef VINE_GROWTH_STAGES
+
+/proc/spacevine_infestation_start(potency_min, potency_max, maturation_min, maturation_max)
+	var/list/turf/simulated/floor/turfs = list() // list of all the empty floor turfs in the hallway areas // start: keeping old method over upstream's landmark method
+	for(var/areapath in typesof(/area/hallway))
+		var/area/A = locate(areapath)
+		for(var/turf/simulated/floor/F in A.contents)
+			if(!F.check_density())
+				turfs += F
+
+	if(turfs.len) //Pick a turf to spawn at if we can
+		var/turf/simulated/floor/T = pick(turfs) // end
+		var/datum/seed/seed = SSplants.create_random_seed(1)
+		seed.set_trait(TRAIT_SPREAD,2)             // So it will function properly as vines.
+		seed.set_trait(TRAIT_POTENCY,rand(potency_min, potency_max)) // 70-100 potency will help guarantee a wide spread and powerful effects.
+		seed.set_trait(TRAIT_MATURATION,rand(maturation_min, maturation_max))
+		seed.display_name = "strange plants" //more thematic for the vine infestation event
+
+		//make vine zero start off fully matured
+		var/obj/effect/plant/vine = new(T,seed)
+		vine.health = vine.max_health
+		vine.mature_time = 0
+		vine.process()
+
+		message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
+		return
+	message_admins(span_notice("Event: Spacevines failed to find a viable turf."))

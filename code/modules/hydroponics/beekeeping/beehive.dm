@@ -296,11 +296,7 @@
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
 	held.honey = 0
 	held.update_icon() //updates the honeyframe
-	spawn(50)
-		new /obj/item/stack/material/wax(loc)
-		honey += processing
-		processing = 0
-		update_icon()
+	om_after(src, 5 SECONDS, PROC_REF(finish_extracting))
 	return TRUE
 
 /datum/interaction/machine_item/honey_extractor_collect
@@ -438,3 +434,9 @@
 	if(processing)
 		return ITEM_INTERACT_BLOCKING
 	return ..()
+
+/obj/machinery/honey_extractor/proc/finish_extracting()
+	new /obj/item/stack/material/wax(loc)
+	honey += processing
+	processing = 0
+	update_icon()
