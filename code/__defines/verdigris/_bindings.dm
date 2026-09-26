@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "1d4afcf3ec00d26d"
+#define VERDIGRIS_ABI "1a029033396cd263"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1100,9 +1100,11 @@
 
 /// Registers (or replaces) a region<->region device edge between two
 /// ports. Carries no flow law of its own (`rust_architecture.md` §8.5 step
-/// 6's pipe-device redesign): [`pipe_flow_set`]/[`pipe_valve_set`] attach
-/// that afterward, as `DeviceFlow`/`DeviceValve` rows linked to this
-/// device's entity.
+/// 6's pipe-device redesign): DM attaches that afterward by creating a
+/// `/obj/effect/device_flow_row`/`device_valve_row` instance, binding it
+/// (`vg_bind_gas`, generated), and setting its `device` field to this
+/// device's `vg_entity` handle -- no bespoke bind here, just the generic
+/// `vg_component_*` accessors every component gets.
 // /proc/vg_pipe_device_set (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_device_set(id, port_a, port_b)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_set_ffi")
@@ -1124,19 +1126,19 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port_a, port_b)
 
-/// Sets (replacing any previous flow(s)) a device's one `DeviceFlow`. Every
-/// DM device that sets a flow today configures exactly one per call
-/// (`rust_set_device`'s existing convention: the whole flow spec on every
-/// settings change, not incremental per-field pokes), so this bind mirrors
-/// that instead of handing DM an entity handle to poke fields on
-/// individually -- a future multi-flow device (a filter, a mixer) can add
-/// a second bind that appends instead of replacing, without disturbing
-/// this one.
-// /proc/vg_pipe_flow_set (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_flow_set(id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_flow_set_ffi")
+/// Links an already-bound `DeviceFlow` row (DM creates and configures the
+/// rest -- `gases`/`rate_kind`/`rate`/`direction`/`stop_side`/`stop_cmp`/
+/// `stop_kpa` -- through the generated `vg_component_*` accessors on its
+/// own `/obj/effect/device_flow_row` instance, no op wire) to device `id`.
+/// The only reason this one field needs a bespoke bind at all: a pipe
+/// port/device's entity is deliberately never exposed to DM as a
+/// `vg_entity` value (this module's own docs), so DM cannot `set_device()`
+/// to it generically the way it would any other component's foreign key.
+// /proc/vg_pipe_flow_link (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_flow_link(flow_entity, id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_flow_link_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	return call_ext(__f)(flow_entity, id)
 
 /// Removes a port; its gas share is released, to `mixture_handle` if given
 /// (else discarded -- `RUST_PIPE_OP_REMOVE`/`REMOVE_TO_MIXTURE`).
@@ -1150,9 +1152,7 @@
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
 /// through `vg_gas::world`'s turf accessors (this module's own docs) --
 /// and returns a flat `id, moles, power_w, target_reached` list per device
-/// that moved something or drew power. Several flows on the same device
-/// compose by running in sequence on the same pair, each seeing the
-/// previous one's result within this tick (`DEVICE_FLOWS`'s own docs).
+/// that moved something or drew power.
 // /proc/vg_pipe_step_devices (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_step_devices(dt)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_step_devices_ffi")
@@ -1168,12 +1168,12 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port_id, mixture_handle, volume)
 
-/// Sets (replacing any previous one) a device's `DeviceValve` gate.
-// /proc/vg_pipe_valve_set (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_valve_set(id, open)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_valve_set_ffi")
+/// See [`pipe_flow_link`]'s own docs; the same for a `DeviceValve` row.
+// /proc/vg_pipe_valve_link (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_valve_link(valve_entity, id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_valve_link_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id, open)
+	return call_ext(__f)(valve_entity, id)
 
 // /proc/poll_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_poll_material_power_graph(handle)

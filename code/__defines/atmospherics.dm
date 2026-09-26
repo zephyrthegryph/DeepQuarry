@@ -109,8 +109,6 @@
 #define RUST_DEVICE_OP_SET 1
 #define RUST_DEVICE_OP_REMOVE 2
 #define RUST_DEVICE_OP_SET_TURF 3
-#define RUST_DEVICE_OP_FLOW 4
-#define RUST_DEVICE_OP_VALVE 5
 
 // A DeviceFlow row's `rate_kind` (verdigris/domains/gas/src/kind/device.rs's
 // rate_kind mod), rust_architecture.md §8.5 step 6's pipe-device redesign.

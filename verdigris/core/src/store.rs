@@ -122,6 +122,11 @@ impl Rows {
         self.present.iter()
     }
 
+    /// Every entity currently holding this row, ascending by index.
+    pub fn entities(&self) -> impl Iterator<Item = EntityId> + '_ {
+        self.present.iter().filter_map(|i| EntityId::from_bits(self.ids[i as usize]))
+    }
+
     fn apply(&mut self, change: RowChange) {
         match change {
             RowChange::Bound(e) => {

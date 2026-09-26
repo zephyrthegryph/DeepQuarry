@@ -2108,6 +2108,19 @@ impl World {
         entry.value(&self.sim, &self.main, entity).ok()
     }
 
+    /// Every entity currently holding component `C`, ascending by index. A
+    /// main-owned kind's rows are immediately authoritative (DM writes are
+    /// synchronous); a worker-owned kind's reflect the last dispatch, same
+    /// as any other main-thread read of one (`World::read`'s own limits).
+    #[must_use]
+    pub fn entities_with<C: Component>(&self) -> Vec<EntityId> {
+        let Some(k) = self.kind_of::<C>() else { return Vec::new() };
+        let Some(entry) = self.kinds[usize::from(k)].as_any().downcast_ref::<KindEntry<C>>() else {
+            return Vec::new();
+        };
+        self.main.get(entry.main).rows.entities().collect()
+    }
+
     /// Typed command (a law-free write from Rust: tests, bridges).
     ///
     /// # Errors

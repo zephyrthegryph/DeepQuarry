@@ -65,14 +65,6 @@ use crate::world::{list, num, whole, with_world};
 thread_local! {
     static PORTS: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
     static DEVICES: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
-    /// DM device id -> its `DeviceFlow` row entities, in the order they were
-    /// added (`rust_architecture.md` §8.5 step 6's pipe-device redesign: a
-    /// device may carry several, composed in this order -- a filter's
-    /// passthrough plus its filtered flow, a mixer's two inputs). Every DM
-    /// device today sets exactly one; the storage doesn't assume that.
-    static DEVICE_FLOWS: RefCell<HashMap<u32, Vec<EntityId>>> = RefCell::new(HashMap::new());
-    /// DM device id -> its `DeviceValve` row entity, at most one.
-    static DEVICE_VALVES: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
     /// A removed port's gas goes here if DM named a target mixture
     /// (`RUST_PIPE_OP_REMOVE_TO_MIXTURE`'s replacement), read back when its
     /// `Released` event drains at [`pipe_commit`].
@@ -353,9 +345,11 @@ fn region_volume(w: &World, raw: u32) -> f32 {
 
 /// Registers (or replaces) a region<->region device edge between two
 /// ports. Carries no flow law of its own (`rust_architecture.md` §8.5 step
-/// 6's pipe-device redesign): [`pipe_flow_set`]/[`pipe_valve_set`] attach
-/// that afterward, as `DeviceFlow`/`DeviceValve` rows linked to this
-/// device's entity.
+/// 6's pipe-device redesign): DM attaches that afterward by creating a
+/// `/obj/effect/device_flow_row`/`device_valve_row` instance, binding it
+/// (`vg_bind_gas`, generated), and setting its `device` field to this
+/// device's `vg_entity` handle -- no bespoke bind here, just the generic
+/// `vg_component_*` accessors every component gets.
 #[auxmacros::bind("/proc/vg_pipe_device_set")]
 fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
     let id_n = whole(&id, "id")?;
@@ -402,95 +396,82 @@ fn pipe_device_set_turf(id: ByondValue, port_a: ByondValue, turf_mixture_handle:
     Ok(ok.into())
 }
 
-/// Sets (replacing any previous flow(s)) a device's one `DeviceFlow`. Every
-/// DM device that sets a flow today configures exactly one per call
-/// (`rust_set_device`'s existing convention: the whole flow spec on every
-/// settings change, not incremental per-field pokes), so this bind mirrors
-/// that instead of handing DM an entity handle to poke fields on
-/// individually -- a future multi-flow device (a filter, a mixer) can add
-/// a second bind that appends instead of replacing, without disturbing
-/// this one.
-#[auxmacros::bind("/proc/vg_pipe_flow_set")]
-fn pipe_flow_set(id: ByondValue, gases: ByondValue, rate_kind: ByondValue, rate: ByondValue, direction: ByondValue, stop_side: ByondValue, stop_cmp: ByondValue, stop_kpa: ByondValue) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
-        return Ok(false.into());
-    };
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let row = DeviceFlow {
-        device: device_e.index(),
-        gases: whole(&gases, "gases")?,
-        rate_kind: num(&rate_kind)? as u8,
-        rate: num(&rate)?,
-        direction: num(&direction)? as u8,
-        stop_side: num(&stop_side)? as u8,
-        stop_cmp: num(&stop_cmp)? as u8,
-        stop_kpa: num(&stop_kpa)?,
-    };
-    with_world(|w| {
-        let old = DEVICE_FLOWS.with(|f| f.borrow_mut().remove(&id_n)).unwrap_or_default();
-        for e in old {
-            let _ = w.despawn(e);
-        }
-        let e = w.bind_value(None, row).map_err(|e| eyre!("{e}"))?;
-        DEVICE_FLOWS.with(|f| f.borrow_mut().insert(id_n, vec![e]));
-        Ok(())
-    })?;
-    Ok(true.into())
-}
-
-/// Sets (replacing any previous one) a device's `DeviceValve` gate.
-#[auxmacros::bind("/proc/vg_pipe_valve_set")]
-fn pipe_valve_set(id: ByondValue, open: ByondValue) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
-        return Ok(false.into());
-    };
-    let row = DeviceValve {
-        device: device_e.index(),
-        open: num(&open)? != 0.0,
-    };
-    with_world(|w| {
-        if let Some(old) = DEVICE_VALVES.with(|v| v.borrow_mut().remove(&id_n)) {
-            let _ = w.despawn(old);
-        }
-        let e = w.bind_value(None, row).map_err(|e| eyre!("{e}"))?;
-        DEVICE_VALVES.with(|v| v.borrow_mut().insert(id_n, e));
-        Ok(())
-    })?;
-    Ok(true.into())
-}
-
 #[auxmacros::bind("/proc/vg_pipe_device_remove")]
 fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
     let id_n = whole(&id, "id")?;
     let Some(e) = DEVICES.with(|d| d.borrow_mut().remove(&id_n)) else {
         return Ok(false.into());
     };
-    let flows = DEVICE_FLOWS.with(|f| f.borrow_mut().remove(&id_n)).unwrap_or_default();
-    let valve = DEVICE_VALVES.with(|v| v.borrow_mut().remove(&id_n));
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| host.unbind_device(e)).map_err(|e| eyre!("{e}"))?;
-        for flow_e in flows {
-            let _ = w.despawn(flow_e);
-        }
-        if let Some(valve_e) = valve {
-            let _ = w.despawn(valve_e);
-        }
         Ok(true)
     })
     .map(ByondValue::from)
 }
 
-/// Every `Flow`/valve-open bound to device `id`, in the order flows were
-/// added (`DEVICE_FLOWS`'s own docs on composing several). Takes `w`
-/// directly (not through [`with_world`]): called from inside
-/// [`pipe_step_devices`]'s own `with_world`, which a nested call would
-/// re-borrow and panic on.
-fn device_laws(w: &World, id: u32) -> (Vec<Flow>, bool) {
-    let flows = DEVICE_FLOWS.with(|f| f.borrow().get(&id).cloned()).unwrap_or_default();
-    let flows = flows.into_iter().filter_map(|e| w.read::<DeviceFlow>(e)).map(|row| row.flow()).collect();
-    let open = DEVICE_VALVES.with(|v| v.borrow().get(&id).copied()).and_then(|e| w.read::<DeviceValve>(e)).is_some_and(|v| v.open);
+/// Links an already-bound `DeviceFlow` row (DM creates and configures the
+/// rest -- `gases`/`rate_kind`/`rate`/`direction`/`stop_side`/`stop_cmp`/
+/// `stop_kpa` -- through the generated `vg_component_*` accessors on its
+/// own `/obj/effect/device_flow_row` instance, no op wire) to device `id`.
+/// The only reason this one field needs a bespoke bind at all: a pipe
+/// port/device's entity is deliberately never exposed to DM as a
+/// `vg_entity` value (this module's own docs), so DM cannot `set_device()`
+/// to it generically the way it would any other component's foreign key.
+#[auxmacros::bind("/proc/vg_pipe_flow_link")]
+fn pipe_flow_link(flow_entity: ByondValue, id: ByondValue) -> Result<ByondValue> {
+    let flow_e = crate::entity::decode(num(&flow_entity)?)?;
+    let id_n = whole(&id, "id")?;
+    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
+        return Ok(false.into());
+    };
+    with_world(|w| {
+        let Some(mut row) = w.read::<DeviceFlow>(flow_e) else {
+            return Ok(false);
+        };
+        row.device = device_e.index();
+        w.put(flow_e, row).map_err(|e| eyre!("{e}"))?;
+        Ok(true)
+    })
+    .map(ByondValue::from)
+}
+
+/// See [`pipe_flow_link`]'s own docs; the same for a `DeviceValve` row.
+#[auxmacros::bind("/proc/vg_pipe_valve_link")]
+fn pipe_valve_link(valve_entity: ByondValue, id: ByondValue) -> Result<ByondValue> {
+    let valve_e = crate::entity::decode(num(&valve_entity)?)?;
+    let id_n = whole(&id, "id")?;
+    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
+        return Ok(false.into());
+    };
+    with_world(|w| {
+        let Some(mut row) = w.read::<DeviceValve>(valve_e) else {
+            return Ok(false);
+        };
+        row.device = device_e.index();
+        w.put(valve_e, row).map_err(|e| eyre!("{e}"))?;
+        Ok(true)
+    })
+    .map(ByondValue::from)
+}
+
+/// Every `Flow`/valve-open bound to device entity `device_e`
+/// (`DeviceFlow`/`DeviceValve` rows, no op wire: DM creates and configures
+/// them directly through the generated `vg_component_*` accessors on
+/// `/obj/effect/device_flow_row`/`device_valve_row` -- `rust_architecture.md`
+/// §8.5 step 6's pipe-device redesign). Several flows on the same device
+/// compose in `DeviceFlow` bind order (a filter's passthrough plus its
+/// filtered flow, a mixer's two inputs); every current DM device sets
+/// exactly one.
+fn device_laws(w: &World, device_e: EntityId) -> (Vec<Flow>, bool) {
+    let index = device_e.index();
+    let flows = w
+        .entities_with::<DeviceFlow>()
+        .into_iter()
+        .filter_map(|e| w.read::<DeviceFlow>(e))
+        .filter(|row| row.device == index)
+        .map(|row| row.flow())
+        .collect();
+    let open = w.entities_with::<DeviceValve>().into_iter().filter_map(|e| w.read::<DeviceValve>(e)).any(|v| v.device == index && v.open);
     (flows, open)
 }
 
@@ -498,9 +479,7 @@ fn device_laws(w: &World, id: u32) -> (Vec<Flow>, bool) {
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
 /// through `vg_gas::world`'s turf accessors (this module's own docs) --
 /// and returns a flat `id, moles, power_w, target_reached` list per device
-/// that moved something or drew power. Several flows on the same device
-/// compose by running in sequence on the same pair, each seeing the
-/// previous one's result within this tick (`DEVICE_FLOWS`'s own docs).
+/// that moved something or drew power.
 #[auxmacros::bind("/proc/vg_pipe_step_devices")]
 fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     let dt = num(&dt)?;
@@ -508,7 +487,7 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     let mut out = Vec::new();
     with_world(|w| {
         for (id, e) in devices {
-            let (flows, valve_open) = device_laws(w, id);
+            let (flows, valve_open) = device_laws(w, e);
             if flows.is_empty() && !valve_open {
                 continue;
             }
