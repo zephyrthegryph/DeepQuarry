@@ -23,8 +23,7 @@
 /datum/nifsoft/soulcatcher/activate()
 	if((. = ..()))
 		show_settings(nif.human)
-		spawn(0)
-			deactivate()
+		om_after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/soulcatcher/deactivate(force = FALSE)
 	if((. = ..()))
