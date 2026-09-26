@@ -5442,7 +5442,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SSair.run_gas_frames(1)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
-	vg_heat_debug_run_frames(2)
+	vg_world_run_steps(2)
 	// The exposure heats the paper's heat body; its ignition rule
 	// (code/datums/rules/declarations.dm) runs on the next heat frame.
 	dq_rx_flush()

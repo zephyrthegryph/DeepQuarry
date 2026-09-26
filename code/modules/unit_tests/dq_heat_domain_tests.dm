@@ -1,6 +1,6 @@
 // The heat domain (M4, verdigris/domains/heat) through its DM API. Each test
 // takes over a few turfs' heat cells, runs heat frames to completion with
-// vg_heat_debug_run_frames(), restores the cells, then asserts.
+// vg_world_run_steps(), restores the cells, then asserts.
 
 /// Makes `T` an isolated solid cell (no air coupling) at `temperature`.
 /proc/heat_test_solid(turf/T, capacity, conductivity, temperature, emissivity = THERMAL_EMISSIVITY_DEFAULT)
@@ -43,12 +43,12 @@
 	TEST_ASSERT_NOTNULL(cold, "no turf east of the test corner")
 	heat_test_solid(hot, 10000, 0.05, 500)
 	heat_test_solid(cold, 10000, 0.05, 300)
-	vg_heat_debug_run_frames(20)
+	vg_world_run_steps(20)
 	var/hot_after = hot.get_temperature()
 	var/cold_after = cold.get_temperature()
 	heat_test_restore(hot)
 	heat_test_restore(cold)
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	TEST_ASSERT(hot_after < 480, "the hot cell did not cool ([hot_after] K)")
 	TEST_ASSERT(cold_after > 320, "the cold neighbour did not warm ([cold_after] K)")
 	TEST_ASSERT(hot_after > cold_after, "conduction overshot ([hot_after] K vs [cold_after] K)")
@@ -64,12 +64,12 @@
 	TEST_ASSERT_NOTNULL(void, "no turf east of the test corner")
 	heat_test_solid(wall, 5000, 0.05, 900, 1)
 	vg_heat_set_turf(void, HEAT_CELL_SPACE, 7000, 0, 0, TCMB, FALSE)
-	vg_heat_debug_run_frames(30)
+	vg_world_run_steps(30)
 	var/after = wall.get_temperature()
 	// The other faces are 1 J/K floors: only radiation can take this much heat.
 	heat_test_restore(void)
 	heat_test_restore(wall)
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	// σT⁴ at 900 K is ~37 kW: about 7 K/s at first for 5000 J/K.
 	TEST_ASSERT(after < 800, "an exposed 900 K wall only cooled to [after] K in 30 s")
 	TEST_ASSERT(after > T20C, "radiation overshot the sky temperature ([after] K)")
@@ -85,7 +85,7 @@
 	TEST_ASSERT_NOTNULL(I.heat_body, "add_heat did not create a heat body")
 	var/start = I.get_temperature()
 	TEST_ASSERT(abs(start - (ambient + 50)) < 1, "the body started at [start] K, not [ambient + 50] K")
-	vg_heat_debug_run_frames(60)
+	vg_world_run_steps(60)
 	var/later = I.get_temperature()
 	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
 	TEST_ASSERT(later > ambient, "the body passed its surroundings ([later] K < [ambient] K)")
@@ -113,11 +113,11 @@
 	var/watch = listener.heat_watch_threshold(T, 400)
 	var/set_watch = listener.heat_watch_set(T)
 	heat_watch_set_add(set_watch, 1, 1, 350)
-	vg_heat_debug_run_frames(2)
+	vg_world_run_steps(2)
 	SSair.dispatch_heat_wakes()
 	var/before = listener.wakes
 	T.add_heat(1000 * 150)
-	vg_heat_debug_run_frames(2)
+	vg_world_run_steps(2)
 	SSair.dispatch_heat_wakes()
 	var/after = listener.wakes
 	var/crossings = listener.crossings
@@ -125,7 +125,7 @@
 	heat_unwatch(set_watch)
 	listener.heat_unsubscribe()
 	heat_test_restore(T)
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	TEST_ASSERT_NOTNULL(watch, "the threshold watch was rejected")
 	TEST_ASSERT_EQUAL(before, 0, "the watch fired before the turf was heated")
 	TEST_ASSERT(after >= 1, "heating the turf past 400 K did not wake the subscriber")

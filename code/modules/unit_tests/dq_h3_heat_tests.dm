@@ -154,18 +154,18 @@
 		TEST_ASSERT(!isnull(CI.container.heat_body), "its containers are coupled to it")
 		things += CI.container
 	// The heat source adds energy.
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	var/start = dq_h3_energy(things)
-	vg_heat_debug_run_frames(5)
+	vg_world_run_steps(5)
 	TEST_ASSERT(dq_h3_energy(things) - start >= oven.heating_power * 4, "the heat source put at least four seconds of power in")
 	// With the source off, the hot oven heats its contents and no joule is
 	// made or lost: the isolated oven plus contents keep their energy.
 	vg_heat_body_power(oven.heat_body, 0)
 	vg_heat_body_set_temperature(oven.heat_body, oven.optimal_temp)
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	start = dq_h3_energy(things)
 	var/contents_start = dq_h3_energy(things - oven)
-	vg_heat_debug_run_frames(10)
+	vg_world_run_steps(10)
 	var/moved = dq_h3_energy(things - oven) - contents_start
 	var/drift = abs(dq_h3_energy(things) - start)
 	TEST_ASSERT(moved > 0, "the oven heated its contents")
@@ -237,7 +237,7 @@
 	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
-	// Was a fixed vg_heat_debug_run_frames(3): that assumed 3 frames is always
+	// Was a fixed vg_world_run_steps(3): that assumed 3 frames is always
 	// enough for the heat domain to measurably warm the probe, which held only
 	// by accident when this test ran on a floor left warm by a previous test
 	// sharing the same turf. wait_for_condition() is the right replacement for
@@ -249,7 +249,7 @@
 	// of adding 30+ seconds to every run while that's open.
 	var/heated = wait_for_condition(
 		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
-		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_heat_debug_run_frames), 1),
+		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_world_run_steps), 1),
 		20,
 	)
 	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")

@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "3ed2b997e11fabf2"
+#define VERDIGRIS_ABI "b6f1058af3c26c62"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -668,15 +668,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
 
-/// Test hook: runs `frames` world steps to completion, one after another,
-/// deterministically (no wall clock). Their events reach DM through
-/// `vg_drain_events()`.
-// /proc/gas_run_frames (verdigris/ffi/src/gas/mod.rs)
-/proc/vg_gas_run_frames(frames)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_run_frames_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(frames)
-
 /// `list(frames, 0, 0, 0, 0, 0, 0, 0, last frame µs, command backlog,
 /// overlay entries, view age, frames skipped, removal shortfall (mol), 0, 0,
 /// 0, 0, 0)`: the world's frame metrics in the layout SSair's stat panel,
@@ -818,13 +809,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_constants_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
-
-/// Runs `frames` heat frames to completion, blocking. Unit tests only.
-// /proc/heat_debug_run_frames (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_debug_run_frames(frames)
-	var/static/__f = load_ext(VERDIGRIS, "byond:heat_debug_run_frames_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(frames)
 
 /// Just the cooling-side Carnot-bounded COP (`cold`/`hot` in K), for a
 /// caller that owns its own power-budget accounting (grid `draw_power()`)
@@ -1713,6 +1697,14 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_rate_watch_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(model, sub, lane_v, cmp_v, level)
+
+/// Runs `steps` world steps now, each waiting for its worker frame
+/// (deterministic, no pacing: tests and admin tools).
+// /proc/world_run_steps (verdigris/ffi/src/world.rs)
+/proc/vg_world_run_steps(steps)
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_run_steps_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(steps)
 
 /// Scheduler counters as a flat list: timers pending, timers fired, rate
 /// crossings fired, key publications, rate models, keys with subscribers,

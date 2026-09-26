@@ -540,3 +540,17 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
     }
     Ok(ByondValue::null())
 }
+
+/// Runs `steps` world steps now, each waiting for its worker frame
+/// (deterministic, no pacing: tests and admin tools).
+#[auxmacros::bind("/proc/world_run_steps")]
+fn world_run_steps(steps: ByondValue) -> Result<ByondValue> {
+    let n = whole(&steps, "steps")?.min(100_000);
+    with_world(|w| {
+        for _ in 0..n {
+            w.step_blocking();
+        }
+        Ok(())
+    })?;
+    Ok(ByondValue::null())
+}

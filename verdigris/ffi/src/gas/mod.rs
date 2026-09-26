@@ -672,20 +672,6 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
     ])
 }
 
-/// Test hook: runs `frames` world steps to completion, one after another,
-/// deterministically (no wall clock). Their events reach DM through
-/// `vg_drain_events()`.
-#[auxmacros::bind("/proc/gas_run_frames")]
-fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
-    let n = frames.get_number()?.clamp(0.0, 100_000.0) as u32;
-    with_world(|w| {
-        for _ in 0..n {
-            w.step_blocking();
-        }
-        Ok(())
-    })?;
-    Ok(ByondValue::null())
-}
 
 // --- Gas handles as a reactor watch domain -----------------------------------
 

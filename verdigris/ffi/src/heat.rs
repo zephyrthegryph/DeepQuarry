@@ -1010,19 +1010,6 @@ fn heat_tick(_seconds: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::from(1.0f32))
 }
 
-/// Runs `frames` heat frames to completion, blocking. Unit tests only.
-#[auxmacros::bind("/proc/heat_debug_run_frames")]
-fn heat_debug_run_frames(frames: ByondValue) -> Result<ByondValue> {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let n = num(&frames)?.clamp(0.0, 10_000.0) as u32;
-    with_world(|w| {
-        for _ in 0..n {
-            w.step_blocking();
-        }
-        Ok(())
-    })?;
-    Ok(ByondValue::null())
-}
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
 /// default emissivity, seconds per heat frame, normal body temperature,

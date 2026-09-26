@@ -64,7 +64,7 @@
 	var/datum/gas_mixture/air = T.return_air()
 	var/air_temperature = air.return_temperature()
 	heat_test_restore(T)
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	TEST_ASSERT(abs(solid - 350) < 0.01, "the solid cell reads [solid] K")
 	TEST_ASSERT_EQUAL(read, solid, "get_temperature() is not the solid's temperature")
 	TEST_ASSERT_EQUAL(interior, air_temperature, "get_interior_temperature() is not the turf air's temperature")

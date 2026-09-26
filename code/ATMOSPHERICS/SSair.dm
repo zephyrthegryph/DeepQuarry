@@ -247,7 +247,7 @@ SUBSYSTEM_DEF(air)
 	gas_reactions_last = 0
 	gas_visuals_last = 0
 	gas_pressure_last = 0
-	vg_gas_run_frames(frames)
+	vg_world_run_steps(frames)
 	vg_drain_events()
 	gas_frames += frames
 	process_high_pressure_delta()

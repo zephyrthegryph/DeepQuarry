@@ -89,12 +89,10 @@
 	SSmachines.process_power()
 	TEST_ASSERT(left.powernet == right.powernet, "a repaired cable did not merge the networks")
 	// `avail` is a per-step law result (ProducerCredit et al, verdigris/domains/power/src/laws.rs),
-	// not pushed on every write -- SSvg.fire() is the only driver
-	// (rust_architecture.md §8.5), and nothing else in this test lets the
-	// real Master.Loop reach it (no sleep, no yield). One direct tick, the
-	// same dt SSvg's own fire() feeds, settles the merged region's ledger
-	// before SSmachines.process_power() re-polls it.
-	vg_world_tick(SSvg.wait / (1 SECOND))
+	// not pushed on every write. One blocking world step settles the merged
+	// region's ledger before SSmachines.process_power() re-polls it (a paced
+	// vg_world_tick() does nothing while the previous worker frame runs).
+	vg_world_run_steps(1)
 	SSmachines.process_power()
 	TEST_ASSERT_EQUAL(left.powernet.avail, 1000, "the merged network does not carry the supply")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 600, "a draw on the merged network failed")
