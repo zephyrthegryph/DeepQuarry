@@ -2,5 +2,6 @@
 //! (`doc/rewrite/rust_bindings.md`), as opposed to `vg-gas`'s turf/pipe
 //! grid kinds. The pump is the reference component (§14).
 
+pub mod device;
 pub mod gas_mix;
 pub mod pump;

@@ -241,6 +241,138 @@
 /obj/item/gas_mix_holder/proc/on_gas_mix_depleted()
 	return
 
+// ---- DeviceFlow (gas kind 3, owner main; verdigris/domains/gas/src/kind/device.rs) ----
+
+#define VG_GAS_DEVICEFLOW 3
+/// The code the generic vg_component_* binds take for DeviceFlow.
+#define VG_KIND_DEVICEFLOW 3
+/// DeviceFlow's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_DEVICEFLOW (VG_WORLD_KIND_BASE | VG_KIND_DEVICEFLOW)
+#define VG_DEVICEFLOW_FIELD_DEVICE 0
+#define VG_DEVICEFLOW_FIELD_GASES 1
+#define VG_DEVICEFLOW_FIELD_RATE_KIND 2
+#define VG_DEVICEFLOW_FIELD_RATE 3
+#define VG_DEVICEFLOW_FIELD_DIRECTION 4
+#define VG_DEVICEFLOW_FIELD_STOP_SIDE 5
+#define VG_DEVICEFLOW_FIELD_STOP_CMP 6
+#define VG_DEVICEFLOW_FIELD_STOP_KPA 7
+
+/obj/effect/device_flow_row
+	vg_gas = VG_GAS_DEVICEFLOW
+
+/obj/effect/device_flow_row/var/tmp/init_device = 0
+/obj/effect/device_flow_row/var/tmp/init_gases = 0
+/obj/effect/device_flow_row/var/tmp/init_rate_kind = 0
+/obj/effect/device_flow_row/var/tmp/init_rate = 0.0
+/obj/effect/device_flow_row/var/tmp/init_direction = 0
+/obj/effect/device_flow_row/var/tmp/init_stop_side = 0
+/obj/effect/device_flow_row/var/tmp/init_stop_cmp = 0
+/obj/effect/device_flow_row/var/tmp/init_stop_kpa = 0.0
+
+
+/// unitless;.
+/obj/effect/device_flow_row/proc/get_device()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, 0)
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_device(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, -1, value)
+
+/// unitless;.
+/obj/effect/device_flow_row/proc/get_gases()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, 0)
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_gases(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, -1, value)
+
+/// unitless;.
+/obj/effect/device_flow_row/proc/get_rate_kind()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, 0)
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_rate_kind(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, -1, value)
+
+/// mol/s;.
+/obj/effect/device_flow_row/proc/get_rate()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, 0) // mol/s
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_rate(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, -1, value)
+
+/// unitless;.
+/obj/effect/device_flow_row/proc/get_direction()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, 0)
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_direction(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, -1, value)
+
+/// unitless;.
+/obj/effect/device_flow_row/proc/get_stop_side()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, 0)
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_stop_side(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, -1, value)
+
+/// unitless;.
+/obj/effect/device_flow_row/proc/get_stop_cmp()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, 0)
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_stop_cmp(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, -1, value)
+
+/// kPa;.
+/obj/effect/device_flow_row/proc/get_stop_kpa()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, 0) // kPa
+
+/// Returns the stored value.
+/obj/effect/device_flow_row/proc/set_stop_kpa(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, -1, value)
+
+/obj/effect/device_flow_row/vg_bind_gas(entity)
+	return vg_component_bind(entity, VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, init_device, VG_DEVICEFLOW_FIELD_GASES, init_gases, VG_DEVICEFLOW_FIELD_RATE_KIND, init_rate_kind, VG_DEVICEFLOW_FIELD_RATE, init_rate, VG_DEVICEFLOW_FIELD_DIRECTION, init_direction, VG_DEVICEFLOW_FIELD_STOP_SIDE, init_stop_side, VG_DEVICEFLOW_FIELD_STOP_CMP, init_stop_cmp, VG_DEVICEFLOW_FIELD_STOP_KPA, init_stop_kpa))
+
+// ---- DeviceValve (gas kind 4, owner main; verdigris/domains/gas/src/kind/device.rs) ----
+
+#define VG_GAS_DEVICEVALVE 4
+/// The code the generic vg_component_* binds take for DeviceValve.
+#define VG_KIND_DEVICEVALVE 4
+/// DeviceValve's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_DEVICEVALVE (VG_WORLD_KIND_BASE | VG_KIND_DEVICEVALVE)
+#define VG_DEVICEVALVE_FIELD_DEVICE 0
+#define VG_DEVICEVALVE_FIELD_OPEN 1
+
+/obj/effect/device_valve_row
+	vg_gas = VG_GAS_DEVICEVALVE
+
+/obj/effect/device_valve_row/var/tmp/init_device = 0
+/obj/effect/device_valve_row/var/tmp/init_open = FALSE
+
+
+/// unitless;.
+/obj/effect/device_valve_row/proc/get_device()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, 0)
+
+/// Returns the stored value.
+/obj/effect/device_valve_row/proc/set_device(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, -1, value)
+
+/// unitless;.
+/obj/effect/device_valve_row/proc/get_open()
+	return vg_component_get(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, 0)
+
+/// Returns the stored value.
+/obj/effect/device_valve_row/proc/set_open(value)
+	return vg_component_set(vg_entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, -1, value)
+
+/obj/effect/device_valve_row/vg_bind_gas(entity)
+	return vg_component_bind(entity, VG_KIND_DEVICEVALVE, list(VG_DEVICEVALVE_FIELD_DEVICE, init_device, VG_DEVICEVALVE_FIELD_OPEN, init_open))
+
 // ---- HeatBody (heat kind 1, owner worker; verdigris/domains/heat/src/components.rs) ----
 
 #define VG_HEAT_HEATBODY 1

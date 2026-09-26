@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "d74e0ee4c5d2bd32"
+#define VERDIGRIS_ABI "2ab57e68d9eab40c"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 

@@ -57,6 +57,14 @@ fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat
     b.add_component::<vg_gas::kind::pump::Pump>();
     b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());
+    // Pipe device flows/valves (the coordinator-approved redesign
+    // alongside the gas cutover, `rust_architecture.md` §8.5 step 6):
+    // declarative rows replacing DeviceParams's packed `kind, p0..p3` wire
+    // form. Registered here (additive; nothing reads or writes them yet --
+    // that's `ffi/src/pipes.rs`'s own device stepping, still on the old
+    // encoding pending the DM-side device file rewrite).
+    b.add_component::<vg_gas::kind::device::DeviceFlow>();
+    b.add_component::<vg_gas::kind::device::DeviceValve>();
 
     // Heat (`rust_architecture.md` §6, §8.5, step 4): the turf solid field
     // plus HeatBody/its coupling components and laws. `crate::heat` is the
