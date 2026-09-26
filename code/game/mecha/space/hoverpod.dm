@@ -40,6 +40,7 @@
 		ion_trail.start()
 
 /obj/mecha/working/hoverpod/go_out()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	. = ..()
 	if(!occupant)
 		ion_trail.stop()
@@ -49,7 +50,7 @@
 	..()
 	if (href_list["toggle_stabilization"])
 		stabilization_enabled = !stabilization_enabled
-		send_byjax(src.occupant,"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
 		src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))
 		return
 

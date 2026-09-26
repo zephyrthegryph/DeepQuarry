@@ -31,7 +31,7 @@
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in M.equipment)
 			if(istype(ME, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
 				var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/S = ME
-				if(S.occupant != null)
+				if(SLOT_ITEM(S, MECHA_SLOT_PILOT) != null)
 					return 0
 
 	return istype(O, /obj/mecha) || istype(O, /obj/vehicle)
@@ -43,8 +43,8 @@
 
 	if(istype(O, /obj/mecha))
 		var/obj/mecha/R = O
-		if(R && R.occupant)
-			to_chat(R.occupant,block_message)
+		if(R && SLOT_ITEM(R, MECHA_SLOT_PILOT))
+			to_chat(SLOT_ITEM(R, MECHA_SLOT_PILOT),block_message)
 	else if(istype(O, /obj/vehicle/train/engine))
 		var/obj/vehicle/train/engine/E = O
 		if(E && E.load && E.is_train_head())

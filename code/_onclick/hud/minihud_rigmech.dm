@@ -204,7 +204,7 @@
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
 	var/obj/mecha/owner_mech = master_ref?.resolve()
-	if(user != owner_mech.occupant)
+	if(user != SLOT_ITEM(owner_mech, MECHA_SLOT_PILOT))
 		return
 	owner_mech.toggle_internal_tank()
 

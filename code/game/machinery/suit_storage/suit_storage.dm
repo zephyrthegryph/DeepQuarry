@@ -9,7 +9,6 @@
 	icon_state = "suitstorage000000100" //order is: [has helmet][has suit][has human][is open][is locked][is UV cycling][is powered][is dirty/broken] [is superUVcycling]
 	anchored = TRUE
 	density = TRUE
-	var/mob/living/carbon/human/OCCUPANT = null
 	var/obj/item/clothing/suit/space/SUIT = null
 	var/suit_type = null
 	var/obj/item/clothing/head/helmet/space/HELMET = null
@@ -43,17 +42,8 @@
 	slot_id = OCCUPANT_SLOT_SUIT_STORAGE
 	name = "suit storage unit"
 
-/datum/om/relation/slot/occupant/suit_storage/on_link(mob/living/source, obj/machinery/suit_storage_unit/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.OCCUPANT = source
-
-/datum/om/relation/slot/occupant/suit_storage/on_unlink(mob/living/source, obj/machinery/suit_storage_unit/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.OCCUPANT == source)
-		target.OCCUPANT = null
-
 /obj/machinery/suit_storage_unit/update_icon()
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	var/hashelmet = 0
 	var/hassuit = 0
 	var/hashuman = 0
@@ -116,6 +106,7 @@
 		ui.open()
 
 /obj/machinery/suit_storage_unit/tgui_data()
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	var/list/data = list()
 
 	data["broken"] = isbroken
@@ -237,6 +228,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/dump_everything()
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	islocked = 0 //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
@@ -253,6 +245,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/toggle_open(mob/user)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	if(islocked || isUV)
 		to_chat(user, span_warning("Unable to open unit."))
 		return
@@ -264,6 +257,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/toggle_lock(mob/user)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	if(OCCUPANT && safetieson)
 		to_chat(user, span_warning("The Unit's safety protocols disallow locking when a biological form is detected inside its compartments."))
 		return
@@ -274,6 +268,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/start_UV(mob/user)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	if(isUV || isopen) //I'm bored of all these sanity checks
 		return
 	if(OCCUPANT && safetieson)
@@ -338,6 +333,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/eject_occupant(mob/user as mob)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	if(islocked)
 		return
 
@@ -380,6 +376,7 @@
 	effect = /obj/machinery/suit_storage_unit/proc/interaction_move_inside
 
 /obj/machinery/suit_storage_unit/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	if(user.stat != 0)
 		return TRUE
 	if(!isopen)
@@ -412,6 +409,7 @@
 	effect = /obj/machinery/suit_storage_unit/proc/interaction_use_item
 
 /obj/machinery/suit_storage_unit/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
 	if(!ispowered)
 		return TRUE
 	if(istype(I, /obj/item/grab))

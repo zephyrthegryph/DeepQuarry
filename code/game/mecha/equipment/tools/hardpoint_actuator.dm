@@ -17,7 +17,7 @@
 		var/obj/item/mecha_parts/mecha_equipment/ME = target
 		if(ME.can_attach(chassis))
 			occupant_message("[ME] can be integrated. Stand by.")
-			if(do_after(chassis.occupant, 3 SECONDS, target))
+			if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 3 SECONDS, target))
 				if(ME.can_attach(chassis) && action_checks(target))
 					ME.attach(chassis)
 					occupant_message("[ME] successfully integrated.")

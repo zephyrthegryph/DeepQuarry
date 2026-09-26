@@ -65,6 +65,7 @@
 
 //We don't get lost quite as easy.
 /obj/mecha/combat/fighter/touch_map_edge()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	//No overmap enabled or no driver to choose
 	if(!using_map.use_overmap || !occupant || !can_ztravel())
 		return ..()
@@ -139,7 +140,7 @@
 	..()
 	if (href_list["toggle_landing_gear"])
 		landing_gear_raised = !landing_gear_raised
-		send_byjax(src.occupant,"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
 		src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
 		return
 
@@ -165,6 +166,7 @@
 		return TRUE
 
 /obj/mecha/combat/fighter/proc/consider_gravity(moved = FALSE)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	var/gravity = get_gravity()
 	if (gravity && !landing_gear_raised)
 		playsound(src, 'sound/effects/roll.ogg', 50, 1)

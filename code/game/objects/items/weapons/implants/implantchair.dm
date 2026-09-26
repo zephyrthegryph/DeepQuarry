@@ -17,7 +17,6 @@
 	var/injection_cooldown = 600
 	var/replenish_cooldown = 6000
 	var/replenishing = 0
-	var/mob/living/carbon/occupant = null
 	var/injecting = 0
 
 /obj/machinery/implantchair/Initialize(mapload)
@@ -31,20 +30,9 @@
 	name = "implant chair"
 	// C8 step 2: replaces the separate occupant_of relation this machine used
 	// to hand-link in put_mob()/go_out().
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
-	// var every reader here uses, but this slot's own on_link()/on_unlink()
-	// are its only writer now -- there is no generic field-link mechanism
-	// left to do it for them.
+	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
+	// (om.dm) is a pure graph read, so there is no field left to write.
 
-/datum/om/relation/slot/occupant/implant_chair/on_link(mob/living/source, obj/machinery/implantchair/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/implant_chair/on_unlink(mob/living/source, obj/machinery/implantchair/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 
 // structured TGUI ImplantChair (see
@@ -53,7 +41,7 @@
 /obj/machinery/implantchair/Topic(href, href_list)
 	if((get_dist(src, usr) <= 1) || isAI(usr))
 		if(href_list["implant"])
-			if(src.occupant)
+			if(SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR))
 				injecting = 1
 				go_out()
 				ready = 0
@@ -101,13 +89,14 @@
 
 
 /obj/machinery/implantchair/proc/go_out(mob/M)
-	if(!( src.occupant ))
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR)
+	if(!occupant)
 		return
 	if(M == occupant) // so that the guy inside can't eject himself -Agouri
 		return
 	// The occupant slot's own om_unlink (C8 step 2) clears `occupant` as soon
 	// as slot_remove() takes effect, so the mob to implant is captured first.
-	var/mob/living/carbon/leaving = src.occupant
+	var/mob/living/carbon/leaving = occupant
 	slot_remove(leaving, get_turf(src))
 	if(injecting)
 		implant(leaving)
@@ -120,7 +109,7 @@
 	if(!iscarbon(M))
 		to_chat(usr, span_warning("\The [src] cannot hold this!"))
 		return
-	if(src.occupant)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR))
 		to_chat(usr, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()

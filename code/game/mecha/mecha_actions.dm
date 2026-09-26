@@ -202,7 +202,7 @@
 	if(!chassis.selected)
 		chassis.selected = available_equipment[1]
 		chassis.occupant_message("You select [chassis.selected]")
-		send_byjax(chassis.occupant,"exosuit.browser","eq_list",chassis.get_equipment_list())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
 		button_icon_state = "mech_cycle_equip_on"
 		build_all_button_icons()
 		return
@@ -218,7 +218,7 @@
 				chassis.selected = available_equipment[number+1]
 				chassis.occupant_message("You switch to [chassis.selected]")
 				button_icon_state = "mech_cycle_equip_on"
-			send_byjax(chassis.occupant,"exosuit.browser","eq_list",chassis.get_equipment_list())
+			send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
 			build_all_button_icons()
 			return
 
@@ -275,7 +275,7 @@
 	defence_mode(usr)
 
 /obj/mecha/proc/defence_mode(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	playsound(src, 'sound/mecha/duranddefencemode.ogg', 50, 1)
 	defence_mode = !defence_mode
@@ -300,7 +300,7 @@
 /obj/mecha/proc/overload(mob/user)
 	if(user.stat == 1)//No manipulating things while unconcious.
 		return
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	if(get_integrity() < max_integrity - max_integrity/3)//Same formula as in movement, just beforehand.
 		src.occupant_message(span_red("Leg actuators damage critical, unable to engage overload."))
@@ -327,7 +327,7 @@
 	smoke(usr)
 
 /obj/mecha/proc/smoke(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 
 	if(smoke_reserve < 1)
@@ -359,9 +359,10 @@
 	zoom(usr)
 
 /obj/mecha/proc/zoom(mob/user)//This could use improvements but maybe later.
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
-	if(src.occupant.client)
+	var/mob/living/_tmp_occ_11 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	if(_tmp_occ_11.client)
 		src.zoom = !src.zoom
 		src.log_message("Toggled zoom mode.", LOG_GAME)
 		if(src.zoom)
@@ -369,10 +370,12 @@
 		else
 			src.occupant_message(span_red("Zoom mode disabled."))
 		if(zoom)
-			src.occupant.set_viewsize(12)
-			src.occupant << sound('sound/mecha/imag_enh.ogg',volume=50)
+			var/mob/living/_tmp_occ_12 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+			_tmp_occ_12.set_viewsize(12)
+			SLOT_ITEM(src, MECHA_SLOT_PILOT) << sound('sound/mecha/imag_enh.ogg',volume=50)
 		else
-			src.occupant.set_viewsize() // Reset to default
+			var/mob/living/_tmp_occ_13 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+			_tmp_occ_13.set_viewsize() // Reset to default
 	return
 
 
@@ -385,9 +388,9 @@
 	thrusters(usr)
 
 /obj/mecha/proc/thrusters(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
-	if(src.occupant)
+	if(SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		if(get_charge() > 0)
 			thrusters = !thrusters
 			src.log_message("Toggled thrusters.", LOG_GAME)
@@ -407,9 +410,9 @@
 	query_damtype(usr)
 
 /obj/mecha/proc/query_damtype(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
-	var/new_damtype = tgui_alert(src.occupant,"Melee Damage Type","Damage Type",list("Brute","Fire","Toxic"))
+	var/new_damtype = tgui_alert(SLOT_ITEM(src, MECHA_SLOT_PILOT),"Melee Damage Type","Damage Type",list("Brute","Fire","Toxic"))
 	if(!new_damtype)
 		return
 	switch(new_damtype)
@@ -435,10 +438,10 @@
 	phasing(usr)
 
 /obj/mecha/proc/phasing(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	phasing = !phasing
-	send_byjax(src.occupant,"exosuit.browser","phasing_command","[phasing?"Dis":"En"]able phasing")
+	send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","phasing_command","[phasing?"Dis":"En"]able phasing")
 	if(phasing)
 		src.occupant_message(span_blue("Enabled phasing."))
 	else
@@ -454,7 +457,7 @@
 	toggle_cloaking(usr)
 
 /obj/mecha/proc/toggle_cloaking(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 
 	if(dq_get_cloaked(src))
@@ -476,7 +479,7 @@
 	set_weapons_only_cycle(usr)
 
 /obj/mecha/proc/set_weapons_only_cycle(mob/user)
-	if(user!=src.occupant)
+	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	weapons_only_cycle = !weapons_only_cycle
 	if(weapons_only_cycle)

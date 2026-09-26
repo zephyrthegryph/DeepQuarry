@@ -28,9 +28,9 @@
 		return FALSE
 
 	if(isliving(target))
-		my_tool.attack(target, chassis.occupant, BP_TORSO)
+		my_tool.attack(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT), BP_TORSO)
 
-	target.attackby(my_tool,chassis.occupant)
+	target.attackby(my_tool,SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/prybar
 	name = "pneumatic prybar"

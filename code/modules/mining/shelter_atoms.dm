@@ -792,7 +792,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	stasis_level = /datum/modifier/stasis/complete //Just one setting
 
 /obj/machinery/sleeper/survival_pod/update_icon()
-	if(occupant)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER))
 		add_overlay("sleeper_cover")
 	else
 		cut_overlays()

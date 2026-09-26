@@ -209,7 +209,7 @@
 	if(istype(AM, /obj/mecha))
 		var/obj/mecha/mecha = AM
 		if(density)
-			if(mecha.occupant && (allowed(mecha.occupant) || check_access_list(mecha.operation_req_access)))
+			if(SLOT_ITEM(mecha, MECHA_SLOT_PILOT) && (allowed(SLOT_ITEM(mecha, MECHA_SLOT_PILOT)) || check_access_list(mecha.operation_req_access)))
 				open()
 			else
 				do_animate("deny")

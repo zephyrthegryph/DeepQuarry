@@ -287,7 +287,7 @@
 		if(prob(3))
 			visible_message(span_critical("\The [src] begins digging its claws into \the [M]'s hatch!"))
 			if(do_after(src, 1 SECOND, target = M))
-				visible_message(span_critical("\The [src] rips \the [M]'s access hatch open, dragging [M.occupant] out!"))
+				visible_message(span_critical("\The [src] rips \the [M]'s access hatch open, dragging [SLOT_ITEM(M, MECHA_SLOT_PILOT)] out!"))
 				M.go_out()
 
 	else

@@ -52,7 +52,7 @@
 								ore_box.stored_ore[ore.material]++
 								qdel(ore)
 			else if(isliving(target))
-				drill_mob(target, chassis.occupant)
+				drill_mob(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 				return 1
 			else if(target.loc == C)
 				src.mecha_log_message("Drilled through [target]")

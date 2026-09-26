@@ -26,7 +26,6 @@
 	clickvol = 30
 
 	var/temperature_archived
-	var/mob/living/carbon/occupant = null
 	var/obj/item/reagent_containers/glass/beaker = null
 
 	var/image/fluid
@@ -71,17 +70,9 @@
 	// are its only writer now -- there is no generic field-link mechanism
 	// left to do it for them.
 
-/datum/om/relation/slot/occupant/cryo/on_link(mob/living/source, obj/machinery/atmospherics/unary/cryo_cell/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/cryo/on_unlink(mob/living/source, obj/machinery/atmospherics/unary/cryo_cell/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /obj/machinery/atmospherics/unary/cryo_cell/process()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	..()
 	if(!on)
 		return PROCESS_KILL
@@ -104,6 +95,7 @@
 	return 1
 
 /obj/machinery/atmospherics/unary/cryo_cell/relaymove(mob/user as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	// note that relaymove will also be called for mobs outside the cell with UI open
 	if(occupant == user && !user.stat)
 		go_out()
@@ -112,6 +104,7 @@
 	tgui_interact(user)
 
 /obj/machinery/atmospherics/unary/cryo_cell/attack_hand(mob/user)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(user == occupant)
 		return
 
@@ -128,6 +121,7 @@
 		ui.open()
 
 /obj/machinery/atmospherics/unary/cryo_cell/tgui_data(mob/user)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	// this is the data which will be sent to the ui
 	var/data[0]
 	data["isOperating"] = on
@@ -165,6 +159,7 @@
 	return data
 
 /obj/machinery/atmospherics/unary/cryo_cell/tgui_act(action, params, datum/tgui/ui)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(..() || ui.user == occupant)
 		return TRUE
 
@@ -192,6 +187,7 @@
 	add_fingerprint(ui.user)
 
 /obj/machinery/atmospherics/unary/cryo_cell/attackby(obj/item/G as obj, mob/user as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(istype(G, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
@@ -232,6 +228,7 @@
 		add_overlay(fluid)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/process_occupant()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(air_contents.total_moles() < 10)
 		return
 	if(occupant)
@@ -281,6 +278,7 @@
 	//loc.assume_air(expel_gas)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/go_out()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(!(occupant))
 		return
 	vis_contents -= occupant
@@ -297,6 +295,7 @@
 	return
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(stat & (NOPOWER|BROKEN))
 		to_chat(usr, span_warning("The cryo cell is not functioning."))
 		return
@@ -332,6 +331,7 @@
 	return 1
 
 /obj/machinery/atmospherics/unary/cryo_cell/verb/move_eject()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	set name = "Eject occupant"
 	set category = "Object"
 	set src in oview(1)

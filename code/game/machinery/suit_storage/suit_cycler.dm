@@ -46,7 +46,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	var/datum/suit_cycler_choice/department/target_department
 	var/datum/suit_cycler_choice/species/target_species
 
-	var/mob/living/carbon/human/occupant = null
 	var/obj/item/clothing/suit/space/void/suit = null
 	var/obj/item/clothing/head/helmet/space/helmet = null
 
@@ -58,15 +57,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	slot_id = OCCUPANT_SLOT_SUIT_CYCLER
 	name = "suit cycler"
 
-/datum/om/relation/slot/occupant/suit_cycler/on_link(mob/living/source, obj/machinery/suit_cycler/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/suit_cycler/on_unlink(mob/living/source, obj/machinery/suit_cycler/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /obj/machinery/suit_cycler/Initialize(mapload)
 	. = ..()
@@ -356,6 +346,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		ui.open()
 
 /obj/machinery/suit_cycler/tgui_data(mob/user)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
 	var/list/data = list()
 
 	data["model_text"] = model_text
@@ -409,6 +400,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	return data
 
 /obj/machinery/suit_cycler/tgui_act(action, params, datum/tgui/ui)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
 	if(..())
 		return TRUE
 
@@ -499,6 +491,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			. = TRUE
 
 /obj/machinery/suit_cycler/process()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(electrified > 0)
 		electrified--
@@ -564,6 +557,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/eject_occupant(mob/user)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(locked || active)
 		to_chat(user, span_warning("The cycler is locked."))

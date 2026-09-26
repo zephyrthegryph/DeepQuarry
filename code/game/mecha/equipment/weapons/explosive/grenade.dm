@@ -22,7 +22,7 @@
 	var/obj/item/grenade/G = AM
 	if(istype(G))
 		G.det_time = det_time
-		G.activate(chassis.occupant) //Grenades actually look primed and dangerous, handle their own stuff.
+		G.activate(SLOT_ITEM(chassis, MECHA_SLOT_PILOT)) //Grenades actually look primed and dangerous, handle their own stuff.
 	AM.throw_at(target,missile_range, missile_speed, chassis)
 
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang//Because I am a heartless bastard -Sieve

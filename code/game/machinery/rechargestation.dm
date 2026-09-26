@@ -11,7 +11,6 @@
 	circuit = /obj/item/circuitboard/recharge_station
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50
-	var/mob/occupant = null
 	var/obj/item/cell/cell = null
 	var/icon_update_tick = 0	// Used to rebuild the overlay only once every 10 ticks
 	var/charging = 0
@@ -38,25 +37,15 @@
 	name = "recharge station"
 	// C8 step 2: replaces the separate occupant_of relation this machine used
 	// to hand-link at each of its three entry points.
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
-	// var every reader here uses, but this slot's own on_link()/on_unlink()
-	// are its only writer now -- there is no generic field-link mechanism
-	// left to do it for them.
+	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
+	// (om.dm) is a pure graph read, so there is no field left to write.
 
-/datum/om/relation/slot/occupant/recharge_station/on_link(mob/living/source, obj/machinery/recharge_station/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/recharge_station/on_unlink(mob/living/source, obj/machinery/recharge_station/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0
 
 /obj/machinery/recharge_station/process()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(!cell) // Shouldn't be possible, but sanity check
@@ -99,6 +88,7 @@
 
 //Processes the occupant, drawing from the internal power cell if needed.
 /obj/machinery/recharge_station/proc/process_occupant()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	if(isrobot(occupant))
 		var/mob/living/silicon/robot/R = occupant
 		var/overcharged = FALSE
@@ -195,6 +185,7 @@
 	effect = /obj/machinery/recharge_station/proc/interaction_part_replacement_impl
 
 /obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	return !occupant
 
 /obj/machinery/recharge_station/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
@@ -255,9 +246,11 @@
 	return TRUE
 
 /obj/machinery/recharge_station/screwdriver_act(mob/user, obj/item/tool)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/recharge_station/crowbar_act(mob/user, obj/item/tool)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/recharge_station/RefreshParts()
@@ -299,6 +292,7 @@
 			add_overlay("statn_c100")
 
 /obj/machinery/recharge_station/update_icon()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
 	if(stat & BROKEN)
 		icon_state = "borgcharger0"
@@ -319,6 +313,7 @@
 	go_in(L)
 
 /obj/machinery/recharge_station/proc/go_in(mob/living/L)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 
 	if(occupant)
 		return
@@ -369,6 +364,7 @@
 		return
 
 /obj/machinery/recharge_station/proc/go_out()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	if(!occupant)
 		return
 	slot_remove(occupant, get_turf(src))
@@ -385,6 +381,7 @@
 	icon = 'icons/obj/structures.dmi'
 
 /obj/machinery/recharge_station/ghost_pod_recharger/update_icon()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
 	if(stat & BROKEN)
 		icon_state = "borg_pod_closed"

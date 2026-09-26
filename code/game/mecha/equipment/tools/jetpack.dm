@@ -92,9 +92,9 @@
 		move_result = 1
 	else
 		move_result	= step(chassis,direction)
-		if(chassis.occupant)
+		if(SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 			for(var/obj/effect/speech_bubble/B in range(1, chassis))
-				if(B.parent == chassis.occupant)
+				if(B.parent == SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 					B.loc = chassis.loc
 	if(move_result)
 		wait = 1

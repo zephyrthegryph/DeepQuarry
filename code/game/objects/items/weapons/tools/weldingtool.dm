@@ -675,9 +675,9 @@
 	if(equip_mount && equip_mount.chassis)
 		var/obj/mecha/M = equip_mount.chassis
 		if(M.selected == equip_mount && get_fuel())
-			setWelding(TRUE, M.occupant)
+			setWelding(TRUE, SLOT_ITEM(M, MECHA_SLOT_PILOT))
 		else
-			setWelding(FALSE, M.occupant)
+			setWelding(FALSE, SLOT_ITEM(M, MECHA_SLOT_PILOT))
 
 
 /obj/item/weldingtool/dummy

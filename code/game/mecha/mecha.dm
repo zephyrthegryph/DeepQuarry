@@ -11,7 +11,6 @@
 	infra_luminosity = 15				//Byond implementation is bugged.
 	var/initial_icon = null				//Mech type for resetting icon. Only used for reskinning kits (see custom items)
 	var/can_move = 1
-	var/mob/living/carbon/occupant = null
 
 	var/step_in = 10					//Make a step in step_in/10 sec.
 	var/encumbrance_gap = 1			//How many points of slowdown are negated from equipment? Added to the mech's base step_in.
@@ -278,20 +277,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	// hand-link -- a human pilot and an MMI/brain pilot both enter and leave
 	// through this slot now (mmi_moved_inside()/go_out()), so both get the
 	// automatic link/unlink for free.
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
-	// var every reader here uses, but this slot's own on_link()/on_unlink()
-	// are its only writer now -- there is no generic field-link mechanism
-	// left to do it for them.
+	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
+	// (om.dm) is a pure graph read, so there is no field left to write.
 
-/datum/om/relation/slot/occupant/mecha_pilot/on_link(mob/living/source, obj/mecha/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/mecha_pilot/on_unlink(mob/living/source, obj/mecha/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /// External: equipment is bolted to the hull's hardpoints, not inside it.
 /// Capacity stays with mecha_equipment.dm's per-category limits.
@@ -335,7 +323,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	for(var/mob/M in src) //Be Extra Sure
 		M.forceMove(get_turf(src))
 		M.loc.Entered(M)
-		if(M != src.occupant)
+		if(M != SLOT_ITEM(src, MECHA_SLOT_PILOT))
 			step_rand(M)
 	for(var/atom/movable/A in src.cargo)
 		A.forceMove(get_turf(src))
@@ -414,6 +402,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
 /obj/mecha/process()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	var/static/max_ticks = 16
 	// An empty parked mech has no player-visible cabin simulation to advance.
 	// Entry and every active-process transition wake it explicitly.
@@ -645,10 +634,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return
 
 /obj/mecha/hear_talk(mob/M, list/message_pieces, verb)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(M == occupant && radio.broadcasting)
 		radio.talk_into(M, message_pieces)
 
 /obj/mecha/proc/check_occupant_radial(mob/user)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(!user)
 		return FALSE
 	if(user.stat)
@@ -661,6 +652,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return TRUE
 
 /obj/mecha/proc/show_radial_occupant(mob/user)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	var/list/choices = list(
 		"Toggle Airtank" = radial_image_airtoggle,
 		"Toggle Light" = radial_image_lighttoggle,
@@ -719,7 +711,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 */
 
 /obj/mecha/proc/click_action(atom/target,mob/user, params)
-	if(!src.occupant || src.occupant != user ) return
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT) || SLOT_ITEM(src, MECHA_SLOT_PILOT) != user ) return
 	if(user.stat) return
 	if(target == src && user == occupant)
 		show_radial_occupant(user)
@@ -757,10 +750,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(istype(target, /obj/machinery/access_button))
 		src.occupant_message(span_notice("Interfacing with [target]."))
 		src.mecha_log_message("Interfaced with [target].")
-		target.attack_hand(src.occupant)
+		target.attack_hand(SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return 1
 	if(istype(target, /obj/machinery/embedded_controller))
-		target.tgui_interact(src.occupant)
+		target.tgui_interact(SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return 1
 	return 0
 
@@ -800,7 +793,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		ME.MoveAction()
 
 /obj/mecha/relaymove(mob/user,direction)
-	if(user != src.occupant) //While not "realistic", this piece is player friendly.
+	if(user != SLOT_ITEM(src, MECHA_SLOT_PILOT)) //While not "realistic", this piece is player friendly.
 		if(istype(user,/mob/living/carbon/brain))
 			if(world.time - last_message > 20)
 				to_chat(user, span_warning("You try to move, but you are not the pilot! The exosuit doesn't respond."))
@@ -1080,6 +1073,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 /obj/mecha/proc/setInternalDamage(int_dam_flag)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	internal_damage |= int_dam_flag
 	start_process(MECHA_PROC_DAMAGE)
 	log_append_to_last("Internal damage of type [int_dam_flag].",1)
@@ -1170,6 +1164,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return
 
 /obj/mecha/attack_hand(mob/user as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(user == occupant)
 		show_radial_occupant(user)
 		return
@@ -1322,6 +1317,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 /obj/mecha/bullet_act(obj/item/projectile/Proj) //wrapper
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(istype(Proj, /obj/item/projectile/test))
 		var/obj/item/projectile/test/Test = Proj
 		LAZYOR(Test.hit, occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
@@ -1399,8 +1395,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/distance = get_dist(Proj.starting, get_turf(loc))
 			var/hit_occupant = 1 //only allow the occupant to be hit once
 			for(var/i in 1 to min(Proj.penetrating, round(Proj.damage/15)))
-				if(src.occupant && hit_occupant && prob(20))
-					Proj.attack_mob(src.occupant, distance)
+				if(SLOT_ITEM(src, MECHA_SLOT_PILOT) && hit_occupant && prob(20))
+					Proj.attack_mob(SLOT_ITEM(src, MECHA_SLOT_PILOT), distance)
 					hit_occupant = 0
 				else
 					if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
@@ -1589,11 +1585,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				to_chat(user, "There's not enough wire to finish the task.")
 		return
 	else if(istype(W, /obj/item/multitool))
-		if(state>=MECHA_CELL_OPEN && src.occupant)
+		if(state>=MECHA_CELL_OPEN && SLOT_ITEM(src, MECHA_SLOT_PILOT))
 			to_chat(user, "You attempt to eject the pilot using the maintenance controls.")
-			if(src.occupant.stat)
+			var/mob/living/_tmp_occ_5 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+			if(_tmp_occ_5.stat)
 				src.go_out()
-				src.mecha_log_message("[src.occupant] was ejected using the maintenance controls.")
+				src.mecha_log_message("[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was ejected using the maintenance controls.")
 			else
 				to_chat(user, span_warning("Your attempt is rejected."))
 				src.occupant_message(span_warning("An attempt to eject you was made using the maintenance controls."))
@@ -1695,6 +1692,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 ///////////////////////////////
 
 /obj/mecha/proc/mmi_move_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	var/mob/living/carbon/brain/mmi_occupant = mmi_as_oc.get_occupant()
 	if(!mmi_occupant?.client)
 		to_chat(user, "Consciousness matrix not detected.")
@@ -1747,7 +1745,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		set_dir(dir_in)
 		src.mecha_log_message("[mmi_as_oc] moved in as pilot.")
 		if(!hasInternalDamage())
-			src.occupant << sound('sound/mecha/nominal.ogg',volume=50)
+			SLOT_ITEM(src, MECHA_SLOT_PILOT) << sound('sound/mecha/nominal.ogg',volume=50)
 		update_icon()
 		return 1
 	else
@@ -1851,6 +1849,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 /obj/mecha/verb/connect_to_port()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	set name = "Connect to port"
 	set category = "Exosuit Interface"
 	set src = usr.loc
@@ -1882,6 +1881,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 /obj/mecha/verb/disconnect_from_port()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	set name = "Disconnect from port"
 	set category = "Exosuit Interface"
 	set src = usr.loc
@@ -1908,6 +1908,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	lights()
 
 /obj/mecha/verb/lights()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(usr!=occupant)	return
 	lights = !lights
 	if(lights)	set_light(light_range + lights_power)
@@ -1926,7 +1927,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	internal_tank()
 
 /obj/mecha/proc/internal_tank()
-	if(usr!=src.occupant)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	if(usr!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 
 	var/obj/item/mecha_parts/component/gas/GC = internal_components[MECH_GAS]
@@ -1953,7 +1955,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	strafing()
 
 /obj/mecha/proc/strafing()
-	if(usr!=src.occupant)
+	if(usr!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	strafing = !strafing
 	src.occupant_message("Toggled strafing mode [strafing?"on":"off"].")
@@ -1986,6 +1988,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return null
 
 /obj/mecha/proc/move_inside(mob/user)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if (user.stat || !ishuman(user) || user.is_incorporeal())
 		return
 
@@ -1999,7 +2002,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(user, span_danger("Kinda hard to climb in while handcuffed don't you think?"))
 			return
-	if (src.occupant)
+	if (SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		to_chat(user, span_danger("The [src.name] is already occupied!"))
 		src.log_append_to_last("Permission denied.")
 		return
@@ -2033,17 +2036,18 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	else
 		visible_message(span_infoplain(span_bold("\The [user]") + " starts to climb into [src.name]"))
 		if(enter_after(40, user))
-			if(!src.occupant)
+			if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
 				moved_inside(user)
 				if(ishuman(occupant)) //Aeiou
 					GrantActions(occupant, 1)
-			else if(src.occupant != user)
-				to_chat(usr, "[src.occupant] was faster. Try better next time, loser.")
+			else if(SLOT_ITEM(src, MECHA_SLOT_PILOT) != user)
+				to_chat(usr, "[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was faster. Try better next time, loser.")
 		else
 			to_chat(user, "You stop entering the exosuit.")
 	return
 
 /obj/mecha/proc/moved_inside(mob/living/carbon/human/H)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(H && H.client && (H in range(1)))
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
@@ -2107,6 +2111,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				who << sound('sound/mecha/nominal.ogg',volume=50)
 
 /obj/mecha/click_alt(mob/living/user)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(user == occupant)
 		strafing()
 
@@ -2115,11 +2120,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	set category = "Exosuit Interface"
 	set src = usr.loc
 	set popup_menu = 0
-	if(usr != src.occupant)
+	if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	// TGUI: replaces legacy browse(get_stats_html()).
 	tgui_subview = "main"
-	tgui_interact(src.occupant)
+	tgui_interact(SLOT_ITEM(src, MECHA_SLOT_PILOT))
 	return
 
 /*
@@ -2136,7 +2141,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	set category = "Exosuit Interface"
 	set src = usr.loc
 	set popup_menu = 0
-	if(usr!=src.occupant)
+	if(usr!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	src.go_out()
 	add_fingerprint(usr)
@@ -2144,11 +2149,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 /obj/mecha/proc/go_out() //Eject/Exit the mech. Yes this is for easier searching.
-	if(!src.occupant) return
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT)) return
 	var/atom/movable/mob_container
 	QDEL_NULL(minihud)
 	if(ishuman(occupant))
-		mob_container = src.occupant
+		mob_container = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 		RemoveActions(occupant, human_occupant=1)//AEIOU
 	else if(istype(occupant, /mob/living/carbon/brain))
 		var/mob/living/carbon/brain/brain = occupant
@@ -2182,8 +2188,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		//src.zoom = 0
 
 		// Doesn't seem needed.
-		if(src.occupant && src.occupant.client)
-			src.occupant.client.view = world.view
+		var/mob/living/_tmp_occ_6 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+		if(SLOT_ITEM(src, MECHA_SLOT_PILOT) && _tmp_occ_6.client)
+			var/mob/living/_tmp_occ_7 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+			_tmp_occ_7.client.view = world.view
 			src.zoom = 0
 
 		strafing = 0
@@ -2702,8 +2710,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/occupant_message(message as text)
 	if(message)
-		if(src.occupant && src.occupant.client)
-			to_chat(src.occupant, "[icon2html(src, src.occupant.client)] [message]")
+		var/mob/living/_tmp_occ_8 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+		if(SLOT_ITEM(src, MECHA_SLOT_PILOT) && _tmp_occ_8.client)
+			var/mob/living/_tmp_occ_9 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+			to_chat(SLOT_ITEM(src, MECHA_SLOT_PILOT), "[icon2html(src, _tmp_occ_9.client)] [message]")
 	return
 
 /obj/mecha/proc/mecha_log_message(message as text,red=null)
@@ -2726,10 +2736,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /////////////////
 
 /obj/mecha/Topic(href, href_list)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	..()
 	if(href_list["update_content"])
-		if(usr != src.occupant)	return
-		send_byjax(src.occupant,"exosuit.browser","content",src.get_stats_part())
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","content",src.get_stats_part())
 		return
 	if(href_list["close"])
 		return
@@ -2737,30 +2748,30 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return
 	var/datum/topic_input/top_filter = new /datum/topic_input(href,href_list)
 	if(href_list["select_equip"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		var/obj/item/mecha_parts/mecha_equipment/equip = top_filter.getObj("select_equip")
 		if(equip)
 			src.selected = equip
 			src.occupant_message("You switch to [equip].")
 			src.visible_message("[src] raises [equip].")
-			send_byjax(src.occupant,"exosuit.browser","eq_list",src.get_equipment_list())
+			send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","eq_list",src.get_equipment_list())
 		return
 	if(href_list["eject"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.eject()
 		return
 	if(href_list["toggle_lights"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.lights()
 		return
 /*
 	if(href_list["toggle_strafing"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.strafing()
 		return*/
 
 	if(href_list["toggle_airtank"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.internal_tank()
 		return
 	if (href_list["toggle_thrusters"])
@@ -2777,40 +2788,40 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		src.phasing(usr)
 
 	if(href_list["rmictoggle"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		radio.broadcasting = !radio.broadcasting
-		send_byjax(src.occupant,"exosuit.browser","rmicstate",(radio.broadcasting?"Engaged":"Disengaged"))
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","rmicstate",(radio.broadcasting?"Engaged":"Disengaged"))
 		return
 	if(href_list["rspktoggle"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		radio.listening = !radio.listening
-		send_byjax(src.occupant,"exosuit.browser","rspkstate",(radio.listening?"Engaged":"Disengaged"))
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","rspkstate",(radio.listening?"Engaged":"Disengaged"))
 		return
 	if(href_list["rfreq"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		var/new_frequency = (radio.frequency + top_filter.getNum("rfreq"))
 		if ((radio.frequency < PUBLIC_LOW_FREQ || radio.frequency > PUBLIC_HIGH_FREQ))
 			new_frequency = sanitize_frequency(new_frequency)
 		radio.set_frequency(new_frequency)
-		send_byjax(src.occupant,"exosuit.browser","rfreq","[format_frequency(radio.frequency)]")
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","rfreq","[format_frequency(radio.frequency)]")
 		return
 	if(href_list["port_disconnect"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.disconnect_from_port()
 		return
 	if (href_list["port_connect"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.connect_to_port()
 		return
 	if(href_list["view_log"])
-		if(usr != src.occupant)
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))
 			return
 		// fully-structured TGUI log sub-view.
 		tgui_subview = "log"
-		tgui_interact(src.occupant)
+		tgui_interact(SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
 	if (href_list["change_name"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		var/newname = sanitizeSafe(tgui_input_text(occupant,"Choose new exosuit name","Rename exosuit",initial(name), MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(newname)
 			name = newname
@@ -2818,17 +2829,17 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			tgui_alert_async(occupant, "nope.avi")
 		return
 	if (href_list["toggle_id_upload"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		add_req_access = !add_req_access
-		send_byjax(src.occupant,"exosuit.browser","t_id_upload","[add_req_access?"L":"Unl"]ock ID upload panel")
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","t_id_upload","[add_req_access?"L":"Unl"]ock ID upload panel")
 		return
 	if(href_list["toggle_maint_access"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		if(state)
 			occupant_message(span_warning("Maintenance protocols in effect"))
 			return
 		maint_access = !maint_access
-		send_byjax(src.occupant,"exosuit.browser","t_maint_access","[maint_access?"Forbid":"Permit"] maintenance protocols")
+		send_byjax(SLOT_ITEM(src, MECHA_SLOT_PILOT),"exosuit.browser","t_maint_access","[maint_access?"Forbid":"Permit"] maintenance protocols")
 		return
 	if(href_list["req_access"] && add_req_access)
 		if(!in_range(src, usr))	return
@@ -2860,8 +2871,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		var/mob/user = usr
 		var/list/passengers = list()
 		for (var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
-			if (P.occupant)
-				passengers["[P.occupant]"] = P
+			if (SLOT_ITEM(P, MECHA_SLOT_PILOT))
+				passengers["[SLOT_ITEM(P, MECHA_SLOT_PILOT)]"] = P
 
 		if (!passengers)
 			to_chat(user, span_warning("There are no passengers to remove."))
@@ -2873,15 +2884,15 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return
 
 		var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = passengers[pname]
-		var/mob/occupant = P.occupant
+		var/mob/passenger_occupant = SLOT_ITEM(P, MECHA_SLOT_PILOT)
 
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins opening the hatch on \the [P]..."), span_notice("You begin opening the hatch on \the [P]..."))
 		if (!do_after(user, 4 SECONDS, target = src))
 			return
 
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " opens the hatch on \the [P] and removes [occupant]!"), span_notice("You open the hatch on \the [P] and remove [occupant]!"))
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " opens the hatch on \the [P] and removes [passenger_occupant]!"), span_notice("You open the hatch on \the [P] and remove [passenger_occupant]!"))
 		P.go_out()
-		P.mecha_log_message("[occupant] was removed.")
+		P.mecha_log_message("[passenger_occupant] was removed.")
 		return
 	if(href_list["add_req_access"] && add_req_access && top_filter.getObj("id_card"))
 		if(!in_range(src, usr))	return
@@ -2900,19 +2911,20 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		SStgui.close_uis(src)
 		return
 	if(href_list["dna_lock"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		if(istype(occupant, /mob/living/carbon/brain))
 			occupant_message("You are a brain. No.")
 			return
-		if(src.occupant)
-			src.dna = src.occupant.dna.unique_enzymes
+		if(SLOT_ITEM(src, MECHA_SLOT_PILOT))
+			var/mob/living/_tmp_occ_10 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+			src.dna = _tmp_occ_10.dna.unique_enzymes
 			src.occupant_message("You feel a prick as the needle takes your DNA sample.")
 		return
 	if(href_list["reset_dna"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.dna = null
 	if(href_list["repair_int_control_lost"])
-		if(usr != src.occupant)	return
+		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.occupant_message("Recalibrating coordination system.")
 		src.mecha_log_message("Recalibration of coordination system started.")
 		var/T = src.loc
@@ -2954,7 +2966,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		var/mob/living/silicon/ai/AI = locate(href_list["ai_take_control"])
 		var/duration = text2num(href_list["duration"])
 		var/mob/living/silicon/ai/O = new /mob/living/silicon/ai(src)
-		var/cur_occupant = src.occupant
+		var/cur_occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 		O.invisibility = INVISIBILITY_NONE
 		O.canmove = 1
 		O.name = AI.name
@@ -2965,7 +2977,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		O.laws = AI.laws
 		O.set_stat(AI.stat)
 		mirror_injury_state(AI, O)
-		src.occupant = O
+		SLOT_ITEM(src, MECHA_SLOT_PILOT) = O
 		if(AI.mind)
 			AI.mind.transfer_to(O)
 		AI.name = "Inactive AI"
@@ -2984,7 +2996,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				AI.icon_state = "ai"
 			else
 				AI.icon_state = "ai-crash"
-			src.occupant = cur_occupant
+			SLOT_ITEM(src, MECHA_SLOT_PILOT) = cur_occupant
 */
 
 ///////////////////////
@@ -3092,17 +3104,20 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /////////////
 /obj/mecha/cloak()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	. = ..()
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
 		occupant.client.images += dq_get_cloaked_selfimage(src)
 
 /obj/mecha/uncloak()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
 		occupant.client.images -= dq_get_cloaked_selfimage(src)
 	return ..()
 
 
 /obj/mecha/proc/update_cell_alerts()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(occupant && cell)
 		var/cellcharge = cell.charge/cell.maxcharge
 		switch(cellcharge)
@@ -3118,6 +3133,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				occupant.throw_alert("charge", /atom/movable/screen/alert/emptycell)
 
 /obj/mecha/proc/update_damage_alerts()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	if(occupant)
 		var/integrity = get_integrity()/max_integrity*100
 		switch(integrity)

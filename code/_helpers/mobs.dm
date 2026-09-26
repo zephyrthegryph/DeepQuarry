@@ -3,7 +3,7 @@
 	if(mobs) return mobs.Copy()
 
 /obj/mecha/get_mob()
-	return occupant
+	return SLOT_ITEM(src, MECHA_SLOT_PILOT)
 
 /obj/vehicle_old/train/get_mob()
 	return BUCKLED_MOBS(src)

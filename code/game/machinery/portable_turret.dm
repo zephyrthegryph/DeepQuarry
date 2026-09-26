@@ -831,10 +831,10 @@
 	if(!istype(M))
 		return TURRET_NOT_TARGET
 
-	if(!M.occupant)
+	if(!SLOT_ITEM(M, MECHA_SLOT_PILOT))
 		return check_all ? TURRET_SECONDARY_TARGET : TURRET_NOT_TARGET
 
-	return assess_living(M.occupant)
+	return assess_living(SLOT_ITEM(M, MECHA_SLOT_PILOT))
 
 /obj/machinery/porta_turret/proc/assess_perp(mob/living/carbon/human/H)
 	if(!H || !istype(H))

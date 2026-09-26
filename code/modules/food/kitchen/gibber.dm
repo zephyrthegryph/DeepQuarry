@@ -13,7 +13,6 @@
 
 	var/operating = 0 //Is it on?
 	var/dirty = 0 // Does it need cleaning?
-	var/mob/living/occupant // Mob who has been put inside
 	var/gib_time = 40        // Time from starting until meat appears
 	var/gib_throw_dir = WEST // Direction to spit meat and gibs in.
 
@@ -51,20 +50,9 @@
 	name = "gibber"
 	// C8 step 2: replaces the separate occupant_of relation this machine used
 	// to hand-link.
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
-	// var every reader here uses, but this slot's own on_link()/on_unlink()
-	// are its only writer now -- there is no generic field-link mechanism
-	// left to do it for them.
+	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
+	// (om.dm) is a pure graph read, so there is no field left to write.
 
-/datum/om/relation/slot/occupant/gibber/on_link(mob/living/source, obj/machinery/gibber/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/gibber/on_unlink(mob/living/source, obj/machinery/gibber/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /obj/machinery/gibber/autogibber/Destroy()
 	input_plate = null
@@ -87,6 +75,7 @@
 	add_overlay("grjam")
 
 /obj/machinery/gibber/update_icon()
+	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
 	cut_overlays()
 	if (dirty)
 		add_overlay("grbloody")
@@ -142,8 +131,9 @@
 	move_into_gibber(user,target)
 
 /obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
+	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
 
-	if(src.occupant)
+	if(occupant)
 		to_chat(user, span_danger("The gibber is full, empty it first!"))
 		return
 
@@ -184,19 +174,21 @@
 	return
 
 /obj/machinery/gibber/proc/go_out()
-	if(operating || !src.occupant)
+	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
+	if(operating || !occupant)
 		return
 	for(var/obj/O in src)
 		O.loc = src.loc
-	slot_remove(src.occupant, get_turf(src))
+	slot_remove(occupant, get_turf(src))
 	update_icon()
 	return
 
 
 /obj/machinery/gibber/proc/startgibbing(mob/user as mob)
+	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
 	if(src.operating)
 		return
-	if(!src.occupant)
+	if(!occupant)
 		visible_message(span_danger("You hear a loud metallic grinding sound."))
 		return
 
@@ -208,17 +200,17 @@
 	var/slab_name = occupant.name
 	var/slab_count = 2 + occupant.meat_amount
 	var/slab_type = occupant.meat_type ? occupant.meat_type : /obj/item/reagent_containers/food/snacks/meat
-	var/slab_nutrition = src.occupant.nutrition / 15
+	var/slab_nutrition = occupant.nutrition / 15
 
 	var/list/byproducts = occupant?.butchery_loot?.Copy()
 
-	if(ishuman(src.occupant))
+	if(ishuman(occupant))
 		var/mob/living/carbon/human/H = occupant
-		slab_name = src.occupant.real_name
+		slab_name = occupant.real_name
 		slab_type = H.isSynthetic() ? /obj/item/stack/material/steel : H.species.meat_type
 
 	// Small mobs don't give as much nutrition.
-	if(issmall(src.occupant))
+	if(issmall(occupant))
 		slab_nutrition *= 0.5
 	slab_nutrition /= slab_count
 
@@ -227,20 +219,20 @@
 		if(istype(new_meat))
 			new_meat.name = "[slab_name] [new_meat.name]"
 			new_meat.reagents.add_reagent(REAGENT_ID_NUTRIMENT,slab_nutrition)
-			if(src.occupant.reagents)
-				src.occupant.reagents.trans_to_obj(new_meat, round(occupant.reagents.total_volume/(2 + occupant.meat_amount),1))
+			if(occupant.reagents)
+				occupant.reagents.trans_to_obj(new_meat, round(occupant.reagents.total_volume/(2 + occupant.meat_amount),1))
 
 	add_attack_logs(user,occupant,"Used [src] to gib")
 
-	src.occupant.ghostize()
+	occupant.ghostize()
 
 	spawn(gib_time)
 		var/mob/living/gibbed = occupant
 		gibbed.gib()
+		occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
 		if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
-			// remains stay physically in the slot, but are no longer "the occupant" (the
-			// slot IS the occupant_of relation now, C8 step 2, so this clears the view
-			// field without a ledger move).
+			// remains stay physically in the slot, but are no longer "the occupant" --
+			// unlink without a ledger move (the remains stay physically where they are).
 			om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		operating = 0

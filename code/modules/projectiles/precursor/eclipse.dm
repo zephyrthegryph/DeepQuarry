@@ -89,7 +89,7 @@
 /obj/item/projectile/energy/mechahack/proc/remote_eject(obj/mecha/M)
 	if(!M)
 		return
-	visible_message(span_critical("\The [M] is remotly hacked and ejects [M.occupant]!"))
+	visible_message(span_critical("\The [M] is remotly hacked and ejects [SLOT_ITEM(M, MECHA_SLOT_PILOT)]!"))
 	M.go_out()
 
 /obj/item/projectile/energy/lightingspark

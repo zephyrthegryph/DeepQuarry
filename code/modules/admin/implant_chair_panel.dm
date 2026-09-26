@@ -28,6 +28,7 @@
 
 /obj/machinery/implantchair/tgui_data(mob/user)
 	var/list/data = list()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR)
 	data["has_occupant"] = !!occupant
 	if(occupant)
 		data["occupant_name"] = "[occupant]"

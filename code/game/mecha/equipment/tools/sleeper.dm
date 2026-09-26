@@ -7,7 +7,6 @@
 	range = MECH_MELEE
 	equip_cooldown = 30
 	mech_flags = EXOSUIT_MODULE_MEDICAL
-	var/mob/living/carbon/human/occupant = null
 	var/inject_amount = 5
 	required_type = list(/obj/mecha/medical)
 	salvageable = 0
@@ -19,20 +18,12 @@
 	slot_id = OCCUPANT_SLOT_MECHA_SLEEPER
 	name = "mounted sleeper"
 
-/datum/om/relation/slot/occupant/mecha_sleeper/on_link(mob/living/source, obj/item/mecha_parts/mecha_equipment/tool/sleeper/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/mecha_sleeper/on_unlink(mob/living/source, obj/item/mecha_parts/mecha_equipment/tool/sleeper/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/Exit(atom/movable/O)
 	return 0
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/action(mob/living/carbon/human/target)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(!action_checks(target))
 		return
 	if(!istype(target))
@@ -67,6 +58,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/go_out()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(!occupant)
 		return
 	occupant_message(span_infoplain("[occupant] ejected. Life support functions disabled."))
@@ -78,6 +70,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/detach()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(occupant)
 		occupant_message(span_infoplain("Unable to detach [src] - equipment occupied."))
 		return
@@ -85,6 +78,7 @@
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/get_equip_info()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/output = ..()
 	if(output)
 		var/temp = ""
@@ -102,8 +96,8 @@
 		go_out()
 		return
 	if(top_filter.get("view_stats"))
-		if(chassis?.occupant)
-			tgui_interact(chassis.occupant)
+		if(SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+			tgui_interact(SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 		return
 	if(top_filter.get("inject"))
 		inject_reagent(top_filter.getType("inject", /datum/reagent), top_filter.getObj("source"))
@@ -116,6 +110,7 @@
 		ui.open()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_data(mob/user)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/list/data = list()
 	data["has_occupant"] = occupant ? 1 : 0
 	if(!occupant)
@@ -179,6 +174,7 @@
 			return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_stats()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(!occupant)
 		return
 	return {"<html>
@@ -208,6 +204,7 @@
 				</html>"}
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_dam()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/t1
 	switch(occupant.stat)
 		if(0)
@@ -224,7 +221,8 @@
 	text += vitality_pct > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Core Temperature:") + " [src.occupant.bodytemperature-T0C]&deg;C ([src.occupant.bodytemperature*1.8-459.67]&deg;F)"
+	var/mob/living/_tmp_occ_4 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	entry = span_bold("Core Temperature:") + " [_tmp_occ_4.bodytemperature-T0C]&deg;C ([_tmp_occ_4.bodytemperature*1.8-459.67]&deg;F)"
 	text += occupant.bodytemperature > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
@@ -237,6 +235,7 @@
 	return text
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_reagents()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(occupant.reagents)
 		for(var/datum/reagent/R in occupant.reagents.reagent_list)
 			if(R.volume > 0)
@@ -254,6 +253,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/inject_reagent(datum/reagent/R,obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(!R || !occupant || !SG || !(SG in chassis.equipment))
 		return 0
 	var/to_inject = min(R.volume, inject_amount)
@@ -270,22 +270,24 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/update_equip_info()
 	if(..())
-		send_byjax(chassis.occupant,"msleeper.browser","lossinfo",get_occupant_dam())
-		send_byjax(chassis.occupant,"msleeper.browser","reagents",get_occupant_reagents())
-		send_byjax(chassis.occupant,"msleeper.browser","injectwith",get_available_reagents())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"msleeper.browser","lossinfo",get_occupant_dam())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"msleeper.browser","reagents",get_occupant_reagents())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"msleeper.browser","injectwith",get_available_reagents())
 		return 1
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/container_resist(mob/living)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	if(occupant == living)
 		eject()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/verb/eject()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	set name = "Sleeper Eject"
 	set category = "Exosuit Interface"
 	set src = usr.loc
 	set popup_menu = 0
-	if(usr!=src.occupant || usr.stat == 2)
+	if(usr!=SLOT_ITEM(src, MECHA_SLOT_PILOT) || usr.stat == 2)
 		return
 	to_chat(usr,span_notice("Release sequence activated. This will take one minute."))
 	sleep(600)
@@ -294,6 +296,7 @@
 	go_out()//and release him from the eternal prison.
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/process()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	..()
 	if(!chassis)
 		set_ready_state(TRUE)

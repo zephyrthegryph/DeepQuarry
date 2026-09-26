@@ -128,8 +128,8 @@
 		return
 	// TGUI: structured reagent management UI (MechaSyringeGun.tsx).
 	if(top_filter.get("show_reagents"))
-		if(chassis?.occupant)
-			tgui_interact(chassis.occupant)
+		if(SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+			tgui_interact(SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 	if(top_filter.get("purge_reagent"))
 		var/reagent = top_filter.get("purge_reagent")
 		if(reagent)
@@ -295,7 +295,7 @@
 			occupant_message("Reagent \"[R.name]\" already present in database, skipping.")
 		else if(R.reagent_state == 2 && add_known_reagent(R.id,R.name))
 			occupant_message("Reagent analyzed, identified as [R.name] and added to database.")
-			send_byjax(chassis.occupant,"msyringegun.browser","reagents_form",get_reagents_form())
+			send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"msyringegun.browser","reagents_form",get_reagents_form())
 		else
 			occupant_message("Reagent \"[R.name]\" unable to be scanned, skipping.")
 	//VOREstation Block Edit - End
@@ -314,8 +314,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/update_equip_info()
 	if(..())
-		send_byjax(chassis.occupant,"msyringegun.browser","reagents",get_current_reagents())
-		send_byjax(chassis.occupant,"msyringegun.browser","reagents_form",get_reagents_form())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"msyringegun.browser","reagents",get_current_reagents())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"msyringegun.browser","reagents_form",get_reagents_form())
 		return 1
 	return
 
@@ -389,12 +389,12 @@
 	. = ..()
 	STOP_PROCESSING(SSobj, src)
 	shut_down()
-	if(chassis && chassis.occupant)
-		to_chat(chassis.occupant, span_notice("\The [chassis] shudders as something jams!"))
+	if(chassis && SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+		to_chat(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), span_notice("\The [chassis] shudders as something jams!"))
 		src.mecha_log_message("[src.name] has malfunctioned. Maintenance required.")
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/process()	// Will continually try to find the nearest person above the threshold that is a valid target, and try to heal them.
-	if(chassis && enabled && chassis.has_charge(energy_drain) && (chassis.occupant || enable_special))
+	if(chassis && enabled && chassis.has_charge(energy_drain) && (SLOT_ITEM(chassis, MECHA_SLOT_PILOT) || enable_special))
 		var/mob/living/Targ = Target
 		var/TargDamage = 0
 

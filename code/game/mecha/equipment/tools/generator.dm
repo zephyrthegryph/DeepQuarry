@@ -80,7 +80,7 @@
 			message = "Unit is full."
 		else
 			message = "[result] unit\s of [fuel] successfully loaded."
-			send_byjax(chassis.occupant,"exosuit.browser","\ref[src]",src.get_equip_info())
+			send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 		occupant_message(message)
 	return
 

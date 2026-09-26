@@ -221,7 +221,6 @@
 	var/allow_occupant_types = list(/mob/living/carbon/human)
 	var/disallow_occupant_types = list()
 
-	var/mob/occupant = null       // Person waiting to be despawned.
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
 	var/time_entered = 0          // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
@@ -297,6 +296,7 @@
 // spills it through the ledger's drop policy, so this just keeps the
 // pre-eject "let them fall asleep, not collapse" behaviour.
 /obj/machinery/cryopod/Destroy()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		occupant.resting = 1
 	return ..()
@@ -310,20 +310,9 @@
 	// C8 step 2: the ledger's own om_link (om_slot_entered/left) now writes
 	// `occupant` directly -- replaces the separate occupant_of relation this
 	// machine used to hand-link in set_occupant().
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
-	// var every reader here uses, but this slot's own on_link()/on_unlink()
-	// are its only writer now -- there is no generic field-link mechanism
-	// left to do it for them.
+	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
+	// (om.dm) is a pure graph read, so there is no field left to write.
 
-/datum/om/relation/slot/occupant/cryopod/on_link(mob/living/source, obj/machinery/cryopod/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/cryopod/on_unlink(mob/living/source, obj/machinery/cryopod/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
 
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
@@ -365,6 +354,7 @@
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
 /obj/machinery/cryopod/process()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(!occupant)
 		return PROCESS_KILL
 	if(occupant)
@@ -407,7 +397,7 @@
 // This function can not be undone; do not call this unless you are sure
 // Also make sure there is a valid control computer
 /obj/machinery/cryopod/proc/despawn_occupant(mob/to_despawn)
-	//Recursively despawn mobs
+
 	for(var/mob/M in to_despawn)
 		despawn_occupant(M)
 
@@ -607,6 +597,7 @@
 	effect = /obj/machinery/cryopod/proc/interaction_insert_grab
 
 /obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_notice("\The [src] is in use."))
 		return TRUE
@@ -624,6 +615,7 @@
 	effect = /obj/machinery/cryopod/proc/interaction_eject
 
 /obj/machinery/cryopod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	icon_state = base_icon_state
 
 	//Eject any items that aren't meant to be in the pod.
@@ -652,6 +644,7 @@
 	effect = /obj/machinery/cryopod/proc/interaction_enter
 
 /obj/machinery/cryopod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(!check_occupant_allowed(user))
 		return TRUE
 
@@ -724,6 +717,7 @@
 		G.icon_state = "off"
 
 /obj/machinery/cryopod/proc/go_out(skip_move = FALSE)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 
 	if(!occupant)
 		return
@@ -740,6 +734,7 @@
 	return
 
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(new_occupant)
 		START_MACHINE_PROCESSING(src)
 	name = initial(name)
@@ -747,6 +742,7 @@
 		name = "[name] ([occupant])"
 
 /obj/machinery/cryopod/proc/go_in(mob/M, mob/user)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(!check_occupant_allowed(M))
 		return
 	if(!M)

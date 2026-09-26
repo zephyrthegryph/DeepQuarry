@@ -3992,7 +3992,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/recharge_station/R = new(test_turf)
 	TEST_ASSERT_NOTNULL(R.cell, "recharge station did not construct its internal cell")
 	R.cell.charge = R.cell.maxcharge
-	R.occupant = null
+	TEST_ASSERT_NULL(SLOT_ITEM(R, OCCUPANT_SLOT_RECHARGE_STATION), "setup: a freshly-constructed recharge station should have no occupant")
 	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "idle full recharge station did not stop timed processing")
 	qdel(R)
 

@@ -25,7 +25,7 @@
 		message = "Reel is full."
 	else
 		message = "[result] meters of cable successfully loaded."
-		send_byjax(chassis.occupant,"exosuit.browser","\ref[src]",src.get_equip_info())
+		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	occupant_message(message)
 	return
 
@@ -38,7 +38,7 @@
 		return
 	if(href_list["cut"])
 		if(cable && cable.get_amount())
-			var/m = tgui_input_number(chassis.occupant, "Please specify the length of cable to cut", "Cut cable", min(cable.get_amount(), 30))
+			var/m = tgui_input_number(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), "Please specify the length of cable to cut", "Cut cable", min(cable.get_amount(), 30))
 			m = min(m, cable.get_amount())
 			if(m)
 				use_cable(m)

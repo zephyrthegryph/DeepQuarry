@@ -32,7 +32,7 @@
 					var/obj/machinery/door/firedoor/FD = O
 					if(FD.blocked)
 						FD.visible_message(span_danger("\The [chassis] begins prying on \the [FD]!"))
-						if(do_after(chassis.occupant, 10 SECONDS, target = FD))
+						if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 10 SECONDS, target = FD))
 							playsound(FD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
 							FD.blocked = 0
 							FD.update_icon()
@@ -40,7 +40,7 @@
 							FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))
 					else if(FD.density)
 						FD.visible_message(span_warning("\The [chassis] begins forcing \the [FD] open!"))
-						if(do_after(chassis.occupant, 5 SECONDS, target = FD))
+						if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 5 SECONDS, target = FD))
 							playsound(FD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
 							FD.visible_message(span_danger("\The [chassis] forces \the [FD] open!"))
 							FD.open(1)
@@ -54,7 +54,7 @@
 					else if(!AD.operating)
 						if(AD.welded)
 							AD.visible_message(span_warning("\The [chassis] begins prying on \the [AD]!"))
-							if(do_after(chassis.occupant, 15 SECONDS, target = AD) && chassis.Adjacent(AD))
+							if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 15 SECONDS, target = AD) && chassis.Adjacent(AD))
 								AD.welded = FALSE
 								AD.update_icon()
 								playsound(AD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
@@ -96,13 +96,13 @@
 	else if(isliving(target))
 		var/mob/living/M = target
 		if(M.stat>1) return
-		if(IS_HARMING(chassis.occupant) || istype(chassis.occupant,/mob/living/carbon/brain)) //No tactile feedback for brains
+		if(IS_HARMING(SLOT_ITEM(chassis, MECHA_SLOT_PILOT)) || istype(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),/mob/living/carbon/brain)) //No tactile feedback for brains
 			M.injure(INJURY_BLUNT, dam_force, null, chassis)
 			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.2, 6 SECONDS) // the chest can't expand in the grip
 			occupant_message(span_warning("You squeeze [target] with [src.name]. Something cracks."))
 			playsound(src, "fracture", 5, 1, -2) //CRACK
 			chassis.visible_message(span_warning("[chassis] squeezes [target]."))
-		else if(IS_DISARMING(chassis.occupant) && enable_special)
+		else if(IS_DISARMING(SLOT_ITEM(chassis, MECHA_SLOT_PILOT)) && enable_special)
 			playsound(src, 'sound/mecha/hydraulic.ogg', 10, 1, -2)
 			M.injure(INJURY_BLUNT, dam_force/2, null, chassis)
 			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.4, 4 SECONDS) // winded by the slam
@@ -159,10 +159,10 @@
 	else if(isliving(target))
 		var/mob/living/M = target
 		if(M.stat>1) return
-		if(IS_HARMING(chassis.occupant))
+		if(IS_HARMING(SLOT_ITEM(chassis, MECHA_SLOT_PILOT)))
 			chassis.occupant_message(span_danger("You obliterate [target] with [src.name], leaving blood and guts everywhere."))
 			chassis.visible_message(span_danger("[chassis] destroys [target] in an unholy fury."))
-		else if(IS_DISARMING(chassis.occupant))
+		else if(IS_DISARMING(SLOT_ITEM(chassis, MECHA_SLOT_PILOT)))
 			chassis.occupant_message(span_danger("You tear [target]'s limbs off with [src.name]."))
 			chassis.visible_message(span_danger("[chassis] rips [target]'s arms off."))
 		else

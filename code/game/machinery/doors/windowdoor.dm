@@ -69,7 +69,7 @@
 		else if(istype(AM, /obj/mecha))
 			var/obj/mecha/mecha = AM
 			if(density)
-				if(mecha.occupant && src.allowed(mecha.occupant))
+				if(SLOT_ITEM(mecha, MECHA_SLOT_PILOT) && src.allowed(SLOT_ITEM(mecha, MECHA_SLOT_PILOT)))
 					open()
 					addtimer(CALLBACK(src, PROC_REF(close)), 50)
 		return
