@@ -149,8 +149,7 @@
 	if(pulledby)
 		pulledby.stop_pulling()
 
-	if(dq_get_orbiting(src))
-		stop_orbit()
+	stop_orbit()
 	throw_source = null
 	QDEL_NULL(riding_datum)
 	set_listening(NON_LISTENING_ATOM)

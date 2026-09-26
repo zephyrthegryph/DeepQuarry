@@ -439,3 +439,42 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the target should be deleted")
 	TEST_ASSERT_NULL(G.following, "G.following should be cleared once the target is deleted")
+
+// ---------------------------------------------------------------- orbiting
+
+/// orbit() links the orbiting relation (ORBIT_TARGET/ORBITERS), puts the
+/// orbiter on the center's turf, keeps it there when the center moves, and
+/// stop_orbit() ends it.
+/datum/unit_test/dq_om_relation_orbiting_follows_center
+
+/datum/unit_test/dq_om_relation_orbiting_follows_center/Run()
+	var/mob/living/carbon/human/center = allocate(/mob/living/carbon/human)
+	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test)
+	orbiter.orbit(center, 16)
+	TEST_ASSERT_EQUAL(ORBIT_TARGET(orbiter), center, "ORBIT_TARGET should be the center")
+	TEST_ASSERT(orbiter in ORBITERS(center), "the orbiter should be listed in ORBITERS(center)")
+	TEST_ASSERT_EQUAL(orbiter.loc, get_turf(center), "the orbiter should sit on the center's turf")
+	var/turf/away = locate(center.x + 2, center.y, center.z)
+	TEST_ASSERT_NOTNULL(away, "setup: needs a turf 2 tiles east")
+	center.forceMove(away)
+	TEST_ASSERT_EQUAL(orbiter.loc, away, "the orbiter should follow the center")
+	TEST_ASSERT_EQUAL(ORBIT_TARGET(orbiter), center, "following the center should not end the orbit")
+	orbiter.stop_orbit()
+	TEST_ASSERT_NULL(ORBIT_TARGET(orbiter), "stop_orbit() should end the orbit")
+	TEST_ASSERT(!LAZYLEN(ORBITERS(center)), "the center should have no orbiters left")
+
+/// An orbiter that leaves the center's turf on its own stops orbiting, and
+/// deleting the center ends every orbit around it.
+/datum/unit_test/dq_om_relation_orbiting_breaks
+
+/datum/unit_test/dq_om_relation_orbiting_breaks/Run()
+	var/mob/living/carbon/human/center = allocate(/mob/living/carbon/human)
+	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test)
+	orbiter.orbit(center, 16)
+	var/turf/away = locate(center.x + 2, center.y, center.z)
+	orbiter.forceMove(away)
+	TEST_ASSERT_NULL(ORBIT_TARGET(orbiter), "leaving the center's turf should end the orbit")
+	orbiter.orbit(center, 16)
+	TEST_ASSERT_EQUAL(ORBIT_TARGET(orbiter), center, "setup: re-orbit should succeed")
+	qdel(center)
+	TEST_ASSERT_NULL(ORBIT_TARGET(orbiter), "deleting the center should end the orbit")

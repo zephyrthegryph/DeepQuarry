@@ -218,6 +218,8 @@
 	var/list/cache
 	/// Contributions currently applied (active_if passed).
 	var/active = FALSE
+	/// Relation-specific payload the linker attaches (e.g. an orbit's saved transform).
+	var/list/data
 
 // ===================================================================== checks
 

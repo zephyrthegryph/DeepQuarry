@@ -515,7 +515,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	set_dir(2) //reset dir so the right directional sprites show up
 	return ..()
 
-/mob/observer/dead/stop_orbit()
+/mob/observer/dead/orbit_ended(atom/center)
 	. = ..()
 	//restart our floating animation after orbit is done.
 	pixel_y = default_pixel_y

@@ -2,7 +2,6 @@
 //
 // Migrated:
 //   belly_cycles      — vore autotransfer counter
-//   orbiting, orbit_target — ghost orbiter state
 //   recursive_listeners — signal recursion list (sparse, only set for atoms with recursive listeners)
 //   moved_recently     — movement timestamp (only set for atoms tracked by an electropack)
 //   affected_dynamic_lights — light cone list (only set when a light affects this atom)
@@ -62,8 +61,6 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 /datum/component/movable_state
 	dupe_mode = COMPONENT_DUPE_UNIQUE
 	var/belly_cycles = 0
-	var/datum/component/orbiter/orbiting
-	var/atom/orbit_target
 	var/list/recursive_listeners
 	var/moved_recently = 0
 	var/list/affected_dynamic_lights
@@ -80,8 +77,6 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	var/hovering_value = FALSE
 
 /datum/component/movable_state/Destroy(force)
-	orbiting = null
-	orbit_target = null
 	recursive_listeners = null
 	affected_dynamic_lights = null
 	cloaked_selfimage = null
@@ -100,28 +95,6 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 			return
 		c = am.AddComponent(/datum/component/movable_state)
 	c.belly_cycles = v
-
-/proc/dq_get_orbit_target(atom/movable/am)
-	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	return c?.orbit_target
-/proc/dq_set_orbit_target(atom/movable/am, v)
-	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c)
-		if(isnull(v))
-			return
-		c = am.AddComponent(/datum/component/movable_state)
-	c.orbit_target = v
-
-/proc/dq_get_orbiting(atom/movable/am)
-	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	return c?.orbiting
-/proc/dq_set_orbiting(atom/movable/am, v)
-	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c)
-		if(isnull(v))
-			return
-		c = am.AddComponent(/datum/component/movable_state)
-	c.orbiting = v
 
 // recursive_listeners is read+written using LAZY* macros. Helpers below match
 // LAZYOR / LAZYREMOVE semantics, auto-creating the component as needed.
