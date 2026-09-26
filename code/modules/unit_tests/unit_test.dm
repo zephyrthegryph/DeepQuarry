@@ -161,13 +161,15 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /// default air/temperature on every open turf, drops any walls a test put up)
 /// and returns it to the pool. Waits for the world's own async teardown paths
 /// so a block is never recycled mid-cleanup. This runs synchronously from
-/// /datum/unit_test/Destroy() (which explicitly opts back out of
-/// SHOULD_NOT_SLEEP for exactly this reason -- test harness teardown is not
-/// subject to the live-game "a Destroy() must never block a tick" rule, and
-/// RunUnitTests() runs each test's New()/Run()/Destroy() strictly
-/// sequentially, so nothing else is waiting on this world to keep ticking
-/// while it waits): making this async caused later tests to race ahead of a
-/// block that hadn't actually finished releasing yet.
+/// RunUnitTest() (the runner), right after qdel(test) -- not from
+/// /datum/unit_test/Destroy() itself, so Destroy() (and every subtype's
+/// override) can keep the base /datum/proc/Destroy()'s SHOULD_NOT_SLEEP(TRUE)
+/// instead of opting back out of it. Test harness teardown is not subject to
+/// the live-game "a Destroy() must never block a tick" rule, and RunUnitTests()
+/// runs each test's New()/Run()/Destroy()/release strictly sequentially, so
+/// nothing else is waiting on this world to keep ticking while it waits:
+/// making this async caused later tests to race ahead of a block that hadn't
+/// actually finished releasing yet.
 /proc/release_unit_test_block(datum/unit_test_block/block, datum/unit_test/test)
 	if(!block)
 		return
@@ -432,14 +434,12 @@ GLOBAL_VAR(dq_test_select_names)
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
 /datum/unit_test/Destroy()
-	// Test harness teardown, not live-game Destroy(): release_unit_test_block()
-	// legitimately blocks (below), and every subtype's Destroy() override
-	// inherits this override rather than the base /datum/proc/Destroy()'s
-	// SHOULD_NOT_SLEEP(TRUE).
-	SHOULD_NOT_SLEEP(FALSE)
+	// release_unit_test_block() legitimately blocks, so it no longer runs
+	// from here -- RunUnitTest() (the runner) releases the block itself,
+	// after qdel(test) returns, so this Destroy() (and every subtype's
+	// override, which inherits it) can keep the base /datum/proc/Destroy()'s
+	// SHOULD_NOT_SLEEP(TRUE) instead of opting back out of it.
 	QDEL_LIST(allocated)
-	release_unit_test_block(test_block, src)
-	test_block = null
 	return ..()
 
 /datum/unit_test/proc/Run()
@@ -676,7 +676,9 @@ GLOBAL_VAR(dq_test_select_names)
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
 	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
 
+	var/datum/unit_test_block/block = test.test_block
 	qdel(test)
+	release_unit_test_block(block, test)
 
 /// Builds (and returns) a list of atoms that we shouldn't initialize in generic testing, like Create and Destroy.
 /// It is appreciated to add the reason why the atom shouldn't be initialized if you add it to this list.
