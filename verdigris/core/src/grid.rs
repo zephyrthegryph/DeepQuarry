@@ -513,9 +513,21 @@ impl Grid {
         self.dims
     }
 
+    /// The neighbour across `face`, following [`Grid::set_z_link`] for
+    /// `Up`/`Down` (`None` off the grid, or across an unlinked level once
+    /// any link is set -- the same rule [`Grid::step`] follows). Every
+    /// field's own edge traversal goes through this (not
+    /// [`GridDims::neighbor`] directly), so a field with cells on more than
+    /// one z-level respects the map's z-links automatically.
     #[must_use]
     pub fn neighbor(&self, index: u32, face: Face) -> Option<u32> {
-        self.dims.neighbor(index, face)
+        if !matches!(face, Face::Up | Face::Down) || self.z_links.is_empty() {
+            return self.dims.neighbor(index, face);
+        }
+        let (x, y, z) = self.dims.coords(index)?;
+        let link = self.z_links.get(z as usize).copied().unwrap_or((None, None));
+        let target = if face == Face::Up { link.0 } else { link.1 }?;
+        self.dims.index(x, y, target)
     }
 
     #[must_use]

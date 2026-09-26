@@ -730,3 +730,74 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
         "refresh caches T"
     );
 }
+
+// ------------------------------------------------------- z-links
+
+#[test]
+fn z_links_gate_vertical_flux_and_a_non_adjacent_link_still_conducts() {
+    use vg_core::grid::Grid;
+
+    let dims = GridDims::new(2, 1, 4).unwrap();
+    let mut b = SimBuilder::new(SimConfig {
+        threads: 2,
+        seed: 3,
+        ..SimConfig::default()
+    });
+    // z=0 and z=1 are numerically adjacent but NOT linked; z=0 IS linked to
+    // z=3 (far away in flat index space, the shape a real expedition site's
+    // z takes relative to the station).
+    let mut grid = Grid::new(dims);
+    grid.set_z_link(0, Some(3), None);
+    grid.set_z_link(3, None, Some(0));
+    let grid_res = b.add_resource("grid", grid);
+    let key = add_field::<HeatToy>(
+        &mut b,
+        dims,
+        FieldConfig {
+            dt: 1.0,
+            max_substeps: 16,
+        },
+        Some(grid_res),
+    );
+    let mut sim = b.build().unwrap();
+    sim.begin_tick();
+
+    for z in 0..4u32 {
+        let cell = dims.index(0, 0, z).unwrap();
+        sim.port(key.geometry).put(cell, Geom::cell(2.0)).unwrap();
+        let t = if z == 0 { 400.0 } else { 280.0 };
+        sim.port(key.cells).put(cell, HeatCell::at(2.0, t)).unwrap();
+    }
+    sim.settle();
+
+    let hot = dims.index(0, 0, 0).unwrap();
+    let unlinked_adjacent = dims.index(0, 0, 1).unwrap();
+    let linked_far = dims.index(0, 0, 3).unwrap();
+    for _ in 0..40 {
+        sim.begin_tick();
+        let _ = sim.drain(key.cells);
+        if !sim.dispatch_frame() {
+            continue;
+        }
+        sim.wait_for_frame();
+    }
+    sim.begin_tick();
+    let _ = sim.drain(key.cells);
+
+    let v = Arc::clone(sim.port(key.cells).pinned());
+    assert!(
+        (v.get(unlinked_adjacent).unwrap().temperature - 280.0).abs() < 0.5,
+        "z=0 and the numerically-adjacent but unlinked z=1 never exchange: {:?}",
+        v.get(unlinked_adjacent)
+    );
+    assert!(
+        v.get(linked_far).unwrap().temperature > 285.0,
+        "z=0 and its linked z=3 (far in index space) do exchange: {:?}",
+        v.get(linked_far)
+    );
+    assert!(
+        v.get(hot).unwrap().temperature < 400.0,
+        "the source cooled by giving energy to its linked neighbour: {:?}",
+        v.get(hot)
+    );
+}

@@ -392,8 +392,14 @@ impl<K: FieldKind> FieldState<K> {
         out
     }
 
-    /// Face-neighbour chunks of `chunk`, in [`Face::ALL`] order.
-    fn chunk_neighbors(&self, chunk: usize) -> [Option<usize>; 6] {
+    /// Face-neighbour chunks of `chunk`, in [`Face::ALL`] order. `Up`/`Down`
+    /// follow `grid`'s z-links when it has any (the same origin-cell
+    /// traversal [`Geo::neighbor`] uses for individual cells): a z-linked
+    /// pair is rarely chunk-adjacent in flat index space (an expedition
+    /// site's z can be far from the station's), so without this a linked
+    /// pair's flux (already correct once [`Geo::neighbor`] is fixed) would
+    /// never wake or even visit the other side's chunk.
+    fn chunk_neighbors(&self, chunk: usize, grid: Option<&Grid>) -> [Option<usize>; 6] {
         let Some(origin) = self.layout.index_of(chunk, 0) else {
             return [None; 6];
         };
@@ -404,13 +410,16 @@ impl<K: FieldKind> FieldState<K> {
             let index = self.dims.index(x?, y?, z?)?;
             self.layout.locate(index).map(|(c, _)| c)
         };
+        let vertical = |face: Face| match grid {
+            Some(g) => g.neighbor(origin, face).and_then(|i| self.layout.locate(i).map(|(c, _)| c)),
+            None => at(Some(x), Some(y), if face == Face::Up { z.checked_add(1) } else { z.checked_sub(1) }),
+        };
         Face::ALL.map(|face| match face {
             Face::North => at(Some(x), y.checked_add(CHUNK_EDGE), Some(z)),
             Face::South => at(Some(x), y.checked_sub(CHUNK_EDGE), Some(z)),
             Face::East => at(x.checked_add(CHUNK_EDGE), Some(y), Some(z)),
             Face::West => at(x.checked_sub(CHUNK_EDGE), Some(y), Some(z)),
-            Face::Up => at(Some(x), Some(y), z.checked_add(1)),
-            Face::Down => at(Some(x), Some(y), z.checked_sub(1)),
+            Face::Up | Face::Down => vertical(face),
         })
     }
 
@@ -478,7 +487,7 @@ impl<K: FieldKind> FieldState<K> {
         for (chunk, _) in self.active.iter().enumerate().filter(|(_, a)| **a) {
             owner[chunk] = true;
             target[chunk] = true;
-            for (face, nb) in Face::ALL.iter().zip(self.chunk_neighbors(chunk)) {
+            for (face, nb) in Face::ALL.iter().zip(self.chunk_neighbors(chunk, geom.grid)) {
                 if let Some(nb) = nb {
                     target[nb] = true;
                     if matches!(face, Face::West | Face::South | Face::Down) {
@@ -566,7 +575,7 @@ impl<K: FieldKind> FieldState<K> {
                         }
                     }
                     for (axis, (_, minus)) in AXES.iter().enumerate() {
-                        let Some(nb) = dims.neighbor(index, *minus) else {
+                        let Some(nb) = geom.neighbor(dims, index, *minus) else {
                             continue;
                         };
                         let Some((nc, ni)) = layout.locate(nb) else {
@@ -652,7 +661,7 @@ impl<K: FieldKind> FieldState<K> {
                 continue;
             }
             for (axis, (plus, minus)) in AXES.iter().enumerate() {
-                let Some(nb) = self.dims.neighbor(index, *plus) else {
+                let Some(nb) = geom.neighbor(self.dims, index, *plus) else {
                     continue;
                 };
                 let Some((nc, _)) = self.layout.locate(nb) else {
@@ -766,6 +775,16 @@ impl Geo<'_> {
         match self.grid {
             Some(grid) => g.blocked.union(grid.blocked(self.kind, index)),
             None => g.blocked,
+        }
+    }
+
+    /// The neighbour across `face` in `dims`, following the grid's z-links
+    /// (`Grid::neighbor`) when one is registered, plain index arithmetic
+    /// otherwise (a field with no grid, e.g. in a unit test).
+    fn neighbor(&self, dims: GridDims, index: u32, face: Face) -> Option<u32> {
+        match self.grid {
+            Some(grid) => grid.neighbor(index, face),
+            None => dims.neighbor(index, face),
         }
     }
 }
