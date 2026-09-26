@@ -28,7 +28,7 @@
 	for(var/key in alerts) //clear out alerts
 		clear_alert(key)
 	QDEL_NULL_LIST(viruses)
-	if(pulling)
+	if(PULLING(src))
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
 	if(ability_master)
@@ -604,14 +604,16 @@
 	set name = "Stop Pulling"
 	set category = "IC.Game"
 
+	var/atom/movable/pulling = PULLING(src)
 	if(pulling)
 		if(ishuman(pulling))
 			var/mob/living/carbon/human/H = pulling
 			visible_message(span_warning("\The [src] lets go of \the [H]."), span_notice("You let go of \the [H]."), exclude_mobs = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] lets go of you."))
-		// The pulling relation's on_unlink() (code/datums/om/library.dm) clears
-		// pulling/pulledby and resets the pull HUD icon.
+		// The pulling relation's on_unlink() (code/datums/om/library.dm)
+		// clears the pull HUD icon; PULLING()/PULLED_BY() (om.dm) are pure
+		// graph reads, with no stored field left to clear.
 		om_unlink(src, pulling, /datum/om/relation/pulling)
 
 /mob/proc/start_pulling(atom/movable/AM)
@@ -672,16 +674,17 @@
 			to_chat(src, span_warning("It won't budge!"))
 			return
 
-	if(pulling)
-		var/pulling_old = pulling
+	var/pulling_old = PULLING(src)
+	if(pulling_old)
 		stop_pulling()
 		// Are we pulling the same thing twice? Just stop pulling.
 		if(pulling_old == AM)
 			return
 
-	// The pulling relation (code/datums/om/library.dm) sets pulling/pulledby,
-	// the pull HUD icon and the status channel raise as its on_link() side
-	// effects; target_single means it also drops AM's previous puller, if any.
+	// The pulling relation (code/datums/om/library.dm) raises the pull HUD
+	// icon and the status channel as its on_link() side effects; PULLING()/
+	// PULLED_BY() (om.dm) are pure graph reads, nothing to set here.
+	// target_single means it also drops AM's previous puller, if any.
 	if(!istype(om_link(src, AM, /datum/om/relation/pulling), /datum/om/edge))
 		return
 
@@ -709,8 +712,8 @@
 	if (AM.anchored)
 		return
 
-	// The pulling relation (code/datums/om/library.dm) sets pulling/pulledby
-	// and the pull HUD icon as its on_link() side effects, but only the first
+	// The pulling relation (code/datums/om/library.dm) raises the pull HUD
+	// icon as its on_link() side effect, but only the first
 	// time this source/target pair links -- re-affirm the inertia reset
 	// unconditionally here since continue_pulling() exists specifically for
 	// discontinuous jumps (portals, multi-z, redgates) where it matters every time.

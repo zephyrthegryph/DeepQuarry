@@ -133,7 +133,7 @@
 			continue
 		if(M.lying) //No spamming this on people.
 			continue
-		if(M.pulling == climbed_thing) // Pulling stuff up stairs can get weird
+		if(PULLING(M) == climbed_thing) // Pulling stuff up stairs can get weird
 			continue
 
 		// Knock off climbers

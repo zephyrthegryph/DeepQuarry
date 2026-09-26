@@ -70,7 +70,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 /mob/living/carbon/alien/diona/proc/npc_behaviour(mob/living/carbon/alien/diona/D)
 	if(D.stat != CONSCIOUS)
 		return
-	if(prob(33) && D.canmove && isturf(D.loc) && !D.pulledby) //won't move if being pulled
+	if(prob(33) && D.canmove && isturf(D.loc) && !PULLED_BY(D)) //won't move if being pulled
 		step(D, pick(GLOB.cardinal))
 	if(prob(1))
 		D.emote(pick("scratch","jump","chirp","roll"))

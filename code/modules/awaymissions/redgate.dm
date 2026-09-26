@@ -59,8 +59,8 @@
 	var/turf/ourturf = find_our_turf(M)		//Find the turf on the opposite side of the target
 	if(!ourturf.check_density(TRUE,TRUE))	//Make sure there isn't a wall there
 		M.unbuckle_all_mobs(TRUE)
-		if(isliving(M) && M.pulling)
-			var/atom/movable/pulled = M.pulling
+		if(isliving(M) && PULLING(M))
+			var/atom/movable/pulled = PULLING(M)
 			M.stop_pulling()
 			playsound(src,'sound/effects/ominous-hum-2.ogg', 100,1)
 			M.forceMove(ourturf)

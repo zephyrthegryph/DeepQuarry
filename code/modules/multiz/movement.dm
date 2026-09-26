@@ -151,8 +151,9 @@
 	if(isliving(src))
 		var/list/atom/movable/pulling = list()
 		var/mob/living/L = src
-		if(L.pulling && !L.pulling.anchored)
-			pulling |= L.pulling
+		var/atom/movable/L_pulling = PULLING(L)
+		if(L_pulling && !L_pulling.anchored)
+			pulling |= L_pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			pulling |= GRAB_TARGET(G)
 		if(direction == UP)
@@ -708,8 +709,9 @@
 		Move(landing)
 		if(isliving(src))
 			var/mob/living/L = src
-			if(L.pulling)
-				L.pulling.forceMove(landing)
+			var/atom/movable/L_pulling = PULLING(L)
+			if(L_pulling)
+				L_pulling.forceMove(landing)
 		return TRUE
 
 	for(var/obj/O in loc)

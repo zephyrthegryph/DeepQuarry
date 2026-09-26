@@ -154,7 +154,7 @@
 	// ition End
 	if(isobserver(AM)) // Ghosts have their own methods for going up and down
 		return
-	if(AM.pulledby) // Animating the movement of pulled things is handled when the puller goes up the stairs
+	if(PULLED_BY(AM)) // Animating the movement of pulled things is handled when the puller goes up the stairs
 		return
 
 	if(AM.has_buckled_mobs()) // Similarly, the rider entering the turf will bring along whatever they're buckled to
@@ -171,8 +171,9 @@
 			pulling |= L.buckled
 
 		// If the object is pulling or grabbing anything, we'll want to move those too. A grab chain may be disrupted in doing so.
-		if(L.pulling && !L.pulling.anchored)
-			pulling |= L.pulling
+		var/atom/movable/L_pulling = PULLING(L)
+		if(L_pulling && !L_pulling.anchored)
+			pulling |= L_pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			pulling |= GRAB_TARGET(G)
 
@@ -214,8 +215,9 @@
 			L.buckled.forceMove(get_turf(top))
 
 		var/atom/movable/P = null
-		if(L.pulling && !L.pulling.anchored)
-			P = L.pulling
+		var/atom/movable/L_pulling = PULLING(L)
+		if(L_pulling && !L_pulling.anchored)
+			P = L_pulling
 			P.forceMove(get_turf(L))
 
 		L.forceMove(get_turf(top))
@@ -419,7 +421,7 @@
 	// ition End
 	if(isobserver(AM)) // Ghosts have their own methods for going up and down
 		return
-	if(AM.pulledby) // Animating the movement of pulled things is handled when the puller goes up the stairs
+	if(PULLED_BY(AM)) // Animating the movement of pulled things is handled when the puller goes up the stairs
 		return
 
 	if(AM.has_buckled_mobs()) // Similarly, the rider entering the turf will bring along whatever they're buckled to
@@ -436,8 +438,9 @@
 			pulling |= L.buckled
 
 		// If the object is pulling or grabbing anything, we'll want to move those too. A grab chain may be disrupted in doing so.
-		if(L.pulling && !L.pulling.anchored)
-			pulling |= L.pulling
+		var/atom/movable/L_pulling = PULLING(L)
+		if(L_pulling && !L_pulling.anchored)
+			pulling |= L_pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			pulling |= GRAB_TARGET(G)
 
@@ -477,8 +480,9 @@
 			L.buckled.forceMove(get_turf(bottom))
 
 		var/atom/movable/P = null
-		if(L.pulling && !L.pulling.anchored)
-			P = L.pulling
+		var/atom/movable/L_pulling = PULLING(L)
+		if(L_pulling && !L_pulling.anchored)
+			P = L_pulling
 			P.forceMove(get_turf(L))
 
 		L.forceMove(get_turf(bottom))

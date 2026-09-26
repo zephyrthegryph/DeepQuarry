@@ -484,7 +484,7 @@
 	hud_layerise()
 	user.position_hud_item(src,slot)
 	if(user.client)	user.client.screen |= src
-	if(user.pulling == src) user.stop_pulling()
+	if(PULLING(user) == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
 		if(equip_sound && !muffled_by_belly(user))
 			playsound(src, equip_sound, 20, preference = /datum/preference/toggle/pickup_sounds)

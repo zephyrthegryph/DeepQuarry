@@ -57,7 +57,7 @@
 			if(isliving(usr))
 				var/mob/living/carbon/C = usr
 				if(!C.get_active_hand())
-					if(C.pulling)
+					if(PULLING(C))
 						C.stop_pulling()
 						return
 					to_chat(usr, span_red("You have nothing to drop in your hand."))
@@ -71,7 +71,7 @@
 /client/verb/delete_key_pressed()
 	set hidden = 1
 
-	if(!usr.pulling)
+	if(!PULLING(usr))
 		to_chat(usr, span_blue("You are not pulling anything."))
 		return
 	usr.stop_pulling()
@@ -234,7 +234,7 @@
 	// Why being pulled while cuffed prevents you from moving
 	if(my_mob.restrained())
 		for(var/mob/M in range(my_mob, 1))
-			if(M.pulling == my_mob)
+			if(PULLING(M) == my_mob)
 				if(!M.restrained() && M.stat == 0 && M.canmove && my_mob.Adjacent(M))
 					to_chat(src, span_blue("You're restrained! You can't move!"))
 					my_mob.setMoveCooldown(my_mob.movement_delay()) //Prevent no-cooldown attempts at moving while restrained.
@@ -263,10 +263,10 @@
 
 	var/total_delay = my_mob.movement_delay(n, direct)
 
-	if(my_mob.pulledby || my_mob.buckled) // Wheelchair driving!
+	if(PULLED_BY(my_mob) || my_mob.buckled) // Wheelchair driving!
 		if(isspace(loc))
 			return // No wheelchair driving in space
-		if(istype(my_mob.pulledby, /obj/structure/bed/chair/wheelchair))
+		if(istype(PULLED_BY(my_mob), /obj/structure/bed/chair/wheelchair))
 			total_delay += 3
 		else if(istype(my_mob.buckled, /obj/structure/bed/chair/wheelchair))
 			if(ishuman(my_mob))
@@ -303,8 +303,9 @@
 					n = get_step(my_mob, direct)
 
 
-	if(istype(my_mob.pulledby, /obj/structure/bed/chair/wheelchair))
-		. = my_mob.pulledby.relaymove(my_mob, direct)
+	var/mob/my_mob_puller = PULLED_BY(my_mob)
+	if(istype(my_mob_puller, /obj/structure/bed/chair/wheelchair))
+		. = my_mob_puller.relaymove(my_mob, direct)
 	else if(istype(my_mob.buckled, /obj/structure/bed/chair/wheelchair))
 		. = my_mob.buckled.relaymove(my_mob,direct)
 	else

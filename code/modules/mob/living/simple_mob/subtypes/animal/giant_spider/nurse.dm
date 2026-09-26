@@ -77,7 +77,7 @@
 		if(!L.stat)
 			return ..()
 		else
-			if (L.anchored && L.buckled && !(L.pulledby || L.buckled.pulledby)) //don't have them trying to unbuckle someone on something that's being pulled because that's just annoying as fuck esp for a medic or something
+			if (L.anchored && L.buckled && !(PULLED_BY(L) || PULLED_BY(L.buckled))) //don't have them trying to unbuckle someone on something that's being pulled because that's just annoying as fuck esp for a medic or something
 				L.buckled.unbuckle_mob(L)
 			if (!L.anchored)
 				return spin_cocoon(L)

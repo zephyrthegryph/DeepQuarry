@@ -438,8 +438,8 @@
 
 	if(istype(holder, /atom/movable))
 		var/atom/movable/HA = holder
-		if(HA.pulledby)
-			on_bumped(holder, HA.pulledby)
+		if(PULLED_BY(HA))
+			on_bumped(holder, PULLED_BY(HA))
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)

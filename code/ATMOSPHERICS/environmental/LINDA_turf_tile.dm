@@ -281,7 +281,7 @@
 	for(var/thing in src)
 		moving_atom = thing
 		if (moving_atom.last_high_pressure_movement_air_cycle < SSair.times_fired)
-			if (!moving_atom.anchored && !moving_atom.pulledby)
+			if (!moving_atom.anchored && !PULLED_BY(moving_atom))
 				moving_atom.experience_pressure_difference(pressure_difference, pressure_direction)
 			else
 

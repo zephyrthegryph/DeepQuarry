@@ -890,7 +890,7 @@
 	if(isturf(wearer.loc))
 		if(wearer.restrained())//Why being pulled while cuffed prevents you from moving
 			for(var/mob/M in range(wearer, 1))
-				if(M.pulling == wearer)
+				if(PULLING(M) == wearer)
 					if(!M.restrained() && M.stat == 0 && M.canmove && wearer.Adjacent(M))
 						to_chat(user, span_notice("Your host is restrained! They can't move!"))
 						return 0
@@ -911,11 +911,12 @@
 		if(wearer.get_current_machine().relaymove(wearer, direction))
 			return
 
-	if(wearer.pulledby || wearer.buckled) // Wheelchair driving!
+	var/mob/wearer_puller = PULLED_BY(wearer)
+	if(wearer_puller || wearer.buckled) // Wheelchair driving!
 		if(istype(wearer.loc, /turf/space))
 			return // No wheelchair driving in space
-		if(istype(wearer.pulledby, /obj/structure/bed/chair/wheelchair))
-			return wearer.pulledby.relaymove(wearer, direction)
+		if(istype(wearer_puller, /obj/structure/bed/chair/wheelchair))
+			return wearer_puller.relaymove(wearer, direction)
 		else if(istype(wearer.buckled, /obj/structure/bed/chair/wheelchair))
 			if(ishuman(wearer.buckled))
 				var/obj/item/organ/external/l_hand = wearer.get_organ(BP_L_HAND)

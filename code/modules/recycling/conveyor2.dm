@@ -192,19 +192,20 @@
 	effect = /obj/machinery/conveyor/proc/interaction_push_pulled
 
 /obj/machinery/conveyor/proc/interaction_push_pulled(mob/user, obj/item/held, datum/interaction/interaction)
-	if ((!( user.canmove ) || user.restrained() || !( user.pulling )))
+	var/atom/movable/pulling = PULLING(user)
+	if ((!( user.canmove ) || user.restrained() || !pulling))
 		return TRUE
-	if (user.pulling.anchored)
+	if (pulling.anchored)
 		return TRUE
-	if ((user.pulling.loc != user.loc && get_dist(user, user.pulling) > 1))
+	if ((pulling.loc != user.loc && get_dist(user, pulling) > 1))
 		return TRUE
-	if (ismob(user.pulling))
-		var/mob/M = user.pulling
+	if (ismob(pulling))
+		var/mob/M = pulling
 		M.stop_pulling()
-		step(user.pulling, get_dir(user.pulling.loc, src))
+		step(pulling, get_dir(pulling.loc, src))
 		user.stop_pulling()
 	else
-		step(user.pulling, get_dir(user.pulling.loc, src))
+		step(pulling, get_dir(pulling.loc, src))
 		user.stop_pulling()
 	return TRUE
 

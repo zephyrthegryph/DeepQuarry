@@ -74,6 +74,7 @@
 	var/item_tally = calculate_item_encumbrance()
 
 	// Dragging heavy objects will also slow you down, similar to above.
+	var/atom/movable/pulling = PULLING(src)
 	if(pulling)
 		if(istype(pulling, /obj/item))
 			var/obj/item/pulled = pulling

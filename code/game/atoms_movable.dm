@@ -14,7 +14,6 @@
 	var/throw_speed = 2
 	var/throw_range = 7
 	// moved_recently moved to /datum/component/movable_state
-	var/mob/pulledby = null
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
@@ -146,6 +145,7 @@
 	for(var/atom/movable/A as anything in vis_locs)
 		A.vis_contents -= src
 
+	var/mob/pulledby = PULLED_BY(src)
 	if(pulledby)
 		pulledby.stop_pulling()
 
@@ -527,6 +527,7 @@
 	if (!target || speed <= 0 || QDELETED(src) || (target.z != src.z))
 		return FALSE
 
+	var/mob/pulledby = PULLED_BY(src)
 	if (pulledby)
 		pulledby.stop_pulling()
 

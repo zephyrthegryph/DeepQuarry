@@ -105,6 +105,7 @@
 			to_chat(usr, span_warning(" You don't think kickstands work here..."))
 			return
 		visible_message("[user] puts down \the [src]'s kickstand.")
+		var/mob/pulledby = PULLED_BY(src)
 		if(pulledby)
 			pulledby.stop_pulling()
 
@@ -149,7 +150,7 @@
 	if(on && cell)
 		cell.use(charge_use)
 
-	if(is_vehicle_inpassable(newloc) || pulledby)
+	if(is_vehicle_inpassable(newloc) || PULLED_BY(src))
 		if(!space_speed)
 			return FALSE
 		move_delay = space_speed
@@ -165,6 +166,7 @@
 
 	update_icon()
 
+	var/mob/pulledby = PULLED_BY(src)
 	if(pulledby)
 		pulledby.stop_pulling()
 	..()

@@ -152,8 +152,9 @@
 		A.forceMove(dest)
 		if(ismob(A))
 			var/mob/D = A
-			if(D.pulling)
-				D.pulling.forceMove(dest)
+			var/atom/movable/D_pulling = PULLING(D)
+			if(D_pulling)
+				D_pulling.forceMove(dest)
 	else
 		to_chat(world, "CANARY: Could not move [A] to [nx], [ny], [nz]: [dest ? "[dest]" : "null"]")
 

@@ -10,8 +10,8 @@
 	if(!(/mob/living/proc/ventcrawl in verbs))
 		to_chat(src, span_warning("You don't possess the ability to ventcrawl!"))
 		return FALSE
-	if(pulling)
-		to_chat(src, span_warning("You cannot bring \the [pulling] into the vent with you!"))
+	if(PULLING(src))
+		to_chat(src, span_warning("You cannot bring \the [PULLING(src)] into the vent with you!"))
 		return FALSE
 	if(incapacitated())
 		to_chat(src, span_warning("You cannot ventcrawl in your current state!"))

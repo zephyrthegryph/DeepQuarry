@@ -131,8 +131,8 @@
 			to_chat(user, span_notice("You fill the [src] with as much as you can grab in one go."))
 		else //Failed. The bag is full.
 			to_chat(user, span_notice("You fail to pick anything up with \the [src]."))
-	if(istype(user.pulling, /obj/structure/ore_box)) //Bit of a crappy way to do this, as it doubles spam for the user, but it works. //Then let me fix it. ~CL.
-		var/obj/structure/ore_box/OB = user.pulling
+	if(istype(PULLING(user), /obj/structure/ore_box)) //Bit of a crappy way to do this, as it doubles spam for the user, but it works. //Then let me fix it. ~CL.
+		var/obj/structure/ore_box/OB = PULLING(user)
 		for(var/ore in stored_ore)
 			if(stored_ore[ore] > 0)
 				var/ore_amount = stored_ore[ore]	// How many ores does the satchel have?

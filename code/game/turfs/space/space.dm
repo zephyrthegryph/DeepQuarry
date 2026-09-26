@@ -147,8 +147,8 @@
 	if(edge && SSticker?.mode && !density) // !density so 'fake' space turfs don't fling ghosts everywhere
 		if(isliving(A))
 			var/mob/living/L = A
-			if(L.pulling)
-				var/atom/movable/pulled = L.pulling
+			if(PULLING(L))
+				var/atom/movable/pulled = PULLING(L)
 				L.stop_pulling()
 				A?.touch_map_edge()
 				pulled.forceMove(L.loc)

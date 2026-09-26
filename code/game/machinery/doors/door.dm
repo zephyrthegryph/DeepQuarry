@@ -218,7 +218,7 @@
 	if(istype(AM, /obj/structure/bed/chair/wheelchair))
 		var/obj/structure/bed/chair/wheelchair/wheel = AM
 		if(density)
-			if(wheel.pulling && (allowed(wheel.pulling)))
+			if(PULLING(wheel) && (allowed(PULLING(wheel))))
 				open()
 			else
 				do_animate("deny")

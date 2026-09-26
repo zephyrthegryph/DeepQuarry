@@ -475,6 +475,7 @@
 //Breaks all grips and pulls that the mob currently has.
 /mob/living/carbon/human/proc/break_all_grabs(mob/living/carbon/user)
 	var/success = FALSE
+	var/atom/movable/pulling = PULLING(src)
 	if(pulling)
 		visible_message(span_danger("[user] has broken [src]'s grip on [pulling]!"))
 		success = TRUE

@@ -149,7 +149,7 @@
 
 /turf/attack_hand(mob/user)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
-	if(!user.pulling)
+	if(!PULLING(user))
 		var/obj/machinery/door/airlock/AL = locate(/obj/machinery/door/airlock) in src.contents
 		if(AL)
 			AL.attack_hand(user)
@@ -159,20 +159,21 @@
 			FD.attack_hand(user)
 			return TRUE
 
-	if(!(user.canmove) || user.restrained() || !(user.pulling))
+	var/atom/movable/pulling = PULLING(user)
+	if(!(user.canmove) || user.restrained() || !pulling)
 		return 0
-	if(user.pulling.anchored || !isturf(user.pulling.loc))
+	if(pulling.anchored || !isturf(pulling.loc))
 		return 0
-	if(user.pulling.loc != user.loc && get_dist(user, user.pulling) > 1)
+	if(pulling.loc != user.loc && get_dist(user, pulling) > 1)
 		return 0
-	if(ismob(user.pulling))
-		var/mob/M = user.pulling
-		var/atom/movable/t = M.pulling
+	if(ismob(pulling))
+		var/mob/M = pulling
+		var/atom/movable/t = PULLING(M)
 		M.stop_pulling()
-		step(user.pulling, get_dir(user.pulling.loc, src))
+		step(pulling, get_dir(pulling.loc, src))
 		M.start_pulling(t)
 	else
-		step(user.pulling, get_dir(user.pulling.loc, src))
+		step(pulling, get_dir(pulling.loc, src))
 	return 1
 
 /turf/attackby(obj/item/W, mob/user)

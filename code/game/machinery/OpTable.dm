@@ -70,8 +70,9 @@
 		user.visible_message("[user] climbs on \the [src].","You climb on \the [src].")
 	else
 		visible_message(span_notice("\The [C] has been laid on \the [src] by [user]."))
-	if(C.pulledby)
-		C.pulledby.stop_pulling()
+	var/mob/puller = PULLED_BY(C)
+	if(puller)
+		puller.stop_pulling()
 	C.resting = 1
 	C.forceMove(get_turf(src))
 	for(var/obj/O in src)

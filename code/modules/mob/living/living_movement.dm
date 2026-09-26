@@ -58,12 +58,12 @@ default behaviour is:
 		spreadFire(tmob)
 
 		for(var/mob/living/M in range(tmob, 1))
-			if(LAZYLEN(tmob.pinned) ||  ((M.pulling == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(GRABBED_BY(tmob)))) )
+			if(LAZYLEN(tmob.pinned) ||  ((PULLING(M) == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(GRABBED_BY(tmob)))) )
 				if ( !(world.time % 5) )
 					to_chat(src, span_warning("[tmob] is restrained, you cannot push past"))
 				now_pushing = FALSE
 				return
-			if( tmob.pulling == M && ( M.restrained() && !( tmob.restrained() ) && tmob.stat == CONSCIOUS) )
+			if( PULLING(tmob) == M && ( M.restrained() && !( tmob.restrained() ) && tmob.stat == CONSCIOUS) )
 				if ( !(world.time % 5) )
 					to_chat(src, span_warning("[tmob] is restraining [M], you cannot push past"))
 				now_pushing = FALSE
@@ -238,7 +238,7 @@ default behaviour is:
 		else
 			return 0
 
-	var/atom/movable/pullee = pulling
+	var/atom/movable/pullee = PULLING(src)
 	// Prior to our move it's already too far away
 	if(pullee && get_dist(src, pullee) > 1)
 		stop_pulling()
@@ -252,6 +252,7 @@ default behaviour is:
 	// Will move our mob (probably)
 	. = ..() // Moved() called at this point if successful
 
+	var/mob/pulledby = PULLED_BY(src)
 	if(pulledby && moving_diagonally != FIRST_DIAG_STEP && get_dist(src, pulledby) > 1) //seperated from our puller and not in the middle of a diagonal move
 		pulledby.stop_pulling()
 
@@ -282,6 +283,7 @@ default behaviour is:
 		layer = initial(layer)
 		plane = initial(plane)
 
+	var/atom/movable/pulling = PULLING(src)
 	if(pulling) // we were pulling a thing and didn't lose it during our move.
 		var/pull_dir = get_dir(src, pulling)
 
@@ -298,6 +300,7 @@ default behaviour is:
 				var/mob/living/M = pulling
 				M.dragged(src, oldloc)
 
+			pulling = PULLING(src)
 			if(pulling)								// Check it AGAIN after previous steps just in case
 				pulling.Move(oldloc, 0, movetime) // the pullee tries to reach our previous position
 				if(get_dist(src, pulling) > 1) // the pullee couldn't keep up
@@ -334,7 +337,7 @@ default behaviour is:
 /mob/living/proc/handle_inertial_drift(locthen)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!anchored && !pulledby && loc == locthen)
+	if(!anchored && !PULLED_BY(src) && loc == locthen)
 		var/stepdir = inertia_dir ? inertia_dir : last_move
 		if(!stepdir)
 			return

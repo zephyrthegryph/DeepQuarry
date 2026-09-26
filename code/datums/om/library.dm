@@ -190,43 +190,44 @@
 	active_if = /datum/om/check/powered
 	include = list(/datum/om/bundle/stasis)
 
-/// mob -> the atom/movable it is pulling. Both sides are exclusive
-/// (source_single/target_single with the default OM_REL_REPLACE), so a new
-/// puller taking something automatically drops whoever pulled it before --
-/// closing a latent bug the hand-rolled version had, where a second puller's
-/// start_pulling() overwrote pulledby without the first puller's own
-/// `pulling` var ever being cleared. break_if = in_range(1) replaces the
-/// hand-rolled "Break pulling if we are too far to pull now" check that used
-/// to live in /atom/movable/Move() (atoms_movable.dm).
+/// An atom/movable (almost always a mob, but a wheelchair also puts itself in
+/// as source -- relaymove(), stool_bed_chair_nest/wheelchair.dm) -> the
+/// atom/movable it is pulling. Both sides are exclusive (source_single/
+/// target_single with the default OM_REL_REPLACE), so a new puller taking
+/// something automatically drops whoever pulled it before -- closing a latent
+/// bug the hand-rolled version had, where a second puller's start_pulling()
+/// overwrote pulledby without the first puller's own `pulling` var ever being
+/// cleared. `pulling`/`pulledby` are gone entirely now (OM relations step 6):
+/// PULLING()/PULLED_BY() (om.dm) read the edge directly, so there is no
+/// stored field left on either side to desync. break_if = in_range(1)
+/// replaces the hand-rolled "Break pulling if we are too far to pull now"
+/// check that used to live in /atom/movable/Move() (atoms_movable.dm).
 /datum/om/relation/pulling
 	name = "pull"
 	source_single = TRUE
 	target_single = TRUE
 	break_if = CHECK(/datum/om/check/in_range, 1)
 
-/datum/om/relation/pulling/on_link(mob/source, atom/movable/target, datum/om/edge/edge)
+/datum/om/relation/pulling/on_link(atom/movable/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	source.pulling = target
-	target.pulledby = source
-	om_changed(source, CHANGE_MOB_STATUS)
-	if(source.pullin)
-		source.pullin.icon_state = "pull1"
+	if(ismob(source))
+		var/mob/M = source
+		om_changed(M, CHANGE_MOB_STATUS)
+		if(M.pullin)
+			M.pullin.icon_state = "pull1"
 	if(ismob(target))
 		var/mob/pulled = target
 		pulled.inertia_dir = 0
 
-/datum/om/relation/pulling/on_unlink(mob/source, atom/movable/target, datum/om/edge/edge)
+/datum/om/relation/pulling/on_unlink(atom/movable/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && source.pulling == target)
-		source.pulling = null
-	if(istype(target) && target.pulledby == source)
-		target.pulledby = null
-	if(istype(source) && !QDELETED(source))
-		om_changed(source, CHANGE_MOB_STATUS)
-		if(source.pullin)
-			source.pullin.icon_state = "pull0"
+	if(istype(source) && !QDELETED(source) && ismob(source))
+		var/mob/M = source
+		om_changed(M, CHANGE_MOB_STATUS)
+		if(M.pullin)
+			M.pullin.icon_state = "pull0"
 
 /// an AI eye -> the silicon AI controlling it. No view fields (OM relations
 /// step 3): the eye's `owner` and the AI's `all_eyes` are still the vars

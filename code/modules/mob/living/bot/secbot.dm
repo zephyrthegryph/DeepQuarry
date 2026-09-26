@@ -43,14 +43,15 @@
 
 /datum/om/stage/life/type_post/bot/secbot/perform(mob/living/bot/secbot/self, datum/om/frame/life/ctx)
 	..()
-	if(self.stat != DEAD && self.on && self.pulledby)
-		if(isliving(self.pulledby))
+	var/mob/puller = PULLED_BY(self)
+	if(self.stat != DEAD && self.on && puller)
+		if(isliving(puller))
 			var/pull_allowed = FALSE
 			for(var/A in self.req_one_access)
-				if(A in self.pulledby.GetAccess())
+				if(A in puller.GetAccess())
 					pull_allowed = TRUE
 			if(!pull_allowed)
-				var/mob/living/L = self.pulledby
+				var/mob/living/L = puller
 				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, UnarmedAttack), L)
 				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), "Do not interfere with active law enforcement routines!")
 				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")

@@ -8,7 +8,6 @@
 
 	var/folded_type = /obj/item/wheelchair
 	var/driving = 0
-	var/mob/living/pulling = null
 	var/bloodiness
 	var/min_mob_buckle_size = MOB_SMALL
 	var/max_mob_buckle_size = MOB_LARGE
@@ -70,8 +69,10 @@
 /obj/structure/bed/chair/wheelchair/relaymove(mob/user, direction)
 	// Redundant check?
 	// The pulling relation's own on_link()/on_unlink() (code/datums/om/library.dm)
-	// are the sole writer of pulling/pulledby here too: they don't care whether
-	// the source is a mob or, as here, the wheelchair itself.
+	// no longer store pulling/pulledby at all (OM relations step 6) -- PULLING()
+	// is a live graph read, so this re-fetches it after every om_unlink() rather
+	// than trusting a cached local, matching the old field's always-live reads.
+	var/mob/living/pulling = PULLING(src)
 	if(user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_PARALYZED) || user.lying || user.restrained())
 		if(user==pulling)
 			om_unlink(src, pulling, /datum/om/relation/pulling)
@@ -80,7 +81,8 @@
 	if(has_buckled_mobs() && pulling && (user in buckled_mobs))
 		if(pulling.stat || pulling.has_status(EFFECT_STUNNED) || pulling.has_status(EFFECT_WEAKENED) || pulling.has_status(EFFECT_PARALYZED) || pulling.lying || pulling.restrained())
 			om_unlink(src, pulling, /datum/om/relation/pulling)
-	if(user.pulling && (user == pulling))
+			pulling = PULLING(src)
+	if(PULLING(user) && (user == pulling))
 		om_unlink(src, pulling, /datum/om/relation/pulling)
 		return
 	if(propelled)
@@ -88,6 +90,7 @@
 	if(pulling && (get_dist(src, pulling) > 1))
 		var/mob/living/was_pulling = pulling
 		om_unlink(src, pulling, /datum/om/relation/pulling)
+		pulling = PULLING(src)
 		if(user==was_pulling)
 			return
 	if(pulling && (get_dir(src.loc, pulling.loc) == direction))
@@ -125,6 +128,7 @@
 			spawn(0)
 				if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
 					om_unlink(src, pulling, /datum/om/relation/pulling)
+				pulling = PULLING(src)
 				if(pulling)
 					pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair
 	if(bloodiness)
@@ -148,6 +152,7 @@
 								Bump(O)
 					else
 						unbuckle_mob()
+				var/mob/living/pulling = PULLING(src)
 				if (pulling && (get_dist(src, pulling) > 1))
 					var/mob/living/was_pulling = pulling
 					om_unlink(src, pulling, /datum/om/relation/pulling)
@@ -157,7 +162,7 @@
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
 /obj/structure/bed/chair/wheelchair/attack_hand(mob/living/user as mob)
-	if (pulling)
+	if (PULLING(src))
 		MouseDrop(user)
 	else
 		if(has_buckled_mobs())
@@ -171,8 +176,9 @@
 		if(has_buckled_mobs() && (user in buckled_mobs))
 			to_chat(user, span_warning("You realize you are unable to push the wheelchair you sit in."))
 			return
+		var/mob/living/pulling = PULLING(src)
 		if(!pulling)
-			if(user.pulling)
+			if(PULLING(user))
 				user.stop_pulling()
 			om_link(src, user, /datum/om/relation/pulling)
 			user.set_dir(get_dir(user, src))
@@ -186,6 +192,7 @@
 	..()
 	if(!has_buckled_mobs())	return
 
+	var/mob/living/pulling = PULLING(src)
 	if(propelled || (pulling && (IS_HARMING(pulling))))
 		var/mob/living/occupant = unbuckle_mob()
 
@@ -232,6 +239,7 @@
 	bloodiness--
 
 /obj/structure/bed/chair/wheelchair/buckle_mob(mob/M as mob, mob/user as mob)
+	var/mob/living/pulling = PULLING(src)
 	if(M == pulling)
 		om_unlink(src, pulling, /datum/om/relation/pulling)
 	..()

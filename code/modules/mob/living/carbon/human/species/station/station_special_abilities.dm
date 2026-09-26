@@ -600,7 +600,7 @@
 		to_chat(C, span_notice("You are already hovering and/or anchored in place!"))
 		return
 
-	if(!C.anchored && !C.pulledby) //Not currently anchored, and not pulled by anyone.
+	if(!C.anchored && !PULLED_BY(C)) //Not currently anchored, and not pulled by anyone.
 		C.anchored = TRUE //This is the only way to stop the inertial_drift.
 		C.adjust_nutrition(-25)
 		update_floating()
