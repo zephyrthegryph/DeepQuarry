@@ -13,6 +13,7 @@
 		to_chat(src, span_notice("You move down."))
 
 /mob/proc/zMove(direction)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(eyeobj)
 		return eyeobj.zMove(direction)
 	if(istype(loc,/obj/mecha))

@@ -1,5 +1,6 @@
 /// Death is decided by the AI machine plan; this is the one pass that follows it.
 /mob/living/silicon/ai/death(gibbed)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 
 	if(stat == DEAD)
 		return
@@ -10,8 +11,8 @@
 
 	. = ..(gibbed,"gives one shrill beep before falling lifeless.")
 
-	if(src.eyeobj)
-		src.eyeobj.setLoc(get_turf(src))
+	if(eyeobj)
+		eyeobj.setLoc(get_turf(src))
 
 	remove_ai_verbs(src)
 

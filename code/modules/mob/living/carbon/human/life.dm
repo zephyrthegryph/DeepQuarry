@@ -1784,7 +1784,8 @@
 		if(!self.seer && !glasses_processed && self.seedarkness)
 			self.see_invisible = self.see_invisible_default
 
-		if(self.eyeobj && self.eyeobj.owner != self)
+		var/mob/observer/eye/eyeobj = ACTIVE_EYE(self)
+		if(eyeobj && EYE_OWNER(eyeobj) != self)
 			self.reset_perspective()
 
 	// Call parent to handle signals

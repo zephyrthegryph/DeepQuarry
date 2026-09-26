@@ -85,9 +85,9 @@
 		message = span_game(span_say(span_bold("[sender_name]") + " [speak_verb], \"[message]\""))
 		if(whisper)
 			speak_verb = "whispers"
-			sender.eyeobj.visible_message(span_italics(message), range = 1)
+			eyeobj.visible_message(span_italics(message), range = 1)
 		else
-			sender.eyeobj.visible_message(message)
+			eyeobj.visible_message(message)
 
 	//Not AR Projecting
 	else
@@ -117,7 +117,7 @@
 		var/range = world.view
 		if(whisper)
 			range = 1
-		sender.eyeobj.visible_message(span_emote("[sender_name] [message]"), range = range)
+		eyeobj.visible_message(span_emote("[sender_name] [message]"), range = range)
 
 	//Not AR Projecting
 	else
@@ -300,13 +300,13 @@
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
 /mob/living/carbon/brain/caught_soul/Destroy()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(soulcatcher)
 		soulcatcher.notify_into("Mind unloaded: [name]")
 		soulcatcher.brainmobs -= src
 		soulcatcher = null
 	if(eyeobj)
 		reenter_soulcatcher()
-		eyeobj = null //This SHOULD be null already, reenter_soulcatcher destroys and nulls it, but safety first.
 	container = null
 	nif = null
 	return ..()
@@ -370,26 +370,31 @@
 	..()
 
 /mob/living/carbon/brain/caught_soul/face_atom(atom/A)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(eyeobj)
 		return eyeobj.face_atom(A)
 	else
 		return ..(A)
 
 /mob/living/carbon/brain/caught_soul/set_dir(direction)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(eyeobj)
 		return eyeobj.set_dir(direction)
 	else
 		return ..(direction)
 
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.say_into(message,src,eyeobj)
 
@@ -411,6 +416,7 @@
 		return FALSE
 
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj)
 
@@ -435,7 +441,7 @@
 	if(!istype(brainmob) || !brainmob.client)
 		return INITIALIZE_HINT_QDEL
 
-	owner = brainmob				//Set eyeobj's owner
+	brainmob.take_eye(src)			//Look through us
 	parent_human = human			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
@@ -594,6 +600,7 @@
 ///////////////////
 //Verbs for soulbrains
 /mob/living/carbon/brain/caught_soul/verb/ar_project()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set name = "AR/SR Project"
 	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
 	set category = "Soulcatcher"
@@ -609,10 +616,11 @@
 	if(!client || !client.prefs)
 		return //Um...
 
-	eyeobj = new/mob/observer/eye/ar_soul(src,nif.human)
+	new /mob/observer/eye/ar_soul(src, nif.human) // takes itself as our eye
 	soulcatcher.notify_into("[src] now AR projecting.")
 
 /mob/living/carbon/brain/caught_soul/verb/jump_to_owner()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set name = "Jump to Owner"
 	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
 	set category = "Soulcatcher"
@@ -624,6 +632,7 @@
 	eyeobj.forceMove(get_turf(nif))
 
 /mob/living/carbon/brain/caught_soul/verb/reenter_soulcatcher()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set name = "Re-enter Soulcatcher"
 	set desc = "Leave AR projection and drop back into the soulcatcher."
 	set category = "Soulcatcher"

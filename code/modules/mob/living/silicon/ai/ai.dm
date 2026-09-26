@@ -99,7 +99,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/multicam_on = FALSE
 	var/atom/movable/screen/movable/pic_in_pic/ai/master_multicam
 	var/list/multicam_screens = list()
-	var/list/all_eyes = list()
 	var/max_multicams = 6
 
 	can_be_antagged = TRUE
@@ -113,6 +112,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	remove_verb(src, silicon_subsystems)
 
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 
 	announcement = new()
 	announcement.title = "A.I. Announcement"
@@ -246,6 +246,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	setup_icon()
 
 /mob/living/silicon/ai/Destroy()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	GLOB.ai_list -= src
 
 	QDEL_NULL(announcement)
@@ -308,6 +309,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	return 0
 
 /mob/living/silicon/ai/SetName(pickedName as text)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	..()
 	announcement.announcer = pickedName
 	if(eyeobj)
@@ -516,7 +518,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	return
 
 /mob/living/silicon/ai/proc/camera_visibility(mob/observer/eye/aiEye/moved_eye)
-	GLOB.cameranet.visibility(moved_eye, client, all_eyes)
+	GLOB.cameranet.visibility(moved_eye, client, EYES_OF(src))
 
 /mob/living/silicon/ai/forceMove(atom/destination, direction, movetime)
 	. = ..()
@@ -524,6 +526,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		end_multicam()
 
 /mob/living/silicon/ai/reset_perspective(atom/new_eye)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(camera)
 		camera.set_light(0)
 	if(istype(new_eye,/obj/machinery/camera))
@@ -543,10 +546,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 
 /mob/living/silicon/ai/proc/switchCamera(obj/machinery/camera/C)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if (!C || stat == DEAD) //C.can_use())
 		return 0
 
-	if(!src.eyeobj)
+	if(!eyeobj)
 		view_core()
 		return
 	// ok, we're alive, camera is good and in our network...
@@ -579,6 +583,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	return cameralist
 
 /mob/living/silicon/ai/proc/ai_network_change(network in get_camera_network_list())
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set category = "AI.Camera Control"
 	set name = "Jump To Network"
 	unset_machine()
@@ -773,9 +778,10 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 // It will get the nearest camera from the eyeobj, lighting it.
 
 /mob/living/silicon/ai/proc/lightNearbyCamera()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(camera_light_on && camera_light_on < world.timeofday)
 		if(src.camera)
-			var/obj/machinery/camera/camera = near_range_camera(src.eyeobj)
+			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && src.camera != camera)
 				src.camera.set_light(0)
 				if(!camera.light_disabled)
@@ -787,7 +793,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				src.camera.set_light(0)
 				src.camera = null
 		else
-			var/obj/machinery/camera/camera = near_range_camera(src.eyeobj)
+			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && !camera.light_disabled)
 				src.camera = camera
 				src.camera.set_light(AI_CAMERA_LUMINOSITY)
@@ -1023,6 +1029,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	is_dummy = 1
 
 /mob/living/silicon/ai/announcer/Initialize(mapload)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	. = ..()
 	GLOB.mob_list -= src
 	GLOB.living_mob_list -= src
@@ -1043,7 +1050,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	GLOB.dead_mob_list -= self
 	GLOB.ai_list -= self
 	GLOB.silicon_mob_list -= self
-	QDEL_NULL(self.eyeobj)
+	qdel(ACTIVE_EYE(self))
 
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO

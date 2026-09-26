@@ -26,6 +26,7 @@
 
 
 /mob/living/silicon/ai/proc/ai_camera_list(camera in get_camera_list())
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set category = "AI.Camera Control"
 	set name = "Show Camera List"
 
@@ -36,11 +37,12 @@
 		return 0
 
 	var/obj/machinery/camera/C = track.cameras[camera]
-	src.eyeobj.setLoc(C)
+	eyeobj.setLoc(C)
 
 	return
 
 /mob/living/silicon/ai/proc/ai_store_location(loc as text)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set category = "AI.Camera Control"
 	set name = "Store Camera Location"
 	set desc = "Stores your current camera location by the given name"
@@ -58,7 +60,7 @@
 		to_chat(src, span_warning("There is already a stored location by this name"))
 		return
 
-	var/L = src.eyeobj.getLoc()
+	var/L = eyeobj.getLoc()
 	if (InvalidPlayerTurf(get_turf(L)))
 		to_chat(src, span_warning("Unable to store this location"))
 		return
@@ -70,6 +72,7 @@
 	return sortList(stored_locations)
 
 /mob/living/silicon/ai/proc/ai_goto_location(loc in sorted_stored_locations())
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set category = "AI.Camera Control"
 	set name = "Goto Camera Location"
 	set desc = "Returns to the selected camera location"
@@ -79,7 +82,7 @@
 		return
 
 	var/L = stored_locations[loc]
-	src.eyeobj.setLoc(L)
+	eyeobj.setLoc(L)
 
 /mob/living/silicon/ai/proc/ai_remove_location(loc in sorted_stored_locations())
 	set category = "AI.Camera Control"
@@ -178,8 +181,9 @@
 					U.ai_cancel_tracking(1)
 					return
 
-			if(U.eyeobj)
-				U.eyeobj.setLoc(get_turf(target), 0)
+			var/mob/observer/eye/eyeobj = ACTIVE_EYE(U)
+			if(eyeobj)
+				eyeobj.setLoc(get_turf(target), 0)
 			else
 				view_core()
 				return
@@ -192,7 +196,8 @@
 		return
 	if (!src.can_use())
 		return
-	user.eyeobj.setLoc(get_turf(src))
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+	eyeobj?.setLoc(get_turf(src))
 
 
 /mob/living/silicon/ai/attack_ai(mob/user as mob)

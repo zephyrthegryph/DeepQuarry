@@ -502,6 +502,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	return 1
 
 /mob/living/silicon/ai/switch_to_camera(obj/machinery/camera/C)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(!C.can_use() || !is_in_chassis())
 		return 0
 

@@ -168,9 +168,12 @@ declarations. `SUM_OF(...)` sums effects.
 - **Relations:** `contained_in`, `worn_by`, `buckled_to`
   (gives `EFFECT_BUCKLED`), `pulling`, `grabbing`, `stasis_occupant` (stops
   the occupant's biological clock while the bed is powered), `powered_by`,
-  `ai_eye_of`, `following`, `host_of`, `claim`. Declared next to their
+  `following`, `host_of`, `claim`. Declared next to their
   feature: `orbiting` (`code/game/orbit.dm`), `leashed_to`/`leash_held_by`
-  (`leash.dm`), `tethered_to` (`tethered_item.dm`). A machine's occupant is a
+  (`leash.dm`), `tethered_to` (`tethered_item.dm`), `eye_of` (every
+  remote eye -> the mob looking through it: AI main and multicam eyes,
+  soulcatcher AR/SR projections, the camera MIU) and `active_eye` (mob -> the
+  eye it moves with; `take_eye()`/`drop_eye()`, `code/modules/mob/freelook/eye.dm`). A machine's occupant is a
   slot (`/datum/om/relation/slot/occupant`), not a relation of its own.
 - **Bundles:** `powered_machine`, `storage`, `occupant_seat`,
   `powered_vehicle`, `stasis`, `hud_on_vitals`, `ui_live`.
@@ -462,20 +465,18 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
   `om_field_link()`) is deleted, and so are the vars it used to feed:
   `occupant`, `buckled`, `buckled_mobs`, `pulling`, `pulledby`, the grab's
   `affecting`/`assailant`, `following`, `following_mobs` and the borer's
-  `host`. Read through the accessor macros in `code/__defines/om.dm`:
+  `host`, the eye's `owner`, the mob's `eyeobj` and the AI's `all_eyes`. Read through the accessor macros in `code/__defines/om.dm`:
   `OM_REL_TARGET(E, rel)` / `OM_REL_SOURCE(E, rel)` / `OM_REL_SOURCES(E, rel)`
   / `OM_REL_TARGETS(E, rel)` for a bare relation, `SLOT_ITEM(E, slot_id)` /
   `SLOT_LIST(E, slot_id)` for a slot, plus the named wrappers (`BUCKLED`,
   `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`, `GRABBED_BY`, `GRAB_TARGET`,
-  `GRAB_ASSAILANT`, `EYE_OF`, `ORBIT_TARGET`, `ORBITERS`, `FOLLOWING`,
+  `GRAB_ASSAILANT`, `EYE_OWNER`, `EYES_OF`, `ACTIVE_EYE`, `ORBIT_TARGET`, `ORBITERS`, `FOLLOWING`,
   `FOLLOWERS`, `BORER_HOST`, `BORER_OF`, `LEASH_PET`, `LEASH_MASTER`,
   `LEASH_OF`, `TETHERED_HANDHELD`, `TETHER_HOST`). They expand to proc
   calls, so read into a typed local before member access. `on_link()`/
   `on_unlink()` keep only real side effects. `edge.data` carries
   relation-specific payload the linker attaches (an orbit's saved
-  transform). Remaining exception: the AI eye's `owner`, the mob `eyeobj`
-  and the AI's `all_eyes` are still written by `ai_eye_of`'s hooks, because
-  soulcatcher eyes and multicam eyes share those vars without the relation.
+  transform).
 - **Deletion unlinks.** In the destroy transaction's phase 4 (links), before
   any `Destroy()`, every edge is unlinked. `on_source_delete` /
   `on_target_delete` (`OM_END_UNLINK` or `OM_END_DELETE_OTHER`) apply to the

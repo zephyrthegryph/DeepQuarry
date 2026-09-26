@@ -1560,6 +1560,7 @@
 	return
 
 /mob/extra_admin_link(source)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(client && eyeobj)
 		return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[eyeobj]'>EYE</A>"
 

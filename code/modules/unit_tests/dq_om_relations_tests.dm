@@ -325,55 +325,61 @@
 	qdel(torso)
 	TEST_ASSERT(QDELETED(I), "the implant should be deleted along with its organ")
 
-// ---------------------------------------------------------------- ai_eye_of
+// ---------------------------------------------------------------- eyes
 
-/// Creating an AI's eye establishes ai_eye_of: the eye's `owner` and the AI's
-/// `all_eyes`/`eyeobj` agree with the direct relation lookup.
-/datum/unit_test/dq_om_relation_ai_eye_of_establishes
+// These use a bare aiEye and take_eye() rather than create_eyeobj(), which
+// also calls SetName() -- that reaches into AI announcer/camera setup a bare
+// allocate() doesn't stand up.
 
-// These drive the relation directly with om_link()/om_unlink() and a bare
-// aiEye, rather than through create_eyeobj(), which also calls SetName() --
-// that reaches into an AI's announcer/camera setup that a bare allocate()
-// doesn't stand up and isn't part of what these tests are checking.
-/datum/unit_test/dq_om_relation_ai_eye_of_establishes/Run()
+/// take_eye() links eye_of and active_eye: EYE_OWNER, EYES_OF and ACTIVE_EYE agree.
+/datum/unit_test/dq_om_relation_eye_establishes
+
+/datum/unit_test/dq_om_relation_eye_establishes/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
-	var/link_result = om_link(E, A, /datum/om/relation/ai_eye_of)
-	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
-	A.eyeobj = E
-	TEST_ASSERT_EQUAL(E.owner, A, "E.owner should be the AI")
-	TEST_ASSERT(E in A.all_eyes, "E should be in the AI's all_eyes")
-	TEST_ASSERT_EQUAL(om_relation_of(E, /datum/om/relation/ai_eye_of), A, "om_relation_of should agree with the owner var")
+	TEST_ASSERT(A.take_eye(E), "take_eye() should succeed")
+	TEST_ASSERT_EQUAL(EYE_OWNER(E), A, "EYE_OWNER(E) should be the AI")
+	TEST_ASSERT(E in EYES_OF(A), "E should be in EYES_OF(A)")
+	TEST_ASSERT_EQUAL(ACTIVE_EYE(A), E, "ACTIVE_EYE(A) should be E")
 
-/// Hard-deleting the AI clears the eye's `owner`, with no dangling reference
-/// left behind.
-/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_target_delete
+/// A second eye linked with eye_of only (a multicam eye) is listed but not active.
+/datum/unit_test/dq_om_relation_eye_secondary
 
-/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_target_delete/Run()
+/datum/unit_test/dq_om_relation_eye_secondary/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
-	om_link(E, A, /datum/om/relation/ai_eye_of)
-	A.eyeobj = E
+	var/mob/observer/eye/aiEye/P = allocate(/mob/observer/eye/aiEye)
+	A.take_eye(E)
+	om_link(P, A, /datum/om/relation/eye_of)
+	TEST_ASSERT(P in EYES_OF(A), "the secondary eye should be listed")
+	TEST_ASSERT_EQUAL(ACTIVE_EYE(A), E, "the secondary eye should not become active")
+	A.drop_eye()
+	TEST_ASSERT_NULL(ACTIVE_EYE(A), "drop_eye() should clear the active eye")
+	TEST_ASSERT_NULL(EYE_OWNER(E), "drop_eye() should unlink the eye")
+	TEST_ASSERT_EQUAL(EYE_OWNER(P), A, "drop_eye() should leave the secondary eye alone")
+
+/// Deleting the owner unlinks the eye.
+/datum/unit_test/dq_om_relation_eye_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_eye_breaks_on_target_delete/Run()
+	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
+	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
+	A.take_eye(E)
 	qdel(A)
 	TEST_ASSERT(QDELETED(A), "setup: the AI should be deleted")
-	TEST_ASSERT_NULL(E.owner, "E.owner should be cleared once the AI is deleted")
+	TEST_ASSERT_NULL(EYE_OWNER(E), "EYE_OWNER(E) should be cleared once the AI is deleted")
 
-/// Hard-deleting the eye clears the AI's `all_eyes` entry and `eyeobj`, with
-/// no dangling reference left behind.
-/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_source_delete
+/// Deleting the eye clears the owner's active eye and eye list entry.
+/datum/unit_test/dq_om_relation_eye_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_source_delete/Run()
+/datum/unit_test/dq_om_relation_eye_breaks_on_source_delete/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
-	om_link(E, A, /datum/om/relation/ai_eye_of)
-	A.eyeobj = E
+	A.take_eye(E)
 	qdel(E)
 	TEST_ASSERT(QDELETED(E), "setup: the eye should be deleted")
-	// Not LAZYLEN(A.all_eyes) == 0: the AI's own Initialize() (safety = TRUE
-	// still runs create_eyeobj()) already created and linked its own eye, so
-	// A legitimately has one left -- just not this one.
-	TEST_ASSERT(!(E in A.all_eyes), "the deleted eye should not still be listed")
-	TEST_ASSERT_NULL(A.eyeobj, "A.eyeobj should be cleared once the eye is deleted")
+	TEST_ASSERT(!(E in EYES_OF(A)), "the deleted eye should not still be listed")
+	TEST_ASSERT_NULL(ACTIVE_EYE(A), "ACTIVE_EYE(A) should be cleared once the eye is deleted")
 
 // ---------------------------------------------------------------- host_of (borer)
 

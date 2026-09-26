@@ -12,14 +12,13 @@
 	visualnet = GLOB.cameranet
 
 /mob/observer/eye/aiEye/Destroy()
-	// The ai_eye_of relation's teardown (destroy transaction phase 5, before
-	// Destroy()) already cleared owner/all_eyes (and the AI's eyeobj, if it
-	// was this eye).
+	// The destroy transaction already unlinked eye_of/active_eye.
 	visualnet.clear_references(src, src.client)
 	visualnet = null
 	. = ..()
 
 /mob/observer/eye/aiEye/setLoc(T, cancel_tracking = 1)
+	var/mob/owner = EYE_OWNER(src)
 	if(owner)
 		T = get_turf(T)
 		loc = T
@@ -51,6 +50,7 @@
 	var/obj/machinery/hologram/holopad/holo = null
 
 /mob/living/silicon/ai/proc/destroy_eyeobj(atom/new_eye)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(!eyeobj) return
 	if(!new_eye)
 		new_eye = src
@@ -59,12 +59,13 @@
 	reset_perspective(new_eye)
 
 /mob/living/silicon/ai/proc/create_eyeobj(newloc)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(eyeobj)
 		destroy_eyeobj()
 	if(!newloc)
 		newloc = src.loc
 	eyeobj = new /mob/observer/eye/aiEye(newloc)
-	om_link(eyeobj, src, /datum/om/relation/ai_eye_of)
+	take_eye(eyeobj)
 	eyeobj.name = "[src.name] (AI Eye)" // Give it a name
 	reset_perspective(eyeobj)
 	SetName(src.name)
@@ -72,25 +73,28 @@
 /atom/proc/move_camera_by_click()
 	if(isAI(usr))
 		var/mob/living/silicon/ai/AI = usr
-		if(AI.eyeobj && (AI.multicam_on || (AI.client.eye == AI.eyeobj)))
+		var/mob/observer/eye/eyeobj = ACTIVE_EYE(AI)
+		if(eyeobj && (AI.multicam_on || (AI.client.eye == eyeobj)))
 			var/turf/T = get_turf(src)
 			if(T)
-				AI.eyeobj.setLoc(T)
+				eyeobj.setLoc(T)
 
 /mob/living/silicon/ai/proc/view_core()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	camera = null
 	unset_machine()
 
-	if(!src.eyeobj)
+	if(!eyeobj)
 		return
 	if(client && client.eye)
 		reset_perspective(src)
 
 	for(var/datum/chunk/c in eyeobj.visibleChunks)
 		c.remove(eyeobj)
-	src.eyeobj.setLoc(src)
+	eyeobj.setLoc(src)
 
 /mob/living/silicon/ai/proc/toggle_acceleration()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	set category = "AI.Settings"
 	set name = "Toggle Camera Acceleration"
 

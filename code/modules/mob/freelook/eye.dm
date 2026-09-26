@@ -18,7 +18,6 @@
 	plane = PLANE_AI_EYE
 	invisibility = INVISIBILITY_EYE
 
-	var/mob/owner = null
 	var/list/visibleChunks = list()
 
 	var/ghostimage = null
@@ -30,14 +29,45 @@
 	. = ..()
 	AddElement(/datum/element/godmode)
 
-/mob/observer/eye/Destroy()
-	if(owner)
-		if(owner.eyeobj == src)
-			owner.eyeobj = null
-		owner = null
-	. = ..()
+// ---------------------------------------------------------------- relations
+//
+// An eye's link to the mob looking through it is state held only as edges:
+// eye_of (eye -> owner; EYE_OWNER()/EYES_OF()) and active_eye (owner -> the
+// eye it moves and sees with; ACTIVE_EYE()). Deleting either end drops both.
+
+/// eye -> the mob looking through it.
+/datum/om/relation/eye_of
+	name = "eye"
+	source_single = TRUE
+
+/datum/om/relation/eye_of/on_unlink(mob/observer/eye/source, mob/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(ACTIVE_EYE(target) == source)
+		om_unlink(target, source, /datum/om/relation/active_eye)
+
+/// mob -> the eye it currently moves and sees with. Implies eye_of.
+/datum/om/relation/active_eye
+	name = "active eye"
+	source_single = TRUE
+	target_single = TRUE
+
+/// Look through `E` as this mob's active eye (replacing any other).
+/mob/proc/take_eye(mob/observer/eye/E)
+	if(!istype(E) || QDELETED(E))
+		return FALSE
+	if(!istype(om_link(E, src, /datum/om/relation/eye_of), /datum/om/edge))
+		return FALSE
+	return istype(om_link(src, E, /datum/om/relation/active_eye), /datum/om/edge)
+
+/// Stop looking through the active eye (it stays alive; the caller deletes it if needed).
+/mob/proc/drop_eye()
+	var/mob/observer/eye/E = ACTIVE_EYE(src)
+	if(E)
+		om_unlink(E, src, /datum/om/relation/eye_of)
+	return E
 
 /mob/observer/eye/Move(n, direct)
+	var/mob/owner = EYE_OWNER(src)
 	if(owner == src)
 		return EyeMove(n, direct)
 	return 0
@@ -59,6 +89,7 @@
 // Use this when setting the eye's location.
 // It will also stream the chunk that the new loc is in.
 /mob/observer/eye/proc/setLoc(T)
+	var/mob/owner = EYE_OWNER(src)
 	if(owner)
 		T = get_turf(T)
 		if(T != loc)
@@ -75,20 +106,21 @@
 	return 0
 
 /mob/observer/eye/proc/getLoc()
+	var/mob/owner = EYE_OWNER(src)
 	if(owner)
 		if(!isturf(owner.loc) || !owner.client)
 			return
 		return loc
-/mob
-	var/mob/observer/eye/eyeobj
 
 /mob/proc/EyeMove(n, direct)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(!eyeobj)
 		return
 
 	return eyeobj.EyeMove(n, direct)
 
 /mob/observer/eye/proc/GetViewerClient()
+	var/mob/owner = EYE_OWNER(src)
 	if(owner)
 		return owner.client
 	return null

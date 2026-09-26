@@ -86,8 +86,9 @@ Possible to do for anyone motivated enough:
 	/*There are pretty much only three ways to interact here.
 	I don't need to check for client since they're clicking on an object.
 	This may change in the future but for now will suffice.*/
-	if(user.eyeobj.loc != src.loc)//Set client eye on the object if it's not already.
-		user.eyeobj.setLoc(get_turf(src))
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+	if(eyeobj?.loc != src.loc)//Set client eye on the object if it's not already.
+		eyeobj?.setLoc(get_turf(src))
 	else if(!LAZYACCESS(masters, user))//If there is no hologram, possibly make one.
 		activate_holo(user)
 	else//If there is a hologram, remove it.
@@ -95,7 +96,8 @@ Possible to do for anyone motivated enough:
 	return
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
-	if(!(stat & NOPOWER) && user.eyeobj.loc == src.loc)//If the projector has power and client eye is on it
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+	if(!(stat & NOPOWER) && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
 		if(user.holo)
 			to_chat(user, span_danger("ERROR:") + " Image feed in progress.")
 			return
@@ -176,7 +178,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 
 /obj/machinery/hologram/holopad/process()
 	for (var/mob/living/silicon/ai/master in masters)
-		var/active_ai = (master && !master.stat && master.client && master.eyeobj)//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
+		var/active_ai = (master && !master.stat && master.client && ACTIVE_EYE(master))//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
 		if((stat & NOPOWER) || !active_ai)
 			clear_holo(master)
 			continue
@@ -188,9 +190,10 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/proc/move_hologram(mob/living/silicon/ai/user)
 	if(LAZYACCESS(masters, user))
 		var/obj/effect/overlay/aiholo/H = LAZYACCESS(masters, user)
-		walk_towards(H, user.eyeobj)
+		var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+		walk_towards(H, eyeobj)
 		//Hologram left the screen (got stuck on a wall or something)
-		if(get_dist(H, user.eyeobj) > world.view)
+		if(get_dist(H, eyeobj) > world.view)
 			clear_holo(user)
 		#ifdef IS_RANGE_BASED
 		if((get_dist(H, src) > holo_range))

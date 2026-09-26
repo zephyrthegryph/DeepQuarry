@@ -84,9 +84,9 @@
 		message = span_game(span_say(span_bold("[sender_name]") + " [speak_verb], \"[message]\""))
 		if(whisper)
 			speak_verb = "whispers"
-			sender.eyeobj.visible_message(span_italics(message), range = 1)
+			eyeobj.visible_message(span_italics(message), range = 1)
 		else
-			sender.eyeobj.visible_message(message)
+			eyeobj.visible_message(message)
 
 	//Not AR Projecting
 	else
@@ -110,9 +110,9 @@
 	if(eyeobj)
 		message = span_emote("[sender_name] [message]")
 		if(whisper)
-			sender.eyeobj.visible_message(span_italics(message), range = 1)
+			eyeobj.visible_message(span_italics(message), range = 1)
 		else
-			sender.eyeobj.visible_message(message)
+			eyeobj.visible_message(message)
 	//Not AR Projecting
 	else
 		message = span_nif(span_bold("[sender_name]") + " [message]")
@@ -329,7 +329,7 @@
 /obj/soulgem/proc/show_vore_fx(mob/living/L, severity = 0)
 	if(!linked_belly || !flag_check(SOULGEM_SHOW_VORE_SFX))
 		return
-	if(!istype(L) || L.eyeobj)
+	if(!istype(L) || ACTIVE_EYE(L))
 		return
 	linked_belly.vore_fx(L, severity)
 

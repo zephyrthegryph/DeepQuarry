@@ -102,12 +102,12 @@ are no view fields: a relation or slot IS the state, and nothing mirrors it
 into a var. The old mirrors are deleted -- a machine's or mech's `occupant`,
 a mob's `buckled`/`pulling`/`pulledby`, a movable's `buckled_mobs`, the grab's
 `affecting`/`assailant`, a ghost's `following` and `following_mobs`, a
-borer's `host` -- so a direct read is a compile error. Readers go through the
+borer's `host`, an eye's `owner`, a mob's `eyeobj`, an AI's `all_eyes` -- so a direct read is a compile error. Readers go through the
 accessor macros in `code/__defines/om.dm`: `OM_REL_TARGET`/`OM_REL_SOURCE`/
 `OM_REL_SOURCES`/`OM_REL_TARGETS` for a bare relation, `SLOT_ITEM`/`SLOT_LIST`
 for a slot (a machine's occupant is `SLOT_ITEM(machine, OCCUPANT_SLOT_*)`),
 plus the named ones (`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`,
-`GRABBED_BY`, `GRAB_TARGET`, `GRAB_ASSAILANT`, `EYE_OF`, `ORBIT_TARGET`,
+`GRABBED_BY`, `GRAB_TARGET`, `GRAB_ASSAILANT`, `EYE_OWNER`, `EYES_OF`, `ACTIVE_EYE`, `ORBIT_TARGET`,
 `ORBITERS`, `FOLLOWING`, `FOLLOWERS`, `BORER_HOST`, `BORER_OF`, `LEASH_PET`,
 `LEASH_MASTER`, `LEASH_OF`, `TETHERED_HANDHELD`, `TETHER_HOST`). Writers go
 through `move_into()`/`slot_remove()` for a slot and `om_link()`/`om_unlink()`
@@ -383,7 +383,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 ## 11. Other holders
 
 - **Vending and smartfridge (C9).** Stock slots hold virtual counts per product, and only one item is materialized per vend.
-- **Links that are not containment.** Pulling, grabbing, buckling, orbiting (`code/game/orbit.dm`, which replaced `/datum/component/orbiter`), ghost following, borer hosts, leashes (`leashed_to` pet -> leash and `leash_held_by` leash -> holder; dropping either edge drops the other) and tethered handhelds (`tethered_to` handheld -> host, deleting the host deletes the handheld) are all relations, read with the macros in §3. An edge can carry relation-specific data in `edge.data` (an orbit keeps the orbiter's pre-orbit transform there).
+- **Links that are not containment.** Pulling, grabbing, buckling, orbiting (`code/game/orbit.dm`, which replaced `/datum/component/orbiter`), ghost following, borer hosts, remote eyes (`eye_of`, `active_eye`), leashes (`leashed_to` pet -> leash and `leash_held_by` leash -> holder; dropping either edge drops the other) and tethered handhelds (`tethered_to` handheld -> host, deleting the host deletes the handheld) are all relations, read with the macros in §3. An edge can carry relation-specific data in `edge.data` (an orbit keeps the orbiter's pre-orbit transform there).
 - **Circuits.** Assemblies hold components in slots. Circuit types come from type properties rather than instances. Pins are created lazily, with values kept in a compact list.
 - **Reagents.** Holders sit behind the same insert, remove and transfer API as a fluid store. Reagent datums become shared singletons plus an id → volume list, with `data` only where needed. Organ holders are created on first reagent (with the body rewrite).
 

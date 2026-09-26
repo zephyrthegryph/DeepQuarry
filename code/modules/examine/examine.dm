@@ -164,7 +164,7 @@
 	var/list/E = list()
 	if(isAI(src))
 		var/mob/living/silicon/ai/my_ai = src
-		for(var/e in my_ai.all_eyes)
+		for(var/e in EYES_OF(my_ai))
 			var/turf/my_turf = get_turf(e)
 			var/foundcam = FALSE
 			for(var/obj/cam in view(world.view, my_turf))

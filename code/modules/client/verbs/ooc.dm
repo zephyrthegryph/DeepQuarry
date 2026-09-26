@@ -156,9 +156,9 @@
 		if(viewer.client && viewer.client.prefs?.read_preference(/datum/preference/toggle/show_looc))
 			receivers |= viewer.client
 		else if(isEye(viewer)) // For AI eyes and the like
-			var/mob/observer/eye/E = viewer
-			if(E.owner && E.owner.client)
-				receivers |= E.owner.client
+			var/mob/owner = EYE_OWNER(viewer)
+			if(owner?.client)
+				receivers |= owner.client
 
 	// Admins with RLOOC displayed who weren't already in
 	for(var/client/admin in GLOB.admins)
@@ -186,6 +186,7 @@
 	return src
 
 /mob/living/silicon/ai/get_looc_source()
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(eyeobj)
 		return eyeobj
 	return src

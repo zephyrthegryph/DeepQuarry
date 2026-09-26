@@ -194,7 +194,7 @@
 		return
 
 	// If we have an eyeobj, it moves instead
-	if(my_mob.eyeobj)
+	if(ACTIVE_EYE(my_mob))
 		return my_mob.EyeMove(n,direct)
 
 	// This is sota the goto stop mobs from moving var (for some reason)

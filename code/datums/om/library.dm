@@ -227,33 +227,6 @@
 		if(M.pullin)
 			M.pullin.icon_state = "pull0"
 
-/// an AI eye -> the silicon AI controlling it. No view fields (OM relations
-/// step 3): the eye's `owner` and the AI's `all_eyes` are still the vars
-/// every caller reads, but this relation's own on_link()/on_unlink() are
-/// their only writer now; on_unlink() also clears the AI's `eyeobj` (its
-/// single "currently active" eye cache) when it was this one. Previously all
-/// three were hand-maintained by create_eyeobj()/destroy_eyeobj()
-/// (code/modules/mob/freelook/ai/eye.dm) and the eye's own Destroy(); now
-/// hard-deleting either one automatically clears the other's reference.
-/datum/om/relation/ai_eye_of
-	name = "ai eye"
-	source_single = TRUE
-
-/datum/om/relation/ai_eye_of/on_link(mob/observer/eye/aiEye/source, mob/living/silicon/ai/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && istype(target))
-		source.owner = target
-		LAZYADD(target.all_eyes, source)
-
-/datum/om/relation/ai_eye_of/on_unlink(mob/observer/eye/aiEye/source, mob/living/silicon/ai/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && source.owner == target)
-		source.owner = null
-	if(istype(target))
-		LAZYREMOVE(target.all_eyes, source)
-	if(istype(target) && !QDELETED(target) && target.eyeobj == source)
-		target.eyeobj = null
-
 /// consumer -> power source.
 /datum/om/relation/powered_by
 	name = "power source"

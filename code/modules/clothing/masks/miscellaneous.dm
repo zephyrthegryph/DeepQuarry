@@ -240,8 +240,7 @@
 /obj/item/clothing/mask/ai/equipped(mob/user, slot)
 	..(user, slot)
 	if(slot == slot_wear_mask)
-		eye.owner = user
-		user.eyeobj = eye
+		user.take_eye(eye)
 
 		for(var/datum/chunk/c in eye.visibleChunks)
 			c.remove(eye)
@@ -249,12 +248,11 @@
 
 /obj/item/clothing/mask/ai/dropped(mob/user, equipping, slot)
 	..()
-	if(eye.owner == user)
+	if(EYE_OWNER(eye) == user)
 		for(var/datum/chunk/c in eye.visibleChunks)
 			c.remove(eye)
 
-		eye.owner.eyeobj = null
-		eye.owner = null
+		om_unlink(eye, user, /datum/om/relation/eye_of)
 
 /obj/item/clothing/mask/bandana
 	name = "black bandana"

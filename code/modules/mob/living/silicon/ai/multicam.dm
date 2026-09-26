@@ -89,7 +89,7 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 		return
 	if(ai)
 		ai.multicam_screens -= src
-		ai.all_eyes -= aiEye
+		om_unlink(aiEye, ai, /datum/om/relation/eye_of)
 		if(ai.master_multicam == src)
 			ai.master_multicam = null
 		if(ai.multicam_on)
@@ -97,7 +97,7 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 	ai = new_ai
 	if(new_ai)
 		new_ai.multicam_screens += src
-		ai.all_eyes += aiEye
+		om_link(aiEye, ai, /datum/om/relation/eye_of)
 		if(new_ai.multicam_on)
 			show_to(new_ai.client)
 
@@ -196,8 +196,6 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 /mob/observer/eye/aiEye/pic_in_pic/Destroy()
 	disable_camera_telegraphing()
-	if(screen && screen.ai)
-		screen.ai.all_eyes -= src
 	if(!QDELETED(screen))
 		QDEL_NULL(screen)
 	else
@@ -207,6 +205,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 //AI procs
 
 /mob/living/silicon/ai/proc/drop_new_multicam(silent = FALSE)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(!multicam_allowed)
 		if(!silent)
 			to_chat(src, span_warning("This action is currently disabled. Contact an administrator to enable this feature."))
@@ -263,6 +262,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 
 /mob/living/silicon/ai/proc/select_main_multicam_window(atom/movable/screen/movable/pic_in_pic/ai/P)
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(master_multicam == P)
 		return
 
