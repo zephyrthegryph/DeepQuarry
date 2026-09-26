@@ -104,35 +104,65 @@
 
 	return 0
 
+/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
+/// the omni mixer's N-way generalization of the trinary mixer's two input
+/// flows -- one plain `DeviceFlow` (mask 0: every gas) per input port,
+/// `RUST_FLOW_MOLES`, ratio-scaled by `vg_mix_transfer()` (already N-way,
+/// no separate Rust function needed here). The actual gas movement is
+/// Rust's own device-edge step.
 /obj/machinery/atmospherics/omni/mixer/process()
 	if(!..())
 		return 0
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = 0
+	var/requested = 0
 	for (var/datum/omni_port/P in inputs)
-		transfer_moles += (set_flow_rate*P.concentration/P.air.return_volume())*P.air.total_moles()
-
-	var/power_draw = -1
-	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
-		power_draw = mix_gas(src, mixing_inputs, output.air, transfer_moles, power_rating)
-
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-
-		for(var/datum/omni_port/P in inputs)
-			if(P.concentration && P.network)
-				P.network.mark_dirty()
-
-		if(output.network)
-			output.network.mark_dirty()
-
-	else
+		requested += (set_flow_rate*P.concentration/P.air.return_volume())*P.air.total_moles()
+	if(requested <= MINIMUM_MOLES_TO_FILTER)
+		unregister_omni_mixer_edges()
 		hibernate_until_gas_changes()
 		return PROCESS_KILL
 
+	var/available_power = material_pump_power(power_rating)
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
+	var/list/result = vg_mix_transfer(mixing_inputs, output.air, requested, available_power, efficiency)
+	if(!result)
+		unregister_omni_mixer_edges()
+		hibernate_until_gas_changes()
+		return PROCESS_KILL
+
+	var/power_draw = result[2]
+	var/dt = SSvg.wait / (1 SECONDS)
+
+	last_power_draw = power_draw
+	use_power(power_draw)
+
+	// result[3..] is one moles figure per `mixing_inputs` entry, in that
+	// same order, REGARDLESS of concentration (mix_transfer() gives every
+	// source a slot, zero-ratio or not) -- so this must walk every port in
+	// lockstep with it, not skip zero-concentration ones.
+	var/i = 3
+	for(var/datum/omni_port/P in inputs)
+		var/slot = "in_[P]"
+		var/moles = result[i++]
+		if(!P.concentration || !moles)
+			rust_unregister_device_n(slot)
+			continue
+		rust_set_device_n(slot, ports.Find(P), ports.Find(output))
+		rust_set_device_flow_n(slot, 0, RUST_FLOW_MOLES, moles / dt, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+
+	for(var/datum/omni_port/P in inputs)
+		if(P.concentration && P.network)
+			P.network.mark_dirty()
+
+	if(output.network)
+		output.network.mark_dirty()
+
 	return 1
+
+/obj/machinery/atmospherics/omni/mixer/proc/unregister_omni_mixer_edges()
+	for(var/datum/omni_port/P in inputs)
+		rust_unregister_device_n("in_[P]")
 
 /obj/machinery/atmospherics/omni/mixer/can_process_gas()
 	var/transfer_moles = 0

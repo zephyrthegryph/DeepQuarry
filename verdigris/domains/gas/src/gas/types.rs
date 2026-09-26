@@ -125,6 +125,11 @@ pub struct GasType {
 	/// The specific heat of the gas. Duplicated in the GAS_SPECIFIC_HEATS vector for speed.
 	/// Byond: `specific_heat`, a number.
 	pub specific_heat: f32,
+	/// kg/mol. Byond: `GLOB.gas_data.molar_mass[id]` (`xgm_compat.dm`'s
+	/// canonical table, not a `/datum/gas` var) -- needed alongside
+	/// `specific_heat` for the entropy-based power-budget math a filter or
+	/// mixer device runs (`rust_architecture.md` §8.5 step 6).
+	pub molar_mass: f32,
 	/// Gas's fusion power. Used in fusion hooking, so this can be removed and ignored if you don't have fusion.
 	/// Byond: `fusion_power`, a number.
 	pub fusion_power: f32,
@@ -157,6 +162,7 @@ impl GasType {
 		name: Box<str>,
 		flags: u32,
 		specific_heat: f32,
+		molar_mass: f32,
 		fusion_power: f32,
 		moles_visible: Option<f32>,
 		enthalpy: f32,
@@ -170,6 +176,7 @@ impl GasType {
 			name,
 			flags,
 			specific_heat,
+			molar_mass,
 			fusion_power,
 			moles_visible,
 			enthalpy,
@@ -309,6 +316,19 @@ pub fn gas_visibility(idx: usize) -> Option<f32> {
 		.and_then(|gas| gas.moles_visible)
 }
 
+/// The molar mass (kg/mol) of gas `idx`, or `0.0` if it isn't registered
+/// (a filter/mixer's power-budget math then falls back to the same
+/// specific-heat-derived estimate DM's own `specific_entropy_gas()` uses
+/// for a gas with no molar mass on file).
+#[must_use]
+pub fn molar_mass(idx: usize) -> f32 {
+	GAS_INFO_BY_IDX
+		.read()
+		.as_ref()
+		.and_then(|gases| gases.get(idx))
+		.map_or(0.0, |gas| gas.molar_mass)
+}
+
 /// Gets a copy of all the gas visibilities.
 /// # Panics
 /// If gas info isn't loaded yet.
@@ -396,6 +416,7 @@ pub fn register_gas_manually(gas_id: &'static str, specific_heat: f32) {
 		name: gas_id.into(),
 		flags: 0,
 		specific_heat,
+		molar_mass: 0.0,
 		fusion_power: 0.0,
 		moles_visible: None,
 		enthalpy: 0.0,

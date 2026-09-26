@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "58a8bd4caa21c92b"
+#define VERDIGRIS_ABI "5387eec2b71978f2"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -649,6 +649,38 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, total)
 
+/// A filter device's entropy-limited power budget
+/// (`_atmospherics_helpers.dm`'s `filter_gas()`, `power_budget.rs`'s
+/// `filter_transfer` -- ported maths, unchanged). `filtering` is a
+/// `1 << gas_id` bitset; `requested`/`available_power` are `null` for
+/// `filter_gas()`'s own `null` (uncapped); `efficiency` is
+/// `ATMOS_FILTER_EFFICIENCY * material_pump_efficiency()/0.8` (or plain
+/// `ATMOS_FILTER_EFFICIENCY`), computed by the caller exactly as before --
+/// this bind only replaces the rate-limiting arithmetic, never the actual
+/// gas movement (a caller-owned pair of `DeviceFlow` rows does that).
+/// Returns `list(total_transfer_moles, filterable_moles,
+/// unfilterable_moles, power_draw)`, or `null` when nothing should move.
+// /proc/vg_filter_transfer (verdigris/domains/gas/src/lib.rs)
+/proc/vg_filter_transfer(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
+	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
+
+/// The omni filter's N-way generalization of [`filter_transfer`]
+/// (`_atmospherics_helpers.dm`'s `filter_gas_multi()`, `power_budget.rs`'s
+/// `filter_transfer_multi` -- ported maths, unchanged): `outputs` is a DM
+/// assoc list, `/datum/gas_mixture` -> mask (one entry per configured
+/// filter port), instead of a single shared `sink_filtered`. `sink_clean`
+/// is the omni filter's required `output` port, catching anything no
+/// output's mask matches. Returns `list(total_transfer_moles, power_draw,
+/// clean_moles, output_1_moles, output_2_moles, ...)` in `outputs`' own
+/// iteration order, or `null` when nothing should move.
+// /proc/vg_filter_transfer_multi (verdigris/domains/gas/src/lib.rs)
+/proc/vg_filter_transfer_multi(source, outputs, sink_clean, requested, available_power, efficiency)
+	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_multi_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(source, outputs, sink_clean, requested, available_power, efficiency)
+
 /// For updating reagent gas fire products, do not use for now.
 // /proc/finalize_gas_refs (verdigris/domains/gas/src/lib.rs)
 /proc/vg_finalize_gas_refs()
@@ -1036,6 +1068,20 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:min_heat_cap_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, arg_min)
+
+/// A mixer device's entropy-limited power budget
+/// (`_atmospherics_helpers.dm`'s `mix_gas()`, `power_budget.rs`'s
+/// `mix_transfer` -- ported maths, unchanged). `sources` is a DM assoc
+/// list, `/datum/gas_mixture` -> mix ratio (every ratio must sum to 1, as
+/// `mix_gas()` required); `requested`/`available_power`/`efficiency` as
+/// [`filter_transfer`]. Returns `list(total_transfer_moles,
+/// power_draw, source_1_moles, source_2_moles, ...)` in `sources`' own
+/// iteration order, or `null` when nothing should move.
+// /proc/vg_mix_transfer (verdigris/domains/gas/src/lib.rs)
+/proc/vg_mix_transfer(sources, sink, requested, available_power, efficiency)
+	var/static/__f = load_ext(VERDIGRIS, "byond:mix_transfer_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(sources, sink, requested, available_power, efficiency)
 
 /// Args: (coefficient). Multiplies all gases by this amount.
 // /datum/gas_mixture/proc/multiply (verdigris/domains/gas/src/lib.rs)

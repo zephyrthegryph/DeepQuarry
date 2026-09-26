@@ -86,6 +86,16 @@
 		icon_state += "off"
 		update_use_power(USE_POWER_OFF)
 
+/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
+/// a filter is a masked flow to the filter port plus a pass-through flow
+/// on the same two Rust device edges (source->filtered, source->clean),
+/// each a plain `DeviceFlow` row with `RUST_FLOW_MOLES`. The entropy-
+/// limited power budget that used to gate `filter_gas()` is unchanged
+/// maths, now in Rust (`vg_filter_transfer()`,
+/// `verdigris/domains/gas/src/power_budget.rs`) -- this proc only
+/// resolves the filtering mask, calls that once, and republishes the two
+/// flows' `rate` from the result; the actual gas movement is Rust's own
+/// device-edge step, same as every other pipe device.
 /obj/machinery/atmospherics/trinary/atmos_filter/process()
 	..()
 
@@ -93,27 +103,53 @@
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
+		rust_unregister_device_n("filtered")
+		rust_unregister_device_n("clean")
+		return 1
 
-	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate/air1.return_volume())*air1.total_moles()
+	var/mask = 0
+	for(var/gas_id in filtered_out)
+		mask |= (1 << GAS_IDX(gas_id))
 
-	var/power_draw = -1
-	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
-		power_draw = filter_gas(src, filtered_out, air1, air2, air3, transfer_moles, power_rating)
+	var/requested = (set_flow_rate/air1.return_volume())*air1.total_moles()
+	if(requested <= MINIMUM_MOLES_TO_FILTER)
+		rust_unregister_device_n("filtered")
+		rust_unregister_device_n("clean")
+		return 1
 
-		if(network2)
-			network2.mark_dirty()
+	var/available_power = material_pump_power(power_rating)
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
+	var/list/result = vg_filter_transfer(air1, air2, air3, mask, requested, available_power, efficiency)
+	if(!result)
+		rust_unregister_device_n("filtered")
+		rust_unregister_device_n("clean")
+		return 1
 
-		if(network3)
-			network3.mark_dirty()
+	var/total_transfer_moles = result[1]
+	var/filterable_moles = result[2]
+	var/unfilterable_moles = result[3]
+	var/power_draw = result[4]
+	var/considered_moles = filterable_moles + unfilterable_moles
+	var/dt = SSvg.wait / (1 SECONDS)
 
-		if(network1)
-			network1.mark_dirty()
+	last_flow_rate = (total_transfer_moles/air1.total_moles())*air1.return_volume()
+	last_power_draw = power_draw
+	use_power(power_draw)
 
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
+	rust_set_device_n("filtered", 1, 2)
+	rust_set_device_flow_n("filtered", mask, RUST_FLOW_MOLES, considered_moles > 0 ? (total_transfer_moles * filterable_moles / considered_moles) / dt : 0, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+
+	rust_set_device_n("clean", 1, 3)
+	rust_set_device_flow_n("clean", RUST_ALL_GASES_MASK & ~mask, RUST_FLOW_MOLES, considered_moles > 0 ? (total_transfer_moles * unfilterable_moles / considered_moles) / dt : 0, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+
+	if(network2)
+		network2.mark_dirty()
+
+	if(network3)
+		network3.mark_dirty()
+
+	if(network1)
+		network1.mark_dirty()
 
 	return 1
 

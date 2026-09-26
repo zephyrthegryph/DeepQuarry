@@ -58,6 +58,13 @@
 	if (!mixing_inputs)
 		mixing_inputs = list(src.air1 = node1_concentration, src.air2 = node2_concentration)
 
+/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
+/// a mixer is two input flows (port1->port3, port2->port3), each a plain
+/// `DeviceFlow` row (mask 0: every gas) with `RUST_FLOW_MOLES`, ratio-
+/// scaled by `vg_mix_transfer()` -- the entropy-limited power budget that
+/// used to gate `mix_gas()`, unchanged maths, now in Rust
+/// (`verdigris/domains/gas/src/power_budget.rs`). The actual gas movement
+/// is Rust's own device-edge step, same as every other pipe device.
 /obj/machinery/atmospherics/trinary/mixer/process()
 	..()
 
@@ -65,27 +72,47 @@
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
+		rust_unregister_device_n("in1")
+		rust_unregister_device_n("in2")
+		return 1
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate*mixing_inputs[air1]/air1.return_volume())*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.return_volume())*air2.total_moles()
+	var/requested = (set_flow_rate*mixing_inputs[air1]/air1.return_volume())*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.return_volume())*air2.total_moles()
+	if(requested <= MINIMUM_MOLES_TO_FILTER)
+		rust_unregister_device_n("in1")
+		rust_unregister_device_n("in2")
+		return 1
 
-	var/power_draw = -1
-	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
-		power_draw = mix_gas(src, mixing_inputs, air3, transfer_moles, power_rating)
+	var/available_power = material_pump_power(power_rating)
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
+	var/list/result = vg_mix_transfer(mixing_inputs, air3, requested, available_power, efficiency)
+	if(!result)
+		rust_unregister_device_n("in1")
+		rust_unregister_device_n("in2")
+		return 1
 
-		if(network1 && mixing_inputs[air1])
-			network1.mark_dirty()
+	var/power_draw = result[2]
+	var/in1_moles = result[3]
+	var/in2_moles = result[4]
+	var/dt = SSvg.wait / (1 SECONDS)
 
-		if(network2 && mixing_inputs[air2])
-			network2.mark_dirty()
+	last_power_draw = power_draw
+	use_power(power_draw)
 
-		if(network3)
-			network3.mark_dirty()
+	rust_set_device_n("in1", 1, 3)
+	rust_set_device_flow_n("in1", 0, RUST_FLOW_MOLES, in1_moles / dt, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
 
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
+	rust_set_device_n("in2", 2, 3)
+	rust_set_device_flow_n("in2", 0, RUST_FLOW_MOLES, in2_moles / dt, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+
+	if(network1 && mixing_inputs[air1])
+		network1.mark_dirty()
+
+	if(network2 && mixing_inputs[air2])
+		network2.mark_dirty()
+
+	if(network3)
+		network3.mark_dirty()
 
 	return 1
 

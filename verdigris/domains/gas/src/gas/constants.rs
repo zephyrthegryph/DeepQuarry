@@ -13,6 +13,10 @@ pub const ONE_ATMOSPHERE: f32 = 101.325;
 pub const TCRYO: f32 = 225.0;
 /// Amount of gas below which any amounts will be truncated to 0.
 pub const GAS_MIN_MOLES: f32 = 0.0001;
+/// DM's `MINIMUM_MOLES_TO_FILTER` (`code/__defines/machinery.dm`): below
+/// this, a filter/mixer's power-budget calc ([`crate::power_budget`])
+/// treats a gas, or a computed transfer, as not worth moving.
+pub const MINIMUM_MOLES_TO_FILTER: f32 = 0.04;
 /// Heat capacities below which heat will be considered 0.
 pub const MINIMUM_HEAT_CAPACITY: f32 = 0.0003;
 

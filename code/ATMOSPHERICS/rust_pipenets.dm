@@ -13,16 +13,27 @@
 	var/list/rust_pipe_port_ids
 	/// Only components without a pre-existing gas slot (valves/connectors) use this.
 	var/list/datum/gas_mixture/rust_unbound_port_air
-	/// M2: this machine's device edge id, or 0 if it has none registered.
+	/// M2: this machine's (one) device edge id, or 0 if it has none
+	/// registered. Single-edge devices (pump, volume pump, passive gate,
+	/// vent pump, vent scrubber) use this; a multi-port device (filter,
+	/// mixer) uses `rust_device_ids`/the `_n` procs below instead.
 	var/rust_device_id = 0
-	/// This device's one flow law, if it has one: the `vg_pipe_flow_set()`-
-	/// returned entity handle of a bare `DeviceFlow` row (`rust_architecture.md`
-	/// §8.5 step 6's pipe-device redesign) -- not a DM object, never placed
-	/// on the map; 0 means none registered yet.
+	/// This device's one flow law, if it has one: the bare `DeviceFlow`
+	/// row's entity handle (`rust_architecture.md` §8.5 step 6's
+	/// pipe-device redesign) -- not a DM object, never placed on the map;
+	/// 0 means none registered yet.
 	var/rust_flow_entity = 0
 	/// This device's valve gate, if it has one: a bare `DeviceValve` row's
 	/// entity handle, same pattern as `rust_flow_entity`.
 	var/rust_valve_entity = 0
+	/// A multi-port device's (filter, mixer) device edges, one per named
+	/// slot (an arbitrary string key the caller picks, e.g. "filtered"/
+	/// "clean", or "a"/"b") -- the N-edges-per-machine extension of
+	/// `rust_device_id` (`rust_set_device_n()` and friends, below).
+	var/list/rust_device_ids
+	/// Per slot, that edge's `DeviceFlow` row entity (`rust_flow_entity`'s
+	/// N-edge counterpart).
+	var/list/rust_flow_entities
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
 	return 0
@@ -142,6 +153,7 @@
 
 /obj/machinery/atmospherics/proc/rust_unregister_pipe_topology()
 	rust_unregister_device()
+	rust_unregister_all_devices_n()
 	for(var/index = 1 to length(rust_pipe_port_ids))
 		var/port_id = rust_pipe_port_ids[index]
 		var/port_volume = rust_pipe_port_volume(index)
@@ -300,6 +312,67 @@
 	SSair.rust_pipe_devices?.Remove("[rust_device_id]")
 	rust_device_id = 0
 	SSair.rust_commit_pending_devices()
+
+// ---- N device edges per machine (filter, mixer: rust_architecture.md §8.5
+// step 6's filter/mixer slice) -- the same shape as rust_device_id/
+// rust_set_device()/rust_set_device_flow()/rust_unregister_device() above,
+// keyed by an arbitrary per-machine slot string instead of being the one
+// implicit edge, so one machine can register several (a filter's source-
+// >filtered and source->clean edges; a mixer's two input->output edges).
+
+/// Allocates `src`'s `slot` device id on first use.
+/obj/machinery/atmospherics/proc/rust_ensure_device_id_n(slot)
+	LAZYINITLIST(rust_device_ids)
+	if(!rust_device_ids[slot])
+		rust_device_ids[slot] = SSair.next_rust_device_id++
+		if(!SSair.rust_pipe_devices)
+			SSair.rust_pipe_devices = list()
+		SSair.rust_pipe_devices["[rust_device_ids[slot]]"] = src
+	return rust_device_ids[slot]
+
+/// `rust_set_device()`'s N-edge counterpart: registers (or replaces)
+/// `slot`'s device edge between ports `port_index_a`/`port_index_b`.
+/obj/machinery/atmospherics/proc/rust_set_device_n(slot, port_index_a, port_index_b)
+	if(!rust_pipe_port_ids || port_index_a > length(rust_pipe_port_ids) || port_index_b > length(rust_pipe_port_ids))
+		return FALSE
+	var/id = rust_ensure_device_id_n(slot)
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET, id, rust_pipe_port_ids[port_index_a], rust_pipe_port_ids[port_index_b])
+	SSair.rust_commit_pending_devices()
+	return TRUE
+
+/// `rust_set_device_flow()`'s N-edge counterpart: sets (creating on first
+/// use) `slot`'s one flow law.
+/obj/machinery/atmospherics/proc/rust_set_device_flow_n(slot, gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
+	LAZYINITLIST(rust_device_ids)
+	var/id = rust_device_ids[slot]
+	if(!id)
+		return FALSE
+	var/device_index = vg_pipe_device_index(id)
+	if(device_index < 0)
+		return FALSE
+	LAZYINITLIST(rust_flow_entities)
+	rust_flow_entities[slot] = vg_bind_device_flow(rust_flow_entities[slot], device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	return rust_flow_entities[slot] != 0
+
+/// `rust_unregister_device()`'s N-edge counterpart: removes just `slot`.
+/obj/machinery/atmospherics/proc/rust_unregister_device_n(slot)
+	if(rust_flow_entities?[slot])
+		vg_entity_unbind(rust_flow_entities[slot])
+		rust_flow_entities -= slot
+	var/id = rust_device_ids?[slot]
+	if(!id)
+		return
+	rust_device_ids -= slot
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, id)
+	SSair.rust_pipe_devices?.Remove("[id]")
+	SSair.rust_commit_pending_devices()
+
+/// Removes every slot this machine registered (`rust_unregister_pipe_topology()`).
+/obj/machinery/atmospherics/proc/rust_unregister_all_devices_n()
+	if(!length(rust_device_ids))
+		return
+	for(var/slot in rust_device_ids.Copy())
+		rust_unregister_device_n(slot)
 
 /// Called once per gas tick with this tick's flow-law result (M2). The base
 /// implementation does nothing; devices with a UI/events override it.

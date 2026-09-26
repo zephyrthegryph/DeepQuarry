@@ -30,7 +30,7 @@ pub const GAS_CHANGE_TEMPERATURE: u8 = 2;
 /// @dm-define GAS_DEPENDENCY_COMPOSITION
 pub const GAS_CHANGE_COMPOSITION: u8 = 4;
 
-fn missing(r: MixRef) -> eyre::Report {
+pub(crate) fn missing(r: MixRef) -> eyre::Report {
 	eyre!("no gas mixture behind handle {} ({r:?})", r.id())
 }
 

@@ -58,6 +58,12 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 	var/idx
 	var/name
 	var/specific_heat
+	/// kg/mol, from GLOB.gas_data.molar_mass (xgm_compat.dm's canonical
+	/// table): the entropy-limited power-budget math filter_gas()/mix_gas()
+	/// used to run in DM (_atmospherics_helpers.dm) needs this alongside
+	/// specific_heat, so it's plumbed into GasType here too
+	/// (rust_architecture.md §8.5 step 6's filter/mixer slice).
+	var/molar_mass = 0
 	var/flags = 0
 	var/fusion_power = 0
 	var/moles_visible
@@ -89,6 +95,7 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 		m.idx = initial(g.idx)
 		m.name = "[initial(g.name)]"
 		m.specific_heat = initial(g.specific_heat)
+		m.molar_mass = GLOB.gas_data.molar_mass[gid] || (initial(g.specific_heat) * 0.05)
 		m.fusion_power = initial(g.fusion_power)
 		m.moles_visible = initial(g.moles_visible)
 		reg.datums["[gp]"] = m

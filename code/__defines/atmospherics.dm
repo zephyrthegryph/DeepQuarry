@@ -115,6 +115,16 @@
 #define RUST_FLOW_VOLUME 0
 #define RUST_FLOW_POWER 1
 #define RUST_FLOW_UNLIMITED 2
+/// A flat mole rate: `rate` is mol/s directly, not derived from the
+/// source's own density. Used by a filter/mixer's flows, whose rate is an
+/// entropy-limited power-budget figure computed once per tick
+/// (`vg_pipe_filter_rate()`/`vg_pipe_mix_rate()`), not a volume or a power.
+#define RUST_FLOW_MOLES 3
+/// Every registered gas's bit set (`GAS_COUNT` gases, `verdigris/domains/gas/src/gas/ids.rs`):
+/// a filter's "everything not filtered" flow masks this with `~filtered_mask`
+/// to get a non-negative complement (DM's `~` is a 32-bit signed complement,
+/// which a raw `~mask` would turn negative for the `DeviceFlow.gases: u32` field).
+#define RUST_ALL_GASES_MASK 0x3FFFFF
 
 // A DeviceFlow row's `direction` (device.rs's direction mod).
 #define RUST_DIR_FORCED 0

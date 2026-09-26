@@ -69,6 +69,13 @@
 
 	return 0
 
+/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
+/// the omni filter's N-way generalization of the trinary filter's two
+/// flows -- one masked `DeviceFlow` per configured filter port plus a
+/// catch-all one to `output`, all `RUST_FLOW_MOLES`. `vg_filter_transfer_multi()`
+/// (`verdigris/domains/gas/src/power_budget.rs`) is `filter_gas_multi()`'s
+/// entropy-limited power budget, unchanged maths, now in Rust; the actual
+/// gas movement is Rust's own device-edge step.
 /obj/machinery/atmospherics/omni/atmos_filter/process()
 	if(!..())
 		return 0
@@ -77,29 +84,64 @@
 	var/datum/gas_mixture/input_air = input.air		// it's completely happy with them if they're in a loop though i.e. "P.air.return_pressure()"... *shrug*
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate/input_air.return_volume())*input_air.total_moles()
-
-	var/power_draw = -1
-	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
-		power_draw = filter_gas_multi(src, filtering_outputs, input_air, output_air, transfer_moles, power_rating)
-
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-
-		if(input.network)
-			input.network.mark_dirty()
-		if(output.network)
-			output.network.mark_dirty()
-		for(var/datum/omni_port/P in atmos_filters)
-			if(P.network)
-				P.network.mark_dirty()
-
-	else
+	var/requested = (set_flow_rate/input_air.return_volume())*input_air.total_moles()
+	if(requested <= MINIMUM_MOLES_TO_FILTER)
+		unregister_omni_filter_edges()
 		hibernate_until_gas_changes()
 		return PROCESS_KILL
 
+	var/list/outputs = list()	//mixture -> mask, one per configured filter port
+	for(var/datum/omni_port/P in atmos_filters)
+		var/gasid = mode_to_gasid(P.mode)
+		if(gasid)
+			outputs[P.air] = 1 << GAS_IDX(gasid)
+
+	var/available_power = material_pump_power(power_rating)
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
+	var/list/result = vg_filter_transfer_multi(input_air, outputs, output_air, requested, available_power, efficiency)
+	if(!result)
+		unregister_omni_filter_edges()
+		hibernate_until_gas_changes()
+		return PROCESS_KILL
+
+	var/total_transfer_moles = result[1]
+	var/power_draw = result[2]
+	var/clean_moles = result[3]
+	var/considered_moles = clean_moles
+	for(var/i in 4 to length(result))
+		considered_moles += result[i]
+	var/dt = SSvg.wait / (1 SECONDS)
+
+	last_power_draw = power_draw
+	use_power(power_draw)
+
+	rust_set_device_n("output", ports.Find(input), ports.Find(output))
+	rust_set_device_flow_n("output", 0, RUST_FLOW_MOLES, considered_moles > 0 ? (total_transfer_moles * clean_moles / considered_moles) / dt : 0, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+
+	var/i = 4
+	for(var/datum/omni_port/P in atmos_filters)
+		var/slot = "filter_[P]"
+		if(!outputs[P.air])
+			rust_unregister_device_n(slot)
+			continue
+		var/moles = result[i++]
+		rust_set_device_n(slot, ports.Find(input), ports.Find(P))
+		rust_set_device_flow_n(slot, outputs[P.air], RUST_FLOW_MOLES, considered_moles > 0 ? (total_transfer_moles * moles / considered_moles) / dt : 0, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+
+	if(input.network)
+		input.network.mark_dirty()
+	if(output.network)
+		output.network.mark_dirty()
+	for(var/datum/omni_port/P in atmos_filters)
+		if(P.network)
+			P.network.mark_dirty()
+
 	return 1
+
+/obj/machinery/atmospherics/omni/atmos_filter/proc/unregister_omni_filter_edges()
+	rust_unregister_device_n("output")
+	for(var/datum/omni_port/P in atmos_filters)
+		rust_unregister_device_n("filter_[P]")
 
 /obj/machinery/atmospherics/omni/atmos_filter/can_process_gas()
 	if(!input?.air)

@@ -13,6 +13,7 @@ pub mod kind;
 mod parser;
 pub mod pipes;
 pub mod planet;
+pub mod power_budget;
 mod reaction;
 pub mod turf;
 pub mod world;
@@ -21,7 +22,7 @@ use byondapi::prelude::*;
 use eyre::Result;
 use gas::constants::{ReactionReturn, GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use gas::{
-	amt_gases, constants, gas_idx_from_string, tot_gases, types, with_gas_info, with_mix,
+	amt_gases, constants, gas_idx_from_string, missing, tot_gases, types, with_gas_info, with_mix,
 	with_mix_mut, with_mixes, with_mixes_mut, Mixture,
 };
 use world::{with_world, MixRef};
@@ -189,6 +190,7 @@ fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
 				gas_datum.read_string_id(byond_string!("name"))?.into_boxed_str(),
 				gas_datum.read_number_id(byond_string!("flags")).unwrap_or_default() as u32,
 				gas_datum.read_number_id(byond_string!("specific_heat"))?,
+				gas_datum.read_number_id(byond_string!("molar_mass")).unwrap_or_default(),
 				gas_datum.read_number_id(byond_string!("fusion_power")).unwrap_or_default(),
 				gas_datum.read_number_id(byond_string!("moles_visible")).ok(),
 				gas_datum.read_number_id(byond_string!("enthalpy")).unwrap_or_default(),
@@ -1067,6 +1069,173 @@ fn parse_gas_string(src: ByondValue, string: ByondValue) -> Result<ByondValue> {
 		Ok(())
 	})?;
 	Ok(true.into())
+}
+
+/// A filter device's entropy-limited power budget
+/// (`_atmospherics_helpers.dm`'s `filter_gas()`, `power_budget.rs`'s
+/// `filter_transfer` -- ported maths, unchanged). `filtering` is a
+/// `1 << gas_id` bitset; `requested`/`available_power` are `null` for
+/// `filter_gas()`'s own `null` (uncapped); `efficiency` is
+/// `ATMOS_FILTER_EFFICIENCY * material_pump_efficiency()/0.8` (or plain
+/// `ATMOS_FILTER_EFFICIENCY`), computed by the caller exactly as before --
+/// this bind only replaces the rate-limiting arithmetic, never the actual
+/// gas movement (a caller-owned pair of `DeviceFlow` rows does that).
+/// Returns `list(total_transfer_moles, filterable_moles,
+/// unfilterable_moles, power_draw)`, or `null` when nothing should move.
+#[auxmacros::bind("/proc/vg_filter_transfer")]
+fn filter_transfer(
+	source: ByondValue,
+	sink_filtered: ByondValue,
+	sink_clean: ByondValue,
+	filtering: ByondValue,
+	requested: ByondValue,
+	available_power: ByondValue,
+	efficiency: ByondValue,
+) -> Result<ByondValue> {
+	let (rs, rf, rc) = (MixRef::of(&source)?, MixRef::of(&sink_filtered)?, MixRef::of(&sink_clean)?);
+	#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+	let filtering = filtering.get_number()? as u32;
+	let requested = (!requested.is_null()).then(|| requested.get_number()).transpose()?;
+	let available_power = (!available_power.is_null()).then(|| available_power.get_number()).transpose()?;
+	let efficiency = efficiency.get_number()?;
+	let result = with_world(|w| {
+		let source_mix = w.load(rs).ok_or_else(|| missing(rs))?;
+		let sink_filtered_mix = w.load(rf).ok_or_else(|| missing(rf))?;
+		let sink_clean_mix = w.load(rc).ok_or_else(|| missing(rc))?;
+		Ok::<_, eyre::Report>(power_budget::filter_transfer(
+			&source_mix,
+			&sink_filtered_mix,
+			&sink_clean_mix,
+			filtering,
+			requested,
+			available_power,
+			efficiency,
+			constants::MINIMUM_MOLES_TO_FILTER,
+		))
+	})?;
+	let Some(result) = result else { return Ok(ByondValue::null()) };
+	let list = ByondValue::new_list()?;
+	list.write_list(&[
+		ByondValue::from(result.total_transfer_moles),
+		ByondValue::from(result.filterable_moles),
+		ByondValue::from(result.unfilterable_moles),
+		ByondValue::from(result.power_draw),
+	])?;
+	Ok(list)
+}
+
+/// A mixer device's entropy-limited power budget
+/// (`_atmospherics_helpers.dm`'s `mix_gas()`, `power_budget.rs`'s
+/// `mix_transfer` -- ported maths, unchanged). `sources` is a DM assoc
+/// list, `/datum/gas_mixture` -> mix ratio (every ratio must sum to 1, as
+/// `mix_gas()` required); `requested`/`available_power`/`efficiency` as
+/// [`filter_transfer`]. Returns `list(total_transfer_moles,
+/// power_draw, source_1_moles, source_2_moles, ...)` in `sources`' own
+/// iteration order, or `null` when nothing should move.
+#[auxmacros::bind("/proc/vg_mix_transfer")]
+fn mix_transfer(
+	sources: ByondValue,
+	sink: ByondValue,
+	requested: ByondValue,
+	available_power: ByondValue,
+	efficiency: ByondValue,
+) -> Result<ByondValue> {
+	let rsink = MixRef::of(&sink)?;
+	let requested = (!requested.is_null()).then(|| requested.get_number()).transpose()?;
+	let available_power = (!available_power.is_null()).then(|| available_power.get_number()).transpose()?;
+	let efficiency = efficiency.get_number()?;
+	let refs = sources
+		.iter()?
+		.map(|(mix, ratio)| Ok((MixRef::of(&mix)?, ratio.get_number()?)))
+		.collect::<Result<Vec<(MixRef, f32)>>>()?;
+	let result = with_world(|w| {
+		let mixtures = refs
+			.iter()
+			.map(|&(r, _)| w.load(r).ok_or_else(|| missing(r)))
+			.collect::<Result<Vec<Mixture>, _>>()?;
+		let sink_mix = w.load(rsink).ok_or_else(|| missing(rsink))?;
+		let sources: Vec<power_budget::MixSource<'_>> = mixtures
+			.iter()
+			.zip(&refs)
+			.map(|(mixture, &(_, ratio))| power_budget::MixSource { mixture, ratio })
+			.collect();
+		Ok::<_, eyre::Report>(power_budget::mix_transfer(
+			&sources,
+			&sink_mix,
+			requested,
+			available_power,
+			efficiency,
+			constants::MINIMUM_MOLES_TO_FILTER,
+		))
+	})?;
+	let Some(result) = result else { return Ok(ByondValue::null()) };
+	let mut flat = vec![ByondValue::from(result.total_transfer_moles), ByondValue::from(result.power_draw)];
+	flat.extend(result.moles.into_iter().map(ByondValue::from));
+	let list = ByondValue::new_list()?;
+	list.write_list(&flat)?;
+	Ok(list)
+}
+
+/// The omni filter's N-way generalization of [`filter_transfer`]
+/// (`_atmospherics_helpers.dm`'s `filter_gas_multi()`, `power_budget.rs`'s
+/// `filter_transfer_multi` -- ported maths, unchanged): `outputs` is a DM
+/// assoc list, `/datum/gas_mixture` -> mask (one entry per configured
+/// filter port), instead of a single shared `sink_filtered`. `sink_clean`
+/// is the omni filter's required `output` port, catching anything no
+/// output's mask matches. Returns `list(total_transfer_moles, power_draw,
+/// clean_moles, output_1_moles, output_2_moles, ...)` in `outputs`' own
+/// iteration order, or `null` when nothing should move.
+#[auxmacros::bind("/proc/vg_filter_transfer_multi")]
+fn filter_transfer_multi(
+	source: ByondValue,
+	outputs: ByondValue,
+	sink_clean: ByondValue,
+	requested: ByondValue,
+	available_power: ByondValue,
+	efficiency: ByondValue,
+) -> Result<ByondValue> {
+	let rs = MixRef::of(&source)?;
+	let rc = MixRef::of(&sink_clean)?;
+	let requested = (!requested.is_null()).then(|| requested.get_number()).transpose()?;
+	let available_power = (!available_power.is_null()).then(|| available_power.get_number()).transpose()?;
+	let efficiency = efficiency.get_number()?;
+	#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+	let refs = outputs
+		.iter()?
+		.map(|(mix, mask)| Ok((MixRef::of(&mix)?, mask.get_number()? as u32)))
+		.collect::<Result<Vec<(MixRef, u32)>>>()?;
+	let result = with_world(|w| {
+		let source_mix = w.load(rs).ok_or_else(|| missing(rs))?;
+		let sink_clean_mix = w.load(rc).ok_or_else(|| missing(rc))?;
+		let sinks = refs
+			.iter()
+			.map(|&(r, _)| w.load(r).ok_or_else(|| missing(r)))
+			.collect::<Result<Vec<Mixture>, _>>()?;
+		let outputs: Vec<power_budget::FilterOutput<'_>> = sinks
+			.iter()
+			.zip(&refs)
+			.map(|(sink, &(_, mask))| power_budget::FilterOutput { mask, sink })
+			.collect();
+		Ok::<_, eyre::Report>(power_budget::filter_transfer_multi(
+			&source_mix,
+			&outputs,
+			&sink_clean_mix,
+			requested,
+			available_power,
+			efficiency,
+			constants::MINIMUM_MOLES_TO_FILTER,
+		))
+	})?;
+	let Some(result) = result else { return Ok(ByondValue::null()) };
+	let mut flat = vec![
+		ByondValue::from(result.total_transfer_moles),
+		ByondValue::from(result.power_draw),
+		ByondValue::from(result.clean_moles),
+	];
+	flat.extend(result.moles.into_iter().map(ByondValue::from));
+	let list = ByondValue::new_list()?;
+	list.write_list(&flat)?;
+	Ok(list)
 }
 
 #[cfg(test)]

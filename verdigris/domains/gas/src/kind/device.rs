@@ -32,6 +32,12 @@ pub mod rate_kind {
 	pub const VOLUME: u8 = 0;
 	pub const POWER: u8 = 1;
 	pub const UNLIMITED: u8 = 2;
+	/// A flat mole rate (`Rate::Moles`): a filter/mixer's per-tick transfer
+	/// is a fixed `total_transfer_moles / dt` figure the entropy-limited
+	/// power budget already computed (`rust_architecture.md` §8.5 step 6's
+	/// filter/mixer slice) -- not a function of the source's own density
+	/// the way `VOLUME`/`POWER` are, so it needs its own kind.
+	pub const MOLES: u8 = 3;
 }
 
 /// [`DeviceFlow::direction`]'s wire values.
@@ -102,6 +108,7 @@ impl DeviceFlow {
 		let rate = match self.rate_kind {
 			rate_kind::POWER => Rate::Power(self.rate),
 			rate_kind::UNLIMITED => Rate::Unlimited,
+			rate_kind::MOLES => Rate::Moles(self.rate),
 			_ => Rate::Volume(self.rate),
 		};
 		let direction = if self.direction == direction::DOWNHILL {
