@@ -137,19 +137,7 @@
 	if(!length(movable_contents))
 		return PROCESS_KILL
 	affecting = movable_contents
-	spawn(1)	// slight delay to prevent infinite propagation due to map order	//TODO: please no spawn() in process(). It's a very bad idea
-		var/items_moved = 0
-		for(var/atom/movable/A in affecting)
-			if(istype(A,/obj/effect/abstract)) // Flashlight's lights are not physical objects
-				continue
-			if(A.is_incorporeal())
-				continue
-			if(!A.anchored)
-				if(A.loc == src.loc) // prevents the object from being affected if it's not currently here.
-					step(A,movedir)
-					items_moved++
-			if(items_moved >= 10)
-				break
+	om_after(src, 1, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 
 /obj/machinery/conveyor/declare_interactions(list/into)
 	into += list(
@@ -404,3 +392,17 @@
 	.=..()
 	if(oneway == 1)
 		. += " It appears to only go in one direction."
+
+/obj/machinery/conveyor/proc/move_affecting()
+	var/items_moved = 0
+	for(var/atom/movable/A in affecting)
+		if(istype(A,/obj/effect/abstract)) // Flashlight's lights are not physical objects
+			continue
+		if(A.is_incorporeal())
+			continue
+		if(!A.anchored)
+			if(A.loc == src.loc) // prevents the object from being affected if it's not currently here.
+				step(A,movedir)
+				items_moved++
+		if(items_moved >= 10)
+			break

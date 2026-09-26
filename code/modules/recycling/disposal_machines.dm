@@ -568,9 +568,8 @@
 	if( flush_count >= flush_every_ticks )
 		if( contents.len )
 			if(mode == DISPOSALMODE_CHARGED)
-				spawn(0)
-					feedback_inc("disposal_auto_flush",1)
-					flush()
+				feedback_inc("disposal_auto_flush",1)
+				flush()
 		flush_count = 0
 
 	if(flush && air_contents.return_pressure() >= SEND_PRESSURE )	// flush can happen even without power

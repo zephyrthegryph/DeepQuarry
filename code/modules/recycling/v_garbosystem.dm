@@ -88,80 +88,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	icon_state = "cronchy_active"
 
 	affecting = loc.contents - src
-	spawn(1)
-		var/items_taken = 0
-		for(var/atom/movable/A in affecting)
-			if(!isobj(A) && !isliving(A))
-				continue
-			if(istype(A, /obj/effect/decal/cleanable) || istype(A, /mob/living/voice))
-				qdel(A)
-			if(!A.anchored)
-				if(A.loc == src.loc)
-					if(isliving(A))
-						var/mob/living/L = A
-						if(!emagged && ishuman(L) && L.mind)
-							playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
-							visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
-							GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")
-							operating = FALSE
-							update()
-							break
-						if(L.stat == DEAD)
-							playsound(src, 'sound/effects/splat.ogg', 50, 1)
-							if(L.meat_amount && L.meat_type) // Get all the goobs outta this goober
-								while(L.meat_amount > 0)
-									var/obj/item/meat = new L.meat_type(src)
-									if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
-										transfer_reagent_to_tank(meat.reagents,1)
-									qdel(meat)
-									L.meat_amount--
-							L.gib()
-							items_taken++
-							if(ishuman(L))
-								// Splorch
-								var/mob/living/carbon/human/H = L
-								transfer_reagent_to_tank(H.bloodstr,1)
-								transfer_reagent_to_tank(H.ingested,1)
-								transfer_reagent_to_tank(H.vessel,0.5)
-							transfer_sludge_to_tank(rand(4,9))
-						else
-							L.injure(INJURY_CUT, 25, null, src)
-							items_taken++
-							break
-					for(var/atom/movable/C in A.contents)
-						if(C.anchored)
-							C.anchored = FALSE
-						C.forceMove(loc)
-					if(isitem(A))
-						A.SpinAnimation(5,3)
-						spawn(15)
-							if(A.loc == loc)
-								if(A.reagents)
-									transfer_reagent_to_tank(A.reagents,1)
-								if(istype(A,/obj/item/ore))
-									transfer_ore_to_tank(A,1)
-								A.forceMove(src)
-								if(!is_type_in_list(A, GLOB.item_digestion_blacklist))
-									crusher.take_item(A) //Force feed the poor bastard.
-						items_taken++
-					else
-						A.SpinAnimation(5,3)
-						spawn(15)
-							if(A)
-								A.forceMove(src)
-								if(A.reagents)
-									transfer_reagent_to_tank(A.reagents,1)
-								if(istype(A, /obj/structure/closet))
-									new /obj/item/stack/material/steel(loc, 2)
-								qdel(A)
-						items_taken++
-			if(items_taken >= voracity)
-				break
-		if(items_taken) //Lazy coder sound design moment.
-			GLOB.Recycled_Items = GLOB.Recycled_Items + items_taken
-			playsound(src, 'sound/items/poster_being_created.ogg', 50, 1)
-			playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
-			playsound(src, 'sound/effects/metalscrape2.ogg', 50, 1)
+	om_after(src, 1, PROC_REF(grind_affecting))
 
 /obj/machinery/v_garbosystem/emag_act(remaining_charges, mob/user, emag_source)
 	emagged = !emagged
@@ -231,3 +158,82 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	if(grinder)
 		grinder.attack_hand(user)
 	return TRUE
+
+/obj/machinery/v_garbosystem/proc/grind_affecting()
+	var/items_taken = 0
+	for(var/atom/movable/A in affecting)
+		if(!isobj(A) && !isliving(A))
+			continue
+		if(istype(A, /obj/effect/decal/cleanable) || istype(A, /mob/living/voice))
+			qdel(A)
+		if(!A.anchored)
+			if(A.loc == src.loc)
+				if(isliving(A))
+					var/mob/living/L = A
+					if(!emagged && ishuman(L) && L.mind)
+						playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
+						visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
+						GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")
+						operating = FALSE
+						update()
+						break
+					if(L.stat == DEAD)
+						playsound(src, 'sound/effects/splat.ogg', 50, 1)
+						if(L.meat_amount && L.meat_type) // Get all the goobs outta this goober
+							while(L.meat_amount > 0)
+								var/obj/item/meat = new L.meat_type(src)
+								if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
+									transfer_reagent_to_tank(meat.reagents,1)
+								qdel(meat)
+								L.meat_amount--
+						L.gib()
+						items_taken++
+						if(ishuman(L))
+							// Splorch
+							var/mob/living/carbon/human/H = L
+							transfer_reagent_to_tank(H.bloodstr,1)
+							transfer_reagent_to_tank(H.ingested,1)
+							transfer_reagent_to_tank(H.vessel,0.5)
+						transfer_sludge_to_tank(rand(4,9))
+					else
+						L.injure(INJURY_CUT, 25, null, src)
+						items_taken++
+						break
+				for(var/atom/movable/C in A.contents)
+					if(C.anchored)
+						C.anchored = FALSE
+					C.forceMove(loc)
+				if(isitem(A))
+					A.SpinAnimation(5,3)
+					om_after(src, 15, PROC_REF(crunch_item), A)
+					items_taken++
+				else
+					A.SpinAnimation(5,3)
+					om_after(src, 15, PROC_REF(crunch_thing), A)
+					items_taken++
+		if(items_taken >= voracity)
+			break
+	if(items_taken) //Lazy coder sound design moment.
+		GLOB.Recycled_Items = GLOB.Recycled_Items + items_taken
+		playsound(src, 'sound/items/poster_being_created.ogg', 50, 1)
+		playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
+		playsound(src, 'sound/effects/metalscrape2.ogg', 50, 1)
+
+/obj/machinery/v_garbosystem/proc/crunch_item(atom/movable/A)
+	if(A.loc == loc)
+		if(A.reagents)
+			transfer_reagent_to_tank(A.reagents,1)
+		if(istype(A,/obj/item/ore))
+			transfer_ore_to_tank(A,1)
+		A.forceMove(src)
+		if(!is_type_in_list(A, GLOB.item_digestion_blacklist))
+			crusher.take_item(A) //Force feed the poor bastard.
+
+/obj/machinery/v_garbosystem/proc/crunch_thing(atom/movable/A)
+	if(A)
+		A.forceMove(src)
+		if(A.reagents)
+			transfer_reagent_to_tank(A.reagents,1)
+		if(istype(A, /obj/structure/closet))
+			new /obj/item/stack/material/steel(loc, 2)
+		qdel(A)

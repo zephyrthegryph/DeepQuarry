@@ -162,8 +162,7 @@
 		if(H)
 			pipe_expel(H, T, 0)
 
-	spawn(2)	// delete pipe after 2 ticks to ensure expel proc finished
-		qdel(src)
+	om_qdel_after(src, 2) // delete pipe after 2 ticks to ensure expel proc finished
 
 // pipe affected by explosion
 // Light damage leaves broken pipe segments in place.
