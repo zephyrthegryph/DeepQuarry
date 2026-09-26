@@ -373,6 +373,32 @@ pipeline in `om_diagnostics()`: frames, parks, unparks, missed wakes.
 Cost: one ring dispatch per entity, one bit test per stage, one proc call per awake stage
 plus its `idle()` check. Parked entities cost nothing.
 
+### 4.11 One scheduler: time, sequences and asynchrony
+
+All deferred and multi-step work in gameplay code runs on the OM wheel and is owned by an entity. There is no second scheduler: SStimer, `spawn()`, `do_after` and gameplay `sleep()` go away.
+
+**Why `INVOKE_ASYNC` exists today.** A DM proc that sleeps also suspends its caller, unless the proc sets `waitfor = FALSE`. `INVOKE_ASYNC` is `world.ImmediateInvokeAsync`, a `waitfor = FALSE` wrapper that runs the target at once and hands control back to the caller at the target's first sleep. It exists only because gameplay procs sleep: signal handlers and Life must not block, so they wrap anything that might sleep, such as prompts, `do_after`, animations or a `sleep()` inside a proc they call. Nothing owns the resumed half. It runs even after its datum is deleted, so deleted-object runtimes follow.
+
+A framework in which gameplay code never sleeps doesn't need it. The rule is **no gameplay proc sleeps**; the things that sleep today are expressed as data instead:
+
+| Today | Becomes | Owned by |
+|---|---|---|
+| `addtimer(cb, d)`, `spawn(d)` | `om_after(E, d, proc, args...)`: a one-shot deadline on E's clock | E. Cancelled on delete; paused by suspension or stasis on its clock |
+| repeating `addtimer`, countdown vars | `om_clock`, stage `rewake`, or a timed contribution | E |
+| `do_after`, `sleep()` sequences, multi-step machines | `om_task` with declared `steps` (each a delay and a proc), claims, `requires` and `interrupted_by` | actor and target |
+| `input()` / `alert()` / `tgui_input_*` | `om_prompt(E, user, spec, on_answer)`: a callback prompt (tgui async), re-checked through the task's `requires` before `on_answer` runs | E and the user |
+| `INVOKE_ASYNC` | nothing: the callee no longer sleeps | — |
+| `stoplag()` in long loops | the work runs as a lane with a budget and resumes by cursor | the lane |
+
+A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
+
+**What stays.**
+- `sleep` and `waitfor = FALSE` remain in the MC, in world/Topic and client procs, in admin and debug verbs, and in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL). Those sit behind their own async wrappers with callbacks.
+- Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
+- `AWAIT(task, timeout)` stays only while legacy procs are converted.
+
+**Lints, ratcheted to zero outside the allowlist:** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, and `set waitfor`.
+
 ### 4.9 Diagnostics and tests
 
 - Per behaviour type (bounded at 512 types): runs, batch ms, worst lateness
