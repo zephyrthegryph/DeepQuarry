@@ -228,8 +228,7 @@
 	inuse = 1
 
 	// Reset the machine.
-	spawn(60)
-		inuse = 0
+	om_after(src, 6 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "inuse", 0)
 
 	// Process.
 	grind_items_to_reagents(holdingitems,beaker.reagents)

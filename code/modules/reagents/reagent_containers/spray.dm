@@ -57,15 +57,14 @@
 		A.visible_message("[user] sprays [A] with [src].")
 		reagents.splash(A, amount_per_transfer_from_this)
 	else
-		spawn(0)
-			var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
-			var/turf/my_target = get_turf(A)
-			D.create_reagents(amount_per_transfer_from_this)
-			if(!src)
-				return
-			reagents.trans_to_obj(D, amount_per_transfer_from_this)
-			D.set_color()
-			D.set_up(my_target, spray_size, 10)
+		var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
+		var/turf/my_target = get_turf(A)
+		D.create_reagents(amount_per_transfer_from_this)
+		if(!src)
+			return
+		reagents.trans_to_obj(D, amount_per_transfer_from_this)
+		D.set_color()
+		D.set_up(my_target, spray_size, 10)
 	return
 
 /*
@@ -189,16 +188,15 @@
 	var/list/the_targets = list(T, T1, T2)
 
 	for(var/a = 1 to 3)
-		spawn(0)
-			if(reagents.total_volume < 1) break
-			var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
-			var/turf/my_target = the_targets[a]
-			D.create_reagents(amount_per_transfer_from_this)
-			if(!src)
-				return
-			reagents.trans_to_obj(D, amount_per_transfer_from_this)
-			D.set_color()
-			D.set_up(my_target, rand(6, 8), 2)
+		if(reagents.total_volume < 1) break
+		var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
+		var/turf/my_target = the_targets[a]
+		D.create_reagents(amount_per_transfer_from_this)
+		if(!src)
+			return
+		reagents.trans_to_obj(D, amount_per_transfer_from_this)
+		D.set_color()
+		D.set_up(my_target, rand(6, 8), 2)
 	return
 
 /obj/item/reagent_containers/spray/plantbgone
@@ -282,36 +280,34 @@
 
 	if(!heavy_spray)
 		for(var/a = 1 to 3)
-			spawn(0)
-				if(reagents.total_volume < 1) break
-				playsound(src, 'sound/effects/spray2.ogg', 50, 1, -6)
-				var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
-				var/turf/my_target = the_targets[a]
-				D.create_reagents(amount_per_transfer_from_this)
-				if(!src)
-					return
-				reagents.trans_to_obj(D, amount_per_transfer_from_this)
-				D.set_color()
-				D.set_up(my_target, rand(6, 8), 2)
+			if(reagents.total_volume < 1) break
+			playsound(src, 'sound/effects/spray2.ogg', 50, 1, -6)
+			var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
+			var/turf/my_target = the_targets[a]
+			D.create_reagents(amount_per_transfer_from_this)
+			if(!src)
+				return
+			reagents.trans_to_obj(D, amount_per_transfer_from_this)
+			D.set_color()
+			D.set_up(my_target, rand(6, 8), 2)
 		return
 
 	else
 		playsound(src, 'sound/effects/extinguish.ogg', 75, 1, -3)
 
 		for(var/a = 1 to spray_particles)
-			spawn(0)
-				if(!src || !reagents.total_volume) return
+			if(!src || !reagents.total_volume) return
 
-				var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(src))
-				var/turf/my_target
-				if(a <= the_targets.len)
-					my_target = the_targets[a]
-				else
-					my_target = pick(the_targets)
-				W.create_reagents(amount_per_transfer_from_this)
-				reagents.trans_to_obj(W, amount_per_transfer_from_this)
-				W.set_color()
-				W.set_up(my_target)
+			var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(src))
+			var/turf/my_target
+			if(a <= the_targets.len)
+				my_target = the_targets[a]
+			else
+				my_target = pick(the_targets)
+			W.create_reagents(amount_per_transfer_from_this)
+			reagents.trans_to_obj(W, amount_per_transfer_from_this)
+			W.set_color()
+			W.set_up(my_target)
 
 		return
 

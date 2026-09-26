@@ -469,8 +469,7 @@
 				P.info += span_bold("Description:") + " [R.description]"
 			P.info += "<br><br><b>Notes:</b><br>"
 			P.name = "Chemical Analysis - [R.name]"
-			spawn(50)
-				printing = FALSE
+			om_after(src, 5 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "printing", FALSE)
 		else
 			. = FALSE
 

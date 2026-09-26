@@ -454,12 +454,7 @@
 		START_PROCESSING(SSobj, src)
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
-	src = null
-	var/datum/weakref/limb_ref = WEAKREF(eo)
-	spawn(rand(5 MINUTES,10 MINUTES))
-		var/obj/item/organ/external/found_limb = limb_ref.resolve()
-		if(istype(found_limb))
-			eo.germ_level += INFECTION_LEVEL_ONE+30
+	om_after(eo, rand(5 MINUTES,10 MINUTES), TYPE_PROC_REF(/obj/item/organ/external, syringe_infection))
 
 //Allow for capped syringe mode
 
@@ -515,3 +510,7 @@
 #undef SYRINGE_BROKEN
 
 #undef SYRINGE_CAPPED
+
+/// A dirty syringe's infection takes hold in the limb.
+/obj/item/organ/external/proc/syringe_infection()
+	germ_level += INFECTION_LEVEL_ONE+30

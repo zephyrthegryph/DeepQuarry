@@ -860,7 +860,7 @@
 	var/turf/location = get_turf(holder.my_atom.loc)
 	for(var/turf/simulated/floor/target_tile in range(0,location))
 		target_tile.assume_gas(GAS_VOLATILE_FUEL, created_volume, 400+T0C)
-		spawn (0) target_tile.hotspot_expose(700, 400)
+		target_tile.hotspot_expose(700, 400)
 	holder.del_reagent("napalm")
 	return
 
@@ -877,8 +877,7 @@
 	S.attach(location)
 	S.set_up(holder, created_volume, 0, location)
 	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
-	spawn(0)
-		S.start()
+	S.start()
 	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
 		holder.clear_reagents()
 	return

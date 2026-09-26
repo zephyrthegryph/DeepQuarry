@@ -1213,8 +1213,7 @@
 				if(prob(25))
 					to_chat(M, span_danger("Your pneumatic fluids seize for a moment."))
 				M.status_at_least(EFFECT_STUNNED, 2)
-				spawn(30)
-					M.status_at_least(EFFECT_WEAKENED, 2)
+				om_after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 2)
 		if(dose >= 10 || toxic_load >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
 			M.injure(INJURY_TOXIN, removed * 4, source = src)
 			M.status_adjust(EFFECT_JITTERY, 5)
