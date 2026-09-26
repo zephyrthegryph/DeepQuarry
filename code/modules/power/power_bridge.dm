@@ -93,6 +93,15 @@ GLOBAL_LIST_EMPTY(power_cable_by_entity)
 	for(var/id in power_regions)
 		var/datum/powernet/network = power_regions[id]
 		network.refresh()
+	// Every power machine's `powernet` var is polled here, not pushed --
+	// a deferred `connect_to_network(FALSE)` (map load, and every
+	// `power_autoconnect()`) relies on this to eventually resolve. APC
+	// and SMES also refresh their own network below (bundled with their
+	// other per-tick bookkeeping); refreshing them again here is a no-op
+	// (`power_bind()` short-circuits when the region hasn't changed).
+	for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
+		if(!QDELETED(machine))
+			machine.power_refresh_network()
 	for(var/obj/machinery/power/apc/apc as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
 		apc.power_poll()
 	for(var/obj/machinery/power/smes/storage as anything in REGISTRY_MEMBERS(REGISTRY_SMES))

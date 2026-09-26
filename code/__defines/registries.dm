@@ -93,6 +93,7 @@
 #define REGISTRY_POINTDEFENSE_TURRETS "pointdefense_turrets"
 #define REGISTRY_PORTAL_MASTERS "all_portal_masters"
 #define REGISTRY_PORTALS "all_portals"
+#define REGISTRY_POWER_MACHINES "power_machines"
 #define REGISTRY_RAD_COLLECTORS "rad_collectors"
 #define REGISTRY_RUNES "rune_list"
 #define REGISTRY_SEED_PACKS "all_seed_packs"

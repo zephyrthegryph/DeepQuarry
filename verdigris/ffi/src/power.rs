@@ -133,13 +133,31 @@ fn region_id(raw: u32) -> Result<RegionId<Cables>> {
 /// A region's ledger: `avail, load, brown` (W, W, 0/1). Everything else
 /// (a region's producers, consumers, SMES terminals) DM already knows --
 /// it bound them.
+///
+/// `region` names a region as of DM's *last* poll of the node that gave it
+/// that id (`vg_power_region_of`, `powernet.dm`'s `power_facade`); a split
+/// or merge inside this very step's `vg_power_commit()` can retire that
+/// exact region between polls (a merge's smaller side is gone, not
+/// renamed -- there is no successor id to redirect to). That is a stale
+/// handle, not an error: the caller (`/datum/powernet/refresh()`) already
+/// treats "no info" as "nothing to update this step" and every live node
+/// re-resolves its *current* region fresh next tick
+/// (`power_refresh_network()`), so this returns `null` instead of
+/// surfacing a runtime for the one tick the old id is dangling.
 #[auxmacros::bind("/proc/vg_power_region_read")]
 fn power_region_read(region: ByondValue) -> Result<ByondValue> {
     let r = region_id(whole(&region, "region")?)?;
-    let ledger: PowerLedger = with_world(|w| {
+    let ledger: Option<PowerLedger> = with_world(|w| {
         let host = w.network::<Cables>().map_err(|err| eyre!("{err}"))?;
-        host.network().region(r).map(|reg| *reg.payload()).map_err(|err| eyre!("{err}"))
+        match host.network().region(r) {
+            Ok(reg) => Ok(Some(*reg.payload())),
+            Err(vg_core::network::NetError::Arena(_)) => Ok(None),
+            Err(err) => Err(eyre!("{err}")),
+        }
     })?;
+    let Some(ledger) = ledger else {
+        return Ok(ByondValue::null());
+    };
     list([ledger.avail, ledger.load, f64::from(u8::from(ledger.brown))].map(|v: f64| v as f32))
 }
 

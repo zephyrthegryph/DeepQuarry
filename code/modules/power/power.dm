@@ -21,7 +21,21 @@
 	/// most never set a nonzero supply, which costs nothing.
 	var/power_supply_rate = 0
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
+
 /obj/machinery/power/Initialize(mapload)
+	. = ..()
+
+/// `on_materialize()` (not `Initialize()`): joining the knot cables on this
+/// machine's turf is a world registration (a network join, exactly the
+/// class `atom_materialize.dm` documents), and needs `vg_entity` bound --
+/// `vg_bind()` runs earlier in the same `on_materialize()` chain
+/// (`/atom/movable/on_materialize()`, `code/game/atoms_movable.dm`),
+/// `Initialize()` runs strictly before either. Calling this from
+/// `Initialize()` sent every anchored power machine's node with
+/// `vg_entity` still `0` -- `vg_power_bind_machine` correctly refused it
+/// (`entity handle 0 is not bound`), so the node was silently never placed.
+/obj/machinery/power/on_materialize()
 	. = ..()
 	power_autoconnect()
 

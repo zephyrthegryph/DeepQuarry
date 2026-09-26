@@ -1010,7 +1010,7 @@
 	return call_ext(__f)()
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-// /proc/auxtools_atmos_init (verdigris/domains/gas/src/lib.rs)
+// /proc/auxtools_atmos_init (verdigris/ffi/src/gas.rs)
 /proc/vg_hook_init(gas_data)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_init_ffi")
 	VG_COUNT_FFI_CALL
@@ -1279,6 +1279,17 @@
 /// A region's ledger: `avail, load, brown` (W, W, 0/1). Everything else
 /// (a region's producers, consumers, SMES terminals) DM already knows --
 /// it bound them.
+///
+/// `region` names a region as of DM's *last* poll of the node that gave it
+/// that id (`vg_power_region_of`, `powernet.dm`'s `power_facade`); a split
+/// or merge inside this very step's `vg_power_commit()` can retire that
+/// exact region between polls (a merge's smaller side is gone, not
+/// renamed -- there is no successor id to redirect to). That is a stale
+/// handle, not an error: the caller (`/datum/powernet/refresh()`) already
+/// treats "no info" as "nothing to update this step" and every live node
+/// re-resolves its *current* region fresh next tick
+/// (`power_refresh_network()`), so this returns `null` instead of
+/// surfacing a runtime for the one tick the old id is dangling.
 // /proc/vg_power_region_read (verdigris/ffi/src/power.rs)
 /proc/vg_power_region_read(region)
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_read_ffi")
@@ -1404,7 +1415,7 @@
 	return call_ext(__f)(sub)
 
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
-// /datum/gas_mixture/proc/react (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/react (verdigris/ffi/src/gas.rs)
 /proc/vg_react_hook(src_ref, holder)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1671,7 +1682,7 @@
 	return call_ext(__f)(id)
 
 /// For updating reaction informations for auxmos, only call this when it is changed.
-// /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/domains/gas/src/lib.rs)
+// /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/ffi/src/gas.rs)
 /proc/vg_update_reactions()
 	var/static/__f = load_ext(VERDIGRIS, "byond:update_reactions_ffi")
 	VG_COUNT_FFI_CALL
