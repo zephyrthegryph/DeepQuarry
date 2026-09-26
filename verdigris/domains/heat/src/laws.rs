@@ -40,7 +40,7 @@ use vg_core::vg;
 
 use crate::components::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling};
 use crate::consts::{BODY_SETTLED_K, RELAX_CAPACITY_RATIO, RELAX_HYSTERESIS_K, RELAX_MAX_INTERVAL, TCMB};
-use crate::couple::{GasHandle, GasProbe, GasRef};
+use crate::couple::{GasSource, GasProbe, GasRef};
 use crate::solid::SolidHeat;
 
 /// Heat's domain events (`rust_architecture.md` §4.8).
@@ -361,7 +361,7 @@ impl Law for BodyBodyExchange {
 /// matching the old `ledger::GAS`/`GAS_RESERVOIRS` entries.
 pub struct BodyGasExchange;
 impl Law for BodyGasExchange {
-    type Reads = (GasCoupling, vg_core::query::Global<GasHandle>);
+    type Reads = (GasCoupling, vg_core::query::Global<GasSource>);
     type Writes = Foreign<GasCoupling, HeatBody>;
     const NAME: &'static str = "heat_body_gas_exchange";
 
@@ -438,7 +438,7 @@ impl Law for BodyGasExchange {
 /// Deposits `moved` joules (leaving the body) into `target` through
 /// `gas`. Returns what must be booked to the ledger (gas is always outside
 /// `"heat_energy"`'s tracked total, mutable or not).
-fn deposit_gas(gas: &GasHandle, target: GasRef, moved: f64) -> LedgerEntry {
+fn deposit_gas(gas: &GasSource, target: GasRef, moved: f64) -> LedgerEntry {
     if moved == 0.0 {
         return LedgerEntry::None;
     }

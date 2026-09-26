@@ -1716,6 +1716,8 @@ dependencies = [
  "byondapi",
  "const_format",
  "eyre",
+ "float-ord",
+ "rustc-hash",
  "serde_json",
  "vg-core",
  "vg-gas",

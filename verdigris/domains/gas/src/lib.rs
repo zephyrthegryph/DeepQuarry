@@ -14,13 +14,13 @@ mod parser;
 pub mod pipes;
 pub mod planet;
 pub mod power_budget;
-mod reaction;
+pub mod reaction;
 pub mod turf;
 pub mod world;
 
 use byondapi::prelude::*;
 use eyre::Result;
-use gas::constants::{ReactionReturn, GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
+use gas::constants::{GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use gas::{
 	amt_gases, constants, gas_idx_from_string, missing, tot_gases, types, with_gas_info, with_mix,
 	with_mix_mut, with_mixes, with_mixes_mut, Mixture,
@@ -37,180 +37,6 @@ fn gas_idx_from_value(value: &ByondValue) -> Result<gas::GasIDX> {
 		.get_number()
 		.map_err(|_| eyre::eyre!("gas IDs are numbers (GAS_ID_*), got {value:?}"))?;
 	gas::gas_idx_from_value(raw)
-}
-
-thread_local! {
-	/// The DM `/datum/gas_reaction` for each reaction id (pending `lib.rs`'s
-	/// own move to `ffi/src/gas.rs`, `rust_architecture.md` step 6 decision
-	/// 1: reactions stay in DM, `AGENTS.md`, so this table of live
-	/// references is inherently `byondapi` and can't live in `reaction.rs`
-	/// now that that module is pure).
-	static REACTION_VALUES: std::cell::RefCell<std::collections::HashMap<reaction::ReactionIdentifier, ByondValue>> = std::cell::RefCell::default();
-}
-
-/// Runs a reaction given a `ReactionIdentifier`, calling back into the live
-/// `/datum/gas_reaction` `auxtools_atmos_init`/`auxtools_update_reactions`
-/// cached above.
-///
-/// # Errors
-/// If the reaction itself has a runtime.
-fn react_by_id(
-	id: reaction::ReactionIdentifier,
-	src: ByondValue,
-	holder: ByondValue,
-) -> Result<ByondValue> {
-	use eyre::Context;
-	REACTION_VALUES.with_borrow(|r| {
-		r.get(&id).map_or_else(
-			|| Err(eyre::eyre!("Reaction with invalid id")),
-			|reaction| {
-				reaction
-					.call_id(byond_string!("react"), &[src, holder])
-					.wrap_err("calling byond side react in react_by_id")
-			},
-		)
-	})
-}
-
-/// Reads DM's `SSair.gas_reactions` into the pure registry
-/// (`gas::types::install_reactions`), caching each live reaction reference
-/// for [`react_by_id`].
-fn load_reactions() -> Result<()> {
-	use eyre::Context;
-	use float_ord::FloatOrd;
-	use reaction::{Reaction, ReactionPriority};
-	use std::collections::BTreeMap;
-
-	let gas_reactions = ByondValue::new_global_ref()
-		.read_var_id(byond_string!("SSair"))
-		.wrap_err("load_reactions: couldn't read global SSair")?
-		.read_var_id(byond_string!("gas_reactions"))
-		.wrap_err("load_reactions: SSair has no gas_reactions var")?;
-	let mut cache: BTreeMap<ReactionPriority, Reaction> = BTreeMap::new();
-	for (reaction, _) in gas_reactions
-		.iter()
-		.wrap_err("load_reactions: SSair.gas_reactions is not a list")?
-	{
-		let priority: ReactionPriority = FloatOrd(
-			reaction
-				.read_number_id(byond_string!("priority"))
-				.map_err(|_| eyre::eyre!("Reaction priority must be a number!"))?,
-		);
-		let string_id = reaction
-			.read_string_id(byond_string!("id"))
-			.map_err(|_| eyre::eyre!("Reaction id must be a string!"))?;
-		let id = {
-			use std::hash::{Hash, Hasher};
-			let mut state = rustc_hash::FxHasher::default();
-			string_id.as_bytes().hash(&mut state);
-			state.finish()
-		};
-		let Some(min_reqs) = reaction
-			.read_var_id(byond_string!("min_requirements"))
-			.ok()
-			.filter(ByondValue::is_list)
-		else {
-			return Err(eyre::eyre!(
-				"Reaction {string_id} doesn't have a gas requirements list!"
-			));
-		};
-		let mut min_gas_reqs: Vec<(gas::GasIDX, f32)> = Vec::new();
-		for i in 0..gas::total_num_gases() {
-			let Some(path) = gas::gas_path(i) else { continue };
-			if let Ok(req_amount) = min_reqs.read_list_index(path).and_then(|v| v.get_number()) {
-				min_gas_reqs.push((i, req_amount));
-			}
-		}
-		let read_req = |key: &str| min_reqs.read_list_index(key).ok().and_then(|v| v.get_number().ok());
-		let parsed = Reaction::new(
-			id,
-			priority,
-			read_req("TEMP"),
-			read_req("MAX_TEMP"),
-			read_req("ENER"),
-			read_req("FIRE_REAGENTS"),
-			min_gas_reqs,
-		);
-		if cache.contains_key(&parsed.get_priority()) {
-			let priority = parsed.get_priority().0;
-			let sender = auxcallback::byond_callback_sender();
-			drop(sender.try_send(Box::new(move || Err(eyre::eyre!("Duplicate reaction priority {priority}, this reaction will be ignored!")))));
-			continue;
-		}
-		REACTION_VALUES.with_borrow_mut(|r| r.insert(id, reaction));
-		cache.insert(parsed.get_priority(), parsed);
-	}
-	gas::types::install_reactions(cache);
-	Ok(())
-}
-
-/// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-#[auxmacros::bind("/proc/auxtools_atmos_init")]
-fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
-	use eyre::Context;
-	use gas::types::GasType;
-
-	let data = gas_data.read_var_id(byond_string!("datums"))?;
-	let gases = data
-		.iter()?
-		.map(|(_, gas_datum)| {
-			let path = gas_datum.read_string_id(byond_string!("id"))?;
-			let idx = gas::gas_id_for_path(&path).ok_or_else(|| eyre::eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
-			if let Ok(dm_idx) = gas_datum.read_number_id(byond_string!("idx")) {
-				#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-				if dm_idx as gas::GasIDX != idx {
-					return Err(eyre::eyre!("{path}: DM idx {dm_idx} disagrees with GAS_PATHS ID {idx}"));
-				}
-			}
-			let fire_info = if let Ok(temperature) = gas_datum.read_number_id(byond_string!("oxidation_temperature")) {
-				gas::types::FireInfo::Oxidation(gas::types::OxidationInfo::new(temperature, gas_datum.read_number_id(byond_string!("oxidation_rate"))?))
-			} else if let Ok(temperature) = gas_datum.read_number_id(byond_string!("fire_temperature")) {
-				gas::types::FireInfo::Fuel(gas::types::FuelInfo::new(temperature, gas_datum.read_number_id(byond_string!("fire_burn_rate"))?))
-			} else {
-				gas::types::FireInfo::None
-			};
-			let fire_products = gas_datum.read_var_id(byond_string!("fire_products")).ok().and_then(|product_info| {
-				if product_info.is_list() {
-					Some(gas::types::FireProductInfo::Generic(
-						product_info
-							.iter()
-							.ok()?
-							.filter_map(|(k, v)| k.get_string().ok().and_then(|s| v.get_number().ok().map(|amt| (gas::types::GasRef::Deferred(s), amt))))
-							.collect(),
-					))
-				} else if product_info.is_num() {
-					Some(gas::types::FireProductInfo::Plasma)
-				} else {
-					None
-				}
-			});
-			Ok(GasType::new(
-				idx,
-				path.clone().into_boxed_str(),
-				gas_datum.read_string_id(byond_string!("name"))?.into_boxed_str(),
-				gas_datum.read_number_id(byond_string!("flags")).unwrap_or_default() as u32,
-				gas_datum.read_number_id(byond_string!("specific_heat"))?,
-				gas_datum.read_number_id(byond_string!("molar_mass")).unwrap_or_default(),
-				gas_datum.read_number_id(byond_string!("fusion_power")).unwrap_or_default(),
-				gas_datum.read_number_id(byond_string!("moles_visible")).ok(),
-				gas_datum.read_number_id(byond_string!("enthalpy")).unwrap_or_default(),
-				gas_datum.read_number_id(byond_string!("fire_radiation_released")).unwrap_or_default(),
-				fire_info,
-				fire_products,
-			))
-		})
-		.collect::<Result<Vec<_>>>()
-		.wrap_err("auxtools_atmos_init failed to register gas")?;
-	gas::types::install_gases(gases)?;
-	load_reactions()?;
-	Ok(true.into())
-}
-
-/// For updating reaction informations for auxmos, only call this when it is changed.
-#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxtools_update_reactions")]
-fn update_reactions() -> Result<ByondValue> {
-	load_reactions()?;
-	Ok(true.into())
 }
 
 /// For updating reagent gas fire products, do not use for now.
@@ -789,24 +615,6 @@ fn compare_hook(src: ByondValue, other: ByondValue) -> Result<ByondValue> {
 			|| gas_one.compare_with(gas_two, MINIMUM_MOLES_DELTA_TO_MOVE))
 		.into())
 	})
-}
-
-/// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
-#[auxmacros::bind("/datum/gas_mixture/proc/react")]
-fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
-	let mut ret = ReactionReturn::NO_REACTION;
-	let reactions = with_mix(&src, |mix| Ok(mix.all_reactable()))?;
-	for reaction in reactions {
-		ret |= ReactionReturn::from_bits_truncate(
-			react_by_id(reaction, src, holder)?
-				.get_number()
-				.unwrap_or_default() as u32,
-		);
-		if ret.contains(ReactionReturn::STOP_REACTIONS) {
-			return Ok((ret.bits() as f32).into());
-		}
-	}
-	Ok((ret.bits() as f32).into())
 }
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.

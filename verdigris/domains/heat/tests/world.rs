@@ -9,7 +9,7 @@ use vg_core::conservation::Tolerance;
 use vg_core::field::{FieldConfig, Geom};
 use vg_core::grid::GridDims;
 use vg_core::world::{WorldBuilder, WorldConfig};
-use vg_heat::couple::{GasHandle, NoGas};
+use vg_heat::couple::{GasSource, NoGas};
 use vg_heat::laws::{BodyBodyExchange, BodyGasExchange, RegulatorHeatPump, SolidBodyExchange};
 use vg_heat::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling, SolidHeat};
 
@@ -231,7 +231,7 @@ fn a_body_exchanges_with_gas_through_the_gas_handle() {
     let mut b = builder();
     let body = b.add_component::<HeatBody>();
     let coupling = b.add_component::<GasCoupling>();
-    b.add_global(vg_core::component::Ownership::Worker, GasHandle(Arc::new(FixedGas(std::sync::Mutex::new(280.0)))));
+    b.add_global(vg_core::component::Ownership::Worker, GasSource(Arc::new(FixedGas(std::sync::Mutex::new(280.0)))));
     let _ = b.add_law::<BodyGasExchange>();
     let mut world = b.build().expect("builds");
     let _ = (body, coupling);

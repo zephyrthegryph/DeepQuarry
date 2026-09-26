@@ -24,6 +24,6 @@ pub mod mob;
 pub mod solid;
 
 pub use components::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling};
-pub use couple::{GasExchange, GasHandle, GasProbe, GasRef, NoGas};
+pub use couple::{GasExchange, GasSource, GasProbe, GasRef, NoGas};
 pub use mob::MobHeat;
 pub use solid::{SolidCell, SolidCmd, SolidHeat};

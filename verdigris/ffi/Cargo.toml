@@ -10,6 +10,8 @@ byondapi = { workspace = true }
 eyre = { workspace = true }
 const_format = "0.2.33"
 serde_json = "1.0"
+float-ord = "0.3.2"
+rustc-hash = "2.1.0"
 auxmacros = { path = "macros" }
 auxcallback = { path = "callback" }
 vg-layout = { path = "../gen/layout" }

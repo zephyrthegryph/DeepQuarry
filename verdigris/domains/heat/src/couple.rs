@@ -70,15 +70,15 @@ impl GasExchange for NoGas {
 /// (`Clone + PartialEq + Send + Sync + 'static`; `PartialEq` is pointer
 /// identity, since the trait object itself never compares).
 #[derive(Clone)]
-pub struct GasHandle(pub Arc<dyn GasExchange>);
+pub struct GasSource(pub Arc<dyn GasExchange>);
 
-impl PartialEq for GasHandle {
+impl PartialEq for GasSource {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
     }
 }
 
-impl Default for GasHandle {
+impl Default for GasSource {
     fn default() -> Self {
         Self(Arc::new(NoGas))
     }

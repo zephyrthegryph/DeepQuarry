@@ -29,7 +29,7 @@ use vg_core::outbox::{Lane, Subscriber, WatchId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
 use vg_heat::components::gas_kind;
-use vg_heat::couple::{GasHandle, GasRef};
+use vg_heat::couple::{GasSource, GasRef};
 use vg_heat::laws::{BodyBodyExchange, BodyGasExchange, RegulatorHeatPump, SolidBodyExchange};
 use vg_heat::{BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat};
 
@@ -115,7 +115,7 @@ pub fn register(b: &mut WorldBuilder) -> FieldKey<SolidHeat> {
     b.add_component::<GasCoupling>();
     b.add_component::<MobHeat>();
     b.add_component::<Regulator>();
-    b.add_global(Ownership::Worker, GasHandle::default());
+    b.add_global(Ownership::Worker, GasSource::default());
     b.conserve("heat_energy", Tolerance::default());
     let _ = b.add_law::<SolidBodyExchange>();
     let _ = b.add_law::<BodyBodyExchange>();
@@ -496,7 +496,7 @@ fn settle_body_if_relaxing(w: &mut vg_core::world::World, e: vg_core::entity::En
                 return Ok(());
             };
             let target = if coupling.kind == gas_kind::MIXTURE { GasRef::Mixture(coupling.target) } else { GasRef::Turf(coupling.target) };
-            let gas = w.global::<GasHandle>().map(|g| g.0.clone()).ok();
+            let gas = w.global::<GasSource>().map(|g| g.0.clone()).ok();
             let moved = vg_heat::laws::settle_relax(body, coupling.conductance, now);
             if let Some(gas) = gas {
                 #[allow(clippy::cast_possible_truncation)]
@@ -786,7 +786,7 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
         1 => {
             if let Some(coupling) = w.read::<GasCoupling>(coupling_e) {
                 let target = if coupling.kind == gas_kind::MIXTURE { GasRef::Mixture(coupling.target) } else { GasRef::Turf(coupling.target) };
-                if let Ok(gas) = w.global::<GasHandle>() {
+                if let Ok(gas) = w.global::<GasSource>() {
                     let gas = gas.0.clone();
                     if let Some(probe) = gas.probe(target) {
                         #[allow(clippy::cast_possible_truncation)]
