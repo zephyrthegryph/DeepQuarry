@@ -156,13 +156,11 @@
 		set_flow_rate = between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume())
 
 	if("status" in signal.data)
-		spawn(2)
-			broadcast_status()
-			return //do not update_icon
+		om_after(src, 2, PROC_REF(broadcast_status))
+		return //do not update_icon
 	update_rust_device()
 
-	spawn(2)
-		broadcast_status()
+	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

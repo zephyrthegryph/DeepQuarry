@@ -293,13 +293,11 @@
 		external_pressure_bound = between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50)
 
 	if(signal.data["status"])
-		spawn(2)
-			broadcast_status()
-			return //do not update_icon
+		om_after(src, 2, PROC_REF(broadcast_status))
+		return //do not update_icon
 	wake_for_state_change()
 
-	spawn(2)
-		broadcast_status()
+	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 
 #undef DEFAULT_PRESSURE_DELTA
