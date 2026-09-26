@@ -16,8 +16,7 @@
 		icon_state = "slime cube active"
 		searching = 1
 		request_player()
-		spawn(60 SECONDS)
-			reset_search()
+		om_after(src, 60 SECONDS, PROC_REF(reset_search))
 
 // Sometime down the road it would be great to make all of these 'ask ghosts if they want to be X' procs into a generic datum.
 /obj/item/slime_cube/proc/request_player()
@@ -29,7 +28,7 @@
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
-	spawn(0)
+	spawn(0) // S7 keeps: tgui_alert() sleeps (prompts, S10)
 		if(!C)
 			return
 		var/response = tgui_alert(C, "Someone is requesting a soul for a promethean. Would you like to play as one?", "Promethean request", list("Yes", "No", "Never for this round"))
