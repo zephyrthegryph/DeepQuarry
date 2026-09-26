@@ -514,3 +514,6 @@
 		return
 	if(src_object.tgui_act(act_type, payload, src, state))
 		SStgui.update_uis(src_object)
+		if(isatom(src_object) && !QDELETED(src_object))
+			var/atom/A = src_object
+			A.interaction_ran(user, null)

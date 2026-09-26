@@ -256,6 +256,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	step_waiting_power = TRUE
 	return PROCESS_KILL
 
+/// A player (or program) changed the machine through an interaction or its UI: a machine with step
+/// work re-evaluates it next frame (its machine_step() says whether there is anything to do).
+/obj/machinery/interaction_ran(mob/actor, datum/interaction/interaction)
+	if(om_attached(src, /datum/om/pipeline/machine))
+		MACHINE_WAKE(src)
+
 /// TRUE while `M` has step work on the machine pipeline (it was: on SSmachines' roster).
 /proc/machine_stepping(obj/machinery/M)
 	return M.step_active && om_attached(M, /datum/om/pipeline/machine)
