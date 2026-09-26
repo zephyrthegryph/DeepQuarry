@@ -442,7 +442,7 @@ rules and budgets, and its largest files are split.
 | 4 | Heat onto the driver; move heat's binds out of gas. | 1a, 1b, 2 |
 | 5 | Gas pipes onto `NetworkHost`. | 1a, 1b |
 | 6 | Gas: `GasMix` main-owned component + generated API; delete `lib.rs` binds, `turf.rs`, `Mains`, `Dirty`, `MixWatches`, `Post`; drop `byondapi`. | 4, 5 |
-| 7 | Reactor FFI: `Tokens` → entity handles, `Probe` → watches. | 1b |
+| 7 | Delete the reactor as its own module: `Tokens` become `World::spawn`/`despawn`, its `RateModel` timers become `LawCtx::schedule`/`schedule_crossing`, `ProbeDomain` becomes a main-owned component watched generically. Repoint DM callers at the generic world/component binds, remove `REACT_DOMAIN_*` and the reactor module entirely; anything genuinely missing (e.g. an exact `RateModel` crossing not already in core) moves into core first. | 1b |
 | 8 | Move `layout` to `gen/`, split its largest files. | — |
 | 9 | CI: line budgets, crate-dependency checks, `ffi/` scanning; the allow-list is empty. | 3–7 |
 
@@ -712,8 +712,20 @@ grid and is deleted when gas and heat port.
   world watches; `Post`/tick encoding become `GasEvent`s; `lib.rs`'s legacy
   binds become `GasMix` accessors and queries. Then drop `byondapi` and the
   `vg-heat` dependency.
-- **Reactor (step 7).** `Tokens` → `World::spawn`/`despawn`; `ProbeDomain` →
-  a main-owned `Probe` component with world watches.
+- **Reactor (step 7): delete it, don't port it.** The reactor was always a
+  generic-handle-plus-timer-plus-probe facility wearing a domain's clothes;
+  by step 7 every piece it needs is core's own. `Tokens` become
+  `World::spawn`/`despawn` (a reactor token was already just an entity with
+  no components); its `RateModel` timers become `LawCtx::schedule`/
+  `schedule_crossing` (move any exact-crossing case core's `RateModel`
+  doesn't already cover into `vg_core::rate` first, so nothing is lost);
+  `ProbeDomain` becomes an ordinary main-owned component, watched the same
+  generic way every other component kind is (§4.8's watch facility). Once
+  DM's callers are repointed at the generic `vg_component_*`/`vg_world_*`
+  binds and `REACT_DOMAIN_*`, the reactor module and its FFI file are
+  deleted outright -- there is no reactor crate or leftover shim once this
+  lands, only core facilities plus whatever domain actually owns the
+  component that used to be a "reactor probe."
 - **CI (step 9).** Budgets, crate-dependency checks (no domain depends on
   `vg-ffi`, `byondapi` or another domain) and scanning `ffi/src`; the
   allow-list reaches empty as 3–7 land.
