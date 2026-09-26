@@ -75,9 +75,8 @@
 		to_chat(user, span_notice("No blood found on [A]"))
 	else
 		to_chat(user, span_notice("Blood found on [A]. Analysing..."))
-		spawn(15)
-			for(var/blood in blood_dna)
-				to_chat(user, span_notice("Blood type: [blood_dna[blood]]\nDNA: [blood]"))
+		for(var/blood in blood_dna)
+			om_after(user, 15, TYPE_PROC_REF(/datum, om_chat), span_notice("Blood type: [blood_dna[blood]]\nDNA: [blood]"))
 
 /datum/data/pda/utility/scanmode/halogen
 	base_name = "Halogen Counter"

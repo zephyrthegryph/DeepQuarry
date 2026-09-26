@@ -53,8 +53,7 @@
 		if("alert")
 			status_signal.data["picture_state"] = data1
 
-	spawn(0)
-		frequency.post_signal(src, status_signal)
+	frequency.post_signal(src, status_signal)
 
 
 /datum/data/pda/app/signaller
@@ -79,8 +78,7 @@
 
 		switch(action)
 			if("signal")
-				spawn(0)
-					R.send_signal("ACTIVATE")
+				R.send_signal("ACTIVATE")
 			if("freq")
 				var/frequency = unformat_frequency(params["freq"])
 				frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)

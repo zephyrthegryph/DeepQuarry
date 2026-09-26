@@ -57,26 +57,22 @@
 	switch(href_list["op"])
 		if("control")
 			active = locate(href_list["bot"])
-			spawn(0)
-				post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
+			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
 
 		if("scanbots")		// find all bots
 			botlist = null
-			spawn(0)
-				post_signal(control_freq, "command", "bot_status", s_filter = bot_filter)
+			post_signal(control_freq, "command", "bot_status", s_filter = bot_filter)
 
 		if("botlist")
 			active = null
 
 		if("stop", "go", "home")
-			spawn(0)
-				post_signal(control_freq, "command", href_list["op"], "active", active, s_filter = bot_filter)
-				post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
+			post_signal(control_freq, "command", href_list["op"], "active", active, s_filter = bot_filter)
+			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
 
 		if("summon")
-			spawn(0)
-				post_signal(control_freq, "command", "summon", "active", active, "target", get_turf(hostpda), "useraccess", hostpda.GetAccess(), "user", usr, s_filter = bot_filter)
-				post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
+			post_signal(control_freq, "command", "summon", "active", active, "target", get_turf(hostpda), "useraccess", hostpda.GetAccess(), "user", usr, s_filter = bot_filter)
+			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
 
 /obj/item/radio/integrated/receive_signal(datum/signal/signal)
 	if(bot_type && isbot(signal.source) && signal.data["type"] == bot_type)
@@ -131,5 +127,4 @@
 	signal.encryption = code
 	signal.data["message"] = message
 
-	spawn(0)
-		radio_connection.post_signal(src, signal)
+	radio_connection.post_signal(src, signal)

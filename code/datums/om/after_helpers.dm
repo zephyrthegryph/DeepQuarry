@@ -78,3 +78,7 @@
 /datum/effect/effect/system/proc/start_repeatedly(times, interval)
 	for(var/i in 0 to times - 1)
 		om_after(src, i * interval, PROC_REF(start))
+
+/// om_after() target: a temporary sensory disability (`flag` of `sdisabilities`) wears off.
+/mob/proc/cure_temporary_sdisability(flag)
+	sdisabilities &= ~flag
