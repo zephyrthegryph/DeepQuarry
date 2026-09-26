@@ -372,6 +372,20 @@
 #define BORER_HOST(B) OM_REL_TARGET(B, /datum/om/relation/host_of)
 /// The borer infesting `H`, or null.
 #define BORER_OF(H) OM_REL_SOURCE(H, /datum/om/relation/host_of)
+/// The telecomms machine bluespace radio `R` transmits to, or null.
+#define BS_TX_TARGET(R) OM_REL_TARGET(R, /datum/om/relation/bluespace_tx_to)
+/// Every bluespace radio transmitting to telecomms machine `M`.
+#define BS_TX_RADIOS(M) OM_REL_SOURCES(M, /datum/om/relation/bluespace_tx_to)
+/// The telecomms machine bluespace radio `R` receives from, or null.
+#define BS_RX_SOURCE(R) OM_REL_TARGET(R, /datum/om/relation/bluespace_rx_from)
+/// Every bluespace radio receiving from telecomms machine `M`.
+#define BS_RX_RADIOS(M) OM_REL_SOURCES(M, /datum/om/relation/bluespace_rx_from)
+/// The item gripper `G` is wrapping, or null.
+#define GRIPPER_HELD(G) OM_REL_TARGET(G, /datum/om/relation/gripper_holding)
+/// Every mob flying UAV `U`.
+#define UAV_MASTERS(U) OM_REL_SOURCES(U, /datum/om/relation/uav_master)
+/// What holds stasis modifier `S`'s mob in stasis, or null.
+#define STASIS_SOURCE(S) OM_REL_TARGET(S, /datum/om/relation/stasis_held_by)
 
 // ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
 #define STEP_NEXT 1
