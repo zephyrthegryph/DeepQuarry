@@ -426,7 +426,4 @@
 		O.show_message(span_npc_say(span_name("\The [src]") + " beeps, \"[message]\""),2)
 	return
 
-/obj/machinery/casino_prize_dispenser/machine_step()
-	return PROCESS_KILL
-
 #undef CASINO_PRIZE

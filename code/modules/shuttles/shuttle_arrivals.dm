@@ -21,9 +21,7 @@
 	shuttle_tag = "Arrivals"
 
 // The shuttle subsystem owns arrivals automation through always_process. The
-// mapped console is only a debugging/control surface and has no idle work.
-/obj/machinery/computer/shuttle_control/arrivals/machine_step()
-	return PROCESS_KILL
+// mapped console is only a debugging/control surface and has no step work.
 
 // This proc checks if anyone is on the shuttle.
 /datum/shuttle/autodock/ferry/arrivals/proc/check_for_passengers()

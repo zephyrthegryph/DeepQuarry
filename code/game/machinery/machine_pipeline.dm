@@ -64,18 +64,24 @@
 		/obj/machinery/bomb_tester,
 		/obj/machinery/botany,
 		/obj/machinery/bunsen_burner,
-		/obj/machinery/casino_prize_dispenser,
 		/obj/machinery/chemical_dispenser,
 		/obj/machinery/chemical_synthesizer,
 		/obj/machinery/clonepod,
 		/obj/machinery/compressor,
-		/obj/machinery/computer,
+		/obj/machinery/computer/HolodeckControl,
+		/obj/machinery/computer/aifixer,
+		/obj/machinery/computer/cloning,
+		/obj/machinery/computer/operating,
+		/obj/machinery/computer/pod,
+		/obj/machinery/computer/power_monitor,
+		/obj/machinery/computer/security/telescreen/bodycamera,
+		/obj/machinery/computer/ship/helm,
+		/obj/machinery/computer/ship/sensors,
 		/obj/machinery/conveyor,
 		/obj/machinery/conveyor_switch,
 		/obj/machinery/cryopod,
 		/obj/machinery/disposal,
 		/obj/machinery/dnaforensics,
-		/obj/machinery/door/airlock,
 		/obj/machinery/door/firedoor,
 		/obj/machinery/door_timer,
 		/obj/machinery/drone_fabricator,
@@ -89,7 +95,6 @@
 		/obj/machinery/fusion_fuel_injector,
 		/obj/machinery/gravity_generator/main,
 		/obj/machinery/hologram/holopad,
-		/obj/machinery/holoposter,
 		/obj/machinery/igniter,
 		/obj/machinery/iv_drip,
 		/obj/machinery/magnetic_controller,
@@ -113,7 +118,6 @@
 		/obj/machinery/pda_multicaster,
 		/obj/machinery/pointdefense,
 		/obj/machinery/porta_turret,
-		/obj/machinery/power/breakerbox,
 		/obj/machinery/power/debug_items/infinite_cable_powersink,
 		/obj/machinery/power/debug_items/infinite_generator,
 		/obj/machinery/power/emitter,
@@ -162,6 +166,12 @@
 		/obj/machinery/vr_sleeper,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
+	/// Machines with machine_step() work that need no frame at Initialize: nothing gives them work
+	/// until a producer's MACHINE_WAKE(), which joins them to the pipeline then. Numerous types
+	/// belong here so an idle one never costs a record (tools/ci/pollers_lint.py reads this list).
+	var/list/lazy = list(
+		/obj/machinery/door/airlock, // a radio command (receive_signal()) is its only step work
+	)
 
 /datum/om/pipeline/machine
 	name = "machine"

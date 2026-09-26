@@ -168,5 +168,3 @@
 		spawn(600)
 			update_locked = 0
 
-/obj/machinery/power/breakerbox/machine_step()
-	return PROCESS_KILL

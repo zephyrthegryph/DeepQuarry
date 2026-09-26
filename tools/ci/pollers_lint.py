@@ -148,7 +148,12 @@ def machine_pipeline_roots():
     m = re.search(r"/datum/om/decl/pipeline_machines\s*\n\tof = list\((.*?)\n\t\)", text, re.S)
     if not m:
         return None
-    return set(re.findall(r"(/obj/machinery[\w/]*)", m.group(1)))
+    roots = set(re.findall(r"(/obj/machinery[\w/]*)", m.group(1)))
+    # Lazily joined types (the decl's `lazy` list): covered, they join on MACHINE_WAKE().
+    lazy = re.search(r"var/list/lazy = list\((.*?)\n\t\)", text, re.S)
+    if lazy:
+        roots |= set(re.findall(r"(/obj/machinery[\w/]*)", re.sub(r"//[^\n]*", "", lazy.group(1))))
+    return roots
 
 
 def check_step_coverage():
