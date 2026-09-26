@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "9a3c13d9a33252e9"
+#define VERDIGRIS_ABI "d74e0ee4c5d2bd32"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -650,7 +650,7 @@
 	return call_ext(__f)(src_ref, total)
 
 /// For updating reagent gas fire products, do not use for now.
-// /proc/finalize_gas_refs (verdigris/domains/gas/src/gas/types.rs)
+// /proc/finalize_gas_refs (verdigris/domains/gas/src/lib.rs)
 /proc/vg_finalize_gas_refs()
 	var/static/__f = load_ext(VERDIGRIS, "byond:finalize_gas_refs_ffi")
 	VG_COUNT_FFI_CALL
@@ -978,7 +978,7 @@
 	return call_ext(__f)()
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-// /proc/auxtools_atmos_init (verdigris/domains/gas/src/gas/types.rs)
+// /proc/auxtools_atmos_init (verdigris/domains/gas/src/lib.rs)
 /proc/vg_hook_init(gas_data)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_init_ffi")
 	VG_COUNT_FFI_CALL
@@ -1605,7 +1605,7 @@
 	return call_ext(__f)(id)
 
 /// For updating reaction informations for auxmos, only call this when it is changed.
-// /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/domains/gas/src/gas/types.rs)
+// /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/domains/gas/src/lib.rs)
 /proc/vg_update_reactions()
 	var/static/__f = load_ext(VERDIGRIS, "byond:update_reactions_ffi")
 	VG_COUNT_FFI_CALL

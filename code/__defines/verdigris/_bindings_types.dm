@@ -1186,6 +1186,18 @@
 /datum/controller/subsystem/vg/proc/on_gas_reaction_ready(reaction)
 	return
 
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_cell_reaction_ready(cell, reaction)
+	return
+
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_cell_visual_change(cell, vis)
+	return
+
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_pressure_jump(cell, neighbor, delta)
+	return
+
 /// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_heat_settled()
 	return
@@ -1265,6 +1277,12 @@
 					target.on_gas_mix_depleted()
 			if(0)
 				SSvg.on_gas_reaction_ready(flat[p + 0])
+			if(1)
+				SSvg.on_gas_cell_reaction_ready(flat[p + 0], flat[p + 1])
+			if(2)
+				SSvg.on_gas_cell_visual_change(flat[p + 0], flat[p + 1])
+			if(3)
+				SSvg.on_gas_pressure_jump(flat[p + 0], flat[p + 1], flat[p + 2])
 			if(131072)
 				SSvg.on_heat_settled()
 			if(65536)

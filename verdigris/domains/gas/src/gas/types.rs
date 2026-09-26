@@ -1,8 +1,13 @@
+//! The gas registry's data (`rust_architecture.md` §8.5 step 6, decision
+//! 1): pure storage and lookups, split from the `byondapi` loading that
+//! populates it. `ffi/src/gas.rs` reads DM's gas/reaction datums and calls
+//! [`install_gases`]/[`install_reactions`]; everything else here (used by
+//! `vg-gas`'s own tests too, `#[cfg(test)]` below) never touches a
+//! `ByondValue`.
+
 use super::GasIDX;
 use crate::reaction::{Reaction, ReactionPriority};
-use auxcallback::byond_callback_sender;
-use byondapi::prelude::*;
-use eyre::{Context, Result};
+use eyre::Result;
 use parking_lot::{const_rwlock, RwLock};
 use std::collections::BTreeMap;
 
@@ -16,6 +21,10 @@ pub struct OxidationInfo {
 }
 
 impl OxidationInfo {
+	#[must_use]
+	pub fn new(temperature: f32, power: f32) -> Self {
+		Self { temperature, power }
+	}
 	#[must_use]
 	pub fn temperature(&self) -> f32 {
 		self.temperature
@@ -35,6 +44,10 @@ pub struct FuelInfo {
 }
 
 impl FuelInfo {
+	#[must_use]
+	pub fn new(temperature: f32, burn_rate: f32) -> Self {
+		Self { temperature, burn_rate }
+	}
 	#[must_use]
 	pub fn temperature(&self) -> f32 {
 		self.temperature
@@ -133,75 +146,45 @@ pub struct GasType {
 }
 
 impl GasType {
-	// This absolute monster is what you want to override to add or remove certain gas properties, based on what a gas datum has.
-	fn new(gas: &ByondValue, idx: GasIDX) -> Result<Self> {
-		Ok(Self {
+	/// Builds a gas's registry entry from already-parsed values (the
+	/// `ByondValue` reading -- every `/datum/gas` var this used to read
+	/// directly -- lives in `ffi/src/gas.rs` now).
+	#[must_use]
+	#[allow(clippy::too_many_arguments)]
+	pub fn new(
+		idx: GasIDX,
+		id: Box<str>,
+		name: Box<str>,
+		flags: u32,
+		specific_heat: f32,
+		fusion_power: f32,
+		moles_visible: Option<f32>,
+		enthalpy: f32,
+		fire_radiation_released: f32,
+		fire_info: FireInfo,
+		fire_products: Option<FireProductInfo>,
+	) -> Self {
+		Self {
 			idx,
-			id: gas.read_string_id(byond_string!("id"))?.into_boxed_str(),
-			name: gas.read_string_id(byond_string!("name"))?.into_boxed_str(),
-			flags: gas
-				.read_number_id(byond_string!("flags"))
-				.unwrap_or_default() as u32,
-			specific_heat: gas.read_number_id(byond_string!("specific_heat"))?,
-			fusion_power: gas
-				.read_number_id(byond_string!("fusion_power"))
-				.unwrap_or_default(),
-			moles_visible: gas.read_number_id(byond_string!("moles_visible")).ok(),
-			fire_info: {
-				if let Ok(temperature) = gas.read_number_id(byond_string!("oxidation_temperature"))
-				{
-					FireInfo::Oxidation(OxidationInfo {
-						temperature,
-						power: gas.read_number_id(byond_string!("oxidation_rate"))?,
-					})
-				} else if let Ok(temperature) =
-					gas.read_number_id(byond_string!("fire_temperature"))
-				{
-					FireInfo::Fuel(FuelInfo {
-						temperature,
-						burn_rate: gas.read_number_id(byond_string!("fire_burn_rate"))?,
-					})
-				} else {
-					FireInfo::None
-				}
-			},
-			fire_products: gas
-				.read_var_id(byond_string!("fire_products"))
-				.ok()
-				.and_then(|product_info| {
-					if product_info.is_list() {
-						Some(FireProductInfo::Generic(
-							product_info
-								.iter()
-								.ok()?
-								.filter_map(|(k, v)| {
-									k.get_string().ok().and_then(|s_str| {
-										v.get_number()
-											.ok()
-											.map(|amt| (GasRef::Deferred(s_str), amt))
-									})
-								})
-								.collect(),
-						))
-					} else if product_info.is_num() {
-						Some(FireProductInfo::Plasma) // if we add another snowflake later, add it, but for now we hack this in
-					} else {
-						None
-					}
-				}),
-			enthalpy: gas
-				.read_number_id(byond_string!("enthalpy"))
-				.unwrap_or_default(),
-			fire_radiation_released: gas
-				.read_number_id(byond_string!("fire_radiation_released"))
-				.unwrap_or_default(),
-		})
+			id,
+			name,
+			flags,
+			specific_heat,
+			fusion_power,
+			moles_visible,
+			enthalpy,
+			fire_radiation_released,
+			fire_info,
+			fire_products,
+		}
 	}
 }
 
 static GAS_INFO_BY_IDX: RwLock<Option<Vec<GasType>>> = const_rwlock(None);
 
-#[byondapi::init]
+/// Prepares the registry for a fresh load (`ffi/src/gas.rs`'s own
+/// `#[byondapi::init]`-attributed function calls this: that attribute needs
+/// `byondapi` in scope, which this pure module no longer depends on).
 pub fn initialize_gas_info_structs() {
 	*GAS_INFO_BY_IDX.write() = Some(Vec::new());
 }
@@ -215,7 +198,11 @@ pub fn destroy_gas_info_structs() {
 /// Installs the gas roster. Each gas lands at the fixed ID of its type path
 /// (`ids.rs`), so DM's generated `GAS_ID_*` numbers and the arena agree without
 /// any lookup at call time.
-fn install_gases(mut gases: Vec<GasType>) -> Result<()> {
+///
+/// # Errors
+/// If the roster is missing an ID, has the wrong count, or a specific heat
+/// disagrees with `cell.rs`'s `SPECIFIC_HEATS`.
+pub fn install_gases(mut gases: Vec<GasType>) -> Result<()> {
 	gases.sort_by_key(|gas| gas.idx);
 	for (expected, gas) in gases.iter().enumerate() {
 		if gas.idx != expected {
@@ -246,76 +233,13 @@ fn install_gases(mut gases: Vec<GasType>) -> Result<()> {
 	Ok(())
 }
 
-/// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-#[auxmacros::bind("/proc/auxtools_atmos_init")]
-fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
-	let data = gas_data.read_var_id(byond_string!("datums"))?;
-	let gases = data
-		.iter()?
-		.map(|(_, gas)| {
-			let path = gas.read_string_id(byond_string!("id"))?;
-			let idx = super::ids::gas_id_for_path(&path)
-				.ok_or_else(|| eyre::eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
-			// DM sets /datum/gas/var/idx from the generated GAS_ID_* define.
-			if let Ok(dm_idx) = gas.read_number_id(byond_string!("idx")) {
-				if dm_idx as GasIDX != idx {
-					return Err(eyre::eyre!(
-						"{path}: DM idx {dm_idx} disagrees with GAS_PATHS ID {idx}"
-					));
-				}
-			}
-			GasType::new(&gas, idx)
-		})
-		.collect::<Result<Vec<_>>>()
-		.wrap_err("auxtools_atmos_init failed to register gas")?;
-	install_gases(gases)?;
-	*REACTION_INFO.write() = Some(get_reaction_info()?);
+/// Publishes a freshly-read reaction table (`ffi/src/gas.rs` reads
+/// `SSair.gas_reactions` and builds this; both `auxtools_atmos_init` and
+/// `auxtools_update_reactions` call it there, replacing this module's own
+/// former `hook_init`/`update_reactions` binds).
+pub fn install_reactions(reactions: BTreeMap<ReactionPriority, Reaction>) {
+	*REACTION_INFO.write() = Some(reactions);
 	install_gate();
-	Ok(true.into())
-}
-
-fn get_reaction_info() -> Result<BTreeMap<ReactionPriority, Reaction>> {
-	let gas_reactions = ByondValue::new_global_ref()
-		.read_var_id(byond_string!("SSair"))
-		.wrap_err("get_reaction_info: couldn't read global SSair")?
-		.read_var_id(byond_string!("gas_reactions"))
-		.wrap_err("get_reaction_info: SSair has no gas_reactions var")?;
-	let mut reaction_cache: BTreeMap<ReactionPriority, Reaction> = Default::default();
-	let sender = byond_callback_sender();
-	for (reaction, _) in gas_reactions
-		.iter()
-		.wrap_err("get_reaction_info: SSair.gas_reactions is not a list")?
-	{
-		match Reaction::from_byond_reaction(reaction) {
-			Ok(reaction) => {
-				if let std::collections::btree_map::Entry::Vacant(e) =
-					reaction_cache.entry(reaction.get_priority())
-				{
-					e.insert(reaction);
-				} else {
-					drop(sender.try_send(Box::new(move || {
-						Err(eyre::eyre!(format!(
-							"Duplicate reaction priority {}, this reaction will be ignored!",
-							reaction.get_priority().0
-						)))
-					})));
-				}
-			}
-			//maybe awful error handling
-			Err(runtime) => {
-				drop(sender.try_send(Box::new(move || Err(runtime))));
-			}
-		}
-	}
-	Ok(reaction_cache)
-}
-
-/// For updating reaction informations for auxmos, only call this when it is changed.
-#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxtools_update_reactions")]
-fn update_reactions() -> Result<ByondValue> {
-	*REACTION_INFO.write() = Some(get_reaction_info()?);
-	install_gate();
-	Ok(true.into())
 }
 
 /// Publishes the reaction requirements and gas visibility the turf field
@@ -431,13 +355,6 @@ pub fn update_gas_refs() -> Result<()> {
 			Ok(())
 		})
 }
-/// For updating reagent gas fire products, do not use for now.
-#[auxmacros::bind("/proc/finalize_gas_refs")]
-fn finalize_gas_refs() -> Result<ByondValue> {
-	update_gas_refs()?;
-	Ok(ByondValue::null())
-}
-
 /// The ID for a gas string: its DM type path (`"/datum/gas/oxygen"`) or its
 /// short gas-string ID (`"o2"`). Used only when parsing gas strings; the FFI
 /// takes numeric IDs.
@@ -457,13 +374,13 @@ pub fn gas_idx_from_string(id: &str) -> Result<GasIDX> {
 		.ok_or_else(|| eyre::eyre!("Invalid gas ID: {id}"))
 }
 
-/// The gas index for a numeric `GAS_ID_*` value passed from DM.
+/// The gas index for a numeric `GAS_ID_*` value passed from DM (already
+/// read out of its `ByondValue` by the caller -- `ffi/src/gas.rs` -- since
+/// this module doesn't depend on `byondapi`).
 /// # Errors
-/// If the value is not a number or not a registered gas ID.
-pub fn gas_idx_from_value(value: &ByondValue) -> Result<GasIDX> {
-	let raw = value
-		.get_number()
-		.map_err(|_| eyre::eyre!("gas IDs are numbers (GAS_ID_*), got {value:?}"))?;
+/// If the value is not a registered gas ID.
+#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+pub fn gas_idx_from_value(raw: f32) -> Result<GasIDX> {
 	let idx = raw as GasIDX;
 	if raw < 0.0 || raw.fract() != 0.0 || idx >= total_num_gases() {
 		return Err(eyre::eyre!("Invalid gas ID: {raw}"));
