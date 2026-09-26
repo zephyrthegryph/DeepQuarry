@@ -325,9 +325,7 @@
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
 		visible_message(span_warning("[user.name] bonks [src] harmlessly with [W]."))
-	spawn(1)
-		if(stat != DEAD)
-			close_up()
+	om_after(src, 1, PROC_REF(close_up_unless_dead))
 	return
 
 /mob/living/silicon/pai/attack_hand(mob/user as mob)
@@ -642,3 +640,6 @@
 			else
 				icon = holo_icon_north
 
+/mob/living/silicon/pai/proc/close_up_unless_dead()
+	if(stat != DEAD)
+		close_up()

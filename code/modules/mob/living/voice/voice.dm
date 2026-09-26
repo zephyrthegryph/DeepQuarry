@@ -117,8 +117,7 @@
 		if(!speech_type || speech_type == "default")
 			speech_type = speech_bubble_appearance()
 		var/image/speech_bubble = generate_speech_bubble(comm, "[speech_type][speech_bubble_test]")
-		spawn(30)
-			qdel(speech_bubble)
+		om_after(src, 3 SECONDS, GLOBAL_PROC_REF(qdel), speech_bubble)
 
 		for(var/mob/M in hearers(comm)) //simplifed since it's just a speech bubble
 			M << speech_bubble

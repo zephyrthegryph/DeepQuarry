@@ -126,10 +126,7 @@
 					ability_icon_given = P.ability_icon_state,
 					arguments = list()
 					)
-	spawn (50)
-		if(H.lleill_display)
-			H.lleill_display.invisibility = INVISIBILITY_NONE
-			H.lleill_display.icon_state = "lleill-4"
+	om_after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /datum/species/shapeshifter/hanner/add_inherent_verbs(mob/living/carbon/human/H)
 	..()

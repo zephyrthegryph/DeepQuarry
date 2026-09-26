@@ -338,9 +338,7 @@
 			do_attack_animation(H)
 			busy = TRUE
 			update_icons()
-			spawn(2)
-				busy = FALSE
-				update_icons()
+			om_after(src, 2, TYPE_PROC_REF(/datum, om_set_var_then), "busy", FALSE, PROC_REF(update_icons))
 			visible_message(span_warning("\The [H] was prodded by \the [src] with a stun baton!"))
 			insult(H)
 		else
@@ -361,9 +359,7 @@
 		playsound(src, "swing_hit", 50, 1, -1)
 		busy = TRUE
 		update_icons()
-		spawn(2)
-			busy = FALSE
-			update_icons()
+		om_after(src, 2, TYPE_PROC_REF(/datum, om_set_var_then), "busy", FALSE, PROC_REF(update_icons))
 		visible_message(span_warning("\The [M] was beaten by \the [src] with a stun baton!"))
 		insult(L)
 

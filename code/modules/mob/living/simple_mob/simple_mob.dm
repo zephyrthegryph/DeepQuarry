@@ -434,9 +434,7 @@
 		to_chat(src, "You can sense other creatures by focusing carefully on your surroundings.")
 		sight |= SEE_MOBS
 		hunting_cooldown = world.time
-		spawn(600)
-			to_chat(src, "Your concentration wears off.")
-			sight -= SEE_MOBS
+		om_after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
 	else if(hunting_cooldown + 5 MINUTES > world.time)
 		to_chat(src, "You must wait for a while before using this again.")
 
@@ -768,7 +766,7 @@
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
 		if(ai_brain) ai_brain.busy = TRUE
-		spawn()
+		spawn() // S7 keeps: animal_nom() sleeps in do_after() (S8)
 			animal_nom(tmob)
 			update_icon()
 			if(ai_brain) ai_brain.busy = FALSE
@@ -1050,3 +1048,6 @@
 	else
 		to_chat(src, span_warning("Your mob does not have a PDA in its ID slot."))
 
+/mob/living/simple_mob/proc/hunting_vision_ends()
+	to_chat(src, "Your concentration wears off.")
+	sight -= SEE_MOBS

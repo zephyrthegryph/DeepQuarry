@@ -205,12 +205,7 @@
 		if(target.client)
 			to_chat(target, span_critical("You feel as though you are losing your sense of direction! Brace yourself!"))
 		new /obj/effect/temp_visual/pre_confuse(get_turf(target))
-		spawn(5 SECONDS)
-			if(target)
-				target.status_at_least(EFFECT_CONFUSED, 3)
-				if(target.client)
-					to_chat(target, span_critical("You feel confused!"))
-				new /obj/effect/temp_visual/confuse(get_turf(target))
+		om_after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
 
 /mob/living/simple_mob/glitch_boss/proc/bullethell(atom/A)
 	set waitfor = FALSE
@@ -231,8 +226,7 @@
 	if(base_attack_cooldown == initial(base_attack_cooldown))
 		base_attack_cooldown = 1 SECOND
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
-		spawn(duration)
-			base_attack_cooldown = initial(base_attack_cooldown)
+		om_after(src, duration, TYPE_PROC_REF(/datum, om_set_var), "base_attack_cooldown", initial(base_attack_cooldown))
 
 /mob/living/simple_mob/glitch_boss/do_special_attack(atom/A)
 	. = TRUE
@@ -314,3 +308,10 @@
 #undef GA_BULLETHELL
 #undef GA_LINES
 #undef GA_CONFUSION
+
+/// The glitch boss's confusion lands, five seconds after its warning.
+/mob/living/proc/glitch_confusion()
+	status_at_least(EFFECT_CONFUSED, 3)
+	if(client)
+		to_chat(src, span_critical("You feel confused!"))
+	new /obj/effect/temp_visual/confuse(get_turf(src))

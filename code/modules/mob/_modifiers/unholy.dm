@@ -69,9 +69,8 @@
 	mob_overlay_state = "cult_aura"
 
 /datum/modifier/repair_aura/tick()
-	spawn()
-		for(var/mob/living/simple_mob/construct/T in view(4,holder))
-			T.occult_mend(rand(10,15), rand(10,15))
+	for(var/mob/living/simple_mob/construct/T in view(4,holder))
+		T.occult_mend(rand(10,15), rand(10,15))
 
 /datum/modifier/agonize //This modifier is used in an aura spell.
 	name = "agonize"
@@ -85,12 +84,11 @@
 	mob_overlay_state = "red_electricity_constant"
 
 /datum/modifier/agonize/tick()
-	spawn()
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
-			H.apply_effect(20, AGONY)
-			if(prob(10))
-				to_chat(H, span_warning("Just make it stop!"))
+	if(ishuman(holder))
+		var/mob/living/carbon/human/H = holder
+		H.apply_effect(20, AGONY)
+		if(prob(10))
+			to_chat(H, span_warning("Just make it stop!"))
 
 ////////// Target Modifier
 /datum/modifier/mend_occult
@@ -105,40 +103,39 @@
 	mob_overlay_state = "red_electricity_constant"
 
 /datum/modifier/mend_occult/tick()
-	spawn()
-		if(isliving(holder))
-			var/mob/living/L = holder
-			if(istype(L, /mob/living/simple_mob/construct))
-				L.occult_mend(rand(5,10), rand(5,10))
-			else
-				L.occult_mend(2, 2)
+	if(isliving(holder))
+		var/mob/living/L = holder
+		if(istype(L, /mob/living/simple_mob/construct))
+			L.occult_mend(rand(5,10), rand(5,10))
+		else
+			L.occult_mend(2, 2)
 
-			if(ishuman(holder))
-				var/mob/living/carbon/human/H = holder
+		if(ishuman(holder))
+			var/mob/living/carbon/human/H = holder
 
-				for(var/obj/item/organ/internal/O in H.internal_organs)
-					if(O.damage > 0) // Fix internal damage
-						H.mend(TREAT_RESTORATION, 2, O)
-					if(O.damage <= 5 && O.organ_tag == O_EYES) // Fix eyes
-						H.sdisabilities &= ~BLIND
+			for(var/obj/item/organ/internal/O in H.internal_organs)
+				if(O.damage > 0) // Fix internal damage
+					H.mend(TREAT_RESTORATION, 2, O)
+				if(O.damage <= 5 && O.organ_tag == O_EYES) // Fix eyes
+					H.sdisabilities &= ~BLIND
 
-				for(var/obj/item/organ/external/O in H.organs) // Fix limbs, no matter if they are Man or Machine.
-					H.mend(TREAT_RESTORATION, rand(2,6), O)
+			for(var/obj/item/organ/external/O in H.organs) // Fix limbs, no matter if they are Man or Machine.
+				H.mend(TREAT_RESTORATION, rand(2,6), O)
 
-				for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
-					var/obj/item/organ/external/affected = E
-					if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
-						affected.status &= ~ORGAN_BROKEN
+			for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
+				var/obj/item/organ/external/affected = E
+				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
+					affected.status &= ~ORGAN_BROKEN
 
-					for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds()) // Fix IB
-						affected.remove_wound(W)
-						affected.update_damages()
+				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds()) // Fix IB
+					affected.remove_wound(W)
+					affected.update_damages()
 
-				H.restore_blood()
-				if(!iscultist(H))
-					H.apply_effect(2, AGONY)
-				if(prob(10))
-					to_chat(H, span_danger("It feels as though your body is being torn apart!"))
+			H.restore_blood()
+			if(!iscultist(H))
+				H.apply_effect(2, AGONY)
+			if(prob(10))
+				to_chat(H, span_danger("It feels as though your body is being torn apart!"))
 
 /datum/modifier/gluttonyregeneration
 	name = "gluttonous regeneration"
@@ -173,16 +170,15 @@
 	return ..()
 
 /datum/modifier/gluttonyregeneration/tick()
-	spawn()
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
-			var/starting_nutrition = H.nutrition
-			H.adjust_nutrition(-10)
-			var/healing_amount = starting_nutrition - H.nutrition //Anything above 9 nutrition will return 10. Anything below will give 0-9. Nutrition is capped at 0.
-			if(healing_amount)
-				H.occult_mend(healing_amount * 0.25, healing_amount * 0.25)
-				H.mend(TREAT_OXYGENATION, healing_amount * 0.25)
-				H.mend(TREAT_ANTITOXIN, healing_amount * 0.25)
+	if(ishuman(holder))
+		var/mob/living/carbon/human/H = holder
+		var/starting_nutrition = H.nutrition
+		H.adjust_nutrition(-10)
+		var/healing_amount = starting_nutrition - H.nutrition //Anything above 9 nutrition will return 10. Anything below will give 0-9. Nutrition is capped at 0.
+		if(healing_amount)
+			H.occult_mend(healing_amount * 0.25, healing_amount * 0.25)
+			H.mend(TREAT_OXYGENATION, healing_amount * 0.25)
+			H.mend(TREAT_ANTITOXIN, healing_amount * 0.25)
 
 	..()
 

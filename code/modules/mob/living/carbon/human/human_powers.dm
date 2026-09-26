@@ -195,36 +195,38 @@
 
 	to_chat(src, span_notice("Performing self-diagnostic, please wait..."))
 
-	spawn(50)
-		var/output = span_filter_notice("Self-Diagnostic Results:\n")
+	om_after(src, 5 SECONDS, PROC_REF(self_diagnostic_report))
 
-		output += "Internal Temperature: [convert_k2c(bodytemperature)] Degrees Celsius\n"
+/mob/living/carbon/human/proc/self_diagnostic_report()
+	var/output = span_filter_notice("Self-Diagnostic Results:\n")
 
-		if(isSynthetic())
-			output += "Current Battery Charge: [nutrition]\n"
+	output += "Internal Temperature: [convert_k2c(bodytemperature)] Degrees Celsius\n"
 
-			var/toxDam = injury_load(INJURY_CATEGORY_TOXIC)
-			if(toxDam)
-				output += "System Instability: " + span_warning("[toxDam > 25 ? "Severe" : "Moderate"]") + ". Seek charging station for cleanup.\n"
+	if(isSynthetic())
+		output += "Current Battery Charge: [nutrition]\n"
+
+		var/toxDam = injury_load(INJURY_CATEGORY_TOXIC)
+		if(toxDam)
+			output += "System Instability: " + span_warning("[toxDam > 25 ? "Severe" : "Moderate"]") + ". Seek charging station for cleanup.\n"
+		else
+			output += "System Instability: " + span_green("OK") + "\n"
+
+	for(var/obj/item/organ/external/EO in organs)
+		if(EO.robotic >= ORGAN_ASSISTED)
+			if(EO.get_trauma() || EO.get_burn())
+				output += "[EO.name] - " + span_warning("[EO.get_burn() + EO.get_trauma() > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" // Makes robotic limb damage scalable
 			else
-				output += "System Instability: " + span_green("OK") + "\n"
+				output += "[EO.name] - " + span_green("OK") + "\n"
 
-		for(var/obj/item/organ/external/EO in organs)
-			if(EO.robotic >= ORGAN_ASSISTED)
-				if(EO.get_trauma() || EO.get_burn())
-					output += "[EO.name] - " + span_warning("[EO.get_burn() + EO.get_trauma() > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" // Makes robotic limb damage scalable
-				else
-					output += "[EO.name] - " + span_green("OK") + "\n"
+	for(var/obj/item/organ/IO in internal_organs)
+		if(IO.robotic >= ORGAN_ASSISTED)
+			if(IO.damage)
+				output += "[IO.name] - " + span_warning("[IO.damage > 10 ? "Heavy Damage" : "Light Damage"]") + "\n"
+			else
+				output += "[IO.name] - " + span_green("OK") + "\n"
+	output = span_notice(output)
 
-		for(var/obj/item/organ/IO in internal_organs)
-			if(IO.robotic >= ORGAN_ASSISTED)
-				if(IO.damage)
-					output += "[IO.name] - " + span_warning("[IO.damage > 10 ? "Heavy Damage" : "Light Damage"]") + "\n"
-				else
-					output += "[IO.name] - " + span_green("OK") + "\n"
-		output = span_notice(output)
-
-		to_chat(src,output)
+	to_chat(src,output)
 
 /mob/living/carbon/human
 	var/next_sonar_ping = 0

@@ -148,8 +148,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
 	powermachine.draining = 1
-	spawn(30)
-		if(ai_brain) ai_brain.busy = FALSE
+	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
 		return

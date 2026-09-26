@@ -436,9 +436,7 @@
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(override_blindness_check || !(disabilities & BLIND))
 		overlay_fullscreen("flash", type)
-		spawn(25)
-			if(src)
-				clear_fullscreen("flash", 25)
+		om_after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), "flash", 25)
 		return 1
 
 /mob/living/proc/cannot_use_vents()
@@ -1369,3 +1367,8 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)
 		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
 		private_notes_window(user)
+
+/// om_after() target: the mob's AI picks up where it paused.
+/mob/living/proc/ai_brain_resume()
+	if(ai_brain)
+		ai_brain.busy = FALSE

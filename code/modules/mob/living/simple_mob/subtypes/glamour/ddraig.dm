@@ -335,17 +335,7 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	spawn(10)
-		src.overlays -= coolanimation
-
-		var/mob/living/new_mob = spawn_polymorph_mob(beast_options[chosen_beast])
-		new_mob.faction = M.faction
-
-		if(new_mob && isliving(new_mob))
-			new_mob.verbs |= /mob/living/proc/revert_beast_form
-			new_mob.verbs |= /mob/living/proc/set_size
-			transfer_mob_identity(new_mob)
-			new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")
+	om_after(src, 1 SECOND, PROC_REF(finish_polymorph), coolanimation, chosen_beast, beast_options[chosen_beast])
 
 /mob/living/proc/spawn_polymorph_mob(chosen_beast)
 	var/tf_type = chosen_beast
@@ -369,3 +359,14 @@
 	else
 		uncloak()
 		to_chat(src, span_warning("The shifting of your skin settles down and you become visible once again."))
+
+/// The end of a polymorph, a second after the animation starts.
+/mob/living/proc/finish_polymorph(image/coolanimation, chosen_beast, beast_type)
+	overlays -= coolanimation
+	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
+	if(new_mob && isliving(new_mob))
+		new_mob.faction = faction
+		new_mob.verbs |= /mob/living/proc/revert_beast_form
+		new_mob.verbs |= /mob/living/proc/set_size
+		transfer_mob_identity(new_mob)
+		new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")

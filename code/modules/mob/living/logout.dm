@@ -14,7 +14,8 @@
 	if(vp)
 		qdel(vp)
 
-	spawn(15 SECONDS) //15 seconds to get back into the mob before it goes wild
-		if(src && !src.client)
-			if(ai_brain)
-				ai_brain.go_wake()
+	om_after(src, 15 SECONDS, PROC_REF(logout_wake_ai)) //15 seconds to get back into the mob before it goes wild
+
+/mob/living/proc/logout_wake_ai()
+	if(!client && ai_brain)
+		ai_brain.go_wake()

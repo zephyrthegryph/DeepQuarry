@@ -214,7 +214,7 @@
 
 /mob/living/simple_mob/animal/space/space_worm/head/Bump(atom/obstacle)
 	if(open_maw && !stat && obstacle != previous)
-		spawn(1)
+		spawn(1) // S7 keeps: AttemptToEat() sleeps in do_after() (S8)
 			if(currentlyEating != obstacle)
 				currentlyEating = obstacle
 

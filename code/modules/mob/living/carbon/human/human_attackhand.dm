@@ -516,7 +516,7 @@
 		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You start applying pressure to your [organ.name]!"))
 	else
 		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [src]'s [organ.name]!"), span_filter_notice("You start applying pressure to [src]'s [organ.name]!"))
-	spawn(0)
+	spawn(0) // S7 keeps: do_after() sleeps (S8)
 		organ.applied_pressure = user
 
 		//apply pressure as long as they stay still and keep grabbing

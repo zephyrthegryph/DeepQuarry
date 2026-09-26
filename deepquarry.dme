@@ -899,6 +899,7 @@
 #include "code\datums\observation\shuttle_added.dm"
 #include "code\datums\observation\stat_set.dm"
 #include "code\datums\observation\turf_enterexit.dm"
+#include "code\datums\om\after_helpers.dm"
 #include "code\datums\om\bundle.dm"
 #include "code\datums\om\check.dm"
 #include "code\datums\om\check_library.dm"

@@ -88,7 +88,7 @@
 	self.status_set(EFFECT_PARALYZED, 0)
 
 	if(self.on && !self.client && !self.busy && !self.paicard)
-		spawn(0)
+		spawn(0) // S7 keeps: handleAI() sleeps (bot AI loop; S8 converts it)
 			self.handleAI()
 
 /datum/om/stage/life/type_post/bot

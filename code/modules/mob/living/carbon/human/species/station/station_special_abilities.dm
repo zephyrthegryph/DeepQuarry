@@ -605,8 +605,7 @@
 		C.adjust_nutrition(-25)
 		update_floating()
 		to_chat(C, span_notice("You hover in place."))
-		spawn(6) //.6 seconds.
-			C.anchored = FALSE
+		om_after(C, 6, TYPE_PROC_REF(/datum, om_set_var), "anchored", FALSE) //.6 seconds.
 	else
 		return
 

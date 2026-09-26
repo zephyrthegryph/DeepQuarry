@@ -76,8 +76,7 @@
 		)
 	victim = null
 	update_icon()
-	spawn(30)
-		if(ai_brain) ai_brain.busy = FALSE // Resume normal operations.
+	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
 
 /mob/living/simple_mob/metroid/juvenile/proc/can_consume(mob/living/L)
 	if(!L || !istype(L))

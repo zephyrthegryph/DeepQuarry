@@ -83,8 +83,7 @@
 	visible_message(span_critical("\The [src] erupts in an inferno!"))
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
-		spawn(0)
-			target_turf.hotspot_expose(1500+T0C, 400)
+		target_turf.hotspot_expose(1500+T0C, 400)
 	qdel(src)
 
 /mob/living/simple_mob/slime/feral/dark_purple/ex_act(severity)

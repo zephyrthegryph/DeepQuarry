@@ -22,9 +22,8 @@
 	if (!QDELETED(src))
 		ghostize()
 
-	spawn(15)
-		if(animation)	qdel(animation)
-		if(src)			qdel(src)
+	om_qdel_after(animation, 15)
+	om_qdel_after(src, 15)
 
 //This is the proc for turning a mob into ash. Mostly a copy of gib code (above).
 //Originally created for wizard disintegrate. I've removed the virus code since it's irrelevant here.
@@ -50,9 +49,8 @@
 	if (!QDELETED(src))
 		ghostize()
 
-	spawn(15)
-		if(animation)	qdel(animation)
-		if(src)			qdel(src)
+	om_qdel_after(animation, 15)
+	om_qdel_after(src, 15)
 
 /mob/proc/ash(anim="dust-m")
 	death(1)
@@ -74,9 +72,8 @@
 	if (!QDELETED(src))
 		ghostize()
 
-	spawn(15)
-		if(animation)	qdel(animation)
-		if(src)			qdel(src)
+	om_qdel_after(animation, 15)
+	om_qdel_after(src, 15)
 
 /mob/proc/death(gibbed,deathmessage="seizes up and falls limp...")
 

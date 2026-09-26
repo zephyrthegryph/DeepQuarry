@@ -182,7 +182,7 @@
 	// Not enough to breathe
 	if((inhale_pp + exhaled_pp) < minimum_breath_pressure) //they can breathe either oxygen OR CO2
 		if(prob(20))
-			spawn(0) H.emote("gasp")
+			H.emote("gasp")
 
 		quality = clamp((inhale_pp + exhaled_pp) / minimum_breath_pressure, 0, 1)
 		failed_inhale = 1
@@ -244,7 +244,7 @@
 		// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
 		else if(SA_pp > 0.15)
 			if(prob(20))
-				spawn(0) H.emote(pick("giggle", "laugh"))
+				H.emote(pick("giggle", "laugh"))
 		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) // update after // was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
 
 	// Were we able to breathe?

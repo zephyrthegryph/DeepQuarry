@@ -74,9 +74,7 @@
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("You short out [src]'s plant identifier circuits."))
-		spawn(rand(30, 50))
-			visible_message(span_warning("[src] buzzes oddly."))
-			emagged = 1
+		om_after(src, rand(30, 50), PROC_REF(emag_takes))
 		return 1
 
 /mob/living/bot/farmbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -247,9 +245,7 @@
 		var/action = pick("weed", "water")
 
 		busy = 1
-		spawn(50) // Some delay
-
-			busy = 0
+		om_after(src, 5 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "busy", 0) // Some delay
 		switch(action)
 			if("weed")
 				flick("farmbot_hoe", src)
@@ -414,3 +410,7 @@
 #undef FARMBOT_WATER
 #undef FARMBOT_UPROOT
 #undef FARMBOT_NUTRIMENT
+
+/mob/living/bot/farmbot/proc/emag_takes()
+	visible_message(span_warning("[src] buzzes oddly."))
+	emagged = 1

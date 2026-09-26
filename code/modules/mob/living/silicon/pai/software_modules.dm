@@ -456,8 +456,7 @@
 
 		switch(action)
 			if("signal")
-				spawn(0)
-					R.send_signal("ACTIVATE")
+				R.send_signal("ACTIVATE")
 				for(var/mob/O in hearers(1, R.loc))
 					O.show_message("[icon2html(R,O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 			if("freq")

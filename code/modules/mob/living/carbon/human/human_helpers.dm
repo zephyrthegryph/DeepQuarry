@@ -355,8 +355,6 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			last_color = sorted[marking][bp]["color"]
 		if (should_add_color)
 			sorted[marking]["color"] = last_color||"#000000"
-	del(markings)
-	del(priorities)
 	markings_len = sorted.len
 	//todo - add an autofixing thing for having markings with the same priorities as another, and for having markings that should have the same priorities across bodyparts, but don't
 	//does not really need to happen, that kinda thing will only happen when putting another person's limb onto your own body

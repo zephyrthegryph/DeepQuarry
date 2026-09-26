@@ -31,10 +31,7 @@
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()
-	spawn(600)
-		if(dq_get_cloaked(target))
-			target.uncloak()
-			target.visible_message(span_infoplain(span_bold("\The [target]") + " appears as if from thin air."))
+	om_after(target, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
 
 //Shrinking Glamour (scaling potion)
 
@@ -443,3 +440,9 @@
 			return
 
 		attack_self(H)
+
+/// The transparent glamour wears off.
+/mob/living/proc/glamour_cloak_expires()
+	if(dq_get_cloaked(src))
+		uncloak()
+		visible_message(span_infoplain(span_bold("\The [src]") + " appears as if from thin air."))

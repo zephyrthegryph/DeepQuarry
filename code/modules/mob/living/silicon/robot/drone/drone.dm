@@ -317,7 +317,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 				question(O.client)
 
 /mob/living/silicon/robot/drone/proc/question(client/C)
-	spawn(0)
+	spawn(0) // S7 keeps: tgui_alert() sleeps (prompts, S10)
 		if(!C || jobban_isbanned(C,JOB_CYBORG))	return
 		var/response = tgui_alert(C, "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", "Maintenance drone reboot", list("Yes", "No", "Never for this round"))
 		if(!C || ckey)

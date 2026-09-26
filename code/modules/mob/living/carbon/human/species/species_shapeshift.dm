@@ -279,8 +279,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			organs.Remove(O)
 			organs_by_name.Remove(O)
 
-	spawn(0)
-		regenerate_icons()
+	regenerate_icons()
 /* Our own trait system, sorry.
 	if(species && mind)
 		apply_traits()

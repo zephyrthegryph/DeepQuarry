@@ -495,21 +495,18 @@
 				message = span_multizsay("[message]")
 			if(isobserver(M) && (!M.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
 			(!(read_preference(/datum/preference/toggle/whisubtle_vis) || (isbelly(M.loc) && src == M.loc:owner)) && !check_rights_for(M.client, R_HOLDER))))
-				spawn(0)
-					M.show_message(undisplayed_message, 2)
+				M.show_message(undisplayed_message, 2)
 			else
-				spawn(0)
-					M.show_message(message, 2)
-					if(M.Adjacent(src) && M.read_preference(/datum/preference/toggle/subtle_sounds)) // makes it so the sounds only play for ghosts when adjacent to the person making them
-						if(voice_sounds_list) // changes to subtle emotes to use mob voice instead
-							M << sound(pick(voice_sounds_list), volume = 25)
+				M.show_message(message, 2)
+				if(M.Adjacent(src) && M.read_preference(/datum/preference/toggle/subtle_sounds)) // makes it so the sounds only play for ghosts when adjacent to the person making them
+					if(voice_sounds_list) // changes to subtle emotes to use mob voice instead
+						M << sound(pick(voice_sounds_list), volume = 25)
 
 		for(var/obj/o in contents)
 			vis_objs |= o
 
 		for(var/obj/O as anything in vis_objs)
-			spawn(0)
-				O.see_emote(src, message, 2)
+			O.see_emote(src, message, 2)
 
 /mob/proc/emote_vr(act, type, message, mode_selection) //This would normally go in say.dm
 	if(act == "me")

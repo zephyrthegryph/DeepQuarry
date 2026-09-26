@@ -470,19 +470,7 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	spawn(10)
-		src.overlays -= coolanimation
-
-		var/mob/living/new_mob = spawn_beast_mob(beast_options[chosen_beast])
-		new_mob.faction = M.faction
-
-		if(new_mob && isliving(new_mob))
-			species.lleill_energy -= energy_cost
-			add_verb(new_mob, /mob/living/proc/revert_beast_form)
-			add_verb(new_mob, /mob/living/proc/set_size)
-			add_verb(new_mob, /mob/living/simple_mob/proc/ColorMate)
-			transfer_mob_identity(new_mob)
-			new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
+	om_after(src, 1 SECOND, PROC_REF(finish_beast_shift), coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost)
 	species.update_lleill_hud(src)
 
 
@@ -628,16 +616,17 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	spawn(10)
-		src.overlays -= coolanimation
+	om_after(src, 1 SECOND, PROC_REF(finish_beast_shift), coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost)
 
-		var/mob/living/simple_mob/new_mob = spawn_beast_mob(beast_options[chosen_beast])
-		new_mob.faction = M.faction
-
-		if(new_mob && isliving(new_mob))
-			species.lleill_energy -= energy_cost
-			add_verb(new_mob, /mob/living/proc/revert_beast_form)
-			add_verb(new_mob, /mob/living/proc/set_size)
-			add_verb(new_mob, /mob/living/simple_mob/proc/ColorMate)
-			transfer_mob_identity(new_mob)
-			new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
+/// The end of a beast shift, a second after the animation starts.
+/mob/living/carbon/human/proc/finish_beast_shift(image/coolanimation, chosen_beast, beast_type, energy_cost)
+	overlays -= coolanimation
+	var/mob/living/new_mob = spawn_beast_mob(beast_type)
+	if(new_mob && isliving(new_mob))
+		new_mob.faction = faction
+		species.lleill_energy -= energy_cost
+		add_verb(new_mob, /mob/living/proc/revert_beast_form)
+		add_verb(new_mob, /mob/living/proc/set_size)
+		add_verb(new_mob, /mob/living/simple_mob/proc/ColorMate)
+		transfer_mob_identity(new_mob)
+		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))

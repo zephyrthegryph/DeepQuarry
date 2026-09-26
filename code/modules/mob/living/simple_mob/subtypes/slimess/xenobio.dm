@@ -114,8 +114,7 @@
 	S.attach(location)
 	S.set_up(holder, 120, 0, location)
 	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
-	spawn(0)
-		S.start()
+	S.start()
 	..()
 
 
@@ -438,15 +437,7 @@
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	spawn(5 SECONDS)
-		if(!QDELETED(holder.my_atom))
-			radiation_pulse(
-				src,
-				max_range = 7,
-				threshold = RAD_MEDIUM_INSULATION,
-				chance = 100,
-				strength = 30
-			)
+	om_after(holder.my_atom, 5 SECONDS, /proc/slime_green_pulse, holder.my_atom)
 	..()
 
 
@@ -737,3 +728,13 @@
 /datum/decl/chemical_reaction/instant/slime/soundjelly/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/glass/plastitanium(get_turf(holder.my_atom), 5)
 	..()
+
+/// The green extract's radiation pulse, five seconds after it starts to vibrate.
+/proc/slime_green_pulse(atom/source)
+	radiation_pulse(
+		source,
+		max_range = 7,
+		threshold = RAD_MEDIUM_INSULATION,
+		chance = 100,
+		strength = 30
+	)

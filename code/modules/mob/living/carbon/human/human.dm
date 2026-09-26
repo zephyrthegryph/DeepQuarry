@@ -443,15 +443,14 @@
 										R.fields["criminal"] = setcriminal
 										modified = 1
 
-										spawn()
-											BITSET(hud_updateflag, WANTED_HUD)
-											if(ishuman(usr))
-												var/mob/living/carbon/human/U = usr
-												var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
-												hud_system.hud_list(U)
-											if(istype(usr,/mob/living/silicon/robot))
-												var/mob/living/silicon/robot/U = usr
-												U.refresh_hud()
+										BITSET(hud_updateflag, WANTED_HUD)
+										if(ishuman(usr))
+											var/mob/living/carbon/human/U = usr
+											var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
+											hud_system.hud_list(U)
+										if(istype(usr,/mob/living/silicon/robot))
+											var/mob/living/silicon/robot/U = usr
+											U.refresh_hud()
 
 			if(!modified)
 				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
@@ -564,13 +563,12 @@
 									if(GLOB.PDA_Manifest.len)
 										GLOB.PDA_Manifest.Cut()
 
-									spawn()
-										if(ishuman(usr))
-											var/mob/living/carbon/human/U = usr
-											U.refresh_hud()
-										if(istype(usr,/mob/living/silicon/robot))
-											var/mob/living/silicon/robot/U = usr
-											U.refresh_hud()
+									if(ishuman(usr))
+										var/mob/living/carbon/human/U = usr
+										U.refresh_hud()
+									if(istype(usr,/mob/living/silicon/robot))
+										var/mob/living/silicon/robot/U = usr
+										U.refresh_hud()
 
 			if(!modified)
 				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
@@ -876,13 +874,11 @@
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(!src.xylophone)
+	if(world.time >= xylophone)
 		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
 		var/song = pick('sound/effects/xylophone1.ogg','sound/effects/xylophone2.ogg','sound/effects/xylophone3.ogg')
 		playsound(src, song, 50, 1, -1)
-		xylophone = 1
-		spawn(1200)
-			xylophone=0
+		xylophone = world.time + 2 MINUTES
 	return
 
 /mob/living/proc/check_has_mouth()

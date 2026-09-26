@@ -400,8 +400,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	announcement.Announce(input)
 	message_cooldown = 1
-	spawn(600)//One minute cooldown
-		message_cooldown = 0
+	om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "message_cooldown", 0) //One minute cooldown
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
 	set category = "AI.Station Commands"
@@ -456,8 +455,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	to_chat(src, span_notice("Message transmitted."))
 	log_game("[key_name(src)] has made an IA [using_map.boss_short] announcement: [input]")
 	emergency_message_cooldown = 1
-	spawn(300)
-		emergency_message_cooldown = 0
+	om_after(src, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "emergency_message_cooldown", 0)
 
 /mob/living/silicon/ai/restrained()
 	return 0

@@ -184,8 +184,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 /mob/living/simple_mob/animal/passive/cat/bluespace/death()
 	animate(src, alpha = 0, color = "#0000FF", time = 0.5 SECOND)
-	spawn(0.5 SECOND)
-		qdel(src)
+	om_qdel_after(src, 0.5 SECOND)
 
 /mob/living/simple_mob/animal/passive/cat/bread
 	name = "bread cat"
@@ -372,7 +371,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	cut_overlays()
 	icon_state = ""
 	flick("kphaseout",src)
-	spawn(1 SECOND)
-		qdel(src) //Back from whence you came!
+	om_qdel_after(src, 1 SECOND) //Back from whence you came!
 
 	. = ..(FALSE, deathmessage)

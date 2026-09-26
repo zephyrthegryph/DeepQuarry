@@ -466,13 +466,11 @@
 			continue
 		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
 		!L.client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) && !check_rights_for(M.client, R_HOLDER)))
-			spawn(0)
-				M.show_message(undisplayed_message, 2)
+			M.show_message(undisplayed_message, 2)
 		else
-			spawn(0)
-				M.show_message(message, 2)
-				if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-					M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+			M.show_message(message, 2)
+			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
+				M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
 
 /datum/decl/flooring/fur
 	name = "fur"
@@ -847,10 +845,9 @@
 	var/our_y = rand(-5,5) + y
 
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
-	spawn(0)
-		playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
-		controller.throw_at(throwtarg, 10, 1)
-		controller = null
+	playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
+	controller.throw_at(throwtarg, 10, 1)
+	controller = null
 
 /obj/effect/landmark/stardog	//I didn't know how else to decide where the dog will land
 	name = "stardog landing"
@@ -929,13 +926,11 @@
 			continue
 		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
 		!L.client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) && !check_rights_for(M.client, R_HOLDER)))
-			spawn(0)
-				M.show_message(undisplayed_message, 2)
+			M.show_message(undisplayed_message, 2)
 		else
-			spawn(0)
-				M.show_message(message, 2)
-				if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-					M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+			M.show_message(message, 2)
+			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
+				M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
 
 /area/redgate/stardog/eyes
 
@@ -1107,8 +1102,7 @@
 	visible_message(span_danger("\The [AM] passes through \the [src]!"))
 	if(throw_through)	//We will throw the target to the south!
 		var/turf/throwtarg = locate(target.x, (target.y - 5), target.z)
-		spawn(0)
-			AM.throw_at(throwtarg, 10, 1)	//reverbfart.ogg
+		AM.throw_at(throwtarg, 10, 1)	//reverbfart.ogg
 
 /obj/effect/dog_teleporter/food_gobbler
 	teleport_sound = 'sound/vore/gulp.ogg'

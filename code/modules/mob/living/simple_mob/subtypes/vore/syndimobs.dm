@@ -219,23 +219,9 @@
 /mob/living/simple_mob/vore/wolftaur/syndicate/death()
 	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#FFFFFF"
-			else
-				color = "#FF7777"
-			sleep(1)
+	color_sequence(syndimob_warning_flash(delay))
 
-	spawn(delay)
-		// The actual boom.
-		if(src && !exploded)
-			visible_message(span_danger("\The [src]'s body violentl explodes!"))
-			exploded = TRUE
-			new /obj/effect/decal/cleanable/blood/gibs(src.loc)
-			explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-			gib(src)
+	om_after(src, delay, PROC_REF(implant_detonates))
 	return ..()
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/alt1
@@ -310,3 +296,18 @@
 */
 
 ///commented this guy out because i couldn't figure out how to make him do the neat little laser pointer targeting thingy the regular merc sniper does before blastin' - Serdy
+
+/mob/living/simple_mob/vore/wolftaur/syndicate/proc/implant_detonates()
+	// The actual boom.
+	if(src && !exploded)
+		visible_message(span_danger("\The [src]'s body violentl explodes!"))
+		exploded = TRUE
+		new /obj/effect/decal/cleanable/blood/gibs(src.loc)
+		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
+		gib(src)
+
+/// White and pale red, alternating, one colour per decisecond for `steps` deciseconds.
+/proc/syndimob_warning_flash(steps)
+	. = list()
+	for(var/i = 1 to steps)
+		. += (i % 2 == 0) ? "#FFFFFF" : "#FF7777"

@@ -488,10 +488,8 @@
 
 /mob/living/simple_mob/animal/synx/proc/handle_mimic()
 	name = pick(voices)
-	spawn(2)
-		src.say(pick(speak))
-	spawn(5)
-		name = realname
+	om_after(src, 2, TYPE_PROC_REF(/mob, say), pick(speak))
+	om_after(src, 5, TYPE_PROC_REF(/datum, om_set_var), "name", realname)
 
 //lo- procs adjusted to mobs.
 

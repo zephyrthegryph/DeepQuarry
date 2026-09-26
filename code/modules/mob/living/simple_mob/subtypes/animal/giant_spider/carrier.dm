@@ -45,30 +45,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/carrier/death()
 	visible_message(span_warning("\The [src]'s abdomen splits as it rolls over, spiderlings crawling from the wound.") )
-	spawn(1)
-		var/list/new_spiders = list()
-		for(var/i = 1 to spiderling_count)
-			if(prob(swarmling_prob) && src)
-				var/mob/living/simple_mob/animal/giant_spider/swarmling = new swarmling_type(src.loc)
-				var/swarm_health = FLOOR(swarmling.endurance * 0.4, 1)
-				var/swarm_dam_lower = FLOOR(melee_damage_lower * 0.4, 1)
-				var/swarm_dam_upper = FLOOR(melee_damage_upper * 0.4, 1)
-				swarmling.name = "spiderling"
-				swarmling.endurance = swarm_health
-				swarmling.melee_damage_lower = swarm_dam_lower
-				swarmling.melee_damage_upper = swarm_dam_upper
-				swarmling.faction = faction
-				swarmling.adjust_scale(0.75)
-				new_spiders += swarmling
-			else if(src)
-				var/obj/effect/spider/spiderling/child = new spiderling_type(src.loc)
-				child.skitter()
-			else // We might've gibbed or got deleted.
-				break
-		// Transfer our player to their new body, if RNG provided one.
-		if(new_spiders.len && client)
-			var/mob/living/simple_mob/animal/giant_spider/new_body = pick(new_spiders)
-			move_player(src, new_body, "carrier spider burst into spiderlings")
+	om_after(src, 1, PROC_REF(burst_into_spiderlings))
 	return ..()
 
 // Note that this isn't required for the 'scan all spiders' entry since its essentially a meme.
@@ -85,3 +62,28 @@
 	swarmling_type = /mob/living/simple_mob/animal/giant_spider/carrier/recursive
 
 /mob/living/simple_mob/animal/giant_spider/carrier/event
+
+/mob/living/simple_mob/animal/giant_spider/carrier/proc/burst_into_spiderlings()
+	var/list/new_spiders = list()
+	for(var/i = 1 to spiderling_count)
+		if(prob(swarmling_prob) && src)
+			var/mob/living/simple_mob/animal/giant_spider/swarmling = new swarmling_type(src.loc)
+			var/swarm_health = FLOOR(swarmling.endurance * 0.4, 1)
+			var/swarm_dam_lower = FLOOR(melee_damage_lower * 0.4, 1)
+			var/swarm_dam_upper = FLOOR(melee_damage_upper * 0.4, 1)
+			swarmling.name = "spiderling"
+			swarmling.endurance = swarm_health
+			swarmling.melee_damage_lower = swarm_dam_lower
+			swarmling.melee_damage_upper = swarm_dam_upper
+			swarmling.faction = faction
+			swarmling.adjust_scale(0.75)
+			new_spiders += swarmling
+		else if(src)
+			var/obj/effect/spider/spiderling/child = new spiderling_type(src.loc)
+			child.skitter()
+		else // We might've gibbed or got deleted.
+			break
+	// Transfer our player to their new body, if RNG provided one.
+	if(new_spiders.len && client)
+		var/mob/living/simple_mob/animal/giant_spider/new_body = pick(new_spiders)
+		move_player(src, new_body, "carrier spider burst into spiderlings")
