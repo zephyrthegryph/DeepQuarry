@@ -84,13 +84,17 @@
 	if(!received_message.spam)
 		log_and_message_admins("Broadcast email address used by [usr]. Message title: [received_message.title].")
 
-	spawn(0)
-		for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
-			var/datum/computer_file/data/email_message/new_message = received_message.clone()
-			send_mail(email_account.login, new_message, 1)
-			sleep(2)
+	var/list/accounts = list()
+	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
+		accounts += email_account
+	om_stagger(src, accounts, 2, PROC_REF(broadcast_to), 1, list(received_message))
 
 	return TRUE
+
+/// One recipient of a broadcast (receive_mail() sends one every 2 deciseconds).
+/datum/computer_file/data/email_account/service/broadcaster/proc/broadcast_to(datum/computer_file/data/email_account/email_account, datum/computer_file/data/email_message/received_message)
+	var/datum/computer_file/data/email_message/new_message = received_message.clone()
+	send_mail(email_account.login, new_message, 1)
 
 /datum/computer_file/data/email_account/service/document
 	login = EMAIL_DOCUMENTS
