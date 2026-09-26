@@ -20,8 +20,7 @@
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
 	user.client?.images |= I
-	spawn(23) //That's just how long the animation is
-		I.icon_state = "spawn-wall-loop"
+	om_after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
 
 /datum/technomancer_marker/Destroy()
 	var/mob/user = U?.resolve()
@@ -127,3 +126,6 @@ GLOBAL_LIST_INIT(mark_spells, list())
 	else
 		to_chat(user, span_warning("You can't afford the energy cost!"))
 		return 0
+
+/datum/technomancer_marker/proc/loop_animation()
+	I.icon_state = "spawn-wall-loop"

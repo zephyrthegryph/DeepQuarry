@@ -194,12 +194,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	refresh_event_modifiers()
 
-	spawn (ROUNDSTART_LOGOUT_REPORT_TIME)
-		display_roundstart_logout_report()
-
-	spawn (rand(waittime_l, waittime_h))
-		spawn(rand(100,150))
-			announce_ert_disabled()
+	om_after(src, ROUNDSTART_LOGOUT_REPORT_TIME, /proc/display_roundstart_logout_report)
+	om_after(src, rand(waittime_l, waittime_h) + rand(100,150), PROC_REF(announce_ert_disabled))
 
 	//Assign all antag types for this game mode. Any players spawned as antags earlier should have been removed from the pending list, so no need to worry about those.
 	for(var/datum/antagonist/antag in antag_templates)

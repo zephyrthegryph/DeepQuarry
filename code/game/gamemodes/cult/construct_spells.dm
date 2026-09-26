@@ -892,12 +892,11 @@
 	mob_overlay_state = "blue_electricity_constant"
 
 /datum/modifier/soothe/tick()
-	spawn()
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
-			H.apply_effect(-20, AGONY)
-			if(prob(10))
-				to_chat(H, span_warning("It feels so comforting!"))
+	if(ishuman(holder))
+		var/mob/living/carbon/human/H = holder
+		H.apply_effect(-20, AGONY)
+		if(prob(10))
+			to_chat(H, span_warning("It feels so comforting!"))
 
 ////////////////////////////
 //	Purity Construct - Priest - Spells
@@ -940,43 +939,42 @@
 	mob_overlay_state = "blue_electricity_constant"
 
 /datum/modifier/mend_purity/tick()
-	spawn()
-		if(isliving(holder))
-			var/mob/living/L = holder
-			var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
-			L.mend(TREAT_TISSUE_REPAIR, mend_amount)
-			L.mend(TREAT_PLATING_REPAIR, mend_amount)
-			L.mend(TREAT_BURN_CARE, mend_amount)
-			L.mend(TREAT_WIRING_REPAIR, mend_amount)
+	if(isliving(holder))
+		var/mob/living/L = holder
+		var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
+		L.mend(TREAT_TISSUE_REPAIR, mend_amount)
+		L.mend(TREAT_PLATING_REPAIR, mend_amount)
+		L.mend(TREAT_BURN_CARE, mend_amount)
+		L.mend(TREAT_WIRING_REPAIR, mend_amount)
 
-			if(ishuman(holder))
-				var/mob/living/carbon/human/H = holder
+		if(ishuman(holder))
+			var/mob/living/carbon/human/H = holder
 
-				for(var/obj/item/organ/internal/O in H.internal_organs)
-					if(O.damage > 0)
-						H.mend(TREAT_RESTORATION, 2, O)
-					if(O.damage <= 5 && O.organ_tag == O_EYES)
-						H.sdisabilities &= ~BLIND
+			for(var/obj/item/organ/internal/O in H.internal_organs)
+				if(O.damage > 0)
+					H.mend(TREAT_RESTORATION, 2, O)
+				if(O.damage <= 5 && O.organ_tag == O_EYES)
+					H.sdisabilities &= ~BLIND
 
-				for(var/obj/item/organ/external/O in H.organs)
-					H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)
-					H.mend(TREAT_PLATING_REPAIR, rand(1, 3), O.organ_tag)
-					H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
-					H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
+			for(var/obj/item/organ/external/O in H.organs)
+				H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_PLATING_REPAIR, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
 
-				for(var/obj/item/organ/E in H.bad_external_organs)
-					var/obj/item/organ/external/affected = E
-					if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
-						affected.status &= ~ORGAN_BROKEN
+			for(var/obj/item/organ/E in H.bad_external_organs)
+				var/obj/item/organ/external/affected = E
+				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
+					affected.status &= ~ORGAN_BROKEN
 
-					for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
-						affected.remove_wound(W)
+				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+					affected.remove_wound(W)
 
-				H.restore_blood()
-				if(iscultist(H))
-					H.apply_effect(100, AGONY)//it will heal cultists but purity really doesn't like them so causes much pain
-				if(prob(10))
-					to_chat(H, span_danger("It feels as though your body is being torn apart!"))
+			H.restore_blood()
+			if(iscultist(H))
+				H.apply_effect(100, AGONY)//it will heal cultists but purity really doesn't like them so causes much pain
+			if(prob(10))
+				to_chat(H, span_danger("It feels as though your body is being torn apart!"))
 
 /datum/spell/targeted/purity_repair_aura
 	name = "Repair Aura"
@@ -1009,9 +1007,8 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/repair_aura_purity/tick()
-	spawn()
-		for(var/mob/living/simple_mob/construct/T in view(4,holder))
-			T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
-			T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
-			T.mend(TREAT_BURN_CARE, rand(10, 15))
-			T.mend(TREAT_WIRING_REPAIR, rand(10, 15))
+	for(var/mob/living/simple_mob/construct/T in view(4,holder))
+		T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
+		T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
+		T.mend(TREAT_BURN_CARE, rand(10, 15))
+		T.mend(TREAT_WIRING_REPAIR, rand(10, 15))

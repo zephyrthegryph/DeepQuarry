@@ -59,8 +59,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	var/Me = pickweight(meteortypes)
 	var/obj/effect/meteor/M = new Me(pickedstart)
 	M.dest = pickedgoal
-	spawn(0)
-		walk_towards(M, M.dest, 3) // Slower Meteors
+	walk_towards(M, M.dest, 3) // Slower Meteors
 	return
 
 /proc/spaceDebrisStartLoc(startSide, Z)

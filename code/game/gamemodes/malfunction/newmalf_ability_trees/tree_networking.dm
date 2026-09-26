@@ -156,23 +156,9 @@
 
 	var/duration = (remaining_apcs.len * 100)		// Calculates duration for announcing system
 	if(duration > 3000)								// Two types of announcements. Short hacks trigger immediate warnings. Long hacks are more "progressive".
-		spawn(0)
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("Caution, [station_name()]. We have detected abnormal behaviour in your network. It seems someone is trying to hack your electronic systems. We will update you when we have more information.", "Network Monitoring")
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("We started tracing the intruder. Whoever is doing this, they seem to be on the station itself. We suggest checking all network control terminals. We will keep you updated on the situation.", "Network Monitoring")
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("This is highly abnormal and somewhat concerning. The intruder is too fast, he is evading our traces. No man could be this fast...", "Network Monitoring")
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("We have traced the intrude#, it seem& t( e yo3r AI s7stem, it &# *#ck@ng th$ sel$ destru$t mechani&m, stop i# bef*@!)$#&&@@  <CONNECTION LOST>", "Network Monitoring")
+		// Network monitoring closes in over the hack, on the AI's clock.
+		for(var/stage in 1 to 4)
+			om_after(user, stage * duration / 5, TYPE_PROC_REF(/mob/living/silicon/ai, network_trace_announce), stage)
 	else
 		GLOB.command_announcement.Announce("We have detected a strong brute-force attack on your firewall which seems to be originating from your AI system. It already controls almost the whole network, and the only thing that's preventing it from accessing the self-destruct is this firewall. You don't have much time before it succeeds.", "Network Monitoring")
 	to_chat(user, "## BEGINNING SYSTEM OVERRIDE.")
@@ -207,3 +193,14 @@
 
 
 // END ABILITY VERBS
+
+/// One of network monitoring's announcements while a malfunctioning AI overrides the station.
+/mob/living/silicon/ai/proc/network_trace_announce(stage)
+	if(stat == DEAD)
+		return
+	var/list/messages = list(
+		"Caution, [station_name()]. We have detected abnormal behaviour in your network. It seems someone is trying to hack your electronic systems. We will update you when we have more information.",
+		"We started tracing the intruder. Whoever is doing this, they seem to be on the station itself. We suggest checking all network control terminals. We will keep you updated on the situation.",
+		"This is highly abnormal and somewhat concerning. The intruder is too fast, he is evading our traces. No man could be this fast...",
+		"We have traced the intrude#, it seem& t( e yo3r AI s7stem, it &# *#ck@ng th$ sel$ destru$t mechani&m, stop i# bef*@!)$#&&@@  <CONNECTION LOST>")
+	GLOB.command_announcement.Announce(messages[stage], "Network Monitoring")

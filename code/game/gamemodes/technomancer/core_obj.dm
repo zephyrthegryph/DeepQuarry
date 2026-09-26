@@ -116,10 +116,7 @@
 			var/mob/living/L = A
 			if(L.stat == DEAD)
 				LAZYREMOVE(summoned_mobs, L)
-				spawn(1)
-					L.visible_message(span_infoplain(span_bold("\The [L]") + " begins to fade away..."))
-					animate(L, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
-					QDEL_IN(L, 30)
+				om_after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
@@ -361,3 +358,9 @@
 	instability_modifier = 0.3
 	spell_power_modifier = 0.7
 	universal = TRUE
+
+/// A dead summon fades into nothingness.
+/mob/living/proc/fade_away()
+	visible_message(span_infoplain(span_bold("\The [src]") + " begins to fade away..."))
+	animate(src, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
+	QDEL_IN(src, 30)

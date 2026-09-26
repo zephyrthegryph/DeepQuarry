@@ -61,38 +61,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	if(GLOB.endgame_exits?.len)
 		new /obj/singularity/narsie/large/exit(pick(GLOB.endgame_exits))
 
-	spawn(rand(30,60) SECONDS)
-		var/txt = {"
-					There's been a galaxy-wide electromagnetic pulse.  All of our systems are heavily damaged and many personnel are dead or dying. We are seeing increasing indications of the universe itself beginning to unravel.
-
-					[station_name()], you are the only facility nearby a bluespace rift, which is near your research outpost. You are hereby directed to enter the rift using all means necessary, quite possibly as the last of your species alive.
-
-					You have five minutes before the universe collapses. Good l\[\[###!!!-
-					AUTOMATED ALERT: Link to [command_name()] lost.
-
-					The access requirements on the Asteroid Shuttles' consoles have now been revoked.
-				"}
-		GLOB.priority_announcement.Announce(txt,"SUPERMATTER CASCADE DETECTED", ANNOUNCER_MSG_SUPERMATTER_CASCADE)
-
-		for(var/obj/machinery/computer/shuttle_control/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			if(istype(C, /obj/machinery/computer/shuttle_control/research) || istype(C, /obj/machinery/computer/shuttle_control/mining))
-				C.req_access = list()
-				C.req_one_access = list()
-
-		spawn(5 MINUTES)
-			play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic
-
-			// FIXME: Probably a better way
-			for(var/mob/living/M in GLOB.living_mob_list)
-				switch(M.z)
-					if(0)	//inside a crate or something
-						var/turf/T = get_turf(M)
-						if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
-							M.set_stat(DEAD)
-					if(1)	//on a z-level 1 turf.
-						M.set_stat(DEAD)
-			GLOB.universe_has_ended = 1
-		return
+	om_after(src, rand(30,60) SECONDS, PROC_REF(announce_cascade))
 
 /datum/universal_state/supermatter_cascade/proc/AreaSet()
 	for(var/area/A in world)
@@ -141,3 +110,38 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 			M.current.flash_eyes()
 
 		SSantag_job.clear_antag_roles(M)
+
+/// The cascade announcement, then five minutes to get through the rift.
+/datum/universal_state/supermatter_cascade/proc/announce_cascade()
+	var/txt = {"
+				There's been a galaxy-wide electromagnetic pulse.  All of our systems are heavily damaged and many personnel are dead or dying. We are seeing increasing indications of the universe itself beginning to unravel.
+
+				[station_name()], you are the only facility nearby a bluespace rift, which is near your research outpost. You are hereby directed to enter the rift using all means necessary, quite possibly as the last of your species alive.
+
+				You have five minutes before the universe collapses. Good l\[\[###!!!-
+				AUTOMATED ALERT: Link to [command_name()] lost.
+
+				The access requirements on the Asteroid Shuttles' consoles have now been revoked.
+			"}
+	GLOB.priority_announcement.Announce(txt,"SUPERMATTER CASCADE DETECTED", ANNOUNCER_MSG_SUPERMATTER_CASCADE)
+
+	for(var/obj/machinery/computer/shuttle_control/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+		if(istype(C, /obj/machinery/computer/shuttle_control/research) || istype(C, /obj/machinery/computer/shuttle_control/mining))
+			C.req_access = list()
+			C.req_one_access = list()
+	om_after(src, 5 MINUTES, PROC_REF(universe_collapses))
+
+/datum/universal_state/supermatter_cascade/proc/universe_collapses()
+	spawn(0) // S7 keeps: start_cinematic() sleeps through its animation (cinematics)
+		play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic
+
+	// FIXME: Probably a better way
+	for(var/mob/living/M in GLOB.living_mob_list)
+		switch(M.z)
+			if(0)	//inside a crate or something
+				var/turf/T = get_turf(M)
+				if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
+					M.set_stat(DEAD)
+			if(1)	//on a z-level 1 turf.
+				M.set_stat(DEAD)
+	GLOB.universe_has_ended = 1

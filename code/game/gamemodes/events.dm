@@ -31,8 +31,8 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		vents -= vent
 		spawncount--
 
-	spawn(rand(5000, 6000)) //Delayed announcements to keep the crew on their toes.
-		GLOB.command_announcement.Announce("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
+	//Delayed announcements to keep the crew on their toes.
+	om_after(null, rand(5000, 6000), /proc/delayed_command_announcement, "Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /proc/high_radiation_event()
 
@@ -92,10 +92,10 @@ GLOBAL_VAR_INIT(hadevent, 0)
 				temp_closet.icon_state = "closed_unlocked"
 
 			for (var/obj/machinery/door/airlock/security/temp_airlock in A)
-				spawn(0) temp_airlock.prison_open()
+				temp_airlock.prison_open()
 
 			for (var/obj/machinery/door/airlock/glass_security/temp_glassairlock in A)
-				spawn(0) temp_glassairlock.prison_open()
+				temp_glassairlock.prison_open()
 
 			for (var/obj/machinery/door_timer/temp_timer in A)
 				temp_timer.timer_duration = 1
@@ -110,8 +110,8 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		if(C.name == "carpspawn")
 			new /mob/living/simple_mob/animal/space/carp(C.loc)
 	//sleep(100)
-	spawn(rand(300, 600)) //Delayed announcements to keep the crew on their toes.
-		GLOB.command_announcement.Announce("Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_NEW_COMMAND_REPORT)
+	//Delayed announcements to keep the crew on their toes.
+	om_after(null, rand(300, 600), /proc/delayed_command_announcement, "Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_NEW_COMMAND_REPORT)
 
 /proc/lightsout(isEvent = 0, lightsoutAmount = 1,lightsoutRange = 25) //leave lightsoutAmount as 0 to break ALL lights
 	if(isEvent)

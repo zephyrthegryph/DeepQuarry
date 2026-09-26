@@ -170,7 +170,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
 				to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
-			else spawn()
+			else spawn() // S7 keeps: tgui_alert() sleeps (prompts, S10)
 				var/choice = tgui_alert(target,"Do you want to join the cult?","Submit to Nar'Sie",list("Resist","Submit"))
 				waiting_for_input[target] = 0
 				if(choice == "Submit") //choosing 'Resist' does nothing of course.
@@ -202,10 +202,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			SetUniversalState(/datum/universal_state/hell)
 			GLOB.narsie_cometh = 1
 
-			spawn(10 SECONDS)
-				if(SSemergency_shuttle)
-					SSemergency_shuttle.call_evac()
-					SSemergency_shuttle.launch_time = 0	// Cannot recall
+			om_after(null, 10 SECONDS, /proc/narsie_call_evac) // the global owner: a round event, and the rune goes
 
 		log_and_message_admins_many(cultists, "summoned the end of days.")
 		return
@@ -255,11 +252,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		span_danger("...but it wasn't nearly enough. You crave, crave for more. The hunger consumes you from within."), \
 		span_warning("You hear a heartbeat."))
 		user.bhunger += drain
-		src = user
-		spawn()
-			for (,user.bhunger>0,user.bhunger--)
-				sleep(50)
-				user.injure(INJURY_BLUNT, 3)
+		om_after(user, 5 SECONDS, TYPE_PROC_REF(/mob/living, blood_hunger_tick))
 		return
 	user.mend(TREAT_TISSUE_REPAIR, drain%5)
 	drain-=drain%5
@@ -1005,8 +998,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			to_chat(M, span_danger("Your blood boils!"))
 			victims += M
 			if(prob(5))
-				spawn(5)
-					M.gib()
+				om_after(M, 5, TYPE_PROC_REF(/mob, gib))
 		for(var/obj/effect/rune/R in view(src))
 			if(prob(10))
 				explosion(R.loc, -1, 0, 1, 5)
@@ -1116,3 +1108,12 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 	qdel(src)
 	return
+
+/// The blood drain rune's hunger: it gnaws every five seconds until sated.
+/mob/living/proc/blood_hunger_tick()
+	if(bhunger <= 0)
+		return
+	injure(INJURY_BLUNT, 3)
+	bhunger--
+	if(bhunger > 0)
+		om_after(src, 5 SECONDS, PROC_REF(blood_hunger_tick))

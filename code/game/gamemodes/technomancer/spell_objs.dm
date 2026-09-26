@@ -290,6 +290,4 @@
 		on_throw_cast(hit_atom)
 
 	// If we miss or hit an obstacle, we still want to delete the spell.
-	spawn(20)
-		if(src)
-			qdel(src)
+	om_qdel_after(src, 2 SECONDS)

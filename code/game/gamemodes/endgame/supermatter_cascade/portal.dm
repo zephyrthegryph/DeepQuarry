@@ -67,8 +67,7 @@
 				if (INVISIBILITY_ABSTRACT == AM.invisibility)
 					continue
 
-				spawn (0)
-					AM.singularity_pull(src, src.current_size)
+				AM.singularity_pull(src, src.current_size)
 
 
 /mob
