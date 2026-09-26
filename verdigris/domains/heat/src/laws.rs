@@ -16,7 +16,7 @@
 //! [`BODY_SETTLED_K`] of its environment emits [`HeatEvent::Settled`]; the
 //! FFI layer releases it.
 
-use vg_core::field::law::Cell;
+use vg_core::field::law::{Cell, Coupled};
 use vg_core::field::FieldKind;
 use vg_core::law::{LawCtx, Settle};
 use vg_core::query::{Foreign, Foreign2};
@@ -36,6 +36,10 @@ pub enum HeatEvent {
     /// environment: its excess energy already moved there this step; the
     /// FFI layer drops its coupling entities and despawns it.
     Settled,
+    /// A body coupled to a gas mixture (a tank, a pipe network) moved
+    /// `joules` into it (negative: out of it); the FFI layer, which owns
+    /// mixtures, applies it.
+    MixtureHeat { target: u32, joules: f32 },
 }
 
 /// Adds `joules` to a body's energy, clamped at its TCMB floor.
@@ -156,6 +160,31 @@ where
 pub trait ThermalField: FieldKind<Value: Thermal> {}
 impl<K: FieldKind<Value: Thermal>> ThermalField for K {}
 
+/// Gas mixtures a body couples to (tanks, pipe networks), by handle, sorted:
+/// `(handle, temperature K, heat capacity J/K, reservoir)`. Main-owned (the
+/// FFI layer refreshes it each step); the exchange law reads its snapshot.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MixtureProbes(pub Vec<(u32, f32, f32, bool)>);
+
+/// A mixture as a coupling's environment: what the body deposits into it is
+/// only recorded (the mixture is main-owned; see [`HeatEvent::MixtureHeat`]).
+struct MixtureEnv {
+    state: (f32, f32, bool),
+    deposited: f64,
+}
+
+impl Env for MixtureEnv {
+    fn state(&self) -> (f32, f32, bool) {
+        let (t, c, r) = self.state;
+        (t, if r { f32::INFINITY } else { c }, r)
+    }
+
+    fn deposit(&mut self, joules: f64) -> f64 {
+        self.deposited += joules;
+        joules
+    }
+}
+
 /// What a coupling step asks of its law's `ctx`.
 enum Outcome {
     Settled,
@@ -257,10 +286,10 @@ vg_core::law! {
 vg_core::law! {
     /// A turf's solid ↔ its gas (`OPEN_HEAT_TRANSFER_COEFFICIENT`): each pair
     /// relaxes at `GAS_COUPLING * conductivity` where the solid has air and
-    /// they differ by more than [`GAS_COUPLING_MIN_K`]. Runs over the gas
-    /// field's active cells (air changing is what drives it).
-    pub SolidGasExchange<G: ThermalField>("heat_solid_gas_exchange"): () => (Cell<G>, Cell<SolidHeat>), |ctx, dt| {
-        let (gas, solid) = &mut ctx.writes;
+    /// they differ by more than [`GAS_COUPLING_MIN_K`]. Runs over every cell
+    /// active in either field: the air changing, or the turf's heat.
+    pub SolidGasExchange<G: ThermalField>("heat_solid_gas_exchange"): () => Coupled<G, SolidHeat>, |ctx, dt| {
+        let Coupled(gas, solid) = &mut ctx.writes;
         if !solid.value.has(flags::AIR) || solid.value.conductivity <= 0.0 || solid.reservoir {
             return Settle::Sleep;
         }
@@ -272,6 +301,33 @@ vg_core::law! {
         let moved = pair_exchange_at_rate_f32(ts, cs, tg, cg, GAS_COUPLING * solid.value.conductivity, dt.0 as f32);
         let booked = gas.deposit(f64::from(moved)) + solid.deposit(-f64::from(moved));
         finish(ctx, (if moved == 0.0 { Outcome::Sleep } else { Outcome::Active }, booked))
+    }
+}
+
+vg_core::law! {
+    /// Body ↔ gas mixture exchange ([`GasCoupling`] to a tank or pipe
+    /// network): the mixture's side is read from [`MixtureProbes`] and
+    /// applied by the FFI layer from [`HeatEvent::MixtureHeat`].
+    pub BodyMixtureExchange("heat_body_mixture_exchange"): (GasCoupling, vg_core::query::Global<MixtureProbes>) => Foreign<GasCoupling, HeatBody>, |ctx, dt| {
+        let (now, c) = (ctx.now(), ctx.reads.0.clone());
+        if c.kind != crate::components::gas_kind::MIXTURE {
+            return Settle::Sleep;
+        }
+        let probes = &ctx.reads.1 .0 .0;
+        let Ok(i) = probes.binary_search_by_key(&c.target, |p| p.0) else {
+            return Settle::Active;
+        };
+        let (_, t, cap, reservoir) = probes[i];
+        let Some(body) = ctx.writes.value.as_mut() else {
+            return Settle::Sleep;
+        };
+        let mut env = MixtureEnv { state: (t, cap, reservoir), deposited: 0.0 };
+        let step = couple(body, &mut env, c.conductance, c.slot == 0, now, dt);
+        if env.deposited != 0.0 {
+            #[allow(clippy::cast_possible_truncation)]
+            ctx.emit(HeatEvent::MixtureHeat { target: c.target, joules: env.deposited as f32 });
+        }
+        finish(ctx, step)
     }
 }
 

@@ -132,6 +132,23 @@ SUBSYSTEM_DEF(vg)
 	if(entities_by_index[slot] == mover)
 		entities_by_index[slot] = null
 
+/// Gives `D` (any datum) its own entity handle, bound in `entities_by_index`
+/// like an atom's: `entity_lookup()` finds it. Returns the handle.
+/datum/controller/subsystem/vg/proc/bind_datum(datum/D)
+	var/entity = vg_entity_spawn()
+	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(length(entities_by_index) < slot)
+		entities_by_index.len = slot
+	entities_by_index[slot] = D
+	return entity
+
+/// Frees an entity `bind_datum()` gave out.
+/datum/controller/subsystem/vg/proc/unbind_datum(datum/D, entity)
+	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(slot <= length(entities_by_index) && entities_by_index[slot] == D)
+		entities_by_index[slot] = null
+	vg_entity_unbind(entity)
+
 /// The atom `entity`'s index belongs to, or null. Event dispatch (§8) still
 /// checks `atom.vg_entity == entity` itself: a recycled index briefly holds
 /// a different, newer entity, and this alone would misdeliver.

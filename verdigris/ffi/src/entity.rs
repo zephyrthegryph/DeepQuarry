@@ -127,6 +127,14 @@ fn entity_unbind(entity: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
+/// A new entity with no components (a subscriber handle for a datum that
+/// is not an atom). Free it with `vg_entity_unbind`.
+#[auxmacros::bind("/proc/entity_spawn")]
+fn entity_spawn() -> Result<ByondValue> {
+    let e = with_world(|w| w.spawn().map_err(|e| eyre!("{e}")))?;
+    Ok(ByondValue::from(entity_value(e)))
+}
+
 /// `vg_describe(atom)`: every attached component's fields, as one
 /// semicolon-joined line (`domain field=value, field=value; domain ...`).
 #[auxmacros::bind("/proc/entity_describe")]

@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "b6f1058af3c26c62"
+#define VERDIGRIS_ABI "11f7103907767122"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -595,6 +595,14 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_is_valid_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, domain, kind)
+
+/// A new entity with no components (a subscriber handle for a datum that
+/// is not an atom). Free it with `vg_entity_unbind`.
+// /proc/entity_spawn (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_spawn()
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_spawn_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
 
 /// `SSvg`'s per-sweep maintenance for hosts not yet on the world's pacer
 /// (the world itself is paced by `vg_world_tick`).

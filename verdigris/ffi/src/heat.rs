@@ -108,6 +108,8 @@ pub fn register(b: &mut WorldBuilder) -> FieldKey<SolidHeat> {
     let _ = b.add_law::<SolidBodyExchange>();
     let _ = b.add_law::<BodyBodyExchange>();
     let _ = b.add_law::<RegulatorHeatPump>();
+    b.add_global(vg_core::component::Ownership::Worker, vg_heat::laws::MixtureProbes::default());
+    let _ = b.add_law::<vg_heat::laws::BodyMixtureExchange>();
     let _ = b.add_law::<vg_heat::mob::MobHeatFlux>();
     field
 }
@@ -768,10 +770,11 @@ fn heat_body_flow(h: ByondValue) -> Result<ByondValue> {
 /// (the settle already happened inside the law; only dropping the
 /// coupling entities and despawning is left).
 fn drain_settled_bodies(w: &mut vg_core::world::World) {
-    let events = w.drain_events();
-    let settled: Vec<vg_core::entity::EntityId> = events
+    // Peeked, not drained: the events are DM's (`vg_world_events`).
+    let settled: Vec<vg_core::entity::EntityId> = w
+        .events()
         .decoded::<vg_heat::laws::HeatEvent>()
-        .filter_map(|(entity_v, vg_heat::laws::HeatEvent::Settled)| entity::decode(entity_v).ok())
+        .filter_map(|(entity_v, e)| matches!(e, vg_heat::laws::HeatEvent::Settled).then(|| entity::decode(entity_v).ok()).flatten())
         .filter_map(|coupling_e| COUPLING_BODY.with(|c| c.borrow().get(&coupling_e.index()).copied()))
         .collect();
     for body_e in settled {
@@ -1058,5 +1061,72 @@ fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
     }
     if joules != 0.0 {
         let _ = w.submit_cell(key, cell, vg_gas::cell::GasCmd::Delta(d));
+    }
+}
+
+/// Every gas mixture a heat body couples to, as the exchange law reads it
+/// (`vg_heat::laws::MixtureProbes`). Loads mixtures, so call it outside the
+/// world borrow.
+pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
+    let targets: Vec<u32> = with_world(|w| {
+        Ok(w.entities_with::<GasCoupling>().into_iter().filter_map(|e| w.read::<GasCoupling>(e)).filter(|c| c.kind == gas_kind::MIXTURE).map(|c| c.target).collect())
+    })
+    .unwrap_or_default();
+    let mut probes: Vec<(u32, f32, f32, bool)> = targets
+        .into_iter()
+        .filter_map(|id| {
+            let m = crate::gas::mix::load(crate::gas::mix::MixRef::from_id(id)?)?;
+            Some((id, m.get_temperature(), m.heat_capacity(), m.is_immutable()))
+        })
+        .collect();
+    probes.sort_unstable_by_key(|p| p.0);
+    probes.dedup_by_key(|p| p.0);
+    vg_heat::laws::MixtureProbes(probes)
+}
+
+/// Applies the heat bodies moved into gas mixtures (`HeatEvent::MixtureHeat`
+/// in `events`). Call it outside the world borrow.
+pub(crate) fn apply_mixture_heat(events: &vg_core::event::EventSink) {
+    for (_, e) in events.decoded::<vg_heat::laws::HeatEvent>() {
+        if let vg_heat::laws::HeatEvent::MixtureHeat { target, joules } = e
+            && let Some(r) = crate::gas::mix::MixRef::from_id(target)
+        {
+            let mut d = [0.0f32; vg_gas::cell::Q];
+            d[vg_gas::cell::N] = joules;
+            crate::gas::mix::add_amounts(r, &d, 0.0);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gas::mix::{self, MixRef};
+
+    #[test]
+    fn a_body_warms_a_tank() {
+        with_world(|_| Ok(())).unwrap();
+        let mut tank = vg_gas::gas::Mixture::from_vol(70.0);
+        tank.set_moles(0, 10.0);
+        tank.set_temperature(280.0);
+        let r = MixRef::Main(mix::alloc(tank).unwrap());
+        with_world(|w| {
+            let body = w.bind_value(None, HeatBody { capacity: 1_000.0, energy: 1_000.0 * 400.0, ..Default::default() }).map_err(|e| eyre!("{e}"))?;
+            w.bind_value(None, GasCoupling { body: body.index(), kind: gas_kind::MIXTURE, target: r.id(), conductance: 5.0, slot: 1 }).map_err(|e| eyre!("{e}"))?;
+            Ok(())
+        })
+        .unwrap();
+        for _ in 0..10 {
+            let probes = mixture_probes();
+            let events = with_world(|w| {
+                w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+                w.step_blocking();
+                Ok(w.drain_events())
+            })
+            .unwrap();
+            apply_mixture_heat(&events);
+        }
+        let t = mix::load(r).unwrap().get_temperature();
+        assert!(t > 281.0, "the tank warmed: {t}");
     }
 }

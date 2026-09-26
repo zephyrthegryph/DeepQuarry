@@ -229,3 +229,62 @@ fn a_body_exchanges_with_a_gas_field_cell() {
     let gas = world.read_cell(air, 0).unwrap();
     assert!(gas.energy > 1_000.0 * 280.0, "the gas warmed: {gas:?}");
 }
+
+#[test]
+fn a_heated_floor_warms_settled_air() {
+    use vg_core::field::toy::{HeatCell, HeatToy};
+    use vg_heat::laws::SolidGasExchange;
+
+    let mut b = builder();
+    b.add_grid(GridDims::new(2, 1, 1).unwrap());
+    let solid = b.add_field::<SolidHeat>(FieldConfig { dt: DT, max_substeps: 16 });
+    let air = b.add_field::<HeatToy>(FieldConfig { dt: DT, max_substeps: 16 });
+    let _ = b.add_law::<SolidGasExchange<HeatToy>>();
+    let mut world = b.build().expect("builds");
+    world.sim_mut().port(air.geometry).put(0, Geom::cell(1_000.0)).unwrap();
+    world.sim_mut().port(air.cells).put(0, HeatCell::at(1_000.0, 293.0)).unwrap();
+    // Two floor tiles (a heated tile conducts to its neighbour, so its chunk
+    // is live), the first with air.
+    for cell in 0..2 {
+        world.sim_mut().port(solid.geometry).put(cell, Geom::cell(10_000.0)).unwrap();
+        world.sim_mut().port(solid.cells).put(cell, vg_heat::SolidCell::at(10_000.0, 293.0, 0.5, 0.9, vg_heat::solid::flags::AIR)).unwrap();
+    }
+    for _ in 0..10 {
+        world.step_blocking();
+    }
+    // Only the floor changes: the air is settled.
+    world.submit_cell(solid, 0, vg_heat::SolidCmd::Add(10_000.0 * 100.0)).unwrap();
+    for _ in 0..20 {
+        world.step_blocking();
+    }
+    let gas = world.read_cell(air, 0).unwrap();
+    assert!(gas.energy > 1_000.0 * 294.0, "the heated floor warmed its air: {gas:?}");
+}
+
+#[test]
+fn a_body_exchanges_with_a_mixture_through_events() {
+    use vg_heat::laws::{BodyMixtureExchange, HeatEvent, MixtureProbes};
+
+    let mut b = builder();
+    let _ = b.add_component::<HeatBody>();
+    let _ = b.add_component::<GasCoupling>();
+    b.add_global(vg_core::component::Ownership::Worker, MixtureProbes(vec![(42, 280.0, 1_000.0, false)]));
+    let _ = b.add_law::<BodyMixtureExchange>();
+    let mut world = b.build().expect("builds");
+    let body_e = world.bind_value(None, HeatBody { capacity: 10.0, energy: 10.0 * 400.0, ..Default::default() }).unwrap();
+    world.bind_value(None, GasCoupling { body: body_e.index(), kind: 1, target: 42, conductance: 2.0, slot: 1 }).unwrap();
+    for _ in 0..5 {
+        world.step_blocking();
+    }
+    let body: HeatBody = world.read(body_e).unwrap();
+    assert!(body.temperature() < 400.0, "{}", body.temperature());
+    let heat: f32 = world
+        .drain_events()
+        .decoded::<HeatEvent>()
+        .filter_map(|(_, e)| match e {
+            HeatEvent::MixtureHeat { target: 42, joules } => Some(joules),
+            _ => None,
+        })
+        .sum();
+    assert!(heat > 0.0, "the body's heat went to the mixture: {heat}");
+}

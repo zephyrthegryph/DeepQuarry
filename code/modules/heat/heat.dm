@@ -200,39 +200,26 @@
 
 // ---------------------------------------------------------------- watches
 
-/// Subscriber index -> datum, for heat watch wakes.
-GLOBAL_LIST_EMPTY(heat_subscribers)
-/// Free subscriber indices.
-GLOBAL_LIST_EMPTY(heat_subscriber_free)
-/// "[watch index]" -> subscriber index, for ThresholdSet crossings
+/// "[watch index]" -> subscriber handle, for ThresholdSet crossings
 /// (index alone: `vg_heat_take_wakes()`'s crossing records carry only the
 /// watch's table index, not its generation -- see that proc's doc).
 GLOBAL_LIST_EMPTY(heat_watch_owners)
 
-/// This datum's heat subscriber index (0: none).
+/// This datum's heat subscriber: an entity handle (0: none), bound in
+/// SSvg's entity table so wakes find the datum again (`SSvg.entity_lookup`).
 /datum/var/heat_subscriber = 0
 
-/// The datum's subscriber index, allocated on first use.
+/// The datum's subscriber handle, allocated on first use.
 /datum/proc/heat_subscriber_index()
-	if(heat_subscriber)
-		return heat_subscriber
-	var/index
-	if(length(GLOB.heat_subscriber_free))
-		index = GLOB.heat_subscriber_free[length(GLOB.heat_subscriber_free)]
-		GLOB.heat_subscriber_free.len--
-		GLOB.heat_subscribers[index] = src
-	else
-		GLOB.heat_subscribers += src
-		index = length(GLOB.heat_subscribers)
-	heat_subscriber = index
-	return index
+	if(!heat_subscriber)
+		heat_subscriber = SSvg.bind_datum(src)
+	return heat_subscriber
 
-/// Frees the datum's subscriber index (its watches must be removed first).
+/// Frees the datum's subscriber handle (its watches must be removed first).
 /datum/proc/heat_unsubscribe()
 	if(!heat_subscriber)
 		return
-	GLOB.heat_subscribers[heat_subscriber] = null
-	GLOB.heat_subscriber_free += heat_subscriber
+	SSvg.unbind_datum(src, heat_subscriber)
 	heat_subscriber = 0
 
 /// Watches `target`'s temperature for crossing `limit` (upwards if `above`).
@@ -310,13 +297,13 @@ GLOBAL_LIST_EMPTY(heat_watch_owners)
 	var/wakes = length(flat) ? flat[1] : 0
 	var/i = 2
 	for(var/n in 1 to wakes)
-		var/datum/subscriber = GLOB.heat_subscribers.len >= flat[i] ? GLOB.heat_subscribers[flat[i]] : null
-		if(subscriber && !QDELETED(subscriber))
+		var/datum/subscriber = SSvg.entity_lookup(flat[i])
+		if(subscriber && subscriber.heat_subscriber == flat[i] && !QDELETED(subscriber))
 			subscriber.on_heat_wake(flat[i + 1], flat[i + 2], flat[i + 3])
 		i += 4
 	while(i + 3 <= length(flat))
-		var/index = GLOB.heat_watch_owners["[flat[i]]"]
-		var/datum/subscriber = index && GLOB.heat_subscribers.len >= index ? GLOB.heat_subscribers[index] : null
-		if(subscriber && !QDELETED(subscriber))
+		var/owner = GLOB.heat_watch_owners["[flat[i]]"]
+		var/datum/subscriber = owner ? SSvg.entity_lookup(owner) : null
+		if(subscriber && subscriber.heat_subscriber == owner && !QDELETED(subscriber))
 			subscriber.on_heat_crossing(flat[i], flat[i + 1], flat[i + 2], flat[i + 3])
 		i += 4

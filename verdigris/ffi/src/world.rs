@@ -489,7 +489,11 @@ fn component_adjust(
 #[auxmacros::bind("/proc/vg_world_tick")]
 fn world_tick(seconds: ByondValue) -> Result<ByondValue> {
     let s = f64::from(num(&seconds)?);
-    let ran = with_world(|w| Ok(w.tick(Seconds(s))))?;
+    let probes = crate::heat::mixture_probes();
+    let ran = with_world(|w| {
+        w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+        Ok(w.tick(Seconds(s)))
+    })?;
     Ok(ByondValue::from(if ran { 1.0f32 } else { 0.0 }))
 }
 
@@ -498,8 +502,9 @@ fn world_tick(seconds: ByondValue) -> Result<ByondValue> {
 /// `vg_drain_events()` decodes it and dispatches each record.
 #[auxmacros::bind("/proc/vg_world_events")]
 fn world_events() -> Result<ByondValue> {
-    let wire = with_world(|w| Ok(w.drain_events().take()))?;
-    list(wire)
+    let mut events = with_world(|w| Ok(w.drain_events()))?;
+    crate::heat::apply_mixture_heat(&events);
+    list(events.take())
 }
 
 /// Conservation violations since the last call, as text (empty: none).
@@ -546,11 +551,13 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
 #[auxmacros::bind("/proc/world_run_steps")]
 fn world_run_steps(steps: ByondValue) -> Result<ByondValue> {
     let n = whole(&steps, "steps")?.min(100_000);
-    with_world(|w| {
-        for _ in 0..n {
+    for _ in 0..n {
+        let probes = crate::heat::mixture_probes();
+        with_world(|w| {
+            w.set_global(probes).map_err(|e| eyre!("{e}"))?;
             w.step_blocking();
-        }
-        Ok(())
-    })?;
+            Ok(())
+        })?;
+    }
     Ok(ByondValue::null())
 }

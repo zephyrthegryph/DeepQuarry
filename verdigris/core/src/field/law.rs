@@ -84,6 +84,7 @@ pub fn cell_anchor<K: FieldKind>() -> Anchor {
         field: TypeId::of::<K>(),
         name: K::NAME,
         list: list_cells::<K>,
+        also: None,
     }
 }
 
@@ -140,6 +141,35 @@ impl<K: FieldKind> WriteQuery for Cell<K> {
         if cells.store.with(at.index, |old| *old != self.value) == Some(true) {
             cells.store.set(at.index, self.value);
         }
+    }
+}
+
+/// The same cell of two fields, `F` and `G`, as one anchor: iterates every
+/// cell active in either field (a coupling between them runs when either
+/// side changes). Writes store each side back only when it changed.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Coupled<F: FieldKind, G: FieldKind>(pub Cell<F>, pub Cell<G>);
+
+impl<F: FieldKind, G: FieldKind> Query for Coupled<F, G> {
+    type State = (FieldIds, FieldIds);
+
+    fn anchor() -> Option<Anchor> {
+        Some(Anchor::Cells { field: TypeId::of::<F>(), name: F::NAME, list: list_cells::<F>, also: Some((TypeId::of::<G>(), list_cells::<G>)) })
+    }
+
+    fn init(init: &mut QueryInit<'_>, write: bool) -> Result<Self::State, LawError> {
+        Ok((field_ids::<F>(init, write)?, field_ids::<G>(init, write)?))
+    }
+
+    fn fetch(state: &Self::State, frame: &FrameData<'_>, at: At) -> Option<Self> {
+        Some(Self(Cell::fetch(&state.0, frame, at)?, Cell::fetch(&state.1, frame, at)?))
+    }
+}
+
+impl<F: FieldKind, G: FieldKind> WriteQuery for Coupled<F, G> {
+    fn write(self, state: &Self::State, frame: &mut FrameData<'_>, at: At) {
+        self.0.write(&state.0, frame, at);
+        self.1.write(&state.1, frame, at);
     }
 }
 

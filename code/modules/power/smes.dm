@@ -196,11 +196,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/power_poll()
 	if(!vg_entity)
 		return
-	power_event_count++
-	charge = get_charge()
+	var/new_charge = get_charge()
+	// Counts polls that saw Rust change something (tests: an idle SMES hears nothing).
+	if(new_charge != charge)
+		power_event_count++
+	charge = new_charge
 	var/new_inputting = input_available > 0 ? (input_available + 0.01 >= target_load ? 2 : 1) : 0
 	var/new_outputting = output_used > 0 ? 2 : (output_attempt ? 1 : 0)
 	if(new_inputting != inputting || new_outputting != outputting || last_disp != chargedisplay())
+		power_event_count++
 		inputting = new_inputting
 		outputting = new_outputting
 		last_disp = chargedisplay()

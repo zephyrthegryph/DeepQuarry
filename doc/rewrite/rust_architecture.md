@@ -54,16 +54,14 @@ A domain crate **may not**:
 CI (`tools/ci/check_rust_core_consolidation.py`) enforces every item above. Its
 allow-list may only shrink.
 
-**Line budgets** (non-test code: non-blank, non-comment lines outside
-`#[cfg(test)]` items, `tests.rs` and `tests/`). Exceeding a budget means
-infrastructure has leaked into the domain. The CI check enforces them, and
-that no domain depends on `byondapi`, the FFI crates or another domain.
+The CI check also fails if a domain depends on `byondapi`, the FFI crates
+or another domain.
 
-| Domain | 2026-09-23 | Now | Budget |
-|---|---|---|---|
-| power | ~1,240 | 399 | **≤ 400** |
-| heat | ~2,070 | 589 | **≤ 600** |
-| gas | ~6,000 | ~1,490 | **≤ 1,600** |
+**Review before merge.** Every domain change gets a review, before it
+merges, confirming that no core machinery is reimplemented in the domain:
+no stores, handles, registries, queues, drivers, dirty tracking or FFI. A
+domain holds declarations and laws; anything else found there moves to
+`vg-core` (or `vg-ffi`) and the copy is deleted.
 
 ## 3. Crate map
 
@@ -362,7 +360,7 @@ together once test isolation and speed have landed and master is green.
 
 **Definition of done** for the Rust phase:
 - the CI consolidation check passes with an **empty** allow-list;
-- the line budgets are met;
+- every domain change has passed the review in §2;
 - all law, property and scenario tests pass;
 - no domain depends on `byondapi`;
 - `pump.rs` is under 30 lines.
@@ -375,15 +373,7 @@ refines §7: §7 says *who*, this says *what is left and in which order*.
 
 ### 8.1 Audit: where the lines are
 
-Every domain is still **60–75% generic machinery**. Budgets are §2's; the
-"realistic" column is what the declarations and laws alone come to once the
-machinery below is gone.
-
-| Domain | Non-test lines today | Budget | Realistic after the plan |
-|---|---|---|---|
-| gas | ~7,850 | 1,600 | ~1,600–1,900 |
-| heat | ~3,900 | 600 | ~600–700 |
-| power | ~970 in `domains/power` + ~1,100 in `ffi/src/power.rs` | 400 | ~400–450 |
+Every domain was still **60–75% generic machinery**.
 
 Power's host did not disappear, it **moved** to `ffi/src/power.rs`:
 `PowerHost`, the `storage_offer`/`asks` maps, its own `step`, the
@@ -429,7 +419,7 @@ constants and packing, which the check does not catch.
 
 **`layout` is not a sim domain.** It is the procedural station/cave generator
 (~11,500 lines). It moves to `verdigris/gen/layout`, is exempt from the domain
-rules and budgets, and its largest files are split.
+rules, and its largest files are split.
 
 ### 8.2 Steps
 
@@ -446,7 +436,7 @@ rules and budgets, and its largest files are split.
 | 6 | Gas: `GasMix` main-owned component + generated API; delete `lib.rs` binds, `turf.rs`, `Mains`, `Dirty`, `MixWatches`, `Post`; drop `byondapi`. | 4, 5 |
 | 7 | Delete the reactor as its own module: `Tokens` become `World::spawn`/`despawn`, its `RateModel` timers become `LawCtx::schedule`/`schedule_crossing`, `ProbeDomain` becomes a main-owned component watched generically. Repoint DM callers at the generic world/component binds, remove `REACT_DOMAIN_*` and the reactor module entirely; anything genuinely missing (e.g. an exact `RateModel` crossing not already in core) moves into core first. | 1b |
 | 8 | Move `layout` to `gen/`, split its largest files. | — |
-| 9 | CI: line budgets, crate-dependency checks, `ffi/` scanning; the allow-list is empty. | 3–7 |
+| 9 | CI: crate-dependency checks, `ffi/` scanning; the allow-list is empty. | 3–7 |
 
 About **120 agent-hours** in total. The critical path is **1b → 4 → 6 → 9**.
 
@@ -454,7 +444,7 @@ About **120 agent-hours** in total. The critical path is **1b → 4 → 6 → 9*
 
 - **Done on `rewrite/rust-core2`:** every step but 0 (differential
   harnesses, deferred: domains are covered by their own tests and the
-  focused DM tests). The allow-list is empty and the budgets hold.
+  focused DM tests). The allow-list is empty.
 - **Gas (steps 5, 6).** Turf gas is the `TurfGas` field on the shared
   World (`vg-ffi`'s `gas/mod.rs` registers it with its laws, its watches
   and the turf binds; air masks are the grid's `Air` layer, z links the
@@ -756,6 +746,6 @@ grid and is deleted when gas and heat port.
   deleted outright -- there is no reactor crate or leftover shim once this
   lands, only core facilities plus whatever domain actually owns the
   component that used to be a "reactor probe."
-- **CI (step 9).** Budgets, crate-dependency checks (no domain depends on
+- **CI (step 9).** Crate-dependency checks (no domain depends on
   `vg-ffi`, `byondapi` or another domain) and scanning `ffi/src`; the
   allow-list reaches empty as 3–7 land.

@@ -49,6 +49,9 @@
 
 mod subscriptions;
 
+/// A deferred write to a worker global ([`World::set_global`]).
+type GlobalWrite = Box<dyn FnOnce(&mut Resources) + Send>;
+
 pub use subscriptions::Subscription;
 
 use std::any::{Any, TypeId};
@@ -314,6 +317,7 @@ enum PlanAnchor {
     Cells {
         state: ResourceId,
         list: crate::query::ListFn,
+        also: Option<(ResourceId, crate::query::ListFn)>,
     },
     Global,
 }
@@ -440,9 +444,14 @@ where
                 }
                 ls.items = items;
             }
-            PlanAnchor::Cells { state, list } => {
+            PlanAnchor::Cells { state, list, also } => {
                 ls.items.clear();
                 list(&frame, state, &mut ls.items);
+                if let Some((state2, list2)) = also {
+                    list2(&frame, state2, &mut ls.items);
+                    ls.items.sort_unstable_by_key(|i| i.at.index);
+                    ls.items.dedup_by_key(|i| i.at.index);
+                }
                 let items = std::mem::take(&mut ls.items);
                 for item in &items {
                     let _ = step_one(ls, &mut frame, item.at, 0.0);
@@ -1395,16 +1404,19 @@ impl WorldBuilder {
                         revision,
                     }
                 }
-                Anchor::Cells { field, name, list } => {
-                    let ids = catalog.field(field).ok_or(LawError::Unregistered {
-                        law: L::NAME,
-                        what: name,
-                    })?;
+                Anchor::Cells { field, name, list, also } => {
+                    let unregistered = LawError::Unregistered { law: L::NAME, what: name };
+                    let ids = catalog.field(field).ok_or(unregistered.clone())?;
                     access.read(ids.state);
-                    PlanAnchor::Cells {
-                        state: ids.state,
-                        list,
-                    }
+                    let also = match also {
+                        Some((f2, l2)) => {
+                            let ids2 = catalog.field(f2).ok_or(unregistered)?;
+                            access.read(ids2.state);
+                            Some((ids2.state, l2))
+                        }
+                        None => None,
+                    };
+                    PlanAnchor::Cells { state: ids.state, list, also }
                 }
                 Anchor::Global { .. } => PlanAnchor::Global,
             };
@@ -1577,6 +1589,7 @@ impl WorldBuilder {
             threshold_crossings: Vec::new(),
             violations: Vec::new(),
             subs: subscriptions::Subscriptions::default(),
+            pending_globals: Vec::new(),
         })
     }
 }
@@ -1693,6 +1706,8 @@ pub struct World {
     violations: Vec<Violation>,
     /// DM timers, keys, rate models and watch records.
     subs: subscriptions::Subscriptions,
+    /// Worker-global writes from the main thread, applied at the next dispatch.
+    pending_globals: Vec<GlobalWrite>,
 }
 
 impl World {
@@ -1785,7 +1800,11 @@ impl World {
         );
         let (events, violations) = (&mut self.events, &mut self.violations);
         let (grid, grid_synced) = (self.grid, &mut self.grid_synced);
+        let pending_globals = &mut self.pending_globals;
         let dispatched = self.sim.dispatch_frame_with(|res| {
+            for set in pending_globals.drain(..) {
+                set(res);
+            }
             if let Some((main_grid, worker_grid)) = grid {
                 let g = main.get(main_grid);
                 if g.revision() != *grid_synced {
@@ -2314,6 +2333,12 @@ impl World {
         Ok(self.kind(kind)?.channels())
     }
 
+    /// The events produced since the last drain, without draining them.
+    #[must_use]
+    pub const fn events(&self) -> &EventSink {
+        &self.events
+    }
+
     /// Every typed event produced since the last drain, in wire form
     /// ([`crate::event`]): the one event list DM receives.
     pub fn drain_events(&mut self) -> EventSink {
@@ -2530,6 +2555,22 @@ impl World {
             return Err(WorldError::WorkerOwned(std::any::type_name::<T>()));
         }
         Ok(self.main.get(Res::<T>::from_id(id)))
+    }
+
+    /// Replaces a global: now for a main-owned one, at the next worker
+    /// dispatch for a worker-owned one (the main thread's input to worker
+    /// laws, e.g. state it owns that a worker law reads).
+    ///
+    /// # Errors
+    /// Unregistered.
+    pub fn set_global<T: Any + Send + Sync>(&mut self, value: T) -> Result<(), WorldError> {
+        let &(id, phase) = self.globals.get(&TypeId::of::<T>()).ok_or(WorldError::NoKind(0))?;
+        let res = Res::<T>::from_id(id);
+        match phase {
+            Phase::Main => *self.main.get_mut(res) = value,
+            Phase::Worker => self.pending_globals.push(Box::new(move |r: &mut Resources| *r.get_mut(res) = value)),
+        }
+        Ok(())
     }
 
     /// Mutable access to a main-owned global.

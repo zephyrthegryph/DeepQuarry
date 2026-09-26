@@ -1253,6 +1253,10 @@
 /datum/controller/subsystem/vg/proc/on_heat_settled()
 	return
 
+/// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_heat_mixture_heat(target, joules)
+	return
+
 /// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_power_brownout()
 	return
@@ -1328,6 +1332,8 @@
 				SSvg.on_gas_pressure_jump(flat[p + 0], flat[p + 1], flat[p + 2])
 			if(131072)
 				SSvg.on_heat_settled()
+			if(131073)
+				SSvg.on_heat_mixture_heat(flat[p + 0], flat[p + 1])
 			if(65536)
 				SSvg.on_power_brownout()
 			if(65537)

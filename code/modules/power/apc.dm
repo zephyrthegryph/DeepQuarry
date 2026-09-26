@@ -280,9 +280,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/proc/power_poll()
 	if(!vg_entity)
 		return
-	power_event_count++
+	var/charge_changed = FALSE
 	if(cell)
-		cell.charge = get_charge()
+		var/new_charge = get_charge()
+		charge_changed = new_charge != cell.charge
+		cell.charge = new_charge
 	var/new_equipment = get_channels(0)
 	var/new_lighting = get_channels(1)
 	var/new_environ = get_channels(2)
@@ -302,6 +304,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	lastused_charging = 0
 	lastused_total = lastused_equip + lastused_light + lastused_environ
 	var/alarm = !!get_alarm()
+	// Counts polls that saw Rust change something (tests: a settled APC hears nothing).
+	if(shown_changed || charge_changed || alarm != power_alarm_raised)
+		power_event_count++
 	if(alarm != power_alarm_raised)
 		power_alarm_raised = alarm
 		if(alarm)

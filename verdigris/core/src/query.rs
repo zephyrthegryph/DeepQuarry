@@ -220,6 +220,9 @@ pub enum Anchor {
         field: TypeId,
         name: &'static str,
         list: ListFn,
+        /// A second field whose active cells run too (a coupling between
+        /// two fields wakes when either side changes).
+        also: Option<(TypeId, ListFn)>,
     },
     /// A single item (index 0), every due frame: a law over a [`Global`].
     Global { ty: TypeId, name: &'static str },

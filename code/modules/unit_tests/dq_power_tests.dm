@@ -113,6 +113,13 @@
 	SIGNAL_HANDLER
 	restored_signals++
 
+/// One power step as the game runs it: DM's loads and topology in, one
+/// world step (Rust's laws; SSvg paces it in play), the results polled back.
+/proc/dq_power_test_step()
+	SSmachines.process_power()
+	vg_world_run_steps(1)
+	SSmachines.process_power()
+
 /proc/dq_power_test_apc()
 	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(candidate.terminal && candidate.cell && candidate.area?.requires_power && !(candidate.stat & (BROKEN | MAINT)) && isturf(candidate.loc))
@@ -142,10 +149,14 @@
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
 	A.cell.charge = A.cell.maxcharge * 0.001
+	A.sync_cell_charge()
+	A.set_channels(0, A.equipment)
+	A.set_channels(1, A.lighting)
+	A.set_channels(2, A.environ)
 	A.update()
 	var/drained = FALSE
 	for(var/i in 1 to 20)
-		SSmachines.process_power()
+		dq_power_test_step()
 		if(!A.area.power_equip)
 			drained = TRUE
 			break
@@ -160,20 +171,21 @@
 	T.set_power_supply(1000000)
 	var/restored = FALSE
 	for(var/i in 1 to 80)
-		SSmachines.process_power()
+		dq_power_test_step()
 		if(A.area.power_equip && A.charging)
 			restored = TRUE
 			break
 	TEST_ASSERT(restored, "the APC did not restore and charge once supply returned")
 	TEST_ASSERT(!(M.stat & NOPOWER), "the machine did not get its power back")
 	TEST_ASSERT(restored_signals, "the machine never heard COMSIG_MACHINERY_POWER_RESTORED")
-	SSmachines.process_power()
+	dq_power_test_step()
 	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
 	TEST_ASSERT(!(A in SSmachines.processing_machines), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
 	A.area.use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
+	A.sync_cell_charge()
 	A.update()
 	UnregisterSignal(M, list(COMSIG_MACHINERY_POWER_LOST, COMSIG_MACHINERY_POWER_RESTORED))
 	SSmachines.process_power()
@@ -190,6 +202,7 @@
 	T.connect_to_network()
 	T.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge
+	A.sync_cell_charge()
 	A.update()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
@@ -204,11 +217,11 @@
 		S.power_sync()
 	// The monitor view settles geometrically; the APC reaches full charge.
 	for(var/i in 1 to 80)
-		SSmachines.process_power()
+		dq_power_test_step()
 	var/apc_events = A.power_event_count
 	var/smes_events = S?.power_event_count
 	for(var/i in 1 to 10)
-		SSmachines.process_power()
+		dq_power_test_step()
 	TEST_ASSERT_EQUAL(A.power_event_count, apc_events, "a settled APC kept hearing power events")
 	TEST_ASSERT(!(A in SSmachines.processing_machines), "a settled APC is polling")
 	if(S)
