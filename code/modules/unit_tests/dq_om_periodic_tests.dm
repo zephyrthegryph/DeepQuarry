@@ -153,3 +153,93 @@
 	om_woken_untrace(S)
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// Machines that used to poll forever (roadmap S5): idle, each one's step says it has nothing to
+/// do, and its producer gives it work again.
+/datum/unit_test/dq_om_idle_machines_sleep
+
+/datum/unit_test/dq_om_idle_machines_sleep/Run()
+	var/turf/T = test_floor()
+
+	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, T)
+	igniter.on = FALSE
+	TEST_ASSERT_EQUAL(igniter.machine_step(), PROCESS_KILL, "a switched-off igniter kept stepping")
+	MACHINE_SLEEP(igniter)
+	igniter.interaction_toggle(null, null, null)
+	TEST_ASSERT(igniter.on && machine_stepping(igniter), "switching an igniter on did not wake it")
+	igniter.on = FALSE
+
+	var/obj/machinery/feeder/feeder = allocate(/obj/machinery/feeder, T)
+	TEST_ASSERT_EQUAL(feeder.machine_step(), PROCESS_KILL, "an unattached feeder kept stepping")
+
+	var/obj/machinery/pump/pump = allocate(/obj/machinery/pump, T)
+	pump.on = FALSE
+	TEST_ASSERT_EQUAL(pump.machine_step(), PROCESS_KILL, "a switched-off reagent pump kept stepping")
+
+	var/obj/machinery/bunsen_burner/bunsen = allocate(/obj/machinery/bunsen_burner, T)
+	TEST_ASSERT_EQUAL(bunsen.machine_step(), PROCESS_KILL, "a cold bunsen burner kept stepping")
+
+	var/obj/machinery/vitals_monitor/vitals = allocate(/obj/machinery/vitals_monitor, T)
+	TEST_ASSERT_EQUAL(vitals.machine_step(), PROCESS_KILL, "an unattached vitals monitor kept stepping")
+
+	var/obj/machinery/door_timer/brig = allocate(/obj/machinery/door_timer, T)
+	TEST_ASSERT_EQUAL(brig.machine_step(), PROCESS_KILL, "an idle brig timer kept stepping")
+
+	var/obj/machinery/particle_accelerator/control_box/pa = allocate(/obj/machinery/particle_accelerator/control_box, T)
+	TEST_ASSERT_EQUAL(pa.machine_step(), PROCESS_KILL, "an inactive particle accelerator kept stepping")
+
+	var/obj/machinery/suspension_gen/suspension = allocate(/obj/machinery/suspension_gen, T)
+	TEST_ASSERT_EQUAL(suspension.machine_step(), PROCESS_KILL, "an inactive suspension generator kept stepping")
+
+	var/obj/machinery/radiocarbon_spectrometer/spectrometer = allocate(/obj/machinery/radiocarbon_spectrometer, T)
+	TEST_ASSERT_EQUAL(spectrometer.machine_step(), PROCESS_KILL, "an idle spectrometer kept stepping")
+
+	var/obj/machinery/dnaforensics/dna = allocate(/obj/machinery/dnaforensics, T)
+	TEST_ASSERT_EQUAL(dna.machine_step(), PROCESS_KILL, "an idle DNA scanner kept stepping")
+
+	var/obj/machinery/casino_prize_dispenser/casino = allocate(/obj/machinery/casino_prize_dispenser, T)
+	TEST_ASSERT_EQUAL(casino.machine_step(), PROCESS_KILL, "a prize dispenser kept stepping")
+
+	// A refinery pipe steps only while reagents move through it.
+	var/obj/machinery/reagent_refinery/pipe/pipe = allocate(/obj/machinery/reagent_refinery/pipe, T)
+	TEST_ASSERT_EQUAL(pipe.machine_step(), PROCESS_KILL, "an empty refinery pipe kept stepping")
+	MACHINE_SLEEP(pipe)
+	pipe.reagents.add_reagent(REAGENT_ID_WATER, 10)
+	TEST_ASSERT(machine_stepping(pipe), "reagents arriving did not wake a refinery pipe")
+	TEST_ASSERT_EQUAL(pipe.machine_step(), PROCESS_KILL, "a refinery pipe with nowhere to send its reagents kept stepping")
+
+	// A door timer counts down only while timing, and wakes when started.
+	MACHINE_SLEEP(brig)
+	brig.stat &= ~(NOPOWER|BROKEN)
+	brig.set_timer(1 MINUTE)
+	brig.timer_start()
+	TEST_ASSERT(machine_stepping(brig), "starting a brig timer did not wake it")
+	TEST_ASSERT_NOTEQUAL(brig.machine_step(), PROCESS_KILL, "a timing brig timer stopped counting")
+	brig.timer_end()
+	TEST_ASSERT_EQUAL(brig.machine_step(), PROCESS_KILL, "a finished brig timer kept stepping")
+
+/// A machine that ended its work for lack of power resumes when power returns, and the audit
+/// sees it as idle only while it is unpowered.
+/datum/unit_test/dq_om_machine_sleeps_until_powered
+
+/datum/unit_test/dq_om_machine_sleeps_until_powered/Run()
+	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, test_floor())
+	var/P = /datum/om/pipeline/machine
+	var/datum/om/stage/machine/step/stage = om_registry().stage_by_type[/datum/om/stage/machine/step]
+	igniter.on = TRUE
+	igniter.stat |= NOPOWER
+	MACHINE_WAKE(igniter)
+	om_run_frame_now(igniter, P)
+	TEST_ASSERT(!igniter.step_active && igniter.step_waiting_power, "an unpowered igniter did not wait for power")
+	TEST_ASSERT(stage.idle(igniter), "an unpowered waiting machine is not idle")
+	igniter.stat &= ~NOPOWER
+	TEST_ASSERT(!stage.idle(igniter), "a powered waiting machine still looks idle to the audit")
+	om_changed(igniter, CHANGE_MACHINE_POWER)
+	igniter.om_rec.sched.run_pass(1e9)
+	om_run_frame_now(igniter, P)
+	TEST_ASSERT(igniter.step_active, "power returning did not restart its work")
+	igniter.on = FALSE
+
+#endif
