@@ -7,11 +7,10 @@
 //! node's row law is already iterating (`Apc`) or through
 //! [`vg_core::query::Foreign`] (`Smes`, via its terminals).
 
-use vg_core::grid::{CellId, Dir};
+use vg_core::grid::CellId;
 use vg_core::network::NetworkKind;
 
 use crate::components::Cable;
-use crate::geom;
 
 /// What one node contributes to its region: a cable's shape, or nothing (a
 /// machine node is topology only; its power data is a component).
@@ -98,15 +97,15 @@ impl NetworkKind for Cables {
 
     /// Two nodes connect when a cable reaches the other's cell with a
     /// direction the other has (or, for same-cell cables, a shared end),
-    /// or a machine sits on a knot cable at its own cell
-    /// ([`crate::geom`]'s `get_connections()` port).
+    /// or a machine sits on a knot cable at its own cell (DM's
+    /// `get_connections()`).
     fn connects((a, ca): (&PowerNode, CellId), (b, cb): (&PowerNode, CellId)) -> bool {
         match (a, b) {
             (PowerNode::Cable(a), PowerNode::Cable(b)) => {
                 if ca == cb {
                     return a.shares_end(b);
                 }
-                a.reaches(ca).into_iter().any(|(t, need)| t == cb && b.has(need))
+                a.reach.iter().any(|&(t, need)| t == cb && b.has(need))
             }
             (PowerNode::Cable(c), PowerNode::Machine) | (PowerNode::Machine, PowerNode::Cable(c)) => {
                 ca == cb && c.is_knot()
@@ -119,9 +118,7 @@ impl NetworkKind for Cables {
         let PowerNode::Cable(cable) = node else {
             return vec![cell];
         };
-        let mut cells = vec![cell];
-        cells.extend(cable.reaches(cell).into_iter().map(|(t, _)| t));
-        cells
+        std::iter::once(cell).chain(cable.reach.iter().map(|&(t, _)| t)).collect()
     }
 
     fn link_group(node: &PowerNode) -> Option<u32> {
@@ -132,96 +129,40 @@ impl NetworkKind for Cables {
     }
 }
 
-impl Cable {
-    #[must_use]
-    pub const fn is_knot(&self) -> bool {
-        self.d1 == 0
-    }
-
-    #[must_use]
-    pub const fn has(&self, dir: u8) -> bool {
-        self.d1 == dir || self.d2 == dir
-    }
-
-    /// Two cables on the same turf connect when they share a direction
-    /// value (two knots share 0).
-    #[must_use]
-    pub const fn shares_end(&self, other: &Self) -> bool {
-        other.has(self.d1) || other.has(self.d2)
-    }
-
-    /// The turfs this cable reaches off `p`, each with the direction a
-    /// cable there must have to connect back: `(turf, required dir)`.
-    #[must_use]
-    pub fn reaches(&self, p: CellId) -> Vec<(CellId, u8)> {
-        let mut out = Vec::with_capacity(4);
-        for dir in [self.d1, self.d2] {
-            if dir == 0 {
-                continue;
-            }
-            if let Some(t) = geom::step(p, dir, self.up, self.down) {
-                out.push((t, Dir(dir).reverse().0));
-            }
-            if Dir(dir).is_diagonal() {
-                for pair in [Dir::NORTH.union(Dir::SOUTH), Dir::EAST.union(Dir::WEST)] {
-                    if let Some(t) = geom::step(p, dir & pair.0, 0, 0) {
-                        out.push((t, dir ^ pair.0));
-                    }
-                }
-            }
-        }
-        out
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::geom::pos;
 
-    fn wire(d1: u8, d2: u8) -> Cable {
-        Cable { d1, d2, up: 0, down: 0, link: 0 }
+    fn wire(d1: u8, d2: u8, reach: &[(CellId, u8)]) -> Cable {
+        Cable { d1, d2, link: 0, reach: reach.to_vec() }
     }
 
     #[test]
     fn a_straight_run_connects_end_to_end() {
-        let a = PowerNode::Cable(wire(0, Dir::EAST.0));
-        let b = PowerNode::Cable(wire(Dir::EAST.0, Dir::WEST.0));
-        let c = PowerNode::Cable(wire(Dir::WEST.0, 0));
-        let (pa, pb, pc) = (pos(1, 1, 1), pos(2, 1, 1), pos(3, 1, 1));
-        assert!(Cables::connects((&a, pa), (&b, pb)));
-        assert!(Cables::connects((&b, pb), (&c, pc)));
-        assert!(!Cables::connects((&a, pa), (&c, pc)), "not directly adjacent");
+        let (e, w) = (4, 8);
+        let a = PowerNode::Cable(wire(0, e, &[(2, w)]));
+        let b = PowerNode::Cable(wire(e, w, &[(3, w), (1, e)]));
+        let c = PowerNode::Cable(wire(w, 0, &[(2, e)]));
+        assert!(Cables::connects((&a, 1), (&b, 2)));
+        assert!(Cables::connects((&b, 2), (&c, 3)));
+        assert!(!Cables::connects((&a, 1), (&c, 3)), "not directly adjacent");
     }
 
     #[test]
     fn a_knot_and_a_machine_on_it_connect_but_not_off_it() {
-        let knot = PowerNode::Cable(wire(0, 0));
-        let machine = PowerNode::Machine;
-        let p = pos(4, 4, 1);
-        assert!(Cables::connects((&knot, p), (&machine, p)));
-        assert!(!Cables::connects((&knot, p), (&machine, pos(5, 4, 1))));
+        let knot = PowerNode::Cable(wire(0, 0, &[]));
+        assert!(Cables::connects((&knot, 7), (&PowerNode::Machine, 7)));
+        assert!(!Cables::connects((&knot, 7), (&PowerNode::Machine, 8)));
+        assert!(!Cables::connects((&PowerNode::Machine, 7), (&PowerNode::Machine, 7)));
     }
 
     #[test]
-    fn two_machines_never_connect_directly() {
-        let p = pos(1, 1, 1);
-        assert!(!Cables::connects((&PowerNode::Machine, p), (&PowerNode::Machine, p)));
-    }
-
-    #[test]
-    fn split_zeroes_the_flow_but_keeps_brown() {
+    fn split_zeroes_the_flow_but_keeps_brown_and_merge_ors_it() {
         let mut payload = PowerLedger { avail: 500.0, load: 300.0, brown: true, ..PowerLedger::default() };
         let child = Cables::split(&mut payload, &(), &());
-        assert_eq!(child, PowerLedger { avail: 0.0, load: 0.0, brown: true, ..PowerLedger::default() });
-    }
-
-    #[test]
-    fn merge_adds_load_and_ors_brown() {
-        let mut into = PowerLedger { avail: 100.0, load: 40.0, brown: false, ..PowerLedger::default() };
-        let other = PowerLedger { avail: 50.0, load: 10.0, brown: true, ..PowerLedger::default() };
-        Cables::merge(&mut into, other);
-        assert_eq!(into.load, 50.0);
-        assert!(into.brown);
+        assert_eq!(child, PowerLedger { brown: true, ..PowerLedger::default() });
+        let mut into = PowerLedger { load: 40.0, ..PowerLedger::default() };
+        Cables::merge(&mut into, PowerLedger { load: 10.0, brown: true, ..PowerLedger::default() });
+        assert_eq!((into.load, into.brown), (50.0, true));
     }
 }

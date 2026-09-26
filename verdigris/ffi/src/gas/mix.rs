@@ -787,3 +787,33 @@ pub fn drain_observations() -> Vec<f32> {
 /// Floats per record returned by `drain_dirty_gas_observations`.
 /// @dm-define GAS_DEPENDENCY_OBSERVATION_STRIDE
 pub const GAS_OBSERVATION_STRIDE: usize = 15;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use vg_gas::gas::ids::GAS_OXYGEN;
+
+    fn tank(moles: f32) -> Mixture {
+        let mut m = Mixture::from_vol(70.0);
+        m.set_moles(GAS_OXYGEN, moles);
+        m.set_temperature(293.15);
+        m
+    }
+
+    #[test]
+    fn a_changed_watch_on_a_main_mixture_wakes_on_a_write_only() {
+        with_world(|_| Ok(())).unwrap();
+        let slot = alloc(tank(10.0)).unwrap();
+        let r = MixRef::Main(slot);
+        let cond = Cond::Changed { cell: r.id(), mask: gas_ch::PRESSURE.bit() };
+        watch(5, Lane::Urgent, &cond).unwrap();
+        let mut out = Vec::new();
+        reactor_wakes(&mut out);
+        assert!(out.is_empty(), "fired at registration: {out:?}");
+        let before = load(r).unwrap();
+        store(r, &before, &tank(20.0));
+        reactor_wakes(&mut out);
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert_eq!(out[0].source, r.id());
+    }
+}

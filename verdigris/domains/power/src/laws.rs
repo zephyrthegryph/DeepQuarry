@@ -6,64 +6,37 @@
 //! of its input terminals is its own entity on its own region
 //! ([`vg_core::query::Foreign`] reaches the shared `Smes` row from one).
 
-use vg_core::rate::RateModel;
-
 use crate::components::{Apc, Channel, Producer, Smes, SmesInputTerminal};
 
-/// A region as one law sees it: enough to plan and draw against, without
-/// exposing the whole [`crate::kind::PowerLedger`].
-pub trait Grid {
-    /// This step's planned supply.
-    fn avail(&self) -> f64;
+/// A region as one law draws against it: this step's planned supply and
+/// what has been delivered so far.
+pub struct Draw<'a> {
+    pub avail: f64,
+    pub load: &'a mut f64,
+}
+
+impl Draw<'_> {
     /// `avail - load` so far.
-    fn surplus(&self) -> f64;
-    /// Draws up to `watts`; returns what was delivered (never more than
-    /// [`Grid::surplus`]).
-    fn draw(&mut self, watts: f64) -> f64;
-}
+    #[must_use]
+    pub fn surplus(&self) -> f64 {
+        self.avail - *self.load
+    }
 
-/// A grid with nothing on it (an unconnected APC terminal).
-pub struct NoGrid;
-
-impl Grid for NoGrid {
-    fn avail(&self) -> f64 {
-        0.0
+    /// Draws up to `watts`; returns what was delivered (never more than the
+    /// surplus).
+    pub fn draw(&mut self, watts: f64) -> f64 {
+        let d = watts.min(self.surplus()).max(0.0);
+        *self.load += d;
+        d
     }
-    fn surplus(&self) -> f64 {
-        0.0
-    }
-    fn draw(&mut self, _: f64) -> f64 {
-        0.0
-    }
-}
-
-fn region_grid(avail: f64, load: &mut f64) -> impl Grid + '_ {
-    struct RegionGrid<'a> {
-        avail: f64,
-        load: &'a mut f64,
-    }
-    impl Grid for RegionGrid<'_> {
-        fn avail(&self) -> f64 {
-            self.avail
-        }
-        fn surplus(&self) -> f64 {
-            self.avail - *self.load
-        }
-        fn draw(&mut self, watts: f64) -> f64 {
-            let d = watts.min(self.avail - *self.load).max(0.0);
-            *self.load += d;
-            d
-        }
-    }
-    RegionGrid { avail, load }
 }
 
 /// `ApcTick`: the channel autoset ladder and charge mode
 /// (`apc_power_distributor.tick()`). Returns `(cell_discharged,
 /// cell_charged)` watts this tick, for the caller's conservation books:
 /// `cell_discharged` never reaches `grid` (the cell covers the area
-/// directly); `cell_charged` does, through [`Grid::draw`].
-pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], grid: &mut dyn Grid) -> (f64, f64) {
+/// directly); `cell_charged` does, through [`Draw::draw`].
+pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], grid: &mut Draw<'_>) -> (f64, f64) {
     apc.oneoff = [0.0; 3];
     if !apc.active {
         return (0.0, 0.0);
@@ -84,7 +57,7 @@ pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], grid: &mut dyn Grid) -> (f64, f
     }
 }
 
-fn with_cell(apc: &mut Apc, excess: f64, total: f64, grid: &mut dyn Grid) -> (f64, f64) {
+fn with_cell(apc: &mut Apc, excess: f64, total: f64, grid: &mut Draw<'_>) -> (f64, f64) {
     let mut cell = apc.cell();
     let mut discharged = 0.0;
     if excess >= total {
@@ -148,9 +121,8 @@ fn with_cell(apc: &mut Apc, excess: f64, total: f64, grid: &mut dyn Grid) -> (f6
 
 /// `_update_channels()`: shedding tiers from the cell level and trend
 /// (config policy, not hard-coded thresholds -- see
-/// [`crate::components::SheddingPolicy`]).
+/// the APC's `policy_*` fields).
 fn update_channels(apc: &mut Apc) {
-    let policy = apc.policy();
     if apc.charging != 0 && apc.longtermpower < 10 {
         apc.longtermpower += 1;
     } else if apc.longtermpower > -10 {
@@ -162,26 +134,26 @@ fn update_channels(apc: &mut Apc) {
             apc.set_channel(c, apc.channel(c).autoset(allow[c.idx()]));
         }
     };
-    if pct > policy.full_above_pct || apc.longtermpower > 0 {
+    if pct > apc.policy_full_above_pct || apc.longtermpower > 0 {
         if apc.autoflag != 3 {
-            set(apc, policy.full_allow);
+            set(apc, apc.policy_full_allow);
             apc.autoflag = 3;
             apc.alarm = false;
         }
-    } else if pct <= policy.full_above_pct && pct > policy.partial_below_pct && apc.longtermpower < 0 {
+    } else if pct <= apc.policy_full_above_pct && pct > apc.policy_partial_below_pct && apc.longtermpower < 0 {
         if apc.autoflag != 2 {
-            set(apc, policy.partial_allow);
+            set(apc, apc.policy_partial_allow);
             apc.alarm = true;
             apc.autoflag = 2;
         }
-    } else if pct <= policy.partial_below_pct {
+    } else if pct <= apc.policy_partial_below_pct {
         if apc.autoflag > 1 {
-            set(apc, policy.min_allow);
+            set(apc, apc.policy_min_allow);
             apc.alarm = true;
             apc.autoflag = 1;
         }
     } else if apc.autoflag != 0 {
-        set(apc, policy.neutral_allow);
+        set(apc, apc.policy_neutral_allow);
         apc.alarm = true;
         apc.autoflag = 0;
     }
@@ -229,20 +201,6 @@ pub fn smes_discharge_out(smes: &mut Smes, share: f64) -> f64 {
     delivered
 }
 
-/// A SMES's charge trajectory if `net_rate` (watts into the store;
-/// negative for a net discharge) holds steady from `now`
-/// (`rust_architecture.md` §4.10).
-#[must_use]
-pub fn smes_charge_model(smes: &Smes, net_rate: f64, now: f64) -> RateModel {
-    smes.cell().model(net_rate, now)
-}
-
-/// As [`smes_charge_model`], for an APC's cell.
-#[must_use]
-pub fn apc_cell_model(apc: &Apc, net_rate: f64, now: f64) -> RateModel {
-    apc.cell().model(net_rate, now)
-}
-
 /// A region browns out when it has no supply at all, or its planned
 /// excess (`avail - load`) is meaningfully negative (overdrawn). The 1 W
 /// slack absorbs float rounding across many small draws, not a real
@@ -280,27 +238,20 @@ pub fn storage_input_share(ask: f64, total_asks: f64, excess: f64) -> f64 {
 // --- Law wiring (`rust_architecture.md` §4.3, §8.5; core::law, core::query,
 // core::network::law) -------------------------------------------------------
 
-use vg_core::law::{Law, LawCtx, Settle};
+use vg_core::law::Settle;
 use vg_core::network::law::{InRegion, Payload};
 use vg_core::query::Foreign;
-use vg_core::units::Seconds;
 
 use crate::events::PowerEvent;
 use crate::kind::Cables;
 
-/// Zeroes a region's per-step accumulators before `ProducerCredit`/
-/// `SmesOutputPlan`/`SmesInputPlan` add this step's numbers into it.
-/// Registration order (not `after`) puts this first: no other power law
-/// needs to run before it, and the driver keeps registration order absent
-/// a declared edge.
-pub struct PowerReset;
-
-impl Law for PowerReset {
-    type Reads = ();
-    type Writes = Payload<Cables>;
-    const NAME: &'static str = "power_reset";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Zeroes a region's per-step accumulators before `ProducerCredit`/
+    /// `SmesOutputPlan`/`SmesInputPlan` add this step's numbers into it.
+    /// Registration order (not `after`) puts this first: no other power law
+    /// needs to run before it, and the driver keeps registration order absent
+    /// a declared edge.
+    pub PowerReset("power_reset"): () => Payload<Cables>, |ctx, _dt| {
         let ledger = &mut ctx.writes.0;
         ledger.avail = 0.0;
         ledger.load = 0.0;
@@ -310,16 +261,10 @@ impl Law for PowerReset {
     }
 }
 
-/// Credits a producer's registered supply, plus its one-shot pulse
-/// (consumed and reset here), into its region's `avail`.
-pub struct ProducerCredit;
-
-impl Law for ProducerCredit {
-    type Reads = ();
-    type Writes = (Producer, InRegion<Cables>);
-    const NAME: &'static str = "power_producer_credit";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Credits a producer's registered supply, plus its one-shot pulse
+    /// (consumed and reset here), into its region's `avail`.
+    pub ProducerCredit("power_producer_credit"): () => (Producer, InRegion<Cables>), |ctx, _dt| {
         let (producer, region) = &mut ctx.writes;
         region.payload.avail += producer.supply + producer.pulse;
         producer.pulse = 0.0;
@@ -327,18 +272,12 @@ impl Law for ProducerCredit {
     }
 }
 
-/// Plans one SMES output terminal's offer this step (from the shared
-/// `Smes` row through [`Foreign`]) and credits it into its own region's
-/// `avail`/`smes_offer_total`, ordered before `PowerBalance`'s consumers
-/// so the offer is part of what they can draw against.
-pub struct SmesOutputPlan;
-
-impl Law for SmesOutputPlan {
-    type Reads = Smes;
-    type Writes = InRegion<Cables>;
-    const NAME: &'static str = "power_smes_output_plan";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Plans one SMES output terminal's offer this step (from the shared
+    /// `Smes` row through [`Foreign`]) and credits it into its own region's
+    /// `avail`/`smes_offer_total`, ordered before `PowerBalance`'s consumers
+    /// so the offer is part of what they can draw against.
+    pub SmesOutputPlan("power_smes_output_plan"): Smes => InRegion<Cables>, |ctx, _dt| {
         let offer = smes_plan(ctx.reads, true, false).offer;
         ctx.writes.payload.avail += offer;
         ctx.writes.payload.smes_offer_total += offer;
@@ -346,17 +285,11 @@ impl Law for SmesOutputPlan {
     }
 }
 
-/// As [`SmesOutputPlan`], the input side: sums what every SMES input
-/// terminal on a region would like this step (not itself supply, so not
-/// credited into `avail`).
-pub struct SmesInputPlan;
-
-impl Law for SmesInputPlan {
-    type Reads = Foreign<SmesInputTerminal, Smes>;
-    type Writes = InRegion<Cables>;
-    const NAME: &'static str = "power_smes_input_plan";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// As [`SmesOutputPlan`], the input side: sums what every SMES input
+    /// terminal on a region would like this step (not itself supply, so not
+    /// credited into `avail`).
+    pub SmesInputPlan("power_smes_input_plan"): Foreign<SmesInputTerminal, Smes> => InRegion<Cables>, |ctx, _dt| {
         let Some(smes) = &ctx.reads.value else {
             return Settle::Active;
         };
@@ -366,22 +299,16 @@ impl Law for SmesInputPlan {
     }
 }
 
-/// The channel autoset ladder and charge mode, per APC, every tick
-/// ([`apc_tick`]), drawing against its region's `avail` (now including
-/// every producer and SMES output offer this step).
-pub struct ApcTick;
-
-impl Law for ApcTick {
-    type Reads = ();
-    type Writes = (Apc, InRegion<Cables>);
-    const NAME: &'static str = "power_apc_tick";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// The channel autoset ladder and charge mode, per APC, every tick
+    /// ([`apc_tick`]), drawing against its region's `avail` (now including
+    /// every producer and SMES output offer this step).
+    pub ApcTick("power_apc_tick"): () => (Apc, InRegion<Cables>), |ctx, _dt| {
         let (discharged, charged, alarm) = {
             let (apc, region) = &mut ctx.writes;
             let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
             let (discharged, charged) = {
-                let mut grid = region_grid(region.payload.avail, &mut region.payload.load);
+                let mut grid = Draw { avail: region.payload.avail, load: &mut region.payload.load };
                 apc_tick(apc, demand, &mut grid)
             };
             (discharged, charged, apc.alarm)
@@ -395,21 +322,15 @@ impl Law for ApcTick {
         ctx.ledger().sink("power_apc_charge", discharged * rate);
         if alarm {
             ctx.emit(PowerEvent::ApcChannelChanged);
-        }
-        Settle::Active
+    }
+    Settle::Active
     }
 }
 
-/// Brownout and the settled numbers, once every region's producers, SMES
-/// offers and APC draws for this step have landed.
-pub struct PowerSettle;
-
-impl Law for PowerSettle {
-    type Reads = ();
-    type Writes = Payload<Cables>;
-    const NAME: &'static str = "power_settle";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Brownout and the settled numbers, once every region's producers, SMES
+    /// offers and APC draws for this step have landed.
+    pub PowerSettle("power_settle"): () => Payload<Cables>, |ctx, _dt| {
         let ledger = &mut ctx.writes.0;
         let non_storage_avail = ledger.avail - ledger.smes_offer_total;
         ledger.storage_used = (ledger.load - non_storage_avail).max(0.0);
@@ -421,22 +342,16 @@ impl Law for PowerSettle {
             (false, true) => ctx.emit(PowerEvent::Brownout),
             (true, false) => ctx.emit(PowerEvent::Restored),
             _ => {}
-        }
-        Settle::Active
+    }
+    Settle::Active
     }
 }
 
-/// Discharges one SMES's pro-rata share of its region's storage-financed
-/// load, ordered after `PowerSettle` so `storage_used`/`smes_offer_total`
-/// are final for this step.
-pub struct SmesOutputApply;
-
-impl Law for SmesOutputApply {
-    type Reads = InRegion<Cables>;
-    type Writes = Smes;
-    const NAME: &'static str = "power_smes_output_apply";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Discharges one SMES's pro-rata share of its region's storage-financed
+    /// load, ordered after `PowerSettle` so `storage_used`/`smes_offer_total`
+    /// are final for this step.
+    pub SmesOutputApply("power_smes_output_apply"): InRegion<Cables> => Smes, |ctx, _dt| {
         let offer = smes_plan(ctx.writes, true, false).offer;
         let region = &ctx.reads.payload;
         let share = storage_output_share(offer, region.smes_offer_total, region.storage_used);
@@ -447,16 +362,10 @@ impl Law for SmesOutputApply {
     }
 }
 
-/// Charges one SMES input terminal's pro-rata share of its region's
-/// leftover supply, ordered after `PowerSettle`.
-pub struct SmesInputApply;
-
-impl Law for SmesInputApply {
-    type Reads = InRegion<Cables>;
-    type Writes = Foreign<SmesInputTerminal, Smes>;
-    const NAME: &'static str = "power_smes_input_apply";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Charges one SMES input terminal's pro-rata share of its region's
+    /// leftover supply, ordered after `PowerSettle`.
+    pub SmesInputApply("power_smes_input_apply"): InRegion<Cables> => Foreign<SmesInputTerminal, Smes>, |ctx, _dt| {
         let Some(smes) = &mut ctx.writes.value else {
             return Settle::Active;
         };
@@ -482,18 +391,9 @@ mod tests {
         avail: f64,
         load: f64,
     }
-    impl Grid for TestGrid {
-        fn avail(&self) -> f64 {
-            self.avail
-        }
-        fn surplus(&self) -> f64 {
-            self.avail - self.load
-        }
-        fn draw(&mut self, watts: f64) -> f64 {
-            let d = watts.min(self.avail - self.load).max(0.0);
-            self.load += d;
-            d
-        }
+
+    fn tick(apc: &mut Apc, demand: [f64; 3], g: &mut TestGrid) -> (f64, f64) {
+        apc_tick(apc, demand, &mut Draw { avail: g.avail, load: &mut g.load })
     }
 
     fn apc_with(max_charge: f64, charge: f64) -> Apc {
@@ -511,7 +411,7 @@ mod tests {
         let mut apc = apc_with(1000.0, 1000.0);
         let mut grid = TestGrid { avail: 100_000.0, load: 0.0 };
         let demand = [1000.0, 2000.0, 1000.0];
-        apc_tick(&mut apc, demand, &mut grid);
+        tick(&mut apc, demand, &mut grid);
         assert_eq!(apc.cell().charge, 1000.0, "cell untouched: grid alone covers it");
         assert_eq!(grid.load, 4000.0);
     }
@@ -521,7 +421,7 @@ mod tests {
         let mut apc = apc_with(1000.0, 1000.0);
         let mut grid = TestGrid { avail: 0.0, load: 0.0 };
         let demand = [1000.0, 2000.0, 1000.0];
-        apc_tick(&mut apc, demand, &mut grid);
+        tick(&mut apc, demand, &mut grid);
         let expect = 1000.0 - 4000.0 * crate::components::CELLRATE;
         assert!((apc.cell().charge - expect).abs() < 1e-9);
     }
@@ -534,7 +434,7 @@ mod tests {
         }
         let mut grid = TestGrid { avail: 0.0, load: 0.0 };
         for _ in 0..10 {
-            apc_tick(&mut apc, [100.0; 3], &mut grid);
+            tick(&mut apc, [100.0; 3], &mut grid);
         }
         assert_eq!(apc.autoflag, 0);
         assert!(Channel::ALL.iter().all(|&c| !apc.channel(c).powered()), "every channel sheds once longtermpower settles");
@@ -548,7 +448,7 @@ mod tests {
         }
         let mut grid = TestGrid { avail: 0.0, load: 0.0 };
         for _ in 0..1500 {
-            apc_tick(&mut apc, [100.0; 3], &mut grid);
+            tick(&mut apc, [100.0; 3], &mut grid);
             grid.load = 0.0;
         }
         assert!(apc.cell().charge > 0.0, "not yet fully depleted");
@@ -564,7 +464,7 @@ mod tests {
         let mut apc = apc_with(500.0, 250.0);
         let mut grid = TestGrid { avail: 10_000.0, load: 0.0 };
         for _ in 0..50 {
-            apc_tick(&mut apc, [50.0; 3], &mut grid);
+            tick(&mut apc, [50.0; 3], &mut grid);
             grid.load = 0.0;
             assert!((0.0..=500.0).contains(&apc.cell().charge));
         }
@@ -606,28 +506,6 @@ mod tests {
         let delivered = smes_discharge_out(&mut smes, 1000.0);
         assert_eq!(delivered, 100.0, "capped by what's stored, not the request");
         assert_eq!(smes.cell().charge, 0.0);
-    }
-
-    #[test]
-    fn smes_charge_model_predicts_the_same_empty_time_as_manual_stepping() {
-        let smes = smes_with(1000.0, 1000.0, 0.5);
-        let model = smes_charge_model(&smes, -100.0, 0.0);
-        let predicted = model.crossing(0.0, 0.0).expect("reaches empty");
-        assert!((predicted - 20.0).abs() < 1e-9, "predicted {predicted}");
-
-        let mut stepped = smes.cell();
-        for _ in 0..20 {
-            stepped.discharge_out(100.0);
-        }
-        assert!((stepped.charge - model.value_at(20.0)).abs() < 1e-6);
-    }
-
-    #[test]
-    fn apc_cell_model_predicts_when_a_steady_drain_empties_the_cell() {
-        let apc = apc_with(500.0, 500.0);
-        let model = apc_cell_model(&apc, -200.0, 0.0);
-        let predicted = model.crossing(0.0, 0.0).expect("reaches empty");
-        assert!((predicted - 1250.0).abs() < 1e-6, "predicted {predicted}");
     }
 
     #[test]
@@ -691,7 +569,7 @@ mod tests {
             for (avail, demand) in avails.into_iter().zip(demands) {
                 let mut grid = TestGrid { avail, load: 0.0 };
                 let d = [demand / 3.0; 3];
-                apc_tick(&mut apc, d, &mut grid);
+                tick(&mut apc, d, &mut grid);
                 prop_assert!((0.0..=max_charge + 1e-6).contains(&apc.cell().charge));
                 prop_assert!(grid.load <= avail + 1e-6);
             }

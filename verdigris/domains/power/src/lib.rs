@@ -8,8 +8,6 @@
 //!   `#[vg::component]` declarations.
 //! - [`kind`]: [`kind::Cables`], the R7 network kind. All region state is
 //!   in [`kind::PowerLedger`], the payload.
-//! - [`geom`]: turf position packing and BYOND direction math, what the
-//!   connection rule ([`kind::Cables`]'s `connects`/`reach`) builds on.
 //! - [`laws`]: the pure physics (`apc_tick`, `smes_plan`,
 //!   `smes_charge_in`/`smes_discharge_out`, `storage_input_share`/
 //!   `storage_output_share`, `brownout`), each proven by its own tests, and
@@ -20,7 +18,6 @@
 
 pub mod components;
 pub mod events;
-pub mod geom;
 pub mod kind;
 pub mod laws;
 

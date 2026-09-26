@@ -1,16 +1,11 @@
-//! The gas registry and mixture maths.
+//! The gas registry's fixed ids, the shared constants and the mixture maths.
 
-// Physical/tuning constants mirrored from DM (`SPECIFIC_HEATS`, fire/reaction
-// thresholds, ...); many are read from DM or by other gas submodules rather
-// than from within `constants` itself, so per-constant dead_code is noise.
-#[allow(dead_code)]
 pub mod constants;
 pub mod ids;
 pub mod mixture;
-pub mod types;
 
+pub use crate::gate::{gas_idx_from_string, gas_idx_from_value};
 pub use ids::*;
 pub use mixture::Mixture;
-pub use types::*;
 
 pub type GasIDX = usize;

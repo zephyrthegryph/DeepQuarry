@@ -25,11 +25,11 @@ use vg_core::slot::RawHandle;
 use vg_core::watch::Cond;
 use vg_core::world::{World, WorldBuilder};
 use vg_gas::cell::{GasCell, GasCmd, TurfGas, Q};
-use vg_gas::gas::constants::{ReactionReturn, CELL_VOLUME};
+use vg_gas::gas::constants::CELL_VOLUME;
 use vg_gas::gas;
 use vg_gas::laws::{CellReactionReadyLaw, CellVisualChangeLaw, SpacewindLaw};
 use vg_gas::pipes::{PipeGas, Pipes};
-use vg_gas::reaction::{Reaction, ReactionIdentifier, ReactionPriority};
+use vg_gas::gate::{Fire, GasType, Requirement};
 
 use self::mix::{with_mix, MixRef};
 use crate::world::with_world;
@@ -96,161 +96,108 @@ pub(crate) fn region_of_slot(slot: u32) -> Option<RegionId<Pipes>> {
 }
 
 std::thread_local! {
-    /// The DM `/datum/gas_reaction` for each reaction id, keyed by the same
-    /// id `vg_gas::gas::types::install_reactions` uses for its pure
-    /// registry. Reactions run in DM (`react_by_id`'s callback), so this
-    /// table of live references can only live where `byondapi` state
-    /// belongs -- the FFI's own per-DLL state, alongside [`crate::world`]'s
-    /// `WORLD`.
-    static REACTION_VALUES: std::cell::RefCell<std::collections::HashMap<ReactionIdentifier, ByondValue>> =
+    /// The DM `/datum/gas_reaction` for each reaction id (the registry,
+    /// `vg_gas::gate`, holds only its requirements). Reactions run in DM
+    /// (`react_by_id`'s callback), so the live references are FFI state.
+    static REACTION_VALUES: std::cell::RefCell<std::collections::HashMap<u64, ByondValue>> =
         std::cell::RefCell::default();
 }
 
-/// Runs a reaction given a `ReactionIdentifier`, calling back into the live
-/// `/datum/gas_reaction` cached by [`load_reactions`].
+/// Reaction callback return bits (`/datum/gas_reaction/proc/react`).
+const STOP_REACTIONS: u32 = 0b10;
+
+/// Runs a reaction by id, calling back into the live `/datum/gas_reaction`
+/// cached by [`load_reactions`].
 ///
 /// # Errors
 /// If the reaction itself has a runtime, or `id` names no cached reaction.
-fn react_by_id(id: ReactionIdentifier, src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
+fn react_by_id(id: u64, src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
     REACTION_VALUES.with_borrow(|r| {
-        r.get(&id).map_or_else(
-            || Err(eyre!("Reaction with invalid id")),
-            |reaction| {
-                reaction
-                    .call_id(byond_string!("react"), &[src, holder])
-                    .wrap_err("calling byond side react in react_by_id")
-            },
-        )
+        let reaction = r.get(&id).ok_or_else(|| eyre!("Reaction with invalid id"))?;
+        reaction.call_id(byond_string!("react"), &[src, holder]).wrap_err("calling byond side react in react_by_id")
     })
 }
 
-/// Reads DM's `SSair.gas_reactions` into the pure registry
-/// (`vg_gas::gas::types::install_reactions`), caching each live reaction
-/// reference for [`react_by_id`].
+/// Reads DM's `SSair.gas_reactions` into the registry, highest priority
+/// first, caching each live reaction reference for [`react_by_id`].
 fn load_reactions() -> Result<()> {
-    use float_ord::FloatOrd;
-    use std::collections::BTreeMap;
-
     let gas_reactions = ByondValue::new_global_ref()
         .read_var_id(byond_string!("SSair"))
         .wrap_err("load_reactions: couldn't read global SSair")?
         .read_var_id(byond_string!("gas_reactions"))
         .wrap_err("load_reactions: SSair has no gas_reactions var")?;
-    let mut cache: BTreeMap<ReactionPriority, Reaction> = BTreeMap::new();
-    for (reaction, _) in gas_reactions
-        .iter()
-        .wrap_err("load_reactions: SSair.gas_reactions is not a list")?
-    {
-        let priority: ReactionPriority = FloatOrd(
-            reaction
-                .read_number_id(byond_string!("priority"))
-                .map_err(|_| eyre!("Reaction priority must be a number!"))?,
-        );
-        let string_id = reaction
-            .read_string_id(byond_string!("id"))
-            .map_err(|_| eyre!("Reaction id must be a string!"))?;
-        let id: ReactionIdentifier = {
+    let mut table: Vec<(f32, Requirement)> = Vec::new();
+    for (reaction, _) in gas_reactions.iter().wrap_err("load_reactions: SSair.gas_reactions is not a list")? {
+        let priority = reaction.read_number_id(byond_string!("priority")).map_err(|_| eyre!("Reaction priority must be a number!"))?;
+        let string_id = reaction.read_string_id(byond_string!("id")).map_err(|_| eyre!("Reaction id must be a string!"))?;
+        let id = {
             use std::hash::{Hash, Hasher};
             let mut state = rustc_hash::FxHasher::default();
             string_id.as_bytes().hash(&mut state);
             state.finish()
         };
-        let Some(min_reqs) = reaction
-            .read_var_id(byond_string!("min_requirements"))
-            .ok()
-            .filter(ByondValue::is_list)
-        else {
+        let Some(reqs) = reaction.read_var_id(byond_string!("min_requirements")).ok().filter(ByondValue::is_list) else {
             return Err(eyre!("Reaction {string_id} doesn't have a gas requirements list!"));
         };
-        let mut min_gas_reqs: Vec<(gas::GasIDX, f32)> = Vec::new();
-        for i in 0..gas::total_num_gases() {
-            let Some(path) = gas::gas_path(i) else { continue };
-            if let Ok(req_amount) = min_reqs.read_list_index(path).and_then(|v| v.get_number()) {
-                min_gas_reqs.push((i, req_amount));
-            }
-        }
-        let read_req = |key: &str| min_reqs.read_list_index(key).ok().and_then(|v| v.get_number().ok());
-        let parsed = Reaction::new(
-            id,
-            priority,
-            read_req("TEMP"),
-            read_req("MAX_TEMP"),
-            read_req("ENER"),
-            read_req("FIRE_REAGENTS"),
-            min_gas_reqs,
-        );
-        if cache.contains_key(&parsed.get_priority()) {
-            let priority = parsed.get_priority().0;
+        let read = |key: &str| reqs.read_list_index(key).ok().and_then(|v| v.get_number().ok());
+        let gases = (0..gas::GAS_COUNT)
+            .filter_map(|i| Some((i, reqs.read_list_index(gas::gas_path(i)?).and_then(|v| v.get_number()).ok()?)))
+            .collect();
+        if table.iter().any(|(p, _)| *p == priority) {
             let sender = auxcallback::byond_callback_sender();
-            drop(sender.try_send(Box::new(move || {
-                Err(eyre!("Duplicate reaction priority {priority}, this reaction will be ignored!"))
-            })));
+            drop(sender.try_send(Box::new(move || Err(eyre!("Duplicate reaction priority {priority}, this reaction will be ignored!")))));
             continue;
         }
         REACTION_VALUES.with_borrow_mut(|r| r.insert(id, reaction));
-        cache.insert(parsed.get_priority(), parsed);
+        table.push((priority, Requirement { id, min_temp: read("TEMP"), max_temp: read("MAX_TEMP"), min_energy: read("ENER"), min_fire: read("FIRE_REAGENTS"), gases }));
     }
-    gas::install_reactions(cache);
+    table.sort_by(|a, b| b.0.total_cmp(&a.0));
+    vg_gas::gate::install_reactions(table.into_iter().map(|(_, r)| r).collect());
     Ok(())
 }
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
 #[auxmacros::bind("/proc/auxtools_atmos_init")]
 fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
-    use gas::GasType;
-
     let data = gas_data.read_var_id(byond_string!("datums"))?;
-    let gases = data
-        .iter()?
-        .map(|(_, gas_datum)| {
-            let path = gas_datum.read_string_id(byond_string!("id"))?;
-            let idx = gas::gas_id_for_path(&path).ok_or_else(|| eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
-            if let Ok(dm_idx) = gas_datum.read_number_id(byond_string!("idx")) {
-                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                if dm_idx as gas::GasIDX != idx {
-                    return Err(eyre!("{path}: DM idx {dm_idx} disagrees with GAS_PATHS ID {idx}"));
-                }
-            }
-            let fire_info = if let Ok(temperature) = gas_datum.read_number_id(byond_string!("oxidation_temperature")) {
-                gas::FireInfo::Oxidation(gas::OxidationInfo::new(temperature, gas_datum.read_number_id(byond_string!("oxidation_rate"))?))
-            } else if let Ok(temperature) = gas_datum.read_number_id(byond_string!("fire_temperature")) {
-                gas::FireInfo::Fuel(gas::FuelInfo::new(temperature, gas_datum.read_number_id(byond_string!("fire_burn_rate"))?))
-            } else {
-                gas::FireInfo::None
-            };
-            let fire_products = gas_datum.read_var_id(byond_string!("fire_products")).ok().and_then(|product_info| {
-                if product_info.is_list() {
-                    Some(gas::FireProductInfo::Generic(
-                        product_info
-                            .iter()
-                            .ok()?
-                            .filter_map(|(k, v)| k.get_string().ok().and_then(|s| v.get_number().ok().map(|amt| (gas::GasRef::Deferred(s), amt))))
-                            .collect(),
-                    ))
-                } else if product_info.is_num() {
-                    Some(gas::FireProductInfo::Plasma)
-                } else {
-                    None
-                }
-            });
-            Ok(GasType::new(
-                idx,
-                path.clone().into_boxed_str(),
-                gas_datum.read_string_id(byond_string!("name"))?.into_boxed_str(),
-                gas_datum.read_number_id(byond_string!("flags")).unwrap_or_default() as u32,
-                gas_datum.read_number_id(byond_string!("specific_heat"))?,
-                gas_datum.read_number_id(byond_string!("molar_mass")).unwrap_or_default(),
-                gas_datum.read_number_id(byond_string!("fusion_power")).unwrap_or_default(),
-                gas_datum.read_number_id(byond_string!("moles_visible")).ok(),
-                gas_datum.read_number_id(byond_string!("enthalpy")).unwrap_or_default(),
-                gas_datum.read_number_id(byond_string!("fire_radiation_released")).unwrap_or_default(),
-                fire_info,
-                fire_products,
-            ))
-        })
-        .collect::<Result<Vec<_>>>()
-        .wrap_err("auxtools_atmos_init failed to register gas")?;
-    gas::install_gases(gases)?;
+    let mut gases: Vec<(usize, GasType)> = Vec::new();
+    for (_, gas_datum) in data.iter()? {
+        let path = gas_datum.read_string_id(byond_string!("id"))?;
+        let idx = gas::gas_id_for_path(&path).ok_or_else(|| eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        if let Ok(dm_idx) = gas_datum.read_number_id(byond_string!("idx"))
+            && dm_idx as usize != idx
+        {
+            bail!("{path}: DM idx {dm_idx} disagrees with GAS_PATHS ID {idx}");
+        }
+        let specific_heat = gas_datum.read_number_id(byond_string!("specific_heat"))?;
+        if specific_heat != vg_gas::cell::SPECIFIC_HEATS[idx] {
+            bail!("{path} has specific_heat {specific_heat} in DM but {} in verdigris cell.rs SPECIFIC_HEATS", vg_gas::cell::SPECIFIC_HEATS[idx]);
+        }
+        let number = |var| gas_datum.read_number_id(var);
+        let fire = if let Ok(temperature) = number(byond_string!("oxidation_temperature")) {
+            Fire::Oxidizer { temperature, power: number(byond_string!("oxidation_rate"))? }
+        } else if let Ok(temperature) = number(byond_string!("fire_temperature")) {
+            Fire::Fuel { temperature, burn_rate: number(byond_string!("fire_burn_rate"))? }
+        } else {
+            Fire::None
+        };
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let flags = number(byond_string!("flags")).unwrap_or_default() as u32;
+        let entry = GasType {
+            id: path.into_boxed_str(),
+            flags,
+            molar_mass: number(byond_string!("molar_mass")).unwrap_or_default(),
+            visible: number(byond_string!("moles_visible")).ok(),
+            fire,
+        };
+        gases.push((idx, entry));
+    }
+    gases.sort_by_key(|g| g.0);
+    if gases.iter().map(|g| g.0).ne(0..gas::GAS_COUNT) {
+        bail!("gas registry must hold every GAS_PATHS entry exactly once ({} of {})", gases.len(), gas::GAS_COUNT);
+    }
+    vg_gas::gate::install_gases(gases.into_iter().map(|g| g.1).collect());
     load_reactions()?;
     Ok(true.into())
 }
@@ -265,24 +212,23 @@ fn update_reactions() -> Result<ByondValue> {
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
 #[auxmacros::bind("/datum/gas_mixture/proc/react")]
 fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
-    let mut ret = ReactionReturn::NO_REACTION;
-    let reactions = with_mix(&src, |mix| Ok(mix.all_reactable()))?;
-    for reaction in reactions {
-        ret |= ReactionReturn::from_bits_truncate(
-            react_by_id(reaction, src, holder)?.get_number().unwrap_or_default() as u32,
-        );
-        if ret.contains(ReactionReturn::STOP_REACTIONS) {
-            return Ok((ret.bits() as f32).into());
+    let mut ret = 0;
+    for reaction in with_mix(&src, |mix| Ok(mix.all_reactable()))? {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            ret |= react_by_id(reaction, src, holder)?.get_number().unwrap_or_default() as u32;
+        }
+        if ret & STOP_REACTIONS != 0 {
+            break;
         }
     }
-    Ok((ret.bits() as f32).into())
+    #[allow(clippy::cast_precision_loss)]
+    Ok((ret as f32).into())
 }
 
-/// The turf a gas field cell index names. `gas_tick`'s events hand DM a
-/// bare cell index now (the generic typed-event wire is plain numbers
-/// only, `rust_architecture.md` §4.8), not a turf reference the way the
-/// old flat encoding did -- `on_gas_cell_*` handlers call this once to
-/// resolve it.
+/// The turf a gas field cell index names. `GasEvent`s carry a bare cell
+/// index (the typed-event wire is plain numbers only); `on_gas_cell_*`
+/// handlers call this once to resolve it.
 #[auxmacros::bind("/proc/vg_turf_of")]
 fn turf_of(cell: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]

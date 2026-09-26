@@ -380,6 +380,35 @@ impl Pacer {
     }
 }
 
+/// Declares a [`Law`]: the unit struct and its impl in one item, so a
+/// domain writes only what the law reads and writes and its step.
+///
+/// ```ignore
+/// vg_core::law! {
+///     /// Zeroes a region's accumulators.
+///     pub PowerReset("power_reset"): () => Payload<Cables>, |ctx, _dt| {
+///         ctx.writes.0.avail = 0.0;
+///         Settle::Active
+///     }
+/// }
+/// ```
+///
+/// `every <Period>` after the writes sets [`Law::PERIOD`].
+#[macro_export]
+macro_rules! law {
+    ($(#[$m:meta])* $vis:vis $name:ident($label:literal): $reads:ty => $writes:ty $(, every $period:expr)?, |$ctx:ident, $dt:pat_param| $body:block) => {
+        $(#[$m])*
+        $vis struct $name;
+        impl $crate::law::Law for $name {
+            type Reads = $reads;
+            type Writes = $writes;
+            const NAME: &'static str = $label;
+            $(const PERIOD: $crate::law::Period = $period;)?
+            fn step($ctx: &mut $crate::law::LawCtx<'_, $reads, $writes>, $dt: $crate::units::Seconds) -> $crate::law::Settle $body
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

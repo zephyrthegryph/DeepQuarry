@@ -93,32 +93,38 @@ impl ChannelSetting {
     }
 }
 
-/// A channel-shedding policy: as the cell's stored fraction falls, lower
-/// priority channels turn off before higher priority ones. Config, not
-/// hard-coded logic (`rust_bindings.md` R10); [`Apc`]'s `policy_*` fields
-/// are this, flattened to the numeric fields the component macro accepts.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct SheddingPolicy {
-    pub full_above_pct: f64,
-    pub partial_below_pct: f64,
-    pub full_allow: [u8; 3],
-    pub partial_allow: [u8; 3],
-    pub min_allow: [u8; 3],
-    pub neutral_allow: [u8; 3],
-}
-
 /// A cable piece: direction geometry only, bound once at construction and
-/// never live-edited (`crate::kind::Cables::connects`) --
+/// never live-edited ([`crate::kind::Cables::connects`]) --
 /// [`vg_core::network::NetworkKind::Node`] data, not a component.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Cable {
     pub d1: u8,
     pub d2: u8,
-    /// z above/below this cable's z (0 = none); read only for UP/DOWN.
-    pub up: u32,
-    pub down: u32,
     /// Ender cables with the same non-zero id are joined wherever they are.
     pub link: u32,
+    /// The cells this cable reaches, each with the direction a cable there
+    /// must have to connect back (computed where the cell is placed on the
+    /// map: `vg-ffi`).
+    pub reach: Vec<(vg_core::grid::CellId, u8)>,
+}
+
+impl Cable {
+    #[must_use]
+    pub const fn is_knot(&self) -> bool {
+        self.d1 == 0
+    }
+
+    #[must_use]
+    pub const fn has(&self, dir: u8) -> bool {
+        self.d1 == dir || self.d2 == dir
+    }
+
+    /// Two cables on the same turf connect when they share a direction
+    /// value (two knots share 0).
+    #[must_use]
+    pub const fn shares_end(&self, other: &Self) -> bool {
+        other.has(self.d1) || other.has(self.d2)
+    }
 }
 
 /// `CELLRATE`: charge units per watt-tick, an APC cell.
@@ -222,18 +228,6 @@ impl Apc {
 
     pub fn set_channel(&mut self, c: Channel, v: ChannelSetting) {
         self.channels[c.idx()] = v.as_u8();
-    }
-
-    #[must_use]
-    pub fn policy(&self) -> SheddingPolicy {
-        SheddingPolicy {
-            full_above_pct: self.policy_full_above_pct,
-            partial_below_pct: self.policy_partial_below_pct,
-            full_allow: self.policy_full_allow,
-            partial_allow: self.policy_partial_allow,
-            min_allow: self.policy_min_allow,
-            neutral_allow: self.policy_neutral_allow,
-        }
     }
 }
 

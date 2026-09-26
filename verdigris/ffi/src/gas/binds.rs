@@ -4,7 +4,7 @@
 use byondapi::prelude::*;
 use eyre::Result;
 use vg_gas::gas::constants::{GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
-use vg_gas::gas::{self, Mixture, constants, gas_idx_from_string, with_gas_info};
+use vg_gas::gas::{self, Mixture, constants, gas_idx_from_string};
 use vg_gas::power_budget;
 
 use super::mix::{self, MixRef, with_mix, with_mix_mut, with_mixes_mut, with_mixes2};
@@ -22,12 +22,6 @@ fn gas_idx_from_value(value: &ByondValue) -> Result<gas::GasIDX> {
     gas::gas_idx_from_value(raw)
 }
 
-/// For updating reagent gas fire products, do not use for now.
-#[auxmacros::bind("/proc/finalize_gas_refs")]
-fn finalize_gas_refs() -> Result<ByondValue> {
-    gas::update_gas_refs()?;
-    Ok(ByondValue::null())
-}
 
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
@@ -449,13 +443,7 @@ fn remove_by_flag_hook(
 ) -> Result<ByondValue> {
     let flag = flag_val.get_number().map_or(0, |n: f32| n as u32);
     let amount = amount_val.get_number().unwrap_or(0.0);
-    let pertinent_gases = with_gas_info(|gas_info| {
-        gas_info
-            .iter()
-            .filter(|g| g.flags & flag != 0)
-            .map(|g| g.idx)
-            .collect::<Vec<_>>()
-    });
+    let pertinent_gases = gases_with_flag(flag);
     if pertinent_gases.is_empty() {
         return Ok(false.into());
     }
@@ -469,13 +457,7 @@ fn remove_by_flag_hook(
 #[auxmacros::bind("/datum/gas_mixture/proc/get_by_flag")]
 fn get_by_flag_hook(src: ByondValue, flag_val: ByondValue) -> Result<ByondValue> {
     let flag = flag_val.get_number().map_or(0, |n: f32| n as u32);
-    let pertinent_gases = with_gas_info(|gas_info| {
-        gas_info
-            .iter()
-            .filter(|g| g.flags & flag != 0)
-            .map(|g| g.idx)
-            .collect::<Vec<_>>()
-    });
+    let pertinent_gases = gases_with_flag(flag);
     if pertinent_gases.is_empty() {
         return Ok(0.0.into());
     }
@@ -998,4 +980,9 @@ fn filter_transfer_multi(
     let list = ByondValue::new_list()?;
     list.write_list(&flat)?;
     Ok(list)
+}
+
+/// The gases whose registry `flags` include `flag`.
+fn gases_with_flag(flag: u32) -> Vec<usize> {
+    vg_gas::gate::with(|g| g.gases.iter().enumerate().filter(|(_, gas)| gas.flags & flag != 0).map(|(i, _)| i).collect())
 }

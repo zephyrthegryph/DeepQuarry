@@ -207,7 +207,8 @@ proptest! {
 #[test]
 fn visual_and_reaction_events_are_typed_events() {
 	let mut gate = crate::gate::Gate::default();
-	gate.visible[GAS_PLASMA] = Some(0.25);
+	gate.gases = vec![crate::gate::GasType::default(); crate::cell::N];
+	gate.gases[GAS_PLASMA].visible = Some(0.25);
 	gate.reactions.push(crate::gate::Requirement {
 		min_temp: Some(500.0),
 		gases: vec![(GAS_PLASMA, 1.0)],

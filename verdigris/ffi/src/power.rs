@@ -9,16 +9,15 @@
 //! payloads are network state, not a component, so
 //! [`crate::world::component_get`] can't reach them).
 //!
-//! DM still names a turf by `(x, y, z)`; [`vg_power::geom::pos`] packs it
-//! into the `CellId` `Cables` uses (power does not register a
-//! [`vg_core::grid::Grid`], so this is its own address space, not the
-//! shared grid's).
+//! DM still names a turf by `(x, y, z)`; [`pos`] packs it into the
+//! `CellId` `Cables` uses, and a cable's reach (the cells its directions
+//! lead to, following DM's explicit z links) is computed here at bind.
 
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::network::RegionId;
 use vg_core::slot::RawHandle;
-use vg_power::geom::pos;
+use vg_core::grid::Dir;
 use vg_power::kind::{Cables, PowerNode};
 use vg_power::{Cable, PowerLedger};
 
@@ -31,6 +30,57 @@ use crate::world::{list, num, whole, with_world};
 pub const NODE_CABLE: u16 = 0;
 /// @dm-define POWER_NODE_MACHINE
 pub const NODE_MACHINE: u16 = 1;
+
+const XY_BITS: u32 = 10;
+const XY_MASK: u32 = (1 << XY_BITS) - 1;
+
+/// A turf, packed `z << 20 | y << 10 | x` (x, y below 1024).
+const fn pos(x: u32, y: u32, z: u32) -> u32 {
+    (z << (2 * XY_BITS)) | ((y & XY_MASK) << XY_BITS) | (x & XY_MASK)
+}
+
+/// `get_zstep(p, dir)`: `up`/`down` are the z-levels above and below `p`'s
+/// z (0: none), as DM's `GetAbove`/`GetBelow` report them.
+fn step(p: u32, dir: u8, up: u32, down: u32) -> Option<u32> {
+    let d = Dir(dir);
+    let (x, y, mut z) = (i64::from(p & XY_MASK), i64::from((p >> XY_BITS) & XY_MASK), p >> (2 * XY_BITS));
+    let x = x + i64::from(d.contains(vg_core::grid::Face::East)) - i64::from(d.contains(vg_core::grid::Face::West));
+    let y = y + i64::from(d.contains(vg_core::grid::Face::North)) - i64::from(d.contains(vg_core::grid::Face::South));
+    for (face, to) in [(vg_core::grid::Face::Up, up), (vg_core::grid::Face::Down, down)] {
+        if d.contains(face) {
+            if to == 0 {
+                return None;
+            }
+            z = to;
+        }
+    }
+    let max = i64::from(XY_MASK);
+    if !(1..=max).contains(&x) || !(1..=max).contains(&y) || z == 0 {
+        return None;
+    }
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    Some(pos(x as u32, y as u32, z))
+}
+
+/// The cells a cable at `p` reaches, each with the direction a cable there
+/// must have to connect back (a diagonal also reaches its two orthogonal
+/// neighbours on the same level).
+fn reach(p: u32, d1: u8, d2: u8, up: u32, down: u32) -> Vec<(u32, u8)> {
+    let mut out = Vec::with_capacity(4);
+    for dir in [d1, d2].into_iter().filter(|&d| d != 0) {
+        if let Some(t) = step(p, dir, up, down) {
+            out.push((t, Dir(dir).reverse().0));
+        }
+        if Dir(dir).is_diagonal() {
+            for pair in [Dir::NORTH.union(Dir::SOUTH), Dir::EAST.union(Dir::WEST)] {
+                if let Some(t) = step(p, dir & pair.0, 0, 0) {
+                    out.push((t, dir ^ pair.0));
+                }
+            }
+        }
+    }
+    out
+}
 
 fn cell(x: &ByondValue, y: &ByondValue, z: &ByondValue) -> Result<u32> {
     Ok(pos(whole(x, "x")?, whole(y, "y")?, whole(z, "z")?))
@@ -47,12 +97,12 @@ fn power_bind_cable(entity: ByondValue, shape: ByondValue) -> Result<ByondValue>
     };
     let e = entity::bind_or_reuse(num(&entity)?)?;
     let p = cell(x, y, z)?;
+    let (d1, d2) = (whole(d1, "d1")? as u8, whole(d2, "d2")? as u8);
     let data = Cable {
-        d1: whole(d1, "d1")? as u8,
-        d2: whole(d2, "d2")? as u8,
-        up: whole(up, "up")?,
-        down: whole(down, "down")?,
+        d1,
+        d2,
         link: whole(link, "link")?,
+        reach: reach(p, d1, d2, whole(up, "up")?, whole(down, "down")?),
     };
     with_world(|w| {
         w.edit_network::<Cables>(move |host| {

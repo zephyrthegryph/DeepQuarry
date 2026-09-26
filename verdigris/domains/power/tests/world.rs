@@ -18,7 +18,7 @@ use vg_power::laws::{ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInput
 const NODE_MACHINE: u16 = 1;
 
 fn knot(d1: u8) -> vg_power::Cable {
-    vg_power::Cable { d1, d2: 0, up: 0, down: 0, link: 0 }
+    vg_power::Cable { d1, d2: 0, link: 0, reach: Vec::new() }
 }
 
 fn field<C: Component>(name: &str) -> u16 {

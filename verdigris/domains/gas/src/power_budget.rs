@@ -36,7 +36,7 @@ fn specific_entropy_gas(idx: usize, mix: &Mixture) -> f32 {
 	if n <= 0.0 {
 		return SPECIFIC_ENTROPY_VACUUM;
 	}
-	let molar_mass = crate::gas::types::molar_mass(idx);
+	let molar_mass = crate::gate::with(|g| g.gases.get(idx).map_or(0.0, |gas| gas.molar_mass));
 	let specific_heat = crate::cell::SPECIFIC_HEATS.get(idx).copied().unwrap_or(0.0);
 	if molar_mass <= 0.0 || specific_heat <= 0.0 {
 		return R_IDEAL_GAS_EQUATION * ((volume / n).ln() + 1.5 * temperature.ln()) + 15.0;
@@ -348,15 +348,7 @@ mod tests {
 		Mixture::from_parts(&moles, temperature, 2500.0, false)
 	}
 
-	fn install_gases() {
-		if crate::gas::types::total_num_gases() > 0 {
-			return;
-		}
-		crate::gas::types::set_gas_statics_manually();
-		for i in 0..N {
-			crate::gas::types::register_gas_manually(Box::leak(i.to_string().into_boxed_str()), crate::cell::SPECIFIC_HEATS[i]);
-		}
-	}
+	fn install_gases() {}
 
 	#[test]
 	fn filter_moves_only_the_masked_gas_and_conserves_the_split() {

@@ -300,12 +300,12 @@ impl fmt::Display for ChannelError {
 
 impl std::error::Error for ChannelError {}
 
+/// A channel name: `UPPER_SNAKE` (a `channels!` table) or `lower_snake` (a
+/// component's field names, `#[vg::component]`).
 fn upper_snake(name: &str) -> bool {
-    !name.is_empty()
-        && name.starts_with(|c: char| c.is_ascii_uppercase())
-        && name
-            .chars()
-            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
+    let upper = name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_');
+    let lower = name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+    name.starts_with(|c: char| c.is_ascii_alphabetic()) && (upper || lower)
 }
 
 /// Checks a domain's channel table. Every error is reported, not just the
@@ -491,7 +491,7 @@ mod tests {
     impl Channels for Bad {
         const CHANNELS: &'static [ChannelDecl<Cell>] = &[
             ChannelDecl {
-                name: "temp",
+                name: "Temp",
                 kind: ValueKind::Scalar,
                 unit: Unit::Kelvin,
                 hysteresis: -1.0,
@@ -531,7 +531,7 @@ mod tests {
         let has = |p: fn(&ChannelError) -> bool| errors.iter().any(p);
         assert!(has(|e| matches!(
             e,
-            ChannelError::BadName { name: "temp", .. }
+            ChannelError::BadName { name: "Temp", .. }
         )));
         assert!(has(|e| matches!(e, ChannelError::BadHysteresis { .. })));
         assert!(has(|e| matches!(e, ChannelError::BadEnum { .. })));

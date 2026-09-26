@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "61d5afdbdc2ccffc"
+#define VERDIGRIS_ABI "984611a7afa39bd4"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -661,13 +661,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_multi_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(source, outputs, sink_clean, requested, available_power, efficiency)
-
-/// For updating reagent gas fire products, do not use for now.
-// /proc/finalize_gas_refs (verdigris/ffi/src/gas/binds.rs)
-/proc/vg_finalize_gas_refs()
-	var/static/__f = load_ext(VERDIGRIS, "byond:finalize_gas_refs_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
 
 /// Args: (temperature). Returns: how much fuel for fire is in the mixture at the given temperature. If temperature is omitted, just uses current temperature instead.
 // /datum/gas_mixture/proc/get_fuel_amount (verdigris/ffi/src/gas/binds.rs)
@@ -1454,11 +1447,9 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
-/// The turf a gas field cell index names. `gas_tick`'s events hand DM a
-/// bare cell index now (the generic typed-event wire is plain numbers
-/// only, `rust_architecture.md` §4.8), not a turf reference the way the
-/// old flat encoding did -- `on_gas_cell_*` handlers call this once to
-/// resolve it.
+/// The turf a gas field cell index names. `GasEvent`s carry a bare cell
+/// index (the typed-event wire is plain numbers only); `on_gas_cell_*`
+/// handlers call this once to resolve it.
 // /proc/vg_turf_of (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_turf_of(cell)
 	var/static/__f = load_ext(VERDIGRIS, "byond:turf_of_ffi")

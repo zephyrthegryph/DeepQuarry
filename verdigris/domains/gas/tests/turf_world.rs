@@ -84,7 +84,8 @@ fn a_cell_with_visible_gas_emits_exactly_one_visual_change_until_it_changes_agai
     // `laws.rs`'s own tests of the same global): this file is its own test
     // binary/process, and it is the only test in it that touches the gate.
     let mut gate = vg_gas::gate::Gate::default();
-    gate.visible[GAS_OXYGEN] = Some(1.0);
+    gate.gases = vec![vg_gas::gate::GasType::default(); vg_gas::cell::N];
+    gate.gases[GAS_OXYGEN].visible = Some(1.0);
     vg_gas::gate::install(gate);
 
     let mut b = builder();
