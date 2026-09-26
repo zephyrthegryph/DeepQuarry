@@ -1242,7 +1242,7 @@
 	if(!istype(landing))
 		return ..()
 
-	if(H.buckled)
+	if(BUCKLED(H))
 		if(!silent)
 			to_chat(H, span_warning("You try to spread your wings to slow your fall, but \the [H.buckled] weighs you down!"))
 		return ..()
