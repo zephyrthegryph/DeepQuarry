@@ -145,7 +145,7 @@
 	return !anchored
 
 /mob/living/slot_loose(mob/actor, atom/target, obj/item/held)
-	return !anchored && !buckled && !LAZYLEN(pinned)
+	return !anchored && !BUCKLED(src) && !LAZYLEN(pinned)
 
 //Cham Projector Exception: the dummy is anchored but hides in closets.
 /obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
@@ -240,7 +240,7 @@
 	return 1
 
 // Each store_* proc moves what it finds on the turf into the interior slot and
-// returns how many went in. The slot refuses anchored or buckled things and
+// returns how many went in. The slot refuses anchored or BUCKLED(src) things and
 // anything that would overflow storage_capacity.
 
 //Cham Projector Exception

@@ -231,7 +231,7 @@
 		if(istype(I) && !I.anchored)
 			bowl_contents += I
 	for(var/mob/living/L in loc.contents)
-		if(L.buckled || !(L.resting || L.lying))
+		if(BUCKLED(L) || !(L.resting || L.lying))
 			continue
 		var/bin_bonus = 0.15
 		if(bin)

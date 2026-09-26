@@ -60,7 +60,7 @@
 		if(!AM.lost_in_space())
 			return FALSE
 	if(has_buckled_mobs())
-		for(var/mob/M in buckled_mobs)
+		for(var/mob/M in BUCKLED_MOBS(src))
 			if(!M.lost_in_space())
 				return FALSE
 

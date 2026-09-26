@@ -167,9 +167,10 @@
 			if(ROI.anchored)
 				if(isliving(ROI))
 					var/mob/living/L = ROI
-					if(L.buckled)
+					if(BUCKLED(L))
 						// TP people on office chairs
-						if(L.buckled.anchored)
+						var/atom/movable/_tmp_buck_44 = BUCKLED(L)
+						if(_tmp_buck_44.anchored)
 							continue
 					else
 						continue

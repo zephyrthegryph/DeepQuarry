@@ -283,7 +283,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -302,7 +302,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
 		to_chat(src, "You cannot leap in your current state.")
 		return
 

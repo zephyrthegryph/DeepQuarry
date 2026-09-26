@@ -37,8 +37,8 @@
 		return
 	if(!istype(target))
 		return
-	if(target.buckled)
-		occupant_message(span_infoplain("[target] will not fit into the sleeper because they are buckled to [target.buckled]."))
+	if(BUCKLED(target))
+		occupant_message(span_infoplain("[target] will not fit into the sleeper because they are buckled to [BUCKLED(target)]."))
 		return
 	if(occupant)
 		occupant_message(span_warning("The sleeper is already occupied"))

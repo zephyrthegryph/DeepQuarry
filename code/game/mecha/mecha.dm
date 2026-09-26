@@ -1989,7 +1989,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if (user.stat || !ishuman(user) || user.is_incorporeal())
 		return
 
-	if (user.buckled)
+	if (BUCKLED(user))
 		to_chat(user, span_warning("You can't climb into the exosuit while buckled!"))
 		return
 

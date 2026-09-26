@@ -113,7 +113,7 @@
 	return FALSE
 
 /turf/simulated/check_slipping(mob/living/M,dirtslip)
-	if(M.buckled)
+	if(BUCKLED(M))
 		return FALSE
 	if(M.is_incorporeal()) // Mar!
 		return FALSE

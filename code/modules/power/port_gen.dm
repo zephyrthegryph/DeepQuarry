@@ -959,15 +959,15 @@
 	pixel_x = -32
 	if(panel_open)
 		icon_state = "reg-o"
-	else if(buckled_mobs && buckled_mobs.len > 0)
+	else if(length(BUCKLED_MOBS(src)) > 0)
 		icon_state = "reg-a"
 	else
 		icon_state = "reg"
 
 /obj/machinery/power/rtg/reg/process()
 	..()
-	if(buckled_mobs && buckled_mobs.len > 0)
-		for(var/mob/living/L in buckled_mobs)
+	if(length(BUCKLED_MOBS(src)) > 0)
+		for(var/mob/living/L in BUCKLED_MOBS(src))
 			runner_process(L)
 	else
 		power_gen = 0

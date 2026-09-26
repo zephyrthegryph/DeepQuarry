@@ -238,9 +238,11 @@
 	equip_custom_items(character) // readded to enable custom_item.txt
 
 	// Moving wheelchair if they have one
-	if(character.buckled && istype(character.buckled, /obj/structure/bed/chair/wheelchair))
-		character.buckled.loc = character.loc
-		character.buckled.set_dir(character.dir)
+	if(BUCKLED(character) && istype(BUCKLED(character), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_32 = BUCKLED(character)
+		_tmp_buck_32.loc = character.loc
+		var/atom/movable/_tmp_buck_33 = BUCKLED(character)
+		_tmp_buck_33.set_dir(character.dir)
 
 	SSticker.mode.latespawn(character)
 

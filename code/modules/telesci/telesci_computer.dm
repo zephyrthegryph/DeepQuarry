@@ -321,9 +321,10 @@
 				if(ROI.anchored)
 					if(isliving(ROI))
 						var/mob/living/L = ROI
-						if(L.buckled)
+						if(BUCKLED(L))
 							// TP people on office chairs
-							if(L.buckled.anchored)
+							var/atom/movable/_tmp_buck_45 = BUCKLED(L)
+							if(_tmp_buck_45.anchored)
 								continue
 
 							log_msg += "[key_name(L)] (on a chair), "

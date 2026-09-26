@@ -901,30 +901,32 @@
 		to_chat(src, span_notice("Your host is pinned to a wall by [wearer.pinned[1]]!"))
 		return 0
 
-	if(istype(wearer.buckled, /obj/vehicle))
+	if(istype(BUCKLED(wearer), /obj/vehicle))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
 		wearer_move_delay = world.time
-		return wearer.buckled.relaymove(wearer, direction)
+		var/atom/movable/_tmp_buck_13 = BUCKLED(wearer)
+		return _tmp_buck_13.relaymove(wearer, direction)
 
 	if(istype(wearer.get_current_machine(), /obj/machinery))
 		if(wearer.get_current_machine().relaymove(wearer, direction))
 			return
 
 	var/mob/wearer_puller = PULLED_BY(wearer)
-	if(wearer_puller || wearer.buckled) // Wheelchair driving!
+	if(wearer_puller || BUCKLED(wearer)) // Wheelchair driving!
 		if(istype(wearer.loc, /turf/space))
 			return // No wheelchair driving in space
 		if(istype(wearer_puller, /obj/structure/bed/chair/wheelchair))
 			return wearer_puller.relaymove(wearer, direction)
-		else if(istype(wearer.buckled, /obj/structure/bed/chair/wheelchair))
-			if(ishuman(wearer.buckled))
+		else if(istype(BUCKLED(wearer), /obj/structure/bed/chair/wheelchair))
+			if(ishuman(BUCKLED(wearer)))
 				var/obj/item/organ/external/l_hand = wearer.get_organ(BP_L_HAND)
 				var/obj/item/organ/external/r_hand = wearer.get_organ(BP_R_HAND)
 				if((!l_hand || (l_hand.status & ORGAN_DESTROYED)) && (!r_hand || (r_hand.status & ORGAN_DESTROYED)))
 					return // No hands to drive your chair? Tough luck!
 			wearer_move_delay += 2
-			return wearer.buckled.relaymove(wearer,direction)
+			var/atom/movable/_tmp_buck_14 = BUCKLED(wearer)
+			return _tmp_buck_14.relaymove(wearer,direction)
 
 	var/power_cost = 50
 	if(!ai_moving)

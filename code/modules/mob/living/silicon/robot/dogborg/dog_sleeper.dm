@@ -133,11 +133,11 @@
 			if(patient)
 				to_chat(user, span_warning("Your [src.name] is already occupied."))
 				return
-			if(trashman.buckled)
+			if(BUCKLED(trashman))
 				to_chat(user, span_warning("[trashman] is buckled and can not be put into your [src.name]."))
 				return
 			user.visible_message(span_warning("[hound.name] is ingesting [trashman] into their [src.name]."), span_notice("You start ingesting [trashman] into your [src.name]..."))
-			if(do_after(user, 3 SECONDS, target = trashman) && !patient && !trashman.buckled && length(contents) < max_item_count)
+			if(do_after(user, 3 SECONDS, target = trashman) && !patient && !BUCKLED(trashman) && length(contents) < max_item_count)
 				trashman.forceMove(src)
 				START_PROCESSING(SSobj, src)
 				user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashman] slips inside."), span_notice("Your [src.name] groans lightly as [trashman] slips inside."))
@@ -154,14 +154,14 @@
 
 	else if(ishuman(target))
 		var/mob/living/carbon/human/H = target
-		if(H.buckled)
+		if(BUCKLED(H))
 			to_chat(user, span_warning("The user is buckled and can not be put into your [src.name]."))
 			return
 		if(patient)
 			to_chat(user, span_warning("Your [src.name] is already occupied."))
 			return
 		user.visible_message(span_warning("[hound.name] is ingesting [H.name] into their [src.name]."), span_notice("You start ingesting [H] into your [src]..."))
-		if(!patient && !H.buckled && do_after (user, 50, H))
+		if(!patient && !BUCKLED(H) && do_after (user, 50, H))
 			if(!proximity_flag)
 				return //If they moved away, you can't eat them.
 			if(patient)

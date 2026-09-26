@@ -134,8 +134,13 @@
 	var/m_int = null//Living
 	var/m_intent = I_RUN//Living
 	var/lastKnownIP = null
-	var/obj/buckled = null//Living
 	var/no_pull_when_living = FALSE //Test for if it can be pulled when alive
+	/// Set around a holder-driven forced step (a chair/wheelchair moving its
+	/// own buckled occupant directly, handle_buckled_mob_movement()) so
+	/// /mob/living/Move() doesn't redirect that step back into the buckled
+	/// object's own Move() -- BUCKLED()/BUCKLED_MOBS() (om.dm) are pure graph
+	/// reads now, with no field left to transiently null for the same effect.
+	var/tmp/skip_buckled_move_redirect = FALSE
 
 	var/seer = 0 //for cult//Carbon, probably Human
 

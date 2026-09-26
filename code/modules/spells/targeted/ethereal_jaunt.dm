@@ -17,8 +17,9 @@
 /datum/spell/targeted/ethereal_jaunt/cast(list/targets) //magnets, so mostly hardcoded
 	for(var/mob/living/target in targets)
 		target.transforming = 1 //protects the mob from being transformed (replaced) midjaunt and getting stuck in bluespace
-		if(target.buckled)
-			target.buckled.unbuckle_mob( target, TRUE)
+		if(BUCKLED(target))
+			var/atom/movable/_tmp_buck_41 = BUCKLED(target)
+			_tmp_buck_41.unbuckle_mob( target, TRUE)
 		spawn(0)
 			var/mobloc = get_turf(target.loc)
 			var/obj/effect/dummy/spell_jaunt/holder = new /obj/effect/dummy/spell_jaunt( mobloc )
@@ -31,8 +32,9 @@
 			animation.layer = ABOVE_MOB_LAYER
 			animation.master = holder
 			target.extinguish_mob()
-			if(target.buckled)
-				target.buckled.unbuckle_mob( target, TRUE)
+			if(BUCKLED(target))
+				var/atom/movable/_tmp_buck_42 = BUCKLED(target)
+				_tmp_buck_42.unbuckle_mob( target, TRUE)
 			jaunt_disappear(animation, target)
 			target.forceMove(holder)
 			target.transforming=0 //mob is safely inside holder now, no need for protection.

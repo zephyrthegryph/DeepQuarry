@@ -556,7 +556,7 @@
 		return FALSE
 	if(!ignore_source_check && firer)
 		var/mob/M = firer
-		if((target == firer) || ((target == firer.loc) && istype(firer.loc, /obj/mecha)) || (target in firer.buckled_mobs) || (istype(M) && (M.buckled == target)))
+		if((target == firer) || ((target == firer.loc) && istype(firer.loc, /obj/mecha)) || (target in BUCKLED_MOBS(firer)) || (istype(M) && (BUCKLED(M) == target)))
 			return FALSE
 	if(!ignore_loc && (loc != target.loc))
 		return FALSE

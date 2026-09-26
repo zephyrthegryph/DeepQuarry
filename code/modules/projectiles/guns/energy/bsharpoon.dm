@@ -121,8 +121,8 @@
 	var/sendfailchance = failure_chance
 	if(isliving(user))
 		var/mob/living/L = user
-		if(LAZYLEN(L.buckled_mobs))
-			for(var/rider in L.buckled_mobs)
+		if(LAZYLEN(BUCKLED_MOBS(L)))
+			for(var/rider in BUCKLED_MOBS(L))
 				sendfailchance += 15
 
 	var/mob/living/living_user = user

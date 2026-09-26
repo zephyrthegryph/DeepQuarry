@@ -170,7 +170,7 @@
 	return ..()
 
 /mob/living/proc/check_submerged()
-	if(buckled)
+	if(BUCKLED(src))
 		return 0
 	if(dq_get_hovering(src) || flying || is_incorporeal())
 		if(flying)

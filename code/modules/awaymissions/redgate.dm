@@ -65,7 +65,7 @@
 			playsound(src,'sound/effects/ominous-hum-2.ogg', 100,1)
 			M.forceMove(ourturf)
 			if(is_type_in_list(pulled, exceptions))
-				for(var/mob/living/buckled_on in pulled.buckled_mobs)
+				for(var/mob/living/buckled_on in BUCKLED_MOBS(pulled))
 					if(!buckled_on.key || is_type_in_list(M, restrictions))
 						pulled.unbuckle_mob(buckled_on, TRUE)
 				pulled.forceMove(ourturf)

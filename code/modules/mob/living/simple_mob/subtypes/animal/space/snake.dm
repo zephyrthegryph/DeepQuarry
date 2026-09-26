@@ -147,7 +147,7 @@
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!self.stat && !self.resting && !self.buckled)
+	if(!self.stat && !self.resting && !BUCKLED(self))
 		self.turns_since_scan++
 		if(self.turns_since_scan > 5)
 			self.turns_since_scan = 0

@@ -429,7 +429,7 @@
 		to_chat(user, span_notice("Close the maintenance panel first."))
 		return 0 //panel open
 
-	if(O.buckled)
+	if(BUCKLED(O))
 		return 0
 	if(O.has_buckled_mobs())
 		to_chat(user, span_warning("\The [O] has other entities attached to it. Remove them first."))

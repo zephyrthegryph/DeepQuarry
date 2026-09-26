@@ -24,8 +24,9 @@
 					L.status_at_least(EFFECT_WEAKENED, 4)
 					L.status_at_least(EFFECT_STUNNED, 4)
 					do_attack_animation(L)
-					if(L.buckled)
-						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.
+					if(BUCKLED(L))
+						var/atom/movable/_tmp_buck_25 = BUCKLED(L)
+						_tmp_buck_25.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.
 					L.status_at_least(EFFECT_STUTTERING, stun_power)
 
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -44,8 +45,9 @@
 					playsound(src, 'sound/weapons/thudswoosh.ogg', 75, 1)
 					L.status_at_least(EFFECT_WEAKENED, 2)
 					do_attack_animation(L)
-					if(L.buckled)
-						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.
+					if(BUCKLED(L))
+						var/atom/movable/_tmp_buck_26 = BUCKLED(L)
+						_tmp_buck_26.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.
 					return FALSE
 
 				else // Failed to do anything this time.

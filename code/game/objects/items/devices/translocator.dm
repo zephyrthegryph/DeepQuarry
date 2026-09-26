@@ -214,7 +214,7 @@ This device records all warnings given and teleport events for admin review in c
 		return FALSE
 
 	//No, you can't teleport buckled people.
-	if(target.buckled)
+	if(BUCKLED(target))
 		to_chat(user,span_warning("The target appears to be attached to something..."))
 		return FALSE
 
@@ -284,9 +284,9 @@ This device records all warnings given and teleport events for admin review in c
 	//Unbuckle taur riders
 	if(isliving(target))
 		var/mob/living/L = target
-		if(LAZYLEN(L.buckled_mobs))
+		if(LAZYLEN(BUCKLED_MOBS(L)))
 			var/datum/riding/R = L.riding_datum
-			for(var/rider in L.buckled_mobs)
+			for(var/rider in BUCKLED_MOBS(L))
 				R.force_dismount(rider)
 
 	//Failure chance

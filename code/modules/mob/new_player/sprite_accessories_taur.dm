@@ -105,7 +105,7 @@
 		return FALSE
 	if(!ishuman(M))
 		return FALSE
-	if(M in buckled_mobs)
+	if(M in BUCKLED_MOBS(src))
 		return FALSE
 	if(M.loc != src.loc)
 		if(M.Adjacent(src))
@@ -120,7 +120,7 @@
 	. = ..()
 	if(.)
 		riding_datum.rider_size = M.size_multiplier
-		buckled_mobs[M] = "riding"
+		BUCKLED_MOBS(src)[M] = "riding"
 
 /mob/living/carbon/human/MouseDrop_T(mob/living/M, mob/living/user) //Prevention for forced relocation caused by can_buckle. Base proc has no other use.
 	return
@@ -130,26 +130,26 @@
 	set category = "Abilities.General"
 	set desc = "Let people ride on you."
 
-	if(LAZYLEN(buckled_mobs) && riding_datum)
+	if(LAZYLEN(BUCKLED_MOBS(src)) && riding_datum)
 		var/datum/riding/R = riding_datum
-		for(var/rider in buckled_mobs)
+		for(var/rider in BUCKLED_MOBS(src))
 			R.force_dismount(rider)
 		return
 	if (stat != CONSCIOUS)
 		return
-	if(!can_buckle || !istype(M) || !M.Adjacent(src) || M.buckled)
+	if(!can_buckle || !istype(M) || !M.Adjacent(src) || BUCKLED(M))
 		return
 	if(buckle_mob(M))
 		visible_message(span_notice("[M] starts riding [name]!"))
 
 /mob/living/carbon/human/attack_hand(mob/user as mob)
-	if(LAZYLEN(buckled_mobs) && riding_datum)
+	if(LAZYLEN(BUCKLED_MOBS(src)) && riding_datum)
 		//We're getting off!
-		if(user in buckled_mobs)
+		if(user in BUCKLED_MOBS(src))
 			riding_datum.force_dismount(user)
 		//We're kicking everyone off!
 		if(user == src)
-			for(var/rider in buckled_mobs)
+			for(var/rider in BUCKLED_MOBS(src))
 				riding_datum.force_dismount(rider)
 	else
 		. = ..()

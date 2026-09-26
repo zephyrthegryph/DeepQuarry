@@ -824,7 +824,7 @@
 		return FALSE
 	if(!ishuman(M))
 		return FALSE
-	if(M in buckled_mobs)
+	if(M in BUCKLED_MOBS(src))
 		return FALSE
 	if(M.size_multiplier > size_multiplier * 1.2)
 		to_chat(src,span_warning("This isn't a pony show! You need to be bigger for them to ride."))
@@ -839,16 +839,16 @@
 	. = ..()
 	if(.)
 		riding_datum.rider_size = H.size_multiplier
-		buckled_mobs[H] = "riding"
+		BUCKLED_MOBS(src)[H] = "riding"
 
 /mob/living/simple_mob/attack_hand(mob/user as mob)
-	if(riding_datum && LAZYLEN(buckled_mobs))
+	if(riding_datum && LAZYLEN(BUCKLED_MOBS(src)))
 		//We're getting off!
-		if(user in buckled_mobs)
+		if(user in BUCKLED_MOBS(src))
 			riding_datum.force_dismount(user)
 		//We're kicking everyone off!
 		if(user == src)
-			for(var/rider in buckled_mobs)
+			for(var/rider in BUCKLED_MOBS(src))
 				riding_datum.force_dismount(rider)
 	else
 		. = ..()
@@ -858,13 +858,13 @@
 	set category = "Abilities.Mob"
 	set desc = "Let people ride on you."
 
-	if(LAZYLEN(buckled_mobs))
-		for(var/rider in buckled_mobs)
+	if(LAZYLEN(BUCKLED_MOBS(src)))
+		for(var/rider in BUCKLED_MOBS(src))
 			riding_datum.force_dismount(rider)
 		return
 	if (stat != CONSCIOUS)
 		return
-	if(!can_buckle || !istype(M) || !M.Adjacent(src) || M.buckled)
+	if(!can_buckle || !istype(M) || !M.Adjacent(src) || BUCKLED(M))
 		return
 	if(buckle_mob(M))
 		visible_message(span_notice("[M] starts riding [name]!"))

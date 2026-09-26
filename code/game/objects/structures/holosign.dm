@@ -72,7 +72,7 @@
 /obj/structure/holosign/barrier/medical/CanPass(atom/movable/mover, border_dir)
 	. = ..()
 	if(mover.has_buckled_mobs())
-		for(var/mob/living/L as anything in buckled_mobs)
+		for(var/mob/living/L as anything in BUCKLED_MOBS(src))
 			if(ishuman(L))
 				if(CheckHuman(L))
 					return FALSE

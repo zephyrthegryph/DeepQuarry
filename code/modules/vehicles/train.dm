@@ -62,7 +62,7 @@
 //trains are commonly open topped, so there is a chance the projectile will hit the mob riding the train instead
 /obj/vehicle/train/bullet_act(obj/item/projectile/Proj)
 	if(has_buckled_mobs() && prob(70))
-		var/mob/living/L = pick(buckled_mobs)
+		var/mob/living/L = pick(BUCKLED_MOBS(src))
 		L.bullet_act(Proj)
 		return
 	..()
@@ -105,7 +105,7 @@
 	return 1
 
 /obj/vehicle/train/MouseDrop_T(atom/movable/C, mob/user as mob)
-	if(user.buckled || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
+	if(BUCKLED(user) || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
 		return
 	if(istype(C,/obj/vehicle/train))
 		latch(C, user)
@@ -120,7 +120,7 @@
 		user.forceMove(loc)			//for handling players stuck in src
 	else if(load)
 		unload(user)			//unload if loaded
-	else if(!load && !user.buckled)
+	else if(!load && !BUCKLED(user))
 		load(user, user)				//else try climbing on board
 	else
 		return 0

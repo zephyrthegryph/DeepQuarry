@@ -70,8 +70,9 @@
 			if(isliving(A))
 				var/mob/living/M = A
 				M.status_adjust(EFFECT_STUNNED, 20) // Keep them from moving during the duration of the extraction
-				if(M.buckled)
-					M.buckled.unbuckle_mob(M)
+				if(BUCKLED(M))
+					var/atom/movable/_tmp_buck_15 = BUCKLED(M)
+					_tmp_buck_15.unbuckle_mob(M)
 			else
 				A.anchored = TRUE
 				A.density = FALSE

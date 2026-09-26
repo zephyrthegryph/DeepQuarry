@@ -144,7 +144,7 @@
 
 	if(!ranged_attack)
 		// you cannot miss if your target is prone or restrained
-		if(target.buckled || target.lying)
+		if(BUCKLED(target) || target.lying)
 			return zone
 		// if your target is being grabbed aggressively by someone you cannot miss either
 		for(var/obj/item/grab/G in GRABBED_BY(target))

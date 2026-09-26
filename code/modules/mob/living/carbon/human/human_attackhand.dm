@@ -257,10 +257,10 @@
 	if(get_equipped_item(SLOT_ID_UNIFORM))
 		get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
-	if(buckled)
-		to_chat(M, span_notice("You cannot grab [src], [M.p_theyre()] buckled in!"))
+	if(BUCKLED(src))
+		to_chat(M, span_notice("You cannot grab [src], [M.p_theyre()] BUCKLED(src) in!"))
 		return
-	var/obj/item/grab/G = new /obj/item/grab(M, src) //If this is put before the buckled check, the user will be perma-slowed due to a grab existing in nullspace.
+	var/obj/item/grab/G = new /obj/item/grab(M, src) //If this is put before the BUCKLED(src) check, the user will be perma-slowed due to a grab existing in nullspace.
 	if(!G)	//the grab will delete itself in New if affecting is anchored
 		return
 	M.put_in_active_hand(G)
@@ -313,7 +313,7 @@
 		// Someone got a good grip on them, they won't be able to do much damage
 		rand_damage = max(1, rand_damage - 2)
 
-	if(LAZYLEN(GRABBED_BY(src)) || src.buckled || !src.canmove || src==H)
+	if(LAZYLEN(GRABBED_BY(src)) || BUCKLED(src) || !src.canmove || src==H)
 		accurate = 1 // certain circumstances make it impossible for us to evade punches
 		rand_damage = 5
 

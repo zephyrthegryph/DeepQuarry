@@ -48,7 +48,7 @@ default behaviour is:
 		return FALSE
 
 /mob/living/Bump(atom/movable/AM)
-	if(now_pushing || !loc || buckled == AM || AM.is_incorporeal())
+	if(now_pushing || !loc || BUCKLED(src) == AM || AM.is_incorporeal())
 		return
 	now_pushing = TRUE
 	if (isliving(AM))
@@ -95,7 +95,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && tmob.canmove && canmove && !tmob.buckled && !buckled && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
+		if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && tmob.canmove && canmove && !BUCKLED(tmob) && !BUCKLED(src) && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
 			var/turf/oldloc = loc
 
 			//check bumpnom chance, if it's a simplemob that's doing the bumping
@@ -225,14 +225,15 @@ default behaviour is:
 		MB.runOver(src)
 
 	if(istype(AM, /obj/vehicle))
-		if(!istype(buckled, /obj/vehicle) && !is_incorporeal()) // Don't run ourselves over, needed for going down stairs in vehicles!
-			// Checks if we are riding a vehicle instead of our buckled vehicle, so that our trailers don't flatten us either!
+		if(!istype(BUCKLED(src), /obj/vehicle) && !is_incorporeal()) // Don't run ourselves over, needed for going down stairs in vehicles!
+			// Checks if we are riding a vehicle instead of our BUCKLED(src) vehicle, so that our trailers don't flatten us either!
 			var/obj/vehicle/V = AM
 			V.RunOver(src)
 
 // Almost all of this handles pulling movables behind us
 /mob/living/Move(atom/newloc, direct, movetime)
-	if(buckled && buckled.loc != newloc) //not updating position
+	var/obj/buckled = BUCKLED(src)
+	if(buckled && !skip_buckled_move_redirect && buckled.loc != newloc) //not updating position
 		if(!buckled.anchored && buckled.buckle_movable)
 			return buckled.Move(newloc, direct)
 		else
@@ -261,7 +262,7 @@ default behaviour is:
 
 /mob/living/proc/dragged(mob/living/dragger, oldloc, forced)
 	var/area/A = get_area(src)
-	if(forced || (lying && !buckled && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
+	if(forced || (lying && !BUCKLED(src) && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
 		injure(INJURY_BLUNT, 2, null, dragger)
 		visible_message(span_danger("\The [src]'s [isSynthetic() ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
 		return TRUE

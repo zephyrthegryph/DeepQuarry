@@ -508,7 +508,7 @@
 	SEND_SIGNAL(src, COMSIG_MOVABLE_IMPACT, hit_atom, throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
-		if(M.buckled == src)
+		if(BUCKLED(M) == src)
 			return // Don't hit the thing we're buckled to.
 		M.hitby(src, throwingdatum)
 

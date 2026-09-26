@@ -124,7 +124,7 @@
 	if(victim && get_turf(victim) == get_turf(src) && victim.lying)
 		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return 0
-	if(patient.buckled)
+	if(BUCKLED(patient))
 		to_chat(user, span_notice("Unbuckle \the [patient] first!"))
 		return 0
 	return 1

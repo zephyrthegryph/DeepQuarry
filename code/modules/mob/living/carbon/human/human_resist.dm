@@ -81,7 +81,7 @@
 		)
 
 	if(do_after(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED))	// Same scaling as breaking cuffs, 5 seconds to 120 seconds, 20 seconds to 480 seconds.
-		if(!get_equipped_item(SLOT_ID_SUIT) || buckled)
+		if(!get_equipped_item(SLOT_ID_SUIT) || BUCKLED(src))
 			return
 
 		visible_message(
@@ -95,6 +95,7 @@
 		var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)
 		drop_from_inventory(ripped)
 		qdel(ripped)
+		var/obj/buckled = BUCKLED(src)
 		if(buckled && buckled.buckle_require_restraints)
 			buckled.unbuckle_mob()
 

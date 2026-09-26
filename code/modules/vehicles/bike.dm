@@ -115,7 +115,7 @@
 /obj/vehicle/bike/load(atom/movable/C, mob/user as mob)
 	var/mob/living/M = C
 	if(!istype(C)) return 0
-	if(M.buckled || M.restrained() || !Adjacent(M) || !M.Adjacent(src))
+	if(BUCKLED(M) || M.restrained() || !Adjacent(M) || !M.Adjacent(src))
 		return 0
 	return ..(M, user)
 
@@ -181,7 +181,7 @@
 
 /obj/vehicle/bike/bullet_act(obj/item/projectile/Proj)
 	if(has_buckled_mobs() && prob(protection_percent))
-		var/mob/living/L = pick(buckled_mobs)
+		var/mob/living/L = pick(BUCKLED_MOBS(src))
 		L.bullet_act(Proj)
 		return
 	..()

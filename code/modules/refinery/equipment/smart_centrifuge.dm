@@ -142,7 +142,7 @@
 
 /// No side effects.
 /obj/machinery/smart_centrifuge/proc/can_drop_drain(mob/actor, atom/target, atom/movable/held)
-	if(actor.buckled || actor.stat || actor.restrained() || !target.Adjacent(actor) || !actor.Adjacent(held) || (actor == held && !actor.canmove))
+	if(BUCKLED(actor) || actor.stat || actor.restrained() || !target.Adjacent(actor) || !actor.Adjacent(held) || (actor == held && !actor.canmove))
 		return FALSE
 	return TRUE
 

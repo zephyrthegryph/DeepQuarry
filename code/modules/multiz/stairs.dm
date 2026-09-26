@@ -167,8 +167,8 @@
 		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
-		if(L.buckled)
-			pulling |= L.buckled
+		if(BUCKLED(L))
+			pulling |= BUCKLED(L)
 
 		// If the object is pulling or grabbing anything, we'll want to move those too. A grab chain may be disrupted in doing so.
 		var/atom/movable/L_pulling = PULLING(L)
@@ -211,8 +211,9 @@
 		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
-		if(L.buckled)
-			L.buckled.forceMove(get_turf(top))
+		if(BUCKLED(L))
+			var/atom/movable/_tmp_buck_35 = BUCKLED(L)
+			_tmp_buck_35.forceMove(get_turf(top))
 
 		var/atom/movable/P = null
 		var/atom/movable/L_pulling = PULLING(L)
@@ -434,8 +435,8 @@
 		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
-		if(L.buckled)
-			pulling |= L.buckled
+		if(BUCKLED(L))
+			pulling |= BUCKLED(L)
 
 		// If the object is pulling or grabbing anything, we'll want to move those too. A grab chain may be disrupted in doing so.
 		var/atom/movable/L_pulling = PULLING(L)
@@ -476,8 +477,9 @@
 		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
-		if(L.buckled)
-			L.buckled.forceMove(get_turf(bottom))
+		if(BUCKLED(L))
+			var/atom/movable/_tmp_buck_36 = BUCKLED(L)
+			_tmp_buck_36.forceMove(get_turf(bottom))
 
 		var/atom/movable/P = null
 		var/atom/movable/L_pulling = PULLING(L)

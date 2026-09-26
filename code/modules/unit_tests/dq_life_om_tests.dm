@@ -697,7 +697,7 @@
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_STUNNED), 1, "one unit per LIFE_CYCLE of real time")
 	scheduler_advance(LIFE_CYCLE_SECONDS)
 	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "the stun ends on its own")
-	TEST_ASSERT(H.canmove, "canmove comes back when it ends (stat [H.stat], sleeping [H.has_status(EFFECT_SLEEPING)], lying [H.lying], resting [H.resting], paralysed [H.has_status(EFFECT_PARALYZED)], weakened [H.has_status(EFFECT_WEAKENED)], buckled [H.buckled])")
+	TEST_ASSERT(H.canmove, "canmove comes back when it ends (stat [H.stat], sleeping [H.has_status(EFFECT_SLEEPING)], lying [H.lying], resting [H.resting], paralysed [H.has_status(EFFECT_PARALYZED)], weakened [H.has_status(EFFECT_WEAKENED)], buckled [BUCKLED(H)])")
 
 	H.status_at_least(EFFECT_WEAKENED, 5)
 	H.status_set(EFFECT_WEAKENED, 1)

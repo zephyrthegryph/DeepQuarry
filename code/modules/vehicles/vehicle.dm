@@ -93,8 +93,8 @@
 
 	//Dummy loads do not have to be moved as they are just an overlay
 	//See load_object() proc in cargo_trains.dm for an example
-	//Also mobs are buckled to the vehicle and get moved in atom/movable/Move's call to take care of that
-	if(load && !(load in buckled_mobs) && !istype(load, /datum/vehicle_dummy_load))
+	//Also mobs are BUCKLED(src) to the vehicle and get moved in atom/movable/Move's call to take care of that
+	if(load && !(load in BUCKLED_MOBS(src)) && !istype(load, /datum/vehicle_dummy_load))
 		load.forceMove(loc)
 
 /obj/vehicle/attackby(obj/item/W as obj, mob/user as mob)

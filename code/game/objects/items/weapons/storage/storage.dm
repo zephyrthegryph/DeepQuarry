@@ -529,7 +529,7 @@
 	make_contents_real()
 	if(!istype(user)) return // If the user passed in isn't a living mob, exit
 	if(target != user) return // If the user didn't drag themselves, exit
-	if(user.incapacitated() || user.buckled) return // If user is incapacitated or buckled, exit
+	if(user.incapacitated() || BUCKLED(user)) return // If user is incapacitated or buckled, exit
 	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return // No jumping into your own equipment
 	if(ishuman(user) && user.get_effective_size(TRUE) > 0.25) return // Only micro characters
 	if(ismouse(user) && user.get_effective_size(TRUE) > 1) return // Only normal sized mice or less

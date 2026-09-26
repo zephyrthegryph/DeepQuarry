@@ -65,7 +65,7 @@
 
 /// The old MouseDrop_T guard: actor able to act, adjacent to both, and (if dropping themself) able to move.
 /obj/machinery/reagent_refinery/waste_processor/proc/drag_actor_ok(mob/actor, atom/target, atom/movable/dropping)
-	if(actor.buckled || actor.stat || actor.restrained() || !actor.Adjacent(target) || !actor.Adjacent(dropping) || !istype(dropping) || (actor == dropping && !actor.canmove))
+	if(BUCKLED(actor) || actor.stat || actor.restrained() || !actor.Adjacent(target) || !actor.Adjacent(dropping) || !istype(dropping) || (actor == dropping && !actor.canmove))
 		return FALSE
 	return TRUE
 

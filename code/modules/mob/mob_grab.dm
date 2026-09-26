@@ -61,7 +61,7 @@
 /obj/item/grab/proc/throw_held()
 	var/mob/living/affecting = GRAB_TARGET(src)
 	if(affecting)
-		if(affecting.buckled)
+		if(BUCKLED(affecting))
 			return null
 		if(state >= GRAB_AGGRESSIVE)
 			animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1)
@@ -185,7 +185,7 @@
 	if(!affecting)
 		qdel(src)
 		return
-	if(affecting.buckled)
+	if(BUCKLED(affecting))
 		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
 		return
 	if(affecting.lying && state != GRAB_KILL)

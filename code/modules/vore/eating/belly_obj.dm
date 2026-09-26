@@ -615,8 +615,9 @@
 		var/mob/mob_prey = prey
 		if(owner.stat == DEAD)
 			return
-		if(mob_prey.buckled)
-			mob_prey.buckled.unbuckle_mob()
+		if(BUCKLED(mob_prey))
+			var/atom/movable/_tmp_buck_46 = BUCKLED(mob_prey)
+			_tmp_buck_46.unbuckle_mob()
 		if(mob_prey.ckey)
 			GLOB.prey_eaten_roundstat++
 			if(owner.mind)

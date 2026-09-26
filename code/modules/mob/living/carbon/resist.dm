@@ -46,7 +46,7 @@
 			span_warning("You attempt to break your [I]. (This will take around 5 seconds and you need to stand still)"))
 
 		if(do_after(src, 5 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED))
-			if(!I || buckled)
+			if(!I || BUCKLED(src))
 				return
 			visible_message(span_danger("[src] manages to break [I]!"),
 				span_warning("You successfully break your [I]."))
@@ -54,6 +54,7 @@
 
 			drop_from_inventory(I)
 
+			var/obj/buckled = BUCKLED(src)
 			if(buckled && buckled.buckle_require_restraints)
 				buckled.unbuckle_mob()
 
@@ -70,7 +71,7 @@
 		drop_from_inventory(I)
 
 /mob/living/carbon/resist_buckle()
-	if(!buckled)
+	if(!BUCKLED(src))
 		return
 
 	if(!restrained())
@@ -83,6 +84,7 @@
 		)
 
 	if(do_after(src, 2 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED))
+		var/obj/buckled = BUCKLED(src)
 		if(!buckled)
 			return
 		visible_message(span_danger("[src] manages to unbuckle themself!"),

@@ -181,8 +181,9 @@
 		if(isliving(M) && dest.abductor)
 			var/mob/living/L = M
 			//Situations to get the mob out of
-			if(L.buckled)
-				L.buckled.unbuckle_mob()
+			if(BUCKLED(L))
+				var/atom/movable/_tmp_buck_34 = BUCKLED(L)
+				_tmp_buck_34.unbuckle_mob()
 			if(istype(L.loc,/obj/mecha))
 				var/obj/mecha/ME = L.loc
 				ME.go_out()

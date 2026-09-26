@@ -198,9 +198,9 @@
 		else
 			msg += span_warning("[p_Theyre()] [icon2html(get_equipped_item(SLOT_ID_HANDCUFFED),user.client)] handcuffed!")
 
-	//buckled
-	if(buckled)
-		msg += span_warning("[p_Theyre()] [icon2html(buckled,user.client)] buckled to [buckled]!")
+	//BUCKLED(src)
+	if(BUCKLED(src))
+		msg += span_warning("[p_Theyre()] [icon2html(BUCKLED(src),user.client)] BUCKLED(src) to [BUCKLED(src)]!")
 
 	//belt
 	if(get_equipped_item(SLOT_ID_BELT) && !(skip_gear & EXAMINE_SKIPBELT) && get_equipped_item(SLOT_ID_BELT).show_examine)

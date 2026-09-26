@@ -73,7 +73,7 @@
 	if(source.is_incorporeal())
 		return
 
-	if(source.buckled || source.throwing || source.movement_type & (source.is_ventcrawling | source.flying))
+	if(BUCKLED(source) || source.throwing || source.movement_type & (source.is_ventcrawling | source.flying))
 		return
 
 	if(source.lying) //play crawling sound if we're lying

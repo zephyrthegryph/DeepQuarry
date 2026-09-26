@@ -132,8 +132,8 @@
 
 	var/mob/living/carbon/human/M = src
 
-	if(buckled)
-		var/obj/Ob = buckled
+	if(BUCKLED(src))
+		var/obj/Ob = BUCKLED(src)
 		if(Ob.buckle_lying)
 			to_chat(M, span_notice("You cannot use your augments when restrained."))
 			return 0

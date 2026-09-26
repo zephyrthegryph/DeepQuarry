@@ -683,8 +683,9 @@
 		if(isliving(user) && applies_stasis)
 			var/mob/living/L = occupant
 			L.set_stasis(/datum/modifier/stasis/total, src)
-		if(user.buckled && istype(user.buckled, /obj/structure/bed/chair/wheelchair))
-			user.buckled.loc = user.loc
+		if(BUCKLED(user) && istype(BUCKLED(user), /obj/structure/bed/chair/wheelchair))
+			var/atom/movable/_tmp_buck_6 = BUCKLED(user)
+			_tmp_buck_6.loc = user.loc
 
 		icon_state = occupied_icon_state
 
@@ -788,8 +789,9 @@
 		if(isliving(M) && applies_stasis)
 			var/mob/living/L = M
 			L.set_stasis(/datum/modifier/stasis/total, src)
-		if(M.buckled && istype(M.buckled, /obj/structure/bed/chair/wheelchair))
-			M.buckled.loc = M.loc
+		if(BUCKLED(M) && istype(BUCKLED(M), /obj/structure/bed/chair/wheelchair))
+			var/atom/movable/_tmp_buck_7 = BUCKLED(M)
+			_tmp_buck_7.loc = M.loc
 
 		// Book keeping!
 		var/turf/location = get_turf(src)

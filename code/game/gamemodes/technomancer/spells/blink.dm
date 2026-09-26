@@ -44,8 +44,9 @@
 	if(destination)
 		if(ismob(AM))
 			var/mob/living/L = AM
-			if(L.buckled)
-				L.buckled.unbuckle_mob()
+			if(BUCKLED(L))
+				var/atom/movable/_tmp_buck_5 = BUCKLED(L)
+				_tmp_buck_5.unbuckle_mob()
 		AM.forceMove(destination)
 		AM.visible_message(span_infoplain(span_bold("\The [AM]") + " vanishes!"))
 		to_chat(AM, span_notice("You suddenly appear somewhere else!"))

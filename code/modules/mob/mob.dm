@@ -207,7 +207,7 @@
 /mob/proc/buckled()
 	// Preliminary work for a future buckle rewrite,
 	// where one might be fully restrained (like an elecrical chair), or merely secured (shuttle chair, keeping you safe but not otherwise restrained from acting)
-	if(!buckled)
+	if(!BUCKLED(src))
 		return UNBUCKLED
 	return restrained() ? FULLY_BUCKLED : PARTIALLY_BUCKLED
 
@@ -791,6 +791,7 @@
 		DEBUG_INPUT("Denying Facedir for [src] (moving=[client?.moving])")
 		return 0
 	set_dir(ndir)
+	var/obj/buckled = BUCKLED(src)
 	if(buckled && buckled.buckle_movable)
 		buckled.set_dir(ndir)
 	setMoveCooldown(movement_delay())
@@ -994,7 +995,7 @@
 
 /mob/set_dir()
 	if(facing_dir)
-		if(!canface() || lying || buckled || restrained())
+		if(!canface() || lying || BUCKLED(src) || restrained())
 			facing_dir = null
 		else if(dir != facing_dir)
 			return ..(facing_dir)

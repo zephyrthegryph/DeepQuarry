@@ -178,7 +178,7 @@
 
 	//cats!
 	for(var/mob/living/simple_mob/animal/passive/cat/C in viewers(1,targloc))
-		if (!(C.stat || C.buckled))
+		if (!(C.stat || BUCKLED(C)))
 			if(prob(50) && !(C.client))
 				C.visible_message(span_warning("[C] pounces on the light!"), span_warning("You pounce on the light!"))
 				step_towards(C, targloc)

@@ -157,7 +157,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		return TRUE
 	if(isliving(AM))
 		var/mob/living/targetmob = AM
-		if(targetmob.unacidable || !targetmob.digestable || targetmob.buckled || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
+		if(targetmob.unacidable || !targetmob.digestable || BUCKLED(targetmob) || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
 			return FALSE
 		if(isrobot(targetmob))
 			if(!digest_robot)

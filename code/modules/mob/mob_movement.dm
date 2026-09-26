@@ -248,27 +248,28 @@
 
 	var/old_delay = mob.next_move
 
-	if(istype(my_mob.buckled, /obj/vehicle) || ismob(my_mob.buckled))
+	if(istype(BUCKLED(my_mob), /obj/vehicle) || ismob(BUCKLED(my_mob)))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
 		my_mob.next_move = world.time
 		//drunk driving
 		if(my_mob.has_status(EFFECT_CONFUSED) && prob(20)) //vehicles tend to keep moving in the same direction
 			direct = turn(direct, pick(90, -90))
-		if(ismob(my_mob.buckled))
-			var/mob/M = my_mob.buckled
+		if(ismob(BUCKLED(my_mob)))
+			var/mob/M = BUCKLED(my_mob)
 			if(M.next_move > my_mob.next_move) // Don't let piggyback riders move their mob IN ADDITION TO the mob moving
 				return
-		return my_mob.buckled.relaymove(my_mob,direct)
+		var/atom/movable/_tmp_buck_30 = BUCKLED(my_mob)
+		return _tmp_buck_30.relaymove(my_mob,direct)
 
 	var/total_delay = my_mob.movement_delay(n, direct)
 
-	if(PULLED_BY(my_mob) || my_mob.buckled) // Wheelchair driving!
+	if(PULLED_BY(my_mob) || BUCKLED(my_mob)) // Wheelchair driving!
 		if(isspace(loc))
 			return // No wheelchair driving in space
 		if(istype(PULLED_BY(my_mob), /obj/structure/bed/chair/wheelchair))
 			total_delay += 3
-		else if(istype(my_mob.buckled, /obj/structure/bed/chair/wheelchair))
+		else if(istype(BUCKLED(my_mob), /obj/structure/bed/chair/wheelchair))
 			if(ishuman(my_mob))
 				var/mob/living/carbon/human/driver = my_mob
 				var/obj/item/organ/external/l_hand = driver.get_organ(BP_L_HAND)
@@ -306,8 +307,9 @@
 	var/mob/my_mob_puller = PULLED_BY(my_mob)
 	if(istype(my_mob_puller, /obj/structure/bed/chair/wheelchair))
 		. = my_mob_puller.relaymove(my_mob, direct)
-	else if(istype(my_mob.buckled, /obj/structure/bed/chair/wheelchair))
-		. = my_mob.buckled.relaymove(my_mob,direct)
+	else if(istype(BUCKLED(my_mob), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_31 = BUCKLED(my_mob)
+		. = _tmp_buck_31.relaymove(my_mob,direct)
 	else
 		. = my_mob.SelfMove(n, direct, total_delay)
 

@@ -1245,7 +1245,7 @@
 		return TRUE
 	if(isliving(digest_target))
 		var/mob/living/L = digest_target
-		if(L.unacidable || !L.digestable || L.buckled || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
+		if(L.unacidable || !L.digestable || BUCKLED(L) || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
 			return FALSE
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L

@@ -57,9 +57,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 		// ition Start: Prevent taurriding abuse
 		if(isliving(M))
 			var/mob/living/L = M
-			if(LAZYLEN(L.buckled_mobs))
+			if(LAZYLEN(BUCKLED_MOBS(L)))
 				var/datum/riding/R = L.riding_datum
-				for(var/rider in L.buckled_mobs)
+				for(var/rider in BUCKLED_MOBS(L))
 					R.force_dismount(rider)
 		// ition End: Prevent taurriding abuse
 		if(isbelly(target))

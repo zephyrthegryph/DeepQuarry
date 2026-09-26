@@ -160,7 +160,7 @@
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target) || WC)
 		return
 	// Traitgenes Do not allow buckled or ridden mobs
-	if(target.buckled)
+	if(BUCKLED(target))
 		return
 	if(target.has_buckled_mobs())
 		to_chat(user, span_warning("\The [target] has other entities attached to it. Remove them first."))

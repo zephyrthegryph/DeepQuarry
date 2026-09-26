@@ -16,8 +16,8 @@
 	if(incapacitated())
 		to_chat(src, span_warning("You cannot ventcrawl in your current state!"))
 		return FALSE
-	if(buckled)
-		to_chat(src, span_warning("You cannot ventcrawl while buckled!"))
+	if(BUCKLED(src))
+		to_chat(src, span_warning("You cannot ventcrawl while BUCKLED(src)!"))
 		return FALSE
 	if(restrict_vore_ventcrawl)
 		var/foundstuff = FALSE

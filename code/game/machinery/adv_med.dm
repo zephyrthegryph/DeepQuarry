@@ -114,7 +114,7 @@
 		to_chat(user, span_notice("\The [src] is already occupied."))
 		return 0 //occupied
 
-	if(O.buckled)
+	if(BUCKLED(O))
 		return 0
 	if(O.abiotic())
 		to_chat(user, span_notice("Subject cannot have abiotic items on."))

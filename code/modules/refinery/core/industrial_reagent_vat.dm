@@ -18,8 +18,8 @@
 	default_apply_parts()
 
 /obj/machinery/reagent_refinery/vat/process()
-	if(buckled_mobs && buckled_mobs.len && reagents.total_volume > 0)
-		for(var/mob/living/L in buckled_mobs)
+	if(length(BUCKLED_MOBS(src)) && reagents.total_volume > 0)
+		for(var/mob/living/L in BUCKLED_MOBS(src))
 			reagents.trans_to(L, 1) // Soak in the juices
 
 	if(!anchored)
@@ -74,7 +74,7 @@
 
 /// The old MouseDrop_T's guard clause, shared by both drag branches.
 /obj/machinery/reagent_refinery/vat/proc/mousedrop_allowed(mob/user, atom/movable/C)
-	return !(user.buckled || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
+	return !(BUCKLED(user) || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
 
 /// The old MouseDrop_T's first branch: drains a trolley tank into the vat.
 /datum/interaction/machine_drag/reagent_vat_drain_trolley

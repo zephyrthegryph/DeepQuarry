@@ -336,7 +336,7 @@
 
 /mob/living/proc/get_scooped(mob/living/carbon/grabber, self_grab)
 
-	if(!holder_type || buckled || LAZYLEN(pinned))
+	if(!holder_type || BUCKLED(src) || LAZYLEN(pinned))
 		return
 
 	// Dodge pickup if enabled by personal space bubble.

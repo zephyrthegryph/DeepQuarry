@@ -39,13 +39,13 @@
 	if(riding_datum) //Bit of slowdown for taur rides if rider is bigger or fatter than mount.
 		var/datum/riding/R = riding_datum
 		var/mob/living/L = R.ridden
-		for(var/mob/living/M in L.buckled_mobs)
+		for(var/mob/living/M in BUCKLED_MOBS(L))
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
 				if(H.size_multiplier > L.size_multiplier)
 					. += 1
 
-	if(istype(buckled, /obj/structure/bed/chair/wheelchair))
+	if(istype(BUCKLED(src), /obj/structure/bed/chair/wheelchair))
 		for(var/organ_name in list(BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM))
 			var/obj/item/organ/external/E = get_organ(organ_name)
 			if(!E || E.is_stump())

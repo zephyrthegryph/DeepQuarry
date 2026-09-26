@@ -167,6 +167,7 @@
 		var/original_canmove = canmove
 		status_set(EFFECT_STUNNED, 0)
 		status_set(EFFECT_WEAKENED, 0)
+		var/obj/buckled = BUCKLED(src)
 		if(buckled)
 			buckled.unbuckle_mob()
 		var/mob/pulledby = PULLED_BY(src)
@@ -268,6 +269,7 @@
 		var/original_canmove = canmove
 		status_set(EFFECT_STUNNED, 0)
 		status_set(EFFECT_WEAKENED, 0)
+		var/obj/buckled = BUCKLED(src)
 		if(buckled)
 			buckled.unbuckle_mob()
 		var/mob/pulledby = PULLED_BY(src)

@@ -127,7 +127,7 @@
 /datum/unarmed_attack/bite/event1
 
 /datum/unarmed_attack/bite/is_usable(mob/living/carbon/human/user, mob/living/carbon/human/target, zone)
-	if (user.is_muzzled() || user.buckled)
+	if (user.is_muzzled() || BUCKLED(user))
 		return FALSE
 	if (user == target && ((zone == BP_GROIN && (prob(98)) || (zone == BP_HEAD || zone == O_EYES || zone == O_MOUTH)))) //biting your own groin is hard. 2% hit chance.
 		return FALSE
@@ -199,7 +199,7 @@
 /datum/unarmed_attack/kick/event1
 
 /datum/unarmed_attack/kick/is_usable(mob/living/carbon/human/user, mob/living/carbon/human/target, zone)
-	if(user.get_equipped_item(SLOT_ID_LEGCUFFED) || user.buckled)
+	if(user.get_equipped_item(SLOT_ID_LEGCUFFED) || BUCKLED(user))
 		return FALSE
 
 	if(!(zone in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_GROIN)))
@@ -245,7 +245,7 @@
 
 /datum/unarmed_attack/stomp/is_usable(mob/living/carbon/human/user, mob/living/carbon/human/target, zone)
 
-	if (user.get_equipped_item(SLOT_ID_LEGCUFFED) || user.buckled)
+	if (user.get_equipped_item(SLOT_ID_LEGCUFFED) || BUCKLED(user))
 		return FALSE
 
 	if(!istype(target))

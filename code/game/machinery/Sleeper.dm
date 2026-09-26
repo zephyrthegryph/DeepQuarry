@@ -486,7 +486,7 @@
 		return
 	if(stat & (BROKEN|NOPOWER))
 		return
-	if(M.buckled)
+	if(BUCKLED(M))
 		return
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
@@ -500,7 +500,7 @@
 		visible_message("\The [user] starts putting [M] into \the [src].")
 
 	if(do_after(user, 2 SECONDS, target = src))
-		if(M.buckled)
+		if(BUCKLED(M))
 			return
 		if(occupant)
 			to_chat(user, span_warning("\The [src] is already occupied."))

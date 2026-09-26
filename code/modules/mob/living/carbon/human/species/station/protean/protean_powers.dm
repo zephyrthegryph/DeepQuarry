@@ -209,8 +209,9 @@
 	var/mob/living/target = pick(potentials)
 	if(!can_spontaneous_vore(H, target))
 		return
-	if(target.buckled)
-		target.buckled.unbuckle_mob(target, force = TRUE)
+	if(BUCKLED(target))
+		var/atom/movable/_tmp_buck_18 = BUCKLED(target)
+		_tmp_buck_18.unbuckle_mob(target, force = TRUE)
 	H.vore_selected.nom_atom(target)
 	to_chat(target, span_warning("\The [H] quickly engulfs you, [H.vore_selected.vore_verb]ing you into their [H.vore_selected.get_belly_name()]!"))
 

@@ -145,7 +145,7 @@
 				I.singularity_pull(target, STAGE_THREE)
 				suckables += I
 			for(var/mob/living/L in oview(pull_range, target))
-				if(L.anchored || !L.devourable || L == user || L.buckled || !L.can_be_drop_prey || L == attachment_holder)
+				if(L.anchored || !L.devourable || L == user || BUCKLED(L) || !L.can_be_drop_prey || L == attachment_holder)
 					continue
 				L.singularity_pull(target, STAGE_THREE)
 				suckables += L
@@ -158,7 +158,7 @@
 					continue
 				suckables += I
 			for(var/mob/living/L in target)
-				if(L.anchored || !L.devourable || L == user || L.buckled || !L.can_be_drop_prey || L == attachment_holder)
+				if(L.anchored || !L.devourable || L == user || BUCKLED(L) || !L.can_be_drop_prey || L == attachment_holder)
 					continue
 				if(L.size_multiplier < 0.5 || vac_power >= 6)
 					suckables += L
@@ -252,7 +252,7 @@
 	if(isliving(target))
 		var/mob/living/L = target
 		var/valid_to_suck = FALSE
-		if(L.anchored || !L.devourable || L == user || L.buckled || !L.can_be_drop_prey)
+		if(L.anchored || !L.devourable || L == user || BUCKLED(L) || !L.can_be_drop_prey)
 			return
 		if(vac_power >= 3)
 			if(L.size_multiplier > 0.5 || HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB))

@@ -479,9 +479,10 @@ SUBSYSTEM_DEF(job)
 				human_mob.forceMove(spawn_turf)
 
 		// Moving wheelchair if they have one
-		if(human_mob.buckled && istype(human_mob.buckled, /obj/structure/bed/chair/wheelchair))
-			human_mob.buckled.forceMove(human_mob.loc)
-			human_mob.buckled.set_dir(human_mob.dir)
+		var/obj/human_mob_buckled = BUCKLED(human_mob)
+		if(human_mob_buckled && istype(human_mob_buckled, /obj/structure/bed/chair/wheelchair))
+			human_mob_buckled.forceMove(human_mob.loc)
+			human_mob_buckled.set_dir(human_mob.dir)
 
 	if(job)
 

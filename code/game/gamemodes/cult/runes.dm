@@ -821,7 +821,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			return fizzle(user)
 		if (cultist == user) //just to be sure.
 			return
-		if(!(cultist.buckled || \
+		if(!(BUCKLED(cultist) || \
 			cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
 			istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
 			(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
@@ -830,8 +830,9 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		))
 			to_chat(user, span_warning("The [cultist] is already free."))
 			return
-		if(cultist.buckled)
-			cultist.buckled.unbuckle_mob(cultist, TRUE)
+		if(BUCKLED(cultist))
+			var/atom/movable/_tmp_buck_3 = BUCKLED(cultist)
+			_tmp_buck_3.unbuckle_mob(cultist, TRUE)
 		if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
 			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
@@ -867,7 +868,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			return fizzle(user)
 		if (cultist == user) //just to be sure.
 			return
-		if(cultist.buckled || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
+		if(BUCKLED(cultist) || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
 			to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
 			return fizzle(user)
 		cultist.forceMove(src.loc)

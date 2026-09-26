@@ -1150,8 +1150,9 @@
 /datum/decl/chemical_reaction/instant/slime/bluespace_chaotic_tele/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Bluespace extract reaction (chaos teleport) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	for(var/mob/living/M in range(2,get_turf(holder.my_atom)))
-		if(M.buckled)
-			M.buckled.unbuckle_mob()
+		if(BUCKLED(M))
+			var/atom/movable/_tmp_buck_51 = BUCKLED(M)
+			_tmp_buck_51.unbuckle_mob()
 
 		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
 		sparks.set_up(3, 0, get_turf(M))

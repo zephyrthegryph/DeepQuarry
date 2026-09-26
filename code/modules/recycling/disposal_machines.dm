@@ -370,7 +370,7 @@
 		return
 	if(user.stat || !user.canmove || !istype(target))
 		return
-	if(target.buckled || get_dist(user, src) > 1 || get_dist(user, target) > 1)
+	if(BUCKLED(target) || get_dist(user, src) > 1 || get_dist(user, target) > 1)
 		return
 
 	add_fingerprint(user)

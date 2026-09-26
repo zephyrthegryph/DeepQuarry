@@ -52,7 +52,7 @@
 	. = ..()
 	if(.)
 		if(has_buckled_mobs())
-			for(var/mob/living/L as anything in buckled_mobs)
+			for(var/mob/living/L as anything in BUCKLED_MOBS(src))
 				L.set_dir(dir)
 
 /obj/structure/bed/chair/wheelchair/attackby(obj/item/W as obj, mob/user as mob)
@@ -78,7 +78,7 @@
 			om_unlink(src, pulling, /datum/om/relation/pulling)
 			to_chat(user, span_warning("You lost your grip!"))
 		return
-	if(has_buckled_mobs() && pulling && (user in buckled_mobs))
+	if(has_buckled_mobs() && pulling && (user in BUCKLED_MOBS(src)))
 		if(pulling.stat || pulling.has_status(EFFECT_STUNNED) || pulling.has_status(EFFECT_WEAKENED) || pulling.has_status(EFFECT_PARALYZED) || pulling.lying || pulling.restrained())
 			om_unlink(src, pulling, /datum/om/relation/pulling)
 			pulling = PULLING(src)
@@ -96,7 +96,7 @@
 	if(pulling && (get_dir(src.loc, pulling.loc) == direction))
 		to_chat(user, span_warning("You cannot go there."))
 		return
-	if(pulling && has_buckled_mobs() && (user in buckled_mobs))
+	if(pulling && has_buckled_mobs() && (user in BUCKLED_MOBS(src)))
 		to_chat(user, span_warning("You cannot drive while being pushed."))
 		return
 
@@ -105,11 +105,11 @@
 	var/turf/T = null
 	//--1---Move occupant---1--//
 	if(has_buckled_mobs())
-		for(var/mob/living/L as anything in buckled_mobs)
-			// Transient, not a relation change (om-field-exempt).
-			L.buckled = null // om-field-exempt
+		for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+			// Transient, not a relation change.
+			L.skip_buckled_move_redirect = TRUE
 			step(L, direction)
-			L.buckled = src // om-field-exempt
+			L.skip_buckled_move_redirect = FALSE
 	//--2----Move driver----2--//
 	if(pulling)
 		T = pulling.loc
@@ -118,7 +118,7 @@
 	//--3--Move wheelchair--3--//
 	step(src, direction)
 	if(has_buckled_mobs()) // Make sure it stays beneath the occupant
-		var/mob/living/L = buckled_mobs[1]
+		var/mob/living/L = BUCKLED_MOBS(src)[1]
 		Move(L.loc)
 	set_dir(direction)
 	if(pulling) // Driver
@@ -139,12 +139,12 @@
 	. = ..()
 	playsound(src, 'sound/effects/roll.ogg', 75, 1)
 	if(has_buckled_mobs())
-		for(var/mob/living/occupant as anything in buckled_mobs)
+		for(var/mob/living/occupant as anything in BUCKLED_MOBS(src))
 			if(!driving)
-				// Transient, not a relation change (om-field-exempt).
-				occupant.buckled = null // om-field-exempt
+				// Transient, not a relation change.
+				occupant.skip_buckled_move_redirect = TRUE
 				occupant.Move(src.loc)
-				occupant.buckled = src // om-field-exempt
+				occupant.skip_buckled_move_redirect = FALSE
 				if (occupant && (src.loc != occupant.loc))
 					if (propelled)
 						for (var/mob/O in src.loc)
@@ -166,14 +166,14 @@
 		MouseDrop(user)
 	else
 		if(has_buckled_mobs())
-			for(var/A in buckled_mobs)
+			for(var/A in BUCKLED_MOBS(src))
 				user_unbuckle_mob(A, user)
 	return
 
 /obj/structure/bed/chair/wheelchair/click_ctrl(mob/user)
 	if(in_range(src, user))
 		if(!ishuman(user))	return
-		if(has_buckled_mobs() && (user in buckled_mobs))
+		if(has_buckled_mobs() && (user in BUCKLED_MOBS(src)))
 			to_chat(user, span_warning("You realize you are unable to push the wheelchair you sit in."))
 			return
 		var/mob/living/pulling = PULLING(src)

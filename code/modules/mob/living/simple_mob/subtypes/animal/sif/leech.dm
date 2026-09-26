@@ -80,7 +80,7 @@
 	if(!istype(H))
 		return .
 
-	if(istype(L.buckled, /obj/vehicle) || dq_get_hovering(L) || L.flying) // Ignore people dq_get_hovering(src) or on boats.
+	if(istype(BUCKLED(L), /obj/vehicle) || dq_get_hovering(L) || L.flying) // Ignore people dq_get_hovering(src) or on boats.
 		return TRUE
 
 	if(!.)

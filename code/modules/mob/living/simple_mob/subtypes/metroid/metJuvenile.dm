@@ -55,7 +55,7 @@
 			status_set(EFFECT_PARALYZED, 0)
 		return
 
-	if(nutrition >= evo_point && !buckled && vore_fullness == 0 && !victim)
+	if(nutrition >= evo_point && !BUCKLED(src) && vore_fullness == 0 && !victim)
 		if(next == "/mob/living/simple_mob/metroid/juvenile/queen" && GLOB.queen_amount > 0)
 			to_chat(src, span_warning("There is already a queen."))
 			return
@@ -64,7 +64,7 @@
 		sleep(50)
 		expand_troid()
 
-	if(nutrition >= evo_limit && (buckled || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
+	if(nutrition >= evo_limit && (BUCKLED(src) || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()
 		prey_excludes.Cut()
 		stop_consumption()
@@ -105,8 +105,9 @@
 					L.status_at_least(EFFECT_WEAKENED, 4)
 					L.status_at_least(EFFECT_STUNNED, 4)
 					do_attack_animation(L)
-					if(L.buckled)
-						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents metroids from jumping on you.
+					if(BUCKLED(L))
+						var/atom/movable/_tmp_buck_23 = BUCKLED(L)
+						_tmp_buck_23.unbuckle_mob() // To prevent an exploit where being BUCKLED(src) prevents metroids from jumping on you.
 					L.status_at_least(EFFECT_STUTTERING, stun_power)
 
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -125,8 +126,9 @@
 					playsound(src, 'sound/weapons/thudswoosh.ogg', 75, 1)
 					L.status_at_least(EFFECT_WEAKENED, 2)
 					do_attack_animation(L)
-					if(L.buckled)
-						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents metroids from jumping on you.
+					if(BUCKLED(L))
+						var/atom/movable/_tmp_buck_24 = BUCKLED(L)
+						_tmp_buck_24.unbuckle_mob() // To prevent an exploit where being BUCKLED(src) prevents metroids from jumping on you.
 					return FALSE
 
 				else // Failed to do anything this time.

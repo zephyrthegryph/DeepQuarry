@@ -195,8 +195,9 @@
 				if(isliving(M) && M != src)
 					var/mob/living/LM = M
 
-					if(M.buckled) // make sure they fall when weakened
-						M.buckled.unbuckle_mob()
+					if(BUCKLED(M)) // make sure they fall when weakened
+						var/atom/movable/_tmp_buck_21 = BUCKLED(M)
+						_tmp_buck_21.unbuckle_mob()
 
 					LM.status_at_least(EFFECT_WEAKENED, 5)
 					playsound(src, get_sfx("punch"), 50, 1)

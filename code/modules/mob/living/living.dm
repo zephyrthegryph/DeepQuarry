@@ -49,7 +49,7 @@
 			var/obj/structure/mob_spawner/S = nest
 			S.get_death_report(src)
 		nest = null
-	// buckled is already null here: the buckled_to relation
+	// BUCKLED(src) is already null here: the buckled_to relation
 	// (code/datums/om/library.dm) unlinked in the destroy transaction's phase
 	// 5 teardown, before Destroy() ran, and its on_unlink() hook did the
 	// unbuckling.
@@ -265,6 +265,7 @@
 /// Performs the actual healing of Aheal, seperate from revive() because it does not use client prefs. Will not heal everything, and expects to be called through revive() or with a bodyrecord doing a respawn/revive.
 /mob/living/proc/revival_healing_action()
 	rejuvenate()
+	var/obj/buckled = BUCKLED(src)
 	if(buckled)
 		buckled.unbuckle_mob()
 	if(iscarbon(src))
@@ -385,7 +386,7 @@
 		return TRUE
 
 	//unbuckling yourself
-	if(buckled)
+	if(BUCKLED(src))
 		resist_buckle()
 		return TRUE
 
@@ -401,6 +402,7 @@
 			resist_restraints()
 
 /mob/living/proc/resist_buckle()
+	var/obj/buckled = BUCKLED(src)
 	if(buckled)
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/vehicle = buckled
@@ -637,6 +639,7 @@
 		lying = FALSE
 		canmove = TRUE
 	else
+		var/obj/buckled = BUCKLED(src)
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/V = buckled
 			if(is_physically_disabled())
@@ -703,9 +706,9 @@
 		lying_prev = lying
 		update_transform()
 		update_mob_action_buttons()
-		if(lying && LAZYLEN(buckled_mobs))
-			for(var/mob/living/L as anything in buckled_mobs)
-				if(buckled_mobs[L] != "riding")
+		if(lying && LAZYLEN(BUCKLED_MOBS(src)))
+			for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+				if(BUCKLED_MOBS(src)[L] != "riding")
 					continue // Only boot off riders
 				if(riding_datum)
 					riding_datum.force_dismount(L)

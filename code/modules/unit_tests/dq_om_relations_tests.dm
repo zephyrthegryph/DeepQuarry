@@ -28,9 +28,9 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "buckle_mob should succeed on a fresh chair")
-	TEST_ASSERT_EQUAL(H.buckled, C, "H.buckled should be the chair")
-	TEST_ASSERT(H in C.buckled_mobs, "H should be in the chair's buckled_mobs")
-	TEST_ASSERT_EQUAL(om_relation_of(H, /datum/om/relation/buckled_to), C, "om_relation_of should agree with the buckled var")
+	TEST_ASSERT_EQUAL(BUCKLED(H), C, "BUCKLED(H) should be the chair")
+	TEST_ASSERT(H in BUCKLED_MOBS(C), "H should be in the chair's BUCKLED_MOBS")
+	TEST_ASSERT_EQUAL(om_relation_of(H, /datum/om/relation/buckled_to), C, "om_relation_of should agree with BUCKLED()")
 	TEST_ASSERT(om_has(H, EFFECT_BUCKLED), "buckling should raise EFFECT_BUCKLED on the mob")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, C, /datum/om/relation/buckled_to), "an edge should exist between H and C")
 
@@ -44,7 +44,7 @@
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "setup: buckle_mob should succeed")
 	qdel(C)
 	TEST_ASSERT(QDELETED(C), "setup: the chair should be deleted")
-	TEST_ASSERT_NULL(H.buckled, "H.buckled should be cleared once the chair is deleted")
+	TEST_ASSERT_NULL(BUCKLED(H), "BUCKLED(H) should be cleared once the chair is deleted")
 	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
 	TEST_ASSERT(!om_has(H, EFFECT_BUCKLED), "EFFECT_BUCKLED should be gone once unbuckled")
 
@@ -58,8 +58,8 @@
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "setup: buckle_mob should succeed")
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the mob should be deleted")
-	TEST_ASSERT_EQUAL(LAZYLEN(C.buckled_mobs), 0, "the chair should have no buckled mobs left")
-	TEST_ASSERT(!(H in C.buckled_mobs), "the deleted mob should not still be listed")
+	TEST_ASSERT_EQUAL(LAZYLEN(BUCKLED_MOBS(C)), 0, "the chair should have no buckled mobs left")
+	TEST_ASSERT(!(H in BUCKLED_MOBS(C)), "the deleted mob should not still be listed")
 
 /// break_if = in_range(0) (library.dm) unlinks the edge outright -- not just
 /// its contribution -- the instant the mob ends up off the chair's tile, e.g.
@@ -83,8 +83,8 @@
 	// it directly so the test doesn't depend on tick timing.
 	om_edge_refresh(edge)
 
-	TEST_ASSERT_NULL(H.buckled, "H.buckled should be cleared once out of range")
-	TEST_ASSERT_EQUAL(LAZYLEN(C.buckled_mobs), 0, "the chair should have no buckled mobs left")
+	TEST_ASSERT_NULL(BUCKLED(H), "BUCKLED(H) should be cleared once out of range")
+	TEST_ASSERT_EQUAL(LAZYLEN(BUCKLED_MOBS(C)), 0, "the chair should have no buckled mobs left")
 	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
 	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
 	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")

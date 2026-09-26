@@ -18,7 +18,7 @@
 	if(blocked >= 100)
 		return
 
-	if(L.buckled) //wheelchairs, office chairs, rollerbeds
+	if(BUCKLED(L)) //wheelchairs, office chairs, rollerbeds
 		return
 
 	if(!L.injure(INJURY_BURN, 30, target_zone, src, flags = INJURE_ARMORED))

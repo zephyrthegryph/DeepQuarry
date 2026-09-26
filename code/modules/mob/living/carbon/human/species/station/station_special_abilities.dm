@@ -31,7 +31,7 @@
 	set category = "Abilities.General"
 
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
 		to_chat(src, "You cannot bite anyone in your current state!")
 		return
 
@@ -67,7 +67,7 @@
 
 	if(last_special > world.time) return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
 		to_chat(src, "You cannot bite in your current state.")
 		return
 	if(B.vessel.total_volume <= 0 || B.isSynthetic()) //Do they have any blood in the first place, and are they synthetic?
@@ -387,7 +387,7 @@
 		to_chat(src,span_warning("You can't shred that type of creature."))
 		return FALSE
 	//Needs to be capable (replace with incapacitated call?)
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
 		to_chat(src,span_warning("You cannot do that in your current state!"))
 		return FALSE
 	//Needs to be adjacent, at the very least.
@@ -632,7 +632,7 @@
 		to_chat(src, "You don't have enough space to spin a cocoon!")
 		return
 
-	if(buckled ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(BUCKLED(src) ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -733,8 +733,9 @@
 			to_chat(target, span_warning("You got away from whatever that was..."))
 			to_chat(src, span_notice("They got away."))
 			return
-		if(target.buckled) //how are you buckled in the water?!
-			target.buckled.unbuckle_mob()
+		if(BUCKLED(target)) //how are you BUCKLED(src) in the water?!
+			var/atom/movable/_tmp_buck_19 = BUCKLED(target)
+			_tmp_buck_19.unbuckle_mob()
 		target.visible_message(span_vwarning("\The [target] suddenly disappears, being dragged into the water!"),\
 			span_vdanger("You are dragged below the water and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
 		to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected.get_belly_name()]."))
@@ -1401,8 +1402,9 @@
 		if(target.loc != starting_loc)
 			to_chat(src, span_notice("\The [target] is no longer within reach."))
 			return
-		if(target.buckled)
-			target.buckled.unbuckle_mob()
+		if(BUCKLED(target))
+			var/atom/movable/_tmp_buck_20 = BUCKLED(target)
+			_tmp_buck_20.unbuckle_mob()
 		to_chat(src, span_vwarning("You manage to [lowertext(belly.vore_verb)] \the [target]!"))
 		to_chat(pred, span_vnotice("Your [belly] manages to [lowertext(belly.vore_verb)] \the [target]."))
 		to_chat(target, span_vwarning("You are [lowertext(belly.vore_verb)]ed by \The [pred]'s [belly]!"))

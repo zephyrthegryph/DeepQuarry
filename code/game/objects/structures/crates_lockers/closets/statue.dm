@@ -20,8 +20,9 @@
 	var/found_target = FALSE
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
 		found_target = TRUE
-		if(L.buckled)
-			L.buckled.unbuckle_mob(L, TRUE)
+		if(BUCKLED(L))
+			var/atom/movable/_tmp_buck_9 = BUCKLED(L)
+			_tmp_buck_9.unbuckle_mob(L, TRUE)
 			L.anchored = FALSE
 		L.forceMove(src)
 		L.sdisabilities |= MUTE

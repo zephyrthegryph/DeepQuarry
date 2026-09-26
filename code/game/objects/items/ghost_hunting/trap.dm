@@ -161,7 +161,7 @@
 			)
 		if(do_after(user, 6 SECONDS, target = src))
 			user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
-			for(var/A in buckled_mobs)
+			for(var/A in BUCKLED_MOBS(src))
 				unbuckle_mob(A)
 			anchored = FALSE
 			deployed = FALSE

@@ -326,8 +326,8 @@ emp_act
 /mob/living/carbon/human/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(src.is_incorporeal())
 		return
-//	if(buckled && buckled == AM)
-//		return // Don't get hit by the thing we're buckled to.
+//	if(BUCKLED(src) && BUCKLED(src) == AM)
+//		return // Don't get hit by the thing we're BUCKLED(src) to.
 
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
@@ -409,7 +409,7 @@ emp_act
 		var/mass = thrown_object.w_class/THROWNOBJ_KNOCKBACK_DIVISOR
 		var/momentum = speed*mass
 
-		if(thrown_object.throw_source && momentum >= THROWNOBJ_KNOCKBACK_SPEED && !buckled)
+		if(thrown_object.throw_source && momentum >= THROWNOBJ_KNOCKBACK_SPEED && !BUCKLED(src))
 			var/dir = get_dir(thrown_object.throw_source, src)
 
 			visible_message(span_filter_warning("[span_red("[src] staggers under the impact!")]"),span_filter_warning("[span_red("You stagger under the impact!")]"))
