@@ -34,7 +34,6 @@
 		/obj/machinery/clonepod,
 		/obj/machinery/vr_sleeper,
 		/obj/machinery/transportpod,
-		/obj/machinery/restoration_cell,
 		/obj/machinery/suit_cycler,
 		/obj/mecha,
 	)
