@@ -314,8 +314,7 @@
 
 	if(!throw_item)
 		return FALSE
-	spawn(0)
-		throw_item.throw_at(target,16,3,src)
+	throw_item.throw_at(target,16,3,src)
 	src.visible_message(span_warning("[src] launches [throw_item.name] at [target.name]!"))
 	SStgui.update_uis(src)
 	update_icon()

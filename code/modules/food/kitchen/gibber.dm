@@ -223,34 +223,36 @@
 
 	occupant.ghostize()
 
-	spawn(gib_time)
-		var/mob/living/gibbed = occupant
-		gibbed.gib()
-		occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
-		if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
-			// remains stay physically in the slot, but are no longer "the occupant" --
-			// unlink without a ledger move (the remains stay physically where they are).
-			om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		operating = 0
-		if(LAZYLEN(byproducts))
-			for(var/path in byproducts)
-				while(byproducts[path])
-					if(prob(min(90,30 * byproducts[path])))
-						new path(src)
+	om_after(src, gib_time, PROC_REF(finish_gibbing), om_handle(occupant), byproducts)
 
-					byproducts[path] -= 1
+/obj/machinery/gibber/proc/finish_gibbing(occupant_handle, list/byproducts)
+	var/mob/living/occupant = om_resolve(occupant_handle)
+	occupant?.gib()
+	occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
+	if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
+		// remains stay physically in the slot, but are no longer "the occupant" --
+		// unlink without a ledger move (the remains stay physically where they are).
+		om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	operating = 0
+	if(LAZYLEN(byproducts))
+		for(var/path in byproducts)
+			while(byproducts[path])
+				if(prob(min(90,30 * byproducts[path])))
+					new path(src)
 
-		for (var/obj/thing in contents)
-			// There's a chance that the gibber will fail to destroy or butcher some evidence.
-			if(istype(thing,/obj/item/organ) && prob(80))
-				var/obj/item/organ/OR = thing
-				if(OR.can_butcher(src))
-					OR.butcher(src, null, src)	// Butcher it, and add it to our list of things to launch.
-				else
-					qdel(thing)
-				continue
-			thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
-			thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
+				byproducts[path] -= 1
 
-		update_icon()
+	for (var/obj/thing in contents)
+		// There's a chance that the gibber will fail to destroy or butcher some evidence.
+		if(istype(thing,/obj/item/organ) && prob(80))
+			var/obj/item/organ/OR = thing
+			if(OR.can_butcher(src))
+				OR.butcher(src, null, src)	// Butcher it, and add it to our list of things to launch.
+			else
+				qdel(thing)
+			continue
+		thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
+		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
+
+	update_icon()

@@ -492,10 +492,7 @@
 	bitecount++
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
-	spawn(5)
-		if(!src && !user.client)
-			user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
-			qdel(src)
+	om_after(user, 5, /proc/food_finished_emote, user, om_handle(src))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -1273,13 +1270,7 @@
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/cooltime()
 	if (src.warm)
-		spawn(420 SECONDS)
-			if(!src?.reagents)
-				return
-			src.warm = 0
-			for(var/reagent in heated_reagents)
-				src.reagents.del_reagent(reagent)
-			src.name = initial(name)
+		om_after(src, 420 SECONDS, PROC_REF(cool_down))
 	return
 
 /obj/item/reagent_containers/food/snacks/donkpocket/spicy
@@ -1349,11 +1340,7 @@
 		return
 	has_been_heated = TRUE
 	user.visible_message(span_notice("[user] crushes \the [src] package."), "You crush \the [src] package and feel a comfortable heat build up. Now just to wait for it to be ready.")
-	spawn(200)
-		if(!QDELETED(src))
-			if(src.loc == user)
-				to_chat(user, "You think \the [src] is ready to eat about now.")
-			heat()
+	om_after(src, 20 SECONDS, PROC_REF(self_heated), user)
 
 /obj/item/reagent_containers/food/snacks/brainburger
 	name = "brainburger"
@@ -9375,3 +9362,22 @@
 /obj/item/reagent_containers/food/snacks/acorn/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PEANUTBUTTER, 2) //Just to make it so people can be allergic to it without making a new reagent
+
+/obj/item/reagent_containers/food/snacks/donkpocket/proc/cool_down()
+	if(!src?.reagents)
+		return
+	src.warm = 0
+	for(var/reagent in heated_reagents)
+		src.reagents.del_reagent(reagent)
+	src.name = initial(name)
+
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/self_heated(mob/user)
+	if(!QDELETED(src))
+		if(src.loc == user)
+			to_chat(user, "You think \the [src] is ready to eat about now.")
+		heat()
+
+/// A mindless eater who finished the food asks for more.
+/proc/food_finished_emote(mob/user, food_handle)
+	if(!om_resolve(food_handle) && !user.client)
+		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
