@@ -143,6 +143,64 @@ impl<K: FieldKind> WriteQuery for Cell<K> {
     }
 }
 
+/// State of a [`Neighbors`] query: `K`'s field ids plus the world grid.
+pub struct NeighborsState<K: FieldKind> {
+    field: FieldIds,
+    grid: ResourceId,
+    marker: std::marker::PhantomData<fn() -> K>,
+}
+
+/// The anchor cell's face neighbours that share `K`'s air: open (neither
+/// side blocks the shared face on `K::BLOCK`'s grid layer), and a real
+/// field node on both ends, one slot per [`crate::grid::Face`] in
+/// [`crate::grid::Face::ALL`] order (`None` where the face is closed, off
+/// the grid, or either side is not a node).
+///
+/// For a law that needs a *spatial* neighbour rather than a foreign-key
+/// join (heat and power's couplings use [`crate::query::Foreign`]/
+/// [`crate::query::Foreign2`] for that): a field cell's own step detecting
+/// a gradient across an edge (gas's pressure/"spacewind" events,
+/// `rust_architecture.md` §8.5 step 6), for instance. Each open slot pairs
+/// the neighbour's own cell index (for an event payload, a further lookup)
+/// with its value.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Neighbors<K: FieldKind>(pub [Option<(u32, Cell<K>)>; 6]);
+
+impl<K: FieldKind> Query for Neighbors<K> {
+    type State = NeighborsState<K>;
+
+    fn anchor() -> Option<Anchor> {
+        // A joined/side query relative to the primary anchor (`Cell<K>`),
+        // like `Foreign`'s wrapped value: it supplies no anchor of its own.
+        None
+    }
+
+    fn init(init: &mut QueryInit<'_>, write: bool) -> Result<Self::State, LawError> {
+        let field = field_ids::<K>(init, write)?;
+        let grid = init.catalog.grid().ok_or(LawError::Unregistered {
+            law: init.law,
+            what: "grid",
+        })?;
+        init.access.read(grid);
+        Ok(NeighborsState {
+            field,
+            grid,
+            marker: std::marker::PhantomData,
+        })
+    }
+
+    fn fetch(state: &Self::State, frame: &FrameData<'_>, at: At) -> Option<Self> {
+        let grid = frame.get::<crate::grid::Grid>(state.grid);
+        let mut out: [Option<(u32, Cell<K>)>; 6] = std::array::from_fn(|_| None);
+        for (i, face) in crate::grid::Face::ALL.into_iter().enumerate() {
+            if let Some(nb) = grid.open_neighbor(K::BLOCK, at.index, face) {
+                out[i] = Cell::<K>::fetch(&state.field, frame, At { index: nb, entity: None }).map(|c| (nb, c));
+            }
+        }
+        Some(Self(out))
+    }
+}
+
 /// A device edge between a region of network `K` and a cell of field `F`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RegionCell<K: NetworkKind, F: FieldKind> {

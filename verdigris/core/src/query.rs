@@ -151,6 +151,9 @@ pub trait Catalog {
     fn global(&self, ty: TypeId) -> Option<(ResourceId, Phase)>;
     /// The resources of field kind `field` (always worker-owned).
     fn field(&self, field: TypeId) -> Option<crate::field::law::FieldIds>;
+    /// The world's one grid (worker-side resource), if one was registered
+    /// ([`crate::world::WorldBuilder::add_grid`]).
+    fn grid(&self) -> Option<ResourceId>;
 }
 
 /// Build-time context for [`Query::init`].

@@ -1012,6 +1012,7 @@ struct CatalogView<'a> {
     net_types: &'a HashMap<TypeId, usize>,
     globals: &'a HashMap<TypeId, (ResourceId, Phase)>,
     fields: &'a HashMap<TypeId, FieldIds>,
+    grid: Option<ResourceId>,
 }
 
 impl Catalog for CatalogView<'_> {
@@ -1028,6 +1029,9 @@ impl Catalog for CatalogView<'_> {
     }
     fn field(&self, field: TypeId) -> Option<FieldIds> {
         self.fields.get(&field).copied()
+    }
+    fn grid(&self) -> Option<ResourceId> {
+        self.grid
     }
 }
 
@@ -1453,6 +1457,7 @@ impl WorldBuilder {
                 net_types: &self.net_types,
                 globals: &self.globals,
                 fields: &self.fields,
+                grid: self.grid.map(|(_, worker)| worker.id()),
             };
             for name in order {
                 let i = names

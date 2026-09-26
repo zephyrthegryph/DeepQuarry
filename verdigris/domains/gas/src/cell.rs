@@ -131,6 +131,10 @@ pub struct GasCell {
 	pub planet: u8,
 	/// Visible-gas signature (a changed signature is a `VisualChange`).
 	pub vis: u16,
+	/// `vis` as of the last emitted `GasEvent::CellVisualChange`
+	/// (`laws::CellVisualChangeLaw`'s own edge-detection state, since a law
+	/// only sees the current step's value, not the previous one).
+	pub last_vis: u16,
 	/// The dense registry index of the highest-priority reaction the last
 	/// `local` step found ready ([`NO_REACTION`]: none). Set by
 	/// `TurfGas::local`, read by the world to emit
@@ -151,6 +155,7 @@ impl Default for GasCell {
 			flags: 0,
 			planet: 0,
 			vis: 0,
+			last_vis: 0,
 			ready: NO_REACTION,
 		}
 	}
