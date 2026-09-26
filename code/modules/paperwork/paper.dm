@@ -354,6 +354,12 @@
 	tgui_interact(user)
 	return
 
+/obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
+	user.visible_message(span_notice("[user] wipes [H]'s lipstick off with \the [src]."), \
+							span_notice("You wipe off [H]'s lipstick."))
+	H.lip_style = null
+	H.update_icons_body()
+
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)
 		user.visible_message(span_notice("You show the paper to [M]. "), \
@@ -371,13 +377,8 @@
 			else
 				user.visible_message(span_warning("[user] begins to wipe [H]'s lipstick off with \the [src]."), \
 										span_notice("You begin to wipe off [H]'s lipstick."))
-				if(do_after(user, 1 SECOND, target = H) && do_after(H, 1 SECONDS, target = user))	//user needs to keep their active hand, H does not.
-					user.visible_message(span_notice("[user] wipes [H]'s lipstick off with \the [src]."), \
-											span_notice("You wipe off [H]'s lipstick."))
-					H.lip_style = null
-					H.update_icons_body()
-					return ITEM_INTERACT_SUCCESS
-				return ITEM_INTERACT_FAILURE
+				om_do_after(user, 1 SECOND, H, src, PROC_REF(wipe_lipstick_done), list(user, H))
+				return ITEM_INTERACT_SUCCESS
 
 /obj/item/paper/proc/set_content(text,title)
 	if(title)

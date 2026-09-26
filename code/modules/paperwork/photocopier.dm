@@ -101,54 +101,57 @@
 				toner -= 5
 			. = TRUE
 
+/// Makes `copies` copies, one after another (each a few steps on the machine's timers).
 /obj/machinery/photocopier/proc/copy_operation(mob/user)
 	if(copying)
 		return FALSE
 	copying = TRUE
-	for(var/i = 0, i < copies, i++)
-		if(toner <= 0)
-			break
+	copy_next(user, copies)
 
-		if (istype(copyitem, /obj/item/paper))
-			playsound(src, "sound/machines/copier.ogg", 100, 1)
-			sleep(11)
-			if(!istype(copyitem, /obj/item/paper)) // removed/swapped during the sleep
-				break
-			copy(copyitem)
-			audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
-			playsound(src, "sound/machines/buzzbeep.ogg", 30)
-		else if (istype(copyitem, /obj/item/photo))
-			playsound(src, "sound/machines/copier.ogg", 100, 1)
-			sleep(11)
-			if(!istype(copyitem, /obj/item/photo)) // removed/swapped during the sleep
-				break
-			photocopy(copyitem)
-			audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
-			playsound(src, "sound/machines/buzzbeep.ogg", 30)
-		else if (istype(copyitem, /obj/item/paper_bundle))
-			sleep(11)
-			if(!istype(copyitem, /obj/item/paper_bundle)) // removed/swapped during the sleep
-				break
-			playsound(src, "sound/machines/copier.ogg", 100, 1)
-			var/obj/item/paper_bundle/B = bundlecopy(copyitem)
-			sleep(11*B.pages.len)
-			audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
-			playsound(src, "sound/machines/buzzbeep.ogg", 30)
-		else if (has_buckled_mobs()) // EDIT: For ass-copying.
-			playsound(src, "sound/machines/copier.ogg", 100, 1)
-			audible_message(span_notice("You can hear [src] whirring as it attempts to scan."), runemessage = "whirr")
-			sleep(rand(20,45)) // Sit with your bare ass on the copier for a random time, feel like a fool, get stared at.
-			copyass(user)
-			sleep(15)
-			audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
-			playsound(src, "sound/machines/buzzbeep.ogg", 30)
-		else
-			to_chat(user, span_warning("\The [copyitem] can't be copied by [src]."))
-			playsound(src, "sound/machines/buzz-two.ogg", 100)
-			break
+/// Starts the next copy, `left` to go.
+/obj/machinery/photocopier/proc/copy_next(mob/user, left)
+	if(left <= 0 || toner <= 0)
+		copying = FALSE
+		return
+	if (istype(copyitem, /obj/item/paper) || istype(copyitem, /obj/item/photo))
+		playsound(src, "sound/machines/copier.ogg", 100, 1)
+		om_after(src, 1.1 SECONDS, PROC_REF(copy_print), user, left, copyitem.type)
+	else if (istype(copyitem, /obj/item/paper_bundle))
+		om_after(src, 1.1 SECONDS, PROC_REF(copy_print), user, left, copyitem.type)
+	else if (has_buckled_mobs()) // EDIT: For ass-copying.
+		playsound(src, "sound/machines/copier.ogg", 100, 1)
+		audible_message(span_notice("You can hear [src] whirring as it attempts to scan."), runemessage = "whirr")
+		// Sit with your bare ass on the copier for a random time, feel like a fool, get stared at.
+		om_after(src, rand(20,45), PROC_REF(copy_ass_scan), user, left)
+	else
+		to_chat(user, span_warning("\The [copyitem] can't be copied by [src]."))
+		playsound(src, "sound/machines/buzz-two.ogg", 100)
+		copying = FALSE
 
-		use_power(active_power_usage)
-	copying = FALSE
+/obj/machinery/photocopier/proc/copy_print(mob/user, left, copy_type)
+	if(!copyitem || copyitem.type != copy_type) // removed/swapped during the wait
+		copying = FALSE
+		return
+	var/finish_delay = 0
+	if (istype(copyitem, /obj/item/paper))
+		copy(copyitem)
+	else if (istype(copyitem, /obj/item/photo))
+		photocopy(copyitem)
+	else
+		playsound(src, "sound/machines/copier.ogg", 100, 1)
+		var/obj/item/paper_bundle/B = bundlecopy(copyitem)
+		finish_delay = 1.1 SECONDS * length(B?.pages)
+	om_after(src, finish_delay, PROC_REF(copy_finished), user, left)
+
+/obj/machinery/photocopier/proc/copy_ass_scan(mob/user, left)
+	copyass(user)
+	om_after(src, 1.5 SECONDS, PROC_REF(copy_finished), user, left)
+
+/obj/machinery/photocopier/proc/copy_finished(mob/user, left)
+	audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
+	playsound(src, "sound/machines/buzzbeep.ogg", 30)
+	use_power(active_power_usage)
+	copy_next(user, left - 1)
 
 /datum/interaction/machine_item/photocopier_insert
 	id = "photocopier_insert"
