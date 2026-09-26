@@ -5,7 +5,7 @@
 	if(!comm || !istype(comm)) return
 
 	LAZYOR(communicating, comm)
-	GLOB.listening_objects |= src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	update_icon()
 
 // Proc: del_communicating()
@@ -73,7 +73,7 @@
 	new_voice.mind = candidate.mind			//Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	LAZYADD(voice_mobs, new_voice)
-	GLOB.listening_objects |= src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.
 	blackness.screen_loc = ui_entire_screen
@@ -139,7 +139,7 @@
 			comm.end_video()
 
 	if(length(voice_mobs) == 0 && length(communicating) == 0)
-		GLOB.listening_objects.Remove(src)
+		registry_leave(REGISTRY_LISTENING_OBJECTS, src)
 
 // Proc: request()
 // Parameters: 1 (candidate - the ghost or communicator wanting to call the device)
@@ -293,7 +293,7 @@
 		to_chat(src, span_danger("You have used the antagHUD and cannot respawn or use communicators!"))
 		return
 
-	for(var/mob/living/L in GLOB.mob_list) //Simple check so you don't have dead people calling.
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_MOBS)) //Simple check so you don't have dead people calling.
 		if(prefs_name == L.real_name)
 			to_chat(src, span_danger("Your identity is already present in the game world.  Please load in a different character first."))
 			return

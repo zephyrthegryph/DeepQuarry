@@ -123,6 +123,8 @@
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
+REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
+
 /obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
 	switch(state)
 		if(1)
@@ -146,7 +148,7 @@
 				var/open_for_latejoin = tgui_alert(user, "Would you like this core to be open for latejoining AIs?", "Latejoin", list("Yes", "No")) == "Yes"
 				var/obj/structure/AIcore/deactivated/D = new(loc)
 				if(open_for_latejoin)
-					GLOB.empty_playable_ai_cores += D
+					registry_join(REGISTRY_EMPTY_AI_CORES, D)
 			else
 				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
@@ -212,8 +214,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 	state = 20//So it doesn't interact based on the above. Not really necessary.
 
 /obj/structure/AIcore/deactivated/Destroy()
-	if(src in GLOB.empty_playable_ai_cores)
-		GLOB.empty_playable_ai_cores -= src
 	return ..()
 
 /obj/structure/AIcore/deactivated/proc/load_ai(mob/living/silicon/ai/transfer, obj/item/aicard/card, mob/user)
@@ -287,9 +287,9 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	if(!ai_struct)
 		return
 
-	if(ai_struct in GLOB.empty_playable_ai_cores)
-		GLOB.empty_playable_ai_cores -= ai_struct
+	if(ai_struct in REGISTRY_MEMBERS(REGISTRY_EMPTY_AI_CORES))
+		registry_leave(REGISTRY_EMPTY_AI_CORES, ai_struct)
 		to_chat(user, span_infoplain("\The [id] is now [span_red("not available")] for latejoining AIs."))
 	else
-		GLOB.empty_playable_ai_cores += ai_struct
+		registry_join(REGISTRY_EMPTY_AI_CORES, ai_struct)
 		to_chat(user, span_infoplain("\The [id] is now [span_green("available")] for latejoining AIs."))

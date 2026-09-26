@@ -138,7 +138,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 ///Checks to see if the game can be setup and ran with the current number of players or whatnot.
 /datum/game_mode/proc/can_start(do_not_spawn)
 	var/playerC = 0
-	for(var/mob/new_player/player in GLOB.player_list)
+	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((player.client)&&(player.ready))
 			playerC++
 
@@ -313,7 +313,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/list/area/escape_locations = list(/area/shuttle/escape/centcom, /area/shuttle/cryo/centcom, /area/shuttle/escape_pod1/centcom, /area/shuttle/escape_pod2/centcom, /area/shuttle/escape_pod3/centcom, /area/shuttle/escape_pod5/centcom, /area/shuttle/escape_pod6/centcom, /area/shuttle/large_escape_pod1/centcom
 , /area/shuttle/large_escape_pod2/centcom) //Appended /centcom to the escape shuttle again to fix transfer message. Added some escape pods to the list.
 
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
 			clients++
 			var/M_area_type = (get_turf(M))?.loc?.type
@@ -407,7 +407,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	// If this is being called post-roundstart then it doesn't care about ready status.
 	if(SSticker && SSticker.current_state == GAME_STATE_PLAYING)
-		for(var/mob/player in GLOB.player_list)
+		for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(!player.client)
 				continue
 			if(isnewplayer(player))
@@ -419,7 +419,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				candidates |= player.mind
 	else
 		// Assemble a list of active players without jobbans.
-		for(var/mob/new_player/player in GLOB.player_list)
+		for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if( player.client && player.ready )
 				players += player
 
@@ -438,7 +438,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 /datum/game_mode/proc/num_players()
 	. = 0
-	for(var/mob/new_player/P in GLOB.player_list)
+	for(var/mob/new_player/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(P.client && P.ready)
 			. ++
 
@@ -476,7 +476,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 /proc/display_roundstart_logout_report()
 	var/msg = span_bold("Roundstart logout report")
 	msg += "<br><br>"
-	for(var/mob/living/L in GLOB.living_mob_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 
 		if(L.ckey)
 			var/found = 0
@@ -503,7 +503,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 					continue //Dead
 
 			continue //Happy connected client
-		for(var/mob/observer/dead/D in GLOB.dead_mob_list)
+		for(var/mob/observer/dead/D in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 			if(D.mind)
 				var/mob/living/original = om_resolve(D.mind.original_character)
 				if((original && original == L) || D.mind.current == L)
@@ -526,13 +526,13 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	msg = span_notice(msg)// close the span from right at the top
 
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(M.client && check_rights_for(M.client, R_HOLDER))
 			to_chat(M,msg)
 
 /proc/get_nt_opposed()
 	var/list/dudes = list()
-	for(var/mob/living/carbon/human/man in GLOB.player_list)
+	for(var/mob/living/carbon/human/man in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(man.client)
 			var/econ_status = man.client.prefs.read_preference(/datum/preference/choiced/human/economic_status)
 			if((econ_status == CLASS_LOWER) || (econ_status == CLASS_BROKE))

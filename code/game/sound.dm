@@ -18,7 +18,7 @@
 
 	// Looping through the player list has the added bonus of working for mobs inside containers.
 	// Iterated in place: nothing below can add or remove players.
-	for(var/mob/hearer as anything in GLOB.player_list)
+	for(var/mob/hearer as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!hearer.client)
 			continue
 		var/list/hear_turfs = list(get_turf(hearer))
@@ -47,7 +47,7 @@
 /// Mirrors playsound()'s listener rules, minus soundproofing and walls.
 /proc/playsound_has_listener(turf/turf_source, max_distance)
 	var/source_z = turf_source.z
-	for(var/mob/hearer as anything in GLOB.player_list)
+	for(var/mob/hearer as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!hearer.client)
 			continue
 		var/turf/T = get_turf(hearer)
@@ -153,7 +153,7 @@
 
 /proc/sound_to_playing_players(sound, volume = 100, vary)
 	sound = get_sfx(sound)
-	for(var/M in GLOB.player_list)
+	for(var/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(ismob(M) && !isnewplayer(M))
 			var/mob/MO = M
 			MO.playsound_local(get_turf(MO), sound, volume, vary, pressure_affected = FALSE)

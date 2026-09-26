@@ -115,7 +115,7 @@
 /obj/item/mail/proc/setRecipient(mob/user)
 	var/list/recipients = list()
 	var/mob/living/recipient_mob
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!SSantag_job.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
@@ -295,7 +295,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		if(!chosen)
 			return
 
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		recipients += player
 
 	var/mob/living/chosen_player = tgui_input_list(user, "Choose recipient", "Recipients", recipients, recipients)
@@ -334,7 +334,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 /obj/structure/closet/crate/mail/full/Initialize(mapload)
 	. = ..()
 	var/list/mail_recipients = list()
-	for(var/mob/living/carbon/human/alive in GLOB.player_list)
+	for(var/mob/living/carbon/human/alive in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(alive.stat != DEAD && alive.client && alive.client.inactivity <= 10 MINUTES)
 			mail_recipients += alive
 	for(var/iterator in 1 to storage_capacity)

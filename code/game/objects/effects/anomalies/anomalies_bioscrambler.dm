@@ -68,7 +68,7 @@
 /obj/effect/anomaly/bioscrambler/proc/find_nearest_target()
 	var/closest_distance = INFINITY
 	var/mob/living/carbon/closest_target = null
-	for(var/mob/living/carbon/target in GLOB.player_list)
+	for(var/mob/living/carbon/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(target.z != z)
 			continue
 		if(om_has(target, EFFECT_GODMODE))

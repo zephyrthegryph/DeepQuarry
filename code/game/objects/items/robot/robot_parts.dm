@@ -173,7 +173,7 @@
 				if(!occupant.key)
 					var/ghost_can_reenter = 0
 					if(occupant.mind)
-						for(var/mob/observer/dead/G in GLOB.player_list)
+						for(var/mob/observer/dead/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 							if(G.can_reenter_corpse && G.mind == occupant.mind)
 								ghost_can_reenter = 1 //May come in use again at another point.
 								to_chat(user, span_notice("\The [W] is completely unresponsive; though it may be able to auto-resuscitate.")) //Jamming a ghosted brain into a borg is likely detrimental, and may result in some problems.

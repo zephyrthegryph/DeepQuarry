@@ -1,4 +1,5 @@
-GLOBAL_LIST_EMPTY(sacrificed)
+
+REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /obj/effect/rune/cultify()
 	return
@@ -351,7 +352,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		to_chat(user, span_warning("The Geometer of Blood refuses to touch this one."))
 		return fizzle(user)
 	else if(!corpse_to_raise.client && corpse_to_raise.mind) //Don't force the dead person to come back if they don't want to.
-		for(var/mob/observer/dead/ghost in GLOB.player_list)
+		for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(ghost.mind == corpse_to_raise.mind)
 				to_chat(ghost, span_interface(span_large(span_bold("The cultist [user.real_name] is trying to \
 				revive you. Return to your body if you want to be resurrected into the service of Nar'Sie!") + "\
@@ -619,7 +620,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	for(var/datum/mind/H in GLOB.cult.current_antagonists)
 		if (H.current)
 			to_chat(H.current, span_cult("[input]"))
-	for(var/mob/observer/dead/O in GLOB.player_list)
+	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		to_chat(O, span_cult("[input]"))
 	qdel(src)
 	return 1
@@ -661,7 +662,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if (SSticker.mode.name == "cult")
 			if(H.mind == GLOB.cult.sacrifice_target)
 				if(cultsinrange.len >= 3)
-					GLOB.sacrificed += H.mind
+					registry_join(REGISTRY_SACRIFICED, H.mind)
 					if(isrobot(H))
 						H.dust()//To prevent the MMI from remaining
 					else

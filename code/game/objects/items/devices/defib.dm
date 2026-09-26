@@ -488,10 +488,10 @@
 	add_attack_logs(user,H,"Shocked using [name]")
 
 /obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M) //This revives the mob
-	GLOB.dead_mob_list.Remove(M)
-	if((M in GLOB.living_mob_list) || (M in GLOB.dead_mob_list))
+	registry_leave(REGISTRY_DEAD_MOBS, M)
+	if((M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (M in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
 		WARNING("Mob [M] was defibbed but already in the living or dead list still!")
-	GLOB.living_mob_list += M
+	registry_join(REGISTRY_LIVING_MOBS, M)
 
 	M.timeofdeath = 0
 	M.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.

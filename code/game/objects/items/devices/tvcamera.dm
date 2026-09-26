@@ -15,7 +15,6 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/tvcamera/Destroy()
-	GLOB.listening_objects -= src
 	qdel(camera)
 	qdel(radio)
 	camera = null
@@ -30,7 +29,7 @@
 
 /obj/item/tvcamera/Initialize(mapload)
 	. = ..()
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	camera = new(src)
 	camera.c_tag = channel
 	camera.status = FALSE
@@ -169,7 +168,6 @@
 	special_handling = TRUE
 
 /obj/item/clothing/accessory/bodycam/Destroy()
-	GLOB.listening_objects -= src
 	qdel(bcamera)
 	qdel(bradio)
 	bcamera = null
@@ -183,7 +181,7 @@
 
 /obj/item/clothing/accessory/bodycam/Initialize(mapload)
 	. = ..()
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	bcamera = new(src)
 	bcamera.c_tag = channel
 	bcamera.status = FALSE

@@ -108,7 +108,7 @@
 	var/turf/T = get_turf(src)
 	if(!T)
 		return 0
-	for(var/mob/living/L in GLOB.player_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		var/turf/L_T
 		if(L.stat == DEAD)
 			continue

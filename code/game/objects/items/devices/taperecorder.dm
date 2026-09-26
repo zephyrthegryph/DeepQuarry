@@ -26,13 +26,12 @@
 	if(ispath(mytape))
 		mytape = new mytape(src)
 		update_icon()
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 /obj/item/taperecorder/empty
 	mytape = null
 
 /obj/item/taperecorder/Destroy()
-	GLOB.listening_objects -= src
 	if(mytape)
 		qdel(mytape)
 		mytape = null

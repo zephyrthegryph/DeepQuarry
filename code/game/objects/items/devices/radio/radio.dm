@@ -77,10 +77,9 @@
 	set_frequency(frequency)
 	for (var/ch_name in channels)
 		secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 /obj/item/radio/on_dematerialize()
-	GLOB.listening_objects -= src
 	if(SSradio)
 		SSradio.remove_object(src, frequency)
 		for (var/ch_name in channels)

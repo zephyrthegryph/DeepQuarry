@@ -82,7 +82,7 @@
 	if(stats)
 		return
 
-	for(var/mob/mob as anything in GLOB.player_list)
+	for(var/mob/mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(get_area(mob) in affected_areas)
 			selected_weather.hear_sounds(mob, TRUE)
 		else

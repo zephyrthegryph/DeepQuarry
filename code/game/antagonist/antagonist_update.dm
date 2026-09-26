@@ -90,7 +90,7 @@
 	if(SSticker.mode.antag_scaling_coeff)
 
 		var/count = 0
-		for(var/mob/living/M in GLOB.player_list)
+		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				count++
 

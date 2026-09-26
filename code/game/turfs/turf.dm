@@ -124,11 +124,13 @@
 	if(uses_integrity)
 		atom_integrity = max_integrity
 
+REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
+
 /turf/Destroy()
 	if (!changing_turf)
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
-	GLOB.cleanbot_reserved_turfs -= src
+	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, src)
 	// ZAS connections.erase_all() removed. Rust owns turf adjacency; the
 	// /turf/open/Destroy unregister drops it.
 	..()

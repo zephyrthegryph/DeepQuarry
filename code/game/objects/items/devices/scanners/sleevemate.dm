@@ -186,7 +186,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		return
 
 	var/target_ref = href_list["target"]
-	var/mob/living/target = locate(target_ref) in GLOB.mob_list
+	var/mob/living/target = locate(target_ref) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 	if(!target)
 		to_chat(usr,span_warning("Unable to operate on that target."))
 		return

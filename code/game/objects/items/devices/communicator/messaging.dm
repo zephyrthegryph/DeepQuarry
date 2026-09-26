@@ -130,7 +130,7 @@
 	if (usr != src)
 		return //something is terribly wrong
 
-	for(var/mob/living/L in GLOB.mob_list) //Simple check so you don't have dead people calling.
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_MOBS)) //Simple check so you don't have dead people calling.
 		if(src.client.prefs.read_preference(/datum/preference/name/real_name) == L.real_name)
 			to_chat(src, span_danger("Your identity is already present in the game world.  Please load in a different character first."))
 			return
@@ -162,7 +162,7 @@
 			to_chat(src, span_notice("You have sent '[text_message]' to [chosen_communicator]."))
 			exonet_messages.Add(span_bold("To [chosen_communicator]:") + "<br>[text_message]")
 			log_talk("(DCOMM: [src]) sent \"[text_message]\" to [chosen_communicator]", LOG_PDA)
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 					if(isnewplayer(M) || M.forbid_seeing_deadchat)
 						continue

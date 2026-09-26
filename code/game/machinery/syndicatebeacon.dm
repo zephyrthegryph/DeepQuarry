@@ -59,7 +59,7 @@
 		if(charges < 1)
 			updateUsrDialog(usr)
 			return
-		var/mob/M = locate(href_list["traitormob"]) in GLOB.mob_list
+		var/mob/M = locate(href_list["traitormob"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 		if(!istype(M) || M != usr) // bounded locate + self-only: a crafted href must not traitor someone else
 			return
 		if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))

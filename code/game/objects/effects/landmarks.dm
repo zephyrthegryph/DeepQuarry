@@ -8,6 +8,10 @@
 	invisibility = INVISIBILITY_MAXIMUM
 	var/delete_me = FALSE
 
+REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
+
+REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
+
 /obj/effect/landmark/Initialize(mapload)
 	. = ..()
 	tag = text("landmark*[]", name)
@@ -21,12 +25,11 @@
 			GLOB.newplayer_start += loc
 			delete_me = TRUE
 		if("JoinLate") // Bit difference, since we need the spawn point to move.
-			GLOB.latejoin += src
+			registry_join(REGISTRY_LATEJOIN, src)
 			simulated = TRUE
 			//delete_me = TRUE // see above, moving, always use this list with get_turf
 		if("JoinLateGateway")
 			GLOB.latejoin_gateway += loc
-			// GLOB.latejoin += loc // ition
 			delete_me = TRUE
 		if("JoinLateStationGateway")
 			GLOB.latejoin_gatewaystation += loc
@@ -87,11 +90,10 @@
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	else
-		GLOB.landmarks_list += src
+		registry_join(REGISTRY_LANDMARKS, src)
 
 /obj/effect/landmark/Destroy(force = FALSE)
 	if(delete_me || force)
-		GLOB.landmarks_list -= src
 		return ..()
 	return QDEL_HINT_LETMELIVE
 

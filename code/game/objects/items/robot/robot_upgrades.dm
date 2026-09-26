@@ -89,14 +89,14 @@
 		return FALSE
 
 	if(!R.key)
-		for(var/mob/observer/dead/ghost in GLOB.player_list)
+		for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(ghost.mind && ghost.mind.current == R)
 				R.key = ghost.key
 
 	R.set_stat(CONSCIOUS)
 	R.add_robot_verbs()
-	GLOB.dead_mob_list -= R
-	GLOB.living_mob_list |= R
+	registry_leave(REGISTRY_DEAD_MOBS, R)
+	registry_join(REGISTRY_LIVING_MOBS, R)
 	R.notify_ai(ROBOT_NOTIFICATION_NEW_UNIT)
 	return TRUE
 

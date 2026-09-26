@@ -138,7 +138,7 @@
 	data["can_hack"] = can_hack_any(user)
 	data["cyborgs"] = list()
 	data["safety"] = safety
-	for(var/mob/living/silicon/robot/R in GLOB.mob_list)
+	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!console_shows(R))
 			continue
 		var/area/A = get_area(R)
@@ -186,7 +186,7 @@
 				return
 			message_admins(span_notice("[key_name_admin(ui.user)] detonated all cyborgs!"))
 			log_game(span_notice("[key_name(ui.user)] detonated all cyborgs!"))
-			for(var/mob/living/silicon/robot/R in GLOB.mob_list)
+			for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				if(istype(R, /mob/living/silicon/robot/drone))
 					continue
 				// Ignore antagonistic cyborgs

@@ -333,7 +333,7 @@
 		if(N)
 			info = N.notehtml
 	to_chat(U, "You hold \a [itemname] up to the camera ...")
-	for(var/mob/living/silicon/ai/O in GLOB.living_mob_list)
+	for(var/mob/living/silicon/ai/O in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(!O.client)
 			continue
 		if(U.name == "Unknown")
