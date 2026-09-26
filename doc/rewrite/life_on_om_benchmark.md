@@ -266,3 +266,37 @@ tails stay far lower on the object model (p95 15 vs 45 %, p99 19 vs 58 %), as be
 Against master as it actually shipped, the 6 s cycle delivers about the same frames per
 mob (master's shrinking quota gave ~6.7 s at 128 humans) with a much lower mix tail
 (p99 18 vs 71 %); the single-boot human rows are within this session's noise.
+
+## Pipelines (rewrite/om-pipeline, 2026-09-26)
+
+Life moved from its own frame loop onto the core pipeline runner (object_model_core.md §4.10);
+rechargers, cell chargers, APCs and SMES moved onto a machine pipeline. `life_sweep,idle,om_dispatch`,
+3 counted boots per side after a warm-up, `--arg=seconds=30 -DLIFE_CYCLE_DS=20 -DLIFE_NO_PROFILE
+-DOM_NO_STAGE_PROFILE`, sides run one after the other (base `rewrite/life-om` 7f9640613e, new
+e132f30914).
+
+The machine ran slower during the new side: the same boot's SSprocessing-shaped loop
+(`om_dispatch_process_ns_per_call`, identical code on both sides) took 1415 ns against 1127 ns
+(x1.256). Normalised by it:
+
+| metric | base | new | new / base | normalised |
+|---|---|---|---|---|
+| h128 Life us per frame | 1738 | 2167 | 1.247 | **0.99** |
+| mix Life us per frame | 1175 | 1453 | 1.236 | **0.98** |
+| mix parked mobs | 384 | 384 | | |
+| idle station: SSmachines ms in 30 s | 22.4 | 20.3 | 0.91 | 0.72 |
+| idle station: SSbehaviours ms in 30 s | 105.6 | 109.1 | 1.03 | 0.82 |
+
+Frames delivered are identical (1967 h128, ~1773 mix). Life costs the same per frame on the core
+runner as on its hand-written loop; the idle station costs no more (APCs and SMES already didn't
+poll; rechargers and cell chargers now park instead of taking one poll to die on each wake).
+
+`om_dispatch` pipeline arm (5000 entities, 8 stages, the runner called by the ring) against a frame
+loop over 8 flyweights with an idle rule each: all awake 21.9 us vs 4.8 us per entity; 7 of 8
+idle 9.2 us vs 1.8 us. The runner's per-entity fixed cost (frame from the pool, facts, counters,
+park bookkeeping) is about 6 us and each awake stage about 1.7 us; idle stages cost nothing
+(only awake bits are visited). Per-frame Life cost is dominated by stage bodies, so the macro
+numbers above are what matter.
+
+A rerun of the new side after the fast-path commit (77385bb5b9) was contaminated by other load
+(idle tick 19% against 4%, the reference loop x1.59) and is not reported.
