@@ -125,6 +125,7 @@ SUBSYSTEM_DEF(air)
 	// The gas field was sized at world start (vg_configure_world); make sure it
 	// covers the map as loaded before registering turfs.
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	vg_heat_configure_world(world.maxx, world.maxy, world.maxz)
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.

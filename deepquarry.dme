@@ -2837,6 +2837,7 @@
 #include "code\modules\genetics\side_effects.dm"
 #include "code\modules\ghosttrap\trap.dm"
 #include "code\modules\heat\heat.dm"
+#include "code\modules\heat\heat_entities.dm"
 #include "code\modules\heat\heat_objects.dm"
 #include "code\modules\holodeck\HolodeckControl.dm"
 #include "code\modules\holodeck\HolodeckObjects.dm"

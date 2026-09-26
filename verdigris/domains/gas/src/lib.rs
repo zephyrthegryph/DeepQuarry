@@ -9,8 +9,6 @@ pub mod device;
 pub mod gas;
 pub mod gate;
 pub mod laws;
-#[cfg(feature = "heat")]
-pub(crate) mod heat;
 pub mod kind;
 mod parser;
 pub mod pipes;
@@ -315,9 +313,8 @@ fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
 fn auxmos_diagnostics() -> Result<ByondValue> {
 	let gas = turf::diagnostics();
-	#[cfg(feature = "heat")]
-	let heat = heat::heat_diagnostics();
-	#[cfg(not(feature = "heat"))]
+	// Heat's own diagnostics moved to vg-ffi (`rust_architecture.md` step 4):
+	// this crate no longer hosts a heat world to report on.
 	let heat = (0, 0, 0);
 	#[allow(clippy::cast_precision_loss)]
 	let values = gas

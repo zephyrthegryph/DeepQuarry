@@ -1,24 +1,15 @@
-//! Couplings between stores: the gas interface, the exact pair exchange,
-//! the energy ledger, and the solid ↔ turf gas frame task.
-//!
-//! R6 left couplings unbuilt. Here each coupling is one frame task that
-//! writes both of its stores with one number: the energy it computes is
-//! removed from one side and added to the other (or to the [`ledger`] when
-//! the other side is a reservoir), so energy is conserved exactly apart
-//! from `f32` rounding of the stored values.
-//!
-//! Gas lives outside the sim (vg-gas's arena, being restructured by M1a and
-//! moved onto the field framework by M1b), so the heat domain only sees it
-//! through the small [`GasExchange`] trait. The DLL implements it over the
-//! arena; tests implement it over a vector.
+//! The gas interface (`rust_architecture.md` step 4, decision (b)): gas is
+//! not yet a [`vg_core::field::FieldKind`] (step 6 ports it), so every edge
+//! that touches gas -- solid↔gas in a turf, and a body's [`crate::components::GasCoupling`]
+//! -- still reaches it through this small trait instead of a `Foreign`
+//! join. Both are deleted in step 6 once `TurfGas` lands and the edges
+//! become field↔field/component↔field laws.
 
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use vg_core::cow::ChunkLayout;
 use vg_core::field::FieldKey;
 use vg_core::frame::Task;
-use vg_core::owner::{Applied, Domain, DomainKey};
 use vg_core::sim::SimBuilder;
 
 use crate::consts::{GAS_COUPLING, GAS_COUPLING_MIN_K};
@@ -40,7 +31,7 @@ pub struct GasProbe {
     /// J/K.
     pub capacity: f32,
     /// Immutable (space, a planet's atmosphere): energy added to it is not
-    /// kept, and goes to the ledger.
+    /// kept.
     pub reservoir: bool,
 }
 
@@ -52,14 +43,13 @@ pub trait GasExchange: Send + Sync + 'static {
     fn probe(&self, gas: GasRef) -> Option<GasProbe>;
 
     /// Locks the gas, calls `f` with its state, and adds the energy `f`
-    /// returns (J; negative removes). Returns the energy actually added
-    /// (an implementation may clamp so the gas stays at or above TCMB; a
-    /// reservoir reports the full amount without changing), or `None`
-    /// with nothing changed if the gas is missing or busy.
+    /// returns (J; negative removes). Returns the energy actually added, or
+    /// `None` with nothing changed if the gas is missing or busy.
     fn exchange(&self, gas: GasRef, f: &mut dyn FnMut(GasProbe) -> f32) -> Option<f32>;
 
     /// Appends the turf cells whose gas temperature changed since the last
-    /// call (the coupling revisits them). The default reports nothing.
+    /// call (the coupling revisits them even when the solid side is
+    /// quiescent). The default reports nothing.
     fn take_changed(&self, _out: &mut Vec<u32>) {}
 }
 
@@ -76,49 +66,22 @@ impl GasExchange for NoGas {
     }
 }
 
-/// Where energy went that no store kept. Cells of the [`HeatLedger`]
-/// domain, in J, cumulative.
-pub mod ledger {
-    /// Net inflow into solid reservoir cells (space, planets): the field's
-    /// own ledger, mirrored each frame.
-    pub const FIELD_RESERVOIRS: u32 = 0;
-    /// Net inflow into reservoir gases (immutable space and planet air).
-    pub const GAS_RESERVOIRS: u32 = 1;
-    /// Net energy put into mutable gases by couplings (J the gas domain now
-    /// holds; the gas side of the books).
-    pub const GAS: u32 = 2;
-    /// Energy bodies' power sources added (negative: sinks removed).
-    pub const POWER: u32 = 3;
-    /// Energy released bodies returned to no environment.
-    pub const RELEASED: u32 = 4;
-    /// Energy an analytic body exchanged under a coupling DM removed before
-    /// it settled, and (negative) energy a body's TCMB floor supplied when a
-    /// sink would have taken it lower.
-    pub const LOST: u32 = 5;
-    /// Net inflow from bodies into solid reservoir cells.
-    pub const BODY_RESERVOIRS: u32 = 6;
-    pub const LEN: u32 = 8;
-}
+/// A pointer to the world's gas side, for [`vg_core::query::Global`]
+/// (`Clone + PartialEq + Send + Sync + 'static`; `PartialEq` is pointer
+/// identity, since the trait object itself never compares).
+#[derive(Clone)]
+pub struct GasHandle(pub Arc<dyn GasExchange>);
 
-/// The energy ledger: one cumulative `f64` per [`ledger`] entry, written by
-/// frame tasks and readable from the pinned view.
-pub struct HeatLedger;
-
-impl Domain for HeatLedger {
-    type Value = f64;
-    /// Adds to the entry.
-    type Command = f64;
-    const NAME: &'static str = "heat_ledger";
-
-    fn apply(value: &mut f64, cmd: &f64) -> Applied {
-        *value += cmd;
-        Applied::default()
+impl PartialEq for GasHandle {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
     }
 }
 
-/// Registers the ledger domain.
-pub fn add_ledger(builder: &mut SimBuilder) -> DomainKey<HeatLedger> {
-    builder.add_domain::<HeatLedger>(ChunkLayout::linear(ledger::LEN))
+impl Default for GasHandle {
+    fn default() -> Self {
+        Self(Arc::new(NoGas))
+    }
 }
 
 /// Worker state of the solid ↔ gas coupling: cells still diverged after
@@ -127,33 +90,23 @@ pub fn add_ledger(builder: &mut SimBuilder) -> DomainKey<HeatLedger> {
 pub struct GasCouplingState {
     pending: BTreeSet<u32>,
     scratch: Vec<u32>,
-    /// Exchanges in the last frame.
-    pub last_exchanges: u32,
 }
 
-/// Registers the solid ↔ turf gas coupling task (after the field task).
+/// Registers the solid ↔ turf gas coupling task (after the field task), as
+/// a plain [`SimBuilder`] task -- not a [`vg_core::law::Law`] -- because
+/// `Cell<SolidHeat>`'s anchor only visits cells the field's own step left
+/// active, and a gas-only change (the solid side quiescent) needs
+/// [`GasExchange::take_changed`]'s extra candidates too
+/// (`dq_h3_hotspot_heats_items`: a coupling that only reads active chunks
+/// misses exactly this case).
 ///
 /// Candidates each frame: cells the gas reported changed, cells still
-/// pending, and air cells of chunks the field left active. Each pair relaxes
-/// exactly at `rate = GAS_COUPLING · conductivity` (today's
-/// `temperature_share_non_gas` coefficient, integrated exactly instead of
-/// explicitly), for pairs more than `GAS_COUPLING_MIN_K` apart. Unlike
-/// superconduct.rs, this is no longer gated on either side being above
-/// 303 K: cold air cools floors too.
-pub fn add_gas_coupling(
-    builder: &mut SimBuilder,
-    field: FieldKey<SolidHeat>,
-    ledger_key: DomainKey<HeatLedger>,
-    gas: Arc<dyn GasExchange>,
-    dt: f32,
-) {
+/// pending, and air cells of chunks the field left active. Each pair
+/// relaxes exactly at `rate = GAS_COUPLING * conductivity`, for pairs more
+/// than [`GAS_COUPLING_MIN_K`] apart.
+pub fn add_gas_coupling(builder: &mut SimBuilder, field: FieldKey<SolidHeat>, gas: Arc<dyn GasExchange>, dt: f32) {
     let state = builder.add_resource("heat:gas_coupling", GasCouplingState::default());
-    let (geom_res, cells_res, field_res, ledger_res) = (
-        field.geometry.state(),
-        field.cells.state(),
-        field.state,
-        ledger_key.state(),
-    );
+    let (geom_res, cells_res, field_res) = (field.geometry.state(), field.cells.state(), field.state);
     builder.add_task(
         Task::new("heat:gas_coupling", move |ctx| {
             let geom = ctx.read(geom_res);
@@ -178,8 +131,6 @@ pub fn add_gas_coupling(
                     }
                 }
             }
-            let (mut to_gas, mut to_reservoir) = (0.0f64, 0.0f64);
-            let mut exchanges = 0u32;
             for cell in candidates {
                 let Some(g) = geom.store.get(cell) else {
                     continue;
@@ -195,19 +146,13 @@ pub fn add_gas_coupling(
                 }
                 let ts = solid.energy / g.capacity;
                 let rate = GAS_COUPLING * solid.conductivity;
-                let mut reservoir = false;
                 let mut gas_after = 0.0f32;
                 let result = gas.exchange(GasRef::Turf(cell), &mut |p: GasProbe| {
-                    reservoir = p.reservoir;
                     gas_after = p.temperature;
                     if p.capacity <= 0.0 || (ts - p.temperature).abs() < GAS_COUPLING_MIN_K {
                         return 0.0;
                     }
-                    let cg = if p.reservoir {
-                        f32::INFINITY
-                    } else {
-                        p.capacity
-                    };
+                    let cg = if p.reservoir { f32::INFINITY } else { p.capacity };
                     let moved = vg_core::thermo::pair_exchange_at_rate_f32(ts, g.capacity, p.temperature, cg, rate, dt);
                     if !p.reservoir {
                         gas_after = p.temperature + moved / p.capacity;
@@ -219,15 +164,9 @@ pub fn add_gas_coupling(
                         st.pending.insert(cell);
                     }
                     Some(applied) if applied != 0.0 => {
-                        exchanges += 1;
                         let c: &mut SolidCell = cells.store.get_mut(cell).expect("cell in layout");
                         c.energy -= applied;
                         c.temperature = c.energy / g.capacity;
-                        if reservoir {
-                            to_reservoir += f64::from(applied);
-                        } else {
-                            to_gas += f64::from(applied);
-                        }
                         if (c.temperature - gas_after).abs() >= GAS_COUPLING_MIN_K {
                             st.pending.insert(cell);
                         }
@@ -235,43 +174,10 @@ pub fn add_gas_coupling(
                     Some(_) => {}
                 }
             }
-            st.last_exchanges = exchanges;
-            drop(cells);
-            if to_gas != 0.0 || to_reservoir != 0.0 {
-                let mut l = ctx.write(ledger_res);
-                if let Some(v) = l.store.get_mut(ledger::GAS) {
-                    *v += to_gas;
-                }
-                if let Some(v) = l.store.get_mut(ledger::GAS_RESERVOIRS) {
-                    *v += to_reservoir;
-                }
-            }
         })
         .reads(geom_res.id())
         .reads(field_res.id())
         .writes(cells_res.id())
-        .writes(state.id())
-        .writes(ledger_res.id()),
-    );
-}
-
-/// Registers the task that mirrors the field's reservoir ledger into the
-/// ledger domain (so it is readable from the main thread).
-pub fn add_field_ledger_mirror(
-    builder: &mut SimBuilder,
-    field: FieldKey<SolidHeat>,
-    ledger_key: DomainKey<HeatLedger>,
-) {
-    let (field_res, ledger_res) = (field.state, ledger_key.state());
-    builder.add_task(
-        Task::new("heat:ledger", move |ctx| {
-            let total = ctx.read(field_res).ledger()[0];
-            let mut l = ctx.write(ledger_res);
-            if l.store.get(ledger::FIELD_RESERVOIRS) != Some(total) {
-                l.store.set(ledger::FIELD_RESERVOIRS, total);
-            }
-        })
-        .reads(field_res.id())
-        .writes(ledger_res.id()),
+        .writes(state.id()),
     );
 }

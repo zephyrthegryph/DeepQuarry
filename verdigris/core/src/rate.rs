@@ -9,7 +9,7 @@
 //!   the predicted tick instead of polling every tick. This is what the
 //!   reactor's `#[auxmacros::bind]`d `vg_rate_*` procs expose to DM
 //!   (`core::reactor::Reactor` holds a `Vec` of these; `vg_ffi::reactor`'s
-//!   binds and `vg_heat::body` import [`RateModel`] from here directly).
+//!   binds import [`RateModel`] from here directly).
 //! - [`RateStore`]: a *bounded reservoir* -- "how much is stored, out of
 //!   how much capacity, converting at this rate between an external flow
 //!   unit (watts) and internal stored units." This is the arithmetic every

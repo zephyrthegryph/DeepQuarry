@@ -73,7 +73,7 @@ use crate::query::{
 use crate::sim::{BuildError, Sim, SimBuilder, SimConfig, WatchKey};
 use crate::store::{MainKind, WorkerKind, kind_layout};
 use crate::units::Seconds;
-use crate::watch::{Cond, WatchError, WatchPort, WatchState};
+use crate::watch::{Cond, SetEntry, WatchError, WatchPort, WatchState};
 
 /// A registered component kind, by registration order.
 pub type KindId = u16;
@@ -513,6 +513,10 @@ trait KindDyn: Any {
         cond: &Cond,
     ) -> Result<WatchId, WorldError>;
     fn unwatch(&mut self, sim: &mut Sim, id: WatchId) -> Result<(), WorldError>;
+    /// Adds (or replaces, by payload) an entry of a `ThresholdSet` watch.
+    fn add_entry(&mut self, sim: &mut Sim, id: WatchId, entry: SetEntry) -> Result<(), WorldError>;
+    /// Removes a `ThresholdSet` entry.
+    fn remove_entry(&mut self, sim: &mut Sim, id: WatchId, payload: u32) -> Result<(), WorldError>;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -752,6 +756,24 @@ impl<C: Component> KindDyn for KindEntry<C> {
             None => Err(WorldError::Watch(WatchError::StaleWatch(id))),
         }
     }
+    fn add_entry(&mut self, sim: &mut Sim, id: WatchId, entry: SetEntry) -> Result<(), WorldError> {
+        if let Some(wk) = self.worker_watches {
+            return Ok(sim.watches(wk).add_entry(id, entry)?);
+        }
+        match &mut self.main_watches {
+            Some(w) => Ok(w.port.add_entry(id, entry)?),
+            None => Err(WorldError::Watch(WatchError::StaleWatch(id))),
+        }
+    }
+    fn remove_entry(&mut self, sim: &mut Sim, id: WatchId, payload: u32) -> Result<(), WorldError> {
+        if let Some(wk) = self.worker_watches {
+            return Ok(sim.watches(wk).remove_entry(id, payload)?);
+        }
+        match &mut self.main_watches {
+            Some(w) => Ok(w.port.remove_entry(id, payload)?),
+            None => Err(WorldError::Watch(WatchError::StaleWatch(id))),
+        }
+    }
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -815,6 +837,8 @@ trait FieldWatchDyn: Any {
         cond: &Cond,
     ) -> Result<WatchId, WatchError>;
     fn unwatch(&self, sim: &mut Sim, id: WatchId) -> Result<(), WatchError>;
+    fn add_entry(&self, sim: &mut Sim, id: WatchId, entry: SetEntry) -> Result<(), WatchError>;
+    fn remove_entry(&self, sim: &mut Sim, id: WatchId, payload: u32) -> Result<(), WatchError>;
     fn channels(&self) -> Vec<ChannelInfo>;
 }
 
@@ -840,6 +864,12 @@ impl<K: FieldKind + Channels> FieldWatchDyn for FieldWatches<K> {
     }
     fn unwatch(&self, sim: &mut Sim, id: WatchId) -> Result<(), WatchError> {
         sim.watches(self.key).unwatch(id)
+    }
+    fn add_entry(&self, sim: &mut Sim, id: WatchId, entry: SetEntry) -> Result<(), WatchError> {
+        sim.watches(self.key).add_entry(id, entry)
+    }
+    fn remove_entry(&self, sim: &mut Sim, id: WatchId, payload: u32) -> Result<(), WatchError> {
+        sim.watches(self.key).remove_entry(id, payload)
     }
     fn channels(&self) -> Vec<ChannelInfo> {
         channel_infos::<K>()
@@ -2108,6 +2138,25 @@ impl World {
         self.kinds[usize::from(kind)].unwatch(&mut self.sim, id)
     }
 
+    /// Adds (or replaces, by payload) an entry of a `ThresholdSet` watch on
+    /// `kind`'s rows.
+    ///
+    /// # Errors
+    /// An unknown kind or a stale watch.
+    pub fn add_watch_entry(&mut self, kind: KindId, id: WatchId, entry: SetEntry) -> Result<(), WorldError> {
+        self.kind(kind)?;
+        self.kinds[usize::from(kind)].add_entry(&mut self.sim, id, entry)
+    }
+
+    /// Removes a `ThresholdSet` entry.
+    ///
+    /// # Errors
+    /// An unknown kind or a stale watch.
+    pub fn remove_watch_entry(&mut self, kind: KindId, id: WatchId, payload: u32) -> Result<(), WorldError> {
+        self.kind(kind)?;
+        self.kinds[usize::from(kind)].remove_entry(&mut self.sim, id, payload)
+    }
+
     /// Registers a watch on field `K`'s cells (see
     /// [`WorldBuilder::watch_field`]).
     ///
@@ -2150,6 +2199,25 @@ impl World {
             .find(|w| w.field() == TypeId::of::<K>())
             .ok_or(WorldError::NoKind(0))?;
         Ok(w.unwatch(&mut self.sim, id)?)
+    }
+
+    /// Adds (or replaces, by payload) an entry of a `ThresholdSet` watch on
+    /// field `K`'s cells.
+    ///
+    /// # Errors
+    /// The field is not watched, or the watch is stale.
+    pub fn add_field_watch_entry<K: FieldKind>(&mut self, id: WatchId, entry: SetEntry) -> Result<(), WorldError> {
+        let w = self.field_watches.iter().find(|w| w.field() == TypeId::of::<K>()).ok_or(WorldError::NoKind(0))?;
+        Ok(w.add_entry(&mut self.sim, id, entry)?)
+    }
+
+    /// Removes a `ThresholdSet` entry on field `K`'s cells.
+    ///
+    /// # Errors
+    /// The field is not watched, or the watch is stale.
+    pub fn remove_field_watch_entry<K: FieldKind>(&mut self, id: WatchId, payload: u32) -> Result<(), WorldError> {
+        let w = self.field_watches.iter().find(|w| w.field() == TypeId::of::<K>()).ok_or(WorldError::NoKind(0))?;
+        Ok(w.remove_entry(&mut self.sim, id, payload)?)
     }
 
     /// `kind`'s watch channels (one per numeric field).

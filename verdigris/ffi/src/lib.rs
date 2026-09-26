@@ -8,7 +8,7 @@
 mod abi;
 pub mod allocator;
 pub mod entity;
-mod heat_mob;
+mod heat;
 mod heat_regulator;
 mod jobs;
 mod layout;

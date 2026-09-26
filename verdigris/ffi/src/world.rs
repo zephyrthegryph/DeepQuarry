@@ -49,7 +49,7 @@ thread_local! {
 }
 
 /// Every domain's declarations (see the module docs).
-fn register(b: &mut WorldBuilder) {
+fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat> {
     b.add_global(
         vg_core::component::Ownership::Main,
         crate::propagate::RadiationLayer::default(),
@@ -57,6 +57,13 @@ fn register(b: &mut WorldBuilder) {
     b.add_component::<vg_gas::kind::pump::Pump>();
     b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());
+
+    // Heat (`rust_architecture.md` §6, §8.5, step 4): the turf solid field
+    // plus HeatBody/its coupling components and laws. `crate::heat` is the
+    // only heat FFI besides the generic `vg_component_*`/`vg_world_*` ones
+    // (turf topology, and watches -- see that module's docs).
+    let _grid = b.add_grid(crate::heat::pending_dims());
+    let heat_field = crate::heat::register(b);
 
     // Power (`rust_architecture.md` §6, §8.5): `Cables`, its components and
     // laws. A SMES's output/input terminals are their own entities, each on
@@ -81,12 +88,15 @@ fn register(b: &mut WorldBuilder) {
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
     let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
     let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
+
+    heat_field
 }
 
 fn build() -> Result<World> {
     let mut b = WorldBuilder::new(WorldConfig::default());
-    register(&mut b);
+    let heat_field = register(&mut b);
     let world = b.build().map_err(|e| eyre!("world build: {e}"))?;
+    crate::heat::install_field(heat_field);
     registry::register_domain(
         u32::try_from(WORLD_DOMAIN).unwrap_or(7),
         Box::new(WorldEntities),

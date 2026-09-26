@@ -12,8 +12,6 @@ edition = "2021"
 [features]
 default = ["turf_processing"]
 turf_processing = []
-# The heat domain (M4, vg-heat): turf solid heat, bodies and couplings.
-heat = ["turf_processing"]
 
 # Tracing exposes a local port — opt-in only.
 tracy = ["dep:tracing-tracy", "dep:tracing-subscriber", "dep:tracing"]

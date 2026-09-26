@@ -499,21 +499,27 @@ pub trait LinksTo: Component {
 /// `Link`'s rows, so a law reads/writes this once per `Link` row, joined to
 /// its shared `C` row. `value` is `None` when the link is unset or the
 /// linked entity has no `C`; the item still runs.
+///
+/// `C` is any [`Query`] whose `fetch` accepts the linked index as `at.index`
+/// (a component, keyed by entity, or [`crate::field::law::Cell`], keyed by
+/// cell -- heat's step 4 joins a coupling row to a solid field cell this
+/// way, `rust_architecture.md` §8.5), not only [`Component`]s: the bound
+/// used to require `C: Component`, which a field cell can never satisfy.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Foreign<Link: LinksTo, C: Component> {
+pub struct Foreign<Link: LinksTo, C: Query> {
     pub value: Option<C>,
     target: Option<At>,
     marker: std::marker::PhantomData<fn() -> Link>,
 }
 
 /// Resolved ids of a [`Foreign`] query.
-pub struct ForeignState<Link: LinksTo, C: Component> {
+pub struct ForeignState<Link: LinksTo, C: Query> {
     link: Column,
-    value: Column,
-    marker: std::marker::PhantomData<fn() -> (Link, C)>,
+    value: C::State,
+    marker: std::marker::PhantomData<fn() -> Link>,
 }
 
-impl<Link: LinksTo, C: Component> Query for Foreign<Link, C> {
+impl<Link: LinksTo, C: Query> Query for Foreign<Link, C> {
     type State = ForeignState<Link, C>;
 
     fn anchor() -> Option<Anchor> {
@@ -545,7 +551,71 @@ impl<Link: LinksTo, C: Component> Query for Foreign<Link, C> {
     }
 }
 
-impl<Link: LinksTo, C: Component> WriteQuery for Foreign<Link, C> {
+impl<Link: LinksTo, C: WriteQuery> WriteQuery for Foreign<Link, C> {
+    fn write(self, state: &Self::State, frame: &mut FrameData<'_>, _at: At) {
+        if let (Some(v), Some(target)) = (self.value, self.target) {
+            v.write(&state.value, frame, target);
+        }
+    }
+}
+
+/// A second, independent foreign key on the same row (`rust_architecture.md`
+/// step 4: a heat coupling row names both the body it belongs to, through
+/// [`LinksTo`], and the other body it exchanges with, through this trait --
+/// one row type cannot implement [`LinksTo`] twice).
+pub trait LinksTo2: Component {
+    /// The second linked entity's raw slot index, or `None`.
+    fn linked_index2(&self) -> Option<u32>;
+}
+
+/// [`Foreign`]'s twin, joined through [`LinksTo2`] instead of [`LinksTo`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct Foreign2<Link: LinksTo2, C: Query> {
+    pub value: Option<C>,
+    target: Option<At>,
+    marker: std::marker::PhantomData<fn() -> Link>,
+}
+
+/// Resolved ids of a [`Foreign2`] query.
+pub struct Foreign2State<Link: LinksTo2, C: Query> {
+    link: Column,
+    value: C::State,
+    marker: std::marker::PhantomData<fn() -> Link>,
+}
+
+impl<Link: LinksTo2, C: Query> Query for Foreign2<Link, C> {
+    type State = Foreign2State<Link, C>;
+
+    fn anchor() -> Option<Anchor> {
+        <Link as Query>::anchor()
+    }
+
+    fn init(init: &mut QueryInit<'_>, write: bool) -> Result<Self::State, LawError> {
+        let link = <Link as Query>::init(init, false)?;
+        let value = <C as Query>::init(init, write)?;
+        Ok(Foreign2State {
+            link,
+            value,
+            marker: std::marker::PhantomData,
+        })
+    }
+
+    fn fetch(state: &Self::State, frame: &FrameData<'_>, at: At) -> Option<Self> {
+        let link_row = <Link as Query>::fetch(&state.link, frame, at)?;
+        let target = link_row.linked_index2().map(|idx| At {
+            index: idx,
+            entity: Some(idx),
+        });
+        let value = target.and_then(|t| <C as Query>::fetch(&state.value, frame, t));
+        Some(Self {
+            value,
+            target,
+            marker: std::marker::PhantomData,
+        })
+    }
+}
+
+impl<Link: LinksTo2, C: WriteQuery> WriteQuery for Foreign2<Link, C> {
     fn write(self, state: &Self::State, frame: &mut FrameData<'_>, _at: At) {
         if let (Some(v), Some(target)) = (self.value, self.target) {
             v.write(&state.value, frame, target);

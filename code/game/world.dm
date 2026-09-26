@@ -157,6 +157,7 @@ GLOBAL_VAR(restart_counter)
 	vg_verdigris_cleanup()
 	vg_heat_reset()
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	vg_heat_configure_world(world.maxx, world.maxy, world.maxz)
 	log_world("Verdigris loaded: [vg_verdigris_version()] | features: [vg_verdigris_features()]")
 
 	GLOB.world_startup_time = world.timeofday
@@ -713,6 +714,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	maxz++
 	. = maxz
 	vg_configure_world(maxx, maxy, maxz)
+	vg_heat_configure_world(maxx, maxy, maxz)
 	max_z_changed()
 
 // Call this to change world.fps, don't modify it directly.

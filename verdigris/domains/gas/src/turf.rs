@@ -113,8 +113,6 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
 	let max_y = max_y.get_number()?.max(1.0) as u32;
 	let max_z = max_z.get_number()?.max(1.0) as u32;
 	with_world(|w| configure(w, max_x, max_y, max_z))?;
-	#[cfg(feature = "heat")]
-	crate::heat::configure_heat(max_x, max_y, max_z)?;
 	Ok(ByondValue::null())
 }
 

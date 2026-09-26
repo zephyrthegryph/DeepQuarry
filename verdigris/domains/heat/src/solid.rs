@@ -234,6 +234,8 @@ fn radiation(body: &Side<'_, SolidCell>, dt: f32) -> f32 {
 impl FieldKind for SolidHeat {
     const GEOMETRY_NAME: &'static str = "heat_geometry";
     const QUANTITIES: usize = 1;
+    const QUANTITY_NAMES: &'static [&'static str] = &["heat_energy"];
+    const BLOCK: vg_core::grid::BlockKind = vg_core::grid::BlockKind::Heat;
     type Flux = f32;
 
     fn flux(a: Side<'_, SolidCell>, b: Side<'_, SolidCell>, dt: f32) -> f32 {
