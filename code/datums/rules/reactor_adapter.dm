@@ -215,13 +215,14 @@
 	if(!isnull(entry[DQ_RX_WATCH_LIVE]))
 		if(entry[DQ_RX_WATCH_BODY] == body)
 			return
-		vg_heat_unwatch(entry[DQ_RX_WATCH_LIVE])
+		var/list/old_live = entry[DQ_RX_WATCH_LIVE]
+		vg_heat_unwatch(TRUE, old_live[1], old_live[2])
 		entry[DQ_RX_WATCH_LIVE] = null
 		entry[DQ_RX_WATCH_BODY] = null
 	if(isnull(body) || QDELETED(D))
 		return // at rest: the object reads its surroundings
 	var/list/params = entry[DQ_RX_WATCH_PARAMS]
-	var/live
+	var/list/live
 	switch(entry[DQ_RX_WATCH_KIND])
 		if(RULE_TRIGGER_THRESHOLD)
 			live = vg_heat_watch(TRUE, body, D.heat_subscriber_index(), HEAT_LANE_NORMAL, params[1] ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, params[2], params[3] ? TRUE : FALSE)
@@ -239,7 +240,8 @@
 	if(!entry)
 		return
 	if(!isnull(entry[DQ_RX_WATCH_LIVE]))
-		vg_heat_unwatch(entry[DQ_RX_WATCH_LIVE])
+		var/list/live = entry[DQ_RX_WATCH_LIVE]
+		vg_heat_unwatch(TRUE, live[1], live[2])
 	watches -= token
 	LAZYREMOVE(node_watches["[entry[DQ_RX_WATCH_NODE]]"], token)
 

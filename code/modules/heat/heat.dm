@@ -204,7 +204,9 @@
 GLOBAL_LIST_EMPTY(heat_subscribers)
 /// Free subscriber indices.
 GLOBAL_LIST_EMPTY(heat_subscriber_free)
-/// "[watch handle]" -> subscriber index, for ThresholdSet crossings.
+/// "[watch index]" -> subscriber index, for ThresholdSet crossings
+/// (index alone: `vg_heat_take_wakes()`'s crossing records carry only the
+/// watch's table index, not its generation -- see that proc's doc).
 GLOBAL_LIST_EMPTY(heat_watch_owners)
 
 /// This datum's heat subscriber index (0: none).
@@ -235,7 +237,12 @@ GLOBAL_LIST_EMPTY(heat_watch_owners)
 
 /// Watches `target`'s temperature for crossing `limit` (upwards if `above`).
 /// A turf watches its solid; any other atom its heat body (kept while watched).
-/// Returns the watch handle. on_heat_wake(watch, reason, source) is called.
+/// Returns the watch handle, `list(on_body, index, generation)` -- opaque to
+/// every caller except `heat_unwatch()`/`heat_watch_set_add()`/
+/// `vg_heat_watch_set_remove()`, which need it back apart to call the
+/// generic `vg_heat_unwatch`/`vg_heat_watch_set_*` binds (index and
+/// generation are their own numbers there, never packed into one, so
+/// neither is ever truncated). on_heat_wake(watch, reason, source) is called.
 /datum/proc/heat_watch_threshold(atom/target, limit, above = TRUE, both_edges = FALSE, lane = HEAT_LANE_NORMAL)
 	return heat_watch(target, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges, lane)
 
@@ -251,24 +258,29 @@ GLOBAL_LIST_EMPTY(heat_watch_owners)
 
 /datum/proc/heat_watch(atom/target, kind, level, both_edges, lane)
 	var/subscriber = heat_subscriber_index()
-	var/watch
-	if(isturf(target))
-		watch = vg_heat_watch(FALSE, target, subscriber, lane, kind, level, both_edges)
+	var/on_body = !isturf(target)
+	var/list/id
+	if(!on_body)
+		id = vg_heat_watch(FALSE, target, subscriber, lane, kind, level, both_edges)
 	else
 		if(!target.create_heat_body(TRUE))
 			return null
 		vg_heat_body_keep(target.heat_body, TRUE)
-		watch = vg_heat_watch(TRUE, target.heat_body, subscriber, lane, kind, level, both_edges)
-	if(!isnull(watch))
-		GLOB.heat_watch_owners["[watch]"] = subscriber
+		id = vg_heat_watch(TRUE, target.heat_body, subscriber, lane, kind, level, both_edges)
+	if(isnull(id))
+		return null
+	var/list/watch = list(on_body, id[1], id[2])
+	GLOB.heat_watch_owners["[id[1]]"] = subscriber
 	return watch
 
-/proc/heat_watch_set_add(watch, payload, generation, limit, above = TRUE, both_edges = FALSE)
-	return vg_heat_watch_set_add(watch, payload, generation, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges)
+/proc/heat_watch_set_add(list/watch, payload, generation, limit, above = TRUE, both_edges = FALSE)
+	return vg_heat_watch_set_add(watch[1], watch[2], watch[3], payload, generation, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges)
 
-/proc/heat_unwatch(watch)
-	GLOB.heat_watch_owners -= "[watch]"
-	return vg_heat_unwatch(watch)
+/proc/heat_unwatch(list/watch)
+	if(isnull(watch))
+		return
+	GLOB.heat_watch_owners -= "[watch[2]]"
+	return vg_heat_unwatch(watch[1], watch[2], watch[3])
 
 /// A heat watch fired. `reason` is the vg-core reason mask, `source` the cell
 /// or body slot.

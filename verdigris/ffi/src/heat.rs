@@ -29,7 +29,7 @@ use vg_core::outbox::{Lane, Subscriber, WatchId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
 use vg_heat::components::gas_kind;
-use vg_heat::couple::GasHandle;
+use vg_heat::couple::{GasHandle, GasRef};
 use vg_heat::laws::{BodyBodyExchange, BodyGasExchange, RegulatorHeatPump, SolidBodyExchange};
 use vg_heat::{BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat};
 
@@ -42,6 +42,23 @@ thread_local! {
     /// side table `heat_body_couple`/`heat_body_create`/`heat_body_release`
     /// keep in sync so a re-couple can find and drop the old one.
     static COUPLINGS: RefCell<HashMap<(u32, u8), (u8, vg_core::entity::EntityId)>> = RefCell::new(HashMap::new());
+    /// Coupling entity index -> owning body entity, the reverse of
+    /// [`COUPLINGS`]: `HeatEvent::Settled` (`vg_heat::laws`) is emitted by
+    /// the coupling's own law (`LawCtx::emit`'s entity is always the
+    /// anchor, never the `Foreign`-joined body), so draining it needs this
+    /// to find which body to release.
+    static COUPLING_BODY: RefCell<HashMap<u32, vg_core::entity::EntityId>> = RefCell::new(HashMap::new());
+    /// Solid cell -> the `SolidCoupling` entities targeting it, so an
+    /// external turf write (`heat_set_turf`/`heat_add_turf`/
+    /// `heat_set_turf_temperature`) can wake them: a coupling anchored on
+    /// its own entity is never woken by a write to the field cell it
+    /// merely joins (`Foreign2`'s join has no reverse-wake of its own,
+    /// unlike a network region's revision).
+    static CELL_COUPLINGS: RefCell<HashMap<u32, Vec<vg_core::entity::EntityId>>> = RefCell::new(HashMap::new());
+    /// Body entity index -> the `BodyCoupling` entities naming it as the
+    /// *other* side, so a write to that body (any `heat_body_*` bind)
+    /// wakes them too, not only the couplings it owns.
+    static BODY_AS_OTHER: RefCell<HashMap<u32, Vec<vg_core::entity::EntityId>>> = RefCell::new(HashMap::new());
     /// The grid size the next (re)build uses (`vg_heat_configure_world`).
     static PENDING_DIMS: Cell<GridDims> = Cell::new(GridDims::new(2, 2, 2).expect("2x2x2 fits"));
 }
@@ -211,6 +228,7 @@ fn set_turf(field: FieldKey<SolidHeat>, cell: u32, kind: i32, capacity: f32, con
             let t = if kind == HEAT_CELL_SPACE { vg_heat::consts::TCMB } else { temperature.max(vg_heat::consts::TCMB) };
             let _ = w.sim_mut().port(field.cells).put(cell, SolidCell::at(capacity, t, conductivity.max(0.0), emissivity, f));
         }
+        wake_cell_couplings(w, cell);
         Ok(true)
     })
 }
@@ -221,6 +239,7 @@ fn clear_turf(w: &mut vg_core::world::World, field: FieldKey<SolidHeat>, cell: u
         let _ = w.sim_mut().port(field.geometry).put(cell, Geom::default());
         let _ = w.sim_mut().port(field.cells).put(cell, SolidCell::default());
     }
+    wake_cell_couplings(w, cell);
 }
 
 #[auxmacros::bind("/turf/proc/heat_set_turf")]
@@ -290,7 +309,9 @@ fn heat_add_turf(turf: ByondValue, joules: ByondValue) -> Result<ByondValue> {
         if !g.is_node() || g.reservoir || !joules.is_finite() {
             return Ok(false);
         }
-        Ok(w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Add(joules)).is_ok())
+        let ok = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Add(joules)).is_ok();
+        wake_cell_couplings(w, cell);
+        Ok(ok)
     })?;
     Ok(ok.into())
 }
@@ -307,7 +328,9 @@ fn heat_set_turf_temperature(turf: ByondValue, temperature: ByondValue) -> Resul
         if !g.is_node() || !t.is_finite() {
             return Ok(false);
         }
-        Ok(w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Set { temperature: t, capacity: g.capacity }).is_ok())
+        let ok = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Set { temperature: t, capacity: g.capacity }).is_ok();
+        wake_cell_couplings(w, cell);
+        Ok(ok)
     })?;
     Ok(ok.into())
 }
@@ -343,8 +366,162 @@ fn coupling_kind_for(target_kind: i32) -> Result<i32> {
 /// Detaches (body, slot)'s current coupling entity, if any.
 fn drop_coupling(w: &mut vg_core::world::World, body: u32, slot: u8) {
     if let Some((_, e)) = COUPLINGS.with(|c| c.borrow_mut().remove(&(body, slot))) {
+        COUPLING_BODY.with(|c| c.borrow_mut().remove(&e.index()));
+        CELL_COUPLINGS.with(|c| {
+            for v in c.borrow_mut().values_mut() {
+                v.retain(|&x| x != e);
+            }
+        });
+        BODY_AS_OTHER.with(|c| {
+            for v in c.borrow_mut().values_mut() {
+                v.retain(|&x| x != e);
+            }
+        });
         let _ = w.despawn(e);
     }
+}
+
+/// Records `coupling`'s owning body for [`drain_settled_bodies`].
+fn track_coupling_owner(coupling: vg_core::entity::EntityId, body: vg_core::entity::EntityId) {
+    COUPLING_BODY.with(|c| c.borrow_mut().insert(coupling.index(), body));
+}
+
+/// Records that `coupling` (a `SolidCoupling`) targets `cell`, for
+/// [`wake_cell_couplings`].
+fn track_cell_coupling(cell: u32, coupling: vg_core::entity::EntityId) {
+    CELL_COUPLINGS.with(|c| c.borrow_mut().entry(cell).or_default().push(coupling));
+}
+
+/// Records that `coupling` (a `BodyCoupling`) names `other` as its other
+/// side, for [`wake_body_couplings`].
+fn track_body_coupling(other: u32, coupling: vg_core::entity::EntityId) {
+    BODY_AS_OTHER.with(|c| c.borrow_mut().entry(other).or_default().push(coupling));
+}
+
+/// Wakes every `SolidCoupling` targeting `cell` (an external turf write).
+fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
+    let Some(kind) = w.kind_of::<SolidCoupling>() else { return };
+    let targets = CELL_COUPLINGS.with(|c| c.borrow().get(&cell).cloned()).unwrap_or_default();
+    for e in targets {
+        let _ = w.wake_row(e, kind);
+    }
+}
+
+/// Wakes every coupling that reads `body` (its own, and any `BodyCoupling`
+/// naming it as the other side) -- an external write to the body itself
+/// (`heat_body_add`/`power`/`capacity`/`phase`/`set_temperature`/
+/// `release`), so a coupling that had settled and gone to sleep notices.
+fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
+    let owned = COUPLINGS.with(|c| {
+        c.borrow()
+            .iter()
+            .filter(|&(&(b, _), _)| b == body)
+            .map(|(_, &(kind, e))| (kind, e))
+            .collect::<Vec<_>>()
+    });
+    for (kind, e) in owned {
+        let kind_id = match kind {
+            0 => w.kind_of::<SolidCoupling>(),
+            1 => w.kind_of::<GasCoupling>(),
+            2 => w.kind_of::<BodyCoupling>(),
+            _ => None,
+        };
+        if let Some(k) = kind_id {
+            let _ = w.wake_row(e, k);
+        }
+    }
+    let Some(body_kind) = w.kind_of::<BodyCoupling>() else { return };
+    let others = BODY_AS_OTHER.with(|c| c.borrow().get(&body).cloned()).unwrap_or_default();
+    for e in others {
+        let _ = w.wake_row(e, body_kind);
+    }
+}
+
+/// If `body` is following the analytic relax model (`vg_heat::laws`'s
+/// module docs), resolves it exactly at `w.now()` and deposits the energy
+/// it moved into slot 0's environment, leaving `body.relax` cleared. A
+/// direct external write to a relaxing body (`heat_body_add`/`power`/
+/// `capacity`/`phase`/`set_temperature`) must go through this first: the
+/// model's anchor (`since`/`ambient`) is only valid until something other
+/// than the coupling's own law changes the body, and `energy` holds the
+/// anchor value, not the current one, while relaxing -- writing it
+/// directly without settling first would silently create or destroy
+/// energy relative to what the exact model already promised the
+/// environment. The coupling's own law re-enters relax mode on its own
+/// next run if the body (now freshly woken, see [`wake_body_couplings`])
+/// is still eligible.
+fn settle_body_if_relaxing(w: &mut vg_core::world::World, e: vg_core::entity::EntityId, body: &mut HeatBody) -> Result<()> {
+    if !body.relax {
+        return Ok(());
+    }
+    let now = w.now();
+    let Some(&(kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()).as_ref() else {
+        // No slot-0 coupling to deposit into (it was detached without
+        // going through `heat_body_couple`/`release`, which both settle
+        // and drop it themselves): just leave the model's anchor value as
+        // the stored energy -- the least-surprising fallback, matching a
+        // plain non-relaxing body with the same energy.
+        body.relax = false;
+        return Ok(());
+    };
+    match kind {
+        0 => {
+            let Some(coupling) = w.read::<SolidCoupling>(coupling_e) else {
+                body.relax = false;
+                return Ok(());
+            };
+            let field = field()?;
+            let (Some(g), Some(mut cell)) = (w.sim_mut().port(field.geometry).read(coupling.cell), w.sim_mut().port(field.cells).read(coupling.cell)) else {
+                body.relax = false;
+                return Ok(());
+            };
+            let moved = vg_heat::laws::settle_relax(body, coupling.conductance, now);
+            if g.reservoir {
+                // Outside `heat_energy`'s tracked total either way; nothing
+                // to write back, and there is no generic per-bind ledger
+                // to book a one-off external write to (unlike the law's
+                // own step, which always runs inside a `World::conserve()`
+                // check).
+            } else if moved != 0.0 {
+                #[allow(clippy::cast_possible_truncation)]
+                let m = moved as f32;
+                cell.energy += m;
+                cell.temperature = cell.energy / g.capacity;
+                let _ = w.sim_mut().port(field.cells).put(coupling.cell, cell);
+            }
+        }
+        1 => {
+            let Some(coupling) = w.read::<GasCoupling>(coupling_e) else {
+                body.relax = false;
+                return Ok(());
+            };
+            let target = if coupling.kind == gas_kind::MIXTURE { GasRef::Mixture(coupling.target) } else { GasRef::Turf(coupling.target) };
+            let gas = w.global::<GasHandle>().map(|g| g.0.clone()).ok();
+            let moved = vg_heat::laws::settle_relax(body, coupling.conductance, now);
+            if let Some(gas) = gas {
+                #[allow(clippy::cast_possible_truncation)]
+                let m = moved as f32;
+                let _ = gas.exchange(target, &mut |_p| m);
+            }
+        }
+        2 => {
+            let Some(coupling) = w.read::<BodyCoupling>(coupling_e) else {
+                body.relax = false;
+                return Ok(());
+            };
+            let other_e = vg_core::entity::EntityId::from_bits(coupling.other).unwrap_or(e);
+            let moved = vg_heat::laws::settle_relax(body, coupling.conductance, now);
+            if moved != 0.0
+                && let Some(mut other) = w.read::<HeatBody>(other_e)
+            {
+                let floor = other.capacity * f64::from(vg_heat::consts::TCMB);
+                other.energy = (other.energy + moved).max(floor);
+                let _ = w.put(other_e, other);
+            }
+        }
+        _ => body.relax = false,
+    }
+    Ok(())
 }
 
 /// Sets (body, slot)'s coupling, replacing any previous one. `target_kind`
@@ -361,6 +538,8 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
                 let cell = target_ref.get_ref()?;
                 let e = w.bind_value(None, SolidCoupling { body: body_i, cell, conductance: conductance.into(), slot }).map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (0, e)));
+                track_coupling_owner(e, body_e);
+                track_cell_coupling(cell, e);
             }
             HEAT_TARGET_TURF_AIR => {
                 let cell = target_ref.get_ref()?;
@@ -368,6 +547,7 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
                     .bind_value(None, GasCoupling { body: body_i, kind: gas_kind::TURF, target: cell, conductance: conductance.into(), slot })
                     .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
+                track_coupling_owner(e, body_e);
             }
             HEAT_TARGET_MIXTURE => {
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -376,6 +556,7 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
                     .bind_value(None, GasCoupling { body: body_i, kind: gas_kind::MIXTURE, target, conductance: conductance.into(), slot })
                     .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
+                track_coupling_owner(e, body_e);
             }
             HEAT_TARGET_BODY => {
                 let other = entity::decode(num(target_ref)?)?;
@@ -383,6 +564,8 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
                     .bind_value(None, BodyCoupling { body: body_i, other: other.index(), conductance: conductance.into(), slot })
                     .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (2, e)));
+                track_coupling_owner(e, body_e);
+                track_body_coupling(other.index(), e);
             }
             _ => unreachable!("coupling_kind_for checked"),
         }
@@ -437,9 +620,12 @@ fn heat_body_add(h: ByondValue, joules: ByondValue) -> Result<ByondValue> {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
         };
+        settle_body_if_relaxing(w, e, &mut b)?;
         let floor = b.capacity * f64::from(vg_heat::consts::TCMB);
         b.energy = (b.energy + joules).max(floor);
-        Ok(w.put(e, b).is_ok())
+        let ok = w.put(e, b).is_ok();
+        wake_body_couplings(w, e.index());
+        Ok(ok)
     })?;
     Ok(ok.into())
 }
@@ -459,7 +645,16 @@ fn heat_body_couple(h: ByondValue, slot: ByondValue, target_kind: ByondValue, ta
 fn heat_body_power(h: ByondValue, watts: ByondValue) -> Result<ByondValue> {
     let watts = f64::from(num(&watts)?);
     let Some(e) = body(&h)? else { return Ok(false.into()) };
-    let ok = with_world(|w| Ok(w.set(e, kind_of(w, "HeatBody")?, field_id::<HeatBody>("power")?, None, watts).is_ok()))?;
+    let ok = with_world(|w| {
+        let Some(mut b) = w.read::<HeatBody>(e) else {
+            return Ok(false);
+        };
+        settle_body_if_relaxing(w, e, &mut b)?;
+        b.power = watts;
+        let ok = w.put(e, b).is_ok();
+        wake_body_couplings(w, e.index());
+        Ok(ok)
+    })?;
     Ok(ok.into())
 }
 
@@ -474,10 +669,13 @@ fn heat_body_capacity(h: ByondValue, capacity: ByondValue) -> Result<ByondValue>
         if !(capacity.is_finite() && capacity > 0.0) {
             return Ok(false);
         }
+        settle_body_if_relaxing(w, e, &mut b)?;
         let t = b.temperature();
         b.capacity = capacity;
         b.energy = capacity * t;
-        Ok(w.put(e, b).is_ok())
+        let ok = w.put(e, b).is_ok();
+        wake_body_couplings(w, e.index());
+        Ok(ok)
     })?;
     Ok(ok.into())
 }
@@ -490,11 +688,14 @@ fn heat_body_phase(h: ByondValue, temperature: ByondValue, latent: ByondValue) -
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
         };
+        settle_body_if_relaxing(w, e, &mut b)?;
         let temp = b.temperature();
         b.phase_temperature = t;
         b.phase_latent = l;
         b.energy = f64::from(vg_core::thermo::phase_energy(temp as f32, b.capacity as f32, b.phase()));
-        Ok(w.put(e, b).is_ok())
+        let ok = w.put(e, b).is_ok();
+        wake_body_couplings(w, e.index());
+        Ok(ok)
     })?;
     Ok(ok.into())
 }
@@ -507,8 +708,14 @@ fn heat_body_set_temperature(h: ByondValue, temperature: ByondValue) -> Result<B
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
         };
+        // DM authority: the new temperature replaces whatever the model
+        // was doing, so this clears `relax` outright instead of settling
+        // first (settling would just be overwritten immediately after).
+        b.relax = false;
         b.energy = f64::from(vg_core::thermo::phase_energy(t as f32, b.capacity as f32, b.phase()));
-        Ok(w.put(e, b).is_ok())
+        let ok = w.put(e, b).is_ok();
+        wake_body_couplings(w, e.index());
+        Ok(ok)
     })?;
     Ok(ok.into())
 }
@@ -517,19 +724,23 @@ fn heat_body_set_temperature(h: ByondValue, temperature: ByondValue) -> Result<B
 fn heat_body_keep(h: ByondValue, keep: ByondValue) -> Result<ByondValue> {
     let keep = keep.is_true();
     let Some(e) = body(&h)? else { return Ok(false.into()) };
-    let ok = with_world(|w| Ok(w.set(e, kind_of(w, "HeatBody")?, field_id::<HeatBody>("keep")?, None, if keep { 1.0 } else { 0.0 }).is_ok()))?;
+    let ok = with_world(|w| {
+        let ok = w.set(e, kind_of(w, "HeatBody")?, field_id::<HeatBody>("keep")?, None, if keep { 1.0 } else { 0.0 }).is_ok();
+        wake_body_couplings(w, e.index());
+        Ok(ok)
+    })?;
     Ok(ok.into())
 }
 
-/// Releases a body: drops its coupling entities and despawns it at once
-/// (unlike the pre-port model, its excess heat is not separately settled
-/// into its environment first -- a known, disclosed simplification; see
-/// `crate::heat`'s module docs and the step 4 commit message).
+/// Releases a body: settles it (if relaxing) into its environment,
+/// deposits its excess over slot 0's environment there too, drops its
+/// coupling entities and despawns it at once.
 #[auxmacros::bind("/proc/heat_body_release")]
 fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
     if let Some(e) = body(&h)? {
         let body_i = e.index();
         with_world(|w| {
+            release_body(w, e)?;
             drop_coupling(w, body_i, 0);
             drop_coupling(w, body_i, 1);
             let _ = w.despawn(e);
@@ -539,11 +750,107 @@ fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
+/// Settles `body` if it is relaxing, then moves whatever it holds above
+/// slot 0's environment there too (`body.rs::release`, ported): the
+/// baseline (what the environment already is) stays out of the books as
+/// released, not conserved -- exactly `heat.dm`'s "excess heat goes to its
+/// surroundings" contract.
+fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> Result<()> {
+    let Some(mut b) = w.read::<HeatBody>(e) else {
+        return Ok(());
+    };
+    settle_body_if_relaxing(w, e, &mut b)?;
+    let Some(&(kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()).as_ref() else {
+        return Ok(());
+    };
+    match kind {
+        0 => {
+            if let Some(coupling) = w.read::<SolidCoupling>(coupling_e) {
+                let field = field()?;
+                if let (Some(g), Some(cell)) = (w.sim_mut().port(field.geometry).read(coupling.cell), w.sim_mut().port(field.cells).read(coupling.cell)) {
+                    let baseline_t = if g.reservoir { cell.temperature } else { cell.temperature_in(g.capacity) };
+                    #[allow(clippy::cast_possible_truncation)]
+                    let baseline = f64::from(vg_core::thermo::phase_energy(baseline_t, b.capacity as f32, b.phase()).max(0.0));
+                    let excess = b.energy - baseline;
+                    if excess != 0.0 && !g.reservoir {
+                        #[allow(clippy::cast_possible_truncation)]
+                        let m = excess as f32;
+                        let mut cell = cell;
+                        cell.energy += m;
+                        cell.temperature = cell.energy / g.capacity;
+                        let _ = w.sim_mut().port(field.cells).put(coupling.cell, cell);
+                    }
+                }
+            }
+        }
+        1 => {
+            if let Some(coupling) = w.read::<GasCoupling>(coupling_e) {
+                let target = if coupling.kind == gas_kind::MIXTURE { GasRef::Mixture(coupling.target) } else { GasRef::Turf(coupling.target) };
+                if let Ok(gas) = w.global::<GasHandle>() {
+                    let gas = gas.0.clone();
+                    if let Some(probe) = gas.probe(target) {
+                        #[allow(clippy::cast_possible_truncation)]
+                        let baseline = f64::from(vg_core::thermo::phase_energy(probe.temperature, b.capacity as f32, b.phase()).max(0.0));
+                        let excess = b.energy - baseline;
+                        if excess != 0.0 {
+                            #[allow(clippy::cast_possible_truncation)]
+                            let m = excess as f32;
+                            let _ = gas.exchange(target, &mut |_p| m);
+                        }
+                    }
+                }
+            }
+        }
+        2 => {
+            if let Some(coupling) = w.read::<BodyCoupling>(coupling_e) {
+                let other_e = vg_core::entity::EntityId::from_bits(coupling.other).unwrap_or(e);
+                if let Some(mut other) = w.read::<HeatBody>(other_e) {
+                    #[allow(clippy::cast_possible_truncation)]
+                    let baseline = f64::from(vg_core::thermo::phase_energy(other.temperature() as f32, b.capacity as f32, b.phase()).max(0.0));
+                    let excess = b.energy - baseline;
+                    if excess != 0.0 {
+                        other.energy += excess;
+                        let _ = w.put(other_e, other);
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 #[auxmacros::bind("/proc/heat_body_flow")]
 fn heat_body_flow(h: ByondValue) -> Result<ByondValue> {
     let Some(e) = body(&h)? else { return Ok(0.0f32.into()) };
     let flow = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| b.flow)))?;
     Ok(ByondValue::from(flow.unwrap_or(0.0) as f32))
+}
+
+/// Auto-release: a coupling law that just settled a releasable body within
+/// [`vg_heat::consts::BODY_SETTLED_K`] of its environment emitted
+/// [`vg_heat::laws::HeatEvent::Settled`] (`LawCtx::emit`'s entity is
+/// always the coupling's own, the law's anchor -- never the body it
+/// `Foreign`-joins), so this resolves it back to the owning body through
+/// [`COUPLING_BODY`] and releases it exactly as `heat_body_release` would
+/// (the settle already happened inside the law; only dropping the
+/// coupling entities and despawning is left).
+fn drain_settled_bodies(w: &mut vg_core::world::World) {
+    let events = w.drain_events();
+    let settled: Vec<vg_core::entity::EntityId> = events
+        .decoded::<vg_heat::laws::HeatEvent>()
+        .filter_map(|(entity_v, vg_heat::laws::HeatEvent::Settled)| entity::decode(entity_v).ok())
+        .filter_map(|coupling_e| COUPLING_BODY.with(|c| c.borrow().get(&coupling_e.index()).copied()))
+        .collect();
+    for body_e in settled {
+        if w.read::<HeatBody>(body_e).is_none() {
+            continue;
+        }
+        let body_i = body_e.index();
+        drop_coupling(w, body_i, 0);
+        drop_coupling(w, body_i, 1);
+        let _ = w.despawn(body_e);
+    }
 }
 
 fn kind_of(w: &vg_core::world::World, name: &str) -> Result<KindId> {
@@ -570,28 +877,18 @@ pub const HEAT_WATCH_BAND: i32 = 2;
 /// @dm-define HEAT_WATCH_SET
 pub const HEAT_WATCH_SET: i32 = 3;
 
-/// Packs a `WatchId` into one DM-exact f32 (`index` in the low 16 bits,
-/// `generation` truncated to 8 -- a real `WatchId::generation` is a full
-/// `u32`, so a watch table slot reused more than 256 times before its
-/// handle is unwatched sees a spurious "stale watch" rather than aliasing
-/// onto the wrong watch: fails safe, not silently wrong. Disclosed
-/// simplification, `crate::heat`'s module docs).
-fn pack_watch(id: WatchId, on_body: bool) -> f32 {
-    #[allow(clippy::cast_possible_truncation)]
-    let packed = (id.index & 0xffff) | ((id.generation & 0xff) << 16) | (u32::from(on_body) << 24);
-    packed as f32
-}
-
-fn unpack_watch(v: f32) -> Result<(WatchId, bool)> {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let packed = v as u32;
-    Ok((
-        WatchId {
-            index: packed & 0xffff,
-            generation: (packed >> 16) & 0xff,
-        },
-        (packed >> 24) & 1 == 1,
-    ))
+/// A DM watch handle: `index` and `generation` as their own numbers (no
+/// packing), so neither is ever truncated -- `WatchId::generation` is a
+/// full `u32`, wider than a single `f32` could carry alongside `index`
+/// without losing bits. `heat_watch` returns `list(index, generation)`;
+/// every other watch bind takes them back as two arguments plus `on_body`
+/// (also no longer packed into a spare bit), matching `Wake`/`WatchId`'s
+/// own shape exactly instead of DM's own encoding of it.
+fn watch_id(index: &ByondValue, generation: &ByondValue) -> Result<WatchId> {
+    Ok(WatchId {
+        index: whole(index, "watch index")?,
+        generation: whole(generation, "watch generation")?,
+    })
 }
 
 fn channel_of(chans: &[vg_core::channel::ChannelInfo], name: &str) -> Result<vg_core::channel::ChannelId> {
@@ -635,7 +932,8 @@ fn heat_watch(on_body: ByondValue, target_ref: ByondValue, subscriber: ByondValu
             w.watch_cells::<SolidHeat>(subscriber, lane, &cond).map_err(|e| eyre!("{e}"))
         }
     })?;
-    Ok(ByondValue::from(pack_watch(id, on_body)))
+    #[allow(clippy::cast_precision_loss)]
+    list([id.index as f32, id.generation as f32])
 }
 
 fn watch_cond(kind: i32, level: &ByondValue, both: bool, ch: vg_core::channel::ChannelId, unit: vg_core::channel::Unit, cell: u32) -> Result<Cond> {
@@ -669,8 +967,9 @@ fn watch_cond(kind: i32, level: &ByondValue, both: bool, ch: vg_core::channel::C
 }
 
 #[auxmacros::bind("/proc/heat_watch_set_add")]
-fn heat_watch_set_add(watch: ByondValue, payload: ByondValue, generation: ByondValue, cmp: ByondValue, limit: ByondValue, both: ByondValue) -> Result<ByondValue> {
-    let (id, on_body) = unpack_watch(num(&watch)?)?;
+fn heat_watch_set_add(on_body: ByondValue, index: ByondValue, watch_generation: ByondValue, payload: ByondValue, generation: ByondValue, cmp: ByondValue, limit: ByondValue, both: ByondValue) -> Result<ByondValue> {
+    let id = watch_id(&index, &watch_generation)?;
+    let on_body = on_body.is_true();
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let (payload, generation) = (num(&payload)? as u32, num(&generation)? as u32);
     let cmp = if num(&cmp)? as i32 == HEAT_WATCH_BELOW { Cmp::Below } else { Cmp::Above };
@@ -694,8 +993,9 @@ fn heat_watch_set_add(watch: ByondValue, payload: ByondValue, generation: ByondV
 }
 
 #[auxmacros::bind("/proc/heat_watch_set_remove")]
-fn heat_watch_set_remove(watch: ByondValue, payload: ByondValue) -> Result<ByondValue> {
-    let (id, on_body) = unpack_watch(num(&watch)?)?;
+fn heat_watch_set_remove(on_body: ByondValue, index: ByondValue, watch_generation: ByondValue, payload: ByondValue) -> Result<ByondValue> {
+    let id = watch_id(&index, &watch_generation)?;
+    let on_body = on_body.is_true();
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let payload = num(&payload)? as u32;
     with_world(|w| {
@@ -711,8 +1011,9 @@ fn heat_watch_set_remove(watch: ByondValue, payload: ByondValue) -> Result<Byond
 }
 
 #[auxmacros::bind("/proc/heat_unwatch")]
-fn heat_unwatch(watch: ByondValue) -> Result<ByondValue> {
-    let (id, on_body) = unpack_watch(num(&watch)?)?;
+fn heat_unwatch(on_body: ByondValue, index: ByondValue, watch_generation: ByondValue) -> Result<ByondValue> {
+    let id = watch_id(&index, &watch_generation)?;
+    let on_body = on_body.is_true();
     with_world(|w| {
         if on_body {
             let _ = w.unwatch(kind_of(w, "HeatBody")?, id);
@@ -744,14 +1045,20 @@ fn heat_take_wakes() -> Result<ByondValue> {
         for wk in wakes {
             flat.extend_from_slice(&[wk.subscriber as f32, wk.watch.index as f32, wk.reason as f32, (wk.source & 0x00ff_ffff) as f32]);
         }
-        // `ThresholdSet` crossings (payload/entered/generation) are not
-        // appended here: `World`'s generic driver does not yet thread a
-        // component/field kind's `Outbox::events()` through to
-        // `World::drain_events()` (only wakes), so there is nowhere to read
-        // a crossing's payload from yet. A `HEAT_WATCH_SET` watch still
-        // registers and its wake still fires (DM sees *that* it crossed
-        // something); which entry crossed is a disclosed gap, not silently
-        // wrong data -- see the step 4 commit message.
+        // `ThresholdSet` crossings: watch_index, payload, entered,
+        // payload_generation -- matching the pre-port wire format exactly.
+        // `crate::outbox::Event` (the core type a crossing rides in) only
+        // carries the watch's table *index*, not its generation
+        // (`core::world::ThresholdCrossing`'s doc), so -- like the pre-port
+        // `HeatWorld`'s own `cell_watch_owner`/`body_watch_owner` re-keying
+        // maps, which were also index-only internally -- `GLOB.
+        // heat_watch_owners` (heat.dm) looks up a crossing's owner by watch
+        // index alone, not the full (index, generation) handle DM otherwise
+        // holds for `heat_unwatch`/`heat_watch_set_add`/`remove`.
+        for c in w.drain_threshold_crossings() {
+            flat.extend_from_slice(&[c.watch as f32, c.payload as f32, if c.entered { 1.0 } else { 0.0 }, c.generation as f32]);
+        }
+        drain_settled_bodies(w);
         Ok(())
     })?;
     let list = ByondValue::new_list()?;

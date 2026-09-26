@@ -64,7 +64,7 @@ use crate::frame::{FrameInfo, Ref, Res, ResourceId, Resources, Task, TaskCtx, ru
 use crate::grid::{Grid, GridDims};
 use crate::law::{Effects, Law, LawCtx, OrderCycle, Pacer, Settle, order_laws};
 use crate::network::{NetworkHost, NetworkKind, RegionEvent, host::Transition};
-use crate::outbox::{Lane, Outbox, Subscriber, Wake, WatchId};
+use crate::outbox::{EventKind, Lane, Outbox, Subscriber, Wake, WatchId};
 use crate::owner::{Applied, Domain, DomainKey, DomainState, PortError};
 use crate::query::{
     Access, Anchor, At, Catalog, ColumnSource, FrameData, Item, LawError, Phase, Query, QueryInit,
@@ -204,6 +204,35 @@ pub struct FrameWakes {
 pub struct FrameOut {
     pub events: EventSink,
     pub violations: Vec<Violation>,
+}
+
+/// A `ThresholdSet` entry crossing (`vg_core::watch`'s `Cond::ThresholdSet`,
+/// `rust_architecture.md` §4.8): a component or field kind's own
+/// [`Outbox`] carries these as plain [`crate::outbox::Event`]s alongside
+/// its wakes, and [`World::drain_threshold_crossings`] is where they
+/// finally surface to DM -- the driver did not thread them through before
+/// (only wakes), so a `ThresholdSet` watch would fire its wake but its
+/// payload/entered/generation had nowhere to go.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ThresholdCrossing {
+    /// The watch's own table index (as in [`Wake::watch`]'s `index`; not
+    /// generation-checked here, same as a `Wake` -- a caller matching this
+    /// against a still-registered watch, as `crate::outbox::Event::key` for
+    /// `EventKind::ThresholdCrossed`, must drop one for a watch it no
+    /// longer owns).
+    pub watch: u32,
+    pub payload: u32,
+    pub entered: bool,
+    pub generation: u32,
+}
+
+fn push_crossings(events: &[crate::outbox::Event], out: &mut Vec<ThresholdCrossing>) {
+    out.extend(events.iter().filter(|e| e.kind == EventKind::ThresholdCrossed).map(|e| ThresholdCrossing {
+        watch: e.key,
+        payload: e.extra,
+        entered: e.value > 0.5,
+        generation: e.generation,
+    }));
 }
 
 /// Per-phase conservation state.
@@ -500,10 +529,10 @@ trait KindDyn: Any {
     /// the worker side.
     fn sync(&mut self, main: &mut Resources, worker: &mut Resources);
     /// At the start of a tick: pin the worker view for main-phase readers
-    /// and collect fired watch wakes.
-    fn begin_tick(&mut self, sim: &mut Sim, main: &mut Resources, wakes: &mut Vec<Wake>);
+    /// and collect fired watch wakes and `ThresholdSet` crossings.
+    fn begin_tick(&mut self, sim: &mut Sim, main: &mut Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>);
     /// After the main phase: evaluate main-owned watches.
-    fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>);
+    fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>);
     fn channels(&self) -> Vec<ChannelInfo>;
     fn watch(
         &mut self,
@@ -707,15 +736,16 @@ impl<C: Component> KindDyn for KindEntry<C> {
         let wk = worker.get_mut(self.worker);
         main.get_mut(self.main).sync_worker(wk);
     }
-    fn begin_tick(&mut self, sim: &mut Sim, main: &mut Resources, wakes: &mut Vec<Wake>) {
+    fn begin_tick(&mut self, sim: &mut Sim, main: &mut Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>) {
         if let Some(key) = self.domain {
             let view = std::sync::Arc::clone(sim.port_ref(key).pinned());
             main.get_mut(self.main).set_view(view);
             let out = sim.drain(key);
             wakes.extend_from_slice(out.wakes());
+            push_crossings(out.events(), crossings);
         }
     }
-    fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>) {
+    fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>) {
         let Some(w) = &mut self.main_watches else {
             return;
         };
@@ -727,6 +757,7 @@ impl<C: Component> KindDyn for KindEntry<C> {
         w.state.evaluate(store, &mut w.out);
         w.port.filter(&mut w.out);
         wakes.extend_from_slice(w.out.wakes());
+        push_crossings(w.out.events(), crossings);
         w.out = Outbox::default();
     }
     fn channels(&self) -> Vec<ChannelInfo> {
@@ -828,7 +859,7 @@ impl<K: NetworkKind> NetDyn for NetEntry<K> {
 
 trait FieldWatchDyn: Any {
     fn field(&self) -> TypeId;
-    fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>);
+    fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>);
     fn watch(
         &self,
         sim: &mut Sim,
@@ -850,8 +881,10 @@ impl<K: FieldKind + Channels> FieldWatchDyn for FieldWatches<K> {
     fn field(&self) -> TypeId {
         TypeId::of::<K>()
     }
-    fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>) {
-        out.extend_from_slice(sim.drain(self.key.domain()).wakes());
+    fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>) {
+        let o = sim.drain(self.key.domain());
+        out.extend_from_slice(o.wakes());
+        push_crossings(o.events(), crossings);
     }
     fn watch(
         &self,
@@ -1530,6 +1563,7 @@ impl WorldBuilder {
             frame: 0,
             events: EventSink::new(),
             wakes: Vec::new(),
+            threshold_crossings: Vec::new(),
             violations: Vec::new(),
         })
     }
@@ -1639,6 +1673,7 @@ pub struct World {
     frame: u64,
     events: EventSink,
     wakes: Vec<Wake>,
+    threshold_crossings: Vec<ThresholdCrossing>,
     violations: Vec<Violation>,
 }
 
@@ -1672,17 +1707,18 @@ impl World {
 
     fn begin_tick(&mut self) {
         self.sim.begin_tick();
-        let (sim, main, kinds, wakes) = (
+        let (sim, main, kinds, wakes, crossings) = (
             &mut self.sim,
             &mut self.main,
             &mut self.kinds,
             &mut self.wakes,
+            &mut self.threshold_crossings,
         );
         for k in kinds.iter_mut() {
-            k.begin_tick(sim, main, wakes);
+            k.begin_tick(sim, main, wakes, crossings);
         }
         for f in &self.field_watches {
-            f.drain(sim, wakes);
+            f.drain(sim, wakes, crossings);
         }
         let out = self.worker_out;
         let (events, violations) = (&mut self.events, &mut self.violations);
@@ -1720,7 +1756,7 @@ impl World {
             self.violations.append(&mut o.violations);
         }
         for k in &mut self.kinds {
-            k.after_main(&self.main, &mut self.wakes);
+            k.after_main(&self.main, &mut self.wakes, &mut self.threshold_crossings);
         }
         // Worker phase.
         let (main, kinds, networks) = (&mut self.main, &mut self.kinds, &mut self.networks);
@@ -1965,6 +2001,25 @@ impl World {
     #[must_use]
     pub fn has(&self, entity: EntityId, kind: KindId) -> bool {
         self.kind(kind).is_ok_and(|k| k.holds(&self.main, entity))
+    }
+
+    /// Wakes `entity`'s `kind` row without writing it: for a caller that
+    /// changed something a law reads through a [`crate::query::Foreign`]/
+    /// [`crate::query::Foreign2`] join (the join's own entity, not the
+    /// anchor row) rather than the row itself, so the anchor's activity
+    /// wouldn't otherwise move. A network-region join wakes generically
+    /// through the region's own revision (`rust_architecture.md` §4.5);
+    /// this is the entity-join equivalent for a caller that knows which
+    /// anchors depend on what it changed (heat's coupling side tables,
+    /// `verdigris/ffi/src/heat.rs`).
+    ///
+    /// # Errors
+    /// A stale entity or unknown kind.
+    pub fn wake_row(&mut self, entity: EntityId, kind: KindId) -> Result<(), WorldError> {
+        self.live(entity)?;
+        self.kind(kind)?;
+        self.wake(kind, entity);
+        Ok(())
     }
 
     /// Every kind attached to `entity`.
@@ -2238,6 +2293,13 @@ impl World {
     /// reactor's lanes).
     pub fn drain_wakes(&mut self, out: &mut Vec<Wake>) {
         out.append(&mut self.wakes);
+    }
+
+    /// Every `ThresholdSet` crossing fired since the last drain (a
+    /// component or field kind's own watch, not a domain event -- see
+    /// [`ThresholdCrossing`]).
+    pub fn drain_threshold_crossings(&mut self) -> Vec<ThresholdCrossing> {
+        std::mem::take(&mut self.threshold_crossings)
     }
 
     /// Conservation violations found since the last call.

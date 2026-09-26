@@ -67,6 +67,20 @@ pub struct HeatBody {
     /// conversion, `body.rs::Body::flow` ported verbatim.
     #[vg(state, unit = "J", default = 0.0)]
     pub flow: f64,
+    /// Following the exact analytic relaxation solution against slot 0's
+    /// environment (`body.rs`'s `state::RELAX`) instead of being stepped
+    /// every frame: `energy` holds the anchor value from `since`, not the
+    /// current one -- read it through `crate::laws`'s relax model (or the
+    /// `heat_body_temperature` bind), not this computed `temperature`
+    /// field directly, while this is set.
+    #[vg(state, default = false)]
+    pub relax: bool,
+    /// Anchor time of the analytic model, s.
+    #[vg(state, default = 0.0)]
+    pub since: f64,
+    /// Environment temperature at the anchor, K.
+    #[vg(state, unit = "K", default = 0.0)]
+    pub ambient: f64,
 }
 
 impl HeatBody {

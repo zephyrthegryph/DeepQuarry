@@ -255,7 +255,10 @@
 #define VG_HEATBODY_FIELD_PHASE_LATENT 4
 #define VG_HEATBODY_FIELD_KEEP 5
 #define VG_HEATBODY_FIELD_FLOW 6
-#define VG_HEATBODY_FIELD_TEMPERATURE 7
+#define VG_HEATBODY_FIELD_RELAX 7
+#define VG_HEATBODY_FIELD_SINCE 8
+#define VG_HEATBODY_FIELD_AMBIENT 9
+#define VG_HEATBODY_FIELD_TEMPERATURE 10
 
 /atom/movable/vg_heat_body
 	vg_heat = VG_HEAT_HEATBODY
@@ -322,6 +325,18 @@
 /// J, read-only (state).
 /atom/movable/vg_heat_body/proc/get_flow()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_FLOW, 0) // J
+
+/// unitless, read-only (state).
+/atom/movable/vg_heat_body/proc/get_relax()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_RELAX, 0)
+
+/// unitless, read-only (state).
+/atom/movable/vg_heat_body/proc/get_since()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_SINCE, 0)
+
+/// K, read-only (state).
+/atom/movable/vg_heat_body/proc/get_ambient()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_AMBIENT, 0) // K
 
 /// unitless, read-only (computed readout).
 /atom/movable/vg_heat_body/get_temperature()
@@ -1171,6 +1186,10 @@
 /datum/controller/subsystem/vg/proc/on_gas_reaction_ready(reaction)
 	return
 
+/// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_heat_settled()
+	return
+
 /// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_power_brownout()
 	return
@@ -1246,6 +1265,8 @@
 					target.on_gas_mix_depleted()
 			if(0)
 				SSvg.on_gas_reaction_ready(flat[p + 0])
+			if(131072)
+				SSvg.on_heat_settled()
 			if(65536)
 				SSvg.on_power_brownout()
 			if(65537)

@@ -61,7 +61,7 @@
 	for(var/i in 1 to length(levels))
 		heat_watch_set_add(heat_set_watch, i, 1, levels[i], TRUE, TRUE)
 	for(var/i in length(levels) + 1 to length(heat_set_levels))
-		vg_heat_watch_set_remove(heat_set_watch, i)
+		vg_heat_watch_set_remove(heat_set_watch[1], heat_set_watch[2], heat_set_watch[3], i)
 	heat_set_levels = levels
 
 /datum/reagents/distilling/proc/unwatch_reaction_temperatures()

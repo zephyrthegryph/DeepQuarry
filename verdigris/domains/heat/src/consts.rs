@@ -75,10 +75,17 @@ pub const HEAT_DT: f32 = 1.0;
 /// finish (the rest is dropped: heat runs slow instead of spiralling).
 pub const MAX_BACKLOG_FRAMES: f32 = 2.0;
 
-/// A body within this of its environment is at equilibrium, K. Kept for the
-/// deferred analytic-relax fast path (`crate::laws`'s module docs); nothing
-/// reads it yet.
+/// A body within this of its environment is at equilibrium, K.
 pub const BODY_SETTLED_K: f32 = 0.05;
+/// A body whose environment has at least this many times its heat capacity
+/// treats the environment as a reservoir and follows the exact relaxation
+/// solution (`crate::laws`).
+pub const RELAX_CAPACITY_RATIO: f32 = 100.0;
+/// An analytic body re-anchors when its environment moves this far, K.
+pub const RELAX_HYSTERESIS_K: f32 = 0.25;
+/// Longest an analytic body goes without settling its energy into its
+/// environment, s. Bounds how long exchanged energy is held in the model.
+pub const RELAX_MAX_INTERVAL: f32 = 30.0;
 
 #[cfg(test)]
 mod tests {

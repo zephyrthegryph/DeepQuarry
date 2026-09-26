@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "8d95f393ade991f0"
+#define VERDIGRIS_ABI "a74daba171788f8e"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -788,10 +788,9 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h, watts)
 
-/// Releases a body: drops its coupling entities and despawns it at once
-/// (unlike the pre-port model, its excess heat is not separately settled
-/// into its environment first -- a known, disclosed simplification; see
-/// `crate::heat`'s module docs and the step 4 commit message).
+/// Releases a body: settles it (if relaxing) into its environment,
+/// deposits its excess over slot 0's environment there too, drops its
+/// coupling entities and despawns it at once.
 // /proc/heat_body_release (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_release(h)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_release_ffi")
@@ -940,10 +939,10 @@
 	return call_ext(__f)(turf)
 
 // /proc/heat_unwatch (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_unwatch(watch)
+/proc/vg_heat_unwatch(on_body, index, watch_generation)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_unwatch_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(watch)
+	return call_ext(__f)(on_body, index, watch_generation)
 
 // /proc/heat_watch (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_watch(on_body, target_ref, subscriber, lane, kind, level, both)
@@ -952,16 +951,16 @@
 	return call_ext(__f)(on_body, target_ref, subscriber, lane, kind, level, both)
 
 // /proc/heat_watch_set_add (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_watch_set_add(watch, payload, generation, cmp, limit, both)
+/proc/vg_heat_watch_set_add(on_body, index, watch_generation, payload, generation, cmp, limit, both)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_watch_set_add_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(watch, payload, generation, cmp, limit, both)
+	return call_ext(__f)(on_body, index, watch_generation, payload, generation, cmp, limit, both)
 
 // /proc/heat_watch_set_remove (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_watch_set_remove(watch, payload)
+/proc/vg_heat_watch_set_remove(on_body, index, watch_generation, payload)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_watch_set_remove_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(watch, payload)
+	return call_ext(__f)(on_body, index, watch_generation, payload)
 
 /// This turf's gas revision (bumped whenever its gas changes).
 // /turf/proc/air_revision (verdigris/domains/gas/src/turf.rs)
