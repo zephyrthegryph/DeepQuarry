@@ -583,8 +583,7 @@
 		light_min_range = 30
 		light_max_range = 30
 		visible_message(span_danger("\The [src] flares to eye-searing brightness!"))
-		sleep(60)
-		temp_color()
+		om_after(src, 6 SECONDS, PROC_REF(temp_color))
 		//plasma_temperature -= lost_plasma
 		return
 //Rupture() is no longer the end all be all. Fear the magnetic resonance cascade and quantum flux cascade

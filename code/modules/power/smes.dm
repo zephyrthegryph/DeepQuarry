@@ -280,7 +280,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return
 
 //Will return 1 on failure
-/obj/machinery/power/smes/proc/make_terminal(const/mob/user)
+/// Starts attaching a terminal with `CC` (a timed action). 1 if it could not start.
+/obj/machinery/power/smes/proc/make_terminal(const/mob/user, obj/item/stack/cable_coil/CC)
 	if (user.loc == loc)
 		to_chat(user, span_filter_notice(span_warning("You must not be on the same tile as the [src].")))
 		return 1
@@ -303,17 +304,28 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(check_terminal_exists(tempLoc, user, tempDir))
 		return 1
 	to_chat(user, span_filter_notice(span_notice("You start adding cable to the [src].")))
-	if(do_after(user, 5 SECONDS, target = src))
-		if(check_terminal_exists(tempLoc, user, tempDir))
-			return 1
-		var/obj/machinery/power/terminal/term = new/obj/machinery/power/terminal(tempLoc)
-		term.set_dir(tempDir)
-		term.master = src
-		term.connect_to_network()
-		LAZYOR(terminals, term)
-		power_sync()
-		return 0
-	return 1
+	var/started = om_do_after(user, 5 SECONDS, src, src, PROC_REF(terminal_done), list(user, CC, tempLoc, tempDir), on_fail = PROC_REF(terminal_ended))
+	return istext(started) ? 1 : 0
+
+/obj/machinery/power/smes/proc/terminal_ended()
+	building_terminal = 0
+
+/obj/machinery/power/smes/proc/terminal_done(mob/user, obj/item/stack/cable_coil/CC, turf/tempLoc, tempDir)
+	building_terminal = 0
+	if(check_terminal_exists(tempLoc, user, tempDir) || !CC.use(10))
+		return
+	var/obj/machinery/power/terminal/term = new/obj/machinery/power/terminal(tempLoc)
+	term.set_dir(tempDir)
+	term.master = src
+	term.connect_to_network()
+	LAZYOR(terminals, term)
+	power_sync()
+	user.visible_message(\
+			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
+			span_filter_notice(span_notice("You added cables to the [src].")))
+	stat = 0
+	if(!powernet)
+		connect_to_network()
 
 /obj/machinery/power/smes/proc/check_terminal_exists(turf/location, mob/user, direction)
 	for(var/obj/machinery/power/terminal/term in location)
@@ -378,17 +390,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		to_chat(user, span_filter_notice(span_warning("You need more cables.")))
 		building_terminal = 0
 		return TRUE
-	if (make_terminal(user))
+	if (make_terminal(user, CC))
 		building_terminal = 0
-		return TRUE
-	building_terminal = 0
-	CC.use(10)
-	user.visible_message(\
-			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
-			span_filter_notice(span_notice("You added cables to the [src].")))
-	stat = 0
-	if(!powernet)
-		connect_to_network()
 	return TRUE
 
 /// Any other item, or a cable coil while a terminal is already being built: swallowed
@@ -418,10 +421,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(!missing_integrity)
 		to_chat(user, span_filter_notice("\The [src] is already fully repaired."))
 		return ITEM_INTERACT_BLOCKING
-	if(welder.remove_fuel(0, user) && do_after(user, missing_integrity, target = src))
-		to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
-		repair_damage(missing_integrity)
+	if(welder.remove_fuel(0, user))
+		om_do_after(user, missing_integrity, src, src, PROC_REF(weld_repair_done), list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/proc/weld_repair_done(mob/user)
+	var/missing_integrity = max_integrity - get_integrity()
+	to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
+	repair_damage(missing_integrity)
 
 /obj/machinery/power/smes/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)

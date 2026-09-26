@@ -206,15 +206,20 @@
 	active = 1
 	START_MACHINE_PROCESSING(src)
 	warming_up = 1
-	spawn(1)
-		while (warming_up<3 && active)
-			sleep(50)
-			warming_up++
-			update_icon()
-			if(warming_up >= 3)
-				start_fields()
-				set_light(light_range_on, light_power_on)
+	om_after(src, 5 SECONDS, PROC_REF(warm_up))
 	update_icon()
+
+/// One warm-up stage every 5 seconds; the fields start at the third.
+/obj/machinery/field_generator/proc/warm_up()
+	if(!active || warming_up >= 3)
+		return
+	warming_up++
+	update_icon()
+	if(warming_up >= 3)
+		start_fields()
+		set_light(light_range_on, light_power_on)
+	else
+		om_after(src, 5 SECONDS, PROC_REF(warm_up))
 
 
 /obj/machinery/field_generator/proc/calc_power()

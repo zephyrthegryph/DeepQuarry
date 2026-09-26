@@ -439,31 +439,33 @@ GLOBAL_LIST_EMPTY(solars_list)
 
 /obj/machinery/power/solar_control/screwdriver_act(mob/user, obj/item/I)
 	playsound(src, I.usesound, 50, 1)
-	if(do_after(user, 2 SECONDS, target = src))
-		if (src.stat & BROKEN)
-			to_chat(user, span_blue("The broken glass falls out."))
-			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-			new /obj/item/material/shard(src.loc)
-			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
-			for(var/obj/C in src)
-				C.loc = src.loc
-			A.circuit = M
-			A.state = 3
-			A.icon_state = "computer_3"
-			A.anchored = TRUE
-			qdel(src)
-		else
-			to_chat(user, span_blue("You disconnect the monitor."))
-			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
-			for(var/obj/C in src)
-				C.loc = src.loc
-			A.circuit = M
-			A.state = 4
-			A.icon_state = "computer_4"
-			A.anchored = TRUE
-			qdel(src)
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(disassemble_done), list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/solar_control/proc/disassemble_done(mob/user)
+	if (src.stat & BROKEN)
+		to_chat(user, span_blue("The broken glass falls out."))
+		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		new /obj/item/material/shard(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		for(var/obj/C in src)
+			C.loc = src.loc
+		A.circuit = M
+		A.state = 3
+		A.icon_state = "computer_3"
+		A.anchored = TRUE
+		qdel(src)
+	else
+		to_chat(user, span_blue("You disconnect the monitor."))
+		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		for(var/obj/C in src)
+			C.loc = src.loc
+		A.circuit = M
+		A.state = 4
+		A.icon_state = "computer_4"
+		A.anchored = TRUE
+		qdel(src)
 
 /obj/machinery/power/solar_control/process()
 	if(stat & (NOPOWER | BROKEN))

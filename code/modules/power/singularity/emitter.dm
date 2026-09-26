@@ -225,13 +225,15 @@
 		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 		return TRUE
 	to_chat(user, span_notice("You begin repairing \the [src]..."))
-	if(do_after(user, 3 SECONDS, target = src))
-		if(P.use(amt))
-			to_chat(user, span_notice("You have repaired \the [src]."))
-			repair_damage(max_integrity)
-		else
-			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(repair_done), list(user, P, amt))
 	return TRUE
+
+/obj/machinery/power/emitter/proc/repair_done(mob/user, obj/item/stack/material/P, amt)
+	if(P.use(amt))
+		to_chat(user, span_notice("You have repaired \the [src]."))
+		repair_damage(max_integrity)
+	else
+		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 
 /// Old attackby: an ID card or PDA toggles the console lock.
 /datum/interaction/machine_item/emitter_toggle_lock

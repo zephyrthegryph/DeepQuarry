@@ -230,3 +230,41 @@
 			.++
 
 #undef TIMED_ACTION_CHANNELS
+
+// ---------------------------------------------------------------- staggered work
+
+/**
+ * Runs `proc_ref` over `items` a few at a time (was a loop with sleep() between items):
+ * `per_step` items now, then the next batch every `delay` deciseconds on E's clock. A type
+ * proc is called on E as (item, extra...); a /proc/ path as (E, item, extra...). Deleted items
+ * are skipped, and the rest is dropped if E is deleted. `on_end` (called like proc_ref, with no
+ * item) runs after the last batch.
+ */
+/proc/om_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end)
+	om_stagger_step(E, items ? items.Copy() : list(), 1, delay, proc_ref, per_step, extra, on_end)
+
+/proc/om_stagger_step(datum/E, list/items, index, delay, proc_ref, per_step, list/extra, on_end)
+	var/last = min(index + max(per_step, 1) - 1, length(items))
+	var/global_proc = copytext("[proc_ref]", 1, 7) == "/proc/"
+	for(var/i in index to last)
+		var/datum/D = items[i]
+		if(isdatum(D) && QDELETED(D))
+			continue
+		try
+			if(global_proc)
+				call(proc_ref)(arglist(list(E, D) + (extra || list())))
+			else
+				call(E, proc_ref)(arglist(list(D) + (extra || list())))
+		catch(var/exception/e)
+			stack_trace("om_stagger [proc_ref] on [E]: [e]")
+	if(last < length(items))
+		om_after(E, delay, /proc/om_stagger_step, E, items, last + 1, delay, proc_ref, per_step, extra, on_end)
+	else if(on_end)
+		if(copytext("[on_end]", 1, 7) == "/proc/")
+			call(on_end)(arglist(list(E) + (extra || list())))
+		else
+			call(E, on_end)(arglist(extra || list()))
+
+/// Deletes the datum: om_after(src, delay, TYPE_PROC_REF(/datum, om_delete_self)).
+/datum/proc/om_delete_self()
+	qdel(src)
