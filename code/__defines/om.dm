@@ -231,6 +231,8 @@
 // ---- Pipelines (section A.10). ----
 /// Stage run() result: nothing left to do until a wake_on channel changes (or its rewake).
 #define STAGE_IDLE "stage_idle"
+/// What F.abort() returns: `return F.abort()` stops the frame.
+#define STAGE_ABORT "stage_abort"
 /// F.abort() scopes. FRAME: stop now, nothing idles this frame. REST: stop now, keep the
 /// idles already decided.
 #define OM_ABORT_FRAME 1

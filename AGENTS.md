@@ -388,41 +388,52 @@ accident or assume they work:
   no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
   and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
   effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
-- **Mob Life runs on the object model.** Read `doc/rewrite/life_on_om.md`. Every `/mob/living`
-  carries the `life` behaviour (`code/modules/mob/living/life/life_om.dm`): one frame per
-  `LIFE_CYCLE` (6 s, fixed steps, catch-up capped at 2) runs an ordered list of
-  `/datum/life_system` flyweights composed per mob type (`life_frame()`). There is no `Life()`
-  proc and no SSmobs Life loop. Don't add `handle_*` hooks on mobs: add a system, or a variant
-  whose path mirrors the mob path (`breathing/carbon/human`). Code outside Life uses
-  `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `run_life_system()`; components tick
-  via `add_trait_life_system()`. Observers (ghosts, AI eyes, blob) run `upkeep()` on their own
-  behaviour. Life content is written per frame, so `LIFE_CYCLE` sets its per-second balance.
-  **Mobs are event-driven and hibernate, players included** (doc §5):
-  - A system sleeps when its `idle(self)` holds after it ticks, and wakes when a mob change
-    channel in its `wake_on` (`LIFE_WAKE_ON_*`) is raised. `rewake_delay()` sets a slow timer
-    for work that still drifts; `woken_by` documents the producers. The default `idle()` is
-    FALSE, so a new system stays awake until you give it a rule.
-  - A mob with nothing awake leaves the ring (`om_sleep`) until a change or a timer.
-  - Anything that changes what a system reads must raise the channel:
+- **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
+  `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
+  (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed
+  steps, catch-up capped at 2), `life_derive` (canmove) and `life_present` (HUD and vision,
+  clients only). Their stages are `/datum/om/stage/life` flyweights; a mob's plan is built once
+  per type. There is no `Life()` proc, no frame loop in Life and no SSmobs Life loop. Don't add
+  `handle_*` hooks on mobs: add a stage, or a variant whose path mirrors the mob path
+  (`breathing/carbon/human`, `of = /mob/living/carbon/human`). Code outside Life uses
+  `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `om_stage_run_now()`; components add
+  their stage with `om_stage_add()`. Observers (ghosts, AI eyes, blob) run `upkeep()` on their
+  own behaviour. Life content is written per frame, so `LIFE_CYCLE` sets its per-second balance.
+  **Mobs are event-driven and park, players included** (doc §5); the core runner owns it:
+  - A stage idles when it returns `STAGE_IDLE` or its `idle(self)` holds after it runs, and
+    wakes when a `CHANGE_MOB_*` channel in its `wake_on` is raised (`LIFE_WAKE_ALL` wakes every
+    stage). `rewake_delay()` sets a slow rewake for work that still drifts; `woken_by`
+    documents the producers. The default `idle()` is FALSE, so a new stage stays awake until
+    you give it a rule. Stages must not sleep (`SHOULD_NOT_SLEEP`): hand slow work to
+    `INVOKE_ASYNC`.
+  - The old early returns are frame facts in `run_if` (`LIFE_RUN_IF_PLACED`,
+    `LIFE_RUN_IF_PLACED_ALIVE`, ...); `ctx.fact("alive")`, `ctx.fact("environment")`,
+    `ctx.fact("in_stasis")` read them; `return ctx.abort()` ends the frame.
+  - A mob whose stages are all idle for two frames parks (off the ring) until a change or a
+    rewake. A low-priority mob on a z-level without living players is parked by relevance.
+  - Anything that changes what a stage reads must raise the channel:
     `om_changed(L, CHANGE_MOB_HEALTH|STATUS|LOC|EQUIPMENT|CONDITIONS|STAT|CLIENT)`, or go through
     a producer that does: `injure`/`mend`, `body.invalidate()`, the status API, `Moved`,
     equip/unequip, `set_stat`, Login, modifiers.
-  - `life_hibernate()` and `life_resume()` are the only procs that park and unpark a mob;
-    `check_grep.sh` rejects direct writes to `life_hibernating` and the asleep bits.
   - Every status (stun, weaken, paralysis, sleep, confusion, blindness, blur, deafness, stutter,
-    mute, drugged, slurring, drowsy, hallucination, dizziness, jitters) is a timed contribution
-    (`EFFECT_*`, `code/modules/mob/living/life/statuses.dm`): set it with
+    mute, drugged, slurring, drowsy, hallucination, dizziness, jitters) is a core timed status
+    (a row in `om_library_effects()`, `code/datums/om/status.dm`): set it with
     `status_at_least()`/`status_set()`/`status_adjust()`/`status_end()` (units of `LIFE_CYCLE`),
-    read it with `has_status()`/`status_units()`. There are no counters and nothing counts them
-    down. Immunity is `EFFECT_IMMUNE_*` held by a source (type decls, mutations, godmode), not
+    read it with `has_status()`/`status_units()`/`status_remaining()` (timed doses only: a hold
+    has no duration). Nothing counts them down. Immunity is `EFFECT_IMMUNE_*` held by a source
+    (type decls, mutations), and godmode is `EFFECT_GODMODE` (`om_has(M, EFFECT_GODMODE)`), not
     `status_flags`. Something that keeps a status on while a condition lasts holds it with its
     own key (voluntary sleep).
   - Stasis holds `EFFECT_CLOCK_BIO_INHIBIT` (the biology clock); absorbed prey and bodies kept
-    for reforming are suspended (`suspend_life()`/`resume_life()`).
-  - A 30 s audit logs `MOB_HIBERNATE_AUDIT: MISSED WAKE` and wakes the mob when a producer
-    was forgotten. It always runs in test builds and fails the run on a miss. On servers it's off
-    unless the `MOB_HIBERNATION_AUDIT` config flag or the "Toggle Hibernation Audit" verb turns it on.
-  - Transition tracing is `GLOB.mob_hibernation_trace`.
+    for reforming are suspended (`om_suspend(M, M)`/`om_unsuspend(M, M)`).
+  - A 30 s audit logs `OM_AUDIT: MISSED WAKE` and wakes the entity when a producer was
+    forgotten. It always runs in test builds and fails the run on a miss. On servers it's off
+    unless the `OM_PIPELINE_AUDIT` config flag or the "Toggle Pipeline Audit" verb turns it on.
+  - Transition tracing is `GLOB.om_pipeline_trace`; `GLOB.om_parking_enabled` switches parking.
+- **Machines on pipelines.** Rechargers, cell chargers, APCs and SMES don't poll: they run the
+  machine pipeline (`code/game/machinery/machine_pipeline.dm`, `polls = FALSE`) and park when
+  settled. Their producers raise `CHANGE_MACHINE_*` (`power_change()`, `atom_break()` and
+  `atom_fix()` do it for every machine).
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf

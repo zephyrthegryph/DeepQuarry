@@ -70,6 +70,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/fact_covered = 0
 	/// wake_on | the pipeline's wake_all.
 	var/wake_mask = 0
+	/// Has a run_if or a min_interval (one test on the fast path).
+	var/gated = FALSE
 
 /// Whether an entity (whose plan is being built) gets this stage at all. Evaluated once per plan,
 /// so it may read only what the plan key covers: the type and its extras.
@@ -149,10 +151,11 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	if(i)
 		known &= ~(1 << (i - 1))
 
-/// Stops the frame after the current stage. OM_ABORT_FRAME: nothing idles this frame (the old
-/// early return before ..()); OM_ABORT_REST: the idles already decided stand.
+/// Stops the frame after the current stage: `return F.abort()`. OM_ABORT_FRAME: nothing idles
+/// this frame (the old early return before ..()); OM_ABORT_REST: the idles already decided stand.
 /datum/om/frame/proc/abort(scope = OM_ABORT_FRAME)
 	aborted = scope
+	return STAGE_ABORT
 
 /// TRUE when every fact in `req` is true and every one in `forbid` false.
 /datum/om/frame/proc/facts_pass(req, forbid)
@@ -235,6 +238,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/pipe_idx = 0
 	/// No cadence: stages run when woken, then idle again.
 	var/reactive = FALSE
+	/// The frame type is a subtype (it may override begin() and reset()).
+	var/frame_hooks = FALSE
 	/// Every stage def this pipeline can run, by pos.
 	var/list/stage_defs
 	/// Family roots from `stages`, in order.
@@ -335,10 +340,24 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/datum/om/plan/plan = S.plan
 	var/list/stages = plan.stages
 	var/datum/om/scheduler/sched = rec.sched
-	var/datum/om/frame/F = frame_acquire(sched, E, dt)
-	F.begin()
+	// The pooled frame, inline (this runs once per entity per frame).
+	var/list/pool = length(sched.frame_pools) >= pipe_idx ? sched.frame_pools[pipe_idx] : null
+	var/datum/om/frame/F
+	if(length(pool))
+		F = pool[length(pool)]
+		pool.len--
+		F.entity = E
+		F.dt = dt
+		F.known = 0
+		F.aborted = 0
+	else
+		F = frame_acquire(sched, E, dt)
+	if(frame_hooks)
+		F.begin()
 	S.frames++
-	var/list/stat = sched.stat_for(id)
+	var/list/stat = length(sched.stats) >= id ? sched.stats[id] : null
+	if(!stat)
+		stat = sched.stat_for(id)
 	stat[OM_STAT_FRAMES]++
 	var/profile = FALSE
 	var/frame_start
@@ -347,60 +366,81 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		frame_start = TICK_USAGE
 	var/list/bits = S.bits
 	var/list/idled
-	for(var/i in 1 to plan.n)
-		if(S.asleep && (bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i)))
-			continue
-		var/datum/om/stage/T = stages[i]
-		if(T.fact_req || T.fact_forbid)
-			var/failed = F.facts_failed(T.fact_req, T.fact_forbid)
-			if(failed)
-				// It idles when every fact that blocked it is reported by a channel it wakes on.
-				if(reactive || !(failed & ~T.fact_covered) || T.idle(E))
-					bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
-					S.asleep++
-					LAZYADD(idled, i)
+	var/n = plan.n
+	var/stop = FALSE
+	// Word by word: only the awake bits of each word are visited, so idle stages cost nothing.
+	for(var/w in 1 to length(bits))
+		var/base = (w - 1) << 4
+		var/width = min(16, n - base)
+		var/awake = ~bits[w] & ((1 << width) - 1)
+		for(var/b in 0 to width - 1)
+			if(!(awake >> b))
+				break
+			var/bit = 1 << b
+			if(!(awake & bit))
 				continue
-		else if(T.run_if_general && !isnull(T.compiled_run_if.why_not(E, F)))
-			if(reactive || T.skip_idles || T.idle(E))
-				bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
+			var/i = base + b + 1
+			var/datum/om/stage/T = stages[i]
+			if(T.gated)
+				if(T.fact_req || T.fact_forbid)
+					var/failed = F.facts_failed(T.fact_req, T.fact_forbid)
+					if(failed)
+						// It idles when every fact that blocked it is reported by a channel it wakes on.
+						if(reactive || !(failed & ~T.fact_covered) || T.idle(E))
+							bits[w] |= bit
+							S.asleep++
+							LAZYADD(idled, i)
+						continue
+				else if(T.run_if_general && !isnull(T.compiled_run_if.why_not(E, F)))
+					if(reactive || T.skip_idles || T.idle(E))
+						bits[w] |= bit
+						S.asleep++
+						LAZYADD(idled, i)
+					continue
+				if(T.min_interval)
+					var/wait = om_stage_throttle(S, i, T, sched.now())
+					if(wait > 0)
+						// Idle until the interval ends: a rewake, so a cadence entity can park meanwhile.
+						bits[w] |= bit
+						S.asleep++
+						om_after(E, wait, src, OM_DL_STAGE - 1 + T.pos)
+						continue
+			var/result
+			if(profile)
+				var/t0 = TICK_USAGE
+				result = T.perform(E, F)
+				var/key = "[T.type]"
+				sched.stage_cost[key] += TICK_DELTA_TO_MS(TICK_USAGE - t0) * profile_stride
+				sched.stage_calls[key] += profile_stride
+			else
+				result = T.perform(E, F)
+			if(result == STAGE_ABORT || rec.torn_down || S.plan != plan)
+				stop = TRUE
+				break
+			var/is_idle = result == STAGE_IDLE || T.idle(E)
+			if(is_idle || reactive)
+				bits[w] |= bit
 				S.asleep++
 				LAZYADD(idled, i)
-			continue
-		if(T.min_interval)
-			var/wait = om_stage_throttle(S, i, T, sched.now())
-			if(wait > 0)
-				if(reactive)
-					bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
-					S.asleep++
-					om_after(E, wait, src, OM_DL_STAGE - 1 + T.pos)
-				continue
-		var/result
-		if(profile)
-			var/t0 = TICK_USAGE
-			result = T.perform(E, F)
-			var/key = "[T.type]"
-			sched.stage_cost[key] += TICK_DELTA_TO_MS(TICK_USAGE - t0) * profile_stride
-			sched.stage_calls[key] += profile_stride
-		else
-			result = T.perform(E, F)
-		if(rec.torn_down || S.plan != plan)
-			break
-		var/is_idle = result == STAGE_IDLE || T.idle(E)
-		if(is_idle || reactive)
-			bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
-			S.asleep++
-			LAZYADD(idled, i)
-			var/delay = is_idle ? T.rewake_delay(E) : busy_retry
-			if(delay > 0)
-				om_after(E, delay, src, OM_DL_STAGE - 1 + T.pos)
-		if(F.aborted)
+				var/delay = is_idle ? T.rewake_delay(E) : busy_retry
+				if(delay > 0)
+					om_after(E, delay, src, OM_DL_STAGE - 1 + T.pos)
+		if(stop)
 			break
 	if(profile)
 		var/key = "[E.type]"
 		sched.stage_cost["type:[key]"] += TICK_DELTA_TO_MS(TICK_USAGE - frame_start) * profile_stride
 		sched.stage_calls["type:[key]"] += profile_stride
 	var/aborted = F.aborted
-	frame_release(sched, F)
+	if(frame_hooks || F.known)
+		frame_release(sched, F)
+	else
+		F.entity = null
+		pool = sched.frame_pools[pipe_idx]
+		if(!pool)
+			pool = list()
+			sched.frame_pools[pipe_idx] = pool
+		pool += F
 	if(rec.torn_down || S.plan != plan)
 		return
 	if(aborted == OM_ABORT_FRAME)

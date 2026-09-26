@@ -101,17 +101,20 @@
 	var/datum/om/rec/rec = om_rec
 	if(!rec?.contribs)
 		return 0
-	var/datum/om/effect/status/def = om_status_def(id)
-	var/latest = om_contrib_latest_expiry(rec, def.idx)
-	return latest ? max(latest - rec.sched.now(), 0) : 0
+	return om_status_remaining(rec, om_status_def(id))
 
 /// status_remaining() in units at the current rate, rounded up.
 /datum/proc/status_units(id)
-	var/left = status_remaining(id)
-	if(!left)
+	var/datum/om/rec/rec = om_rec
+	if(!rec?.contribs)
 		return 0
 	var/datum/om/effect/status/def = om_status_def(id)
-	return CEILING(left * status_rate(def) / def.unit, 1)
+	var/left = om_status_remaining(rec, def)
+	return left ? CEILING(left * status_rate(def) / def.unit, 1) : 0
+
+/proc/om_status_remaining(datum/om/rec/rec, datum/om/effect/status/def)
+	var/latest = om_contrib_latest_expiry(rec, def.idx)
+	return latest ? max(latest - rec.sched.now(), 0) : 0
 
 /// status_remaining() in seconds, for readouts.
 /datum/proc/status_seconds(id)

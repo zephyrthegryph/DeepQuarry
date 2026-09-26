@@ -515,6 +515,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 /// Orders a pipeline's stages, compiles run_if, facts and wake masks, and lists its variants.
 /datum/om/registry/proc/compile_pipeline(datum/om/pipeline/P)
 	P.reactive = !P.every && !P.step_interval
+	P.frame_hooks = P.frame_type != /datum/om/frame
 	P.variants = list()
 	P.roots = list()
 	P.plans = list()
@@ -629,6 +630,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			if(deps && !(deps & ~T.wake_mask))
 				T.fact_covered |= 1 << (i - 1)
 		compile_run_if(P, T)
+		T.gated = !isnull(T.run_if) || T.min_interval > 0
 	P.wake_on |= wake
 
 /// Deepest `of` first; between equal depths, the least derived stage type.

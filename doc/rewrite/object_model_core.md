@@ -8,8 +8,11 @@ Rust interop and dm-health.
 
 Code: `code/datums/om/`, `code/__defines/om.dm`,
 `code/controllers/subsystems/behaviours.dm`. Tests:
-`code/modules/unit_tests/dq_om_core_tests.dm`. Benchmark:
-`code/modules/benchmarks/om_dispatch.dm`. No content uses the API yet.
+`code/modules/unit_tests/dq_om_core_tests.dm`,
+`code/modules/unit_tests/dq_om_pipeline_tests.dm`. Benchmark:
+`code/modules/benchmarks/om_dispatch.dm`. Users: mob Life
+([life_on_om.md](life_on_om.md)) and the machines in
+`code/game/machinery/machine_pipeline.dm` (rechargers, cell chargers, APCs, SMES).
 
 ## 1. What it is for
 
@@ -40,6 +43,7 @@ define, hence `ALL_OF`.
 | Concept | Path |
 |---|---|
 | Behaviour | `/datum/om/behaviour/<x>` |
+| Pipeline, its stages and frame | `/datum/om/pipeline/<x>`, `/datum/om/stage/<x>`, `/datum/om/frame/<x>` |
 | Event | `/datum/om/event/<x>`, `/datum/om/event/before/<x>` |
 | Relation | `/datum/om/relation/<x>` |
 | Check | `/datum/om/check/<x>` |
@@ -48,7 +52,11 @@ define, hence `ALL_OF`.
 | Task | a row in a `tasks` table, or `/datum/om/task_def/<x>` |
 | Service (global observer) | `/datum/om/service/<x>` |
 | Bundle | `/datum/om/bundle/<x>` |
-| Entity table | `/datum/om/decl/<x>` with `of = /entity/type` |
+| Entity table | `/datum/om/decl/<x>` with `of = /entity/type` or `of = list(types)` |
+
+Words: an entity **parks** (leaves a ring while nothing is due, `om_park`/`om_unpark`); a
+pipeline stage **idles** and **wakes**; statuses keep their game names (stunned, asleep). One
+channel vocabulary, `CHANGE_*` (§5), is used by every behaviour and stage.
 
 ## 3. Tables first
 
@@ -79,14 +87,15 @@ indirection.
 
 | Field (bundle or decl) | Row | Effect |
 |---|---|---|
-| `of` (decl only) | entity type | rows apply to it and every subtype |
+| `of` (decl only) | entity type, or a list of types | rows apply to each and every subtype |
 | `include` | bundle types | merged in; bundles nest; cycles are boot errors |
 | `ticks` | `/type/proc/x = list(every, clock, lane, max_interval, max_dt, relevance, order_after, requires, step_interval, max_catchup)` | a synthesised behaviour calls `E.x(dt)` |
 | `reacts` | `/type/proc/x = CHANGE_mask` | calls `E.x(changes)` once per tick with the union of bits |
 | `events` | `/datum/om/event/x = /type/proc/y` | calls `E.y(event)` |
-| `behaviours` | full behaviour types | attached as they are |
+| `behaviours` | full behaviour types (pipelines included) | attached as they are |
+| `stages` | stage types | extra pipeline stages for this entity type (§4.10) |
 | `derived` | `DERIVE*()` rows | global names, read with `om_derived(E, name)` |
-| `effects` | `id = list(combine, stacking, channel, default, expr, type)` | global effect definitions |
+| `effects` | `id = list(combine, stacking, channel, default, expr, type, implies, kind, status fields)` | global effect definitions (§8.1 for statuses) |
 | `clocks` | `id = list(min, max)` | global clock domains |
 | `checks` | `name = spec` | named check specs, usable anywhere a spec is |
 | `tasks` | `name = list(duration, claims, requires, interrupted_by, interrupt_on, on_complete, on_cancel)` | global task names |
@@ -188,10 +197,12 @@ and never changed afterwards. Per-entity state lives on the entity.
 | `handles` | event types (subtypes included) |
 | `produces` | output channel; behaviours waking on it are ordered after this one |
 | `holds` | hooks call `om_hold()`; holds not repeated on the next call are released |
+| `min_interval` | deciseconds: `on_wake` at most this often per entity; wakes in between coalesce (their bits union) and arrive by one deadline when the interval ends |
+| `runlevels` | `RUNLEVEL_*` mask: outside it the behaviour's rings are dormant (one test per ring per pass, none per entity) and resume without catch-up |
 
-Hooks: `tick(E, dt)`, `on_wake(E, changes)`, `on_deadline(E)`, `on_step(E)`,
-`on_start(E)`, `on_stop(E)`, `on_native(E, bits)`, `on_event(E, event)`, and
-typed event handlers. All are `SHOULD_NOT_SLEEP`. A hook may omit parameters
+Hooks: `tick(E, dt)`, `on_wake(E, changes)`, `on_deadline(E)`,
+`on_keyed_deadline(E, sub)`, `on_step(E)`, `on_start(E)`, `on_stop(E)`,
+`on_native(E, bits)`, `on_event(E, event)`, and typed event handlers. All are `SHOULD_NOT_SLEEP`. A hook may omit parameters
 it doesn't use. Return values are ignored: there is no scheduling by return
 value.
 
@@ -202,9 +213,9 @@ Each behaviour owns one ring (cadence wheel) per interval in use. A ring has
 phase is per entity, so all of an entity's cadence behaviours run in the same
 tick, in behaviour order.
 
-- **Membership is eligibility.** Sleeping, suspension, a failing `requires`,
-  a zero clock rate or an `OM_SLEEP` relevance level all mean "not on the
-  ring". Nothing iterates idle entities.
+- **Membership is eligibility.** Parking, suspension, a failing `requires`,
+  a zero clock rate, an `OM_PARK` relevance level or a dormant runlevel all mean
+  "not running". Nothing iterates idle entities.
 - **The hot loop** per entity is a list read, one proc call and a tick-usage
   check. dt is computed once per slot. Timing is two `TICK_USAGE` reads per
   slot, so per-type cost is exact without per-call overhead. Per-call timing
@@ -242,15 +253,18 @@ the entity's run order sees changes raised earlier in the same run.
 A bucketed wheel of `(rec, behaviour id, generation, due)` entries, one
 decisecond per bucket, 1024 buckets. No datum per timer, no signal, no FFI.
 
-- `om_after(E, delay, B)` calls `B.on_deadline(E)` after `delay`
-  deciseconds. One deadline per (entity, behaviour); calling again replaces
-  it. `om_cancel_after(E, B)`, `om_deadline_pending(E, B)`.
+- `om_after(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
+  deciseconds. One deadline per (entity, behaviour, sub-key); calling again
+  replaces it. `om_cancel_after(E, B, sub)`, `om_cancel_all_after(E, B)`,
+  `om_deadline_pending(E, B, sub)`. The key is `bid + sub * OM_DL_SUB`, so firing
+  one decodes it with no search: sub 0 is `on_deadline`, `OM_DL_THROTTLE` a
+  `min_interval` wake, `OM_DL_STAGE + n` a pipeline stage's rewake
+  (`on_keyed_deadline`).
 - A stale generation or a torn-down entity is skipped when its bucket comes
   round. An entry further out than one wheel turn stays in its bucket until due.
 - Clocked behaviours store the target in local time and re-check at fire. A
   rate change re-inserts every clocked deadline of that domain.
-- `om_tick_now(E, B, dt)` runs a tick outside the ring (Life's "run this
-  system now").
+- `om_tick_now(E, B, dt)` runs a tick outside the ring.
 
 ### 4.6 Clocks
 
@@ -265,7 +279,9 @@ deadlines; a zero rate takes cadence work off the ring.
 
 `RELEVANCE_NONE`, `NEAR`, `VISIBLE`, `WATCHED`. An entity's level is the
 largest `EFFECT_RELEVANCE` contribution: `om_observe(E, observer, level)`,
-released when the observer goes. `om_ui_bind()` holds `WATCHED`. A level
+released when the observer goes. `OM_PARK` in a behaviour's `relevance` list parks
+it at that level (Life: `list(OM_PARK, null, null, null)`, so a low-priority mob on a
+z-level without players costs nothing and nothing is tested per frame). `om_ui_bind()` holds `WATCHED`. A level
 change moves the entity between rings and calls
 `om_native_bridge_relevance(E, level)`.
 
@@ -277,6 +293,78 @@ calls `om_native_deliver(E, bits)`, which runs `on_native(E, bits)` on each
 started behaviour declaring those bits. The two `om_native_bridge_*` procs
 are stubs today; the reactor track replaces their bodies with generated
 bindings. Nothing else in this API crosses the FFI.
+
+### 4.10 Pipelines
+
+A pipeline (`/datum/om/pipeline`, a behaviour) runs an ordered list of **stages** that share
+one **frame**. The ring (or, for a pipeline with no cadence, a wake) makes one call per
+entity; the runner walks the entity's plan testing one idle bit per stage. Everything a
+hand-written frame loop used to carry is the runner's:
+
+| Pipeline var | Meaning |
+|---|---|
+| `every`, `step_interval`, `max_catchup`, `lane`, `relevance`, `runlevels`, `requires`, `min_interval` | as for any behaviour: cadence, fixed steps and catch-up, lane, parking by relevance, dormancy outside runlevels |
+| `stages` | stage types, or categories of them (a category contributes every family below it whose `pipeline` is this one) |
+| `frame_type` | the frame (and so the facts) its stages share |
+| `wake_all` | channels that wake every stage |
+| `park_after` | frames in a row with every stage idle before the entity parks (hysteresis; 2) |
+| `busy_retry` | no-cadence pipelines: rewake delay for a stage that ran and still has work |
+| `profile_stride` | time every Nth frame per stage and entity type (`sched.stage_cost`) |
+
+| Stage var or proc | Meaning |
+|---|---|
+| `perform(E, F)` | the work (`SHOULD_NOT_SLEEP`); return `STAGE_IDLE` to idle now |
+| `idle(E)` | the idle rule: TRUE when nothing is left to do until a `wake_on` channel changes. Checked after each run and by the audit |
+| `rewake_delay(E)` | an idle stage that still drifts: deciseconds until it wakes anyway (a deadline keyed by entity, pipeline and stage) |
+| `wake_on` | channels that wake it once idle |
+| `run_if` | check spec over frame facts: `FACT("alive")`, `NOT_OF(...)`, `ALL_OF(...)`; other checks get the frame as target |
+| `after`, `before`, `order` | order: after/before between families, then `order`, then path; compiled once at boot, cycles are boot errors |
+| `min_interval` | runs at most this often per entity; a throttled stage idles with a rewake at the end of the interval |
+| `of`, `category`, `pipeline`, `extra`, `applies(E)` | families and variants (below) |
+
+**Frames and facts.** A frame type declares `facts = list(name = list(compute proc,
+depends_on))`. A fact is computed on first use and cached for the frame (`F.fact(name)`,
+`F.forget(name)`, `F.set_fact(name, value)`); `run_if` of facts compiles to two bit masks.
+`depends_on` names the channels that report the fact changing: a stage whose `run_if` fails
+**idles** when every such channel is in its wake mask (a dead mob's alive-only stages wake on
+`CHANGE_MOB_STAT`), otherwise it stays awake unless its `idle()` holds. `begin()` runs once at
+the start of every scheduled frame (Life advances the stasis counter there) and `reset()` when
+the frame returns to the pool. Frames are pooled per pipeline on the scheduler; a nested run
+(`om_stage_run_now()` inside a stage) takes a second frame, so no scratch state exists.
+
+**Idle, park, wake.** A stage idles when it returns `STAGE_IDLE` or its `idle()` holds; its
+bit is then skipped. An entity whose stages have all been idle for `park_after` frames in a
+row parks (off the ring, in the scheduler's parked list). A channel in a stage's wake mask
+clears its bit; on a parked entity it wakes every stage and unparks it. A stage rewake wakes
+that stage only, and a parked entity comes back for it counting one idle frame already, so it
+parks again as soon as the stage idles. A frame never runs from a wake or a rewake: the next
+cadence frame runs the woken stages. A pipeline with no cadence (`every` 0) is reactive: a
+wake runs the woken stages at once and they idle again.
+
+**Abort.** `F.abort(OM_ABORT_FRAME)` stops the frame after the current stage and idles
+nothing (the old early `return` before `..()`); `OM_ABORT_REST` keeps the idles already made.
+A stage that deletes its entity or changes its plan also ends the frame.
+
+**Families and variants.** A stage type directly under a category is a family root; its
+subtypes are variants, each serving the entity type in its `of`. The plan for an entity type
+takes, per family, the variant whose `of` is deepest in the type's inheritance (ties: the
+least derived stage type; a path segment that only inherits `of` is not a variant). Plans
+are built once per type (plus per-entity extras from `om_stage_add()`), so variant
+resolution costs nothing per frame. A decl's `stages` rows add stages for its types.
+
+**Audit.** `om_pipeline_audit()` (SSbehaviours every 30 s in test builds, or with the
+`OM_PIPELINE_AUDIT` config flag or the admin verb) samples parked and awake entities of every
+cadence pipeline and asks each idle stage without a pending rewake whose `run_if` passes
+whether its `idle()` still holds. One that doesn't is a missed `om_changed()`: logged
+(`OM_AUDIT: MISSED WAKE`), counted, a failed test in unit tests, and woken.
+
+API: `om_pipe_state(E, P)`, `om_run_frame_now(E, P)`, `om_stage_run_now(E, stage)`,
+`om_stage_for(E, stage)`, `om_stage_add/remove(E, stage)`, `om_stage_idle(E, P, stage)`,
+`om_pipe_parked(E, P)`, `om_pipeline_frames(P)`, `om_pipeline_parked_count(P)`. Counters per
+pipeline in `om_diagnostics()`: frames, parks, unparks, missed wakes.
+
+Cost: one ring dispatch per entity, one bit test per stage, one proc call per awake stage
+plus its `idle()` check. Parked entities cost nothing.
 
 ### 4.9 Diagnostics and tests
 
@@ -386,6 +474,7 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
 | `om_grant(T, kind, id, source)`, `om_revoke`, `om_has_grant`, `om_grants_from(T, source)` | grants: kind = effect id, id = key, source = source |
 | `om_observe`, `om_unobserve`, `om_relevance` | relevance |
 | `om_suspend(E, source)`, `om_unsuspend` | suspension hold: off every ring while held |
+| `implies` (row key) | effect ids the entity holds on itself while this one is in effect (`EFFECT_GODMODE` implies the incapacitation immunities) |
 
 Effect rows declare `combine` (`COMBINE_ANY`, `SUM`, `MAX`, `MIN`,
 `MULTIPLY`, `SUM_PER_KEY`), `stacking` for repeated applies from one source
@@ -403,6 +492,27 @@ Effect rows declare `combine` (`COMBINE_ANY`, `SUM`, `MAX`, `MIN`,
 - The grant vocabulary matches `rewrite/grants` in spirit: kinds become
   effect types, ids become keys, and the source is the edge or datum that
   granted. Ids are text or type paths.
+
+### 8.1 Timed statuses
+
+A row with `"kind" = OM_EFFECT_STATUS` (`code/datums/om/status.dm`) is a timed status. Its
+fields are declarations, so nothing switches on which status it is:
+
+| Field | Meaning |
+|---|---|
+| `unit`, `rate`, `rate_resting`, `max_units` | one unit lasts `unit` ds at rate 1; `rate` units wear off per unit of time (the entity's `status_rate()` may change it); cap |
+| `immunity` | effect id that blocks increases; gaining it ends the timed contributions (`blocks` is compiled on the immunity) |
+| `scaled`, `signal` | increases pass the entity's `status_scale()`; `signal` is sent before an increase and `COMPONENT_NO_STUN` vetoes it |
+| `alert`, `alert_type`, `indicator` | presentation, applied by the entity's `status_shown()` |
+| `on_start`, `on_end`, `on_increase` | procs called on the entity |
+
+The API is on `/datum`: `has_status(id)`, `status_immune(id)`, `status_remaining(id)`
+(deciseconds until the last timed contribution ends: 0 when none; a hold has no duration),
+`status_units(id)` (`status_remaining()` in units, rounded up, no floor), `status_seconds(id)`,
+`status_at_least(id, n)`, `status_set(id, n)`, `status_adjust(id, n)`, `status_end(id)`,
+`status_rate_check(id)`. Each call looks the def up once and then works on its integer index.
+The entity's own dose is its keyless timed contribution; its value is the rate its expiry was
+computed with, so a rate change rescales what is left. Mob statuses: [life_on_om.md](life_on_om.md) §7.
 
 ## 9. Rates (section F)
 
@@ -466,6 +576,9 @@ Each has a regression test in `dq_om_core_tests.dm`.
 | An FFI call per DM timer | the deadline wheel is pure DM |
 | Draining or transaction flags stuck after a runtime | every drain resets its depth outside the try, hook context is restored after catch |
 | Overrides stuck after their source goes | holds die with their source; hook holds are reconciled |
+| A second scheduler inside content (per-stage sleep bits, wake timers, parking, audits hand-rolled per system) | pipelines own them once (§4.10); content declares stages |
+| A wake coalescer written by hand per behaviour | `min_interval` |
+| Variant choice by string length of a type path | inheritance depth, once per plan |
 
 ## 13. Cost
 
@@ -483,26 +596,26 @@ Each has a regression test in `dq_om_core_tests.dm`.
   index in a local.
 - Deadlines are four list entries in a bucket and three on the entity.
 
-## 14. What Life will use
-
-The mob Life migration maps onto this API without new mechanisms:
+## 14. What Life uses
 
 | Life needs | API |
 |---|---|
-| Ordered systems per mob | behaviours with `order_after`; one phase per mob, so all run in the same tick |
-| Biology running faster or slower | `clock = CLOCK_BIO`; drugs and stasis contribute `EFFECT_CLOCK_BIO_MULT` / `_INHIBIT` |
-| Substeps for stiff biology | `max_dt`; `step_interval` for discrete per-step work |
-| Hibernation | roster removal: `requires`, `om_sleep()`/`om_resume()`, relevance intervals with `OM_SLEEP` |
-| Wake on injury, equipment, gas | `wake_on` channels from setters; `wake_on_related` for worn and held items; `wake_on_native` for gas |
-| Stasis and cryo | `om_suspend()` holds, or the `stasis_occupant` relation |
-| `run_life_system()` | `om_tick_now(E, B, dt)` |
-| Statuses and factors | effects and composites; holds from hooks for "while X" factors |
+| Ordered systems per mob, one call per mob | the `life` pipeline (§4.10): stages, `order`, one dispatch per mob |
+| Early returns and `if` blocks of the old Life() | frame facts and `run_if` (`placed`, `alive`, `status_ok`, `in_stasis`, `environment`) |
+| Systems idling and waking | stage `idle()`, `wake_on`, `rewake_delay()` |
+| Hibernation | parking (`park_after` 2) |
+| Lobby and player-free z-levels | `runlevels`, relevance `OM_PARK` with z-level presence holds |
+| canmove and HUD | reactive `life_derive` and `life_present` pipelines (the latter `min_interval` 0.5 s) |
+| Statuses | timed statuses (§8.1) |
+| Biology running faster or slower | `CLOCK_BIO`; stasis holds `EFFECT_CLOCK_BIO_INHIBIT` |
+| Stasis and cryo, absorbed prey | the biology clock, `om_suspend()` |
 
 ## 15. Limits
 
-- One deadline per (entity, behaviour). Behaviours needing several keep
-  their own list and set the soonest (the internal expiry, rate and task
-  behaviours do this).
+- One deadline per (entity, behaviour, sub-key). The internal expiry, rate and
+  task behaviours keep their own list and set the soonest.
+- A pipeline frame's facts are at most 24 per frame type; stage idle bits are
+  16 per list entry.
 - Timed contributions are read as present until their expiry deadline runs,
   at most one scheduler run late.
 - A slot deferred mid-way gives the rest of the slot the dt computed when

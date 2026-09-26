@@ -21,11 +21,18 @@
 /datum/pipe_test_entity/deep
 /datum/pipe_test_entity/deep/deeper
 /datum/pipe_test_other
+	var/list/log = list()
+	var/list/busy = list()
 
 /// One decl for two unrelated types (multi-type decls).
 /datum/om/decl/pipe_test
 	of = list(/datum/pipe_test_entity, /datum/pipe_test_other)
 	behaviours = list(/datum/om/pipeline/test, /datum/om/pipeline/test_reactive, /datum/om/behaviour/test_throttle)
+
+/// A type adds a stage of its own through its decl's `stages`.
+/datum/om/decl/pipe_test_other
+	of = /datum/pipe_test_other
+	stages = list(/datum/om/stage/test/other_only)
 
 /datum/om/pipeline/test
 	name = "test pipeline"
@@ -102,7 +109,7 @@
 /datum/om/stage/test/f/perform(datum/pipe_test_entity/E, datum/om/frame/test/F)
 	..()
 	if(E.abort_now)
-		F.abort(E.abort_now)
+		return F.abort(E.abort_now)
 
 /// Runs a nested stage on demand (a second frame from the pool while this one is in use).
 /datum/om/stage/test/g
@@ -126,6 +133,13 @@
 
 /datum/om/check/test_never/why_not(datum/actor, datum/target)
 	return "never"
+
+/// Only in plans of types whose decl lists it.
+/datum/om/stage/test/other_only
+	name = "other only"
+	order = 45
+	extra = TRUE
+	of = /datum/pipe_test_other
 
 /// A variant for deeper entity types: resolved by inheritance depth.
 /datum/om/stage/test/a/deep
@@ -357,6 +371,22 @@
 	TEST_ASSERT(reg.decl_typecache[/datum/pipe_test_other], "every listed type is in the decl cache")
 	TEST_ASSERT(reg.behaviour(/datum/om/pipeline/test) in reg.type_table(/datum/pipe_test_other).behaviours, "the second type gets the rows")
 	TEST_ASSERT(reg.behaviour(/datum/om/pipeline/test) in reg.type_table(/datum/pipe_test_entity/deep).behaviours, "subtypes of the first too")
+
+/// A decl's `stages` rows add stages to its types' plans, ordered with the pipeline's own.
+/datum/unit_test/om_pipeline/decl_stages
+
+/datum/unit_test/om_pipeline/decl_stages/run_pipeline()
+	var/datum/pipe_test_other/O = new
+	om_start(O)
+	var/datum/om/pipe/S = om_pipe_state(O, /datum/om/pipeline/test)
+	TEST_ASSERT_EQUAL(S?.plan.n, 1, "the other type's plan is its decl's stage (the base stages serve another type)")
+	var/datum/om/stage/T = S?.plan.stages[1]
+	TEST_ASSERT_EQUAL(T?.type, /datum/om/stage/test/other_only, "listed by its decl")
+	var/datum/pipe_test_entity/E = pipe_test_new()
+	TEST_ASSERT(!(/datum/om/stage/test/other_only in pipe_test_state(E).plan.stages), "types whose decl doesn't list it don't get it")
+	var/datum/om/stage/c = om_registry().stage_by_type[/datum/om/stage/test/d]
+	var/datum/om/stage/d = om_registry().stage_by_type[/datum/om/stage/test/e]
+	TEST_ASSERT(T && T.pos > c.pos && T.pos < d.pos, "ordered at boot with the pipeline's own stages")
 
 // --- min_interval ------------------------------------------------------------------------
 
