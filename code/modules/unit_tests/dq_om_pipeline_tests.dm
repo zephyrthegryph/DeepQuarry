@@ -569,7 +569,8 @@
 	TEST_ASSERT(om_attached(F, /datum/om/pipeline/machine), "a fire alarm runs the machine pipeline")
 	TEST_ASSERT(!(F in SSmachines.processing_machines), "and doesn't poll")
 	var/datum/om/frame/S = om_pipe_state(F, /datum/om/pipeline/machine, TRUE)
-	om_run_frame_now(F, /datum/om/pipeline/machine)
+	for(var/i in 1 to 3)
+		om_run_frame_now(F, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "an idle fire alarm parks")
 	F.timing = 1
 	F.time = 1
@@ -596,17 +597,19 @@
 	TEST_ASSERT(om_attached(C, /datum/om/pipeline/machine), "a canister runs the machine pipeline")
 	TEST_ASSERT(!(C in SSmachines.processing_machines), "and doesn't poll")
 	var/datum/om/frame/S = om_pipe_state(C, /datum/om/pipeline/machine, TRUE)
-	om_run_frame_now(C, /datum/om/pipeline/machine)
+	for(var/i in 1 to 3)
+		om_run_frame_now(C, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a closed, unreactive canister parks")
 	var/datum/weakref/canister_ref = WEAKREF(C)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[canister_ref.reference], "parking armed a gas-mixture watch")
 	C.air_contents.adjust_moles(/datum/gas/oxygen, 5)
-	for(var/i in 1 to 4096)
+	for(var/gas_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
 		if(!S.parked)
 			break
 	TEST_ASSERT(!S.parked, "a gas-mixture change on the watched mixture wakes the canister")
-	om_run_frame_now(C, /datum/om/pipeline/machine)
+	for(var/i in 1 to 3)
+		om_run_frame_now(C, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "it settles and parks again")
 	C.valve_open = TRUE
 	om_changed(C, CHANGE_MACHINE_SETTINGS)

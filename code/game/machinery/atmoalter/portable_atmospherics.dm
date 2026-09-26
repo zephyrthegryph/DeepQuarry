@@ -12,7 +12,13 @@
 	var/volume = 0
 	var/destroyed = 0
 	var/sleeping_mixture_id
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
+	// NOTE: polls stays TRUE (the default) on this base type. Only canister (below) is fully
+	// migrated to the OM machine pipeline; several other subtypes (portable_atmospherics/powered/
+	// pump, .../scrubber, hydroponics, reagent_distillery) still have their own real process()
+	// overrides that were NOT migrated. Setting polls = FALSE here previously cascaded to every
+	// subtype via inheritance and silently stopped those overrides from ever being scheduled —
+	// caught by the OM_AUDIT "MISSED WAKE has work but was idle" failures the test suite raised
+	// for exactly those types. Do not set polls here; set it on the specific subtype you migrate.
 
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
@@ -36,17 +42,17 @@
 	QDEL_NULL(holding)
 	return ..()
 
-// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
-// `polls = FALSE` above moves this off SSmachines' process() roster onto the OM machine
-// pipeline. The react-while-unconnected logic that used to live in process() is unchanged,
-// just relocated here (shared by the base stage and canister's override of it) and to
-// /datum/om/stage/machine/power/portable_atmospherics/perform().
+// Shared by the base process() below and by canister's OM pipeline stage
+// (code/game/machinery/machine_pipeline.dm, "canisters" section).
 /obj/machinery/portable_atmospherics/proc/react_or_update()
 	if(!connected_port) //only react when pipe_network will do it for you
 		//Allow for reactions
 		return air_contents.react(src)
 	update_icon()
 	return NO_REACTION
+
+/obj/machinery/portable_atmospherics/process()
+	return react_or_update()
 
 /obj/machinery/portable_atmospherics/proc/hibernate_until_gas_changes()
 	var/datum/weakref/WR = WEAKREF(src)

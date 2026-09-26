@@ -14,6 +14,7 @@
 
 	var/canister_color = "yellow"
 	var/can_label = 1
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	/// Cached from the last perform(): TRUE once valve_open is off and neither a reaction nor
 	/// the material vessel is doing anything, mirroring the settle check the old process() made
 	/// right before it called hibernate_until_gas_changes(). Read by

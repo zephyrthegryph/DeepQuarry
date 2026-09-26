@@ -18,7 +18,7 @@
 		/obj/machinery/power/smes,
 		/obj/machinery/firealarm,
 		/obj/machinery/alarm,
-		/obj/machinery/portable_atmospherics,
+		/obj/machinery/portable_atmospherics/canister,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
 
@@ -261,29 +261,12 @@
 /datum/om/stage/machine/power/alarm/idle(obj/machinery/alarm/M)
 	return !M.regulating_temperature
 
-// ---------------------------------------------------------------- portable atmospherics
-
-/// A bare portable_atmospherics (no canister-style valve/hibernate logic of its own) only ever
-/// had one job in process(): let air_contents react while unconnected, or update its icon while
-/// connected to a port. There's no event for "a reaction might start" on an otherwise-quiescent
-/// mixture — the fallback here is the one genuine "no watch exists" case in this family: it
-/// simply never idles while unconnected, exactly matching the always-on process() it replaces
-/// (a connected device is idle, since its port already drives the actual gas movement and this
-/// stage then only refreshes an icon on change).
-/datum/om/stage/machine/power/portable_atmospherics
-	of = /obj/machinery/portable_atmospherics
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
-	woken_by = "power_change(); atom_break()/atom_fix(); connect()/disconnect()"
-
-/datum/om/stage/machine/power/portable_atmospherics/perform(obj/machinery/portable_atmospherics/M, datum/om/frame/machine/F)
-	M.react_or_update()
-	return STAGE_IDLE
-
-/datum/om/stage/machine/power/portable_atmospherics/idle(obj/machinery/portable_atmospherics/M)
-	return M.connected_port ? TRUE : FALSE
-
 // ---------------------------------------------------------------- canisters
 
+/// Only canister is on this pipeline (see the NOTE in portable_atmospherics.dm): the other
+/// portable_atmospherics subtypes (powered/pump, powered/scrubber, hydroponics,
+/// reagent_distillery) still have their own real process() overrides and stay polling.
+///
 /// Wakes on the valve, the holding tank and the connection (all raise
 /// CHANGE_MACHINE_SETTINGS today; canister.dm), plus any gas change on either mixture it
 /// touches through the existing subscribe_gas_dependency()/gas_dependency_changed() transport
@@ -292,12 +275,12 @@
 /// temperature change", which is exactly what the dirty-mixture watch already delivers, not a
 /// single threshold edge). hibernate_until_gas_changes() (unchanged) re-arms that subscription
 /// every time perform() settles.
-/datum/om/stage/machine/power/portable_atmospherics/canister
+/datum/om/stage/machine/power/canister
 	of = /obj/machinery/portable_atmospherics/canister
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
 	woken_by = "power_change(); atom_break()/atom_fix(); valve/label/eject topic actions; a subscribed gas mixture changing"
 
-/datum/om/stage/machine/power/portable_atmospherics/canister/perform(obj/machinery/portable_atmospherics/canister/M, datum/om/frame/machine/F)
+/datum/om/stage/machine/power/canister/perform(obj/machinery/portable_atmospherics/canister/M, datum/om/frame/machine/F)
 	if(M.destroyed)
 		M.om_settled = TRUE
 		return STAGE_IDLE
@@ -343,5 +326,5 @@
 		M.hibernate_until_gas_changes()
 	return STAGE_IDLE
 
-/datum/om/stage/machine/power/portable_atmospherics/canister/idle(obj/machinery/portable_atmospherics/canister/M)
+/datum/om/stage/machine/power/canister/idle(obj/machinery/portable_atmospherics/canister/M)
 	return M.om_settled
