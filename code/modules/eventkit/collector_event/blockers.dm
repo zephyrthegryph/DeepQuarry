@@ -110,18 +110,22 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 	. = ..()
 
 
+/obj/structure/event_collector_blocker/proc/repair_step_done(obj/item/O, mob/user, step_count)
+	if(active_repair_steps.len != step_count)
+		return
+	post_repair_handling(O,active_repair_steps[active_repair_steps.len],user)
+	to_chat(user,span_notice(fix_descs[active_repair_steps[active_repair_steps.len]]))
+	active_repair_steps.len = active_repair_steps.len - 1
+	if(active_repair_steps.len == 0)
+		fix()
+
 /obj/structure/event_collector_blocker/attackby(obj/item/O, mob/user)
 	. = ..()
 	if(tools_to_fix)
 		if(active_repair_steps.len >= 1)
 			if(O.has_tool_quality(active_repair_steps[active_repair_steps.len]))
 				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return
-				if(do_after(user, 2 SECONDS, target = src))
-					post_repair_handling(O,active_repair_steps[active_repair_steps.len],user)
-					to_chat(usr,span_notice(fix_descs[active_repair_steps[active_repair_steps.len]]))
-					active_repair_steps.len = active_repair_steps.len - 1
-					if(active_repair_steps.len == 0)
-						fix()
+				om_do_after(user, 2 SECONDS, src, src, PROC_REF(repair_step_done), list(O, user, active_repair_steps.len))
 			else
 				to_chat(user,span_notice("this doesn't look like the right tool for the job..."))
 
