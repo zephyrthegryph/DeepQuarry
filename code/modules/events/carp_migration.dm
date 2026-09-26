@@ -94,14 +94,12 @@
 /datum/event/carp_migration/end()
 	. = ..()
 	// Clean up carp that died in space for some reason.
-	spawn(0)
-		for(var/mob/living/simple_mob/SM in spawned_carp)
-			if(SM.stat == DEAD)
-				var/turf/T = get_turf(SM)
-				if(istype(T, /turf/space))
-					if(prob(75))
-						qdel(SM)
-			CHECK_TICK
+	for(var/mob/living/simple_mob/SM in spawned_carp)
+		if(SM.stat == DEAD)
+			var/turf/T = get_turf(SM)
+			if(istype(T, /turf/space))
+				if(prob(75))
+					qdel(SM)
 
 // Overmap version
 /datum/event/carp_migration/overmap/announce()

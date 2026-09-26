@@ -41,11 +41,9 @@
 		i++
 
 /datum/event/spider_migration/end()
-	spawn(0)
-		for(var/mob/living/simple_mob/SM in spawned_spider)
-			if(!SM.stat)
-				var/turf/T = get_turf(SM)
-				if(istype(T, /turf/space))
-					if(prob(75))
-						qdel(SM)
-			sleep(1)
+	for(var/mob/living/simple_mob/SM in spawned_spider)
+		if(!SM.stat)
+			var/turf/T = get_turf(SM)
+			if(istype(T, /turf/space))
+				if(prob(75))
+					qdel(SM)

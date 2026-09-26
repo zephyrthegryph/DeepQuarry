@@ -5,21 +5,19 @@
 
 /datum/event/ianstorm/announce()
 	GLOB.command_announcement.Announce("It has come to our attention that the [using_map.facility_type] passed through an ion storm.  Please monitor all electronic equipment for malfunctions.", "Anomaly Alert", ANNOUNCER_MSG_IANSTORM)
-	spawn(7 SECONDS)
-		GLOB.command_announcement.Announce("Wait. No, that's wrong. The [using_map.facility_type] passed through an IAN storm!.", "Ian Alert")
+	om_after(src, 7 SECONDS, /proc/delayed_command_announcement, "Wait. No, that's wrong. The [using_map.facility_type] passed through an IAN storm!.", "Ian Alert")
 
 /datum/event/ianstorm/start()
-	spawn()
-		for(var/mob/living/carbon/human/C in GLOB.living_mob_list)
-			var/turf/T = get_turf(C)
-			if(!T)
-				continue
-			if(!(T.z in using_map.station_levels))
-				continue
-			var/area/A = get_area(T)
-			if(A.flag_check(RAD_SHIELDED | BLUE_SHIELDED))
-				continue
-			place_ian(T)
+	for(var/mob/living/carbon/human/C in GLOB.living_mob_list)
+		var/turf/T = get_turf(C)
+		if(!T)
+			continue
+		if(!(T.z in using_map.station_levels))
+			continue
+		var/area/A = get_area(T)
+		if(A.flag_check(RAD_SHIELDED | BLUE_SHIELDED))
+			continue
+		place_ian(T)
 
 /datum/event/ianstorm/proc/place_ian(turf/T)
 	// Try three times to place an Ian
