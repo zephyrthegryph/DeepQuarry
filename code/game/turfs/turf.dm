@@ -360,8 +360,7 @@
 		return
 
 	if(!get_gravity(source)) //Checked a different codebase for reference. Turns out it's only supposed to happen in no-gravity
-		spawn(2)
-			step(source, turn(source.last_move, 180)) //This makes it float away after hitting a wall in 0G
+		om_after(source, 2, TYPE_PROC_REF(/atom/movable, om_step), turn(source.last_move, 180)) //This makes it float away after hitting a wall in 0G
 	if(isliving(source))
 		var/mob/living/M = source
 		M.turf_collision(src, throwingdatum?.speed)
