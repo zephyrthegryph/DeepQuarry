@@ -10,14 +10,15 @@
 	name = null
 	icon = 'icons/obj/power.dmi'
 	anchored = TRUE
-	/// The network this machine is on (bound by the Rust power step), or null.
+	/// The network this machine is on (rust_architecture.md step 3: polled
+	/// from Rust, not pushed), or null.
 	var/datum/powernet/powernet = null
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 	active_power_usage = 0
-	/// This machine's key in the Rust power domain (0: not registered).
-	var/power_key = 0
-	/// Persistent supply registered with set_power_supply() (W).
+	/// Persistent supply registered with set_power_supply() (W). Every
+	/// `/obj/machinery/power` is a `Producer` (verdigris/domains/power);
+	/// most never set a nonzero supply, which costs nothing.
 	var/power_supply_rate = 0
 
 /obj/machinery/power/Initialize(mapload)
@@ -35,9 +36,6 @@
 
 /obj/machinery/power/Destroy()
 	disconnect_from_network()
-	if(power_key)
-		power_key_free(power_key)
-		power_key = 0
 	return ..()
 
 ///////////////////////////////
@@ -56,9 +54,9 @@
 /// Supply for the next power step only (pulse sources: coils, collectors,
 /// fusion). A producer that runs every tick calls it every tick, as before.
 /obj/machinery/power/proc/add_avail(amount)
-	if(!powernet || amount <= 0)
+	if(!powernet || amount <= 0 || !vg_entity)
 		return FALSE
-	SSmachines.power_queue(list(POWER_OP_PULSE, 2, power_key, amount))
+	set_pulse(amount)
 	return TRUE
 
 /// A persistent supply rate (W): it stays until changed, so a steady
@@ -68,9 +66,8 @@
 	if(amount == power_supply_rate)
 		return
 	power_supply_rate = amount
-	if(!power_key)
-		power_key = power_key_alloc(src)
-	SSmachines.power_queue(list(POWER_OP_SUPPLY, 2, power_key, amount))
+	if(vg_entity)
+		set_supply(amount)
 
 /obj/machinery/power/proc/clear_power_supply()
 	set_power_supply(0)
@@ -105,7 +102,7 @@
 /// there. Returns TRUE when that put it on a network. Without `bind_now` the
 /// next power step binds it (map load).
 /obj/machinery/power/proc/connect_to_network(bind_now = TRUE)
-	if(powernet && power_key)
+	if(powernet && vg_entity)
 		return TRUE
 	if(!power_send_node())
 		return FALSE
@@ -118,11 +115,9 @@
 	var/turf/T = power_turf()
 	if(!istype(T))
 		return FALSE
-	if(!power_key)
-		power_key = power_key_alloc(src)
-	SSmachines.power_queue(list(POWER_OP_MACHINE, 4, power_key, T.x, T.y, T.z))
+	vg_power_bind_machine(vg_entity, T.x, T.y, T.z)
 	if(power_supply_rate)
-		SSmachines.power_queue(list(POWER_OP_SUPPLY, 2, power_key, power_supply_rate))
+		set_supply(power_supply_rate)
 	power_registered()
 	return TRUE
 
@@ -132,21 +127,29 @@
 
 /// Binds to the current region at once (the step would do it anyway).
 /obj/machinery/power/proc/power_bind_now()
-	var/datum/powernet/network = SSmachines.power_region_of(power_key)
-	power_bind(network?.region_id || 0, network ? 2 : 0)
+	vg_power_commit()
+	power_refresh_network()
+
+/// Re-reads which region (if any) this machine's node is on right now and
+/// updates `powernet` if it changed. A machine alone on its own singleton
+/// region (no cable reached it) reads as unconnected, as before.
+/obj/machinery/power/proc/power_refresh_network()
+	var/id = vg_entity ? vg_power_region_of(vg_entity) : 0
+	var/connected = id && length(vg_power_region_members(id)) > 1
+	power_bind(connected ? id : 0)
 
 /// Leaves the network and removes the node.
 /obj/machinery/power/proc/disconnect_from_network()
-	if(!power_key)
+	if(!vg_entity)
 		return FALSE
-	SSmachines.power_queue(list(POWER_OP_REMOVE, 1, power_key))
+	vg_power_unbind_node(vg_entity)
 	var/was = !!powernet
-	power_bind(0, 0)
+	power_bind(0)
 	return was
 
-/// The Rust step (or a connect) put this machine on region `region_id`.
-/obj/machinery/power/proc/power_bind(region_id, members)
-	var/datum/powernet/network = (region_id && members > 1) ? SSmachines.power_facade(region_id, power_key) : null
+/// The machine's node is (or isn't) on region `region_id` now.
+/obj/machinery/power/proc/power_bind(region_id)
+	var/datum/powernet/network = region_id ? SSmachines.power_facade(region_id) : null
 	if(network == powernet)
 		return
 	var/datum/powernet/old = powernet
@@ -248,13 +251,6 @@
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
 			var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 			if(G.siemens_coefficient == 0)	return 0		//to avoid spamming with insulated glvoes on
-/*Phorochem removed.
-//Phorochemistry DM: Allows chemicalresistant shocking -Radiantflash
-		for(var/datum/reagent/phororeagent/R in M.reagents.reagent_list)
-			if(R.id == REAGENT_ID_FULGURACIN)
-				to_chat(M, span_notice("Your hairs stand up, but you resist the shock for the most part"))
-				return 0 //no shock for you
-*/
 	//Checks again. If we are still here subject will be shocked, trigger standard 20 tick warning
 	//Since this one is longer it will override the original one.
 	if(PN)

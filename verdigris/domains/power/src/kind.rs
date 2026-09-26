@@ -1,31 +1,25 @@
 //! [`Cables`]: the R7 network kind for power (`rust_architecture.md` §6).
 //! All region state lives in [`PowerLedger`], the payload -- there is no
-//! side ledger map (`rust_architecture.md` §4.5's rule).
+//! side ledger map (`rust_architecture.md` §4.5's rule). A node's role is
+//! topology only (`rust_architecture.md` step 3): a machine node (an APC's
+//! own terminal, a producer, a SMES terminal) carries no power data of its
+//! own any more -- that lives on components, reached through the entity a
+//! node's row law is already iterating (`Apc`) or through
+//! [`vg_core::query::Foreign`] (`Smes`, via its terminals).
 
 use vg_core::grid::{CellId, Dir};
-use vg_core::network::{Additive, NetworkKind};
-use vg_core::units::Watts;
+use vg_core::network::NetworkKind;
 
 use crate::components::Cable;
 use crate::geom;
 
-/// What one node contributes to its region: a cable contributes nothing
-/// (its role is topology, not power); a machine node carries its
-/// registered supply and the demand it serves (an APC terminal's area, a
-/// SMES's own draw).
-#[derive(Clone, Debug, PartialEq)]
+/// What one node contributes to its region: a cable's shape, or nothing (a
+/// machine node is topology only; its power data is a component).
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum PowerNode {
     Cable(Cable),
-    Machine { supply: Watts, demand: [Watts; 3] },
-}
-
-impl Default for PowerNode {
-    fn default() -> Self {
-        Self::Machine {
-            supply: Watts::ZERO,
-            demand: [Watts::ZERO; 3],
-        }
-    }
+    #[default]
+    Machine,
 }
 
 impl PowerNode {
@@ -33,92 +27,72 @@ impl PowerNode {
     pub const fn as_cable(&self) -> Option<&Cable> {
         match self {
             Self::Cable(c) => Some(c),
-            Self::Machine { .. } => None,
+            Self::Machine => None,
         }
     }
 }
 
-/// A region's additive aggregate: total registered supply and demand per
-/// channel.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Summary {
-    pub supply: Watts,
-    pub demand: [Watts; 3],
-}
-
-impl Additive for Summary {
-    fn add(&mut self, other: &Self) {
-        self.supply += other.supply;
-        for (a, b) in self.demand.iter_mut().zip(other.demand) {
-            *a += b;
-        }
-    }
-    fn sub(&mut self, other: &Self) {
-        self.supply -= other.supply;
-        for (a, b) in self.demand.iter_mut().zip(other.demand) {
-            *a -= b;
-        }
-    }
-}
-
-/// A region's live state: what [`crate::laws::power_balance`] computes and
-/// what the brownout event tracks. The only region state there is
+/// A region's live state: what [`crate::laws::PowerPlan`]/
+/// [`crate::laws::PowerSettle`] compute and what the brownout event tracks,
+/// plus the pro-rata totals [`crate::laws::SmesOutputApply`]/
+/// [`crate::laws::SmesInputApply`] need and can only be summed once per
+/// region (`rust_architecture.md` §8.5). The only region state there is
 /// (`rust_architecture.md` §4.5) -- no side ledger, no display smoothing
 /// (a DM read-time concern now, not simulated here).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct PowerLedger {
-    /// Registered supply plus storage offers, planned for this step.
-    pub avail: Watts,
-    /// Delivered this step.
-    pub load: Watts,
+    /// Registered supply plus storage offers, planned for this step, W.
+    pub avail: f64,
+    /// Delivered this step, W.
+    pub load: f64,
     pub brown: bool,
+    /// Sum of every member SMES output terminal's offer this step, W.
+    pub smes_offer_total: f64,
+    /// Sum of every member SMES input terminal's ask this step, W.
+    pub smes_ask_total: f64,
+    /// `load` beyond non-storage `avail`: what storage output actually had
+    /// to cover this step, W.
+    pub storage_used: f64,
+    /// `avail - load`: this step's leftover supply, shared pro-rata among
+    /// asking SMES input terminals, W.
+    pub region_excess: f64,
 }
 
 impl PowerLedger {
     #[must_use]
-    pub fn netexcess(&self) -> Watts {
-        Watts(self.avail.get() - self.load.get())
+    pub fn netexcess(&self) -> f64 {
+        self.avail - self.load
     }
 }
 
-/// Cables: node data is a [`PowerNode`], the region payload is
-/// [`PowerLedger`]. There is no pooled-energy command path (storage charge
-/// lives on the `Apc`/`Smes` component itself, not the region).
+/// Cables: node data is a [`PowerNode`] (topology only), the region payload
+/// is [`PowerLedger`].
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Cables;
 
 impl NetworkKind for Cables {
     const NAME: &'static str = "cables";
     type Node = PowerNode;
-    type Summary = Summary;
+    type Summary = ();
     type Payload = PowerLedger;
     type Device = ();
     type Command = ();
 
-    fn summarize(node: &PowerNode) -> Summary {
-        match node {
-            PowerNode::Cable(_) => Summary::default(),
-            PowerNode::Machine { supply, demand } => Summary {
-                supply: *supply,
-                demand: *demand,
-            },
-        }
-    }
+    fn summarize(_node: &PowerNode) {}
 
-    fn split(payload: &mut PowerLedger, _whole: &Summary, _part: &Summary) -> PowerLedger {
+    fn split(payload: &mut PowerLedger, (): &(), (): &()) -> PowerLedger {
         // avail/load are re-planned every step (they are not a stock), so
         // a split child starts fresh; brown carries over until the next
         // step's law recomputes it, so a mid-step split never flashes a
         // brief false "restored".
         PowerLedger {
-            avail: Watts::ZERO,
-            load: Watts::ZERO,
             brown: payload.brown,
+            ..PowerLedger::default()
         }
     }
 
     fn merge(into: &mut PowerLedger, other: PowerLedger) {
-        into.load = Watts(into.load.get() + other.load.get());
+        into.load += other.load;
         into.brown = into.brown || other.brown;
     }
 
@@ -134,10 +108,10 @@ impl NetworkKind for Cables {
                 }
                 a.reaches(ca).into_iter().any(|(t, need)| t == cb && b.has(need))
             }
-            (PowerNode::Cable(c), PowerNode::Machine { .. }) | (PowerNode::Machine { .. }, PowerNode::Cable(c)) => {
+            (PowerNode::Cable(c), PowerNode::Machine) | (PowerNode::Machine, PowerNode::Cable(c)) => {
                 ca == cb && c.is_knot()
             }
-            (PowerNode::Machine { .. }, PowerNode::Machine { .. }) => false,
+            (PowerNode::Machine, PowerNode::Machine) => false,
         }
     }
 
@@ -223,10 +197,7 @@ mod tests {
     #[test]
     fn a_knot_and_a_machine_on_it_connect_but_not_off_it() {
         let knot = PowerNode::Cable(wire(0, 0));
-        let machine = PowerNode::Machine {
-            supply: Watts(100.0),
-            demand: [Watts::ZERO; 3],
-        };
+        let machine = PowerNode::Machine;
         let p = pos(4, 4, 1);
         assert!(Cables::connects((&knot, p), (&machine, p)));
         assert!(!Cables::connects((&knot, p), (&machine, pos(5, 4, 1))));
@@ -234,29 +205,23 @@ mod tests {
 
     #[test]
     fn two_machines_never_connect_directly() {
-        let a = PowerNode::Machine { supply: Watts::ZERO, demand: [Watts::ZERO; 3] };
-        let b = PowerNode::Machine { supply: Watts::ZERO, demand: [Watts::ZERO; 3] };
         let p = pos(1, 1, 1);
-        assert!(!Cables::connects((&a, p), (&b, p)));
+        assert!(!Cables::connects((&PowerNode::Machine, p), (&PowerNode::Machine, p)));
     }
 
     #[test]
-    fn summary_is_additive_and_split_zeroes_the_flow_but_keeps_brown() {
-        let mut whole = Summary::default();
-        whole.add(&Summary { supply: Watts(500.0), demand: [Watts(100.0), Watts(50.0), Watts(25.0)] });
-        assert_eq!(whole.supply, Watts(500.0));
-
-        let mut payload = PowerLedger { avail: Watts(500.0), load: Watts(300.0), brown: true };
-        let child = Cables::split(&mut payload, &whole, &whole);
-        assert_eq!(child, PowerLedger { avail: Watts::ZERO, load: Watts::ZERO, brown: true });
+    fn split_zeroes_the_flow_but_keeps_brown() {
+        let mut payload = PowerLedger { avail: 500.0, load: 300.0, brown: true, ..PowerLedger::default() };
+        let child = Cables::split(&mut payload, &(), &());
+        assert_eq!(child, PowerLedger { avail: 0.0, load: 0.0, brown: true, ..PowerLedger::default() });
     }
 
     #[test]
     fn merge_adds_load_and_ors_brown() {
-        let mut into = PowerLedger { avail: Watts(100.0), load: Watts(40.0), brown: false };
-        let other = PowerLedger { avail: Watts(50.0), load: Watts(10.0), brown: true };
+        let mut into = PowerLedger { avail: 100.0, load: 40.0, brown: false, ..PowerLedger::default() };
+        let other = PowerLedger { avail: 50.0, load: 10.0, brown: true, ..PowerLedger::default() };
         Cables::merge(&mut into, other);
-        assert_eq!(into.load, Watts(50.0));
+        assert_eq!(into.load, 50.0);
         assert!(into.brown);
     }
 }

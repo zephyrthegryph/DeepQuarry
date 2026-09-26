@@ -57,6 +57,30 @@ fn register(b: &mut WorldBuilder) {
     b.add_component::<vg_gas::kind::pump::Pump>();
     b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());
+
+    // Power (`rust_architecture.md` §6, §8.5): `Cables`, its components and
+    // laws. A SMES's output/input terminals are their own entities, each on
+    // its own region; `crate::power`'s topology binds are the only power
+    // FFI besides the generic `vg_component_*`/`vg_world_*` ones.
+    use vg_core::component::Ownership;
+    use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
+    use vg_power::kind::Cables;
+    use vg_power::laws::{ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInputApply, SmesInputPlan, SmesOutputApply, SmesOutputPlan};
+    b.add_component::<Producer>();
+    b.add_component::<Apc>();
+    b.add_component::<Smes>();
+    b.add_component::<SmesInputTerminal>();
+    b.add_network::<Cables>(Ownership::Main);
+    b.conserve("power_apc_charge", Tolerance::default());
+    b.conserve("power_smes_charge", Tolerance::default());
+    let _ = b.add_law::<PowerReset>();
+    let _ = b.add_law::<ProducerCredit>().after::<PowerReset>();
+    let _ = b.add_law::<SmesOutputPlan>().after::<PowerReset>();
+    let _ = b.add_law::<SmesInputPlan>().after::<PowerReset>();
+    let _ = b.add_law::<ApcTick>().after::<ProducerCredit>().after::<SmesOutputPlan>();
+    let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
+    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
+    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
 }
 
 fn build() -> Result<World> {
@@ -227,12 +251,12 @@ impl DomainRegistry for WorldKind {
 
 // --- Binds -------------------------------------------------------------------------
 
-fn num(v: &ByondValue) -> Result<f32> {
+pub(crate) fn num(v: &ByondValue) -> Result<f32> {
     Ok(v.get_number()?)
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn whole(v: &ByondValue, what: &str) -> Result<u32> {
+pub(crate) fn whole(v: &ByondValue, what: &str) -> Result<u32> {
     let n = num(v)?;
     if !(n >= 0.0 && n.fract() == 0.0 && n < 16_777_216.0) {
         bail!("bad {what} {n}");
@@ -250,7 +274,7 @@ fn kind(w: &World, code: &ByondValue) -> Result<KindId> {
         .ok_or_else(|| eyre!("no component kind with code {code}"))
 }
 
-fn list(values: impl IntoIterator<Item = f32>) -> Result<ByondValue> {
+pub(crate) fn list(values: impl IntoIterator<Item = f32>) -> Result<ByondValue> {
     let items: Vec<ByondValue> = values.into_iter().map(ByondValue::from).collect();
     let list = ByondValue::new_list()?;
     list.write_list(&items)?;

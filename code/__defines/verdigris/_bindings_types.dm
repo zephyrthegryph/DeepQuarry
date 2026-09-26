@@ -8,6 +8,8 @@
 	var/tmp/vg_entity = 0
 	/// Which gas component kind (a VG_GAS_* define), or 0.
 	var/tmp/vg_gas = 0
+	/// Which power component kind (a VG_POWER_* define), or 0.
+	var/tmp/vg_power = 0
 
 /// Binds this atom's gas component (if the type declares one) and
 /// returns the (possibly newly created) entity handle. Overridden per
@@ -19,6 +21,18 @@
 /// what Rust has stored for its gas component, repairing as it goes.
 /// Overridden per bound type below.
 /atom/movable/proc/vg_reconcile_gas()
+	return list()
+
+/// Binds this atom's power component (if the type declares one) and
+/// returns the (possibly newly created) entity handle. Overridden per
+/// bound type below.
+/atom/movable/proc/vg_bind_power(entity)
+	return entity
+
+/// Reconciler (§7): mismatches between this atom's declared inputs and
+/// what Rust has stored for its power component, repairing as it goes.
+/// Overridden per bound type below.
+/atom/movable/proc/vg_reconcile_power()
 	return list()
 
 // ---- Pump (gas kind 1, owner worker; verdigris/domains/gas/src/kind/pump.rs) ----
@@ -213,6 +227,400 @@
 /obj/item/gas_mix_holder/proc/on_gas_mix_depleted()
 	return
 
+// ---- Producer (power kind 2, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_PRODUCER 2
+/// The code the generic vg_component_* binds take for Producer.
+#define VG_KIND_PRODUCER 258
+/// Producer's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_PRODUCER (VG_WORLD_KIND_BASE | VG_KIND_PRODUCER)
+#define VG_PRODUCER_FIELD_SUPPLY 0
+#define VG_PRODUCER_FIELD_PULSE 1
+
+/obj/machinery/power
+	vg_power = VG_POWER_PRODUCER
+
+/obj/machinery/power/var/tmp/init_supply = 0.0
+/obj/machinery/power/var/tmp/init_pulse = 0.0
+
+#define VG_PRODUCER_SUPPLY_MIN 0
+#define VG_PRODUCER_SUPPLY_MAX 1000000
+#define VG_PRODUCER_PULSE_MIN 0
+#define VG_PRODUCER_PULSE_MAX 10000000
+
+/// W; clamped to VG_PRODUCER_SUPPLY_MIN..MAX.
+/obj/machinery/power/proc/get_supply()
+	return vg_component_get(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/proc/set_supply(value)
+	return vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, -1, value)
+
+/// W; clamped to VG_PRODUCER_PULSE_MIN..MAX.
+/obj/machinery/power/proc/get_pulse()
+	return vg_component_get(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/proc/set_pulse(value)
+	return vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, -1, value)
+
+/obj/machinery/power/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_PRODUCER, list(VG_PRODUCER_FIELD_SUPPLY, init_supply, VG_PRODUCER_FIELD_PULSE, init_pulse))
+
+// ---- Apc (power kind 3, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_APC 3
+/// The code the generic vg_component_* binds take for Apc.
+#define VG_KIND_APC 259
+/// Apc's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_APC (VG_WORLD_KIND_BASE | VG_KIND_APC)
+#define VG_APC_FIELD_ACTIVE 0
+#define VG_APC_FIELD_HAS_CELL 1
+#define VG_APC_FIELD_FAILED 2
+#define VG_APC_FIELD_SHORTED_OR_GRID_CHECK 3
+#define VG_APC_FIELD_OPERATING 4
+#define VG_APC_FIELD_CHARGEMODE 5
+#define VG_APC_FIELD_CHARGELEVEL 6
+#define VG_APC_FIELD_CAPACITY 7
+#define VG_APC_FIELD_RATE 8
+#define VG_APC_FIELD_CHARGE 9
+#define VG_APC_FIELD_CHANNELS 10
+#define VG_APC_FIELD_CHARGING 11
+#define VG_APC_FIELD_CHARGECOUNT 12
+#define VG_APC_FIELD_LONGTERMPOWER 13
+#define VG_APC_FIELD_AUTOFLAG 14
+#define VG_APC_FIELD_ALARM 15
+#define VG_APC_FIELD_STATIC_LOAD 16
+#define VG_APC_FIELD_ONEOFF 17
+#define VG_APC_FIELD_POLICY_FULL_ABOVE_PCT 18
+#define VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT 19
+#define VG_APC_FIELD_POLICY_FULL_ALLOW 20
+#define VG_APC_FIELD_POLICY_PARTIAL_ALLOW 21
+#define VG_APC_FIELD_POLICY_MIN_ALLOW 22
+#define VG_APC_FIELD_POLICY_NEUTRAL_ALLOW 23
+
+/obj/machinery/power/apc
+	vg_power = VG_POWER_APC
+
+/obj/machinery/power/apc/var/tmp/init_active = TRUE
+/obj/machinery/power/apc/var/tmp/init_has_cell = TRUE
+/obj/machinery/power/apc/var/tmp/init_failed = FALSE
+/obj/machinery/power/apc/var/tmp/init_shorted_or_grid_check = FALSE
+/obj/machinery/power/apc/var/tmp/init_operating = TRUE
+/obj/machinery/power/apc/var/tmp/init_chargemode = TRUE
+/obj/machinery/power/apc/var/tmp/init_chargelevel = 0.0005
+/obj/machinery/power/apc/var/tmp/init_capacity = 0.0
+/obj/machinery/power/apc/var/tmp/init_rate = 0.002
+/obj/machinery/power/apc/var/tmp/init_policy_full_above_pct = 30.0
+/obj/machinery/power/apc/var/tmp/init_policy_partial_below_pct = 15.0
+
+#define VG_APC_CHARGELEVEL_MIN 0
+#define VG_APC_CHARGELEVEL_MAX 1
+#define VG_APC_CAPACITY_MIN 0
+#define VG_APC_CAPACITY_MAX 1000000000
+#define VG_APC_STATIC_LOAD_MIN 0
+#define VG_APC_STATIC_LOAD_MAX 1000000
+#define VG_APC_ONEOFF_MIN 0
+#define VG_APC_ONEOFF_MAX 1000000
+#define VG_APC_POLICY_FULL_ABOVE_PCT_MIN 0
+#define VG_APC_POLICY_FULL_ABOVE_PCT_MAX 100
+#define VG_APC_POLICY_PARTIAL_BELOW_PCT_MIN 0
+#define VG_APC_POLICY_PARTIAL_BELOW_PCT_MAX 100
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_active()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_active(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_has_cell()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_has_cell(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_failed()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_failed(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_shorted_or_grid_check()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_shorted_or_grid_check(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_operating()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_operating(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_chargemode()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_chargemode(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, -1, value)
+
+/// unitless; clamped to VG_APC_CHARGELEVEL_MIN..MAX.
+/obj/machinery/power/apc/proc/get_chargelevel()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_chargelevel(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, -1, value)
+
+/// J; clamped to VG_APC_CAPACITY_MIN..MAX.
+/obj/machinery/power/apc/proc/get_capacity()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, 0) // J
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_capacity(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_rate()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_rate(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_channels(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_channels(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index, value)
+
+/// W; clamped to VG_APC_STATIC_LOAD_MIN..MAX.
+/obj/machinery/power/apc/proc/get_static_load(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index) // W
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_static_load(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index, value)
+
+/// W; clamped to VG_APC_ONEOFF_MIN..MAX.
+/obj/machinery/power/apc/proc/get_oneoff(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index) // W
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_oneoff(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index, value)
+
+/// unitless; clamped to VG_APC_POLICY_FULL_ABOVE_PCT_MIN..MAX.
+/obj/machinery/power/apc/proc/get_policy_full_above_pct()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_full_above_pct(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, -1, value)
+
+/// unitless; clamped to VG_APC_POLICY_PARTIAL_BELOW_PCT_MIN..MAX.
+/obj/machinery/power/apc/proc/get_policy_partial_below_pct()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_partial_below_pct(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_full_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_full_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_partial_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_partial_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_min_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_min_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_neutral_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_neutral_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index, value)
+
+/// J, read-only (state).
+/obj/machinery/power/apc/proc/get_charge()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGE, 0) // J
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_charging()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGING, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_chargecount()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGECOUNT, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_longtermpower()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_LONGTERMPOWER, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_autoflag()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_AUTOFLAG, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_alarm()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ALARM, 0)
+
+/// Take reconciliation (power_apc_charge): adds `delta` to what Rust holds now;
+/// returns the part of a removal that was not there.
+/obj/machinery/power/apc/proc/adjust_charge(delta)
+	return vg_component_adjust(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGE, 0, delta)
+
+/obj/machinery/power/apc/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_APC, list(VG_APC_FIELD_ACTIVE, init_active, VG_APC_FIELD_HAS_CELL, init_has_cell, VG_APC_FIELD_FAILED, init_failed, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, init_shorted_or_grid_check, VG_APC_FIELD_OPERATING, init_operating, VG_APC_FIELD_CHARGEMODE, init_chargemode, VG_APC_FIELD_CHARGELEVEL, init_chargelevel, VG_APC_FIELD_CAPACITY, init_capacity, VG_APC_FIELD_RATE, init_rate, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, init_policy_full_above_pct, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, init_policy_partial_below_pct))
+
+// ---- Smes (power kind 4, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_SMES 4
+/// The code the generic vg_component_* binds take for Smes.
+#define VG_KIND_SMES 260
+/// Smes's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_SMES (VG_WORLD_KIND_BASE | VG_KIND_SMES)
+#define VG_SMES_FIELD_INPUT_ENABLED 0
+#define VG_SMES_FIELD_OUTPUT_ENABLED 1
+#define VG_SMES_FIELD_INPUT_LEVEL 2
+#define VG_SMES_FIELD_OUTPUT_LEVEL 3
+#define VG_SMES_FIELD_CAPACITY 4
+#define VG_SMES_FIELD_RATE 5
+#define VG_SMES_FIELD_CHARGE 6
+
+/obj/machinery/power/smes
+	vg_power = VG_POWER_SMES
+
+/obj/machinery/power/smes/var/tmp/init_input_enabled = FALSE
+/obj/machinery/power/smes/var/tmp/init_output_enabled = TRUE
+/obj/machinery/power/smes/var/tmp/init_input_level = 50000.0
+/obj/machinery/power/smes/var/tmp/init_output_level = 50000.0
+/obj/machinery/power/smes/var/tmp/init_capacity = 0.0
+/obj/machinery/power/smes/var/tmp/init_rate = 0.03333
+
+#define VG_SMES_INPUT_LEVEL_MIN 0
+#define VG_SMES_INPUT_LEVEL_MAX 10000000
+#define VG_SMES_OUTPUT_LEVEL_MIN 0
+#define VG_SMES_OUTPUT_LEVEL_MAX 10000000
+#define VG_SMES_CAPACITY_MIN 0
+#define VG_SMES_CAPACITY_MAX 10000000000
+
+/// unitless;.
+/obj/machinery/power/smes/proc/get_input_enabled()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_input_enabled(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, -1, value)
+
+/// unitless;.
+/obj/machinery/power/smes/proc/get_output_enabled()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_output_enabled(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, -1, value)
+
+/// W; clamped to VG_SMES_INPUT_LEVEL_MIN..MAX.
+/obj/machinery/power/smes/proc/get_input_level()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_input_level(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, -1, value)
+
+/// W; clamped to VG_SMES_OUTPUT_LEVEL_MIN..MAX.
+/obj/machinery/power/smes/proc/get_output_level()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_output_level(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, -1, value)
+
+/// J; clamped to VG_SMES_CAPACITY_MIN..MAX.
+/obj/machinery/power/smes/proc/get_capacity()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, 0) // J
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_capacity(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, -1, value)
+
+/// unitless;.
+/obj/machinery/power/smes/proc/get_rate()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_rate(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, -1, value)
+
+/// J, read-only (state).
+/obj/machinery/power/smes/proc/get_charge()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
+
+/// Take reconciliation (power_smes_charge): adds `delta` to what Rust holds now;
+/// returns the part of a removal that was not there.
+/obj/machinery/power/smes/proc/adjust_charge(delta)
+	return vg_component_adjust(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0, delta)
+
+/obj/machinery/power/smes/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_SMES, list(VG_SMES_FIELD_INPUT_ENABLED, init_input_enabled, VG_SMES_FIELD_OUTPUT_ENABLED, init_output_enabled, VG_SMES_FIELD_INPUT_LEVEL, init_input_level, VG_SMES_FIELD_OUTPUT_LEVEL, init_output_level, VG_SMES_FIELD_CAPACITY, init_capacity, VG_SMES_FIELD_RATE, init_rate))
+
+// ---- SmesInputTerminal (power kind 5, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_SMESINPUTTERMINAL 5
+/// The code the generic vg_component_* binds take for SmesInputTerminal.
+#define VG_KIND_SMESINPUTTERMINAL 261
+/// SmesInputTerminal's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_SMESINPUTTERMINAL (VG_WORLD_KIND_BASE | VG_KIND_SMESINPUTTERMINAL)
+#define VG_SMESINPUTTERMINAL_FIELD_UNIT 0
+
+/obj/machinery/power/terminal/smes_input
+	vg_power = VG_POWER_SMESINPUTTERMINAL
+
+/obj/machinery/power/terminal/smes_input/var/tmp/init_unit = 0
+
+
+/// unitless;.
+/obj/machinery/power/terminal/smes_input/proc/get_unit()
+	return vg_component_get(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/terminal/smes_input/proc/set_unit(value)
+	return vg_component_set(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, -1, value)
+
+/obj/machinery/power/terminal/smes_input/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_SMESINPUTTERMINAL, list(VG_SMESINPUTTERMINAL_FIELD_UNIT, init_unit))
+
 /// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_gas_reaction_ready(reaction)
 	return
@@ -236,6 +644,8 @@
 	var/entity = 0
 	if(vg_gas)
 		entity = vg_bind_gas(entity)
+	if(vg_power)
+		entity = vg_bind_power(entity)
 	vg_entity = entity
 
 /// Every declared-input mismatch across every bound domain (§7). SSvg's
@@ -246,6 +656,8 @@
 	var/list/mismatches = list()
 	if(vg_gas)
 		mismatches += vg_reconcile_gas()
+	if(vg_power)
+		mismatches += vg_reconcile_power()
 	return mismatches
 
 /// Drains and dispatches every typed event since the last call (§4.8).

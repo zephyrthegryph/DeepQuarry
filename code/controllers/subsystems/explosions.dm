@@ -495,7 +495,6 @@ SUBSYSTEM_DEF(explosions)
 	// its next frame) -- only the power side batches.
 	if(!atmos_topology_batch_open)
 		atmos_topology_batch_open = TRUE
-		SSmachines.power_batch_begin()
 	// waking from sleep, we are absolutely not resuming, and INSTANT feedback to players is required here.
 	if(can_fire) // already awake
 		return
@@ -529,7 +528,7 @@ SUBSYSTEM_DEF(explosions)
 	if(atmos_topology_batch_open)
 		atmos_topology_batch_open = FALSE
 		SSair.rust_commit_pending_pipenets()
-		SSmachines.power_batch_end()
+		vg_power_commit()
 	SSmachines.flush_gas_watch_updates()
 	// we've finished. Pause because was have no more work to do.
 	if(!can_fire) // already asleep

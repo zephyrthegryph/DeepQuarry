@@ -480,6 +480,79 @@ impl<C: Component> WriteQuery for Option<C> {
     }
 }
 
+// --- Foreign (many-to-one) joins ---------------------------------------------
+
+/// A component whose row names another entity by its slot index: a foreign
+/// key (`rust_architecture.md` step 3's SMES terminals, each its own entity
+/// on its own network region, naming the SMES unit entity that holds the
+/// actual `Smes` state). Implemented by hand alongside the type's own
+/// `Component` impl -- `#[vg::component]` has no notion of a foreign key.
+pub trait LinksTo: Component {
+    /// The linked entity's raw slot index ([`crate::entity::EntityId::index`]),
+    /// or `None` when this row names no link.
+    fn linked_index(&self) -> Option<u32>;
+}
+
+/// The `C` row of the entity the item's own `Link` row names
+/// ([`LinksTo::linked_index`]): a many-to-one join, the other direction
+/// from [`crate::network::law::Members`] (which is one-to-many). Anchors on
+/// `Link`'s rows, so a law reads/writes this once per `Link` row, joined to
+/// its shared `C` row. `value` is `None` when the link is unset or the
+/// linked entity has no `C`; the item still runs.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Foreign<Link: LinksTo, C: Component> {
+    pub value: Option<C>,
+    target: Option<At>,
+    marker: std::marker::PhantomData<fn() -> Link>,
+}
+
+/// Resolved ids of a [`Foreign`] query.
+pub struct ForeignState<Link: LinksTo, C: Component> {
+    link: Column,
+    value: Column,
+    marker: std::marker::PhantomData<fn() -> (Link, C)>,
+}
+
+impl<Link: LinksTo, C: Component> Query for Foreign<Link, C> {
+    type State = ForeignState<Link, C>;
+
+    fn anchor() -> Option<Anchor> {
+        <Link as Query>::anchor()
+    }
+
+    fn init(init: &mut QueryInit<'_>, write: bool) -> Result<Self::State, LawError> {
+        let link = <Link as Query>::init(init, false)?;
+        let value = <C as Query>::init(init, write)?;
+        Ok(ForeignState {
+            link,
+            value,
+            marker: std::marker::PhantomData,
+        })
+    }
+
+    fn fetch(state: &Self::State, frame: &FrameData<'_>, at: At) -> Option<Self> {
+        let link_row = <Link as Query>::fetch(&state.link, frame, at)?;
+        let target = link_row.linked_index().map(|idx| At {
+            index: idx,
+            entity: Some(idx),
+        });
+        let value = target.and_then(|t| <C as Query>::fetch(&state.value, frame, t));
+        Some(Self {
+            value,
+            target,
+            marker: std::marker::PhantomData,
+        })
+    }
+}
+
+impl<Link: LinksTo, C: Component> WriteQuery for Foreign<Link, C> {
+    fn write(self, state: &Self::State, frame: &mut FrameData<'_>, _at: At) {
+        if let (Some(v), Some(target)) = (self.value, self.target) {
+            v.write(&state.value, frame, target);
+        }
+    }
+}
+
 // --- Globals -----------------------------------------------------------------
 
 /// A whole resource, for once-per-frame laws (anchor [`Anchor::Global`]).

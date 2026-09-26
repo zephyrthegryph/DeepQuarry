@@ -52,8 +52,10 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	/// Set only while a material overlay owns this cable (engineered
 	/// conductors, see powernet.dm). Everything else asks get_powernet().
 	var/datum/powernet/powernet
-	/// This piece's key in the Rust power domain.
-	var/power_key = 0
+	/// This piece's entity in the Rust power domain (a cable is not a
+	/// `#[vg::component]` -- pure topology data -- so it has no `vg_entity`
+	/// of its own; `vg_power_bind_cable` mints and returns one).
+	var/power_entity = 0
 	name = "power cable"
 	desc = "A flexible superconducting cable for heavy-duty power transfer."
 	icon = 'icons/obj/power_cond_white.dmi'
@@ -92,7 +94,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!engineered_material_id && !material_custom_assembly)
 		return
 	SSmachines.power_material_cables[src] = TRUE
-	if(power_key)
+	if(power_entity)
 		get_powernet()?.invalidate_material_cache()
 
 /obj/structure/cable/proc/recover_coil(turf/location, length)
@@ -110,9 +112,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 	return network.draw_power(amount, src)
 
-/// The network this cable is on (asks Rust; flushes queued edits first).
+/// The network this cable is on (asks Rust).
 /obj/structure/cable/proc/get_powernet()
-	return power_key ? SSmachines.power_region_of(power_key, FALSE) : null
+	return power_entity ? SSmachines.power_region_of(power_entity) : null
 
 /// Sends this piece (its turf and directions) to the Rust network. Placing,
 /// rotating and moving a cable all call this; Rust works out what it joins.
@@ -121,8 +123,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!istype(T))
 		power_unregister()
 		return
-	if(!power_key)
-		power_key = power_key_alloc(src)
 	var/above = 0
 	var/below = 0
 	if((d1 | d2) & UP)
@@ -131,14 +131,17 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if((d1 | d2) & DOWN)
 		var/turf/D = GetBelow(T)
 		below = D?.z || 0
-	SSmachines.power_queue(list(POWER_OP_CABLE, 9, power_key, T.x, T.y, T.z, d1, d2, above, below, power_link_id()))
+	GLOB.power_cable_by_entity -= "[power_entity]"
+	power_entity = vg_power_bind_cable(power_entity, list(T.x, T.y, T.z, d1, d2, above, below, power_link_id()))
+	GLOB.power_cable_by_entity["[power_entity]"] = src
 
 /obj/structure/cable/proc/power_unregister()
-	if(!power_key)
+	if(!power_entity)
 		return
-	SSmachines.power_queue(list(POWER_OP_REMOVE, 1, power_key))
-	power_key_free(power_key)
-	power_key = 0
+	vg_power_unbind_node(power_entity)
+	vg_entity_unbind(power_entity)
+	GLOB.power_cable_by_entity -= "[power_entity]"
+	power_entity = 0
 
 /// Cables with the same non-zero link id connect wherever they are (enders).
 /obj/structure/cable/proc/power_link_id()

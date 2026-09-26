@@ -144,7 +144,7 @@ SUBSYSTEM_DEF(machines)
 	msg += "PO:[round(last_cost_power_objects,1)]/[round(cost_power_objects,1)]"
 	msg += "} "
 	msg += "MC:[length(SSmachines.processing_machines)]|"
-	msg += "PN:[length(power_regions)] ev:[power_last_events][power_batch_depth ? " - BATCH" : ""]|"
+	msg += "PN:[length(power_regions)]|"
 	msg += "PO:[length(SSmachines.powerobjs)]|"
 	msg += "HV:[length(SSmachines.hibernating_vents)]|"
 	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]|"
@@ -372,7 +372,7 @@ SUBSYSTEM_DEF(machines)
 		if(++rank >= 50)
 			break
 	log_runtime("MACHINE_PROFILE_SUMMARY active=[length(processing_machines)] concrete_types=[length(current_counts)]")
-	log_runtime("MACHINE_PROFILE_POWER regions=[length(power_regions)] events=[power_last_events] edits_sent=[power_edits_sent]")
+	log_runtime("MACHINE_PROFILE_POWER regions=[length(power_regions)]")
 	var/list/sorted_predicates = gas_predicate_profile_cost.Copy()
 	sortTim(sorted_predicates, /proc/cmp_numeric_desc, TRUE)
 	rank = 0
@@ -469,7 +469,6 @@ SUBSYSTEM_DEF(machines)
 			SSmachines.powerobjs -= D
 
 	processing_machines = SSmachines.processing_machines
-	power_ops = SSmachines.power_ops
 	power_regions = SSmachines.power_regions
 	power_dirty_areas = SSmachines.power_dirty_areas
 	power_material_cables = SSmachines.power_material_cables

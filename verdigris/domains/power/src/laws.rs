@@ -1,64 +1,61 @@
-//! Power's laws (`rust_architecture.md` §4.3, §6): pure functions over
-//! components and the region ledger. No `Sim`, no stepping-everything loop
-//! -- each is a plain function a driver (or, today, a direct call from a
-//! test or the FFI glue) applies once per tick. The per-`Law`-trait
-//! scheduler wiring lands once Core B's component stores do; until then
-//! these are the physics, proven by the tests alongside each one.
+//! Power's laws (`rust_architecture.md` §4.3, §6, §8.5): pure functions
+//! over components and the region ledger, plus the `Law` wiring that runs
+//! them over `vg_core`'s driver. No `PowerHost`, no side ledger map -- a
+//! region's only state is [`PowerLedger`], the network payload. `Smes`
+//! binds its own node directly for output (one per unit, like `Apc`); each
+//! of its input terminals is its own entity on its own region
+//! ([`vg_core::query::Foreign`] reaches the shared `Smes` row from one).
 
 use vg_core::rate::RateModel;
-use vg_core::units::Watts;
 
-use crate::components::{Apc, Channel, Consumer, Smes};
+use crate::components::{Apc, Channel, Producer, Smes, SmesInputTerminal};
 
 /// A region as one law sees it: enough to plan and draw against, without
-/// exposing the whole [`crate::kind::PowerLedger`]. `PowerBalance` (the
-/// driver, once wired) is what actually owns advancing `load`.
+/// exposing the whole [`crate::kind::PowerLedger`].
 pub trait Grid {
     /// This step's planned supply.
-    fn avail(&self) -> Watts;
+    fn avail(&self) -> f64;
     /// `avail - load` so far.
-    fn surplus(&self) -> Watts;
+    fn surplus(&self) -> f64;
     /// Draws up to `watts`; returns what was delivered (never more than
     /// [`Grid::surplus`]).
-    fn draw(&mut self, watts: Watts) -> Watts;
+    fn draw(&mut self, watts: f64) -> f64;
 }
 
-/// A grid with nothing on it (an unconnected APC/SMES terminal).
+/// A grid with nothing on it (an unconnected APC terminal).
 pub struct NoGrid;
 
 impl Grid for NoGrid {
-    fn avail(&self) -> Watts {
-        Watts::ZERO
+    fn avail(&self) -> f64 {
+        0.0
     }
-    fn surplus(&self) -> Watts {
-        Watts::ZERO
+    fn surplus(&self) -> f64 {
+        0.0
     }
-    fn draw(&mut self, _: Watts) -> Watts {
-        Watts::ZERO
+    fn draw(&mut self, _: f64) -> f64 {
+        0.0
     }
 }
 
-/// `POWER_BALANCE`'s per-region plan: registered [`Producer`]s and storage
-/// offers, before any [`Consumer`] draws (`rust_architecture.md` §6).
-#[must_use]
-pub fn planned_supply(producers: impl IntoIterator<Item = Watts>, storage_offers: impl IntoIterator<Item = Watts>) -> Watts {
-    let mut total = 0.0;
-    for p in producers {
-        total += p.get();
+fn region_grid(avail: f64, load: &mut f64) -> impl Grid + '_ {
+    struct RegionGrid<'a> {
+        avail: f64,
+        load: &'a mut f64,
     }
-    for s in storage_offers {
-        total += s.get();
+    impl Grid for RegionGrid<'_> {
+        fn avail(&self) -> f64 {
+            self.avail
+        }
+        fn surplus(&self) -> f64 {
+            self.avail - *self.load
+        }
+        fn draw(&mut self, watts: f64) -> f64 {
+            let d = watts.min(self.avail - *self.load).max(0.0);
+            *self.load += d;
+            d
+        }
     }
-    Watts(total)
-}
-
-/// One [`Consumer`]'s draw against a region this step: never more than the
-/// grid's surplus. Priority order (highest first) is the caller's
-/// responsibility -- draw consumers in the order they must be served, so a
-/// starved region sheds the lowest-priority ones first.
-pub fn consumer_draw(consumer: &Consumer, grid: &mut dyn Grid) -> Watts {
-    let total: f64 = consumer.demand.iter().map(|w| w.get()).sum();
-    grid.draw(Watts(total))
+    RegionGrid { avail, load }
 }
 
 /// `ApcTick`: the channel autoset ladder and charge mode
@@ -66,70 +63,72 @@ pub fn consumer_draw(consumer: &Consumer, grid: &mut dyn Grid) -> Watts {
 /// cell_charged)` watts this tick, for the caller's conservation books:
 /// `cell_discharged` never reaches `grid` (the cell covers the area
 /// directly); `cell_charged` does, through [`Grid::draw`].
-pub fn apc_tick(apc: &mut Apc, demand: [Watts; 3], grid: &mut dyn Grid) -> (Watts, Watts) {
-    let used = demand;
-    apc.oneoff = [Watts::ZERO; 3];
+pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], grid: &mut dyn Grid) -> (f64, f64) {
+    apc.oneoff = [0.0; 3];
     if !apc.active {
-        return (Watts::ZERO, Watts::ZERO);
+        return (0.0, 0.0);
     }
-    let total = Watts(used.iter().map(|w| w.get()).sum());
+    let total: f64 = demand.iter().sum();
     let excess = grid.surplus();
     if apc.has_cell && !apc.shorted_or_grid_check {
         with_cell(apc, excess, total, grid)
     } else {
         apc.charging = 0;
         apc.chargecount = 0;
-        for c in &mut apc.channels {
-            *c = c.autoset(0);
+        for c in Channel::ALL {
+            apc.set_channel(c, apc.channel(c).autoset(0));
         }
         apc.alarm = true;
         apc.autoflag = 0;
-        (Watts::ZERO, Watts::ZERO)
+        (0.0, 0.0)
     }
 }
 
-fn with_cell(apc: &mut Apc, excess: Watts, total: Watts, grid: &mut dyn Grid) -> (Watts, Watts) {
-    let mut discharged = Watts::ZERO;
-    if excess.get() >= total.get() {
+fn with_cell(apc: &mut Apc, excess: f64, total: f64, grid: &mut dyn Grid) -> (f64, f64) {
+    let mut cell = apc.cell();
+    let mut discharged = 0.0;
+    if excess >= total {
         grid.draw(total);
     } else {
-        let available = apc.cell.watts_available();
-        discharged = Watts(apc.cell.discharge_out(total.get()));
-        if available + excess.get() >= total.get() {
+        let available = cell.watts_available();
+        discharged = cell.discharge_out(total);
+        if available + excess >= total {
             let drawn = grid.draw(excess);
-            apc.cell.charge = apc.cell.capacity.min(apc.cell.charge + apc.cell.rate * drawn.get());
+            cell.charge = cell.capacity.min(cell.charge + cell.rate * drawn);
             apc.charging = 0;
         } else {
             apc.charging = 0;
             apc.chargecount = 0;
-            for c in &mut apc.channels {
-                *c = c.autoset(0);
+            for c in Channel::ALL {
+                apc.set_channel(c, apc.channel(c).autoset(0));
             }
             apc.autoflag = 0;
         }
     }
+    apc.set_cell(cell);
 
     update_channels(apc);
 
-    let mut charged = Watts::ZERO;
+    let mut cell = apc.cell();
+    let mut charged = 0.0;
     if apc.chargemode && apc.charging == 1 && apc.operating {
-        if excess.get() > 0.0 {
-            let ch = (excess.get() * apc.cell.rate).min(apc.cell.capacity * apc.chargelevel);
-            let drawn = grid.draw(Watts(ch / apc.cell.rate));
-            apc.cell.charge = (apc.cell.charge + drawn.get() * apc.cell.rate).min(apc.cell.capacity.max(apc.cell.charge));
+        if excess > 0.0 {
+            let ch = (excess * cell.rate).min(cell.capacity * apc.chargelevel);
+            let drawn = grid.draw(ch / cell.rate);
+            cell.charge = (cell.charge + drawn * cell.rate).min(cell.capacity.max(cell.charge));
             charged = drawn;
         } else {
             apc.charging = 0;
             apc.chargecount = 0;
         }
     }
-    if apc.cell.charge >= apc.cell.capacity {
-        apc.cell.charge = apc.cell.capacity;
+    if cell.charge >= cell.capacity {
+        cell.charge = cell.capacity;
         apc.charging = 2;
     }
     if apc.chargemode {
         if apc.charging == 0 {
-            if excess.get() > apc.cell.capacity * apc.chargelevel {
+            if excess > cell.capacity * apc.chargelevel {
                 apc.chargecount += 1;
             } else {
                 apc.chargecount = 0;
@@ -143,22 +142,24 @@ fn with_cell(apc: &mut Apc, excess: Watts, total: Watts, grid: &mut dyn Grid) ->
         apc.charging = 0;
         apc.chargecount = 0;
     }
+    apc.set_cell(cell);
     (discharged, charged)
 }
 
 /// `_update_channels()`: shedding tiers from the cell level and trend
-/// (config policy, not hard-coded thresholds -- see [`crate::components::SheddingPolicy`]).
+/// (config policy, not hard-coded thresholds -- see
+/// [`crate::components::SheddingPolicy`]).
 fn update_channels(apc: &mut Apc) {
-    let policy = apc.policy;
+    let policy = apc.policy();
     if apc.charging != 0 && apc.longtermpower < 10 {
         apc.longtermpower += 1;
     } else if apc.longtermpower > -10 {
         apc.longtermpower -= 2;
     }
-    let pct = 100.0 * apc.cell.fraction();
+    let pct = 100.0 * apc.cell().fraction();
     let set = |apc: &mut Apc, allow: [u8; 3]| {
         for c in Channel::ALL {
-            apc.channels[c.idx()] = apc.channels[c.idx()].autoset(allow[c.idx()]);
+            apc.set_channel(c, apc.channel(c).autoset(allow[c.idx()]));
         }
     };
     if pct > policy.full_above_pct || apc.longtermpower > 0 {
@@ -190,57 +191,56 @@ fn update_channels(apc: &mut Apc) {
 /// whether the unit's output/input terminals are on a region.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct SmesPlan {
-    pub offer: Watts,
-    pub target_load: Watts,
+    pub offer: f64,
+    pub target_load: f64,
 }
 
 #[must_use]
 pub fn smes_plan(smes: &Smes, output_connected: bool, input_connected: bool) -> SmesPlan {
-    let offer = if smes.output_enabled && output_connected && smes.charge.charge > 0.0 {
-        Watts(
-            (smes.charge.charge / smes.charge.rate)
-                .min(smes.output_level.get())
-                .max(0.0),
-        )
+    let cell = smes.cell();
+    let offer = if smes.output_enabled && output_connected && cell.charge > 0.0 {
+        (cell.charge / cell.rate).min(smes.output_level).max(0.0)
     } else {
-        Watts::ZERO
+        0.0
     };
     let target_load = if smes.input_enabled && input_connected {
-        Watts(((smes.charge.capacity - smes.charge.charge) / smes.charge.rate).clamp(0.0, smes.input_level.get()))
+        ((cell.capacity - cell.charge) / cell.rate).clamp(0.0, smes.input_level)
     } else {
-        Watts::ZERO
+        0.0
     };
     SmesPlan { offer, target_load }
 }
 
 /// Charges a SMES from `got` watts offered this step; returns watts
 /// actually absorbed (bounded by room to capacity).
-pub fn smes_charge_in(smes: &mut Smes, got: Watts) -> Watts {
-    Watts(smes.charge.charge_in(got.get()))
+pub fn smes_charge_in(smes: &mut Smes, got: f64) -> f64 {
+    let mut cell = smes.cell();
+    let absorbed = cell.charge_in(got);
+    smes.set_cell(cell);
+    absorbed
 }
 
 /// Discharges a SMES for up to `share` watts; returns watts actually
 /// delivered (bounded by stored charge).
-pub fn smes_discharge_out(smes: &mut Smes, share: Watts) -> Watts {
-    Watts(smes.charge.discharge_out(share.get()))
+pub fn smes_discharge_out(smes: &mut Smes, share: f64) -> f64 {
+    let mut cell = smes.cell();
+    let delivered = cell.discharge_out(share);
+    smes.set_cell(cell);
+    delivered
 }
 
 /// A SMES's charge trajectory if `net_rate` (watts into the store;
 /// negative for a net discharge) holds steady from `now`
-/// (`rust_architecture.md` §4.10): a driver builds this whenever the rate
-/// changes (a new offer, a config edit), predicts the next crossing with
-/// [`RateModel::crossing`] (empty at `0.0`, full at `smes.charge.capacity`),
-/// and schedules the law to run again then instead of stepping it every
-/// tick while nothing changes.
+/// (`rust_architecture.md` §4.10).
 #[must_use]
-pub fn smes_charge_model(smes: &Smes, net_rate: Watts, now: f64) -> RateModel {
-    smes.charge.model(net_rate.get(), now)
+pub fn smes_charge_model(smes: &Smes, net_rate: f64, now: f64) -> RateModel {
+    smes.cell().model(net_rate, now)
 }
 
 /// As [`smes_charge_model`], for an APC's cell.
 #[must_use]
-pub fn apc_cell_model(apc: &Apc, net_rate: Watts, now: f64) -> RateModel {
-    apc.cell.model(net_rate.get(), now)
+pub fn apc_cell_model(apc: &Apc, net_rate: f64, now: f64) -> RateModel {
+    apc.cell().model(net_rate, now)
 }
 
 /// A region browns out when it has no supply at all, or its planned
@@ -248,194 +248,224 @@ pub fn apc_cell_model(apc: &Apc, net_rate: Watts, now: f64) -> RateModel {
 /// slack absorbs float rounding across many small draws, not a real
 /// tolerance for being overdrawn.
 #[must_use]
-pub fn brownout(avail: Watts, load: Watts) -> bool {
-    avail.get() <= 0.0 || avail.get() - load.get() < -1.0
+pub fn brownout(avail: f64, load: f64) -> bool {
+    avail <= 0.0 || avail - load < -1.0
 }
 
-/// `PowerBalance`'s storage-input step: one SMES's pro-rata share of a
-/// region's leftover supply (`excess`) out of everything storage in the
+/// `SmesOutputApply`'s share: one output terminal's pro-rata slice of
+/// `storage_used` (the region's load beyond non-storage `avail`)
+/// proportional to its own offer out of every output terminal's combined
+/// offer on that region.
+#[must_use]
+pub fn storage_output_share(offer: f64, total_offer: f64, storage_used: f64) -> f64 {
+    if total_offer <= 0.0 {
+        return 0.0;
+    }
+    storage_used * offer / total_offer
+}
+
+/// `SmesInputApply`'s share: one input terminal's pro-rata slice of a
+/// region's leftover supply (`excess`) out of everything storage on that
 /// region asked for (`total_asks`), never more than its own `ask` or the
 /// excess itself.
 #[must_use]
-pub fn storage_input_share(ask: Watts, total_asks: Watts, excess: Watts) -> Watts {
-    if total_asks.get() <= 0.0 {
-        return Watts::ZERO;
+pub fn storage_input_share(ask: f64, total_asks: f64, excess: f64) -> f64 {
+    if total_asks <= 0.0 {
+        return 0.0;
     }
-    let fraction = (excess.get() / total_asks.get()).clamp(0.0, 1.0);
-    Watts((ask.get() * fraction).min(excess.get().max(0.0)))
+    let fraction = (excess / total_asks).clamp(0.0, 1.0);
+    (ask * fraction).min(excess.max(0.0))
 }
 
-/// `PowerBalance`'s storage-output step (storage is the last supply
-/// used): one SMES's share of `storage_used` (the region's load beyond
-/// non-storage `avail`) proportional to its own offer out of every
-/// storage unit's combined offer.
-#[must_use]
-pub fn storage_output_share(offer: Watts, total_offer: Watts, storage_used: Watts) -> Watts {
-    if total_offer.get() <= 0.0 {
-        return Watts::ZERO;
-    }
-    Watts(storage_used.get() * offer.get() / total_offer.get())
-}
+// --- Law wiring (`rust_architecture.md` §4.3, §8.5; core::law, core::query,
+// core::network::law) -------------------------------------------------------
 
-// --- Law wiring (`rust_architecture.md` §4.3, §7; core::law, Core A) -------
-//
-// Each `Law` below is a thin adapter over the pure functions above: the
-// physics is proven by the tests those functions already have, so `step()`
-// only orchestrates reads/writes/events/ledger. `Reads`/`Writes` are plain
-// structs (core::law::Query is blanket-implemented) until Core B's real
-// component-store queries land -- exactly what core::law's own docs ask
-// for. `Settle::Active` throughout: a real sleep decision needs
-// `apc_cell_model`/`smes_charge_model`'s `RateModel` wired through
-// `LawCtx::schedule`, which doesn't exist until the driver integration
-// that follows Core B's stores (the coordinator's own sequencing).
-
-use vg_core::law::{Law, LawCtx, Period, Settle};
+use vg_core::law::{Law, LawCtx, Settle};
+use vg_core::network::law::{InRegion, Payload};
+use vg_core::query::Foreign;
 use vg_core::units::Seconds;
 
 use crate::events::PowerEvent;
-use crate::kind::PowerLedger;
+use crate::kind::Cables;
 
-fn region_grid(avail: Watts, load: &mut Watts) -> impl Grid + '_ {
-    struct RegionGrid<'a> {
-        avail: Watts,
-        load: &'a mut Watts,
+/// Zeroes a region's per-step accumulators before `ProducerCredit`/
+/// `SmesOutputPlan`/`SmesInputPlan` add this step's numbers into it.
+/// Registration order (not `after`) puts this first: no other power law
+/// needs to run before it, and the driver keeps registration order absent
+/// a declared edge.
+pub struct PowerReset;
+
+impl Law for PowerReset {
+    type Reads = ();
+    type Writes = Payload<Cables>;
+    const NAME: &'static str = "power_reset";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let ledger = &mut ctx.writes.0;
+        ledger.avail = 0.0;
+        ledger.load = 0.0;
+        ledger.smes_offer_total = 0.0;
+        ledger.smes_ask_total = 0.0;
+        Settle::Active
     }
-    impl Grid for RegionGrid<'_> {
-        fn avail(&self) -> Watts {
-            self.avail
-        }
-        fn surplus(&self) -> Watts {
-            Watts(self.avail.get() - self.load.get())
-        }
-        fn draw(&mut self, watts: Watts) -> Watts {
-            let d = watts.get().min(self.avail.get() - self.load.get()).max(0.0);
-            *self.load = Watts(self.load.get() + d);
-            Watts(d)
-        }
-    }
-    RegionGrid { avail, load }
 }
 
-/// `ApcTick`'s reads: the area demand it serves and its terminal region's
-/// planned supply this step.
-pub struct ApcTickReads {
-    pub demand: [Watts; 3],
-    pub grid_avail: Watts,
+/// Credits a producer's registered supply, plus its one-shot pulse
+/// (consumed and reset here), into its region's `avail`.
+pub struct ProducerCredit;
+
+impl Law for ProducerCredit {
+    type Reads = ();
+    type Writes = (Producer, InRegion<Cables>);
+    const NAME: &'static str = "power_producer_credit";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let (producer, region) = &mut ctx.writes;
+        region.payload.avail += producer.supply + producer.pulse;
+        producer.pulse = 0.0;
+        Settle::Active
+    }
 }
 
-/// `ApcTick`'s writes: the component itself and the region load its grid
-/// draw adds to.
-pub struct ApcTickWrites {
-    pub apc: Apc,
-    pub grid_load: Watts,
+/// Plans one SMES output terminal's offer this step (from the shared
+/// `Smes` row through [`Foreign`]) and credits it into its own region's
+/// `avail`/`smes_offer_total`, ordered before `PowerBalance`'s consumers
+/// so the offer is part of what they can draw against.
+pub struct SmesOutputPlan;
+
+impl Law for SmesOutputPlan {
+    type Reads = Smes;
+    type Writes = InRegion<Cables>;
+    const NAME: &'static str = "power_smes_output_plan";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let offer = smes_plan(ctx.reads, true, false).offer;
+        ctx.writes.payload.avail += offer;
+        ctx.writes.payload.smes_offer_total += offer;
+        Settle::Active
+    }
+}
+
+/// As [`SmesOutputPlan`], the input side: sums what every SMES input
+/// terminal on a region would like this step (not itself supply, so not
+/// credited into `avail`).
+pub struct SmesInputPlan;
+
+impl Law for SmesInputPlan {
+    type Reads = Foreign<SmesInputTerminal, Smes>;
+    type Writes = InRegion<Cables>;
+    const NAME: &'static str = "power_smes_input_plan";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let Some(smes) = &ctx.reads.value else {
+            return Settle::Active;
+        };
+        let target = smes_plan(smes, false, true).target_load;
+        ctx.writes.payload.smes_ask_total += target;
+        Settle::Active
+    }
 }
 
 /// The channel autoset ladder and charge mode, per APC, every tick
-/// ([`apc_tick`]).
+/// ([`apc_tick`]), drawing against its region's `avail` (now including
+/// every producer and SMES output offer this step).
 pub struct ApcTick;
 
 impl Law for ApcTick {
-    type Reads = ApcTickReads;
-    type Writes = ApcTickWrites;
+    type Reads = ();
+    type Writes = (Apc, InRegion<Cables>);
     const NAME: &'static str = "power_apc_tick";
 
     fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
-        let demand = ctx.reads.demand;
-        let (discharged, charged) = {
-            let mut grid = region_grid(ctx.reads.grid_avail, &mut ctx.writes.grid_load);
-            apc_tick(&mut ctx.writes.apc, demand, &mut grid)
+        let (discharged, charged, alarm) = {
+            let (apc, region) = &mut ctx.writes;
+            let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
+            let (discharged, charged) = {
+                let mut grid = region_grid(region.payload.avail, &mut region.payload.load);
+                apc_tick(apc, demand, &mut grid)
+            };
+            (discharged, charged, apc.alarm)
         };
-        ctx.ledger().source("power_apc_charge", charged.get());
-        ctx.ledger().sink("power_apc_charge", discharged.get());
-        if ctx.writes.apc.alarm {
+        // `charged`/`discharged` are watts (§4.10's `RateStore` API); the
+        // conserved field is `Apc::charge`, in the cell's internal units,
+        // so the ledger wants the same `rate` conversion the field itself
+        // moved by.
+        let rate = ctx.writes.0.rate;
+        ctx.ledger().source("power_apc_charge", charged * rate);
+        ctx.ledger().sink("power_apc_charge", discharged * rate);
+        if alarm {
             ctx.emit(PowerEvent::ApcChannelChanged);
         }
         Settle::Active
     }
 }
 
-/// `SmesPlanning`'s reads: whether each terminal is on a region, and this
-/// unit's already-resolved share of the region's leftover supply/storage-
-/// financed load (`storage_input_share`/`storage_output_share`, computed
-/// once per region across every SMES sharing it).
-pub struct SmesPlanningReads {
-    pub output_connected: bool,
-    pub input_connected: bool,
-    pub input_share: Watts,
-    pub output_share: Watts,
-}
+/// Brownout and the settled numbers, once every region's producers, SMES
+/// offers and APC draws for this step have landed.
+pub struct PowerSettle;
 
-pub struct SmesPlanningWrites {
-    pub smes: Smes,
-}
-
-/// SMES input/output planning and charge/discharge, per unit, every tick
-/// ([`smes_plan`], [`smes_charge_in`], [`smes_discharge_out`]). Runs on a
-/// slower cadence than `ApcTick`/`PowerBalance` in the original design
-/// (every machinery tick, same as them, today -- `Period::Ticks` is here
-/// for when a domain wants to change that without touching the law).
-pub struct SmesPlanning;
-
-impl Law for SmesPlanning {
-    type Reads = SmesPlanningReads;
-    type Writes = SmesPlanningWrites;
-    const NAME: &'static str = "power_smes_planning";
-    const PERIOD: Period = Period::Ticks(1);
+impl Law for PowerSettle {
+    type Reads = ();
+    type Writes = Payload<Cables>;
+    const NAME: &'static str = "power_settle";
 
     fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
-        let _plan = smes_plan(&ctx.writes.smes, ctx.reads.output_connected, ctx.reads.input_connected);
-        let absorbed = smes_charge_in(&mut ctx.writes.smes, ctx.reads.input_share);
-        let delivered = smes_discharge_out(&mut ctx.writes.smes, ctx.reads.output_share);
-        ctx.ledger().source("power_smes_charge", absorbed.get());
-        ctx.ledger().sink("power_smes_charge", delivered.get());
-        Settle::Active
-    }
-}
-
-/// `PowerBalance`'s reads: every producer's supply, every storage unit's
-/// offer, and the consumers this region must serve, already ordered
-/// highest priority first (the caller's job -- see [`consumer_draw`]).
-pub struct PowerBalanceReads {
-    pub producer_supply: Vec<Watts>,
-    pub storage_offers: Vec<Watts>,
-    pub consumers: Vec<Consumer>,
-}
-
-pub struct PowerBalanceWrites {
-    pub ledger: PowerLedger,
-}
-
-/// Per region: producers and storage offers plan the supply, consumers
-/// draw in priority order, then brownout ([`planned_supply`],
-/// [`consumer_draw`], [`brownout`]). Storage input/output pro-rata sharing
-/// ([`storage_input_share`]/[`storage_output_share`]) runs per SMES in
-/// [`SmesPlanning`], not here, since it needs every SMES sharing the
-/// region at once, not one region's worth of already-summed numbers.
-pub struct PowerBalance;
-
-impl Law for PowerBalance {
-    type Reads = PowerBalanceReads;
-    type Writes = PowerBalanceWrites;
-    const NAME: &'static str = "power_balance";
-
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
-        let avail = planned_supply(ctx.reads.producer_supply.iter().copied(), ctx.reads.storage_offers.iter().copied());
-        ctx.writes.ledger.avail = avail;
-        ctx.writes.ledger.load = Watts::ZERO;
-        {
-            let mut grid = region_grid(ctx.writes.ledger.avail, &mut ctx.writes.ledger.load);
-            for consumer in &ctx.reads.consumers {
-                consumer_draw(consumer, &mut grid);
-            }
-        }
-        let was_brown = ctx.writes.ledger.brown;
-        let now_brown = brownout(ctx.writes.ledger.avail, ctx.writes.ledger.load);
-        ctx.writes.ledger.brown = now_brown;
+        let ledger = &mut ctx.writes.0;
+        let non_storage_avail = ledger.avail - ledger.smes_offer_total;
+        ledger.storage_used = (ledger.load - non_storage_avail).max(0.0);
+        ledger.region_excess = ledger.avail - ledger.load;
+        let was_brown = ledger.brown;
+        let now_brown = brownout(ledger.avail, ledger.load);
+        ledger.brown = now_brown;
         match (was_brown, now_brown) {
             (false, true) => ctx.emit(PowerEvent::Brownout),
             (true, false) => ctx.emit(PowerEvent::Restored),
             _ => {}
         }
+        Settle::Active
+    }
+}
+
+/// Discharges one SMES's pro-rata share of its region's storage-financed
+/// load, ordered after `PowerSettle` so `storage_used`/`smes_offer_total`
+/// are final for this step.
+pub struct SmesOutputApply;
+
+impl Law for SmesOutputApply {
+    type Reads = InRegion<Cables>;
+    type Writes = Smes;
+    const NAME: &'static str = "power_smes_output_apply";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let offer = smes_plan(ctx.writes, true, false).offer;
+        let region = &ctx.reads.payload;
+        let share = storage_output_share(offer, region.smes_offer_total, region.storage_used);
+        let rate = ctx.writes.rate;
+        let delivered = smes_discharge_out(ctx.writes, share);
+        ctx.ledger().sink("power_smes_charge", delivered * rate);
+        Settle::Active
+    }
+}
+
+/// Charges one SMES input terminal's pro-rata share of its region's
+/// leftover supply, ordered after `PowerSettle`.
+pub struct SmesInputApply;
+
+impl Law for SmesInputApply {
+    type Reads = InRegion<Cables>;
+    type Writes = Foreign<SmesInputTerminal, Smes>;
+    const NAME: &'static str = "power_smes_input_apply";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let Some(smes) = &mut ctx.writes.value else {
+            return Settle::Active;
+        };
+        let target = smes_plan(smes, false, true).target_load;
+        let region = &ctx.reads.payload;
+        let share = storage_input_share(target, region.smes_ask_total, region.region_excess);
+        let rate = smes.rate;
+        let absorbed = smes_charge_in(smes, share);
+        ctx.ledger().source("power_smes_charge", absorbed * rate);
         Settle::Active
     }
 }
@@ -449,155 +479,143 @@ mod tests {
     use crate::components::ChannelSetting;
 
     struct TestGrid {
-        avail: Watts,
-        load: Watts,
+        avail: f64,
+        load: f64,
     }
     impl Grid for TestGrid {
-        fn avail(&self) -> Watts {
+        fn avail(&self) -> f64 {
             self.avail
         }
-        fn surplus(&self) -> Watts {
-            Watts(self.avail.get() - self.load.get())
+        fn surplus(&self) -> f64 {
+            self.avail - self.load
         }
-        fn draw(&mut self, watts: Watts) -> Watts {
-            let d = watts.get().min(self.avail.get() - self.load.get()).max(0.0);
-            self.load = Watts(self.load.get() + d);
-            Watts(d)
+        fn draw(&mut self, watts: f64) -> f64 {
+            let d = watts.min(self.avail - self.load).max(0.0);
+            self.load += d;
+            d
         }
     }
 
     fn apc_with(max_charge: f64, charge: f64) -> Apc {
-        Apc {
-            cell: RateStore { charge, capacity: max_charge, rate: crate::components::CELLRATE },
-            ..Apc::default()
-        }
+        let mut apc = Apc::default();
+        apc.set_cell(RateStore {
+            charge,
+            capacity: max_charge,
+            rate: crate::components::CELLRATE,
+        });
+        apc
     }
 
     #[test]
     fn a_strong_grid_carries_the_area_untouched() {
         let mut apc = apc_with(1000.0, 1000.0);
-        let mut grid = TestGrid { avail: Watts(100_000.0), load: Watts::ZERO };
-        let demand = [Watts(1000.0), Watts(2000.0), Watts(1000.0)];
+        let mut grid = TestGrid { avail: 100_000.0, load: 0.0 };
+        let demand = [1000.0, 2000.0, 1000.0];
         apc_tick(&mut apc, demand, &mut grid);
-        assert_eq!(apc.cell.charge, 1000.0, "cell untouched: grid alone covers it");
-        assert_eq!(grid.load, Watts(4000.0));
+        assert_eq!(apc.cell().charge, 1000.0, "cell untouched: grid alone covers it");
+        assert_eq!(grid.load, 4000.0);
     }
 
     #[test]
     fn no_supply_drains_the_cell_by_cellrate_per_watt() {
         let mut apc = apc_with(1000.0, 1000.0);
-        let mut grid = TestGrid { avail: Watts::ZERO, load: Watts::ZERO };
-        let demand = [Watts(1000.0), Watts(2000.0), Watts(1000.0)];
+        let mut grid = TestGrid { avail: 0.0, load: 0.0 };
+        let demand = [1000.0, 2000.0, 1000.0];
         apc_tick(&mut apc, demand, &mut grid);
         let expect = 1000.0 - 4000.0 * crate::components::CELLRATE;
-        assert!((apc.cell.charge - expect).abs() < 1e-9);
+        assert!((apc.cell().charge - expect).abs() < 1e-9);
     }
 
     #[test]
     fn a_dead_cell_settles_with_every_channel_shed() {
-        // No grid and no charge, cell can't cover any of the demand:
-        // with_cell's own "can't even partly cover it" branch sheds every
-        // channel and resets autoflag every tick, but longtermpower
-        // starts optimistic (+10) and update_channels' full-power branch
-        // (`longtermpower > 0`, independent of pct) overrides that back
-        // to full for the first few ticks regardless -- the two only
-        // agree once longtermpower has decayed to <= 0 (a handful of
-        // ticks at -2/tick from +10), landing on update_channels' own
-        // "pct in the neutral 15-30% band with longtermpower == 0"
-        // fixed point once pct is 0%: every channel off, autoflag 0. That
-        // asymmetry (and alarm never firing on this exact path) is the
-        // ported original's real behaviour, not this port's invention.
         let mut apc = apc_with(1000.0, 0.0);
-        apc.channels = [ChannelSetting::OnAuto; 3];
-        let mut grid = TestGrid { avail: Watts::ZERO, load: Watts::ZERO };
+        for c in Channel::ALL {
+            apc.set_channel(c, ChannelSetting::OnAuto);
+        }
+        let mut grid = TestGrid { avail: 0.0, load: 0.0 };
         for _ in 0..10 {
-            apc_tick(&mut apc, [Watts(100.0); 3], &mut grid);
+            apc_tick(&mut apc, [100.0; 3], &mut grid);
         }
         assert_eq!(apc.autoflag, 0);
-        assert!(apc.channels.iter().all(|c| !c.powered()), "every channel sheds once longtermpower settles");
+        assert!(Channel::ALL.iter().all(|&c| !apc.channel(c).powered()), "every channel sheds once longtermpower settles");
     }
 
     #[test]
     fn a_slowly_draining_cell_settles_on_the_shedding_ladder_with_the_alarm_raised() {
-        // No grid at all, but a nonzero cell: `available` (watts the cell
-        // could give this instant) stays far above one tick's demand
-        // until charge is almost exactly zero, so this exercises
-        // update_channels' own longtermpower/pct ladder, not with_cell's
-        // separate "can't cover any of it" branch (see the test above).
-        // CELLRATE-scale draining takes ~1500 ticks to cross 30%; cheap
-        // for a host-only unit test, so run it out fully rather than
-        // picking a fragile mid-drain checkpoint.
         let mut apc = apc_with(1000.0, 1000.0);
-        apc.channels = [ChannelSetting::OnAuto; 3];
-        let mut grid = TestGrid { avail: Watts::ZERO, load: Watts::ZERO };
-        for _ in 0..1500 {
-            apc_tick(&mut apc, [Watts(100.0); 3], &mut grid);
-            grid.load = Watts::ZERO;
+        for c in Channel::ALL {
+            apc.set_channel(c, ChannelSetting::OnAuto);
         }
-        assert!(apc.cell.charge > 0.0, "not yet fully depleted");
+        let mut grid = TestGrid { avail: 0.0, load: 0.0 };
+        for _ in 0..1500 {
+            apc_tick(&mut apc, [100.0; 3], &mut grid);
+            grid.load = 0.0;
+        }
+        assert!(apc.cell().charge > 0.0, "not yet fully depleted");
         assert!(apc.alarm);
         assert_eq!(apc.autoflag, 1, "settled at the minimum tier, not neutral or full");
-        assert!(!apc.channels[Channel::Equip.idx()].powered(), "equipment sheds first");
-        assert!(!apc.channels[Channel::Light.idx()].powered(), "then lighting");
-        assert!(apc.channels[Channel::Environ.idx()].powered(), "environment/life support sheds last");
+        assert!(!apc.channel(Channel::Equip).powered(), "equipment sheds first");
+        assert!(!apc.channel(Channel::Light).powered(), "then lighting");
+        assert!(apc.channel(Channel::Environ).powered(), "environment/life support sheds last");
     }
 
     #[test]
     fn cell_charge_and_discharge_never_leave_zero_or_capacity() {
         let mut apc = apc_with(500.0, 250.0);
-        let mut grid = TestGrid { avail: Watts(10_000.0), load: Watts::ZERO };
+        let mut grid = TestGrid { avail: 10_000.0, load: 0.0 };
         for _ in 0..50 {
-            apc_tick(&mut apc, [Watts(50.0); 3], &mut grid);
-            grid.load = Watts::ZERO;
-            assert!((0.0..=500.0).contains(&apc.cell.charge));
+            apc_tick(&mut apc, [50.0; 3], &mut grid);
+            grid.load = 0.0;
+            assert!((0.0..=500.0).contains(&apc.cell().charge));
         }
+    }
+
+    fn smes_with(charge: f64, capacity: f64, rate: f64) -> Smes {
+        let mut smes = Smes::default();
+        smes.set_cell(RateStore { charge, capacity, rate });
+        smes
     }
 
     #[test]
     fn smes_offers_output_only_when_connected_and_charged() {
-        let mut smes = Smes { charge: RateStore { charge: 1e5, capacity: 1e6, rate: crate::components::SMESRATE }, ..Smes::default() };
-        assert_eq!(smes_plan(&smes, false, false).offer, Watts::ZERO, "not connected");
+        let mut smes = smes_with(1e5, 1e6, crate::components::SMESRATE);
+        assert_eq!(smes_plan(&smes, false, false).offer, 0.0, "not connected");
         let plan = smes_plan(&smes, true, false);
-        assert!(plan.offer.get() > 0.0);
-        smes.charge.charge = 0.0;
-        assert_eq!(smes_plan(&smes, true, false).offer, Watts::ZERO, "empty");
+        assert!(plan.offer > 0.0);
+        let mut cell = smes.cell();
+        cell.charge = 0.0;
+        smes.set_cell(cell);
+        assert_eq!(smes_plan(&smes, true, false).offer, 0.0, "empty");
     }
 
     #[test]
     fn smes_input_targets_room_to_capacity_bounded_by_input_level() {
-        let smes = Smes {
-            input_enabled: true,
-            input_level: Watts(100.0),
-            charge: RateStore { charge: 0.0, capacity: 1e6, rate: crate::components::SMESRATE },
-            ..Smes::default()
-        };
+        let mut smes = smes_with(0.0, 1e6, crate::components::SMESRATE);
+        smes.input_enabled = true;
+        smes.input_level = 100.0;
         let plan = smes_plan(&smes, false, true);
-        assert_eq!(plan.target_load, Watts(100.0), "capped by input_level despite huge room");
+        assert_eq!(plan.target_load, 100.0, "capped by input_level despite huge room");
     }
 
     #[test]
     fn smes_charge_round_trips_through_rate_conversion() {
-        let mut smes = Smes { charge: RateStore { charge: 0.0, capacity: 1000.0, rate: 0.5 }, ..Smes::default() };
-        let absorbed = smes_charge_in(&mut smes, Watts(100.0));
-        assert_eq!(absorbed, Watts(100.0));
-        assert_eq!(smes.charge.charge, 50.0);
-        let delivered = smes_discharge_out(&mut smes, Watts(1000.0));
-        assert_eq!(delivered, Watts(100.0), "capped by what's stored, not the request");
-        assert_eq!(smes.charge.charge, 0.0);
+        let mut smes = smes_with(0.0, 1000.0, 0.5);
+        let absorbed = smes_charge_in(&mut smes, 100.0);
+        assert_eq!(absorbed, 100.0);
+        assert_eq!(smes.cell().charge, 50.0);
+        let delivered = smes_discharge_out(&mut smes, 1000.0);
+        assert_eq!(delivered, 100.0, "capped by what's stored, not the request");
+        assert_eq!(smes.cell().charge, 0.0);
     }
 
     #[test]
     fn smes_charge_model_predicts_the_same_empty_time_as_manual_stepping() {
-        // 1000 charge units at 0.5 rate, discharging at a steady 100 W:
-        // 1000 / (0.5 * 100) = 20 ticks to empty.
-        let smes = Smes { charge: RateStore { charge: 1000.0, capacity: 1000.0, rate: 0.5 }, ..Smes::default() };
-        let model = smes_charge_model(&smes, Watts(-100.0), 0.0);
+        let smes = smes_with(1000.0, 1000.0, 0.5);
+        let model = smes_charge_model(&smes, -100.0, 0.0);
         let predicted = model.crossing(0.0, 0.0).expect("reaches empty");
         assert!((predicted - 20.0).abs() < 1e-9, "predicted {predicted}");
 
-        // A driver sleeping until `predicted` and then stepping once more
-        // sees the same charge a tick-by-tick simulation would.
-        let mut stepped = smes.charge;
+        let mut stepped = smes.cell();
         for _ in 0..20 {
             stepped.discharge_out(100.0);
         }
@@ -607,55 +625,42 @@ mod tests {
     #[test]
     fn apc_cell_model_predicts_when_a_steady_drain_empties_the_cell() {
         let apc = apc_with(500.0, 500.0);
-        // Draining at 200 W with CELLRATE = 0.002: empties in
-        // 500 / (0.002 * 200) = 1250 ticks.
-        let model = apc_cell_model(&apc, Watts(-200.0), 0.0);
+        let model = apc_cell_model(&apc, -200.0, 0.0);
         let predicted = model.crossing(0.0, 0.0).expect("reaches empty");
         assert!((predicted - 1250.0).abs() < 1e-6, "predicted {predicted}");
     }
 
     #[test]
     fn brownout_fires_on_no_supply_or_overdraw() {
-        assert!(brownout(Watts::ZERO, Watts::ZERO));
-        assert!(brownout(Watts(100.0), Watts(102.0)));
-        assert!(!brownout(Watts(100.0), Watts(100.0)));
-        assert!(!brownout(Watts(100.0), Watts::ZERO));
+        assert!(brownout(0.0, 0.0));
+        assert!(brownout(100.0, 102.0));
+        assert!(!brownout(100.0, 100.0));
+        assert!(!brownout(100.0, 0.0));
     }
 
     #[test]
     fn storage_input_shares_never_exceed_the_ask_or_the_excess() {
-        // Two SMES ask for 100 and 300 of a region with only 120 excess:
-        // each gets its own fraction of the shortfall, summing to the
-        // excess exactly (no more, no less).
-        let (ask_a, ask_b, excess) = (Watts(100.0), Watts(300.0), Watts(120.0));
-        let total = Watts(ask_a.get() + ask_b.get());
-        let (got_a, got_b) = (
-            storage_input_share(ask_a, total, excess),
-            storage_input_share(ask_b, total, excess),
-        );
-        assert!(got_a.get() <= ask_a.get() + 1e-9);
-        assert!(got_b.get() <= ask_b.get() + 1e-9);
-        assert!((got_a.get() + got_b.get() - excess.get()).abs() < 1e-9);
+        let (ask_a, ask_b, excess) = (100.0, 300.0, 120.0);
+        let total = ask_a + ask_b;
+        let (got_a, got_b) = (storage_input_share(ask_a, total, excess), storage_input_share(ask_b, total, excess));
+        assert!(got_a <= ask_a + 1e-9);
+        assert!(got_b <= ask_b + 1e-9);
+        assert!((got_a + got_b - excess).abs() < 1e-9);
     }
 
     #[test]
     fn storage_input_share_is_zero_with_nothing_asked() {
-        assert_eq!(storage_input_share(Watts(50.0), Watts::ZERO, Watts(100.0)), Watts::ZERO);
+        assert_eq!(storage_input_share(50.0, 0.0, 100.0), 0.0);
     }
 
     #[test]
     fn storage_output_shares_sum_to_what_storage_actually_covered() {
-        // Two SMES offering 200 and 600 W cover a region's 100 W of
-        // storage-financed load: split proportionally to their offers.
-        let (offer_a, offer_b, used) = (Watts(200.0), Watts(600.0), Watts(100.0));
-        let total = Watts(offer_a.get() + offer_b.get());
-        let (got_a, got_b) = (
-            storage_output_share(offer_a, total, used),
-            storage_output_share(offer_b, total, used),
-        );
-        assert!((got_a.get() - 25.0).abs() < 1e-9, "1/4 of the offer, 1/4 of the load: {got_a:?}");
-        assert!((got_b.get() - 75.0).abs() < 1e-9);
-        assert!((got_a.get() + got_b.get() - used.get()).abs() < 1e-9);
+        let (offer_a, offer_b, used) = (200.0, 600.0, 100.0);
+        let total = offer_a + offer_b;
+        let (got_a, got_b) = (storage_output_share(offer_a, total, used), storage_output_share(offer_b, total, used));
+        assert!((got_a - 25.0).abs() < 1e-9, "1/4 of the offer, 1/4 of the load: {got_a:?}");
+        assert!((got_b - 75.0).abs() < 1e-9);
+        assert!((got_a + got_b - used).abs() < 1e-9);
     }
 
     proptest! {
@@ -663,12 +668,12 @@ mod tests {
         fn storage_shares_conserve_for_any_split(
             ask_a in 0.0f64..1000.0, ask_b in 0.0f64..1000.0, excess in 0.0f64..1000.0,
         ) {
-            let total = Watts(ask_a + ask_b);
-            let got_a = storage_input_share(Watts(ask_a), total, Watts(excess));
-            let got_b = storage_input_share(Watts(ask_b), total, Watts(excess));
-            prop_assert!(got_a.get() + got_b.get() <= excess + 1e-6);
-            prop_assert!(got_a.get() <= ask_a + 1e-6);
-            prop_assert!(got_b.get() <= ask_b + 1e-6);
+            let total = ask_a + ask_b;
+            let got_a = storage_input_share(ask_a, total, excess);
+            let got_b = storage_input_share(ask_b, total, excess);
+            prop_assert!(got_a + got_b <= excess + 1e-6);
+            prop_assert!(got_a <= ask_a + 1e-6);
+            prop_assert!(got_b <= ask_b + 1e-6);
         }
     }
 
@@ -684,117 +689,12 @@ mod tests {
         ) {
             let mut apc = apc_with(max_charge, start_charge.min(max_charge));
             for (avail, demand) in avails.into_iter().zip(demands) {
-                let mut grid = TestGrid { avail: Watts(avail), load: Watts::ZERO };
-                let d = [Watts(demand / 3.0); 3];
+                let mut grid = TestGrid { avail, load: 0.0 };
+                let d = [demand / 3.0; 3];
                 apc_tick(&mut apc, d, &mut grid);
-                prop_assert!((0.0..=max_charge + 1e-6).contains(&apc.cell.charge));
-                prop_assert!(grid.load.get() <= avail + 1e-6);
+                prop_assert!((0.0..=max_charge + 1e-6).contains(&apc.cell().charge));
+                prop_assert!(grid.load <= avail + 1e-6);
             }
         }
-    }
-
-    // --- Law wiring: the same physics, driven through `Law::step` ---------
-
-    fn test_ledger() -> vg_core::conservation::Ledger {
-        vg_core::conservation::Ledger::new()
-    }
-
-    #[test]
-    fn apc_tick_law_matches_the_bare_function_and_reports_conservation() {
-        let reads = ApcTickReads { demand: [Watts(1000.0); 3], grid_avail: Watts::ZERO };
-        let mut writes = ApcTickWrites { apc: apc_with(1000.0, 1000.0), grid_load: Watts::ZERO };
-        let mut fx = vg_core::law::Effects {
-            ledger: test_ledger(),
-            ..Default::default()
-        };
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
-        assert_eq!(ApcTick::step(&mut ctx, Seconds(1.0)), Settle::Active);
-        // No grid at all: the cell alone must cover all 3000 W of demand.
-        let expect = 1000.0 - 3000.0 * crate::components::CELLRATE;
-        assert!((writes.apc.cell.charge - expect).abs() < 1e-9);
-        // check_conservation-style: the ledger's own source/sink calls
-        // match what actually moved the charge.
-        assert!(
-            fx.ledger
-                .check("power_apc_charge", writes.apc.cell.charge, 1e-6)
-                .is_ok()
-        );
-    }
-
-    #[test]
-    fn smes_planning_law_charges_from_its_share_and_discharges_from_its_share() {
-        let reads = SmesPlanningReads {
-            output_connected: true,
-            input_connected: false,
-            input_share: Watts::ZERO,
-            output_share: Watts(50.0),
-        };
-        let mut writes = SmesPlanningWrites {
-            smes: Smes { charge: RateStore { charge: 1000.0, capacity: 1e6, rate: crate::components::SMESRATE }, ..Smes::default() },
-        };
-        let mut fx = vg_core::law::Effects {
-            ledger: test_ledger(),
-            ..Default::default()
-        };
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
-        assert_eq!(SmesPlanning::step(&mut ctx, Seconds(1.0)), Settle::Active);
-        let expect = 1000.0 - 50.0 * crate::components::SMESRATE;
-        assert!((writes.smes.charge.charge - expect).abs() < 1e-9);
-    }
-
-    #[test]
-    fn power_balance_law_serves_priority_order_before_any_leftover_runs_out() {
-        let reads = PowerBalanceReads {
-            producer_supply: vec![Watts(100.0)],
-            storage_offers: vec![],
-            consumers: vec![
-                Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 },
-                Consumer { demand: [Watts(50.0), Watts::ZERO, Watts::ZERO], priority: 1 },
-            ],
-        };
-        let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
-        let mut fx = vg_core::law::Effects {
-            ledger: test_ledger(),
-            ..Default::default()
-        };
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
-        assert_eq!(PowerBalance::step(&mut ctx, Seconds(1.0)), Settle::Active);
-        // The first (highest-priority) consumer is served in full (80 of
-        // its 80 W); the second is starved by what's left (20 of its 50 W)
-        // -- never more than the region's 100 W total, and never negative.
-        assert_eq!(writes.ledger.load, Watts(100.0));
-        assert_eq!(writes.ledger.avail, Watts(100.0));
-        assert!(!writes.ledger.brown, "fully used, but not overdrawn: avail - load == 0, not < -1 W");
-    }
-
-    #[test]
-    fn power_balance_law_emits_brownout_then_restored_on_the_transition() {
-        let no_supply = PowerBalanceReads {
-            producer_supply: vec![Watts::ZERO],
-            storage_offers: vec![],
-            consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
-        };
-        let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
-        let mut fx = vg_core::law::Effects {
-            ledger: test_ledger(),
-            ..Default::default()
-        };
-        {
-            let mut ctx = LawCtx::new(&no_supply, &mut writes, &mut fx);
-            PowerBalance::step(&mut ctx, Seconds(1.0));
-        }
-        assert!(writes.ledger.brown, "no supply at all");
-        assert_eq!(fx.events.decoded::<PowerEvent>().map(|(_, e)| e).collect::<Vec<_>>(), vec![PowerEvent::Brownout]);
-
-        let restored = PowerBalanceReads {
-            producer_supply: vec![Watts(1000.0)],
-            storage_offers: vec![],
-            consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
-        };
-        fx.events.clear();
-        let mut ctx = LawCtx::new(&restored, &mut writes, &mut fx);
-        PowerBalance::step(&mut ctx, Seconds(1.0));
-        assert!(!writes.ledger.brown);
-        assert_eq!(fx.events.decoded::<PowerEvent>().map(|(_, e)| e).collect::<Vec<_>>(), vec![PowerEvent::Restored]);
     }
 }

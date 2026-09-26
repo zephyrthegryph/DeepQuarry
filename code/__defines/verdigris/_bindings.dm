@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "b7df0bda57674e9b"
+#define VERDIGRIS_ABI "1dd9a0f5fd919d80"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -234,100 +234,13 @@
 // verdigris/domains/heat/src/consts.rs
 #define HUMAN_HEAT_CAPACITY 280000.0
 
-/// APC flags.
+/// Node kinds in the graph (an opaque tag `NetworkHost` stores per node;
+/// power does not read it back, only DM's own bookkeeping might).
 // verdigris/ffi/src/power.rs
-#define POWER_APC_ACTIVE 1
+#define POWER_NODE_CABLE 0
 
 // verdigris/ffi/src/power.rs
-#define POWER_APC_CHARGEMODE 32
-
-// verdigris/ffi/src/power.rs
-#define POWER_APC_FAILED 4
-
-// verdigris/ffi/src/power.rs
-#define POWER_APC_HAS_CELL 2
-
-// verdigris/ffi/src/power.rs
-#define POWER_APC_OPERATING 16
-
-// verdigris/ffi/src/power.rs
-#define POWER_APC_SHORTED 8
-
-// verdigris/ffi/src/power.rs
-#define POWER_EV_APC 4
-
-// verdigris/ffi/src/power.rs
-#define POWER_EV_BIND 1
-
-// verdigris/ffi/src/power.rs
-#define POWER_EV_BROWNOUT 6
-
-// verdigris/ffi/src/power.rs
-#define POWER_EV_REGION 2
-
-// verdigris/ffi/src/power.rs
-#define POWER_EV_RETIRED 3
-
-// verdigris/ffi/src/power.rs
-#define POWER_EV_SMES 5
-
-/// `key, terminal (-1 none), flags, max_charge, chargelevel, charge (-1
-/// keep), eqp, lgt, env (-1 keep), autoflag (-1 keep)`
-// verdigris/ffi/src/power.rs
-#define POWER_OP_APC 6
-
-/// `key, eqp, lgt, env`: the area's static load (W).
-// verdigris/ffi/src/power.rs
-#define POWER_OP_AREA_LOAD 7
-
-/// `key, x, y, z, d1, d2, z_above, z_below, link_id`
-// verdigris/ffi/src/power.rs
-#define POWER_OP_CABLE 1
-
-/// `key, charge`
-// verdigris/ffi/src/power.rs
-#define POWER_OP_CHARGE 10
-
-/// `key, x, y, z`
-// verdigris/ffi/src/power.rs
-#define POWER_OP_MACHINE 2
-
-/// `key, eqp, lgt, env`: one-off area use (W) for the next step.
-// verdigris/ffi/src/power.rs
-#define POWER_OP_ONEOFF 8
-
-/// `key, watts`: supply for the next step only.
-// verdigris/ffi/src/power.rs
-#define POWER_OP_PULSE 5
-
-/// `key`
-// verdigris/ffi/src/power.rs
-#define POWER_OP_REMOVE 3
-
-/// `key`: forget an APC or SMES.
-// verdigris/ffi/src/power.rs
-#define POWER_OP_REMOVE_STORAGE 11
-
-/// `key, flags, capacity, input_level, output_level, charge (-1 keep),
-/// terminal keys...`
-// verdigris/ffi/src/power.rs
-#define POWER_OP_SMES 9
-
-/// `key, watts`: persistent supply.
-// verdigris/ffi/src/power.rs
-#define POWER_OP_SUPPLY 4
-
-/// Numbers in a `vg_power_region` reply: region, avail, load, netexcess,
-/// supply, eqp, lgt, env, capacity, members.
-// verdigris/ffi/src/power.rs
-#define POWER_REGION_STRIDE 10
-
-/// SMES flags.
-// verdigris/ffi/src/power.rs
-#define POWER_SMES_INPUT 1
-
-// verdigris/ffi/src/power.rs
-#define POWER_SMES_OUTPUT 2
+#define POWER_NODE_MACHINE 1
 
 /// Gas: turf gas and main-owned mixtures, by gas handle (vg-gas).
 // verdigris/ffi/src/reactor.rs
@@ -427,10 +340,6 @@
 // verdigris/ffi/src/heat_mob.rs
 #define VG_DOMAIN_HEAT_MOB 3
 
-/// Power's domain index in the entity table (gas is 0).
-// verdigris/ffi/src/power.rs
-#define VG_DOMAIN_POWER 1
-
 /// The bits of a `vg_entity` value (after subtracting the raw-plus-one
 /// offset) that carry the slot index, matching `vg_core::entity::INDEX_BITS`
 /// (checked in this module's tests). DM computes an entity's table index
@@ -443,11 +352,6 @@
 /// domain so far).
 // verdigris/ffi/src/heat_mob.rs
 #define VG_HEAT_MOB_KIND 1
-
-/// The one component kind a power row uses: a cable piece and a machine
-/// node are both rows of the same store, keyed by DM's power key.
-// verdigris/ffi/src/power.rs
-#define VG_POWER_NODE 1
 
 /// Registry ids at and above this are world component kinds:
 /// `WORLD_KIND_BASE | kind_code` ([`crate::world::kind_code`]).
@@ -1301,64 +1205,78 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(handle)
 
-/// Draws up to `watts` for `key` from its region now; returns what was
-/// delivered.
-// /proc/power_draw (verdigris/ffi/src/power.rs)
-/proc/vg_power_draw(key, watts)
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_draw_ffi")
+/// Binds (or rebinds) `entity`'s node as a cable piece: `shape` is
+/// `[x, y, z, d1, d2, up, down, link]`. `entity` `0`: mints a new one (a
+/// cable has no component of its own). Returns the entity handle.
+// /proc/vg_power_bind_cable (verdigris/ffi/src/power.rs)
+/proc/vg_power_bind_cable(entity, shape)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_bind_cable_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(key, watts)
+	return call_ext(__f)(entity, shape)
 
-/// Applies a flat list of edits and commands (`op, n, n values` each; the
-/// `POWER_OP_*` defines). Topology waits for the next read or step, so a
-/// batch commits once.
-// /proc/power_edit (verdigris/ffi/src/power.rs)
-/proc/vg_power_edit(ops)
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_edit_ffi")
+/// Binds (or rebinds) `entity`'s node as a plain machine terminal at
+/// `(x, y, z)`: a producer, an APC's own area terminal, or one of a SMES's
+/// two terminals. `entity` must already exist (a `vg_component_bind` on
+/// the matching component) -- unlike a cable, a machine terminal is never
+/// topology-only.
+// /proc/vg_power_bind_machine (verdigris/ffi/src/power.rs)
+/proc/vg_power_bind_machine(entity, x, y, z)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_bind_machine_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(ops)
+	return call_ext(__f)(entity, x, y, z)
 
-/// This entity's power key, or `null` if it has no power component.
-///
-/// # Errors
-/// A bad `entity` value.
-// /proc/power_key_of (verdigris/ffi/src/power.rs)
-/proc/vg_power_key_of(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_key_of_ffi")
+/// Commits pending topology now, instead of at the next `vg_world_tick`
+/// (an explosion or a construction burst wants its region split/merge
+/// reflected before the next machinery tick reads it).
+// /proc/vg_power_commit (verdigris/ffi/src/power.rs)
+/proc/vg_power_commit()
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_commit_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// A mid-tick draw against `region`'s ledger, outside the normal
+/// `ApcTick`/`PowerBalance` pass (the material power overlay paying its
+/// resistive loss from the grid, `powernet.dm`'s `draw_power()`). Returns
+/// what was delivered (never more than the region's remaining surplus).
+// /proc/vg_power_region_draw (verdigris/ffi/src/power.rs)
+/proc/vg_power_region_draw(region, watts)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_draw_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(region, watts)
+
+/// Every entity with a node on `region` (the material power overlay's cable
+/// enumeration, `powernet.dm`'s `rebuild_material_cache()`).
+// /proc/vg_power_region_members (verdigris/ffi/src/power.rs)
+/proc/vg_power_region_members(region)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_members_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(region)
+
+/// `entity`'s region, `0` if it has none (never a runtime): a raw handle
+/// plus one (`0` is DM's null), stable until the node's region changes.
+// /proc/vg_power_region_of (verdigris/ffi/src/power.rs)
+/proc/vg_power_region_of(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_of_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
-/// Keys of every cable and machine on `key`'s region.
-// /proc/power_members (verdigris/ffi/src/power.rs)
-/proc/vg_power_members(key)
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_members_ffi")
+/// A region's ledger: `avail, load, brown` (W, W, 0/1). Everything else
+/// (a region's producers, consumers, SMES terminals) DM already knows --
+/// it bound them.
+// /proc/vg_power_region_read (verdigris/ffi/src/power.rs)
+/proc/vg_power_region_read(region)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_read_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(key)
+	return call_ext(__f)(region)
 
-/// The region `key` is on, `POWER_REGION_STRIDE` numbers (region, avail,
-/// load, netexcess, supply, eqp, lgt, env, 0 (reserved), members), or
-/// null.
-// /proc/power_region (verdigris/ffi/src/power.rs)
-/proc/vg_power_region(key)
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_ffi")
+/// Drops `entity`'s cable/machine node (the entity and any component it
+/// holds are untouched; `entity_unbind`/`vg_component_detach` handle
+/// those).
+// /proc/vg_power_unbind_node (verdigris/ffi/src/power.rs)
+/proc/vg_power_unbind_node(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_unbind_node_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(key)
-
-/// Forgets everything (world start and admin repair), freeing every
-/// entity the power rows minted.
-// /proc/power_reset (verdigris/ffi/src/power.rs)
-/proc/vg_power_reset()
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_reset_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
-
-/// One machinery tick. Returns the events as `type, n, n values` records
-/// (the `POWER_EV_*` defines).
-// /proc/power_step (verdigris/ffi/src/power.rs)
-/proc/vg_power_step()
-	var/static/__f = load_ext(VERDIGRIS, "byond:power_step_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
+	return call_ext(__f)(entity)
 
 /// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
 /// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets

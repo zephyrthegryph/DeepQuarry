@@ -74,10 +74,18 @@
 
 	var/smes_amt = min((amount * SMESRATE), charge)
 	charge -= smes_amt
-	power_sync()
+	if(vg_entity)
+		adjust_charge(-smes_amt)
 	return smes_amt / SMESRATE
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
+
+/// A SMES's own input terminal (rust_architecture.md step 3): its own
+/// entity, on its own region, naming the SMES unit
+/// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) --
+/// unlike the generic terminal, or an APC's own, this is a real network
+/// node in its own right, not a construction anchor for another entity's.
+/obj/machinery/power/terminal/smes_input
 
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
@@ -134,8 +142,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return
 
 /obj/machinery/power/smes/Destroy()
-	if(power_key)
-		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
 	for(var/obj/machinery/power/terminal/T in terminals)
 		T.master = null
 	terminals = null
@@ -165,35 +171,35 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/power_registered()
 	power_sync()
 
-/// Sends settings, charge and terminals to Rust. DM's charge is current (every
-/// power step writes it back), so sending it is always safe.
+/// Sends settings and capacity to Rust (generated accessors,
+/// verdigris/domains/power/src/components.rs). Charge is Rust's own
+/// (`Smes.charge` is conserved, laws drive it) -- DM's absolute writes to
+/// it (drain_power(), the EMP hit) cross as `adjust_charge` deltas, and
+/// power_poll() reads the settled value back.
 /obj/machinery/power/smes/proc/power_sync()
-	if(QDELETED(src))
+	if(QDELETED(src) || !vg_entity)
 		return
-	if(!power_key)
-		power_key = power_key_alloc(src)
-	var/flags = 0
 	var/working = !(stat & BROKEN) && !grid_check
-	if(working && input_attempt && !input_pulsed && !input_cut)
-		flags |= POWER_SMES_INPUT
-	if(working && output_attempt && !output_pulsed && !output_cut)
-		flags |= POWER_SMES_OUTPUT
-	var/list/op = list(POWER_OP_SMES, 0, power_key, flags, capacity, input_level, output_level, charge)
-	for(var/obj/machinery/power/terminal/term as anything in terminals)
-		if(term.power_key)
-			op += term.power_key
-	op[2] = length(op) - 2
-	SSmachines.power_queue(op)
+	set_input_enabled(working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
+	set_output_enabled(working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
+	set_capacity(capacity)
+	set_input_level(input_level)
+	set_output_level(output_level)
+	var/unit_index = (vg_entity - 1) & VG_ENTITY_INDEX_MASK
+	for(var/obj/machinery/power/terminal/smes_input/term as anything in terminals)
+		if(term.vg_entity)
+			term.set_unit(unit_index)
 
-/// A POWER_EV_SMES record at `at`: key, charge, inputting, outputting,
-/// output_used, input_available, display.
-/obj/machinery/power/smes/proc/power_event(list/events, at)
+/// Reads back what Rust's SmesOutputPlan/Apply and SmesInputApply did this
+/// step (verdigris/domains/power/src/laws.rs): the settled charge and the
+/// shown input/output state.
+/obj/machinery/power/smes/proc/power_poll()
+	if(!vg_entity)
+		return
 	power_event_count++
-	charge = events[at + 1]
-	output_used = events[at + 4]
-	input_available = events[at + 5]
-	var/new_inputting = events[at + 2]
-	var/new_outputting = events[at + 3]
+	charge = get_charge()
+	var/new_inputting = input_available > 0 ? (input_available + 0.01 >= target_load ? 2 : 1) : 0
+	var/new_outputting = output_used > 0 ? 2 : (output_attempt ? 1 : 0)
 	if(new_inputting != inputting || new_outputting != outputting || last_disp != chargedisplay())
 		inputting = new_inputting
 		outputting = new_outputting
@@ -299,7 +305,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(do_after(user, 5 SECONDS, target = src))
 		if(check_terminal_exists(tempLoc, user, tempDir))
 			return 1
-		var/obj/machinery/power/terminal/term = new/obj/machinery/power/terminal(tempLoc)
+		var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
 		term.set_dir(tempDir)
 		term.master = src
 		term.connect_to_network()
