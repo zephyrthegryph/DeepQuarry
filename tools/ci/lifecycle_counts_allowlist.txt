@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1226 in 983 files. qdel total: 2971 in 1177 files.
+# Destroy total: 1224 in 981 files. qdel total: 2971 in 1177 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -159,7 +159,6 @@ code/datums/soul_link.dm 1
 code/datums/state/serializer.dm 1
 code/datums/status_effects/_status_effect.dm 2
 code/datums/vending/stored_item.dm 1
-code/datums/weakrefs.dm 1
 code/datums/wires/wires.dm 1
 code/defines/obj/weapon.dm 1
 code/game/atom/armor.dm 1
@@ -662,7 +661,6 @@ code/modules/media/mediamanager.dm 1
 code/modules/media/walkpod.dm 1
 code/modules/medical/conditions/wounds.dm 1
 code/modules/medical/diagnosis/diagnosis.dm 1
-code/modules/medical/stabilisation/stasis.dm 1
 code/modules/mining/drilling/drill.dm 1
 code/modules/mining/fulton.dm 1
 code/modules/mining/kinetic_crusher.dm 3
@@ -1108,6 +1106,7 @@ code/datums/modules.dm 1
 code/datums/observation/helpers.dm 1
 code/datums/om/prompt.dm 5
 code/datums/om/relation.dm 2
+code/datums/om/timer.dm 1
 code/datums/outfits/costumes/halloween.dm 1
 code/datums/outfits/horror_killers.dm 1
 code/datums/outfits/jobs/command.dm 1
@@ -1125,7 +1124,6 @@ code/datums/status_effects/_status_effect_helpers.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 12
 code/datums/status_effects/grouped_effect.dm 1
 code/datums/vending/stored_item.dm 3
-code/datums/weakrefs.dm 1
 code/datums/wires/mines.dm 1
 code/defines/procs/statistics.dm 3
 code/game/antagonist/antagonist_equip.dm 1
