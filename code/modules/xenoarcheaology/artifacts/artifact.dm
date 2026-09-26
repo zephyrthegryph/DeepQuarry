@@ -18,11 +18,26 @@
 	var/datum/component/artifact_master/artifact_master = /datum/component/artifact_master
 
 
-/obj/machinery/artifact/machine_step() //Air too hot! We break!
+/// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
+/// ARTIFACT_HEAT_BREAK (and re-arms when moved).
+/obj/machinery/artifact/machine_step()
 	var/turf/T = get_turf(src)
-	var/datum/gas_mixture/env = T.return_air()
+	var/datum/gas_mixture/env = T?.return_air()
 	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)
 		qdel(src)
+		return PROCESS_KILL
+	var/datum/om_watch/W = om_watch_arm_bands(src, "heat", env?.arena_id(), list(new /datum/om_watch_band("temperature", TRUE, ARTIFACT_HEAT_BREAK)), null, CALLBACK(src, PROC_REF(heat_wake)))
+	if(W)
+		LAZYSET(W.last_side, "temperature:[TRUE]:[ARTIFACT_HEAT_BREAK]", FALSE) // below it now: the first reading above fires
+	return PROCESS_KILL
+
+/obj/machinery/artifact/proc/heat_wake()
+	MACHINE_WAKE(src)
+
+/obj/machinery/artifact/Moved(atom/old_loc)
+	. = ..()
+	if(isturf(loc) && !QDELETED(src))
+		MACHINE_WAKE(src)
 
 /obj/machinery/artifact/Destroy()
 	if(artifact_master)

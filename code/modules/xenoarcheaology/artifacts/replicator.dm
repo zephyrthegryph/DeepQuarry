@@ -107,6 +107,15 @@
 		[pick("front","side","top","bottom","rear","inside")].")
 
 /obj/machinery/replicator/machine_step()
+	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
+	if(!spawning_types.len)
+		last_process_time = 0
+		return PROCESS_KILL
+	if(!powered())
+		last_process_time = 0
+		return sleep_until_powered()
+	if(!last_process_time)
+		last_process_time = world.time
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -266,6 +275,15 @@
 		)))
 
 /obj/machinery/replicator/vore/machine_step()
+	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
+	if(!spawning_types.len)
+		last_process_time = 0
+		return PROCESS_KILL
+	if(!powered())
+		last_process_time = 0
+		return sleep_until_powered()
+	if(!last_process_time)
+		last_process_time = world.time
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)
@@ -516,6 +534,15 @@
 		)))
 
 /obj/machinery/replicator/clothing/machine_step()
+	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
+	if(!spawning_types.len)
+		last_process_time = 0
+		return PROCESS_KILL
+	if(!powered())
+		last_process_time = 0
+		return sleep_until_powered()
+	if(!last_process_time)
+		last_process_time = world.time
 	if(spawning_types.len && powered())
 		spawn_progress_time += world.time - last_process_time
 		if(spawn_progress_time > max_spawn_time)

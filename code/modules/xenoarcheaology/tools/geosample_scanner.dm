@@ -184,9 +184,10 @@
 			radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
 			return TRUE
 
+/// Runs the scan while scanning; otherwise it sleeps until start_scanning().
 /obj/machinery/radiocarbon_spectrometer/machine_step()
 	if(!scanning)
-		return
+		return PROCESS_KILL
 
 	if(!scanned_item || scanned_item.loc != src)
 		scanned_item = null
@@ -232,6 +233,7 @@
 /obj/machinery/radiocarbon_spectrometer/proc/start_scanning()
 	icon_state = "analyser_processing"
 	scanning = TRUE
+	MACHINE_WAKE(src)
 	scan_progress = 0
 	scanner_rpm_delta = 0
 	scanner_rpm = 0

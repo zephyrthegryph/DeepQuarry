@@ -183,6 +183,7 @@
 	C.loc = src
 	cartridges[C.label] = C
 	cartridges = sortAssoc(cartridges)
+	MACHINE_WAKE(src)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
@@ -255,11 +256,21 @@
 	return ITEM_INTERACT_SUCCESS
 
 // More stolen chemical_dispenser code.
+/// Refills its cartridges every 15 frames while any is short; full (or not recharging) it sleeps
+/// until a cartridge is drawn from or added.
 /obj/machinery/chemical_synthesizer/machine_step()
 	if(!_recharge_reagents)
-		return
+		return PROCESS_KILL
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return sleep_until_powered()
+	var/short = FALSE
+	for(var/label in cartridges)
+		var/obj/item/reagent_containers/chem_disp_cartridge/cart = cartridges[label]
+		if(cart && cart.reagents.total_volume < cart.reagents.maximum_volume)
+			short = TRUE
+			break
+	if(!short)
+		return PROCESS_KILL
 	if(--process_tick <= 0)
 		process_tick = 15
 		. = 0
@@ -668,6 +679,7 @@
 
 	// After all this mess of code, we reach the line where the magic happens.
 	C.reagents.trans_to_holder(src.reagents, quantity)
+	MACHINE_WAKE(src) // a cartridge to refill
 	update_icon() // Update underlays.
 	playsound(src, 'sound/machines/HPLC_binary_pump.ogg', 15, 1)
 

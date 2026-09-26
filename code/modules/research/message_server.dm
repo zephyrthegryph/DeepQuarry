@@ -46,6 +46,7 @@
 				priority = "Undetermined"
 
 /obj/machinery/message_server
+	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/research.dmi'
 	icon_state = "server"
@@ -119,7 +120,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 		soundloop.start()
 		noisy = TRUE
 	update_icon()
-	return
+	return PROCESS_KILL
 
 /obj/machinery/message_server/proc/send_pda_message(recipient = "",sender = "",message = "")
 	var/result
@@ -177,6 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	active = !active
 	update_icon()
+	MACHINE_WAKE(src)
 	return TRUE
 
 /// Old attackby: the message-monitor upgrade branch. offered_when falls through to the base attackby otherwise.

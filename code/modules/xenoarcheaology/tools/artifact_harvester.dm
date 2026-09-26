@@ -275,11 +275,12 @@
 				inserted_battery.stored_charge = 0
 
 
+/// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
 /obj/machinery/artifact_harvester/machine_step()
 	if(harvesting == 0)
-		return
+		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return sleep_until_powered()
 
 	if(harvesting > 0)
 		//charge at 33% consumption rate

@@ -58,13 +58,14 @@
 	attempting = 0
 	return 1
 
+/// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
 /obj/machinery/clonepod/transhuman/machine_step()
 	var/mob/living/occupant = get_occupant()
 	if(stat & NOPOWER)
 		if(occupant)
 			locked = 0
 			go_out()
-		return
+		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
 		if(occupant.stat == DEAD)
@@ -104,7 +105,7 @@
 		if(locked)
 			locked = 0
 		update_icon()
-		return
+		return PROCESS_KILL
 
 	return
 
@@ -190,13 +191,14 @@
 				store_rating = store_rating * rating
 	max_res_amount = store_rating
 
+/// Prints while busy with a body; idle, it sleeps until one is queued.
 /obj/machinery/transhuman/synthprinter/machine_step()
 	if(stat & NOPOWER)
 		if(busy)
 			busy = 0
 			current_br = null
 		update_icon()
-		return
+		return PROCESS_KILL
 
 	if(busy > 0 && busy <= 95)
 		busy += 5
@@ -204,7 +206,8 @@
 	if(busy >= 100)
 		make_body()
 
-	return
+	if(!busy)
+		return PROCESS_KILL
 
 /obj/machinery/transhuman/synthprinter/proc/print(datum/weakref/BR)
 	if(!BR?.resolve() || busy)
@@ -215,6 +218,7 @@
 
 	current_br = BR
 	busy = 5
+	MACHINE_WAKE(src)
 	update_icon()
 
 	return 1
