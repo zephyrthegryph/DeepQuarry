@@ -40,9 +40,11 @@
 			drilling_turf = get_turf(src)
 			src.visible_message(span_bold("\The [src]") + " begins to drill into \the [M].")
 			anchored = TRUE
-			spawn(drill_time)
-				if(get_turf(src) == drilling_turf && active)
-					M.GetDrilled()
-					src.loc = M
-				drilling_turf = null
-				anchored = FALSE
+			om_after(src, drill_time, PROC_REF(finish_drilling), M)
+
+/obj/machinery/giga_drill/proc/finish_drilling(turf/simulated/mineral/M)
+	if(get_turf(src) == drilling_turf && active)
+		M.GetDrilled()
+		src.loc = M
+	drilling_turf = null
+	anchored = FALSE

@@ -27,8 +27,7 @@
 			E.density = TRUE
 			E.anchored = TRUE
 			E.invisibility = INVISIBILITY_NONE
-		spawn(10)
-			UpdateMove()
+		om_after(src, 1 SECOND, PROC_REF(UpdateMove))
 	return 1
 
 /datum/artifact_effect/forcefield/process()

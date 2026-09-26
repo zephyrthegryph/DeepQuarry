@@ -281,8 +281,7 @@
 	animation.layer = ABOVE_JUNK_LAYER
 	animation.icon_state = "cultwall"
 	flick("cultwall",animation)
-	spawn(10)
-		qdel(animation)
+	om_qdel_after(animation, 1 SECOND)
 
 /// When it actually, properly converts the turf.
 /obj/item/melee/artifact_blade/proc/convert_turf(atom/A, mob/living/user) //Shamelessly taken from RCD code.
