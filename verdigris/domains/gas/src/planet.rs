@@ -1,7 +1,7 @@
 //! Planet atmospheres a turf cell relaxes back to (`rust_architecture.md`
 //! §8.5 step 6): a small, process-wide table, the same shape `gate.rs`
 //! already uses for reaction/visibility data, chosen for the same reason --
-//! `PlanetRelaxLaw` (`laws.rs`) runs on a worker frame-pool thread and reads
+//! `TurfGas::relax` (`cell.rs`) runs on a worker frame-pool thread and reads
 //! it there, while `planet_id` is only ever called from DM's main-thread
 //! turf-registration path (`ffi/src/gas.rs`), so the table needs to be
 //! `Send + Sync` but not a [`vg_core::query::Global`] (that would require a

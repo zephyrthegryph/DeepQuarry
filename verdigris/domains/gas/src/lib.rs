@@ -15,7 +15,6 @@ pub mod pipes;
 pub mod planet;
 pub mod power_budget;
 pub mod reaction;
-pub mod turf;
 pub mod world;
 
 use byondapi::prelude::*;
@@ -130,38 +129,6 @@ fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
 	let id = id.get_number()? as u32;
 	with_world(|w| w.unwatch_dirty(id));
 	Ok(ByondValue::null())
-}
-
-/// `list(main mixtures live, main slots, pipe regions, pipe ports,
-/// registered turf cells, gas frames, pending callbacks, heat frames, heat
-/// bodies, heat frame us)` for SSair's stat panel.
-#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
-fn auxmos_diagnostics() -> Result<ByondValue> {
-	let gas = turf::diagnostics();
-	// Heat's own diagnostics moved to vg-ffi (`rust_architecture.md` step 4);
-	// pipe region/port counts moved there too (step 5, alongside the pipe
-	// network itself): this crate no longer hosts either to report on. Kept
-	// as zeros, not removed, so this list's width (and every existing
-	// index into it) stays the same for callers that haven't moved to a
-	// `vg_pipe_*`/`vg_heat_*` diagnostics bind instead.
-	let heat = (0, 0, 0);
-	let pipes = (0, 0);
-	#[allow(clippy::cast_precision_loss)]
-	let values = gas
-		.into_iter()
-		.chain([
-			auxcallback::pending_callbacks(),
-			heat.0,
-			heat.1,
-			heat.2 as usize,
-			pipes.0,
-			pipes.1,
-		])
-		.map(|value| ByondValue::from(value as f32))
-		.collect::<Vec<_>>();
-	let list = ByondValue::new_list()?;
-	list.write_list(&values)?;
-	Ok(list)
 }
 
 /// Gives a new `/datum/gas_mixture` a main-owned slot sized from its

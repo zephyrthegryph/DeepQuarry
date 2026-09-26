@@ -1556,6 +1556,7 @@ impl WorldBuilder {
             net_types: self.net_types,
             globals: self.globals,
             laws: law_meta,
+            field_wakes: self.field_watches.iter().map(|_| Vec::new()).collect(),
             field_watches: self.field_watches,
             main_wakes: self.main_wakes,
             worker_wakes: self.worker_wakes,
@@ -1664,6 +1665,9 @@ pub struct World {
     globals: HashMap<TypeId, (ResourceId, Phase)>,
     laws: Vec<(&'static str, Phase, Res<LawState>)>,
     field_watches: Vec<Box<dyn FieldWatchDyn>>,
+    /// Fired wakes of each watched field, parallel to `field_watches`
+    /// ([`World::drain_field_wakes`]).
+    field_wakes: Vec<Vec<Wake>>,
     main_wakes: Res<FrameWakes>,
     worker_wakes: Res<FrameWakes>,
     main_out: Res<FrameOut>,
@@ -1722,8 +1726,8 @@ impl World {
         for k in kinds.iter_mut() {
             k.begin_tick(sim, main, wakes, crossings);
         }
-        for f in &self.field_watches {
-            f.drain(sim, wakes, crossings);
+        for (f, out) in self.field_watches.iter().zip(&mut self.field_wakes) {
+            f.drain(sim, out, crossings);
         }
         let out = self.worker_out;
         let (events, violations) = (&mut self.events, &mut self.violations);
@@ -2319,10 +2323,20 @@ impl World {
         self.events.push(entity, event);
     }
 
-    /// Every watch wake fired since the last drain (feed them to the
-    /// reactor's lanes).
+    /// Every component-kind watch wake fired since the last drain (feed
+    /// them to the reactor's lanes). Field watches drain separately
+    /// ([`drain_field_wakes`](Self::drain_field_wakes)): their sources are
+    /// cells, not entity rows.
     pub fn drain_wakes(&mut self, out: &mut Vec<Wake>) {
         out.append(&mut self.wakes);
+    }
+
+    /// Every wake of field `K`'s cell watches fired since the last drain
+    /// (`source`: the cell).
+    pub fn drain_field_wakes<K: FieldKind>(&mut self, out: &mut Vec<Wake>) {
+        if let Some(i) = self.field_watches.iter().position(|w| w.field() == TypeId::of::<K>()) {
+            out.append(&mut self.field_wakes[i]);
+        }
     }
 
     /// Every `ThresholdSet` crossing fired since the last drain (a

@@ -89,6 +89,9 @@ pub const SETTLED_KELVIN: f32 = 0.5;
 pub const REVISION_KPA: f32 = 0.5;
 pub const REVISION_KELVIN: f32 = 0.5;
 pub const REVISION_MOLES: f32 = 0.05;
+/// Planet cells relax this fraction of the way back to their baseline each
+/// frame.
+const PLANET_RELAX: f32 = 0.25;
 /// Pressure differences below this (kPa) do not add bulk flow to the
 /// stiffness (they still flow).
 const STIFF_PRESSURE: f32 = 1.0;
@@ -400,6 +403,32 @@ impl FieldKind for TurfGas {
 	fn local(cell: &mut GasCell, _capacity: f32, _dt: f32) -> bool {
 		cell.ready = crate::gate::ready(cell).map_or(NO_REACTION, |i| i as u32);
 		false
+	}
+
+	/// A planet cell relaxes [`PLANET_RELAX`] of the way back to its
+	/// planet's baseline (`crate::planet`) each frame, until within the
+	/// settling bands.
+	fn relax(cell: &mut GasCell, capacity: f32, _dt: f32) -> bool {
+		let Some(base) = crate::planet::baseline(cell.planet) else {
+			return false;
+		};
+		let mut settled = true;
+		for (m, b) in cell.moles.iter_mut().zip(base.moles) {
+			*m += (b - *m) * PLANET_RELAX;
+			if (*m - b).abs() > GAS_MIN_MOLES * 10.0 {
+				settled = false;
+			} else {
+				*m = b;
+			}
+		}
+		cell.energy += (base.energy - cell.energy) * PLANET_RELAX;
+		if (cell.energy - base.energy).abs() > 1.0 {
+			settled = false;
+		} else {
+			cell.energy = base.energy;
+		}
+		cell.refresh_in(capacity.max(1.0));
+		!settled
 	}
 
 	fn quiet(before: &GasCell, after: &GasCell) -> bool {

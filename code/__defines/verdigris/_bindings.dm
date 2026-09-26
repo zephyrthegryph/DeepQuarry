@@ -25,16 +25,17 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "f305d5b97715afcb"
+#define VERDIGRIS_ABI "abb33785b25dbd45"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
 /// Every face a mask can block (`NORTH|SOUTH|EAST|WEST|UP|DOWN`).
-// verdigris/domains/gas/src/turf.rs
+// verdigris/ffi/src/gas.rs
 #define AIR_BLOCK_ALL 63
 
-/// Mask argument meaning "keep the mask Rust already has for this turf".
-// verdigris/domains/gas/src/turf.rs
+/// Mask argument meaning "keep the mask Rust already has for this turf"
+/// (any negative mask does).
+// verdigris/ffi/src/gas.rs
 #define AIR_BLOCK_KEEP -1
 
 /// Normal human core body temperature, 37 °C in K. The one body temperature:
@@ -271,7 +272,7 @@
 #define REGULATOR_MODE_HEAT 0
 
 /// Registration flag DM passes for a simulated turf.
-// verdigris/domains/gas/src/turf.rs
+// verdigris/ffi/src/gas.rs
 #define SIMULATION_ANY 3
 
 /// Stefan-Boltzmann constant, W/(m^2*K^4). Written out in decimal
@@ -366,14 +367,14 @@
 	return call_ext(__f)(arglist(args))
 
 /// Returns: the turfs this turf shares air with (face neighbours only).
-// /proc/atmos_adjacent_turfs (verdigris/domains/gas/src/turf.rs)
+// /proc/atmos_adjacent_turfs (verdigris/ffi/src/gas.rs)
 /proc/vg_atmos_adjacent_turfs(turf)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_adjacent_turfs_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
 /// Batched form of `atmos_adjacent_turfs`: a list of lists, one per turf.
-// /proc/atmos_adjacent_turfs_bulk (verdigris/domains/gas/src/turf.rs)
+// /proc/atmos_adjacent_turfs_bulk (verdigris/ffi/src/gas.rs)
 /proc/vg_atmos_adjacent_turfs_bulk(turfs)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_adjacent_turfs_bulk_ffi")
 	VG_COUNT_FFI_CALL
@@ -387,30 +388,29 @@
 	return call_ext(__f)(remaining)
 
 /// Diagnostic: list(registered, mask, z-level links, zero-based z).
-// /proc/atmos_cell_info (verdigris/domains/gas/src/turf.rs)
+// /proc/atmos_cell_info (verdigris/ffi/src/gas.rs)
 /proc/vg_atmos_cell_info(turf)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_cell_info_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
 /// Returns: the direction bits (NORTH..DOWN) across which this turf shares air.
-// /proc/atmos_open_dirs (verdigris/domains/gas/src/turf.rs)
+// /proc/atmos_open_dirs (verdigris/ffi/src/gas.rs)
 /proc/vg_atmos_open_dirs(turf)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_open_dirs_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
 /// Returns: whether two turfs are face neighbours that share air.
-// /proc/atmos_turfs_share (verdigris/domains/gas/src/turf.rs)
+// /proc/atmos_turfs_share (verdigris/ffi/src/gas.rs)
 /proc/vg_atmos_turfs_share(first, second)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_turfs_share_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(first, second)
 
-/// `list(main mixtures live, main slots, pipe regions, pipe ports,
-/// registered turf cells, gas frames, pending callbacks, heat frames, heat
-/// bodies, heat frame us)` for SSair's stat panel.
-// /datum/controller/subsystem/air/proc/auxmos_diagnostics (verdigris/domains/gas/src/lib.rs)
+/// `list(main mixtures live, main slots, 0, 0, 0, world frames, pending
+/// callbacks, 0, 0, 0)` for SSair's stat panel and the benchmarks.
+// /datum/controller/subsystem/air/proc/auxmos_diagnostics (verdigris/ffi/src/gas.rs)
 /proc/vg_auxmos_diagnostics()
 	var/static/__f = load_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")
 	VG_COUNT_FFI_CALL
@@ -508,9 +508,12 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, code, field_id, index, value)
 
-/// Args: (maxx, maxy, maxz). Sizes the gas field (and the heat field) for
-/// the map. Called at world start and when the map grows.
-// /proc/auxmos_configure_world (verdigris/domains/gas/src/turf.rs)
+/// Sizes the world's one grid (every per-turf field: turf gas, solid heat)
+/// for the map, `(maxx, maxy, maxz)`. Builds the world on the first call
+/// (or while the grid is still the 2x2x2 placeholder); once the world holds
+/// state, a later call is a no-op and cells past the z headroom are ignored
+/// (rebuilding would wipe every other domain's state to grow the grid).
+// /proc/auxmos_configure_world (verdigris/ffi/src/world.rs)
 /proc/vg_configure_world(max_x, max_y, max_z)
 	var/static/__f = load_ext(VERDIGRIS, "byond:configure_world_ffi")
 	VG_COUNT_FFI_CALL
@@ -679,42 +682,23 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
 
-/// Test hook: runs `frames` gas frames to completion, one after another,
-/// deterministically (no wall clock), and pushes their events like
-/// `gas_tick`.
+/// Test hook: runs `frames` world steps to completion, one after another,
+/// deterministically (no wall clock). Their events reach DM through
+/// `vg_drain_events()`.
 // /proc/gas_run_frames (verdigris/ffi/src/gas.rs)
 /proc/vg_gas_run_frames(frames)
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_run_frames_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(frames)
 
-/// `list(frames, commands, events, reactions, visuals, pressure, takes
-/// reconciled, last tick µs, last frame µs, command backlog, overlay entries,
-/// view age, frames skipped, removal shortfall (mol), fallback pieces applied,
-/// fallback pieces rejected, mode, idle frames skipped, active chunks last
-/// step)`.
-// /proc/gas_stats (verdigris/domains/gas/src/turf.rs)
+/// `list(frames, 0, 0, 0, 0, 0, 0, 0, last frame µs, command backlog,
+/// overlay entries, view age, frames skipped, removal shortfall (mol), 0, 0,
+/// 0, 0, 0)`: the world's frame metrics in the layout SSair's stat panel,
+/// the profiler and the benchmarks read (the zeros were the old gas-only
+/// driver's own counters).
+// /proc/gas_stats (verdigris/ffi/src/gas.rs)
 /proc/vg_gas_stats()
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_stats_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
-
-/// One SSair tick: pin the newest turf gas, collect its events and watch
-/// wakes, apply heat, start the next frame. Never waits. Its reaction/
-/// visual/pressure notifications reach DM through `vg_drain_events()`
-/// (`SSvg.fire()` already calls it every tick), not a return value.
-// /proc/gas_tick (verdigris/ffi/src/gas.rs)
-/proc/vg_gas_tick()
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_tick_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
-
-/// Conservation totals for tests: `list(moles, energy)` summed over every
-/// main-owned mixture, pipe region and turf cell (pinned), plus what flowed
-/// into reservoirs.
-// /proc/gas_totals (verdigris/domains/gas/src/turf.rs)
-/proc/vg_gas_totals()
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_totals_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
@@ -839,18 +823,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_clear_turf_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
-
-/// Sizes the world's grid for the map (`maxx`, `maxy`, `maxz`), the same
-/// call site as `vg_configure_world` -- gas's own field is separate and
-/// sized by that call already. Rebuilds the whole world only on the first
-/// call (or if the current grid is already too small); once built, a
-/// within-headroom call is a no-op, exactly as the pre-port `HeatWorld`
-/// behaved.
-// /proc/vg_heat_configure_world (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_configure_world(max_x, max_y, max_z)
-	var/static/__f = load_ext(VERDIGRIS, "byond:heat_configure_world_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(max_x, max_y, max_z)
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
 /// default emissivity, seconds per heat frame, normal body temperature,
@@ -981,7 +953,7 @@
 	return call_ext(__f)(on_body, index, watch_generation, payload)
 
 /// This turf's gas revision (bumped whenever its gas changes).
-// /turf/proc/air_revision (verdigris/domains/gas/src/turf.rs)
+// /turf/proc/air_revision (verdigris/ffi/src/gas.rs)
 /proc/vg_hook_air_revision(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_air_revision_ffi")
 	VG_COUNT_FFI_CALL
@@ -1019,7 +991,7 @@
 /// turf's gas and publishes its air-block mask (`AIR_BLOCK_KEEP` keeps the
 /// current one). Reads blocks_air, air, immutable_atmos, planetary_atmos and
 /// initial_gas_mix.
-// /turf/proc/update_air_ref (verdigris/domains/gas/src/turf.rs)
+// /turf/proc/update_air_ref (verdigris/ffi/src/gas.rs)
 /proc/vg_hook_register_turf(src_ref, flag, mask)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_register_turf_ffi")
 	VG_COUNT_FFI_CALL
@@ -1027,7 +999,7 @@
 
 /// Bulk registration for round start and map loads. Args: (turfs, flag),
 /// where `turfs` is an assoc list of turf -> air-block mask.
-// /proc/_auxmos_register_turfs_bulk (verdigris/domains/gas/src/turf.rs)
+// /proc/_auxmos_register_turfs_bulk (verdigris/ffi/src/gas.rs)
 /proc/vg_hook_register_turfs_bulk(list, flag)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_register_turfs_bulk_ffi")
 	VG_COUNT_FFI_CALL
@@ -1594,7 +1566,7 @@
 
 /// Args: (links). One entry per z-level: the `UP`/`DOWN` bits of the levels
 /// air may cross into. Vertical faces open only between linked levels.
-// /datum/controller/subsystem/air/proc/auxmos_set_z_links (verdigris/domains/gas/src/turf.rs)
+// /datum/controller/subsystem/air/proc/auxmos_set_z_links (verdigris/ffi/src/gas.rs)
 /proc/vg_set_z_links(links)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_z_links_ffi")
 	VG_COUNT_FFI_CALL
@@ -1627,9 +1599,8 @@
 	return call_ext(__f)(src_ref)
 
 /// Diagnostic invariant for shuttle and atmos tests: the turf's air datum
-/// names its field cell (or the shared vacuum), and the cell's geometry is
-/// what the turf's mask says.
-// /proc/_auxmos_topology_matches (verdigris/domains/gas/src/turf.rs)
+/// names its field cell (or the shared vacuum), and the cell is in the field.
+// /proc/_auxmos_topology_matches (verdigris/ffi/src/gas.rs)
 /proc/vg_topology_matches(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:topology_matches_ffi")
 	VG_COUNT_FFI_CALL
@@ -1658,7 +1629,7 @@
 
 /// Diagnostic: whether the turf's gas is still moving (some open edge is
 /// not settled).
-// /turf/proc/auxmos_is_atmos_active (verdigris/domains/gas/src/turf.rs)
+// /turf/proc/auxmos_is_atmos_active (verdigris/ffi/src/gas.rs)
 /proc/vg_turf_active_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:turf_active_hook_ffi")
 	VG_COUNT_FFI_CALL

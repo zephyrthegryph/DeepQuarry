@@ -144,7 +144,7 @@ impl Law for CellReactionReadyLaw {
 
 	fn step(ctx: &mut LawCtx<'_, Cell<TurfGas>, ()>, _dt: Seconds) -> Settle {
 		let ready = ctx.reads.value.ready;
-		if ready != NO_REACTION {
+		if ready != NO_REACTION && !ctx.reads.reservoir {
 			let cell = ctx.index();
 			ctx.emit(GasEvent::CellReactionReady { cell, reaction: ready });
 		}
@@ -167,7 +167,7 @@ impl Law for CellVisualChangeLaw {
 
 	fn step(ctx: &mut LawCtx<'_, Cell<TurfGas>, Cell<TurfGas>>, _dt: Seconds) -> Settle {
 		let vis = ctx.reads.value.vis;
-		if vis != ctx.reads.value.last_vis {
+		if vis != ctx.reads.value.last_vis && !ctx.reads.reservoir {
 			let cell = ctx.index();
 			ctx.emit(GasEvent::CellVisualChange { cell, vis });
 			ctx.writes.value.last_vis = vis;
@@ -192,9 +192,13 @@ impl Law for SpacewindLaw {
 
 	fn step(ctx: &mut LawCtx<'_, (Cell<TurfGas>, Neighbors<TurfGas>), ()>, _dt: Seconds) -> Settle {
 		let (cell, neighbors) = ctx.reads;
+		if cell.reservoir {
+			return Settle::Active;
+		}
 		let my_p = cell.value.pressure_in(cell.capacity);
 		let index = ctx.index();
-		for slot in &neighbors.0 {
+		// Planar faces only (`Face::ALL`'s first four), as the old `Post::run`.
+		for slot in &neighbors.0[..4] {
 			let Some((neighbor, nb)) = slot else { continue };
 			let nb_p = nb.value.pressure_in(nb.capacity);
 			let moved = (my_p - nb_p) * PRESSURE_EVENT_SCALE;
@@ -207,55 +211,6 @@ impl Law for SpacewindLaw {
 			}
 		}
 		Settle::Active
-	}
-}
-
-/// Planet cells relax this fraction of the way back to their baseline each
-/// frame -- `world.rs::PLANET_RELAX`, ported verbatim.
-const PLANET_RELAX: f32 = 0.25;
-
-/// Relaxes a reservoir turf cell tagged with a planet id
-/// (`GasCell::planet`) toward that planet's registered baseline
-/// (`crate::planet`) -- `world.rs`'s old `Post::relax_planets`, ported onto
-/// a `Cell<TurfGas>` law: reservoir cells are never written by the field's
-/// own flux (their geometry says so), so this is the only thing that ever
-/// moves one, exactly as before. Sleeps once within settling tolerance of
-/// the baseline (composition and energy both), same bands `world.rs` used.
-pub struct PlanetRelaxLaw;
-
-impl Law for PlanetRelaxLaw {
-	type Reads = Cell<TurfGas>;
-	type Writes = Cell<TurfGas>;
-	const NAME: &'static str = "gas_planet_relax";
-	const PERIOD: Period = Period::Frame;
-
-	fn step(ctx: &mut LawCtx<'_, Cell<TurfGas>, Cell<TurfGas>>, _dt: Seconds) -> Settle {
-		let cell = ctx.reads.value;
-		if cell.planet == 0 || !ctx.reads.reservoir {
-			return Settle::Sleep;
-		}
-		let Some(base) = crate::planet::baseline(cell.planet) else {
-			return Settle::Sleep;
-		};
-		let mut next = cell;
-		let mut settled = true;
-		for (m, b) in next.moles.iter_mut().zip(base.moles) {
-			*m += (b - *m) * PLANET_RELAX;
-			if (*m - b).abs() > crate::gas::constants::GAS_MIN_MOLES * 10.0 {
-				settled = false;
-			} else {
-				*m = b;
-			}
-		}
-		next.energy += (base.energy - next.energy) * PLANET_RELAX;
-		if (next.energy - base.energy).abs() > 1.0 {
-			settled = false;
-		} else {
-			next.energy = base.energy;
-		}
-		next.refresh_in(ctx.reads.capacity.max(1.0));
-		ctx.writes.value = next;
-		if settled { Settle::Sleep } else { Settle::Active }
 	}
 }
 
@@ -540,44 +495,5 @@ mod tests {
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		SpacewindLaw::step(&mut ctx, Seconds(1.0));
 		assert!(fx.events.is_empty(), "equal pressures: no spacewind");
-	}
-
-	#[test]
-	fn planet_relax_law_moves_a_reservoir_toward_its_baseline_and_settles() {
-		crate::planet::reset_for_test();
-		let mut base_moles = [0.0; crate::cell::N];
-		base_moles[GAS_OXYGEN] = 84.0;
-		let mut baseline = GasCell::new(base_moles, 293.0);
-		baseline.refresh_in(CELL_VOLUME);
-		let id = crate::planet::planet_id("test_planet", baseline);
-		assert_ne!(id, 0);
-
-		let mut cell = GasCell::new([0.0; crate::cell::N], 293.0);
-		cell.planet = id;
-		let mut reads = field_cell(cell, CELL_VOLUME, true);
-		let mut settled = false;
-		for _ in 0..200 {
-			let mut writes = field_cell(reads.value, reads.capacity, reads.reservoir);
-			let mut fx = cell_fx(0);
-			let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
-			if PlanetRelaxLaw::step(&mut ctx, Seconds(1.0)) == Settle::Sleep {
-				settled = true;
-				reads = writes;
-				break;
-			}
-			reads = writes;
-		}
-		assert!(settled, "relaxes to the baseline within 200 steps: {:?}", reads.value);
-		assert!((reads.value.moles[GAS_OXYGEN] - 84.0).abs() < 1.0, "{:?}", reads.value);
-	}
-
-	#[test]
-	fn planet_relax_law_sleeps_immediately_for_a_non_planet_cell() {
-		let cell = GasCell::new([0.0; crate::cell::N], 293.0);
-		let reads = field_cell(cell, CELL_VOLUME, true);
-		let mut writes = field_cell(reads.value, reads.capacity, reads.reservoir);
-		let mut fx = cell_fx(0);
-		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
-		assert_eq!(PlanetRelaxLaw::step(&mut ctx, Seconds(1.0)), Settle::Sleep);
 	}
 }

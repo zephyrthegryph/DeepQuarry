@@ -39,6 +39,7 @@ use vg_core::entity::{ComponentRef, EntityId, WORLD_DOMAIN};
 use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
 use vg_core::registry::{DomainRegistry, world_kind_domain};
 use vg_core::units::Seconds;
+use vg_core::grid::GridDims;
 use vg_core::watch::Cond;
 use vg_core::world::{KindId, World, WorldBuilder, WorldConfig};
 
@@ -46,10 +47,29 @@ use crate::{entity, registry};
 
 thread_local! {
     static WORLD: RefCell<Option<World>> = const { RefCell::new(None) };
+    /// The grid size the next (re)build uses ([`configure_world`]).
+    static PENDING_DIMS: std::cell::Cell<GridDims> = std::cell::Cell::new(GridDims::new(2, 2, 2).expect("2x2x2 fits"));
+}
+
+/// The grid dims to build with next.
+fn pending_dims() -> GridDims {
+    PENDING_DIMS.with(std::cell::Cell::get)
+}
+
+/// Headroom for z-levels created at run time (expeditions): the grid is
+/// sized once, and cells past it are ignored.
+fn z_capacity(max_z: u32) -> u32 {
+    max_z.saturating_mul(2).max(256).max(max_z + 1)
 }
 
 /// Every domain's declarations (see the module docs).
-fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat> {
+/// The field keys `register` hands back for the FFI modules to keep.
+struct Fields {
+    heat: vg_core::field::FieldKey<vg_heat::SolidHeat>,
+    turf_gas: vg_core::field::FieldKey<vg_gas::cell::TurfGas>,
+}
+
+fn register(b: &mut WorldBuilder) -> Fields {
     b.add_global(
         vg_core::component::Ownership::Main,
         crate::propagate::RadiationLayer::default(),
@@ -70,29 +90,9 @@ fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat
     // plus HeatBody/its coupling components and laws. `crate::heat` is the
     // only heat FFI besides the generic `vg_component_*`/`vg_world_*` ones
     // (turf topology, and watches -- see that module's docs).
-    let _grid = b.add_grid(crate::heat::pending_dims());
+    let _grid = b.add_grid(pending_dims());
     let heat_field = crate::heat::register(b);
-
-    // Turf gas (`rust_architecture.md` §8.5 step 6, gas's "slice E"):
-    // `TurfGas` as a field on the shared World's own grid (the same one
-    // heat's `SolidHeat` just registered on -- both are per-turf fields on
-    // the same map), and the four laws already written and tested against
-    // it in isolation (`vg_gas::laws`'s own fixture-based tests) but never
-    // before registered anywhere: `domains/gas/src/world.rs`'s `GasWorld`
-    // is still the engine DM's ~60 gas binds actually read and write (its
-    // own module docs, and this field's own docs below), so this field
-    // sees no writes yet and drives no DM-visible behavior -- additive,
-    // not yet the cutover. `FRAME_DT`/`MAX_SUBSTEPS` match the private
-    // engine's own `Field::new` exactly, so a future cutover changes
-    // nothing about the timing.
-    let _turf_gas_field = b.add_field::<vg_gas::cell::TurfGas>(vg_core::field::FieldConfig {
-        dt: vg_gas::world::FRAME_DT,
-        max_substeps: vg_gas::world::MAX_SUBSTEPS,
-    });
-    let _ = b.add_law::<vg_gas::laws::CellReactionReadyLaw>();
-    let _ = b.add_law::<vg_gas::laws::CellVisualChangeLaw>();
-    let _ = b.add_law::<vg_gas::laws::SpacewindLaw>();
-    let _ = b.add_law::<vg_gas::laws::PlanetRelaxLaw>();
+    let turf_gas = crate::gas::register(b);
 
     // Power (`rust_architecture.md` §6, §8.5): `Cables`, its components and
     // laws. A SMES's output/input terminals are their own entities, each on
@@ -128,7 +128,7 @@ fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat
     b.conserve("pipe_moles", Tolerance::default());
     b.conserve("pipe_energy", Tolerance::default());
 
-    heat_field
+    Fields { heat: heat_field, turf_gas }
 }
 
 fn build() -> Result<World> {
@@ -142,11 +142,11 @@ fn build() -> Result<World> {
         dt: vg_core::units::Seconds(0.5),
         ..WorldConfig::default()
     });
-    let heat_field = register(&mut b);
+    let fields = register(&mut b);
     let world = b.build().map_err(|e| eyre!("world build: {e}"))?;
-    crate::heat::install_field(heat_field);
+    crate::heat::install_field(fields.heat);
+    crate::gas::install(fields.turf_gas);
     vg_gas::world::install_pipe_access(Box::new(crate::pipes::FfiPipeAccess));
-    crate::gas::install_mains_access();
     registry::register_domain(
         u32::try_from(WORLD_DOMAIN).unwrap_or(7),
         Box::new(WorldEntities),
@@ -156,11 +156,8 @@ fn build() -> Result<World> {
             vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
     }
-    // Gas's turf watch port: a host that is not on the world yet.
-    registry::register_domain(
-        crate::reactor::DOMAIN_GAS,
-        Box::new(vg_gas::turf::GasDomain),
-    );
+    // Gas handles as a reactor watch domain (turf cells and main mixtures).
+    registry::register_domain(crate::reactor::DOMAIN_GAS, Box::new(crate::gas::GasDomain));
     Ok(world)
 }
 
@@ -233,60 +230,29 @@ struct WorldKind {
     kind: KindId,
 }
 
-/// Rewrites every cell of `cond` from a `vg_entity` value to the entity's
-/// slot index (the row the world's stores use).
-fn cells_to_rows(cond: &Cond) -> Result<Cond, String> {
-    let row = |cell: u32| -> Result<u32, String> {
-        #[allow(clippy::cast_precision_loss)]
-        entity::decode(cell as f32)
-            .map(EntityId::index)
-            .map_err(|e| e.to_string())
-    };
+/// `cond` with every cell rewritten by `f`.
+pub(crate) fn map_cells(cond: &Cond, f: &dyn Fn(u32) -> Result<u32, String>) -> Result<Cond, String> {
     Ok(match cond {
-        Cond::Changed { cell, mask } => Cond::Changed {
-            cell: row(*cell)?,
-            mask: *mask,
-        },
-        Cond::Threshold { cell, level } => Cond::Threshold {
-            cell: row(*cell)?,
-            level: *level,
-        },
-        Cond::Band {
-            cell,
-            ch,
-            unit,
-            levels,
-            hysteresis,
-        } => Cond::Band {
-            cell: row(*cell)?,
+        Cond::Changed { cell, mask } => Cond::Changed { cell: f(*cell)?, mask: *mask },
+        Cond::Threshold { cell, level } => Cond::Threshold { cell: f(*cell)?, level: *level },
+        Cond::Band { cell, ch, unit, levels, hysteresis } => Cond::Band {
+            cell: f(*cell)?,
             ch: *ch,
             unit: *unit,
             levels: levels.clone(),
             hysteresis: *hysteresis,
         },
-        Cond::Difference { a, b, level, abs } => Cond::Difference {
-            a: row(*a)?,
-            b: row(*b)?,
-            level: *level,
-            abs: *abs,
-        },
-        Cond::ThresholdSet { cell, ch } => Cond::ThresholdSet {
-            cell: row(*cell)?,
-            ch: *ch,
-        },
-        Cond::Any(children) => Cond::Any(
-            children
-                .iter()
-                .map(cells_to_rows)
-                .collect::<Result<_, _>>()?,
-        ),
-        Cond::All(children) => Cond::All(
-            children
-                .iter()
-                .map(cells_to_rows)
-                .collect::<Result<_, _>>()?,
-        ),
+        Cond::Difference { a, b, level, abs } => Cond::Difference { a: f(*a)?, b: f(*b)?, level: *level, abs: *abs },
+        Cond::ThresholdSet { cell, ch } => Cond::ThresholdSet { cell: f(*cell)?, ch: *ch },
+        Cond::Any(children) => Cond::Any(children.iter().map(|c| map_cells(c, f)).collect::<Result<_, _>>()?),
+        Cond::All(children) => Cond::All(children.iter().map(|c| map_cells(c, f)).collect::<Result<_, _>>()?),
     })
+}
+
+/// A `vg_entity` value's slot index (the row the world's stores use).
+#[allow(clippy::cast_precision_loss)]
+fn entity_row(cell: u32) -> Result<u32, String> {
+    entity::decode(cell as f32).map(EntityId::index).map_err(|e| e.to_string())
 }
 
 impl DomainRegistry for WorldKind {
@@ -295,7 +261,7 @@ impl DomainRegistry for WorldKind {
     }
 
     fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId), String> {
-        let rows = cells_to_rows(cond)?;
+        let rows = map_cells(cond, &entity_row)?;
         with_world(|w| {
             w.watch(self.kind, sub, lane, &rows)
                 .map_err(|e| eyre!("{e}"))
@@ -538,4 +504,24 @@ fn world_laws() -> Result<ByondValue> {
             s.name, s.phase, s.stepped, s.awake
         )
     }))
+}
+
+/// Sizes the world's one grid (every per-turf field: turf gas, solid heat)
+/// for the map, `(maxx, maxy, maxz)`. Builds the world on the first call
+/// (or while the grid is still the 2x2x2 placeholder); once the world holds
+/// state, a later call is a no-op and cells past the z headroom are ignored
+/// (rebuilding would wipe every other domain's state to grow the grid).
+#[auxmacros::bind("/proc/auxmos_configure_world")]
+fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
+    let max_x = whole(&max_x, "max_x")?.max(1);
+    let max_y = whole(&max_y, "max_y")?.max(1);
+    let max_z = whole(&max_z, "max_z")?.max(1);
+    let dims = GridDims::new(max_x, max_y, z_capacity(max_z))
+        .ok_or_else(|| eyre!("grid {max_x}x{max_y}x{max_z} does not fit a u32 index"))?;
+    let placeholder = WORLD.with_borrow(|w| w.as_ref().is_none_or(|w| w.grid().is_ok_and(|g| g.dims() == GridDims::new(2, 2, 2).expect("fits"))));
+    if placeholder {
+        PENDING_DIMS.with(|d| d.set(dims));
+        reset()?;
+    }
+    Ok(ByondValue::null())
 }

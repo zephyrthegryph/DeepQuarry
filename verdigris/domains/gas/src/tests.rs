@@ -1,33 +1,315 @@
-//! Conservation tests for the gas world: the turf field alone, the field
-//! with DM writes (overlay and fallback), `Take` reconciliation, and pipes.
+//! Turf gas on the shared `vg_core::world::World`: the `TurfGas` field and
+//! gas's laws registered the way `vg-ffi` registers them, stepped by the
+//! world's own driver.
 //!
-//! Totals are `f64` sums of every gas and the energy over main-owned
-//! mixtures, pipe regions, field cells and the field's reservoir ledger.
-//! Cells are `f32`, so each check allows a small relative error.
+//! Totals are `f64` sums of every gas and the energy over the field's cells
+//! (pinned view) and its reservoir ledger. Cells are `f32`, so each check
+//! allows a small relative error.
+
+use std::cell::RefCell;
 
 use proptest::prelude::*;
-use vg_core::sim::Mode;
+use vg_core::field::{FieldConfig, FieldKey, FieldState, Geom};
+use vg_core::grid::{BlockKind, Dir, GridDims};
+use vg_core::units::Seconds;
+use vg_core::world::{World, WorldBuilder, WorldConfig};
 
-use crate::cell::{GasCell, N, Q};
+use crate::cell::{GasCell, GasCmd, TurfGas, N, Q};
 use crate::gas::ids::{GAS_NITROGEN, GAS_OXYGEN, GAS_PLASMA};
 use crate::gas::Mixture;
-use crate::world::{GasWorld, MainsAccess, MixRef};
+use crate::laws::{CellReactionReadyLaw, CellVisualChangeLaw, GasEvent, SpacewindLaw};
+use crate::world::{MainsAccess, MixRef, TurfAccess};
 
-/// A `MainsAccess` double for domain-crate tests (no `vg-ffi`, so no
-/// `MainsStore` to install): a plain `Vec` slab, no revision tracking
-/// (nothing here reads it).
+const X: u32 = 20;
+const Y: u32 = 20;
+
+/// A world holding only turf gas, as `vg-ffi` registers it.
+struct Rig {
+	w: World,
+	key: FieldKey<TurfGas>,
+}
+
+impl Rig {
+	fn new(x: u32, y: u32) -> Self {
+		let mut b = WorldBuilder::new(WorldConfig {
+			dt: Seconds(0.5),
+			..WorldConfig::default()
+		});
+		b.add_grid(GridDims::new(x, y, 1).expect("fits"));
+		let key = b.add_field::<TurfGas>(FieldConfig {
+			dt: 0.5,
+			max_substeps: 16,
+		});
+		b.watch_field(key);
+		let _ = b.add_law::<CellReactionReadyLaw>();
+		let _ = b.add_law::<CellVisualChangeLaw>();
+		let _ = b.add_law::<SpacewindLaw>();
+		Self {
+			w: b.build().expect("world builds"),
+			key,
+		}
+	}
+
+	fn register(&mut self, cell: u32, mut value: GasCell, reservoir: bool, mask: u8) {
+		value.refresh_in(2500.0);
+		let _ = self.w.sim_mut().port(self.key.cells).put(cell, value);
+		let geom = Geom {
+			capacity: 2500.0,
+			blocked: Dir::NONE,
+			reservoir,
+		};
+		let _ = self.w.sim_mut().port(self.key.geometry).put(cell, geom);
+		let _ = self.w.edit_grid(|g| g.set_blocked(BlockKind::Air, cell, Dir(mask)));
+	}
+
+	fn read(&self, cell: u32) -> Option<GasCell> {
+		self.w.read_cell(self.key, cell)
+	}
+
+	fn run(&mut self, frames: u32) {
+		for _ in 0..frames {
+			self.w.step_blocking();
+		}
+	}
+
+	/// Every cell's gas and energy (pinned) plus what flowed into
+	/// reservoirs.
+	fn totals(&mut self) -> [f64; Q] {
+		self.w.settle();
+		let cells = self.w.sim().port_ref(self.key.cells).pinned();
+		let geom = self.w.sim().port_ref(self.key.geometry).pinned();
+		let sums = FieldState::<TurfGas>::totals(cells.store(), geom.store());
+		let state = self.key.state;
+		let ledger = self
+			.w
+			.sim_mut()
+			.with_idle_world(|res| res.get(state).ledger().to_vec())
+			.expect("idle");
+		let mut out = [0.0; Q];
+		for (i, o) in out.iter_mut().enumerate() {
+			*o = sums[i] + ledger[i];
+		}
+		out
+	}
+
+	fn active_chunks(&mut self) -> u32 {
+		let state = self.key.state;
+		self.w
+			.sim_mut()
+			.with_idle_world(|res| res.get(state).stats().active_chunks)
+			.expect("idle")
+	}
+}
+
+fn air(scale: f32, t: f32) -> GasCell {
+	let mut m = [0.0; N];
+	m[GAS_OXYGEN] = 21.8 * scale;
+	m[GAS_NITROGEN] = 82.1 * scale;
+	GasCell::new(m, t)
+}
+
+fn cell(x: u32, y: u32) -> u32 {
+	y * X + x
+}
+
+/// A room with random walls, doors and gas, and the map's border as space
+/// reservoirs when `space` is set.
+fn build(r: &mut Rig, seed: u64, space: bool) {
+	let mut rng = seed | 1;
+	let mut next = || {
+		rng ^= rng << 13;
+		rng ^= rng >> 7;
+		rng ^= rng << 17;
+		rng
+	};
+	for y in 0..Y {
+		for x in 0..X {
+			let c = cell(x, y);
+			if x == 0 || y == 0 || x == X - 1 || y == Y - 1 {
+				if space {
+					let mut v = GasCell::default();
+					v.flags |= crate::cell::flags::IMMUTABLE;
+					r.register(c, v, true, 0);
+				}
+				continue;
+			}
+			let n = next();
+			if n % 11 == 0 {
+				continue; // a wall: not in the field
+			}
+			let t = 150.0 + (n >> 20) as f32 % 400.0;
+			let mut v = air((n % 1000) as f32 / 250.0, t);
+			if n % 7 == 0 {
+				v.moles[GAS_PLASMA] = 5.0;
+				v = GasCell::new(v.moles, t);
+			}
+			// Some faces blocked (doors, windows).
+			let mask = if n % 5 == 0 { 1 << (n % 4) } else { 0 };
+			r.register(c, v, false, mask as u8);
+		}
+	}
+}
+
+fn close(a: &[f64; Q], b: &[f64; Q], rel: f64) -> Result<(), String> {
+	for i in 0..Q {
+		let scale = a[i].abs().max(b[i].abs()).max(1.0);
+		if (a[i] - b[i]).abs() > rel * scale {
+			return Err(format!("quantity {i}: {} vs {} (diff {})", a[i], b[i], a[i] - b[i]));
+		}
+	}
+	Ok(())
+}
+
+#[test]
+fn the_field_conserves_gas_and_energy_including_space() {
+	let mut r = Rig::new(X, Y);
+	build(&mut r, 99, true);
+	r.run(1);
+	let before = r.totals();
+	r.run(40);
+	let after = r.totals();
+	close(&before, &after, 1e-4).unwrap();
+	let state = r.key.state;
+	let ledger = r.w.sim_mut().with_idle_world(|res| res.get(state).ledger().to_vec()).unwrap();
+	assert!(ledger[GAS_OXYGEN] > 0.0, "space took nothing: {ledger:?}");
+}
+
+#[test]
+fn a_breach_drains_a_room_and_settles() {
+	let mut r = Rig::new(X, Y);
+	build(&mut r, 7, true);
+	let probe = cell(X / 2, Y / 2);
+	let start = r.read(probe).unwrap_or_default();
+	r.run(200);
+	let end = r.read(probe).unwrap_or_default();
+	assert!(
+		end.total_moles() < start.total_moles() * 0.05 || start.total_moles() == 0.0,
+		"{} -> {}",
+		start.total_moles(),
+		end.total_moles()
+	);
+}
+
+proptest! {
+	#![proptest_config(ProptestConfig::with_cases(
+		std::env::var("PROPTEST_CASES").ok().and_then(|v| v.parse().ok()).unwrap_or(16)
+	))]
+
+	#[test]
+	fn field_conserves_for_any_layout(seed in 1u64..u64::MAX, frames in 1u32..30) {
+		let mut r = Rig::new(X, Y);
+		build(&mut r, seed, seed % 2 == 0);
+		r.run(1);
+		let before = r.totals();
+		r.run(frames);
+		let after = r.totals();
+		prop_assert!(close(&before, &after, 1e-4).is_ok(), "{:?}", close(&before, &after, 1e-4));
+	}
+
+	#[test]
+	fn dm_writes_conserve(seed in 1u64..u64::MAX, ops in proptest::collection::vec(
+		(0u8..8, 0u8..20, 0u8..20, 0.5f32..40.0), 1..60)
+	) {
+		let r = dm_writes(seed, &ops);
+		prop_assert!(r.is_ok(), "{:?}", r);
+	}
+}
+
+#[test]
+fn visual_and_reaction_events_are_typed_events() {
+	let mut gate = crate::gate::Gate::default();
+	gate.visible[GAS_PLASMA] = Some(0.25);
+	gate.reactions.push(crate::gate::Requirement {
+		min_temp: Some(500.0),
+		gases: vec![(GAS_PLASMA, 1.0)],
+		..Default::default()
+	});
+	crate::gate::install(gate);
+	let mut r = Rig::new(X, Y);
+	for y in 1..Y - 1 {
+		for x in 1..X - 1 {
+			r.register(cell(x, y), air(1.0, 293.15), false, 0);
+		}
+	}
+	r.run(3);
+	let _ = r.w.drain_events();
+	let (a, b) = (cell(5, 5), cell(6, 5));
+	let mut d = [0.0; Q];
+	d[GAS_PLASMA] = 100.0;
+	d[N] = 100.0 * 200.0 * 600.0;
+	let _ = r.w.submit_cell(r.key, a, GasCmd::Delta(d));
+	r.run(4);
+	let events: Vec<GasEvent> = r.w.drain_events().decoded::<GasEvent>().map(|(_, e)| e).collect();
+	assert!(
+		events.iter().any(|e| matches!(e, GasEvent::CellVisualChange { cell, .. } if *cell == b)),
+		"no CellVisualChange for b: {events:?}"
+	);
+	assert!(
+		events.iter().any(|e| matches!(e, GasEvent::CellReactionReady { cell, reaction: 0 } if *cell == a)),
+		"no CellReactionReady(0) for a: {events:?}"
+	);
+}
+
+/// Pins the activity invariants `FieldState` gives every field, for gas: a
+/// settled room sleeps, a nudge wakes only nearby chunks (not the whole
+/// map), a distant cell is untouched, and the field re-settles.
+#[test]
+fn nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again() {
+	const SIZE: u32 = 48; // several CHUNK_EDGE=16 chunks per axis
+	let mut r = Rig::new(SIZE, SIZE);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	for y in 0..SIZE {
+		for x in 0..SIZE {
+			r.register(idx(x, y), air(1.0, 293.15), false, 0);
+		}
+	}
+	r.run(20);
+	assert_eq!(r.active_chunks(), 0, "a uniform room should settle");
+	let far = idx(SIZE - 2, SIZE - 2);
+	let before_far = r.read(far).unwrap();
+
+	let mut d = [0.0; Q];
+	d[N] = 200.0;
+	let _ = r.w.submit_cell(r.key, idx(2, 2), GasCmd::Delta(d));
+	r.run(1);
+	let awake = r.active_chunks();
+	let total = SIZE.div_ceil(16) * SIZE.div_ceil(16);
+	assert!(awake > 0 && awake < total, "only a neighbourhood should wake: {awake} of {total}");
+	r.run(60);
+	assert_eq!(r.active_chunks(), 0, "it settles again");
+	assert_eq!(before_far, r.read(far).unwrap(), "the far cell was never part of the disturbance");
+}
+
+#[test]
+fn a_planet_cell_relaxes_back_to_its_atmosphere() {
+	crate::planet::reset_for_test();
+	let mut r = Rig::new(4, 4);
+	let base = air(1.0, 293.15);
+	let id = crate::planet::planet_id("test_planet_rig", base);
+	let mut v = base;
+	v.planet = id;
+	r.register(5, v, true, 0);
+	r.register(6, air(1.0, 293.15), false, 0);
+	r.run(2);
+	let mut d = [0.0; Q];
+	d[GAS_OXYGEN] = -10.0;
+	let _ = r.w.submit_cell(r.key, 5, GasCmd::Delta(d));
+	r.run(1);
+	assert!(r.read(5).unwrap().moles[GAS_OXYGEN] < base.moles[GAS_OXYGEN] - 1.0);
+	r.run(60);
+	let end = r.read(5).unwrap();
+	assert!((end.moles[GAS_OXYGEN] - base.moles[GAS_OXYGEN]).abs() < 0.1, "{end:?}");
+}
+
+// --- DM writes through the gas world's mixture layer ------------------------
+
+/// A `MainsAccess` double (no `vg-ffi`, so no `MainsStore`): a plain slab.
 #[derive(Default)]
-struct TestMains(std::cell::RefCell<Vec<Option<Mixture>>>);
+struct TestMains(RefCell<Vec<Option<Mixture>>>);
 
 impl MainsAccess for TestMains {
 	fn alloc(&self, mix: Mixture) -> Option<u32> {
 		let mut v = self.0.borrow_mut();
-		for (i, s) in v.iter_mut().enumerate() {
-			if s.is_none() {
-				*s = Some(mix);
-				return u32::try_from(i).ok();
-			}
-		}
 		v.push(Some(mix));
 		u32::try_from(v.len() - 1).ok()
 	}
@@ -53,7 +335,7 @@ impl MainsAccess for TestMains {
 	}
 
 	fn live(&self) -> usize {
-		self.0.borrow().iter().filter(|s| s.is_some()).count()
+		self.0.borrow().iter().flatten().count()
 	}
 
 	fn capacity(&self) -> usize {
@@ -63,8 +345,7 @@ impl MainsAccess for TestMains {
 	fn totals(&self) -> [f64; Q] {
 		let mut out = [0.0; Q];
 		for m in self.0.borrow().iter().flatten() {
-			let moles = m.moles_array();
-			for (o, v) in out.iter_mut().zip(moles) {
+			for (o, v) in out.iter_mut().zip(m.moles_array()) {
 				*o += f64::from(v);
 			}
 			out[N] += f64::from(m.thermal_energy());
@@ -73,174 +354,60 @@ impl MainsAccess for TestMains {
 	}
 }
 
-const X: u32 = 20;
-const Y: u32 = 20;
+type Shared = std::rc::Rc<RefCell<Rig>>;
 
-fn air(scale: f32, t: f32) -> GasCell {
-	let mut m = [0.0; N];
-	m[GAS_OXYGEN] = 21.8 * scale;
-	m[GAS_NITROGEN] = 82.1 * scale;
-	GasCell::new(m, t)
+/// `TurfAccess` over a test [`Rig`], as `vg-ffi` bridges it to the DLL's
+/// world.
+struct TestTurfs(Shared);
+
+impl TurfAccess for TestTurfs {
+	fn read(&self, cell: u32) -> Option<(GasCell, Geom)> {
+		let r = self.0.borrow();
+		let g = r.w.sim().port_ref(r.key.geometry).read(cell)?;
+		Some((r.read(cell)?, g))
+	}
+
+	fn submit(&self, cell: u32, cmd: GasCmd) {
+		let mut r = self.0.borrow_mut();
+		let key = r.key;
+		let _ = r.w.submit_cell(key, cell, cmd);
+	}
 }
 
-fn world(mode: Mode) -> GasWorld {
+fn gas<T>(f: impl FnOnce(&mut crate::world::GasWorld) -> T) -> T {
+	crate::world::with_world(f)
+}
+
+fn dm_writes(seed: u64, ops: &[(u8, u8, u8, f32)]) -> Result<(), String> {
 	crate::world::install_mains_access(Box::new(TestMains::default()));
-	let mut w = GasWorld::default();
-	let field = crate::world::Field::new(X, Y, 1, mode, &w.exchange).expect("field builds");
-	w.mode = field.mode;
-	w.field = Some(field);
-	w
-}
+	let mut rig = Rig::new(X, Y);
+	build(&mut rig, seed, false);
+	let rig: Shared = std::rc::Rc::new(RefCell::new(rig));
+	crate::world::install_turf_access(Box::new(TestTurfs(rig.clone())));
 
-fn cell(x: u32, y: u32) -> u32 {
-	y * X + x
-}
-
-/// A walled room of `w` x `h` cells at the origin, `gas` inside, with the
-/// border of the map as space reservoirs when `space` is set.
-fn build(world: &mut GasWorld, seed: u64, space: bool) {
-	let field = world.field.as_mut().expect("field");
-	let mut rng = seed | 1;
-	let mut next = || {
-		rng ^= rng << 13;
-		rng ^= rng >> 7;
-		rng ^= rng << 17;
-		rng
+	let tank = gas(|w| w.mains.alloc(Mixture::from_vol(70.0))).unwrap();
+	rig.borrow_mut().run(1);
+	let totals = || {
+		let mut t = rig.borrow_mut().totals();
+		for (a, b) in t.iter_mut().zip(gas(|w| w.mains.totals())) {
+			*a += b;
+		}
+		t
 	};
-	for y in 0..Y {
-		for x in 0..X {
-			let c = cell(x, y);
-			let edge = x == 0 || y == 0 || x == X - 1 || y == Y - 1;
-			if edge {
-				if space {
-					let mut v = GasCell::default();
-					v.flags |= crate::cell::flags::IMMUTABLE;
-					field.register(c, v, 2500.0, true, Some(0));
-				}
-				continue;
-			}
-			let r = next();
-			if r % 11 == 0 {
-				continue; // a wall: not registered
-			}
-			let scale = (r % 1000) as f32 / 250.0;
-			let t = 150.0 + (r >> 20) as f32 % 400.0;
-			let mut v = air(scale, t);
-			if r % 7 == 0 {
-				v.moles[GAS_PLASMA] = 5.0;
-				v = GasCell::new(v.moles, t);
-			}
-			// Some faces blocked (doors, windows).
-			let mask = if r % 5 == 0 { 1 << (r % 4) } else { 0 };
-			field.register(c, v, 2500.0, false, Some(mask as u8));
-		}
-	}
-}
-
-fn close(a: &[f64; Q], b: &[f64; Q], rel: f64) -> Result<(), String> {
-	for i in 0..Q {
-		let scale = a[i].abs().max(b[i].abs()).max(1.0);
-		if (a[i] - b[i]).abs() > rel * scale {
-			return Err(format!(
-				"quantity {i}: {} vs {} (diff {})",
-				a[i],
-				b[i],
-				a[i] - b[i]
-			));
-		}
-	}
-	Ok(())
-}
-
-fn totals(w: &GasWorld) -> [f64; Q] {
-	let mut t = w.totals();
-	for (o, v) in t.iter_mut().zip(w.field_ledger()) {
-		*o += v;
-	}
-	t
-}
-
-#[test]
-fn the_field_conserves_gas_and_energy_including_space() {
-	let mut w = world(Mode::Overlay);
-	build(&mut w, 99, true);
-	w.run_frames(1);
-	let before = totals(&w);
-	w.run_frames(40);
-	let after = totals(&w);
-	close(&before, &after, 1e-4).unwrap();
-	// Space took something.
-	let ledger = w.field_ledger();
-	assert!(ledger[GAS_OXYGEN] > 0.0, "{ledger:?}");
-}
-
-/// Same scenario as above, checked through the shared
-/// `vg_core::conservation::Ledger` instead of a by-hand `close()` diff --
-/// wiring gas into the generic conservation audit (`rust_core.md` §15).
-/// `totals()` already folds the field's reservoir ledger (what space took)
-/// into the sum, so no external source/sink events are expected here: the
-/// energy total should hold across the run within the ledger's tolerance.
-#[test]
-fn the_field_conserves_energy_through_the_shared_ledger() {
-	let mut w = world(Mode::Overlay);
-	build(&mut w, 99, true);
-	w.run_frames(1);
-	let mut ledger = vg_core::conservation::Ledger::new();
-	// Relative tolerance (as `close()` above uses), scaled to the current
-	// total's magnitude: an absolute epsilon would be meaninglessly tight
-	// or loose depending on how much energy is in the system.
-	let tolerance = |total: f64| 1e-4 * total.abs().max(1.0);
-	let energy = totals(&w)[N];
-	// Primes the baseline; nothing to compare against yet.
-	ledger
-		.check("gas_energy_j", energy, tolerance(energy))
-		.expect("priming never fails");
-	for _ in 0..40 {
-		w.run_frames(1);
-		let energy = totals(&w)[N];
-		vg_core::conservation::assert_conserved(&mut ledger, "gas_energy_j", energy, tolerance(energy));
-	}
-}
-
-#[test]
-fn a_breach_drains_a_room_and_settles() {
-	let mut w = world(Mode::Overlay);
-	build(&mut w, 7, true);
-	let field = w.field.as_ref().unwrap();
-	let probe = cell(X / 2, Y / 2);
-	let (start, _) = field.read(probe).unwrap();
-	w.run_frames(200);
-	let (end, _) = w.field.as_ref().unwrap().read(probe).unwrap();
-	assert!(
-		end.total_moles() < start.total_moles() * 0.05 || start.total_moles() == 0.0,
-		"{} -> {}",
-		start.total_moles(),
-		end.total_moles()
-	);
-}
-
-/// DM's view of a turf: read, change, store (as every gas bind does).
-fn dm_write(w: &mut GasWorld, c: u32, f: impl FnOnce(&mut Mixture)) {
-	let r = MixRef::Turf(c);
-	let before = w.load(r).unwrap();
-	let mut after = before.clone();
-	f(&mut after);
-	w.store(r, &before, &after);
-}
-
-fn dm_writes(mode: Mode, seed: u64, ops: &[(u8, u8, u8, f32)]) -> Result<(), String> {
-	let mut w = world(mode);
-	build(&mut w, seed, false);
-	let tank = w.mains.alloc(Mixture::from_vol(70.0)).unwrap();
-	w.run_frames(1);
-	let start = totals(&w);
-	let mut expected = start;
+	let mut expected = totals();
 	for &(kind, x, y, amount) in ops {
 		let c = cell(1 + u32::from(x) % (X - 2), 1 + u32::from(y) % (Y - 2));
-		if w.load(MixRef::Turf(c)).is_none() {
+		let turf = MixRef::Turf(c);
+		let Some(before) = gas(|w| w.load(turf)) else { continue };
+		let node = {
+			let r = rig.borrow();
+			r.w.sim().port_ref(r.key.geometry).read(c).unwrap_or_default().is_node()
+		};
+		if before.volume <= 0.0 || !node {
 			continue;
 		}
-		match kind % 4 {
+		let mut after = before.clone();
+		match kind % 3 {
 			0 => {
 				// Add plasma at 400 K (a canister release).
 				let mut add = Mixture::from_vol(2500.0);
@@ -248,401 +415,42 @@ fn dm_writes(mode: Mode, seed: u64, ops: &[(u8, u8, u8, f32)]) -> Result<(), Str
 				add.set_temperature(400.0);
 				expected[GAS_PLASMA] += f64::from(amount);
 				expected[N] += f64::from(amount * 200.0 * 400.0);
-				dm_write(&mut w, c, |m| m.merge(&add));
+				after.merge(&add);
+				gas(|w| w.store(turf, &before, &after));
 			}
 			1 => {
 				// Remove a fraction into the tank (a scrubber, a breath).
-				let r = MixRef::Turf(c);
-				let before = w.load(r).unwrap();
-				let tank_before = w.load(MixRef::Main(tank)).unwrap();
-				let (mut a, mut b) = (before.clone(), tank_before.clone());
-				b.merge(&a.remove_ratio((amount / 100.0).clamp(0.0, 1.0)));
-				w.store(r, &before, &a);
-				w.store(MixRef::Main(tank), &tank_before, &b);
-			}
-			2 => {
-				// Heat it (set_temperature: energy comes from outside).
-				let r = MixRef::Turf(c);
-				let before = w.load(r).unwrap();
-				let t = before.get_temperature() + amount;
-				let de = f64::from(before.heat_capacity()) * f64::from(amount);
-				expected[N] += de;
-				dm_write(&mut w, c, |m| m.set_temperature(t));
+				let tank_ref = MixRef::Main(tank);
+				let tank_before = gas(|w| w.load(tank_ref)).unwrap();
+				let mut t = tank_before.clone();
+				t.merge(&after.remove_ratio((amount / 100.0).clamp(0.0, 1.0)));
+				gas(|w| {
+					w.store(turf, &before, &after);
+					w.store(tank_ref, &tank_before, &t);
+				});
 			}
 			_ => {
-				// Take the whole cell into the tank, reconciled later.
-				let taken = w.take_turf(c, tank);
-				if let Some(m) = taken {
-					let tank_before = w.load(MixRef::Main(tank)).unwrap();
-					let mut b = tank_before.clone();
-					b.merge(&m);
-					w.store(MixRef::Main(tank), &tank_before, &b);
-				}
+				// Heat it (set_temperature: energy comes from outside).
+				expected[N] += f64::from(before.heat_capacity()) * f64::from(amount);
+				after.set_temperature(before.get_temperature() + amount);
+				gas(|w| w.store(turf, &before, &after));
 			}
 		}
 		if kind % 3 == 0 {
-			w.run_frames(1);
+			rig.borrow_mut().run(1);
 		}
 	}
-	w.run_frames(3);
-	let end = totals(&w);
-	// Heat added by set_temperature is only approximately what DM saw
-	// (the cell's capacity may have moved by a frame), so allow for it.
+	rig.borrow_mut().run(3);
+	let end = totals();
+	// Heat added by set_temperature is only approximately what DM saw (the
+	// cell's capacity may have moved by a frame), so allow for it.
 	close(&expected, &end, 2e-3)
 }
 
 #[test]
-fn dm_writes_conserve_with_the_overlay() {
+fn dm_writes_conserve_through_the_turf_bridge() {
 	let ops: Vec<(u8, u8, u8, f32)> = (0..120u32)
-		.map(|i| {
-			(
-				(i * 7 % 13) as u8,
-				(i * 5) as u8,
-				(i * 3) as u8,
-				(i % 17) as f32 + 1.0,
-			)
-		})
+		.map(|i| ((i * 7 % 13) as u8, (i * 5) as u8, (i * 3) as u8, (i % 17) as f32 + 1.0))
 		.collect();
-	dm_writes(Mode::Overlay, 3, &ops).unwrap();
-}
-
-proptest! {
-	#![proptest_config(ProptestConfig::with_cases(
-		std::env::var("PROPTEST_CASES").ok().and_then(|v| v.parse().ok()).unwrap_or(16)
-	))]
-
-	#[test]
-	fn field_conserves_for_any_layout(seed in 1u64..u64::MAX, frames in 1u32..30) {
-		let mut w = world(Mode::Overlay);
-		build(&mut w, seed, seed % 2 == 0);
-		w.run_frames(1);
-		let before = totals(&w);
-		w.run_frames(frames);
-		let after = totals(&w);
-		prop_assert!(close(&before, &after, 1e-4).is_ok(), "{:?}", close(&before, &after, 1e-4));
-	}
-
-	#[test]
-	fn dm_writes_conserve(seed in 1u64..u64::MAX, ops in proptest::collection::vec(
-		(0u8..8, 0u8..20, 0u8..20, 0.5f32..40.0), 1..60)
-	) {
-		let r = dm_writes(Mode::Overlay, seed, &ops);
-		prop_assert!(r.is_ok(), "{:?}", r);
-	}
-
-}
-
-/// Overlay vs fallback (`rust_core.md` §3.11): main-thread cost per tick
-/// and conservation, under a breach. Run with
-/// `cargo test --release -p vg-gas --target i686-pc-windows-msvc -- --ignored --nocapture overlay_vs_fallback`.
-#[test]
-#[ignore = "measurement, run by hand"]
-fn overlay_vs_fallback() {
-	for mode in [Mode::Overlay, Mode::Fallback { budget_cells: 4096 }] {
-		let mut w = world(mode);
-		build(&mut w, 11, true);
-		w.run_frames(1);
-		let before = totals(&w);
-		let mut main_us = Vec::new();
-		let mut writes = 0u32;
-		for i in 0..200u32 {
-			let t = std::time::Instant::now();
-			// DM-side work per tick: a scrubber and a vent on every tenth cell.
-			for y in (1..Y - 1).step_by(3) {
-				for x in (1..X - 1).step_by(3) {
-					let c = cell(x, y);
-					if w.load(MixRef::Turf(c)).is_some() {
-						dm_write(&mut w, c, |m| m.adjust_moles(GAS_OXYGEN, 0.01));
-						writes += 1;
-					}
-				}
-			}
-			w.tick(true);
-			main_us.push(t.elapsed().as_secs_f64() * 1e6);
-			if let Some(f) = w.field.as_mut() {
-				f.sim.wait_for_frame();
-			}
-			let _ = i;
-		}
-		w.run_frames(2);
-		let after = totals(&w);
-		main_us.sort_by(f64::total_cmp);
-		let avg = main_us.iter().sum::<f64>() / main_us.len() as f64;
-		let p99 = main_us[main_us.len() * 99 / 100];
-		let added = 0.01 * f64::from(writes);
-		println!(
-			"{mode:?}: main-thread avg {avg:.1} us, p99 {p99:.1} us, oxygen drift {:.4} mol (added {added:.1})",
-			after[GAS_OXYGEN] - before[GAS_OXYGEN] - added
-		);
-	}
-}
-
-#[test]
-fn visual_and_reaction_events_reach_dm() {
-	let mut gate = crate::gate::Gate::default();
-	gate.visible[GAS_PLASMA] = Some(0.25);
-	gate.reactions.push(crate::gate::Requirement {
-		min_temp: Some(500.0),
-		gases: vec![(GAS_PLASMA, 1.0)],
-		..Default::default()
-	});
-	crate::gate::install(gate);
-	let mut w = world(Mode::Overlay);
-	build(&mut w, 5, false);
-	w.run_frames(3);
-	let a = cell(5, 5);
-	let b = cell(6, 5);
-	{
-		let f = w.field.as_mut().unwrap();
-		f.set_mask(a, Some(0));
-		f.set_mask(b, Some(0));
-	}
-	dm_write(&mut w, a, |m| {
-		let mut add = Mixture::from_vol(2500.0);
-		add.set_moles(GAS_PLASMA, 100.0);
-		add.set_temperature(600.0);
-		m.merge(&add);
-	});
-	let events = w.run_frames(4);
-	let visual_b = events
-		.chunks_exact(4)
-		.any(|e| e[0] as u32 == 3 && e[1] as u32 == b);
-	// kind 2 (ReactionReady), key = a; extra (events[3]) is the dense gate
-	// index of the ready reaction - 0, the only one this test registered.
-	let react_a = events
-		.chunks_exact(4)
-		.any(|e| e[0] as u32 == 2 && e[1] as u32 == a && e[3] as u32 == 0);
-	assert!(visual_b, "no VisualChange for b: {events:?}");
-	assert!(react_a, "no ReactionReady(index 0) for a: {events:?}");
-}
-
-#[test]
-fn a_settled_station_sleeps() {
-	let mut w = world(Mode::Overlay);
-	{
-		let f = w.field.as_mut().unwrap();
-		for y in 1..Y - 1 {
-			for x in 1..X - 1 {
-				f.register(cell(x, y), air(1.0, 293.15), 2500.0, false, Some(0));
-			}
-		}
-	}
-	w.run_frames(5);
-	let idle = |w: &mut GasWorld| w.field.as_mut().unwrap().idle();
-	assert!(idle(&mut w));
-	let skips = w.field.as_ref().unwrap().idle_skips;
-	assert!(skips > 0, "a settled field still dispatched frames");
-	// A heat-sized nudge wakes it; it settles and sleeps again.
-	let mut d = [0.0; Q];
-	d[N] = 50.0;
-	w.add_amounts(MixRef::Turf(cell(5, 5)), &d, 0.0);
-	assert!(!idle(&mut w));
-	let frames = w.field.as_ref().unwrap().frames;
-	w.run_frames(10);
-	assert!(w.field.as_ref().unwrap().frames > frames);
-	assert!(idle(&mut w), "{:?}", w.field.as_ref().unwrap().stats());
-}
-
-/// Pins the activity/sleep invariants `core::field::FieldState` (which
-/// `TurfGas` runs on -- `rust_core.md` §16.5/§15 (2)) is supposed to give
-/// every field, at the gas level specifically: a nudge wakes only nearby
-/// chunks (not the whole map), a distant, settled cell's gas is bit-
-/// identical throughout, and the field re-settles afterward. Gas has no
-/// activity tracking of its own to migrate onto a core service -- this
-/// confirms it's already there (turf gas is `FieldState<TurfGas>`, not a
-/// gas-local reimplementation) rather than building a redundant one.
-#[test]
-fn nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again() {
-	const SIZE: u32 = 48; // several CHUNK_EDGE=16 chunks per axis
-	let mut w = GasWorld::default();
-	let field = crate::world::Field::new(SIZE, SIZE, 1, Mode::Overlay, &w.exchange)
-		.expect("field builds");
-	w.mode = field.mode;
-	w.field = Some(field);
-	let idx = |x: u32, y: u32| y * SIZE + x;
-	{
-		let f = w.field.as_mut().unwrap();
-		for y in 0..SIZE {
-			for x in 0..SIZE {
-				f.register(idx(x, y), air(1.0, 293.15), 2500.0, false, Some(0));
-			}
-		}
-	}
-	w.run_frames(20);
-	let idle = |w: &mut GasWorld| w.field.as_mut().unwrap().idle();
-	assert!(idle(&mut w), "a uniform room should settle");
-
-	// A far corner, well outside the chunk(s) the nudge below can reach.
-	let far = MixRef::Turf(idx(SIZE - 2, SIZE - 2));
-	let before_far = w.load(far).expect("far cell readable");
-
-	// Nudge one cell near the origin.
-	let mut d = [0.0; Q];
-	d[N] = 200.0;
-	w.add_amounts(MixRef::Turf(idx(2, 2)), &d, 0.0);
-	assert!(!idle(&mut w), "the nudge must wake the field");
-	w.run_frames(1);
-	let awake_after_one_step = w.field.as_ref().unwrap().awake_chunks();
-	let total_chunks = SIZE.div_ceil(16) * SIZE.div_ceil(16);
-	assert!(awake_after_one_step > 0, "the nudged neighbourhood woke");
-	assert!(
-		(awake_after_one_step as u32) < total_chunks,
-		"only a neighbourhood should wake, not the whole {total_chunks}-chunk map: {awake_after_one_step}"
-	);
-
-	// The far corner never moved while the field was mid-settle.
-	let mid_far = w.load(far).expect("far cell readable");
-	assert_eq!(
-		before_far.get_temperature(),
-		mid_far.get_temperature(),
-		"a sleeping cell's gas must be untouched by an unrelated wake"
-	);
-
-	// It settles again.
-	w.run_frames(60);
-	assert!(idle(&mut w), "{:?}", w.field.as_ref().unwrap().stats());
-	let after_far = w.load(far).expect("far cell readable");
-	assert_eq!(
-		before_far.get_temperature(),
-		after_far.get_temperature(),
-		"the far cell was never part of the disturbance"
-	);
-}
-
-
-// --- Differential test: the old Signature/Dirty path vs. a real core watch
-// condition (`rust_architecture.md` §4.7's planned replacement) ------------
-//
-// Per the coordinator: build the new path and differential-test it against
-// the old one before deleting anything, rather than deleting by inspection.
-// Pressure and temperature dirty-tracking are directly expressible as
-// `vg_core::watch::Cond::Changed` (a per-channel hysteresis comparison
-// against a baseline - exactly what `mix_ch::PRESSURE`/`TEMPERATURE`
-// already declare, at the same 0.5 hysteresis `world.rs`'s
-// `PRESSURE_DIRTY_EPSILON`/`TEMPERATURE_DIRTY_EPSILON` use), so this proves
-// the two paths agree on those two categories over randomized writes.
-//
-// Composition is deliberately *not* covered here: `Dirty`'s composition
-// category is `sum_i |moles[i] - baseline[i]| >= 0.05` across every gas,
-// an aggregate reduction over N independent per-species baselines. No
-// existing `Cond` expresses that - `Changed`'s mask semantics are "did any
-// *one* listed channel move past *its own* hysteresis" (an OR across
-// channels, each independently thresholded), not "does the sum of every
-// channel's movement cross one threshold". The extension this needs is
-// written up in `doc/rewrite/watch_aggregate_extension.md` for Core A;
-// composition dirty-tracking stays on the old `Signature`/`Dirty` path
-// until that lands.
-#[cfg(test)]
-mod dirty_watch_differential {
-	use super::*;
-	use vg_core::outbox::Lane;
-	use vg_core::watch::Cond;
-
-	use crate::gas::{GAS_CHANGE_PRESSURE, GAS_CHANGE_TEMPERATURE};
-	use crate::world::mix_ch;
-
-	/// Registers both paths on a fresh main-owned mixture and returns
-	/// `(world, tank slot, wire id, new watch id)`.
-	///
-	/// `Cond::Changed` documents "never fires at registration": its first
-	/// evaluation only primes its baseline to whatever the store shows at
-	/// that point, with nothing earlier to compare against (`watch/mod.rs`'s
-	/// `Node::Changed::eval`: `past` is `*primed && ...`, and `primed`
-	/// starts `false`). `Dirty::watch_dirty`, by contrast, baselines
-	/// immediately from the mixture's state *at registration*, with no
-	/// separate priming step. So the two paths agree only from their
-	/// *second* evaluation on: this drains one (necessarily empty) round of
-	/// wakes right after registering, exactly the way `SSreactor` would
-	/// evaluate the domain at least once before a caller's first real
-	/// write, to put both paths in the same "primed" state before the
-	/// tests below compare them.
-	fn rig() -> (GasWorld, u32, u32, vg_core::outbox::WatchId) {
-		let mut w = world(Mode::Overlay);
-		let tank = w.mains.alloc(Mixture::from_vol(70.0)).expect("alloc");
-		let id = MixRef::Main(tank).id();
-		w.watch_dirty(id, GAS_CHANGE_PRESSURE | GAS_CHANGE_TEMPERATURE);
-		let (_, watch_id) = w
-			.watch(
-				0,
-				Lane::Normal,
-				&Cond::Changed {
-					cell: id,
-					mask: mix_ch::PRESSURE.bit() | mix_ch::TEMPERATURE.bit(),
-				},
-			)
-			.expect("registers a Changed watch on a main-owned mixture");
-		let mut priming = Vec::new();
-		w.take_wakes(&mut priming);
-		assert!(priming.is_empty(), "Changed must never fire at registration");
-		(w, tank, id, watch_id)
-	}
-
-	fn old_fired(w: &mut GasWorld, id: u32) -> bool {
-		w.drain_dirty()
-			.iter()
-			.any(|&(i, mask)| i == id && mask & (GAS_CHANGE_PRESSURE | GAS_CHANGE_TEMPERATURE) != 0)
-	}
-
-	fn new_fired(w: &mut GasWorld, watch_id: vg_core::outbox::WatchId) -> bool {
-		let mut wakes = Vec::new();
-		w.take_wakes(&mut wakes);
-		wakes.iter().any(|wk| wk.watch == watch_id && wk.reason != 0)
-	}
-
-	proptest! {
-		/// A write that changes moles and temperature by an arbitrary
-		/// amount fires the old and the new path identically (both, or
-		/// neither), over randomized magnitudes including near-zero ones
-		/// that should fire nothing.
-		#[test]
-		fn agree_on_an_arbitrary_write(moles in 0.0f32..2000.0, temp in 100.0f32..900.0) {
-			let (mut w, tank, id, watch_id) = rig();
-			let before = w.load(MixRef::Main(tank)).expect("tank exists");
-			let mut after = before.clone();
-			after.set_moles(GAS_OXYGEN, moles);
-			after.set_temperature(temp);
-			w.store(MixRef::Main(tank), &before, &after);
-
-			let old = old_fired(&mut w, id);
-			let new = new_fired(&mut w, watch_id);
-			prop_assert_eq!(old, new, "moles={}, temp={}: old={}, new={}", moles, temp, old, new);
-		}
-
-		/// After a real change settles (both paths have re-baselined),
-		/// repeating exactly the same state fires neither path.
-		#[test]
-		fn agree_that_an_unchanged_state_fires_neither(moles in 1.0f32..2000.0, temp in 200.0f32..800.0) {
-			let (mut w, tank, id, watch_id) = rig();
-			let before = w.load(MixRef::Main(tank)).expect("tank exists");
-			let mut after = before.clone();
-			after.set_moles(GAS_OXYGEN, moles);
-			after.set_temperature(temp);
-			w.store(MixRef::Main(tank), &before, &after);
-			// Prime both paths' baselines on the first (real) change.
-			let _ = old_fired(&mut w, id);
-			let _ = new_fired(&mut w, watch_id);
-
-			// Same state again: no-op per `store`'s own `same_state` guard,
-			// but exercised through both drains regardless.
-			let before2 = w.load(MixRef::Main(tank)).expect("tank exists");
-			w.store(MixRef::Main(tank), &before2, &before2.clone());
-			prop_assert!(!old_fired(&mut w, id), "old path fired on an unchanged state");
-			prop_assert!(!new_fired(&mut w, watch_id), "new path fired on an unchanged state");
-		}
-	}
-
-	/// A single, non-randomized example pinning the exact call sequence
-	/// (useful as a readable smoke test alongside the property tests above).
-	#[test]
-	fn a_concrete_pressure_and_temperature_change_fires_both_paths() {
-		let (mut w, tank, id, watch_id) = rig();
-		let before = w.load(MixRef::Main(tank)).unwrap();
-		let mut after = before.clone();
-		after.set_moles(GAS_OXYGEN, 21.8);
-		after.set_temperature(350.0);
-		w.store(MixRef::Main(tank), &before, &after);
-
-		assert!(old_fired(&mut w, id), "old Dirty path did not fire on a real change");
-		assert!(new_fired(&mut w, watch_id), "new Cond::Changed path did not fire on the same change");
-	}
+	dm_writes(3, &ops).unwrap();
 }

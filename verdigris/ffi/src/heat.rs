@@ -24,7 +24,7 @@ use std::collections::HashMap;
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::field::{FieldKey, Geom};
-use vg_core::grid::{Dir, GridDims};
+use vg_core::grid::Dir;
 use vg_core::outbox::{Lane, Subscriber, WatchId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
@@ -59,8 +59,6 @@ thread_local! {
     /// *other* side, so a write to that body (any `heat_body_*` bind)
     /// wakes them too, not only the couplings it owns.
     static BODY_AS_OTHER: RefCell<HashMap<u32, Vec<vg_core::entity::EntityId>>> = RefCell::new(HashMap::new());
-    /// The grid size the next (re)build uses (`vg_heat_configure_world`).
-    static PENDING_DIMS: Cell<GridDims> = Cell::new(GridDims::new(2, 2, 2).expect("2x2x2 fits"));
 }
 
 /// Coupling-slot kinds DM sends, matching the pre-existing `HEAT_TARGET_*`
@@ -88,13 +86,6 @@ mod flags {
     pub const SPACE: u8 = 1;
     pub const AIR: u8 = 2;
     pub const PLANET: u8 = 4;
-}
-
-/// Headroom for z-levels created at run time (expeditions): the grid is
-/// sized once, and cells past it are ignored (`vg_heat::world`'s old
-/// comment, ported verbatim: this limitation predates the port).
-fn z_capacity(max_z: u32) -> u32 {
-    max_z.saturating_mul(2).max(256).max(max_z + 1)
 }
 
 /// Registers heat's fields, components and laws
@@ -131,50 +122,8 @@ pub fn install_field(field: FieldKey<SolidHeat>) {
     FIELD.with(|f| f.set(Some(field)));
 }
 
-/// The grid dims to build with next (`vg_heat_configure_world`'s pending
-/// size, or the default if it was never called).
-pub fn pending_dims() -> GridDims {
-    PENDING_DIMS.with(Cell::get)
-}
-
 fn field() -> Result<FieldKey<SolidHeat>> {
     FIELD.with(Cell::get).ok_or_else(|| eyre!("heat field not installed"))
-}
-
-/// Sizes the world's grid for the map (`maxx`, `maxy`, `maxz`), the same
-/// call site as `vg_configure_world` -- gas's own field is separate and
-/// sized by that call already. Rebuilds the whole world only on the first
-/// call (or if the current grid is already too small); once built, a
-/// within-headroom call is a no-op, exactly as the pre-port `HeatWorld`
-/// behaved.
-#[auxmacros::bind("/proc/vg_heat_configure_world")]
-fn heat_configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
-    let max_x = whole(&max_x, "max_x")?.max(1);
-    let max_y = whole(&max_y, "max_y")?.max(1);
-    let max_z = whole(&max_z, "max_z")?.max(1);
-    let dims = GridDims::new(max_x, max_y, z_capacity(max_z)).ok_or_else(|| eyre!("heat grid {max_x}x{max_y}x{max_z} does not fit a u32 index"))?;
-    let need_build = field().is_err();
-    if need_build {
-        // Nothing exists yet (world boot): safe to (re)build with these
-        // dims -- nothing is lost.
-        PENDING_DIMS.with(|d| d.set(dims));
-        crate::world::reset()?;
-        return Ok(ByondValue::null());
-    }
-    let fits = with_world(|w| {
-        let g = w.grid().map_err(|e| eyre!("{e}"))?;
-        Ok(g.dims().max_x() == max_x && g.dims().max_y() == max_y && max_z <= g.dims().max_z())
-    })
-    .unwrap_or(false);
-    // if !fits: the world is already up (power, bodies, live heat rows);
-    // a full rebuild here would wipe every other domain's state to grow
-    // heat's grid, which the pre-port `HeatWorld` never did either -- it
-    // silently ignored cells past its own headroom instead. A no-op here
-    // matches that (disclosed) limitation rather than a
-    // same-effect-as-`verdigris_init` reset triggered by ordinary runtime
-    // z-growth (expeditions).
-    let _ = fits;
-    Ok(ByondValue::null())
 }
 
 // ------------------------------------------------------------------ turfs
@@ -1041,6 +990,7 @@ fn heat_take_wakes() -> Result<ByondValue> {
     with_world(|w| {
         let mut wakes = Vec::new();
         w.drain_wakes(&mut wakes);
+        w.drain_field_wakes::<SolidHeat>(&mut wakes);
         flat.push(wakes.len() as f32);
         for wk in wakes {
             flat.extend_from_slice(&[wk.subscriber as f32, wk.watch.index as f32, wk.reason as f32, (wk.source & 0x00ff_ffff) as f32]);

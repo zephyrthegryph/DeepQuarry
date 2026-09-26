@@ -125,7 +125,6 @@ SUBSYSTEM_DEF(air)
 	// The gas field was sized at world start (vg_configure_world); make sure it
 	// covers the map as loaded before registering turfs.
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
-	vg_heat_configure_world(world.maxx, world.maxy, world.maxz)
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
@@ -167,24 +166,16 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
-	// === Turf gas (the Rust gas field) ===
-	// One call pins the newest frame, collects its events and watch wakes,
-	// applies heat, and starts the next frame on the gas pool; it never
-	// waits. Its reaction/visual/spacewind notifications are typed events
-	// now (rust_architecture.md §4.8): vg_gas_tick() pushes them onto the
-	// shared World, and vg_drain_events() dispatches them to SSvg's
-	// on_gas_cell_*() overrides below, the same generic path every other
-	// domain's events already take -- there is nothing left to loop over
-	// here (no more GAS_EVENT_STRIDE flat records, no more resumability
-	// across ticks: matches how SSvg.fire() itself already dispatches
-	// every domain's events in one unconditional call).
+	// === Turf gas (the TurfGas field on the shared Rust World) ===
+	// The world is stepped by SSvg (vg_world_tick()); its reaction, visual and
+	// spacewind notifications are typed events, dispatched to SSvg's
+	// on_gas_cell_*() overrides below by vg_drain_events().
 	if(currentpart == SSAIR_TURFS)
 		timer = TICK_USAGE_REAL
 		gas_events_last = 0
 		gas_reactions_last = 0
 		gas_visuals_last = 0
 		gas_pressure_last = 0
-		vg_gas_tick()
 		vg_drain_events()
 		gas_frames++
 		cached_cost = TICK_USAGE_REAL - timer

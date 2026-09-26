@@ -204,6 +204,14 @@ pub trait FieldKind: Domain {
     fn local(_cell: &mut Self::Value, _capacity: f32, _dt: f32) -> bool {
         false
     }
+    /// A reservoir cell's own dynamics, once per frame on active cells (a
+    /// planet's atmosphere returning to its baseline after DM disturbed it;
+    /// the flux never changes a reservoir). Returns whether the cell must
+    /// stay awake. Reservoirs are outside the conserved totals (their
+    /// inflow is the field's ledger), so this may change them freely.
+    fn relax(_cell: &mut Self::Value, _capacity: f32, _dt: f32) -> bool {
+        false
+    }
     /// Whether a cell's change over one step is rounding noise. A chunk
     /// whose cells are all quiet sleeps even with an edge above its
     /// `settled` threshold: in `f32`, a nearly linear profile can reach a
@@ -613,7 +621,13 @@ impl<K: FieldKind> FieldState<K> {
                     continue;
                 };
                 let g = geom.store.get(index).unwrap_or_default();
-                if !g.is_node() || g.reservoir {
+                if !g.is_node() {
+                    continue;
+                }
+                if g.reservoir {
+                    if active[chunk] && K::relax(value, g.capacity, dt) {
+                        awake[chunk].store(true, Ordering::Relaxed);
+                    }
                     continue;
                 }
                 if active[chunk] && K::local(value, g.capacity, dt) {

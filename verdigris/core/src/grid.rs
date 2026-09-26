@@ -559,11 +559,12 @@ impl Grid {
         self.blocks[kind as usize].set(index, Dir(mask.0 & Dir::ALL.0))
     }
 
-    /// The neighbour across `face` if it exists and neither side blocks the
-    /// shared face for `kind`.
+    /// The neighbour across `face` (following the z links, as
+    /// [`Grid::neighbor`]) if it exists and neither side blocks the shared
+    /// face for `kind`.
     #[must_use]
     pub fn open_neighbor(&self, kind: BlockKind, index: u32, face: Face) -> Option<u32> {
-        let other = self.dims.neighbor(index, face)?;
+        let other = self.neighbor(index, face)?;
         let layer = self.layer(kind);
         let here = layer.get(index).unwrap_or_default();
         let there = layer.get(other).unwrap_or_default();

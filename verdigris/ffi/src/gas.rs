@@ -8,20 +8,28 @@
 //! `verdigris/domains/gas/src/lib.rs` pending its own move here
 //! (`rust_architecture.md` §8.5 step 6); this module is the first slice.
 
+use std::cell::Cell;
+
 use byondapi::prelude::*;
-use eyre::{eyre, Context, Result};
+use eyre::{bail, eyre, Context, Result};
+use vg_core::field::{FieldConfig, FieldKey, FieldKind, Geom, Side};
+use vg_core::grid::{BlockKind, Dir, Face};
 use vg_core::network::RegionId;
-use vg_core::outbox::EventKind;
+use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
+use vg_core::registry::DomainRegistry;
 use vg_core::slot::RawHandle;
 use vg_core::watch::revision::Counter;
-use vg_gas::cell::{N, Q};
-use vg_gas::gas::constants::ReactionReturn;
+use vg_core::watch::Cond;
+use vg_core::world::{World, WorldBuilder};
+use vg_gas::cell::{GasCell, GasCmd, TurfGas, N, Q};
+use vg_gas::gas::constants::{ReactionReturn, CELL_VOLUME};
 use vg_gas::gas::{self, with_mix, Mixture};
-use vg_gas::laws::GasEvent;
-use vg_gas::pipes::Pipes;
+use vg_gas::laws::{CellReactionReadyLaw, CellVisualChangeLaw, SpacewindLaw};
+use vg_gas::pipes::{PipeGas, Pipes};
 use vg_gas::reaction::{Reaction, ReactionIdentifier, ReactionPriority};
-use vg_gas::world::with_world as with_gas_world;
-use vg_gas::world::{MainsAccess, PIPE_BASE};
+use vg_gas::world::{MainsAccess, MixRef, PIPE_BASE, TURF_BASE};
+
+use crate::world::with_world;
 
 // --- Main-owned mixtures -------------------------------------------------
 //
@@ -127,10 +135,6 @@ impl MainsAccess for MainsStore {
     }
 }
 
-/// Installs the main-owned-mixture bridge (`crate::world::build`).
-pub(crate) fn install_mains_access() {
-    vg_gas::world::install_mains_access(Box::new(MainsStore::default()));
-}
 
 // --- Pipe region slot compaction ----------------------------------------
 //
@@ -376,67 +380,6 @@ fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
     Ok((ret.bits() as f32).into())
 }
 
-// --- Turf gas tick events --------------------------------------------------
-//
-// `GasWorld::tick`/`run_frames` (still its own driver -- `domains/gas/src/
-// world.rs`'s docs, gas's "first slice" not being the field/law migration
-// yet) return every frame's reaction/visual/pressure notifications as flat
-// `kind, cell, value, extra` quadruples (`vg_core::outbox::EventKind`).
-// Converting them to `GasEvent` and pushing them onto the shared `World`
-// here -- instead of handing DM the flat list to parse itself, the way
-// `code/ATMOSPHERICS/SSair.dm`'s `process_gas_events()` used to -- is the
-// one typed-event path every other domain's events already take
-// (`rust_architecture.md` §4.8): `SSvg.fire()` already calls
-// `vg_drain_events()` unconditionally every tick, so DM needs nothing new
-// to receive them, only real bodies for the generated `on_gas_cell_*`
-// handlers (`code/ATMOSPHERICS/SSair.dm`).
-fn push_turf_events(flat: &[f32]) {
-    crate::world::with_world(|w| {
-        for e in flat.chunks_exact(4) {
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let (cell, value, extra) = (e[1] as u32, e[2], e[3] as u32);
-            match e[0] as u8 {
-                k if k == EventKind::ReactionReady as u8 => {
-                    w.push_event(0.0, &GasEvent::CellReactionReady { cell, reaction: extra });
-                }
-                k if k == EventKind::VisualChange as u8 => {
-                    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                    let vis = value as u16;
-                    w.push_event(0.0, &GasEvent::CellVisualChange { cell, vis });
-                }
-                k if k == EventKind::PressureJump as u8 => {
-                    w.push_event(0.0, &GasEvent::PressureJump { cell, neighbor: extra, delta: value });
-                }
-                _ => {}
-            }
-        }
-        Ok(())
-    })
-    .ok();
-}
-
-/// One SSair tick: pin the newest turf gas, collect its events and watch
-/// wakes, apply heat, start the next frame. Never waits. Its reaction/
-/// visual/pressure notifications reach DM through `vg_drain_events()`
-/// (`SSvg.fire()` already calls it every tick), not a return value.
-#[auxmacros::bind("/proc/gas_tick")]
-fn gas_tick() -> Result<ByondValue> {
-    let flat = with_gas_world(|w| w.tick(true));
-    push_turf_events(&flat);
-    Ok(ByondValue::null())
-}
-
-/// Test hook: runs `frames` gas frames to completion, one after another,
-/// deterministically (no wall clock), and pushes their events like
-/// `gas_tick`.
-#[auxmacros::bind("/proc/gas_run_frames")]
-fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
-    let n = frames.get_number()?.clamp(0.0, 100_000.0) as u32;
-    let flat = with_gas_world(|w| w.run_frames(n));
-    push_turf_events(&flat);
-    Ok(ByondValue::null())
-}
-
 /// The turf a gas field cell index names. `gas_tick`'s events hand DM a
 /// bare cell index now (the generic typed-event wire is plain numbers
 /// only, `rust_architecture.md` §4.8), not a turf reference the way the
@@ -447,4 +390,526 @@ fn turf_of(cell: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let c = cell.get_number()? as u32;
     Ok(ByondValue::new_ref(ValueType::Turf, c))
+}
+
+// --- Turf gas: the `TurfGas` field on the shared World ----------------------
+//
+// Every turf's gas is one cell of the `TurfGas` field (`rust_architecture.md`
+// §8.5 step 6), on the world's one grid; its air-block masks are the grid's
+// `BlockKind::Air` layer and its z links the grid's. The gas laws turn
+// the field's state into typed events (`GasEvent`), which reach DM through
+// `vg_drain_events()` like every other domain's.
+
+/// Seconds of gas simulated per frame (`SSvg`'s `wait`, the world's `dt`).
+const FRAME_DT: f32 = 0.5;
+/// Sub-step cap per frame.
+const MAX_SUBSTEPS: u32 = 16;
+
+/// Every face a mask can block (`NORTH|SOUTH|EAST|WEST|UP|DOWN`).
+/// @dm-define AIR_BLOCK_ALL
+pub const AIR_BLOCK_ALL: u8 = 63;
+
+/// Mask argument meaning "keep the mask Rust already has for this turf"
+/// (any negative mask does).
+/// @dm-define AIR_BLOCK_KEEP
+#[allow(dead_code)] // read by DM only, through the generated define
+pub const AIR_BLOCK_KEEP: i32 = -1;
+
+/// Registration flag DM passes for a simulated turf.
+/// @dm-define SIMULATION_ANY
+#[allow(dead_code)] // read by DM only, through the generated define
+pub const DM_SIMULATION_ANY: u8 = 3;
+
+thread_local! {
+    static TURF: Cell<Option<FieldKey<TurfGas>>> = const { Cell::new(None) };
+}
+
+/// Registers turf gas: the field, its watches and its laws
+/// (`crate::world::register`).
+pub(crate) fn register(b: &mut WorldBuilder) -> FieldKey<TurfGas> {
+    let key = b.add_field::<TurfGas>(FieldConfig { dt: FRAME_DT, max_substeps: MAX_SUBSTEPS });
+    b.watch_field(key);
+    let _ = b.add_law::<CellReactionReadyLaw>();
+    let _ = b.add_law::<CellVisualChangeLaw>();
+    let _ = b.add_law::<SpacewindLaw>();
+    key
+}
+
+/// Keeps the field key and installs the gas bridges once the world is built
+/// (`crate::world::build`): a rebuilt world starts with no mixtures.
+pub(crate) fn install(key: FieldKey<TurfGas>) {
+    TURF.with(|t| t.set(Some(key)));
+    vg_gas::world::install_turf_access(Box::new(FfiTurfAccess));
+    vg_gas::world::install_mains_access(Box::new(MainsStore::default()));
+}
+
+fn turf_key() -> Result<FieldKey<TurfGas>> {
+    TURF.with(Cell::get).ok_or_else(|| eyre!("turf gas field not installed"))
+}
+
+fn geom_of(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Geom {
+    w.sim().port_ref(key.geometry).read(cell).unwrap_or_default()
+}
+
+/// A turf cell's gas and geometry as DM sees them now.
+fn turf_read(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Option<(GasCell, Geom)> {
+    let g = w.sim().port_ref(key.geometry).read(cell)?;
+    Some((w.read_cell(key, cell)?, g))
+}
+
+/// Whether `cell` is inside the grid.
+fn contains(w: &World, cell: u32) -> bool {
+    w.grid().is_ok_and(|g| cell < g.dims().layer_len() * g.dims().max_z())
+}
+
+/// The neighbour across `face` if air crosses it: both cells in the field,
+/// neither blocking the shared face, and the levels linked for a vertical
+/// face.
+fn open(w: &World, key: FieldKey<TurfGas>, cell: u32, face: Face) -> Option<u32> {
+    if !geom_of(w, key, cell).is_node() {
+        return None;
+    }
+    let nb = w.grid().ok()?.open_neighbor(BlockKind::Air, cell, face)?;
+    geom_of(w, key, nb).is_node().then_some(nb)
+}
+
+fn open_neighbors(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Vec<u32> {
+    Face::ALL.into_iter().filter_map(|f| open(w, key, cell, f)).collect()
+}
+
+fn set_mask(w: &mut World, cell: u32, mask: Option<u8>) {
+    if let Some(m) = mask {
+        let _ = w.edit_grid(|g| g.set_blocked(BlockKind::Air, cell, Dir(m & AIR_BLOCK_ALL)));
+    }
+}
+
+/// Puts `value` into `cell` with its geometry (`reservoir`: space and
+/// planets) and air-block mask (`None`: keep the current one).
+fn register_cell(w: &mut World, key: FieldKey<TurfGas>, cell: u32, mut value: GasCell, volume: f32, reservoir: bool, mask: Option<u8>) {
+    let volume = if volume > 0.0 { volume } else { CELL_VOLUME };
+    value.refresh_in(volume);
+    let _ = w.sim_mut().port(key.cells).put(cell, value);
+    let geom = Geom { capacity: volume, blocked: Dir::NONE, reservoir };
+    if geom_of(w, key, cell) != geom {
+        let _ = w.sim_mut().port(key.geometry).put(cell, geom);
+    }
+    set_mask(w, cell, mask);
+}
+
+/// Drops a cell from the field (it became a wall, or its turf went away).
+fn unregister_cell(w: &mut World, key: FieldKey<TurfGas>, cell: u32) {
+    if geom_of(w, key, cell) != Geom::default() {
+        let _ = w.sim_mut().port(key.geometry).put(cell, Geom::default());
+    }
+    if w.read_cell(key, cell) != Some(GasCell::default()) {
+        let _ = w.sim_mut().port(key.cells).put(cell, GasCell::default());
+    }
+}
+
+/// `MixRef::Turf` for the gas binds still in `vg-gas` (`vg_gas::world::
+/// TurfAccess`). Never called with the world borrowed.
+struct FfiTurfAccess;
+
+impl vg_gas::world::TurfAccess for FfiTurfAccess {
+    fn read(&self, cell: u32) -> Option<(GasCell, Geom)> {
+        with_world(|w| Ok(turf_read(w, turf_key()?, cell))).ok().flatten()
+    }
+
+    fn submit(&self, cell: u32, cmd: GasCmd) {
+        let _ = with_world(|w| {
+            let key = turf_key()?;
+            w.submit_cell(key, cell, cmd).map_err(|e| eyre!("{e}"))
+        });
+    }
+}
+
+/// A turf cell's gas as a pipe device's side (`crate::pipes`' vents and
+/// scrubbers): its gas and volume.
+pub(crate) fn turf_device_probe(w: &World, cell: u32) -> Option<(PipeGas, f64)> {
+    let (c, g) = turf_read(w, turf_key().ok()?, cell)?;
+    let volume = if g.capacity > 0.0 { g.capacity } else { CELL_VOLUME };
+    let mix = vg_gas::world::mixture_of_cell(&c, volume);
+    Some((PipeGas::from_amounts(&vg_gas::world::amounts_of(&mix), mix.get_temperature()), f64::from(volume)))
+}
+
+/// Applies a device step's result to turf `cell`: the difference from what
+/// [`turf_device_probe`] read, as one command.
+pub(crate) fn turf_device_apply(w: &mut World, cell: u32, before: &PipeGas, after: &PipeGas) {
+    let Ok(key) = turf_key() else { return };
+    let (b, a) = (before.amounts(), after.amounts());
+    let mut d = [0.0f32; Q];
+    for (o, (x, y)) in d.iter_mut().zip(a.iter().zip(b)) {
+        *o = x - y;
+    }
+    if d.iter().any(|v| *v != 0.0) {
+        let _ = w.submit_cell(key, cell, GasCmd::Delta(d));
+    }
+}
+
+/// Args: (links). One entry per z-level: the `UP`/`DOWN` bits of the levels
+/// air may cross into. Vertical faces open only between linked levels.
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_set_z_links")]
+fn set_z_links(links: ByondValue) -> Result<ByondValue> {
+    // get_list_values, not iter(): iter() indexes the list by each item.
+    let links = links.get_list_values()?.iter().map(|v| v.get_number().unwrap_or(0.0) as u8).collect::<Vec<_>>();
+    with_world(|w| {
+        w.edit_grid(|g| {
+            for (z, bits) in (0u32..).zip(links) {
+                let up = (bits & Dir::UP.0 != 0).then_some(z + 1);
+                let down = if bits & Dir::DOWN.0 != 0 { z.checked_sub(1) } else { None };
+                g.set_z_link(z, up, down);
+            }
+        })
+        .map_err(|e| eyre!("{e}"))
+    })?;
+    Ok(ByondValue::null())
+}
+
+fn is_set(value: std::result::Result<f32, byondapi::Error>) -> bool {
+    value.is_ok_and(|n| n != 0.0)
+}
+
+fn mask_from_value(mask: &ByondValue) -> Option<u8> {
+    mask.get_number().ok().filter(|&m| m >= 0.0).map(|m| (m as u8) & AIR_BLOCK_ALL)
+}
+
+/// Registers (flag >= 0) or removes (flag < 0) a turf's gas.
+///
+/// A turf's own `air` datum moves into its field cell (the datum's handle
+/// becomes the cell's). Space's shared immutable vacuum stays a main-owned
+/// mixture; its cells are reservoirs. Planet turfs are reservoirs that
+/// relax back to their atmosphere when DM disturbs them.
+fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
+    let cell = src.get_ref()?;
+    let key = turf_key()?;
+    if !with_world(|w| Ok(contains(w, cell)))? {
+        return Ok(());
+    }
+    let unregister = || with_world(|w| {
+        unregister_cell(w, key, cell);
+        Ok(())
+    });
+    if flag < 0 || is_set(src.read_number_id(byond_string!("blocks_air"))) {
+        return unregister();
+    }
+    let Ok(mut air) = src.read_var_id(byond_string!("air")) else {
+        return Ok(());
+    };
+    if air.is_null() {
+        return unregister();
+    }
+    let planet = is_set(src.read_number_id(byond_string!("planetary_atmos")));
+    let planet_key = || src.read_string_id(byond_string!("initial_gas_mix")).unwrap_or_default();
+    let r = MixRef::of(&air)?;
+    if r == MixRef::Turf(cell) {
+        // Already this turf's cell: the mask and the planet flag can change.
+        return with_world(|w| {
+            let (value, geom) = turf_read(w, key, cell).unwrap_or_default();
+            if planet != (value.planet > 0) {
+                let mut value = value;
+                value.planet = if planet { vg_gas::planet::planet_id(&planet_key(), value) } else { 0 };
+                register_cell(w, key, cell, value, CELL_VOLUME, planet, mask);
+            } else if geom.is_node() {
+                set_mask(w, cell, mask);
+            } else {
+                register_cell(w, key, cell, value, CELL_VOLUME, geom.reservoir, mask);
+            }
+            Ok(())
+        });
+    }
+    let Some(mix) = vg_gas::world::with_world(|gw| gw.load(r)) else {
+        bail!("turf air has no gas mixture ({r:?})");
+    };
+    let mut value = vg_gas::world::cell_of_mixture(&mix);
+    if mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos"))) {
+        value.flags |= vg_gas::cell::flags::IMMUTABLE;
+        // Shared vacuum: the datum stays main-owned.
+        return with_world(|w| {
+            register_cell(w, key, cell, value, mix.volume, true, mask);
+            Ok(())
+        });
+    }
+    if planet {
+        value.planet = vg_gas::planet::planet_id(&planet_key(), value);
+    }
+    with_world(|w| {
+        register_cell(w, key, cell, value, mix.volume, planet, mask);
+        Ok(())
+    })?;
+    if let MixRef::Main(slot) = r {
+        vg_gas::world::with_world(|gw| gw.mains.free(slot));
+    }
+    MixRef::Turf(cell).store(&mut air)?;
+    Ok(())
+}
+
+/// Args: (flag, mask). Registers (flag >= 0) or removes (flag < 0) this
+/// turf's gas and publishes its air-block mask (`AIR_BLOCK_KEEP` keeps the
+/// current one). Reads blocks_air, air, immutable_atmos, planetary_atmos and
+/// initial_gas_mix.
+#[auxmacros::bind("/turf/proc/update_air_ref")]
+fn hook_register_turf(src: ByondValue, flag: ByondValue, mask: ByondValue) -> Result<ByondValue> {
+    register_turf(src, flag.get_number()? as i32, mask_from_value(&mask))?;
+    Ok(ByondValue::null())
+}
+
+/// Bulk registration for round start and map loads. Args: (turfs, flag),
+/// where `turfs` is an assoc list of turf -> air-block mask.
+#[auxmacros::bind("/proc/_auxmos_register_turfs_bulk")]
+fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
+    let flag = flag.get_number()? as i32;
+    for (turf, mask) in list.iter()?.collect::<Vec<_>>() {
+        register_turf(turf, flag, mask_from_value(&mask))?;
+    }
+    Ok(ByondValue::null())
+}
+
+/// This turf's gas revision (bumped whenever its gas changes).
+#[auxmacros::bind("/turf/proc/air_revision")]
+fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
+    let cell = src.get_ref()?;
+    let rev = with_world(|w| Ok(turf_read(w, turf_key()?, cell).map_or(0, |(c, _)| c.revision())))?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(((rev & 0x00FF_FFFF) as f32).into())
+}
+
+fn turf_list(cells: Vec<u32>) -> Result<ByondValue> {
+    let items = cells.into_iter().map(|c| ByondValue::new_ref(ValueType::Turf, c)).collect::<Vec<_>>();
+    let list = ByondValue::new_list()?;
+    list.write_list(&items)?;
+    Ok(list)
+}
+
+/// Returns: the turfs this turf shares air with (face neighbours only).
+#[auxmacros::bind("/proc/atmos_adjacent_turfs")]
+fn atmos_adjacent_turfs(turf: ByondValue) -> Result<ByondValue> {
+    let cell = turf.get_ref()?;
+    turf_list(with_world(|w| Ok(open_neighbors(w, turf_key()?, cell)))?)
+}
+
+/// Batched form of `atmos_adjacent_turfs`: a list of lists, one per turf.
+#[auxmacros::bind("/proc/atmos_adjacent_turfs_bulk")]
+fn atmos_adjacent_turfs_bulk(turfs: ByondValue) -> Result<ByondValue> {
+    let cells = turfs.get_list_values()?.iter().map(ByondValue::get_ref).collect::<Result<Vec<_>, _>>()?;
+    let lists = with_world(|w| {
+        let key = turf_key()?;
+        Ok(cells.iter().map(|&c| open_neighbors(w, key, c)).collect::<Vec<_>>())
+    })?;
+    let out = lists.into_iter().map(turf_list).collect::<Result<Vec<_>>>()?;
+    let list = ByondValue::new_list()?;
+    list.write_list(&out)?;
+    Ok(list)
+}
+
+/// Returns: the direction bits (NORTH..DOWN) across which this turf shares air.
+#[auxmacros::bind("/proc/atmos_open_dirs")]
+fn atmos_open_dirs(turf: ByondValue) -> Result<ByondValue> {
+    let cell = turf.get_ref()?;
+    let bits = with_world(|w| {
+        let key = turf_key()?;
+        Ok(Face::ALL.into_iter().filter(|&f| open(w, key, cell, f).is_some()).fold(0u8, |acc, f| acc | f.bit()))
+    })?;
+    Ok(f32::from(bits).into())
+}
+
+/// Diagnostic: list(registered, mask, z-level links, zero-based z).
+#[auxmacros::bind("/proc/atmos_cell_info")]
+fn atmos_cell_info(turf: ByondValue) -> Result<ByondValue> {
+    let cell = turf.get_ref()?;
+    let info = with_world(|w| {
+        let key = turf_key()?;
+        let grid = w.grid().map_err(|e| eyre!("{e}"))?;
+        let links = [Face::Up, Face::Down].into_iter().filter(|&f| grid.neighbor(cell, f).is_some()).fold(0u8, |acc, f| acc | f.bit());
+        #[allow(clippy::cast_precision_loss)]
+        Ok([
+            f32::from(u8::from(geom_of(w, key, cell).is_node())),
+            f32::from(grid.blocked(BlockKind::Air, cell).0),
+            f32::from(links),
+            (cell / grid.dims().layer_len()) as f32,
+        ])
+    })?;
+    crate::world::list(info)
+}
+
+/// Returns: whether two turfs are face neighbours that share air.
+#[auxmacros::bind("/proc/atmos_turfs_share")]
+fn atmos_turfs_share(first: ByondValue, second: ByondValue) -> Result<ByondValue> {
+    let (a, b) = (first.get_ref()?, second.get_ref()?);
+    let shares = with_world(|w| {
+        let key = turf_key()?;
+        Ok(Face::ALL.into_iter().any(|f| open(w, key, a, f) == Some(b)))
+    })?;
+    Ok(shares.into())
+}
+
+/// Diagnostic invariant for shuttle and atmos tests: the turf's air datum
+/// names its field cell (or the shared vacuum), and the cell is in the field.
+#[auxmacros::bind("/proc/_auxmos_topology_matches")]
+fn topology_matches(src: ByondValue) -> Result<ByondValue> {
+    let cell = src.get_ref()?;
+    let r = MixRef::of(&src.read_var_id(byond_string!("air"))?).ok();
+    let matches = with_world(|w| {
+        let Some((value, geom)) = turf_read(w, turf_key()?, cell) else {
+            return Ok(false);
+        };
+        Ok((r == Some(MixRef::Turf(cell)) || value.is_immutable()) && geom.is_node())
+    })?;
+    Ok(matches.into())
+}
+
+fn side(cell: &GasCell, g: Geom) -> Side<'_, GasCell> {
+    Side {
+        cell,
+        capacity: g.capacity,
+        inv_capacity: g.inv_capacity(),
+        reservoir: g.reservoir,
+        share: 1.0 / 6.0,
+    }
+}
+
+/// Diagnostic: whether the turf's gas is still moving (some open edge is
+/// not settled).
+#[auxmacros::bind("/turf/proc/auxmos_is_atmos_active")]
+fn turf_active_hook(src: ByondValue) -> Result<ByondValue> {
+    let cell = src.get_ref()?;
+    let active = with_world(|w| {
+        let key = turf_key()?;
+        let Some((a, ga)) = turf_read(w, key, cell) else {
+            return Ok(false);
+        };
+        if !ga.is_node() || ga.reservoir {
+            return Ok(false);
+        }
+        // Holding air next to vacuum is not settled until it is gone.
+        Ok(open_neighbors(w, key, cell)
+            .into_iter()
+            .any(|nb| turf_read(w, key, nb).is_some_and(|(b, gb)| !TurfGas::settled(side(&a, ga), side(&b, gb)))))
+    })?;
+    Ok(active.into())
+}
+
+/// `list(frames, 0, 0, 0, 0, 0, 0, 0, last frame µs, command backlog,
+/// overlay entries, view age, frames skipped, removal shortfall (mol), 0, 0,
+/// 0, 0, 0)`: the world's frame metrics in the layout SSair's stat panel,
+/// the profiler and the benchmarks read (the zeros were the old gas-only
+/// driver's own counters).
+#[auxmacros::bind("/proc/gas_stats")]
+fn gas_stats() -> Result<ByondValue> {
+    let v = with_world(|w| {
+        let key = turf_key()?;
+        let m = w.sim().metrics();
+        let shortfall = w.sim().port_ref(key.cells).pinned().shortfall_total();
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+        Ok([
+            w.frame() as f32,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            m.last_frame.as_secs_f32() * 1e6,
+            m.command_backlog as f32,
+            m.overlay_entries as f32,
+            m.view_age_ticks as f32,
+            m.dispatches_skipped as f32,
+            shortfall as f32,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ])
+    })?;
+    crate::world::list(v)
+}
+
+/// `list(main mixtures live, main slots, 0, 0, 0, world frames, pending
+/// callbacks, 0, 0, 0)` for SSair's stat panel and the benchmarks.
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
+fn auxmos_diagnostics() -> Result<ByondValue> {
+    let (live, slots) = vg_gas::world::with_world(|gw| (gw.mains.live(), gw.mains.capacity()));
+    let frames = with_world(|w| Ok(w.frame()))?;
+    #[allow(clippy::cast_precision_loss)]
+    crate::world::list([
+        live as f32,
+        slots as f32,
+        0.0,
+        0.0,
+        0.0,
+        frames as f32,
+        auxcallback::pending_callbacks() as f32,
+        0.0,
+        0.0,
+        0.0,
+    ])
+}
+
+/// Test hook: runs `frames` world steps to completion, one after another,
+/// deterministically (no wall clock). Their events reach DM through
+/// `vg_drain_events()`.
+#[auxmacros::bind("/proc/gas_run_frames")]
+fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
+    let n = frames.get_number()?.clamp(0.0, 100_000.0) as u32;
+    with_world(|w| {
+        for _ in 0..n {
+            w.step_blocking();
+        }
+        Ok(())
+    })?;
+    Ok(ByondValue::null())
+}
+
+// --- Gas handles as a reactor watch domain -----------------------------------
+
+/// Gas as a reactor domain: `REACT_ON` / `REACT_WHEN` on gas handles (turf
+/// gas by its turf's air handle, or a main-owned mixture). One kind of
+/// handle per condition: port 0 is the turf field's cell watches, port 1
+/// the main mixtures'.
+pub(crate) struct GasDomain;
+
+fn cond_cells(cond: &Cond, out: &mut Vec<u32>) {
+    match cond {
+        Cond::Changed { cell, .. } | Cond::Threshold { cell, .. } | Cond::Band { cell, .. } | Cond::ThresholdSet { cell, .. } => out.push(*cell),
+        Cond::Difference { a, b, .. } => out.extend([*a, *b]),
+        Cond::Any(cs) | Cond::All(cs) => cs.iter().for_each(|c| cond_cells(c, out)),
+    }
+}
+
+impl DomainRegistry for GasDomain {
+    fn channels(&self) -> Vec<vg_core::channel::ChannelInfo> {
+        vg_core::channel::channel_infos::<TurfGas>()
+    }
+
+    fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> std::result::Result<(u8, WatchId), String> {
+        let mut ids = Vec::new();
+        cond_cells(cond, &mut ids);
+        if ids.iter().all(|&id| matches!(MixRef::from_id(id), Some(MixRef::Turf(_)))) {
+            let cells = crate::world::map_cells(cond, &|id| Ok(id - TURF_BASE))?;
+            return with_world(|w| w.watch_cells::<TurfGas>(sub, lane, &cells).map_err(|e| eyre!("{e}")))
+                .map(|id| (0, id))
+                .map_err(|e| e.to_string());
+        }
+        vg_gas::world::with_world(|gw| gw.watch(sub, lane, cond)).map(|id| (1, id)).map_err(|e| e.to_string())
+    }
+
+    fn unwatch(&mut self, port: u8, id: WatchId) {
+        if port == 0 {
+            let _ = with_world(|w| w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}")));
+        } else {
+            vg_gas::world::with_world(|gw| gw.unwatch(id));
+        }
+    }
+
+    fn take_wakes(&mut self, out: &mut Vec<Wake>) {
+        let mut turf = Vec::new();
+        let _ = with_world(|w| {
+            w.drain_field_wakes::<TurfGas>(&mut turf);
+            Ok(())
+        });
+        // A turf wake's source is its cell; DM knows it by the gas handle.
+        out.extend(turf.into_iter().map(|w| Wake { source: MixRef::Turf(w.source).id(), ..w }));
+        vg_gas::world::with_world(|gw| gw.take_wakes(out));
+    }
 }

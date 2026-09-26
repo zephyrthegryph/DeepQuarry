@@ -242,7 +242,8 @@ fn pipe_clear() -> Result<ByondValue> {
 /// already parses.
 #[auxmacros::bind("/proc/vg_pipe_commit")]
 fn pipe_commit() -> Result<ByondValue> {
-    with_world(|w| {
+    let mut released: Vec<(MixRef, PipeGas)> = Vec::new();
+    let out = with_world(|w| {
         w.commit_network::<Pipes>();
         let releases_cell: std::sync::Arc<std::sync::Mutex<Vec<(EntityId, u32, PipeGas)>>> = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let releases_out = std::sync::Arc::clone(&releases_cell);
@@ -261,7 +262,7 @@ fn pipe_commit() -> Result<ByondValue> {
             let port_id = PORTS.with(|p| p.borrow().iter().find(|&(_, &e)| e == port_e).map(|(&id, _)| id));
             let target = port_id.and_then(|id| RELEASE_TARGETS.with(|r| r.borrow_mut().remove(&id)));
             if let Some(target) = target {
-                vg_gas::world::with_world(|gw| gw.add_amounts(target, &payload.amounts(), payload.temperature));
+                released.push((target, payload));
             }
         }
         let transitions = w.drain_transitions::<Pipes>();
@@ -288,8 +289,14 @@ fn pipe_commit() -> Result<ByondValue> {
             out.extend(ports);
             out.extend(priors);
         }
-        list(out)
-    })
+        Ok(out)
+    })?;
+    // Released gas goes to its target outside the world borrow: a turf or
+    // pipe target reaches the world again.
+    for (target, payload) in released {
+        vg_gas::world::with_world(|gw| gw.add_amounts(target, &payload.amounts(), payload.temperature));
+    }
+    list(out)
 }
 
 fn region_volume(w: &World, raw: u32) -> f32 {
@@ -503,8 +510,8 @@ fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, flows: &[Flow]
         let r = host.network().region(region).ok()?;
         (region, *r.summary(), *r.payload())
     };
-    let vol_cell = vg_gas::world::with_world(|gw| gw.turf_device_volume(cell)).unwrap_or(vg_gas::gas::constants::CELL_VOLUME.into());
-    let mut turf_gas = vg_gas::world::with_world(|gw| gw.turf_device_probe(cell))?;
+    let (turf_before, vol_cell) = crate::gas::turf_device_probe(w, cell)?;
+    let mut turf_gas = turf_before;
     let report = if cell_is_a {
         step_all(flows, valve_open, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
     } else {
@@ -516,7 +523,7 @@ fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, flows: &[Flow]
                 *p = region_gas;
             }
         });
-        vg_gas::world::with_world(|gw| gw.turf_device_apply(cell, &turf_gas, vol_cell));
+        crate::gas::turf_device_apply(w, cell, &turf_before, &turf_gas);
     }
     Some(report)
 }
