@@ -270,8 +270,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 					sendfax(destination, ui.user)
 
 				if (sendcooldown)
-					spawn(sendcooldown) // cooldown time
-						sendcooldown = 0
+					om_after(src, sendcooldown, TYPE_PROC_REF(/datum, om_set_var), "sendcooldown", 0) // cooldown time
 
 		if("dept")
 			var/lastdestination = destination

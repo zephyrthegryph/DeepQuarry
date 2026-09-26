@@ -338,8 +338,7 @@
 		if(spam_flag == 0)
 			spam_flag = 1
 			playsound(src, 'sound/items/bikehorn.ogg', 50, 1)
-			spawn(20)
-				spam_flag = 0
+			om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "spam_flag", 0)
 	return
 
 // AI/cyborg viewer routes through the same TGUI paper window.
@@ -542,19 +541,7 @@
 		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
 		playsound(src, 'sound/bureaucracy/paperburn.ogg', 50, 1)
 
-		spawn(20)
-			if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
-				user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-				"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
-
-				if(user.get_inactive_hand() == src)
-					user.drop_from_inventory(src)
-
-				new /obj/effect/decal/cleanable/ash(src.loc)
-				qdel(src)
-
-			else
-				to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
 
 
 /obj/item/paper/get_worn_icon_state(slot_name)
@@ -886,3 +873,17 @@
 	name = "Hermit's notes"
 	icon_state = "scrap"
 	info = "I told them over and over! Stop digging. But no, of course not. They kept digging, and digging and digging on down, and now their dead. now we're all dead."
+
+/obj/item/paper/proc/burn_through(mob/user, obj/item/flame/P, class)
+	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
+		user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
+		"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+
+		if(user.get_inactive_hand() == src)
+			user.drop_from_inventory(src)
+
+		new /obj/effect/decal/cleanable/ash(src.loc)
+		qdel(src)
+
+	else
+		to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))

@@ -138,8 +138,7 @@
 
 /obj/machinery/papershredder/power_change()
 	..()
-	spawn(rand(0,15))
-		update_icon()
+	om_after(src, rand(0,15), TYPE_PROC_REF(/atom, update_icon))
 
 /obj/machinery/papershredder/update_icon()
 	cut_overlays()
