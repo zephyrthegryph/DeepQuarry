@@ -48,8 +48,7 @@
 		while(fields < fieldlimit)
 			for(var/i=0, i<=2, i++)
 				if(fields >= fieldlimit)
-					sleep(burst_time)
-					cascading = FALSE
+					om_after(src, burst_time, PROC_REF(end_cascade))
 					return
 				switch(i) //Using a switch statement rather than (-90 + i * 90) to favour going straight ahead
 					if(0)
@@ -79,8 +78,13 @@
 		playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
 		new /obj/effect/resonance(T, WEAKREF(creator), burst_time)
 		fieldsactive++
-		spawn(burst_time)
-			fieldsactive--
+		om_after(src, burst_time, PROC_REF(field_burst))
+
+/obj/item/resonator/proc/end_cascade()
+	cascading = FALSE
+
+/obj/item/resonator/proc/field_burst()
+	fieldsactive--
 
 /obj/item/resonator/attack_self(mob/user)
 	. = ..(user)

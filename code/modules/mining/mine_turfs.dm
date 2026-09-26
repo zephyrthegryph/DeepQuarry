@@ -366,10 +366,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			to_chat(user, span_notice("You start digging."))
 			playsound(user, 'sound/effects/rustle1.ogg', 50, 1)
 
-			if(!do_after(user, digspeed, target = src)) return
-
-			to_chat(user, span_notice("You dug a hole."))
-			GetDrilled()
+			om_do_after(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
 
 		else if(istype(W,/obj/item/storage/bag/fossils))
 			var/obj/item/storage/bag/fossils/S = W
@@ -404,8 +401,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		if (istype(W, /obj/item/measuring_tape))
 			var/obj/item/measuring_tape/P = W
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \a [P] towards \the [src]."),span_notice("You extend \the [P] towards \the [src]."))
-			if(do_after(user, 15, target = src))
-				to_chat(user, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
+			om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
@@ -414,8 +410,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 				C.depth_scanner.scan_atom(user, src)
 			else
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"), span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
-				if(do_after(user, 15, target = src))
-					to_chat(user, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
+				om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return
 
 		if (istype(W, /obj/item/melee/shock_maul))
@@ -483,38 +478,50 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 					fail_message = ". <b>[pick("There is a crunching noise","[W] collides with some different rock","Part of the rock face crumbles away","Something breaks under [W]")]</b>"
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
-
-			if(do_after(user, P.digspeed, target = src))
-
-				if(finds && finds.len)
-					var/datum/find/F = finds[1]
-					if(newDepth == F.excavation_required) // When the pick hits that edge just right, you extract your find perfectly, it's never confined in a rock
-						excavate_find(1, F)
-					else if(newDepth > F.excavation_required)
-						excavate_find(prob(10), F) //A 1 in 10 chance to get it out perfectly seems fine if you're not being careful.
-
-				user.balloon_alert(user, "you finish [P.drill_verb] \the [src].")
-
-				if(newDepth >= 200) // This means the rock is mined out fully
-					if(P.destroy_artefacts)
-						GetDrilled(0)
-					else
-						excavate_turf()
-					return
-
-				excavation_level += P.excavation_amount
-				update_archeo_overlays(P.excavation_amount)
-				geologic_data = new /datum/geosample(src)
-				//drop some rocks
-				next_rock += P.excavation_amount
-				while(next_rock > 50)
-					next_rock -= 50
-					var/obj/item/ore/archeology_debris/O = new(src)
-					geologic_data.UpdateNearbyArtifactInfo(src)
-					O.geologic_data = geologic_data
+			om_do_after(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
 			return
 
 	return attack_hand(user)
+
+/turf/simulated/mineral/proc/dig_hole_done(mob/user)
+	if(sand_dug)
+		return
+	to_chat(user, span_notice("You dug a hole."))
+	GetDrilled()
+
+/turf/simulated/mineral/proc/measure_done(mob/user)
+	to_chat(user, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
+
+/turf/simulated/mineral/proc/pick_done(mob/user, obj/item/pickaxe/P)
+	if(!density)
+		return
+	var/newDepth = excavation_level + P.excavation_amount
+	if(finds && finds.len)
+		var/datum/find/F = finds[1]
+		if(newDepth == F.excavation_required) // When the pick hits that edge just right, you extract your find perfectly, it's never confined in a rock
+			excavate_find(1, F)
+		else if(newDepth > F.excavation_required)
+			excavate_find(prob(10), F) //A 1 in 10 chance to get it out perfectly seems fine if you're not being careful.
+
+	user.balloon_alert(user, "you finish [P.drill_verb] \the [src].")
+
+	if(newDepth >= 200) // This means the rock is mined out fully
+		if(P.destroy_artefacts)
+			GetDrilled(0)
+		else
+			excavate_turf()
+		return
+
+	excavation_level += P.excavation_amount
+	update_archeo_overlays(P.excavation_amount)
+	geologic_data = new /datum/geosample(src)
+	//drop some rocks
+	next_rock += P.excavation_amount
+	while(next_rock > 50)
+		next_rock -= 50
+		var/obj/item/ore/archeology_debris/O = new(src)
+		geologic_data.UpdateNearbyArtifactInfo(src)
+		O.geologic_data = geologic_data
 
 //THIS IS THE 'YOU HIT AN ARTIFACT AND ARE GOING TOO DEEP' PROC. This is NOT the 'you destroyed the turf' proc. For that, look at 'GetDrilled'
 /turf/simulated/mineral/proc/wreckfinds(destroy = FALSE)

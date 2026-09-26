@@ -324,9 +324,12 @@
 	if(F)
 		to_chat(user, span_warning("There is already a light here."))
 		return TRUE
-	if(!do_after(user, 8 SECONDS, target = src))
-		return TRUE
+	om_do_after(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
+	return TRUE
 
+/obj/item/stack/lightpole/proc/plant_done(mob/user, turf/T)
+	if(locate(/obj/structure/trailblazer) in T)
+		return
 	var/obj/structure/trailblazer/newlightpole = new blazer_type(T)
 	newlightpole.visible_message("\The [user] plants \the [newlightpole] firmly in the ground.")
 	use(1)
@@ -357,11 +360,13 @@
 	icon_state = "redtrail_light_on"
 	set_light(2, 2, "#FF0000")
 
+/obj/structure/trailblazer/proc/knock_down_done(mob/user)
+	visible_message("\The [user] knocks down \the [src].")
+	new stack_type(get_turf(src), 1)
+	qdel(src)
+
 /obj/structure/trailblazer/attack_hand(mob/user)
-	if(do_after(user, 8 SECONDS, target = src))
-		visible_message("\The [user] knocks down \the [src].")
-		new stack_type(get_turf(src), 1)
-		qdel(src)
+	if(!istext(om_do_after(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
 		return
 
 /obj/structure/trailblazer/red
