@@ -1290,6 +1290,18 @@
 /// re-resolves its *current* region fresh next tick
 /// (`power_refresh_network()`), so this returns `null` instead of
 /// surfacing a runtime for the one tick the old id is dangling.
+///
+/// Only [`ArenaError::Stale`] (the slot was freed, maybe reused, since this
+/// id was issued -- exactly a split/merge retiring it) is that legitimate
+/// case. Every other [`ArenaError`] (`OutOfRange`: `region`'s raw bits never
+/// named a region the arena ever allocated; `Full`: not even reachable from
+/// a read) means a bad id reached here -- `region_id()` decoding garbage, or
+/// a caller passing something that was never a `vg_power_region_of()`
+/// result, not a split/merge timing race. Silently returning `null` for
+/// that would mask exactly the bind-order bug this function's callers exist
+/// to avoid, so it's asserted out in debug builds and still logged in
+/// release (never surfaced as a DM runtime -- the caller's "no info this
+/// step" handling is still the right recovery either way).
 // /proc/vg_power_region_read (verdigris/ffi/src/power.rs)
 /proc/vg_power_region_read(region)
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_read_ffi")
