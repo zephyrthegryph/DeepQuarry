@@ -73,6 +73,27 @@ fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat
     let _grid = b.add_grid(crate::heat::pending_dims());
     let heat_field = crate::heat::register(b);
 
+    // Turf gas (`rust_architecture.md` §8.5 step 6, gas's "slice E"):
+    // `TurfGas` as a field on the shared World's own grid (the same one
+    // heat's `SolidHeat` just registered on -- both are per-turf fields on
+    // the same map), and the four laws already written and tested against
+    // it in isolation (`vg_gas::laws`'s own fixture-based tests) but never
+    // before registered anywhere: `domains/gas/src/world.rs`'s `GasWorld`
+    // is still the engine DM's ~60 gas binds actually read and write (its
+    // own module docs, and this field's own docs below), so this field
+    // sees no writes yet and drives no DM-visible behavior -- additive,
+    // not yet the cutover. `FRAME_DT`/`MAX_SUBSTEPS` match the private
+    // engine's own `Field::new` exactly, so a future cutover changes
+    // nothing about the timing.
+    let _turf_gas_field = b.add_field::<vg_gas::cell::TurfGas>(vg_core::field::FieldConfig {
+        dt: vg_gas::world::FRAME_DT,
+        max_substeps: vg_gas::world::MAX_SUBSTEPS,
+    });
+    let _ = b.add_law::<vg_gas::laws::CellReactionReadyLaw>();
+    let _ = b.add_law::<vg_gas::laws::CellVisualChangeLaw>();
+    let _ = b.add_law::<vg_gas::laws::SpacewindLaw>();
+    let _ = b.add_law::<vg_gas::laws::PlanetRelaxLaw>();
+
     // Power (`rust_architecture.md` §6, §8.5): `Cables`, its components and
     // laws. A SMES's output/input terminals are their own entities, each on
     // its own region; `crate::power`'s topology binds are the only power
