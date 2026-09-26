@@ -82,7 +82,7 @@
 			stripping = TRUE
 		else
 			var/obj/item/grab/grab = held
-			if(istype(grab) && grab.affecting == src)
+			if(istype(grab) && GRAB_TARGET(grab) == src)
 				stripping = TRUE
 
 	if(stripping)

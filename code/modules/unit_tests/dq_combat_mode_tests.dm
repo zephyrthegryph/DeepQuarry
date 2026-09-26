@@ -221,7 +221,7 @@
 		attacker.attack_variant_key_release(ATTACK_VARIANT_GRAB)
 		var/obj/item/grab/G = attacker.get_active_hand()
 		TEST_ASSERT(istype(G), "[target_type]: the Grab key grabs")
-		TEST_ASSERT_EQUAL(G?.affecting, target, "[target_type]: the grab holds the target")
+		TEST_ASSERT_EQUAL(G ? GRAB_TARGET(G) : null, target, "[target_type]: the grab holds the target")
 		TEST_ASSERT_NULL(attacker.attack_variant, "[target_type]: the variant is gone after the grab")
 		qdel(G)
 

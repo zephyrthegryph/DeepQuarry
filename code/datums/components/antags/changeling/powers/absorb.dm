@@ -20,7 +20,7 @@
 		to_chat(src, span_warning("We must be grabbing a creature in our active hand to absorb them."))
 		return
 
-	var/mob/living/carbon/human/T = G.affecting
+	var/mob/living/carbon/human/T = GRAB_TARGET(G)
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not compatible with our biology."))
 		return

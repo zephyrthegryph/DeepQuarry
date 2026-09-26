@@ -133,7 +133,7 @@
 		to_chat(user, span_danger("You need a better grip to do that!"))
 		return
 
-	move_into_gibber(user,G.affecting)
+	move_into_gibber(user,GRAB_TARGET(G))
 	// Grab() process should clean up the grab item, no need to del it.
 
 /obj/machinery/gibber/MouseDrop_T(mob/target, mob/user)

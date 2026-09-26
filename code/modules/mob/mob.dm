@@ -645,10 +645,10 @@
 		// kind of mob pull value AT ALL, you will be able to pull
 		// them, so don't bother checking that explicitly.
 
-		if(LAZYLEN(M.grabbed_by))
+		if(LAZYLEN(GRABBED_BY(M)))
 			// Only start pulling when nobody else has a grab on them
 			. = 1
-			for(var/obj/item/grab/G in M.grabbed_by)
+			for(var/obj/item/grab/G in GRABBED_BY(M))
 				if(G.assailant != usr)
 					. = 0
 				else

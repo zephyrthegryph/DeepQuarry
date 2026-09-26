@@ -397,9 +397,9 @@
 		return
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
-		if(!ismob(G.affecting))
+		if(!ismob(GRAB_TARGET(G)))
 			return
-		var/mob/M = G.affecting
+		var/mob/M = GRAB_TARGET(G)
 		if(put_mob(M))
 			qdel(G)
 			return //Don't call up else we'll get attack messsages

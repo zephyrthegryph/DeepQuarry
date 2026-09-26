@@ -205,14 +205,14 @@
 		update_icon()
 	else if(istype(G, /obj/item/grab))
 		var/obj/item/grab/grab = G
-		if(!ismob(grab.affecting))
+		var/mob/M = GRAB_TARGET(grab)
+		if(!ismob(M))
 			return
 		if(occupant)
 			to_chat(user,span_warning("\The [src] is already occupied by [occupant]."))
-		if(grab.affecting.has_buckled_mobs())
-			to_chat(user, span_warning("\The [grab.affecting] has other entities attached to it. Remove them first."))
+		if(M.has_buckled_mobs())
+			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
 			return
-		var/mob/M = grab.affecting
 		qdel(grab)
 		put_mob(M)
 

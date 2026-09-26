@@ -355,7 +355,7 @@
 		if (G.state == GRAB_NECK)
 			mob.set_dir(GLOB.reverse_dir[direct])
 		G.adjust_position()
-	for (var/obj/item/grab/G in my_mob.grabbed_by)
+	for (var/obj/item/grab/G in GRABBED_BY(my_mob))
 		G.adjust_position()
 
 	// We're not in the middle of a move anymore

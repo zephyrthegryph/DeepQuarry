@@ -7,7 +7,7 @@
 	//if we are being grabbed
 	if(isliving(mob))
 		var/mob/living/L = mob
-		if(!L.canmove && LAZYLEN(L.grabbed_by))
+		if(!L.canmove && LAZYLEN(GRABBED_BY(L)))
 			L.resist() //shortcut for resisting grabs
 
 		//if we are grabbing someone
@@ -20,7 +20,6 @@
 	icon_state = "reinforce"
 	item_flags = DROPDEL | NOSTRIP
 	var/atom/movable/screen/grab/hud = null
-	var/mob/living/affecting = null
 	var/mob/living/carbon/human/assailant = null
 	var/state = GRAB_PASSIVE
 
@@ -60,6 +59,7 @@
 
 //Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
 /obj/item/grab/proc/throw_held()
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(affecting)
 		if(affecting.buckled)
 			return null
@@ -74,6 +74,7 @@
 /obj/item/grab/proc/synch() //why is this needed?
 	if(QDELETED(src))
 		return
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(affecting)
 		if(assailant.get_equipped_item(SLOT_ID_HAND_R) == src)
 			hud.screen_loc = ui_rhand
@@ -85,6 +86,7 @@
 		return PROCESS_KILL
 
 	confirm()
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!assailant)
 		qdel(src) // Same here, except we're trying to delete ourselves.
 		return PROCESS_KILL
@@ -98,15 +100,15 @@
 		//disallow upgrading if we're grabbing more than one person
 		if((assailant.get_equipped_item(SLOT_ID_HAND_L) && assailant.get_equipped_item(SLOT_ID_HAND_L) != src && istype(assailant.get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab)))
 			var/obj/item/grab/G = assailant.get_equipped_item(SLOT_ID_HAND_L)
-			if(G.affecting != affecting)
+			if(GRAB_TARGET(G) != affecting)
 				allow_upgrade = 0
 		if((assailant.get_equipped_item(SLOT_ID_HAND_R) && assailant.get_equipped_item(SLOT_ID_HAND_R) != src && istype(assailant.get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab)))
 			var/obj/item/grab/G = assailant.get_equipped_item(SLOT_ID_HAND_R)
-			if(G.affecting != affecting)
+			if(GRAB_TARGET(G) != affecting)
 				allow_upgrade = 0
 
 		//disallow upgrading past aggressive if we're being grabbed aggressively
-		for(var/obj/item/grab/G in affecting.grabbed_by)
+		for(var/obj/item/grab/G in GRABBED_BY(affecting))
 			if(G == src) continue
 			if(G.state >= GRAB_AGGRESSIVE)
 				allow_upgrade = 0
@@ -148,6 +150,7 @@
 	adjust_position()
 
 /obj/item/grab/proc/handle_eye_mouth_covering(mob/living/carbon/target, mob/user, target_zone)
+	var/mob/living/affecting = GRAB_TARGET(src)
 	var/announce = (target_zone != last_hit_zone) //only display messages when switching between different target zones
 	last_hit_zone = target_zone
 
@@ -178,6 +181,7 @@
 //Updating pixelshift, position and direction
 //Gets called on process, when the grab gets upgraded or the assailant moves
 /obj/item/grab/proc/adjust_position()
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!affecting)
 		qdel(src)
 		return
@@ -225,6 +229,7 @@
 /obj/item/grab/proc/s_click(atom/movable/screen/S)
 	if(QDELETED(src))
 		return
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!affecting)
 		return
 	if(state == GRAB_UPGRADING)
@@ -277,6 +282,7 @@
 
 //This is used to make sure the victim hasn't managed to yackety sax away before using the grab.
 /obj/item/grab/proc/confirm()
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!assailant || !affecting)
 		qdel(src)
 		return 0
@@ -291,6 +297,7 @@
 /obj/item/grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(QDELETED(src))
 		return ITEM_INTERACT_FAILURE
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!affecting)
 		return ITEM_INTERACT_FAILURE
 	if(world.time < (last_action + 20))
@@ -332,12 +339,14 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/grab/proc/reset_kill_state()
+	var/mob/living/affecting = GRAB_TARGET(src)
 	if(state == GRAB_KILL)
 		assailant.visible_message(span_warning("[assailant] lost [assailant.p_their()] tight grip on [affecting]'s neck!"))
 		hud.icon_state = "kill"
 		state = GRAB_NECK
 
 /obj/item/grab/proc/handle_resist()
+	var/mob/living/affecting = GRAB_TARGET(src)
 	var/grab_name
 	var/break_strength = 1
 	var/list/break_chance_table = list(100)

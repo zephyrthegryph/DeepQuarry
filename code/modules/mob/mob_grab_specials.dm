@@ -6,7 +6,7 @@
 		to_chat(user, span_notice("[H] is missing that bodypart."))
 		return
 
-	user.visible_message(span_notice("[user] starts inspecting [affecting]'s [E.name] carefully."))
+	user.visible_message(span_notice("[user] starts inspecting [GRAB_TARGET(src)]'s [E.name] carefully."))
 	if(!do_after(user, 1 SECOND, H))
 		to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
 	else if(length(E.get_wounds()))
@@ -204,7 +204,7 @@
 	if(force_down)
 		to_chat(attacker, span_warning("You are already pinning [target] to the ground."))
 		return
-	if(size_difference(affecting, assailant) > 0)
+	if(size_difference(GRAB_TARGET(src), assailant) > 0)
 		to_chat(attacker, span_warning("You are too small to do that!"))
 		return
 

@@ -340,3 +340,5 @@
 #define GRABBED_BY(M) OM_REL_SOURCES(M, /datum/om/relation/grabbing)
 /// The AI eye watching for `AI`, or null.
 #define EYE_OF(AI) OM_REL_SOURCE(AI, /datum/om/relation/ai_eye_of)
+/// The mob `G` (a grab item) is grabbing, or null.
+#define GRAB_TARGET(G) OM_REL_TARGET(G, /datum/om/relation/grabbing)

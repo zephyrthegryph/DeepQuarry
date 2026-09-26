@@ -11,7 +11,6 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
 	TEST_ASSERT_NULL(H.logging, "a fresh human owns no logging list")
-	TEST_ASSERT_NULL(H.grabbed_by, "a fresh human owns no grabbed_by list")
 	TEST_ASSERT_NULL(H.active_genes, "a fresh human owns no active_genes list")
 	TEST_ASSERT_NULL(H.modifiers, "a fresh human owns no modifiers list")
 	TEST_ASSERT_NULL(H.temp_language_sources, "a fresh human owns no temp_language_sources list")
@@ -30,7 +29,6 @@
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 
 	TEST_ASSERT_NULL(M.logging, "a fresh simple_mob owns no logging list")
-	TEST_ASSERT_NULL(M.grabbed_by, "a fresh simple_mob owns no grabbed_by list")
 	TEST_ASSERT_NULL(M.modifiers, "a fresh simple_mob owns no modifiers list")
 	TEST_ASSERT_NULL(M.friends, "a fresh simple_mob owns no friends list")
 
@@ -54,7 +52,6 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 
 	TEST_ASSERT_NULL(R.logging, "a fresh robot owns no logging list")
-	TEST_ASSERT_NULL(R.grabbed_by, "a fresh robot owns no grabbed_by list")
 	TEST_ASSERT_NULL(R.modifiers, "a fresh robot owns no modifiers list")
 	TEST_ASSERT_NULL(R.robotdecal_on, "a fresh robot owns no robotdecal_on list")
 	TEST_ASSERT_NULL(R.sprite_extra_customization, "a fresh robot owns no sprite_extra_customization list")

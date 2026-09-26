@@ -10,7 +10,7 @@
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
 	set category = "Abilities.General"
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained() || buckled || LAZYLEN(GRABBED_BY(src)) || has_buckled_mobs()) //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 		return
 
 	if(status_flags & HIDING)

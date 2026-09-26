@@ -169,7 +169,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if(shock(user, 100))
 			return TRUE
 
-	if(!(ismob(G.affecting)))
+	var/mob/grabbed = GRAB_TARGET(G)
+	if(!(ismob(grabbed)))
 		return TRUE
 
 	if(locked)
@@ -177,15 +178,15 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		return TRUE
 
 	if(contents.len > 0)
-		to_chat(user, span_danger("There is no room inside the cycler for [G.affecting.name]."))
+		to_chat(user, span_danger("There is no room inside the cycler for [grabbed.name]."))
 		return TRUE
 
-	visible_message(span_notice("[user] starts putting [G.affecting.name] into the suit cycler."), 3)
+	visible_message(span_notice("[user] starts putting [grabbed.name] into the suit cycler."), 3)
 
 	if(do_after(user, 2 SECONDS, target = src))
-		if(!G || !G.affecting)
+		if(!G || !GRAB_TARGET(G))
 			return TRUE
-		var/mob/M = G.affecting
+		var/mob/M = GRAB_TARGET(G)
 		if(!M.move_into(src, OCCUPANT_SLOT_SUIT_CYCLER))
 			return TRUE
 

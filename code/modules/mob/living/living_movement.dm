@@ -58,7 +58,7 @@ default behaviour is:
 		spreadFire(tmob)
 
 		for(var/mob/living/M in range(tmob, 1))
-			if(LAZYLEN(tmob.pinned) ||  ((M.pulling == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(tmob.grabbed_by))) )
+			if(LAZYLEN(tmob.pinned) ||  ((M.pulling == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(GRABBED_BY(tmob)))) )
 				if ( !(world.time % 5) )
 					to_chat(src, span_warning("[tmob] is restrained, you cannot push past"))
 				now_pushing = FALSE
@@ -204,8 +204,8 @@ default behaviour is:
 		if(AM.Move(T2, t, move_time))
 			Move(T, t, move_time)
 
-		if(ishuman(AM) && AM:grabbed_by)
-			for(var/obj/item/grab/G in AM:grabbed_by)
+		if(ishuman(AM) && GRABBED_BY(AM))
+			for(var/obj/item/grab/G in GRABBED_BY(AM))
 				step(G.assailant, get_dir(G.assailant, AM))
 				G.adjust_position()
 		now_pushing = FALSE

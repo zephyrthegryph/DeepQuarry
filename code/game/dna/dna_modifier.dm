@@ -229,15 +229,16 @@
 	else if(!istype(item, /obj/item/grab))
 		return
 	var/obj/item/grab/G = item
-	if(!ismob(G.affecting))
+	var/mob/living/grabbed = GRAB_TARGET(G)
+	if(!ismob(grabbed))
 		return
 	if(get_occupant())
 		to_chat(user, span_warning("The scanner is already occupied!"))
 		return
-	if(G.affecting.abiotic())
+	if(grabbed.abiotic())
 		to_chat(user, span_warning("The subject cannot have abiotic items on."))
 		return
-	put_in(G.affecting)
+	put_in(grabbed)
 	src.add_fingerprint(user)
 	qdel(G)
 	return

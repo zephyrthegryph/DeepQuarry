@@ -333,18 +333,19 @@ This device records all warnings given and teleport events for admin review in c
 
 	//And any friends!
 	for(var/obj/item/grab/G in target.contents)
-		if(G.affecting && (G.state >= GRAB_AGGRESSIVE))
+		var/mob/grabbed = GRAB_TARGET(G)
+		if(grabbed && (G.state >= GRAB_AGGRESSIVE))
 
 			//Phase-out effect for grabbed person
-			phase_out(G.affecting,get_turf(G.affecting))
+			phase_out(grabbed,get_turf(grabbed))
 
 			//Move them, and televore if necessary
-			G.affecting.forceMove(real_dest)
+			grabbed.forceMove(real_dest)
 			if(televored)
 				to_chat(target,span_warning("\The [src] teleports you right into \a [lowertext(real_dest.name)]!"))
 
 			//Phase-in effect for grabbed person
-			phase_in(G.affecting,get_turf(G.affecting))
+			phase_in(grabbed,get_turf(grabbed))
 
 	update_icon()
 	addtimer(CALLBACK(src, PROC_REF(translocator_ready)), 30 SECONDS)

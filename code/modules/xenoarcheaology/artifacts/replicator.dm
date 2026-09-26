@@ -347,7 +347,7 @@
 			return
 	else if(istype(W,/obj/item/grab)) //Is someone being shoved into the machine?
 		var/obj/item/grab/the_grab = W
-		var/mob/living/inserted_mob = the_grab.affecting //Get the mob that is grabbed.
+		var/mob/living/inserted_mob = GRAB_TARGET(the_grab) //Get the mob that is grabbed.
 		if(!inserted_mob.allow_spontaneous_tf)
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return
@@ -590,7 +590,7 @@
 			return
 	else if(istype(W,/obj/item/grab)) //Is someone being shoved into the machine?
 		var/obj/item/grab/the_grab = W
-		var/mob/living/inserted_mob = the_grab.affecting //Get the mob that is grabbed.
+		var/mob/living/inserted_mob = GRAB_TARGET(the_grab) //Get the mob that is grabbed.
 		if(!inserted_mob.allow_spontaneous_tf)
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return

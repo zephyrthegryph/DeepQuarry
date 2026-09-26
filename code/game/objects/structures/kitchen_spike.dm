@@ -13,14 +13,14 @@
 	var/victim_name = "corpse"
 
 /obj/structure/kitchenspike/attackby(obj/item/grab/G as obj, mob/user as mob)
-	if(!istype(G, /obj/item/grab) || !ismob(G.affecting))
+	if(!istype(G, /obj/item/grab) || !ismob(GRAB_TARGET(G)))
 		return
 	if(occupied)
 		to_chat(user, span_danger("The spike already has something on it, finish collecting its meat first!"))
 	else
-		if(spike(G.affecting))
-			visible_message(span_danger("[user] has forced [G.affecting] onto the spike, killing [G.p_them()] instantly!"))
-			var/mob/M = G.affecting
+		if(spike(GRAB_TARGET(G)))
+			visible_message(span_danger("[user] has forced [GRAB_TARGET(G)] onto the spike, killing [G.p_them()] instantly!"))
+			var/mob/M = GRAB_TARGET(G)
 			M.forceMove(src)
 			qdel(G)
 			qdel(M)

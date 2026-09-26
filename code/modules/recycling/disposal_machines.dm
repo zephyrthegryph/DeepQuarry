@@ -186,8 +186,8 @@
 
 	var/obj/item/grab/G = I
 	if(istype(G))	// handle grabbed mob
-		if(ismob(G.affecting))
-			var/mob/GM = G.affecting
+		if(ismob(GRAB_TARGET(G)))
+			var/mob/GM = GRAB_TARGET(G)
 			for (var/mob/V in viewers(user))
 				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
 			if(do_after(user, 2 SECONDS, target = src))

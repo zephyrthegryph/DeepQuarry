@@ -186,17 +186,18 @@
 	else if(istype(W,/obj/item/grab))
 		if((state == EMPTY_OPEN) && hacked)
 			var/obj/item/grab/G = W
-			if(ishuman(G.assailant) && (iscorgi(G.affecting) || ishuman(G.affecting)))
-				user.visible_message("[user] begins stuffing [G.affecting] into the [src]!", "You begin stuffing [G.affecting] into the [src]!")
+			if(ishuman(G.assailant) && (iscorgi(GRAB_TARGET(G)) || ishuman(GRAB_TARGET(G))))
+				user.visible_message("[user] begins stuffing [GRAB_TARGET(G)] into the [src]!", "You begin stuffing [GRAB_TARGET(G)] into the [src]!")
 				if(do_after(user, 5 SECONDS, target = src))
 					if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
-						user.visible_message("[user] stuffs [G.affecting] into the [src] and shuts the door!", "You stuff [G.affecting] into the [src] and shut the door!")
-						G.affecting.forceMove(src)
-						LAZYADD(washing, G.affecting)
+						var/mob/grabbed = GRAB_TARGET(G)
+						user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
+						grabbed.forceMove(src)
+						LAZYADD(washing, grabbed)
 						qdel(G)
 						state = FULL_CLOSED
 					else
-						to_chat(user, "You can't shove [G.affecting] in unless the washer is empty and open!")
+						to_chat(user, "You can't shove [GRAB_TARGET(G)] in unless the washer is empty and open!")
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(is_type_in_list(W, disallowed_types))

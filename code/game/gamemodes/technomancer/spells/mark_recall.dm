@@ -108,9 +108,10 @@ GLOBAL_LIST_INIT(mark_spells, list())
 			var/turf/old_turf = get_turf(user)
 
 			for(var/obj/item/grab/G in user.contents) // People the Technomancer is grabbing come along for the ride.
-				if(G.affecting)
-					G.affecting.forceMove(locate( target_turf.x+rand(-1,1), target_turf.y+rand(-1,1), target_turf.z))
-					to_chat(G.affecting, span_warning("You are teleported along with [user]!"))
+				var/mob/living/grabbed = GRAB_TARGET(G)
+				if(grabbed)
+					grabbed.forceMove(locate( target_turf.x+rand(-1,1), target_turf.y+rand(-1,1), target_turf.z))
+					to_chat(grabbed, span_warning("You are teleported along with [user]!"))
 
 			user.forceMove(target_turf)
 			to_chat(user, span_notice("You are teleported to your Mark."))

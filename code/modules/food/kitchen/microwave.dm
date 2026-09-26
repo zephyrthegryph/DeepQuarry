@@ -125,7 +125,7 @@
 	if(try_insert_reagent(O, user)) return FALSE
 	if(istype(O,/obj/item/grab))
 		var/obj/item/grab/G = O
-		to_chat(user, span_warning("Unfortunately, the laws of physics prevent you from inserting \the [G.affecting] into \the [src]."))
+		to_chat(user, span_warning("Unfortunately, the laws of physics prevent you from inserting \the [GRAB_TARGET(G)] into \the [src]."))
 		return TRUE
 	if(istype(O, /obj/item/paicard))
 		if(!paicard)

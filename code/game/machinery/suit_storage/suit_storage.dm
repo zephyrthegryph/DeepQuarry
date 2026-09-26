@@ -416,7 +416,8 @@
 		return TRUE
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		if(!(ismob(G.affecting)))
+		var/mob/grabbed = GRAB_TARGET(G)
+		if(!(ismob(grabbed)))
 			return TRUE
 		if(!isopen)
 			to_chat(user, span_warning("The unit's doors are shut."))
@@ -427,10 +428,10 @@
 		if((OCCUPANT) || (HELMET) || (SUIT)) //Unit needs to be absolutely empty
 			to_chat(user, span_warning("The unit's storage area is too cluttered."))
 			return TRUE
-		visible_message(span_notice("[user] starts putting [G.affecting.name] into the Suit Storage Unit."), 3)
+		visible_message(span_notice("[user] starts putting [grabbed.name] into the Suit Storage Unit."), 3)
 		if(do_after(user, 2 SECONDS, target = src))
-			if(!G || !G.affecting) return TRUE //derpcheck
-			var/mob/M = G.affecting
+			if(!G || !GRAB_TARGET(G)) return TRUE //derpcheck
+			var/mob/M = GRAB_TARGET(G)
 			if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
 				return TRUE
 			isopen = 0 //close ittt

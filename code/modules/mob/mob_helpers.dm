@@ -147,7 +147,7 @@
 		if(target.buckled || target.lying)
 			return zone
 		// if your target is being grabbed aggressively by someone you cannot miss either
-		for(var/obj/item/grab/G in target.grabbed_by)
+		for(var/obj/item/grab/G in GRABBED_BY(target))
 			if(G.state >= GRAB_AGGRESSIVE)
 				return zone
 

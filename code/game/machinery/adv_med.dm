@@ -64,21 +64,21 @@
 /obj/machinery/bodyscanner/attackby(obj/item/G, user as mob)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/H = G
+		var/mob/M = GRAB_TARGET(H)
 		if(panel_open)
 			to_chat(user, span_notice("Close the maintenance panel first."))
 			return
-		if(!ismob(H.affecting))
+		if(!ismob(M))
 			return
-		if(!ishuman(H.affecting))
+		if(!ishuman(M))
 			to_chat(user, span_warning("\The [src] is not designed for that organism!"))
 			return
 		if(occupant)
 			to_chat(user, span_notice("\The [src] is already occupied!"))
 			return
-		if(H.affecting.has_buckled_mobs())
-			to_chat(user, span_warning("\The [H.affecting] has other entities attached to it. Remove them first."))
+		if(M.has_buckled_mobs())
+			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
 			return
-		var/mob/M = H.affecting
 		if(M.abiotic())
 			to_chat(user, span_notice("Subject cannot have abiotic items on."))
 			return

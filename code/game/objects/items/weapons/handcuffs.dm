@@ -58,7 +58,7 @@
 		if(user.Adjacent(target))
 			return 1
 	else
-		for(var/obj/item/grab/G in target.grabbed_by)
+		for(var/obj/item/grab/G in GRABBED_BY(target))
 			if(G.loc == user && G.state >= GRAB_AGGRESSIVE)
 				return 1
 	return 0

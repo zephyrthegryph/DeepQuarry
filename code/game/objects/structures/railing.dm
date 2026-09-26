@@ -160,8 +160,8 @@
 	// Handle harm intent grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
-		if (isliving(G.affecting))
-			var/mob/living/M = G.affecting
+		if (isliving(GRAB_TARGET(G)))
+			var/mob/living/M = GRAB_TARGET(G)
 			var/obj/occupied = can_climb_turf(src)
 			if(occupied)
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
@@ -171,18 +171,18 @@
 					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
-					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))
+					visible_message(span_danger("[G.assailant] slams [M]'s face against \the [src]!"))
 					playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 				else
 					to_chat(user, span_danger("You need a better grip to do that!"))
 					return
 			else
-				if (get_turf(G.affecting) == get_turf(src))
-					G.affecting.forceMove(get_step(src, src.dir))
+				if (get_turf(M) == get_turf(src))
+					M.forceMove(get_step(src, src.dir))
 				else
-					G.affecting.forceMove(get_turf(src))
-				G.affecting.status_at_least(EFFECT_WEAKENED, 5)
-				visible_message(span_danger("[G.assailant] throws [G.affecting] over \the [src]!"))
+					M.forceMove(get_turf(src))
+				M.status_at_least(EFFECT_WEAKENED, 5)
+				visible_message(span_danger("[G.assailant] throws [M] over \the [src]!"))
 			qdel(W)
 			return
 

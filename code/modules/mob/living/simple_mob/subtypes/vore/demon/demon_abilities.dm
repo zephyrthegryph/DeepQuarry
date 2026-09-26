@@ -273,7 +273,7 @@
 	if(!istype(G))
 		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
 		return
-	var/mob/living/carbon/human/T = G.affecting
+	var/mob/living/carbon/human/T = GRAB_TARGET(G)
 	if(!istype(T))
 		to_chat(src, span_warning("\The [T] is not able to be affected."))
 		return
@@ -314,7 +314,7 @@
 	if(!istype(G))
 		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
 		return
-	var/mob/living/carbon/human/T = G.affecting
+	var/mob/living/carbon/human/T = GRAB_TARGET(G)
 	if(!istype(T))
 		to_chat(src, span_warning("\The [T] is not able to be affected."))
 		return

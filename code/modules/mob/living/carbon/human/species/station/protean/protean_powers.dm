@@ -347,7 +347,7 @@
 
 /datum/protean_power/copy_form/proc/aggressive_grab_on(mob/living/carbon/human/H, mob/living/victim)
 	for(var/obj/item/grab/G in H)
-		if(G.state >= GRAB_AGGRESSIVE && (!victim || G.affecting == victim))
+		if(G.state >= GRAB_AGGRESSIVE && (!victim || GRAB_TARGET(G) == victim))
 			return G
 	return null
 
@@ -356,7 +356,7 @@
 	if(!G)
 		to_chat(H, span_notice("You need to be aggressively grabbing someone before you can copy their form."))
 		return
-	var/mob/living/carbon/human/victim = G.affecting
+	var/mob/living/carbon/human/victim = GRAB_TARGET(G)
 	if(!istype(victim))
 		to_chat(H, span_warning("You can only perform this on human mobs!"))
 		return

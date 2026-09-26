@@ -9,7 +9,6 @@
 	use_power = USE_POWER_OFF
 
 	var/in_transit = 0
-	var/mob/occupant = null
 
 	var/xc = list(137, 209, 163, 110, 95, 60, 129, 201) // List of x values on the map to go to.
 	var/yc = list(134, 99, 169, 120, 96, 122, 189, 219) // List of y values on the map to go to.
@@ -23,18 +22,8 @@
 	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
 	name = "transport pod"
 
-/datum/om/relation/slot/occupant/transportpod/on_link(mob/living/source, obj/machinery/transportpod/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/transportpod/on_unlink(mob/living/source, obj/machinery/transportpod/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
-
 /obj/machinery/transportpod/process()
-	if(occupant)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		if(in_transit)
 			var/locNum = rand(1, 8) //pick a random location
 			var/turf/L = locate(xc[locNum], yc[locNum], 1) // Pairs the X and Y to get an actual location.
@@ -58,7 +47,7 @@
 
 /obj/machinery/transportpod/update_icon()
 	..()
-	if(occupant)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		icon_state = "borg_pod_closed"
 	else
 		icon_state = "borg_pod_opened"
@@ -67,7 +56,7 @@
 	go_in(O)
 
 /obj/machinery/transportpod/proc/go_in(mob/living/carbon/human/O)
-	if(occupant)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		return
 
 	if(O.incapacitated()) //aint no sleepy people getting in here
@@ -85,6 +74,7 @@
 	return 1
 
 /obj/machinery/transportpod/proc/go_out()
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD)
 	if(!occupant)
 		return
 	slot_remove(occupant, src.loc)

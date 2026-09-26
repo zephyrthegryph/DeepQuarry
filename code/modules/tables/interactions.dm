@@ -88,8 +88,8 @@
 	// Handle harm intent grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
-		if (isliving(G.affecting))
-			var/mob/living/M = G.affecting
+		if (isliving(GRAB_TARGET(G)))
+			var/mob/living/M = GRAB_TARGET(G)
 			var/obj/occupied = can_climb_turf(src)
 			if(occupied)
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
@@ -100,7 +100,7 @@
 				if(IS_HARMING(user))
 					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
-					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))
+					visible_message(span_danger("[G.assailant] slams [GRAB_TARGET(G)]'s face against \the [src]!"))
 					if(material)
 						playsound(src, material.tableslam_noise, 50, 1)
 					else
@@ -123,7 +123,7 @@
 			else if(G.state > GRAB_AGGRESSIVE || world.time >= (G.last_action + UPGRADE_COOLDOWN))
 				M.forceMove(get_turf(src))
 				M.status_at_least(EFFECT_WEAKENED, 5)
-				visible_message(span_danger("[G.assailant] puts [G.affecting] on \the [src]."))
+				visible_message(span_danger("[G.assailant] puts [GRAB_TARGET(G)] on \the [src]."))
 			qdel(W)
 			return
 

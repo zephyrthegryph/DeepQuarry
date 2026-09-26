@@ -20,8 +20,8 @@
 
 	if(istype(I, /obj/item/grab)) // Drop grabs, this is an edge case
 		var/obj/item/grab/check_grab = I
-		if(check_grab.affecting)
-			visible_message(span_danger("\The [src] breaks their grip on [check_grab.affecting]!"))
+		if(GRAB_TARGET(check_grab))
+			visible_message(span_danger("\The [src] breaks their grip on [GRAB_TARGET(check_grab)]!"))
 		drop_from_inventory(check_grab)
 		return
 

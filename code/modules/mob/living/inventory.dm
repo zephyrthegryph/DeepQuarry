@@ -123,16 +123,18 @@
 	// Lefty grab!
 	if (istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab))
 		var/obj/item/grab/G = get_equipped_item(SLOT_ID_HAND_L)
-		L |= G.affecting
+		var/mob/grabbed = GRAB_TARGET(G)
+		L |= grabbed
 		if(mobchain_limit-- > 0)
-			G.affecting?.ret_grab(L, mobchain_limit) // Recurse! They can update the list. It's the same instance as ours.
+			grabbed?.ret_grab(L, mobchain_limit) // Recurse! They can update the list. It's the same instance as ours.
 
 	// Righty grab!
 	if (istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab))
 		var/obj/item/grab/G = get_equipped_item(SLOT_ID_HAND_R)
-		L |= G.affecting
+		var/mob/grabbed = GRAB_TARGET(G)
+		L |= grabbed
 		if(mobchain_limit-- > 0)
-			G.affecting?.ret_grab(L, mobchain_limit) // Same as lefty!
+			grabbed?.ret_grab(L, mobchain_limit) // Same as lefty!
 
 	// On all but the one not called by us, this will just be ignored. Oh well!
 	return L

@@ -410,7 +410,7 @@
 
 /mob/living/proc/resist_grab()
 	var/resisting = 0
-	for(var/obj/item/grab/G in grabbed_by)
+	for(var/obj/item/grab/G in GRABBED_BY(src))
 		resisting++
 		G.handle_resist()
 	if(resisting)
@@ -694,7 +694,7 @@
 			pass_flags &= ~PASSTABLE
 		passtable_crawl_checked = FALSE
 
-	for(var/obj/item/grab/G in grabbed_by)
+	for(var/obj/item/grab/G in GRABBED_BY(src))
 		if(G.state >= GRAB_AGGRESSIVE)
 			canmove = 0
 			break

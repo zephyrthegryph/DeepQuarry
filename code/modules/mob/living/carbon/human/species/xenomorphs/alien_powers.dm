@@ -365,16 +365,16 @@
 
 	last_special = world.time + 50
 
-	visible_message(span_warning(span_bold("\The [src]") + " rips viciously at \the [G.affecting]'s body with its claws!"))
+	visible_message(span_warning(span_bold("\The [src]") + " rips viciously at \the [GRAB_TARGET(G)]'s body with its claws!"))
 
-	if(ishuman(G.affecting))
-		var/mob/living/carbon/human/H = G.affecting
+	if(ishuman(GRAB_TARGET(G)))
+		var/mob/living/carbon/human/H = GRAB_TARGET(G)
 		H.injure(INJURY_CUT, 50, null, src)
 		if(H.stat == 2)
 			H.gib()
 
 	else
-		var/mob/living/M = G.affecting
+		var/mob/living/M = GRAB_TARGET(G)
 		if(!istype(M)) return //wut
 		M.injure(INJURY_CUT, 50, null, src)
 		if(M.stat == 2)

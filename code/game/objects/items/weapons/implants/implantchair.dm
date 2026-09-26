@@ -88,12 +88,12 @@
 /obj/machinery/implantchair/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/grab = G
-		if(!ismob(grab.affecting))
+		var/mob/M = GRAB_TARGET(grab)
+		if(!ismob(M))
 			return TRUE
-		if(grab.affecting.has_buckled_mobs())
-			to_chat(user, span_warning("\The [grab.affecting] has other entities attached to them. Remove them first."))
+		if(M.has_buckled_mobs())
+			to_chat(user, span_warning("\The [M] has other entities attached to them. Remove them first."))
 			return TRUE
-		var/mob/M = grab.affecting
 		if(put_mob(M))
 			qdel(G)
 	src.updateUsrDialog(user)

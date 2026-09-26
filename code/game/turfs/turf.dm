@@ -225,7 +225,7 @@
 		return
 	if(istype(O, /atom/movable/screen))
 		return
-	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user.grabbed_by) || user.is_paralyzed())
+	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(GRABBED_BY(user)) || user.is_paralyzed())
 		return
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
 		return

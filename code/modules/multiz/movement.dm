@@ -154,7 +154,7 @@
 		if(L.pulling && !L.pulling.anchored)
 			pulling |= L.pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
-			pulling |= G.affecting
+			pulling |= GRAB_TARGET(G)
 		if(direction == UP)
 			src.audible_message(span_notice("[src] moves up."))
 		else if(direction == DOWN)
@@ -324,7 +324,7 @@
 				L.stop_flying()
 			else
 				return
-		if(LAZYLEN(L.grabbed_by)) //If you're grabbed (presumably by someone flying) let's not have you fall. This also allows people to grab onto you while you jump over a railing to prevent you from falling!
+		if(LAZYLEN(GRABBED_BY(L))) //If you're grabbed (presumably by someone flying) let's not have you fall. This also allows people to grab onto you while you jump over a railing to prevent you from falling!
 			return
 
 	if(can_fall() && can_fall_to(below))

@@ -164,7 +164,7 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 
-		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -174,7 +174,7 @@
 		if(L.pulling && !L.pulling.anchored)
 			pulling |= L.pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
-			pulling |= G.affecting
+			pulling |= GRAB_TARGET(G)
 
 	// If the stairs aren't broken, go up.
 	if(check_integrity())
@@ -207,7 +207,7 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 
-		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -226,7 +226,8 @@
 			L.continue_pulling(P)
 
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
-			G.affecting.forceMove(get_turf(top))
+			var/mob/grabbed = GRAB_TARGET(G)
+			grabbed.forceMove(get_turf(top))
 
 		if(L.client)
 			L.client.Process_Grab()
@@ -428,7 +429,7 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 
-		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -438,7 +439,7 @@
 		if(L.pulling && !L.pulling.anchored)
 			pulling |= L.pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
-			pulling |= G.affecting
+			pulling |= GRAB_TARGET(G)
 
 	// If the stairs aren't broken, go up.
 	if(check_integrity())
@@ -469,7 +470,7 @@
 	// ition End
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(GRABBED_BY(L))) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -488,7 +489,8 @@
 			L.continue_pulling(P)
 
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
-			G.affecting.forceMove(get_turf(bottom))
+			var/mob/grabbed = GRAB_TARGET(G)
+			grabbed.forceMove(get_turf(bottom))
 
 		if(L.client)
 			L.client.Process_Grab()

@@ -398,8 +398,8 @@
 	add_fingerprint(user)
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		if(G.affecting)
-			go_in(G.affecting, user)
+		if(GRAB_TARGET(G))
+			go_in(GRAB_TARGET(G), user)
 		return
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)

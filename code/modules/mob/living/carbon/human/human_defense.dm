@@ -589,7 +589,7 @@ emp_act
 	user.visible_message(span_danger("\The [user] begins to twist \the [W] around inside [src]'s [chest]!"))
 	if(!do_after(user, 2 SECONDS, target = src))
 		return 0
-	if(!(G && G.assailant == user && G.affecting == src)) //check that we still have a grab
+	if(!(G && G.assailant == user && GRAB_TARGET(G) == src)) //check that we still have a grab
 		return 0
 
 	user.visible_message(span_danger("\The [user] twists \the [W] around inside [src]'s [chest]!"))

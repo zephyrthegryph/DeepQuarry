@@ -250,7 +250,7 @@
 		return
 	if(M == src || anchored)
 		return
-	for(var/obj/item/grab/G in src.grabbed_by)
+	for(var/obj/item/grab/G in GRABBED_BY(src))
 		if(G.assailant == M)
 			to_chat(M, span_notice("You already grabbed [src]."))
 			return
@@ -309,11 +309,11 @@
 			if(canmove && src!=H && prob(20))
 				block = 1
 
-	if(LAZYLEN(M.grabbed_by))
+	if(LAZYLEN(GRABBED_BY(M)))
 		// Someone got a good grip on them, they won't be able to do much damage
 		rand_damage = max(1, rand_damage - 2)
 
-	if(LAZYLEN(src.grabbed_by) || src.buckled || !src.canmove || src==H)
+	if(LAZYLEN(GRABBED_BY(src)) || src.buckled || !src.canmove || src==H)
 		accurate = 1 // certain circumstances make it impossible for us to evade punches
 		rand_damage = 5
 
@@ -450,7 +450,7 @@
 /mob/living/carbon/human/proc/grab_joint(mob/living/user, def_zone)
 	var/has_grab = 0
 	for(var/obj/item/grab/G in list(user.get_equipped_item(SLOT_ID_HAND_L), user.get_equipped_item(SLOT_ID_HAND_R)))
-		if(G.affecting == src && G.state == GRAB_NECK)
+		if(GRAB_TARGET(G) == src && G.state == GRAB_NECK)
 			has_grab = 1
 			break
 
@@ -482,14 +482,14 @@
 
 	if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab))
 		var/obj/item/grab/lgrab = get_equipped_item(SLOT_ID_HAND_L)
-		if(lgrab.affecting)
-			visible_message(span_danger("[user] has broken [src]'s grip on [lgrab.affecting]!"))
+		if(GRAB_TARGET(lgrab))
+			visible_message(span_danger("[user] has broken [src]'s grip on [GRAB_TARGET(lgrab)]!"))
 			success = TRUE
 		drop_from_inventory(lgrab)
 	if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab))
 		var/obj/item/grab/rgrab = get_equipped_item(SLOT_ID_HAND_R)
-		if(rgrab.affecting)
-			visible_message(span_danger("[user] has broken [src]'s grip on [rgrab.affecting]!"))
+		if(GRAB_TARGET(rgrab))
+			visible_message(span_danger("[user] has broken [src]'s grip on [GRAB_TARGET(rgrab)]!"))
 			success = TRUE
 		drop_from_inventory(rgrab)
 	return success

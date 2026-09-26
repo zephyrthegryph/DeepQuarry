@@ -42,19 +42,20 @@
 		//If we're grabbing someone, electrocute them.
 		if(istype(held_item,/obj/item/grab))
 			var/obj/item/grab/G = held_item
-			if(G.affecting)
-				G.affecting.electrocute_act(10 * siemens, src, 1.0, BP_TORSO, 0)
+			var/mob/living/grabbed = GRAB_TARGET(G)
+			if(grabbed)
+				grabbed.electrocute_act(10 * siemens, src, 1.0, BP_TORSO, 0)
 				var/agony = 80 * siemens //Does more than if hit with an electric hand, since grabbing is slower.
-				G.affecting.stun_effect_act(0, agony, BP_TORSO, src, electric = TRUE)
+				grabbed.stun_effect_act(0, agony, BP_TORSO, src, electric = TRUE)
 
-				add_attack_logs(src,G.affecting,"Changeling shocked")
+				add_attack_logs(src,grabbed,"Changeling shocked")
 
 				if(siemens)
-					visible_message(span_warning("Arcs of electricity strike [G.affecting]!"),
-					span_warning("Our hand channels raw electricity into [G.affecting]."),
+					visible_message(span_warning("Arcs of electricity strike [GRAB_TARGET(G)]!"),
+					span_warning("Our hand channels raw electricity into [GRAB_TARGET(G)]."),
 					span_warningplain("You hear sparks!"))
 				else
-					to_chat(src, span_warning("Our gloves block us from shocking \the [G.affecting]."))
+					to_chat(src, span_warning("Our gloves block us from shocking \the [GRAB_TARGET(G)]."))
 				changeling.chem_charges -= 10
 				return TRUE
 

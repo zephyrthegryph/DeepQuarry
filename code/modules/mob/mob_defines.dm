@@ -142,8 +142,6 @@
 
 	var/tmp/datum/hud/hud_used = null
 
-	var/list/grabbed_by
-
 	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
 	var/in_throw_mode = 0

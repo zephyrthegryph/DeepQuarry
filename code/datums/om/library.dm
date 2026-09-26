@@ -91,11 +91,12 @@
 // (/datum/om/relation/slot/occupant, containment.md §10), which IS the
 // relation, so there is no separate one left to declare.
 
-/// mob -> what it is buckled to. No view fields (OM relations step 3): `M.buckled`
-/// and `A.buckled_mobs` are still the vars every caller reads (BUCKLED()/
-/// BUCKLED_MOBS(), om.dm, wrap the relation directly for new code), but this
-/// relation's own on_link()/on_unlink() are now their only writer -- there is
-/// no generic field-link mechanism left to do it for them.
+/// mob -> what it is buckled to. `buckled`/`buckled_mobs` are gone (OM
+/// relations step 6): there is no stored field on either side any more --
+/// BUCKLED()/BUCKLED_MOBS() (om.dm) read the edge directly, so this relation
+/// no longer has any view state to keep in sync, only the real side effects
+/// below (direction/canmove/floating/water, riding offsets, the buckled
+/// alert, the buckle signal).
 /// break_if drops the edge outright (not just its EFFECT_BUCKLED contribution)
 /// the moment the mob ends up off the buckled object's tile, e.g. a forced
 /// move that didn't go through handle_buckled_mob_movement().
@@ -113,8 +114,6 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	source.buckled = target
-	LAZYADD(target.buckled_mobs, source)
 	var/forced = pending_forced
 	source.facing_dir = null
 	source.set_dir(target.buckle_dir ? target.buckle_dir : target.dir)
@@ -130,10 +129,6 @@
 
 /datum/om/relation/buckled_to/on_unlink(mob/living/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && source.buckled == target)
-		source.buckled = null
-	if(istype(target))
-		LAZYREMOVE(target.buckled_mobs, source)
 	if(istype(source) && !QDELETED(source))
 		source.anchored = initial(source.anchored)
 		source.update_canmove()
@@ -167,27 +162,21 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	source.affecting = target
-	LAZYADD(target.grabbed_by, source)
 	target.reveal(span_warning("You are revealed as [source.assailant] grabs you."))
 	source.assailant?.reveal(span_warning("You reveal yourself as you grab [target]."))
 	// If the assailant is also currently grabbed by their new victim, both
 	// grabs enter "dancing" (facing each other, e.g. a wrestling clinch).
-	if(source.assailant?.grabbed_by)
-		for(var/obj/item/grab/G in source.assailant.grabbed_by)
-			if(G.assailant == target && G.affecting == source.assailant)
+	if(source.assailant)
+		for(var/obj/item/grab/G in GRABBED_BY(source.assailant))
+			if(G.assailant == target && OM_REL_TARGET(G, /datum/om/relation/grabbing) == source.assailant)
 				G.dancing = TRUE
 				G.adjust_position()
 				source.dancing = TRUE
-	if(source.assailant?.pulling == target)
+	if(PULLING(source.assailant) == target)
 		source.assailant.stop_pulling()
 
 /datum/om/relation/grabbing/on_unlink(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && source.affecting == target)
-		source.affecting = null
-	if(istype(target))
-		LAZYREMOVE(target.grabbed_by, source)
 	if(istype(target) && !QDELETED(target))
 		animate(target, pixel_x = initial(target.pixel_x), pixel_y = initial(target.pixel_y), 4, 1, LINEAR_EASING)
 		target.reset_plane_and_layer()

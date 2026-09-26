@@ -611,9 +611,9 @@
 		to_chat(user, span_notice("\The [src] is in use."))
 		return TRUE
 
-	if(!ismob(grab.affecting))
+	if(!ismob(GRAB_TARGET(grab)))
 		return TRUE
-	go_in(grab.affecting, user)
+	go_in(GRAB_TARGET(grab), user)
 	return TRUE
 
 /// Old object verb.

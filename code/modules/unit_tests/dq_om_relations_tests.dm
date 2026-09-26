@@ -91,8 +91,10 @@
 
 // ---------------------------------------------------------------- grabbing
 
-/// Grabbing a mob establishes the grabbing relation: the grab item's
-/// `affecting` and the victim's `grabbed_by` agree with the direct lookup.
+/// Grabbing a mob establishes the grabbing relation: GRAB_TARGET(G) and
+/// GRABBED_BY(victim) agree with the direct lookup. No view fields (OM
+/// relations step 6): the grab item's `affecting` and the victim's
+/// `grabbed_by` fields are gone -- both are pure graph reads now.
 /datum/unit_test/dq_om_relation_grabbing_establishes
 
 /datum/unit_test/dq_om_relation_grabbing_establishes/Run()
@@ -100,12 +102,12 @@
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
 	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
 	TEST_ASSERT(!QDELETED(G), "the grab should not immediately self-delete")
-	TEST_ASSERT_EQUAL(G.affecting, victim, "G.affecting should be the victim")
-	TEST_ASSERT(G in victim.grabbed_by, "G should be in the victim's grabbed_by")
-	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with the affecting var")
+	TEST_ASSERT_EQUAL(GRAB_TARGET(G), victim, "GRAB_TARGET(G) should be the victim")
+	TEST_ASSERT(G in GRABBED_BY(victim), "G should be in the victim's GRABBED_BY")
+	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with GRAB_TARGET")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(G, victim, /datum/om/relation/grabbing), "an edge should exist between G and the victim")
 
-/// Hard-deleting a grab removes it from the victim's grabbed_by, with no
+/// Hard-deleting a grab removes it from the victim's GRABBED_BY, with no
 /// dangling reference left behind.
 /datum/unit_test/dq_om_relation_grabbing_breaks_on_source_delete
 
@@ -116,8 +118,8 @@
 	TEST_ASSERT(!QDELETED(G), "setup: the grab should not immediately self-delete")
 	qdel(G)
 	TEST_ASSERT(QDELETED(G), "setup: the grab should be deleted")
-	TEST_ASSERT_EQUAL(LAZYLEN(victim.grabbed_by), 0, "the victim should have no grabs left")
-	TEST_ASSERT(!(G in victim.grabbed_by), "the deleted grab should not still be listed")
+	TEST_ASSERT_EQUAL(length(GRABBED_BY(victim)), 0, "the victim should have no grabs left")
+	TEST_ASSERT(!(G in GRABBED_BY(victim)), "the deleted grab should not still be listed")
 
 /// Hard-deleting the grabbed mob deletes the grab item too (on_target_delete
 /// = OM_END_DELETE_OTHER): the item has nothing left to grab, and previously

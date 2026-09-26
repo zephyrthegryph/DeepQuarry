@@ -121,12 +121,12 @@
 
 	else if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
-		var/mob/living/affecting = G.affecting
+		var/mob/living/affecting = GRAB_TARGET(G)
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		if(do_after(user, 2 SECONDS, G.affecting, target = src))
+		if(do_after(user, 2 SECONDS, GRAB_TARGET(G), target = src))
 			affecting.forceMove(loc)
 			INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
 			qdel(W)

@@ -211,11 +211,11 @@
 	if(get_dist(src, actor) >= 2)
 		return FALSE
 	var/obj/item/grab/G = held
-	return isliving(G.affecting)
+	return isliving(GRAB_TARGET(G))
 
 /obj/machinery/recharge_station/proc/interaction_insert_grab(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/grab/G = held
-	var/mob/living/M = G.affecting
+	var/mob/living/M = GRAB_TARGET(G)
 	qdel(held)
 	go_in(M)
 	return FALSE

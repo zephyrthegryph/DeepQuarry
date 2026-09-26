@@ -159,7 +159,7 @@
 		to_chat(C, span_warning("You must be grabbing a creature in your active hand to absorb them."))
 		return
 
-	var/mob/living/carbon/human/T = G.affecting // I must say, this is a quite ingenious way of doing it. Props to the original coders.
+	var/mob/living/carbon/human/T = GRAB_TARGET(G) // I must say, this is a quite ingenious way of doing it. Props to the original coders.
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not able to be drained."))
 		return
@@ -222,7 +222,7 @@
 		to_chat(src, span_warning("You must be grabbing a creature in your active hand to drain them."))
 		return
 
-	var/mob/living/carbon/human/T = G.affecting // I must say, this is a quite ingenious way of doing it. Props to the original coders.
+	var/mob/living/carbon/human/T = GRAB_TARGET(G) // I must say, this is a quite ingenious way of doing it. Props to the original coders.
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not able to be drained."))
 		return
@@ -320,7 +320,7 @@
 		to_chat(C, span_warning("You must be grabbing a creature in your active hand to feed them."))
 		return
 
-	var/mob/living/carbon/human/T = G.affecting // I must say, this is a quite ingenious way of doing it. Props to the original coders.
+	var/mob/living/carbon/human/T = GRAB_TARGET(G) // I must say, this is a quite ingenious way of doing it. Props to the original coders.
 	if(!istype(T))
 		to_chat(src, span_warning("\The [T] is not able to be fed."))
 		return
@@ -413,7 +413,7 @@
 		to_chat(src,span_warning("You must have a tighter grip to severely damage this creature!"))
 		return FALSE
 
-	return ..(G.affecting)
+	return ..(GRAB_TARGET(G))
 
 //PAIs, borgs, and animals don't need a grab or anything
 /mob/living/silicon/pai/can_shred(mob/living/carbon/human/target)
@@ -1205,7 +1205,7 @@
 		to_chat(C, span_warning("You must be grabbing a creature in your active hand to bite them."))
 		return
 
-	var/mob/living/carbon/human/T = G.affecting
+	var/mob/living/carbon/human/T = GRAB_TARGET(G)
 
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not able to be bitten."))

@@ -61,9 +61,9 @@
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			if(large)
-				MouseDrop_T(G.affecting, user)	//act like they were dragged onto the closet
+				MouseDrop_T(GRAB_TARGET(G), user)	//act like they were dragged onto the closet
 			else
-				to_chat(user, span_notice("The locker is too small to stuff [G.affecting] into!"))
+				to_chat(user, span_notice("The locker is too small to stuff [GRAB_TARGET(G)] into!"))
 		if(isrobot(user))
 			return
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
