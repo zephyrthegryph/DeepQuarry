@@ -137,7 +137,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 		if(target.key)
 			target.ghostize()
 		host.release_mind(target, "brain implanted into [target]")
-	host?.discard_occupant() // an implanted brain shows no view
+	host?.discard_view() // an implanted brain shows no view
 	..()
 
 /obj/item/organ/internal/brain/proc/get_control_efficiency()

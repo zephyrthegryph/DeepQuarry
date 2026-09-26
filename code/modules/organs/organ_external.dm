@@ -144,13 +144,13 @@
 	capacity_model = SLOT_CAPACITY_NONE
 	keyed = TRUE
 	drop_policy = SLOT_DROP_DELETE
-	source_ref_field = "part"
-	target_list_field = "implants"
 
+/// No view fields (OM relations step 3): `part` (the implant's own var) and
+/// `implants` (the organ's list) are still ordinary vars every reader here
+/// uses, but this slot's own on_link()/on_unlink() are their only writer now.
 /// `imp_in` (the host mob) has no reverse list of its own to double-check
-/// against, so the core's source_ref_field can't set it directly -- it needs
-/// the organ's `owner`, not the organ itself. Previously both sides were
-/// hand-maintained (/obj/item/implant/Destroy() and
+/// against, so it needs the organ's `owner`, not the organ itself. Previously
+/// all of this was hand-maintained (/obj/item/implant/Destroy() and
 /// /obj/item/organ/external/Destroy() each cleaned up their own half); now
 /// hard-deleting either one tears the whole link down automatically,
 /// including `imp_in`, which used to only get cleared by the organ's
@@ -159,11 +159,17 @@
 /datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && istype(target))
+		source.part = target
+		LAZYADD(target.implants, source)
 		source.imp_in = target.owner
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	// Unlike the old bare relation, this slot's own drop_policy (DELETE) may
+	if(istype(source) && source.part == target)
+		source.part = null
+	if(istype(target))
+		LAZYREMOVE(target.implants, source)
+	// Unlike a bare relation, this slot's own drop_policy (DELETE) may
 	// already be what's destroying `source` (its organ is going and takes it
 	// with it) -- writing to a QDELETED datum's own vars is harmless, and
 	// leaving `imp_in` stale until then would fail a "no dangling refs" check

@@ -43,6 +43,16 @@
 	slot_id = OCCUPANT_SLOT_SUIT_STORAGE
 	name = "suit storage unit"
 
+/datum/om/relation/slot/occupant/suit_storage/on_link(mob/living/source, obj/machinery/suit_storage_unit/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.OCCUPANT = source
+
+/datum/om/relation/slot/occupant/suit_storage/on_unlink(mob/living/source, obj/machinery/suit_storage_unit/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.OCCUPANT == source)
+		target.OCCUPANT = null
+
 /obj/machinery/suit_storage_unit/update_icon()
 	var/hashelmet = 0
 	var/hassuit = 0
@@ -340,7 +350,6 @@
 		if(user.loc != src.loc)
 			to_chat(OCCUPANT, span_notice("You leave the not-so-cozy confines of the SSU."))
 	slot_remove(OCCUPANT, get_turf(src))
-	OCCUPANT = null
 	if(!isopen)
 		isopen = 1
 	update_icon()
@@ -387,14 +396,11 @@
 		user.stop_pulling()
 		if(!user.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
 			return TRUE
-		OCCUPANT = user
 		isopen = 0 //Close the thing after the guy gets inside
 		update_icon()
 
 		add_fingerprint(user)
 		return TRUE
-	else
-		OCCUPANT = null //Testing this as a backup sanity test
 	return TRUE
 
 
@@ -427,7 +433,6 @@
 			var/mob/M = G.affecting
 			if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
 				return TRUE
-			OCCUPANT = M
 			isopen = 0 //close ittt
 
 			add_fingerprint(user)

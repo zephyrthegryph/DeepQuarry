@@ -112,6 +112,22 @@
 
 	var/mob/living/carbon/occupant = null
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/tyr_prop
+	holder = /obj/machinery/restoration_cell
+	slot_id = OCCUPANT_SLOT_TYR_PROP
+	name = "restoration cell"
+
+/datum/om/relation/slot/occupant/tyr_prop/on_link(mob/living/source, obj/machinery/restoration_cell/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/tyr_prop/on_unlink(mob/living/source, obj/machinery/restoration_cell/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/machinery/restoration_cell/attackby(obj/item/G as obj, mob/user as mob)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/grab = G
@@ -149,9 +165,8 @@
 	vis_contents -= occupant
 	occupant.pixel_x = occupant.default_pixel_x
 	occupant.pixel_y = occupant.default_pixel_y
-	occupant.loc = get_step(src.loc, SOUTH)
 	unbuckle_mob(occupant, force = TRUE)
-	occupant = null
+	slot_remove(occupant, get_step(src.loc, SOUTH))
 	update_use_power(USE_POWER_IDLE)
 	return
 
@@ -172,11 +187,11 @@
 		M.client.perspective = EYE_PERSPECTIVE
 		M.client.eye = src
 	M.stop_pulling()
-	M.forceMove(src)
+	if(!M.move_into(src, OCCUPANT_SLOT_TYR_PROP))
+		return
 	M.ExtinguishMob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_notice("<b>You feel a warm liquid surround you.</b>"))
-	occupant = M
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
 	occupant.pixel_y += 19

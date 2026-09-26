@@ -33,6 +33,26 @@
 #define OCCUPANT_SLOT_DNA_SCANNER "dna_scanner_occupant"
 /// The sealed occupant slot of a suit storage unit.
 #define OCCUPANT_SLOT_SUIT_STORAGE "suit_storage_occupant"
+/// The sealed occupant slot of a medical sleeper.
+#define OCCUPANT_SLOT_SLEEPER "sleeper_occupant"
+/// The sealed occupant slot of a cryo tube.
+#define OCCUPANT_SLOT_CRYO "cryo_occupant"
+/// The sealed occupant slot of an advanced medical body scanner.
+#define OCCUPANT_SLOT_BODY_SCANNER "body_scanner_occupant"
+/// The sealed occupant slot of a cloning pod.
+#define OCCUPANT_SLOT_CLONEPOD "clonepod_occupant"
+/// The sealed occupant slot of a VR pod's avatar shell.
+#define OCCUPANT_SLOT_VR_POD "vr_pod_occupant"
+/// The sealed occupant slot of a ballistic transport pod.
+#define OCCUPANT_SLOT_TRANSPORTPOD "transportpod_occupant"
+/// The sealed occupant slot of a mech passenger seat equipment item.
+#define OCCUPANT_SLOT_MECHA_PASSENGER "mecha_passenger_occupant"
+/// The sealed occupant slot of a mech-mounted sleeper equipment item.
+#define OCCUPANT_SLOT_MECHA_SLEEPER "mecha_sleeper_occupant"
+/// The sealed occupant slot of a Tyr project stasis prop.
+#define OCCUPANT_SLOT_TYR_PROP "tyr_prop_occupant"
+/// The sealed occupant slot of a suit cycler.
+#define OCCUPANT_SLOT_SUIT_CYCLER "suit_cycler_occupant"
 /// A mecha's sealed pilot slot.
 #define MECHA_SLOT_PILOT "mecha_pilot"
 /// A mecha's external hardpoint slot for attached equipment.

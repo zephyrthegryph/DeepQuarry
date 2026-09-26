@@ -85,27 +85,17 @@
 	name = "wearer"
 	source_single = TRUE
 
-/// mob -> the seat, vehicle or machine it occupies. target_ref_field makes
-/// the core the sole writer of the machine's `occupant` var: Sleeper.dm,
-/// cryo.dm, cryopod.dm, mecha.dm and the rest each used to hand-set
-/// `occupant = M` on entry with no COMSIG_QDELETING hook, so hard-deleting
-/// the occupant mid-occupancy (an explosion, an admin action) left `occupant`
-/// pointing at a QDELETED mob until the next unrelated write happened to
-/// overwrite it. The move-in/out mechanics (forceMove, UI, music, chemistry,
-/// icons) stay exactly where they are in each machine -- only the bare field
-/// write is now om_link()/om_unlink().
-/datum/om/relation/occupant_of
-	name = "seat"
-	source_single = TRUE
-	target_single = TRUE
-	target_ref_field = "occupant"
-	include = list(/datum/om/bundle/occupant_seat)
+// A machine's occupant (Sleeper.dm, cryo.dm, cryopod.dm, mecha.dm and the
+// rest) used to be a bare relation here (occupant_of); it's gone (OM
+// relations step 3) -- every occupant is a slot now
+// (/datum/om/relation/slot/occupant, containment.md §10), which IS the
+// relation, so there is no separate one left to declare.
 
-/// mob -> what it is buckled to. `source_ref_field`/`target_list_field` make the
-/// core the sole writer of `buckled`/`buckled_mobs` (defs.dm, om_field_link()/
-/// om_field_unlink() in relation.dm) -- on_link()/on_unlink() below are left
-/// with only the real side effects (direction/canmove/floating/water, riding
-/// offsets, the buckled alert, the buckle signal), never the bookkeeping.
+/// mob -> what it is buckled to. No view fields (OM relations step 3): `M.buckled`
+/// and `A.buckled_mobs` are still the vars every caller reads (BUCKLED()/
+/// BUCKLED_MOBS(), om.dm, wrap the relation directly for new code), but this
+/// relation's own on_link()/on_unlink() are now their only writer -- there is
+/// no generic field-link mechanism left to do it for them.
 /// break_if drops the edge outright (not just its EFFECT_BUCKLED contribution)
 /// the moment the mob ends up off the buckled object's tile, e.g. a forced
 /// move that didn't go through handle_buckled_mob_movement().
@@ -114,8 +104,6 @@
 	source_single = TRUE
 	source_contributes = list(EFFECT_BUCKLED = TRUE)
 	break_if = CHECK(/datum/om/check/in_range, 0)
-	source_ref_field = "buckled"
-	target_list_field = "buckled_mobs"
 	/// Set by buckle_mob() immediately before it calls om_link(), since
 	/// on_link()'s signature has no room for the `forced` flag; read and
 	/// cleared here.
@@ -125,6 +113,8 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
+	source.buckled = target
+	LAZYADD(target.buckled_mobs, source)
 	var/forced = pending_forced
 	source.facing_dir = null
 	source.set_dir(target.buckle_dir ? target.buckle_dir : target.dir)
@@ -140,6 +130,10 @@
 
 /datum/om/relation/buckled_to/on_unlink(mob/living/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && source.buckled == target)
+		source.buckled = null
+	if(istype(target))
+		LAZYREMOVE(target.buckled_mobs, source)
 	if(istype(source) && !QDELETED(source))
 		source.anchored = initial(source.anchored)
 		source.update_canmove()
@@ -153,9 +147,10 @@
 			target.riding_datum.handle_vehicle_offsets()
 		target.post_buckle_mob(istype(source) ? source : null)
 
-/// grab item -> the mob it grabs. source_ref_field/target_list_field make the
-/// core the sole writer of /obj/item/grab's `affecting` var and the grabbed
-/// mob's `grabbed_by` list. on_target_delete = OM_END_DELETE_OTHER fixes a
+/// grab item -> the mob it grabs. No view fields (OM relations step 3):
+/// /obj/item/grab's `affecting` and the grabbed mob's `grabbed_by` are still
+/// the vars every caller reads, but this relation's own on_link()/on_unlink()
+/// are their only writer now. on_target_delete = OM_END_DELETE_OTHER fixes a
 /// real dangling-reference bug the hand-rolled version had: /obj/item/grab's
 /// own Destroy() only ever cleaned up the affecting-mob side, so hard-deleting
 /// the grabbed mob (it isn't in the grab item's contents -- the item lives in
@@ -166,14 +161,14 @@
 /datum/om/relation/grabbing
 	name = "grab"
 	source_single = TRUE
-	source_ref_field = "affecting"
-	target_list_field = "grabbed_by"
 	on_target_delete = OM_END_DELETE_OTHER
 
 /datum/om/relation/grabbing/on_link(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
+	source.affecting = target
+	LAZYADD(target.grabbed_by, source)
 	target.reveal(span_warning("You are revealed as [source.assailant] grabs you."))
 	source.assailant?.reveal(span_warning("You reveal yourself as you grab [target]."))
 	// If the assailant is also currently grabbed by their new victim, both
@@ -189,6 +184,10 @@
 
 /datum/om/relation/grabbing/on_unlink(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && source.affecting == target)
+		source.affecting = null
+	if(istype(target))
+		LAZYREMOVE(target.grabbed_by, source)
 	if(istype(target) && !QDELETED(target))
 		animate(target, pixel_x = initial(target.pixel_x), pixel_y = initial(target.pixel_y), 4, 1, LINEAR_EASING)
 		target.reset_plane_and_layer()
@@ -214,14 +213,14 @@
 	name = "pull"
 	source_single = TRUE
 	target_single = TRUE
-	source_ref_field = "pulling"
-	target_ref_field = "pulledby"
 	break_if = CHECK(/datum/om/check/in_range, 1)
 
 /datum/om/relation/pulling/on_link(mob/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
+	source.pulling = target
+	target.pulledby = source
 	om_changed(source, CHANGE_MOB_STATUS)
 	if(source.pullin)
 		source.pullin.icon_state = "pull1"
@@ -231,27 +230,39 @@
 
 /datum/om/relation/pulling/on_unlink(mob/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && source.pulling == target)
+		source.pulling = null
+	if(istype(target) && target.pulledby == source)
+		target.pulledby = null
 	if(istype(source) && !QDELETED(source))
 		om_changed(source, CHANGE_MOB_STATUS)
 		if(source.pullin)
 			source.pullin.icon_state = "pull0"
 
-/// implant -> the external organ it is embedded in. source_ref_field/
-/// an AI eye -> the silicon AI controlling it. source_ref_field/
-/// target_list_field make the core the sole writer of the eye's `owner` and
-/// the AI's `all_eyes` list; on_unlink() also clears the AI's `eyeobj` (its
-/// single "currently active" eye cache) when it was this one. Previously
-/// both sides were hand-maintained by create_eyeobj()/destroy_eyeobj()
+/// an AI eye -> the silicon AI controlling it. No view fields (OM relations
+/// step 3): the eye's `owner` and the AI's `all_eyes` are still the vars
+/// every caller reads, but this relation's own on_link()/on_unlink() are
+/// their only writer now; on_unlink() also clears the AI's `eyeobj` (its
+/// single "currently active" eye cache) when it was this one. Previously all
+/// three were hand-maintained by create_eyeobj()/destroy_eyeobj()
 /// (code/modules/mob/freelook/ai/eye.dm) and the eye's own Destroy(); now
 /// hard-deleting either one automatically clears the other's reference.
 /datum/om/relation/ai_eye_of
 	name = "ai eye"
 	source_single = TRUE
-	source_ref_field = "owner"
-	target_list_field = "all_eyes"
+
+/datum/om/relation/ai_eye_of/on_link(mob/observer/eye/aiEye/source, mob/living/silicon/ai/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && istype(target))
+		source.owner = target
+		LAZYADD(target.all_eyes, source)
 
 /datum/om/relation/ai_eye_of/on_unlink(mob/observer/eye/aiEye/source, mob/living/silicon/ai/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && source.owner == target)
+		source.owner = null
+	if(istype(target))
+		LAZYREMOVE(target.all_eyes, source)
 	if(istype(target) && !QDELETED(target) && target.eyeobj == source)
 		target.eyeobj = null
 
@@ -276,16 +287,8 @@
 		DERIVE_SUM("contents_weight", /datum/om/relation/contained_in, FROM_VAR("w_class"), CHANGE_ITEM_TOTAL_MASS),
 	)
 
-/datum/om/bundle/occupant_seat
-	derived = list(
-		DERIVE_COUNT("occupants", /datum/om/relation/occupant_of, CHANGE_MACHINE_OCCUPANT),
-	)
-	checks = list(
-		"seat_free" = NOT_OF(CHECK(/datum/om/check/derived_true, "occupants")),
-	)
-
 /datum/om/bundle/powered_vehicle
-	include = list(/datum/om/bundle/powered_machine, /datum/om/bundle/occupant_seat)
+	include = list(/datum/om/bundle/powered_machine)
 
 /// For relations: the source (occupant) has its biological clock stopped.
 /datum/om/bundle/stasis

@@ -82,7 +82,7 @@
 /// (C5 overrides latent_count()).
 /datum/om/relation/slot/storage/proc/count_used(obj/item/storage/holder)
 	var/datum/ledger/L = dq_ledger(holder)
-	var/list/things = L?.slots[id]
+	var/list/things = L?.slots[slot_id]
 	return length(things) + latent_count(holder)
 
 /// Latent entries in this slot, for the count limit. None until C5.

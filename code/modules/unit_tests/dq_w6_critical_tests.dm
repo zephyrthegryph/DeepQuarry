@@ -13,13 +13,13 @@
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_floor())
 	S.stat = 0
-	om_link(patient, S, /datum/om/relation/occupant_of)
+	patient.move_into(S, OCCUPANT_SLOT_SLEEPER)
 	TEST_ASSERT(!LAZYACCESS(S.available_chemicals, REAGENT_ID_TOXIN), "the sleeper must not list toxin")
 	S.inject_chemical(user, REAGENT_ID_TOXIN, 5)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 0, "an unlisted chemical must not be injected")
 	S.inject_chemical(user, REAGENT_ID_INAPROVALINE, 5)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 5, "a listed chemical is injected")
-	om_unlink(patient, S, /datum/om/relation/occupant_of)
+	S.slot_remove(patient, test_floor())
 
 /// Amputation is only offered on a limb opened to at least retracted flesh.
 /datum/unit_test/dq_amputation_needs_open_limb

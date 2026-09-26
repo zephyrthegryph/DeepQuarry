@@ -38,7 +38,20 @@
 	name = "recharge station"
 	// C8 step 2: replaces the separate occupant_of relation this machine used
 	// to hand-link at each of its three entry points.
-	target_ref_field = "occupant"
+	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	// var every reader here uses, but this slot's own on_link()/on_unlink()
+	// are its only writer now -- there is no generic field-link mechanism
+	// left to do it for them.
+
+/datum/om/relation/slot/occupant/recharge_station/on_link(mob/living/source, obj/machinery/recharge_station/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/recharge_station/on_unlink(mob/living/source, obj/machinery/recharge_station/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
 
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0

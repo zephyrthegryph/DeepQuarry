@@ -12,6 +12,9 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/vr_sleeper
 	var/mob/living/carbon/human/occupant = null
+	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	// var every reader here uses, but this slot's own on_link()/on_unlink()
+	// (below) are its only writer now.
 	var/mob/living/carbon/human/avatar = null
 	var/datum/mind/vr_mind = null
 	var/datum/effect/effect/system/smoke_spread/bad/smoke
@@ -35,6 +38,22 @@
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/vr_pod
+	holder = /obj/machinery/vr_sleeper
+	slot_id = OCCUPANT_SLOT_VR_POD
+	name = "VR pod"
+
+/datum/om/relation/slot/occupant/vr_pod/on_link(mob/living/source, obj/machinery/vr_sleeper/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/vr_pod/on_unlink(mob/living/source, obj/machinery/vr_sleeper/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -44,14 +63,6 @@
 /obj/machinery/vr_sleeper/Destroy()
 	if(occupant && occupant.vr_link)
 		occupant.vr_link.exit_vr()
-	//The below deals with the edge case of there being no occupant but there IS things inside, somehow.
-	//Just in case some weirdness happened.
-	for(var/atom/movable/A in src)
-		if(A == circuit)
-			continue
-		if(component_parts && (A in component_parts))
-			continue
-		A.loc = src.loc
 	. = ..()
 
 /obj/machinery/vr_sleeper/process()
@@ -212,8 +223,8 @@
 			to_chat(user, span_warning("\The [src] is already occupied."))
 			return
 		M.stop_pulling()
-		M.forceMove(src)
-		occupant = M
+		if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
+			return
 
 		update_icon()
 
@@ -246,14 +257,11 @@
 		occupant.vr_link.exit_vr(FALSE)
 
 	occupant.reset_perspective() // Needed for returning from VR
-	occupant.forceMove(get_turf(src))
-	occupant = null
-	for(var/atom/movable/A in src) // In case an object was dropped inside or something
-		if(A == circuit)
-			continue
-		if(component_parts && (A in component_parts))
-			continue
-		A.forceMove(get_turf(src))
+	// The occupant slot is the only thing in this machine that should ever
+	// leave here: everything else (circuit, parts) lives in its own default
+	// slot (machine_internals) now, so the old "eject everything except a
+	// hand-kept exclude list" loop is gone.
+	slot_remove(occupant, get_turf(src))
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
 

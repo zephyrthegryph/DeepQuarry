@@ -200,52 +200,50 @@
 	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
 	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
 
-// ---------------------------------------------------------------- occupant_of
+// ---------------------------------------------------------------- occupant slots (no bare occupant_of)
 
-/// Entering a machine's occupant slot establishes occupant_of: the machine's
-/// `occupant` var agrees with the direct relation lookup. Exercised through
-/// the sleeper, one of several machines (also cryo, cryopod, mecha,
-/// rechargestation, the implant chair and the gibber) that share this
-/// relation via target_ref_field = "occupant".
-/datum/unit_test/dq_om_relation_occupant_of_establishes
+/// Entering a machine's occupant slot links it, the slot itself being the
+/// relation (OM relations step 3: there is no separate occupant_of any more).
+/// Exercised through the sleeper, one of several machines (also cryo,
+/// cryopod, mecha, rechargestation, the implant chair and the gibber, adv_med
+/// and the clone pod) built on /datum/om/relation/slot/occupant.
+/datum/unit_test/dq_om_relation_occupant_slot_establishes
 
-/datum/unit_test/dq_om_relation_occupant_of_establishes/Run()
+/datum/unit_test/dq_om_relation_occupant_slot_establishes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
-	om_link(H, S, /datum/om/relation/occupant_of)
-	TEST_ASSERT_EQUAL(S.occupant, H, "S.occupant should be H")
-	TEST_ASSERT_EQUAL(om_relation_of(H, /datum/om/relation/occupant_of), S, "om_relation_of should agree with the occupant var")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/om/relation/occupant_of), "an edge should exist between H and S")
-	om_unlink(H, S, /datum/om/relation/occupant_of)
+	TEST_ASSERT(H.move_into(S, OCCUPANT_SLOT_SLEEPER), "setup: move_into should succeed")
+	TEST_ASSERT_EQUAL(SLOT_ITEM(S, OCCUPANT_SLOT_SLEEPER), H, "the sleeper's occupant slot should hold H")
+	TEST_ASSERT_EQUAL(om_relation_of(H, /datum/om/relation/slot/occupant/sleeper), S, "om_relation_of should agree with the slot")
+	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/om/relation/slot/occupant/sleeper), "an edge should exist between H and S")
+	S.slot_remove(H, get_turf(S))
 
 /// Hard-deleting the machine clears the occupant mob's relation lookup, with
 /// no dangling reference left behind.
-/datum/unit_test/dq_om_relation_occupant_of_breaks_on_target_delete
+/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_occupant_of_breaks_on_target_delete/Run()
+/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
-	om_link(H, S, /datum/om/relation/occupant_of)
-	TEST_ASSERT_EQUAL(S.occupant, H, "setup: om_link should succeed")
+	TEST_ASSERT(H.move_into(S, OCCUPANT_SLOT_SLEEPER), "setup: move_into should succeed")
 	qdel(S)
 	TEST_ASSERT(QDELETED(S), "setup: the sleeper should be deleted")
-	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/occupant_of), "the relation lookup should agree")
+	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/slot/occupant/sleeper), "the relation lookup should agree")
 
-/// Hard-deleting the occupant mob clears the machine's `occupant` var --
-/// closing the same class of dangling-reference bug the grabbing relation
-/// fixed: these machines used to hand-set `occupant = M` on entry with no
-/// COMSIG_QDELETING hook, so hard-deleting the occupant mid-occupancy left
-/// `occupant` pointing at a QDELETED mob indefinitely.
-/datum/unit_test/dq_om_relation_occupant_of_breaks_on_source_delete
+/// Hard-deleting the occupant mob clears the slot, with no dangling reference
+/// left behind -- closing the same class of dangling-reference bug the
+/// grabbing relation fixed: these machines used to hand-set `occupant = M` on
+/// entry with no COMSIG_QDELETING hook, so hard-deleting the occupant
+/// mid-occupancy left `occupant` pointing at a QDELETED mob indefinitely.
+/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_occupant_of_breaks_on_source_delete/Run()
+/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_source_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
-	om_link(H, S, /datum/om/relation/occupant_of)
-	TEST_ASSERT_EQUAL(S.occupant, H, "setup: om_link should succeed")
+	TEST_ASSERT(H.move_into(S, OCCUPANT_SLOT_SLEEPER), "setup: move_into should succeed")
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the mob should be deleted")
-	TEST_ASSERT_NULL(S.occupant, "S.occupant should be cleared once the occupant is deleted")
+	TEST_ASSERT_NULL(SLOT_ITEM(S, OCCUPANT_SLOT_SLEEPER), "the sleeper's occupant slot should be cleared once the occupant is deleted")
 
 // ---------------------------------------------------------------- implanted_in
 

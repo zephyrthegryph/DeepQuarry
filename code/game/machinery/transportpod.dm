@@ -17,6 +17,22 @@
 	var/limit_x = 3
 	var/limit_y = 3
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/transportpod
+	holder = /obj/machinery/transportpod
+	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
+	name = "transport pod"
+
+/datum/om/relation/slot/occupant/transportpod/on_link(mob/living/source, obj/machinery/transportpod/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/transportpod/on_unlink(mob/living/source, obj/machinery/transportpod/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/machinery/transportpod/process()
 	if(occupant)
 		if(in_transit)
@@ -58,8 +74,8 @@
 		return
 
 	add_fingerprint(O)
-	O.forceMove(src)
-	occupant = O
+	if(!O.move_into(src, OCCUPANT_SLOT_TRANSPORTPOD))
+		return
 	update_icon()
 	if(tgui_alert(O, "Are you sure you're ready to launch?", "Transport Pod", list("Yes", "No")) == "Yes")
 		in_transit = 1
@@ -71,8 +87,7 @@
 /obj/machinery/transportpod/proc/go_out()
 	if(!occupant)
 		return
-	occupant.forceMove(src.loc)
-	occupant = null
+	slot_remove(occupant, src.loc)
 	update_icon()
 
 /obj/machinery/transportpod/declare_interactions(list/into)

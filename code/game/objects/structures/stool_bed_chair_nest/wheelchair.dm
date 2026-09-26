@@ -69,9 +69,9 @@
 
 /obj/structure/bed/chair/wheelchair/relaymove(mob/user, direction)
 	// Redundant check?
-	// The pulling relation (code/datums/om/library.dm) is the sole writer of
-	// pulling/pulledby here too: source_ref_field/target_ref_field don't care
-	// whether the source is a mob or, as here, the wheelchair itself.
+	// The pulling relation's own on_link()/on_unlink() (code/datums/om/library.dm)
+	// are the sole writer of pulling/pulledby here too: they don't care whether
+	// the source is a mob or, as here, the wheelchair itself.
 	if(user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_PARALYZED) || user.lying || user.restrained())
 		if(user==pulling)
 			om_unlink(src, pulling, /datum/om/relation/pulling)

@@ -34,6 +34,26 @@
 		console.scanner = null
 	return ..()
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/body_scanner
+	holder = /obj/machinery/bodyscanner
+	slot_id = OCCUPANT_SLOT_BODY_SCANNER
+	name = "body scanner"
+	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	// var every reader here uses, but this slot's own on_link()/on_unlink()
+	// are its only writer now -- there is no generic field-link mechanism
+	// left to do it for them.
+
+/datum/om/relation/slot/occupant/body_scanner/on_link(mob/living/source, obj/machinery/bodyscanner/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/body_scanner/on_unlink(mob/living/source, obj/machinery/bodyscanner/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/machinery/bodyscanner/power_change()
 	..()
 	if(!(stat & (BROKEN|NOPOWER)))
@@ -62,8 +82,8 @@
 		if(M.abiotic())
 			to_chat(user, span_notice("Subject cannot have abiotic items on."))
 			return
-		M.forceMove(src)
-		occupant = M
+		if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
+			return
 		update_icon()
 		playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
 		add_fingerprint(user)
@@ -108,8 +128,8 @@
 	else
 		visible_message("[user] puts [O] into the body scanner.")
 
-	O.forceMove(src)
-	occupant = O
+	if(!O.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
+		return
 	update_icon()
 	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
 	add_fingerprint(user)
@@ -133,8 +153,7 @@
 /obj/machinery/bodyscanner/proc/go_out()
 	if ((!(occupant) || src.locked))
 		return
-	occupant.forceMove(get_turf(src))
-	occupant = null
+	slot_remove(occupant, get_turf(src))
 	update_icon() // icon_state = "body_scanner_1" // Health display for consoles with light and such.
 	SStgui.update_uis(src)
 	return

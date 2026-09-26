@@ -72,6 +72,26 @@
 	go_out()
 	. = ..()
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
+/// pod grows and displays the clone through this, same as before the ledger
+/// tracked the move. Not a target_ref_field slot -- like the DNA scanner and
+/// resleever, this machine already tracked its occupant through a weakref
+/// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
+/// is what keeps it current instead.
+/datum/om/relation/slot/occupant/clonepod
+	holder = /obj/machinery/clonepod
+	slot_id = OCCUPANT_SLOT_CLONEPOD
+	name = "cloning pod"
+
+/datum/om/relation/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	target.set_occupant(source)
+
+/datum/om/relation/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(target.get_occupant() == source)
+		target.set_occupant(null)
+
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
@@ -165,9 +185,13 @@
 	H.add_modifier(H.species.cloning_modifier, rand(modifier_lower_bound, modifier_upper_bound))
 	H.add_modifier(/datum/modifier/cloned)
 
-	// Finished!
+	// Finished! H was created directly in src (produce_human_mob() ->
+	// internal_producebody()), so it landed in the pod's default slot
+	// (machine_internals) rather than its occupant slot -- move it to the
+	// right one now. set_occupant() itself now happens through the slot's
+	// own on_link() (OM relations step 3).
+	H.move_into(src, OCCUPANT_SLOT_CLONEPOD)
 	update_icon()
-	set_occupant(H)
 	attempting = 0
 
 	return 1
@@ -361,14 +385,13 @@
 	if(!(occupant))
 		return
 
-	occupant.forceMove(get_turf(src))
 	eject_wait = 0 //If it's still set somehow.
 	if(ishuman(occupant)) //Need to be safe.
 		var/mob/living/carbon/human/patient = occupant
 		if(!(patient.species.flags & NO_DNA)) //If, for some reason, someone makes a genetically-unalterable clone, let's not make them permanently disabled.
 			domutcheck(occupant) //Waiting until they're out before possible transforming.
 			occupant.UpdateAppearance()
-	set_occupant(null)
+	slot_remove(occupant, get_turf(src))
 
 	update_icon()
 	return

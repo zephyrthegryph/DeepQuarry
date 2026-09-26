@@ -24,6 +24,28 @@
 		sleeper.console = null
 	return ..()
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
+/// sleeper's own field is the occupant's environment, same as before the
+/// ledger tracked the move.
+/datum/om/relation/slot/occupant/sleeper
+	holder = /obj/machinery/sleeper
+	slot_id = OCCUPANT_SLOT_SLEEPER
+	name = "sleeper"
+	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	// var every reader here uses, but this slot's own on_link()/on_unlink()
+	// are its only writer now -- there is no generic field-link mechanism
+	// left to do it for them.
+
+/datum/om/relation/slot/occupant/sleeper/on_link(mob/living/source, obj/machinery/sleeper/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/sleeper/on_unlink(mob/living/source, obj/machinery/sleeper/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/machinery/sleep_console/proc/findsleeper()
 	var/obj/machinery/sleeper/sleepernew = null
 	for(var/direction in GLOB.cardinal) // Loop through every direction
@@ -484,9 +506,9 @@
 			to_chat(user, span_warning("\The [src] is already occupied."))
 			return
 		M.stop_pulling()
-		M.forceMove(src)
+		if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
+			return
 		update_use_power(USE_POWER_ACTIVE)
-		om_link(M, src, /datum/om/relation/occupant_of)
 		START_MACHINE_PROCESSING(src)
 		occupant.cozyloop.start() // Cozy Music
 		update_icon()
@@ -494,19 +516,15 @@
 /obj/machinery/sleeper/proc/go_out()
 	if(!occupant || occupant.loc != src)
 		occupant?.cozyloop?.stop() // Cozy Music
-		if(occupant)
-			om_unlink(occupant, src, /datum/om/relation/occupant_of) // JUST IN CASE
 		return
 	occupant.set_stasis(null, src)
-	occupant.forceMove(get_turf(src))
 	occupant.cozyloop.stop() // Cozy Music
-	om_unlink(occupant, src, /datum/om/relation/occupant_of)
-	for(var/atom/movable/A in src) // In case an object was dropped inside or something
-		if(A == beaker || A == circuit)
-			continue
-		if(A in component_parts)
-			continue
-		A.forceMove(get_turf(src))
+	// The occupant slot is the only thing in this machine that should ever
+	// leave on go_out(): everything else (beaker, circuit, parts) lives in
+	// its own default slot (machine_internals) now, so the old "eject
+	// everything except a hand-kept exclude list" loop -- the source of the
+	// sleeper's partial-eject bug -- is gone.
+	slot_remove(occupant, get_turf(src))
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
 	toggle_filter()

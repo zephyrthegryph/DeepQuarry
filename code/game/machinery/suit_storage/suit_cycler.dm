@@ -50,6 +50,24 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	var/obj/item/clothing/suit/space/void/suit = null
 	var/obj/item/clothing/head/helmet/space/helmet = null
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3). The
+/// suit and helmet stay their own typed vars in raw contents, same as the
+/// suit storage unit -- only the person inside is a slot.
+/datum/om/relation/slot/occupant/suit_cycler
+	holder = /obj/machinery/suit_cycler
+	slot_id = OCCUPANT_SLOT_SUIT_CYCLER
+	name = "suit cycler"
+
+/datum/om/relation/slot/occupant/suit_cycler/on_link(mob/living/source, obj/machinery/suit_cycler/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/suit_cycler/on_unlink(mob/living/source, obj/machinery/suit_cycler/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/machinery/suit_cycler/Initialize(mapload)
 	. = ..()
 
@@ -168,8 +186,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if(!G || !G.affecting)
 			return TRUE
 		var/mob/M = G.affecting
-		M.forceMove(src)
-		occupant = M
+		if(!M.move_into(src, OCCUPANT_SLOT_SUIT_CYCLER))
+			return TRUE
 
 		add_fingerprint(user)
 		qdel(G)
@@ -553,8 +571,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	if(!occupant)
 		return
 
-	occupant.forceMove(get_turf(src))
-	occupant = null
+	slot_remove(occupant, get_turf(src))
 
 	add_fingerprint(user)
 	update_icon()

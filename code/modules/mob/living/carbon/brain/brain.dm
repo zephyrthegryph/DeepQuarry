@@ -37,8 +37,8 @@
 			death(1)	//Brains can die again. AND THEY SHOULD AHA HA HA HA HA HA
 		ghostize()		//Ghostize checks for key so nothing else is necessary.
 	if(host)
-		if(host.occupant == src)
-			host.occupant = null
+		if(host.view == src)
+			host.view = null
 		host = null
 	container = null
 	return ..()

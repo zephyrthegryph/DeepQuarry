@@ -13,10 +13,21 @@
 	salvageable = 0
 	allow_duplicate = TRUE
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/Destroy()
-	for(var/atom/movable/AM in src)
-		AM.forceMove(get_turf(src))
-	return ..()
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/mecha_sleeper
+	holder = /obj/item/mecha_parts/mecha_equipment/tool/sleeper
+	slot_id = OCCUPANT_SLOT_MECHA_SLEEPER
+	name = "mounted sleeper"
+
+/datum/om/relation/slot/occupant/mecha_sleeper/on_link(mob/living/source, obj/item/mecha_parts/mecha_equipment/tool/sleeper/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/mecha_sleeper/on_unlink(mob/living/source, obj/item/mecha_parts/mecha_equipment/tool/sleeper/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/Exit(atom/movable/O)
 	return 0
@@ -45,8 +56,8 @@
 		if(occupant)
 			occupant_message(span_boldwarning("The sleeper is already occupied!"))
 			return
-		target.forceMove(src)
-		occupant = target
+		if(!target.move_into(src, OCCUPANT_SLOT_MECHA_SLEEPER))
+			return
 		occupant.set_stasis(/datum/modifier/stasis/moderate, src)
 		set_ready_state(FALSE)
 		START_PROCESSING(SSprocessing, src)
@@ -58,11 +69,10 @@
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/go_out()
 	if(!occupant)
 		return
-	occupant.forceMove(get_turf(src))
 	occupant_message(span_infoplain("[occupant] ejected. Life support functions disabled."))
 	src.mecha_log_message("[occupant] ejected. Life support functions disabled.")
 	occupant.set_stasis(null, src)
-	occupant = null
+	slot_remove(occupant, get_turf(src))
 	STOP_PROCESSING(SSprocessing, src)
 	set_ready_state(TRUE)
 	return

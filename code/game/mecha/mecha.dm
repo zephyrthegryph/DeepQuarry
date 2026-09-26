@@ -278,7 +278,20 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	// hand-link -- a human pilot and an MMI/brain pilot both enter and leave
 	// through this slot now (mmi_moved_inside()/go_out()), so both get the
 	// automatic link/unlink for free.
-	target_ref_field = "occupant"
+	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	// var every reader here uses, but this slot's own on_link()/on_unlink()
+	// are its only writer now -- there is no generic field-link mechanism
+	// left to do it for them.
+
+/datum/om/relation/slot/occupant/mecha_pilot/on_link(mob/living/source, obj/mecha/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/mecha_pilot/on_unlink(mob/living/source, obj/mecha/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
 
 /// External: equipment is bolted to the hull's hardpoints, not inside it.
 /// Capacity stays with mecha_equipment.dm's per-category limits.

@@ -50,12 +50,36 @@
 	update_icon()
 
 /obj/machinery/atmospherics/unary/cryo_cell/Destroy()
+	// The occupant slot's own drop policy (SPILL, below) has already moved
+	// the occupant out by this point (the destroy transaction's contents
+	// phase runs before any Destroy()), so `contents` here no longer
+	// includes them.
 	var/turf/T = src.loc
 	T.contents += contents
 	if(beaker)
 		beaker.forceMove(get_step(loc, SOUTH)) //Beaker is carefully ejected from the wreckage of the cryotube
 		beaker = null
 	. = ..()
+
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/cryo
+	holder = /obj/machinery/atmospherics/unary/cryo_cell
+	slot_id = OCCUPANT_SLOT_CRYO
+	name = "cryo cell"
+	// No view fields (OM relations step 3): `occupant` is still an ordinary
+	// var every reader here uses, but this slot's own on_link()/on_unlink()
+	// are its only writer now -- there is no generic field-link mechanism
+	// left to do it for them.
+
+/datum/om/relation/slot/occupant/cryo/on_link(mob/living/source, obj/machinery/atmospherics/unary/cryo_cell/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/cryo/on_unlink(mob/living/source, obj/machinery/atmospherics/unary/cryo_cell/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
 
 /obj/machinery/atmospherics/unary/cryo_cell/process()
 	..()
@@ -262,12 +286,12 @@
 	vis_contents -= occupant
 	occupant.pixel_x = occupant.default_pixel_x
 	occupant.pixel_y = occupant.default_pixel_y
-	occupant.forceMove(get_step(src.loc, SOUTH))	//this doesn't account for walls or anything, but i don't forsee that being a problem.
 	if(occupant.bodytemperature < 261 && occupant.bodytemperature >= 70) //Patch by Aranclanos to stop people from taking burn damage after being ejected
 		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
 	unbuckle_mob(occupant, force = TRUE)
 	occupant.cozyloop.stop() // Cozy Music
-	om_unlink(occupant, src, /datum/om/relation/occupant_of)
+	//this doesn't account for walls or anything, but i don't forsee that being a problem.
+	slot_remove(occupant, get_step(src.loc, SOUTH))
 	update_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
 	return
@@ -289,11 +313,11 @@
 		to_chat(usr, span_warning("The cell is not correctly connected to its pipe network!"))
 		return
 	M.stop_pulling()
-	M.forceMove(src)
+	if(!M.move_into(src, OCCUPANT_SLOT_CRYO))
+		return
 	M.extinguish_mob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
-	om_link(M, src, /datum/om/relation/occupant_of)
 	if(on)
 		START_MACHINE_PROCESSING(src)
 	occupant.cozyloop.start() // Cozy Music

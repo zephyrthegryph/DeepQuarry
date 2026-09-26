@@ -302,3 +302,41 @@
 // #define OM_PROFILE_CALLS
 // Uncomment (or pass -DOM_DERIVED_AUDIT) to recompute aggregates on every read and compare.
 // #define OM_DERIVED_AUDIT
+
+// ---------------------------------------------------------------- relation and slot accessors
+//
+// No view fields (doc/rewrite/object_model_core.md, relations; OM relations
+// step 3): a relation or slot IS the state -- readers go through these, not a
+// plain var the core used to mirror onto the entity. Each is a direct read
+// against the entity's own OM record (its edge list, or the ledger for
+// slots), so there is nothing for a lint to catch and nothing to keep in
+// sync: deleting the old mirrored var is what makes every remaining direct
+// read a compile error.
+
+/// The single target of `E`'s edge of relation `REL` (E is the source), or null.
+#define OM_REL_TARGET(E, REL) om_relation_of(E, REL)
+/// The single source of an edge of relation `REL` targeting `E` (E is the
+/// target), or null. Pair with a target_single relation.
+#define OM_REL_SOURCE(E, REL) om_source_of(E, REL)
+/// Every source of an edge of relation `REL` targeting `E` (E is the target).
+#define OM_REL_SOURCES(E, REL) om_related_to(E, REL)
+/// Every target of `E`'s edges of relation `REL` (E is the source).
+#define OM_REL_TARGETS(E, REL) om_related(E, REL)
+
+/// The one thing in `E`'s slot `SLOT` (null: its default slot), or null.
+#define SLOT_ITEM(E, SLOT) ((E) ? (E).slot_item(SLOT) : null)
+/// A copy of what is in `E`'s slot `SLOT` (null: every slot, in slot order).
+#define SLOT_LIST(E, SLOT) ((E) ? (E).slot_contents(SLOT) : list())
+
+/// What `M` is buckled to, or null.
+#define BUCKLED(M) OM_REL_TARGET(M, /datum/om/relation/buckled_to)
+/// Every mob buckled to `A`.
+#define BUCKLED_MOBS(A) OM_REL_SOURCES(A, /datum/om/relation/buckled_to)
+/// What `M` is pulling, or null.
+#define PULLING(M) OM_REL_TARGET(M, /datum/om/relation/pulling)
+/// Who is pulling `A`, or null.
+#define PULLED_BY(A) OM_REL_SOURCE(A, /datum/om/relation/pulling)
+/// Every grab item holding `M`.
+#define GRABBED_BY(M) OM_REL_SOURCES(M, /datum/om/relation/grabbing)
+/// The AI eye watching for `AI`, or null.
+#define EYE_OF(AI) OM_REL_SOURCE(AI, /datum/om/relation/ai_eye_of)

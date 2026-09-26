@@ -11,6 +11,22 @@
 	allow_duplicate = TRUE
 	equip_type = EQUIP_HULL
 
+/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/datum/om/relation/slot/occupant/mecha_passenger
+	holder = /obj/item/mecha_parts/mecha_equipment/tool/passenger
+	slot_id = OCCUPANT_SLOT_MECHA_PASSENGER
+	name = "passenger compartment"
+
+/datum/om/relation/slot/occupant/mecha_passenger/on_link(mob/living/source, obj/item/mecha_parts/mecha_equipment/tool/passenger/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target))
+		target.occupant = source
+
+/datum/om/relation/slot/occupant/mecha_passenger/on_unlink(mob/living/source, obj/item/mecha_parts/mecha_equipment/tool/passenger/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && target.occupant == source)
+		target.occupant = null
+
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/destroy()
 	for(var/atom/movable/AM in src)
 		AM.forceMove(get_turf(src))
@@ -26,8 +42,8 @@
 
 	if(do_after(user, 4 SECONDS, target = src))
 		if(!src.occupant)
-			user.forceMove(src)
-			occupant = user
+			if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
+				return
 			src.mecha_log_message("[user] boarded.")
 			occupant_message("[user] boarded.")
 		else if(src.occupant != user)
@@ -66,8 +82,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/go_out()
 	if(!occupant)
 		return
-	occupant.forceMove(get_turf(src))
-	occupant = null
+	slot_remove(occupant, get_turf(src))
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/attach()
