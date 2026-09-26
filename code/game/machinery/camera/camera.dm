@@ -82,7 +82,7 @@
 /obj/machinery/camera/Destroy()
 	// cancelCameraAlarm() intentionally respects a cut alarm wire, which is wrong
 	// during destruction: every handler must release source and cached-camera refs.
-	for(var/datum/alarm_handler/handler as anything in SSalarm.all_handlers)
+	for(var/datum/alarm_handler/handler as anything in all_alarm_handlers())
 		handler.release_atom(src)
 	if(isMotion())
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))

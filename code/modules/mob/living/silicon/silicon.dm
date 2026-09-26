@@ -44,7 +44,7 @@
 /mob/living/silicon/Destroy()
 	common_radio = null // same ref as radio, deleted by child
 	GLOB.silicon_mob_list -= src
-	for(var/datum/alarm_handler/AH in SSalarm.all_handlers)
+	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.unregister_alarm(src)
 	if(aiCamera)
 		QDEL_NULL(aiCamera)

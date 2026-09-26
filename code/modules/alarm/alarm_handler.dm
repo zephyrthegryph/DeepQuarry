@@ -7,10 +7,13 @@
 	var/list/datum/alarm/alarms_assoc	// Associative list of alarms, to efficiently acquire them based on origin.
 	var/list/listeners				// A list of all objects interested in alarm changes.
 
-/datum/alarm_handler/process()
+/// Expires alarms every 2 s while any is up (a raised alarm starts it); with none left it parks.
+/datum/alarm_handler/periodic_step()
 	for(var/datum/alarm/A in alarms)
-		A.process()
+		A.alarm_tick()
 		check_alarm_cleared(A)
+	if(!length(alarms))
+		return PROCESS_KILL
 
 /datum/alarm_handler/Destroy()
 	QDEL_LIST(alarms)
@@ -36,6 +39,7 @@
 
 	alarms |= existing
 	LAZYSET(alarms_assoc, origin, existing)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	if(new_alarm)
 		alarms = dd_sortedObjectList(alarms)
 		on_alarm_change(existing, ALARM_RAISED)
