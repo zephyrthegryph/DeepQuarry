@@ -237,6 +237,8 @@
 	if(choice != selecting)
 		selecting = choice
 		update_icon()
+		if(user)
+			om_changed(user, CHANGE_MOB_TARGETING)
 
 /atom/movable/screen/zone_sel/update_icon()
 	cut_overlays()

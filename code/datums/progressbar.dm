@@ -20,6 +20,9 @@
 	var/location_type
 	///Where to draw the progress bar above the icon
 	var/offset_y
+	/// animate_fill(): when the client-side fill started, and how long it takes.
+	var/fill_started = 0
+	var/fill_duration = 0
 
 /datum/progressbar/New(mob/User, goal_number, atom/target, starting_amount)
 	. = ..()
@@ -137,9 +140,23 @@
 	bar.icon_state = "prog_bar_[round(((progress / goal) * 100), 5)]"
 
 
+/// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
+/datum/progressbar/proc/animate_fill(duration)
+	fill_started = world.time
+	fill_duration = max(duration, 1)
+	var/step_time = fill_duration / 20
+	animate(bar, icon_state = "prog_bar_5", time = step_time, flags = ANIMATION_PARALLEL)
+	for(var/pct in 10 to 100 step 5)
+		animate(icon_state = "prog_bar_[pct]", time = step_time)
+
 ///Called on progress end, be it successful or a failure. Wraps up things to delete the datum and bar.
-/datum/progressbar/proc/end_progress()
-	if(last_progress != goal)
+/// `success` null: judged by the last update().
+/datum/progressbar/proc/end_progress(success = null)
+	if(fill_duration)
+		var/pct = round(clamp((world.time - fill_started) / fill_duration, 0, 1) * 100, 5)
+		last_progress = success ? goal : goal * pct / 100
+		bar.icon_state = "prog_bar_[success ? 100 : pct]"
+	if(success == FALSE || (isnull(success) && last_progress != goal))
 		bar.icon_state = "[bar.icon_state]_fail"
 
 	animate(bar, alpha = 0, time = PROGRESSBAR_ANIMATION_TIME)

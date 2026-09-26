@@ -809,6 +809,7 @@
 		animate(client, color = null, time = 10)
 
 /mob/living/swap_hand()
+	om_changed(src, CHANGE_MOB_HANDS)
 	src.hand = !( src.hand )
 	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use

@@ -45,6 +45,8 @@
 #define CHANGE_MOB_CAN_MOVE (1<<17)
 /// Modifiers, instability, diseases: the long-running conditions the upkeep systems follow.
 #define CHANGE_MOB_CONDITIONS (1<<18)
+/// The zone the mob aims at (zone_sel) changed.
+#define CHANGE_MOB_TARGETING (1<<19)
 
 // Item family.
 #define CHANGE_ITEM_LOC (1<<8)

@@ -302,6 +302,9 @@
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
+	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
+	if(om_listen && !ismob(src))
+		om_changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(old_loc)

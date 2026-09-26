@@ -29,6 +29,8 @@
 	/// STEP_DONE or STEP_FAIL(reason). Past the last step the task completes. With steps,
 	/// `duration` is unused.
 	var/list/steps
+	/// The running-task type this def makes (a subtype keeps per-run state).
+	var/task_type = /datum/om/task
 
 	/// Flat: proc, delay, proc, delay...
 	var/list/compiled_steps
@@ -65,6 +67,15 @@
 /// Extra requirements from start parameters (presets such as timed_tool).
 /datum/om/task_def/proc/extra_requires(list/params)
 	return null
+
+/// Per-run conditions that aren't table checks (the actor has not moved since the start, ...):
+/// re-checked with the requires on every wake. Null, or the reason to cancel.
+/datum/om/task_def/proc/why_not_running(datum/om/task/T)
+	return null
+
+/// Called once the task is running (UI, signals).
+/datum/om/task_def/proc/on_started(datum/om/task/T)
+	return
 
 /datum/om/task_def/proc/on_complete(datum/om/task/T)
 	if(complete_proc)
@@ -119,7 +130,7 @@
 		if(!isnull(reason))
 			return reason
 		extra_mask |= C.depends_on
-	var/datum/om/task/T = new
+	var/datum/om/task/T = new def.task_type
 	T.def = def
 	T.actor = actor
 	T.target = target
@@ -141,6 +152,12 @@
 		if(istext(claimed))
 			return claimed
 		T.claim = claimed
+	else if(target && target != actor)
+		// Not exclusive, but the task still ends when its target is deleted.
+		var/linked = om_link(T, target, /datum/om/relation/task_on)
+		if(istext(linked))
+			return linked
+		T.claim = linked
 	var/t = rec.sched.now()
 	var/dur = params?["duration"]
 	if(isnull(dur))
@@ -160,6 +177,7 @@
 			om_watch(actor, target, mask, B)
 	om_recompute_listen(rec)
 	om_tasks_reschedule(rec)
+	def.on_started(T)
 	return T
 
 /proc/om_task_cancel(datum/om/task/T, reason = "cancelled")
@@ -252,6 +270,8 @@
 				reason = om_why_not(spec, T.actor, T.target)
 				if(!isnull(reason))
 					break
+		if(isnull(reason) && T.state == OM_TASK_RUNNING)
+			reason = T.def.why_not_running(T)
 		if(!isnull(reason))
 			om_task_cancel(T, reason)
 
@@ -314,6 +334,17 @@
 	conflict = OM_REL_REFUSE
 
 /datum/om/relation/claim/on_unlink(datum/source, datum/target, datum/om/edge/edge)
+	var/datum/om/task/T = source
+	if(istype(T) && T.state == OM_TASK_RUNNING && T.claim == edge)
+		T.claim = null
+		om_task_cancel(T, "target gone")
+
+/// A running task's link to a target it works on without claiming it: deleting the target
+/// cancels the task.
+/datum/om/relation/task_on
+	name = "task on"
+
+/datum/om/relation/task_on/on_unlink(datum/source, datum/target, datum/om/edge/edge)
 	var/datum/om/task/T = source
 	if(istype(T) && T.state == OM_TASK_RUNNING && T.claim == edge)
 		T.claim = null
