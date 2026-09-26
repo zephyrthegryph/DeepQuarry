@@ -39,9 +39,8 @@
 	if(vorePanel)
 		QDEL_NULL(vorePanel)
 
-	for(var/mob/observer/dead/M in following_mobs)
+	for(var/mob/observer/dead/M in FOLLOWERS(src))
 		M.stop_following()
-	following_mobs = null
 	previewing_belly = null // from code/modules/vore/eating/mob_ch.dm
 	vore_selected = null // from code/modules/vore/eating/mob_vr
 	focus = null

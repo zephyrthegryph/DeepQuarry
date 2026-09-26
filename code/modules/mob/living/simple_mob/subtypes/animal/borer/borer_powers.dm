@@ -2,6 +2,7 @@
  * Put a nearby target to sleep to allow for infestation.
  */
 /mob/living/simple_mob/animal/borer/verb/knockout_victim()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	set category = "Abilities.Borer"
 	set name = "Knockout Victim"
 	set desc = "Use your psychic influence to put a target into a temporary catatonic state."
@@ -51,6 +52,7 @@
  * Crawls inside of a target mob, and adds the borer as an implant to the mob's brain. If no brain exists the body will become a borer husk zombie.
  */
 /mob/living/simple_mob/animal/borer/verb/infest()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	set category = "Abilities.Borer"
 	set name = "Infest"
 	set desc = "Infest a suitable humanoid host."
@@ -79,6 +81,7 @@
 
 /// Infests mob with borer.
 /mob/living/simple_mob/animal/borer/proc/infest_target(mob/living/carbon/human/infest_target)
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	if(!istype(infest_target))
 		to_chat(src, span_warning("\The [infest_target] is not suitable for infestation..."))
 		return
@@ -128,8 +131,9 @@
 	to_chat(src, span_alien("You wiggle into [infest_target]'s ear."))
 	if(!infest_target.stat)
 		to_chat(infest_target, span_vdanger("Something disgusting and slimy wiggles into your ear!"))
-	// om_link's on_link (library.dm) sets host and the head organ's implants list.
+	// om_link's on_link (library.dm) adds us to the head organ's implants list.
 	om_link(src, infest_target, /datum/om/relation/host_of)
+	host = infest_target
 	forceMove(host)
 
 	//Update their traitor status.
@@ -150,6 +154,7 @@
  * Releases chemicals from the borer into their host. Can be used as a standalone chemist in your head for an antag cooperating with their borer.
  */
 /mob/living/simple_mob/animal/borer/verb/secrete_chemicals()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	set category = "Abilities.Borer"
 	set name = "Secrete Chemicals"
 	set desc = "Drain some chemicals into your host's bloodstream."
@@ -163,6 +168,7 @@
 		return
 
 	var/injection_choice = tgui_input_list(src, "Select a chemical to secrete.", "Chemicals", borer_chem_list)
+	host = BORER_HOST(src) // may have changed while choosing
 	if(injection_choice == "Revive Dead Host")
 		if(!can_use_power_in_host())
 			return

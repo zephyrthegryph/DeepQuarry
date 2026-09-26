@@ -776,7 +776,8 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/borer_survive/check_completion()
 	if(owner)
 		var/mob/living/simple_mob/animal/borer/B = owner
-		if(istype(B) && B.stat < 2 && B.host && B.host.stat < 2) return 1
+		var/mob/living/carbon/human/host = BORER_HOST(B)
+		if(istype(B) && B.stat < 2 && host && host.stat < 2) return 1
 	return 0
 
 /datum/objective/borer_reproduce

@@ -2,6 +2,7 @@
  * Assume control of a borer's host, putting the borer's client in control, and putting the other into a dominated brain.
  */
 /mob/living/simple_mob/animal/borer/verb/bond_brain()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	set category = "Abilities.Borer"
 	set name = "Assume Control"
 	set desc = "Fully connect to the brain of your host."
@@ -19,6 +20,7 @@
 
 // This entire section is awful and a relic of ancient times. It needs to be replaced
 /mob/living/simple_mob/animal/borer/proc/finish_bond_brain()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
 
@@ -75,6 +77,7 @@
  * Releases manual control of the borer from a mind-dominated host. Returning control to the original mind.
  */
 /mob/living/simple_mob/animal/borer/verb/release_host()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	set category = "Abilities.Borer"
 	set name = "Release Host"
 	set desc = "Slither out of your host."
@@ -95,6 +98,7 @@
 	addtimer(CALLBACK(src, PROC_REF(finish_release_host)), 10 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/simple_mob/animal/borer/proc/finish_release_host()
+	var/mob/living/carbon/human/host = BORER_HOST(src)
 	PRIVATE_PROC(TRUE)
 
 	if(!host || QDELETED(src))

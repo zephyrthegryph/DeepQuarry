@@ -23,7 +23,7 @@
 
 		var/mob/living/simple_mob/animal/borer/B = loc
 		to_chat(src, "You whisper silently, \"[message]\"")
-		to_chat(B.host, "The captive mind of [src] whispers, \"[message]\"")
+		to_chat(BORER_HOST(B), "The captive mind of [src] whispers, \"[message]\"")
 
 		for (var/mob/M in GLOB.player_list)
 			if (isnewplayer(M))
@@ -43,9 +43,10 @@
 	//Resisting control by an alien mind.
 	if(istype(loc, /mob/living/simple_mob/animal/borer))
 		var/mob/living/simple_mob/animal/borer/B = loc
+		var/mob/living/carbon/human/host = BORER_HOST(B)
 		to_chat(src, span_danger("You begin doggedly resisting the parasite's control (this will take approximately sixty seconds)."))
-		to_chat(B.host, span_danger("You feel the captive mind of [src] begin to resist your control."))
-		addtimer(CALLBACK(src, PROC_REF(break_control_of_borer)), (rand(20,25) + (B.host.injury_load(INJURY_CATEGORY_NEURAL)/10)) SECONDS, TIMER_DELETE_ME)
+		to_chat(host, span_danger("You feel the captive mind of [src] begin to resist your control."))
+		addtimer(CALLBACK(src, PROC_REF(break_control_of_borer)), (rand(20,25) + (host ? host.injury_load(INJURY_CATEGORY_NEURAL)/10 : 0)) SECONDS, TIMER_DELETE_ME)
 		return
 	. = ..()
 
@@ -53,7 +54,8 @@
 	var/mob/living/simple_mob/animal/borer/B = loc
 	if(!B || !B.controlling)
 		return
+	var/mob/living/carbon/human/host = BORER_HOST(B)
 	to_chat(src, span_danger("With an immense exertion of will, you regain control of your body!"))
-	to_chat(B.host, span_danger("You feel control of the host brain ripped from your grasp, and retract your probosci before the wild neural impulses can damage you."))
-	B.host.injure(INJURY_NEURAL, rand(0.1,0.5), source = B)
+	to_chat(host, span_danger("You feel control of the host brain ripped from your grasp, and retract your probosci before the wild neural impulses can damage you."))
+	host?.injure(INJURY_NEURAL, rand(0.1,0.5), source = B)
 	B.detatch()

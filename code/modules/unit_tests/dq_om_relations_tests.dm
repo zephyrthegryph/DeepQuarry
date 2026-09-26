@@ -388,11 +388,11 @@
 	TEST_ASSERT_NOTNULL(head, "setup: H should have a head organ")
 	var/link_result = om_link(B, H, /datum/om/relation/host_of)
 	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
-	TEST_ASSERT_EQUAL(B.host, H, "B.host should be H")
+	TEST_ASSERT_EQUAL(BORER_HOST(B), H, "BORER_HOST(B) should be H")
 	TEST_ASSERT(B in head.implants, "B should be listed in the host's head implants")
 	TEST_ASSERT_EQUAL(om_relation_of(B, /datum/om/relation/host_of), H, "om_relation_of should agree with the host var")
 	om_unlink(B, H, /datum/om/relation/host_of)
-	TEST_ASSERT_NULL(B.host, "B.host should be cleared after unlink")
+	TEST_ASSERT_NULL(BORER_HOST(B), "BORER_HOST(B) should be cleared after unlink")
 	TEST_ASSERT(!(B in head.implants), "B should no longer be listed in the host's head implants")
 
 /// Hard-deleting the host clears the borer's `host`, with no dangling
@@ -407,13 +407,12 @@
 	om_link(B, H, /datum/om/relation/host_of)
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the host should be deleted")
-	TEST_ASSERT_NULL(B.host, "B.host should be cleared once the host is deleted")
+	TEST_ASSERT_NULL(BORER_HOST(B), "BORER_HOST(B) should be cleared once the host is deleted")
 
 // ---------------------------------------------------------------- following (ghost)
 
-/// Following a target establishes the following relation: the ghost's
-/// `following` var and the target's `following_mobs` list agree with the
-/// direct relation lookup.
+/// Following a target establishes the following relation: FOLLOWING() and
+/// FOLLOWERS() agree with the direct relation lookup.
 /datum/unit_test/dq_om_relation_following_establishes
 
 /datum/unit_test/dq_om_relation_following_establishes/Run()
@@ -421,14 +420,14 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/link_result = om_link(G, H, /datum/om/relation/following)
 	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
-	TEST_ASSERT_EQUAL(G.following, H, "G.following should be H")
-	TEST_ASSERT(G in H.following_mobs, "G should be listed in H's following_mobs")
-	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/following), H, "om_relation_of should agree with the following var")
+	TEST_ASSERT_EQUAL(FOLLOWING(G), H, "FOLLOWING(G) should be H")
+	TEST_ASSERT(G in FOLLOWERS(H), "G should be listed in FOLLOWERS(H)")
+	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/following), H, "om_relation_of should agree with FOLLOWING()")
 	G.stop_following()
-	TEST_ASSERT_NULL(G.following, "G.following should be cleared after stop_following()")
-	TEST_ASSERT(!(G in H.following_mobs), "G should no longer be listed in H's following_mobs")
+	TEST_ASSERT_NULL(FOLLOWING(G), "FOLLOWING(G) should be cleared after stop_following()")
+	TEST_ASSERT(!(G in FOLLOWERS(H)), "G should no longer be listed in FOLLOWERS(H)")
 
-/// Hard-deleting the followed target clears the ghost's `following`, with no
+/// Hard-deleting the followed target ends the ghost's follow, with no
 /// dangling reference left behind.
 /datum/unit_test/dq_om_relation_following_breaks_on_target_delete
 
@@ -438,7 +437,7 @@
 	om_link(G, H, /datum/om/relation/following)
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the target should be deleted")
-	TEST_ASSERT_NULL(G.following, "G.following should be cleared once the target is deleted")
+	TEST_ASSERT_NULL(FOLLOWING(G), "FOLLOWING(G) should be cleared once the target is deleted")
 
 // ---------------------------------------------------------------- orbiting
 

@@ -103,7 +103,7 @@
 
 /// Followers are dragged along on Moved; spell buttons only matter for casters.
 /datum/om/stage/life/upkeep/idle(mob/living/self)
-	return !length(self.following_mobs) && !LAZYLEN(self.spell_masters)
+	return !LAZYLEN(FOLLOWERS(self)) && !LAZYLEN(self.spell_masters)
 
 // --- Light --------------------------------------------------------------------------------------
 

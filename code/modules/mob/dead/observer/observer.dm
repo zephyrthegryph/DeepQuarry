@@ -29,7 +29,6 @@
 	var/secHUD = FALSE
 	var/antagHUD = FALSE
 	universal_speak = TRUE
-	var/atom/movable/following = null
 	var/admin_ghosted = FALSE
 	var/anonsay = FALSE
 	var/ghostvision = TRUE //is the ghost able to see things humans can't?
@@ -175,7 +174,7 @@ Works together with spawning an observer, noted above.
 		return_to_spawn()
 
 /mob/observer/dead/proc/return_to_spawn()
-	if(following)
+	if(FOLLOWING(src))
 		stop_following()
 	var/obj/O = locate("landmark*Observer-Start")
 	if(istype(O))
@@ -421,7 +420,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	if(get_z(destination) in using_map?.secret_levels)
 		to_chat(src,span_warning("Sorry, that z-level does not allow ghosts."))
-		if(following)
+		if(FOLLOWING(src))
 			stop_following()
 		return
 
@@ -429,7 +428,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/area/A = get_area(destination)
 	if(A?.flag_check(AREA_BLOCK_GHOSTS) && !isbelly(destination) && !admin_ghosted && !just_spawned)
 		to_chat(src,span_warning("Sorry, that area does not allow ghosts."))
-		if(following)
+		if(FOLLOWING(src))
 			stop_following()
 		return
 	//RS Port #658 End
@@ -441,7 +440,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	if(get_z(newloc) in using_map?.secret_levels)
 		to_chat(src,span_warning("Sorry, that z-level does not allow ghosts."))
-		if(following)
+		if(FOLLOWING(src))
 			stop_following()
 		return
 
@@ -459,31 +458,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(get_z(target) in using_map?.secret_levels)
 		to_chat(src, span_warning("Sorry, that target is in an area that ghosts aren't allowed to go."))
 		return
-	/*if(target != src)
-		if(following && following == target)
-			return
-		if(following)
-			src.stop_following()
-		following = target
-		to_chat(src, span_notice("Now following [target]"))
-		if(ismob(target))
-			var/target_turf = get_turf(target)
-			if(!target_turf)
-				to_chat(src, span_warning("This mob does not seem to exist in the tangible world."))
-				return
-			forceMove(target_turf)
-			var/mob/M = target
-			M.following_mobs += src
-		else
-			spawn(0)
-				while(target && following == target && client)
-					var/turf/T = get_turf(target)
-					if(!T)
-						break
-					// To stop the ghost flickering.
-					if(loc != T)
-						forceMove(T)
-					sleep(15)*/
+
 
 	var/icon/I = icon(target.icon,target.icon_state,target.dir)
 
@@ -506,9 +481,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			rot_seg = 36 //360/10 bby, smooth enough aproximation of a circle
 	*/
 
-	if(following && following != target)
-		om_unlink(src, following, /datum/om/relation/following)
-	om_link(src, target, /datum/om/relation/following)
+	om_link(src, target, /datum/om/relation/following) // replaces any previous follow
 	orbit(target, orbitsize, FALSE, 20, rot_seg)
 
 /mob/observer/dead/orbit()
@@ -525,24 +498,18 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
 
 /mob/observer/dead/proc/stop_following()
-	if(following)
-		om_unlink(src, following, /datum/om/relation/following)
+	var/atom/movable/followed = FOLLOWING(src)
+	if(followed)
+		om_unlink(src, followed, /datum/om/relation/following)
 	stop_orbit()
 
 /mob/proc/update_following()
 	. = get_turf(src)
-	for(var/mob/observer/dead/M in following_mobs)
+	for(var/mob/observer/dead/M in FOLLOWERS(src))
 		if(!.)
 			M.stop_following()
-
-		if(M.following != src)
-			LAZYREMOVE(following_mobs, M)
-		else
-			if(M.loc != .)
-				M.forceMove(., movetime = MOVE_GLIDE_CALC(glide_size, moving_diagonally)) // pass movespeed
-
-/mob
-	var/list/following_mobs = list()
+		else if(M.loc != .)
+			M.forceMove(., movetime = MOVE_GLIDE_CALC(glide_size, moving_diagonally)) // pass movespeed
 
 /mob/observer/dead/Destroy()
 	if(exonet)
@@ -622,7 +589,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	to_chat(src, span_filter_notice(span_red("You are dead! You have no mind to store memory!")))
 
 /mob/observer/dead/Post_Incorpmove()
-	if(following) //This wasn't here before. It meant that we would do stop_following repeatedly every movement we made...Resulting in a DOS on our client.
+	if(FOLLOWING(src)) //This wasn't here before. It meant that we would do stop_following repeatedly every movement we made...Resulting in a DOS on our client.
 		stop_following()
 
 /mob/observer/dead/verb/analyze_air()

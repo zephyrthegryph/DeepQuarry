@@ -369,7 +369,7 @@
 		for(var/mob/entity in range(detection_range, our_turf))
 			if(isobserver(entity))
 				var/mob/observer/dead/ghost = entity
-				if(ghost.following || !ghost.interact_with_world || ghost.admin_ghosted) //Ghosts orbiting us or someone else, or have opted out of interactions.
+				if(FOLLOWING(ghost) || !ghost.interact_with_world || ghost.admin_ghosted) //Ghosts orbiting us or someone else, or have opted out of interactions.
 					continue
 				ghosts_present++
 			if(entity.is_incorporeal())

@@ -358,3 +358,11 @@
 #define TETHERED_HANDHELD(H) OM_REL_SOURCE(H, /datum/om/relation/tethered_to)
 /// The host item handheld `I` is tethered to, or null.
 #define TETHER_HOST(I) OM_REL_TARGET(I, /datum/om/relation/tethered_to)
+/// What ghost `G` is following, or null.
+#define FOLLOWING(G) OM_REL_TARGET(G, /datum/om/relation/following)
+/// Every ghost following `A`.
+#define FOLLOWERS(A) OM_REL_SOURCES(A, /datum/om/relation/following)
+/// The human borer `B` has infested, or null.
+#define BORER_HOST(B) OM_REL_TARGET(B, /datum/om/relation/host_of)
+/// The borer infesting `H`, or null.
+#define BORER_OF(H) OM_REL_SOURCE(H, /datum/om/relation/host_of)
