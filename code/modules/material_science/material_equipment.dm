@@ -74,13 +74,13 @@
 	material_service.delivered_moles += actual_moles
 	material_service.last_delivery_pressure = destination.return_pressure()
 	material_service.last_delivery_temperature = destination.return_temperature()
-	material_service.last_delivery_mixture = WEAKREF(destination)
+	material_service.last_delivery_mixture = om_handle(destination)
 
 /datum/material_service
 	var/delivered_moles = 0
 	var/last_delivery_pressure = 0
 	var/last_delivery_temperature = 0
-	var/datum/weakref/last_delivery_mixture
+	var/last_delivery_mixture
 	var/last_work_time = 0
 	var/last_work_kind
 	var/last_work_duration = 0

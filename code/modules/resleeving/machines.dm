@@ -135,7 +135,7 @@
 	var/busy = 0       //Busy cloning
 	var/body_cost = 15000  //Cost of a cloned body (metal and glass ea.)
 	var/max_res_amount = 30000 //Max the thing can hold
-	var/datum/weakref/current_br
+	var/current_br
 
 	var/broken = 0
 	var/burn_value = 0 //Setting these to 0, if resleeving as organic with unupgraded sleevers gives them no damage, resleeving synths with unupgraded synthfabs should not give them potentially 105 damage.
@@ -206,8 +206,8 @@
 
 	return
 
-/obj/machinery/transhuman/synthprinter/proc/print(datum/weakref/BR)
-	if(!BR?.resolve() || busy)
+/obj/machinery/transhuman/synthprinter/proc/print(BR)
+	if(!om_resolve(BR) || busy)
 		return 0
 
 	if(stored_material[MAT_STEEL] < body_cost || stored_material[MAT_GLASS] < body_cost)
@@ -222,7 +222,7 @@
 /obj/machinery/transhuman/synthprinter/proc/make_body()
 	//Manage machine-specific stuff
 
-	var/datum/transhuman/body_record/current_project = current_br?.resolve()
+	var/datum/transhuman/body_record/current_project = om_resolve(current_br)
 	if(!current_project)
 		busy = 0
 		current_br = null
@@ -310,7 +310,7 @@
 	var/blur_amount
 	var/confuse_amount
 
-	VAR_PRIVATE/datum/weakref/weakref_occupant = null
+	VAR_PRIVATE/occupant_handle = null
 	var/connected = null
 
 	var/sleevecards = 2
@@ -350,14 +350,14 @@
 /obj/machinery/transhuman/resleever/proc/set_occupant(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!H)
-		weakref_occupant = null
+		occupant_handle = null
 		return
-	weakref_occupant = WEAKREF(H)
+	occupant_handle = om_handle(H)
 
 /obj/machinery/transhuman/resleever/proc/get_occupant()
 	RETURN_TYPE(/mob/living/carbon/human)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return weakref_occupant?.resolve()
+	return om_resolve(occupant_handle)
 
 /obj/machinery/transhuman/resleever/RefreshParts()
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)

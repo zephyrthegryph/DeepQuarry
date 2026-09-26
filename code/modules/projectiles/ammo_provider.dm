@@ -21,13 +21,13 @@
  */
 
 /datum/ammo_provider
-	/// The gun that owns this provider.  Weakref to avoid preventing GC.
-	var/datum/weakref/gun_ref = null
+	/// The gun that owns this provider.  An OM handle to avoid preventing GC.
+	var/gun_ref = null
 
 /datum/ammo_provider/New(obj/item/gun/projectile/gun)
 	..()
 	if(gun)
-		gun_ref = WEAKREF(gun)
+		gun_ref = om_handle(gun)
 
 /datum/ammo_provider/Destroy()
 	gun_ref = null
@@ -64,7 +64,7 @@
 /datum/ammo_provider/single_casing
 
 /datum/ammo_provider/single_casing/get_next_round()
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun)
 		return null
 	if(!gun.loaded.len)
@@ -75,13 +75,13 @@
 	return gun.chambered?.BB
 
 /datum/ammo_provider/single_casing/describe_ammo()
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun)
 		return "no gun"
 	return "[gun.loaded.len] round\s loaded"
 
 /datum/ammo_provider/single_casing/ammo_count()
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun)
 		return 0
 	var/count = gun.loaded.len
@@ -90,7 +90,7 @@
 	return count
 
 /datum/ammo_provider/single_casing/receive_ammo(obj/item/A, mob/user)
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun || !user)
 		return FALSE
 	if(!istype(A, /obj/item/ammo_casing))
@@ -113,7 +113,7 @@
 	return FALSE
 
 /datum/ammo_provider/single_casing/unload(mob/user, allow_dump = TRUE)
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun || !gun.loaded.len)
 		return
 	if(allow_dump && (gun.load_method & SPEEDLOADER))
@@ -143,7 +143,7 @@
 /datum/ammo_provider/magazine
 
 /datum/ammo_provider/magazine/get_next_round()
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun)
 		return null
 	if(gun.ammo_magazine && gun.ammo_magazine.stored_ammo.len)
@@ -154,7 +154,7 @@
 	return null
 
 /datum/ammo_provider/magazine/describe_ammo()
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun)
 		return "no gun"
 	if(gun.ammo_magazine)
@@ -162,7 +162,7 @@
 	return "no magazine"
 
 /datum/ammo_provider/magazine/ammo_count()
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun)
 		return 0
 	var/count = 0
@@ -173,7 +173,7 @@
 	return count
 
 /datum/ammo_provider/magazine/receive_ammo(obj/item/A, mob/user)
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun || !user)
 		return FALSE
 	if(!istype(A, /obj/item/ammo_magazine))
@@ -202,7 +202,7 @@
 	return FALSE
 
 /datum/ammo_provider/magazine/unload(mob/user, allow_dump = TRUE)
-	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
+	var/obj/item/gun/projectile/gun = om_resolve(gun_ref)
 	if(!gun || !gun.ammo_magazine)
 		return
 	user.put_in_hands(gun.ammo_magazine)

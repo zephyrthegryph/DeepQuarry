@@ -28,7 +28,7 @@
 	var/update_icon_define_orig = null	// temp storage for original update_icon_define (if it exists)
 	var/update_icon_define_digi = null	// dmi used for the digi sprites
 	var/fit_for_digi = FALSE // flag for if clothing has already been reskinned to digitigrade
-	var/datum/weakref/wearer	//Who the person currently wearing us is.
+	var/wearer	//Who the person currently wearing us is.
 
 //Updates the icons of the mob wearing the clothing item, if any.
 /obj/item/clothing/proc/update_clothing_icon()
@@ -349,7 +349,7 @@
 
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	return ..()
 
 /obj/item/clothing/gloves/dropped(mob/user, equipping, slot)

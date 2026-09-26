@@ -18,9 +18,9 @@
 	var/datum/integrated_io/I = inputs[1]
 	set_pin_data(IC_OUTPUT, 1, null)
 
-	if(!isweakref(I.data))
+	if(!ic_is_ref(I.data))
 		return
-	var/atom/A = I.data.resolve()
+	var/atom/A = ic_ref_resolve(I.data)
 	if(!A)
 		return
 	if(!(A in view(get_turf(src))))
@@ -98,7 +98,7 @@
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder
 	var/turf/last_known_position = null
-	var/datum/weakref/last_target = null
+	var/last_target = null
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder/Destroy()
 	. = ..()
@@ -109,16 +109,16 @@
 	var/datum/integrated_io/I = inputs[1]
 	set_pin_data(IC_OUTPUT, 1, null)
 
-	if(!istype(I.data, /datum/weakref) || I.data != last_target)
+	if(!ic_is_ref(I.data) || I.data != last_target)
 		last_known_position = null
 		last_target = I.data
 
-	if(!isweakref(I.data))
+	if(!ic_is_ref(I.data))
 		push_data()
 		activate_pin(2)
 		return
 
-	var/atom/A = I.data.resolve()
+	var/atom/A = ic_ref_resolve(I.data)
 	if(!A)
 		push_data()
 		activate_pin(2)
@@ -179,7 +179,7 @@
 /obj/item/integrated_circuit/smart/pathfinding_locomotion
 	// Add these two variables
 	var/turf/last_known_position = null
-	var/datum/weakref/last_target = null
+	var/last_target = null
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/Destroy()
 	. = ..()
@@ -190,15 +190,15 @@
 	var/datum/integrated_io/I = inputs[1]
 
 	// Reset last known position when target changes
-	if(!istype(I.data, /datum/weakref) || I.data != last_target)
+	if(!ic_is_ref(I.data) || I.data != last_target)
 		last_known_position = null
 		last_target = I.data
 
-	if(!isweakref(I.data))
+	if(!ic_is_ref(I.data))
 		activate_pin(3)
 		return
 
-	var/atom/A = I.data.resolve()
+	var/atom/A = ic_ref_resolve(I.data)
 	if(!A)
 		activate_pin(3)
 		return

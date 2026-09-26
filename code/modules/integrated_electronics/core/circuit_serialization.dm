@@ -114,7 +114,7 @@
 			if(input_pin.data != null)
 				var/pin_data = null
 				// Handle different data types appropriately
-				if(isnum(input_pin.data) || istext(input_pin.data))
+				if(isnum(input_pin.data) || (istext(input_pin.data) && !ic_is_ref(input_pin.data)))
 					pin_data = input_pin.data
 				else if(islist(input_pin.data))
 					var/list/original_list = input_pin.data
@@ -133,7 +133,7 @@
 			if(output_pin.data != null)
 				var/pin_data = null
 				// Handle different data types appropriately
-				if(isnum(output_pin.data) || istext(output_pin.data))
+				if(isnum(output_pin.data) || (istext(output_pin.data) && !ic_is_ref(output_pin.data)))
 					pin_data = output_pin.data
 				else if(islist(output_pin.data))
 					var/list/original_list = output_pin.data

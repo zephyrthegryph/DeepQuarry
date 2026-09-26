@@ -7,7 +7,7 @@
 	var/confidence = 0
 	var/created_at = 0
 	var/expires_at = 0
-	var/datum/weakref/target_ref
+	var/target_ref
 
 /datum/generated_station_knowledge_report/proc/is_expired(at_time = world.time)
 	return expires_at > 0 && at_time >= expires_at

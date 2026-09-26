@@ -143,7 +143,7 @@
 	var/delivered = drawn * efficiency
 	if(consumer && material_graph)
 		LAZYINITLIST(material_consumers)
-		material_consumers[WEAKREF(consumer)] += delivered
+		material_consumers[om_handle(consumer)] += delivered
 	return delivered
 
 /datum/powernet/proc/is_empty()
@@ -247,7 +247,7 @@
 	var/list/sources = list()
 	for(var/obj/machinery/power/M as anything in nodes)
 		if(M.power_supply_rate > 0)
-			sources[WEAKREF(M)] = M.power_supply_rate
+			sources[om_handle(M)] = M.power_supply_rate
 	return sources
 
 /// One overlay step: settle heat for the last interval, solve if the flow
@@ -271,7 +271,7 @@
 	for(var/obj/machinery/power/terminal/T in nodes)
 		var/obj/machinery/power/apc/A = T.master
 		if(istype(A))
-			material_consumers[WEAKREF(T)] += A.lastused_total
+			material_consumers[om_handle(T)] += A.lastused_total
 	material_pending_heat += material_loss_watts * elapsed_seconds
 	material_pending_heat_elapsed += elapsed_seconds
 	if(material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL)

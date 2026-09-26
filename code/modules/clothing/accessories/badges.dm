@@ -339,7 +339,7 @@
 		return ..()
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H)
 		if(current_film && (H.radiation >= 25) && (current_film.state == 0))
 			update_state(1)

@@ -51,7 +51,7 @@
 	if(mind)
 		if(mind.current == src)
 			mind.current = null
-		var/mob/living/original = mind.original_character?.resolve()
+		var/mob/living/original = om_resolve(mind.original_character)
 		if(original && original == src)
 			mind.original_character = null
 
@@ -1133,12 +1133,12 @@
 		exploit_addons |= I
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
-		I.exploit_for = WEAKREF(src)
+		I.exploit_for = om_handle(src)
 
 
 /obj/item/Destroy(force, ...)
 	if(exploit_for)
-		var/mob/exploited = exploit_for.resolve()
+		var/mob/exploited = om_resolve(exploit_for)
 		exploited?.exploit_addons -= src
 		exploit_for = null
 	user_vars_remembered = null

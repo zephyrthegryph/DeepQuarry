@@ -455,9 +455,9 @@
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
 	src = null
-	var/datum/weakref/limb_ref = WEAKREF(eo)
+	var/limb_ref = om_handle(eo)
 	spawn(rand(5 MINUTES,10 MINUTES))
-		var/obj/item/organ/external/found_limb = limb_ref.resolve()
+		var/obj/item/organ/external/found_limb = om_resolve(limb_ref)
 		if(istype(found_limb))
 			eo.germ_level += INFECTION_LEVEL_ONE+30
 

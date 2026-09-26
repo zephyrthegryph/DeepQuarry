@@ -9,8 +9,8 @@
 // per the project's list-allocation rules.
 
 /datum/world_model
-	/// Weak ref to the mob we observe for, kept weak so we never block GC.
-	var/datum/weakref/owner_ref = null
+	/// OM handle of the mob we observe for, so we never block GC.
+	var/owner_ref = null
 
 	/// Last fully-populated perception lists. Held mobs/objs only; never turfs.
 	/// Reused — Cut() instead of reallocating.
@@ -24,7 +24,7 @@
 	var/list/known_hazards = null        // each entry: list(atom_ref, severity, expires)
 
 	/// One-slot caches (refs).
-	var/datum/weakref/last_attacker = null
+	var/last_attacker = null
 	var/atom/last_known_threat_turf = null
 
 	/// world.time of last perception refresh.
@@ -36,7 +36,7 @@
 
 /datum/world_model/New(mob/living/owner)
 	if(owner)
-		owner_ref = WEAKREF(owner)
+		owner_ref = om_handle(owner)
 	visible_hostiles = list()
 	visible_friendlies = list()
 	visible_neutrals = list()
@@ -54,7 +54,7 @@
 	return ..()
 
 /datum/world_model/proc/get_owner()
-	return owner_ref?.resolve()
+	return om_resolve(owner_ref)
 
 /// Walks view() once and bucket-sorts everyone visible into hostile/friendly/neutral.
 /// Called from /datum/ai_brain/handle_strategicals at the slow tick.
@@ -95,10 +95,10 @@
 		recent_damage_events.Cut(1, 2)
 		if(islist(dropped))
 			recent_damage_total = max(0, recent_damage_total - dropped[1])
-	recent_damage_events += list(list(amount, injury_kind, WEAKREF(attacker), world.time))
+	recent_damage_events += list(list(amount, injury_kind, om_handle(attacker), world.time))
 	recent_damage_total += amount
 	if(attacker)
-		last_attacker = WEAKREF(attacker)
+		last_attacker = om_handle(attacker)
 		last_known_threat_turf = get_turf(attacker)
 
 /// Drop damage entries older than 10 seconds.
@@ -130,7 +130,7 @@
 	if(!hazard)
 		return
 	LAZYINITLIST(known_hazards)
-	known_hazards += list(list(WEAKREF(hazard), severity, world.time + duration))
+	known_hazards += list(list(om_handle(hazard), severity, world.time + duration))
 
 /datum/world_model/proc/trim_old_hazards()
 	if(!LAZYLEN(known_hazards))
@@ -142,4 +142,4 @@
 	UNSETEMPTY(known_hazards)
 
 /datum/world_model/proc/get_last_attacker()
-	return last_attacker?.resolve()
+	return om_resolve(last_attacker)

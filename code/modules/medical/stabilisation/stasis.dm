@@ -66,12 +66,8 @@
 	hidden = TRUE
 	stacks = MODIFIER_STACK_ALLOWED
 	factors = alist(BF_STASIS = 0.5)
-	/// Weakref to what holds the mob in stasis (bag, pod, NIF), or null.
-	var/datum/weakref/stasis_source
-
-/datum/modifier/stasis/Destroy(force)
-	stasis_source = null
-	return ..()
+	// What holds the mob in stasis (bag, pod, NIF) is STASIS_SOURCE(src), the
+	// stasis_held_by relation; null for stasis applied without a source (admin).
 
 /// Holds the biology clock back by this modifier's depth while it is applied. The hold's
 /// source is the modifier, so it also ends when the modifier is deleted.
@@ -129,7 +125,8 @@
 	if(stasis_type)
 		added = add_modifier(stasis_type, suppress_failure = TRUE)
 		if(added)
-			added.stasis_source = source ? WEAKREF(source) : null
+			if(source)
+				om_link(added, source, /datum/om/relation/stasis_held_by)
 	log_game("STASIS: [key_name(src)] [current ? "left [current.name]" : ""][current && added ? " and " : ""][added ? "entered [added.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")
 	return TRUE
 
@@ -137,8 +134,7 @@
 /// matches stasis applied without one (admin).
 /mob/living/proc/stasis_modifier_from(datum/source)
 	for(var/datum/modifier/stasis/S in modifiers)
-		var/datum/held_by = S.stasis_source?.resolve()
-		if(held_by == source)
+		if(STASIS_SOURCE(S) == source)
 			return S
 	return null
 

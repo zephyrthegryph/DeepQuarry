@@ -38,7 +38,7 @@
 		activate_pin(2) // Failure pin, out of range or not visible.
 		return
 
-	set_pin_data(IC_OUTPUT, 1, WEAKREF(target))
+	set_pin_data(IC_OUTPUT, 1, ic_ref(target))
 	set_pin_data(IC_OUTPUT, 2, target.x - user.x)
 	set_pin_data(IC_OUTPUT, 3, target.y - user.y)
 	push_data()
@@ -281,7 +281,7 @@
 	O.data = null
 	if(assembly)
 		if(isliving(assembly.loc)) // Now check if someone's holding us.
-			O.data = WEAKREF(assembly.loc)
+			O.data = ic_ref(assembly.loc)
 
 	O.push_data()
 
@@ -305,9 +305,9 @@
 	var/datum/integrated_io/O = outputs[1]
 	O.data = null
 
-	if(!isweakref(I.data))
+	if(!ic_is_ref(I.data))
 		return
-	var/atom/A = I.data.resolve()
+	var/atom/A = ic_ref_resolve(I.data)
 	if(!A)
 		return
 	var/desired_type = A.type
@@ -321,7 +321,7 @@
 			continue
 		valid_things.Add(thing)
 	if(valid_things.len)
-		O.data = WEAKREF(pick(valid_things))
+		O.data = ic_ref(pick(valid_things))
 		activate_pin(2)
 	else
 		activate_pin(3)
@@ -360,8 +360,8 @@
 	var/turf/T = get_turf(src)
 	var/list/nearby_things = range(radius, T)
 	var/list/valid_things = list()
-	if(isweakref(I.data))
-		var/atom/A = I.data.resolve()
+	if(ic_is_ref(I.data))
+		var/atom/A = ic_ref_resolve(I.data)
 		if(A)
 			var/desired_type = A.type
 			if(desired_type)
@@ -404,7 +404,7 @@
 			if(findtext(addtext(thing.name," ",thing.desc), DT, 1, 0) )
 				valid_things.Add(thing)
 	if(valid_things.len)
-		O.data = WEAKREF(pick(valid_things))
+		O.data = ic_ref(pick(valid_things))
 		O.push_data()
 		activate_pin(2)
 	else
@@ -644,7 +644,7 @@
 			// as a translation, when it is not.
 			if(S.speaking && !istype(S.speaking, /datum/language/common))
 				translated = TRUE
-		set_pin_data(IC_OUTPUT , 1, WEAKREF(M))
+		set_pin_data(IC_OUTPUT , 1, ic_ref(M))
 		set_pin_data(IC_OUTPUT, 2, M.GetVoice())
 		set_pin_data(IC_OUTPUT, 3, msg)
 
@@ -696,7 +696,7 @@
 		for(var/datum/multilingual_say_piece/S in message_pieces)
 			if(!((S.speaking.flags & NONVERBAL) || (S.speaking.flags & SIGNLANG))||S.speaking.name == LANGUAGE_ECHOSONG) //Ignore verbal languages
 				return
-		set_pin_data(IC_OUTPUT , 1, WEAKREF(M))
+		set_pin_data(IC_OUTPUT , 1, ic_ref(M))
 		set_pin_data(IC_OUTPUT, 2, M.GetVoice())
 		set_pin_data(IC_OUTPUT, 3, msg)
 
@@ -739,7 +739,7 @@
 		if(istype(A, /obj/item/storage))
 			return FALSE
 
-	set_pin_data(IC_OUTPUT, 1, WEAKREF(A))
+	set_pin_data(IC_OUTPUT, 1, ic_ref(A))
 	push_data()
 	activate_pin(1)
 	return TRUE
@@ -766,7 +766,7 @@
 	set_pin_data(IC_OUTPUT, 1, null)
 	set_pin_data(IC_OUTPUT, 2, null)
 	set_pin_data(IC_OUTPUT, 3, null)
-	set_pin_data(IC_OUTPUT, 4, WEAKREF(assembly))
+	set_pin_data(IC_OUTPUT, 4, ic_ref(assembly))
 	if(assembly)
 		if(assembly.battery)
 

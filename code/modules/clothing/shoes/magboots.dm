@@ -82,7 +82,7 @@
 	if(slot && slot != slot_shoes)
 		return ..()
 	set_slowdown()
-	wearer = WEAKREF(H)
+	wearer = om_handle(H)
 	..()
 
 /obj/item/clothing/shoes/magboots/dropped(mob/user, equipping, slot)

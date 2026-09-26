@@ -403,7 +403,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 			var/realname = C.mob.real_name
 			if(C.mob.mind)
 				mindname = C.mob.mind.name
-				var/mob/living/original = C.mob.mind.original_character?.resolve()
+				var/mob/living/original = om_resolve(C.mob.mind.original_character)
 				if(original && original.real_name)
 					realname = original.real_name
 			if(mindname && mindname != realname)
@@ -469,7 +469,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		C = O
 	else if(istype(O, /datum/mind))
 		var/datum/mind/M = O
-		var/mob/living/original = M.original_character?.resolve()
+		var/mob/living/original = om_resolve(M.original_character)
 		if(M.current && M.current.client)
 			C = M.current.client
 		else if(original && original.client)

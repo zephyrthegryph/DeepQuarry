@@ -19,9 +19,28 @@
 			io_list.Add(new io_type(src, io_entry, default_data))
 		i++
 
+/// Prefix of an IC ref. Pin text is sanitized (html-encoded), so no string a
+/// player writes can start with it and forge a reference.
+#define IC_REF_PREFIX "<ic-ref "
+
+/// An IC ref: the OM handle of `D` in that wrapper. Null for a deleted datum.
+/proc/ic_ref(datum/D)
+	var/h = om_handle(D)
+	return h && "[IC_REF_PREFIX][h]>"
+
+/// TRUE if `x` is an IC ref (ic_ref()), whether or not it still resolves.
+/proc/ic_is_ref(x)
+	return istext(x) && findtext(x, IC_REF_PREFIX, 1, length(IC_REF_PREFIX) + 1)
+
+/// The datum an IC ref names, or null once it has been deleted.
+/proc/ic_ref_resolve(x)
+	if(!ic_is_ref(x))
+		return null
+	return om_resolve(copytext(x, length(IC_REF_PREFIX) + 1, -1))
+
 /obj/item/integrated_circuit/proc/set_pin_data(pin_type, pin_number, datum/new_data)
-	if (istype(new_data) && !isweakref(new_data))
-		new_data = WEAKREF(new_data)
+	if (istype(new_data) && !ic_is_ref(new_data))
+		new_data = ic_ref(new_data)
 	var/datum/integrated_io/pin = get_pin_ref(pin_type, pin_number)
 	return pin.write_data_to_pin(new_data)
 
@@ -42,8 +61,8 @@
 /datum/integrated_io/proc/get_data()
 	if(isnull(data))
 		return
-	if(isweakref(data))
-		return data.resolve()
+	if(ic_is_ref(data))
+		return ic_ref_resolve(data)
 	return data
 
 /obj/item/integrated_circuit/proc/get_pin_ref(pin_type, pin_number)

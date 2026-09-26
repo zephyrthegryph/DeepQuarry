@@ -51,7 +51,7 @@
 	hud.icon_state = "reinforce"
 	icon_state = "grabbed"
 	hud.name = "reinforce grab"
-	hud.master_ref = WEAKREF(src)
+	hud.master_ref = om_handle(src)
 
 	adjust_position()
 

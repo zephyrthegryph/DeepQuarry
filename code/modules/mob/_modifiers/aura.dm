@@ -11,7 +11,7 @@ making it not expire ever, which is likely not what you want.
 	if(!origin)
 		expire()
 		return
-	var/atom/A = origin.resolve()
+	var/atom/A = om_resolve(origin)
 	if(istype(A)) // Make sure we're not null.
 		if(get_dist(holder, A) > aura_max_distance)
 			expire()

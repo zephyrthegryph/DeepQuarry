@@ -53,7 +53,7 @@
 		init_vore()
 	Vac = new /obj/item/vac_attachment/swoopie(src)
 	if(istype(Vac))
-		Vac.output_dest = WEAKREF(vore_selected)
+		Vac.output_dest = om_handle(vore_selected)
 		Vac.vac_power = 3
 		Vac.vac_owner = src
 
@@ -200,10 +200,10 @@
 					L.remove_from_mob(self.Vac, self)
 				else
 					self.Vac.forceMove(self)
-		var/atom/movable/vac_output = self.Vac.output_dest?.resolve()
+		var/atom/movable/vac_output = om_resolve(self.Vac.output_dest)
 		if(!vac_output)
 			if(isbelly(self.vore_selected))
-				self.Vac.output_dest = WEAKREF(self.vore_selected)
+				self.Vac.output_dest = om_handle(self.vore_selected)
 	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
 		return
 	if(istype(T, /turf/simulated))

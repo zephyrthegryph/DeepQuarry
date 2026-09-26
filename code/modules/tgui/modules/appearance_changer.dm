@@ -121,7 +121,7 @@
 	var/datum/tgui_module/appearance_changer/body_designer/BD = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		BD = src
-		DC = BD.linked_body_design_console?.resolve()
+		DC = om_resolve(BD.linked_body_design_console)
 
 	switch(action)
 		if("race")
@@ -749,7 +749,7 @@
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		var/datum/tgui_module/appearance_changer/body_designer/BD = src
-		DC = BD.linked_body_design_console?.resolve()
+		DC = om_resolve(BD.linked_body_design_console)
 	if(DC)
 		data["is_design_console"] = TRUE
 		data["disk"] = !isnull(DC.disk)
@@ -1120,7 +1120,7 @@
 /datum/tgui_module/appearance_changer/body_designer
 	name ="Appearance Editor (Body Designer)"
 	flags = APPEARANCE_ALL
-	var/datum/weakref/linked_body_design_console = null
+	var/linked_body_design_console = null
 
 /datum/tgui_module/appearance_changer/body_designer/tgui_status(mob/user, datum/tgui_state/state)
 	if(!istype(host,/obj/machinery/computer/transhuman/designer))
@@ -1128,7 +1128,7 @@
 	return ..()
 
 /datum/tgui_module/appearance_changer/body_designer/Destroy()
-	var/obj/machinery/computer/transhuman/designer/DC = linked_body_design_console?.resolve()
+	var/obj/machinery/computer/transhuman/designer/DC = om_resolve(linked_body_design_console)
 	if(DC)
 		DC.selected_record = FALSE
 		DC.designer_gui = null // no hardrefs

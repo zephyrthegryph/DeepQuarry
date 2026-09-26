@@ -23,7 +23,7 @@
 
 /obj/item/integrated_circuit/output/screen/do_work()
 	var/datum/integrated_io/I = inputs[1]
-	if(isweakref(I.data))
+	if(ic_is_ref(I.data))
 		var/datum/d = I.data_as_type(/datum)
 		if(d)
 			stuff_to_display = "[d]"

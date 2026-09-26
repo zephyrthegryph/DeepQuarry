@@ -204,7 +204,7 @@
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Follow leader ---------------------------------------------------------
-// Cooperative AI follows the brain.leader weakref when not in combat. Used
+// Cooperative AI follows the brain.leader handle when not in combat. Used
 // for /datum/ai_holder/simple_mob/passive pets and pack-mob fledglings.
 
 /datum/ai_behavior/follow_leader

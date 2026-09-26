@@ -22,8 +22,8 @@
 /datum/board_game/nine_mens
 	name = GAME_NINE_MENS_MORRIS
 	table_icon = "gamble_ninemen"
-	var/datum/weakref/player_one
-	var/datum/weakref/player_two
+	var/player_one
+	var/player_two
 	var/player_one_time = 0
 	var/player_two_time = 0
 	var/list/current_board = list(
@@ -102,8 +102,8 @@
 		ui.open()
 
 /datum/board_game/nine_mens/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/player_one_mob = player_one?.resolve()
-	var/mob/player_two_mob = player_two?.resolve()
+	var/mob/player_one_mob = om_resolve(player_one)
+	var/mob/player_two_mob = om_resolve(player_two)
 
 	return list(
 		"player_one" = player_one_mob,
@@ -131,25 +131,25 @@
 		if("be_player_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_one?.resolve() == ui.user)
+			if(om_resolve(player_one) == ui.user)
 				player_one = null
 				return TRUE
-			player_one = WEAKREF(ui.user)
+			player_one = om_handle(ui.user)
 			return TRUE
 		if("be_player_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_two?.resolve() == ui.user)
+			if(om_resolve(player_two) == ui.user)
 				player_two = null
 				return TRUE
-			player_two = WEAKREF(ui.user)
+			player_two = om_handle(ui.user)
 			return TRUE
 		if("swap_players")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
-			var/datum/weakref/temp_player = player_one
+			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
 		if("clear_game")
@@ -160,7 +160,7 @@
 		if("start_game")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			game_state = GAME_PLAYER_ONE
 			turn_start_time = world.time
@@ -168,7 +168,7 @@
 		if("play_again")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
 			turn_start_time = world.time
@@ -176,23 +176,23 @@
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
-			var/datum/weakref/temp_player = player_one
+			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
 			turn_start_time = world.time
 			return TRUE
 		if("game_action")
-			if(ui.user == player_one?.resolve() && game_state == GAME_PLAYER_ONE)
+			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "w")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_TWO
 						turn_start_time = world.time
 					return TRUE
-			if(ui.user == player_two?.resolve() && game_state == GAME_PLAYER_TWO)
+			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
@@ -356,7 +356,7 @@
 	var/opponent = (active_color == "w") ? "b" : "w"
 
 	if(count_pieces(opponent) < 3 || !has_moves(opponent))
-		var/mob/winning_player = (active_color == "w" ? player_one?.resolve() : player_two?.resolve())
+		var/mob/winning_player = (active_color == "w" ? om_resolve(player_one) : om_resolve(player_two))
 		winner = winning_player?.name
 		game_state = GAME_OVER
 

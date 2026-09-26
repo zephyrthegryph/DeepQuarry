@@ -548,7 +548,7 @@
 
 	//Has a list of items that it can hold.
 
-	var/datum/weakref/WR = null //We resolve this to get wrapped. Use get_wrapped_item when possible.
+	// The item it is wrapping is GRIPPER_HELD(src) (the gripper_holding relation). Use get_wrapped_item when possible.
 
 	var/total_pockets = 5 //How many total inventory slots we want to have in the gripper
 
@@ -599,7 +599,7 @@
 
 /obj/item/gripper/Destroy()
 	current_pocket = null
-	QDEL_NULL(WR)
+	qdel(get_wrapped_item())
 	QDEL_LIST(pockets)
 	if(our_robot) //In case we returned INITIALIZE_HINT_QDEL earlier in initalize.
 		UnregisterSignal(our_robot, COMSIG_DO_AFTER_BEGAN)

@@ -31,10 +31,10 @@
 	update_icon()
 	return secured
 
-/obj/item/assembly/prox_sensor/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/obj/item/assembly/prox_sensor/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

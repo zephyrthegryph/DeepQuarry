@@ -40,7 +40,7 @@
 		var/fields = 0
 		if(depth == 0)
 			playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
-			new /obj/effect/resonance(T, WEAKREF(creator), burst_time)
+			new /obj/effect/resonance(T, om_handle(creator), burst_time)
 			fields++
 			depth++
 		var/origin_dir = get_cardinal_dir(creator, T)
@@ -63,13 +63,13 @@
 					var/turf/oldT = newT
 					newT = get_step(oldT, dir)
 					if(step == depth)
-						new /obj/effect/resonance(newT, WEAKREF(creator), burst_time)
+						new /obj/effect/resonance(newT, om_handle(creator), burst_time)
 						fields++
 						if(depth > 1 && fields < fieldlimit) //Works until 15 fieldlimit.
 							oldT = newT
 							dir = turn(dir, (i == 2 ? 135 : -135))
 							newT = get_step(oldT, dir)
-							new /obj/effect/resonance(newT, WEAKREF(creator), burst_time)
+							new /obj/effect/resonance(newT, om_handle(creator), burst_time)
 							fields++
 			depth++
 
@@ -77,7 +77,7 @@
 
 	else
 		playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
-		new /obj/effect/resonance(T, WEAKREF(creator), burst_time)
+		new /obj/effect/resonance(T, om_handle(creator), burst_time)
 		fieldsactive++
 		spawn(burst_time)
 			fieldsactive--

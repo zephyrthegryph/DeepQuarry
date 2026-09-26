@@ -153,7 +153,7 @@
 /datum/ai_brain/proc/check_attacker(mob/M)
 	if(!personal || !M)
 		return FALSE
-	var/list/entry = personal[WEAKREF(M)]
+	var/list/entry = personal[om_handle(M)]
 	return entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE
 
 /datum/ai_brain/proc/on_hear_say(mob/living/speaker, message)

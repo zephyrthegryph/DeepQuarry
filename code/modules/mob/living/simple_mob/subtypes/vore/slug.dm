@@ -31,7 +31,7 @@
 
 	var/slime_count = 0
 	var/slime_max = 35 //With a slug which moves once every 10 seconds and a 5 minute delete timer, this should never exceed 30.
-	var/datum/weakref/last_prey = null
+	var/last_prey = null
 
 	can_be_drop_prey = FALSE
 
@@ -93,7 +93,7 @@
 	if(locate(/obj/effect/slug_glue) in get_turf(src)) // Don't stack slime forever
 		return
 	var/obj/effect/slug_glue/G = new /obj/effect/slug_glue/(get_turf(src))
-	G.owner_slug = WEAKREF(src)
+	G.owner_slug = om_handle(src)
 	slime_count++
 
 /mob/living/simple_mob/vore/slug/Moved()
@@ -123,7 +123,7 @@
 
 /mob/living/simple_mob/vore/slug/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay)
 	..()
-	last_prey = WEAKREF(prey)
+	last_prey = om_handle(prey)
 
 /obj/effect/slug_glue
 	name = "liquid"
@@ -138,7 +138,7 @@
 	buckle_lying = TRUE
 
 	var/persist_time = 5 MINUTES //How long until we cease existing.
-	var/datum/weakref/owner_slug = null
+	var/owner_slug = null
 	var/turf/my_turf = null //The turf we spawn on.
 	var/base_escape_time = 1 MINUTE //How long does it take to struggle free? Affected by the victim's size_multiplier.
 
@@ -159,7 +159,7 @@
 
 /obj/effect/slug_glue/Destroy()
 	. = ..()
-	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug?.resolve()
+	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
 	if(my_slug)
 		my_slug.slime_count--
 	owner_slug = null
@@ -201,16 +201,16 @@
 			alert_slug(L)
 
 /obj/effect/slug_glue/proc/alert_slug(mob/living/victim as mob)
-	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug?.resolve()
+	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
 	if(!my_slug || !has_buckled_mobs() || isbelly(my_slug.loc)) //Otherwise if you eat the slug it will infinitely attempt to eat you if you trip in glue.
 		return
-	if(my_slug.last_prey?.resolve() == victim) //Getting eaten lets you get stuck once without alerting the slug. This is to prevent instantly getting eaten again if you struggle free with run intent on.
+	if(om_resolve(my_slug.last_prey) == victim) //Getting eaten lets you get stuck once without alerting the slug. This is to prevent instantly getting eaten again if you struggle free with run intent on.
 		my_slug.last_prey = null
 		return
 	my_slug.ai_brain?.give_target(victim, TRUE)
 
 /obj/effect/slug_glue/proc/unalert_slug(mob/living/victim as mob)
-	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug?.resolve()
+	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
 	if(!my_slug)
 		return
 	if(my_slug.ai_brain?.primary_threat == victim)

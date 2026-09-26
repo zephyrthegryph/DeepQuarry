@@ -22,13 +22,13 @@
 	. = ..()
 
 // For COMSIG_MOVABLE_MOTIONTRACKER
-/mob/proc/handle_motion_tracking(mob/source, datum/weakref/RW, turf/T)
+/mob/proc/handle_motion_tracking(mob/source, RW, turf/T)
 	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return
-	var/atom/echo_source = RW?.resolve()
+	var/atom/echo_source = om_resolve(RW)
 	if(!echo_source || get_dist(src,echo_source) > SSmotiontracker.max_range || src.z != echo_source.z)
 		return
 	// Blind characters see all pings around them. Otherwise remove the closest, or any we can see. Pings behind walls or in the dark are always visible
@@ -37,7 +37,7 @@
 	var/echos = 1
 	if(prob(30))
 		echos = rand(1,3)
-	SSmotiontracker.queue_echo(get_turf(src),T,echos,client ? WEAKREF(client) : null)
+	SSmotiontracker.queue_echo(get_turf(src),T,echos,client ? om_handle(client) : null)
 
 /mob/proc/toggle_motion_echo_vis()
 	set name = "Toggle Vibration Senses"

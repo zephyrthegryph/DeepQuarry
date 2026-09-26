@@ -12,7 +12,7 @@
 	max_integrity = 200 //The shield can only take so much beating (prevents perma-prisons)
 	var/shield_generate_power = 7500	//how much power we use when regenerating
 	var/shield_idle_power = 1500		//how much power we use when just being sustained.
-	var/datum/weakref/our_owner
+	var/our_owner
 
 /obj/machinery/shield/malfai
 	name = "emergency forcefield"
@@ -40,7 +40,7 @@
 	opacity = 0
 	density = FALSE
 	update_nearby_tiles()
-	var/obj/machinery/shieldgen/SG = our_owner?.resolve()
+	var/obj/machinery/shieldgen/SG = om_resolve(our_owner)
 	if(SG)
 		LAZYREMOVE(SG.deployed_shields, src)
 	our_owner = null
@@ -168,7 +168,7 @@
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
 				LAZYADD(deployed_shields, S)
-				S.our_owner = WEAKREF(src) //So it knows to remove itself from our list when it gets qdel'd
+				S.our_owner = om_handle(src) //So it knows to remove itself from our list when it gets qdel'd
 				use_power(S.shield_generate_power)
 
 /obj/machinery/shieldgen/proc/collapse_shields()
