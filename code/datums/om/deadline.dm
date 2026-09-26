@@ -10,6 +10,9 @@
 /// keys further deadlines of the same behaviour on the same entity: OM_DL_THROTTLE is the
 /// scheduler's deferred wake, OM_DL_STAGE + n a pipeline stage's rewake (on_keyed_deadline()).
 /proc/om_after(datum/E, delay, B, sub = 0)
+	// A proc as the third argument: the one-shot call of timer.dm (object_model_core.md §4.11).
+	if(!istype(B, /datum/om/behaviour) && !ispath(B, /datum/om/behaviour))
+		return om_after_call(E, delay, B, length(args) > 3 ? args.Copy(4) : null)
 	var/datum/om/behaviour/def = om_registry().behaviour(B)
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec)

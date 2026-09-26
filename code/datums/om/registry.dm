@@ -67,6 +67,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/datum/om/behaviour/expiry_behaviour
 	var/datum/om/behaviour/rate_behaviour
 	var/datum/om/behaviour/task_behaviour
+	var/datum/om/behaviour/timer_behaviour
 	var/datum/om/behaviour/ui_behaviour
 	var/datum/om/behaviour/edge_behaviour
 
@@ -453,6 +454,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	expiry_behaviour = behaviour_by_type[/datum/om/behaviour/internal/expiry]
 	rate_behaviour = behaviour_by_type[/datum/om/behaviour/internal/rates]
 	task_behaviour = behaviour_by_type[/datum/om/behaviour/internal/tasks]
+	timer_behaviour = behaviour_by_type[/datum/om/behaviour/internal/timers]
 	ui_behaviour = behaviour_by_type[/datum/om/behaviour/internal/ui_push]
 	edge_behaviour = behaviour_by_type[/datum/om/behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.

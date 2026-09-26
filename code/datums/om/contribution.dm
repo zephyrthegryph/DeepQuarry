@@ -317,12 +317,14 @@
 	switch(eff.kind)
 		if(OM_EFFECT_CLOCK_MULT, OM_EFFECT_CLOCK_INHIBIT)
 			om_clock_changed(rec, eff.clock_idx)
+			om_timers_rate_changed(rec)
 		if(OM_EFFECT_RELEVANCE)
 			rec.relevance = new_value
 			om_sync_all(rec)
 			om_native_relevance(E, new_value)
 		if(OM_EFFECT_SUSPEND)
 			om_sync_all(rec)
+			om_timers_rate_changed(rec)
 	eff.on_changed(E, old, new_value)
 	var/bits = eff.channel | CHANGE_EFFECTS
 	if(eff.dependents)

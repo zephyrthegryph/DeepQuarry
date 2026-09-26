@@ -24,14 +24,21 @@
 	/// /type/proc/x called on the actor with the task (table rows).
 	var/complete_proc
 	var/cancel_proc
+	/// Steps (object_model_core.md §4.11): list(/type/proc/x = delay, ...), in order. Each
+	/// runs on the actor with the task after its delay and returns STEP_NEXT, STEP_REPEAT(d),
+	/// STEP_DONE or STEP_FAIL(reason). Past the last step the task completes. With steps,
+	/// `duration` is unused.
+	var/list/steps
 
+	/// Flat: proc, delay, proc, delay...
+	var/list/compiled_steps
 	var/list/compiled_requires
 	var/requires_mask = 0
 	var/claim_rel
 
 /datum/om/task_def/proc/compile(datum/om/registry/reg)
 	compiled_requires = list()
-	for(var/spec in om_spec_list(requires))
+	for(var/spec in (isnull(requires) ? list() : om_spec_list(requires)))
 		var/datum/om/check/C = om_check_get(spec, reg)
 		if(!C)
 			reg.error("task [name]: malformed requires entry")
@@ -46,6 +53,14 @@
 	for(var/path in interrupted_by)
 		if(!ispath(path, /datum/om/event))
 			reg.error("task [name]: interrupted_by [path] is not an event")
+	if(length(steps))
+		compiled_steps = list()
+		for(var/step_proc in steps)
+			var/delay = steps[step_proc]
+			if(!isnum(delay) || delay < 0)
+				reg.error("task [name]: step [step_proc] needs a delay")
+				delay = 0
+			compiled_steps += list(step_proc, delay)
 
 /// Extra requirements from start parameters (presets such as timed_tool).
 /datum/om/task_def/proc/extra_requires(list/params)
@@ -71,6 +86,16 @@
 	var/reason
 	var/list/extra_requires
 	var/datum/om/edge/claim
+	/// Index of the next step (steps tasks), 1-based over def.compiled_steps' pairs.
+	var/step_no = 0
+	/// params keys whose datum values are held as OM handles (weak capture).
+	var/list/param_handles
+
+/// The datum a param names, resolved from its handle (null once deleted).
+/datum/om/task/proc/param(key)
+	if(param_handles && (key in param_handles))
+		return om_resolve(params[key])
+	return params?[key]
 
 /// Starts task `task` (a name from a bundle's `tasks` or a /datum/om/task_def
 /// type). Returns the task, or a text reason it can't start.
@@ -98,6 +123,17 @@
 	T.def = def
 	T.actor = actor
 	T.target = target
+	if(params)
+		params = params.Copy()
+		for(var/key in params)
+			var/datum/D = params[key]
+			if(!isdatum(D))
+				continue
+			var/h = om_handle(D)
+			if(isnull(h))
+				return "gone"
+			params[key] = h
+			LAZYADD(T.param_handles, key)
 	T.params = params
 	T.extra_requires = extra
 	if(def.claim_rel && target)
@@ -111,6 +147,9 @@
 		dur = om_read(actor, def.duration)
 	T.started_at = t
 	T.ends_at = t + max(dur, 0)
+	if(def.compiled_steps)
+		T.step_no = 1
+		T.ends_at = t + def.compiled_steps[2]
 	LAZYADD(rec.tasks, T)
 	var/datum/om/behaviour/B = reg.task_behaviour
 	om_attach(actor, B)
@@ -189,7 +228,13 @@
 		return
 	var/t = rec.sched.now()
 	for(var/datum/om/task/T as anything in rec.tasks?.Copy())
-		if(T.ends_at <= t)
+		if(T.state != OM_TASK_RUNNING || T.ends_at > t)
+			continue
+		if(!om_task_params_alive(T))
+			om_task_cancel(T, "gone")
+		else if(T.step_no)
+			om_task_run_step(T, t)
+		else
 			om_task_complete(T)
 	if(rec.owner)
 		om_tasks_reschedule(rec)
@@ -209,6 +254,44 @@
 					break
 		if(!isnull(reason))
 			om_task_cancel(T, reason)
+
+/proc/om_task_params_alive(datum/om/task/T)
+	for(var/key in T.param_handles)
+		if(!om_resolve(T.params[key]))
+			return FALSE
+	return TRUE
+
+/// Runs the task's current step and acts on its result. Cancelling is always safe: no
+/// proc is suspended inside a step.
+/proc/om_task_run_step(datum/om/task/T, t)
+	var/list/S = T.def.compiled_steps
+	var/i = T.step_no * 2 - 1
+	var/result
+	try
+		result = call(T.actor, S[i])(T)
+	catch(var/exception/e)
+		stack_trace("om task [T.def.name] step [S[i]]: [e]")
+		result = STEP_FAIL("error")
+	if(T.state != OM_TASK_RUNNING)
+		return // the step cancelled or finished its own task
+	if(islist(result))
+		var/list/R = result
+		switch(R[1])
+			if(OM_STEP_REPEAT)
+				T.ends_at = t + max(R[2], 0)
+				return
+			if(OM_STEP_FAIL)
+				om_task_cancel(T, R[2] || "failed")
+				return
+	if(result == STEP_DONE)
+		om_task_complete(T)
+		return
+	// STEP_NEXT (or null).
+	T.step_no++
+	if(T.step_no * 2 > length(S))
+		om_task_complete(T)
+		return
+	T.ends_at = t + S[T.step_no * 2]
 
 /// Legacy procs that must sleep: waits for `T` with a mandatory timeout
 /// (deciseconds). TRUE if it completed.
