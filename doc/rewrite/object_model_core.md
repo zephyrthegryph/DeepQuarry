@@ -165,9 +165,13 @@ declarations. `SUM_OF(...)` sums effects.
   (`GRANT_ABILITY`, `GRANT_LANGUAGE`, `GRANT_VERB`, `GRANT_ACCESS`,
   `GRANT_TRAIT`).
 - **Clocks:** `CLOCK_BIO`, `CLOCK_MACHINE`, `CLOCK_CHEM`.
-- **Relations:** `contained_in`, `worn_by`, `occupant_of`, `buckled_to`
-  (gives `EFFECT_BUCKLED`), `stasis_occupant` (stops the occupant's
-  biological clock while the bed is powered), `powered_by`, `claim`.
+- **Relations:** `contained_in`, `worn_by`, `buckled_to`
+  (gives `EFFECT_BUCKLED`), `pulling`, `grabbing`, `stasis_occupant` (stops
+  the occupant's biological clock while the bed is powered), `powered_by`,
+  `ai_eye_of`, `following`, `host_of`, `claim`. Declared next to their
+  feature: `orbiting` (`code/game/orbit.dm`), `leashed_to`/`leash_held_by`
+  (`leash.dm`), `tethered_to` (`tethered_item.dm`). A machine's occupant is a
+  slot (`/datum/om/relation/slot/occupant`), not a relation of its own.
 - **Bundles:** `powered_machine`, `storage`, `occupant_seat`,
   `powered_vehicle`, `stasis`, `hud_on_vitals`, `ui_live`.
 - **Tasks:** `/datum/om/task_def/timed_tool` (params `tool`, `duration`).
@@ -453,20 +457,25 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
 
 - Both ends hold the edge. `source_single` / `target_single` set cardinality;
   `conflict` is `OM_REL_REPLACE` or `OM_REL_REFUSE` (with a reason).
-- **No view fields (OM relations step 3).** A relation used to be able to
-  declare `source_ref_field`/`target_ref_field`/`source_list_field`/
-  `target_list_field` (defs.dm) and have the core (`om_field_link()`/
-  `om_field_unlink()` in relation.dm) write a legacy var on link/unlink for
-  free. That generic mechanism is deleted -- a relation or slot IS the state,
-  and any legacy var a caller still reads (a machine's `occupant`, a mob's
-  `buckled`/`pulling`, an item's `affecting`) is now written only by that
-  relation's own `on_link()`/`on_unlink()`, right alongside its other side
-  effects. New code reads through the accessor macros in `code/__defines/om.dm`
-  instead of a plain var: `OM_REL_TARGET(E, rel)` / `OM_REL_SOURCE(E, rel)` /
-  `OM_REL_SOURCES(E, rel)` / `OM_REL_TARGETS(E, rel)` for a bare relation,
-  `SLOT_ITEM(E, slot_id)` / `SLOT_LIST(E, slot_id)` for a slot, plus the named
-  wrappers (`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`, `GRABBED_BY`,
-  `EYE_OF`).
+- **No view fields.** A relation or slot IS the state; nothing mirrors it
+  into a var. The generic field mechanism (`source_ref_field` and friends,
+  `om_field_link()`) is deleted, and so are the vars it used to feed:
+  `occupant`, `buckled`, `buckled_mobs`, `pulling`, `pulledby`, the grab's
+  `affecting`/`assailant`, `following`, `following_mobs` and the borer's
+  `host`. Read through the accessor macros in `code/__defines/om.dm`:
+  `OM_REL_TARGET(E, rel)` / `OM_REL_SOURCE(E, rel)` / `OM_REL_SOURCES(E, rel)`
+  / `OM_REL_TARGETS(E, rel)` for a bare relation, `SLOT_ITEM(E, slot_id)` /
+  `SLOT_LIST(E, slot_id)` for a slot, plus the named wrappers (`BUCKLED`,
+  `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`, `GRABBED_BY`, `GRAB_TARGET`,
+  `GRAB_ASSAILANT`, `EYE_OF`, `ORBIT_TARGET`, `ORBITERS`, `FOLLOWING`,
+  `FOLLOWERS`, `BORER_HOST`, `BORER_OF`, `LEASH_PET`, `LEASH_MASTER`,
+  `LEASH_OF`, `TETHERED_HANDHELD`, `TETHER_HOST`). They expand to proc
+  calls, so read into a typed local before member access. `on_link()`/
+  `on_unlink()` keep only real side effects. `edge.data` carries
+  relation-specific payload the linker attaches (an orbit's saved
+  transform). Remaining exception: the AI eye's `owner`, the mob `eyeobj`
+  and the AI's `all_eyes` are still written by `ai_eye_of`'s hooks, because
+  soulcatcher eyes and multicam eyes share those vars without the relation.
 - **Deletion unlinks.** In the destroy transaction's phase 4 (links), before
   any `Destroy()`, every edge is unlinked. `on_source_delete` /
   `on_target_delete` (`OM_END_UNLINK` or `OM_END_DELETE_OTHER`) apply to the

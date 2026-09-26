@@ -98,14 +98,23 @@ A slot is a relation (`/datum/om/relation/slot`, `object_model_core.md` §7) tha
 also owns loc: linking a thing into a slot is a ledger move, and it is also an
 `om_link` to the holder, so a slot gets a relation's `changes` channels and
 `contributes`/`grants` rows for free, on top of what a container needs. There
-are no view fields any more (OM relations step 3): a relation or slot IS the
-state, and the only writer of any legacy var a caller still reads (a
-machine's `occupant`, a mob's `pulling`) is that relation's own `on_link()`/
-`on_unlink()`. Readers go through the accessor macros in `code/__defines/om.dm`
--- `OM_REL_TARGET`/`OM_REL_SOURCE`/`OM_REL_SOURCES`/`OM_REL_TARGETS` for a bare
-relation, `SLOT_ITEM`/`SLOT_LIST` for a slot, plus the named ones
-(`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`, `GRABBED_BY`, `EYE_OF`) --
-not a plain var, in any new code. A slot decl subclasses `/datum/om/relation/slot` and declares
+are no view fields: a relation or slot IS the state, and nothing mirrors it
+into a var. The old mirrors are deleted -- a machine's or mech's `occupant`,
+a mob's `buckled`/`pulling`/`pulledby`, a movable's `buckled_mobs`, the grab's
+`affecting`/`assailant`, a ghost's `following` and `following_mobs`, a
+borer's `host` -- so a direct read is a compile error. Readers go through the
+accessor macros in `code/__defines/om.dm`: `OM_REL_TARGET`/`OM_REL_SOURCE`/
+`OM_REL_SOURCES`/`OM_REL_TARGETS` for a bare relation, `SLOT_ITEM`/`SLOT_LIST`
+for a slot (a machine's occupant is `SLOT_ITEM(machine, OCCUPANT_SLOT_*)`),
+plus the named ones (`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`,
+`GRABBED_BY`, `GRAB_TARGET`, `GRAB_ASSAILANT`, `EYE_OF`, `ORBIT_TARGET`,
+`ORBITERS`, `FOLLOWING`, `FOLLOWERS`, `BORER_HOST`, `BORER_OF`, `LEASH_PET`,
+`LEASH_MASTER`, `LEASH_OF`, `TETHERED_HANDHELD`, `TETHER_HOST`). Writers go
+through `move_into()`/`slot_remove()` for a slot and `om_link()`/`om_unlink()`
+for a relation; a relation's `on_link()`/`on_unlink()` hold only real side
+effects (alerts, animations, signal registration). The macros expand to proc
+calls, so DM will not take `BUCKLED(M).x` or `BUCKLED(M)?.x`: read into a
+typed local first. A slot decl subclasses `/datum/om/relation/slot` and declares
 `holder` (a holder type, or list of them) instead of overriding a per-holder
 proc; the registry (`code/datums/om/registry.dm`,
 `build_slot_holders()`/`slot_group_for()`) builds each holder's slot list once,
@@ -363,7 +372,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 
 - **Occupant slots** are internal and sealed, and they define the occupant's environment (breathing and temperature). Landed (OM relations step 3), each its own `/datum/om/relation/slot/occupant` subtype with `move_into()`/`slot_remove()` replacing raw `forceMove()`:
   - Sleepers (`Sleeper.dm`, also the mech-mounted sleeper equipment), scanners (`adv_med.dm`'s body scanner, VR pods in `vr_console.dm`), cryo (`cryo.dm`), cryopods (`cryopod.dm`), the DNA modifier (`dna_modifier.dm`, landed earlier as C8a), the cloning pod (`cloning.dm`), recharge stations (`rechargestation.dm`), resleevers, the suit storage unit (`suit_storage.dm`) and cycler (`suit_cycler.dm`), the implant chair (`implantchair.dm`), the gibber (`gibber.dm`), the transport pod (`transportpod.dm`) and the mech passenger compartment (`passenger.dm`) all use them.
-  - `/datum/om/relation/occupant_of` (the bare, non-slot relation this replaced) is deleted.
+  - There is no separate occupant relation: the slot is the relation, and the machine has no `occupant` var.
   - The old "eject everything except a hand-kept exclude list" loops (sleeper, VR pod) are gone along with the sleeper's partial-eject bug: everything but the occupant lives in its own default `machine_internals` slot now, so `slot_remove()` on the occupant slot is the only thing that ever leaves on eject.
 - **Mechs**:
   - The pilot sits in a sealed occupant slot (`/datum/om/relation/slot/occupant/mecha_pilot`, `mecha.dm`), including the MMI path via `move_into()`.
@@ -374,6 +383,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 ## 11. Other holders
 
 - **Vending and smartfridge (C9).** Stock slots hold virtual counts per product, and only one item is materialized per vend.
+- **Links that are not containment.** Pulling, grabbing, buckling, orbiting (`code/game/orbit.dm`, which replaced `/datum/component/orbiter`), ghost following, borer hosts, leashes (`leashed_to` pet -> leash and `leash_held_by` leash -> holder; dropping either edge drops the other) and tethered handhelds (`tethered_to` handheld -> host, deleting the host deletes the handheld) are all relations, read with the macros in §3. An edge can carry relation-specific data in `edge.data` (an orbit keeps the orbiter's pre-orbit transform there).
 - **Circuits.** Assemblies hold components in slots. Circuit types come from type properties rather than instances. Pins are created lazily, with values kept in a compact list.
 - **Reagents.** Holders sit behind the same insert, remove and transfer API as a fluid store. Reagent datums become shared singletons plus an id → volume list, with `data` only where needed. Organ holders are created on first reagent (with the body rewrite).
 
