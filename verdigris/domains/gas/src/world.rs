@@ -34,7 +34,6 @@ use vg_core::frame::{Res, Task};
 use vg_core::grid::{Dir, Face, GridDims};
 use vg_core::outbox::{Event, EventKind, Lane, Outbox, Wake, WatchId};
 use vg_core::owner::{DomainState, View};
-use vg_core::watch::revision::Counter;
 use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig, WatchKey};
 use vg_core::watch::{Cond, WatchPort, WatchState};
 
@@ -117,121 +116,99 @@ impl MixRef {
 }
 
 // --- Main-owned mixtures ----------------------------------------------------
+//
+// The slab itself lives in `verdigris/ffi/src/gas.rs` (`MainsStore`): main-
+// owned mixtures are FFI state, the same as the reaction table and the
+// pipe region slot compaction this file's `PipeAccess` already bridges.
+// `GasWorld` reaches it through the installed [`MainsAccess`] below --
+// [`Mains`] is a stateless facade over that bridge, kept so `GasWorld`'s own
+// field (`mains: Mains`) and every existing call site (`w.mains.alloc(...)`,
+// `.get(...)`, `.free(...)`, `.live()`, `.capacity()`) keep their shape.
 
-struct Slot {
-	mix: Mixture,
-	revision: Counter,
-	live: bool,
+/// What `GasWorld` needs from the DLL's main-owned mixture slab. Installed
+/// once by the FFI crate at DLL init (`crate::gas::install_mains_access`);
+/// domain-crate tests install their own in-memory double instead
+/// (`tests.rs`'s `world()`).
+pub trait MainsAccess {
+	/// Allocates a slot for `mix`. `None`: every main handle is in use.
+	fn alloc(&self, mix: Mixture) -> Option<u32>;
+	/// Frees a live slot. A no-op if it's already free.
+	fn free(&self, i: u32);
+	/// The slot's mixture, or `None` if it isn't live.
+	fn get(&self, i: u32) -> Option<Mixture>;
+	/// Replaces a live slot's mixture and bumps its revision. A no-op if
+	/// the slot isn't live.
+	fn set(&self, i: u32, mix: Mixture);
+	fn revision(&self, i: u32) -> u32;
+	fn live(&self) -> usize;
+	fn capacity(&self) -> usize;
+	/// Total gas (moles + energy) over every live slot, for conservation
+	/// checks.
+	fn totals(&self) -> [f64; Q];
 }
 
-/// The main-owned mixture slab. Slots are reused; a handle is only valid
-/// while its datum lives (as before).
-///
-/// This (and [`MixRef`] above) stays here for now: `verdigris/ffi/src/
-/// gas.rs`'s own docs call moving it "the first gas slice", but unlike the
-/// reaction table and the pipe region slot compaction (both already moved
-/// there -- pure FFI-only state), `Mains` is a field `GasWorld` embeds
-/// directly (`mains: Mains` below) and every `with_mix`/`with_mix_mut`
-/// dispatch reaches through it. Relocating it means `GasWorld` reaching
-/// main-owned mixtures through an installed access trait instead (the
-/// `PipeAccess`/`GasExchange` shape this file and `heat::couple` already
-/// use), not just moving a type definition -- its own migration slice,
-/// same as the M2/gas rewrite's other GasWorld-embedded state
-/// (`tools/ci/rust_core_consolidation_allowlist.txt`'s gas section).
-#[derive(Default)]
-pub struct Mains {
-	slots: Vec<Slot>,
-	free: Vec<u32>,
-	live: usize,
+thread_local! {
+	static MAINS_ACCESS: RefCell<Option<Box<dyn MainsAccess>>> = const { RefCell::new(None) };
 }
+
+/// Installs the main-owned-mixture bridge (`verdigris_init`/DLL load, or a
+/// domain-crate test's own setup).
+pub fn install_mains_access(access: Box<dyn MainsAccess>) {
+	MAINS_ACCESS.with_borrow_mut(|p| *p = Some(access));
+}
+
+fn with_mains_access<T>(f: impl FnOnce(&dyn MainsAccess) -> T) -> Option<T> {
+	MAINS_ACCESS.with_borrow(|p| p.as_deref().map(f))
+}
+
+/// Facade over the installed [`MainsAccess`] bridge -- see the section docs
+/// above.
+#[derive(Default, Clone, Copy)]
+pub struct Mains;
 
 impl Mains {
 	/// Allocates a slot.
 	///
 	/// # Errors
-	/// If every main handle is in use.
+	/// If every main handle is in use, or nothing installed [`MainsAccess`]
+	/// yet.
 	pub fn alloc(&mut self, mix: Mixture) -> Result<u32> {
-		self.live += 1;
-		if let Some(i) = self.free.pop() {
-			let slot = &mut self.slots[i as usize];
-			slot.mix = mix;
-			slot.revision.bump();
-			slot.live = true;
-			return Ok(i);
-		}
-		let i = u32::try_from(self.slots.len())?;
-		if i >= PIPE_BASE {
-			self.live -= 1;
-			bail!("out of main gas mixture handles ({PIPE_BASE})");
-		}
-		self.slots.push(Slot {
-			mix,
-			revision: Counter::new(),
-			live: true,
-		});
-		Ok(i)
+		with_mains_access(|a| a.alloc(mix))
+			.flatten()
+			.ok_or_else(|| eyre!("out of main gas mixture handles ({PIPE_BASE}), or no mains access installed"))
 	}
 
 	pub fn free(&mut self, i: u32) {
-		if let Some(slot) = self.slots.get_mut(i as usize) {
-			if slot.live {
-				slot.live = false;
-				slot.mix = Mixture::new();
-				slot.revision.bump();
-				self.free.push(i);
-				self.live -= 1;
-			}
-		}
+		with_mains_access(|a| a.free(i));
 	}
 
 	#[must_use]
-	pub fn get(&self, i: u32) -> Option<&Mixture> {
-		self.slots
-			.get(i as usize)
-			.filter(|s| s.live)
-			.map(|s| &s.mix)
+	pub fn get(&self, i: u32) -> Option<Mixture> {
+		with_mains_access(|a| a.get(i)).flatten()
 	}
 
-	pub fn get_mut(&mut self, i: u32) -> Option<&mut Mixture> {
-		self.slots
-			.get_mut(i as usize)
-			.filter(|s| s.live)
-			.map(|s| &mut s.mix)
-	}
-
-	fn bump(&mut self, i: u32) {
-		if let Some(s) = self.slots.get_mut(i as usize) {
-			s.revision.bump();
-		}
+	pub fn set(&mut self, i: u32, mix: Mixture) {
+		with_mains_access(|a| a.set(i, mix));
 	}
 
 	#[must_use]
 	pub fn revision(&self, i: u32) -> u32 {
-		self.slots.get(i as usize).map_or(0, |s| s.revision.get())
+		with_mains_access(|a| a.revision(i)).unwrap_or(0)
 	}
 
 	#[must_use]
 	pub fn live(&self) -> usize {
-		self.live
+		with_mains_access(|a| a.live()).unwrap_or(0)
 	}
 
 	#[must_use]
 	pub fn capacity(&self) -> usize {
-		self.slots.len()
+		with_mains_access(|a| a.capacity()).unwrap_or(0)
 	}
 
-	/// Total gas over every live slot (for conservation checks).
 	#[must_use]
 	pub fn totals(&self) -> [f64; Q] {
-		let mut out = [0.0; Q];
-		for s in self.slots.iter().filter(|s| s.live) {
-			let m = s.mix.moles_array();
-			for (o, v) in out.iter_mut().zip(m) {
-				*o += f64::from(v);
-			}
-			out[N] += f64::from(s.mix.thermal_energy());
-		}
-		out
+		with_mains_access(|a| a.totals()).unwrap_or([0.0; Q])
 	}
 }
 
@@ -1181,7 +1158,7 @@ pub struct GasWorld {
 impl Default for GasWorld {
 	fn default() -> Self {
 		Self {
-			mains: Mains::default(),
+			mains: Mains,
 			field: None,
 			exchange: Arc::new(Exchange::default()),
 			dirty: Dirty::default(),
@@ -1284,7 +1261,7 @@ impl GasWorld {
 	#[must_use]
 	pub fn load(&self, r: MixRef) -> Option<Mixture> {
 		match r {
-			MixRef::Main(i) => self.mains.get(i).cloned(),
+			MixRef::Main(i) => self.mains.get(i),
 			MixRef::Pipe(s) => {
 				let (gas, volume) = with_pipe_access(|p| p.probe(s))??;
 				Some(mixture_of_pipe(&gas, volume))
@@ -1310,10 +1287,7 @@ impl GasWorld {
 		}
 		match r {
 			MixRef::Main(i) => {
-				if let Some(m) = self.mains.get_mut(i) {
-					*m = after.clone();
-				}
-				self.mains.bump(i);
+				self.mains.set(i, after.clone());
 				self.touched(r, after);
 			}
 			MixRef::Pipe(s) => {
@@ -1476,7 +1450,7 @@ impl GasWorld {
 				}
 			}
 			MixRef::Main(i) => {
-				let Some(before) = self.mains.get(i).cloned() else {
+				let Some(before) = self.mains.get(i) else {
 					return;
 				};
 				if before.is_immutable() {
@@ -1622,7 +1596,7 @@ impl GasWorld {
 			for &slot in &ids {
 				*self.mix_watches.watched.entry(slot).or_default() += 1;
 				if let Some(m) = self.mains.get(slot) {
-					let p = GasProbeCell::of(m);
+					let p = GasProbeCell::of(&m);
 					self.mix_watches.store.set(slot, p);
 				}
 			}

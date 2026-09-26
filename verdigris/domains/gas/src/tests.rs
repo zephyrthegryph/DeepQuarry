@@ -11,7 +11,67 @@ use vg_core::sim::Mode;
 use crate::cell::{GasCell, N, Q};
 use crate::gas::ids::{GAS_NITROGEN, GAS_OXYGEN, GAS_PLASMA};
 use crate::gas::Mixture;
-use crate::world::{GasWorld, MixRef};
+use crate::world::{GasWorld, MainsAccess, MixRef};
+
+/// A `MainsAccess` double for domain-crate tests (no `vg-ffi`, so no
+/// `MainsStore` to install): a plain `Vec` slab, no revision tracking
+/// (nothing here reads it).
+#[derive(Default)]
+struct TestMains(std::cell::RefCell<Vec<Option<Mixture>>>);
+
+impl MainsAccess for TestMains {
+	fn alloc(&self, mix: Mixture) -> Option<u32> {
+		let mut v = self.0.borrow_mut();
+		for (i, s) in v.iter_mut().enumerate() {
+			if s.is_none() {
+				*s = Some(mix);
+				return u32::try_from(i).ok();
+			}
+		}
+		v.push(Some(mix));
+		u32::try_from(v.len() - 1).ok()
+	}
+
+	fn free(&self, i: u32) {
+		if let Some(s) = self.0.borrow_mut().get_mut(i as usize) {
+			*s = None;
+		}
+	}
+
+	fn get(&self, i: u32) -> Option<Mixture> {
+		self.0.borrow().get(i as usize).cloned().flatten()
+	}
+
+	fn set(&self, i: u32, mix: Mixture) {
+		if let Some(s) = self.0.borrow_mut().get_mut(i as usize) {
+			*s = Some(mix);
+		}
+	}
+
+	fn revision(&self, _i: u32) -> u32 {
+		0
+	}
+
+	fn live(&self) -> usize {
+		self.0.borrow().iter().filter(|s| s.is_some()).count()
+	}
+
+	fn capacity(&self) -> usize {
+		self.0.borrow().len()
+	}
+
+	fn totals(&self) -> [f64; Q] {
+		let mut out = [0.0; Q];
+		for m in self.0.borrow().iter().flatten() {
+			let moles = m.moles_array();
+			for (o, v) in out.iter_mut().zip(moles) {
+				*o += f64::from(v);
+			}
+			out[N] += f64::from(m.thermal_energy());
+		}
+		out
+	}
+}
 
 const X: u32 = 20;
 const Y: u32 = 20;
@@ -24,6 +84,7 @@ fn air(scale: f32, t: f32) -> GasCell {
 }
 
 fn world(mode: Mode) -> GasWorld {
+	crate::world::install_mains_access(Box::new(TestMains::default()));
 	let mut w = GasWorld::default();
 	let field = crate::world::Field::new(X, Y, 1, mode, &w.exchange).expect("field builds");
 	w.mode = field.mode;

@@ -12,10 +12,122 @@ use byondapi::prelude::*;
 use eyre::{eyre, Context, Result};
 use vg_core::network::RegionId;
 use vg_core::slot::RawHandle;
+use vg_core::watch::revision::Counter;
+use vg_gas::cell::{N, Q};
 use vg_gas::gas::constants::ReactionReturn;
-use vg_gas::gas::{self, with_mix};
+use vg_gas::gas::{self, with_mix, Mixture};
 use vg_gas::pipes::Pipes;
 use vg_gas::reaction::{Reaction, ReactionIdentifier, ReactionPriority};
+use vg_gas::world::{MainsAccess, PIPE_BASE};
+
+// --- Main-owned mixtures -------------------------------------------------
+//
+// The DLL's own slab for every main-owned `/datum/gas_mixture` (a tank, a
+// lung, a canister, a device buffer or scratch mixture): FFI state, the
+// same as the reaction table and the pipe region slots above. `vg_gas::
+// world::GasWorld` (still the active engine for turf/pipe gas -- see that
+// module's own docs) reaches it through the installed [`MainsAccess`]
+// bridge instead of owning it directly (`Mains` there is now a stateless
+// facade over this).
+
+struct Slot {
+    mix: Mixture,
+    revision: Counter,
+    live: bool,
+}
+
+#[derive(Default)]
+struct MainsStore {
+    slots: std::cell::RefCell<Vec<Slot>>,
+    free: std::cell::RefCell<Vec<u32>>,
+    live: std::cell::Cell<usize>,
+}
+
+impl MainsAccess for MainsStore {
+    fn alloc(&self, mix: Mixture) -> Option<u32> {
+        self.live.set(self.live.get() + 1);
+        if let Some(i) = self.free.borrow_mut().pop() {
+            let mut slots = self.slots.borrow_mut();
+            let slot = &mut slots[i as usize];
+            slot.mix = mix;
+            slot.revision.bump();
+            slot.live = true;
+            return Some(i);
+        }
+        let mut slots = self.slots.borrow_mut();
+        let i = u32::try_from(slots.len()).ok()?;
+        if i >= PIPE_BASE {
+            self.live.set(self.live.get() - 1);
+            return None;
+        }
+        slots.push(Slot {
+            mix,
+            revision: Counter::new(),
+            live: true,
+        });
+        Some(i)
+    }
+
+    fn free(&self, i: u32) {
+        let mut slots = self.slots.borrow_mut();
+        if let Some(slot) = slots.get_mut(i as usize) {
+            if slot.live {
+                slot.live = false;
+                slot.mix = Mixture::new();
+                slot.revision.bump();
+                self.free.borrow_mut().push(i);
+                self.live.set(self.live.get() - 1);
+            }
+        }
+    }
+
+    fn get(&self, i: u32) -> Option<Mixture> {
+        self.slots
+            .borrow()
+            .get(i as usize)
+            .filter(|s| s.live)
+            .map(|s| s.mix.clone())
+    }
+
+    fn set(&self, i: u32, mix: Mixture) {
+        let mut slots = self.slots.borrow_mut();
+        if let Some(s) = slots.get_mut(i as usize) {
+            if s.live {
+                s.mix = mix;
+                s.revision.bump();
+            }
+        }
+    }
+
+    fn revision(&self, i: u32) -> u32 {
+        self.slots.borrow().get(i as usize).map_or(0, |s| s.revision.get())
+    }
+
+    fn live(&self) -> usize {
+        self.live.get()
+    }
+
+    fn capacity(&self) -> usize {
+        self.slots.borrow().len()
+    }
+
+    fn totals(&self) -> [f64; Q] {
+        let mut out = [0.0; Q];
+        for s in self.slots.borrow().iter().filter(|s| s.live) {
+            let m = s.mix.moles_array();
+            for (o, v) in out.iter_mut().zip(m) {
+                *o += f64::from(v);
+            }
+            out[N] += f64::from(s.mix.thermal_energy());
+        }
+        out
+    }
+}
+
+/// Installs the main-owned-mixture bridge (`crate::world::build`).
+pub(crate) fn install_mains_access() {
+    vg_gas::world::install_mains_access(Box::new(MainsStore::default()));
+}
 
 // --- Pipe region slot compaction ----------------------------------------
 //

@@ -43,10 +43,7 @@ where
 	F: FnOnce(&Mixture) -> Result<T>,
 {
 	let r = MixRef::of(mix)?;
-	with_world(|w| match r {
-		MixRef::Main(i) => f(w.mains.get(i).ok_or_else(|| missing(r))?),
-		_ => f(&w.load(r).ok_or_else(|| missing(r))?),
-	})
+	with_world(|w| f(&w.load(r).ok_or_else(|| missing(r))?))
 }
 
 /// As [`with_mix`], but mutable. A turf's gas changes by one command.
