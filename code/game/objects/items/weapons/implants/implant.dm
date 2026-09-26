@@ -25,14 +25,19 @@
 // Moves the implant where it needs to go, and tells it if there's more to be done in post_implant
 /obj/item/implant/proc/handle_implant(mob/source, target_zone = BP_TORSO)
 	. = TRUE
-	imp_in = source
 	implanted = TRUE
 	if(ishuman(source))
 		var/mob/living/carbon/human/H = source
 		var/obj/item/organ/external/affected = H.get_organ(target_zone)
 		if(affected)
-			affected.implants |= src
-			part = affected
+			// The implanted_in relation (code/datums/om/library.dm) sets
+			// part/imp_in and the organ's implants membership.
+			om_link(src, affected, /datum/om/relation/implanted_in)
+	if(!part)
+		// No organ to embed in (a non-human host, or no matching limb):
+		// imp_in has no relation to keep it in sync with, since there's no
+		// reverse list on a bare mob the way an organ's `implants` is one.
+		imp_in = source
 	if(part)
 		forceMove(part)
 	else
@@ -69,11 +74,10 @@
 		post_implant(H)
 
 /obj/item/implant/Destroy()
-	if(part)
-		part.implants.Remove(src)
-		part = null
+	// The implanted_in relation's teardown (destroy transaction phase 5,
+	// before Destroy()) already cleared part/imp_in and this implant's entry
+	// in the organ's implants list, if it had one.
 	GLOB.listening_objects.Remove(src)
-	imp_in = null
 	return ..()
 
 /obj/item/implant/attackby(obj/item/I, mob/user)

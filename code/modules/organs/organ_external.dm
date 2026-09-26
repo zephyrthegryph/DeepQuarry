@@ -124,11 +124,9 @@
 		while(null in owner.organs)
 			owner.organs -= null
 
-	for(var/obj/item/implant/I as anything in implants)
-		if(!istype(I))
-			continue
-		I.imp_in = I.part = null
-	implants.Cut()
+	// The implanted_in relation's teardown (destroy transaction phase 5,
+	// before Destroy()) already unlinked every implant here -- clearing its
+	// part/imp_in and this organ's implants list.
 
 	return ..()
 

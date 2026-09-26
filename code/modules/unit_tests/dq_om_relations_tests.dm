@@ -246,3 +246,49 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the mob should be deleted")
 	TEST_ASSERT_NULL(S.occupant, "S.occupant should be cleared once the occupant is deleted")
+
+// ---------------------------------------------------------------- implanted_in
+
+/// Implanting a human establishes implanted_in: the implant's `part`/`imp_in`
+/// and the organ's `implants` list agree with the direct relation lookup.
+/datum/unit_test/dq_om_relation_implanted_in_establishes
+
+/datum/unit_test/dq_om_relation_implanted_in_establishes/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
+	TEST_ASSERT_NOTNULL(torso, "setup: H should have a torso")
+	var/obj/item/implant/I = allocate(/obj/item/implant)
+	I.handle_implant(H, BP_TORSO)
+	TEST_ASSERT_EQUAL(I.part, torso, "I.part should be the torso")
+	TEST_ASSERT_EQUAL(I.imp_in, H, "I.imp_in should be H")
+	TEST_ASSERT(I in torso.implants, "I should be in the torso's implants list")
+	TEST_ASSERT_EQUAL(om_relation_of(I, /datum/om/relation/implanted_in), torso, "om_relation_of should agree with the part var")
+
+/// Hard-deleting the organ clears the implant's part/imp_in, with no
+/// dangling reference left behind.
+/datum/unit_test/dq_om_relation_implanted_in_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_implanted_in_breaks_on_target_delete/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
+	var/obj/item/implant/I = allocate(/obj/item/implant)
+	I.handle_implant(H, BP_TORSO)
+	TEST_ASSERT_EQUAL(I.part, torso, "setup: handle_implant should succeed")
+	qdel(torso)
+	TEST_ASSERT(QDELETED(torso), "setup: the organ should be deleted")
+	TEST_ASSERT_NULL(I.part, "I.part should be cleared once the organ is deleted")
+	TEST_ASSERT_NULL(I.imp_in, "I.imp_in should be cleared once the organ is deleted")
+
+/// Hard-deleting the implant removes it from the organ's implants list, with
+/// no dangling reference left behind.
+/datum/unit_test/dq_om_relation_implanted_in_breaks_on_source_delete
+
+/datum/unit_test/dq_om_relation_implanted_in_breaks_on_source_delete/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
+	var/obj/item/implant/I = allocate(/obj/item/implant)
+	I.handle_implant(H, BP_TORSO)
+	TEST_ASSERT(I in torso.implants, "setup: handle_implant should succeed")
+	qdel(I)
+	TEST_ASSERT(QDELETED(I), "setup: the implant should be deleted")
+	TEST_ASSERT(!(I in torso.implants), "the deleted implant should not still be listed")
