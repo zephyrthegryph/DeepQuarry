@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "984611a7afa39bd4"
+#define VERDIGRIS_ABI "41e01f78b0dd8125"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1063,8 +1063,8 @@
 	return call_ext(__f)()
 
 /// Commits pending topology and returns the regions DM must rebuild, one
-/// header per changed or retired region: `region_slot, port_count,
-/// prior_count, volume, ports..., prior_region_slots...` (`volume < 0`:
+/// header per changed or retired region: `region_handle, port_count,
+/// prior_count, volume, ports..., prior_region_handles...` (`volume < 0`:
 /// the region is gone) -- the exact wire shape `rust_apply_pipe_topology`
 /// already parses.
 // /proc/vg_pipe_commit (verdigris/ffi/src/pipes.rs)

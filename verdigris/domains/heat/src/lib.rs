@@ -12,18 +12,14 @@
 //! - [`laws`]: the [`vg_core::law::Law`]s that run those couplings over
 //!   [`vg_core::world::World`].
 //! - [`mob`]: [`mob::MobHeat`], DQ Medical's flux-integrator body.
-//! - [`couple`]: the gas interface, while gas is not yet a field
-//!   (`rust_architecture.md` step 4 decision (b); deleted in step 6).
 //! - [`consts`]: shared physical constants.
 
 pub mod components;
 pub mod consts;
-pub mod couple;
 pub mod laws;
 pub mod mob;
 pub mod solid;
 
 pub use components::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling};
-pub use couple::{GasExchange, GasSource, GasProbe, GasRef, NoGas};
 pub use mob::MobHeat;
 pub use solid::{SolidCell, SolidCmd, SolidHeat};

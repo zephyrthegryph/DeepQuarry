@@ -194,8 +194,8 @@ fn pipe_clear() -> Result<ByondValue> {
 }
 
 /// Commits pending topology and returns the regions DM must rebuild, one
-/// header per changed or retired region: `region_slot, port_count,
-/// prior_count, volume, ports..., prior_region_slots...` (`volume < 0`:
+/// header per changed or retired region: `region_handle, port_count,
+/// prior_count, volume, ports..., prior_region_handles...` (`volume < 0`:
 /// the region is gone) -- the exact wire shape `rust_apply_pipe_topology`
 /// already parses.
 #[auxmacros::bind("/proc/vg_pipe_commit")]
@@ -232,7 +232,7 @@ fn pipe_commit() -> Result<ByondValue> {
             });
             let Some(slot) = slot else { continue };
             if t.retired {
-                out.extend([slot as f32, 0.0, 0.0, -1.0]);
+                out.extend([handle(slot), 0.0, 0.0, -1.0]);
                 continue;
             }
             let vol = region_volume(w, t.region);
@@ -241,9 +241,9 @@ fn pipe_commit() -> Result<ByondValue> {
                 .iter()
                 .filter_map(|&e| PORTS.with(|p| p.borrow().iter().find(|&(_, &pe)| pe == e).map(|(&id, _)| id as f32)))
                 .collect();
-            let priors: Vec<f32> = t.prior.iter().filter_map(|&raw| REGION_SLOTS.with(|s| s.borrow().raw_slot_of(raw)).map(|s| s as f32)).collect();
+            let priors: Vec<f32> = t.prior.iter().filter_map(|&raw| REGION_SLOTS.with(|s| s.borrow().raw_slot_of(raw)).map(handle)).collect();
             #[allow(clippy::cast_precision_loss)]
-            out.extend([slot as f32, ports.len() as f32, priors.len() as f32, vol]);
+            out.extend([handle(slot), ports.len() as f32, priors.len() as f32, vol]);
             out.extend(ports);
             out.extend(priors);
         }
@@ -255,6 +255,12 @@ fn pipe_commit() -> Result<ByondValue> {
         mix::add_amounts(target, &payload.amounts(), payload.temperature);
     }
     list(out)
+}
+
+/// A region slot as DM's gas handle for it (`vg_bind_handle` takes it).
+#[allow(clippy::cast_precision_loss)]
+fn handle(slot: u32) -> f32 {
+    MixRef::Pipe(slot).id() as f32
 }
 
 fn region_volume(w: &World, raw: u32) -> f32 {

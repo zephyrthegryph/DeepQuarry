@@ -172,85 +172,6 @@
 /obj/machinery/atmospherics/binary/pump/proc/on_pump_starved()
 	return
 
-// ---- GasMix (gas kind 2, owner main; verdigris/domains/gas/src/kind/gas_mix.rs) ----
-
-#define VG_GAS_GASMIX 2
-/// The code the generic vg_component_* binds take for GasMix.
-#define VG_KIND_GASMIX 2
-#define VG_GASMIX_FIELD_MOLES 0
-#define VG_GASMIX_FIELD_TEMPERATURE 1
-#define VG_GASMIX_FIELD_VOLUME 2
-#define VG_GASMIX_FIELD_PRESSURE 3
-#define VG_GASMIX_FIELD_TOTAL 4
-
-/obj/item/gas_mix_holder
-	vg_gas = VG_GAS_GASMIX
-
-/obj/item/gas_mix_holder/var/tmp/init_temperature = T20C
-/obj/item/gas_mix_holder/var/tmp/init_volume = 70.0
-
-#define VG_GASMIX_MOLES_MIN 0
-#define VG_GASMIX_MOLES_MAX 1000000
-#define VG_GASMIX_TEMPERATURE_MIN 2.7
-#define VG_GASMIX_TEMPERATURE_MAX 10000
-#define VG_GASMIX_VOLUME_MIN 0
-#define VG_GASMIX_VOLUME_MAX 100000
-
-/// mol; clamped to VG_GASMIX_MOLES_MIN..MAX.
-/obj/item/gas_mix_holder/proc/get_moles(index)
-	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_MOLES, index) // mol
-
-/// Returns the stored value.
-/obj/item/gas_mix_holder/proc/set_moles(index, value)
-	return vg_component_set(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_MOLES, index, value)
-
-/// K; clamped to VG_GASMIX_TEMPERATURE_MIN..MAX.
-/obj/item/gas_mix_holder/get_temperature()
-	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_TEMPERATURE, 0) // K
-
-/// Returns the stored value.
-/obj/item/gas_mix_holder/proc/set_temperature(value)
-	return vg_component_set(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_TEMPERATURE, -1, value)
-
-/// L; clamped to VG_GASMIX_VOLUME_MIN..MAX.
-/obj/item/gas_mix_holder/proc/get_volume()
-	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_VOLUME, 0) // L
-
-/// Returns the stored value.
-/obj/item/gas_mix_holder/proc/set_volume(value)
-	return vg_component_set(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_VOLUME, -1, value)
-
-/// unitless, read-only (computed readout).
-/obj/item/gas_mix_holder/proc/get_pressure()
-	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_PRESSURE, 0)
-
-/// unitless, read-only (computed readout).
-/obj/item/gas_mix_holder/proc/get_total()
-	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_TOTAL, 0)
-
-/// Take reconciliation (gas_moles): adds `delta` to what Rust holds now;
-/// returns the part of a removal that was not there.
-/obj/item/gas_mix_holder/proc/adjust_moles(index, delta)
-	return vg_component_adjust(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_MOLES, index, delta)
-
-/// temperature, volume in one call.
-/obj/item/gas_mix_holder/proc/gas_mix_query_ui()
-	return vg_component_get_many(vg_entity, VG_KIND_GASMIX, list(VG_GASMIX_FIELD_TEMPERATURE, VG_GASMIX_FIELD_VOLUME))
-
-/obj/item/gas_mix_holder/vg_bind_gas(entity)
-	return vg_component_bind(entity, VG_KIND_GASMIX, list(VG_GASMIX_FIELD_TEMPERATURE, init_temperature, VG_GASMIX_FIELD_VOLUME, init_volume))
-
-#define VG_GASMIX_EVENT_OVERPRESSURE 0
-#define VG_GASMIX_EVENT_DEPLETED 1
-
-/// Generated no-op default. Override to react to the event.
-/obj/item/gas_mix_holder/proc/on_gas_mix_overpressure()
-	return
-
-/// Generated no-op default. Override to react to the event.
-/obj/item/gas_mix_holder/proc/on_gas_mix_depleted()
-	return
-
 // ---- DeviceFlow (gas kind 3, owner main; verdigris/domains/gas/src/kind/device.rs) ----
 
 #define VG_GAS_DEVICEFLOW 3
@@ -1317,10 +1238,6 @@
 	return vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, -1, value)
 
 /// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_gas_reaction_ready(reaction)
-	return
-
-/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_gas_cell_reaction_ready(cell, reaction)
 	return
 
@@ -1403,23 +1320,11 @@
 				if(mover && mover.vg_entity == entity)
 					var/obj/machinery/atmospherics/binary/pump/target = mover
 					target.on_pump_starved()
-			if(512)
-				var/atom/movable/mover = SSvg.entity_lookup(entity)
-				if(mover && mover.vg_entity == entity)
-					var/obj/item/gas_mix_holder/target = mover
-					target.on_gas_mix_overpressure()
-			if(513)
-				var/atom/movable/mover = SSvg.entity_lookup(entity)
-				if(mover && mover.vg_entity == entity)
-					var/obj/item/gas_mix_holder/target = mover
-					target.on_gas_mix_depleted()
 			if(0)
-				SSvg.on_gas_reaction_ready(flat[p + 0])
-			if(1)
 				SSvg.on_gas_cell_reaction_ready(flat[p + 0], flat[p + 1])
-			if(2)
+			if(1)
 				SSvg.on_gas_cell_visual_change(flat[p + 0], flat[p + 1])
-			if(3)
+			if(2)
 				SSvg.on_gas_pressure_jump(flat[p + 0], flat[p + 1], flat[p + 2])
 			if(131072)
 				SSvg.on_heat_settled()

@@ -29,8 +29,7 @@ use vg_core::outbox::{Lane, Subscriber, WatchId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
 use vg_heat::components::gas_kind;
-use vg_heat::couple::{GasSource, GasRef};
-use vg_heat::laws::{BodyBodyExchange, BodyGasExchange, RegulatorHeatPump, SolidBodyExchange};
+use vg_heat::laws::{BodyBodyExchange, RegulatorHeatPump, SolidBodyExchange};
 use vg_heat::{BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat};
 
 use crate::entity;
@@ -92,7 +91,6 @@ mod flags {
 /// (`crate::world::register`'s call site). Returns the field key so
 /// `crate::world::build` can hand it to [`install_field`].
 pub fn register(b: &mut WorldBuilder) -> FieldKey<SolidHeat> {
-    use vg_core::component::Ownership;
     use vg_core::conservation::Tolerance;
 
     let field = b.add_field::<SolidHeat>(vg_core::field::FieldConfig {
@@ -106,11 +104,9 @@ pub fn register(b: &mut WorldBuilder) -> FieldKey<SolidHeat> {
     b.add_component::<GasCoupling>();
     b.add_component::<MobHeat>();
     b.add_component::<Regulator>();
-    b.add_global(Ownership::Worker, GasSource::default());
     b.conserve("heat_energy", Tolerance::default());
     let _ = b.add_law::<SolidBodyExchange>();
     let _ = b.add_law::<BodyBodyExchange>();
-    let _ = b.add_law::<BodyGasExchange>();
     let _ = b.add_law::<RegulatorHeatPump>();
     let _ = b.add_law::<vg_heat::mob::MobHeatFlux>();
     field
@@ -444,13 +440,9 @@ fn settle_body_if_relaxing(w: &mut vg_core::world::World, e: vg_core::entity::En
                 body.relax = false;
                 return Ok(());
             };
-            let target = if coupling.kind == gas_kind::MIXTURE { GasRef::Mixture(coupling.target) } else { GasRef::Turf(coupling.target) };
-            let gas = w.global::<GasSource>().map(|g| g.0.clone()).ok();
             let moved = vg_heat::laws::settle_relax(body, coupling.conductance, now);
-            if let Some(gas) = gas {
-                #[allow(clippy::cast_possible_truncation)]
-                let m = moved as f32;
-                let _ = gas.exchange(target, &mut |_p| m);
+            if coupling.kind == gas_kind::TURF {
+                turf_gas_heat(w, coupling.target, moved);
             }
         }
         2 => {
@@ -734,19 +726,10 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
         }
         1 => {
             if let Some(coupling) = w.read::<GasCoupling>(coupling_e) {
-                let target = if coupling.kind == gas_kind::MIXTURE { GasRef::Mixture(coupling.target) } else { GasRef::Turf(coupling.target) };
-                if let Ok(gas) = w.global::<GasSource>() {
-                    let gas = gas.0.clone();
-                    if let Some(probe) = gas.probe(target) {
-                        #[allow(clippy::cast_possible_truncation)]
-                        let baseline = f64::from(vg_core::thermo::phase_energy(probe.temperature, b.capacity as f32, b.phase()).max(0.0));
-                        let excess = b.energy - baseline;
-                        if excess != 0.0 {
-                            #[allow(clippy::cast_possible_truncation)]
-                            let m = excess as f32;
-                            let _ = gas.exchange(target, &mut |_p| m);
-                        }
-                    }
+                if let Some(t) = (coupling.kind == gas_kind::TURF).then(|| turf_gas_temperature(w, coupling.target)).flatten() {
+                    #[allow(clippy::cast_possible_truncation)]
+                    let baseline = f64::from(vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0));
+                    turf_gas_heat(w, coupling.target, b.energy - baseline);
                 }
             }
         }
@@ -1066,4 +1049,25 @@ fn heat_constants() -> Result<ByondValue> {
 fn heat_reset() -> Result<ByondValue> {
     COUPLINGS.with(|c| c.borrow_mut().clear());
     Ok(ByondValue::null())
+}
+
+/// A turf's gas temperature (turf-air couplings), if it has gas.
+fn turf_gas_temperature(w: &vg_core::world::World, cell: u32) -> Option<f32> {
+    use vg_core::thermo::Thermal;
+    let key = crate::gas::turf_key().ok()?;
+    let (gas, geom) = crate::gas::turf_read(w, key, cell)?;
+    geom.is_node().then(|| gas.thermal(geom.capacity).0)
+}
+
+/// Adds `joules` to a turf's gas (a released body's excess), as a command.
+fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
+    let Ok(key) = crate::gas::turf_key() else { return };
+    let mut d = [0.0f32; vg_gas::cell::Q];
+    #[allow(clippy::cast_possible_truncation)]
+    {
+        d[vg_gas::cell::N] = joules as f32;
+    }
+    if joules != 0.0 {
+        let _ = w.submit_cell(key, cell, vg_gas::cell::GasCmd::Delta(d));
+    }
 }

@@ -76,7 +76,6 @@ fn register(b: &mut WorldBuilder) -> Fields {
     );
     b.add_component::<crate::sched::Probe>();
     b.add_component::<vg_gas::kind::pump::Pump>();
-    b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());
     // Pipe device flows/valves (the coordinator-approved redesign
     // alongside the gas cutover, `rust_architecture.md` §8.5 step 6):
@@ -94,6 +93,9 @@ fn register(b: &mut WorldBuilder) -> Fields {
     let _grid = b.add_grid(pending_dims());
     let heat_field = crate::heat::register(b);
     let turf_gas = crate::gas::register(b);
+    // Heat against turf gas: couplings across the two domains' fields.
+    let _ = b.add_law::<vg_heat::laws::SolidGasExchange<vg_gas::cell::TurfGas>>();
+    let _ = b.add_law::<vg_heat::laws::BodyGasExchange<vg_gas::cell::TurfGas>>();
 
     // Power (`rust_architecture.md` §6, §8.5): `Cables`, its components and
     // laws. A SMES's output/input terminals are their own entities, each on

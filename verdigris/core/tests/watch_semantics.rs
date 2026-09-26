@@ -698,7 +698,7 @@ impl Domain for Broken {
 
 channels! { mod broken_ch for Broken {
     OK: Scalar<Kpa> hysteresis 0.5 => |c, o| o[0] = c.kpa,
-    lower_case: Scalar<Kpa> hysteresis -2.0 => |c, o| o[0] = c.kpa,
+    Mixed_Case: Scalar<Kpa> hysteresis -2.0 => |c, o| o[0] = c.kpa,
 }}
 
 #[test]

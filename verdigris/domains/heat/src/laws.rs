@@ -1,47 +1,33 @@
-//! Heat's coupling laws (`rust_architecture.md` §6, §8.5): each of
-//! [`crate::components::SolidCoupling`]/[`crate::components::BodyCoupling`]/
-//! [`crate::components::GasCoupling`]/[`crate::components::Regulator`]
-//! anchors one [`Law`] here, joined to the [`HeatBody`] row(s) it moves
-//! energy between through [`vg_core::query::Foreign`]/
-//! [`vg_core::query::Foreign2`] (and, for a solid target,
-//! [`vg_core::field::law::Cell`]). The exchange math itself -- exact pair
-//! exchange, the analytic relaxation solution, the regulator's COP-limited
-//! heat pump -- is [`vg_core::thermo`]/[`vg_core::rate`]; this module wires
-//! it onto real component rows.
+//! Heat's coupling laws (`rust_architecture.md` §6, §8.5). Each coupling
+//! component ([`SolidCoupling`], [`BodyCoupling`], [`GasCoupling`],
+//! [`Regulator`]) anchors one law, joined through
+//! [`vg_core::query::Foreign`]/[`vg_core::query::Foreign2`] to the body and
+//! the environment it exchanges with. Every environment -- a solid cell, a
+//! turf's gas, another body -- is an [`Env`], so one function, [`couple`],
+//! runs every body coupling. A gas is any field whose cells are
+//! [`Thermal`]: heat does not depend on the gas domain.
 //!
 //! A body coupled through its `slot == 0` edge to an environment at least
-//! [`RELAX_CAPACITY_RATIO`] times its own capacity (or an outright
-//! reservoir), with no phase plateau, follows [`RateModel::Relax`] instead
-//! of being stepped every frame (`body.rs`'s analytic path, ported onto
-//! [`LawCtx::schedule`]): [`anchor_relax`] anchors the model and schedules
-//! the next required wake (either the exact time the body would settle
-//! within [`consts::BODY_SETTLED_K`] of its target, or
-//! [`RELAX_MAX_INTERVAL`], whichever is sooner); the row then sleeps until
-//! that wake, an explicit [`vg_core::world::World::wake_row`] call from an
-//! FFI bind that changed the body or its environment out from under it
-//! (`verdigris/ffi/src/heat.rs`'s coupling side tables), or a `slot != 0`
-//! edge that keeps stepping regardless. [`settle_relax`] resolves the
-//! model exactly at whatever `now` the row next runs at (early or on
-//! schedule), moves the net energy into the environment, and either
-//! re-anchors (still eligible) or falls through to the ordinary per-frame
-//! exchange below it in the same call. A releasable body (`!keep`, no
-//! sustained `power`) within [`consts::BODY_SETTLED_K`] of its target when
-//! it settles emits [`HeatEvent::Settled`]; the FFI layer, which alone
-//! knows a body's coupling entities, does the actual release (settle
-//! already happened here) and despawn.
+//! [`RELAX_CAPACITY_RATIO`] times its own capacity (or a reservoir), with
+//! no phase plateau, follows [`RateModel::Relax`] instead of being stepped
+//! every frame: [`anchor_relax`] anchors the model and schedules the next
+//! wake ([`LawCtx::schedule`]); [`settle_relax`] resolves it exactly at
+//! whatever `now` the row next runs. A releasable body within
+//! [`BODY_SETTLED_K`] of its environment emits [`HeatEvent::Settled`]; the
+//! FFI layer releases it.
 
+use vg_core::field::FieldKind;
 use vg_core::field::law::Cell;
 use vg_core::law::{Law, LawCtx, Settle};
 use vg_core::query::{Foreign, Foreign2};
 use vg_core::rate::RateModel;
-use vg_core::thermo::{RegulatorStep, ThermalBody, pair_exchange_f32, phase_energy};
+use vg_core::thermo::{Thermal, ThermalBody, pair_exchange_at_rate_f32, pair_exchange_f32, phase_energy};
 use vg_core::units::{HeatCapacity, Kelvin, Seconds};
 use vg_core::vg;
 
 use crate::components::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling};
-use crate::consts::{BODY_SETTLED_K, RELAX_CAPACITY_RATIO, RELAX_HYSTERESIS_K, RELAX_MAX_INTERVAL, TCMB};
-use crate::couple::{GasSource, GasProbe, GasRef};
-use crate::solid::SolidHeat;
+use crate::consts::{BODY_SETTLED_K, GAS_COUPLING, GAS_COUPLING_MIN_K, RELAX_CAPACITY_RATIO, RELAX_HYSTERESIS_K, RELAX_MAX_INTERVAL, TCMB};
+use crate::solid::{SolidHeat, flags};
 
 /// Heat's domain events (`rust_architecture.md` §4.8).
 #[vg::events(domain = heat)]
@@ -52,44 +38,32 @@ pub enum HeatEvent {
     Settled,
 }
 
-/// Adds `joules` to a body's energy, clamped at its TCMB floor
-/// (`body.rs::Body::add`, ported verbatim).
-fn add_body_energy(body: &mut HeatBody, joules: f64) {
-    let floor = body.capacity * f64::from(TCMB);
-    body.energy = (body.energy + joules).max(floor);
+/// Adds `joules` to a body's energy, clamped at its TCMB floor.
+pub fn add_body_energy(body: &mut HeatBody, joules: f64) {
+    body.energy = (body.energy + joules).max(body.capacity * f64::from(TCMB));
 }
 
-/// The analytic model's asymptote: `ambient + power / conductance`.
 fn relax_target(ambient: f64, power: f64, conductance: f64) -> f64 {
-    if conductance > 0.0 {
-        ambient + power / conductance
-    } else {
-        ambient
-    }
+    if conductance > 0.0 { ambient + power / conductance } else { ambient }
 }
 
-/// The analytic model's rate, `conductance / capacity`.
 fn relax_rate(conductance: f64, capacity: f64) -> f64 {
     if capacity > 0.0 { conductance / capacity } else { 0.0 }
 }
 
-/// A body with no sustained power draw/sink and DM's authority to release
-/// it (`body.rs::releasable`, ported verbatim -- `pending` doesn't exist
-/// here: a command applies straight to `energy`, so nothing is held back).
+/// No sustained power, and DM lets it go.
 fn releasable(body: &HeatBody) -> bool {
     !body.keep && body.power == 0.0
 }
 
-/// Whether `env` is a reservoir for relax purposes: an outright reservoir,
-/// or at least [`RELAX_CAPACITY_RATIO`] times `body_capacity`.
+/// An outright reservoir, or at least [`RELAX_CAPACITY_RATIO`] times the body.
 fn is_reservoir_env(env_capacity: f64, env_reservoir: bool, body_capacity: f64) -> bool {
     env_reservoir || env_capacity >= f64::from(RELAX_CAPACITY_RATIO) * body_capacity
 }
 
-/// Resolves the analytic model exactly at `now`, moves the net energy out
-/// of `body` (clamped at its TCMB floor) and returns it for the caller to
-/// deposit into the environment. Leaves `body.relax` cleared; the caller
-/// re-anchors immediately if the body is still eligible.
+/// Resolves the analytic model exactly at `now` and returns the net energy
+/// that left the body (clamped at its TCMB floor) for the caller to deposit
+/// into the environment. Clears `body.relax`.
 pub fn settle_relax(body: &mut HeatBody, conductance: f64, now: f64) -> f64 {
     let model = RateModel::Relax {
         target: relax_target(body.ambient, body.power, conductance),
@@ -100,38 +74,130 @@ pub fn settle_relax(body: &mut HeatBody, conductance: f64, now: f64) -> f64 {
     #[allow(clippy::cast_possible_truncation)]
     let t = (model.value_at(now).max(f64::from(TCMB))) as f32;
     let e_new = f64::from(phase_energy(t, body.capacity as f32, body.phase()));
-    let supplied = body.power * (now - body.since).max(0.0);
-    let out = body.energy + supplied - e_new;
-    let floor = body.capacity * f64::from(TCMB);
-    body.energy = e_new.max(floor);
+    let out = body.energy + body.power * (now - body.since).max(0.0) - e_new;
+    body.energy = e_new.max(body.capacity * f64::from(TCMB));
     body.relax = false;
     out
 }
 
-/// Anchors the analytic model at `now` against `ambient`, and returns when
-/// it must next be settled: the exact time it would reach
-/// [`BODY_SETTLED_K`] of its target (if releasable), else
-/// [`RELAX_MAX_INTERVAL`] from now.
+/// Anchors the analytic model at `now` against `ambient` and returns when
+/// it must next be settled: when it would reach [`BODY_SETTLED_K`] of its
+/// target (if releasable), else [`RELAX_MAX_INTERVAL`] from now.
 fn anchor_relax(body: &mut HeatBody, ambient: f64, conductance: f64, now: f64) -> f64 {
     body.relax = true;
     body.since = now;
     body.ambient = ambient;
     let k = relax_rate(conductance, body.capacity);
-    let mut due = now + f64::from(RELAX_MAX_INTERVAL);
-    if releasable(body) && k > 0.0 {
-        let target = relax_target(ambient, body.power, conductance);
-        let gap = (body.temperature() - target).abs();
-        let settled = f64::from(BODY_SETTLED_K) * 0.5;
-        due = if gap > settled {
-            due.min(now + (gap / settled).ln() / k)
-        } else {
-            now
-        };
+    let due = now + f64::from(RELAX_MAX_INTERVAL);
+    if !releasable(body) || k <= 0.0 {
+        return due;
     }
-    due
+    let gap = (body.temperature() - relax_target(ambient, body.power, conductance)).abs();
+    let settled = f64::from(BODY_SETTLED_K) * 0.5;
+    if gap > settled { due.min(now + (gap / settled).ln() / k) } else { now }
 }
 
-/// Body ↔ solid-cell exchange (`crate::components::SolidCoupling`).
+/// A body's exchange partner.
+pub trait Env {
+    /// `(temperature K, heat capacity J/K, reservoir)`.
+    fn state(&self) -> (f32, f32, bool);
+    /// Adds `joules`; returns the part that left `"heat_energy"`'s tracked
+    /// total (all of it for a reservoir or a gas).
+    fn deposit(&mut self, joules: f64) -> f64;
+}
+
+impl Env for HeatBody {
+    #[allow(clippy::cast_possible_truncation)]
+    fn state(&self) -> (f32, f32, bool) {
+        (self.temperature() as f32, self.capacity as f32, false)
+    }
+
+    fn deposit(&mut self, joules: f64) -> f64 {
+        add_body_energy(self, joules);
+        0.0
+    }
+}
+
+impl<K: FieldKind> Env for Cell<K>
+where
+    K::Value: Thermal,
+{
+    fn state(&self) -> (f32, f32, bool) {
+        let (t, c) = self.value.thermal(self.capacity);
+        (t, if self.reservoir { f32::INFINITY } else { c }, self.reservoir)
+    }
+
+    fn deposit(&mut self, joules: f64) -> f64 {
+        #[allow(clippy::cast_possible_truncation)]
+        if !self.reservoir {
+            self.value.add_heat(joules as f32, self.capacity);
+        }
+        if self.reservoir || !K::Value::IN_HEAT_TOTAL { joules } else { 0.0 }
+    }
+}
+
+/// What a coupling step asks of its law's `ctx`.
+enum Outcome {
+    Settled,
+    Scheduled(f64),
+    Active,
+    Sleep,
+}
+
+/// One body coupling step: the analytic relax path for a slot-0 edge to a
+/// large environment, else the exact pair exchange over `dt`. Returns what
+/// to do and the joules to book as leaving `"heat_energy"`.
+#[allow(clippy::cast_possible_truncation)]
+fn couple(body: &mut HeatBody, env: &mut impl Env, conductance: f64, slot0: bool, now: f64, dt: Seconds) -> (Outcome, f64) {
+    let (env_t, env_c, env_reservoir) = env.state();
+    let mut booked = 0.0;
+    if slot0 {
+        let analytic = body.phase_temperature <= 0.0 && is_reservoir_env(f64::from(env_c), env_reservoir, body.capacity);
+        if body.relax {
+            let env_moved = (f64::from(env_t) - body.ambient).abs() > f64::from(RELAX_HYSTERESIS_K);
+            booked = env.deposit(settle_relax(body, conductance, now));
+            if analytic && !env_moved && releasable(body) && (body.temperature() - f64::from(env_t)).abs() < f64::from(BODY_SETTLED_K) {
+                return (Outcome::Settled, booked);
+            }
+        }
+        if analytic {
+            return (Outcome::Scheduled(anchor_relax(body, f64::from(env_t), conductance, now)), booked);
+        }
+    }
+    let (tb, cb, _) = body.state();
+    let moved = pair_exchange_f32(tb, cb, env_t, env_c, conductance as f32, dt.0 as f32);
+    if moved == 0.0 {
+        return (Outcome::Sleep, booked);
+    }
+    add_body_energy(body, -f64::from(moved));
+    if slot0 {
+        body.flow = f64::from(moved);
+    }
+    (Outcome::Active, booked + env.deposit(f64::from(moved)))
+}
+
+/// Applies a coupling step's [`Outcome`] and ledger booking to `ctx`.
+fn finish<R, W>(ctx: &mut LawCtx<'_, R, W>, (outcome, booked): (Outcome, f64)) -> Settle {
+    if booked > 0.0 {
+        ctx.ledger().sink("heat_energy", booked);
+    } else if booked < 0.0 {
+        ctx.ledger().source("heat_energy", -booked);
+    }
+    match outcome {
+        Outcome::Settled => {
+            ctx.emit(HeatEvent::Settled);
+            Settle::Sleep
+        }
+        Outcome::Scheduled(due) => {
+            ctx.schedule(due);
+            Settle::Sleep
+        }
+        Outcome::Active => Settle::Active,
+        Outcome::Sleep => Settle::Sleep,
+    }
+}
+
+/// Body ↔ solid-cell exchange ([`SolidCoupling`]).
 pub struct SolidBodyExchange;
 impl Law for SolidBodyExchange {
     type Reads = SolidCoupling;
@@ -139,162 +205,17 @@ impl Law for SolidBodyExchange {
     const NAME: &'static str = "heat_solid_body_exchange";
 
     fn step(ctx: &mut LawCtx<'_, SolidCoupling, Self::Writes>, dt: Seconds) -> Settle {
-        let now = ctx.now();
-        let conductance = ctx.reads.conductance;
-        let slot0 = ctx.reads.slot == 0;
-
-        let (body_side, cell_side) = (&mut ctx.writes.0.value, &mut ctx.writes.1.value);
-        let (Some(body), Some(cell)) = (body_side.as_mut(), cell_side.as_mut()) else {
-            return Settle::Sleep;
-        };
-        let env = (f64::from(cell.value.temperature), if cell.reservoir { f64::INFINITY } else { f64::from(cell.capacity) }, cell.reservoir);
-        let (action, entry) = if slot0 {
-            try_relax(body, conductance, now, env, |moved| deposit_solid(cell, moved))
-        } else {
-            (RelaxAction::None, LedgerEntry::None)
-        };
-        entry.apply(ctx);
-        match action {
-            RelaxAction::Settled => {
-                ctx.emit(HeatEvent::Settled);
-                return Settle::Sleep;
-            }
-            RelaxAction::Scheduled(due) => {
-                ctx.schedule(due);
-                return Settle::Sleep;
-            }
-            RelaxAction::None => {}
-        }
-
+        let (now, c) = (ctx.now(), ctx.reads.clone());
         let (Some(body), Some(cell)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
         };
-        #[allow(clippy::cast_possible_truncation)]
-        let dt32 = dt.0 as f32;
-        #[allow(clippy::cast_possible_truncation)]
-        let (tb, cb) = (body.temperature() as f32, body.capacity as f32);
-        let cc = if cell.reservoir { f32::INFINITY } else { cell.capacity };
-        let moved = pair_exchange_f32(tb, cb, cell.value.temperature, cc, conductance as f32, dt32);
-        if moved == 0.0 {
-            return Settle::Sleep;
-        }
-        add_body_energy(body, -f64::from(moved));
-        if slot0 {
-            body.flow = f64::from(moved);
-        }
-        deposit_solid(cell, f64::from(moved)).apply(ctx);
-        Settle::Active
+        let step = couple(body, cell, c.conductance, c.slot == 0, now, dt);
+        finish(ctx, step)
     }
 }
 
-/// What happened when [`try_relax`] ran: the caller applies this to its
-/// `ctx` once the body/environment borrows it computed with are free
-/// again (a plain returned value, not a closure over `ctx`, is what makes
-/// that possible: `ctx.schedule`/`ctx.emit` need `&mut` the whole
-/// `LawCtx`, which can't coexist with a live borrow of `ctx.writes`).
-enum RelaxAction {
-    /// Not relaxing (or no longer eligible): fall through to the ordinary
-    /// per-frame exchange.
-    None,
-    /// Settled within [`BODY_SETTLED_K`] and releasable: emit
-    /// [`HeatEvent::Settled`].
-    Settled,
-    /// Still relaxing (freshly anchored or re-anchored): sleep until `due`.
-    Scheduled(f64),
-}
-
-/// Runs one coupling's relax handling for `now`, entering, continuing or
-/// leaving analytic mode as needed. `env` is the environment's current
-/// (temperature, capacity, is-a-reservoir); `deposit` moves `moved` joules
-/// (leaving the body) into it, returning what to book to the ledger.
-/// Returns `RelaxAction::None` unless the body is (or was, this call)
-/// relaxing -- the caller runs the ordinary stepped exchange itself, this
-/// only ever resolves down to a plain energy handoff.
-fn try_relax(body: &mut HeatBody, conductance: f64, now: f64, env: (f64, f64, bool), deposit: impl FnOnce(f64) -> LedgerEntry) -> (RelaxAction, LedgerEntry) {
-    let (env_t, env_c, env_reservoir) = env;
-    let analytic_ok = body.phase_temperature <= 0.0 && is_reservoir_env(env_c, env_reservoir, body.capacity);
-    if !body.relax {
-        return if analytic_ok {
-            let due = anchor_relax(body, env_t, conductance, now);
-            (RelaxAction::Scheduled(due), LedgerEntry::None)
-        } else {
-            (RelaxAction::None, LedgerEntry::None)
-        };
-    }
-    let env_moved = (env_t - body.ambient).abs() > f64::from(RELAX_HYSTERESIS_K);
-    let moved = settle_relax(body, conductance, now);
-    let entry = deposit(moved);
-    if analytic_ok && !env_moved && releasable(body) && (body.temperature() - env_t).abs() < f64::from(BODY_SETTLED_K) {
-        return (RelaxAction::Settled, entry);
-    }
-    if analytic_ok {
-        let due = anchor_relax(body, env_t, conductance, now);
-        return (RelaxAction::Scheduled(due), entry);
-    }
-    (RelaxAction::None, entry)
-}
-
-/// What a deposit into a reservoir side must book to the ledger, once the
-/// caller's borrow of that side is free again.
-enum LedgerEntry {
-    None,
-    Sink(f64),
-    Source(f64),
-}
-
-impl LedgerEntry {
-    fn apply(self, ctx: &mut impl LedgerSink) {
-        match self {
-            Self::None => {}
-            Self::Sink(v) => ctx.ledger().sink("heat_energy", v),
-            Self::Source(v) => ctx.ledger().source("heat_energy", v),
-        }
-    }
-}
-
-trait LedgerSink {
-    fn ledger(&mut self) -> &mut vg_core::conservation::Ledger;
-}
-
-impl<R> LedgerSink for LawCtx<'_, R, <SolidBodyExchange as Law>::Writes> {
-    fn ledger(&mut self) -> &mut vg_core::conservation::Ledger {
-        LawCtx::ledger(self)
-    }
-}
-
-impl LedgerSink for LawCtx<'_, <BodyGasExchange as Law>::Reads, <BodyGasExchange as Law>::Writes> {
-    fn ledger(&mut self) -> &mut vg_core::conservation::Ledger {
-        LawCtx::ledger(self)
-    }
-}
-
-/// Deposits `moved` joules (leaving the body) into a solid cell side,
-/// mutating it directly if it is not a reservoir. Returns what a reservoir
-/// side must still book to the ledger (the caller applies it once its own
-/// borrow of `ctx.writes` is free).
-fn deposit_solid(cell: &mut vg_core::field::law::Cell<SolidHeat>, moved: f64) -> LedgerEntry {
-    if moved == 0.0 {
-        return LedgerEntry::None;
-    }
-    if cell.reservoir {
-        if moved > 0.0 { LedgerEntry::Sink(moved) } else { LedgerEntry::Source(-moved) }
-    } else {
-        #[allow(clippy::cast_possible_truncation)]
-        let m = moved as f32;
-        cell.value.energy += m;
-        cell.value.temperature = cell.value.energy / cell.capacity;
-        LedgerEntry::None
-    }
-}
-
-/// Body ↔ body exchange (`crate::components::BodyCoupling`): a container's
-/// interior. `b` (the "other" side) is treated as `a`'s environment for
-/// relax purposes; a `b` that is itself relaxing reports its own anchor
-/// temperature, not a live value, until it next settles -- a known
-/// approximation for two bodies relaxing against each other, which
-/// `rust_architecture.md`'s target shape does not otherwise need (a
-/// container's interior is usually a small, actively-stepped body against
-/// a large fixed one, not two mutually-relaxing bodies).
+/// Body ↔ body exchange ([`BodyCoupling`]): a container's interior, `b`
+/// (the "other" side) being `a`'s environment.
 pub struct BodyBodyExchange;
 impl Law for BodyBodyExchange {
     type Reads = BodyCoupling;
@@ -302,161 +223,67 @@ impl Law for BodyBodyExchange {
     const NAME: &'static str = "heat_body_body_exchange";
 
     fn step(ctx: &mut LawCtx<'_, BodyCoupling, Self::Writes>, dt: Seconds) -> Settle {
-        let now = ctx.now();
-        let conductance = ctx.reads.conductance;
-        let slot0 = ctx.reads.slot == 0;
-
-        let (a_side, b_side) = (&mut ctx.writes.0.value, &mut ctx.writes.1.value);
-        let (Some(a), Some(b)) = (a_side.as_mut(), b_side.as_mut()) else {
-            return Settle::Sleep;
-        };
-        let env = (b.temperature(), b.capacity, false);
-        let (action, _) = if slot0 {
-            try_relax(a, conductance, now, env, |moved| {
-                add_body_energy(b, moved);
-                LedgerEntry::None
-            })
-        } else {
-            (RelaxAction::None, LedgerEntry::None)
-        };
-        match action {
-            RelaxAction::Settled => {
-                ctx.emit(HeatEvent::Settled);
-                return Settle::Sleep;
-            }
-            RelaxAction::Scheduled(due) => {
-                ctx.schedule(due);
-                return Settle::Sleep;
-            }
-            RelaxAction::None => {}
-        }
-
+        let (now, c) = (ctx.now(), ctx.reads.clone());
         let (Some(a), Some(b)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
         };
-        #[allow(clippy::cast_possible_truncation)]
-        let dt32 = dt.0 as f32;
-        #[allow(clippy::cast_possible_truncation)]
-        let (ta, ca) = (a.temperature() as f32, a.capacity as f32);
-        #[allow(clippy::cast_possible_truncation)]
-        let (tb, cb) = (b.temperature() as f32, b.capacity as f32);
-        let moved = pair_exchange_f32(ta, ca, tb, cb, conductance as f32, dt32);
-        if moved == 0.0 {
-            return Settle::Sleep;
-        }
-        add_body_energy(a, -f64::from(moved));
-        add_body_energy(b, f64::from(moved));
-        if slot0 {
-            a.flow = f64::from(moved);
-        }
-        Settle::Active
+        let step = couple(a, b, c.conductance, c.slot == 0, now, dt);
+        finish(ctx, step)
     }
 }
 
-/// Body ↔ gas exchange (`crate::components::GasCoupling`), through
-/// [`crate::couple::GasExchange`] while gas is not yet a field
-/// (`rust_architecture.md` step 4 decision (b)). Every joule that crosses
-/// this edge leaves or enters `"heat_energy"`'s tracked total (gas is
-/// outside it, mutable or not), so it is always booked to the ledger,
-/// matching the old `ledger::GAS`/`GAS_RESERVOIRS` entries.
-pub struct BodyGasExchange;
-impl Law for BodyGasExchange {
-    type Reads = (GasCoupling, vg_core::query::Global<GasSource>);
-    type Writes = Foreign<GasCoupling, HeatBody>;
+/// Body ↔ turf gas exchange ([`GasCoupling`]) with gas field `G`.
+pub struct BodyGasExchange<G>(std::marker::PhantomData<G>);
+impl<G: FieldKind> Law for BodyGasExchange<G>
+where
+    G::Value: Thermal,
+{
+    type Reads = GasCoupling;
+    type Writes = (Foreign<GasCoupling, HeatBody>, Foreign2<GasCoupling, Cell<G>>);
     const NAME: &'static str = "heat_body_gas_exchange";
 
-    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, dt: Seconds) -> Settle {
-        let now = ctx.now();
-        let (coupling, gas) = (ctx.reads.0.clone(), ctx.reads.1.0.clone());
-        let Some(body) = ctx.writes.value.as_mut() else {
+    fn step(ctx: &mut LawCtx<'_, GasCoupling, Self::Writes>, dt: Seconds) -> Settle {
+        let (now, c) = (ctx.now(), ctx.reads.clone());
+        let (Some(body), Some(gas)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
         };
-        let target = if coupling.kind == crate::components::gas_kind::MIXTURE {
-            GasRef::Mixture(coupling.target)
-        } else {
-            GasRef::Turf(coupling.target)
-        };
-        let conductance = f64::from(coupling.conductance as f32);
-        let slot0 = coupling.slot == 0;
-
-        if slot0 {
-            if let Some(probe) = gas.0.probe(target) {
-                let env = (f64::from(probe.temperature), if probe.reservoir { f64::INFINITY } else { f64::from(probe.capacity) }, probe.reservoir);
-                let (action, entry) = try_relax(body, conductance, now, env, |moved| deposit_gas(&gas, target, moved));
-                entry.apply(ctx);
-                match action {
-                    RelaxAction::Settled => {
-                        ctx.emit(HeatEvent::Settled);
-                        return Settle::Sleep;
-                    }
-                    RelaxAction::Scheduled(due) => {
-                        ctx.schedule(due);
-                        return Settle::Sleep;
-                    }
-                    RelaxAction::None => {}
-                }
-            }
-        }
-
-        let Some(body) = ctx.writes.value.as_mut() else {
-            return Settle::Sleep;
-        };
-        #[allow(clippy::cast_possible_truncation)]
-        let dt32 = dt.0 as f32;
-        #[allow(clippy::cast_possible_truncation)]
-        let (tb, cb) = (body.temperature() as f32, body.capacity as f32);
-        let mut moved_from_body = 0.0f32;
-        let ok = gas
-            .0
-            .exchange(target, &mut |p: GasProbe| {
-                if p.capacity <= 0.0 {
-                    return 0.0;
-                }
-                let cg = if p.reservoir { f32::INFINITY } else { p.capacity };
-                let m = pair_exchange_f32(tb, cb, p.temperature, cg, conductance as f32, dt32);
-                moved_from_body = m;
-                m
-            })
-            .is_some();
-        if !ok || moved_from_body == 0.0 {
-            return Settle::Sleep;
-        }
-        add_body_energy(body, -f64::from(moved_from_body));
-        if slot0 {
-            body.flow = f64::from(moved_from_body);
-        }
-        let ledger = ctx.ledger();
-        if moved_from_body > 0.0 {
-            ledger.sink("heat_energy", f64::from(moved_from_body));
-        } else {
-            ledger.source("heat_energy", f64::from(-moved_from_body));
-        }
-        Settle::Active
+        let step = couple(body, gas, c.conductance, c.slot == 0, now, dt);
+        finish(ctx, step)
     }
 }
 
-/// Deposits `moved` joules (leaving the body) into `target` through
-/// `gas`. Returns what must be booked to the ledger (gas is always outside
-/// `"heat_energy"`'s tracked total, mutable or not).
-fn deposit_gas(gas: &GasSource, target: GasRef, moved: f64) -> LedgerEntry {
-    if moved == 0.0 {
-        return LedgerEntry::None;
-    }
-    #[allow(clippy::cast_possible_truncation)]
-    let m = moved as f32;
-    let applied = gas.0.exchange(target, &mut |_p| m).unwrap_or(0.0);
-    if applied > 0.0 {
-        LedgerEntry::Sink(f64::from(applied))
-    } else if applied < 0.0 {
-        LedgerEntry::Source(f64::from(-applied))
-    } else {
-        LedgerEntry::None
+/// A turf's solid ↔ its gas (`OPEN_HEAT_TRANSFER_COEFFICIENT`): each pair
+/// relaxes at `GAS_COUPLING * conductivity` where the solid has air and
+/// they differ by more than [`GAS_COUPLING_MIN_K`]. Runs over the gas
+/// field's active cells (air changing is what drives it).
+pub struct SolidGasExchange<G>(std::marker::PhantomData<G>);
+impl<G: FieldKind> Law for SolidGasExchange<G>
+where
+    G::Value: Thermal,
+{
+    type Reads = ();
+    type Writes = (Cell<G>, Cell<SolidHeat>);
+    const NAME: &'static str = "heat_solid_gas_exchange";
+
+    fn step(ctx: &mut LawCtx<'_, (), Self::Writes>, dt: Seconds) -> Settle {
+        let (gas, solid) = &mut ctx.writes;
+        if !solid.value.has(flags::AIR) || solid.value.conductivity <= 0.0 || solid.reservoir {
+            return Settle::Sleep;
+        }
+        let ((tg, cg, _), (ts, cs, _)) = (gas.state(), solid.state());
+        if cg <= 0.0 || (ts - tg).abs() < GAS_COUPLING_MIN_K {
+            return Settle::Sleep;
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        let moved = pair_exchange_at_rate_f32(ts, cs, tg, cg, GAS_COUPLING * solid.value.conductivity, dt.0 as f32);
+        let booked = gas.deposit(f64::from(moved)) + solid.deposit(-f64::from(moved));
+        finish(ctx, (if moved == 0.0 { Outcome::Sleep } else { Outcome::Active }, booked))
     }
 }
 
-/// The regulator as a heat pump (`crate::components::Regulator`):
-/// [`vg_core::thermo::Regulator::step`] applied to the controlled body and
-/// the other side it moves energy between.
+/// The regulator as a heat pump ([`Regulator`]):
+/// [`vg_core::thermo::Regulator::step`] between the controlled body and
+/// the other side.
 pub struct RegulatorHeatPump;
 impl Law for RegulatorHeatPump {
     type Reads = Regulator;
@@ -465,15 +292,13 @@ impl Law for RegulatorHeatPump {
 
     fn step(ctx: &mut LawCtx<'_, Regulator, Self::Writes>, dt: Seconds) -> Settle {
         let settings = ctx.reads.settings();
-        #[allow(clippy::cast_possible_truncation)]
-        let dt32 = dt.0 as f32;
-        let (controlled, other) = (&mut ctx.writes.0.value, &mut ctx.writes.1.value);
-        let (Some(controlled), Some(other)) = (controlled.as_mut(), other.as_mut()) else {
+        let (Some(controlled), Some(other)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
         };
         let cb = ThermalBody::new(HeatCapacity(controlled.capacity), Kelvin(controlled.temperature()));
         let ob = ThermalBody::new(HeatCapacity(other.capacity), Kelvin(other.temperature()));
-        let step: RegulatorStep = settings.step(cb, ob, dt32);
+        #[allow(clippy::cast_possible_truncation)]
+        let step = settings.step(cb, ob, dt.0 as f32);
         if step.moved == 0.0 && step.other == 0.0 {
             return Settle::Sleep;
         }
@@ -512,12 +337,8 @@ mod tests {
         };
         let before = a.energy + b.energy;
         #[allow(clippy::cast_possible_truncation)]
-        let dt32 = 1.0f32;
-        let moved = pair_exchange_f32(a.temperature() as f32, a.capacity as f32, b.temperature() as f32, b.capacity as f32, 5.0, dt32);
-        let mut a2 = a.clone();
-        let mut b2 = b.clone();
-        add_body_energy(&mut a2, -f64::from(moved));
-        add_body_energy(&mut b2, f64::from(moved));
+        let (mut a2, mut b2) = (a.clone(), b.clone());
+        couple(&mut a2, &mut b2, 5.0, false, 0.0, Seconds(1.0));
         assert!(((a2.energy + b2.energy) - before).abs() < 1e-3);
         assert!(a2.temperature() < a.temperature());
         assert!(b2.temperature() > b.temperature());

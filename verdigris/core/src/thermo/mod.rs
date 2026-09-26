@@ -262,6 +262,21 @@ pub fn relax_toward(t0: f32, ambient: f32, power: f32, conductance: f32, capacit
     (target + (f64::from(t0) - target) * (-rate * f64::from(elapsed.max(0.0))).exp()) as f32
 }
 
+/// A field cell as a thermal body, for couplings between domains (a heat
+/// body or a solid cell against a turf's gas) without either domain
+/// depending on the other: the coupling law is generic over a field whose
+/// cells implement this.
+pub trait Thermal {
+    /// Whether this cell's energy is inside the heat domain's conserved
+    /// `"heat_energy"` total (a solid cell) or outside it (a gas).
+    const IN_HEAT_TOTAL: bool = false;
+    /// `(temperature K, heat capacity J/K)` in a cell of `capacity` (the
+    /// field geometry's capacity: J/K for a solid, litres for a gas).
+    fn thermal(&self, capacity: f32) -> (f32, f32);
+    /// Adds `joules` (negative removes).
+    fn add_heat(&mut self, joules: f32, capacity: f32);
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

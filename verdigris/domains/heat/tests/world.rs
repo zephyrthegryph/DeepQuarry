@@ -3,13 +3,10 @@
 //! body↔body exchange and a regulator, all `byondapi`-free and driven the
 //! same generic way DM's `vg_component_*`/`vg_world_*` binds would.
 
-use std::sync::Arc;
-
 use vg_core::conservation::Tolerance;
 use vg_core::field::{FieldConfig, Geom};
 use vg_core::grid::GridDims;
 use vg_core::world::{WorldBuilder, WorldConfig};
-use vg_heat::couple::{GasSource, NoGas};
 use vg_heat::laws::{BodyBodyExchange, BodyGasExchange, RegulatorHeatPump, SolidBodyExchange};
 use vg_heat::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling, SolidHeat};
 
@@ -208,62 +205,27 @@ fn a_regulator_heats_the_controlled_body_toward_its_target() {
 }
 
 #[test]
-fn a_body_exchanges_with_gas_through_the_gas_handle() {
-    use vg_heat::{GasExchange, GasProbe, GasRef};
-
-    struct FixedGas(std::sync::Mutex<f32>);
-    impl GasExchange for FixedGas {
-        fn probe(&self, _gas: GasRef) -> Option<GasProbe> {
-            None
-        }
-        fn exchange(&self, _gas: GasRef, f: &mut dyn FnMut(GasProbe) -> f32) -> Option<f32> {
-            let mut t = self.0.lock().unwrap();
-            let applied = f(GasProbe {
-                temperature: *t,
-                capacity: 1_000.0,
-                reservoir: false,
-            });
-            *t += applied / 1_000.0;
-            Some(applied)
-        }
-    }
+fn a_body_exchanges_with_a_gas_field_cell() {
+    use vg_core::field::toy::{HeatCell, HeatToy};
 
     let mut b = builder();
-    let body = b.add_component::<HeatBody>();
-    let coupling = b.add_component::<GasCoupling>();
-    b.add_global(vg_core::component::Ownership::Worker, GasSource(Arc::new(FixedGas(std::sync::Mutex::new(280.0)))));
-    let _ = b.add_law::<BodyGasExchange>();
+    b.add_grid(GridDims::new(2, 1, 1).unwrap());
+    let air = b.add_field::<HeatToy>(FieldConfig { dt: DT, max_substeps: 16 });
+    let _ = b.add_component::<HeatBody>();
+    let _ = b.add_component::<GasCoupling>();
+    let _ = b.add_law::<BodyGasExchange<HeatToy>>();
     let mut world = b.build().expect("builds");
-    let _ = (body, coupling);
+    world.sim_mut().port(air.geometry).put(0, Geom::cell(1_000.0)).unwrap();
+    world.sim_mut().port(air.cells).put(0, HeatCell::at(1_000.0, 280.0)).unwrap();
 
-    let body_e = world
-        .bind_value(
-            None,
-            HeatBody {
-                capacity: 10.0,
-                energy: 10.0 * 400.0,
-                ..Default::default()
-            },
-        )
-        .unwrap();
-    let _ = world
-        .bind_value(
-            None,
-            GasCoupling {
-                body: body_e.index(),
-                kind: 0,
-                target: 0,
-                conductance: 2.0,
-                slot: 0,
-            },
-        )
-        .unwrap();
-
+    let body_e = world.bind_value(None, HeatBody { capacity: 10.0, energy: 10.0 * 400.0, ..Default::default() }).unwrap();
+    let coupling = GasCoupling { body: body_e.index(), kind: 0, target: 0, conductance: 2.0, slot: 1 };
+    world.bind_value(None, coupling).unwrap();
     for _ in 0..500 {
         world.step_blocking();
     }
-
     let body: HeatBody = world.read(body_e).unwrap();
     assert!(body.temperature() < 400.0, "the body cooled toward the gas: {}", body.temperature());
-    let _ = NoGas;
+    let gas = world.read_cell(air, 0).unwrap();
+    assert!(gas.energy > 1_000.0 * 280.0, "the gas warmed: {gas:?}");
 }

@@ -36,6 +36,20 @@ impl HeatCell {
     }
 }
 
+/// The toy cell as a coupling partner (a stand-in gas in domain tests).
+impl crate::thermo::Thermal for HeatCell {
+    fn thermal(&self, capacity: f32) -> (f32, f32) {
+        (if capacity > 0.0 { self.energy / capacity } else { self.temperature }, capacity)
+    }
+
+    fn add_heat(&mut self, joules: f32, capacity: f32) {
+        self.energy += joules;
+        if capacity > 0.0 {
+            self.temperature = self.energy / capacity;
+        }
+    }
+}
+
 /// Heat sources and sinks (absolute amounts, computed on the main thread).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HeatCmd {

@@ -184,6 +184,21 @@ pub fn temperature_of(moles: &[f32; N], energy: f32, fallback: f32) -> f32 {
 	}
 }
 
+impl vg_core::thermo::Thermal for GasCell {
+	fn thermal(&self, _volume: f32) -> (f32, f32) {
+		(self.temperature_now(), self.heat_capacity())
+	}
+
+	/// Never cools below TCMB; marks the cell touched like a DM write.
+	fn add_heat(&mut self, joules: f32, volume: f32) {
+		if self.is_immutable() {
+			return;
+		}
+		self.energy = (self.energy + joules).max(self.heat_capacity() * TCMB);
+		self.refresh_in(volume);
+	}
+}
+
 impl GasCell {
 	/// A cell holding `moles` at `temperature`.
 	#[must_use]

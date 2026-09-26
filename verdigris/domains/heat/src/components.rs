@@ -22,7 +22,7 @@
 //! law already matched this file's target, `rust_architecture.md` §8.5).
 //! [`Regulator`] is [`vg_core::thermo::Regulator`]'s settings, flattened.
 
-use vg_core::query::{LinksTo, LinksTo2};
+use vg_core::query::LinksTo2;
 use vg_core::thermo::RegulatorMode;
 use vg_core::vg;
 
@@ -110,7 +110,7 @@ impl HeatBody {
 /// through [`LinksTo`] and the target cell directly (a `CellId`, not
 /// another entity -- read through `vg_core::query::Foreign<SolidCoupling,
 /// vg_core::field::law::Cell<crate::solid::SolidHeat>>`).
-#[vg::component(domain = heat, kind = 2, dm = "/atom/movable/vg_heat_solid_coupling", owner = worker)]
+#[vg::component(domain = heat, kind = 2, dm = "/atom/movable/vg_heat_solid_coupling", owner = worker, links = [body, cell])]
 pub struct SolidCoupling {
     #[vg(config, default = 0)]
     pub body: u32,
@@ -125,28 +125,16 @@ pub struct SolidCoupling {
     pub slot: u8,
 }
 
-impl LinksTo for SolidCoupling {
-    fn linked_index(&self) -> Option<u32> {
-        Some(self.body)
-    }
-}
-
 /// [`SolidCoupling::cell`] doubles as the field-cell join key: `Foreign`
 /// resolves through [`LinksTo::linked_index`], so the solid target reuses
 /// the same trait as the body link would if it named another entity. A
 /// coupling's *body* link is the primary [`LinksTo`]; the field cell is
 /// reached from the same row through [`LinksTo2`] instead, so a law can
 /// join both sides of the edge in one anchor.
-impl LinksTo2 for SolidCoupling {
-    fn linked_index2(&self) -> Option<u32> {
-        Some(self.cell)
-    }
-}
-
 /// A body's coupling to another body (a container's interior): its own
 /// entity, naming the owning body through [`LinksTo`] and the other body
 /// through [`LinksTo2`].
-#[vg::component(domain = heat, kind = 3, dm = "/atom/movable/vg_heat_body_coupling", owner = worker)]
+#[vg::component(domain = heat, kind = 3, dm = "/atom/movable/vg_heat_body_coupling", owner = worker, links = [body, other])]
 pub struct BodyCoupling {
     #[vg(config, default = 0)]
     pub body: u32,
@@ -158,25 +146,13 @@ pub struct BodyCoupling {
     pub slot: u8,
 }
 
-impl LinksTo for BodyCoupling {
-    fn linked_index(&self) -> Option<u32> {
-        Some(self.body)
-    }
-}
-
-impl LinksTo2 for BodyCoupling {
-    fn linked_index2(&self) -> Option<u32> {
-        Some(self.other)
-    }
-}
-
 /// A body's coupling to a gas (turf air or a mixture by arena id): its own
 /// entity, naming the owning body through [`LinksTo`]. Gas is not yet a
 /// [`vg_core::field::FieldKind`] (`rust_architecture.md` step 6), so this
 /// coupling's law reaches it through `crate::couple::GasExchange` (a
 /// `Global` resource) instead of a `Foreign`/`Foreign2` join; it is deleted
 /// in step 6 once `TurfGas` lands and the edge becomes field↔field.
-#[vg::component(domain = heat, kind = 4, dm = "/atom/movable/vg_heat_gas_coupling", owner = worker)]
+#[vg::component(domain = heat, kind = 4, dm = "/atom/movable/vg_heat_gas_coupling", owner = worker, links = [body])]
 pub struct GasCoupling {
     #[vg(config, default = 0)]
     pub body: u32,
@@ -192,9 +168,11 @@ pub struct GasCoupling {
     pub slot: u8,
 }
 
-impl LinksTo for GasCoupling {
-    fn linked_index(&self) -> Option<u32> {
-        Some(self.body)
+/// The turf cell a turf-air coupling exchanges with (a mixture target has
+/// none: only turf gas is a field).
+impl LinksTo2 for GasCoupling {
+    fn linked_index2(&self) -> Option<u32> {
+        (self.kind == gas_kind::TURF).then_some(self.target)
     }
 }
 
@@ -203,7 +181,7 @@ impl LinksTo for GasCoupling {
 /// (`vg_core::thermo::Regulator`, `rust_architecture.md` §6, §8.5). Couples
 /// a controlled [`HeatBody`] to another one through the same [`LinksTo`]/
 /// [`LinksTo2`] shape as [`BodyCoupling`].
-#[vg::component(domain = heat, kind = 5, dm = "/atom/movable/vg_heat_regulator", owner = worker)]
+#[vg::component(domain = heat, kind = 5, dm = "/atom/movable/vg_heat_regulator", owner = worker, links = [controlled, other])]
 pub struct Regulator {
     #[vg(config, default = 0)]
     pub controlled: u32,
@@ -224,18 +202,6 @@ pub struct Regulator {
     pub resistive_heating: bool,
     #[vg(config, unit = "K", range = 0.0..=100.0, default = 0.05, on_invalid = clamp)]
     pub deadband: f64,
-}
-
-impl LinksTo for Regulator {
-    fn linked_index(&self) -> Option<u32> {
-        Some(self.controlled)
-    }
-}
-
-impl LinksTo2 for Regulator {
-    fn linked_index2(&self) -> Option<u32> {
-        Some(self.other)
-    }
 }
 
 impl Regulator {

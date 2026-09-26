@@ -17,7 +17,6 @@
 //! [`crate::laws`] reaches the shared `Smes` row through
 //! [`vg_core::query::Foreign`].
 
-use vg_core::query::LinksTo;
 use vg_core::vg;
 
 /// A power channel: equipment, lighting, environment. Per-channel values
@@ -276,14 +275,9 @@ impl Smes {
 /// one output node, at the unit's own tile) and so needs no terminal
 /// component of its own -- `Smes` binds its own [`crate::kind::Cables`]
 /// node directly, exactly as `Apc` does.
-#[vg::component(domain = power, kind = 5, dm = "/obj/machinery/power/terminal/smes_input", owner = main)]
+#[vg::component(domain = power, kind = 5, dm = "/obj/machinery/power/terminal/smes_input", owner = main, links = [unit])]
 pub struct SmesInputTerminal {
     #[vg(config, default = 0)]
     pub unit: u32,
 }
 
-impl LinksTo for SmesInputTerminal {
-    fn linked_index(&self) -> Option<u32> {
-        Some(self.unit)
-    }
-}

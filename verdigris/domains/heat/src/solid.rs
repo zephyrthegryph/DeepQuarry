@@ -94,6 +94,19 @@ impl SolidCell {
 }
 
 /// Sources, sinks and material updates, computed on the main thread.
+impl vg_core::thermo::Thermal for SolidCell {
+    const IN_HEAT_TOTAL: bool = true;
+
+    fn thermal(&self, capacity: f32) -> (f32, f32) {
+        (self.temperature_in(capacity), capacity)
+    }
+
+    fn add_heat(&mut self, joules: f32, capacity: f32) {
+        self.energy += joules;
+        self.temperature = self.temperature_in(capacity);
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SolidCmd {
     /// Adds energy (negative removes); clamps at zero energy and reports
