@@ -31,7 +31,7 @@
 
 	// Bluespace radios talk directly to telecomms equipment
 	var/bluespace_radio = FALSE
-	var/datum/weakref/bs_tx_weakref //Maybe misleading, this is the device to TRANSMIT TO
+	// The device a bluespace radio TRANSMITS TO is BS_TX_TARGET(src) (a relation).
 	// For mappers or subtypes, to start them prelinked to these devices
 	var/bs_tx_preload_id
 	var/bs_rx_preload_id
@@ -66,10 +66,10 @@
 		return INITIALIZE_HINT_LATELOAD
 
 // radio_connection/secure_radio_connections are SSradio's live subscriptions,
-// rebuilt by on_materialize() from frequency/channels (C5); bs_tx_weakref
-// points at a telecomms machine outside the subtree, relinked separately.
+// rebuilt by on_materialize() from frequency/channels (C5). The bluespace
+// links are relations (BS_TX_TARGET, BS_RX_SOURCE), not state.
 /obj/item/radio/state_exclude()
-	return ..() + list("radio_connection", "secure_radio_connections", "bs_tx_weakref")
+	return ..() + list("radio_connection", "secure_radio_connections")
 
 /// Radio joins (L3): the frequency and channel connections, and hearing.
 /obj/item/radio/on_materialize()
@@ -93,17 +93,15 @@
 		//Try to find a receiver
 		for(var/obj/machinery/telecomms/receiver/RX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(RX.id == bs_tx_preload_id) //Again, bs_tx is the thing to TRANSMIT TO, so a receiver.
-				bs_tx_weakref = WEAKREF(RX)
-				RX.link_radio(src)
+				om_link(src, RX, /datum/om/relation/bluespace_tx_to)
 				break
 		//Hmm, howabout an AIO machine
-		if(!bs_tx_weakref)
+		if(!BS_TX_TARGET(src))
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_tx_preload_id)
-					bs_tx_weakref = WEAKREF(AIO)
-					AIO.link_radio(src)
+					om_link(src, AIO, /datum/om/relation/bluespace_tx_to)
 					break
-		if(!bs_tx_weakref)
+		if(!BS_TX_TARGET(src))
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
 
 	if(bs_rx_preload_id)
@@ -111,14 +109,14 @@
 		//Try to find a transmitter
 		for(var/obj/machinery/telecomms/broadcaster/TX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(TX.id == bs_rx_preload_id) //Again, bs_rx is the thing to RECEIVE FROM, so a transmitter.
-				TX.link_radio(src)
+				om_link(src, TX, /datum/om/relation/bluespace_rx_from)
 				found = 1
 				break
 		//Hmm, howabout an AIO machine
 		if(!found)
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_rx_preload_id)
-					AIO.link_radio(src)
+					om_link(src, AIO, /datum/om/relation/bluespace_rx_from)
 					found = 1
 					break
 		if(!found)
@@ -127,7 +125,6 @@
 /obj/item/radio/Destroy()
 	qdel(wires)
 	wires = null
-	bs_tx_weakref = null
 	return ..()
 
 /obj/item/radio/proc/recalculateChannels()
@@ -478,14 +475,8 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	/* ###### Bluespace radios talk directly to receivers (and only directly to receivers) ###### */
 	if(bluespace_radio)
 		//Nothing to transmit to
-		if(!bs_tx_weakref)
-			to_chat(loc, span_warning("\The [src] buzzes to inform you of the lack of a functioning connection."))
-			return FALSE
-
-		var/obj/machinery/telecomms/tx_to = bs_tx_weakref.resolve()
-		//Was linked, now destroyed or something
+		var/obj/machinery/telecomms/tx_to = BS_TX_TARGET(src)
 		if(!tx_to)
-			bs_tx_weakref = null
 			to_chat(loc, span_warning("\The [src] buzzes to inform you of the lack of a functioning connection."))
 			return FALSE
 

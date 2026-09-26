@@ -43,7 +43,7 @@
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
-	VAR_PRIVATE/datum/weakref/weakref_occupant = null
+	VAR_PRIVATE/occupant_handle = null
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	var/locked = 0
@@ -75,7 +75,7 @@
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// pod grows and displays the clone through this, same as before the ledger
 /// tracked the move. Not a target_ref_field slot -- like the DNA scanner and
-/// resleever, this machine already tracked its occupant through a weakref
+/// resleever, this machine already tracked its occupant through an OM handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
 /datum/om/relation/slot/occupant/clonepod
@@ -95,16 +95,16 @@
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		weakref_occupant = null
+		occupant_handle = null
 		STOP_MACHINE_PROCESSING(src)
 		return
-	weakref_occupant = WEAKREF(L)
+	occupant_handle = om_handle(L)
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return weakref_occupant?.resolve()
+	return om_resolve(occupant_handle)
 
 /obj/machinery/clonepod/attack_ai(mob/user as mob)
 

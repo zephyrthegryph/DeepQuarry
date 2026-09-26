@@ -7,12 +7,12 @@
 
 /image/client_only/proc/append_client(client/C)
 	C.images += src
-	LAZYADD(clients, WEAKREF(C))
+	LAZYADD(clients, om_handle(C))
 
 /image/client_only/Destroy(force)
 	. = ..()
-	for(var/datum/weakref/CW in clients)
-		var/client/C = CW?.resolve()
+	for(var/CW in clients)
+		var/client/C = om_resolve(CW)
 		if(C)
 			C.images -= src
 	LAZYCLEARLIST(clients)

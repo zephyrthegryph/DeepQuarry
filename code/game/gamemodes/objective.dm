@@ -322,7 +322,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/survive/check_completion()
 	if(!owner.current || owner.current.stat == DEAD || isbrain(owner.current))
 		return 0		//Brains no longer win survive objectives. --NEO
-	var/mob/living/original = owner.original_character?.resolve()
+	var/mob/living/original = om_resolve(owner.original_character)
 	if(issilicon(owner.current) && (original && (owner.current != original)))
 		return 0
 	return 1

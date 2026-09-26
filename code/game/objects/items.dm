@@ -118,7 +118,7 @@
 	var/digestable = TRUE
 	var/item_tf_spawn_allowed = FALSE
 	var/list/ckeys_allowed_itemspawn = null
-	var/datum/weakref/exploit_for //if this obj is an exploit for somebody, this points to them
+	var/exploit_for //if this obj is an exploit for somebody, this points to them
 	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage

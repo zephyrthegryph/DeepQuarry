@@ -505,7 +505,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			continue //Happy connected client
 		for(var/mob/observer/dead/D in GLOB.dead_mob_list)
 			if(D.mind)
-				var/mob/living/original = D.mind.original_character?.resolve()
+				var/mob/living/original = om_resolve(D.mind.original_character)
 				if((original && original == L) || D.mind.current == L)
 					if(L.stat == DEAD)
 						if(L.suiciding)	//Suicider

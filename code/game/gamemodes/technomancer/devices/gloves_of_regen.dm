@@ -23,7 +23,7 @@
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_GLOVES) == src)
-			wearer = WEAKREF(H)
+			wearer = om_handle(H)
 			if(H.can_feel_pain())
 				to_chat(H, span_danger("You feel a stabbing sensation in your hands as you slide \the [src] on!"))
 				H.custom_pain("You feel a sharp pain in your hands!",1)
@@ -53,7 +53,7 @@
 	return ..()
 
 /obj/item/clothing/gloves/regen/process()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
 		return // Dead people don't have a metabolism.
 

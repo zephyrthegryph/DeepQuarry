@@ -9,12 +9,12 @@
 	category = UTILITY_SPELLS
 // Multiple technomancer support
 /datum/technomancer_marker
-	var/datum/weakref/U
+	var/U
 	var/image/I
 	var/turf/T
 
 /datum/technomancer_marker/New(mob/user)
-	U = WEAKREF(user)
+	U = om_handle(user)
 	T = get_turf(user)
 	I = image('icons/goonstation/featherzone.dmi', T, "spawn-wall")
 	I.plane = TURF_PLANE
@@ -24,7 +24,7 @@
 		I.icon_state = "spawn-wall-loop"
 
 /datum/technomancer_marker/Destroy()
-	var/mob/user = U?.resolve()
+	var/mob/user = om_resolve(U)
 	user?.client?.images -= I
 	I?.loc = null
 	U = T = I = null
@@ -45,7 +45,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 		return 0
 	if(pay_energy(1000))
 		// Multiple technomancer support
-		var/datum/technomancer_marker/marker = GLOB.mark_spells[WEAKREF(user)]
+		var/datum/technomancer_marker/marker = GLOB.mark_spells[om_handle(user)]
 		//They have one in the list
 		if(istype(marker))
 			qdel(marker)
@@ -53,7 +53,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 		//They don't have one yet
 		else
 			to_chat(user, span_notice("You mark \the [get_turf(user)] under you."))
-		GLOB.mark_spells[WEAKREF(user)] = new /datum/technomancer_marker(user)
+		GLOB.mark_spells[om_handle(user)] = new /datum/technomancer_marker(user)
 		adjust_instability(5)
 		return 1
 	else
@@ -81,7 +81,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 
 /obj/item/spell/recall/on_use_cast(mob/living/user)
 	if(pay_energy(3000))
-		var/datum/technomancer_marker/marker = GLOB.mark_spells[WEAKREF(user)] // Multiple technomancer support
+		var/datum/technomancer_marker/marker = GLOB.mark_spells[om_handle(user)] // Multiple technomancer support
 		if(!istype(marker))
 			to_chat(user, span_danger("There's no Mark!"))
 			return 0

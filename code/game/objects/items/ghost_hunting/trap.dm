@@ -15,7 +15,7 @@
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
 	///The entity we currently have captured.
-	var/datum/weakref/captured_entity
+	var/captured_entity
 	var/obj/item/radio/intercom/science/ghost_reporter
 
 /obj/item/ghost_trap/Initialize(mapload)
@@ -38,7 +38,7 @@
 
 /obj/item/ghost_trap/Destroy()
 	STOP_PROCESSING(SSobj, src)
-	var/mob/our_entity = captured_entity?.resolve()
+	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
@@ -61,7 +61,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src))
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
@@ -80,7 +80,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity)
 			icon_state = "item_captured"
 			return
@@ -95,7 +95,7 @@
 
 /obj/item/ghost_trap/process()
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && our_entity.loc != src)
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
@@ -116,7 +116,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity)
 			to_chat(user, "You are unable to use \the [src]! It beeps that it an entity contained inside!")
 			return
@@ -186,7 +186,7 @@
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
 		return
-	captured_entity = WEAKREF(passing_entity)
+	captured_entity = om_handle(passing_entity)
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity
@@ -250,7 +250,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null

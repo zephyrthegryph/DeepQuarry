@@ -69,7 +69,7 @@
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
 	var/locked = 0
-	VAR_PRIVATE/datum/weakref/weakref_occupant = null
+	VAR_PRIVATE/occupant_handle = null
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/opened = 0
 	var/damage_coeff
@@ -109,14 +109,14 @@
 /obj/machinery/dna_scannernew/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		weakref_occupant = null
+		occupant_handle = null
 		return
-	weakref_occupant = WEAKREF(L)
+	occupant_handle = om_handle(L)
 
 /obj/machinery/dna_scannernew/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return weakref_occupant?.resolve()
+	return om_resolve(occupant_handle)
 
 /obj/machinery/dna_scannernew/RefreshParts()
 	scan_level = 0

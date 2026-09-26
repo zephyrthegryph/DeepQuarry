@@ -102,7 +102,7 @@
 			return TRUE
 	if(!isAI(user))
 		return FALSE
-	var/mob/living/original = user.mind.original_character?.resolve()
+	var/mob/living/original = om_resolve(user.mind.original_character)
 	return (user.mind.special_role && (original && original == user))
 
 /**

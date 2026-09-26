@@ -10,7 +10,7 @@
 	/// Stops multiple grabbs if set to TRUE
 	var/busy = FALSE
 	/// The entity we are currently grabbing.
-	var/datum/weakref/grabbed_entity
+	var/grabbed_entity
 	/// How far we can move an entity in one go!
 	var/max_move_distance = 1
 	/// If we're held in two hands or not...Used until we get two handed component.
@@ -67,7 +67,7 @@
 				return
 		else
 			if(grabbed_entity)
-				var/atom/movable/entity = grabbed_entity.resolve()
+				var/atom/movable/entity = om_resolve(grabbed_entity)
 				if(get_dist(T, entity) > max_move_distance)
 					to_chat(user, span_warning("\The [src] is unable to pull the entity that far!"))
 					return
@@ -77,7 +77,7 @@
 
 	if(istype(target, /obj/item/ghost_trap)) //Special handling for traps, since traps are full sized objects and not turf.
 		var/obj/item/ghost_trap/trap = target
-		var/atom/movable/entity = grabbed_entity?.resolve()
+		var/atom/movable/entity = om_resolve(grabbed_entity)
 		if(!trap.deployed)
 			to_chat(user, span_warning("The trap isn't deployed!"))
 			return
@@ -116,7 +116,7 @@
 
 	playsound(src, 'sound/machines/beep.ogg', 50)
 
-	grabbed_entity = WEAKREF(target)
+	grabbed_entity = om_handle(target)
 	if(isliving(target))
 		var/mob/living/target_mob = target
 		target_mob.status_at_least(EFFECT_WEAKENED, 3)

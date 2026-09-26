@@ -11,7 +11,7 @@
 	/// Destination tagging for the mail sorter.
 	var/sortTag = 0
 	/// Who this mail is for and who can open it.
-	var/datum/weakref/recipient_ref
+	var/recipient_ref
 	/// How many goodies this mail contains.
 	var/goodie_count = 1
 	// Goodies which can be given to anyone.
@@ -215,7 +215,7 @@
 
 /obj/item/mail/proc/unwrap(mob/user)
 	if(recipient_ref)
-		var/datum/mind/recipient = recipient_ref.resolve()
+		var/datum/mind/recipient = om_resolve(recipient_ref)
 		if(recipient && recipient.current?.dna.unique_enzymes != user.dna.unique_enzymes)
 			balloon_alert(user, "you can't open somebody's mail! That's <em>illegal</em>")
 			return FALSE
@@ -250,7 +250,7 @@
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
 	var/current_title = recipient.role_alt_title ? recipient.role_alt_title : recipient.assigned_role
 	name = "[initial(name)] for [recipient.name] ([current_title])"
-	recipient_ref = WEAKREF(recipient)
+	recipient_ref = om_handle(recipient)
 
 	var/datum/job/this_job = SSjob.occupations_by_name[recipient.assigned_role]
 
@@ -425,7 +425,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 
 		var/datum/mind/recipient
 		if(saved.recipient_ref)
-			recipient = saved.recipient_ref.resolve()
+			recipient = om_resolve(saved.recipient_ref)
 
 		if(isnull(recipient) || isnull(recipient.current))
 			return

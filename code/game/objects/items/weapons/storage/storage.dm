@@ -675,7 +675,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	backdrop = list()
 	catchers = list()
 	shown = list()
-	var/datum/weakref/master = WEAKREF(S)
+	var/master = om_handle(S)
 	if(S.storage_slots)
 		backdrop += new_backdrop(master, "block")
 	else
@@ -700,7 +700,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	storage = null
 	return ..()
 
-/datum/storage_hud/proc/new_backdrop(datum/weakref/master, state)
+/datum/storage_hud/proc/new_backdrop(master, state)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
 	B.master_ref = master
@@ -848,13 +848,13 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	plane = PLANE_PLAYER_HUD_ITEMS
 	layer = 0.1
 	alpha = 200
-	var/datum/weakref/held_item
+	var/held_item
 
 /atom/movable/storage_slot/Initialize(mapload, obj/item/held_item)
 	. = ..()
 	ASSERT(held_item)
 	name += held_item.name
-	src.held_item = WEAKREF(held_item)
+	src.held_item = om_handle(held_item)
 
 /atom/movable/storage_slot/Destroy()
 	held_item = null
@@ -866,7 +866,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	overlays = somethings
 
 /atom/movable/storage_slot/Click()
-	var/obj/item/I = held_item?.resolve()
+	var/obj/item/I = om_resolve(held_item)
 	if(I)
 		usr.ClickOn(I)
 	return 1

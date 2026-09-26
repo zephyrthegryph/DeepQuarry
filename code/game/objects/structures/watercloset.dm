@@ -26,8 +26,8 @@
 	//Flushing stuff
 	var/panic_mult = 1
 	var/refilling = FALSE
-	var/datum/weakref/swirlie_mob = null //the mob being given a swirlie
-	var/datum/weakref/teleplumb_dest_ref //the destination of this toilet if it's teleplumbed
+	var/swirlie_mob = null //the mob being given a swirlie
+	var/teleplumb_dest_ref //the destination of this toilet if it's teleplumbed
 	var/list/currently_held_objects //List of objects currently in the toilet, used for flushing.
 	COOLDOWN_DECLARE(panic_flush)
 
@@ -42,7 +42,7 @@
 
 	if(teleplumb_crystal)
 		teleplumb_crystal = new /obj/item/bluespace_crystal(src)
-		teleplumb_dest_ref = WEAKREF(locate(/obj/effect/landmark/teleplumb_exit))
+		teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
@@ -74,7 +74,7 @@
 	icon_state = "[initial(icon_state)][open][cistern]"
 
 /obj/structure/toilet/attack_hand(mob/living/user)
-	var/mob/living/swirlie = swirlie_mob?.resolve()
+	var/mob/living/swirlie = om_resolve(swirlie_mob)
 	if(swirlie)
 		user.setClickCooldown(user.get_attack_speed())
 		user.visible_message(span_danger("[user] slams the toilet seat onto [swirlie.name]'s head!"), span_notice("You slam the toilet seat onto [swirlie.name]'s head!"), "You hear reverberating porcelain.")
@@ -134,10 +134,10 @@
 			if(GM.loc != get_turf(src))
 				to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 				return
-			var/mob/living/swirlie = swirlie_mob?.resolve()
+			var/mob/living/swirlie = om_resolve(swirlie_mob)
 			if(open && !swirlie)
 				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
-				swirlie_mob = WEAKREF(GM)
+				swirlie_mob = om_handle(GM)
 				if(do_after(user, 3 SECONDS, target = GM))
 					if(!open) //Someone closed it while we were trying to swirlie. Rude.
 						open = TRUE //Open it.
@@ -167,7 +167,7 @@
 		I.forceMove(src)
 		teleplumb_crystal = I
 		//TODO: add a way to link this to custom destinations.
-		teleplumb_dest_ref = WEAKREF(locate(/obj/effect/landmark/teleplumb_exit))
+		teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 		return
 
@@ -295,7 +295,7 @@
 		if(flush_weight + weight_value <= max_flush_weight)
 			taken_contents += flushed
 			flush_weight += weight_value
-			var/atom/teleplumb_dest = teleplumb_dest_ref?.resolve()
+			var/atom/teleplumb_dest = om_resolve(teleplumb_dest_ref)
 			if(teleplumb_crystal && teleplumb_dest)
 				if(isliving(flushed))
 					var/mob/living/m = flushed

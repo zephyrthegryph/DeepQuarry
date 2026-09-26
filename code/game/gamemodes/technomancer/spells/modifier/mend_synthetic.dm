@@ -39,6 +39,6 @@
 
 	holder.adjust_instability(1)
 	if(origin)
-		var/mob/living/L = origin.resolve()
+		var/mob/living/L = om_resolve(origin)
 		if(istype(L))
 			L.adjust_instability(1)

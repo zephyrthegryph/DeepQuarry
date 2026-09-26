@@ -8,7 +8,7 @@
 	item_state = "sucker"
 	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
-	var/datum/weakref/output_dest
+	var/output_dest
 	var/list/vac_settings = list(
 			"power off" = 0,
 			"dust and grime" = 1,
@@ -38,7 +38,7 @@
 	if(.)
 		return TRUE
 	var/set_input = null
-	if(!output_dest?.resolve())
+	if(!om_resolve(output_dest))
 		set_input = "output destination"
 	if(!set_input)
 		set_input = tgui_input_list(user, "Set your [suckverb] attachment's power level or output mode.", "Vac Settings", vac_settings)
@@ -58,7 +58,7 @@
 						var/obj/item/robot_module/M = R.module
 						for(var/obj/item/dogborg/sleeper/S in M.modules)
 							if(istype(S))
-								output_dest = WEAKREF(S)
+								output_dest = om_handle(S)
 								return
 					to_chat(user, span_warning("Borg belly not found."))
 				if("Trash Bag")
@@ -67,16 +67,16 @@
 						var/obj/item/robot_module/M = R.module
 						for(var/obj/item/storage/bag/trash/T in M.modules)
 							if(istype(T))
-								output_dest = WEAKREF(T)
+								output_dest = om_handle(T)
 								return
 					for(var/obj/item/storage/bag/trash/T in user.contents)
 						if(istype(T))
-							output_dest = WEAKREF(T)
+							output_dest = om_handle(T)
 							return
 					to_chat(user, span_warning("Trash bag not found."))
 				if("Vore Belly")
 					if(user.vore_selected)
-						output_dest = WEAKREF(user.vore_selected)
+						output_dest = om_handle(user.vore_selected)
 			return
 		else
 			vac_power = vac_settings[set_input]
@@ -87,7 +87,7 @@
 		return
 	if(!proximity)
 		return
-	var/atom/movable/output_atom = output_dest?.resolve()
+	var/atom/movable/output_atom = om_resolve(output_dest)
 	if(!output_atom)
 		return
 	var/mob/living/attachment_holder //If we have someone holding the vac_attachment, so we don't suck them up by mistake.
@@ -269,7 +269,7 @@
 			addtimer(CALLBACK(src, PROC_REF(handle_consumption), L, user, auto_setting), 0.5 SECONDS)
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
-	var/atom/movable/output_atom = output_dest?.resolve()
+	var/atom/movable/output_atom = om_resolve(output_dest)
 
 	if(vac_owner) //Embedded vacs have special handling.
 		var/turf/item_turf = get_turf(src)
@@ -286,7 +286,7 @@
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
 	if(target_turf && target.loc != target_turf)
 		return
-	var/atom/movable/output_atom = output_dest?.resolve()
+	var/atom/movable/output_atom = om_resolve(output_dest)
 
 	if(vac_owner)
 		var/turf/item_turf = get_turf(src)

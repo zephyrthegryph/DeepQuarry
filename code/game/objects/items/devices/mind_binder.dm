@@ -30,7 +30,7 @@
 /obj/item/mindbinder/pre_attack(atom/A)
 	if(istype(A, /obj/structure/gargoyle))
 		var/obj/structure/gargoyle/G = A
-		A = G.WR_gargoyle?.resolve()
+		A = om_resolve(G.WR_gargoyle)
 	if(istype(A, /obj/item/holder))
 		var/obj/item/holder/H = A
 		A = H.held_mob

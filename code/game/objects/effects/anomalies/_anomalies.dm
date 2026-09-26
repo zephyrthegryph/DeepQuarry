@@ -114,7 +114,7 @@
 		move_chance = 0
 	if(!stats && add_stats)
 		stats = new /datum/anomaly_stats
-		stats.attached_anomaly = WEAKREF(src)
+		stats.attached_anomaly = om_handle(src)
 		stats.calculate_points()
 		density = TRUE
 	return
@@ -128,7 +128,7 @@
 		var/obj/item/anomaly_scanner/scanner = I
 		if(!do_after(user, 1 SECOND, src))
 			return
-		scanner.buffered_anomaly = WEAKREF(src)
+		scanner.buffered_anomaly = om_handle(src)
 		scanner.tgui_interact(user)
 		return TRUE
 	return ..()

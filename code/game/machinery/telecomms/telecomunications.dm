@@ -334,12 +334,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	var/overmap_range_min = 0
 	var/overmap_range_max = 5
 
-	var/list/linked_radios_weakrefs
-
-/obj/machinery/telecomms/receiver/proc/link_radio(obj/item/radio/R)
-	if(!istype(R))
-		return
-	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
+	// Bluespace radios that transmit to this receiver are BS_TX_RADIOS(src).
 
 /obj/machinery/telecomms/receiver/receive_signal(datum/signal/signal)
 	if(!on) // has to be on to receive messages
@@ -366,7 +361,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		var/obj/item/radio/R = signal.data["radio"]
 
 		//Who're you?
-		if(!(WEAKREF(R) in linked_radios_weakrefs))
+		if(!R || BS_TX_TARGET(R) != src)
 			signal.data["reject"] = 1
 			return 0
 
