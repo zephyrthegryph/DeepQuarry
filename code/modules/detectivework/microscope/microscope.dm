@@ -62,10 +62,15 @@
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample]."))
 
-	if(!do_after(user, 2 SECONDS, target = sample) || !sample)
-		to_chat(user, span_notice("You stop examining \the [sample]."))
-		return TRUE
+	om_do_after(user, 2 SECONDS, sample, src, PROC_REF(examine_done), list(user, sample), on_fail = PROC_REF(examine_stopped), fail_args = list(user, sample))
+	return TRUE
 
+/obj/machinery/microscope/proc/examine_stopped(mob/user, obj/item/examined)
+	to_chat(user, span_notice("You stop examining \the [examined]."))
+
+/obj/machinery/microscope/proc/examine_done(mob/user, obj/item/examined)
+	if(sample != examined)
+		return
 	to_chat(user, span_notice("Printing findings now..."))
 	var/obj/item/paper/report = new(get_turf(src))
 	report.stamped = list(/obj/item/stamp)
@@ -113,7 +118,6 @@
 		report.update_icon()
 		if(report.info)
 			to_chat(user,report.info)
-	return TRUE
 
 /obj/machinery/microscope/proc/remove_sample(mob/living/remover)
 	if(!istype(remover) || remover.incapacitated() || !Adjacent(remover))

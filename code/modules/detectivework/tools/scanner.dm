@@ -55,10 +55,11 @@
 
 	add_fingerprint(user)
 
-	if(!(do_after(user, 1 SECOND, target = src)))
-		to_chat(user, span_warning("You must remain still for the device to complete its work."))
-		return 0
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(scan_done), list(A, user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_warning("You must remain still for the device to complete its work.")))
+	return 0
 
+/// The scan: prints now, then fibres and blood (each a further timed action when analysed).
+/obj/item/detective_scanner/proc/scan_done(atom/A, mob/user)
 	// Contract evidence is authenticated by its ordinary paper/shipment
 	// metadata, not by a bespoke scanner mode. This runs before the traditional
 	// fingerprint early return so a clean document remains investigable.
@@ -104,24 +105,43 @@
 			for(var/i in incomplete_prints)
 				to_chat(user, span_notice("&nbsp;&nbsp;&nbsp;&nbsp;[i]"))
 
-	//FIBERS
+	scan_fibers(A, user)
+
+/obj/item/detective_scanner/proc/scan_fibers(atom/A, mob/user)
 	if(A.forensic_data?.has_fibres())
 		to_chat(user,span_notice("Fibers/Materials detected.[reveal_fibers ? " Analysing..." : " Acquisition of fibers for H.R.F.S. analysis advised."]"))
 		flick("[icon_state]1",src)
-		if(reveal_fibers && do_after(user, 5 SECONDS, target = src))
-			to_chat(user, span_notice("Apparel samples scanned:"))
-			for(var/sample in A.forensic_data.get_fibres())
-				to_chat(user, " - " + span_notice("[sample]"))
+		if(reveal_fibers)
+			om_do_after(user, 5 SECONDS, src, src, PROC_REF(fibers_done), list(A, user), on_fail = PROC_REF(scan_blood), fail_args = list(A, user))
+			return
+	scan_blood(A, user)
 
-	//Blood
+/obj/item/detective_scanner/proc/fibers_done(atom/A, mob/user)
+	to_chat(user, span_notice("Apparel samples scanned:"))
+	for(var/sample in A.forensic_data?.get_fibres())
+		to_chat(user, " - " + span_notice("[sample]"))
+	scan_blood(A, user)
+
+/obj/item/detective_scanner/proc/scan_blood(atom/A, mob/user)
+	if(!A || !user)
+		return
 	if (A.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood detected.[reveal_blood ? " Analysing..." : " Acquisition of swab for H.R.F.S. analysis advised."]"))
-		if(reveal_blood && do_after(user, 5 SECONDS, target = src))
-			flick("[icon_state]1",src)
-			var/list/blood_data = A.forensic_data.get_blooddna()
-			for(var/blood in blood_data)
-				to_chat(user, "Blood type: " + span_warning("[blood_data[blood]]") + " DNA: " + span_warning("[blood]"))
+		if(reveal_blood)
+			om_do_after(user, 5 SECONDS, src, src, PROC_REF(blood_done), list(A, user), on_fail = PROC_REF(scan_finish), fail_args = list(A, user))
+			return
+	scan_finish(A, user)
 
+/obj/item/detective_scanner/proc/blood_done(atom/A, mob/user)
+	flick("[icon_state]1",src)
+	var/list/blood_data = A.forensic_data?.get_blooddna()
+	for(var/blood in blood_data)
+		to_chat(user, "Blood type: " + span_warning("[blood_data[blood]]") + " DNA: " + span_warning("[blood]"))
+	scan_finish(A, user)
+
+/obj/item/detective_scanner/proc/scan_finish(atom/A, mob/user)
+	if(!A || !user)
+		return
 	user.visible_message("\The [user] scans \the [A] with \a [src], the air around [user.gender == MALE ? "him" : "her"] humming[prob(70) ? " gently." : "."]" ,\
 	span_notice("You finish scanning \the [A]."),\
 	"You hear a faint hum of electrical equipment.")
@@ -145,48 +165,52 @@
 	//to_world("usr is [usr]") //why was this a thing? -KK.
 	display_data(usr)
 
+/// Shows the stored records one per second (a timed action each, so moving stops the spam).
 /obj/item/detective_scanner/proc/display_data(mob/user)
 	if(user && stored && stored.len)
-		for(var/objref in stored)
-			if(!do_after(user, 1 SECOND, target = src)) // So people can move and stop the spam, if they refuse to wipe data.
-				break
+		om_do_after(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, 1))
 
-			var/datum/data/record/forensic/F = stored[objref]
-			var/list/fprints = F.fields["fprints"]
-			var/list/fibers = F.fields["fibers"]
-			var/list/bloods = F.fields["blood"]
+/obj/item/detective_scanner/proc/display_record(mob/user, index)
+	if(index > length(stored))
+		return
+	if(index < length(stored))
+		om_do_after(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, index + 1))
+	var/datum/data/record/forensic/F = stored[stored[index]]
+	var/list/fprints = F.fields["fprints"]
+	var/list/fibers = F.fields["fibers"]
+	var/list/bloods = F.fields["blood"]
 
-			to_chat(user, span_notice("Data for: [F.fields["name"]]"))
+	to_chat(user, span_notice("Data for: [F.fields["name"]]"))
 
-			if(reveal_fingerprints)
-				var/list/complete_prints = list()
-				var/list/incomplete_prints = list()
-				for(var/i in fprints)
-					var/print = fprints[i]
-					if(stringpercent(print) <= FINGERPRINT_COMPLETE)
-						complete_prints += print
-						to_chat(user, " - " + span_notice("[print]"))
-					else
-						incomplete_prints += print
+	if(reveal_fingerprints)
+		var/list/complete_prints = list()
+		var/list/incomplete_prints = list()
+		for(var/i in fprints)
+			var/print = fprints[i]
+			if(stringpercent(print) <= FINGERPRINT_COMPLETE)
+				complete_prints += print
+				to_chat(user, " - " + span_notice("[print]"))
+			else
+				incomplete_prints += print
 
-				if(complete_prints.len < 1)
-					to_chat(user, span_notice("No intact prints found."))
+		if(complete_prints.len < 1)
+			to_chat(user, span_notice("No intact prints found."))
 
-				if(reveal_incompletes)
-					for(var/print in incomplete_prints)
-						to_chat(user, " - " + span_notice("[print]"))
+		if(reveal_incompletes)
+			for(var/print in incomplete_prints)
+				to_chat(user, " - " + span_notice("[print]"))
 
-			if(fibers && fibers.len)
-				to_chat(user, span_notice("[fibers.len] samples of material were present."))
-				if(reveal_fibers)
-					for(var/sample in fibers)
-						to_chat(user, " - " + span_notice("[sample]"))
+	if(fibers && fibers.len)
+		to_chat(user, span_notice("[fibers.len] samples of material were present."))
+		if(reveal_fibers)
+			for(var/sample in fibers)
+				to_chat(user, " - " + span_notice("[sample]"))
 
-			if(bloods && bloods.len)
-				to_chat(user, span_notice("[bloods.len] samples of blood were present."))
-				if(reveal_blood)
-					for(var/bloodsample in bloods)
-						to_chat(user, " - " + span_warning("[bloodsample]") + " Type: [bloods[bloodsample]]")
+	if(bloods && bloods.len)
+		to_chat(user, span_notice("[bloods.len] samples of blood were present."))
+		if(reveal_blood)
+			for(var/bloodsample in bloods)
+				to_chat(user, " - " + span_warning("[bloodsample]") + " Type: [bloods[bloodsample]]")
 
 /obj/item/detective_scanner/verb/wipe()
 	set name = "Wipe Forensic Data"
