@@ -57,6 +57,10 @@
 		if(A.allowed(user) && A.operable())
 			A.open()
 
+/obj/item/rig_module/pat_module/proc/override_done(obj/machinery/door/airlock/A)
+	if(A.density)
+		A.open()
+
 /obj/item/rig_module/pat_module/engage()
 	var/mob/living/carbon/human/H = holder.wearer
 	if(!istype(H))
@@ -70,8 +74,7 @@
 		return 0
 
 	H.visible_message(span_warning("[H] begins overriding the airlock!"),span_notice("You begin overriding the airlock!"))
-	if(do_after(H, 6 SECONDS, target = A) && A.density)
-		A.open()
+	om_do_after(H, 6 SECONDS, A, src, PROC_REF(override_done), list(A))
 
 	var/username = FindNameFromID(H) || "Unknown"
 	var/message = "[username] has overridden [A] (airlock) in \the [get_area(A)] at [A.x],[A.y],[A.z] with \the [src]."

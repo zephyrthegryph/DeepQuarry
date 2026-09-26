@@ -265,6 +265,8 @@
 	toggle_piece("chest", loc, ONLY_RETRACT, TRUE)
 	update_icon(1)
 
+/// Seals or unseals the suit: a sequence of timed actions (the overall check, then one per
+/// piece), each continuing in seal_piece() and ending in seal_finish().
 /obj/item/rig/proc/toggle_seals(mob/living/carbon/human/M, instant, destructive)
 
 	if(sealing) return
@@ -278,7 +280,6 @@
 	deploy(M,destructive)
 
 	var/seal_target = !canremove
-	var/failed_to_seal
 
 	var/atom/movable/screen/rig_booting/booting_L = new
 	var/atom/movable/screen/rig_booting/booting_R = new
@@ -297,77 +298,98 @@
 	if(!seal_target && !suit_is_deployed())
 		M.visible_message(span_danger("[M]'s suit flashes an error light."),span_danger("Your suit flashes an error light. It can't function properly without being fully deployed."))
 		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
-		failed_to_seal = 1
+		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
+		return 0
 
+	var/list/seal_args = list(M, seal_target, instant, booting_L, booting_R)
+	if(!instant)
+		M.visible_message(span_notice("[M]'s suit emits a quiet hum as it begins to adjust its seals."),span_notice("With a quiet hum, the suit begins running checks and adjusting components."))
+		if(seal_delay)
+			om_do_after(M, seal_delay, src, src, PROC_REF(seal_piece), seal_args + 1, IGNORE_TARGET_LOC_CHANGE, PROC_REF(seal_interrupted), seal_args)
+			return 1
+	seal_piece(M, seal_target, instant, booting_L, booting_R, 1)
+	return 1
+
+/obj/item/rig/proc/seal_interrupted(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R)
+	if(M)
+		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
+		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+	seal_finish(M, seal_target, booting_L, booting_R, TRUE)
+
+/// Seals pieces from `index` on (boots, gloves, helmet, chest); a piece with a seal delay is a
+/// timed action that comes back here for the next one.
+/obj/item/rig/proc/seal_piece(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, index)
+	if(!M)
+		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
+		return
+	var/list/pieces = list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_SUIT),chest,"chest",chest_type))
+	for(var/i in index to length(pieces))
+		var/list/piece_data = pieces[i]
+		var/obj/item/piece = piece_data[1]
+		var/obj/item/compare_piece = piece_data[2]
+		var/msg_type = piece_data[3]
+		var/piece_type = piece_data[4]
+
+		if(!piece || !piece_type)
+			continue
+
+		if(!istype(M) || !istype(piece) || !istype(compare_piece) || !msg_type)
+			to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
+			seal_finish(M, seal_target, booting_L, booting_R, TRUE)
+			return
+
+		if(!((M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src) && piece == compare_piece))
+			seal_finish(M, seal_target, booting_L, booting_R, TRUE)
+			return
+
+		if(seal_delay && !instant)
+			var/list/seal_args = list(M, seal_target, instant, booting_L, booting_R)
+			om_do_after(M, seal_delay, src, src, PROC_REF(seal_piece_done), seal_args + list(piece, msg_type, i), IGNORE_TARGET_LOC_CHANGE, PROC_REF(seal_interrupted), seal_args)
+			return
+		seal_one_piece(M, piece, msg_type, seal_target)
+
+	seal_finish(M, seal_target, booting_L, booting_R, FALSE)
+
+/obj/item/rig/proc/seal_piece_done(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, obj/item/piece, msg_type, index)
+	seal_one_piece(M, piece, msg_type, seal_target)
+	seal_piece(M, seal_target, instant, booting_L, booting_R, index + 1)
+
+/obj/item/rig/proc/seal_one_piece(mob/living/carbon/human/M, obj/item/piece, msg_type, seal_target)
+	piece.icon_state = "[suit_state][!seal_target ? "_sealed" : ""]"
+	switch(msg_type)
+		if("boots")
+			to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
+			M.update_inv_shoes()
+		if("gloves")
+			to_chat(M, span_notice("\The [piece] [!seal_target ? "tighten around your fingers and wrists" : "become loose around your fingers"]."))
+			M.update_inv_gloves()
+		if("chest")
+			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
+			M.update_inv_wear_suit()
+		if("helmet")
+			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
+			M.update_inv_head()
+			if(helmet?.light_system == STATIC_LIGHT)
+				helmet.update_light(wearer)
+
+	//sealed pieces become airtight, protecting against diseases
+	if (!seal_target)
+		piece.set_armor_value("bio", 100)
+	else
+		piece.set_armor_value("bio", src.get_armor().value("bio"))
+	piece.worn_protection_changed()
+	playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
+
+/obj/item/rig/proc/seal_finish(mob/living/carbon/human/M, seal_target, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, failed_to_seal)
 	if(!failed_to_seal)
-
-		if(!instant)
-			M.visible_message(span_notice("[M]'s suit emits a quiet hum as it begins to adjust its seals."),span_notice("With a quiet hum, the suit begins running checks and adjusting components."))
-			if(seal_delay && !do_after(M, seal_delay, target = src))
-				if(M)
-					to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
-					playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
-				failed_to_seal = 1
-		if(!M)
-			failed_to_seal = 1
-		else
-			for(var/list/piece_data in list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_SUIT),chest,"chest",chest_type)))
-
-				var/obj/item/piece = piece_data[1]
-				var/obj/item/compare_piece = piece_data[2]
-				var/msg_type = piece_data[3]
-				var/piece_type = piece_data[4]
-
-				if(!piece || !piece_type)
-					continue
-
-				if(!istype(M) || !istype(piece) || !istype(compare_piece) || !msg_type)
-					if(M)
-						to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
-					failed_to_seal = 1
-					break
-
-				if(!failed_to_seal && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src) && piece == compare_piece)
-
-					if(seal_delay && !instant && !do_after(M, seal_delay, target = src))
-						failed_to_seal = 1
-
-					piece.icon_state = "[suit_state][!seal_target ? "_sealed" : ""]"
-					switch(msg_type)
-						if("boots")
-							to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
-							M.update_inv_shoes()
-						if("gloves")
-							to_chat(M, span_notice("\The [piece] [!seal_target ? "tighten around your fingers and wrists" : "become loose around your fingers"]."))
-							M.update_inv_gloves()
-						if("chest")
-							to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
-							M.update_inv_wear_suit()
-						if("helmet")
-							to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-							M.update_inv_head()
-							if(helmet?.light_system == STATIC_LIGHT)
-								helmet.update_light(wearer)
-
-					//sealed pieces become airtight, protecting against diseases
-					if (!seal_target)
-						piece.set_armor_value("bio", 100)
-					else
-						piece.set_armor_value("bio", src.get_armor().value("bio"))
-					piece.worn_protection_changed()
-					playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
-
-				else
-					failed_to_seal = 1
-
-		if((M && !(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src)) && !istype(M,/mob/living/silicon)) || (!seal_target && !suit_is_deployed()))
+		if(!M || (!(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src)) && !istype(M,/mob/living/silicon)) || (!seal_target && !suit_is_deployed()))
 			failed_to_seal = 1
 
 	sealing = null
 
 	if(failed_to_seal)
-		M.client?.screen -= booting_L
-		M.client?.screen -= booting_R
+		M?.client?.screen -= booting_L
+		M?.client?.screen -= booting_R
 		qdel(booting_L)
 		qdel(booting_R)
 		for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -391,9 +413,7 @@
 	M.client?.screen -= booting_L
 	qdel(booting_L)
 	booting_R.icon_state = "boot_done"
-	spawn(40)
-		M.client?.screen -= booting_R
-		qdel(booting_R)
+	om_after(src, 4 SECONDS, PROC_REF(remove_boot_screen), M, booting_R)
 
 	if(canremove)
 		for(var/obj/item/rig_module/module in installed_modules)
@@ -401,6 +421,10 @@
 	if(airtight)
 		update_component_sealed()
 	update_icon(1)
+
+/obj/item/rig/proc/remove_boot_screen(mob/living/carbon/human/M, atom/movable/screen/rig_booting/booting_R)
+	M.client?.screen -= booting_R
+	qdel(booting_R)
 
 /obj/item/rig/proc/update_component_sealed()
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -600,13 +624,17 @@
 
 	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_notice("[M] starts putting on \the [src]..."), span_notice("You start putting on \the [src]..."))
-		if(!do_after(M, seal_delay, target = src))
-			if(M && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
-				if(!M.unEquip(src))
-					return
-			src.forceMove(get_turf(src))
-			return
+		om_do_after(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
+		return
+	put_on_done(M)
 
+/obj/item/rig/proc/put_on_failed(mob/living/carbon/human/M)
+	if(M && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
+		if(!M.unEquip(src))
+			return
+	src.forceMove(get_turf(src))
+
+/obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_boldnotice("[M] struggles into \the [src]."), span_boldnotice("You struggle into \the [src]."))
 		wearer = M
