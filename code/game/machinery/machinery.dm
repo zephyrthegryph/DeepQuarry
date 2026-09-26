@@ -144,6 +144,9 @@ Class Procs:
 	/// FALSE for machines that run on an object-model pipeline (machine_pipeline.dm) and never
 	/// join SSmachines' polling roster.
 	var/polls = TRUE
+	/// Lazy assoc channel -> /datum/om_watch (code/datums/om/watch.dm). Threshold watches this
+	/// machine has armed on a gas mixture or a DM-side derived value.
+	var/list/om_watches
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -186,6 +189,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /obj/machinery/Destroy()
 	cancel_sleep_keys()
+	om_unwatch_all()
 	if(!speed_process)
 		STOP_MACHINE_PROCESSING(src)
 	else
@@ -224,8 +228,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// Whether a dirty gas notification makes a sleeping machine actionable.
 /// Gas-dependent subtypes override this; the conservative default preserves
 /// correctness for newly subscribed machinery until it supplies a filter.
-/obj/machinery/proc/gas_dependency_changed(mixture_id, change_mask)
-	return TRUE
+///
+/// A machine with om_watch_gas() bands armed (code/datums/om/watch.dm) is handled here directly:
+/// a crossing raises om_changed(src, channel), which is all an OM-pipeline (polls = FALSE)
+/// machine needs to reschedule itself. A machine that still polls (polls = TRUE) also returns
+/// TRUE so SSmachines' wake_gas_subscriber() re-enrolls it in the process() roster the old way.
+/obj/machinery/proc/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!om_watches)
+		return TRUE
+	. = FALSE
+	for(var/channel in om_watches)
+		var/datum/om_watch/W = om_watches[channel]
+		if(W.mixture_id != mixture_id)
+			continue
+		if(!observation)
+			. = TRUE
+			continue
+		if(W.evaluate_gas(observation, observation_index))
+			om_changed(src, channel)
+			if(polls)
+				. = TRUE
 
 /// Change classes this machine can act on while sleeping. Rust uses the
 /// aggregate mask to avoid publishing irrelevant notifications into DM.
