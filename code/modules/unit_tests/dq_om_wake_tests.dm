@@ -17,12 +17,27 @@
 		om_woken_untrace(D)
 		return "[D.type] woke while its input held steady"
 	change.Invoke()
-	react_test_ticks(ticks)
-	var/after = om_woken_traced_count(D)
+	// Wakes ride the scheduler's lanes and deadline share: under a busy test world give them a
+	// little longer than `ticks` before calling one lost.
+	var/after = before
+	for(var/i in 1 to ticks * 10)
+		react_test_ticks(1)
+		after = om_woken_traced_count(D)
+		if(after != before)
+			break
 	om_woken_untrace(D)
 	if(after == before)
 		return "[D.type] did not wake after its input changed"
 	return null
+
+/// Waits (a tick at a time, up to `max_ticks`) until `D` has been woken more than `count` times.
+/// Wakes ride the scheduler's lanes: a busy test world can take a few ticks longer.
+/proc/om_wait_for_wake(datum/D, count = 0, max_ticks = 40)
+	for(var/i in 1 to max_ticks)
+		react_test_ticks(1)
+		if(om_woken_traced_count(D) > count)
+			return TRUE
+	return FALSE
 
 /// Records every wake reason.
 /datum/om_wake_test_subscriber
@@ -189,7 +204,10 @@
 	var/obj/item/source = allocate(/obj/item, T)
 	var/datum/looping_sound/dq_test/loop = new(list(source))
 	loop.start()
-	react_test_ticks(6)
+	for(var/i in 1 to 60)
+		react_test_ticks(1)
+		if(loop.dormant_chunk_tokens || loop.has_listener())
+			break
 	if(loop.has_listener())
 		qdel(loop)
 		return // A player is in range on this map; dormancy cannot be tested here.

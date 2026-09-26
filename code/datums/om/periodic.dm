@@ -17,6 +17,9 @@
 //   /datum/om/pipeline/periodic/slow     every 2 s   (SSobj, SSturfs)          periodic_step(20)
 //   /datum/om/pipeline/periodic/second   every 1 s   (SSprocessing, SSburning) periodic_step(10)
 //   /datum/om/pipeline/periodic/fast     every 0.2 s (SSfastprocess)           periodic_step(2)
+//   /datum/om/pipeline/periodic/plants   every 7.5 s (SSplants' vines)          periodic_step(75)
+// Also on the slow lane now: alarm handlers, random events and their containers, working
+// shuttles, the game mode and planets (their subsystems schedule nothing any more).
 // Declared continuous lanes (each says why it must tick at frame rate):
 //   /datum/om/pipeline/periodic/continuous/projectiles, .../instruments, .../status_effects,
 //   .../tab_items
@@ -52,9 +55,8 @@
 	set waitfor = FALSE
 	return PROCESS_KILL
 
-/// What the subsystems that still own their own schedule call on their datums (SSevents,
-/// SSplanets, SSshuttles, SSticker's game mode, tgui windows, database queries). Nothing on a
-/// periodic lane uses it (tools/ci/pollers_lint.py counts the overrides).
+/// The core's own per-datum hook, kept for tgui windows and database queries (SStgui, SSdbcore).
+/// No gameplay type defines it any more (tools/ci/pollers_lint.py counts the overrides).
 /datum/proc/process()
 	set waitfor = FALSE
 	return PROCESS_KILL

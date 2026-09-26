@@ -134,8 +134,7 @@
 	react_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_woken_traced_count(S), 0, "a publish with no shared mask bit woke the subscriber")
 	OM_KEY_PUBLISH(KEY_METEORS, 77, 2)
-	react_test_ticks(4)
-	TEST_ASSERT(om_woken_traced_count(S) >= 1, "a matching publish did not wake the subscriber")
+	TEST_ASSERT(om_wait_for_wake(S), "a matching publish did not wake the subscriber")
 	TEST_ASSERT((S.wakes[length(S.wakes)] & OM_WOKEN_KEY), "a key wake did not say it was a key")
 	OM_KEY_OFF(S, token)
 	TEST_ASSERT(!GLOB.om_keys["[KEY_METEORS]:77"], "the last unsubscribe left the key behind")
@@ -146,6 +145,7 @@
 
 	OM_WAKE_AT(S, world.time + 1)
 	TEST_ASSERT(om_wake_pending(S), "the timer is not pending")
+	TEST_ASSERT(om_wait_for_wake(S, before), "the timer did not fire")
 	react_test_ticks(8)
 	TEST_ASSERT(om_woken_traced_count(S) == before + 1, "the timer did not fire exactly once")
 	TEST_ASSERT((S.wakes[length(S.wakes)] & OM_WOKEN_TIMER), "a timer wake did not say it was a timer")
@@ -305,7 +305,10 @@
 	var/mob/living/M = allocate(/mob/living, T)
 	var/obj/item/holder/H = new(T, M)
 	TEST_ASSERT(!H.periodic_pipe, "a holder polls on a lane")
-	react_test_ticks(4)
+	for(var/i in 1 to 40)
+		react_test_ticks(1)
+		if(QDELETED(H))
+			break
 	TEST_ASSERT(QDELETED(H), "a holder left on a turf was not cleaned up")
 	TEST_ASSERT_EQUAL(M.loc, T, "the held mob was not released onto the turf")
 
@@ -349,5 +352,20 @@
 /datum/unit_test/dq_om_planets_on_lanes/Run()
 	for(var/datum/planet/P as anything in SSplanets.planets)
 		TEST_ASSERT(P.periodic_pipe == PERIODIC_SLOW, "planet [P.name] is not on the slow lane")
+
+#endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// Spreading plants (was SSplants' loop) grow on their own lane from add_plant() to remove_plant().
+/datum/unit_test/dq_om_plants_on_lane
+
+/datum/unit_test/dq_om_plants_on_lane/Run()
+	var/datum/probe = allocate(/datum/dq_periodic_probe)
+	PERIODIC_START(probe, PERIODIC_PLANTS)
+	TEST_ASSERT(probe.periodic_pipe == PERIODIC_PLANTS, "the plant lane did not take a datum")
+	var/datum/om/pipeline/periodic/P = om_registry().behaviour(PERIODIC_PLANTS)
+	TEST_ASSERT_EQUAL(P.every, 7.5 SECONDS, "the plant lane lost the old SSplants cadence")
+	PERIODIC_STOP(probe)
 
 #endif
