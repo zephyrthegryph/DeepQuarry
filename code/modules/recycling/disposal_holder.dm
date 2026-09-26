@@ -138,7 +138,10 @@
 	to_chat(escapee, span_warning("You push against the thin pipe walls..."))
 	playsound(loc, 'sound/machines/door/airlock_creaking.ogg', 30, FALSE, 3) //yeah I know but at least it sounds like metal being bent.
 
-	if(!do_after(escapee, 20 SECONDS, transport_cylinder))
+	om_do_after(escapee, 20 SECONDS, transport_cylinder, src, PROC_REF(burst_pipe), list(transport_cylinder))
+
+/obj/structure/disposalholder/proc/burst_pipe(obj/structure/disposalpipe/transport_cylinder)
+	if(loc != transport_cylinder || active)
 		return
 	for(var/mob/living/jailbird in contents)
 		jailbird.injure(INJURY_BLUNT, rand(5,15), null, src)
