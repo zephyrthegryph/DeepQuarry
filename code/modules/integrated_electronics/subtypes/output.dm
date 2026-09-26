@@ -153,6 +153,10 @@
 	my_voice = new (src)
 	my_voice.name = "TTS Circuit"
 
+/// A text-to-speech circuit's voice is not a mob of the world: no mob registry.
+/mob/living/voice/skips_registry(registry_id)
+	return istype(loc, /obj/item/integrated_circuit) || ..()
+
 /obj/item/integrated_circuit/output/text_to_speech/advanced/do_work()
 	text = get_pin_data(IC_INPUT, 1)
 	var/mob/living/target_mob = get_pin_data(IC_INPUT, 2)
