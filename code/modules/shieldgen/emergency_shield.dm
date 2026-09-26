@@ -284,13 +284,15 @@
 
 /obj/machinery/shieldgen/proc/interaction_repair(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
 	to_chat(user, span_notice("You begin to replace the wires."))
-	if(do_after(user, 3 SECONDS, target = src))
-		if (coil.use(1))
-			repair_damage(max_integrity)
-			malfunction = 0
-			to_chat(user, span_notice("You repair the [src]!"))
-			update_icon()
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(rewire_done), list(user, coil))
 	return TRUE
+
+/obj/machinery/shieldgen/proc/rewire_done(mob/user, obj/item/stack/cable_coil/coil)
+	if (coil.use(1))
+		repair_damage(max_integrity)
+		malfunction = 0
+		to_chat(user, span_notice("You repair the [src]!"))
+		update_icon()
 
 /datum/interaction/machine_item/shieldgen_toggle_lock
 	id = "shieldgen_toggle_lock"

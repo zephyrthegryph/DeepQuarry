@@ -83,21 +83,24 @@
 	if(W.sharp && W.edge)
 		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
 		user.setClickCooldown(time)
-		var/our_material_name = src.material.name
-		if(do_after(user, time, target = src) && use(1))
-			to_chat(user, span_notice("You cut up a log into planks."))
-			playsound(src, 'sound/effects/woodcutting.ogg', 50, 1)
-			var/obj/item/stack/material/wood/existing_wood = null
-			for(var/obj/item/stack/material/wood/M in user.loc)
-				if(M.material.name == our_material_name)
-					existing_wood = M
-					break
-
-			var/obj/item/stack/material/wood/new_wood = new plank_type(user.loc, 2)
-			if(existing_wood && new_wood.transfer_to(existing_wood))
-				to_chat(user, span_notice("You add the newly-formed wood to the stack. It now contains [existing_wood.get_amount()] planks."))
+		om_do_after(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
 	else
 		return ..()
+
+/obj/item/stack/material/log/proc/cut_planks_done(mob/user, our_material_name)
+	if(!use(1))
+		return
+	to_chat(user, span_notice("You cut up a log into planks."))
+	playsound(user, 'sound/effects/woodcutting.ogg', 50, 1)
+	var/obj/item/stack/material/wood/existing_wood = null
+	for(var/obj/item/stack/material/wood/M in user.loc)
+		if(M.material.name == our_material_name)
+			existing_wood = M
+			break
+
+	var/obj/item/stack/material/wood/new_wood = new plank_type(user.loc, 2)
+	if(existing_wood && new_wood.transfer_to(existing_wood))
+		to_chat(user, span_notice("You add the newly-formed wood to the stack. It now contains [existing_wood.get_amount()] planks."))
 
 
 /obj/item/stack/material/stick

@@ -93,8 +93,12 @@
 		to_chat(user, span_notice("The payload is already resident."))
 		return TRUE
 	user.visible_message(span_notice("[user] begins uploading a control payload."), span_notice("You begin uploading the malware payload."))
-	if(!do_after(user, 5 SECONDS, target = src) || QDELETED(src))
-		return TRUE
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
+	return TRUE
+
+/obj/machinery/generated_station_upload_terminal/proc/upload_done(mob/user)
+	if(uploaded)
+		return
 	uploaded = TRUE
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	for(var/key in SSexpedition?.sites)
@@ -103,7 +107,6 @@
 			candidate.station_director?.set_department_connected("ai-1", FALSE)
 			break
 	visible_message(span_warning("[src] reports: DIRECTOR NETWORK OVERRIDE ACCEPTED."))
-	return TRUE
 
 /obj/item/generated_station_command_asset
 	name = "station command cryptographic core"

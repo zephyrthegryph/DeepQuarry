@@ -118,6 +118,19 @@
 
 /mob/living/var/ventcrawl_layer = 3
 
+/mob/living/proc/ventcrawl_prep_ended()
+	prepping_to_ventcrawl = FALSE
+
+/mob/living/proc/ventcrawl_in_done(obj/machinery/atmospherics/unary/vent_found)
+	prepping_to_ventcrawl = FALSE
+	if(!can_ventcrawl())
+		return
+
+	visible_message(span_infoplain(span_bold("[src] scrambles into the ventilation ducts!")), span_infoplain("You climb into the ventilation system."))
+
+	forceMove(vent_found)
+	add_ventcrawl(vent_found)
+
 /mob/living/proc/handle_ventcrawl(atom/clicked_on)
 	if(!can_ventcrawl() || prepping_to_ventcrawl)
 		return
@@ -171,18 +184,7 @@
 			// Handle animation delay
 			fade_towards(vent_found, vent_crawl_time)
 			prepping_to_ventcrawl = TRUE
-			if(!do_after(src, vent_crawl_time, target = src))
-				prepping_to_ventcrawl = FALSE
-				return
-			prepping_to_ventcrawl = FALSE
-
-			if(!can_ventcrawl())
-				return
-
-			visible_message(span_infoplain(span_bold("[src] scrambles into the ventilation ducts!")), span_infoplain("You climb into the ventilation system."))
-
-			forceMove(vent_found)
-			add_ventcrawl(vent_found)
+			om_do_after(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), on_fail = PROC_REF(ventcrawl_prep_ended))
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

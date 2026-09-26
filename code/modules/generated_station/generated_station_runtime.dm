@@ -55,12 +55,15 @@
 
 /obj/machinery/generated_station_department_control/proc/interaction_override(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("[user] begins overriding [src]."), span_notice("You begin overriding [src]."))
-	if(!do_after(user, 3 SECONDS, target = src) || QDELETED(src) || get_integrity() <= 0)
-		return TRUE
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))
+	return TRUE
+
+/obj/machinery/generated_station_department_control/proc/override_done(mob/user)
+	if(get_integrity() <= 0)
+		return
 	captured = TRUE
 	captured_by = user.ckey || user.name
 	visible_message(span_notice("[src] accepts the new control authority."))
-	return TRUE
 
 /obj/machinery/generated_station_department_control/Destroy()
 	captured_by = null

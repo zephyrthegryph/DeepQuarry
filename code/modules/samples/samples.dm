@@ -113,6 +113,16 @@
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
 
+/obj/item/research_sample/proc/crush_done(mob/living/carbon/human/H)
+	H.visible_message(span_notice("[H] crushes \the [src], stabilizing its anomalous properties and rendering it into a pile of assorted minerals."))
+	var/i = rand(min_ore,max_ore)
+	while(i>0)
+		var/ore = pick(resource_list)
+		new ore(H.loc)
+		i--
+	H.drop_from_inventory(src,get_turf(H))
+	qdel(src)
+
 /obj/item/research_sample/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -165,15 +175,9 @@
 			H.drop_from_inventory(src, get_turf(H))
 			return
 
-		else if(do_after(user, 3 SECONDS, target = src))	//short delay, so you can abort/cancel if you misclick
-			H.visible_message(span_notice("[H] crushes \the [src], stabilizing its anomalous properties and rendering it into a pile of assorted minerals."))
-			var/i = rand(min_ore,max_ore)
-			while(i>0)
-				var/ore = pick(resource_list)
-				new ore(H.loc)
-				i--
-			H.drop_from_inventory(src,get_turf(H))
-			qdel(src)
+		else	//short delay, so you can abort/cancel if you misclick
+			om_do_after(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
+			return
 
 	if(isrobot(user))
 		burn_user = FALSE

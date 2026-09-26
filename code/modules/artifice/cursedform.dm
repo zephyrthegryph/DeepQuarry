@@ -19,21 +19,29 @@
 		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_they()] [user.p_are()] trying to burn it!</span>", \
 		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
 
-		if(do_after(user, 2 SECONDS, target = src) && P.lit)
-			user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-			"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(cursed_burn_done), list(P, user, class), on_fail = PROC_REF(cursed_burn_failed), fail_args = list(P, user))
 
-			if(user.get_inactive_hand() == src)
-				user.drop_from_inventory(src)
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(obj/item/flame/P, mob/user)
+	to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+	cursed_sear(user)
 
-			new /obj/effect/decal/cleanable/ash(src.loc)
-			qdel(src)
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(obj/item/flame/P, mob/user, class)
+	if(!P.lit)
+		cursed_burn_failed(P, user)
+		return
+	user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
+	"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
 
-		else
-			to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+	if(user.get_inactive_hand() == src)
+		user.drop_from_inventory(src)
 
-		if(isliving(user))
-			var/mob/living/L = user
-			L.visible_message(span_danger("[L] convulses, the very letters of \the [src] searing themselves into their eyes!"), \
-				span_critical("You convulse, the very letters of \the [src] searing themselves into your eyes!"))
-			L.add_modifier(/datum/modifier/grievous_wounds, 10 MINUTES)
+	cursed_sear(user)
+	new /obj/effect/decal/cleanable/ash(src.loc)
+	qdel(src)
+
+/obj/item/paper/carbon/cursedform/proc/cursed_sear(mob/user)
+	if(isliving(user))
+		var/mob/living/L = user
+		L.visible_message(span_danger("[L] convulses, the very letters of \the [src] searing themselves into their eyes!"), \
+			span_critical("You convulse, the very letters of \the [src] searing themselves into your eyes!"))
+		L.add_modifier(/datum/modifier/grievous_wounds, 10 MINUTES)

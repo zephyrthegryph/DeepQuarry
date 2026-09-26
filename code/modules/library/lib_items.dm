@@ -310,13 +310,16 @@ Book Cart End
 	if(carved)
 		return FALSE
 	to_chat(user, span_notice("You begin to carve out [title]."))
-	if(!do_after(user, 3 SECONDS, target = src))
-		return FALSE
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(carve_done), list(user))
+	return TRUE
+
+/obj/item/book/proc/carve_done(mob/user)
+	if(carved)
+		return
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
 	playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
 	new /obj/item/shreddedp(get_turf(src))
 	carved = TRUE
-	return TRUE
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)

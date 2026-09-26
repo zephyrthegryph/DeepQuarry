@@ -20,44 +20,51 @@
 		if(BUCKLED(target))
 			var/atom/movable/_tmp_buck_41 = BUCKLED(target)
 			_tmp_buck_41.unbuckle_mob( target, TRUE)
-		spawn(0)
-			var/mobloc = get_turf(target.loc)
-			var/obj/effect/dummy/spell_jaunt/holder = new /obj/effect/dummy/spell_jaunt( mobloc )
-			var/atom/movable/overlay/animation = new /atom/movable/overlay( mobloc )
-			animation.name = "water"
-			animation.density = FALSE
-			animation.anchored = TRUE
-			animation.icon = 'icons/mob/mob.dmi'
-			animation.plane = MOB_PLANE
-			animation.layer = ABOVE_MOB_LAYER
-			animation.master = holder
-			target.extinguish_mob()
-			if(BUCKLED(target))
-				var/atom/movable/_tmp_buck_42 = BUCKLED(target)
-				_tmp_buck_42.unbuckle_mob( target, TRUE)
-			jaunt_disappear(animation, target)
-			target.forceMove(holder)
-			target.transforming=0 //mob is safely inside holder now, no need for protection.
-			jaunt_steam(mobloc)
-			sleep(duration)
-			mobloc = holder.last_valid_turf
-			animation.loc = mobloc
-			jaunt_steam(mobloc)
-			target.canmove = 0
-			holder.reappearing = 1
-			sleep(20)
-			jaunt_reappear(animation, target)
-			sleep(5)
-			if(!target.forceMove(mobloc))
-				for(var/direction in list(1,2,4,8,5,6,9,10))
-					var/turf/T = get_step(mobloc, direction)
-					if(T)
-						if(target.forceMove(T))
-							break
-			target.canmove = 1
-			target.reset_perspective() // Fixes a blackscreen
-			qdel(animation)
-			qdel(holder)
+		var/mobloc = get_turf(target.loc)
+		var/obj/effect/dummy/spell_jaunt/holder = new /obj/effect/dummy/spell_jaunt( mobloc )
+		var/atom/movable/overlay/animation = new /atom/movable/overlay( mobloc )
+		animation.name = "water"
+		animation.density = FALSE
+		animation.anchored = TRUE
+		animation.icon = 'icons/mob/mob.dmi'
+		animation.plane = MOB_PLANE
+		animation.layer = ABOVE_MOB_LAYER
+		animation.master = holder
+		target.extinguish_mob()
+		if(BUCKLED(target))
+			var/atom/movable/_tmp_buck_42 = BUCKLED(target)
+			_tmp_buck_42.unbuckle_mob( target, TRUE)
+		jaunt_disappear(animation, target)
+		target.forceMove(holder)
+		target.transforming=0 //mob is safely inside holder now, no need for protection.
+		jaunt_steam(mobloc)
+		om_after(src, duration, PROC_REF(jaunt_resurface), target, holder, animation)
+
+/// The jaunt ends: steam at the holder's last valid turf, then the reappearance (2 s), then landing (0.5 s).
+/datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	var/mobloc = holder.last_valid_turf
+	animation.loc = mobloc
+	jaunt_steam(mobloc)
+	target.canmove = 0
+	holder.reappearing = 1
+	om_after(src, 2 SECONDS, PROC_REF(jaunt_reappear_step), target, holder, animation)
+
+/datum/spell/targeted/ethereal_jaunt/proc/jaunt_reappear_step(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	jaunt_reappear(animation, target)
+	om_after(src, 0.5 SECONDS, PROC_REF(jaunt_land), target, holder, animation)
+
+/datum/spell/targeted/ethereal_jaunt/proc/jaunt_land(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	var/mobloc = holder.last_valid_turf
+	if(!target.forceMove(mobloc))
+		for(var/direction in list(1,2,4,8,5,6,9,10))
+			var/turf/T = get_step(mobloc, direction)
+			if(T)
+				if(target.forceMove(T))
+					break
+	target.canmove = 1
+	target.reset_perspective() // Fixes a blackscreen
+	qdel(animation)
+	qdel(holder)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
 	animation.icon_state = "liquify"

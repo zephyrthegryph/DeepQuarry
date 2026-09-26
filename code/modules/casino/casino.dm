@@ -82,21 +82,19 @@
 			color="red"
 	if(result == 37)
 		result = "00"
-	spawn(5 SECONDS)
-		// visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
-		busy = 0
-		icon_state = initial(icon_state)
+	om_after(src, 5 SECONDS, PROC_REF(spin_result), result, color)
 
-		if(color=="gold") // Happy celebrations!
-			visible_message(span_notice("The roulette stops spinning, the ball lands on the golden zero! Fortune favors all bets!"))
-			confetti_spread = new /datum/effect/effect/system/confetti_spread()
-			confetti_spread.attach(src) //If somehow people start dragging roulette
-			spawn(0)
-				for(var/i = 1 to confetti_strength)
-					confetti_spread.start()
-					sleep(10)
-		else
-			visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
+/obj/structure/casino_table/roulette_table/proc/spin_result(result, color)
+	busy = 0
+	icon_state = initial(icon_state)
+
+	if(color=="gold") // Happy celebrations!
+		visible_message(span_notice("The roulette stops spinning, the ball lands on the golden zero! Fortune favors all bets!"))
+		confetti_spread = new /datum/effect/effect/system/confetti_spread()
+		confetti_spread.attach(src) //If somehow people start dragging roulette
+		confetti_repeat(confetti_spread, confetti_strength)
+	else
+		visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
 
 /obj/structure/casino_table/roulette_table/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/roulette_ball))
@@ -533,6 +531,16 @@
 	lottery_tickets += "Number.[lottery_entries] [user.name]"
 	lottery_tickets_ckeys += user.client.ckey
 
+/obj/machinery/wheel_of_fortune/proc/wheel_stops(outcome)
+	visible_message(span_notice("The wheel of fortune stops spinning, [outcome]!"))
+	src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
+	src.confetti_spread.attach(src) //If somehow people start dragging slot machine
+	confetti_repeat(confetti_spread, confetti_strength)
+
+	flick("[icon_state]-winning",src)
+	busy = 0
+	icon_state = "wheel_of_fortune"
+
 /obj/machinery/wheel_of_fortune/proc/spin_the_wheel(mode)
 	var/result = 0
 
@@ -540,19 +548,7 @@
 		busy = 1
 		icon_state = "wheel_of_fortune_spinning"
 		result = rand(1,interval)
-
-		spawn(5 SECONDS)
-			visible_message(span_notice("The wheel of fortune stops spinning, the number is [result]!"))
-			src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
-			src.confetti_spread.attach(src) //If somehow people start dragging slot machine
-			spawn(0)
-				for(var/i = 1 to confetti_strength)
-					src.confetti_spread.start()
-					sleep(10)
-
-			flick("[icon_state]-winning",src)
-			busy = 0
-			icon_state = "wheel_of_fortune"
+		om_after(src, 5 SECONDS, PROC_REF(wheel_stops), "the number is [result]")
 
 	if(mode == "lottery")
 		if(lottery_entries == 0)
@@ -562,19 +558,7 @@
 		busy = 1
 		icon_state = "wheel_of_fortune_spinning"
 		result = pick(lottery_tickets)
-
-		spawn(5 SECONDS)
-			visible_message(span_notice("The wheel of fortune stops spinning, and the winner is [result]!"))
-			src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
-			src.confetti_spread.attach(src) //If somehow people start dragging slot machine
-			spawn(0)
-				for(var/i = 1 to confetti_strength)
-					src.confetti_spread.start()
-					sleep(10)
-
-			flick("[icon_state]-winning",src)
-			busy = 0
-			icon_state = "wheel_of_fortune"
+		om_after(src, 5 SECONDS, PROC_REF(wheel_stops), "and the winner is [result]")
 
 /datum/interaction/machine_verb/wheel_of_fortune_setinterval
 	id = "wheel_of_fortune_setinterval"
@@ -946,3 +930,9 @@
 			return
 		casinosentientprize_price = new_price
 		to_chat(user,span_notice("You set the price to [casinosentientprize_price]"))
+
+/// Confetti `times` times, a second apart (was a sleeping loop).
+/obj/proc/confetti_repeat(datum/effect/effect/system/confetti_spread/C, times)
+	C?.start()
+	if(times > 1)
+		om_after(src, 1 SECOND, PROC_REF(confetti_repeat), C, times - 1)

@@ -64,8 +64,10 @@
 		// forever. Yield through one MC interval, then wait until the controller
 		// has actually advanced so generation resumes in its idle window.
 		var/mc_iteration = Master?.iteration
+		// S8 allowlist: generator worker yield (budgeted background job, not gameplay).
 		sleep(world.tick_lag)
 		while(Master && Master.iteration == mc_iteration)
+			// S8 allowlist: generator worker yield (budgeted background job, not gameplay).
 			sleep(world.tick_lag * 0.1)
 		rustg_time_reset(timer_id)
 		last_checkpoint_microseconds = 0

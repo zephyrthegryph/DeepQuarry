@@ -274,7 +274,7 @@
 ///////////////////////////////
 
 //Overall 'prepare' proc (marks as ready)
-/datum/rogue/zonemaster/proc/prepare_zone(delay = 0)
+/datum/rogue/zonemaster/proc/prepare_zone()
 	GLOB.rm_controller.unmark_clean(src)
 	GLOB.rm_controller.dbg("ZM(p): Preparing zone with difficulty level [GLOB.rm_controller.diffstep].")
 
@@ -287,8 +287,6 @@
 		var/datum/rogue/asteroid/A = generate_asteroid()
 		GLOB.rm_controller.dbg("ZM(p): Placing asteroid.")
 		place_asteroid(A,SP)
-		if(delay)
-			sleep(delay)
 
 	for(var/obj/rogue_mobspawner/SP in mobspawns)
 		GLOB.rm_controller.dbg("ZM(p): Spawning mob at [SP.x],[SP.y],[SP.z].")
@@ -309,8 +307,6 @@
 			var/mob/living/newmob = new mobchoice(get_turf(SP))
 			newmob.faction = FACTION_ASTEROID_BELT
 			LAZYADD(spawned_mobs, newmob)
-			if(delay)
-				sleep(delay)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
 	log_world("RM(stats): PREP [myarea] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
@@ -388,7 +384,13 @@
 	LAZYCLEARLIST(rockspawns)
 	LAZYCLEARLIST(mobspawns)
 
-	var/ignored = list(
+	clean_pass(delay, 1)
+	return myarea
+
+/// One cleaning pass: turfs to space at once, then the objects one per `delay` (om_stagger).
+/// The second pass catches what the first uncovered ("a deletion so nice that I give it twice").
+/datum/rogue/zonemaster/proc/clean_pass(delay, pass)
+	var/static/list/ignored = list(
 	/obj/asteroid_spawner,
 	/obj/rogue_mobspawner,
 	/obj/effect/shuttle_landmark,
@@ -397,6 +399,7 @@
 	/obj/effect/step_trigger/teleporter/roguemine_loop/east,
 	/obj/effect/step_trigger/teleporter/roguemine_loop/west)
 
+	var/list/doomed = list()
 	for(var/atom/I in myarea.contents)
 		if(I.type == /turf/space)
 			I.cut_overlays()
@@ -409,25 +412,16 @@
 			continue
 		else if(I.type in ignored)
 			continue
-		qdel(I)
-		sleep(delay)
+		doomed += I
+	om_stagger(src, doomed, delay, PROC_REF(clean_atom), 1, null, pass == 1 ? PROC_REF(clean_second_pass) : PROC_REF(clean_done))
 
-	//A deletion so nice that I give it twice
-	for(var/atom/I in myarea.contents)
-		if(I.type == /turf/space)
-			I.cut_overlays()
-			continue
-		if(isturf(I))
-			var/turf/T = I
-			T.ChangeTurf(/turf/space)
-			continue
-		else if(!I.simulated)
-			continue
-		else if(I.type in ignored)
-			continue
-		qdel(I)
-		sleep(delay)
+/datum/rogue/zonemaster/proc/clean_atom(atom/I)
+	qdel(I)
 
+/datum/rogue/zonemaster/proc/clean_second_pass()
+	clean_pass(1, 2)
+
+/datum/rogue/zonemaster/proc/clean_done()
 	//Clean up vars
 	scored = 0
 	original_mobs = 0

@@ -82,7 +82,6 @@
 
 /obj/structure/candybowl/attack_hand(mob/user)
 
-	var/thegoods
 
 	if(!has_candy)
 		to_chat(user, span_warning("There is no candy! Someone took too many..."))
@@ -93,12 +92,16 @@
 		return
 
 	searching = TRUE
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), on_fail = PROC_REF(search_ended))
 
-	if(!do_after(user, 5 SECONDS, src))
-		searching = FALSE
-		return
-
+/obj/structure/candybowl/proc/search_ended()
 	searching = FALSE
+
+/obj/structure/candybowl/proc/search_done(mob/user)
+	var/thegoods
+	searching = FALSE
+	if(!has_candy)
+		return
 
 	if(LAZYACCESS(treated, user.ckey))
 		var/choice = tgui_alert(user, "You already took one! Take more?", "Take another...", list("Reach in...", "Leave it!"))
@@ -220,8 +223,9 @@
 	costumes = typesof(/obj/item/storage/box/halloween/)
 
 /obj/structure/boxpile/attack_hand(mob/living/user)
-	if(!do_after(user, 5 SECONDS, src))
-		return
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user))
+
+/obj/structure/boxpile/proc/rummage_done(mob/living/user)
 	if(!user.ckey)
 		return
 	if(LAZYACCESS(ckeys_that_took, user.ckey))

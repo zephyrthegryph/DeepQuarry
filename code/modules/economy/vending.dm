@@ -658,6 +658,10 @@ GLOBAL_LIST_EMPTY(vending_products)
 	flick("[icon_state]-vend",src)
 	addtimer(CALLBACK(src, PROC_REF(delayed_vend), R, user), vend_delay)
 
+/obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
+	if(R.get_product(get_turf(src)))
+		visible_message(span_infoplain(span_bold("\The [src]") + " clunks as it vends an additional item."))
+
 /obj/machinery/vending/proc/delayed_vend(datum/stored_item/vending_product/R, mob/user)
 	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10))
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
@@ -670,9 +674,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(has_logs)
 		do_logging(R, user, 1)
 	if(prob(1))
-		sleep(3)
-		if(R.get_product(get_turf(src)))
-			visible_message(span_infoplain(span_bold("\The [src]") + " clunks as it vends an additional item."))
+		om_after(src, 0.3 SECONDS, PROC_REF(bonus_vend), R)
 	playsound(src, "sound/[vending_sound]", 100, 1, 1)
 
 	GLOB.items_sold_shift_roundstat++

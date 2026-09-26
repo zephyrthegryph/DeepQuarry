@@ -612,29 +612,31 @@
 		held.loc = src
 		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		sleep(rand(200,400))
-		src.visible_message("[src] whirs as it prints and binds a new book.")
-		var/obj/item/book/b = new(src.loc)
-		var/obj/item/paper/source_paper = held
-		b.dat = source_paper.info
-		b.name = "Print Job #" + "[rand(100, 999)]"
-		b.icon_state = "book[rand(1,7)]"
-		qdel(held)
+		om_after(src, rand(200,400), PROC_REF(bind_paper), held)
 	else
 		user.drop_item()
 		held.loc = src
 		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		sleep(rand(300,500))
-		src.visible_message("[src] whirs as it prints and binds a new book.")
-		var/obj/item/book/bundle/b = new(src.loc)
-		var/obj/item/paper_bundle/source_bundle = held
-		b.pages = source_bundle.pages
-		for(var/obj/item/paper/P in held.contents)
-			P.forceMove(b)
-		for(var/obj/item/photo/P in held.contents)
-			P.forceMove(b)
-		b.name = "Print Job #" + "[rand(100, 999)]"
-		b.icon_state = "book[rand(1,7)]"
-		qdel(held)
+		om_after(src, rand(300,500), PROC_REF(bind_bundle), held)
 	return TRUE
+
+/obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)
+	src.visible_message("[src] whirs as it prints and binds a new book.")
+	var/obj/item/book/b = new(src.loc)
+	b.dat = source_paper.info
+	b.name = "Print Job #" + "[rand(100, 999)]"
+	b.icon_state = "book[rand(1,7)]"
+	qdel(source_paper)
+
+/obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
+	src.visible_message("[src] whirs as it prints and binds a new book.")
+	var/obj/item/book/bundle/b = new(src.loc)
+	b.pages = source_bundle.pages
+	for(var/obj/item/paper/P in source_bundle.contents)
+		P.forceMove(b)
+	for(var/obj/item/photo/P in source_bundle.contents)
+		P.forceMove(b)
+	b.name = "Print Job #" + "[rand(100, 999)]"
+	b.icon_state = "book[rand(1,7)]"
+	qdel(source_bundle)

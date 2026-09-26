@@ -41,11 +41,15 @@
 		i++
 
 /datum/event/spider_migration/end()
-	spawn(0)
-		for(var/mob/living/simple_mob/SM in spawned_spider)
-			if(!SM.stat)
-				var/turf/T = get_turf(SM)
-				if(istype(T, /turf/space))
-					if(prob(75))
-						qdel(SM)
-			sleep(1)
+	var/list/spiders = list()
+	for(var/mob/living/simple_mob/SM in spawned_spider)
+		spiders += SM
+	om_stagger(null, spiders, 0.1 SECONDS, GLOBAL_PROC_REF(spider_migration_cull))
+
+/// Stray spiders left in space when the migration ends mostly go.
+/proc/spider_migration_cull(datum/owner, mob/living/simple_mob/SM)
+	if(!SM.stat)
+		var/turf/T = get_turf(SM)
+		if(istype(T, /turf/space))
+			if(prob(75))
+				qdel(SM)

@@ -105,12 +105,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 			to_chat(user, span_warning("You don't have enough carpet!"))
 
 	if(!material && can_plate && istype(W, /obj/item/stack/material))
-		material = common_material_add(W, user, "plat")
-		if(material)
-			update_connections(1)
-			update_icon()
-			update_desc()
-			update_material()
+		common_material_add(W, user, "plat", PROC_REF(plating_done))
 		return 1
 
 	return ..()
@@ -207,11 +202,24 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		to_chat(user, span_warning("Put \the [src] back in place before reinforcing it!"))
 		return
 
-	reinforced = common_material_add(S, user, "reinforc")
+	common_material_add(S, user, "reinforc", PROC_REF(reinforcing_done))
+
+/obj/structure/table/proc/plating_done(datum/material/M)
+	if(material)
+		return
+	material = M
+	update_connections(1)
+	update_icon()
+	update_desc()
+	update_material()
+
+/obj/structure/table/proc/reinforcing_done(datum/material/M)
 	if(reinforced)
-		update_desc()
-		update_icon()
-		update_material()
+		return
+	reinforced = M
+	update_desc()
+	update_icon()
+	update_material()
 
 /obj/structure/table/proc/update_desc()
 	if(material)
@@ -226,21 +234,29 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		desc = initial(desc)
 
 // Returns the material to set the table to.
-/obj/structure/table/proc/common_material_add(obj/item/stack/material/S, mob/user, verb) // Verb is actually verb without 'e' or 'ing', which is added. Works for 'plate'/'plating' and 'reinforce'/'reinforcing'.
+/// Plates or reinforces with `S` (a timed action); `done_proc` gets the material on completion.
+/// Verb is actually verb without 'e' or 'ing', which is added. Works for 'plate'/'plating' and 'reinforce'/'reinforcing'.
+/obj/structure/table/proc/common_material_add(obj/item/stack/material/S, mob/user, verb, done_proc)
 	var/datum/material/M = S.get_material()
 	if(!istype(M))
 		to_chat(user, span_warning("You cannot [verb]e \the [src] with \the [S]."))
-		return null
+		return
 
-	if(manipulating) return M
+	if(manipulating)
+		return
 	manipulating = 1
 	to_chat(user, span_notice("You begin [verb]ing \the [src] with [M.display_name]."))
-	if(!do_after(user, 2 SECONDS, target = src) || !S.use(1))
-		manipulating = 0
-		return null
-	user.visible_message(span_notice("\The [user] [verb]es \the [src] with [M.display_name]."), span_notice("You finish [verb]ing \the [src]."))
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(material_add_done), list(S, user, verb, done_proc, M), on_fail = PROC_REF(material_add_ended))
+
+/obj/structure/table/proc/material_add_ended()
 	manipulating = 0
-	return M
+
+/obj/structure/table/proc/material_add_done(obj/item/stack/material/S, mob/user, verb, done_proc, datum/material/M)
+	manipulating = 0
+	if(!S.use(1))
+		return
+	user.visible_message(span_notice("\The [user] [verb]es \the [src] with [M.display_name]."), span_notice("You finish [verb]ing \the [src]."))
+	call(src, done_proc)(M)
 
 // Returns the material to set the table to.
 /obj/structure/table/proc/common_material_remove(mob/user, datum/material/M, delay, what, type_holding, obj/item/tool)

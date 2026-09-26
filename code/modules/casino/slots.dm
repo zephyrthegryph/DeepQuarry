@@ -150,75 +150,76 @@
 		if(8 to 8) symbol3 = "diamond"
 		if(9 to 9) symbol3 = "platinum coin"
 
+	om_after(src, 5 SECONDS, PROC_REF(roll_result), user)
+
+/obj/machinery/slot_machine/proc/roll_result(mob/user)
 	var/output //Output variable to send out in chat after the large if statement.
 	var/winnings = 0 //How much money will be given if any.
 	// var/platinumwin = 0 // If you win the platinum chip or not - Ringa ding ding babe! No chips until further notice!
 	var/celebrate = 0
 	var/delaytime = 5 SECONDS
 
-	spawn(delaytime)
-		to_chat(user,span_notice("The slot machine flashes with bright colours as the slots lights up with a [symbol1], a [symbol2] and a [symbol3]!"))
+	to_chat(user,span_notice("The slot machine flashes with bright colours as the slots lights up with a [symbol1], a [symbol2] and a [symbol3]!"))
 
-		if (symbol1 == "cherry" && symbol2 == "cherry" && symbol3 == "cherry")
-			output = span_notice("Three cherries! The slot machine deposits chips worth 25 credits!")
-			winnings = 25
+	if (symbol1 == "cherry" && symbol2 == "cherry" && symbol3 == "cherry")
+		output = span_notice("Three cherries! The slot machine deposits chips worth 25 credits!")
+		winnings = 25
 
-		if ((symbol1 != "cherry" && symbol2 == "cherry" && symbol3 == "cherry") || (symbol1 == "cherry" && symbol2 != "cherry" && symbol3 == "cherry") ||(symbol1 == "cherry" && symbol2 == "cherry" && symbol3 != "cherry"))
-			output = span_notice("Two cherries! The slot machine deposits a 10 credit chip!")
-			winnings = 10
+	if ((symbol1 != "cherry" && symbol2 == "cherry" && symbol3 == "cherry") || (symbol1 == "cherry" && symbol2 != "cherry" && symbol3 == "cherry") ||(symbol1 == "cherry" && symbol2 == "cherry" && symbol3 != "cherry"))
+		output = span_notice("Two cherries! The slot machine deposits a 10 credit chip!")
+		winnings = 10
 
-		if (symbol1 == "lemon" && symbol2 == "lemon" && symbol3 == "lemon")
-			output = span_notice("Three lemons! The slot machine deposits a 50 credit chip!")
-			winnings = 50
+	if (symbol1 == "lemon" && symbol2 == "lemon" && symbol3 == "lemon")
+		output = span_notice("Three lemons! The slot machine deposits a 50 credit chip!")
+		winnings = 50
 
-		if (symbol1 == "bell" && symbol2 == "bell" && symbol3 == "bell")
-			output = span_notice("Three bells! The slot machine deposits chips a 100 credit chip!")
-			winnings = 100
+	if (symbol1 == "bell" && symbol2 == "bell" && symbol3 == "bell")
+		output = span_notice("Three bells! The slot machine deposits chips a 100 credit chip!")
+		winnings = 100
 
-		if (symbol1 == "four leaf clover" && symbol2 == "four leaf clover" && symbol3 == "four leaf clover")
-			output = span_notice("Three four leaf clovers! The slot machine deposits a 200 credit chip!")
-			winnings = 200
+	if (symbol1 == "four leaf clover" && symbol2 == "four leaf clover" && symbol3 == "four leaf clover")
+		output = span_notice("Three four leaf clovers! The slot machine deposits a 200 credit chip!")
+		winnings = 200
 
-		if (symbol1 == "seven" && symbol2 == "seven" && symbol3 == "seven")
-			output = span_notice("Three sevens! The slot machine deposits a 300 credit chip!")
-			winnings = 300
-			celebrate = 1
+	if (symbol1 == "seven" && symbol2 == "seven" && symbol3 == "seven")
+		output = span_notice("Three sevens! The slot machine deposits a 300 credit chip!")
+		winnings = 300
+		celebrate = 1
 
-		if (symbol1 == "diamond" && symbol2 == "diamond" && symbol3 == "diamond")
-			output = span_notice("Three diamonds! The slot machine deposits a 500 credit chip!")
-			winnings = 500
-			celebrate = 1
+	if (symbol1 == "diamond" && symbol2 == "diamond" && symbol3 == "diamond")
+		output = span_notice("Three diamonds! The slot machine deposits a 500 credit chip!")
+		winnings = 500
+		celebrate = 1
 
-		if (symbol1 == "platinum coin" && symbol2 == "platinum coin" && symbol3 == "platinum coin")
-			output = span_notice("Three platinum coins! The slot machine deposits a 1000 credit chip!")
-			winnings = 1000
-			celebrate = 1
+	if (symbol1 == "platinum coin" && symbol2 == "platinum coin" && symbol3 == "platinum coin")
+		output = span_notice("Three platinum coins! The slot machine deposits a 1000 credit chip!")
+		winnings = 1000
+		celebrate = 1
 
-		icon_state = initial(icon_state) // Set it back to the original iconstate.
+	icon_state = initial(icon_state) // Set it back to the original iconstate.
 
-		if(!output) // Is there anything to output? If not, consider it a loss.
-			to_chat(user,"Better luck next time!")
-			busy = FALSE
-			return
-
-		to_chat(user,output) //Output message
-
-		if(winnings) //Did the person win?
-			icon_state = "slotmachine_winning"
-			playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
-			spawn(delaytime)
-				spawn_casinochips(winnings, src.loc)
-				icon_state = "slotmachine"
-
-		if(celebrate) // Happy celebrations!
-			src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
-			src.confetti_spread.attach(src) //If somehow people start dragging slot machine
-			spawn(0)
-				for(var/i = 1 to confetti_strength)
-					src.confetti_spread.start()
-					sleep(10)
-
+	if(!output) // Is there anything to output? If not, consider it a loss.
+		to_chat(user,"Better luck next time!")
 		busy = FALSE
+		return
+
+	to_chat(user,output) //Output message
+
+	if(winnings) //Did the person win?
+		icon_state = "slotmachine_winning"
+		playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+		om_after(src, delaytime, PROC_REF(pay_out), winnings)
+
+	if(celebrate) // Happy celebrations!
+		src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
+		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
+		confetti_repeat(confetti_spread, confetti_strength)
+
+	busy = FALSE
+
+/obj/machinery/slot_machine/proc/pay_out(winnings)
+	spawn_casinochips(winnings, src.loc)
+	icon_state = "slotmachine"
 
 /*
  * Station Slot Machine (takes space cash instead of chips)
@@ -368,76 +369,77 @@
 		if(8 to 8) symbol3 = "diamond"
 		if(9 to 9) symbol3 = "platinum coin"
 
+	om_after(src, 5 SECONDS, PROC_REF(roll_result), user)
+
+/obj/machinery/station_slot_machine/proc/roll_result(mob/user)
 	var/output //Output variable to send out in chat after the large if statement.
 	var/winnings = 0 //How much money will be given if any.
 	var/platinumwin = 0 // If you win the platinum chip or not
 	var/celebrate = 0
 	var/delaytime = 5 SECONDS
 
-	spawn(delaytime)
-		to_chat(user,span_notice("The slot machine flashes with bright colours as the slots lights up with a [symbol1], a [symbol2] and a [symbol3]!"))
+	to_chat(user,span_notice("The slot machine flashes with bright colours as the slots lights up with a [symbol1], a [symbol2] and a [symbol3]!"))
 
-		if (symbol1 == "cherry" && symbol2 == "cherry" && symbol3 == "cherry")
-			output = span_notice("Three cherries! The slot machine deposits 25 Thalers!")
-			winnings = 25
+	if (symbol1 == "cherry" && symbol2 == "cherry" && symbol3 == "cherry")
+		output = span_notice("Three cherries! The slot machine deposits 25 Thalers!")
+		winnings = 25
 
-		if ((symbol1 != "cherry" && symbol2 == "cherry" && symbol3 == "cherry") || (symbol1 == "cherry" && symbol2 != "cherry" && symbol3 == "cherry") ||(symbol1 == "cherry" && symbol2 == "cherry" && symbol3 != "cherry"))
-			output = span_notice("Two cherries! The slot machine deposits 10 Thalers!")
-			winnings = 10
+	if ((symbol1 != "cherry" && symbol2 == "cherry" && symbol3 == "cherry") || (symbol1 == "cherry" && symbol2 != "cherry" && symbol3 == "cherry") ||(symbol1 == "cherry" && symbol2 == "cherry" && symbol3 != "cherry"))
+		output = span_notice("Two cherries! The slot machine deposits 10 Thalers!")
+		winnings = 10
 
-		if (symbol1 == "lemon" && symbol2 == "lemon" && symbol3 == "lemon")
-			output = span_notice("Three lemons! The slot machine deposits 50 Thalers!")
-			winnings = 50
+	if (symbol1 == "lemon" && symbol2 == "lemon" && symbol3 == "lemon")
+		output = span_notice("Three lemons! The slot machine deposits 50 Thalers!")
+		winnings = 50
 
-		if (symbol1 == "bell" && symbol2 == "bell" && symbol3 == "bell")
-			output = span_notice("Three bells! The slot machine deposits 100 Thalers!")
-			winnings = 100
+	if (symbol1 == "bell" && symbol2 == "bell" && symbol3 == "bell")
+		output = span_notice("Three bells! The slot machine deposits 100 Thalers!")
+		winnings = 100
 
-		if (symbol1 == "four leaf clover" && symbol2 == "four leaf clover" && symbol3 == "four leaf clover")
-			output = span_notice("Three four leaf clovers! The slot machine deposits 200 Thalers!")
-			winnings = 200
+	if (symbol1 == "four leaf clover" && symbol2 == "four leaf clover" && symbol3 == "four leaf clover")
+		output = span_notice("Three four leaf clovers! The slot machine deposits 200 Thalers!")
+		winnings = 200
 
-		if (symbol1 == "seven" && symbol2 == "seven" && symbol3 == "seven")
-			output = span_notice("Three sevens! The slot machine deposits 500 Thalers!")
-			winnings = 500
-			celebrate = 1
+	if (symbol1 == "seven" && symbol2 == "seven" && symbol3 == "seven")
+		output = span_notice("Three sevens! The slot machine deposits 500 Thalers!")
+		winnings = 500
+		celebrate = 1
 
-		if (symbol1 == "diamond" && symbol2 == "diamond" && symbol3 == "diamond")
-			output = span_notice("Three diamonds! The slot machine deposits 1000 Thalers!")
-			winnings = 1000
-			celebrate = 1
+	if (symbol1 == "diamond" && symbol2 == "diamond" && symbol3 == "diamond")
+		output = span_notice("Three diamonds! The slot machine deposits 1000 Thalers!")
+		winnings = 1000
+		celebrate = 1
 
-		if (symbol1 == "platinum coin" && symbol2 == "platinum coin" && symbol3 == "platinum coin")
-			output = span_notice("Three platinum coins! The slot machine deposits a platinum chip!")
-			platinumwin = TRUE;
-			celebrate = 1
+	if (symbol1 == "platinum coin" && symbol2 == "platinum coin" && symbol3 == "platinum coin")
+		output = span_notice("Three platinum coins! The slot machine deposits a platinum chip!")
+		platinumwin = TRUE;
+		celebrate = 1
 
-		icon_state = initial(icon_state) // Set it back to the original iconstate.
+	icon_state = initial(icon_state) // Set it back to the original iconstate.
 
-		if(!output) // Is there anything to output? If not, consider it a loss.
-			to_chat(user,"Better luck next time!")
-			busy = FALSE
-			return
-
-		to_chat(user,output) //Output message
-
-		if(platinumwin) // Did they win the platinum chip?
-			new /obj/item/casino_platinum_chip(src.loc)
-			playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
-
-		if(winnings) //Did the person win?
-			icon_state = "ntslotmachine_winning"
-			playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
-			spawn(delaytime)
-				spawn_money(winnings, src.loc)
-				icon_state = "ntslotmachine"
-
-		if(celebrate) // Happy celebrations!
-			src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
-			src.confetti_spread.attach(src) //If somehow people start dragging slot machine
-			spawn(0)
-				for(var/i = 1 to confetti_strength)
-					src.confetti_spread.start()
-					sleep(10)
-
+	if(!output) // Is there anything to output? If not, consider it a loss.
+		to_chat(user,"Better luck next time!")
 		busy = FALSE
+		return
+
+	to_chat(user,output) //Output message
+
+	if(platinumwin) // Did they win the platinum chip?
+		new /obj/item/casino_platinum_chip(src.loc)
+		playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+
+	if(winnings) //Did the person win?
+		icon_state = "ntslotmachine_winning"
+		playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+		om_after(src, delaytime, PROC_REF(pay_out), winnings)
+
+	if(celebrate) // Happy celebrations!
+		src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
+		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
+		confetti_repeat(confetti_spread, confetti_strength)
+
+	busy = FALSE
+
+/obj/machinery/station_slot_machine/proc/pay_out(winnings)
+	spawn_money(winnings, src.loc)
+	icon_state = "ntslotmachine"
