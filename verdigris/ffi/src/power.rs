@@ -144,6 +144,18 @@ fn region_id(raw: u32) -> Result<RegionId<Cables>> {
 /// re-resolves its *current* region fresh next tick
 /// (`power_refresh_network()`), so this returns `null` instead of
 /// surfacing a runtime for the one tick the old id is dangling.
+///
+/// Only [`ArenaError::Stale`] (the slot was freed, maybe reused, since this
+/// id was issued -- exactly a split/merge retiring it) is that legitimate
+/// case. Every other [`ArenaError`] (`OutOfRange`: `region`'s raw bits never
+/// named a region the arena ever allocated; `Full`: not even reachable from
+/// a read) means a bad id reached here -- `region_id()` decoding garbage, or
+/// a caller passing something that was never a `vg_power_region_of()`
+/// result, not a split/merge timing race. Silently returning `null` for
+/// that would mask exactly the bind-order bug this function's callers exist
+/// to avoid, so it's asserted out in debug builds and still logged in
+/// release (never surfaced as a DM runtime -- the caller's "no info this
+/// step" handling is still the right recovery either way).
 #[auxmacros::bind("/proc/vg_power_region_read")]
 fn power_region_read(region: ByondValue) -> Result<ByondValue> {
     let r = region_id(whole(&region, "region")?)?;
@@ -151,7 +163,22 @@ fn power_region_read(region: ByondValue) -> Result<ByondValue> {
         let host = w.network::<Cables>().map_err(|err| eyre!("{err}"))?;
         match host.network().region(r) {
             Ok(reg) => Ok(Some(*reg.payload())),
-            Err(vg_core::network::NetError::Arena(_)) => Ok(None),
+            Err(vg_core::network::NetError::Arena(vg_core::arena::ArenaError::Stale)) => Ok(None),
+            Err(vg_core::network::NetError::Arena(bad)) => {
+                let msg = format!(
+                    "vg_power_region_read: region {r:?} ({bad}, raw handle {region:?}) -- \
+                     not a split/merge race, a bad region id reached here"
+                );
+                debug_assert!(false, "{msg}");
+                // Release: surfaced to DM's own runtime log (best-effort, the
+                // same channel `ffi/src/gas.rs`'s duplicate-reaction-priority
+                // warning uses) instead of silently returning null like the
+                // legitimate `Stale` case above -- this is the one path this
+                // function must not let go unnoticed.
+                let sender = auxcallback::byond_callback_sender();
+                drop(sender.try_send(Box::new(move || Err(eyre!("{msg}")))));
+                Ok(None)
+            }
             Err(err) => Err(eyre!("{err}")),
         }
     })?;
