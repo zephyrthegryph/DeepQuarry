@@ -259,7 +259,7 @@
 
 /datum/om/stage/life/special/animal/space/mouse_army/stealth/perform(mob/living/simple_mob/animal/space/mouse_army/stealth/self, datum/om/frame/life/ctx)
 	if(!dq_get_cloaked(self) && self.can_cloak())
-		INVOKE_ASYNC(self, TYPE_PROC_REF(/atom/movable, cloak))
+		self.start_cloaking()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))
@@ -440,3 +440,20 @@
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator
 	endurance = 150
 */
+
+/// Cloaks over one second: the fade runs as a task (cancelled if the mouse dies or is deleted),
+/// so Life never waits for it.
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/start_cloaking()
+	if(!cloak_begin())
+		return
+	animate(src, alpha = 0, time = 1 SECOND)
+	if(istext(om_task_start(src, /datum/om/task_def/mob_work/cloak, src)))
+		cloak_finish()
+
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/om/task/task)
+	alpha = initial(alpha)
+	cloak_finish()
+
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/om/task/task, reason)
+	alpha = initial(alpha)
+	uncloak()

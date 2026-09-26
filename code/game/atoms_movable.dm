@@ -639,17 +639,22 @@
 
 // Procs to cloak/uncloak
 /atom/movable/proc/cloak()
+	if(!cloak_begin())
+		return FALSE
+	cloak_animation(1 SECOND)
+	cloak_finish()
+	return TRUE
+
+/// Cloaking without waiting: marks the atom cloaked and starts the fade. TRUE when it did work.
+/// cloak_finish() completes it after the animation (cloak() sleeps for it; a task doesn't).
+/atom/movable/proc/cloak_begin()
 	if(dq_get_cloaked(src))
 		return FALSE
 	dq_set_cloaked(src, TRUE)
-	. = TRUE // We did work
-
-	var/static/animation_time = 1 SECOND
 	dq_set_cloaked_selfimage(src, get_cloaked_selfimage())
+	return TRUE
 
-	//Wheeee
-	cloak_animation(animation_time)
-
+/atom/movable/proc/cloak_finish()
 	//Needs to be last so people can actually see the effect before we become invisible
 	if(dq_get_cloaked(src)) // Ensure we are still dq_get_cloaked(src) after the animation delay
 		plane = CLOAKED_PLANE

@@ -199,7 +199,7 @@
 					heartless_mod = 1
 
 			if(prob(15 + (20 * heartless_mod)))
-				INVOKE_ASYNC(self, TYPE_VERB_REF(/mob/living/simple_mob/animal/sif/leech, feed_on_organ))
+				self.feed_on_random_organ()
 	//legacy else-clause emptied (was ai_holder reset).
 	if(self.host && self.host.stat == DEAD && istype(get_turf(self.host), /turf/simulated/floor/water))
 		self.leave_host()
@@ -419,6 +419,17 @@
 
 	else
 		to_chat(src, span_warning("We cannot feed now."))
+
+/// Feeds on an organ of the host without asking (the leech's own Life): never sleeps.
+/mob/living/simple_mob/animal/sif/leech/proc/feed_on_random_organ()
+	if(docile || !host || world.time < last_feeding + feeding_delay)
+		return
+	var/list/organs = list()
+	for(var/obj/item/organ/internal/O in host.internal_organs)
+		if(O.damage < O.max_damage)
+			organs += O
+	if(length(organs))
+		bite_organ(pick(organs))
 
 /mob/living/simple_mob/animal/sif/leech/proc/bite_organ(obj/item/organ/internal/O)
 	last_feeding = world.time

@@ -299,33 +299,16 @@
 
 /datum/om/stage/life/special/animal/tyr/mineral_ants/builder/perform(mob/living/simple_mob/animal/tyr/mineral_ants/builder/self, datum/om/frame/life/ctx)
 	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
-		INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/tyr/mineral_ants/builder, build_tile), self.loc)
+		self.build_tile(self.loc)
 
+/// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
-	if(nutrition < 75)
+	if(nutrition < 75 || !istype(T) || (locate(/obj/effect/ant_structure) in T))
 		return FALSE
-	if(!istype(T))
+	if(istext(om_task_start(src, /datum/om/task_def/mob_work/ant_build, T)))
 		return FALSE
-
-	var/obj/effect/ant_structure/W = locate() in T
-	if(W)
-		return FALSE // Already got webs here.
-
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
-	// Get our AI to stay still.
-	if(ai_brain) ai_brain.busy = TRUE
-	if(!do_after(src, 5 SECONDS, T))
-		if(ai_brain) ai_brain.busy = FALSE
-		to_chat(src, span_warning("You need to stay still to spin a web on \the [T]."))
-		return FALSE
-
-	W = locate() in T
-	if(W)
-		return FALSE // Spamclick protection.
-
-	adjust_nutrition(-30)
-	if(ai_brain) ai_brain.busy = FALSE
-	new build_type(T)
+	ai_brain?.busy = TRUE
 	return TRUE
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/silver //transparent
@@ -387,33 +370,16 @@
 
 /datum/om/stage/life/special/animal/tyr/mineral_ants/queen/perform(mob/living/simple_mob/animal/tyr/mineral_ants/queen/self, datum/om/frame/life/ctx)
 	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
-		INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/tyr/mineral_ants/queen, build_tile), self.loc)
+		self.build_tile(self.loc)
 
+/// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
-	if(nutrition < 30)
+	if(nutrition < 75 || !istype(T) || (locate(/obj/effect/ant_structure) in T))
 		return FALSE
-	if(!istype(T))
+	if(istext(om_task_start(src, /datum/om/task_def/mob_work/ant_build, T)))
 		return FALSE
-
-	var/obj/effect/ant_structure/W = locate() in T
-	if(W)
-		return FALSE // Already got webs here.
-
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
-	// Get our AI to stay still.
-	if(ai_brain) ai_brain.busy = TRUE
-	if(!do_after(src, 5 SECONDS, T))
-		if(ai_brain) ai_brain.busy = FALSE
-		to_chat(src, span_warning("You need to stay still to spin a web on \the [T]."))
-		return FALSE
-
-	W = locate() in T
-	if(W)
-		return FALSE // Spamclick protection.
-
-	adjust_nutrition(-75)
-	if(ai_brain) ai_brain.busy = FALSE
-	new build_type(T)
+	ai_brain?.busy = TRUE
 	return TRUE
 
 /*
@@ -593,3 +559,26 @@ ANT STRUCTURES
 
 /obj/effect/spider/spiderling/antling/created
 	faction = FACTION_TYR
+
+/// What the builder and the queen build (ant_build task).
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_product()
+	return null
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/builder/build_product()
+	return build_type
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/queen/build_product()
+	return build_type
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done(datum/om/task/task)
+	ai_brain?.busy = FALSE
+	var/turf/T = task.target
+	var/product = build_product()
+	if(!product || (locate(/obj/effect/ant_structure) in T))
+		return
+	adjust_nutrition(-30)
+	new product(T)
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/om/task/task, reason)
+	ai_brain?.busy = FALSE
+	to_chat(src, span_warning("You need to stay still to build on \the [task.target]."))

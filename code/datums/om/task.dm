@@ -247,3 +247,35 @@
 	if(params?["tool"])
 		return list(CHECK(/datum/om/check/holding_tool, params["tool"]))
 	return null
+
+/// A mob's timed work on a turf (spinning a web, laying eggs, building): it stays within one tile,
+/// conscious; the claim keeps a second worker off the turf; death or deletion cancels it. The
+/// actor's procs finish or clean up.
+/datum/om/task_def/mob_work
+	abstract_type = /datum/om/task_def/mob_work
+	duration = 5 SECONDS
+	claims = TRUE
+	requires = list(/datum/om/check/conscious, /datum/om/check/in_range, /datum/om/check/target_exists)
+
+/datum/om/task_def/mob_work/spider_web
+	name = "spider_web"
+	complete_proc = /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done
+	cancel_proc = /mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted
+
+/datum/om/task_def/mob_work/spider_eggs
+	name = "spider_eggs"
+	complete_proc = /mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done
+	cancel_proc = /mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted
+
+/datum/om/task_def/mob_work/ant_build
+	name = "ant_build"
+	complete_proc = /mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done
+	cancel_proc = /mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted
+
+/datum/om/task_def/mob_work/cloak
+	name = "cloak"
+	duration = 1 SECOND
+	claims = null
+	requires = list(/datum/om/check/alive)
+	complete_proc = /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done
+	cancel_proc = /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted

@@ -343,9 +343,12 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 /// `_PERFORM` is the call (timed or not). Locals are few on purpose: every local costs on entry.
 #define OM_RUN_STAGE(_i, _w, _bit, _PERFORM) \
 	T = stages[_i]; \
-	if(gated[_i] && (result = gate(E, F, T, _i))) { \
-		if(result > 1) { bits[_w] |= _bit; asleep++; if(result == 2) { LAZYADD(idled, _i); } } \
-		continue; \
+	if(gated[_i]) { \
+		result = gate(E, F, T, _i); \
+		if(result) { \
+			if(result > 1) { bits[_w] |= _bit; asleep++; if(result == 2) { LAZYADD(idled, _i); } } \
+			continue; \
+		} \
 	} \
 	result = _PERFORM; \
 	if(result == STAGE_ABORT || E.gc_destroyed) { stop = TRUE; break; } \
@@ -353,7 +356,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		bits[_w] |= _bit; \
 		asleep++; \
 		LAZYADD(idled, _i); \
-		if((result = T.rewake_delay(E)) > 0) { om_after(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
+		result = T.rewake_delay(E); \
+		if(result > 0) { om_after(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
 	} else if(mode & OM_PIPE_MODE_REACTIVE) { \
 		bits[_w] |= _bit; \
 		asleep++; \

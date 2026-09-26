@@ -151,75 +151,54 @@
 /datum/om/stage/life/special/animal/giant_spider/nurse/perform(mob/living/simple_mob/animal/giant_spider/nurse/self, datum/om/frame/life/ctx)
 	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
 		if(self.fed && self.can_lay_eggs)
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider/nurse, lay_eggs), self.loc)
+			self.lay_eggs(self.loc)
 		else
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider/nurse, web_tile), self.loc)
+			self.web_tile(self.loc)
 
+/// Starts spinning a web on `T`: a 5 s task that holds its claim on the turf and ends when the
+/// spider moves off, stops being conscious, or dies. TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_tile(turf/T)
-	if(!istype(T))
+	if(!istype(T) || (locate(/obj/effect/spider/stickyweb) in T))
 		return FALSE
-
-	var/obj/effect/spider/stickyweb/W = locate() in T
-	if(W)
-		return FALSE // Already got webs here.
-
+	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_web, T)))
+		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance.") )
-	// Get our AI to stay still.
-	if(ai_brain) ai_brain.busy = TRUE
-	if(!do_after(src, 5 SECONDS, T))
-		if(ai_brain) ai_brain.busy = FALSE
-		to_chat(src, span_warning("You need to stay still to spin a web on \the [T]."))
-		return FALSE
-
-	W = locate() in T
-	if(W)
-		if(ai_brain) ai_brain.busy = FALSE
-		return FALSE // Spamclick protection.
-
-	if(ai_brain) ai_brain.busy = FALSE
-	new web_type(T)
+	ai_brain?.busy = TRUE // Get our AI to stay still.
 	return TRUE
 
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/om/task/task)
+	ai_brain?.busy = FALSE
+	var/turf/T = task.target
+	if(!(locate(/obj/effect/spider/stickyweb) in T))
+		new web_type(T)
 
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/om/task/task, reason)
+	ai_brain?.busy = FALSE
+	laying_eggs = FALSE
+	to_chat(src, span_warning("You need to stay still to finish that on \the [task.target]."))
+
+/// Starts laying a cluster of eggs on `T` (a 5 s task, as web_tile()). TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/lay_eggs(turf/T)
-	if(!istype(T))
+	if(!istype(T) || !fed || !can_lay_eggs || laying_eggs)
 		return FALSE
-
-	if(!fed)
-		return FALSE
-
-	if(!can_lay_eggs)
-		return FALSE
-
-	var/obj/effect/spider/eggcluster/E = locate() in T
-	if(E)
+	if(locate(/obj/effect/spider/eggcluster) in T)
 		return FALSE // Already got eggs here.
-
-	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") )
-	// Get our AI to stay still.
-	if(ai_brain) ai_brain.busy = TRUE
-	// Stop players from spamming eggs.
-	laying_eggs = TRUE
-
-	if(!do_after(src, 5 SECONDS, T))
-		if(ai_brain) ai_brain.busy = FALSE
-		laying_eggs = FALSE
-		to_chat(src, span_warning("You need to stay still to lay eggs on \the [T]."))
+	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_eggs, T)))
 		return FALSE
+	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") )
+	ai_brain?.busy = TRUE
+	laying_eggs = TRUE // Stop players from spamming eggs.
+	return TRUE
 
-	E = locate() in T
-	if(E)
-		if(ai_brain) ai_brain.busy = FALSE
-		laying_eggs = FALSE
-		return FALSE // Spamclick protection.
-
-	if(ai_brain) ai_brain.busy = FALSE
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/om/task/task)
+	ai_brain?.busy = FALSE
+	laying_eggs = FALSE
+	var/turf/T = task.target
+	if(locate(/obj/effect/spider/eggcluster) in T)
+		return // Spamclick protection.
 	var/obj/effect/spider/eggcluster/eggs = new egg_type(T)
 	eggs.faction = faction
 	fed--
-	laying_eggs = FALSE
-	return TRUE
-
 
 // Variant that 'blocks' light (by being a negative light source).
 // This is done to make webbed rooms scary and allow for spiders on the other side of webs to see prey.
