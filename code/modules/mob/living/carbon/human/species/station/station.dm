@@ -1244,7 +1244,7 @@
 
 	if(BUCKLED(H))
 		if(!silent)
-			to_chat(H, span_warning("You try to spread your wings to slow your fall, but \the [H.buckled] weighs you down!"))
+			to_chat(H, span_warning("You try to spread your wings to slow your fall, but what you're buckled to weighs you down!"))
 		return ..()
 
 	// Is there enough air to flap against?
