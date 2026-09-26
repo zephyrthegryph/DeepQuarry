@@ -4,7 +4,7 @@
 
 /proc/updateVisibility(atom/A, opacity_check = 1)
 	if(SSticker)
-		for(var/datum/visualnet/VN in GLOB.visual_nets)
+		for(var/datum/visualnet/VN in REGISTRY_MEMBERS(REGISTRY_VISUAL_NETS))
 			VN.updateVisibility(A, opacity_check)
 
 /turf

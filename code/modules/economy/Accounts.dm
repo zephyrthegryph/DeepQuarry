@@ -199,6 +199,8 @@
 	var/time = ""
 	var/source_terminal = ""
 
+REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
+
 /proc/create_account(new_owner_name = "Default user", starting_funds = 0, obj/machinery/account_database/source_db, offmap = FALSE)
 
 	//create a new account
@@ -254,7 +256,7 @@
 
 	//add the account
 	LAZYADD(M.transaction_log, T)
-	GLOB.all_money_accounts.Add(M)
+	registry_join(REGISTRY_MONEY_ACCOUNTS, M)
 
 	return M
 
@@ -275,7 +277,7 @@
 	return account
 
 /proc/charge_to_account(attempt_account_number, source_name, purpose, terminal_id, amount)
-	for(var/datum/money_account/D in GLOB.all_money_accounts)
+	for(var/datum/money_account/D in REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 		if(D.account_number == attempt_account_number && !D.suspended)
 			if(amount > 0)
 				return D.credit(amount, source_name, purpose, terminal_id)
@@ -287,14 +289,14 @@
 
 //this returns the first account datum that matches the supplied accnum/pin combination, it returns null if the combination did not match any account
 /proc/attempt_account_access(attempt_account_number, attempt_pin_number, security_level_passed = 0)
-	for(var/datum/money_account/D in GLOB.all_money_accounts)
+	for(var/datum/money_account/D in REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 		if(D.account_number == attempt_account_number)
 			if( D.security_level <= security_level_passed && (!D.security_level || D.remote_access_pin == attempt_pin_number) )
 				return D
 			break
 
 /proc/get_account(account_number)
-	for(var/datum/money_account/D in GLOB.all_money_accounts)
+	for(var/datum/money_account/D in REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 		if(D.account_number == account_number)
 			return D
 

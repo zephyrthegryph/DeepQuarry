@@ -1017,7 +1017,7 @@
 	// Try the sealed test-room landmarks first (loaded in RunUnitTests). Force-build
 	// adjacency on the seed in case it wasn't wired yet — the room is a runtime-loaded
 	// z, so setup_allturfs never saw it.
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list
+	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -1039,7 +1039,7 @@
 /proc/dq_atmos_test_find_floor_line(count)
 	dq_atmos_test_restore_walls()
 	var/list/seeds = list()
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list
+	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))

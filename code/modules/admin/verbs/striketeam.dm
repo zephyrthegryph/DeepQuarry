@@ -112,7 +112,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 /proc/percentage_dead()
 	var/total = 0
 	var/deadcount = 0
-	for(var/mob/living/carbon/human/H in GLOB.mob_list)
+	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(H.client) // Monkeys and mice don't have a client, amirite?
 			if(H.stat == 2) deadcount++
 			total++
@@ -124,7 +124,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 /proc/percentage_antagonists()
 	var/total = 0
 	var/antagonists = 0
-	for(var/mob/living/carbon/human/H in GLOB.mob_list)
+	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(is_special_character(H) >= 1)
 			antagonists++
 		total++

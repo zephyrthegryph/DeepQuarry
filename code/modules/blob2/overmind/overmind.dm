@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(overminds)
 
 /mob/observer/blob
 	name = "Blob Overmind"
@@ -36,7 +35,6 @@ GLOBAL_LIST_EMPTY(overminds)
 	if(pre_placed) //we already have a core!
 		placed = 1
 
-	GLOB.overminds += src
 	var/new_name = "[initial(name)] ([rand(1, 999)])"
 	name = new_name
 	real_name = new_name
@@ -56,6 +54,8 @@ GLOBAL_LIST_EMPTY(overminds)
 
 	return ..()
 
+REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
+
 /mob/observer/blob/Destroy()
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
@@ -67,7 +67,6 @@ GLOBAL_LIST_EMPTY(overminds)
 			BM.overmind = null
 			BM.update_icons()
 
-	GLOB.overminds -= src
 	return ..()
 
 /mob/observer/blob/get_status_tab_items()

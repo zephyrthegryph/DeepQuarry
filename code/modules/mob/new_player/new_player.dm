@@ -22,7 +22,6 @@
 	var/created_for
 
 /mob/new_player/Destroy()
-	GLOB.new_player_list -= src
 	if(manifest_dialog)
 		QDEL_NULL(manifest_dialog)
 	if(late_choices_dialog)
@@ -53,7 +52,7 @@
 		totalPlayers = 0
 		totalPlayersReady = 0
 		var/datum/job/refJob = null
-		for(var/mob/new_player/player in GLOB.player_list)
+		for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			refJob = player.client?.prefs.get_highest_job()
 			var/obfuscate_key = player.read_preference(/datum/preference/toggle/obfuscate_key)
 			var/obfuscate_job = player.read_preference(/datum/preference/toggle/obfuscate_job)
@@ -219,8 +218,8 @@
 	if(J.mob_type & JOB_SILICON_AI)
 
 		// IsJobAvailable for AI checks that there is an empty core available in this list
-		var/obj/structure/AIcore/deactivated/C = GLOB.empty_playable_ai_cores[1]
-		GLOB.empty_playable_ai_cores -= C
+		var/obj/structure/AIcore/deactivated/C = REGISTRY_MEMBERS(REGISTRY_EMPTY_AI_CORES)[1]
+		registry_leave(REGISTRY_EMPTY_AI_CORES, C)
 
 		character.forceMove(C.loc)
 

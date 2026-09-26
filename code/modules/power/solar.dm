@@ -4,7 +4,6 @@
 #define SOLAR_AUTO_START_CONFIG 2 // Will start itself if config allows it (default is no).
 
 GLOBAL_VAR_INIT(solar_gen_rate, 1500)
-GLOBAL_LIST_EMPTY(solars_list)
 
 /obj/machinery/power/solar
 	name = "solar panel"
@@ -346,23 +345,25 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar_control/drain_power()
 	return -1
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
+
 /obj/machinery/power/solar_control/disconnect_from_network()
 	. = ..()
-	GLOB.solars_list.Remove(src)
+	registry_leave(REGISTRY_SOLAR_CONTROLS, src)
 	needs_panel_check = TRUE
 
 /obj/machinery/power/solar_control/connect_to_network(bind_now = TRUE)
 	var/to_return = ..()
 	if(powernet) //if connected and not already in solar_list...
-		GLOB.solars_list |= src //... add it
+		registry_join(REGISTRY_SOLAR_CONTROLS, src) //... add it
 		needs_panel_check = TRUE
 	return to_return
 
 /obj/machinery/power/solar_control/power_network_changed(datum/powernet/old, datum/powernet/network)
 	if(network)
-		GLOB.solars_list |= src
+		registry_join(REGISTRY_SOLAR_CONTROLS, src)
 	else
-		GLOB.solars_list -= src
+		registry_leave(REGISTRY_SOLAR_CONTROLS, src)
 	needs_panel_check = TRUE
 
 //search for unconnected panels and trackers in the computer powernet and connect them

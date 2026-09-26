@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 
 //
 // The Supply Demand Event - CentCom asks for us to put some stuff on the shuttle
@@ -11,10 +10,12 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	startWhen = 2
 	endWhen = 1800 // Aproximately 1 hour in master controller ticks, refined by end_time
 
+REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
+
 /datum/event/supply_demand/setup()
 	my_department = "[using_map.company_name] Supply Division" // Can't have company name in initial value (not const)
 	end_time = world.time + 1 HOUR + (severity * 30 MINUTES)
-	GLOB.running_demand_events += src
+	registry_join(REGISTRY_DEMAND_EVENTS, src)
 	// Decide what items are requried!
 	// We base this on what departmets are most active, excluding departments we don't have
 	var/list/notHaveDeptList = GLOB.metric.departments.Copy()
@@ -74,7 +75,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		endWhen = activeFor  // End early becuase we're done already!
 
 /datum/event/supply_demand/end()
-	GLOB.running_demand_events -= src
+	registry_leave(REGISTRY_DEMAND_EVENTS, src)
 	UnregisterSignal(SSdcs, COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART)
 	// Check if the crew succeeded or failed!
 	if(length(required_items) == 0)
@@ -98,7 +99,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
  */
 /datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/source, list/area/supply_shuttle_areas)
 	SIGNAL_HANDLER
-	for(var/datum/event/supply_demand/E in GLOB.running_demand_events)
+	for(var/datum/event/supply_demand/E in REGISTRY_MEMBERS(REGISTRY_DEMAND_EVENTS))
 		// I don't think multiple supply shuttles have ever been used, but retaining support regardless...
 		for(var/area/sub_area in supply_shuttle_areas)
 			E.handle_sold_shuttle(sub_area)

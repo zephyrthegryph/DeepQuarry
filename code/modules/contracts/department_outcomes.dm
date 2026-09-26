@@ -39,7 +39,7 @@
 		return FALSE
 	var/list/eligible_players = list()
 	var/lowest_live_count
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((!player.client && !contract_unit_test_mode()) || player.stat == DEAD || department_for_mob(player) != department)
 			continue
 		var/datum/money_account/account = contract_account_for_mob(player)
@@ -76,7 +76,7 @@
 	return count
 
 /proc/contract_mob_for_account(account_number) as /mob/living
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(contract_account_for_mob(player)?.account_number == account_number)
 			return player
 
@@ -158,7 +158,7 @@
 
 /datum/contract_definition/outcome/prepare_accept(datum/contract/outcome/contract, datum/money_account/accepting_account, mob/living/user, atom/source)
 	var/live_crew = 0
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.client && player.stat != DEAD && contract_account_for_mob(player))
 			live_crew++
 	switch(id)

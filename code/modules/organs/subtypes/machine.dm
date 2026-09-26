@@ -88,8 +88,8 @@
 
 	if(owner && owner.stat == DEAD)
 		owner.set_stat(CONSCIOUS)
-		GLOB.dead_mob_list -= owner
-		GLOB.living_mob_list |= owner
+		registry_leave(REGISTRY_DEAD_MOBS, owner)
+		registry_join(REGISTRY_LIVING_MOBS, owner)
 		owner.visible_message(span_danger("\The [owner] twitches visibly!"))
 
 /obj/item/organ/internal/mmi_holder/removed(mob/living/user)

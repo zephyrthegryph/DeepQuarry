@@ -152,3 +152,67 @@
 	TEST_ASSERT_NULL(STASIS_SOURCE(S), "deleting the source unlinks it")
 	H.set_stasis(null, null)
 	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "the leftover stasis is released as sourceless")
+
+// ---------------------------------------------------------------- registries
+
+/// A mob joins its declared registries when it materializes and its stat's
+/// conditional registry; deleting it drops it from all of them.
+/datum/unit_test/dq_refs_registry_mob_lists
+
+/datum/unit_test/dq_refs_registry_mob_lists/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(H in REGISTRY_MEMBERS(REGISTRY_MOBS), "a human is in REGISTRY_MOBS")
+	TEST_ASSERT(H in REGISTRY_MEMBERS(REGISTRY_HUMANS), "a human is in REGISTRY_HUMANS")
+	TEST_ASSERT(registry_has(REGISTRY_LIVING_MOBS, H), "a live human is in REGISTRY_LIVING_MOBS")
+	TEST_ASSERT(!registry_has(REGISTRY_DEAD_MOBS, H), "and not in REGISTRY_DEAD_MOBS")
+	qdel(H)
+	TEST_ASSERT(!(H in REGISTRY_MEMBERS(REGISTRY_MOBS)), "deleting it drops it from REGISTRY_MOBS")
+	TEST_ASSERT(!(H in REGISTRY_MEMBERS(REGISTRY_HUMANS)), "and from REGISTRY_HUMANS")
+	TEST_ASSERT(!registry_has(REGISTRY_LIVING_MOBS, H), "and from REGISTRY_LIVING_MOBS")
+
+/// Preview dummies skip every mob registry, conditional ones included.
+/datum/unit_test/dq_refs_registry_dummy_skips
+
+/datum/unit_test/dq_refs_registry_dummy_skips/Run()
+	var/mob/living/carbon/human/dummy/D = allocate(/mob/living/carbon/human/dummy)
+	TEST_ASSERT(!(D in REGISTRY_MEMBERS(REGISTRY_MOBS)), "a dummy is not in REGISTRY_MOBS")
+	TEST_ASSERT(!(D in REGISTRY_MEMBERS(REGISTRY_HUMANS)), "nor in REGISTRY_HUMANS")
+	TEST_ASSERT(!registry_join(REGISTRY_LIVING_MOBS, D), "and can't join REGISTRY_LIVING_MOBS")
+
+/// A conditional registry: join and leave by state, idempotently, and the
+/// member drops out by itself when deleted.
+/datum/unit_test/dq_refs_registry_conditional
+
+/datum/unit_test/dq_refs_registry_conditional/Run()
+	var/obj/item/radio_jammer/J = allocate(/obj/item/radio_jammer)
+	TEST_ASSERT(!registry_has(REGISTRY_RADIO_JAMMERS, J), "an idle jammer is not in the registry")
+	registry_join(REGISTRY_RADIO_JAMMERS, J)
+	registry_join(REGISTRY_RADIO_JAMMERS, J)
+	TEST_ASSERT(registry_has(REGISTRY_RADIO_JAMMERS, J), "registry_join() puts it in")
+	var/count = 0
+	for(var/obj/item/radio_jammer/member as anything in REGISTRY_MEMBERS(REGISTRY_RADIO_JAMMERS))
+		if(member == J)
+			count++
+	TEST_ASSERT_EQUAL(count, 1, "joining twice lists it once")
+	registry_leave(REGISTRY_RADIO_JAMMERS, J)
+	TEST_ASSERT(!registry_has(REGISTRY_RADIO_JAMMERS, J), "registry_leave() takes it out")
+	registry_join(REGISTRY_RADIO_JAMMERS, J)
+	qdel(J)
+	TEST_ASSERT(!registry_has(REGISTRY_RADIO_JAMMERS, J), "deleting it drops it")
+	TEST_ASSERT(!(J in REGISTRY_MEMBERS(REGISTRY_RADIO_JAMMERS)), "from the member list too")
+
+/// Datums that aren't atoms: a declared registry holds them from New(), a
+/// conditional one while joined, and the destroy transaction drops them.
+/datum/unit_test/dq_refs_registry_datums
+
+/datum/unit_test/dq_refs_registry_datums/Run()
+	var/datum/objective/O = new
+	TEST_ASSERT(O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES), "a new objective is in REGISTRY_OBJECTIVES")
+	qdel(O)
+	TEST_ASSERT(!(O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES)), "deleting it drops it")
+	var/datum/money_account/A = new
+	TEST_ASSERT(!registry_has(REGISTRY_MONEY_ACCOUNTS, A), "an unregistered account is not listed")
+	registry_join(REGISTRY_MONEY_ACCOUNTS, A)
+	TEST_ASSERT(registry_has(REGISTRY_MONEY_ACCOUNTS, A), "registry_join() lists it")
+	qdel(A)
+	TEST_ASSERT(!registry_has(REGISTRY_MONEY_ACCOUNTS, A), "deleting it drops it")

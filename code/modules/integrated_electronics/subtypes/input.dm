@@ -628,10 +628,9 @@
 
 /obj/item/integrated_circuit/input/microphone/Initialize(mapload)
 	. = ..()
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 /obj/item/integrated_circuit/input/microphone/Destroy()
-	GLOB.listening_objects -= src
 	return ..()
 
 /obj/item/integrated_circuit/input/microphone/hear_talk(mob/M, list/message_pieces, verb)

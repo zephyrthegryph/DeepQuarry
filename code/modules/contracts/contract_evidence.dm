@@ -86,7 +86,7 @@
 	return identity?.current_mob()
 
 /datum/controller/subsystem/contracts/proc/find_mob_by_account(account_number) as /mob/living
-	for(var/mob/living/subject in GLOB.player_list)
+	for(var/mob/living/subject in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(subject.mind?.initial_account?.account_number == account_number)
 			return subject
 

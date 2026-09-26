@@ -47,7 +47,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(unfortunate_soul.stat == DEAD) //Only care if we're dead.
 		handle_corpse()
 		var/obj/effect/landmark/drop_point
-		drop_point = pick(GLOB.latejoin) //Can be changed to whatever exit list you want. By default, uses GLOB.latejoin
+		drop_point = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN)) //Can be changed to whatever exit list you want. By default, uses REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
 		if(drop_point)
 			unfortunate_soul.forceMove(get_turf(drop_point))
 			unfortunate_soul.endurance = max(50, unfortunate_soul.endurance) //If they died, send them back with 50 endurance or their current endurance. Whatever's higher. We're evil, but not mean.
@@ -579,10 +579,10 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	unfortunate_soul.grab_ghost(TRUE)
 
 	//Defib stuff here.
-	GLOB.dead_mob_list.Remove(unfortunate_soul)
-	if((unfortunate_soul in GLOB.living_mob_list) || (unfortunate_soul in GLOB.dead_mob_list))
+	registry_leave(REGISTRY_DEAD_MOBS, unfortunate_soul)
+	if((unfortunate_soul in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (unfortunate_soul in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
 		WARNING("Mob [unfortunate_soul] was revived but already in the living or dead list still!")
-	GLOB.living_mob_list += unfortunate_soul
+	registry_join(REGISTRY_LIVING_MOBS, unfortunate_soul)
 	unfortunate_soul.timeofdeath = 0
 	unfortunate_soul.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
 	unfortunate_soul.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.

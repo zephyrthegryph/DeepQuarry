@@ -882,7 +882,7 @@
 	//Sketchy fallback for safety, put them somewhere safe.
 	else
 		log_runtime("[src] (\ref[src]) doesn't have an owner, and dropped someone at a latespawn point!")
-		var/fallback = pick(GLOB.latejoin)
+		var/fallback = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
 		return get_turf(fallback)
 
 //Yes, it's ""safe"" to drop items here

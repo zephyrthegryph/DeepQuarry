@@ -22,7 +22,7 @@
 
 /datum/event2/event/ion_storm/start()
 	// Ion laws.
-	for(var/mob/living/silicon/target in GLOB.silicon_mob_list)
+	for(var/mob/living/silicon/target in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 		if(target.z in get_location_z_levels())
 			// Don't ion law drons.
 			if(istype(target, /mob/living/silicon/robot/drone))
@@ -42,7 +42,7 @@
 			target.show_laws()
 
 	// Emag bots.
-	for(var/mob/living/bot/B in GLOB.mob_list)
+	for(var/mob/living/bot/B in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(B.z in get_location_z_levels())
 			if(prob(bot_emag_chance))
 				B.emag_act(1)

@@ -38,7 +38,7 @@
 
 	// Check if any landmarks exist!
 	var/list/spawn_locations = list()
-	for(var/obj/effect/landmark/C in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn" && (C.z in affecting_z))
 			spawn_locations.Add(C.loc)
 	if(spawn_locations.len) // Okay we've got landmarks, lets use those!

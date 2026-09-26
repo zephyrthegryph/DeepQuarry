@@ -252,7 +252,7 @@
 	my_mob = M
 
 /atom/movable/screen/plane_master/augmented/Destroy()
-	GLOB.entopic_users -= my_mob
+	registry_leave(REGISTRY_ENTOPIC_USERS, my_mob)
 	my_mob = null
 	. = ..()
 
@@ -266,11 +266,11 @@
 		return
 
 	if(state)
-		GLOB.entopic_users |= my_mob
+		registry_join(REGISTRY_ENTOPIC_USERS, my_mob)
 		if(my_mob.client)
 			my_mob.client.images |= GLOB.entopic_images
 	else
-		GLOB.entopic_users -= my_mob
+		registry_leave(REGISTRY_ENTOPIC_USERS, my_mob)
 		if(my_mob.client)
 			my_mob.client.images -= GLOB.entopic_images
-// /mob/Destroy() cleanup of GLOB.entopic_users folded into the canonical /mob/Destroy() in mob.dm
+// /mob/Destroy() cleanup of REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS) folded into the canonical /mob/Destroy() in mob.dm

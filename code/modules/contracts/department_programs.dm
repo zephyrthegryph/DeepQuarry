@@ -105,7 +105,7 @@
 /// Keep social breadth meaningful without making low-population offers impossible.
 /proc/contract_scaled_participant_target(desired, minimum = 2, crew_per_participant = 2)
 	var/active_crew = 0
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.client && player.stat != DEAD)
 			active_crew++
 	return min(desired, max(minimum, CEILING(active_crew / crew_per_participant, 1)))

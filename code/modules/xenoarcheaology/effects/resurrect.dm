@@ -76,8 +76,8 @@
 			SM.fully_heal()
 			SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, null, null, 0, null, INJURE_SILENT)
 			SM.stat = CONSCIOUS
-			GLOB.dead_mob_list -= SM
-			GLOB.living_mob_list += SM
+			registry_leave(REGISTRY_DEAD_MOBS, SM)
+			registry_join(REGISTRY_LIVING_MOBS, SM)
 			SM.update_icon()
 			SM.revive()
 			holder.visible_message(span_alien("\The [SM]'s eyes open in a flash of light!"))
@@ -85,7 +85,7 @@
 			var/mob/living/carbon/human/H = L
 
 			if(!H.client && H.mind)
-				for(var/mob/observer/dead/ghost in GLOB.player_list)
+				for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 					if(ghost.mind == H.mind)
 						to_chat(ghost, span_large(span_interface(span_bold("An artifact is trying to \
 						revive you. Return to your body if you want to be resurrected!") + "\
@@ -99,8 +99,8 @@
 			sleep(10 SECONDS)
 			if(H.client)
 				L.stat = CONSCIOUS
-				GLOB.dead_mob_list -= H
-				GLOB.living_mob_list += H
+				registry_leave(REGISTRY_DEAD_MOBS, H)
+				registry_join(REGISTRY_LIVING_MOBS, H)
 				H.timeofdeath = null
 
 				holder.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))

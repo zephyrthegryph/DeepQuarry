@@ -8,10 +8,10 @@
 /mob/living/carbon/human/dummy/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/godmode)
-	GLOB.mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.human_mob_list -= src
+
+/// Preview dummies are in no mob registry.
+/mob/living/carbon/human/dummy/skips_registry(registry_id)
+	return TRUE
 
 /mob/living/carbon/human/dummy
 	life_set = LIFE_SET_DELIST
@@ -19,11 +19,6 @@
 /datum/om/stage/life/delist/carbon/human/dummy
 	of = /mob/living/carbon/human/dummy
 
-/datum/om/stage/life/delist/carbon/human/dummy/perform(mob/living/carbon/human/dummy/self, datum/om/frame/life/ctx)
-	GLOB.mob_list -= self
-	GLOB.living_mob_list -= self
-	GLOB.dead_mob_list -= self
-	GLOB.human_mob_list -= self
 
 /mob/living/carbon/human/dummy/mannequin/Initialize(mapload)
 	. = ..()

@@ -1,4 +1,4 @@
-GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
+REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain
 	name = "brain"

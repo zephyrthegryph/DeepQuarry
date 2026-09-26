@@ -25,7 +25,7 @@ GLOBAL_VAR_INIT(floorIsLava, 0)
 						confidential = TRUE)
 
 /proc/admin_notice(message, rights)
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		var/C = M.client
 
 		if(!C)
@@ -455,12 +455,12 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	message_admins(span_blue("Toggled reviving to [CONFIG_GET(flag/allow_admin_rev)]."))
 	feedback_add_details("admin_verb","TAR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/datum/admins/proc/unprison(mob/M in GLOB.mob_list)
+/datum/admins/proc/unprison(mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	set category = "Admin.Moderation"
 	set name = "Unprison"
 	if (M.z == 2)
 		if (CONFIG_GET(flag/allow_admin_jump))
-			M.forceMove(get_turf(pick(GLOB.latejoin)))
+			M.forceMove(get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))))
 			message_admins("[key_name_admin(usr)] has unprisoned [key_name_admin(M)]", 1)
 			log_admin("[key_name(usr)] has unprisoned [key_name(M)]")
 		else
@@ -582,7 +582,7 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 	log_and_message_admins("spawned [amount] x [chosen_path] at [AREACOORD(user.mob)]", user)
 	feedback_add_details("admin_verb","SA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(show_traitor_panel, R_ADMIN|R_FUN|R_EVENT, "Show Traitor Panel", "Edit mobs's memory and role", ADMIN_CATEGORY_EVENTS, mob/M in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(show_traitor_panel, R_ADMIN|R_FUN|R_EVENT, "Show Traitor Panel", "Edit mobs's memory and role", ADMIN_CATEGORY_EVENTS, mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!istype(M))
 		to_chat(user, "This can only be used on instances of type /mob")
 		return
@@ -740,7 +740,7 @@ ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "For
 	log_and_message_admins("attempting to force mode autospawn.")
 	SSticker.mode.try_latespawn()
 
-ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/msg
 	if (!living_target.has_status(EFFECT_PARALYZED))
 		living_target.status_set(EFFECT_PARALYZED, 8000)
@@ -752,14 +752,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 		msg = "has unparalyzed [key_name(living_target)]."
 		log_and_message_admins(msg)
 
-ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to change telecrystals of a user.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in GLOB.player_list)
+ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to change telecrystals of a user.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	var/crystals = tgui_input_number(user, "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].")
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals = crystals
 		var/msg = "[key_name(user)] has modified [human_mob.ckey]'s telecrystals to [crystals]."
 		message_admins(msg)
 
-ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to change telecrystals of a user by addition.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in GLOB.player_list)
+ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to change telecrystals of a user by addition.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	var/crystals = tgui_input_number(user, "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].")
 	if (!isnull(crystals))
 		human_mob.mind.tcrystals += crystals
@@ -851,7 +851,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	return
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/mob/living/carbon/human/traitor_human = tgui_input_list(user, "Select whom to give an uplink.", "Set uplink", GLOB.human_mob_list)
+	var/mob/living/carbon/human/traitor_human = tgui_input_list(user, "Select whom to give an uplink.", "Set uplink", REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if(!traitor_human)
 		return
 

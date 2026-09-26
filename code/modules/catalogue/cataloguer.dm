@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	// Figure out who may have helped out.
 	var/list/contributers = list()
 	var/list/contributer_names = list()
-	for(var/mob/living/L as anything in GLOB.player_list)
+	for(var/mob/living/L as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(L == user)
 			continue
 		if(!istype(L))

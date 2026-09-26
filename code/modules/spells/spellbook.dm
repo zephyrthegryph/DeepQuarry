@@ -262,7 +262,7 @@
 
 /obj/item/spellbook/oneuse/mindswap/recoil(mob/user as mob)
 	..()
-	if(stored_swap in GLOB.dead_mob_list)
+	if(stored_swap in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 		stored_swap = null
 	if(!stored_swap)
 		stored_swap = user

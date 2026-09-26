@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 				continue
 			var/datum/unit_test_block/candidate = new
 			candidate.z = new_z
-			// Don't rely on GLOB.landmarks_list: atom Initialize() for a
+			// Don't rely on REGISTRY_MEMBERS(REGISTRY_LANDMARKS): atom Initialize() for a
 			// freshly loaded z can be queued rather than run synchronously
 			// inside load_new_z(), so the landmark may not be registered
 			// into that list yet. The atom instance itself is already in

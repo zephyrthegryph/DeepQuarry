@@ -294,7 +294,7 @@
 	update_icon_timer = addtimer(CALLBACK(src, PROC_REF(callback_update_icon)), 0.3 SECONDS, TIMER_STOPPABLE)
 
 	ghostjoin = 0
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 	ghostjoin_icon()
 	return ..(gibbed,deathmessage)
 

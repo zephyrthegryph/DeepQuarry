@@ -68,7 +68,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 /mob/living/simple_mob/vore/solargrub/Initialize(mapload)
 	. = ..()
-	GLOB.existing_solargrubs += src
 
 /datum/om/stage/life/type_post/simple_mob/vore/solargrub
 	of = /mob/living/simple_mob/vore/solargrub
@@ -162,8 +161,9 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	set_light(0)
 	..()
 
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
+
 /mob/living/simple_mob/vore/solargrub/Destroy()
-	GLOB.existing_solargrubs -= src
 	. = ..()
 
 /datum/om/stage/life/light/simple_mob/vore/solargrub

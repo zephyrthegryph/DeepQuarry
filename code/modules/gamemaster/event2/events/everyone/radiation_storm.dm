@@ -29,7 +29,7 @@
 /datum/event2/event/radiation_storm/proc/radiate()
 	//This sucks. Just mutate.
 
-	for(var/mob/living/carbon/C in GLOB.living_mob_list)
+	for(var/mob/living/carbon/C in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(!(C.z in using_map.station_levels) || C.isSynthetic() || isbelly(C.loc))
 			continue
 		var/area/A = get_area(C)

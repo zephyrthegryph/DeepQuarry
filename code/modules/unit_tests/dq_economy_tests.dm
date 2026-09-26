@@ -102,7 +102,7 @@
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded
 
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded/Run()
-	var/list/original_players = GLOB.player_list
+	var/list/original_players = dq_test_players_clear()
 	var/original_policy = SSsupply.allocation_policy
 	var/list/original_allocations = list()
 	var/list/original_percentages = list()
@@ -113,7 +113,6 @@
 		original_percentages[department] = budget.allocation_percent
 		original_overrides[department] = budget.allocation_configured
 		budget.allocation_configured = FALSE
-	GLOB.player_list = list()
 	var/mob/living/carbon/human/employee = new(run_loc_floor_bottom_left)
 	employee.job = JOB_ENGINEER
 	var/datum/mind/employee_mind = new("budget_plan_employee")
@@ -121,7 +120,7 @@
 	employee_account.account_number = 812345
 	employee_mind.initial_account = employee_account
 	employee_mind.transfer_to(employee)
-	GLOB.player_list += employee
+	registry_join(REGISTRY_PLAYERS, employee)
 	SSsupply.allocation_policy = "equal"
 	var/list/plan = SSsupply.department_budget_plan()
 	var/list/departments = plan["departments"]
@@ -141,7 +140,7 @@
 	engineering = departments[DEPARTMENT_ENGINEERING]
 	TEST_ASSERT_EQUAL(engineering["requested"], engineering["payroll"] + round(plan["operating_pool"] * 0.25), "department percentage override did not replace only its recurring operating share")
 	TEST_ASSERT(engineering["overridden"], "budget preview did not identify the department override")
-	GLOB.player_list = original_players
+	dq_test_players_restore(original_players)
 	SSsupply.allocation_policy = original_policy
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/budget = GLOB.department_accounts[department]
@@ -156,7 +155,7 @@
 
 /datum/unit_test/dq_payroll_uses_all_available_funds_fairly/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
-	var/list/original_players = GLOB.player_list
+	var/list/original_players = dq_test_players_clear()
 	var/datum/money_account/original_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
 	var/datum/money_account/test_budget = new
 	test_budget.owner_name = "Test Engineering"
@@ -164,7 +163,6 @@
 	test_budget.is_budget_account = TRUE
 	test_budget.money = 31
 	GLOB.department_accounts[DEPARTMENT_ENGINEERING] = test_budget
-	GLOB.player_list = list()
 	var/list/employees = list()
 	var/list/accounts = list()
 	for(var/index in 1 to 2)
@@ -176,7 +174,7 @@
 		account.account_number = 810000 + index
 		employee_mind.initial_account = account
 		employee_mind.transfer_to(employee)
-		GLOB.player_list += employee
+		registry_join(REGISTRY_PLAYERS, employee)
 		employees += employee
 		accounts += account
 	SSsupply.run_department_payroll()
@@ -186,7 +184,7 @@
 		total_paid += account.money
 	TEST_ASSERT_EQUAL(total_paid, 31, "payroll did not spend every available Thaler")
 	TEST_ASSERT_EQUAL(test_budget.money + test_budget.savings, 0, "payroll left spendable funds while wages were unpaid")
-	GLOB.player_list = original_players
+	dq_test_players_restore(original_players)
 	GLOB.department_accounts[DEPARTMENT_ENGINEERING] = original_budget
 	for(var/mob/living/carbon/human/employee as anything in employees)
 		qdel(employee)
@@ -245,9 +243,9 @@
 	var/list/preexisting_packages = list()
 	for(var/obj/item/smallDelivery/existing_package in test_turf)
 		preexisting_packages += existing_package
-	var/accounts_before = length(GLOB.all_money_accounts)
+	var/accounts_before = REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS)
 	TEST_ASSERT(!create_station_funded_account("Rejected account", 40, terminal), "suspended station budget created a funded account")
-	TEST_ASSERT_EQUAL(length(GLOB.all_money_accounts), accounts_before, "failed station debit left an account behind")
+	TEST_ASSERT_EQUAL(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS), accounts_before, "failed station debit left an account behind")
 	TEST_ASSERT_EQUAL(test_station.money, 100, "failed account activation changed station funds")
 	var/created_before = SSsupply.currency_created
 	var/destroyed_before = SSsupply.currency_destroyed
@@ -259,7 +257,7 @@
 	TEST_ASSERT_EQUAL(test_station.money + account.money, 100, "manual account creation created or destroyed Thalers")
 	TEST_ASSERT_EQUAL(SSsupply.currency_created, created_before, "internal account activation was counted as external creation")
 	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, destroyed_before, "internal account activation was counted as external destruction")
-	GLOB.all_money_accounts -= account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	GLOB.station_account = original_station
 	for(var/obj/item/smallDelivery/new_package in test_turf)
 		if(!(new_package in preexisting_packages))
@@ -305,7 +303,7 @@
 	account.owner_name = "Personal Supply Tester"
 	account.account_number = 812345
 	account.money = SSsupply.pack_price(pack) + 10
-	GLOB.all_money_accounts += account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	requester_mind.initial_account = account
 	requester_mind.transfer_to(requester)
 	var/starting_balance = account.money
@@ -322,7 +320,7 @@
 			SSsupply.adm_order_history -= admin_order
 			qdel(admin_order)
 			break
-	GLOB.all_money_accounts -= account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	SSsupply.currency_destroyed = destroyed_before
 	SSsupply.currency_refunded = refunded_before
 	SSsupply.currency_sink_refunded = sink_refunded_before
@@ -353,7 +351,7 @@
 	customer.owner_name = "Hungry Tester"
 	customer.account_number = 823456
 	customer.money = 120
-	GLOB.all_money_accounts += customer
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	service.service_subsidy = 0.25
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_CIVILIAN, 200), "underfunded Service checkout produced a quote")
 	customer.money = 150
@@ -383,7 +381,7 @@
 	service.monthly_expenses = service_expenses_before
 	service.total_revenue = service_revenue_before
 	service.total_expenses = service_total_expenses_before
-	GLOB.all_money_accounts -= customer
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	qdel(invoice)
 	qdel(customer)
 	qdel(refund_operator)
@@ -410,8 +408,8 @@
 	var/datum/money_account/staff = new
 	staff.owner_name = "Service Worker"
 	staff.account_number = 834568
-	GLOB.all_money_accounts += customer
-	GLOB.all_money_accounts += staff
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
+	registry_join(REGISTRY_MONEY_ACCOUNTS, staff)
 	service.service_subsidy = 0
 	var/datum/service_invoice/invoice = complete_service_checkout(customer, service, 100, "Adversarial meal", "Destroyed terminal", list("meal" = 1), list("meal" = 100), staff.account_number, staff.owner_name, 20)
 	TEST_ASSERT(invoice, "valid tipped checkout did not create an invoice")
@@ -465,8 +463,8 @@
 	service.total_revenue = service_revenue_before
 	service.total_expenses = service_total_expenses_before
 	service.service_subsidy = old_subsidy
-	GLOB.all_money_accounts -= customer
-	GLOB.all_money_accounts -= staff
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, staff)
 	qdel(invoice)
 	qdel(impostor)
 	qdel(user)
@@ -546,8 +544,8 @@
 	second_provider.security_level = 1
 	second_provider.is_budget_account = TRUE
 	second_provider.department_id = DEPARTMENT_CARGO
-	GLOB.all_money_accounts += first_provider
-	GLOB.all_money_accounts += second_provider
+	registry_join(REGISTRY_MONEY_ACCOUNTS, first_provider)
+	registry_join(REGISTRY_MONEY_ACCOUNTS, second_provider)
 	scanner.linked_account = first_provider
 	scanner.service_staff_account_number = 884003
 	scanner.service_staff_name = "Previous worker"
@@ -570,8 +568,8 @@
 	TEST_ASSERT_EQUAL(length(register.item_list), 0, "register carried an old ticket into a new provider account")
 	TEST_ASSERT_EQUAL(register.service_staff_account_number, 0, "register carried old staff attribution into a new provider account")
 	TEST_ASSERT(!SSsupply.create_service_invoice(null, first_provider, "Malformed checkout", list("Meal" = 1), list("Meal" = 10), list("total" = 10, "subsidy" = 0, "personal" = 9, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null, "Malformed customer"), "invoice accepted a financial split that did not reconcile")
-	GLOB.all_money_accounts -= first_provider
-	GLOB.all_money_accounts -= second_provider
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, first_provider)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, second_provider)
 	qdel(scanner)
 	qdel(register)
 	qdel(first_provider)
@@ -596,7 +594,7 @@
 	customer_account.owner_name = "Lifecycle Customer"
 	customer_account.account_number = 845670
 	customer_account.money = 200
-	GLOB.all_money_accounts += customer_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/datum/mind/customer_mind = new("service_lifecycle")
 	customer_mind.initial_account = customer_account
@@ -666,7 +664,7 @@
 	service.monthly_expenses = service_expenses_before
 	service.total_revenue = service_revenue_before
 	service.total_expenses = service_total_expenses_before
-	GLOB.all_money_accounts -= customer_account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	qdel(register)
 	qdel(customer_pda)
 	qdel(customer)
@@ -726,7 +724,7 @@
 	producer.account_number = 918273
 	producer.money = 1000
 	producer.department_id = DEPARTMENT_ENGINEERING
-	GLOB.all_money_accounts += producer
+	registry_join(REGISTRY_MONEY_ACCOUNTS, producer)
 	var/datum/contract_definition/research_definition = SScontracts.definitions["research_export_portfolio"]
 	var/datum/contract/outcome/research_contract = research_definition.create_contract(list("value_target" = 100, "variety_target" = 1))
 	research_contract.reward = 0
@@ -823,7 +821,7 @@
 	cargo.money = cargo_before
 	research.monthly_income = research_income_before
 	cargo.monthly_income = cargo_income_before
-	GLOB.all_money_accounts -= producer
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, producer)
 	qdel(scanner)
 	qdel(customer)
 	qdel(prototype)
@@ -884,7 +882,7 @@
 	var/datum/money_account/account = new
 	account.account_number = 9654331
 	account.owner_name = "Market Order Tester"
-	GLOB.all_money_accounts += account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("market_order_tester")
 	test_mind.initial_account = account
 	var/mob/living/carbon/human/test_buyer = new(test_turf)
@@ -903,7 +901,7 @@
 			break
 	SSsupply.order_history -= order
 	SSsupply.adm_order_history -= admin_order
-	GLOB.all_money_accounts -= account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(admin_order)
 	qdel(order)
 	qdel(test_buyer)
@@ -928,7 +926,7 @@
 	owner_account.account_number = 9654340
 	owner_account.owner_name = "Covert Principal Tester"
 	owner_account.money = 10000
-	GLOB.all_money_accounts += owner_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/datum/mind/owner_mind = new("covert_principal_tester")
 	owner_mind.initial_account = owner_account
 	var/mob/living/carbon/human/owner = new(test_turf)
@@ -938,7 +936,7 @@
 	collaborator_account.account_number = 9654341
 	collaborator_account.owner_name = "Covert Cargo Tester"
 	collaborator_account.department_id = DEPARTMENT_CARGO
-	GLOB.all_money_accounts += collaborator_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	var/datum/mind/collaborator_mind = new("covert_cargo_tester")
 	collaborator_mind.initial_account = collaborator_account
 	var/mob/living/carbon/human/collaborator = new(test_turf)
@@ -1032,7 +1030,7 @@
 	var/datum/money_account/auditor_account = new
 	auditor_account.account_number = 9654342
 	auditor_account.owner_name = "Market Auditor"
-	GLOB.all_money_accounts += auditor_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("market_auditor")
 	auditor_mind.initial_account = auditor_account
 	var/mob/living/carbon/human/auditor = new(test_turf)
@@ -1061,9 +1059,9 @@
 	GLOB.station_faction_relations.agent_records -= "[owner_account.account_number]"
 	SScontracts.active_contracts -= test_contract
 	SSsupply.market_transactions -= transaction
-	GLOB.all_money_accounts -= owner_account
-	GLOB.all_money_accounts -= collaborator_account
-	GLOB.all_money_accounts -= auditor_account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	qdel(transaction)
 	qdel(test_contract)
 	qdel(record)
@@ -1084,12 +1082,12 @@
 	var/datum/money_account/principal_account = new
 	principal_account.account_number = 9654350
 	principal_account.owner_name = "Physical Principal Tester"
-	GLOB.all_money_accounts += principal_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, principal_account)
 	var/datum/money_account/contact_account = new
 	contact_account.account_number = 9654351
 	contact_account.owner_name = "Physical Cargo Tester"
 	contact_account.department_id = DEPARTMENT_CARGO
-	GLOB.all_money_accounts += contact_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, contact_account)
 	var/datum/mind/contact_mind = new("physical_cargo_tester")
 	contact_mind.initial_account = contact_account
 	var/mob/living/carbon/human/contact = new(test_turf)
@@ -1149,7 +1147,7 @@
 	var/datum/money_account/auditor_account = new
 	auditor_account.account_number = 9654352
 	auditor_account.owner_name = "Physical Evidence Tester"
-	GLOB.all_money_accounts += auditor_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("physical_evidence_tester")
 	auditor_mind.initial_account = auditor_account
 	var/mob/living/carbon/human/auditor = new(test_turf)
@@ -1170,9 +1168,9 @@
 
 	SSsupply.release_agent_contract_market(contract)
 	GLOB.station_faction_relations.agent_records -= "[principal_account.account_number]"
-	GLOB.all_money_accounts -= principal_account
-	GLOB.all_money_accounts -= contact_account
-	GLOB.all_money_accounts -= auditor_account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, principal_account)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, contact_account)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	qdel(crate)
 	qdel(charter)
 	qdel(contract)
@@ -1225,7 +1223,7 @@
 	customer.owner_name = "Storefront Unit Customer"
 	customer.department_id = DEPARTMENT_ENGINEERING
 	customer.money = 500
-	GLOB.all_money_accounts += customer
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/datum/mind/customer_mind = new("storefront_unit_customer")
 	customer_mind.initial_account = customer
 	var/turf/customer_turf = test_turf
@@ -1272,7 +1270,7 @@
 	TEST_ASSERT(adoption.adopted, "operational-use evidence did not become exactly-once after publication")
 
 	research.money = research_before
-	GLOB.all_money_accounts -= customer
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	qdel(store)
 	qdel(customer_mob)
 	qdel(customer_mind)
@@ -1289,3 +1287,16 @@
 	if(!H.get_equipped_item(SLOT_ID_UNIFORM))
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), slot_w_uniform)
 	H.equip_to_slot(id, slot_wear_id)
+
+/// Empties REGISTRY_PLAYERS for a test; returns who was in it.
+/proc/dq_test_players_clear()
+	. = REGISTRY_COPY(REGISTRY_PLAYERS)
+	for(var/mob/M as anything in .)
+		registry_leave(REGISTRY_PLAYERS, M)
+
+/// Puts REGISTRY_PLAYERS back to `original` (dq_test_players_clear()'s result).
+/proc/dq_test_players_restore(list/original)
+	for(var/mob/M as anything in REGISTRY_COPY(REGISTRY_PLAYERS))
+		registry_leave(REGISTRY_PLAYERS, M)
+	for(var/mob/M as anything in original)
+		registry_join(REGISTRY_PLAYERS, M)

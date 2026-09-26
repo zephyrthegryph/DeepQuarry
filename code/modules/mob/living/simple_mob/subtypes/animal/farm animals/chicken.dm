@@ -151,7 +151,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 			var/mob/living/simple_mob/animal/passive/chicken/C = new (self.loc)
 			C.ghostjoin = 1
 			C.ghostjoin_icon()
-			GLOB.active_ghost_pods += C
+			registry_join(REGISTRY_GHOST_PODS, C)
 			qdel(self)
 
 // Say Lists

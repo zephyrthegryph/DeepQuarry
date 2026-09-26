@@ -39,7 +39,7 @@ GLOBAL_LIST(ghost_traps)
 /datum/ghosttrap/proc/request_player(mob/target, request_string)
 	if(!target)
 		return
-	for(var/mob/observer/dead/O in GLOB.player_list)
+	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!O.MayRespawn())
 			continue
 		if(islist(ban_checks))

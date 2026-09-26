@@ -29,7 +29,7 @@
 	else if(activeFor == leaveBelt)
 		GLOB.command_announcement.Announce("The [using_map.facility_type] has passed the radiation belt. Please allow for up to one minute while radiation levels dissipate, and report to medbay if you experience any unusual symptoms. Maintenance will lose all access again shortly.", "Anomaly Alert") // Restored original message
 /datum/event/radiation_storm/proc/radiate()
-	for(var/mob/living/carbon/C in GLOB.living_mob_list)
+	for(var/mob/living/carbon/C in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(!(C.z in using_map.station_levels) || C.isSynthetic() || isbelly(C.loc))
 			continue
 		var/area/A = get_area(C)

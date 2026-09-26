@@ -22,7 +22,6 @@ GLOBAL_DATUM(station_account, /datum/money_account)
 GLOBAL_LIST_EMPTY_TYPED(department_accounts, /datum/money_account)
 GLOBAL_VAR_INIT(num_financial_terminals, 1)
 GLOBAL_VAR_INIT(next_account_number, 0)
-GLOBAL_LIST_EMPTY(all_money_accounts)
 GLOBAL_VAR_INIT(economy_init, 0)
 
 /proc/setup_economy()
@@ -80,7 +79,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 
 		//add the account
 		LAZYADD(GLOB.station_account.transaction_log, T)
-		GLOB.all_money_accounts.Add(GLOB.station_account)
+		registry_join(REGISTRY_MONEY_ACCOUNTS, GLOB.station_account)
 
 /proc/create_department_account(department)
 	GLOB.next_account_number = rand(111111, 999999)
@@ -104,6 +103,6 @@ GLOBAL_VAR_INIT(economy_init, 0)
 
 	//add the account
 	LAZYADD(department_account.transaction_log, T)
-	GLOB.all_money_accounts.Add(department_account)
+	registry_join(REGISTRY_MONEY_ACCOUNTS, department_account)
 
 	GLOB.department_accounts[department] = department_account

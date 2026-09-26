@@ -323,7 +323,7 @@ ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the c
 	user.holder.output_ai_laws()
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/silicon_target = tgui_input_list(user, "Select silicon.", "Rename Silicon.", GLOB.silicon_mob_list)
+	var/mob/living/silicon/silicon_target = tgui_input_list(user, "Select silicon.", "Rename Silicon.", REGISTRY_MEMBERS(REGISTRY_SILICONS))
 	if(!silicon_target)
 		return
 
@@ -334,7 +334,7 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 	feedback_add_details("admin_verb","RAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows to modify silicon laws.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/selected_silicon = tgui_input_list(user, "Select silicon.", "Manage Silicon Laws", GLOB.silicon_mob_list)
+	var/mob/living/silicon/selected_silicon = tgui_input_list(user, "Select silicon.", "Manage Silicon Laws", REGISTRY_MEMBERS(REGISTRY_SILICONS))
 	if(!selected_silicon)
 		return
 
@@ -384,7 +384,7 @@ ADMIN_VERB(toggledrones, R_ADMIN|R_FUN|R_EVENT, "Toggle maintenance drones", "To
 	message_admins("Admin [key_name_admin(user)] has [CONFIG_GET(flag/allow_drone_spawn) ? "en" : "dis"]abled maintenance drones.")
 
 ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/mob/living/living_target = tgui_input_list(user, "Who to tell to man up and deal with it.", "Man up", GLOB.mob_list)
+	var/mob/living/living_target = tgui_input_list(user, "Who to tell to man up and deal with it.", "Man up", REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!living_target)
 		return
 
@@ -401,7 +401,7 @@ ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man
 	if(tgui_alert(user, "Are you sure you want to tell the whole server up?","Confirmation",list("Deal with it","No")) != "Deal with it")
 		return
 
-	for (var/mob/target_mob in GLOB.mob_list)
+	for (var/mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		to_chat(target_mob, "<br><center>" + span_filter_system(span_notice(span_bold(span_huge("Man up.<br> Deal with it.")) + "<br>Move along.")) + "</center><br>")
 		DIRECT_OUTPUT(target_mob, 'sound/voice/manup1.ogg')
 

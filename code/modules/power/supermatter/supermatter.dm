@@ -228,7 +228,7 @@
 				strength = DETONATION_RADS * 5
 			)
 
-	for(var/mob/living/mob in GLOB.living_mob_list)
+	for(var/mob/living/mob in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		var/turf/TM = get_turf(mob)
 		if(!TM)
 			continue
@@ -336,7 +336,7 @@
 		//Public alerts
 		if((damage > emergency_point) && !public_alert)
 			GLOB.global_announcer.autosay("WARNING: SUPERMATTER CRYSTAL DELAMINATION IMMINENT!", "Supermatter Monitor")
-			for(var/mob/M in GLOB.player_list) // Rykka adds SM Delam alarm
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS)) // Rykka adds SM Delam alarm
 				if(!isnewplayer(M) && !isdeaf(M)) // Rykka adds SM Delam alarm
 					M << message_sound // Rykka adds SM Delam alarm
 			admin_chat_message(message = "SUPERMATTER DELAMINATING!", color = "#FF2222")

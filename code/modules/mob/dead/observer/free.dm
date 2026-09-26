@@ -19,7 +19,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 	//prevent_respawns += mind.name //Replaced by PR 4785
 
 	//Update any existing objectives involving this mob.
-	for(var/datum/objective/O in GLOB.all_objectives)
+	for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
 		if(O.target == src.mind)
 			if(O.owner && O.owner.current)
 				to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))

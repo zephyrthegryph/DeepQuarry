@@ -771,7 +771,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 /mob/living/simple_mob/vore/alienanimals/teppi/Destroy()
 	GLOB.teppi_count --
 	friend_zone = null
-	GLOB.active_ghost_pods -= src
 	//legacy .leader reference removed (no equivalent on /datum/ai_brain).
 	return ..()
 
@@ -960,7 +959,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	eye_color = teppi_data["eye_color"]
 	skin_color = teppi_data["skin_color"]
 	ghostjoin = 1
-	GLOB.active_ghost_pods += src
+	registry_join(REGISTRY_GHOST_PODS, src)
 	update_icon()
 
 //This sets all the things on baby teppi when they are bred from adult teppi

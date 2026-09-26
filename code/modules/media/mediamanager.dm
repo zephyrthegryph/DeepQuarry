@@ -27,7 +27,7 @@
 /hook/roundend/proc/stop_all_media()
 	log_world("Stopping all playing media...")
 	// Stop all music.
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(M && M.client)
 			M.stop_all_music()
 	//  SHITTY HACK TO AVOID RACE CONDITION WITH SERVER REBOOT.
