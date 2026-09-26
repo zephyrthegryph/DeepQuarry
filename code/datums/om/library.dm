@@ -237,31 +237,6 @@
 			source.pullin.icon_state = "pull0"
 
 /// implant -> the external organ it is embedded in. source_ref_field/
-/// target_list_field make the core the sole writer of the implant's `part`
-/// and the organ's `implants` list; on_link()/on_unlink() keep only the
-/// `imp_in` (host mob) side effect, since it has no reverse list of its own
-/// to double-check against. Previously both sides were hand-maintained
-/// (/obj/item/implant/Destroy() and /obj/item/organ/external/Destroy() each
-/// cleaned up their own half); now hard-deleting either one tears the whole
-/// link down automatically, including `imp_in`, which used to only get
-/// cleared by the organ's Destroy() -- so directly hard-deleting the host mob
-/// without going through organ removal left `imp_in` dangling.
-/datum/om/relation/implanted_in
-	name = "implant site"
-	source_single = TRUE
-	source_ref_field = "part"
-	target_list_field = "implants"
-
-/datum/om/relation/implanted_in/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && istype(target))
-		source.imp_in = target.owner
-
-/datum/om/relation/implanted_in/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(source) && !QDELETED(source))
-		source.imp_in = null
-
 /// an AI eye -> the silicon AI controlling it. source_ref_field/
 /// target_list_field make the core the sole writer of the eye's `owner` and
 /// the AI's `all_eyes` list; on_unlink() also clears the AI's `eyeobj` (its

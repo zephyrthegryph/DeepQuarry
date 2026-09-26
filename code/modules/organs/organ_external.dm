@@ -124,11 +124,52 @@
 		while(null in owner.organs)
 			owner.organs -= null
 
-	// The implanted_in relation's teardown (destroy transaction phase 5,
-	// before Destroy()) already unlinked every implant here -- clearing its
-	// part/imp_in and this organ's implants list.
+	// The implant site slot's own teardown (destroy transaction phase 5,
+	// before Destroy(), OM relations step 2) already unlinked every implant
+	// here -- clearing its part/imp_in and this organ's implants list. The
+	// real objects themselves are then deleted below, by drop_policy.
 
 	return ..()
+
+/// An organ's implant site (OM relations step 2, doc/rewrite/containment.md
+/// §3): a keyed internal slot, replacing the old bare implanted_in relation
+/// plus a hand-managed forceMove(). Keyed by implant type, so re-implanting
+/// the same kind refuses rather than stacking duplicates. Deleted with the
+/// organ, same as the raw contents this slot replaces.
+/datum/om/relation/slot/implant_site
+	holder = /obj/item/organ/external
+	slot_id = ORGAN_SLOT_IMPLANTS
+	name = "implant site"
+	exposure = SLOT_EXPOSURE_INTERNAL
+	capacity_model = SLOT_CAPACITY_NONE
+	keyed = TRUE
+	drop_policy = SLOT_DROP_DELETE
+	source_ref_field = "part"
+	target_list_field = "implants"
+
+/// `imp_in` (the host mob) has no reverse list of its own to double-check
+/// against, so the core's source_ref_field can't set it directly -- it needs
+/// the organ's `owner`, not the organ itself. Previously both sides were
+/// hand-maintained (/obj/item/implant/Destroy() and
+/// /obj/item/organ/external/Destroy() each cleaned up their own half); now
+/// hard-deleting either one tears the whole link down automatically,
+/// including `imp_in`, which used to only get cleared by the organ's
+/// Destroy() -- so directly hard-deleting the host mob without going through
+/// organ removal left `imp_in` dangling.
+/datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && istype(target))
+		source.imp_in = target.owner
+
+/datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	// Unlike the old bare relation, this slot's own drop_policy (DELETE) may
+	// already be what's destroying `source` (its organ is going and takes it
+	// with it) -- writing to a QDELETED datum's own vars is harmless, and
+	// leaving `imp_in` stale until then would fail a "no dangling refs" check
+	// that inspects it before GC.
+	if(istype(source))
+		source.imp_in = null
 
 /obj/item/organ/external/emp_act(severity, recursive)
 	. = ..()

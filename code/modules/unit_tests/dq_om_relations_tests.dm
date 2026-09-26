@@ -262,7 +262,7 @@
 	TEST_ASSERT_EQUAL(I.part, torso, "I.part should be the torso")
 	TEST_ASSERT_EQUAL(I.imp_in, H, "I.imp_in should be H")
 	TEST_ASSERT(I in torso.implants, "I should be in the torso's implants list")
-	TEST_ASSERT_EQUAL(om_relation_of(I, /datum/om/relation/implanted_in), torso, "om_relation_of should agree with the part var")
+	TEST_ASSERT_EQUAL(om_relation_of(I, /datum/om/relation/slot/implant_site), torso, "om_relation_of should agree with the part var")
 
 /// Hard-deleting the organ clears the implant's part/imp_in, with no
 /// dangling reference left behind.
@@ -292,6 +292,37 @@
 	qdel(I)
 	TEST_ASSERT(QDELETED(I), "setup: the implant should be deleted")
 	TEST_ASSERT(!(I in torso.implants), "the deleted implant should not still be listed")
+
+/// The implant site is keyed by implant type (organ_external.dm, OM
+/// relations step 2): a second implant of the same type is refused, and a
+/// different type still fits.
+/datum/unit_test/dq_om_relation_implanted_in_keyed_by_type
+
+/datum/unit_test/dq_om_relation_implanted_in_keyed_by_type/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
+	var/obj/item/implant/I1 = allocate(/obj/item/implant)
+	I1.handle_implant(H, BP_TORSO)
+	TEST_ASSERT_EQUAL(I1.part, torso, "setup: the first implant should take")
+
+	var/obj/item/implant/I2 = allocate(/obj/item/implant)
+	TEST_ASSERT_NOTNULL(dq_ledger_refusal(I2, torso, ORGAN_SLOT_IMPLANTS, null), "a second implant of the same type should be refused")
+
+	var/obj/item/implant/tracking/I3 = allocate(/obj/item/implant/tracking)
+	TEST_ASSERT_NULL(dq_ledger_refusal(I3, torso, ORGAN_SLOT_IMPLANTS, null), "a different implant type should still fit")
+
+/// Destroying the organ deletes its implants (SLOT_DROP_DELETE), same as the
+/// raw contents this slot replaced.
+/datum/unit_test/dq_om_relation_implanted_in_drop_policy_deletes
+
+/datum/unit_test/dq_om_relation_implanted_in_drop_policy_deletes/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
+	var/obj/item/implant/I = allocate(/obj/item/implant)
+	I.handle_implant(H, BP_TORSO)
+	TEST_ASSERT(I in torso.implants, "setup: handle_implant should succeed")
+	qdel(torso)
+	TEST_ASSERT(QDELETED(I), "the implant should be deleted along with its organ")
 
 // ---------------------------------------------------------------- ai_eye_of
 

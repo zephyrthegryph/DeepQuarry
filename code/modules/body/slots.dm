@@ -444,7 +444,7 @@
 /// What is in body slot `def`.
 /mob/living/proc/body_slot_item(datum/om/relation/slot/body/def)
 	var/datum/ledger/L = dq_ledger(src)
-	var/list/things = L?.slots[def.id]
+	var/list/things = L?.slots[def.slot_id]
 	return length(things) ? things[1] : null
 
 /// Every item in this mob's body slots with any of `roles` (BODY_SLOT_*), in

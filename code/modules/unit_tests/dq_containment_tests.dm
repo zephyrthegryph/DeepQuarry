@@ -273,7 +273,7 @@
 	var/atom/parent = H.loc
 	var/list/expected = list()
 	for(var/datum/om/relation/slot/def as anything in L.defs)
-		for(var/atom/movable/T as anything in H.slot_contents(def.id))
+		for(var/atom/movable/T as anything in H.slot_contents(def.slot_id))
 			expected[T] = def.drop_policy
 	holders -= H
 	things -= H

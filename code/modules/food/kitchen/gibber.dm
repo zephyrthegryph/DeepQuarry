@@ -40,8 +40,8 @@
 		log_world("## MISC a [src] didn't find an input plate.")
 
 /obj/machinery/gibber/Destroy()
-	// occupant_of's teardown (destroy transaction phase 5, before Destroy())
-	// already cleared occupant if one was present.
+	// The occupant slot's own teardown (destroy transaction phase 5, before
+	// Destroy(), C8 step 2) already cleared occupant if one was present.
 	return ..()
 
 /// Sealed occupant slot (C8a, containment.md §10).
@@ -49,6 +49,9 @@
 	holder = /obj/machinery/gibber
 	slot_id = OCCUPANT_SLOT_GIBBER
 	name = "gibber"
+	// C8 step 2: replaces the separate occupant_of relation this machine used
+	// to hand-link.
+	target_ref_field = "occupant"
 
 /obj/machinery/gibber/autogibber/Destroy()
 	input_plate = null
@@ -154,7 +157,6 @@
 		if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
 			return
 		user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
-		om_link(victim, src, /datum/om/relation/occupant_of)
 		update_icon()
 
 /obj/machinery/gibber/verb/eject()
@@ -174,7 +176,6 @@
 	for(var/obj/O in src)
 		O.loc = src.loc
 	slot_remove(src.occupant, get_turf(src))
-	om_unlink(src.occupant, src, /datum/om/relation/occupant_of)
 	update_icon()
 	return
 
@@ -223,8 +224,11 @@
 	spawn(gib_time)
 		var/mob/living/gibbed = occupant
 		gibbed.gib()
-		if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains).
-			om_unlink(occupant, src, /datum/om/relation/occupant_of)
+		if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
+			// remains stay physically in the slot, but are no longer "the occupant" (the
+			// slot IS the occupant_of relation now, C8 step 2, so this clears the view
+			// field without a ledger move).
+			om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		operating = 0
 		if(LAZYLEN(byproducts))

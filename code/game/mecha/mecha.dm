@@ -274,6 +274,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	slot_id = MECHA_SLOT_PILOT
 	name = "pilot"
 	drop_policy = SLOT_DROP_HOLDER
+	// C8 step 2: replaces the separate occupant_of relation this mech used to
+	// hand-link -- a human pilot and an MMI/brain pilot both enter and leave
+	// through this slot now (mmi_moved_inside()/go_out()), so both get the
+	// automatic link/unlink for free.
+	target_ref_field = "occupant"
 
 /// External: equipment is bolted to the hull's hardpoints, not inside it.
 /// Capacity stays with mecha_equipment.dm's per-category limits.
@@ -1715,9 +1720,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return 0
 		user.drop_from_inventory(mmi_as_oc)
 		var/mob/brainmob = mmi_occupant
-		om_link(brainmob, src, /datum/om/relation/occupant_of)
-		brainmob.forceMove(src) //should allow relaymove
-		brainmob.canmove = 1
+		// Through the pilot slot (C8 step 2), so it gets the automatic
+		// om_link (occupant, etc.) the same way a human pilot does.
+		if(!brainmob.move_into(src, MECHA_SLOT_PILOT))
+			return 0
+		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.loc = src
 		mmi_as_oc.mecha = src
 		src.verbs += /obj/mecha/verb/eject
@@ -2028,7 +2035,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		om_link(H, src, /datum/om/relation/occupant_of)
 		START_PROCESSING(SSobj, src)
 		src.add_fingerprint(H)
 		src.verbs += /obj/mecha/verb/eject
@@ -2136,8 +2142,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		mob_container = brain.container
 	else
 		return
-	var/moved = ishuman(occupant) ? slot_remove(mob_container, src.loc) : mob_container.forceMove(src.loc)
-	if(moved)//ejecting mob container
+	// The pilot slot (C8 step 2) tracks `occupant` either way (a brain pilot
+	// is moved into it too, mmi_moved_inside()), so this is what leaves it
+	// and unlinks it, automatically, for both a human and an MMI/brain pilot.
+	var/moved = slot_remove(occupant, src.loc)
+	if(moved)//ejecting occupant
 		src.mecha_log_message("[mob_container] moved out.")
 		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)
@@ -2145,6 +2154,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			occupant.client.images -= dq_get_cloaked_selfimage(src)
 		if(istype(mob_container, /obj/item/mmi))
 			var/obj/item/mmi/mmi = mob_container
+			mmi.forceMove(src.loc)
 			if(mmi.get_occupant())
 				occupant.forceMove(mmi)
 			mmi.mecha = null
@@ -2152,7 +2162,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
 		occupant.in_enclosed_vehicle = 0
-		om_unlink(occupant, src, /datum/om/relation/occupant_of)
 		update_icon()
 		set_dir(dir_in)
 		verbs -= /obj/mecha/verb/eject

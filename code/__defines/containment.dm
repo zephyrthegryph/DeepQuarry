@@ -15,6 +15,8 @@
 #define CONTAINER_SLOT_INTERNALS "internals"
 /// A storage item's interior (/obj/item/storage, C4).
 #define CONTAINER_SLOT_STORAGE "storage"
+/// An organ's implant site: keyed by implant type (OM relations step 2).
+#define ORGAN_SLOT_IMPLANTS "implants"
 
 // ---- Occupant machines (C8, containment.md §10) ----
 /// The sealed occupant slot of a cryopod-family despawner.

@@ -36,6 +36,9 @@
 	holder = /obj/machinery/recharge_station
 	slot_id = OCCUPANT_SLOT_RECHARGE_STATION
 	name = "recharge station"
+	// C8 step 2: replaces the separate occupant_of relation this machine used
+	// to hand-link at each of its three entry points.
+	target_ref_field = "occupant"
 
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0
@@ -323,7 +326,6 @@
 		add_fingerprint(R)
 		if(!R.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 			return
-		om_link(R, src, /datum/om/relation/occupant_of)
 		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return 1
@@ -337,7 +339,6 @@
 		add_fingerprint(P)
 		if(!P.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 			return
-		om_link(P, src, /datum/om/relation/occupant_of)
 		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return 1
@@ -348,7 +349,6 @@
 			add_fingerprint(H)
 			if(!H.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 				return
-			om_link(H, src, /datum/om/relation/occupant_of)
 			START_MACHINE_PROCESSING(src)
 			update_icon()
 			return 1
@@ -359,7 +359,6 @@
 	if(!occupant)
 		return
 	slot_remove(occupant, get_turf(src))
-	om_unlink(occupant, src, /datum/om/relation/occupant_of)
 	update_icon()
 
 /obj/machinery/recharge_station/power_change()

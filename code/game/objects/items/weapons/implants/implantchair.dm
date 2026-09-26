@@ -29,6 +29,9 @@
 	holder = /obj/machinery/implantchair
 	slot_id = OCCUPANT_SLOT_IMPLANT_CHAIR
 	name = "implant chair"
+	// C8 step 2: replaces the separate occupant_of relation this machine used
+	// to hand-link in put_mob()/go_out().
+	target_ref_field = "occupant"
 
 
 // structured TGUI ImplantChair (see
@@ -89,11 +92,13 @@
 		return
 	if(M == occupant) // so that the guy inside can't eject himself -Agouri
 		return
-	slot_remove(src.occupant, get_turf(src))
+	// The occupant slot's own om_unlink (C8 step 2) clears `occupant` as soon
+	// as slot_remove() takes effect, so the mob to implant is captured first.
+	var/mob/living/carbon/leaving = src.occupant
+	slot_remove(leaving, get_turf(src))
 	if(injecting)
-		implant(src.occupant)
+		implant(leaving)
 		injecting = 0
-	om_unlink(src.occupant, src, /datum/om/relation/occupant_of)
 	icon_state = "implantchair"
 	return
 
@@ -109,7 +114,6 @@
 	if(!M.move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, usr))
 		to_chat(usr, span_warning("\The [src] won't take [M]!"))
 		return
-	om_link(M, src, /datum/om/relation/occupant_of)
 	src.add_fingerprint(usr)
 	icon_state = "implantchair_on"
 	return 1

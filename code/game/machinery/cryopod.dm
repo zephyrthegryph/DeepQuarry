@@ -307,6 +307,10 @@
 	holder = /obj/machinery/cryopod
 	slot_id = OCCUPANT_SLOT_CRYOPOD
 	name = "cryopod"
+	// C8 step 2: the ledger's own om_link (om_slot_entered/left) now writes
+	// `occupant` directly -- replaces the separate occupant_of relation this
+	// machine used to hand-link in set_occupant().
+	target_ref_field = "occupant"
 
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
@@ -724,9 +728,6 @@
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
 	if(new_occupant)
 		START_MACHINE_PROCESSING(src)
-		om_link(new_occupant, src, /datum/om/relation/occupant_of)
-	else if(occupant)
-		om_unlink(occupant, src, /datum/om/relation/occupant_of)
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"

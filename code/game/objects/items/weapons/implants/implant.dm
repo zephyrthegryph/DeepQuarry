@@ -16,6 +16,11 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
+/// The implant site slot is keyed by implant type (organ_external.dm): at
+/// most one implant of a given kind per organ.
+/obj/item/implant/slot_key()
+	return type
+
 /obj/item/implant/proc/trigger(emote, source as mob)
 	return
 
@@ -26,21 +31,20 @@
 /obj/item/implant/proc/handle_implant(mob/source, target_zone = BP_TORSO)
 	. = TRUE
 	implanted = TRUE
+	var/obj/item/organ/external/affected
 	if(ishuman(source))
 		var/mob/living/carbon/human/H = source
-		var/obj/item/organ/external/affected = H.get_organ(target_zone)
-		if(affected)
-			// The implanted_in relation (code/datums/om/library.dm) sets
-			// part/imp_in and the organ's implants membership.
-			om_link(src, affected, /datum/om/relation/implanted_in)
-	if(!part)
+		affected = H.get_organ(target_zone)
+	if(affected)
+		// The implant site slot (organ_external.dm, OM relations step 2) is
+		// the implanted_in relation: this move sets part/imp_in and the
+		// organ's implants membership, same as the physical placement.
+		move_into(affected, ORGAN_SLOT_IMPLANTS)
+	else
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
 		// reverse list on a bare mob the way an organ's `implants` is one.
 		imp_in = source
-	if(part)
-		forceMove(part)
-	else
 		forceMove(source)
 
 	GLOB.listening_objects |= src
@@ -74,9 +78,9 @@
 		post_implant(H)
 
 /obj/item/implant/Destroy()
-	// The implanted_in relation's teardown (destroy transaction phase 5,
-	// before Destroy()) already cleared part/imp_in and this implant's entry
-	// in the organ's implants list, if it had one.
+	// The implant site slot's teardown (destroy transaction phase 5, before
+	// Destroy(), OM relations step 2) already cleared part/imp_in and this
+	// implant's entry in the organ's implants list, if it had one.
 	GLOB.listening_objects.Remove(src)
 	return ..()
 
