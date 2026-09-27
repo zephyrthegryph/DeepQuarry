@@ -132,6 +132,9 @@
 
 /// `A` just got a heat body: move its node's watches onto it.
 /proc/dq_rx_heat_body_created(atom/A)
+	// Heat watches are registered only once there is a body to watch.
+	var/datum/rule_binding/binding = dq_rule_binding_of(A)
+	binding?.link_heat()
 	var/datum/dq_rx_nodes/nodes = dq_rx_nodes()
 	var/node = A.rx_node
 	if(isnull(node) || nodes.atom_of(node) != A)
@@ -148,7 +151,7 @@
 /datum/dq_rx_nodes
 	var/next_node = 1
 	var/next_watch = 1
-	/// "[node]" -> weakref to its atom.
+	/// "[node]" -> its atom.
 	var/list/owners = list()
 	// The atom keeps its node id in /datum/var/rx_node (no REF() text keys).
 	/// "[node]" -> its watch tokens.
@@ -163,13 +166,14 @@
 	if(!isnull(A.rx_node) && atom_of(A.rx_node) == A)
 		return A.rx_node
 	var/node = next_node++
-	owners["[node]"] = WEAKREF(A)
+	// Held directly: a node lives only inside its object's binding, which
+	// frees it (destroy_node) when the object dematerializes.
+	owners["[node]"] = A
 	A.rx_node = node
 	return node
 
 /datum/dq_rx_nodes/proc/atom_of(node)
-	var/datum/weakref/ref = owners["[node]"]
-	var/atom/A = ref?.resolve()
+	var/atom/A = owners["[node]"]
 	return (A && !QDELETED(A)) ? A : null
 
 /datum/dq_rx_nodes/proc/value_of(node)
