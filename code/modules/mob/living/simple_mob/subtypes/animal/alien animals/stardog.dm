@@ -36,7 +36,6 @@
 	attack_sound = 'sound/voice/bork.ogg'
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
-
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
 	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
@@ -92,7 +91,6 @@
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
-
 
 /datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
 	of = /mob/living/simple_mob/vore/overmap/stardog
@@ -381,7 +379,6 @@
 /turf/simulated/floor/outdoors/fur/ex_act(severity)
 	return
 
-
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
 	if(ishuman(AM))
@@ -410,7 +407,6 @@
 
 	apply_layer(MOB_WATER_LAYER)
 
-
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)
 	. = ..()
 	if(tree_chance && prob(tree_chance) && !check_density())
@@ -419,7 +415,6 @@
 			tree.color = tree_color
 		else
 			tree.color = color
-
 
 /turf/simulated/floor/outdoors/fur/verb/pet()
 	set name = "Pet Fur"
@@ -768,12 +763,10 @@
 		if(!Turf.check_density())
 			new F(Turf)
 
-
 /area/redgate/stardog/flesh_abyss/play_ambience(mob/living/L, initial = TRUE)
 	if(!L.check_sound_preference(/datum/preference/toggle/digestion_noises))
 		return
 	..()
-
 
 /obj/structure/control_pod	//god someone is going to try to fuck with this, everyone is going to be angry, I'm so sorry
 	name = "node"
@@ -873,7 +866,6 @@
 	var/area/a = get_area(src)
 	name = a.name
 
-
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye
 	name = "visual nexus"
 	desc = "A glowing bundle of nerves across which you can see what the dog sees."
@@ -966,7 +958,6 @@
 	icon_state = "bluwhicir"
 
 	var/list/our_eyes
-
 
 /area/redgate/stardog/eyes/Entered(mob/M)
 	. = ..()
@@ -1238,11 +1229,6 @@
 		we_process = FALSE
 		return PROCESS_KILL
 
-/turf/simulated/floor/water/digestive_enzymes/Destroy()
-	if(we_process)
-		PERIODIC_STOP(src)
-	. = ..()
-
 /turf/simulated/floor/water/digestive_enzymes/proc/can_digest(atom/movable/digest_target)
 	. = FALSE
 	if(digest_target.loc != src)
@@ -1347,7 +1333,6 @@
 			if(!L.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			linked_mob.adjust_nutrition(how_much)
-
 
 /obj/structure/auto_flesh_door	//It's like a simple door, but it opens and closes automatically now and then!
 	name = "flesh valve"

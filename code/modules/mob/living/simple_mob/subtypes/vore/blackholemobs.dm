@@ -155,7 +155,6 @@
 	var/explosion_delay_lower	= 1 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 3 SECONDS	// Upper bound.
 
-
 	say_list_type = /datum/say_list/merc/blackhole
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
@@ -178,7 +177,6 @@
 	melee_damage_upper = 30
 	attack_sound = 'sound/weapons/blade1.ogg'
 	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
-
 
 /mob/living/simple_mob/vore/blackhole/grotesque
 	name = "grotesque"
@@ -313,7 +311,6 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-
 	say_list_type = /datum/say_list/merc/blackhole
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
@@ -420,12 +417,10 @@
 	reload_max = 5
 	reload_time = 5 SECONDS
 
-
 	ranged_attack_delay = 1.5 SECONDS
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole/ranged_pre_animation(atom/A)
 	Beam(get_turf(A), icon_state = "sniper_beam", time = 1 SECONDS, maxdistance = 20)
-
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole/rocket
 	name = "Black Hole anti tank"
@@ -563,7 +558,6 @@
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_state = "mech1_wreck"
 
-
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///obelisk and monolith!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -700,9 +694,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	exclusive = TRUE
 	volume_chan = VOLUME_CHANNEL_MACHINERY
 
-/mob/living/simple_mob/vore/blackhole_obelisk/Destroy()
-	QDEL_NULL(loopy)
-	. = ..()
+REF_OWNED(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy")
 
 /mob/living/simple_mob/vore/blackhole_obelisk/attack_hand(mob/living/L)
 	..()
@@ -728,7 +720,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 			if(!incapacitated(INCAPACITATION_ALL) && prob(grab_resist))
 				L.visible_message(span_warning("[src] pulses ominously at [L], forcefully pushing them away with psychic energy as they try to grab it!"))
 				return
-
 
 #undef OBELISK_LURE
 
@@ -858,11 +849,9 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 ///ai holder stuff!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
-
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///special bullets, because the 'projectilesound' var does not work!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
-
 
 /obj/item/projectile/bullet/pistol/bh1
 	name = "7mm bullet"

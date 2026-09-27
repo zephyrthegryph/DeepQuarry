@@ -21,17 +21,7 @@
 
 	var/created_for
 
-/mob/new_player/Destroy()
-	if(manifest_dialog)
-		QDEL_NULL(manifest_dialog)
-	if(late_choices_dialog)
-		QDEL_NULL(late_choices_dialog)
-	// clean up poll dialogs (privacy + player poll browser) migrated to TGUI
-	if(privacy_poll_dialog)
-		QDEL_NULL(privacy_poll_dialog)
-	if(poll_browser_dialog)
-		QDEL_NULL(poll_browser_dialog)
-	. = ..()
+REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "privacy_poll_dialog", "poll_browser_dialog"))
 
 /mob/new_player/get_status_tab_items()
 	. = ..()
@@ -74,7 +64,6 @@
 		client.prefs.process_link(src, href_list)
 	if(href_list["open_station_news"])
 		show_latest_news(GLOB.news_data.station_newspaper)
-
 
 /mob/new_player/proc/handle_server_news()
 	if(!client)
@@ -149,7 +138,6 @@
 		if(play_mode == "pai")
 			return 0
 	return 1
-
 
 /mob/new_player/proc/AttemptLateSpawn(rank)
 	if (src != usr)
@@ -442,7 +430,6 @@
 
 /mob/new_player/MayRespawn()
 	return TRUE
-
 
 /mob/new_player/proc/spawn_checks_vr(rank)
 	var/pass = TRUE

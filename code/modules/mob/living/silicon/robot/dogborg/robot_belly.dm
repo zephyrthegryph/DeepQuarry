@@ -41,10 +41,6 @@
 	QDEL_NULL(R.riding_datum)
 	R.can_buckle = initial(R.can_buckle)
 
-/datum/component/robot_belly/Destroy(force)
-	active_ore_bags = null
-	return ..()
-
 /// The sleeper sets this; the sprite only redraws when it actually changes.
 /datum/component/robot_belly/proc/set_sleeper_state(new_state)
 	if(sleeper_state == new_state)
@@ -117,7 +113,6 @@
 		fullness_ref[1] = capacity
 	else if(preference == "Both")
 		fullness_ref[1] += 1
-
 
 // --- Riding ------------------------------------------------------------------------------------
 

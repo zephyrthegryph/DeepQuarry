@@ -35,10 +35,6 @@
 		origin = om_handle(holder)
 	..()
 
-/datum/modifier/Destroy(force)
-	. = ..()
-	origin = null
-
 // Checks if the modifier should be allowed to be applied to the mob before attaching it.
 // Override for special criteria, e.g. forbidding robots from receiving it.
 /datum/modifier/proc/can_apply(mob/living/L, suppress_output = FALSE)
@@ -196,7 +192,6 @@
 /datum/modifier/proc/describe_modifier_effects()
 	return jointext(body_factor_describe(factors), "<br>")
 
-
 // === merged from modifiers_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/modifier
 	var/effect_color					// Allows for coloring of modifiers.
@@ -218,7 +213,6 @@
 	// You're underwater. Good luck shooting a gun. (Makes shots as if you were 3.33 tiles further.)
 	// You're underwater and a bit harder to hit.
 	factors = alist(BF_SLOWDOWN = -1.0, BF_ACCURACY = -50, BF_EVASION = 30, BF_MELEE_DAMAGE = 0.75, BF_SIEMENS = 1.5)
-
 
 /datum/modifier/underwater_stealth/on_applied()
 	holder.alpha = 50
@@ -281,11 +275,6 @@
 
 /datum/modifier/shield_projection/on_expire()
 	UnregisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY)
-
-/datum/modifier/shield_projection/Destroy(force)
-	shield_generator = null
-	energy_source = null
-	return ..()
 
 /datum/modifier/shield_projection/check_if_valid() //Let's check to make sure you got the stuff and set the vars. Don't need to modify this for any subtypes!
 	if(ishuman(holder)) //Only humans can use this! Other things later down the line might use the same stuff this does, but the shield generator is human only!

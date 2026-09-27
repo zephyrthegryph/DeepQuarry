@@ -32,10 +32,6 @@
 	..(null,"is smashed into pieces!")
 	qdel(src)
 
-/mob/living/simple_mob/mechanical/ward/Destroy()
-	owner = null
-	return ..()
-
 /mob/living/simple_mob/mechanical/ward/IIsAlly(mob/living/L)
 	if(owner == L)
 		return TRUE

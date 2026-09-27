@@ -44,7 +44,6 @@
 	vore_active = 1
 	vore_default_mode = DM_HOLD
 
-
 	var/morphed = FALSE
 	var/tooltip = TRUE
 	var/melee_damage_disguised = 0
@@ -67,10 +66,6 @@
 	if(!istype(src, /mob/living/simple_mob/vore/morph/dominated_prey))
 		add_verb(src, /mob/living/simple_mob/vore/morph/proc/morph_color)
 
-	return ..()
-
-/mob/living/simple_mob/vore/morph/Destroy()
-	form = null
 	return ..()
 
 /mob/living/simple_mob/vore/morph/proc/allowed(atom/movable/A)
@@ -231,7 +226,6 @@
 		return
 	return ..()
 
-
 /mob/living/simple_mob/vore/morph/update_icons()
 	if(morphed)
 		return
@@ -254,7 +248,6 @@
 	if(newcolor)
 		color = newcolor
 		chosen_color = newcolor
-
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()
 	set name = "Take Over Prey"
@@ -318,7 +311,6 @@
 	var/datum/mind/prey_mind
 	vore_active = FALSE
 
-
 /mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, datum/mind/pmind, parent, prey)
 	. = ..()
 	if(!pmind)
@@ -340,13 +332,6 @@
 /mob/living/simple_mob/vore/morph/dominated_prey/death(gibbed)
 	. = ..()
 	undo_prey_takeover(FALSE)
-
-
-/mob/living/simple_mob/vore/morph/dominated_prey/Destroy()
-	. = ..()
-	parent_morph = null
-	prey_body = null
-	prey_mind = null
 
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/undo_prey_takeover(ooc_escape)
 	var/obj/buckled = BUCKLED(src)

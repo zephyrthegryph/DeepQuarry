@@ -62,10 +62,7 @@
 
 	..()
 
-/datum/plane_holder/Destroy()
-	my_mob = null
-	QDEL_LIST_NULL(plane_masters) //Goodbye my children, be free
-	return ..()
+REF_OWNED_LIST(/datum/plane_holder, "plane_masters")
 
 /datum/plane_holder/proc/set_vis(which = null, state = FALSE)
 	ASSERT(which)
@@ -103,9 +100,6 @@
 	if(!PM)
 		stack_trace("Tried to alter [which] in plane_holder on [my_mob]!")
 	PM.alter_plane_values(arglist(values))
-
-
-
 
 ////////////////////
 // The Plane Master
@@ -238,7 +232,6 @@
 /atom/movable/screen/plane_master/main
 	alpha = 255
 	mouse_opacity = 1
-
 
 /////////////////
 //AR planemaster does some special image handling

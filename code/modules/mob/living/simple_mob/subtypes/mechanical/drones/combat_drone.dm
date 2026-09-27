@@ -72,10 +72,7 @@
 	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
 	return ..()
 
-/mob/living/simple_mob/mechanical/combat_drone/Destroy()
-	QDEL_NULL(ion_trail)
-	QDEL_NULL(shields)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/mechanical/combat_drone, list("ion_trail", "shields"))
 
 /mob/living/simple_mob/mechanical/combat_drone/death()
 	..(null,"suddenly breaks apart.")
@@ -99,7 +96,6 @@
 /mob/living/simple_mob/mechanical/combat_drone/lesser
 	desc = "An automated combat drone with an aged apperance."
 	movement_cooldown = 3
-
 
 // This one is the type spawned by the random event.
 // It won't wander away from its spawn point

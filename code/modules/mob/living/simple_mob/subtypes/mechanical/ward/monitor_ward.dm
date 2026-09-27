@@ -33,7 +33,6 @@
 	player_msg = "You will automatically alert your owner (if one exists) of enemies you see nearby.<br>\
 	You can also <b>see invisible entities, and will automatically uncloak</b> nearby invisible or hidden enemies."
 
-
 	var/list/seen_mobs = list()
 	var/view_range = 5
 
@@ -78,10 +77,6 @@
 	refresh_glow() // Update the light immediately.
 	..()
 
-/mob/living/simple_mob/mechanical/ward/monitor/Destroy()
-	seen_mobs = null
-	return ..()
-
 /mob/living/simple_mob/mechanical/ward/monitor/proc/detect_mobs()
 	var/last_seen_mobs_len = seen_mobs.len
 	var/list/mobs_nearby = hearers(view_range, src)
@@ -122,7 +117,6 @@
 	// Check if we need to update icon.
 	if(seen_mobs.len != last_seen_mobs_len)
 		update_icon()
-
 
 // Can't attack but calls for help. Used by the monitor and spotter wards.
 // Special attacks are not blocked since they might be used for things besides attacking, and can be conditional.

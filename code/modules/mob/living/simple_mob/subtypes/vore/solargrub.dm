@@ -163,9 +163,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 
-/mob/living/simple_mob/vore/solargrub/Destroy()
-	. = ..()
-
 /datum/om/stage/life/light/simple_mob/vore/solargrub
 	of = /mob/living/simple_mob/vore/solargrub
 

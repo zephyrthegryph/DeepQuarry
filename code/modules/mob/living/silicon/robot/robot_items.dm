@@ -12,10 +12,7 @@
 	. = ..()
 	dummy_card = new dummy_card_type(src)
 
-/obj/item/card/robot/Destroy()
-	qdel(dummy_card)
-	dummy_card = null
-	. = ..()
+REF_OWNED(/obj/item/card/robot, "dummy_card")
 
 /obj/item/card/robot/GetID()
 	return dummy_card
@@ -75,7 +72,6 @@
 
 		for(var/obj/item/reagent_containers/food/I in pickup)
 
-
 			if( I != src && !I.anchored && !istype(I, /obj/item/clothing/under) && !istype(I, /obj/item/clothing/suit) && !istype(I, /obj/item/projectile) )
 				var/add = 0
 				if(I.w_class == ITEMSIZE_TINY)
@@ -114,7 +110,6 @@
 		else					// they clicked on a table
 			dropspot = target.loc
 
-
 		overlays = null
 
 		var droppedSomething = 0
@@ -134,9 +129,6 @@
 
 	return ..()
 
-
-
-
 // A special pen for service droids. Can be toggled to switch between normal writting mode, and paper rename mode
 // Allows service droids to rename paper items.
 
@@ -145,7 +137,6 @@
 	name = "Printing Pen"
 	var/mode = 1
 	special_handling = TRUE
-
 
 /obj/item/pen/robopen/attack_self(mob/user)
 	. = ..(user)
@@ -479,9 +470,6 @@
 	var/last_flash = 0				//Stores the time of last flash
 
 /obj/item/borg/combat/shield/Initialize(mapload)
-	. = ..()
-
-/obj/item/borg/combat/shield/Destroy()
 	. = ..()
 
 /obj/item/borg/combat/shield/attack_self(mob/living/user)
