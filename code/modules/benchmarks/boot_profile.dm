@@ -51,8 +51,10 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	for(var/i = 1, i < length(report), i += 2)
 		if(report[i + 1] >= 1048576)
 			parts[report[i]] = round(report[i + 1] / 1048576, 0.1)
+	var/list/process = benchmark_process_memory()
 	GLOB.benchmark_rust_marks += list(list(
 		"name" = name,
+		"private_mb" = islist(process) ? process["private_mb"] : null,
 		"current_mb" = round(heap[1] / 1048576, 0.1),
 		"peak_mb" = round(heap[2] / 1048576, 0.1),
 		"parts" = parts,

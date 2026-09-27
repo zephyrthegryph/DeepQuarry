@@ -620,3 +620,96 @@
 	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
 	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
 	detail("radiation_diagnostics", SSradiation.performance_diagnostics())
+
+/// Where the memory outside DM objects goes (init_and_turfs.md §0.4). Counts
+/// unique appearances (atoms' own and their overlay/underlay entries), icons,
+/// images and mutable appearances, then frees things in stages and records
+/// the private-memory drop after each: overlays and underlays, lighting,
+/// then every movable. Destructive: run it alone.
+/datum/benchmark/memory_breakdown
+	id = "memory_breakdown"
+	description = "Appearance counts and staged private-memory drops"
+
+/datum/benchmark/memory_breakdown/proc/private_mb()
+	var/list/process = benchmark_process_memory()
+	return islist(process) ? process["private_mb"] : 0
+
+/// Waits for the external sampler and BYOND's collector, then records.
+/datum/benchmark/memory_breakdown/proc/stage(name)
+	wait_seconds(param("settle", 8))
+	var/mb = private_mb()
+	metric("private_mb_[name]", mb, "MB")
+	return mb
+
+/datum/benchmark/memory_breakdown/Run()
+	wait_for_assets()
+	wait_fires(SSair, 5)
+	var/base = stage("booted")
+	var/list/own = list()
+	var/list/overlay = list()
+	var/atoms = 0
+	var/overlay_refs = 0
+	for(var/atom/A in world)
+		atoms++
+		own[ref(A.appearance)] = TRUE
+		for(var/entry in A.overlays)
+			overlay_refs++
+			overlay[ref(entry)] = TRUE
+		for(var/entry in A.underlays)
+			overlay_refs++
+			overlay[ref(entry)] = TRUE
+		CHECK_TICK
+	metric("atoms", atoms, "atoms", "none")
+	metric("unique_atom_appearances", length(own), "appearances", "none")
+	metric("overlay_underlay_refs", overlay_refs, "refs", "none")
+	metric("unique_overlay_appearances", length(overlay), "appearances", "none")
+	own = null
+	overlay = null
+	var/icons = 0
+	for(var/icon/I)
+		icons++
+		CHECK_TICK
+	var/images = 0
+	for(var/image/I)
+		images++
+		CHECK_TICK
+	var/mutables = 0
+	for(var/mutable_appearance/M)
+		mutables++
+		CHECK_TICK
+	metric("icon_objects", icons, "icons", "none")
+	metric("image_objects", images, "images", "none")
+	metric("mutable_appearances", mutables, "objects", "none")
+
+	// Stage 1: every overlay and underlay.
+	for(var/atom/A in world)
+		if(length(A.overlays))
+			A.cut_overlays()
+			A.overlays.Cut()
+		if(length(A.underlays))
+			A.underlays.Cut()
+		CHECK_TICK
+	var/no_overlays = stage("no_overlays")
+	metric("freed_mb_overlays", base - no_overlays, "MB", "none")
+
+	// Stage 2: lighting objects, corners and sources.
+	SSlighting.can_fire = FALSE
+	for(var/datum/lighting_object/O)
+		qdel(O, force = TRUE)
+		CHECK_TICK
+	for(var/datum/light_source/L)
+		qdel(L, force = TRUE)
+		CHECK_TICK
+	for(var/datum/lighting_corner/C)
+		qdel(C, force = TRUE)
+		CHECK_TICK
+	var/no_lighting = stage("no_lighting")
+	metric("freed_mb_lighting", no_overlays - no_lighting, "MB", "none")
+
+	// Stage 3: every obj (machines, structures, items, effects).
+	for(var/obj/O in world)
+		qdel(O, force = TRUE)
+		CHECK_TICK
+	var/no_objs = stage("no_objs")
+	metric("freed_mb_objs", no_lighting - no_objs, "MB", "none")
+	metric("remaining_mb", no_objs, "MB", "none")
