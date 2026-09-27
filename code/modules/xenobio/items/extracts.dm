@@ -14,7 +14,6 @@
 	var/slime_type
 	flags = OPENCONTAINER
 
-
 /obj/item/slime_extract/Initialize(mapload)
 	. = ..()
 	create_reagents(60)
@@ -62,7 +61,6 @@
 		T.visible_message("[icon2html(T,viewers(T))]<b>\The [T]</b> goes inert.")
 		T.name = "inert [initial(T.name)]"
 
-
 // ***************
 // * Grey slimes *
 // ***************
@@ -73,7 +71,6 @@
 	description_info = "When injected with phoron, this extract creates a grey slime. When injected with blood, this extract creates some monkey cubes. \
 	When injected with water, this extract creates some slime jelly."
 	slime_type = /mob/living/simple_mob/slime/xenobio
-
 
 /datum/decl/chemical_reaction/instant/slime/grey_new_slime
 	name = "Slime Spawn"
@@ -88,7 +85,6 @@
 	new /mob/living/simple_mob/slime/xenobio(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/grey_monkey
 	name = "Slime Monkey"
 	id = "m_grey_monkey"
@@ -101,7 +97,6 @@
 	for(var/i = 1 to 5) // Increased number of monkey cubes from 4 to 5
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/grey_slimejelly
 	name = REAGENT_SLIMEJELLY
@@ -122,7 +117,6 @@
 	When injected with water, this extract creates some unorthodox materials. When injected with slime jelly, this extract creates some steel."
 	slime_type = /mob/living/simple_mob/slime/xenobio/metal
 
-
 /datum/decl/chemical_reaction/instant/slime/metal_materials_basic
 	name = "Slime Basic Construction Materials"
 	id = "m_metal_basic"
@@ -137,7 +131,6 @@
 		new type_to_spawn(get_turf(holder.my_atom), 10)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/metal_materials_adv
 	name = "Slime Advanced Construction Materials"
 	id = "m_metal_adv"
@@ -151,7 +144,6 @@
 		new type_to_spawn(get_turf(holder.my_atom), 10)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/metal_materials_weird
 	name = "Slime Weird Construction Materials"
 	id = "m_metal_weird"
@@ -164,7 +156,6 @@
 		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_weird)
 		new type_to_spawn(get_turf(holder.my_atom), 5)
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/metal_materials_steel
 	name = "Slime Weird Construction Materials"
@@ -188,7 +179,6 @@
 	When injected with water, this extract creates a clamness wave that calms enraged slimes. When injected with slime jelly, this extract creates some cryotoxin."
 	slime_type = /mob/living/simple_mob/slime/xenobio/blue
 
-
 /datum/decl/chemical_reaction/instant/slime/blue_frostoil
 	name = "Slime Frost Oil"
 	id = "m_blue_frostoil"
@@ -196,7 +186,6 @@
 	required_reagents = list(REAGENT_ID_PHORON = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/blue
-
 
 /datum/decl/chemical_reaction/instant/slime/blue_stability
 	name = "Slime Stability"
@@ -208,7 +197,6 @@
 /datum/decl/chemical_reaction/instant/slime/blue_stability/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/stabilizer(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/blue_calm
 	name = "Slime Calm"
@@ -242,7 +230,6 @@
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/blue_cryotoxin
 	name = "Slime Cryotoxin"
 	id = "m_blue_cryotoxin"
@@ -263,7 +250,6 @@
 	When injected with slime jelly, this extract creates a fertility agent, which can be used to increase amount of slime's offspring."
 	slime_type = /mob/living/simple_mob/slime/xenobio/purple
 
-
 /datum/decl/chemical_reaction/instant/slime/purple_steroid
 	name = "Slime Steroid"
 	id = "m_purple_steroid"
@@ -274,7 +260,6 @@
 /datum/decl/chemical_reaction/instant/slime/purple_steroid/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/steroid(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/purple_infertility
 	name = "Slime Infetility"
@@ -287,7 +272,6 @@
 	new /obj/item/slimepotion/infertility(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/purple_shrink
 	name = "Slime Shrink"
 	id = "m_purple_shrink"
@@ -298,7 +282,6 @@
 /datum/decl/chemical_reaction/instant/slime/purple_shrink/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/shrink(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/purple_fertility
 	name = "Slime Fetility"
@@ -322,7 +305,6 @@
 	some smoke. When injected with slime jelly, this extract creates some pyrotoxin."
 	slime_type = /mob/living/simple_mob/slime/xenobio/orange
 
-
 /datum/decl/chemical_reaction/instant/slime/orange_fire
 	name = "Slime Fire"
 	id = "m_orange_fire"
@@ -336,7 +318,6 @@
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_fire, holder.my_atom)
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/orange_heatwave
 	name = "Slime Heat Wave"
@@ -389,7 +370,6 @@
 	playsound(T, 'sound/effects/phasein.ogg', 75, 1)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/orange_smoke
 	name = "Slime Smoke"
 	id = "m_orange_smoke"
@@ -405,7 +385,6 @@
 	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
 	S.start()
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/orange_pyrotoxin
 	name = "Slime Pyrotoxin"
@@ -426,7 +405,6 @@
 	this extract creates an EMP puls. When injected with slime jelly, this extract creates a self-charging slime battery."
 	slime_type = /mob/living/simple_mob/slime/xenobio/yellow
 
-
 /datum/decl/chemical_reaction/instant/slime/yellow_lightning
 	name = "Slime Lightning"
 	id = "m_yellow_lightning"
@@ -441,7 +419,6 @@
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_lightning, holder.my_atom)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/yellow_flashlight
 	name = "Slime Flashlight"
 	id = "m_yellow_flashlight"
@@ -452,7 +429,6 @@
 /datum/decl/chemical_reaction/instant/slime/yellow_flashlight/on_reaction(datum/reagents/holder)
 	new /obj/item/flashlight/slime(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/yellow_emp
 	name = "Slime EMP"
@@ -467,7 +443,6 @@
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_emp, holder.my_atom)
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/yellow_battery
 	name = "Slime Cell"
@@ -490,7 +465,6 @@
 	description_info = "When injected with phoron, this extract creates a few random creatures. When injected with blood, this extract a random hostile creature. \
 	When injected with water, this extract creates a random passive creature. When injected with slime jelly, this extract creates some gold."
 	slime_type = /mob/living/simple_mob/slime/xenobio/gold
-
 
 /datum/decl/chemical_reaction/instant/slime/gold_random_mobs
 	name = "Slime Random Mobs"
@@ -517,7 +491,6 @@
 			step(C, pick(NORTH,SOUTH,EAST,WEST))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/gold_hostile_mob
 	name = "Slime Hostile Mob"
 	id = "m_gold_hostile_mob"
@@ -532,7 +505,6 @@
 	for(var/l = 1, l <= rand(1, 3), l++)
 		step(C, pick(NORTH,SOUTH,EAST,WEST))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/gold_safe_mob
 	name = "Slime Safe Mob"
@@ -551,7 +523,6 @@
 	for(var/l = 1, l <= rand(1, 3), l++)
 		step(C, pick(NORTH,SOUTH,EAST,WEST))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/gold_materials_gold
 	name = "Slime Gold"
@@ -575,7 +546,6 @@
 	with water, this extract creates some completely random materials. When injected with slime jelly, this extract creates some silver."
 	slime_type = /mob/living/simple_mob/slime/xenobio/silver
 
-
 /datum/decl/chemical_reaction/instant/slime/silver_materials_basic
 	name = "Slime Basic Science Materials"
 	id = "m_silver_basic"
@@ -589,7 +559,6 @@
 		new type_to_spawn(get_turf(holder.my_atom), 5)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/silver_materials_adv
 	name = "Slime Advanced Science Materials"
 	id = "m_silver_adv"
@@ -601,7 +570,6 @@
 	var/type_to_spawn = pickweight(GLOB.xenobio_silver_materials_adv)
 	new type_to_spawn(get_turf(holder.my_atom), 3)
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/silver_materials_random
 	name = "Slime Random Materials"
@@ -627,7 +595,6 @@
 		new type_to_spawn(get_turf(holder.my_atom), amount)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/silver_materials_silver
 	name = "Slime Silver"
 	id = "m_silver_silver"
@@ -649,7 +616,6 @@
 	description_info = "When injected with water, this extract creates some phoron. When injected with slime jelly, this extract creates some blood."
 	slime_type = /mob/living/simple_mob/slime/xenobio/dark_purple
 
-
 /datum/decl/chemical_reaction/instant/slime/dark_purple_phoron
 	name = "Slime Phoron"
 	id = "m_darkpurple_phoron"
@@ -657,7 +623,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/dark_purple
-
 
 /datum/decl/chemical_reaction/instant/slime/dark_purple_blood
 	name = "Slime Blood"
@@ -677,7 +642,6 @@
 	description_info = "When injected with phoron, this extract creates a cold wave. When injected with blood, this extract grants ability to resist temperature for a while. \
 	When injected with water, the water freezes. When injected with slime jelly, this extract creates a death agent, which can be used to instantly kill a slime."
 	slime_type = /mob/living/simple_mob/slime/xenobio/dark_blue
-
 
 /datum/decl/chemical_reaction/instant/slime/dark_blue_cold_snap
 	name = "Slime Cold Snap"
@@ -742,7 +706,6 @@
 
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/dark_blue_temp_resist
 	name = "Slime Temperature Resistance"
 	id = "m_darkblue_temperature_resist"
@@ -766,7 +729,6 @@
 
 	factors = alist(BF_INCOMING_THERMAL = 0.5, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0)
 
-
 /datum/decl/chemical_reaction/instant/slime/dark_blue_ice
 	name = "Slime Ice"
 	id = "m_darkblue_ice"
@@ -774,7 +736,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 5
 	required = /obj/item/slime_extract/dark_blue
-
 
 /datum/decl/chemical_reaction/instant/slime/dark_blue_death
 	name = "Slime Death"
@@ -799,7 +760,6 @@
 	unreceptive to discipline."
 	slime_type = /mob/living/simple_mob/slime/xenobio/red
 
-
 /datum/decl/chemical_reaction/instant/slime/red_mutation
 	name = "Slime Mutation"
 	id = "m_red_mutation"
@@ -810,7 +770,6 @@
 /datum/decl/chemical_reaction/instant/slime/red_mutation/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/mutator(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/red_enrage
 	name = "Slime Enrage"
@@ -846,7 +805,6 @@
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/red_hotsauce
 	name = "Slime Hot Sauce"
 	id = "m_red_hotsauce"
@@ -854,7 +812,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/red
-
 
 /datum/decl/chemical_reaction/instant/slime/red_ferality
 	name = "Slime Ferality"
@@ -903,9 +860,6 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/slime_extract/green/Destroy()
-	. = ..()
-
 /datum/decl/chemical_reaction/instant/slime/green_radpulse
 	name = "Slime Radiation Pulse"
 	id = "m_green_radpulse"
@@ -920,8 +874,6 @@
 	if(istype(holder.my_atom, /obj/item/slime_extract/green))
 		om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_start_emitting, holder.my_atom)
 
-
-
 /datum/decl/chemical_reaction/instant/slime/green_emitter
 	name = "Slime Radiation Emitter"
 	id = "m_green_emitter"
@@ -934,7 +886,6 @@
 	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/green_radium
 	name = "Slime Radium"
 	id = "m_green_radium"
@@ -942,7 +893,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/green
-
 
 /datum/decl/chemical_reaction/instant/slime/green_uranium
 	name = "Slime Uranium"
@@ -966,7 +916,6 @@
 	extract creates some organ healing agent. When injected with slime jelly, this extract creates a powerful regenerative wave."
 	slime_type = /mob/living/simple_mob/slime/xenobio/pink
 
-
 /datum/decl/chemical_reaction/instant/slime/pink_bone_fix
 	name = "Slime Bone Med"
 	id = "m_pink_bone_fixer"
@@ -974,7 +923,6 @@
 	required_reagents = list(REAGENT_ID_PHORON = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/pink
-
 
 /datum/decl/chemical_reaction/instant/slime/pink_clotting
 	name = "Slime Clotting Med"
@@ -984,7 +932,6 @@
 	result_amount = 30
 	required = /obj/item/slime_extract/pink
 
-
 /datum/decl/chemical_reaction/instant/slime/pink_organ_fix
 	name = "Slime Organ Med"
 	id = "m_pink_organ_fixer"
@@ -992,7 +939,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/pink
-
 
 /datum/decl/chemical_reaction/instant/slime/pink_heal_pulse
 	name = "Slime Heal Pulse"
@@ -1023,7 +969,6 @@
 	creates a fake explosion sound. When injected with slime jelly, this extract explodes."
 	slime_type = /mob/living/simple_mob/slime/xenobio/oil
 
-
 /datum/decl/chemical_reaction/instant/slime/oil_fuel
 	name = "Slime Fuel"
 	id = "m_oil_fuel"
@@ -1032,7 +977,6 @@
 	result_amount = 30
 	required = /obj/item/slime_extract/oil
 
-
 /datum/decl/chemical_reaction/instant/slime/oil_oil
 	name = "Slime Oil"
 	id = "m_oil_oil"
@@ -1040,7 +984,6 @@
 	required_reagents = list(REAGENT_ID_BLOOD = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/oil
-
 
 /datum/decl/chemical_reaction/instant/slime/oil_fakesplosion
 	name = "Slime Fake Explosion"
@@ -1053,7 +996,6 @@
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	explosion(get_turf(holder.my_atom), 0, 0, 0)
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/oil_explosion
 	name = "Slime Explosion"
@@ -1087,7 +1029,6 @@
 	extract causes random teleportation. When injected with slime jelly, this extract creates a disposable precise teleportation tool."
 	slime_type = /mob/living/simple_mob/slime/xenobio/bluespace
 
-
 /datum/decl/chemical_reaction/instant/slime/bluespace_crystals
 	name = "Slime Bluespace Crystals"
 	id = "m_bs_crystals"
@@ -1100,7 +1041,6 @@
 		new /obj/item/slime_crystal(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/bluespace_pouch
 	name = "Slime Bluespace Pouch"
 	id = "m_bs_pouch"
@@ -1111,7 +1051,6 @@
 /datum/decl/chemical_reaction/instant/slime/bluespace_pouch/on_reaction(datum/reagents/holder)
 	new /obj/item/storage/backpack/holding/slime(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/bluespace_chaotic_tele
 	name = "Slime Bluespace Chaos"
@@ -1138,7 +1077,6 @@
 		sparks.start()
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/bluespace_teleporter
 	name = "Slime Bluespace Teleporter"
 	id = "m_bs_teleporter"
@@ -1162,7 +1100,6 @@
 	When injected with slime jelly, this extract creates a random agent."
 	slime_type = /mob/living/simple_mob/slime/xenobio/cerulean
 
-
 /datum/decl/chemical_reaction/instant/slime/cerulean_enhancer
 	name = "Slime Enhancer"
 	id = "m_cerulean_enhancer"
@@ -1173,7 +1110,6 @@
 /datum/decl/chemical_reaction/instant/slime/cerulean_enhancer/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/enhancer(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/cerulean_reinvigoration
 	name = "Slime Reinvigoration"
@@ -1186,7 +1122,6 @@
 	new /obj/item/slimepotion/reinvigoration(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/cerulean_potion_mimic
 	name = "Slime Potion Mimic"
 	id = "m_cerulean_potion_mimic"
@@ -1197,7 +1132,6 @@
 /datum/decl/chemical_reaction/instant/slime/cerulean_potion_mimic/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/mimic(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/cerulean_random_potion
 	name = "Slime Random Potion"
@@ -1222,7 +1156,6 @@
 	When injected with water, this extract creates some edible slime globs. When injected with slime jelly, this extract creates some super-nutritious slime goop."
 	slime_type = /mob/living/simple_mob/slime/xenobio/amber
 
-
 /datum/decl/chemical_reaction/instant/slime/amber_slimefood
 	name = "Slime Feeding"
 	id = "m_amber_slime_food"
@@ -1233,7 +1166,6 @@
 /datum/decl/chemical_reaction/instant/slime/amber_slimefood/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/feeding(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/amber_random_food
 	name = "Slime Random Food"
@@ -1257,7 +1189,6 @@
 					step(B, pick(NORTH,SOUTH,EAST,WEST))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/amber_snack
 	name = "Slime Snack"
 	id = "m_amber_snack"
@@ -1269,7 +1200,6 @@
 	for(var/i = 1 to rand(3, 5))
 		new /obj/item/reagent_containers/food/snacks/slime(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/amber_goop
 	name = "Slime Goop"
@@ -1291,7 +1221,6 @@
 	various creatures."
 	slime_type = /mob/living/simple_mob/slime/xenobio/sapphire
 
-
 /datum/decl/chemical_reaction/instant/slime/sapphire_promethean
 	name = "Slime Promethean"
 	id = "m_sapphire_promethean"
@@ -1303,7 +1232,6 @@
 	new /obj/item/slime_cube(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/sapphire_mutation
 	name = "Slime Mutation Toxins"
 	id = "m_sapphire_mutation_tox"
@@ -1311,7 +1239,6 @@
 	required_reagents = list(REAGENT_ID_BLOOD = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/sapphire
-
 
 /datum/decl/chemical_reaction/instant/slime/sapphire_plushies
 	name = "Slime Plushies"
@@ -1328,7 +1255,6 @@
 		spawn_type = pickweight(possible_types)
 		new spawn_type(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/sapphire_sapience
 	name = "Slime Sapience"
@@ -1375,7 +1301,6 @@
 
 	factors = alist(BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.75, BF_DISABLE_DURATION = 0.5, BF_ENDURANCE_FLAT = 50)
 
-
 /datum/decl/chemical_reaction/instant/slime/ruby_pull
 	name = "Slime Pull"
 	id = "m_ruby_pull"
@@ -1391,7 +1316,6 @@
 	s.start()
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/ruby_brute_juice
 	name = "Slime Brute Juice"
 	id = "m_ruby_brute_juice"
@@ -1399,7 +1323,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/ruby
-
 
 /datum/decl/chemical_reaction/instant/slime/ruby_push
 	name = "Slime Push"
@@ -1437,7 +1360,6 @@
 	for a short time. When injected with water, this extract creates some hyperzine. When injected with slime jelly, this extract causes area around to become slippery for a time."
 	slime_type = /mob/living/simple_mob/slime/xenobio/emerald
 
-
 /datum/decl/chemical_reaction/instant/slime/emerald_agility
 	name = "Slime Agility"
 	id = "m_emerald_agility"
@@ -1460,7 +1382,6 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 	factors = alist(BF_EVASION = 45, BF_ATTACK_SPEED = 0.5, BF_DISABLE_DURATION = 0.5)
-
 
 /datum/decl/chemical_reaction/instant/slime/emerald_speed
 	name = "Slime Speed"
@@ -1485,7 +1406,6 @@
 
 	factors = alist(BF_SLOWDOWN = -3)
 
-
 /datum/decl/chemical_reaction/instant/slime/emerald_hyperzine
 	name = "Slime Hyperzine"
 	id = "m_emerald_hyperzine"
@@ -1493,7 +1413,6 @@
 	required_reagents = list(REAGENT_ID_WATER = 5)
 	result_amount = 30
 	required = /obj/item/slime_extract/emerald
-
 
 /datum/decl/chemical_reaction/instant/slime/emerald_hell
 	name = "Slime Hell"
@@ -1523,7 +1442,6 @@
 	which can be used to pacify a slime or a creature permanently. When injected with slime jelly, this extract creates an obedience agent, which can be used to instantly fully discipline a slime."
 	slime_type = /mob/living/simple_mob/slime/xenobio/light_pink
 
-
 /datum/decl/chemical_reaction/instant/slime/light_pink_friendship
 	name = "Slime Friendship"
 	id = "m_lightpink_friendship"
@@ -1534,7 +1452,6 @@
 /datum/decl/chemical_reaction/instant/slime/light_pink_friendship/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/friendship(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/light_pink_loyalty
 	name = "Slime Loyalty"
@@ -1547,7 +1464,6 @@
 	new /obj/item/slimepotion/loyalty(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/light_pink_docility
 	name = "Slime Docility"
 	id = "m_lightpink_docility"
@@ -1558,7 +1474,6 @@
 /datum/decl/chemical_reaction/instant/slime/light_pink_docility/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/docility(get_turf(holder.my_atom))
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/light_pink_obedience
 	name = "Slime Obedience"
@@ -1575,14 +1490,12 @@
 // * Rainbow slimes *
 // ******************
 
-
 /obj/item/slime_extract/rainbow
 	name = "rainbow slime extract"
 	icon_state = "rainbow slime extract"
 	description_info = "When injected with phoron, this extract will create a random slime. When injected with blood, this extract will create a random slime extract. When injected with water, \
 	this extract with create pretty colors. When injected with slime jelly, this extract will create unity agent, which can be used to make slime non-hostile to slimes of other colors."
 	slime_type = /mob/living/simple_mob/slime/xenobio/rainbow
-
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_random_slime
 	name = "Slime Random Slime"
@@ -1607,7 +1520,6 @@
 		new S(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/rainbow_random_extract
 	name = "Slime Random Extract"
 	id = "m_rainow_random_extract"
@@ -1620,7 +1532,6 @@
 	new spawn_type(get_turf(holder.my_atom))
 	..()
 
-
 /datum/decl/chemical_reaction/instant/slime/rainbow_colors
 	name = "Slime Colors"
 	id = "m_rainbow_colors"
@@ -1632,7 +1543,6 @@
 	for(var/mob/living/carbon/human/H in range(3, holder.my_atom))
 		H.status_at_least(EFFECT_DRUGGED, 30)
 	..()
-
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_unity
 	name = "Slime Unity"
