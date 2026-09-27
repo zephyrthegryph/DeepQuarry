@@ -54,6 +54,15 @@ GLOBAL_VAR(latent_last_refusal)
 	var/list/snapshot
 	/// Capacity one of them takes in its slot.
 	var/unit_cost = 0
+	/// The blob captured right after a real collapse (roadmap C10,
+	/// containment.md §4.7 "Safety"), set only when the round-trip audit is
+	/// on (not for the original declared generator, which was never a real
+	/// atom). This is the same list object as `blob` (dq_latent_entry_blob()
+	/// mutates and returns its argument in place) at the moment of capture,
+	/// so it verifies the entry's own state round-trips through
+	/// materialize -> serialize, not a byte-for-byte pre-strip snapshot.
+	/// Checked against the next materialize from this entry, then cleared.
+	var/list/audit_blob
 
 /datum/latent_entry/Destroy()
 	blob = null
@@ -65,6 +74,17 @@ GLOBAL_VAR(latent_last_refusal)
 	return "[slot][LEDGER_ENTRY_SEPARATOR]L[serial]g[generation]"
 
 // ---- Eligibility and type data ----
+
+/// A type opts out of being latent for reasons the storability sandbox can't
+/// see (semantics, not side effects: containment.md §4.7) -- an admin fax
+/// mid-composition, a reagent that isn't wired up. Override to return a
+/// non-null reason and `latent_safe_types.dm`'s hand-kept `latent_safe`
+/// still decides eligibility (dq_latent_eligible() below); this is the
+/// self-documenting home for *why*, queried by the sandbox
+/// (dq_storability_sandbox.dm) so an opt-out reads as a reason, not a
+/// silent `FALSE`.
+/atom/movable/proc/latent_unsafe_reason()
+	return null
 
 /// Whether things of `path` may be latent: latent-safe (containment.md §4.4).
 /proc/dq_latent_eligible(path)
@@ -322,6 +342,8 @@ GLOBAL_VAR(latent_last_refusal)
 	var/path = entry.path
 	var/list/blob = entry.blob
 	var/slot = entry.slot
+	var/list/audit_blob = entry.audit_blob
+	entry.audit_blob = null // only the first materialize after a collapse is checked
 	// The ledger move: the entry gives them up before they exist.
 	latent_set_count(entry, entry.count - n)
 	for(var/i in 1 to n)
@@ -333,6 +355,10 @@ GLOBAL_VAR(latent_last_refusal)
 		var/list/record = entries[thing]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
+		dq_latency_log("materialized", path, holder.type)
+		if(audit_blob)
+			dq_latency_audit_check(thing, audit_blob)
+			audit_blob = null // one comparison per collapse, not per n
 		. += thing
 
 /// Every entry in `slot_id` (null: all) -> real things. Returns them.
@@ -424,11 +450,19 @@ GLOBAL_VAR(latent_last_refusal)
 	if(!blob)
 		GLOB.latent_last_refusal = jointext(errors, "; ")
 		return FALSE
+	// dq_latent_entry_blob() mutates and returns its argument, so `blob` is
+	// the entry blob from here on -- audit_blob below is that same object,
+	// captured before merging (an identical existing entry would otherwise
+	// share it with a different collapse's copy).
 	blob = dq_latent_entry_blob(blob)
 	var/slot = record[LEDGER_E_SLOT]
 	var/path = type
+	var/holder_type = loc.type
 	qdel(src)
-	L.latent_add(path, 1, blob, slot)
+	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
+	if(entry && dq_latency_audit_enabled())
+		entry.audit_blob = blob
+	dq_latency_log("collapsed", path, holder_type)
 	return TRUE
 
 /// Why this can't collapse into an entry now, or null. `held_refs` counts

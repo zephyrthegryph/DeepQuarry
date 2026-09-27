@@ -138,7 +138,8 @@
 		// moment its Initialize() first asked the ledger a question, so clear
 		// those before src's parts (real, or still latent) replace them.
 		materialize_parts()
-		dq_ledger(new_coil)?.latent_clear()
+		var/datum/ledger/new_coil_ledger = dq_ledger(new_coil)
+		new_coil_ledger?.latent_clear()
 		for(var/obj/item/stock_parts/C in component_parts)
 			component_parts -= C
 			C.move_into(new_coil, CONTAINER_SLOT_INTERNALS)

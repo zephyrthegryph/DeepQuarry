@@ -111,3 +111,38 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 
 /datum/state_codec/atom_flags/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
 	owner.vars[var_name] = (owner.vars[var_name] & ATOM_RUNTIME_FLAGS) | (encoded & ~ATOM_RUNTIME_FLAGS)
+
+// ---------------------------------------------------------------------------
+// frame_type: /obj/item/circuitboard/board_type (roadmap C6, containment.md
+// section 5). Usually a /datum/frame/frame_types instance owned only by this
+// board (an `owned` nested blob), but some boards set it to a plain string
+// ("other") instead -- circuitboard.dm's own comment: "Some boards use text
+// instead of an instance". frame_types itself needs no codec of its own: its
+// vars (name, frame_size, frame_class, a circuit type path, frame_style,
+// x_offset, y_offset, an icon_override resource) are all plain values the
+// generic encoder already handles.
+// ---------------------------------------------------------------------------
+/datum/state_codec/frame_type
+
+/datum/state_codec/frame_type/encode(datum/owner, var_name, value, datum/state_context/ctx)
+	if(isnull(value))
+		return null
+	if(!isdatum(value))
+		return ctx.encode_value(value, "[owner.type].[var_name]")
+	if(isatom(value))
+		ctx.refuse("[owner.type].[var_name] is a frame_type codec but holds an atom")
+		return null
+	var/list/nested = ctx.serialize_datum(value, NONE)
+	if(!nested)
+		return null
+	return list(STATE_WRAP_OWNED = nested)
+
+/datum/state_codec/frame_type/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
+	if(isnull(encoded))
+		owner.vars[var_name] = null
+		return
+	if(!islist(encoded))
+		owner.vars[var_name] = encoded
+		return
+	var/list/nested = encoded[STATE_WRAP_OWNED]
+	owner.vars[var_name] = ctx.materialize_datum(nested)

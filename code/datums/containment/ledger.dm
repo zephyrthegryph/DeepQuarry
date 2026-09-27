@@ -37,6 +37,8 @@
 		// Building the ledger is the first exact question: resolve the generator (C5).
 		if(holder.latent_contents)
 			dq_latent_resolve(holder, L)
+			// Candidate for the latency sweep (roadmap C10, containment.md §4.7).
+			dq_latency_sweep_register(holder)
 	L.sync()
 	return L
 
@@ -276,6 +278,12 @@
 	propagate()
 	if(thing.move_hooks)
 		adjust_hooked(1)
+	// The one idle-tracking seam (roadmap C10, containment.md §4.7): this is
+	// the ledger's own move path, which also covers adoption (sync()) and
+	// materialization, so nothing else needs its own touch call. Moves onto
+	// DQ Medical's joint before/after-move transaction hook in one place
+	// once that lands (medical_frameworks.md).
+	dq_latent_touch(thing)
 	holder.on_slot_changed(id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, id)
 	om_slot_entered(holder, thing, def)
