@@ -15,9 +15,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
-/obj/structure/blob/node/Destroy()
-	return ..()
-
 /obj/structure/blob/node/update_icon()
 	cut_overlays()
 	color = null
