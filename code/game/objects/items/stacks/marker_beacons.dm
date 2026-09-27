@@ -120,14 +120,16 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	if(perma)
 		return
 	to_chat(user, span_notice("You start picking [src] up..."))
-	if(do_after(user, remove_speed, target = src))
-		var/obj/item/stack/marker_beacon/M = new(loc)
-		M.picked_color = picked_color
-		M.update_icon()
-		transfer_fingerprints_to(M)
-		if(user.put_in_hands(M, TRUE)) //delete the beacon if it fails
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			qdel(src) //otherwise delete us
+	om_do_after(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+
+/obj/structure/marker_beacon/proc/attack_hand_timed_done(mob/living/user)
+	var/obj/item/stack/marker_beacon/M = new(loc)
+	M.picked_color = picked_color
+	M.update_icon()
+	transfer_fingerprints_to(M)
+	if(user.put_in_hands(M, TRUE)) //delete the beacon if it fails
+		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		qdel(src) //otherwise delete us
 
 /obj/structure/marker_beacon/attackby(obj/item/I, mob/user, params)
 	if(perma)
@@ -135,12 +137,16 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	if(istype(I, /obj/item/stack/marker_beacon))
 		var/obj/item/stack/marker_beacon/M = I
 		to_chat(user, span_notice("You start picking [src] up..."))
-		if(do_after(user, remove_speed, target = src) && M.get_amount() + 1 <= M.max_amount)
-			M.add(1)
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			qdel(src)
+		om_do_after(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
 	else
 		return ..()
+
+/obj/structure/marker_beacon/proc/attackby_timed_done(obj/item/stack/marker_beacon/M)
+	if(!(M.get_amount() + 1 <= M.max_amount))
+		return
+	M.add(1)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	qdel(src)
 
 /obj/structure/marker_beacon/click_alt(mob/living/user)
 	..()

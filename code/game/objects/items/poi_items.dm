@@ -302,5 +302,7 @@
 		message += "Looks like there's a printer without any paper in it."
 
 
-	if(do_after(user, delay = 5 SECONDS, target = src))
-		to_chat(user, message)
+	om_do_after(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
+
+/obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)
+	to_chat(user, message)

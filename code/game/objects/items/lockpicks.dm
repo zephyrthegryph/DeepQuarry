@@ -28,9 +28,7 @@
 		else	//finally, we can assume that they do match
 			to_chat(user, span_notice("You start to [pick_verb] the lock on \the [D]..."))
 			playsound(src, D.keysound,100, 1)
-			if(do_after(user, pick_time * D.lock_difficulty, target = src))
-				to_chat(user, span_notice("Success!"))
-				D.locked = FALSE
+			om_do_after(user, pick_time * D.lock_difficulty, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user, D))
 	if(istype(A, /obj/structure/fence/door))
 		var/obj/structure/fence/door/D = A
 		if(!D.locked)	//you can pick your nose, but you can't pick an unlocked door
@@ -45,9 +43,7 @@
 		else	//finally, we can assume that they do match
 			to_chat(user, span_notice("You start to [pick_verb] the lock on \the [D]..."))
 			playsound(src, D.keysound,100, 1)
-			if(do_after(user, pick_time * D.lock_difficulty, target = src))
-				to_chat(user, span_notice("Success!"))
-				D.locked = FALSE
+			om_do_after(user, pick_time * D.lock_difficulty, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(user, D))
 	else if(ishuman(A)) //you can pick your friends, and you can pick your nose, but you can't pick your friend's nose
 		var/mob/living/carbon/human/H = A
 		if(user.zone_sel.selecting == BP_HEAD)
@@ -56,6 +52,13 @@
 			else
 				user.visible_message(span_notice("[user] tries to [pick_verb] [H]'s nose with \the [src]! They don't seem to be having much success."),span_notice("You try to [pick_verb] [H]'s nose. It doesn't seem to be working."))
 			return
+
+/obj/item/lockpick/proc/afterattack_timed_done(mob/user, obj/structure/simple_door/D)
+	to_chat(user, span_notice("Success!"))
+	D.locked = FALSE
+/obj/item/lockpick/proc/afterattack_timed_done2(mob/user, obj/structure/simple_door/D)
+	to_chat(user, span_notice("Success!"))
+	D.locked = FALSE
 
 /obj/item/lockpick/pick_gun
 	name = "pick gun"

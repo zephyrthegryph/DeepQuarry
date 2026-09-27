@@ -138,25 +138,27 @@
 	busy = TRUE
 
 	perform_effect(A, true_delay)
-	if(do_after(user, true_delay, target = A))
-		busy = FALSE
-		// Doing another check in case we lost matter during the delay for whatever reason.
-		if(!can_afford(rcd_results[RCD_VALUE_COST] * output_envelope))
-			to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))
-			cleanup_effect(A)
-			return FALSE
-		if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
-			consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
-			record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
-			playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
-			cleanup_effect(A)
-			return TRUE
+	om_do_after(user, true_delay, target = A, receiver = src, on_done = PROC_REF(use_rcd_timed_done), done_args = list(A, user, rcd_results, output_envelope))
 
 	// If they moved, kill the beam immediately.
 	qdel(rcd_beam)
 	busy = FALSE
 	cleanup_effect(A)
 	return FALSE
+
+/obj/item/rcd/proc/use_rcd_timed_done(atom/A, mob/living/user, list/rcd_results, output_envelope)
+	busy = FALSE
+	// Doing another check in case we lost matter during the delay for whatever reason.
+	if(!can_afford(rcd_results[RCD_VALUE_COST] * output_envelope))
+		to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))
+		cleanup_effect(A)
+		return FALSE
+	if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
+		consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
+		record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
+		playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
+		cleanup_effect(A)
+		return TRUE
 
 // RCD variants.
 

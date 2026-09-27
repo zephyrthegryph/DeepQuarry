@@ -64,12 +64,7 @@
 				to_chat(user, span_warning("You need two sheets of glass to add them to the frame."))
 				return
 			to_chat(user, span_notice("You start to add the glass to the frame."))
-			if(do_after(user, 2 SECONDS, target = src))
-				if (G.use(2))
-					shattered = 0
-					glass = 1
-					icon_state = "mirror"
-					to_chat(user, span_notice("You add the glass to the frame."))
+			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, G))
 			return
 
 	if(shattered && glass)
@@ -83,6 +78,13 @@
 	else
 		visible_message(span_warning("[user] hits [src] with [I]!"))
 		playsound(src, 'sound/effects/Glasshit.ogg', 70, 1)
+
+/obj/structure/mirror/proc/attackby_timed_done(mob/user, obj/item/stack/material/glass/G)
+	if (G.use(2))
+		shattered = 0
+		glass = 1
+		icon_state = "mirror"
+		to_chat(user, span_notice("You add the glass to the frame."))
 
 /obj/structure/mirror/wrench_act(mob/user, obj/item/I)
 	if(!glass)

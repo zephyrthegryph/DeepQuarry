@@ -124,27 +124,29 @@
 /obj/structure/transit_tube/station/proc/launch_pod()
 	for(var/obj/structure/transit_tube_pod/pod in loc)
 		if(!pod.moving && (pod.dir in directions()))
-			spawn(5)
-				pod_moving = 1
-				close_animation()
-				sleep(CLOSE_DURATION + 2)
-
-				//reverse directions for automated cycling
-				var/turf/next_loc = get_step(loc, pod.dir)
-				var/obj/structure/transit_tube/nexttube
-				for(var/obj/structure/transit_tube/tube in next_loc)
-					if(tube.has_entrance(pod.dir))
-						nexttube = tube
-						break
-				if(!nexttube)
-					pod.set_dir(turn(pod.dir, 180))
-
-				if(icon_state == "closed" && pod)
-					pod.follow_tube()
-
-				pod_moving = 0
-
+			om_after(src, 5, PROC_REF(launch_pod_close), pod)
 			return
+
+/obj/structure/transit_tube/station/proc/launch_pod_close(obj/structure/transit_tube_pod/pod)
+	pod_moving = 1
+	close_animation()
+	om_after(src, CLOSE_DURATION + 2, PROC_REF(launch_pod_go), pod)
+
+/obj/structure/transit_tube/station/proc/launch_pod_go(obj/structure/transit_tube_pod/pod)
+	//reverse directions for automated cycling
+	var/turf/next_loc = get_step(loc, pod.dir)
+	var/obj/structure/transit_tube/nexttube
+	for(var/obj/structure/transit_tube/tube in next_loc)
+		if(tube.has_entrance(pod.dir))
+			nexttube = tube
+			break
+	if(!nexttube)
+		pod.set_dir(turn(pod.dir, 180))
+
+	if(icon_state == "closed" && pod)
+		pod.follow_tube()
+
+	pod_moving = 0
 
 
 
@@ -167,23 +169,26 @@
 
 /obj/structure/transit_tube/station/pod_stopped(obj/structure/transit_tube_pod/pod, from_dir)
 	pod_moving = 1
-	spawn(5)
-		open_animation()
-		sleep(OPEN_DURATION + 2)
-		pod_moving = 0
-		pod.mix_air()
+	om_after(src, 5, PROC_REF(pod_stopped_open), pod)
 
-		if(automatic_launch_time)
-			var/const/wait_step = 5
-			var/i = 0
-			while(i < automatic_launch_time)
-				sleep(wait_step)
-				i += wait_step
+/obj/structure/transit_tube/station/proc/pod_stopped_open(obj/structure/transit_tube_pod/pod)
+	open_animation()
+	om_after(src, OPEN_DURATION + 2, PROC_REF(pod_stopped_opened), pod)
 
-				if(pod_moving || icon_state != "open")
-					return
+/obj/structure/transit_tube/station/proc/pod_stopped_opened(obj/structure/transit_tube_pod/pod)
+	pod_moving = 0
+	pod.mix_air()
+	if(automatic_launch_time)
+		om_after(src, 5, PROC_REF(auto_launch_wait), 5)
 
-			launch_pod()
+/// Counts down automatic_launch_time in half seconds while the station stays open.
+/obj/structure/transit_tube/station/proc/auto_launch_wait(waited)
+	if(pod_moving || icon_state != "open")
+		return
+	if(waited >= automatic_launch_time)
+		launch_pod()
+		return
+	om_after(src, 5, PROC_REF(auto_launch_wait), waited + 5)
 
 
 
@@ -255,70 +260,72 @@
 
 	moving = 1
 
-	spawn()
-		var/obj/structure/transit_tube/current_tube = null
-		var/next_dir
-		var/next_loc
-		var/last_delay = 0
-		var/exit_delay
+	var/obj/structure/transit_tube/current_tube = null
+	for(var/obj/structure/transit_tube/tube in loc)
+		if(tube.has_exit(dir))
+			current_tube = tube
+			break
+	tube_step(current_tube, 0)
 
-		for(var/obj/structure/transit_tube/tube in loc)
-			if(tube.has_exit(dir))
-				current_tube = tube
-				break
+/// Leaves `current_tube` by its exit after the exit delay.
+/obj/structure/transit_tube_pod/proc/tube_step(obj/structure/transit_tube/current_tube, last_delay)
+	if(!current_tube)
+		tube_leave(null, last_delay)
+		return
+	var/next_dir = current_tube.get_exit(dir)
+	if(!next_dir)
+		tube_leave(current_tube, last_delay)
+		return
+	var/exit_delay = current_tube.exit_delay(src, dir)
+	last_delay += exit_delay
+	om_after(src, exit_delay, PROC_REF(tube_exit), next_dir, last_delay)
 
-		while(current_tube)
-			next_dir = current_tube.get_exit(dir)
+/obj/structure/transit_tube_pod/proc/tube_exit(next_dir, last_delay)
+	var/turf/next_loc = get_step(loc, next_dir)
+	var/obj/structure/transit_tube/current_tube = null
+	for(var/obj/structure/transit_tube/tube in next_loc)
+		if(tube.has_entrance(next_dir))
+			current_tube = tube
+			break
 
-			if(!next_dir)
-				break
+	if(current_tube == null)
+		set_dir(next_dir)
+		Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
+		tube_leave(null, last_delay)
+		return
 
-			exit_delay = current_tube.exit_delay(src, dir)
-			last_delay += exit_delay
+	last_delay = current_tube.enter_delay(src, next_dir)
+	om_after(src, last_delay, PROC_REF(tube_enter), current_tube, next_dir, next_loc, last_delay)
 
-			sleep(exit_delay)
+/obj/structure/transit_tube_pod/proc/tube_enter(obj/structure/transit_tube/current_tube, next_dir, turf/next_loc, last_delay)
+	set_dir(next_dir)
+	forceMove(next_loc) // When moving from one tube to another, skip collision and such.
+	density = current_tube.density
 
-			next_loc = get_step(loc, next_dir)
+	if(current_tube.should_stop_pod(src, next_dir))
+		current_tube.pod_stopped(src, dir)
+		tube_leave(current_tube, last_delay)
+		return
+	tube_step(current_tube, last_delay)
 
-			current_tube = null
-			for(var/obj/structure/transit_tube/tube in next_loc)
-				if(tube.has_entrance(next_dir))
-					current_tube = tube
-					break
+/obj/structure/transit_tube_pod/proc/tube_leave(obj/structure/transit_tube/current_tube, last_delay)
+	density = TRUE
 
-			if(current_tube == null)
-				set_dir(next_dir)
-				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
-				break
+	// If the pod is no longer in a tube, move in a line until stopped or slowed to a halt.
+	//  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
+	//  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
+	if(!current_tube && last_delay <= 10)
+		om_after(src, last_delay, PROC_REF(tube_drift), last_delay)
+		return
+	moving = 0
 
-			last_delay = current_tube.enter_delay(src, next_dir)
-			sleep(last_delay)
-			set_dir(next_dir)
-			forceMove(next_loc) // When moving from one tube to another, skip collision and such.
-			density = current_tube.density
-
-			if(current_tube && current_tube.should_stop_pod(src, next_dir))
-				current_tube.pod_stopped(src, dir)
-				break
-
-		density = TRUE
-
-		// If the pod is no longer in a tube, move in a line until stopped or slowed to a halt.
-		//  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
-		//  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
-		if(!current_tube && last_delay <= 10)
-			do
-				sleep(last_delay)
-
-				if(!istype(loc, /turf/space))
-					last_delay++
-
-				if(last_delay > 10)
-					break
-
-			while(isturf(loc) && Move(get_step(loc, dir)))
-
+/obj/structure/transit_tube_pod/proc/tube_drift(last_delay)
+	if(!istype(loc, /turf/space))
+		last_delay++
+	if(last_delay > 10 || !isturf(loc) || !Move(get_step(loc, dir)))
 		moving = 0
+		return
+	om_after(src, last_delay, PROC_REF(tube_drift), last_delay)
 
 /obj/structure/transit_tube_pod/return_air()
 	return air_contents

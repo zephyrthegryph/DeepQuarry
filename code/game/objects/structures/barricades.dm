@@ -43,11 +43,8 @@
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
 				return
 			visible_message(span_notice("[user] begins to repair \the [src]."))
-			if(do_after(user, 2 SECONDS, target = src) && get_integrity() < max_integrity)
-				if(D.use(1))
-					repair_damage(max_integrity)
-					visible_message(span_notice("[user] repairs \the [src]."))
-				return
+			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
+			return
 		return
 
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
@@ -60,6 +57,14 @@
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.75)
 	..()
+
+/obj/structure/barricade/proc/attackby_timed_done(mob/user, obj/item/stack/D)
+	if(!(get_integrity() < max_integrity))
+		return
+	if(D.use(1))
+		repair_damage(max_integrity)
+		visible_message(span_notice("[user] repairs \the [src]."))
+	return
 
 /obj/structure/barricade/atom_destruction(damage_flag)
 	dismantle()

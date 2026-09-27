@@ -121,11 +121,13 @@
 		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
 		return TRUE
 	to_chat(user, span_notice("You start breaking down \the [src]."))
-	if(do_after(user, 10 SECONDS, target = src))
-		new /obj/item/stack/material/plasteel(loc, 10)
-		playsound(user, O.usesound, 50, 1)
-		qdel(src)
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
 	return TRUE
+
+/obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)
+	new /obj/item/stack/material/plasteel(loc, 10)
+	playsound(user, O.usesound, 50, 1)
+	qdel(src)
 
 /obj/structure/drop_pod/return_air()
 	return return_air_for_internal_lifeform()

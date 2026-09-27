@@ -50,6 +50,24 @@
 	src.icon_state += "_[active]"
 	return
 
+/obj/item/implanter/proc/implant_done(mob/living/M, mob/living/user, turf/T1)
+	if(!(user && M && (get_turf(M) == T1) && src && src.imp))
+		return
+	M.visible_message(span_warning("[M] has been implanted by [user]."))
+
+	add_attack_logs(user,M,"Implanted with [imp.name] using [name]")
+
+	if(imp.handle_implant(M))
+		imp.post_implant(M)
+
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+			BITSET(H.hud_updateflag, IMPLOYAL_HUD)
+			BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
+
+	imp = null
+	update()
+
 /obj/item/implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!istype(M, /mob/living/carbon))
 		return ITEM_INTERACT_FAILURE
@@ -61,23 +79,12 @@
 			user.do_attack_animation(M)
 
 			var/turf/T1 = get_turf(M)
-			if (T1 && ((M == user) || do_after(user, 5 SECONDS, target = M)))
-				if(user && M && (get_turf(M) == T1) && src && src.imp)
-					M.visible_message(span_warning("[M] has been implanted by [user]."))
-
-					add_attack_logs(user,M,"Implanted with [imp.name] using [name]")
-
-					if(imp.handle_implant(M))
-						imp.post_implant(M)
-
-						if(ishuman(M))
-							var/mob/living/carbon/human/H = M
-							BITSET(H.hud_updateflag, IMPLOYAL_HUD)
-							BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
-
-					imp = null
-					update()
-					return ITEM_INTERACT_SUCCESS
+			if(T1 && M == user)
+				implant_done(M, user, T1)
+				return ITEM_INTERACT_SUCCESS
+			if(T1)
+				om_do_after(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(implant_done), done_args = list(M, user, T1))
+				return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You need to activate \the [src.name] first."))
 	return ITEM_INTERACT_FAILURE

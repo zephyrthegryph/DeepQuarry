@@ -39,8 +39,6 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 	if(!A || !istype(A, /atom/movable))
 		return
 	var/atom/movable/AM = A
-	var/curtiles = 0
-	var/stopthrow = 0
 	for(var/obj/effect/step_trigger/thrower/T in orange(2, src))
 		if(AM in T.affecting)
 			return
@@ -51,35 +49,37 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 			M.canmove = 0
 
 	affecting.Add(AM)
-	while(AM && !stopthrow)
-		if(tiles)
-			if(curtiles >= tiles)
-				break
-		if(AM.z != src.z)
-			break
+	throw_next(AM, 0)
 
-		curtiles++
+/// Moves AM one tile every `speed` until it runs out of tiles or hits a stopper.
+/obj/effect/step_trigger/thrower/proc/throw_next(atom/movable/AM, curtiles)
+	if(QDELETED(AM) || (tiles && curtiles >= tiles) || AM.z != src.z)
+		throw_end(AM)
+		return
+	om_after(src, speed, PROC_REF(throw_step), AM, curtiles + 1)
 
-		sleep(speed)
+/obj/effect/step_trigger/thrower/proc/throw_step(atom/movable/AM, curtiles)
+	var/stopthrow = 0
+	// Calculate if we should stop the process
+	if(!nostop)
+		for(var/obj/effect/step_trigger/T in get_step(AM, direction))
+			if(T.stopper && T != src)
+				stopthrow = 1
+	else
+		for(var/obj/effect/step_trigger/teleporter/T in get_step(AM, direction))
+			if(T.stopper)
+				stopthrow = 1
 
-		// Calculate if we should stop the process
-		if(!nostop)
-			for(var/obj/effect/step_trigger/T in get_step(AM, direction))
-				if(T.stopper && T != src)
-					stopthrow = 1
-		else
-			for(var/obj/effect/step_trigger/teleporter/T in get_step(AM, direction))
-				if(T.stopper)
-					stopthrow = 1
+	var/predir = AM.dir
+	step(AM, direction)
+	if(!facedir)
+		AM.set_dir(predir)
+	if(stopthrow)
+		throw_end(AM)
+		return
+	throw_next(AM, curtiles)
 
-		if(AM)
-			var/predir = AM.dir
-			step(AM, direction)
-			if(!facedir)
-				AM.set_dir(predir)
-
-
-
+/obj/effect/step_trigger/thrower/proc/throw_end(atom/movable/AM)
 	affecting.Remove(AM)
 
 	if(ismob(AM))

@@ -126,12 +126,14 @@
 			to_chat(user, span_notice("\The [src] already has someone BUCKLED(src) to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		if(do_after(user, 2 SECONDS, GRAB_TARGET(G), target = src))
-			affecting.forceMove(loc)
-			INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
-			qdel(W)
+		om_do_after(user, 2 SECONDS, target = GRAB_TARGET(G), target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user, affecting))
 	else
 		..()
+
+/obj/structure/bed/proc/attackby_timed_done(obj/item/W, mob/user, mob/living/affecting)
+	affecting.forceMove(loc)
+	INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
+	qdel(W)
 
 /obj/structure/bed/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)

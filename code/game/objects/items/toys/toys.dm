@@ -717,14 +717,7 @@
 
 	if(stored_item && opened && !searching)
 		searching = TRUE
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
-			stored_item.forceMove(get_turf(src))
-			stored_item = null
-			searching = FALSE
-			return
-		else
-			searching = FALSE
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
 
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
@@ -736,6 +729,16 @@
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
+
+/obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
+	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
+	stored_item.forceMove(get_turf(src))
+	stored_item = null
+	searching = FALSE
+	return
+
+/obj/structure/plushie/proc/attack_hand_timed_failed(mob/user)
+	searching = FALSE
 
 /obj/structure/plushie/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/threadneedle) && opened)
@@ -838,14 +841,7 @@
 		return
 	if(stored_item && opened && !searching)
 		searching = TRUE
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
-			stored_item.forceMove(get_turf(src))
-			stored_item = null
-			searching = FALSE
-			return
-		else
-			searching = FALSE
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
 
 	if(world.time - last_message <= 1 SECOND)
 		return
@@ -863,6 +859,16 @@
 	if(pokephrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		say_phrase()
 	last_message = world.time
+
+/obj/item/toy/plushie/proc/attack_self_timed_done(mob/user)
+	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
+	stored_item.forceMove(get_turf(src))
+	stored_item = null
+	searching = FALSE
+	return
+
+/obj/item/toy/plushie/proc/attack_self_timed_failed(mob/user)
+	searching = FALSE
 
 /obj/item/toy/plushie/proc/say_phrase()
 	//If we don't prevent impersonation, we just speak like normal!
@@ -2202,18 +2208,21 @@
 /obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		if(do_after(user, 1 SECOND, target = src))
-			if(O.loc != user)
-				to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
-			else
-				user.visible_message(span_notice("You feed \the [O] into \the [src]!"),span_notice("[user] feeds \the [O] into \the [src]!"))
-				user.unEquip(O)
-				O.forceMove(src)
-				stored_minature = O
-		else
-			user.visible_message(span_notice("You stop feeding \the [O] into \the [src]."),span_notice("[user] stops feeding \the [O] into \the [src]!"))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(O, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(O, user))
 
 	else ..()
+
+/obj/item/toy/minigibber/proc/attackby_timed_done(obj/O, mob/user)
+	if(O.loc != user)
+		to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
+	else
+		user.visible_message(span_notice("You feed \the [O] into \the [src]!"),span_notice("[user] feeds \the [O] into \the [src]!"))
+		user.unEquip(O)
+		O.forceMove(src)
+		stored_minature = O
+
+/obj/item/toy/minigibber/proc/attackby_timed_failed(obj/O, mob/user)
+	user.visible_message(span_notice("You stop feeding \the [O] into \the [src]."),span_notice("[user] stops feeding \the [O] into \the [src]!"))
 
 /*
  * Toy xeno
@@ -2226,6 +2235,15 @@
 	bubble_icon = "alien"
 	var/cooldown = 0
 
+/obj/item/toy/toy_xeno/proc/hiss()
+	atom_say("Hiss!")
+	var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
+	playsound(get_turf(src), pick(possible_sounds), 50, 1)
+	om_after(src, 45, PROC_REF(hiss_rewound))
+
+/obj/item/toy/toy_xeno/proc/hiss_rewound()
+	icon_state = "[initial(icon_state)]"
+
 /obj/item/toy/toy_xeno/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -2234,13 +2252,7 @@
 		cooldown = (world.time + 50) //5 second cooldown
 		user.visible_message(span_notice("[user] pulls back the string on [src]."))
 		icon_state = "[initial(icon_state)]cool"
-		sleep(5)
-		atom_say("Hiss!")
-		var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
-		playsound(get_turf(src), pick(possible_sounds), 50, 1)
-		spawn(45)
-			if(src)
-				icon_state = "[initial(icon_state)]"
+		om_after(src, 5, PROC_REF(hiss))
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
 		return

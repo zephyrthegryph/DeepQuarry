@@ -90,7 +90,9 @@
 	var/mob/living/capsuleowner = user
 	playsound(src, 'sound/effects/splat.ogg', 30, 1)
 	var/item = pick(winitems)
-	sleep(100)
+	om_after(src, 10 SECONDS, PROC_REF(capsule_result), capsuleowner, item)
+
+/obj/item/daredevice/proc/capsule_result(mob/living/capsuleowner, item)
 	switch(luckynumber7)
 		if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
 		if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
@@ -107,7 +109,9 @@
 		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
 		else luckynumber7 = (rand(0,10))
 	luckynumber7 = rand(0,10)
-	sleep(100)
+	om_after(src, 10 SECONDS, PROC_REF(capsule_reset))
+
+/obj/item/daredevice/proc/capsule_reset()
 	playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
 
 //items literally just made for the above item spawner

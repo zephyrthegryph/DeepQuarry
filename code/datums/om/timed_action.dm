@@ -263,6 +263,18 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  * are skipped, and the rest is dropped if E is deleted. `on_end` (called like proc_ref, with no
  * item) runs after the last batch.
  */
+/// Steps `A` `steps` times in `direction`, one step every `delay` deciseconds
+/// (the old `for(...) sleep(delay); step(A, dir)` drift). Stops if A is deleted.
+/proc/om_drift(atom/movable/A, direction, steps, delay)
+	if(steps <= 0 || QDELETED(A))
+		return
+	om_after(A, delay, /proc/om_drift_step, A, direction, steps, delay)
+
+/proc/om_drift_step(atom/movable/A, direction, steps, delay)
+	step(A, direction)
+	if(steps > 1)
+		om_after(A, delay, /proc/om_drift_step, A, direction, steps - 1, delay)
+
 /proc/om_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end)
 	om_stagger_step(E, items ? items.Copy() : list(), 1, delay, proc_ref, per_step, extra, on_end)
 

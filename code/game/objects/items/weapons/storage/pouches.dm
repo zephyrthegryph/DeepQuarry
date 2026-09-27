@@ -15,6 +15,8 @@
 
 	var/insert_delay = 0 SECONDS
 	var/remove_delay = 0 SECONDS // Faster, QOL.
+	/// Set while a delayed move is retried after its delay.
+	var/tmp/stall_passed = FALSE
 
 /obj/item/storage/pouch/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
@@ -24,23 +26,34 @@
 	if(user.get_active_hand() == src || user.get_inactive_hand() == src)
 		return TRUE // Skip delay
 
-	if(insert_delay && !do_after(user, insert_delay, target = src))
-		return FALSE // Moved while there is a delay
+	if(!insert_delay || stall_passed)
+		return TRUE //Now we're allowed to put the item in the pouch
+	om_do_after(user, insert_delay, target = src, receiver = src, on_done = PROC_REF(stalled_insert), done_args = list(W, user))
+	return FALSE // the delay runs first; stalled_insert() retries the move
 
-	return TRUE //Now we're allowed to put the item in the pouch
+/obj/item/storage/pouch/proc/stalled_insert(obj/item/W, mob/user)
+	stall_passed = TRUE
+	insert_item(W, user)
+	stall_passed = FALSE
 
-/obj/item/storage/pouch/stall_removal(obj/item/W, mob/user)
+/obj/item/storage/pouch/stall_removal(obj/item/W, mob/user, atom/new_location)
 	// No delay if you have the pouch in your hands
 	if(user.get_active_hand() == src || user.get_inactive_hand() == src)
 		return TRUE // Skip delay
 
-	if(remove_delay && !do_after(user, remove_delay, target = src))
-		return FALSE // Moved while there is a delay
+	if(remove_delay && !stall_passed)
+		om_do_after(user, remove_delay, target = src, receiver = src, on_done = PROC_REF(stalled_remove), done_args = list(W, user, new_location))
+		return FALSE // the delay runs first; stalled_remove() retries the move
 
 	if(W in src)
 		return TRUE // Item is still inside
 
 	return FALSE //Item was somehow already removed
+
+/obj/item/storage/pouch/proc/stalled_remove(obj/item/W, mob/user, atom/new_location)
+	stall_passed = TRUE
+	remove_from_storage(W, new_location, user)
+	stall_passed = FALSE
 
 /obj/item/storage/pouch/pocket_description(mob/haver, mob/examiner)
 	return "[src]"

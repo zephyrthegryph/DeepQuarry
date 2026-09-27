@@ -78,14 +78,17 @@
 
 	var/obj/structure/sign/poster/P = new poster_type(user.loc, get_dir(user, W), src)
 
-	if(do_after(user, 17, target = src)) //Let's check if everything is still there
-		to_chat(user, span_notice("You place the poster!"))
-		qdel(src)
-		return TRUE
+	om_do_after(user, 17, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
+	return TRUE
 
 	P.roll_and_drop(P.loc)
 	qdel(src)
 	return FALSE
+
+/obj/item/poster/proc/afterattack_timed_done(mob/user)
+	to_chat(user, span_notice("You place the poster!"))
+	qdel(src)
+	return TRUE
 
 //############################## THE ACTUAL DECALS ###########################
 

@@ -71,7 +71,7 @@
  * * opponent - (optional) the defender controller in the battle, for PvP
  */
 
-/obj/item/toy/mecha/proc/combat_sleep(delay, obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
+/obj/item/toy/mecha/proc/combat_can_continue(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
 	if(!attacker_controller) // If the attacker for whatever reason is null, don't continue.
 		return FALSE
 
@@ -109,8 +109,7 @@
 									span_notice(" You separate [attacker] and [src], ending the battle. "))
 				return FALSE
 
-	// If all that is good, then we can sleep peacefully.
-	sleep(delay)
+	// If all that is good, the battle goes on.
 	return TRUE
 
 //all credit to skasi for toy mech fun ideas
@@ -227,11 +226,6 @@
 						span_danger(" You collide [attacker] into [src], sparking a fierce battle! "), \
 						span_hear(" You hear hard plastic smacking into hard plastic."))
 
-	/// Who's in control of the defender (src)?
-	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
-	/// How long has the battle been going?
-	var/battle_length = 0
-
 	in_combat = TRUE
 	attacker.in_combat = TRUE
 
@@ -239,107 +233,116 @@
 	timer = world.time + cooldown*cooldown_multiplier
 	attacker.timer = world.time + attacker.cooldown*attacker.cooldown_multiplier
 
-	sleep(1 SECONDS)
+	om_after(src, 1 SECOND, PROC_REF(brawl_round), attacker, attacker_controller, opponent, 0)
+
+/// Checks the fighters, then half a second later the next exchange lands.
+/obj/item/toy/mecha/proc/brawl_round(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
 	//--THE BATTLE BEGINS--
-	while(combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH)
-		if(!combat_sleep(0.5 SECONDS, attacker, attacker_controller, opponent)) //combat_sleep checks everything we need to have checked for combat to continue
-			break
+	if(combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
+		om_after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), attacker, attacker_controller, opponent, battle_length)
+		return
+	brawl_end(attacker, attacker_controller, opponent)
 
-		//before we do anything - deal with charged attacks
-		if(special_attack_charged)
-			src_controller.visible_message(span_danger(" [src] unleashes its special attack!! "), \
-							span_danger(" You unleash [src]'s special attack! "))
-			special_attack_move(attacker)
-		else if(attacker.special_attack_charged)
+/obj/item/toy/mecha/proc/brawl_exchange(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
+	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
-			attacker_controller.visible_message(span_danger(" [attacker] unleashes its special attack!! "), \
-								span_danger(" You unleash [attacker]'s special attack! "))
-			attacker.special_attack_move(src)
-		else
-			//process the cooldowns
-			if(special_attack_cooldown > 0)
-				special_attack_cooldown--
-			if(attacker.special_attack_cooldown > 0)
-				attacker.special_attack_cooldown--
+	//before we do anything - deal with charged attacks
+	if(special_attack_charged)
+		src_controller.visible_message(span_danger(" [src] unleashes its special attack!! "), \
+						span_danger(" You unleash [src]'s special attack! "))
+		special_attack_move(attacker)
+	else if(attacker.special_attack_charged)
 
-			//combat commences
-			switch(rand(1,8))
-				if(1 to 3) //attacker wins
-					if(attacker.special_attack_cooldown == 0 && attacker.combat_health <= round(attacker.max_combat_health/3)) //if health is less than 1/3 and special off CD, use it
-						attacker.special_attack_charged = TRUE
-						attacker_controller.visible_message(span_danger(" [attacker] begins charging its special attack!! "), \
-											span_danger(" You begin charging [attacker]'s special attack! "))
-					else //just attack
-						attacker.SpinAnimation(5, 0)
-						playsound(attacker, 'sound/mecha/mechstep.ogg', 30, TRUE)
-						combat_health--
-						attacker_controller.visible_message(span_danger(" [attacker] devastates [src]! "), \
-											span_danger(" You ram [attacker] into [src]! "), \
-											span_hear(" You hear hard plastic smacking hard plastic."))
-						if(prob(5))
-							combat_health--
-							playsound(src, 'sound/effects/meteorimpact.ogg', 20, TRUE)
-							attacker_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
-												span_boldwarning(" ...and you land a CRIPPLING blow on [src]! "), null)
+		attacker_controller.visible_message(span_danger(" [attacker] unleashes its special attack!! "), \
+							span_danger(" You unleash [attacker]'s special attack! "))
+		attacker.special_attack_move(src)
+	else
+		//process the cooldowns
+		if(special_attack_cooldown > 0)
+			special_attack_cooldown--
+		if(attacker.special_attack_cooldown > 0)
+			attacker.special_attack_cooldown--
 
-				if(4) //both lose
+		//combat commences
+		switch(rand(1,8))
+			if(1 to 3) //attacker wins
+				if(attacker.special_attack_cooldown == 0 && attacker.combat_health <= round(attacker.max_combat_health/3)) //if health is less than 1/3 and special off CD, use it
+					attacker.special_attack_charged = TRUE
+					attacker_controller.visible_message(span_danger(" [attacker] begins charging its special attack!! "), \
+										span_danger(" You begin charging [attacker]'s special attack! "))
+				else //just attack
 					attacker.SpinAnimation(5, 0)
-					SpinAnimation(5, 0)
+					playsound(attacker, 'sound/mecha/mechstep.ogg', 30, TRUE)
 					combat_health--
-					attacker.combat_health--
-					// This is sloppy but we don't have do_sparks.
-					var/datum/effect/effect/system/spark_spread/sparksrc = new(src)
-					playsound(src, "sparks", 50, 1)
-					sparksrc.set_up(2, 0, src)
-					sparksrc.attach(src)
-					sparksrc.start()
-					var/datum/effect/effect/system/spark_spread/sparkatk = new(attacker)
-					playsound(attacker, "sparks", 50, 1)
-					sparkatk.set_up(2, 0, attacker)
-					sparkatk.attach(attacker)
-					sparkatk.start()
-					if(prob(50))
-						attacker_controller.visible_message(span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
-											span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
-											span_hear(" You hear hard plastic rubbing against hard plastic."))
-					else
-						src_controller.visible_message(span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
-										span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
+					attacker_controller.visible_message(span_danger(" [attacker] devastates [src]! "), \
+										span_danger(" You ram [attacker] into [src]! "), \
+										span_hear(" You hear hard plastic smacking hard plastic."))
+					if(prob(5))
+						combat_health--
+						playsound(src, 'sound/effects/meteorimpact.ogg', 20, TRUE)
+						attacker_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
+											span_boldwarning(" ...and you land a CRIPPLING blow on [src]! "), null)
+
+			if(4) //both lose
+				attacker.SpinAnimation(5, 0)
+				SpinAnimation(5, 0)
+				combat_health--
+				attacker.combat_health--
+				// This is sloppy but we don't have do_sparks.
+				var/datum/effect/effect/system/spark_spread/sparksrc = new(src)
+				playsound(src, "sparks", 50, 1)
+				sparksrc.set_up(2, 0, src)
+				sparksrc.attach(src)
+				sparksrc.start()
+				var/datum/effect/effect/system/spark_spread/sparkatk = new(attacker)
+				playsound(attacker, "sparks", 50, 1)
+				sparkatk.set_up(2, 0, attacker)
+				sparkatk.attach(attacker)
+				sparkatk.start()
+				if(prob(50))
+					attacker_controller.visible_message(span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
+										span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
 										span_hear(" You hear hard plastic rubbing against hard plastic."))
-				if(5) //both win
-					playsound(attacker, 'sound/weapons/parry.ogg', 20, TRUE)
-					if(prob(50))
-						attacker_controller.visible_message(span_danger(" [src]'s attack deflects off of [attacker]. "), \
-											span_danger(" [src]'s attack deflects off of [attacker]. "), \
-											span_hear(" You hear hard plastic bouncing off hard plastic."))
-					else
-						src_controller.visible_message(span_danger(" [attacker]'s attack deflects off of [src]. "), \
-										span_danger(" [attacker]'s attack deflects off of [src]. "), \
-										span_hear(" You hear hard plastic bouncing off hard plastic."))
-
-				if(6 to 8) //defender wins
-					if(special_attack_cooldown == 0 && combat_health <= round(max_combat_health/3)) //if health is less than 1/3 and special off CD, use it
-						special_attack_charged = TRUE
-						src_controller.visible_message(span_danger(" [src] begins charging its special attack!! "), \
-										span_danger(" You begin charging [src]'s special attack! "))
-					else //just attack
-						SpinAnimation(5, 0)
-						playsound(src, 'sound/mecha/mechstep.ogg', 30, TRUE)
-						attacker.combat_health--
-						src_controller.visible_message(span_danger(" [src] smashes [attacker]! "), \
-										span_danger(" You smash [src] into [attacker]! "), \
-										span_hear(" You hear hard plastic smashing hard plastic."))
-						if(prob(5))
-							attacker.combat_health--
-							playsound(attacker, 'sound/effects/meteorimpact.ogg', 20, TRUE)
-							src_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
-											span_boldwarning(" ...and you land a CRIPPLING blow on [attacker]! "), null)
 				else
-					attacker_controller.visible_message(span_notice(" [src] and [attacker] stand around awkwardly."), \
-										span_notice(" You don't know what to do next."))
+					src_controller.visible_message(span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
+									span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
+									span_hear(" You hear hard plastic rubbing against hard plastic."))
+			if(5) //both win
+				playsound(attacker, 'sound/weapons/parry.ogg', 20, TRUE)
+				if(prob(50))
+					attacker_controller.visible_message(span_danger(" [src]'s attack deflects off of [attacker]. "), \
+										span_danger(" [src]'s attack deflects off of [attacker]. "), \
+										span_hear(" You hear hard plastic bouncing off hard plastic."))
+				else
+					src_controller.visible_message(span_danger(" [attacker]'s attack deflects off of [src]. "), \
+									span_danger(" [attacker]'s attack deflects off of [src]. "), \
+									span_hear(" You hear hard plastic bouncing off hard plastic."))
 
-		battle_length++
-		sleep(0.5 SECONDS)
+			if(6 to 8) //defender wins
+				if(special_attack_cooldown == 0 && combat_health <= round(max_combat_health/3)) //if health is less than 1/3 and special off CD, use it
+					special_attack_charged = TRUE
+					src_controller.visible_message(span_danger(" [src] begins charging its special attack!! "), \
+									span_danger(" You begin charging [src]'s special attack! "))
+				else //just attack
+					SpinAnimation(5, 0)
+					playsound(src, 'sound/mecha/mechstep.ogg', 30, TRUE)
+					attacker.combat_health--
+					src_controller.visible_message(span_danger(" [src] smashes [attacker]! "), \
+									span_danger(" You smash [src] into [attacker]! "), \
+									span_hear(" You hear hard plastic smashing hard plastic."))
+					if(prob(5))
+						attacker.combat_health--
+						playsound(attacker, 'sound/effects/meteorimpact.ogg', 20, TRUE)
+						src_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
+										span_boldwarning(" ...and you land a CRIPPLING blow on [attacker]! "), null)
+			else
+				attacker_controller.visible_message(span_notice(" [src] and [attacker] stand around awkwardly."), \
+									span_notice(" You don't know what to do next."))
+
+	om_after(src, 0.5 SECONDS, PROC_REF(brawl_round), attacker, attacker_controller, opponent, battle_length + 1)
+
+/obj/item/toy/mecha/proc/brawl_end(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
+	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
 	/// Lines chosen for the winning mech
 	var/list/winlines = list("YOU'RE NOTHING BUT SCRAP!", "I'LL YIELD TO NONE!", "GLORY IS MINE!", "AN EASY FIGHT.", "YOU SHOULD HAVE NEVER FACED ME.", "ROCKED AND SOCKED.")

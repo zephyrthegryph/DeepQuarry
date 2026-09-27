@@ -102,15 +102,20 @@
 		return
 
 	if(!set_content && !sealed)
-		if(!do_after(user, 1.5 SECONDS, target = user))
-			set_content = FALSE
-		user.drop_item()
-		W.forceMove(src)
-		balloon_alert(user, "placed \the [W] into \the [src]")
-		set_content = TRUE
-		description_info = "Click with an empty hand to seal it, or Alt-Click to retrieve the object out."
+		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(W, user))
 		return
 	return
+
+/obj/item/mail/blank/proc/attackby_timed_done(obj/item/W, mob/user)
+	user.drop_item()
+	W.forceMove(src)
+	balloon_alert(user, "placed \the [W] into \the [src]")
+	set_content = TRUE
+	description_info = "Click with an empty hand to seal it, or Alt-Click to retrieve the object out."
+	return
+
+/obj/item/mail/blank/proc/attackby_timed_failed(obj/item/W, mob/user)
+	set_content = FALSE
 
 /obj/item/mail/proc/setRecipient(mob/user)
 	var/list/recipients = list()
@@ -149,14 +154,19 @@
 	if(.)
 		return TRUE
 	if(!sealed)
-		if(!do_after(user, 1.5 SECONDS, target = user))
-			sealed = FALSE
-		sealed = TRUE
-		description_info = "Shift Click to add the sender's name to the envelope, or attack with a pen to set a receiver."
+		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
 		return
 	if(!unwrap(user))
 		return FALSE
 	return after_unwrap(user)
+
+/obj/item/mail/blank/proc/attack_self_timed_done()
+	sealed = TRUE
+	description_info = "Shift Click to add the sender's name to the envelope, or attack with a pen to set a receiver."
+	return
+
+/obj/item/mail/blank/proc/attack_self_timed_failed()
+	sealed = FALSE
 
 /obj/item/mail/update_icon()
 	. = ..()
@@ -225,10 +235,15 @@
 		return FALSE
 
 	opening = TRUE
-	if(!do_after(user, 1.5 SECONDS, target = user))
-		opening = FALSE
-		return FALSE
+	om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(), on_fail = PROC_REF(unwrap_timed_failed), fail_args = list())
 	return TRUE
+
+/obj/item/mail/proc/unwrap_timed_done()
+	return TRUE
+
+/obj/item/mail/proc/unwrap_timed_failed()
+	opening = FALSE
+	return FALSE
 
 /obj/item/mail/proc/after_unwrap(mob/user)
 	user.temporarilyRemoveItemFromInventory(src, TRUE)

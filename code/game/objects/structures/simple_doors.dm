@@ -138,7 +138,9 @@
 	isSwitchingStates = 1
 	playsound(src, material.dooropen_noise, 100, 1)
 	flick("[material.door_icon_base]opening",src)
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(open_finish))
+
+/obj/structure/simple_door/proc/open_finish()
 	density = FALSE
 	set_opacity(0)
 	state = 1
@@ -150,7 +152,9 @@
 	isSwitchingStates = 1
 	playsound(src, material.dooropen_noise, 100, 1)
 	flick("[material.door_icon_base]closing",src)
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(close_finish))
+
+/obj/structure/simple_door/proc/close_finish()
 	density = TRUE
 	set_opacity(1)
 	state = 0
@@ -180,9 +184,7 @@
 	if(istype(W,/obj/item/pickaxe) && breakable)
 		var/obj/item/pickaxe/digTool = W
 		visible_message(span_danger("[user] starts digging [src]!"))
-		if(do_after(user,digTool.digspeed*get_integrity()/10, target = src) && src)
-			visible_message(span_danger("[user] finished digging [src]!"))
-			Dismantle()
+		om_do_after(user, digTool.digspeed*get_integrity()/10, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		visible_message(span_danger("[user] hits [src] with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
@@ -195,6 +197,12 @@
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/simple_door/proc/attackby_timed_done(mob/user)
+	if(!(src))
+		return
+	visible_message(span_danger("[user] finished digging [src]!"))
+	Dismantle()
 
 /obj/structure/simple_door/welder_act(mob/user, obj/item/W)
 	if(!breakable)

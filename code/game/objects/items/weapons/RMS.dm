@@ -96,16 +96,18 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		to_chat(user, span_notice("The battery has no charge."))
 	else
 		playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-		if(do_after(user, 2, target = C))
-			stored_charge += C.charge
-			if(C.charge > charge_needed) //We only drain what we need!
-				C.use(charge_needed)
-			else
-				C.use(C.charge)
-			C.update_icon()
-			to_chat(user, span_notice("You drain [C]."))
+		om_do_after(user, 2, target = C, receiver = src, on_done = PROC_REF(drain_battery_timed_done), done_args = list(user, C, charge_needed))
 	stored_charge = CLAMP(stored_charge, 0, max_charge)
 	update_icon()
+
+/obj/item/rms/proc/drain_battery_timed_done(user, obj/item/cell/C, charge_needed)
+	stored_charge += C.charge
+	if(C.charge > charge_needed) //We only drain what we need!
+		C.use(charge_needed)
+	else
+		C.use(C.charge)
+	C.update_icon()
+	to_chat(user, span_notice("You drain [C]."))
 
 /obj/item/rms/proc/consume_resources(amount)
 	stored_charge -= amount
@@ -130,23 +132,25 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
 	playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
-	if(do_after(user, 5, target = A))
-		// Only deduct charge once the action actually completes, so an interrupted use refunds nothing-spent.
-		if(overcharge)
-			consume_resources(charge_cost * overcharge_modifier)
-		else
-			consume_resources(charge_cost)
-		if(overcharge)
-			if(prob(5)) //5% chance for malfunction
-				var/thing_to_spawn = pick(GLOB.RMS_random_malfunction)
-				product = new thing_to_spawn
-			else
-				product = choose_overcharge(user)
-		else
-			product = choose_normal(user)
+	om_do_after(user, 5, target = A, receiver = src, on_done = PROC_REF(use_rms_timed_done), done_args = list(A, user, product))
 
-		spark_system.start()
-		product.loc = get_turf(A)
+/obj/item/rms/proc/use_rms_timed_done(atom/A, mob/living/user, obj/product)
+	// Only deduct charge once the action actually completes, so an interrupted use refunds nothing-spent.
+	if(overcharge)
+		consume_resources(charge_cost * overcharge_modifier)
+	else
+		consume_resources(charge_cost)
+	if(overcharge)
+		if(prob(5)) //5% chance for malfunction
+			var/thing_to_spawn = pick(GLOB.RMS_random_malfunction)
+			product = new thing_to_spawn
+		else
+			product = choose_overcharge(user)
+	else
+		product = choose_normal(user)
+
+	spark_system.start()
+	product.loc = get_turf(A)
 
 /obj/item/rms/proc/choose_overcharge(mob/living/user)
 	var/final_product

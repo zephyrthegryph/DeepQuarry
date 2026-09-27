@@ -31,21 +31,22 @@ REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 
 		user.visible_message(span_warning("[user] begins to clean \the [get_turf(A)]."))
 
-		if(do_after(user, mop_time, target = get_turf(A)))
-			var/turf/T = get_turf(A)
-			if(T)
-				T.wash(CLEAN_SCRUB)
-				reagents.trans_to_turf(T, 1, 10)
-				var/mob/living/cleaner = user
-				emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
-					"department" = DEPARTMENT_CIVILIAN,
-					"target_id" = REF(T),
-					"method" = "manual_mop",
-					"cleaned_units" = 1,
-					"detail" = "Cleaned [T] with [src].",
-				), "sanitation:[REF(T)]:[world.time]", src, cleaner)
-			user.balloon_alert(user, "you have finished mopping!")
+		om_do_after(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
 
+/obj/item/mop/proc/afterattack_timed_done(atom/A, mob/user)
+	var/turf/T = get_turf(A)
+	if(T)
+		T.wash(CLEAN_SCRUB)
+		reagents.trans_to_turf(T, 1, 10)
+		var/mob/living/cleaner = user
+		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
+			"department" = DEPARTMENT_CIVILIAN,
+			"target_id" = REF(T),
+			"method" = "manual_mop",
+			"cleaned_units" = 1,
+			"detail" = "Cleaned [T] with [src].",
+		), "sanitation:[REF(T)]:[world.time]", src, cleaner)
+	user.balloon_alert(user, "you have finished mopping!")
 
 // NOTE: the /obj/effect/attackby(mop/soap) no-op override lives in mop_deploy.dm (included later, so it
 // wins under DM's last-include-wins). A duplicate here was silently discarded — and is a hard

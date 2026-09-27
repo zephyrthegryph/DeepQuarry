@@ -55,7 +55,6 @@
 	var/list/target_turfs = getcircle(T, spreading_range)
 
 	for(var/turf/O in target_turfs)
-		sleep(0)
 		var/shot_type = pick(projectiletypes)
 
 		var/obj/item/projectile/P = new shot_type(T)

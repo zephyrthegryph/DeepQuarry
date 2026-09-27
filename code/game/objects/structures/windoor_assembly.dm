@@ -91,11 +91,7 @@
 			user.visible_message("[user] wires the windoor assembly.", "You start to wire the windoor assembly.")
 
 			var/obj/item/stack/cable_coil/CC = W
-			if(do_after(user, 4 SECONDS, target = src))
-				if (CC.use(1))
-					to_chat(user,span_notice("You wire the windoor!"))
-					src.state = "02"
-					step = 1
+			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, CC))
 		else
 			..()
 
@@ -105,21 +101,29 @@
 			playsound(src, 'sound/items/Screwdriver.ogg', 100, 1)
 			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
-			if(do_after(user, 4 SECONDS, target = src))
-				if(!src) return
-
-				user.drop_item()
-				W.loc = src
-				to_chat(user,span_notice("You've installed the airlock electronics!"))
-				step = 2
-				src.electronics = W
-			else
-				W.loc = src.loc
+			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed2), fail_args = list(W, user))
 		else
 			..()
 
 	//Update to reflect changes(if applicable)
 	update_state()
+
+/obj/structure/windoor_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/CC)
+	if (CC.use(1))
+		to_chat(user,span_notice("You wire the windoor!"))
+		src.state = "02"
+		step = 1
+/obj/structure/windoor_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
+	if(!src) return
+
+	user.drop_item()
+	W.loc = src
+	to_chat(user,span_notice("You've installed the airlock electronics!"))
+	step = 2
+	src.electronics = W
+
+/obj/structure/windoor_assembly/proc/attackby_timed_failed2(obj/item/W, mob/user)
+	W.loc = src.loc
 
 /obj/structure/windoor_assembly/welder_act(mob/user, obj/item/W)
 	if(state != "01" || anchored)

@@ -849,6 +849,17 @@
 /mob/living/proc/get_digestion_efficiency_modifier()
 	return 1
 
+/// Swallows the held item I into the selected belly.
+/mob/living/proc/swallow_trash(obj/item/I)
+	if(get_active_hand() != I || !vore_selected)
+		return
+	drop_item()
+	vore_selected.nom_atom(I)
+	updateVRPanel()
+	log_admin("VORE: [src] used Eat Trash to swallow [I].")
+	I.after_trash_eaten(src)
+	visible_message(span_vwarning(src.vore_selected.belly_format_string(src.vore_selected.trash_eater_in, I, item=I)))
+
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
 	set category = "Abilities.Vore"
@@ -868,14 +879,9 @@
 		return
 
 	if(is_type_in_list(I, GLOB.edible_trash) || adminbus_trash || is_type_in_list(I,GLOB.edible_tech) && isSynthetic()) // adds edible tech for synth
-		if(!I.on_trash_eaten(src)) // shows object's rejection message itself
+		if(!I.on_trash_eaten(src)) // shows object's rejection message itself (or eats it later)
 			return
-		drop_item()
-		vore_selected.nom_atom(I)
-		updateVRPanel()
-		log_admin("VORE: [src] used Eat Trash to swallow [I].")
-		I.after_trash_eaten(src)
-		visible_message(span_vwarning(src.vore_selected.belly_format_string(src.vore_selected.trash_eater_in, I, item=I)))
+		swallow_trash(I)
 		return
 	to_chat(src, span_notice("This snack is too powerful to go down that easily."))
 	return

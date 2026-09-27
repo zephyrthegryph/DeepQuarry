@@ -252,6 +252,20 @@ Implant Specifics:<BR>"}
 		activate()
 		qdel(src)
 
+/obj/item/implant/explosive/proc/limb_boom()
+	if(!part)
+		return
+	if (istype(part,/obj/item/organ/external/chest) ||	\
+		istype(part,/obj/item/organ/external/groin) ||	\
+		istype(part,/obj/item/organ/external/head))
+		part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
+		explosion(get_turf(imp_in), -1, -1, 1, 3)
+		qdel(src)
+	else
+		explosion(get_turf(imp_in), -1, -1, 1, 3)
+		part.droplimb(0,DROPLIMB_BLUNT)
+		qdel(src)
+
 /obj/item/implant/explosive/activate()
 	if (malfunction == MALFUNCTION_PERMANENT)
 		return
@@ -266,17 +280,7 @@ Implant Specifics:<BR>"}
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
 					imp_in.visible_message(span_warning("Something beeps inside [imp_in][part ? "'s [part.name]" : ""]!"))
 					playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
-					sleep(25)
-					if (istype(part,/obj/item/organ/external/chest) ||	\
-						istype(part,/obj/item/organ/external/groin) ||	\
-						istype(part,/obj/item/organ/external/head))
-						part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
-						explosion(get_turf(imp_in), -1, -1, 1, 3)
-						qdel(src)
-					else
-						explosion(get_turf(imp_in), -1, -1, 1, 3)
-						part.droplimb(0,DROPLIMB_BLUNT)
-						qdel(src)
+					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, 0, 1, 6)
 				T.gib()

@@ -159,68 +159,74 @@
 			return FALSE
 		if(!target.mind)
 			user.visible_message("[user] gently presses [src] to [target]...", runemessage = "presses [src] to [target]")
-			if(do_after(user, revive_time, target = target))
-				target.faction = user.faction
-				target.revivedby = user.name
-				target.ghostjoin = 1
-				GLOB.active_ghost_pods += target
-				target.ghostjoin_icon()
-				last_used = world.time
-				charges--
-				log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
-				target.visible_message("[target]'s eyes widen, as though in revelation as it looks at [user].", runemessage = "eyes widen")
-				if(charges == 0)
-					icon_state = "[initial(icon_state)]-o"
-					update_icon()
+			om_do_after(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
 			return FALSE
 		else
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
 	return TRUE
 
+/obj/item/denecrotizer/proc/check_target_timed_done(mob/living/simple_mob/target, mob/living/user)
+	target.faction = user.faction
+	target.revivedby = user.name
+	target.ghostjoin = 1
+	GLOB.active_ghost_pods += target
+	target.ghostjoin_icon()
+	last_used = world.time
+	charges--
+	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
+	target.visible_message("[target]'s eyes widen, as though in revelation as it looks at [user].", runemessage = "eyes widen")
+	if(charges == 0)
+		icon_state = "[initial(icon_state)]-o"
+		update_icon()
+
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	user.visible_message("[user] gently presses [src] to [target]...", runemessage = "presses [src] to [target]")
-	if(do_after(user, revive_time, target = target))
-		target.faction = user.faction
-		target.revivedby = user.name
-		target.revive()
-		target.sight = initial(target.sight)
-		target.see_in_dark = initial(target.see_in_dark)
-		target.see_invisible = initial(target.see_invisible)
-		target.update_icon()
-		visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
-		log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
-		if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
-			target.ghostjoin = 1
-			GLOB.active_ghost_pods |= target
-			target.ghostjoin_icon()
-		last_used = world.time
-		charges--
-		if(charges == 0)
-			icon_state = "[initial(icon_state)]-o"
-			update_icon()
-		return
+	om_do_after(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
+	return
+
+/obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(mob/living/simple_mob/target, mob/living/user)
+	target.faction = user.faction
+	target.revivedby = user.name
+	target.revive()
+	target.sight = initial(target.sight)
+	target.see_in_dark = initial(target.see_in_dark)
+	target.see_invisible = initial(target.see_invisible)
+	target.update_icon()
+	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
+	log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
+	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
+		target.ghostjoin = 1
+		GLOB.active_ghost_pods |= target
+		target.ghostjoin_icon()
+	last_used = world.time
+	charges--
+	if(charges == 0)
+		icon_state = "[initial(icon_state)]-o"
+		update_icon()
+	return
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	user.visible_message("[user] presses [src] to [target]...", runemessage = "presses [src] to [target]")
-	if(do_after(user, revive_time, target = target))
-		target.revive()
-		target.sight = initial(target.sight)
-		target.see_in_dark = initial(target.see_in_dark)
-		target.see_invisible = initial(target.see_invisible)
-		target.update_icon()
-		visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
-		last_used = world.time
-		charges--
-		if(charges == 0)
-			icon_state = "[initial(icon_state)]-o"
-			update_icon()
-		return
-	else
-		user.visible_message("[user] bonks [target] with [src]. Nothing happened.")
-		return
+	om_do_after(user, revive_time, target = target, receiver = src, on_done = PROC_REF(basic_rez_timed_done), done_args = list(target, user), on_fail = PROC_REF(basic_rez_timed_failed), fail_args = list(target, user))
 
+/obj/item/denecrotizer/proc/basic_rez_timed_done(mob/living/simple_mob/target, mob/living/user)
+	target.revive()
+	target.sight = initial(target.sight)
+	target.see_in_dark = initial(target.see_in_dark)
+	target.see_invisible = initial(target.see_invisible)
+	target.update_icon()
+	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
+	last_used = world.time
+	charges--
+	if(charges == 0)
+		icon_state = "[initial(icon_state)]-o"
+		update_icon()
+	return
 
+/obj/item/denecrotizer/proc/basic_rez_timed_failed(mob/living/simple_mob/target, mob/living/user)
+	user.visible_message("[user] bonks [target] with [src]. Nothing happened.")
+	return
 
 /obj/item/denecrotizer/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(check_target(target, user))

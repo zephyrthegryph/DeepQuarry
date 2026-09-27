@@ -198,11 +198,7 @@
 	if(!user.IsAdvancedToolUser())
 		return
 	if(!status && bcell && bcell.charge >= hitcost)
-		if(do_after(user, charge_time, target = src))
-			status = 1
-			user.visible_message(span_warning("[user] charges \the [src]!"),span_warning("You charge \the [src]. <b>It's hammer time!</b>"))
-			playsound(src, "sparks", 75, 1, -1)
-			update_held_icon()
+		om_do_after(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
 		status = 0
 		user.visible_message(span_notice("[user] safely disengages \the [src]'s power field."),span_notice("\The [src] is now off."))
@@ -213,6 +209,12 @@
 	else
 		to_chat(user, span_warning("\The [src] is out of charge."))
 	add_fingerprint(user)
+
+/obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
+	status = 1
+	user.visible_message(span_warning("[user] charges \the [src]!"),span_warning("You charge \the [src]. <b>It's hammer time!</b>"))
+	playsound(src, "sparks", 75, 1, -1)
+	update_held_icon()
 
 /obj/item/melee/shock_maul/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return

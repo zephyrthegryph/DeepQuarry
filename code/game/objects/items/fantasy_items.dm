@@ -85,16 +85,17 @@
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		if(do_after(user, 2 SECONDS, target = GRAB_TARGET(G)))
-			affecting.forceMove(loc)
-			spawn(0)
-				if(buckle_mob(affecting))
-					affecting.visible_message(\
-						span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
-						span_danger("You are buckled to [src] by [user.name]!"),\
-						span_notice("You hear metal clanking."))
-			qdel(I)
+		om_do_after(user, 2 SECONDS, target = GRAB_TARGET(G), receiver = src, on_done = PROC_REF(bath_buckle_done), done_args = list(I, user, affecting))
 
+/obj/structure/bed/bath/proc/bath_buckle_done(obj/item/I, mob/user, mob/living/affecting)
+	affecting.forceMove(loc)
+	spawn(0)
+		if(buckle_mob(affecting))
+			affecting.visible_message(\
+				span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
+				span_danger("You are buckled to [src] by [user.name]!"),\
+				span_notice("You hear metal clanking."))
+	qdel(I)
 
 /obj/structure/bed/bath/Initialize(mapload)
 	create_reagents(300)
@@ -156,10 +157,7 @@
 				if(open && !swirlie)
 					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
 					swirlie_mob = WEAKREF(GM)
-					if(do_after(user, 3 SECONDS, target = GM))
-						user.visible_message(span_danger("[user] gives [GM.name] a swirlie!"), span_notice("You give [GM.name] a swirlie!"), "You hear a toilet flushing.")
-						if(!GM.internal)
-							GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+					om_do_after(user, 3 SECONDS, target = GM, receiver = src, on_done = PROC_REF(wooden_swirlie_done), done_args = list(user, GM, swirlie))
 					swirlie_mob = null
 				else
 					user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
@@ -179,6 +177,11 @@
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
 		return
+
+/obj/structure/toilet/wooden/proc/wooden_swirlie_done(mob/living/user, mob/living/GM, mob/living/swirlie)
+	user.visible_message(span_danger("[user] gives [GM.name] a swirlie!"), span_notice("You give [GM.name] a swirlie!"), "You hear a toilet flushing.")
+	if(!GM.internal)
+		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 
 /obj/structure/toilet/wooden/Initialize(mapload)
 	open = 1 //just to make sure it works

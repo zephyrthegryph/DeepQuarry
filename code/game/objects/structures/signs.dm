@@ -1666,15 +1666,17 @@
 	..()
 	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
 		visible_message(span_warning("\The [user] starts to burn \the [src] down!"))
-		if(!do_after(user, 2 SECONDS, target = src))
-			return FALSE
-		visible_message(span_warning("\The [user] burns \the [src] down!"))
-		playsound(src.loc, 'sound/items/cigs_lighters/cig_light.ogg', 100, 1)
-		new /obj/effect/decal/cleanable/ash(src.loc)
-		if(linked_flag)
-			qdel(linked_flag)
-		qdel(src)
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return TRUE
+
+/obj/structure/sign/flag/proc/attackby_timed_done(mob/user)
+	visible_message(span_warning("\The [user] burns \the [src] down!"))
+	playsound(src.loc, 'sound/items/cigs_lighters/cig_light.ogg', 100, 1)
+	new /obj/effect/decal/cleanable/ash(src.loc)
+	if(linked_flag)
+		qdel(linked_flag)
+	qdel(src)
+	return TRUE
 
 /obj/structure/sign/flag/blank/left
 	icon_state = "flag_l"

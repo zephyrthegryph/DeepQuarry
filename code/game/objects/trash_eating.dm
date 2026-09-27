@@ -58,6 +58,11 @@
 	to_chat(user, span_notice("You can taste the dry flavor of knowledge."))
 
 // PDA
+/// The ten-second threat is over: down it goes.
+/obj/item/proc/threat_eaten(mob/living/user)
+	user.visible_message(span_warning("[user] successfully makes [src] disappear!"))
+	user.swallow_trash(src)
+
 /obj/item/pda/on_trash_eaten(mob/living/user)
 	if(!..())
 		return FALSE
@@ -75,9 +80,8 @@
 				var/confirm = tgui_alert(user, "The PDA you're holding contains a vulnerable ID card. Will you risk it?", "Confirmation", list("Definitely", "Cancel"))
 				if(confirm != "Definitely")
 					return FALSE
-			if(!do_after(user, 10 SECONDS, target = src))
-				return FALSE
-			user.visible_message(span_warning("[user] successfully makes [src] disappear!"))
+			om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+			return FALSE
 	return TRUE
 
 /obj/item/pda/after_trash_eaten(mob/living/user)
@@ -100,9 +104,8 @@
 			return FALSE
 		else
 			user.visible_message(span_warning("[user] is threatening to make [src] disappear!"))
-			if(!do_after(user, 10 SECONDS, target = src))
-				return FALSE
-			user.visible_message(span_warning("[user] successfully makes [src] disappear!"))
+			om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+			return FALSE
 	return TRUE
 
 /obj/item/card/id/after_trash_eaten(mob/living/user)

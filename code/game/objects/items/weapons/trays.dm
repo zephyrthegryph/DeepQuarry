@@ -19,6 +19,13 @@
 	COOLDOWN_DECLARE(shield_bash)
 	drop_sound = 'sound/items/trayhit1.ogg'
 
+/// Items slide off a dropped tray a step or two, in random directions.
+/proc/tray_scatter(obj/item/I, steps)
+	if(steps <= 0 || QDELETED(I))
+		return
+	step(I, pick(NORTH,SOUTH,EAST,WEST))
+	om_after(I, rand(2,4), /proc/tray_scatter, I, steps - 1)
+
 /obj/item/tray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/tray_sound = pick('sound/items/trayhit1.ogg', 'sound/items/trayhit2.ogg')
 	//var/attack_area = user.zone_sel.selecting
@@ -29,11 +36,7 @@
 		I.loc = M.loc
 		LAZYREMOVE(carrying, I)
 		if(isturf(I.loc))
-			spawn()
-				for(var/i = 1, i <= rand(1,2), i++)
-					if(I)
-						step(I, pick(NORTH,SOUTH,EAST,WEST))
-						sleep(rand(2,4))
+			tray_scatter(I, rand(1,2))
 
 
 	if(CLUMSY_FAIL_CHANCE(user))              //What if he's a clown?
@@ -166,7 +169,4 @@
 				I.forceMove(loc)
 				LAZYREMOVE(carrying, I)
 				if(noTable)
-					for(var/i = 1, i <= rand(1,2), i++)
-						if(I)
-							step(I, pick(NORTH,SOUTH,EAST,WEST))
-							sleep(rand(2,4))
+					tray_scatter(I, rand(1,2))

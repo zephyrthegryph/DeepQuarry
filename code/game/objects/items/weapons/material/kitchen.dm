@@ -84,6 +84,14 @@
 		qdel(loading)
 	update_icon()
 
+/obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)
+	if(!loaded)
+		return
+	M.visible_message(span_bold("\The [user]") + " feeds some of [loaded] to \the [M] with \the [src].")
+	playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
+	loaded = null
+	update_icon()
+
 /obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M))
 		return ..()
@@ -111,9 +119,10 @@
 			M.visible_message(span_bold("\The [user]") + " eats some of [loaded] with \the [src].")
 		else
 			user.visible_message(span_warning("\The [user] begins to feed \the [M]!"))
-			if(!(M.can_force_feed(user, loaded) && do_after(user, 5 SECONDS, M)))
+			if(!M.can_force_feed(user, loaded))
 				return ITEM_INTERACT_FAILURE
-			M.visible_message(span_bold("\The [user]") + " feeds some of [loaded] to \the [M] with \the [src].")
+			om_do_after(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
+			return ITEM_INTERACT_SUCCESS
 		playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
 		loaded = null
 		update_icon()

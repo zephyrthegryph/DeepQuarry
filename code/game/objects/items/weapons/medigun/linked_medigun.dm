@@ -149,66 +149,68 @@
 	if(should_stop(H, user, user.get_active_hand()))
 		return
 
-	if(do_after(user, 1 SECOND, user, timed_action_flags = IGNORE_USER_LOC_CHANGE, hidden = TRUE))
-		var/washealing = ishealing // Did we heal last cycle
-		ishealing = FALSE // The default is 'we didn't heal this cycle'
-		if(!checked_use(5))
-			to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-			return
-		if(H.stat == DEAD)
-			process_medigun(H, user, filter)
-			return
-		var/lastier = medigun_base_unit.slaser.get_rating()
-		if(lastier >= 2)
-			if(checked_use(5))
-				H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
-			if(H.current_pain() && checked_use(5))
-				H.mend(TREAT_ANALGESIC, 20)
-			if(H.has_status(EFFECT_WEAKENED) && checked_use(5))
-				H.status_adjust(EFFECT_WEAKENED, -1)
-			if(lastier >= 3)
-				if(H.has_status(EFFECT_PARALYZED) && (checked_use(15)))
-					H.status_adjust(EFFECT_PARALYZED, -1)
+	om_do_after(user, 1 SECOND, target = user, timed_action_flags = IGNORE_USER_LOC_CHANGE, hidden = TRUE, receiver = src, on_done = PROC_REF(process_medigun_timed_done), done_args = list(H, user, filter, ishealing))
 
-		var/healmod = lastier
-		if(H.injury_load(INJURY_CATEGORY_TOXIC))
-			healmod = min(lastier,medigun_base_unit.toxcharge,H.injury_load(INJURY_CATEGORY_TOXIC))
-			if(medigun_base_unit.toxcharge >= healmod)
-				if(!checked_use(healmod))
-					to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-					return
-				if(healmod < 0)
-					healmod = 0
-				else
-					H.mend(TREAT_ANTITOXIN, healmod)
-					medigun_base_unit.toxcharge -= healmod
-					ishealing = TRUE
-		if(H.oxygen_debt())
-			healmod = min(10*lastier,H.oxygen_debt())
-			if(!checked_use(min(10,healmod)))
+
+/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(mob/living/carbon/human/H, mob/user, filter, ishealing)
+	var/washealing = ishealing // Did we heal last cycle
+	ishealing = FALSE // The default is 'we didn't heal this cycle'
+	if(!checked_use(5))
+		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
+		return
+	if(H.stat == DEAD)
+		process_medigun(H, user, filter)
+		return
+	var/lastier = medigun_base_unit.slaser.get_rating()
+	if(lastier >= 2)
+		if(checked_use(5))
+			H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
+		if(H.current_pain() && checked_use(5))
+			H.mend(TREAT_ANALGESIC, 20)
+		if(H.has_status(EFFECT_WEAKENED) && checked_use(5))
+			H.status_adjust(EFFECT_WEAKENED, -1)
+		if(lastier >= 3)
+			if(H.has_status(EFFECT_PARALYZED) && (checked_use(15)))
+				H.status_adjust(EFFECT_PARALYZED, -1)
+
+	var/healmod = lastier
+	if(H.injury_load(INJURY_CATEGORY_TOXIC))
+		healmod = min(lastier,medigun_base_unit.toxcharge,H.injury_load(INJURY_CATEGORY_TOXIC))
+		if(medigun_base_unit.toxcharge >= healmod)
+			if(!checked_use(healmod))
 				to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 				return
-			H.mend(TREAT_OXYGENATION, healmod)
-			ishealing = TRUE
-
-		ishealing = process_wounds(H, lastier, lastier, ishealing)
-		//if(medigun_base_unit.brutecharge <= 0 || medigun_base_unit.burncharge <= 0 || medigun_base_unit.toxcharge <= 0)
-		medigun_base_unit.update_icon()
-		//if(medigun_base_unit.slaser.get_rating() >= 5)
-
-	//Blood regeneration if there is some space
-		if(lastier >= 5)
-			if(H.vessel.get_reagent_amount("blood") < H.species.blood_volume)
-				var/datum/reagent/blood/B = locate() in H.vessel.reagent_list //Grab some blood
-				B.volume += min(5, (H.species.blood_volume - H.vessel.get_reagent_amount("blood")))// regenerate blood
-
-		if(ishealing != washealing) // Either we stopped or started healing this cycle
-			if(ishealing)
-				H.filters += filter
+			if(healmod < 0)
+				healmod = 0
 			else
-				H.filters -= filter
+				H.mend(TREAT_ANTITOXIN, healmod)
+				medigun_base_unit.toxcharge -= healmod
+				ishealing = TRUE
+	if(H.oxygen_debt())
+		healmod = min(10*lastier,H.oxygen_debt())
+		if(!checked_use(min(10,healmod)))
+			to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
+			return
+		H.mend(TREAT_OXYGENATION, healmod)
+		ishealing = TRUE
 
-		process_medigun(H, user, filter, ishealing)
+	ishealing = process_wounds(H, lastier, lastier, ishealing)
+	//if(medigun_base_unit.brutecharge <= 0 || medigun_base_unit.burncharge <= 0 || medigun_base_unit.toxcharge <= 0)
+	medigun_base_unit.update_icon()
+	//if(medigun_base_unit.slaser.get_rating() >= 5)
+	//Blood regeneration if there is some space
+	if(lastier >= 5)
+		if(H.vessel.get_reagent_amount("blood") < H.species.blood_volume)
+			var/datum/reagent/blood/B = locate() in H.vessel.reagent_list //Grab some blood
+			B.volume += min(5, (H.species.blood_volume - H.vessel.get_reagent_amount("blood")))// regenerate blood
+
+	if(ishealing != washealing) // Either we stopped or started healing this cycle
+		if(ishealing)
+			H.filters += filter
+		else
+			H.filters -= filter
+
+	process_medigun(H, user, filter, ishealing)
 
 /obj/item/bork_medigun/linked/proc/process_wounds(mob/living/carbon/human/H, heal_ticks, remaining_strength, ishealing)
 	while(heal_ticks > 0)

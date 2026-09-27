@@ -222,7 +222,7 @@
 	if(insert_refusal(W, user))
 		return FALSE
 	if(user)
-		if(!stall_insertion(W, user)) // Can sleep, for slow storage
+		if(!stall_insertion(W, user)) // Slow storage runs its delay and retries
 			return FALSE
 		if(insert_refusal(W, user)) // Things change while stalling
 			return FALSE
@@ -276,7 +276,7 @@
 	if(!istype(W) || W.loc != src)
 		return FALSE
 
-	if(user && !stall_removal(W, user)) // Can sleep, for slow storage
+	if(user && !stall_removal(W, user, new_location)) // Slow storage runs its delay and retries
 		return FALSE
 	if(W.loc != src)
 		return FALSE

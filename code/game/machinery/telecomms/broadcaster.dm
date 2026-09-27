@@ -749,7 +749,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	// --- Finally, tag the actual signal with the appropriate values ---
 	signal.data = list(
-		"slow" = 0, // how much to sleep() before broadcasting - simulates net lag
+		"slow" = 0, // broadcast delay - simulates net lag
 		"message" = "TEST",
 		"compression" = rand(45, 50), // If the signal is compressed, compress our message too.
 		"traffic" = 0, // dictates the total traffic sum that the signal went through

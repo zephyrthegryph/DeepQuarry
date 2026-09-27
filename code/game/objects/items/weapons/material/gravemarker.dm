@@ -75,13 +75,17 @@
 		return 0
 	else
 		to_chat(user, span_notice("You begin to place \the [src.name]."))
-		if(!do_after(user, 1 SECOND, target = src))
-			return 0
-		var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
-		to_chat(user, span_notice("You place \the [src.name]."))
-		G.grave_name = grave_name
-		G.epitaph = epitaph
-		G.add_fingerprint(user)
-		G.dir = user.dir
-		QDEL_NULL(src)
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
+	return
+
+/obj/item/material/gravemarker/proc/place_done(mob/user)
+	if(!isturf(user.loc) || locate(/obj/structure/gravemarker, user.loc))
+		return
+	var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
+	to_chat(user, span_notice("You place \the [src.name]."))
+	G.grave_name = grave_name
+	G.epitaph = epitaph
+	G.add_fingerprint(user)
+	G.dir = user.dir
+	QDEL_NULL(src)
 	return

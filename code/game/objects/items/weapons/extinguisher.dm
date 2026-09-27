@@ -79,16 +79,19 @@
 	if(istype(O, /obj/structure/bed/chair))
 		C = O
 
-	var/list/move_speed = list(1, 1, 1, 2, 2, 3)
-	for(var/i in 1 to 6)
-		if(C) C.propelled = (6-i)
-		O.Move(get_step(user,movementdirection), movementdirection)
-		sleep(move_speed[i])
+	propel_step(O, C, user, movementdirection, 1)
 
-	//additional movement
-	for(var/i in 1 to 3)
-		O.Move(get_step(user,movementdirection), movementdirection)
-		sleep(3)
+/// Nine pushes: six accelerating, then three more at a steady pace.
+/obj/item/extinguisher/proc/propel_step(obj/O, obj/structure/bed/chair/C, mob/user, movementdirection, i)
+	var/static/list/move_speed = list(1, 1, 1, 2, 2, 3, 3, 3, 3)
+	if(C && i <= 6)
+		C.propelled = (6-i)
+	O.Move(get_step(user,movementdirection), movementdirection)
+	if(i < length(move_speed))
+		om_after(O, move_speed[i], /proc/extinguisher_propel_next, src, O, C, user, movementdirection, i + 1)
+
+/proc/extinguisher_propel_next(obj/item/extinguisher/E, obj/O, obj/structure/bed/chair/C, mob/user, movementdirection, i)
+	E.propel_step(O, C, user, movementdirection, i)
 
 /obj/item/extinguisher/afterattack(atom/target, mob/user, flag)
 	//TODO; Add support for reagents in water.

@@ -73,19 +73,19 @@
 
 /obj/machinery/holoplant/proc/flicker()
 	interference = TRUE
-	spawn(0)
+	flicker_step(1)
+
+/obj/machinery/holoplant/proc/flicker_step(n)
+	if(n % 2)
 		cut_overlays()
 		set_light(0)
-		sleep(rand(2,4))
+	else
 		add_overlay(plant)
 		set_light(2)
-		sleep(rand(2,4))
-		cut_overlays()
-		set_light(0)
-		sleep(rand(2,4))
-		add_overlay(plant)
-		set_light(2)
+	if(n >= 4)
 		interference = FALSE
+		return
+	om_after(src, rand(2,4), PROC_REF(flicker_step), n + 1)
 
 /obj/machinery/holoplant/proc/prepare_icon(state)
 	if(!state)

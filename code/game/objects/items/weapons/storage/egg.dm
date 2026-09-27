@@ -31,13 +31,15 @@
 /obj/item/storage/vore_egg/proc/hatch(mob/living/user as mob)
 	visible_message(span_danger("\The [src] begins to shake as something pushes out from within!"))
 	animate_shake()
-	if(do_after(user, 5 SECONDS, target = src))
-		if(use_sound)
-			playsound(src, src.use_sound, 50, 0, -5)
-		animate_shake()
-		drop_contents()
-		if(user.transforming) //this is actually godawful and transforming should never be used as it skips life ticks
-			user.transforming = FALSE //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
+	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(hatch_timed_done), done_args = list(user))
+
+/obj/item/storage/vore_egg/proc/hatch_timed_done(mob/living/user)
+	if(use_sound)
+		playsound(src, src.use_sound, 50, 0, -5)
+	animate_shake()
+	drop_contents()
+	if(user.transforming) //this is actually godawful and transforming should never be used as it skips life ticks
+		user.transforming = FALSE //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
 
 /obj/item/storage/vore_egg/unathi
 	name = "unathi egg"

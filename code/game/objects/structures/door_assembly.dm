@@ -172,22 +172,13 @@
 			to_chat(user, span_warning("You need one length of coil to wire the airlock assembly."))
 			return
 		user.visible_message("[user] wires the airlock assembly.", "You start to wire the airlock assembly.")
-		if(do_after(user, 4 SECONDS, target = src) && state == 0 && anchored)
-			if (C.use(1))
-				src.state = 1
-				to_chat(user, span_notice("You wire the airlock."))
+		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 
 	else if(istype(W, /obj/item/airlock_electronics) && state == 1)
 		playsound(src, W.usesound, 100, 1)
 		user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
-		if(do_after(user, 4 SECONDS, target = src))
-			if(!src) return
-			user.drop_item()
-			W.loc = src
-			to_chat(user, span_notice("You installed the airlock electronics!"))
-			src.state = 2
-			src.electronics = W
+		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(W, user))
 
 	else if(istype(W, /obj/item/stack/material) && !glass)
 		var/obj/item/stack/S = W
@@ -197,10 +188,7 @@
 				if(material_name == MAT_RGLASS)
 					playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 					user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
-					if(do_after(user, 4 SECONDS, target = src) && !glass)
-						if (S.use(1))
-							to_chat(user, span_notice("You installed reinforced glass windows into the airlock assembly."))
-							glass = 1
+					om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(user, S))
 				else if(material_name)
 					// Ugly hack, will suffice for now. Need to fix it upstream as well, may rewrite mineral walls. ~Z
 					if(!(material_name in list(MAT_GOLD, MAT_SILVER, MAT_DIAMOND, MAT_URANIUM, MAT_PHORON, MAT_SANDSTONE)))
@@ -209,14 +197,37 @@
 					if(S.get_amount() >= 2)
 						playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 						user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
-						if(do_after(user, 4 SECONDS, target = src) && !glass)
-							if (S.use(2))
-								to_chat(user, span_notice("You installed [material_display_name(material_name)] plating into the airlock assembly."))
-								glass = material_name
+						om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(user, S, material_name))
 
 	else
 		..()
 	update_state()
+
+/obj/structure/door_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
+	if(!(state == 0 && anchored))
+		return
+	if (C.use(1))
+		src.state = 1
+		to_chat(user, span_notice("You wire the airlock."))
+/obj/structure/door_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
+	if(!src) return
+	user.drop_item()
+	W.loc = src
+	to_chat(user, span_notice("You installed the airlock electronics!"))
+	src.state = 2
+	src.electronics = W
+/obj/structure/door_assembly/proc/attackby_timed_done3(mob/user, obj/item/stack/S)
+	if(!(!glass))
+		return
+	if (S.use(1))
+		to_chat(user, span_notice("You installed reinforced glass windows into the airlock assembly."))
+		glass = 1
+/obj/structure/door_assembly/proc/attackby_timed_done4(mob/user, obj/item/stack/S, material_name)
+	if(!(!glass))
+		return
+	if (S.use(2))
+		to_chat(user, span_notice("You installed [material_display_name(material_name)] plating into the airlock assembly."))
+		glass = material_name
 
 /obj/structure/door_assembly/welder_act(mob/user, obj/item/W)
 	if(!(istext(glass) || glass == 1 || !anchored))

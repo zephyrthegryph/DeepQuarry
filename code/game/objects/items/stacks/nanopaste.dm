@@ -16,13 +16,8 @@
 	if(istype(M,/mob/living/silicon/robot) && can_use(1))	//Repairing cyborgs
 		var/mob/living/silicon/robot/R = M
 		if(R.injury_load(INJURY_CATEGORY_PHYSICAL) || R.injury_load(INJURY_CATEGORY_THERMAL))
-			if(do_after(user, 7 * toolspeed, target = R))
-				R.mend(TREAT_PLATING_REPAIR, 15)
-				R.mend(TREAT_WIRING_REPAIR, 15)
-				use(1)
-				user.balloon_alert_visible("\the [user] applied some [src] on [R]'s damaged areas.",\
-				"you apply some [src] at [R]'s damaged areas.")
-				return ITEM_INTERACT_SUCCESS
+			om_do_after(user, 7 * toolspeed, target = R, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, R))
+			return ITEM_INTERACT_SUCCESS
 		else
 			balloon_alert(user, "all [R]'s systems are nominal.")
 			return ITEM_INTERACT_FAILURE
@@ -53,20 +48,26 @@
 			else if(can_use(1))
 				user.setClickCooldown(user.get_attack_speed(src))
 				// Nanites rebuild plating and wiring alike.
-				var/restoration = 0
-				if(S.open >= 2)
-					if(do_after(user, 5 * toolspeed, target = S))
-						restoration = restoration_internal
-				else if(do_after(user, 5 * toolspeed, target = S))
-					restoration = restoration_external
-				if(restoration)
-					H.mend(TREAT_PLATING_REPAIR, restoration, S.organ_tag)
-					H.mend(TREAT_WIRING_REPAIR, restoration, S.organ_tag)
-				use(1)
-				user.balloon_alert_visible("\the [user] applies some nanite paste on [user != M ? "[M]'s [S.name]" : "[S]"] with [src].",\
-				"you apply some nanite paste on [user == M ? "your" : "[M]'s"] [S.name].")
+				var/restoration = S.open >= 2 ? restoration_internal : restoration_external
+				om_do_after(user, 5 * toolspeed, target = S, receiver = src, on_done = PROC_REF(repair_limb_done), done_args = list(user, H, S, restoration))
 				return ITEM_INTERACT_SUCCESS
 
+/obj/item/stack/nanopaste/proc/attack_timed_done(mob/living/user, mob/living/silicon/robot/R)
+	R.mend(TREAT_PLATING_REPAIR, 15)
+	R.mend(TREAT_WIRING_REPAIR, 15)
+	use(1)
+	user.balloon_alert_visible("\the [user] applied some [src] on [R]'s damaged areas.",\
+	"you apply some [src] at [R]'s damaged areas.")
+	return ITEM_INTERACT_SUCCESS
+/obj/item/stack/nanopaste/proc/repair_limb_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/S, restoration)
+	if(!can_use(1))
+		return
+	if(restoration)
+		H.mend(TREAT_PLATING_REPAIR, restoration, S.organ_tag)
+		H.mend(TREAT_WIRING_REPAIR, restoration, S.organ_tag)
+	use(1)
+	user.balloon_alert_visible("\the [user] applies some nanite paste on [user != H ? "[H]'s [S.name]" : "[S]"] with [src].",\
+	"you apply some nanite paste on [user == H ? "your" : "[H]'s"] [S.name].")
 
 /obj/item/stack/nanopaste
 	var/restoration_external = 5

@@ -208,11 +208,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			persist_nif_data(H)
 
 		usr.visible_message("[usr] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
-		if(do_after(usr, 8 SECONDS, target))
-			our_db.m_backup(target.mind,nif,one_time = TRUE)
-			to_chat(usr,span_notice("Mind backed up!"))
-		else
-			to_chat(usr,span_warning("You must remain close to your target!"))
+		om_do_after(usr, 8 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done), done_args = list(target, nif, usr), on_fail = PROC_REF(Topic_timed_failed), fail_args = list(target, nif, usr))
 
 		return
 
@@ -224,12 +220,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		var/mob/living/carbon/human/H = target
 
 		usr.visible_message("[usr] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
-		if(do_after(usr, 8 SECONDS, target))
-			var/datum/transhuman/body_record/BR = new()
-			BR.init_from_mob(H, TRUE, TRUE, database_key = db_key)
-			to_chat(usr,span_notice("Body scanned!"))
-		else
-			to_chat(usr,span_warning("You must remain close to your target!"))
+		om_do_after(usr, 8 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done2), done_args = list(target, H, usr), on_fail = PROC_REF(Topic_timed_failed2), fail_args = list(target, H, usr))
 
 		return
 
@@ -246,10 +237,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		if(choice == "Continue" && usr.get_active_hand() == src && usr.Adjacent(target))
 
 			usr.visible_message(span_warning("[usr] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
-			if(do_after(usr, 35 SECONDS, target)) //This is powerful, yo.
-				if(!stored_mind && target.mind)
-					get_mind(target)
-					to_chat(usr,span_notice("Mind downloaded!"))
+			om_do_after(usr, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, usr))
 
 		return
 
@@ -301,12 +289,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				return
 
 		usr.visible_message(span_warning("[usr] begins uploading someone's mind into [target]!"),span_notice("You begin uploading a mind into [target]!"))
-		if(do_after(usr, 35 SECONDS, target))
-			if(!stored_mind)
-				to_chat(usr,span_warning("\The [src] no longer has a stored mind."))
-				return
-			put_mind(target)
-			to_chat(usr,span_notice("Mind transferred into [target]!"))
+		om_do_after(usr, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, usr))
 
 	if(href_list["mindrelease"])
 		if(stored_mind)
@@ -325,6 +308,30 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				to_chat(usr,span_notice("Mind downloaded!"))
 				return
 		to_chat(usr,span_notice("Unable to find that mind in Soulcatcher!"))
+
+/obj/item/sleevemate/proc/Topic_timed_done(mob/living/target, nif, mob/usr_mob)
+	our_db.m_backup(target.mind,nif,one_time = TRUE)
+	to_chat(usr_mob,span_notice("Mind backed up!"))
+
+/obj/item/sleevemate/proc/Topic_timed_failed(mob/living/target, nif, mob/usr_mob)
+	to_chat(usr_mob,span_warning("You must remain close to your target!"))
+/obj/item/sleevemate/proc/Topic_timed_done2(mob/living/target, mob/living/carbon/human/H, mob/usr_mob)
+	var/datum/transhuman/body_record/BR = new()
+	BR.init_from_mob(H, TRUE, TRUE, database_key = db_key)
+	to_chat(usr_mob,span_notice("Body scanned!"))
+
+/obj/item/sleevemate/proc/Topic_timed_failed2(mob/living/target, mob/living/carbon/human/H, mob/usr_mob)
+	to_chat(usr_mob,span_warning("You must remain close to your target!"))
+/obj/item/sleevemate/proc/Topic_timed_done3(mob/living/target, mob/usr_mob)
+	if(!stored_mind && target.mind)
+		get_mind(target)
+		to_chat(usr_mob,span_notice("Mind downloaded!"))
+/obj/item/sleevemate/proc/Topic_timed_done4(mob/living/target, mob/usr_mob)
+	if(!stored_mind)
+		to_chat(usr_mob,span_warning("\The [src] no longer has a stored mind."))
+		return
+	put_mind(target)
+	to_chat(usr_mob,span_notice("Mind transferred into [target]!"))
 
 /obj/item/sleevemate/update_icon()
 	if(stored_mind)

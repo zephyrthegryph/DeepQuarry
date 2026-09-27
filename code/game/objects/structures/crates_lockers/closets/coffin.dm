@@ -27,14 +27,17 @@
 	if(opened)
 		visible_message(span_notice("[user] starts to climb into \the [src.name]."), \
 						span_notice("You start to lower yourself into \the [src.name]."))
-		if(do_after(user, 5 SECONDS, target = src))
-			user.forceMove(src.loc)
-			visible_message(span_notice("[user] climbs into \the [src.name]."), \
-							span_notice("You climb into \the [src.name]."))
-		else
-			visible_message(span_notice("[user] decides not to climb into \the [src.name]."), \
-							span_notice("You stop climbing into \the [src.name]."))
+		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
 	return
+
+/obj/structure/closet/grave/proc/attack_hand_timed_done(mob/user)
+	user.forceMove(src.loc)
+	visible_message(span_notice("[user] climbs into \the [src.name]."), \
+					span_notice("You climb into \the [src.name]."))
+
+/obj/structure/closet/grave/proc/attack_hand_timed_failed(mob/user)
+	visible_message(span_notice("[user] decides not to climb into \the [src.name]."), \
+					span_notice("You stop climbing into \the [src.name]."))
 
 /obj/structure/closet/grave/CanPass(atom/movable/mover, turf/target)
 	if(opened && ismob(mover))

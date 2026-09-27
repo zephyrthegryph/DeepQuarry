@@ -465,21 +465,30 @@
 	visible_message(span_danger("\The [src] begins to shake violently!"))
 
 	breakout = 1 //can't think of a better way to do this right now.
-	for(var/i in 1 to (6*breakout_time * 2)) //minutes * 6 * 5seconds * 2
-		if(!do_after(escapee, 5 SECONDS, target = src)) //5 seconds
-			breakout = 0
-			return
-		if(!escapee || escapee.incapacitated() || escapee.loc != src)
-			breakout = 0
-			return //closet/user destroyed OR user dead/unconcious OR user no longer in closet OR closet opened
-		//Perform the same set of checks as above for weld and lock status to determine if there is even still a point in 'resisting'...
-		if(!req_breakout())
-			breakout = 0
-			return
+	breakout_push(escapee, 1)
 
-		playsound(src, breakout_sound, 100, 1)
-		animate_shake()
-		add_fingerprint(escapee)
+/// One 5-second shove; (6 * breakout_time * 2) of them break the closet open.
+/obj/structure/closet/proc/breakout_push(mob/living/escapee, i)
+	om_do_after(escapee, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(breakout_pushed), done_args = list(escapee, i), on_fail = PROC_REF(breakout_stop))
+
+/obj/structure/closet/proc/breakout_stop()
+	breakout = 0
+
+/obj/structure/closet/proc/breakout_pushed(mob/living/escapee, i)
+	if(!escapee || escapee.incapacitated() || escapee.loc != src)
+		breakout = 0
+		return //closet/user destroyed OR user dead/unconcious OR user no longer in closet OR closet opened
+	//Perform the same set of checks as above for weld and lock status to determine if there is even still a point in 'resisting'...
+	if(!req_breakout())
+		breakout = 0
+		return
+
+	playsound(src, breakout_sound, 100, 1)
+	animate_shake()
+	add_fingerprint(escapee)
+	if(i < (6*breakout_time * 2)) //minutes * 6 * 5seconds * 2
+		breakout_push(escapee, i + 1)
+		return
 
 	//Well then break it!
 	breakout = 0

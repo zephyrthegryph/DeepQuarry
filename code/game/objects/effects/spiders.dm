@@ -208,11 +208,14 @@
 		amount_grown += rand(0,2)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	sleep(rand(20,60))
+	om_after(src, rand(20,60), PROC_REF(vent_crawl_enter), entry, exit_vent)
+
+/obj/effect/spider/spiderling/proc/vent_crawl_enter(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	loc = exit_vent
 	var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
-	sleep(travel_time)
+	om_after(src, travel_time, PROC_REF(vent_crawl_midway), entry, exit_vent, travel_time)
 
+/obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || exit_vent.welded)
 		loc = entry
 		entry_vent = null
@@ -221,8 +224,9 @@
 	if(prob(50))
 		src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
 		SSmotiontracker.ping(src,10)
-	sleep(travel_time)
+	om_after(src, travel_time, PROC_REF(vent_crawl_exit), entry, exit_vent)
 
+/obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || exit_vent.welded)
 		loc = entry
 		entry_vent = null

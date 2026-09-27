@@ -127,31 +127,34 @@
 			span_danger("You begin deploying \the [src]!")
 			)
 
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has deployed \the [src]."),
-				span_danger("You have deployed \the [src]!")
-				)
-			playsound(src, 'sound/machines/click.ogg', 70, 1)
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 
-			deployed = TRUE
-			user.drop_from_inventory(src)
-			update_icon()
-			anchored = TRUE
-			log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
+/obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
+	user.visible_message(
+		span_danger("[user] has deployed \the [src]."),
+		span_danger("You have deployed \the [src]!")
+		)
+	playsound(src, 'sound/machines/click.ogg', 70, 1)
+
+	deployed = TRUE
+	user.drop_from_inventory(src)
+	update_icon()
+	anchored = TRUE
+	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
 /obj/item/ghost_trap/container_resist(mob/living/escapee)
 	if(!ismob(escapee))
 		return
 	visible_message(span_danger("Lights flicker and buzzers beep from \the [src], alerting that a containment breach is imminent!"))
-	if(do_after(escapee, 2 MINUTES, target = src)) //Escape!
-		REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
-		captured_entity = null
-		escapee.forceMove(get_turf(src))
-		announce_escape(escapee)
-		visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
-		update_icon()
+	om_do_after(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
 
+/obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
+	REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
+	captured_entity = null
+	escapee.forceMove(get_turf(src))
+	announce_escape(escapee)
+	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
+	update_icon()
 
 /obj/item/ghost_trap/attack_hand(mob/user)
 	if(has_buckled_mobs() && can_use(user))
@@ -159,12 +162,7 @@
 			span_notice("[user] begins freeing something from \the [src]."),
 			span_notice("You carefully begin to free something from \the [src]."),
 			)
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
-			for(var/A in BUCKLED_MOBS(src))
-				unbuckle_mob(A)
-			anchored = FALSE
-			deployed = FALSE
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	else if(deployed && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to deactivate \the [src]."),
@@ -172,16 +170,24 @@
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has deactivated \the [src]."),
-				span_notice("You have deactivated \the [src]!")
-				)
-			deployed = FALSE
-			anchored = FALSE
-			update_icon()
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		..()
+
+/obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
+	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
+	for(var/A in BUCKLED_MOBS(src))
+		unbuckle_mob(A)
+	anchored = FALSE
+	deployed = FALSE
+/obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
+	user.visible_message(
+		span_danger("[user] has deactivated \the [src]."),
+		span_notice("You have deactivated \the [src]!")
+		)
+	deployed = FALSE
+	anchored = FALSE
+	update_icon()
 
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do

@@ -63,17 +63,19 @@
 		playsound(src, 'sound/effects/weightlifter.ogg', 50, 1)
 		user.set_dir(SOUTH)
 		flick("[icon_state]_[weight]", src)
-		if(do_after(user, 3 SECONDS + (weight * 10), target = src)) // Set timer to be similar to the machines in fitness_machines_vr.dm
-			playsound(src, 'sound/effects/weightdrop.ogg', 25, 1)
-			user.adjust_nutrition(weight * -10)
-			var/weightloss_enhanced = weightloss_power * (weight * 0.5)
-			user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)
-			to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
-			fitness_being_used = 0
-		else
-			to_chat(user, span_notice("Against your previous judgement, perhaps working out is not for you."))
-			fitness_being_used = 0
+		om_do_after(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
 
+/obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
+	playsound(src, 'sound/effects/weightdrop.ogg', 25, 1)
+	user.adjust_nutrition(weight * -10)
+	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
+	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)
+	to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
+	fitness_being_used = 0
+
+/obj/structure/fitness/weightlifter/proc/attack_hand_timed_failed(mob/living/carbon/human/user)
+	to_chat(user, span_notice("Against your previous judgement, perhaps working out is not for you."))
+	fitness_being_used = 0
 
 /obj/structure/fitness/boxing_ropes
 	name = "ropes"

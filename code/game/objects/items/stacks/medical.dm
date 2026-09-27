@@ -75,6 +75,123 @@
 		charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 2, "Medical treatment with [name]", user.real_name)
 	return ITEM_INTERACT_SUCCESS
 
+// ---- Timed wound treatment: one wound per timed action, in order.
+
+/// Whether this stack still has work to do on wound W.
+/obj/item/stack/medical/proc/wound_needs_treatment(datum/affliction/wound/W)
+	return !W.internal && !W.bandaged
+
+/// Whether the stack stops after `amount` wounds.
+/obj/item/stack/medical/proc/wound_limited_by_amount()
+	return TRUE
+
+/obj/item/stack/medical/proc/wound_treat_delay(datum/affliction/wound/W)
+	return W.damage / 5
+
+/// Someone else finished the job during the wait.
+/obj/item/stack/medical/proc/wound_already_treated(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting)
+	if(affecting.is_bandaged()) // We do a second check after the delay, in case it was bandaged after the first check.
+		balloon_alert(user, "[H]'s [affecting.name] is already bandaged.")
+		return TRUE
+	return FALSE
+
+/// Treats W; returns the new count of stack units used.
+/obj/item/stack/medical/proc/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
+	playsound(src, pick(apply_sounds), 25)
+	return used + 1
+
+/obj/item/stack/medical/proc/wound_treat_step(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, list/wounds, index, used, available)
+	var/datum/affliction/wound/W
+	while(index <= length(wounds))
+		var/datum/affliction/wound/candidate = wounds[index]
+		if(!QDELETED(candidate) && wound_needs_treatment(candidate))
+			W = candidate
+			break
+		index++
+	if(!W || (wound_limited_by_amount() && used == amount))
+		wound_treat_finish(H, user, affecting, used)
+		return
+	om_do_after(user, wound_treat_delay(W), target = affecting, receiver = src, on_done = PROC_REF(wound_treat_done), done_args = list(H, user, affecting, wounds, index, used, available), on_fail = PROC_REF(wound_treat_interrupted), fail_args = list(H, user, affecting, used))
+
+/obj/item/stack/medical/proc/wound_treat_interrupted(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	balloon_alert(user, "stand still to bandage wounds.")
+	wound_treat_finish(H, user, affecting, used)
+
+/obj/item/stack/medical/proc/wound_treat_done(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, list/wounds, index, used, available)
+	if(wound_already_treated(H, user, affecting))
+		return
+	if(used >= available)
+		balloon_alert(user, "you run out of [src]!")
+		wound_treat_finish(H, user, affecting, used)
+		return
+	used = apply_wound_treatment(wounds[index], H, user, affecting, used)
+	wound_treat_step(H, user, affecting, wounds, index + 1, used, available)
+
+/obj/item/stack/medical/proc/wound_treat_finish(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	if(!affecting)
+		return
+	affecting.update_damages()
+	if(used == amount)
+		if(affecting.is_bandaged())
+			balloon_alert(user, "\the [src] is used up.")
+		else
+			balloon_alert(user, "\the [src] is used up, but there are more wounds to treat on \the [affecting.name].")
+	use(used)
+
+/obj/item/stack/medical/crude_pack/wound_treat_delay(datum/affliction/wound/W)
+	return W.damage / 3
+
+/obj/item/stack/medical/crude_pack/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	if (W.current_stage <= W.max_bleeding_stage)
+		user.balloon_alert_visible("\the [user] bandages \a [W.desc] on [H]'s [affecting.name].", \
+									"you bandage \a [W.desc] on [H]'s [affecting.name]." )
+	else
+		user.balloon_alert_visible("\the [user] places a bandage over \a [W.desc] on [H]'s [affecting.name].", \
+									"you place a bandage over \a [W.desc] on [H]'s [affecting.name]." )
+	return ..()
+
+/obj/item/stack/medical/bruise_pack/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	if (W.current_stage <= W.max_bleeding_stage)
+		user.balloon_alert_visible("\the [user] bandages \a [W.desc] on [H]'s [affecting.name].", \
+									"bandaged \a [W.desc] on [H]'s [affecting.name]." )
+	else if (W.damage_type == BRUISE)
+		user.balloon_alert_visible("\the [user] places a bruise patch over \a [W.desc] on [H]'s [affecting.name].", \
+									"placed bruise patch over \a [W.desc] on [H]'s [affecting.name]." )
+	else
+		user.balloon_alert_visible("\the [user] places a bandaid over \a [W.desc] on [H]'s [affecting.name].", \
+									"placed bandaid over \a [W.desc] on [H]'s [affecting.name]." )
+	return ..()
+
+/obj/item/stack/medical/advanced/bruise_pack/wound_needs_treatment(datum/affliction/wound/W)
+	return !W.internal && !(W.bandaged && W.disinfected)
+
+/obj/item/stack/medical/advanced/bruise_pack/wound_limited_by_amount()
+	return FALSE
+
+/obj/item/stack/medical/advanced/bruise_pack/wound_already_treated(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting)
+	if(affecting.is_bandaged() && affecting.is_disinfected()) // We do a second check after the delay, in case it was bandaged after the first check.
+		balloon_alert(user, "[H]'s [affecting.name] is already bandaged.")
+		return TRUE
+	return FALSE
+
+/obj/item/stack/medical/advanced/bruise_pack/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	if (W.current_stage <= W.max_bleeding_stage)
+		user.balloon_alert_visible("\the [user] cleans \a [W.desc] on [H]'s [affecting.name] and seals the edges with bioglue.", \
+									"cleaning and sealing \a [W.desc] on [H]'s [affecting.name]." )
+	else if (W.damage_type == BRUISE)
+		user.balloon_alert_visible("\the [user] places a medical patch over \a [W.desc] on [H]'s [affecting.name].", \
+									"placed medical patch over \a [W.desc] on [H]'s [affecting.name]." )
+	else
+		user.balloon_alert_visible("\the [user] smears some bioglue over \a [W.desc] on [H]'s [affecting.name].", \
+									"smeared bioglue over \a [W.desc] on [H]'s [affecting.name]." )
+	W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
+	W.disinfect()
+	H.mend(TREAT_TISSUE_REPAIR, heal_brute, affecting.organ_tag)
+	playsound(src, pick(apply_sounds), 25)
+	update_icon()
+	return 1
+
 /obj/item/stack/medical/proc/upgrade_stack(upgrade_amount)
 	. = FALSE
 
@@ -115,42 +232,7 @@
 			var/available = get_amount()
 			user.balloon_alert_visible("\the [user] starts bandaging [M]'s [affecting.name].", \
 											"bandaging [M]'s [affecting.name]." )
-			var/used = 0
-			for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
-				if(W.internal)
-					continue
-				if(W.bandaged)
-					continue
-				if(used == amount)
-					break
-				if(!do_after(user, W.damage/3, affecting))
-					balloon_alert(user, "stand still to bandage wounds.")
-					break
-
-				if(affecting.is_bandaged()) // We do a second check after the delay, in case it was bandaged after the first check.
-					balloon_alert(user, "[M]'s [affecting.name] is already bandaged.")
-					return ITEM_INTERACT_FAILURE
-
-				if(used >= available)
-					balloon_alert(user, "you run out of [src]!")
-					break
-
-				if (W.current_stage <= W.max_bleeding_stage)
-					user.balloon_alert_visible("\the [user] bandages \a [W.desc] on [M]'s [affecting.name].", \
-												"you bandage \a [W.desc] on [M]'s [affecting.name]." )
-				else
-					user.balloon_alert_visible("\the [user] places a bandage over \a [W.desc] on [M]'s [affecting.name].", \
-												"you place a bandage over \a [W.desc] on [M]'s [affecting.name]." )
-				W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
-				playsound(src, pick(apply_sounds), 25)
-				used++
-			affecting.update_damages()
-			if(used == amount)
-				if(affecting.is_bandaged())
-					balloon_alert(user, "\the [src] is used up.")
-				else
-					balloon_alert(user, "\the [src] is used up, but there are more wounds to treat on \the [affecting.name].")
-			use(used)
+			wound_treat_step(H, user, affecting, affecting.get_wounds().Copy(), 1, 0, available)
 			return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/bruise_pack
@@ -184,47 +266,7 @@
 			var/available = get_amount()
 			user.balloon_alert_visible("\the [user] starts treating [M]'s [affecting.name].", \
 										"treating [M]'s [affecting.name]." )
-			var/used = 0
-			for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
-				if (W.internal)
-					continue
-				if(W.bandaged)
-					continue
-				if(used == amount)
-					break
-				if(!do_after(user, W.damage/5, affecting))
-					balloon_alert(user, "stand still to bandage wounds.")
-					break
-
-				if(affecting.is_bandaged()) // We do a second check after the delay, in case it was bandaged after the first check.
-					balloon_alert(user, "[M]'s [affecting.name] is already bandaged.")
-					return 1
-
-				if(used >= available)
-					balloon_alert(user, "you run out of [src]!")
-					break
-
-				if (W.current_stage <= W.max_bleeding_stage)
-					user.balloon_alert_visible("\the [user] bandages \a [W.desc] on [M]'s [affecting.name].", \
-												"bandaged \a [W.desc] on [M]'s [affecting.name]." )
-					//H.add_side_effect("Itch")
-				else if (W.damage_type == BRUISE)
-					user.balloon_alert_visible("\the [user] places a bruise patch over \a [W.desc] on [M]'s [affecting.name].", \
-												"placed bruise patch over \a [W.desc] on [M]'s [affecting.name]." )
-				else
-					user.balloon_alert_visible("\the [user] places a bandaid over \a [W.desc] on [M]'s [affecting.name].", \
-												"placed bandaid over \a [W.desc] on [M]'s [affecting.name]." )
-				W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
-				// W.disinfect() // Tech1 should not disinfect
-				playsound(src, pick(apply_sounds), 25)
-				used++
-			affecting.update_damages()
-			if(used == amount)
-				if(affecting.is_bandaged())
-					user.balloon_alert(user, "\the [src] is used up.")
-				else
-					user.balloon_alert(user, "\the [src] is used up, but there are more wounds to treat on \the [affecting.name].")
-			use(used)
+			wound_treat_step(H, user, affecting, affecting.get_wounds().Copy(), 1, 0, available)
 			return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/ointment
@@ -257,18 +299,23 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			if(!do_after(user, 1 SECOND, affecting))
-				user.balloon_alert(user, "stand still to salve wounds.")
-				return ITEM_INTERACT_FAILURE
-			if(affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
-				user.balloon_alert(user, "[M]'s [affecting.name] have already been salved.")
-				return ITEM_INTERACT_FAILURE
-			user.balloon_alert_visible("[user] salved wounds on [M]'s [affecting.name].", \
-										"salved wounds on [M]'s [affecting.name]." )
-			use(1)
-			affecting.salve()
-			playsound(src, pick(apply_sounds), 25)
+			om_do_after(user, 1 SECOND, target = affecting, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user, affecting), on_fail = PROC_REF(attack_timed_failed), fail_args = list(M, user, affecting))
 			return ITEM_INTERACT_SUCCESS
+
+/obj/item/stack/medical/ointment/proc/attack_timed_done(mob/living/M, mob/living/user, obj/item/organ/external/affecting)
+	if(affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
+		user.balloon_alert(user, "[M]'s [affecting.name] have already been salved.")
+		return ITEM_INTERACT_FAILURE
+	user.balloon_alert_visible("[user] salved wounds on [M]'s [affecting.name].", \
+								"salved wounds on [M]'s [affecting.name]." )
+	use(1)
+	affecting.salve()
+	playsound(src, pick(apply_sounds), 25)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/stack/medical/ointment/proc/attack_timed_failed(mob/living/M, mob/living/user, obj/item/organ/external/affecting)
+	user.balloon_alert(user, "stand still to salve wounds.")
+	return ITEM_INTERACT_FAILURE
 
 /obj/item/stack/medical/ointment/simple
 	name = "ointment paste"
@@ -303,47 +350,7 @@
 			var/available = get_amount()
 			user.balloon_alert_visible("\the [user] starts treating [M]'s [affecting.name].", \
 										"treating [M]'s [affecting.name]." )
-			var/used = 0
-			for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
-				if (W.internal)
-					continue
-				if (W.bandaged && W.disinfected)
-					continue
-				//if(used == amount)
-				//	break
-				if(!do_after(user, W.damage/5, affecting))
-					balloon_alert(user, "stand still to bandage wounds.")
-					break
-				if(affecting.is_bandaged() && affecting.is_disinfected()) // We do a second check after the delay, in case it was bandaged after the first check.
-					balloon_alert(user, "[M]'s [affecting.name] is already bandaged.")
-					return 1
-
-				if(used >= available)
-					balloon_alert(user, "you run out of [src]!")
-					break
-
-				if (W.current_stage <= W.max_bleeding_stage)
-					user.balloon_alert_visible("\the [user] cleans \a [W.desc] on [M]'s [affecting.name] and seals the edges with bioglue.", \
-												"cleaning and sealing \a [W.desc] on [M]'s [affecting.name]." )
-				else if (W.damage_type == BRUISE)
-					user.balloon_alert_visible("\the [user] places a medical patch over \a [W.desc] on [M]'s [affecting.name].", \
-												"placed medical patch over \a [W.desc] on [M]'s [affecting.name]." )
-				else
-					user.balloon_alert_visible("\the [user] smears some bioglue over \a [W.desc] on [M]'s [affecting.name].", \
-												"smeared bioglue over \a [W.desc] on [M]'s [affecting.name]." )
-				W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
-				W.disinfect()
-				H.mend(TREAT_TISSUE_REPAIR, heal_brute, affecting.organ_tag)
-				playsound(src, pick(apply_sounds), 25)
-				used = 1
-				update_icon()
-			affecting.update_damages()
-			if(used == amount)
-				if(affecting.is_bandaged())
-					balloon_alert(user, "\the [src] is used up.")
-				else
-					balloon_alert(user, "\the [src] is used up, but there are more wounds to treat on \the [affecting.name].")
-			use(used)
+			wound_treat_step(H, user, affecting, affecting.get_wounds().Copy(), 1, 0, available)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
@@ -372,20 +379,25 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			if(!do_after(user, 1 SECOND, affecting))
-				user.balloon_alert(user, "stand still to salve wounds.")
-				return ITEM_INTERACT_FAILURE
-			if(affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
-				user.balloon_alert(user, "[M]'s [affecting.name] have already been salved.")
-				return ITEM_INTERACT_FAILURE
-			user.balloon_alert_visible("[user] covers wounds on [M]'s [affecting.name] with regenerative membrane.", \
-									"covered wounds on [M]'s [affecting.name] with regenerative membrane." )
-			H.mend(TREAT_BURN_CARE, heal_burn, affecting.organ_tag)
-			use(1)
-			affecting.salve()
-			playsound(src, pick(apply_sounds), 25)
-			update_icon()
+			om_do_after(user, 1 SECOND, target = affecting, receiver = src, on_done = PROC_REF(attack_timed_done2), done_args = list(M, user, H, affecting), on_fail = PROC_REF(attack_timed_failed2), fail_args = list(M, user, H, affecting))
 			return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_FAILURE
+
+/obj/item/stack/medical/advanced/ointment/proc/attack_timed_done2(mob/living/M, mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/affecting)
+	if(affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
+		user.balloon_alert(user, "[M]'s [affecting.name] have already been salved.")
+		return ITEM_INTERACT_FAILURE
+	user.balloon_alert_visible("[user] covers wounds on [M]'s [affecting.name] with regenerative membrane.", \
+							"covered wounds on [M]'s [affecting.name] with regenerative membrane." )
+	H.mend(TREAT_BURN_CARE, heal_burn, affecting.organ_tag)
+	use(1)
+	affecting.salve()
+	playsound(src, pick(apply_sounds), 25)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2(mob/living/M, mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/affecting)
+	user.balloon_alert(user, "stand still to salve wounds.")
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/stack/medical/splint
@@ -422,35 +434,36 @@
 				balloon_alert(user, "you can't apply a splint to the arm you're using!")
 				return ITEM_INTERACT_FAILURE
 			user.balloon_alert_visible("[user] starts to apply \the [src] to their [limb].", "applying \the [src] to your [limb].", "You hear something being wrapped.")
-		if(do_after(user, 5 SECONDS, affecting))
-			if(affecting.splinted)
-				balloon_alert(user, "[M]'s [limb] is already splinted!")
-				return ITEM_INTERACT_FAILURE
-			if(M == user && prob(75))
-				user.balloon_alert_visible("\the [user] fumbles [src].", "fumbling [src].", "You hear something being wrapped.")
-				return ITEM_INTERACT_FAILURE
-			if(ishuman(user))
-				var/obj/item/stack/medical/splint/S = split(1)
-				if(S)
-					if(affecting.apply_splint(S))
-						S.forceMove(affecting)
-						if (M != user)
-							user.balloon_alert_visible("\the [user] finishes applying [src] to [M]'s [limb].", "finished applying \the [src] to [M]'s [limb].", "You hear something being wrapped.")
-						else
-							user.balloon_alert_visible("\the [user] successfully applies [src] to their [limb].", "successfully applied \the [src] to your [limb].", "You hear something being wrapped.")
-						return ITEM_INTERACT_FAILURE
-					S.dropInto(src.loc) //didn't get applied, so just drop it
-			if(isrobot(user))
-				var/obj/item/stack/medical/splint/B = src
-				if(B)
-					if(affecting.apply_splint(B))
-						B.forceMove(affecting)
-						user.balloon_alert_visible("\the [user] finishes applying [src] to [M]'s [limb].", "finish applying \the [src] to [M]'s [limb].", "You hear something being wrapped.")
-						B.use(1)
-						return ITEM_INTERACT_SUCCESS
-			user.balloon_alert_visible("\the [user] fails to apply [src].", "failed to apply [src].", "You hear something being wrapped.")
+		om_do_after(user, 5 SECONDS, target = affecting, receiver = src, on_done = PROC_REF(attack_timed_done3), done_args = list(M, user, affecting, limb))
 		return ITEM_INTERACT_FAILURE
 
+/obj/item/stack/medical/splint/proc/attack_timed_done3(mob/living/M, mob/living/user, obj/item/organ/external/affecting, limb)
+	if(affecting.splinted)
+		balloon_alert(user, "[M]'s [limb] is already splinted!")
+		return ITEM_INTERACT_FAILURE
+	if(M == user && prob(75))
+		user.balloon_alert_visible("\the [user] fumbles [src].", "fumbling [src].", "You hear something being wrapped.")
+		return ITEM_INTERACT_FAILURE
+	if(ishuman(user))
+		var/obj/item/stack/medical/splint/S = split(1)
+		if(S)
+			if(affecting.apply_splint(S))
+				S.forceMove(affecting)
+				if (M != user)
+					user.balloon_alert_visible("\the [user] finishes applying [src] to [M]'s [limb].", "finished applying \the [src] to [M]'s [limb].", "You hear something being wrapped.")
+				else
+					user.balloon_alert_visible("\the [user] successfully applies [src] to their [limb].", "successfully applied \the [src] to your [limb].", "You hear something being wrapped.")
+				return ITEM_INTERACT_FAILURE
+			S.dropInto(src.loc) //didn't get applied, so just drop it
+	if(isrobot(user))
+		var/obj/item/stack/medical/splint/B = src
+		if(B)
+			if(affecting.apply_splint(B))
+				B.forceMove(affecting)
+				user.balloon_alert_visible("\the [user] finishes applying [src] to [M]'s [limb].", "finish applying \the [src] to [M]'s [limb].", "You hear something being wrapped.")
+				B.use(1)
+				return ITEM_INTERACT_SUCCESS
+	user.balloon_alert_visible("\the [user] fails to apply [src].", "failed to apply [src].", "You hear something being wrapped.")
 
 /obj/item/stack/medical/splint/ghetto
 	name = "makeshift splints"

@@ -199,14 +199,16 @@
 		else
 			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
 			playsound(src, keysound,100, 1)
-			if(do_after(user, L.pick_time * lock_difficulty, target = src))
-				to_chat(user, span_notice("Success!"))
-				locked = FALSE
+			om_do_after(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return
 
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/fence/door/proc/attackby_timed_done(mob/user)
+	to_chat(user, span_notice("Success!"))
+	locked = FALSE
 
 /obj/structure/fence/door/attack_ai(mob/user as mob)
 	if(isAI(user)) //so the AI can't open it

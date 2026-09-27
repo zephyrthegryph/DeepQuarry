@@ -99,8 +99,7 @@
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
 				user.visible_message(span_infoplain(span_bold("[user]") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src]."), span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src]."))
-				if(do_after(user, 10 SECONDS, target = src))
-					return toggle_packed(user)
+				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 		// Can toggle power from on and off
 		if("Toggle Power")
 			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
@@ -109,6 +108,9 @@
 		if("Pairing Mode")
 			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
 				return toggle_pairing(user)
+
+/obj/item/uav/proc/attack_hand_timed_done(mob/user)
+	return toggle_packed(user)
 
 /obj/item/uav/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
@@ -119,13 +121,7 @@
 		toggle_pairing()
 
 	else if(istype(I, /obj/item/cell) && !cell)
-		if(do_after(user, 3 SECONDS, target = src))
-			to_chat(user, span_notice("You insert [I] into [nickname]."))
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			power_down()
-			user.remove_from_mob(I)
-			I.forceMove(src)
-			cell = I
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
 		var/tmp_label = tgui_input_text(user, "Enter a nickname for [src]", "Nickname", nickname, MAX_NAME_LEN)
@@ -138,16 +134,28 @@
 	else
 		return ..()
 
+/obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
+	to_chat(user, span_notice("You insert [I] into [nickname]."))
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	power_down()
+	user.remove_from_mob(I)
+	I.forceMove(src)
+	cell = I
+
 /obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
 	if(!cell)
 		return ITEM_INTERACT_BLOCKING
-	if(do_after(user, 3 SECONDS, target = src) && cell)
-		to_chat(user, span_notice("You remove [cell] from [nickname]."))
-		playsound(src, tool.usesound, 50, 1)
-		power_down()
-		cell.forceMove(get_turf(src))
-		cell = null
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/uav/proc/screwdriver_act_timed_done(mob/user, obj/item/tool)
+	if(!(cell))
+		return
+	to_chat(user, span_notice("You remove [cell] from [nickname]."))
+	playsound(src, tool.usesound, 50, 1)
+	power_down()
+	cell.forceMove(get_turf(src))
+	cell = null
 
 /obj/item/uav/proc/can_transition_to(new_state, mob/user)
 	switch(state) //Current one

@@ -127,9 +127,10 @@
 
 	//addtimer(VARSET_CALLBACK(src, in_use , FALSE), 5 SECONDS, TIMER_DELETE_ME) //Leaving this for reference of how to do the timer here if do_after wasn't present.
 
-	if(!do_after(user, 5 SECONDS, target = src))
-		in_use = FALSE
-		return ITEM_INTERACT_FAILURE
+	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), on_fail = PROC_REF(attack_timed_failed), fail_args = list(M, user))
+	return TRUE
+
+/obj/item/dnainjector/proc/attack_timed_done(mob/living/M, mob/living/user)
 
 
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
@@ -145,6 +146,9 @@
 	inject(M, user)
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/dnainjector/proc/attack_timed_failed(mob/living/M, mob/living/user)
+	in_use = FALSE
+	return ITEM_INTERACT_FAILURE
 
 // Traitgenes Injectors are randomized now due to no hardcoded genes. Split into good or bad, and then versions that specify what they do on the label.
 // Otherwise scroll down further for how to make unique injectors
