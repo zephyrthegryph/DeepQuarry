@@ -3,7 +3,7 @@
 # this file: a file may not exceed its count. Make the list an owned-children
 # list, a backlist, a declared cache with an invalidation rule, a relation or
 # a registry, or key it by OM handle, and lower the count with --update.
-# Total: 601 writes in 143 files.
+# Total: 602 writes in 144 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
@@ -61,6 +61,7 @@ code/modules/clothing/spacesuits/spacesuits.dm 2
 code/modules/combat_ai/brain/brain.dm 2
 code/modules/combat_ai/world_model/world_model.dm 3
 code/modules/contracts/contract.dm 5
+code/modules/contracts/damage_batch.dm 1
 code/modules/contracts/medical_trial.dm 1
 code/modules/contracts/opportunity_broker.dm 1
 code/modules/contracts/social_framework.dm 2

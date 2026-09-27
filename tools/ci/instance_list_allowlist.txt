@@ -608,3 +608,9 @@
 /obj/item/dq_entry_probe_item/done # baseline when CI was wired (2026-09-26); convert or give a real reason
 /datum/om/decl/pipeline_machines/lazy # a declaration singleton: one instance
 /datum/om_wake_test_subscriber/wakes # unit-test witness, always filled
+/datum/benchmark_init_stats/by_type  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/child_us  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/phase_self_ms  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/qdel_by_type  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/qdel_child_ms  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/qdel_phase_mark_ms  # benchmark singleton (one per bench run), always filled
