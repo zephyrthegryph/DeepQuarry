@@ -5,11 +5,7 @@
 	var/atom/movable/screen/background/cam_foreground
 	var/atom/movable/screen/skybox/local_skybox
 
-/atom/movable/screen/map_view_tg/camera/Destroy()
-	QDEL_NULL(cam_background)
-	QDEL_NULL(cam_foreground)
-	QDEL_NULL(local_skybox)
-	return ..()
+REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_foreground", "local_skybox"))
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
@@ -60,7 +56,6 @@
 	cam_background.icon_state = "scanline2"
 	cam_background.fill_rect(1, 1, DEFAULT_MAP_SIZE, DEFAULT_MAP_SIZE)
 	local_skybox.cut_overlays()
-
 
 /datum/tgui_module/camera
 	name = "Security Cameras"

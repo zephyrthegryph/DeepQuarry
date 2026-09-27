@@ -105,12 +105,8 @@
 		last_camera_turf = null
 		cut_data()
 
-/datum/tgui_module/appearance_changer/Destroy()
-	QDEL_NULL(cam_screen)
-	QDEL_LIST(cam_plane_masters)
-	QDEL_NULL(cam_background)
-	local_skybox = null
-	return ..()
+REF_OWNED(/datum/tgui_module/appearance_changer, list("cam_screen", "cam_background"))
+REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 
 /datum/tgui_module/appearance_changer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
