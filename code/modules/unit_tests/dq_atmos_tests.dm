@@ -9,6 +9,19 @@
 //      types initialize with their preset gas content
 //   5. SSair init — gas singleton metadata reached Rust via auxtools_atmos_init
 
+/// The first simulated floor with air whose area is powered on every channel
+/// (or needs no power). Machines under test must not depend on the map grid:
+/// the test map's APC cells drain over a long run, and an unpowered machine
+/// never reaches the state a test checks.
+/proc/dq_test_powered_floor()
+	for(var/turf/simulated/floor/candidate in world)
+		if(!candidate.air || candidate.blocks_air)
+			continue
+		var/area/A = get_area(candidate)
+		if(A && (!A.requires_power || (A.power_equip && A.power_light && A.power_environ)))
+			return candidate
+	return null
+
 /// Records the gas dependency wakes its watches deliver.
 /datum/dq_gas_dependency_probe
 	var/list/heard
@@ -3820,10 +3833,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 /datum/unit_test/dq_air_alarm_skips_unchanged_air/Run()
 	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air)
-			T = candidate
-			break
+	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for event-driven air alarm test")
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
@@ -3883,10 +3893,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_air_alarm_receives_matching_status/Run()
 	var/turf/simulated/floor/T
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air)
-			T = candidate
-			break
+	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for air alarm radio test")
 	var/obj/machinery/alarm/A = new(T)
 	TEST_ASSERT_NOTNULL(A.alarm_area, "air alarm radio test has no area")
@@ -4225,10 +4232,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
 	var/turf/simulated/floor/T
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air)
-			T = candidate
-			break
+	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machine hibernation test")
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
 	var/datum/gas_mixture/pipe_air = P.return_air()
@@ -4452,8 +4456,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement
 
 /datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement/Run()
-	var/obj/machinery/door/airlock/A = locate() in world
-	TEST_ASSERT_NOTNULL(A, "no mapped airlock for blocked airlock hibernation test")
+	// Its own airlock: a mapped one would leave the map's doors changed for later tests.
+	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	var/turf/T = get_turf(A)
 	A.density = FALSE
 	A.operating = FALSE
@@ -4478,8 +4482,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose
 
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose/Run()
-	var/obj/machinery/door/airlock/A = locate() in world
-	TEST_ASSERT_NOTNULL(A, "no mapped airlock for stale autoclose test")
+	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	A.density = TRUE
 	A.operating = FALSE
 	A.autoclose = TRUE
@@ -4536,7 +4539,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_auxiliary_machines_hibernate
 
 /datum/unit_test/dq_idle_auxiliary_machines_hibernate/Run()
-	var/turf/simulated/floor/T = locate() in world
+	var/turf/simulated/floor/T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for auxiliary machinery hibernation test")
 	var/obj/machinery/ai_status_display/display = new(T)
 	TEST_ASSERT_EQUAL(display.machine_step(), PROCESS_KILL, "AI status display retained an empty polling loop")

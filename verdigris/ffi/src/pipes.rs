@@ -391,11 +391,11 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
                 (Endpoint::Node(_), Endpoint::Node(_)) => {
                     step_region_region(w, e, &flows, valve_open, dt)
                 }
-                (Endpoint::Cell(cell), Endpoint::Node(_)) => {
-                    step_region_turf(w, e, cell, &flows, valve_open, dt, true)
-                }
-                (Endpoint::Node(_), Endpoint::Cell(cell)) => {
-                    step_region_turf(w, e, cell, &flows, valve_open, dt, false)
+                // A turf device's flow treats the turf as side `a` (vent
+                // pump, scrubber), wherever the graph stores the cell.
+                (Endpoint::Cell(cell), Endpoint::Node(_))
+                | (Endpoint::Node(_), Endpoint::Cell(cell)) => {
+                    step_region_turf(w, e, cell, &flows, valve_open, dt)
                 }
                 _ => None,
             };
@@ -495,14 +495,12 @@ fn step_region_turf(
     flows: &[Flow],
     valve_open: bool,
     dt: f32,
-    cell_is_a: bool,
 ) -> Option<StepReport> {
     let (region, vol_region, mut region_gas) = {
         let host = w.network::<Pipes>().ok()?;
         let dev_id = host.device_of(device_e)?;
         let dev = host.network().device(dev_id).ok()?;
-        let node = if cell_is_a { dev.b } else { dev.a };
-        let Endpoint::Node(node) = node else {
+        let ((Endpoint::Node(node), _) | (_, Endpoint::Node(node))) = (dev.a, dev.b) else {
             return None;
         };
         let Side::Region(region) = host.network().resolve(Endpoint::Node(node)) else {
@@ -513,27 +511,15 @@ fn step_region_turf(
     };
     let (turf_before, vol_cell) = crate::gas::turf_device_probe(w, cell)?;
     let mut turf_gas = turf_before;
-    let report = if cell_is_a {
-        step_all(
-            flows,
-            valve_open,
-            &mut turf_gas,
-            vol_cell,
-            &mut region_gas,
-            vol_region,
-            dt,
-        )
-    } else {
-        step_all(
-            flows,
-            valve_open,
-            &mut region_gas,
-            vol_region,
-            &mut turf_gas,
-            vol_cell,
-            dt,
-        )
-    };
+    let report = step_all(
+        flows,
+        valve_open,
+        &mut turf_gas,
+        vol_cell,
+        &mut region_gas,
+        vol_region,
+        dt,
+    );
     if report.moles != 0.0 || report.power_w != 0.0 {
         let _ = w.edit_network::<Pipes>(move |host| {
             if let Ok(p) = host.payload_mut(region) {

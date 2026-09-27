@@ -939,12 +939,15 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
+/// Installs the gas registry (`vg_gas::gate`) from DM's per-gas rows, one
+/// per gas id in order: `list(specific_heat, molar_mass, moles_visible)`
+/// (`build_auxmos_gas_registry()`), then loads the reactions. Ids and paths
+/// are Rust's own (`gas/ids.rs`); DM only supplies the data it declares.
 // /proc/auxtools_atmos_init (verdigris/ffi/src/gas/mod.rs)
-/proc/vg_hook_init(gas_data)
+/proc/vg_hook_init(rows)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_init_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(gas_data)
+	return call_ext(__f)(rows)
 
 /// Returns: the total amount of gas mixtures in the arena, including "free" ones.
 // /datum/controller/subsystem/air/proc/get_max_gas_mixes (verdigris/ffi/src/gas/binds.rs)

@@ -286,11 +286,14 @@
 	if(!A)
 		return
 	var/datum/dq_power_wake_probe/probe = new
-	var/token = REACT_ON_KEY(probe, REACT_KEY_AREA_POWER, REACT_ID(A.area), REACT_AREA_POWER_CHANGED)
+	// The urgent lane drains in full each step: earlier tests' queued light wakes
+	// (normal lane, budgeted) cannot defer this one.
+	var/token = SSreactor.on_key(probe, REACT_KEY_AREA_POWER, REACT_ID(A.area), REACT_AREA_POWER_CHANGED, REACT_LANE_URGENT)
 	TEST_ASSERT(token, "the area power key subscription was refused")
 	TEST_ASSERT_EQUAL(SSvg.entity_lookup(probe.reactor_id), probe, "the reactor id is not the subscriber's SSvg handle")
 	A.area.power_change()
-	react_test_ticks(2)
+	// Step the reactor directly: the wake must come from this publish, not the MC's schedule.
+	SSreactor.fire(FALSE)
 	TEST_ASSERT(probe.wakes >= 1, "the area's power change did not wake its subscriber")
 	qdel(probe)
 	TEST_ASSERT_EQUAL(probe.reactor_id, 0, "deleting the subscriber kept its reactor id")

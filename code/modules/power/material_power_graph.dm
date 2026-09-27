@@ -1,6 +1,7 @@
 /// Reduced resistor graph. Degree-two cable runs form one edge. Junctions and
 /// equipment attachment points remain vertices. Only weak object references
-/// survive a rebuild, so a deleted cable cannot be retained by a cached graph.
+/// survive a rebuild, so a deleted cable cannot be retained by a cached graph;
+/// every map is keyed by the object's OM handle (om_handle()), never REF() text.
 /datum/material_power_graph
 	var/list/vertices
 	var/list/indices
@@ -87,28 +88,27 @@
 		adjacency[cable] = neighbors
 		if(length(neighbors) != 2 || has_attachment)
 			vertices += om_handle(cable)
-			indices[REF(cable)] = length(vertices)
+			indices[om_handle(cable)] = length(vertices)
 	if(!length(vertices) && length(cables))
 		var/obj/structure/cable/first = cables[1]
 		vertices += om_handle(first)
-		indices[REF(first)] = 1
+		indices[om_handle(first)] = 1
 	var/list/visited = list()
 	for(var/start_index in 1 to length(vertices))
 		var/start_ref = vertices[start_index]
 		var/obj/structure/cable/start = om_resolve(start_ref)
 		for(var/obj/structure/cable/neighbor as anything in adjacency[start])
-			var/forward_key = "[REF(start)]>[REF(neighbor)]"
-			if(visited[forward_key])
+			if(om_handle(neighbor) in visited[om_handle(start)])
 				continue
 			var/list/run = list(om_handle(start))
 			var/obj/structure/cable/previous = start
 			var/obj/structure/cable/current = neighbor
 			var/end_index
 			while(current)
-				visited["[REF(previous)]>[REF(current)]"] = TRUE
-				visited["[REF(current)]>[REF(previous)]"] = TRUE
+				LAZYADD(visited[om_handle(previous)], om_handle(current))
+				LAZYADD(visited[om_handle(current)], om_handle(previous))
 				run += om_handle(current)
-				end_index = indices[REF(current)]
+				end_index = indices[om_handle(current)]
 				if(end_index)
 					break
 				var/list/next_neighbors = adjacency[current]
@@ -227,14 +227,14 @@
 
 /datum/material_power_graph/proc/vertex_for(atom/equipment)
 	if(istype(equipment, /obj/structure/cable))
-		return indices[REF(equipment)]
-	var/key = REF(equipment)
+		return indices[om_handle(equipment)]
+	var/key = om_handle(equipment)
 	var/cached = equipment_vertices[key]
 	if(cached)
 		return cached
 	var/turf/location = get_turf(equipment)
 	var/obj/structure/cable/cable = location?.get_cable_node()
-	var/index = cable ? indices[REF(cable)] : null
+	var/index = cable ? indices[om_handle(cable)] : null
 	if(index)
 		equipment_vertices[key] = index
 	return index
@@ -349,7 +349,7 @@
 		var/atom/consumer = om_resolve(reference)
 		var/index = vertex_for(consumer)
 		if(index && consumer)
-			efficiencies[REF(consumer)] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
+			efficiencies[om_handle(consumer)] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
 	pending_reduced = null
 	pending_sources = null
 	pending_consumers = null
@@ -423,7 +423,7 @@
 	for(var/reference as anything in consumers)
 		var/index = vertex_for(om_resolve(reference))
 		if(index)
-			efficiencies[REF(om_resolve(reference))] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
+			efficiencies[reference] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
 
 /// Heat exactly the energy debited for cable loss, apportioned by the solved
 /// I^2 R distribution. No thermal energy is minted by an accounting estimate.
