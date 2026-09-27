@@ -28,7 +28,7 @@
 	if(brain.last_juke_at == brain.last_attack_at)
 		return null
 	var/mob/living/owner = brain.get_owner()
-	if(!owner.Adjacent(brain.primary_threat))
+	if(!owner || !owner.Adjacent(brain.primary_threat))
 		return null
 	return DQAI_RESULT(70, brain.primary_threat)
 

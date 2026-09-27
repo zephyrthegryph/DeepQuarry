@@ -1565,7 +1565,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	TEST_ASSERT_EQUAL(blocks_air_post, 0, "make_floor didn't set blocks_air=0")
 	TEST_ASSERT(has_air, \
-		"make_floor left air=null — neighbors will crash on share. DQEdit in mine_turfs.dm missing?")
+		"make_floor left air=null — neighbors will crash on share. Is the air init in mine_turfs.dm missing?")
 	TEST_ASSERT(moles_ok, "make_floor air mixture is broken")
 	TEST_ASSERT_EQUAL(blocks_air_restored, 1, "make_wall didn't restore blocks_air=1")
 	TEST_ASSERT(air_cleared, "make_wall didn't QDEL_NULL the air mixture")

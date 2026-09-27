@@ -182,13 +182,16 @@
 	return TRUE
 
 /datum/generated_station_director/proc/expire_report(report_id, expected_expiry)
+	// The director may already be torn down when a stale timer fires.
+	if(QDELETED(src) || !reports)
+		return
 	var/datum/generated_station_knowledge_report/report = reports[report_id]
 	if(!report || report.expires_at != expected_expiry || !report.is_expired())
 		return
-	global_knowledge -= report_id
+	global_knowledge?.Remove(report_id)
 	for(var/department_id in local_knowledge)
 		var/list/knowledge = local_knowledge[department_id]
-		knowledge -= report_id
+		knowledge?.Remove(report_id)
 	reports -= report_id
 	qdel(report)
 

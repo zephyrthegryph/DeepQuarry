@@ -37,10 +37,6 @@
 	///Var for attack_self chain
 	var/special_weapon_handling = FALSE
 
-	/// Ammo provider datum (see ammo_provider.dm).  Set in Initialize() based on
-	/// load_method.  Provides a unified get_next_round()/unload() interface.
-	var/datum/ammo_provider/ammo_provider = null
-
 /obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
 	. = ..()
 	if(starts_loaded)
@@ -57,19 +53,9 @@
 				ammo_magazine.contents.Cut(0,ammo_cut)
 				ammo_magazine.stored_ammo.Cut(0,ammo_cut)
 
-	// Create the appropriate ammo provider for this gun's load method.
-	if(load_method & MAGAZINE)
-		ammo_provider = new /datum/ammo_provider/magazine(src)
-	else
-		// SINGLE_CASING and SPEEDLOADER share the same provider type since they
-		// both use the `loaded` list; the allow_dump flag in unload() distinguishes
-		// speedloader behaviour.
-		ammo_provider = new /datum/ammo_provider/single_casing(src)
-
 	update_icon()
 
 /obj/item/gun/projectile/Destroy()
-	QDEL_NULL(ammo_provider)
 	loaded = null
 	ammo_magazine = null
 	chambered = null
@@ -91,7 +77,7 @@
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
-		M?.hud_used.update_ammo_hud(M, src)
+		M?.hud_used?.update_ammo_hud(M, src)
 
 	if (chambered)
 		return chambered.BB
@@ -134,7 +120,7 @@
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
-		M?.hud_used.update_ammo_hud(M, src)
+		M?.hud_used?.update_ammo_hud(M, src)
 
 
 //attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
@@ -149,7 +135,7 @@
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		ammo_magazine.update_icon()
 		ammo_magazine = null
-		user.hud_used.update_ammo_hud(user, src)
+		user.hud_used?.update_ammo_hud(user, src)
 	else if(loaded.len)
 		//presumably, if it can be speed-loaded, it can be speed-unloaded.
 		if(allow_dump && (load_method & SPEEDLOADER))
@@ -168,11 +154,11 @@
 			user.put_in_hands(C)
 			user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		user.hud_used.update_ammo_hud(user, src)
+		user.hud_used?.update_ammo_hud(user, src)
 	else
 		to_chat(user, span_warning("[src] is empty."))
 	update_icon()
-	user.hud_used.update_ammo_hud(user, src)
+	user.hud_used?.update_ammo_hud(user, src)
 
 /obj/item/gun/projectile/attackby(obj/item/A as obj, mob/user as mob)
 	..()
@@ -210,7 +196,7 @@
 		ammo_magazine.update_icon()
 		ammo_magazine = null
 		update_icon() //make sure to do this after unsetting ammo_magazine
-		user.hud_used.update_ammo_hud(user, src)
+		user.hud_used?.update_ammo_hud(user, src)
 
 /obj/item/gun/projectile/examine(mob/user)
 	. = ..()
@@ -397,7 +383,7 @@
 			playsound(src, sound_ejectchamber, 50, 0)
 			user.visible_message(span_notice("[user] pulls back \the [bolt_name] before releasing it[close_open_ejected] causing it to slide forward again[casing_chambered]."), \
 			span_notice("You pull back \the [bolt_name] before releasing it[close_open_ejected] causing it to slide forward again[casing_chambered]."))
-			user.hud_used.update_ammo_hud(user, src)
+			user.hud_used?.update_ammo_hud(user, src)
 		else if(opened)
 			playsound(src, sound_eject, 50, 0)
 			if(locked)
@@ -427,7 +413,7 @@
 			else
 				user.visible_message(span_notice("[user] closes \the [bolt_name][casing_chambered]."), \
 				span_notice("You close \the [bolt_name][casing_chambered]."))
-		user.hud_used.update_ammo_hud(user, src)
+		user.hud_used?.update_ammo_hud(user, src)
 
 /obj/item/gun/projectile/proc/bolt_toggle(manual)
 	if(!bolt_open)
@@ -546,7 +532,7 @@
 
 /obj/item/gun/projectile/proc/feed_round(obj/item/ammo_magazine/handful/H, mob/user, count)
 	// re-validate after the wait; the stack may have shrunk or moved.
-	if(!H.stored_ammo.len || loaded.len >= max_shells)
+	if(QDELETED(H) || !H.stored_ammo.len || loaded.len >= max_shells)
 		feed_done(H, user, count)
 		return
 	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
@@ -555,7 +541,7 @@
 	loaded.Insert(1, rd) //add to the head of the list
 	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 	H.update_icon()
-	user.hud_used.update_ammo_hud(user, src)
+	user.hud_used?.update_ammo_hud(user, src)
 	feed_round_step(H, user, count + 1)
 
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
@@ -599,7 +585,7 @@
 					chamber_bullet()
 					bolt_toggle()
 				playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
-				user.hud_used.update_ammo_hud(user, src)
+				user.hud_used?.update_ammo_hud(user, src)
 			if(SPEEDLOADER)
 				if(only_open_load && !bolt_open)
 					to_chat(user, span_warning("[src] must have its bolt open to be loaded!"))
@@ -619,7 +605,7 @@
 				if(count)
 					user.visible_message("[user] reloads [src].", span_notice("You load [count] round\s into [src]."))
 					playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-					user.hud_used.update_ammo_hud(user, src)
+					user.hud_used?.update_ammo_hud(user, src)
 		AM.update_icon()
 	else if(istype(A, /obj/item/ammo_casing))
 		var/obj/item/ammo_casing/C = A
@@ -662,7 +648,7 @@
 		loaded.Insert(1, C) //add to the head of the list
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		user.hud_used.update_ammo_hud(user, src)
+		user.hud_used?.update_ammo_hud(user, src)
 
 	else if(istype(A, /obj/item/storage))
 		var/obj/item/storage/storage = A

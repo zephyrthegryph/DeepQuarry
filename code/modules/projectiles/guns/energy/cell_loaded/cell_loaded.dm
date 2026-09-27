@@ -69,7 +69,7 @@
 	update_icon()
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
-		M?.hud_used.update_ammo_hud(M, src)
+		M?.hud_used?.update_ammo_hud(M, src)
 
 /obj/item/gun/projectile/cell_loaded/attack_self(mob/user)
 	. = ..(user)
@@ -167,7 +167,7 @@
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc
 		var/mob/living/M = cell_load.loc
 		if(istype(M))
-			M?.hud_used.update_ammo_hud(M, cell_load)
+			M?.hud_used?.update_ammo_hud(M, cell_load)
 
 /obj/item/ammo_magazine/cell_mag/update_icon()
 	cut_overlays()

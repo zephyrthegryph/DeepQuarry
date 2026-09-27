@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1224 in 982 files. qdel total: 2914 in 1165 files.
+# Destroy total: 1215 in 974 files. qdel total: 2905 in 1163 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -226,7 +226,6 @@ code/game/machinery/computer/station_alert.dm 1
 code/game/machinery/computer/timeclock.dm 1
 code/game/machinery/cryo.dm 1
 code/game/machinery/cryopod.dm 1
-code/game/machinery/doors/airlock.dm 1
 code/game/machinery/doors/airlock_control.dm 3
 code/game/machinery/doors/alarmlock.dm 1
 code/game/machinery/doors/brigdoors.dm 1
@@ -246,7 +245,6 @@ code/game/machinery/floor_light.dm 1
 code/game/machinery/gear_dispenser.dm 1
 code/game/machinery/hologram.dm 1
 code/game/machinery/holoposter.dm 1
-code/game/machinery/jukebox.dm 1
 code/game/machinery/lightswitch.dm 1
 code/game/machinery/machinery.dm 1
 code/game/machinery/machinery_power.dm 1
@@ -264,7 +262,6 @@ code/game/machinery/portable_turret.dm 1
 code/game/machinery/recharger.dm 1
 code/game/machinery/requests_console.dm 1
 code/game/machinery/status_display.dm 1
-code/game/machinery/suit_storage/suit_cycler.dm 1
 code/game/machinery/supplybeacon.dm 1
 code/game/machinery/syndicatebeacon.dm 1
 code/game/machinery/telecomms/broadcaster.dm 1
@@ -343,7 +340,7 @@ code/game/objects/items/devices/powersink.dm 1
 code/game/objects/items/devices/radio/headset.dm 1
 code/game/objects/items/devices/radio/intercom.dm 1
 code/game/objects/items/devices/radio/jammer.dm 1
-code/game/objects/items/devices/radio/radio.dm 2
+code/game/objects/items/devices/radio/radio.dm 1
 code/game/objects/items/devices/scanners/motion_tracker.dm 1
 code/game/objects/items/devices/spy_bug.dm 1
 code/game/objects/items/devices/suit_cooling.dm 1
@@ -369,7 +366,6 @@ code/game/objects/items/weapons/circuitboards/circuitboard.dm 1
 code/game/objects/items/weapons/circuitboards/frame.dm 1
 code/game/objects/items/weapons/cosmetics.dm 1
 code/game/objects/items/weapons/ecigs.dm 1
-code/game/objects/items/weapons/explosives.dm 1
 code/game/objects/items/weapons/flamethrower.dm 1
 code/game/objects/items/weapons/grenades/chem_grenade.dm 1
 code/game/objects/items/weapons/grenades/confetti.dm 1
@@ -483,6 +479,7 @@ code/modules/assembly/infrared.dm 1
 code/modules/assembly/shock_kit.dm 1
 code/modules/assembly/signaler.dm 1
 code/modules/awaymissions/redgate.dm 1
+code/modules/balance/_balance_harness.dm 1
 code/modules/belly_overlay/belly_overlay_tgui.dm 1
 code/modules/benchmarks/scenarios.dm 2
 code/modules/blob/blob.dm 2
@@ -787,7 +784,6 @@ code/modules/nifsoft/software/06_screens.dm 2
 code/modules/nifsoft/software/13_soulcatcher.dm 3
 code/modules/nifsoft/software/14_commlink.dm 1
 code/modules/organs/data.dm 1
-code/modules/organs/internal/_organ_internal.dm 1
 code/modules/organs/internal/augment/bio.dm 1
 code/modules/organs/internal/horror.dm 1
 code/modules/organs/internal/special/heart_anomalock.dm 1
@@ -839,7 +835,6 @@ code/modules/power/fusion/gyrotron/gyrotron.dm 1
 code/modules/power/fusion/gyrotron/gyrotron_control.dm 1
 code/modules/power/generator.dm 1
 code/modules/power/gravitygenerator.dm 2
-code/modules/power/grid_checker.dm 1
 code/modules/power/lighting.dm 1
 code/modules/power/material_power_graph.dm 1
 code/modules/power/port_gen.dm 4
@@ -860,10 +855,8 @@ code/modules/power/smes_construction.dm 1
 code/modules/power/solar.dm 2
 code/modules/power/supermatter/supermatter.dm 1
 code/modules/power/terminal.dm 1
-code/modules/power/tesla/coil.dm 1
 code/modules/power/tesla/energy_ball.dm 1
 code/modules/power/tracker.dm 1
-code/modules/projectiles/ammo_provider.dm 1
 code/modules/projectiles/ammunition.dm 1
 code/modules/projectiles/ammunition/smartmag.dm 1
 code/modules/projectiles/dnalocking.dm 1
@@ -876,7 +869,6 @@ code/modules/projectiles/guns/magnetic/bore.dm 2
 code/modules/projectiles/guns/magnetic/magnetic.dm 1
 code/modules/projectiles/guns/projectile.dm 1
 code/modules/projectiles/guns/vox.dm 1
-code/modules/projectiles/magazine_appearance.dm 1
 code/modules/projectiles/projectile.dm 1
 code/modules/projectiles/projectile/arc.dm 1
 code/modules/projectiles/projectile_effects.dm 1
@@ -1194,7 +1186,6 @@ code/game/machinery/Beacon.dm 1
 code/game/machinery/OpTable.dm 2
 code/game/machinery/Sleeper.dm 1
 code/game/machinery/adv_med.dm 2
-code/game/machinery/air_alarm.dm 1
 code/game/machinery/atm_ret_field.dm 2
 code/game/machinery/atmo_control.dm 1
 code/game/machinery/atmoalter/canister.dm 1
@@ -1202,7 +1193,7 @@ code/game/machinery/atmoalter/clamp.dm 2
 code/game/machinery/atmoalter/meter.dm 1
 code/game/machinery/atmoalter/portable_atmospherics.dm 1
 code/game/machinery/biogenerator.dm 1
-code/game/machinery/camera/camera.dm 3
+code/game/machinery/camera/camera.dm 2
 code/game/machinery/computer/Operating.dm 1
 code/game/machinery/computer/RCON_Console.dm 1
 code/game/machinery/computer/ai_core.dm 3
@@ -1215,11 +1206,11 @@ code/game/machinery/computer/security.dm 6
 code/game/machinery/computer/skills.dm 3
 code/game/machinery/computer/specops_shuttle.dm 4
 code/game/machinery/computer/station_alert.dm 1
-code/game/machinery/cryo.dm 2
+code/game/machinery/cryo.dm 3
 code/game/machinery/cryopod.dm 18
 code/game/machinery/deployable.dm 2
 code/game/machinery/doorbell.dm 1
-code/game/machinery/doors/airlock.dm 3
+code/game/machinery/doors/airlock.dm 2
 code/game/machinery/doors/airlock_subtypes.dm 1
 code/game/machinery/doors/door.dm 1
 code/game/machinery/doors/firedoor.dm 1
@@ -1233,7 +1224,7 @@ code/game/machinery/food_replicator.dm 1
 code/game/machinery/frame_construction.dm 5
 code/game/machinery/hologram.dm 1
 code/game/machinery/iv_drip.dm 1
-code/game/machinery/jukebox.dm 3
+code/game/machinery/jukebox.dm 2
 code/game/machinery/machinery.dm 6
 code/game/machinery/newscaster.dm 1
 code/game/machinery/nuclear_bomb.dm 1
@@ -1248,7 +1239,7 @@ code/game/machinery/portable_turret.dm 8
 code/game/machinery/protean_reconstitutor.dm 4
 code/game/machinery/rechargestation.dm 1
 code/game/machinery/seed_extractor.dm 2
-code/game/machinery/suit_storage/suit_cycler.dm 2
+code/game/machinery/suit_storage/suit_cycler.dm 1
 code/game/machinery/suit_storage/suit_storage.dm 4
 code/game/machinery/supplybeacon.dm 1
 code/game/machinery/telecomms/logbrowser.dm 1
@@ -1327,7 +1318,6 @@ code/game/objects/items/devices/powersink.dm 1
 code/game/objects/items/devices/radio/beacon.dm 1
 code/game/objects/items/devices/radio/headset.dm 3
 code/game/objects/items/devices/radio/intercom.dm 1
-code/game/objects/items/devices/radio/radio.dm 1
 code/game/objects/items/devices/scanners/health.dm 1
 code/game/objects/items/devices/scanners/sleevemate.dm 2
 code/game/objects/items/devices/spy_bug.dm 4
@@ -1364,7 +1354,7 @@ code/game/objects/items/weapons/chewables.dm 2
 code/game/objects/items/weapons/cigs_lighters.dm 7
 code/game/objects/items/weapons/cosmetics.dm 1
 code/game/objects/items/weapons/dna_injector.dm 1
-code/game/objects/items/weapons/explosives.dm 4
+code/game/objects/items/weapons/explosives.dm 3
 code/game/objects/items/weapons/flamethrower.dm 2
 code/game/objects/items/weapons/gift_wrappaper.dm 5
 code/game/objects/items/weapons/grenades/anti_photon_grenade.dm 1
@@ -1534,6 +1524,7 @@ code/modules/assembly/shock_kit.dm 3
 code/modules/asset_cache/assets/preferences.dm 1
 code/modules/asset_cache/assets/spritesheets/vending.dm 1
 code/modules/autowiki/autowiki.dm 1
+code/modules/balance/_balance_harness.dm 2
 code/modules/benchmarks/_benchmark.dm 2
 code/modules/benchmarks/life_sweep.dm 1
 code/modules/benchmarks/om_dispatch.dm 2
@@ -1575,12 +1566,12 @@ code/modules/clothing/spacesuits/rig/modules/specific/cleaner_launcher.dm 1
 code/modules/clothing/spacesuits/rig/modules/specific/grenade_launcher.dm 1
 code/modules/clothing/spacesuits/rig/modules/specific/mounted_gun.dm 2
 code/modules/clothing/spacesuits/rig/modules/specific/self_destruct.dm 1
-code/modules/clothing/spacesuits/rig/rig.dm 10
+code/modules/clothing/spacesuits/rig/rig.dm 9
 code/modules/clothing/spacesuits/rig/rig_component_registry.dm 2
 code/modules/clothing/suits/reactive_armour.dm 4
 code/modules/clothing/suits/reactive_armour_dimensional_themes.dm 1
 code/modules/clothing/suits/storage.dm 1
-code/modules/combat_ai/brain/brain.dm 2
+code/modules/combat_ai/brain/brain.dm 1
 code/modules/combat_ai/ports/slime_state.dm 1
 code/modules/contracts/contract.dm 5
 code/modules/contracts/contract_evidence.dm 2
@@ -1600,7 +1591,7 @@ code/modules/economy/casinocash.dm 6
 code/modules/economy/mint.dm 1
 code/modules/economy/service_invoices.dm 1
 code/modules/economy/trader.dm 6
-code/modules/economy/vending.dm 6
+code/modules/economy/vending.dm 5
 code/modules/economy/vending_machines.dm 1
 code/modules/entopics/alternate_appearance.dm 3
 code/modules/env_message/env_message.dm 3
@@ -1649,7 +1640,7 @@ code/modules/food/kitchen/cooking_machines/container.dm 1
 code/modules/food/kitchen/gibber.dm 2
 code/modules/food/kitchen/microwave.dm 4
 code/modules/food/kitchen/smartfridge/drying_rack.dm 1
-code/modules/food/kitchen/smartfridge/smartfridge.dm 2
+code/modules/food/kitchen/smartfridge/smartfridge.dm 1
 code/modules/food/recipe.dm 6
 code/modules/food/recipe_dump.dm 2
 code/modules/gamemaster/event2/events/command/manifest_malfunction.dm 1
@@ -1658,7 +1649,7 @@ code/modules/gamemaster/event2/events/security/carp_migration.dm 1
 code/modules/gamemaster/event2/events/security/rogue_drones.dm 1
 code/modules/games/cards.dm 6
 code/modules/generated_station/generated_station_architecture_validation.dm 6
-code/modules/generated_station/generated_station_defenders.dm 2
+code/modules/generated_station/generated_station_defenders.dm 3
 code/modules/generated_station/generated_station_director.dm 5
 code/modules/generated_station/generated_station_fragments.dm 3
 code/modules/generated_station/generated_station_jobs.dm 1
@@ -1763,7 +1754,8 @@ code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm 3
 code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm 2
 code/modules/mob/living/carbon/human/species/outsider/shadow.dm 1
 code/modules/mob/living/carbon/human/species/shadekin/shadekin.dm 1
-code/modules/mob/living/carbon/human/species/species.dm 3
+code/modules/mob/living/carbon/human/species/species.dm 5
+code/modules/mob/living/carbon/human/species/species_shapeshift.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/forms.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm 1
@@ -1913,7 +1905,7 @@ code/modules/organs/internal/augment/bio.dm 1
 code/modules/organs/internal/brain.dm 3
 code/modules/organs/internal/malignant/malignant.dm 4
 code/modules/organs/organ.dm 3
-code/modules/organs/organ_external.dm 9
+code/modules/organs/organ_external.dm 8
 code/modules/organs/organ_stump.dm 1
 code/modules/organs/subtypes/diona.dm 3
 code/modules/organs/subtypes/machine.dm 2
@@ -1945,7 +1937,7 @@ code/modules/persistence/noticeboard.dm 1
 code/modules/persistence/storage/smartfridge.dm 1
 code/modules/polls/poll_dialogs.dm 14
 code/modules/power/antimatter/containment_jar.dm 1
-code/modules/power/apc.dm 6
+code/modules/power/apc.dm 5
 code/modules/power/batteryrack.dm 2
 code/modules/power/breaker_box.dm 2
 code/modules/power/cable.dm 4
@@ -1962,7 +1954,6 @@ code/modules/power/fusion/fuel_assembly/fuel_injector.dm 1
 code/modules/power/fusion/fusion_reactions.dm 1
 code/modules/power/fusion_coil.dm 1
 code/modules/power/gravitygenerator.dm 3
-code/modules/power/grid_checker.dm 1
 code/modules/power/lighting.dm 5
 code/modules/power/lightswitch.dm 3
 code/modules/power/port_gen.dm 8
@@ -1974,11 +1965,10 @@ code/modules/power/singularity/containment_field.dm 2
 code/modules/power/singularity/field_generator.dm 1
 code/modules/power/singularity/generator.dm 3
 code/modules/power/singularity/particle_accelerator/particle.dm 1
-code/modules/power/singularity/particle_accelerator/particle_control.dm 1
 code/modules/power/singularity/particle_accelerator/particle_smasher.dm 4
 code/modules/power/singularity/singularity.dm 2
 code/modules/power/smes.dm 2
-code/modules/power/smes_construction.dm 2
+code/modules/power/smes_construction.dm 1
 code/modules/power/solar.dm 5
 code/modules/power/supermatter/supermatter.dm 4
 code/modules/power/tesla/coil.dm 1

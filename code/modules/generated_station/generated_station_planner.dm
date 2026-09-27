@@ -52,6 +52,7 @@
 		catalog += definition
 	return catalog
 
+
 /// DM supplies semantic room and department contracts; Rust exclusively owns
 /// every spatial decision in the returned station specification.
 /datum/generated_station_planner

@@ -83,6 +83,8 @@
 		movedir = backwards
 	else
 		operating = OFF
+	// update() enrols a running belt in the machine (or fast) roster, so cargo
+	// already sitting on it is picked up without waiting for a new arrival.
 	update()
 
 /obj/machinery/conveyor/set_dir()
@@ -106,7 +108,13 @@
 	if(!operable)
 		operating = OFF
 	if(stat & NOPOWER)
-		operating = OFF
+		// Keep the commanded direction across a power blip: process() already
+		// kills itself on NOPOWER, and power_change() re-enters here to restart
+		// the belt. Clearing `operating` left belts (and their cargo) stalled
+		// until someone re-toggled the switch.
+		icon_state = "conveyor[OFF]"
+		update_use_power(USE_POWER_OFF)
+		return
 	icon_state = "conveyor[operating]"
 
 	if(!operating)

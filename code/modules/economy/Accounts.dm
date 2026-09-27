@@ -128,8 +128,10 @@
 		return
 	amount = round(amount)
 	var/subsidy = 0
-	if(customer.money < 100)
-		subsidy = min(amount, GLOB.station_account?.money || 0)
+	if(customer.money < SERVICE_HARDSHIP_THRESHOLD)
+		// Hardship relief is capped per purchase so a stream of expensive orders
+		// from an empty account cannot drain the station account.
+		subsidy = min(amount, SERVICE_HARDSHIP_SUBSIDY_CAP, GLOB.station_account?.money || 0)
 	else if(provider.service_subsidy > 0)
 		subsidy = min(amount, round(amount * provider.service_subsidy), GLOB.station_account?.money || 0)
 	var/remainder = amount - subsidy

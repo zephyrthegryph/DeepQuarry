@@ -330,10 +330,13 @@
 			if(isnum(weight) && weight > 0)
 				weight_total += weight
 		if(weight_total > 0)
+			// Credit only what the requirement can still absorb, mirroring the
+			// unweighted path where add_progress() credits progress - old_progress.
+			var/credited = min(amount, max(0, target - progress))
 			for(var/contributor_key in contributor_weights)
 				var/weight = contributor_weights[contributor_key]
-				if(isnum(weight) && weight > 0)
-					contract?.record_contribution(text2num(contributor_key), amount * weight / weight_total, event.value("detail"))
+				if(isnum(weight) && weight > 0 && credited > 0)
+					contract?.record_contribution(text2num(contributor_key), credited * weight / weight_total, event.value("detail"))
 			return add_progress(amount, null, event.value("detail"))
 	return add_progress(amount, event.value(contributor_field), event.value("detail"))
 

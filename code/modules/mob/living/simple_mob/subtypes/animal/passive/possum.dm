@@ -93,8 +93,8 @@
 	. = ..()
 	update_icon()
 
-//respond_to_damage and update_icon for opossum moved to
-// modular_dq/.../ports/possum.dm where they read the modern mob-side
+//respond_to_damage and update_icon for opossum live in
+// code/modules/combat_ai/ports/possum.dm where they read the modern mob-side
 // is_angry / play_dead_until vars instead of the deleted ai_holder.
 /mob/living/simple_mob/animal/passive/opossum/proc/respond_to_damage()
 	return

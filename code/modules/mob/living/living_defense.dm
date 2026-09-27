@@ -62,7 +62,9 @@
 		P.inflict_injury(src, def_zone)
 		// Call on_hit() so any modifier_type_to_apply and other effects set on the
 		// projectile are applied even for taser-effect projectiles.  Pass absorb so
-		// a fully-blocked hit still suppresses secondary effects correctly.
+		// a fully-blocked hit still suppresses secondary effects correctly. Agony
+		// was already applied by stun_effect_act above; on_hit skips it for
+		// taser_effect projectiles so it is not applied twice.
 		P.on_hit(src, absorb, def_zone)
 		qdel(P)
 		return

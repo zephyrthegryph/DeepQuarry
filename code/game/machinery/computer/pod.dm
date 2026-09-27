@@ -133,6 +133,12 @@
 		timing = FALSE
 		return PROCESS_KILL
 
+/obj/machinery/computer/pod/power_change()
+	..()
+	// machine_step() sleeps on NOPOWER; resume the countdown when power returns.
+	if(timing && !(stat & (NOPOWER|BROKEN)))
+		MACHINE_WAKE(src)
+
 /obj/machinery/computer/pod/old
 	icon_state = "oldcomp"
 	icon_keyboard = null

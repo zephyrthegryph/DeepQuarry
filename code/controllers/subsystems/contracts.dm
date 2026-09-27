@@ -538,6 +538,7 @@ SUBSYSTEM_DEF(contracts)
 	var/list/rows = list()
 	for(var/datum/contract_requirement/requirement in contract.requirements)
 		rows.Add(list(list(
+			"id" = REF(requirement),
 			"name" = requirement.name,
 			"description" = requirement.description,
 			"state" = requirement.state,

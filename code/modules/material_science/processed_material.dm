@@ -21,6 +21,40 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		feedstock_trace = pick("carbon trace", "silicon trace", "sulfur contamination", "copper trace", "oxide inclusion")
 		feedstock_trace_units = rand(2, max(2, 100 - feedstock_purity)) / 10
 
+/// Re-point this stack at another registered material. Ordinary sheet types
+/// carry their material in the type path, but runtime materials (processed
+/// alloys, dynamic/substance materials) live only on the instance, so split
+/// copies and material swaps need an explicit setter.
+/obj/item/stack/material/proc/set_stack_material(material_name)
+	var/datum/material/new_material = get_material_by_name(material_name)
+	if(!new_material)
+		return FALSE
+	default_type = material_name
+	material = new_material
+	recipes = material.get_recipes()
+	stacktype = material.stack_type
+	if(apply_colour || pass_color)
+		color = material.icon_colour
+	if(material.conductive)
+		flags &= ~NOCONDUCT
+	else
+		flags |= NOCONDUCT
+	update_strings()
+	return TRUE
+
+/obj/item/stack/material/copy_stack_properties(obj/item/stack/newstack)
+	..()
+	var/obj/item/stack/material/copy = newstack
+	if(!istype(copy) || !material)
+		return
+	if(copy.material?.name != material.name)
+		copy.set_stack_material(material.name)
+	// A split does not change the physical lot the sheets came from.
+	copy.feedstock_purity = feedstock_purity
+	copy.feedstock_lot_id = feedstock_lot_id
+	copy.feedstock_trace = feedstock_trace
+	copy.feedstock_trace_units = feedstock_trace_units
+
 /obj/item/stack/material/examine(mob/user)
 	. = ..()
 	ensure_feedstock_lot()
@@ -253,6 +287,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	strict_color_stacking = TRUE
 	exotic_no_autolathe_reprint = TRUE
 	var/datum/material_batch/batch_state
+	/// Export value of one sheet; the stack's total is always this times the
+	/// current amount, so splitting/merging/using never creates or destroys value.
+	var/export_value_per_sheet = 0
 
 /obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
 	if(_material_name)
@@ -260,7 +297,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	. = ..(mapload, _amount)
 	if(istype(material, /datum/material/processed_alloy))
 		color = material.icon_colour
-		set_economic_provenance(DEPARTMENT_RESEARCH, max(material.supply_conversion_value, 1) * amount)
+		export_value_per_sheet = max(material.supply_conversion_value, 0)
+		set_economic_provenance(DEPARTMENT_RESEARCH, export_value_per_sheet * amount)
 		var/datum/material/processed_alloy/processed = material
 		batch_state = processed.batch_template.copy_for_amount(amount)
 
@@ -357,6 +395,19 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	qdel(target_batch)
 	return transferred
 
+/// Every amount mutation on a stack (use/add/set_amount, hence split/merge/
+/// transfer) ends in update_icon(), so this is the one seam that keeps the
+/// export value in step with the sheets actually present: a split can no
+/// longer leave both halves carrying the whole stack's value.
+/obj/item/stack/material/processed_alloy/update_icon()
+	. = ..()
+	refresh_export_value()
+
+/obj/item/stack/material/processed_alloy/proc/refresh_export_value()
+	if(!export_value_per_sheet)
+		return
+	economic_export_value = max(1, round(export_value_per_sheet * get_amount()))
+
 /obj/item/stack/material/processed_alloy/proc/set_processed_material(material_name)
 	var/datum/material/new_material = get_material_by_name(material_name)
 	if(!istype(new_material, /datum/material/processed_alloy))
@@ -371,7 +422,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	else
 		flags |= NOCONDUCT
 	update_strings()
-	set_economic_provenance(DEPARTMENT_RESEARCH, max(material.supply_conversion_value, 1) * amount)
+	export_value_per_sheet = max(material.supply_conversion_value, 0)
+	set_economic_provenance(DEPARTMENT_RESEARCH, export_value_per_sheet * amount)
 	return TRUE
 
 /obj/item/stack/material/processed_alloy/examine(mob/user)

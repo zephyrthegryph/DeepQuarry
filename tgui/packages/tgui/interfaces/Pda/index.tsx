@@ -34,7 +34,7 @@ type Data = {
 
 const requirePdaInterface = require.context('./pda_screens', false, /\.tsx$/);
 
-// CHOMPEdit Start - Add check for chompstation pda_screens
+// Also check the chompstation pda_screens folder; it takes precedence over the base one.
 const requirePdaInterfaceCh = require.context(
   '../chompstation/Pda/pda_screens',
   false,
@@ -54,7 +54,6 @@ function getPdaApp(name: string) {
       throw err;
     }
   }
-  // CHOMPEdit End
 
   const Component = appModule[name] as (() => React.JSX.Element) | undefined;
 

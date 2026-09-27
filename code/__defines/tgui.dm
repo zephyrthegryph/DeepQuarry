@@ -8,6 +8,27 @@
 /// Used for rate-limiting to prevent DoS by excessively refreshing a TGUI window
 #define TGUI_REFRESH_FULL_UPDATE_COOLDOWN (1 SECONDS)
 
+/// Local-development TGUI diagnostics: server startup telemetry in /datum/tgui/open(),
+/// native shell transition logging, and unconditional acceptance of browser perf/...
+/// telemetry topics from any address. Deliberately NOT tied to the codebase-wide
+/// `DEBUG` define (which is always on), so production builds enforce the localhost
+/// gate on perf/... topics. Auto-enabled under CIBUILDING; uncomment to opt in locally.
+// #define TGUI_DEV_DIAGNOSTICS
+#if defined(CIBUILDING) && !defined(TGUI_DEV_DIAGNOSTICS)
+#define TGUI_DEV_DIAGNOSTICS
+#endif
+
+/// Minimum spacing between accepted browser perf/... telemetry topics per window.
+#define TGUI_PERF_LOG_COOLDOWN (1 SECONDS)
+/// Maximum number of chunked (oversized) browser payloads a window may be assembling at once.
+#define TGUI_MAX_OVERSIZED_PAYLOADS 4
+/// Maximum payloadChunk topics accepted per window per second. The browser sends
+/// chunks serially (each waits for an acknowledgement), so legitimate traffic sits
+/// well under this.
+#define TGUI_MAX_PAYLOAD_CHUNKS_PER_SECOND 100
+/// How long an idle prewarmed shell may remain LOADING before it is torn down and replaced.
+#define TGUI_PREWARM_LOAD_TIMEOUT (30 SECONDS)
+
 /// Window does not exist
 #define TGUI_WINDOW_CLOSED 0
 /// Window was just opened, but is still not ready to be sent data

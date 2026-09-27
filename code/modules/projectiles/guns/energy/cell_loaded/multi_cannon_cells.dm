@@ -47,7 +47,7 @@
 			var/obj/item/gun/projectile/multi_cannon = loc
 			var/mob/living/user = multi_cannon.loc
 			if(istype(user))
-				user?.hud_used.update_ammo_hud(user, multi_cannon)
+				user?.hud_used?.update_ammo_hud(user, multi_cannon)
 		return
 	else
 		BB = null
@@ -68,7 +68,7 @@
 		var/obj/item/gun/projectile/multi_cannon = loc
 		var/mob/living/user = multi_cannon.loc
 		if(istype(user))
-			user?.hud_used.update_ammo_hud(user, multi_cannon)
+			user?.hud_used?.update_ammo_hud(user, multi_cannon)
 
 //variants here, there's not many of them.
 

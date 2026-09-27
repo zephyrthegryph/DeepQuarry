@@ -427,6 +427,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(fakeConversations)
 		QDEL_NULL(fakeConversations)
 	QDEL_NULL(loot_panel)
+	// Client-scoped persistent UIs: their /datum/tgui entries would otherwise
+	// linger in SStgui.all_uis for every reconnect.
+	QDEL_NULL(tooltips)
+	QDEL_NULL(media)
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 

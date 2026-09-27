@@ -775,6 +775,9 @@ GLOBAL_LIST_EMPTY(vending_products)
 	else
 		if(!(stat & NOPOWER))
 			icon_state = initial(icon_state)
+			// machine_step() sleeps on NOPOWER; resume timed work on restore.
+			if(active && (seconds_electrified > 0 || shoot_inventory || (!shut_up && length(slogan_list))))
+				MACHINE_WAKE(src)
 		else
 			om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var), "icon_state", "[initial(icon_state)]-off")
 

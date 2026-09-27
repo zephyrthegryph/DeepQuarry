@@ -114,8 +114,15 @@
 			return FALSE
 	return TRUE
 
+/// Share of the cash reward paid to the crew (split evenly); the rest funds the
+/// exploration department. Survey points are a program score, never money.
+#define EXP_CREW_CASH_SHARE 0.5
+
 // Pay base reward + bonus for each completed optional objective. Called once by
-// the controller when check_completion() first returns TRUE.
+// the controller when check_completion() first returns TRUE. Points are logged
+// to the program tally; cash is paid ONCE per mission: half split evenly between
+// the surviving crew, the remainder (plus any unclaimable crew shares) to the
+// exploration budget.
 /datum/expedition_mission/proc/on_complete()
 	state = EXP_MISSION_COMPLETE
 	var/pts = reward_points
@@ -124,20 +131,33 @@
 		if(!O.required && O.state == EXP_OBJ_COMPLETE)
 			pts += O.bonus_points
 			cash += O.bonus_cash
-	if(site && length(site.participants))
+	if(SSexpedition)
+		SSexpedition.survey_points_total += pts
+	var/list/mob/living/crew = list()
+	if(site)
 		for(var/mob/living/L in site.participants)
-			if(QDELETED(L) || L.stat == DEAD)
-				continue
-			var/obj/item/card/id/id = L.GetIdCard()
-			if(id)
-				var/datum/money_account/account = get_account(id.associated_account_number)
-				account?.credit(pts, "Exploration program", "Expedition crew bonus")
-				to_chat(L, span_notice("Expedition complete — [pts] survey points credited to [id]."))
-			else
-				to_chat(L, span_notice("Expedition complete — but you have no ID to credit survey points to."))
-	if(cash > 0)
+			if(!QDELETED(L) && L.stat != DEAD)
+				crew += L
+	var/crew_pool = round(cash * EXP_CREW_CASH_SHARE)
+	var/crew_share = length(crew) ? round(crew_pool / length(crew)) : 0
+	var/paid_to_crew = 0
+	for(var/mob/living/L as anything in crew)
+		var/obj/item/card/id/id = L.GetIdCard()
+		var/datum/money_account/account = id ? get_account(id.associated_account_number) : null
+		if(account && crew_share > 0 && account.credit(crew_share, "Exploration program", "Expedition crew share"))
+			paid_to_crew += crew_share
+			to_chat(L, span_notice("Expedition complete — [pts] survey points logged for the program and [crew_share] Thalers credited to [id]."))
+		else if(id)
+			to_chat(L, span_notice("Expedition complete — [pts] survey points logged for the program, but your crew share could not be credited to [id]."))
+		else
+			to_chat(L, span_notice("Expedition complete — [pts] survey points logged for the program, but you have no ID to credit a crew share to."))
+	var/department_cash = cash - paid_to_crew
+	if(department_cash > 0)
 		var/datum/money_account/exploration_budget = GLOB.department_accounts[DEPARTMENT_PLANET]
-		exploration_budget?.credit(cash, "Exploration program", "Expedition mission proceeds")
+		exploration_budget?.credit(department_cash, "Exploration program", "Expedition mission proceeds")
+	log_world("SSexpedition: mission '[name]' paid [pts] survey points, [paid_to_crew] Thalers to [length(crew)] crew, [department_cash] Thalers to [DEPARTMENT_PLANET].")
+
+#undef EXP_CREW_CASH_SHARE
 
 // Per-objective rows for the console.
 /datum/expedition_mission/proc/objective_rows()

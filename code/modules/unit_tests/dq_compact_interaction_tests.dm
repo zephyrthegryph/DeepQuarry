@@ -8,7 +8,7 @@
 	name = "compact probe"
 	density = FALSE
 	anchored = TRUE
-	var/list/log = list()
+	var/list/log
 
 /obj/dq_compact_probe/get_interactions()
 	var/static/list/L = list(
@@ -20,20 +20,20 @@
 	return L
 
 /obj/dq_compact_probe/proc/zoom()
-	log += "zoom"
+	LAZYADD(log, "zoom")
 	// Deliberately returns nothing: INTERACT_USE is the one shape whose effect
 	// need not return TRUE - a self-use has no legacy fallthrough to decline into.
 
 /obj/dq_compact_probe/proc/poke(mob/user, obj/item/held, datum/interaction/interaction)
-	log += "poke"
+	LAZYADD(log, "poke")
 	return TRUE
 
 /obj/dq_compact_probe/proc/eject(mob/user, obj/item/held, datum/interaction/interaction)
-	log += "eject"
+	LAZYADD(log, "eject")
 	return TRUE
 
 /obj/dq_compact_probe/proc/insert_crowbar(mob/user, obj/item/W, datum/interaction/interaction)
-	log += "insert_crowbar"
+	LAZYADD(log, "insert_crowbar")
 	return TRUE
 
 /// A second type declaring the identical spec (same inherited zoom proc via subtyping),
@@ -50,7 +50,7 @@
 	..()
 
 /obj/dq_compact_probe/extended/proc/wave()
-	log += "wave"
+	LAZYADD(log, "wave")
 
 /**
  * INTERACT_HAND/INTERACT_ALT respect their effect's own TRUE/FALSE, unlike
@@ -68,7 +68,7 @@
 	return L
 
 /obj/dq_compact_probe/declining/proc/decline(mob/user, obj/item/held, datum/interaction/interaction)
-	log += "declined"
+	LAZYADD(log, "declined")
 	return FALSE
 
 // ---- Tests ----

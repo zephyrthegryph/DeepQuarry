@@ -107,6 +107,14 @@
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	MACHINE_WAKE(src)
 
+// The intake subscription is keyed by the mixture of the turf we sit on; after a
+// move it is stale. (A ChangeTurf() underneath us also swaps the mixture with no
+// Moved() and no contents hook — see the matching note in firedoor.dm.)
+/obj/machinery/disposal/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	if(mode == DISPOSALMODE_CHARGING)
+		wake_for_state_change()
+
 /// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()

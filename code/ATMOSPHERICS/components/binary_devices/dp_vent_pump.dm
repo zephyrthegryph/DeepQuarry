@@ -254,10 +254,12 @@
 		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
 
 
-/obj/machinery/atmospherics/unary/vent_pump/power_change()
+/obj/machinery/atmospherics/binary/dp_vent_pump/power_change()
 	var/old_stat = stat
 	..()
 	if(old_stat != stat)
+		// process() hibernates on NOPOWER; re-evaluate when power returns.
+		wake_for_state_change()
 		update_icon()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)

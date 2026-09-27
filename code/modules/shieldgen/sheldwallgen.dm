@@ -215,6 +215,10 @@
 	anchored = state
 	playsound(src, W.usesound, 75, 1)
 	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
+	// machine_step() sleeps while unanchored; an anchored generator with an
+	// unfilled buffer needs ticks to draw from the cable underneath.
+	if(anchored && storedpower < max_stored_power)
+		MACHINE_WAKE(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shieldwallgen/proc/cleanup(NSEW)

@@ -478,15 +478,21 @@
 	subscribe_events()
 	for(var/datum/contract_requirement/requirement in requirements)
 		requirement.on_contract_activated()
+	// on_accepted() may discover the contract cannot actually run (no market
+	// route, no operative authorization, ...) and withdraw it. In that case the
+	// contract was never accepted: no audit line, no broadcast, no TRUE.
+	if(!on_accepted(user, source))
+		return FALSE
 	audit(CONTRACT_AUDIT_ACCEPTED, "Contract accepted.")
-	on_accepted(user, source)
 	SScontracts?.handle_contract_accepted(src)
 	if(offer_kind == CONTRACT_OFFER_OPPORTUNITY)
 		SScontracts?.replay_post_trigger_events(src)
 	return TRUE
 
+/// Post-activation hook. Return FALSE (after withdrawing) to abort the
+/// acceptance; the contract is then reported to the caller as not accepted.
 /datum/contract/proc/on_accepted(mob/living/user, atom/source)
-	return
+	return TRUE
 
 /datum/contract/proc/ui_details(mob/living/user)
 	return null

@@ -1,7 +1,5 @@
 import type { sendAct } from 'tgui/events/act';
 
-// DQEdit — bay_prefs deleted; the legacy constant payload no longer exists.
-
 export enum GamePreferencesSelectedPage {
   Settings,
   Keybindings,
@@ -34,7 +32,7 @@ export type PreferencesMenuData = {
 };
 
 export type ServerData = {
-  // DQEdit — was `legacy: LegacyConstant` (Bay-prefs constants). The new auto-renderer
-  // gets its constants per-editor via /datum/preference_editor.build_ui_static_data.
+  // No shared constant payload; the auto-renderer gets its constants per-editor
+  // via /datum/preference_editor.build_ui_static_data.
   [key: string]: unknown;
 };

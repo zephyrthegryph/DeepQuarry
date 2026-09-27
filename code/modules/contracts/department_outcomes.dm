@@ -6,6 +6,9 @@
 	var/primary_target = 0
 	var/secondary_target = 0
 	var/outcome_duration = 0
+	/// Per-department funding floor for budget mandates (Thalers), kept apart
+	/// from outcome_duration so a money threshold is never read as a time.
+	var/minimum_allocation = 0
 	var/outcome_variant = "standard"
 	var/list/personal_side_definitions
 
@@ -14,6 +17,7 @@
 	return ..()
 
 /datum/contract/outcome/on_accepted(mob/living/user, atom/source)
+	. = ..()
 	offer_linked_personal_contracts(user)
 
 /datum/contract/outcome/proc/personal_offer_context(definition_id)
@@ -24,6 +28,7 @@
 		"primary_target" = primary_target,
 		"secondary_target" = secondary_target,
 		"outcome_duration" = outcome_duration,
+		"minimum_allocation" = minimum_allocation,
 		"outcome_variant" = outcome_variant,
 	)
 
@@ -97,7 +102,7 @@
 	else if(standing >= REPUTATION_ALLIED)
 		percent = 10
 	else if(standing >= REPUTATION_FRIENDLY)
-		percent = 10
+		percent = 5
 	else if(standing <= REPUTATION_HOSTILE)
 		percent = -10
 	else if(standing <= REPUTATION_UNFRIENDLY)
@@ -189,7 +194,7 @@
 			for(var/department_name in GLOB.department_accounts)
 				if(department_name != DEPARTMENT_PLANET && department_name != "Vendor")
 					available_departments++
-			var/minimum_allocation = max(1, contract.outcome_duration)
+			var/minimum_allocation = max(1, contract.minimum_allocation)
 			var/funding_capacity = SSsupply.projected_station_budget_capacity()
 			var/fundable_departments = min(available_departments, FLOOR(funding_capacity / minimum_allocation, 1))
 			if(fundable_departments < 1)
@@ -426,8 +431,8 @@
 /datum/contract_definition/outcome/command_budget_mandate/configure_contract(datum/contract/outcome/contract, list/context)
 	contract.primary_target = context?["allocation_target"] || pick(14000, 16000, 18000, 20000)
 	contract.secondary_target = context?["department_target"] || pick(4, 5)
-	contract.outcome_duration = context?["minimum_allocation"] || 2000
-	contract.description = "Complete one monthly budget and payroll cycle that actually funds at least [contract.primary_target] Thalers among [contract.secondary_target] station departments, with no qualifying department below [contract.outcome_duration] Thalers and at least 75% of wages paid. Exploration is excluded and Command may retain no more than 3,000 Thalers under the diversified mandate."
+	contract.minimum_allocation = context?["minimum_allocation"] || 2000
+	contract.description = "Complete one monthly budget and payroll cycle that actually funds at least [contract.primary_target] Thalers among [contract.secondary_target] station departments, with no qualifying department below [contract.minimum_allocation] Thalers and at least 75% of wages paid. Exploration is excluded and Command may retain no more than 3,000 Thalers under the diversified mandate."
 	contract.station_reputation_reward = 14
 	contract.department_reputation_reward = 20
 	contract.personal_reputation_reward = 6

@@ -72,6 +72,17 @@
 	G.ai_busy_end()
 	return DQ_BEHAVIOR_DONE
 
+/// A draining grub sits anchored to its cable. Break free right here in the
+/// signal path when struck, rather than waiting for the eval_trigger to be
+/// picked, so it can turn and fight instead of being beaten to death in place.
+/datum/ai_behavior/solargrub_break_free/on_signal(datum/ai_brain/brain, sig_type)
+	var/mob/living/simple_mob/vore/solargrub/G = brain.get_owner()
+	if(istype(G) && G.anchored)
+		dqai_log("[G] solargrub: struck while draining, breaking free")
+		G.anchored = FALSE
+		brain.set_cooldown(type, null, cooldown)
+	return ..()
+
 // ===========================================================================
 // Solargrub larva — machine-hunting infestation crawler
 // ===========================================================================

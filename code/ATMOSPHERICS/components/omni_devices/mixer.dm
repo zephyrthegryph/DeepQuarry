@@ -171,6 +171,10 @@
 /obj/machinery/atmospherics/omni/mixer/can_process_gas()
 	var/transfer_moles = 0
 	for(var/datum/omni_port/P in inputs)
+		// Runs inside SSmachines' dirty-batch drain; a port whose mixture was
+		// torn down (topology rebuild, deconstruction) must not runtime here.
+		if(!P.air)
+			continue
 		transfer_moles += (set_flow_rate * P.concentration / P.air.return_volume()) * P.air.total_moles()
 	return transfer_moles > MINIMUM_MOLES_TO_FILTER
 

@@ -432,6 +432,18 @@
 		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake)
 	MACHINE_SLEEP(src)
 
+// Gas subscriptions are keyed by the mixtures of the turf we sat on and its
+// neighbours. After a move those ids are stale, so drop them and re-sample.
+// NOTE: a ChangeTurf() under a stationary firedoor also replaces the turf's
+// mixture (new arena id) without any Moved(); there is currently no turf-change
+// hook delivered to contents (turf_changing.dm), so that case still relies on
+// the next open/close cycle to resubscribe.
+/obj/machinery/door/firedoor/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	if(sleeping_mixture_ids)
+		clear_gas_dependencies()
+		MACHINE_WAKE(src)
+
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
 	for(var/key in sleeping_mixture_ids)
 		om_watch_disarm(src, key)

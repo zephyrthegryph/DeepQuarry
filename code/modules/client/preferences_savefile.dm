@@ -2,8 +2,12 @@
 #define SAVEFILE_VERSION_MAX	1
 
 /datum/preferences/proc/save_data_needs_update(list/save_data)
-	// empty list = new char; anything else with the current version = fine; anything else = stale, wipe it.
-	if(!save_data)
+	// null OR empty tree = fresh savefile / new char; anything else with the current
+	// version = fine; anything else = stale, wipe it.
+	// A brand-new /datum/json_savefile has a non-null but EMPTY tree, and an empty list is
+	// truthy in DM — the old `!save_data` test fell through to -2 and every first-time
+	// player got the "incompatible upstream version" warning + a pointless backup.
+	if(!islist(save_data) || !length(save_data))
 		return -1
 	if(save_data["version"] == SAVEFILE_VERSION_MAX)
 		return -1

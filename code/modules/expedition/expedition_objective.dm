@@ -362,6 +362,9 @@
 		var/obj/machinery/power/generator/G = locate(/obj/machinery/power/generator) in T
 		if(G)
 			generators += G
+			// `tracked` is what has_viable_objectives() inspects; leaving it empty
+			// made every restore mission log as published without objectives.
+			tracked += G
 
 /datum/expedition_objective/commission_engine/check()
 	for(var/obj/machinery/power/generator/G in generators)

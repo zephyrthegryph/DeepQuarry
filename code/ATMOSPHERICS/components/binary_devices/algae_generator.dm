@@ -52,6 +52,16 @@
 	. = ..()
 	internal = null
 
+/obj/machinery/atmospherics/binary/algae_farm/power_change()
+	var/old_stat = stat
+	. = ..()
+	if(old_stat != stat)
+		update_icon()
+		// machine_step() sleeps while inoperable; wake it when power returns
+		// to a farm that is still switched on.
+		if(!inoperable() && use_power >= USE_POWER_ACTIVE)
+			MACHINE_WAKE(src)
+
 /obj/machinery/atmospherics/binary/algae_farm/machine_step()
 	..()
 	recent_moles_transferred = 0

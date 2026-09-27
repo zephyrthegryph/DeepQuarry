@@ -38,7 +38,9 @@
 	var/turf/T = get_turf(src.loc)
 	if(T)
 		for(var/mob/M in turf_contents_of_type(T, /mob))
-			Proj.on_hit(M,M.bullet_act(Proj, def_zone))
+			// /mob/living/bullet_act already calls Proj.on_hit internally; calling it
+			// again here doubled every stun/agony/modifier effect on the occupant.
+			M.bullet_act(Proj, def_zone)
 	return
 
 /obj/effect/forcefield/mime

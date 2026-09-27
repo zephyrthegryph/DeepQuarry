@@ -142,19 +142,23 @@
 		other_budget.allocation_percent = effective_percent
 		other_budget.allocation_configured = TRUE
 	var/old_percent = budget.allocation_percent
+	var/old_requested = current_departments?[department]?["requested"] || 0
 	budget.allocation_percent = percent
 	budget.allocation_configured = TRUE
 	budget.record_transaction(authenticated, "Recurring operating share set to [percent]%", 0, name)
 	if(old_percent != percent)
 		var/list/plan = SSsupply.department_budget_plan()
 		var/list/department_plan = plan["departments"]?[department]
+		// Report only the change in the planned request, never the whole
+		// figure: a policy edit is a plan, and re-toggling a plan is not new aid.
+		var/requested_delta = max(0, (department_plan?["requested"] || 0) - old_requested)
 		emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
 			"department" = DEPARTMENT_COMMAND,
 			"source_department" = "Station",
 			"target_department" = department,
 			"target_account" = budget.account_number,
 			"target_is_department" = budget.is_department_budget(),
-			"metrics" = list("amount" = department_plan?["requested"] || 0, "allocation_percent" = percent),
+			"metrics" = list("amount" = requested_delta, "allocation_percent" = percent),
 			"detail" = "Assigned [department] [percent]% of the recurring operating pool",
 		), "budget-allocation:[REF(budget)]:[world.time]:[percent]", src, user)
 	return TRUE
@@ -170,6 +174,16 @@
 		to_chat(user, span_warning("The station account cannot fund that transfer."))
 		return FALSE
 	to_chat(user, span_notice("Transferred [amount] Thalers to [department]."))
+	// Money actually moved, so this counts as settled aid.
+	emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
+		"department" = DEPARTMENT_COMMAND,
+		"source_department" = "Station",
+		"target_department" = department,
+		"target_account" = budget.account_number,
+		"target_is_department" = TRUE,
+		"metrics" = list("amount" = amount, "settled" = 1),
+		"detail" = "Transferred [amount] Thalers of one-time Command funding to [department]",
+	), "budget-transfer:[REF(budget)]:[world.time]:[amount]", src, user)
 	return TRUE
 
 /obj/machinery/computer/skills/proc/clear_department_allocation(department, mob/living/user = null)
@@ -181,6 +195,7 @@
 	budget.allocation_configured = FALSE
 	var/list/plan = SSsupply.department_budget_plan()
 	var/list/department_plan = plan["departments"]?[department]
+	var/old_requested = budget.monthly_allocation
 	budget.allocation_percent = 0
 	budget.monthly_allocation = department_plan?["requested"] || 0
 	budget.record_transaction(authenticated, "Recurring operating share returned to automatic policy", 0, name)
@@ -190,7 +205,7 @@
 		"target_department" = department,
 		"target_account" = budget.account_number,
 		"target_is_department" = TRUE,
-		"metrics" = list("amount" = budget.monthly_allocation),
+		"metrics" = list("amount" = max(0, budget.monthly_allocation - old_requested)),
 		"detail" = "Returned [department] to the automatic recurring funding policy",
 	), "budget-allocation:[REF(budget)]:[world.time]:automatic", src, user)
 	return TRUE

@@ -60,10 +60,23 @@
 	for(var/datum/generated_station_department_instance/department in site.station_spec.departments)
 		if(department.id != department_id)
 			continue
-		var/area/generated_station/A = site.station_materialization.department_areas[department.layout_node_id]
-		for(var/turf/T in area_contents_of_type(A, /turf))
-			if(!T.density && !locate(/obj/machinery/door) in T)
-				return T
+		var/list/candidate_areas = list()
+		var/area/generated_station/department_area = site.station_materialization.department_areas[department.layout_node_id]
+		if(department_area)
+			candidate_areas += department_area
+		// Planned rooms own their own areas; the department shell may hold only
+		// circulation, so fall back to any room area belonging to this department.
+		for(var/datum/generated_station_module/module in site.station_materialization.modules)
+			if(module.department_node_id != department.layout_node_id)
+				continue
+			var/area/generated_station/room_area = site.station_materialization.module_areas[module.id]
+			if(room_area)
+				candidate_areas += room_area
+		for(var/area/generated_station/A as anything in candidate_areas)
+			for(var/turf/T in area_contents_of_type(A, /turf))
+				// `!locate(...) in T` parsed as `(!locate(...)) in T`, which is never true.
+				if(!T.density && !locate_on(T, /obj/machinery/door))
+					return T
 	return null
 
 /obj/machinery/generated_station_upload_terminal

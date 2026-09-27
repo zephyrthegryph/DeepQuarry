@@ -28,6 +28,11 @@
 	last_contact = null
 	return ..()
 
+/// A null or deleted defender must never read as "alive"; `defender?.stat < DEAD`
+/// evaluates `null < DEAD` and is TRUE for a missing mob.
+/datum/generated_station_defender_agent/proc/is_active()
+	return defender && !QDELETED(defender) && defender.stat < DEAD
+
 /datum/generated_station_defender_agent/proc/on_damage(datum/source, amount, damage_type, atom/attacker)
 	SIGNAL_HANDLER
 	if(attacker)
@@ -41,7 +46,7 @@
 	runtime?.on_casualty(src)
 
 /datum/generated_station_defender_agent/proc/apply_order(datum/generated_station_order/order, datum/generated_station_knowledge_report/report)
-	if(!defender || QDELETED(defender) || defender.stat >= DEAD)
+	if(!is_active())
 		return
 	var/atom/target = om_resolve(report?.target_ref)
 	switch(order.kind)
@@ -106,10 +111,15 @@
 	site = null
 	return ..()
 
+
 /datum/generated_station_defense_runtime/proc/create_roster()
 	for(var/obj/machinery/generated_station_department_control/control in site.station_controls)
 		department_turfs[control.department_id] = get_turf(control)
-	for(var/obj/machinery/generated_station_data_relay/relay in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
+	// Relays are tracked by the materialization; never materialise a full-z
+	// block() list (and a typed for-loop over turfs would skip every relay anyway).
+	for(var/obj/machinery/generated_station_data_relay/relay in site.station_materialization?.infrastructure)
+		if(QDELETED(relay))
+			continue
 		if(relay.station_id == site.station_spec?.id)
 			relay.defense_runtime_ref = om_handle(src)
 	spawn_department("security-1", 2)
@@ -126,17 +136,23 @@
 		return
 	squads_by_department[department_id] = squad.id
 	for(var/index in 1 to count)
-		suppress_sensor_events = TRUE
-		var/mob/living/simple_mob/humanoid/merc/ranged/poi/defender = new(spawn_turf)
-		suppress_sensor_events = FALSE
-		defender.faction = GENERATED_STATION_DEFENDER_FACTION
-		defender.ai_attack_on_sight = FALSE
-		defender.ai_brain?.set_hostile(FALSE)
-		defender.ai_brain?.go_sleep()
-		var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
-		agents += agent
-		squad.add_member(REF(defender))
-		director.register_defender(defender)
+		spawn_defender(department_id, squad, spawn_turf)
+
+/// Creates one physical defender bound to a squad. Shared by the initial roster
+/// and reinforcement so the two paths cannot drift.
+/datum/generated_station_defense_runtime/proc/spawn_defender(department_id, datum/generated_station_squad/squad, turf/spawn_turf)
+	suppress_sensor_events = TRUE
+	var/mob/living/simple_mob/humanoid/merc/ranged/poi/defender = new(spawn_turf)
+	suppress_sensor_events = FALSE
+	defender.faction = GENERATED_STATION_DEFENDER_FACTION
+	defender.ai_attack_on_sight = FALSE
+	defender.ai_brain?.set_hostile(FALSE)
+	defender.ai_brain?.go_sleep()
+	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
+	agents += agent
+	squad.add_member(REF(defender))
+	director.register_defender(defender)
+	return agent
 
 /// Finds a walkable tile adjacent to the department core. The core itself is dense.
 /proc/generated_station_defender_spawn_turf(turf/core_turf)
@@ -157,7 +173,7 @@
 /// Cameras, relays, doors, and other event producers call this directly. Detection
 /// remains local if data or AI coordination is unavailable.
 /datum/generated_station_defense_runtime/proc/notify_sensor_contact(department_id, atom/contact, source_kind = "sensor", confidence = 80, issue_response = TRUE)
-	if(!contact || !(department_id in director.local_knowledge))
+	if(!contact || !director || !(department_id in director.local_knowledge))
 		return null
 	var/datum/generated_station_knowledge_report/report = director.submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
 	if(!report)
@@ -173,13 +189,15 @@
 	return report
 
 /datum/generated_station_defense_runtime/proc/contact_expired(report_id, department_id)
-	if(director?.reports[report_id])
+	if(!director || QDELETED(src))
 		return
-	director?.set_alert(GENERATED_STATION_ALERT_BLUE, department_id)
+	if(director.reports?[report_id])
+		return
+	director.set_alert(GENERATED_STATION_ALERT_BLUE, department_id)
 	addtimer(CALLBACK(src, PROC_REF(return_to_green), department_id), GENERATED_STATION_SEARCH_DURATION)
 
 /datum/generated_station_defense_runtime/proc/return_to_green(department_id)
-	if(director?.local_alert_levels[department_id] == GENERATED_STATION_ALERT_BLUE)
+	if(director?.local_alert_levels?[department_id] == GENERATED_STATION_ALERT_BLUE)
 		director.set_alert(GENERATED_STATION_ALERT_GREEN, department_id)
 
 /// Door controllers call this only after a denied or forced transition, avoiding
@@ -202,13 +220,19 @@
 	addtimer(CALLBACK(src, PROC_REF(finish_order), order.id), order.kind == GENERATED_STATION_ORDER_PATROL ? GENERATED_STATION_PATROL_DURATION : GENERATED_STATION_SEARCH_DURATION)
 
 /datum/generated_station_defense_runtime/proc/finish_order(order_id)
-	var/datum/generated_station_order/order = director?.orders[order_id]
+	var/datum/generated_station_order/order = director?.orders?[order_id]
 	if(!order)
 		return
 	var/datum/generated_station_squad/squad = director.squads[order.squad_id]
 	director.complete_order(order.id)
+	sleep_squad(squad?.id)
+
+/// Puts every living member of a squad back to sleep after a bounded job.
+/datum/generated_station_defense_runtime/proc/sleep_squad(squad_id)
+	if(!squad_id)
+		return
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad?.id && agent.defender?.stat < DEAD)
+		if(agent.squad_id == squad_id && agent.is_active())
 			agent.defender.ai_brain?.go_sleep()
 
 /// Patrols are explicitly requested and self-terminate; stable stations schedule none.
@@ -231,29 +255,32 @@
 	if(active_patrols?[squad_id] == order_id)
 		active_patrols -= squad_id
 
+/// A dead defender leaves the roster entirely: its agent is dropped from `agents`
+/// and its squad membership released, so reinforcement is not locked out by
+/// corpses still counting against GENERATED_STATION_MAX_SQUAD_MEMBERS.
 /datum/generated_station_defense_runtime/proc/on_casualty(datum/generated_station_defender_agent/agent)
+	if(!agent || QDELETED(agent))
+		return
 	casualties++
+	var/department_id = agent.department_id
+	var/datum/generated_station_squad/squad = director?.squads?[agent.squad_id]
+	if(squad && agent.defender)
+		squad.member_ids -= REF(agent.defender)
 	director?.unregister_defender(agent.defender)
-	if(agent.department_id == "security-1" && director?.request_security_reserve())
+	agents -= agent
+	qdel(agent)
+	if(department_id == "security-1" && director?.request_security_reserve())
 		addtimer(CALLBACK(src, PROC_REF(spawn_reinforcement), "security-1"), 10 SECONDS)
 
 /datum/generated_station_defense_runtime/proc/spawn_reinforcement(department_id)
+	if(!director || QDELETED(src))
+		return FALSE
 	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turfs[department_id])
 	var/squad_id = squads_by_department[department_id]
-	var/datum/generated_station_squad/squad = director?.squads[squad_id]
+	var/datum/generated_station_squad/squad = director.squads[squad_id]
 	if(!spawn_turf || !squad || length(squad.member_ids) >= GENERATED_STATION_MAX_SQUAD_MEMBERS)
 		return FALSE
-	suppress_sensor_events = TRUE
-	var/mob/living/simple_mob/humanoid/merc/ranged/poi/defender = new(spawn_turf)
-	suppress_sensor_events = FALSE
-	defender.faction = GENERATED_STATION_DEFENDER_FACTION
-	defender.ai_attack_on_sight = FALSE
-	defender.ai_brain?.set_hostile(FALSE)
-	defender.ai_brain?.go_sleep()
-	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
-	agents += agent
-	squad.add_member(REF(defender))
-	director.register_defender(defender)
+	spawn_defender(department_id, squad, spawn_turf)
 	return TRUE
 
 /// Damage producers call this with the affected department. Engineering consumes
@@ -265,7 +292,7 @@
 	return FALSE
 
 /datum/generated_station_defense_runtime/proc/retreat_agent(datum/generated_station_defender_agent/agent)
-	if(!agent?.defender || QDELETED(agent.defender))
+	if(!agent?.is_active())
 		return
 	var/turf/medical = department_turfs["medical-1"] || agent.home
 	agent.defender.ai_brain?.give_destination(medical)
@@ -274,7 +301,7 @@
 
 /datum/generated_station_defense_runtime/proc/heal_and_redeploy(agent_ref)
 	var/datum/generated_station_defender_agent/agent = om_resolve(agent_ref)
-	if(!agent?.defender || QDELETED(agent.defender))
+	if(!agent?.is_active())
 		return
 	var/obj/item/stack/medical/medicine
 	var/area/medical_area = get_area(department_turfs["medical-1"])
@@ -306,7 +333,7 @@
 	if(!squad_id)
 		return FALSE
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
+		if(agent.squad_id == squad_id && agent.is_active())
 			agent.defender.ai_brain?.give_destination(get_turf(target))
 			agent.defender.ai_brain?.go_wake()
 	addtimer(CALLBACK(src, PROC_REF(complete_physical_repair), om_handle(target), amount, squad_id), 5 SECONDS)
@@ -325,9 +352,7 @@
 	if(!materials || !materials.use(1))
 		return
 	target.repair_damage(amount)
-	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.go_sleep()
+	sleep_squad(squad_id)
 
 /// Moves an actual crate through a bounded delivery job.
 /datum/generated_station_defense_runtime/proc/request_logistics_delivery(obj/structure/closet/crate/crate, turf/destination)
@@ -337,7 +362,7 @@
 	if(!squad_id)
 		return FALSE
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
+		if(agent.squad_id == squad_id && agent.is_active())
 			agent.defender.ai_brain?.give_destination(get_turf(crate))
 			agent.defender.ai_brain?.go_wake()
 	addtimer(CALLBACK(src, PROC_REF(complete_logistics_delivery), om_handle(crate), om_handle(destination), squad_id), 5 SECONDS)
@@ -348,9 +373,7 @@
 	var/turf/destination = om_resolve(destination_ref)
 	if(crate && destination && !QDELETED(crate) && !is_blocked_turf(destination))
 		crate.forceMove(destination)
-	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.go_sleep()
+	sleep_squad(squad_id)
 
 /datum/expedition_site
 	var/datum/generated_station_defense_runtime/station_defense

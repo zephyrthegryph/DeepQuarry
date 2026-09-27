@@ -52,10 +52,10 @@
 	. = ..()
 	if(!SSsupply?.reserve_agent_contract_market(src))
 		withdraw("The principal's authenticated market route could not be established.")
-		return
+		return FALSE
 	if(red_contract && !GLOB.station_faction_relations.activate_contract_operative(owner_account_number, id, user))
 		withdraw("The explicit operative authorization could not be attached to its accepting account.")
-		return
+		return FALSE
 	issue_agent_fieldwork_documents(user, source)
 
 /datum/contract/faction_agent/ui_details(mob/living/user)
@@ -200,7 +200,7 @@
 
 /datum/contract/covert_market_investigation/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	addtimer(CALLBACK(SSsupply, TYPE_PROC_REF(/datum/controller/subsystem/supply, replay_market_audit_evidence), src), 1)
+	addtimer(CALLBACK(SSsupply, TYPE_PROC_REF(/datum/controller/subsystem/supply, replay_market_audit_evidence), src), 1 DECISECONDS)
 
 /datum/contract_definition/covert_market_investigation
 	id = "covert_market_investigation"

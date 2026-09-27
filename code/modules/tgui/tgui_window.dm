@@ -27,6 +27,18 @@
 	var/list/preapplied_geometry
 	/// Rate limit for automatic local-development browser telemetry.
 	var/last_perf_log_at = 0
+	/// Opaque token for the page most recently browse()'d into this window. Every
+	/// message the page sends carries it, so a late message from a superseded page
+	/// (e.g. its `ready` arriving after a reinitialize) cannot be mistaken for the
+	/// current page's.
+	var/document_id
+	/// world.time at which a prewarm initialize() was issued, so an idle shell that
+	/// never reports `ready` can be timed out and replaced.
+	var/prewarm_started_at = 0
+	/// Start of the current one-second payloadChunk accounting window.
+	var/payload_chunk_window_started_at = 0
+	/// payloadChunk topics accepted during the current accounting window.
+	var/payload_chunks_this_window = 0
 	var/datum/tgui/locked_by
 	var/datum/subscriber_object
 	var/subscriber_delegate
@@ -95,6 +107,7 @@
 		resolved_assets += asset
 	if(include_tgui_shell && asset_generation?.shell_assets)
 		resolved_assets += asset_generation.shell_assets
+	src.initial_strict_mode = strict_mode
 	src.initial_fancy = fancy
 	src.initial_assets = resolved_assets
 	src.initial_inline_html = inline_html
@@ -102,6 +115,9 @@
 	src.initial_inline_css = inline_css
 	status = TGUI_WINDOW_LOADING
 	fatally_errored = FALSE
+	// A fresh page gets a fresh document token; see on_message().
+	var/static/document_sequence = 0
+	document_id = "[id]-[world.time]-[++document_sequence]"
 	// browse() popup options cannot make a newly-created native window hidden.
 	// Clone an already-hidden skin window first, so browse() targets its existing
 	// browser control without ever painting a default popup on screen.
@@ -151,10 +167,16 @@
 	// Inject inline HTML
 	if (inline_html)
 		html = replacetextEx(html, "<!-- tgui:inline-html -->", isfile(inline_html) ? file2text(inline_html) : inline_html)
-	// Inject inline JS
+	// Inject inline JS. The document shim runs first: it tags every tgui topic this
+	// page sends with the page's document_id (helpers.js is already loaded at this
+	// point, and both the shell's own `ready` and all React-side messages route
+	// through Byond.topic), so the server can reject messages from a stale page.
+	var/document_shim = "<script>\n(function(){var documentId=\"[document_id]\";var topic=Byond.topic;Byond.topic=function(params){if(params&&params.tgui){params.document_id=documentId;}return topic.call(Byond,params);};})();\n</script>\n"
 	if (inline_js)
 		inline_js = "<script>\n'use strict';\n[isfile(inline_js) ? file2text(inline_js) : inline_js]\n</script>"
-		html = replacetextEx(html, "<!-- tgui:inline-js -->", inline_js)
+	else
+		inline_js = ""
+	html = replacetextEx(html, "<!-- tgui:inline-js -->", document_shim + inline_js)
 	// Inject inline CSS
 	if (inline_css)
 		inline_css = "<style>\n[isfile(inline_css) ? file2text(inline_css) : inline_css]\n</style>"
@@ -232,7 +254,9 @@
 	if(client && pooled)
 		geometry_preapplied = FALSE
 		preapplied_geometry = null
+		#ifdef TGUI_DEV_DIAGNOSTICS
 		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sending generation=[generation + 1] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
+		#endif
 		if(native_shell)
 			winset(client, id, "alpha=0")
 		winshow(client, id, FALSE)
@@ -255,7 +279,9 @@
 				winset(client, id, "size=[default_size]")
 				preapplied_geometry = list("size" = default_size)
 				geometry_preapplied = TRUE
+		#ifdef TGUI_DEV_DIAGNOSTICS
 		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
+		#endif
 	generation++
 	locked = TRUE
 	locked_by = ui
@@ -315,11 +341,15 @@
 		// Do not rely on the asynchronous browser suspend handler to hide the shell.
 		// The pool can hand this READY window to another UI immediately after return.
 		if(pooled)
+			#ifdef TGUI_DEV_DIAGNOSTICS
 			log_tgui(client, "TGUI transition: stage=server-release-hide-sending generation=[generation] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
+			#endif
 			if(native_shell)
 				winset(client, id, "alpha=0")
 			winshow(client, id, FALSE)
+			#ifdef TGUI_DEV_DIAGNOSTICS
 			log_tgui(client, "TGUI transition: stage=server-release-hide-sent generation=[generation].", window = src)
+			#endif
 		visible = FALSE
 		status = TGUI_WINDOW_READY
 		send_message("suspend")
@@ -443,6 +473,22 @@
  * Callback for handling incoming tgui messages.
  */
 /datum/tgui_window/proc/on_message(type, payload, href_list)
+	// Drop messages from a page this window has since replaced. Without this a
+	// superseded page's late `ready` would flip the window READY and flush the new
+	// page's queued first update into the old document, where it is lost. Logs are
+	// still collected so a stale page's errors remain visible.
+	var/reported_document = href_list?["document_id"]
+	if(document_id && reported_document && reported_document != document_id && type != "log")
+		log_tgui(client, "Ignored [type] from stale document [reported_document]; current document is [document_id].", window = src)
+		return
+	// A reusable shell's browser keeps retrying `suspend` until the server confirms
+	// it. If the shell was reacquired by a new UI in the meantime, that retry must
+	// not close the new occupant.
+	if(type == "suspend")
+		var/suspend_generation = text2num("[payload?["generation"]]")
+		if(suspend_generation && suspend_generation != generation)
+			log_tgui(client, "Ignored stale suspend for generation [suspend_generation]; current generation is [generation].", window = src)
+			return
 	// Status can be READY if user has refreshed the window.
 	if(type == "ready" && status == TGUI_WINDOW_READY)
 		// Resend the assets
@@ -501,35 +547,17 @@
 					LAZYSET(client.tgui_resolved_geometries, locked_by.interface, safe_geometry)
 			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
 		if("perf/flicker")
-			#ifndef DEBUG
-			if(client?.address != "127.0.0.1" && client?.address != "::1")
+			if(!accept_perf_telemetry())
 				return
-			#endif
-			if(world.time < last_perf_log_at + 1 SECOND)
-				return
-			last_perf_log_at = world.time
-			var/encoded_payload = json_encode(payload)
-			if(length(encoded_payload) > 8000)
-				encoded_payload = copytext(encoded_payload, 1, 8001)
-			log_tgui(client, "Automatic TGUI flicker telemetry: [encoded_payload]", window = src)
+			log_tgui(client, "Automatic TGUI flicker telemetry: [truncated_perf_payload(payload)]", window = src)
 		if("perf/status")
-			#ifndef DEBUG
-			if(client?.address != "127.0.0.1" && client?.address != "::1")
+			if(!accept_perf_telemetry())
 				return
-			#endif
-			var/encoded_payload = json_encode(payload)
-			if(length(encoded_payload) > 8000)
-				encoded_payload = copytext(encoded_payload, 1, 8001)
-			log_tgui(client, "Automatic TGUI performance telemetry: [encoded_payload]", window = src)
+			log_tgui(client, "Automatic TGUI performance telemetry: [truncated_perf_payload(payload)]", window = src)
 		if("perf/transition")
-			#ifndef DEBUG
-			if(client?.address != "127.0.0.1" && client?.address != "::1")
+			if(!accept_perf_telemetry())
 				return
-			#endif
-			var/encoded_payload = json_encode(payload)
-			if(length(encoded_payload) > 8000)
-				encoded_payload = copytext(encoded_payload, 1, 8001)
-			log_tgui(client, "TGUI transition: [encoded_payload]", window = src)
+			log_tgui(client, "TGUI transition: [truncated_perf_payload(payload)]", window = src)
 		if("suspend")
 			close(can_be_suspended = TRUE)
 		if("close")
@@ -543,14 +571,57 @@
 		if("oversizedPayloadRequest")
 			var/payload_id = payload["id"]
 			var/chunk_count = text2num(payload["chunkCount"])
-			var/permit_payload = chunk_count <= MAX_MESSAGE_CHUNKS
+			// Cap both the size of one assembly and how many a single window may
+			// hold open at once, so a client cannot park unbounded partial buffers.
+			var/permit_payload = istext(payload_id) \
+				&& chunk_count \
+				&& chunk_count <= MAX_MESSAGE_CHUNKS \
+				&& length(oversized_payloads) < TGUI_MAX_OVERSIZED_PAYLOADS \
+				&& !oversized_payloads[payload_id]
 			if(permit_payload)
 				create_oversized_payload(payload_id, payload["type"], chunk_count)
 			send_message("oversizePayloadResponse", list("allow" = permit_payload, "id" = payload_id))
 		if("payloadChunk")
+			if(!accept_payload_chunk())
+				return
 			var/payload_id = payload["id"]
 			append_payload_chunk(payload_id, payload["chunk"])
 			send_message("acknowledgePayloadChunk", list("id" = payload_id))
+
+/**
+ * private
+ *
+ * Gate for browser perf/... telemetry topics. Outside a diagnostics build only
+ * localhost clients may submit them, and every window is limited to one accepted
+ * topic per TGUI_PERF_LOG_COOLDOWN regardless of build.
+ */
+/datum/tgui_window/proc/accept_perf_telemetry()
+	#ifndef TGUI_DEV_DIAGNOSTICS
+	if(client?.address != "127.0.0.1" && client?.address != "::1")
+		return FALSE
+	#endif
+	if(world.time < last_perf_log_at + TGUI_PERF_LOG_COOLDOWN)
+		return FALSE
+	last_perf_log_at = world.time
+	return TRUE
+
+/// Bounds a browser telemetry payload before it is written to the log.
+/datum/tgui_window/proc/truncated_perf_payload(payload)
+	var/encoded_payload = json_encode(payload)
+	if(length(encoded_payload) > 8000)
+		encoded_payload = copytext(encoded_payload, 1, 8001)
+	return encoded_payload
+
+/// Per-window, per-second budget for payloadChunk topics (which bypass the
+/// client Topic rate limiter).
+/datum/tgui_window/proc/accept_payload_chunk()
+	if(world.time >= payload_chunk_window_started_at + 1 SECOND)
+		payload_chunk_window_started_at = world.time
+		payload_chunks_this_window = 0
+	if(payload_chunks_this_window >= TGUI_MAX_PAYLOAD_CHUNKS_PER_SECOND)
+		return FALSE
+	payload_chunks_this_window++
+	return TRUE
 
 /datum/tgui_window/vv_edit_var(var_name, var_value)
 	return var_name != NAMEOF(src, id) && ..()
@@ -578,7 +649,7 @@
 		var/final_payload = chunks.Join()
 		remove_oversized_payload(payload_id)
 		if (!rustg_json_is_valid(final_payload))
-			log_tgui(usr, "Error: Invalid JSON")
+			log_tgui(client, "Error: Invalid JSON in reassembled oversized payload", window = src)
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else

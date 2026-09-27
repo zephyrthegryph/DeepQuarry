@@ -81,6 +81,7 @@
 	return completed
 
 /datum/contract/medical_trial_personal/on_accepted(mob/living/user, atom/source)
+	. = ..()
 	if(!(action_key in list(MEDICAL_SIDE_ESPIONAGE, MEDICAL_SIDE_AUTOPSY)))
 		to_chat(user, span_notice("Private contract [id] is active. The issuer recognizes records received through a station fax."))
 		return
@@ -499,10 +500,16 @@
 		to_chat(sender, span_warning("VeyMed rejects the packet: it lacks a genuine body-scanner report made at least one minute after exposure."))
 		return FALSE
 	var/list/evidence_ids = list(consent_document.evidence_id, baseline["evidence_id"], followup["evidence_id"])
-	if(!SScontracts.evidence_available(evidence_ids) || !trial.submit_subject_evidence(subject_id, baseline, followup, sender_account) || !SScontracts.consume_evidence(evidence_ids, trial.id))
+	// Consume first: evidence that has already earned credit must never remain
+	// available for a second submission if the consume step were to fail.
+	if(!SScontracts.evidence_available(evidence_ids) || !SScontracts.consume_evidence(evidence_ids, trial.id))
 		to_chat(sender, span_warning("VeyMed rejects the packet because its evidence could not be authenticated."))
 		return FALSE
 	trial.audit(CONTRACT_AUDIT_EVIDENCE, "Consumed evidence [english_list(evidence_ids)] for [participant.current_subject()?.real_name || subject_id].")
+	if(!trial.submit_subject_evidence(subject_id, baseline, followup, sender_account))
+		trial.audit(CONTRACT_AUDIT_EVIDENCE, "Consumed packet for [participant.current_subject()?.real_name || subject_id] was rejected by the trial after authentication.")
+		to_chat(sender, span_warning("VeyMed rejects the packet because its evidence could not be authenticated."))
+		return FALSE
 	consent_document.payload["veymed_submitted"] = TRUE
 	return TRUE
 

@@ -118,7 +118,7 @@
 /// One pump every second (a timed action each) until full.
 /obj/item/gun/energy/locked/frontier/proc/pump_cycle(mob/user)
 	playsound(src,'sound/items/change_drill.ogg',25,1)
-	user.hud_used.update_ammo_hud(user, src)
+	user.hud_used?.update_ammo_hud(user, src)
 	if(power_supply.give(phase_power) < phase_power)
 		pump_end(user)
 		return
@@ -127,7 +127,7 @@
 /obj/item/gun/energy/locked/frontier/proc/pump_end(mob/user)
 	recharging = 0
 	update_icon()
-	user?.hud_used.update_ammo_hud(user, src) // Update one last time once we're finished!
+	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
 /obj/item/gun/energy/locked/frontier/update_icon()
 	if(recharging)

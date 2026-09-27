@@ -51,7 +51,10 @@ SUBSYSTEM_DEF(ai)
 			continue
 
 		var/mob/living/L = A.holder
-		if(!L?.loc)
+		// The holder's Destroy owns the brain's lifetime — never qdel a brain from
+		// this copied currentrun. A dead/deleted holder just gets skipped here and
+		// the brain sleeps itself in handle_strategicals.
+		if(!L || QDELETED(L) || !L.loc)
 			continue
 
 		if(A.next_strategic_at > world.time)

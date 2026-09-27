@@ -42,20 +42,25 @@
 				return FALSE
 			return GLOB.station_faction_relations.begin_agent_vetting(ui.user, faction.id)
 		return FALSE
-	if(action == "contract_stakeholder_propose")
-		var/datum/contract/social/social = contract
-		return istype(social) && social.propose_stakeholder(account, params["role"], text2num(params["weight"]))
-	if(action == "contract_stakeholder_withdraw")
-		var/datum/contract/social/social = contract
-		return istype(social) && social.withdraw_stakeholder(account, params["role"])
-	if(contract.scope != CONTRACT_SCOPE_PERSONAL || contract.owner_account_number != account.account_number)
-		return FALSE
-	if(action == "contract_decline")
-		return contract.decline(ui.user)
-	var/datum/contract/faction_agent/agent_contract = contract
-	if(istype(agent_contract) && agent_contract.red_contract)
-		if(tgui_alert(ui.user, "This is a RED CONTRACT. Acceptance explicitly registers you as a contract antagonist for the written objective until it closes. This is not unrestricted permission to antagonize or grief. Accept?", "Explicit antagonist opt-in", list("Cancel", "Accept red contract")) != "Accept red contract")
-			return FALSE
-		if(pda.loc != ui.user || !pda.id || pda.id.associated_account_number != account.account_number || contract.state != CONTRACT_OFFERED)
-			return FALSE
-	return contract.accept(account, ui.user, pda)
+	switch(action)
+		if("contract_stakeholder_propose")
+			var/datum/contract/social/social = contract
+			return istype(social) && social.propose_stakeholder(account, params["role"], text2num(params["weight"]))
+		if("contract_stakeholder_withdraw")
+			var/datum/contract/social/social = contract
+			return istype(social) && social.withdraw_stakeholder(account, params["role"])
+		if("contract_decline")
+			if(contract.scope != CONTRACT_SCOPE_PERSONAL || contract.owner_account_number != account.account_number)
+				return FALSE
+			return contract.decline(ui.user)
+		if("contract_accept")
+			if(contract.scope != CONTRACT_SCOPE_PERSONAL || contract.owner_account_number != account.account_number)
+				return FALSE
+			var/datum/contract/faction_agent/agent_contract = contract
+			if(istype(agent_contract) && agent_contract.red_contract)
+				if(tgui_alert(ui.user, "This is a RED CONTRACT. Acceptance explicitly registers you as a contract antagonist for the written objective until it closes. This is not unrestricted permission to antagonize or grief. Accept?", "Explicit antagonist opt-in", list("Cancel", "Accept red contract")) != "Accept red contract")
+					return FALSE
+				if(pda.loc != ui.user || !pda.id || pda.id.associated_account_number != account.account_number || contract.state != CONTRACT_OFFERED)
+					return FALSE
+			return contract.accept(account, ui.user, pda)
+	return FALSE
