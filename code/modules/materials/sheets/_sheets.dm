@@ -50,10 +50,6 @@
 
 	update_strings()
 
-/obj/item/stack/material/Destroy()
-	material = null
-	. = ..()
-
 /// A sheet's composition follows its material (per sheet; multiply by the amount).
 /obj/item/stack/material/material_totals()
 	return material ? material.get_matter() : ..()
