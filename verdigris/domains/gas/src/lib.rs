@@ -28,19 +28,30 @@ use gas::{
 use reaction::react_by_id;
 use world::{with_world, MixRef};
 
-/// Applies one DM pipe-topology transaction to the pipe network and returns
-/// the regions DM must rebuild. Input is semicolon-delimited records of four
-/// comma-separated numbers, `opcode, first, second_or_mixture, volume`, with
-/// opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
-/// remove-to-mixture=7 (`RUST_PIPE_OP_*`). An upserted port's gas moves out
-/// of the mixture it names into the network; a removed port's share of its
-/// region is released into the mixture `remove-to-mixture` names.
-///
-/// Output repeats `region handle, port_count, prior_count, volume, ports...,
-/// prior region handles...`; a volume of -1 marks a region that is gone.
-#[auxmacros::bind("/proc/auxmos_pipenet_topology_batch")]
-fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
-	use pipes::op;
+/// Parses a pipe-topology transaction: either a flat list of numbers, four per
+/// operation, or the older semicolon-delimited text of comma-separated
+/// four-number records.
+fn parse_pipe_operations(operations: &ByondValue) -> Result<Vec<[f32; 4]>> {
+	if operations.is_list() {
+		let values = operations.get_list_values()?;
+		if values.len() % 4 != 0 {
+			eyre::bail!(
+				"pipenet operation list length {} is not a multiple of four",
+				values.len()
+			);
+		}
+		let mut parsed = Vec::with_capacity(values.len() / 4);
+		for (operation_index, record) in values.chunks_exact(4).enumerate() {
+			let mut n = [0.0f32; 4];
+			for (i, v) in record.iter().enumerate() {
+				n[i] = v.get_number().map_err(|error| {
+					eyre::eyre!("invalid pipenet number at operation {operation_index}: {error}")
+				})?;
+			}
+			parsed.push(n);
+		}
+		return Ok(parsed);
+	}
 	let encoded = operations.get_string()?;
 	let mut parsed = Vec::new();
 	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
@@ -58,6 +69,24 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 		}
 		parsed.push(n);
 	}
+	Ok(parsed)
+}
+
+/// Applies one DM pipe-topology transaction to the pipe network and returns
+/// the regions DM must rebuild. Input is a flat list of numbers, four per
+/// operation, `opcode, first, second_or_mixture, volume` (the older
+/// semicolon-delimited text of comma-separated records is still accepted),
+/// with opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
+/// remove-to-mixture=7 (`RUST_PIPE_OP_*`). An upserted port's gas moves out
+/// of the mixture it names into the network; a removed port's share of its
+/// region is released into the mixture `remove-to-mixture` names.
+///
+/// Output repeats `region handle, port_count, prior_count, volume, ports...,
+/// prior region handles...`; a volume of -1 marks a region that is gone.
+#[auxmacros::bind("/proc/auxmos_pipenet_topology_batch")]
+fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
+	use pipes::op;
+	let parsed = parse_pipe_operations(&operations)?;
 	let result = with_world(|w| -> Result<Vec<f32>> {
 		for [opcode, first, second, volume] in parsed {
 			let port = first as u32;

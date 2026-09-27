@@ -2,7 +2,8 @@
 	var/next_rust_pipe_port_id = 1
 	var/list/rust_pipe_ports
 	var/list/rust_pipe_region_networks
-	var/rust_pipe_pending_operations = ""
+	/// Queued topology operations, a flat list of four numbers per operation.
+	var/list/rust_pipe_pending_operations
 	/// M2 (simulation.md §5): device edges by DM id -> owning machine.
 	var/next_rust_device_id = 1
 	var/list/rust_pipe_devices
@@ -158,17 +159,21 @@
 		return
 	qdel(network)
 
-/datum/controller/subsystem/air/proc/rust_pipe_operation(opcode, first, second, volume = 0)
-	return "[opcode],[first],[second],[volume];"
+/// Appends one topology operation to `operations`, a flat list of four numbers
+/// per operation (`vg_pipenet_topology_batch`). Lists grow in amortised
+/// constant time; the old text form copied the whole transaction per append.
+#define RUST_PIPE_OP_APPEND(operations, opcode, first, second, volume) operations.Add(opcode, first, second, volume)
 
 /datum/controller/subsystem/air/proc/rust_queue_pipe_operation(opcode, first, second = 0, volume = 0)
-	rust_pipe_pending_operations += rust_pipe_operation(opcode, first, second, volume)
+	if(!rust_pipe_pending_operations)
+		rust_pipe_pending_operations = list()
+	RUST_PIPE_OP_APPEND(rust_pipe_pending_operations, opcode, first, second, volume)
 
 /datum/controller/subsystem/air/proc/rust_commit_pending_pipenets()
 	if(!length(rust_pipe_pending_operations))
 		return
-	var/operations = rust_pipe_pending_operations
-	rust_pipe_pending_operations = ""
+	var/list/operations = rust_pipe_pending_operations
+	rust_pipe_pending_operations = null
 	rust_apply_pipe_topology(operations)
 
 // ---- M2: device edges (simulation.md §5) ------------------------------
@@ -262,7 +267,7 @@
 	rust_pipe_ports = list()
 	rust_pipe_region_networks = list()
 	next_rust_pipe_port_id = 1
-	var/operations = rust_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
+	var/list/operations = list(RUST_PIPE_OP_CLEAR, 0, 0, 0)
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
@@ -270,7 +275,7 @@
 			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
 			if(!port_air)
 				continue
-			operations += rust_pipe_operation(RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
+			RUST_PIPE_OP_APPEND(operations, RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 
@@ -289,12 +294,12 @@
 				if(seen_edges[edge_key])
 					continue
 				seen_edges[edge_key] = TRUE
-				operations += rust_pipe_operation(RUST_PIPE_OP_CONNECT, first, second)
+				RUST_PIPE_OP_APPEND(operations, RUST_PIPE_OP_CONNECT, first, second, 0)
 		var/list/internal_edges = machine.rust_pipe_internal_edges()
 		for(var/edge_index = 1, edge_index < length(internal_edges), edge_index += 2)
 			var/first_index = internal_edges[edge_index]
 			var/second_index = internal_edges[edge_index + 1]
-			operations += rust_pipe_operation(RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index])
+			RUST_PIPE_OP_APPEND(operations, RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index], 0)
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 
@@ -304,7 +309,7 @@
 /// the compatibility wrappers of every region whose membership changed. Gas
 /// never passes through DM: the network pools, splits and releases it, and
 /// each region's air datum is bound to the region's gas handle.
-/datum/controller/subsystem/air/proc/rust_apply_pipe_topology(operations)
+/datum/controller/subsystem/air/proc/rust_apply_pipe_topology(list/operations)
 	var/list/result = vg_pipenet_topology_batch(operations)
 	if(!islist(result))
 		CRASH("Rust pipenet topology did not return a region list")
@@ -635,3 +640,5 @@
 		air_out = network_air
 		network2 = new_network
 	return TRUE
+
+#undef RUST_PIPE_OP_APPEND

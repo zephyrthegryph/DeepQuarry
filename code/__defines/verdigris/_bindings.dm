@@ -1315,9 +1315,10 @@
 	return call_ext(__f)(dt)
 
 /// Applies one DM pipe-topology transaction to the pipe network and returns
-/// the regions DM must rebuild. Input is semicolon-delimited records of four
-/// comma-separated numbers, `opcode, first, second_or_mixture, volume`, with
-/// opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
+/// the regions DM must rebuild. Input is a flat list of numbers, four per
+/// operation, `opcode, first, second_or_mixture, volume` (the older
+/// semicolon-delimited text of comma-separated records is still accepted),
+/// with opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
 /// remove-to-mixture=7 (`RUST_PIPE_OP_*`). An upserted port's gas moves out
 /// of the mixture it names into the network; a removed port's share of its
 /// region is released into the mixture `remove-to-mixture` names.
