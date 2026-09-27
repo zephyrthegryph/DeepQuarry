@@ -109,14 +109,11 @@
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 
+REF_OWNED(/obj/item/mapping_unit, "extras_holder")
+
+// LIFECYCLE: its map display is torn down.
 /obj/item/mapping_unit/Destroy()
-
 	last_run()
-
-	LAZYCLEARLIST(map_image_cache)
-	LAZYCLEARLIST(icon_image_cache)
-	QDEL_NULL(extras_holder)
-
 	return ..()
 
 /obj/item/mapping_unit/dropped(mob/user, equipping, slot)

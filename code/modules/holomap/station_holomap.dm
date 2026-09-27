@@ -41,11 +41,11 @@
 	if(SSholomaps.holomaps_initialized)
 		setup_holomap()
 
-/obj/machinery/station_map/Destroy()
+/// Phase 2: leaves the holomap index and stops watching.
+/obj/machinery/station_map/lifecycle_dematerialize()
+	. = ..()
 	SSholomaps.station_holomaps -= src
 	stopWatching()
-	holomap_datum = null
-	. = ..()
 
 /obj/machinery/station_map/proc/setup_holomap()
 	bogus = FALSE
@@ -218,7 +218,6 @@
 /obj/machinery/station_map/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	return FALSE
-
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"
