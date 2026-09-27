@@ -1502,6 +1502,12 @@ impl Env {
         }
     }
 
+    fn invalidate_after_checked(&mut self, expr: &Value, owner: &str, symbols: &Symbols) {
+        if contains_unproved_effect_with_vars(expr, owner, symbols, &self.facts) {
+            self.invalidate_after(expr);
+        }
+    }
+
     fn forget_after_unverified(&mut self, owner: &str) {
         self.facts.clear();
         self.fresh_collections.clear();
@@ -2559,6 +2565,16 @@ impl Checker<'_> {
                 {
                     return result;
                 }
+                if let Some(result) =
+                    self.shape_preserving_list_result(owner, name, f(expr, "Parameters"), vars)
+                {
+                    return result;
+                }
+                if let Some(result) =
+                    self.generic_collection_result(owner, name, f(expr, "Parameters"), vars)
+                {
+                    return result;
+                }
                 let signature = self.signature(owner, name);
                 if signature.is_none_or(standard_builtin_signature) {
                     if let Some(result) = self.builtin_result(expr, name, vars, owner) {
@@ -2646,6 +2662,9 @@ impl Checker<'_> {
                             vars,
                             owner,
                         )
+                        .or_else(|| {
+                            self.weakref_resolve_result(receiver, member, f(op, "Parameters"))
+                        })
                         .or_else(|| self.signature(receiver, member).map(|s| s.result.clone()))
                         .unwrap_or(Ty::Unknown)
                     } else {
@@ -2788,6 +2807,19 @@ impl Checker<'_> {
                     _ => Ty::Unknown,
                 }
             }
+            "DMASTMask" => {
+                let left = self.expression(f(expr, "LHS"), vars, owner);
+                let right = self.expression(f(expr, "RHS"), vars, owner);
+                match (&left, &right) {
+                    (a, b) if numeric_operand(a) && numeric_operand(b) => Ty::Num,
+                    (Ty::Num, b) if b.has_unknown() => Ty::Num,
+                    // List intersection can only retain elements from its
+                    // left operand; the right operand cannot add a new type.
+                    (Ty::List(_), _) => left,
+                    (Ty::EmptyList, _) => Ty::EmptyList,
+                    _ => Ty::Unknown,
+                }
+            }
             "DMASTCombine" => {
                 let left = self.expression(f(expr, "LHS"), vars, owner);
                 let right = self.expression(f(expr, "RHS"), vars, owner);
@@ -2820,8 +2852,14 @@ impl Checker<'_> {
                 let b = self.expression(f(expr, "RHS"), vars, owner);
                 if numeric_operand(&a) && numeric_operand(&b) {
                     Ty::Num
-                } else if matches!(kind(expr), "DMASTBinaryOr" | "DMASTBinaryAnd" | "DMASTBinaryXor")
-                    && a == Ty::Num && b.has_unknown()
+                } else if kind(expr) == "DMASTBinaryAnd" && matches!(a, Ty::List(_) | Ty::EmptyList)
+                {
+                    a
+                } else if matches!(
+                    kind(expr),
+                    "DMASTBinaryOr" | "DMASTBinaryAnd" | "DMASTBinaryXor"
+                ) && a == Ty::Num
+                    && b.has_unknown()
                 {
                     // List and icon variants of these bitwise operators need
                     // a list or icon on the left. With a proved numeric left
@@ -3009,6 +3047,16 @@ impl Checker<'_> {
                 match (&values[0], &values[1], &values[2]) {
                     (Ty::Num | Ty::Null, Ty::Num, Ty::Num) => Ty::Num,
                     (Ty::Nullable(inner), Ty::Num, Ty::Num) if **inner == Ty::Num => Ty::Num,
+                    (Ty::Num, low, high)
+                        if [low, high]
+                            .iter()
+                            .all(|bound| **bound == Ty::Num || bound.has_unknown()) =>
+                    {
+                        // A numeric input can only produce a numeric clamped
+                        // value on a successful call. Unknown bounds still
+                        // need separate operand diagnostics.
+                        Ty::Num
+                    }
                     (Ty::Text, Ty::Text, Ty::Text) => Ty::Text,
                     (Ty::Path(value), Ty::Path(low), Ty::Path(high))
                         if value == low
@@ -3077,6 +3125,19 @@ impl Checker<'_> {
                 }
                 _ => Ty::Unknown,
             });
+        }
+        if values.len() >= 2 && values.iter().any(|value| value.has_unknown()) {
+            for exemplar in [Ty::Num, Ty::Text] {
+                if values.contains(&exemplar)
+                    && values.iter().all(|value| {
+                        *value == exemplar || *value == Ty::Null || value.has_unknown()
+                    })
+                {
+                    // DM rejects mixed max/min comparison families. Unknown
+                    // arguments can be null, so preserve that outcome.
+                    return Some(Ty::Nullable(Box::new(exemplar)));
+                }
+            }
         }
         Some(
             if values.len() >= 2 && values.iter().all(|value| *value == Ty::Num) {
@@ -3185,6 +3246,24 @@ impl Checker<'_> {
         None
     }
 
+    fn weakref_resolve_result(
+        &self,
+        receiver: &str,
+        member: &str,
+        parameters: &Value,
+    ) -> Option<Ty> {
+        if member != "resolve"
+            || !self.symbols.is_subtype(receiver, "/datum/weakref")
+            || self.signature_key(receiver, member)? != ("/datum/weakref".into(), "resolve".into())
+            || !parameters.as_array()?.is_empty()
+        {
+            return None;
+        }
+        // resolve() returns either the located datum or null when it was
+        // deleted. A subtype override is excluded by signature_key above.
+        Some(Ty::Nullable(Box::new(Ty::Path("/datum".into()))))
+    }
+
     fn tgui_input_list_result(
         &self,
         owner: &str,
@@ -3268,7 +3347,30 @@ impl Checker<'_> {
             key.is_null()
                 || (kind(key) == "DMASTConstantString" && f(key, "Value").as_str() == Some("ls"))
         })?;
-        let element = match self.expression(f(first, "Value"), vars, owner).nonnull() {
+        let input = f(first, "Value");
+        let literal_items = match kind(input) {
+            "DMASTList" => f(input, "Values").as_array(),
+            "DMASTNewList" => f(input, "Parameters").as_array(),
+            _ => None,
+        };
+        if let Some(items) = literal_items {
+            // A list constructor has a fixed length at this call site. The
+            // helper returns its sole element unchanged, but formats every
+            // other length as text. Associated entries occupy one key slot.
+            return match items.as_slice() {
+                [] => Some(Ty::Text),
+                [item] => {
+                    let value = if f(item, "Key").is_null() {
+                        f(item, "Value")
+                    } else {
+                        f(item, "Key")
+                    };
+                    Some(self.expression(value, vars, owner))
+                }
+                _ => Some(Ty::Text),
+            };
+        }
+        let element = match self.expression(input, vars, owner).nonnull() {
             Ty::EmptyList | Ty::Record(_) => return Some(Ty::Text),
             Ty::List(element) | Ty::Assoc(element, _) | Ty::Alist(element, _) => *element,
             _ => return None,
@@ -3278,10 +3380,140 @@ impl Checker<'_> {
         match element {
             Ty::Text => Some(Ty::Text),
             Ty::Nullable(inner) if *inner == Ty::Text => Some(Ty::Nullable(Box::new(Ty::Text))),
-            other if other.is_precise() && !other.may_be_null() =>
-                Some(join_value_flow(&Ty::Text, &other, self.symbols)),
+            other if other.is_precise() && !other.may_be_null() => {
+                Some(join_value_flow(&Ty::Text, &other, self.symbols))
+            }
             _ => None,
         }
+    }
+
+    fn shape_preserving_list_result(
+        &self,
+        owner: &str,
+        name: &str,
+        parameters: &Value,
+        vars: &HashMap<String, Ty>,
+    ) -> Option<Ty> {
+        // These repository helpers return their input list after sorting it
+        // in place (sortTim) or a Copy() of it (sortList). Neither adds list
+        // elements, so a proved element shape survives the call.
+        if !matches!(name, "sortTim" | "sortList")
+            || self.signature_key(owner, name)? != ("/".into(), name.into())
+        {
+            return None;
+        }
+        let first = parameters.as_array()?.first()?;
+        let key = f(first, "Key");
+        let expected = if name == "sortTim" { "to_sort" } else { "L" };
+        if !(key.is_null()
+            || (kind(key) == "DMASTConstantString" && f(key, "Value").as_str() == Some(expected)))
+        {
+            return None;
+        }
+        let ty = self.expression(f(first, "Value"), vars, owner).nonnull();
+        (ty.is_precise() && matches!(ty, Ty::List(_) | Ty::Assoc(_, _) | Ty::Alist(_, _)))
+            .then_some(ty)
+    }
+
+    fn generic_collection_result(
+        &self,
+        owner: &str,
+        name: &str,
+        arguments: &Value,
+        vars: &HashMap<String, Ty>,
+    ) -> Option<Ty> {
+        // Infer a small element variable from the *body*, not a helper name:
+        // a one-statement proc that returns a list parameter (or its built-in
+        // Copy()) transports that parameter's element type to the result.
+        // The one-statement requirement excludes writes that could replace an
+        // element with a different type before returning the list.
+        let key = self.signature_key(owner, name)?;
+        let versions = self.proc_versions.get(&key)?;
+        let [signature] = versions.as_slice() else {
+            return None;
+        };
+        if signature.result_required || signature.parameters.len() != 1 {
+            return None;
+        }
+        if key.0 != "/"
+            && self.procs.keys().any(|(candidate_owner, candidate_name)| {
+                candidate_name == name
+                    && candidate_owner != &key.0
+                    && self.symbols.is_subtype(candidate_owner, &key.0)
+            })
+        {
+            // A dynamically dispatched override may have a different body.
+            return None;
+        }
+        let [(_, body)] = self.return_bodies.get(&key)?.as_slice() else {
+            return None;
+        };
+        let [statement] = simple_statements(body)?.as_slice() else {
+            return None;
+        };
+        if kind(statement) != "DMASTProcStatementReturn" {
+            return None;
+        }
+        let returned = f(statement, "Value");
+        let (parameter_name, copied) = if kind(returned) == "DMASTIdentifier" {
+            (f(returned, "Identifier").as_str()?, false)
+        } else if kind(returned) == "DMASTDereference" {
+            let [operation] = f(returned, "Operations").as_array()?.as_slice() else {
+                return None;
+            };
+            if kind(operation) != "CallOperation"
+                || f(operation, "Identifier").as_str() != Some("Copy")
+                || f(operation, "Safe").as_bool() == Some(true)
+                || !f(operation, "Parameters").as_array()?.is_empty()
+            {
+                return None;
+            }
+            let input = f(returned, "Expression");
+            if kind(input) != "DMASTIdentifier" {
+                return None;
+            }
+            (f(input, "Identifier").as_str()?, true)
+        } else {
+            return None;
+        };
+        let index = signature
+            .parameters
+            .iter()
+            .position(|parameter| parameter.name == parameter_name)?;
+        let parameter = &signature.parameters[index];
+        if !matches!(
+            parameter.ty.nonnull(),
+            Ty::List(_) | Ty::Assoc(_, _) | Ty::Alist(_, _)
+        ) {
+            return None;
+        }
+        let supplied = arguments.as_array()?;
+        if supplied.len() != 1 {
+            // Another argument could mutate an aliased list while arguments
+            // are being evaluated, before this helper returns it.
+            return None;
+        }
+        let mut positional = 0;
+        let actual = supplied.iter().find_map(|argument| {
+            let argument_name = f(argument, "Key");
+            let matches = if argument_name.is_null() {
+                let matches = positional == index;
+                positional += 1;
+                matches
+            } else {
+                kind(argument_name) == "DMASTConstantString"
+                    && f(argument_name, "Value").as_str() == Some(parameter_name)
+            };
+            matches.then_some(f(argument, "Value"))
+        })?;
+        let ty = self.expression(actual, vars, owner);
+        let ty = if copied { ty.nonnull() } else { ty };
+        (ty.is_precise()
+            && matches!(
+                ty.nonnull(),
+                Ty::List(_) | Ty::Assoc(_, _) | Ty::Alist(_, _)
+            ))
+        .then_some(ty)
     }
 
     fn inherit_override_parameter_types(&mut self) -> bool {
@@ -3443,7 +3675,13 @@ impl Checker<'_> {
             for key in targets {
                 self.record_arguments(&key, f(node, "ProcParameters"), owner, vars);
             }
-        } else if kind(node) == "DMASTDereference" {
+        } else if kind(node) == "DMASTDereference"
+            && f(node, "Operations").as_array().is_some_and(|operations| {
+                operations
+                    .iter()
+                    .any(|operation| kind(operation) == "CallOperation")
+            })
+        {
             let mut receiver = self.expression(f(node, "Expression"), vars, owner);
             for op in f(node, "Operations").as_array().into_iter().flatten() {
                 let member = f(op, "Identifier").as_str().unwrap_or("");
@@ -4531,8 +4769,10 @@ impl Checker<'_> {
         vars: &HashMap<String, Ty>,
         owner: &str,
     ) -> bool {
-        if !matches!(self.fields[field_key].evidence, Ty::EmptyList | Ty::List(_) | Ty::Assoc(_, _))
-            || contains_unknown_effect(rhs)
+        if !matches!(
+            self.fields[field_key].evidence,
+            Ty::EmptyList | Ty::List(_) | Ty::Assoc(_, _)
+        ) || contains_unknown_effect(rhs)
         {
             return false;
         }
@@ -4557,9 +4797,9 @@ impl Checker<'_> {
             return Some((false, zero));
         }
         match kind(expr) {
-            "DMASTExpressionWrapped" => self.numeric_index_component(
-                f(expr, "Value"), field_key, vars, owner,
-            ),
+            "DMASTExpressionWrapped" => {
+                self.numeric_index_component(f(expr, "Value"), field_key, vars, owner)
+            }
             "DMASTAdd" | "DMASTOr" => {
                 let left = self.numeric_index_component(f(expr, "LHS"), field_key, vars, owner)?;
                 let right = self.numeric_index_component(f(expr, "RHS"), field_key, vars, owner)?;
@@ -5092,20 +5332,15 @@ impl Checker<'_> {
         // Call-site evidence is a useful storage-type hypothesis, but DM
         // procedures are open to dynamic calls. Keep that boundary visible in
         // strict diagnostics instead of claiming the parameter is proved.
-        let evidence: Vec<_> = self
-            .param_evidence
-            .iter()
-            .map(|(key, value)| (key.clone(), value.clone()))
-            .collect();
         let mut changed = false;
-        for ((owner, name, index), observed) in evidence {
-            let key = (owner, name);
+        for ((owner, name, index), observed) in &self.param_evidence {
+            let key = (owner.clone(), name.clone());
             let Some(versions) = self.proc_versions.get(&key) else {
                 continue;
             };
             let Some(last) = versions
                 .last()
-                .and_then(|version| version.parameters.get(index))
+                .and_then(|version| version.parameters.get(*index))
             else {
                 continue;
             };
@@ -5114,7 +5349,7 @@ impl Checker<'_> {
             // storage type when their positional parameters and defaults are
             // compatible with that effective definition.
             let aligned = versions.iter().all(|version| {
-                version.parameters.get(index).is_some_and(|parameter| {
+                version.parameters.get(*index).is_some_and(|parameter| {
                     parameter.name == last.name
                         && (parameter.ty == Ty::Unknown || parameter.ty == last.ty)
                 })
@@ -5128,7 +5363,7 @@ impl Checker<'_> {
                 Ty::Unknown
             };
             for version in versions {
-                let param = &version.parameters[index];
+                let param = &version.parameters[*index];
                 if param.has_default {
                     if !param.default_ty.is_precise() || param.default_ty.may_be_null() {
                         candidate = Ty::Unknown;
@@ -5160,7 +5395,7 @@ impl Checker<'_> {
                 continue;
             };
             for version in versions.iter_mut() {
-                let param = &mut version.parameters[index];
+                let param = &mut version.parameters[*index];
                 if param.ty == Ty::Unknown {
                     param.ty = candidate.clone();
                     param.inferred_from_calls = true;
@@ -5493,7 +5728,7 @@ impl Checker<'_> {
         let Some([operation]) = f(lhs, "Operations").as_array().map(Vec::as_slice) else {
             return Ty::Unknown;
         };
-        if kind(operation) != "IndexOperation" || !value.is_precise() || value.may_be_null() {
+        if kind(operation) != "IndexOperation" {
             return Ty::Unknown;
         }
         let index = f(operation, "Index");
@@ -5504,27 +5739,38 @@ impl Checker<'_> {
                     let Some(name) = f(index, "Value").as_str() else {
                         return Ty::Unknown;
                     };
-                    Ty::Record(BTreeMap::from([(name.into(), (value.clone(), false))]))
-                } else {
+                    Ty::Record(BTreeMap::from([(
+                        name.into(),
+                        (value.clone(), value.may_be_null()),
+                    )]))
+                } else if value.is_precise() && !value.may_be_null() {
                     Ty::Assoc(Box::new(Ty::Text), Box::new(value.clone()))
+                } else {
+                    Ty::Unknown
                 }
             }
-            (Ty::EmptyList, Ty::Num) => Ty::List(Box::new(value.clone())),
+            (Ty::EmptyList, Ty::Num) if value.is_precise() && !value.may_be_null() => {
+                Ty::List(Box::new(value.clone()))
+            }
             (Ty::Record(fields), Ty::Text) if kind(index) == "DMASTConstantString" => {
                 let Some(name) = f(index, "Value").as_str() else {
                     return Ty::Unknown;
                 };
                 let mut fields = fields.clone();
-                fields.insert(name.into(), (value.clone(), false));
+                fields.insert(name.into(), (value.clone(), value.may_be_null()));
                 Ty::Record(fields)
             }
-            (Ty::Assoc(existing_key, existing_value), Ty::Text) if **existing_key == Ty::Text => {
+            (Ty::Assoc(existing_key, existing_value), Ty::Text)
+                if **existing_key == Ty::Text && value.is_precise() && !value.may_be_null() =>
+            {
                 Ty::Assoc(
                     existing_key.clone(),
                     Box::new(existing_value.join(value, self.symbols)),
                 )
             }
-            (Ty::List(existing), Ty::Num) => Ty::List(Box::new(existing.join(value, self.symbols))),
+            (Ty::List(existing), Ty::Num) if value.is_precise() && !value.may_be_null() => {
+                Ty::List(Box::new(existing.join(value, self.symbols)))
+            }
             _ => Ty::Unknown,
         }
     }
@@ -5574,6 +5820,7 @@ impl Checker<'_> {
                         vars.insert(name, Ty::Unknown);
                     }
                     let native = declared(f(statement, "Type"), f(statement, "ValueType"));
+                    let literal_record = self.literal_record_fact(initial, vars, owner);
                     let inferred = if initial.is_null() {
                         if f(statement, "IsGlobal").as_bool() == Some(true) && native != Ty::Unknown
                         {
@@ -5582,7 +5829,9 @@ impl Checker<'_> {
                             Ty::Null
                         }
                     } else {
-                        self.expression(initial, vars, owner)
+                        literal_record
+                            .clone()
+                            .unwrap_or_else(|| self.expression(initial, vars, owner))
                     };
                     let inferred =
                         if kind(initial) == "DMASTNewInferred" && matches!(native, Ty::Path(_)) {
@@ -5590,8 +5839,9 @@ impl Checker<'_> {
                         } else {
                             inferred
                         };
+                    let fresh = empty_list_literal(initial) || literal_record.is_some();
                     vars.insert(local.into(), inferred);
-                    if empty_list_literal(initial) {
+                    if fresh {
                         fresh_locals.insert(local.into());
                     } else {
                         fresh_locals.remove(local);
@@ -5635,12 +5885,15 @@ impl Checker<'_> {
                             } else {
                                 Ty::Unknown
                             };
-                            *fresh_result &=
-                                result_slot.is_precise() || matches!(result_slot, Ty::EmptyList);
+                            *fresh_result &= result_slot.is_precise()
+                                || matches!(result_slot, Ty::EmptyList | Ty::Record(_));
                         } else if kind(lhs) == "DMASTIdentifier" {
                             if let Some(local) = f(lhs, "Identifier").as_str() {
+                                let literal_record = self.literal_record_fact(rhs, vars, owner);
+                                let fresh = empty_list_literal(rhs) || literal_record.is_some();
+                                let ty = literal_record.unwrap_or(ty);
                                 vars.insert(local.into(), ty);
-                                if empty_list_literal(rhs) {
+                                if fresh {
                                     fresh_locals.insert(local.into());
                                 } else {
                                     fresh_locals.remove(local);
@@ -6431,7 +6684,10 @@ impl Checker<'_> {
             let operand = self.expression(f(expr, "Value"), vars, owner);
             self.assignment(expr, &Ty::Num, &operand, "numeric operator operand");
         }
-        if matches!(kind(expr), "DMASTBinaryOr" | "DMASTBinaryAnd" | "DMASTBinaryXor" | "DMASTCombine") {
+        if matches!(
+            kind(expr),
+            "DMASTBinaryOr" | "DMASTBinaryAnd" | "DMASTBinaryXor" | "DMASTCombine" | "DMASTMask"
+        ) {
             let left = self.expression(f(expr, "LHS"), vars, owner);
             let right = self.expression(f(expr, "RHS"), vars, owner);
             if left == Ty::Num && !numeric_operand(&right) {
@@ -7161,7 +7417,18 @@ impl Checker<'_> {
                 let record_aliases = env.record_references(initializer);
                 env.escape_fresh_references(initializer);
                 self.inspect_contextual_new(initializer, owner, env, &native);
-                env.invalidate_after(initializer);
+                let fresh_constructor = kind(initializer) == "DMASTNewInferred"
+                    && matches!(&native, Ty::Path(path) if self.symbols.fresh_constructor_preserves_existing(path))
+                    && f(initializer, "Parameters")
+                        .as_array()
+                        .is_some_and(|parameters| {
+                            parameters
+                                .iter()
+                                .all(|parameter| !contains_unknown_effect(parameter))
+                        });
+                if !fresh_constructor {
+                    env.invalidate_after_checked(initializer, owner, self.symbols);
+                }
                 env.invalidate_record_aliases(initializer, &record_aliases);
                 invalidate_result_after(initializer, &mut env.result_fact);
                 let hint = self.current_proc.as_deref().and_then(|proc_name| {
@@ -7277,7 +7544,7 @@ impl Checker<'_> {
                     let record_fact = self.literal_record_fact(rhs, &env.facts, owner);
                     let record_aliases = env.record_references(rhs);
                     env.escape_fresh_references(rhs);
-                    env.invalidate_after(rhs);
+                    env.invalidate_after_checked(rhs, owner, self.symbols);
                     env.invalidate_record_aliases(rhs, &record_aliases);
                     let actual = if record_aliases.is_empty() {
                         actual
@@ -7372,6 +7639,9 @@ impl Checker<'_> {
                                             .then(|| f(index_expr, "Value").as_str())
                                             .flatten();
                                         if let Some(key) = key {
+                                            // A value of unknown type spoils only this
+                                            // named entry. Other constant-key entries of a
+                                            // fresh, unescaped record retain their proofs.
                                             fields.insert(key.into(), (actual.clone(), false));
                                             let fact = Ty::Record(fields);
                                             env.record_fact_origin(&base_name, &fact, expr);
@@ -7430,7 +7700,20 @@ impl Checker<'_> {
                             let mut invalidate_shape = false;
                             match &receiver {
                                 Ty::EmptyList => {
-                                    let shape = match (&key, &actual) {
+                                    let index = f(op, "Index");
+                                    let shape = if kind(index) == "DMASTConstantString"
+                                        && actual.is_precise()
+                                    {
+                                        f(index, "Value").as_str().map(|name| {
+                                            Ty::Record(BTreeMap::from([(
+                                                name.into(),
+                                                (actual.clone(), actual.may_be_null()),
+                                            )]))
+                                        })
+                                    } else {
+                                        None
+                                    };
+                                    let shape = shape.or_else(|| match (&key, &actual) {
                                         (Ty::Num, value)
                                             if value.is_precise() && !value.may_be_null() =>
                                         {
@@ -7455,7 +7738,7 @@ impl Checker<'_> {
                                             ))
                                         }
                                         _ => None,
-                                    };
+                                    });
                                     if let (Some(local), Some(shape)) = (
                                         local
                                             .as_ref()
@@ -7651,7 +7934,7 @@ impl Checker<'_> {
                     }
                     self.inspect_expr(expr, owner, env);
                     if !proved_scalar_append {
-                        env.invalidate_after(expr);
+                        env.invalidate_after_checked(expr, owner, self.symbols);
                         invalidate_result_after(expr, &mut env.result_fact);
                         if let Some((name, ty)) = proved_local_list_append {
                             env.facts.insert(name, ty);
@@ -7676,7 +7959,7 @@ impl Checker<'_> {
             "DMASTProcStatementIf" => {
                 let condition = f(node, "Condition");
                 self.inspect_condition(condition, owner, env);
-                env.invalidate_after(condition);
+                env.invalidate_after_checked(condition, owner, self.symbols);
                 invalidate_result_after(condition, &mut env.result_fact);
                 let stable_condition = !contains_unknown_effect(condition);
                 if stable_condition {
@@ -7746,7 +8029,7 @@ impl Checker<'_> {
             "DMASTProcStatementSwitch" => {
                 let value = f(node, "Value");
                 self.inspect_expr(value, owner, env);
-                env.invalidate_after(value);
+                env.invalidate_after_checked(value, owner, self.symbols);
                 invalidate_result_after(value, &mut env.result_fact);
                 let Some(cases) = f(node, "Cases").as_array() else {
                     if self.strict(node) {
@@ -7777,7 +8060,7 @@ impl Checker<'_> {
                     }
                     for choice in f(case, "Values").as_array().into_iter().flatten() {
                         self.inspect_expr(choice, owner, env);
-                        env.invalidate_after(choice);
+                        env.invalidate_after_checked(choice, owner, self.symbols);
                         invalidate_result_after(choice, &mut env.result_fact);
                     }
                 }
@@ -7822,7 +8105,7 @@ impl Checker<'_> {
                 let condition = f(node, "Conditional");
                 if kind(node) == "DMASTProcStatementWhile" && !condition.is_null() {
                     self.inspect_condition(condition, owner, env);
-                    env.invalidate_after(condition);
+                    env.invalidate_after_checked(condition, owner, self.symbols);
                     invalidate_result_after(condition, &mut env.result_fact);
                     body.invalidate_after(condition);
                     invalidate_result_after(condition, &mut body.result_fact);
@@ -7842,7 +8125,7 @@ impl Checker<'_> {
                             "loop source has no proven iterable type".into(),
                         ));
                     }
-                    env.invalidate_after(collection_expr);
+                    env.invalidate_after_checked(collection_expr, owner, self.symbols);
                     invalidate_result_after(collection_expr, &mut env.result_fact);
                     body.invalidate_after(collection_expr);
                     invalidate_result_after(collection_expr, &mut body.result_fact);
@@ -7904,7 +8187,7 @@ impl Checker<'_> {
                         let bound = f(iterator, part);
                         if !bound.is_null() {
                             self.inspect_expr(bound, owner, env);
-                            env.invalidate_after(bound);
+                            env.invalidate_after_checked(bound, owner, self.symbols);
                             invalidate_result_after(bound, &mut env.result_fact);
                             body.invalidate_after(bound);
                             invalidate_result_after(bound, &mut body.result_fact);
@@ -7937,7 +8220,7 @@ impl Checker<'_> {
                         let expression = f(node, header);
                         if !expression.is_null() {
                             self.inspect_expr(expression, owner, env);
-                            env.invalidate_after(expression);
+                            env.invalidate_after_checked(expression, owner, self.symbols);
                             invalidate_result_after(expression, &mut env.result_fact);
                         }
                     }
@@ -8075,7 +8358,7 @@ impl Checker<'_> {
             }
             "DMASTProcStatementSet" => {
                 self.inspect_expr(node, owner, env);
-                env.invalidate_after(node);
+                env.invalidate_after_checked(node, owner, self.symbols);
                 invalidate_result_after(node, &mut env.result_fact);
                 false
             }
@@ -8458,65 +8741,68 @@ fn join_value_flow(left: &Ty, right: &Ty, symbols: &Symbols) -> Ty {
     with_nullable(joined, nullable)
 }
 
+fn known_pure_proc_call(node: &Value) -> bool {
+    let name = f(f(node, "Callable"), "Identifier").as_str().unwrap_or("");
+    if matches!(
+        name,
+        "isnull"
+            | "QDELETED"
+            | "islist"
+            | "isnum"
+            | "istext"
+            | "isarea"
+            | "ismob"
+            | "isobj"
+            | "isturf"
+            | "ismovable"
+    ) && !checked_unary_builtin(node)
+    {
+        return false;
+    }
+    if name == "ispath" && !checked_ispath_builtin(node) {
+        return false;
+    }
+    if name == "text2path" && !checked_unary_builtin(node) {
+        return false;
+    }
+    [
+        "isnull",
+        "istype",
+        "ispath",
+        "islist",
+        "isnum",
+        "istext",
+        "isarea",
+        "ismob",
+        "isobj",
+        "isturf",
+        "ismovable",
+        "text2path",
+        "QDELETED",
+        "length",
+        "min",
+        "max",
+        "round",
+        "lowertext",
+        "view",
+        "oview",
+        "range",
+        "orange",
+        "viewers",
+        "oviewers",
+        "hearers",
+        "ohearers",
+    ]
+    .contains(&name)
+}
+
 fn contains_unknown_effect(node: &Value) -> bool {
     match kind(node) {
         "DMASTCall" | "DMASTNewPath" | "DMASTNewExpr" | "DMASTNewInferred" | "DMASTAppend" => {
             return true
         }
         "DMASTProcCall" => {
-            let name = f(f(node, "Callable"), "Identifier").as_str().unwrap_or("");
-            if matches!(
-                name,
-                "isnull"
-                    | "QDELETED"
-                    | "islist"
-                    | "isnum"
-                    | "istext"
-                    | "isarea"
-                    | "ismob"
-                    | "isobj"
-                    | "isturf"
-                    | "ismovable"
-            ) && !checked_unary_builtin(node)
-            {
-                return true;
-            }
-            if name == "ispath" && !checked_ispath_builtin(node) {
-                return true;
-            }
-            if name == "text2path" && !checked_unary_builtin(node) {
-                return true;
-            }
-            if ![
-                "isnull",
-                "istype",
-                "ispath",
-                "islist",
-                "isnum",
-                "istext",
-                "isarea",
-                "ismob",
-                "isobj",
-                "isturf",
-                "ismovable",
-                "text2path",
-                "QDELETED",
-                "length",
-                "min",
-                "max",
-                "round",
-                "lowertext",
-                "view",
-                "oview",
-                "range",
-                "orange",
-                "viewers",
-                "oviewers",
-                "hearers",
-                "ohearers",
-            ]
-            .contains(&name)
-            {
+            if !known_pure_proc_call(node) {
                 return true;
             }
         }
@@ -8535,6 +8821,106 @@ fn contains_unknown_effect(node: &Value) -> bool {
                 items.iter().any(contains_unknown_effect)
             } else if child.is_object() {
                 contains_unknown_effect(child)
+            } else {
+                false
+            }
+        })
+    })
+}
+
+#[cfg(test)]
+fn contains_unproved_effect(node: &Value, owner: &str, symbols: &Symbols) -> bool {
+    contains_unproved_effect_with_vars(node, owner, symbols, &HashMap::new())
+}
+
+fn contains_unproved_effect_with_vars(
+    node: &Value,
+    owner: &str,
+    symbols: &Symbols,
+    vars: &HashMap<String, Ty>,
+) -> bool {
+    match kind(node) {
+        "DMASTProcCall" => {
+            let callable = f(node, "Callable");
+            let name = f(callable, "Identifier").as_str().unwrap_or("");
+            if !known_pure_proc_call(node)
+                && (kind(callable) != "DMASTCallableProcIdentifier"
+                    || !symbols.effect_free_global_call(owner, name))
+            {
+                return true;
+            }
+        }
+        "DMASTCall" | "DMASTNewPath" | "DMASTNewExpr" | "DMASTNewInferred" | "DMASTAppend" => {
+            return true
+        }
+        "DMASTDereference"
+            if f(node, "Operations")
+                .as_array()
+                .is_some_and(|ops| ops.iter().any(|op| kind(op) == "CallOperation")) =>
+        {
+            let base = f(node, "Expression");
+            let Some(operations) = f(node, "Operations").as_array() else {
+                return true;
+            };
+            if operations.len() != 1 || kind(&operations[0]) != "CallOperation" {
+                return true;
+            }
+            let method = f(&operations[0], "Identifier").as_str().unwrap_or("");
+            if kind(base) == "DMASTNewPath" {
+                let path = f(f(f(base, "Path"), "Value"), "Path")
+                    .as_str()
+                    .unwrap_or("");
+                if !symbols.fresh_constructor_preserves_existing(path)
+                    || !symbols.fresh_method_preserves_existing(path, method)
+                {
+                    return true;
+                }
+                return [f(base, "Parameters"), f(&operations[0], "Parameters")]
+                    .into_iter()
+                    .any(|parameters| {
+                        parameters.as_array().is_none_or(|parameters| {
+                            parameters.iter().any(|parameter| {
+                                contains_unproved_effect_with_vars(parameter, owner, symbols, vars)
+                            })
+                        })
+                    });
+            }
+            let receiver = if kind(base) == "DMASTIdentifier" {
+                f(base, "Identifier")
+                    .as_str()
+                    .and_then(|name| vars.get(name))
+            } else {
+                None
+            };
+            let proven = match receiver {
+                Some(Ty::Path(path)) => symbols.effect_free_dispatch(path, method),
+                Some(Ty::Nullable(inner)) => match inner.as_ref() {
+                    Ty::Path(path) => symbols.effect_free_dispatch(path, method),
+                    _ => false,
+                },
+                _ => false,
+            };
+            if !proven {
+                return true;
+            }
+            return f(&operations[0], "Parameters")
+                .as_array()
+                .is_none_or(|parameters| {
+                    parameters.iter().any(|parameter| {
+                        contains_unproved_effect_with_vars(parameter, owner, symbols, vars)
+                    })
+                });
+        }
+        _ => {}
+    }
+    node["fields"].as_object().is_some_and(|fields| {
+        fields.values().any(|child| {
+            if let Some(items) = child.as_array() {
+                items
+                    .iter()
+                    .any(|item| contains_unproved_effect_with_vars(item, owner, symbols, vars))
+            } else if child.is_object() {
+                contains_unproved_effect_with_vars(child, owner, symbols, vars)
             } else {
                 false
             }
@@ -9042,9 +9428,15 @@ fn inference_state(checker: &Checker<'_>) -> Vec<(String, Ty)> {
     }
     for ((owner, name), versions) in &checker.proc_versions {
         for (version, signature) in versions.iter().enumerate() {
-            state.push((format!("return:{owner}:{name}:{version}"), signature.result.clone()));
+            state.push((
+                format!("return:{owner}:{name}:{version}"),
+                signature.result.clone(),
+            ));
             for (index, parameter) in signature.parameters.iter().enumerate() {
-                state.push((format!("parameter:{owner}:{name}:{version}:{index}"), parameter.ty.clone()));
+                state.push((
+                    format!("parameter:{owner}:{name}:{version}:{index}"),
+                    parameter.ty.clone(),
+                ));
             }
         }
     }
@@ -9070,7 +9462,10 @@ fn widen_oscillating_fields(
             let mut finding = issue(
                 &field.origin,
                 "cyclic-field-inference",
-                format!("{}.{} changes type on alternating inference passes; its type remains unknown", key.0, key.1),
+                format!(
+                    "{}.{} changes type on alternating inference passes; its type remains unknown",
+                    key.0, key.1
+                ),
             );
             finding.severity = "warning";
             findings.push(finding);
@@ -9263,9 +9658,14 @@ pub fn analyze_with_cache<R: BufRead, S: BufRead + Seek, T: BufRead>(
         .collect();
     let phase = Instant::now();
     refresh_evidence(&mut checker, &mut second, &field_seeds)?;
-    evidence_time += phase.elapsed();
+    let initial_refresh_time = phase.elapsed();
+    evidence_time += initial_refresh_time;
     evidence_passes += 1;
+    let initial_field_started = Instant::now();
     let mut fields_changed = checker.infer_field_types();
+    if profile {
+        eprintln!("dm-health inference seed: registration={registration_time:?} initial_evidence={initial_refresh_time:?} initial_field_inference={:?}", initial_field_started.elapsed());
+    }
     // Re-evaluate call arguments after newly inferred parameter types become
     // available to their callers. The stream is seekable, so this does not
     // retain the full OpenDream AST in memory on large repositories.
@@ -9275,7 +9675,16 @@ pub fn analyze_with_cache<R: BufRead, S: BufRead + Seek, T: BufRead>(
     let mut prior_field_types: Option<HashMap<(String, String), Ty>> = None;
     let mut cyclic_fields = HashSet::new();
     for round in 0..8 {
+        let state_started = Instant::now();
         let state_before = inference_state(&checker);
+        if profile {
+            eprintln!(
+                "dm-health inference round {}: snapshot={:?} entries={}",
+                round + 1,
+                state_started.elapsed(),
+                state_before.len()
+            );
+        }
         if seen_inference_states.contains(&state_before) {
             inference_cycle = true;
             checker.findings.push(Finding {
@@ -9283,38 +9692,68 @@ pub fn analyze_with_cache<R: BufRead, S: BufRead + Seek, T: BufRead>(
                 path: "<ast>".into(),
                 line: 1,
                 severity: "error",
-                message: format!("parameter, return, and field inference repeated a prior state in round {}", round + 1),
+                message: format!(
+                    "parameter, return, and field inference repeated a prior state in round {}",
+                    round + 1
+                ),
             });
             break;
         }
         seen_inference_states.push(state_before);
         let phase = Instant::now();
-        let parameters_changed =
-            checker.infer_parameters() | checker.inherit_override_parameter_types();
+        let direct_parameters_changed = checker.infer_parameters();
+        let direct_parameter_time = phase.elapsed();
+        let inherited_parameters_changed = checker.inherit_override_parameter_types();
+        let parameters_changed = direct_parameters_changed | inherited_parameters_changed;
         parameter_time += phase.elapsed();
+        if profile {
+            eprintln!(
+                "dm-health inference round {}: direct_parameters={:?} inherited_parameters={:?}",
+                round + 1,
+                direct_parameter_time,
+                phase.elapsed() - direct_parameter_time
+            );
+        }
+        let return_snapshot_started = Instant::now();
         let returns_before: HashMap<_, _> = checker
             .procs
             .iter()
             .map(|(key, signature)| (key.clone(), signature.result.clone()))
             .collect();
+        if profile {
+            eprintln!(
+                "dm-health inference round {}: return_snapshot={:?}",
+                round + 1,
+                return_snapshot_started.elapsed()
+            );
+        }
         let phase = Instant::now();
+        if profile {
+            eprintln!(
+                "dm-health inference round {}: entering return inference",
+                round + 1
+            );
+        }
         checker.infer_returns();
         return_time += phase.elapsed();
-        let returns_changed = checker.procs.iter().any(|(key, signature)| {
-            returns_before.get(key) != Some(&signature.result)
-        });
+        let returns_changed = checker
+            .procs
+            .iter()
+            .any(|(key, signature)| returns_before.get(key) != Some(&signature.result));
         if profile {
             let field_state = |owner: &str, name: &str| {
                 checker
                     .fields
                     .get(&(owner.into(), name.into()))
-                    .map(|field| format!(
-                        "type:{} evidence:{} unknown_write:{} conflict:{}",
-                        field.ty.label(),
-                        field.evidence.label(),
-                        field.saw_unknown_write,
-                        field.conflict,
-                    ))
+                    .map(|field| {
+                        format!(
+                            "type:{} evidence:{} unknown_write:{} conflict:{}",
+                            field.ty.label(),
+                            field.evidence.label(),
+                            field.saw_unknown_write,
+                            field.conflict,
+                        )
+                    })
                     .unwrap_or_else(|| "<absent>".into())
             };
             eprintln!(
@@ -9331,7 +9770,9 @@ pub fn analyze_with_cache<R: BufRead, S: BufRead + Seek, T: BufRead>(
             inference_converged = true;
             break;
         }
-        let field_types_before: HashMap<_, _> = checker.fields.iter()
+        let field_types_before: HashMap<_, _> = checker
+            .fields
+            .iter()
             .map(|(key, field)| (key.clone(), field.ty.clone()))
             .collect();
         let phase = Instant::now();
@@ -9345,15 +9786,28 @@ pub fn analyze_with_cache<R: BufRead, S: BufRead + Seek, T: BufRead>(
             prior_field_types.as_ref(),
             &mut cyclic_fields,
         ));
-        fields_changed = checker.fields.iter().any(|(key, field)| field_types_before.get(key) != Some(&field.ty));
+        fields_changed = checker
+            .fields
+            .iter()
+            .any(|(key, field)| field_types_before.get(key) != Some(&field.ty));
         prior_field_types = Some(field_types_before.clone());
         if profile {
-            let mut changes: Vec<_> = checker.fields.iter().filter_map(|(key, field)| {
-                let previous = field_types_before.get(key)?;
-                (previous != &field.ty).then(|| format!(
-                    "{}.{}: {} -> {}", key.0, key.1, previous.label(), field.ty.label()
-                ))
-            }).collect();
+            let mut changes: Vec<_> = checker
+                .fields
+                .iter()
+                .filter_map(|(key, field)| {
+                    let previous = field_types_before.get(key)?;
+                    (previous != &field.ty).then(|| {
+                        format!(
+                            "{}.{}: {} -> {}",
+                            key.0,
+                            key.1,
+                            previous.label(),
+                            field.ty.label()
+                        )
+                    })
+                })
+                .collect();
             changes.sort_unstable();
             eprintln!(
                 "dm-health inference round {}: changed_field_types={} examples={:?}",
@@ -9534,6 +9988,202 @@ pub fn analyze_with_cache<R: BufRead, S: BufRead + Seek, T: BufRead>(
 mod tests {
     use super::*;
     #[test]
+    fn constructor_argument_effects_are_found_inside_call_parameter_wrappers() {
+        let initializer = serde_json::json!({"kind":"DMASTNewInferred","fields":{
+            "Parameters":[{"kind":"DMASTCallParameter","fields":{
+                "Value":{"kind":"DMASTProcCall","fields":{
+                    "Callable":{"kind":"DMASTCallableProcIdentifier","fields":{"Identifier":"mutate_global"}},
+                    "Parameters":[]
+                }},"Key":null
+            }}]
+        }});
+        let arguments = f(&initializer, "Parameters").as_array().unwrap();
+        assert!(arguments.iter().any(contains_unknown_effect));
+    }
+
+    #[test]
+    fn proven_global_call_preserves_flow_but_nested_or_shadowed_effects_do_not() {
+        let proc = |owner: &str, name: &str, body: serde_json::Value| {
+            serde_json::json!({"kind":"proc","owner":owner,"name":name,
+                "file":"code/test.dm","line":1,"parameters":[],"returnType":null,
+                "body":body})
+            .to_string()
+        };
+        let pure_body = serde_json::json!({"kind":"DMASTProcBlockInner","fields":{
+            "Statements":[{"kind":"DMASTProcStatementReturn","fields":{
+                "Value":{"kind":"DMASTConstantInteger","fields":{"Value":1}}
+            }}]
+        }});
+        let mutation_body = serde_json::json!({"kind":"DMASTProcBlockInner","fields":{
+            "Statements":[{"kind":"DMASTProcStatementExpression","fields":{
+                "Expression":{"kind":"DMASTAssign","fields":{
+                    "LHS":{"kind":"DMASTIdentifier","fields":{"Identifier":"GLOB"}},
+                    "RHS":{"kind":"DMASTConstantInteger","fields":{"Value":1}}
+                }}
+            }}]
+        }});
+        let input = [
+            proc("/", "pure_number", pure_body.clone()),
+            proc("/", "mutate", mutation_body),
+            proc("/datum/shadow", "pure_number", pure_body),
+        ]
+        .join("\n");
+        let symbols = Symbols::collect(input.as_bytes(), &[]).unwrap();
+        let call = |name: &str, params: Vec<Value>| {
+            serde_json::json!({
+                "kind":"DMASTProcCall","fields":{
+                    "Callable":{"kind":"DMASTCallableProcIdentifier","fields":{"Identifier":name}},
+                    "Parameters":params
+                }
+            })
+        };
+        let pure = call("pure_number", vec![]);
+        let mutating = call("mutate", vec![]);
+        assert!(!contains_unproved_effect(&pure, "/datum/other", &symbols));
+        assert!(contains_unproved_effect(&pure, "/datum/shadow", &symbols));
+        assert!(contains_unproved_effect(
+            &mutating,
+            "/datum/other",
+            &symbols
+        ));
+        let nested = call(
+            "pure_number",
+            vec![serde_json::json!({
+                "kind":"DMASTCallParameter","fields":{"Value":mutating,"Key":null}
+            })],
+        );
+        assert!(contains_unproved_effect(&nested, "/datum/other", &symbols));
+        let safe_builtin = call(
+            "length",
+            vec![serde_json::json!({
+                "kind":"DMASTCallParameter","fields":{"Value":pure.clone(),"Key":null}
+            })],
+        );
+        assert!(!contains_unproved_effect(
+            &safe_builtin,
+            "/datum/other",
+            &symbols
+        ));
+        let nested_binary = serde_json::json!({"kind":"DMASTAdd","fields":{
+            "LHS":safe_builtin,"RHS":nested.clone()
+        }});
+        assert!(contains_unproved_effect(
+            &nested_binary,
+            "/datum/other",
+            &symbols
+        ));
+        let mut env = Env::default();
+        env.facts
+            .insert("gear_tweaks".into(), Ty::List(Box::new(Ty::Num)));
+        env.invalidate_after_checked(&pure, "/datum/other", &symbols);
+        assert_eq!(env.facts["gear_tweaks"], Ty::List(Box::new(Ty::Num)));
+        env.invalidate_after_checked(&nested, "/datum/other", &symbols);
+        assert!(!env.facts.contains_key("gear_tweaks"));
+    }
+
+    #[test]
+    fn exact_fresh_receiver_method_preserves_existing_flow() {
+        let proc = |name: &str, body: serde_json::Value| {
+            serde_json::json!({"kind":"proc","owner":"/datum/fresh","name":name,
+                "file":"code/test.dm","line":1,"parameters":[],"returnType":null,
+                "body":body})
+            .to_string()
+        };
+        let fresh_write = serde_json::json!({"kind":"DMASTProcBlockInner","fields":{
+            "Statements":[{"kind":"DMASTProcStatementExpression","fields":{
+                "Expression":{"kind":"DMASTAssign","fields":{
+                    "LHS":{"kind":"DMASTDereference","fields":{
+                        "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"src"}},
+                        "Operations":[{"kind":"FieldOperation","fields":{"Identifier":"value"}}]
+                    }},
+                    "RHS":{"kind":"DMASTConstantInteger","fields":{"Value":1}}
+                }}
+            }}]
+        }});
+        let input = [proc("New", fresh_write.clone()), proc("touch", fresh_write)].join("\n");
+        let symbols = Symbols::collect(input.as_bytes(), &[]).unwrap();
+        let new_object = serde_json::json!({"kind":"DMASTNewPath","fields":{
+            "Path":{"kind":"DMASTConstantPath","fields":{
+                "Value":{"kind":"DMASTPath","fields":{"Path":"/datum/fresh"}}
+            }},"Parameters":[]
+        }});
+        let call = serde_json::json!({"kind":"DMASTDereference","fields":{
+            "Expression":new_object,"Operations":[{
+                "kind":"CallOperation","fields":{"Identifier":"touch","Parameters":[]}
+            }]
+        }});
+        assert!(!contains_unproved_effect(&call, "/datum/other", &symbols));
+        let mut env = Env::default();
+        env.facts.insert("external_field".into(), Ty::Num);
+        env.invalidate_after_checked(&call, "/datum/other", &symbols);
+        assert_eq!(env.facts["external_field"], Ty::Num);
+        let mut unknown = call.clone();
+        unknown["fields"]["Operations"][0]["fields"]["Identifier"] = "unknown_method".into();
+        assert!(contains_unproved_effect(&unknown, "/datum/other", &symbols));
+        let mut effectful_argument = call.clone();
+        effectful_argument["fields"]["Operations"][0]["fields"]["Parameters"] = serde_json::json!([{"kind":"DMASTCallParameter","fields":{
+            "Value":{"kind":"DMASTCall","fields":{}},"Key":null
+        }}]);
+        assert!(contains_unproved_effect(
+            &effectful_argument,
+            "/datum/other",
+            &symbols
+        ));
+    }
+
+    #[test]
+    fn typed_receiver_dispatch_requires_every_override_to_be_effect_free() {
+        let body = |mutates: bool| {
+            let value = if mutates {
+                serde_json::json!({"kind":"DMASTAssign","fields":{
+                    "LHS":{"kind":"DMASTIdentifier","fields":{"Identifier":"GLOB"}},
+                    "RHS":{"kind":"DMASTConstantInteger","fields":{"Value":1}}
+                }})
+            } else {
+                serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":1}})
+            };
+            serde_json::json!({"kind":"DMASTProcBlockInner","fields":{
+                "Statements":[{"kind":"DMASTProcStatementExpression","fields":{"Expression":value}}]
+            }})
+        };
+        let proc = |owner: &str, mutates: bool| {
+            serde_json::json!({
+                "kind":"proc","owner":owner,"name":"inspect","file":"code/test.dm",
+                "line":1,"parameters":[],"returnType":null,"body":body(mutates)
+            })
+            .to_string()
+        };
+        let safe = [proc("/datum/base", false), proc("/datum/base/child", false)].join("\n");
+        let symbols = Symbols::collect(safe.as_bytes(), &[]).unwrap();
+        let call = serde_json::json!({"kind":"DMASTDereference","fields":{
+            "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"receiver"}},
+            "Operations":[{"kind":"CallOperation","fields":{
+                "Identifier":"inspect","Parameters":[]
+            }}]
+        }});
+        let vars = HashMap::from([("receiver".into(), Ty::Path("/datum/base".into()))]);
+        assert!(!contains_unproved_effect_with_vars(
+            &call,
+            "/datum/other",
+            &symbols,
+            &vars
+        ));
+        let unsafe_source = format!("{safe}\n{}", proc("/datum/base/bad", true));
+        let unsafe_symbols = Symbols::collect(unsafe_source.as_bytes(), &[]).unwrap();
+        assert!(contains_unproved_effect_with_vars(
+            &call,
+            "/datum/other",
+            &unsafe_symbols,
+            &vars
+        ));
+        assert!(contains_unproved_effect_with_vars(
+            &call,
+            "/datum/other",
+            &symbols,
+            &HashMap::new()
+        ));
+    }
+    #[test]
     fn oscillating_field_widens_once_and_stays_unknown() {
         let key = ("/atom".to_owned(), "color".to_owned());
         let field = FieldInfo {
@@ -9561,7 +10211,9 @@ mod tests {
         assert_eq!(fields[&key].evidence, Ty::Unknown);
         fields.get_mut(&key).unwrap().ty = Ty::Text;
         fields.get_mut(&key).unwrap().evidence = Ty::Text;
-        assert!(widen_oscillating_fields(&mut fields, &before, Some(&prior), &mut locked).is_empty());
+        assert!(
+            widen_oscillating_fields(&mut fields, &before, Some(&prior), &mut locked).is_empty()
+        );
         assert_eq!(fields[&key].ty, Ty::Unknown);
         assert_eq!(fields[&key].evidence, Ty::Unknown);
     }
@@ -9814,6 +10466,54 @@ mod tests {
             ),
             None,
             "numeric defaults must be proved before specializing"
+        );
+    }
+
+    #[test]
+    fn weakref_resolve_is_nullable_datum_only_for_original_proc() {
+        let symbols = Symbols::default();
+        let selection = Selection::default();
+        let mut checker = Checker {
+            symbols: &symbols,
+            contracts: &[],
+            selection: &selection,
+            fields: HashMap::new(),
+            overrides: Vec::new(),
+            procs: HashMap::new(),
+            proc_versions: HashMap::new(),
+            checked_versions: HashMap::new(),
+            param_evidence: HashMap::new(),
+            return_bodies: HashMap::new(),
+            new_bodies: HashMap::new(),
+            current_proc: None,
+            current_proc_version: None,
+            inferred_locals: HashMap::new(),
+            findings: Vec::new(),
+            coverage: TypeCoverage::default(),
+        };
+        checker.register(&serde_json::json!({"kind":"proc","owner":"/datum/weakref",
+            "name":"resolve","file":"code/datums/weakrefs.dm","line":75,
+            "parameters":[],"returnType":null,"body":null}));
+        assert_eq!(
+            checker.weakref_resolve_result("/datum/weakref", "resolve", &serde_json::json!([])),
+            Some(Ty::Nullable(Box::new(Ty::Path("/datum".into()))))
+        );
+        assert_eq!(
+            checker.weakref_resolve_result("/datum/weakref", "resolve", &serde_json::json!([{}])),
+            None
+        );
+        checker.register(
+            &serde_json::json!({"kind":"proc","owner":"/datum/weakref/special",
+            "name":"resolve","file":"code/test.dm","line":1,
+            "parameters":[],"returnType":null,"body":null}),
+        );
+        assert_eq!(
+            checker.weakref_resolve_result(
+                "/datum/weakref/special",
+                "resolve",
+                &serde_json::json!([])
+            ),
+            None
         );
     }
 
@@ -10227,60 +10927,105 @@ mod tests {
     #[test]
     fn keyed_field_writes_keep_heterogeneous_nullable_values_separate() {
         let symbols = Symbols::default();
-        let selection = Selection { all: true, ..Selection::default() };
+        let selection = Selection {
+            all: true,
+            ..Selection::default()
+        };
         let mut checker = Checker {
-            symbols: &symbols, contracts: &[], selection: &selection,
-            fields: HashMap::new(), overrides: Vec::new(), procs: HashMap::new(),
-            proc_versions: HashMap::new(), checked_versions: HashMap::new(),
-            param_evidence: HashMap::new(), return_bodies: HashMap::new(),
-            new_bodies: HashMap::new(), current_proc: None, current_proc_version: None,
-            inferred_locals: HashMap::new(), findings: Vec::new(),
+            symbols: &symbols,
+            contracts: &[],
+            selection: &selection,
+            fields: HashMap::new(),
+            overrides: Vec::new(),
+            procs: HashMap::new(),
+            proc_versions: HashMap::new(),
+            checked_versions: HashMap::new(),
+            param_evidence: HashMap::new(),
+            return_bodies: HashMap::new(),
+            new_bodies: HashMap::new(),
+            current_proc: None,
+            current_proc_version: None,
+            inferred_locals: HashMap::new(),
+            findings: Vec::new(),
             coverage: TypeCoverage::default(),
         };
         let key = ("/datum/test".into(), "base_values".into());
-        checker.fields.insert(key.clone(), FieldInfo {
-            ty: Ty::List(Box::new(Ty::Unknown)), explicit_type: true,
-            evidence: Ty::EmptyList, origin: Value::Null, nullable: false,
-            delayed: false, phase: None, proved_initialization: false,
-            initially_null: false, saw_unknown_write: false, conflict: false,
-        });
+        checker.fields.insert(
+            key.clone(),
+            FieldInfo {
+                ty: Ty::List(Box::new(Ty::Unknown)),
+                explicit_type: true,
+                evidence: Ty::EmptyList,
+                origin: Value::Null,
+                nullable: false,
+                delayed: false,
+                phase: None,
+                proved_initialization: false,
+                initially_null: false,
+                saw_unknown_write: false,
+                conflict: false,
+            },
+        );
         let vars = HashMap::new();
         assert!(!checker.merge_keyed_field_write(
-            &key, None, &serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":1}}),
-            &vars, "/datum/test",
+            &key,
+            None,
+            &serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":1}}),
+            &vars,
+            "/datum/test",
         ));
         assert!(checker.merge_keyed_field_write(
-            &key, Some("desc"), &serde_json::json!({"kind":"DMASTConstantString","fields":{"Value":"description"}}),
-            &vars, "/datum/test",
+            &key,
+            Some("desc"),
+            &serde_json::json!({"kind":"DMASTConstantString","fields":{"Value":"description"}}),
+            &vars,
+            "/datum/test",
         ));
         assert!(checker.merge_keyed_field_write(
-            &key, Some("armor"), &serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":7}}),
-            &vars, "/datum/test",
+            &key,
+            Some("armor"),
+            &serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":7}}),
+            &vars,
+            "/datum/test",
         ));
         assert!(checker.infer_field_types());
-        let Ty::Record(members) = &checker.fields[&key].ty else { panic!("expected record") };
+        let Ty::Record(members) = &checker.fields[&key].ty else {
+            panic!("expected record")
+        };
         assert_eq!(members["desc"].0, Ty::Text);
         assert_eq!(members["armor"].0, Ty::Num);
         assert!(!checker.fields[&key].conflict);
-        let read = |name: &str| serde_json::json!({"kind":"DMASTDereference","fields":{
-            "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"base_values"}},
-            "Operations":[{"kind":"IndexOperation","fields":{
-                "Index":{"kind":"DMASTConstantString","fields":{"Value":name}}
-            }}]
-        }});
-        assert_eq!(checker.expression(&read("desc"), &vars, "/datum/test"),
-            Ty::Nullable(Box::new(Ty::Text)));
-        assert_eq!(checker.expression(&read("armor"), &vars, "/datum/test"),
-            Ty::Nullable(Box::new(Ty::Num)));
-        let nullable = serde_json::json!({"kind":"DMASTIdentifier","fields":{"Identifier":"maybe"}});
+        let read = |name: &str| {
+            serde_json::json!({"kind":"DMASTDereference","fields":{
+                "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"base_values"}},
+                "Operations":[{"kind":"IndexOperation","fields":{
+                    "Index":{"kind":"DMASTConstantString","fields":{"Value":name}}
+                }}]
+            }})
+        };
+        assert_eq!(
+            checker.expression(&read("desc"), &vars, "/datum/test"),
+            Ty::Nullable(Box::new(Ty::Text))
+        );
+        assert_eq!(
+            checker.expression(&read("armor"), &vars, "/datum/test"),
+            Ty::Nullable(Box::new(Ty::Num))
+        );
+        let nullable =
+            serde_json::json!({"kind":"DMASTIdentifier","fields":{"Identifier":"maybe"}});
         let vars = HashMap::from([("maybe".into(), Ty::Nullable(Box::new(Ty::Text)))]);
         checker.fields.get_mut(&key).unwrap().evidence = Ty::EmptyList;
         let indexed_write = serde_json::json!({"kind":"DMASTAssign","fields":{
             "LHS":read("desc"), "RHS":nullable,
         }});
         checker.register_writes(&indexed_write, "/datum/test", &vars, &HashSet::new());
-        assert_eq!(checker.fields[&key].evidence,
-            Ty::Record(BTreeMap::from([("desc".into(), (Ty::Nullable(Box::new(Ty::Text)), true))])));
+        assert_eq!(
+            checker.fields[&key].evidence,
+            Ty::Record(BTreeMap::from([(
+                "desc".into(),
+                (Ty::Nullable(Box::new(Ty::Text)), true)
+            )]))
+        );
         assert!(checker.merge_keyed_field_write(&key, None, &nullable, &vars, "/datum/test"));
         assert_eq!(checker.fields[&key].evidence, Ty::Unknown);
     }
@@ -10288,23 +11033,45 @@ mod tests {
     #[test]
     fn numeric_index_recurrence_seeds_empty_list_value_type() {
         let symbols = Symbols::default();
-        let selection = Selection { all: true, ..Selection::default() };
+        let selection = Selection {
+            all: true,
+            ..Selection::default()
+        };
         let mut checker = Checker {
-            symbols: &symbols, contracts: &[], selection: &selection,
-            fields: HashMap::new(), overrides: Vec::new(), procs: HashMap::new(),
-            proc_versions: HashMap::new(), checked_versions: HashMap::new(),
-            param_evidence: HashMap::new(), return_bodies: HashMap::new(),
-            new_bodies: HashMap::new(), current_proc: None, current_proc_version: None,
-            inferred_locals: HashMap::new(), findings: Vec::new(),
+            symbols: &symbols,
+            contracts: &[],
+            selection: &selection,
+            fields: HashMap::new(),
+            overrides: Vec::new(),
+            procs: HashMap::new(),
+            proc_versions: HashMap::new(),
+            checked_versions: HashMap::new(),
+            param_evidence: HashMap::new(),
+            return_bodies: HashMap::new(),
+            new_bodies: HashMap::new(),
+            current_proc: None,
+            current_proc_version: None,
+            inferred_locals: HashMap::new(),
+            findings: Vec::new(),
             coverage: TypeCoverage::default(),
         };
         let key = ("/datum/test".into(), "amounts".into());
-        checker.fields.insert(key.clone(), FieldInfo {
-            ty: Ty::List(Box::new(Ty::Unknown)), explicit_type: true,
-            evidence: Ty::EmptyList, origin: Value::Null, nullable: false,
-            delayed: false, phase: None, proved_initialization: false,
-            initially_null: false, saw_unknown_write: false, conflict: false,
-        });
+        checker.fields.insert(
+            key.clone(),
+            FieldInfo {
+                ty: Ty::List(Box::new(Ty::Unknown)),
+                explicit_type: true,
+                evidence: Ty::EmptyList,
+                origin: Value::Null,
+                nullable: false,
+                delayed: false,
+                phase: None,
+                proved_initialization: false,
+                initially_null: false,
+                saw_unknown_write: false,
+                conflict: false,
+            },
+        );
         let index = serde_json::json!({"kind":"DMASTIdentifier","fields":{"Identifier":"key"}});
         let old = serde_json::json!({"kind":"DMASTDereference","fields":{
             "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"amounts"}},
@@ -10323,10 +11090,7 @@ mod tests {
             }}},
             "RHS":{"kind":"DMASTIdentifier","fields":{"Identifier":"increment"}}
         }});
-        let vars = HashMap::from([
-            ("key".into(), Ty::Text),
-            ("increment".into(), Ty::Num),
-        ]);
+        let vars = HashMap::from([("key".into(), Ty::Text), ("increment".into(), Ty::Num)]);
         assert!(checker.numeric_index_recurrence(&rhs, &key, &vars, "/datum/test"));
         let write = serde_json::json!({"kind":"DMASTAssign","fields":{
             "LHS":{"kind":"DMASTDereference","fields":{
@@ -10336,46 +11100,75 @@ mod tests {
             "RHS":rhs
         }});
         checker.register_writes(&write, "/datum/test", &vars, &HashSet::new());
-        assert_eq!(checker.fields[&key].evidence,
-            Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num)));
+        assert_eq!(
+            checker.fields[&key].evidence,
+            Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num))
+        );
         checker.fields.get_mut(&key).unwrap().evidence = Ty::EmptyList;
         let mut non_numeric = vars;
         non_numeric.insert("increment".into(), Ty::Text);
         assert!(!checker.numeric_index_recurrence(
-            f(&write, "RHS"), &key, &non_numeric, "/datum/test"));
+            f(&write, "RHS"),
+            &key,
+            &non_numeric,
+            "/datum/test"
+        ));
     }
 
     #[test]
     fn empty_list_field_evidence_survives_inference_rounds() {
         let symbols = Symbols::default();
-        let selection = Selection { all: true, ..Selection::default() };
+        let selection = Selection {
+            all: true,
+            ..Selection::default()
+        };
         let mut checker = Checker {
-            symbols: &symbols, contracts: &[], selection: &selection,
-            fields: HashMap::new(), overrides: Vec::new(), procs: HashMap::new(),
-            proc_versions: HashMap::new(), checked_versions: HashMap::new(),
-            param_evidence: HashMap::new(), return_bodies: HashMap::new(),
-            new_bodies: HashMap::new(), current_proc: None, current_proc_version: None,
-            inferred_locals: HashMap::new(), findings: Vec::new(),
+            symbols: &symbols,
+            contracts: &[],
+            selection: &selection,
+            fields: HashMap::new(),
+            overrides: Vec::new(),
+            procs: HashMap::new(),
+            proc_versions: HashMap::new(),
+            checked_versions: HashMap::new(),
+            param_evidence: HashMap::new(),
+            return_bodies: HashMap::new(),
+            new_bodies: HashMap::new(),
+            current_proc: None,
+            current_proc_version: None,
+            inferred_locals: HashMap::new(),
+            findings: Vec::new(),
             coverage: TypeCoverage::default(),
         };
         let key = ("/datum/test".into(), "amounts".into());
-        checker.fields.insert(key.clone(), FieldInfo {
-            ty: Ty::List(Box::new(Ty::Unknown)), explicit_type: true,
-            evidence: Ty::Null, origin: Value::Null, nullable: false,
-            delayed: false, phase: None, proved_initialization: false,
-            initially_null: true, saw_unknown_write: false, conflict: false,
-        });
+        checker.fields.insert(
+            key.clone(),
+            FieldInfo {
+                ty: Ty::List(Box::new(Ty::Unknown)),
+                explicit_type: true,
+                evidence: Ty::Null,
+                origin: Value::Null,
+                nullable: false,
+                delayed: false,
+                phase: None,
+                proved_initialization: false,
+                initially_null: true,
+                saw_unknown_write: false,
+                conflict: false,
+            },
+        );
         checker.merge_field_write(&key, Ty::EmptyList);
         checker.infer_field_types();
         assert_eq!(checker.fields[&key].ty, Ty::EmptyList);
         checker.fields.get_mut(&key).unwrap().evidence = Ty::Null;
         checker.merge_field_write(&key, Ty::EmptyList);
         assert_eq!(checker.fields[&key].evidence, Ty::EmptyList);
-        checker.merge_field_write(&key,
-            Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num)));
+        checker.merge_field_write(&key, Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num)));
         checker.infer_field_types();
-        assert_eq!(checker.fields[&key].ty,
-            Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num)));
+        assert_eq!(
+            checker.fields[&key].ty,
+            Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num))
+        );
         assert!(!checker.fields[&key].saw_unknown_write);
     }
 
@@ -10624,6 +11417,97 @@ mod tests {
         assert!(!findings
             .iter()
             .any(|finding| finding.rule == "unknown-argument-target"));
+    }
+
+    #[test]
+    fn max_and_clamp_keep_numeric_result_with_unknown_operand() {
+        let symbols = Symbols::default();
+        let selection = Selection::default();
+        let checker = Checker {
+            symbols: &symbols,
+            contracts: &[],
+            selection: &selection,
+            fields: HashMap::new(),
+            overrides: Vec::new(),
+            procs: HashMap::new(),
+            proc_versions: HashMap::new(),
+            checked_versions: HashMap::new(),
+            param_evidence: HashMap::new(),
+            return_bodies: HashMap::new(),
+            new_bodies: HashMap::new(),
+            current_proc: None,
+            current_proc_version: None,
+            inferred_locals: HashMap::new(),
+            findings: Vec::new(),
+            coverage: TypeCoverage::default(),
+        };
+        let argument = |value: Value| serde_json::json!({"kind":"DMASTCallParameter","fields":{"Key":null,"Value":value}});
+        let unknown =
+            serde_json::json!({"kind":"DMASTIdentifier","fields":{"Identifier":"dynamic"}});
+        let number = serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":5}});
+        let text = serde_json::json!({"kind":"DMASTConstantString","fields":{"Value":"a"}});
+        assert_eq!(
+            checker.builtin_result(&Value::Null, "max", &HashMap::new(), "/datum/test"),
+            None
+        );
+        let call = |args: Vec<Value>| serde_json::json!({"fields":{"Parameters":args}});
+        assert_eq!(
+            checker.builtin_result(
+                &call(vec![argument(number.clone()), argument(unknown.clone())]),
+                "max",
+                &HashMap::new(),
+                "/datum/test"
+            ),
+            Some(Ty::parse("num?"))
+        );
+        assert_eq!(
+            checker.builtin_result(
+                &call(vec![argument(text), argument(unknown.clone())]),
+                "min",
+                &HashMap::new(),
+                "/datum/test"
+            ),
+            Some(Ty::parse("text?"))
+        );
+        assert_eq!(
+            checker.builtin_result(
+                &call(vec![
+                    argument(number.clone()),
+                    argument(unknown.clone()),
+                    argument(number)
+                ]),
+                "clamp",
+                &HashMap::new(),
+                "/datum/test"
+            ),
+            Some(Ty::Num)
+        );
+        assert_eq!(
+            checker.builtin_result(
+                &call(vec![argument(unknown.clone()), argument(unknown.clone())]),
+                "max",
+                &HashMap::new(),
+                "/datum/test"
+            ),
+            Some(Ty::Unknown)
+        );
+        assert_eq!(
+            checker.builtin_result(
+                &call(vec![
+                    argument(
+                        serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":1}})
+                    ),
+                    argument(
+                        serde_json::json!({"kind":"DMASTConstantString","fields":{"Value":"x"}})
+                    ),
+                    argument(unknown)
+                ]),
+                "max",
+                &HashMap::new(),
+                "/datum/test"
+            ),
+            Some(Ty::Unknown)
+        );
     }
 
     #[test]
@@ -13374,7 +14258,10 @@ mod tests {
         );
         assert_eq!(
             fresh.facts.get("items"),
-            Some(&Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num)))
+            Some(&Ty::Record(BTreeMap::from([(
+                "key".into(),
+                (Ty::Num, false)
+            )])))
         );
         let unrelated_call = serde_json::json!({"kind":"DMASTProcCall","fields":{
             "Callable":{"kind":"DMASTCallableProcIdentifier","fields":{"Identifier":"Unknown"}},
@@ -13383,7 +14270,10 @@ mod tests {
         fresh.invalidate_after(&unrelated_call);
         assert_eq!(
             fresh.facts.get("items"),
-            Some(&Ty::Assoc(Box::new(Ty::Text), Box::new(Ty::Num)))
+            Some(&Ty::Record(BTreeMap::from([(
+                "key".into(),
+                (Ty::Num, false)
+            )])))
         );
         let mut escaped = fresh.clone();
         let escaping_call = serde_json::json!({"kind":"DMASTProcCall","fields":{
@@ -13403,7 +14293,13 @@ mod tests {
             &sig,
             &mut fresh,
         );
-        assert_eq!(fresh.facts.get("items"), Some(&Ty::Unknown));
+        assert_eq!(
+            fresh.facts.get("items"),
+            Some(&Ty::Record(BTreeMap::from([(
+                "key".into(),
+                (Ty::Unknown, false)
+            ),])))
+        );
     }
 
     #[test]
@@ -14331,12 +15227,408 @@ mod tests {
             serde_json::json!({"kind":"DMASTConstantString","fields":{"Value":"ls"}});
         let named_input = format!("{helper}\n{named_caller}");
         let (named_findings, _) = analyze(
-            named_input.as_bytes(), named_input.as_bytes(), named_input.as_bytes(),
-            &Symbols::default(), &[], &Selection { all: true, ..Selection::default() },
-        ).unwrap();
-        assert!(!named_findings.iter().any(|finding|
-            finding.rule == "unknown-return-type" && finding.message.contains("/datum/test/JoinNamed")),
-            "{named_findings:?}");
+            named_input.as_bytes(),
+            named_input.as_bytes(),
+            named_input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            !named_findings
+                .iter()
+                .any(|finding| finding.rule == "unknown-return-type"
+                    && finding.message.contains("/datum/test/JoinNamed")),
+            "{named_findings:?}"
+        );
+    }
+
+    #[test]
+    fn list2text_literal_length_determines_result_without_element_type() {
+        let helper = serde_json::json!({"kind":"proc","owner":"/","name":"list2text",
+            "file":"code/test.dm","line":1,"parameters":[],"body":{
+                "kind":"DMASTProcBlockInner","fields":{"Statements":[]}}});
+        let call = |values: Vec<Value>| {
+            serde_json::json!({"kind":"DMASTProcCall",
+            "fields":{"Callable":{"kind":"DMASTCallableProcIdentifier",
+                "fields":{"Identifier":"list2text"}},"Parameters":[{
+                "kind":"DMASTCallParameter","fields":{"Key":null,"Value":{
+                    "kind":"DMASTList","fields":{"Values":values}}}}]}})
+        };
+        let item = |value: Value| {
+            serde_json::json!({"kind":"DMASTCallParameter",
+            "fields":{"Key":null,"Value":value}})
+        };
+        let unknown = serde_json::json!({"kind":"DMASTIdentifier",
+            "fields":{"Identifier":"dynamic_value"}});
+        let caller = |name: &str, value: Value| {
+            serde_json::json!({"kind":"proc",
+            "owner":"/datum/test","name":name,"file":"code/test.dm","line":2,
+            "parameters":[],"body":{"kind":"DMASTProcBlockInner","fields":{
+                "Statements":[{"kind":"DMASTProcStatementReturn","fields":{
+                    "Value":value}}]}}})
+        };
+        let text = caller(
+            "Many",
+            call(vec![
+                item(unknown),
+                item(serde_json::json!({
+            "kind":"DMASTConstantInteger","fields":{"Value":7}})),
+            ]),
+        );
+        let empty = caller("Empty", call(vec![]));
+        let null = caller(
+            "Nullable",
+            call(vec![item(serde_json::json!({
+            "kind":"DMASTConstantNull","fields":{}}))]),
+        );
+        let input = format!("{helper}\n{text}\n{empty}\n{null}");
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        for name in ["Many", "Empty"] {
+            assert!(
+                !findings
+                    .iter()
+                    .any(|finding| finding.rule == "unknown-return-type"
+                        && finding.message.contains(&format!("/datum/test/{name}"))),
+                "{findings:?}"
+            );
+        }
+        // The raw singleton is null. With no non-null branch, its return
+        // type has no provable base type and must remain unresolved.
+        assert!(
+            findings
+                .iter()
+                .any(|finding| finding.rule == "unknown-return-type"
+                    && finding.message.contains("/datum/test/Nullable")),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn sorting_helpers_keep_precise_input_list_shape() {
+        let helper = |name: &str| {
+            serde_json::json!({"kind":"proc","owner":"/",
+            "name":name,"file":"code/test.dm","line":1,"parameters":[],"body":{
+                "kind":"DMASTProcBlockInner","fields":{"Statements":[]}}})
+        };
+        let caller = |name: &str, helper_name: &str| {
+            serde_json::json!({"kind":"proc",
+            "owner":"/datum/test","name":name,"file":"code/test.dm","line":2,
+            "parameters":[],"body":{"kind":"DMASTProcBlockInner","fields":{
+                "Statements":[{"kind":"DMASTProcStatementReturn","fields":{
+                    "Value":{"kind":"DMASTProcCall","fields":{"Callable":{
+                        "kind":"DMASTCallableProcIdentifier","fields":{"Identifier":helper_name}},
+                        "Parameters":[{"kind":"DMASTCallParameter","fields":{"Key":null,
+                            "Value":{"kind":"DMASTList","fields":{"Values":[{
+                                "kind":"DMASTCallParameter","fields":{"Key":null,
+                                    "Value":{"kind":"DMASTConstantInteger","fields":{"Value":7}}}
+                            }]}}}}]}}}}]}}})
+        };
+        let input = format!(
+            "{}\n{}\n{}\n{}",
+            helper("sortTim"),
+            helper("sortList"),
+            caller("Tim", "sortTim"),
+            caller("List", "sortList")
+        );
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        for name in ["Tim", "List"] {
+            assert!(
+                !findings
+                    .iter()
+                    .any(|finding| finding.rule == "unknown-return-type"
+                        && finding.message.contains(&format!("/datum/test/{name}"))),
+                "{findings:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn simple_collection_helper_instantiates_element_type_from_call() {
+        let helper = |name: &str, copied: bool| {
+            let parameter = serde_json::json!({"Name":"values","type":{
+                "kind":"DMASTPath","fields":{"Path":"/list"}},
+                "valueType":"anything","defaultValue":null});
+            let ident = serde_json::json!({"kind":"DMASTIdentifier",
+                "fields":{"Identifier":"values"}});
+            let returned = if copied {
+                serde_json::json!({"kind":"DMASTDereference","fields":{
+                    "Expression":ident,"Operations":[{"kind":"CallOperation","fields":{
+                        "Identifier":"Copy","Safe":false,"Parameters":[]}}]}})
+            } else {
+                ident
+            };
+            serde_json::json!({"kind":"proc","owner":"/","name":name,
+            "file":"code/test.dm","line":1,"parameters":[parameter],
+            "body":{"kind":"DMASTProcBlockInner","fields":{"Statements":[
+                {"kind":"DMASTProcStatementReturn","fields":{"Value":returned}}
+            ]}}})
+        };
+        let caller = |name: &str, target: &str| {
+            serde_json::json!({"kind":"proc",
+            "owner":"/datum/test","name":name,"file":"code/test.dm","line":2,
+            "parameters":[],"body":{"kind":"DMASTProcBlockInner","fields":{
+                "Statements":[{"kind":"DMASTProcStatementReturn","fields":{
+                    "Value":{"kind":"DMASTProcCall","fields":{"Callable":{
+                        "kind":"DMASTCallableProcIdentifier","fields":{"Identifier":target}},
+                        "Parameters":[{"kind":"DMASTCallParameter","fields":{"Key":null,
+                            "Value":{"kind":"DMASTList","fields":{"Values":[{
+                                "kind":"DMASTCallParameter","fields":{"Key":null,
+                                    "Value":{"kind":"DMASTConstantInteger","fields":{"Value":7}}}
+                            }]}}}}]}}}}]}}})
+        };
+        let input = format!(
+            "{}\n{}\n{}\n{}",
+            helper("IdentityList", false),
+            helper("CopyList", true),
+            caller("IdentityUse", "IdentityList"),
+            caller("CopyUse", "CopyList")
+        );
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        for name in ["IdentityUse", "CopyUse"] {
+            assert!(
+                !findings
+                    .iter()
+                    .any(|finding| finding.rule == "unknown-return-type"
+                        && finding.message.contains(&format!("/datum/test/{name}"))),
+                "{findings:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn fresh_local_named_writes_keep_heterogeneous_record_shape() {
+        let declaration = serde_json::json!({"kind":"DMASTProcStatementVarDeclaration",
+            "file":"code/test.dm","line":2,"fields":{"Name":"data",
+                "Type":{"kind":"DMASTPath","fields":{"Path":"/list"}},
+                "ValueType":"anything","IsGlobal":false,
+                "Value":{"kind":"DMASTList","fields":{"Values":[]}}}});
+        let write = |key: &str, value: Value| {
+            serde_json::json!({
+            "kind":"DMASTProcStatementExpression","file":"code/test.dm","line":3,
+            "fields":{"Expression":{"kind":"DMASTAssign","fields":{
+                "LHS":{"kind":"DMASTDereference","fields":{
+                    "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"data"}},
+                    "Operations":[{"kind":"IndexOperation","fields":{
+                        "Index":{"kind":"DMASTConstantString","fields":{"Value":key}},
+                        "Safe":false}}]}},"RHS":value}}}})
+        };
+        let read = |key: &str| {
+            serde_json::json!({"kind":"DMASTDereference",
+            "fields":{"Expression":{"kind":"DMASTIdentifier",
+                "fields":{"Identifier":"data"}},"Operations":[{
+                    "kind":"IndexOperation","fields":{"Index":{
+                        "kind":"DMASTConstantString","fields":{"Value":key}},
+                        "Safe":false}}]}})
+        };
+        let body = serde_json::json!({"kind":"DMASTProcBlockInner","fields":{
+            "Statements":[declaration,
+                write("name", serde_json::json!({"kind":"DMASTConstantString",
+                    "fields":{"Value":"alpha"}})),
+                write("count", serde_json::json!({"kind":"DMASTConstantInteger",
+                    "fields":{"Value":7}})),
+                {"kind":"DMASTProcStatementReturn","fields":{"Value":read("name")}}]}});
+        let proc = serde_json::json!({"kind":"proc","owner":"/datum/test",
+            "name":"Build","file":"code/test.dm","line":1,"parameters":[],"body":body});
+        let input = proc.to_string();
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            !findings
+                .iter()
+                .any(|finding| finding.rule == "unresolved-index-write"
+                    || (finding.rule == "unknown-return-type"
+                        && finding.message.contains("Build"))),
+            "{findings:?}"
+        );
+
+        let mut dynamic = proc.clone();
+        dynamic["name"] = Value::String("Dynamic".into());
+        let dynamic_key = serde_json::json!({"kind":"DMASTIdentifier",
+            "fields":{"Identifier":"unknown_key"}});
+        let mut dynamic_write = write(
+            "placeholder",
+            serde_json::json!({
+            "kind":"DMASTConstantInteger","fields":{"Value":8}}),
+        );
+        dynamic_write["fields"]["Expression"]["fields"]["LHS"]["fields"]["Operations"][0]
+            ["fields"]["Index"] = dynamic_key;
+        dynamic["body"]["fields"]["Statements"]
+            .as_array_mut()
+            .unwrap()
+            .insert(3, dynamic_write);
+        let input = dynamic.to_string();
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            findings
+                .iter()
+                .any(|finding| finding.rule == "unknown-return-type"
+                    && finding.message.contains("Dynamic")),
+            "{findings:?}"
+        );
+
+        let mut aliased = proc;
+        aliased["name"] = Value::String("Aliased".into());
+        aliased["body"]["fields"]["Statements"]
+            .as_array_mut()
+            .unwrap()
+            .insert(
+                3,
+                serde_json::json!({"kind":"DMASTProcStatementVarDeclaration",
+                "fields":{"Name":"alias","Type":{"kind":"DMASTPath",
+                    "fields":{"Path":"/list"}},"ValueType":"anything",
+                    "IsGlobal":false,"Value":{"kind":"DMASTIdentifier",
+                        "fields":{"Identifier":"data"}}}}),
+            );
+        let input = aliased.to_string();
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            findings
+                .iter()
+                .any(|finding| finding.rule == "unknown-return-type"
+                    && finding.message.contains("Aliased")),
+            "{findings:?}"
+        );
+
+        let mut partial = aliased;
+        partial["name"] = Value::String("Partial".into());
+        partial["body"]["fields"]["Statements"]
+            .as_array_mut()
+            .unwrap()
+            .remove(3);
+        partial["body"]["fields"]["Statements"]
+            .as_array_mut()
+            .unwrap()
+            .insert(
+                3,
+                write(
+                    "name",
+                    serde_json::json!({"kind":"DMASTIdentifier",
+                "fields":{"Identifier":"unproved"}}),
+                ),
+            );
+        partial["body"]["fields"]["Statements"][4]["fields"]["Value"] = read("count");
+        let input = partial.to_string();
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            !findings
+                .iter()
+                .any(|finding| finding.rule == "unknown-return-type"
+                    && finding.message.contains("Partial")),
+            "{findings:?}"
+        );
+
+        let mut literal = partial;
+        literal["name"] = Value::String("Literal".into());
+        literal["body"]["fields"]["Statements"][0]["fields"]["Value"] = serde_json::json!({"kind":"DMASTList","fields":{"Values":[{
+            "kind":"DMASTCallParameter","fields":{"Key":{
+                "kind":"DMASTConstantString","fields":{"Value":"name"}},
+                "Value":{"kind":"DMASTConstantString","fields":{"Value":"alpha"}}}}
+        ]}});
+        literal["body"]["fields"]["Statements"]
+            .as_array_mut()
+            .unwrap()
+            .remove(1);
+        let input = literal.to_string();
+        let (findings, _) = analyze(
+            input.as_bytes(),
+            input.as_bytes(),
+            input.as_bytes(),
+            &Symbols::default(),
+            &[],
+            &Selection {
+                all: true,
+                ..Selection::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            !findings
+                .iter()
+                .any(|finding| finding.rule == "unknown-return-type"
+                    && finding.message.contains("Literal")),
+            "{findings:?}"
+        );
     }
 
     #[test]
@@ -16960,7 +18252,13 @@ mod tests {
         assert_eq!(checker.expression(&flags, &vars, "/datum/test"), Ty::Num);
         let unknown_flag =
             serde_json::json!({"kind":"DMASTIdentifier","fields":{"Identifier":"dynamic_result"}});
-        for operator in ["DMASTBinaryOr", "DMASTBinaryAnd", "DMASTBinaryXor", "DMASTCombine"] {
+        for operator in [
+            "DMASTBinaryOr",
+            "DMASTBinaryAnd",
+            "DMASTBinaryXor",
+            "DMASTCombine",
+            "DMASTMask",
+        ] {
             let bitwise = serde_json::json!({"kind":operator,"file":"code/test.dm","line":4,
                 "fields":{"LHS":{"kind":"DMASTConstantInteger","fields":{"Value":0}},
                     "RHS":unknown_flag}});
@@ -16970,12 +18268,26 @@ mod tests {
             );
             checker.inspect_expr(&bitwise, "/datum/test", &Env::default());
         }
-        assert_eq!(checker.coverage.unresolved_assignments, 4);
+        assert_eq!(checker.coverage.unresolved_assignments, 5);
         assert!(checker
             .findings
             .iter()
             .any(|finding| finding.rule == "unknown-type-flow"
                 && finding.message.contains("bitwise right operand")));
+        for operator in ["DMASTBinaryAnd", "DMASTMask"] {
+            let intersection = serde_json::json!({"kind":operator,"fields":{
+                "LHS":{"kind":"DMASTIdentifier","fields":{"Identifier":"items"}},
+                "RHS":{"kind":"DMASTIdentifier","fields":{"Identifier":"dynamic_result"}}
+            }});
+            assert_eq!(
+                checker.expression(
+                    &intersection,
+                    &HashMap::from([("items".into(), Ty::parse("list<text>"))]),
+                    "/datum/test"
+                ),
+                Ty::parse("list<text>")
+            );
+        }
         let zero = HashMap::from([("maybe".into(), Ty::Null)]);
         assert_eq!(checker.expression(&flags, &zero, "/datum/test"), Ty::Num);
         for operator in ["DMASTAppend", "DMASTRemove", "DMASTCombine"] {

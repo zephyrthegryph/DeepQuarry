@@ -3,9 +3,11 @@ use crate::contracts::{Contract, Visibility};
 use serde::Deserialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{self, BufRead, Read};
 use std::path::Path;
+use std::sync::RwLock;
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
 pub struct ParameterSymbol {
@@ -25,9 +27,104 @@ pub struct FieldSymbol {
     pub kind: String,
     pub nonnull: bool,
 }
+
+#[derive(Default)]
+struct ProcEffect {
+    pure: bool,
+    fresh_only: bool,
+    global_calls: Vec<String>,
+}
+
+fn scan_proc_effect(node: &Value, effect: &mut ProcEffect) {
+    let kind = node["kind"].as_str().unwrap_or("");
+    let fields = &node["fields"];
+    match kind {
+        "DMASTAssign" | "DMASTAppend" => {
+            let lhs = &fields["LHS"];
+            // A bare name can resolve to a global before a later declaration
+            // introduces a local with the same spelling. Only the implicit
+            // result slot is unambiguously private without scope analysis.
+            let local = lhs["kind"] == "DMASTIdentifier" && lhs["fields"]["Identifier"] == ".";
+            let fresh_field = lhs["kind"] == "DMASTDereference"
+                && lhs["fields"]["Expression"]["kind"] == "DMASTIdentifier"
+                && lhs["fields"]["Expression"]["fields"]["Identifier"] == "src"
+                && lhs["fields"]["Operations"]
+                    .as_array()
+                    .is_some_and(|ops| ops.len() == 1 && ops[0]["kind"] == "FieldOperation");
+            // Appending through the implicit result may mutate a list that
+            // aliases shared state. Only replacing that local slot is pure.
+            if !local || kind == "DMASTAppend" {
+                effect.pure = false;
+            }
+            if (!local && !fresh_field) || kind == "DMASTAppend" {
+                effect.fresh_only = false;
+            }
+            scan_proc_effect(&fields["RHS"], effect);
+            if !local && !fresh_field {
+                scan_proc_effect(lhs, effect);
+            }
+            return;
+        }
+        "DMASTProcCall" => {
+            let callable = &fields["Callable"];
+            if callable["kind"] == "DMASTCallableProcIdentifier" {
+                if let Some(name) = callable["fields"]["Identifier"].as_str() {
+                    effect.global_calls.push(name.into());
+                } else {
+                    effect.pure = false;
+                    effect.fresh_only = false;
+                }
+            } else {
+                effect.pure = false;
+                effect.fresh_only = false;
+            }
+        }
+        "DMASTCall"
+        | "DMASTNewPath"
+        | "DMASTNewExpr"
+        | "DMASTNewInferred"
+        | "DMASTNewModifiedType"
+        | "DMASTProcStatementSpawn" => {
+            effect.pure = false;
+            effect.fresh_only = false;
+        }
+        "DMASTDereference"
+            if fields["Operations"]
+                .as_array()
+                .is_some_and(|ops| ops.iter().any(|op| op["kind"] == "CallOperation")) =>
+        {
+            effect.pure = false;
+            effect.fresh_only = false;
+        }
+        "DMASTIdentifier" if fields["Identifier"] == "src" => {
+            effect.fresh_only = false;
+        }
+        _ => {}
+    }
+    if let Some(fields) = fields.as_object() {
+        for child in fields.values() {
+            if let Some(items) = child.as_array() {
+                for item in items {
+                    if item.is_object() {
+                        scan_proc_effect(item, effect);
+                    }
+                }
+            } else if child.is_object() {
+                scan_proc_effect(child, effect);
+            }
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct Symbols {
     procs: HashMap<(String, String), ProcSymbol>,
+    proc_effects: HashMap<(String, String), ProcEffect>,
+    effect_free_procs: HashSet<(String, String)>,
+    fresh_constructors: HashSet<String>,
+    proc_owners_by_name: HashMap<String, Vec<String>>,
+    dispatch_effect_cache: RwLock<HashMap<String, HashMap<String, bool>>>,
+    global_effect_cache: RwLock<HashMap<String, HashMap<String, bool>>>,
     pub duplicate_procs: HashSet<(String, String)>,
     fields: HashMap<(String, String), FieldSymbol>,
     parents: HashMap<String, String>,
@@ -238,11 +335,31 @@ impl Symbols {
 
     pub fn collect<R: BufRead>(reader: R, contracts: &[Contract]) -> io::Result<Self> {
         let mut symbols = Self::default();
+        let profile = std::env::var_os("DM_HEALTH_PROFILE").is_some();
+        let started = Instant::now();
+        let mut parse_time = Duration::ZERO;
+        let mut effect_time = Duration::ZERO;
+        let mut return_time = Duration::ZERO;
+        let nonnull_contracts: HashSet<_> = contracts
+            .iter()
+            .filter(|contract| contract.visibility == Visibility::NonNull)
+            .map(|contract| {
+                (
+                    contract.owner.as_str(),
+                    contract.member.as_str(),
+                    contract.parameter.as_deref(),
+                )
+            })
+            .collect();
         for line in reader.lines() {
             let line = line?;
+            let parse_started = profile.then(Instant::now);
             let mut deserializer = serde_json::Deserializer::from_str(&line);
             deserializer.disable_recursion_limit();
             let item = Value::deserialize(&mut deserializer)?;
+            if let Some(start) = parse_started {
+                parse_time += start.elapsed();
+            }
             let owner = item["owner"].as_str().unwrap_or("").to_owned();
             if owner.starts_with('/') && owner != "/" {
                 symbols.declared_types.insert(owner.clone());
@@ -307,12 +424,7 @@ impl Symbols {
                     ));
                 }
             } else if item["kind"] == "field" {
-                let nonnull = contracts.iter().any(|c| {
-                    c.owner == owner
-                        && c.member == name
-                        && c.parameter.is_none()
-                        && c.visibility == Visibility::NonNull
-                });
+                let nonnull = nonnull_contracts.contains(&(owner.as_str(), name.as_str(), None));
                 symbols.fields.insert(
                     (owner, name),
                     FieldSymbol {
@@ -321,31 +433,44 @@ impl Symbols {
                     },
                 );
             } else if item["kind"] == "proc" {
+                let mut effect = ProcEffect {
+                    pure: !item["body"].is_null(),
+                    fresh_only: !item["body"].is_null(),
+                    global_calls: Vec::new(),
+                };
+                if !item["body"].is_null() {
+                    let effect_started = profile.then(Instant::now);
+                    scan_proc_effect(&item["body"], &mut effect);
+                    if let Some(start) = effect_started {
+                        effect_time += start.elapsed();
+                    }
+                }
+                symbols
+                    .proc_effects
+                    .insert((owner.clone(), name.clone()), effect);
+                let return_started = profile.then(Instant::now);
                 let inferred_return = if item["returnType"].is_null() {
                     single_return(&item)
                 } else {
                     None
                 };
+                if let Some(start) = return_started {
+                    return_time += start.elapsed();
+                }
                 let inferred = inferred_return.is_some();
-                let return_nonnull = inferred
-                    || contracts.iter().any(|c| {
-                        c.owner == owner
-                            && c.member == name
-                            && c.parameter.is_none()
-                            && c.visibility == Visibility::NonNull
-                    });
+                let return_nonnull =
+                    inferred || nonnull_contracts.contains(&(owner.as_str(), name.as_str(), None));
                 let parameters = item["parameters"]
                     .as_array()
                     .into_iter()
                     .flatten()
                     .map(|p| {
                         let param_name = p["Name"].as_str().unwrap_or("").to_owned();
-                        let nonnull = contracts.iter().any(|c| {
-                            c.owner == owner
-                                && c.member == name
-                                && c.parameter.as_deref() == Some(&param_name)
-                                && c.visibility == Visibility::NonNull
-                        });
+                        let nonnull = nonnull_contracts.contains(&(
+                            owner.as_str(),
+                            name.as_str(),
+                            Some(param_name.as_str()),
+                        ));
                         ParameterSymbol {
                             name: param_name,
                             kind: declared_type(p["type"].as_str(), p["valueType"].as_str()),
@@ -370,16 +495,23 @@ impl Symbols {
                 );
             }
         }
-        let declarations: Vec<_> = symbols.procs.keys().cloned().collect();
+        let read_elapsed = started.elapsed();
+        for (owner, name) in symbols.procs.keys() {
+            symbols
+                .proc_owners_by_name
+                .entry(name.clone())
+                .or_default()
+                .push(owner.clone());
+        }
         let overridden: Vec<_> = symbols
             .procs
             .iter()
             .filter(|(_, proc)| proc.inferred_return)
             .filter(|((owner, name), _)| {
-                declarations.iter().any(|(other_owner, other_name)| {
-                    other_owner != owner
-                        && other_name == name
-                        && symbols.is_subtype(other_owner, owner)
+                symbols.proc_owners_by_name.get(name).is_some_and(|owners| {
+                    owners.iter().any(|other_owner| {
+                        other_owner != owner && symbols.is_subtype(other_owner, owner)
+                    })
                 })
             })
             .map(|((owner, name), _)| (owner.clone(), name.clone()))
@@ -389,14 +521,188 @@ impl Symbols {
                 continue;
             };
             proc.return_kind = "unknown".into();
-            proc.return_nonnull = contracts.iter().any(|contract| {
-                contract.owner == owner
-                    && contract.member == name
-                    && contract.parameter.is_none()
-                    && contract.visibility == Visibility::NonNull
-            });
+            proc.return_nonnull =
+                nonnull_contracts.contains(&(owner.as_str(), name.as_str(), None));
+        }
+        let override_elapsed = started.elapsed() - read_elapsed;
+        // Resolve each dependency once, then propagate from leaves. A cycle,
+        // unresolved call, or impure callee has no ready node and stays unsafe.
+        let mut remaining = HashMap::<(String, String), usize>::new();
+        let mut dependents = HashMap::<(String, String), Vec<(String, String)>>::new();
+        let mut ready = VecDeque::new();
+        for (key, effect) in &symbols.proc_effects {
+            if !effect.pure || symbols.duplicate_procs.contains(key) {
+                continue;
+            }
+            let mut calls = HashSet::new();
+            let mut unresolved = false;
+            for call in &effect.global_calls {
+                if let Some(callee) = symbols.resolved_global_effect_call(&key.0, call) {
+                    calls.insert(callee);
+                } else {
+                    unresolved = true;
+                    break;
+                }
+            }
+            if unresolved {
+                continue;
+            }
+            remaining.insert(key.clone(), calls.len());
+            if calls.is_empty() {
+                ready.push_back(key.clone());
+            }
+            for callee in calls {
+                dependents.entry(callee).or_default().push(key.clone());
+            }
+        }
+        while let Some(key) = ready.pop_front() {
+            if !symbols.effect_free_procs.insert(key.clone()) {
+                continue;
+            }
+            if let Some(callers) = dependents.get(&key) {
+                for caller in callers {
+                    if let Some(count) = remaining.get_mut(caller) {
+                        *count -= 1;
+                        if *count == 0 {
+                            ready.push_back(caller.clone());
+                        }
+                    }
+                }
+            }
+        }
+        symbols.fresh_constructors = symbols
+            .proc_effects
+            .iter()
+            .filter(|((owner, name), effect)| {
+                name == "New"
+                    && !symbols
+                        .duplicate_procs
+                        .contains(&(owner.clone(), name.clone()))
+                    && effect.fresh_only
+                    && effect.global_calls.iter().all(|call| {
+                        symbols
+                            .resolved_global_effect_call(owner, call)
+                            .is_some_and(|callee| symbols.effect_free_procs.contains(&callee))
+                    })
+            })
+            .map(|((owner, _), _)| owner.clone())
+            .collect();
+        if profile {
+            eprintln!(
+                "dm-health symbols: total={:?} read={:?} json={:?} effect_walk={:?} return_walk={:?} override_index={:?} effect_graph={:?} procs={} contracts={}",
+                started.elapsed(),
+                read_elapsed,
+                parse_time,
+                effect_time,
+                return_time,
+                override_elapsed,
+                started.elapsed() - read_elapsed - override_elapsed,
+                symbols.procs.len(),
+                contracts.len(),
+            );
         }
         Ok(symbols)
+    }
+
+    fn resolved_global_effect_call(&self, owner: &str, name: &str) -> Option<(String, String)> {
+        let mut current = Some(owner.to_owned());
+        while let Some(path) = current {
+            if path != "/" && self.procs.contains_key(&(path.clone(), name.into())) {
+                return None;
+            }
+            current = self.parent(&path);
+        }
+        let key = ("/".into(), name.into());
+        (self.procs.contains_key(&key) && !self.duplicate_procs.contains(&key)).then_some(key)
+    }
+
+    pub fn fresh_constructor_preserves_existing(&self, path: &str) -> bool {
+        self.fresh_constructors.contains(path)
+    }
+    pub fn effect_free_global_call(&self, owner: &str, name: &str) -> bool {
+        if let Some(found) = self
+            .global_effect_cache
+            .read()
+            .unwrap()
+            .get(owner)
+            .and_then(|calls| calls.get(name))
+            .copied()
+        {
+            return found;
+        }
+        let safe = self
+            .resolved_global_effect_call(owner, name)
+            .is_some_and(|key| self.effect_free_procs.contains(&key));
+        self.global_effect_cache
+            .write()
+            .unwrap()
+            .entry(owner.to_owned())
+            .or_default()
+            .insert(name.to_owned(), safe);
+        safe
+    }
+    pub fn fresh_method_preserves_existing(&self, path: &str, name: &str) -> bool {
+        let mut current = Some(path.to_owned());
+        while let Some(owner) = current {
+            let key = (owner.clone(), name.to_owned());
+            if self.procs.contains_key(&key) {
+                return !self.duplicate_procs.contains(&key)
+                    && self.proc_effects.get(&key).is_some_and(|effect| {
+                        effect.fresh_only
+                            && effect.global_calls.iter().all(|call| {
+                                self.resolved_global_effect_call(&owner, call)
+                                    .is_some_and(|callee| self.effect_free_procs.contains(&callee))
+                            })
+                    });
+            }
+            current = self.parent(&owner);
+        }
+        false
+    }
+    pub fn effect_free_dispatch(&self, path: &str, name: &str) -> bool {
+        if let Some(found) = self
+            .dispatch_effect_cache
+            .read()
+            .unwrap()
+            .get(path)
+            .and_then(|methods| methods.get(name))
+            .copied()
+        {
+            return found;
+        }
+        let safe = self.compute_effect_free_dispatch(path, name);
+        self.dispatch_effect_cache
+            .write()
+            .unwrap()
+            .entry(path.to_owned())
+            .or_default()
+            .insert(name.to_owned(), safe);
+        safe
+    }
+
+    fn compute_effect_free_dispatch(&self, path: &str, name: &str) -> bool {
+        let mut current = Some(path.to_owned());
+        let mut base = None;
+        while let Some(owner) = current {
+            let key = (owner.clone(), name.to_owned());
+            if self.procs.contains_key(&key) {
+                base = Some(key);
+                break;
+            }
+            current = self.parent(&owner);
+        }
+        if !base.is_some_and(|key| self.effect_free_procs.contains(&key)) {
+            return false;
+        }
+        self.proc_owners_by_name.get(name).is_some_and(|owners| {
+            owners
+                .iter()
+                .filter(|owner| self.is_subtype(owner, path))
+                .all(|owner| {
+                    self.effect_free_procs
+                        .contains(&(owner.clone(), name.to_owned()))
+                })
+        })
     }
     pub fn proc(&self, owner: &str, name: &str) -> Option<&ProcSymbol> {
         let mut current = owner.to_owned();
@@ -498,7 +804,122 @@ impl Symbols {
 
 #[cfg(test)]
 mod tests {
-    use super::{declared_type, Symbols};
+    use super::{declared_type, scan_proc_effect, ProcEffect, Symbols};
+
+    #[test]
+    fn append_to_implicit_result_may_mutate_shared_alias() {
+        let append = serde_json::json!({"kind":"DMASTAppend","fields":{
+            "LHS":{"kind":"DMASTIdentifier","fields":{"Identifier":"."}},
+            "RHS":{"kind":"DMASTConstantInteger","fields":{"Value":1}}
+        }});
+        let mut effect = ProcEffect {
+            pure: true,
+            fresh_only: true,
+            ..ProcEffect::default()
+        };
+        scan_proc_effect(&append, &mut effect);
+        assert!(!effect.pure);
+        assert!(!effect.fresh_only);
+    }
+
+    #[test]
+    fn constructor_effects_follow_global_calls_and_reject_escapes() {
+        let proc = |owner: &str, name: &str, body: serde_json::Value| {
+            serde_json::json!({"kind":"proc","owner":owner,"name":name,
+                "file":"code/test.dm","line":1,"parameters":[],"returnType":null,
+                "body":body})
+            .to_string()
+        };
+        let pure = proc(
+            "/",
+            "number",
+            serde_json::json!({"kind":"DMASTProcBlockInner",
+            "fields":{"Statements":[{"kind":"DMASTProcStatementReturn","fields":{
+                "Value":{"kind":"DMASTConstantInteger","fields":{"Value":1}}
+            }}]}}),
+        );
+        let fresh = proc(
+            "/datum/new_data",
+            "New",
+            serde_json::json!({"kind":"DMASTProcBlockInner",
+            "fields":{"Statements":[
+                {"kind":"DMASTProcStatementExpression","fields":{"Expression":{
+                    "kind":"DMASTAssign","fields":{
+                        "LHS":{"kind":"DMASTDereference","fields":{
+                            "Expression":{"kind":"DMASTIdentifier","fields":{"Identifier":"src"}},
+                            "Operations":[{"kind":"FieldOperation","fields":{"Identifier":"value"}}]
+                        }},
+                        "RHS":{"kind":"DMASTProcCall","fields":{
+                            "Callable":{"kind":"DMASTCallableProcIdentifier","fields":{"Identifier":"number"}},
+                            "Parameters":[]
+                        }}
+                    }
+                }}}
+            ]}}),
+        );
+        let escaping = proc(
+            "/datum/escaping",
+            "New",
+            serde_json::json!({
+                "kind":"DMASTProcBlockInner","fields":{"Statements":[{
+                    "kind":"DMASTProcStatementReturn","fields":{
+                        "Value":{"kind":"DMASTIdentifier","fields":{"Identifier":"src"}}
+                    }
+                }]}
+            }),
+        );
+        let dynamic = proc(
+            "/datum/dynamic",
+            "New",
+            serde_json::json!({
+                "kind":"DMASTProcBlockInner","fields":{"Statements":[{
+                    "kind":"DMASTProcStatementExpression","fields":{"Expression":{
+                        "kind":"DMASTCall","fields":{}
+                    }}
+                }]}
+            }),
+        );
+        let input = [pure, fresh, escaping, dynamic].join("\n");
+        let symbols = Symbols::collect(input.as_bytes(), &[]).unwrap();
+        assert!(symbols.fresh_constructor_preserves_existing("/datum/new_data"));
+        assert!(!symbols.fresh_constructor_preserves_existing("/datum/escaping"));
+        assert!(!symbols.fresh_constructor_preserves_existing("/datum/dynamic"));
+    }
+
+    #[test]
+    fn effect_dependency_worklist_accepts_chains_and_rejects_cycles() {
+        let call = |name: &str| {
+            serde_json::json!({"kind":"DMASTProcCall","fields":{
+                "Callable":{"kind":"DMASTCallableProcIdentifier","fields":{"Identifier":name}},
+                "Parameters":[]
+            }})
+        };
+        let proc = |name: &str, value: serde_json::Value| {
+            serde_json::json!({
+                "kind":"proc","owner":"/","name":name,"file":"code/test.dm","line":1,
+                "parameters":[],"returnType":null,"body":{
+                    "kind":"DMASTProcBlockInner","fields":{
+                        "Statements":[{"kind":"DMASTProcStatementReturn","fields":{"Value":value}}]
+                    }
+                }
+            })
+            .to_string()
+        };
+        let input = [
+            proc(
+                "leaf",
+                serde_json::json!({"kind":"DMASTConstantInteger","fields":{"Value":1}}),
+            ),
+            proc("middle", call("leaf")),
+            proc("top", call("middle")),
+            proc("cycle_a", call("cycle_b")),
+            proc("cycle_b", call("cycle_a")),
+        ]
+        .join("\n");
+        let symbols = Symbols::collect(input.as_bytes(), &[]).unwrap();
+        assert!(symbols.effect_free_global_call("/datum/test", "top"));
+        assert!(!symbols.effect_free_global_call("/datum/test", "cycle_a"));
+    }
 
     #[test]
     fn descendant_index_matches_individual_queries() {
