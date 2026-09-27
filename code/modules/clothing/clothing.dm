@@ -261,7 +261,6 @@
 		else
 			. = ..()
 
-
 /obj/item/clothing/ears/offear
 	name = "Other ear"
 	w_class = ITEMSIZE_HUGE
@@ -346,7 +345,6 @@
 	. = ..()
 	transfer_blood = 0
 	update_icon()
-
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
 	wearer = om_handle(user)
@@ -643,12 +641,7 @@
 		span_red("More motion while \the [name] move, feet pressing down against you.")
 	)
 
-/obj/item/clothing/shoes/Destroy()
-	if(shoes)
-		QDEL_NULL(shoes)
-	if(holding)
-		QDEL_NULL(holding)
-	return ..()
+REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 
 /obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	set name = "Draw Boot Knife"
@@ -910,7 +903,6 @@
 	preserve_item = 1
 	equip_sound = 'sound/items/jumpsuit_equip.ogg'
 
-
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi'
@@ -930,9 +922,7 @@
 	toggleicon = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/clothing/suit/Destroy()
-	QDEL_NULL(hood)
-	return ..()
+REF_OWNED(/obj/item/clothing/suit, "hood")
 
 /obj/item/clothing/suit/update_icon()
 	. = ..()
@@ -1029,7 +1019,6 @@
 			standing.add_overlay(I)
 	else
 		return ..()
-
 
 ///////////////////////////////////////////////////////////////////////
 //Under clothing
@@ -1193,7 +1182,6 @@
 		M.update_inv_w_uniform()
 
 	set_clothing_index()
-
 
 /obj/item/clothing/under/examine(mob/user)
 	. = ..()
@@ -1363,7 +1351,6 @@
 				if(icon_state && icon_states_fast(update_icon_define_digi):Find(icon_state)) //Unsure what to do to this seeing as it does :Find()
 					update_icon_define = update_icon_define_digi
 
-
 		// if not-digitigrade, only act if the clothing was previously fit for a digitigrade char
 		else
 			if(fit_for_digi)
@@ -1421,7 +1408,6 @@
 /obj/item/clothing/head/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
 
-
 /obj/item/clothing/head/attack_robot(mob/living/silicon/robot/user)
 	. = ..()
 
@@ -1436,7 +1422,6 @@
 		return
 	user.place_on_head(src)
 	balloon_alert(user, "picked up hat")
-
 
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)
@@ -1460,7 +1445,6 @@
 		user.forceMove(src)
 
 	return ..()
-
 
 /obj/item/clothing
 	var/recent_struggle = 0

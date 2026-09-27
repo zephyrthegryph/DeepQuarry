@@ -7,9 +7,7 @@
 	pockets = new/obj/item/storage/internal(src)
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
-/obj/item/clothing/suit/storage/Destroy()
-	QDEL_NULL(pockets)
-	return ..()
+REF_OWNED(/obj/item/clothing/suit/storage, "pockets")
 
 /obj/item/clothing/suit/storage/attack_hand(mob/user as mob)
 	if (pockets.handle_attack_hand(user))
@@ -50,7 +48,6 @@
 		to_chat(usr, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
 		return
 	update_clothing_icon()	//so our overlays update
-
 
 /obj/item/clothing/suit/storage/hooded/toggle
 	name = DEVELOPER_WARNING_NAME

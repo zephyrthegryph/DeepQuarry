@@ -81,9 +81,7 @@
 	if(tgarscreen_path)
 		tgarscreen = new tgarscreen_path(src)
 
-/obj/item/clothing/glasses/omnihud/Destroy()
-	QDEL_NULL(tgarscreen)
-	. = ..()
+REF_OWNED(/obj/item/clothing/glasses/omnihud, "tgarscreen")
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
 	if(tgarscreen)
@@ -96,7 +94,6 @@
 		. += "\n " + span_notice("The HUD indicator reads ON.")
 	else
 		. += "\n " + span_notice("The HUD indicator reads OFF.")
-
 
 /obj/item/clothing/glasses/omnihud/emp_act(severity, recursive)
 	. = ..()
@@ -211,8 +208,6 @@
 	ar_toggled = !ar_toggled
 	usr.update_mob_action_buttons()
 	usr.recalculate_vis()
-
-
 
 /obj/item/clothing/glasses/omnihud/proc/ar_interact(mob/living/carbon/human/user)
 	return 0 //The base models do nothing.
@@ -382,7 +377,6 @@
 	else
 		icon_state = initial(icon_state)
 	update_clothing_icon()
-
 
 /obj/item/clothing/glasses/hud/health/eyepatch
 	name = "Medical Hudpatch"

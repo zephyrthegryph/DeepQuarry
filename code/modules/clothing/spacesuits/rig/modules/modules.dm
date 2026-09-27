@@ -139,7 +139,6 @@
 	QDEL_NULL_LIST(stat_modules)
 	. = ..()
 
-
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)
 	holder = new_holder
@@ -231,10 +230,6 @@
 	module = loc
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
-
-/atom/movable/stat_rig_module/Destroy()
-	module = null
-	. = ..()
 
 /atom/movable/stat_rig_module/proc/AddHref(list/href_list)
 	return
