@@ -729,3 +729,30 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
         "refresh caches T"
     );
 }
+
+#[test]
+fn stepping_allocates_only_chunks_with_writable_nodes() {
+    // A 64x64x8 grid (128 chunks): one warm patch of cells beside a strip of
+    // space reservoirs whose values stay at the default.
+    let dims = GridDims::new(64, 64, 8).unwrap();
+    let mut w = World::<HeatToy>::new(dims, FieldConfig::default());
+    for x in 0..8 {
+        let cell = dims.index(x, 0, 0).unwrap();
+        w.geom.set(cell, Geom::cell(1.0));
+        w.cells.set(cell, HeatCell::at(1.0, 400.0));
+    }
+    for y in 16..32 {
+        let cell = dims.index(0, y, 3).unwrap();
+        w.geom.set(cell, Geom::reservoir(1.0));
+    }
+    let pool = pool(2);
+    for _ in 0..5 {
+        w.step(&pool);
+    }
+    assert_eq!(
+        w.cells.allocated_chunks(),
+        1,
+        "only the chunk with non-reservoir cells is ever written"
+    );
+    assert_eq!(w.geom.allocated_chunks(), 2);
+}

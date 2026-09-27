@@ -412,7 +412,13 @@ impl<K: FieldKind> FieldState<K> {
                     self.active[chunk] = true;
                 }
             }
-            None => self.active.fill(true),
+            // First step: every chunk that has geometry (a chunk without it
+            // has no field nodes, so nothing to step).
+            None => {
+                for (chunk, active) in self.active.iter_mut().enumerate() {
+                    *active = geom.chunk(chunk).is_some();
+                }
+            }
         }
         if let Some(last) = &self.last_geom {
             for chunk in geom.chunks_differing_from(last) {
@@ -451,8 +457,22 @@ impl<K: FieldKind> FieldState<K> {
                 }
             }
         }
-        let owners: Vec<usize> = (0..chunks).filter(|&c| owner[c]).collect();
-        let targets: Vec<usize> = (0..chunks).filter(|&c| target[c]).collect();
+        // Only chunks with field nodes own edges (an edge needs a node at
+        // both ends), and only chunks with a non-reservoir node are ever
+        // written. Listing a chunk as a target allocates it, so a chunk of
+        // pure reservoir (space) or no geometry at all must not be listed:
+        // stepping everything once allocated every chunk of the grid.
+        let owners: Vec<usize> = (0..chunks)
+            .filter(|&c| owner[c] && geom.chunk(c).is_some())
+            .collect();
+        let targets: Vec<usize> = (0..chunks)
+            .filter(|&c| {
+                target[c]
+                    && geom
+                        .chunk(c)
+                        .is_some_and(|g| g.iter().any(|g| g.is_node() && !g.reservoir))
+            })
+            .collect();
         let mut slot = vec![u32::MAX; chunks];
         for (i, &c) in owners.iter().enumerate() {
             slot[c] = u32::try_from(i).expect("chunk count fits u32");

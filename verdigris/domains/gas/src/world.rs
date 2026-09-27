@@ -125,16 +125,32 @@ struct Slot {
 	live: bool,
 }
 
+/// Slots per [`Mains`] chunk: the slab grows by whole chunks, never by
+/// doubling one large block (DreamDaemon is 32-bit; a boot holds a slot for
+/// every turf's air until it registers).
+const MAINS_CHUNK: usize = 1024;
+
 /// The main-owned mixture slab. Slots are reused; a handle is only valid
 /// while its datum lives (as before).
 #[derive(Default)]
 pub struct Mains {
-	slots: Vec<Slot>,
+	slots: Vec<Vec<Slot>>,
+	len: usize,
 	free: Vec<u32>,
 	live: usize,
 }
 
 impl Mains {
+	fn slot(&self, i: u32) -> Option<&Slot> {
+		let i = i as usize;
+		self.slots.get(i / MAINS_CHUNK)?.get(i % MAINS_CHUNK)
+	}
+
+	fn slot_mut(&mut self, i: u32) -> Option<&mut Slot> {
+		let i = i as usize;
+		self.slots.get_mut(i / MAINS_CHUNK)?.get_mut(i % MAINS_CHUNK)
+	}
+
 	/// Allocates a slot.
 	///
 	/// # Errors
@@ -142,61 +158,60 @@ impl Mains {
 	pub fn alloc(&mut self, mix: Mixture) -> Result<u32> {
 		self.live += 1;
 		if let Some(i) = self.free.pop() {
-			let slot = &mut self.slots[i as usize];
+			let slot = self.slot_mut(i).expect("freed slots exist");
 			slot.mix = mix;
 			slot.revision.bump();
 			slot.live = true;
 			return Ok(i);
 		}
-		let i = u32::try_from(self.slots.len())?;
+		let i = u32::try_from(self.len)?;
 		if i >= PIPE_BASE {
 			self.live -= 1;
 			bail!("out of main gas mixture handles ({PIPE_BASE})");
 		}
-		self.slots.push(Slot {
+		if self.slots.last().is_none_or(|c| c.len() == MAINS_CHUNK) {
+			self.slots.push(Vec::with_capacity(MAINS_CHUNK));
+		}
+		self.slots.last_mut().expect("just ensured").push(Slot {
 			mix,
 			revision: Counter::new(),
 			live: true,
 		});
+		self.len += 1;
 		Ok(i)
 	}
 
 	pub fn free(&mut self, i: u32) {
-		if let Some(slot) = self.slots.get_mut(i as usize) {
-			if slot.live {
-				slot.live = false;
-				slot.mix = Mixture::new();
-				slot.revision.bump();
-				self.free.push(i);
-				self.live -= 1;
-			}
+		let Some(slot) = self.slot_mut(i) else {
+			return;
+		};
+		if slot.live {
+			slot.live = false;
+			slot.mix = Mixture::new();
+			slot.revision.bump();
+			self.free.push(i);
+			self.live -= 1;
 		}
 	}
 
 	#[must_use]
 	pub fn get(&self, i: u32) -> Option<&Mixture> {
-		self.slots
-			.get(i as usize)
-			.filter(|s| s.live)
-			.map(|s| &s.mix)
+		self.slot(i).filter(|s| s.live).map(|s| &s.mix)
 	}
 
 	pub fn get_mut(&mut self, i: u32) -> Option<&mut Mixture> {
-		self.slots
-			.get_mut(i as usize)
-			.filter(|s| s.live)
-			.map(|s| &mut s.mix)
+		self.slot_mut(i).filter(|s| s.live).map(|s| &mut s.mix)
 	}
 
 	fn bump(&mut self, i: u32) {
-		if let Some(s) = self.slots.get_mut(i as usize) {
+		if let Some(s) = self.slot_mut(i) {
 			s.revision.bump();
 		}
 	}
 
 	#[must_use]
 	pub fn revision(&self, i: u32) -> u32 {
-		self.slots.get(i as usize).map_or(0, |s| s.revision.get())
+		self.slot(i).map_or(0, |s| s.revision.get())
 	}
 
 	#[must_use]
@@ -206,14 +221,22 @@ impl Mains {
 
 	#[must_use]
 	pub fn capacity(&self) -> usize {
-		self.slots.len()
+		self.len
+	}
+
+	/// Heap bytes the slab holds.
+	#[must_use]
+	pub fn memory_bytes(&self) -> usize {
+		self.slots.len() * MAINS_CHUNK * size_of::<Slot>()
+			+ self.slots.capacity() * size_of::<Vec<Slot>>()
+			+ self.free.capacity() * 4
 	}
 
 	/// Total gas over every live slot (for conservation checks).
 	#[must_use]
 	pub fn totals(&self) -> [f64; Q] {
 		let mut out = [0.0; Q];
-		for s in self.slots.iter().filter(|s| s.live) {
+		for s in self.slots.iter().flatten().filter(|s| s.live) {
 			let m = s.mix.moles_array();
 			for (o, v) in out.iter_mut().zip(m) {
 				*o += f64::from(v);
@@ -770,6 +793,23 @@ struct PendingTake {
 	seen: [f32; Q],
 }
 
+/// Whether a registered cell needs no stored value: an empty reservoir
+/// (space) is exactly the default cell to the field, which never changes a
+/// reservoir, so pure space keeps its chunks unallocated.
+fn stores_nothing(value: &GasCell, reservoir: bool) -> bool {
+	reservoir && value.planet == 0 && value.total_moles() <= 0.0 && value.energy <= 0.0
+}
+
+/// One cell to register with [`Field::register_many`].
+#[derive(Clone, Copy, Debug)]
+pub struct Registration {
+	pub cell: u32,
+	pub value: GasCell,
+	pub volume: f32,
+	pub reservoir: bool,
+	pub mask: Option<u8>,
+}
+
 /// The turf gas field and its sim.
 pub struct Field {
 	pub sim: Sim,
@@ -1034,7 +1074,14 @@ impl Field {
 	) {
 		let volume = if volume > 0.0 { volume } else { CELL_VOLUME };
 		value.refresh_in(volume);
-		let _ = self.sim.port(self.key.cells).put(cell, value);
+		if stores_nothing(&value, reservoir) {
+			// Space keeps no cell: an empty reservoir is the default value.
+			if self.sim.port_ref(self.key.cells).read(cell) != Some(GasCell::default()) {
+				let _ = self.sim.port(self.key.cells).put(cell, GasCell::default());
+			}
+		} else {
+			let _ = self.sim.port(self.key.cells).put(cell, value);
+		}
 		let current = self
 			.sim
 			.port_ref(self.key.geometry)
@@ -1047,6 +1094,87 @@ impl Field {
 			self.geom(cell, GeomCmd::Reservoir(reservoir));
 		}
 		self.set_mask(cell, mask);
+	}
+
+	/// Registers many cells at once (round start, a map load). While no
+	/// frame runs and nothing is queued, the values go straight into the
+	/// live stores (`Sim::write_direct`) instead of one command and one
+	/// overlay entry per cell, which held every registration twice until the
+	/// first frame; otherwise each is registered as by [`register`].
+	///
+	/// [`register`]: Self::register
+	pub fn register_many(&mut self, regs: Vec<Registration>) {
+		if regs.is_empty() {
+			return;
+		}
+		let mut geoms = Vec::with_capacity(regs.len());
+		let mut cells = Vec::with_capacity(regs.len());
+		for r in &regs {
+			let volume = if r.volume > 0.0 { r.volume } else { CELL_VOLUME };
+			let mask = match r.mask {
+				Some(m) => m,
+				None => self.masks.get(&r.cell).copied().unwrap_or(0),
+			};
+			self.masks.insert(r.cell, mask);
+			geoms.push((
+				r.cell,
+				Geom {
+					capacity: volume,
+					blocked: self.effective_mask(r.cell, mask),
+					reservoir: r.reservoir,
+				},
+			));
+			let mut value = r.value;
+			value.refresh_in(volume);
+			if stores_nothing(&value, r.reservoir) {
+				value = GasCell::default();
+			}
+			cells.push((r.cell, value));
+		}
+		let geometry = self.key.geometry;
+		let wrote_geometry = self
+			.sim
+			.write_direct(geometry, |store| {
+				for &(cell, g) in &geoms {
+					store.set(cell, g);
+				}
+			})
+			.is_some();
+		if !wrote_geometry {
+			for &(cell, g) in &geoms {
+				let current = self.sim.port_ref(geometry).read(cell).unwrap_or_default();
+				if current.capacity != g.capacity {
+					self.geom(cell, GeomCmd::Capacity(g.capacity));
+				}
+				if current.reservoir != g.reservoir {
+					self.geom(cell, GeomCmd::Reservoir(g.reservoir));
+				}
+				if current.blocked != g.blocked {
+					self.geom(cell, GeomCmd::Blocked(g.blocked));
+				}
+			}
+		}
+		let key = self.key.cells;
+		let wrote_cells = self
+			.sim
+			.write_direct(key, |store| {
+				for &(cell, value) in &cells {
+					// Writing the default into an unallocated chunk would
+					// allocate it: pure space stays unallocated.
+					if value == GasCell::default() && store.get(cell) == Some(GasCell::default()) {
+						continue;
+					}
+					store.set(cell, value);
+				}
+			})
+			.is_some();
+		if !wrote_cells {
+			for (cell, value) in cells {
+				if self.sim.port_ref(key).read(cell) != Some(value) {
+					let _ = self.sim.port(key).put(cell, value);
+				}
+			}
+		}
 	}
 
 	/// Drops a cell from the field (it became a wall, or its turf went away).
@@ -1185,6 +1313,50 @@ impl Default for GasWorld {
 
 thread_local! {
 	static WORLD: RefCell<GasWorld> = RefCell::new(GasWorld::default());
+}
+
+fn map_bytes<K, V, S>(m: &HashMap<K, V, S>) -> usize {
+	m.capacity() * (size_of::<(K, V)>() + 1)
+}
+
+impl GasWorld {
+	/// Heap bytes the gas world holds, by part (capacities, approximate),
+	/// appended to `out` as `(name, bytes)`.
+	pub fn memory_report(&self, out: &mut Vec<(String, usize)>) {
+		out.push(("gas.mains".into(), self.mains.memory_bytes()));
+		out.push(("gas.pipes".into(), self.pipes.memory_bytes()));
+		out.push((
+			"gas.dirty".into(),
+			map_bytes(&self.dirty.watched) + map_bytes(&self.dirty.dirty),
+		));
+		out.push((
+			"gas.mix_watches".into(),
+			self.mix_watches.store.reserved_bytes()
+				+ map_bytes(&self.mix_watches.watched)
+				+ map_bytes(&self.mix_watches.cells),
+		));
+		out.push(("gas.wakes".into(), self.wakes.capacity() * size_of::<Wake>()));
+		let Some(field) = &self.field else {
+			return;
+		};
+		for (name, m) in field.sim.memory() {
+			out.push((format!("gas.field.{name}.view"), m.view));
+			out.push((format!("gas.field.{name}.overlay"), m.overlay));
+			out.push((format!("gas.field.{name}.commands"), m.commands));
+			if m.fallback > 0 {
+				out.push((format!("gas.field.{name}.fallback"), m.fallback));
+			}
+		}
+		out.push(("gas.field.masks".into(), map_bytes(&field.masks)));
+		out.push(("gas.field.takes".into(), map_bytes(&field.takes)));
+		out.push((
+			"gas.field.planets".into(),
+			field
+				.planets
+				.read()
+				.map_or(0, |p| p.capacity() * size_of::<GasCell>()),
+		));
+	}
 }
 
 /// Runs `f` on the gas world. Never call DM (which may call back into gas

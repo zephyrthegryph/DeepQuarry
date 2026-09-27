@@ -36,6 +36,28 @@
 
 GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 
+/// Rust heap marks through boot: list(name, current MB, peak MB, parts), where
+/// parts are the gas and heat worlds' structures above 1 MB
+/// (`vg_verdigris_memory_report`). The peak is process-wide and monotonic, so
+/// the first mark whose peak jumps names the stage that set it.
+GLOBAL_LIST_EMPTY(benchmark_rust_marks)
+
+/proc/benchmark_rust_mark(name)
+	var/list/heap = vg_verdigris_allocator_diagnostics()
+	if(!islist(heap))
+		return
+	var/list/parts = list()
+	var/list/report = vg_verdigris_memory_report()
+	for(var/i = 1, i < length(report), i += 2)
+		if(report[i + 1] >= 1048576)
+			parts[report[i]] = round(report[i + 1] / 1048576, 0.1)
+	GLOB.benchmark_rust_marks += list(list(
+		"name" = name,
+		"current_mb" = round(heap[1] / 1048576, 0.1),
+		"peak_mb" = round(heap[2] / 1048576, 0.1),
+		"parts" = parts,
+	))
+
 /proc/benchmark_init_frame_begin()
 	var/datum/benchmark_init_stats/S = GLOB.bench_init_stats
 	if(!S)
@@ -200,6 +222,15 @@ GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 	var/list/subsystems = benchmark_subsystem_init_times()
 	for(var/name in subsystems)
 		metric("init_ms_[name]", subsystems[name], "ms")
+	benchmark_rust_mark("booted")
+	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
+	var/list/rust_now = vg_verdigris_allocator_diagnostics()
+	if(islist(rust_now))
+		metric("booted_rust_heap_mb", rust_now[1] / 1048576, "MB")
+		metric("booted_rust_heap_peak_mb", rust_now[2] / 1048576, "MB")
+	var/list/process = benchmark_process_memory()
+	if(islist(process) && !isnull(process["private_mb"]))
+		metric("booted_private_mb", process["private_mb"], "MB")
 	metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	var/turfs = world.maxx * world.maxy * world.maxz
 	metric("world_turfs", turfs, "turfs", "none")
@@ -298,6 +329,7 @@ GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 	var/list/qdel_types_before = deep_copy_rows(S.qdel_by_type)
 	var/list/lighting_before = list("sources" = SSlighting.times_fired)
 	mark("before_explosion")
+	benchmark_rust_mark("before explosion")
 	begin_window()
 	var/started = REALTIMEOFDAY
 	explosion(center, devastation, devastation * 2, devastation * 3, 0, FALSE, 0)
@@ -319,6 +351,8 @@ GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 		profile = benchmark_proc_profile()
 	end_window("explosion")
 	mark("after_explosion")
+	benchmark_rust_mark("after explosion")
+	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	metric("explosion_resolve_wall_ms", (resolved_at - started) * 100, "ms")
 	metric("explosion_lighting_settle_wall_ms", (lit_at - resolved_at) * 100, "ms")
 	var/list/diagnostics = SSexplosions.performance_diagnostics()

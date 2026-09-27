@@ -15,7 +15,9 @@ use vg_core::sim::Mode;
 
 use crate::cell::{GasCell, TurfGas};
 use crate::gas::constants::CELL_VOLUME;
-use crate::world::{cell_of_mixture, with_world, Field, GasWorld, MixRef, OBSERVATION_STRIDE};
+use crate::world::{
+	cell_of_mixture, with_world, Field, GasWorld, MixRef, Registration, OBSERVATION_STRIDE,
+};
 
 /// Every face a mask can block (`NORTH|SOUTH|EAST|WEST|UP|DOWN`).
 /// @dm-define AIR_BLOCK_ALL
@@ -177,7 +179,17 @@ fn is_set(value: Result<f32, byondapi::Error>) -> bool {
 /// becomes the cell's). Space's shared immutable vacuum stays a main-owned
 /// mixture; its cells are reservoirs. Planet turfs are reservoirs that
 /// relax back to their atmosphere when DM disturbs them.
-fn register_turf(w: &mut GasWorld, src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
+///
+/// With `batch`, a new cell's registration is appended there for
+/// [`Field::register_many`](crate::world::Field::register_many) instead of
+/// being queued as commands one cell at a time.
+fn register_turf(
+	w: &mut GasWorld,
+	src: ByondValue,
+	flag: i32,
+	mask: Option<u8>,
+	mut batch: Option<&mut Vec<Registration>>,
+) -> Result<()> {
 	let cell = src.get_ref()?;
 	let Some(field) = w.field.as_mut() else {
 		return Ok(());
@@ -230,7 +242,16 @@ fn register_turf(w: &mut GasWorld, src: ByondValue, flag: i32, mask: Option<u8>)
 	let mut value = cell_of_mixture(&mix);
 	if immutable {
 		value.flags |= crate::cell::flags::IMMUTABLE;
-		field.register(cell, value, mix.volume, true, mask);
+		match batch.as_deref_mut() {
+			Some(batch) => batch.push(Registration {
+				cell,
+				value,
+				volume: mix.volume,
+				reservoir: true,
+				mask,
+			}),
+			None => field.register(cell, value, mix.volume, true, mask),
+		}
 		// Shared vacuum: the datum stays main-owned.
 		return Ok(());
 	}
@@ -241,7 +262,16 @@ fn register_turf(w: &mut GasWorld, src: ByondValue, flag: i32, mask: Option<u8>)
 			.unwrap_or_default();
 		value.planet = field.planet_id(&key, value);
 	}
-	field.register(cell, value, mix.volume, planet, mask);
+	match batch {
+		Some(batch) => batch.push(Registration {
+			cell,
+			value,
+			volume: mix.volume,
+			reservoir: planet,
+			mask,
+		}),
+		None => field.register(cell, value, mix.volume, planet, mask),
+	}
 	if let MixRef::Main(slot) = r {
 		w.mains.free(slot);
 	}
@@ -257,7 +287,7 @@ fn register_turf(w: &mut GasWorld, src: ByondValue, flag: i32, mask: Option<u8>)
 fn hook_register_turf(src: ByondValue, flag: ByondValue, mask: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
 	let mask = mask_from_value(&mask);
-	with_world(|w| register_turf(w, src, flag, mask))?;
+	with_world(|w| register_turf(w, src, flag, mask, None))?;
 	Ok(ByondValue::null())
 }
 
@@ -268,10 +298,20 @@ fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondV
 	let flag = flag.get_number()? as i32;
 	let turfs = list.iter()?.collect::<Vec<_>>();
 	with_world(|w| -> Result<()> {
+		let mut batch = Vec::with_capacity(turfs.len());
+		let mut result = Ok(());
 		for (turf, mask) in &turfs {
-			register_turf(w, *turf, flag, mask_from_value(mask))?;
+			result = register_turf(w, *turf, flag, mask_from_value(mask), Some(&mut batch));
+			if result.is_err() {
+				break;
+			}
 		}
-		Ok(())
+		// Apply what was gathered even on an error: those turfs' air handles
+		// already point at their cells.
+		if let Some(field) = w.field.as_mut() {
+			field.register_many(batch);
+		}
+		result
 	})?;
 	Ok(ByondValue::null())
 }

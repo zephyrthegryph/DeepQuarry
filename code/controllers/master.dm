@@ -527,6 +527,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/time = rustg_time_milliseconds(SS_INIT_TIMER_KEY)
 	var/seconds = round(time / 1000, 0.01)
 	subsystem.init_time_ms = time
+#ifdef BENCHMARK
+	benchmark_rust_mark("init [subsystem.name]")
+#endif
 
 	// Always update the blackbox tally regardless.
 	// NOT IMPLEMENTED: SSblackbox.record_feedback("tally", "subsystem_initialize", time, subsystem.name)

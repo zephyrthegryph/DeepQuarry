@@ -21,7 +21,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use crate::arena::{Arena, ArenaError};
-use crate::command::{CommandBuffer, Op, Seq, Sequenced};
+use crate::command::{Batch, CommandBuffer, Op, Seq};
 use crate::cow::{ChunkLayout, CowStore};
 use crate::frame::{Res, TaskCtx};
 use crate::slot::Handle;
@@ -172,7 +172,7 @@ impl<V: Clone + Default> View<V> {
 pub struct DomainState<D: Domain> {
     /// The live cells. Tasks declared as writers may change them freely.
     pub store: CowStore<D::Value>,
-    pending: Vec<Sequenced<DomainOp<D>>>,
+    pending: Batch<DomainOp<D>>,
     applied_through: Seq,
     version: u64,
     shortfall_total: f64,
@@ -191,7 +191,7 @@ impl<D: Domain> DomainState<D> {
     ) -> Self {
         Self {
             store: CowStore::new(layout),
-            pending: Vec::new(),
+            pending: Batch::new(),
             applied_through: Seq(0),
             version: 0,
             shortfall_total: 0.0,
@@ -215,8 +215,7 @@ impl<D: Domain> DomainState<D> {
     /// Applies every queued command in sequence order (§3.9). The built-in
     /// apply task calls this first thing each frame.
     pub fn apply_pending(&mut self) {
-        debug_assert!(self.pending.windows(2).all(|w| w[0].seq < w[1].seq));
-        for cmd in self.pending.drain(..) {
+        for cmd in self.pending.drain() {
             let cell = self
                 .store
                 .get_mut(cmd.target)
@@ -241,11 +240,11 @@ impl<D: Domain> DomainState<D> {
         self.applied_through
     }
 
-    pub(crate) fn enqueue(&mut self, batch: Vec<Sequenced<DomainOp<D>>>) {
+    pub(crate) fn enqueue(&mut self, mut batch: Batch<DomainOp<D>>) {
         if self.pending.is_empty() {
             self.pending = batch;
         } else {
-            self.pending.extend(batch);
+            self.pending.append(&mut batch);
         }
     }
 
@@ -357,6 +356,27 @@ pub struct FallbackStats {
     pub pending_pieces: usize,
     pub applied_pieces: u64,
     pub rejected_pieces: u64,
+}
+
+/// Heap bytes one domain port holds, by part (capacities, not lengths).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PortMemory {
+    /// Chunks of the pinned view (shared with the worker's live store and
+    /// older views wherever a chunk is unchanged).
+    pub view: usize,
+    /// The overlay of DM writes the pinned view does not include yet.
+    pub overlay: usize,
+    /// Commands queued for the next frame.
+    pub commands: usize,
+    /// The fallback path's live store and pending pieces.
+    pub fallback: usize,
+}
+
+impl PortMemory {
+    #[must_use]
+    pub const fn total(&self) -> usize {
+        self.view + self.overlay + self.commands + self.fallback
+    }
 }
 
 /// The DM-facing side of a domain. Main thread only (`!Sync`); no locks.
@@ -546,6 +566,50 @@ impl<D: Domain> MainPort<D> {
         self.overlay.len()
     }
 
+    /// Whether DM has nothing in flight for this domain: overlay mode, no
+    /// queued or unapplied command and no overlay entry, so the worker's
+    /// live store is exactly what DM sees.
+    pub(crate) fn quiescent(&self, state: &DomainState<D>) -> bool {
+        self.fallback.is_none()
+            && self.commands.is_empty()
+            && self.overlay.is_empty()
+            && state.pending.is_empty()
+            && state.applied_through == self.commands.last_issued()
+    }
+
+    /// Pins a view of `state`'s live store (after a direct write), dropping
+    /// any older view still in the mailbox so it can never be pinned over it.
+    pub(crate) fn repin(&mut self, state: &DomainState<D>) {
+        let _stale = self.inbox.take();
+        if let Some(batch) = self.outbox_inbox.collect() {
+            self.collected.append(batch);
+        }
+        self.pinned = Arc::new(View {
+            store: state.store.snapshot(),
+            version: state.version,
+            applied_through: state.applied_through,
+            shortfall_total: state.shortfall_total,
+        });
+    }
+
+    /// Heap bytes this port holds (see [`PortMemory`]).
+    #[must_use]
+    pub fn memory(&self) -> PortMemory {
+        let fallback = self.fallback.as_ref().map_or(0, |fb| {
+            fb.live.reserved_bytes()
+                + fb.pieces
+                    .iter()
+                    .map(|p| p.capacity() * size_of::<(u32, D::Value)>())
+                    .sum::<usize>()
+        });
+        PortMemory {
+            view: self.pinned.store.reserved_bytes(),
+            overlay: self.overlay.capacity_bytes(),
+            commands: self.commands.capacity_bytes(),
+            fallback,
+        }
+    }
+
     /// Ticks since a new view was last pinned.
     #[must_use]
     pub const fn view_age_ticks(&self) -> u32 {
@@ -652,7 +716,7 @@ impl<D: Domain> MainPort<D> {
             return None;
         }
         let batch = self.commands.take();
-        let recorded = record.then(|| Box::new(batch.clone()) as Box<dyn Any + Send + Sync>);
+        let recorded = record.then(|| Box::new(batch.to_vec()) as Box<dyn Any + Send + Sync>);
         state.enqueue(batch);
         recorded
     }

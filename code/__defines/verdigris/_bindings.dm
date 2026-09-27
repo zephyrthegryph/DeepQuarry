@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "034eab3a3bbb7263"
+#define VERDIGRIS_ABI "1554b128c3b71548"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1918,6 +1918,15 @@
 // /proc/verdigris_jobs_completed (verdigris/ffi/src/jobs.rs)
 /proc/vg_verdigris_jobs_completed()
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_jobs_completed_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Heap bytes the gas and heat worlds hold, by part, as a flat list of
+/// `name, bytes` pairs (capacities, approximate). With the allocator's live
+/// total this tells what holds the Rust heap (init_and_turfs.md §0.1).
+// /proc/verdigris_memory_report (verdigris/domains/gas/src/heat.rs)
+/proc/vg_verdigris_memory_report()
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_memory_report_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 

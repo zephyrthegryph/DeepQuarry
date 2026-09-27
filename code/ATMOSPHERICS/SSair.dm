@@ -132,8 +132,17 @@ SUBSYSTEM_DEF(air)
 	hotspot_reactions = init_hotspot_reactions()
 
 	build_multiz_atmos_levels()
+#ifdef BENCHMARK
+	benchmark_rust_mark("air: before turfs")
+#endif
 	setup_allturfs()
+#ifdef BENCHMARK
+	benchmark_rust_mark("air: turfs registered")
+#endif
 	setup_atmos_machinery()
+#ifdef BENCHMARK
+	benchmark_rust_mark("air: pipenets")
+#endif
 	// Rust setup is the sole pipenet topology build. Compatibility wrappers are
 	// materialized from its connected-region publication.
 	setup_turf_visuals()

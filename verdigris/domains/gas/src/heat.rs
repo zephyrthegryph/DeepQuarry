@@ -149,27 +149,23 @@ fn heat_set_turf(
 #[auxmacros::bind("/proc/heat_set_turfs_bulk")]
 fn heat_set_turfs_bulk(records: ByondValue) -> Result<ByondValue> {
 	let values = records.get_list_values()?;
-	let mut set = 0u32;
-	with_heat(|w| -> Result<()> {
-		for r in values.chunks_exact(7) {
-			let Ok(cell) = r[0].get_ref() else {
-				continue;
-			};
-			let spec = cell_spec(
-				r[1].get_number()?,
-				r[2].get_number()?,
-				r[3].get_number()?,
-				r[4].get_number()?,
-				r[5].get_number()?,
-				r[6].is_true(),
-			)?;
-			if w.set_cell(cell, spec) {
-				set += 1;
-			}
-		}
-		Ok(())
-	})
-	.transpose()?;
+	let mut specs = Vec::with_capacity(values.len() / 7);
+	for r in values.chunks_exact(7) {
+		let Ok(cell) = r[0].get_ref() else {
+			continue;
+		};
+		let spec = cell_spec(
+			r[1].get_number()?,
+			r[2].get_number()?,
+			r[3].get_number()?,
+			r[4].get_number()?,
+			r[5].get_number()?,
+			r[6].is_true(),
+		)?;
+		specs.push((cell, spec));
+	}
+	drop(values);
+	let set = with_heat(|w| w.set_cells(&specs)).unwrap_or(0);
 	Ok((set as f32).into())
 }
 
@@ -658,4 +654,29 @@ mod decode_tests {
 			"error should name the bad kind: {err}"
 		);
 	}
+}
+
+/// Heap bytes the gas and heat worlds hold, by part, as a flat list of
+/// `name, bytes` pairs (capacities, approximate). With the allocator's live
+/// total this tells what holds the Rust heap (init_and_turfs.md §0.1).
+#[auxmacros::bind("/proc/verdigris_memory_report")]
+fn verdigris_memory_report() -> Result<ByondValue> {
+	let mut parts: Vec<(String, usize)> = Vec::new();
+	with_world(|w| w.memory_report(&mut parts));
+	with_heat(|h| {
+		for (name, m) in h.memory() {
+			parts.push((format!("heat.{name}.view"), m.view));
+			parts.push((format!("heat.{name}.overlay"), m.overlay));
+			parts.push((format!("heat.{name}.commands"), m.commands));
+		}
+	});
+	let mut values = Vec::with_capacity(parts.len() * 2);
+	for (name, bytes) in parts {
+		values.push(ByondValue::new_str(name)?);
+		#[allow(clippy::cast_precision_loss)]
+		values.push(ByondValue::from(bytes as f32));
+	}
+	let list = ByondValue::new_list()?;
+	list.write_list(&values)?;
+	Ok(list)
 }

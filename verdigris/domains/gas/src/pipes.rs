@@ -329,6 +329,23 @@ impl PipeNet {
 		Self::default()
 	}
 
+	/// Heap bytes the pipe network holds (approximate).
+	#[must_use]
+	pub fn memory_bytes(&self) -> usize {
+		fn map<K, V>(m: &HashMap<K, V>) -> usize {
+			m.capacity() * (size_of::<(K, V)>() + 1)
+		}
+		self.net.reserved_bytes()
+			+ map(&self.ports)
+			+ map(&self.targets)
+			+ map(&self.devices)
+			+ map(&self.slot_of)
+			+ self.seen.capacity() * size_of::<(u32, u32)>()
+			+ self.slots.capacity() * size_of::<Option<RawHandle>>()
+			+ self.revisions.capacity() * 4
+			+ self.free.capacity() * 4
+	}
+
 	/// The node for a DM port id.
 	#[must_use]
 	pub fn port(&self, port: u32) -> Option<NodeId<Pipes>> {

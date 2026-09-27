@@ -274,6 +274,12 @@ fn watch_pack(slot: u32, generation: u8, body: bool) -> u32 {
 }
 
 impl HeatWorld {
+    /// Heap bytes the heat world's sim ports hold, by domain name.
+    #[must_use]
+    pub fn memory(&self) -> Vec<(&'static str, vg_core::owner::PortMemory)> {
+        self.sim.memory()
+    }
+
     /// Builds the heat sim over `config.dims` with `gas` as the gas side.
     ///
     /// # Errors
@@ -353,6 +359,103 @@ impl HeatWorld {
 
     fn cell_count(&self) -> u32 {
         self.dims.layer_len() * self.dims.max_z()
+    }
+
+    /// The geometry and starting value of a cell registered from `spec`
+    /// into an empty slot, or `None` if the spec removes the cell.
+    fn new_cell(spec: CellSpec) -> Option<(Geom, SolidCell)> {
+        let reservoir = spec.kind != CellKind::Solid;
+        let capacity = if reservoir {
+            spec.capacity.max(1.0)
+        } else {
+            spec.capacity
+        };
+        if capacity.is_nan() || capacity <= 0.0 || !capacity.is_finite() {
+            return None;
+        }
+        let mut f = match spec.kind {
+            CellKind::Solid => 0,
+            CellKind::Space => flags::SPACE,
+            CellKind::Planet => flags::PLANET,
+        };
+        if spec.air {
+            f |= flags::AIR;
+        }
+        let geom = Geom {
+            capacity,
+            blocked: DirMask::NONE.with(Face::Up).with(Face::Down),
+            reservoir,
+        };
+        let t = if spec.kind == CellKind::Space {
+            TCMB
+        } else {
+            spec.temperature.max(TCMB)
+        };
+        Some((
+            geom,
+            SolidCell::at(capacity, t, spec.conductivity.max(0.0), spec.emissivity, f),
+        ))
+    }
+
+    /// Registers many turfs (round start, a map load). Cells not yet in the
+    /// field go straight into the live stores while no frame runs and
+    /// nothing is queued (`Sim::write_direct`), instead of one command and
+    /// one overlay entry each; the rest go through [`set_cell`]. Returns
+    /// how many were set.
+    ///
+    /// [`set_cell`]: Self::set_cell
+    pub fn set_cells(&mut self, specs: &[(u32, CellSpec)]) -> u32 {
+        let count = self.cell_count();
+        let geometry = self.field.geometry;
+        let mut fresh = Vec::with_capacity(specs.len());
+        let mut rest = Vec::new();
+        for &(cell, spec) in specs {
+            if cell >= count {
+                continue;
+            }
+            let old = self.sim.port_ref(geometry).read(cell).unwrap_or_default();
+            match Self::new_cell(spec) {
+                Some((geom, value)) if old == Geom::default() => fresh.push((cell, geom, value, spec)),
+                _ => rest.push((cell, spec)),
+            }
+        }
+        let mut set = 0;
+        if !fresh.is_empty() {
+            let wrote = self
+                .sim
+                .write_direct(geometry, |store| {
+                    for &(cell, geom, _, _) in &fresh {
+                        store.set(cell, geom);
+                    }
+                })
+                .is_some();
+            if wrote {
+                let cells = self.field.cells;
+                let wrote_cells = self
+                    .sim
+                    .write_direct(cells, |store| {
+                        for &(cell, _, value, _) in &fresh {
+                            store.set(cell, value);
+                        }
+                    })
+                    .is_some();
+                if !wrote_cells {
+                    for &(cell, _, value, _) in &fresh {
+                        let _ = self.sim.port(cells).put(cell, value);
+                    }
+                }
+                set += u32::try_from(fresh.len()).unwrap_or(u32::MAX);
+            } else {
+                // Something is in flight: register them one by one.
+                rest.extend(fresh.iter().map(|&(cell, _, _, spec)| (cell, spec)));
+            }
+        }
+        for (cell, spec) in rest {
+            if self.set_cell(cell, spec) {
+                set += 1;
+            }
+        }
+        set
     }
 
     /// Registers or updates a turf. A cell that already exists keeps its
