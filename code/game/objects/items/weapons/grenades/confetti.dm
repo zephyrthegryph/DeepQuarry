@@ -14,10 +14,7 @@
 	confetti_spread = new /datum/effect/effect/system/confetti_spread()
 	confetti_spread.attach(src)
 
-/obj/item/grenade/confetti/Destroy()
-	qdel(confetti_spread)
-	confetti_spread = null
-	return ..()
+REF_OWNED(/obj/item/grenade/confetti, "confetti_spread")
 
 /obj/item/grenade/confetti/detonate() //Find a good confetti firework or pop sound effect later
 	start_effect_sprayer(confetti_spread, confetti_strength, 'sound/effects/snap.ogg')

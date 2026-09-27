@@ -233,10 +233,6 @@
 	AddComponent(/datum/component/hose_connector/input)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose)
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/Destroy()
-	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	. = ..()
-
 /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(atom/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
 	SIGNAL_HANDLER
 	for(var/datum/component/hose_connector/HC in GetComponents(/datum/component/hose_connector))
@@ -310,7 +306,6 @@
 			W.set_up(my_target)
 
 		return
-
 
 /obj/item/reagent_containers/spray/windowsealant
 	name = "Krak-b-gone"

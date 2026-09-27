@@ -81,7 +81,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	if (!istype(e))
 		return // Abnormal exception, don't even bother
 
-	var/erroruid = "[e.file][e.line]"
+	var/erroruid = error_uid(e)
 	var/datum/error_viewer/error_source/error_source = LAZYACCESS(error_sources, erroruid)
 	if (!error_source)
 		error_source = new(e)
@@ -98,7 +98,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	//  from the same source hasn't been shown too recently
 	if (error_source.next_message_at <= world.time)
 		var/const/viewtext = "\[view]" // Nesting these in other brackets went poorly
-		//to_chat(world, "Runtime in <b>[e.file]</b>, line <b>[e.line]</b>: <b>[html_encode(e.name)]</b> [error_entry.make_link(viewtext)]")
+		//to_chat(world, "Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b> [error_entry.make_link(viewtext)]")
 		var/err_msg_delay
 		if(config?.loaded)
 			err_msg_delay = CONFIG_GET(number/error_msg_delay)
@@ -116,7 +116,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		name = "\[[time_stamp()]] Uncaught exceptions"
 		return
 
-	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[e.file]</b>, line <b>[e.line]</b>: <b>[html_encode(e.name)]</b>"
+	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b>"
 
 /datum/error_viewer/error_source/show_to(user, datum/error_viewer/back_to, linear)
 	if (!istype(back_to))
@@ -142,11 +142,11 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		return
 
 	if(skip_count)
-		name = "\[[time_stamp()]] Skipped [skip_count] runtimes in [e.file],[e.line]."
+		name = "\[[time_stamp()]] Skipped [skip_count] runtimes in [error_where(e)]."
 		is_skip_count = TRUE
 		return
 
-	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[e.file]</b>, line <b>[e.line]</b>: <b>[html_encode(e.name)]</b>"
+	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b>"
 	exc = e
 	if (istype(desclines))
 		for (var/line in desclines)

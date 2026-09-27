@@ -14,21 +14,13 @@
 	var/spell_holder_handle
 
 /// A spell button -> the spell master it is listed on. The master reads its buttons with
-/// spell_buttons(), a button its master with spell_master_of(). A button going takes it off its
-/// holder's screen, and the last button going deletes the master.
+/// spell_buttons(), a button its master with spell_master_of(). Either end going drops the edge;
+/// an emptied master deletes itself when next clicked.
 /datum/om/relation/spell_button_on
 	name = "spell button"
 	source_single = TRUE
 
-/datum/om/relation/spell_button_on/on_unlink(atom/movable/screen/spell/source, atom/movable/screen/movable/spell_master/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(!QDELETED(source))
-		return
-	var/mob/holder = target.spell_holder()
-	holder?.client?.screen -= source
-	if(!QDELETED(target) && !length(target.spell_buttons()))
-		qdel(target)
-
+// LIFECYCLE: the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
 /atom/movable/screen/movable/spell_master/Destroy()
 	. = ..()
 	var/mob/holder = spell_holder()
@@ -184,9 +176,7 @@
 
 	var/icon/last_charged_icon
 
-/atom/movable/screen/spell/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("last_charged_icon")
+REF_OWNED(/atom/movable/screen/spell, list("last_charged_icon"))
 
 /// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/spell/proc/spell() as /datum/spell

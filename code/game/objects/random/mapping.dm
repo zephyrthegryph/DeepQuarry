@@ -2182,7 +2182,7 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/effect/map_helper/LateInitialize()
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/base_turf
 	name = "z-wide baseturf editor"
@@ -2192,7 +2192,7 @@
 /obj/effect/map_helper/base_turf/LateInitialize()
 	if(baseturf)
 		using_map.base_turf_by_z["[z]"] = baseturf
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/base_turf/area
 	name = "area-wide baseturf editor"
@@ -2202,7 +2202,7 @@
 	var/area/our_area = get_area(src)
 	if(our_area)
 		our_area.base_turf = baseturf
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/no_tele
 	name = "z-wide teleport block"
@@ -2218,7 +2218,7 @@
 	*/
 	for(var/turf/T in Z_TURFS(z))
 		T.block_tele = 1
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/no_tele/area
 	name = "area-wide teleport block"
@@ -2230,7 +2230,7 @@
 		A.flags |= BLUE_SHIELDED
 		for(var/turf/T in A.contents)
 			T.block_tele = 1
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/make_indoors
 	name = "z-wide indoors maker"
@@ -2239,7 +2239,7 @@
 /obj/effect/map_helper/make_indoors/LateInitialize()
 	for(var/turf/simulated/T in Z_TURFS(z))
 		T.make_indoors()
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/make_indoors/area
 	name = "Area indoors maker"
@@ -2250,7 +2250,7 @@
 	if(A)
 		for(var/turf/simulated/T in A.contents)
 			T.make_indoors()
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/make_outdoors
 	name = "z-wide outdoors maker"
@@ -2259,7 +2259,7 @@
 /obj/effect/map_helper/make_outdoors/LateInitialize()
 	for(var/turf/simulated/T in Z_TURFS(z))
 		T.make_outdoors()
-	qdel(src)
+	expire(0)
 
 /obj/effect/map_helper/make_outdoors/area
 	name = "Area outdoors maker"
@@ -2270,7 +2270,7 @@
 	if(A)
 		for(var/turf/simulated/T in A.contents)
 			T.make_outdoors()
-	qdel(src)
+	expire(0)
 
 /*
 Make this if you can figure out a way to do it for every area in that z level exclusively
@@ -2295,7 +2295,7 @@ Make this if you can figure out a way to do it for every area in that z level ex
 	var/area/A = get_area(src)
 	if(A)
 		A.flags |= PHASE_SHIELDED
-	qdel(src)
+	expire(0)
 
 //For active edges in Sif POIs
 /obj/random/turf/lava/sif

@@ -99,7 +99,7 @@
 	if(will_break && src.loc == user) // If it's not in our hand anymore
 		user.visible_message(span_danger("[user] hit \the [target] with \the [src], shattering it!"), span_warning("You shatter \the [src] in your hand!"))
 		playsound(src, pick('sound/effects/Glassbr1.ogg', 'sound/effects/Glassbr2.ogg', 'sound/effects/Glassbr3.ogg'), 30, 1)
-		qdel(src)
+		consume(src, user)
 	return
 
 /obj/item/material/shard/Crossed(atom/movable/AM as mob|obj)

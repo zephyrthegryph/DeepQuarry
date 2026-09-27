@@ -45,17 +45,8 @@ Nothing else in the console has ID requirements.
 	if(stored_research)
 		LAZYADD(stored_research.consoles_accessing, src)
 
-/obj/machinery/computer/rdconsole_tg/Destroy()
-	if(stored_research)
-		LAZYREMOVE(stored_research.consoles_accessing, src)
-		stored_research = null
-	if(t_disk)
-		t_disk.forceMove(get_turf(src))
-		t_disk = null
-	if(d_disk)
-		d_disk.forceMove(get_turf(src))
-		d_disk = null
-	return ..()
+REF_BACKLIST(/obj/machinery/computer/rdconsole_tg, list("stored_research" = "consoles_accessing"))
+REF_SPILL(/obj/machinery/computer/rdconsole_tg, list("t_disk", "d_disk"))
 
 /obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
 	into += list(

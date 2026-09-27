@@ -59,6 +59,7 @@
 			var/datum/pipeline/P2 = node2.parent
 			network_node2 = P2.network
 
+// LIFECYCLE: a closed clamp reopens its pipe.
 /obj/machinery/clamp/Destroy()
 	if(!open)
 		open()
@@ -105,7 +106,7 @@
 	C.forceMove(usr_mob.loc)
 	if(ishuman(usr_mob))
 		usr_mob.put_in_hands(C)
-	qdel(src)
+	replace_with(src, C)
 	return
 
 /obj/item/clamp

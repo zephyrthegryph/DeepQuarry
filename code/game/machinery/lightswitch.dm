@@ -33,11 +33,6 @@
 	on = area.lightswitch
 	update_icon()
 
-/obj/machinery/light_switch/Destroy()
-	area = null
-	overlay = null
-	return ..()
-
 /obj/machinery/light_switch/update_icon()
 	cut_overlays()
 	if(stat & NOPOWER)
@@ -50,7 +45,6 @@
 		. += emissive_appearance(icon, "light[on]-overlay")
 
 	return add_overlay(.)
-
 
 /obj/machinery/light_switch/examine(mob/user)
 	. = ..()

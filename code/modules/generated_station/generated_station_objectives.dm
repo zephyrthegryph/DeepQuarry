@@ -8,10 +8,6 @@
 	..()
 	department_ids = list()
 
-/datum/expedition_objective/generated_department/Destroy()
-	department_ids = null
-	return ..()
-
 /datum/expedition_objective/generated_department/populate(datum/expedition_site/S)
 	..()
 	for(var/obj/machinery/generated_station_department_control/control in S.station_controls)

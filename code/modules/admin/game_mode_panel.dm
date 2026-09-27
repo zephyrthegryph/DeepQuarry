@@ -11,11 +11,8 @@
 	..()
 	src.target_mode = target_mode
 
-/datum/game_mode_panel/Destroy()
-	if(target_mode?.tgui_game_mode_panel == src)
-		target_mode.tgui_game_mode_panel = null
-	target_mode = null
-	return ..()
+REF_PAIR(/datum/game_mode_panel, list("target_mode" = "tgui_game_mode_panel"))
+REF_PAIR(/datum/game_mode, list("tgui_game_mode_panel" = "target_mode"))
 
 /datum/game_mode_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)
@@ -106,7 +103,6 @@
 			recompute_antag_caps()
 			SStgui.update_uis(src)
 			return TRUE
-
 
 /datum/game_mode
 	var/datum/game_mode_panel/tgui_game_mode_panel

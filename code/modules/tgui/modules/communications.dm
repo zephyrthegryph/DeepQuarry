@@ -44,10 +44,6 @@
 	crew_announcement = new()
 	crew_announcement.newscast = TRUE
 
-/datum/tgui_module/communications/Destroy(force)
-	. = ..()
-	ATC = null
-
 /datum/tgui_module/communications/tgui_interact(mob/user, datum/tgui/ui)
 	if(using_map && !(get_z(user) in using_map.contact_levels))
 		to_chat(user, span_danger("Unable to establish a connection: You're too far away from the station!"))
@@ -280,7 +276,6 @@
 		if("callshuttle")
 			if(!is_authenticated(ui.user))
 				return
-
 
 			// Add confirmation message
 			var/response = tgui_alert(ui.user, "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?", "Confirm", list("Yes", "No"))

@@ -29,10 +29,6 @@
 /datum/component/crowd_detection/UnregisterFromParent()
 	om_stage_remove(parent, /datum/om/stage/life/trait/crowd_detection)
 
-/datum/component/crowd_detection/Destroy(force = FALSE)
-	human_parent = null
-	. = ..()
-
 /// Called by the crowd detection trait system each Life() cycle.
 /datum/component/crowd_detection/proc/life_tick()
 	handle_life()
@@ -152,7 +148,6 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return discomfort
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Lonelyness
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,8 +223,6 @@
 	if(!message && !get_calm())
 		message = span_infoplain("The nearby company calms you down...")
 	. = ..(amount, message)
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Agoraphobia

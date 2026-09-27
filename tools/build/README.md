@@ -52,3 +52,15 @@ Example dm_versions.json file:
   }
 ]
 ```
+
+## DEBUG is off in production builds
+
+`deepquarry.dme` no longer defines `DEBUG`. The production `dm` target (and
+`build`/`server`) compiles without it: runtimes lose their file and line
+numbers, and the world loads ~56 MB smaller (doc/rewrite/init_and_turfs.md
+§0.5). The custom runtime handler in `code/modules/error_handler/` stays on;
+without file and line it dedupes on the error text and proc name.
+
+Test, bench and autowiki builds add `DEBUG` themselves (`TEST_DEFINES` in
+`build.ts`), so test runtimes keep their line numbers. For a local debug
+build of the main .dmb, pass it explicitly: `tools/build/build.sh -DDEBUG`.

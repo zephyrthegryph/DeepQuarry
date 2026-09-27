@@ -62,7 +62,7 @@
 	to_chat(user, span_notice("You pull \the [paper] off \the [src]."))
 	papers--
 	if(papers <= 0)
-		qdel(src)
+		consume(src, user)
 	else
 		update_icon()
 
@@ -106,6 +106,7 @@
 	pixel_x = 0
 	pixel_y = 0
 
+// LIFECYCLE: persistence stops tracking it.
 /obj/item/paper/sticky/Destroy()
 	reset_persistence_tracking()
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)

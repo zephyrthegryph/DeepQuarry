@@ -23,9 +23,7 @@
 		BB = new projectile_type(src)
 	randpixel_xy()
 
-/obj/item/ammo_casing/Destroy()
-	QDEL_NULL(BB)
-	return ..()
+REF_OWNED(/obj/item/ammo_casing, "BB")
 
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()

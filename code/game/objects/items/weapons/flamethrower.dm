@@ -44,11 +44,7 @@
 	. = ..()
 	status = TRUE
 
-/obj/item/flamethrower/Destroy()
-	QDEL_NULL(weldtool)
-	QDEL_NULL(igniter)
-	QDEL_NULL(ptank)
-	. = ..()
+REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
 
 /obj/item/flamethrower/periodic_step()
 	if(!lit)

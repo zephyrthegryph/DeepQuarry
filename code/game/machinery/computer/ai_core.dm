@@ -133,8 +133,7 @@
 REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 /obj/structure/AIcore/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You deconstruct the frame."))
-	new /obj/item/stack/material/plasteel(loc, 4)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/plasteel, 4)
 
 /obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
 	switch(state)
@@ -223,9 +222,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 	icon_state = "ai-empty"
 	anchored = TRUE
 	state = 20//So it doesn't interact based on the above. Not really necessary.
-
-/obj/structure/AIcore/deactivated/Destroy()
-	return ..()
 
 /obj/structure/AIcore/deactivated/proc/load_ai(mob/living/silicon/ai/transfer, obj/item/aicard/card, mob/user)
 

@@ -18,7 +18,6 @@
 	var/obj/machinery/power/solar_control/control = null
 	var/SOLAR_MAX_DIST = 60 // ition // ours are >40 away
 
-
 /obj/machinery/power/tracker/Initialize(mapload, glass_type)
 	. = ..()
 	update_icon()
@@ -30,6 +29,7 @@
 	. = ..()
 	connect_to_network()
 
+// LIFECYCLE: leaves its solar control computer.
 /obj/machinery/power/tracker/Destroy()
 	unset_control() //remove from control computer
 	. = ..()
@@ -67,10 +67,9 @@
 	var/obj/item/solar_assembly/S = new(loc)
 	S.tracker = TRUE
 	S.anchored = TRUE
-	new glass_type(loc, 2)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	user.visible_message(span_notice("[user] takes the glass off the tracker."))
-	qdel(src)
+	replace_with(src, glass_type, 2)
 
 // Tracker Electronic
 

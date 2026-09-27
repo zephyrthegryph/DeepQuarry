@@ -34,5 +34,4 @@
 			new /obj/item/stack/cable_coil(loc, 10)
 			to_chat(user, "You cut the cables and disassemble the unused power terminal.")
 			qdel(T)
-	new /obj/machinery/power/apc(loc, ndir, 1)
-	qdel(src)
+	replace_with(src, /obj/machinery/power/apc, ndir, 1)

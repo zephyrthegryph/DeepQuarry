@@ -15,11 +15,7 @@
 	if(!length(alarms))
 		return PROCESS_KILL
 
-/datum/alarm_handler/Destroy()
-	QDEL_LIST(alarms)
-	alarms_assoc = null
-	listeners = null
-	return ..()
+REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 
 /datum/alarm_handler/proc/triggerAlarm(atom/origin, atom/source, duration = 0, severity = 1, hidden = 0)
 	var/new_alarm

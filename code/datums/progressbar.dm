@@ -66,6 +66,7 @@
 	if(starting_amount)
 		update(starting_amount)
 
+// LIFECYCLE: the bars above it on the same mob slide down to close the gap.
 /datum/progressbar/Destroy()
 	if(user)
 		for(var/pb in user.progressbars[bar_loc])
@@ -89,7 +90,6 @@
 
 	return ..()
 
-
 ///Called right before the user's Destroy()
 /datum/progressbar/proc/on_user_delete(datum/source)
 	SIGNAL_HANDLER
@@ -97,7 +97,6 @@
 	user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	user = null
 	qdel(src)
-
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
 /datum/progressbar/proc/clean_user_client(datum/source)
@@ -107,7 +106,6 @@
 		return
 	user_client.images -= bar
 	user_client = null
-
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
 /datum/progressbar/proc/on_user_login(datum/source)
@@ -122,14 +120,12 @@
 	user_client = user.client
 	add_prog_bar_image_to_client()
 
-
 ///Adds a smoothly-appearing progress bar image to the player's screen.
 /datum/progressbar/proc/add_prog_bar_image_to_client()
 	bar.pixel_z = 0
 	bar.alpha = 0
 	user_client.images += bar
 	animate(bar, pixel_z = ICON_SIZE_Y + offset_y + (PROGRESSBAR_HEIGHT * (listindex - 1)), alpha = 255, time = PROGRESSBAR_ANIMATION_TIME, easing = SINE_EASING)
-
 
 ///Updates the progress bar image visually.
 /datum/progressbar/proc/update(progress)
@@ -138,7 +134,6 @@
 		return
 	last_progress = progress
 	bar.icon_state = "prog_bar_[round(((progress / goal) * 100), 5)]"
-
 
 /// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
 /datum/progressbar/proc/animate_fill(duration)
@@ -165,7 +160,7 @@
 
 ///Progress bars are very generic, and what hangs a ref to them depends heavily on the context in which they're used
 ///So let's make hunting harddels easier yeah?
-/datum/progressbar/dump_harddel_info()
+/datum/progressbar/proc/dump_harddel_info()
 	if(harddel_deets_dumped)
 		return
 	harddel_deets_dumped = TRUE

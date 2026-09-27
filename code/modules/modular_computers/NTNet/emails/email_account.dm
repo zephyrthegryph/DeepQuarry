@@ -29,9 +29,10 @@
 		LAZYADD(GLOB.ntnet_global.email_accounts, src)
 	..()
 
-/datum/computer_file/data/email_account/Destroy()
-	LAZYREMOVE(GLOB.ntnet_global.email_accounts, src)
+/// Phase 2: leaves NTNet's email accounts.
+/datum/computer_file/data/email_account/lifecycle_dematerialize()
 	. = ..()
+	LAZYREMOVE(GLOB.ntnet_global.email_accounts, src)
 
 /datum/computer_file/data/email_account/proc/all_emails()
 	return (inbox | spam | deleted)

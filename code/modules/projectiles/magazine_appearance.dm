@@ -53,11 +53,6 @@
 	max_ammo   = mag.max_ammo
 	_build_cache(mag)
 
-/datum/magazine_appearance/Destroy()
-	thresholds = null
-	state_names = null
-	return ..()
-
 /// Scan the icon file for states of the form "[base_state]-[N]" (N = 0..max_ammo)
 /// and build the threshold/state_names parallel lists.  Caches results in GLOB
 /// so subsequent magazines of the same type skip the scan.

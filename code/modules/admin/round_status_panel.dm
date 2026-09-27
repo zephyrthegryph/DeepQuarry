@@ -15,7 +15,6 @@
 #define SHUTTLE_STATE_ARRIVING      "arriving"
 #define SHUTTLE_STATE_WARMUP        "warmup"
 
-
 /datum/round_status_panel
 	var/datum/admins/owner_admin
 	var/list/cached_antag_blocks
@@ -24,12 +23,8 @@
 	..()
 	src.owner_admin = owner_admin
 
-/datum/round_status_panel/Destroy()
-	if(owner_admin?.round_status_panel == src)
-		owner_admin.round_status_panel = null
-	owner_admin = null
-	cached_antag_blocks = null
-	return ..()
+REF_PAIR(/datum/round_status_panel, list("owner_admin" = "round_status_panel"))
+REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 
 /datum/round_status_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -176,7 +171,6 @@
 				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_traitor_panel, M)
 			return TRUE
 
-
 // /datum/admins extension: each admin owns one panel datum lazily.
 /datum/admins
 	var/datum/round_status_panel/round_status_panel
@@ -188,7 +182,6 @@
 	if(!round_status_panel)
 		round_status_panel = new(src)
 	round_status_panel.tgui_interact(user)
-
 
 #undef SHUTTLE_STATE_IDLE
 #undef SHUTTLE_STATE_COUNTING_DOWN

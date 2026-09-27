@@ -19,10 +19,7 @@
 	findsleeper()
 	return ..()
 
-/obj/machinery/sleep_console/Destroy()
-	if(sleeper)
-		sleeper.console = null
-	return ..()
+REF_PAIR(/obj/machinery/sleep_console, list("sleeper" = "console"))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// sleeper's own field is the occupant's environment, same as before the
@@ -36,7 +33,6 @@
 	// are its only writer now -- there is no generic field-link mechanism
 	// left to do it for them.
 
-
 /obj/machinery/sleep_console/proc/findsleeper()
 	var/obj/machinery/sleeper/sleepernew = null
 	for(var/direction in GLOB.cardinal) // Loop through every direction
@@ -45,7 +41,6 @@
 			sleeper = sleepernew
 			sleepernew.console = src
 			break
-
 
 /obj/machinery/sleep_console/attack_ai(mob/user)
 	return attack_hand(user)
@@ -133,10 +128,7 @@
 	default_apply_parts()
 	update_icon()
 
-/obj/machinery/sleeper/Destroy()
-	if(console)
-		console.sleeper = null
-	return ..()
+REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0
@@ -241,7 +233,6 @@
 		occupantData["btCelsius"] = occupant.bodytemperature - T0C
 		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
 
-
 		// I'm not sure WHY you'd want to put a simple_animal in a sleeper, but precedent is precedent
 		// Runtime is aptly named, isn't she?
 		if(ishuman(occupant) && !(NO_BLOOD in occupant.species.flags) && occupant.vessel)
@@ -269,7 +260,6 @@
 			data["beakerFreeSpace"] = 0
 	else
 		data["isBeakerLoaded"] = FALSE
-
 
 	var/stasis_level_name = "Error!"
 	for(var/N in stasis_choices)
@@ -303,7 +293,6 @@
 			chemicals.Add(list(list("title" = temp.name, "id" = temp.id, "commands" = list("chemical" = temp.id), "occ_amount" = reagent_amount, "pretty_amount" = pretty_amount, "injectable" = injectable, "overdosing" = overdosing, "od_warning" = caution)))
 	data["chemicals"] = chemicals
 	return data
-
 
 /obj/machinery/sleeper/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)

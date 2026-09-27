@@ -20,9 +20,6 @@
 
 	var/deconstructable = FALSE
 
-/obj/machinery/embedded_controller/radio/airlock/Destroy()
-	return ..()
-
 /obj/machinery/embedded_controller/radio/airlock/tgui_status(mob/user, datum/tgui_state/state)
 	. = ..()
 	if(!allowed(user))

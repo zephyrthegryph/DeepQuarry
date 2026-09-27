@@ -35,7 +35,6 @@
 	var/filter_type = -1
 	var/list/filtered_out = list()
 
-
 	var/frequency = ZERO_FREQ
 	var/datum/radio_frequency/radio_connection
 
@@ -67,10 +66,6 @@
 	air3.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 	if(frequency)
 		set_frequency(frequency)
-
-/obj/machinery/atmospherics/trinary/atmos_filter/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
 
 /obj/machinery/atmospherics/trinary/atmos_filter/update_icon()
 	if(mirrored)

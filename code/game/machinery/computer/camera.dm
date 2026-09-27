@@ -24,9 +24,7 @@
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
 
-/obj/machinery/computer/security/Destroy()
-	QDEL_NULL(camera)
-	return ..()
+REF_OWNED(/obj/machinery/computer/security, "camera")
 
 /obj/machinery/computer/security/tgui_interact(mob/user, datum/tgui/ui = null)
 	camera.tgui_interact(user, ui)
@@ -82,7 +80,6 @@
 /obj/machinery/computer/security/telescreen/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-
 /obj/machinery/computer/security/telescreen/entertainment
 	name = "entertainment monitor"
 	desc = "Damn, why do they never have anything interesting on these things? (Alt-click to toggle the display)"
@@ -131,13 +128,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 	radio.canhear_range = world.view // Same as default sight range.
 	power_change()
 
+REF_OWNED(/obj/machinery/computer/security/telescreen/entertainment, list("pinboard", "radio"))
+
+// LIFECYCLE: stops showing its feed.
 /obj/machinery/computer/security/telescreen/entertainment/Destroy()
 	if(showing)
 		stop_showing()
 	vis_contents.Cut()
-	QDEL_NULL(pinboard)
-	QDEL_NULL(radio)
-	showing = null
 	return ..()
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/toggle()
@@ -231,7 +228,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 	network = list(NETWORK_MERCENARY)
 	circuit = null
 	req_access = list(150)
-
 
 /obj/machinery/computer/security/abductor
 	name = "camera uplink"

@@ -108,6 +108,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		owner.add_language("Changeling")
 
 ///This is a component that is referenced to by the mind, so it should never be deleted
+// LIFECYCLE: antag state refuses deletion unless forced.
 /datum/component/antag/changeling/Destroy(force = FALSE)
 	if(!force)
 		return QDEL_HINT_LETMELIVE
@@ -251,13 +252,13 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	//////////
 
 /mob/proc/sting_can_reach(mob/M as mob, sting_range = 1)
-	if(M.loc == src.loc)
+	if(M.loc == loc)
 		return 1 //target and source are in the same thing
-	if(!isturf(src.loc) || !isturf(M.loc))
+	if(!isturf(loc) || !isturf(M.loc))
 		to_chat(src, span_warning("We cannot reach \the [M] with a sting!"))
 		return 0 //One is inside, the other is outside something.
 	// Maximum queued turfs set to 25; I don't *think* anything raises sting_range above 2, but if it does the 25 may need raising
-	if(!AStar(src.loc, M.loc, /turf/proc/AdjacentTurfsRangedSting, /turf/proc/Distance, max_nodes=25, max_node_depth=sting_range)) //If we can't find a path, fail
+	if(!AStar(loc, M.loc, /turf/proc/AdjacentTurfsRangedSting, /turf/proc/Distance, max_nodes=25, max_node_depth=sting_range)) //If we can't find a path, fail
 		to_chat(src, span_warning("We cannot find a path to sting \the [M] by!"))
 		return 0
 	return 1
@@ -433,10 +434,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 ///Changeling Panel
 /datum/changeling_panel
 	var/datum/component/antag/changeling/comp
-
-/datum/changeling_panel/Destroy(force)
-	comp = null
-	. = ..()
 
 /datum/changeling_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state

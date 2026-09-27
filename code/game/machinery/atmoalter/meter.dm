@@ -15,13 +15,25 @@
 
 /obj/machinery/meter/Initialize(mapload)
 	. = ..()
-	if (!target)
-		target = select_target()
+	set_target(target || select_target())
 
-/obj/machinery/meter/Destroy()
-	LAZYCLEARLIST(pipes_on_turf)
+/// Points the meter at `new_target`. The meter owns its lifetime watch on a
+/// pipe target: when the pipe is destroyed the meter comes off as an item.
+/obj/machinery/meter/proc/set_target(new_target)
+	if(istype(target, /obj/machinery/atmospherics/pipe))
+		UnregisterSignal(target, COMSIG_QDELETING)
+	target = new_target
+	if(istype(target, /obj/machinery/atmospherics/pipe))
+		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(on_target_deleted))
+
+/obj/machinery/meter/proc/on_target_deleted(datum/source)
+	SIGNAL_HANDLER
 	target = null
-	return ..()
+	if(QDELETED(src))
+		return
+	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
+	transfer_fingerprints_to(PM)
+	qdel(src)
 
 /obj/machinery/meter/proc/select_target()
 	var/obj/machinery/atmospherics/pipe/P
@@ -146,8 +158,7 @@
 
 /obj/machinery/meter/proc/wrench_act_tool_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
-	new /obj/item/pipe_meter(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/item/pipe_meter)
 
 /obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -166,7 +177,7 @@
 		LAZYOR(pipes_on_turf, pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
-	target = LAZYACCESS(pipes_on_turf, 1)
+	set_target(LAZYACCESS(pipes_on_turf, 1))
 	LAZYREMOVE(pipes_on_turf, target)
 	LAZYADD(pipes_on_turf, target)
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target]."))

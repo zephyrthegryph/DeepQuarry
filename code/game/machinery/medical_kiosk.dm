@@ -41,10 +41,6 @@
 	/// This determines if the kiosk can dispense or not. Edit the below line to FALSE if you don't want them to do such.
 	var/can_dispense = TRUE
 
-/obj/machinery/medical_kiosk/Destroy()
-	active_user = null
-	. = ..()
-
 
 /obj/machinery/medical_kiosk/update_icon()
 	. = ..()
@@ -222,9 +218,6 @@
 	var/tramadol_given = FALSE
 	var/inaprovaline_given = FALSE
 	var/medication_dispensed = FALSE
-
-
-
 
 	if(!can_dispense || (world.time < last_dispensed + dispense_cooldown))
 		able_to_dispense = FALSE

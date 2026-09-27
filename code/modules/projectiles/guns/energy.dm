@@ -43,12 +43,10 @@
 		power_supply.charge = charge_cost*rand(0,power_supply.maxcharge/charge_cost)
 	update_icon()
 
+// LIFECYCLE: the cell goes only if it is still inside the gun.
 /obj/item/gun/energy/Destroy()
-	if(self_recharge)
-		PERIODIC_STOP(src)
 	if(power_supply?.loc == src && !QDELETED(power_supply))
 		qdel(power_supply)
-	power_supply = null
 	return ..()
 
 /obj/item/gun/energy/get_cell()

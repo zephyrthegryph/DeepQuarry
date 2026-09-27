@@ -16,10 +16,7 @@
 	smoke = new /datum/effect/effect/system/smoke_spread/bad()
 	smoke.attach(src)
 
-/obj/item/grenade/smokebomb/Destroy()
-	qdel(smoke)
-	smoke = null
-	return ..()
+REF_OWNED(/obj/item/grenade/smokebomb, "smoke")
 
 /obj/item/grenade/smokebomb/detonate()
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)

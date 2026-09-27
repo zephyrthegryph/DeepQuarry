@@ -32,9 +32,7 @@
 	. = ..()
 	grill_loop = new(list(src), FALSE)
 
-/obj/machinery/appliance/cooker/grill/Destroy()
-	QDEL_NULL(grill_loop)
-	return ..()
+REF_OWNED(/obj/machinery/appliance/cooker/grill, "grill_loop")
 
 /obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon
 	if(!stat)

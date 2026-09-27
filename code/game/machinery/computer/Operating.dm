@@ -28,20 +28,14 @@
 			table.computer = src
 			break
 
-/obj/machinery/computer/operating/Destroy()
-	if(table)
-		table.computer = null
-		table = null
-	if(victim)
-		victim = null
-	return ..()
+REF_PAIR(/obj/machinery/computer/operating, list("table" = "computer"))
+REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 
 /obj/machinery/computer/operating/attack_ai(mob/user)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
 		return
 	tgui_interact(user)
-
 
 /obj/machinery/computer/operating/attack_hand(mob/user)
 	add_fingerprint(user)

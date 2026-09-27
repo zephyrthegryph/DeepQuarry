@@ -55,11 +55,6 @@ GLOBAL_VAR(latent_last_refusal)
 	/// Capacity one of them takes in its slot.
 	var/unit_cost = 0
 
-/datum/latent_entry/Destroy()
-	blob = null
-	snapshot = null
-	return ..()
-
 /// "interior#L4g2": slot, serial and generation. Different from real ids.
 /datum/latent_entry/proc/entry_id()
 	return "[slot][LEDGER_ENTRY_SEPARATOR]L[serial]g[generation]"

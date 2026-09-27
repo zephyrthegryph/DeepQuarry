@@ -21,14 +21,11 @@
 	popup_screen = new
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
+
+// LIFECYCLE: hides itself from every client it is shown to.
 /atom/movable/screen/movable/pic_in_pic/Destroy()
 	for(var/C in shown_to)
 		unshow_to(C)
-	QDEL_NULL(button_x)
-	QDEL_NULL(button_shrink)
-	QDEL_NULL(button_expand)
-	QDEL_NULL(button_pop)
-	QDEL_NULL(popup_screen)
 	return ..()
 
 /atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params)
@@ -188,6 +185,4 @@
 /atom/movable/screen/movable/pic_in_pic/proc/center() as /atom
 	return om_resolve(center_handle)
 
-/atom/movable/screen/movable/pic_in_pic/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("button_x", "button_expand", "button_shrink", "button_pop", "popup_screen", "standard_background")
+REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_expand", "button_shrink", "button_pop", "popup_screen", "standard_background"))

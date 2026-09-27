@@ -24,10 +24,6 @@
 	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 
-/obj/item/spell/shield/Destroy()
-	spark_system = null
-	return ..()
-
 /obj/item/spell/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(user.incapacitated())
 		return 0
@@ -47,7 +43,7 @@
 
 	if(!pay_energy(damage_to_energy_cost))
 		to_chat(owner, span_danger("Your shield fades due to lack of energy!"))
-		qdel(src)
+		consume(src, user)
 		return 0
 
 	//block as long as they are not directly behind us

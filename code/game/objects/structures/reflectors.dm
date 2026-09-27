@@ -151,31 +151,27 @@
 		var/obj/item/stack/material/S = W
 		if(istype(S, /obj/item/stack/material/glass))
 			if(S.use(5))
-				new /obj/structure/reflector/single(drop_location())
-				qdel(src)
+				replace_with(src, /obj/structure/reflector/single)
 			else
 				to_chat(user, span_warning("You need five sheets of glass to create a reflector!"))
 				return
 		if(istype(S, /obj/item/stack/material/glass/reinforced))
 			if(S.use(10))
-				new /obj/structure/reflector/double(drop_location())
-				qdel(src)
+				replace_with(src, /obj/structure/reflector/double)
 			else
 				to_chat(user, span_warning("You need ten sheets of reinforced glass to create a double reflector!"))
 				return
 		if(istype(S, /obj/item/stack/material/diamond))
 			if(S.use(1))
-				new /obj/structure/reflector/box(drop_location())
-				qdel(src)
+				replace_with(src, /obj/structure/reflector/box)
 	else
 		return ..()
 
 /obj/structure/reflector/proc/attackby_timed_done(mob/user)
 	user.visible_message(span_notice("[user] dismantles [src]."), span_notice("You dismantle [src]..."))
-	new framebuildstacktype(drop_location(), framebuildstackamount)
 	if(buildstackamount)
 		new buildstacktype(drop_location(), buildstackamount)
-	qdel(src)
+	replace_with(src, framebuildstacktype, framebuildstackamount)
 /obj/structure/reflector/proc/attackby_timed_done2(mob/user, obj/item/weldingtool/I)
 	if(!I.remove_fuel(1,user))
 		to_chat(user, span_warning("You require fuel to weld the [src]!"))

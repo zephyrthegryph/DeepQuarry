@@ -48,6 +48,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	. = ..()
 	connect_to_network()
 
+// LIFECYCLE: leaves its solar control computer.
 /obj/machinery/power/solar/Destroy()
 	unset_control() //remove from control computer
 	. = ..()
@@ -97,10 +98,9 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
 	var/obj/item/solar_assembly/S = new(loc)
 	S.anchored = TRUE
-	new glass_type(loc, 2)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
-	qdel(src)
+	replace_with(src, glass_type, 2)
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
@@ -113,7 +113,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	new /obj/item/material/shard(src.loc)
 	new /obj/item/material/shard(src.loc)
 	return ..()
-
 
 /obj/machinery/power/solar/update_icon()
 	..()
@@ -160,7 +159,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	update_icon()
 	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)
 	return
-
 
 //trace towards sun to see if we're in shadow
 /obj/machinery/power/solar/proc/occlusion()
@@ -255,7 +253,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 		if(istype(W, /obj/item/tracker_electronics))
 			tracker = 1
 			user.drop_item()
-			qdel(W)
+			consume(W, user)
 			user.visible_message(span_notice("[user] inserts the electronics into the solar assembly."))
 			return 1
 	..()
@@ -318,6 +316,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	connect_to_network()
 	set_panels(cdir)
 
+// LIFECYCLE: its panels and tracker lose their controller.
 /obj/machinery/power/solar_control/Destroy()
 	for(var/obj/machinery/power/solar/M in connected_panels)
 		M.unset_control()
@@ -552,8 +551,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	if((. = ..()))
 		update_icon()
 
-
-
 //
 // MISC
 //
@@ -565,7 +562,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 #undef SOLAR_AUTO_START_NO
 #undef SOLAR_AUTO_START_YES
 #undef SOLAR_AUTO_START_CONFIG
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/solar_control/step_start_condition()

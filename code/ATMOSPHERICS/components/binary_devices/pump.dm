@@ -57,10 +57,6 @@ Thus, the two variables affect pump operation are set in New():
 	// tick; this has no process() at all any more.
 	MACHINE_SLEEP(src)
 
-/obj/machinery/atmospherics/binary/pump/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
-
 /obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 

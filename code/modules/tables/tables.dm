@@ -82,6 +82,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 	AddElement(/datum/element/climbable/table)
 
+// LIFECYCLE: neighbouring tables re-smooth without it.
 /obj/structure/table/Destroy()
 	material = null
 	reinforced = null
@@ -303,8 +304,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 /obj/structure/table/proc/dismantle_tool_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."),
 							span_notice("You dismantle \the [src]."))
-	new /obj/item/stack/material/steel(src.loc)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel)
 	return
 
 // Returns a list of /obj/item/material/shard objects that were created as a result of this table's breakage.
@@ -453,7 +453,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 				connections |= nextT.get_all_connected_tables(connections)
 
 	return connections
-
 
 #define CORNER_NONE 0
 #define CORNER_COUNTERCLOCKWISE 1

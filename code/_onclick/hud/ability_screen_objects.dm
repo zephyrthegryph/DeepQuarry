@@ -21,17 +21,13 @@
 	else
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
-/atom/movable/screen/movable/ability_master/Destroy()
-	//Get rid of the ability objects.
-	remove_all_abilities()
-	LAZYCLEARLIST(ability_objects)
+REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
 
-	// After that, remove ourselves from the mob seeing us, so we can qdel cleanly.
-	if(my_mob())
-		my_mob().ability_master = null
-		if(my_mob().client && my_mob().client.screen)
-			my_mob().client.screen -= src
-		my_mob_handle = null
+// LIFECYCLE: the mob's ability_master var points back at us; a master deleted on its own clears it.
+/atom/movable/screen/movable/ability_master/Destroy()
+	var/mob/M = my_mob()
+	if(M?.ability_master == src)
+		M.ability_master = null
 	return ..()
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
@@ -185,16 +181,14 @@
 
 //	var/icon/last_charged_icon
 
+// LIFECYCLE: an ability leaves its master's list (the master owns the list; the ability can go first).
 /atom/movable/screen/ability/Destroy()
-	if(master_of())
-		LAZYREMOVE(master_of().ability_objects, src)
-		if(master_of().my_mob() && master_of().my_mob().client)
-			master_of().my_mob().client.screen -= src
-	if(master_of() && !length(master_of().ability_objects))
-		master_of().update_icon()
-//		qdel(ability_master)
-	ability_master_handle = null
-	. = ..()
+	var/atom/movable/screen/movable/ability_master/master = master_of()
+	if(master)
+		LAZYREMOVE(master.ability_objects, src)
+		if(!length(master.ability_objects))
+			master.update_icon()
+	return ..()
 
 /atom/movable/screen/ability/update_icon()
 
@@ -348,7 +342,3 @@
 /// LC-refs: the ability master listing this ability -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/ability/proc/master_of() as /atom/movable/screen/movable/ability_master
 	return om_resolve(ability_master_handle)
-
-/atom/movable/screen/movable/ability_master/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("ability_objects")

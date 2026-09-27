@@ -25,7 +25,7 @@
 			user.drop_item()
 			++confetti_charge
 			to_chat(user, span_blue("You put the paper in the [src]."))
-			qdel(I)
+			consume(I, user)
 		else
 			to_chat(user, span_red("[src] cannot hold more paper."))
 

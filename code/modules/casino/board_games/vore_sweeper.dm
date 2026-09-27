@@ -23,11 +23,6 @@
 	. = ..()
 	parent = holder
 
-/datum/board_game/vore_sweeper/Destroy(force)
-	dealer = null
-	parent = null
-	. = ..()
-
 /datum/board_game/vore_sweeper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)

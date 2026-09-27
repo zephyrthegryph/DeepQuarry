@@ -34,12 +34,8 @@
 	last_event = world.time
 	active = FALSE
 
-
 /obj/effect/map_effect/radiation_emitter/Initialize(mapload)
 	PERIODIC_START(src, PERIODIC_SLOW)
-	return ..()
-
-/obj/effect/map_effect/radiation_emitter/Destroy()
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/strong

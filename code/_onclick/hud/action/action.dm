@@ -76,9 +76,7 @@
 		source.Remove(target)
 
 /// The action's buttons (owned) are the values of `viewers`, keyed by hud handle.
-/datum/action/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("viewers")
+REF_OWNED_VALUES(/datum/action, "viewers")
 
 /// Grants the action to the passed mob, making it the owner
 /datum/action/proc/Grant(mob/grant_to)

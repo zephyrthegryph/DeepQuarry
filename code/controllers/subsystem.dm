@@ -141,7 +141,6 @@
 	//Do not blindly add vars here to the bottom, put it where it goes above
 	//If your var only has two values, put it in as a flag.
 
-
 //Do not override
 ///datum/controller/subsystem/New()
 
@@ -180,6 +179,7 @@
 	flags |= SS_NO_FIRE
 	CRASH("Subsystem [src]([type]) does not fire() but did not set the SS_NO_FIRE flag. Please add the SS_NO_FIRE flag to any subsystem that doesn't fire so it doesn't get added to the processing list and waste cpu.")
 
+// LIFECYCLE: engine: a subsystem leaves the MC's queue and roster.
 /datum/controller/subsystem/Destroy()
 	dequeue()
 	can_fire = 0
@@ -187,7 +187,6 @@
 	if (Master)
 		Master.subsystems -= src
 	return ..()
-
 
 /** Update next_fire for the next run.
  *  reset_time (bool) - Ignore things that would normally alter the next fire, like tick_overrun, and last_fire. (also resets postpone)
@@ -211,7 +210,6 @@
 		next_fire += wait
 	else
 		next_fire = queued_time + wait + (world.tick_lag * (tick_overrun/100))
-
 
 ///Queue it to run.
 /// (we loop thru a linked list until we get to the end or find the right point)
@@ -273,7 +271,6 @@
 		queue_prev_handle = om_handle(queue_node.queue_prev())
 		queue_node.queue_prev_handle = om_handle(src)
 
-
 /datum/controller/subsystem/proc/dequeue()
 	if (queue_next())
 		queue_next().queue_prev_handle = om_handle(queue_prev())
@@ -286,7 +283,6 @@
 	queued_time = 0
 	if (state == SS_QUEUED)
 		state = SS_IDLE
-
 
 /datum/controller/subsystem/proc/pause()
 	. = 1

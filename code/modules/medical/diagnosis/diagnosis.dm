@@ -40,12 +40,7 @@
 	/// TREAT_* -> DIAG_BAND_* urgency, when the profile gives hints. Lazy.
 	var/list/hints
 
-/datum/diagnosis/Destroy()
-	profile = null
-	QDEL_LIST(findings)
-	parts = null
-	hints = null
-	return ..()
+REF_OWNED_LIST(/datum/diagnosis, "findings")
 
 /datum/diagnosis/proc/add_finding(datum/diagnosis_finding/F)
 	for(var/datum/diagnosis_finding/existing as anything in findings)
@@ -88,7 +83,6 @@
 			if(F.band == rank)
 				sorted += F
 	findings = sorted
-
 
 /// One finding: a condition, a lesion, a wound or a sign (a presenting
 /// symptom whose cause the instrument may not see).

@@ -31,10 +31,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	set_rand_sprite()
 	mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
 
-/obj/machinery/holoposter/Destroy()
-	deltimer(mytimer)
-	return ..()
-
 /obj/machinery/holoposter/examine(mob/user, infix, suffix)
 	. = ..()
 	. += examine_addon

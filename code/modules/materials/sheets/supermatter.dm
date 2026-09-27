@@ -37,10 +37,6 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/stack/material/supermatter/Destroy()
-	return ..()
-
-
 /obj/item/stack/material/supermatter/proc/update_mass()	// Due to how dangerous they can be, the item will get heavier and larger the more are in the stack.
 	slowdown = amount / 10
 	w_class = min(5, round(amount / 10) + 1)

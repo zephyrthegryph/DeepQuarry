@@ -27,11 +27,10 @@
 		remove_verb(H, power_verbs)
 	return ..()
 
+// LIFECYCLE: the protean's rig forgets its protean.
 /datum/component/forms/protean/Destroy(force)
-	if(rig)
-		if(rig.myprotean == parent)
-			rig.myprotean = null
-		rig = null
+	if(rig?.myprotean == parent)
+		rig.myprotean = null
 	return ..()
 
 /datum/component/forms/protean/proc/blob_form()
@@ -97,7 +96,6 @@
 	log_game("FORMS: [key_name(H)] unfolded from their control cluster at [AREACOORD(H)]")
 	return TRUE
 
-
 /// Changing shape quickly strains the swarm (form_strain).
 /datum/component/forms/protean/set_form(form_type, silent = FALSE)
 	var/previous_switch = last_switch_time
@@ -133,7 +131,6 @@
 	to_chat(H, span_warning("Your orchestrator loses track of the swarm and the change falls apart!"))
 	log_game("FORMS: [key_name(H)] failed a form change to orchestrator damage ([round(damage.severity)]).")
 	return FALSE
-
 
 // --- The blob form -------------------------------------------------------------------
 
@@ -223,7 +220,6 @@
 /datum/form/protean_blob/proc/block_move(atom/movable/source)
 	SIGNAL_HANDLER
 	return COMPONENT_MOVABLE_BLOCK_PRE_MOVE
-
 
 // --- Blob styles: appearance as data ---------------------------------------------------
 
@@ -330,7 +326,6 @@
 	id = "robodrgn"
 	icon = 'icons/mob/species/protean/protean128x64.dmi'
 	pixel_x = -48
-
 
 /// A multi-layer style: every layer picks a state from its options and a colour.
 /datum/protean_blob_style/layered

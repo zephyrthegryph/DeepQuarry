@@ -78,21 +78,15 @@
 		interned[key] = shared
 	return shared
 
+REF_OWNED(/obj/machinery/camera, list("assembly", "wires"))
+
+// LIFECYCLE: alarm handlers release it, motion sensing stops and viewers are kicked out.
 /obj/machinery/camera/Destroy()
-	// cancelCameraAlarm() intentionally respects a cut alarm wire, which is wrong
-	// during destruction: every handler must release source and cached-camera refs.
 	for(var/datum/alarm_handler/handler as anything in all_alarm_handlers())
 		handler.release_atom(src)
 	if(isMotion())
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-	deactivate(null, 0) //kick anyone viewing out
-	if(assembly)
-		qdel(assembly)
-		assembly = null
-	qdel(wires)
-	wires = null
-	client_huds = null
-	network = null
+	deactivate(null, 0)
 	return ..()
 
 // A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
@@ -474,13 +468,13 @@
 			//If someone knows a better way to do this, let me know. -Giacom
 			switch(i)
 				if(NORTH)
-					src.set_dir(SOUTH)
+					set_dir(SOUTH)
 				if(SOUTH)
-					src.set_dir(NORTH)
+					set_dir(NORTH)
 				if(WEST)
-					src.set_dir(EAST)
+					set_dir(EAST)
 				if(EAST)
-					src.set_dir(WEST)
+					set_dir(WEST)
 			break
 
 //Return a working camera that can see a given mob
@@ -505,7 +499,6 @@
 		return 0
 	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
-
 
 /obj/machinery/camera/proc/weld_finished(on_done, list/done_args)
 	if(on_done)

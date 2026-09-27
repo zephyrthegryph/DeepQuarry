@@ -1,5 +1,6 @@
 /obj/machinery/atmospherics/var/image/pipe_image
 
+// LIFECYCLE: ventcrawlers inside are put out; its pipe image comes off players' clients.
 /obj/machinery/atmospherics/Destroy()
 	for(var/mob/living/M in src) //ventcrawling is serious business
 		M.remove_ventcrawl()

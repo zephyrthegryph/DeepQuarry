@@ -42,16 +42,13 @@
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
+REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
+
+// LIFECYCLE: leaves every alarm handler and its subsystems.
 /mob/living/silicon/Destroy()
-	common_radio = null // same ref as radio, deleted by child
+	common_radio = null
 	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.unregister_alarm(src)
-	if(aiCamera)
-		QDEL_NULL(aiCamera)
-	if(idcard)
-		QDEL_NULL(idcard)
-	if(laws)
-		QDEL_NULL(laws)
 	clear_subsystems()
 	return ..()
 
@@ -128,14 +125,12 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/apply_effect(effect = 0,effecttype = STUN, blocked = 0, check_protection = 1)
 	return 0//The only effect that can hit them atm is flashes and they still directly edit so this works for now
 
-
 /proc/islinked(mob/living/silicon/robot/bot, mob/living/silicon/ai/ai)
 	if(!istype(bot) || !istype(ai))
 		return 0
 	if (bot.connected_ai == ai)
 		return 1
 	return 0
-
 
 // this function shows the health of the AI in the Status panel
 // TGPanel
@@ -144,7 +139,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		. = "System integrity: [round(vitality() * 100)]%"
 	else
 		. = "Systems nonfunctional"
-
 
 // This is a pure virtual function, it should be overwritten by all subclasses
 /mob/living/silicon/proc/show_malf_ai()
@@ -156,7 +150,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
 		if(eta_status)
 			. = "[eta_status]"
-
 
 // This adds the basic clock, shuttle recall timer, and malf_ai info to all silicon lifeforms
 /mob/living/silicon/get_status_tab_items()
@@ -171,7 +164,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	if(error_msg)
 		to_chat(user, span_warning("The armoured plating is too tough."))
 	return 0
-
 
 //Silicon mob language procs
 
@@ -360,7 +352,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=\ref[src];switchcamera=\ref[C]'>[C.c_tag]</A>"
 	to_chat(src, span_filter_warning("[A.alarm_name()]! ([(cameratext)? cameratext : "No Camera"])"))
 
-
 /mob/living/silicon/proc/is_traitor()
 	return mind && (mind in GLOB.traitors.current_antagonists)
 
@@ -404,7 +395,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 /mob/living/silicon/can_feed()
 	return FALSE
-
 
 // === merged from silicon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/silicon/Topic(href, href_list) //For Robots and pAI's. And possibly AI's too.

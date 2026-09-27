@@ -51,9 +51,11 @@
 	. = ..()
 	AddComponent(/datum/component/swarming)
 
+/mob/living/simple_mob/mechanical/viscerator
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/viscerator/death()
 	..(null,"is smashed into pieces!")
-	qdel(src)
 
 // Variant that is always loyal to mercenary antagonists.
 // Used for a special grenade, to ensure they don't attack the wrong thing.

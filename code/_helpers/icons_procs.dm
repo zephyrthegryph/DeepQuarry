@@ -525,11 +525,11 @@ ColorTone(rgb, tone)
 	return I
 
 //Interface for easy drawing of one pixel on an atom.
-/atom/proc/DrawPixelOn(colour, drawX, drawY)
-	var/icon/I = new(icon)
+/proc/DrawPixelOn(atom/target, colour, drawX, drawY)
+	var/icon/I = new(target.icon)
 	var/icon/J = DrawPixel(I, colour, drawX, drawY)
 	if(J) //Only set the icon if it succeeded, the icon without the pixel is 1000x better than a black square.
-		icon = J
+		target.icon = J
 		return J
 	return 0
 

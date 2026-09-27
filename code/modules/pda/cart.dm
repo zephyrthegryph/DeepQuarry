@@ -62,11 +62,8 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/list/programs
 	var/list/messenger_plugins
 
-/obj/item/cartridge/Destroy()
-	QDEL_NULL(radio)
-	QDEL_LIST(programs)
-	QDEL_LIST(messenger_plugins)
-	return ..()
+REF_OWNED(/obj/item/cartridge, "radio")
+REF_OWNED_LIST(/obj/item/cartridge, list("programs", "messenger_plugins"))
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)
 	for(var/datum/data/pda/P as anything in programs)
@@ -115,7 +112,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 		new/datum/data/pda/utility/scanmode/medical,
 
 		new/datum/data/pda/app/crew_records/security)
-
 
 /obj/item/cartridge/janitor
 	name = "\improper CustodiPRO cartridge"
@@ -308,7 +304,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	charges = 5
 	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/frame)
 
-
 /obj/item/cartridge
 	slot_flags = SLOT_EARS
 
@@ -342,10 +337,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	hold = new/obj/item/storage/internal(src)
 	hold.max_storage_space = slots * 2
 
-/obj/item/cartridge/storage/Destroy()
-	// Un-nulled `hold` pins the internal storage against GC (cf. suit pockets).
-	QDEL_NULL(hold)
-	return ..()
+REF_OWNED(/obj/item/cartridge/storage, "hold")
 
 /obj/item/cartridge/storage/attack_hand(mob/user)
 	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item

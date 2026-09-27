@@ -1,5 +1,5 @@
-/obj/item/proc/describe_power()
-	switch(force)
+/proc/describe_power(obj/item/source)
+	switch(source.force)
 		if(0)
 			return "a negligable amount of"
 		if(1 to 2)
@@ -21,8 +21,8 @@
 		if(101 to 2000)
 			return "a truly ruinous amount of"
 
-/obj/item/proc/describe_throwpower()
-	switch(throwforce)
+/proc/describe_throwpower(obj/item/source)
+	switch(source.throwforce)
 		if(0)
 			return "a negligable amount of"
 		if(1 to 2)
@@ -44,8 +44,8 @@
 		if(101 to 2000)
 			return "a truly ruinous amount of"
 
-/obj/item/proc/describe_penetration()
-	switch(armor_penetration)
+/proc/describe_penetration(obj/item/source)
+	switch(source.armor_penetration)
 		if(0)
 			return "cannot pierce armor"
 		if(1 to 20)
@@ -67,35 +67,35 @@
 		if(100 to 1000)
 			return "completely and utterly pierces all armor"
 
-/obj/item/proc/describe_speed()
-	if(attackspeed > DEFAULT_ATTACK_COOLDOWN)
+/proc/describe_speed(obj/item/source)
+	if(source.attackspeed > DEFAULT_ATTACK_COOLDOWN)
 		return "a slow attack speed"
-	else if(attackspeed < DEFAULT_ATTACK_COOLDOWN)
+	else if(source.attackspeed < DEFAULT_ATTACK_COOLDOWN)
 		return "a high attack speed"
 	else
 		return "an average attack speed"
 
-/atom/proc/examine_tags()
+/proc/examine_tags(atom/source)
 	var/list/info_stats = list()
-	if(abstract_type == type)
+	if(source.abstract_type == source.type)
 		info_stats += span_hypnophrase("This is an abstract concept, you should report this to a strange entity called GITHUB!")
 
-	if(resistance_flags & INDESTRUCTIBLE)
+	if(source.resistance_flags & INDESTRUCTIBLE)
 		info_stats += "It is extremely robust! It'll probably withstand anything that could happen to it!"
 	else
-		if(resistance_flags & LAVA_PROOF)
+		if(source.resistance_flags & LAVA_PROOF)
 			info_stats += span_info("It is made of an extremely heat-resistant material, it'd probably be able to withstand lava!<br>")
-		if(resistance_flags & (ACID_PROOF | UNACIDABLE))
+		if(source.resistance_flags & (ACID_PROOF | UNACIDABLE))
 			info_stats += span_info("It looks pretty robust! It'd probably be able to withstand acid!<br>")
-		if(resistance_flags & FREEZE_PROOF)
+		if(source.resistance_flags & FREEZE_PROOF)
 			info_stats += span_info("It is made of cold-resistant materials.<br>")
-		if(resistance_flags & FIRE_PROOF)
+		if(source.resistance_flags & FIRE_PROOF)
 			info_stats += span_info("It is made of fire-retardant materials.<br>")
-		if(resistance_flags & SHUTTLE_CRUSH_PROOF)
+		if(source.resistance_flags & SHUTTLE_CRUSH_PROOF)
 			info_stats += span_info("It is extremely solid. It should be able to withstand being run over by a shuttle!<br>")
-		if(resistance_flags & BOMB_PROOF)
+		if(source.resistance_flags & BOMB_PROOF)
 			info_stats += span_info("It looks like it could survive an explosion!<br>")
-		if(resistance_flags & FLAMMABLE)
+		if(source.resistance_flags & FLAMMABLE)
 			info_stats += span_info("It looks like it could easily catch on fire.")
 	return info_stats
 
@@ -113,15 +113,15 @@
 		weapon_stats += description_info
 
 	if(force)
-		weapon_stats += "If used in melee, it deals [describe_power()] [sharp ? "sharp" : "blunt"] damage, [describe_penetration()], and has [describe_speed()]."
+		weapon_stats += "If used in melee, it deals [describe_power(src)] [sharp ? "sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
 	if(throwforce)
-		weapon_stats += "If thrown, it would deal [describe_throwpower()] [sharp ? "sharp" : "blunt"] damage."
+		weapon_stats += "If thrown, it would deal [describe_throwpower(src)] [sharp ? "sharp" : "blunt"] damage."
 	if(can_cleave)
 		weapon_stats += "It is capable of hitting multiple targets with a single swing."
 	if(reach > 1)
 		weapon_stats += "It can attack targets up to [reach] tiles away, and can attack over certain objects."
 
-	weapon_stats += examine_tags()
+	weapon_stats += examine_tags(src)
 
 	if(weapon_stats.len < 1)
 		return ""

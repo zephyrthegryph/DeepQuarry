@@ -26,7 +26,6 @@
 	if(min_jobs)
 		min_job_count = min_jobs
 
-
 /datum/event_meta/proc/get_weight(list/active_with_role)
 	if(!enabled)
 		return 0
@@ -186,10 +185,6 @@
 
 	setup()
 	..()
-
-/datum/event/Destroy()
-	victim = null
-	. = ..()
 
 /datum/event/proc/location_name()
 	if(victim)

@@ -39,10 +39,6 @@
 	description = _description
 	effects = list()
 
-/datum/contract_clause_option/Destroy()
-	effects = null
-	return ..()
-
 /proc/make_contract_clause_option(id, title, description, station_money = 0, department_money = 0, staff_money = 0, station_rep = 0, department_rep = 0, staff_rep = 0, deadline_change = 0, list/effects) as /datum/contract_clause_option
 	var/datum/contract_clause_option/option = new(id, title, description)
 	option.station_reward_delta = station_money
@@ -70,11 +66,7 @@
 	description = _description
 	options = list()
 
-/datum/contract_negotiation_clause/Destroy()
-	for(var/option_id in options)
-		qdel(options[option_id])
-	options = null
-	return ..()
+REF_OWNED_VALUES(/datum/contract_negotiation_clause, "options")
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
 	if(!option?.id || options[option.id])
@@ -259,37 +251,17 @@
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()
 
+REF_OWNED_LIST(/datum/contract, list("requirements", "audit_log"))
+REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
+
+// LIFECYCLE: an active contract unsubscribes, leaves SScontracts and orphans its children.
 /datum/contract/Destroy()
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
-	if(deadline_timer)
-		deltimer(deadline_timer)
-		deadline_timer = null
-	if(offer_timer)
-		deltimer(offer_timer)
-		offer_timer = null
 	SScontracts?.unregister_contract(src)
-	for(var/datum/contract_requirement/requirement in requirements)
-		qdel(requirement)
-	requirements = null
 	for(var/datum/contract/child in children)
 		if(child.parent == src)
 			child.parent = null
-	children = null
-	parent = null
-	funding_account = null
-	contributions = null
-	contributor_names = null
-	for(var/clause_id in negotiation_clauses)
-		qdel(negotiation_clauses[clause_id])
-	negotiation_clauses = null
-	negotiation_selections = null
-	negotiated_effects = null
-	secondary_faction_reputation_rewards = null
-	offer_context = null
-	for(var/datum/contract_audit_entry/entry in audit_log)
-		qdel(entry)
-	audit_log = null
 	return ..()
 
 /datum/contract/proc/finalize_offer(duration)

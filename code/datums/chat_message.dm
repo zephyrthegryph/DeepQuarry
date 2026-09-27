@@ -76,20 +76,14 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		return
 	INVOKE_ASYNC(src, PROC_REF(generate_image), text, target, owner, extra_classes, lifespan)
 
+// LIFECYCLE: a message leaves its client's screen and seen list (clients aren't datums).
 /datum/chatmessage/Destroy()
-	if(istype(owned_by, /client)) // hopefully the PARENT_QDELETING on client should beat this if it's a disconnect
-		UnregisterSignal(owned_by, COMSIG_QDELETING)
+	if(istype(owned_by, /client))
 		if(owned_by.seen_messages)
 			LAZYREMOVEASSOC(owned_by.seen_messages, message_loc, src)
 		owned_by.images.Remove(message)
-
 	if (finish_callback)
 		SSrunechat.message_queue -= finish_callback
-		finish_callback = null
-
-	owned_by = null
-	message_loc = null
-	message = null
 	return ..()
 
 /**

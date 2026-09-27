@@ -72,6 +72,7 @@
 			CRASH("A supply shuttle is already defined.")
 		SSsupply.shuttle = src
 
+// LIFECYCLE: leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/Destroy()
 	current_location = null
 	SSshuttles.shuttles -= src.name
@@ -231,7 +232,6 @@
 	on_shuttle_arrival(start_location, destination)
 	make_sounds(HYPERSPACE_END)
 
-
 //////////////////////////////
 // Forward declarations of public procs. They do nothing because this is not auto-dock.
 
@@ -309,7 +309,6 @@
 
 	return TRUE
 
-
 //just moves the shuttle from A to B
 //A note to anyone overriding move in a subtype. perform_shuttle_move() must absolutely not, under any circumstances, fail to move the shuttle.
 //If you want to conditionally cancel shuttle launches, that logic must go in short_jump() or long_jump()
@@ -333,7 +332,9 @@
 
 	// TODO - Old code used to throw stuff out of the way instead of squashing. Should we?
 
-	// Move, gib, or delete everything in our way!
+	// Move, gib, or delete everything in our way! Everything crushed goes as
+	// one batched destroy (code/datums/lifecycle/batch.dm).
+	dq_destroy_collect_begin()
 	for(var/turf/src_turf in turf_translation)
 		var/turf/dst_turf = turf_translation[src_turf]
 		if(src_turf.is_solid_structure()) // in case someone put a hole in the shuttle and you were lucky enough to be under it
@@ -350,6 +351,7 @@
 					bug.gib()
 				else
 					qdel(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
+	dq_destroy_collect_end()
 	var/list/radios = list()
 	for(var/area/A in shuttle_area)
 		// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving

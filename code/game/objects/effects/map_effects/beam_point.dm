@@ -39,6 +39,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), initial_delay)
 	return ..()
 
+// LIFECYCLE: its beams go with it.
 /obj/effect/map_effect/beam_point/Destroy()
 	destroy_all_beams()
 	use_timer = FALSE
@@ -149,8 +150,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 			timer_on_index = 1
 
 		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), on_duration[timer_on_index])
-
-
 
 // Subtypes to use in maps and adminbuse.
 // Remember, beam_points ONLY connect to other beam_points with the same id variable.

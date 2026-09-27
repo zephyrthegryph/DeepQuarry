@@ -2,13 +2,15 @@ GLOBAL_LIST_EMPTY(typelists)
 
 #ifndef TESTING
 
-/datum/proc/typelist(key, list/values = list())
+/proc/typelist(datum/owner, key, list/values = list())
+	var/type = owner.type
 	var/list/mytypelist = GLOB.typelists[type] || (GLOB.typelists[type] = list())
 	return mytypelist[key] || (mytypelist[key] = values.Copy())
 
 #else
 // mostly the same code as above, just more verbose, slower and has tallying for saved lists
-/datum/proc/typelist(key, list/values)
+/proc/typelist(datum/owner, key, list/values)
+	var/type = owner.type
 	if (!values)
 		values = list()
 	GLOB.typelistkeys |= key

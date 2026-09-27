@@ -21,8 +21,10 @@
 	. = ..() // Same as the normal Syndicate id, only already has all station access
 	access |= SSaccess.get_all_station_access()
 
+REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
+
+// LIFECYCLE: the card's registered user is unset.
 /obj/item/card/id/syndicate/Destroy()
-	QDEL_NULL(agentcard_module)
 	unset_registered_user(registered_user)
 	return ..()
 
@@ -52,7 +54,6 @@
 				agentcard_module.tgui_interact(user)
 			if("Show")
 				..(user, TRUE)
-
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)
 	if(!istype(user) || user == registered_user)

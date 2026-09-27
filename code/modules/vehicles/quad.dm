@@ -43,9 +43,7 @@
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
 
-/obj/vehicle/train/engine/quadbike/Destroy()
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 
 /obj/item/key/quadbike
 	name = "key"
@@ -156,7 +154,6 @@
 			var/mob/living/D = load
 			to_chat(D, span_danger("You hit [M]!"))
 			add_attack_logs(D,M,"Ran over with [src.name]")
-
 
 /obj/vehicle/train/engine/quadbike/RunOver(mob/living/M)
 	..()

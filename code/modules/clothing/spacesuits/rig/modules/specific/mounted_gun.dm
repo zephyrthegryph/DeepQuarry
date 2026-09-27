@@ -114,8 +114,7 @@
 		return
 
 	for(var/obj/item/melee/energy/blade/blade in M.contents)
-		M.drop_from_inventory(blade)
-		qdel(blade)
+		consume(blade, M)
 
 /obj/item/rig_module/mounted/mop
 
@@ -172,8 +171,7 @@
 		return
 
 	for(var/obj/item/mop_deploy/blade in M.contents)
-		M.drop_from_inventory(blade)
-		qdel(blade)
+		consume(blade, M)
 
 
 /obj/item/rig_module/mounted/sizegun

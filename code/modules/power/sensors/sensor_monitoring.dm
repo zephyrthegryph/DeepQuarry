@@ -40,10 +40,7 @@
 	. = ..()
 	power_monitor = new(src)
 
-/obj/machinery/computer/power_monitor/Destroy()
-	qdel(power_monitor)
-	power_monitor = null
-	return ..()
+REF_OWNED(/obj/machinery/computer/power_monitor, "power_monitor")
 
 // On user click opens the UI of this computer.
 /obj/machinery/computer/power_monitor/declare_interactions(list/into)
@@ -86,7 +83,6 @@
 	if(check_warnings() != alerting)
 		return "asleep with a stale alert ([alerting] vs [check_warnings()])"
 	return null
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/computer/power_monitor/step_start_condition()

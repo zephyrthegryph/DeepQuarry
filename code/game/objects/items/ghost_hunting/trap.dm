@@ -35,13 +35,14 @@
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE, \
 		experiment_signals = ghost_signals)
 
+REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
+
+// LIFECYCLE: a captured entity is released onto the turf.
 /obj/item/ghost_trap/Destroy()
 	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
-	captured_entity = null
-	QDEL_NULL(ghost_reporter)
 	. = ..()
 
 /obj/item/ghost_trap/verb/release_occupant()
@@ -86,7 +87,6 @@
 		icon_state = initial(icon_state)
 		return
 	icon_state = initial(icon_state)
-
 
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
@@ -241,7 +241,6 @@
 		anchored = FALSE
 		update_icon()
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
-
 
 /obj/item/ghost_trap/verb/hidden_vore()
 	set src in oview(1)

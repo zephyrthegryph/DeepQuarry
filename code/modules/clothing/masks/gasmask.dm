@@ -59,7 +59,7 @@
 		I.loc = N
 		if(!isturf(N.loc))
 			user.put_in_hands(N)
-		qdel(src)
+		consume(src, user)
 	..()
 
 //Plague Dr suit can be found in clothing/suits/bio.dm

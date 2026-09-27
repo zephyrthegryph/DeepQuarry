@@ -14,7 +14,6 @@
 // No logic is duplicated here — get_reaction_lookup(), supports_belly_reagents(), and
 // on_reactions_handled() together select the distilling reaction bucket and suppress the signal.
 
-
 // ---- Temperature-gated reactions (H3) ----
 // A distilling holder's reactions need a temperature. The holder watches its
 // atom's heat body with one ThresholdSet holding both ends of every candidate
@@ -26,6 +25,7 @@
 	/// Levels in the set (payload = index).
 	var/tmp/list/heat_set_levels
 
+// LIFECYCLE: stops watching reaction temperatures.
 /datum/reagents/distilling/Destroy()
 	unwatch_reaction_temperatures()
 	return ..()

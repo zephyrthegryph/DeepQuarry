@@ -146,6 +146,7 @@
 		A.gravitychange(1)
 
 //This could all be done better, but it works for now.
+// LIFECYCLE: the looking glass unloads its program.
 /obj/machinery/computer/looking_glass/Destroy()
 	unload_program()
 	my_area = null

@@ -54,11 +54,6 @@
 	if(always_process)
 		PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/weldingtool/Destroy()
-	if(welding || always_process)
-		PERIODIC_STOP(src)
-	return ..()
-
 /obj/item/weldingtool/get_welder()
 	return src
 
@@ -480,10 +475,8 @@
 	else
 		return INITIALIZE_HINT_QDEL
 
-/obj/item/weldingtool/tubefed/Destroy()
-	mounted_pack.nozzle = null
-	mounted_pack = null
-	return ..()
+REF_PAIR(/obj/item/weldingtool/tubefed, list("mounted_pack" = "nozzle"))
+REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 
 /obj/item/weldingtool/tubefed/periodic_step()
 	if(!mounted_pack)
@@ -677,7 +670,6 @@
 			setWelding(TRUE, M?.slot_item(MECHA_SLOT_PILOT))
 		else
 			setWelding(FALSE, M?.slot_item(MECHA_SLOT_PILOT))
-
 
 /obj/item/weldingtool/dummy
 	name = "dummy welding tool"

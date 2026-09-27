@@ -27,9 +27,7 @@
 	. = ..()
 	.["chargesMoney"] = TRUE
 
-/obj/machinery/vending/nifsoft_shop/Destroy()
-	QDEL_NULL(entopic)
-	return ..()
+REF_OWNED(/obj/machinery/vending/nifsoft_shop, "entopic")
 
 /obj/machinery/vending/nifsoft_shop/power_change()
 	..()

@@ -44,13 +44,6 @@
 	client.screen |= GLOB.global_hud.whitense
 	client.screen |= GLOB.global_hud.darkMask
 
-// Proc: Destroy()
-// Parameters: None
-// Description: Removes reference to the communicator, so it can qdel() successfully.
-/mob/living/voice/Destroy()
-	comm = null
-	return ..()
-
 // Proc: ghostize()
 // Parameters: None
 // Description: Sets a timeofdeath variable, to fix the free respawn bug.
@@ -151,7 +144,6 @@
 // Emotes!
 /mob/living/voice/get_available_emotes()
 	LAZYOR(., GLOB.simple_mob_default_emotes)
-
 
 /mob/living/voice
 	no_vore = TRUE

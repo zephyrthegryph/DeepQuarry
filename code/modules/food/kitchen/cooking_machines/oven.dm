@@ -46,9 +46,7 @@
 
 	oven_loop = new(list(src), FALSE)
 
-/obj/machinery/appliance/cooker/oven/Destroy()
-	QDEL_NULL(oven_loop)
-	return ..()
+REF_OWNED(/obj/machinery/appliance/cooker/oven, "oven_loop")
 
 /obj/machinery/appliance/cooker/oven/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
@@ -133,7 +131,6 @@
 	else
 		return ..()
 
-
 /// An open door loses heat to the room eight times faster (the body's coupling).
 /obj/machinery/appliance/cooker/oven/cooker_conductance()
 	return open ? COOKER_CONDUCTANCE * 8 : COOKER_CONDUCTANCE
@@ -147,7 +144,6 @@
 	else
 		return ..()
 
-
 //Oven has lots of recipes and combine options. The chance for interference is high, so
 //If a combine target is set the oven will do it instead of checking recipes
 /obj/machinery/appliance/cooker/oven/finish_cooking(datum/cooking_item/CI)
@@ -158,7 +154,6 @@
 		return
 	else
 		..()
-
 
 /obj/machinery/appliance/cooker/oven/attackby(obj/item/O as obj, mob/user as mob)
 	if(default_part_replacement(user, O))

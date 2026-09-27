@@ -60,8 +60,7 @@
 		new_material = MAT_STEEL
 	material = get_material_by_name(new_material)
 	if(!istype(material))
-		qdel(src)
-		return
+		return INITIALIZE_HINT_QDEL
 	name = "[material.display_name] bracelet"
 	desc = "A bracelet made from [material.display_name]."
 	color = material.icon_colour

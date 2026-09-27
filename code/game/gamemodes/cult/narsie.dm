@@ -15,13 +15,9 @@ GLOBAL_VAR_INIT(narsie_cometh, 0)
 	grav_pull = 10 //How many tiles out do we pull?
 	consume_range = 3 //How many tiles out do we eat
 
-
 REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 /obj/singularity/narsie/Initialize(mapload)
-	. = ..()
-
-/obj/singularity/narsie/Destroy()
 	. = ..()
 
 /obj/singularity/narsie/large
@@ -78,7 +74,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 			if(!iscultist(M))
 				to_chat(M, span_danger("You feel your sanity crumble away in an instant as you gaze upon [src.name]..."))
 				M.apply_effect(3, STUN)
-
 
 /obj/singularity/narsie/large/Bump(atom/A)
 	if(!cause_hell) return

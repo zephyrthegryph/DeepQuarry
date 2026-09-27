@@ -42,10 +42,10 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	pixel_y = rand(0, 10)
 	GLOB.chicken_count += 1
 
+// LIFECYCLE: the population cap counts it out.
 /mob/living/simple_mob/animal/passive/chicken/Destroy()
 	. = ..()
 	GLOB.chicken_count -= 1
-
 
 /mob/living/simple_mob/animal/passive/chicken/attackby(obj/item/O as obj, mob/user as mob)
 	if(istype(O, /obj/item/reagent_containers/food/snacks/grown)) //feedin' dem chickens
@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 			if(!stat && eggsleft < 8)
 				user.visible_message(span_blue("[user] feeds [O] to [name]! It clucks happily."),span_blue("You feed [O] to [name]! It clucks happily."))
 				user.drop_item()
-				qdel(O)
+				consume(O, user)
 				eggsleft += rand(1, 4)
 			else
 				to_chat(user, span_blue("[name] doesn't seem hungry!"))
@@ -79,12 +79,6 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
 			PERIODIC_START(E, PERIODIC_SLOW)
 
-
-
-
-
-
-
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
 
 // This only starts normally if there are less than MAX_CHICKENS chickens
@@ -93,17 +87,10 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
-			new /mob/living/simple_mob/animal/passive/chick(get_turf(src))
 			PERIODIC_STOP(src)
-			qdel(src)
+			replace_with(src, /mob/living/simple_mob/animal/passive/chick)
 	else
 		PERIODIC_STOP(src)
-
-
-
-
-
-
 
 /mob/living/simple_mob/animal/passive/chick
 	name = "chick"

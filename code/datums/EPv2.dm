@@ -30,7 +30,6 @@ The receiving atom will receive the origin atom (the atom that sent the message)
 It's suggested to start with an if or switch statement for the message, to determine what to do.
 */
 
-
 /datum/exonet_protocol
 	var/address = "" //Resembles IPv6, but with only five 'groups', e.g. XXXX:XXXX:XXXX:XXXX:XXXX
 	var/atom/movable/holder = null
@@ -38,11 +37,6 @@ It's suggested to start with an if or switch statement for the message, to deter
 /datum/exonet_protocol/New(atom/holder)
 	src.holder = holder
 	..()
-
-/datum/exonet_protocol/Destroy()
-	remove_address()
-	holder = null
-	return ..()
 
 // Proc: make_address()
 // Parameters: 1 (string - used to make into a hash that will be part of the new address)
@@ -60,7 +54,6 @@ It's suggested to start with an if or switch statement for the message, to deter
 			string = "[string]0" //If we did get a collision, this should make the next attempt not have one.
 		address = new_address
 		registry_join(REGISTRY_EXONET_CONNECTIONS, src)
-
 
 REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 
@@ -88,14 +81,12 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 	var/new_address = "[addr_1]:[addr_2]:[addr_3]:[addr_4]"
 	return new_address
 
-
 // Proc: remove_address()
 // Parameters: None
 // Description: Deallocates the address, freeing it for use.
 /datum/exonet_protocol/proc/remove_address()
 	address = ""
 	registry_leave(REGISTRY_EXONET_CONNECTIONS, src)
-
 
 // Proc: find_address()
 // Parameters: 1 (target_address - the desired address to find)

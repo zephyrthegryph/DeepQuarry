@@ -55,10 +55,6 @@
 		"m_stat" = list("*Insane*", "*Unstable*", "*Watch*", "Stable"),
 	)
 
-/obj/machinery/computer/skills/Destroy()
-	active1 = null
-	return ..()
-
 /obj/machinery/computer/skills/proc/can_allocate_station_budget()
 	return scan && ((ACCESS_CAPTAIN in scan.access) || (ACCESS_HOP in scan.access) || (ACCESS_CENT_CAPTAIN in scan.access))
 

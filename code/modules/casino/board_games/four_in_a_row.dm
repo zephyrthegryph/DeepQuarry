@@ -9,7 +9,6 @@
 	icon_state = "gamble_four"
 	game_ui = /datum/board_game/four_row
 
-
 /datum/board_game/four_row
 	name = GAME_FOUR_ROW
 	table_icon = "gamble_four"
@@ -25,11 +24,6 @@
 	var/player_two_color = "red"
 	var/winner
 	var/static/list/possible_colors = list("red", "yellow", "green", "orange", "blue", "cyan")
-
-/datum/board_game/four_row/Destroy(force)
-	player_one = null
-	player_two = null
-	. = ..()
 
 /datum/board_game/four_row/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -214,7 +208,6 @@
 
 			validate_victory(x_loc, target_y, user.name)
 			return TRUE
-
 
 /datum/board_game/four_row/proc/has_chip(list/player_list, x, y)
 	return player_list["[x],[y]"]

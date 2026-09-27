@@ -47,7 +47,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 			balloon_alert(user, "the fabricator can't hold any more matter.")
 			return
 
-		qdel(W)
+		consume(W, user)
 
 		stored_matter += 10
 		playsound(src, 'sound/machines/click.ogg', 10, 1)

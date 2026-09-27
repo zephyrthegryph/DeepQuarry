@@ -11,7 +11,6 @@
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
-
 /obj/item/clothing/suit/vrwizard
 	name = "wizard robes"
 	desc = "A silky robe with 0s and 1s flying off the seams."
@@ -40,7 +39,6 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-
 
 /obj/item/clothing/suit/darkvrwizard
 	name = "wizard robes"
@@ -100,9 +98,6 @@
 /obj/item/clothing/gloves/stamina/Initialize(mapload)
 	. = ..()
 
-/obj/item/clothing/gloves/stamina/Destroy()
-	return ..()
-
 /// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/stamina/periodic_step()
 	var/mob/living/carbon/human/H = om_resolve(wearer)
@@ -151,9 +146,6 @@
 		else
 			if(flavor_drop)
 				to_chat(H, span_info(flavor_drop))
-
-/obj/item/clothing/suit/armor/buffvest/Destroy()
-	return ..()
 
 /obj/item/clothing/suit/armor/buffvest/periodic_step()
 	if(isliving(loc))

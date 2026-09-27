@@ -83,13 +83,6 @@
 			var/area/source_area = get_area(source_turf)
 			area_name = source_area?.name
 
-/datum/contract_event/Destroy()
-	tags = null
-	metrics = null
-	evidence_ids = null
-	data = null
-	return ..()
-
 /proc/contract_event_schema(event_type)
 	var/static/list/schemas = list(
 		CONTRACT_EVENT_EVIDENCE_REGISTERED = list(

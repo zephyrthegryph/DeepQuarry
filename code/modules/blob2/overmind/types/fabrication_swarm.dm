@@ -28,8 +28,7 @@
 			var/reinforce_probability = min(damage, 70)
 			if(prob(reinforce_probability))
 				B.visible_message(span_danger("The [name] quakes, before rapidly hardening!"))
-				new/obj/structure/blob/shield(get_turf(B), B.overmind)
-				qdel(B)
+				replace_with(B, /obj/structure/blob/shield, B.overmind)
 	return ..()
 
 /datum/blob_type/fabrication_swarm/on_emp(obj/structure/blob/B, severity)

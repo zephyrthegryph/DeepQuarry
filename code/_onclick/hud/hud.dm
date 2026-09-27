@@ -20,7 +20,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 		GLOB.global_hud.holomap
 ))
 
-
 /datum/global_hud
 	var/atom/movable/screen/druggy
 	var/atom/movable/screen/blurry
@@ -198,7 +197,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/datum/action_group/listed/listed_actions
 	var/list/floating_actions
 
-
 	var/list/slot_info
 
 	var/icon/ui_style
@@ -216,28 +214,21 @@ GLOBAL_LIST_INIT(global_huds, list(
 	instantiate()
 	..()
 
+// The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
+// are keyed by the gun's OM handle.
+REF_OWNED(/datum/hud, list("lingchemdisplay", "wiz_instability_display", "wiz_energy_display", "blobpwrdisplay", "blobhealthdisplay", "r_hand_hud_object", "l_hand_hud_object", "combat_mode_button", "move_intent", "control_vtec", "toggle_palette", "palette_down", "palette_up", "palette_actions", "listed_actions", "ui_style"))
+REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions", "hotkeybuttons"))
+REF_OWNED_VALUES(/datum/hud, "ammo_hud_list")
+
+// LIFECYCLE: the mob's hud_used points at us (our side is a handle); a hud going clears it.
 /datum/hud/Destroy()
 	var/mob/owner = mymob()
 	if(owner?.hud_used == src)
 		owner.hud_used = null
-
-	QDEL_NULL_LIST(minihuds)
-	QDEL_LIST(floating_actions)
-
 	adding = null
 	other = null
 	other_important = null
 	return ..()
-
-/// The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
-/// are keyed by the gun's OM handle.
-/datum/hud/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("lingchemdisplay", "wiz_instability_display", "wiz_energy_display", "blobpwrdisplay", "blobhealthdisplay", "r_hand_hud_object", "l_hand_hud_object", "combat_mode_button", "move_intent", "control_vtec", "toggle_palette", "palette_down", "palette_up", "palette_actions", "listed_actions", "ui_style")
-
-/datum/hud/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("hotkeybuttons", "ammo_hud_list")
 
 /datum/hud/proc/hidden_inventory_update()
 	if(!mymob()) return
@@ -286,7 +277,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 					if(slot_wear_mask)
 						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = null
 
-
 /datum/hud/proc/persistant_inventory_update()
 	if(!mymob())
 		return
@@ -323,7 +313,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = null
 					if(slot_r_store)
 						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = null
-
 
 /datum/hud/proc/instantiate()
 	if(!ismob(mymob()))
@@ -505,27 +494,27 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 	if(hud_used.hud_shown)
 		hud_used.hud_shown = 0
-		if(src.hud_used.adding)
-			src.client.screen -= src.hud_used.adding
-		if(src.hud_used.other)
-			src.client.screen -= src.hud_used.other
-		if(src.hud_used.hotkeybuttons)
-			src.client.screen -= src.hud_used.hotkeybuttons
-		src.client.screen -= src.internals
-		if(src.hud_used.combat_mode_button)
-			src.client.screen += src.hud_used.combat_mode_button		//we want the combat mode button visible
+		if(hud_used.adding)
+			client.screen -= hud_used.adding
+		if(hud_used.other)
+			client.screen -= hud_used.other
+		if(hud_used.hotkeybuttons)
+			client.screen -= hud_used.hotkeybuttons
+		client.screen -= internals
+		if(hud_used.combat_mode_button)
+			client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 	else
 		hud_used.hud_shown = 1
-		if(src.hud_used.adding)
-			src.client.screen += src.hud_used.adding
-		if(src.hud_used.other && src.hud_used.inventory_shown)
-			src.client.screen += src.hud_used.other
-		if(src.hud_used.hotkeybuttons && !src.hud_used.hotkey_ui_hidden)
-			src.client.screen += src.hud_used.hotkeybuttons
-		if(src.internals)
-			src.client.screen |= src.internals
-		if(src.hud_used.combat_mode_button)
-			src.hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
+		if(hud_used.adding)
+			client.screen += hud_used.adding
+		if(hud_used.other && hud_used.inventory_shown)
+			client.screen += hud_used.other
+		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
+			client.screen += hud_used.hotkeybuttons
+		if(internals)
+			client.screen |= internals
+		if(hud_used.combat_mode_button)
+			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()
@@ -604,6 +593,4 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/mymob() as /mob
 	return om_resolve(mymob_handle)
 
-/datum/global_hud/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("druggy", "blurry", "whitense", "heavy_whitense", "centermarker", "darksight", "nvg", "thermal", "meson", "science", "material", "holomap")
+REF_OWNED(/datum/global_hud, list("druggy", "blurry", "whitense", "heavy_whitense", "centermarker", "darksight", "nvg", "thermal", "meson", "science", "material", "holomap"))

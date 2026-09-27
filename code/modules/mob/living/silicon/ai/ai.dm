@@ -39,7 +39,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				subject.attack_ai(M)
 	return is_in_use
 
-
 /// Full backup capacitor charge (the old 200-point oxyloss budget).
 #define AI_BACKUP_CAPACITY 200
 
@@ -197,7 +196,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 		on_mob_init()
 
-
 	. = ..()
 	init_id(idcard_type)
 
@@ -247,18 +245,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
+REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio"))
+
+// LIFECYCLE: the AI's eye goes with it.
 /mob/living/silicon/ai/Destroy()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-
-	QDEL_NULL(announcement)
 	QDEL_NULL(eyeobj)
-	QDEL_NULL(psupply)
-	QDEL_NULL(aiPDA)
-	QDEL_NULL(aiCommunicator)
-	QDEL_NULL(aiMulti)
-	QDEL_NULL(aiRadio)
-	hack = null
-
 	destroy_eyeobj()
 	return ..()
 
@@ -349,10 +341,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 		forceMove(powered_ai.loc)
 
 	use_power(1) // Just incase we need to wake up the power system.
-
-/obj/machinery/ai_powersupply/Destroy()
-	. = ..()
-	powered_ai = null
 
 /obj/machinery/ai_powersupply/machine_step()
 	if(!powered_ai || powered_ai.stat == DEAD)
@@ -540,7 +528,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 			new_eye.set_light(AI_CAMERA_LUMINOSITY)
 		else
 			new_eye.set_light(0)
-
 
 /mob/living/silicon/ai/proc/switchCamera(obj/machinery/camera/C)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -770,8 +757,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	else
 		lightNearbyCamera()
 
-
-
 // Handled camera lighting, when toggled.
 // It will get the nearest camera from the eyeobj, lighting it.
 
@@ -796,7 +781,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 				src.camera = camera
 				src.camera.set_light(AI_CAMERA_LUMINOSITY)
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
-
 
 /mob/living/silicon/ai/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/aicard))
@@ -854,7 +838,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 		var/obj/effect/overlay/aiholo/hologram = LAZYACCESS(holo.masters, src)
 		walk(hologram, 0)
 	to_chat(src, span_filter_notice("Your hologram will [hologram_follow ? "follow" : "no longer follow"] you now."))
-
 
 /mob/living/silicon/ai/proc/check_unable(flags = NONE, feedback = 1)
 	if(stat == DEAD)
@@ -947,7 +930,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	// AI cores don't store what brain was used to build them so we're just gonna assume they can think to some degree.
 	// If that is ever fixed please update this proc.
 	return TRUE
-
 
 /mob/living/silicon/ai/handle_track(message, verb = "says", mob/speaker = null, speaker_name, hard_to_hear)
 	if(hard_to_hear)
@@ -1052,7 +1034,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO
 
-
 /mob/AIize(move = TRUE)
 	. = ..()
 	add_language(LANGUAGE_BIRDSONG,		1)
@@ -1063,7 +1044,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	add_language(LANGUAGE_ENOCHIAN,		1)
 	add_language(LANGUAGE_DRUDAKAR,		1)
 	add_language(LANGUAGE_TAVAN,		1)
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/ai_powersupply/step_start_condition()

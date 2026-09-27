@@ -100,8 +100,17 @@
 	// same hook, __defines/misc.dm). Move this single call into pre_destroy()
 	// when J1 lands; do not add a second unbind mechanism.
 	if(vg_entity)
-		SSvg.unregister(src)
-		vg_entity_unbind(vg_entity)
+		var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+		if(batch?.doomed[src])
+			// Batched destroy: one pass over SSvg.bound and one unbind call at the end.
+			var/slot = ((vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+			if(slot <= length(SSvg.entities_by_index) && SSvg.entities_by_index[slot] == src)
+				SSvg.entities_by_index[slot] = null
+			batch.unbind_movers += src
+			batch.unbind_entities += vg_entity
+		else
+			SSvg.unregister(src)
+			vg_entity_unbind(vg_entity)
 		vg_entity = 0
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)

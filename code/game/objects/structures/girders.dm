@@ -28,11 +28,6 @@
 	set_material(our_material)
 	update_icon()
 
-/obj/structure/girder/Destroy()
-	if(girder_material && girder_material.products_need_process())
-		PERIODIC_STOP(src)
-	. = ..()
-
 /obj/structure/girder/periodic_step()
 	if(!radiate())
 		PERIODIC_STOP(src)
@@ -317,8 +312,7 @@
 		icon_state = "displaced"
 
 /obj/structure/girder/cult/dismantle()
-	new /obj/effect/decal/remains/human(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/remains/human)
 
 /obj/structure/girder/cult/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))

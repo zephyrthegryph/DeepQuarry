@@ -12,10 +12,10 @@
 	var/mob/living/carbon/human/corpse = null
 	var/mob/living/carbon/human/watchowner = null
 
-
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()
 
+// LIFECYCLE: an invisible wearer is revealed.
 /obj/item/deadringer/Destroy() //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()
 	. = ..()
@@ -51,7 +51,6 @@
 		to_chat(H, span_blue("You press a small button on [src]'s side. It stops humming."))
 		activated = 0
 		return
-
 
 /obj/item/deadringer/proc/deathprevent()
 	for(var/mob/living/simple_mob/D in oviewers(7, src))
@@ -151,7 +150,6 @@
 	corpse.regenerate_icons()
 	QDEL_NULL_LIST(corpse.internal_organs)
 
-
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /// Watches its holder while armed and counts its cooldown; idle, it sleeps.
 /obj/item/deadringer/periodic_step()
@@ -178,8 +176,7 @@
 	if(timer == 2)
 		reveal()
 		if(corpse)
-			new /obj/effect/effect/smoke/chem(corpse.loc)
-			qdel(corpse)
+			replace_with(corpse, /obj/effect/effect/smoke/chem)
 	if(timer == 0)
 		icon_state = "deadringer"
 	return

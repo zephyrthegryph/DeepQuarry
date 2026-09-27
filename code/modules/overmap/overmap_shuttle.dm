@@ -14,10 +14,6 @@
 	..(_name, start_waypoint)
 	refresh_fuel_ports_list()
 
-/datum/shuttle/autodock/overmap/Destroy()
-	. = ..()
-	myship = null
-
 /datum/shuttle/autodock/overmap/proc/refresh_fuel_ports_list() //loop through all
 	fuel_ports = list()
 	for(var/area/A in shuttle_area)

@@ -164,9 +164,6 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/effect/blob/core/Destroy()
-	return ..()
-
 /obj/effect/blob/core/periodic_step()
 	pulse(20, list(NORTH, EAST))
 	pulse(20, list(NORTH, WEST))
@@ -186,11 +183,6 @@
 /obj/effect/blob/shield/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles()
-
-/obj/effect/blob/shield/Destroy()
-	density = FALSE
-	update_nearby_tiles()
-	. = ..()
 
 /obj/effect/blob/shield/update_icon()
 	if(get_integrity() > max_integrity * 2 / 3)

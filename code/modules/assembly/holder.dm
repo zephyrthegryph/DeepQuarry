@@ -13,6 +13,7 @@
 	var/obj/item/assembly/a_right = null
 	var/obj/special_assembly = null
 
+// LIFECYCLE: assemblies still inside it go with it (ones already taken out stay).
 /obj/item/assembly_holder/Destroy()
 	if(a_left)
 		a_left.holder = null
@@ -22,9 +23,6 @@
 		a_right.holder = null
 		if(a_right.loc == src && !QDELETED(a_right))
 			qdel(a_right)
-	a_left = null
-	a_right = null
-	special_assembly = null
 	return ..()
 
 /obj/item/assembly_holder/proc/attach(obj/item/assembly/D, obj/item/assembly/D2, mob/user)
@@ -159,7 +157,7 @@
 		if(a_right)
 			a_right.holder = null
 			a_right.forceMove(T)
-		qdel(src)
+		consume(src, user)
 
 /obj/item/assembly_holder/proc/process_activation(obj/D, normal = 1)
 	if(!D)

@@ -30,10 +30,6 @@
 	record_true_identity() // Get all the identifying features from the holder.
 	update_name() // Then hide them for awhile if needed.
 
-/datum/identification/Destroy()
-	holder = null
-	return ..()
-
 // Records the object's inital identifiying features to the datum for future safekeeping.
 /datum/identification/proc/record_true_identity()
 	true_name = holder.name

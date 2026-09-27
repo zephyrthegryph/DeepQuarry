@@ -32,7 +32,6 @@
 	var/deflect_chance = 10 // Chance to outright stop an attack, just like a normal exosuit.
 	var/has_repair_droid = FALSE // If true, heals 2 damage every tick and gets a repair droid overlay.
 
-
 /mob/living/simple_mob/mechanical/mecha/Initialize(mapload)
 	sparks = new (src)
 	sparks.set_up(3, 1, src)
@@ -49,9 +48,10 @@
 
 	return ..()
 
-/mob/living/simple_mob/mechanical/mecha/Destroy()
-	QDEL_NULL(sparks)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/mechanical/mecha, "sparks")
+
+/mob/living/simple_mob/mechanical/mecha
+	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha/death()
 	..(0,"explodes!") // Do everything else first.
@@ -68,7 +68,6 @@
 	if(wreckage)
 		new wreckage(loc) // Leave some wreckage.
 
-	qdel(src) // Then delete us since we don't actually have a body.
 
 /datum/om/stage/life/special/mechanical/mecha
 	of = /mob/living/simple_mob/mechanical/mecha

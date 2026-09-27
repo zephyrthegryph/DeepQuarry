@@ -29,6 +29,7 @@
 	default_protection = protection
 	set_default()
 
+// LIFECYCLE: engine: leaves the config's entry table.
 /datum/config_entry/Destroy()
 	config.RemoveEntry(src)
 	return ..()
@@ -276,7 +277,6 @@
 				return
 
 			return key_path
-
 
 /// Takes a given config value and validates it. If successful, returns the formatted key. If unsuccessful, returns null.
 /datum/config_entry/keyed_list/proc/validate_config_value(value)

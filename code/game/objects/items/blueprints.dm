@@ -15,7 +15,6 @@
 
 	name = "Tether Elevator"
 
-
 /area/submap/virgo2
 	name = "Submap Area"
 
@@ -203,10 +202,6 @@
 	station_master = 0
 	uses_charges = 1
 	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
-
-/obj/item/areaeditor/blueprints/Destroy()
-	//clear_viewer()
-	return ..()
 
 /obj/item/areaeditor/blueprints/attack_self(mob/user)
 	. = ..(user)

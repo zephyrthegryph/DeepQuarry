@@ -108,8 +108,7 @@
 
 /datum/interaction/construction/frame/cut_apart/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	new /obj/item/stack/material/steel(frame.loc, frame.frame_type.frame_size)
-	qdel(frame)
+	replace_with(frame, /obj/item/stack/material/steel, frame.frame_type.frame_size)
 	return TRUE
 
 // ---- The circuit board ----

@@ -82,7 +82,6 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 	var/list/page_data //list of choices per page
 
-
 	var/selected_choice
 	var/list/atom/movable/screen/elements
 	var/atom/movable/screen/radial/center/close_button
@@ -303,7 +302,6 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		MA.appearance_flags |= RESET_TRANSFORM
 	return MA
 
-
 /datum/radial_menu/proc/next_page()
 	if(pages > 1)
 		current_page = WRAP(current_page + 1,1,pages+1)
@@ -341,21 +339,18 @@ GLOBAL_LIST_EMPTY(radial_menus)
 /datum/radial_menu/lifecycle_unbind()
 	hide()
 
+// LIFECYCLE: a menu drops its choice lists, whose keys are the offered atoms.
 /datum/radial_menu/Destroy()
 	Reset()
 	. = ..()
 
 /// The menu's slices, centre button, holder image and check callback are its own.
-/datum/radial_menu/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("close_button", "menu_holder", "custom_check_callback")
+REF_OWNED(/datum/radial_menu, list("close_button", "menu_holder", "custom_check_callback"))
 
-/datum/radial_menu/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("elements")
+REF_OWNED_LIST(/datum/radial_menu, list("elements"))
 
 /*
-	Presents radial menu to user anchored to anchor() (or user if the anchor() is currently in users screen)
+	Presents radial menu to user anchored to anchor (or user if the anchor is currently in users screen)
 	Choices should be a list where list keys are movables or text used for element names and return value
 	and list values are movables/icons/images used for element icons
 */
@@ -416,9 +411,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	/// If provided, will display an info button that will put this text in your chat
 	var/info
 
-/datum/radial_menu_choice/Destroy(force)
-	. = ..()
-	QDEL_NULL(image)
+REF_OWNED(/datum/radial_menu_choice, "image")
 
 #undef NEXT_PAGE_ID
 #undef DEFAULT_CHECK_DELAY

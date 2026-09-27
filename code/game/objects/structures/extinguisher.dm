@@ -50,8 +50,7 @@
 
 /obj/structure/extinguisher_cabinet/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
-	new /obj/item/frame/extinguisher_cabinet(loc)
-	qdel(src)
+	replace_with(src, /obj/item/frame/extinguisher_cabinet)
 
 /obj/structure/extinguisher_cabinet/attack_hand(mob/living/user)
 	if(isrobot(user))
@@ -92,12 +91,6 @@
 	has_extinguisher = null
 	opened = TRUE
 	update_icon()
-
-/obj/structure/extinguisher_cabinet/Destroy()
-	if(has_extinguisher)
-		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
-		has_extinguisher = null
-	return ..()
 
 /obj/structure/extinguisher_cabinet/update_icon()
 	var/suffix = "empty"

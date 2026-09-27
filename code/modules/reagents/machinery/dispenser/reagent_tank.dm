@@ -385,7 +385,7 @@
 	for(var/datum/reagent/R in G.reagents.reagent_list)
 		var/total_reagent = G.reagents.get_reagent_amount(R.id)
 		reagents.add_reagent(R.id, total_reagent)
-	qdel(G)
+	consume(G, user)
 
 /obj/structure/reagent_dispensers/water_cooler/proc/cupholder_done(mob/user, obj/item/stack/material/plastic/P)
 	if(cupholder || !anchored)
@@ -441,8 +441,7 @@
 	if(bottle || cupholder)
 		return
 	to_chat(user, span_notice("You take the water-cooler apart."))
-	new /obj/item/stack/material/plastic(loc, 4)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/plastic, 4)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/reagent_dispensers/water_cooler/attack_hand(mob/user)

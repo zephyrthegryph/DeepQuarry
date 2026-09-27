@@ -222,7 +222,7 @@
 /obj/item/spellbook/oneuse/fireball/recoil(mob/user as mob)
 	..()
 	explosion(user.loc, -1, 0, 2, 3, 0)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/spellbook/oneuse/smoke
 	spell = /datum/spell/aoe_turf/smoke
@@ -342,7 +342,7 @@
 		magichead.voicechange = 1	//NEEEEIIGHH
 		user.drop_from_inventory(user.get_equipped_item(SLOT_ID_MASK))
 		user.equip_to_slot_if_possible(magichead, slot_wear_mask, 1, 1)
-		qdel(src)
+		consume(src, user)
 	else
 		to_chat(user, span_notice("I say thee neigh"))
 

@@ -1,16 +1,16 @@
-/obj/proc/analyze_gases(atom/A, mob/user)
-	if(src != A)
-		user.visible_message(span_notice("\The [user] has used \an [src] on \the [A]"))
+/proc/analyze_gases_by(obj/tool, atom/A, mob/user)
+	if(tool != A)
+		user.visible_message(span_notice("\The [user] has used \an [tool] on \the [A]"))
 
 	A.add_fingerprint(user)
 	var/list/result = A.atmosanalyze(user)
 	if(result && result.len)
-		to_chat(user, span_notice("Results of the analysis[src == A ? "" : " of \the [A]"]"))
+		to_chat(user, span_notice("Results of the analysis[tool == A ? "" : " of \the [A]"]"))
 		for(var/line in result)
 			to_chat(user, span_notice("[line]"))
 		return 1
 
-	to_chat(user, span_warning("Your [src] flashes a red light as it fails to analyze \the [A]."))
+	to_chat(user, span_warning("Your [tool] flashes a red light as it fails to analyze \the [A]."))
 	return 0
 
 /proc/atmosanalyzer_scan(atom/target, datum/gas_mixture/mixture, mob/user)

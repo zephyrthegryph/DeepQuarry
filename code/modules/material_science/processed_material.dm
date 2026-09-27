@@ -32,9 +32,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	stack_type = /obj/item/stack/material/processed_alloy
 	var/datum/material_batch/batch_template
 
-/datum/material/processed_alloy/Destroy()
-	QDEL_NULL(batch_template)
-	return ..()
+REF_OWNED(/datum/material/processed_alloy, "batch_template")
 
 /proc/register_processed_material(datum/material_batch/batch)
 	if(!istype(batch) || !length(batch.composition))
@@ -264,9 +262,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		var/datum/material/processed_alloy/processed = material
 		batch_state = processed.batch_template.copy_for_amount(amount)
 
-/obj/item/stack/material/processed_alloy/Destroy()
-	QDEL_NULL(batch_state)
-	return ..()
+REF_OWNED(/obj/item/stack/material/processed_alloy, "batch_state")
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)

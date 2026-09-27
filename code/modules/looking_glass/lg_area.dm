@@ -19,11 +19,6 @@
 		if(lgt.optional)
 			LAZYADD(our_optional_turfs, lgt)
 
-/area/looking_glass/Destroy()
-	our_landmark = null
-	LAZYCLEARLIST(our_turfs)
-	return ..()
-
 /area/looking_glass/Entered(atom/movable/AM)
 	if(isliving(AM))
 		var/mob/living/L = AM

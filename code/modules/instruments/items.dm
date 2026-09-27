@@ -21,9 +21,7 @@
 	song = new(src, allowed_instrument_ids, instrument_range)
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
 
-/obj/item/instrument/Destroy()
-	QDEL_NULL(song)
-	return ..()
+REF_OWNED(/obj/item/instrument, "song")
 
 /obj/item/instrument/proc/can_play(atom/music_player)
 	if(!ismob(music_player))
@@ -262,7 +260,6 @@
 	desc = "A blue wooden flute."
 	icon_state = "flute_tief"
 	allowed_instrument_ids = "recorder"
-
 
 /obj/item/instrument/keytar
 	name = "portable keyboard"

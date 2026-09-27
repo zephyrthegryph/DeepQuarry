@@ -18,10 +18,6 @@
 	src.connections = connections
 	set_tracked(tracked)
 
-/datum/component/connect_containers/Destroy()
-	set_tracked(null)
-	return ..()
-
 /datum/component/connect_containers/CheckDupeComponent(datum/component/connect_containers/new_component, atom/movable/tracked, list/connections)
 	// Not equivalent. Checks if they are not the same list via shallow comparison.
 	if(!compare_list(src.connections, connections))

@@ -329,10 +329,6 @@
 	var/reserved_account = 0
 	var/retired = FALSE
 
-/datum/cargo_market_listing/Destroy()
-	pack = null
-	return ..()
-
 /datum/cargo_market_bid
 	var/id
 	var/counterparty_id
@@ -346,9 +342,7 @@
 	var/reservation_key
 	var/reserved_account = 0
 
-/datum/cargo_market_bid/Destroy()
-	QDEL_NULL(profile)
-	return ..()
+REF_OWNED(/datum/cargo_market_bid, "profile")
 
 /datum/cargo_market_bid/proc/remaining_units()
 	return max(0, target_units - fulfilled_units)
@@ -374,10 +368,6 @@
 /datum/cargo_market_transaction/New()
 	. = ..()
 	audited_accounts = list()
-
-/datum/cargo_market_transaction/Destroy()
-	audited_accounts = null
-	return ..()
 
 /obj/structure/closet/crate
 	/// Optional routing selected at the Cargo console. Unmatched contents still

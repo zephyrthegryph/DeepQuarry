@@ -26,6 +26,7 @@
 	if(trunk)
 		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
 
+// LIFECYCLE: it unlinks from its trunk.
 /obj/structure/disposaloutlet/Destroy()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
 	target = null
@@ -62,7 +63,7 @@
 	C.update()
 	C.anchored = TRUE
 	C.density = TRUE
-	qdel(src)
+	replace_with(src, C)
 
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
 	if(mode == OUTLET_SCREWED)

@@ -42,6 +42,7 @@
 	if(landmark_transition)
 		landmark_transition = SSshuttles.get_landmark(landmark_transition)
 
+// LIFECYCLE: its docking controllers are released.
 /datum/shuttle/autodock/Destroy()
 	in_use = null
 	next_location = null
@@ -132,7 +133,6 @@
 	if (!shuttle_docking_controller || !current_dock_target())
 		return TRUE	//shuttles without docking controllers or at locations without docking ports act like old-style shuttles
 	return FALSE
-
 
 /*
 	Please ensure that long_jump() and short_jump() are only called from here. This applies to subtypes as well.

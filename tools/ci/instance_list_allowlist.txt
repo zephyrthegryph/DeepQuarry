@@ -615,3 +615,11 @@
 /datum/benchmark_init_stats/qdel_phase_mark_ms  # benchmark singleton (one per bench run), always filled
 /datum/om/registry/fields_by_type # d: registry singleton, filled per entity type on first use
 /datum/om/scheduler/world_wakes_by_type # d: one live scheduler (plus test ones); counted on every world wake
+/datum/destroy_batch/doomed # one per batched destroy, always filled
+/datum/destroy_batch/doomed_places # one per batched destroy, always filled
+/datum/destroy_batch/forced # one per batched destroy, filled in the teardown pass
+/datum/destroy_batch/unbind_entities # one per batched destroy, filled in the teardown pass
+/datum/destroy_batch/unbind_movers # one per batched destroy, filled in the teardown pass
+/datum/destroy_batch/registry_leaves # one per batched destroy, filled in the teardown pass
+/datum/destroy_batch/effect_turfs # one per batched destroy, filled in the teardown pass
+/datum/destroy_batch/after_effects # one per batched destroy, filled in the teardown pass

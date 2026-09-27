@@ -47,7 +47,6 @@
 /mob/living/bot/Initialize(mapload)
 	. = ..()
 
-
 	botcard = new /obj/item/card/id(src)
 	botcard.access = botcard_access.Copy()
 
@@ -62,15 +61,6 @@
 		turn_on() // Update lights and other stuff
 	update_icons()
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
-
-/mob/living/bot/Destroy()
-	if(ignore_list)
-		ignore_list.Cut()
-	if(patrol_path)
-		patrol_path.Cut()
-	if(target_path)
-		target_path.Cut()
-	return ..()
 
 /// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
 /datum/om/stage/life/bot_core
@@ -131,7 +121,7 @@
 		if(open)
 			to_chat(user, span_notice("You repair the bot's systems."))
 			emagged = 0
-			qdel(O)
+			consume(O, user)
 		else
 			to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
 	else if(istype(O, /obj/item/paicard))
@@ -302,7 +292,6 @@
 			frustration++
 	return
 
-
 /mob/living/bot/proc/handleFrustrated(has_target)
 	obstacle = null
 	if (has_target)
@@ -312,7 +301,6 @@
 		obstacle = patrol_path[1]
 	target_path = list()
 	patrol_path = list()
-
 
 /mob/living/bot/proc/lookForTargets()
 	return
@@ -439,7 +427,6 @@
 // Navigation procs
 // Used for A-star pathfinding
 
-
 // Returns the surrounding GLOB.cardinal turfs with open links
 // Including through doors openable with the ID
 /turf/proc/CardinalTurfsWithAccess(obj/item/card/id/ID)
@@ -465,7 +452,6 @@
 		if(!LinkBlockedWithAccess(src, T, ID))
 			L.Add(T)
 
-
 	return L
 
 // Similar to above but not restricted to just GLOB.cardinal directions.
@@ -478,7 +464,6 @@
 			if(!LinkBlockedWithAccess(src, T, ID))
 				L.Add(T)
 	return L
-
 
 // Returns true if a link between A and B is blocked
 // Movement through doors allowed if ID has access
@@ -607,7 +592,6 @@
 	can_be_drop_pred = FALSE
 
 	return ..()
-
 
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/bot

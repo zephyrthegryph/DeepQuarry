@@ -43,17 +43,6 @@
 	if(move_trader)
 		move_trader()
 
-/obj/trader/Destroy()
-	. = ..()
-	LAZYCLEARLIST(products)
-	LAZYCLEARLIST(bank)
-	LAZYCLEARLIST(start_products)
-	LAZYCLEARLIST(prices)
-	LAZYCLEARLIST(multiple)
-	// Snapshot: qdel pulls members out of contents mid-iteration.
-	for(var/item in contents.Copy())
-		qdel(item)
-
 /obj/trader/attack_hand(mob/living/user)
 	. = ..()
 	if(trading)
@@ -149,13 +138,13 @@
 				var/obj/item/aliencoin/a = O
 				coinbalance += a.value
 				visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
-				qdel(a)
+				consume(a, user)
 		if("money")
 			if(istype(O, /obj/item/spacecash))
 				var/obj/item/spacecash/w = O
 				for(var/obj/item/spacecash/c in bank)
 					var/loadsamoney = w.worth
-					qdel(w)
+					consume(w, user)
 					c.worth += loadsamoney
 					c.update_icon()
 					loadsamoney = null

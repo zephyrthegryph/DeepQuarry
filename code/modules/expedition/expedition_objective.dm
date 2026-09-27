@@ -33,11 +33,6 @@
 	required = _required
 	tracked = list()
 
-/datum/expedition_objective/Destroy()
-	site = null
-	tracked = null
-	return ..()
-
 /datum/expedition_objective/proc/populate(datum/expedition_site/S)
 	site = S
 

@@ -8,10 +8,6 @@
 	w_class = ITEMSIZE_HUGE
 	var/obj/item/target/pinned_target // the current pinned target
 
-/obj/structure/target_stake/Destroy()
-	pinned_target = null
-	return ..()
-
 /obj/structure/target_stake/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	// Move the pinned target along with the stake

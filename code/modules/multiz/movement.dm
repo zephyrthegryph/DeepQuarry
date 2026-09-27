@@ -172,9 +172,9 @@
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			pulling |= G?.grab_target()
 		if(direction == UP)
-			src.audible_message(span_notice("[src] moves up."))
+			audible_message(span_notice("[src] moves up."))
 		else if(direction == DOWN)
-			src.audible_message(span_notice("[src] moves down."))
+			audible_message(span_notice("[src] moves down."))
 		for(var/atom/movable/P in pulling)
 			P.forceMove(destination)
 	return 1
@@ -411,7 +411,7 @@
 	for(var/atom/A in landing)
 		if(ismob(A))
 			continue
-		if(!A.CanPass(src, src.loc, 1, 0))
+		if(!A.CanPass(src, loc, 1, 0))
 			return FALSE
 	return TRUE
 

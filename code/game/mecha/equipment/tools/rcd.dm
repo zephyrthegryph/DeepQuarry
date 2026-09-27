@@ -13,9 +13,7 @@
 	my_rcd = new(src)
 	return ..()
 
-/obj/item/mecha_parts/mecha_equipment/tool/rcd/Destroy()
-	QDEL_NULL(my_rcd)
-	return ..()
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd")
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/action(atom/target)
 	if(!action_checks(target) || get_dist(chassis, target) > 3)

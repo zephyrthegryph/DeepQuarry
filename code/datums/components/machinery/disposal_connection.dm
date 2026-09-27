@@ -15,26 +15,17 @@
 	disposal_owner = parent
 	visible_connection = visibly_connects
 
-/datum/component/disposal_system_connection/Destroy()
-	if(connected_trunk)
-		UnregisterSignal(connected_trunk, COMSIG_DISPOSAL_SEND)
-		connected_trunk = null
-	. = ..()
-	disposal_owner = null
-
 /datum/component/disposal_system_connection/RegisterWithParent()
 	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_FLUSH, PROC_REF(on_flush))
 	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_LINK, PROC_REF(link_to_trunk))
 	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_UNLINK, PROC_REF(unlink_from_trunk))
 	RegisterSignal(disposal_owner, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
 
-
 /datum/component/disposal_system_connection/UnregisterFromParent()
 	UnregisterSignal(disposal_owner, COMSIG_DISPOSAL_FLUSH)
 	UnregisterSignal(disposal_owner, COMSIG_DISPOSAL_LINK)
 	UnregisterSignal(disposal_owner, COMSIG_DISPOSAL_UNLINK)
 	UnregisterSignal(disposal_owner, COMSIG_ATOM_EXAMINE)
-
 
 // Signal handling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +83,6 @@
 	packet.set_dir(DOWN)
 	packet.move()
 	return TRUE
-
 
 // Expel handling, can be override by subtypes but excepts parent proc to handle core logic
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

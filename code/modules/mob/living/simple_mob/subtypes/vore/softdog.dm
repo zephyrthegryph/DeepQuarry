@@ -45,7 +45,6 @@
 	attack_sound = 'sound/voice/bork.ogg'
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
-
 	mob_size = MOB_SMALL
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
@@ -83,7 +82,6 @@
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
-
 
 /mob/living/simple_mob/vore/woof/load_default_bellies()
 	. = ..()
@@ -181,9 +179,7 @@
 
 	movement_cooldown = -2
 
-
 /mob/living/simple_mob/vore/woof/hostile/ranged
-
 
 	projectiletype = /obj/item/projectile/awoo_missile
 	projectilesound = 'sound/voice/long_awoo.ogg'
@@ -206,7 +202,6 @@
 	hitsound_wall = 'sound/voice/bork.ogg'
 
 /mob/living/simple_mob/vore/woof/hostile/terrible
-
 
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
 	projectilesound = 'sound/voice/long_awoo.ogg'
@@ -245,16 +240,19 @@ GLOBAL_VAR_INIT(woof_current, 0)
 		GLOB.woof_maximum = 0 //Let's start duplicating again
 	GLOB.woof_current++
 
+// LIFECYCLE: the population cap counts it out.
 /mob/living/simple_mob/vore/woof/hostile/aweful/Destroy()
 	GLOB.woof_current--
 	. = ..()
+
+/mob/living/simple_mob/vore/woof/hostile/aweful
+	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/death()
 	. = ..()
 	var/thismany = rand(0,3)
 	if(!thismany || killswitch || GLOB.woof_maximum >= 20)
 		visible_message(span_notice("\The [src] evaporates into nothing..."))
-		qdel(src)
 		return
 	var/list/possiblewoofs = list(/mob/living/simple_mob/vore/woof/hostile/aweful/melee, /mob/living/simple_mob/vore/woof/hostile/aweful/ranged)
 	for(var/i = 1 to thismany)
@@ -262,16 +260,13 @@ GLOBAL_VAR_INIT(woof_current, 0)
 		new woof(loc, src)
 		GLOB.woof_maximum++
 		visible_message(span_warning("Another [src] appears!"))
-	qdel(src)
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/melee
 
 	movement_cooldown = -2
 
-
 /mob/living/simple_mob/vore/woof/hostile/aweful/ranged
 	movement_cooldown = -2
-
 
 	projectiletype = /obj/item/projectile/awoo_missile
 	projectilesound = 'sound/voice/long_awoo.ogg'

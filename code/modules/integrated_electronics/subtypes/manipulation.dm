@@ -25,10 +25,6 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 	power_draw_per_use = 50 // The targeting mechanism uses this.  The actual gun uses its own cell for firing if it's an energy weapon.
 
-/obj/item/integrated_circuit/manipulation/weapon_firing/Destroy()
-	installed_gun = null // It will be qdel'd by ..() if still in our contents
-	return ..()
-
 /obj/item/integrated_circuit/manipulation/weapon_firing/attackby(obj/O, mob/user)
 	if(istype(O, /obj/item/gun))
 		var/obj/item/gun/gun = O
@@ -152,7 +148,6 @@
 			if(isnum(wanted_dir.data))
 				step(assembly, wanted_dir.data)
 
-
 /obj/item/integrated_circuit/manipulation/grenade
 	name = "grenade primer"
 	desc = "This circuit comes with the ability to attach most types of grenades at prime them at will."
@@ -175,6 +170,7 @@
 		var/grenade = new pre_attached_grenade_type(src)
 		attach_grenade(grenade)
 
+// LIFECYCLE: an unarmed grenade drops out.
 /obj/item/integrated_circuit/manipulation/grenade/Destroy()
 	if(attached_grenade && !attached_grenade.active)
 		attached_grenade.dropInto(loc)

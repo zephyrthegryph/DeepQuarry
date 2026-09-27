@@ -111,8 +111,8 @@
 /proc/get_all_job_icons() //For all existing HUD icons
 	return SSjob.occupations_by_name + GLOB.alt_titles_with_icons + list("Prisoner")
 
-/obj/proc/GetJobName() //Used in secHUD icon generation
-	var/obj/item/card/id/I = GetID()
+/proc/GetJobName(obj/source) //Used in secHUD icon generation
+	var/obj/item/card/id/I = source.GetID()
 
 	if(I)
 		if(istype(I,/obj/item/card/id/centcom))

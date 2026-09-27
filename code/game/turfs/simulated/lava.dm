@@ -32,11 +32,7 @@
 	soundloop.start()
 	return ..()
 
-/turf/simulated/floor/lava/Destroy()
-	soundloop.stop()
-	QDEL_NULL(soundloop)
-
-	. = ..()
+REF_OWNED(/turf/simulated/floor/lava, "soundloop")
 
 /turf/simulated/floor/lava/make_outdoors()
 	..()
@@ -99,7 +95,6 @@
 				continue
 			. = TRUE
 			L.lava_act()
-
 
 // Tells AI mobs to not suicide by pathing into lava if it would hurt them.
 /turf/simulated/floor/lava/is_safe_to_enter(mob/living/L)

@@ -32,10 +32,6 @@
 	if(frequency)
 		set_frequency(frequency)
 
-/obj/machinery/atmospherics/unary/outlet_injector/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
-
 /obj/machinery/atmospherics/unary/outlet_injector/update_icon()
 	if(!powered())
 		icon_state = "off"

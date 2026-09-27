@@ -30,12 +30,6 @@
 		S.master_ref = om_handle(owner_rig())
 	..()
 
-/datum/mini_hud/rig/Destroy()
-	if(owner_rig())
-		//owner_rig.minihud = null
-		owner_rig_handle = null
-	return ..()
-
 /datum/mini_hud/rig/periodic_step()
 	if(!owner_rig())
 		qdel(src)
@@ -79,6 +73,7 @@
 		S.master_ref = om_handle(owner_mech())
 	..()
 
+// LIFECYCLE: the mech points at its minihud; the minihud going clears that var.
 /datum/mini_hud/mech/Destroy()
 	if(owner_mech())
 		owner_mech().minihud = null
@@ -217,10 +212,6 @@
 /datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
 	return om_resolve(owner_mech_handle)
 
-/datum/mini_hud/rig/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("power", "health", "air", "airtoggle")
+REF_OWNED(/datum/mini_hud/rig, list("power", "health", "air", "airtoggle"))
 
-/datum/mini_hud/mech/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("power", "health", "air", "airtoggle")
+REF_OWNED(/datum/mini_hud/mech, list("power", "health", "air", "airtoggle"))

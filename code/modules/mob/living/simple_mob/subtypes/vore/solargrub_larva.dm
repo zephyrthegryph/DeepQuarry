@@ -25,7 +25,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	response_disarm = "nudges"
 	response_harm = "stomps on"
 
-
 	mob_size = MOB_MINISCULE
 	pass_flags = PASSTABLE
 	can_pull_size = ITEMSIZE_TINY
@@ -48,7 +47,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	var/tracked = FALSE
 
-
 	glow_override = TRUE
 
 /mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
@@ -66,11 +64,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
 
-/mob/living/simple_mob/animal/solargrub_larva/Destroy()
-	QDEL_NULL(powermachine)
-	QDEL_NULL(sparks)
-	QDEL_NULL(machine_effect)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "sparks", "machine_effect"))
 
 /datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva
 	of = /mob/living/simple_mob/animal/solargrub_larva
@@ -198,7 +192,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	else if(self.is_dead())
 		self.set_glow_override(FALSE)
 
-
 /obj/machinery/abstract_grub_machine
 	var/total_active_power_usage = 45 KILOWATTS
 	var/list/active_power_usages = list(15 KILOWATTS, 15 KILOWATTS, 15 KILOWATTS)
@@ -207,8 +200,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	var/draining = 1
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
 
-
-
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
 	shuffle_power_usages()
@@ -216,10 +207,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	if(!istype(grub))
 		grub = null
 		return INITIALIZE_HINT_QDEL
-
-/obj/machinery/abstract_grub_machine/Destroy()
-	grub = null
-	return ..()
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 /obj/machinery/abstract_grub_machine/machine_step()
@@ -246,7 +233,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	total_idle_power_usage = rand(1 KILOWATTS, 5 KILOWATTS)
 	active_power_usages = split_into_3(total_active_power_usage)
 	idle_power_usages = split_into_3(total_idle_power_usage)
-
 
 /obj/item/multitool/afterattack(obj/O, mob/user, proximity)
 	if(proximity)

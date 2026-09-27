@@ -35,14 +35,8 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
 	var/obj/effect/statclick/ticket_list/rstatclick = new(null, null, AHELP_RESOLVED)
 
-/datum/tickets/Destroy()
-	QDEL_LIST(active_tickets)
-	QDEL_LIST(closed_tickets)
-	QDEL_LIST(resolved_tickets)
-	QDEL_NULL(astatclick)
-	QDEL_NULL(cstatclick)
-	QDEL_NULL(rstatclick)
-	return ..()
+REF_OWNED(/datum/tickets, list("astatclick", "cstatclick", "rstatclick"))
+REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolved_tickets"))
 
 //private
 /datum/tickets/proc/ListInsert(datum/ticket/new_ticket)
@@ -312,6 +306,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
+// LIFECYCLE: leaves the active, closed and resolved ticket lists.
 /datum/ticket/Destroy()
 	RemoveActive()
 	GLOB.tickets.closed_tickets -= src
@@ -639,10 +634,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 /obj/effect/statclick/ticket/Click()
 	ticket_datum.TicketPanel()
-
-/obj/effect/statclick/ticket/Destroy()
-	ticket_datum = null
-	return ..()
 
 //
 // LOGGING

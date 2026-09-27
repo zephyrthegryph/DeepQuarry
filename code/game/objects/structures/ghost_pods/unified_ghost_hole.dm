@@ -88,7 +88,7 @@
 		newPred.copy_from_prefs_vr()
 		if(LAZYLEN(newPred.vore_organs))
 			newPred.vore_selected = newPred.vore_organs[1]
-	qdel(src)
+	replace_with(src, newPred)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_morph(mob/M)
 	registry_leave(REGISTRY_GHOST_PODS, src)
@@ -175,9 +175,6 @@
 	glows += mutable_appearance(icon, "rift_glow")
 	glows += emissive_appearance(icon, "rift_glow")
 	add_overlay(glows)
-
-/obj/structure/ghost_pod/ghost_activated/unified_hole/Destroy()
-	. = ..()
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/redgate
 	name = "Redspace inhabitant hole"

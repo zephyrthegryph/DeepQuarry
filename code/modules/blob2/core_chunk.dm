@@ -29,12 +29,6 @@
 	create_reagents(120)
 	setup_blobtype(parentblob)
 
-/obj/item/blobcore_chunk/Destroy()
-
-	blob_type = null
-
-	. = ..()
-
 /obj/item/blobcore_chunk/proc/setup_blobtype(datum/blob_type/parentblob = null)
 	if(!parentblob)
 		name = "inert [initial(name)]"

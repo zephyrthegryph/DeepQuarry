@@ -156,8 +156,16 @@ SUBSYSTEM_DEF(radio)
 		devices_line = new
 		devices[radio_filter] = devices_line
 	devices_line |= device // idempotent: on_materialize() may rejoin what Initialize() already joined
+	// The frequency owns the membership: a listener that is destroyed leaves by
+	// itself, so no device unregisters its radio in Destroy().
+	RegisterSignal(device, COMSIG_QDELETING, PROC_REF(on_listener_deleted), override = TRUE)
+
+/datum/radio_frequency/proc/on_listener_deleted(obj/device)
+	SIGNAL_HANDLER
+	SSradio.remove_object(device, frequency)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
+	UnregisterSignal(device, COMSIG_QDELETING)
 	for (var/devices_filter in devices)
 		var/list/devices_line = devices[devices_filter]
 		devices_line-=device

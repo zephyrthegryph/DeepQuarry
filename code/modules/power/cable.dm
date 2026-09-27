@@ -2,7 +2,6 @@
 //CABLE STRUCTURE
 ///////////////////////////////
 
-
 ////////////////////////////////
 // Definitions
 ////////////////////////////////
@@ -140,7 +139,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return
 	vg_power_unbind_node(power_entity)
 	SSvg.untrack_entity(src, power_entity)
-	vg_entity_unbind(power_entity)
+	dq_entity_unbind(src, power_entity)
 	power_entity = 0
 
 /// Cables with the same non-zero link id connect wherever they are (enders).
@@ -185,14 +184,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(level==1) hide(!T.is_plating())
 	power_register()
 
-
-/obj/structure/cable/Destroy()
-	breaker_box = null
+/// Phase 1 (unbind): the cable leaves its powernet and the material power graph.
+/obj/structure/cable/lifecycle_unbind()
+	. = ..()
 	SSmachines.power_material_cables -= src
 	powernet?.remove_cable(src)
 	powernet = null
 	power_unregister()
-	return ..()
 
 /obj/structure/cable/examine(mob/user)
 	. = ..()
@@ -686,11 +684,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		var/nd1 = C.d2	// these will be the new directions
 		var/nd2 = dirn
 
-
 		if(nd1 > nd2)		// swap directions to match icons/states
 			nd1 = dirn
 			nd2 = C.d2
-
 
 		for(var/obj/structure/cable/LC in T)		// check to make sure there's no matching cable
 			if(LC == C)			// skip the cable we're interacting with
@@ -698,7 +694,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 			if((LC.d1 == nd1 && LC.d2 == nd2) || (LC.d1 == nd2 && LC.d2 == nd1) )	// make sure no cable matches either direction
 				to_chat(user, "There's already a cable at that position.")
 				return
-
 
 		C.cableColor(color)
 		C.set_engineered_material(engineered_material_id)
@@ -819,7 +814,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	. = ..()
 
 //Endless alien cable coil
-
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_wire
 	name = "Precursor Alpha Object - Recursive Spool"

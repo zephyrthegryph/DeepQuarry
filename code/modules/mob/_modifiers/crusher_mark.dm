@@ -26,11 +26,12 @@
 		else
 			Destroy()
 
+REF_OWNED(/datum/modifier/crusher_mark, "marked_underlay")
+
+// LIFECYCLE: the mark's underlay comes off its holder.
 /datum/modifier/crusher_mark/Destroy()
-	hammer_synced = null
 	if(holder)
 		holder.underlays -= marked_underlay
-	QDEL_NULL(marked_underlay)
 	return ..()
 
 /datum/modifier/crusher_mark/on_expire()

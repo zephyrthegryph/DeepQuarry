@@ -480,6 +480,4 @@
 /obj/item/pai_cable/proc/machine() as /obj/machinery
 	return om_resolve(machine_handle)
 
-/obj/item/gift/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("gift")
+REF_OWNED(/obj/item/gift, list("gift"))

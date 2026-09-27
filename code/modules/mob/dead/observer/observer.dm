@@ -458,7 +458,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, span_warning("Sorry, that target is in an area that ghosts aren't allowed to go."))
 		return
 
-
 	var/icon/I = icon(target.icon,target.icon_state,target.dir)
 
 	var/orbitsize = (I.Width()+I.Height())*0.5
@@ -512,6 +511,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
+// LIFECYCLE: a ghost leaves the ghost visualnet and its chunks; one with a client is re-ghosted.
 /mob/observer/dead/Destroy()
 	if(exonet)
 		exonet.remove_address()
@@ -865,22 +865,22 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return FALSE
 	return TRUE
 
-/atom/proc/extra_ghost_link()
-	return
-
-/mob/extra_ghost_link(atom/ghost)
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(client && eyeobj)
-		return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
-
-/mob/observer/dead/extra_ghost_link(atom/ghost)
-	if(mind && mind.current)
-		return "|<a href='byond://?src=\ref[ghost];track=\ref[mind.current]'>body</a>"
+/proc/extra_ghost_link(atom/target, atom/ghost)
+	if(isobserver(target))
+		var/mob/observer/dead/dead = target
+		if(dead.mind && dead.mind.current)
+			return "|<a href='byond://?src=\ref[ghost];track=\ref[dead.mind.current]'>body</a>"
+		return
+	if(ismob(target))
+		var/mob/M = target
+		var/mob/observer/eye/eyeobj = M?.active_eye()
+		if(M.client && eyeobj)
+			return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
 
 /proc/ghost_follow_link(atom/target, atom/ghost)
 	if((!target) || (!ghost)) return
 	. = "<a href='byond://?src=\ref[ghost];track=\ref[target]'>follow</a>"
-	. += target.extra_ghost_link(ghost)
+	. += extra_ghost_link(target, ghost)
 
 //Culted Ghosts
 
@@ -1007,7 +1007,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	set category = "Ghost.Join"
 	src.abandon_mob()
 
-
 /mob/observer/dead/verb/backup_ping()
 	set category = "Ghost.Join"
 	set name = "Notify Transcore"
@@ -1108,7 +1107,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	forceMove(L)
-
 
 /mob/observer
 	low_priority = TRUE

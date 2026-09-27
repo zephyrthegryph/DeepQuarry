@@ -277,7 +277,7 @@
 	charge = H.nutrition
 	maxcharge = initial(H.nutrition)
 
-	QDEL_IN(src, 20 SECONDS)
+	expire(20 SECONDS)
 
 
 /obj/item/cell/standin/give(amount, update_appearance = TRUE)

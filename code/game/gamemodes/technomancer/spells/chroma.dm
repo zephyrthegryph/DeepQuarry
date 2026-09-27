@@ -33,7 +33,7 @@
 	if(T)
 		new /obj/effect/temporary_effect/chroma(T, color_to_use)
 		to_chat(user, span_notice("You shift the light onto \the [T]."))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/spell/chroma/on_use_cast(mob/user)
 	var/new_color = tgui_color_picker(user, "Choose the color you want your light to be.", "Color selection")

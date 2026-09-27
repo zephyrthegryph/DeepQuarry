@@ -419,12 +419,11 @@
 		return
 
 	if(S.secured)
-		qdel(S)
+		consume(S, user)
 		var/obj/item/secbot_assembly/A = new /obj/item/secbot_assembly
 		user.put_in_hands(A)
 		to_chat(user, "You add the signaler to the helmet.")
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 	else
 		return
 
@@ -531,8 +530,7 @@
 	else
 		var/mob/living/bot/secbot/bot = new /mob/living/bot/secbot(where)
 		bot.name = assembly.created_name
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE
 
 #undef SECBOT_WAIT_TIME

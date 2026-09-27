@@ -30,9 +30,10 @@
 		mapped_quantum_pads[map_pad_id] = src
 	update_icon()
 
-/obj/machinery/power/quantumpad/Destroy()
+/// Phase 2: leaves the quantum pad map.
+/obj/machinery/power/quantumpad/lifecycle_dematerialize()
+	. = ..()
 	mapped_quantum_pads -= map_pad_id
-	return ..()
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
@@ -78,7 +79,7 @@
 	"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
 	playsound(src, 'sound/items/rped.ogg', 25, 1)
 	boosted = TRUE
-	qdel(booster)
+	consume(booster, user)
 	return TRUE
 
 /obj/machinery/power/quantumpad/multitool_act(mob/user, obj/item/tool)

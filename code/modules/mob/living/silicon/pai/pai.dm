@@ -99,7 +99,6 @@
 	vore_capacity = 1
 	vore_capacity_ex = list("stomach" = 1)
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,21 +185,12 @@
 	update_icon()
 	return TRUE
 
+REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "communicator", "pda", "pai_fold_display"))
+
+// LIFECYCLE: releases its prey, retracts its cable and frees its key.
 /mob/living/silicon/pai/Destroy()
 	release_vore_contents()
 	check_retract_cable()
-	if(!QDELETED(card))
-		QDEL_NULL(card)
-	QDEL_NULL(pai_ui_chassis)
-	QDEL_NULL(sradio)
-	QDEL_NULL(communicator)
-	QDEL_NULL(pda)
-	if(pai_fold_display)
-		QDEL_NULL(pai_fold_display)
-	securityActive1 = null
-	securityActive2 = null
-	hackdoor = null
-	current = null
 	if(ckey)
 		GLOB.paikeys -= ckey
 	return ..()

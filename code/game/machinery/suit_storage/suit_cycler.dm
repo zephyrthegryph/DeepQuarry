@@ -57,7 +57,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	slot_id = OCCUPANT_SLOT_SUIT_CYCLER
 	name = "suit cycler"
 
-
 /obj/machinery/suit_cycler/Initialize(mapload)
 	. = ..()
 
@@ -74,10 +73,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	set_wires(new /datum/wires/suit_storage_unit(src))
 
-/obj/machinery/suit_cycler/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
+REF_OWNED(/obj/machinery/suit_cycler, "wires")
 
 /obj/machinery/suit_cycler/proc/load_departments()
 	var/list/typecache = GLOB.suit_cycler_typecache[type]
@@ -185,7 +181,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		return TRUE
 
 	add_fingerprint(user)
-	qdel(G)
+	consume(G, user)
 
 /// Fit a helmet, excluding hardsuit (rig) helmets.
 /datum/interaction/machine_item/suit_cycler_insert_helmet

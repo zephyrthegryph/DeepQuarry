@@ -31,6 +31,7 @@
 /obj/singularity/energy_ball/ex_act(severity, target)
 	return
 
+// LIFECYCLE: its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/Destroy()
 	for(var/obj/singularity/energy_ball/EB as anything in orbiting_balls())
 		qdel(EB)
@@ -41,7 +42,6 @@
 	if(miniball)
 		return //don't annnounce miniballs
 	..()
-
 
 /obj/singularity/energy_ball/periodic_step(wait = 20)
 	set waitfor = FALSE
@@ -158,8 +158,7 @@
 		var/obj/singularity/energy_ball/orbitingball = center
 		orbitingball.dissipate_strength = length(orbitingball.orbiting_balls()) + 1
 	if(!loc && !QDELETED(src))
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 0)
-
+		expire(0)
 
 /obj/singularity/energy_ball/proc/dust_mob(mob/living/L)
 	if(!istype(L) || L.is_incorporeal())
@@ -219,7 +218,6 @@
 				//while still allowing common code to run before hand
 				closest_tesla_coil = C
 				closest_atom = C
-
 
 		else if(closest_tesla_coil)
 			continue //no need checking these other things

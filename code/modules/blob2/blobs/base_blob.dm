@@ -28,11 +28,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 	. = ..()
 	update_icon()
 
-
-/obj/structure/blob/Destroy()
-	playsound(src, 'sound/effects/splat.ogg', 50, 1) //Expand() is no longer broken, no check necessary.
-	overmind = null
-	return ..()
+DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'sound/effects/splat.ogg'))
 
 /obj/structure/blob/update_icon() //Updates color based on overmind color if we have an overmind.
 	if(overmind)
@@ -231,7 +227,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 		B.overmind = controller
 	B.update_icon()
 	B.set_dir(dir)
-	qdel(src)
+	replace_with(src, B)
 	return B
 
 /obj/structure/blob/attack_generic(mob/user, damage, attack_verb)

@@ -7,7 +7,7 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 		replacement.key = key
 		return
 
-	update_Login_details()    //handles setting lastKnownIP and computer_id for use by the ban systems as well as checking for multikeying
+	update_Login_details(src)    //handles setting lastKnownIP and computer_id for use by the ban systems as well as checking for multikeying
 	if(!mind)
 		mind = new /datum/mind(key)
 		mind.active = 1

@@ -47,11 +47,7 @@
 
 	update_icon()
 
-/obj/item/gun/magnetic/Destroy()
-	QDEL_NULL(cell)
-	QDEL_NULL(loaded)
-	QDEL_NULL(capacitor)
-	. = ..()
+REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
 
 /obj/item/gun/magnetic/get_cell()
 	return cell
@@ -323,7 +319,6 @@
 /obj/item/gun/magnetic/fuelrod/proc/blitzed(turf/T, mob/living/carbon/M, max_range, banglet)					// Added a new proc called 'bang' that takes a location and a person to be banged.
 	to_chat(M, span_danger("BANG"))						// Called during the loop that bangs people in lockers/containers and when banging
 	playsound(src, 'sound/effects/bang.ogg', 50, 1, 30)		// people in normal view.  Could theroetically be called during other explosions.
-
 
 	//Checking for protections
 	var/eye_safety = 0

@@ -69,12 +69,7 @@
 	anomalyEffect(seconds_per_tick)
 	anomalyPulse()
 
-/obj/effect/anomaly/Destroy()
-	QDEL_NULL(countdown)
-	QDEL_NULL(anomaly_core)
-	if(stats)
-		QDEL_NULL(stats)
-	return ..()
+REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))
 
 /obj/effect/anomaly/proc/anomalyEffect(seconds_per_tick)
 	if(prob(move_chance) && !locate(/obj/effect/suspension_field) in get_turf(src))

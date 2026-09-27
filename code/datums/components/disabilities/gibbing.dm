@@ -36,7 +36,3 @@
 	if((gutdeathpressure/3) >= 1 && prob(gutdeathpressure/3))
 		death_time = TRUE
 
-/datum/component/gibbing_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

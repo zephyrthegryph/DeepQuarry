@@ -59,9 +59,7 @@
 	if(in_stat_panel)
 		button = new(null, src)
 
-/datum/protean_power/Destroy()
-	QDEL_NULL(button)
-	return ..()
+REF_OWNED(/datum/protean_power, "button")
 
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
 	if(!istype(H))
@@ -113,10 +111,6 @@
 	icon = power.icon
 	icon_state = power.icon_state
 
-/obj/effect/protean_power_button/Destroy()
-	power = null
-	return ..()
-
 /obj/effect/protean_power_button/Click(location, control, params)
 	var/list/modifiers = params2list(params)
 	var/mob/living/carbon/human/H = usr
@@ -126,7 +120,6 @@
 		to_chat(H, span_notice(span_bold("[power.name]") + " - [power.desc]"))
 		return
 	power.try_activate(H)
-
 
 // --- Form ------------------------------------------------------------------------------
 
@@ -245,7 +238,6 @@
 	set desc = "Disperses your mass into a thin veil, making a trap to snatch prey with, or simply hide."
 	set category = "Abilities.Protean"
 	activate_protean_power(/datum/protean_power/hide_self)
-
 
 // --- Refactory ------------------------------------------------------------------------
 
@@ -492,7 +484,6 @@
 	set desc = "If you're holding a stack of material, you can consume some and store it for later."
 	set hidden = TRUE
 	activate_protean_power(/datum/protean_power/metal_nom)
-
 
 // --- Appearance ------------------------------------------------------------------------
 

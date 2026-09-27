@@ -60,9 +60,7 @@
 
 	rebuild_overlay_lists(TRUE)
 
-/obj/compass_holder/Destroy()
-	QDEL_LIST_ASSOC_VAL(compass_waypoints)
-	. = ..()
+REF_OWNED_VALUES(/obj/compass_holder, "compass_waypoints")
 
 /obj/compass_holder/proc/get_heading()
 	var/atom/A = loc?.loc // is there a get_holder_recursive() equivalent on Polaris?

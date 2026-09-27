@@ -36,6 +36,7 @@
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
 
+// LIFECYCLE: its summons are dismissed with it.
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
 	return ..()
@@ -339,7 +340,6 @@
 	regen_rate = 100 //250 seconds to full
 	instability_modifier = 0.75
 
-
 /obj/item/technomancer_core/verb/toggle_lock()
 	set name = "Toggle Core Lock"
 	set category = "Object"
@@ -366,4 +366,4 @@
 /mob/living/proc/fade_away()
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins to fade away..."))
 	animate(src, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
-	QDEL_IN(src, 30)
+	expire(30)

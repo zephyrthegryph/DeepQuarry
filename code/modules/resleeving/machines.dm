@@ -163,10 +163,6 @@
 	RefreshParts()
 	update_icon()
 
-/obj/machinery/transhuman/synthprinter/Destroy()
-	current_br = null
-	. = ..()
-
 /obj/machinery/transhuman/synthprinter/RefreshParts()
 
 	//Scanning modules reduce burn rating by 15 each
@@ -340,9 +336,6 @@
 	RefreshParts()
 	update_icon()
 
-/obj/machinery/transhuman/resleever/Destroy()
-	. = ..()
-
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
 /// the occupant's environment, same as before the ledger tracked it.
 /datum/om/relation/slot/occupant/resleever
@@ -404,13 +397,13 @@
 			return
 		var/mob/M = G?.grab_target()
 		if(put_mob(M))
-			qdel(G)
+			consume(G, user)
 			return //Don't call up else we'll get attack messsages
 	if(istype(W, /obj/item/paicard/sleevecard))
 		var/obj/item/paicard/sleevecard/C = W
 		user.unEquip(C)
 		C.removePersonality()
-		qdel(C)
+		consume(C, user)
 		sleevecards++
 		to_chat(user, span_notice("You store \the [C] in \the [src]."))
 		return
@@ -496,7 +489,6 @@
 	var/obj/item/implant/backup/new_imp = new()
 	if(new_imp.handle_implant(occupant, BP_HEAD))
 		new_imp.post_implant(occupant)
-
 
 	//Inform them and make them a little dizzy.
 	if(confuse_amount + blur_amount <= 16)

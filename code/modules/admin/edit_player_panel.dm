@@ -26,6 +26,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	holder = owner_holder
 	target = target_mob
 
+// LIFECYCLE: leaves the per-admin panel index.
 /datum/edit_player_panel/Destroy(force, ...)
 	if(holder && target)
 		GLOB.dq_edit_player_panels -= "[REF(holder)]-[REF(target)]"

@@ -38,11 +38,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /datum/effect/effect/system/proc/start()
 
-/datum/effect/effect/system/Destroy()
-	location = null
-	holder = null
-	return ..()
-
 /////////////////////////////////////////////
 // GENERIC STEAM SPREAD SYSTEM
 
@@ -109,8 +104,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
-	QDEL_IN(src, 5 SECONDS)
+	expire(5 SECONDS)
 
+// LIFECYCLE: a dying spark can still light its tile.
 /obj/effect/effect/sparks/Destroy()
 	var/turf/T = src.loc
 	if (istype(T, /turf))
@@ -160,14 +156,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			return
 		INVOKE_ASYNC(src, PROC_REF(emit_one_spark))
 
-
-
 /////////////////////////////////////////////
 //// SMOKE SYSTEMS
 // direct can be optinally added when set_up, to make the smoke always travel in one direction
 // in case you wanted a vent to always smoke north for example
 /////////////////////////////////////////////
-
 
 /obj/effect/effect/smoke
 	name = "smoke"
@@ -299,9 +292,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
-/obj/effect/effect/smoke/elemental/Destroy()
-	return ..()
-
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	for(var/mob/living/L in range(1, src))
@@ -310,7 +300,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/smoke/elemental/periodic_step()
 	for(var/mob/living/L in range(1, src))
 		affect(L)
-
 
 /obj/effect/effect/smoke/elemental/fire
 	name = "burning cloud"
@@ -441,10 +430,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/processing = 1
 	var/on = 1
 
-/datum/effect/effect/system/ion_trail_follow/Destroy()
-	oldposition = null
-	. = ..()
-
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)
 	oldposition = get_turf(atom)
@@ -486,9 +471,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		src.processing = 0
 		src.on = 0
 
-
-
-
 /////////////////////////////////////////////
 //////// Attach a steam trail to an object (eg. a reacting beaker) that will follow it
 // even if it's carried of thrown.
@@ -498,10 +480,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/turf/oldposition
 	var/processing = 1
 	var/on = 1
-
-/datum/effect/effect/system/steam_trail_follow/Destroy()
-	oldposition = null
-	. = ..()
 
 /datum/effect/effect/system/steam_trail_follow/set_up(atom/atom)
 	attach(atom)
@@ -608,7 +586,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /obj/effect/effect/teleport_greyscale/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 2 SECONDS)
+	expire(2 SECONDS)
 
 /datum/effect/effect/system/teleport_greyscale
 	var/color = "#FFFFFF"
@@ -623,7 +601,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system/teleport_greyscale/start()
 	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.location)
 	tele.color = color
-
 
 // === merged from effect_system_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 
@@ -645,7 +622,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/confetti/Initialize(mapload)
 	. = ..()
 	if(time_to_live)
-		QDEL_IN(src, time_to_live)
+		expire(time_to_live)
 				//make confetti on ground cleanable decal to spawn
 
 /datum/effect/effect/system/confetti_spread

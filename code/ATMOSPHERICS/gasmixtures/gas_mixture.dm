@@ -76,10 +76,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	// _extools_pointer_gasmixture.
 	vg_register_gasmixture_hook(src)
 
-/datum/gas_mixture/Destroy()
-	// Free the arena slot for reuse.
+/// Phase 1 (unbind): frees the Rust arena slot for reuse.
+/datum/gas_mixture/lifecycle_unbind()
+	. = ..()
 	vg_unregister_gasmixture_hook(src)
-	reaction_results = null
+
+// LIFECYCLE: returns QDEL_HINT_IWILLGC (no reference-check queue for handles).
+/datum/gas_mixture/Destroy()
 	..()
 	// Gas mixtures are opaque handles with no post-Destroy cleanup dependency.
 	// Let BYOND collect them naturally instead of retaining tens of thousands of

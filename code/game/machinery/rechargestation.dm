@@ -204,7 +204,7 @@
 /obj/machinery/recharge_station/proc/interaction_insert_grab(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/grab/G = held
 	var/mob/living/M = G?.grab_target()
-	qdel(held)
+	consume(held, user)
 	go_in(M)
 	return FALSE
 

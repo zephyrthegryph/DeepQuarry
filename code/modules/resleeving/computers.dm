@@ -41,6 +41,7 @@
 	sleevers = list()
 	updatemodules()
 
+// LIFECYCLE: its pods are released.
 /obj/machinery/computer/transhuman/resleeving/Destroy()
 	releasepods()
 	current_br = null
@@ -520,7 +521,7 @@
 	user.unEquip(src)
 	var/obj/item/disk/transcore/newdisk = new(get_turf(src))
 	user.put_in_any_hand_if_possible(newdisk)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/disk/transcore
 	name = "TransCore Dump Disk"

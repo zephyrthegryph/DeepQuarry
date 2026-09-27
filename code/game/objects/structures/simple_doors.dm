@@ -42,10 +42,6 @@
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/simple_door/Destroy()
-	update_nearby_tiles()
-	return ..()
-
 /obj/structure/simple_door/proc/set_material(material_name)
 	if(!material_name)
 		material_name = MAT_STEEL
@@ -353,7 +349,6 @@
 /obj/structure/simple_door/snowbrick/Initialize(mapload, material_name)
 	. = ..(mapload, material_name || MAT_SNOWBRICK)
 
-
 /obj/structure/simple_door/cult/TryToSwitchState(atom/user)
 	if(isliving(user))
 		var/mob/living/L = user
@@ -385,7 +380,6 @@
 	TryToSwitchState(user)
 	return
 // end.
-
 
 /datum/material/flockium
 	name = MAT_FLOKIUM

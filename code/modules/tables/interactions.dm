@@ -124,7 +124,7 @@
 				M.forceMove(get_turf(src))
 				M.status_at_least(EFFECT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] puts [G?.grab_target()] on \the [src]."))
-			qdel(W)
+			consume(W, user)
 			return
 
 	// Handle dismantling or placing things on the table from here on.

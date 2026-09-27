@@ -31,11 +31,7 @@
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
-/obj/structure/prop/prism/Destroy()
-	if(remote_dial)
-		LAZYREMOVE(remote_dial.my_turrets, src)
-		remote_dial = null
-	. = ..()
+REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 
 /obj/structure/prop/prism/proc/reset_rotation()
 	var/degrees_to_rotate = -1 * degrees_from_north
@@ -209,6 +205,7 @@
 			LAZYOR(my_turrets, P)
 			P.remote_dial = src
 
+// LIFECYCLE: its turrets forget the dial.
 /obj/structure/prop/prismcontrol/Destroy()
 	for(var/obj/structure/prop/prism/P in my_turrets)
 		P.remote_dial = null

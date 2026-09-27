@@ -12,6 +12,7 @@
 	var/list/blend_objects = null // Objects which to blend with // default null
 	var/list/noblend_objects = null // Objects to avoid blending with (such as children of listed blend objects. // default null
 
+// LIFECYCLE: the base structure: leaves its parts behind.
 /obj/structure/Destroy()
 	if(parts)
 		new parts(loc)
@@ -60,7 +61,7 @@
 		return 0
 	visible_message(span_danger("[user] [attack_verb] the [src] apart!"))
 	user.do_attack_animation(src)
-	QDEL_IN(src, 1)
+	expire(1)
 	return 1
 
 /obj/structure/proc/can_visually_connect()

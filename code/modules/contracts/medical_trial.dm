@@ -63,18 +63,8 @@
 	var/conditional_offer = FALSE
 	var/resupplies_used = 0
 
-/datum/contract/medical_trial/Destroy()
-	QDEL_NULL(profile)
-	for(var/key in participants)
-		var/datum/medical_trial_participant/participant = participants[key]
-		var/mob/living/subject = participant.current_subject()
-		if(subject)
-			UnregisterSignal(subject, COMSIG_MOB_DEATH)
-		qdel(participant)
-	participants = null
-	observation_requirement = null
-	analysis_requirement = null
-	return ..()
+REF_OWNED(/datum/contract/medical_trial, "profile")
+REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
 	profile = new(cohort, target_metric)
@@ -436,13 +426,6 @@
 /datum/medical_trial_participant/proc/current_subject() as /mob/living/carbon/human
 	var/mob/living/carbon/human/subject = SScontracts.resolve_subject(subject_id)
 	return istype(subject) ? subject : null
-
-/datum/medical_trial_participant/Destroy()
-	subject_id = null
-	consent_record = null
-	baseline_metrics = null
-	final_metrics = null
-	return ..()
 
 /proc/medical_trial_target_choices()
 	return list("trauma", "infection", "respiratory", "neurological", "organ failure")

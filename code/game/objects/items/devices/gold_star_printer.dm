@@ -89,5 +89,5 @@
 	target.description_fluff = "[target.description_fluff] Attached to it is [desc]"
 	to_chat(user, span_notice("You stick \the [src] to \the [target]."))
 	user.drop_item()
-	qdel(src)
+	consume(src, user)
 	return

@@ -47,17 +47,6 @@
 		base_area = locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
 
-/obj/effect/shuttle_landmark/Destroy()
-	// Docking programs are registry-owned. A destroyed landmark must release its
-	// borrowed reference or the controller survives the explosion that removed
-	// its dock.
-	if(docking_controller)
-		UnregisterSignal(docking_controller, COMSIG_QDELETING)
-	docking_controller = null
-	special_dock_targets = null
-	base_area = null
-	return ..()
-
 /obj/effect/shuttle_landmark/LateInitialize()
 	if(!docking_controller)
 		return
@@ -165,7 +154,6 @@
 	for(var/turf/T in range(radius, src))
 		if(T.density)
 			T.ChangeTurf(get_base_turf_by_area(T))
-
 
 //
 // Bluespace flare landmark beacon

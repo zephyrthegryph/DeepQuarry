@@ -27,18 +27,12 @@
 	if(length(linked_machine.tgui_data()))
 		log_world("## ERROR [machine.type] implements tgui_data(), and has likely been ported to tgui already. It should no longer use set_machine().")
 
+// LIFECYCLE: the machine is free again and the operator's perspective and trait reset.
 /datum/component/using_machine_shim/Destroy(force)
 	. = ..()
-	// Machine
-	UnregisterSignal(linked_machine, COMSIG_QDELETING)
 	linked_machine.in_use = FALSE
-	linked_machine = null
-	// Mob
-	UnregisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	om_stage_remove(host_mob, /datum/om/stage/life/trait/using_machine_shim)
-	UnregisterSignal(host_mob, COMSIG_MOB_LOGOUT)
-	host_mob.reset_perspective() // Required, because our machine may have been operating a remote view
-	host_mob = null
+	host_mob.reset_perspective()
 
 /datum/component/using_machine_shim/proc/on_mob_action()
 	SIGNAL_HANDLER

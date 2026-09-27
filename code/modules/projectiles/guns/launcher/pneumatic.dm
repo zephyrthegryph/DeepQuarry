@@ -196,15 +196,13 @@
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
 			playsound(src, tool.usesound, 100, 1)
 			to_chat(user, span_notice("You weld the valve into place."))
-			new /obj/item/gun/launcher/pneumatic(get_turf(src))
-			qdel(src)
+			replace_with(src, /obj/item/gun/launcher/pneumatic)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/pipe))
 		if(buildstate == 0)
-			user.drop_from_inventory(W)
-			qdel(W)
+			consume(W, user)
 			to_chat(user, span_notice("You secure the piping inside the frame."))
 			buildstate++
 			update_icon()
@@ -221,8 +219,7 @@
 			return
 	else if(istype(W,/obj/item/transfer_valve))
 		if(buildstate == 4)
-			user.drop_from_inventory(W)
-			qdel(W)
+			consume(W, user)
 			to_chat(user, span_notice("You install the transfer valve and connect it to the piping."))
 			buildstate++
 			update_icon()

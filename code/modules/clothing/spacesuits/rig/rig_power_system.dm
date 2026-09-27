@@ -39,10 +39,6 @@
 /datum/rig_power_system/New(obj/item/rig/new_holder)
 	holder = new_holder
 
-/datum/rig_power_system/Destroy()
-	holder = null
-	return ..()
-
 /*
  * proc/get_environment_temperature()
  *

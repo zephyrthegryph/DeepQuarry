@@ -72,9 +72,7 @@
 	src.modifier_type_to_apply = modifier_type_to_apply
 	src.modifier_duration     = modifier_duration
 
-/datum/projectile_effects/Destroy()
-	QDEL_NULL(turf_effect_callback)
-	return ..()
+REF_OWNED(/datum/projectile_effects, "turf_effect_callback")
 
 /// Apply mob-targeted effects.  Returns TRUE if any effect was applied.
 /// blocked: armor absorption percentage; >= 100 suppresses all effects.

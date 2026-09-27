@@ -95,11 +95,11 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	var/atom/atom_parent = parent
 	atom_parent.extinguish()
 
+REF_OWNED(/datum/component/burning, "particle_effect")
+
+// LIFECYCLE: the fire's heat and shared particles leave the burning thing.
 /datum/component/burning/Destroy(force)
 	stop_heat()
-	fire_overlay = null
-	if(particle_effect)
-		QDEL_NULL(particle_effect)
 	if (ismovable(parent) && particle_type)
 		var/atom/movable/movable_parent = parent
 		movable_parent.remove_shared_particles("[particle_type]_[isitem(parent)]")

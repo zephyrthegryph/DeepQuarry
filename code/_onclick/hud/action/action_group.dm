@@ -26,10 +26,8 @@
 	actions = list()
 	src.owner_handle = om_handle(owner)
 
-/datum/action_group/Destroy()
-	QDEL_NULL(landing)
-	QDEL_LIST(actions)
-	return ..()
+REF_OWNED(/datum/action_group, "landing")
+REF_OWNED_LIST(/datum/action_group, "actions")
 
 /datum/action_group/proc/insert_action(atom/movable/screen/action, index)
 	if(action in actions)
@@ -200,7 +198,6 @@
 	// Remember the number var indexes at 0
 	return ..(1 + (row_offset * column_max), landing)
 
-
 /datum/action_group/listed
 	pixel_north_offset = 6
 	column_max = 10
@@ -213,11 +210,3 @@
 /// LC-refs: the hud that owns this group -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/action_group/proc/owner() as /datum/hud
 	return om_resolve(owner_handle)
-
-/datum/action_group/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("landing")
-
-/datum/action_group/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("actions")

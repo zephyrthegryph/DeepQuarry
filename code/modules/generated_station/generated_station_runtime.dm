@@ -65,10 +65,6 @@
 	captured_by = user.ckey || user.name
 	visible_message(span_notice("[src] accepts the new control authority."))
 
-/obj/machinery/generated_station_department_control/Destroy()
-	captured_by = null
-	return ..()
-
 /datum/generated_station_director
 	var/list/registered_defenders
 	var/security_reserves = 6

@@ -169,6 +169,7 @@
 		if(istype(rig,/obj/item/rig))
 			rig.forced_move(direction, user)
 
+// LIFECYCLE: the occupant view is discarded before the tissue; a borg forgets its MMI.
 /obj/item/mmi/Destroy()
 	if(body_backup)
 		qdel(body_backup)

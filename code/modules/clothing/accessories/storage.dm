@@ -19,11 +19,7 @@
 	if (!hide_on_roll)
 		on_rolled["down"] = icon_state
 
-/obj/item/clothing/accessory/storage/Destroy()
-	// Without this the contents-qdel loop deletes the internal storage while
-	// `hold` still points at it, so it fails GC every time (cf. suit pockets).
-	QDEL_NULL(hold)
-	return ..()
+REF_OWNED(/obj/item/clothing/accessory/storage, "hold")
 
 /obj/item/clothing/accessory/storage/attack_hand(mob/user)
 	if (has_suit)	//if we are part of a suit
@@ -107,7 +103,6 @@
 
 	new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
 	new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
-
 
 /obj/item/clothing/accessory/storage/bluespace
 	name = "bluespace badge"

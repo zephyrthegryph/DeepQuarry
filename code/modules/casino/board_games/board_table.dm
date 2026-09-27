@@ -19,11 +19,7 @@
 	if(ispath(game_ui))
 		game_ui = new game_ui(src)
 
-/obj/structure/casino_table/board_game/Destroy()
-	if(game_ui)
-		game_ui.parent = null
-		QDEL_NULL(game_ui)
-	. = ..()
+REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 
 /obj/structure/casino_table/board_game/attack_hand(mob/user)
 	. = ..()
@@ -60,10 +56,6 @@
 /datum/board_game/New(atom/holder)
 	. = ..()
 	parent = holder
-
-/datum/board_game/Destroy(force)
-	parent = null
-	. = ..()
 
 /datum/board_game/tgui_host(mob/user)
 	return parent

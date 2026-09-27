@@ -26,11 +26,7 @@
 	. = ..()
 	announce = new /obj/item/radio/intercom(src)
 
-/obj/machinery/computer/timeclock/Destroy()
-	if(card)
-		card.forceMove(get_turf(src))
-		card = null
-	. = ..()
+REF_SPILL(/obj/machinery/computer/timeclock, "card")
 
 /obj/machinery/computer/timeclock/update_icon()
 	if(inoperable())

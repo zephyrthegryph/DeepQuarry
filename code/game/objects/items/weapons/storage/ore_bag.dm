@@ -69,7 +69,7 @@
 		stored_ore[ore.material]++
 		current_capacity++
 		user.remove_from_mob(W)
-		qdel(ore)
+		consume(ore, user)
 
 /obj/item/ore_bag/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	//If we attack a turf, we try to scoop up all the ore from the turf first.
@@ -120,7 +120,7 @@
 		stored_ore[ore.material]++
 		current_capacity++
 		current_pickup++
-		qdel(ore)
+		consume(ore)
 		success = 1
 	if(!silent) //Let's do a single check and then do more instead of a bunch at once.
 		if(success && !failure && !max_pickup_reached) //Picked stuff up, did not reach capacity, did not reach max_pickup.

@@ -83,7 +83,6 @@
 		icon_state = "dark_maw_used"
 		return INITIALIZE_HINT_QDEL
 
-
 	var/mob/living/target_user = null
 	for(var/mob/living/L in T)
 		if(L != owner && !L.is_incorporeal())
@@ -97,7 +96,7 @@
 		icon_state = "dark_maw_used"
 		flick("dark_maw_tr", src)
 		visible_message(span_warning("A set of crystals suddenly springs from the ground and shadowy tendrils wrap around nothing before vanishing."))
-		QDEL_IN(src, 3 SECONDS)
+		expire(3 SECONDS)
 	else
 		if(SK)
 			LAZYADD(SK.active_dark_maws, src)
@@ -109,15 +108,11 @@
 	SIGNAL_HANDLER
 	qdel(src)
 
+// LIFECYCLE: leaves its shadekin's maw list (the component lives on the owner, not in a var).
 /obj/effect/abstract/dark_maw/Destroy()
-	if(owner)
-		if(has_signal)
-			UnregisterSignal(owner, COMSIG_QDELETING)
-		var/datum/component/shadekin/SK = owner.get_shadekin_component()
-		if(SK)
-			LAZYREMOVE(SK.active_dark_maws, src)
-	owner = null
-	target = null
+	var/datum/component/shadekin/SK = owner?.get_shadekin_component()
+	if(SK)
+		LAZYREMOVE(SK.active_dark_maws, src)
 	return ..()
 
 /obj/effect/abstract/dark_maw/Crossed(O)

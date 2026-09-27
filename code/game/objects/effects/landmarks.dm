@@ -92,6 +92,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 	else
 		registry_join(REGISTRY_LANDMARKS, src)
 
+// LIFECYCLE: landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/Destroy(force = FALSE)
 	if(delete_me || force)
 		return ..()
@@ -106,7 +107,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 /obj/effect/landmark/start/Initialize(mapload)
 	. = ..()
 	tag = "start*[name]"
-
 
 /obj/effect/landmark/virtual_reality
 	name = "virtual_reality"
@@ -274,10 +274,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 /obj/effect/landmark/unit_test_top_right
 	name = "unit test zone top right"
 
-
 /obj/effect/landmark
 	var/abductor = 0
-
 
 /obj/effect/landmark/wildlife
 	name = "wildlife"

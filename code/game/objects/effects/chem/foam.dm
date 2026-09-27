@@ -40,7 +40,7 @@
 		M.metal = metal
 		M.update_icon()
 	flick("[icon_state]-disolve", src)
-	QDEL_IN(src, 5)
+	expire(5)
 
 /obj/effect/effect/foam/proc/checkReagents() // transfer any reagents to the floor
 	if(!metal && reagents)
@@ -78,7 +78,7 @@
 	if(metal)
 		return
 	flick("[icon_state]-disolve", src)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 5)
+	expire(5)
 
 /obj/effect/effect/foam/Crossed(atom/movable/AM)
 	if(AM.is_incorporeal())
@@ -148,11 +148,6 @@
 	. = ..()
 	update_nearby_tiles(1)
 
-/obj/structure/foamedmetal/Destroy()
-	density = FALSE
-	update_nearby_tiles(1)
-	return ..()
-
 /obj/structure/foamedmetal/update_icon()
 	if(metal == 1)
 		icon_state = "metalfoam"
@@ -179,7 +174,7 @@
 		var/mob/grabbed = G?.grab_target()
 		grabbed.loc = src.loc
 		visible_message(span_warning("[G?.grab_assailant()] smashes [grabbed] through the foamed metal wall."))
-		qdel(I)
+		consume(I, user)
 		qdel(src)
 		return
 
@@ -188,7 +183,6 @@
 		qdel(src)
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
-
 
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"
@@ -204,8 +198,5 @@
 
 /obj/effect/effect/foam/firefighting/proc/dissolve()
 	flick("[icon_state]-disolve", src)
-	QDEL_IN(src, 5)
-
-/obj/effect/effect/foam/firefighting/Destroy()
-	return ..()
+	expire(5)
 

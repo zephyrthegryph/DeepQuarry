@@ -29,7 +29,6 @@
 	var/service_staff_account_number = 0
 	var/service_staff_name
 
-
 // Claim machine ID
 REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
@@ -39,9 +38,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	cash_stored = rand(10, 70)*10
 	if(GLOB.economy_init && account_to_connect)
 		linked_account = GLOB.department_accounts[account_to_connect]
-
-/obj/machinery/cash_register/Destroy()
-	. = ..()
 
 /obj/machinery/cash_register/examine(mob/user)
 	. = ..(user)
@@ -124,7 +120,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
 				H.drop_from_inventory(SC)
-			qdel(SC)
+			consume(SC, user)
 		else
 			scan_cash(SC, user)
 	else if(istype(O, /obj/item/card/emag))
@@ -296,7 +292,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	toggle_anchors(tool, user)
 	return ITEM_INTERACT_SUCCESS
 
-
 /// The old MouseDrop_T: an object dragged on is used on the register.
 /datum/interaction/machine_drag/cash_register_drop
 	id = "cash_register_drop"
@@ -309,7 +304,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		attackby(dropping, user)
 	return TRUE
 
-
 /obj/machinery/cash_register/proc/confirm(obj/item/I)
 	if(confirm_item == I && confirm_revision == ticket_revision)
 		return 1
@@ -319,7 +313,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		src.visible_message(span_infoplain("[icon2html(src,viewers(src))]" + span_bold("Total price:") + " [transaction_amount] Thaler\s. Swipe again to confirm."))
 		playsound(src, 'sound/machines/twobeep.ogg', 25)
 		return 0
-
 
 /obj/machinery/cash_register/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
 	if(!transaction_amount || !ticket_is_valid())
@@ -439,7 +432,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 			if(ishuman(SC.loc))
 				var/mob/living/carbon/human/H = SC.loc
 				H.drop_from_inventory(SC)
-			qdel(SC)
+			consume(SC, user)
 		// Save log
 		// Department cash is deposited immediately so the invoice and account
 		// books agree and any same-period refund has authoritative funding.
@@ -525,7 +518,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	new_entry["prices"] = price_list.Copy()
 	UNTYPED_LIST_ADD(transaction_logs, new_entry)
 
-
 /obj/machinery/cash_register/proc/check_account(mob/user)
 	if (!linked_account)
 		user.visible_message("[icon2html(src, viewers(src))]" + span_warning("Unable to connect to linked account."))
@@ -601,7 +593,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	else
 		to_chat(user, span_warning("The cash box is locked."))
 
-
 /obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
 	if(om_busy(src)) return
 	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor.", receiver = src, on_done = PROC_REF(toggle_anchors_tool_done), done_args = list(user), claims = TRUE)
@@ -626,7 +617,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		locked = 0
 		cash_locked = 0
 		open_cash_box(user)
-
 
 //--Premades--//
 

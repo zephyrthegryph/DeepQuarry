@@ -51,10 +51,6 @@
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	icon = null
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
-
 /obj/machinery/atmospherics/binary/dp_vent_pump/disconnect(obj/machinery/atmospherics/reference)
 	wake_for_state_change()
 	return ..()
@@ -216,7 +212,6 @@
 
 	return pressure_delta
 
-
 //Radio remote control
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_frequency(new_frequency)
@@ -252,7 +247,6 @@
 	. = ..()
 	if(Adjacent(user))
 		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
-
 
 /obj/machinery/atmospherics/unary/vent_pump/power_change()
 	var/old_stat = stat

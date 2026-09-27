@@ -33,7 +33,7 @@
 		var/datum/modifier/technomancer/MT = M
 		MT.spell_power = calculate_spell_power(1)
 	log_and_message_admins("has casted [src] on [L].")
-	qdel(src)
+	consume(src, L)
 	return TRUE
 
 // Technomancer specific subtype which keeps track of spell power and gets targeted specificially by Dispel.

@@ -319,6 +319,7 @@ MRE Stuff
 	. = ..()
 	pickflavor()
 
+// LIFECYCLE: leaves its wrapper as trash.
 /obj/item/storage/box/tgmc_mre/Destroy()
 	var/turf/T = get_turf(src)
 	if(T)

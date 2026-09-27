@@ -101,9 +101,8 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	. = ..()
 
 	var/type = pick(/obj/item/tank/phoron/onetankbomb, /obj/item/tank/oxygen/onetankbomb)
-	new type(src.loc)
+	replace_with(src, type)
 
-	qdel(src)
 
 /obj/effect/spawner/onetankbomb/full
 	name = "Single-tank bomb"
@@ -117,9 +116,8 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	. = ..()
 
 	var/type = pick(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full)
-	new type(src.loc)
+	replace_with(src, type)
 
-	qdel(src)
 
 /obj/effect/spawner/onetankbomb/frag
 	name = "Single-tank bomb"

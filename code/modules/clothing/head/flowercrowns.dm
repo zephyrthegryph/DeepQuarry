@@ -27,8 +27,8 @@
 			return ..()
 		user.drop_from_inventory(W)
 		user.drop_from_inventory(src)
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 		user.put_in_hands(complete)
 		return
 	return ..()

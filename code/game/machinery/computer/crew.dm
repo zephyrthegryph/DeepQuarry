@@ -14,10 +14,7 @@
 	. = ..()
 	crew_monitor = new(src)
 
-/obj/machinery/computer/crew/Destroy()
-	qdel(crew_monitor)
-	crew_monitor = null
-	. = ..()
+REF_OWNED(/obj/machinery/computer/crew, "crew_monitor")
 
 /obj/machinery/computer/crew/declare_interactions(list/into)
 	into += list(

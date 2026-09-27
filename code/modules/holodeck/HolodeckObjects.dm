@@ -421,7 +421,7 @@
 		grabbed.loc = src.loc
 		grabbed.status_at_least(EFFECT_WEAKENED, 5)
 		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
-		qdel(W)
+		consume(W, user)
 		return
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src.loc)

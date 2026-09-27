@@ -48,9 +48,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /obj/machinery/power/proc/power_turf()
 	return isturf(loc) ? loc : null
 
-/obj/machinery/power/Destroy()
+/// Phase 1 (unbind): the machine's power node leaves its network.
+/obj/machinery/power/lifecycle_unbind()
+	. = ..()
 	disconnect_from_network()
-	return ..()
 
 ///////////////////////////////
 // General procedures

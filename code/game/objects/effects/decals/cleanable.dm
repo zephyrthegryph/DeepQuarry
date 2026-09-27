@@ -32,6 +32,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 		qdel(src)
 		return TRUE
 
+// LIFECYCLE: persistent filth forgets this decal.
 /obj/effect/decal/cleanable/Destroy()
 	SSpersistence.forget_value(src, /datum/persistent/filth)
 	. = ..()
@@ -42,7 +43,6 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	// This is so it may be used with update_icon() overrides that use overlays, while adding the janitor overlay at the end.
 	cut_overlays()
 	add_janitor_hud_overlay()
-
 
 /obj/effect/decal/cleanable/proc/add_janitor_hud_overlay()
 	// This was original a seperate object that followed the grime, it got stuck in everything you can imagine!

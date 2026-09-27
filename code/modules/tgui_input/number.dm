@@ -92,11 +92,6 @@
 	if(default > max_value)
 		CRASH("Default value is greater than max value.")
 
-/datum/tgui_input_number/Destroy(force)
-	SStgui.close_uis(src)
-	state = null
-	return ..()
-
 /**
  * Waits for a user's response to the tgui_input_number's prompt before returning. Returns early if
  * the window was closed by the user.

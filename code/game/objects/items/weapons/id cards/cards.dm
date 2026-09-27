@@ -6,8 +6,6 @@
  *		FINGERPRINT CARD
  */
 
-
-
 /*
  * DATA CARDS - Used for the teleporter
  */
@@ -120,7 +118,7 @@
 		user.drop_item()
 		var/obj/item/card/emag_broken/junk = new(user.loc)
 		junk.add_fingerprint(user)
-		qdel(src)
+		consume(src, user)
 
 	return 1
 
@@ -133,8 +131,7 @@
 		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
 		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
 		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
-		qdel(O)
-
+		consume(O, user)
 
 /obj/item/card/emag/borg
 	uses = 12
@@ -292,14 +289,6 @@
 			forceMove(robot_owner)
 		if(loc == robot_owner)
 			hud_layerise()
-
-/obj/item/card/id/synthetic/borg/Destroy()
-	if(robot_owner)
-		UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-		robot_owner = null
-		last_robot_loc = null
-	. = ..()
-
 
 /obj/item/card/emag/examine(mob/user)
 	. = ..()

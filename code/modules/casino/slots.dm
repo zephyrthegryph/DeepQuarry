@@ -110,8 +110,7 @@
 	cashmoney.update_icon()
 
 	if(cashmoney.worth <= 0)
-		user.drop_from_inventory(cashmoney)
-		qdel(cashmoney)
+		consume(cashmoney, user)
 
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "slotmachine_rolling"
@@ -257,8 +256,7 @@
 	cashmoney.update_icon()
 
 	if(cashmoney.worth <= 0)
-		user.drop_from_inventory(cashmoney)
-		qdel(cashmoney)
+		consume(cashmoney, user)
 
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "ntslotmachine_rolling"

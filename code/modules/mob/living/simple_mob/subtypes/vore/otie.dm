@@ -238,7 +238,7 @@
 
 /mob/living/simple_mob/vore/otie/attackby(obj/item/O, mob/user) // Trade donuts for bellybrig victims.
 	if(istype(O, /obj/item/reagent_containers/food))
-		qdel(O)
+		consume(O, user)
 		playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
 		if(!(ai_brain != null))//No autobarf on player control.
 			return

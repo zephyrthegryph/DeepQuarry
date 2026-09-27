@@ -33,24 +33,6 @@
 /obj/machinery/atmospherics/binary/get_neighbor_nodes_for_init()
 	return list(node1, node2)
 
-/obj/machinery/atmospherics/binary/Destroy()
-	rust_unregister_pipe_topology()
-	// Disconnect/qdel BEFORE chaining ..() so node and network derefs run
-	// against still-valid state. /atom/movable/Destroy queues us into the gc
-	// and may flush refs in the parent chain.
-	if(node1)
-		node1.disconnect(src)
-		rust_release_network_wrapper(network1)
-	if(node2)
-		node2.disconnect(src)
-		rust_release_network_wrapper(network2)
-
-	node1 = null
-	node2 = null
-	network1 = null
-	network2 = null
-	return ..()
-
 /obj/machinery/atmospherics/binary/atmos_init()
 	if(node1 && node2)
 		return

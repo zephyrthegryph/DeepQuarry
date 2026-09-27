@@ -22,11 +22,7 @@
 	src.item_ref = om_handle(item)
 	src.item_callback = item_callback
 
-/datum/component/action_item_overlay/Destroy(force)
-	item_ref = null
-	QDEL_NULL(item_callback)
-	item_appearance = null
-	return ..()
+REF_OWNED(/datum/component/action_item_overlay, "item_callback")
 
 /datum/component/action_item_overlay/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_ACTION_OVERLAY_APPLY, PROC_REF(on_overlays_applied))
@@ -79,6 +75,4 @@
 	if(parent_action && !QDELING(parent_action))
 		parent_action.build_all_button_icons(UPDATE_BUTTON_OVERLAY)
 
-/datum/component/action_item_overlay/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("item_callback", "item_appearance")
+REF_OWNED(/datum/component/action_item_overlay, list("item_callback", "item_appearance"))

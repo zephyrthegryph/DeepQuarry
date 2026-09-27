@@ -23,8 +23,7 @@
 	S.icon_state = icon_state
 	S.sign_state = icon_state
 	S.original_type = type
-	qdel(src)
-
+	replace_with(src, S)
 
 /obj/item/sign
 	name = "sign"
@@ -274,7 +273,6 @@
 	desc = "Next to the extremely long list of names and job titles. Beneath the image, someone has scratched the word \"PACKETS\""
 	icon_state = "kiddieplaque"
 
-
 /obj/structure/sign/kiddieplaque/poi1
 	name = "expeditionary corps frame"
 	desc = "An old framed photograph of four figures in retro mining gear wielding harpoons. They look ready for a fight."
@@ -294,7 +292,6 @@
 	name = "expeditionary corps frame"
 	desc = "An old framed paper map littered with notes. Looks like the creator was marking the location of deposits."
 	icon_state = "explorerplaque4"
-
 
 /obj/structure/sign/atmosplaque
 	name = "\improper FEA atmospherics division plaque"
@@ -345,7 +342,6 @@
 	name = "\improper XENOBIOLOGY"
 	desc = "A warning sign which reads XENOBIOLOGY."
 	icon_state = "xenobio3"
-
 
 //direction signs presented by the order they appear in the dmi
 /obj/structure/sign/directions
@@ -1619,12 +1615,9 @@
 	P.description_info = description_info
 	P.description_fluff = description_fluff
 	P.flagtype = type
-	qdel(src)
+	consume(src, user)
 
-/obj/structure/sign/flag/Destroy()
-	if(linked_flag?.linked_flag == src) //Catches other instances where one half might be destroyed, say by a broken wall, to avoid runtimes.
-		linked_flag.linked_flag = null //linked_flag
-	. = ..()
+REF_PAIR(/obj/structure/sign/flag, list("linked_flag" = "linked_flag"))
 
 /obj/structure/sign/flag/ex_act(severity)
 	. = ..()
@@ -1895,7 +1888,6 @@
 	desc = "Shiver me timbers, hoist the black!"
 	flag_path = "pirate"
 
-
 /obj/item/flag/pirate/l
 	name = "large pirate flag"
 	flag_size = 1
@@ -1966,7 +1958,6 @@
 	name = "Galactic Autonomy Party flag"
 	desc = "The flag of the libertarian Galactic Autonomy Party political party."
 	flag_path = "gap"
-
 
 /obj/structure/sign/itg
 	icon = 'icons/obj/decals.dmi'

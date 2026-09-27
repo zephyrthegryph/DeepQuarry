@@ -94,6 +94,5 @@
 		)
 		our_atom.visible_message(span_warning("\The [our_atom] glows brightly, bursting into flames and flashing into ash."),\
 		span_warning("You hear an unearthly shriek, burning heat washing over you."))
-		new /obj/effect/decal/cleanable/ash(our_atom.loc)
-		qdel(our_atom)
+		replace_with(our_atom, /obj/effect/decal/cleanable/ash)
 // end

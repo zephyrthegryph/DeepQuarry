@@ -159,7 +159,6 @@ Example: USING PROCCALL = BLOCKING, SELECT = FORCE_NULLS, PRIORITY = HIGH SELECT
 
 */
 
-
 #define SDQL2_STATE_ERROR 0
 #define SDQL2_STATE_IDLE 1
 #define SDQL2_STATE_PRESEARCH 2
@@ -307,14 +306,9 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	id = id_assign++
 	qdel_on_finish = finished_qdel
 
+// LIFECYCLE: a running query halts.
 /datum/SDQL2_query/Destroy()
 	state = SDQL2_STATE_HALTING
-	query_tree = null
-	obj_count_all = null
-	obj_count_eligible = null
-	obj_count_finished = null
-	select_text = null
-	select_refs = null
 	return ..()
 
 /datum/SDQL2_query/proc/get_query_text()

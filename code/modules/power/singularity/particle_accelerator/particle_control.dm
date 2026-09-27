@@ -26,11 +26,12 @@
 	connected_parts = list()
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
 
+REF_OWNED(/obj/machinery/particle_accelerator/control_box, "wires")
+
+// LIFECYCLE: a running accelerator powers down.
 /obj/machinery/particle_accelerator/control_box/Destroy()
 	if(active)
 		toggle_power()
-	qdel(wires)
-	wires = null
 	return ..()
 
 /obj/machinery/particle_accelerator/control_box/declare_interactions(list/into)
@@ -67,7 +68,6 @@
 		update_use_power(USE_POWER_IDLE)
 		active = 0
 		connected_parts = list()
-
 
 /obj/machinery/particle_accelerator/control_box/update_icon()
 	if(active)
@@ -124,7 +124,6 @@
 	else if(!stat && construction_state == 3)
 		update_use_power(USE_POWER_IDLE)
 
-
 /// Emits every machine frame while active; off, it sleeps until toggle_power() turns it on.
 /obj/machinery/particle_accelerator/control_box/machine_step()
 	if(!active)
@@ -140,7 +139,6 @@
 		for(var/obj/structure/particle_accelerator/particle_emitter/PE in connected_parts)
 			if(PE)
 				PE.emit_particle(src.strength)
-
 
 /obj/machinery/particle_accelerator/control_box/proc/part_scan()
 	for(var/obj/structure/particle_accelerator/fuel_chamber/F in orange(1,src))
@@ -183,8 +181,6 @@
 	assembled = 1
 	return 1
 
-
-
 /obj/machinery/particle_accelerator/control_box/proc/check_part(turf/T, type)
 	if(!(T)||!(type))
 		return 0
@@ -194,7 +190,6 @@
 		src.connected_parts.Add(PA)
 		return 1
 	return 0
-
 
 /obj/machinery/particle_accelerator/control_box/proc/toggle_power(mob/user)
 	active = !active

@@ -36,7 +36,7 @@
 	to_chat(user, span_notice("You feed the slime the stabilizer. It is now less likely to mutate."))
 	xenobio_slime.mutation_chance = between(0, xenobio_slime.mutation_chance - 15, 100)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -63,7 +63,7 @@
 	to_chat(user, span_notice("You feed the slime the mutator. It is now more likely to mutate."))
 	xenobio_slime.mutation_chance = between(0, xenobio_slime.mutation_chance + 12, 100)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -128,7 +128,7 @@
 	if(newname && !QDELETED(M))
 		M.name = newname
 		M.real_name = newname
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -159,7 +159,7 @@
 	to_chat(user, span_notice("You feed the slime the steroid. It will now produce one more extract."))
 	xenobio_slime.cores++
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -189,7 +189,7 @@
 	your friends, at least if you don't attack them first."))
 	xenobio_slime.unify()
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 // Makes slimes not kill (most) humanoids but still fight spiders/carp/bears/etc.
@@ -228,7 +228,7 @@
 		var/mob/living/simple_mob/slime/slime = M
 		slime.update_mood() //Makes them drop-nomable.
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -266,7 +266,7 @@
 	LAZYADD(SM.friends, user)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -293,7 +293,7 @@
 	xenobio_slime.amount_grown = 10
 	xenobio_slime.reproduce()
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -304,7 +304,7 @@
 		playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
 		var/newtype = src.type
 		new newtype(get_turf(src))
-		qdel(O)
+		consume(O, user)
 	..()
 
 
@@ -330,7 +330,7 @@
 	to_chat(user, span_notice("You feed the slime the infertility agent. It will now have less offspring."))
 	xenobio_slime.split_amount = between(2, xenobio_slime.split_amount - 2, 6)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/slimepotion/fertility
@@ -355,7 +355,7 @@
 	to_chat(user, span_notice("You feed the slime the fertility agent. It will now have more offspring."))
 	xenobio_slime.split_amount = between(2, xenobio_slime.split_amount + 2, 6)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/slimepotion/shrink
@@ -380,7 +380,7 @@
 	to_chat(user, span_notice("You feed the slime the shrinking agent. It is now back to being a baby."))
 	xenobio_slime.make_baby()
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/slimepotion/death
@@ -402,7 +402,7 @@
 	to_chat(user, span_notice("You feed the slime the death agent. Its face flashes pain of betrayal before it goes still."))
 	xenobio_slime.injure(INJURY_TOXIN, xenobio_slime.get_endurance() * 5, source = src, flags = INJURE_IGNORE_RESISTANCE)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/slimepotion/ferality
@@ -428,7 +428,7 @@
 	xenobio_slime.untamable = TRUE
 	xenobio_slime.untamable_inheirit = TRUE
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/slimepotion/reinvigoration
@@ -452,7 +452,7 @@
 		s.set_up(3, 3, location)
 		s.start()
 		qdel(M)
-		qdel(src)
+		consume(src, user)
 		return ITEM_INTERACT_SUCCESS
 	..()
 
@@ -486,7 +486,7 @@
 	xenobio_slime.ghostjoin_icon()
 	log_and_message_admins("used a sapience potion on a simple mob: [xenobio_slime]. [ADMIN_FLW(src)]", user)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/slimepotion/obedience
@@ -511,5 +511,5 @@
 	if(xenobio_slime.slime_state && justified)
 		xenobio_slime.slime_state.obedience = 10
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS

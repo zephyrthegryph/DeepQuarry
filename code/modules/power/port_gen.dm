@@ -147,6 +147,7 @@
 	if(anchored)
 		connect_to_network()
 
+// LIFECYCLE: its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/pacman/Destroy()
 	DropFuel()
 	return ..()
@@ -498,10 +499,8 @@
 	explosion(src.loc, 3, 6, 12, 16, 1)
 	qdel(src)
 
-
 #undef TEMPERATURE_DIVISOR
 #undef TEMPERATURE_CHANGE_MAX
-
 
 /obj/machinery/power/port_gen/pacman/super/potato
 	name = "nuclear reactor"
@@ -513,10 +512,6 @@
 	anchored = TRUE
 
 //Port Start, RS PR #484
-/obj/machinery/power/port_gen/pacman/super/potato/Destroy()
-	. = ..()
-	cut_overlays() // sanity checks
-	set_light(0)
 
 /obj/machinery/power/port_gen/pacman/super/potato/update_icon()
 	cut_overlays()
@@ -861,7 +856,6 @@
 	cell = new /obj/item/cell/void/hybrid(src)
 	RefreshParts()
 
-
 // Kugelblitz generator, confined black hole like a singulo but smoller and higher tech
 // Presumably whoever made these has better tech than most
 /obj/machinery/power/rtg/kugelblitz
@@ -919,9 +913,6 @@
 
 /obj/machinery/power/rtg/reg/Initialize(mapload)
 	pixel_x = -32
-	. = ..()
-
-/obj/machinery/power/rtg/reg/Destroy()
 	. = ..()
 
 /obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
@@ -1030,7 +1021,6 @@
 	default_power_gen = 500000 //Half power
 	nutrition_drain = 0.5	//for half cost - EQUIVALENT EXCHANGE >:O
 
-
 // Big altevian version of pacman. has a lot of copypaste from regular kind, but less flexible.
 /obj/machinery/power/port_gen/large_altevian
 	name = "Phoronic Conversion System"
@@ -1055,6 +1045,7 @@
 	if(anchored)
 		connect_to_network()
 
+// LIFECYCLE: its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/large_altevian/Destroy()
 	DropFuel()
 	return ..()
@@ -1182,7 +1173,6 @@
 /obj/machinery/power/rtg/antimatter_core/ex_act()
 	asplod()
 
-
 /obj/machinery/power/rtg/antimatter_core/bullet_act(obj/item/projectile/Proj)
 	. = ..()
 	if(istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)) && Proj.damage >= 20)
@@ -1195,7 +1185,6 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/rtg/step_start_condition()
 	return anchored
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/port_gen/step_start_condition()

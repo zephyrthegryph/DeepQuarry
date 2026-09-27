@@ -35,8 +35,7 @@
 	for(var/obj/item/to_remove in summoned_items)
 		if(istype(to_remove.loc, /mob))
 			var/mob/M = to_remove.loc
-			M.remove_from_mob(to_remove)
-			qdel(to_remove)
+			consume(to_remove, M)
 
 /datum/spell/targeted/equip_item/proc/summon_item(newtype)
 	return new newtype

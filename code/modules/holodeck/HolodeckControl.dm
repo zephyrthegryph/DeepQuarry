@@ -184,6 +184,7 @@
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 
 //This could all be done better, but it works for now.
+// LIFECYCLE: the holodeck shuts down.
 /obj/machinery/computer/HolodeckControl/Destroy()
 	emergencyShutdown()
 	. = ..()
@@ -224,7 +225,6 @@
 			update_use_power(USE_POWER_IDLE)
 			for(var/mob/M in range(10,src))
 				M.show_message("The holodeck overloads!")
-
 
 			for(var/turf/T in linkedholodeck)
 				if(prob(30))
@@ -269,7 +269,6 @@
 
 		active = 0
 		update_use_power(USE_POWER_IDLE)
-
 
 /obj/machinery/computer/HolodeckControl/proc/loadProgram(prog, check_delay = 1)
 	if(!prog)
@@ -349,7 +348,6 @@
 		update_projections()
 
 	return 1
-
 
 /obj/machinery/computer/HolodeckControl/proc/toggleGravity(area/A)
 	if(world.time < (last_gravity_change + 25))

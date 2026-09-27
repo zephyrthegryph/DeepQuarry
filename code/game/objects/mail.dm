@@ -77,10 +77,6 @@
 		for(var/i = 1, i <= stamp_count, i++)
 			stamps += list("stamp_[rand(2, 8)]")
 
-/obj/item/mail/Destroy()
-	recipient_ref = null
-	. = ..()
-
 /obj/item/mail/blank
 	desc = "A blank envelope."
 	description_info = "An object can be placed into the envelope, click on it with an empty hand to seal it. Alt-Click to retrieve the items from inside before sealing."
@@ -258,7 +254,7 @@
 		confetti_nade.desc = span_bolddanger("What the hell are you looking at it for?! RUN!!")
 		confetti_nade.activate()
 	playsound(loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
 	var/current_title = recipient.role_alt_title ? recipient.role_alt_title : recipient.assigned_role

@@ -45,10 +45,6 @@
 	swallowTime = 100 //10 seconds. Easy to crawl away from when knocked over.
 	vore_default_mode = DM_DIGEST
 
-/mob/living/simple_mob/vore/slug/Destroy()
-	. = ..()
-	last_prey = null
-
 /mob/living/simple_mob/vore/slug/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -64,7 +60,6 @@
 	B.release_sound = "Pred Escape"
 	B.contamination_color = "cyan"
 	B.contamination_flavor = "Wet"
-
 
 	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
@@ -149,7 +144,7 @@
 	my_turf = get_turf(src)
 	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
 		return INITIALIZE_HINT_QDEL
-	QDEL_IN(src, persist_time)
+	expire(persist_time)
 /*	for(var/obj/effect/slug_glue/G in my_turf.contents)
 		if(G == src)
 			continue
@@ -157,6 +152,7 @@
 			qdel(G) //Prevent glue layering
 */ //Not including this due to performance concerns but keeping as comments for reference.
 
+// LIFECYCLE: its slug may lay more glue.
 /obj/effect/slug_glue/Destroy()
 	. = ..()
 	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
@@ -173,7 +169,6 @@
 			to_chat(AM, span_warning("You stick to \the [my_turf]!"))
 			return FALSE
 	return ..()
-
 
 /obj/effect/slug_glue/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

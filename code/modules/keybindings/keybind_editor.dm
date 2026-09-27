@@ -8,6 +8,7 @@
 	src.owner = owner
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
+// LIFECYCLE: clears the client's cached editor (clients aren't datums).
 /datum/keybind_editor/Destroy()
 	if(owner?.keybind_editor == src)
 		owner.keybind_editor = null

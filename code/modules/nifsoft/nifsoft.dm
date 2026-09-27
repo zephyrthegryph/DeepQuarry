@@ -55,6 +55,7 @@
 		qdel(src)
 
 //Destructor cleans up the software and nif reference
+// LIFECYCLE: installed software uninstalls.
 /datum/nifsoft/Destroy()
 	if(nif)
 		uninstall()
@@ -175,10 +176,6 @@
 	qdel(src)
 
 //Clean self up
-/datum/nifsoft/package/Destroy()
-	LAZYCLEARLIST(software)
-	software = null
-	return ..()
 
 /////////////////
 // A NIFSoft Uploader
@@ -240,7 +237,6 @@
 //So disks can pass fancier stuff.
 /obj/item/disk/nifsoft/proc/extra_params()
 	return null
-
 
 // Compliance Disk //
 /obj/item/disk/nifsoft/compliance

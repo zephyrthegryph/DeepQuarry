@@ -33,10 +33,7 @@
 	camera = new(src, camera_network_id, see_dark)
 	update_camera_name()
 
-/obj/item/integrated_circuit/output/video_camera/Destroy()
-	if(camera)
-		QDEL_NULL(camera)
-	return ..()
+REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 
 /obj/item/integrated_circuit/output/video_camera/on_data_written()
 	update_camera_name()
@@ -124,9 +121,10 @@
 	GLOB.cameranet.addCamera(src)
 	return ..()
 
-/obj/machinery/camera/intcircuit/Destroy()
+/// Phase 2: leaves the camera net.
+/obj/machinery/camera/intcircuit/lifecycle_dematerialize()
+	. = ..()
 	GLOB.cameranet.removeCamera(src)
-	return ..()
 
 /obj/machinery/camera/intcircuit/update_coverage(network_change = 0)
 	GLOB.cameranet.updateVisibility(src, 0)
@@ -165,10 +163,7 @@
 	. = ..()
 	camera_module = new(src)
 
-/obj/item/integrated_circuit/input/video_camera_input/Destroy()
-	LAZYCLEARLIST(paired_cameras)
-	QDEL_NULL(camera_module)
-	return ..()
+REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module")
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)
 	if(!length(paired_cameras))

@@ -63,10 +63,16 @@ ALL_MODS = {"tmp", "static", "global", "const", "final"}
 DECLARED_PROCS = (
     "declared_owned_vars",
     "declared_owned_list_vars",
+    "declared_owned_value_vars",
+    "declared_spill_vars",
+    "declared_spill_list_vars",
+    "declared_held_vars",
     "declared_pair_vars",
     "declared_backlist_vars",
     "declared_cache_vars",
 )
+# REF_OWNED(/type, NAMES) and friends (code/__defines/lifecycle.dm): one-line declarations.
+REF_MACRO = re.compile(r"^REF_(?:OWNED_LIST|OWNED_VALUES|OWNED|SPILL_LIST|SPILL|HELD|PAIR|BACKLIST)\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
 TYPE_HEADER = re.compile(r"^(/[A-Za-z_][\w/]*)\s*$")
 PROC_HEADER = re.compile(r"^(/[\w/]*?)/(proc/)?(" + "|".join(DECLARED_PROCS) + r")\s*\(")
 VAR_LINE = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
@@ -102,6 +108,10 @@ def lc_ref_sites(rel, raw_text, code_text):
                 for line in body:
                     declared.setdefault(owner, set()).update(STRING_LIT.findall(line))
                 owner, body = None, []
+            m = REF_MACRO.match(stripped.rstrip())
+            if m:
+                declared.setdefault(m.group(1), set()).update(STRING_LIT.findall(m.group(2)))
+                continue
             m = PROC_HEADER.match(stripped.rstrip())
             if m:
                 owner = m.group(1)

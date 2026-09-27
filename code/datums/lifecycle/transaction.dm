@@ -42,33 +42,32 @@
 			dq_lifecycle_resolve_minds(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_MIND, tick)
 
-			// Phase 1: unbind. Hook point -- R10 entity bindings, heat
-			// bodies, pipe/cable topology are outside this track's scope.
-			tick = world.tick_usage
-			dq_lifecycle_unbind(AM)
-			dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
+	// Phase 1: unbind, for every datum: Rust entity bindings, pipe/cable
+	// topology, heat bodies (lifecycle_unbind() overrides). Must precede
+	// dematerialize.
+	tick = world.tick_usage
+	D.lifecycle_unbind()
+	dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
 
-			// Phase 2: dematerialize. Hook point for registries (L3) not
-			// already covered by the base Destroy() (phase 7) or links
-			// (phase 4).
-			tick = world.tick_usage
-			dq_lifecycle_dematerialize(AM)
-			dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
+	// Phase 2: dematerialize. Index leaves that aren't registries yet
+	// (lifecycle_dematerialize() overrides), for every datum.
+	tick = world.tick_usage
+	D.lifecycle_dematerialize()
+	if(ismovable(D))
+		dq_lifecycle_release_from_holder(D)
+	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
 
+	if(isatom(D))
+		var/atom/movable/AM = D
+		if(ismovable(AM))
 			// Phase 3: contents. Every slot's declared destroy policy,
 			// post-order (children before parents -- see
 			// code/datums/containment/lifecycle.dm's file header for why
 			// that falls out of ordinary qdel() recursion with no extra work).
 			tick = world.tick_usage
 			AM.dq_lifecycle_resolve_contents()
+			dq_lifecycle_spill_declared(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
-
-	if(!ismovable(D))
-		// Phase 1 for a datum (or turf/area): the same unbind hook, so it can let go of what it
-		// only borrowed, or unregister from what it owns, before phase 4 deletes its owned children.
-		tick = world.tick_usage
-		D.lifecycle_unbind()
-		dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
 
 	// Phase 4: links. Owned children deleted, pair partners nulled,
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
@@ -87,7 +86,11 @@
 
 	// Phase 6: effects. Declared destroy_effects data (L3).
 	tick = world.tick_usage
-	dq_lifecycle_effects(D)
+	var/datum/destroy_effects_data/effects = D.destroy_effects()
+	var/turf/effects_turf
+	// Under a batch (batch.dm) effects are merged per turf and neighbour updates run once at the end.
+	if(effects && !dq_batch_effects(D, effects))
+		effects_turf = effects.apply(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 
 	// Phase 7: leftover Destroy(). Only real domain consequences should
@@ -99,6 +102,12 @@
 
 	if(isnull(D)) // Destroy() hard-deleted itself (rare; some override del()s src)
 		return hint
+
+	// Phase 6's second half: neighbours that smooth against D, now it's gone.
+	if(effects_turf)
+		tick = world.tick_usage
+		effects.apply_after(D, effects_turf)
+		dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 
 	// Phase 8: scrub. Null outbound declared owned/pair vars to break
 	// reference cycles, then hand D to GC. Nothing is parked in nullspace.
@@ -128,9 +137,6 @@
 /datum/proc/lifecycle_unbind()
 	return
 
-/proc/dq_lifecycle_unbind(atom/movable/AM)
-	AM.lifecycle_unbind()
-
 // ---- Phase 2: dematerialize (hook point) ----
 
 /// Phase 2: leave registries and drop rule bindings, same as today (most of
@@ -139,9 +145,6 @@
 /// sites over time). Hook point for now.
 /datum/proc/lifecycle_dematerialize()
 	return
-
-/proc/dq_lifecycle_dematerialize(atom/movable/AM)
-	AM.lifecycle_dematerialize()
 
 // ---- Phase 5: teardown ----
 
@@ -154,6 +157,9 @@
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()
+		// A walk_towards()/walk() loop keeps an internal BYOND reference.
+		if(ismovable(AT))
+			walk(AT, 0)
 	dq_lifecycle_clock_teardown(D)
 	dq_lifecycle_revoke_grants(D)
 
@@ -193,9 +199,7 @@
 
 /proc/dq_lifecycle_effects(datum/D)
 	var/datum/destroy_effects_data/data = D.destroy_effects()
-	if(!data)
-		return
-	data.apply(D)
+	return data?.apply(D)
 
 // ---- Phase 8: scrub ----
 

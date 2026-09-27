@@ -48,10 +48,6 @@ Thus, the two variables affect pump operation are set in New():
 	// tick; this has no process() at all any more.
 	MACHINE_SLEEP(src)
 
-/obj/machinery/atmospherics/binary/volume_pump/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
-
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per
 // port, after that port's region exists in Rust, so re-publishing once the
@@ -290,7 +286,6 @@ Thus, the two variables affect pump operation are set in New():
 	. += span_notice("Its pressure limits could be [overclocked ? "en" : "dis"]abled with a" + span_bold("multitool") + ".")
 	if(overclocked)
 		. += "Its warning light is on[use_power ? " and it's spewing gas!" : "."]"
-
 
 /obj/machinery/atmospherics/binary/volume_pump/wrench_act(mob/user, obj/item/W)
 	if (!(stat & NOPOWER) && use_power)

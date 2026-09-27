@@ -618,18 +618,10 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/datum/tgs_chat_user/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("channel")
+REF_OWNED(/datum/tgs_chat_user, list("channel"))
 
-/datum/tgs_message_content/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("embed")
+REF_OWNED(/datum/tgs_message_content, list("embed"))
 
-/datum/tgs_chat_embed/structure/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("image", "thumbnail", "video", "footer", "provider", "author")
+REF_OWNED(/datum/tgs_chat_embed/structure, list("image", "thumbnail", "video", "footer", "provider", "author"))
 
-/datum/tgs_chat_embed/structure/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("fields")
+REF_OWNED_LIST(/datum/tgs_chat_embed/structure, list("fields"))

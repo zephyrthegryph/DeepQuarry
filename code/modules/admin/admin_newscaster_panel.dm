@@ -28,11 +28,8 @@
 	..()
 	holder = owner_holder
 
-/datum/newscaster_panel/Destroy(force, ...)
-	if(holder)
-		holder.dq_newscaster_panel = null
-	holder = null
-	return ..()
+REF_PAIR(/datum/newscaster_panel, list("holder" = "dq_newscaster_panel"))
+REF_PAIR(/datum/admins, list("dq_newscaster_panel" = "holder"))
 
 /datum/newscaster_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)

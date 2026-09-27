@@ -56,7 +56,7 @@
 	else
 		to_chat(user, "[O] doesn't seem to have any usable seeds inside it.")
 
-	qdel(O)
+	consume(O, user)
 	return TRUE
 
 /// Grass.
@@ -83,7 +83,7 @@
 /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil(mob/user, obj/item/O, datum/interaction/interaction)
 	var/obj/item/seeds/random/R = new(get_turf(src))
 	to_chat(user, "\The [src] pulverizes \the [O] and spits out \the [R].")
-	qdel(O)
+	consume(O, user)
 	return TRUE
 
 /// Anything else: the old attackby never chained to ..(), so it silently swallowed the hit.

@@ -13,4 +13,4 @@
 /obj/effect/floorbreak/LateInitialize()
 	var/turf/simulated/floor/our_turf = src.loc
 	our_turf.break_tile()
-	qdel(src)
+	expire(0)

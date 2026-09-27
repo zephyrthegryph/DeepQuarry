@@ -103,7 +103,7 @@
 			if (user.get_inactive_hand()==src)
 				user.remove_from_mob(src)
 				user.put_in_inactive_hand(B)
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
 	if(istype(W, /obj/item/robot_parts/l_leg))
@@ -214,7 +214,7 @@
 
 			feedback_inc("cyborg_birth",1)
 
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, span_warning("The MMI must go in after everything else!"))
 

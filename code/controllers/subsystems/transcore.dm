@@ -300,6 +300,4 @@ SUBSYSTEM_DEF(transcore)
 
 /// The database owns its records: mind records (backed_up, and has_left once they cryo) and
 /// body records, keyed by name. A core dump moves the mind records to the disk first.
-/datum/transcore_db/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + list("backed_up", "has_left", "body_scans")
+REF_OWNED_VALUES(/datum/transcore_db, list("backed_up", "has_left", "body_scans"))

@@ -16,7 +16,6 @@
 	update()
 	return
 
-
 // next direction to move
 // if coming in from secondary dirs, then next is primary dir
 // if coming in from primary dir, then next is equal chance of other dirs
@@ -68,11 +67,13 @@
 		return
 	name = initial(name)
 
-/obj/structure/disposalpipe/sortjunction/Destroy()
-	QDEL_NULL(wires)
+REF_OWNED(/obj/structure/disposalpipe/sortjunction, "wires")
+
+/// Phase 2: leaves the tagger index.
+/obj/structure/disposalpipe/sortjunction/lifecycle_dematerialize()
+	. = ..()
 	if(sortType)
 		LAZYREMOVE(GLOB.tagger_locations["[sortType]"], get_z(src))
-	. = ..()
 
 /obj/structure/disposalpipe/sortjunction/proc/updatedir()
 	var/negdir = turn(dir, 180)

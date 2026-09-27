@@ -69,15 +69,7 @@
 		chamber_air.copy_from(environment)
 	create_reagents(120)
 
-/obj/machinery/material_furnace/Destroy()
-	if(firing_timer)
-		deltimer(firing_timer)
-		firing_timer = null
-	feedstock = null
-	carbon_feed = null
-	output_stock = null
-	QDEL_NULL(chamber_air)
-	return ..()
+REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 
 /obj/machinery/material_furnace/examine(mob/user)
 	. = ..()
@@ -473,7 +465,7 @@
 		changed = TRUE
 	else if(istype(item, /obj/item/ore/coal))
 		batch.add_surface_layer(MATERIAL_SURFACE_CARBON, 35, "carbon", 3)
-		qdel(item)
+		consume(item, user)
 		changed = TRUE
 	else if(istype(item, /obj/item/analyzer))
 		to_chat(user, span_notice("Composition [json_encode(batch.composition)]; purity [batch.purity]%; conductivity [batch.conductivity]%; hardness [batch.hardness]."))

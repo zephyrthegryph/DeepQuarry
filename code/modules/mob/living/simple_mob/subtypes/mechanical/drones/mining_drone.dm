@@ -76,17 +76,15 @@
 	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
 	return ..()
 
-/mob/living/simple_mob/mechanical/mining_drone/Destroy()
-	QDEL_NULL(ion_trail)
-	QDEL_NULL(shields)
-	QDEL_NULL(my_storage)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/mechanical/mining_drone, list("ion_trail", "shields", "my_storage"))
+
+/mob/living/simple_mob/mechanical/mining_drone
+	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mining_drone/death()
 	my_storage.forceMove(get_turf(src))
 	my_storage = null
 	..(null,"suddenly breaks apart.")
-	qdel(src)
 
 /mob/living/simple_mob/mechanical/mining_drone/Process_Spacemove(check_drift = 0)
 	return TRUE
@@ -175,7 +173,6 @@
 	ignoreunarmed = FALSE
 	allowedtools = list(/obj/item/pickaxe)
 	projectiletype = /obj/item/projectile/energy/excavate/weak
-
 
 // === merged from combat_drone_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

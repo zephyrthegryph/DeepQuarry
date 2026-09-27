@@ -53,9 +53,7 @@
 	set_wires(new /datum/wires/tesla_coil(src))
 	default_apply_parts()
 
-/obj/machinery/power/tesla_coil/Destroy()
-	QDEL_NULL(wires)
-	return ..()
+REF_OWNED(/obj/machinery/power/tesla_coil, "wires")
 
 /obj/machinery/power/tesla_coil/RefreshParts()
 	zap_cooldown = 10
@@ -285,7 +283,6 @@
 		. += span_info("This tesla coil will amplify any power it receives by [round((((amp_eff) * 100) - 100), 0.1)]% of the original power when relaying it.")
 		. += span_info("Every jump the tesla makes reduces the effectiveness of the amplifier by 10%, meaning at 10 jumps, it stops increasing power.")
 		. += span_danger("This tesla coil will NOT produce produce energy.")
-
 
 ///BE WARNED, THIS THING CAN CAUSE MASSIVE LAG IF THE RANGE IS TOO HIGH
 /obj/machinery/power/tesla_coil/recaster

@@ -7,8 +7,6 @@
 
 	return fire_reactions
 
-
-
 /turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = 0)
 	return
 
@@ -357,6 +355,7 @@
 	dir = pick(GLOB.cardinals)
 	update_color()
 
+// LIFECYCLE: a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/Destroy()
 	SSair.hotspots -= src
 	var/turf/open/cur_turf = loc
@@ -406,12 +405,7 @@
 	var/drop_off_dist
 	COOLDOWN_DECLARE(update_sound_center)
 
-
-/datum/hot_group/Destroy()
-	. = ..()
-	current_sound_loc = null
-	spot_list = null
-	qdel(sound)
+REF_OWNED(/datum/hot_group, "sound")
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	spot_list -= target

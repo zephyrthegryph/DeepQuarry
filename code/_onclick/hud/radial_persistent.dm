@@ -18,8 +18,6 @@
 	. = ..()
 	icon_state = "radial_center"
 
-
-
 /datum/radial_menu/persistent
 	var/uniqueid
 	var/datum/callback/select_proc_callback
@@ -28,10 +26,8 @@
 	close_button = new /atom/movable/screen/radial/persistent/center
 	close_button.set_parent(src)
 
-
 /datum/radial_menu/persistent/element_chosen(choice_id,mob/user)
 	select_proc_callback.Invoke(LAZYACCESS(choices_values, choice_id))
-
 
 /datum/radial_menu/persistent/proc/change_choices(list/newchoices, tooltips)
 	if(!newchoices.len)
@@ -39,16 +35,14 @@
 	Reset()
 	set_choices(newchoices,tooltips)
 
-/datum/radial_menu/persistent/Destroy()
-	GLOB.radial_menus -= uniqueid
-	. = ..()
+REF_OWNED(/datum/radial_menu/persistent, "select_proc_callback")
 
-/datum/radial_menu/persistent/declared_owned_vars()
+/datum/radial_menu/persistent/lifecycle_dematerialize()
 	. = ..()
-	. = (. || list()) + list("select_proc_callback")
+	GLOB.radial_menus -= uniqueid
 
 /*
-	Creates a persistent radial menu and shows it to the user, anchored to anchor() (or user if the anchor() is currently in users screen).
+	Creates a persistent radial menu and shows it to the user, anchored to anchor (or user if the anchor is currently in users screen).
 	Choices should be a list where list keys are movables or text used for element names and return value
 	and list values are movables/icons/images used for element icons
 	Select_proc is the proc to be called each time an element on the menu is clicked, and should accept the chosen element as its final argument

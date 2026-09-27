@@ -127,9 +127,6 @@
 
 	return ..()
 
-/mob/living/simple_mob/shadekin/Destroy()
-	. = ..()
-
 /mob/living/simple_mob/shadekin/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
 	vore_selected = B
@@ -233,7 +230,7 @@
 		cut_overlays()
 		icon_state = ""
 		flick("tp_out",src)
-		QDEL_IN(src, 1 SECOND)
+		expire(1 SECOND)
 		. = ..(FALSE, deathmessage)
 	else
 		if(comp.respite_activating)
@@ -247,7 +244,6 @@
 			om_qdel_after(src, 1 SECOND) //Back from whence you came!
 
 			return ..(FALSE, deathmessage)
-
 
 		if(!LAZYLEN(GLOB.latejoin_thedark))
 			log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
@@ -309,7 +305,6 @@
 	comp.in_dark_respite = FALSE
 	movement_cooldown = initial(movement_cooldown)
 	to_chat(src, span_notice("You feel like you can leave the Dark again"))
-
 
 /* // AI Temporary Removal
 //Blue-eyes want to nom people to heal them

@@ -4,7 +4,6 @@
 	max_power = 500000
 	thermal_efficiency = 0.40 // 25% less effective around 1400 kw with 24 shots
 
-
 /obj/machinery/power/generator
 	name = "thermoelectric generator"
 	desc = "It's a high efficiency thermoelectric generator."
@@ -44,10 +43,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 /obj/machinery/power/generator/LateInitialize()
 	reconnect()
 
-/obj/machinery/power/generator/Destroy()
-	clear_gas_dependencies()
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/machinery/power/generator, "soundloop")
 
 //generators connect in dir and GLOB.reverse_dir(dir) directions
 //mnemonic to determine circulator/generator directions: the cirulators orbit clockwise around the generator
@@ -296,7 +292,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		clear_gas_dependencies()
 		MACHINE_WAKE(src)
 	update_icon()
-
 
 /obj/machinery/power/generator/power_spike(announce_prob = 30)
 	if(!(effective_gen >= max_power / 2 && powernet)) // Don't make a spike if we're not making a whole lot of power.

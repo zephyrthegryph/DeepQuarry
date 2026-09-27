@@ -25,10 +25,6 @@ GLOBAL_LIST_INIT(dq_blood_color_by_type, list(
 	var/datum/forensics_crime/forensic_data
 	var/fluorescent
 
-/datum/component/forensics_state/Destroy(force)
-	forensic_data = null
-	return ..()
-
 // ---- Helpers (global procs to avoid /atom proc-table bloat) ----
 
 /proc/dq_get_was_bloodied(atom/a)

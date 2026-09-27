@@ -143,9 +143,6 @@
 	O.on_overheat()
 	PERIODIC_START(src, PERIODIC_SECOND)
 
-/datum/component/overheating/Destroy(force)
-	return ..()
-
 /datum/component/overheating/periodic_step(seconds_per_tick)
 	var/obj/O = parent
 	if(QDELETED(O))

@@ -71,7 +71,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	vore_default_contamination_flavor = "Acrid"
 	vore_default_contamination_color = "yellow"
 
-
 	heat_damage_per_tick = 20
 	cold_damage_per_tick = 20
 
@@ -150,10 +149,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
-/mob/living/simple_mob/animal/hyena/Destroy()
-	if(hat)
-		drop_hat(src) // w;
-	..()
+REF_SPILL(/mob/living/simple_mob/animal/hyena, "hat")
 
 /mob/living/simple_mob/animal/hyena/update_icon()
 	overlays.Cut()

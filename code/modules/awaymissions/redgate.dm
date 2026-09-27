@@ -19,6 +19,7 @@
 		/mob/living/simple_mob/vore/bigdragon
 		)	//There are some things we don't want to come through no matter what.
 
+// LIFECYCLE: its paired gate closes.
 /obj/structure/redgate/Destroy()
 	if(target)
 		target.target = null
@@ -174,7 +175,6 @@
 	icon_state = "redblacir"
 	base_turf = /turf/simulated/mineral/floor/cave
 
-
 /obj/item/paper/teppiranch
 	name = "elegantly scrawled note"
 	info = {"<i>Goeleigh,<BR><BR>
@@ -185,24 +185,17 @@
 
 	Yours, Medley</i>"}
 
-
 // City areas, there are soooo many
-
 
 // Islands areas
 
-
 //train areas
-
 
 // fantasy areas
 
-
 //WELCOME TO THE JUNGLE
 
-
 //Facility locations
-
 
 //The actual flags. Base type defined to handle some of the basic behaviours.
 /obj/item/laserdome_flag

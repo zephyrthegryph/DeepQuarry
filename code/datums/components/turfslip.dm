@@ -97,14 +97,11 @@
 		qdel(src)
 		return
 
+// LIFECYCLE: the slipping mob stops sliding.
 /datum/component/turfslip/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_MOVABLE_MOVED)
 	owner.inertia_dir = 0
 	owner.is_slipping = FALSE
-	owner = null
-	slip_dist = 0
 	. = ..()
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Helper proc

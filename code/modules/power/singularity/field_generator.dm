@@ -1,6 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
-
 /**
  * field_generator power level display
  * The icon used for the field_generator need to have 'num_power_levels' number of icon states
@@ -67,7 +66,6 @@
 
 	return
 
-
 /obj/machinery/field_generator/Initialize(mapload)
 	. = ..()
 	fields = list()
@@ -92,7 +90,6 @@
 		update_icon()
 		return
 	return PROCESS_KILL
-
 
 /obj/machinery/field_generator/declare_interactions(list/into)
 	into += list(
@@ -125,7 +122,6 @@
 
 	add_fingerprint(user)
 	return TRUE
-
 
 /obj/machinery/field_generator/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)
 	if(active)
@@ -185,12 +181,10 @@
 		return 0
 	return ..()
 
-
+// LIFECYCLE: its field comes down.
 /obj/machinery/field_generator/Destroy()
 	src.cleanup()
 	. = ..()
-
-
 
 /obj/machinery/field_generator/proc/turn_off()
 	active = 0
@@ -219,7 +213,6 @@
 		set_light(light_range_on, light_power_on)
 		return
 	om_after(src, 5 SECONDS, PROC_REF(warm_up_step))
-
 
 /obj/machinery/field_generator/proc/calc_power()
 	if(Varpower)
@@ -280,7 +273,6 @@
 	src.active = 2
 	MACHINE_WAKE(src)
 
-
 /obj/machinery/field_generator/proc/setup_field(NSEW)
 	var/turf/T = src.loc
 	var/obj/machinery/field_generator/G
@@ -335,7 +327,6 @@
 	if(!listcheck)
 		G.connected_gens.Add(src)
 
-
 /obj/machinery/field_generator/proc/cleanup()
 	clean_up = 1
 	for (var/obj/machinery/containment_field/F in fields)
@@ -372,11 +363,9 @@
 	state = 2 //Start welded.
 	anchored = TRUE
 
-
 /obj/machinery/field_generator/pre_mapped/Initialize(mapload)
 	. = ..()
 	update_icon()
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/field_generator/step_start_condition()

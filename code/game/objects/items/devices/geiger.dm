@@ -29,10 +29,6 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 	. = ..()
 	RegisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
 
-/obj/item/geiger/Destroy()
-	UnregisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION)
-	return ..()
-
 /obj/item/geiger/examine(mob/user)
 	. = ..()
 	if(!scanning)
@@ -174,7 +170,6 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 	. = ..()
 	if(scanning)
 		AddComponent(/datum/component/geiger_sound/wall)
-
 
 /obj/item/geiger/wall/update_icon()
 	if(!scanning)

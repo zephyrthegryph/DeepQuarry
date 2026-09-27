@@ -123,11 +123,9 @@
 
 	if(!istype(target))
 		if(istype(target, /mob/living/simple_mob/animal/passive/mouse))
-			new /obj/effect/decal/remains/mouse(get_turf(target))
-			qdel(target)
+			replace_with(target, /obj/effect/decal/remains/mouse)
 		else if(istype(target, /mob/living/simple_mob/animal/passive/lizard))
-			new /obj/effect/decal/remains/lizard(get_turf(target))
-			qdel(target)
+			replace_with(target, /obj/effect/decal/remains/lizard)
 		return
 
 	if(!target_limb) target_limb = pick(BP_ALL)

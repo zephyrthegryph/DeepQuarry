@@ -21,13 +21,7 @@
 	///If the core is removable once socketed.
 	var/core_removable = TRUE
 
-/obj/item/organ/internal/heart/machine/anomalock/Destroy()
-	if(lightning_timer)
-		deltimer(lightning_timer)
-	if(lightning_overlay)
-		lightning_overlay = null
-	QDEL_NULL(core)
-	return ..()
+REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
 	if(!core)
@@ -46,7 +40,7 @@
 		UnregisterSignal(owner, COMSIG_ATOM_EMP_ACT)
 		owner.RemoveElement(/datum/element/empprotection)
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
-		QDEL_IN(src, 0)
+		expire(0)
 
 	..(removed)
 

@@ -48,10 +48,6 @@
 	I.color = PIPE_COLOR_BLACK
 	add_overlay(I)
 
-/obj/machinery/atmospherics/binary/algae_farm/Destroy()
-	. = ..()
-	internal = null
-
 /obj/machinery/atmospherics/binary/algae_farm/machine_step()
 	..()
 	recent_moles_transferred = 0
@@ -288,7 +284,6 @@
 
 		stored_material[material_name] -= to_set * perunit
 		units_to_eject -= to_set
-
 
 // Attept to load materials.  Returns 0 if item wasn't a stack of materials, otherwise 1 (even if failed to load)
 /obj/machinery/atmospherics/binary/algae_farm/proc/try_load_materials(mob/user, obj/item/stack/material/S)

@@ -197,9 +197,6 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-
-
-
 /obj/item/melee/energy/click_alt(mob/living/user)
 	if(!colorable) //checks if is not colorable
 		return
@@ -292,7 +289,6 @@
 	drop_sound = 'sound/items/drop/sword.ogg'
 	pickup_sound = 'sound/items/pickup/sword.ogg'
 
-
 	projectile_parry_chance = 65
 
 /obj/item/melee/energy/sword/dropped(mob/user, equipping, slot)
@@ -300,14 +296,12 @@
 	if(!istype(loc,/mob))
 		deactivate(user)
 
-
 /obj/item/melee/energy/sword/activate(mob/living/user)
 	if(!active)
 		to_chat(user, span_notice("\The [src] is now energised."))
 
 	..()
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-
 
 /obj/item/melee/energy/sword/deactivate(mob/living/user)
 	if(active)
@@ -351,7 +345,6 @@
 	icon_state = "cutlass"
 	item_state = "cutlass"
 	colorable = TRUE
-
 
 /*
  *Ionic Rapier
@@ -464,15 +457,12 @@
 	om_after(src, 0, PROC_REF(check_held))
 	set_light(lrange, lpower, lcolor)
 
-/obj/item/melee/energy/blade/Destroy()
-	. = ..()
-
 /obj/item/melee/energy/blade/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
 	user.drop_from_inventory(src)
-	QDEL_IN(src, 1)
+	expire(1)
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
@@ -489,7 +479,7 @@
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
-		QDEL_IN(src, 1)
+		expire(1)
 
 /obj/item/melee/energy/blade/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(60))
@@ -544,7 +534,6 @@
 	active_w_class = ITEMSIZE_HUGE
 	colorable = TRUE
 
-
 	lcolor = "#800080"
 
 /obj/item/melee/energy/spear/activate(mob/living/user)
@@ -552,7 +541,6 @@
 		to_chat(user, span_notice("\The [src] is now energised."))
 	..()
 	attack_verb = list("jabbed", "stabbed", "impaled")
-
 
 /obj/item/melee/energy/spear/deactivate(mob/living/user)
 	if(active)
@@ -569,7 +557,6 @@
 		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 		return 1
 	return 0
-
 
 // === merged from energy_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/melee/energy/sword/imperial

@@ -59,11 +59,7 @@
 		qdel(B)
 	LAZYCLEARLIST(elements)
 
-/datum/beam/Destroy()
-	Reset()
-	target = null
-	origin = null
-	return ..()
+REF_OWNED_LIST(/datum/beam, "elements")
 
 /datum/beam/proc/Draw()
 	if(QDELETED(target) || QDELETED(origin))
@@ -138,10 +134,6 @@
 	anchored = TRUE
 	var/datum/beam/owner
 
-/obj/effect/ebeam/Destroy()
-	owner = null
-	return ..()
-
 /obj/effect/ebeam/singularity_pull()
 	return
 /obj/effect/ebeam/singularity_act()
@@ -164,9 +156,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
-/obj/effect/ebeam/reactive/Destroy()
-	return ..()
-
 /obj/effect/ebeam/reactive/on_drawn()
 	for(var/A in loc)
 		on_contact(A)
@@ -185,7 +174,6 @@
 /obj/effect/ebeam/reactive/proc/on_contact(atom/movable/AM)
 	return
 
-
 // Shocks things that touch it.
 /obj/effect/ebeam/reactive/electric
 	var/shock_amount = 25 // Be aware that high numbers may stun and result in dying due to not being able to get out of the beam.
@@ -194,8 +182,6 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		L.inflict_shock_damage(shock_amount)
-
-
 
 /atom/proc/Beam(atom/BeamTarget, icon_state="b_beam", icon='icons/effects/beam.dmi', time=50, maxdistance=10, beam_type=/obj/effect/ebeam, beam_sleep_time=3, beam_color = null)
 	var/datum/beam/newbeam = new(src,BeamTarget,icon,icon_state,time,maxdistance,beam_type,beam_sleep_time,beam_color)

@@ -71,13 +71,6 @@
 		start_time = world.time
 		QDEL_IN(src, timeout)
 
-/datum/tgui_checkbox_input/Destroy(force)
-	SStgui.close_uis(src)
-	state = null
-	items?.Cut()
-
-	return ..()
-
 /datum/tgui_checkbox_input/proc/wait()
 	while (!closed && !QDELETED(src))
 		stoplag(1)

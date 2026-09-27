@@ -19,6 +19,7 @@
 /datum/belly_overlay_tgui/New(mob/M)
 	owner = M
 
+// LIFECYCLE: hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/Destroy(force)
 	if(owner?.client)
 		winset(owner.client, "mapwindow.belly_overlay", "is-visible=false")

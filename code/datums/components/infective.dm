@@ -7,7 +7,6 @@
 	/// Chance of weak infection on consumption
 	var/weak_infection_chance = 10
 
-
 /datum/component/infective/Initialize(list/datum/disease/diseases, expire_in, weak = FALSE, weak_infection_chance = 10)
 	if(!ismovable(parent))
 		return COMPONENT_INCOMPATIBLE
@@ -36,9 +35,7 @@
 	is_weak = weak
 	src.weak_infection_chance = weak_infection_chance
 
-/datum/component/infective/Destroy()
-	QDEL_LIST(diseases)
-	return ..()
+REF_OWNED_LIST(/datum/component/infective, "diseases")
 
 /datum/component/infective/RegisterWithParent()
 	if(is_weak && isitem(parent))

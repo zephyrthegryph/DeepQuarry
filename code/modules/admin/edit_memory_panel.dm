@@ -19,13 +19,8 @@
 	src.target_mind = target_mind
 	src.admin_user = admin_user
 
-/datum/edit_memory_panel/Destroy()
-	if(target_mind?.tgui_edit_memory_panel == src)
-		target_mind.tgui_edit_memory_panel = null
-	target_mind = null
-	admin_user = null
-	cached_antag_blocks = null
-	return ..()
+REF_PAIR(/datum/edit_memory_panel, list("target_mind" = "tgui_edit_memory_panel"))
+REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
 
 /datum/edit_memory_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT)
@@ -179,7 +174,6 @@
 				A.place_mob(target_mind.current)
 			SStgui.update_uis(src)
 			return TRUE
-
 
 /datum/mind
 	var/datum/edit_memory_panel/tgui_edit_memory_panel

@@ -23,10 +23,7 @@
 	// If we can start activated or not! Note: This is only really disabled on artifacts that can REALLY do some MAJOR DAMAGE to the server itself. See: Atmos & temperature artifacts destroying an entire Z-level's atmos.
 	var/can_start_activated = TRUE
 
-/datum/artifact_effect/Destroy()
-	master = null //Master still exists even if our effect gets destroyed. No need to QDEL_NULL.
-	QDEL_NULL(active_effect)
-	. = ..()
+REF_OWNED(/datum/artifact_effect, "active_effect")
 
 /datum/artifact_effect/proc/get_master_holder()	// Return the effectmaster's holder, if it is set to an effectmaster. Otherwise, master is the target object.
 	if(istype(master))
@@ -81,7 +78,6 @@
 	set waitfor = FALSE
 
 	var/atom/target = get_master_holder()
-
 
 	if(world.time - last_activation > 1 SECOND)
 		last_activation = world.time

@@ -44,7 +44,7 @@
 			pages.Add(O)
 
 		to_chat(user, span_notice("You add \the [W.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
-		qdel(W)
+		consume(W, user)
 	else
 		if(istype(W, /obj/item/tape_roll))
 			return 0
@@ -203,8 +203,7 @@
 		O.loc = usr.loc
 		O.layer = initial(O.layer)
 		O.add_fingerprint(usr)
-	usr.drop_from_inventory(src)
-	qdel(src)
+	consume(src, usr)
 	return
 
 
@@ -247,8 +246,7 @@
 		if(user.get_inactive_hand() == src)
 			user.drop_from_inventory(src)
 
-		new /obj/effect/decal/cleanable/ash(src.loc)
-		qdel(src)
+		replace_with(src, /obj/effect/decal/cleanable/ash)
 
 	else
 		to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))

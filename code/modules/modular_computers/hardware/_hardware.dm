@@ -52,7 +52,6 @@
 		return TRUE
 	return ..()
 
-
 /// Returns the name of the var on /obj/item/modular_computer that holds this
 /// hardware slot, or null if this type has no dedicated named slot.
 /// Each concrete hardware subtype overrides this so that
@@ -79,10 +78,6 @@
 	w_class = hardware_size
 	if(istype(loc, /obj/item/modular_computer))
 		holder2 = loc
-
-/obj/item/computer_hardware/Destroy()
-	holder2 = null
-	return ..()
 
 /// Handles damage checks
 /obj/item/computer_hardware/proc/check_functionality()

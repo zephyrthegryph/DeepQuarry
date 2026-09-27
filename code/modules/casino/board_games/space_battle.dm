@@ -40,11 +40,6 @@
 	var/winner
 	var/ships_have_been_placed = NONE
 
-/datum/board_game/space_battle/Destroy(force)
-	player_one = null
-	player_two = null
-	. = ..()
-
 /datum/board_game/space_battle/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)

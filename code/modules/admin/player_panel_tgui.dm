@@ -12,12 +12,8 @@
 	..()
 	src.owner_admin = owner_admin
 
-/datum/player_panel/Destroy()
-	if(owner_admin?.tgui_player_panel == src)
-		owner_admin.tgui_player_panel = null
-	owner_admin = null
-	cached_players = null
-	return ..()
+REF_PAIR(/datum/player_panel, list("owner_admin" = "tgui_player_panel"))
+REF_PAIR(/datum/admins, list("tgui_player_panel" = "owner_admin"))
 
 /datum/player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
@@ -119,7 +115,6 @@
 			snapshot_players()
 			SStgui.update_uis(src)
 			return TRUE
-
 
 /datum/admins
 	var/datum/player_panel/tgui_player_panel

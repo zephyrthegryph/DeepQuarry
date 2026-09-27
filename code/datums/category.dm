@@ -18,11 +18,7 @@
 			categories_by_name[category.name] = category
 	categories = dd_sortedObjectList(categories)
 
-/datum/category_collection/Destroy()
-	for(var/category in categories)
-		qdel(category)
-	categories.Cut()
-	return ..()
+REF_OWNED_LIST(/datum/category_collection, "categories")
 
 /******************
 * Category Groups *
@@ -51,16 +47,10 @@
 	// If you change this, confirm that character setup doesn't become completely unordered.
 	items = dd_sortedObjectList(items)
 
-/datum/category_group/Destroy()
-	for(var/item in items)
-		qdel(item)
-	items.Cut()
-	collection = null
-	return ..()
+REF_OWNED_LIST(/datum/category_group, "items")
 
 /datum/category_group/dd_SortValue()
 	return name
-
 
 /*****************
 * Category Items *
@@ -72,10 +62,6 @@
 /datum/category_item/New(datum/category_group/cg)
 	..()
 	category = cg
-
-/datum/category_item/Destroy()
-	category = null
-	return ..()
 
 /datum/category_item/dd_SortValue()
 	return name

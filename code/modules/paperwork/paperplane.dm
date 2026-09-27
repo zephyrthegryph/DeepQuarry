@@ -28,11 +28,7 @@
 		internalPaper = new /obj/item/paper(src)
 	update_icon()
 
-/obj/item/paperplane/Destroy()
-	if(internalPaper)
-		qdel(internalPaper)
-		internalPaper = null
-	return ..()
+REF_OWNED(/obj/item/paperplane, "internalPaper")
 
 /obj/item/paperplane/update_icon()
 	cut_overlays()
@@ -52,7 +48,7 @@
 	var/atom/movable/internal_paper_tmp = internalPaper
 	internal_paper_tmp.forceMove(loc)
 	internalPaper = null
-	qdel(src)
+	consume(src, user)
 	user.put_in_hands(internal_paper_tmp)
 
 /obj/item/paperplane/attackby(obj/item/P, mob/living/carbon/human/user, params)

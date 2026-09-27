@@ -63,6 +63,8 @@
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
 
+/mob/living/simple_mob/mechanical/corrupt_maint_drone
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/corrupt_maint_drone/death()
 	..(null,"is smashed into pieces!")
-	qdel(src)

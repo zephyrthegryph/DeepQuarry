@@ -10,7 +10,7 @@
 /obj/item/grenade/empgrenade/detonate()
 	..()
 	if(empulse(src, emp_heavy, emp_med, emp_light, emp_long))
-		qdel(src)
+		consume(src)
 	return
 
 /obj/item/grenade/empgrenade/low_yield

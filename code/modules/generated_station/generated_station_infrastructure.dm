@@ -50,11 +50,6 @@
 	site?.station_director?.set_department_connected(department_id, FALSE)
 	return ..()
 
-/obj/machinery/generated_station_data_relay/Destroy()
-	defense_runtime_ref = null
-	camera_ref = null
-	return ..()
-
 /datum/expedition_site/proc/initialize_generated_station_infrastructure()
 	if(!station_spec || !station_materialization || !station_director)
 		return FALSE

@@ -28,10 +28,7 @@
 	AddElement(/datum/element/lootable/trash_pile)
 	AddElement(/datum/element/climbable)
 
-/obj/structure/trash_pile/Destroy()
-	qdel(mouse_nest)
-	mouse_nest = null
-	return ..()
+REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
 /obj/structure/trash_pile/attackby(obj/item/W as obj, mob/user as mob)
 	var/w_type = W.type
@@ -40,7 +37,7 @@
 		user.unEquip(W)
 		W.forceMove(src)
 		restore_gamma_loot(w_type)
-		qdel(W)
+		consume(W, user)
 	else
 		return ..()
 

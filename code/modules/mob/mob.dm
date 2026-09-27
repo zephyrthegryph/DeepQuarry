@@ -15,6 +15,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	. = ..()
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
+REF_OWNED(/mob, "ability_master")
+
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
 	if(client)
@@ -44,9 +46,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
-	if(ability_master)
-		QDEL_NULL(ability_master)
-
 	if(LAZYLEN(vore_organs))
 		QDEL_NULL_LIST(vore_organs)
 	if(vorePanel)
@@ -73,7 +72,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	. = ..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
-
 
 /mob/proc/remove_screen_obj_references()
 	hands = null
@@ -102,7 +100,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
 	publish_mob_chunk(src)
-	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
+	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
@@ -158,9 +156,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return -1
 
 // used for petrification machines
-/atom/proc/get_ultimate_mob()
+/proc/get_ultimate_mob(atom/source)
 	var/mob/ultimate_mob
-	var/atom/to_check = loc
+	var/atom/to_check = source.loc
 	var/n = 0
 	while (to_check && !isturf(to_check) && n++ < 16)
 		if (ismob(to_check))
@@ -205,7 +203,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if (M.real_name == text("[]", msg))
 			return M
 	return 0
-
 
 #define UNBUCKLED 0
 #define PARTIALLY_BUCKLED 1
@@ -542,7 +539,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	var/list/targets = list()
 
-
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
@@ -791,7 +787,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/update_canmove()
 	return canmove
 
-
 /mob/proc/facedir(ndir)
 	if(!canface() || (client && (client.moving || !checkMoveCooldown())))
 		DEBUG_INPUT("Denying Facedir for [src] (moving=[client?.moving])")
@@ -803,26 +798,21 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	setMoveCooldown(movement_delay())
 	return 1
 
-
 /mob/verb/eastface()
 	set hidden = 1
 	return facedir(client.client_dir(EAST))
-
 
 /mob/verb/westface()
 	set hidden = 1
 	return facedir(client.client_dir(WEST))
 
-
 /mob/verb/northface()
 	set hidden = 1
 	return facedir(client.client_dir(NORTH))
 
-
 /mob/verb/southface()
 	set hidden = 1
 	return facedir(client.client_dir(SOUTH))
-
 
 //This might need a rename but it should replace the can this mob use things check
 /mob/proc/IsAdvancedToolUser()
@@ -971,7 +961,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
 
 	om_task_start(/datum/om/task/timed/mob_yank_out, U, src, list("receiver" = src, "selection" = selection, "self" = self))
-
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()
@@ -1155,7 +1144,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		exploit_record += exploitmsg
 		I.exploit_for = om_handle(src)
 
-
+// LIFECYCLE: exploit add-ons forget the item (the exploited mob is a handle).
 /obj/item/Destroy(force, ...)
 	if(exploit_for)
 		var/mob/exploited = om_resolve(exploit_for)
@@ -1163,7 +1152,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		exploit_for = null
 	user_vars_remembered = null
 	. = ..()
-
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)
@@ -1511,7 +1499,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 
 		new new_organ(M)
 
-
 	if(href_list[VV_HK_REMOVEORGAN])
 		if(!check_rights(R_SPAWN))
 			return
@@ -1617,7 +1604,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	//	if(NAMEOF(src, logging))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
-
 
 // === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

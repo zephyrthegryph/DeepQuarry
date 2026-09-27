@@ -17,7 +17,7 @@
 /obj/effect/temporary_effect/Initialize(mapload)
 	. = ..()
 	if(time_to_die)
-		QDEL_IN(src, time_to_die)
+		expire(time_to_die)
 
 // Shown really briefly when attacking with axes.
 /obj/effect/temporary_effect/cleave_attack
@@ -82,7 +82,7 @@
 	if(!isnull(_color))
 		set_light_color(_color)
 	if(_duration)
-		QDEL_IN(src, _duration)
+		expire(_duration)
 
 /obj/effect/dummy/lighting_obj/moblight
 	name = "mob lighting fx"
@@ -140,12 +140,12 @@
 			if(3 to INFINITY)
 				light_spot.icon_state = "far"
 
+REF_OWNED(/obj/effect/abstract/directional_lighting, "light_spot")
+
+// LIFECYCLE: only its light component may delete it.
 /obj/effect/abstract/directional_lighting/Destroy(force)
 	if(!force)
 		stack_trace("Directional light atom deleted, but not by our component")
 		return QDEL_HINT_LETMELIVE
-
 	vis_contents.Cut()
-	QDEL_NULL(light_spot)
-
 	return ..()

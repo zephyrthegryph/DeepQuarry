@@ -53,9 +53,7 @@
 	ai_brain.forget_everything()
 
 /mob/living/simple_mob/proc/handle_tame_item(obj/O, mob/user)
-	user.drop_from_inventory(O)
-	qdel(O)
+	consume(O, user)
 
 /mob/living/simple_mob/proc/fail_tame(obj/O, mob/user)
-	user.drop_from_inventory(O)
-	qdel(O)
+	consume(O, user)

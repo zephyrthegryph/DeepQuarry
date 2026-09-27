@@ -22,9 +22,6 @@
 	. = ..()
 	last_regen = world.time
 
-/obj/item/gun/launcher/spikethrower/Destroy()
-	. = ..()
-
 /// Regrows spikes every 2 s while short (firing starts it); full, it sleeps.
 /obj/item/gun/launcher/spikethrower/periodic_step()
 	if(spikes >= max_spikes)

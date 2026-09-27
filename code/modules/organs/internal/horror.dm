@@ -40,7 +40,6 @@
 		to_chat(owner, span_cult("Your eyes tear up and blood drips down your face."))
 		owner.automatic_custom_emote(VISIBLE_MESSAGE, "blinks, a drop of blood trailing from their eye!", check_stat = FALSE)
 
-
 /obj/item/organ/internal/heart/horror
 	name = "mass"
 	color = "#660000"
@@ -84,7 +83,7 @@
 			entering_vent = TRUE
 			mouse_opacity = 0 //No clicky
 			fade_towards(entry_vent,45)
-			QDEL_IN(src, 45)
+			expire(45)
 		else if(!entering_vent)
 			escaping_attempts += 1
 			if(escaping_attempts >= 5)
@@ -92,11 +91,6 @@
 				escaping = FALSE //We tried and failed...
 				escaping_attempts = 0
 				audible_message("[src] stops squirming around.")
-
-
-/obj/item/organ/internal/intestine/horror/Destroy()
-	entry_vent = null
-	. = ..()
 
 /obj/item/organ/internal/intestine/horror/handle_organ_mod_special(removed = FALSE)
 	..()
@@ -128,7 +122,6 @@
 		for(var/datum/reagent/drink/coffee/R in owner.ingested.reagent_list)
 			R.holder.remove_reagent(REAGENT_ID_COFFEE, REM)
 			owner.bloodstr.add_reagent(REAGENT_ID_HYPERZINE, REM)
-
 
 /obj/item/organ/internal/liver/horror
 	name = "mass"

@@ -7,16 +7,13 @@
 	item_flags = ABSTRACT
 
 /// Find spawning debug tool. Can be called on any /mob to spawn it at their location.
-/mob/proc/artifact_spawn_debug_tool()
-	set name = "Artifact Debug"
-	set desc = "Spawn an artifact."
-	set category = "Debug"
-	if(!src.loc)
+/proc/artifact_spawn_debug_tool(mob/target)
+	if(!target?.loc)
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
 	var/type_to_spawn = tgui_input_number(usr, "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", "Spawn Artifact", 0)
-	new /obj/item/archaeological_find(src.loc, type_to_spawn)
+	new /obj/item/archaeological_find(target.loc, type_to_spawn)
 
 /obj/item/archaeological_find/Initialize(mapload, new_item_type)
 	. = ..()
@@ -369,7 +366,6 @@
 				new_gun.power_supply.charge = 0
 			item_type = "Relic Laser Gun"
 
-
 		/// Artifact type gun that requires a random caliber and selects a random bullet type it shoots out!.
 		if(ARCHAEO_GUN)
 			var/obj/item/gun/projectile/artifact/new_gun = new /obj/item/gun/projectile/artifact(src.loc)
@@ -465,7 +461,6 @@
 			//Code to prevent rejection.
 			new_organ = new_item
 			new_organ.can_reject = FALSE
-
 
 		if(ARCHAEO_REMAINS_ROBOT)
 			//robot remains
@@ -879,7 +874,7 @@
 	if(become_anomalous)
 		become_anomalous()
 
-
+// LIFECYCLE: its artifact master component is removed.
 /obj/item/archaeological_find/Destroy()
 	if(src.is_anomalous())
 		var/datum/component/artifact_master/arti_mstr = GetComponent(/datum/component/artifact_master)

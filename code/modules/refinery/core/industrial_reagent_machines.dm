@@ -17,6 +17,7 @@
 	update_icon()
 	AddElement(/datum/element/rotatable)
 
+// LIFECYCLE: its reagents are flushed.
 /obj/machinery/reagent_refinery/Destroy()
 	reagent_flush()
 	. = ..()

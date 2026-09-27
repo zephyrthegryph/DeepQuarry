@@ -36,13 +36,13 @@
 		return 0
 
 	var/obj/item/clothing/suit/A = new armor_type(src)
-	src.equip_to_slot_or_del(A, slot_wear_suit)
+	equip_to_slot_or_del(A, slot_wear_suit)
 
 	var/obj/item/clothing/suit/H = new helmet_type(src)
-	src.equip_to_slot_or_del(H, slot_head)
+	equip_to_slot_or_del(H, slot_head)
 
 	var/obj/item/clothing/shoes/B = new boot_type(src)
-	src.equip_to_slot_or_del(B, slot_shoes)
+	equip_to_slot_or_del(B, slot_shoes)
 
 	changeling.chem_charges -= chem_cost
 	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
@@ -69,53 +69,53 @@
 	if(changeling.armor_deployed)
 		if(M.get_equipped_item(SLOT_ID_HEAD) && stuff_to_equip["head"])
 			if(istype(M.get_equipped_item(SLOT_ID_HEAD), stuff_to_equip["head"]))
-				qdel(M.get_equipped_item(SLOT_ID_HEAD))
+				M.slot_clear(SLOT_ID_HEAD)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_ID) && stuff_to_equip["wear_id"])
 			if(istype(M.get_equipped_item(SLOT_ID_ID), stuff_to_equip["wear_id"]))
-				qdel(M.get_equipped_item(SLOT_ID_ID))
+				M.slot_clear(SLOT_ID_ID)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_SUIT) && stuff_to_equip["wear_suit"])
 			if(istype(M.get_equipped_item(SLOT_ID_SUIT), stuff_to_equip["wear_suit"]))
-				qdel(M.get_equipped_item(SLOT_ID_SUIT))
+				M.slot_clear(SLOT_ID_SUIT)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_GLOVES) && stuff_to_equip["gloves"])
 			if(istype(M.get_equipped_item(SLOT_ID_GLOVES), stuff_to_equip["gloves"]))
-				qdel(M.get_equipped_item(SLOT_ID_GLOVES))
+				M.slot_clear(SLOT_ID_GLOVES)
 				success = 1
 		if(M.get_equipped_item(SLOT_ID_SHOES) && stuff_to_equip["shoes"])
 			if(istype(M.get_equipped_item(SLOT_ID_SHOES), stuff_to_equip["shoes"]))
-				qdel(M.get_equipped_item(SLOT_ID_SHOES))
+				M.slot_clear(SLOT_ID_SHOES)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_BELT) && stuff_to_equip["belt"])
 			if(istype(M.get_equipped_item(SLOT_ID_BELT), stuff_to_equip["belt"]))
-				qdel(M.get_equipped_item(SLOT_ID_BELT))
+				M.slot_clear(SLOT_ID_BELT)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_EYES) && stuff_to_equip["glasses"])
 			if(istype(M.get_equipped_item(SLOT_ID_EYES), stuff_to_equip["glasses"]))
-				qdel(M.get_equipped_item(SLOT_ID_EYES))
+				M.slot_clear(SLOT_ID_EYES)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_MASK) && stuff_to_equip["wear_mask"])
 			if(istype(M.get_equipped_item(SLOT_ID_MASK), stuff_to_equip["wear_mask"]))
-				qdel(M.get_equipped_item(SLOT_ID_MASK))
+				M.slot_clear(SLOT_ID_MASK)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_BACK) && stuff_to_equip["back"])
 			if(istype(M.get_equipped_item(SLOT_ID_BACK), stuff_to_equip["back"]))
 				for(var/atom/movable/AM in M.get_equipped_item(SLOT_ID_BACK).contents) //Dump whatever's in the bag before deleting.
-					AM.forceMove(src.loc)
-				qdel(M.get_equipped_item(SLOT_ID_BACK))
+					AM.forceMove(loc)
+				M.slot_clear(SLOT_ID_BACK)
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_UNIFORM) && stuff_to_equip["w_uniform"])
 			if(istype(M.get_equipped_item(SLOT_ID_UNIFORM), stuff_to_equip["w_uniform"]))
-				qdel(M.get_equipped_item(SLOT_ID_UNIFORM))
+				M.slot_clear(SLOT_ID_UNIFORM)
 				success = 1
 
 		if(success)

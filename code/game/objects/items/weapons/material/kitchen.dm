@@ -27,6 +27,7 @@
 		src.pixel_y = rand(0, 4)
 	create_reagents(scoop_volume)
 
+// LIFECYCLE: micros on the utensil drop off.
 /obj/item/material/kitchen/utensil/Destroy()
 	if(food_inserted_micros)
 		for(var/mob/M in food_inserted_micros)
@@ -81,7 +82,7 @@
 				src.food_inserted_micros += F
 
 	if (loading.reagents.total_volume <= 0)
-		qdel(loading)
+		consume(loading, user)
 	update_icon()
 
 /obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)

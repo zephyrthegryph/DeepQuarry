@@ -148,9 +148,7 @@ SUBSYSTEM_DEF(throwing)
 
 	start_time = world.time
 
-/datum/thrownthing/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("callback")
+REF_OWNED(/datum/thrownthing, list("callback"))
 
 /// Returns the thrower, or null
 /datum/thrownthing/proc/get_thrower()

@@ -20,6 +20,7 @@
 	/// God I hate how dragging works
 	var/last_hovored_ref
 
+// LIFECYCLE: a button leaves its hud's layout and its action's viewers.
 /atom/movable/screen/movable/action_button/Destroy()
 	var/datum/hud/hud = our_hud()
 	if(hud)
@@ -253,11 +254,11 @@
 	/// Id of any currently running timers that set our color matrix
 	var/color_timer_id
 
+// LIFECYCLE: the hud owns us as its toggle_palette; one deleted on its own clears that var.
 /atom/movable/screen/button_palette/Destroy()
-	if(our_hud())
-		our_hud().mymob()?.client?.screen -= src
-		our_hud().toggle_palette = null
-		our_hud_handle = null
+	var/datum/hud/hud = our_hud()
+	if(hud?.toggle_palette == src)
+		hud.toggle_palette = null
 	return ..()
 
 /atom/movable/screen/button_palette/Initialize(mapload)
@@ -418,11 +419,11 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	icon_state = "scroll_down"
 	scroll_direction = 1
 
+// LIFECYCLE: the hud owns us as its palette_down; one deleted on its own clears that var.
 /atom/movable/screen/palette_scroll/down/Destroy()
-	if(our_hud())
-		our_hud().mymob()?.client?.screen -= src
-		our_hud().palette_down = null
-		our_hud_handle = null
+	var/datum/hud/hud = our_hud()
+	if(hud?.palette_down == src)
+		hud.palette_down = null
 	return ..()
 
 /atom/movable/screen/palette_scroll/up
@@ -431,11 +432,11 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	icon_state = "scroll_up"
 	scroll_direction = -1
 
+// LIFECYCLE: the hud owns us as its palette_up; one deleted on its own clears that var.
 /atom/movable/screen/palette_scroll/up/Destroy()
-	if(our_hud())
-		our_hud().mymob()?.client?.screen -= src
-		our_hud().palette_up = null
-		our_hud_handle = null
+	var/datum/hud/hud = our_hud()
+	if(hud?.palette_up == src)
+		hud.palette_up = null
 	return ..()
 
 /// Exists so you have a place to put your buttons when you move them around
@@ -448,12 +449,13 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
 	var/owner_handle
 
+// LIFECYCLE: its palette re-lays its actions without the landing spot.
+// LIFECYCLE: the group owns us as its landing; one deleted on its own clears it and re-lays the group.
 /atom/movable/screen/action_landing/Destroy()
 	var/datum/action_group/group = owner()
-	if(group)
-		group.landing = null
-		var/datum/hud/hud = group.owner()
-		hud?.mymob()?.client?.screen -= src
+	if(group && !QDELETED(group))
+		if(group.landing == src)
+			group.landing = null
 		group.refresh_actions()
 	return ..()
 
@@ -495,6 +497,4 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return om_resolve(owner_handle)
 
-/atom/movable/screen/movable/action_button/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("button_overlay")
+REF_OWNED(/atom/movable/screen/movable/action_button, list("button_overlay"))

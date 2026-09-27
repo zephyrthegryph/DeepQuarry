@@ -136,14 +136,22 @@ GLOBAL_REAL(Master, /datum/controller/master)
 			//Either init a new SS or if an existing one was found use that
 			for(var/I in subsystem_types)
 				var/ss_idx = existing_subsystems.Find(I)
+#ifdef BENCHMARK
+				var/started = REALTIMEOFDAY
+				var/mb_before = benchmark_early_private_mb()
+#endif
 				if (ss_idx)
 					_subsystems += existing_subsystems[ss_idx]
 				else
 					_subsystems += new I
+#ifdef BENCHMARK
+				benchmark_early_note("new [I]", REALTIMEOFDAY - started, mb_before)
+#endif
 
 	if(!GLOB)
 		new /datum/controller/global_vars
 
+// LIFECYCLE: MC singleton; asks for a hard delete.
 /datum/controller/master/Destroy()
 	..()
 	// Tell qdel() to Del() this object.
@@ -261,7 +269,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	PRIVATE_PROC(TRUE)
 	set waitfor = FALSE
 
-
 	if(!overview_fast_update)
 		return
 
@@ -291,7 +298,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	catch
 		return -1
 	return 1
-
 
 /datum/controller/master/Recover()
 	var/msg = "## DEBUG: [time2text(world.timeofday, "DDD MMM DD hh:mm:ss YYYY", TIMEZONE_UTC)] MC restarted. Reports:\n"
@@ -476,12 +482,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	benchmark_rust_mark("mc: init done")
 #endif
 
-
-
 	var/msg = "Initializations complete within [time] second[time == 1 ? "" : "s"]!"
 	to_chat(world, span_boldannounce("[msg]"), MESSAGE_TYPE_DEBUG)
 	log_world(msg)
-
 
 	if(world.system_type == MS_WINDOWS && CONFIG_GET(flag/toast_notification_on_init) && !length(GLOB.clients))
 		world.shelleo("start /min powershell -ExecutionPolicy Bypass -File tools/initToast/initToast.ps1 -name \"[world.name]\" -icon %CD%\\icons\\virgoicon_16.png -port [world.port]")
@@ -973,7 +976,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		SS.enqueue()
 	. = 1
 
-
 /// RunQueue - Run thru the queue of subsystems to run, running them while balancing out their allocated tick precentage
 /// Returns 0 if runtimed, a negitive number for logic errors, and a positive number if the operation completed without errors
 /datum/controller/master/proc/RunQueue()
@@ -1018,7 +1020,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 				. = -1
 				current_tick_budget = queue_priority_count //this won't even be right, but is the best we have.
 				bg_calc = FALSE
-
 
 			tick_remaining = TICK_LIMIT_RUNNING - TICK_USAGE
 
@@ -1072,7 +1073,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			if (state == SS_RUNNING)
 				state = SS_IDLE
 			current_tick_budget -= queue_node_priority
-
 
 			if (tick_usage < 0)
 				tick_usage = 0
@@ -1160,11 +1160,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	if (!skip_ticks)
 		skip_ticks = 1
 
-
 /datum/controller/master/stat_entry(msg)
 	msg = "(TickRate:[Master.processing]) (Iteration:[Master.iteration]) (TickLimit: [round(Master.current_ticklimit, 0.1)])"
 	return msg
-
 
 /datum/controller/master/StartLoadingMap()
 	//disallow more than one map to load at once, multithreading it will just cause race conditions
@@ -1180,7 +1178,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	for(var/S in subsystems)
 		var/datum/controller/subsystem/SS = S
 		SS.StopLoadingMap()
-
 
 /datum/controller/master/proc/UpdateTickRate()
 	if (!processing)
@@ -1219,6 +1216,4 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 /datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
 	return om_resolve(queue_tail_handle)
 
-/datum/controller/master/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("stack_end_detector")
+REF_OWNED(/datum/controller/master, "stack_end_detector")

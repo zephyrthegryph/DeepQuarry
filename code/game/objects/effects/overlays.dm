@@ -12,7 +12,7 @@
 
 /obj/effect/overlay/beam/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 1 SECOND)
+	expire(1 SECOND)
 
 /obj/effect/overlay/palmtree_r
 	name = "Palm tree"
@@ -135,6 +135,7 @@
 	vis_flags = NONE
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
+// LIFECYCLE: only its light component may delete it.
 /obj/effect/overlay/light_visible/Destroy(force)
 	if(!force)
 		stack_trace("Movable light visible mask deleted, but not by our component")
@@ -166,6 +167,7 @@
 /obj/effect/overlay/light_cone/proc/apply_standard_transform()
 	transform = transform.Translate(-32, -32)
 
+// LIFECYCLE: only its light component may delete it.
 /obj/effect/overlay/light_cone/Destroy(force)
 	if(!force)
 		stack_trace("Directional light cone deleted, but not by our component")

@@ -171,10 +171,10 @@
 
 	self_destruct_if_idle()
 
-
 /datum/lighting_corner/dummy/New()
 	return
 
+// LIFECYCLE: lighting engine: corners leave their sources and turfs; refuse deletion unless forced.
 /datum/lighting_corner/Destroy(force)
 	if (!force)
 		return QDEL_HINT_LETMELIVE
@@ -220,7 +220,6 @@
 		cache_b = pshandler.cache_b_shade
 		largest_color_luminosity = pshandler.maxlumshade
 
-
 	var/datum/lighting_object/lighting_object = master_NE?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
@@ -258,7 +257,6 @@
 	if(istype(master_NW_sim) && master_NW_sim.shandler)
 		master_NW_sim.shandler.corner_sunlight_change(src)
 	update_sunlight_handlers()
-
 
 /datum/lighting_corner/proc/update_sunlight_handlers()
 	var/turf/simulated/master_NE_sim = master_NE

@@ -18,11 +18,6 @@
 	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
 	var/hud_handle	// A reference to the owner HUD, if any.
 
-/atom/movable/screen/Destroy()
-	master_ref = null
-	hud_handle = null
-	return ..()
-
 // L1 (doc/rewrite/lifecycle.md §2 phase 5, "release screens"): whichever
 // client(s) it's shown on -- almost always exactly one, but this doesn't
 // assume which -- instead of leaving a dangling ref in client.screen for
@@ -43,7 +38,6 @@
 	maptext_height = 480
 	maptext_width = 480
 
-
 /atom/movable/screen/inventory
 	var/slot_id	//The indentifier for the slot. It has nothing to do with ID cards.
 	var/list/object_overlays // Required for inventory/screen overlays.
@@ -57,7 +51,6 @@
 	if(object_overlays) cut_overlay(object_overlays)
 	LAZYCLEARLIST(object_overlays)
 
-
 /atom/movable/screen/close
 	name = "close"
 
@@ -69,13 +62,8 @@
 			S.close(usr)
 	return 1
 
-
 /atom/movable/screen/item_action
 	var/owner_handle
-
-/atom/movable/screen/item_action/Destroy()
-	. = ..()
-	owner_handle = null
 
 /atom/movable/screen/item_action/Click()
 	if(!usr || !owner())
@@ -106,7 +94,6 @@
 
 /atom/movable/screen/grab/attackby()
 	return
-
 
 /atom/movable/screen/storage
 	name = "storage"
@@ -430,13 +417,11 @@
 									best = i
 									bestcontents = contents[i]
 
-
 							//We've determined the best container now we set it as our internals
 
 							if(best)
 								to_chat(C, span_notice("You are now running on internals from [tankcheck[best]] [from] your [nicename[best]]."))
 								C.internal = tankcheck[best]
-
 
 							if(C.internal)
 								if(C.internals)
@@ -742,10 +727,6 @@
 
 	var/pref_handle
 
-/atom/movable/screen/setup_preview/Destroy()
-	pref_handle = null
-	return ..()
-
 // Background 'floor'
 /atom/movable/screen/setup_preview/pm_helper
 	icon = null
@@ -824,19 +805,7 @@
 	frame.vis_contents.Add(powbutton,mapbutton)
 	vis_contents.Add(frame)
 
-
-/atom/movable/screen/movable/mapper_holder/Destroy()
-	QDEL_NULL(mask_full)
-	QDEL_NULL(mask_ping)
-	QDEL_NULL(bg)
-
-	QDEL_NULL(frame)
-	QDEL_NULL(powbutton)
-	QDEL_NULL(mapbutton)
-
-	extras_holder_handle = null
-	owner_handle = null
-	return ..()
+REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_ping", "bg", "frame", "powbutton", "mapbutton"))
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)
@@ -892,10 +861,6 @@
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
 	parent_handle = om_handle(loc)
-
-/atom/movable/screen/mapper/Destroy()
-	parent_handle = null
-	return ..()
 
 // Holds the actual map image
 /atom/movable/screen/mapper/map
@@ -992,10 +957,6 @@
 	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
 	var/our_gun
 
-/atom/movable/screen/ammo/Destroy()
-	. = ..()
-	our_gun = null
-
 /atom/movable/screen/ammo/Click()
 	var/mob/user = usr
 	if(!user.checkClickCooldown())
@@ -1079,7 +1040,6 @@
 			overlays += image('icons/mob/screen_ammo.dmi', src, "t9")
 			overlays += image('icons/mob/screen_ammo.dmi', src, "h9")
 
-
 //Invesitgating a runtime made me discover that all simplemobs have HUD on hands set to themselves
 //Which cause this original code to die because the mob does not have a mymob var...
 //So yeah this is why we now check if it is type of mob first...
@@ -1144,14 +1104,6 @@
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
 	return om_resolve(parent_handle)
 
-/atom/movable/screen/zone_sel/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("selecting_appearance")
+REF_OWNED(/atom/movable/screen/zone_sel, list("selecting_appearance"))
 
-/atom/movable/screen/inventory/hand/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("handcuff_overlay")
-
-/atom/movable/screen/movable/mapper_holder/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("mask_full", "mask_ping", "bg", "frame", "powbutton", "mapbutton")
+REF_OWNED(/atom/movable/screen/inventory/hand, list("handcuff_overlay"))

@@ -31,10 +31,7 @@ fundamental differences
 
 	mixer_loop = new(list(src), FALSE)
 
-/obj/machinery/appliance/mixer/Destroy()
-	. = ..()
-
-	QDEL_NULL(mixer_loop)
+REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen
 /obj/machinery/appliance/mixer/choose_output(mob/user, new_output)
@@ -50,7 +47,6 @@ fundamental differences
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
-
 /obj/machinery/appliance/mixer/has_space(obj/item/I)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	if (!CI || !CI.container)
@@ -60,7 +56,6 @@ fundamental differences
 		return CI
 
 	return 0
-
 
 /obj/machinery/appliance/mixer/can_remove_items(mob/user, show_warning = TRUE)
 	if(stat)
@@ -144,7 +139,6 @@ fundamental differences
 		icon_state = off_icon
 		if(mixer_loop)
 			mixer_loop.stop(src)
-
 
 /obj/machinery/appliance/mixer/machine_step()
 	if(stat || !cooking || !length(cooking_objs))

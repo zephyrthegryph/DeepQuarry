@@ -155,7 +155,7 @@
 		return TRUE
 	if(IS_HARMING(user))
 		to_chat(user,span_warning("As you squeeze the [name], it crumbles into dust and falls apart into nothing!"))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/digestion_remains/ribcage
 	name = "ribcage"

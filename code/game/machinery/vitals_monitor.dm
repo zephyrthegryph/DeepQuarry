@@ -24,10 +24,6 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/vitals_monitor/Destroy()
-	victim = null
-	. = ..()
-
 /obj/machinery/vitals_monitor/examine(mob/user)
 	. = ..()
 	if(victim)

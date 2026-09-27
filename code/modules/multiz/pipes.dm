@@ -85,13 +85,6 @@
 	else if(dir == (EAST|WEST))
 		set_dir(EAST)
 
-/obj/machinery/atmospherics/pipe/zpipe/Destroy()
-	if(node1)
-		node1.disconnect(src)
-	if(node2)
-		node2.disconnect(src)
-	. = ..()
-
 /obj/machinery/atmospherics/pipe/zpipe/pipeline_expansion()
 	return list(node1, node2)
 
@@ -143,7 +136,6 @@
 					node2 = target
 					break
 
-
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level == 1 && !T.is_plating()) hide(1)	// but respect level
 
@@ -179,7 +171,6 @@
 				if (check_connectable(target) && target.check_connectable(src))
 					node2 = target
 					break
-
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level == 1 && !T.is_plating()) hide(1)	// but respect level

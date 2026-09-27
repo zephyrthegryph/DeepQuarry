@@ -32,12 +32,6 @@
 	for(var/datum/omni_port/P in ports)
 		P.air.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
-/obj/machinery/atmospherics/omni/atmos_filter/Destroy()
-	input = null
-	output = null
-	atmos_filters.Cut()
-	return ..()
-
 /obj/machinery/atmospherics/omni/atmos_filter/sort_ports()
 	var/any_updated = FALSE
 	for(var/datum/omni_port/P in ports)

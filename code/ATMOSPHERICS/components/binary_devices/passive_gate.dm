@@ -43,10 +43,6 @@
 	// Rust device edge, stepped from SSair, not DM's process() scheduler).
 	MACHINE_SLEEP(src)
 
-/obj/machinery/atmospherics/binary/passive_gate/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
-
 // M2 (simulation.md §5): the flow law lives on the Rust device edge and runs
 // every gas tick regardless of DM's process() scheduling. rust_bind_pipe_port
 // fires once per port, after that port's region exists in Rust (map setup's
@@ -209,7 +205,6 @@
 
 	return data
 
-
 /obj/machinery/atmospherics/binary/passive_gate/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
@@ -273,7 +268,6 @@
 #undef REGULATE_NONE
 #undef REGULATE_INPUT
 #undef REGULATE_OUTPUT
-
 
 /obj/machinery/atmospherics/binary/passive_gate/on
 	unlocked = 1

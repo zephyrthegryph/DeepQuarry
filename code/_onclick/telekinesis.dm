@@ -92,10 +92,10 @@
 	if(!target || !user)	return
 	if(last_throw+3 > world.time)	return
 	if(!host() || host() != user)
-		qdel(src)
+		consume(src, user)
 		return
 	if(!host().has_telegrip())
-		qdel(src)
+		consume(src, user)
 		return
 	if(isobj(target) && !isturf(target.loc))
 		return
@@ -145,7 +145,7 @@
 /obj/item/tk_grab/proc/focus_object(obj/target, mob/living/user)
 	if(!istype(target,/obj))	return//Cant throw non objects atm might let it do mobs later
 	if(target.anchored || !isturf(target.loc))
-		qdel(src)
+		consume(src, user)
 		return
 	focus_handle = om_handle(target)
 	update_icon()

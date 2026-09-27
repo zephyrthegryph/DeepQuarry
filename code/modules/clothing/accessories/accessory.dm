@@ -22,6 +22,7 @@
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 
+// LIFECYCLE: an attached accessory is removed from its clothing.
 /obj/item/clothing/accessory/Destroy()
 	on_removed()
 	return ..()
@@ -723,11 +724,6 @@
 	. = ..()
 	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT) // Makes it so you don't need to change the frequency off of default for it to work.
 
-/obj/item/clothing/accessory/collar/shock/Destroy() //Clean up your toys when you're done.
-	SSradio.remove_object(src, frequency)
-	radio_connection = null //Don't delete this, this is a shared object.
-	return ..()
-
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
@@ -1019,18 +1015,16 @@
 		return
 	to_chat(user, span_notice("You wire the signaler into the [src]."))
 	user.drop_item()
-	qdel(component)
+	consume(component, user)
 	var/turf/T = get_turf(src)
 	new /obj/item/clothing/accessory/collar/shock/bluespace/modified(T)
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/item/clothing/accessory/collar/shock/bluespace/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src]."))
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 // modified bluespace collar where the size is controlled by the signaller.
@@ -1054,8 +1048,7 @@
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src], the attached signaler disconnects."))
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)

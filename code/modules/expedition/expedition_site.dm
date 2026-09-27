@@ -60,28 +60,8 @@
 	last_occupied = world.time
 	participants = list()
 
-/datum/expedition_site/Destroy()
-	landing = null
-	floors = null
-	origin_console = null
-	assigned_shuttle = null
-	assigned_flight_vessel = null
-	payout_turf = null
-	overmap_sector = null
-	landing_waypoint = null
-	participants = null
-	QDEL_LIST(station_controls)
-	QDEL_NULL(station_defense)
-	QDEL_NULL(station_director)
-	QDEL_NULL(station_simulation)
-	QDEL_NULL(station_utilities)
-	if(mission)
-		QDEL_NULL(mission)
-	if(biome)
-		QDEL_NULL(biome)
-	QDEL_NULL(station_spec)
-	QDEL_NULL(station_materialization)
-	return ..()
+REF_OWNED(/datum/expedition_site, list("station_defense", "station_director", "station_simulation", "station_utilities", "mission", "biome", "station_spec", "station_materialization"))
+REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 
 // A random walkable floor on this site (prefers the cached list, falls back to
 // a fresh scan if the cache is stale/empty). Biome-agnostic.

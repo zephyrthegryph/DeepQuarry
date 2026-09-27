@@ -263,7 +263,7 @@
 	var/percentage = charge/maxcharge
 	newcell.charge = newcell.maxcharge * percentage
 	newcell.persist_storable = persist_storable
-	qdel(src)
+	consume(src, user)
 
 /obj/item/cell/void/hybrid
 	icon = 'icons/obj/power_vr.dmi'

@@ -40,13 +40,7 @@
 	reward_cash = 150 + difficulty * 200
 	objectives = list()
 
-/datum/expedition_mission/Destroy()
-	site = null
-	if(objectives)
-		for(var/datum/expedition_objective/O in objectives)
-			qdel(O)
-		objectives = null
-	return ..()
+REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 
 // Override per mission: return the list of objectives.
 /datum/expedition_mission/proc/build_objectives()

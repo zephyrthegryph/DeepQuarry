@@ -11,11 +11,11 @@
 	. = ..()
 	visualnet = GLOB.cameranet
 
-/mob/observer/eye/aiEye/Destroy()
-	// The destroy transaction already unlinked eye_of/active_eye.
-	visualnet.clear_references(src, src.client)
-	visualnet = null
+/// Phase 2: the eye leaves its visualnet.
+/mob/observer/eye/aiEye/lifecycle_dematerialize()
 	. = ..()
+	visualnet?.clear_references(src, src.client)
+	visualnet = null
 
 /mob/observer/eye/aiEye/setLoc(T, cancel_tracking = 1)
 	var/mob/owner = src?.eye_owner()

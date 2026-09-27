@@ -36,6 +36,7 @@
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
+// LIFECYCLE: leaves its generator's deployed shields (the generator is a handle).
 /obj/machinery/shield/Destroy()
 	opacity = 0
 	density = FALSE
@@ -122,15 +123,13 @@
 		cell = new cell_type(src)
 	AddElement(/datum/element/climbable)
 
+REF_OWNED(/obj/machinery/shieldgen, "cell")
+REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")
+
+// LIFECYCLE: its shields collapse.
 /obj/machinery/shieldgen/Destroy()
 	collapse_shields()
-	if(cell)
-		QDEL_NULL(cell)
-	if(LAZYLEN(deployed_shields))
-		QDEL_NULL_LIST(deployed_shields)
-
 	. = ..()
-
 
 /obj/machinery/shieldgen/examine(mob/user)
 	. = ..()
@@ -360,14 +359,12 @@
 		anchored = TRUE
 	return ITEM_INTERACT_SUCCESS
 
-
 /obj/machinery/shieldgen/update_icon()
 	if(active && !(stat & NOPOWER))
 		src.icon_state = malfunction ? "shieldonbr":"shieldon"
 	else
 		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"
 	return
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldgen/step_start_condition()

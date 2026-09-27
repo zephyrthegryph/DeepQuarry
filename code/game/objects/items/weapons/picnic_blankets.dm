@@ -22,7 +22,7 @@
 	P.name = name
 	P.desc = unfolded_desc
 	P.unfold()
-	qdel(src)
+	replace_with(src, P)
 
 /obj/structure/picnic_blanket_deployed
 	name = "picnic blanket"
@@ -46,7 +46,7 @@
 	var/obj/item/picnic_blankets_carried/P = new /obj/item/picnic_blankets_carried(usr.loc)
 	P.name = name
 	P.desc = folded_desc
-	qdel(src)
+	replace_with(src, P)
 
 /obj/structure/picnic_blanket_deployed/proc/unfold()
 	var/dirs = GLOB.alldirs

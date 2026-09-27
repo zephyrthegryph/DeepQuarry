@@ -131,8 +131,7 @@
 /mob/living/simple_mob/vore/fluffball/attackby(obj/item/W as obj, mob/user as mob)
 	..()
 	if(istype(W,/obj/item/reagent_containers/food))
-		user.drop_item(W)
-		qdel(W)
+		consume(W, user)
 		visible_message("<span class='notice'>\The [src] quickly steals \the [W] into its fluff, it seems to have become a little less shy!</span>!")
 		//friend_list lived on the deleted ai_holder; modern brain
 		// stores friendliness as personal entries via add_personal but the

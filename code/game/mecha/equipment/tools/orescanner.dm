@@ -16,9 +16,7 @@
 	my_scanner = new(src)
 	return ..()
 
-/obj/item/mecha_parts/mecha_equipment/tool/orescanner/Destroy()
-	QDEL_NULL(my_scanner)
-	return ..()
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/tool/orescanner, "my_scanner")
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/proc/scan_done(atom/target)
 	my_scanner.ScanTurf(target, chassis?.slot_item(MECHA_SLOT_PILOT), exact_scan)

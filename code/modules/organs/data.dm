@@ -17,10 +17,6 @@
 	var/list/skin_color
 	var/list/hair_color
 
-/datum/organ_data/Destroy(force)
-	. = ..()
-	species = null
-
 /datum/organ_data/proc/setup_from_dna(datum/dna/dna)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	// Prosfab uses default dna to get vars, lets respect that still
@@ -56,7 +52,6 @@
 		cached_species_vars[p] = x; \
 	} \
 	return cached_species_vars[p];
-
 
 /datum/organ_data/proc/get_species_name()
 	SHOULD_NOT_OVERRIDE(TRUE)

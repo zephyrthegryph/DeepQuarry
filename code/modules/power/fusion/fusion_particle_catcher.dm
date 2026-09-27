@@ -8,10 +8,7 @@
 
 	light_color = COLOR_BLUE
 
-/obj/effect/fusion_particle_catcher/Destroy()
-	. =..()
-	LAZYREMOVE(parent.particle_catchers, src)
-	parent = null
+REF_BACKLIST(/obj/effect/fusion_particle_catcher, list("parent" = "particle_catchers"))
 
 /obj/effect/fusion_particle_catcher/proc/SetSize(newsize)
 	name = "collector [newsize]"

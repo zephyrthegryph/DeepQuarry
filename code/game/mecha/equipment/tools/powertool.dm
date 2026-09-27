@@ -19,9 +19,7 @@
 	my_tool.canremove = FALSE
 	return ..()
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/Destroy()
-	QDEL_NULL(my_tool)
-	return ..()
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/tool/powertool, "my_tool")
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/action(atom/target)
 	if(!action_checks(target))

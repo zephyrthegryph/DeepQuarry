@@ -14,20 +14,8 @@
 	flags = REMOTEVIEW_ON_ENTER
 	dir = 0
 
-/obj/structure/disposalholder/Destroy()
-	QDEL_NULL(gas)
-	if(contents.len)
-		var/turf/qdelloc = get_turf(src)
-		if(qdelloc)
-			for(var/atom/movable/AM in contents)
-				AM.forceMove(qdelloc)
-		else
-			log_runtime("A disposal holder was deleted with contents in nullspace") //ideally, this should never happen
-
-	active = FALSE
-	return ..()
-
-	// initialize a holder from the contents of a disposal unit
+REF_OWNED(/obj/structure/disposalholder, "gas")
+REF_SPILL_LIST(/obj/structure/disposalholder, "contents")
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	gas = flush_gas// transfer gas resv. into holder object -- let's be explicit about the data this proc consumes, please.
 
@@ -93,7 +81,6 @@
 		active = FALSE
 		return
 	addtimer(CALLBACK(src, PROC_REF(move)), 1, TIMER_DELETE_ME)
-
 
 // find the turf which should contain the next pipe
 /obj/structure/disposalholder/proc/nextloc()

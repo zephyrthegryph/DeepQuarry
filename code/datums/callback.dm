@@ -55,10 +55,6 @@
 	if(usr)
 		user = om_handle(usr)
 
-/datum/callback/Destroy(force)
-	. = ..()
-	user =  null
-
 /world/proc/ImmediateInvokeAsync(thingtocall, proctocall, ...)
 	set waitfor = FALSE
 
@@ -116,8 +112,6 @@
 	if (object == GLOBAL_PROC)
 		return call(delegate)(arglist(calling_arguments))
 	return call(object, delegate)(arglist(calling_arguments))
-
-
 
 // Makes a call in the context of a different usr
 // Use sparingly

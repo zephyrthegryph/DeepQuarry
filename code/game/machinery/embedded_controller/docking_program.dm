@@ -60,7 +60,6 @@
 	In line with this, docking controllers should prevent players from manually doing things when the override is NOT enabled.
 */
 
-
 /datum/embedded_program/docking
 	var/tag_target				//the tag of the docking controller that we are trying to dock with
 	var/dock_state = STATE_UNDOCKED
@@ -80,9 +79,10 @@
 			stack_trace("Docking controller tag [id_tag] had multiple associated programs.")
 		SSshuttles.docking_registry[id_tag] = src
 
-/datum/embedded_program/docking/Destroy()
+/// Phase 2: leaves the shuttle docking registry.
+/datum/embedded_program/docking/lifecycle_dematerialize()
+	. = ..()
 	SSshuttles.docking_registry -= id_tag
-	return ..()
 
 /datum/embedded_program/docking/receive_signal(datum/signal/signal, receive_method, receive_param)
 	var/receive_tag = signal.data["tag"]		//for docking signals, this is the sender id
@@ -123,7 +123,6 @@
 				control_mode = MODE_SERVER
 				dock_state = STATE_DOCKING
 				broadcast_docking_status()
-
 
 				if (!override_enabled)
 					prepare_for_docking()
@@ -196,7 +195,6 @@
 		reset()
 	if (control_mode == MODE_SERVER && dock_state == STATE_UNDOCKED)
 		control_mode = MODE_NONE
-
 
 /datum/embedded_program/docking/proc/initiate_docking(target)
 	if (dock_state != STATE_UNDOCKED || control_mode == MODE_SERVER)	//must be undocked and not serving another request to begin a new docking handshake

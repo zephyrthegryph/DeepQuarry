@@ -33,12 +33,7 @@
 	node = get_exonet_node()
 	message_admins("A EPv2 Discovery circuit has been created. \ref[src]")
 
-/obj/item/integrated_circuit/illegal/EPv2_Discoverer/Destroy()
-	if(exonet)
-		exonet.remove_address()
-		qdel(exonet)
-		exonet = null
-	return ..()
+REF_OWNED(/obj/item/integrated_circuit/illegal/EPv2_Discoverer, "exonet")
 
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/do_work()
 	if(!get_connection_to_tcomms())

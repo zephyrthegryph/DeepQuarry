@@ -61,10 +61,7 @@
 	default_apply_parts()
 	RefreshParts()
 
-/obj/machinery/autolathe/Destroy()
-	QDEL_NULL(wires)
-	QDEL_NULL(print_sound)
-	return ..()
+REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 
 /obj/machinery/autolathe/examine(mob/user)
 	. = ..()

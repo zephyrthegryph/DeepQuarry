@@ -4,13 +4,33 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 #ifdef USE_CUSTOM_ERROR_HANDLER
 #define ERROR_USEFUL_LEN 2
 
+/// Dedupe key for a runtime. With DEBUG the file and line; without it (production)
+/// the error text plus the proc it happened in, read from the exception's desc.
+/proc/error_uid(exception/E)
+	if(E.file)
+		return "[E.file][E.line]"
+	return "[E.name]|[error_proc_name(E)]"
+
+/// The "proc name:" line BYOND puts in an exception's desc, or "".
+/proc/error_proc_name(exception/E)
+	var/desc = E.desc
+	var/at = findtext(desc, "proc name:")
+	if(!at)
+		return ""
+	var/eol = findtext(desc, "\n", at)
+	return trim(copytext(desc, at + 10, eol || 0))
+
+/// "file,line" when known, else the proc name.
+/proc/error_where(exception/E)
+	return E.file ? "[E.file],[E.line]" : error_proc_name(E)
+
 /// A silenced runtime's silence is over: report how many were skipped meanwhile.
 /proc/error_silence_ended(erroruid, list/error_cooldown, list/exception_box)
 	var/exception/E = exception_box[1]
 	var/skipcount = abs(error_cooldown[erroruid]) - 1
 	error_cooldown[erroruid] = 0
 	if(skipcount > 0)
-		SEND_TEXT(world.log, "\[[time_stamp()]] Skipped [skipcount] runtimes in [E.file],[E.line].")
+		SEND_TEXT(world.log, "\[[time_stamp()]] Skipped [skipcount] runtimes in [error_where(E)].")
 		GLOB.error_cache.log_error(E, skip_count = skipcount)
 
 /world/Error(exception/E, datum/e_src)
@@ -58,7 +78,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 		E.line = data[2]
 		E.name = stack_workaround.Replace(E.name, "")
 
-	var/erroruid = "[E.file][E.line]"
+	var/erroruid = error_uid(E)
 	var/last_seen = error_last_seen[erroruid]
 	var/cooldown = error_cooldown[erroruid] || 0
 
@@ -146,7 +166,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	if(GLOB.error_cache)
 		GLOB.error_cache.log_error(E, desclines)
 
-	var/main_line = "\[[time_stamp()]] Runtime in [E.file],[E.line]: [E]"
+	var/main_line = "\[[time_stamp()]] Runtime in [error_where(E)]: [E]"
 	SEND_TEXT(world.log, main_line)
 	for(var/line in desclines)
 		SEND_TEXT(world.log, line)

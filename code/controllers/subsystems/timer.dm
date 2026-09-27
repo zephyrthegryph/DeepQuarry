@@ -154,7 +154,6 @@ SUBSYSTEM_DEF(timer)
 		bucket_list = src.bucket_list
 		resumed = FALSE
 
-
 	// Iterate through each bucket starting from the practical offset
 	while (practical_offset <= BUCKET_LEN && head_offset + ((practical_offset - 1) * world.tick_lag) <= world.time)
 		var/datum/timedevent/timer
@@ -334,7 +333,6 @@ SUBSYSTEM_DEF(timer)
 	second_queue = alltimers
 	bucket_count = new_bucket_count
 
-
 /datum/controller/subsystem/timer/Recover()
 	// Find the current timer sub-subsystem in global and recover its buckets etc
 	var/datum/controller/subsystem/timer/timerSS = null
@@ -434,10 +432,9 @@ SUBSYSTEM_DEF(timer)
 		callBack.object._active_timers -= src
 		UNSETEMPTY(callBack.object._active_timers)
 
-/datum/timedevent/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + list("callBack")
+REF_OWNED(/datum/timedevent, list("callBack"))
 
+// LIFECYCLE: engine: a timer leaves its bucket, hash and id table (the timer system itself).
 /datum/timedevent/Destroy()
 	..()
 	if (flags & TIMER_UNIQUE && hash)

@@ -56,11 +56,7 @@
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
-/obj/effect/overmap/visitable/simplemob/Destroy()
-	UnregisterSignal(parent, COMSIG_MOVABLE_MOVED)
-	if(!QDELETED(parent))
-		QDEL_NULL(parent)
-	return ..()
+REF_OWNED(/obj/effect/overmap/visitable/simplemob, "parent")
 
 /obj/effect/overmap/visitable/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -138,10 +134,7 @@
 		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
 		child_om_marker = C
 
-/mob/living/simple_mob/vore/overmap/Destroy()
-	if(!QDELETED(child_om_marker))
-		QDEL_NULL(child_om_marker)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/vore/overmap, "child_om_marker")
 
 //SHIP
 
@@ -180,10 +173,7 @@
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
-/obj/effect/overmap/visitable/ship/simplemob/Destroy()
-	UnregisterSignal(parent, COMSIG_MOVABLE_MOVED)
-	QDEL_NULL(parent)
-	return ..()
+REF_OWNED(/obj/effect/overmap/visitable/ship/simplemob, "parent")
 
 /obj/effect/overmap/visitable/ship/simplemob/get_scan_data(mob/user)
 	if(!known)

@@ -69,9 +69,7 @@
 	battery.charge = 0
 	. = ..()
 
-/obj/item/computer_hardware/battery_module/Destroy()
-	QDEL_NULL(battery)
-	return ..()
+REF_OWNED(/obj/item/computer_hardware/battery_module, "battery")
 
 /obj/item/computer_hardware/battery_module/proc/charge_to_full()
 	if(battery)
