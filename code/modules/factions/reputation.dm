@@ -174,11 +174,6 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 			if(faction_id in GLOB.reputation_factions)
 				reputations[faction_id] = CLAMP(round(initial_values[faction_id]), REPUTATION_MINIMUM, REPUTATION_MAXIMUM)
 
-/datum/faction_reputation_ledger/Destroy()
-	reputations = null
-	positive_reputation_earned = null
-	return ..()
-
 /datum/faction_reputation_ledger/proc/get_reputation(faction_id)
 	if(!(faction_id in GLOB.reputation_factions))
 		return null
@@ -316,11 +311,6 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 /datum/faction_agent_record/New()
 	. = ..()
 	investigation_facts = list()
-
-/datum/faction_agent_record/Destroy()
-	agent_mind = null
-	investigation_facts = null
-	return ..()
 
 /proc/faction_agent_tier_name(tier)
 	switch(tier)
