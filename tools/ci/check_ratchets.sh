@@ -21,6 +21,7 @@ for lint in \
 	actor_forwarding_lint.py \
 	breakpoint_lint.py \
 	api_lints.py \
+	cooldown_lint.py \
 	base_proc_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
