@@ -179,7 +179,6 @@
 		log_game("NANOFORM: [key_name(H)] regrew [regrown] part(s).")
 	return regrown
 
-
 // --- Core dormancy ---------------------------------------------------------------------
 
 /// A nanoform body that lost cohesion retreats into its core. It neither dies
@@ -232,6 +231,7 @@
 	release()
 	return ..()
 
+// LIFECYCLE: a dormant core is released.
 /datum/affliction/core_dormancy/Destroy()
 	release()
 	return ..()
