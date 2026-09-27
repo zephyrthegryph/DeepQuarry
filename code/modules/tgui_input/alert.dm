@@ -189,9 +189,7 @@
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
 	src.callback = callback
 
-/datum/tgui_alert/async/Destroy(force, ...)
-	QDEL_NULL(callback)
-	. = ..()
+REF_OWNED(/datum/tgui_alert/async, "callback")
 
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()
