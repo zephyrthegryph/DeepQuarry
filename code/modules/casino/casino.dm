@@ -16,7 +16,6 @@
 	throwpass = 1
 	var/item_place = 1 //allows items to be placed on the table, but not on benches.
 
-
 /obj/structure/casino_table/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/climbable)
@@ -274,11 +273,7 @@
 	if(trapped && trapped.held_mob)
 		to_chat(trapped.held_mob, span_critical("THE WHOLE WORLD IS SENT WHIRLING AS THE ROULETTE SPINS!!!"))
 
-/obj/item/roulette_ball/hollow/Destroy()
-	if(trapped)
-		trapped.forceMove(src.loc)
-		trapped = null
-	return ..()
+REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 
 /obj/item/roulette_ball/cheat
 	cheatball = TRUE
@@ -384,7 +379,6 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 15
 
-
 /obj/machinery/wheel_of_fortune/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/wheel_of_fortune_use,
@@ -419,7 +413,6 @@
 			if("Set the interval")
 				interaction_setinterval(user)
 	return TRUE
-
 
 /datum/interaction/machine_item/wheel_of_fortune_id
 	id = "wheel_of_fortune_id"
