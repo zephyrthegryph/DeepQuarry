@@ -50,6 +50,7 @@ Compile baseline stays at the 4 known errors (`dq_rule_test`,
 - **Verdigris provenance** (from the Codex snapshot: `tools/build/lib/verdigris_provenance.ts`, `verdigris/verdigris/build.rs`). It stops a stale or mismatched DLL from being reused, but it makes `DQ_PREBUILT_VERDIGRIS=1` refuse a DLL copied without its sidecar, so porting it needs every worktree's copy step updated at the same time.
 - **dm-health baseline.** `tools/dm-health/baseline.json` was taken on Codex's tree. The first CI run of `dm-health ci-suite` will report differences; regenerate with `--write-baseline`. Its Rust tests pass (201).
 - **Lint gaps found while rebasing ratchets.** `lifecycle_counts_lint.py` strips comments before looking for `// LIFECYCLE:`, so no Destroy can be justified that way. The ceilings raised in this pass are listed in commits `cdaac8cabf` and `1eafbecba3`: 9 admin VV prompts, the expedition objective's undeclared `tracked` list, and qdel counts in cryo, species, shapeshift, the balance harness and the defenders.
+- **`code/modules/unit_tests/dq_focus.dm` is not empty** (291 `TEST_FOCUS` lines, already so on `rewrite/om-integration`); `check_misc.sh` rejects that in CI.
 - **Dead generated-station procs** (`fill_exterior`, `carve_departments`, `carve_corridors`, `enclose_corridors`, `is_interface_door_candidate`, `place_interface_door_run`) have no callers.
 
 ## 3. Proposed deletions (not done; the user decides)
@@ -67,9 +68,8 @@ deletes the main tree's `node_modules`.
 `E:/projects/CHOMPStation2` sits on `master` (`d58f79336c`) with 372 changed
 paths. Compared file by file with `codex/main-tree-wip` (pushed to origin):
 
-- 278 of the 281 modified tracked files are byte-identical to the snapshot
-  (line endings aside). The other 3 were a path-quoting artefact of the
-  comparison and are identical too.
+- 279 of the 281 modified tracked files are identical to the snapshot
+  (line endings aside).
 - 2 tracked files are newer than the snapshot: `code/__defines/verdigris/_bindings.dm`
   and `verdigris/domains/gas/src/lib.rs`, each with 4 extra `dm-health:`
   return-type comments. `_bindings.dm` is generated, and this tree's
@@ -83,3 +83,14 @@ paths. Compared file by file with `codex/main-tree-wip` (pushed to origin):
 in them is either ported here, preserved on `codex/main-tree-wip`, or
 deliberately dropped. Nothing has been written there since 02:41, but check
 that no Codex session is still using the main tree before discarding.
+
+## 5. Focused test run (one run, 307 tests over the touched areas)
+
+246 passed, 12 failed, 39 skipped (`data/test-runs/20260927T201445_35b7270bfd.json`).
+Before the run, the test build needed two fixes to tests merged from w5 (vtec
+verb → `grant_ability`, cryo `occupant` → the OM occupant slot). Open failures:
+
+- `dq_interaction_domain_snapshot/i7_bulk`, `i7_items_bulk`, `i7_structures_bulk`: the i7 snapshots predate the merged interactions (button item press, assembly, girder construction); regenerate them.
+- `dq_combat_ai_damage_promotes_attacker`, `dq_combat_ai_spatial_sleep_wakes`: probably the review-fixes AI port (the same-faction retaliation rule and the calm-hibernation change); check the test fixtures against the new rules.
+- `dq_part_mob_delete`, `dq_part_reparent_within_body`, `dq_part_species_change`, `dq_revive_restore_regrows_brain` (runtime at `mutations.dm:12`): the O2/O5 part-tree ports.
+- `dq_lifecycle_sandbox` (10 problems), `dq_material_blueprint_covers_catalogue` (furnace board), `dq_material_every_slot_changes_real_physics` (runtime at test line 151).

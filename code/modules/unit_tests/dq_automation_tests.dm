@@ -65,20 +65,20 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_CUT, 25, BP_L_ARM, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	var/physical_before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
-	cell.occupant = H
+	TEST_ASSERT(H.move_into(cell, OCCUPANT_SLOT_CRYO), "the patient should enter the cryo cell")
 	H.bodytemperature = 100
 	for(var/i in 1 to 5)
 		cell.treat_occupant()
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) < physical_before, "cryo should mend the demanded tissue repair ([physical_before] -> [H.injury_load(INJURY_CATEGORY_PHYSICAL)])")
-	TEST_ASSERT_EQUAL(cell.occupant, H, "cryo should keep treating a patient triage still finds injured")
+	TEST_ASSERT_EQUAL(SLOT_ITEM(cell, OCCUPANT_SLOT_CRYO), H, "cryo should keep treating a patient triage still finds injured")
 
 	// A patient triage finds healthy is released.
 	var/mob/living/carbon/human/well = allocate(/mob/living/carbon/human)
-	cell.occupant = well
+	H.forceMove(get_turf(cell)) // free the one-occupant slot
+	TEST_ASSERT(well.move_into(cell, OCCUPANT_SLOT_CRYO), "the patient should enter the cryo cell")
 	well.bodytemperature = 100
 	TEST_ASSERT(!cell.treat_occupant(), "cryo should release a patient with no treatment demand")
-	TEST_ASSERT_NULL(cell.occupant, "the released patient should have left the cell")
-	cell.occupant = null
+	TEST_ASSERT_NULL(SLOT_ITEM(cell, OCCUPANT_SLOT_CRYO), "the released patient should have left the cell")
 
 
 // --- Medigun: only its mode's tags -------------------------------------------------

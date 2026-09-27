@@ -45,7 +45,7 @@
 	TEST_ASSERT_NOTNULL(proto, "the VTEC upgrade prototype should resolve")
 
 	// Simulate the upgrade having been installed (mirrors what action() does).
-	add_verb(R, /mob/living/silicon/robot/proc/toggle_vtec)
+	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
 	R.vtec_active = TRUE
 	TEST_ASSERT(proto.is_installed(R), "VTEC should be detected as installed once its verb is present")
 
@@ -60,7 +60,7 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	var/obj/item/borg/upgrade/basic/vtec/proto = robot_upgrade_prototype(/obj/item/borg/upgrade/basic/vtec)
 
-	add_verb(R, /mob/living/silicon/robot/proc/toggle_vtec)
+	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
 	R.vtec_active = TRUE
 	TEST_ASSERT(proto.is_installed(R), "VTEC should be installed before the reset")
 
