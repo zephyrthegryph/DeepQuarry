@@ -19,7 +19,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain/periodic_step()
 	..()
-	if(owner && owner.stat != DEAD) // So there's a lower risk of ticking twice.
+	if(owner && owner.is_alive()) // So there's a lower risk of ticking twice.
 		tick_defib_timer()
 
 /// Fraction of max_damage below which a brain still recovers on its own
@@ -37,7 +37,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	if(preserved) // In an MMI/ice box/etc.
 		return
 
-	if(!owner || owner.stat == DEAD)
+	if(!owner || owner.is_dead())
 		defib_timer = max(--defib_timer, 0)
 	else
 		defib_timer = min(++defib_timer, (CONFIG_GET(number/defib_timer) MINUTES) / 2)

@@ -41,8 +41,11 @@
 			L.status_at_least(EFFECT_WEAKENED, 3)
 			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
 
-/mob/living/simple_mob/animal/space/tree/death()
-	..(null,"is hacked into pieces!")
+/mob/living/simple_mob/animal/space/tree
+	death_message = "is hacked into pieces!"
+
+/mob/living/simple_mob/animal/space/tree/on_death(gibbed)
+	..()
 	playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 	new /obj/item/stack/material/wood(loc)
 	qdel(src)

@@ -54,7 +54,10 @@
 	fire_sound = 'sound/effects/uncloak.ogg'
 	combustion = TRUE
 
-/mob/living/simple_mob/glitch_boss/death(gibbed, deathmessage="suddenly %runtime error in unknown.dm, line 56%")
+/mob/living/simple_mob/glitch_boss
+	death_message = "suddenly %runtime error in unknown.dm, line 56%"
+
+/mob/living/simple_mob/glitch_boss/on_death(gibbed)
 	. = ..()
 	new /obj/effect/temp_visual/glitch(get_turf(src))
 	qdel(src)
@@ -285,11 +288,13 @@
 	endurance = 100
 	prob_respawn = 60
 
-/mob/living/simple_mob/glitch_boss_fake/death(gibbed, deathmessage="disappears in cloud of static.")
+/// Vanishes instead of dying.
+/mob/living/simple_mob/glitch_boss_fake/replace_death(gibbed)
 	new /obj/effect/temp_visual/glitch(get_turf(src))
 	if(prob(prob_respawn))
 		new /mob/living/simple_mob/glitch_boss_fake(get_turf(src))
 	qdel(src)
+	return TRUE
 
 /obj/item/projectile/energy/slow_orb_fake
 	name = "TROJAN"

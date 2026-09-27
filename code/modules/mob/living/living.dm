@@ -260,7 +260,6 @@
 /// Revives a body using the client's preferences if human
 /mob/living/proc/revive()
 	revival_healing_action()
-	SEND_SIGNAL(src, COMSIG_LIVING_REVIVE)
 
 /// Performs the actual healing of Aheal, seperate from revive() because it does not use client prefs. Will not heal everything, and expects to be called through revive() or with a bodyrecord doing a respawn/revive.
 /mob/living/proc/revival_healing_action()
@@ -318,15 +317,11 @@
 	// fix all of our organs
 	restore_all_organs()
 
-	// remove the character from the list of the dead
+	// Everything is healed: a dead mob comes back through the one revive path; a living one wakes.
 	if(stat == DEAD)
-		registry_leave(REGISTRY_DEAD_MOBS, src)
-		registry_join(REGISTRY_LIVING_MOBS, src)
-		tod = null
-		timeofdeath = 0
-
-	// restore us to conciousness
-	set_stat(CONSCIOUS)
+		return_from_death("rejuvenated", src, REVIVE_IGNORE_WINDOW)
+	else
+		set_stat(CONSCIOUS)
 
 	// make the icons look correct
 	regenerate_icons()

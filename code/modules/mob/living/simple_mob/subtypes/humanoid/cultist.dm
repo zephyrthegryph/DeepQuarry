@@ -70,9 +70,12 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/human/death()
+/mob/living/simple_mob/humanoid/cultist/human
+	death_message = "let's out a maddening laugh as his body crumbles away."
+
+/mob/living/simple_mob/humanoid/cultist/human/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
-	..(null,"let's out a maddening laugh as his body crumbles away.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -231,9 +234,12 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/tesh/death()
+/mob/living/simple_mob/humanoid/cultist/tesh
+	death_message = "let's out a shrill chirp as his body turns to dust."
+
+/mob/living/simple_mob/humanoid/cultist/tesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
-	..(null,"let's out a shrill chirp as his body turns to dust.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -279,9 +285,12 @@
 	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
 
-/mob/living/simple_mob/humanoid/cultist/lizard/death()
+/mob/living/simple_mob/humanoid/cultist/lizard
+	death_message = "hisses as he collapses into a pile of bones."
+
+/mob/living/simple_mob/humanoid/cultist/lizard/on_death(gibbed)
 	new /obj/effect/decal/remains/unathi (src.loc)
-	..(null,"hisses as he collapses into a pile of bones.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -324,10 +333,13 @@
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/caster/death()
+/mob/living/simple_mob/humanoid/cultist/caster
+	death_message = "melts into a pile of blood and bones."
+
+/mob/living/simple_mob/humanoid/cultist/caster/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
-	..(null,"melts into a pile of blood and bones.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -370,9 +382,12 @@
 	movement_cooldown = 4
 
 
-/mob/living/simple_mob/humanoid/cultist/initiate/death()
+/mob/living/simple_mob/humanoid/cultist/initiate
+	death_message = "lets out a horrified scream as his body crumbles away."
+
+/mob/living/simple_mob/humanoid/cultist/initiate/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
-	..(null,"lets out a horrified scream as his body crumbles away.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -413,9 +428,12 @@
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/castertesh/death()
+/mob/living/simple_mob/humanoid/cultist/castertesh
+	death_message = "burns away into nothing."
+
+/mob/living/simple_mob/humanoid/cultist/castertesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
-	..(null,"burns away into nothing.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -478,11 +496,14 @@
 	else
 		..()
 
-/mob/living/simple_mob/humanoid/cultist/elite/death()
+/mob/living/simple_mob/humanoid/cultist/elite
+	death_message = "shatters into bone and blood like pieces like the now shattered mirror."
+
+/mob/living/simple_mob/humanoid/cultist/elite/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	new /obj/item/material/shard (src.loc)
-	..(null,"shatters into bone and blood like pieces like the now shattered mirror.")
+	..()
 	playsound(src, 'sound/effects/Glassbr2.ogg', 100, 1)
 	ghostize()
 	qdel(src)
@@ -527,9 +548,12 @@
 	var/obj/item/shield_projector/shields = null
 
 
-/mob/living/simple_mob/humanoid/cultist/magus/death()
+/mob/living/simple_mob/humanoid/cultist/magus
+	death_message = "let's out a dark laugh as it collapses into a puddle of blood."
+
+/mob/living/simple_mob/humanoid/cultist/magus/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
-	..(null,"let's out a dark laugh as it collapses into a puddle of blood.")
+	..()
 	ghostize()
 	qdel(src)
 
@@ -584,9 +608,12 @@
 	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/hunter/death()
+/mob/living/simple_mob/humanoid/cultist/hunter
+	death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."
+
+/mob/living/simple_mob/humanoid/cultist/hunter/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
-	..(null,"laughs as he melts away. His laughs echo through the air even after only a dense red goo remains.")
+	..()
 	ghostize()
 	qdel(src)
 

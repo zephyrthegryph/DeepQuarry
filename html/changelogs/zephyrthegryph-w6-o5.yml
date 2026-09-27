@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Death is one ordered pipeline: a second death call no longer repeats soul links, sounds, loot or messages."
+  - refactor: "Every revival (defib, CPR, rejuvenate, changeling, resleeving, admin, artifacts, spells) goes through one path with one set of eligibility rules."
+  - bugfix: "Reforming a body inside a belly always succeeds, rebuilding a missing or dead brain and clearing husking."
+  - bugfix: "Revived simple mobs block movement and glow again."
+  - code_imp: "Named vital-state predicates (alive, critical, dying, dead, vital band) replace scattered stat checks in medical code."

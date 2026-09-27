@@ -114,17 +114,17 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 		/obj/item/clothing/head,
 		)
 
-/mob/living/simple_mob/slime/death()
+/mob/living/simple_mob/slime/on_death(gibbed)
 	// Make dead slimes stop glowing.
 	glow_toggle = FALSE
 	refresh_glow()
 	..()
 
-/mob/living/simple_mob/slime/revive()
+/mob/living/simple_mob/slime/on_revived(reason, datum/source)
+	. = ..()
 	// Make revived slimes resume glowing.
 	glow_toggle = initial(glow_toggle)
 	refresh_glow()
-	..()
 
 /mob/living/simple_mob/slime/update_icon()
 	..() // Do the regular stuff first.

@@ -152,7 +152,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	pitcher_plant_lure_messages = GLOB.pitcher_plant_lure_messages
 
 
-/mob/living/simple_mob/vore/pitcher_plant/death()
+/mob/living/simple_mob/vore/pitcher_plant/on_death(gibbed)
 	..()
 	anchored = 0
 	if(fruit)

@@ -33,10 +33,7 @@
 				var/mob/living/simple_mob/SM = L
 				SM.fully_heal()
 				SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT) // back at a third of its strength
-				SM.set_stat(CONSCIOUS)
-				registry_leave(REGISTRY_DEAD_MOBS, SM)
-				registry_join(REGISTRY_LIVING_MOBS, SM)
-				SM.update_icon()
+				SM.return_from_death("technomancer resurrection", src, REVIVE_IGNORE_WINDOW)
 				adjust_instability(15)
 			else if(ishuman(L))
 				var/mob/living/carbon/human/H = L
@@ -53,12 +50,8 @@
 				om_after(src, 10 SECONDS, PROC_REF(resurrect_finish), H, user)
 
 /obj/item/spell/resurrect/proc/resurrect_finish(mob/living/carbon/human/H, mob/living/user)
-	var/mob/living/L = H
-	if(H.client)
-		L.set_stat(CONSCIOUS) //Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
-		registry_leave(REGISTRY_DEAD_MOBS, H)
-		registry_join(REGISTRY_LIVING_MOBS, H)
-		H.timeofdeath = null
+	//Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
+	if(H.client && H.return_from_death("technomancer resurrection", src, REVIVE_IGNORE_WINDOW) == TRUE)
 		visible_message(span_danger("\The [H]'s eyes open!"))
 		to_chat(user, span_notice("It's alive!"))
 		adjust_instability(50)

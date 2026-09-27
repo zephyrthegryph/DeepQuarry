@@ -27,7 +27,7 @@
 
 	say_list_type = /datum/say_list/Eddy
 
-/mob/living/simple_mob/horror/Eddy/death()
+/mob/living/simple_mob/horror/Eddy/on_death(gibbed)
 	playsound(src, 'sound/h_sounds/headcrab.ogg', 50, 1)
 	..()
 

@@ -123,14 +123,14 @@
 	base_dead_overlay.appearance_flags = RESET_COLOR
 	add_overlay(base_dead_overlay)
 
-/mob/living/simple_mob/animal/space/carp/death(gibbed)
+/mob/living/simple_mob/animal/space/carp/on_death(gibbed)
 	. = ..()
 	if(!random_color || gibbed)
 		return
 	regenerate_icons()
 
-/mob/living/simple_mob/animal/space/carp/revive()
-	..()
+/mob/living/simple_mob/animal/space/carp/on_revived(reason, datum/source)
+	. = ..()
 	regenerate_icons()
 
 /mob/living/simple_mob/animal/space/carp/regenerate_icons()
@@ -307,7 +307,7 @@
 /mob/living/simple_mob/animal/space/carp/holographic/gib()
 	derez() // Holograms can't gib.
 
-/mob/living/simple_mob/animal/space/carp/holographic/death()
+/mob/living/simple_mob/animal/space/carp/holographic/on_death(gibbed)
 	..()
 	derez()
 

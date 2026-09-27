@@ -423,10 +423,14 @@
 	// Flush synthetic system faults (a no-op on organic parts).
 	H.mend(TREAT_SYSTEM_RESTORE, H.injury_load(INJURY_CATEGORY_TOXIC))
 
+	var/revived = make_alive(H)
+	if(revived != TRUE)
+		make_announcement("buzzes, \"Resuscitation failed - [revived]. Further attempts futile without treatment.\"", "warning")
+		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		return
+
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
-
-	make_alive(H)
 
 	log_and_message_admins("used \a [src] to revive [key_name(H)].")
 
@@ -471,17 +475,12 @@
 
 	add_attack_logs(user,H,"Shocked using [name]")
 
-/obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M) //This revives the mob
-	registry_leave(REGISTRY_DEAD_MOBS, M)
-	if((M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (M in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
-		WARNING("Mob [M] was defibbed but already in the living or dead list still!")
-	registry_join(REGISTRY_LIVING_MOBS, M)
-
-	M.timeofdeath = 0
+/// Revive the patient through return_from_death(). Returns TRUE, or the refusal reason.
+/obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M)
 	M.body?.begin_revival_grace(src)
-	M.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-	M.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-	M.reload_fullscreen()
+	. = M.return_from_death("defibrillated", src, REVIVE_UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
+	if(. != TRUE)
+		return
 
 	M.emote("gasp")
 	M.status_at_least(EFFECT_WEAKENED, rand(10,25))

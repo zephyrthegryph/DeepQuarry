@@ -47,9 +47,11 @@
 	ADD_TRAIT(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 //Deletes the body upon death
-/mob/living/simple_mob/animal/passive/cockroach/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/passive/cockroach/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/bug_remains(src.loc)
 	qdel(src)
+	return TRUE
 
 //Squish code
 /mob/living/simple_mob/animal/passive/cockroach/Crossed(atom/movable/AM)

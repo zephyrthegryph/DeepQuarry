@@ -215,7 +215,7 @@
 			break
 	return T
 */
-/mob/living/simple_mob/vore/aggressive/rat/death()
+/mob/living/simple_mob/vore/aggressive/rat/on_death(gibbed)
 	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 50, 1)
 	..()
 

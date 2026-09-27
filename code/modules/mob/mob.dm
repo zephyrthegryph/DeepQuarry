@@ -734,8 +734,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_active()
 	return (0 >= stat)
 
+/// Vital-state predicate: is this mob dead (stat)? See code/modules/body/vital_state.dm.
 /mob/proc/is_dead()
 	return stat == DEAD
+
+/// Vital-state predicate: is this mob alive (not DEAD)?
+/mob/proc/is_alive()
+	return stat != DEAD
 
 /mob/proc/is_mechanical()
 	if(mind && (mind.assigned_role == JOB_CYBORG || mind.assigned_role == JOB_AI))

@@ -567,7 +567,7 @@
 /mob/living/simple_mob/animal/space/carp/holodeck/gib()
 	derez() //holograms can't gib
 
-/mob/living/simple_mob/animal/space/carp/holodeck/death()
+/mob/living/simple_mob/animal/space/carp/holodeck/on_death(gibbed)
 	..()
 	derez()
 

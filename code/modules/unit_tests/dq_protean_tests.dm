@@ -32,7 +32,7 @@
 
 	// Tick path: the body is still lethally damaged when dormancy is lifted.
 	D.cure()
-	TEST_ASSERT(H.body.is_dead(), "the body should still be lethally damaged")
+	TEST_ASSERT(H.body.is_lethal(), "the body should still be lethally damaged")
 	H.body.evaluate_status()
 	TEST_ASSERT_NOTNULL(H.body.find_affliction(/datum/affliction/core_dormancy), "the tick path should go dormant too")
 	TEST_ASSERT(H.stat != DEAD, "the tick path must not kill a folded protean")
@@ -139,7 +139,7 @@
 	D.complete_revival()
 
 	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/core_dormancy), "revival should end dormancy")
-	TEST_ASSERT(!H.body.is_dead(), "revival should rebuild the vital parts")
+	TEST_ASSERT(!H.body.is_lethal(), "revival should rebuild the vital parts")
 	TEST_ASSERT(H.stat != DEAD, "a revived protean is alive")
 	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/nanite/cohesion_loss), "revival rebuilds cohesion")
 	TEST_ASSERT(contamination in H.body.afflictions, "revival must not clear contamination")

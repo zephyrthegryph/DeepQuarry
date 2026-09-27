@@ -75,11 +75,7 @@
 			log_game("MIND: view [key_name(src)] in [host.parent] died: [tissue ? "its brain tissue is brain dead" : "its brain tissue is gone"].")
 			death()
 		return
-	if(stat == DEAD)
-		registry_leave(REGISTRY_DEAD_MOBS, src)
-		registry_join(REGISTRY_LIVING_MOBS, src)
-		timeofdeath = 0
-		set_stat(CONSCIOUS)
+	if(stat == DEAD && return_from_death("brain tissue recovered", tissue, REVIVE_IGNORE_WINDOW) == TRUE)
 		blinded = 0
 	update_canmove()
 

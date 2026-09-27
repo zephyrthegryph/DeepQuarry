@@ -272,7 +272,7 @@
 /// Per-tick consequences of the current factors: poor motor control drops
 /// held items, blocked hands can't hold anything.
 /datum/body/proc/tick_factor_effects()
-	if(!ishuman(owner) || owner.stat == DEAD)
+	if(!ishuman(owner) || owner.is_dead())
 		return
 	var/mob/living/carbon/human/H = owner
 	var/blocks = factors[BF_ACTION_BLOCKS]

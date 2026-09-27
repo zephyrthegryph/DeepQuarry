@@ -109,7 +109,7 @@
 			playsound(src, 'sound/effects/mouse_squeak.ogg', 35, 1)
 	..()
 
-/mob/living/simple_mob/animal/passive/mouse/death()
+/mob/living/simple_mob/animal/passive/mouse/on_death(gibbed)
 	layer = MOB_LAYER
 	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 35, 1)
 	if(client)

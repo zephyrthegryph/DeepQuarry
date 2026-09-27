@@ -201,7 +201,7 @@
 	say_list_type = /datum/say_list/merc/blackhole/grotesque
 	attack_sound = 'sound/weapons/slice.ogg'
 
-/mob/living/simple_mob/vore/blackhole/grotesque/death()
+/mob/living/simple_mob/vore/blackhole/grotesque/on_death(gibbed)
 	..()
 	visible_message("[src] lets out a horrible cry as it collapses into an inky black pile of gore!")
 	playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
@@ -765,7 +765,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 		gib(src)
 
-/mob/living/simple_mob/vore/blackhole/death()
+/mob/living/simple_mob/vore/blackhole/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
@@ -779,7 +779,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 		exploded = TRUE
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 
-/mob/living/simple_mob/vore/otie/syndicate/blackhole/death()
+/mob/living/simple_mob/vore/otie/syndicate/blackhole/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
@@ -793,7 +793,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 		exploded = TRUE
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 
-/mob/living/simple_mob/vore/blackhole_obelisk/death()
+/mob/living/simple_mob/vore/blackhole_obelisk/on_death(gibbed)
 	visible_message(span_critical("\\The [src] suddenly destablizes!"))
 	visible_message("[src] flashes brightly, crumbling as its psychic influence suddenly vanishes from the minds of those nearby...")
 	playsound(src, 'sound/effects/monolith_death.ogg', 100)

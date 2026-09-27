@@ -93,10 +93,13 @@
 			if(ghost.mind && ghost.mind.current == R)
 				R.key = ghost.key
 
-	R.set_stat(CONSCIOUS)
-	R.add_robot_verbs()
-	registry_leave(REGISTRY_DEAD_MOBS, R)
-	registry_join(REGISTRY_LIVING_MOBS, R)
+	if(R.stat == DEAD)
+		var/revived = R.return_from_death("restart module", src)
+		if(revived != TRUE)
+			to_chat(user, span_warning("The restart fails: [revived]."))
+			return FALSE
+	else
+		R.set_stat(CONSCIOUS)
 	R.notify_ai(ROBOT_NOTIFICATION_NEW_UNIT)
 	return TRUE
 

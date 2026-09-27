@@ -269,7 +269,7 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40
 
-/mob/living/simple_mob/vore/bigdragon/death()
+/mob/living/simple_mob/vore/bigdragon/on_death(gibbed)
 	. = ..()
 	canceltimers()
 

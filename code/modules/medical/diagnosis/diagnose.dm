@@ -33,7 +33,7 @@
 	D.patient_name = owner.name
 	D.fake_death = (owner.status_flags & FAKEDEATH) && !P.sees_fake_death
 
-	if(owner.stat == DEAD || D.fake_death)
+	if(owner.is_dead() || D.fake_death)
 		D.status = DIAG_STATUS_DEAD
 		D.band = DIAG_BAND_CRITICAL
 		D.time_of_death = owner.timeofdeath
@@ -55,7 +55,7 @@
 
 /// Vitals through the contract. A feigned death reads as flatlined.
 /datum/body/proc/diagnose_vitals(datum/diagnosis/D, datum/diagnostic_profile/P)
-	var/flat = D.fake_death || owner.stat == DEAD
+	var/flat = D.fake_death || owner.is_dead()
 	if(P.vitals & VITALS_PULSE)
 		var/rate = heart_rate()
 		if(!isnull(rate))

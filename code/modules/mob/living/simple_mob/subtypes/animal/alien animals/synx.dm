@@ -760,7 +760,7 @@
 	playsound(src.loc, 'sound/items/bikehorn.ogg', 50, 1)
 
 //HOLOSEEDSPAWNCODE
-/mob/living/simple_mob/animal/synx/ai/pet/holo/death()
+/mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
 	visible_message(span_notice("\The [src] fades away!"))
 	var/location = get_turf(src)

@@ -182,9 +182,11 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/bluespace
 
-/mob/living/simple_mob/animal/passive/cat/bluespace/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/passive/cat/bluespace/replace_death(gibbed)
 	animate(src, alpha = 0, color = "#0000FF", time = 0.5 SECOND)
 	om_qdel_after(src, 0.5 SECOND)
+	return TRUE
 
 /mob/living/simple_mob/animal/passive/cat/bread
 	name = "bread cat"
@@ -367,10 +369,12 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, audible_emote), "[verb] anxiously.")
 
 //Emergency teleport - Until a spriter makes something better
-/mob/living/simple_mob/animal/passive/cat/tabiranth/death(gibbed, deathmessage = "teleports away!")
+/mob/living/simple_mob/animal/passive/cat/tabiranth
+	death_message = "teleports away!"
+
+/mob/living/simple_mob/animal/passive/cat/tabiranth/on_death(gibbed)
+	. = ..()
 	cut_overlays()
 	icon_state = ""
 	flick("kphaseout",src)
 	om_qdel_after(src, 1 SECOND) //Back from whence you came!
-
-	. = ..(FALSE, deathmessage)

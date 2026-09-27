@@ -263,7 +263,7 @@
 	fragment_amount = 4
 	spread_range = 5
 
-/mob/living/simple_mob/mechanical/mecha/vistor/death()
+/mob/living/simple_mob/mechanical/mecha/vistor/on_death(gibbed)
 	..()
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread

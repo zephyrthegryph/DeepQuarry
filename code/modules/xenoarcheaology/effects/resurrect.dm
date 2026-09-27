@@ -74,11 +74,7 @@
 		var/mob/living/simple_mob/SM = L
 		SM.fully_heal()
 		SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, null, null, 0, null, INJURE_SILENT)
-		SM.stat = CONSCIOUS
-		registry_leave(REGISTRY_DEAD_MOBS, SM)
-		registry_join(REGISTRY_LIVING_MOBS, SM)
-		SM.update_icon()
-		SM.revive()
+		SM.return_from_death("artifact resurrection", holder, REVIVE_IGNORE_WINDOW)
 		holder.visible_message(span_alien("\The [SM]'s eyes open in a flash of light!"))
 	else if(ishuman(L))
 		var/mob/living/carbon/human/H = L
@@ -98,12 +94,7 @@
 
 /// Ten seconds after an artifact restarts a body: it wakes if its owner came back to it.
 /proc/artifact_revive_wakes(mob/living/carbon/human/H, atom/holder)
-	if(H.client)
-		H.stat = CONSCIOUS
-		registry_leave(REGISTRY_DEAD_MOBS, H)
-		registry_join(REGISTRY_LIVING_MOBS, H)
-		H.timeofdeath = null
-
+	if(H.client && H.return_from_death("artifact resurrection", holder, REVIVE_IGNORE_WINDOW) == TRUE)
 		holder.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))
 	else
 		holder.visible_message(span_alien("\The [H]'s body stays still...Perhaps their mind was not ready to rejoin their body."))

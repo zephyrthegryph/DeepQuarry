@@ -82,14 +82,8 @@
 		holder.mend(TREAT_BURN_CARE, 150)
 		holder.mend(TREAT_WIRING_REPAIR, 150)
 		holder.mend(TREAT_OXYGENATION, 200)
-		registry_leave(REGISTRY_DEAD_MOBS, holder)
-		if((holder in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (holder in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
-			WARNING("Mob [holder] was defibbed but already in the living or dead list still!")
-		registry_join(REGISTRY_LIVING_MOBS, holder)
-		holder.timeofdeath = 0
 		holder.set_stat(CONSCIOUS)
 		holder.failed_last_breath = 0
-		holder.reload_fullscreen()
 		expire()
 
 /datum/modifier/life_cloak_exhaustion

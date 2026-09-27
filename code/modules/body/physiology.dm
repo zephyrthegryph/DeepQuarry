@@ -504,7 +504,7 @@
 	rate += round((1 - clamp(blood_fraction, 0, 1)) * 80)
 	rate += round(min(oxygen_debt, 60) / 2)
 	rate += body.get_factor(BF_HEART_RATE)
-	if(H.stat == DEAD)
+	if(H.is_dead())
 		return 0
 	return max(0, round(rate))
 
@@ -527,7 +527,7 @@
 			if(CARDIAC_RHYTHM_VF)
 				return RHYTHM_VFIB
 		return RHYTHM_ASYSTOLE
-	if(H.stat == DEAD)
+	if(H.is_dead())
 		return RHYTHM_ASYSTOLE
 	return RHYTHM_SINUS
 

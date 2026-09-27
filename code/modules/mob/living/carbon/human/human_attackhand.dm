@@ -585,7 +585,7 @@
 
 	// standard CPR ahead: restart a body whose injuries are survivable, or oxygenate a living one
 	// A fibrillating or flatlined heart doesn't restart from compressions alone.
-	if(stat == DEAD && !body?.is_dead() && has_cardiac_output() && vitality() > 0.5 && prob(10))
+	if(stat == DEAD && !body?.is_lethal() && has_cardiac_output() && vitality() > 0.5 && prob(10))
 		if(species.flags & NO_DEFIB) //TODO: Changee the NO_DEFIB species flag into a HAS_TRAIT() sometime.
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle no-defib species flag.
@@ -613,16 +613,9 @@
 			ghost.notify_revive("Someone is trying to resuscitate you. Re-enter your body if you want to be revived!", 'sound/effects/genetics.ogg', source = src)
 		visible_message(span_warning("\The [src]'s body convulses a bit."))
 
-		// REVIVE TIME, basically stolen from defib.dm
-		registry_leave(REGISTRY_DEAD_MOBS, src)
-		if((src in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (src in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
-			WARNING("Mob [src] was cpr revived by [reviver], but already in the living or dead list still!")
-		registry_join(REGISTRY_LIVING_MOBS, src)
-
-		timeofdeath = 0
-		set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-		failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-		reload_fullscreen()
+		// REVIVE TIME. Life() can bring them back to consciousness if it needs to.
+		if(return_from_death("CPR", reviver, REVIVE_UNCONSCIOUS) != TRUE)
+			return
 
 		var/obj/item/organ/internal/lungs/lungs = internal_organs_by_name[O_LUNGS]
 		if(lungs)
