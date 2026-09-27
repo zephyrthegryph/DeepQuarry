@@ -50,7 +50,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 			particle_effect = new(atom_parent, fire_particles)
 	fuel = atom_parent.max_integrity * BURN_ENERGY_PER_INTEGRITY
 	start_heat()
-	START_PROCESSING(SSburning, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 /// The heat source and the cooling watch on the parent's heat body.
 /datum/component/burning/proc/start_heat()
@@ -99,7 +99,6 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	atom_parent.extinguish()
 
 /datum/component/burning/Destroy(force)
-	STOP_PROCESSING(SSburning, src)
 	stop_heat()
 	fire_overlay = null
 	if(particle_effect)
@@ -132,7 +131,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 			atom_parent.cut_overlay(fire_overlay)
 		atom_parent.update_icon()
 
-/datum/component/burning/process(seconds_per_tick)
+/datum/component/burning/periodic_step(seconds_per_tick)
 	var/atom/atom_parent = parent
 	if(QDELETED(atom_parent))
 		return // parent's gone; the component tears down with it

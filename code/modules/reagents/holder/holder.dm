@@ -133,7 +133,7 @@
 					from_belly = R.from_belly
 
 		for(var/datum/decl/chemical_reaction/C as anything in eligible_reactions)
-			if(C.can_happen(src) && C.process(src, from_belly))
+			if(C.can_happen(src) && C.react_step(src, from_belly))
 				effect_reactions |= C
 				reaction_occurred = TRUE
 		eligible_reactions.len = 0

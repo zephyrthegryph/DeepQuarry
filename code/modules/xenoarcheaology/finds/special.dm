@@ -4,7 +4,7 @@
 
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
 		var/new_chem = pick(SSchemistry.chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
@@ -14,10 +14,9 @@
 			break
 
 /obj/item/reagent_containers/glass/replenishing/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/reagent_containers/glass/replenishing/process()
+/obj/item/reagent_containers/glass/replenishing/periodic_step()
 	reagents.add_reagent(spawning_id, 0.3)
 
 //a talking gas mask!
@@ -28,13 +27,15 @@
 
 /obj/item/clothing/mask/gas/poltergeist/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/clothing/mask/gas/poltergeist/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/clothing/mask/gas/poltergeist/process()
+/// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
+/// (hearing or being put on starts it); otherwise it sleeps.
+/obj/item/clothing/mask/gas/poltergeist/periodic_step()
+	if(!length(heard_talk) || !isliving(src.loc))
+		return PROCESS_KILL
 	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
 		M.say(DEFAULTPICK(heard_talk, null))
@@ -44,6 +45,8 @@
 	if(length(heard_talk) > max_stored_messages)
 		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
 	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
+	if(isliving(loc))
+		PERIODIC_START(src, PERIODIC_SLOW)
 	if(isliving(src.loc) && world.time - last_twitch > 50)
 		last_twitch = world.time
 
@@ -64,13 +67,15 @@
 
 /obj/item/vampiric/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/vampiric/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/vampiric/process()
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
+/obj/item/vampiric/periodic_step()
+	if(!mob_near(world.view, TRUE))
+		return sleep_until_mob_near(world.view, TRUE)
 	//see if we've identified anyone nearby
 	if(world.time - last_bloodcall > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
@@ -156,14 +161,16 @@
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	loc_last_process = src.loc
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/effect/decal/cleanable/blood/splatter/animated/process()
+/// Crawls toward its target turf every 2 s; arrived, it sleeps.
+/obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
+	if(!target_turf)
+		return PROCESS_KILL
 	if(target_turf && src.loc != target_turf)
 		step_towards(src,target_turf)
 		if(src.loc == loc_last_process)
@@ -191,13 +198,15 @@
 
 /obj/effect/shadow_wight/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/shadow_wight/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/effect/shadow_wight/process()
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
+/obj/effect/shadow_wight/periodic_step()
+	if(!mob_near(world.view, TRUE))
+		return sleep_until_mob_near(world.view, TRUE)
 	if(src.loc)
 		src.loc = get_turf(pick(orange(1,src)))
 		var/mob/living/carbon/M = locate() in src.loc
@@ -222,8 +231,13 @@
 
 			src.loc = null
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		qdel(src) //Let's not just sit in nullspace forever, yeah?
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)
 	to_chat(obstacle, span_red("You feel a chill run down your spine!"))
+
+/obj/item/clothing/mask/gas/poltergeist/equipped(mob/user, slot)
+	. = ..()
+	if(length(heard_talk))
+		PERIODIC_START(src, PERIODIC_SLOW)

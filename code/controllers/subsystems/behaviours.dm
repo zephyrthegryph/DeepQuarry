@@ -34,6 +34,7 @@ SUBSYSTEM_DEF(behaviours)
 	if(world.time >= next_audit && audit_enabled())
 		next_audit = world.time + OM_AUDIT_INTERVAL
 		om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
+		om_sleeper_audit(64, TRUE)
 
 /// The audit runs in unit test and TESTING builds always; on servers only with the
 /// OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).

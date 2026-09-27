@@ -275,7 +275,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 // power, and the base power_change() sends COMSIG_MACHINERY_POWER_LOST or
 // COMSIG_MACHINERY_POWER_RESTORED when it flips.
 /area/proc/power_change()
-	REACT_PUBLISH(REACT_KEY_AREA_POWER, REACT_ID(src), REACT_AREA_POWER_CHANGED)
+	om_changed(src, CHANGE_AREA_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
 		M.power_change()
 	if (fire || eject || party)
@@ -313,7 +313,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			oneoff_environ += amount
 	if(amount)
 		power_loads_changed()
-		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
+		om_changed(src, CHANGE_AREA_POWER)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -331,7 +331,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			static_environ += amount
 	if(amount)
 		power_loads_changed()
-		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
+		om_changed(src, CHANGE_AREA_POWER)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()

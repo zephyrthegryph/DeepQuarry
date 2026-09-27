@@ -37,7 +37,7 @@
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
 	var/affected_by_emp_until = 0
-	/// The REACT_AT token for next_camera_deadline(), and the deadline it was set for.
+	/// The om_after() timer for next_camera_deadline(), and the deadline it was set for.
 	var/tmp/camera_timer_token
 	var/tmp/camera_timer_at = 0
 
@@ -82,7 +82,7 @@
 /obj/machinery/camera/Destroy()
 	// cancelCameraAlarm() intentionally respects a cut alarm wire, which is wrong
 	// during destruction: every handler must release source and cached-camera refs.
-	for(var/datum/alarm_handler/handler as anything in SSalarm.all_handlers)
+	for(var/datum/alarm_handler/handler as anything in all_alarm_handlers())
 		handler.release_atom(src)
 	if(isMotion())
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
@@ -96,8 +96,8 @@
 	network = null
 	return ..()
 
-// A camera sleeps on one REACT_AT for its earliest deadline (EMP recovery, the motion alarm
-// delay) and on signals from the mobs it tracks; it never polls (reactor.md §9).
+// A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
+// delay) and on signals from the mobs it tracks; it never polls.
 
 /// The earliest pending deadline (world.time), or 0 for none.
 /obj/machinery/camera/proc/next_camera_deadline()
@@ -115,16 +115,14 @@
 	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
 		return
 	if(!isnull(camera_timer_token))
-		REACT_CANCEL(src, camera_timer_token)
+		om_cancel_timer(src, camera_timer_token)
 		camera_timer_token = null
 	camera_timer_at = deadline
 	if(deadline)
-		camera_timer_token = REACT_AT(src, deadline)
+		om_attach(src, /datum/om/behaviour/sleeper/timed)
+		camera_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
 
-/obj/machinery/camera/on_react(reason, source, source_kind)
-	. = ..()
-	if(!(reason & REACT_REASON_TIMER))
-		return
+/obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_token = null
 	camera_timer_at = 0
 	if((stat & EMPED) && world.time >= affected_by_emp_until)
@@ -135,7 +133,7 @@
 	check_motion_alarm()
 	schedule_camera_timer()
 
-/obj/machinery/camera/react_sleep_violation()
+/obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
 	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"

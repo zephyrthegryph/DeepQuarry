@@ -101,7 +101,7 @@
 		if(SK)
 			LAZYADD(SK.active_dark_maws, src)
 		flick("dark_maw", src)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 ///Called when we get a signal that our owner is being qdel'd
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete()
@@ -109,7 +109,6 @@
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	if(owner)
 		if(has_signal)
 			UnregisterSignal(owner, COMSIG_QDELETING)
@@ -130,7 +129,7 @@
 	if(!L.is_incorporeal() && (!owner || L != owner))
 		triggered_by(L)
 
-/obj/effect/abstract/dark_maw/process()
+/obj/effect/abstract/dark_maw/periodic_step()
 	var/turf/T = get_turf(src)
 	if(!istype(T) || T.get_lumcount() >= 0.5)
 		dispel()
@@ -144,7 +143,7 @@
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/proc/triggered_by(mob/living/L, triggered_instantly = 0)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	icon_state = "dark_maw_used"
 	flick("dark_maw_tr", src)
 	L.status_adjust(EFFECT_STUNNED, 4)
@@ -199,7 +198,7 @@
 			return
 	. = ..()
 
-/obj/effect/energy_net/dark/process()
+/obj/effect/energy_net/dark/periodic_step()
 	. = ..()
 	var/turf/T = get_turf(src)
 	if(!istype(T) || T.get_lumcount() >= 0.6)

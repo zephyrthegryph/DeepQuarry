@@ -30,7 +30,7 @@
 /obj/item/rig_module/self_destruct/deactivate()
 	return
 
-/obj/item/rig_module/self_destruct/process()
+/obj/item/rig_module/self_destruct/periodic_step()
 
 	// Not being worn, leave it alone.
 	if(!holder || !holder.wearer || holder.wearer.get_equipped_item(SLOT_ID_SUIT) != holder)

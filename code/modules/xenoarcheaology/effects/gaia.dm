@@ -74,7 +74,7 @@
 	for(var/obj/effect/plant/P in view(effectrange,get_turf(holder)))
 		age_plantlife(P)
 
-/datum/artifact_effect/gaia/process()
+/datum/artifact_effect/gaia/periodic_step()
 	var/atom/holder = get_master_holder()
 	..()
 

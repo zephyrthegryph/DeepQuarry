@@ -91,7 +91,7 @@
 	if(kin_energy >= TURBINE_MIN_KIN_ENERGY)
 		var/obj/machinery/power/turbinemotor/motor = locate() in get_step(src, dir)
 		if(motor)
-			START_MACHINE_PROCESSING(motor)
+			MACHINE_WAKE(motor)
 		return
 	// Spun down with no pressure head: park until the head returns (the test above).
 	kin_energy = 0
@@ -103,7 +103,7 @@
 
 /obj/machinery/atmospherics/pipeturbine/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/pipeturbine/update_icon()
 	cut_overlays()
@@ -118,7 +118,7 @@
 
 /obj/machinery/atmospherics/pipeturbine/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 
@@ -221,7 +221,6 @@
 
 
 /obj/machinery/power/turbinemotor
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "motor"
 	desc = "Electrogenerator. Converts rotation into power."
 	icon = 'icons/obj/pipeturbine.dmi'
@@ -260,7 +259,7 @@
 
 /obj/machinery/power/turbinemotor/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
 	turbine = null
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
@@ -274,3 +273,9 @@
 	return turbine && anchored && !(stat & BROKEN) && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY
 
 #undef TURBINE_MIN_KIN_ENERGY
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/pipeturbine/arm_wakes()
+	..()
+	if(air_in && air_out)
+		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))

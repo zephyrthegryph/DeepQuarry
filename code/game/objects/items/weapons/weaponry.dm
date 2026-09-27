@@ -117,7 +117,11 @@
 
 /obj/effect/energy_net/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	om_after(src, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
+
+/obj/effect/energy_net/proc/check_empty()
+	if(!has_buckled_mobs())
+		qdel(src)
 
 /obj/effect/energy_net/Destroy()
 	if(has_buckled_mobs())
@@ -125,12 +129,7 @@
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
 
-	STOP_PROCESSING(SSobj, src)
 	return ..()
-
-/obj/effect/energy_net/process()
-	if(!has_buckled_mobs())
-		qdel(src)
 
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
@@ -163,7 +162,7 @@
 
 	var/size_increment = 0.01
 
-/obj/effect/energy_net/shrink/process()
+/obj/effect/energy_net/shrink/periodic_step()
 	..()
 	for(var/A in BUCKLED_MOBS(src))
 		if(istype(A, /mob/living))

@@ -21,7 +21,7 @@
 	anchored = TRUE
 	var/generation_rate = 350000
 
-/obj/machinery/power/generator/generated_station/process()
+/obj/machinery/power/generator/generated_station/machine_step()
 	if(stat & BROKEN)
 		return
 	add_avail(generation_rate)
@@ -815,3 +815,8 @@
 	station_utilities = builder.build(station_spec, station_materialization)
 	qdel(builder)
 	return !!station_utilities
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/generator/generated_station/step_start_condition()
+	return !(stat & BROKEN)

@@ -68,7 +68,7 @@
 		if(!src.locked)
 			if(src.active==1)
 				src.active = 0
-				STOP_MACHINE_PROCESSING(src)
+				MACHINE_SLEEP(src)
 				balloon_alert_visible("turned off")
 				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
@@ -76,7 +76,7 @@
 			else
 				src.active = 1
 				material_last_charge = world.time
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 				balloon_alert_visible("turned on")
 				src.shot_number = 0
 				src.fire_delay = get_initial_fire_delay()
@@ -90,7 +90,7 @@
 		to_chat(user, span_warning("\The [src] needs to be firmly secured to the floor first."))
 		return 1
 
-/obj/machinery/power/emitter/process()
+/obj/machinery/power/emitter/machine_step()
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(src.state != 2 || (!powernet && active_power_usage))
@@ -394,3 +394,8 @@
 	. = ..()
 	connect_to_network()
 	update_icon()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/emitter/step_start_condition()
+	return active

@@ -30,7 +30,7 @@
 	icon_state = "unathi_liver"
 
 //Unathi liver acts as kidneys, too.
-/obj/item/organ/internal/liver/unathi/process()
+/obj/item/organ/internal/liver/unathi/periodic_step()
 	..()
 	if(!owner) return
 

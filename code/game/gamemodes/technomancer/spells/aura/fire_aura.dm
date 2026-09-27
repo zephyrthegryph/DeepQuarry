@@ -17,7 +17,7 @@
 	aspect = ASPECT_FIRE
 	glow_color = "#FF6A00"
 
-/obj/item/spell/aura/fire/process()
+/obj/item/spell/aura/fire/periodic_step()
 	if(!pay_energy(100))
 		qdel(src)
 		return

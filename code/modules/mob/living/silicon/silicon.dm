@@ -44,7 +44,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 /mob/living/silicon/Destroy()
 	common_radio = null // same ref as radio, deleted by child
-	for(var/datum/alarm_handler/AH in SSalarm.all_handlers)
+	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.unregister_alarm(src)
 	if(aiCamera)
 		QDEL_NULL(aiCamera)

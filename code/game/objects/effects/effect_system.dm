@@ -281,7 +281,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	color = "#000000"
 	time_to_live = 600
 
-/obj/effect/effect/smoke/bad/burntfood/process()
+/obj/effect/effect/smoke/bad/burntfood/periodic_step()
 	for(var/mob/living/L in get_turf(src))
 		affect(L)
 
@@ -302,11 +302,10 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/strength = 5 // How much damage to do inside each affect()
 
 /obj/effect/effect/smoke/elemental/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
@@ -314,7 +313,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
-/obj/effect/effect/smoke/elemental/process()
+/obj/effect/effect/smoke/elemental/periodic_step()
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 

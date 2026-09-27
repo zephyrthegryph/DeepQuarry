@@ -116,7 +116,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 		update_brightness()
 		return TRUE
 
-/obj/machinery/floor_light/process()
+/obj/machinery/floor_light/machine_step()
 	..()
 	var/need_update
 	if((!anchored || broken()) && on)

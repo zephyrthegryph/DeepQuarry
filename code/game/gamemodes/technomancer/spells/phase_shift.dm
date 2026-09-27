@@ -29,15 +29,17 @@
 /obj/effect/phase_shift/Initialize(mapload)
 	. = ..()
 	set_light(3, 5, l_color = "#FA58F4")
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/phase_shift/Destroy()
 	for(var/atom/movable/AM in contents) //Eject everything out.
 		AM.forceMove(get_turf(src))
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/effect/phase_shift/process()
+/// Wears on whoever hides inside every 2 s; empty, it sleeps.
+/obj/effect/phase_shift/periodic_step()
+	if(!(locate(/mob/living) in contents))
+		return PROCESS_KILL
 	for(var/mob/living/L in contents)
 		L.adjust_instability(2)
 

@@ -59,13 +59,13 @@
 
 /turf/simulated/floor/lava/Entered(atom/movable/AM)
 	if(burn_stuff(AM))
-		START_PROCESSING(SSturfs, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /turf/simulated/floor/lava/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(burn_stuff(source))
-		START_PROCESSING(SSturfs, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
-/turf/simulated/floor/lava/process()
+/turf/simulated/floor/lava/periodic_step()
 	if(!burn_stuff())
 		return PROCESS_KILL
 

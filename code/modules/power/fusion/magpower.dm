@@ -15,7 +15,7 @@
 	var/id_tag //needed for !!rasins!!
 	circuit = /obj/item/circuitboard/hydromagnetic_trap
 
-/obj/machinery/power/hydromagnetic_trap/process()
+/obj/machinery/power/hydromagnetic_trap/machine_step()
 	if(anchored)
 		if(!powernet)
 			src.active = 0
@@ -76,3 +76,8 @@
 
 #undef ENERGY_PER_K
 #undef MINIMUM_PLASMA_TEMPERATURE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/hydromagnetic_trap/step_start_condition()
+	return anchored

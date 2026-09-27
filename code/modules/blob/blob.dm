@@ -159,13 +159,12 @@
 
 /obj/effect/blob/core/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/blob/core/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/effect/blob/core/process()
+/obj/effect/blob/core/periodic_step()
 	pulse(20, list(NORTH, EAST))
 	pulse(20, list(NORTH, WEST))
 	pulse(20, list(SOUTH, EAST))

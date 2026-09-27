@@ -466,7 +466,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/solar_control/process()
+/obj/machinery/power/solar_control/machine_step()
 	if(stat & (NOPOWER | BROKEN))
 		return
 
@@ -556,3 +556,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 #undef SOLAR_AUTO_START_NO
 #undef SOLAR_AUTO_START_YES
 #undef SOLAR_AUTO_START_CONFIG
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/solar_control/step_start_condition()
+	return TRUE // connects its trackers

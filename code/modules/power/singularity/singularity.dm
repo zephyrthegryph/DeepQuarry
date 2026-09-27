@@ -36,14 +36,13 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 	admin_investigate_setup()
 	. = ..()
 	energy = starting_energy
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon
 			break
 
 /obj/singularity/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/singularity/attack_hand(mob/user as mob)
@@ -74,7 +73,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 /obj/singularity/Bumped(atom/A)
 	consume(A)
 
-/obj/singularity/process()
+/obj/singularity/periodic_step()
 	eat()
 	dissipate()
 	check_energy()

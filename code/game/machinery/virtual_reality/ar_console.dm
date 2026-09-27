@@ -23,8 +23,10 @@
 	if(possible_species && possible_species.len)
 		produce_species = pick(possible_species)
 
-/obj/machinery/vr_sleeper/alien/process()
+/obj/machinery/vr_sleeper/alien/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	if(!occupant)
+		return PROCESS_KILL
 	if(stat & (BROKEN))
 		if(occupant)
 			perform_exit()

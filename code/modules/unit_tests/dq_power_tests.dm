@@ -163,7 +163,7 @@
 	TEST_ASSERT(restored_signals, "the machine never heard COMSIG_MACHINERY_POWER_RESTORED")
 	SSmachines.process_power()
 	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
-	TEST_ASSERT(!(A in SSmachines.processing_machines), "the APC polled during the cycle")
+	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
 	A.area.use_power_static(-2000, EQUIP)
@@ -204,10 +204,10 @@
 	for(var/i in 1 to 10)
 		SSmachines.process_power()
 	TEST_ASSERT_EQUAL(A.power_event_count, apc_events, "a settled APC kept hearing power events")
-	TEST_ASSERT(!(A in SSmachines.processing_machines), "a settled APC is polling")
+	TEST_ASSERT(!machine_stepping(A), "a settled APC is polling")
 	if(S)
 		TEST_ASSERT_EQUAL(S.power_event_count, smes_events, "an idle SMES kept hearing power events")
-		TEST_ASSERT(!(S in SSmachines.processing_machines), "an idle SMES is polling")
+		TEST_ASSERT(!machine_stepping(S), "an idle SMES is polling")
 		S.charge = old_smes[1]
 		S.input_attempt = old_smes[2]
 		S.output_attempt = old_smes[3]

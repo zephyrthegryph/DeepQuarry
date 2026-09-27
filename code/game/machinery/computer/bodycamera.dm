@@ -70,10 +70,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 /obj/machinery/computer/security/telescreen/bodycamera/update_icon()
 	return // NUH
 
-/obj/machinery/computer/security/telescreen/bodycamera/process()
+/// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
+/obj/machinery/computer/security/telescreen/bodycamera/machine_step()
 	if(!showing || !the_camera)
 		stop_showing()
-		return
+		return PROCESS_KILL
 	var/atom/them = om_resolve(showing)
 	var/obj/item/clothing/accessory/bodycam/bo_cam = om_resolve(the_camera)
 	var/turf/here = get_turf(them)
@@ -99,6 +100,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
 	showing = om_handle(thing)
+	MACHINE_WAKE(src)
 	if(bpinboard)
 		bpinboard.vis_contents = list(thing)
 

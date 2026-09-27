@@ -43,7 +43,7 @@
 	..()
 
 
-/obj/singularity/energy_ball/process(wait = 20)
+/obj/singularity/energy_ball/periodic_step(wait = 20)
 	set waitfor = FALSE
 	if(!ORBIT_TARGET(src))
 		if (handle_energy())

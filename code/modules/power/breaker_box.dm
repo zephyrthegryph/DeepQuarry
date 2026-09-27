@@ -165,5 +165,3 @@
 		update_locked = 1
 		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
 
-/obj/machinery/power/breakerbox/process()
-	return PROCESS_KILL

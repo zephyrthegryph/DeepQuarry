@@ -135,7 +135,7 @@
 	if(. && !issilicon(ui.user))
 		playsound(src, "terminal_type", 50, 1)
 
-/obj/machinery/computer/ship/sensors/process()
+/obj/machinery/computer/ship/sensors/machine_step()
 	..()
 	refresh_sensor_light()
 	return PROCESS_KILL
@@ -220,9 +220,9 @@
 	update_use_power(!use_power)
 	update_icon()
 	refresh_linked_consoles()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
-/obj/machinery/shipsensors/process()
+/obj/machinery/shipsensors/machine_step()
 	if(use_power) //can't run in non-vacuum
 		if(!in_vacuum())
 			toggle()
@@ -265,3 +265,13 @@
 /obj/machinery/shipsensors/weak
 	heat_reduction = 0.2
 	desc = "Miniaturized gravity scanner with various other sensors, used to detect irregularities in surrounding space. Can only run in vacuum to protect delicate quantum bluespace elements."
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shipsensors/step_start_condition()
+	return use_power
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/computer/ship/sensors/step_start_condition()
+	return TRUE // its sensor light

@@ -612,3 +612,5 @@
 /obj/dq_entry_probe/done # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/dq_containment_test/hooked/log # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/dq_entry_probe_item/done # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/decl/pipeline_machines/lazy # a declaration singleton: one instance
+/datum/om_wake_test_subscriber/wakes # unit-test witness, always filled

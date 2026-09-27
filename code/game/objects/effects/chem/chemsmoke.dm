@@ -21,7 +21,7 @@
 
 /obj/effect/effect/smoke/chem/proc/wake_nearby_hydroponics()
 	for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(1, src))
-		START_MACHINE_PROCESSING(tray)
+		MACHINE_WAKE(tray)
 
 /obj/effect/effect/smoke/chem/Destroy()
 	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.

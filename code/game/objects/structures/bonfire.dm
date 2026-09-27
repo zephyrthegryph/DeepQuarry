@@ -177,14 +177,14 @@
 	if(burning)
 		burning = FALSE
 		update_icon()
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
 		burning = TRUE
 		update_icon()
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/bonfire/proc/burn_bonfire()
@@ -233,7 +233,7 @@
 		add_overlay(grille_image)
 
 
-/obj/structure/bonfire/process()
+/obj/structure/bonfire/periodic_step()
 	if(!check_oxygen())
 		extinguish()
 		return
@@ -374,14 +374,14 @@
 	if(burning)
 		burning = FALSE
 		update_icon()
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/fireplace/proc/ignite()
 	if(!burning && get_fuel_amount())
 		burning = TRUE
 		update_icon()
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/fireplace/proc/burn_bonfire()
@@ -419,7 +419,7 @@
 	else
 		set_light(0)
 
-/obj/structure/fireplace/process()
+/obj/structure/fireplace/periodic_step()
 	if(!check_oxygen())
 		extinguish()
 		return

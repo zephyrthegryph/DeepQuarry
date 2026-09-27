@@ -36,9 +36,9 @@
 		if(WIRE_IDSCAN)
 			S.scan_id = !S.scan_id
 	if(S.shoot_inventory || S.seconds_electrified > 0)
-		START_MACHINE_PROCESSING(S)
+		MACHINE_WAKE(S)
 	else
-		STOP_MACHINE_PROCESSING(S)
+		MACHINE_SLEEP(S)
 	..()
 
 /datum/wires/smartfridge/on_cut(wire, mend)
@@ -54,7 +54,7 @@
 		if(WIRE_IDSCAN)
 			S.scan_id = TRUE
 	if(S.shoot_inventory || S.seconds_electrified > 0)
-		START_MACHINE_PROCESSING(S)
+		MACHINE_WAKE(S)
 	else
-		STOP_MACHINE_PROCESSING(S)
+		MACHINE_SLEEP(S)
 	..()

@@ -39,7 +39,8 @@
 	if(ispath(loaded))
 		loaded = new loaded(src)
 
-	START_PROCESSING(SSobj, src)
+	if(capacitor && capacitor.charge < capacitor.max_charge)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -47,7 +48,6 @@
 	update_icon()
 
 /obj/item/gun/magnetic/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(cell)
 	QDEL_NULL(loaded)
 	QDEL_NULL(capacitor)
@@ -56,7 +56,12 @@
 /obj/item/gun/magnetic/get_cell()
 	return cell
 
-/obj/item/gun/magnetic/process()
+/// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled;
+/// firing and swapping parts start it again.
+/obj/item/gun/magnetic/periodic_step()
+	if(!capacitor || (cell ? capacitor.charge >= capacitor.max_charge : !capacitor.charge))
+		update_state()
+		return PROCESS_KILL
 	if(capacitor)
 		if(cell)
 			if(capacitor.charge < capacitor.max_charge && cell.checked_use(power_per_tick))
@@ -161,6 +166,7 @@
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
 			cell = thing
+			PERIODIC_START(src, PERIODIC_SLOW)
 			user.drop_from_inventory(cell, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [cell] into \the [src]."))
@@ -172,6 +178,7 @@
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
 			capacitor = thing
+			PERIODIC_START(src, PERIODIC_SLOW)
 			user.drop_from_inventory(capacitor, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -212,6 +219,7 @@
 		else if(cell && removable_components)
 			removing = cell
 			cell = null
+			PERIODIC_START(src, PERIODIC_SLOW)
 
 		if(removing)
 			removing.forceMove(get_turf(src))
@@ -236,6 +244,7 @@
 
 	use_ammo()
 	capacitor.use(power_cost)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
@@ -304,6 +313,7 @@
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 	use_ammo()
 	capacitor.use(power_cost)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 	if(projectile_type)
 		return new projectile_type(src)

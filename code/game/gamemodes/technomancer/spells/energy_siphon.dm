@@ -22,16 +22,15 @@
 
 /obj/item/spell/energy_siphon/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/spell/energy_siphon/Destroy()
 	stop_siphoning()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/spell/energy_siphon/process()
+/// Drains every 2 s while linked (on_ranged_cast() starts it); unlinked, it sleeps.
+/obj/item/spell/energy_siphon/periodic_step()
 	if(!siphoning)
-		return
+		return PROCESS_KILL
 	if(!pay_energy(100))
 		to_chat(owner, span_warning("You can't afford to maintain the siphon link!"))
 		stop_siphoning()
@@ -56,6 +55,7 @@
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
 		siphoning = AM
+		PERIODIC_START(src, PERIODIC_SLOW)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else

@@ -83,7 +83,7 @@
 			)
 		)
 
-/obj/machinery/seed_storage/process()
+/obj/machinery/seed_storage/machine_step()
 	..()
 	if(seconds_electrified > 0)
 		seconds_electrified--

@@ -136,13 +136,14 @@ SUBSYSTEM_DEF(ticker)
 				Master.SetRunLevel(RUNLEVEL_LOBBY)
 
 		if(GAME_STATE_PLAYING)
-			mode.process() // So THIS is where we run mode.process() huh? Okay
-
+			// The mode's own periodic work (latespawn, meteor waves) runs on the slow lane,
+			// started when the round starts (setup()).
 			if(mode.explosion_in_progress)
 				return // wait until explosion is done.
 
 			if(force_ending)
 				current_state = GAME_STATE_FINISHED
+				PERIODIC_STOP(mode)
 				declare_completion(force_ending)
 				Master.SetRunLevel(RUNLEVEL_POSTGAME)
 			else
@@ -159,6 +160,7 @@ SUBSYSTEM_DEF(ticker)
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
 					current_state = GAME_STATE_FINISHED
+					PERIODIC_STOP(mode)
 					Master.SetRunLevel(RUNLEVEL_POSTGAME)
 					INVOKE_ASYNC(src, PROC_REF(declare_completion))
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
@@ -229,6 +231,7 @@ SUBSYSTEM_DEF(ticker)
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
 	current_state = GAME_STATE_PLAYING
+	PERIODIC_START(mode, PERIODIC_SLOW)
 	Master.SetRunLevel(RUNLEVEL_GAME)
 
 	//Holiday Round-start stuff	~Carn

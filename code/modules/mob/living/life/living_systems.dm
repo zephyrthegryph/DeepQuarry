@@ -357,7 +357,7 @@
 	self.update_pulling()
 
 	for(var/obj/item/grab/G in self)
-		G.process()
+		G.periodic_step()
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
 /datum/om/stage/life/movement/idle(mob/living/self)

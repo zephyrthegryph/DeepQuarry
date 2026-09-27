@@ -301,7 +301,7 @@
 
 	get_cooking_work(CI)
 	cooking = TRUE
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	return CI
 
 /obj/machinery/appliance/proc/get_cooking_work(datum/cooking_item/CI)
@@ -385,7 +385,7 @@
 
 	return TRUE
 
-/obj/machinery/appliance/process()
+/obj/machinery/appliance/machine_step()
 	if(cooking_power <= 0 || !cooking)
 		return PROCESS_KILL
 	var/all_done_cooking = TRUE
@@ -893,3 +893,8 @@
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
 	food_safety = !food_safety
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/appliance/step_start_condition()
+	return cooking

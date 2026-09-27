@@ -24,15 +24,14 @@
 /obj/item/spell/radiance/Initialize(mapload, coreless)
 	. = ..()
 	set_light(7, 4, l_color = "#D9D900")
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	log_and_message_admins("has casted [src].")
 
 /obj/item/spell/radiance/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	log_and_message_admins("has stopped maintaining [src].")
 	return ..()
 
-/obj/item/spell/radiance/process()
+/obj/item/spell/radiance/periodic_step()
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/removed = null
 	var/datum/gas_mixture/env = null

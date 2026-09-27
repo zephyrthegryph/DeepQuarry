@@ -17,17 +17,16 @@
 		if(H.isSynthetic() && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
 			robotic_brain = TRUE
 	if(istype(my_brain) && my_brain.can_assist())
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/implant/neural/Destroy()
 	if(my_brain)
 		if(my_brain.owner)
 			to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
-	STOP_PROCESSING(SSobj, src)
 	my_brain = null
 	return ..()
 
-/obj/item/implant/neural/process()
+/obj/item/implant/neural/periodic_step()
 	if(my_brain && part)
 		if(my_brain.loc != part.loc)
 			to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
@@ -91,7 +90,7 @@ Implant Specifics:<BR>"}
 
 /obj/item/implant/neural/meltdown()
 	..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	var/mob/living/carbon/human/H = null
 	if(my_brain && my_brain.owner)
 		if(ishuman(my_brain.owner))

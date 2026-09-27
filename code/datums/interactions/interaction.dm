@@ -191,6 +191,8 @@
 	var/shown_name = display_name(actor, target)
 	if(!call(target, effect)(actor, held, src))
 		return null
+	if(!QDELETED(target))
+		target.interaction_ran(actor, src)
 	log_input("Interaction: [key_name(actor)] did [id] ([shown_name]) on [target] ([target.type]).")
 	var/self_text = fill_message(feedback[1], actor, target)
 	var/others_text = fill_message(feedback[2], actor, target)
@@ -256,3 +258,8 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 		candidates |= interaction
 	cache[target.type] = candidates
 	return candidates
+
+/// Called on the target after an interaction's effect ran: a player (or program) changed it. Types
+/// whose scheduled work depends on their settings wake here (a machine's step, a refinery line).
+/atom/proc/interaction_ran(mob/actor, datum/interaction/interaction)
+	return

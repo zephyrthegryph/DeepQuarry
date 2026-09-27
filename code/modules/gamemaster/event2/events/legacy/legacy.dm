@@ -13,7 +13,7 @@
 /datum/event2/meta/legacy/get_weight()
 	return 50
 
-/datum/event2/event/legacy/process()
+/datum/event2/event/legacy/advance()
 	..()
 	tick_count++
 

@@ -53,8 +53,9 @@
 
 	var/seclevel = "green"
 
-	/// The REACT_AT for the next redraw (a countdown, the clock or a scrolling message) and
-	/// when it is due; the shuttle key watched in shuttle modes (REACT_SHUTTLE_*, 0 for none).
+	/// The om_after() timer for the next redraw (a countdown, the clock or a scrolling message)
+	/// and when it is due; the shuttle schedule watched in shuttle modes (SHUTTLE_SCHEDULE_*, 0
+	/// for none) and the entity whose CHANGE_SHUTTLE_SCHEDULE it watches.
 	var/tmp/refresh_token
 	var/tmp/refresh_at = 0
 	var/tmp/shuttle_key_token
@@ -92,8 +93,8 @@
 	refresh()
 
 // A status display redraws only when its input changes: a signal, an alert, power, the
-// shuttle key, or a REACT_AT for content that moves on its own (a countdown, the clock,
-// a scrolling message). It never polls (reactor.md §9).
+// shuttle key, or an om_after() timer for content that moves on its own (a countdown, the clock,
+// a scrolling message). It never polls.
 
 /// Deciseconds until the display must redraw with no new input, or 0 while it is static.
 /obj/machinery/status_display/proc/next_refresh_delay()
@@ -112,9 +113,26 @@
 			return max(1, 1 MINUTE - (now - FLOOR(now, 1 MINUTE)))
 	return 0
 
-/// The REACT_SHUTTLE_* schedule this display shows, or 0.
+/// The SHUTTLE_SCHEDULE_* schedule this display shows, or 0.
 /obj/machinery/status_display/proc/watched_shuttle()
-	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? REACT_SHUTTLE_EVAC : 0
+	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? SHUTTLE_SCHEDULE_EVAC : 0
+
+/// The entity that raises CHANGE_SHUTTLE_SCHEDULE for schedule `id`.
+/proc/shuttle_schedule_source(id)
+	switch(id)
+		if(SHUTTLE_SCHEDULE_EVAC)
+			return SSemergency_shuttle
+		if(SHUTTLE_SCHEDULE_SUPPLY)
+			return SSsupply
+	return null
+
+/// A watched shuttle schedule changed.
+/datum/om/behaviour/sleeper/status_display
+	name = "status display"
+
+/datum/om/behaviour/sleeper/status_display/on_wake(obj/machinery/status_display/D, changes)
+	if(!QDELETED(D))
+		D.refresh()
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
@@ -129,30 +147,32 @@
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
-			REACT_CANCEL(src, shuttle_key_token)
+			om_unwatch(src, shuttle_key_token, /datum/om/behaviour/sleeper/status_display)
 			shuttle_key_token = null
 		shuttle_key_id = want_shuttle
-		if(want_shuttle)
-			shuttle_key_token = REACT_ON_KEY(src, REACT_KEY_SHUTTLE_SCHEDULE, want_shuttle, 1)
+		var/datum/source = shuttle_schedule_source(want_shuttle)
+		if(source)
+			om_attach(src, /datum/om/behaviour/sleeper/status_display)
+			om_watch(src, source, CHANGE_SHUTTLE_SCHEDULE, /datum/om/behaviour/sleeper/status_display)
+			shuttle_key_token = source
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
 	if(!isnull(refresh_token))
 		if(at && at == refresh_at)
 			return
-		REACT_CANCEL(src, refresh_token)
+		om_cancel_timer(src, refresh_token)
 		refresh_token = null
 	refresh_at = at
 	if(at)
-		refresh_token = REACT_AT(src, at)
+		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
+		refresh_token = om_after(src, delay, PROC_REF(refresh_timer_fired))
 
-/obj/machinery/status_display/on_react(reason, source, source_kind)
-	. = ..()
-	if(reason & REACT_REASON_TIMER)
-		refresh_token = null
-		refresh_at = 0
+/obj/machinery/status_display/proc/refresh_timer_fired()
+	refresh_token = null
+	refresh_at = 0
 	refresh()
 
-/obj/machinery/status_display/react_sleep_violation()
+/obj/machinery/status_display/om_sleep_violation()
 	if(stat & NOPOWER)
 		return null
 	if(next_refresh_delay() && isnull(refresh_token))

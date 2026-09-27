@@ -75,7 +75,7 @@
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 
-/obj/machinery/field_generator/process()
+/obj/machinery/field_generator/machine_step()
 	if(Varedit_start == 1)
 		if(active == 0)
 			active = 1
@@ -206,7 +206,7 @@
 
 /obj/machinery/field_generator/proc/turn_on()
 	active = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	warming_up = 1
 	om_after(src, 1 + 5 SECONDS, PROC_REF(warm_up_step))
 	update_icon()
@@ -281,7 +281,7 @@
 	om_after(src, 3, PROC_REF(setup_field), 4)
 	om_after(src, 4, PROC_REF(setup_field), 8)
 	src.active = 2
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)
@@ -379,3 +379,8 @@
 /obj/machinery/field_generator/pre_mapped/Initialize(mapload)
 	. = ..()
 	update_icon()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/field_generator/step_start_condition()
+	return active || Varedit_start

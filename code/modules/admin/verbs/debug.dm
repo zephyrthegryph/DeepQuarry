@@ -410,7 +410,7 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 	for(var/obj/machinery/field_generator/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(get_area(F), /area/space))
 			F.Varedit_start = 1
-			START_MACHINE_PROCESSING(F)
+			MACHINE_WAKE(F)
 	for(var/obj/machinery/power/grounding_rod/GR in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		GR.anchored = TRUE
 		GR.update_icon()

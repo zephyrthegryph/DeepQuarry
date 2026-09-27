@@ -36,7 +36,7 @@
 		owner_rig = null
 	return ..()
 
-/datum/mini_hud/rig/process()
+/datum/mini_hud/rig/periodic_step()
 	if(!owner_rig)
 		qdel(src)
 		return
@@ -85,7 +85,7 @@
 		owner_mech = null
 	return ..()
 
-/datum/mini_hud/mech/process()
+/datum/mini_hud/mech/periodic_step()
 	if(!owner_mech)
 		qdel(src)
 		return

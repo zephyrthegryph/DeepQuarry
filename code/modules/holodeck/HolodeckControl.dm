@@ -198,7 +198,11 @@
 	if (stat != oldstat && active && (stat & NOPOWER))
 		emergencyShutdown()
 
-/obj/machinery/computer/HolodeckControl/process()
+/// Watches its holograms (and draws power for them) while a program runs or holograms exist;
+/// otherwise it sleeps until a program loads (its UI).
+/obj/machinery/computer/HolodeckControl/machine_step()
+	if(!active && !length(holographic_objs) && !length(holographic_mobs))
+		return PROCESS_KILL
 	for(var/item in holographic_objs) // do this first, to make sure people don't take items out when power is down.
 		if(!(get_turf(item) in linkedholodeck))
 			derez(item, 0)

@@ -11,6 +11,8 @@
 	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
+	/// Recycled bodies per monkey cube pressed.
+	var/monkeys_per_cube = 4
 
 /obj/item/circuitboard/processor
 	name = T_BOARD("slime processor")
@@ -110,10 +112,10 @@
 	if(AM)
 		LAZYREMOVE(to_be_processed, AM)
 		return STEP_REPEAT(0)
-	if(monkeys_recycled >= 4)
+	if(monkeys_recycled >= monkeys_per_cube)
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		monkeys_recycled -= 4
+		monkeys_recycled -= monkeys_per_cube
 		return STEP_REPEAT(1 SECOND)
 	return STEP_DONE
 

@@ -418,7 +418,7 @@
 	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
 	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
 
-/obj/item/projectile/bullet/BFGtaser/process()
+/obj/item/projectile/bullet/BFGtaser/periodic_step()
 	var/list/victims = list()
 	for(var/mob/living/M in living_mobs(world.view))
 		if(M != firer)

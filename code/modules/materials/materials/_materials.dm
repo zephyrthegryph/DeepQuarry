@@ -154,7 +154,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	if(!.)
 		WARNING("Attempted to fetch nonexistent material with key [key]")
 
-/** I'm not going to lie, this was swiped from [SSdcs][/datum/controller/subsystem/processing/dcs].
+/** I'm not going to lie, this was swiped from [SSdcs][/datum/controller/subsystem/dcs].
  * Credit does to ninjanomnom
  *
  * Generates an id for bespoke ~~elements~~ materials when given the argument list

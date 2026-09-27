@@ -50,9 +50,9 @@
 	QDEL_NULL(ptank)
 	. = ..()
 
-/obj/item/flamethrower/process()
+/obj/item/flamethrower/periodic_step()
 	if(!lit)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		return null
 	var/turf/location = loc
 	if(istype(location, /mob/))
@@ -201,7 +201,7 @@
 				return FALSE
 			lit = !lit
 			if(lit)
-				START_PROCESSING(SSobj, src)
+				PERIODIC_START(src, PERIODIC_SLOW)
 				playsound(src, 'sound/items/welderactivate.ogg', 50, 1)
 			else
 				playsound(src, 'sound/items/welderdeactivate.ogg', 50, 1)

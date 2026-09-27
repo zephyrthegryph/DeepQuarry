@@ -461,11 +461,10 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-	START_PROCESSING(SSobj, src)
+	om_after(src, 0, PROC_REF(check_held))
 	set_light(lrange, lpower, lcolor)
 
 /obj/item/melee/energy/blade/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/melee/energy/blade/attack_self(mob/user)
@@ -475,7 +474,9 @@
 	user.drop_from_inventory(src)
 	QDEL_IN(src, 1)
 
-/obj/item/melee/energy/blade/process()
+/// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
+/// between hands, never polled.
+/obj/item/melee/energy/blade/proc/check_held()
 	if(!creator || loc != creator || !creator.item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
@@ -596,3 +597,11 @@
 		icon_state = "[initial(icon_state)]_active"
 	else
 		icon_state = initial(icon_state)
+
+/obj/item/melee/energy/blade/dropped(mob/user, equipping, slot)
+	. = ..()
+	om_after(src, 0, PROC_REF(check_held))
+
+/obj/item/melee/energy/blade/equipped(mob/user, slot)
+	. = ..()
+	om_after(src, 0, PROC_REF(check_held))

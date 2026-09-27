@@ -89,6 +89,7 @@
 		if(tank)
 			tank.forceMove(C)
 		breather = C
+		MACHINE_WAKE(src)
 		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
 
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
@@ -164,7 +165,10 @@
 		. += span_warning("It is missing a tank!")
 
 
-/obj/machinery/oxygen_pump/process()
+/// Runs while a mask is on someone; with nobody attached it sleeps until attach_mask().
+/obj/machinery/oxygen_pump/machine_step()
+	if(!breather)
+		return PROCESS_KILL
 	if(breather)
 		if(!can_apply_to_target(breather))
 			if(tank)
@@ -257,6 +261,7 @@
 		if(tank)
 			tank.forceMove(C)
 		breather = C
+		MACHINE_WAKE(src)
 		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
 
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
@@ -282,17 +287,13 @@
 
 	var/last_area = null
 
-/obj/machinery/oxygen_pump/mobile/process()
-	..()
-
-	var/turf/T = get_turf(src)
-
-	if(!last_area && T)
-		last_area = T.loc
-
-	if(last_area != T.loc)
+/// A mobile pump re-reads its area's power when it is wheeled into another area.
+/obj/machinery/oxygen_pump/mobile/Moved(atom/old_loc)
+	. = ..()
+	var/area/A = get_area(src)
+	if(A && last_area != A)
+		last_area = A
 		power_change()
-		last_area = T.loc
 
 /obj/machinery/oxygen_pump/mobile/anesthetic
 	name = "portable anesthetic pump"
@@ -311,6 +312,7 @@
 		if(tank)
 			tank.forceMove(C)
 		breather = C
+		MACHINE_WAKE(src)
 		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
 
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
@@ -325,7 +327,9 @@
 	name = "portable patient stabilizer"
 	desc = "A portable oxygen pump with a retractable mask used for stabilizing patients in the field."
 
-/obj/machinery/oxygen_pump/mobile/stabilizer/process()
+/obj/machinery/oxygen_pump/mobile/stabilizer/machine_step()
+	if(!breather)
+		return PROCESS_KILL
 	if(breather)
 		if(!can_apply_to_target(breather))
 			if(tank)
@@ -366,12 +370,3 @@
 					// breathing drive and cardiac output while attached.
 					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
 					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
-
-	var/turf/T = get_turf(src)
-
-	if(!last_area && T)
-		last_area = T.loc
-
-	if(last_area != T.loc)
-		power_change()
-		last_area = T.loc

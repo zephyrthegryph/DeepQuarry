@@ -57,7 +57,7 @@
 	if(src.active >= 1)
 		src.active = 0
 		if(storedpower >= max_stored_power)
-			STOP_MACHINE_PROCESSING(src)
+			MACHINE_SLEEP(src)
 		icon_state = "Shield_Gen"
 
 		user.visible_message("[user] turned the shield generator off.", \
@@ -66,7 +66,7 @@
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
 		src.active = 1
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		icon_state = "Shield_Gen_on"
 		user.visible_message("[user] turned the shield generator on.", \
 			"You turn on the shield generator.", \
@@ -100,7 +100,7 @@
 	power = 1	// IVE GOT THE POWER!
 	return 1
 
-/obj/machinery/shieldwallgen/process()
+/obj/machinery/shieldwallgen/machine_step()
 	if(!active)
 		if(!anchored)
 			return PROCESS_KILL
@@ -303,7 +303,7 @@
 	return TRUE
 
 
-/obj/machinery/shieldwall/process()
+/obj/machinery/shieldwall/machine_step()
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
 			qdel(src)
@@ -344,3 +344,13 @@
 	if(istype(mover, /obj/item/projectile))
 		return prob(10)
 	return !density
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shieldwallgen/step_start_condition()
+	return active
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shieldwall/step_start_condition()
+	return needs_power

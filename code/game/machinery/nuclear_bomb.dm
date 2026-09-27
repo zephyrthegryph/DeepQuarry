@@ -49,7 +49,7 @@ GLOBAL_VAR(bomb_set)
 	safety_wire = pick(w)
 	w -= safety_wire
 
-/obj/machinery/nuclearbomb/process()
+/obj/machinery/nuclearbomb/machine_step()
 	if(timing)
 		GLOB.bomb_set = 1 //So long as there is one nuke timing, it means one nuke is armed.
 		timeleft--
@@ -510,3 +510,8 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
 /obj/item/disk/nuclear/touch_map_edge()
 	qdel(src)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/nuclearbomb/step_start_condition()
+	return timing

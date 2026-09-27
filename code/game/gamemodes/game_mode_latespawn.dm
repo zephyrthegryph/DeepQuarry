@@ -11,9 +11,8 @@
 			usable_templates |= A
 	return usable_templates
 
-///process()
-///Called by the gameticker
-/datum/game_mode/process()
+/// The mode's periodic work every 2 s while the round plays (SSticker starts it at round start).
+/datum/game_mode/periodic_step()
 	// Slow this down a bit so latejoiners have a chance of being antags.
 	process_count++
 	if(process_count >= 10)

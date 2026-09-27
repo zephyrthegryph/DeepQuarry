@@ -334,6 +334,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	investigate_log("is now [charging_state == POWER_UP ? "charging" : "discharging"].", "gravity")
 	update_icon()
+	if(charging_state != POWER_IDLE)
+		MACHINE_WAKE(src)
 
 // Set the state of the gravity.
 /obj/machinery/gravity_generator/main/proc/set_state(new_state)
@@ -363,9 +365,13 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 // Charge/Discharge and turn on/off gravity when you reach 0/100 percent.
 // Also emit radiation and handle the overlays.
-/obj/machinery/gravity_generator/main/process()
+/// Spins up or down while charging; settled (or broken) it sleeps until set_power() starts a
+/// charge again.
+/obj/machinery/gravity_generator/main/machine_step()
 	if(stat & BROKEN)
-		return
+		return PROCESS_KILL
+	if(charging_state == POWER_IDLE)
+		return PROCESS_KILL
 	if(charging_state != POWER_IDLE)
 		if(charging_state == POWER_UP && charge_count >= 100)
 			set_state(1)
@@ -491,3 +497,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 #undef GRAV_NEEDS_WELDING
 #undef GRAV_NEEDS_PLASTEEL
 #undef GRAV_NEEDS_WRENCH
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/gravity_generator/main/step_start_condition()
+	return charging_state != 0 // POWER_IDLE (undefined past this file end)

@@ -92,14 +92,14 @@
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/tvcamera/proc/hide_tvs()
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	showing = null
 	showing_name = null
 
@@ -118,7 +118,7 @@
 		if(user.check_current_machine(src))
 			show_ui(user) // refresh the UI
 
-/obj/item/tvcamera/process()
+/obj/item/tvcamera/periodic_step()
 	if(!showing)
 		return PROCESS_KILL
 
@@ -251,14 +251,14 @@
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/accessory/bodycam/proc/hide_bodycamera_tvs()
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	showing = null
 	showing_name = null
 
@@ -267,7 +267,7 @@
 	if(bcamera.status && loc != old_loc)
 		show_bodycamera_tvs(loc)
 
-/obj/item/clothing/accessory/bodycam/process()
+/obj/item/clothing/accessory/bodycam/periodic_step()
 	if(!showing)
 		return PROCESS_KILL
 

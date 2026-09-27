@@ -13,8 +13,8 @@ SUBSYSTEM_DEF(shuttles)
 		/datum/controller/subsystem/atoms,
 		/datum/controller/subsystem/radio
 	)
-	flags = SS_KEEP_TIMING|SS_NO_TICK_CHECK
-	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
+	// Shuttles with work run their shuttle_step() on the slow periodic lane (refresh_processing_shuttle()).
+	flags = SS_NO_FIRE
 
 	var/overmap_halted = FALSE                     // Whether ships can move on the overmap; used for adminbus.
 	var/list/ships = list()                        // List of all ships.
@@ -61,35 +61,26 @@ SUBSYSTEM_DEF(shuttles)
 	process_init_queues()
 	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/shuttles/fire(resumed = 0)
-	if (!resumed)
-		src.current_run = active_process_shuttles.Copy()
+/// A shuttle with work: one shuttle_step() every 2 s while it is launching, moving or always
+/// processing; idle, it parks until set_process_state() gives it work again.
+/datum/shuttle/periodic_step(delta)
+	if(!process_state && !always_process)
+		return PROCESS_KILL
+	var/profile_start = TICK_USAGE
+	var/result = shuttle_step()
+	var/type_key = "[type]"
+	SSshuttles.profile_type_cost_ms[type_key] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
+	SSshuttles.profile_type_calls[type_key]++
+	SSshuttles.profile_process_calls++
+	if(result == PROCESS_KILL)
+		SSshuttles.profile_kills++
+		set_process_state(IDLE_STATE)
+	if(!process_state && !always_process)
+		return PROCESS_KILL
 
-	var/list/working_shuttles = src.current_run // Cache for sanic speed
-	while(length(working_shuttles))
-		var/datum/shuttle/S = working_shuttles[length(working_shuttles)]
-		working_shuttles.len--
-		profile_entries_scanned++
-		if(!istype(S) || QDELETED(S))
-			profile_bad_entries++
-			log_world("## ERROR Bad entry in SSshuttles.process_shuttles - [log_info_line(S)] ")
-			process_shuttles -= S
-			active_process_shuttles -= S
-			continue
-		if(S.process_state || S.always_process)
-			var/profile_start = TICK_USAGE
-			var/process_result = S.process(wait, times_fired, src)
-			var/type_key = "[S.type]"
-			profile_type_cost_ms[type_key] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
-			profile_type_calls[type_key]++
-			profile_process_calls++
-			if(process_result == PROCESS_KILL)
-				profile_kills++
-				S.set_process_state(IDLE_STATE)
-
-		if(MC_TICK_CHECK)
-			profile_yields++
-			return
+/// One step of this shuttle's launch/move state machine.
+/datum/shuttle/proc/shuttle_step()
+	return PROCESS_KILL
 
 /datum/controller/subsystem/shuttles/proc/performance_diagnostics()
 	var/list/type_costs = profile_type_cost_ms.Copy()
@@ -115,11 +106,15 @@ SUBSYSTEM_DEF(shuttles)
 /datum/controller/subsystem/shuttles/proc/refresh_processing_shuttle(datum/shuttle/shuttle)
 	if(!shuttle || QDELETED(shuttle) || !(shuttle.flags & SHUTTLE_FLAGS_PROCESS))
 		active_process_shuttles -= shuttle
+		if(shuttle)
+			PERIODIC_STOP(shuttle)
 		return
 	if(shuttle.always_process || shuttle.process_state != IDLE_STATE)
 		active_process_shuttles |= shuttle
+		PERIODIC_START(shuttle, PERIODIC_SLOW)
 	else
 		active_process_shuttles -= shuttle
+		PERIODIC_STOP(shuttle)
 
 /datum/controller/subsystem/shuttles/proc/process_init_queues()
 	if(block_init_queue)

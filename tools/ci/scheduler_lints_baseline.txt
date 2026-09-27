@@ -5,10 +5,10 @@ spawn 42
 addtimer 791
 invoke_async 117
 do_after 654
-sleep 407
+sleep 404
 stoplag 50
 prompts 2235
-set_waitfor 108
+set_waitfor 110
 weakref 0
 del 13
-lc_refs 2685
+lc_refs 2687

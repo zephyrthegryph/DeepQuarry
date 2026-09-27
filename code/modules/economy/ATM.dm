@@ -49,7 +49,7 @@ log transactions
 	authenticated_account = null
 	return ..()
 
-/obj/machinery/atm/process()
+/obj/machinery/atm/machine_step()
 	if(stat & NOPOWER)
 		return PROCESS_KILL
 
@@ -75,7 +75,7 @@ log transactions
 /obj/machinery/atm/power_change()
 	. = ..()
 	if(. && !(stat & NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/atm/emag_act(remaining_charges, mob/user)
 	if(emagged)
@@ -445,7 +445,7 @@ log transactions
 
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 		playsound(src, "keyboard", 50, TRUE)
 
 /datum/interaction/machine_hand/ungated/atm_use

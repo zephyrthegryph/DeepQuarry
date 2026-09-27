@@ -150,7 +150,7 @@
 		open()
 		openDuringInit = 0
 
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/valve/return_network(obj/machinery/atmospherics/reference)
 	if(reference==node1)

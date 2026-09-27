@@ -17,7 +17,7 @@
 	aspect = ASPECT_UNSTABLE
 	glow_color = "#CC00CC"
 
-/obj/item/spell/aura/unstable/process()
+/obj/item/spell/aura/unstable/periodic_step()
 	if(!pay_energy(200))
 		qdel(src)
 		return

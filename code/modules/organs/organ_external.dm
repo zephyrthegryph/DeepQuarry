@@ -333,7 +333,7 @@
 				germ_level = 0
 				status &= ~ORGAN_DEAD
 				damage = 0 //Fix the damage on it as well.
-				START_PROCESSING(SSobj, src) //Dead limbs stop processing, so we restart the process.
+				PERIODIC_START(src, PERIODIC_SLOW) //Dead limbs stop processing, so we restart the process.
 				stage-- //Go back to stage 2
 				return
 	..()
@@ -849,7 +849,7 @@ This function completely restores a damaged organ to perfect condition.
 		return 1
 	return 0
 
-/obj/item/organ/external/process()
+/obj/item/organ/external/periodic_step()
 	if(owner)
 
 		// Process wounds, doing healing etc. Only do this every few ticks to save processing power

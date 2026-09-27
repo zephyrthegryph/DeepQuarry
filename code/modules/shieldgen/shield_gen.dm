@@ -158,7 +158,7 @@
 
 	return list("locked" = locked, "lockedData" = lockedData)
 
-/obj/machinery/shield_gen/process()
+/obj/machinery/shield_gen/machine_step()
 	if (!anchored && active)
 		toggle()
 	if(!active && !length(field))
@@ -193,7 +193,7 @@
 
 			for(var/obj/machinery/shield_capacitor/capacitor in active_capacitors)
 				capacitor.stored_charge -= max(assumed_charge / active_capacitors.len, 0) // Drain from all active capacitors evenly.
-				START_MACHINE_PROCESSING(capacitor)
+				MACHINE_WAKE(capacitor)
 
 		else
 			renwick_upkeep_per_field = max(renwick_upkeep_per_field, 0.5)
@@ -252,7 +252,7 @@
 	set background = 1
 	active = !active
 	if(active)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon()
 	if(active)
 		var/list/covered_turfs = get_shielded_turfs()
@@ -359,3 +359,8 @@
 // === merged from shield_gen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_gen
 	icon = 'icons/obj/machines/shielding.dmi'
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shield_gen/step_start_condition()
+	return active

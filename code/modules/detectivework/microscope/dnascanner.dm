@@ -93,6 +93,8 @@
 				if(bloodsamp)
 					scanner_progress = 0
 					scanning = TRUE
+					last_process_worldtime = world.time
+					MACHINE_WAKE(src)
 					to_chat(ui.user, span_notice("Scan initiated."))
 					update_icon()
 				else
@@ -106,7 +108,10 @@
 				scanning = FALSE
 				update_icon()
 
-/obj/machinery/dnaforensics/process()
+/// Scans while scanning (started from its UI); otherwise it sleeps.
+/obj/machinery/dnaforensics/machine_step()
+	if(!scanning)
+		return PROCESS_KILL
 	if(scanning)
 		if(!bloodsamp || bloodsamp.loc != src)
 			bloodsamp = null

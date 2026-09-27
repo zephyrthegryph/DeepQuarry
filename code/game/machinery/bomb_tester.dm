@@ -55,7 +55,7 @@
 	simulation_finish(1)
 	return ..()
 
-/obj/machinery/bomb_tester/process()
+/obj/machinery/bomb_tester/machine_step()
 	..()
 	if(test_canister && !Adjacent(test_canister))
 		test_canister = null
@@ -387,3 +387,8 @@
 #undef MODE_SINGLE
 #undef MODE_DOUBLE
 #undef MODE_CANISTER
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/bomb_tester/step_start_condition()
+	return simulating

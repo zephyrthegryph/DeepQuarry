@@ -23,7 +23,6 @@
 	if(deployed)
 		update_icon()
 	ghost_reporter = new(null)
-	START_PROCESSING(SSobj, src)
 
 	var/static/list/ghost_signals = list(
 		COMSIG_GLOB_GHOST_CAPTURED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_spectral_experiment),
@@ -37,7 +36,6 @@
 		experiment_signals = ghost_signals)
 
 /obj/item/ghost_trap/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
@@ -93,7 +91,10 @@
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
-/obj/item/ghost_trap/process()
+/// Watches its catch every 2 s while it holds one (catch_ghost() starts it); empty, it sleeps.
+/obj/item/ghost_trap/periodic_step()
+	if(!captured_entity)
+		return PROCESS_KILL
 	if(captured_entity)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && our_entity.loc != src)
@@ -187,6 +188,7 @@
 	if(!ismob(passing_entity)) //wtf did you do
 		return
 	captured_entity = om_handle(passing_entity)
+	PERIODIC_START(src, PERIODIC_SLOW) // watches for an escape while it holds something
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity

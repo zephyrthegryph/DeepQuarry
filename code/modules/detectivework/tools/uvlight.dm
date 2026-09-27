@@ -26,12 +26,12 @@
 	on = !on
 	if(on)
 		set_light(range, 2, "#007fff")
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		icon_state = "uv_on"
 	else
 		set_light(0)
 		clear_last_scan()
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		icon_state = "uv_off"
 
 /obj/item/uv_light/proc/clear_last_scan()
@@ -51,7 +51,7 @@
 			if(dq_get_fluorescent(I) == 2) dq_set_fluorescent(I, 1)
 		LAZYCLEARLIST(reset_objects)
 
-/obj/item/uv_light/process()
+/obj/item/uv_light/periodic_step()
 	clear_last_scan()
 	if(on)
 		step_alpha = round(255/range)

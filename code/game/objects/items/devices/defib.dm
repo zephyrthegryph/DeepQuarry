@@ -625,7 +625,7 @@
 /obj/item/shockpaddles/standalone/Destroy()
 	. = ..()
 	if(fail_counter)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 /obj/item/shockpaddles/standalone/check_charge(charge_amt)
 	return 1
@@ -640,7 +640,7 @@
 	)
 	return 1
 
-/obj/item/shockpaddles/standalone/process()
+/obj/item/shockpaddles/standalone/periodic_step()
 	if(fail_counter > 0)
 		radiation_pulse(
 			src,
@@ -651,7 +651,7 @@
 		)
 		fail_counter--
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 /obj/item/shockpaddles/standalone/emp_act(severity, recursive)
 	. = ..()
@@ -668,7 +668,7 @@
 				to_chat(loc, span_warning("\The [src] feel pleasantly warm."))
 
 	if(new_fail && !fail_counter)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	fail_counter = new_fail
 
 /* From the Bay port, this doesn't seem to have a sprite.

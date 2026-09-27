@@ -6,7 +6,7 @@
 	range = 0
 	equip_type = EQUIP_SPECIAL
 
-/obj/item/mecha_parts/mecha_equipment/cloak/process()
+/obj/item/mecha_parts/mecha_equipment/cloak/periodic_step()
 	..()
 	//Removed from chassis or ran out of power
 	if(!chassis || !chassis.use_power(energy_drain))
@@ -36,7 +36,7 @@
 	if(chassis)
 		chassis.cloak()
 	src.mecha_log_message("Activated.")
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	set_ready_state(FALSE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
 
@@ -44,6 +44,6 @@
 	if(chassis)
 		chassis.uncloak()
 	src.mecha_log_message("Deactivated.")
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	set_ready_state(TRUE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)

@@ -24,11 +24,10 @@
 
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	last_spawn = world.time + rand(0,spawn_delay)
 
 /obj/structure/mob_spawner/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))
 			var/mob/living/L = spawned
@@ -39,7 +38,10 @@
 	LAZYCLEARLIST(spawned_mobs)
 	return ..()
 
-/obj/structure/mob_spawner/process()
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
+/obj/structure/mob_spawner/periodic_step()
+	if(!mob_near(world.view * 2, TRUE))
+		return sleep_until_mob_near(world.view * 2, TRUE)
 	if(!can_spawn())
 		return
 	var/chosen_mob = choose_spawn()
@@ -176,7 +178,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 		LAZYREMOVE(mobs_in_range, AM)
 
 
-/obj/structure/mob_spawner/scanner/process()
+/obj/structure/mob_spawner/scanner/periodic_step()
 	if(!can_spawn())
 		return
 	if(world.time > last_spawn + spawn_delay)

@@ -438,7 +438,6 @@
 /obj/machinery/shower/Destroy()
 	QDEL_NULL(soundloop)
 	QDEL_NULL(reagents)
-	STOP_MACHINE_PROCESSING(src)
 	return ..()
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
@@ -485,8 +484,8 @@
 	handle_mist()
 	add_fingerprint(user)
 	if(on)
-		START_MACHINE_PROCESSING(src)
-		process()
+		MACHINE_WAKE(src)
+		machine_step()
 		soundloop.start()
 	else
 		soundloop.stop()
@@ -601,7 +600,7 @@
 		var/remove_amount = C.touching.maximum_volume * C.reagent_permeability() //take off your suit first
 		C.touching.remove_any(remove_amount)
 
-/obj/machinery/shower/process()
+/obj/machinery/shower/machine_step()
 	if(on)
 		if(isturf(loc)) //Wash the turf.
 			wash_atom(loc)

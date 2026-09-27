@@ -1,11 +1,11 @@
+/// Event bookkeeping: the containers and the active and finished events. It schedules nothing:
+/// each active event and each container runs on the slow periodic lane (code/datums/om/periodic.dm).
 SUBSYSTEM_DEF(events)
 	name = "Events"
-	wait = 2 SECONDS
+	flags = SS_NO_FIRE
 	dependencies = list(
 		/datum/controller/subsystem/atoms
 	)
-
-	var/tmp/list/currentrun = null
 
 	var/list/datum/event/active_events = list()
 	var/list/datum/event/finished_events = list()
@@ -22,28 +22,12 @@ SUBSYSTEM_DEF(events)
 			/*EVENT_LEVEL_MODERATE	= */ new/datum/event_container/moderate,
 			/*EVENT_LEVEL_MAJOR 	= */ new/datum/event_container/major
 		)
+	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
+		PERIODIC_START(event_containers[i], PERIODIC_SLOW)
 	if(using_map.use_overmap)
 		if(using_map.overmap_z)
 			GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)
 	return SS_INIT_SUCCESS
-
-/datum/controller/subsystem/events/fire(resumed)
-	if (!resumed)
-		src.currentrun = active_events.Copy()
-
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while (length(currentrun))
-		var/datum/event/E = currentrun[length(currentrun)]
-		currentrun.len--
-		if(E.processing_active)
-			E.process()
-		if (MC_TICK_CHECK)
-			return
-
-	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		var/datum/event_container/EC = event_containers[i]
-		EC.process()
 
 /datum/controller/subsystem/events/stat_entry(msg)
 	msg = "E:[length(active_events)]"
@@ -57,6 +41,7 @@ SUBSYSTEM_DEF(events)
 
 /datum/controller/subsystem/events/proc/event_complete(datum/event/E)
 	active_events -= E
+	PERIODIC_STOP(E)
 
 	if(!E.event_meta || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
 		log_game("Event of '[E.type]' with missing meta-data has completed.")

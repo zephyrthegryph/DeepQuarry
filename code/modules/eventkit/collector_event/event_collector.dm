@@ -63,10 +63,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 /obj/structure/event_collector/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/structure/event_collector/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 
@@ -135,7 +133,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		next_item = active_recipe[1]
 		message_admins("\[EVENT\] Event Collection object [src] has started a recipe! If it's in sequence, the next one is [next_item] ")
 
-/obj/structure/event_collector/process()
+/// Works on its recipe every 2 s while one is running (start_recipe_process()); otherwise it sleeps.
+/obj/structure/event_collector/periodic_step()
+	if(!awaiting_next_recipe)
+		return PROCESS_KILL
 	var/blockers = get_blockers()
 	if(awaiting_next_recipe && blockers < 10)
 		if( recipe_process_sounds && prob(recipe_process_sound_chance) )
@@ -239,6 +240,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 /obj/structure/event_collector/proc/start_recipe_process()
 	awaiting_next_recipe = TRUE
+	PERIODIC_START(src, PERIODIC_SLOW)
 	calls_remaining = completion_time * 10
 	message_admins("\[EVENT\] Event Collection object [src] has started processing its current recipe! ETA: [(calls_remaining/10) / 2] ish seconds.")
 

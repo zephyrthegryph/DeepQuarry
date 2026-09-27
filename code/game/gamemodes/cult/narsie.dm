@@ -55,7 +55,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 		om_after(src, 10 SECONDS, /proc/narsie_call_evac)
 
-/obj/singularity/narsie/process()
+/obj/singularity/narsie/periodic_step()
 	eat()
 
 	if (!target || prob(5))

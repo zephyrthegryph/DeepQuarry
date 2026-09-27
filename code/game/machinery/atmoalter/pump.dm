@@ -12,7 +12,6 @@
 
 	var/pressuremin = 0
 	var/pressuremax = 39.45 * ONE_ATMOSPHERE //The safest level you can get WITHOUT the tank exploding.
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 
 	volume = 1000
 
@@ -62,10 +61,7 @@
 
 	target_pressure = rand(0,1300)
 	if(on)
-		if(polls)
-			START_MACHINE_PROCESSING(src)
-		else
-			om_changed(src, CHANGE_MACHINE_SETTINGS)
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
@@ -181,10 +177,7 @@
 		if("power")
 			on = !on
 			if(on)
-				if(polls)
-					START_MACHINE_PROCESSING(src)
-				else
-					om_changed(src, CHANGE_MACHINE_SETTINGS)
+				om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = 1
 		if("direction")
 			direction_out = !direction_out
@@ -359,3 +352,8 @@
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
 	return on && anchored && !(stat & (NOPOWER|BROKEN))
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/powered/pump/step_start_condition()
+	return on

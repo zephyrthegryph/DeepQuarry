@@ -881,7 +881,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/slime_extract/green/process()
+/obj/item/slime_extract/green/periodic_step()
 	radiate()
 	..()
 
@@ -904,7 +904,6 @@
 	active = FALSE
 
 /obj/item/slime_extract/green/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /datum/decl/chemical_reaction/instant/slime/green_radpulse
@@ -1669,7 +1668,7 @@
 	playsound(extract, 'sound/effects/phasein.ogg', 75, 1)
 
 /proc/slime_extract_start_emitting(atom/extract)
-	START_PROCESSING(SSobj, extract)
+	PERIODIC_START(extract, PERIODIC_SLOW)
 
 /proc/slime_extract_explode(atom/extract, power)
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)

@@ -27,10 +27,9 @@
 
 /obj/effect/map_effect/interval/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/map_effect/interval/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 // Override this for the specific thing to do.
@@ -38,18 +37,16 @@
 	return
 
 // Handles the delay and making sure it doesn't run when it would be bad.
-/obj/effect/map_effect/interval/process()
-	//Not yet!
-	if(world.time < next_attempt)
-		return
-
+/// Triggers, then sleeps on a timer for its next interval; with nobody near it sleeps until a
+/// player comes within proximity_needed.
+/obj/effect/map_effect/interval/periodic_step()
 	// Check to see if we're useful first.
 	if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-		next_attempt = world.time + retry_delay
-	// Hey there's someone nearby.
-	else
-		next_attempt = world.time + rand(interval_lower_bound, interval_upper_bound)
-		trigger()
+		return sleep_until_mob_near(proximity_needed, TRUE)
+	next_attempt = world.time + rand(interval_lower_bound, interval_upper_bound)
+	trigger()
+	om_after(src, max(next_attempt - world.time, 1), /datum/proc/periodic_resume)
+	return PROCESS_KILL
 
 // Helper proc to optimize the use of effects by making sure they do not run if nobody is around to perceive it.
 /proc/check_for_player_proximity(atom/proximity_to, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE)

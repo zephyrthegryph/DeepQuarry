@@ -73,7 +73,7 @@
 /datum/shuttle/autodock/web_shuttle/proc/build_destinations()
 	return
 
-/datum/shuttle/autodock/web_shuttle/process()
+/datum/shuttle/autodock/web_shuttle/shuttle_step()
 	update_helmets()
 
 	if(moving_status == SHUTTLE_IDLE)
@@ -464,7 +464,7 @@
 	icon_state = "airlock_sensor_standby"
 	var/id_tag
 
-/obj/machinery/shuttle_sensor/process()
+/obj/machinery/shuttle_sensor/machine_step()
 	return PROCESS_KILL //nty
 
 /obj/machinery/shuttle_sensor/proc/air_list()

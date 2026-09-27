@@ -65,7 +65,8 @@
 		our_planet.update_sun()
 	log_game("[our_planet.name]'s weather is now [new_weather], with a temperature of [temperature]&deg;K ([temperature - T0C]&deg;C | [temperature * 1.8 - 459.67]&deg;F).")
 
-/datum/weather_holder/process()
+/// The planet's weather step (its planet calls it every 2 s).
+/datum/weather_holder/proc/weather_tick()
 	if(imminent_weather && world.time >= imminent_weather_shift)
 		proceed_to_imminent_weather()
 	else if(!imminent_weather && world.time >= next_weather_shift)

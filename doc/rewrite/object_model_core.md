@@ -394,6 +394,32 @@ pipeline in `om_diagnostics()`: frames, parks, unparks, missed wakes.
 Cost: one ring dispatch per entity, one bit test per stage, one proc call per awake stage
 plus its `idle()` check. Parked entities cost nothing.
 
+**Periodic lanes and machine steps** (roadmap S3-S5; no processing subsystem is left). A
+datum with periodic work defines `periodic_step(delta)` and is started on a lane with
+`PERIODIC_START(E, lane)` by whatever gives it work; `PROCESS_KILL` or `PERIODIC_STOP(E)` ends
+it and it parks (`code/datums/om/periodic.dm`). The lanes are pipelines on the core runner:
+`PERIODIC_SLOW` (2 s), `PERIODIC_SECOND`, `PERIODIC_FAST` (0.2 s), `PERIODIC_PLANTS` (7.5 s),
+plus declared continuous lanes, each with a `continuous_why` (projectiles, instruments, priority
+status effects, stat tab items). Work that only matters near mobs ends its step with
+`return sleep_until_mob_near(radius)` and wakes on the mob chunks around it.
+
+Machines never start by default. Joining the machine pipeline runs nothing: every stage starts
+idle and the machine parks. Once the world is up, `materialize_wakes()` arms its watches
+(`arm_wakes()`) and wakes it only if its declared `step_start_condition()` holds. After that a
+machine runs only when a declared wake fires: `MACHINE_WAKE(M)` from its own producers, a power
+or break change (`sleep_until_powered()`, `step_on_power_change`), an interaction or UI act
+(`interaction_ran()`), a watch, or a timer. `PROCESS_KILL` or `MACHINE_SLEEP(M)` ends its step
+work. `tools/ci/pollers_lint.py` ratchets `process()` definitions and `START_*PROCESSING` calls.
+
+**Timers and published facts.** A sleeper's timer is `om_after(E, delay, proc)` (§4.11). A
+published fact is a change channel on the entity it belongs to (`CHANGE_AREA_POWER` on an area,
+`CHANGE_POWERNET_*` on a powernet, `CHANGE_MACHINE_MODE`/`SETTINGS` on a machine,
+`CHANGE_METEORS` on `GLOB.meteor_watch`, `CHANGE_CHUNK_*` on a `/datum/mob_chunk`); whatever
+waits on it `om_watch()`es those channels with its own behaviour, usually a
+`/datum/om/behaviour/sleeper` subtype whose `on_wake()` does the work. Machines use
+`sleep_until_keys(list(entity, mask, ...))`, which watches with the machine pipeline itself.
+The missed-wake audit samples sleepers and asks each `om_sleep_violation()`.
+
 ### 4.11 One scheduler: time, sequences and asynchrony
 
 All deferred and multi-step work in gameplay code runs on the OM wheel and is owned by an entity. There is no second scheduler: SStimer, `spawn()`, `do_after` and gameplay `sleep()` go away.

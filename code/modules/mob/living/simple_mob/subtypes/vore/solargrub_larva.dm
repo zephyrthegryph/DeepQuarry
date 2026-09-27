@@ -123,6 +123,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	if(ai_brain) ai_brain.busy = TRUE
 	forceMove(M)
 	powermachine.draining = 2
+	MACHINE_WAKE(powermachine)
 	visible_message(span_warning("\The [src] finds an opening and crawls inside \the [M]."))
 	if(!(M.type in GLOB.grub_machine_overlays))
 		generate_machine_effect(M)
@@ -148,6 +149,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
 	powermachine.draining = 1
+	MACHINE_WAKE(powermachine)
 	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
@@ -216,9 +218,10 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	grub = null
 	return ..()
 
-/obj/machinery/abstract_grub_machine/process()
+/// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
+/obj/machinery/abstract_grub_machine/machine_step()
 	if(!draining)
-		return
+		return PROCESS_KILL
 	var/area/A = get_area(src)
 	if(!A)
 		return

@@ -21,7 +21,7 @@
 /datum/stockMarket/proc/schedule_process()
 	if(QDELETED(src) || process_timer)
 		return
-	process_timer = addtimer(CALLBACK(src, PROC_REF(process)), 10 SECONDS, TIMER_STOPPABLE)
+	process_timer = addtimer(CALLBACK(src, PROC_REF(market_tick)), 10 SECONDS, TIMER_STOPPABLE)
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))
@@ -118,11 +118,11 @@
 		stocks += S
 		LAZYSET(last_read, S, list())
 
-/datum/stockMarket/process()
+/datum/stockMarket/proc/market_tick()
 	process_timer = null
 	for (var/stock in stocks)
 		var/datum/stock/S = stock
-		S.process(5)
+		S.stock_tick(5)
 	schedule_process()
 
 /datum/stockMarket/proc/add_log(log_type, user, company_name, stocks, shareprice, money)

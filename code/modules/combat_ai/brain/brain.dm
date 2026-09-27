@@ -65,7 +65,7 @@
 	/// brain uses a long discovery cadence while combat stays responsive.
 	var/next_strategic_at = 0
 	var/idle_strategic_interval = 10 SECONDS
-	/// While hibernating: the (token, kind) pairs from SSreactor.sleep_on_keys().
+	/// While hibernating: the chunks it watches (watch_mob_chunks()).
 	var/tmp/list/react_sleep_tokens
 
 /datum/ai_brain/New(mob/living/owner)

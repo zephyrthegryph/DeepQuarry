@@ -353,7 +353,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	. = ..()
 	powered_ai = null
 
-/obj/machinery/ai_powersupply/process()
+/obj/machinery/ai_powersupply/machine_step()
 	if(!powered_ai || powered_ai.stat == DEAD)
 		qdel(src)
 		return
@@ -1058,3 +1058,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	add_language(LANGUAGE_ENOCHIAN,		1)
 	add_language(LANGUAGE_DRUDAKAR,		1)
 	add_language(LANGUAGE_TAVAN,		1)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/ai_powersupply/step_start_condition()
+	return TRUE // made when an AI needs power

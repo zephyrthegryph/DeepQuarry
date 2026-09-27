@@ -118,7 +118,7 @@
 				to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
 				playsound(src, 'sound/machines/terminal_prompt_confirm.ogg', 25, FALSE)
 				restoring = TRUE
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 				var/mob/observer/dead/ghost = occupier.get_ghost()
 				if(ghost)
 					ghost.notify_revive("Your core files are being restored!", source = src)
@@ -136,7 +136,7 @@
 
 	return occupier.vitality() < 1 || occupier.backup_capacitor() < 100
 
-/obj/machinery/computer/aifixer/process()
+/obj/machinery/computer/aifixer/machine_step()
 	if(!restoring || !occupier)
 		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))

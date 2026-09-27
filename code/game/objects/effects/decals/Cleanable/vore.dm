@@ -34,10 +34,9 @@
 	custombasecolor = spill_color
 
 	update_icon()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/decal/cleanable/blood/reagent/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/effect/decal/cleanable/blood/reagent/update_icon()

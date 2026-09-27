@@ -11,7 +11,7 @@
 /datum/tgui_module/alarm_monitor/all
 /datum/tgui_module/alarm_monitor/all/New()
 	..()
-	alarm_handlers = SSalarm.all_handlers
+	alarm_handlers = all_alarm_handlers()
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/all/glasses

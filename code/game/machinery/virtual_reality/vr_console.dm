@@ -56,8 +56,12 @@
 		occupant.vr_link.exit_vr()
 	. = ..()
 
-/obj/machinery/vr_sleeper/process()
+/// Watches its occupant (death, power loss) while it has one; empty, it sleeps until someone
+/// gets in.
+/obj/machinery/vr_sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	if(!occupant)
+		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
 		if(occupant)
 			occupant.exit_vr(FALSE)
@@ -225,6 +229,7 @@
 		M.stop_pulling()
 		if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
 			return
+		MACHINE_WAKE(src)
 
 		update_icon()
 

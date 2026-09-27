@@ -8,7 +8,7 @@
 	parent_organ = BP_HEAD
 	vital = 1
 
-/obj/item/organ/internal/borer/process()
+/obj/item/organ/internal/borer/periodic_step()
 	if(!owner || !owner.reagents)
 		return
 

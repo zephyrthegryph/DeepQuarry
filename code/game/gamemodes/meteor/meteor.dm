@@ -10,7 +10,7 @@
 	deny_respawn = 0
 	var/next_wave = METEOR_DELAY
 
-/datum/game_mode/meteor/process()
+/datum/game_mode/meteor/periodic_step()
 	if(world.time >= next_wave)
 		next_wave = world.time + GLOB.meteor_wave_delay
 		spawn_meteors(6, GLOB.meteors_normal)

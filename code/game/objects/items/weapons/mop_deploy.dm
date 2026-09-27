@@ -19,7 +19,7 @@
 /obj/item/mop_deploy/Initialize(mapload)
 	. = ..()
 	create_reagents(5)
-	START_PROCESSING(SSobj, src)
+	om_after(src, 0, PROC_REF(check_held))
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))
@@ -51,7 +51,6 @@
 	..()
 
 /obj/item/mop_deploy/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/mop_deploy/attack_self(mob/user)
@@ -61,7 +60,9 @@
 	user.drop_from_inventory(src)
 	om_qdel_after(src, 1)
 
-/obj/item/mop_deploy/process()
+/// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
+/// between hands, never polled.
+/obj/item/mop_deploy/proc/check_held()
 	if(!creator || loc != creator || !creator.item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
@@ -75,3 +76,11 @@
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
 		om_qdel_after(src, 1)
+
+/obj/item/mop_deploy/dropped(mob/user, equipping, slot)
+	. = ..()
+	om_after(src, 0, PROC_REF(check_held))
+
+/obj/item/mop_deploy/equipped(mob/user, slot)
+	. = ..()
+	om_after(src, 0, PROC_REF(check_held))

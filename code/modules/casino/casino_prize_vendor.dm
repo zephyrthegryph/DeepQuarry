@@ -425,8 +425,4 @@
 		O.show_message(span_npc_say(span_name("\The [src]") + " beeps, \"[message]\""),2)
 	return
 
-/obj/machinery/casino_prize_dispenser/process() //Might not need this, but just to be safe for now
-	if(stat & (BROKEN|NOPOWER))
-		return
-
 #undef CASINO_PRIZE

@@ -208,7 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 	update_transform()
 
@@ -389,14 +389,13 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	QDEL_NULL(spark_system)
 	QDEL_NULL(minihud)
 
-	STOP_PROCESSING(SSobj, src)
 
 	. = ..()
 
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
-/obj/mecha/process()
+/obj/mecha/periodic_step()
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	var/static/max_ticks = 16
 	// An empty parked mech has no player-visible cabin simulation to advance.
@@ -2044,7 +2043,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		src.add_fingerprint(H)
 		src.verbs += /obj/mecha/verb/eject
 		src.log_append_to_last("[H] moved in as pilot.")
@@ -3091,7 +3090,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/start_process(process)
 	current_processes |= process
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 
 /////////////

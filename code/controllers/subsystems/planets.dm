@@ -11,8 +11,6 @@ SUBSYSTEM_DEF(planets)
 	var/static/list/planets = list()
 	var/static/list/z_to_planet = list()
 
-	var/static/list/currentrun = list()
-
 	var/static/list/needs_sun_update = list()
 	var/static/list/needs_temp_update = list()
 
@@ -26,6 +24,7 @@ SUBSYSTEM_DEF(planets)
 	for(var/P in planet_datums)
 		var/datum/planet/NP = new P()
 		planets += NP
+		PERIODIC_START(NP, PERIODIC_SLOW)
 		for(var/index in 1 to length(NP.expected_z_levels))
 			var/Z = LAZYACCESS(NP.expected_z_levels, index)
 			if(!isnum(Z))
@@ -65,10 +64,9 @@ SUBSYSTEM_DEF(planets)
 			P.sun_holder.remove_from_turf(T)
 
 
+/// Applies the lighting and wall-temperature changes the planets queued (their own clocks and
+/// weather run on the slow lane), in batches that yield across ticks.
 /datum/controller/subsystem/planets/fire(resumed = 0)
-	if(!resumed)
-		src.currentrun = planets.Copy()
-
 	var/list/needs_sun_update = src.needs_sun_update
 	while(length(needs_sun_update))
 		var/datum/planet/P = needs_sun_update[length(needs_sun_update)]
@@ -87,25 +85,6 @@ SUBSYSTEM_DEF(planets)
 			return
 	#endif
 
-	var/list/currentrun = src.currentrun
-	while(length(currentrun))
-		var/datum/planet/P = currentrun[length(currentrun)]
-		currentrun.len--
-
-		P.process(last_fire)
-
-		//Sun light needs changing
-		if(P.needs_work & PLANET_PROCESS_SUN)
-			P.needs_work &= ~PLANET_PROCESS_SUN
-			needs_sun_update |= P
-
-		//Temperature needs updating
-		if(P.needs_work & PLANET_PROCESS_TEMP)
-			P.needs_work &= ~PLANET_PROCESS_TEMP
-			needs_temp_update |= P
-
-		if(MC_TICK_CHECK)
-			return
 
 /datum/controller/subsystem/planets/proc/updateSunlight(datum/planet/P)
 	var/new_brightness = P.sun["brightness"]

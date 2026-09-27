@@ -13,11 +13,11 @@
 
 /datum/talking_atom/proc/init()
 	if(holder_atom)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
-/datum/talking_atom/process()
+/datum/talking_atom/periodic_step()
 	if(!holder_atom)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 	else if(heard_words.len >= 1 && world.time > last_talk_time + talk_interval && prob(talk_chance))
 		SaySomething()

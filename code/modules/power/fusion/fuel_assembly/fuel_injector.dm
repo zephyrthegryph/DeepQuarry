@@ -34,7 +34,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE
 
-/obj/machinery/fusion_fuel_injector/process()
+/obj/machinery/fusion_fuel_injector/machine_step()
 	if(!injecting)
 		return PROCESS_KILL
 	if(stat & (BROKEN|NOPOWER))
@@ -157,7 +157,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 		icon_state = "injector1"
 		injecting = 1
 		update_use_power(USE_POWER_IDLE)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/fusion_fuel_injector/proc/StopInjecting()
 	if(injecting)

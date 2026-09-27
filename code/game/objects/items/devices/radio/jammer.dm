@@ -51,7 +51,7 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 /obj/item/radio_jammer/proc/turn_off(mob/user)
 	if(user)
 		to_chat(user,span_warning("\The [src] deactivates."))
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	registry_leave(REGISTRY_RADIO_JAMMERS, src)
 	on = FALSE
 	update_icon()
@@ -59,12 +59,12 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 /obj/item/radio_jammer/proc/turn_on(mob/user)
 	if(user)
 		to_chat(user,span_notice("\The [src] is now active."))
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	registry_join(REGISTRY_RADIO_JAMMERS, src)
 	on = TRUE
 	update_icon()
 
-/obj/item/radio_jammer/process()
+/obj/item/radio_jammer/periodic_step()
 	if(!power_source || !power_source.check_charge(tick_cost))
 		var/mob/living/notify
 		if(isliving(loc))

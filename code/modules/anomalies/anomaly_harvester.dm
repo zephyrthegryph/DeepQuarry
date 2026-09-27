@@ -32,7 +32,7 @@
 	efficiency = max(1, (efficient/10+1))
 	points_to_create = min(100, (100 - (rating * 5)))
 
-/obj/machinery/anomaly_harvester/process()
+/obj/machinery/anomaly_harvester/machine_step()
 	..()
 	if(stat & (NOPOWER|BROKEN) || !anchored)
 		update_use_power(USE_POWER_OFF)
@@ -203,3 +203,8 @@
 			for(var/obj/item/research_sample/sample in src)
 				sample.forceMove(get_turf(src))
 			return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/anomaly_harvester/step_start_condition()
+	return anchored

@@ -181,14 +181,14 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 /obj/item/mapping_unit/proc/start_updates()
 	registry_join(REGISTRY_MAPPING_UNITS, src)
 	updating = TRUE
-	START_PROCESSING(SSobj, src)
-	process()
+	PERIODIC_START(src, PERIODIC_SLOW)
+	periodic_step()
 
 
 
 /obj/item/mapping_unit/proc/stop_updates()
 	registry_leave(REGISTRY_MAPPING_UNITS, src)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	updating = FALSE
 	if(hud_item)
 		hud_item.off(FALSE)
@@ -204,7 +204,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 	hud_item = null
 
 
-/obj/item/mapping_unit/process()
+/obj/item/mapping_unit/periodic_step()
 	if(!updating || (uses_power && !cell))
 		stop_updates()
 		return

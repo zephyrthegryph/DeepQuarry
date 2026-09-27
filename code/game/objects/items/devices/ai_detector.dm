@@ -24,13 +24,13 @@
 	// It's really really unlikely for the view range to change.  But why not be futureproof anyways?
 	range_alert = world.view
 	range_warning = world.view * 2
-	START_PROCESSING(SSobj, src)
 
 /obj/item/multitool/ai_detector/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/multitool/ai_detector/process()
+/obj/item/multitool/ai_detector/periodic_step()
+	if(!ismob(loc))
+		return PROCESS_KILL
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
 	detect_state = new_detect_state
@@ -115,3 +115,8 @@
 #undef PROXIMITY_ON_SCREEN
 #undef PROXIMITY_TRACKING
 #undef PROXIMITY_TRACKING_FAIL
+
+/// Senses while carried (picking it up starts it); set down, it sleeps.
+/obj/item/multitool/ai_detector/equipped(mob/user, slot)
+	. = ..()
+	PERIODIC_START(src, PERIODIC_SLOW)

@@ -13,8 +13,17 @@
 
 /obj/effect/bspawner/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj,src)
 	init_time = world.time
+	om_after(src, time_between_spawn, PROC_REF(spawn_due))
+	om_after(src, time_to_end, /datum/proc/qdel_self)
+
+/// One item every time_between_spawn (its timer re-arms) until time_to_end deletes it.
+/obj/effect/bspawner/proc/spawn_due()
+	if(QDELETED(src))
+		return
+	spawn_item()
+	spawned_num++
+	om_after(src, time_between_spawn, PROC_REF(spawn_due))
 
 /obj/effect/bspawner/proc/spawn_item()
 	if(!isnull(item_arg))
@@ -22,15 +31,8 @@
 	else
 		new item_to_spawn(loc)
 
-/obj/effect/bspawner/process()
-	if(world.time > init_time + time_between_spawn * (spawned_num + 1))
-		spawn_item()
-		spawned_num++
-	if(world.time > init_time + time_to_end)
-		qdel(src)
 
 /obj/effect/bspawner/Destroy()
-	STOP_PROCESSING(SSobj,src)
 	. = ..()
 
 /obj/effect/bspawner/min30

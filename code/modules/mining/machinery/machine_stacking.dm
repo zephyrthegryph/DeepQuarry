@@ -65,7 +65,7 @@
 	switch(action)
 		if("change_stack")
 			machine.stack_amt = clamp(text2num(params["amt"]), 1, 50)
-			machine.wake_processing()
+			machine.wake_mining()
 			. = TRUE
 
 		if("release_stack")
@@ -107,27 +107,15 @@
 	for (var/dir in GLOB.cardinal)
 		src.output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 		if(src.output) break
-	if(input?.loc)
-		RegisterSignal(input.loc, COMSIG_ATOM_ENTERED, PROC_REF(on_input_entered))
+	watch_input(input)
 
 /obj/machinery/mineral/stacking_machine/Destroy()
-	if(input?.loc)
-		UnregisterSignal(input.loc, COMSIG_ATOM_ENTERED)
+	unwatch_input(input)
 	input = null
 	output = null
 	console = null
 	return ..()
 
-/obj/machinery/mineral/stacking_machine/proc/on_input_entered(datum/source, atom/movable/arrived)
-	SIGNAL_HANDLER
-	if(isitem(arrived))
-		wake_processing()
-
-/obj/machinery/mineral/stacking_machine/proc/wake_processing()
-	if(speed_process)
-		START_PROCESSING(SSfastprocess, src)
-	else
-		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/mineral/stacking_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -135,13 +123,13 @@
 	else
 		speed_process = !speed_process // switching gears
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 
-/obj/machinery/mineral/stacking_machine/process()
+/obj/machinery/mineral/stacking_machine/machine_step()
 	var/did_work = FALSE
 	if (src.output && src.input)
 		var/turf/T = get_turf(input)

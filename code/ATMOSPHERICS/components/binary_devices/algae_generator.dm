@@ -155,7 +155,7 @@
 /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials(mob/user, obj/item/stack/material/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	try_load_materials(user, held)
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	return TRUE
 
 /// Old attackby: the final "anything else" branch.
@@ -237,7 +237,7 @@
 		if("toggle")
 			if(use_power == USE_POWER_IDLE)
 				update_use_power(USE_POWER_ACTIVE)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			else
 				update_use_power(USE_POWER_IDLE)
 			update_icon()
@@ -248,7 +248,7 @@
 			if(!(matName in stored_material))
 				return
 			eject_materials(matName, 0)
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			. = TRUE
 
 // TODO - These should be replaced with materials datum.
@@ -335,7 +335,13 @@
 
 /obj/machinery/atmospherics/binary/algae_farm/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/binary/algae_farm/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/binary/algae_farm/arm_wakes()
+	..()
+	if(air1)
+		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))

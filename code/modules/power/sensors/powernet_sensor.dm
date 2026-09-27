@@ -38,7 +38,7 @@
 	history["demand"] = list()
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PM.power_monitor?.refresh_sensors()
-		START_MACHINE_PROCESSING(PM)
+		MACHINE_WAKE(PM)
 
 // Proc: auto_set_name()
 // Parameters: None
@@ -55,7 +55,7 @@
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(PM.power_monitor)
 			PM.power_monitor.refresh_sensors()
-			START_MACHINE_PROCESSING(PM)
+			MACHINE_WAKE(PM)
 	history.Cut()
 	history = null
 
@@ -72,7 +72,7 @@
 // Proc: process()
 // Parameters: None
 // Description: This tracks historical usage, for TGUI power monitors
-/obj/machinery/power/sensor/process()
+/obj/machinery/power/sensor/machine_step()
 	if(!powernet)
 		use_power = USE_POWER_IDLE
 		connect_to_network()
@@ -88,7 +88,7 @@
 	record_timer = null
 	// Sampling is already timer-driven and does not sleep. Do it directly rather
 	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
-	process()
+	machine_step()
 
 // This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/proc/record()
@@ -286,3 +286,8 @@
 		data["load_percentage"] = 100
 	data["alarm"] = powernet.problem ? 1 : 0
 	return data
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/sensor/step_start_condition()
+	return TRUE // schedules its history samples

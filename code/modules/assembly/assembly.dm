@@ -82,7 +82,7 @@
 		to_chat(user, span_notice("\The [src] can now be attached!"))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/assembly/process()
+/obj/item/assembly/periodic_step()
 	return PROCESS_KILL
 
 /obj/item/assembly/examine(mob/user)

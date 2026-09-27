@@ -49,6 +49,7 @@
 		visible_message("[usr] inserts the feeding tube into \the [over_object].")
 		attached = over_object
 		update_icon()
+		MACHINE_WAKE(src)
 
 
 /obj/machinery/feeder/declare_interactions(list/into)
@@ -75,6 +76,7 @@
 	user.drop_item()
 	W.loc = src
 	beaker = W
+	MACHINE_WAKE(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()
 	return TRUE
@@ -104,23 +106,22 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/machinery/feeder/process()
-	set background = 1
-
+/// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
+/obj/machinery/feeder/machine_step()
 	if(attached)
-
 		if(!(get_dist(src, attached) <= 1 && isturf(attached.loc)))
 			visible_message("The tube is pulled out of [attached].")
 			attached = null
 			update_icon()
-			return
+			return PROCESS_KILL
 
-	if(attached && beaker)
-		// Give food
-		if(beaker.volume > 0)
-			var/transfer_amount = 2
-			beaker.reagents.trans_to_mob(attached, transfer_amount, CHEM_INGEST)
-			update_icon()
+	if(!attached || !beaker)
+		return PROCESS_KILL
+	// Give food
+	if(beaker.volume > 0)
+		var/transfer_amount = 2
+		beaker.reagents.trans_to_mob(attached, transfer_amount, CHEM_INGEST)
+		update_icon()
 
 /// Old attack_hand: took out the beaker, or fell through to ..() when there was none.
 /datum/interaction/machine_hand/feeder_take_beaker

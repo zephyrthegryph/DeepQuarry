@@ -159,3 +159,8 @@
 		schedule_growth_wake()
 		return PROCESS_KILL
 	return
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/hydroponics/step_start_condition()
+	return !!seed

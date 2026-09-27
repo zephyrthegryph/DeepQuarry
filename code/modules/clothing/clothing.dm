@@ -1330,7 +1330,6 @@
 	. = ..()
 
 /obj/item/clothing/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	if(IC)
 		IC.clothing = null
 		action_circuit = null // Will get deleted by qdel-ing the IC assembly.

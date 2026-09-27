@@ -20,7 +20,7 @@
 	var/datum/tgui_module/power_monitor/power_monitor
 
 // Checks the sensors for alerts. If change (alerts cleared or detected) occurs, calls for icon update.
-/obj/machinery/computer/power_monitor/process()
+/obj/machinery/computer/power_monitor/machine_step()
 	var/alert = check_warnings()
 	if(alert != alerting)
 		alerting = alert
@@ -32,7 +32,7 @@
 	if(length(dependencies))
 		var/list/keys = list()
 		for(var/datum/powernet/PN as anything in dependencies)
-			keys += list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_STATE)
+			keys += list(PN, CHANGE_POWERNET_STATE)
 		sleep_until_keys(keys)
 		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
@@ -80,9 +80,14 @@
 	return 0
 
 /// Audit: a sleeping monitor's alert light must match its sensors.
-/obj/machinery/computer/power_monitor/react_sleep_violation()
+/obj/machinery/computer/power_monitor/om_sleep_violation()
 	if(!asleep_on_keys())
 		return null
 	if(check_warnings() != alerting)
 		return "asleep with a stale alert ([alerting] vs [check_warnings()])"
 	return null
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/computer/power_monitor/step_start_condition()
+	return TRUE // arms its grid watches

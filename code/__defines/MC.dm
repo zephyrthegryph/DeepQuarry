@@ -28,12 +28,8 @@
 
 #define NEW_SS_GLOBAL(varname) if(varname != src){if(istype(varname)){Recover();qdel(varname);}varname = src;}
 
-// L1 (doc/rewrite/lifecycle.md §2 phase 5): every START_PROCESSING records
-// its subsystem on the datum, so the destroy transaction's teardown phase
-// can stop it automatically -- one auto-stop mechanism instead of a
-// STOP_PROCESSING call in every type's Destroy().
-#define START_PROCESSING(Processor, Datum) if (!(Datum.datum_flags & DF_ISPROCESSING)) {Datum.datum_flags |= DF_ISPROCESSING;Datum.lifecycle_processing_subsystem = Processor;Processor.processing += Datum}
-#define STOP_PROCESSING(Processor, Datum) Datum.datum_flags &= ~DF_ISPROCESSING;Datum.lifecycle_processing_subsystem = null;Processor.processing -= Datum;Processor.currentrun -= Datum
+// START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on object-model
+// pipelines, PERIODIC_START()/PERIODIC_STOP() (code/__defines/om.dm, code/datums/om/periodic.dm).
 
 /// Returns true if the MC is initialized and running.
 /// Optional argument init_stage controls what stage the mc must have initialized to count as initialized. Defaults to INITSTAGE_MAX if not specified.
@@ -110,14 +106,6 @@
 }\
 /datum/controller/subsystem/timer/##X/fire() {..() /*just so it shows up on the profiler*/} \
 /datum/controller/subsystem/timer/##X
-
-#define PROCESSING_SUBSYSTEM_DEF(X) GLOBAL_REAL(SS##X, /datum/controller/subsystem/processing/##X);\
-/datum/controller/subsystem/processing/##X/New(){\
-	NEW_SS_GLOBAL(SS##X);\
-	PreInit();\
-}\
-/datum/controller/subsystem/processing/##X/fire() {..() /*just so it shows up on the profiler*/} \
-/datum/controller/subsystem/processing/##X
 
 #define VERB_MANAGER_SUBSYSTEM_DEF(X) GLOBAL_REAL(SS##X, /datum/controller/subsystem/verb_manager/##X);\
 /datum/controller/subsystem/verb_manager/##X/New(){\

@@ -1,5 +1,4 @@
 /obj/machinery/meter
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "meter"
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
@@ -52,7 +51,7 @@
 
 /obj/machinery/meter/proc/wake_from_gas()
 	unregister_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/meter/proc/current_pressure_icon_state()
 	return pressure_icon_state(target?.return_air())
@@ -178,3 +177,8 @@
 
 /obj/machinery/meter/turf/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
 	return ITEM_INTERACT_BLOCKING
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/meter/arm_wakes()
+	..()
+	register_gas_dependency()

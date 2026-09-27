@@ -20,6 +20,14 @@
 		output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 		if(output)
 			break
+	watch_input(input)
+
+/obj/machinery/mineral/unloading_machine/Destroy()
+	// LIFECYCLE: drops the turf watch on its input marker (a watch on another entity).
+	unwatch_input(input)
+	input = null
+	output = null
+	return ..()
 
 /obj/machinery/mineral/unloading_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -27,13 +35,17 @@
 	else
 		speed_process = !speed_process // switching gears
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 
-/obj/machinery/mineral/unloading_machine/process()
+/// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
+/// until something arrives (on_input_entered()).
+/obj/machinery/mineral/unloading_machine/machine_step()
+	if(!output || !input || !(locate(/obj/structure/ore_box) in input.loc) && !(locate(/obj/item) in input.loc))
+		return PROCESS_KILL
 	if (src.output && src.input)
 		if (locate(/obj/structure/ore_box, input.loc))
 			var/obj/structure/ore_box/BOX = locate(/obj/structure/ore_box, input.loc)

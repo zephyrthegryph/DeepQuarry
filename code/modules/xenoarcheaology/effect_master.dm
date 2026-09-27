@@ -49,7 +49,7 @@
 
 	my_effects = list()
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 	do_setup()
 	return
@@ -146,7 +146,6 @@
 		my_effects -= AE
 		qdel(AE)
 
-	STOP_PROCESSING(SSobj,src)
 
 	. = ..()
 
@@ -425,9 +424,9 @@
 		if(my_effect)
 			my_effect.UpdateMove()
 
-/datum/component/artifact_master/process()
+/datum/component/artifact_master/periodic_step()
 	if(!holder)	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		if(!QDELETED(src))
 			qdel(src)
 			return
@@ -461,7 +460,7 @@
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		my_effect.artifact_id = artifact_id
 
-		my_effect.process()
+		my_effect.periodic_step()
 
 		//COLD ACTIVATION
 		if(my_effect.trigger == TRIGGER_COLD && (trigger_cold ^ my_effect.activated))

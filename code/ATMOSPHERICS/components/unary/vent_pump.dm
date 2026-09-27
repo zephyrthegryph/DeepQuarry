@@ -91,7 +91,7 @@
 		id_tag = num2text(uid)
 	// M2: the flow law is a Rust device edge (pipe port <-> turf), stepped
 	// from SSair every gas tick; this has no process() at all any more.
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::VentPump). rust_bind_pipe_port fires once the

@@ -108,6 +108,7 @@
 	// Begin boiling: the flame is a heat source on the burner's heat body.
 	visible_message(span_notice("\The [src] starts to heat \the [held_container]."))
 	heating = TRUE
+	MACHINE_WAKE(src)
 	if(create_heat_body(TRUE))
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heat_power)
@@ -119,9 +120,10 @@
 	held_container.forceMove(get_turf(src))
 	held_container = null
 
-/obj/machinery/bunsen_burner/process()
+/// Boils its container while heating; otherwise it sleeps until start_boiling().
+/obj/machinery/bunsen_burner/machine_step()
 	if(!heating)
-		return
+		return PROCESS_KILL
 
 	if(held_container && !anchored)
 		drop_held_container()

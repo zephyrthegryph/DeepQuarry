@@ -18,12 +18,16 @@ GLOBAL_DATUM_INIT(ntnet_global, /datum/ntnet, new)
 GLOBAL_VAR_INIT(last_message_id, 0)
 
 // We manually initialize the alarm handlers instead of looping over all existing types
-// to make it possible to write: camera_alarm.triggerAlarm() rather than SSalarm.managers[datum/alarm_handler/camera].triggerAlarm() or a variant thereof.
+// to make it possible to write: camera_alarm.triggerAlarm() rather than a lookup by type or a variant thereof.
 GLOBAL_DATUM_INIT(atmosphere_alarm, /datum/alarm_handler/atmosphere, new)
 GLOBAL_DATUM_INIT(camera_alarm, /datum/alarm_handler/camera, new)
 GLOBAL_DATUM_INIT(fire_alarm, /datum/alarm_handler/fire, new)
 GLOBAL_DATUM_INIT(motion_alarm, /datum/alarm_handler/motion, new)
 GLOBAL_DATUM_INIT(power_alarm, /datum/alarm_handler/power, new)
+
+/// Every alarm handler (was SSalarm.all_handlers).
+/proc/all_alarm_handlers()
+	return list(GLOB.atmosphere_alarm, GLOB.camera_alarm, GLOB.fire_alarm, GLOB.motion_alarm, GLOB.power_alarm)
 
 GLOBAL_DATUM_INIT(decls_repository, /datum/repository/decls, new)
 

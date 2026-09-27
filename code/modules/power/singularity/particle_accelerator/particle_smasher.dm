@@ -206,7 +206,10 @@
 		return 0
 	return ..()
 
-/obj/machinery/particle_smasher/process()
+/// Bleeds its stored energy (radiating) while it has any; empty, it sleeps until a particle hits.
+/obj/machinery/particle_smasher/machine_step()
+	if(!energy)
+		return PROCESS_KILL
 	if(!src.anchored)	// Rapidly loses focus.
 		if(energy)
 			radiation_pulse(
@@ -233,8 +236,8 @@
 			strength = energy * 0.1 //60 rads at max energy.
 		)
 		energy = CLAMP(energy - 5, 0, max_energy)
-
-	return
+	if(!energy)
+		return PROCESS_KILL
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
 	if(!recipes)

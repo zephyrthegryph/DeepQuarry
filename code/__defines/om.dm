@@ -387,6 +387,50 @@
 /// What holds stasis modifier `S`'s mob in stasis, or null.
 #define STASIS_SOURCE(S) OM_REL_TARGET(S, /datum/om/relation/stasis_held_by)
 
+// ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
+
+/// Starts `E`'s periodic work on pipeline type `P` (idempotent). Wakes it if parked.
+#define PERIODIC_START(E, P) periodic_start(E, P)
+/// Ends `E`'s periodic work: its stage idles and it parks. Does nothing when it isn't running.
+#define PERIODIC_STOP(E) periodic_stop(E)
+/// TRUE while `E` has periodic work on any pipeline.
+#define PERIODIC_RUNNING(E) (!isnull((E).periodic_pipe))
+
+#define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
+#define PERIODIC_SECOND /datum/om/pipeline/periodic/second
+#define PERIODIC_FAST /datum/om/pipeline/periodic/fast
+#define PERIODIC_PLANTS /datum/om/pipeline/periodic/plants
+#define PERIODIC_PROJECTILES /datum/om/pipeline/periodic/continuous/projectiles
+#define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
+#define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects
+#define PERIODIC_TAB_ITEMS /datum/om/pipeline/periodic/continuous/tab_items
+
+// ---------------------------------------------------------------- published facts as change channels
+// What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
+// whatever waits on it om_watch()es those channels with its own behaviour.
+
+/// Machine family: a mode another machine or program may wait on changed (door bolts, power,
+/// electrification, open state; an APC's operating state).
+#define CHANGE_MACHINE_MODE (1<<18)
+/// An area's power channels or light switch changed (area power_change()).
+#define CHANGE_AREA_POWER CHANGE_DATUM_A
+/// A powernet's supply or load moved; cables, warnings or monitor state; machine membership.
+#define CHANGE_POWERNET_RATE CHANGE_DATUM_A
+#define CHANGE_POWERNET_STATE CHANGE_DATUM_B
+#define CHANGE_POWERNET_TOPOLOGY CHANGE_DATUM_C
+/// A pipe network's leaks or topology changed (on the network, or on GLOB.new_pipe_networks for
+/// a change whose network is not known yet).
+#define CHANGE_PIPE_LEAKS CHANGE_DATUM_A
+/// A meteor appeared or went away (on GLOB.meteor_watch).
+#define CHANGE_METEORS CHANGE_DATUM_A
+/// A shuttle's schedule changed (on SSemergency_shuttle for evac, SSsupply for supply).
+#define CHANGE_SHUTTLE_SCHEDULE CHANGE_DATUM_D
+	/// Which schedule a status display shows (shuttle_schedule_source()).
+	#define SHUTTLE_SCHEDULE_EVAC 1
+	#define SHUTTLE_SCHEDULE_SUPPLY 2
+/// A mob entered, left or moved in a chunk (/datum/mob_chunk, code/modules/mob/mob_chunks.dm).
+#define CHANGE_CHUNK_ANY_MOB CHANGE_DATUM_A
+#define CHANGE_CHUNK_PLAYER CHANGE_DATUM_B
 // ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
 /// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
 #define OM_CALLEE_SLEPT "__om_callee_slept"

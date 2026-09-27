@@ -9,13 +9,12 @@
 /obj/item/spell/aura/Initialize(mapload)
 	. = ..()
 	set_light(calculate_spell_power(7), calculate_spell_power(4), l_color = glow_color)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	log_and_message_admins("has started casting [src].")
 
 /obj/item/spell/aura/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	log_and_message_admins("has stopped maintaining [src].")
 	return ..()
 
-/obj/item/spell/aura/process()
+/obj/item/spell/aura/periodic_step()
 	return

@@ -105,13 +105,13 @@
 		open = FALSE
 		heat_recouple()
 		cooking = TRUE
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	else
 		open = TRUE
 		heat_recouple()
 		//When the oven door is opened, heat is lost MUCH faster and you stop cooking (because the door is open)
 		cooking = FALSE
-		STOP_MACHINE_PROCESSING(src)
+		MACHINE_SLEEP(src)
 
 	playsound(src, 'sound/machines/hatch_open.ogg', 20, 1)
 	to_chat(user, span_notice("You [open? "open":"close"] the oven door"))

@@ -9,7 +9,7 @@
 	. = ..()
 	adjust_scale(1.5,1.5)
 
-/obj/item/organ/internal/appendix/horror/process()
+/obj/item/organ/internal/appendix/horror/periodic_step()
 	..()
 	if(!owner) return
 	if(is_bruised()) //They heal theirselves.
@@ -26,7 +26,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/eyes/horror/process()
+/obj/item/organ/internal/eyes/horror/periodic_step()
 	..()
 	if(!owner)
 		return
@@ -50,7 +50,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/heart/horror/process()
+/obj/item/organ/internal/heart/horror/periodic_step()
 	..()
 	if(!owner)
 		return
@@ -73,7 +73,7 @@
 	var/entering_vent = FALSE
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 
-/obj/item/organ/internal/intestine/horror/process()
+/obj/item/organ/internal/intestine/horror/periodic_step()
 	..()
 	if(!owner && !escaping) return
 	if(is_bruised()) //They heal theirselves.
@@ -117,7 +117,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/kidneys/horror/process()
+/obj/item/organ/internal/kidneys/horror/periodic_step()
 	..()
 	if(!owner) return
 	if(is_bruised()) //They heal theirselves.
@@ -138,7 +138,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/liver/horror/process()
+/obj/item/organ/internal/liver/horror/periodic_step()
 	..()
 	if(!owner)
 		return
@@ -159,7 +159,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/lungs/horror/process()
+/obj/item/organ/internal/lungs/horror/periodic_step()
 	..()
 	if(!owner)
 		return
@@ -179,7 +179,7 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 	spleen_efficiency = 5
 
-/obj/item/organ/internal/spleen/horror/process()
+/obj/item/organ/internal/spleen/horror/periodic_step()
 	..()
 	if(!owner)
 		return
@@ -197,7 +197,7 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 	var/spider_chance = 10 //for admemes
 
-/obj/item/organ/internal/stomach/horror/process()
+/obj/item/organ/internal/stomach/horror/periodic_step()
 	..()
 	if(!owner)
 		return
@@ -237,7 +237,7 @@
 	target.add_language(LANGUAGE_REDSPACE)
 	target.default_language = redspace
 
-/obj/item/organ/internal/voicebox/horror/process()
+/obj/item/organ/internal/voicebox/horror/periodic_step()
 	..()
 	if(!owner)
 		return

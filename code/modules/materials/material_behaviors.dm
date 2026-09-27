@@ -67,21 +67,21 @@
 	else if(old_luminescence > 0)
 		I.set_light(0)
 	if((radioactivity > 0 || toxicity > 0) && !processing)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		processing = TRUE
 	else if(radioactivity <= 0 && toxicity <= 0 && processing)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		processing = FALSE
 
 /datum/component/material_behaviors/Destroy(force)
 	if(processing)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	var/obj/item/I = parent
 	if(istype(I) && luminescence > 0)
 		I.set_light(0)
 	return ..()
 
-/datum/component/material_behaviors/process(seconds_per_tick)
+/datum/component/material_behaviors/periodic_step(seconds_per_tick)
 	var/obj/item/I = parent
 	if(QDELETED(I))
 		return PROCESS_KILL

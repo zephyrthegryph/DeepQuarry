@@ -101,13 +101,15 @@
 
 /obj/item/coin/uranium/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/coin/uranium/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/coin/uranium/process()
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
+/obj/item/coin/uranium/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 

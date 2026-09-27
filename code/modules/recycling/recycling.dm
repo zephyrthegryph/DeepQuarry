@@ -13,7 +13,7 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/recycling/process()
+/obj/machinery/recycling/machine_step()
 	return PROCESS_KILL // these are all stateful
 
 /obj/machinery/recycling/update_icon()

@@ -38,7 +38,7 @@
 	source.add_modifier(/datum/modifier/leash)
 	source.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = target)
 	target.RegisterSignal(source, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/item/leash, on_pet_move))
-	START_PROCESSING(SSobj, target)
+	PERIODIC_START(target, PERIODIC_SLOW)
 
 /datum/om/relation/leashed_to/on_unlink(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -47,7 +47,7 @@
 		source.remove_a_modifier_of_type(/datum/modifier/leash)
 	if(istype(target))
 		target.UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
-		STOP_PROCESSING(SSobj, target)
+		PERIODIC_STOP(target)
 		// No pet, no leash: let go of the holder too.
 		var/mob/living/master = LEASH_MASTER(target)
 		if(master)
@@ -89,7 +89,7 @@
 	throwforce = 1
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/leash/process()
+/obj/item/leash/periodic_step()
 	var/mob/living/leash_pet = LEASH_PET(src)
 	var/mob/living/leash_master = LEASH_MASTER(src)
 	if(!leash_pet || !leash_master) //If there is no pet, there is no dom. Loop breaks.

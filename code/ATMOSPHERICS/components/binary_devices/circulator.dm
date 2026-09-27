@@ -130,7 +130,7 @@
 	for(var/obj/machinery/power/generator/generator in range(1, src))
 		generator.reconnect()
 		if(generator.anchored)
-			START_MACHINE_PROCESSING(generator)
+			MACHINE_WAKE(generator)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/binary/circulator/examine(mob/user, infix, suffix)

@@ -198,7 +198,7 @@
 
 	add_fingerprint(ui.user)
 	update_icon()
-	START_MACHINE_PROCESSING(src) // settings: re-evaluate the filter now
+	MACHINE_WAKE(src) // settings: re-evaluate the filter now
 
 //
 // Mirrored Orientation - Flips the output dir to opposite side from normal.
@@ -219,7 +219,12 @@
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/trinary/atmos_filter/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/trinary/atmos_filter/arm_wakes()
+	..()
+	hibernate_until_input_changes()

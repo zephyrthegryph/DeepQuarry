@@ -71,9 +71,10 @@
 
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
-/obj/machinery/pump/process()
+/// Pumps every machine frame while on; off, it sleeps until set_state() turns it on.
+/obj/machinery/pump/machine_step()
 	if(!on)
-		return
+		return PROCESS_KILL
 
 	if(!anchored || !(cell?.use(active_power_usage)))
 		set_state(FALSE)
@@ -100,6 +101,8 @@
 
 	on = !on
 	update_icon()
+	if(on)
+		MACHINE_WAKE(src)
 	if(message)
 		if(on)
 			message = span_notice("\The [src] turns on.")

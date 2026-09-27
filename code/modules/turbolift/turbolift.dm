@@ -97,7 +97,7 @@
 #define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/process()
+/datum/turbolift/periodic_step()
 	if(world.time < next_process)
 		return
 	switch(busy_state)
@@ -209,7 +209,7 @@
 	floor.pending_move(src)
 	LAZYOR(queued_floors, floor)
 	busy_state = LIFT_MOVING
-	START_PROCESSING(SSprocessing, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.
 /datum/turbolift/proc/is_functional()

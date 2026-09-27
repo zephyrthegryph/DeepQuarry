@@ -52,11 +52,11 @@
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 	if(always_process)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/weldingtool/Destroy()
 	if(welding || always_process)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/weldingtool/get_welder()
@@ -124,7 +124,7 @@
 
 	..()
 
-/obj/item/weldingtool/process()
+/obj/item/weldingtool/periodic_step()
 	if(welding)
 		if(!no_passive_burn)
 			++burned_fuel_for
@@ -281,7 +281,7 @@
 			welding = 1
 			update_icon()
 			if(!always_process)
-				START_PROCESSING(SSobj, src)
+				PERIODIC_START(src, PERIODIC_SLOW)
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -290,7 +290,7 @@
 	//Otherwise
 	else if(!set_welding && welding)
 		if(!always_process)
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 		if(M)
 			to_chat(M, span_notice("You switch \the [src] off."))
 		else if(T)
@@ -419,7 +419,7 @@
 	change_icons = 0
 	always_process = TRUE
 
-/obj/item/weldingtool/alien/process()
+/obj/item/weldingtool/alien/periodic_step()
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
@@ -437,7 +437,7 @@
 	always_process = TRUE
 	var/nextrefueltick = 0
 
-/obj/item/weldingtool/experimental/process()
+/obj/item/weldingtool/experimental/periodic_step()
 	..()
 	if(get_fuel() < get_max_fuel() && nextrefueltick < world.time)
 		nextrefueltick = world.time + 10
@@ -485,7 +485,7 @@
 	mounted_pack = null
 	return ..()
 
-/obj/item/weldingtool/tubefed/process()
+/obj/item/weldingtool/tubefed/periodic_step()
 	if(!mounted_pack)
 		return PROCESS_KILL
 	if(loc == mounted_pack)
@@ -668,7 +668,7 @@
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 		equip_mount = loc
 
-/obj/item/weldingtool/electric/mounted/exosuit/process()
+/obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
 	..()
 
 	if(equip_mount && equip_mount.chassis)
@@ -684,7 +684,7 @@
 	desc = "you shouldn't be reading this. Tell a dev!"
 	welding = TRUE
 
-/obj/item/weldingtool/dummy/process()
+/obj/item/weldingtool/dummy/periodic_step()
 	return
 
 /obj/item/weldingtool/dummy/get_fuel()

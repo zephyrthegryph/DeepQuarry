@@ -46,7 +46,7 @@
 	repair += get_part_rating(/obj/item/stock_parts/scanning_module)
 	repair += get_part_rating(/obj/item/stock_parts/manipulator) * 2
 
-/obj/machinery/mech_recharger/process()
+/obj/machinery/mech_recharger/machine_step()
 	..()
 	if(!charging)
 		return PROCESS_KILL
@@ -101,10 +101,10 @@
 		else
 			to_chat(M, span_notice("Now charging..."))
 		charging = M
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	return
 
 /obj/machinery/mech_recharger/power_change()
 	. = ..()
 	if(. && charging)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)

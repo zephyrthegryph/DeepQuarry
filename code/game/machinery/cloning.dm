@@ -96,10 +96,10 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
 		occupant_handle = null
-		STOP_MACHINE_PROCESSING(src)
+		MACHINE_SLEEP(src)
 		return
 	occupant_handle = om_handle(L)
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
@@ -197,7 +197,7 @@
 	return 1
 
 //Grow clones to maturity then kick them out.  FREELOADERS
-/obj/machinery/clonepod/process()
+/obj/machinery/clonepod/machine_step()
 	var/mob/living/occupant = get_occupant()
 	if(stat & NOPOWER) //Autoeject if power is lost
 		if(occupant)

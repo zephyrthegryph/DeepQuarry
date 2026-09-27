@@ -209,7 +209,7 @@
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)
 
-/obj/item/gun/magnetic/matfed/phoronbore/process()
+/obj/item/gun/magnetic/matfed/phoronbore/periodic_step()
 	if(generator_state && !mat_storage)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		soundloop.stop()

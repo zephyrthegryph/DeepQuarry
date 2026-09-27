@@ -20,6 +20,8 @@
 		)
 	pixel_y = 8
 	var/mob/living/held_mob
+	/// The om_after() timer id of a pending cleanup_check(), or 0.
+	var/tmp/cleanup_timer = 0
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
@@ -29,7 +31,8 @@
 		stack_trace("Holder was not passed a mob.")
 		return INITIALIZE_HINT_QDEL
 	held.forceMove(src)
-	START_PROCESSING(SSobj, src)
+	if(isturf(loc) || isbelly(loc))
+		schedule_cleanup_check()
 
 /mob/living/get_status_tab_items()
 	. = ..()
@@ -89,11 +92,16 @@
 		held_mob.vis_flags = original_vis_flags
 		held_mob = null
 		invisibility = INVISIBILITY_ABSTRACT
+		schedule_cleanup_check() // once the move is over
 	..()
+
+/obj/item/holder/Moved(atom/old_loc)
+	. = ..()
+	if(isturf(loc) || isbelly(loc))
+		schedule_cleanup_check()
 
 /// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
 /obj/item/holder/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	if(held_mob)
 		var/mob/cached_mob = held_mob
 		dump_mob()
@@ -103,8 +111,14 @@
 		M.drop_from_inventory(src, loc)
 	. = ..()
 
-/// If the mob somehow leaves the holder, clean us up.
-/obj/item/holder/process()
+/// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
+/// right after the move that did it (Exited(), Moved()), never polled.
+/obj/item/holder/proc/schedule_cleanup_check()
+	if(!cleanup_timer)
+		cleanup_timer = om_after(src, 0, PROC_REF(cleanup_check))
+
+/obj/item/holder/proc/cleanup_check()
+	cleanup_timer = 0
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
 		qdel(src)
 

@@ -139,7 +139,7 @@
 			user.visible_message(span_warning("[hound.name] is ingesting [trashman] into their [src.name]."), span_notice("You start ingesting [trashman] into your [src.name]..."))
 			if(do_after(user, 3 SECONDS, target = trashman) && !patient && !BUCKLED(trashman) && length(contents) < max_item_count)
 				trashman.forceMove(src)
-				START_PROCESSING(SSobj, src)
+				PERIODIC_START(src, PERIODIC_SLOW)
 				user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashman] slips inside."), span_notice("Your [src.name] groans lightly as [trashman] slips inside."))
 				log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 				playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
@@ -169,7 +169,7 @@
 			else //If you don't have someone in you, proceed.
 				H.forceMove(src)
 				update_patient()
-				START_PROCESSING(SSobj, src)
+				PERIODIC_START(src, PERIODIC_SLOW)
 				user.visible_message(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside."), span_notice("Your [src] lights up as [H] slips inside. Life support functions engaged."))
 				log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 				playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
@@ -348,7 +348,7 @@
 				return FALSE
 			cleaning = TRUE
 			drain(startdrain)
-			START_PROCESSING(SSobj, src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 			update_patient()
 			if(patient)
 				to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
@@ -610,7 +610,7 @@
 		update_patient()
 	return
 
-/obj/item/dogborg/sleeper/process()
+/obj/item/dogborg/sleeper/periodic_step()
 	if(!istype(src.loc,/mob/living/silicon/robot))
 		return
 
@@ -630,7 +630,7 @@
 
 	if(!patient && !cleaning) //We think we're done working.
 		if(!update_patient()) //One last try to find someone
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 			return
 
 /obj/item/dogborg/sleeper/proc/get_experiment_handler()
