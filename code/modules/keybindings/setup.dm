@@ -1,13 +1,5 @@
 // Set a client's focus to an object and override these procs on that object to let it handle keypresses
 
-/// Called when a key is pressed down initially
-/datum/proc/key_down(key, client/user)
-	return
-
-/// Called when a key is released
-/datum/proc/key_up(key, client/user)
-	return
-
 /// Called once every server tick
 /datum/proc/keyLoop(client/user)
 	set waitfor = FALSE

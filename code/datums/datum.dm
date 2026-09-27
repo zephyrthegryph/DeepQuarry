@@ -350,20 +350,17 @@
 /// Return text from this proc to provide extra context to hard deletes that happen to it
 /// Optional, you should use this for cases where replication is difficult and extra context is required
 /// Can be called more then once per object, use harddel_deets_dumped to avoid duplicate calls (I am so sorry)
-/datum/proc/dump_harddel_info()
-	return
-
 ///images are pretty generic, this should help a bit with tracking harddels related to them
-/image/dump_harddel_info()
+/image/proc/dump_harddel_info()
 	if(harddel_deets_dumped)
 		return
 	harddel_deets_dumped = TRUE
 	return "Image icon: [icon] - icon_state: [icon_state] [loc ? "loc: [loc] ([loc.x],[loc.y],[loc.z])" : ""]"
 
 /// Begin coordinated remote viewing, this will call look() when the view begins, and unlook() when it ends.
-/datum/proc/start_coordinated_remoteview(mob/user, atom/target, list/viewer_managed_list, remote_view_config_path = null)
+/proc/start_coordinated_remoteview(datum/coordinator, mob/user, atom/target, list/viewer_managed_list, remote_view_config_path = null)
 	ASSERT(islist(viewer_managed_list))
-	user.AddComponent(/datum/component/remote_view/viewer_managed, focused_on = target, viewsize = null, vconfig_path = remote_view_config_path, coordinator = src, viewer_list = viewer_managed_list)
+	user.AddComponent(/datum/component/remote_view/viewer_managed, focused_on = target, viewsize = null, vconfig_path = remote_view_config_path, coordinator = coordinator, viewer_list = viewer_managed_list)
 
 /// Called from /datum/component/remote_view/viewer_managed during Initilize().
 /datum/proc/look(mob/user)

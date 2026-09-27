@@ -559,7 +559,7 @@
 	if(om_busy(src)) // a wrenching job claims the turret
 		to_chat(user, span_warning("Someone is already [anchored ? "un" : ""]securing the turret!"))
 		return ITEM_INTERACT_SUCCESS
-	if(!anchored && isinspace())
+	if(!anchored && isinspace(src))
 		to_chat(user, span_warning("Cannot secure turrets in space!"))
 		return ITEM_INTERACT_SUCCESS
 

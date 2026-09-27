@@ -806,9 +806,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				var/specific_quest = tgui_input_text(ui.user, "What is their quest?", "Quest!!!")
 				if(!specific_quest)
 					return
-				target.quest_from_above(specific_quest)
+				quest_from_above(target, specific_quest)
 			else
-				target.quest_from_above()
+				quest_from_above(target)
 
 
 		////////FIXES//////////////

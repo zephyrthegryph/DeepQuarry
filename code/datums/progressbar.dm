@@ -165,7 +165,7 @@
 
 ///Progress bars are very generic, and what hangs a ref to them depends heavily on the context in which they're used
 ///So let's make hunting harddels easier yeah?
-/datum/progressbar/dump_harddel_info()
+/datum/progressbar/proc/dump_harddel_info()
 	if(harddel_deets_dumped)
 		return
 	harddel_deets_dumped = TRUE

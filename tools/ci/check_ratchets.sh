@@ -17,7 +17,8 @@ for lint in \
 	state_schema_lint.py \
 	check_deadline_polling.py \
 	actor_forwarding_lint.py \
-	breakpoint_lint.py; do
+	breakpoint_lint.py \
+	base_proc_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")

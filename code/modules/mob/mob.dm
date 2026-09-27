@@ -158,9 +158,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return -1
 
 // used for petrification machines
-/atom/proc/get_ultimate_mob()
+/proc/get_ultimate_mob(atom/source)
 	var/mob/ultimate_mob
-	var/atom/to_check = loc
+	var/atom/to_check = source.loc
 	var/n = 0
 	while (to_check && !isturf(to_check) && n++ < 16)
 		if (ismob(to_check))

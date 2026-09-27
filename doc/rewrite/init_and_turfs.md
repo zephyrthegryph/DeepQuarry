@@ -240,6 +240,35 @@ Order: 3 is a one-line build change; 2 is mechanical per proc and can be
 done incrementally with the count as a ratchet; 1 is the large win and needs
 the variant loader and map aliases.
 
+**Done (2026-09-27): fixes 2 and 3.** (1 is not approved.)
+
+- **3, DEBUG off in production.** `deepquarry.dme` and `code/__defines/misc.dm`
+  no longer define `DEBUG`; the `dm` target builds without it. `TEST_DEFINES`
+  in `tools/build/build.ts` (test and bench builds) and the autowiki build add
+  `DEBUG` back, so test runtimes keep file and line. A local debug build of
+  the main .dmb is `tools/build/build.sh -DDEBUG`. Without `DEBUG` the custom
+  `world/Error` handler (`USE_CUSTOM_ERROR_HANDLER`) is off too, since it keys
+  its dedupe on file and line; production uses BYOND's default handler.
+  Measured earlier at -56 MB (table above); bench builds keep `DEBUG`, so the
+  bench numbers below don't include it.
+- **2, procs off the base types.** 33 procs moved to global procs (or deleted
+  where nothing called them): 19 on `/datum` (the 12 `tgui_modal_*` helpers,
+  `typelist`, `IsAbstract`, `can_vv_mark`, `key_down`, `key_up`,
+  `start_coordinated_remoteview`, `dump_harddel_info`), 10 on `/atom`
+  (`Admin_Coordinates_Readable`, `Safe_COORD_Location`, `extra_admin_link`,
+  `extra_ghost_link`, `vv_auto_rename`, `test_telecomms`, `DrawPixelOn`,
+  `laserhit`, `get_ultimate_mob`, `isinspace`), 1 on `/obj`
+  (`analyze_gases`, now `analyze_gases_by(tool, target, user)`) and 3 on
+  `/mob` (`quest_from_above`, `safe_animal`, `artifact_spawn_debug_tool`).
+  `tools/ci/base_proc_lint.py` (in `check_ratchets.sh`) counts procs declared
+  on `/datum`, `/atom`, `/atom/movable`, `/obj`, `/obj/item` and `/mob`
+  against `tools/ci/base_proc_allowlist.txt`; the ceilings went from
+  166/323/132/103/127/588 to 147/313/132/102/127/585. A new rarely used proc
+  belongs in a global proc or a helper datum.
+- **Measured** (bench `boot_profile`, minitest, one boot each, bench build
+  with `DEBUG`): private MB at `world/New()` 698.1 before, 666.5 after
+  (-31.6); booted 841.3 before, 809.1 after (-32.2).
+
 ## 1. Boot profile
 
 ### 1.1 Subsystems (clean builds, 3 boots)

@@ -135,7 +135,7 @@
 			return FALSE
 		else if(!viewing_overmap(ui.user))
 			if(!viewers) viewers = list() // List must exist for pass by reference to work
-			start_coordinated_remoteview(ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
+			start_coordinated_remoteview(src, ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
 		else
 			ui.user.reset_perspective()
 		return TRUE
@@ -406,7 +406,7 @@
 				return FALSE
 			else  if(!viewing_overmap(ui.user))
 				if(!viewers) viewers = list()
-				start_coordinated_remoteview(ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
+				start_coordinated_remoteview(src, ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()
 			. = TRUE
