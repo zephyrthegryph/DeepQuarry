@@ -50,9 +50,7 @@
 	new /obj/item/stack/material/wood(get_turf(src))
 	qdel(src)
 
-/obj/structure/noticeboard/Destroy()
-	QDEL_NULL_LIST(notices)
-	. = ..()
+REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 
 /obj/structure/noticeboard/ex_act(severity)
 	dismantle()
@@ -125,7 +123,6 @@
 
 /obj/structure/noticeboard/tgui_data(mob/user)
 	var/list/data = ..()
-
 
 	var/list/tgui_notices = list()
 	for(var/obj/item/I in src.notices)
