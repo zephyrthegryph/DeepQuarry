@@ -182,6 +182,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /obj/machinery/power/apc/Initialize(mapload, ndir, building)
 	. = ..()
+	// Rust runs the distributor; the APC never polls (wakes call power_sync()).
+	STOP_MACHINE_PROCESSING(src)
 	set_wires(new /datum/wires/apc(src))
 
 	icon_renderer     = new /datum/apc_icon_renderer()

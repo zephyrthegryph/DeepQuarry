@@ -141,7 +141,7 @@
 	M.power_change()
 
 	// Cut off, nearly empty, with a load.
-	T.disconnect_from_network()
+	A.disconnect_from_network()
 	A.area.use_power_static(2000, EQUIP)
 	A.operating = TRUE
 	A.chargemode = TRUE
@@ -167,7 +167,7 @@
 	var/low = A.cell.charge
 
 	// Supply returns.
-	T.connect_to_network()
+	A.connect_to_network()
 	T.set_power_supply(1000000)
 	var/restored = FALSE
 	for(var/i in 1 to 80)
