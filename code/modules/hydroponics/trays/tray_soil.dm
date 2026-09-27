@@ -40,7 +40,9 @@
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
 		return TRUE
 	if(!seed)
-		var/choice= tgui_alert(user, "Do you want to destroy the growplot?", "Destroy growplot?" , list("Yes", "No"))
+		var/choice= rerun_prompt(user, "k43", list("message" = "Do you want to destroy the growplot?", "title" = "Destroy growplot?", "choices" = list("Yes", "No")), PROC_REF(interaction_shovel), args)
+		if(isnull(choice))
+			return
 		if(!choice||choice=="No")
 			return TRUE
 		user.visible_message("[user] starts dispersing the [src]...", runemessage = "disperses the [src]")

@@ -18,7 +18,9 @@
 	if(.)
 		return TRUE
 	if(LAZYLEN(genes))
-		var/choice = tgui_alert(user, "Are you sure you want to wipe the disk?", "Xenobotany Data", list("No", "Yes"))
+		var/choice = rerun_prompt(user, "k21", list("message" = "Are you sure you want to wipe the disk?", "title" = "Xenobotany Data", "choices" = list("No", "Yes")), PROC_REF(attack_self), args)
+		if(isnull(choice))
+			return TRUE
 		if(src && user && genes && choice && choice == "Yes" && user.Adjacent(get_turf(src)))
 			to_chat(user, span_filter_notice("You wipe the disk data."))
 			name = initial(name)
