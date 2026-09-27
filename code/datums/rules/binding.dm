@@ -103,11 +103,9 @@
 	/// The id of the owner's DM-owned keys (om_world_key_id()).
 	var/key_id
 	/// Every world watch made for this binding (dq_rx_*), deleted with it.
+	/// Deleted by Destroy() (dq_rx_clear()), not by the lifecycle's owned-var pass: it is a
+	/// plain list, and qdel() refuses lists.
 	var/list/world_watches
-
-/datum/rule_binding/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + "world_watches"
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()

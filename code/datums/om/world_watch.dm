@@ -240,7 +240,8 @@
 			error("world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
 		if(W.one_shot)
 			W.cancel()
-		if(out_of_budget() && i <= length(Q))
+		// Urgent wakes drain in full, like Rust's urgent lane; the rest yield to the budget.
+		if(lane != LANE_URGENT && out_of_budget() && i <= length(Q))
 			Q.Cut(1, i)
 			return FALSE
 	Q.Cut()
