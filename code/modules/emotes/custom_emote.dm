@@ -8,7 +8,10 @@
 
 	var/input
 	if(!message)
-		input = tgui_input_text(src,"Choose an emote to display.", max_length = MAX_MESSAGE_LEN)
+		var/_answer_k11 = rerun_prompt(src, "k11", list("kind" = "text", "message" = "Choose an emote to display.", "max_length" = MAX_MESSAGE_LEN), PROC_REF(custom_emote), args)
+		if(isnull(_answer_k11))
+			return
+		input = _answer_k11
 	else
 		input = message
 	process_normal_emote(m_type, input, input, range)

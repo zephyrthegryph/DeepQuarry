@@ -56,11 +56,17 @@
 
 		if(act == "custom")
 			if(!message)
-				message = sanitize_or_reflect(tgui_input_text(src,"Choose an emote to display.", encode = FALSE), src) // Reflect too long messages, within reason
+				var/_answer_k59 = rerun_prompt(src, "k59", list("kind" = "text", "message" = "Choose an emote to display.", "encode" = FALSE), PROC_REF(emote), args)
+				if(isnull(_answer_k59))
+					return
+				message = sanitize_or_reflect(_answer_k59, src) // Reflect too long messages, within reason
 			if(!message)
 				return
 			if (!m_type)
-				if(tgui_alert(src, "Is this an audible emote?", "Emote", list("Yes", "No")) != "Yes")
+				var/_answer_k63 = rerun_prompt(src, "k63", list("message" = "Is this an audible emote?", "title" = "Emote", "choices" = list("Yes", "No")), PROC_REF(emote), args)
+				if(isnull(_answer_k63))
+					return
+				if(_answer_k63 != "Yes")
 					m_type = VISIBLE_MESSAGE
 				else
 					m_type = AUDIBLE_MESSAGE
