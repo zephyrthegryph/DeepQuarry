@@ -34,19 +34,20 @@
 		if(M.id == id)
 			M.open()
 
-	sleep(20)
+	om_after(src, 2 SECONDS, PROC_REF(alarm_drive))
 
+/obj/machinery/computer/pod/proc/alarm_drive()
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			M.power = connected.power
+			M.power = connected?.power
 			M.drive()
+	om_after(src, 5 SECONDS, PROC_REF(alarm_close))
 
-	sleep(50)
+/obj/machinery/computer/pod/proc/alarm_close()
 	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.close()
 			return
-	return
 
 /obj/machinery/computer/pod/declare_interactions(list/into)
 	into += list(

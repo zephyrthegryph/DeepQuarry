@@ -429,8 +429,7 @@
 				return
 			if(UNCONSCIOUS)
 				to_chat(usr, span_notice("You struggle through the haze to hit the eject button. This will take a couple of minutes..."))
-				if(do_after(usr, 2 MINUTES, target = src))
-					go_out()
+				om_do_after(usr, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
 			if(CONSCIOUS)
 				go_out()
 	else
@@ -438,6 +437,9 @@
 			return
 		go_out()
 	add_fingerprint(usr)
+
+/obj/machinery/sleeper/proc/move_eject_timed_done()
+	go_out()
 
 /obj/machinery/sleeper/MouseDrop_T(mob/target, mob/user)
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user) || !ishuman(target))
@@ -502,19 +504,23 @@
 	else
 		visible_message("\The [user] starts putting [M] into \the [src].")
 
-	if(do_after(user, 2 SECONDS, target = src))
-		if(BUCKLED(M))
-			return
-		if(occupant)
-			to_chat(user, span_warning("\The [src] is already occupied."))
-			return
-		M.stop_pulling()
-		if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
-			return
-		update_use_power(USE_POWER_ACTIVE)
-		START_MACHINE_PROCESSING(src)
-		occupant.cozyloop.start() // Cozy Music
-		update_icon()
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+
+/obj/machinery/sleeper/proc/go_in_timed_done(mob/M, mob/user)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	if(BUCKLED(M))
+		return
+	if(occupant)
+		to_chat(user, span_warning("\The [src] is already occupied."))
+		return
+	M.stop_pulling()
+	if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
+		return
+	occupant = M
+	update_use_power(USE_POWER_ACTIVE)
+	START_MACHINE_PROCESSING(src)
+	occupant.cozyloop.start() // Cozy Music
+	update_icon()
 
 /obj/machinery/sleeper/proc/go_out()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)

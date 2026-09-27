@@ -219,14 +219,16 @@ Deployable items
 		var/choice = tgui_input_list(user, "What would you like to paint the cutout as?", "Cutout Painting", cutout_types)
 		if(!choice || !Adjacent(user) || I != user.get_active_hand())
 			return TRUE
-		if(do_after(user, 10 SECONDS, target = src))
-			var/picked_type = cutout_types[choice]
-			new picked_type(loc)
-			qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
+		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(choice))
 		return TRUE
 
 	else
 		return ..()
+
+/obj/structure/barricade/cutout/proc/attackby_timed_done(choice)
+	var/picked_type = cutout_types[choice]
+	new picked_type(loc)
+	qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
 
 //Variants
 /obj/structure/barricade/cutout/greytide

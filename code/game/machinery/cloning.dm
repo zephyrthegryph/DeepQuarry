@@ -249,6 +249,15 @@
 	return
 
 //Let's unlock this early I guess.  Might be too early, needs tweaking.
+/obj/machinery/clonepod/proc/load_container_done(mob/user, obj/item/W)
+	if(LAZYLEN(containers) >= container_limit)
+		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
+		return
+	user.visible_message("[user] has loaded \the [W] into \the [src].", "You load \the [W] into \the [src].")
+	track_biomass_container(W)
+	user.drop_item()
+	W.forceMove(src)
+
 /obj/machinery/clonepod/attackby(obj/item/W as obj, mob/user as mob)
 	var/mob/living/occupant = get_occupant()
 	if(isnull(occupant))
@@ -269,11 +278,8 @@
 	else if(istype(W,/obj/item/reagent_containers/glass))
 		if(LAZYLEN(containers) >= container_limit)
 			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
-		else if(do_after(user, 1 SECOND, target = src))
-			user.visible_message("[user] has loaded \the [W] into \the [src].", "You load \the [W] into \the [src].")
-			track_biomass_container(W)
-			user.drop_item()
-			W.forceMove(src)
+		else
+			om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
 		return
 	else
 		..()

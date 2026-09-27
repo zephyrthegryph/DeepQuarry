@@ -223,12 +223,7 @@
 			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 			return TRUE
 		to_chat(user, span_notice("You begin repairing [src]..."))
-		if(do_after(user, 3 SECONDS, target = src))
-			if(P.use(amt))
-				to_chat(user, span_notice("You have repaired \The [src]"))
-				src.repair()
-			else
-				to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_attackby_timed_done), done_args = list(user, amt, P))
 
 	else if(src.density && (IS_HARMING(user))) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
 		var/obj/item/W = C
@@ -244,6 +239,13 @@
 			return TRUE
 	return TRUE
 
+/obj/machinery/door/blast/proc/interaction_attackby_timed_done(mob/user, amt, obj/item/stack/P)
+	if(P.use(amt))
+		to_chat(user, span_notice("You have repaired \The [src]"))
+		src.repair()
+	else
+		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+
 // Proc: attack_alien()
 // Parameters: Attacking Xeno mob.
 // Description: Forces open the door after a delay.
@@ -253,20 +255,23 @@
 		if(istype(X.species, /datum/species/xenos))
 			if(src.density)
 				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-				if(do_after(user, 15 SECONDS, target = src))
-					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-					visible_message(span_danger("\The [user] forces \the [src] open!"))
-					force_open(1)
+				om_do_after(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user))
 			else
 				visible_message(span_alium("\The [user] begins forcing \the [src] closed!"))
-				if(do_after(user, 5 SECONDS, target = src))
-					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-					visible_message(span_danger("\The [user] forces \the [src] closed!"))
-					force_close(1)
+				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user))
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 			return
 	..()
+
+/obj/machinery/door/blast/proc/attack_alien_timed_done(mob/user)
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	force_open(1)
+/obj/machinery/door/blast/proc/attack_alien_timed_done2(mob/user)
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	force_close(1)
 
 // Proc: attack_generic()
 // Parameters: Attacking simple mob, incoming damage.
@@ -277,19 +282,22 @@
 			if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				if(do_after(user, 5 SECONDS, target = src))
-					visible_message(span_danger("\The [user] forces \the [src] open!"))
-					force_open(1)
+				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user))
 			else
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				if(do_after(user, 2 SECONDS, target = src))
-					visible_message(span_danger("\The [user] forces \the [src] closed!"))
-					force_close(1)
+				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user))
 			if(user.ai_brain) user.ai_brain.busy = FALSE
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return
 	..()
+
+/obj/machinery/door/blast/proc/attack_generic_timed_done(mob/living/user)
+	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	force_open(1)
+/obj/machinery/door/blast/proc/attack_generic_timed_done2(mob/living/user)
+	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	force_close(1)
 
 // Proc: open()
 // Parameters: None

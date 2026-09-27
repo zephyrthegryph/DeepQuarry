@@ -221,17 +221,10 @@
 		if(istype(X.species, /datum/species/xenos))
 			if(src.blocked)
 				visible_message(span_alium("\The [user] begins digging into \the [src] internals!"))
-				if(do_after(user, 5 SECONDS, target = src))
-					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-					src.blocked = 0
-					update_icon()
-					open(1)
+				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
 			else if(src.density)
 				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-				if(do_after(user, 2 SECONDS, target = src))
-					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-					visible_message(span_danger("\The [user] forces \the [src] open!"))
-					open(1)
+				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user))
 			else
 				visible_message(span_danger("\The [user] forces \the [src] closed!"))
 				close(1)
@@ -240,6 +233,16 @@
 			return
 	..()
 
+/obj/machinery/door/firedoor/proc/attack_alien_timed_done()
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	src.blocked = 0
+	update_icon()
+	open(1)
+/obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	open(1)
+
 /obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
 	if(stat & (BROKEN|NOPOWER))
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -247,23 +250,26 @@
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
 				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
-				if(do_after(user, time_to_force, target = src))
-					visible_message(span_danger("\The [user] forces \the [src] open!"))
-					src.blocked = 0
-					open(1)
+				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user))
 				if(user.ai_brain) user.ai_brain.busy = FALSE
 			else
 				time_to_force = (time_to_force / 2)
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
 				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
-				if(do_after(user, time_to_force, target = src))
-					visible_message(span_danger("\The [user] forces \the [src] closed!"))
-					close(1)
+				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user))
 				if(user.ai_brain) user.ai_brain.busy = FALSE
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return
 	..()
+
+/obj/machinery/door/firedoor/proc/attack_generic_timed_done(mob/living/user)
+	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	src.blocked = 0
+	open(1)
+/obj/machinery/door/firedoor/proc/attack_generic_timed_done2(mob/living/user)
+	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	close(1)
 
 /obj/machinery/door/firedoor/declare_interactions(list/into)
 	into += list(
@@ -303,23 +309,23 @@
 
 		prying = 1
 		update_icon()
-		if(use_tool(user, C, src, delay = 3 SECONDS, volume = 100,
-				message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!",
-				message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!"))
-			user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
-					"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
-					"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
-			if(density)
-				spawn(0)
-					open(1)
-			else
-				spawn(0)
-					close()
+		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C))
 		prying = 0
 		update_icon()
 		return TRUE
 
 	return FALSE
+
+/obj/machinery/door/firedoor/proc/interaction_use_item_tool_done(mob/user, obj/item/C)
+	user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
+			"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
+			"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
+	if(density)
+		spawn(0)
+			open(1)
+	else
+		spawn(0)
+			close()
 
 /obj/machinery/door/firedoor/welder_act(mob/user, obj/item/tool)
 	if(operating)
@@ -354,38 +360,43 @@
 			to_chat(user, span_danger("You must open the maintenance hatch first!"))
 			return TRUE
 		user.visible_message(span_danger("[user] is removing the electronics from \the [src]."), "You start to remove the electronics from [src].")
-		if(do_after(user, 3 SECONDS, target = src) && blocked && density && hatch_open)
-			playsound(src, tool.usesound, 50, TRUE)
-			user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
-			if(stat & BROKEN)
-				new /obj/item/circuitboard/broken(loc)
-			else
-				new /obj/item/circuitboard/airalarm(loc)
-			var/obj/structure/firedoor_assembly/assembly = new(loc)
-			assembly.anchored = TRUE
-			assembly.density = TRUE
-			assembly.wired = TRUE
-			assembly.glass = glass
-			assembly.update_icon()
-			qdel(src)
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user, tool))
 		return TRUE
 	if(prying)
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
 	prying = TRUE
 	update_icon()
-	if(use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100,
-			message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!",
-			message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!") \
-			&& (stat & (BROKEN|NOPOWER) || !density))
-		user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
-		if(density)
-			open(TRUE)
-		else
-			close()
+	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool))
 	prying = FALSE
 	update_icon()
 	return TRUE
+
+/obj/machinery/door/firedoor/proc/crowbar_act_timed_done(mob/user, obj/item/tool)
+	if(!(blocked && density && hatch_open))
+		return
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
+	if(stat & BROKEN)
+		new /obj/item/circuitboard/broken(loc)
+	else
+		new /obj/item/circuitboard/airalarm(loc)
+	var/obj/structure/firedoor_assembly/assembly = new(loc)
+	assembly.anchored = TRUE
+	assembly.density = TRUE
+	assembly.wired = TRUE
+	assembly.glass = glass
+	assembly.update_icon()
+	qdel(src)
+
+/obj/machinery/door/firedoor/proc/crowbar_act_tool_done(mob/user, obj/item/tool)
+	if(!((stat & (BROKEN|NOPOWER) || !density)))
+		return
+	user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
+	if(density)
+		open(TRUE)
+	else
+		close()
 
 // CHECK PRESSURE
 /obj/machinery/door/firedoor/process()

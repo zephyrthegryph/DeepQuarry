@@ -25,44 +25,57 @@
 
 
 /obj/machinery/computer/telecomms/traffic/proc/update_ide()
+	if(ide_ticking)
+		return
+	ide_ticking = TRUE
+	update_ide_tick()
 
-	// loop if there's someone manning the keyboard
-	while(editingcode)
-		if(!editingcode.client)
-			editingcode = null
-			break
+/obj/machinery/computer/telecomms/traffic/var/tmp/ide_ticking = FALSE
 
-		// For the typer, the input is enabled. Buffer the typed text
+/// One half-second refresh of the IDE while someone is manning the keyboard.
+/obj/machinery/computer/telecomms/traffic/proc/update_ide_tick()
+	if(!editingcode)
+		update_ide_end()
+		return
+	if(!editingcode.client)
+		editingcode = null
+		update_ide_end()
+		return
+
+	// For the typer, the input is enabled. Buffer the typed text
+	if(editingcode)
+		storedcode = "[winget(editingcode, "tcscode", "text")]"
+	if(editingcode) // double if's to work around a runtime error
+		winset(editingcode, "tcscode", "is-disabled=false")
+
+	// If the player's not manning the keyboard anymore, adjust everything
+	if( (!(editingcode in range(1, src)) && !issilicon(editingcode)) || (!editingcode.check_current_machine(src) && !issilicon(editingcode)))
 		if(editingcode)
-			storedcode = "[winget(editingcode, "tcscode", "text")]"
-		if(editingcode) // double if's to work around a runtime error
-			winset(editingcode, "tcscode", "is-disabled=false")
+			winshow(editingcode, "Telecomms IDE", 0) // hide the window!
+		editingcode = null
+		update_ide_end()
+		return
 
-		// If the player's not manning the keyboard anymore, adjust everything
-		if( (!(editingcode in range(1, src)) && !issilicon(editingcode)) || (!editingcode.check_current_machine(src) && !issilicon(editingcode)))
-			if(editingcode)
-				winshow(editingcode, "Telecomms IDE", 0) // hide the window!
-			editingcode = null
-			break
+	// For other people viewing the typer type code, the input is disabled and they can only view the code
+	// (this is put in place so that there's not any magical shenanigans with 50 people inputting different code all at once)
 
-		// For other people viewing the typer type code, the input is disabled and they can only view the code
-		// (this is put in place so that there's not any magical shenanigans with 50 people inputting different code all at once)
+	if(length(viewingcode))
+		// This piece of code is very important - it escapes quotation marks so string aren't cut off by the input element
+		var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
+		showcode = replacetext(storedcode, "\"", "\\\"")
 
-		if(length(viewingcode))
-			// This piece of code is very important - it escapes quotation marks so string aren't cut off by the input element
-			var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
-			showcode = replacetext(storedcode, "\"", "\\\"")
+		for(var/mob/M in viewingcode)
 
-			for(var/mob/M in viewingcode)
+			if( (M.check_current_machine(src) && (M in view(1, src)) ) || issilicon(M))
+				winset(M, "tcscode", "is-disabled=true")
+				winset(M, "tcscode", "text=\"[showcode]\"")
+			else
+				LAZYREMOVE(viewingcode, M)
+				winshow(M, "Telecomms IDE", 0) // hide the window!
+	om_after(src, 5, PROC_REF(update_ide_tick))
 
-				if( (M.check_current_machine(src) && (M in view(1, src)) ) || issilicon(M))
-					winset(M, "tcscode", "is-disabled=true")
-					winset(M, "tcscode", "text=\"[showcode]\"")
-				else
-					LAZYREMOVE(viewingcode, M)
-					winshow(M, "Telecomms IDE", 0) // hide the window!
-
-		sleep(5)
+/obj/machinery/computer/telecomms/traffic/proc/update_ide_end()
+	ide_ticking = FALSE
 
 	if(length(viewingcode) > 0)
 		editingcode = DEFAULTPICK(viewingcode, null)

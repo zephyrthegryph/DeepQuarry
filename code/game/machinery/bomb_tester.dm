@@ -292,7 +292,6 @@
 		if(simulate_tank())
 			break
 		simulation_results += "<br>Gas tank status:<br>[format_gas_for_results(faketank)]"
-		sleep(2)
 
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
@@ -317,7 +316,6 @@
 		if(simulate_tank())
 			break
 		simulation_results += "<br>Gas mixture status:<br>[format_gas_for_results(faketank)]"
-		sleep(2)
 
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
@@ -350,7 +348,6 @@
 		if(simulate_tank())
 			break
 		simulation_results += "<br>Gas tank status:<br>[format_gas_for_results(faketank)]"
-		sleep(2)
 
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."

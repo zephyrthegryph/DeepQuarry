@@ -764,9 +764,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	for(var/obj/machinery/telecomms/receiver/R in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		R.receive_signal(signal)
 
-	if(do_sleep)
-		sleep(rand(10,25))
-
 	//to_world_log("Level: [signal.data["level"]] - Done: [signal.data["done"]]")
 
 	return signal

@@ -142,17 +142,20 @@
 		return
 	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN)) //Door is open, we can climb out easily.
 		visible_message("[user] begins to climb out of the [src]!")
-		if(do_after(user, 2 SECONDS, target = src))
-			if(!(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))) //Someone shut the door while we were trying to climb out!
-				user.forceMove(get_turf(src))
-				visible_message("[user] climbs out of the [src]!")
-			else
-				to_chat(user, "Someone shut the door on you!")
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done), done_args = list(user))
 	else if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED)) //Door is shut.
 		visible_message("[src] begins to rattle and shake!")
-		if(do_after(user, 60 SECONDS, target = src))
-			visible_message("[user] climbs out of the [src]!")
-			interaction_washing_machine_use(user, null, null, force = TRUE)
+		om_do_after(user, 60 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done2), done_args = list(user))
+
+/obj/machinery/washing_machine/proc/user_climb_out_timed_done(mob/user)
+	if(!(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))) //Someone shut the door while we were trying to climb out!
+		user.forceMove(get_turf(src))
+		visible_message("[user] climbs out of the [src]!")
+	else
+		to_chat(user, "Someone shut the door on you!")
+/obj/machinery/washing_machine/proc/user_climb_out_timed_done2(mob/user)
+	visible_message("[user] climbs out of the [src]!")
+	interaction_washing_machine_use(user, null, null, force = TRUE)
 
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
@@ -188,16 +191,7 @@
 			var/obj/item/grab/G = W
 			if(ishuman(GRAB_ASSAILANT(G)) && (iscorgi(GRAB_TARGET(G)) || ishuman(GRAB_TARGET(G))))
 				user.visible_message("[user] begins stuffing [GRAB_TARGET(G)] into the [src]!", "You begin stuffing [GRAB_TARGET(G)] into the [src]!")
-				if(do_after(user, 5 SECONDS, target = src))
-					if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
-						var/mob/grabbed = GRAB_TARGET(G)
-						user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
-						grabbed.forceMove(src)
-						LAZYADD(washing, grabbed)
-						qdel(G)
-						state = FULL_CLOSED
-					else
-						to_chat(user, "You can't shove [GRAB_TARGET(G)] in unless the washer is empty and open!")
+				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(is_type_in_list(W, disallowed_types))
@@ -218,6 +212,17 @@
 	//else: old fell through to a bare ..() (approximated as a no-op)
 	update_icon()
 	return TRUE
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
+	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
+		var/mob/grabbed = GRAB_TARGET(G)
+		user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
+		grabbed.forceMove(src)
+		LAZYADD(washing, grabbed)
+		qdel(G)
+		state = FULL_CLOSED
+	else
+		to_chat(user, "You can't shove [GRAB_TARGET(G)] in unless the washer is empty and open!")
 
 /obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
 	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING

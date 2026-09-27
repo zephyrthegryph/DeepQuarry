@@ -217,8 +217,7 @@
 	if (density && operable())
 		operating = -1
 		flick("[src.base_state]spark", src)
-		sleep(6)
-		open()
+		om_after(src, 6, PROC_REF(open))
 		return 1
 
 /datum/interaction/machine_item/windowdoor_emag

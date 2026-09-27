@@ -284,47 +284,51 @@
 		islocked = 1 //Let's lock it for good measure
 	update_icon()
 
-	var/i //our counter
-	for(i=0,i<4,i++)
-		sleep(50)
-		if(OCCUPANT)
-			OCCUPANT.apply_effect(50, IRRADIATE)
-			var/obj/item/organ/internal/diona/nutrients/rad_organ = locate() in OCCUPANT.internal_organs
-			if(!rad_organ)
-				if(OCCUPANT.can_feel_pain())
-					OCCUPANT.emote("scream")
-				if(issuperUV)
-					var/burndamage = rand(28,35)
-					OCCUPANT.injure(INJURY_BURN, burndamage, null, src)
-				else
-					var/burndamage = rand(6,10)
-					OCCUPANT.injure(INJURY_BURN, burndamage, null, src)
-		if(i==3) //End of the cycle
-			if(!issuperUV)
-				if(HELMET)
-					HELMET.wash(CLEAN_SCRUB)
-				if(SUIT)
-					SUIT.wash(CLEAN_SCRUB)
-				if(MASK)
-					MASK.wash(CLEAN_SCRUB)
-			else //It was supercycling, destroy everything
-				if(HELMET)
-					qdel(HELMET)
-					HELMET = null
-				if(SUIT)
-					qdel(SUIT)
-					SUIT = null
-				if(MASK)
-					qdel(MASK)
-					MASK = null
-				visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
-				isbroken = 1
-				isopen = 1
-				islocked = 0
-				eject_occupant(OCCUPANT) //Mixing up these two lines causes bug. DO NOT DO IT.
-			isUV = 0 //Cycle ends
+	om_after(src, 5 SECONDS, PROC_REF(uv_cycle_step), 0)
+
+/// One five-second pass of the cauterisation cycle; pass 3 ends it.
+/obj/machinery/suit_storage_unit/proc/uv_cycle_step(i)
+	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	if(OCCUPANT)
+		OCCUPANT.apply_effect(50, IRRADIATE)
+		var/obj/item/organ/internal/diona/nutrients/rad_organ = locate() in OCCUPANT.internal_organs
+		if(!rad_organ)
+			if(OCCUPANT.can_feel_pain())
+				OCCUPANT.emote("scream")
+			if(issuperUV)
+				var/burndamage = rand(28,35)
+				OCCUPANT.injure(INJURY_BURN, burndamage, null, src)
+			else
+				var/burndamage = rand(6,10)
+				OCCUPANT.injure(INJURY_BURN, burndamage, null, src)
+	if(i==3) //End of the cycle
+		if(!issuperUV)
+			if(HELMET)
+				HELMET.wash(CLEAN_SCRUB)
+			if(SUIT)
+				SUIT.wash(CLEAN_SCRUB)
+			if(MASK)
+				MASK.wash(CLEAN_SCRUB)
+		else //It was supercycling, destroy everything
+			if(HELMET)
+				qdel(HELMET)
+				HELMET = null
+			if(SUIT)
+				qdel(SUIT)
+				SUIT = null
+			if(MASK)
+				qdel(MASK)
+				MASK = null
+			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
+			isbroken = 1
+			isopen = 1
+			islocked = 0
+			eject_occupant(OCCUPANT) //Mixing up these two lines causes bug. DO NOT DO IT.
+		isUV = 0 //Cycle ends
+	if(i < 3)
+		om_after(src, 5 SECONDS, PROC_REF(uv_cycle_step), i + 1)
+		return
 	update_icon()
-	return
 
 /obj/machinery/suit_storage_unit/proc/cycletimeleft()
 	if(cycletime_left >= 1)
@@ -389,17 +393,18 @@
 		to_chat(user, span_warning("It's too cluttered inside for you to fit in!"))
 		return TRUE
 	visible_message(span_info("[user] starts squeezing into the suit storage unit!"), 3)
-	if(do_after(user, 1 SECOND, target = src))
-		user.stop_pulling()
-		if(!user.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
-			return TRUE
-		isopen = 0 //Close the thing after the guy gets inside
-		update_icon()
-
-		add_fingerprint(user)
-		return TRUE
+	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(interaction_move_inside_timed_done), done_args = list(user))
 	return TRUE
 
+/obj/machinery/suit_storage_unit/proc/interaction_move_inside_timed_done(mob/user)
+	user.stop_pulling()
+	if(!user.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
+		return TRUE
+	isopen = 0 //Close the thing after the guy gets inside
+	update_icon()
+
+	add_fingerprint(user)
+	return TRUE
 
 /// The old attackby: never called ..(), loaded a grabbed mob, suit, helmet or mask.
 /datum/interaction/machine_item/suit_storage_use_item
@@ -427,17 +432,7 @@
 			to_chat(user, span_warning("The unit's storage area is too cluttered."))
 			return TRUE
 		visible_message(span_notice("[user] starts putting [grabbed.name] into the Suit Storage Unit."), 3)
-		if(do_after(user, 2 SECONDS, target = src))
-			if(!G || !GRAB_TARGET(G)) return TRUE //derpcheck
-			var/mob/M = GRAB_TARGET(G)
-			if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
-				return TRUE
-			isopen = 0 //close ittt
-
-			add_fingerprint(user)
-			qdel(G)
-			update_icon()
-			return TRUE
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user, G))
 		return TRUE
 	if(istype(I,/obj/item/clothing/suit/space))
 		if(!isopen)
@@ -478,6 +473,18 @@
 		MASK = M
 		update_icon()
 		return TRUE
+	update_icon()
+	return TRUE
+
+/obj/machinery/suit_storage_unit/proc/interaction_use_item_timed_done(mob/user, obj/item/grab/G)
+	if(!G || !GRAB_TARGET(G)) return TRUE //derpcheck
+	var/mob/M = GRAB_TARGET(G)
+	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
+		return TRUE
+	isopen = 0 //close ittt
+
+	add_fingerprint(user)
+	qdel(G)
 	update_icon()
 	return TRUE
 

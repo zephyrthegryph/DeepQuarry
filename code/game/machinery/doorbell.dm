@@ -26,7 +26,9 @@
 	icon_state = "dbchime-active"
 	set_light(2, 0.5, "#33FF33")
 	visible_message("\The [src]'s light flashes.")
-	sleep(30)
+	om_after(src, 3 SECONDS, PROC_REF(chime_end))
+
+/obj/machinery/doorbell_chime/proc/chime_end()
 	set_light(0)
 	update_icon()
 
@@ -174,8 +176,12 @@
 /obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
 	playsound(src, 'sound/items/Ratchet.ogg', 50, TRUE)
-	if(!do_after(user, 15, target = src) || QDELETED(src))
-		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/button/doorbell/proc/wrench_act_timed_done(mob/user)
+	if(QDELETED(src))
+		return
 	to_chat(user, span_notice("You unwrench \the [src]."))
 	new /obj/item/frame/doorbell(loc)
 	qdel(src)

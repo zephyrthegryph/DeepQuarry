@@ -434,7 +434,10 @@ GLOBAL_VAR(bomb_set)
 	world << sound('sound/machines/Alarm.ogg')//chompedit, nuke is big event, make it global
 	if(SSticker && SSticker.mode)
 		SSticker.mode.explosion_in_progress = 1
-	sleep(100)
+	om_after(src, 10 SECONDS, PROC_REF(detonate))
+
+/// Ten seconds after the alarm: the blast, the cinematic and the round outcome.
+/obj/machinery/nuclearbomb/proc/detonate()
 
 	var/off_station = 0
 	var/turf/bomb_location = get_turf(src)
@@ -489,11 +492,12 @@ GLOBAL_VAR(bomb_set)
 
 				if(GLOB.blackbox)
 					GLOB.blackbox.save_all_data_to_sql()
-				sleep(300)
-				log_game("Rebooting due to nuclear detonation")
-				world.Reboot()
+				om_after(null, 30 SECONDS, /proc/nuke_reboot)
 				return
-	return
+
+/proc/nuke_reboot()
+	log_game("Rebooting due to nuclear detonation")
+	world.Reboot()
 
 #undef NUKERANGE
 

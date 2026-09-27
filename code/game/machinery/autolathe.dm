@@ -473,11 +473,10 @@
 		span_hear("You hear the chatter of a floppy drive."))
 	busy = TRUE
 
-	if(!do_after(user, 1.5 SECONDS, target = src))
-		busy = FALSE
-		update_static_data_for_all_viewers()
-		balloon_alert(user, "interrupted!")
-		return TRUE
+	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_attackby_timed_done), done_args = list(user, O), on_fail = PROC_REF(interaction_attackby_timed_failed), fail_args = list(user, O))
+	return TRUE
+
+/obj/machinery/autolathe/proc/interaction_attackby_timed_done(mob/user, obj/item/O)
 
 	var/list/not_imported
 	var/design_count = 0
@@ -516,6 +515,12 @@
 
 	busy = FALSE
 	update_static_data_for_all_viewers()
+	return TRUE
+
+/obj/machinery/autolathe/proc/interaction_attackby_timed_failed(mob/user, obj/item/O)
+	busy = FALSE
+	update_static_data_for_all_viewers()
+	balloon_alert(user, "interrupted!")
 	return TRUE
 
 /obj/machinery/autolathe/RefreshParts()

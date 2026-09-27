@@ -174,9 +174,7 @@
 				if(turtle > 0)
 					turtle--
 
-				sleep(10)
-				enemy_hp -= attackamt
-				arcade_action(ui.user)
+				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, attackamt, 0, 0)
 
 			if(XENO_CHEM_HEAL)
 				blocked = 1
@@ -186,11 +184,7 @@
 				playsound(src, 'sound/arcade/heal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
 				turtle++
 
-				sleep(10)
-				player_mp -= pointamt
-				player_hp += healamt
-				blocked = 1
-				arcade_action(ui.user)
+				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, pointamt, healamt)
 
 			if("charge")
 				blocked = 1
@@ -201,8 +195,7 @@
 				if(turtle > 0)
 					turtle--
 
-				sleep(10)
-				arcade_action(ui.user)
+				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, 0, 0)
 
 
 	if(action == "newgame") //Reset everything
@@ -220,6 +213,13 @@
 
 	add_fingerprint(ui.user)
 	return TRUE
+
+/// The player's move lands a second after it was chosen, then the enemy acts.
+/obj/machinery/computer/arcade/battle/proc/battle_resolve(mob/user, enemy_damage, mp_cost, heal)
+	enemy_hp -= enemy_damage
+	player_mp -= mp_cost
+	player_hp += heal
+	arcade_action(user)
 
 /obj/machinery/computer/arcade/battle/proc/arcade_action(mob/user)
 	if ((enemy_mp <= 0) || (enemy_hp <= 0))
@@ -258,7 +258,6 @@
 
 		if (player_mp <= 0)
 			gameover = 1
-			sleep(10)
 			temp = "You have been drained! GAME OVER"
 			if(emagged)
 				feedback_inc("arcade_loss_mana_emagged")
@@ -411,6 +410,23 @@
 // lives in code/modules/admin/orion_trail_panel.dm and
 // re-runs the upstream game-over side effects before opening the panel.
 
+/obj/machinery/computer/arcade/orion_trail/proc/malfunction_restore(oldfood, oldfuel)
+	if(oldfuel > fuel && oldfood > food)
+		src.audible_message("\The [src] lets out a somehow reassuring chime.", runemessage = "reassuring chime")
+	else if(oldfuel < fuel || oldfood < food)
+		src.audible_message("\The [src] lets out a somehow ominous chime.", runemessage = "ominous chime")
+	food = oldfood
+	fuel = oldfuel
+
+/// The emagged black hole pulls at the player four times, a second apart.
+/obj/machinery/computer/arcade/orion_trail/proc/blackhole_hurt(mob/living/L, hits)
+	if(!hits)
+		to_chat(L, span_danger("This is really starting to hurt!"))
+	if(istype(L))
+		L.injure(INJURY_BLUNT, 25, null, src)
+	if(hits < 3)
+		om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), L, hits + 1)
+
 /obj/machinery/computer/arcade/orion_trail/Topic(href, href_list)
 	if(..())
 		return
@@ -484,13 +500,7 @@
 						food = rand(10,80) / rand(1,2)
 						fuel = rand(10,60) / rand(1,2)
 						if(electronics)
-							sleep(10)
-							if(oldfuel > fuel && oldfood > food)
-								src.audible_message("\The [src] lets out a somehow reassuring chime.", runemessage = "reassuring chime")
-							else if(oldfuel < fuel || oldfood < food)
-								src.audible_message("\The [src] lets out a somehow ominous chime.", runemessage = "ominous chime")
-							food = oldfood
-							fuel = oldfuel
+							om_after(src, 1 SECOND, PROC_REF(malfunction_restore), oldfood, oldfuel)
 
 	else if(href_list["newgame"]) //Reset everything
 		if(gameStatus == ORION_STATUS_START)
@@ -545,14 +555,8 @@
 				if(emagged) //has to be here because otherwise it doesn't work
 					src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
 					to_chat(usr, span_warning("Something draws you closer and closer to the machine."))
-					sleep(10)
-					to_chat(usr, span_danger("This is really starting to hurt!"))
-					var i; //spawning a literal blackhole would be fun, but a bit disruptive.
-					for(i=0;i<4;i++)
-						var/mob/living/L = usr
-						if(istype(L))
-							L.injure(INJURY_BLUNT, 25, null, src)
-						sleep(10)
+					//spawning a literal blackhole would be fun, but a bit disruptive.
+					om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), usr, 0)
 			else
 				event = null
 				turns += 1
@@ -1017,15 +1021,21 @@
 	active = 1
 	src.visible_message(span_notice("[src] softly beeps and whirs to life!"))
 	src.audible_message(span_bold("\The [src]") + " says, 'This is ship ID #[rand(1,1000)] to Orion Port Authority. We're coming in for landing, over.'")
-	sleep(20)
-	src.visible_message(span_warning("[src] begins to vibrate..."))
-	src.audible_message(span_bold("\The [src]") + " says, 'Uh, Port? Having some issues with our reactor, could you check it out? Over.'")
-	sleep(30)
-	src.audible_message(span_bold("\The [src]") + " says, 'Oh, God! Code Eight! CODE EIGHT! IT'S GONNA BL-'")
-	sleep(3.6)
-	src.visible_message(span_danger("[src] explodes!"))
-	explosion(src.loc, 1,2,4)
-	qdel(src)
+	om_after(src, 2 SECONDS, PROC_REF(countdown), 1)
+
+/obj/item/orion_ship/proc/countdown(stage)
+	switch(stage)
+		if(1)
+			src.visible_message(span_warning("[src] begins to vibrate..."))
+			src.audible_message(span_bold("\The [src]") + " says, 'Uh, Port? Having some issues with our reactor, could you check it out? Over.'")
+			om_after(src, 3 SECONDS, PROC_REF(countdown), 2)
+		if(2)
+			src.audible_message(span_bold("\The [src]") + " says, 'Oh, God! Code Eight! CODE EIGHT! IT'S GONNA BL-'")
+			om_after(src, 3.6, PROC_REF(countdown), 3)
+		if(3)
+			src.visible_message(span_danger("[src] explodes!"))
+			explosion(src.loc, 1,2,4)
+			qdel(src)
 
 #undef ORION_TRAIL_WINTURN
 #undef ORION_TRAIL_RAIDERS
