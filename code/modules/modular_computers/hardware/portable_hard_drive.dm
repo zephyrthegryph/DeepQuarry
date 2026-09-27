@@ -37,8 +37,3 @@
 	stored_files = list()
 	recalculate_size()
 
-/obj/item/computer_hardware/hard_drive/portable/Destroy()
-	var/slot = get_slot_var()
-	if(holder2 && (holder2.vars[slot] == src))
-		holder2.vars[slot] = null
-	return ..()

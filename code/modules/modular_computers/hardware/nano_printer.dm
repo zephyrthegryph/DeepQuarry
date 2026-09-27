@@ -87,9 +87,3 @@
 		to_chat(user, "You add [num_of_pages_added] papers from \the [W] into \the [src].")
 	return
 
-/obj/item/computer_hardware/nano_printer/Destroy()
-	var/slot = get_slot_var()
-	if(holder2 && (holder2.vars[slot] == src))
-		holder2.vars[slot] = null
-	holder2 = null
-	return ..()

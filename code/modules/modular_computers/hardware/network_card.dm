@@ -76,13 +76,6 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 /obj/item/computer_hardware/network_card/get_slot_var()
 	return "network_card"
 
-/obj/item/computer_hardware/network_card/Destroy()
-	var/slot = get_slot_var()
-	if(holder2 && (holder2.vars[slot] == src))
-		holder2.vars[slot] = null
-	holder2 = null
-	return ..()
-
 // Returns a string identifier of this network card
 /obj/item/computer_hardware/network_card/proc/get_network_tag()
 	return "[identification_string] (NID [identification_id])"

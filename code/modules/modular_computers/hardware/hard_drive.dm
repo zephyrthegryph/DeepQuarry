@@ -93,7 +93,6 @@
 	store_file(new/datum/computer_file/program/ntnetdownload(src))			// NTNet Downloader Utility, allows users to download more software from NTNet repository
 	store_file(new/datum/computer_file/program/filemanager(src))			// File manager, allows text editor functions and basic file manipulation.
 
-
 // Use this proc to remove file from the drive. Returns 1 on success and 0 on failure. Contains necessary sanity checks.
 /obj/item/computer_hardware/hard_drive/proc/remove_file(datum/computer_file/F)
 	if(!F || !istype(F))
@@ -141,8 +140,6 @@
 			return 0
 	return can_store_file(F.size)
 
-
-
 // Tries to find the file by filename. Returns null on failure
 /obj/item/computer_hardware/hard_drive/proc/find_file_by_name(filename)
 	if(!check_functionality())
@@ -173,13 +170,6 @@
 	for(var/datum/computer_file/F in stored_files)
 		if(F.uid == uid)
 			return F
-
-/obj/item/computer_hardware/hard_drive/Destroy()
-	var/slot = get_slot_var()
-	if(holder2 && (holder2.vars[slot] == src))
-		holder2.vars[slot] = null
-	stored_files = null
-	return ..()
 
 /obj/item/computer_hardware/hard_drive/Initialize(mapload)
 	. = ..()
