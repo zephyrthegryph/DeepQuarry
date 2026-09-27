@@ -12,6 +12,7 @@
 		return name
 
 /mob/living/Destroy()
+	clear_transforming()
 	clear_life_systems()
 	remove_all_modifiers(TRUE)
 	// The character's DNA outlives this body when the identity references it.

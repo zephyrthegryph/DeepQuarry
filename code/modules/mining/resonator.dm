@@ -113,16 +113,26 @@
 	layer = ABOVE_MOB_LAYER
 	mouse_opacity = 0
 	var/resonance_damage = 20
+	var/datum/weakref/creator_ref
+	var/datum/object_model/schedule_entry/burst_timer
 
 /obj/effect/resonance/Initialize(mapload, creator = null, timetoburst)
 	. = ..()
+	creator_ref = creator
 	// Start small and grow to big size as we are about to burst
 	transform = matrix()*0.75
 	animate(src, transform = matrix()*1.5, time = timetoburst)
 	// Queue the actual bursting
-	addtimer(CALLBACK(src, PROC_REF(burst), creator), timetoburst)
+	burst_timer = After(timetoburst, PROC_REF(on_burst_due))
+
+/obj/effect/resonance/proc/on_burst_due()
+	burst_timer = null
+	burst(creator_ref)
 
 /obj/effect/resonance/proc/burst(creator = null)
+	if(burst_timer)
+		qdel(burst_timer)
+		burst_timer = null
 	var/turf/T = get_turf(src)
 	if(!T)
 		return

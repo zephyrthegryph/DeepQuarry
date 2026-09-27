@@ -118,6 +118,48 @@
 
 // --- Gates ------------------------------------------------------------------------------------------
 
+/// Transformations hold the biology schedule while their animation or replacement runs.
+/// Each caller owns its hold, so one transformation cannot resume another caller's hold.
+/mob/proc/set_transforming(active, datum/source = src)
+	transforming = !!active
+
+/mob/proc/clear_transforming()
+	set_transforming(FALSE)
+
+/mob/living
+	var/list/transforming_sources
+	var/list/transforming_holds
+
+/mob/living/set_transforming(active, datum/source = src)
+	if(!source || (active && QDELETED(source)))
+		return
+	var/was_transforming = transforming
+	if(active)
+		if(source in transforming_sources)
+			return
+		LAZYADD(transforming_sources, source)
+		if(source != src)
+			RegisterSignal(source, COMSIG_QDELETING, PROC_REF(on_transforming_source_deleted))
+		LAZYSET(transforming_holds, source, om_suspend(src, /datum/object_model/schedule_set/biology, source))
+	else if(source in transforming_sources)
+		LAZYREMOVE(transforming_sources, source)
+		if(source != src && !QDELETED(source))
+			UnregisterSignal(source, COMSIG_QDELETING)
+		var/datum/object_model/suspension/hold = LAZYACCESS(transforming_holds, source)
+		LAZYREMOVE(transforming_holds, source)
+		om_resume(hold)
+	transforming = !!LAZYLEN(transforming_sources)
+	if(was_transforming && !transforming && !QDELETED(src))
+		wake_life(/datum/life_wake_event/all, "transformation ended")
+
+/mob/living/clear_transforming()
+	for(var/datum/source as anything in transforming_sources?.Copy())
+		set_transforming(FALSE, source)
+
+/mob/living/proc/on_transforming_source_deleted(datum/source)
+	SIGNAL_HANDLER
+	set_transforming(FALSE, source)
+
 /// Category for gates. A gate evaluates one old `if(...) return` (or an `if` around a block of
 /// hooks) once per cycle and blocks the segment that code guarded.
 /datum/life_system/gate
@@ -133,11 +175,15 @@
 	name = "gate: transforming"
 	phase = LIFE_PHASE_INPUT
 	order = 40
+	biology_catchup = TRUE
 
 /datum/life_system/gate/transforming/tick(mob/living/self, datum/life_context/ctx)
 	if(self.transforming)
 		ctx.blocked |= LIFE_SEG_LIVING
 		ctx.no_sleep = TRUE
+
+/datum/life_system/gate/transforming/tick_biology(mob/living/self, datum/life_context/ctx)
+	return tick(self, ctx)
 
 /// `if(!loc) return` in /mob/living/Life(); captures the environment for the cycle.
 /datum/life_system/gate/placed
@@ -145,6 +191,7 @@
 	phase = LIFE_PHASE_INPUT
 	order = 60
 	segment = LIFE_SEG_LIVING
+	biology_catchup = TRUE
 
 /datum/life_system/gate/placed/tick(mob/living/self, datum/life_context/ctx)
 	if(!self.loc)
@@ -156,18 +203,25 @@
 	else
 		ctx.environment = self.loc.return_air()
 
+/datum/life_system/gate/placed/tick_biology(mob/living/self, datum/life_context/ctx)
+	return tick(self, ctx)
+
 /// `if(stat != DEAD)` around breathing .. AFK in /mob/living/Life().
 /datum/life_system/gate/alive
 	name = "gate: alive"
 	phase = LIFE_PHASE_INPUT
 	order = 80
 	segment = LIFE_SEG_LIVING
+	biology_catchup = TRUE
 
 /datum/life_system/gate/alive/tick(mob/living/self, datum/life_context/ctx)
 	if(self.stat == DEAD)
 		ctx.blocked |= LIFE_SEG_LIVING_ALIVE
 	else
 		ctx.living_result = 1
+
+/datum/life_system/gate/alive/tick_biology(mob/living/self, datum/life_context/ctx)
+	return tick(self, ctx)
 
 // --- Light --------------------------------------------------------------------------------------
 
@@ -313,36 +367,6 @@
 /datum/life_system/random_events/idle(mob/living/self)
 	return type == /datum/life_system/random_events
 
-/// Automatic AFK marking for idle clients.
-/datum/life_system/afk
-	name = "afk"
-	bit = LIFE_SYS_CLIENT
-	phase = LIFE_PHASE_BODY
-	order = 30
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
-	woken_by = "Login, Logout; its own timer"
-
-/datum/life_system/afk/tick(mob/living/self, datum/life_context/ctx)
-	var/client/C = self.client
-	if(!C)
-		return
-	var/idle_limit = 10 MINUTES
-	if(C.inactivity >= idle_limit && !self.away_from_keyboard && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
-		self.add_status_indicator("afk")
-		to_chat(self, span_notice("You have been idle for too long, and automatically marked as AFK."))
-		self.away_from_keyboard = TRUE
-	else if(self.away_from_keyboard && C.inactivity < idle_limit && !self.manual_afk) //if we're afk but we do something AND we weren't manually flagged as afk, unmark it
-		self.remove_status_indicator("afk")
-		to_chat(self, span_notice("You have been automatically un-marked as AFK."))
-		self.away_from_keyboard = FALSE
-
-/// Lazy: a client's idle time is checked on a timer, not every cycle.
-/datum/life_system/afk/idle(mob/living/self)
-	return TRUE
-
-/datum/life_system/afk/rewake_delay(mob/living/self)
-	return self.client ? 30 SECONDS : 0
-
 // --- Core -------------------------------------------------------------------------------------
 
 /// Chemicals in the body. Runs dead or alive, so blood can be added after death.
@@ -382,41 +406,6 @@
 /datum/life_system/environment/idle(mob/living/self)
 	return type == /datum/life_system/environment
 
-/// Re-plays area ambience to a client that has stayed in one area.
-/datum/life_system/ambience
-	name = "ambience"
-	bit = LIFE_SYS_CLIENT
-	phase = LIFE_PHASE_BODY
-	order = 70
-	segment = LIFE_SEG_LIVING
-	woken_by = "Login; its own timer"
-
-/datum/life_system/ambience/tick(mob/living/self, datum/life_context/ctx)
-	if(!self.client)
-		return
-	// If you're in an ambient area and have not moved out of it for x time as configured per-client, and do not have it disabled, we're going to play ambience again to you, to help break up the silence.
-	var/pref = self.read_preference(/datum/preference/numeric/ambience_freq)
-	if(!pref)
-		return
-
-	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
-		var/area/A = get_area(self)
-		if(A)
-			self.lastareachange = world.time // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
-			A.play_ambience(self, initial = FALSE)
-
-/// Lazy: sleeps until the next replay is due.
-/datum/life_system/ambience/idle(mob/living/self)
-	return TRUE
-
-/datum/life_system/ambience/rewake_delay(mob/living/self)
-	if(!self.client)
-		return 0
-	var/pref = self.read_preference(/datum/preference/numeric/ambience_freq)
-	if(!pref)
-		return 0
-	return max(1 SECONDS, self.lastareachange + pref MINUTES - world.time)
-
 /// Gravity, pulling and grabs.
 /datum/life_system/movement
 	name = "movement"
@@ -450,14 +439,26 @@
 	order = 90
 	segment = LIFE_SEG_LIVING
 	woken_by = "injure, mend, afflictions, factors and reagents (body invalidate); set_stat"
+	biology_catchup = TRUE
 
 /datum/life_system/status/tick(mob/living/self, datum/life_context/ctx)
 	if(!update_status(self))
 		ctx?.blocked |= LIFE_SEG_LIVING_STATUS
 
+/datum/life_system/status/tick_biology(mob/living/self, datum/life_context/ctx)
+	process_biology(self)
+	if(!biology_status_ready(self))
+		ctx?.blocked |= LIFE_SEG_LIVING_STATUS
+
+/datum/life_system/status/proc/biology_status_ready(mob/living/self)
+	return self.stat != DEAD
+
+/datum/life_system/status/proc/process_biology(mob/living/self)
+	self.body?.life_tick()
+
 /// This updates the health and status of the mob (conscious, unconscious, dead).
 /datum/life_system/status/proc/update_status(mob/living/self)
-	self.body?.life_tick()
+	process_biology(self)
 	if(self.stat != DEAD)
 		self.set_stat(CONSCIOUS)
 		return TRUE
@@ -489,6 +490,7 @@
 	order = 10
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
 	woken_by = "Blind/SetBlinded/AdjustBlinded; set_stat; body invalidate"
+	biology_catchup = TRUE
 
 /datum/life_system/disabilities/tick(mob/living/self, datum/life_context/ctx)
 	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
@@ -512,6 +514,18 @@
 		// deafness heals slowly over time, unless ear_damage is over 100
 		if(self.ear_damage < 100)
 			self.adjustEarDamage(-0.05,-1)
+
+/datum/life_system/disabilities/tick_biology(mob/living/self, datum/life_context/ctx)
+	// Recovery is biological; disability signals and blind alerts stay on the real frame.
+	if(!(self.sdisabilities & BLIND) && !self.stat && self.eye_blind)
+		self.eye_blind = max(0, self.eye_blind - 1)
+	if(self.eye_blurry)
+		self.eye_blurry = max(self.eye_blurry - 1, 0)
+	if(self.sdisabilities & DEAF)
+		self.ear_deaf = max(self.ear_deaf, 1)
+	else if(self.ear_damage < 100)
+		self.ear_damage = max(0, self.ear_damage - 0.05)
+		self.ear_deaf = max(0, self.ear_deaf - 1)
 
 /// Busy while eyes or ears are recovering, a disability component listens, or the blind
 /// alert is still up.

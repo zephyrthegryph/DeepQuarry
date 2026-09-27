@@ -30,7 +30,6 @@
 	/// The REACT_AT token for next_door_deadline(), and the deadline it was set for.
 	var/tmp/door_timer_token
 	var/tmp/door_timer_at = 0
-	var/list/autoclose_blockers
 
 	var/anim_length_before_density = 0.3 SECONDS
 	var/anim_length_before_finalize = 0.7 SECONDS
@@ -148,20 +147,21 @@
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
 		return
-	LAZYADD(autoclose_blockers, blocker)
-	RegisterSignal(blocker, COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_changed))
-	RegisterSignal(blocker, COMSIG_QDELETING, PROC_REF(on_autoclose_blocker_changed))
+	var/list/blockers = ObservedSources(COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_moved))
+	blockers |= blocker
+	if(!ObserveSet(blockers, COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_moved), null, PROC_REF(on_autoclose_blocker_lost)))
+		return
 	close_door_at = 0
 	schedule_door_timer()
 
 /obj/machinery/door/proc/clear_autoclose_blockers()
-	for(var/atom/movable/blocker as anything in autoclose_blockers)
-		UnregisterSignal(blocker, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
-	LAZYCLEARLIST(autoclose_blockers)
+	ObserveSet(null, COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_moved))
 
-/obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source)
+/obj/machinery/door/proc/on_autoclose_blocker_moved(atom/movable/source, atom/old_loc)
 	SIGNAL_HANDLER
-	clear_autoclose_blockers()
+	autoclose_in(0)
+
+/obj/machinery/door/proc/on_autoclose_blocker_lost(datum/source)
 	autoclose_in(0)
 
 /obj/machinery/door/proc/can_open()

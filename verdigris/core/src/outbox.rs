@@ -9,10 +9,10 @@
 //! replaced by a newer one: an unread batch is merged into the next, so no
 //! record is lost however the frames and ticks interleave.
 //!
-//! Buffers are bounded. When one is over capacity it is merged by key
-//! (wakes by subscriber, lane and watch; events by kind and key) instead of
-//! dropping records. `Take` results are never merged: they carry mass and
-//! energy (transfer-out must conserve).
+//! Buffers have merge thresholds. Wakes and state snapshots can be merged
+//! when the main thread falls behind. Edge events and `Take` results must
+//! remain lossless: repeated transitions and transfers are distinct work,
+//! so their storage can grow until the main thread drains the outbox.
 //!
 //! DM drains each kind as a flat numeric list with a fixed stride
 //! ([`Outbox::wakes_flat`], [`Outbox::events_flat`]); every field is kept
@@ -116,6 +116,17 @@ pub enum EventKind {
     Restore = 8,
     TopologyChanged = 9,
     Destroyed = 10,
+}
+
+impl EventKind {
+    /// Only a presentation snapshot may replace an older snapshot for the
+    /// same entity and generation. Every other event describes a transition
+    /// or an occurrence; coalescing it can erase a real edge when two frames
+    /// finish before DM drains the outbox.
+    #[must_use]
+    pub const fn coalesces_as_latest(self) -> bool {
+        matches!(self, Self::VisualChange)
+    }
 }
 
 /// One fixed-stride event record.
@@ -293,14 +304,31 @@ impl<V> Outbox<V> {
         self.wake_merge_at = self.wake_capacity.max(self.wakes.len() * 2);
     }
 
-    /// Merges events with the same kind and key; the latest record wins.
+    /// Replaces older presentation snapshots with the latest for a given
+    /// entity and generation. The surviving snapshot stays at its original
+    /// position relative to transition events, preserving delivery order.
     pub fn merge_events(&mut self) {
         let before = self.events.len();
-        merge_by_key(
-            &mut self.events,
-            |e| (e.kind, e.key, e.extra),
-            |a, b| *a = *b,
-        );
+        let mut latest = std::collections::HashMap::new();
+        for (index, event) in self.events.iter().enumerate() {
+            if event.kind.coalesces_as_latest() {
+                latest.insert(
+                    (event.kind, event.key, event.extra, event.generation),
+                    index,
+                );
+            }
+        }
+        let mut merged = Vec::with_capacity(self.events.len());
+        for (index, event) in self.events.drain(..).enumerate() {
+            if event.kind.coalesces_as_latest() {
+                let key = (event.kind, event.key, event.extra, event.generation);
+                if latest.get(&key) != Some(&index) {
+                    continue;
+                }
+            }
+            merged.push(event);
+        }
+        self.events = merged;
         self.merged_on_overflow += (before - self.events.len()) as u64;
         self.event_merge_at = self.event_capacity.max(self.events.len() * 2);
     }
@@ -437,7 +465,7 @@ mod tests {
         assert_eq!(out.merged_on_overflow, 2);
         for v in 0..3 {
             out.push_event(Event {
-                kind: EventKind::Brownout,
+                kind: EventKind::VisualChange,
                 key: 7,
                 value: v as f32,
                 extra: 0,
@@ -446,6 +474,57 @@ mod tests {
         }
         assert_eq!(out.events().len(), 1);
         assert_eq!(out.events()[0].value, 2.0, "latest wins");
+    }
+
+    #[test]
+    fn overflow_preserves_repeated_edges_and_distinct_generations() {
+        let mut out = Outbox::<()>::with_capacity(0, 1);
+        for value in [1.0, 0.0, 1.0] {
+            out.push_event(Event {
+                kind: EventKind::ThresholdCrossed,
+                key: 7,
+                value,
+                extra: 2,
+                generation: 3,
+            });
+        }
+        assert_eq!(out.events().len(), 3, "each crossing is an occurrence");
+        for generation in [3, 4] {
+            out.push_event(Event {
+                kind: EventKind::VisualChange,
+                key: 7,
+                value: f32::from(generation as u16),
+                extra: 0,
+                generation,
+            });
+        }
+        assert_eq!(
+            out.events().len(),
+            5,
+            "new entity generations stay distinct"
+        );
+    }
+
+    #[test]
+    fn coalesced_snapshot_keeps_its_order_after_an_edge() {
+        let mut out = Outbox::<()>::with_capacity(0, 1);
+        for (kind, value) in [
+            (EventKind::VisualChange, 1.0),
+            (EventKind::Ignite, 0.0),
+            (EventKind::VisualChange, 2.0),
+        ] {
+            out.push_event(Event {
+                kind,
+                key: 1,
+                value,
+                extra: 0,
+                generation: 0,
+            });
+        }
+        out.merge_events();
+        assert_eq!(out.events().len(), 2);
+        assert_eq!(out.events()[0].kind, EventKind::Ignite);
+        assert_eq!(out.events()[1].value, 2.0);
     }
 
     #[test]

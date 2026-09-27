@@ -8,7 +8,7 @@ use std::cell::RefCell;
 
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
-use vg_core::entity::{ComponentRef, EntityError, EntityId, EntityTable};
+use vg_core::entity::{ComponentRef, EntityError, EntityId, EntityTable, MAX_DOMAINS};
 
 use crate::registry;
 
@@ -86,6 +86,17 @@ pub fn component_of(entity: EntityId, domain: usize, kind: u16) -> Option<Compon
     ENTITIES.with_borrow(|t| t.component(entity, domain, kind).ok())
 }
 
+/// The installed kind in a live entity's domain, if any. Generated binders
+/// call this before creating a domain row so an idempotent bind does not leak
+/// one and a conflicting bind cannot overwrite the existing component.
+pub fn kind_of(entity: EntityId, domain: usize) -> Result<Option<u16>> {
+    let slots = ENTITIES.with_borrow(|t| t.components(entity)).map_err(|e| eyre!("{e}"))?;
+    if domain >= MAX_DOMAINS {
+        bail!("invalid component domain {domain}");
+    }
+    Ok(slots.get(domain).map(|component| component.kind))
+}
+
 /// The `f32` DM should store in `vg_entity` (the raw id plus one; see
 /// [`decode`]).
 #[must_use]
@@ -132,6 +143,40 @@ fn entity_unbind(entity: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
+/// Roll back one component installed by a failed multi-domain bind without
+/// disturbing any component the caller found on the borrowed entity. The
+/// expected kind prevents a stale rollback from detaching a replacement.
+#[auxmacros::bind("/proc/entity_detach_component")]
+fn entity_detach_component(entity: ByondValue, domain: ByondValue, expected_kind: ByondValue) -> Result<ByondValue> {
+    let id = decode(num(&entity)?)?;
+    let domain_number = num(&domain)?;
+    let kind_number = num(&expected_kind)?;
+    if !domain_number.is_finite()
+        || domain_number < 0.0
+        || domain_number.fract() != 0.0
+        || domain_number >= MAX_DOMAINS as f32
+        || !kind_number.is_finite()
+        || kind_number <= 0.0
+        || kind_number.fract() != 0.0
+        || kind_number > f32::from(u16::MAX)
+    {
+        return Ok(yes(false));
+    }
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let domain = domain_number as usize;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let expected_kind = kind_number as u16;
+    if kind_of(id, domain)? != Some(expected_kind) {
+        return Ok(yes(false));
+    }
+    let Some(component) = ENTITIES.with_borrow_mut(|table| table.detach(id, domain)).map_err(|e| eyre!("{e}"))? else {
+        return Ok(yes(false));
+    };
+    #[allow(clippy::cast_possible_truncation)]
+    registry::with_domain(domain as u32, |handler| handler.detach(component));
+    Ok(yes(true))
+}
+
 /// `vg_describe(atom)`: every attached component's fields, as one
 /// semicolon-joined line (`domain field=value, field=value; domain ...`).
 #[auxmacros::bind("/proc/entity_describe")]
@@ -170,6 +215,32 @@ fn entity_count() -> Result<ByondValue> {
     #[allow(clippy::cast_precision_loss)]
     let n = ENTITIES.with_borrow(EntityTable::len) as f32;
     Ok(ByondValue::from(n))
+}
+
+/// Introspects one domain before a mixed legacy/object-model bind. Returns
+/// -1 for a stale/invalid handle or domain, 0 for an empty slot, and the
+/// positive kind ID for an installed component. Unlike a guessed-kind probe,
+/// this lets DM reject a conflicting component without replacing its row.
+#[auxmacros::bind("/proc/entity_component_kind")]
+fn entity_component_kind(entity: ByondValue, domain: ByondValue) -> Result<ByondValue> {
+    let handle = num(&entity)?;
+    if handle == 0.0 {
+        return Ok(ByondValue::from(0.0f32));
+    }
+    let domain_number = num(&domain)?;
+    if !domain_number.is_finite()
+        || domain_number < 0.0
+        || domain_number.fract() != 0.0
+        || domain_number >= MAX_DOMAINS as f32
+    {
+        return Ok(ByondValue::from(-1.0f32));
+    }
+    let kind = decode(handle)
+        .ok()
+        .and_then(|id| kind_of(id, domain_number as usize).ok())
+        .map(|installed| installed.map_or(0.0, f32::from))
+        .unwrap_or(-1.0);
+    Ok(ByondValue::from(kind))
 }
 
 /// A safe probe for whether `entity_v` currently resolves to a live

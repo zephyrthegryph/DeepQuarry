@@ -630,7 +630,9 @@ SUBSYSTEM_DEF(timer)
 		hash = hashlist.Join("|||||||")
 
 		var/datum/timedevent/hash_timer = timer_subsystem.hashes[hash]
-		if(hash_timer)
+		if(hash_timer && !istype(hash_timer, /datum/timedevent))
+			CRASH("Timer hash entry is not a timed event")
+		if(istype(hash_timer, /datum/timedevent))
 			if (hash_timer.spent) // it's pending deletion, pretend it doesn't exist.
 				hash_timer.hash = null // but keep it from accidentally deleting us
 			else
@@ -639,13 +641,23 @@ SUBSYSTEM_DEF(timer)
 					qdel(hash_timer)
 				else
 					if (hash_timer.flags & TIMER_STOPPABLE)
-						. = hash_timer.id
+						var/existing_id = hash_timer.id
+						if(isnum(existing_id))
+							return existing_id
+						if(istext(existing_id))
+							return existing_id
+						CRASH("Stoppable timer has an invalid ID")
 					return
 	else if(flags & TIMER_OVERRIDE)
 		stack_trace("TIMER_OVERRIDE used without TIMER_UNIQUE") //this is also caught by grep.
 
 	var/datum/timedevent/timer = new(callback, wait, flags, timer_subsystem, hash, file && "[file]:[line]")
-	return timer.id
+	var/new_id = timer.id
+	if(isnum(new_id))
+		return new_id
+	if(istext(new_id))
+		return new_id
+	CRASH("New timer has an invalid ID")
 
 /**
  * Delete a timer

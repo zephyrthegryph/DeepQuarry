@@ -1,18 +1,37 @@
-/obj/machinery/atmospherics/pipe/zpipe/up/verb/ventcrawl_move_up()
-	set name = "Ventcrawl Upwards"
-	set desc = "Climb up through a pipe."
-	set category = "Abilities.General"
-	set src = usr.loc
-	var/obj/machinery/atmospherics/target = check_ventcrawl(GetAbove(loc))
-	if(target) ventcrawl_to(usr, target, UP)
+/obj/machinery/atmospherics/pipe/zpipe/up/declare_interactions(list/into)
+	into += /datum/interaction/machine_verb/ventcrawl_up
+	..()
 
-/obj/machinery/atmospherics/pipe/zpipe/down/verb/ventcrawl_move_down()
-	set name = "Ventcrawl Downwards"
-	set desc = "Climb down through a pipe."
-	set category = "Abilities.General"
-	set src = usr.loc
+/obj/machinery/atmospherics/pipe/zpipe/down/declare_interactions(list/into)
+	into += /datum/interaction/machine_verb/ventcrawl_down
+	..()
+
+/datum/interaction/machine_verb/ventcrawl_up
+	id = "ventcrawl_up"
+	name = "Ventcrawl Upwards"
+	requires = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/pipe/zpipe/proc/actor_inside_pipe, "enter the pipe first"))
+	effect = /obj/machinery/atmospherics/pipe/zpipe/proc/interaction_ventcrawl_up
+
+/datum/interaction/machine_verb/ventcrawl_down
+	id = "ventcrawl_down"
+	name = "Ventcrawl Downwards"
+	requires = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/pipe/zpipe/proc/actor_inside_pipe, "enter the pipe first"))
+	effect = /obj/machinery/atmospherics/pipe/zpipe/proc/interaction_ventcrawl_down
+
+/obj/machinery/atmospherics/pipe/zpipe/proc/actor_inside_pipe(mob/actor, atom/target, obj/item/held)
+	return actor?.loc == src
+
+/obj/machinery/atmospherics/pipe/zpipe/proc/interaction_ventcrawl_up(mob/living/user, obj/item/held, datum/interaction/interaction)
+	var/obj/machinery/atmospherics/target = check_ventcrawl(GetAbove(loc))
+	if(target)
+		ventcrawl_to(user, target, UP)
+	return TRUE
+
+/obj/machinery/atmospherics/pipe/zpipe/proc/interaction_ventcrawl_down(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/obj/machinery/atmospherics/target = check_ventcrawl(GetBelow(loc))
-	if(target) ventcrawl_to(usr, target, DOWN)
+	if(target)
+		ventcrawl_to(user, target, DOWN)
+	return TRUE
 
 /obj/machinery/atmospherics/pipe/zpipe/proc/check_ventcrawl(turf/target)
 	if(!istype(target))

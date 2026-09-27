@@ -469,6 +469,203 @@
 	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
+/// Isolates the cost of moving through physical containment with no model
+/// observer and with an active derived observer. The relation read uses the
+/// same virtual physical_contents path as ordinary content code.
+#define OM_BENCH_CONTENTS_CHILD_CHANGE (1<<0)
+/datum/benchmark/object_model_movement
+	id = "object_model_movement"
+	description = "Per-move object-model containment overhead and virtual relation read cost"
+
+/datum/object_model/behaviour/benchmark_contents_count
+	derived_relation_inputs = list(list(/datum/object_model/relation/physical_contents, OM_READ_OUTGOING, OM_BENCH_CONTENTS_CHILD_CHANGE))
+
+/datum/object_model/behaviour/benchmark_contents_count/compute_derived(datum/source, list/config)
+	var/atom/holder = source
+	return length(holder.contents)
+
+/obj/object_model_benchmark_holder/om_declare(datum/object_model/archetype/A)
+	..()
+	A.relation(/datum/object_model/relation/physical_contents)
+	A.add(/datum/object_model/behaviour/benchmark_contents_count)
+
+/datum/benchmark/object_model_movement/Run()
+	var/moves = max(100, min(100000, round(param("moves", 10000))))
+	var/reads = max(100, min(100000, round(param("reads", 10000))))
+	var/rounds = max(1, min(10, round(param("rounds", 3))))
+	var/obj/object_model_benchmark_holder/first = new
+	var/obj/object_model_benchmark_holder/second = new
+	var/obj/item/probe = new(first)
+	var/unobserved_best = INFINITY
+	var/observed_best = INFINITY
+	var/read_best = INFINITY
+	for(var/round in 1 to rounds)
+		stoplag()
+		rustg_time_reset("object_model_movement")
+		for(var/i in 1 to moves)
+			probe.forceMove(second)
+			probe.forceMove(first)
+		unobserved_best = min(unobserved_best, rustg_time_microseconds("object_model_movement") / (2 * moves))
+	var/datum/object_model/derived_watch/first_watch = om_observe_derived(first, first, /datum/object_model/behaviour/benchmark_contents_count)
+	var/datum/object_model/derived_watch/second_watch = om_observe_derived(second, second, /datum/object_model/behaviour/benchmark_contents_count)
+	if(!first_watch || !second_watch)
+		fail("could not observe both containment holders")
+	for(var/round in 1 to rounds)
+		stoplag()
+		rustg_time_reset("object_model_movement")
+		for(var/i in 1 to moves)
+			probe.forceMove(second)
+			probe.forceMove(first)
+		observed_best = min(observed_best, rustg_time_microseconds("object_model_movement") / (2 * moves))
+	if(om_derived_read(first, /datum/object_model/behaviour/benchmark_contents_count) != 1 || om_derived_read(second, /datum/object_model/behaviour/benchmark_contents_count) != 0)
+		fail("observed containment count was stale")
+	for(var/round in 1 to rounds)
+		stoplag()
+		rustg_time_reset("object_model_movement")
+		var/found = 0
+		for(var/i in 1 to reads)
+			found += om_has_link(first, /datum/object_model/relation/physical_contents, probe)
+		read_best = min(read_best, rustg_time_microseconds("object_model_movement") / reads)
+		if(found != reads)
+			fail("virtual relation read missed its member")
+	metric("unobserved_move_us", unobserved_best, "us/move")
+	metric("observed_move_us", observed_best, "us/move")
+	metric("physical_relation_read_us", read_best, "us/read")
+	metric("movement_observer_delta_us", observed_best - unobserved_best, "us/move")
+	metric("moves_per_round", 2 * moves, "moves", "none")
+	metric("reads_per_round", reads, "reads", "none")
+	qdel(probe)
+	qdel(first)
+	qdel(second)
+
+#undef OM_BENCH_CONTENTS_CHILD_CHANGE
+
+/// Isolates the material service's movement-source relation from gas/turf work.
+/// Each assembly has two unmapped containment chains, so rebind sees the owner
+/// plus `depth` movable ancestors without subscribing to atmospherics.
+/datum/benchmark/material_service_movement_watches
+	id = "material_service_movement_watches"
+	description = "Material service movement-watch bind, rebind and teardown cost (bench_assemblies, bench_depth, bench_rounds)"
+
+/obj/material_service_benchmark_holder
+/obj/material_service_benchmark_assembly
+
+/datum/benchmark/material_service_movement_watches/Run()
+	var/assembly_count = max(1, min(2000, round(param("assemblies", 200))))
+	var/depth = max(1, min(10, round(param("depth", 3))))
+	var/rounds = max(1, min(10, round(param("rounds", 3))))
+	metric("assemblies", assembly_count, "assemblies", "none")
+	metric("loc_chain_depth", depth, "movable ancestors", "none")
+	metric("expected_links", assembly_count * (depth + 1), "links", "none")
+	mark("before")
+	var/list/obj/material_service_benchmark_holder/holders = list()
+	var/list/obj/material_service_benchmark_assembly/assemblies = list()
+	var/list/obj/material_service_benchmark_holder/first_destinations = list()
+	var/list/obj/material_service_benchmark_holder/second_destinations = list()
+	var/list/datum/material_service/services = list()
+	for(var/i in 1 to assembly_count)
+		var/obj/material_service_benchmark_holder/first
+		var/obj/material_service_benchmark_holder/second
+		for(var/level in 1 to depth)
+			first = new /obj/material_service_benchmark_holder(first)
+			second = new /obj/material_service_benchmark_holder(second)
+			holders += first
+			holders += second
+		first_destinations += first
+		second_destinations += second
+		var/obj/material_service_benchmark_assembly/assembly = new(first)
+		assemblies += assembly
+		CHECK_TICK
+	mark("fixture")
+	var/fixture_om_states = 0
+	for(var/obj/material_service_benchmark_holder/holder as anything in holders)
+		fixture_om_states += !!holder.om_state
+	for(var/obj/material_service_benchmark_assembly/assembly as anything in assemblies)
+		fixture_om_states += !!assembly.om_state
+	for(var/obj/material_service_benchmark_assembly/assembly as anything in assemblies)
+		var/datum/material_service/service = new(assembly)
+		if(!assembly.set_material_service(service))
+			fail("could not claim material service for benchmark assembly")
+		SSmaterial_services.unqueue(service)
+		service.timer = FALSE
+		services += service
+		CHECK_TICK
+	stoplag()
+	rustg_time_reset("material_service_movement_watches")
+	for(var/datum/material_service/service as anything in services)
+		service.rebind()
+	var/bind_us = rustg_time_microseconds("material_service_movement_watches") / assembly_count
+	var/observed_links = 0
+	for(var/datum/material_service/service as anything in services)
+		observed_links += length(service.ObservedSources(COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved)))
+	if(observed_links != assembly_count * (depth + 1))
+		fail("bound [observed_links] movement sources; expected [assembly_count * (depth + 1)]")
+	var/bound_om_states = 0
+	var/service_lists = 0
+	for(var/obj/material_service_benchmark_holder/holder as anything in holders)
+		bound_om_states += !!holder.om_state
+	for(var/obj/material_service_benchmark_assembly/assembly as anything in assemblies)
+		bound_om_states += !!assembly.om_state
+	for(var/datum/material_service/service as anything in services)
+		bound_om_states += !!service.om_state
+		service_lists += !!service.om_state?.observations
+		var/datum/object_model/observation/movement_watch = service.om_state?.observations?[om_observation_key(COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved))]
+		service_lists += !!movement_watch?.subjects
+		service_lists += !!service.mixture_ids
+		service_lists += !!service.mixture_pressures
+		service_lists += !!service.mixture_corrosion
+	metric("om_states_added_per_service", (bound_om_states - fixture_om_states) / assembly_count, "states/service", "none")
+	metric("service_lists_per_service", service_lists / assembly_count, "lists/service", "none")
+	mark("bound")
+	var/list/fixture_memory = null
+	var/list/bound_memory = null
+	if(length(phases) >= 3)
+		fixture_memory = phases[2]["process"]
+		bound_memory = phases[3]["process"]
+	metric("process_memory_sample_available", islist(fixture_memory) && islist(bound_memory), "boolean", "none")
+	if(islist(fixture_memory) && islist(bound_memory) && isnum(fixture_memory["private_mb"]) && isnum(bound_memory["private_mb"]))
+		metric("estimated_private_kb_per_service", (bound_memory["private_mb"] - fixture_memory["private_mb"]) * 1024 / assembly_count, "KB/service")
+	var/stable_best = INFINITY
+	var/switch_best = INFINITY
+	for(var/round in 1 to rounds)
+		stoplag()
+		rustg_time_reset("material_service_movement_watches")
+		for(var/datum/material_service/service as anything in services)
+			service.rebind()
+		stable_best = min(stable_best, rustg_time_microseconds("material_service_movement_watches") / assembly_count)
+		var/list/destinations = round % 2 ? second_destinations : first_destinations
+		for(var/i in 1 to assembly_count)
+			var/obj/material_service_benchmark_assembly/assembly = assemblies[i]
+			assembly.forceMove(destinations[i])
+			var/datum/material_service/service = services[i]
+			SSmaterial_services.unqueue(service)
+			service.timer = FALSE
+		stoplag()
+		rustg_time_reset("material_service_movement_watches")
+		for(var/datum/material_service/service as anything in services)
+			service.rebind()
+		switch_best = min(switch_best, rustg_time_microseconds("material_service_movement_watches") / assembly_count)
+	metric("initial_bind_us_per_service", bind_us, "us/service")
+	metric("stable_rebind_us_per_service", stable_best, "us/service")
+	metric("moved_rebind_us_per_service", switch_best, "us/service")
+	metric("movement_sources_per_service", observed_links / assembly_count, "sources/service", "none")
+	metric("fixture_objects", length(holders) + length(assemblies), "objects", "none")
+	stoplag()
+	rustg_time_reset("material_service_movement_watches")
+	for(var/datum/material_service/service as anything in services)
+		qdel(service)
+	metric("teardown_us_per_service", rustg_time_microseconds("material_service_movement_watches") / assembly_count, "us/service")
+	for(var/datum/material_service/service as anything in services)
+		if(length(service.om_state?.observations))
+			fail("service teardown left a movement observation")
+	mark("services_released")
+	for(var/obj/material_service_benchmark_assembly/assembly as anything in assemblies)
+		qdel(assembly)
+	for(var/obj/material_service_benchmark_holder/holder as anything in holders)
+		if(!QDELETED(holder))
+			qdel(holder)
+	mark("all_released")
+
 /// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
 /// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
 /// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
@@ -497,7 +694,7 @@
 
 	GLOB.mob_hibernation_enabled = FALSE
 	for(var/mob/living/L as anything in mobs)
-		L.life_wake(LIFE_SYS_ALL, "benchmark")
+		L.wake_life(/datum/life_wake_event/all, "benchmark")
 	wait_fires(SSmobs, SSmobs.life_slices * 2)
 	begin_window()
 	wait_fires(SSmobs, SSmobs.life_slices * cycles)

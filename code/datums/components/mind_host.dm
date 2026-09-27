@@ -15,6 +15,26 @@
 //                           e.g. brain organ <-> MMI
 // Each logs, and minds move through transfer_mind(). There is no raw key path.
 
+/// A host's backing tissue is an optional single relationship. The relation
+/// clears the compatibility field when the organ is deleted by any path.
+/datum/object_model/relation/mind_host_tissue
+	from_type = /datum/component/mind_host
+	to_type = /obj/item/organ/internal/brain
+	source_single = TRUE
+
+/datum/object_model/relation/mind_host_tissue/on_link(datum/source, datum/target)
+	var/datum/component/mind_host/host = source
+	host.tissue = target
+	host.occupant?.refresh_host_status()
+
+/datum/object_model/relation/mind_host_tissue/on_unlink(datum/source, datum/target, reason)
+	var/datum/component/mind_host/host = source
+	if(host.tissue != target)
+		return
+	host.tissue = null
+	if(!om_is_dying(host))
+		host.occupant?.refresh_host_status()
+
 /datum/component/mind_host
 	/// The view mob the hosted mind occupies. Created on demand.
 	var/mob/living/carbon/brain/occupant
@@ -45,16 +65,7 @@
 /datum/component/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)
 	if(tissue == new_tissue)
 		return
-	if(tissue)
-		UnregisterSignal(tissue, COMSIG_QDELETING)
-	tissue = new_tissue
-	if(tissue)
-		RegisterSignal(tissue, COMSIG_QDELETING, PROC_REF(on_tissue_deleted))
-	occupant?.refresh_host_status()
-
-/datum/component/mind_host/proc/on_tissue_deleted(datum/source)
-	SIGNAL_HANDLER
-	set_tissue(null)
+	return om_replace_related(src, /datum/object_model/relation/mind_host_tissue, new_tissue)
 
 /// The view mob, creating it if needed.
 /datum/component/mind_host/proc/ensure_occupant()

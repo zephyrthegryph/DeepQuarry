@@ -4,7 +4,7 @@
 	var/list/last_read
 	var/list/stockBrokers
 	var/list/logs
-	var/process_timer
+	var/datum/object_model/schedule_entry/process_timer
 
 /datum/stockMarket/New()
 		..()
@@ -12,16 +12,10 @@
 		generateStocks()
 		schedule_process()
 
-/datum/stockMarket/Destroy()
-	if(process_timer)
-		deltimer(process_timer)
-		process_timer = null
-	return ..()
-
 /datum/stockMarket/proc/schedule_process()
-	if(QDELETED(src) || process_timer)
+	if(QDELETED(src) || (process_timer && !QDELETED(process_timer)))
 		return
-	process_timer = addtimer(CALLBACK(src, PROC_REF(process)), 10 SECONDS, TIMER_STOPPABLE)
+	process_timer = After(10 SECONDS, PROC_REF(process))
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))

@@ -71,7 +71,7 @@
 	for (var/obj/item/implant/I in C) //Still preserving implants
 		implants += I
 
-	C.transforming = 1
+	C.set_transforming(TRUE)
 	C.canmove = 0
 	C.icon = null
 	C.cut_overlays()

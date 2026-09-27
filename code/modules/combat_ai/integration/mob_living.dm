@@ -48,6 +48,7 @@
 	if(ai_brain)
 		QDEL_NULL(ai_brain)
 	ai_brain = new /datum/ai_brain(src)
+	om_claim(src, "om:ai_brain", ai_brain)
 	var/list/sels = get_ai_target_selectors()
 	if(sels && length(sels))
 		ai_brain.target_selector_chain = sels.Copy()
@@ -89,5 +90,5 @@
 		initialize_ai_brain()
 
 /mob/living/Destroy()
-	QDEL_NULL(ai_brain)
+	ai_brain = null
 	return ..()

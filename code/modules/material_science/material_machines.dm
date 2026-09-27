@@ -57,7 +57,7 @@
 	var/list/carbon_feed
 	var/obj/item/stack/material/processed_alloy/output_stock
 	var/firing = FALSE
-	var/firing_timer
+	var/datum/object_model/schedule_entry/firing_timer
 	var/datum/gas_mixture/chamber_air
 
 /obj/machinery/material_furnace/Initialize(mapload)
@@ -70,14 +70,17 @@
 	create_reagents(120)
 
 /obj/machinery/material_furnace/Destroy()
-	if(firing_timer)
-		deltimer(firing_timer)
-		firing_timer = null
 	feedstock = null
 	carbon_feed = null
 	output_stock = null
 	QDEL_NULL(chamber_air)
 	return ..()
+
+/obj/machinery/material_furnace/proc/on_firing_due()
+	if(!firing)
+		return
+	firing_timer = null
+	finish_firing()
 
 /obj/machinery/material_furnace/examine(mob/user)
 	. = ..()
@@ -202,7 +205,7 @@
 		chamber_air.react()
 	set_light(3, 3, "#ff7b22")
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
-	firing_timer = addtimer(CALLBACK(src, PROC_REF(finish_firing)), 6 SECONDS, TIMER_STOPPABLE)
+	firing_timer = After(6 SECONDS, PROC_REF(on_firing_due))
 	return TRUE
 
 /// The old "Eject contents" object verb.
@@ -240,7 +243,9 @@
 	return TRUE
 
 /obj/machinery/material_furnace/proc/finish_firing()
-	firing_timer = null
+	if(firing_timer)
+		qdel(firing_timer)
+		firing_timer = null
 	firing = FALSE
 	icon_state = "nt_cruciforge"
 	set_light(0)

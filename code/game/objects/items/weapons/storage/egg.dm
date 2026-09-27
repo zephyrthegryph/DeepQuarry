@@ -36,8 +36,8 @@
 			playsound(src, src.use_sound, 50, 0, -5)
 		animate_shake()
 		drop_contents()
-		if(user.transforming) //this is actually godawful and transforming should never be used as it skips life ticks
-			user.transforming = FALSE //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
+		if(user.transforming)
+			user.clear_transforming()
 
 /obj/item/storage/vore_egg/unathi
 	name = "unathi egg"

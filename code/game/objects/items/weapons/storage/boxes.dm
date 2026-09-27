@@ -524,17 +524,17 @@
 /obj/item/storage/box/freezer/Entered(atom/movable/AM)
 	if(istype(AM, /obj/item/organ))
 		var/obj/item/organ/O = AM
-		O.preserved = 1
+		O.set_preserved(TRUE)
 		for(var/obj/item/organ/organ in O)
-			organ.preserved = 1
+			organ.set_preserved(TRUE)
 	..()
 
 /obj/item/storage/box/freezer/Exited(atom/movable/AM)
 	if(istype(AM, /obj/item/organ))
 		var/obj/item/organ/O = AM
-		O.preserved = 0
+		O.set_preserved(FALSE)
 		for(var/obj/item/organ/organ in O)
-			organ.preserved = 0
+			organ.set_preserved(FALSE)
 	..()
 
 /obj/item/storage/box/ambrosia

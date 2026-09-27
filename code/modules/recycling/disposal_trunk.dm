@@ -1,7 +1,13 @@
 //a trunk joining to a disposal bin or outlet on the same turf
 /obj/structure/disposalpipe/trunk
 	icon_state = "pipe-t"
-	var/atom/linked // The linked atom. It should have a /datum/component/disposal_connection to handle receiving disposal packets.
+	// The connected owner is resolved through its disposal connection component.
+
+/obj/structure/disposalpipe/trunk/proc/linked_owner()
+	var/datum/component/disposal_system_connection/connection = om_first_linked_to(src, /datum/object_model/relation/disposal_trunk)
+	if(!connection)
+		return null
+	return connection.disposal_owner
 
 /obj/structure/disposalpipe/trunk/Initialize(mapload)
 	..()
@@ -12,15 +18,15 @@
 	update()
 
 /obj/structure/disposalpipe/trunk/Destroy()
-	if(linked) //Linked to something, better unlink.
-		SEND_SIGNAL(linked, COMSIG_DISPOSAL_UNLINK)
-		linked = null
+	var/atom/owner = linked_owner()
+	if(owner)
+		SEND_SIGNAL(owner, COMSIG_DISPOSAL_UNLINK)
 	. = ..()
 
 // Override attackby so we disallow trunkremoval when somethings ontop
 /obj/structure/disposalpipe/trunk/attackby(obj/item/I, mob/user)
 	//Linked atom.
-	if(linked)
+	if(linked_owner())
 		return
 	//Disposal constructors
 	var/turf/T = get_turf(src)
@@ -38,7 +44,7 @@
 	if(H.dir == DOWN)		// we just entered from a disposer
 		return ..()		// so do base transfer proc
 
-	if(linked)
+	if(linked_owner())
 		if(SEND_SIGNAL(src, COMSIG_DISPOSAL_SEND, H))
 			return //Sent, and handled. Our job is done.
 

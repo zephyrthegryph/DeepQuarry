@@ -29,6 +29,7 @@
 	actions_types = list(/datum/action/item_action/toggle_light)
 	var/charged = TRUE
 	var/charge_time = 15
+	var/datum/object_model/schedule_entry/recharge_timer
 	var/detonation_damage = 50 //75
 	var/backstab_bonus = 30 //105
 	/// does it have a light icon
@@ -61,9 +62,6 @@
 /obj/item/kinetic_crusher/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/conflict_checking, CONFLICT_ELEMENT_CRUSHER)
-
-/obj/item/kinetic_crusher/Destroy()
-	return ..()
 
 /obj/item/kinetic_crusher/emag_act()
 	. = ..()
@@ -113,7 +111,7 @@
 		D.fire()
 		charged = FALSE
 		update_icon()
-		addtimer(CALLBACK(src, PROC_REF(Recharge)), charge_time)
+		schedule_recharge()
 		return
 	if(proximity_flag && isliving(target))
 		detonate(target, user)
@@ -145,10 +143,22 @@
 		detonate(L, throwingdatumd?.get_thrower(), TRUE)
 
 /obj/item/kinetic_crusher/proc/Recharge()
+	if(recharge_timer)
+		qdel(recharge_timer)
+		recharge_timer = null
 	if(!charged)
 		charged = TRUE
 		update_icon()
 		playsound(src.loc, 'sound/weapons/kenetic_reload.ogg', 60, 1)
+
+/obj/item/kinetic_crusher/proc/schedule_recharge()
+	if(recharge_timer)
+		qdel(recharge_timer)
+	recharge_timer = After(charge_time, PROC_REF(on_recharge_due))
+
+/obj/item/kinetic_crusher/proc/on_recharge_due()
+	recharge_timer = null
+	Recharge()
 
 /obj/item/kinetic_crusher/ui_action_click(mob/user, actiontype)
 	integ_light_on = !integ_light_on

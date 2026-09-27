@@ -56,6 +56,14 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 	log_admin("[key_name(src)] has contracted the virus \"[D]\"")
 
 /datum/disease/proc/stage_act()
+	return stage_progression()
+
+/// Local-clock disease progression without symptom presentation. Subtypes add
+/// damage and physiological symptoms here for accelerated biology steps.
+/datum/disease/proc/stage_biology()
+	return stage_progression()
+
+/datum/disease/proc/stage_progression()
 	if(!affected_mob)
 		return FALSE
 	var/cure = has_cure()

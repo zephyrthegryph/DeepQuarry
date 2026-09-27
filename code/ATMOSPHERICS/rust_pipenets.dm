@@ -211,12 +211,20 @@
 /obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
 	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
 		return FALSE
+	// return_air() supplies a shared immutable vacuum on walls, space and
+	// unsimulated turfs. That mixture has a main-arena handle, and Rust turf
+	// devices can only address cells in the turf arena. A device moved onto an
+	// airless tile must also drop any previously registered edge.
+	var/turf_handle = turf_air.arena_id()
+	if(turf_handle < GAS_HANDLE_TURF_BASE)
+		rust_unregister_device()
+		return FALSE
 	if(!rust_device_id)
 		rust_device_id = SSair.next_rust_device_id++
 		if(!SSair.rust_pipe_devices)
 			SSair.rust_pipe_devices = list()
 		SSair.rust_pipe_devices["[rust_device_id]"] = src
-	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_air.arena_id(), law_kind, p0, p1, p2, p3)
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_handle, law_kind, p0, p1, p2, p3)
 	SSair.rust_commit_pending_devices()
 	return TRUE
 

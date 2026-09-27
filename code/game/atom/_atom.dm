@@ -682,4 +682,16 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 
 /// Sets the wire datum of an atom
 /atom/proc/set_wires(datum/wires/new_wires)
+	if(new_wires && !istype(src, new_wires.holder_type))
+		return FALSE
+	if(new_wires && !om_claim(src, "om:wires", new_wires))
+		return FALSE
+	if(new_wires?.holder && new_wires.holder != src && new_wires.holder.wires == new_wires)
+		new_wires.holder.wires = null
+	var/datum/wires/old_wires = wires
 	wires = new_wires
+	if(new_wires)
+		new_wires.holder = src
+	if(old_wires && old_wires != new_wires)
+		qdel(old_wires)
+	return TRUE

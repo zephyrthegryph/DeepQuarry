@@ -9,7 +9,7 @@
 	LAZYADD(viruses, D)
 	var/mob/living/L = src
 	if(istype(L))
-		L.life_wake(LIFE_SYS_UPKEEP, "disease")
+		L.wake_life(/datum/life_wake_event/upkeep, "disease")
 	return TRUE
 
 /mob/proc/RemoveDisease(datum/disease/D)
@@ -180,6 +180,7 @@
 	order = 50
 	segment = LIFE_SEG_LIVING
 	woken_by = "addDisease()"
+	biology_catchup = TRUE
 
 /// Continuous only while the mob carries a virus.
 /datum/life_system/diseases/idle(mob/living/self)
@@ -189,6 +190,11 @@
 /datum/life_system/diseases/tick(mob/living/self, datum/life_context/ctx)
 	if(self.has_viruses())
 		progress(self)
+
+/datum/life_system/diseases/tick_biology(mob/living/self, datum/life_context/ctx)
+	for(var/datum/disease/D as anything in self.GetViruses())
+		if(self.stat != DEAD || global_flag_check(D.virus_modifiers, SPREAD_DEAD))
+			D.stage_biology()
 
 /// Spread and stage every virus this mob carries.
 /datum/life_system/diseases/proc/progress(mob/living/self)

@@ -1,3 +1,24 @@
+/datum/object_model/relation/redgate_partner
+	from_type = /obj/structure/redgate
+	to_type = /obj/structure/redgate
+	shape = OM_REL_SYMMETRIC
+	source_single = TRUE
+	target_single = TRUE
+
+/datum/object_model/relation/redgate_partner/on_link(datum/source, datum/target)
+	var/obj/structure/redgate/first = source
+	var/obj/structure/redgate/second = target
+	first.toggle_portal()
+	second.toggle_portal()
+
+/datum/object_model/relation/redgate_partner/on_unlink(datum/source, datum/target, reason)
+	if(!om_is_dying(source))
+		var/obj/structure/redgate/first = source
+		first.toggle_portal()
+	if(!om_is_dying(target))
+		var/obj/structure/redgate/second = target
+		second.toggle_portal()
+
 /obj/structure/redgate
 	name = "redgate"
 	desc = "It leads to someplace else!"
@@ -8,7 +29,6 @@
 	anchored = TRUE
 	pixel_x = -16
 
-	var/obj/structure/redgate/target
 	var/secret = FALSE	//If either end of the redgate has this enabled, ghosts will not be able to click to teleport
 	var/static/list/exceptions = list(
 		/obj/structure/ore_box,
@@ -19,14 +39,8 @@
 		/mob/living/simple_mob/vore/bigdragon
 		)	//There are some things we don't want to come through no matter what.
 
-/obj/structure/redgate/Destroy()
-	if(target)
-		target.target = null
-		target.toggle_portal()
-		target = null
-		set_light(0)
-
-	return ..()
+/obj/structure/redgate/proc/partner()
+	return om_first_linked(src, /datum/object_model/relation/redgate_partner)
 
 /obj/structure/redgate/proc/teleport(mob/M as mob)
 	var/keycheck = TRUE
@@ -53,8 +67,9 @@
 		if(!M.ckey)		//We only want players, no bringing the weird stuff on the other side back
 			return
 
-	if(!target)
+	if(!partner())
 		toggle_portal()
+		return
 
 	var/turf/ourturf = find_our_turf(M)		//Find the turf on the opposite side of the target
 	if(!ourturf.check_density(TRUE,TRUE))	//Make sure there isn't a wall there
@@ -79,6 +94,9 @@
 		to_chat(M, span_notice("Something blocks your way."))
 
 /obj/structure/redgate/proc/find_our_turf(atom/movable/AM)	//This finds the turf on the opposite side of the target gate from where you are
+	var/obj/structure/redgate/target = partner()
+	if(!target)
+		return null
 	var/offset_x = x - AM.x										//used for more smooth teleporting
 	var/offset_y = y - AM.y
 
@@ -87,7 +105,7 @@
 	return temptarg
 
 /obj/structure/redgate/proc/toggle_portal()
-	if(target)
+	if(partner())
 		icon_state = "on"
 		density = TRUE
 		plane = ABOVE_MOB_PLANE
@@ -133,6 +151,7 @@
 
 /obj/structure/redgate/attack_ghost(mob/observer/dead/user)
 
+	var/obj/structure/redgate/target = partner()
 	if(target)
 		if(!(secret || target.secret) || check_rights_for(user?.client, R_HOLDER))
 			user.forceMove(get_turf(target))
@@ -145,25 +164,21 @@
 		log_and_message_admins("An away redgate spawned but wasn't able to find a gateway to link to. If this appeared at roundstart, something has gone wrong, otherwise if you spawn another gate they should connect.")
 
 /obj/structure/redgate/proc/find_partner()
+	if(partner())
+		return TRUE
 	for(var/obj/structure/redgate/g in world)
 		if(istype(g, /obj/structure/redgate))
-			if(g.target)
+			if(g.partner())
 				continue
 			else if(g == src)
 				continue
 			else if(g.z in using_map.station_levels)
-				target = g
-				//legacy .target reference removed (no equivalent on /datum/ai_brain).
-				toggle_portal()
-				target.toggle_portal()
+				om_link(src, /datum/object_model/relation/redgate_partner, g)
 				break
 			else if(g != src)
-				target = g
-				//legacy .target reference removed (no equivalent on /datum/ai_brain).
-				toggle_portal()
-				target.toggle_portal()
+				om_link(src, /datum/object_model/relation/redgate_partner, g)
 				break
-	if(!target)
+	if(!partner())
 		return FALSE
 	else
 		return TRUE

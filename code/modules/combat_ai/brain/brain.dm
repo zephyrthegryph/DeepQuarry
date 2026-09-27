@@ -75,6 +75,7 @@
 		return
 	holder = owner
 	model = new /datum/world_model(owner)
+	om_claim(src, "om:world_model", model)
 	target_selector_chain = list(/datum/target_selector/closest)
 	home_turf = get_turf(owner)
 	manage_processing(DQAI_PROCESSING)
@@ -96,7 +97,7 @@
 	if(holder)
 		UnregisterSignal(holder, list(COMSIG_MOB_STATCHANGE, COMSIG_MOB_LOGIN, COMSIG_LIVING_INJURED))
 	manage_processing(0)
-	QDEL_NULL(model)
+	model = null
 	holder = null
 	primary_threat = null
 	active_target = null

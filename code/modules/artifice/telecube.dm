@@ -44,6 +44,7 @@
 
 	var/cooldown_time = 30 SECONDS
 	var/ready = TRUE
+	var/datum/object_model/schedule_entry/cooldown_timer
 
 // How far the cube will search for things to teleport. 0 = only contacting objects / mobs.
 	var/teleport_range = 0 // For all that is holy, do not change this unless you know what you're doing.
@@ -195,9 +196,13 @@
 
 	ready = FALSE
 	update_icon()
-	addtimer(CALLBACK(src, PROC_REF(ready)), cooldown_time)
+	cooldown_timer = After(cooldown_time, PROC_REF(on_cooldown_due))
 	if(mate_too && mate)
 		mate.cooldown(mate_too = FALSE) //No infinite recursion pls
+
+/obj/item/telecube/proc/on_cooldown_due()
+	cooldown_timer = null
+	ready()
 
 /obj/item/telecube/proc/ready()
 	ready = TRUE

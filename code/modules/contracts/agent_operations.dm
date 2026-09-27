@@ -347,6 +347,10 @@
 	return finalize_operation("Authoritative operation evidence")
 
 /datum/contract/faction_agent/check_deadline()
+	if(state == CONTRACT_ACTIVE && deadline && world.time < deadline)
+		return
+	if(deadline_timer)
+		qdel(deadline_timer)
 	deadline_timer = null
 	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
 		if(current_operation_ratio() >= CONTRACT_GRADE_MINIMUM_RATIO)

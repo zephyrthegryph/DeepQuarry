@@ -149,6 +149,7 @@
 	pack.open(first)
 	var/datum/storage_hud/hud = pack.hud
 	TEST_ASSERT_NOTNULL(hud, "opening makes the HUD")
+	TEST_ASSERT_EQUAL(length(hud.om_state?.observations), 2, "the open HUD owns only its insert and remove watches")
 	TEST_ASSERT_EQUAL(GLOB.storage_hud_count, baseline + 1, "one HUD for one open storage")
 	TEST_ASSERT_EQUAL(length(hud.backdrop), 3, "the volume bar has start, continue and end")
 	TEST_ASSERT(I in hud.shown, "the stored item is shown")
@@ -171,6 +172,7 @@
 	TEST_ASSERT_EQUAL(pack.hud, hud, "the HUD stays while someone still looks")
 	pack.close(second)
 	TEST_ASSERT_NULL(pack.hud, "the last viewer out deletes the HUD")
+	TEST_ASSERT(QDELETED(hud), "closing the last view tears down its owned observations")
 	TEST_ASSERT_EQUAL(GLOB.storage_hud_count, baseline, "no HUD left")
 	for(var/atom/movable/A as anything in atoms)
 		TEST_ASSERT(QDELETED(A), "screen object [A] was deleted with the HUD")

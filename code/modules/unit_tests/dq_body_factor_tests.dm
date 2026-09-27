@@ -120,16 +120,88 @@
 	A.set_severity(100)
 	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 20), "edema at full severity should raise the heart rate by 20, got [H.factor(BF_HEART_RATE)]")
 	TEST_ASSERT(dq_near(H.factor(BF_BP_SYSTOLIC), -15), "edema at full severity should drop systolic pressure by 15")
+	TEST_ASSERT_EQUAL(om_track_change(H.body, OM_BODY_CHANGE_EFFECTIVE_FACTORS), 0, "effective factor revision starts when observed")
 
 	A.set_severity(50)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "crossing a severity band should mark the factors dirty")
+	TEST_ASSERT_EQUAL(om_change_revision(H.body, OM_BODY_CHANGE_EFFECTIVE_FACTORS), 0, "source invalidation does not claim an effective value change")
 	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "edema at half severity should give half the heart rate, got [H.factor(BF_HEART_RATE)]")
+	TEST_ASSERT_EQUAL(om_change_revision(H.body, OM_BODY_CHANGE_EFFECTIVE_FACTORS), 1, "recompute publishes one effective factor change")
 
 	A.set_severity(52)
 	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_FACTORS), "a change inside the same band should not recompute")
 
 	A.cure()
 	TEST_ASSERT_EQUAL(H.factor(BF_HEART_RATE), 0, "curing should remove the contribution")
+
+/datum/dq_test_factor_view_counter
+	var/changes = 0
+	var/last_old
+	var/last_new
+
+/datum/dq_test_factor_view_counter/proc/on_factor_view_changed(datum/source, old_value, new_value)
+	SIGNAL_HANDLER
+	changes++
+	var/list/previous = old_value
+	var/list/current = new_value
+	last_old = previous?[BF_HEART_RATE] || 0
+	last_new = current?[BF_HEART_RATE] || 0
+
+/datum/unit_test/dq_body_factor_observed_view
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_body_factor_observed_view/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/affliction/A = H.body.afflict(/datum/affliction/airway_edema)
+	TEST_ASSERT_NOTNULL(A, "airway edema should afflict")
+	A.set_severity(100)
+	var/datum/dq_test_factor_view_counter/counter = new
+	counter.RegisterSignal(H.body, COMSIG_BODY_FACTOR_VIEW_CHANGED, TYPE_PROC_REF(/datum/dq_test_factor_view_counter, on_factor_view_changed))
+	var/datum/object_model/derived_watch/watch = H.body.observe_factor_view(counter)
+	TEST_ASSERT_NOTNULL(watch, "factor view should be observed")
+	var/list/first = H.body.factor_view()
+	TEST_ASSERT(dq_near(first[BF_HEART_RATE], 20), "initial view should contain the effective factor")
+	first[BF_HEART_RATE] = -999
+	TEST_ASSERT(dq_near(H.body.factor_view()[BF_HEART_RATE], 20), "caller mutation changed the cached factor view")
+	A.set_severity(50)
+	var/list/second = H.body.factor_view()
+	TEST_ASSERT(dq_near(second[BF_HEART_RATE], 10), "view should refresh on first read after affliction change")
+	TEST_ASSERT_EQUAL(counter.changes, 1, "effective change should notify once")
+	TEST_ASSERT(dq_near(counter.last_old, 20) && dq_near(counter.last_new, 10), "notification should carry old and new values")
+	A.set_severity(52)
+	H.body.factor_view()
+	TEST_ASSERT_EQUAL(counter.changes, 1, "same factor band should not notify")
+	var/datum/modifier/M = H.add_modifier(/datum/modifier/dq_test_healing)
+	var/list/with_modifier = H.body.factor_view()
+	TEST_ASSERT(dq_near(with_modifier[BF_HEALING_RECEIVED], 2), "modifier should appear on the next derived read")
+	M.set_factors(alist(BF_HEALING_RECEIVED = 0.5))
+	var/list/changed_modifier = H.body.factor_view()
+	TEST_ASSERT(dq_near(changed_modifier[BF_HEALING_RECEIVED], 0.5), "modifier setter should refresh the view without a tick")
+	qdel(counter)
+
+/// An observed factor view should ignore severity writes that cannot change
+/// the rounded contribution, while still refreshing on a band crossing.
+/datum/unit_test/dq_body_factor_observed_band_gate
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_body_factor_observed_band_gate/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/affliction/airway_edema/A = H.body.afflict(/datum/affliction/airway_edema)
+	TEST_ASSERT_NOTNULL(A, "airway edema should afflict")
+	A.set_severity(98)
+	var/datum/object_model/derived_watch/watch = H.body.observe_factor_view(src)
+	TEST_ASSERT_NOTNULL(watch, "factor view should be observed")
+	H.body.factor_view()
+	var/datum/object_model/change_state/state = om_change_state_for(H.body)
+	var/list/entry = state.views[/datum/object_model/behaviour/body_factor_view]
+	TEST_ASSERT(!entry[OM_DERIVED_DIRTY], "initial factor view should be clean")
+	A.set_severity(99)
+	TEST_ASSERT(!entry[OM_DERIVED_DIRTY], "same-band severity should not dirty the factor view")
+	TEST_ASSERT(dq_near(H.body.factor_view()[BF_HEART_RATE], 19.6), "same-band factor should retain its value")
+	A.set_severity(50)
+	TEST_ASSERT(entry[OM_DERIVED_DIRTY], "crossing a factor band should dirty the observed view")
+	TEST_ASSERT_EQUAL(H.body.factor_view()[BF_HEART_RATE], 10, "cross-band factor should refresh on read")
+	qdel(watch)
 
 
 /// Staged afflictions use the stage's table at full value.
@@ -183,6 +255,10 @@
 	H.drop_from_inventory(boots)
 	TEST_ASSERT(H.equip_to_slot_if_possible(boots, slot_shoes, disable_warning = TRUE), "the boots should equip")
 	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 1.5, "worn boots should add their slowdown")
+	boots.set_worn_factors(alist(BF_SLOWDOWN = 0.75))
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0.75, "a worn item's setter should refresh factors without caller invalidation")
+	boots.set_worn_factors(null)
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "clearing a worn item's factors should refresh the body")
 
 	H.drop_from_inventory(boots)
 	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "taking the boots off should remove it")
@@ -197,6 +273,11 @@
 	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0.5, "unathi should move with their species slowdown")
 	TEST_ASSERT(dq_near(H.factor(BF_METABOLISM), 0.85), "unathi should metabolise at their species rate")
 	TEST_ASSERT_EQUAL(H.species.baseline_factor(BF_SLOWDOWN), 0.5, "the species baseline should read on its own")
+	var/alist/extra = alist(BF_SLOWDOWN = 1)
+	H.species.grant_factors(extra, H)
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 1.5, "granting species factors should refresh the matching body's cache")
+	H.species.revoke_factors(extra, H)
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0.5, "revoking species factors should refresh the matching body's cache")
 
 	// Traits that change the same factor conflict, like traits changing the same var.
 	var/datum/trait/slow = GLOB.all_traits[/datum/trait/negative/speed_slow]
@@ -291,6 +372,26 @@
 	C.charge = 0
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT) > 0, "an empty shield should let the hit through")
 	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), 2), "the shield's conductivity is an ordinary factor")
+
+/datum/unit_test/dq_body_factor_shield_signal_lifetime
+
+/datum/unit_test/dq_body_factor_shield_signal_lifetime/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/baseline = H.factor(BF_SIEMENS)
+	var/datum/modifier/shield_projection/bruteburn/S = H.add_modifier(/datum/modifier/shield_projection/bruteburn)
+	TEST_ASSERT(S, "shield modifier could not be applied")
+	TEST_ASSERT(om_has_link(S, /datum/object_model/relation/shield_projection_holder, H), "active shield has no holder relation")
+	TEST_ASSERT(S._signal_procs?[H]?[COMSIG_LIVING_SHIELD_INJURY], "active shield has no injury listener")
+	qdel(S)
+	TEST_ASSERT(!H.has_modifier_of_type(/datum/modifier/shield_projection), "direct deletion left a dead shield in the modifier list")
+	TEST_ASSERT(!H._listen_lookup?[COMSIG_LIVING_SHIELD_INJURY], "direct deletion left the injury listener")
+	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), baseline), "direct deletion left the shield factor active")
+	var/datum/modifier/shield_projection/bruteburn/replacement = H.add_modifier(/datum/modifier/shield_projection/bruteburn)
+	TEST_ASSERT(replacement && om_has_link(replacement, /datum/object_model/relation/shield_projection_holder, H), "shield could not be reapplied after direct deletion")
+	replacement.expire(TRUE)
+	TEST_ASSERT(!H.has_modifier_of_type(/datum/modifier/shield_projection), "normal expiry left the shield in the modifier list")
+	TEST_ASSERT(!H._listen_lookup?[COMSIG_LIVING_SHIELD_INJURY], "normal expiry left the injury listener")
+	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), baseline), "normal expiry left the shield factor active")
 
 
 /// The reference book documents a source straight from its table.

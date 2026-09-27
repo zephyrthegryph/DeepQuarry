@@ -1005,7 +1005,7 @@
 /// Find an adjacent floor pair whose adjacency was built by the real init
 /// path (init_immediate_calculate_adjacent_turfs). Preference order:
 ///   1. Adjacent floor pair INSIDE the unit_tests.dmm sealed room (walls of
-///      /turf/closed/indestructible block atmos via real type — no white-box
+///      /turf/unsimulated/wall blocks atmos via real type — no white-box
 ///      adjacency rewriting needed).
 ///   2. Any floor pair with built adjacency anywhere on the map.
 /// Sealed-room pairs let mass-conservation tests check totals — the gas
@@ -1249,7 +1249,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			open_turf.air_update_turf(TRUE, FALSE)
 
 /// Open a sealed test-room floor up to space by ChangeTurf-ing one of its
-/// cardinal neighbors (a /turf/closed/indestructible test-room wall) into a
+/// cardinal neighbors (a /turf/unsimulated/wall test-room wall) into a
 /// real /turf/space. ChangeTurf marks the new turf for update, whose
 /// immediate_calculate_adjacent_turfs wires the floor↔space adjacency
 /// bidirectionally — the same production path a hull breach would take.
@@ -1275,7 +1275,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(!fallback_neighbor)
 			fallback_neighbor = neighbor
 		// If a neighbor is already space, just use it (and record so we can put
-		// it back). The test-room walls are /turf/closed/indestructible; isolate
+		// it back). The test-room walls are /turf/unsimulated/wall; isolate
 		// helpers leave /turf/simulated/wall. Either way they block air, so pick
 		// a solid neighbor and breach it.
 		if(istype(neighbor, /turf/space))
@@ -1319,6 +1319,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/B = pair[2]
 
 	dq_atmos_test_isolate_pair(A, B)
+	var/list/isolated_a_neighbors = vg_atmos_adjacent_turfs(A)
+	var/list/isolated_b_neighbors = vg_atmos_adjacent_turfs(B)
+	var/list/isolated_neighbor_debug = list()
+	for(var/turf/neighbor as anything in isolated_a_neighbors + isolated_b_neighbors)
+		isolated_neighbor_debug += "[COORD(neighbor)] type=[neighbor.type] blocks=[neighbor.blocks_air] rust=[json_encode(vg_atmos_cell_info(neighbor))]"
+	TEST_ASSERT(length(isolated_a_neighbors) == 1 && isolated_a_neighbors[1] == B && length(isolated_b_neighbors) == 1 && isolated_b_neighbors[1] == A, \
+		"sealed pair retained external gas edges: A=[COORD(A)] dirs=[vg_atmos_open_dirs(A)] B=[COORD(B)] dirs=[vg_atmos_open_dirs(B)] details=[jointext(isolated_neighbor_debug, "; ")]")
 
 	for(var/datum/gas/g as anything in A.air.get_gases())
 		A.air.set_moles(g, 0)
@@ -1509,6 +1516,25 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// next test that picks this tile. (On assert failure the entry in
 	// dq_atmos_test_walled_turfs survives so the next isolate_pair call
 	// reverses it via dq_atmos_test_restore_walls.)
+	dq_atmos_test_restore_walls()
+
+
+/// A non-open turf replacing a live floor must close the old Rust gas cell.
+/// Dynamic map loading can make this replacement without ChangeTurf, so the
+/// new turf's Initialize is responsible for clearing the previous geometry.
+/datum/unit_test/dq_nonopen_wall_clears_turf_gas_cell
+
+/datum/unit_test/dq_nonopen_wall_clears_turf_gas_cell/Run()
+	var/list/pair = dq_atmos_test_find_floor_pair()
+	TEST_ASSERT_NOTNULL(pair, "no usable floor pair for non-open wall replacement")
+	var/turf/open/A = pair[1]
+	var/turf/open/B = pair[2]
+	GLOB.dq_atmos_test_walled_turfs[B] = B.type
+	var/turf/W = B.ChangeTurf(/turf/unsimulated/wall)
+	TEST_ASSERT(istype(W, /turf/unsimulated/wall), "replacement did not create an unsimulated wall")
+	var/list/wall_info = vg_atmos_cell_info(W)
+	TEST_ASSERT(!wall_info[1], "non-open wall remained registered as a Rust gas cell")
+	TEST_ASSERT(!vg_atmos_turfs_share(A, W), "Rust gas graph kept an edge from the floor into the wall")
 	dq_atmos_test_restore_walls()
 
 
@@ -2249,6 +2275,22 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	qdel(line_a)
 	qdel(line_b)
 
+
+/// Non-open turfs return a shared vacuum mixture, which is a main-arena
+/// handle. A turf device must not submit that handle to the Rust turf edge API.
+/datum/unit_test/dq_turf_device_rejects_fallback_vacuum
+
+/datum/unit_test/dq_turf_device_rejects_fallback_vacuum/Run()
+	var/turf/T = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	TEST_ASSERT_NOTNULL(T, "test has no turf")
+	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
+	V.rust_allocate_pipe_ports()
+	var/datum/gas_mixture/immutable/space/vacuum = new
+	TEST_ASSERT(vacuum.arena_id() < GAS_HANDLE_TURF_BASE, "fallback vacuum unexpectedly has a turf handle")
+	TEST_ASSERT(!V.rust_set_turf_device(1, vacuum, RUST_DEVICE_LAW_VENT_PUMP), "fallback vacuum registered as a turf device")
+	TEST_ASSERT(!V.rust_device_id, "invalid turf device allocated a Rust device ID")
+	qdel(V)
+	qdel(vacuum)
 
 /// Vent pump integration: build a real vent_pump on a floor, seed its
 /// air_contents with pressurized N2, satisfy can_pump's preconditions, and
@@ -4434,14 +4476,37 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	blocker.density = TRUE
 	A.close()
 	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
-	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
-	TEST_ASSERT(blocker._listen_lookup?[COMSIG_MOVABLE_MOVED], "blocked airlock did not register a movement signal on its blocker")
+	TEST_ASSERT(A.Observed(blocker, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/machinery/door, on_autoclose_blocker_moved)), "blocked airlock did not observe blocker movement")
 	TEST_ASSERT(isnull(A.door_timer_token) || A.next_door_deadline(), "blocked airlock kept an autoclose timer")
 	blocker.Moved(T, NORTH, TRUE, 0)
 	TEST_ASSERT(A.close_door_at, "woken airlock did not schedule an immediate close attempt")
-	TEST_ASSERT(!isnull(A.door_timer_token), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
+	TEST_ASSERT(!isnull(A.door_timer_token), "woken airlock has no autoclose timer (close_at=[A.close_door_at])")
+	TEST_ASSERT(!A.Observed(blocker, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/machinery/door, on_autoclose_blocker_moved)), "moving the blocker retained its observation")
 	qdel(blocker)
 	qdel(A)
+
+/datum/unit_test/dq_door_autoclose_blocker_relation_lifetime
+
+/datum/unit_test/dq_door_autoclose_blocker_relation_lifetime/Run()
+	var/turf/T = locate(1, 1, 1)
+	TEST_ASSERT_NOTNULL(T, "no turf for door blocker lifetime test")
+	var/obj/machinery/door/D = new(T)
+	var/obj/blocker = new(T)
+	var/obj/second = new(T)
+	D.autoclose = TRUE
+	D.sleep_until_autoclose_blocker_moves(blocker)
+	D.sleep_until_autoclose_blocker_moves(second)
+	TEST_ASSERT(D.Observed(blocker, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/machinery/door, on_autoclose_blocker_moved)), "door did not observe its first blocker")
+	TEST_ASSERT(D.Observed(second, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/machinery/door, on_autoclose_blocker_moved)), "door did not observe its second blocker")
+	D.clear_autoclose_blockers()
+	TEST_ASSERT(!D.Observed(blocker, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/machinery/door, on_autoclose_blocker_moved)), "explicit clear retained blocker observation")
+	TEST_ASSERT(!blocker._listen_lookup?[COMSIG_MOVABLE_MOVED], "explicit clear retained a movement observer")
+	D.sleep_until_autoclose_blocker_moves(blocker)
+	qdel(blocker)
+	TEST_ASSERT(!D.Observed(blocker, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/machinery/door, on_autoclose_blocker_moved)), "deleting blocker retained its observation")
+	TEST_ASSERT(D.close_door_at > 0, "deleting blocker did not schedule an immediate close retry")
+	qdel(D)
+	qdel(second)
 
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose
 

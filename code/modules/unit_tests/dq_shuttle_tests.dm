@@ -31,6 +31,127 @@
 	shuttle.set_process_state(IDLE_STATE)
 	TEST_ASSERT(!(shuttle in SSshuttles.active_process_shuttles), "settled shuttle did not leave the active processing set")
 	qdel(shuttle)
+
+/datum/shuttle/autodock/unit_test_controller_relation
+	shuttle_area = /area
+	defer_initialisation = TRUE
+
+/datum/unit_test/dq_shuttle_docking_controller_relation_lifetime
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_shuttle_docking_controller_relation_lifetime/Run()
+	var/datum/shuttle/autodock/unit_test_controller_relation/shuttle = new
+	var/datum/embedded_program/docking/first = new
+	var/datum/embedded_program/docking/second = new
+	var/datum/embedded_program/docking/third = new
+	TEST_ASSERT(shuttle.set_shuttle_docking_controller(first), "Shuttle could not link its own docking controller")
+	TEST_ASSERT(shuttle.set_active_docking_controller(first), "Shuttle could not link the same controller as its active dock")
+	TEST_ASSERT(om_has_link(shuttle, /datum/object_model/relation/shuttle_own_docking_controller, first), "Own controller relation was missing")
+	TEST_ASSERT(om_has_link(shuttle, /datum/object_model/relation/shuttle_active_docking_controller, first), "Active controller relation was missing")
+	TEST_ASSERT(shuttle.set_shuttle_docking_controller(second), "Shuttle could not replace its own controller")
+	TEST_ASSERT(shuttle.shuttle_docking_controller == second, "Own controller mirror did not switch")
+	TEST_ASSERT(shuttle.active_docking_controller == first, "Replacing own controller disturbed the active controller")
+	qdel(first)
+	TEST_ASSERT(!shuttle.active_docking_controller, "Deleting active controller left a stale mirror")
+	TEST_ASSERT(shuttle.shuttle_docking_controller == second, "Deleting active controller cleared the separate own controller")
+	TEST_ASSERT(shuttle.set_active_docking_controller(second), "Shuttle could not share the replacement controller across both roles")
+	qdel(second)
+	TEST_ASSERT(!shuttle.shuttle_docking_controller, "Deleting shared controller left own controller mirror")
+	TEST_ASSERT(!shuttle.active_docking_controller, "Deleting shared controller left active controller mirror")
+	TEST_ASSERT(!length(om_linked(shuttle, /datum/object_model/relation/shuttle_own_docking_controller)), "Deleting shared controller left own relation")
+	TEST_ASSERT(!length(om_linked(shuttle, /datum/object_model/relation/shuttle_active_docking_controller)), "Deleting shared controller left active relation")
+	TEST_ASSERT(shuttle.set_shuttle_docking_controller(third), "Shuttle could not link a surviving controller")
+	qdel(shuttle)
+	TEST_ASSERT(!length(om_linked_to(third, /datum/object_model/relation/shuttle_own_docking_controller)), "Deleting shuttle left a controller relation")
+	qdel(third)
+
+/obj/effect/shuttle_landmark/unit_test_controller_relation
+	landmark_tag = "dq-test-landmark-controller-relation"
+
+/datum/embedded_program/docking/unit_test_landmark_lookup
+	id_tag = "dq-test-landmark-docking-tag"
+
+/obj/effect/shuttle_landmark/unit_test_resolved_controller
+	landmark_tag = "dq-test-landmark-resolved-controller"
+	docking_controller = "dq-test-landmark-docking-tag"
+
+/obj/effect/shuttle_landmark/unit_test_missing_controller
+	landmark_tag = "dq-test-landmark-missing-controller"
+	docking_controller = "dq-test-missing-docking-tag"
+
+/datum/unit_test/dq_shuttle_landmark_controller_relation_lifetime
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_shuttle_landmark_controller_relation_lifetime/Run()
+	var/turf/spawn_turf = locate(1, 1, 1)
+	var/obj/effect/shuttle_landmark/unit_test_controller_relation/landmark = new(spawn_turf)
+	var/datum/embedded_program/docking/first = new
+	var/datum/embedded_program/docking/second = new
+	TEST_ASSERT(landmark.set_docking_controller(first), "Landmark could not link a controller")
+	TEST_ASSERT(om_has_link(landmark, /datum/object_model/relation/shuttle_landmark_docking_controller, first), "Landmark controller relation was missing")
+	TEST_ASSERT(landmark.set_docking_controller(second), "Landmark could not replace its controller")
+	TEST_ASSERT(landmark.docking_controller == second, "Landmark kept the replaced controller")
+	TEST_ASSERT(!length(om_linked_to(first, /datum/object_model/relation/shuttle_landmark_docking_controller)), "Replaced controller kept landmark relation")
+	qdel(second)
+	TEST_ASSERT(!landmark.docking_controller, "Deleted controller remained on landmark")
+	TEST_ASSERT(!length(om_linked(landmark, /datum/object_model/relation/shuttle_landmark_docking_controller)), "Deleted controller relation remained on landmark")
+	TEST_ASSERT(landmark.set_docking_controller(first), "Landmark could not rebind its controller")
+	qdel(landmark)
+	TEST_ASSERT(!length(om_linked_to(first, /datum/object_model/relation/shuttle_landmark_docking_controller)), "Deleted landmark kept controller relation")
+	SSshuttles.registered_shuttle_landmarks -= "dq-test-landmark-controller-relation"
+	qdel(first)
+	var/datum/embedded_program/docking/unit_test_landmark_lookup/looked_up = new
+	var/obj/effect/shuttle_landmark/unit_test_resolved_controller/resolved = new(spawn_turf)
+	resolved.LateInitialize()
+	TEST_ASSERT(resolved.docking_controller == looked_up, "Landmark did not resolve its mapped docking tag")
+	TEST_ASSERT(om_has_link(resolved, /datum/object_model/relation/shuttle_landmark_docking_controller, looked_up), "Mapped docking tag did not create a relation")
+	qdel(resolved)
+	SSshuttles.registered_shuttle_landmarks -= "dq-test-landmark-resolved-controller"
+	qdel(looked_up)
+	var/obj/effect/shuttle_landmark/unit_test_missing_controller/missing = new(spawn_turf)
+	missing.LateInitialize()
+	TEST_ASSERT(!missing.docking_controller, "Missing docking tag resolved to a stale controller")
+	TEST_ASSERT(!length(om_linked(missing, /datum/object_model/relation/shuttle_landmark_docking_controller)), "Missing docking tag created a relation")
+	qdel(missing)
+	SSshuttles.registered_shuttle_landmarks -= "dq-test-landmark-missing-controller"
+
+/datum/shuttle/autodock/ferry/escape_pod/unit_test_arming_relation
+	shuttle_area = /area
+	defer_initialisation = TRUE
+
+/datum/shuttle/autodock/ferry/escape_pod/unit_test_arming_relation/first
+	name = "DQ arming relation pod one"
+
+/datum/shuttle/autodock/ferry/escape_pod/unit_test_arming_relation/second
+	name = "DQ arming relation pod two"
+
+/datum/unit_test/dq_escape_pod_arming_controller_relation_lifetime
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_escape_pod_arming_controller_relation_lifetime/Run()
+	var/datum/shuttle/autodock/ferry/escape_pod/unit_test_arming_relation/first/first_pod = new
+	var/datum/shuttle/autodock/ferry/escape_pod/unit_test_arming_relation/second/second_pod = new
+	var/datum/embedded_program/docking/simple/escape_pod_berth/first_berth = new
+	var/datum/embedded_program/docking/simple/escape_pod_berth/second_berth = new
+	TEST_ASSERT(first_pod.set_arming_controller(first_berth), "First pod could not link its berth")
+	TEST_ASSERT(second_pod.set_arming_controller(first_berth), "Second pod could not share the berth")
+	TEST_ASSERT(length(om_linked_to(first_berth, /datum/object_model/relation/escape_pod_arming_controller)) == 2, "Shared berth did not track both pods")
+	TEST_ASSERT(first_pod.set_arming_controller(second_berth), "First pod could not replace its berth")
+	TEST_ASSERT(first_pod.arming_controller == second_berth, "First pod retained the old berth")
+	TEST_ASSERT(second_pod.arming_controller == first_berth, "Replacing one pod berth changed the other pod")
+	qdel(first_berth)
+	TEST_ASSERT(!second_pod.arming_controller, "Deleted shared berth remained on second pod")
+	TEST_ASSERT(!second_pod.can_launch(), "Pod could launch without a live arming berth")
+	TEST_ASSERT(!second_pod.can_force(), "Pod could force-launch without a live arming berth")
+	TEST_ASSERT(first_pod.arming_controller == second_berth, "Deleting old berth cleared replacement on first pod")
+	qdel(first_pod)
+	TEST_ASSERT(!length(om_linked_to(second_berth, /datum/object_model/relation/escape_pod_arming_controller)), "Deleted pod kept its berth relation")
+	TEST_ASSERT(second_pod.set_arming_controller(second_berth), "Second pod could not rebind to surviving berth")
+	qdel(second_berth)
+	TEST_ASSERT(!second_pod.arming_controller, "Deleted berth remained on second pod")
+	qdel(second_pod)
+	SSemergency_shuttle.escape_pods -= "DQ arming relation pod one"
+	SSemergency_shuttle.escape_pods -= "DQ arming relation pod two"
 //
 // A web-shuttle destination whose map landmark doesn't exist (e.g. it lived on
 // a z-level this map no longer loads) used to survive init with a null

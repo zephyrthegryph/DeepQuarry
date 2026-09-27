@@ -239,6 +239,48 @@
 		recompute_factors()
 	return factors ? factors[id] : body_factor_baseline(id)
 
+/// Optional observed view of the effective factor vector. Normal factor()
+/// reads stay on the cheap dirty-bit path; a scanner or monitor pays for the
+/// snapshot only while it asks for or observes one. Treat the returned list
+/// as immutable and copy it before making local edits.
+/datum/object_model/behaviour/body_factor_view
+	derived_input_mask = OM_BODY_CHANGE_AFFLICTIONS | OM_BODY_CHANGE_FACTORS
+	// The body is the authority for effective factor inputs. A severity setter
+	// publishes OM_BODY_CHANGE_FACTORS only when its contribution can change;
+	// observing every affliction severity change would rebuild this flat vector
+	// for changes inside the same severity band.
+
+/datum/object_model/behaviour/body_factor_view/compute_derived(datum/source, list/config)
+	var/datum/body/B = source
+	B.get_factor(BF_AIRWAY)
+	return B.factors?.Copy()
+
+/datum/object_model/behaviour/body_factor_view/derived_equal(old_value, new_value)
+	if(old_value == new_value)
+		return TRUE
+	if(!old_value || !new_value)
+		return FALSE
+	var/list/old_factors = old_value
+	var/list/new_factors = new_value
+	for(var/id in 1 to BF_COUNT)
+		if(old_factors[id] != new_factors[id])
+			return FALSE
+	return TRUE
+
+/datum/object_model/behaviour/body_factor_view/on_derived_changed(datum/source, old_value, new_value, list/config)
+	var/list/old_factors = old_value
+	var/list/new_factors = new_value
+	SEND_SIGNAL(source, COMSIG_BODY_FACTOR_VIEW_CHANGED, old_factors?.Copy(), new_factors?.Copy())
+
+/// A retained watch refreshes at the end of the current tick. The signal
+/// above only fires if the effective vector actually changes.
+/datum/body/proc/observe_factor_view(datum/observer)
+	return om_observe_derived(observer, src, /datum/object_model/behaviour/body_factor_view)
+
+/datum/body/proc/factor_view()
+	var/list/snapshot = om_derived_read(src, /datum/object_model/behaviour/body_factor_view)
+	return snapshot?.Copy()
+
 /// Rebuild `factors` from every source. Visits each source's static table
 /// once; allocates only when something contributes.
 /datum/body/proc/recompute_factors()
@@ -253,6 +295,8 @@
 	var/list/old = factors
 	factors = body_factor_finalize(acc)
 	if(!factors_equal(old, factors))
+		if(om_state?.change)
+			om_mark_changed(src, OM_BODY_CHANGE_EFFECTIVE_FACTORS)
 		// Pain and consciousness read analgesia, pain and sedation; the
 		// physiology reads the oxygen-transport factors.
 		invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
@@ -380,6 +424,8 @@
 /// Replace this modifier's table at runtime (charge-dependent shields,
 /// stacking effects). Marks the holder's factors stale.
 /datum/modifier/proc/set_factors(alist/new_factors)
+	if(factors == new_factors)
+		return
 	factors = new_factors
 	holder?.invalidate_factors()
 
@@ -390,6 +436,19 @@
 /obj/item
 	/// Body factors applied while this item is equipped outside the hands.
 	var/alist/worn_factors
+
+/// Replace a runtime factor table. Static subtype tables can still be
+/// declared on worn_factors; a live item's changes go through this setter.
+/// The body's slot ledger remains the authority for whether the item counts.
+/obj/item/proc/set_worn_factors(alist/new_factors)
+	if(worn_factors == new_factors)
+		return
+	worn_factors = new_factors
+	var/mob/living/L = loc
+	if(!istype(L))
+		return
+	if(src in L.body_slot_items(BODY_SLOT_WORN))
+		L.invalidate_factors()
 
 // --- Book text -------------------------------------------------------------------------
 

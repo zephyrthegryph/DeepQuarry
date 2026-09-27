@@ -104,6 +104,11 @@
 		return
 	. = ..()
 
+/datum/life_system/environment/simple_mob/vore/demonAI/tick_biology(mob/living/simple_mob/vore/demonAI/self, datum/life_context/ctx)
+	if(self.shifted_out)
+		return
+	return ..()
+
 /mob/living/simple_mob/vore/demonAI/update_canmove()
 	if(is_shifting)
 		canmove = FALSE

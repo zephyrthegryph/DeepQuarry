@@ -24,12 +24,17 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 /// How many isolated test blocks to keep in the pool. Tests run strictly
 /// sequentially (RunUnitTests() calls each test's New()/Run()/restore_atmos()/
-/// Destroy() in a plain for loop before starting the next), so one block would
-/// be enough in theory -- but a test's Destroy() may still be draining async
-/// leftovers (a delayed callback, an expedition teardown_z wait) when the next
-/// test's New() runs, so a small pool lets us round-robin instead of forcing
-/// every test to block on the previous test's straggling cleanup.
+/// cleanup in a plain for loop before starting the next), so one block would
+/// be enough in theory. A small pool also covers exceptional async cleanup
+/// when a test is deleted outside the runner.
 #define UNIT_TEST_BLOCK_POOL_SIZE 8
+
+/// Dedicated area for runtime-loaded test rooms. The template must use types
+/// that exist in this fork: missing map paths are silently dropped by the
+/// parser and leave an empty model for build_coordinate().
+/area/unit_test
+	name = "Unit Test Room"
+	requires_power = FALSE
 
 /// One isolated, walled-off copy of maps/templates/unit_tests.dmm on its own
 /// z-level. Checked out to exactly one running unit test at a time so tests no
@@ -49,18 +54,26 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /// The pool of isolated test blocks. Built lazily on the first test that needs
 /// one, so non-test worlds never pay for it.
 GLOBAL_LIST_EMPTY(unit_test_block_pool)
-/// TRUE once the pool has been built (or an attempt was made to build it).
+/// TRUE once the pool has finished building and contains at least one block.
 GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
+/// A pool build can yield during map loading; other callers must wait for it.
+GLOBAL_VAR_INIT(unit_test_block_pool_loading, FALSE)
+/// Do not reload 24 z-levels for every test after a failed build.
+GLOBAL_VAR_INIT(unit_test_block_pool_failed, FALSE)
 
 /// Loads UNIT_TEST_BLOCK_POOL_SIZE independent copies of the unit-test room
 /// template, each on its own z-level, and records their corner turfs. Safe to
 /// call more than once -- only the first call does anything.
 /proc/ensure_unit_test_block_pool()
-	if(GLOB.unit_test_block_pool_ready)
+	if(GLOB.unit_test_block_pool_ready || GLOB.unit_test_block_pool_failed)
 		return
-	// Set this before load_new_z() (which yields) so a re-entrant call made
-	// while we're still loading the first copy doesn't start a second build.
-	GLOB.unit_test_block_pool_ready = TRUE
+	if(GLOB.unit_test_block_pool_loading)
+		while(GLOB.unit_test_block_pool_loading)
+			sleep(1)
+		return
+	// load_new_z() yields; mark the build in progress before it starts so
+	// another test cannot acquire an unfinished (possibly empty) pool.
+	GLOB.unit_test_block_pool_loading = TRUE
 
 	// load_new_z() -> initTemplateBounds() is a deliberate no-op while
 	// SSatoms.initialized is still FALSE (code/modules/maps/map_template.dm):
@@ -123,8 +136,11 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 
 		GLOB.unit_test_block_pool += block
 
-	if(!length(GLOB.unit_test_block_pool))
-		CRASH("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
+	GLOB.unit_test_block_pool_ready = length(GLOB.unit_test_block_pool) > 0
+	GLOB.unit_test_block_pool_failed = !GLOB.unit_test_block_pool_ready
+	GLOB.unit_test_block_pool_loading = FALSE
+	if(!GLOB.unit_test_block_pool_ready)
+		log_world("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
 
 /// Checks out a free isolated test block, waiting for one to be returned if
 /// every block is currently in use (should be rare -- see the pool size
@@ -133,6 +149,8 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /proc/acquire_unit_test_block()
 	RETURN_TYPE(/datum/unit_test_block)
 	ensure_unit_test_block_pool()
+	if(!GLOB.unit_test_block_pool_ready)
+		return null
 
 	var/waited = 0
 	while(TRUE)
@@ -149,7 +167,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /// default air/temperature on every open turf, drops any walls a test put up)
 /// and returns it to the pool. Waits for the world's own async teardown paths
 /// so a block is never recycled mid-cleanup.
-/proc/release_unit_test_block(datum/unit_test_block/block, datum/unit_test/test)
+/proc/release_unit_test_block(datum/unit_test_block/block, test_type)
 	if(!block)
 		return
 
@@ -195,7 +213,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 		var/list/parts = list()
 		for(var/leaked_type in leaked_types)
 			parts += "[leaked_type] x[leaked_types[leaked_type]]"
-		log_world("UNIT TEST LEAK: [test ? test.type : "?"] left [leaked] object(s) on its block: [parts.Join(", ")]")
+		log_world("UNIT TEST LEAK: [test_type || "?"] left [leaked] object(s) on its block: [parts.Join(", ")]")
 
 	block.in_use = FALSE
 
@@ -354,8 +372,10 @@ GLOBAL_VAR(dq_test_select_names)
 	/// List of atoms that we don't want to ever initialize in an agnostic context, like for Create and Destroy. Stored on the base datum for usability in other relevant tests that need this data.
 	var/static/list/uncreatables = null
 
-	/// The isolated block this test checked out of the pool, released on Destroy().
+	/// The isolated block this test checked out of the pool, released by the runner.
 	var/datum/unit_test_block/test_block
+	/// Pure datum tests can skip map allocation and its boot cost.
+	var/needs_test_block = TRUE
 
 	/// Seconds Run() gets before RunUnitTest() gives up on it and fails it by
 	/// name instead of hanging the whole suite (a real incident: one test
@@ -393,9 +413,13 @@ GLOBAL_VAR(dq_test_select_names)
 		uncreatables = build_list_of_uncreatables()
 
 	allocated = new
-	test_block = acquire_unit_test_block()
-	run_loc_floor_bottom_left = test_block.bottom_left
-	run_loc_floor_top_right = test_block.top_right
+	if(needs_test_block)
+		test_block = acquire_unit_test_block()
+		if(!test_block)
+			Fail("could not acquire an isolated test block; see ensure_unit_test_block_pool diagnostics", __FILE__, __LINE__)
+			return
+		run_loc_floor_bottom_left = test_block.bottom_left
+		run_loc_floor_top_right = test_block.top_right
 
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()
@@ -410,12 +434,14 @@ GLOBAL_VAR(dq_test_select_names)
 	seed = dq_test_seed_for("[type]")
 	rand_seed(seed)
 
-	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
-	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
+	if(needs_test_block)
+		TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
+		TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
 /datum/unit_test/Destroy()
 	QDEL_LIST(allocated)
-	release_unit_test_block(test_block, src)
+	if(test_block)
+		INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(release_unit_test_block), test_block, type)
 	test_block = null
 	return ..()
 
@@ -595,7 +621,7 @@ GLOBAL_VAR(dq_test_select_names)
 		/datum/unit_test/dq_debug_station_initializes_complete_runtime,
 		/datum/unit_test/dq_emergency_station_fallback_is_playable,
 	))
-	var/skip_test = generated_station_test || (test_path in SSmapping.current_map.skipped_tests)
+	var/skip_test = (generated_station_test && !unit_test_is_focused_run()) || (test_path in SSmapping.current_map.skipped_tests)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
@@ -604,6 +630,9 @@ GLOBAL_VAR(dq_test_select_names)
 
 	if(skip_test)
 		log_world("[TEST_OUTPUT_YELLOW("SKIPPED")] Skipped run on map [SSmapping.current_map.name].")
+	else if(test.needs_test_block && !test.test_block)
+		log_world("UNIT TEST INFRASTRUCTURE FAILURE: [test_path] could not acquire an isolated test block.")
+		GLOB.failed_any_test = TRUE
 
 	else
 		duration = REALTIMEOFDAY
@@ -653,6 +682,12 @@ GLOBAL_VAR(dq_test_select_names)
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
 	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
 
+	// Drain tracked allocations before the blocking block reset. Destroy() cannot
+	// wait for expedition teardown, so the ordinary runner performs that reset.
+	QDEL_LIST(test.allocated)
+	test.allocated = null
+	release_unit_test_block(test.test_block, test.type)
+	test.test_block = null
 	qdel(test)
 
 /// Builds (and returns) a list of atoms that we shouldn't initialize in generic testing, like Create and Destroy.

@@ -37,6 +37,9 @@ shuts down. It also repacks icons and builds Verdigris first if they are stale.
 - **Writing tests.** See `code/modules/unit_tests/README.md` for the API
   (`allocate()`, `TEST_ASSERT*`, `TEST_FAIL`). Use real game objects where you
   can, and avoid `prob()`, since RNG is seeded during tests.
+- **Pure datum tests.** Set `needs_test_block = FALSE` on a test that never uses
+  a turf or `allocate()` for an atom. It skips the isolated map-block pool,
+  making focused framework tests faster and independent of template loading.
 
 ### Focused runs
 
@@ -302,11 +305,14 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | `generation` | Expedition station generation and release; `cycles` > 1 is a leak soak. | `cycles`, `seed` |
 | `sm_soak` | Repeated supermatter-scale blasts plus five minutes of recovery. Use the full map. | `blasts` (4), `profile_types` |
 | `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/__defines/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
+| `material_service_movement_watches` | Per-service movement-watch bind, stable and moved rebind, teardown, relation count, and sampled memory. Uses unmapped containment chains to isolate movement watches from gas processing. | `assemblies` (200), `depth` (3), `rounds` (3) |
 
 **What gets recorded.** Each invocation is one file in `data/bench/runs/`
 holding the commit, map, defines, every iteration's raw results (metrics,
-subsystem breakdowns, the ticks that overran, memory at each phase, the full
-memory time series) and a summary: median, spread, minimum and maximum of every
+subsystem breakdowns, the ticks that overran, scheduler dispatch counts and
+costs by system, deadline misses, budget deferrals, recent slow calls and
+overrun incidents, memory at each phase, the full memory time series) and a
+summary: median, spread, minimum and maximum of every
 metric over the measured iterations. The world also reports subsystem
 initialization times and runtimes. With `--profile`, BYOND proc profiles for
 each measurement window go to `data/bench/profiles/<run>/`.
@@ -321,7 +327,8 @@ for single runs; tick timings are not.
 
 **Report.** `data/bench/report.html` is regenerated after every `bench`. It
 shows the latest run against the previous one, a trend line per metric, the
-memory timeline with scenario phases, the ticks that overran, and recent
+memory timeline with scenario phases, slow scheduler systems, recent scheduler
+incidents, the ticks that overran, and recent
 unit-test runs. Open it in a browser; it needs no network.
 
 **Writing a scenario.** Subtype `/datum/benchmark`, set `id` and `description`,
@@ -331,7 +338,7 @@ and implement `Run()`. The helpers are in `_benchmark.dm`:
 |---|---|
 | `metric(name, value, unit, better)` | A compared number; `better` is `"lower"`, `"higher"` or `"none"`. |
 | `detail(name, value)` | Context that isn't compared (tables, lists). |
-| `begin_window()` / `end_window(prefix)` | Tick usage, overruns, TPS and per-subsystem cost between the two calls. |
+| `begin_window()` / `end_window(prefix)` | Tick usage, overruns, TPS, per-subsystem cost and scheduler dispatch counts between the two calls. The `prefix_scheduler` detail includes per-system timing and deadline misses, aggregate deferrals and bounded incident samples. |
 | `mark(name)` | Process and Rust heap memory at this moment. |
 | `param(name, default)` | A `--arg=name=value` option. |
 | `wait_for_assets()`, `wait_fires(SS, n)`, `wait_seconds(n)` | Settle before measuring. |

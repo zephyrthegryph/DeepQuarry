@@ -108,6 +108,18 @@
 				// Effect slowly growing stronger
 				M.strength+=0.08
 
+/// Advance side-effect strength on extra biology steps without replaying messages or emotes.
+/// Cure checks and on_life presentation remain on the next real frame.
+/datum/life_system/medical/proc/side_effects_biology(mob/living/carbon/human/self)
+	if(!LAZYLEN(self.side_effects) || self.life_tick % 15 != 0)
+		return
+	for(var/datum/medical_effect/M as anything in self.side_effects)
+		if(!M || M.strength > 50)
+			continue
+		var/strength_percent = sin((self.life_tick - M.start) / 2)
+		if(strength_percent >= 0.4)
+			M.strength += 0.08
+
 // HEADACHE
 // ========
 /datum/medical_effect/headache

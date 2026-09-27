@@ -63,7 +63,6 @@
 	RefreshParts()
 
 /obj/machinery/autolathe/Destroy()
-	QDEL_NULL(wires)
 	QDEL_NULL(print_sound)
 	return ..()
 

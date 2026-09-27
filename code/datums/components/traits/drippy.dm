@@ -77,3 +77,5 @@
 
 /datum/life_system/trait/drippy/tick_component(mob/living/self, datum/component/drippy/component)
 	component.process_component()
+
+// Drips are presentation. The default tick_biology() deliberately does not replay them.

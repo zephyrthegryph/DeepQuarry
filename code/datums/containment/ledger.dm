@@ -21,13 +21,15 @@
 /atom/var/tmp/datum/ledger/ledger
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
-/proc/dq_ledger(atom/holder)
+/proc/dq_ledger(atom/holder, destroying = FALSE)
 	if(!holder)
 		return null
 	var/datum/ledger/L = holder.ledger
 	if(!L)
 		var/list/defs = dq_slot_defs_for(holder)
-		if(!defs || QDELETED(holder))
+		// The destroy transaction resolves an untouched holder's slots after
+		// marking it QDELETED. Only that contents phase may build its ledger.
+		if(!defs || (QDELETED(holder) && !destroying))
 			return null
 		L = new /datum/ledger(holder, defs)
 		holder.ledger = L
@@ -228,6 +230,9 @@
 	entry[LEDGER_E_KEY] = key
 	if(!isnull(key))
 		index_key(id, key, thing)
+	om_slot_membership_dirty(holder, thing)
+	om_changed(holder, "contents")
+	om_slot_contribution_event(holder, thing, id)
 
 // ---- Sync ----
 
@@ -269,14 +274,17 @@
 	things += thing
 	used[id] += cost
 	tracked++
+	om_slot_membership_dirty(holder, thing)
 	add_snapshot(snapshot)
 	propagate()
 	if(thing.move_hooks)
 		adjust_hooked(1)
+	om_changed(holder, "contents")
 	holder.on_slot_changed(id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, id)
 	if(thing.has_slot_hooks)
 		thing.on_slotted(holder, id, flags)
+	om_slot_membership_event(holder, thing, id, TRUE)
 
 /datum/ledger/proc/note_exit(atom/movable/thing)
 	var/list/entry = entries[thing]
@@ -293,14 +301,17 @@
 	things -= thing
 	used[id] -= entry[LEDGER_E_COST]
 	tracked--
+	om_slot_membership_dirty(holder, thing)
 	remove_snapshot(entry[LEDGER_E_SNAPSHOT])
 	propagate()
 	if(thing.move_hooks)
 		adjust_hooked(-1)
+	om_changed(holder, "contents")
 	holder.on_slot_changed(id, thing, FALSE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, id)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, id, flags)
+	om_slot_membership_event(holder, thing, id, FALSE)
 
 /// Moves a thing already inside between two of the holder's slots.
 /datum/ledger/proc/reslot(atom/movable/thing, new_id, flags = 0)
@@ -314,10 +325,6 @@
 	var/datum/slot_def/old_def = def_by_id(old_id)
 	if(old_def?.keyed)
 		unindex_key(old_id, entry[LEDGER_E_KEY], thing)
-	holder.on_slot_changed(old_id, thing, FALSE)
-	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, old_id)
-	if(thing.has_slot_hooks)
-		thing.on_unslotted(holder, old_id, flags)
 	var/datum/slot_def/def = def_by_id(new_id)
 	entry[LEDGER_E_SLOT] = new_id
 	entry[LEDGER_E_SERIAL] = ++next_serial
@@ -329,14 +336,30 @@
 	var/list/new_things = slots[new_id]
 	new_things += thing
 	used[new_id] += entry[LEDGER_E_COST]
+	om_slot_membership_dirty(holder, thing)
+	// Both old and new slot indexes are committed before legacy callbacks.
+	// A handler can now query the ledger without seeing an entry filed under
+	// the old slot after it has been removed from that slot's member list.
+	holder.on_slot_changed(old_id, thing, FALSE)
+	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, old_id)
+	if(thing.has_slot_hooks)
+		thing.on_unslotted(holder, old_id, flags)
+	// Old-slot callbacks can move or delete the member. Their nested ledger
+	// update publishes the new state; this transition must not announce an
+	// insertion that no longer exists.
+	if(entries[thing] != entry || entry[LEDGER_E_SLOT] != new_id || thing.loc != holder)
+		return
+	om_changed(holder, "contents")
 	holder.on_slot_changed(new_id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, new_id)
 	if(thing.has_slot_hooks)
 		thing.on_slotted(holder, new_id, flags)
+	om_slot_membership_event(holder, thing, old_id, FALSE)
+	om_slot_membership_event(holder, thing, new_id, TRUE)
 
 /// Re-reads one thing's contribution, e.g. after its own contents changed.
-/// Changes to a child's own properties reach here through the reactor later
-/// (containment.md §2, invariant 5); until then callers refresh by hand.
+/// Tracked producer groups declared with A.ledger_contribution_changes() reach
+/// here through om_mark_changed(). Legacy producers call this explicitly.
 /datum/ledger/proc/refresh(atom/movable/thing)
 	if(!entries[thing])
 		return
@@ -350,6 +373,12 @@
 	entry[LEDGER_E_SNAPSHOT] = fresh
 	add_snapshot(fresh)
 	propagate()
+	if(holder.om_state || thing.om_state)
+		om_derived_relation_membership_changed(holder, /datum/object_model/relation/slot_member, thing)
+		om_derived_relation_membership_changed(holder, /datum/object_model/relation/physical_contents, thing)
+	om_changed(holder, "contents")
+	om_bump_revision_if_tracked(holder)
+	om_slot_contribution_event(holder, thing, entry[LEDGER_E_SLOT])
 
 /// Our totals changed, so the holder's own contribution to its container did.
 /datum/ledger/proc/propagate()
@@ -572,8 +601,9 @@
 /// included) into its holder's ledger, if it is in one. The ledger caches a
 /// thing's contribution at note_enter() (file header) and never re-reads it
 /// on its own, so anything that can change while a thing sits still --
-/// today, only TAG_CLOCKED (dynamic_state.dm) -- must call this itself right
-/// after it changes. A no-op when `src` isn't in a slot right now.
+/// today, only TAG_CLOCKED (dynamic_state.dm) -- must either declare a ledger
+/// contribution change group and mark it after writes, or call this itself.
+/// A no-op when `src` isn't in a slot right now.
 /atom/movable/proc/ledger_refresh_contribution()
 	var/datum/ledger/L = dq_ledger_peek(loc)
 	L?.refresh(src)

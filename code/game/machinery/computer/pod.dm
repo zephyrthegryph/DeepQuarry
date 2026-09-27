@@ -1,5 +1,15 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
+/datum/object_model/relation/pod_mass_driver
+	from_type = /obj/machinery/computer/pod
+	to_type = /obj/machinery/mass_driver
+	source_single = TRUE
+
+/datum/object_model/relation/pod_mass_driver/on_unlink(datum/source, datum/target, reason)
+	var/obj/machinery/computer/pod/console = source
+	if(console.connected == target)
+		console.connected = null
+
 /obj/machinery/computer/pod
 	name = "pod launch control console"
 	desc = "A control console for launching pods. Some people prefer firing Mechas."
@@ -12,6 +22,16 @@
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
 
+/obj/machinery/computer/pod/proc/set_connected_driver(obj/machinery/mass_driver/driver)
+	if(connected == driver)
+		return TRUE
+	if(connected)
+		om_unlink(src, /datum/object_model/relation/pod_mass_driver, connected)
+	if(driver && !om_link(src, /datum/object_model/relation/pod_mass_driver, driver))
+		return FALSE
+	connected = driver
+	return TRUE
+
 /obj/machinery/computer/pod/Initialize(mapload)
 	..()
 	return INITIALIZE_HINT_LATELOAD
@@ -19,7 +39,7 @@
 /obj/machinery/computer/pod/LateInitialize()
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			connected = M
+			set_connected_driver(M)
 			break
 
 /obj/machinery/computer/pod/proc/alarm()
@@ -35,6 +55,8 @@
 			M.open()
 
 	sleep(20)
+	if(!connected)
+		return
 
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
@@ -105,6 +127,8 @@
 			alarm()
 			return TRUE
 		if("test_drive")
+			if(!connected)
+				return FALSE
 			for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				if(M.id == id)
 					M.power = connected.power

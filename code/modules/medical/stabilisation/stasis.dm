@@ -4,10 +4,9 @@
 // emergency stasis, stasis cages, admin) is a /datum/modifier/stasis subtype that
 // contributes BF_STASIS, a 0..1 share of life processes suspended (max rule).
 //
-// The body reads BF_STASIS in ONE place, advance_stasis(), which Life() calls once
-// per cycle before any life system runs. It runs a fractional clock: each cycle adds
-// (1 - stasis), and the cycle runs normally only when the clock fills. Every other
-// cycle is "paused". A paused cycle skips:
+// Each modifier inhibits the body's biology clock. Life samples elapsed local
+// time once per frame, then runs biological work for each whole local cycle.
+// A paused biological cycle skips:
 //   - affliction ticks (progression, treatment, symptoms)     body.life_tick()
 //   - metabolism and hunger                                    the chemicals system
 //   - breathing (so oxygen debt stops accumulating)            the breathing system
@@ -17,25 +16,45 @@
 // So at stasis 0.9 everything runs at 10% speed; at 1 it stops.
 
 /datum/body
-	/// Fractional stasis clock: +(1 - BF_STASIS) per Life() cycle.
+	/// Fractional remainder of a biological cycle, in nominal Life periods.
 	var/tmp/stasis_clock = 0
+	/// Last local biology time sampled by Life(), in deciseconds.
+	var/tmp/stasis_last_virtual
+	/// Whole local cycles due this frame, bounded before Life's catch-up pass.
+	var/tmp/biology_due = 1
 	/// TRUE when stasis paused the current Life() cycle.
 	var/tmp/stasis_paused = FALSE
 
-/// Advance the stasis clock by one Life() cycle. Returns TRUE if this cycle is
-/// paused. The only reader of BF_STASIS in the life pipeline.
+/// Consume local biology time since the previous Life frame. Nonbiological
+/// systems still run on the real-time frame. Event wakes without elapsed local
+/// time cannot advance biological processes in stasis.
 /datum/body/proc/advance_stasis()
-	var/level = get_factor(BF_STASIS)
-	if(level <= 0)
+	var/domain = /datum/object_model/clock_domain/biology
+	var/datum/object_model/clock_state/C = owner?.om_state?.clock_states?[domain]
+	// Ordinary time needs no fractional bookkeeping. Faster local time is
+	// consumed by Life's bounded biological-only catch-up pass.
+	if(!C || C.rate == 1)
 		stasis_clock = 0
+		stasis_last_virtual = C?.settle()
+		biology_due = 1
 		stasis_paused = FALSE
 		return FALSE
-	stasis_clock += 1 - level
-	if(stasis_clock >= 1)
-		stasis_clock -= 1
-		stasis_paused = FALSE
-	else
+	if(C.rate <= 0)
+		stasis_last_virtual = C.settle()
+		biology_due = 0
 		stasis_paused = TRUE
+		return TRUE
+	var/now = C.settle()
+	if(isnull(stasis_last_virtual))
+		stasis_last_virtual = now
+	var/elapsed = max(0, now - stasis_last_virtual)
+	stasis_last_virtual = now
+	stasis_clock += elapsed / (LIFE_NOMINAL_SECONDS SECONDS)
+	biology_due = min(LIFE_MAX_BIOLOGY_STEPS, floor(stasis_clock + 0.000001))
+	// Keep at most one frame of debt. A long server stall cannot trigger
+	// unbounded biological catch-up on a single mob.
+	stasis_clock = min(LIFE_MAX_BIOLOGY_STEPS, max(0, stasis_clock - biology_due))
+	stasis_paused = !biology_due
 	return stasis_paused
 
 /// Is this mob's current Life() cycle paused by stasis?
@@ -59,8 +78,32 @@
 	var/datum/weakref/stasis_source
 
 /datum/modifier/stasis/Destroy(force)
+	var/datum/source = stasis_source?.resolve()
+	if(source && !QDELETED(source))
+		UnregisterSignal(source, COMSIG_QDELETING)
+	if(holder && !QDELETED(holder))
+		om_clock_set(holder, /datum/object_model/clock_domain/biology, src)
 	stasis_source = null
 	return ..()
+
+/datum/modifier/stasis/proc/on_stasis_source_deleted(datum/source)
+	SIGNAL_HANDLER
+	if(holder && !QDELETED(holder))
+		holder.remove_specific_modifier(src, TRUE)
+
+/datum/modifier/stasis/on_applied()
+	. = ..()
+	if(!holder || QDELETED(holder))
+		return
+	var/datum/body/B = holder.body
+	if(B && isnull(B.stasis_last_virtual))
+		B.stasis_last_virtual = om_clock_time(holder, /datum/object_model/clock_domain/biology)
+	om_clock_set(holder, /datum/object_model/clock_domain/biology, src, 1, factors[BF_STASIS])
+
+/datum/modifier/stasis/on_expire()
+	. = ..()
+	if(holder && !QDELETED(holder))
+		om_clock_set(holder, /datum/object_model/clock_domain/biology, src)
 
 /// Life at half speed.
 /datum/modifier/stasis/light
@@ -105,6 +148,8 @@
 		added = add_modifier(stasis_type, suppress_failure = TRUE)
 		if(added)
 			added.stasis_source = source ? WEAKREF(source) : null
+			if(source)
+				added.RegisterSignal(source, COMSIG_QDELETING, TYPE_PROC_REF(/datum/modifier/stasis, on_stasis_source_deleted))
 	log_game("STASIS: [key_name(src)] [current ? "left [current.name]" : ""][current && added ? " and " : ""][added ? "entered [added.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")
 	return TRUE
 

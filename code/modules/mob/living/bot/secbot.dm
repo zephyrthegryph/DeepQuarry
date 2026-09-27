@@ -212,8 +212,20 @@
 	if(!target)
 		playsound(src, pick(threat_found_sounds), 50)
 		GLOB.global_announcer.autosay("[src] was attacked by a hostile <b>[target_name(attacker)]</b> in <b>[get_area(src)]</b>.", "[src]", "Security")
-	target = attacker
+	set_pursuit_target(attacker)
 	attacked = TRUE
+
+/// The chase target is independent of the temporary movement watch used while
+/// waiting for surrender. Retargeting always removes that old watch first.
+/mob/living/bot/secbot/proc/set_pursuit_target(mob/new_target)
+	if(target == new_target)
+		return
+	Observe(null, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(target_moved))
+	target = new_target
+
+/mob/living/bot/secbot/proc/on_surrender_target_lost(datum/lost_target)
+	if(target == lost_target)
+		resetTarget()
 
 // Say "freeze!" and demand surrender
 /mob/living/bot/secbot/proc/demand_surrender(mob/target, threat)
@@ -222,21 +234,21 @@
 		GLOB.global_announcer.autosay("[src] is [arrest_type ? "detaining" : "arresting"] a level [threat] suspect <b>[suspect_name]</b> in <b>[get_area(src)]</b>.", "[src]", "Security")
 	say("Down on the floor, [suspect_name]! You have [SECBOT_WAIT_TIME*2] seconds to comply.")
 	playsound(src, pick(preparing_arrest_sounds), 50)
-	// Register to be told when the target moves
-	target.AddComponent(/datum/component/recursive_move)
-	RegisterSignal(target, COMSIG_MOVABLE_ATTEMPTED_MOVE, /mob/living/bot/secbot/proc/target_moved)
+	// Observe this surrender target until it moves away, is replaced, or dies.
+	Observe(target, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(target_moved), /datum/component/recursive_move, PROC_REF(on_surrender_target_lost))
 
 // Callback invoked if the registered target moves
 /mob/living/bot/secbot/proc/target_moved(atom/movable/moving_instance, atom/old_loc, atom/new_loc)
 	SIGNAL_HANDLER
+	if(moving_instance != target || !Observed(moving_instance, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(target_moved)))
+		return
 	if(get_dist(get_turf(src), get_turf(target)) >= 1)
 		awaiting_surrender = INFINITY	// Done waiting!
-		UnregisterSignal(moving_instance, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		Observe(null, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(target_moved))
 
 /mob/living/bot/secbot/resetTarget()
+	Observe(null, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(target_moved))
 	..()
-	if(target)
-		UnregisterSignal(target, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	awaiting_surrender = 0
 	attacked = FALSE
 	walk_to(src, 0)
@@ -258,7 +270,7 @@
 		if(M.stat == DEAD)
 			continue
 		if(confirmTarget(M))
-			target = M
+			set_pursuit_target(M)
 			awaiting_surrender = 0
 			say("Level [threat] infraction alert!")
 			automatic_custom_emote(VISIBLE_MESSAGE, "points at [M.name]!")

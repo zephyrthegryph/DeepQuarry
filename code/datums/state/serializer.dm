@@ -16,6 +16,8 @@
 	var/list/codecs
 	/// var name -> encoded pristine value, for list vars of latent-safe types (null otherwise).
 	var/list/list_baseline
+	/// List vars whose Initialize() result is not a stable per-type baseline.
+	var/list/nondeterministic_list_vars
 
 GLOBAL_LIST_EMPTY(state_schemas)
 
@@ -53,6 +55,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			continue
 		schema.saved_vars += name
 	schema.codecs = D.state_codecs()
+	schema.nondeterministic_list_vars = D.state_nondeterministic_list_vars()
 	GLOB.state_schemas[D.type] = schema
 	return schema
 
@@ -221,6 +224,8 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /datum/state_context/proc/list_matches_baseline(datum/D, datum/state_schema/schema, name, encoded, latent)
 	if(!latent)
 		return FALSE
+	if(name in schema.nondeterministic_list_vars)
+		return FALSE
 	var/list/L = D.vars[name]
 	var/list/baselines = list_baseline_of(D.type)
 	var/baseline = baselines[name]
@@ -251,7 +256,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		// /atom/Initialize()); a baseline sampled from one random instance
 		// would falsely swallow every other instance's real colour (C5).
 		// Skipping it here falls back to the plain "matches if empty" rule.
-		if(name == "atom_colours")
+		if(name == "atom_colours" || (name in schema.nondeterministic_list_vars))
 			continue
 		var/value = probe.vars[name]
 		if(!islist(value))

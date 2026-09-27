@@ -60,6 +60,11 @@
 /datum/life_system/trait/nutrition_size_change
 	name = "nutrition size change"
 	component_type = /datum/component/nutrition_size_change
+	biology_catchup = TRUE
 
 /datum/life_system/trait/nutrition_size_change/tick_component(mob/living/self, datum/component/nutrition_size_change/component)
 	component.process_component()
+
+/datum/life_system/trait/nutrition_size_change/tick_biology(mob/living/self, datum/life_context/ctx)
+	for(var/datum/component/nutrition_size_change/component as anything in self.GetComponents(component_type))
+		component.process_component()

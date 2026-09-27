@@ -481,6 +481,7 @@
 	return !A || A.is_perfusing()
 
 /// Push the heart into `rhythm` (only ever toward a worse rhythm).
+// dm-health: param rhythm num
 /mob/living/carbon/human/proc/induce_arrhythmia(rhythm = CARDIAC_RHYTHM_VF)
 	if(!should_have_organ(O_HEART) || !internal_organs_by_name?[O_HEART])
 		return null

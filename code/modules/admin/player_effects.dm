@@ -149,7 +149,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return //Can't nom when not exposed
 
 			//Begin abuse
-			target.transforming = TRUE //Cheap hack to stop them from moving
+			target.set_transforming(TRUE, src) //Cheap hack to stop them from moving
 			var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 			shadekin.real_name = shadekin.name
 			shadekin.init_vore(TRUE)
@@ -169,7 +169,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
 			sleep(2 SECONDS)
 			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
-			target.transforming = FALSE //Undo cheap hack
+			target.set_transforming(FALSE, src) //Undo cheap hack
 
 			if(myself == "Control") //Put admin in mob
 				shadekin.ckey = target.ckey

@@ -222,6 +222,7 @@
 
 /// Heal `amount`; returns what's left over for other wounds. Internal wounds
 /// only heal with `heals_internal`.
+// dm-health: param heals_internal num
 /datum/affliction/wound/proc/heal_damage(amount, heals_internal = FALSE)
 	if(internal && !heals_internal)
 		return amount
@@ -321,6 +322,7 @@
 
 /// The wound affliction for `damage_type` (CUT/PIERCE/BRUISE/BURN) and
 /// `damage`, on an organic or synthetic limb.
+// dm-health: param synthetic num
 /proc/wound_affliction_type(damage_type, damage, synthetic = FALSE)
 	if(synthetic)
 		switch(damage_type)

@@ -101,6 +101,11 @@
 
 /turf/Initialize(mapload)
 	. = ..()
+	// Runtime map loads can replace an already registered floor with a turf
+	// outside /turf/open. BYOND replaces its turf ref without running our
+	// ChangeTurf path, so close the previous field cell here.
+	if(SSair?.initialized && !istype(src, /turf/open))
+		update_air_ref(-1)
 	for(var/atom/movable/AM in src)
 		Entered(AM)
 

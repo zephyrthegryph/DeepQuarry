@@ -57,6 +57,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 /obj/machinery/cash_register/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/cash_register_pay,
+		/datum/interaction/machine_drag/cash_register_drag_pay,
 		/datum/interaction/machine_alt/cash_register_open_box_alt,
 		/datum/interaction/machine_hand/ungated/cash_register_use,
 		/datum/interaction/machine_verb/cash_register_open_box_verb,
@@ -297,11 +298,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/machinery/cash_register/MouseDrop_T(atom/dropping, mob/user)
-	if(!isobj(dropping))
-		return
-	if(Adjacent(dropping) && Adjacent(user) && !user.stat)
-		attackby(dropping, user)
+/datum/interaction/machine_drag/cash_register_drag_pay
+	id = "cash_register_drag_pay"
+	name = "Pay / scan"
+	held_type = /obj/item
+	requires = list(REQ_ON(PRED_TARGET, /obj/machinery/cash_register/proc/can_drag_pay, null))
+	effect = /obj/machinery/cash_register/proc/interaction_drag_pay
+
+/obj/machinery/cash_register/proc/can_drag_pay(mob/actor, atom/target, obj/item/held)
+	return held && Adjacent(held) && Adjacent(actor) && !actor.stat
+
+/obj/machinery/cash_register/proc/interaction_drag_pay(mob/actor, obj/item/held, datum/interaction/interaction)
+	attackby(held, actor)
+	return TRUE
 
 
 /obj/machinery/cash_register/proc/confirm(obj/item/I)

@@ -20,6 +20,7 @@
 	circuit = /obj/item/circuitboard/telecomms/exonet_node
 
 	var/datum/looping_sound/tcomms/soundloop
+	var/datum/object_model/schedule_entry/emp_recovery_timer
 	var/noisy = TRUE
 
 // Proc: New()
@@ -45,6 +46,7 @@
 		electronically."
 
 /obj/machinery/exonet_node/Destroy()
+	emp_recovery_timer = null
 	QDEL_NULL(soundloop)
 	return ..()
 
@@ -89,8 +91,14 @@
 		return
 	stat |= EMPED
 	var/duration = (300 * 10)/severity
-	addtimer(CALLBACK(src, PROC_REF(emp_recover)), rand(duration - 20, duration + 20), TIMER_DELETE_ME)
+	if(emp_recovery_timer)
+		qdel(emp_recovery_timer)
+	emp_recovery_timer = After(rand(duration - 20, duration + 20), PROC_REF(on_emp_recovery_due))
 	update_icon()
+
+/obj/machinery/exonet_node/proc/on_emp_recovery_due()
+	emp_recovery_timer = null
+	emp_recover()
 
 /obj/machinery/exonet_node/proc/emp_recover()
 	stat &= ~EMPED

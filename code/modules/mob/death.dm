@@ -3,7 +3,7 @@
 /mob/proc/gib(anim="blank", do_gibs, gib_file = 'icons/mob/mob.dmi')
 	if(stat != DEAD)
 		death(1)
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -32,7 +32,7 @@
 /mob/proc/dust(anim="dust-m",remains=/obj/effect/decal/cleanable/ash)
 	death(1)
 	var/atom/movable/overlay/animation = null
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -57,7 +57,7 @@
 /mob/proc/ash(anim="dust-m")
 	death(1)
 	var/atom/movable/overlay/animation = null
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT

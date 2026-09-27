@@ -53,10 +53,6 @@
 	set_wires(new /datum/wires/tesla_coil(src))
 	default_apply_parts()
 
-/obj/machinery/power/tesla_coil/Destroy()
-	QDEL_NULL(wires)
-	return ..()
-
 /obj/machinery/power/tesla_coil/RefreshParts()
 	zap_cooldown = 10
 	input_power_multiplier = get_part_rating(/obj/item/stock_parts/capacitor)

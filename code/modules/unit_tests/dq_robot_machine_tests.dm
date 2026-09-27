@@ -113,6 +113,21 @@
 	R.Life()
 	TEST_ASSERT_EQUAL(R.stat, CONSCIOUS, "a cyborg should come back when power returns")
 
+/// The installed-cell relation follows replacement and clears the legacy field on deletion.
+/datum/unit_test/dq_robot_cell_relation_lifetime
+
+/datum/unit_test/dq_robot_cell_relation_lifetime/Run()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
+	var/obj/item/cell/first = R.cell
+	TEST_ASSERT(om_has_link(R, /datum/object_model/relation/robot_cell, first), "the initial cell should be related to its robot")
+	var/obj/item/cell/second = allocate(/obj/item/cell, R)
+	R.set_cell(second)
+	TEST_ASSERT(!om_has_link(R, /datum/object_model/relation/robot_cell, first), "replacing a cell should release the old relation")
+	TEST_ASSERT(om_has_link(R, /datum/object_model/relation/robot_cell, second), "replacing a cell should link the new one")
+	qdel(second)
+	TEST_ASSERT_NULL(R.cell, "deleting the installed cell should clear the robot's legacy reference")
+	TEST_ASSERT(!length(om_linked(R, /datum/object_model/relation/robot_cell)), "deleting the cell should leave no relation")
+
 /// The plan's second death rule: a destroyed processor core.
 /datum/unit_test/dq_robot_core_death
 

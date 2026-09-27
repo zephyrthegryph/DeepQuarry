@@ -64,7 +64,7 @@ mod tests {
         assert_eq!(store.read(cell).unwrap().target_pressure, 15000.0);
 
         store.detach(cell);
-        assert_eq!(store.read(cell), Some(Pump::default()), "detach resets the row to Value::default()");
+        assert_eq!(store.read(cell), None, "detached rows are no longer live components");
     }
 
     /// Events raised against a row are attributed to the entity bound there,

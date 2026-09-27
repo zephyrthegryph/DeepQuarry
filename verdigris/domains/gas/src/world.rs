@@ -236,6 +236,8 @@ type FieldViews = Option<(Arc<View<GasCell>>, Arc<View<Geom>>)>;
 #[derive(Default)]
 pub struct Exchange {
 	views: Mutex<FieldViews>,
+	/// Main-thread turf writes and heat transfers not yet present in `views`.
+	turf_probes: Mutex<HashMap<u32, (vg_heat::GasProbe, u64)>>,
 	/// Probes of main-owned and pipe gas, by handle, refreshed each tick.
 	probes: Mutex<HashMap<u32, vg_heat::GasProbe>>,
 	requests: Mutex<Vec<u32>>,
@@ -252,22 +254,28 @@ fn cell_probe(cells: &View<GasCell>, geom: &View<Geom>, cell: u32) -> Option<vg_
 	}
 	let c = cells.get(cell)?;
 	Some(vg_heat::GasProbe {
-		temperature: c.temperature,
+		temperature: c.temperature_now(),
 		capacity: c.heat_capacity(),
 		reservoir: g.reservoir || c.is_immutable(),
 	})
 }
 
 impl Exchange {
-	fn probe(&self, gas: vg_heat::GasRef) -> Option<vg_heat::GasProbe> {
-		let turf = match gas {
+	fn turf_cell(gas: vg_heat::GasRef) -> Option<u32> {
+		match gas {
 			vg_heat::GasRef::Turf(cell) => Some(cell),
 			vg_heat::GasRef::Mixture(id) => match MixRef::from_id(id)? {
 				MixRef::Turf(cell) => Some(cell),
 				_ => None,
 			},
-		};
-		if let Some(cell) = turf {
+		}
+	}
+
+	fn probe(&self, gas: vg_heat::GasRef) -> Option<vg_heat::GasProbe> {
+		if let Some(cell) = Self::turf_cell(gas) {
+			if let Some((probe, _)) = self.turf_probes.try_lock().ok()?.get(&cell) {
+				return Some(*probe);
+			}
 			let views = self.views.try_lock().ok()?;
 			let (cells, geom) = views.as_ref()?;
 			return cell_probe(cells, geom, cell);
@@ -315,6 +323,16 @@ impl vg_heat::GasExchange for HeatGas {
 		// Never cool gas below TCMB.
 		let e = e.max(-(probe.temperature - TCMB).max(0.0) * probe.capacity);
 		pending.push((gas, e));
+		if let Some(cell) = Exchange::turf_cell(gas) {
+			let mut overrides = self
+				.0
+				.turf_probes
+				.lock()
+				.unwrap_or_else(std::sync::PoisonError::into_inner);
+			let mut updated = probe;
+			updated.temperature = (updated.temperature + e / updated.capacity).max(TCMB);
+			overrides.insert(cell, (updated, u64::MAX));
+		}
 		Some(e)
 	}
 
@@ -1318,6 +1336,7 @@ impl GasWorld {
 				let _ = field.sim.port(field.key.cells).submit(c, GasCmd::Delta(d));
 				self.stats.commands += 1;
 				self.touched(r, after);
+				self.publish_turf_probe(c);
 			}
 		}
 	}
@@ -1429,6 +1448,31 @@ impl GasWorld {
 		}
 	}
 
+	/// Make a direct turf gas write visible to heat frames before a gas field
+	/// frame publishes its next view. `Field::read` includes the command overlay.
+	fn publish_turf_probe(&self, cell: u32) {
+		let Some(field) = &self.field else {
+			return;
+		};
+		let Some((gas, geom)) = field.read(cell) else {
+			return;
+		};
+		if !geom.is_node() {
+			return;
+		}
+		let probe = vg_heat::GasProbe {
+			temperature: gas.temperature_now(),
+			capacity: gas.heat_capacity(),
+			reservoir: geom.reservoir || gas.is_immutable(),
+		};
+		let seq = field.sim.port_ref(field.key.cells).last_seq().0;
+		self.exchange
+			.turf_probes
+			.lock()
+			.unwrap_or_else(std::sync::PoisonError::into_inner)
+			.insert(cell, (probe, seq));
+	}
+
 	#[must_use]
 	pub fn revision(&self, r: MixRef) -> u32 {
 		match r {
@@ -1483,6 +1527,7 @@ impl GasWorld {
 						.port(field.key.cells)
 						.submit(c, GasCmd::Delta(*amounts));
 				}
+				self.publish_turf_probe(c);
 			}
 			MixRef::Pipe(s) => {
 				if let Some((gas, _)) = self.pipes.gas_mut(s) {
@@ -1769,6 +1814,12 @@ impl GasWorld {
 				.lock()
 				.unwrap_or_else(std::sync::PoisonError::into_inner) = Some(views);
 		}
+		let applied = field.sim.port_ref(field.key.cells).pinned().applied_through().0;
+		self.exchange
+			.turf_probes
+			.lock()
+			.unwrap_or_else(std::sync::PoisonError::into_inner)
+			.retain(|_, (_, seq)| *seq > applied);
 		let takes: Vec<(PendingTake, [f32; Q])> = out
 			.takes()
 			.iter()

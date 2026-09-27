@@ -1,11 +1,16 @@
 // Alien larva are quite simple.
 /datum/life_system/type_pre/carbon/alien
 	mob_type = /mob/living/carbon/alien
+	biology_catchup = TRUE
 
 /datum/life_system/type_pre/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
 	if (self.transforming)	return LIFE_HALT
 	if(!self.loc)			return LIFE_HALT
 	return ..()
+
+/datum/life_system/type_pre/carbon/alien/tick_biology(mob/living/carbon/alien/self, datum/life_context/ctx)
+	if(self.transforming || !self.loc)
+		return LIFE_HALT
 
 /// Growth, blindness reset and icons after the living core (the old alien Life() tail).
 /datum/life_system/alien_growth
@@ -14,6 +19,7 @@
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/carbon/alien
+	biology_catchup = TRUE
 
 /datum/life_system/alien_growth/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
 	if (self.stat != DEAD) //still breathing
@@ -24,6 +30,10 @@
 
 	//Status updates, death etc.
 	self.update_icons()
+
+/datum/life_system/alien_growth/tick_biology(mob/living/carbon/alien/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.update_progression()
 
 /datum/life_system/radiation/carbon/alien
 	mob_type = /mob/living/carbon/alien
@@ -51,14 +61,20 @@
 /datum/life_system/status/carbon/alien
 	mob_type = /mob/living/carbon/alien
 
+/datum/life_system/status/carbon/alien/process_biology(mob/living/carbon/alien/self)
+	if(self.stat != DEAD)
+		self.body?.life_tick()
+
+/datum/life_system/status/carbon/alien/biology_status_ready(mob/living/carbon/alien/self)
+	return TRUE
+
 /datum/life_system/status/carbon/alien/update_status(mob/living/carbon/alien/self)
 
 	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL) //I don't want to go in and do HUD stuff imediately, so... no.
 		return 0	// Cancelled by a component
 
 	// Death from injury is decided by the (simple) body.
-	if(self.stat != DEAD)
-		self.body?.life_tick()
+	process_biology(self)
 
 	if(self.stat == DEAD)
 		self.blinded = 1

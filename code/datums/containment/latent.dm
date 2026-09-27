@@ -54,11 +54,52 @@ GLOBAL_VAR(latent_last_refusal)
 	var/list/snapshot
 	/// Capacity one of them takes in its slot.
 	var/unit_cost = 0
+	/// The ledger remains authoritative; this back pointer makes inverse queries cheap.
+	var/tmp/datum/ledger/owner_ledger
 
 /datum/latent_entry/Destroy()
 	blob = null
 	snapshot = null
+	owner_ledger = null
 	return ..()
+
+/// Latent groups are virtual relation targets. They have no BYOND loc and
+/// must not be confused with the slot_member relation for materialized atoms.
+/datum/object_model/relation/latent_slot_member
+	from_type = /atom
+	to_type = /datum/latent_entry
+	virtual = TRUE
+	changes_revision = FALSE
+
+/datum/object_model/relation/latent_slot_member/query_from(datum/source)
+	var/atom/holder = source
+	var/datum/ledger/L = isatom(holder) ? dq_ledger(holder) : null
+	return L ? L.latent_list() : list()
+
+/datum/object_model/relation/latent_slot_member/query_to(datum/target)
+	var/datum/latent_entry/entry = target
+	var/datum/ledger/L = entry?.owner_ledger
+	return L?.latent_holds(entry) ? list(L.holder) : list()
+
+/datum/object_model/relation/latent_slot_member/virtual_has(datum/source, datum/target)
+	var/atom/holder = source
+	var/datum/latent_entry/entry = target
+	return isatom(holder) && entry?.owner_ledger?.holder == holder && entry.owner_ledger.latent_holds(entry)
+
+/// Payload: entry, old count, new count, slot ID. A zero new count means the
+/// entry is already absent from the virtual relation when observers run.
+/datum/object_model/event/latent_entry_changed
+
+/proc/om_latent_entry_changed(atom/holder, datum/latent_entry/entry, old_count, new_count)
+	if(holder?.om_state || entry?.om_state)
+		// Count changes affect folds over this relation even without a membership
+		// transition. The same invalidation also covers add and removal.
+		om_derived_relation_membership_changed(holder, /datum/object_model/relation/latent_slot_member, entry)
+		if(holder.om_state)
+			om_bump_revision_if_tracked(holder)
+	om_changed(holder, "contents")
+	if(holder && (holder.om_state || om_event_has_subscribers(holder, /datum/object_model/event/latent_entry_changed)))
+		om_emit(holder, /datum/object_model/event/latent_entry_changed, entry, old_count, new_count, entry.slot)
 
 /// "interior#L4g2": slot, serial and generation. Different from real ids.
 /datum/latent_entry/proc/entry_id()
@@ -246,6 +287,7 @@ GLOBAL_VAR(latent_last_refusal)
 	entry.key = key
 	entry.serial = ++next_serial
 	entry.unit_cost = def.entry_cost(holder, path)
+	entry.owner_ledger = src
 	LAZYINITLIST(latent)
 	if(!latent[id])
 		latent[id] = list()
@@ -257,6 +299,7 @@ GLOBAL_VAR(latent_last_refusal)
 /// Sets an entry's count, keeping capacity and aggregates current. At zero
 /// the entry is removed.
 /datum/ledger/proc/latent_set_count(datum/latent_entry/entry, n)
+	var/old_count = entry.count
 	remove_snapshot(entry.snapshot)
 	used[entry.slot] -= entry.unit_cost * entry.count
 	latent_total -= entry.count
@@ -273,8 +316,10 @@ GLOBAL_VAR(latent_last_refusal)
 		if(!length(group))
 			latent -= entry.slot
 		UNSETEMPTY(latent)
-		qdel(entry)
 	propagate()
+	om_latent_entry_changed(holder, entry, old_count, entry.count)
+	if(!entry.count)
+		qdel(entry)
 
 /// Whether `entry` is still one of ours.
 /datum/ledger/proc/latent_holds(datum/latent_entry/entry)

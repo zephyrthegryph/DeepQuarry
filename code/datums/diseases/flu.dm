@@ -49,3 +49,16 @@
 				to_chat(affected_mob, span_danger("Your stomach hurts."))
 				affected_mob.injure(INJURY_TOXIN, 1)
 	return
+
+/datum/disease/flu/stage_biology()
+	if(!..())
+		return FALSE
+	if(stage == 2 || stage == 3)
+		if(affected_mob.lying && prob(stage == 2 ? 20 : 15))
+			stage--
+			return TRUE
+		if(prob(1) && prob(20))
+			affected_mob.injure(INJURY_PAIN, 1)
+		if(prob(1))
+			affected_mob.injure(INJURY_TOXIN, 1)
+	return TRUE

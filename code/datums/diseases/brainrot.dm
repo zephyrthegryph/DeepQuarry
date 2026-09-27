@@ -41,3 +41,19 @@
 					affected_mob.emote("snore")
 			if(prob(15))
 				affected_mob.apply_effect(5, STUTTER)
+
+/datum/disease/brainrot/stage_biology()
+	if(!..())
+		return FALSE
+	switch(stage)
+		if(2)
+			if(prob(5))
+				affected_mob.injure(INJURY_NEURAL, 1)
+		if(3)
+			if(prob(10) && affected_mob.injury_load(INJURY_CATEGORY_NEURAL) < 100)
+				affected_mob.injure(INJURY_NEURAL, 3)
+			if(prob(3))
+				affected_mob.Sleeping(rand(5, 10))
+			if(prob(15))
+				affected_mob.apply_effect(5, STUTTER)
+	return TRUE

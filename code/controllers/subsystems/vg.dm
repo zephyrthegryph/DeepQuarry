@@ -126,7 +126,7 @@ SUBSYSTEM_DEF(vg)
 		if(sweep_index > index)
 			sweep_index--
 	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
-	if(entities_by_index[slot] == mover)
+	if(slot <= length(entities_by_index) && entities_by_index[slot] == mover)
 		entities_by_index[slot] = null
 
 /// The atom `entity`'s index belongs to, or null. Event dispatch (§8) still

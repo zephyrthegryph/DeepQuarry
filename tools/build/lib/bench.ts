@@ -85,11 +85,11 @@ const MB = 1024 * 1024;
 // One long-lived PowerShell loop is far cheaper than spawning per sample.
 const WINDOWS_SAMPLER = `
 $ErrorActionPreference = 'SilentlyContinue'
-$p = Get-Process -Id $args[0]
+$p = Get-Process -Id ([int]$env:DQ_BENCH_PID)
 while ($p -and -not $p.HasExited) {
   $p.Refresh()
   Write-Output ("{0} {1} {2}" -f $p.PrivateMemorySize64, $p.WorkingSet64, $p.TotalProcessorTime.TotalSeconds)
-  Start-Sleep -Milliseconds $args[1]
+  Start-Sleep -Milliseconds ([int]$env:DQ_BENCH_INTERVAL_MS)
 }
 `;
 
@@ -108,8 +108,12 @@ export class ProcessSampler {
     if (process.platform === 'win32') {
       const child = spawn(
         'powershell',
-        ['-NoProfile', '-NonInteractive', '-Command', WINDOWS_SAMPLER, String(pid), String(this.intervalMs)],
-        { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true },
+        ['-NoProfile', '-NonInteractive', '-Command', WINDOWS_SAMPLER],
+        {
+          stdio: ['ignore', 'pipe', 'ignore'],
+          windowsHide: true,
+          env: { ...process.env, DQ_BENCH_PID: String(pid), DQ_BENCH_INTERVAL_MS: String(this.intervalMs) },
+        },
       );
       let buffer = '';
       child.stdout.on('data', (chunk: Buffer) => {

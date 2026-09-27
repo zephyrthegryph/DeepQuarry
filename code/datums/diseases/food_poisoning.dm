@@ -65,3 +65,29 @@
 					affected_mob.visible_message(span_danger("[affected_mob] gags and retches!"))
 					affected_mob.Stun(rand(4, 8))
 					affected_mob.Weaken(rand(4, 8))
+
+/datum/disease/food_poisoning/stage_biology()
+	if(!..())
+		return FALSE
+	if(affected_mob.stat == UNCONSCIOUS && prob(33))
+		cure()
+		return FALSE
+	switch(stage)
+		if(2)
+			if(affected_mob.stat == UNCONSCIOUS && prob(40))
+				cure()
+				return FALSE
+		if(3)
+			if(affected_mob.stat == UNCONSCIOUS && prob(25))
+				cure()
+				return FALSE
+			if(prob(1) && prob(10))
+				cure()
+				return FALSE
+			if(prob(5))
+				if(affected_mob.nutrition > 10)
+					affected_mob.do_vomit(message = FALSE)
+				else
+					affected_mob.Stun(rand(4, 8))
+					affected_mob.Weaken(rand(4, 8))
+	return TRUE

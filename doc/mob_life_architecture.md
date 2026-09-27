@@ -76,7 +76,7 @@ periodic = at a lower rate, lazy = computed on read, event = only when woken):
 | Model | Work |
 |---|---|
 | Continuous while active | reagent metabolism; affliction progression; blood while bleeding or low; heat exchange outside the comfort band; radiation decay while above 0; physiology while not settled |
-| Periodic | nutrition (every 5 cycles); darksight (every 2); AFK and ambience (every 15, clients only) |
+| Periodic | nutrition (every 5 Life cycles); darksight (every 2); AFK and ambience on independent Behavior deadlines for clients |
 | Lazy: deadlines or integrate-on-read | status durations; modifier expiry; robot killswitch and weapon-lock countdowns; AI backup charge |
 | Event-driven | vision; voice and visible name; HUD; movement state, gravity, falling and pulling; mutations and disabilities; organs (active set only); breathing in unchanging air; heat inside the comfort band; pressure; robot power demand; robot camera, radio and lights; protean regeneration; promethean cleaning |
 
@@ -203,7 +203,7 @@ composed, from species and organs:
 | Pattern | Use when | Mechanism | Examples |
 |---|---|---|---|
 | Continuous | coupled dynamics that change every tick while active | stays awake; sleeps on its own condition | metabolism, affliction progression, blood while bleeding, heat exchange away from equilibrium |
-| Periodic | slow drift where exact timing doesn't matter | `period` | nutrition, darksight, AFK and ambience |
+| Periodic | slow drift where exact timing doesn't matter | Life `period` or a Behavior deadline | nutrition, darksight, AFK and ambience |
 | Lazy | the value is a function of time since an event | store a deadline or integrate on read; a timer for the one moment that matters | status durations, modifier expiry, lock countdowns, AI backup charge |
 | Event | nothing changes until something happens | wake bits from signals, gas dependencies, reactive keys, or explicit `wake()` at the write site | vision, identity, HUD, movement state, organs, breathing in steady air, robot power demand |
 
@@ -242,12 +242,14 @@ Existing infrastructure is reused:
 | output | Senses | sight flags, darksight, hearing | event; darksight periodic (2) while the light level varies | equipment, `stat`, area, light | `handle_vision` (82), `handle_darksight` |
 | output | Identity | voice, visible name | event | equipment, ID, mask, disguise | per-tick `GetVoice()` and `get_visible_name()` |
 | output | HUD | player HUD elements | event: one dirty bit per element, raised by the system that owns the data | an owner's band changes | `handle_regular_hud_updates` (224), the duplicated `handle_hud_icons_health`, `handle_hud_list`, the 30-tick full refresh |
-| output | Client | AFK marking, ambience | periodic (15), clients only | login | the AFK and ambience code in `Life()` |
+| output | Client | AFK marking, ambience | scheduled Behaviors, clients only | login/logout and their separate deadlines | `life/client_behaviours.dm` |
 | output | Movement state | canmove, gravity, falling, pulling, grabs | event | status change, `Moved`, grab | `update_canmove`, `update_gravity`, `fall`, `update_pulling` |
 
-For a healthy, idle human in stable air, every system except Client is asleep. A cycle
-costs a handful of bit tests instead of 500–800 calls. With hibernation on, it costs
-nothing.
+Some simple mobs fully hibernate. Humans still have continuous physiology and
+other active Life families: the 64-human body benchmark recorded zero fully
+hibernating humans even in its idle phase. Client-only AFK and ambience no
+longer force extra Life passes, but full human hibernation needs further
+dependency work and separate verification.
 
 ### 4.6 Breaking down the case-based procedures
 
@@ -376,16 +378,19 @@ with no behaviour change. The code is in `code/modules/mob/living/life/` and the
 
 ### 4.9 As built (phase 5): sleep rules, wakes and hibernation
 
-Hibernation is on for every mob, players included (`MOB_HIBERNATION_ENABLED`, runtime switch
-`GLOB.mob_hibernation_enabled`). A mob leaves the `SSmobs` run once all of its systems are
-asleep, and comes back on the first wake.
+Hibernation is on for every living mob, players included (`MOB_HIBERNATION_ENABLED`, runtime
+switch `GLOB.mob_hibernation_enabled`). A mob's scheduled Life behaviour stops running once
+all of its systems are asleep, and resumes on the first wake. `SSmobs` still owns the
+hibernation audit and legacy nonliving processing; it no longer scans living mobs for Life.
+`SSreactor` distributes awake Life frames across shared cadence slices.
 
 **Sleep rules.** A system says when it has nothing to do:
 - `idle(self)` returns TRUE when the system can sleep until its `bit` is woken. The default is
   FALSE (never sleeps), so a system nobody has audited keeps its mob awake. It must be cheap
   and read-only, because the hibernation audit calls it on mobs that aren't ticking.
 - `rewake_delay(self)` is for an idle system that still drifts slowly. It returns the
-  deciseconds after which the system wakes anyway (a per-mob timer, `life_wake_in()`).
+  deciseconds after which the system wakes anyway. `life_wake_in()` stores deadlines per
+  wake bit and arms only the earliest deadline through the native reactor timer wheel.
 - `woken_by` names the producers that wake it. The audit prints it when a wake was missed.
 - A family root's rule covers only the root (`type == /datum/life_system/<family>`). A variant
   with its own tick code stays awake until it declares its own rule.
@@ -400,9 +405,12 @@ a transforming or nullspace gate stopped (`ctx.no_sleep`). When no bit other tha
 bit is left, `life_hibernate()` parks the mob.
 
 **Wake and hibernate live in exactly one proc each.**
-- `/mob/living/proc/life_wake(bits, reason, partial = FALSE)` sets bits. A hibernating mob
-  wakes whole, so every system gets one pass to re-check its rule. Only the timer passes
-  `partial`. The next `Life()` gets nominal seconds, not the length of the nap.
+- Producers use `/mob/living/proc/wake_life(event_or_family, reason)` with a typed
+  `/datum/life_wake_event` path or Life family path. It maps onto the internal bit groups.
+- `/mob/living/proc/life_wake(bits, reason, partial = FALSE)` sets those internal bits and
+  wakes the scheduled Life behaviour. A hibernating mob wakes whole, so every system gets
+  one pass to re-check its rule. Only the timer passes `partial`. The next `Life()` gets
+  nominal seconds, not the length of the nap.
 - `/mob/living/proc/life_hibernate(reason)` parks the mob.
 - `SSmobs.hibernating_mobs` and `life_hibernating` are written only there;
   `tools/ci/check_grep.sh` rejects other writes. Any other waker, such as SSreactor's REACT_ON
@@ -431,8 +439,6 @@ bit is left, `life_hibernate()` parks the mob.
 | breathing, blood, chemicals, random events, environment, special, addictions, type_pre (roots) | always (roots are no-ops) | |
 | type_post (root, carbon, simple mob) | always (return value only) | |
 | mutations, radiation (roots) | no component listens to the signal | |
-| afk | always | 30 s with a client |
-| ambience | always | until the next replay with a client |
 | movement | not pulling or grabbing | 30 s with a client (gravity) |
 | status (root) | conscious or dead, and `body.life_settled()` | |
 | disabilities (root) | eyes and ears recovered, blind alert gone, no disability component | |
@@ -444,10 +450,65 @@ bit is left, `life_hibernate()` parks the mob.
 | environment (simple mob) | the air is survivable and the body has nothing for it to treat | 15 s (air changing in place) |
 | human hud refresh, voice, visible name | always | 1 min; 10 s; 10 s |
 
+AFK marking and ambience replay use independently scheduled object-model behaviours
+(`client_behaviours.dm`). Login starts their sparse runtime; logout wakes them once to
+cancel their deadlines. The living mob's whole ordered Life composition runs under one
+scheduled behaviour (`scheduled_life.dm`); its families still share the internal bit
+scheduler, phase order and context. There is not a separate behaviour or timer for each
+Life family.
+
+**Runtime ownership.** `SSmobs` registers living mobs into `pending_living` and starts
+their Life behaviour in bounded batches. Its first fire makes one registration pass over
+pre-existing `GLOB.mob_list` entries; later fires process the pending queue and legacy
+nonliving mobs, not an every-slice living Life list. The Life behaviour has a nominal 2 s
+real-time period. `SSreactor` runs one shared bucket per tick to spread active Life frames
+across that period without a recurring native timer for each mob. Its runlevel,
+`SSmobs.can_fire`, disabled-subsystem and low-priority-area gates preserve the former
+subsystem conditions. The object's scheduled-behaviour runtime arms a native `REACT_AT`
+token only for an explicit per-owner deadline, such as the earliest deferred Life bit
+wake. That deadline survives an unrelated producer wake. A hibernating mob leaves the
+shared cadence and rejoins on a producer wake or its deferred deadline.
+
+**Local time.** The object model has per-entity virtual clock domains for biology, decay
+and action. A source contributes a multiplier and/or inhibition to a domain; multiple
+sources compose, and removing a source releases its contribution. A zero rate pauses a
+virtual deadline without polling and re-arms it on resume. Stasis changes the living
+mob's biology clock. The real Life frame still runs at its nominal cadence when awake:
+one normal ordered pass handles presentation and other real-time work, while only audited
+systems with `biology_catchup = TRUE` receive additional `tick_biology(self, ctx)` passes.
+Each additional pass gets a fresh context and observes the original awake bits, system
+periods and blocked segments. Catch-up is capped at `LIFE_MAX_BIOLOGY_STEPS` per frame;
+elapsed biology while hibernating is not replayed on an unrelated later wake. Detached
+organ decay has its own scheduled behaviour on the decay clock.
+
+**Cost and lateness diagnostics.** The shared Life frame declares vital
+dispatch priority and a maximum queue delay. `SSreactor` records frame queue
+age and inclusive cost for budget prediction, plus sampled exclusive
+per-Life-system cost and exact call counts for slow-system and overrun reports.
+Calls crossing the slow threshold or arriving on an already busy tick are
+always timed. The report keeps missed work visible
+alongside tick usage; see `doc/rewrite/scheduler_diagnostics.md`.
+
+This is an explicit opt-in for biological progression, not general time scaling. Status
+counter decay, action and presentation systems remain on real frames unless separately
+audited. Advanced disease symptom `Activate()` deadlines remain real-time; ordinary disease
+stage and cure progression use the biology pass. Family ordering and the internal wake bits
+remain part of the Life composition; moving each family to a fully independent behaviour
+would require another ordering and parity migration.
+
 A healthy idle simple mob hibernates within two cycles. Humans still run their physiology,
 HUD, vision and tail systems every cycle, and robots, the AI and pAIs their own sets. They
 sleep individual bits but don't hibernate until those systems declare rules (the physiology
 work, diagnosis, cyborg phases).
+
+**Transformations.** Call `set_transforming(TRUE, source)` before an animation or replacement
+that pauses a living mob's biology schedule, then `set_transforming(FALSE, source)` when it
+ends. A caller may omit `source` to use the mob itself. Holds from different sources stack:
+one caller cannot resume another caller's hold. Deleting a source releases its hold, and
+the mob releases all holds on deletion. `clear_transforming()` is for operations that
+intentionally cancel every source. Code must not write the `transforming` field directly;
+the CI grep check enforces this. The subtype and living gates still check the flag for
+direct `Life()` calls while the migration is in progress.
 
 **Status effects.** The counters (`stunned`, `weakened`, `paralysis`, `sleeping`,
 `confused`, `eye_blind`) stay as they are. Their setters wake `LIFE_WAKE_STATUS`, and the

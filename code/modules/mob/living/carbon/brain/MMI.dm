@@ -34,7 +34,7 @@
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
 	brainobj = B
 	if(B)
-		B.preserved = TRUE
+		B.set_preserved(TRUE)
 		if(B.loc != src)
 			B.forceMove(src)
 	var/datum/component/mind_host/host = get_mind_host(src)
@@ -147,7 +147,7 @@
 	var/obj/item/organ/internal/brain/brain = brainobj
 	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
 		brain = new(destination)
-	brain.preserved = FALSE
+	brain.set_preserved(FALSE)
 	if(!destination)
 		destination = drop_location()
 	if(destination)

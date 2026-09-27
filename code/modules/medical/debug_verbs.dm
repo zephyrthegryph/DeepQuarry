@@ -100,7 +100,7 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 		var/sym_list = ""
 		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(C))
 			sym_list += "[S.name], "
-		to_chat(user, span_notice("  <b>[C.name]</b> on [C.location?.name] — severity [round(C.severity, 1)]"))
+		to_chat(user, span_notice("  <b>[C.name]</b> on [C.location_name()] — severity [round(C.severity, 1)]"))
 		if(sym_list)
 			to_chat(user, span_notice("    symptoms: [sym_list]"))
 	to_chat(user, span_notice("<b>Vitals:</b>"))
@@ -113,6 +113,8 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 
 
 /// Internal helper: collect candidate target humans near a mob.
+// dm-health: local L assoc<text,/mob/living/carbon/human>
+// dm-health: returns assoc<text,/mob/living/carbon/human>
 /proc/_dq_list_living_humans_in_view(mob/observer)
 	var/list/L = list()
 	if(!observer)

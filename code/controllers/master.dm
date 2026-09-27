@@ -851,6 +851,13 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			perf_worst_tick = tick_record
 		if(usage <= 100)
 			return
+		if(SSreactor)
+			var/unattributed_usage = 0
+			for(var/list/part as anything in breakdown)
+				if(part["name"] == "BYOND / pre-MC / external")
+					unattributed_usage = part["usage"]
+					break
+			tick_record["scheduler"] = SSreactor.record_scheduler_incident(usage, breakdown, unattributed_usage)
 		perf_outliers += list(tick_record)
 		if(perf_outliers.len > 20)
 			perf_outliers.Cut(1, perf_outliers.len - 19)

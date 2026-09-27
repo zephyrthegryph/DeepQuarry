@@ -238,6 +238,14 @@
 
 /datum/unit_test/dq_interaction_domain_snapshot/Run()
 	var/turf/T = test_floor()
+	// This test map's floor may be outside station contact levels. The skills
+	// console's Use interaction depends on that map setting, while these
+	// snapshots are intended to record interaction wiring at the test floor.
+	// Work on a copy and restore the original before checking snapshots.
+	var/list/original_contact_levels = using_map?.contact_levels
+	if(using_map)
+		using_map.contact_levels = original_contact_levels?.Copy() || list()
+		using_map.contact_levels |= T.z
 	var/list/actors = list(
 		"human" = allocate(/mob/living/carbon/human, T),
 		"robot" = allocate(/mob/living/silicon/robot, T),
@@ -249,6 +257,8 @@
 		var/atom/target = allocate(type, T)
 		actual += dq_snapshot_lines(target, T, actors)
 		qdel(target)
+	if(using_map)
+		using_map.contact_levels = original_contact_levels
 	for(var/line in actual)
 		TEST_ASSERT(line in expected, "new or changed snapshot: [line]")
 	for(var/line in expected)

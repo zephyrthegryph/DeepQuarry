@@ -33,13 +33,11 @@
 /// cell (the datum becomes a handle to the cell). Rust reads blocks_air, air,
 /// immutable_atmos, planetary_atmos and initial_gas_mix.
 ///
-/// Base /turf is a NO-OP: only /turf/open carries an `air` var, and the Rust
-/// register reads `air._extools_pointer_gasmixture` when blocks_air == 0.
-/// Non-open turfs (/turf/unsimulated/planetary floors, which have blocks_air == 0
-/// but no `air` var) would make that read raise a runtime. Gate the FFI to open
-/// turfs.
+/// A non-open turf has no air datum. It must remove any field cell left by the
+/// turf it replaced, including a floor replaced by a dynamically loaded map.
+/// The negative flag exits Rust registration before it reads the air var.
 /turf/proc/update_air_ref(flag, mask = AIR_BLOCK_KEEP)
-	return
+	return vg_hook_register_turf(src, -1, AIR_BLOCK_ALL)
 
 /turf/open/update_air_ref(flag, mask = AIR_BLOCK_KEEP)
 	// Walls (blocks_air) are fine: Rust short-circuits on blocks_air before

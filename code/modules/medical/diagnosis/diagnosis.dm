@@ -9,6 +9,7 @@
 	/// The profile the report was taken with.
 	var/datum/diagnostic_profile/profile
 	/// Patient name at scan time.
+	// dm-health: type text?
 	var/patient_name
 	/// DIAG_STATUS_*.
 	var/status = DIAG_STATUS_ALIVE
@@ -17,20 +18,26 @@
 	/// Feigned death was applied to this report.
 	var/fake_death = FALSE
 	/// world.time of death, when dead (or feigning it).
+	// dm-health: type num?
 	var/time_of_death
 
 	// --- Vitals (null = not measured / no such system) ---
+	// dm-health: type num?
 	var/heart_rate
 	/// list(systolic, diastolic)
 	var/list/blood_pressure
 	/// SpO2, 0..100
+	// dm-health: type num?
 	var/oxygenation
+	// dm-health: type num?
 	var/respiratory_rate
 	/// Core temperature, °C.
+	// dm-health: type num?
 	var/temperature
 	/// "alert", "drowsy", "unresponsive" or "none".
 	var/consciousness
 	/// Blood volume, % of normal.
+	// dm-health: type num?
 	var/blood_percent
 
 	/// /datum/diagnosis_finding, most severe first. Lazy.

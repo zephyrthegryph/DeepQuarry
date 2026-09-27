@@ -58,6 +58,27 @@
 	for (var/signal_type in signal_types)
 		RegisterSignal(target, signal_type, proctype, override)
 
+/// Register a shared signal-to-handler table. A proc-local static list keeps
+/// declarations together without allocating a table for each listener. The
+/// normal signal storage owns these registrations and cleans them on deletion.
+/datum/proc/RegisterSignalMap(datum/target, list/handlers, override = FALSE)
+	if(QDELETED(src) || QDELETED(target) || !islist(handlers))
+		return FALSE
+	for(var/signal_type in handlers)
+		if(!istext(signal_type) || !istext(handlers[signal_type]))
+			return FALSE
+	for(var/signal_type in handlers)
+		RegisterSignal(target, signal_type, handlers[signal_type], override)
+	return TRUE
+
+/// Release precisely the hooks declared by the same handler table. Passing
+/// the map itself avoids a second per-instance list of signal names.
+/datum/proc/UnregisterSignalMap(datum/target, list/handlers)
+	if(!target || !islist(handlers))
+		return FALSE
+	UnregisterSignal(target, handlers)
+	return TRUE
+
 /**
  * Stop listening to a given signal from target
  *

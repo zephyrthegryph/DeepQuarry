@@ -11,6 +11,8 @@
 // — this file is now just dispatch. Adding a new injury-driven
 // condition does not require editing this file.
 
+// dm-health: param type text
+// dm-health: param damage num
 /obj/item/organ/external/proc/dq_check_damage_cascades(type, damage)
 	if(!owner || !ishuman(owner) || damage <= 0)
 		return
@@ -51,6 +53,11 @@
 	/// Biologies of the injured part this trigger fires for.
 	var/biology = BIOLOGY_ORGANIC
 
+// dm-health: param wound_class text
+// dm-health: param organ_tag text
+// dm-health: param single_damage num
+// dm-health: param cumulative_damage num
+// dm-health: param part_biology num
 /proc/dq_dispatch_damage_event(wound_class, organ_tag, single_damage, cumulative_damage, obj/item/organ/target, part_biology = BIOLOGY_ORGANIC)
 	for(var/datum/affliction_trigger/injury/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/injury"))
 		if(!(c.biology & part_biology))
@@ -79,6 +86,8 @@
 /// makes massive trauma reliably seed cascades while keeping borderline
 /// hits stochastic. If no threshold is declared, fall back to the base
 /// chance — there's nothing to scale against.
+// dm-health: param single_damage num
+// dm-health: returns num
 /proc/dq_scaled_cascade_chance(datum/affliction_trigger_outcome/o, single_damage)
 	if(isnull(o.threshold) || o.threshold <= 0)
 		return o.chance
@@ -88,11 +97,15 @@
 	return min(round(o.chance * ratio), 95)
 
 
+// dm-health: param organ_tag text
+// dm-health: returns num
 /proc/_dq_is_limb_tag(organ_tag)
 	return organ_tag in list(BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG, BP_L_HAND, BP_R_HAND, BP_L_FOOT, BP_R_FOOT)
 
 
 /// Give this organ's body an affliction located here (or on `target`).
 /// Idempotent per (type, location).
+// dm-health: param condition_type typepath</datum/affliction>
+// dm-health: returns /datum/affliction?
 /obj/item/organ/proc/spawn_affliction(condition_type, obj/item/organ/target = src)
 	return owner?.body?.afflict(condition_type, target || src)

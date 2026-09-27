@@ -147,6 +147,45 @@
 		return isnull(siemens) ? 1 : siemens
 	return dq_worn_siemens_scan(owner.body_slot_items(BODY_SLOT_INSULATION), part)
 
+/// Optional observed conductivity projection. Ordinary worn_siemens() reads
+/// keep using the lazy body cache; observers pay for this flat snapshot.
+/datum/object_model/behaviour/body_worn_siemens_view
+	derived_input_mask = OM_BODY_CHANGE_WORN_PROTECTION
+
+/datum/object_model/behaviour/body_worn_siemens_view/compute_derived(datum/source, list/config)
+	var/datum/body/B = source
+	B.ensure_worn_protection()
+	var/list/values = list()
+	for(var/part in dq_worn_zone_parts())
+		var/value = B.siemens_by_part?[part]
+		values += isnull(value) ? 1 : value
+	return values
+
+/datum/object_model/behaviour/body_worn_siemens_view/derived_equal(old_value, new_value)
+	if(old_value == new_value)
+		return TRUE
+	var/list/old_values = old_value
+	var/list/new_values = new_value
+	if(!old_values || !new_values || length(old_values) != length(new_values))
+		return FALSE
+	for(var/i in 1 to length(old_values))
+		if(old_values[i] != new_values[i])
+			return FALSE
+	return TRUE
+
+/datum/object_model/behaviour/body_worn_siemens_view/on_derived_changed(datum/source, old_value, new_value, list/config)
+	var/list/old_values = old_value
+	var/list/new_values = new_value
+	SEND_SIGNAL(source, COMSIG_BODY_WORN_SIEMENS_VIEW_CHANGED, old_values?.Copy(), new_values?.Copy())
+
+/datum/body/proc/observe_worn_siemens(datum/observer)
+	return om_observe_derived(observer, src, /datum/object_model/behaviour/body_worn_siemens_view)
+
+/// Values follow dq_worn_zone_parts() order. Treat the result as immutable.
+/datum/body/proc/worn_siemens_view()
+	var/list/snapshot = om_derived_read(src, /datum/object_model/behaviour/body_worn_siemens_view)
+	return snapshot?.Copy()
+
 /// Body part flags protected from heat at `temperature`: the old
 /// get_heat_protection_flags() answer, restricted to the parts thermal
 /// protection counts.

@@ -40,6 +40,20 @@
 		else
 			return
 
+/datum/disease/gbs/stage_biology()
+	if(!..())
+		return FALSE
+	switch(stage)
+		if(2)
+			if(prob(45))
+				affected_mob.injure(INJURY_TOXIN, 5, affliction = /datum/affliction/cytolytic_toxaemia)
+		if(4)
+			affected_mob.injure(INJURY_TOXIN, 5, affliction = /datum/affliction/cytolytic_toxaemia)
+		if(5)
+			if(prob(50))
+				affected_mob.delayed_gib()
+	return TRUE
+
 /datum/disease/gbs/curable
 	name = "Non-Contagious GBS"
 	medical_name = "Non-Contagious Guillain-Barré Syndrome"

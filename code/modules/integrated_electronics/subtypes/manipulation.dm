@@ -153,6 +153,32 @@
 				step(assembly, wanted_dir.data)
 
 
+/// The attachment is a logical link; the grenade's `loc` remains the physical
+/// authority. Either endpoint ending removes the link and refreshes the primer.
+/datum/object_model/relation/integrated_grenade_attachment
+	from_type = /obj/item/integrated_circuit/manipulation/grenade
+	to_type = /obj/item/grenade
+	source_single = TRUE
+	target_single = TRUE
+
+/datum/object_model/relation/integrated_grenade_attachment/on_link(datum/source, datum/target)
+	var/obj/item/integrated_circuit/manipulation/grenade/primer = source
+	var/obj/item/grenade/G = target
+	primer.attached_grenade = G
+	primer.size += G.w_class
+	primer.desc += " \An [G] is attached to it!"
+
+/datum/object_model/relation/integrated_grenade_attachment/on_unlink(datum/source, datum/target, reason)
+	var/obj/item/integrated_circuit/manipulation/grenade/primer = source
+	var/obj/item/grenade/G = target
+	// OM removes edges before Destroy(); preserve the primer's inactive drop.
+	if(reason == OM_REL_DESTROYING && om_is_dying(primer) && !om_is_dying(G) && !G.active)
+		G.dropInto(primer.loc)
+	if(primer.attached_grenade == target)
+		primer.attached_grenade = null
+		primer.size = initial(primer.size)
+		primer.desc = initial(primer.desc)
+
 /obj/item/integrated_circuit/manipulation/grenade
 	name = "grenade primer"
 	desc = "This circuit comes with the ability to attach most types of grenades at prime them at will."
@@ -214,19 +240,12 @@
 
 // These procs do not relocate the grenade, that's the callers responsibility
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
-	attached_grenade = G
-	RegisterSignal(attached_grenade, COMSIG_OBSERVER_DESTROYED, PROC_REF(detach_grenade))
-	size += G.w_class
-	desc += " \An [attached_grenade] is attached to it!"
+	return om_link(src, /datum/object_model/relation/integrated_grenade_attachment, G)
 
 /obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade()
-	SIGNAL_HANDLER
 	if(!attached_grenade)
 		return
-	UnregisterSignal(attached_grenade, COMSIG_OBSERVER_DESTROYED)
-	attached_grenade = null
-	size = initial(size)
-	desc = initial(desc)
+	return om_unlink(src, /datum/object_model/relation/integrated_grenade_attachment, attached_grenade)
 
 /obj/item/integrated_circuit/manipulation/grenade/frag
 	pre_attached_grenade_type = /obj/item/grenade/explosive

@@ -287,7 +287,7 @@
 // drags it back down.
 /datum/affliction/concussion/New()
 	..()
-	severity = 100
+	set_severity(100)
 
 // --- Burns ---
 
@@ -425,23 +425,24 @@
 // shows on the thermometer, not just on the readout.
 /datum/affliction/wound_infection/tick()
 	. = ..()
-	if(!location || !owner)
+	var/obj/item/organ/organ = location
+	if(!istype(organ) || !owner)
 		return
 	// Modest fever — local infection, not systemic yet.
 	if(severity > 0 && istype(owner, /mob/living/carbon/human))
 		var/target_offset_k = (severity / 100) * 1.2
 		owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, BODYTEMP_NORMAL + 1.5)
-	var/germ_level = location.germ_level
+	var/germ_level = organ.germ_level
 	// Above INFECTION_LEVEL_ONE the wound is actively feeding the
 	// condition. The extra delta scales with how far past threshold
 	// we are: each 1000 germs over threshold = +1.0/tick (on top of
 	// base progression).
 	if(germ_level > INFECTION_LEVEL_ONE)
-		severity = min(severity + ((germ_level - INFECTION_LEVEL_ONE) / 1000), AFFLICTION_SEVERITY_TERMINAL)
+		set_severity(min(severity + ((germ_level - INFECTION_LEVEL_ONE) / 1000), AFFLICTION_SEVERITY_TERMINAL))
 	// Hysteresis: germs well below threshold means the wound has been
 	// cleaned. Condition severity drifts down on its own.
 	else if(germ_level < (INFECTION_LEVEL_ONE - 100))
-		severity = max(severity - 0.2, 0)
+		set_severity(max(severity - 0.2, 0))
 		if(severity <= 0)
 			cure()
 

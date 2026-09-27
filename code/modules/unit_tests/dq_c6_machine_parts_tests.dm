@@ -72,6 +72,14 @@
 	qdel(reference)
 	qdel(gen)
 
+	// The food replicator divides by its manipulator rating. Its declared
+	// board must supply that part even while machine internals stay latent.
+	var/obj/machinery/food_replicator/replicator = new(test_turf)
+	TEST_ASSERT_EQUAL(replicator.get_part_rating(/obj/item/stock_parts/manipulator), 1, "The food replicator's declared board supplies a manipulator.")
+	TEST_ASSERT_EQUAL(replicator.efficiency, 3, "RefreshParts uses the latent manipulator rating without dividing by zero.")
+	TEST_ASSERT_NULL(replicator.component_parts, "Reading the rating leaves the replicator's internals latent.")
+	qdel(replicator)
+
 /// After a maintenance-panel part swap (RPED), the real installed part's
 /// rating -- not the board's declared default -- drives RefreshParts().
 /datum/unit_test/dq_c6_rped_swap_reads_real_part

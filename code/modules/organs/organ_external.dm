@@ -288,7 +288,7 @@
 				germ_level = 0
 				status &= ~ORGAN_DEAD
 				damage = 0 //Fix the damage on it as well.
-				START_PROCESSING(SSobj, src) //Dead limbs stop processing, so we restart the process.
+				resume_organ_processing() // Dead limbs restart on their active scheduler.
 				stage-- //Go back to stage 2
 				return
 	..()
@@ -357,6 +357,7 @@
 /obj/item/organ/external/replaced(mob/living/carbon/human/target)
 	owner = target
 	forceMove(owner)
+	om_behaviour_refresh(src)
 	if(istype(owner))
 		owner.organs_by_name[organ_tag] = src
 		owner.organs |= src

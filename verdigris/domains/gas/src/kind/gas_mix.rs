@@ -196,7 +196,7 @@ mod tests {
 		assert!(d.pressure > 0.0);
 
 		store.detach(cell);
-		assert_eq!(store.read(cell), Some(GasMix::default()), "detach resets the row to Value::default()");
+		assert_eq!(store.read(cell), None, "detached rows are no longer live components");
 	}
 
 	#[test]

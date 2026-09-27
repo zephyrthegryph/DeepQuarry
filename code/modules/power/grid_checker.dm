@@ -22,11 +22,6 @@
 	set_wires(new /datum/wires/grid_checker(src))
 	default_apply_parts()
 
-/obj/machinery/power/grid_checker/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
-
 /obj/machinery/power/grid_checker/update_icon()
 	if(power_failing)
 		icon_state = "gridchecker_off"

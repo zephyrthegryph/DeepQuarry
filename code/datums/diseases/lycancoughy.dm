@@ -63,3 +63,36 @@
 					new hairball(H.loc)
 					barklimit--
 					H.injure(INJURY_BLUNT, rand(10, 15), stomach)
+
+/datum/disease/lycan/stage_biology()
+	if(!..())
+		return FALSE
+	var/mob/living/carbon/human/H = affected_mob
+	switch(stage)
+		if(2)
+			if(prob(3))
+				H.injure(INJURY_CUT, rand(4, 6))
+		if(3)
+			var/obj/item/organ/external/stomach = H.organs_by_name[pick(BP_TORSO, BP_GROIN)]
+			if(prob(3))
+				H.injure(INJURY_BLUNT, rand(0, 5), stomach)
+			if(prob(3))
+				H.injure(INJURY_BLUNT, rand(4, 6), stomach)
+			if(prob(3))
+				H.injure(INJURY_BLUNT, rand(5, 10), stomach)
+		if(4)
+			var/obj/item/organ/external/stomach = H.organs_by_name[pick(BP_TORSO, BP_GROIN)]
+			if(prob(5))
+				H.injure(INJURY_BLUNT, rand(0, 5), stomach)
+			if(prob(5))
+				H.Confuse(rand(12, 16))
+				H.injure(INJURY_BLUNT, rand(0, 5), stomach)
+			if(prob(5))
+				if(!barklimit)
+					H.injure(INJURY_BLUNT, rand(5, 10), stomach)
+				else
+					var/atom/hairball = pick(prob(50) ? puppy_types : plush_types)
+					new hairball(H.loc)
+					barklimit--
+					H.injure(INJURY_BLUNT, rand(10, 15), stomach)
+	return TRUE

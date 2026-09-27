@@ -313,11 +313,6 @@
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_STORAGE))
 		. += I
 
-/// Keep the HUD in step with every move in or out, however it happened.
-/obj/item/storage/on_slot_changed(slot_id, atom/movable/thing, inserted)
-	if(hud)
-		refresh_hud()
-
 // ---- Gather and empty ----
 
 /obj/item/storage/proc/gather_all(turf/T, mob/user)
@@ -675,6 +670,10 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 /datum/storage_hud/New(obj/item/storage/S)
 	..()
 	storage = S
+	// The derived screen view watches its source only while it exists. The
+	// observation owner removes both registrations when the last viewer closes.
+	if(!Observe(S, COMSIG_SLOT_INSERTED, PROC_REF(on_slot_membership_changed)) || !Observe(S, COMSIG_SLOT_REMOVED, PROC_REF(on_slot_membership_changed)))
+		CRASH("storage HUD could not observe its storage")
 	backdrop = list()
 	catchers = list()
 	shown = list()
@@ -691,6 +690,11 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	closer.hud_layerise()
 	GLOB.storage_hud_count++
 	layout()
+
+/datum/storage_hud/proc/on_slot_membership_changed(obj/item/storage/source, atom/movable/thing, slot_id)
+	SIGNAL_HANDLER
+	if(storage == source && source.hud == src)
+		source.refresh_hud()
 
 /datum/storage_hud/Destroy()
 	GLOB.storage_hud_count--

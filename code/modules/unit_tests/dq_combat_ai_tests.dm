@@ -181,7 +181,21 @@
 	TEST_ASSERT_NOTNULL(S.ai_brain, "combat_ai_test_subject spawned without an ai_brain")
 	TEST_ASSERT(S.ai_brain.holder == S, "brain.holder doesn't point back to the mob")
 	TEST_ASSERT_NOTNULL(S.ai_brain.model, "brain.model wasn't created")
+	TEST_ASSERT_EQUAL(om_owner(S.ai_brain), S, "mob is not lifetime owner of its AI brain")
+	TEST_ASSERT_EQUAL(om_owner(S.ai_brain.model), S.ai_brain, "brain is not lifetime owner of its world model")
 	TEST_ASSERT(length(S.ai_brain.target_selector_chain), "brain has no target_selector_chain")
+
+/datum/unit_test/dq_combat_ai_owned_lifetime
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_combat_ai_owned_lifetime/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = new(locate(1, 1, 1))
+	var/datum/ai_brain/brain = S.ai_brain
+	var/datum/world_model/model = brain?.model
+	TEST_ASSERT(brain && model, "test mob did not create its AI lifetime tree")
+	qdel(S)
+	TEST_ASSERT(QDELETED(brain), "AI brain survived its mob")
+	TEST_ASSERT(QDELETED(model), "world model survived its AI brain")
 
 
 // --- runtime: give_target sets primary_threat and a personal HOSTILE ---

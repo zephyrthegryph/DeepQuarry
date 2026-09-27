@@ -3,30 +3,58 @@
 //! A domain crate declares components, kinds and **laws** -- pure functions
 //! over the rows/regions/cells they read and write -- and nothing else
 //! (§2). This module is the stable shape domain agents write laws against:
-//! [`Law`], [`LawCtx`], [`Settle`] and [`Period`]. It intentionally does
-//! **not** yet wire a law's `Reads`/`Writes` to real component-store
-//! columns: that plumbing is Core B's `EntityTable`/component-store work
-//! (`rust_architecture.md` §4.1–§4.2), which this module's `Query` trait is
-//! deliberately left open for. Until then, `Reads`/`Writes` can be any
-//! `'static` type a domain constructs itself (a plain struct of borrowed
-//! slices works fine for a law's own Rust tests today), so a law can be
-//! written and tested **now**, before the entity/component stores exist,
-//! exactly as `rust_architecture.md` §7 asks: "domains write their laws as
-//! pure functions with Rust tests immediately, since laws don't need the
-//! infrastructure."
+//! [`Law`], [`LawCtx`], [`Settle`] and [`Period`]. The shared
+//! [`crate::sim::SimBuilder`] runs laws over typed worker resources. Domain
+//! component stores can be passed as those resources; deriving queries
+//! directly from component columns remains future work.
 //!
-//! [`order_laws`] and [`Pacer`] are the two pieces of "one `Sim` per DLL...
-//! the driver owns pacing" (§4.3) that don't need Reads/Writes plumbing to
-//! be real and useful today: declared `after`/`before` ordering, and the
-//! fixed-dt accumulator / idle skip / backlog cap every domain's `Sim`
-//! currently reimplements for itself (gas's idle skip, heat's tick
-//! accumulator and `MAX_BACKLOG_FRAMES`, ...). Wiring a heterogeneous set
-//! of laws (each with its own `Reads`/`Writes` type) into the existing
-//! [`crate::sim::Sim`]/[`crate::frame`] machinery as actual `frame::Task`s
-//! is the integration step that follows once Core B's stores land; this
-//! module is the stable surface that doesn't change shape under that work.
+//! [`order_laws`] gives stable dependency order. [`Pacer`] and
+//! [`crate::sim::PacedDriver`] provide a fixed-dt accumulator, idle skip,
+//! backlog cap and asynchronous frame backpressure.
 
+use crate::conservation::Ledger;
+use crate::frame::Res;
 use crate::units::Seconds;
+
+/// Handle to the output and activity state of a registered law.
+pub struct LawKey<L: Law> {
+    pub(crate) state: Res<LawState>,
+    pub(crate) _law: std::marker::PhantomData<fn() -> L>,
+}
+
+impl<L: Law> Clone for LawKey<L> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<L: Law> Copy for LawKey<L> {}
+
+/// Side channels and activity owned by one law instance.
+#[derive(Default)]
+pub struct LawState {
+    pub active: bool,
+    pub events: Vec<u32>,
+    pub wakes: Vec<u32>,
+    pub ledger: Ledger,
+    pub last_run_frame: Option<u64>,
+}
+
+impl LawState {
+    pub fn new() -> Self {
+        Self {
+            active: true,
+            ..Self::default()
+        }
+    }
+
+    /// Takes events and wake requests produced since the previous drain.
+    pub fn drain(&mut self) -> (Vec<u32>, Vec<u32>) {
+        (
+            std::mem::take(&mut self.events),
+            std::mem::take(&mut self.wakes),
+        )
+    }
+}
 
 /// Marker for a law's declared read or write set: component columns,
 /// network payloads, field cells, or (until those exist) any plain
@@ -235,7 +263,11 @@ fn visit(
         2 => return Ok(()),
         1 => {
             let start = stack.iter().position(|&n| n == node).unwrap_or(0);
-            let cycle = stack[start..].iter().chain([&node]).map(|&i| names[i]).collect();
+            let cycle = stack[start..]
+                .iter()
+                .chain([&node])
+                .map(|&i| names[i])
+                .collect();
             return Err(OrderCycle(cycle));
         }
         _ => {}
@@ -279,6 +311,11 @@ impl Pacer {
     #[must_use]
     pub const fn dt(&self) -> Seconds {
         self.dt
+    }
+
+    #[must_use]
+    pub const fn backlog_cap(&self) -> u32 {
+        self.backlog_cap
     }
 
     /// Real time still owed a step, not yet enough for one.

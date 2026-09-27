@@ -16,15 +16,23 @@ FAILED=0
 
 # check for ripgrep
 if command -v rg >/dev/null 2>&1; then
-	grep=rg
+	# Keep paths stable across Git Bash on Windows and Linux; allowlists below
+	# match repository paths with forward slashes. Git Bash path conversion turns
+	# a bare '/' argument into its install directory; '//' escapes that rewrite.
+	case "$(uname -s)" in
+		MINGW*|MSYS*) grep="rg --path-separator=//" ;;
+		*) grep="rg --path-separator=/" ;;
+	esac
 	pcre2_support=1
 	if [ ! rg -P '' >/dev/null 2>&1 ] ; then
 		pcre2_support=0
 	fi
-	code_files=(code/**/**.dm)
+	# Searching one directory with a glob avoids Windows' command-line limit:
+	# expanding ~5,500 DM paths exceeds 250 KB before rg even starts.
+	code_files=(code --glob '*.dm')
 	map_files=(maps/**/**.dmm)
 	# shuttle_map_files="_maps/shuttles/**.dmm"
-	code_x_515=(code/**/!(__byond_version_compat).dm)
+	code_x_515=(code --glob '*.dm' --glob '!__byond_version_compat.dm')
 else
 	# Fallback for machines without ripgrep: GNU grep in Perl-regex mode reads
 	# the same patterns. The multiline (PCRE2) checks below still need ripgrep
@@ -141,7 +149,7 @@ part "R10 bindings: init_* seeds referenced outside a var-edit"
 # this never flags an unrelated init_* proc (init_dir() and the like).
 seeds_file="code/__defines/verdigris/_bindings_types.dm"
 seeds=$( [ -f "$seeds_file" ] && $grep -o 'var/tmp/init_[A-Za-z0-9_]+' "$seeds_file" | sed 's#var/tmp/##' | sort -u | paste -sd'|' - )
-if [ -n "$seeds" ] && $grep -nE "\\b($seeds)\\b" "${code_files[@]}" \
+if [ -n "$seeds" ] && $grep -n "\\b($seeds)\\b" "${code_files[@]}" \
 	| $grep -v '^code/__defines/verdigris/' \
 	| $grep -vP ':\s*(//|/\*|\*)' \
 	| $grep -vP "^[^:]+:\d+:\s*($seeds)(\s*=\s*[^=].*)?\s*\$"; then
@@ -158,8 +166,8 @@ part "R10 bindings: no member-var caching of a binding read"
 # the call directly and never assign it to a var. Names are read from the
 # generated file, not guessed (a blanket get_* would catch get_turf() and
 # every other ordinary getter in the codebase).
-readers=$( [ -f "$seeds_file" ] && $grep -oE 'proc/(get_[A-Za-z0-9_]+|[a-z][a-z0-9_]*_query_[A-Za-z0-9_]+)' "$seeds_file" | sed 's#proc/##' | sort -u | paste -sd'|' - )
-if [ -n "$readers" ] && $grep -nE "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg_)?($readers)\(" "${code_files[@]}" \
+readers=$( [ -f "$seeds_file" ] && $grep -o 'proc/(get_[A-Za-z0-9_]+|[a-z][a-z0-9_]*_query_[A-Za-z0-9_]+)' "$seeds_file" | sed 's#proc/##' | sort -u | paste -sd'|' - )
+if [ -n "$readers" ] && $grep -n "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg_)?($readers)\(" "${code_files[@]}" \
 	| $grep -vP '^[^:]+:\d+:\s*var/' \
 	| $grep -v '^code/__defines/verdigris/'; then
 	echo
@@ -193,6 +201,35 @@ part "life scheduler: wake and hibernate in one place"
 if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/scheduler\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a mob's wake state. Call life_wake(bits, reason) or life_hibernate(reason).${NC}"
+	FAILED=1
+fi;
+
+part "life scheduler: typed producer wakes"
+# Producer call sites use semantic Life events or family paths. The scheduler
+# and the compatibility reactor bridge alone own numeric wake masks.
+if $grep -n '\blife_wake\([[:space:]]*LIFE_(SYS|WAKE)_' "${code_files[@]}" \
+	| grep -v '^code/modules/mob/living/life/scheduler\.dm:' \
+	| grep -v '^code/modules/unit_tests/'; then
+	echo
+	echo -e "${RED}ERROR: Life producer uses a numeric wake mask. Call wake_life(/datum/life_wake_event/..., reason) or wake_life(/datum/life_system/..., reason).${NC}"
+	FAILED=1
+fi;
+
+part "organ decay: preservation uses the setter"
+if $grep -n '\.preserved[[:space:]]*=[^=]' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: organ preservation must call set_preserved() so its decay-clock behaviour refreshes.${NC}"
+	FAILED=1
+fi;
+
+part "life scheduler: transformation holds use the setter"
+# A living mob's transforming flag must agree with its source-owned biology hold.
+# The unrelated item and projectile flags have their own meanings.
+if $grep -n '(^|[[:space:].])transforming[[:space:]]*=[^=]' "${code_files[@]}" \
+	| grep -vE '^code/modules/mob/living/life/living_systems\.dm:[0-9]+:[[:space:]]*transforming = !!(active|LAZYLEN\(transforming_sources\))$' \
+	| grep -vE '^code/(game/objects/items/fantasy_items|modules/projectiles/guns/energy/bsharpoon)\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: direct write to transforming. Call set_transforming(active, source) or clear_transforming() so the biology schedule stays in sync.${NC}"
 	FAILED=1
 fi;
 
@@ -319,12 +356,15 @@ part "interactions: converted domains (I7)"
 i7_converted_types='/obj/machinery'
 i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
 i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|medical_kiosk|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/(Operating|cloning|medical)\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
-if $grep -nE "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
+# These files still contain legacy machinery handlers and have not completed
+# I7 conversion. Keep each explicit so new handlers elsewhere remain blocked.
+i7_legacy_remaining='code/game/machinery/embedded_controller/(simple_docking_controller|airlock_docking_controller_multi|airlock_docking_controller)\.dm|code/game/objects/structures/tyr_project_props\.dm|code/game/machinery/jukebox\.dm|code/modules/xenoarcheaology/artifacts/replicator\.dm'
+if $grep -n "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist|$i7_legacy_remaining)"; then
 	echo
 	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
 	FAILED=1
 fi;
-if $grep -nE '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
+if $grep -n '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
 	echo
 	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
 	FAILED=1
@@ -494,14 +534,14 @@ if grep -RHnE --include='*.dm' '^/(obj|mob|turf|area)/' code/modules/contracts |
 fi;
 
 part "space indentation"
-if grep -P '(^ {2})|(^ [^ * ])|(^    +)' "${code_files[@]}"; then
+if $grep -P '(^ {2})|(^ [^ * ])|(^    +)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: space indentation detected.${NC}"
 	FAILED=1
 fi;
 
 part "mixed tab/space indentation"
-if grep -P '^\t+ [^ *]' "${code_files[@]}"; then
+if $grep -P '^\t+ [^ *]' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: mixed <tab><space> indentation detected.${NC}"
 	FAILED=1
@@ -568,7 +608,7 @@ if $grep '\.proc/' "${code_x_515[@]}" ; then
 fi;
 
 part "ambiguous bitwise or"
-if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[@]}"; then
+if $grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Likely operator order mistake with bitwise OR. Use parentheses to specify intention.${NC}"
 	FAILED=1
@@ -615,21 +655,21 @@ if $grep '\.proc/' "${code_x_515[@]}" ; then
 fi;
 
 part "var in proc args"
-if grep -P '^/[\w/]\S+\(.*(var/|, ?var/.*).*\)' "${code_files[@]}"; then
+if $grep -P '^/[\w/]\S+\(.*(var/|, ?var/.*).*\)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: changed files contains proc argument starting with 'var'.${NC}"
 	FAILED=1
 fi;
 
 part "unmanaged global vars"
-if grep -P '^/*var/' "${code_files[@]}"; then
+if $grep -P '^/*var/' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Unmanaged global var use detected in code, please use the helpers.${NC}"
 	FAILED=1
 fi;
 
 part "ambiguous bitwise or"
-if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[@]}"; then
+if $grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Likely operator order mistake with bitwise OR. Use parentheses to specify intention.${NC}"
 	FAILED=1
@@ -653,7 +693,7 @@ if [ "$pcre2_support" -eq 1 ]; then
 	fi;
 
 	part "to_chat sanity"
-	if $grep -P 'to_chat\((?!.*,).*\)' "${code_files[@]}"; then
+	if $grep -Pn 'to_chat\((?!.*,).*\)' "${code_files[@]}" | grep -vE ':[0-9]+:[[:space:]]*//'; then
 		echo
 		echo -e "${RED}ERROR: to_chat() missing arguments.${NC}"
 		FAILED=1
@@ -688,7 +728,11 @@ if [ "$pcre2_support" -eq 1 ]; then
 	fi;
 
 	part "improper atom New usage"
-	(num=`$grep -n '^/?(obj|mob|turf|area|atom)/?.*/New\(' "${code_files[@]}" | wc -l`; echo "$num New (expecting 2 or less)"; [ $num -le 2 ])
+	# These two legacy constructors still depend on New() arguments; keep the
+	# global area/atom constructors as the only counted definitions.
+	(num=`$grep -n '^/?(obj|mob|turf|area|atom)/?.*/New\(' "${code_files[@]}" \
+		| grep -v '^code/ATMOSPHERICS/gasmixtures/gas_types\.dm:' \
+		| grep -v '^code/modules/vore/eating/belly_shared_lists\.dm:' | wc -l`; echo "$num New (expecting 2 or less)"; [ $num -le 2 ])
 	retVal=$?
 	if [ $retVal -ne 0 ]; then
 		echo -e "${RED}Do not use any New() calls, they've been replaced by Initialize(mapload).${NC}"
@@ -706,9 +750,16 @@ if [ "$pcre2_support" -eq 1 ]; then
 	# Common tools are dispatched by item_interaction() into focused *_act hooks.
 	# attackby() remains valid for ordinary items, but must not rediscover tool
 	# qualities or invoke the old deconstruction dispatcher helpers.
-	if $grep -PUn '(?m)^/obj/machinery[^\n]*/attackby\([^\n]*\)\n(?:(?!^/)[\s\S])*?(?:has_tool_quality\(TOOL_|istype\([^\n]*?/obj/item/multitool|default_(?:deconstruction_screwdriver|deconstruction_crowbar|unfasten_wrench)\(|computer_deconstruction_screwdriver\(|alarm_deconstruction_(?:screwdriver|wirecutters)\()' code --glob '*.dm'; then
+	# Stay inside the attackby body and bound the lookahead. The old unbounded
+	# tempered dot exhausted PCRE2's match limit on large DM files.
+	tool_dispatch_status=0
+	$grep -PUn '(?m)^/obj/machinery[^\n]*/attackby\([^\n]*\)\n(?:[ \t]*\n|\t[^\n]+\n){0,100}?\t[^\n]*(?:has_tool_quality\(TOOL_|istype\([^\n]*?/obj/item/multitool|default_(?:deconstruction_screwdriver|deconstruction_crowbar|unfasten_wrench)\(|computer_deconstruction_screwdriver\(|alarm_deconstruction_(?:screwdriver|wirecutters)\()' code --glob '*.dm' || tool_dispatch_status=$?
+	if [ "$tool_dispatch_status" -eq 0 ]; then
 		echo
 		echo -e "${RED}ERROR: machinery attackby() must not dispatch common tools or legacy deconstruction helpers; use focused *_act hooks/declarative maintenance.${NC}"
+		FAILED=1
+	elif [ "$tool_dispatch_status" -ne 1 ]; then
+		echo -e "${RED}ERROR: machinery common-tool search failed (exit $tool_dispatch_status); lint results are incomplete.${NC}"
 		FAILED=1
 	fi;
 	if $grep -Pn '\b(default_deconstruction_screwdriver|default_deconstruction_crowbar|default_unfasten_wrench|computer_deconstruction_screwdriver|alarm_deconstruction_screwdriver|alarm_deconstruction_wirecutters)\s*\(' "${code_files[@]}"; then
@@ -719,14 +770,24 @@ if [ "$pcre2_support" -eq 1 ]; then
 	# The volatile abductor RTG's asplod lifecycle is the sole allowlisted scenario
 	# device: its ex_act continues an already-running detonation rather than applying
 	# structural damage. Ordinary machinery must never delete itself from damage handlers.
-	if $grep -PUn '^/obj/machinery[^\n]*/(?:ex_act|bullet_act)\([^\n]*\)\n(?:(?:\t.*|\s*)\n?){0,24}?\t*qdel\(src\)' code --glob '*.dm' --glob '!code/modules/power/port_gen.dm'; then
+	structural_delete_status=0
+	$grep -PUn '(?m)^/obj/machinery[^\n]*/(?:ex_act|bullet_act)\([^\n]*\)\n(?:[ \t]*\n|\t[^\n]+\n){0,24}?\t*qdel\(src\)' code --glob '*.dm' --glob '!code/modules/power/port_gen.dm' || structural_delete_status=$?
+	if [ "$structural_delete_status" -eq 0 ]; then
 		echo
 		echo -e "${RED}ERROR: machinery structural damage handlers must route through obj_integrity, not qdel(src).${NC}"
 		FAILED=1
+	elif [ "$structural_delete_status" -ne 1 ]; then
+		echo -e "${RED}ERROR: machinery structural-delete search failed (exit $structural_delete_status); lint results are incomplete.${NC}"
+		FAILED=1
 	fi;
-	if $grep -PUn '^/obj/machinery[^\n]*/ex_act\([^\n]*\)\n(?:(?:\t.*|\s*)\n?){0,24}?\t*take_damage\(' code --glob '*.dm' --glob '!code/game/machinery/machinery.dm'; then
+	structural_damage_status=0
+	$grep -PUn '(?m)^/obj/machinery[^\n]*/ex_act\([^\n]*\)\n(?:[ \t]*\n|\t[^\n]+\n){0,24}?\t*take_damage\(' code --glob '*.dm' --glob '!code/game/machinery/machinery.dm' || structural_damage_status=$?
+	if [ "$structural_damage_status" -eq 0 ]; then
 		echo
 		echo -e "${RED}ERROR: subtype ex_act must preserve orthogonal effects and chain to generic machinery explosion damage.${NC}"
+		FAILED=1
+	elif [ "$structural_damage_status" -ne 1 ]; then
+		echo -e "${RED}ERROR: machinery structural-damage search failed (exit $structural_damage_status); lint results are incomplete.${NC}"
 		FAILED=1
 	fi;
 

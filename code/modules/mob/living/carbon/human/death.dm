@@ -1,5 +1,5 @@
 /mob/living/carbon/human/gib()
-	transforming = 1 //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
+	set_transforming(TRUE) //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
 
 	//Drop the NIF, they're expensive, why not recover them?
 	release_vore_contents(silent = TRUE)
@@ -173,5 +173,4 @@
 	status_flags |= DISFIGURED
 	update_icons_body()
 	return
-
 

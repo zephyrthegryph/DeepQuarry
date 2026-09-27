@@ -681,6 +681,12 @@
 /datum/species/diona/environment_effects(mob/living/carbon/human/H)
 	if(H.inStasisNow())
 		return
+	environment_biology(H)
+	..()
+
+/datum/species/diona/environment_biology(mob/living/carbon/human/H)
+	if(H.inStasisNow())
+		return
 
 	var/obj/item/organ/internal/diona/node/light_organ = locate() in H.internal_organs
 
@@ -707,7 +713,7 @@
 		//traumatic_shock is updated every tick, incrementing that is pointless - shock_stage is the counter.
 		//Not that it matters much for diona, who have NO_PAIN.
 		H.shock_stage++
-	..()
+	return
 
 
 
@@ -1582,20 +1588,23 @@
 /datum/species/spider/environment_effects(mob/living/carbon/human/H)
 	if(H.stat == DEAD) // If they're dead they won't need anything.
 		return
+	environment_biology(H)
+	if((H.bodytemperature <= 260 && H.bodytemperature >= 200) || (H.bodytemperature <= 199 && H.bodytemperature >= 100) || H.bodytemperature <= 99)
+		H.eye_blurry = 5
+	..()
 
+/datum/species/spider/environment_biology(mob/living/carbon/human/H)
+	if(H.stat == DEAD)
+		return
 	if(H.bodytemperature <= 260) //If they're really cold, they go into stasis.
 		var/coldshock = 0
 		if(H.bodytemperature <= 260 && H.bodytemperature >= 200) //Chilly.
 			coldshock = 4 //This will begin to knock them out until they run out of oxygen and suffocate or until someone finds them.
-			H.eye_blurry = 5 //Blurry vision in the cold.
 		if(H.bodytemperature <= 199 && H.bodytemperature >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
 			coldshock = 8
-			H.eye_blurry = 5
 		if(H.bodytemperature <= 99) //Insanely cold.
 			coldshock = 16
-			H.eye_blurry = 5
 		H.shock_stage = min(H.shock_stage + coldshock, 160) //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
-	..()
 
 /datum/species/werebeast
 	name = SPECIES_WEREBEAST
@@ -1737,6 +1746,13 @@
 	species_component = list(/datum/component/xenochimera)
 
 /datum/species/xenochimera/environment_effects(mob/living/carbon/human/H)
+	if(!environment_biology(H))
+		return
+	if(body_temperature - H.bodytemperature >= 50)
+		H.eye_blurry = max(5,H.eye_blurry)
+	..()
+
+/datum/species/xenochimera/environment_biology(mob/living/carbon/human/H)
 	//Cold/pressure effects when not regenerating
 	if(!isturf(H.loc))
 		return
@@ -1758,8 +1774,7 @@
 	var/temp_diff = body_temperature - H.bodytemperature
 	if(temp_diff >= 50)
 		H.shock_stage = min(H.shock_stage + (temp_diff/20), 160) // Divided by 20 is the same as previous numbers, but a full scale
-		H.eye_blurry = max(5,H.eye_blurry)
-	..()
+	return TRUE
 
 /datum/species/xenochimera/get_race_key()
 	var/datum/species/real = GLOB.all_species[base_species]
@@ -1982,6 +1997,11 @@
 	var/weeds_heal_rate = 0.5   // Health regen on weeds. No healing unless resting.
 
 /datum/species/xenomorph_hybrid/environment_effects(mob/living/carbon/human/H)
+	if(!environment_biology(H, FALSE))
+		return
+	..()
+
+/datum/species/xenomorph_hybrid/environment_biology(mob/living/carbon/human/H, quiet = TRUE)
 
 	var/turf/T = H.loc
 	if(!T) return
@@ -1989,14 +2009,14 @@
 	if(!environment) return
 
 	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate(/obj/effect/alien/weeds) in T)
-		if(!regenerate(H))
+		if(!regenerate(H, quiet))
 			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
 			if(istype(P))
 				P.stored_plasma += weeds_plasma_rate
 				P.stored_plasma = min(max(P.stored_plasma,0),P.max_plasma)
-	..()
+	return TRUE
 
-/datum/species/xenomorph_hybrid/proc/regenerate(mob/living/carbon/human/H)
+/datum/species/xenomorph_hybrid/proc/regenerate(mob/living/carbon/human/H, quiet = FALSE)
 	var/heal_rate = weeds_heal_rate
 	var/mend_prob = 10 // Much lower than regular xenos. Bumped from 5 to 10 as medical changes allowed all carbons to passively heal damage after a long delay.
 	if (!H.resting)
@@ -2007,7 +2027,7 @@
 	for(var/obj/item/organ/internal/I in H.internal_organs)
 		if(I.damage > 0)
 			H.mend(TREAT_RESTORATION, heal_rate, I)
-			if (prob(5))
+			if (!quiet && prob(5))
 				to_chat(H, span_alien("We feel a soothing sensation within our [I.parent_organ]..."))
 			return 1
 
@@ -2017,7 +2037,7 @@
 		H.mend(TREAT_BURN_CARE, heal_rate)
 		H.mend(TREAT_OXYGENATION, heal_rate)
 		H.mend(TREAT_ANTITOXIN, heal_rate)
-		if (prob(5))
+		if (!quiet && prob(5))
 			to_chat(H, span_alien("A soothing sensation falls over our body..."))
 		return 1
 
@@ -2025,7 +2045,7 @@
 	for(var/obj/item/organ/external/E in H.bad_external_organs)
 		if (E.status & ORGAN_BROKEN)
 			if (prob(mend_prob))
-				if (E.mend_fracture())
+				if (E.mend_fracture() && !quiet)
 					to_chat(H, span_alien("We feel something reshape and mend within our [E.name]..."))
 			return 1
 

@@ -43,3 +43,7 @@
 #define COMSIG_LIVING_INJURED "living_injured"
 /// From /datum/body/proc/recompute_factors() when a body factor value changed: ()
 #define COMSIG_LIVING_FACTORS_CHANGED "living_factors_changed"
+/// An observed body's effective factor snapshot changed after refresh.
+#define COMSIG_BODY_FACTOR_VIEW_CHANGED "body_factor_view_changed"
+/// An observed body's per-part worn conductivity changed after refresh.
+#define COMSIG_BODY_WORN_SIEMENS_VIEW_CHANGED "body_worn_siemens_view_changed"

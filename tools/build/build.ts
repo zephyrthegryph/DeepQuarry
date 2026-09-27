@@ -13,9 +13,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Juke from './juke/index.js';
-import { bun, bunRoot } from './lib/bun';
-import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
-import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BENCH_RUNS_DIR,
   type BenchIteration,
@@ -40,9 +37,17 @@ import {
   writeJson,
 } from './lib/bench';
 import { renderReport } from './lib/bench_report';
+import { bun, bunRoot } from './lib/bun';
 import { DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
-import { prependDefines } from './lib/tgs';
+import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
+import { prependDefines } from './lib/tgs';
+import { generateVerdigrisBindings } from './lib/verdigris_bindings';
+import {
+  checkVerdigrisProvenance,
+  installVerdigrisLibrary,
+  verdigrisInputHash,
+} from './lib/verdigris_provenance';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -130,9 +135,12 @@ export const IconRepackTarget = new Juke.Target({
   // that may not exist yet, crashing the build. Let the python step gate itself.
   executes: async () => {
     await Juke.exec('python3', [
-      '-m', 'tools.dq_icons.build_step',
-      '--output', 'icons/gen',
-      'icons', 'maps',
+      '-m',
+      'tools.dq_icons.build_step',
+      '--output',
+      'icons/gen',
+      'icons',
+      'maps',
     ]);
   },
 });
@@ -182,7 +190,10 @@ export const ValidateDmeTarget = new Juke.Target({
       const out: string[] = [];
       for (const seg of combined.replace(/\\/g, '/').split('/')) {
         if (seg === '' || seg === '.') continue;
-        if (seg === '..') { out.pop(); continue; }
+        if (seg === '..') {
+          out.pop();
+          continue;
+        }
         out.push(seg);
       }
       return out.join('/');
@@ -195,8 +206,8 @@ export const ValidateDmeTarget = new Juke.Target({
     const ACTIVE_INCLUDE = /^[ \t]*#include\s+"([^"]+\.dm)"/gm;
     const COMMENTED_INCLUDE = /^[ \t]*\/\/\s*#include\s+"([^"]+\.dm)"/gm;
 
-    const reachable = new Set<string>();  // compiled (transitively included)
-    const disabled = new Set<string>();   // intentionally commented-out includes
+    const reachable = new Set<string>(); // compiled (transitively included)
+    const disabled = new Set<string>(); // intentionally commented-out includes
     const queue: string[] = [];
 
     const seed = (content: string, baseDir: string) => {
@@ -219,9 +230,7 @@ export const ValidateDmeTarget = new Juke.Target({
 
     // Unit-test files are compiled only under a separate test .dme, never from
     // deepquarry.dme — exclude them from the "is it wired into the build" check.
-    const EXCLUDED_PREFIXES = [
-      'code/modules/unit_tests/',
-    ];
+    const EXCLUDED_PREFIXES = ['code/modules/unit_tests/'];
 
     const dmFiles = Juke.glob('code/**/*.dm');
     const missing: string[] = [];
@@ -232,23 +241,28 @@ export const ValidateDmeTarget = new Juke.Target({
       missing.push(normalized);
     }
 
-    if (missing.length > 0 && (process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM)) {
+    if (
+      missing.length > 0 &&
+      (process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM)
+    ) {
       Juke.logger.warn(
-        `DQ_WIP_TREE is set: ignoring ${missing.length} .dm file(s) not reachable from ${DME_NAME}.dme:\n`
-        + missing.map((f) => `  ${f}`).join('\n'),
+        `DQ_WIP_TREE is set: ignoring ${missing.length} .dm file(s) not reachable from ${DME_NAME}.dme:\n` +
+          missing.map((f) => `  ${f}`).join('\n'),
       );
       return;
     }
     if (missing.length > 0) {
       Juke.logger.error(
-        `${missing.length} .dm file(s) under code/ are not reachable from ${DME_NAME}.dme `
-          + 'via the #include graph (silently uncompiled):\n'
-        + missing.map((f) => `  ${f}`).join('\n')
-        + '\n\nAdd each file to deepquarry.dme (or an included aggregator), or delete it if unused.',
+        `${missing.length} .dm file(s) under code/ are not reachable from ${DME_NAME}.dme ` +
+          'via the #include graph (silently uncompiled):\n' +
+          missing.map((f) => `  ${f}`).join('\n') +
+          '\n\nAdd each file to deepquarry.dme (or an included aggregator), or delete it if unused.',
       );
       throw new Juke.ExitCode(1);
     }
-    Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
+    Juke.logger.info(
+      `ValidateDme: all ${dmFiles.length} code/ .dm files are reachable from the DME.`,
+    );
   },
 });
 // DQAdd End
@@ -272,6 +286,7 @@ const VERDIGRIS_RUST_TARGET =
   process.platform === 'win32'
     ? 'i686-pc-windows-msvc'
     : 'i686-unknown-linux-gnu';
+const VERDIGRIS_PROVENANCE = `${VERDIGRIS_LIB}.provenance.json`;
 
 // DQAdd Start — generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
 // `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
@@ -281,7 +296,9 @@ export const VerdigrisBindingsTarget = new Juke.Target({
   executes: () => {
     const written = generateVerdigrisBindings(process.cwd(), false);
     Juke.logger.info(
-      written.length ? `verdigris bindings: wrote ${written.join(', ')}` : 'verdigris bindings: up to date',
+      written.length
+        ? `verdigris bindings: wrote ${written.join(', ')}`
+        : 'verdigris bindings: up to date',
     );
   },
 });
@@ -291,8 +308,8 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
     const stale = generateVerdigrisBindings(process.cwd(), true);
     if (stale.length) {
       Juke.logger.error(
-        `verdigris bindings are stale (${stale.join(', ')}). `
-          + 'Run `tools/build/build.sh verdigris-bindings` and commit the result.',
+        `verdigris bindings are stale (${stale.join(', ')}). ` +
+          'Run `tools/build/build.sh verdigris-bindings` and commit the result.',
       );
       throw new Juke.ExitCode(1);
     }
@@ -303,10 +320,25 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
 export const VerdigrisTarget = new Juke.Target({
   dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
+    const mismatch = checkVerdigrisProvenance(
+      process.cwd(),
+      VERDIGRIS_LIB,
+      VERDIGRIS_RUST_TARGET,
+      process.env.RUSTFLAGS || '',
+    );
     // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
     // library instead of compiling the whole Rust workspace.
-    if (process.env.DQ_PREBUILT_VERDIGRIS === '1' && fs.existsSync(VERDIGRIS_LIB)) {
-      Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
+    if (process.env.DQ_PREBUILT_VERDIGRIS === '1') {
+      if (mismatch) {
+        Juke.logger.error(
+          `verdigris: prebuilt ${VERDIGRIS_LIB} is unsafe to reuse: ${mismatch}. ` +
+            'Copy its matching provenance sidecar or rebuild in this checkout.',
+        );
+        throw new Juke.ExitCode(1);
+      }
+      Juke.logger.info(
+        `verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`,
+      );
       return false;
     }
     const probe = spawnSync('cargo', ['--version'], {
@@ -315,19 +347,23 @@ export const VerdigrisTarget = new Juke.Target({
     });
     const cargoOk = !probe.error && probe.status === 0;
     if (!cargoOk) {
-      if (fs.existsSync(VERDIGRIS_LIB)) {
+      if (!mismatch) {
         Juke.logger.info(
           `verdigris: cargo not found — using existing ${VERDIGRIS_LIB}`,
         );
       } else {
-        Juke.logger.warn(
-          `verdigris: cargo not found and ${VERDIGRIS_LIB} is missing. `
-            + 'Atmos/cave-gen FFI will fail at runtime — install rustup '
-            + `(see verdigris/README.md) or obtain a prebuilt ${VERDIGRIS_LIB}.`,
+        Juke.logger.error(
+          `verdigris: cargo not found and ${VERDIGRIS_LIB} cannot be used: ${mismatch}. ` +
+            'Install Rust or copy a matching library and provenance sidecar.',
         );
+        throw new Juke.ExitCode(1);
       }
       return false;
     }
+    if (mismatch)
+      Juke.logger.info(
+        `verdigris: rebuilding ${VERDIGRIS_LIB} because ${mismatch}`,
+      );
     return true;
   },
   inputs: [
@@ -349,17 +385,111 @@ export const VerdigrisTarget = new Juke.Target({
     'verdigris/tools/**/build.rs',
     'verdigris/tools/**/*.rs',
   ],
-  outputs: [VERDIGRIS_LIB],
+  // A mismatched file can have a newer mtime than every source (for example a
+  // copied DLL), so force Juke to run even when its timestamp check would pass.
+  outputs: () =>
+    checkVerdigrisProvenance(
+      process.cwd(),
+      VERDIGRIS_LIB,
+      VERDIGRIS_RUST_TARGET,
+      process.env.RUSTFLAGS || '',
+    )
+      ? []
+      : [VERDIGRIS_LIB, VERDIGRIS_PROVENANCE],
   executes: async () => {
+    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`;
+    const inputHash = verdigrisInputHash(process.cwd());
+    const cargoOptions = {
+      cwd: 'verdigris',
+      env: { ...process.env, DQ_VERDIGRIS_INPUT_HASH: inputHash },
+    };
+    // Restored source files can retain old timestamps while Cargo keeps newer
+    // rlibs. Clean local crates when provenance is stale, preserving cached
+    // third-party dependencies.
+    if (
+      checkVerdigrisProvenance(
+        process.cwd(),
+        VERDIGRIS_LIB,
+        VERDIGRIS_RUST_TARGET,
+        process.env.RUSTFLAGS || '',
+      )
+    ) {
+      await Juke.exec(
+        'cargo',
+        [
+          'clean',
+          '--release',
+          '--target',
+          VERDIGRIS_RUST_TARGET,
+          '-p',
+          'vg-core',
+          '-p',
+          'vg-gas',
+          '-p',
+          'vg-heat',
+          '-p',
+          'vg-layout',
+          '-p',
+          'vg-power',
+          '-p',
+          'vg-ffi',
+          '-p',
+          'auxmacros',
+          '-p',
+          'auxcallback',
+          '-p',
+          'verdigris',
+        ],
+        cargoOptions,
+      );
+    }
     await Juke.exec(
       'cargo',
       ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
-      { cwd: 'verdigris' },
+      cargoOptions,
     );
-    fs.copyFileSync(
-      `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
-      VERDIGRIS_LIB,
-    );
+    try {
+      installVerdigrisLibrary(
+        process.cwd(),
+        built,
+        VERDIGRIS_LIB,
+        VERDIGRIS_RUST_TARGET,
+        process.env.RUSTFLAGS || '',
+      );
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes('lacks generated exports')
+      )
+        throw error;
+      // Cargo can report a cached release artifact as fresh after source files
+      // are restored across worktrees. Rebuild the FFI crate once from scratch.
+      Juke.logger.warn(`verdigris: ${error.message}; rebuilding the FFI crate`);
+      await Juke.exec(
+        'cargo',
+        [
+          'clean',
+          '-p',
+          'vg-ffi',
+          '--release',
+          '--target',
+          VERDIGRIS_RUST_TARGET,
+        ],
+        cargoOptions,
+      );
+      await Juke.exec(
+        'cargo',
+        ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
+        cargoOptions,
+      );
+      installVerdigrisLibrary(
+        process.cwd(),
+        built,
+        VERDIGRIS_LIB,
+        VERDIGRIS_RUST_TARGET,
+        process.env.RUSTFLAGS || '',
+      );
+    }
   },
 });
 // DQAdd End
@@ -369,7 +499,8 @@ export const VerdigrisTarget = new Juke.Target({
 // trust, which hangs headless runs in new worktrees forever. DQ_DD_SECURITY=safe
 // runs without it (safe mode still allows files and DLLs inside the world folder).
 // Test, bench and autowiki worlds default to safe; the server keeps trusted.
-const ddSecurityFlag = (fallback = 'safe') => `-${process.env.DQ_DD_SECURITY || fallback}`;
+const ddSecurityFlag = (fallback = 'safe') =>
+  `-${process.env.DQ_DD_SECURITY || fallback}`;
 
 export const DmTarget = new Juke.Target({
   parameters: [
@@ -421,7 +552,10 @@ export const DmTarget = new Juke.Target({
 
 export const RunsParameter = new Juke.Parameter({ type: 'number' });
 export const WarmupParameter = new Juke.Parameter({ type: 'number' });
-export const ScenarioParameter = new Juke.Parameter({ type: 'string[]', alias: 's' });
+export const ScenarioParameter = new Juke.Parameter({
+  type: 'string[]',
+  alias: 's',
+});
 export const ArgParameter = new Juke.Parameter({ type: 'string[]' });
 export const ProfileParameter = new Juke.Parameter({ type: 'boolean' });
 export const LabelParameter = new Juke.Parameter({ type: 'string' });
@@ -445,18 +579,24 @@ function pickAutoShardCount(): number {
   const priority = process.env.DQ_DD_PRIORITY === '1';
   const free = countFreeDdSlots(priority);
   const count = Math.min(Math.max(free, 2), 6);
-  Juke.logger.info(`dm-test --shards=0 (auto): ${free} dd-slot(s) free right now -> using ${count} shard(s).`);
+  Juke.logger.info(
+    `dm-test --shards=0 (auto): ${free} dd-slot(s) free right now -> using ${count} shard(s).`,
+  );
   return count;
 }
 export const BaseParameter = new Juke.Parameter({ type: 'string' });
 export const HeadParameter = new Juke.Parameter({ type: 'string' });
 export const ThresholdParameter = new Juke.Parameter({ type: 'number' });
-export const FailOnRegressionParameter = new Juke.Parameter({ type: 'boolean' });
+export const FailOnRegressionParameter = new Juke.Parameter({
+  type: 'boolean',
+});
 export const AllParameter = new Juke.Parameter({ type: 'boolean' });
 export const RefParameter = new Juke.Parameter({ type: 'string' });
 
 /** Set in a tree with unfinished work to tolerate dangling or missing includes. */
-const WIP_TREE = !!(process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM);
+const WIP_TREE = !!(
+  process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM
+);
 
 /**
  * Writes the manifest for a test or benchmark build. In a WIP tree
@@ -479,7 +619,9 @@ function writeDerivedDme(target: string): void {
       })
       .join('\n');
     if (dropped.length) {
-      Juke.logger.warn(`DQ_WIP_TREE: dropped ${dropped.length} include(s) of missing files:\n${dropped.map((f) => `  ${f}`).join('\n')}`);
+      Juke.logger.warn(
+        `DQ_WIP_TREE: dropped ${dropped.length} include(s) of missing files:\n${dropped.map((f) => `  ${f}`).join('\n')}`,
+      );
     }
   }
   fs.writeFileSync(target, text);
@@ -503,7 +645,10 @@ function resolveDmeIncludes(dmeText: string): string[] {
     const out: string[] = [];
     for (const seg of combined.replace(/\\/g, '/').split('/')) {
       if (seg === '' || seg === '.') continue;
-      if (seg === '..') { out.pop(); continue; }
+      if (seg === '..') {
+        out.pop();
+        continue;
+      }
       out.push(seg);
     }
     return out.join('/');
@@ -538,7 +683,11 @@ function resolveDmeIncludes(dmeText: string): string[] {
  * Order-independent in the define list; file order is fixed (sorted) so the
  * hash is stable across runs.
  */
-function computeCompileHash(dmeText: string, defines: string[], dmVersion: string | null): string {
+function computeCompileHash(
+  dmeText: string,
+  defines: string[],
+  dmVersion: string | null,
+): string {
   const hash = createHash('sha256');
   hash.update(dmeText);
   for (const file of resolveDmeIncludes(dmeText)) {
@@ -554,7 +703,11 @@ function computeCompileHash(dmeText: string, defines: string[], dmVersion: strin
   return hash.digest('hex');
 }
 
-async function compileDerived(dme: string, get: any, defines: string[]): Promise<void> {
+async function compileDerived(
+  dme: string,
+  get: any,
+  defines: string[],
+): Promise<void> {
   writeDerivedDme(dme);
   const dmeText = fs.readFileSync(dme, 'utf-8');
   const allDefines = [...defines, ...get(DefineParameter)];
@@ -567,7 +720,9 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     try {
       const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
       if (cached.hash === hash) {
-        Juke.logger.info(`compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`);
+        Juke.logger.info(
+          `compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`,
+        );
         return;
       }
     } catch {
@@ -592,7 +747,12 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     throw error;
   }
   fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
-  writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
+  writeJson(cacheFile, {
+    hash,
+    defines: allDefines,
+    dmVersion,
+    compiledAt: new Date().toISOString(),
+  });
 }
 
 type WorldRun = {
@@ -608,6 +768,10 @@ type WorldRun = {
    * results are likely missing or incomplete; always logged as an explicit
    * error rather than folded into an ordinary "not clean". */
   killedByWatchdog: boolean;
+  daemonExitCode: number | null;
+  daemonSignal: string | null;
+  daemonReason: string | null;
+  daemonError: string | null;
 };
 
 /**
@@ -627,9 +791,16 @@ async function runTestWorld(
   Juke.rm('data/bench/scenarios.json');
   fs.mkdirSync('data/bench', { recursive: true });
   const sampler = sample ? new ProcessSampler('data/bench/process.json') : null;
-  const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
+  const params = new URLSearchParams({
+    'log-directory': 'ci',
+    ...worldParams,
+  }).toString();
   const started = Date.now();
   let killedByWatchdog = false;
+  let daemonExitCode: number | null = null;
+  let daemonSignal: string | null = null;
+  let daemonReason: string | null = null;
+  let daemonError: string | null = null;
   try {
     const result = await DreamDaemon(
       {
@@ -645,8 +816,11 @@ async function runTestWorld(
       params,
     );
     killedByWatchdog = !!result.killedByWatchdog;
-  } catch {
-    // DreamDaemon exits non-zero even on clean runs; the files below decide.
+    daemonExitCode = result.code;
+    daemonSignal = result.signal;
+    daemonReason = result.watchdogReason ?? null;
+  } catch (error) {
+    daemonError = String(error);
   }
   const processSummary = sampler ? sampler.stop() : null;
   let cleanText: string | null = null;
@@ -669,11 +843,46 @@ async function runTestWorld(
     process: processSummary,
     samples: sampler?.samples ?? [],
     killedByWatchdog,
+    daemonExitCode,
+    daemonSignal,
+    daemonReason,
+    daemonError,
   };
 }
 
+/** Keep every benchmark boot's outputs before the next boot clears shared paths. */
+function saveBenchIterationDiagnostics(runId: string, iteration: number, run: WorldRun): string {
+  const dest = `data/bench/iterations/${runId}/iteration${iteration}`;
+  fs.mkdirSync(dest, { recursive: true });
+  writeJson(`${dest}/runner.json`, {
+    duration_seconds: run.durationSeconds,
+    clean: run.clean,
+    killed_by_watchdog: run.killedByWatchdog,
+    daemon_exit_code: run.daemonExitCode,
+    daemon_signal: run.daemonSignal,
+    daemon_reason: run.daemonReason,
+    daemon_error: run.daemonError,
+    has_test_results: run.results !== null,
+    has_benchmark_results: fs.existsSync('data/bench/scenarios.json'),
+  });
+  for (const source of ['data/unit_tests.json', 'data/bench/scenarios.json', 'data/bench/process.json']) {
+    if (fs.existsSync(source)) fs.copyFileSync(source, `${dest}/${path.basename(source)}`);
+  }
+  const logSource = 'data/logs/ci';
+  if (fs.existsSync(logSource)) {
+    fs.cpSync(logSource, `${dest}/logs`, {
+      recursive: true,
+      filter: (source) => !path.relative(logSource, source).split(path.sep).includes('profiler'),
+    });
+  }
+  return dest;
+}
+
 function printLogTails(): void {
-  for (const logFile of ['data/logs/ci/tests.log', 'data/logs/ci/runtime.log']) {
+  for (const logFile of [
+    'data/logs/ci/tests.log',
+    'data/logs/ci/runtime.log',
+  ]) {
     if (!fs.existsSync(logFile)) continue;
     const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
     Juke.logger.error(`Last output from ${logFile}:`);
@@ -691,7 +900,9 @@ async function removeDerivedArtifacts(pattern: string): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
-  Juke.logger.warn(`Could not remove ${pattern}; it will be replaced on the next run.`);
+  Juke.logger.warn(
+    `Could not remove ${pattern}; it will be replaced on the next run.`,
+  );
 }
 
 function reportFocus(): void {
@@ -701,27 +912,40 @@ function reportFocus(): void {
     .map((line) => line.trim())
     .filter((line) => line.startsWith('TEST_FOCUS('));
   if (focusedTests.length) {
-    Juke.logger.warn(`Focused unit-test run (${focusedTests.length}): ${focusedTests.join(', ')}`);
+    Juke.logger.warn(
+      `Focused unit-test run (${focusedTests.length}): ${focusedTests.join(', ')}`,
+    );
   } else {
     Juke.logger.info('Full unit-test suite selected.');
   }
 }
 
 /** Stores a test run under data/test-runs/ and prints its summary. */
-function recordTestRun(run: WorldRun, label: string | null, defines: string[]): TestRun | null {
+function recordTestRun(
+  run: WorldRun,
+  label: string | null,
+  defines: string[],
+): TestRun | null {
   if (run.killedByWatchdog) {
     Juke.logger.error(
-      'Unit-test summary: the DreamDaemon watchdog force-killed this world for running past its hard '
-        + `timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ${run.results ? 'Partial' : 'No'} results were captured.`,
+      'Unit-test summary: the DreamDaemon watchdog force-killed this world for running past its hard ' +
+        `timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ${run.results ? 'Partial' : 'No'} results were captured.`,
     );
   }
   if (!run.results) return null;
   recordSweepHashes(run.results);
-  const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
+  const record = testRunRecord(
+    runIdentity(label),
+    label,
+    defines,
+    run.clean,
+    run.durationSeconds,
+    run.results,
+  );
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
-    `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
-      + `in ${Math.round(record.duration_seconds)}s (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
+    `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped ` +
+      `in ${Math.round(record.duration_seconds)}s (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
   );
   console.log(testHotspots(run.results, 20));
   for (const name of record.failed) {
@@ -752,7 +976,10 @@ const DOMAIN_PATTERNS: [RegExp, string][] = [
   [/\bpower\b|reactor|solars?|smes|electric/i, 'power'],
   [/contain(ment|er)/i, 'containment'],
   [/\binteraction\b/i, 'interaction'],
-  [/medical|surgery|disease|genetics|\borgan\b|\bbody\b|physiology|stabilisation|diagnosis/i, 'medical'],
+  [
+    /medical|surgery|disease|genetics|\borgan\b|\bbody\b|physiology|stabilisation|diagnosis/i,
+    'medical',
+  ],
   [/vore|belly/i, 'vore'],
   [/\brule/i, 'rules'],
   [/\bstate\b|latent/i, 'state'],
@@ -776,7 +1003,11 @@ function classifyDomain(filePath: string): string {
 /** Every declared unit-test type, the file it's declared in, and its
  * inferred domain -- a source scan (see enumerateUnitTestTypes()'s doc), not
  * a world boot. */
-function enumerateUnitTestsWithDomain(): { name: string; file: string; domain: string }[] {
+function enumerateUnitTestsWithDomain(): {
+  name: string;
+  file: string;
+  domain: string;
+}[] {
   const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
   const out: { name: string; file: string; domain: string }[] = [];
   for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
@@ -793,7 +1024,8 @@ function enumerateUnitTestsWithDomain(): { name: string; file: string; domain: s
  * tree's own uncommitted changes if there's no `master` ref to diff
  * against -- e.g. a shallow clone). */
 function changedFiles(): string[] {
-  const run = (args: string[]) => spawnSync('git', args, { encoding: 'utf-8', cwd: process.cwd() });
+  const run = (args: string[]) =>
+    spawnSync('git', args, { encoding: 'utf-8', cwd: process.cwd() });
   const base = run(['merge-base', 'master', 'HEAD']);
   if (base.status === 0) {
     const diff = run(['diff', '--name-only', base.stdout.trim()]);
@@ -894,7 +1126,9 @@ function incrementalSkips(): Set<string> {
     if (cache[name] === hash) skip.add(name);
   }
   if (skip.size) {
-    Juke.logger.info(`--incremental: skipping ${skip.size} sweep(s) with unchanged inputs: ${[...skip].join(', ')}.`);
+    Juke.logger.info(
+      `--incremental: skipping ${skip.size} sweep(s) with unchanged inputs: ${[...skip].join(', ')}.`,
+    );
   }
   return skip;
 }
@@ -941,14 +1175,17 @@ function resolveTestSelection(get: any): string[] | null {
   // flags is the default path every existing caller (CI, the
   // merge-to-master run, dq_focused_test.sh) uses, and it must never
   // silently drop tests.
-  if (!tierRaw && !explicitDomains.size && !affected && !incremental) return null;
+  if (!tierRaw && !explicitDomains.size && !affected && !incremental)
+    return null;
   const tier = tierRaw ?? 'fast';
 
   const domains = new Set(explicitDomains);
   if (affected) {
     const touched = affectedDomains();
     if (!touched.size) {
-      Juke.logger.warn('--affected: no changed files found against master; falling back to --tier only.');
+      Juke.logger.warn(
+        '--affected: no changed files found against master; falling back to --tier only.',
+      );
     }
     for (const d of touched) domains.add(d);
   }
@@ -958,14 +1195,16 @@ function resolveTestSelection(get: any): string[] | null {
   const skips = incremental ? incrementalSkips() : null;
   const all = enumerateUnitTestsWithDomain();
   const selected = all
-    .filter((t) => (SWEEP_TEST_NAMES.has(t.name) ? includeSweeps : includeNonSweeps))
+    .filter((t) =>
+      SWEEP_TEST_NAMES.has(t.name) ? includeSweeps : includeNonSweeps,
+    )
     .filter((t) => (domains.size ? domains.has(t.domain) : true))
     .filter((t) => !skips?.has(t.name))
     .map((t) => t.name);
 
   Juke.logger.info(
-    `Test selection: tier=${tier}${domains.size ? `, domains=${[...domains].join(',')}` : ''}`
-      + `${incremental ? ', incremental' : ''} -> ${selected.length}/${all.length} test(s).`,
+    `Test selection: tier=${tier}${domains.size ? `, domains=${[...domains].join(',')}` : ''}` +
+      `${incremental ? ', incremental' : ''} -> ${selected.length}/${all.length} test(s).`,
   );
   return selected;
 }
@@ -1017,7 +1256,10 @@ function enumerateUnitTestTypes(): string[] {
  * heaviest first onto the currently lightest shard. Tests with no
  * historical record get a small default weight, so new tests still balance
  * instead of piling onto shard 0. */
-function assignTestShards(shardCount: number, selection: Set<string> | null): string[][] {
+function assignTestShards(
+  shardCount: number,
+  selection: Set<string> | null,
+): string[][] {
   const shards: string[][] = Array.from({ length: shardCount }, () => []);
   const loads = new Array(shardCount).fill(0);
   const durations = new Map<string, number>();
@@ -1025,21 +1267,26 @@ function assignTestShards(shardCount: number, selection: Set<string> | null): st
   if (runs.length) {
     const latest = readJson<TestRun>(runs[runs.length - 1]);
     for (const [name, entry] of Object.entries(latest.tests)) {
-      if (!SWEEP_TEST_NAMES.has(name)) durations.set(name, entry.duration_ds ?? 1);
+      if (!SWEEP_TEST_NAMES.has(name))
+        durations.set(name, entry.duration_ds ?? 1);
     }
   }
   const known = new Set(durations.keys());
   for (const name of enumerateUnitTestTypes()) {
     if (!SWEEP_TEST_NAMES.has(name)) known.add(name);
   }
-  if (selection) for (const name of [...known]) if (!selection.has(name)) known.delete(name);
+  if (selection)
+    for (const name of [...known]) if (!selection.has(name)) known.delete(name);
   const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick
   const sorted = [...known].sort(
-    (a, b) => (durations.get(b) ?? DEFAULT_WEIGHT_DS) - (durations.get(a) ?? DEFAULT_WEIGHT_DS),
+    (a, b) =>
+      (durations.get(b) ?? DEFAULT_WEIGHT_DS) -
+      (durations.get(a) ?? DEFAULT_WEIGHT_DS),
   );
   for (const name of sorted) {
     let lightest = 0;
-    for (let i = 1; i < shardCount; i++) if (loads[i] < loads[lightest]) lightest = i;
+    for (let i = 1; i < shardCount; i++)
+      if (loads[i] < loads[lightest]) lightest = i;
     shards[lightest].push(name);
     loads[lightest] += durations.get(name) ?? DEFAULT_WEIGHT_DS;
   }
@@ -1085,7 +1332,10 @@ async function runShardWorld(
   // linear, since per-world boot/settle overhead and any single still-heavy
   // sweep slice don't shrink that fast. Floored at 12 minutes;
   // DQ_DD_WATCHDOG_MINUTES (read in lib/byond.ts) overrides this entirely.
-  const shardWatchdogMs = Math.max(Math.round((45 / Math.sqrt(shardCount)) * 60 * 1000), 12 * 60 * 1000);
+  const shardWatchdogMs = Math.max(
+    Math.round((45 / Math.sqrt(shardCount)) * 60 * 1000),
+    12 * 60 * 1000,
+  );
   const started = Date.now();
   let killedByWatchdog = false;
   try {
@@ -1162,7 +1412,8 @@ function mergeShardResults(runs: ShardRun[]): {
         merged[name] = { ...entry };
         continue;
       }
-      const existingWins = statusPriority(existing.status) >= statusPriority(entry.status);
+      const existingWins =
+        statusPriority(existing.status) >= statusPriority(entry.status);
       merged[name] = {
         status: existingWins ? existing.status : entry.status,
         message: existingWins ? existing.message : entry.message,
@@ -1196,38 +1447,56 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   let selectFile: string | null = null;
   if (selection) {
     selectFile = `${SHARD_DIR}/select.txt`;
-    fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
+    fs.writeFileSync(
+      selectFile,
+      selection.length ? `${selection.join('\n')}\n` : '',
+    );
   }
   const assignment = assignTestShards(shardCount, selectionSet);
   const testFiles: string[] = [];
   for (let i = 0; i < shardCount; i++) {
     const file = `${SHARD_DIR}/shard-${i}-of-${shardCount}.txt`;
-    fs.writeFileSync(file, assignment[i].length ? `${assignment[i].join('\n')}\n` : '');
+    fs.writeFileSync(
+      file,
+      assignment[i].length ? `${assignment[i].join('\n')}\n` : '',
+    );
     testFiles.push(file);
   }
   Juke.logger.info(
-    `dm-test --shards=${shardCount}: `
-      + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `
-      + `plus every sweep test in each shard${selection ? ' that matches the selection' : ''}.`,
+    `dm-test --shards=${shardCount}: ` +
+      `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, ` +
+      `plus every sweep test in each shard${selection ? ' that matches the selection' : ''}.`,
   );
   const shardWatchdogMinutes = Math.max(45 / Math.sqrt(shardCount), 12);
   const started = Date.now();
   const runs = await Promise.all(
     Array.from({ length: shardCount }, (_, i) =>
-      runShardWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), i, shardCount, testFiles[i], priority, selectFile)),
+      runShardWorld(
+        `${DME_NAME}.test.dmb`,
+        get(DmVersionParameter),
+        i,
+        shardCount,
+        testFiles[i],
+        priority,
+        selectFile,
+      ),
+    ),
   );
   const wallSeconds = (Date.now() - started) / 1000;
   for (const run of runs) {
     if (run.killedByWatchdog) {
       Juke.logger.error(
-        `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its `
-          + `${Math.round(shardWatchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
-          + `${run.results ? 'Partial' : 'No'} results were captured.`,
+        `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its ` +
+          `${Math.round(shardWatchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ` +
+          `${run.results ? 'Partial' : 'No'} results were captured.`,
       );
     }
     if (!run.clean) {
       Juke.logger.error(`Shard ${run.index} was not clean:`);
-      for (const logFile of [`data/logs/shard${run.index}/tests.log`, `data/logs/shard${run.index}/runtime.log`]) {
+      for (const logFile of [
+        `data/logs/shard${run.index}/tests.log`,
+        `data/logs/shard${run.index}/runtime.log`,
+      ]) {
         if (!fs.existsSync(logFile)) continue;
         const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
         console.error(lines.slice(-40).join('\n'));
@@ -1246,9 +1515,9 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   );
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
-    `Unit-test summary (${shardCount} shards): ${record.counts.passed} passed, ${record.counts.failed} failed, `
-      + `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall / ~${Math.round(totalCpuSeconds)}s `
-      + `summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
+    `Unit-test summary (${shardCount} shards): ${record.counts.passed} passed, ${record.counts.failed} failed, ` +
+      `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall / ~${Math.round(totalCpuSeconds)}s ` +
+      `summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
   );
   console.log(testHotspots(results, 20));
   for (const name of record.failed) {
@@ -1283,7 +1552,10 @@ export const DmTestTarget = new Juke.Target({
   ],
   executes: async ({ get }) => {
     const requestedShards = get(ShardsParameter);
-    const shardCount = requestedShards === 0 ? pickAutoShardCount() : Math.max(requestedShards ?? 1, 1);
+    const shardCount =
+      requestedShards === 0
+        ? pickAutoShardCount()
+        : Math.max(requestedShards ?? 1, 1);
     if (shardCount > 1) {
       await runSharded(shardCount, get);
       return;
@@ -1295,10 +1567,18 @@ export const DmTestTarget = new Juke.Target({
     if (selection) {
       fs.mkdirSync(SHARD_DIR, { recursive: true });
       const selectFile = `${SHARD_DIR}/select.txt`;
-      fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
+      fs.writeFileSync(
+        selectFile,
+        selection.length ? `${selection.join('\n')}\n` : '',
+      );
       worldParams = { 'test-select': selectFile };
     }
-    const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, false);
+    const run = await runTestWorld(
+      `${DME_NAME}.test.dmb`,
+      get(DmVersionParameter),
+      worldParams,
+      false,
+    );
     if (!run.clean) printLogTails();
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
     // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an
@@ -1320,8 +1600,19 @@ export const DmTestTarget = new Juke.Target({
  * consistent and flaky. `--runs` defaults to 3.
  */
 export const TestRepeatTarget = new Juke.Target({
-  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, RunsParameter],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  parameters: [
+    DefineParameter,
+    DmVersionParameter,
+    WarningParameter,
+    NoWarningParameter,
+    RunsParameter,
+  ],
+  dependsOn: [
+    IconRepackTarget,
+    ValidateDmeTarget,
+    VerdigrisTarget,
+    MapBoundsTarget,
+  ],
   executes: async ({ get }) => {
     const runs = Math.max(get(RunsParameter) ?? 3, 1);
     reportFocus();
@@ -1329,25 +1620,43 @@ export const TestRepeatTarget = new Juke.Target({
     const outcomes: Record<string, number[]> = {};
     for (let i = 1; i <= runs; i++) {
       Juke.logger.info(`Test repeat ${i}/${runs}`);
-      const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), {}, false);
+      const run = await runTestWorld(
+        `${DME_NAME}.test.dmb`,
+        get(DmVersionParameter),
+        {},
+        false,
+      );
       recordTestRun(run, `repeat${i}of${runs}`, get(DefineParameter));
       for (const [name, result] of Object.entries(run.results ?? {})) {
-        (outcomes[name] ??= []).push(result.status);
+        outcomes[name] ??= [];
+        outcomes[name].push(result.status);
       }
     }
     // See the matching comment in DmTestTarget: keep the .dmb/.rsc for reuse.
     await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
-    const consistent = Object.entries(outcomes).filter(([, s]) => s.length === runs && s.every((v) => v === 1));
-    const flaky = Object.entries(outcomes).filter(([, s]) => s.includes(1) && !s.every((v) => v === 1));
-    Juke.logger.info(`Across ${runs} runs: ${consistent.length} consistent failure(s), ${flaky.length} flaky test(s).`);
+    const consistent = Object.entries(outcomes).filter(
+      ([, s]) => s.length === runs && s.every((v) => v === 1),
+    );
+    const flaky = Object.entries(outcomes).filter(
+      ([, s]) => s.includes(1) && !s.every((v) => v === 1),
+    );
+    Juke.logger.info(
+      `Across ${runs} runs: ${consistent.length} consistent failure(s), ${flaky.length} flaky test(s).`,
+    );
     for (const [name] of consistent) console.log(`  always fails  ${name}`);
-    for (const [name, s] of flaky) console.log(`  flaky ${s.filter((v) => v === 1).length}/${s.length}   ${name}`);
+    for (const [name, s] of flaky)
+      console.log(
+        `  flaky ${s.filter((v) => v === 1).length}/${s.length}   ${name}`,
+      );
     if (consistent.length || flaky.length) throw new Juke.ExitCode(1);
   },
 });
 
 /** Prints new, fixed and shared failures between two stored test runs. */
-function compareTestRuns(base: TestRun, head: TestRun): { newFailures: string[] } {
+function compareTestRuns(
+  base: TestRun,
+  head: TestRun,
+): { newFailures: string[] } {
   const baseFailed = new Set(base.failed);
   const headFailed = new Set(head.failed);
   const newFailures = head.failed.filter((t) => !baseFailed.has(t));
@@ -1355,7 +1664,9 @@ function compareTestRuns(base: TestRun, head: TestRun): { newFailures: string[] 
   const shared = head.failed.filter((t) => baseFailed.has(t));
   const missing = Object.keys(base.tests).filter((t) => !(t in head.tests));
   const added = Object.keys(head.tests).filter((t) => !(t in base.tests));
-  console.log(`Base ${base.id} (${base.counts.failed} failed) -> head ${head.id} (${head.counts.failed} failed)`);
+  console.log(
+    `Base ${base.id} (${base.counts.failed} failed) -> head ${head.id} (${head.counts.failed} failed)`,
+  );
   const section = (title: string, items: string[]) => {
     if (!items.length) return;
     console.log(`${title} (${items.length}):`);
@@ -1372,9 +1683,14 @@ function compareTestRuns(base: TestRun, head: TestRun): { newFailures: string[] 
 export const TestCompareTarget = new Juke.Target({
   parameters: [BaseParameter, HeadParameter],
   executes: async ({ get }) => {
-    const base = readJson<TestRun>(resolveRun(TEST_RUNS_DIR, get(BaseParameter) || 'previous'));
-    const head = readJson<TestRun>(resolveRun(TEST_RUNS_DIR, get(HeadParameter) || 'latest'));
-    if (compareTestRuns(base, head).newFailures.length) throw new Juke.ExitCode(1);
+    const base = readJson<TestRun>(
+      resolveRun(TEST_RUNS_DIR, get(BaseParameter) || 'previous'),
+    );
+    const head = readJson<TestRun>(
+      resolveRun(TEST_RUNS_DIR, get(HeadParameter) || 'latest'),
+    );
+    if (compareTestRuns(base, head).newFailures.length)
+      throw new Juke.ExitCode(1);
   },
 });
 
@@ -1387,7 +1703,9 @@ export const TestBaselineTarget = new Juke.Target({
   parameters: [RefParameter, DefineParameter],
   executes: async ({ get }) => {
     const ref = get(RefParameter) || 'HEAD';
-    const commit = spawnSync('git', ['rev-parse', '--short=10', ref], { encoding: 'utf-8' }).stdout.trim();
+    const commit = spawnSync('git', ['rev-parse', '--short=10', ref], {
+      encoding: 'utf-8',
+    }).stdout.trim();
     if (!commit) {
       Juke.logger.error(`Unknown git ref '${ref}'.`);
       throw new Juke.ExitCode(1);
@@ -1395,42 +1713,70 @@ export const TestBaselineTarget = new Juke.Target({
     const root = process.cwd();
     const worktree = path.join(os.tmpdir(), `dq-baseline-${commit}`);
     if (!fs.existsSync(worktree)) {
-      Juke.logger.info(`Creating baseline worktree for ${ref} (${commit}) at ${worktree}`);
+      Juke.logger.info(
+        `Creating baseline worktree for ${ref} (${commit}) at ${worktree}`,
+      );
       await Juke.exec('git', ['worktree', 'add', '--detach', worktree, commit]);
     } else {
       Juke.logger.info(`Reusing baseline worktree ${worktree}`);
     }
     // Seed the generated icons so the repack only redoes what differs.
-    if (fs.existsSync('icons/gen') && !fs.existsSync(path.join(worktree, 'icons/gen'))) {
-      fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
+    if (
+      fs.existsSync('icons/gen') &&
+      !fs.existsSync(path.join(worktree, 'icons/gen'))
+    ) {
+      fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), {
+        recursive: true,
+      });
     }
-    const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
+    const script =
+      process.platform === 'win32'
+        ? 'tools\\build\\build.bat'
+        : 'tools/build/build.sh';
     const defines = get(DefineParameter).flatMap((d) => ['-D', d]);
     try {
-      await Juke.exec(script, ['dm-test', '--label', `baseline-${commit}`, ...defines], {
-        cwd: worktree,
-        shell: process.platform === 'win32',
-        env: { ...process.env, CARGO_TARGET_DIR: path.join(root, 'verdigris', 'target') },
-      });
+      await Juke.exec(
+        script,
+        ['dm-test', '--label', `baseline-${commit}`, ...defines],
+        {
+          cwd: worktree,
+          shell: process.platform === 'win32',
+          env: {
+            ...process.env,
+            CARGO_TARGET_DIR: path.join(root, 'verdigris', 'target'),
+          },
+        },
+      );
     } catch {
       // failures are expected; the record decides
     }
     const baselineRuns = listRuns(path.join(worktree, TEST_RUNS_DIR));
     if (!baselineRuns.length) {
-      Juke.logger.error('The baseline run produced no results (compile or boot failure). See the output above.');
+      Juke.logger.error(
+        'The baseline run produced no results (compile or boot failure). See the output above.',
+      );
       throw new Juke.ExitCode(1);
     }
     const baselineFile = baselineRuns[baselineRuns.length - 1];
     const copied = path.join(TEST_RUNS_DIR, path.basename(baselineFile));
     fs.mkdirSync(TEST_RUNS_DIR, { recursive: true });
     fs.copyFileSync(baselineFile, copied);
-    const local = listRuns(TEST_RUNS_DIR).filter((f) => !path.basename(f).includes('baseline-'));
+    const local = listRuns(TEST_RUNS_DIR).filter(
+      (f) => !path.basename(f).includes('baseline-'),
+    );
     if (!local.length) {
-      Juke.logger.warn('No local test run to compare against; run dm-test first. Baseline saved.');
+      Juke.logger.warn(
+        'No local test run to compare against; run dm-test first. Baseline saved.',
+      );
       return;
     }
-    compareTestRuns(readJson<TestRun>(copied), readJson<TestRun>(local[local.length - 1]));
-    Juke.logger.info(`Remove the worktree when done: git worktree remove --force ${worktree}`);
+    compareTestRuns(
+      readJson<TestRun>(copied),
+      readJson<TestRun>(local[local.length - 1]),
+    );
+    Juke.logger.info(
+      `Remove the worktree when done: git worktree remove --force ${worktree}`,
+    );
   },
 });
 
@@ -1441,38 +1787,78 @@ export const TestBaselineTarget = new Juke.Target({
  */
 export const BenchTarget = new Juke.Target({
   parameters: [
-    DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter,
-    ScenarioParameter, RunsParameter, WarmupParameter, ArgParameter, ProfileParameter, LabelParameter,
+    DefineParameter,
+    DmVersionParameter,
+    WarningParameter,
+    NoWarningParameter,
+    ScenarioParameter,
+    RunsParameter,
+    WarmupParameter,
+    ArgParameter,
+    ProfileParameter,
+    LabelParameter,
   ],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: [
+    IconRepackTarget,
+    ValidateDmeTarget,
+    VerdigrisTarget,
+    MapBoundsTarget,
+  ],
   executes: async ({ get }) => {
     const scenarios = get(ScenarioParameter).flatMap((s) => s.split(','));
     const runs = Math.max(get(RunsParameter) ?? 1, 1);
     const warmup = Math.max(get(WarmupParameter) ?? (runs > 1 ? 1 : 0), 0);
-    const worldParams: Record<string, string> = { bench: scenarios.length ? scenarios.join(',') : 'default' };
+    const worldParams: Record<string, string> = {
+      bench: scenarios.length ? scenarios.join(',') : 'default',
+    };
     if (get(ProfileParameter)) worldParams.bench_profile = '1';
     for (const arg of get(ArgParameter)) {
       const [key, ...rest] = arg.split('=');
       worldParams[`bench_${key}`] = rest.join('=');
     }
-    await compileDerived(`${DME_NAME}.bench.dme`, get, [...TEST_DEFINES, 'BENCHMARK']);
+    await compileDerived(`${DME_NAME}.bench.dme`, get, [
+      ...TEST_DEFINES,
+      'BENCHMARK',
+    ]);
     const identity = runIdentity(get(LabelParameter));
     const iterations: BenchIteration[] = [];
     const failures: string[] = [];
     for (let i = 1; i <= warmup + runs; i++) {
       const isWarmup = i <= warmup;
-      Juke.logger.info(`Benchmark iteration ${i}/${warmup + runs}${isWarmup ? ' (warm-up, not counted)' : ''}`);
-      const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
+      Juke.logger.info(
+        `Benchmark iteration ${i}/${warmup + runs}${isWarmup ? ' (warm-up, not counted)' : ''}`,
+      );
+      const run = await runTestWorld(
+        `${DME_NAME}.bench.dmb`,
+        get(DmVersionParameter),
+        worldParams,
+        true,
+      );
+      const diagnostics = saveBenchIterationDiagnostics(identity.id, i, run);
       let world: WorldBenchDocument;
       try {
         world = readJson<WorldBenchDocument>('data/bench/scenarios.json');
       } catch {
         printLogTails();
-        failures.push(`iteration ${i}: the world wrote no benchmark results`);
+        failures.push(
+          `iteration ${i}: the world wrote no benchmark results ` +
+          `(daemon ${run.daemonReason ?? 'unknown'}, exit ${run.daemonExitCode ?? 'unknown'}, ` +
+          `watchdog ${run.killedByWatchdog ? 'timed out' : 'no'}; diagnostics: ${diagnostics})`,
+        );
         continue;
       }
+      if (run.killedByWatchdog || run.daemonError) {
+        failures.push(
+          `iteration ${i}: DreamDaemon ${run.daemonError ?? run.daemonReason ?? 'failed'}; ` +
+          `diagnostics: ${diagnostics}`,
+        );
+      }
       for (const scenario of Object.values(world.scenarios)) {
-        if (scenario.status !== 'passed') failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}`);
+        if (scenario.status !== 'passed')
+          failures.push(
+            `iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}; ` +
+            `diagnostics: ${diagnostics}`,
+          );
       }
       const profiles: string[] = [];
       if (fs.existsSync('data/logs/ci/profiler')) {
@@ -1511,7 +1897,9 @@ export const BenchTarget = new Juke.Target({
       console.log(`\n${scenario}`);
       for (const [name, stats] of Object.entries(metrics)) {
         const spread = stats.n > 1 ? ` ±${formatNumber(stats.stdev)}` : '';
-        console.log(`  ${name.padEnd(40)} ${formatNumber(stats.median).padStart(10)} ${stats.unit}${spread}`);
+        console.log(
+          `  ${name.padEnd(40)} ${formatNumber(stats.median).padStart(10)} ${stats.unit}${spread}`,
+        );
       }
     }
     Juke.logger.info(`Saved ${file}`);
@@ -1533,27 +1921,42 @@ export const BenchTarget = new Juke.Target({
 });
 
 export const BenchCompareTarget = new Juke.Target({
-  parameters: [BaseParameter, HeadParameter, ThresholdParameter, FailOnRegressionParameter, AllParameter],
+  parameters: [
+    BaseParameter,
+    HeadParameter,
+    ThresholdParameter,
+    FailOnRegressionParameter,
+    AllParameter,
+  ],
   executes: async ({ get }) => {
-    const baseFile = resolveRun(BENCH_RUNS_DIR, get(BaseParameter) || 'previous');
+    const baseFile = resolveRun(
+      BENCH_RUNS_DIR,
+      get(BaseParameter) || 'previous',
+    );
     const headFile = resolveRun(BENCH_RUNS_DIR, get(HeadParameter) || 'latest');
     const base = readJson<BenchRun>(baseFile);
     const head = readJson<BenchRun>(headFile);
-    if (base.map !== head.map) Juke.logger.warn(`Comparing different maps: ${base.map} vs ${head.map}`);
+    if (base.map !== head.map)
+      Juke.logger.warn(`Comparing different maps: ${base.map} vs ${head.map}`);
     const rows = compareRuns(base, head, get(ThresholdParameter) ?? 5);
     console.log(`Base ${base.id}\nHead ${head.id}\n`);
     console.log(formatComparison(rows, !get(AllParameter)));
     const regressions = rows.filter((r) => r.verdict === 'regression');
     const improvements = rows.filter((r) => r.verdict === 'improvement');
-    Juke.logger.info(`${regressions.length} regression(s), ${improvements.length} improvement(s), ${rows.length} metrics compared.`);
-    if (get(FailOnRegressionParameter) && regressions.length) throw new Juke.ExitCode(1);
+    Juke.logger.info(
+      `${regressions.length} regression(s), ${improvements.length} improvement(s), ${rows.length} metrics compared.`,
+    );
+    if (get(FailOnRegressionParameter) && regressions.length)
+      throw new Juke.ExitCode(1);
   },
 });
 
 export const BenchReportTarget = new Juke.Target({
   executes: async () => {
     const { runs, tests } = renderReport('data/bench/report.html');
-    Juke.logger.info(`Wrote data/bench/report.html (${runs} benchmark runs, ${tests} test runs).`);
+    Juke.logger.info(
+      `Wrote data/bench/report.html (${runs} benchmark runs, ${tests} test runs).`,
+    );
   },
 });
 
@@ -1778,9 +2181,9 @@ export const TguiTarget = new Juke.Target({
     // and the partial bundle isn't accepted.
     if (!tguiBundleComplete()) {
       throw new Error(
-        'tgui build finished but the bundle is incomplete (missing/empty interface '
-          + 'chunks). Re-run the build; if it persists, delete '
-          + 'tgui/public/*.{bundle,chunk}.* and rebuild.',
+        'tgui build finished but the bundle is incomplete (missing/empty interface ' +
+          'chunks). Re-run the build; if it persists, delete ' +
+          'tgui/public/*.{bundle,chunk}.* and rebuild.',
       );
     }
   },
@@ -1832,7 +2235,8 @@ export const DreamCheckerTarget = new Juke.Target({
     // release builds lint a UNIT_TESTS manifest instead of production code.
     const stashDirectory = 'data/.dreamchecker-dme-stash';
     fs.mkdirSync(stashDirectory, { recursive: true });
-    const stashed = fs.readdirSync('.')
+    const stashed = fs
+      .readdirSync('.')
       .filter((name) => name.endsWith('.dme') && name !== `${DME_NAME}.dme`)
       .map((name) => {
         const destination = `${stashDirectory}/${name}`;

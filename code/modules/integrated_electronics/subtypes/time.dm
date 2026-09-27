@@ -25,7 +25,10 @@
 		var/new_delay = CLAMP(delay_input, 1, 1 HOUR)
 		delay = new_delay
 
-	addtimer(CALLBACK(src, PROC_REF(activate_pin), 2), delay)
+	After(delay, PROC_REF(on_delayed_pulse))
+
+/obj/item/integrated_circuit/time/delay/proc/on_delayed_pulse()
+	activate_pin(2)
 
 /obj/item/integrated_circuit/time/ticker
 	name = "ticker circuit"
@@ -43,6 +46,7 @@
 	var/delay = 2 SECONDS
 	var/next_fire = 0
 	var/is_running = FALSE
+	var/datum/object_model/schedule_entry/tick_timer
 	// Power consumption scales based on how fast it ticks.
 	// This, plus the fact it ticks more often will increase consumption non-linearly,
 	// and the circuit cooldown and will hopefully discourage stupidly fast ticking machines.
@@ -62,11 +66,25 @@
 		tick()
 	else if(!do_tick && is_running)
 		is_running = FALSE
+		if(tick_timer)
+			qdel(tick_timer)
+			tick_timer = null
 
+/obj/item/integrated_circuit/time/ticker/Destroy()
+	if(tick_timer)
+		qdel(tick_timer)
+		tick_timer = null
+	return ..()
+
+/obj/item/integrated_circuit/time/ticker/proc/on_tick_due()
+	tick_timer = null
+	tick()
 
 /obj/item/integrated_circuit/time/ticker/proc/tick()
 	if(is_running && check_power())
-		addtimer(CALLBACK(src, PROC_REF(tick)), delay)
+		if(tick_timer)
+			qdel(tick_timer)
+		tick_timer = After(delay, PROC_REF(on_tick_due))
 		if(world.time > next_fire)
 			next_fire = world.time + delay
 			activate_pin(1)

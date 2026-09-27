@@ -89,7 +89,7 @@
 	var/instrument = P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB | PRESENT_SYNTHETIC | PRESENT_NANITE)
 	var/eyes = P.senses & PRESENT_VISIBLE
 	for(var/datum/affliction/A as anything in afflictions)
-		var/where = (P.localize && A.location) ? "[A.location.name]" : ""
+		var/where = P.localize ? (A.location_name() || "") : ""
 		var/band = dq_qualitative_damage_band(A.diagnostic_severity(), 100)
 		if(A.perceived_by(P) && band != DIAG_BAND_NONE)
 			var/datum/diagnosis_finding/F = D.add_finding(new /datum/diagnosis_finding(A.diagnostic_name(), A.finding_kind(), band, where, A.type))
@@ -154,6 +154,8 @@
 /datum/body/humanoid/diagnose_plan(datum/diagnosis/D, datum/diagnostic_profile/P)
 	..()
 	var/mob/living/carbon/human/H = owner
+	if(!istype(H))
+		return
 	var/instrument = P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB)
 	if(instrument)
 		if(H.should_have_organ(O_BRAIN) && (D.fake_death || H.is_brain_dead() || !H.has_brain()))

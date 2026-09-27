@@ -89,6 +89,13 @@ list entry or DM loop per timer, and timers share the lanes with watch and key w
 and a watch landing in one tick merge into one `on_react()`. A DM wheel would need a per-timer
 record and a bucket scan per tick, which is what SStimer already pays for.
 
+This applies to bare `REACT_AT` registrations. The object-model owned
+`schedule_entry` wrapper allocates a DM datum, and `REACT_EVERY` is a DM
+continuous list. Opt-in scheduled behaviours instead keep one DM timer per
+entity, with separate deadlines per behaviour; the shared `SSreactor` dispatches
+their pending work after native wakes. This avoids FFI traffic for DM-only
+deadlines while retaining native watches where the watched state lives in Rust.
+
 ## 4. DM-owned keys
 
 State that only DM changes (door modes, area alarms, turret targets) is published with `REACT_PUBLISH`.

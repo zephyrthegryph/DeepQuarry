@@ -799,6 +799,12 @@ fn component_glue(
             };
             let id = ::vg_ffi::entity::bind_or_reuse(entity.get_number()?)?;
             let entity_v = ::vg_ffi::entity::entity_value(id);
+            if let ::std::option::Option::Some(installed_kind) = ::vg_ffi::entity::kind_of(id, DOMAIN)? {
+                if installed_kind == #struct_ident::KIND {
+                    return ::std::result::Result::Ok(::byondapi::value::ByondValue::from(entity_v));
+                }
+                ::eyre::bail!("domain {} already has component kind {}; cannot bind kind {}", DOMAIN, installed_kind, #struct_ident::KIND);
+            }
             let cell = #with_fn(|w| w.bind(entity_v, value).map_err(|e| ::eyre::eyre!("{} bind: {}", #dm, e)))?;
             ::vg_ffi::entity::attach(id, DOMAIN, ::vg_core::entity::ComponentRef::new(#struct_ident::KIND, cell)).map_err(|e| ::eyre::eyre!("{e}"))?;
             ::std::result::Result::Ok(::byondapi::value::ByondValue::from(entity_v))

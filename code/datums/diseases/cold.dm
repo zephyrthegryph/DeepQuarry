@@ -63,3 +63,22 @@
 					var/datum/disease/Flu = new /datum/disease/flu(0)
 					affected_mob.ContractDisease(Flu)
 					cure()
+
+/datum/disease/cold/stage_biology()
+	if(!..())
+		return FALSE
+	switch(stage)
+		if(2)
+			if((affected_mob.stat == UNCONSCIOUS && prob(40)) || (affected_mob.lying && prob(10)) || (prob(1) && prob(5)))
+				cure()
+				return FALSE
+		if(3)
+			if((affected_mob.stat == UNCONSCIOUS && prob(25)) || (affected_mob.lying && prob(5)) || (prob(1) && prob(1)))
+				cure()
+				return FALSE
+			if(prob(1) && prob(50) && affected_mob.HasResistance(/datum/disease/flu))
+				var/datum/disease/Flu = new /datum/disease/flu(0)
+				affected_mob.ContractDisease(Flu)
+				cure()
+				return FALSE
+	return TRUE

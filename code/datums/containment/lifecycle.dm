@@ -10,20 +10,22 @@
 
 /// Phase 0.5. Resolves every is_mind_slot across `root`'s whole holder tree,
 /// pre-order (root before its children, so a body's mind slot resolves
-/// before a head's, before a brain's): the mob is still fully registered and
-/// has a loc when each TRANSFER(mind) resolver runs. A no-op today -- no
-/// slot_def sets is_mind_slot yet (DQ Medical, O2) -- and cheap when so: one
+/// before a head's, before a brain's): the mob still has a loc when each
+/// TRANSFER(mind) resolver runs, although the root is already marked for
+/// deletion. A no-op today -- no production slot_def sets is_mind_slot yet
+/// (DQ Medical, O2) -- and cheap when so: one
 /// ledger peek and a defs walk per holder in the tree, nothing per thing.
 /proc/dq_lifecycle_resolve_minds(atom/movable/root)
 	var/datum/ledger/L = dq_ledger_peek(root)
 	if(L)
 		for(var/datum/slot_def/def as anything in L.defs)
-			if(!def.is_mind_slot)
+			if(!def.is_mind_slot || def.drop_policy == SLOT_DROP_HOLDER)
 				continue
+			var/atom/drop = root.drop_location()
+			def.drop_latent(root, drop)
 			var/list/things = L.slots[def.id]
 			if(!length(things))
 				continue
-			var/atom/drop = root.drop_location()
 			for(var/atom/movable/thing as anything in things.Copy())
 				if(!QDELETED(thing))
 					dq_lifecycle_resolve_slot_entry(root, def, thing, drop, null)
@@ -35,7 +37,7 @@
 /// SLOT_DROP_DELETE -- see file header). Skips is_mind_slot entries: phase
 /// 0.5 already resolved those, tree-wide, before this ever runs.
 /atom/movable/proc/dq_lifecycle_resolve_contents()
-	var/datum/ledger/L = dq_ledger(src) // builds it (and resolves a latent generator) if this is its first use
+	var/datum/ledger/L = dq_ledger(src, TRUE) // phase 3 may first resolve a QDELETED holder's latent generator
 	if(!L)
 		return
 	var/atom/drop = drop_location()
@@ -43,6 +45,7 @@
 	for(var/datum/slot_def/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
 			continue
+		def.drop_latent(src, drop)
 		var/list/things = L.slots[def.id]
 		for(var/atom/movable/thing as anything in things.Copy())
 			if(!QDELETED(thing))

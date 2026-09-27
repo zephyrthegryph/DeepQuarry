@@ -42,3 +42,27 @@
 				affected_mob.automatic_custom_emote(VISIBLE_MESSAGE, "winces painfully.", check_stat = TRUE)
 				affected_mob.Stun(rand(4, 6))
 				affected_mob.injure(INJURY_TOXIN, 2, affliction = /datum/affliction/appendiceal_sepsis, flags = INJURE_SILENT)
+
+/datum/disease/appendicitis/stage_biology()
+	if(!..())
+		return FALSE
+	switch(stage)
+		if(1)
+			if(prob(5))
+				affected_mob.injure(INJURY_TOXIN, 1, affliction = /datum/affliction/appendiceal_sepsis, flags = INJURE_SILENT)
+		if(2)
+			var/obj/item/organ/internal/appendix/A = affected_mob.internal_organs_by_name[O_APPENDIX]
+			if(A)
+				A.inflamed = TRUE
+			if(prob(3))
+				affected_mob.Stun(rand(4, 6))
+				affected_mob.injure(INJURY_TOXIN, 1, affliction = /datum/affliction/appendiceal_sepsis, flags = INJURE_SILENT)
+		if(3)
+			if(prob(1))
+				affected_mob.Weaken(10)
+			if(prob(1))
+				affected_mob.do_vomit(95, message = FALSE)
+			if(prob(5))
+				affected_mob.Stun(rand(4, 6))
+				affected_mob.injure(INJURY_TOXIN, 2, affliction = /datum/affliction/appendiceal_sepsis, flags = INJURE_SILENT)
+	return TRUE

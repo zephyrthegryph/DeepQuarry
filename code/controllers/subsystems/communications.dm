@@ -115,6 +115,58 @@ SUBSYSTEM_DEF(radio)
 	var/frequency as num
 	var/list/list/obj/devices = list()
 
+// SSradio's filtered device lists remain the registration authority. Expose
+// membership to object-model readers without allocating a second edge per radio.
+/datum/object_model/relation/radio_listener
+	from_type = /datum/radio_frequency
+	to_type = /obj
+	virtual = TRUE
+	changes_revision = FALSE
+
+/datum/object_model/relation/radio_listener/query_from(datum/source)
+	var/datum/radio_frequency/channel = source
+	var/list/result = list()
+	if(!istype(channel))
+		return result
+	for(var/filter_key in channel.devices)
+		result |= channel.devices[filter_key]
+	return result
+
+/datum/object_model/relation/radio_listener/query_to(datum/target)
+	var/list/result = list()
+	if(!isobj(target) || !SSradio)
+		return result
+	var/obj/device = target
+	for(var/frequency_key in SSradio.frequencies)
+		var/datum/radio_frequency/channel = SSradio.frequencies[frequency_key]
+		if(channel.listener_registered(device))
+			result += channel
+	return result
+
+/datum/object_model/relation/radio_listener/virtual_has(datum/source, datum/target)
+	var/datum/radio_frequency/channel = source
+	if(!istype(channel) || !isobj(target))
+		return FALSE
+	var/obj/device = target
+	return channel.listener_registered(device)
+
+/datum/radio_frequency/proc/listener_registered(obj/device)
+	for(var/filter_key in devices)
+		if(device in devices[filter_key])
+			return TRUE
+	return FALSE
+
+/datum/radio_frequency/proc/listener_membership_changed(obj/device)
+	if(!om_state && !device?.om_state)
+		return
+	om_derived_relation_membership_changed(src, /datum/object_model/relation/radio_listener, device)
+	if(om_state)
+		om_changed(src, "radio_listeners")
+		om_bump_revision_if_tracked(src)
+	if(device?.om_state)
+		om_changed(device, "radio_frequencies")
+		om_bump_revision_if_tracked(device)
+
 /datum/radio_frequency/proc/post_signal(obj/source as obj|null, datum/signal/signal, radio_filter = null as text|null, range = null as num|null)
 	var/turf/start_point
 	if(range)
@@ -148,6 +200,7 @@ SUBSYSTEM_DEF(radio)
 		device.receive_signal(signal, TRANSMISSION_RADIO, frequency)
 
 /datum/radio_frequency/proc/add_listener(obj/device as obj, radio_filter as text|null)
+	var/was_registered = listener_registered(device)
 	if (!radio_filter)
 		radio_filter = RADIO_DEFAULT
 	//log_admin("add_listener(device=[device],radio_filter=[radio_filter]) frequency=[frequency]")
@@ -156,8 +209,11 @@ SUBSYSTEM_DEF(radio)
 		devices_line = new
 		devices[radio_filter] = devices_line
 	devices_line |= device // idempotent: on_materialize() may rejoin what Initialize() already joined
+	if(!was_registered)
+		listener_membership_changed(device)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
+	var/was_registered = listener_registered(device)
 	for (var/devices_filter in devices)
 		var/list/devices_line = devices[devices_filter]
 		devices_line-=device
@@ -165,6 +221,8 @@ SUBSYSTEM_DEF(radio)
 			devices_line -= null
 		if (!length(devices_line))
 			devices -= devices_filter
+	if(was_registered)
+		listener_membership_changed(device)
 
 /datum/signal
 	var/obj/source

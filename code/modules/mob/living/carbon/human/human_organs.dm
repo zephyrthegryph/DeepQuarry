@@ -23,13 +23,18 @@
 	order = 150
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	// Polymorphic organ.process() overrides still mix biology and presentation.
+	biology_catchup = FALSE
 
 /datum/life_system/organs/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	process_organs(self)
 
+/datum/life_system/organs/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	process_organs(self, catchup = TRUE)
+
 /// Takes care of organ related updates, such as broken and missing limbs. `force` rebuilds the
 /// list of external organs that need processing.
-/datum/life_system/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)
+/datum/life_system/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE, catchup = FALSE)
 
 	var/force_process = self.recheck_bad_external_organs()
 
@@ -45,8 +50,9 @@
 	for(var/obj/item/organ/I in self.internal_organs)
 		I.process()
 
-	self.handle_stance()
-	self.handle_grasp()
+	if(!catchup)
+		self.handle_stance()
+		self.handle_grasp()
 
 	if(!force_process && !self.bad_external_organs.len)
 		return
@@ -64,7 +70,7 @@
 
 			if (!self.lying && !self.buckled && world.time - self.l_move_time < 15)
 			//Moving around with fractured ribs won't do you any good
-				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
+				if (!catchup && prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
 					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
 					self.emote("scream")
 					self.drop_item(self.loc)

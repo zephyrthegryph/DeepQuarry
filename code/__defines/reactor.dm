@@ -11,6 +11,12 @@
 #define REACT_LANE_NORMAL 1
 #define REACT_LANE_BACKGROUND 2
 
+// Scheduled DM work: larger values win when due work competes for a tick.
+// Age promotion prevents any lane from starving under a sustained load.
+#define SCHEDULE_PRIORITY_BACKGROUND 0
+#define SCHEDULE_PRIORITY_NORMAL 10
+#define SCHEDULE_PRIORITY_VITAL 50
+
 // --- Comparisons for conditions and rate watches.
 #define REACT_CMP_ABOVE 0
 #define REACT_CMP_BELOW 1
@@ -87,6 +93,8 @@
 #define REACT_SHUTTLE_SUPPLY 2
 /// A machine broke or was fixed (base /obj/machinery/atom_break()/atom_fix()). Id: the machine's REACT_ID.
 #define REACT_KEY_MACHINE_BROKEN 23
+/// A converted object-model subject published an observable state change.
+#define REACT_KEY_OBJECT_MODEL 24
 
 /// Key id for global keys (registry ids start at 1, so 0 is never a datum's id).
 #define REACT_ID_GLOBAL 0

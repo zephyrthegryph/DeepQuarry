@@ -18,6 +18,7 @@
 
 	log_and_message_admins("has used SMITE ([smite_choice]) on [key_name(target)].", src)
 	feedback_add_details("admin_verb","SMITE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	var/mob/admin_source = usr
 
 	switch(smite_choice)
 		if(SMITE_BREAKLEGS)
@@ -115,7 +116,7 @@
 				return //Can't nom when not exposed
 
 			//Begin abuse
-			target.transforming = TRUE //Cheap hack to stop them from moving
+			target.set_transforming(TRUE, admin_source) //Cheap hack to stop them from moving
 			var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 			shadekin.real_name = shadekin.name
 			shadekin.init_vore(TRUE)
@@ -135,7 +136,7 @@
 			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
 			sleep(2 SECONDS)
 			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
-			target.transforming = FALSE //Undo cheap hack
+			target.set_transforming(FALSE, admin_source) //Undo cheap hack
 
 			if(myself == "Control") //Put admin in mob
 				shadekin.ckey = ckey
@@ -262,10 +263,18 @@ GLOBAL_VAR(redspace_abduction_z)
 
 	if(!target || !user)
 		return
+	var/datum/transform_source
+	if(istype(user, /client))
+		var/client/C = user
+		transform_source = C.mob
+	else if(ismob(user))
+		transform_source = user
+	if(!transform_source)
+		return
 
 	var/size_of_square = 26
 	var/halfbox = round(size_of_square*0.5)
-	target.transforming = TRUE
+	target.set_transforming(TRUE, transform_source)
 	to_chat(target,span_danger("You feel a strange tug, deep inside. You're frozen in momentarily..."))
 	to_chat(user,span_notice("Beginning vis_contents copy to abduction site, player mob is frozen."))
 	sleep(1 SECOND)
@@ -321,7 +330,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	to_chat(target,span_danger("The tug relaxes, but everything around you looks... slightly off."))
 	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(usr.client, R_HOLDER))])"))
 
-	target.transforming = FALSE
+	target.set_transforming(FALSE, transform_source)
 
 /proc/fake_autosave(mob/living/target, client/user, wide)
 	if(!istype(target) || !target.client)

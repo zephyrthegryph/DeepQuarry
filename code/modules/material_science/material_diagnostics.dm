@@ -25,11 +25,17 @@
 	var/monitor_minimum_pressure = INFINITY
 	var/monitor_stored_energy = 0
 
+/datum/material_service/proc/diagnostic_signal_handlers()
+	var/static/list/handlers = list(
+		COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL) = PROC_REF(inspect_with_tool),
+		COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER) = PROC_REF(open_service_cover),
+		COMSIG_ATOM_ATTACKBY = PROC_REF(replace_with_stock),
+		COMSIG_ATOM_EXAMINE = PROC_REF(examine_service),
+	)
+	return handlers
+
 /datum/material_service/proc/register_diagnostics()
-	RegisterSignal(owner, COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL), PROC_REF(inspect_with_tool))
-	RegisterSignal(owner, COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER), PROC_REF(open_service_cover))
-	RegisterSignal(owner, COMSIG_ATOM_ATTACKBY, PROC_REF(replace_with_stock))
-	RegisterSignal(owner, COMSIG_ATOM_EXAMINE, PROC_REF(examine_service))
+	RegisterSignalMap(owner, diagnostic_signal_handlers())
 
 /obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
 	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
@@ -40,7 +46,7 @@
 	return service.inspect_with_tool(src, user, tool)
 
 /datum/material_service/proc/unregister_diagnostics()
-	UnregisterSignal(owner, list(COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL), COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY, COMSIG_ATOM_EXAMINE))
+	UnregisterSignalMap(owner, diagnostic_signal_handlers())
 	monitor_tool = null
 	monitor_user = null
 	last_reading = null

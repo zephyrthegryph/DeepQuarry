@@ -1,3 +1,6 @@
+#define CONTRACT_TIMER_OFFER "offer_expiry"
+#define CONTRACT_TIMER_DEADLINE "deadline"
+
 /datum/contract_audit_entry
 	var/time
 	var/category
@@ -208,11 +211,11 @@
 	var/personal_reputation_reward = 0
 	var/deadline = 0
 	var/deadline_duration = 0
-	var/deadline_timer
+	var/datum/object_model/schedule_entry/deadline_timer
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
 	var/grace_until = 0
 	var/offer_expires_at = 0
-	var/offer_timer
+	var/datum/object_model/schedule_entry/offer_timer
 	var/accepted_at = 0
 	var/accepted_by_account = 0
 	var/closed_at = 0
@@ -263,10 +266,10 @@
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	if(deadline_timer)
-		deltimer(deadline_timer)
+		qdel(deadline_timer)
 		deadline_timer = null
 	if(offer_timer)
-		deltimer(offer_timer)
+		qdel(offer_timer)
 		offer_timer = null
 	SScontracts?.unregister_contract(src)
 	for(var/datum/contract_requirement/requirement in requirements)
@@ -303,10 +306,21 @@
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
 	offer_expires_at = world.time + duration
-	offer_timer = addtimer(CALLBACK(src, PROC_REF(expire_offer)), duration, TIMER_STOPPABLE)
+	if(offer_timer)
+		qdel(offer_timer)
+	offer_timer = om_timer(src, duration, src, CONTRACT_TIMER_OFFER)
 	return TRUE
 
+/datum/contract/om_on_timer(datum/entity, key)
+	switch(key)
+		if(CONTRACT_TIMER_OFFER)
+			expire_offer()
+		if(CONTRACT_TIMER_DEADLINE)
+			check_deadline()
+
 /datum/contract/proc/expire_offer()
+	if(offer_timer)
+		qdel(offer_timer)
 	offer_timer = null
 	if(state == CONTRACT_OFFERED)
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
@@ -464,7 +478,7 @@
 	negotiation_locked = TRUE
 	var/old_state = state
 	if(offer_timer)
-		deltimer(offer_timer)
+		qdel(offer_timer)
 		offer_timer = null
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
@@ -473,7 +487,7 @@
 	if(deadline_duration > 0)
 		deadline = world.time + deadline_duration
 	if(deadline > world.time)
-		deadline_timer = addtimer(CALLBACK(src, PROC_REF(check_deadline)), deadline - world.time, TIMER_STOPPABLE)
+		deadline_timer = om_timer(src, deadline - world.time, src, CONTRACT_TIMER_DEADLINE)
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
 	for(var/datum/contract_requirement/requirement in requirements)
@@ -492,6 +506,10 @@
 	return null
 
 /datum/contract/proc/check_deadline()
+	if((state == CONTRACT_ACTIVE && deadline && world.time < deadline) || (state == CONTRACT_GRACE && grace_until && world.time < grace_until))
+		return
+	if(deadline_timer)
+		qdel(deadline_timer)
 	deadline_timer = null
 	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
 		if(deadline_grace_duration > 0)
@@ -507,7 +525,9 @@
 	var/old_state = state
 	state = CONTRACT_GRACE
 	grace_until = world.time + deadline_grace_duration
-	deadline_timer = addtimer(CALLBACK(src, PROC_REF(check_deadline)), deadline_grace_duration, TIMER_STOPPABLE)
+	if(deadline_timer)
+		qdel(deadline_timer)
+	deadline_timer = om_timer(src, deadline_grace_duration, src, CONTRACT_TIMER_DEADLINE)
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")
 	SScontracts?.notify_contract(src, "Contract [id] entered its evidence grace period.")
@@ -570,7 +590,7 @@
 		// turn an otherwise successful contract into a deadline failure while it
 		// waits for the account-status signal that retries payment.
 		if(deadline_timer)
-			deltimer(deadline_timer)
+			qdel(deadline_timer)
 			deadline_timer = null
 		deadline = 0
 		grace_until = 0
@@ -680,10 +700,10 @@
 	if(old_state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	if(deadline_timer)
-		deltimer(deadline_timer)
+		qdel(deadline_timer)
 		deadline_timer = null
 	if(offer_timer)
-		deltimer(offer_timer)
+		qdel(offer_timer)
 		offer_timer = null
 	offer_expires_at = 0
 	grace_until = 0
@@ -800,3 +820,6 @@
 	payout_distributed = paid_reward >= reward
 	audit(CONTRACT_AUDIT_PAYMENT, "[reason]: distributed [planned_total] Thalers ([paid_reward]/[reward] settled).")
 	return TRUE
+
+#undef CONTRACT_TIMER_OFFER
+#undef CONTRACT_TIMER_DEADLINE

@@ -11,6 +11,52 @@
 		/obj/item/dq_containment_test = 1,
 	)
 
+/obj/item/dq_containment_box/dq_latent_relation_test
+	latent_contents = TRUE
+
+/datum/dq_latent_relation_listener
+	var/list/counts = list()
+	var/list/slots = list()
+
+/datum/dq_latent_relation_listener/proc/on_entry_changed(datum/source, datum/object_model/event/E, datum/latent_entry/entry, old_count, new_count, slot_id)
+	counts += "[old_count]:[new_count]"
+	slots += slot_id
+
+/datum/object_model/subscription_rule/dq_latent_relation_test
+	event_path = /datum/object_model/event/latent_entry_changed
+	handler = TYPE_PROC_REF(/datum/dq_latent_relation_listener, on_entry_changed)
+
+/// The ledger is the sole authority for latent groups; the object model sees
+/// the same groups and emits count transitions, including merge and removal.
+/datum/unit_test/dq_latent_object_model_relation
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_latent_object_model_relation/Run()
+	var/obj/item/dq_containment_box/dq_latent_relation_test/holder = new
+	var/datum/ledger/L = dq_ledger(holder)
+	var/datum/dq_latent_relation_listener/listener = new
+	var/datum/object_model/subscription/S = om_subscribe(listener, /datum/object_model/subscription_rule/dq_latent_relation_test, holder)
+	TEST_ASSERT_NOTNULL(S, "latent event subscription")
+	var/start_revision = om_revision(holder)
+	var/datum/latent_entry/entry = L.latent_add(/obj/item/pen, 2, null, "pocket")
+	TEST_ASSERT_NOTNULL(entry, "latent entry created")
+	TEST_ASSERT(om_has_link(holder, /datum/object_model/relation/latent_slot_member, entry), "latent entry visible as a relation")
+	TEST_ASSERT(entry in om_linked(holder, /datum/object_model/relation/latent_slot_member), "forward relation query")
+	TEST_ASSERT(holder in om_linked_to(entry, /datum/object_model/relation/latent_slot_member), "inverse relation query")
+	TEST_ASSERT_EQUAL(om_revision(holder), start_revision + 1, "latent addition advances observed holder revision")
+	TEST_ASSERT_EQUAL(listener.counts[1], "0:2", "addition event")
+	TEST_ASSERT_EQUAL(listener.slots[1], "pocket", "event identifies slot")
+	TEST_ASSERT_EQUAL(L.latent_add(/obj/item/pen, 1, null, "pocket"), entry, "identical group merges")
+	TEST_ASSERT_EQUAL(length(om_linked(holder, /datum/object_model/relation/latent_slot_member)), 1, "merge retains one relation target")
+	TEST_ASSERT_EQUAL(listener.counts[2], "2:3", "merge event")
+	L.latent_set_count(entry, 0)
+	TEST_ASSERT(!om_has_link(holder, /datum/object_model/relation/latent_slot_member, entry), "removed entry leaves relation before event")
+	TEST_ASSERT_EQUAL(length(om_linked(holder, /datum/object_model/relation/latent_slot_member)), 0, "no stale relation targets")
+	TEST_ASSERT_EQUAL(listener.counts[3], "3:0", "removal event")
+	TEST_ASSERT_EQUAL(om_revision(holder), start_revision + 3, "each count mutation advances revision once")
+	qdel(listener)
+	qdel(holder)
+
 /// "path=count;..." of the things directly in `where`, sorted.
 /proc/dq_latent_census(atom/where, list/only)
 	var/list/counts = list()
@@ -203,6 +249,21 @@
 	TEST_ASSERT_EQUAL(outer.latent_count(), 3, "entries moved into the outer closet as data")
 	TEST_ASSERT_EQUAL(length(outer.contents), real_items, "only the real item spilled as an atom")
 	qdel(outer)
+
+/// A declared generator must still be resolved when the first ledger access
+/// happens inside qdel's contents phase, after the holder is marked deleted.
+/datum/unit_test/dq_latent_destroy_unopened_pill_bottle
+
+/datum/unit_test/dq_latent_destroy_unopened_pill_bottle/Run()
+	var/turf/T = test_floor()
+	var/obj/item/storage/pill_bottle/paracetamol/bottle = new(T)
+	TEST_ASSERT_NULL(bottle.ledger, "fresh pill bottle unexpectedly built its ledger")
+	TEST_ASSERT(bottle.has_latent(), "fresh pill bottle has no declared pills")
+	var/list/before = T.contents.Copy()
+	qdel(bottle)
+	TEST_ASSERT(QDELETED(bottle), "pill bottle was not deleted")
+	TEST_ASSERT(!bottle.has_latent(), "deleted pill bottle retained its declared pills")
+	TEST_ASSERT_EQUAL(length(dq_latent_new_items(T, before)), 0, "storage's delete policy spawned pills instead of discarding them")
 
 /// Blasts resolve entries as data, matching what the same things do for real.
 /datum/unit_test/dq_latent_blast_parity

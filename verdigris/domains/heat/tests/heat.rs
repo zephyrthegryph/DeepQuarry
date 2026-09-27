@@ -352,10 +352,9 @@ fn heat_flows_through_a_container_chain() {
                 .with_coupling(0, Coupling::new(Target::Gas(turf), 5.0)),
         )
         .unwrap();
-    let (slot, _) = (crate_body & 0xffff, 0);
     let item = w
         .create_body(
-            Body::new(50.0, 800.0).with_coupling(0, Coupling::new(Target::Body(slot), 2.0)),
+            Body::new(50.0, 800.0).with_coupling(0, Coupling::new(Target::Body(crate_body), 2.0)),
         )
         .unwrap();
     w.settle();
@@ -366,6 +365,43 @@ fn heat_flows_through_a_container_chain() {
     let after = t.conserved() + gas.energy() - t.ledger[ledger::GAS as usize];
     assert!(rel(after, before) < 1e-5, "{after} vs {before}");
     let _ = item;
+}
+
+#[test]
+fn a_dynamic_body_coupling_heats_a_cold_container() {
+    let (mut w, _) = world(8, 8);
+    let oven = w.create_body(Body::new(4_000.0, 293.15).kept()).unwrap();
+    let tray = w.create_body(Body::new(800.0, 293.15).kept()).unwrap();
+    assert!(w.body_command(tray, BodyCmd::Couple(0, Coupling::new(Target::Body(oven), 60.0))));
+    assert!(w.body_command(oven, BodyCmd::SetTemperature(473.15)));
+    w.settle();
+    w.run_frames(10);
+    assert!(w.body_temperature(tray).unwrap() > 293.15);
+}
+
+#[test]
+fn body_coupling_checks_target_generation_after_slot_reuse() {
+    let (mut w, _) = world(8, 8);
+    let parent = w.create_body(Body::new(100.0, 600.0).kept()).unwrap();
+    let child = w
+        .create_body(
+            Body::new(100.0, 300.0)
+                .kept()
+                .with_coupling(0, Coupling::new(Target::Body(parent), 10.0)),
+        )
+        .unwrap();
+    w.run_frames(2);
+    assert!(w.body_temperature(child).unwrap() > 300.0);
+
+    w.release_body(parent);
+    w.run_frames(1);
+    let replacement = w.create_body(Body::new(100.0, 1000.0).kept()).unwrap();
+    assert_eq!(parent & 0xffff, replacement & 0xffff);
+    assert_ne!(parent, replacement);
+    let before = w.body_temperature(child).unwrap();
+    w.run_frames(2);
+    assert_eq!(w.body_temperature(child).unwrap(), before);
+    assert_eq!(w.body_temperature(replacement), Some(1000.0));
 }
 
 #[test]
@@ -603,7 +639,7 @@ fn releasing_into_a_small_analytic_body_conserves() {
         .create_body(
             Body::new(819.78, 50.0)
                 .with_power(-26.63)
-                .with_coupling(0, Coupling::new(Target::Body(b1 & 0xffff), 0.1)),
+                .with_coupling(0, Coupling::new(Target::Body(b1), 0.1)),
         )
         .unwrap();
     w.settle();
@@ -751,7 +787,7 @@ proptest! {
                     let target = match target {
                         0 => Target::Solid(i),
                         1 => Target::Gas(GasRef::Turf(i)),
-                        2 => bodies.get(other % bodies.len().max(1)).map_or(Target::None, |h: &u32| Target::Body(h & 0xffff)),
+                        2 => bodies.get(other % bodies.len().max(1)).map_or(Target::None, |h: &u32| Target::Body(*h)),
                         _ => Target::None,
                     };
                     if let Some(h) = w.create_body(Body::new(c, t).with_power(power).with_coupling(0, Coupling::new(target, g))) {

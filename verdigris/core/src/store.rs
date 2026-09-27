@@ -13,13 +13,15 @@
 //!   read reflects every earlier write with no staleness window at all —
 //!   which is exactly "DM reads and writes it immediately, with no frame."
 //!
-//! A kind chooses by calling [`KindStore::tick`] every frame (worker) or
-//! never (main); nothing else about the type differs.
+//! A kind chooses [`KindStore::main_owned`] or
+//! [`KindStore::worker_owned`] at construction. Main-owned writes go
+//! straight to the live store, so an unticked kind cannot accumulate a
+//! command queue or overlay indefinitely.
 
 use crate::cow::ChunkLayout;
 use crate::entity::CellAllocator;
 use crate::owner::{Applied, Domain, DomainKey, PortError};
-use crate::sim::{Sim, SimBuilder, SimConfig};
+use crate::sim::{Mode, Sim, SimBuilder, SimConfig};
 
 /// Row capacity: matches [`crate::entity::MAX_SLOTS`], since a store never
 /// needs to outlive the entities that could reference it.
@@ -36,6 +38,14 @@ pub struct KindStore<D: Domain> {
     row_entity: Vec<Option<f32>>,
     /// Raised events not yet drained, as `(entity, event_id)` (§4.8).
     events: Vec<(f32, u8)>,
+    owner: KindOwner,
+}
+
+/// Explicit ownership mode for a component kind.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KindOwner {
+    Main,
+    Worker,
 }
 
 impl<D: Domain> Default for KindStore<D> {
@@ -45,19 +55,38 @@ impl<D: Domain> Default for KindStore<D> {
 }
 
 impl<D: Domain> KindStore<D> {
-    /// A fresh, empty store. `threads` is the frame pool size for this
-    /// kind's `Sim`; worker-owned kinds pass what their laws need (at least
-    /// 1), main-owned kinds that never call [`tick`](Self::tick) can pass 1
-    /// (the pool sits idle).
+    /// A fresh, main-owned store.
     #[must_use]
     pub fn new() -> Self {
-        Self::with_threads(1)
+        Self::main_owned()
+    }
+
+    /// Main-owned state is written directly. It has no unconsumed command
+    /// queue or frame staleness, and its worker pool remains idle.
+    #[must_use]
+    pub fn main_owned() -> Self {
+        Self::build(1, KindOwner::Main)
+    }
+
+    /// Worker-owned state publishes snapshots as frames complete.
+    #[must_use]
+    pub fn worker_owned(threads: usize) -> Self {
+        Self::build(threads, KindOwner::Worker)
     }
 
     #[must_use]
     pub fn with_threads(threads: usize) -> Self {
+        Self::worker_owned(threads)
+    }
+
+    fn build(threads: usize, owner: KindOwner) -> Self {
         let mut builder = SimBuilder::new(SimConfig {
             threads: threads.max(1),
+            mode: if owner == KindOwner::Main {
+                Mode::Fallback { budget_cells: usize::MAX }
+            } else {
+                Mode::Overlay
+            },
             ..SimConfig::default()
         });
         let key = builder.add_domain::<D>(ChunkLayout::linear(ROWS));
@@ -70,12 +99,16 @@ impl<D: Domain> KindStore<D> {
             rows: CellAllocator::new(),
             row_entity: Vec::new(),
             events: Vec::new(),
+            owner,
         }
     }
 
     /// Allocates a row, seeds it with `value`, and records `entity` as the
     /// row's owner for event attribution. Returns the row.
     pub fn bind(&mut self, entity: f32, value: D::Value) -> Result<u32, PortError> {
+        if self.rows.high_water() >= ROWS && self.rows.live() == ROWS as usize {
+            return Err(PortError::OutOfRange(ROWS));
+        }
         let row = self.rows.alloc();
         self.sim.port(self.key).put(row, value)?;
         self.set_row_entity(row, entity);
@@ -94,7 +127,7 @@ impl<D: Domain> KindStore<D> {
     /// frame, R4 §6).
     #[must_use]
     pub fn read(&self, row: u32) -> Option<D::Value> {
-        self.sim.port_ref(self.key).read(row)
+        self.rows.contains(row).then(|| self.sim.port_ref(self.key).read(row)).flatten()
     }
 
     /// Queues a command; applies to what DM sees immediately.
@@ -102,11 +135,17 @@ impl<D: Domain> KindStore<D> {
     /// # Errors
     /// If `row` is out of range.
     pub fn submit(&mut self, row: u32, cmd: D::Command) -> Result<Applied, PortError> {
+        if !self.rows.contains(row) {
+            return Err(PortError::Detached(row));
+        }
         self.sim.port(self.key).submit(row, cmd)
     }
 
     /// Frees `row`: resets its value and returns the row for reuse.
     pub fn detach(&mut self, row: u32) {
+        if !self.rows.contains(row) {
+            return;
+        }
         let _ = self.sim.port(self.key).take(row);
         self.rows.free_cell(row);
         if let Some(slot) = self.row_entity.get_mut(row as usize) {
@@ -133,8 +172,16 @@ impl<D: Domain> KindStore<D> {
     /// publishing a view and pruning the overlay. Worker-owned kinds call
     /// this every frame; main-owned kinds never call it (module docs).
     pub fn tick(&mut self) {
+        if self.owner == KindOwner::Main {
+            return;
+        }
         self.sim.begin_tick();
         self.sim.dispatch_frame();
+    }
+
+    #[must_use]
+    pub const fn owner(&self) -> KindOwner {
+        self.owner
     }
 
     /// The kind's `Sim`, for a domain that needs to add its own frame tasks
@@ -197,7 +244,8 @@ mod tests {
         assert_eq!(out, vec![(42.0, 3)]);
 
         store.detach(row);
-        assert_eq!(store.read(row), Some(Widget::default()));
+        assert_eq!(store.read(row), None);
+        assert_eq!(store.submit(row, WidgetCmd::Set(7)), Err(PortError::Detached(row)));
         store.push_event(row, 1);
         let mut out2 = Vec::new();
         store.drain_events(&mut out2);
@@ -211,11 +259,39 @@ mod tests {
 
     #[test]
     fn worker_owned_kind_ticks_and_publishes_a_view() {
-        let mut store = KindStore::<WidgetKind>::new();
+        let mut store = KindStore::<WidgetKind>::worker_owned(1);
         let row = store.bind(1.0, Widget::default()).unwrap();
         store.submit(row, WidgetCmd::Set(3)).unwrap();
         store.tick();
         store.tick();
         assert_eq!(store.read(row).unwrap().n, 3.0);
+    }
+
+    #[test]
+    fn main_owned_writes_do_not_accumulate_commands_or_overlay() {
+        let mut store = KindStore::<WidgetKind>::main_owned();
+        assert_eq!(store.owner(), KindOwner::Main);
+        let row = store.bind(1.0, Widget::default()).unwrap();
+        for n in 0..1000 {
+            store.submit(row, WidgetCmd::Set(n)).unwrap();
+        }
+        assert_eq!(store.read(row), Some(Widget { n: 999.0 }));
+        assert_eq!(store.sim.port_ref(store.key).queued(), 0);
+        assert_eq!(store.sim.port_ref(store.key).overlay_len(), 0);
+        store.tick();
+        assert_eq!(store.read(row), Some(Widget { n: 999.0 }));
+    }
+
+    #[test]
+    fn detached_row_cannot_mutate_a_reused_component() {
+        let mut store = KindStore::<WidgetKind>::new();
+        let row = store.bind(1.0, Widget { n: 3.0 }).unwrap();
+        store.detach(row);
+        assert_eq!(store.read(row), None);
+        assert_eq!(store.submit(row, WidgetCmd::Set(8)), Err(PortError::Detached(row)));
+        store.detach(row);
+        let reused = store.bind(2.0, Widget { n: 5.0 }).unwrap();
+        assert_eq!(reused, row);
+        assert_eq!(store.read(reused), Some(Widget { n: 5.0 }));
     }
 }

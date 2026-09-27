@@ -165,6 +165,7 @@
 
 /// Heal up to `amount`. `full` ignores the drug floor. Returns the amount
 /// healed. A lesion healed to nothing removes itself.
+// dm-health: param full num
 /datum/affliction/lesion/proc/heal(amount, full = FALSE)
 	if(amount <= 0 || damage <= 0)
 		return 0

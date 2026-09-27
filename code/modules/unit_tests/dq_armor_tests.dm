@@ -281,6 +281,69 @@
 	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_FRACTURE_TOUGHNESS), steel.fracture_toughness, "an item's toughness is its material's")
 	TEST_ASSERT_EQUAL(probe.impact_response(), steel_response, "and its response is steel's")
 
+/datum/unit_test/dq_material_scintillation_owned_timer
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_material_scintillation_owned_timer/Run()
+	var/datum/material/lumen = GLOB.name_to_material[MAT_LUMEN_CRYSTAL]
+	TEST_ASSERT(lumen, "lumen material is registered")
+	var/obj/item/cell/cell = new
+	var/datum/component/material_response/response = cell.AddComponent(/datum/component/material_response, lumen, TRUE, FALSE, FALSE, FALSE)
+	TEST_ASSERT(response, "cell received material response")
+	response.apply_radiation_energy(1)
+	var/datum/object_model/schedule_entry/first = response.scintillation_timer
+	TEST_ASSERT(first && !QDELETED(first), "radiation armed an owned scintillation timer")
+	response.apply_radiation_energy(1)
+	var/datum/object_model/schedule_entry/second = response.scintillation_timer
+	TEST_ASSERT(QDELETED(first) && second && !QDELETED(second), "later radiation replaced the timer")
+	qdel(cell)
+	TEST_ASSERT(QDELETED(second), "deleting the item canceled its component timer")
+
+/datum/dq_signal_map_test_listener
+	var/calls = 0
+
+/datum/dq_signal_map_test_listener/proc/on_pre_emp(datum/source, severity)
+	SIGNAL_HANDLER
+	calls++
+	return EMP_PROTECT_SELF
+
+/datum/unit_test/dq_material_response_signal_map
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_material_response_signal_map/Run()
+	var/datum/source = new
+	var/datum/dq_signal_map_test_listener/listener = new
+	var/list/handlers = list(COMSIG_ATOM_PRE_EMP_ACT = TYPE_PROC_REF(/datum/dq_signal_map_test_listener, on_pre_emp))
+	TEST_ASSERT(listener.RegisterSignalMap(source, handlers), "signal map registers")
+	TEST_ASSERT(SEND_SIGNAL(source, COMSIG_ATOM_PRE_EMP_ACT, 1) & EMP_PROTECT_SELF, "the mapped handler preserves a signal return flag")
+	TEST_ASSERT_EQUAL(listener.calls, 1, "the mapped handler ran once")
+	TEST_ASSERT(listener.UnregisterSignalMap(source, handlers), "signal map unregisters")
+	TEST_ASSERT(!(SEND_SIGNAL(source, COMSIG_ATOM_PRE_EMP_ACT, 1) & EMP_PROTECT_SELF), "unregister removes the return flag")
+	TEST_ASSERT_EQUAL(listener.calls, 1, "unregister prevents another call")
+	qdel(listener)
+	qdel(source)
+
+	var/datum/material/steel = GLOB.name_to_material[MAT_STEEL]
+	var/obj/item/cell/cell = new
+	var/datum/component/material_response/response = cell.AddComponent(/datum/component/material_response, steel, FALSE, FALSE, FALSE, FALSE)
+	TEST_ASSERT(response, "material response attaches")
+	TEST_ASSERT_EQUAL(length(response._signal_procs[cell]), 8, "the component installs all eight declared hooks")
+	TEST_ASSERT(!response.om_state?.observations, "direct signal hooks add no observation datums")
+	qdel(response)
+	TEST_ASSERT(!response._signal_procs?[cell], "component deletion clears its hooks")
+	TEST_ASSERT(!cell.GetComponent(/datum/component/material_response), "component deletion detaches it from the item")
+	var/datum/component/material_response/replacement = cell.AddComponent(/datum/component/material_response, steel, FALSE, FALSE, FALSE, FALSE)
+	TEST_ASSERT_EQUAL(length(replacement._signal_procs[cell]), 8, "the item can receive a fresh response")
+	qdel(cell)
+	TEST_ASSERT(QDELETED(replacement), "item deletion also deletes its response")
+
+	var/obj/service_owner = new
+	var/datum/material_service/service = new(service_owner)
+	TEST_ASSERT_EQUAL(length(service._signal_procs[service_owner]), 4, "material diagnostics install all four declared hooks")
+	qdel(service)
+	TEST_ASSERT(!service._signal_procs?[service_owner], "material service deletion clears diagnostic hooks")
+	qdel(service_owner)
+
 /// A plain steel item for property reads.
 /obj/item/dq_armor_steel_probe
 	name = "steel probe"

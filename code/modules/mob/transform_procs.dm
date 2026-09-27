@@ -6,7 +6,7 @@
 			continue
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	stunned = 1
 	icon = null
@@ -21,7 +21,7 @@
 	sleep(48)
 	//animation = null
 
-	transforming = 0
+	set_transforming(FALSE)
 	stunned = 0
 	update_canmove()
 	invisibility = initial(invisibility)
@@ -63,7 +63,7 @@
 		return
 	for(var/obj/item/W in src)
 		drop_from_inventory(W)
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -150,7 +150,7 @@
 	for(var/obj/item/W in src)
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -201,7 +201,7 @@
 	for(var/obj/item/W in src)
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -225,7 +225,7 @@
 	for(var/obj/item/W in src)
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -255,7 +255,7 @@
 		drop_from_inventory(W)
 
 	regenerate_icons()
-	transforming = 1
+	set_transforming(TRUE)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT

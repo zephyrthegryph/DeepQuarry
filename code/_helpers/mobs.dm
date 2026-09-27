@@ -211,89 +211,9 @@ Proc for attack log creation, because really why not
 		return FALSE
 	if(!isnum(delay))
 		CRASH("do_after was passed a non-number delay: [delay || "null"].")
-
 	if(!isatom(target))
 		CRASH("do_after was given a non-atom target! [target]")
-
-	if(!interaction_key && target)
-		interaction_key = target //Use the direct ref to the target
-	if(interaction_key) //Do we have a interaction_key now?
-		var/current_interaction_count = LAZYACCESS(user.do_afters, interaction_key) || 0
-		if(current_interaction_count >= max_interact_count) //We are at our peak
-			return
-		LAZYSET(user.do_afters, interaction_key, current_interaction_count + 1)
-
-	var/atom/user_loc = user.loc
-	var/atom/target_loc = target?.loc
-
-	var/drifting = FALSE
-	/* //We don't have a drift handler yet, sadly.
-	if(!isnull(user.drift_handler))
-		drifting = TRUE*/
-
-	var/holding = user.get_active_hand()
-/* //Disabling for now. Meant to be used for modifier slowdowns.
-	if(!(timed_action_flags & IGNORE_SLOWDOWNS))
-		var/slowdown = user.calculate_item_encumbrance()
-		if(slowdown)
-			//Let's not be TOO evil. You can be up to 4x faster, but never more than 3x slower.
-			delay *= CLAMP(slowdown, 0.25, 3)
-*/
-	var/datum/progressbar/progbar
-	var/datum/cogbar/cog
-
-	if(progress)
-		if(user.client)
-			progbar = new(user, delay, target || user)
-
-		if(!hidden && delay >= 1 SECONDS)
-			cog = new(user, icon, iconstate)
-
-	SEND_SIGNAL(user, COMSIG_DO_AFTER_BEGAN)
-
-	var/endtime = world.time + delay
-	var/starttime = world.time
-	. = TRUE
-	while (world.time < endtime)
-		stoplag(1)
-
-		if(!QDELETED(progbar))
-			progbar.update(world.time - starttime)
-
-		/*if(drifting && isnull(user.drift_handler)) //We don't have a drift handler yet, sadly.
-			drifting = FALSE
-			user_loc = user.loc*/
-
-		if(QDELETED(user) \
-			|| (!(timed_action_flags & IGNORE_USER_LOC_CHANGE) && !drifting && user.loc != user_loc) \
-			|| (!(timed_action_flags & IGNORE_HELD_ITEM) && user.get_active_hand() != holding) \
-			|| (!(timed_action_flags & IGNORE_INCAPACITATED) && HAS_TRAIT(user, TRAIT_INCAPACITATED)) \
-			|| (max_distance && target && get_dist(user, target) > max_distance) \
-			|| (target_zone && user.zone_sel?.selecting != target_zone) \
-			|| (extra_checks && !extra_checks.Invoke()))
-			. = FALSE
-			break
-
-		if(target && (user != target) && \
-			(QDELETED(target) \
-			|| (!(timed_action_flags & IGNORE_TARGET_LOC_CHANGE) && target.loc != target_loc)))
-			. = FALSE
-			break
-
-	if(!QDELETED(progbar))
-		progbar.end_progress()
-
-	cog?.remove()
-
-	if(interaction_key)
-		var/reduced_interaction_count = (LAZYACCESS(user.do_afters, interaction_key) || 0) - 1
-		if(reduced_interaction_count > 0) // Not done yet!
-			LAZYSET(user.do_afters, interaction_key, reduced_interaction_count)
-			return
-		// all out, let's clear er out fully
-		LAZYREMOVE(user.do_afters, interaction_key)
-	SEND_SIGNAL(user, COMSIG_DO_AFTER_ENDED)
-
+	return om_do_after_compat(user, delay, target, timed_action_flags, progress, extra_checks, interaction_key, max_interact_count, hidden, icon, iconstate, target_zone, max_distance)
 /atom/proc/living_mobs(range = world.view, count_held = FALSE)
 	var/list/viewers = oviewers(src,range)
 	if(count_held)

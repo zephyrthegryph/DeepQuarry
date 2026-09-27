@@ -430,6 +430,10 @@
 	return complete()
 
 /datum/contract/social/check_deadline()
+	if((state == CONTRACT_ACTIVE && deadline && world.time < deadline) || (state == CONTRACT_GRACE && grace_until && world.time < grace_until))
+		return
+	if(deadline_timer)
+		qdel(deadline_timer)
 	deadline_timer = null
 	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
 		if(can_finalize_outcome())

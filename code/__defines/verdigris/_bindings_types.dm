@@ -134,6 +134,8 @@
 
 /obj/machinery/atmospherics/binary/pump/vg_dispatch_gas_event(event_id)
 	pump_dispatch_event(event_id)
+	if(om_declarations()[type])
+		om_rust_component(/datum/object_model/rust_component/pump).dispatch_event(src, event_id)
 
 // ---- GasMix (gas kind 2; verdigris/domains/gas/src/kind/gas_mix.rs) ----
 
@@ -161,7 +163,7 @@
 	return vg_gas_mix_set_moles(vg_entity, index, value)
 
 /// K; clamped to VG_GASMIX_TEMPERATURE_MIN..MAX.
-/obj/item/gas_mix_holder/proc/get_temperature()
+/obj/item/gas_mix_holder/get_temperature()
 	return vg_gas_mix_get_temperature(vg_entity) // K
 
 /// Returns the stored value.
@@ -204,15 +206,24 @@
 
 /obj/item/gas_mix_holder/vg_dispatch_gas_event(event_id)
 	gas_mix_dispatch_event(event_id)
+	if(om_declarations()[type])
+		om_rust_component(/datum/object_model/rust_component/gas_mix).dispatch_event(src, event_id)
 
 // ---- One entry point per bound atom -------------------------------------
 
 /// Binds every component this atom's type declares (base on_materialize(), L2).
 /atom/movable/proc/vg_bind()
-	var/entity = 0
-	if(vg_gas)
+	var/entity = vg_entity
+	if(vg_gas && entity)
+		var/installed_gas = vg_entity_component_kind(entity, VG_DOMAIN_GAS)
+		if(installed_gas < 0 || (installed_gas && installed_gas != vg_gas))
+			return FALSE
+	if(vg_gas && (!entity || !vg_entity_component_kind(entity, VG_DOMAIN_GAS)))
 		entity = vg_bind_gas(entity)
+		if(!entity)
+			return FALSE
 	vg_entity = entity
+	return entity
 
 /// Every declared-input mismatch across every bound domain (§7). SSvg's
 /// sweep and the test sandbox teardown call this per atom.

@@ -20,11 +20,15 @@
 	phase = LIFE_PHASE_TAIL
 	order = 10
 	mob_type = /mob/living/carbon
+	biology_catchup = TRUE
 
 /datum/life_system/germs/tick(mob/living/carbon/self, datum/life_context/ctx)
 	// Increase germ_level regularly
 	if(self.germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		self.germ_level++
+
+/datum/life_system/germs/tick_biology(mob/living/carbon/self, datum/life_context/ctx)
+	return tick(self, ctx)
 
 /mob/living/carbon/Destroy()
 	QDEL_NULL(ingested)

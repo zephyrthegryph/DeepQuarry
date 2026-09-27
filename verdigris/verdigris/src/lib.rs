@@ -3,6 +3,8 @@
 
 pub mod material_power;
 
+include!(concat!(env!("OUT_DIR"), "/fingerprint.rs"));
+
 #[cfg(target_arch = "x86")]
 #[global_allocator]
 static ALLOCATOR: vg_ffi::allocator::TrackingAllocator = vg_ffi::allocator::TrackingAllocator;

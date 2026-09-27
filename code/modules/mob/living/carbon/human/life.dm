@@ -30,6 +30,7 @@
 /// The code before ..() in the old human Life().
 /datum/life_system/type_pre/carbon/human
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/type_pre/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if (self.transforming)
@@ -45,6 +46,11 @@
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
 	self.life_tick++
 	return ..()
+
+/datum/life_system/type_pre/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	if(self.transforming)
+		return LIFE_HALT
+	self.life_tick++
 
 /// Periodic safety refresh of every HUD.
 /datum/life_system/hud_refresh
@@ -120,6 +126,7 @@
 	phase = LIFE_PHASE_TAIL
 	order = 135
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/gate/human_vitals/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(ctx.in_stasis(self))
@@ -129,6 +136,9 @@
 	else
 		ctx.blocked |= LIFE_SEG_HUMAN_LIVE
 
+/datum/life_system/gate/human_vitals/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return tick(self, ctx)
+
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
 /datum/life_system/medical
 	name = "medical"
@@ -137,11 +147,19 @@
 	order = 200
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/medical/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	SEND_SIGNAL(self,COMSIG_HANDLE_ALLERGENS, self.factor(BF_ALLERGY))
 
 	side_effects(self)
+	process_biology(self)
+
+/datum/life_system/medical/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	side_effects_biology(self)
+	process_biology(self)
+
+/datum/life_system/medical/proc/process_biology(mob/living/carbon/human/self)
 	self.dq_check_ischemic_damage()
 	self.dq_process_dirty_medical_conditions()
 
@@ -181,9 +199,9 @@
 /datum/life_system/breathing/carbon/human
 	mob_type = /mob/living/carbon/human
 
-/datum/life_system/breathing/carbon/human/breathe(mob/living/carbon/human/self)
-	if(!self.inStasisNow())
-		..()
+/datum/life_system/breathing/carbon/human/breathe(mob/living/carbon/human/self, catchup = FALSE)
+	if(catchup || !self.inStasisNow())
+		..(self, catchup)
 
 // Calculate how vulnerable the human is to the current pressure.
 // Returns 0 (equals 0 %) if sealed in an undamaged suit that's rated for the pressure, 1 if unprotected (equals 100%).
@@ -299,6 +317,7 @@
 
 /datum/life_system/mutations/carbon/human
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/mutations/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	. = ..()
@@ -306,6 +325,12 @@
 		return
 	if(self.inStasisNow())
 		return
+	process_biology(self)
+
+/datum/life_system/mutations/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return process_biology(self)
+
+/datum/life_system/mutations/carbon/human/proc/process_biology(mob/living/carbon/human/self)
 
 	// Slow natural healing of wounds; cold-resistant bodies shrug off burns.
 	if(self.injury_load(INJURY_CATEGORY_THERMAL))
@@ -610,7 +635,7 @@
 	return null
 
 
-/datum/life_system/breathing/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/breath)
+/datum/life_system/breathing/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/breath, catchup = FALSE)
 	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
 		return 0	// Cancelled by a component
 
@@ -639,10 +664,12 @@
 		// Nothing to breathe: a closed airway, apnea, or vacuum.
 		self.failed_last_breath = 1
 		self.body?.set_breath_quality(0)
-		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
+		if(!catchup)
+			self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
 	else
-		self.clear_alert("oxy")
+		if(!catchup)
+			self.clear_alert("oxy")
 
 	// Minimum safe partial pressure of breathable gas in kPa. Lung damage is
 	// the physiology's business (gas exchange), not the air's.
@@ -700,7 +727,7 @@
 
 	// Not enough to breathe
 	if(inhale_pp < safe_pressure_min)
-		if(prob(20))
+		if(!catchup && prob(20))
 			self.emote("gasp")
 		if(is_below_sound_pressure(get_turf(self)))	//No more popped lungs from choking/drowning. You also have ~20 seconds to get internals on before your lungs pop.
 			self.rupture_lung(TRUE)
@@ -709,25 +736,27 @@
 		quality = safe_pressure_min > 0 ? clamp(inhale_pp / safe_pressure_min, 0, 1) : 0
 		failed_inhale = 1
 
-		switch(breath_type)
-			if(GAS_O2)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
-			if(GAS_PHORON)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_tox)
-			if(GAS_N2)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_nitro)
-			if(GAS_CO2)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
-			if(GAS_CH4)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_methane)
-			if(GAS_VOLATILE_FUEL)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_fuel)
-			if(GAS_N2O)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_n2o)
+		if(!catchup)
+			switch(breath_type)
+				if(GAS_O2)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
+				if(GAS_PHORON)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_tox)
+				if(GAS_N2)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_nitro)
+				if(GAS_CO2)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
+				if(GAS_CH4)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_methane)
+				if(GAS_VOLATILE_FUEL)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_fuel)
+				if(GAS_N2O)
+					self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_n2o)
 
 	else
 		// We're in safe limits
-		self.clear_alert("oxy")
+		if(!catchup)
+			self.clear_alert("oxy")
 
 	inhaled_gas_used = inhaling/6
 
@@ -738,7 +767,7 @@
 
 		// Too much exhaled gas in the air
 		if(exhaled_pp > safe_exhaled_max)
-			if (prob(15))
+			if (!catchup && prob(15))
 				var/word = pick("extremely dizzy","short of breath","faint","confused")
 				to_chat(self, span_danger("You feel [word]."))
 
@@ -747,7 +776,7 @@
 			failed_exhale = 1
 
 		else if(exhaled_pp > safe_exhaled_max * 0.7)
-			if (!prob(1))
+			if (!catchup && !prob(1))
 				var/word = pick("dizzy","short of breath","faint","momentarily confused")
 				to_chat(self, span_warning("You feel [word]."))
 
@@ -759,7 +788,7 @@
 			failed_exhale = 1
 
 		else if(exhaled_pp > safe_exhaled_max * 0.6)
-			if(prob(0.3))
+			if(!catchup && prob(0.3))
 				var/word = pick("a little dizzy","short of breath")
 				to_chat(self, span_warning("You feel [word]."))
 
@@ -767,32 +796,36 @@
 	if(toxins_pp > safe_toxins_min)
 		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
 		if(SA_pp > 0.05)
-			if(prob(3))
+			if(!catchup && prob(3))
 				to_chat(self,span_warning("Something burns as you breathe."))
 	if(toxins_pp > safe_toxins_max)
 		var/ratio = (poison_toxin/safe_toxins_max) * 10
 		if(self.reagents)
 			self.reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
 			breath.adjust_gas(poison_type, -poison_toxin/6, update = 0) //update after
-		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
+		if(!catchup)
+			self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
-		self.clear_alert("tox_in_air")
+		if(!catchup)
+			self.clear_alert("tox_in_air")
 
 	// Too much methane in the air
 	if(methane_pp > safe_toxins_min)
 		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_CH4) / breath_moles) * breath_pressure
 		if(SA_pp > 0.05)
-			if(prob(5))
+			if(!catchup && prob(5))
 				to_chat(self,span_warning("You smell rotten eggs."))
 	if(methane_pp > safe_toxins_max)
 		// Methane displaces the breath: slow suffocation.
 		quality *= 1 - clamp(methane_pp / (safe_toxins_max * 20), 0.1, 0.8)
-		if(prob(20))
+		if(!catchup && prob(20))
 			self.emote("gasp")
 		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
-		self.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
+		if(!catchup)
+			self.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
-		self.clear_alert("methane_in_air")
+		if(!catchup)
+			self.clear_alert("methane_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
 	if(LINDA_GAS_AMT(breath, GAS_N2O))
@@ -811,20 +844,20 @@
 
 		// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
 		else if(SA_pp > 0.15)
-			if(prob(20))
+			if(!catchup && prob(20))
 				self.emote(pick("giggle", "laugh"))
 		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after
 
-	if(self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_OXY)
+	if(!catchup && self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_OXY)
 		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
-	else if(self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_TOXIN)
+	else if(!catchup && self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_TOXIN)
 		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 
 	// Were we able to breathe?
 	self.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
 	self.body?.set_breath_quality(quality)
 
-	if(!self.does_not_breathe && self.client) // If we breathe, and have an active client, check if we have synthetic lungs.
+	if(!catchup && !self.does_not_breathe && self.client) // If we breathe, and have an active client, check if we have synthetic lungs.
 		var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
 		var/turf = get_turf(self)
 		var/mob/living/carbon/human/M = self
@@ -841,43 +874,43 @@
 		if((breath_temperature <= self.species.cold_discomfort_level || breath_temperature >= self.species.heat_discomfort_level) && !(self.has_mutation(COLD_RESISTANCE)))
 
 			if(breath_temperature <= self.species.breath_cold_level_1)
-				if(prob(20))
+				if(!catchup && prob(20))
 					to_chat(self, span_danger("You feel your face freezing and icicles forming in your lungs!"))
 			else if(breath_temperature >= self.species.breath_heat_level_1)
-				if(prob(20))
+				if(!catchup && prob(20))
 					to_chat(self, span_danger("You feel your face burning and a searing heat in your lungs!"))
 
 			if(breath_temperature >= self.species.heat_discomfort_level)
 
 				if(breath_temperature >= self.species.breath_heat_level_3)
 					self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_3, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 				else if(breath_temperature >= self.species.breath_heat_level_2)
 					self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_2, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
 				else if(breath_temperature >= self.species.breath_heat_level_1)
 					self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_1, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 				else if(self.species.get_environment_discomfort(self, ENVIRONMENT_COMFORT_MARKER_HOT))
-					self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
 				else
-					self.clear_alert("temp")
+					if(!catchup) self.clear_alert("temp")
 
 			else if(breath_temperature <= self.species.cold_discomfort_level)
 
 				if(breath_temperature <= self.species.breath_cold_level_3)
 					self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 				else if(breath_temperature <= self.species.breath_cold_level_2)
 					self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_2, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
 				else if(breath_temperature <= self.species.breath_cold_level_1)
 					self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_1, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
 				else if(self.species.get_environment_discomfort(self, ENVIRONMENT_COMFORT_MARKER_COLD))
-					self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
+					if(!catchup) self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
 				else
-					self.clear_alert("temp")
+					if(!catchup) self.clear_alert("temp")
 
 			//breathing in hot/cold air also heats/cools you a bit
 			var/temp_adj = breath_temperature - self.bodytemperature
@@ -928,6 +961,15 @@
 	phase = LIFE_PHASE_TAIL
 	order = 290
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
+
+/datum/life_system/species_components/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	var/datum/component/xenochimera/xc = self.get_xenochimera_component()
+	if(xc && (!self.stat || !(xc.revive_ready == REVIVING_NOW || xc.revive_ready == REVIVING_DONE)))
+		xc.biology_step()
+	var/datum/component/shadekin/sk = self.get_shadekin_component()
+	if(sk && !self.stat)
+		sk.biology_step()
 
 /// Species components (xenochimera, shadekin). Not stat checked: those check in their own code.
 /datum/life_system/species_components/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -946,6 +988,13 @@
 
 /datum/life_system/environment/carbon/human
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
+
+/datum/life_system/environment/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	if(ctx?.environment && !self.is_incorporeal())
+		self.species.environment_biology(self)
+		for(var/datum/trait/env_trait as anything in self.species.env_traits)
+			env_trait.environment_biology(self)
 
 /datum/life_system/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
 	if(!environment)
@@ -1135,6 +1184,7 @@
 	order = 160
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /// Body temperature adjusts itself (self-regulation).
 /datum/life_system/thermoregulation/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -1166,6 +1216,7 @@
 		var/recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
 		//to_world("Cold. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.bodytemperature += recovery_amt
+
 	else if(self.species.cold_level_1 <= self.bodytemperature && self.bodytemperature <= self.species.heat_level_1)
 		var/recovery_amt = body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR
 		//to_world("Norm. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
@@ -1176,7 +1227,11 @@
 		//to_world("Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.bodytemperature += recovery_amt
 
-	//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
+
+/datum/life_system/thermoregulation/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return tick(self, ctx)
+
+//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
 //Read from the body's worn protection cache (code/modules/body/worn_protection.dm), not by scanning the slots.
 /mob/living/carbon/human/proc/get_heat_protection_flags(temperature) //Temperature is the temperature you're being exposed to.
 	return body ? body.worn_heat_flags(temperature) : 0
@@ -1244,13 +1299,43 @@
 
 /datum/life_system/chemicals/carbon/human
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/chemicals/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 
 	if(self.inStasisNow())
 		return
+	if(!process_biology(self))
+		return
+	// Hunger sounds, emotes, and visibility updates remain once per real frame.
+	if(self.noisy == TRUE && self.nutrition < 250 && prob(10))
+		var/sound/growlsound = sound(get_sfx("hunger_sounds"))
+		var/growlmultiplier = 100 - (self.nutrition / 250 * 100)
+		playsound(self, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	if(self.nutrition > 500 && self.noisy_full == TRUE)
+		var/belch_prob = 5
+		if(self.nutrition < 4075)
+			belch_prob = ((self.nutrition-500)/3575)*5
+		if(prob(belch_prob))
+			self.emote("belch")
+	if(self.factor(BF_DARKSIGHT) && self.chemical_darksight == 0)
+		self.recalculate_vis()
+		self.chemical_darksight = 1
+	if(!self.factor(BF_DARKSIGHT) && self.chemical_darksight == 1)
+		self.recalculate_vis()
+		self.chemical_darksight = 0
 
-	if(self.reagents)
+	if(!self.isSynthetic())
+		self.handle_trace_chems()
+
+/datum/life_system/chemicals/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return process_biology(self, TRUE)
+
+/datum/life_system/chemicals/carbon/human/proc/process_biology(mob/living/carbon/human/self, catchup = FALSE)
+
+	// Reagent callbacks are polymorphic and may emit presentation. Nutrition is
+	// safe to advance independently while their extra-step contract is audited.
+	if(self.reagents && !catchup)
 		if(self.touching)
 			self.touching.metabolize()
 		if(self.ingested)
@@ -1281,33 +1366,47 @@
 		if(comp)
 			nutrition_reduction *= comp.get_nutrition_multiplier()
 		self.adjust_nutrition(-nutrition_reduction)
-
-	if(self.noisy == TRUE && self.nutrition < 250 && prob(10))
-		var/sound/growlsound = sound(get_sfx("hunger_sounds"))
-		var/growlmultiplier = 100 - (self.nutrition / 250 * 100)
-		playsound(self, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
-	if(self.nutrition > 500 && self.noisy_full == TRUE)
-		var/belch_prob = 5 //Maximum belch prob.
-		if(self.nutrition < 4075)
-			belch_prob = ((self.nutrition-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
-		if(prob(belch_prob))
-			self.emote("belch")
-	if(self.factor(BF_DARKSIGHT) && self.chemical_darksight == 0)
-		self.recalculate_vis()
-		self.chemical_darksight = 1
-	if(!self.factor(BF_DARKSIGHT) && self.chemical_darksight == 1)
-		self.recalculate_vis()
-		self.chemical_darksight = 0
-
-	// TODO: stomach and bloodstream organ.
-	if(!self.isSynthetic())
-		self.handle_trace_chems()
-
-	return
+	return TRUE
 
 //DO NOT run the statuses system from this proc: it runs after this one as long as this returns a true value.
 /datum/life_system/status/carbon/human
 	mob_type = /mob/living/carbon/human
+
+/datum/life_system/status/carbon/human/process_biology(mob/living/carbon/human/self)
+	if(self.stat != DEAD)
+		self.body?.life_tick()
+
+/datum/life_system/status/carbon/human/biology_status_ready(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/status/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	..()
+	if(self.stat == DEAD)
+		return
+	// Counters and healing advance on virtual biology time. Alerts, dreams, sounds,
+	// hallucination presentation, and visible effects remain on the real frame.
+	if(self.hallucination)
+		self.hallucination = max(0, self.hallucination - 2)
+	if(self.tiredness)
+		self.tiredness--
+		if(self.tiredness >= 100)
+			self.Sleeping(5)
+	if(self.fear)
+		self.fear--
+	if(self.sleeping)
+		self.mend(TREAT_ANALGESIC, 3)
+		if(prob(2))
+			if(prob(50))
+				self.mend(TREAT_TISSUE_REPAIR, 1)
+			else
+				self.mend(TREAT_BURN_CARE, 1)
+	if(self.resting)
+		self.mend(TREAT_ANALGESIC, 2)
+	if(self.drowsyness)
+		self.drowsyness = max(0, self.drowsyness - 1)
+		if(prob(5))
+			self.Sleeping(1)
+			self.Paralyse(5)
 
 /datum/life_system/status/carbon/human/update_status(mob/living/carbon/human/self)
 
@@ -1324,7 +1423,7 @@
 	else				//ALIVE. LIGHTS ARE ON
 		// The body ticks afflictions, recomputes vitals once, and applies
 		// death (organ death) and unconsciousness (consciousness model).
-		self.body.life_tick()
+		process_biology(self)
 
 		if(self.stat == DEAD)
 			self.blinded = 1
@@ -1863,10 +1962,22 @@
 
 /datum/life_system/random_events/carbon/human
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/random_events/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(self.inStasisNow())
 		return
+	process_biology(self)
+	// Ambient scare audio is tied to real time, not virtual biology time.
+	if(isturf(self.loc) && rand(1,1000) == 1)
+		var/turf/T = self.loc
+		if(T.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
+			self.playsound_local(self,pick(GLOB.scarySounds),50, 1, -1)
+
+/datum/life_system/random_events/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	process_biology(self)
+
+/datum/life_system/random_events/carbon/human/proc/process_biology(mob/living/carbon/human/self)
 
 	// Puke if toxloss is too high
 	if(!self.stat && !isbelly(self.loc))
@@ -1880,18 +1991,6 @@
 			spawn self.vomit()
 
 
-	//0.1% chance of playing a scary sound to someone who's in complete darkness
-	if(isturf(self.loc) && rand(1,1000) == 1)
-		var/turf/T = self.loc
-		if(T.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
-			/* 
-			if(text2num(time2text(world.timeofday, "MM")) == 4)
-				if(text2num(time2text(world.timeofday, "DD")) == 1)
-					playsound_local(self,pick(GLOB.scawwysownds),50, 0)
-					return
-			*/
-			self.playsound_local(self,pick(GLOB.scarySounds),50, 1, -1)
-
 /datum/life_system/changeling
 	name = "changeling"
 	bit = LIFE_SYS_TRAITS
@@ -1899,6 +1998,11 @@
 	order = 140
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
+
+/datum/life_system/changeling/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	var/datum/component/antag/changeling/comp = is_changeling(self)
+	comp?.regenerate()
 
 /// Updates the number of stored chemicals for powers.
 /datum/life_system/changeling/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -1955,9 +2059,16 @@
 	order = 180
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /// Traumatic shock stages from pain.
 /datum/life_system/shock/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+	return process_shock_biology(self)
+
+/datum/life_system/shock/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return process_shock_biology(self, TRUE)
+
+/datum/life_system/shock/proc/process_shock_biology(mob/living/carbon/human/self, catchup = FALSE)
 	self.updateshock()
 	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
 		return 0	// Cancelled by a component
@@ -1971,33 +2082,33 @@
 	if(self.stat)
 		return 0
 
-	if(self.shock_stage == 10)
+	if(!catchup && self.shock_stage == 10)
 		if(self.traumatic_shock >= 80)
 			self.custom_pain("[pick("It hurts so much", "You really need some painkillers", "Dear god, the pain")]!", 40)
 
 	if(self.shock_stage >= 30)
-		if(self.shock_stage == 30 && !isbelly(self.loc))
+		if(!catchup && self.shock_stage == 30 && !isbelly(self.loc))
 			self.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
 		self.eye_blurry = max(2, self.eye_blurry)
 		if(self.traumatic_shock >= 80)
 			self.stuttering = max(self.stuttering, 5)
 
 
-	if(self.shock_stage == 40)
+	if(!catchup && self.shock_stage == 40)
 		if(self.traumatic_shock >= 80)
 			to_chat(self, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 
 	if (self.shock_stage >= 60)
-		if(self.shock_stage == 60 && !isbelly(self.loc))
+		if(!catchup && self.shock_stage == 60 && !isbelly(self.loc))
 			self.automatic_custom_emote(VISIBLE_MESSAGE, "'s body becomes limp.", check_stat = TRUE)
 		if (prob(2))
-			if(self.traumatic_shock >= 80)
+			if(!catchup && self.traumatic_shock >= 80)
 				to_chat(self, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 			self.Weaken(20)
 
 	if(self.shock_stage >= 80)
 		if (prob(5))
-			if(self.traumatic_shock >= 80)
+			if(!catchup && self.traumatic_shock >= 80)
 				to_chat(self, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 				if(prob(20) && !isbelly(self.loc))
 					self.emote("pain")
@@ -2005,7 +2116,7 @@
 
 	if(self.shock_stage >= 120)
 		if (prob(2))
-			if(self.traumatic_shock >= 80)
+			if(!catchup && self.traumatic_shock >= 80)
 				to_chat(self, span_danger("[pick("You black out", "You feel like you could die any moment now", "You are about to lose consciousness")]!"))
 				if(prob(40) && !isbelly(self.loc))
 					self.emote("pain")
@@ -2013,7 +2124,7 @@
 			self.Sleeping(5)
 
 	if(self.shock_stage == 150)
-		if(!isbelly(self.loc))
+		if(!catchup && !isbelly(self.loc))
 			self.automatic_custom_emote(VISIBLE_MESSAGE, "can no longer stand, collapsing!", check_stat = TRUE)
 			if(prob(60))
 				self.emote("pain")
@@ -2028,9 +2139,13 @@
 	phase = LIFE_PHASE_TAIL
 	order = 310
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/pulse/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	self.pulse = compute(self)
+
+/datum/life_system/pulse/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return tick(self, ctx)
 
 /// The pulse this body should show now (updates every 5 life ticks).
 /datum/life_system/pulse/proc/compute(mob/living/carbon/human/self)
@@ -2331,6 +2446,7 @@
 	order = 280
 	segment = LIFE_SEG_HUMAN_DEAD
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /// Brain decay while dead, which closes the defibrillation window.
 /datum/life_system/defib_timer/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -2342,6 +2458,9 @@
 		return // Still no brain.
 
 	brain.tick_defib_timer()
+
+/datum/life_system/defib_timer/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return tick(self, ctx)
 
 /mob/living/carbon/human/proc/has_virus()
 	for(var/thing in viruses)
@@ -2372,6 +2491,7 @@
 	order = 170
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /// Weight gain and loss from nutrition.
 /datum/life_system/weight/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -2381,6 +2501,9 @@
 
 		else if (self.nutrition <= MAX_NUTRITION_TO_LOSE && self.stat != 2 && self.weight > MIN_MOB_WEIGHT && self.weight_loss)
 			self.weight -= self.species.metabolism*(0.01*self.weight_loss) // starvation weight loss
+
+/datum/life_system/weight/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return tick(self, ctx)
 
 //Our call for the NIF to do whatever
 /datum/life_system/nif

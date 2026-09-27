@@ -7,6 +7,7 @@
 
 use proptest::prelude::*;
 use vg_core::sim::Mode;
+use vg_heat::{GasExchange, GasRef};
 
 use crate::cell::{GasCell, N, Q};
 use crate::gas::ids::{GAS_NITROGEN, GAS_OXYGEN, GAS_PLASMA};
@@ -34,6 +35,26 @@ fn world(mode: Mode) -> GasWorld {
 
 fn cell(x: u32, y: u32) -> u32 {
 	y * X + x
+}
+
+#[test]
+fn direct_turf_write_is_visible_to_heat_before_a_gas_frame() {
+	let mut w = world(Mode::Overlay);
+	let c = cell(4, 4);
+	w.field
+		.as_mut()
+		.expect("field")
+		.register(c, air(1.0, 293.15), 2500.0, false, Some(0));
+	let before = w.load(MixRef::Turf(c)).expect("registered gas");
+	let mut after = before.clone();
+	after.set_temperature(1024.0);
+	w.store(MixRef::Turf(c), &before, &after);
+	let cell = w.field.as_ref().expect("field").read(c).expect("cell").0;
+	assert_eq!(cell.temperature, 293.15, "the field's cached value is stale until its next frame");
+	assert!((cell.temperature_now() - 1024.0).abs() < 0.1);
+	let heat = crate::world::HeatGas(std::sync::Arc::clone(&w.exchange));
+	let probe = heat.probe(GasRef::Turf(c)).expect("heat probe");
+	assert!((probe.temperature - 1024.0).abs() < 0.1);
 }
 
 /// A walled room of `w` x `h` cells at the origin, `gas` inside, with the

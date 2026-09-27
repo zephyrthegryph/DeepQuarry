@@ -12,12 +12,16 @@
 	density = TRUE
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 2
-	var/timerid
+	var/datum/object_model/schedule_entry/startup_timer
 
 /obj/machinery/bluespace_denier/Initialize(mapload)
 	. = ..()
 	// if already anchored, setup the proxity check
-	timerid = addtimer(CALLBACK(src, PROC_REF(start_up)), 10 SECONDS, TIMER_STOPPABLE)
+	startup_timer = After(10 SECONDS, PROC_REF(on_startup_due))
+
+/obj/machinery/bluespace_denier/proc/on_startup_due()
+	startup_timer = null
+	start_up()
 
 /obj/machinery/bluespace_denier/proc/start_up()
 	if(anchored)
@@ -25,9 +29,8 @@
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/machinery/bluespace_denier/Destroy()
-	if(timerid)
-		deltimer(timerid)
-	. = ..()
+	startup_timer = null
+	return ..()
 
 /obj/machinery/bluespace_denier/power_change()
 	..()

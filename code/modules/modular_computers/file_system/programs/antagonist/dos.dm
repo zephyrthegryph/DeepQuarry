@@ -1,3 +1,15 @@
+// The selected relay is a lifetime-managed edge. Losing either endpoint
+// clears the selection, including before execution.
+/datum/object_model/relation/ntnet_dos_target
+	from_type = /datum/computer_file/program/ntnet_dos
+	to_type = /obj/machinery/ntnet_relay
+	source_single = TRUE
+
+/datum/object_model/relation/ntnet_dos_target/on_unlink(datum/source, datum/target, reason)
+	var/datum/computer_file/program/ntnet_dos/program = source
+	if(reason == OM_REL_DESTROYING && !QDELETED(program))
+		program.error = "Connection to quantum relay severed"
+
 /datum/computer_file/program/ntnet_dos
 	filename = "ntn_dos"
 	filedesc = "DoS Traffic Generator"
@@ -11,12 +23,15 @@
 	available_on_syndinet = TRUE
 	tgui_id = "NtosNetDos"
 
-	var/obj/machinery/ntnet_relay/target = null
 	var/dos_speed = 0
 	var/error = ""
 	var/executed = 0
 
+/datum/computer_file/program/ntnet_dos/proc/selected_relay()
+	return om_first_linked(src, /datum/object_model/relation/ntnet_dos_target)
+
 /datum/computer_file/program/ntnet_dos/process_tick()
+	var/obj/machinery/ntnet_relay/target = selected_relay()
 	dos_speed = 0
 	switch(ntnet_status)
 		if(1)
@@ -28,14 +43,13 @@
 	if(target && executed)
 		target.dos_overload += dos_speed
 		if(!target.operable())
-			LAZYREMOVE(target.dos_sources, src)
-			target = null
+			om_unlink(src, /datum/object_model/relation/ntnet_dos_target, target)
 			error = "Connection to destination relay lost."
 
 /datum/computer_file/program/ntnet_dos/kill_program(forced)
+	var/obj/machinery/ntnet_relay/target = selected_relay()
 	if(target)
-		LAZYREMOVE(target.dos_sources, src)
-		target = null
+		om_unlink(src, /datum/object_model/relation/ntnet_dos_target, target)
 	executed = 0
 
 	..(forced)
@@ -45,6 +59,7 @@
 		return
 
 	var/list/data = get_header_data()
+	var/obj/machinery/ntnet_relay/target = selected_relay()
 
 	data["error"] = error
 	if(target && executed)
@@ -65,24 +80,23 @@
 /datum/computer_file/program/ntnet_dos/tgui_act(action, params)
 	if(..())
 		return TRUE
+	var/obj/machinery/ntnet_relay/target = selected_relay()
 	switch(action)
 		if("PRG_target_relay")
 			for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
 				if(R.uid == text2num(params["targid"]))
-					target = R
+					om_link(src, /datum/object_model/relation/ntnet_dos_target, R)
 					break
 			return TRUE
 		if("PRG_reset")
 			if(target)
-				LAZYREMOVE(target.dos_sources, src)
-				target = null
+				om_unlink(src, /datum/object_model/relation/ntnet_dos_target, target)
 			executed = FALSE
 			error = ""
 			return TRUE
 		if("PRG_execute")
 			if(target)
 				executed = TRUE
-				LAZYADD(target.dos_sources, src)
 				if(GLOB.ntnet_global.intrusion_detection_enabled)
 					var/obj/item/computer_hardware/network_card/network_card = computer.network_card
 					GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target.uid] detected from device: [network_card.get_network_tag()]")

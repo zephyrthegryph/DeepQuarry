@@ -37,12 +37,11 @@
 #define LIFE_SYS_SENSES (1<<13)
 #define LIFE_SYS_IDENTITY (1<<14)
 #define LIFE_SYS_HUD (1<<15)
-#define LIFE_SYS_CLIENT (1<<16)
-#define LIFE_SYS_MOVEMENT (1<<17)
-#define LIFE_SYS_MACHINE (1<<18)
-#define LIFE_SYS_BEHAVIOUR (1<<19)
-#define LIFE_SYS_GATE (1<<20)
-#define LIFE_SYS_ALL ((1<<21) - 1)
+#define LIFE_SYS_MOVEMENT (1<<16)
+#define LIFE_SYS_MACHINE (1<<17)
+#define LIFE_SYS_BEHAVIOUR (1<<18)
+#define LIFE_SYS_GATE (1<<19)
+#define LIFE_SYS_ALL ((1<<20) - 1)
 
 // --- Segments (/datum/life_context/var/blocked) ---------------------------------------------
 // A segment is the run of code that followed an early `return` in a legacy Life() or an
@@ -102,3 +101,5 @@
 
 /// Nominal seconds between two Life() calls for one mob (SSmobs wait x slices).
 #define LIFE_NOMINAL_SECONDS 2
+/// Bounded biological catch-up; equals the object-model clock's maximum rate.
+#define LIFE_MAX_BIOLOGY_STEPS 8

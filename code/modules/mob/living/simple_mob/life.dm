@@ -15,6 +15,7 @@
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/simple_mob
+	biology_catchup = TRUE
 
 /datum/life_system/simple_vitals/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	// Death is decided by the body (evaluate_status -> death()); we only refresh displays here.
@@ -24,6 +25,13 @@
 		ctx.blocked |= LIFE_SEG_SIMPLE
 		return
 	ctx.core_result = TRUE
+
+/datum/life_system/simple_vitals/tick_biology(mob/living/simple_mob/self, datum/life_context/ctx)
+	if(self.stat >= DEAD)
+		ctx.core_result = FALSE
+		ctx.blocked |= LIFE_SEG_SIMPLE
+	else
+		ctx.core_result = TRUE
 
 /datum/life_system/simple_vitals/idle(mob/living/simple_mob/self)
 	return TRUE
@@ -60,8 +68,12 @@
 	segment = LIFE_SEG_SIMPLE
 	mob_type = /mob/living/simple_mob
 	woken_by = "injure (LIFE_WAKE_BODY); feeding"
+	biology_catchup = TRUE
 
 /datum/life_system/simple_healing/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+	self.do_healing()
+
+/datum/life_system/simple_healing/tick_biology(mob/living/simple_mob/self, datum/life_context/ctx)
 	self.do_healing()
 
 /// Heals only while hurt and fed.
@@ -161,6 +173,11 @@
 /datum/life_system/environment/simple_mob
 	mob_type = /mob/living/simple_mob
 	woken_by = "Moved (LIFE_WAKE_MOVED); injure; its own timer for air changing in place"
+	biology_catchup = TRUE
+
+/datum/life_system/environment/simple_mob/tick_biology(mob/living/simple_mob/self, datum/life_context/ctx)
+	if(ctx?.environment)
+		exchange_biology(self, ctx.environment)
 
 /// Idle while the air is survivable and the body has nothing for it to treat. Air that
 /// changes in place (a breach) is caught by a slow timer: atmos has no per-mob signal yet.
@@ -203,6 +220,10 @@
 
 /// Handle interacting with and taking damage from atmos.
 /datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
+	return exchange_biology(self, environment, FALSE)
+
+/// Extra local biology samples gas again, but leaves HUD alerts for the real frame.
+/datum/life_system/environment/simple_mob/proc/exchange_biology(mob/living/simple_mob/self, datum/gas_mixture/environment, quiet = TRUE)
 
 	if(self.inStasisNow())
 		return 1 // return early to skip atmos checks
@@ -218,58 +239,76 @@
 	var/atmos_unsuitable = 0
 	if(self.min_oxy && LINDA_GAS_AMT(environment, GAS_O2) < self.min_oxy)
 		atmos_unsuitable |= 1
-		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
+		if(!quiet)
+			self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
 	else if(self.max_oxy && LINDA_GAS_AMT(environment, GAS_O2) > self.max_oxy)
 		atmos_unsuitable |= 1
-		self.throw_alert("oxy", /atom/movable/screen/alert/too_much_oxy)
+		if(!quiet)
+			self.throw_alert("oxy", /atom/movable/screen/alert/too_much_oxy)
 	else
-		self.clear_alert("oxy")
+		if(!quiet)
+			self.clear_alert("oxy")
 
 	if(self.min_tox && LINDA_GAS_AMT(environment, GAS_PHORON) < self.min_tox)
 		atmos_unsuitable |= 2
-		self.throw_alert("tox_in_air", /atom/movable/screen/alert/not_enough_tox)
+		if(!quiet)
+			self.throw_alert("tox_in_air", /atom/movable/screen/alert/not_enough_tox)
 	else if(self.max_tox && LINDA_GAS_AMT(environment, GAS_PHORON) > self.max_tox)
 		atmos_unsuitable |= 2
-		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
+		if(!quiet)
+			self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
-		self.clear_alert("tox_in_air")
+		if(!quiet)
+			self.clear_alert("tox_in_air")
 
 	if(self.min_n2 && LINDA_GAS_AMT(environment, GAS_N2) < self.min_n2)
 		atmos_unsuitable |= 1
-		self.throw_alert("n2o", /atom/movable/screen/alert/not_enough_nitro)
+		if(!quiet)
+			self.throw_alert("n2o", /atom/movable/screen/alert/not_enough_nitro)
 	else if(self.max_n2 && LINDA_GAS_AMT(environment, GAS_N2) > self.max_n2)
 		atmos_unsuitable |= 1
-		self.throw_alert("n2o", /atom/movable/screen/alert/too_much_nitro)
+		if(!quiet)
+			self.throw_alert("n2o", /atom/movable/screen/alert/too_much_nitro)
 	else
-		self.clear_alert("n2o")
+		if(!quiet)
+			self.clear_alert("n2o")
 
 	if(self.min_co2 && LINDA_GAS_AMT(environment, GAS_CO2) < self.min_co2)
 		atmos_unsuitable |= 1
-		self.throw_alert("co2", /atom/movable/screen/alert/not_enough_co2)
+		if(!quiet)
+			self.throw_alert("co2", /atom/movable/screen/alert/not_enough_co2)
 	else if(self.max_co2 && LINDA_GAS_AMT(environment, GAS_CO2) > self.max_co2)
 		atmos_unsuitable |= 1
-		self.throw_alert("co2", /atom/movable/screen/alert/too_much_co2)
+		if(!quiet)
+			self.throw_alert("co2", /atom/movable/screen/alert/too_much_co2)
 	else
-		self.clear_alert("co2")
+		if(!quiet)
+			self.clear_alert("co2")
 
 	if(self.min_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) < self.min_ch4)
 		atmos_unsuitable |= 2
-		self.throw_alert("methane_in_air", /atom/movable/screen/alert/not_enough_methane)
+		if(!quiet)
+			self.throw_alert("methane_in_air", /atom/movable/screen/alert/not_enough_methane)
 	else if(self.max_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) > self.max_ch4)
 		atmos_unsuitable |= 2
-		self.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
+		if(!quiet)
+			self.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
-		self.clear_alert("methane_in_air")
+		if(!quiet)
+			self.clear_alert("methane_in_air")
 
 	//Atmos effect
 	if(self.bodytemperature < self.minbodytemp)
 		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc)
-		self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
+		if(!quiet)
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 	else if(self.bodytemperature > self.maxbodytemp)
 		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc)
-		self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
+		if(!quiet)
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else
-		self.clear_alert("temp")
+		if(!quiet)
+			self.clear_alert("temp")
 
 	if(atmos_unsuitable)
 		self.add_oxygen_debt(self.unsuitable_atoms_damage, self.loc)
@@ -283,12 +322,19 @@
 	order = 140
 	segment = LIFE_SEG_SIMPLE
 	mob_type = /mob/living/simple_mob
+	biology_catchup = TRUE
 
 /// Organ processing.
 /datum/life_system/guts/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	for(var/obj/item/organ/OR in self.internal_organs)
 		OR.process()
 
+	for(var/obj/item/organ/OR in self.organs)
+		OR.process()
+
+/datum/life_system/guts/tick_biology(mob/living/simple_mob/self, datum/life_context/ctx)
+	for(var/obj/item/organ/OR in self.internal_organs)
+		OR.process()
 	for(var/obj/item/organ/OR in self.organs)
 		OR.process()
 

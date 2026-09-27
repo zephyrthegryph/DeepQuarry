@@ -65,7 +65,7 @@
 	if(owner?.body)
 		owner.body.add_affliction(W, src)
 	else
-		W.location = src
+		W.set_location(src)
 		LAZYADD(detached_afflictions, W)
 	W.sync()
 	integrity_dirty = TRUE
@@ -105,7 +105,7 @@
 /datum/body/proc/detach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
-		A.location = O
+		A.set_location(O)
 		LAZYADD(O.detached_afflictions, A)
 	// The organ's own integrity is recomputed by removed() once its owner is
 	// cleared, so it reads the detached list rather than this body's index.

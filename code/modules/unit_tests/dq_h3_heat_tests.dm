@@ -152,6 +152,7 @@
 	var/list/things = list(oven)
 	for(var/datum/cooking_item/CI as anything in oven.cooking_objs)
 		TEST_ASSERT(!isnull(CI.container.heat_body), "its containers are coupled to it")
+		TEST_ASSERT(CI.container.loc == oven, "its containers are inside the oven")
 		things += CI.container
 	// The heat source adds energy.
 	vg_heat_debug_run_frames(1)
@@ -162,13 +163,14 @@
 	// made or lost: the isolated oven plus contents keep their energy.
 	vg_heat_body_power(oven.heat_body, 0)
 	vg_heat_body_set_temperature(oven.heat_body, oven.optimal_temp)
-	vg_heat_debug_run_frames(1)
+	// Include the first exchange frame: a highly conductive tray can receive
+	// nearly all its heat before a later snapshot.
 	start = dq_h3_energy(things)
 	var/contents_start = dq_h3_energy(things - oven)
 	vg_heat_debug_run_frames(10)
 	var/moved = dq_h3_energy(things - oven) - contents_start
 	var/drift = abs(dq_h3_energy(things) - start)
-	TEST_ASSERT(moved > 0, "the oven heated its contents")
+	TEST_ASSERT(moved > 0, "the oven heated its contents (moved [moved] J)")
 	TEST_ASSERT(drift <= moved * 0.01, "energy is conserved: [moved] J moved to the contents, total changed by [drift] J")
 	oven.set_heating(FALSE)
 
@@ -237,22 +239,14 @@
 	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
-	// Was a fixed vg_heat_debug_run_frames(3): that assumed 3 frames is always
-	// enough for the heat domain to measurably warm the probe, which held only
-	// by accident when this test ran on a floor left warm by a previous test
-	// sharing the same turf. wait_for_condition() is the right replacement for
-	// that timing assumption, but on a genuinely isolated floor this still
-	// fails even after 500 frames (50 x 10) -- the probe never measurably
-	// warms at all. That is a real heat-domain coupling bug, not a timing
-	// issue, and is tracked separately from test isolation; see the isolation
-	// checkpoint notes. Kept short (not 500 frames) so this fails fast instead
-	// of adding 30+ seconds to every run while that's open.
+	// Let the heat domain settle across frames without relying on a warm floor
+	// left by another test. The gas cell's live energy must feed its heat probe.
 	var/heated = wait_for_condition(
 		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
 		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_heat_debug_run_frames), 1),
 		20,
 	)
-	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")
+	TEST_ASSERT(heated, "the heat domain heats it (probe [probe.get_temperature()] K, start [start] K, air [T.air.return_temperature()] K, body [probe.heat_body], gas handle [T.air.arena_id()], turf cell [json_encode(vg_atmos_cell_info(T))])")
 	hotspot.perform_exposure()
 	TEST_ASSERT_EQUAL(probe.fire_acts, 0, "without a fire_act() call per SSair fire")
 	qdel(hotspot)

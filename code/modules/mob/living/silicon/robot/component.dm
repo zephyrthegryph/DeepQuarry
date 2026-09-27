@@ -242,7 +242,7 @@
 	max_damage = 40
 
 // POWER BUS: the cell mount. The cell is the installed item; the robot drops
-// its cell reference when the cell is deleted (see set_cell()).
+// its cell reference when the cell relation ends (see set_cell()).
 /datum/robot_component/cell
 	name = "power cell"
 	max_damage = 50

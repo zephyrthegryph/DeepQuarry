@@ -101,6 +101,36 @@
 	if(length(failures))
 		TEST_FAIL("[length(failures)] of [tested] latent-safe types failed:\n[jointext(failures, "\n")]")
 
+/// A generated list must be saved even if this item happens to match the
+/// cached pristine sample. Force that coincidence so the test is not random.
+/datum/unit_test/dq_state_nondeterministic_list_baseline
+
+/datum/unit_test/dq_state_nondeterministic_list_baseline/Run()
+	var/list/cases = list(
+		/obj/item/clothing/head/fishing = "item_state_slots",
+		/obj/item/trash/material/metal = "material_mix",
+	)
+	for(var/path in cases)
+		var/name = cases[path]
+		var/obj/item/original = new path(test_floor())
+		var/datum/state_schema/schema = state_schema_for(original)
+		var/list/previous_baseline = schema.list_baseline
+		var/datum/state_context/ctx = new(NONE)
+		var/list/forced_baseline = list()
+		forced_baseline[name] = ctx.encode_value(original.vars[name], "[path].[name]")
+		schema.list_baseline = forced_baseline
+		var/list/blob = state_serialize(original, STATE_FULL)
+		schema.list_baseline = previous_baseline
+		TEST_ASSERT_NOTNULL(blob, "[path] should serialize")
+		var/list/saved = blob[STATE_KEY_VARS]
+		TEST_ASSERT(name in saved, "[path].[name] must be saved despite matching the sampled baseline")
+		var/obj/item/copy = state_materialize(blob, test_floor(), STATE_FULL)
+		TEST_ASSERT_NOTNULL(copy, "[path] should materialize")
+		TEST_ASSERT_EQUAL(state_canonical(copy.vars[name]), state_canonical(original.vars[name]), "[path].[name] should survive reconstruction")
+		qdel(ctx)
+		qdel(copy)
+		qdel(original)
+
 /// Deltas: identical items hash equal, a change shows up, key order does not matter.
 /datum/unit_test/dq_state_canonical_delta
 

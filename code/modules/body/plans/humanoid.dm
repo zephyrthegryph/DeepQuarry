@@ -349,17 +349,23 @@
 	return acc
 
 /// Grant a factor table (a trait's or perk's) to this species instance.
-/datum/species/proc/grant_factors(alist/table)
+/datum/species/proc/grant_factors(alist/table, mob/living/carbon/human/H)
 	if(!length(table))
 		return
 	LAZYINITLIST(granted_factors)
 	granted_factors[++granted_factors.len] = table
+	if(H && H.species == src)
+		H.invalidate_factors()
 
-/datum/species/proc/revoke_factors(alist/table)
+/datum/species/proc/revoke_factors(alist/table, mob/living/carbon/human/H)
 	if(!granted_factors)
+		return
+	if(!(table in granted_factors))
 		return
 	granted_factors -= list(table)
 	UNSETEMPTY(granted_factors)
+	if(H && H.species == src)
+		H.invalidate_factors()
 
 /// The species' own value of a factor (baseline plus traits), without any
 /// other source. Feral movement compresses everything above it.

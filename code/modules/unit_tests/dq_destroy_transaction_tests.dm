@@ -195,6 +195,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "mind level"
 	w_class = ITEMSIZE_NORMAL
 	var/level_name
+	var/mind_latent_hook_saw_location = FALSE
 
 /obj/item/dq_destroy_transaction_mind_level/slot_def_types()
 	var/static/list/types = list(/datum/slot_def/dq_destroy_transaction_mind_slot, /datum/slot_def/dq_destroy_transaction_mind_body_slot)
@@ -205,24 +206,30 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	is_mind_slot = TRUE
 	drop_policy = SLOT_DROP_SPILL
 
+/datum/slot_def/dq_destroy_transaction_mind_slot/drop_latent(atom/holder, atom/drop)
+	var/obj/item/dq_destroy_transaction_mind_level/level = holder
+	level.mind_latent_hook_saw_location = !!level.loc && (level in level.loc.contents)
+
 /datum/slot_def/dq_destroy_transaction_mind_body_slot
 	id = "body"
 	is_default = TRUE
 	drop_policy = SLOT_DROP_DELETE
 
 /// Occupies a level's mind slot; logs its level name and whether the level
-/// still had a loc (fully registered) when it left.
+/// remained in its physical container when the mind left.
 /obj/item/dq_destroy_transaction_mind_probe
 	name = "mind probe"
 	w_class = ITEMSIZE_TINY
 	has_slot_hooks = TRUE
-	var/still_registered
+	var/still_located
+	var/holder_destroying
 
 /obj/item/dq_destroy_transaction_mind_probe/on_unslotted(atom/holder, slot_id, flags = 0)
 	if(istype(holder, /obj/item/dq_destroy_transaction_mind_level))
 		var/obj/item/dq_destroy_transaction_mind_level/level = holder
 		dq_destroy_transaction_log(level.level_name)
-	still_registered = !QDELETED(holder) && holder.loc
+	still_located = !!holder.loc && (holder in holder.loc.contents)
+	holder_destroying = QDESTROYING(holder)
 
 /datum/unit_test/dq_destroy_transaction_mind_pre_order
 
@@ -248,9 +255,12 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	qdel(body)
 
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_destroy_transaction_log, ","), "body,head,brain", "mind slots resolve pre-order: outermost (body) first, then head, then brain")
-	TEST_ASSERT(body_mind.still_registered, "the body was still fully valid (had a loc) when its mind slot resolved")
-	TEST_ASSERT(head_mind.still_registered, "the head was still valid and had a loc when its mind slot resolved -- phase 0.5 runs tree-wide before any DELETE in phase 3 tears the tree down")
-	TEST_ASSERT(brain_mind.still_registered, "same for the brain, deepest in the tree")
+	TEST_ASSERT(body_mind.still_located, "the body remained in its physical container when its mind slot resolved")
+	TEST_ASSERT(head_mind.still_located, "the head remained in the body when its mind slot resolved")
+	TEST_ASSERT(brain_mind.still_located, "the brain remained in the head when its mind slot resolved")
+	TEST_ASSERT(body_mind.holder_destroying, "the root had entered the phase-0 deletion guard before mind resolution")
+	TEST_ASSERT(!head_mind.holder_destroying && !brain_mind.holder_destroying, "descendant mind slots resolved before their holders entered deletion")
+	TEST_ASSERT(body.mind_latent_hook_saw_location && head.mind_latent_hook_saw_location && brain.mind_latent_hook_saw_location, "mind-slot latent hooks ran while every holder remained located")
 
 // ---- Tests: generic occupant-style ejection (TRANSFER + resolver) ----
 

@@ -9,6 +9,26 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
+/datum/unit_test/dq_mind_host_tissue_relation
+
+/datum/unit_test/dq_mind_host_tissue_relation/Run()
+	var/obj/item/mmi/mmi = allocate(/obj/item/mmi)
+	var/obj/item/organ/internal/brain/brain = allocate(/obj/item/organ/internal/brain)
+	var/datum/component/mind_host/host = get_mind_host(mmi)
+	TEST_ASSERT_NOTNULL(host, "MMI has a mind host")
+	host.set_tissue(brain)
+	TEST_ASSERT_EQUAL(host.tissue, brain, "the tissue compatibility field follows the relation")
+	TEST_ASSERT(om_has_link(host, /datum/object_model/relation/mind_host_tissue, brain), "the host links to its backing tissue")
+	var/obj/item/organ/internal/brain/replacement = allocate(/obj/item/organ/internal/brain)
+	host.set_tissue(replacement)
+	TEST_ASSERT(!om_has_link(host, /datum/object_model/relation/mind_host_tissue, brain), "replacing tissue removes the old link")
+	TEST_ASSERT_EQUAL(host.tissue, replacement, "replacing tissue updates the compatibility field")
+	qdel(brain)
+	TEST_ASSERT_EQUAL(host.tissue, replacement, "deleting the old tissue leaves the replacement linked")
+	qdel(replacement)
+	TEST_ASSERT_NULL(host.tissue, "deleting tissue clears the mind host")
+	TEST_ASSERT(!length(om_linked(host, /datum/object_model/relation/mind_host_tissue)), "deleting tissue removes the relationship")
+
 /// Test helper: give `L` a fresh mind named `name` with some OOC notes.
 /proc/dq_test_give_mind(mob/living/L, name)
 	var/datum/mind/M = new /datum/mind("dq_mind_test_[name]")

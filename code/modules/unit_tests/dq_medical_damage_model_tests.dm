@@ -360,6 +360,9 @@
 	TEST_ASSERT_NOTNULL(host_limb, "no limb to hold the liver")
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, liver, 60)
 	TEST_ASSERT_NOTNULL(A, "custom affliction could not be afflicted")
+	TEST_ASSERT_EQUAL(om_owner(A), H.body, "body relation owns its affliction")
+	TEST_ASSERT(om_has_link(A, /datum/object_model/relation/body_affliction, H.body), "body membership relation is present")
+	TEST_ASSERT(om_has_link(A, /datum/object_model/relation/affliction_location, liver), "organ location relation is present")
 	var/datum/affliction/systemic = H.body.afflict(/datum/affliction/toxic_poisoning, null, 30)
 
 	liver.removed()
@@ -369,14 +372,61 @@
 	TEST_ASSERT(A in liver.afflictions_here(), "afflictions_here() should list the detached organ's afflictions")
 	TEST_ASSERT_NULL(A.owner, "a detached affliction should have no owner")
 	TEST_ASSERT_EQUAL(A.location, liver, "a detached affliction should stay located on its organ")
+	TEST_ASSERT_NULL(om_owner(A), "detached affliction leaves body lifetime authority")
+	TEST_ASSERT(!om_has_link(A, /datum/object_model/relation/body_affliction, H.body), "detached affliction leaves body relation")
+	TEST_ASSERT(om_has_link(A, /datum/object_model/relation/affliction_location, liver), "detached affliction keeps organ relation")
 	TEST_ASSERT_EQUAL(A.severity, 60, "detaching should not change severity")
 	TEST_ASSERT(systemic in H.body.afflictions, "systemic afflictions should stay with the body")
 
 	liver.replaced(H, host_limb)
 	TEST_ASSERT(A in H.body.afflictions, "reattaching the organ should bring its affliction back into the body")
 	TEST_ASSERT_EQUAL(A.owner, H, "a reattached affliction should belong to the patient again")
+	TEST_ASSERT_EQUAL(om_owner(A), H.body, "reattached affliction regains body lifetime authority")
 	TEST_ASSERT_EQUAL(H.body.find_affliction(/datum/affliction/custom, liver), A, "the type index should find the reattached affliction")
 	TEST_ASSERT(!LAZYLEN(liver.detached_afflictions), "the organ should no longer carry detached afflictions")
+
+/datum/unit_test/dq_robot_affliction_component_location_relation
+
+/datum/unit_test/dq_robot_affliction_component_location_relation/Run()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
+	var/datum/robot_component/armour = R.get_component(ROBOT_SLOT_ARMOUR)
+	var/datum/robot_component/core = R.get_component(ROBOT_SLOT_CORE)
+	TEST_ASSERT(armour && core, "robot did not initialize its damage locations")
+	R.injure(INJURY_BLUNT, 10, ROBOT_SLOT_ARMOUR, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	var/datum/affliction/load/trauma/A = R.body.find_affliction(/datum/affliction/load/trauma, armour)
+	TEST_ASSERT(A, "targeted robot injury did not create a located load")
+	TEST_ASSERT(om_has_link(A, /datum/object_model/relation/affliction_location, armour), "load is not related to its robot component")
+	TEST_ASSERT(A in R.body.afflictions_at(armour), "body location index omitted the robot load")
+	TEST_ASSERT(A.set_location(core), "load could not move to another robot component")
+	TEST_ASSERT(!om_has_link(A, /datum/object_model/relation/affliction_location, armour), "old component relation remained after relocation")
+	TEST_ASSERT(om_has_link(A, /datum/object_model/relation/affliction_location, core), "new component relation was not created")
+	TEST_ASSERT(!(A in R.body.afflictions_at(armour)) && (A in R.body.afflictions_at(core)), "body location index did not follow relocation")
+	var/datum/invalid = new
+	TEST_ASSERT(!A.set_location(invalid), "an arbitrary datum was accepted as an affliction location")
+	TEST_ASSERT_EQUAL(A.location, core, "rejected location changed the affliction")
+	qdel(invalid)
+
+/datum/unit_test/dq_affliction_location_endpoint_cleanup
+
+/datum/unit_test/dq_affliction_location_endpoint_cleanup/Run()
+	var/datum/robot_component/component = new
+	var/datum/affliction/custom/A = new(component)
+	TEST_ASSERT(A.set_location(component), "affliction location should link")
+	TEST_ASSERT(om_has_link(A, /datum/object_model/relation/affliction_location, component), "location relation is missing")
+	qdel(component)
+	TEST_ASSERT(QDELETED(A), "deleting a location should retire its affliction")
+
+/datum/unit_test/dq_body_affliction_destroy_cleanup
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_body_affliction_destroy_cleanup/Run()
+	var/mob/living/carbon/human/H = new(locate(1, 1, 1))
+	var/datum/body/B = H.body
+	var/datum/affliction/custom/A = B.afflict(/datum/affliction/custom, null, 30)
+	TEST_ASSERT(A && om_has_link(A, /datum/object_model/relation/body_affliction, B), "affliction should join the body")
+	qdel(H)
+	TEST_ASSERT(QDELETED(B) && QDELETED(A), "mob deletion should retire its body and affliction")
+	TEST_ASSERT(!om_has_link(A, /datum/object_model/relation/body_affliction, B), "body destruction left an affliction relationship")
 
 // --- GM custom afflictions ------------------------------------------------------------------
 
@@ -487,9 +537,11 @@
 	var/datum/dq_test_signal_counter/counter = new
 	counter.RegisterSignal(H, COMSIG_AFFLICTION_SEVERITY_CHANGED, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed))
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 40)
+	TEST_ASSERT_EQUAL(om_track_change(A, OM_AFFLICTION_CHANGE_SEVERITY), 0, "affliction revisions start when requested")
 	TEST_ASSERT(counter.severity_changes >= 1, "setting severity should signal")
 	A.adjust_severity(-10)
 	TEST_ASSERT_EQUAL(counter.last_old_severity, 40, "the signal should carry the old severity")
+	TEST_ASSERT_EQUAL(om_change_revision(A, OM_AFFLICTION_CHANGE_SEVERITY), 1, "setter publishes one severity revision")
 	qdel(counter)
 
 /// Destroying a body removes its afflictions through remove_affliction(), so

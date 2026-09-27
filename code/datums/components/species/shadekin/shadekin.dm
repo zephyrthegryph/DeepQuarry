@@ -159,15 +159,21 @@
 		return
 	handle_shade()
 
+/// Local biology catch-up keeps healing and energy in time without redrawing HUD.
+/datum/component/shadekin/proc/biology_step()
+	if(QDELETED(parent) || owner.stat == DEAD)
+		return
+	handle_shade(TRUE)
+
 ///Handles the shadekin's energy gain and loss.
-/datum/component/shadekin/proc/handle_shade()
+/datum/component/shadekin/proc/handle_shade(quiet = FALSE)
 	//Shifted kin don't gain/lose energy (and save time if we're at the cap)
 	var/darkness = 1
 	var/dark_gains = 0
 
 	var/suit = owner.get_equipped_item(slot_wear_suit)
 	if(istype(suit, /obj/item/clothing/suit/space/rig))
-		if(dark_energy)
+		if(dark_energy && !quiet)
 			to_chat(owner, span_warning("You feel your energy waning and your powers being blocked from the heavy equipment you're wearing!"))
 		dark_energy = 0
 		return
@@ -202,7 +208,8 @@
 	shadekin_adjust_energy(dark_gains)
 
 	//Update huds
-	update_shadekin_hud()
+	if(!quiet)
+		update_shadekin_hud()
 
 /datum/component/shadekin/proc/calculate_stun()
 	var/stun_time = 3

@@ -225,3 +225,28 @@
 		if(R in new_freq.devices[filter_key])
 			found = TRUE
 	TEST_ASSERT(!found, "deleted radio still registered in SSradio listener list — hard GC leak")
+
+// Radio registration has one authority (SSradio's filter lists); the object
+// model exposes its current membership without retaining a second edge.
+/datum/unit_test/dq_radio_listener_relation
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_radio_listener_relation/Run()
+	var/obj/item/device = new(null)
+	var/obj/item/other = new(null)
+	var/frequency_number = 1769
+	var/datum/radio_frequency/channel = SSradio.add_object(device, frequency_number, RADIO_CHAT)
+	SSradio.add_object(other, frequency_number, RADIO_CHAT)
+	var/kind = /datum/object_model/relation/radio_listener
+	TEST_ASSERT(om_has_link(channel, kind, device), "radio relation sees registration")
+	TEST_ASSERT(device in om_linked(channel, kind), "radio forward query sees device")
+	TEST_ASSERT(channel in om_linked_to(device, kind), "radio inverse query sees frequency")
+	var/initial_revision = om_revision(channel)
+	SSradio.add_object(device, frequency_number, RADIO_CHAT)
+	TEST_ASSERT_EQUAL(om_revision(channel), initial_revision, "duplicate registration does not change membership")
+	SSradio.remove_object(device, frequency_number)
+	TEST_ASSERT(!om_has_link(channel, kind, device), "radio relation clears on removal")
+	TEST_ASSERT_EQUAL(om_revision(channel), initial_revision + 1, "removal advances observed frequency revision")
+	SSradio.remove_object(other, frequency_number)
+	qdel(device)
+	qdel(other)

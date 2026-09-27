@@ -36,11 +36,6 @@
 		stat |= BROKEN
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/media/jukebox/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
-
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 

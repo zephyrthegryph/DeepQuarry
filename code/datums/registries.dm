@@ -19,6 +19,11 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 	built = list()
 	. = built
 	for(var/datum/registry/path as anything in subtypesof(/datum/registry))
+		// Object-model registries are activated by their own runtimes and are
+		// created lazily; they share this storage implementation, not this
+		// eager materialization registry table.
+		if(ispath(path, /datum/object_model/registry))
+			continue
 		var/datum/registry/registry = new path
 		if(!registry.id)
 			stack_trace("[path] has no id")
@@ -68,14 +73,14 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 		members_by_key = list()
 		member_keys = list()
 
-/// Joins a member. Only /atom/join_registries() calls this.
-/datum/registry/proc/add(atom/member)
+/// Joins a member. Atom materialization and object-model activation call this.
+/datum/registry/proc/add(datum/member)
 	members += member
 	if(keyed)
 		file_member(member)
 
-/// Leaves a member. Only /atom/leave_registries() calls this.
-/datum/registry/proc/remove(atom/member)
+/// Leaves a member. Atom dematerialization and object-model teardown call this.
+/datum/registry/proc/remove(datum/member)
 	members -= member
 	if(keyed)
 		unfile_member(member)
@@ -89,13 +94,13 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 	return length(members)
 
 /// Re-files a member whose key (registry_key()) changed, e.g. a new frequency.
-/datum/registry/proc/rekey(atom/member)
+/datum/registry/proc/rekey(datum/member)
 	if(!keyed || !(member in member_keys))
 		return
 	unfile_member(member)
 	file_member(member)
 
-/datum/registry/proc/file_member(atom/member)
+/datum/registry/proc/file_member(datum/member)
 	PRIVATE_PROC(TRUE)
 	var/key = member.registry_key(id)
 	member_keys[member] = key
@@ -103,7 +108,7 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 		return
 	LAZYADD(members_by_key[key], member)
 
-/datum/registry/proc/unfile_member(atom/member)
+/datum/registry/proc/unfile_member(datum/member)
 	PRIVATE_PROC(TRUE)
 	var/key = member_keys[member]
 	member_keys -= member
@@ -127,7 +132,7 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 	return FALSE
 
 /// A keyed registry files this member under the returned key (null: unfiled).
-/atom/proc/registry_key(registry_id)
+/datum/proc/registry_key(registry_id)
 	return null
 
 /// The registries this atom's type joins, cached per type.

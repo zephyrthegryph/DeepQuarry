@@ -60,20 +60,24 @@
 /// `lifetime`, because a couple of existing effect types already declare
 /// their own unrelated `lifetime` var and this must not collide with them.
 /atom/movable/var/lifecycle_lifetime = 0
-/// The armed self-destruct timer, or null. Cancelled if something else
-/// qdels this first (the timer target is weak-refd and Destroy() cancels
-/// timers already; this var exists so expire() itself can be called again
-/// to re-arm with a new delay).
-/atom/movable/var/tmp/lifecycle_lifetime_timer
+/// The owned schedule entry, or null. The object's lifetime owns this entry.
+/atom/movable/var/tmp/datum/object_model/schedule_entry/lifetime_expiry/lifecycle_lifetime_timer
 
 /// Arms (or re-arms) this atom's self-destruct for `after` deciseconds from
 /// now, cancelling any previous one. `expire(after)` with no
 /// `lifecycle_lifetime` set is how a one-off timed delete (a thrown effect,
 /// a spawner) declares it without a type-level lifetime var.
 /atom/movable/proc/expire(after)
-	if(lifecycle_lifetime_timer)
-		deltimer(lifecycle_lifetime_timer)
-	lifecycle_lifetime_timer = addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), after, TIMER_STOPPABLE)
+	if(lifecycle_lifetime_timer && !QDELETED(lifecycle_lifetime_timer))
+		qdel(lifecycle_lifetime_timer)
+	lifecycle_lifetime_timer = null
+	if(!isnum(after) || after < 0 || QDELETED(src))
+		return
+	var/datum/object_model/schedule_entry/lifetime_expiry/entry = new
+	if(!entry.start(src, src, null, after, "timer"))
+		qdel(entry)
+		return
+	lifecycle_lifetime_timer = entry
 
 /atom/movable/proc/lifecycle_arm_lifetime()
 	if(lifecycle_lifetime > 0)

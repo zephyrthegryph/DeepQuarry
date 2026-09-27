@@ -63,6 +63,11 @@
 /datum/life_system/trait/burninlight
 	name = "burninlight"
 	component_type = /datum/component/burninlight
+	biology_catchup = TRUE
 
 /datum/life_system/trait/burninlight/tick_component(mob/living/self, datum/component/burninlight/component)
 	component.process_component()
+
+/datum/life_system/trait/burninlight/tick_biology(mob/living/self, datum/life_context/ctx)
+	for(var/datum/component/burninlight/component as anything in self.GetComponents(component_type))
+		component.process_component()

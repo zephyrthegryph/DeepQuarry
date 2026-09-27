@@ -182,6 +182,33 @@
 
 // --- Core dormancy ---------------------------------------------------------------------
 
+/// The dormant affliction watches its patient only while this link exists.
+/// Endpoint teardown and replacement remove all three signal handlers together.
+/datum/object_model/relation/core_dormancy_patient
+	from_type = /datum/affliction/core_dormancy
+	to_type = /mob/living
+	source_single = TRUE
+
+/datum/object_model/relation/core_dormancy_patient/on_link(datum/source, datum/target)
+	var/datum/affliction/core_dormancy/dormancy = source
+	var/mob/living/patient = target
+	dormancy.held_mob = patient
+	dormancy.Observe(patient, COMSIG_LIVING_BODY_STATUS, TYPE_PROC_REF(/datum/affliction/core_dormancy, hold_alive))
+	dormancy.Observe(patient, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), TYPE_PROC_REF(/datum/affliction/core_dormancy, on_body_screwdriver))
+	dormancy.Observe(patient, COMSIG_ATOM_ATTACKBY, TYPE_PROC_REF(/datum/affliction/core_dormancy, on_body_attackby))
+
+/datum/object_model/relation/core_dormancy_patient/on_unlink(datum/source, datum/target, reason)
+	var/datum/affliction/core_dormancy/dormancy = source
+	var/mob/living/patient = target
+	dormancy.Unobserve(COMSIG_LIVING_BODY_STATUS, TYPE_PROC_REF(/datum/affliction/core_dormancy, hold_alive))
+	dormancy.Unobserve(COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), TYPE_PROC_REF(/datum/affliction/core_dormancy, on_body_screwdriver))
+	dormancy.Unobserve(COMSIG_ATOM_ATTACKBY, TYPE_PROC_REF(/datum/affliction/core_dormancy, on_body_attackby))
+	if(!om_is_dying(patient))
+		var/datum/component/forms/protean/F = patient.GetComponent(/datum/component/forms/protean)
+		F?.rig?.wake()
+	if(dormancy.held_mob == patient)
+		dormancy.held_mob = null
+
 /// A nanoform body that lost cohesion retreats into its core. It neither dies
 /// nor acts: it is held alive (COMSIG_LIVING_BODY_STATUS) and unconscious
 /// (consciousness_at_max), its control cluster goes inert, and it is revived
@@ -202,17 +229,15 @@
 	var/revival_step = DORMANCY_SEALED
 	/// The mob whose COMSIG_LIVING_BODY_STATUS we answer.
 	var/mob/living/held_mob
-	/// The reboot timer, once the core is jump-started.
-	var/reboot_timer
+	/// Owned reboot schedule, once the core is jump-started.
+	var/datum/object_model/schedule_entry/reboot_timer
 
 /datum/affliction/core_dormancy/on_added()
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
-	held_mob = owner
-	RegisterSignal(held_mob, COMSIG_LIVING_BODY_STATUS, PROC_REF(hold_alive))
-	// Without a control cluster to work through, the core is repaired on the body itself.
-	RegisterSignal(held_mob, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), PROC_REF(on_body_screwdriver))
-	RegisterSignal(held_mob, COMSIG_ATOM_ATTACKBY, PROC_REF(on_body_attackby))
+	set_held_mob(owner)
+	if(!held_mob)
+		return
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
 	playsound(held_mob, 'sound/voice/borg_deathsound.ogg', 50, 1)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
@@ -238,15 +263,20 @@
 
 /datum/affliction/core_dormancy/proc/release()
 	if(reboot_timer)
-		deltimer(reboot_timer)
+		qdel(reboot_timer)
 		reboot_timer = null
 	if(!held_mob)
 		return
-	UnregisterSignal(held_mob, list(COMSIG_LIVING_BODY_STATUS, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY))
-	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
-	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
-	held_mob = null
+	set_held_mob(null)
+
+/datum/affliction/core_dormancy/proc/set_held_mob(mob/living/patient)
+	if(patient == held_mob)
+		return
+	if(patient)
+		om_link(src, /datum/object_model/relation/core_dormancy_patient, patient)
+	else if(held_mob)
+		om_unlink(src, /datum/object_model/relation/core_dormancy_patient, held_mob)
 
 /datum/affliction/core_dormancy/proc/hold_alive(mob/living/source)
 	SIGNAL_HANDLER
@@ -358,14 +388,18 @@
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		reboot_timer = addtimer(CALLBACK(src, PROC_REF(complete_revival)), DORMANCY_REBOOT_TIME, TIMER_STOPPABLE)
+		reboot_timer = After(DORMANCY_REBOOT_TIME, PROC_REF(on_reboot_due))
 	return 1
+
+/datum/affliction/core_dormancy/proc/on_reboot_due()
+	if(revival_step == DORMANCY_REBOOTING)
+		complete_revival()
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,
 /// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
 	if(reboot_timer)
-		deltimer(reboot_timer)
+		qdel(reboot_timer)
 		reboot_timer = null
 	var/mob/living/patient = owner
 	var/datum/body/humanoid/nanoform/B = body

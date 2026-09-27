@@ -64,6 +64,10 @@ prof.dll
 # Verdigris build artifacts — CI builds these from source; developers build locally via verdigris/build-*.sh
 libverdigris.so
 verdigris.dll
+libverdigris.so.provenance.json
+verdigris.dll.provenance.json
+libverdigris.so.next*
+verdigris.dll.next*
 verdigris/target-wt/
 
 # From /tools/define_sanity/check.py - potential output file that we load onto the user's machine that we don't want to have committed.

@@ -11,15 +11,13 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/button/attackby(obj/item/W, mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
 /obj/machinery/button/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/button_press,
+		/datum/interaction/machine_item/button_press_item,
 	)
 	..()
 
@@ -28,6 +26,17 @@
 	id = "button_press"
 	name = "Press"
 	effect = /obj/machinery/button/proc/interaction_press
+
+/// Using any item on a plain button presses it through the same hand gate.
+/datum/interaction/machine_item/button_press_item
+	id = "button_press_item"
+	name = "Press"
+	held_type = /obj/item
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null))
+	effect = /obj/machinery/button/proc/interaction_press
+
+/datum/interaction/machine_item/button_press_item/applies_to(atom/target)
+	return !istype(target, /obj/machinery/button/remote)
 
 /obj/machinery/button/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
 	playsound(src, 'sound/machines/button.ogg', 100, 1)

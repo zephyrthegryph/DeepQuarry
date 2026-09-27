@@ -123,6 +123,7 @@ pub struct Task {
     name: String,
     reads: Vec<ResourceId>,
     writes: Vec<ResourceId>,
+    after: Vec<String>,
     every: u32,
     run: TaskFn,
 }
@@ -136,6 +137,7 @@ impl Task {
             name: name.into(),
             reads: Vec::new(),
             writes: Vec::new(),
+            after: Vec::new(),
             every: 1,
             run: Box::new(run),
         }
@@ -152,6 +154,14 @@ impl Task {
     #[must_use]
     pub fn writes(mut self, id: ResourceId) -> Self {
         self.writes.push(id);
+        self
+    }
+
+    /// Declares a dependency on an earlier task, even when their resources
+    /// do not conflict. The builder must register dependencies in order.
+    #[must_use]
+    pub fn after(mut self, name: impl Into<String>) -> Self {
+        self.after.push(name.into());
         self
     }
 
@@ -204,7 +214,9 @@ impl Schedule {
         let mut level = vec![0usize; tasks.len()];
         for j in 0..tasks.len() {
             for i in 0..j {
-                if tasks[i].conflicts_with(&tasks[j]) {
+                if tasks[i].conflicts_with(&tasks[j])
+                    || tasks[j].after.iter().any(|name| name == tasks[i].name())
+                {
                     level[j] = level[j].max(level[i] + 1);
                 }
             }
@@ -448,6 +460,15 @@ mod tests {
         }
         assert_eq!(res.get_mut(a), &vec![1, 10, 1, 21]);
         assert_eq!(*res.get_mut(b), 21);
+    }
+
+    #[test]
+    fn explicit_dependency_orders_independent_resources() {
+        let tasks = vec![
+            Task::new("first", |_| {}),
+            Task::new("second", |_| {}).after("first"),
+        ];
+        assert_eq!(Schedule::build(&tasks).levels(), &[vec![0], vec![1]]);
     }
 
     #[test]

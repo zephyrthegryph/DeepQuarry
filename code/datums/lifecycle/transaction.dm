@@ -9,13 +9,13 @@
 // atom to nullspace "to finish later". Phase 3 runs while the holder still
 // has a loc, so TRANSFER and SPILL always have a live destination to reach.
 
-/// Runs `D`'s whole destruction. Called from qdel() only -- SHOULD_NOT_OVERRIDE
-/// because the phase order encodes every ordering hazard the codebase used to
-/// rely on ad-hoc Destroy() comments for. Returns what phase 7's Destroy()
+/// Runs `D`'s whole destruction. Called from qdel() only. This global proc has
+/// no subtype override point; its phase order encodes every ordering hazard
+/// the codebase used to rely on ad-hoc Destroy() comments for. Returns what phase 7's Destroy()
 /// (or, for a plain /datum with no override, the base no-op) returned.
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	LAZYINITLIST(trash.phase_ms)
+	if(!trash.phase_ms)
+		trash.phase_ms = new /list(LIFECYCLE_PHASE_COUNT)
 
 	// Phase 0: guard. From here QDELETED(D) is true (gc_destroyed is set),
 	// which is what stops re-entrant qdel(D) (qdel()'s own check, above this
@@ -23,6 +23,7 @@
 	var/tick = world.tick_usage
 	D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 	D.datum_flags |= DF_DESTROYING
+	var/om_prepared = om_prepare_destroy(D)
 	SEND_SIGNAL(D, COMSIG_QDELETING, force)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_GUARD, tick)
 
@@ -59,6 +60,7 @@
 	// Phase 4: links. Owned children deleted, pair partners nulled,
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
 	tick = world.tick_usage
+	om_before_destroy(D)
 	dq_lifecycle_clear_links(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 
@@ -84,6 +86,7 @@
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DESTROY, tick)
 
 	if(isnull(D)) // Destroy() hard-deleted itself (rare; some override del()s src)
+		om_finish_destroy(om_prepared)
 		return hint
 
 	// Phase 8: scrub. Null outbound declared owned/pair vars to break
@@ -91,6 +94,7 @@
 	tick = world.tick_usage
 	dq_lifecycle_scrub(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_SCRUB, tick)
+	om_finish_destroy(om_prepared)
 
 	return hint
 

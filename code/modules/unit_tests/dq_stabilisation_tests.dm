@@ -18,6 +18,10 @@
 /datum/unit_test/proc/dq_stab_run_cycles(mob/living/carbon/human/H, cycles)
 	. = 0
 	for(var/i in 1 to cycles)
+		// Simulate one nominal real-time frame without sleeping the test world.
+		var/datum/object_model/clock_state/C = H.om_state?.clock_states?[/datum/object_model/clock_domain/biology]
+		if(C)
+			C.last_world -= LIFE_NOMINAL_SECONDS SECONDS
 		if(H.body.advance_stasis())
 			.++
 		H.body.life_tick()
@@ -113,10 +117,49 @@
 	H.set_stasis(/datum/modifier/stasis/light, source_a)
 	H.set_stasis(/datum/modifier/stasis/total, source_b)
 	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 1, "the deepest stasis source should win")
+	var/datum/object_model/clock_state/C = om_clock_for(H, /datum/object_model/clock_domain/biology)
+	TEST_ASSERT_EQUAL(C.rate, 0, "total stasis pauses the local biology clock")
 	H.set_stasis(null, source_b)
 	TEST_ASSERT(dq_near(H.factor(BF_STASIS), 0.5), "releasing one source should leave the other's stasis")
+	TEST_ASSERT_EQUAL(C.rate, 0.5, "releasing total stasis resumes the remaining source's rate")
 	H.set_stasis(null, source_a)
 	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "releasing every source should end stasis")
+	TEST_ASSERT_EQUAL(C.rate, 1, "releasing every source restores real-time biology")
+
+/// Deleting the device that supplied stasis releases both its factor and clock rate.
+/datum/unit_test/dq_stab_stasis_source_deleted
+
+/datum/unit_test/dq_stab_stasis_source_deleted/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/source = allocate(/obj/item/tourniquet)
+	H.set_stasis(/datum/modifier/stasis/total, source)
+	var/datum/object_model/clock_state/C = om_clock_for(H, /datum/object_model/clock_domain/biology)
+	TEST_ASSERT_EQUAL(C.rate, 0, "source holds biology stopped")
+	qdel(source)
+	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "deleting source removes its stasis modifier")
+	TEST_ASSERT_EQUAL(C.rate, 1, "deleting source resumes biology clock")
+
+/// Real-time upkeep continues during stasis, while the local biological clock
+/// stops and later resumes without charging the paused interval.
+/datum/unit_test/dq_stab_biology_clock_resume
+
+/datum/unit_test/dq_stab_biology_clock_resume/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/source = allocate(/obj/item/tourniquet)
+	H.set_stasis(/datum/modifier/stasis/total, source)
+	var/datum/object_model/clock_state/C = om_clock_for(H, /datum/object_model/clock_domain/biology)
+	var/before = C.settle()
+	TEST_ASSERT(H.body.advance_stasis(), "an event wake without elapsed local time cannot tick biology")
+	TEST_ASSERT(H.body.advance_stasis(), "repeated event wakes in one world tick cannot tick biology")
+	C.last_world -= 10 * (LIFE_NOMINAL_SECONDS SECONDS)
+	TEST_ASSERT(H.body.advance_stasis(), "biology is ineligible during total stasis")
+	TEST_ASSERT_EQUAL(H.body.biology_due, 0, "no biological cycle is due during total stasis")
+	TEST_ASSERT_EQUAL(C.settle(), before, "paused world time does not advance the local clock")
+	H.set_stasis(null, source)
+	TEST_ASSERT_EQUAL(C.rate, 1, "removal resumes local time")
+	TEST_ASSERT(!H.body.advance_stasis(), "ordinary biology resumes without catch-up")
+	TEST_ASSERT_EQUAL(H.body.biology_due, 1, "resumption grants one ordinary cycle")
+
 
 
 /// Hemostatic gauze runs down the bleed on the wound it's packed into.

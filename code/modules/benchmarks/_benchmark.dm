@@ -32,6 +32,8 @@
 	var/list/window_subsystem_fires
 	/// SSreactor.total_wakes when the window began.
 	var/window_reactor_wakes = 0
+	/// Scheduler counters at the start of the current measurement window.
+	var/list/window_scheduler_diagnostics
 
 /// The scenario body. Call fail() to abort with a reason.
 /datum/benchmark/proc/Run()
@@ -91,6 +93,7 @@
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_reactor_wakes = SSreactor.total_wakes
+	window_scheduler_diagnostics = SSreactor.performance_scheduler_diagnostics()
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
 	if(profiling)
@@ -139,12 +142,83 @@
 	reactor["window_wakes"] = SSreactor.total_wakes - window_reactor_wakes
 	metric("[prefix]_reactor_wakes", reactor["window_wakes"], "wakes", "lower")
 	detail("[prefix]_reactor", reactor)
+	var/list/scheduler = benchmark_scheduler_window(window_scheduler_diagnostics, SSreactor.performance_scheduler_diagnostics())
+	var/list/scheduler_totals = scheduler["totals"]
+	metric("[prefix]_scheduler_calls", scheduler_totals["calls"], "calls", "none")
+	metric("[prefix]_scheduler_work_units", scheduler["work_units"], "units", "none")
+	metric("[prefix]_scheduler_sampled_calls", scheduler_totals["sampled_calls"], "calls", "none")
+	metric("[prefix]_scheduler_sampled_ms", scheduler_totals["sampled_total_ms"], "ms", "none")
+	metric("[prefix]_scheduler_estimated_ms", scheduler["estimated_window_ms"], "ms")
+	metric("[prefix]_scheduler_slow_calls", scheduler_totals["slow_calls"], "calls")
+	metric("[prefix]_scheduler_deadline_misses", scheduler_totals["deadline_misses"], "calls")
+	metric("[prefix]_scheduler_deferred_budget", scheduler_totals["deferred_budget"], "calls")
+	metric("[prefix]_scheduler_deferred_tick", scheduler_totals["deferred_tick"], "calls")
+	detail("[prefix]_scheduler", scheduler)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
 	if(profiling)
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)
 	return tick
+
+/// Only additive scheduler counters can be subtracted to describe a window.
+/proc/benchmark_scheduler_counter_delta(list/before, list/after)
+	var/static/list/counters = list("calls", "sampled_calls", "sampled_total_ms", "slow_calls", "deadline_misses", "deferred_budget", "deferred_tick", "work_units")
+	var/list/delta = list()
+	for(var/key in counters)
+		var/current = after?[key]
+		delta[key] = isnum(current) ? current - (before?[key] || 0) : 0
+	return delta
+
+/// A bounded snapshot of dispatch work and incidents attributable to one window.
+/proc/benchmark_scheduler_window(list/before, list/after)
+	var/list/start_totals = before?["totals"]
+	var/list/end_totals = after?["totals"]
+	var/list/start_systems = before?["systems"]
+	var/list/end_systems = after?["systems"]
+	var/list/systems = list()
+	var/estimated_window_ms = 0
+	var/window_work_units = 0
+	if(islist(end_systems))
+		for(var/key in end_systems)
+			var/list/current = end_systems[key]
+			var/list/previous = start_systems?[key]
+			var/list/system_delta = benchmark_scheduler_counter_delta(previous, current)
+			if(!system_delta["calls"] && !system_delta["deferred_budget"] && !system_delta["deferred_tick"])
+				continue
+			// Peak and estimate are lifetime context; they are never presented as window deltas.
+			system_delta["max_call_ms_since_boot"] = current["max_call_ms"]
+			system_delta["estimated_ms_end"] = current["estimated_ms"]
+			system_delta["max_lateness_ds_since_boot"] = current["max_lateness_ds"]
+			var/average_ms = system_delta["sampled_calls"] ? system_delta["sampled_total_ms"] / system_delta["sampled_calls"] : (current["estimated_ms"] || 0)
+			system_delta["estimated_window_ms"] = average_ms * system_delta["calls"]
+			estimated_window_ms += system_delta["estimated_window_ms"]
+			window_work_units += system_delta["work_units"]
+			systems[key] = system_delta
+	var/starting_sequence = before?["sequence"] || 0
+	var/list/incidents = list()
+	var/list/slow_calls = list()
+	var/list/recent_incidents = after?["incidents"]
+	var/list/recent_slow_calls = after?["slow_calls"]
+	if(islist(recent_incidents))
+		for(var/list/incident as anything in recent_incidents)
+			if(incident["sequence"] > starting_sequence)
+				incidents += list(incident)
+	if(islist(recent_slow_calls))
+		for(var/list/slow_call as anything in recent_slow_calls)
+			if(slow_call["sequence"] > starting_sequence)
+				slow_calls += list(slow_call)
+	return list(
+		"totals" = benchmark_scheduler_counter_delta(start_totals, end_totals),
+		"systems" = systems,
+		"estimated_window_ms" = estimated_window_ms,
+		"work_units" = window_work_units,
+		"incidents" = incidents,
+		"slow_calls" = slow_calls,
+		"pending_end" = after?["pending"],
+		"sequence_start" = starting_sequence,
+		"sequence_end" = after?["sequence"],
+	)
 
 /// Records a named point in time with process memory and every Rust metric.
 /datum/benchmark/proc/mark(name)

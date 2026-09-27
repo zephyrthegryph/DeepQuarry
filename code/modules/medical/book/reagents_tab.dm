@@ -179,6 +179,7 @@
 	return length(out) ? out : null
 
 
+// dm-health: param distilling num
 /proc/_dq_reagent_recipe_entry(datum/decl/chemical_reaction/CR, distilling = FALSE)
 	var/list/entry = list()
 	entry["distilling"] = distilling

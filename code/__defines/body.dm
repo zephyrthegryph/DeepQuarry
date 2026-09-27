@@ -152,6 +152,18 @@
 #define BODY_DIRTY_CONDITIONS (BODY_DIRTY_ORGANS | BODY_DIRTY_METRICS | BODY_DIRTY_CHEMS)
 #define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS | BODY_DIRTY_PHYSIOLOGY | BODY_DIRTY_ARMOR)
 
+// Object-model change groups. VITALS/FACTORS/PHYSIOLOGY report invalidated
+// inputs; EFFECTIVE_FACTORS reports a changed recomputed value. BODY_DIRTY_*
+// remains the body's internal recomputation queue.
+#define OM_BODY_CHANGE_AFFLICTIONS (1<<0)
+#define OM_BODY_CHANGE_VITALS (1<<1)
+#define OM_BODY_CHANGE_FACTORS (1<<2)
+#define OM_BODY_CHANGE_PHYSIOLOGY (1<<3)
+#define OM_BODY_CHANGE_EFFECTIVE_FACTORS (1<<4)
+#define OM_BODY_CHANGE_WORN_PROTECTION (1<<5)
+#define OM_AFFLICTION_CHANGE_SEVERITY (1<<0)
+#define OM_AFFLICTION_CHANGE_LOCATION (1<<1)
+
 // --- Natural regeneration (TREAT_REGENERATION) ---------------------------------------------
 /// Regeneration level of a fed, awake, living humanoid.
 #define REGENERATION_BASE_LEVEL 1

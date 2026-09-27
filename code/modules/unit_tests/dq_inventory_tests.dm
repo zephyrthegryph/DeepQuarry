@@ -355,3 +355,26 @@
 			TEST_FAIL("[label]: [def.id] holds [length(L.slots[def.id])] things")
 			return FALSE
 	return TRUE
+
+/// Verify the direct inventory callback sees the committed ledger during a
+/// same-holder reslot. Icon and equipment producers rely on this ordering.
+/mob/living/carbon/human/dq_inventory_commit_probe
+	var/obj/item/watched_item
+	var/saw_committed_removal = FALSE
+
+/mob/living/carbon/human/dq_inventory_commit_probe/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
+	..()
+	if(thing == watched_item && slot_id == SLOT_ID_HAND_L && !inserted)
+		saw_committed_removal = (inventory_slot_id(thing) == SLOT_ID_HAND_R && get_left_hand() == null && get_right_hand() == thing)
+
+/datum/unit_test/dq_inventory_reslot_callback_committed
+
+/datum/unit_test/dq_inventory_reslot_callback_committed/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/dq_inventory_commit_probe/H = allocate(/mob/living/carbon/human/dq_inventory_commit_probe, T)
+	var/obj/item/tool/wrench/W = new(T)
+	TEST_ASSERT(H.equip_to_slot(W, slot_l_hand), "fixture item equipped in the left hand")
+	H.watched_item = W
+	TEST_ASSERT(H.equip_to_slot(W, slot_r_hand), "item reslotted to the right hand")
+	TEST_ASSERT(H.saw_committed_removal, "old-slot callback saw the final slot index and item views")
+	dq_verify_ledger(H, "inventory reslot callback")

@@ -55,7 +55,7 @@ pub enum Target {
     Solid(u32),
     /// A gas: turf air or a mixture.
     Gas(GasRef),
-    /// Another body (the container's interior).
+    /// Another body's generation-bearing host handle (the container's interior).
     Body(u32),
 }
 
@@ -497,9 +497,10 @@ impl Stores<'_> {
                     },
                 })
             }
-            Target::Body(j) if j != skip => {
+            Target::Body(h) if crate::world::split(h).0 != skip => {
+                let (j, generation) = crate::world::split(h);
                 let b = self.bodies.get(j)?;
-                b.is_live().then_some(Env {
+                (b.is_live() && b.generation == generation).then_some(Env {
                     temperature: b.temperature,
                     capacity: b.capacity,
                 })
@@ -541,9 +542,10 @@ impl Stores<'_> {
                 self.book_gas(applied, reservoir);
                 Some(applied)
             }
-            Target::Body(j) => {
+            Target::Body(h) => {
+                let (j, generation) = crate::world::split(h);
                 let b = self.bodies.get_mut(j)?;
-                if !b.is_live() {
+                if !b.is_live() || b.generation != generation {
                     return None;
                 }
                 Some(b.deposit(e))

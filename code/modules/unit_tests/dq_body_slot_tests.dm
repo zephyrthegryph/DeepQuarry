@@ -107,6 +107,63 @@
 	vest.worn_protection_changed()
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, BP_TORSO), 10, "a changed vest reads its new armour")
 
+/datum/dq_test_worn_siemens_counter
+	var/changes = 0
+	var/old_torso
+	var/new_torso
+
+/datum/dq_test_worn_siemens_counter/proc/on_changed(datum/source, old_value, new_value)
+	SIGNAL_HANDLER
+	changes++
+	var/list/zones = dq_worn_zone_parts()
+	var/torso_index = zones.Find(UPPER_TORSO)
+	var/list/old_values = old_value
+	var/list/new_values = new_value
+	old_torso = old_values[torso_index]
+	new_torso = new_values[torso_index]
+
+/// Equipment observers see slot moves and in-place material changes, while
+/// no-op invalidations do not publish a changed effective value.
+/datum/unit_test/dq_body_slot_observed_siemens
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_body_slot_observed_siemens/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/dq_test_worn_siemens_counter/counter = new
+	counter.RegisterSignal(H.body, COMSIG_BODY_WORN_SIEMENS_VIEW_CHANGED, TYPE_PROC_REF(/datum/dq_test_worn_siemens_counter, on_changed))
+	var/datum/object_model/derived_watch/watch = H.body.observe_worn_siemens(counter)
+	TEST_ASSERT_NOTNULL(watch, "conductivity view should be observable")
+	var/list/zones = dq_worn_zone_parts()
+	var/torso_index = zones.Find(UPPER_TORSO)
+	var/list/bare = H.body.worn_siemens_view()
+	if(length(bare))
+		var/original = bare[1]
+		bare[1] = -999
+		TEST_ASSERT_EQUAL(H.body.worn_siemens_view()[1], original, "caller mutation changed cached insulation")
+	TEST_ASSERT_EQUAL(bare[torso_index], 1, "an uncovered torso starts at unit conductivity")
+	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
+	vest.body_parts_covered = UPPER_TORSO
+	vest.siemens_coefficient = 0.5
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, slot_wear_suit, disable_warning = TRUE), "the vest should equip")
+	var/list/equipped = H.body.worn_siemens_view()
+	TEST_ASSERT_EQUAL(equipped[torso_index], 0.5, "the observed view should refresh after equipping")
+	TEST_ASSERT_EQUAL(counter.changes, 1, "equipping should notify the observer once")
+	vest.siemens_coefficient = 0.7
+	vest.worn_protection_changed()
+	var/list/changed = H.body.worn_siemens_view()
+	TEST_ASSERT_EQUAL(changed[torso_index], 0.7, "an in-place insulation change should refresh")
+	TEST_ASSERT_EQUAL(counter.changes, 2, "in-place insulation change should notify")
+	TEST_ASSERT_EQUAL(counter.old_torso, 0.5, "notification should carry the previous conductivity")
+	TEST_ASSERT_EQUAL(counter.new_torso, 0.7, "notification should carry the new conductivity")
+	vest.worn_protection_changed()
+	H.body.worn_siemens_view()
+	TEST_ASSERT_EQUAL(counter.changes, 2, "no effective change should not notify")
+	H.drop_from_inventory(vest, get_turf(H))
+	var/list/removed = H.body.worn_siemens_view()
+	TEST_ASSERT_EQUAL(removed[torso_index], 1, "the observed view should refresh after unequipping")
+	TEST_ASSERT_EQUAL(counter.changes, 3, "unequipping should notify")
+	qdel(counter)
+
 /// Dresses `H` in a spread of equipment with known armour, coverage,
 /// conductivity and thermal limits, including an accessory.
 /datum/unit_test/proc/dq_dress_for_protection(mob/living/carbon/human/H)

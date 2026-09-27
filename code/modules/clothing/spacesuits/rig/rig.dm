@@ -148,8 +148,6 @@
 
 	installed_modules = null
 	STOP_PROCESSING(SSobj, src)
-	qdel(wires)
-	wires = null
 	qdel(spark_system)
 	spark_system = null
 	return ..()

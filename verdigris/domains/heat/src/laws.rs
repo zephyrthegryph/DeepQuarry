@@ -336,19 +336,13 @@ impl Law for SolidGasCoupling {
 /// whatever temperature/capacity the gas side reports, with no gas-specific
 /// physics of its own.
 ///
-/// This is the law `dq_h3_hotspot_heats_items` needs. Today's production
-/// path (`domains/gas/src/world.rs`'s `Exchange`) probes a gas cell through
-/// a `views` cache that is only republished on a *completed gas field
-/// frame*: a body coupled through it can go arbitrarily long without seeing
-/// a direct DM write (`T.air.set_temperature()`, exactly what
-/// `hotspot_expose()` does) if nothing drives a gas tick in between --
-/// which `vg_heat_debug_run_frames`/heat-only frames never do, matching
-/// `dq_h3_hotspot_heats_items`'s reported failure exactly (the item never
-/// measurably warms, however many heat frames run). A `Law`-driven coupling
-/// has no such gap: `ctx.writes.b` is read fresh every step, by
-/// construction, whatever store or cell it is wired to once Core B lands.
+/// This is the law `dq_h3_hotspot_heats_items` exercises. Production's
+/// `Exchange` exposes a direct-write gas probe until the field publishes its
+/// next view, and reads `temperature_now()` from conserved energy. That keeps
+/// heat-only frames in sync with DM gas writes. A direct `Law`-driven coupling
+/// would read the same two sides from their stores within one frame.
 /// See [`tests::gas_cell_warms_item_body_through_the_hotspot_coupling_law`]
-/// for the scenario, reproduced host-side without any gas-tick dependency.
+/// for the host-side scenario.
 pub struct BodyGasCoupling;
 impl Law for BodyGasCoupling {
     type Reads = PairCoupling;

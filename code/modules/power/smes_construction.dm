@@ -111,8 +111,6 @@
 	should_be_mapped = 1
 
 /obj/machinery/power/smes/buildable/Destroy()
-	qdel(wires)
-	wires = null
 	for(var/datum/tgui_module/rcon/R in world)
 		R.FindDevices()
 	return ..()

@@ -71,7 +71,7 @@
 	var/num = 1
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
-		if(!P.connected)
+		if(!P.connected && !P.connected_console())
 			pods += P
 			P.connected = src
 			P.name = "[initial(P.name)] #[num++]"
@@ -109,7 +109,7 @@
 /obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting
-	if(!istype(pod) || (pod in pods))
+	if(!istype(pod) || (pod in pods) || pod.connected_console())
 		return ITEM_INTERACT_BLOCKING
 	pods += pod
 	pod.connected = src

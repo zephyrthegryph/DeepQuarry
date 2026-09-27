@@ -101,6 +101,15 @@
 
 
 /datum/species/alraune/environment_effects(mob/living/carbon/human/H)
+	if(H.inStasisNow())
+		return
+	environment_biology(H, FALSE)
+	return ..()
+
+/// One skin-breathing biology step. Each call takes fresh air from the mob's
+/// current location, so accelerated local time consumes gas and applies harm
+/// proportionally. Only the real frame updates HUD alerts and emits messages.
+/datum/species/alraune/environment_biology(mob/living/carbon/human/H, quiet = TRUE)
 	if(H.inStasisNow()) // if they're in stasis, they won't need this stuff.
 		return
 
@@ -136,18 +145,20 @@
 	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.
 	if(H.does_not_breathe)
 		H.failed_last_breath = 0
-		return ..()// if somehow they don't breathe, abort breathing.
+		return // if somehow they don't breathe, abort breathing.
 
 	// The breath's quality goes to the physiology, which decides whether the plant suffocates.
 	if(!breath || (xgm_total_moles(breath) == 0)) // xgm_total_moles bridges XGM-var/LINDA-proc gap
 		H.failed_last_breath = 1
 		H.body?.set_breath_quality(0)
 
-		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
+		if(!quiet)
+			H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 
-		return ..() // skip air processing if there's no air
+		return // skip air processing if there's no air
 	else
-		H.clear_alert("pressure")
+		if(!quiet)
+			H.clear_alert("pressure")
 
 	// now into the good stuff
 
@@ -181,16 +192,18 @@
 
 	// Not enough to breathe
 	if((inhale_pp + exhaled_pp) < minimum_breath_pressure) //they can breathe either oxygen OR CO2
-		if(prob(20))
+		if(!quiet && prob(20))
 			spawn(0) H.emote("gasp")
 
 		quality = clamp((inhale_pp + exhaled_pp) / minimum_breath_pressure, 0, 1)
 		failed_inhale = 1
 
-		H.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
+		if(!quiet)
+			H.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
 	else
 		// We're in safe limits
-		H.clear_alert("oxy")
+		if(!quiet)
+			H.clear_alert("oxy")
 
 	inhaled_gas_used = inhaling/6
 	breath.adjust_gas(GAS_CO2, -inhaled_gas_used, update = 0) //update afterwards
@@ -198,9 +211,11 @@
 
 	//Now we handle CO2.
 	if(inhale_pp > safe_exhaled_max * 0.7) // For a human, this would be too much exhaled gas in the air. But plants don't care.
-		H.throw_alert("co2", /atom/movable/screen/alert/too_much_co2/plant) // Give them the alert on the HUD. They'll be aware when the good stuff is present.
+		if(!quiet)
+			H.throw_alert("co2", /atom/movable/screen/alert/too_much_co2/plant) // Give them the alert on the HUD. They'll be aware when the good stuff is present.
 	else
-		H.clear_alert("co2")
+		if(!quiet)
+			H.clear_alert("co2")
 
 	//do the CO2 buff stuff here
 
@@ -223,9 +238,11 @@
 		if(H.reagents)
 			H.reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
 			breath.adjust_gas(poison_type, -poison/6, update = 0) //update after
-		H.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
+		if(!quiet)
+			H.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
-		H.clear_alert("tox_in_air")
+		if(!quiet)
+			H.clear_alert("tox_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
 	if(LINDA_GAS_AMT(breath, GAS_N2O)) // string "sleeping_agent" doesn't exist as a LINDA gas id; GAS_N2O = "n2o" is the real id
@@ -243,7 +260,7 @@
 
 		// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
 		else if(SA_pp > 0.15)
-			if(prob(20))
+			if(!quiet && prob(20))
 				spawn(0) H.emote(pick("giggle", "laugh"))
 		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) // update after // was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
 
@@ -257,10 +274,10 @@
 	if((breath_temperature < breath_cold_level_1 || breath_temperature > breath_heat_level_1) && !(H.has_mutation(COLD_RESISTANCE)))
 
 		if(breath_temperature <= breath_cold_level_1)
-			if(prob(20))
+			if(!quiet && prob(20))
 				to_chat(H, span_danger("You feel icicles forming on your skin!"))
 		else if(breath_temperature >= breath_heat_level_1)
-			if(prob(20))
+			if(!quiet && prob(20))
 				to_chat(H, span_danger("You feel yourself smouldering in the heat!"))
 
 		var/bodypart = pick(BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD)
@@ -296,13 +313,13 @@
 		//to_world("Breath: [breath.temperature], [src]: [bodytemperature], Adjusting: [temp_adj]")
 		H.bodytemperature += temp_adj
 
-	else if(breath_temperature >= heat_discomfort_level)
+	else if(!quiet && breath_temperature >= heat_discomfort_level)
 		get_environment_discomfort(src,"heat")
-	else if(breath_temperature <= cold_discomfort_level)
+	else if(!quiet && breath_temperature <= cold_discomfort_level)
 		get_environment_discomfort(src,"cold")
 
 	// breath.update_values() removed; no-op under LINDA.
-	..()
+	return
 
 /obj/item/organ/internal/brain/alraune
 	icon = 'icons/mob/species/alraune/organs.dmi'

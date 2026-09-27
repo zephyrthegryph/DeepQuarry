@@ -34,3 +34,12 @@
 				affected_mob.visible_message(span_danger("[affected_mob] coughs up a swarm of bees!"), span_userdanger("You cough up a swarm of bees!"))
 				new /mob/living/simple_mob/vore/bee(affected_mob.loc)
 	return
+
+/datum/disease/beesease/stage_biology()
+	if(!..())
+		return FALSE
+	if(stage == 3 && prob(2) && prob(20))
+		affected_mob.injure(INJURY_TOXIN, 2, affliction = /datum/affliction/apid_infestation)
+	if(stage == 4 && prob(1))
+		new /mob/living/simple_mob/vore/bee(affected_mob.loc)
+	return TRUE

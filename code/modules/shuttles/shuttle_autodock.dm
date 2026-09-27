@@ -2,6 +2,36 @@
 // Consists of code pulled down from the old /datum/shuttle and up from /datum/shuttle/ferry
 // Note: Since all known shuttles extend this type, this really could just be built into /datum/shuttle
 // Why isn't it you ask? Eh, baystation did it this way and its convenient to keep the files smaller I guess.
+/// The two roles may reference the same controller. Independent relations keep
+/// both mirrors correct when either role changes or the controller is deleted.
+/datum/object_model/relation/shuttle_own_docking_controller
+	from_type = /datum/shuttle/autodock
+	to_type = /datum/embedded_program/docking
+	source_single = TRUE
+
+/datum/object_model/relation/shuttle_own_docking_controller/on_link(datum/source, datum/target)
+	var/datum/shuttle/autodock/shuttle = source
+	shuttle.shuttle_docking_controller = target
+
+/datum/object_model/relation/shuttle_own_docking_controller/on_unlink(datum/source, datum/target, reason)
+	var/datum/shuttle/autodock/shuttle = source
+	if(shuttle.shuttle_docking_controller == target)
+		shuttle.shuttle_docking_controller = null
+
+/datum/object_model/relation/shuttle_active_docking_controller
+	from_type = /datum/shuttle/autodock
+	to_type = /datum/embedded_program/docking
+	source_single = TRUE
+
+/datum/object_model/relation/shuttle_active_docking_controller/on_link(datum/source, datum/target)
+	var/datum/shuttle/autodock/shuttle = source
+	shuttle.active_docking_controller = target
+
+/datum/object_model/relation/shuttle_active_docking_controller/on_unlink(datum/source, datum/target, reason)
+	var/datum/shuttle/autodock/shuttle = source
+	if(shuttle.active_docking_controller == target)
+		shuttle.active_docking_controller = null
+
 /datum/shuttle/autodock
 	var/in_use = null	// Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
 	var/last_dock_attempt_time = 0
@@ -73,28 +103,13 @@
 
 /datum/shuttle/autodock/proc/set_shuttle_docking_controller(datum/embedded_program/docking/controller)
 	if(shuttle_docking_controller == controller)
-		return
-	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller)
-		UnregisterSignal(shuttle_docking_controller, COMSIG_QDELETING)
-	shuttle_docking_controller = controller
-	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller)
-		RegisterSignal(shuttle_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
+		return TRUE
+	return om_replace_related(src, /datum/object_model/relation/shuttle_own_docking_controller, controller)
 
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
 	if(active_docking_controller == controller)
-		return
-	if(active_docking_controller && active_docking_controller != shuttle_docking_controller)
-		UnregisterSignal(active_docking_controller, COMSIG_QDELETING)
-	active_docking_controller = controller
-	if(active_docking_controller && active_docking_controller != shuttle_docking_controller)
-		RegisterSignal(active_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
-
-/datum/shuttle/autodock/proc/docking_controller_deleted(datum/source)
-	SIGNAL_HANDLER
-	if(shuttle_docking_controller == source)
-		shuttle_docking_controller = null
-	if(active_docking_controller == source)
-		active_docking_controller = null
+		return TRUE
+	return om_replace_related(src, /datum/object_model/relation/shuttle_active_docking_controller, controller)
 /*
 	Docking stuff
 */

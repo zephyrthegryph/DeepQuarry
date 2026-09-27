@@ -9,17 +9,24 @@
 
 /datum/life_system/breathing/carbon
 	mob_type = /mob/living/carbon
+	biology_catchup = TRUE
 
 //Start of a breath chain, calls breathe()
 /datum/life_system/breathing/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
+	return advance_breath(self)
+
+/datum/life_system/breathing/carbon/tick_biology(mob/living/carbon/self, datum/life_context/ctx)
+	return advance_breath(self, TRUE)
+
+/datum/life_system/breathing/carbon/proc/advance_breath(mob/living/carbon/self, catchup = FALSE)
 	self.breath_cycle = (self.breath_cycle + 1) % BREATH_CYCLE_PERIOD
 	if(!self.breath_cycle || self.failed_last_breath || self.is_critical()) // First, resolve location and get a breath
-		breathe(self)
+		breathe(self, catchup)
 
 #undef BREATH_CYCLE_PERIOD
 
 /// One breath: pick the breath source, exchange gas, exhale.
-/datum/life_system/breathing/carbon/proc/breathe(mob/living/carbon/self)
+/datum/life_system/breathing/carbon/proc/breathe(mob/living/carbon/self, catchup = FALSE)
 	//if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell)) return
 	if(!self.should_have_organ(O_LUNGS)) return
 
@@ -31,10 +38,10 @@
 
 	if(self.losebreath>0) //Suffocating so do not take a breath
 		self.AdjustLosebreath(-1)
-		if (prob(10) && !isbelly(self.loc)) //Gasp per 10 ticks? Sounds about right.
+		if (!catchup && prob(10) && !isbelly(self.loc)) //Gasp per 10 ticks? Sounds about right.
 			spawn self.emote("gasp")
 	else if(self.breath_blocked()) //No ventilation (closed airway, apnea): no gas exchange at all.
-		if(prob(10) && !isbelly(self.loc))
+		if(!catchup && prob(10) && !isbelly(self.loc))
 			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, emote), "gasp")
 	else
 		//Okay, we can breathe, now check if we can get air
@@ -52,7 +59,7 @@
 
 			breath = vacuum //still nothing? must be vacuum
 
-	exchange(self, breath)
+	exchange(self, breath, catchup)
 	exhale(self, breath)
 
 /mob/living/carbon/proc/get_breath_from_internal(volume_needed=BREATH_VOLUME) //hopefully this will allow overrides to specify a different default volume without breaking any cases where volume is passed in.
@@ -103,7 +110,7 @@
 			break // If they breathe in the nasty stuff once, no need to continue checking
 
 /// Gas exchange for one breath (species breath and poison gases, oxygenation).
-/datum/life_system/breathing/carbon/proc/exchange(mob/living/carbon/self, datum/gas_mixture/breath)
+/datum/life_system/breathing/carbon/proc/exchange(mob/living/carbon/self, datum/gas_mixture/breath, catchup = FALSE)
 	return
 
 /datum/life_system/breathing/carbon/proc/exhale(mob/living/carbon/self, datum/gas_mixture/breath)

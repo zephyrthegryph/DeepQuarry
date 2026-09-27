@@ -24,6 +24,16 @@
 	var/order = 0
 	/// Run every Nth cycle while awake.
 	var/period = 1
+	/// Diagnostic priority for this system. Frame dispatch priority belongs to
+	/// living_life_frame; this value identifies important slow work inside it.
+	var/priority = 0
+	/// A nested system has no independent queue deadline, but these guide
+	/// diagnostics and provide an initial call-cost estimate.
+	var/run_max_lateness = 0
+	var/run_cost_hint_ms = 0.1
+	/// Exact dispatch count kept on this shared flyweight, avoiding a metrics
+	/// registry lookup on every ordinary mob Life-system call.
+	var/telemetry_calls = 0
 	/// LIFE_SEG_* flags. If an earlier gate blocked any of them this cycle, the system is skipped.
 	var/segment = NONE
 	/// LIFE_SET_* flags of the Life sequences that include this family. Read from the family root.
@@ -39,6 +49,8 @@
 	/// What wakes this system once it sleeps (for logs and the audit). A system that can
 	/// sleep says here which producers call life_wake() with its `bit`.
 	var/woken_by
+	/// TRUE only after tick_biology has been audited for an extra virtual-time step.
+	var/biology_catchup = FALSE
 
 /// Does this mob get this system at all? Evaluated only when composing, so it may depend
 /// only on what the composition key covers (the mob type and its extras).
@@ -71,12 +83,20 @@
 /datum/life_system/proc/tick(mob/living/self, datum/life_context/ctx)
 	return
 
+/// One additional biological cycle when virtual biology time advances faster than the
+/// real frame. Systems opt in explicitly; presentation, input, and generic upkeep stay
+/// on the real frame. The caller supplies a fresh context and honours segment/period.
+/datum/life_system/proc/tick_biology(mob/living/self, datum/life_context/ctx)
+	return
+
 // --- Context ----------------------------------------------------------------------------------
 
 /// Per-cycle facts shared by the systems of one mob's Life() call. Built once per cycle.
 /datum/life_context
 	/// Seconds since this mob's previous Life() (SSmobs passes it; nominal 2).
 	var/seconds = LIFE_NOMINAL_SECONDS
+	/// TRUE for an extra virtual-time biology step; presentation stays on the real frame.
+	var/biological_step = FALSE
 	/// LIFE_SEG_* flags blocked by gates this cycle.
 	var/blocked = NONE
 	/// TRUE when SSmobs sampled this call for the per-system profiler.

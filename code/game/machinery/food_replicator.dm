@@ -1,5 +1,6 @@
 /obj/machinery/food_replicator
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	circuit = /obj/item/circuitboard/food_replicator
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
 	icon_state = "food_replicator"

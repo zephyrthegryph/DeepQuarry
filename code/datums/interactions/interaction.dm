@@ -247,6 +247,12 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 		return candidates
 	var/list/paths = list()
 	target.declare_interactions(paths)
+	// Static archetypes contribute paths once per type; ordinary atoms retain
+	// the existing cached candidate path with no per-instance OM work.
+	if(om_declaration_for(target.type))
+		var/datum/object_model/archetype/A = om_archetype_for(target.type)
+		for(var/path in A.interactions)
+			paths |= path
 	candidates = list()
 	for(var/path in paths)
 		var/datum/interaction/interaction = GLOB.interactions_by_type[path]

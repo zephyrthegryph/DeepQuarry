@@ -38,7 +38,6 @@
 	var/stat_tracking = TRUE
 	var/sleeping_turf_mixture_id
 	var/sleeping_turf_revision = -1
-	var/power_retry_timer
 	flags = REMOTEVIEW_ON_ENTER
 
 // create a new disposal
@@ -80,9 +79,6 @@
 	update_icon()
 
 /obj/machinery/disposal/Destroy()
-	if(power_retry_timer)
-		deltimer(power_retry_timer)
-		power_retry_timer = null
 	clear_gas_dependency()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
 	eject()
@@ -675,14 +671,14 @@
 		update_icon()	// update icon
 		if(flush || length(contents))
 			wake_for_state_change()
-		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()) && !power_retry_timer)
+		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()))
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			power_retry_timer = addtimer(CALLBACK(src, PROC_REF(retry_charge_after_power_restore)), rand(1 SECOND, 30 SECONDS), TIMER_STOPPABLE)
+			EnsureAfter(rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
-	power_retry_timer = null
+	CancelAfter(PROC_REF(retry_charge_after_power_restore))
 	if(mode == DISPOSALMODE_CHARGING && !(stat & (NOPOWER|BROKEN)) && can_pressurize_from(loc.return_air()))
 		wake_for_state_change()
 

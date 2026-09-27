@@ -159,6 +159,8 @@ struct ApcRow {
     main_status: u8,
     /// Used equipment, lighting, environment, charging, total (W).
     lastused: [f64; 5],
+    /// Last values visible to DM, after conversion to BYOND's f32 numbers.
+    reported: Option<[f32; 15]>,
 }
 
 /// A SMES component plus its per-step plan and results.
@@ -171,6 +173,7 @@ struct SmesRow {
     outputting: u8,
     output_used: f64,
     input_available: f64,
+    reported: Option<[f32; 7]>,
 }
 
 #[derive(Default)]
@@ -203,6 +206,18 @@ fn push(out: &mut Vec<f32>, kind: u32, values: &[f64]) {
     out.push(kind as f32);
     out.push(values.len() as f32);
     out.extend(values.iter().map(|&v| v as f32));
+}
+
+/// Only cross the FFI when DM would actually observe a new storage value.
+/// Compare the converted numbers, since sub-f32 changes cannot reach DM.
+#[allow(clippy::cast_possible_truncation)]
+fn push_changed<const N: usize>(out: &mut Vec<f32>, kind: u32, values: [f64; N], reported: &mut Option<[f32; N]>) {
+    let visible = values.map(|v| v as f32);
+    if reported.as_ref() == Some(&visible) {
+        return;
+    }
+    push(out, kind, &values);
+    *reported = Some(visible);
 }
 
 const fn channel_code(c: ChannelSetting) -> u8 {
@@ -637,12 +652,12 @@ impl PowerHost {
     }
 
     fn report_storage(&mut self) {
-        for (&key, a) in &self.apcs {
+        for (&key, a) in &mut self.apcs {
             let apc = &a.apc;
-            push(
+            push_changed(
                 &mut self.out,
                 EV_APC,
-                &[
+                [
                     f64::from(key),
                     apc.cell.charge,
                     f64::from(channel_code(apc.channels[0])),
@@ -659,13 +674,14 @@ impl PowerHost {
                     a.lastused[4],
                     f64::from(apc_channel_bits(apc)),
                 ],
+                &mut a.reported,
             );
         }
-        for (&key, s) in &self.smes {
-            push(
+        for (&key, s) in &mut self.smes {
+            push_changed(
                 &mut self.out,
                 EV_SMES,
-                &[
+                [
                     f64::from(key),
                     s.smes.charge.charge,
                     f64::from(s.inputting),
@@ -674,6 +690,7 @@ impl PowerHost {
                     s.input_available,
                     f64::from(smes_display(&s.smes)),
                 ],
+                &mut s.reported,
             );
         }
     }
@@ -846,6 +863,7 @@ fn apply(w: &mut PowerHost, op: u32, a: &[f32]) -> Result<()> {
                 terminal: None,
                 main_status: STATUS_NOT_CONNECTED,
                 lastused: [0.0; 5],
+                reported: None,
             });
             let apc = &mut row.apc;
             apc.active = flags & APC_ACTIVE != 0;
@@ -905,6 +923,7 @@ fn apply(w: &mut PowerHost, op: u32, a: &[f32]) -> Result<()> {
                 outputting: 0,
                 output_used: 0.0,
                 input_available: 0.0,
+                reported: None,
             });
             let s = &mut row.smes;
             s.charge.capacity = f64::from(a[2].max(0.0));
@@ -1065,5 +1084,27 @@ fn power_key_of(entity: ByondValue) -> Result<ByondValue> {
     match entity::resolve(v, DOMAIN, KIND_NODE) {
         Ok(comp) => Ok(ByondValue::from(comp.cell as f32)),
         Err(_) => Ok(ByondValue::null()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{EV_APC, push_changed};
+
+    #[test]
+    fn storage_events_only_report_dm_visible_changes() {
+        let mut events = Vec::new();
+        let mut reported = None;
+        push_changed(&mut events, EV_APC, [1.0, 100.0], &mut reported);
+        let first = events.clone();
+        push_changed(&mut events, EV_APC, [1.0, 100.0], &mut reported);
+        assert_eq!(events, first);
+
+        // A change smaller than BYOND's number precision cannot be observed.
+        push_changed(&mut events, EV_APC, [1.0, 100.0 + 1e-7], &mut reported);
+        assert_eq!(events, first);
+
+        push_changed(&mut events, EV_APC, [1.0, 99.0], &mut reported);
+        assert_eq!(&events[first.len()..], &[EV_APC as f32, 2.0, 1.0, 99.0]);
     }
 }

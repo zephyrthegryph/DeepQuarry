@@ -323,7 +323,6 @@
 		if(deployed)
 			undeploy()
 		revert_shell() // To get it out of the GLOB list.
-	QDEL_NULL(wires)
 	sprite_datum = null
 	QDEL_NULL(robotact)
 	set_cell(null)
@@ -418,19 +417,36 @@
 		to_chat(src, span_danger("Warning: Unauthorized access through power channel [rand(11,29)] detected!"))
 	return amount
 
-/// The one writer of `cell`. Watches the cell for deletion and shields it
-/// from EMP recursion (the robot drains it itself in emp_act()).
+/// The installed cell is a non-owning relation: its physical location owns it.
+/// The relation clears the legacy field when the cell is deleted.
+/datum/object_model/relation/robot_cell
+	from_type = /mob/living/silicon/robot
+	to_type = /obj/item/cell
+	source_single = TRUE
+
+/datum/object_model/relation/robot_cell/on_unlink(datum/source, datum/target, reason)
+	if(reason != OM_REL_DESTROYING || om_is_dying(source))
+		return
+	var/mob/living/silicon/robot/robot = source
+	var/obj/item/cell/lost_cell = target
+	robot.on_installed_cell_lost(lost_cell)
+
+/// The one writer of `cell`. The relation watches deletion; the EMP signal
+/// shields the cell from recursion (the robot drains it in emp_act()).
 /mob/living/silicon/robot/proc/set_cell(obj/item/cell/new_cell)
 	if(cell == new_cell)
 		return
 	if(cell)
-		UnregisterSignal(cell, list(COMSIG_ATOM_PRE_EMP_ACT, COMSIG_QDELETING))
+		UnregisterSignal(cell, COMSIG_ATOM_PRE_EMP_ACT)
+		om_unlink(src, /datum/object_model/relation/robot_cell, cell)
 	cell = new_cell
 	if(new_cell)
 		if(new_cell.loc != src)
 			new_cell.forceMove(src)
+		if(!om_link(src, /datum/object_model/relation/robot_cell, new_cell))
+			cell = null
+			return
 		RegisterSignal(new_cell, COMSIG_ATOM_PRE_EMP_ACT, PROC_REF(shield_cell_from_emp))
-		RegisterSignal(new_cell, COMSIG_QDELETING, PROC_REF(on_cell_deleted))
 		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
@@ -452,13 +468,17 @@
 	SIGNAL_HANDLER
 	return EMP_PROTECT_SELF
 
-/mob/living/silicon/robot/proc/on_cell_deleted(datum/source)
-	SIGNAL_HANDLER
+/mob/living/silicon/robot/proc/on_installed_cell_lost(obj/item/cell/source)
+	if(cell != source)
+		return
+	UnregisterSignal(source, COMSIG_ATOM_PRE_EMP_ACT)
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
 		mount.wrapped = null
 		mount.installed = ROBOT_PART_MISSING
-	set_cell(null)
+	cell = null
+	if(!QDELETED(src))
+		update_power_state()
 
 /// Recompute the cached demand. Called on toggle, install, equip and lights
 /// change; the power system spends it every cycle without summing.
@@ -1557,8 +1577,29 @@
 		if(ROBOT_NOTIFICATION_AI_SHELL) //New Shell
 			to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New AI shell detected: <a href='byond://?src=[REF(connected_ai)];track2=[html_encode(name)]'>[name]</a>") + "<br>"))
 
-/// The only writer of the robot–AI link. Keeps both sides in step and
-/// subscribes to the master's law changes, so slaved borgs sync on push.
+/// One non-owning master link. Its hooks maintain both legacy read indexes and
+/// the law-change subscription, including when either endpoint is deleted.
+/datum/object_model/relation/robot_master_ai
+	from_type = /mob/living/silicon/robot
+	to_type = /mob/living/silicon/ai
+	source_single = TRUE
+
+/datum/object_model/relation/robot_master_ai/on_link(datum/source, datum/target)
+	var/mob/living/silicon/robot/robot = source
+	var/mob/living/silicon/ai/master = target
+	robot.connected_ai = master
+	master.connected_robots |= robot
+	robot.Observe(master, COMSIG_SILICON_LAWS_CHANGED, TYPE_PROC_REF(/mob/living/silicon/robot, on_master_laws_changed))
+
+/datum/object_model/relation/robot_master_ai/on_unlink(datum/source, datum/target, reason)
+	var/mob/living/silicon/robot/robot = source
+	var/mob/living/silicon/ai/master = target
+	robot.Unobserve(COMSIG_SILICON_LAWS_CHANGED, TYPE_PROC_REF(/mob/living/silicon/robot, on_master_laws_changed))
+	master.connected_robots -= robot
+	if(robot.connected_ai == master)
+		robot.connected_ai = null
+
+/// The only writer of the robot–AI link. The relationship owns mirror updates.
 /mob/living/silicon/robot/proc/set_master_ai(mob/living/silicon/ai/new_ai, silent = FALSE)
 	if(new_ai == connected_ai)
 		return FALSE
@@ -1566,13 +1607,8 @@
 	if(old_ai)
 		if(!silent)
 			sync() // One last sync attempt
-		UnregisterSignal(old_ai, list(COMSIG_SILICON_LAWS_CHANGED, COMSIG_QDELETING))
-		old_ai.connected_robots -= src
-	connected_ai = new_ai
-	if(new_ai)
-		new_ai.connected_robots |= src
-		RegisterSignal(new_ai, COMSIG_SILICON_LAWS_CHANGED, PROC_REF(on_master_laws_changed))
-		RegisterSignal(new_ai, COMSIG_QDELETING, PROC_REF(on_master_deleted))
+	if(!om_replace_related(src, /datum/object_model/relation/robot_master_ai, new_ai))
+		return FALSE
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")
 	return TRUE
 
@@ -1580,10 +1616,6 @@
 	SIGNAL_HANDLER
 	if(lawupdate)
 		INVOKE_ASYNC(src, PROC_REF(sync))
-
-/mob/living/silicon/robot/proc/on_master_deleted(datum/source)
-	SIGNAL_HANDLER
-	set_master_ai(null, TRUE)
 
 /mob/living/silicon/robot/proc/disconnect_from_ai(silent)
 	set_master_ai(null, silent)

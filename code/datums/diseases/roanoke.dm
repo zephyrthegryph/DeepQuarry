@@ -91,6 +91,36 @@
 				cure()
 	return
 
+/datum/disease/roanoke/stage_biology()
+	if(!..())
+		return FALSE
+	var/mob/living/carbon/human/M = affected_mob
+	if(stage < 2)
+		return TRUE
+	if(prob(1) && M.bodytemperature < BODYTEMP_HEAT_DAMAGE_LIMIT)
+		fever(M)
+	if(stage >= 3)
+		var/germ_chance = stage == 3 ? 1 : 2
+		if(prob(germ_chance))
+			O = DEFAULTPICK(organ_list, null)
+			O?.adjust_germ_level(rand(5, 10))
+	if(stage >= 5 && prob(stage == 5 ? 1 : 2))
+		O = DEFAULTPICK(organ_list, null)
+		M.injure(INJURY_BLUNT, rand(1, 3), O)
+	if(stage >= 6)
+		if(prob(1) && prob(10))
+			O = DEFAULTPICK(organ_list, null)
+			var/obj/item/organ/external/E = O?.parent_organ
+			if(E)
+				var/datum/affliction/wound/internal_bleeding/W = new(5)
+				E.add_wound(W)
+				M.process_organs(TRUE)
+		if(M.stat == DEAD || M.allow_spontaneous_tf)
+			M.LoadComponent(/datum/component/xenochimera)
+			cure()
+			return FALSE
+	return TRUE
+
 /datum/disease/roanoke/proc/fever(mob/living/M, datum/disease/D)
 	M.bodytemperature = min(M.bodytemperature + (2 * stage), BODYTEMP_HEAT_DAMAGE_LIMIT - 1)
 	return TRUE

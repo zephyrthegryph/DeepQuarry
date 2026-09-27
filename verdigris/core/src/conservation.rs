@@ -58,6 +58,24 @@ impl std::fmt::Display for Violation {
 
 impl std::error::Error for Violation {}
 
+/// Invalid amount for a paired transfer between conserved stores.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransferError {
+    Negative,
+    NonFinite,
+}
+
+impl std::fmt::Display for TransferError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Negative => write!(f, "conservation transfer cannot be negative"),
+            Self::NonFinite => write!(f, "conservation transfer must be finite"),
+        }
+    }
+}
+
+impl std::error::Error for TransferError {}
+
 impl Ledger {
     #[must_use]
     pub fn new() -> Self {
@@ -79,13 +97,42 @@ impl Ledger {
         self.entries.entry(name).or_default().sinks += amount;
     }
 
+    /// Records both sides of an internal transfer in one operation. The
+    /// donor's measured quantity decreases and the recipient's increases by
+    /// the same finite, nonnegative amount. Quantity names may differ when
+    /// the two domains track separate stores of the same physical quantity
+    /// (for example gas energy and solid energy). Failed validation leaves
+    /// both ledgers untouched.
+    pub fn transfer_to(
+        &mut self,
+        donor_quantity: &'static str,
+        recipient: &mut Self,
+        recipient_quantity: &'static str,
+        amount: f64,
+    ) -> Result<(), TransferError> {
+        if !amount.is_finite() {
+            return Err(TransferError::NonFinite);
+        }
+        if amount < 0.0 {
+            return Err(TransferError::Negative);
+        }
+        self.sink(donor_quantity, amount);
+        recipient.source(recipient_quantity, amount);
+        Ok(())
+    }
+
     /// Checks `name`'s current `total` against the sources/sinks recorded
     /// since the last check, within an absolute `tolerance`, then resets
     /// the accumulators for the next step. The first call for a given
     /// `name` only records the starting baseline (nothing to compare
     /// against yet), so callers can check from the first step without a
     /// separate "prime the ledger" call.
-    pub fn check(&mut self, name: &'static str, total: f64, tolerance: f64) -> Result<(), Violation> {
+    pub fn check(
+        &mut self,
+        name: &'static str,
+        total: f64,
+        tolerance: f64,
+    ) -> Result<(), Violation> {
         let entry = self.entries.entry(name).or_default();
         if !entry.initialized {
             entry.initialized = true;
@@ -269,6 +316,36 @@ mod tests {
     }
 
     #[test]
+    fn paired_transfer_accounts_for_both_domains() {
+        let mut gas = Ledger::new();
+        let mut solid = Ledger::new();
+        gas.check("gas_energy", 100.0, 1e-6).unwrap();
+        solid.check("solid_energy", 25.0, 1e-6).unwrap();
+        gas.transfer_to("gas_energy", &mut solid, "solid_energy", 15.0)
+            .unwrap();
+        assert!(gas.check("gas_energy", 85.0, 1e-6).is_ok());
+        assert!(solid.check("solid_energy", 40.0, 1e-6).is_ok());
+    }
+
+    #[test]
+    fn invalid_transfer_does_not_mutate_either_ledger() {
+        let mut gas = Ledger::new();
+        let mut solid = Ledger::new();
+        gas.check("energy", 100.0, 1e-6).unwrap();
+        solid.check("energy", 25.0, 1e-6).unwrap();
+        assert_eq!(
+            gas.transfer_to("energy", &mut solid, "energy", f64::NAN),
+            Err(TransferError::NonFinite)
+        );
+        assert_eq!(
+            gas.transfer_to("energy", &mut solid, "energy", -1.0),
+            Err(TransferError::Negative)
+        );
+        assert!(gas.check("energy", 100.0, 1e-6).is_ok());
+        assert!(solid.check("energy", 25.0, 1e-6).is_ok());
+    }
+
+    #[test]
     fn quantities_are_independent() {
         let mut ledger = Ledger::new();
         ledger.check("moles", 100.0, 1e-6).unwrap();
@@ -313,9 +390,18 @@ mod tests {
         let mut set = ConservationSet::new();
         let moles = set.intern("moles");
         let energy = set.intern("energy");
-        set.register(Box::new(FixedSource { id: moles, value: 10.0 }));
-        set.register(Box::new(FixedSource { id: energy, value: 1000.0 }));
-        set.register(Box::new(FixedSource { id: moles, value: 5.0 }));
+        set.register(Box::new(FixedSource {
+            id: moles,
+            value: 10.0,
+        }));
+        set.register(Box::new(FixedSource {
+            id: energy,
+            value: 1000.0,
+        }));
+        set.register(Box::new(FixedSource {
+            id: moles,
+            value: 5.0,
+        }));
         let mut out = Vec::new();
         set.totals_into(&mut out);
         assert_eq!(out[moles.0 as usize], 15.0);
@@ -336,7 +422,10 @@ mod tests {
     fn conservation_set_check_catches_a_leak() {
         let mut set = ConservationSet::new();
         let moles = set.intern("moles");
-        set.register(Box::new(FixedSource { id: moles, value: 100.0 }));
+        set.register(Box::new(FixedSource {
+            id: moles,
+            value: 100.0,
+        }));
         let mut ledger = Ledger::new();
         let mut out = Vec::new();
         assert!(
@@ -351,14 +440,20 @@ mod tests {
     fn conservation_set_check_reports_a_violation() {
         let mut set = ConservationSet::new();
         let moles = set.intern("moles");
-        set.register(Box::new(FixedSource { id: moles, value: 100.0 }));
+        set.register(Box::new(FixedSource {
+            id: moles,
+            value: 100.0,
+        }));
         let mut ledger = Ledger::new();
         let mut out = Vec::new();
         assert!(
             set.check(&mut ledger, &mut out, 1e-6).is_empty(),
             "priming never fails"
         );
-        set.sources[0] = Box::new(FixedSource { id: moles, value: 150.0 });
+        set.sources[0] = Box::new(FixedSource {
+            id: moles,
+            value: 150.0,
+        });
         let violations = set.check(&mut ledger, &mut out, 1e-6);
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].name, "moles");
@@ -368,7 +463,10 @@ mod tests {
     fn totals_into_reuses_its_buffer_without_stale_values() {
         let mut set = ConservationSet::new();
         let moles = set.intern("moles");
-        set.register(Box::new(FixedSource { id: moles, value: 3.0 }));
+        set.register(Box::new(FixedSource {
+            id: moles,
+            value: 3.0,
+        }));
         let mut out = vec![999.0; 10]; // deliberately oversized and stale
         set.totals_into(&mut out);
         assert_eq!(out, vec![3.0], "cleared and resized, not left stale");

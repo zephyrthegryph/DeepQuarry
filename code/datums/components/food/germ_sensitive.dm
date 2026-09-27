@@ -12,8 +12,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 
 /// Makes items infective if left on floor, also sending corresponding signals to parent
 /datum/component/germ_sensitive
-	/// Timer for counting delay before becoming infective
-	var/timer_id
 	/// Whether it is already infective
 	var/infective = FALSE
 
@@ -44,6 +42,7 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 		handle_movement()
 
 /datum/component/germ_sensitive/UnregisterFromParent()
+	CancelAfter(PROC_REF(expose_to_germs))
 	REMOVE_TRAIT(parent, TRAIT_GERM_SENSITIVE, REF(src))
 	UnregisterSignal(parent, list(
 		COMSIG_ATOM_ENTERED,
@@ -58,16 +57,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 		COMSIG_MOVABLE_MOVED,
 	))
 
-/datum/component/germ_sensitive/Destroy()
-	remove_timer()
-	return ..()
-
-/datum/component/germ_sensitive/proc/remove_timer()
-	if(!timer_id)
-		return
-	deltimer(timer_id)
-	timer_id = null
-
 /datum/component/germ_sensitive/proc/handle_movement()
 	SIGNAL_HANDLER
 
@@ -76,21 +65,21 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 
 	// Is parent on simulated valid turf that is safe? Or held/in a pocket/in a closet/etc?
 	if(!istype(open_turf) || islava(open_turf) || ismineralturf(open_turf) || !parent_object.get_gravity())
-		remove_timer()
+		CancelAfter(PROC_REF(expose_to_germs))
 		return
 
 	// Is parent on an elevated structure?
 	for(var/atom/movable/content as anything in open_turf.contents)
 		if(GLOB.typecache_elevated_structures[content.type])
-			remove_timer()
+			CancelAfter(PROC_REF(expose_to_germs))
 			return
 
 	// Exposed to bacteria, start countdown until becoming infected
-	timer_id = addtimer(CALLBACK(src, PROC_REF(expose_to_germs)), GERM_EXPOSURE_DELAY, TIMER_STOPPABLE | TIMER_UNIQUE)
+	EnsureAfter(GERM_EXPOSURE_DELAY, PROC_REF(expose_to_germs))
 
 /datum/component/germ_sensitive/proc/picked_up()
 	SIGNAL_HANDLER
-	remove_timer()
+	CancelAfter(PROC_REF(expose_to_germs))
 
 /datum/component/germ_sensitive/proc/dropped()
 	SIGNAL_HANDLER

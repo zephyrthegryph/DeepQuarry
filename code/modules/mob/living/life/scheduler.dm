@@ -21,6 +21,8 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	var/life_awake = LIFE_SYS_ALL
 	/// Life cycles run by this mob; drives system periods.
 	var/life_cycle = 0
+	/// Whole local biology cycles consumed, including accelerated catch-up steps.
+	var/biological_cycle = 0
 	/// LIFE_SET_* of the Life sequence this mob type runs.
 	var/life_set = LIFE_SET_LIVING
 	/// Lazy list of extra system types (component-provided) this mob carries.
@@ -31,10 +33,12 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	var/life_cycle_wakes = NONE
 	/// Bits of the pending timed wake (life_wake_in()).
 	var/life_timer_bits = NONE
+	/// Sparse allocation, fixed 20 slots for the individual LIFE_SYS_* deadlines.
+	var/list/life_timer_due
 	/// world.time the pending timed wake fires.
 	var/life_timer_at = 0
-	/// The pending timed wake's timer.
-	var/life_timer_id
+	/// TRUE while the scheduled frame consumes a due wake, avoiding a second frame.
+	var/life_frame_running = FALSE
 
 /mob/living/Life(seconds = LIFE_NOMINAL_SECONDS, profile = FALSE)
 	set invisibility = INVISIBILITY_NONE
@@ -43,7 +47,10 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	var/datum/life_composition/comp = life_composition || recompose_life()
 	var/datum/life_context/ctx = new(seconds, profile)
 	ctx.stasis = body ? body.advance_stasis() : FALSE
+	var/biology_steps = body ? body.biology_due : 1
 	life_cycle++
+	if(biology_steps > 0)
+		biological_cycle++
 	life_cycle_wakes = NONE
 	life_in_cycle = TRUE
 	// Gates always run while the mob runs: they decide what the rest of the cycle may do.
@@ -61,6 +68,11 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 				busy |= bit
 			continue
 		var/result
+		S.telemetry_calls++
+		var/dispatch_started_at = world.time
+		var/dispatch_started_usage = TICK_USAGE_REAL
+		SSreactor.prepare_scheduler_tick()
+		var/observed_child_before = SSreactor.scheduler_tick_child_ms
 		if(profile)
 			var/profile_start = TICK_USAGE
 			result = S.tick(src, ctx)
@@ -71,6 +83,9 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 			result = S.tick(src, ctx)
 			if(result != LIFE_HALT && result != LIFE_SLEEP && life_system_wants_run(S))
 				busy |= bit
+		var/dispatch_exclusive_ms = max(TICK_DELTA_TO_MS(TICK_USAGE_REAL - dispatch_started_usage) - (SSreactor.scheduler_tick_child_ms - observed_child_before), 0)
+		if(profile || dispatch_exclusive_ms >= SSreactor.scheduler_slow_call_ms || TICK_USAGE >= 50)
+			SSreactor.observe_dispatch("life", S.type, type, null, dispatch_started_at, dispatch_exclusive_ms, "frame", 1, S.priority)
 		if(result == LIFE_HALT)
 			halted = TRUE
 			break
@@ -78,6 +93,42 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 			var/delay = S.rewake_delay(src)
 			if(delay > 0)
 				life_wake_in(bit, delay)
+	// Faster local time repeats only audited biological work. A fresh context
+	// re-evaluates gates and placement after each step; presentation and upkeep
+	// remain once per real-time Life frame.
+	if(!halted && !QDELETED(src) && biology_steps > 1)
+		for(var/step in 2 to biology_steps)
+			biological_cycle++
+			var/datum/life_context/biology_ctx = new(LIFE_NOMINAL_SECONDS, profile)
+			biology_ctx.biological_step = TRUE
+			for(var/datum/life_system/B as anything in comp.ordered)
+				if(!B.biology_catchup || !(awake & B.bit) || (B.period > 1 && (biological_cycle % B.period)))
+					continue
+				if(biology_ctx.blocked & B.segment)
+					continue
+				considered |= B.bit
+				var/bio_result
+				B.telemetry_calls++
+				var/bio_started_at = world.time
+				var/bio_started_usage = TICK_USAGE_REAL
+				SSreactor.prepare_scheduler_tick()
+				var/bio_child_before = SSreactor.scheduler_tick_child_ms
+				if(profile)
+					var/bio_profile_start = TICK_USAGE
+					bio_result = B.tick_biology(src, biology_ctx)
+					SSmobs.record_system_cost(B, TICK_USAGE - bio_profile_start)
+				else
+					bio_result = B.tick_biology(src, biology_ctx)
+				var/bio_exclusive_ms = max(TICK_DELTA_TO_MS(TICK_USAGE_REAL - bio_started_usage) - (SSreactor.scheduler_tick_child_ms - bio_child_before), 0)
+				if(profile || bio_exclusive_ms >= SSreactor.scheduler_slow_call_ms || TICK_USAGE >= 50)
+					SSreactor.observe_dispatch("life", B.type, type, null, bio_started_at, bio_exclusive_ms, "biology catch-up", 1, B.priority)
+				if(bio_result == LIFE_HALT || QDELETED(src))
+					halted = TRUE
+					break
+				if(life_system_wants_run(B))
+					busy |= B.bit
+			if(halted)
+				break
 	life_in_cycle = FALSE
 	if(halted || ctx.no_sleep || QDELETED(src))
 		return
@@ -125,10 +176,9 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 			S.detach(src)
 	life_composition = null
 	life_extra_systems = null
-	if(life_timer_id)
-		deltimer(life_timer_id)
-		life_timer_id = null
 	life_timer_bits = NONE
+	life_timer_at = 0
+	life_timer_due = null
 	if(life_hibernating)
 		life_wake(NONE, "deleted", TRUE)
 
@@ -140,6 +190,7 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 /// it wakes whole, so every system gets one pass to re-check its sleep rule. `reason` is a
 /// short constant string for the trace and the wake-reason summary.
 /mob/living/proc/life_wake(bits = LIFE_SYS_ALL, reason, partial = FALSE)
+	var/was_hibernating = life_hibernating
 	if(life_in_cycle)
 		life_cycle_wakes |= bits
 	if(life_hibernating)
@@ -147,12 +198,27 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 			bits = LIFE_SYS_ALL
 		life_hibernating = FALSE
 		life_last_time = 0 // the next Life() gets nominal seconds, not the whole nap
+		if(reason != "timer")
+			life_discard_elapsed_biology()
 		var/slept_since = SSmobs.hibernating_mobs[src]
 		SSmobs.hibernating_mobs -= src
 		SSmobs.note_wake(reason)
 		if(GLOB.mob_hibernation_trace)
 			log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) woke ([reason || "unspecified"]) after [DisplayTimeText(world.time - slept_since)], bits [bits]; [length(SSmobs.hibernating_mobs)] hibernating")
 	life_awake |= bits
+	if(was_hibernating && !life_frame_running)
+		var/datum/object_model/behaviour_runtime/R = om_state?.behaviour_runtime
+		if(R?.run_last)
+			R.run_last -= /datum/object_model/behaviour/living_life_frame
+		om_behaviour_wake(src, /datum/object_model/behaviour/living_life_frame, reason || "life wake")
+
+/// A paused or externally woken mob resumes without simulating its entire nap.
+/mob/living/proc/life_discard_elapsed_biology()
+	if(!body)
+		return
+	var/datum/object_model/clock_state/biology_clock = om_state?.clock_states?[/datum/object_model/clock_domain/biology]
+	body.stasis_last_virtual = biology_clock?.settle()
+	body.stasis_clock = 0
 
 /// Takes a mob with no awake systems out of the SSmobs run until life_wake(). Returns TRUE
 /// when the mob now hibernates.
@@ -166,26 +232,50 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) hibernating ([reason || "unspecified"]); [length(SSmobs.hibernating_mobs)] hibernating")
 	return TRUE
 
-/// Wakes `bits` after `delay` (a sleeping system that still drifts slowly). One timer per
-/// mob: the earliest deadline wins and later requests ride along with it.
+/// Wakes each requested system bit after `delay`. One wheel token serves the
+/// earliest deadline, while later systems retain their own due times.
 /mob/living/proc/life_wake_in(bits, delay)
-	var/at = world.time + delay
-	if(life_timer_id && life_timer_at <= at)
-		life_timer_bits |= bits
+	if(!bits || delay <= 0)
 		return
-	if(life_timer_id)
-		deltimer(life_timer_id)
+	var/at = world.time + delay
+	if(!life_timer_due)
+		life_timer_due = list()
+		life_timer_due.len = 20
+	var/bit = 1
+	for(var/index in 1 to 20)
+		if(bits & bit)
+			var/old_due = life_timer_due[index]
+			if(isnull(old_due) || at < old_due)
+				life_timer_due[index] = at
+		bit *= 2
 	life_timer_bits |= bits
-	life_timer_at = at
-	life_timer_id = addtimer(CALLBACK(src, PROC_REF(life_timer_fired)), delay, TIMER_STOPPABLE)
+	if(!life_timer_at || at < life_timer_at)
+		life_timer_at = at
+		om_behaviour_due_at(src, /datum/object_model/behaviour/living_life_frame, at)
 
-/// The life_wake_in() timer: wakes only the systems that asked for it.
+/// Consumes only due systems and re-arms the next per-bit deadline.
 /mob/living/proc/life_timer_fired()
-	var/bits = life_timer_bits
-	life_timer_bits = NONE
-	life_timer_id = null
-	life_timer_at = 0
-	life_wake(bits, "timer", TRUE)
+	var/due_bits = NONE
+	var/remaining_bits = NONE
+	var/next_at = 0
+	var/bit = 1
+	for(var/index in 1 to 20)
+		var/at = life_timer_due?[index]
+		if(!isnull(at))
+			if(at <= world.time)
+				due_bits |= bit
+				life_timer_due[index] = null
+			else
+				remaining_bits |= bit
+				if(!next_at || at < next_at)
+					next_at = at
+		bit *= 2
+	life_timer_bits = remaining_bits
+	life_timer_at = next_at
+	if(next_at)
+		om_behaviour_due_at(src, /datum/object_model/behaviour/living_life_frame, next_at)
+	if(due_bits)
+		life_wake(due_bits, "timer", TRUE)
 
 /// The hibernation audit's check: the first sleeping system whose sleep rule no longer
 /// holds, or null. A hit means a producer forgot to call life_wake().
@@ -279,6 +369,10 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 /// A client logged into or out of this mob: the HUD, senses and client systems restart.
 /mob/living/proc/on_client_changed(reason)
 	life_wake(LIFE_SYS_ALL, reason)
+	om_behaviour_start(src)
+	om_behaviour_refresh(src)
+	om_behaviour_wake(src, /datum/object_model/behaviour/living_afk)
+	om_behaviour_wake(src, /datum/object_model/behaviour/living_ambience)
 
 /// Something was equipped or unequipped.
 /mob/proc/on_equipment_changed()

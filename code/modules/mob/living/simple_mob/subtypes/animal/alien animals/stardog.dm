@@ -891,29 +891,38 @@
 	. = ..()
 	icon_state = "screen_eye"
 
-/obj/machinery/computer/ship/navigation/verb/emote_beyond(message as message)	//I could have put this into any other file but right here will do
-	set name = "Emote Beyond"
-	set desc = "Emote to those beyond the ship!"
-	set category = "IC.Chat"
-	set src in oview(7)
+/obj/machinery/computer/ship/navigation/declare_interactions(list/into)
+	into += /datum/interaction/machine_verb/navigation_emote_beyond
+	..()
 
-	if(!isliving(usr))
-		return
-	var/mob/living/L = usr
+/datum/interaction/machine_verb/navigation_emote_beyond
+	id = "navigation_emote_beyond"
+	name = "Emote Beyond"
+	category = INTERACTION_CAT_IC_CHAT
+	requires = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/ship/navigation/proc/actor_can_emote_beyond, "move closer to the console"))
+	effect = /obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond
+
+/obj/machinery/computer/ship/navigation/proc/actor_can_emote_beyond(mob/actor, atom/target, obj/item/held)
+	return src in oview(7, actor)
+
+/obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/L = user
+	if(!istype(L) || !L.client)
+		return FALSE
 	if(L.client.prefs.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
-		return
-	if (!message)
-		message = tgui_input_text(L, "Type a message to emote.","Emote Beyond", encode = FALSE)
+		return TRUE
+	var/message = tgui_input_text(L, "Type a message to emote.","Emote Beyond", encode = FALSE)
 	message = sanitize_or_reflect(message,L)
 	if (!message)
-		return
+		return TRUE
 	if (L.stat == DEAD)
-		return L.say_dead(message)
+		L.say_dead(message)
+		return TRUE
 	var/obj/effect/overmap/visitable/ship/s = get_overmap_sector(z)
 	if(!s || !istype(s, /obj/effect/overmap/visitable/ship))
 		to_chat(L, span_warning("You can't do that here."))
-		return
+		return TRUE
 
 	L.log_message("(SUBTLE) [message]", LOG_EMOTE)
 	message = span_emote_subtle(span_bold("[L]") + " " + span_italics("[message]"))
@@ -936,6 +945,7 @@
 				M.show_message(message, 2)
 				if(M.read_preference(/datum/preference/toggle/subtle_sounds))
 					M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+	return TRUE
 
 /area/redgate/stardog/eyes
 

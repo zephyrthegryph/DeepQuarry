@@ -21,7 +21,7 @@
 /atom/state_post_apply(list/blob, flags)
 	..()
 	if(wires)
-		wires.holder = src
+		set_wires(wires)
 
 // constraint_overrides holds compiled /datum/predicate instances (rules.md
 // §3), each a cached, shared-by-key singleton rather than owned by this item
@@ -42,6 +42,14 @@
 		return
 	variant = vars["variant"]
 	apply_variant()
+
+// These lists are generated in Initialize(), so a sampled pristine instance
+// cannot stand in for another instance's default.
+/obj/item/clothing/head/fishing/state_nondeterministic_list_vars()
+	return ..() + list("item_state_slots")
+
+/obj/item/trash/material/state_nondeterministic_list_vars()
+	return ..() + list("material_mix")
 
 /obj/machinery/state_codecs()
 	return ..() + list(

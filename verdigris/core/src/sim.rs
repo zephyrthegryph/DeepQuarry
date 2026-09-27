@@ -20,9 +20,11 @@ use std::time::{Duration, Instant};
 use crate::channel::{ChannelError, ChannelInfo, Channels, channel_infos, validate_channels};
 use crate::cow::ChunkLayout;
 use crate::frame::{FrameInfo, Res, ResourceId, Resources, Schedule, Task, run_frame};
+use crate::law::{Law, LawCtx, LawKey, LawState, OrderCycle, Pacer, Period, Settle, order_laws};
 use crate::mailbox::Latest;
 use crate::outbox::{Outbox, OutboxSlot};
 use crate::owner::{Domain, DomainKey, DomainState, MainPort};
+use crate::units::Seconds;
 use crate::watch::{Cond, WatchError, WatchPort, WatchState, validate};
 
 /// How DM writes to worker-owned cells are handled.
@@ -83,6 +85,48 @@ pub struct SimMetrics {
     pub overlay_entries: usize,
     pub frame_panics: u64,
     pub last_panic: Option<String>,
+}
+
+/// Main-thread pacing for an asynchronous [`Sim`]. It accumulates elapsed
+/// time, caps catch-up, and retains due steps while a worker frame runs.
+/// Call [`Sim::begin_tick`] before [`dispatch`](Self::dispatch) each DM tick.
+pub struct PacedDriver {
+    pacer: Pacer,
+    due: u32,
+}
+
+impl PacedDriver {
+    #[must_use]
+    pub const fn new(dt: Seconds, backlog_cap: u32) -> Self {
+        Self {
+            pacer: Pacer::new(dt, backlog_cap),
+            due: 0,
+        }
+    }
+
+    /// Adds elapsed time; any backlog beyond the configured cap is dropped.
+    pub fn advance(&mut self, elapsed: Seconds) {
+        let steps = self.pacer.advance(elapsed);
+        self.due = self.due.saturating_add(steps).min(self.pacer.backlog_cap());
+    }
+
+    #[must_use]
+    pub const fn due(&self) -> u32 {
+        self.due
+    }
+
+    /// Starts one due frame if the worker is ready; otherwise leaves it due.
+    pub fn dispatch(&mut self, sim: &mut Sim) -> bool {
+        if self.due == 0 {
+            return false;
+        }
+        if sim.dispatch_frame() {
+            self.due -= 1;
+            true
+        } else {
+            false
+        }
+    }
 }
 
 /// One dispatched frame in the flight recorder: its number and each
@@ -220,6 +264,8 @@ pub struct SimBuilder {
     resources: Resources,
     apply_tasks: Vec<Task>,
     tasks: Vec<Task>,
+    law_tasks: Vec<(&'static str, Task)>,
+    law_after: Vec<(&'static str, &'static str)>,
     publishers: Vec<(ResourceId, PublishFn)>,
     ports: Vec<Box<dyn PortDyn>>,
     watch_tasks: Vec<Task>,
@@ -278,6 +324,8 @@ pub enum BuildError {
     Pool(rayon::ThreadPoolBuildError),
     /// Every declared channel and condition that failed validation.
     Boot(Vec<BootError>),
+    LawOrder(OrderCycle),
+    LawDeclaration(String),
 }
 
 impl std::fmt::Display for BuildError {
@@ -291,6 +339,8 @@ impl std::fmt::Display for BuildError {
                 }
                 Ok(())
             }
+            Self::LawOrder(e) => write!(f, "{e}"),
+            Self::LawDeclaration(e) => write!(f, "law declaration: {e}"),
         }
     }
 }
@@ -363,6 +413,8 @@ impl SimBuilder {
             resources: Resources::new(),
             apply_tasks: Vec::new(),
             tasks: Vec::new(),
+            law_tasks: Vec::new(),
+            law_after: Vec::new(),
             publishers: Vec::new(),
             ports: Vec::new(),
             watch_tasks: Vec::new(),
@@ -503,6 +555,71 @@ impl SimBuilder {
         self
     }
 
+    /// Registers a typed law over two worker resources. Reads and writes
+    /// must be distinct resources; the frame graph checks their access.
+    /// A law that settles sleeps until [`Sim::wake_law`] is called.
+    pub fn add_law<L: Law + Send + Sync>(
+        &mut self,
+        reads: Res<L::Reads>,
+        writes: Res<L::Writes>,
+        dt: Seconds,
+    ) -> LawKey<L>
+    where
+        L::Reads: Send + Sync,
+        L::Writes: Send + Sync,
+    {
+        assert_ne!(
+            reads.id(),
+            writes.id(),
+            "law reads and writes must be distinct resources"
+        );
+        let state = self
+            .resources
+            .insert(format!("law:{}", L::NAME), LawState::new());
+        let task = Task::new(format!("law:{}", L::NAME), move |ctx| {
+            let mut output = ctx.write(state);
+            if !output.active {
+                return;
+            }
+            let read = ctx.read(reads);
+            let mut write = ctx.write(writes);
+            let wake_count = output.wakes.len();
+            let LawState {
+                events,
+                wakes,
+                ledger,
+                ..
+            } = &mut *output;
+            let mut law_ctx = LawCtx::new(&*read, &mut *write, events, wakes, ledger);
+            let elapsed = match L::PERIOD {
+                Period::Frame => dt,
+                Period::Ticks(n) => Seconds(dt.0 * f64::from(n.max(1))),
+            };
+            let settle = L::step(&mut law_ctx, elapsed);
+            output.active = settle == Settle::Active || output.wakes.len() > wake_count;
+            output.last_run_frame = Some(ctx.frame());
+        })
+        .reads(reads.id())
+        .writes(writes.id())
+        .writes(state.id())
+        .every(match L::PERIOD {
+            Period::Frame => 1,
+            Period::Ticks(n) => n.max(1),
+        });
+        self.law_tasks.push((L::NAME, task));
+        LawKey {
+            state,
+            _law: PhantomData,
+        }
+    }
+
+    /// Orders law `L` after law `B`, including when their resource sets do
+    /// not conflict. Cycles fail at build time.
+    pub fn law_after<L: Law, B: Law>(&mut self) -> &mut Self {
+        self.law_after.push((L::NAME, B::NAME));
+        self
+    }
+
     /// Validates every channel table and declared condition, then builds
     /// the pool and the world.
     ///
@@ -518,8 +635,37 @@ impl SimBuilder {
             .num_threads(self.config.threads.max(1))
             .thread_name(|i| format!("vg-frame-{i}"))
             .build()?;
+        let law_names: Vec<_> = self.law_tasks.iter().map(|(name, _)| *name).collect();
+        let mut seen = std::collections::HashSet::new();
+        for name in &law_names {
+            if !seen.insert(*name) {
+                return Err(BuildError::LawDeclaration(format!(
+                    "duplicate law name `{name}`"
+                )));
+            }
+        }
+        for &(after, before) in &self.law_after {
+            if !seen.contains(after) || !seen.contains(before) {
+                return Err(BuildError::LawDeclaration(format!(
+                    "dependency `{after}` after `{before}` names an unregistered law"
+                )));
+            }
+        }
+        let order = order_laws(&law_names, &self.law_after).map_err(BuildError::LawOrder)?;
+        let mut law_tasks = self.law_tasks;
         let mut tasks = self.apply_tasks;
         tasks.extend(self.tasks);
+        for name in order {
+            let index = law_tasks
+                .iter()
+                .position(|(n, _)| *n == name)
+                .expect("ordered law exists");
+            let (_, mut task) = law_tasks.remove(index);
+            for &(_, before) in self.law_after.iter().filter(|(after, _)| *after == name) {
+                task = task.after(format!("law:{before}"));
+            }
+            tasks.push(task);
+        }
         tasks.extend(self.watch_tasks);
         let schedule = Schedule::build(&tasks);
         let domains = self.publishers.len();
@@ -552,6 +698,7 @@ impl SimBuilder {
             metrics: SimMetrics::default(),
             log,
             config: self.config,
+            pending_law_wakes: Vec::new(),
             _main_thread_only: PhantomData,
         })
     }
@@ -572,6 +719,7 @@ pub struct Sim {
     next_frame: u64,
     metrics: SimMetrics,
     log: Option<FrameLog>,
+    pending_law_wakes: Vec<ResourceId>,
     _main_thread_only: PhantomData<*const Cell<()>>,
 }
 
@@ -613,6 +761,14 @@ impl Sim {
             return false;
         }
         let mut world = self.world.take().expect("checked above");
+        for id in self.pending_law_wakes.drain(..) {
+            world
+                .resources
+                .erased_mut(id)
+                .downcast_mut::<LawState>()
+                .expect("law key from another simulation")
+                .active = true;
+        }
         let frame = self.next_frame;
         self.next_frame += 1;
         let record = self.log.is_some();
@@ -693,6 +849,35 @@ impl Sim {
             .as_any_mut()
             .downcast_mut()
             .expect("domain key from another Sim")
+    }
+
+    /// Wakes a sleeping law at the next dispatched frame. Safe to call
+    /// while a worker frame is running; no worker lock is taken.
+    pub fn wake_law<L: Law>(&mut self, key: LawKey<L>) {
+        if !self.pending_law_wakes.contains(&key.state.id()) {
+            self.pending_law_wakes.push(key.state.id());
+        }
+    }
+
+    /// Drains a law's side channels while its world is idle. Returns `None`
+    /// while a frame is running; call again after `begin_tick` reclaims it.
+    pub fn drain_law<L: Law>(&mut self, key: LawKey<L>) -> Option<(Vec<u32>, Vec<u32>)> {
+        self.law_state(key).map(LawState::drain)
+    }
+
+    /// Reads whether a law is active while the world is idle.
+    #[must_use]
+    pub fn law_active<L: Law>(&mut self, key: LawKey<L>) -> Option<bool> {
+        self.law_state(key).map(|state| state.active)
+    }
+
+    /// Access a law's side channels and conservation ledger while idle.
+    /// Returns `None` while its worker frame is running.
+    pub fn law_state<L: Law>(&mut self, key: LawKey<L>) -> Option<&mut LawState> {
+        self.reclaim();
+        self.world
+            .as_mut()
+            .map(|world| world.resources.get_mut(key.state))
     }
 
     /// A domain's watch registration port (main thread).

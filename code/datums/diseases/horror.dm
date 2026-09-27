@@ -73,6 +73,45 @@
 		else
 			return
 
+/datum/disease/fleshy_spread/stage_biology()
+	if(!..())
+		return FALSE
+	var/mob/living/carbon/human/infected = affected_mob
+	switch(stage)
+		if(2)
+			if(prob(2))
+				if(infected.bodytemperature < BODYTEMP_HEAT_DAMAGE_LIMIT)
+					fever(infected)
+			else if(prob(1))
+				return TRUE
+			else if(prob(1))
+				infected.AdjustConfused(5)
+		if(3)
+			if(prob(2))
+				if(infected.bodytemperature < BODYTEMP_HEAT_DAMAGE_LIMIT)
+					fever(infected)
+			else if(prob(1))
+				infected.injure(INJURY_CUT, 2, BP_HEAD)
+				infected.drip(1)
+			else if(prob(1))
+				infected.AdjustConfused(10)
+				infected.silent = max(10, infected.silent)
+		if(4)
+			if(!infected.has_modifier_of_type(/datum/modifier/redspace_drain))
+				infected.add_modifier(/datum/modifier/redspace_drain/lesser)
+			var/datum/modifier/redspace_drain/drain_modifier = infected.get_modifier_of_type(/datum/modifier/redspace_drain/lesser)
+			if(drain_modifier && prob(5))
+				drain_modifier.choose_organs(1)
+		if(5)
+			if(infected.mind?.assigned_role == JOB_CHAPLAIN || (infected.species.flags & NO_SLEEVE))
+				cure()
+				return FALSE
+			if(!infected.has_modifier_of_type(/datum/modifier/redspace_corruption))
+				infected.add_modifier(/datum/modifier/redspace_corruption)
+			cure()
+			return FALSE
+	return TRUE
+
 /datum/disease/fleshy_spread/cure()
 	var/mob/living/carbon/human/infected = affected_mob
 	if(infected.has_modifier_of_type(/datum/modifier/redspace_drain/lesser))

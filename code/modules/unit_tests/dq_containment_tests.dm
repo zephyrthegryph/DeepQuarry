@@ -23,6 +23,20 @@
 /obj/item/dq_containment_test/anchored
 	anchored = TRUE
 
+#define OM_TEST_LEDGER_CONTRIBUTION 1
+#define OM_TEST_LEDGER_UNRELATED 2
+
+/obj/item/dq_containment_test/clocked
+	var/clocked = FALSE
+
+/obj/item/dq_containment_test/clocked/om_declare(datum/object_model/archetype/A)
+	..()
+	A.track_changes(OM_TEST_LEDGER_CONTRIBUTION | OM_TEST_LEDGER_UNRELATED)
+	A.ledger_contribution_changes(OM_TEST_LEDGER_CONTRIBUTION)
+
+/obj/item/dq_containment_test/clocked/is_lifecycle_clocked()
+	return clocked
+
 /// A two-slot holder: a sharp-only "main" slot of three things that spills, and
 /// a "pocket" that transfers into whatever holds the box.
 /obj/item/dq_containment_box
@@ -104,6 +118,29 @@
 	for(var/problem in problems)
 		TEST_FAIL("[label]: [problem]")
 	return !length(problems)
+
+/datum/unit_test/dq_ledger_tracked_contribution
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_ledger_tracked_contribution/Run()
+	var/obj/item/dq_containment_box/holder = new
+	var/obj/item/dq_containment_test/clocked/member = new
+	TEST_ASSERT(member.forceMove(holder), "member enters holder")
+	var/datum/ledger/L = dq_ledger(holder)
+	TEST_ASSERT(!L.has_tag(TAG_CLOCKED), "initial aggregate is not clocked")
+	member.clocked = TRUE
+	om_mark_changed(member, OM_TEST_LEDGER_UNRELATED)
+	TEST_ASSERT(!L.has_tag(TAG_CLOCKED), "unrelated tracked write skips ledger snapshot refresh")
+	om_mark_changed(member, OM_TEST_LEDGER_CONTRIBUTION)
+	TEST_ASSERT(L.has_tag(TAG_CLOCKED), "declared producer write refreshes holder aggregate")
+	member.clocked = FALSE
+	om_mark_changed(member, OM_TEST_LEDGER_CONTRIBUTION)
+	TEST_ASSERT(!L.has_tag(TAG_CLOCKED), "declared producer write removes stale aggregate tag")
+	qdel(member)
+	qdel(holder)
+
+#undef OM_TEST_LEDGER_CONTRIBUTION
+#undef OM_TEST_LEDGER_UNRELATED
 
 // ---- Conservation fuzz ----
 
@@ -625,12 +662,22 @@
 	has_slot_hooks = TRUE
 	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
 	var/list/log = list()
+	var/saw_committed_reslot = FALSE
 
 /obj/item/dq_containment_test/hooked/on_slotted(atom/holder, slot_id)
 	log += "on:[holder]:[slot_id]"
 
 /obj/item/dq_containment_test/hooked/on_unslotted(atom/holder, slot_id)
 	log += "off:[holder]:[slot_id]"
+	if(slot_id == "pocket" && holder?.ledger)
+		var/datum/ledger/L = holder.ledger
+		var/list/entry = L.entries[src]
+		saw_committed_reslot = entry?[LEDGER_E_SLOT] == "main" && (src in L.slots["main"]) && !(src in L.slots["pocket"])
+
+/obj/item/dq_containment_test/hooked/reentrant/on_unslotted(atom/holder, slot_id)
+	..()
+	if(slot_id == "pocket")
+		forceMove(get_turf(holder))
 
 /datum/unit_test/dq_containment_j6_commit_hooks
 
@@ -646,6 +693,7 @@
 	thing.log.Cut()
 	TEST_ASSERT(thing.move_into(box, "main"), "reslot from pocket to the sharp-only main slot")
 	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "off:[box]:pocket,on:[box]:main", "reslot fires leave-then-enter, on the same move")
+	TEST_ASSERT(thing.saw_committed_reslot, "reslot callbacks should see the committed new slot")
 
 	thing.log.Cut()
 	TEST_ASSERT(box.slot_remove(thing, T), "out of the box entirely")
@@ -655,6 +703,19 @@
 	// pays no proc call: nothing to observe, but this must not runtime.
 	TEST_ASSERT(plain.move_into(box, "pocket"), "an unhooked item moves normally")
 	TEST_ASSERT(box.slot_remove(plain, T), "and leaves normally")
+
+/datum/unit_test/dq_containment_reslot_reentrant_exit
+
+/datum/unit_test/dq_containment_reslot_reentrant_exit/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
+	var/obj/item/dq_containment_test/hooked/reentrant/thing = allocate(/obj/item/dq_containment_test/hooked/reentrant, T)
+	TEST_ASSERT(thing.move_into(box, "pocket"), "reentrant item entered pocket")
+	thing.log.Cut()
+	thing.move_into(box, "main")
+	TEST_ASSERT_EQUAL(thing.loc, T, "old-slot callback should be able to move the item away")
+	TEST_ASSERT(!(thing in box.ledger.slots["main"]), "reentrant exit left a stale new-slot member")
+	TEST_ASSERT(!findtext(jointext(thing.log, ","), "on:[box]:main"), "superseded reslot announced a stale insertion")
 
 // ---- J8: slot_item ----
 
@@ -671,4 +732,3 @@
 	TEST_ASSERT(knife2.move_into(box, "main"), "a second sharp item into main")
 	TEST_ASSERT_EQUAL(box.slot_item("main"), knife, "slot_item still returns the first (insertion order)")
 	TEST_ASSERT_NULL(box.slot_item("lid"), "an unknown slot: null, not a runtime")
-

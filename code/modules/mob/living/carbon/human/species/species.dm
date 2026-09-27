@@ -617,6 +617,11 @@
 		env_trait.environment_effects(H)
 	return
 
+/// Effects safe to advance for an extra local biology step. The normal environment
+/// pass still owns gas exchange, alerts, and presentation.
+/datum/species/proc/environment_biology(mob/living/carbon/human/H)
+	return
+
 // Used to update alien icons for aliens.
 /datum/species/proc/handle_login_special(mob/living/carbon/human/H)
 	return

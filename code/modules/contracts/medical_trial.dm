@@ -53,6 +53,8 @@
 	contract.add_negotiation_clause(protocol)
 	add_contract_payout_negotiation(contract)
 
+#define MEDICAL_TRIAL_PARTICIPANTS_SLOT "medical_trial:participants"
+
 /datum/contract/medical_trial
 	var/datum/medical_trial_profile/profile
 	var/list/participants
@@ -65,12 +67,7 @@
 
 /datum/contract/medical_trial/Destroy()
 	QDEL_NULL(profile)
-	for(var/key in participants)
-		var/datum/medical_trial_participant/participant = participants[key]
-		var/mob/living/subject = participant.current_subject()
-		if(subject)
-			UnregisterSignal(subject, COMSIG_MOB_DEATH)
-		qdel(participant)
+	// Participants are contract-owned and unregister their own death listeners.
 	participants = null
 	observation_requirement = null
 	analysis_requirement = null
@@ -162,19 +159,14 @@
 		if(matching_class >= 2)
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
+	if(!om_claim(src, MEDICAL_TRIAL_PARTICIPANTS_SLOT, participant))
+		qdel(participant)
+		return FALSE
 	participants[identity.id] = participant
-	RegisterSignal(subject, COMSIG_MOB_DEATH, PROC_REF(on_participant_death))
+	participant.observe_subject_death(subject)
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")
 	return TRUE
-
-/datum/contract/medical_trial/proc/on_participant_death(mob/living/carbon/human/subject, gibbed)
-	SIGNAL_HANDLER
-	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
-	var/datum/medical_trial_participant/participant = participants?[identity?.id]
-	if(!participant || participant.corpse_contract_offered || gibbed)
-		return
-	participant.corpse_contract_offered = !!medical_trial_offer_corpse_autopsy(src, participant)
 
 /datum/contract/medical_trial/proc/record_exposure(mob/living/carbon/human/subject, amount)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
@@ -322,8 +314,7 @@
 		audit(CONTRACT_AUDIT_PROGRESS, "[participant.current_subject()?.real_name || subject_id] withdrew from further participation after evidence had already been received.")
 		return TRUE
 	var/mob/living/carbon/human/subject = participant.current_subject()
-	if(subject)
-		UnregisterSignal(subject, COMSIG_MOB_DEATH)
+	participant.stop_observing_subject_death()
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
 	participants -= subject_id
@@ -406,6 +397,8 @@
 
 /datum/medical_trial_participant
 	var/subject_id
+	/// Exact enrolled subject for the death signal; identity resolution may later change.
+	var/datum/weakref/death_signal_subject
 	var/list/baseline_metrics
 	var/list/final_metrics
 	var/healthy_volunteer = FALSE
@@ -437,7 +430,26 @@
 	var/mob/living/carbon/human/subject = SScontracts.resolve_subject(subject_id)
 	return istype(subject) ? subject : null
 
+/datum/medical_trial_participant/proc/observe_subject_death(mob/living/carbon/human/subject)
+	stop_observing_subject_death()
+	death_signal_subject = WEAKREF(subject)
+	RegisterSignal(subject, COMSIG_MOB_DEATH, PROC_REF(on_subject_death))
+
+/datum/medical_trial_participant/proc/stop_observing_subject_death()
+	var/mob/living/carbon/human/subject = death_signal_subject?.resolve()
+	if(subject)
+		UnregisterSignal(subject, COMSIG_MOB_DEATH)
+	death_signal_subject = null
+
+/datum/medical_trial_participant/proc/on_subject_death(mob/living/carbon/human/subject, gibbed)
+	SIGNAL_HANDLER
+	var/datum/contract/medical_trial/trial = om_owner(src)
+	if(!trial || corpse_contract_offered || gibbed)
+		return
+	corpse_contract_offered = !!medical_trial_offer_corpse_autopsy(trial, src)
+
 /datum/medical_trial_participant/Destroy()
+	stop_observing_subject_death()
 	subject_id = null
 	consent_record = null
 	baseline_metrics = null
@@ -622,7 +634,7 @@
 			"name" = condition.name,
 			"type" = condition.type,
 			"severity" = round(condition.severity, 0.1),
-			"organ" = condition.location?.name || "systemic",
+			"organ" = condition.location_name() || "systemic",
 			"symptoms" = symptoms,
 		)))
 	var/list/bp = subject.get_bp_reading()
@@ -882,3 +894,5 @@
 		return 0
 	var/list/contracts = medical_trial_contract_fractions(reagent.data)
 	return reagent.volume * (contracts[contract_id] || 0)
+
+#undef MEDICAL_TRIAL_PARTICIPANTS_SLOT

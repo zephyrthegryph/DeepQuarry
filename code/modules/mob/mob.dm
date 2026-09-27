@@ -5,7 +5,7 @@
 
 	persistent_client?.set_mob(null)
 
-	SSmobs.currentrun -= src
+	SSmobs?.unregister_mob(src)
 	GLOB.mob_list -= src
 	GLOB.dead_mob_list -= src
 	GLOB.living_mob_list -= src
@@ -96,6 +96,7 @@
 	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
+	SSmobs?.register_mob(src)
 	SSreactor?.publish_mob_chunk(src)
 	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.

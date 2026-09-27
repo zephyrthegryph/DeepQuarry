@@ -45,12 +45,20 @@
 	handle_feralness()
 	handle_regeneration()
 
-/datum/component/xenochimera/proc/handle_regeneration()
+/// Extra local biology changes feralness and revival constraints once more,
+/// while chat, sounds and HUD presentation remain on the real frame.
+/datum/component/xenochimera/proc/biology_step()
+	if(QDELETED(owner))
+		return
+	handle_feralness(TRUE)
+	handle_regeneration(TRUE)
+
+/datum/component/xenochimera/proc/handle_regeneration(quiet = FALSE)
 	if(revive_ready == REVIVING_NOW || revive_ready == REVIVING_DONE)
 		owner.SetStunned(5)
 		owner.canmove = 0
 		owner.does_not_breathe = TRUE
-		if(prob(2)) // 2% chance of playing squelchy noise while reviving, which is run roughly every 2 seconds/tick while regenerating.
+		if(!quiet && prob(2)) // 2% chance of playing squelchy noise while reviving, which is run roughly every 2 seconds/tick while regenerating.
 			playsound(owner, pick(regen_sounds), 30)
 			owner.visible_message(span_danger("<p>" + span_huge("[owner.name]'s motionless form shudders grotesquely, rippling unnaturally.") + "</p>"))
 		if(!owner.lying)
@@ -69,7 +77,7 @@
 	if(from_save_slot)
 		handle_record() // Update record
 
-/datum/component/xenochimera/proc/handle_feralness()
+/datum/component/xenochimera/proc/handle_feralness(quiet = FALSE)
 	//first, calculate how stressed the chimera is
 
 	//Low-ish nutrition has messages and can eventually cause feralness
@@ -99,11 +107,11 @@
 	if(!feral && !isbelly(owner.loc))
 		// if stress is below 15, no chance of snapping. Also if they weren't feral before, they won't suddenly become feral unless they get MORE stressed
 		if((currentstress > laststress) && prob(clamp(currentstress-15, 0, 100)) )
-			go_feral(currentstress, cause)
+			go_feral(currentstress, cause, quiet)
 			feral = currentstress //update the local var
 
 		//they didn't go feral, give 'em a chance of hunger messages
-		else if(owner.nutrition <= 200 && prob(0.5))
+		else if(!quiet && owner.nutrition <= 200 && prob(0.5))
 			switch(owner.nutrition)
 				if(150 to 200)
 					to_chat(owner,span_info("You feel rather hungry. It might be a good idea to find some some food..."))
@@ -136,9 +144,10 @@
 		//Did we just finish being feral?
 		if(!feral)
 			feral_state = FALSE
-			to_chat(owner,span_info("Your thoughts start clearing, your feral urges having passed - for the time being, at least."))
-			log_and_message_admins("is no longer feral.", owner)
-			update_xenochimera_hud(danger, feral_state)
+			if(!quiet)
+				to_chat(owner,span_info("Your thoughts start clearing, your feral urges having passed - for the time being, at least."))
+				log_and_message_admins("is no longer feral.", owner)
+				update_xenochimera_hud(danger, feral_state)
 			return
 
 		//If they lose enough health to hit softcrit, the shock life system will keep resetting this. Otherwise, pissed off critters will lose shock faster than they gain it.
@@ -147,7 +156,8 @@
 		//Handle light/dark areas
 		var/turf/T = get_turf(owner)
 		if(!T)
-			update_xenochimera_hud(danger, feral_state)
+			if(!quiet)
+				update_xenochimera_hud(danger, feral_state)
 			return //Nullspace
 		var/darkish = T.get_lumcount() <= 0.1
 
@@ -169,7 +179,11 @@
 					handle_feral()
 
 			//And bail
-			update_xenochimera_hud(danger, feral_state)
+			if(!quiet)
+				update_xenochimera_hud(danger, feral_state)
+			return
+
+		if(quiet)
 			return
 
 		// In the darkness, or "hidden", or in a belly. No need for custom scene-protection checks as it's just an occational infomessage.
@@ -217,7 +231,8 @@
 					to_chat(owner,span_danger("Confusing sights and sounds and smells surround you, this place is wrong, confusing, frightening. You need to hide, go to ground..."))
 
 	// HUD update time
-	update_xenochimera_hud(danger, feral_state)
+	if(!quiet)
+		update_xenochimera_hud(danger, feral_state)
 
 /datum/component/xenochimera/proc/update_xenochimera_hud(danger, feral)
 	if(owner.xenochimera_danger_display)
@@ -233,7 +248,10 @@
 
 	return
 
-/datum/component/xenochimera/proc/go_feral(stress, cause)
+/datum/component/xenochimera/proc/go_feral(stress, cause, quiet = FALSE)
+	if(quiet)
+		feral = stress
+		return
 	// Going feral due to hunger
 	if(cause == "hunger")
 		to_chat(owner,span_danger(span_large("Something in your mind flips, your instincts taking over, no longer able to fully comprehend your surroundings as survival becomes your primary concern - you must feed, survive, there is nothing else. Hunt. Eat. Hide. Repeat.")))

@@ -116,13 +116,21 @@
 		if(contract.definition_id == "dq_offer_lifecycle_test")
 			published += contract
 	TEST_ASSERT_EQUAL(length(published), expected_published, "station board did not enforce its published-offer limit alongside existing offers")
-	TEST_ASSERT(SScontracts.find_candidate("dq-lifecycle-4"), "the overflow opportunity was not retained as a lightweight candidate")
+	var/datum/contract_offer_candidate/overflow = SScontracts.find_candidate("dq-lifecycle-4")
+	TEST_ASSERT(overflow, "the overflow opportunity was not retained as a lightweight candidate")
+	var/datum/object_model/schedule_entry/overflow_timer = overflow.recheck_timer
+	TEST_ASSERT(overflow_timer && om_owner(overflow_timer) == overflow, "deferred offer recheck is not owned by its candidate")
 	var/datum/contract/declined = published[1]
+	var/datum/object_model/schedule_entry/declined_offer_timer = declined.offer_timer
+	TEST_ASSERT(declined_offer_timer && om_owner(declined_offer_timer) == declined, "published offer expiry belongs to its contract")
 	var/candidates_before_decline = 0
+	var/list/pending_timers = list()
 	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
 			candidates_before_decline++
+			pending_timers[candidate] = candidate.recheck_timer
 	TEST_ASSERT(declined.decline(), "one-click decline did not close an offered contract")
+	TEST_ASSERT(QDELETED(declined_offer_timer) && !declined.offer_timer, "decline canceled its owned offer expiry")
 	TEST_ASSERT_EQUAL(declined.closure_code, CONTRACT_CLOSE_DECLINED, "decline did not record its lifecycle outcome")
 	TEST_ASSERT(SScontracts.offer_cooldowns[declined.offer_key] > world.time, "declined offer did not enter cooldown")
 	var/candidates_after_decline = 0
@@ -130,6 +138,13 @@
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
 			candidates_after_decline++
 	TEST_ASSERT_EQUAL(candidates_after_decline, candidates_before_decline - 1, "freeing a board slot did not publish one queued opportunity")
+	var/canceled_rechecks = 0
+	for(var/datum/contract_offer_candidate/candidate as anything in pending_timers)
+		if(QDELETED(candidate))
+			var/datum/object_model/schedule_entry/pending_recheck = pending_timers[candidate]
+			TEST_ASSERT(QDELETED(pending_recheck), "materialized candidate left a scheduled recheck behind")
+			canceled_rechecks++
+	TEST_ASSERT_EQUAL(canceled_rechecks, 1, "exactly one deferred candidate should have materialized")
 	var/published_after_decline = 0
 	for(var/datum/contract/contract in SScontracts.offered_contracts)
 		if(contract.definition_id == "dq_offer_lifecycle_test")
@@ -144,9 +159,27 @@
 	grace_contract.deadline = world.time
 	grace_contract.check_deadline()
 	TEST_ASSERT_EQUAL(grace_contract.state, CONTRACT_GRACE, "deadline did not enter the evidence grace state")
+	var/datum/object_model/schedule_entry/grace_timer = grace_contract.deadline_timer
+	TEST_ASSERT(grace_timer && om_owner(grace_timer) == grace_contract, "evidence grace deadline belongs to the contract")
+	grace_contract.check_deadline()
+	TEST_ASSERT(grace_contract.deadline_timer == grace_timer && !QDELETED(grace_timer), "an early grace check preserved its future deadline")
 	emit_contract_event("dq_offer_grace_result", list("contract_id" = grace_contract.id), "dq-offer-grace")
 	TEST_ASSERT_EQUAL(grace_contract.state, CONTRACT_COMPLETED, "evidence arriving during grace did not complete the contract")
+	TEST_ASSERT(QDELETED(grace_timer) && !grace_contract.deadline_timer, "completion canceled the grace timer")
 	qdel(grace_contract)
+
+	var/datum/contract/timed_contract = new
+	timed_contract.title = "Owned deadline test"
+	timed_contract.deadline_duration = 30 SECONDS
+	timed_contract.add_requirement(new /datum/contract_requirement/event_count("dq_offer_owned_deadline", 1))
+	TEST_ASSERT(timed_contract.accept(), "timed contract could not be accepted")
+	var/datum/object_model/schedule_entry/active_timer = timed_contract.deadline_timer
+	TEST_ASSERT(active_timer && om_owner(active_timer) == timed_contract, "active deadline belongs to its contract")
+	timed_contract.check_deadline()
+	TEST_ASSERT(timed_contract.deadline_timer == active_timer && !QDELETED(active_timer), "an early active check preserved its future deadline")
+	TEST_ASSERT(timed_contract.withdraw("Owned timer lifecycle test"), "timed contract could not be withdrawn")
+	TEST_ASSERT(QDELETED(active_timer) && !timed_contract.deadline_timer, "withdrawal canceled its owned deadline")
+	qdel(timed_contract)
 
 	for(var/id in SScontracts.contracts_by_id.Copy())
 		var/datum/contract/contract = SScontracts.contracts_by_id[id]
@@ -539,6 +572,34 @@
 	TEST_ASSERT_EQUAL(stage_rows[1]["status"], "Complete", "completed tier was not exposed clearly to the UI")
 	TEST_ASSERT_EQUAL(stage_rows[2]["status"], "Waiting", "untouched tier was not exposed as waiting")
 	qdel(requirement)
+
+/datum/unit_test/dq_medical_trial_participant_lifetime
+
+/datum/unit_test/dq_medical_trial_participant_lifetime/Run()
+	var/datum/contract/medical_trial/trial = new
+	trial.department = DEPARTMENT_MEDICAL
+	trial.initialize_trial()
+	trial.profile.cohort = MEDICAL_TRIAL_COHORT_HEALTHY
+	TEST_ASSERT(trial.accept(), "medical trial could not be accepted")
+	var/mob/living/carbon/human/withdrawn_subject = new(run_loc_floor_bottom_left)
+	TEST_ASSERT(trial.enroll(withdrawn_subject), "healthy subject could not enroll")
+	var/datum/contract_subject_identity/withdrawn_identity = SScontracts.subject_identity(withdrawn_subject)
+	var/datum/medical_trial_participant/withdrawn = trial.participants[withdrawn_identity.id]
+	TEST_ASSERT(om_owner(withdrawn) == trial, "participant is not owned by its trial")
+	TEST_ASSERT(withdrawn._signal_procs?[withdrawn_subject]?[COMSIG_MOB_DEATH], "participant did not register its subject death signal")
+	TEST_ASSERT(trial.revoke_consent(withdrawn_identity.id), "consent could not be withdrawn")
+	TEST_ASSERT(QDELETED(withdrawn), "withdrawing consent did not delete the participant")
+	TEST_ASSERT(!withdrawn_subject._listen_lookup?[COMSIG_MOB_DEATH], "withdrawing consent left a death listener on the subject")
+	qdel(withdrawn_subject)
+
+	var/mob/living/carbon/human/lost_subject = new(run_loc_floor_bottom_left)
+	TEST_ASSERT(trial.enroll(lost_subject), "replacement subject could not enroll")
+	var/datum/contract_subject_identity/lost_identity = SScontracts.subject_identity(lost_subject)
+	var/datum/medical_trial_participant/survivor = trial.participants[lost_identity.id]
+	qdel(lost_subject)
+	TEST_ASSERT(!QDELETED(survivor) && trial.participants[lost_identity.id] == survivor, "subject deletion erased the participant evidence record")
+	qdel(trial)
+	TEST_ASSERT(QDELETED(survivor), "trial deletion did not delete its owned participant")
 
 /datum/unit_test/dq_medical_trial_outcome_workflow
 

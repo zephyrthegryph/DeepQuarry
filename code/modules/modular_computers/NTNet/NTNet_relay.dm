@@ -12,7 +12,6 @@
 	var/datum/ntnet/NTNet = null // This is mostly for backwards reference and to allow varedit modifications from ingame.
 	var/enabled = 1				// Set to 0 if the relay was turned off
 	var/dos_failure = 0			// Set to 1 if the relay failed due to (D)DoS attack
-	var/list/dos_sources	// Backwards reference for qdel() stuff
 
 	// Denial of Service attack variables
 	var/dos_overload = 0		// Amount of DoS "packets" in this relay's buffer
@@ -132,9 +131,6 @@
 		LAZYREMOVE(GLOB.ntnet_global.relays, src)
 		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet.relays)]")
 		NTNet = null
-	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
-		D.target = null
-		D.error = "Connection to quantum relay severed"
 	QDEL_NULL(soundloop)
 	. = ..()
 

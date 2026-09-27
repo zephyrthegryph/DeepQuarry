@@ -2002,6 +2002,9 @@
 	var_changes = list("unarmed_types" = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch/chimera, /datum/unarmed_attack/bite/sharp), "heat_level_1" = 420, "heat_level_2" = 480, "heat_level_3" = 1100, "breath_heat_level_1" = 450, "breath_heat_level_2" = 530, "breath_heat_level_3" = 1500, "heat_discomfort_level" = 390) //xenochim are already tank
 
 /datum/trait/neutral/xenochimera_YR3/environment_effects(mob/living/carbon/human/H)
+	environment_biology(H, FALSE)
+
+/datum/trait/neutral/xenochimera_YR3/environment_biology(mob/living/carbon/human/H, quiet = TRUE)
 	var/list/nanitereagents = list(REAGENT_HEALINGNANITES, REAGENT_SHREDDINGNANITES, REAGENT_IRRADIATEDNANITES, REAGENT_NEUROPHAGENANITES, REAGENT_NIFREPAIRNANITES)
 	if(istype(H.loc, /turf/simulated/floor/water/digestive_enzymes/nanites))
 		var/turf/simulated/floor/water/digestive_enzymes/nanites/N = H.loc
@@ -2019,7 +2022,8 @@
 			implant.unimplant(H)
 			QDEL_NULL(implant)
 			H.adjust_nutrition(100)
-			to_chat(H, span_critical("Your NIF lets out one last sputter as it finally gives out"))
+			if(!quiet)
+				to_chat(H, span_critical("Your NIF lets out one last sputter as it finally gives out"))
 
 /datum/trait/neutral/mobegglaying
 	name = "Egg Laying"

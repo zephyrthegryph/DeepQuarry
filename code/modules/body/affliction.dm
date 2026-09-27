@@ -26,9 +26,9 @@
 	/// Convenience: body.owner. Null when detached.
 	var/mob/living/owner
 	/// The part this affliction sits on: an organ for humanoids, a robot
-	/// component for robots (typed as organ for field access), or null when
+	/// component for robots, or null when
 	/// systemic.
-	var/obj/item/organ/location
+	var/datum/location
 
 	/// Biologies this affliction can exist on (BIOLOGY_*). A body refuses to
 	/// grow an affliction on a part whose biology isn't listed.
@@ -47,6 +47,7 @@
 	var/injury_category
 
 	/// 0..AFFLICTION_SEVERITY_TERMINAL. Players never see this number.
+	// dm-health: tracked(setter=set_severity)
 	var/severity = 0
 	/// Severity growth per tick with no treatment, × AFFLICTION_BASE_PROGRESSION.
 	/// Negative = self-resolving.
@@ -63,6 +64,7 @@
 
 	// --- Treatment ---
 	/// TREAT_* -> severity decrease per tick at full treatment level.
+	// dm-health: type assoc<text,num>?
 	var/list/treated_by
 	/// TREAT_* -> severity increase per tick at full level.
 	var/list/worsened_by_tags
@@ -103,6 +105,7 @@
 	/// INJURY_* kind, or "internal" for organ integrity damage.
 	var/organ_damage_type
 	var/organ_damage_per_tick = 0
+	// dm-health: type list<text>?
 	var/list/organ_damage_targets
 	/// Lesion kind (/datum/affliction/lesion typepath) inflicted by "internal"
 	/// organ damage. Null = the organ's default (chem-caused -> toxic injury).
@@ -113,6 +116,7 @@
 	var/category = "General"
 	var/subcategory
 	/// symptom typepath -> weight 0..100
+	// dm-health: type assoc<typepath</datum/affliction_symptom>,num>?
 	var/list/symptom_pool
 	var/min_symptoms = 1
 	var/max_symptoms = 3
@@ -135,9 +139,39 @@
 /datum/affliction/Destroy()
 	if(body)
 		body.remove_affliction(src)
+	if(location)
+		om_unlink(src, /datum/object_model/relation/affliction_location, location)
 	active_symptoms = null
 	location = null
 	return ..()
+
+/// Move a located affliction while preserving the body's location index and
+/// the non-owning part edge. A detached affliction may keep its location.
+/datum/affliction/proc/set_location(datum/new_location)
+	if(new_location && !istype(new_location, /obj/item/organ) && !istype(new_location, /datum/robot_component))
+		return FALSE
+	if(location == new_location && (!new_location || om_has_link(src, /datum/object_model/relation/affliction_location, new_location)))
+		return TRUE
+	if(!om_replace_related(src, /datum/object_model/relation/affliction_location, new_location))
+		return FALSE
+	// A fresh affliction starts with a location but no relation until adopted.
+	if(!new_location)
+		location = null
+	if(om_state?.change)
+		om_mark_changed(src, OM_AFFLICTION_CHANGE_LOCATION)
+	if(body?.om_state?.change)
+		om_mark_changed(body, OM_BODY_CHANGE_AFFLICTIONS)
+	return TRUE
+
+/// Name of the organ or robot component bearing this affliction.
+/datum/affliction/proc/location_name()
+	if(istype(location, /obj/item/organ))
+		var/obj/item/organ/O = location
+		return O.name
+	if(istype(location, /datum/robot_component))
+		var/datum/robot_component/C = location
+		return C.name
+	return null
 
 /// Location-dependent setup, run once at construction (location may be null:
 /// systemic afflictions, reference prototypes). Virtual.
@@ -182,6 +216,8 @@
 		body.invalidate(dirty)
 	if(owner)
 		SEND_SIGNAL(owner, COMSIG_AFFLICTION_SEVERITY_CHANGED, src, old_severity)
+	if(om_state)
+		om_mark_changed(src, OM_AFFLICTION_CHANGE_SEVERITY)
 	return TRUE
 
 /datum/affliction/proc/adjust_severity(delta)

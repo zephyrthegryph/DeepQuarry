@@ -126,6 +126,18 @@
 	qdel(source_a)
 	qdel(source_b)
 
+/// Ability sources now use lifetime-owned keyed grants: deletion revokes automatically.
+/datum/unit_test/dq_ability_grant_source_deletion
+
+/datum/unit_test/dq_ability_grant_source_deletion/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/source = new
+	H.grant_ability("dq_test_ability", source)
+	TEST_ASSERT(H.has_ability("dq_test_ability"), "source grants ability")
+	qdel(source)
+	TEST_ASSERT(!H.has_ability("dq_test_ability"), "source deletion revokes ability")
+	TEST_ASSERT_NULL(H.ability_sources("dq_test_ability"), "source deletion clears query")
+
 // ---- Dark respite ----
 
 /datum/unit_test/proc/dq_respite_ability()

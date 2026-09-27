@@ -71,6 +71,54 @@
 	/// it (drug-interaction markers). Null when nothing interferes.
 	var/list/reagent_interference
 
+/// An affliction has one body lifetime authority. The flat/type/location
+/// lists above remain query indexes while their existing callers migrate.
+/datum/object_model/relation/body_affliction
+	from_type = /datum/affliction
+	to_type = /datum/body
+	source_single = TRUE
+	ownership = OM_REL_OWN_SOURCE
+
+/// Location is independent of body membership: a detached limb keeps wounds.
+/datum/object_model/relation/affliction_location
+	from_type = /datum/affliction
+	// Both organs and robot components are valid affliction locations.
+	to_type = /datum
+	source_single = TRUE
+
+/datum/object_model/relation/affliction_location/on_link(datum/source, datum/target)
+	var/datum/affliction/A = source
+	A.location = target
+	if(A.body)
+		LAZYADDASSOCLIST(A.body.afflictions_by_location, target, A)
+
+/datum/object_model/relation/affliction_location/on_unlink(datum/source, datum/target, reason)
+	var/datum/affliction/A = source
+	if(A.location != target)
+		return
+	if(A.body && !om_is_dying(A.body))
+		LAZYREMOVEASSOC(A.body.afflictions_by_location, target, A)
+	A.location = null
+	if(om_is_dying(target) && !om_is_dying(A))
+		A.cure()
+
+/datum/object_model/declaration/body
+	target_type = /datum/body
+
+/datum/object_model/declaration/body/build(datum/object_model/archetype/A)
+	A.track_changes(OM_BODY_CHANGE_AFFLICTIONS | OM_BODY_CHANGE_VITALS | OM_BODY_CHANGE_FACTORS | OM_BODY_CHANGE_PHYSIOLOGY | OM_BODY_CHANGE_EFFECTIVE_FACTORS | OM_BODY_CHANGE_WORN_PROTECTION)
+	A.relation(/datum/object_model/relation/body_affliction)
+	A.add(/datum/object_model/behaviour/body_factor_view)
+	A.add(/datum/object_model/behaviour/body_worn_siemens_view)
+
+/datum/object_model/declaration/affliction
+	target_type = /datum/affliction
+
+/datum/object_model/declaration/affliction/build(datum/object_model/archetype/A)
+	A.track_changes(OM_AFFLICTION_CHANGE_SEVERITY | OM_AFFLICTION_CHANGE_LOCATION)
+	A.relation(/datum/object_model/relation/body_affliction)
+	A.relation(/datum/object_model/relation/affliction_location)
+
 /datum/body/New(mob/living/new_owner)
 	..()
 	owner = new_owner
@@ -101,7 +149,21 @@
 	// The physiology reads factors and organs.
 	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
 		dirty |= BODY_DIRTY_PHYSIOLOGY
-	owner?.life_wake(LIFE_WAKE_BODY, "body invalidate")
+	// The ordinary body dirty bits do not allocate revision storage. Publish
+	// only when a derived view or revision reader has requested typed changes.
+	if(om_state?.change)
+		var/changed = 0
+		if(domains & BODY_DIRTY_VITALS)
+			changed |= OM_BODY_CHANGE_VITALS
+		if(domains & BODY_DIRTY_FACTORS)
+			changed |= OM_BODY_CHANGE_FACTORS
+		if(domains & (BODY_DIRTY_PHYSIOLOGY | BODY_DIRTY_ORGANS))
+			changed |= OM_BODY_CHANGE_PHYSIOLOGY
+		if(domains & BODY_DIRTY_ARMOR)
+			changed |= OM_BODY_CHANGE_WORN_PROTECTION
+		if(changed)
+			om_mark_changed(src, changed)
+	owner?.wake_life(/datum/life_wake_event/body, "body invalidate")
 
 
 // --- Affliction bookkeeping -------------------------------------------------
@@ -111,13 +173,20 @@
 /datum/body/proc/add_affliction(datum/affliction/A, location = null)
 	if(!A || A.body == src)
 		return FALSE
+	if(A.body)
+		A.body.remove_affliction(A)
+	if(!A.set_location(location))
+		return FALSE
+	if(!om_link(A, /datum/object_model/relation/body_affliction, src))
+		return FALSE
 	A.body = src
 	A.owner = owner
-	A.location = location
 	LAZYADD(afflictions, A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)
+	if(om_state?.change)
+		om_mark_changed(src, OM_BODY_CHANGE_AFFLICTIONS)
 	// Interference markers live on afflictions: the snapshot folds them in.
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_added()
@@ -132,6 +201,9 @@
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
+	om_unlink(A, /datum/object_model/relation/body_affliction, src)
+	if(om_state?.change)
+		om_mark_changed(src, OM_BODY_CHANGE_AFFLICTIONS)
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_removed()
 	A.body = null

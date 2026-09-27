@@ -5,6 +5,10 @@
 
 /datum/life_system/breathing/carbon/brain
 	mob_type = /mob/living/carbon/brain
+	biology_catchup = FALSE
+
+/datum/life_system/breathing/carbon/brain/tick_biology(mob/living/carbon/brain/self, datum/life_context/ctx)
+	return
 
 /datum/life_system/breathing/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
 	return
@@ -30,11 +34,18 @@
 /datum/life_system/status/carbon/brain
 	mob_type = /mob/living/carbon/brain
 
+/datum/life_system/status/carbon/brain/process_biology(mob/living/carbon/brain/self)
+	if(!self.host && self.stat != DEAD)
+		self.body?.life_tick()
+
+/datum/life_system/status/carbon/brain/biology_status_ready(mob/living/carbon/brain/self)
+	return TRUE
+
 /datum/life_system/status/carbon/brain/update_status(mob/living/carbon/brain/self)
 	if(self.host)
 		self.refresh_host_status()
-	else if(self.stat != DEAD)
-		self.body?.life_tick() // tissue-less views (souls) keep a simple body
+	else
+		process_biology(self) // tissue-less views (souls) keep a simple body
 
 	if(self.stat == DEAD)
 		self.blinded = 1

@@ -17,14 +17,14 @@
 // icons/gen tree (built from PNG + .dmi.toml sources by
 // tools/dq_icons/build_step.py) comes first so generated DMIs shadow
 // the committed upstream .dmi tree at runtime.
-#define FILE_DIR icons/gen
-#define FILE_DIR icons
-#define FILE_DIR sound
-#define FILE_DIR maps
-#define FILE_DIR interface
-#define FILE_DIR html
-#define FILE_DIR strings
-#define FILE_DIR config
+#define FILE_DIR "icons/gen"
+#define FILE_DIR "icons"
+#define FILE_DIR "sound"
+#define FILE_DIR "maps"
+#define FILE_DIR "interface"
+#define FILE_DIR "html"
+#define FILE_DIR "strings"
+#define FILE_DIR "config"
 // END_FILE_DIR
 
 // BEGIN_PREFERENCES
@@ -325,6 +325,7 @@
 #include "code\__defines\traits\sources.dm"
 #include "code\__defines\verdigris\_bindings.dm"
 #include "code\__defines\verdigris\_bindings_types.dm"
+#include "code\__defines\verdigris\_component_schemas.dm"
 // LINDA atmospherics is unconditional (no gating). Defines and macros
 // hoisted early so they're in scope for every later atmos consumer. ZAS/XGM
 // includes have been removed from the build entirely. See code/ATMOSPHERICS/README.md.
@@ -625,6 +626,34 @@
 #include "code\datums\lifecycle\links.dm"
 #include "code\datums\lifecycle\transaction.dm"
 #include "code\datums\lifecycle\verbs.dm"
+#include "code\datums\object_model\lifetime.dm"
+#include "code\datums\object_model\physical_relation.dm"
+#include "code\datums\object_model\slot_relation.dm"
+#include "code\datums\object_model\cache.dm"
+#include "code\datums\object_model\change.dm"
+#include "code\datums\object_model\stat_runtime.dm"
+#include "code\datums\object_model\generated_stats.dm"
+#include "code\datums\object_model\requirement.dm"
+#include "code\datums\object_model\behaviour.dm"
+#include "code\datums\object_model\clock.dm"
+#include "code\datums\object_model\suspension.dm"
+#include "code\datums\object_model\rust_component.dm"
+#include "code\datums\object_model\event.dm"
+#include "code\datums\object_model\signal_bridge.dm"
+#include "code\datums\object_model\observation.dm"
+#include "code\datums\object_model\subscription.dm"
+#include "code\datums\object_model\global_observer.dm"
+#include "code\datums\object_model\archetype.dm"
+#include "code\datums\object_model\registry.dm"
+#include "code\datums\object_model\schedule.dm"
+#include "code\datums\object_model\grant.dm"
+#include "code\datums\object_model\behaviour_runtime.dm"
+#include "code\datums\object_model\watch.dm"
+#include "code\datums\object_model\rate.dm"
+#include "code\datums\object_model\task.dm"
+#include "code\datums\object_model\persistence.dm"
+#include "code\datums\object_model\ui.dm"
+#include "code\datums\object_model\generated_ui_schema.dm"
 #include "code\datums\datacore.dm"
 #include "code\datums\datum.dm"
 #include "code\datums\datumvars.dm"
@@ -3215,6 +3244,9 @@
 #include "code\modules\mob\living\life\_life_system.dm"
 #include "code\modules\mob\living\life\living_systems.dm"
 #include "code\modules\mob\living\life\scheduler.dm"
+#include "code\modules\mob\living\life\wake_api.dm"
+#include "code\modules\mob\living\life\client_behaviours.dm"
+#include "code\modules\mob\living\life\scheduled_life.dm"
 #include "code\modules\mob\living\living.dm"
 #include "code\modules\mob\living\melee_swing.dm"
 #include "code\modules\mob\living\living_defense.dm"
@@ -3853,6 +3885,7 @@
 #include "code\modules\organs\data.dm"
 #include "code\modules\organs\misc.dm"
 #include "code\modules\organs\organ.dm"
+#include "code\modules\organs\detached_decay.dm"
 #include "code\modules\organs\organ_external.dm"
 #include "code\modules\organs\organ_icon.dm"
 #include "code\modules\organs\organ_stump.dm"

@@ -14,17 +14,19 @@
 
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
-#ifdef BENCHMARK
+#if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 /// FFI calls made through the vg_* procs. Benchmark builds only; the
 /// benchmarks report it per window (code/modules/benchmarks/_benchmark.dm).
 /* This comment bypasses grep checks */ /var/__verdigris_ffi_calls = 0
+#endif
+#ifdef BENCHMARK
 #define VG_COUNT_FFI_CALL __verdigris_ffi_calls++
 #else
 #define VG_COUNT_FFI_CALL
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "034eab3a3bbb7263"
+#define VERDIGRIS_ABI "b4fd181f3f0f46a6"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -647,6 +649,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(x, y, z, max_x, max_y, max_z, ranges)
 
+/// Introspects one domain before a mixed legacy/object-model bind. Returns
+/// -1 for a stale/invalid handle or domain, 0 for an empty slot, and the
+/// positive kind ID for an installed component. Unlike a guessed-kind probe,
+/// this lets DM reject a conflicting component without replacing its row.
+// /proc/entity_component_kind (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_component_kind(entity, domain)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_component_kind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, domain)
+
 /// Live entities (a reconciler/test metric).
 // /proc/entity_count (verdigris/ffi/src/entity.rs)
 /proc/vg_entity_count()
@@ -669,6 +681,15 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_describe_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
+
+/// Roll back one component installed by a failed multi-domain bind without
+/// disturbing any component the caller found on the borrowed entity. The
+/// expected kind prevents a stale rollback from detaching a replacement.
+// /proc/entity_detach_component (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_detach_component(entity, domain, expected_kind)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_detach_component_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, domain, expected_kind)
 
 /// `SSvg`'s per-domain event drain (§4.8): every event raised by that
 /// domain's components since the last drain, as a flat
@@ -870,6 +891,7 @@
 
 /// Args: (gas_id). Returns: the amount of substance of the given gas, in moles.
 // /datum/gas_mixture/proc/get_moles (verdigris/domains/gas/src/lib.rs)
+// dm-health: returns num
 /proc/vg_get_moles_hook(src_ref, gas_id)
 	var/static/__f = load_ext(VERDIGRIS, "byond:get_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -966,6 +988,7 @@
 
 /// Returns: Heat capacity, in J/K (probably).
 // /datum/gas_mixture/proc/heat_capacity (verdigris/domains/gas/src/lib.rs)
+// dm-health: returns num
 /proc/vg_heat_cap_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_cap_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1795,6 +1818,7 @@
 
 /// Returns: Amount of substance, in moles.
 // /datum/gas_mixture/proc/total_moles (verdigris/domains/gas/src/lib.rs)
+// dm-health: returns num
 /proc/vg_total_moles_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:total_moles_hook_ffi")
 	VG_COUNT_FFI_CALL

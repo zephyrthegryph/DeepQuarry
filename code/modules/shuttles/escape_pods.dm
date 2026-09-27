@@ -1,3 +1,17 @@
+/datum/object_model/relation/escape_pod_arming_controller
+	from_type = /datum/shuttle/autodock/ferry/escape_pod
+	to_type = /datum/embedded_program/docking/simple/escape_pod_berth
+	source_single = TRUE
+
+/datum/object_model/relation/escape_pod_arming_controller/on_link(datum/source, datum/target)
+	var/datum/shuttle/autodock/ferry/escape_pod/pod = source
+	pod.arming_controller = target
+
+/datum/object_model/relation/escape_pod_arming_controller/on_unlink(datum/source, datum/target, reason)
+	var/datum/shuttle/autodock/ferry/escape_pod/pod = source
+	if(pod.arming_controller == target)
+		pod.arming_controller = null
+
 /datum/shuttle/autodock/ferry/escape_pod
 	var/datum/embedded_program/docking/simple/escape_pod_berth/arming_controller
 	category = /datum/shuttle/autodock/ferry/escape_pod
@@ -20,13 +34,10 @@
 	var/arming_controller_tag = arming_controller
 	if(!arming_controller && active_docking_controller)
 		arming_controller_tag = active_docking_controller.id_tag
-	arming_controller = SSshuttles.docking_registry[arming_controller_tag]
-	if(!istype(arming_controller))
+	arming_controller = null
+	var/datum/embedded_program/docking/simple/escape_pod_berth/controller = SSshuttles.docking_registry[arming_controller_tag]
+	if(!istype(controller) || !set_arming_controller(controller))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
-	// Every pod references the shared berth program. Multiple pod listeners are
-	// intentional, so opt into signal fan-out instead of emitting one runtime per
-	// pod during shuttle initialization.
-	RegisterSignal(arming_controller, COMSIG_QDELETING, PROC_REF(arming_controller_deleted), override = TRUE)
 
 	//find the pod's own controller
 	var/datum/embedded_program/docking/simple/prog = SSshuttles.docking_registry[docking_controller_tag]
@@ -36,23 +47,25 @@
 	controller_master.pod = src
 
 /datum/shuttle/autodock/ferry/escape_pod/Destroy()
-	if(arming_controller)
-		UnregisterSignal(arming_controller, COMSIG_QDELETING)
+	set_arming_controller(null)
 	arming_controller = null
 	return ..()
 
-/datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller_deleted(datum/source)
-	SIGNAL_HANDLER
-	arming_controller = null
+/datum/shuttle/autodock/ferry/escape_pod/proc/set_arming_controller(datum/embedded_program/docking/simple/escape_pod_berth/controller)
+	if(arming_controller == controller)
+		return TRUE
+	return om_replace_related(src, /datum/object_model/relation/escape_pod_arming_controller, controller)
 
 /datum/shuttle/autodock/ferry/escape_pod/can_launch()
-	if(arming_controller && !arming_controller.armed)	//must be armed
+	if(!arming_controller || !arming_controller.armed)	//must have a live, armed berth
 		return 0
 	if(location)
 		return 0	//it's a one-way trip.
 	return ..()
 
 /datum/shuttle/autodock/ferry/escape_pod/can_force()
+	if(!arming_controller)
+		return FALSE
 	if (arming_controller.eject_time && world.time < arming_controller.eject_time + 50)
 		return 0	//dont allow force launching until 5 seconds after the arming controller has reached it's countdown
 	return ..()
@@ -81,7 +94,7 @@
 		"override_enabled" = docking_program.override_enabled,
 		"exterior_status" =	docking_program.memory["door_status"],								// TGUI DATA fails silently when there's no linked pod, leading to UI crashes
 		"can_force" = pod?.can_force() || (SSemergency_shuttle.departed && pod?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
-		"armed" = pod?.arming_controller.armed,
+		"armed" = pod?.arming_controller?.armed,
 		"internalTemplateName" = "EscapePodConsole",
 	)
 
@@ -91,7 +104,7 @@
 
 	switch(action)
 		if("manual_arm")
-			pod.arming_controller.arm()
+			pod?.arming_controller?.arm()
 			. = TRUE
 		if("force_launch")
 			if(pod.can_force())

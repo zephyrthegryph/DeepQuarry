@@ -306,12 +306,13 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	if(isnull(value))
 		value = preference_entry.create_informed_default_value(src)
 		if(write_preference(preference_entry, value))
-			// Cache wasn't populated by write_preference(_by_type) in this path; return
-			// the freshly-defaulted value. Copy lists so the caller can mutate freely.
-			if(islist(value))
-				var/list/L = value
+			// Return the validated value written to the cache. The raw default may
+			// have been changed by pref_deserialize before it was stored.
+			var/stored = value_cache[preference_type]
+			if(islist(stored))
+				var/list/L = stored
 				return L.Copy()
-			return value
+			return stored
 		else
 			CRASH("Couldn't write the default value for [preference_type] (received [value])")
 	value_cache[preference_type] = value
@@ -333,8 +334,6 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		remembered_default = client?.prefs?.default_slot
 		client?.prefs?.load_character(mind.loaded_from_slot)
 	var/success = client?.prefs?.write_preference_by_type(preference_type, preference_value, write_mode)
-	if(success)
-		client?.prefs?.value_cache[preference_type] = preference_value
 	if(remembered_default)
 		client?.prefs?.return_to_character_slot(src, remembered_default)
 	return success

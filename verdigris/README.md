@@ -8,6 +8,23 @@ its `load_ext` handle. Regenerate with `tools/build/build.sh verdigris-bindings`
 the build and CI fail when the file is stale, and `check_grep.sh` rejects
 `call_ext` anywhere else.
 
+The build writes a `verdigris.dll.provenance.json` (or
+`libverdigris.so.provenance.json`) beside the library. It records a hash of the
+Rust inputs, generated DM bindings, target, build flags, and library bytes.
+The DLL also embeds the source hash from its Cargo build; the build compares
+that embedded value to the checkout before installing or reusing the library.
+When the hashes differ, it cleans the workspace Rust crates while retaining
+third-party dependency artifacts, then rebuilds. This catches Cargo reusing a
+stale local crate after files are restored with old timestamps.
+The build also inspects the DLL/shared library export table and requires every
+generated `vg_*` binding to have a matching Rust export. If Cargo reuses an
+incomplete FFI artifact, the build cleans and recompiles that crate once;
+it never installs or stamps a library with missing exports.
+When using `DQ_PREBUILT_VERDIGRIS=1` in a worktree, copy both the library and
+its matching provenance file. A stale or unverified prebuilt library fails the
+build; with Cargo available, a normal build recreates both files. The runtime
+`VERDIGRIS_ABI` handshake separately checks the exported bind set at boot.
+
 ## Workspace layout
 
 This directory is a Cargo workspace that produces one `libverdigris.so` /

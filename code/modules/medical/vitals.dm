@@ -25,6 +25,8 @@
 // on consecutive checks; we apply a small random offset so repeated
 // measurements feel realistic and the doctor can't lock onto a precise
 // number. Helper returns a uniform random in [-amount, +amount].
+// dm-health: param amount num
+// dm-health: returns num
 /proc/_dq_jitter(amount)
 	return (rand() * 2 - 1) * amount
 

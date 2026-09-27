@@ -163,11 +163,19 @@
 	return physiology?.ventilation
 
 /// Oxygen saturation, SpO2 0..100. Carbon monoxide doesn't show here.
+// dm-health: returns num?
 /datum/body/proc/oxygenation()
 	ensure_physiology()
-	if(isnull(physiology?.oxygenation))
+	var/reading = physiology?.oxygenation
+	if(!isnum(reading))
 		return null
-	return clamp(round(physiology.oxygenation * 100 + get_factor(BF_O2_SAT)), 0, 100)
+	var/factor = get_factor(BF_O2_SAT)
+	if(!isnum(factor))
+		return null
+	var/result = clamp(round(reading * 100 + factor), 0, 100)
+	if(isnum(result))
+		return result
+	return null
 
 /// Fraction of normal tissue perfusion (0..1).
 /datum/body/proc/perfusion()
@@ -180,19 +188,35 @@
 	return physiology?.oxygen_debt
 
 /// Heart rate in bpm (0 = no output).
+// dm-health: returns num?
 /datum/body/proc/heart_rate()
 	ensure_physiology()
-	return physiology?.heart_rate()
+	var/rate = physiology?.heart_rate()
+	if(isnum(rate))
+		return rate
+	return null
 
 /// list(systolic, diastolic) in mmHg.
+// dm-health: returns list<num>?
 /datum/body/proc/blood_pressure()
 	ensure_physiology()
-	return physiology?.blood_pressure()
+	var/list/pressure = physiology?.blood_pressure()
+	if(!islist(pressure) || length(pressure) < 2)
+		return null
+	var/systolic = pressure[1]
+	var/diastolic = pressure[2]
+	if(isnum(systolic) && isnum(diastolic))
+		return list(systolic, diastolic)
+	return null
 
 /// Breaths per minute (0 = apneic).
+// dm-health: returns num?
 /datum/body/proc/respiratory_rate()
 	ensure_physiology()
-	return physiology?.respiratory_rate()
+	var/rate = physiology?.respiratory_rate()
+	if(isnum(rate))
+		return rate
+	return null
 
 /// Explicit oxygen debt, for causes with no mechanism (magic, admin, spawn-in
 /// injuries). Returns the debt added.
@@ -495,6 +519,7 @@
 	phase = LIFE_PHASE_BODY
 	order = 85
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	biology_catchup = TRUE
 
 /datum/life_system/physiology/applies(mob/living/self)
 	var/datum/body/proto = self.body_type
@@ -503,4 +528,7 @@
 /datum/life_system/physiology/tick(mob/living/self, datum/life_context/ctx)
 	if(ctx?.in_stasis(self))
 		return
+	self.body?.physiology_tick(ctx ? ctx.seconds : LIFE_NOMINAL_SECONDS)
+
+/datum/life_system/physiology/tick_biology(mob/living/self, datum/life_context/ctx)
 	self.body?.physiology_tick(ctx ? ctx.seconds : LIFE_NOMINAL_SECONDS)

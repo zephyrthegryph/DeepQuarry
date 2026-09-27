@@ -325,12 +325,18 @@ impl<V> Scratch<V> {
 pub enum PortError {
     /// The cell index is outside the domain's layout.
     OutOfRange(u32),
+    /// The row is in range but has no attached component.
+    Detached(u32),
+    /// An asynchronous operation was requested from a main-owned domain.
+    NoWorker,
 }
 
 impl fmt::Display for PortError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::OutOfRange(cell) => write!(f, "cell {cell} is outside the domain"),
+            Self::Detached(cell) => write!(f, "cell {cell} is detached"),
+            Self::NoWorker => write!(f, "domain is main-owned and has no worker"),
         }
     }
 }
@@ -435,9 +441,11 @@ impl<D: Domain> MainPort<D> {
         self.push(cell, Op::Put(value)).map(|_| ())
     }
 
-    /// Transfers a cell's value out to the main thread and resets the cell.
-    /// The value is what DM sees now; with the overlay it can be up to one
-    /// frame behind the worker (§3.10).
+    /// Speculatively transfers a cell's value out to the main thread and
+    /// resets the cell. The returned value is what DM sees now; with the
+    /// overlay it can be up to one frame behind the worker (§3.10). For a
+    /// conserving transfer, use [`request_take`](Self::request_take) and
+    /// wait for the matching [`TakeResult`] in the outbox instead.
     ///
     /// # Errors
     /// If `cell` is outside the layout.
@@ -445,6 +453,30 @@ impl<D: Domain> MainPort<D> {
         let value = self.read(cell).ok_or(PortError::OutOfRange(cell))?;
         self.push(cell, Op::Take)?;
         Ok(Scratch(value))
+    }
+
+    /// Requests a transfer-out and returns its sequence. On a worker-owned
+    /// domain, the actual removed value arrives as a [`TakeResult`] with
+    /// this sequence in the outbox after the worker applies the command.
+    /// The caller may then wrap that value in [`Scratch`] and hand it to
+    /// another owner. No predicted value is transferred, so intervening
+    /// worker changes cannot duplicate or lose conserved state.
+    ///
+    /// For a main-owned fallback, use [`take`](Self::take), which reads and
+    /// removes the live value synchronously.
+    ///
+    /// # Errors
+    /// If `cell` is outside the layout.
+    pub fn request_take(&mut self, cell: u32) -> Result<Seq, PortError> {
+        if self.layout.locate(cell).is_none() {
+            return Err(PortError::OutOfRange(cell));
+        }
+        if self.fallback.is_some() {
+            // A synchronous main-owned store has no worker outbox.
+            return Err(PortError::NoWorker);
+        }
+        self.push(cell, Op::Take)?;
+        Ok(self.commands.last_issued())
     }
 
     /// Removes part of a cell as a scratch value (§3.5). `split` computes,
@@ -659,5 +691,43 @@ impl<D: Domain> MainPort<D> {
 
     pub(crate) const fn state_res(&self) -> Res<DomainState<D>> {
         self.state
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sim::{SimBuilder, SimConfig};
+
+    #[derive(Clone, Debug, Default, PartialEq)]
+    struct Quantity(f32);
+    #[derive(Clone, Debug)]
+    struct QuantityDomain;
+    impl Domain for QuantityDomain {
+        type Value = Quantity;
+        type Command = f32;
+        const NAME: &'static str = "quantity";
+        fn apply(value: &mut Quantity, cmd: &f32) -> Applied {
+            value.0 += *cmd;
+            Applied::default()
+        }
+    }
+
+    #[test]
+    fn requested_take_is_reconciled_by_sequence_with_worker_value() {
+        let mut builder = SimBuilder::new(SimConfig::default());
+        let key = builder.add_domain::<QuantityDomain>(ChunkLayout::linear(4));
+        let mut sim = builder.build().unwrap();
+        sim.begin_tick();
+        let port = sim.port(key);
+        port.put(0, Quantity(7.0)).unwrap();
+        port.submit(0, 2.0).unwrap();
+        let seq = port.request_take(0).unwrap();
+        assert_eq!(port.read(0), Some(Quantity::default()));
+        sim.settle();
+        let out = sim.drain(key);
+        assert_eq!(out.takes().len(), 1);
+        assert_eq!(out.takes()[0].seq, seq);
+        assert_eq!(out.takes()[0].value, Quantity(9.0));
     }
 }

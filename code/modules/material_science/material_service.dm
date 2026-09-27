@@ -72,13 +72,23 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(!admit)
 		return
 	if(!material_service)
-		material_service = new(src)
+		var/datum/material_service/new_service = new(src)
+		if(!set_material_service(new_service))
+			qdel(new_service)
+			return
 	material_last_service_event = event
 	material_service.last_admission_event = event
 	if(isnum(observed_temperature) && observed_temperature > material_service.temperature)
 		material_service.temperature = observed_temperature
 	material_service.schedule(0)
 	return material_service
+
+/// The framework installs the direct field before publishing ownership and
+/// clears it automatically on release.
+/obj/proc/set_material_service(datum/material_service/new_service)
+	if(!new_service || new_service.owner != src)
+		return FALSE
+	return OM_CLAIM_FIELD(src, material_service, "om:material_service", new_service)
 
 /// Compatibility entry for explicit test/debug callers. Gameplay integrations
 /// must publish a material_service_event() with a physical reason.
@@ -177,8 +187,6 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	/// pressure jitter updates this cache without waking the physical model.
 	var/list/mixture_pressures
 	var/list/mixture_corrosion
-	var/list/movement_sources
-	var/turf/watched_turf
 	var/timer
 	var/next_update = 0
 	var/last_update
@@ -226,8 +234,6 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(SSmaterial_services.currentrun)
 		SSmaterial_services.currentrun -= src
 	clear_watches()
-	if(owner?.material_service == src)
-		owner.material_service = null
 	owner = null
 	last_delivery_mixture = null
 	thermal_stock = null
@@ -248,9 +254,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 			SSmaterial_services.queue(src, due)
 
 /datum/material_service/proc/clear_watches()
-	if(watched_turf)
-		UnregisterSignal(watched_turf, COMSIG_TURF_CHANGE)
-		watched_turf = null
+	Observe(null, COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
 	// WEAKREF refuses a datum already marked QDELETED. Destroy must use the
 	// existing subscription identity rather than trying to create it again.
 	var/datum/weakref/reference = weak_reference
@@ -259,9 +263,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	mixture_ids = null
 	mixture_pressures = null
 	mixture_corrosion = null
-	for(var/atom/movable/source as anything in movement_sources)
-		UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
-	movement_sources = null
+	ObserveSet(null, COMSIG_MOVABLE_MOVED, PROC_REF(moved))
 
 /datum/material_service/proc/moved()
 	SIGNAL_HANDLER
@@ -270,8 +272,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/proc/changing_turf(datum/source, new_type, list/new_baseturfs, flags, list/post_change_callbacks)
 	SIGNAL_HANDLER
-	UnregisterSignal(source, COMSIG_TURF_CHANGE)
-	watched_turf = null
+	Observe(null, COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
 	watches_dirty = TRUE
 	post_change_callbacks += CALLBACK(src, PROC_REF(environment_changed))
 
@@ -336,12 +337,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/list/next_corrosion = list()
 	var/list/air_ports = owner.material_service_gases()
 	var/turf/location = get_turf(owner)
-	if(location != watched_turf)
-		if(watched_turf)
-			UnregisterSignal(watched_turf, COMSIG_TURF_CHANGE)
-		watched_turf = location
-		if(watched_turf)
-			RegisterSignal(watched_turf, COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
+	Observe(location, COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()
 	if(ambient)
 		var/ambient_id = ambient.arena_id()
@@ -368,13 +364,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	while(istype(location_source))
 		next_sources += location_source
 		location_source = location_source.loc
-	for(var/atom/movable/source as anything in movement_sources)
-		if(!(source in next_sources))
-			UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
-	for(var/atom/movable/source as anything in next_sources)
-		if(!(source in movement_sources))
-			RegisterSignal(source, COMSIG_MOVABLE_MOVED, PROC_REF(moved))
-	movement_sources = next_sources
+	ObserveSet(next_sources, COMSIG_MOVABLE_MOVED, PROC_REF(moved))
 
 /datum/material_service/proc/contents_changed()
 	if(QDELETED(owner))

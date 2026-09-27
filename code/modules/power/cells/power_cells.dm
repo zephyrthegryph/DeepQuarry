@@ -160,11 +160,10 @@
  */
 /obj/item/cell/slime
 	name = "charged slime core"
-	desc = "A yellow slime core infused with phoron, it crackles with power."
+	desc = "A yellow slime core infused with phoron, it crackles with power. This cell holds up to 20k charge and recharges itself over time."
 	icon = 'icons/mob/slimes.dmi' //'icons/obj/harvest.dmi'
 	icon_state = "yellow slime extract" //"potato_battery"
 	connector_type = "slime"
-	description_info = "This 'cell' holds a max charge of 20k and self recharges over time."
 	charge = 20000
 	maxcharge = 20000
 	charge_amount = 500 // 2.5%.

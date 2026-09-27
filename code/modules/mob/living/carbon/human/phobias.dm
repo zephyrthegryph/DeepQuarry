@@ -5,6 +5,7 @@
 	order = 260
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/phobias/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(!self.phobias)
@@ -54,3 +55,6 @@
 	if(self.phobias & AGRAVIAPHOBIA)
 		if(self.is_floating)
 			self.fear = min((self.fear + 4), 102)
+
+/datum/life_system/phobias/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return tick(self, ctx)

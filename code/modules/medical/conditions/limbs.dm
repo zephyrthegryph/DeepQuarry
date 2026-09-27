@@ -94,7 +94,7 @@
 /datum/affliction/tendon_severed/New()
 	..()
 	// Spawn with severity 50 so it presents symptoms immediately.
-	severity = 50
+	set_severity(50)
 
 // Body factors depend on which limb is affected, which is fixed for the
 // lifetime of the condition: the affected hand can't hold anything; a leg
@@ -136,14 +136,15 @@
 
 /datum/affliction/nerve_damage/New()
 	..()
-	severity = 60
+	set_severity(60)
 
 /datum/affliction/nerve_damage/tick()
 	. = ..()
-	if(!location)
+	var/obj/item/organ/external/limb = location
+	if(!istype(limb))
 		return
 	// Add limb-specific symptom on top of the base pool.
-	switch(location.organ_tag)
+	switch(limb.organ_tag)
 		if(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)
 			// Inject numbness_arm into the pool if not already there.
 			if(symptom_pool && !(/datum/affliction_symptom/numbness_arm in symptom_pool))
@@ -193,4 +194,4 @@
 
 /datum/affliction/tissue_necrosis/New()
 	..()
-	severity = 75
+	set_severity(75)

@@ -70,8 +70,8 @@
 /// asked, because it can flip while an object sits in its slot with nothing
 /// else about it changing. A holder's ledger caches each thing's
 /// contribution at note_enter() (containment.md §2), so a flip only reaches
-/// the holder's aggregate once something calls ledger_refresh_contribution()
-/// on the thing -- DQ Medical's clock code (K1) does, whenever it flips this.
+/// the holder's aggregate after a declared object-model producer change or
+/// ledger_refresh_contribution() on the thing.
 #define TAG_CLOCKED "clocked"
 // Wearable tags: what the item's slot_flags allow (constraints, rules.md �3).
 // The equip slot constraints (code/datums/properties/equip_slots.dm) read these.

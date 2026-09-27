@@ -10,6 +10,29 @@
 	allocate(/obj/item/rig/protean, test_floor(), H)
 	return H
 
+/// Patient replacement and either endpoint's teardown must retire the
+/// dormancy signal handlers along with the relationship.
+/datum/unit_test/dq_protean_dormancy_patient_relation
+
+/datum/unit_test/dq_protean_dormancy_patient_relation/Run()
+	var/datum/affliction/core_dormancy/D = allocate(/datum/affliction/core_dormancy)
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, test_floor())
+	D.set_held_mob(first)
+	TEST_ASSERT_EQUAL(D.held_mob, first, "the first patient should be held")
+	TEST_ASSERT(SEND_SIGNAL(first, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE, "the first patient should receive dormancy support")
+	D.set_held_mob(second)
+	TEST_ASSERT_EQUAL(D.held_mob, second, "the replacement patient should be held")
+	TEST_ASSERT(!om_has_link(D, /datum/object_model/relation/core_dormancy_patient, first), "the old patient edge should be gone")
+	TEST_ASSERT(!(SEND_SIGNAL(first, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE), "the old patient should lose dormancy support")
+	TEST_ASSERT(SEND_SIGNAL(second, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE, "the new patient should receive dormancy support")
+	qdel(second)
+	TEST_ASSERT_NULL(D.held_mob, "destroying the patient should clear the affliction mirror")
+	TEST_ASSERT_NULL(om_first_linked(D, /datum/object_model/relation/core_dormancy_patient), "destroying the patient should remove its edge")
+	D.set_held_mob(first)
+	qdel(D)
+	TEST_ASSERT(!(SEND_SIGNAL(first, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE), "destroying dormancy should remove the final patient handler")
+
 /// A protean that chose to fold into its cluster and then takes lethal damage
 /// goes dormant, on the immediate path (a hit) and on the tick path.
 /datum/unit_test/dq_protean_folded_lethal_goes_dormant

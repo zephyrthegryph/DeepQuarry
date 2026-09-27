@@ -44,7 +44,7 @@
 	var/obj/temp_chem_holder   // Something to hold reagents during process_reagents()
 	var/labelled
 	var/frozen = 0				//Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
-	var/growth_timer
+	var/datum/object_model/schedule_entry/growth_timer
 
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
@@ -211,9 +211,6 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/portable_atmospherics/hydroponics/Destroy()
-	if(growth_timer)
-		deltimer(growth_timer)
-		growth_timer = null
 	QDEL_NULL(temp_chem_holder)
 	seed = null
 	return ..()
@@ -224,7 +221,7 @@
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(growth_timer || frozen == 1)
 		return
-	growth_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_growth)), max(1, lastcycle + cycledelay - world.time), TIMER_STOPPABLE)
+	growth_timer = After(max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	growth_timer = null

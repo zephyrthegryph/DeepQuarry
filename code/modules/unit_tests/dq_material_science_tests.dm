@@ -500,7 +500,7 @@
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
 	for(var/subscribed_id in service.mixture_ids)
 		TEST_ASSERT(REF(service) in SSmachines.material_gas_subscribers["[subscribed_id]"], "Material subscriptions must use the coalesced mixture registry")
-	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
+	TEST_ASSERT(length(service.ObservedSources(COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved))), "A stationary assembly must watch movement while sleeping")
 	SSmaterial_services.unqueue(service)
 	service.timer = FALSE
 	service.active = FALSE
@@ -523,6 +523,76 @@
 		TEST_ASSERT(!(reference in subscribers), "Deleted assemblies must release mixture subscriptions")
 		var/list/material_subscribers = SSmachines.material_gas_subscribers["[id]"]
 		TEST_ASSERT(!(reference in material_subscribers), "Deleted assemblies must release coalesced material subscriptions")
+
+/datum/unit_test/dq_material_service_movement_relation
+
+/datum/unit_test/dq_material_service_movement_relation/Run()
+	var/turf/start = run_loc_floor_bottom_left
+	var/obj/item/storage/box/holder = new(start)
+	var/obj/item/cell/cell = new(start)
+	var/datum/material_service/service = cell.material_service
+	service.rebind()
+	TEST_ASSERT(service.Observed(cell, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved)), "The assembly itself must be watched")
+	cell.forceMove(holder)
+	service.rebind()
+	TEST_ASSERT(service.Observed(holder, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved)), "A containing movable must be watched")
+	cell.forceMove(start)
+	service.rebind()
+	TEST_ASSERT(!service.Observed(holder, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved)), "Leaving the container must release its movement watch")
+	cell.forceMove(holder)
+	service.rebind()
+	cell.forceMove(start)
+	qdel(holder)
+	TEST_ASSERT(!service.Observed(holder, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/datum/material_service, moved)), "Deleting a former container must not leave a movement watch")
+	qdel(cell)
+
+/datum/unit_test/dq_material_service_turf_watch_relation
+
+/datum/unit_test/dq_material_service_turf_watch_relation/Run()
+	var/turf/start = run_loc_floor_bottom_left
+	var/starting_type = start.type
+	var/obj/item/cell/cell = new(start)
+	var/datum/material_service/service = cell.material_service
+	service.rebind()
+	TEST_ASSERT(service.Observed(start, COMSIG_TURF_CHANGE, TYPE_PROC_REF(/datum/material_service, changing_turf)), "The service watches its physical turf")
+	var/turf/replaced = start.ChangeTurf(/turf/simulated/wall)
+	TEST_ASSERT_NOTNULL(replaced, "The test turf must be replaceable")
+	TEST_ASSERT(!service.Observed(start, COMSIG_TURF_CHANGE, TYPE_PROC_REF(/datum/material_service, changing_turf)), "Changing a turf must unlink the old signal source")
+	service.rebind()
+	TEST_ASSERT(service.Observed(replaced, COMSIG_TURF_CHANGE, TYPE_PROC_REF(/datum/material_service, changing_turf)), "Rebind watches the replacement turf")
+	var/turf/restored = replaced.ChangeTurf(starting_type)
+	service.rebind()
+	TEST_ASSERT(service.Observed(restored, COMSIG_TURF_CHANGE, TYPE_PROC_REF(/datum/material_service, changing_turf)), "Restoring the turf rebinds its watch")
+	qdel(cell)
+	TEST_ASSERT(!restored._listen_lookup?[COMSIG_TURF_CHANGE], "Deleting the assembly releases the turf watch")
+
+/datum/unit_test/dq_material_service_owned_lifecycle
+
+/datum/unit_test/dq_material_service_owned_lifecycle/Run()
+	var/turf/start = run_loc_floor_bottom_left
+	var/obj/item/cell/first = new(start)
+	var/datum/material_service/first_service = first.material_service
+	TEST_ASSERT_NOTNULL(first_service, "The cell enrolled a material service")
+	TEST_ASSERT_EQUAL(om_owner(first_service), first, "The service is owned by its assembly")
+	TEST_ASSERT_EQUAL(om_owner_slot(first_service), "om:material_service", "The service uses the reserved lifetime slot")
+	TEST_ASSERT(first.set_material_service(first_service), "Reattaching the already owned service is idempotent")
+	TEST_ASSERT_EQUAL(length(om_children(first, "om:material_service")), 1, "Idempotent setter keeps one owned service")
+	TEST_ASSERT(om_release(first_service), "Explicit release succeeds")
+	TEST_ASSERT_NULL(first.material_service, "Releasing ownership clears the direct field")
+	TEST_ASSERT(first.set_material_service(first_service), "A released service can be reclaimed")
+	TEST_ASSERT_EQUAL(first.material_service, first_service, "Reclaiming restores the direct field")
+	var/first_service_ref = REF(first_service)
+	qdel(first_service)
+	TEST_ASSERT_NULL(first.material_service, "Retiring a service clears the assembly mirror")
+	TEST_ASSERT(!length(om_children(first, "om:material_service")), "Retiring a service releases ownership")
+	TEST_ASSERT(!SSmaterial_services.scheduled_indices[first_service_ref], "Deleting a service releases queued work")
+	qdel(first)
+
+	var/obj/item/cell/second = new(start)
+	var/datum/material_service/second_service = second.material_service
+	TEST_ASSERT_EQUAL(om_owner(second_service), second, "The second service is owned")
+	qdel(second)
+	TEST_ASSERT(QDELETED(second_service), "Deleting an assembly deletes its owned service before obj Destroy")
 
 /datum/unit_test/dq_material_gas_publication_filtering
 
@@ -680,6 +750,23 @@
 
 /obj/machinery/material_furnace/unpowered_test/use_power_oneoff(amount, chan)
 	return 0
+
+/datum/unit_test/dq_material_furnace_owned_firing_timer
+
+/datum/unit_test/dq_material_furnace_owned_firing_timer/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/obj/machinery/material_furnace/furnace = new(test_turf)
+	furnace.firing = TRUE
+	furnace.firing_timer = furnace.After(6 SECONDS, TYPE_PROC_REF(/obj/machinery/material_furnace, on_firing_due))
+	var/datum/object_model/schedule_entry/first = furnace.firing_timer
+	TEST_ASSERT(first && !QDELETED(first), "furnace firing timer was scheduled")
+	furnace.finish_firing()
+	TEST_ASSERT(QDELETED(first) && !furnace.firing_timer, "manual completion canceled the firing timer")
+	furnace.firing_timer = furnace.After(6 SECONDS, TYPE_PROC_REF(/obj/machinery/material_furnace, on_firing_due))
+	var/datum/object_model/schedule_entry/second = furnace.firing_timer
+	TEST_ASSERT(second && !QDELETED(second), "furnace could schedule another firing timer")
+	qdel(furnace)
+	TEST_ASSERT(QDELETED(second), "furnace deletion canceled its owned firing timer")
 
 /datum/unit_test/dq_material_furnace_cannot_create_heat
 

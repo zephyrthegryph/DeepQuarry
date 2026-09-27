@@ -56,10 +56,17 @@ BLOOD_VOLUME_SURVIVE = 40
 // Takes care blood loss and regeneration
 /datum/life_system/blood/carbon/human
 	mob_type = /mob/living/carbon/human
+	biology_catchup = TRUE
 
 /datum/life_system/blood/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(self.inStasisNow())
 		return
+	return process_biology(self)
+
+/datum/life_system/blood/carbon/human/tick_biology(mob/living/carbon/human/self, datum/life_context/ctx)
+	return process_biology(self, TRUE)
+
+/datum/life_system/blood/carbon/human/proc/process_biology(mob/living/carbon/human/self, catchup = FALSE)
 
 	if(!self.should_have_organ(O_HEART))
 		return
@@ -87,18 +94,19 @@ BLOOD_VOLUME_SURVIVE = 40
 		// hypovolemic_shock symptoms) and the physiology owns its consequence
 		// (low perfusion -> oxygen debt). Here: the pale sprite cue, and the
 		// fatal collapse below the survivable volume.
-		if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_safe)
-			if(self.pale)
-				self.pale = 0
-				self.update_icons_body()
-		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_fatal)
-			if(!self.pale)
+		if(!catchup)
+			if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_safe)
+				if(self.pale)
+					self.pale = 0
+					self.update_icons_body()
+			else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_fatal)
+				if(!self.pale)
+					self.pale = 1
+					self.update_icons_body()
+			else if(!self.pale)
 				self.pale = 1
 				self.update_icons_body()
-		else //Not enough blood to survive (usually)
-			if(!self.pale)
-				self.pale = 1
-				self.update_icons_body()
+		if(blood_volume_raw < self.species.blood_volume*self.species.blood_level_fatal)
 			self.Paralyse(3)
 			self.Sleeping(3)
 			self.injure(INJURY_TOXIN, (self.factor(BF_STABILIZATION) ? 1.5 : 3), flags = INJURE_SILENT)

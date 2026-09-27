@@ -39,3 +39,34 @@
 	qdel(simulation)
 	qdel(spec)
 	qdel(planner)
+
+/mob/living/simple_mob/generated_station_defender_test_subject
+	name = "defender relation test subject"
+
+/datum/unit_test/dq_generated_station_defender_relation_lifetime
+	needs_test_block = FALSE
+
+/datum/unit_test/dq_generated_station_defender_relation_lifetime/Run()
+	var/turf/spawn_turf = locate(1, 1, 1)
+	var/mob/living/simple_mob/generated_station_defender_test_subject/first = new(spawn_turf)
+	var/mob/living/simple_mob/generated_station_defender_test_subject/second = new(spawn_turf)
+	var/datum/generated_station_defender_agent/agent = new(first, null, "security-1", "squad-1", spawn_turf)
+	var/obj/item/first_contact = new(spawn_turf)
+	var/obj/item/second_contact = new(spawn_turf)
+	TEST_ASSERT(om_has_link(agent, /datum/object_model/relation/generated_station_defender, first), "New agent did not relate to its defender")
+	SEND_SIGNAL(first, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, 1, INJURY_BLUNT, first_contact)
+	TEST_ASSERT(agent.last_contact?.resolve() == first_contact, "Agent did not observe damage to its related defender")
+	TEST_ASSERT(om_link(agent, /datum/object_model/relation/generated_station_defender, second), "Agent could not replace its defender")
+	TEST_ASSERT(agent.defender == second, "Agent kept the old defender after replacement")
+	TEST_ASSERT(!om_has_link(agent, /datum/object_model/relation/generated_station_defender, first), "Old defender relation survived replacement")
+	SEND_SIGNAL(first, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, 1, INJURY_BLUNT, second_contact)
+	TEST_ASSERT(agent.last_contact?.resolve() == first_contact, "Old defender kept sending damage events to the agent")
+	SEND_SIGNAL(second, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, 1, INJURY_BLUNT, second_contact)
+	TEST_ASSERT(agent.last_contact?.resolve() == second_contact, "Replacement defender did not send damage events")
+	qdel(second)
+	TEST_ASSERT(!agent.defender, "Deleted defender remained in the agent mirror")
+	TEST_ASSERT(!length(om_linked(agent, /datum/object_model/relation/generated_station_defender)), "Deleted defender relation survived")
+	qdel(agent)
+	qdel(first)
+	qdel(first_contact)
+	qdel(second_contact)

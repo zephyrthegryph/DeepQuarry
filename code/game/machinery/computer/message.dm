@@ -1,5 +1,15 @@
 // Allows you to monitor messages that passes the server.
 
+/datum/object_model/relation/message_monitor_server
+	from_type = /obj/machinery/computer/message_monitor
+	to_type = /obj/machinery/message_server
+	source_single = TRUE
+
+/datum/object_model/relation/message_monitor_server/on_unlink(datum/source, datum/target, reason)
+	var/obj/machinery/computer/message_monitor/monitor = source
+	if(monitor.linkedServer == target)
+		monitor.linkedServer = null
+
 /obj/machinery/computer/message_monitor
 	name = "messaging monitor console"
 	desc = "Used to access and maintain data on messaging servers. Allows you to view PDA and request console messages."
@@ -27,6 +37,16 @@
 	var/customjob		= "Admin"
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
+
+/obj/machinery/computer/message_monitor/proc/set_linked_server(obj/machinery/message_server/server)
+	if(linkedServer == server)
+		return TRUE
+	if(linkedServer)
+		om_unlink(src, /datum/object_model/relation/message_monitor_server, linkedServer)
+	if(server && !om_link(src, /datum/object_model/relation/message_monitor_server, server))
+		return FALSE
+	linkedServer = server
+	return TRUE
 
 /obj/machinery/computer/message_monitor/screwdriver_act(mob/living/user, obj/item/tool)
 	if(stat & (NOPOWER|BROKEN))
@@ -73,7 +93,7 @@
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer)
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-			linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
+			set_linked_server(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 /obj/machinery/computer/message_monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -209,10 +229,10 @@
 		//Find a server
 		if("find")
 			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-				linkedServer = tgui_input_list(ui.user,"Please select a server.", "Select a server.", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
+				set_linked_server(tgui_input_list(ui.user,"Please select a server.", "Select a server.", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)))
 				set_temp("NOTICE: Server selected.", "alert")
 			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-				linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
+				set_linked_server(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 			else
 				temp = noserver

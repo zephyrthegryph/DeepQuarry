@@ -733,7 +733,7 @@
 	var/telez = 0	//Set this in-round if you want a return point with fake health
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
-	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
+	set_worn_factors(slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null)
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		wearer = H

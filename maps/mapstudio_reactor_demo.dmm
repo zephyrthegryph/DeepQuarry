@@ -1,0 +1,1799 @@
+//MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
+"aa" = (
+/turf/space,
+/area/space)
+"ab" = (
+/turf/simulated/wall/r_lead,
+/area/expoutpost/engstorage)
+"ac" = (
+/turf/simulated/wall/r_lead,
+/area/expoutpost/reactorroom)
+"ad" = (
+/turf/simulated/wall/r_lead,
+/area/expoutpost/atmospherics)
+"ae" = (
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"af" = (
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"ag" = (
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"ah" = (
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"ai" = (
+/turf/simulated/wall/r_lead,
+/area/expoutpost/reactorcr)
+"aj" = (
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorcr)
+"ak" = (
+/obj/machinery/door/airlock/engineering{
+	name = "R-UST Control"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorcr)
+"al" = (
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"am" = (
+/obj/machinery/door/blast/radproof{
+	name = "Reactor Shield"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"an" = (
+/turf/simulated/floor/reinforced,
+/area/expoutpost/engstorage)
+"ao" = (
+/obj/machinery/door/airlock/engineering{
+	name = "Fuel Preparation"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/engstorage)
+"ap" = (
+/turf/simulated/floor/reinforced,
+/area/expoutpost/atmospherics)
+"aq" = (
+/obj/machinery/door/airlock/engineering{
+	name = "Cooling Service"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/atmospherics)
+"ar" = (
+/obj/machinery/door/airlock/engineering{
+	name = "Fuel Store"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/engstorage)
+"as" = (
+/obj/machinery/door/airlock/engineering{
+	name = "TEG Service"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/atmospherics)
+"at" = (
+/obj/machinery/door/blast/radproof{
+	name = "Fuel Injector Access"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"au" = (
+/obj/machinery/door/blast/radproof{
+	name = "Coolant Access"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"av" = (
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"aw" = (
+/obj/effect/floor_decal/industrial/warning,
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"ax" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"ay" = (
+/obj/effect/floor_decal/industrial/warning,
+/obj/effect/floor_decal/industrial/outline/yellow,
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"az" = (
+/obj/machinery/power/fusion_core/mapped{
+	id_tag = "Solstice Core"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"aA" = (
+/obj/machinery/fusion_fuel_injector/mapped{
+	dir = 4;
+	id_tag = "Solstice Injectors"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"aB" = (
+/obj/machinery/fusion_fuel_injector/mapped{
+	dir = 8;
+	id_tag = "Solstice Injectors"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"aC" = (
+/obj/machinery/fusion_fuel_injector/mapped{
+	dir = 1;
+	id_tag = "Solstice Injectors"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"aD" = (
+/obj/machinery/power/emitter/gyrotron/anchored{
+	dir = 2;
+	id_tag = "Solstice Gyrotron"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"aE" = (
+/obj/machinery/power/hydromagnetic_trap,
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"aF" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/machinery/atmospherics/unary/outlet_injector{
+	dir = 4;
+	id = "solstice_cooling_in";
+	name = "Core Coolant Injector"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"aG" = (
+/obj/machinery/atmospherics/unary/vent_pump/engine{
+	dir = 8;
+	id_tag = "solstice_cooling_out";
+	name = "Core Coolant Return"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"aH" = (
+/obj/machinery/air_sensor{
+	id_tag = "solstice_sensor"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"aI" = (
+/obj/machinery/light/small,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"aJ" = (
+/obj/structure/sign/signnew/radiation,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"aK" = (
+/obj/machinery/light/small,
+/obj/machinery/power/apc,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"aL" = (
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"aM" = (
+/obj/machinery/computer/fusion_core_control{
+	dir = 1;
+	id_tag = "Solstice Core"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"aN" = (
+/obj/machinery/computer/fusion_fuel_control{
+	dir = 1;
+	id_tag = "Solstice Injectors"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"aO" = (
+/obj/machinery/computer/gyrotron_control{
+	dir = 1;
+	id_tag = "Solstice Gyrotron"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"aP" = (
+/obj/machinery/computer/general_air_control/supermatter_core{
+	dir = 1;
+	input_tag = "solstice_cooling_in";
+	output_tag = "solstice_cooling_out";
+	sensors = list("solstice_sensor"="Core Temperature")
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"aQ" = (
+/obj/machinery/computer/security/engineering,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aR" = (
+/obj/item/book/manual/rust_engine,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aS" = (
+/obj/structure/bed/chair/office/light,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aT" = (
+/obj/machinery/power/apc,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aU" = (
+/obj/machinery/alarm,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aV" = (
+/obj/machinery/firealarm,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aW" = (
+/obj/machinery/alarm,
+/obj/machinery/light,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aX" = (
+/obj/machinery/light,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aY" = (
+/obj/machinery/firealarm,
+/obj/machinery/light,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"aZ" = (
+/obj/machinery/fusion_fuel_compressor,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"ba" = (
+/obj/item/fuel_assembly/deuterium,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bb" = (
+/obj/item/fuel_assembly/tritium,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bc" = (
+/obj/structure/closet/radiation,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bd" = (
+/obj/structure/closet/toolcloset,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"be" = (
+/obj/structure/table/rack/shelf/steel,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bf" = (
+/obj/structure/sign/warning/radioactive,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bg" = (
+/obj/machinery/power/smes/buildable/precharged,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bh" = (
+/obj/machinery/power/smes/buildable/charging,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bi" = (
+/obj/machinery/power/apc,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bj" = (
+/obj/machinery/alarm,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bk" = (
+/obj/structure/closet/walllocker/emerglocker,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bl" = (
+/obj/machinery/light/small,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bm" = (
+/obj/machinery/power/generator{
+	anchored = 1;
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bn" = (
+/obj/machinery/atmospherics/binary/circulator{
+	anchored = 1;
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bo" = (
+/obj/machinery/atmospherics/binary/circulator{
+	anchored = 1;
+	dir = 2
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bp" = (
+/obj/machinery/atmospherics/unary/freezer,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bq" = (
+/obj/machinery/atmospherics/portables_connector,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"br" = (
+/obj/machinery/portable_atmospherics/canister/carbon_dioxide,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bs" = (
+/obj/machinery/atmospherics/pipe/tank/air/full,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bt" = (
+/obj/machinery/pipedispenser,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bu" = (
+/obj/structure/sign/department/atmos,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bv" = (
+/obj/machinery/power/apc,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bw" = (
+/obj/machinery/atmospherics/omni/atmos_filter,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bx" = (
+/obj/machinery/alarm,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"by" = (
+/obj/structure/closet/radiation,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bz" = (
+/obj/machinery/light/small,
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bA" = (
+/obj/machinery/power/smes/buildable/precharged,
+/obj/structure/cable/green{
+	icon_state = "0-4"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bB" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bC" = (
+/obj/machinery/power/smes/buildable/charging,
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bD" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-1"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"bE" = (
+/obj/machinery/door/airlock/engineering{
+	name = "Fuel Preparation"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/engstorage)
+"bF" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"bG" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-1"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"bH" = (
+/obj/machinery/computer/fusion_core_control{
+	dir = 1;
+	id_tag = "Solstice Core"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"bI" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"bJ" = (
+/obj/machinery/computer/fusion_fuel_control{
+	dir = 1;
+	id_tag = "Solstice Injectors"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"bK" = (
+/obj/machinery/computer/gyrotron_control{
+	dir = 1;
+	id_tag = "Solstice Gyrotron"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"bL" = (
+/obj/machinery/computer/gyrotron_control{
+	dir = 1;
+	id_tag = "Solstice Gyrotron"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-2"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"bM" = (
+/obj/machinery/computer/general_air_control/supermatter_core{
+	dir = 1;
+	input_tag = "solstice_cooling_in";
+	output_tag = "solstice_cooling_out";
+	sensors = list("solstice_sensor"="Core Temperature")
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/milspec/raised,
+/area/expoutpost/reactorcr)
+"bN" = (
+/obj/machinery/computer/security/engineering,
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"bO" = (
+/obj/machinery/door/airlock/engineering{
+	name = "Cooling Service"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/atmospherics)
+"bP" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bQ" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-1"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bR" = (
+/obj/structure/cable/green{
+	icon_state = "2-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"bS" = (
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"bT" = (
+/obj/machinery/door/blast/radproof{
+	name = "Reactor Shield"
+	},
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"bU" = (
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"bV" = (
+/obj/machinery/power/emitter/gyrotron/anchored{
+	dir = 2;
+	id_tag = "Solstice Gyrotron"
+	},
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"bW" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"bX" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-8"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"bY" = (
+/obj/machinery/air_sensor{
+	id_tag = "solstice_sensor"
+	},
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"bZ" = (
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"ca" = (
+/obj/machinery/power/fusion_core/mapped{
+	id_tag = "Solstice Core"
+	},
+/obj/structure/cable/green{
+	icon_state = "1-4"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"cb" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"cc" = (
+/obj/machinery/power/hydromagnetic_trap,
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced/airless,
+/area/expoutpost/reactorroom)
+"cd" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"ce" = (
+/obj/machinery/fusion_fuel_injector/mapped{
+	dir = 8;
+	id_tag = "Solstice Injectors"
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cf" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cg" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/wall/r_lead,
+/area/expoutpost/atmospherics)
+"ch" = (
+/obj/machinery/atmospherics/binary/circulator{
+	anchored = 1;
+	dir = 1
+	},
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"ci" = (
+/obj/machinery/power/generator{
+	anchored = 1;
+	dir = 4
+	},
+/obj/structure/cable/green{
+	icon_state = "1-8"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cj" = (
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"ck" = (
+/obj/machinery/door/airlock/engineering{
+	name = "TEG Service"
+	},
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/atmospherics)
+"cl" = (
+/obj/machinery/light/small,
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cm" = (
+/obj/machinery/power/apc,
+/obj/structure/cable/green{
+	icon_state = "0-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/engstorage)
+"cn" = (
+/obj/machinery/power/apc,
+/obj/structure/cable/green{
+	icon_state = "0-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorcr)
+"co" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cp" = (
+/obj/structure/sign/signnew/radiation,
+/obj/structure/cable/green{
+	icon_state = "1-4"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cq" = (
+/obj/machinery/light/small,
+/obj/machinery/power/apc,
+/obj/structure/cable/green{
+	icon_state = "0-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cr" = (
+/obj/machinery/power/apc,
+/obj/structure/cable/green{
+	icon_state = "0-2"
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cs" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 5
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"ct" = (
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cu" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cv" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 9
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cw" = (
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cx" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cy" = (
+/obj/machinery/atmospherics/unary/vent_pump/engine{
+	dir = 8;
+	id_tag = "solstice_cooling_out";
+	name = "Core Coolant Return"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cz" = (
+/obj/structure/sign/signnew/radiation,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 10
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cA" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cB" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cC" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cD" = (
+/obj/structure/sign/signnew/radiation,
+/obj/structure/cable/green{
+	icon_state = "1-4"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 6
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cE" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 5
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 5
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cF" = (
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cG" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cH" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 9
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 9
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cI" = (
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 1
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cJ" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 1
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cK" = (
+/obj/machinery/atmospherics/unary/vent_pump/engine{
+	dir = 8;
+	id_tag = "solstice_cooling_out";
+	name = "Core Coolant Return"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 1
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cL" = (
+/obj/structure/sign/signnew/radiation,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 10
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 10
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cM" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/obj/structure/cable/green{
+	icon_state = "0-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cN" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cO" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cP" = (
+/obj/structure/sign/signnew/radiation,
+/obj/structure/cable/green{
+	icon_state = "1-4"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 6
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 6
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cQ" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 5
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cR" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cS" = (
+/obj/machinery/fusion_fuel_injector/mapped{
+	dir = 1;
+	id_tag = "Solstice Injectors"
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"cT" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"cU" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/wall/r_lead,
+/area/expoutpost/atmospherics)
+"cV" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cW" = (
+/obj/machinery/pipedispenser,
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 9
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cX" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cY" = (
+/obj/machinery/portable_atmospherics/canister/carbon_dioxide,
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"cZ" = (
+/obj/structure/sign/department/atmos,
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 10
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"da" = (
+/obj/machinery/light/small,
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"db" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"dc" = (
+/obj/machinery/power/emitter/gyrotron/anchored{
+	dir = 2;
+	id_tag = "Solstice Gyrotron"
+	},
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"dd" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 6
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"de" = (
+/obj/structure/cable/green{
+	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"df" = (
+/obj/effect/floor_decal/industrial/warning,
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"dg" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/machinery/atmospherics/unary/outlet_injector{
+	dir = 4;
+	id = "solstice_cooling_in";
+	name = "Core Coolant Injector"
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"dh" = (
+/obj/effect/floor_decal/industrial/outline/yellow,
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"di" = (
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/reinforced,
+/area/expoutpost/reactorroom)
+"dj" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 5
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"dk" = (
+/obj/machinery/atmospherics/pipe/manifold/visible/green{
+	dir = 2
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"dl" = (
+/obj/machinery/atmospherics/pipe/manifold/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"dm" = (
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 6
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"dn" = (
+/obj/structure/cable/green{
+	icon_state = "1-2"
+	},
+/obj/machinery/atmospherics/pipe/simple/visible/green{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"do" = (
+/obj/machinery/atmospherics/pipe/manifold/visible/green{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/atmospherics)
+"dp" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 5
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 5
+	},
+/obj/machinery/atmospherics/unary/vent_pump/on{
+	dir = 4
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+"dq" = (
+/obj/machinery/light/small,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 9
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 9
+	},
+/obj/machinery/atmospherics/unary/vent_scrubber/on{
+	dir = 8
+	},
+/turf/simulated/floor/tiled/dark,
+/area/expoutpost/reactorroom)
+
+(1,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}
+(2,1,1) = {"
+aa
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+aa
+"}
+(3,1,1) = {"
+aa
+ab
+ae
+bj
+bA
+ae
+ab
+ae
+bf
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ab
+aa
+"}
+(4,1,1) = {"
+aa
+ab
+ae
+ae
+bB
+ae
+ab
+ae
+ae
+bb
+ba
+bl
+ae
+aZ
+ae
+bc
+ae
+ae
+ae
+ab
+aa
+"}
+(5,1,1) = {"
+aa
+ab
+bl
+bk
+bC
+ae
+ar
+ae
+bl
+ae
+ba
+ae
+be
+ae
+ae
+bd
+ae
+ae
+ae
+ab
+aa
+"}
+(6,1,1) = {"
+aa
+ab
+ae
+cm
+bD
+ae
+ab
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ae
+ab
+aa
+"}
+(7,1,1) = {"
+aa
+ab
+ab
+ab
+bE
+ab
+ab
+ab
+ab
+ab
+at
+ab
+ab
+ab
+ab
+ab
+ab
+ab
+ae
+ab
+aa
+"}
+(8,1,1) = {"
+aa
+ai
+ah
+ah
+bF
+ah
+ac
+af
+af
+af
+af
+af
+af
+af
+af
+af
+af
+ac
+af
+ac
+aa
+"}
+(9,1,1) = {"
+aa
+ai
+cn
+bS
+bG
+ah
+ac
+af
+cq
+cP
+cI
+cI
+cI
+cI
+cI
+dp
+af
+ac
+af
+ac
+aa
+"}
+(10,1,1) = {"
+aa
+ai
+aW
+aR
+bH
+ah
+ac
+af
+al
+cO
+al
+al
+aA
+al
+al
+cF
+al
+ac
+af
+ac
+aa
+"}
+(11,1,1) = {"
+aa
+ai
+ah
+ah
+bI
+ah
+ac
+af
+dd
+de
+df
+dg
+dh
+dh
+df
+di
+cQ
+ac
+af
+ac
+aa
+"}
+(12,1,1) = {"
+aa
+ai
+ah
+ah
+bJ
+ah
+ac
+af
+cR
+cN
+av
+av
+aE
+av
+av
+cG
+cR
+ac
+af
+ac
+aa
+"}
+(13,1,1) = {"
+aa
+ai
+ah
+ah
+bI
+ah
+ac
+af
+cR
+cN
+av
+av
+av
+av
+av
+cG
+cR
+ac
+af
+ac
+aa
+"}
+(14,1,1) = {"
+aa
+ak
+aX
+ah
+bL
+bS
+bT
+bU
+dc
+cM
+bY
+bZ
+ca
+av
+av
+cG
+cS
+ac
+af
+ac
+aa
+"}
+(15,1,1) = {"
+aa
+ai
+ah
+ah
+bI
+ah
+ac
+af
+cR
+cG
+av
+av
+cb
+av
+av
+cG
+cR
+ac
+af
+ac
+aa
+"}
+(16,1,1) = {"
+aa
+ai
+ah
+ah
+bI
+ah
+ac
+af
+cR
+cG
+av
+av
+cc
+av
+av
+cG
+cR
+ac
+af
+ac
+aa
+"}
+(17,1,1) = {"
+aa
+ai
+ah
+ah
+bM
+ah
+ac
+af
+cR
+cF
+ay
+ax
+cd
+ax
+ay
+cF
+cR
+ac
+af
+ac
+aa
+"}
+(18,1,1) = {"
+aa
+ai
+aY
+aS
+bI
+ah
+ac
+af
+cR
+cF
+al
+al
+ce
+al
+al
+cF
+cR
+ac
+af
+ac
+aa
+"}
+(19,1,1) = {"
+aa
+ai
+ah
+ah
+bN
+ah
+ac
+af
+db
+cL
+cI
+cK
+cJ
+cI
+cI
+dq
+cT
+ac
+af
+ac
+aa
+"}
+(20,1,1) = {"
+aa
+ai
+ah
+ah
+bF
+ah
+ac
+af
+cT
+af
+af
+af
+cf
+af
+af
+af
+cT
+ac
+af
+ac
+aa
+"}
+(21,1,1) = {"
+aa
+ad
+ad
+ad
+bO
+ad
+ad
+ad
+cU
+ad
+au
+ad
+cg
+ad
+ad
+ad
+cU
+ad
+ag
+ad
+aa
+"}
+(22,1,1) = {"
+aa
+ad
+ag
+cr
+bQ
+ag
+ad
+ag
+cV
+ag
+ag
+dm
+ch
+dj
+ag
+bq
+cV
+ag
+ag
+ad
+aa
+"}
+(23,1,1) = {"
+aa
+ad
+bz
+ag
+bR
+cj
+ck
+cj
+da
+cj
+cj
+dn
+ci
+cV
+bz
+br
+cV
+ag
+ag
+ad
+aa
+"}
+(24,1,1) = {"
+aa
+ad
+by
+bw
+ag
+ag
+ad
+ag
+cV
+bs
+ag
+do
+bo
+dk
+ag
+bp
+cV
+ag
+ag
+ad
+aa
+"}
+(25,1,1) = {"
+aa
+ad
+ag
+ag
+bx
+ag
+ad
+ag
+cZ
+cY
+cX
+dl
+cX
+dl
+cX
+cX
+cW
+ag
+ag
+ad
+aa
+"}
+(26,1,1) = {"
+aa
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+ad
+aa
+"}
+(27,1,1) = {"
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+aa
+"}

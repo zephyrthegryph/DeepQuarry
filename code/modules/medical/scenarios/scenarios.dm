@@ -28,6 +28,9 @@
 
 /// Helper — spawn a condition on the named organ at the given severity.
 /// Idempotent; if the same type is already present, leaves it alone.
+// dm-health: param organ_tag text
+// dm-health: param condition_type typepath</datum/affliction>
+// dm-health: param severity num
 /datum/dq_medical_scenario/proc/_seed(mob/living/carbon/human/H, organ_tag, condition_type, severity = DQ_SCENARIO_DEFAULT_SEVERITY)
 	var/obj/item/organ/target
 	if(organ_tag in list(O_HEART, O_LUNGS, O_BRAIN, O_LIVER, O_KIDNEYS, O_STOMACH, O_INTESTINE, O_SPLEEN, O_APPENDIX, O_EYES))
@@ -50,6 +53,10 @@
 /// Note: injury triggers may roll the matching affliction by themselves;
 /// scenarios still call `_seed` afterwards to guarantee the targeted
 /// affliction is present (it's idempotent).
+// dm-health: param organ_tag text
+// dm-health: param brute num
+// dm-health: param burn num
+// dm-health: param sharp num
 /datum/dq_medical_scenario/proc/_apply_external_damage(mob/living/carbon/human/H, organ_tag, brute = 0, burn = 0, sharp = FALSE)
 	if(!H.get_organ(organ_tag))
 		return

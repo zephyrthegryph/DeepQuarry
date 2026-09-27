@@ -115,7 +115,7 @@
 	if(!.)
 		return
 	BITSET(hud_updateflag, HEALTH_HUD)
-	life_wake(LIFE_WAKE_BODY, "injure")
+	wake_life(/datum/life_wake_event/body, "injure")
 	if(!(flags & INJURE_SILENT))
 		flash_weak_pain()
 	body.on_status_changed()
@@ -245,7 +245,7 @@
 	. = body.mend(tag, amount, target)
 	if(.)
 		BITSET(hud_updateflag, HEALTH_HUD)
-		life_wake(LIFE_WAKE_BODY, "mend")
+		wake_life(/datum/life_wake_event/body, "mend")
 
 /// Clear every affliction and restore the body plan's parts. Admin heal,
 /// rejuvenate, resleeve.
@@ -253,7 +253,7 @@
 	body?.clear_afflictions()
 	body?.restore()
 	BITSET(hud_updateflag, HEALTH_HUD)
-	life_wake(LIFE_WAKE_BODY, "fully healed")
+	wake_life(/datum/life_wake_event/body, "fully healed")
 
 
 // --- Questions ----------------------------------------------------------------------

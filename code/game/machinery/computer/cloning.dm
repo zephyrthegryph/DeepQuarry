@@ -1,6 +1,19 @@
 #define MENU_MAIN 1
 #define MENU_RECORDS 2
 
+/datum/object_model/relation/cloning_console_pod
+	from_type = /obj/machinery/computer/cloning
+	to_type = /obj/machinery/clonepod
+	target_single = TRUE
+
+/datum/object_model/relation/cloning_console_pod/on_unlink(datum/source, datum/target, reason)
+	var/obj/machinery/computer/cloning/console = source
+	var/obj/machinery/clonepod/pod = target
+	if(console.selected_pod == pod)
+		console.selected_pod = null
+	if(!om_is_dying(pod))
+		pod.name = initial(pod.name)
+
 /obj/machinery/computer/cloning
 	name = "cloning console"
 	icon = 'icons/obj/computer.dmi'
@@ -9,7 +22,6 @@
 	circuit = /obj/item/circuitboard/cloning
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
 	var/obj/machinery/dna_scannernew/scanner = null //Linked scanner. For scanning.
-	var/list/pods = null //Linked cloning pods.
 	var/list/temp = null
 	var/list/scantemp = null
 	var/menu = MENU_MAIN //Which menu screen to display
@@ -27,7 +39,6 @@
 
 /obj/machinery/computer/cloning/Initialize(mapload)
 	. = ..()
-	pods = list()
 	records = list()
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
@@ -39,6 +50,7 @@
 	return ..()
 
 /obj/machinery/computer/cloning/process()
+	var/list/pods = linked_pods()
 	if(!autoprocess)
 		return PROCESS_KILL
 	if(!scanner || !pods.len || stat & NOPOWER)
@@ -61,8 +73,12 @@
 	scanner = findscanner()
 	releasecloner()
 	findcloner()
+	var/list/pods = linked_pods()
 	if(!selected_pod && pods.len)
 		selected_pod = pods[1]
+
+/obj/machinery/computer/cloning/proc/linked_pods()
+	return om_linked(src, /datum/object_model/relation/cloning_console_pod)
 
 /obj/machinery/computer/cloning/proc/findscanner()
 	var/obj/machinery/dna_scannernew/scannerf = null
@@ -81,17 +97,13 @@
 	return 0
 
 /obj/machinery/computer/cloning/proc/releasecloner()
-	for(var/obj/machinery/clonepod/P in pods)
-		P.connected = null
-		P.name = initial(P.name)
-	pods.Cut()
+	for(var/obj/machinery/clonepod/P in linked_pods())
+		om_unlink(src, /datum/object_model/relation/cloning_console_pod, P)
 
 /obj/machinery/computer/cloning/proc/findcloner()
 	var/num = 1
 	for(var/obj/machinery/clonepod/P in get_area(src))
-		if(!P.connected)
-			pods += P
-			P.connected = src
+		if(!P.connected_console() && P.available_for_cloning_console() && om_link(src, /datum/object_model/relation/cloning_console_pod, P))
 			P.name = "[initial(P.name)] #[num++]"
 
 /obj/machinery/computer/cloning/attackby(obj/item/W as obj, mob/user as mob, params)
@@ -111,10 +123,8 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/pod = multitool.connecting
-	if(pod && !(pod in pods))
-		pods += pod
-		pod.connected = src
-		pod.name = "[initial(pod.name)] #[length(pods)]"
+	if(pod && pod.available_for_cloning_console() && !om_has_link(src, /datum/object_model/relation/cloning_console_pod, pod) && om_link(src, /datum/object_model/relation/cloning_console_pod, pod))
+		pod.name = "[initial(pod.name)] #[length(linked_pods())]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -145,6 +155,7 @@
 		ui.open()
 
 /obj/machinery/computer/cloning/tgui_data(mob/user)
+	var/list/pods = linked_pods()
 	var/data[0]
 	data["menu"] = menu
 	data["scanner"] = sanitize("[scanner]")
@@ -205,6 +216,7 @@
 	return data
 
 /obj/machinery/computer/cloning/tgui_act(action, params, datum/tgui/ui)
+	var/list/pods = linked_pods()
 	if(..())
 		return TRUE
 
@@ -373,6 +385,7 @@
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
+	var/list/pods = linked_pods()
 	if(stat & NOPOWER)
 		return
 	if(scanner.stat & (NOPOWER|BROKEN))

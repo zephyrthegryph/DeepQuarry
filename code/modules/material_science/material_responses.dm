@@ -46,7 +46,7 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	var/next_piezo_response = 0
 	var/stored_phase_energy = 0
 	var/stored_reactive_energy = 0
-	var/scintillation_timer
+	var/datum/object_model/schedule_entry/scintillation_timer
 
 /datum/component/material_response/Initialize(datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()
@@ -68,23 +68,30 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 
 /datum/component/material_response/Destroy(force)
 	GLOB.material_radiovoltaic_items -= parent
-	if(scintillation_timer)
-		deltimer(scintillation_timer)
-		scintillation_timer = null
 	return ..()
 
+/datum/component/material_response/proc/on_scintillation_due()
+	scintillation_timer = null
+	end_scintillation()
+
+/datum/component/material_response/proc/signal_handlers()
+	var/static/list/handlers = list(
+		COMSIG_ATOM_EXAMINE = PROC_REF(on_examine),
+		COMSIG_ATOM_TAKE_DAMAGE = PROC_REF(on_take_damage),
+		COMSIG_ATOM_PRE_EMP_ACT = PROC_REF(on_pre_emp),
+		COMSIG_ATOM_FIRE_ACT = PROC_REF(on_fire),
+		COMSIG_ATOM_PROPAGATE_RAD_PULSE = PROC_REF(on_propagated_radiation),
+		COMSIG_IN_RANGE_OF_IRRADIATION = PROC_REF(on_radiation),
+		COMSIG_ATOM_ATTACKBY = PROC_REF(on_attackby),
+		COMSIG_MATERIAL_SURGERY = PROC_REF(on_surgery),
+	)
+	return handlers
+
 /datum/component/material_response/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
-	RegisterSignal(parent, COMSIG_ATOM_TAKE_DAMAGE, PROC_REF(on_take_damage))
-	RegisterSignal(parent, COMSIG_ATOM_PRE_EMP_ACT, PROC_REF(on_pre_emp))
-	RegisterSignal(parent, COMSIG_ATOM_FIRE_ACT, PROC_REF(on_fire))
-	RegisterSignal(parent, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(on_propagated_radiation))
-	RegisterSignal(parent, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_radiation))
-	RegisterSignal(parent, COMSIG_ATOM_ATTACKBY, PROC_REF(on_attackby))
-	RegisterSignal(parent, COMSIG_MATERIAL_SURGERY, PROC_REF(on_surgery))
+	RegisterSignalMap(parent, signal_handlers())
 
 /datum/component/material_response/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_ATOM_EXAMINE, COMSIG_ATOM_TAKE_DAMAGE, COMSIG_ATOM_PRE_EMP_ACT, COMSIG_ATOM_FIRE_ACT, COMSIG_ATOM_PROPAGATE_RAD_PULSE, COMSIG_IN_RANGE_OF_IRRADIATION, COMSIG_ATOM_ATTACKBY, COMSIG_MATERIAL_SURGERY))
+	UnregisterSignalMap(parent, signal_handlers())
 
 /datum/component/material_response/proc/material() as /datum/material
 	return get_material_by_name(material_id)
@@ -176,11 +183,10 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		var/obj/item/item = parent
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
 		if(scintillation_timer)
-			deltimer(scintillation_timer)
-		scintillation_timer = addtimer(CALLBACK(src, PROC_REF(end_scintillation)), 5 SECONDS, TIMER_STOPPABLE)
+			qdel(scintillation_timer)
+		scintillation_timer = After(5 SECONDS, PROC_REF(on_scintillation_due))
 
 /datum/component/material_response/proc/end_scintillation()
-	scintillation_timer = null
 	var/obj/item/item = parent
 	var/datum/material/material = material()
 	if(!istype(item) || !material)

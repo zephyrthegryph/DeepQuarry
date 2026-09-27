@@ -1,7 +1,7 @@
 /// One eligible offer waiting for capacity on its station, department, or
 /// personal board. Candidates are deliberately cheaper than live contracts:
-/// no timers, requirements, physical supplies, or event subscriptions exist
-/// until the lifecycle engine admits them.
+/// no requirements, physical supplies, or event subscriptions exist until
+/// the lifecycle engine admits them. A deferred candidate owns its recheck timer.
 /datum/contract_offer_candidate
 	var/id
 	var/definition_id
@@ -13,6 +13,7 @@
 	var/expires_at
 	var/priority = 50
 	var/list/context
+	var/datum/object_model/schedule_entry/recheck_timer
 
 /datum/contract_offer_candidate/New(_id, _definition_id, _offer_key, _board_key, _offer_kind, _reason, list/_context, _expires_at, _priority)
 	. = ..()
@@ -205,8 +206,15 @@
 	if(cooldown_until > world.time)
 		recheck_delay = recheck_delay ? min(recheck_delay, cooldown_until - world.time) : cooldown_until - world.time
 	if(recheck_delay)
-		addtimer(CALLBACK(src, PROC_REF(reconcile_offer_board), "Candidate timer"), recheck_delay)
+		candidate.recheck_timer = om_timer(candidate, recheck_delay, src, "candidate_recheck")
 	return null
+
+/datum/controller/subsystem/contracts/om_on_timer(datum/entity, key)
+	if(key != "candidate_recheck" || !istype(entity, /datum/contract_offer_candidate))
+		return
+	var/datum/contract_offer_candidate/candidate = entity
+	candidate.recheck_timer = null
+	reconcile_offer_board("Candidate timer")
 
 /datum/controller/subsystem/contracts/proc/try_materialize_candidate(datum/contract_offer_candidate/candidate) as /datum/contract
 	if(!candidate || !(candidate in offer_candidates))

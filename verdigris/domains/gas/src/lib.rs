@@ -369,6 +369,7 @@ fn hook_mix_revision(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Returns: Heat capacity, in J/K (probably).
+/// @dm-health returns num
 #[auxmacros::bind("/datum/gas_mixture/proc/heat_capacity")]
 fn heat_cap_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.heat_capacity().into()))
@@ -385,6 +386,7 @@ fn min_heat_cap_hook(src: ByondValue, arg_min: ByondValue) -> Result<ByondValue>
 }
 
 /// Returns: Amount of substance, in moles.
+/// @dm-health returns num
 #[auxmacros::bind("/datum/gas_mixture/proc/total_moles")]
 fn total_moles_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.total_moles().into()))
@@ -555,6 +557,7 @@ fn set_volume_hook(src: ByondValue, vol_arg: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (gas_id). Returns: the amount of substance of the given gas, in moles.
+/// @dm-health returns num
 #[auxmacros::bind("/datum/gas_mixture/proc/get_moles")]
 fn get_moles_hook(src: ByondValue, gas_id: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| {

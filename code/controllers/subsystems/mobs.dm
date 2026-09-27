@@ -21,8 +21,17 @@ SUBSYSTEM_DEF(mobs)
 	)
 
 	var/list/currentrun = list()
+	/// Only mobs still using direct subsystem Life calls are sliced here.
+	var/list/legacy_mobs = list()
+	/// Newly initialized living mobs start their behaviour runtime once, after Initialize.
+	var/list/pending_living = list()
+	var/mob_partition_ready = FALSE
 	var/life_slices = 8
 	var/slice_budget_remaining = 0
+	/// Fixed for one legacy roster; recomputing from its shrinking remainder slows Life.
+	var/legacy_slice_budget = 1
+	/// Hold an early-drained roster until its full nominal eight-slice period ends.
+	var/legacy_slices_left = 0
 	/// Logical two-second Life cycle; unlike subsystem times_fired this does
 	/// not advance once per distribution slice.
 	var/life_cycle = 0
@@ -35,6 +44,8 @@ SUBSYSTEM_DEF(mobs)
 	var/list/death_list = list()
 	var/profile_sample_phase = 0
 	var/profile_run_index = 0
+	/// Continuous sample phase for living frames, which no longer follow SSmobs slices.
+	var/life_profile_index = 0
 	var/profile_sample_stride = 16
 	var/list/profile_type_cost = list()
 	var/list/profile_type_calls = list()
@@ -65,13 +76,51 @@ SUBSYSTEM_DEF(mobs)
 	msg = "P: [length(GLOB.mob_list)] | S: [slept_mobs] | H: [length(hibernating_mobs)] | D: [length(death_list)]"
 	return ..()
 
+/datum/controller/subsystem/mobs/proc/register_mob(mob/M)
+	if(!M || QDELETED(M))
+		return
+	if(istype(M, /mob/living))
+		if(!(M in pending_living) && !M.om_state?.behaviour_runtime)
+			pending_living += M
+	else if(!(M in legacy_mobs))
+		legacy_mobs += M
+
+/datum/controller/subsystem/mobs/proc/unregister_mob(mob/M)
+	currentrun -= M
+	legacy_mobs -= M
+	pending_living -= M
+
+/datum/controller/subsystem/mobs/proc/start_pending_living()
+	if(!length(pending_living))
+		return
+	var/start_count = min(length(pending_living), max(1, CEILING(length(GLOB.mob_list) / life_slices, 1)))
+	var/list/to_start = pending_living.Copy(1, start_count + 1)
+	pending_living.Cut(1, start_count + 1)
+	for(var/mob/living/new_living as anything in to_start)
+		if(new_living && !QDELETED(new_living))
+			if(!om_behaviour_start(new_living))
+				log_runtime("LIFE_SCHEDULE: failed to start object-model runtime for [new_living.type]; using SSmobs Life")
+				legacy_mobs += new_living
+
+/datum/controller/subsystem/mobs/proc/prepare_legacy_slice()
+	if(!length(currentrun) && !legacy_slices_left)
+		currentrun = legacy_mobs.Copy()
+		profile_run_index = 0
+		life_cycle++
+		legacy_slice_budget = max(1, CEILING(length(currentrun) / life_slices, 1))
+		legacy_slices_left = life_slices
+	if(legacy_slices_left > 0)
+		legacy_slices_left--
+	slice_budget_remaining = legacy_slice_budget
+
 /datum/controller/subsystem/mobs/fire(resumed = 0)
 	if (!resumed)
-		if(!length(src.currentrun))
-			src.currentrun = GLOB.mob_list.Copy()
-			profile_run_index = 0
-			life_cycle++
-		slice_budget_remaining = max(1, CEILING(length(src.currentrun) / life_slices, 1))
+		if(!mob_partition_ready)
+			mob_partition_ready = TRUE
+			for(var/mob/registered in GLOB.mob_list)
+				register_mob(registered)
+		start_pending_living()
+		prepare_legacy_slice()
 		if(world.time >= next_hibernation_audit && hibernation_audit_enabled())
 			next_hibernation_audit = world.time + MOB_HIBERNATION_AUDIT_INTERVAL
 			audit_hibernation()
@@ -104,7 +153,7 @@ SUBSYSTEM_DEF(mobs)
 		else if(!M.enabled)
 			slept_mobs++
 			continue
-		else if(M.life_hibernating)
+		if(M.life_hibernating)
 			slept_mobs++
 			continue
 
@@ -238,7 +287,7 @@ SUBSYSTEM_DEF(mobs)
 		else
 			GLOB.failed_any_test = TRUE
 #endif
-	L.life_wake(S.bit, "audit: [S.name]")
+	L.wake_life(S.type, "audit: [S.name]")
 	return S
 
 /datum/controller/subsystem/mobs/proc/log_recent()

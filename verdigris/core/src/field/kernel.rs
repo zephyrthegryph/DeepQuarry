@@ -112,6 +112,9 @@ fn clamp_to(q: f32, limit: f32) -> f32 {
 /// capacity. Never moves more than the pair's equalizing energy.
 #[must_use]
 pub fn conduction(a: Operand<'_, 1>, b: Operand<'_, 1>, conductance: f32, dt: f32) -> f32 {
+    if !valid_step(conductance, dt) || !valid_capacity(&a) || !valid_capacity(&b) {
+        return 0.0;
+    }
     let delta = a.amounts[0] / a.capacity - b.amounts[0] / b.capacity;
     let inv = a.inv_capacity + b.inv_capacity;
     if inv <= 0.0 {
@@ -123,7 +126,29 @@ pub fn conduction(a: Operand<'_, 1>, b: Operand<'_, 1>, conductance: f32, dt: f3
 /// Stiffness of [`conduction`] (and [`diffusion`]): `k * (1/Ca + 1/Cb)`.
 #[must_use]
 pub fn exchange_stiffness(coefficient: f32, a_inv_capacity: f32, b_inv_capacity: f32) -> f32 {
+    if !coefficient.is_finite()
+        || coefficient < 0.0
+        || !a_inv_capacity.is_finite()
+        || a_inv_capacity < 0.0
+        || !b_inv_capacity.is_finite()
+        || b_inv_capacity < 0.0
+    {
+        return 0.0;
+    }
     coefficient * (a_inv_capacity + b_inv_capacity)
+}
+
+fn valid_step(coefficient: f32, dt: f32) -> bool {
+    coefficient.is_finite() && coefficient >= 0.0 && dt.is_finite() && dt >= 0.0
+}
+
+fn valid_capacity<const N: usize>(side: &Operand<'_, N>) -> bool {
+    side.capacity.is_finite()
+        && side.capacity > 0.0
+        && side.inv_capacity.is_finite()
+        && side.inv_capacity >= 0.0
+        && !side.share.is_nan()
+        && side.share >= 0.0
 }
 
 /// Fickian diffusion of every component: flux_i = `coefficient * dt *
@@ -135,6 +160,9 @@ pub fn diffusion<const N: usize>(
     coefficient: f32,
     dt: f32,
 ) -> Amounts<N> {
+    if !valid_step(coefficient, dt) || !valid_capacity(&a) || !valid_capacity(&b) {
+        return Amounts::default();
+    }
     let inv = a.inv_capacity + b.inv_capacity;
     if inv <= 0.0 {
         return Amounts::default();
@@ -160,6 +188,9 @@ pub fn pressure_flow<const N: usize>(
     conductance: f32,
     dt: f32,
 ) -> Amounts<N> {
+    if !valid_step(conductance, dt) || !valid_capacity(&a) || !valid_capacity(&b) {
+        return Amounts::default();
+    }
     let dp = pa - pb;
     if !dp.is_finite() || dp == 0.0 || a.inv_capacity + b.inv_capacity <= 0.0 {
         return Amounts::default();
@@ -177,6 +208,10 @@ pub fn pressure_flow<const N: usize>(
 /// (0 for a reservoir or an empty side).
 #[must_use]
 pub fn pressure_stiffness(conductance: f32, a_dp_dn: f32, b_dp_dn: f32) -> f32 {
+    if !conductance.is_finite() || conductance < 0.0 || !a_dp_dn.is_finite() || !b_dp_dn.is_finite()
+    {
+        return 0.0;
+    }
     conductance * (a_dp_dn.max(0.0) + b_dp_dn.max(0.0))
 }
 
@@ -248,5 +283,19 @@ mod tests {
         // concentration (0), limited only by the room's share.
         assert_eq!(diffusion(room, space, 1e6, 1.0).0[0], 25.0);
         assert_eq!(diffusion(space, space, 1.0, 1.0), Amounts::default());
+    }
+
+    #[test]
+    fn invalid_steps_cannot_reverse_or_poison_a_flux() {
+        let (x, y) = ([10.0, 3.0], [2.0, 8.0]);
+        let (a, b) = (op(&x, 1.0, false), op(&y, 2.0, false));
+        assert_eq!(diffusion(a, b, -1.0, 1.0), Amounts::default());
+        assert_eq!(diffusion(a, b, 1.0, f32::NAN), Amounts::default());
+        assert_eq!(
+            pressure_flow(a, 5.0, b, 2.0, 2, -1.0, 1.0),
+            Amounts::default()
+        );
+        assert_eq!(pressure_stiffness(-1.0, 1.0, 1.0), 0.0);
+        assert_eq!(exchange_stiffness(f32::NAN, 1.0, 1.0), 0.0);
     }
 }

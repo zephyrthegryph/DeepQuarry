@@ -30,7 +30,7 @@
 	var/can_reject = 1					// Can this organ reject?
 	var/rejecting						// Is this organ already being rejected?
 	var/decays = TRUE					// Can this organ decay at all?
-	var/preserved = 0					// If this is 1, prevents organ decay.
+	var/preserved = 0					// If this is 1, prevents organ decay. Use set_preserved().
 
 	// Language vars. Putting them here in case we decide to do something crazy with sign-or-other-nonverbal languages.
 	var/list/will_assist_languages = list()
@@ -48,6 +48,7 @@
 	var/special_handling = FALSE
 
 /obj/item/organ/Destroy()
+	om_behaviour_release(src)
 
 	handle_organ_mod_special(TRUE)
 	// Afflictions located on this organ die with it, attached or detached.
@@ -118,6 +119,15 @@
 
 	handle_organ_mod_special()
 
+/obj/item/organ/Moved(atom/old_loc, direction, forced = FALSE, movetime)
+	. = ..()
+	if(QDELETED(src))
+		return
+	if(!owner && !preserved)
+		start_detached_decay()
+	else
+		om_behaviour_refresh(src)
+
 /obj/item/organ/proc/set_initial_meat()
 	if(owner)
 		if(!meat_type)
@@ -144,6 +154,7 @@
 		status |= ORGAN_DEAD
 	saturate_damage()
 	STOP_PROCESSING(SSobj, src)
+	om_behaviour_refresh(src)
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
@@ -156,6 +167,33 @@
 
 /obj/item/organ/proc/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
+
+/// Start the detached schedule only after removal has cleared owner.
+/obj/item/organ/proc/start_detached_decay()
+	if(owner || (status & ORGAN_DEAD))
+		return
+	STOP_PROCESSING(SSobj, src)
+	om_behaviour_start(src)
+	om_behaviour_refresh(src)
+
+/// Revived attached organs retain their old subsystem processing path.
+/obj/item/organ/proc/resume_organ_processing()
+	if(owner)
+		START_PROCESSING(SSobj, src)
+	else
+		start_detached_decay()
+
+/// Preservation deactivates the decay deadline; release starts a fresh one.
+/obj/item/organ/proc/set_preserved(active)
+	active = !!active
+	if(preserved == active)
+		return FALSE
+	preserved = active
+	if(!owner && !active)
+		start_detached_decay()
+	else
+		om_behaviour_refresh(src)
+	return TRUE
 
 /obj/item/organ/process()
 
@@ -473,7 +511,6 @@
 		if(affected) affected.internal_organs -= src
 
 		owner.remove_from_mob(src, owner.drop_location())
-		START_PROCESSING(SSobj, src)
 		rejecting = null
 
 	if(istype(owner))
@@ -495,6 +532,7 @@
 	handle_organ_mod_special(TRUE)
 
 	owner = null
+	start_detached_decay()
 	// Detached: integrity now derives from the afflictions it carries.
 	recalc_integrity()
 
@@ -518,6 +556,7 @@
 
 	owner = target
 	loc = owner
+	om_behaviour_refresh(src)
 	STOP_PROCESSING(SSobj, src)
 	target.internal_organs |= src
 	affected.internal_organs |= src
@@ -582,7 +621,7 @@
 			else
 				damage--
 			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			START_PROCESSING(SSobj, src) //When an organ dies, it stops processing. This restarts it.
+			resume_organ_processing() // Dead organs stop processing; revive on the correct scheduler.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
 			return

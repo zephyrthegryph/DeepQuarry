@@ -93,7 +93,8 @@
 	return ..()
 
 /datum/affliction/custom/tick()
-	if(!owner || QDELETED(location) || location.owner != owner)
+	var/obj/item/organ/O = location
+	if(!owner || !istype(O) || QDELETED(O) || O.owner != owner)
 		return
 	..()
 
@@ -121,12 +122,15 @@
 
 /datum/affliction/custom/proc/apply_custom_damage()
 	if(damage_organ)
+		var/obj/item/organ/O = location
+		if(!istype(O))
+			return
 		if(istype(location, /obj/item/organ/external))
 			var/obj/item/organ/external/E = location
 			if(E.get_trauma() + E.get_burn() < damage_max)
 				owner.injure(INJURY_BLUNT, damage_strength, E.organ_tag, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-		else if(location.damage < damage_max)
-			owner.injure(INJURY_BLUNT, min(damage_strength, damage_max - location.damage), location, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+		else if(O.damage < damage_max)
+			owner.injure(INJURY_BLUNT, min(damage_strength, damage_max - O.damage), O, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 		return
 	if(!damage_kind)
 		return
@@ -169,7 +173,8 @@
 		return "Suggested treatment: Prescription of [cure_reagent_name]."
 	if(cure_surgery)
 		return "Required surgery: [cure_surgery_name]."
-	return "[location ? capitalize(location.name) : "The affected organ"] may require surgical removal or transplantation."
+	var/where = location_name()
+	return "[where ? capitalize(where) : "The affected organ"] may require surgical removal or transplantation."
 
 /// Custom afflictions on `O` (in a body or detached).
 /proc/dq_custom_afflictions_on(obj/item/organ/O)

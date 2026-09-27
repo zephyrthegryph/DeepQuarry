@@ -5,9 +5,14 @@
 
 /////// Grower Pod ///////
 /obj/machinery/clonepod/transhuman
+	/// Resleeving consoles still maintain their own pod list and connection.
+	var/obj/machinery/computer/transhuman/resleeving/connected
 	name = "grower pod"
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	circuit = /obj/item/circuitboard/transhuman_clonepod
+
+/obj/machinery/clonepod/transhuman/available_for_cloning_console()
+	return !connected
 
 //A full version of the pod
 /obj/machinery/clonepod/transhuman/full/Initialize(mapload)

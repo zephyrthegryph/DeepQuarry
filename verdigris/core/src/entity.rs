@@ -30,8 +30,8 @@ pub const MAX_GENERATION: u8 = (1 << GENERATION_BITS) - 1;
 /// A freed slot is reused only once this many *other* slots have also been
 /// freed since (`rust_architecture.md` §4.1's quarantined FIFO). Aliasing a
 /// stale handle would need 32 reuses of one slot, each behind a quarantine
-/// this long — the generation check is a debug assertion backed by a real
-/// one, not the only defence.
+/// this long. Slots retire before their generation wraps, so a stale handle
+/// can never become live again.
 pub const QUARANTINE: usize = 4096;
 
 const INDEX_MASK: u32 = MAX_SLOTS - 1;
@@ -169,6 +169,8 @@ pub enum EntityError {
     Full,
     /// The entity is live but has no component for that domain.
     NoComponent { domain: usize },
+    /// Binding tried to replace a live component without detaching it.
+    OccupiedDomain { domain: usize, found: u16 },
     /// The entity has a component for that domain, but of a different kind
     /// than the caller expected (a `set_*` generated for one component
     /// called through an atom now holding another).
@@ -184,6 +186,7 @@ impl fmt::Display for EntityError {
             Self::OutOfRange => write!(f, "entity id index out of range"),
             Self::Full => write!(f, "entity table is full"),
             Self::NoComponent { domain } => write!(f, "entity has no component for domain {domain}"),
+            Self::OccupiedDomain { domain, found } => write!(f, "entity already has kind {found} in domain {domain}"),
             Self::WrongKind {
                 domain,
                 expected,
@@ -213,6 +216,9 @@ pub struct EntityTable {
     /// others have been freed after it.
     quarantine: VecDeque<u32>,
     len: usize,
+    /// Slots whose 5-bit generation would wrap are never reused. This
+    /// preserves stale-handle rejection even after an arbitrarily long run.
+    retired: usize,
 }
 
 impl Default for EntityTable {
@@ -228,6 +234,7 @@ impl EntityTable {
             slots: Vec::new(),
             quarantine: VecDeque::new(),
             len: 0,
+            retired: 0,
         }
     }
 
@@ -235,9 +242,11 @@ impl EntityTable {
     /// (§4.1's "one call creates the entity and its components").
     ///
     /// # Errors
-    /// [`EntityError::Full`] if every slot is in use or quarantined.
+    /// [`EntityError::Full`] if every slot is in use, quarantined or retired.
     pub fn bind(&mut self) -> Result<EntityId, EntityError> {
-        let index = if self.quarantine.len() > QUARANTINE {
+        let index = if self.quarantine.len() > QUARANTINE
+            || (self.slots.len() >= MAX_SLOTS as usize && !self.quarantine.is_empty())
+        {
             self.quarantine.pop_front().expect("checked non-empty")
         } else {
             let next = self.slots.len();
@@ -279,13 +288,20 @@ impl EntityTable {
         Ok(slot)
     }
 
-    /// Attaches (or replaces) `domain`'s component on a live entity.
+    /// Attaches `domain`'s component on a live entity. A live slot cannot be
+    /// replaced because that would orphan the old domain row.
     ///
     /// # Errors
     /// [`EntityError::Stale`]/[`OutOfRange`](EntityError::OutOfRange) for a
     /// bad id, [`EntityError::BadDomain`] for `domain >= MAX_DOMAINS`.
     pub fn attach(&mut self, entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(), EntityError> {
         let slots = self.slot_mut(entity)?.live.as_mut().expect("checked live");
+        if domain >= MAX_DOMAINS {
+            return Err(EntityError::BadDomain { domain });
+        }
+        if let Some(existing) = slots.get(domain) {
+            return Err(EntityError::OccupiedDomain { domain, found: existing.kind });
+        }
         if !slots.set(domain, Some(comp)) {
             return Err(EntityError::BadDomain { domain });
         }
@@ -349,13 +365,16 @@ impl EntityTable {
             slots.is_empty(),
             "unbind: entity still has attached components; detach them first"
         );
-        slot.generation = if slot.generation == MAX_GENERATION {
-            0
-        } else {
-            slot.generation + 1
-        };
+        let retire = slot.generation == MAX_GENERATION;
+        if !retire {
+            slot.generation += 1;
+        }
         self.len -= 1;
-        self.quarantine.push_back(index);
+        if retire {
+            self.retired += 1;
+        } else {
+            self.quarantine.push_back(index);
+        }
         Ok(slots)
     }
 
@@ -381,6 +400,12 @@ impl EntityTable {
         self.quarantine.len().min(QUARANTINE)
     }
 
+    /// Slots permanently retired to prevent generation wraparound.
+    #[must_use]
+    pub const fn retired(&self) -> usize {
+        self.retired
+    }
+
     /// Live entities and their components, for the reconciler and
     /// `vg_describe()`.
     pub fn iter(&self) -> impl Iterator<Item = (EntityId, &EntitySlots)> {
@@ -402,6 +427,7 @@ impl EntityTable {
 pub struct CellAllocator {
     next: u32,
     free: Vec<u32>,
+    live: Vec<bool>,
 }
 
 impl CellAllocator {
@@ -410,22 +436,33 @@ impl CellAllocator {
         Self {
             next: 0,
             free: Vec::new(),
+            live: Vec::new(),
         }
     }
 
     /// Allocates a cell, reusing a freed one if any.
     pub fn alloc(&mut self) -> u32 {
-        self.free.pop().unwrap_or_else(|| {
+        let cell = self.free.pop().unwrap_or_else(|| {
             let cell = self.next;
             self.next += 1;
+            self.live.push(false);
             cell
-        })
+        });
+        self.live[cell as usize] = true;
+        cell
     }
 
     /// Returns a cell for reuse. Callers must have already reset its value
     /// (the owning store's take/unbind path).
     pub fn free_cell(&mut self, cell: u32) {
+        assert!(self.live.get(cell as usize).copied().unwrap_or(false), "freeing an unallocated cell");
+        self.live[cell as usize] = false;
         self.free.push(cell);
+    }
+
+    #[must_use]
+    pub fn contains(&self, cell: u32) -> bool {
+        self.live.get(cell as usize).copied().unwrap_or(false)
     }
 
     /// Cells currently allocated.
@@ -453,6 +490,11 @@ mod tests {
         assert_eq!(table.component(e, 0, 7), Err(EntityError::NoComponent { domain: 0 }));
 
         table.attach(e, 0, ComponentRef::new(7, 42)).unwrap();
+        assert_eq!(table.component(e, 0, 7), Ok(ComponentRef::new(7, 42)));
+        assert_eq!(
+            table.attach(e, 0, ComponentRef::new(8, 99)),
+            Err(EntityError::OccupiedDomain { domain: 0, found: 7 })
+        );
         assert_eq!(table.component(e, 0, 7), Ok(ComponentRef::new(7, 42)));
         assert_eq!(
             table.component(e, 0, 8),
@@ -532,5 +574,31 @@ mod tests {
         let c2 = a.alloc();
         assert_eq!(c2, c0, "freed cells are reused");
         assert_eq!(a.high_water(), 2);
+    }
+
+    #[test]
+    fn final_generation_retires_instead_of_revalidating_a_stale_id() {
+        let mut table = EntityTable::new();
+        let id = table.bind().unwrap();
+        table.slots[id.index() as usize].generation = MAX_GENERATION;
+        let final_id = EntityId::new(id.index(), MAX_GENERATION).unwrap();
+        table.unbind(final_id).unwrap();
+        assert_eq!(table.retired(), 1);
+        assert!(!table.contains(id));
+        assert!(!table.contains(final_id));
+        for _ in 0..=QUARANTINE {
+            let another = table.bind().unwrap();
+            assert_ne!(another.index(), id.index());
+            table.unbind(another).unwrap();
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "freeing an unallocated cell")]
+    fn cell_allocator_rejects_double_free() {
+        let mut rows = CellAllocator::new();
+        let row = rows.alloc();
+        rows.free_cell(row);
+        rows.free_cell(row);
     }
 }

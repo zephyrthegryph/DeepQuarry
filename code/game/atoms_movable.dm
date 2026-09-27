@@ -89,9 +89,45 @@
 	// Last, so registries and signals this atom's inputs might read (e.g.
 	// REGISTRY_MACHINES via join_registries() in the base on_materialize())
 	// are already in place.
-	vg_bind()
+	// Static object-model declarations may seed generated Rust components
+	// directly from their archetype config. Legacy types keep the old path.
+	if(!vg_bind_for_materialization())
+		stack_trace("Rust binding failed for [type] ([src]); preserving vg_entity [vg_entity] without SSvg registration")
+		return
 	if(vg_entity)
 		SSvg.register(src)
+
+/// A failed domain check must leave the borrowed handle intact and out of SSvg.
+/atom/movable/proc/vg_bind_for_materialization()
+	var/original_handle = vg_entity
+	var/static/list/has_declaration_by_type = list()
+	var/has_declaration = has_declaration_by_type[type]
+	if(isnull(has_declaration))
+		has_declaration = !!om_declaration_for(type)
+		has_declaration_by_type[type] = has_declaration
+	if(has_declaration)
+		var/datum/object_model/archetype/A = om_archetype_for(type, src)
+		if(length(A.components))
+			// Resolve a declaration/legacy domain disagreement before either path
+			// can attach a component to a borrowed Rust entity.
+			for(var/path in A.component_order)
+				var/datum/object_model/rust_component/C = om_rust_component(path)
+				if(C.domain_id == VG_DOMAIN_GAS && vg_gas && C.kind != vg_gas)
+					if(vg_entity)
+						SSvg.unregister(src)
+					return FALSE
+			if(!om_rust_bind(src))
+				if(vg_entity)
+					SSvg.unregister(src)
+				return FALSE
+	if(!vg_bind() && vg_gas)
+		if(vg_entity)
+			SSvg.unregister(src)
+		if(!original_handle && vg_entity)
+			vg_entity_unbind(vg_entity)
+			vg_entity = 0
+		return FALSE
+	return TRUE
 
 /atom/movable/on_dematerialize()
 	// R10 unbind. J1's pre_destroy() is the design's intended call site
@@ -115,8 +151,14 @@
 	// slot's declared policy said, in the destroy transaction's phase 3
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
 	// Destroy() ever runs. Nothing decides that here any more.
-	if((ledger || dq_slot_defs_for(src)) && (length(contents) || has_latent()))
-		stack_trace("[type] still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them")
+	if(ledger)
+		for(var/datum/slot_def/def as anything in ledger.defs)
+			// HOLDER entries intentionally remain for the ordinary parent teardown.
+			if(def.drop_policy == SLOT_DROP_HOLDER)
+				continue
+			for(var/atom/movable/thing as anything in ledger.slots[def.id])
+				if(!QDELETED(thing))
+					stack_trace("[type] still holds [thing.type] in [def.id] entering Destroy() -- the destroy transaction's contents phase should have released it")
 	if(em_block)
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)
@@ -390,6 +432,13 @@
 		glide_for(movetime)
 		last_move = isnull(direction) ? 0 : direction
 		loc = destination
+		if(!same_loc)
+			// Dirty virtual containment reads before the ledger publishes its
+			// contents event, so synchronous observers cannot read stale views.
+			if(oldloc?.om_state || om_state)
+				om_physical_contents_changed(oldloc, src)
+			if(destination.om_state || om_state)
+				om_physical_contents_changed(destination, src)
 		// The containment ledger's commit point: account for the move before
 		// anything else can react to it.
 		if(!same_loc)
@@ -466,6 +515,8 @@
 		if(move_hooks)
 			move_hooks_dispatch(TRUE)
 		loc = null
+		if(oldloc.om_state || om_state)
+			om_physical_contents_changed(oldloc, src)
 		oldloc.ledger?.note_exit(src)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
@@ -826,4 +877,3 @@
 	if(href_list[VV_HK_EDIT_PARTICLES] && check_rights(R_VAREDIT))
 		var/client/C = usr.client
 		C?.open_particle_editor(src)
-

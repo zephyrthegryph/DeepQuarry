@@ -164,8 +164,6 @@
 /obj/machinery/alarm/Destroy()
 	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	unregister_radio(src, frequency)
-	qdel(wires)
-	wires = null
 	LAZYREMOVE(alarm_area.air_alarms, src)
 	if(alarm_area.main_air_alarm?.resolve() == src)
 		alarm_area.elect_main_air_alarm(TRUE)

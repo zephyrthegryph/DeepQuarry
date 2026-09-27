@@ -138,7 +138,7 @@
 	if(mod.on_created_text)
 		to_chat(src, mod.on_created_text)
 	LAZYADD(modifiers, mod)
-	life_wake(LIFE_SYS_UPKEEP, "modifier")
+	wake_life(/datum/life_wake_event/upkeep, "modifier")
 	if(mod.flags & MODIFIER_GENETIC)
 		record_genetic_modifier(mod.type, TRUE)
 	if(mod.factors)
@@ -277,13 +277,41 @@
 /// Key in resist_full / resist_empty that applies to every injury category.
 #define SHIELD_RESIST_ALL 0
 
+/datum/object_model/relation/shield_projection_holder
+	from_type = /datum/modifier/shield_projection
+	to_type = /mob/living
+	source_single = TRUE
+	changes_revision = FALSE
+
+/datum/object_model/relation/shield_projection_holder/on_link(datum/source, datum/target)
+	var/datum/modifier/shield_projection/shield = source
+	var/mob/living/L = target
+	shield.RegisterSignal(L, COMSIG_LIVING_SHIELD_INJURY, TYPE_PROC_REF(/datum/modifier/shield_projection, on_holder_injure))
+
+/datum/object_model/relation/shield_projection_holder/on_unlink(datum/source, datum/target, reason)
+	var/datum/modifier/shield_projection/shield = source
+	var/mob/living/L = target
+	shield.UnregisterSignal(L, COMSIG_LIVING_SHIELD_INJURY)
+
 /datum/modifier/shield_projection/on_applied()
-	RegisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(on_holder_injure))
+	om_link(src, /datum/object_model/relation/shield_projection_holder, holder)
 
 /datum/modifier/shield_projection/on_expire()
-	UnregisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY)
+	om_unlink(src, /datum/object_model/relation/shield_projection_holder, holder)
 
 /datum/modifier/shield_projection/Destroy(force)
+	var/mob/living/L = holder
+	// expire() handles normal removal. Direct qdel must also drop the legacy
+	// list/index entry so a dead shield cannot leave its factor or sprite active.
+	if(L && !QDELETED(L))
+		var/list/current_modifiers = L.modifiers
+		var/was_active = current_modifiers && current_modifiers.Find(src)
+		if(was_active)
+			LAZYREMOVE(L.modifiers, src)
+			if(factors)
+				L.invalidate_factors()
+			if(mob_overlay_state)
+				L.update_modifier_visuals()
 	shield_generator = null
 	energy_source = null
 	return ..()

@@ -46,6 +46,21 @@
 					var/mob/living/simple_mob/animal/sif/glitterfly/B = new(affected_mob.loc)
 					addtimer(CALLBACK(B, TYPE_PROC_REF(/mob/living/simple_mob/animal/sif/glitterfly, decompose)), rand(5, 25) SECONDS)
 
+/datum/disease/anxiety/stage_biology()
+	if(!..())
+		return FALSE
+	if(stage == 3 && prob(2))
+		affected_mob.AdjustConfused(rand(4, 6))
+	if(stage == 4)
+		if(prob(5))
+			affected_mob.AdjustConfused(rand(12, 16))
+			affected_mob.make_jittery(100 + rand(12, 16))
+		if(prob(2))
+			for(var/i in 1 to 2)
+				var/mob/living/simple_mob/animal/sif/glitterfly/B = new(affected_mob.loc)
+				addtimer(CALLBACK(B, TYPE_PROC_REF(/mob/living/simple_mob/animal/sif/glitterfly, decompose)), rand(5, 25) SECONDS)
+	return TRUE
+
 /mob/living/simple_mob/animal/sif/glitterfly/proc/decompose()
 	visible_message(
 		span_notice("[src] decomposes due to being outside of its original habitat for too long!"),

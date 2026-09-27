@@ -1,6 +1,43 @@
 //
 // Wall mounted holomap of the station
 //
+/// One active watcher per map and one map per watcher. The edge owns movement
+/// observation and screen cleanup; the map datum remains the image authority.
+/datum/object_model/relation/station_map_watcher
+	from_type = /obj/machinery/station_map
+	to_type = /mob/living
+	source_single = TRUE
+	target_single = TRUE
+
+/datum/object_model/relation/station_map_watcher/on_link(datum/source, datum/target)
+	var/obj/machinery/station_map/station_map = source
+	var/mob/living/watcher = target
+	station_map.watching_mob = watcher
+	station_map.Observe(watcher, COMSIG_MOVABLE_ATTEMPTED_MOVE, TYPE_PROC_REF(/obj/machinery/station_map, checkPosition), /datum/component/recursive_move)
+	station_map.Observe(watcher, COMSIG_MOB_LOGOUT, TYPE_PROC_REF(/obj/machinery/station_map, on_watcher_logout))
+	START_MACHINE_PROCESSING(station_map)
+	station_map.update_use_power(USE_POWER_ACTIVE)
+
+/datum/object_model/relation/station_map_watcher/on_unlink(datum/source, datum/target, reason)
+	var/obj/machinery/station_map/station_map = source
+	var/mob/living/watcher = target
+	station_map.Unobserve(COMSIG_MOVABLE_ATTEMPTED_MOVE, TYPE_PROC_REF(/obj/machinery/station_map, checkPosition))
+	station_map.Unobserve(COMSIG_MOB_LOGOUT, TYPE_PROC_REF(/obj/machinery/station_map, on_watcher_logout))
+	var/client/watcher_client = watcher.client
+	var/image/map_image = station_map.holomap_datum?.station_map
+	if(watcher_client && !QDELETED(watcher_client) && map_image)
+		if(om_is_dying(watcher))
+			watcher_client.images -= map_image
+		else
+			animate(map_image, alpha = 0, time = 5, easing = LINEAR_EASING)
+			spawn(5)
+				if(watcher_client && !QDELETED(watcher_client) && (QDELETED(station_map) || station_map.watching_mob?.client != watcher_client))
+					watcher_client.images -= map_image
+	if(station_map.watching_mob == watcher)
+		station_map.watching_mob = null
+	if(!om_is_dying(station_map))
+		station_map.update_use_power(USE_POWER_IDLE)
+
 /obj/machinery/station_map
 	name = "station holomap"
 	desc = "A virtual map of the surrounding station."
@@ -118,6 +155,8 @@
 	// TODO - This part!! ~Leshana
 	if(isliving(user) && anchored && !(stat & (NOPOWER|BROKEN)))
 		if(user.client)
+			if(!om_link(src, /datum/object_model/relation/station_map_watcher, user))
+				return
 			holomap_datum.station_map.loc = GLOB.global_hud.holomap  // Put the image on the holomap hud
 			holomap_datum.station_map.alpha = 0 // Set to transparent so we can fade in
 			animate(holomap_datum.station_map, alpha = 255, time = 5, easing = LINEAR_EASING)
@@ -125,14 +164,6 @@
 			// Wait, if wea re not modifying the holomap_obj... can't it be part of the global hud?
 			user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
 			user.client.images |= holomap_datum.station_map
-
-			watching_mob = user
-			START_MACHINE_PROCESSING(src)
-			watching_mob.AddComponent(/datum/component/recursive_move)
-			RegisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
-			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
-			RegisterSignal(watching_mob, COMSIG_OBSERVER_DESTROYED, /obj/machinery/station_map/proc/stopWatching)
-			update_use_power(USE_POWER_ACTIVE)
 
 			if(bogus)
 				to_chat(user, span_warning("The holomap failed to initialize. This area of space cannot be mapped."))
@@ -154,18 +185,13 @@
 	if(!watching_mob || (watching_mob.loc != loc) || (dir != watching_mob.dir))
 		stopWatching()
 
-/obj/machinery/station_map/proc/stopWatching()
+/obj/machinery/station_map/proc/on_watcher_logout()
 	SIGNAL_HANDLER
+	stopWatching()
+
+/obj/machinery/station_map/proc/stopWatching()
 	if(watching_mob)
-		if(watching_mob.client)
-			animate(holomap_datum.station_map, alpha = 0, time = 5, easing = LINEAR_EASING)
-			var/mob/M = watching_mob
-			spawn(5) //we give it time to fade out
-				M.client.images -= holomap_datum.station_map
-		UnregisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-		//GLOB.dir_set_event.unregister(watching_mob, src)
-		UnregisterSignal(watching_mob, COMSIG_OBSERVER_DESTROYED)
-	watching_mob = null
+		return om_unlink(src, /datum/object_model/relation/station_map_watcher, watching_mob)
 	update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()
@@ -254,4 +280,3 @@
 	var/id // used for icon_state of the marker on maps
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
-

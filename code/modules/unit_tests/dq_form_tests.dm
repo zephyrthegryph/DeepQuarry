@@ -103,8 +103,11 @@
 	H.mend(TREAT_PLATING_REPAIR, 1)
 	H.mend(TREAT_DEFIBRILLATION, 1)
 	TEST_ASSERT_EQUAL(D.revival_step, DORMANCY_REBOOTING, "calibration, plating repair and defibrillation should start the reboot")
+	var/datum/object_model/schedule_entry/reboot = D.reboot_timer
+	TEST_ASSERT_NOTNULL(reboot, "the reboot should have an owned schedule entry")
 
 	D.complete_revival()
+	TEST_ASSERT(QDELETED(reboot), "finishing revival should cancel the pending reboot")
 	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/core_dormancy), "revival should end dormancy")
 	TEST_ASSERT(!H.body.is_dead(), "revival should rebuild the body")
 

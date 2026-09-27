@@ -35,6 +35,11 @@
 /datum/life_system/trait/photosynth
 	name = "photosynth"
 	component_type = /datum/component/photosynth
+	biology_catchup = TRUE
 
 /datum/life_system/trait/photosynth/tick_component(mob/living/self, datum/component/photosynth/component)
 	component.process_component()
+
+/datum/life_system/trait/photosynth/tick_biology(mob/living/self, datum/life_context/ctx)
+	for(var/datum/component/photosynth/component as anything in self.GetComponents(component_type))
+		component.process_component()

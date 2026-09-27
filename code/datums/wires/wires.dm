@@ -36,6 +36,10 @@
 		CRASH("Our holder is null/the wrong type!")
 
 	holder = _holder
+	// The atom owns its wiring even when older callers assign `wires` directly.
+	// The setter also claims restored wires that were constructed without one.
+	if(holder && !om_claim(holder, "om:wires", src))
+		CRASH("Could not attach wires to their holder")
 
 	// Add in the appropriate amount of dud wires.
 	var/wire_len = length(wires)
@@ -62,6 +66,8 @@
 /datum/wires/Destroy()
 	for(var/color in assemblies)
 		detach_assembly(color)
+	if(holder?.wires == src)
+		holder.wires = null
 	holder = null
 	return ..()
 

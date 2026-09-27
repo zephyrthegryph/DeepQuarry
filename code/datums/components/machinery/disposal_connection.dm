@@ -1,8 +1,5 @@
 ///Disposal connection component, allows an atom to recieve and send disposal packages if attached to a disposal trunk.
 /datum/component/disposal_system_connection
-	//The connected trunk. Also determines if we're linked already or not.
-	var/obj/structure/disposalpipe/trunk/connected_trunk = null
-
 	var/atom/disposal_owner
 	/// The proc that the owner has that'll accept a list of items from recieved disposal packets.
 	var/visible_connection
@@ -16,11 +13,26 @@
 	visible_connection = visibly_connects
 
 /datum/component/disposal_system_connection/Destroy()
-	if(connected_trunk)
-		UnregisterSignal(connected_trunk, COMSIG_DISPOSAL_SEND)
-		connected_trunk = null
 	. = ..()
 	disposal_owner = null
+
+/// The component owns the connection; the trunk can accept only one owner.
+/datum/object_model/relation/disposal_trunk
+	from_type = /datum/component/disposal_system_connection
+	to_type = /obj/structure/disposalpipe/trunk
+	source_single = TRUE
+	target_single = TRUE
+
+/datum/object_model/relation/disposal_trunk/on_link(datum/source, datum/target)
+	var/datum/component/disposal_system_connection/connection = source
+	connection.RegisterSignal(target, COMSIG_DISPOSAL_SEND, TYPE_PROC_REF(/datum/component/disposal_system_connection, on_recieve))
+
+/datum/object_model/relation/disposal_trunk/on_unlink(datum/source, datum/target, reason)
+	var/datum/component/disposal_system_connection/connection = source
+	connection.UnregisterSignal(target, COMSIG_DISPOSAL_SEND)
+
+/datum/component/disposal_system_connection/proc/connected_trunk()
+	return om_first_linked(src, /datum/object_model/relation/disposal_trunk)
 
 /datum/component/disposal_system_connection/RegisterWithParent()
 	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_FLUSH, PROC_REF(on_flush))
@@ -49,19 +61,16 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!trunk)
 		return FALSE
-	if(trunk.linked) //Already linked to something
+	if(trunk.linked_owner()) //Already linked to something
 		return FALSE
-	connected_trunk = trunk
-	trunk.linked = disposal_owner
-	RegisterSignal(trunk, COMSIG_DISPOSAL_SEND, PROC_REF(on_recieve))
+	return om_link(src, /datum/object_model/relation/disposal_trunk, trunk)
 
 /datum/component/disposal_system_connection/proc/unlink_from_trunk(datum/source)
 	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(connected_trunk)
-		connected_trunk.linked = null
-		UnregisterSignal(connected_trunk, COMSIG_DISPOSAL_SEND)
-		connected_trunk = null
+	var/obj/structure/disposalpipe/trunk/trunk = connected_trunk()
+	if(trunk)
+		om_unlink(src, /datum/object_model/relation/disposal_trunk, trunk)
 
 /datum/component/disposal_system_connection/proc/on_recieve(datum/source, obj/structure/disposalholder/packet)
 	SIGNAL_HANDLER
@@ -72,7 +81,7 @@
 	SIGNAL_HANDLER
 	if(!visible_connection)
 		return
-	examine_texts += span_notice("It [connected_trunk ? "is connected" : "can be connected"] to a disposal pipe network.")
+	examine_texts += span_notice("It [connected_trunk() ? "is connected" : "can be connected"] to a disposal pipe network.")
 
 // Flush handling, can be override by subtypes but excepts parent proc to handle core logic
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,14 +89,15 @@
 	PROTECTED_PROC(TRUE)
 	SHOULD_CALL_PARENT(TRUE)
 	// if no trunk connected, return false
-	if(!connected_trunk)
+	var/obj/structure/disposalpipe/trunk/trunk = connected_trunk()
+	if(!trunk)
 		return FALSE
 
 	var/obj/structure/disposalholder/packet = new()	// virtual holder object which actually travels through the pipes.
 	packet.init(flushed_items, flush_gas)
 
 	// start the holder processing movement
-	packet.forceMove(connected_trunk)
+	packet.forceMove(trunk)
 	packet.active = TRUE
 	packet.set_dir(DOWN)
 	packet.move()

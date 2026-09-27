@@ -114,6 +114,11 @@
 	..()
 
 /datum/species/xenos/environment_effects(mob/living/carbon/human/H)
+	if(!environment_biology(H, FALSE))
+		return
+	..()
+
+/datum/species/xenos/environment_biology(mob/living/carbon/human/H, quiet = TRUE)
 
 	var/turf/T = H.loc
 	if(!T) return
@@ -121,13 +126,14 @@
 	if(!environment) return
 
 	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate(/obj/effect/alien/weeds) in T)
-		if(!regenerate(H))
+		if(!regenerate(H, quiet))
 			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
-			P.stored_plasma += weeds_plasma_rate
-			P.stored_plasma = min(max(P.stored_plasma,0),P.max_plasma)
-	..()
+			if(istype(P))
+				P.stored_plasma += weeds_plasma_rate
+				P.stored_plasma = min(max(P.stored_plasma,0),P.max_plasma)
+	return TRUE
 
-/datum/species/xenos/proc/regenerate(mob/living/carbon/human/H)
+/datum/species/xenos/proc/regenerate(mob/living/carbon/human/H, quiet = FALSE)
 	var/heal_rate = weeds_heal_rate
 	var/mend_prob = 10
 	if (!H.resting)
@@ -140,7 +146,7 @@
 		H.mend(TREAT_BURN_CARE, heal_rate)
 		H.mend(TREAT_OXYGENATION, heal_rate)
 		H.mend(TREAT_ANTITOXIN, heal_rate)
-		if (prob(5))
+		if (!quiet && prob(5))
 			to_chat(H, span_alien("You feel a soothing sensation come over you..."))
 		return 1
 
@@ -148,7 +154,7 @@
 	for(var/obj/item/organ/internal/I in H.internal_organs)
 		if(I.damage > 0)
 			H.mend(TREAT_RESTORATION, heal_rate, I)
-			if (prob(5))
+			if (!quiet && prob(5))
 				to_chat(H, span_alien("You feel a soothing sensation within your [I.parent_organ]..."))
 			return 1
 
@@ -156,7 +162,7 @@
 	for(var/obj/item/organ/external/E in H.bad_external_organs)
 		if (E.status & ORGAN_BROKEN)
 			if (prob(mend_prob))
-				if (E.mend_fracture())
+				if (E.mend_fracture() && !quiet)
 					to_chat(H, span_alien("You feel something mend itself inside your [E.name]."))
 			return 1
 

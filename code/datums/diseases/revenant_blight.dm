@@ -70,3 +70,25 @@
 				affected_mob.visible_message(span_warning("[affected_mob] looks terrifyingly gaunt..."), span_danger("You suddenly feel like your skin is <i>wrong</i>..."))
 				affected_mob.add_atom_colour("#1d2953", TEMPORARY_COLOUR_PRIORITY)
 				addtimer(CALLBACK(src, PROC_REF(cure)), 10 SECONDS)
+
+/datum/disease/revblight/stage_biology()
+	if(!..())
+		return FALSE
+	if(!finalstage)
+		if(affected_mob.lying && SPT_PROB(3 * stage, LIFE_NOMINAL_SECONDS))
+			cure()
+			return FALSE
+		if(SPT_PROB(1.5 * stage, LIFE_NOMINAL_SECONDS))
+			affected_mob.Confuse(10)
+		if(stagedamage < stage)
+			stagedamage++
+			affected_mob.injure(INJURY_TOXIN, stage * LIFE_NOMINAL_SECONDS, affliction = /datum/affliction/spectral_blight)
+	if(stage >= 5 && !finalstage)
+		finalstage = TRUE
+		if(ishuman(affected_mob))
+			var/mob/living/carbon/human/human = affected_mob
+			original_hair_colour = list(human.r_hair, human.g_hair, human.b_hair)
+			human.change_hair_color(255, 255, 255)
+		affected_mob.add_atom_colour("#1d2953", TEMPORARY_COLOUR_PRIORITY)
+		addtimer(CALLBACK(src, PROC_REF(cure)), 10 SECONDS)
+	return TRUE

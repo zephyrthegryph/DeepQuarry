@@ -47,7 +47,6 @@
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	var/locked = 0
-	var/obj/machinery/computer/cloning/connected = null //So we remember the connected clone machine.
 	var/mess = 0					// Need to clean out it if it's full of exploded clone.
 	var/attempting = 0				// One clone attempt at a time thanks
 	var/eject_wait = 0				// Don't eject them as soon as they are created fuckkk
@@ -62,6 +61,12 @@
 	. = ..()
 	default_apply_parts()
 	update_icon()
+
+/obj/machinery/clonepod/proc/connected_console()
+	return om_first_linked_to(src, /datum/object_model/relation/cloning_console_pod)
+
+/obj/machinery/clonepod/proc/available_for_cloning_console()
+	return TRUE
 
 /obj/machinery/clonepod/Destroy()
 	for(var/obj/container in containers)
@@ -271,9 +276,9 @@
 		return ITEM_INTERACT_BLOCKING
 	if(anchored)
 		anchored = FALSE
+		var/obj/machinery/computer/cloning/connected = connected_console()
 		if(connected)
-			connected.pods -= src
-			connected = null
+			om_unlink(connected, /datum/object_model/relation/cloning_console_pod, src)
 	else
 		anchored = TRUE
 	playsound(src, tool.usesound, 100, TRUE)
@@ -299,6 +304,7 @@
 
 //Put messages in the connected computer's temp var for display.
 /obj/machinery/clonepod/proc/connected_message(message)
+	var/obj/machinery/computer/cloning/connected = connected_console()
 	if((isnull(connected)) || (!istype(connected, /obj/machinery/computer/cloning)))
 		return 0
 	if(!message)

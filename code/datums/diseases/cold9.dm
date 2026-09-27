@@ -43,3 +43,17 @@
 				to_chat(affected_mob, span_danger("Your throat feels sore."))
 			if(prob(10))
 				to_chat(affected_mob, span_danger("You feel stiff."))
+
+/datum/disease/cold9/stage_biology()
+	if(!..())
+		return FALSE
+	switch(stage)
+		if(2)
+			if(prob(10))
+				affected_mob.bodytemperature -= 2
+			if(prob(1) && prob(10))
+				cure()
+		if(3)
+			if(prob(10))
+				affected_mob.bodytemperature -= 5
+	return TRUE

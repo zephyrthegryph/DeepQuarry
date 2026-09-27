@@ -126,7 +126,7 @@ fn handle(slot: u32, generation: u8) -> BodyHandle {
     slot | (u32::from(generation) << 16)
 }
 
-fn split(h: BodyHandle) -> (u32, u8) {
+pub(crate) fn split(h: BodyHandle) -> (u32, u8) {
     #[allow(clippy::cast_possible_truncation)]
     (h & (MAX_BODIES - 1), (h >> 16) as u8)
 }
@@ -547,6 +547,7 @@ impl HeatWorld {
         let rec = self.slots.get(slot as usize)?;
         (rec.live && rec.generation == generation).then_some(slot)
     }
+
 
     /// Whether `h` names a live body.
     #[must_use]

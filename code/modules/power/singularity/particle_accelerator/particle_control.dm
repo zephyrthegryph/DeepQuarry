@@ -29,8 +29,6 @@
 /obj/machinery/particle_accelerator/control_box/Destroy()
 	if(active)
 		toggle_power()
-	qdel(wires)
-	wires = null
 	return ..()
 
 /obj/machinery/particle_accelerator/control_box/declare_interactions(list/into)

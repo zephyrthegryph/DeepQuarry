@@ -251,13 +251,8 @@ fn target(kind: &ByondValue, target: &ByondValue) -> Result<Target> {
 		HEAT_TARGET_SOLID => Target::Solid(target.get_ref()?),
 		HEAT_TARGET_TURF_AIR => Target::Gas(GasRef::Turf(target.get_ref()?)),
 		HEAT_TARGET_MIXTURE => Target::Gas(GasRef::Mixture(target.get_number()? as u32)),
-		// The full packed handle (slot | generation << 16), not masked to
-		// its low `MAX_BODIES - 1` bits (H1 audit finding): masking here
-		// used to silently strip the generation, so a stale or garbage
-		// handle whose low bits matched a live slot's index would target
-		// whatever body currently occupies that slot instead of being
-		// rejected. `HeatWorld::live_slot` already checks the generation
-		// against the slot's current one; let it reject a bad handle.
+		// Keep the full generation-bearing handle. The frame validates it
+		// against the target body's current generation before every exchange.
 		HEAT_TARGET_BODY => Target::Body(target.get_number()? as u32),
 		HEAT_TARGET_NONE => Target::None,
 		other => eyre::bail!("bad heat target kind {other}"),

@@ -51,8 +51,7 @@
 /datum/trait/proc/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	ASSERT(S)
 	if(factors)
-		S.grant_factors(factors)
-		H?.invalidate_factors()
+		S.grant_factors(factors, H)
 	if(var_changes)
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
@@ -87,8 +86,7 @@
 /datum/trait/proc/unapply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	ASSERT(S)
 	if(factors)
-		S.revoke_factors(factors)
-		H?.invalidate_factors()
+		S.revoke_factors(factors, H)
 	if(var_changes)
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, this assumes traits can only ever GIVE you flags.
@@ -202,4 +200,9 @@
 	return input
 
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
+	return
+
+/// Trait physiology for an extra local biology step. Visual and one-shot
+/// trait checks remain in environment_effects() on the real frame.
+/datum/trait/proc/environment_biology(mob/living/carbon/human/H)
 	return

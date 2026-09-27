@@ -115,6 +115,7 @@
 		if(prob(public_emote_chance))
 			M.emote(pick(emotes))
 
+// dm-health: param initial num
 /datum/affliction_symptom/proc/send_patient_message(mob/living/M, initial = FALSE)
 	var/list/msgs = get_patient_messages()
 	if(!length(msgs))

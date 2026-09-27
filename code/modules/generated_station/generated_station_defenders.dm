@@ -1,4 +1,27 @@
 /// Event-driven binding between one physical defender and its strategic squad.
+/datum/object_model/relation/generated_station_defender
+	from_type = /datum/generated_station_defender_agent
+	to_type = /mob/living/simple_mob
+	source_single = TRUE
+	target_single = TRUE
+
+/datum/object_model/relation/generated_station_defender/on_link(datum/source, datum/target)
+	var/datum/generated_station_defender_agent/agent = source
+	var/mob/living/simple_mob/defender = target
+	agent.defender = defender
+	agent.runtime?.director?.register_defender(defender)
+	agent.Observe(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, TYPE_PROC_REF(/datum/generated_station_defender_agent, on_damage))
+	agent.Observe(defender, COMSIG_MOB_DEATH, TYPE_PROC_REF(/datum/generated_station_defender_agent, on_death))
+
+/datum/object_model/relation/generated_station_defender/on_unlink(datum/source, datum/target, reason)
+	var/datum/generated_station_defender_agent/agent = source
+	var/mob/living/simple_mob/defender = target
+	agent.Unobserve(GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, TYPE_PROC_REF(/datum/generated_station_defender_agent, on_damage))
+	agent.Unobserve(COMSIG_MOB_DEATH, TYPE_PROC_REF(/datum/generated_station_defender_agent, on_death))
+	agent.runtime?.director?.unregister_defender(defender)
+	if(agent.defender == defender)
+		agent.defender = null
+
 /datum/generated_station_defender_agent
 	var/mob/living/simple_mob/defender
 	var/datum/generated_station_defense_runtime/runtime
@@ -9,19 +32,16 @@
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
-	defender = new_defender
 	runtime = new_runtime
 	department_id = new_department_id
 	squad_id = new_squad_id
 	home = new_home
-	RegisterSignal(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, PROC_REF(on_damage))
-	RegisterSignal(defender, COMSIG_MOB_DEATH, PROC_REF(on_death))
+	if(new_defender)
+		om_link(src, /datum/object_model/relation/generated_station_defender, new_defender)
 
 /datum/generated_station_defender_agent/Destroy()
 	if(defender)
-		UnregisterSignal(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL)
-		UnregisterSignal(defender, COMSIG_MOB_DEATH)
-		runtime?.director?.unregister_defender(defender)
+		om_unlink(src, /datum/object_model/relation/generated_station_defender, defender)
 	defender = null
 	runtime = null
 	home = null
@@ -136,7 +156,6 @@
 		var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 		agents += agent
 		squad.add_member(REF(defender))
-		director.register_defender(defender)
 
 /// Finds a walkable tile adjacent to the department core. The core itself is dense.
 /proc/generated_station_defender_spawn_turf(turf/core_turf)
@@ -253,7 +272,6 @@
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 	agents += agent
 	squad.add_member(REF(defender))
-	director.register_defender(defender)
 	return TRUE
 
 /// Damage producers call this with the affected department. Engineering consumes

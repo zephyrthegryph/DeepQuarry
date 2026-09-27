@@ -14,10 +14,10 @@
  * `revoke_ability(actor, id, source)` removes just that source's claim. The
  * ability stays available as long as ANY source remains - two traits granting
  * the same ability, or an item and an innate grant overlapping, don't fight
- * each other or need reference counting by the caller. Whoever creates a
- * grant owns revoking it: a component revokes in its Destroy()/UnregisterFromParent,
- * an item revokes on unequip, a status revokes on its own removal - the same
- * discipline as signals and modifiers.
+ * each other or need reference counting by the caller. The object model owns
+ * each grant token and automatically revokes it when its source is deleted.
+ * Producers still revoke explicitly when they stop granting before deletion
+ * (for example, an item on unequip or a component on detachment).
  *
  *	// Granting (species, trait, item, component, ...):
  *	L.grant_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK) // SK is the source
@@ -26,7 +26,7 @@
  *
  *	// Reading (rare - why_not()/attempt() already check this):
  *	L.has_ability(id)          // any source grants it right now?
- *	L.ability_sources(id)      // the list of sources, for UI/debugging
+ *	L.ability_sources(id)      // a snapshot of sources, for UI/debugging
  *
  * Species `inherent_verbs` grants and item/trait ability grants are meant to
  * move onto this same API (DQ Medical's protean powers registry is the first
@@ -112,32 +112,23 @@
 // ---------------------------------------------------------------------------
 // Grants: source-tracked, so an ability stays available while any source remains.
 
-/// id -> list of sources currently granting it. LAZYLIST: null for a mob with no grants.
-/mob/living/var/list/ability_grants
-
 /// `source` now grants `id`. Idempotent: granting the same (id, source) twice is a no-op.
-/mob/living/proc/grant_ability(id, source)
-	if(!id || !source)
+/mob/living/proc/grant_ability(id, datum/source)
+	if(!id || !istype(source))
 		CRASH("grant_ability() needs both an id and a source")
-	LAZYINITLIST(ability_grants)
-	LAZYINITLIST(ability_grants[id])
-	ability_grants[id] |= source
+	return om_keyed_grant(src, id, source)
 
 /// `source` no longer grants `id`. The ability stays available if another source still does.
-/mob/living/proc/revoke_ability(id, source)
-	if(!ability_grants || !ability_grants[id])
-		return
-	ability_grants[id] -= source
-	if(!length(ability_grants[id]))
-		ability_grants -= id
+/mob/living/proc/revoke_ability(id, datum/source)
+	return om_keyed_revoke(src, id, source)
 
 /// TRUE if any source currently grants `id`.
 /mob/living/proc/has_ability(id)
-	return length(ability_grants?[id]) > 0
+	return om_keyed_has(src, id)
 
 /// The sources currently granting `id` (for UI/debugging), or null.
 /mob/living/proc/ability_sources(id)
-	return ability_grants?[id]
+	return om_keyed_sources(src, id)
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).

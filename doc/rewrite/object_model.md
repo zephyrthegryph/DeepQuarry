@@ -1,10 +1,11 @@
 # Object model: kinds, ownership, relations, behaviours, scheduling
 
-Status: **authoritative design**. It supersedes `lifecycle.md` §4 (declared
-references). It keeps `lifecycle.md`'s destroy transaction and extends it (§14).
-It sits beside `rust_architecture.md`, which covers the Rust side. Nothing here
-migrates existing callers yet. This document defines the frameworks, and
-migration runs later behind ratchets (§21).
+Status: **authoritative design, not an implementation status report**. It
+supersedes `lifecycle.md` §4 (declared references) and revises its existing
+destroy transaction (§14). It sits beside `rust_architecture.md`,
+which covers the Rust side. Existing callers have not migrated to this model.
+Section 2 distinguishes working foundations from planned prerequisites;
+section 21 defines measured, domain-sized migration steps.
 
 ## 1. Goals
 
@@ -13,8 +14,9 @@ system:
 
 - **No hand-written lifecycle.** Remove per-type `Initialize`, `Destroy` and
   `process()` wherever a framework can own the work.
-- **No dangling references and no hard deletes.** Every object has an owner.
-  Every other reference is a framework-managed relation.
+- **Fewer dangling references and hard deletes.** Every entity has one lifetime
+  authority. References that must unlink or constrain lifetime are managed
+  relations; ordinary short-lived borrows need not become edges.
 - **Null only where a type says so.** Composition and typed nullability keep
   null out of behaviour code.
 - **Almost no polling.** Things happen because an event, timer, watch or rate
@@ -36,64 +38,84 @@ system:
 3. **Handlers receive their participants.** A handler is called only when what
    it needs is present, so it never fetches an optional reference itself.
 4. **Plain types and procs in, generated glue out.**
-5. **Fail at boot or in CI, not at runtime.** Declarations are validated when a
-   type's archetype is built (§6). dm-health checks what can be checked
-   statically.
+5. **Fail in CI or at boot, not on first use.** CI validates all declared
+   archetypes, including uncommon and unmapped types (§6). dm-health checks
+   what can be proved statically; runtime audits check missed wakes and leaks.
 6. **Everything is inspectable.** Owners, edges, requirement bits, pending
    timers and watches, and the reason a behaviour is asleep are all visible in
    the variable viewer.
 
 ## 2. What exists already
 
-This design unifies pieces that are already built or in flight. It doesn't
-start from nothing.
+This design unifies pieces that exist in the current tree and proposals that
+have not landed. Check each prerequisite against the compile manifest rather
+than assuming a design document proves it exists.
 
-| Piece | Where | Becomes |
+| Piece | Current checkout | Model's intended next step |
 |---|---|---|
-| Containment ledger, slots, latent state | `code/datums/containment/` (C1–C11) | the ownership layer (§4) |
-| Destroy transaction, links, verbs | `rewrite/ledger-joint`: `code/datums/lifecycle/transaction.dm`, `links.dm`, `verbs.dm` (LC1–LC3) | the destroy pipeline (§14); `REF_*` links become relation kinds |
-| Grants | `rewrite/grants`: `code/datums/grants/` | one relation kind with apply/unapply hooks (§5.6) |
-| Abilities (P5) | `code/datums/abilities/ability.dm` | behaviours granted through grants |
-| Compact interactions (I7) | `code/datums/interactions/` | archetype interaction tables (§6) |
-| Interaction requirements (P2 `REQ_*`) | interactions framework | the requirement library (§8) |
-| Mob life systems and hibernation | `code/modules/mob/living/life/scheduler.dm` (DQ Medical) | behaviours under the unified scheduler (§10); converged with DQ Medical |
-| Reactor: timer wheel, wake lanes, `RateModel` | `verdigris/core/src/reactor.rs`, `rate.rs`, `code/__defines/reactor.dm` | the scheduler backend (§10) |
-| Rules engine (thresholds, hold, band) | `doc/rewrite/rules.md` | the DM-side watch evaluator (§11) |
-| Registries (L3) | `code/datums/registries.dm` | derived indexes over membership relations (§5) |
-| R10 bindings, entity table, component stores | `rewrite/bindings`, `doc/rewrite/rust_bindings.md` | Rust components usable in declarations (§17) |
-| dm-health | `tools/dm-health/` | the static half (§18) |
+| Containment ledger, atom slots, latent state | `code/datums/containment/` | extend ownership to datum slots (§4) |
+| Destroy transaction and declared links (LC1–LC3) | `code/datums/lifecycle/{transaction,links,verbs}.dm` and `code/datums/containment/lifecycle.dm` | extend the existing destroy pipeline and express links as relation kinds (§14) |
+| Source-tracked ability grants | `code/datums/abilities/ability.dm`; callers revoke manually | tracked grant lifetime (§5.6) |
+| Compact interactions and `REQ_*` predicates | `code/datums/interactions/`, `code/__defines/predicates.dm` | reuse their vocabulary and reason messages in reactive checks (§8) |
+| Mob life systems and hibernation | `code/modules/mob/living/life/scheduler.dm` | share scheduling primitives before changing the mob-facing model (§10) |
+| Reactor: timers, wake lanes, rate models | `verdigris/core/src/reactor.rs`, `code/__defines/reactor.dm` | scheduler backend (§10) |
+| Rules engine | `code/datums/rules/` | reuse threshold and hold semantics in watches (§11) |
+| Registries | `code/datums/registries.dm` | optionally derive membership from relations where useful (§5) |
+| Generated Rust bindings | `code/__defines/verdigris/_bindings.dm` | add component schemas only after the binding design is proven (§17) |
+| dm-health | `tools/dm-health/`; current checks described in its README | implement strict contracts incrementally (§18) |
 
 ## 3. Four kinds of object
 
-Every type declares one kind through `object_kind` (default `KIND_ENTITY`).
-dm-health reads each type's initial value.
+The proposed `object_kind` classifies lifetime and mutation policy. It is not
+implemented yet. Converted types declare one kind; unconverted datums keep
+their existing lifecycle until a domain migration makes the classification
+enforceable.
 
 | Kind | What it is | Lifetime | References to it |
 |---|---|---|---|
-| `KIND_DEF` | immutable definitions: species, materials, reagents, gas types, recipes, behaviours, requirements, events, relation kinds, bundles, UIs, task types | created at boot, frozen, never destroyed | plain variables, never tracked |
+| `KIND_DEF` | authored definition data: species, materials, reagents, gas types, recipes, behaviours, requirements, events, relation kinds, bundles, UIs, task types | created at boot, configuration frozen | plain variables, never tracked |
 | `KIND_SERVICE` | singletons with state: subsystems, managers, registries | the round | plain variables, never tracked |
-| `KIND_LOCATION` | turfs and areas | the life of their z-level (expedition z-levels are recycled) | plain variables; releasing a z-level drops relations to them in bulk |
-| `KIND_ENTITY` | everything else: items, mobs, machines, minds, bodies, afflictions, reagent holders, UI sessions, running tasks | exactly one owner | an owning slot or a relation, nothing else (§4, §5) |
+| `KIND_LOCATION` | turfs and areas | the life of their z-level (expedition z-levels are recycled) | plain variables; z-level release must audit or invalidate external references |
+| `KIND_ENTITY` | everything else: items, mobs, machines, minds, bodies, afflictions, reagent holders, UI sessions, running tasks | exactly one lifetime authority | owning slot, tracked relation, or scoped borrow (§4, §5) |
 
-- **DEFs are frozen after boot.** dm-health enforces this statically with
-  `readonly` fields (§18). Test builds also enforce it at runtime: a write to a
-  frozen DEF fails the test. That catches the class of bug found tonight, where
-  the event headset mutated the shared species definition.
-- **Only `KIND_ENTITY` targets need relation tracking.** A variable holding a
-  DEF, SERVICE or LOCATION is an ordinary variable.
+- **Freeze authored DEF configuration, not derived caches.** Existing
+  definitions such as interactions fill compiled predicates on first use.
+  Move those caches into explicitly mutable storage or compile them before
+  freezing. dm-health should reject direct configuration writes where it can
+  prove them; runtime writes through framework setters can be checked too.
+  Plain DM field assignment cannot be assumed to pass through a runtime guard.
+- **Entity relations are the primary tracked case.** A variable holding a DEF
+  or SERVICE is ordinarily plain. LOCATION references may also need a tracked
+  handle when an expedition z-level can be recycled while the holder survives.
 
 ## 4. Ownership
 
-Every entity has exactly one owner. For atoms the owner is a holder slot, or
-the turf it stands on (the turf's world slot). For non-atom entities it is a
-slot on the owning entity or service. Ownership forms a tree whose roots are
-services and locations.
+Every converted entity has exactly one **lifetime authority**: the thing whose
+release or destruction ends or transfers its lifetime. For atoms this is a
+holder slot or the turf's world slot. For non-atom entities it is a slot on an
+entity or service. The authorities form a tree rooted in services and
+locations. This rule does not mean that every ordinary DM variable is an
+owning pointer or must be represented by an edge.
 
-- **The containment ledger generalises to every entity.** Slots may hold
-  datums, not only atoms. `ledger_owner(D)` is framework-managed.
-- **Destruction means an owner drops its subtree** (§14). A tree has no
-  cycles, so reference counting frees everything once relations are cleared.
-- **Nothing is unowned** except locals inside a running proc.
+- **One slot contract covers atom contents and datum children.** Atom slots
+  use the containment ledger as their indexed implementation, while datum
+  slots use the ownership tree; both expose the same claim, release, destroy
+  policy and query semantics. BYOND `loc` remains the physical authority for
+  atoms. Do not allocate a second mutable relation edge for each contained
+  atom or maintain a competing contents index.
+- **Latent contents are virtual slot entries.** Each carries a type, count,
+  aggregate snapshot and optional payload under the same slot policy as a
+  live child. Materialization exchanges the virtual entry for live children
+  atomically. A connection to a latent entry needs a stable entry handle and
+  an explicit materialization or consumption policy; it cannot point to an
+  object that has not been created.
+- **Destruction means an authority drops its subtree** (§14). Clearing tracked
+  edges removes known references, but engine-held references, legacy lists and
+  suspended procs may still pin an object; reference counting is not by itself
+  proof of reclamation.
+- **Nothing converted is unowned** after construction. The constructor and
+  transfer APIs must make the handoff explicit. Temporary locals are scoped
+  borrows; long-lived caches declare whether they are relations or handles.
 - **No nullspace parking.** Things outside the world are either latent data or
   held in a slot.
 - **Owned children** that aren't contents (actions, loops, helper contexts,
@@ -101,11 +123,24 @@ services and locations.
   slots: `SPILL` where it makes sense, `DELETE`, `TRANSFER(resolver)`,
   `TO_LATENT` and `KEEP_WITH`.
 
+For a hot direct field that mirrors a single owned child, use
+`OM_CLAIM_FIELD(owner, field, slot, child)`. The macro checks that the field
+exists at compile time; the caller should take a typed child argument because
+DM cannot type-check the helper's dynamic field assignment. The helper
+validates the existing mirror, sets it before publishing the ownership change,
+and rolls it back on failure. Releasing or deleting the child clears the mirror
+before publishing the release. The child must be unowned or already in that
+same field and slot;
+cross-owner transfer remains an explicit release followed by a claim.
+
 ## 5. Relations
 
-Every non-owning reference to an entity is a **relation**: a typed edge
-between two ends, owned by the framework. Direct assignment to a relation
-variable is forbidden (dm-health: framework-write-only, §18).
+A **relation** is a typed, framework-managed edge for a non-owning reference
+that needs automatic unlinking, a lifetime policy, membership, or a condition.
+Ordinary proc locals and short-lived lookups are borrows. Persistent caches
+without those semantics may use validated handles. A converted field declared
+as a relation is framework-write-only (dm-health, §18); migration must find
+legacy writes and callbacks before claiming that guarantee.
 
 ### 5.1 Relation kinds are DEF types
 
@@ -133,15 +168,24 @@ variable is forbidden (dm-health: framework-write-only, §18).
   also carry state and behaviour. A pull edge, for example, moves its follower.
 - **Lifetime.** An edge dies before either end finishes dying. `on_end_lost`
   decides what happens to the surviving end.
+- **Mutation order.** Linking, replacement, unlink hooks and destruction have
+  defined transaction order. Hooks see the old edge as unavailable and cannot
+  resurrect a dying endpoint; a hook-requested link or destroy joins a bounded
+  worklist. Failed transfers report a reason rather than leaving half a link.
 
 ### 5.2 Light and rich edges
 
-- **Light edges** are adjacency entries: a lazy `_edges` alist on both ends,
-  keyed by relation kind, holding the partner or a list of partners. They cost
-  roughly 32–48 bytes each.
-- **Rich edges** are `/edge/<kind>` entity datums, held in both ends' `_edges`,
-  for relations with state or behaviour. Examples: grab, pull, buckle, a tgui
-  session, a running task, a grant. They cost roughly 150–250 bytes each.
+- **Light edges** are adjacency entries on both ends, keyed by relation kind,
+  holding the partner or a list of partners. The exact representation is chosen
+  after an instance census; no per-datum `_edges` field is added without a
+  memory benchmark.
+- **Rich edges** are `/edge/<kind>` entity datums for relations with state or
+  behaviour. Examples: grab, pull, buckle, a tgui session, a running task, a
+  grant. Their declaration names one lifetime authority (usually the source's
+  slot or a service). Both endpoints index the edge but do not both own it.
+- **Costs are measured, not inferred from a datum estimate.** Count both
+  endpoint entries, lists, subscriptions, and retained objects at idle and at
+  peak. Compare with the mechanism each conversion removes.
 - **There is no separate reverse index.** Both ends hold the edge, the way
   Bevy's `ChildOf` and `Children` do. When B dies, the framework walks B's own
   edges, so the cost is proportional to B's degree, not a scan of the world.
@@ -150,17 +194,23 @@ variable is forbidden (dm-health: framework-write-only, §18).
 
 - **1:1 kinds** keep a framework-maintained view variable on the source, such
   as `sleeper.console`, so reads cost the same as a plain variable. It is
-  non-null for *required* 1:1 kinds.
-- **Other shapes** are read with `linked(src, /relation/x)`. It returns a list,
-  using a shared empty list when there are none, so `for` needs no null check.
+  non-null for *required* 1:1 kinds only while the declaring behaviour is
+  active; loss of the partner suspends or destroys that behaviour before a
+  handler can read the view.
+- **Other shapes** are read with `linked(src, /relation/x)` as a read-only
+  iterable/view. It supports an empty loop without an allocation or null
+  check, but never exposes a shared mutable empty DM list. Callers needing a
+  mutable snapshot request a copy explicitly.
 - **Queries** include `linked`, `linked_to` (the reverse direction), `has_link`,
   and transitive walks up the owner and holder chains.
 
 ### 5.4 Derived relations
 
-`in_view`, `near(n)` and `same_area` are maintained by the spatial index from
-movement events. They can be queried and they emit events, so they drive
-proximity watches (§11) without polling.
+`in_view`, `near(n)` and `same_area` are queries over a spatial index.
+Observers can subscribe to enter/leave changes using chunk or region
+subscriptions. Do not materialise an edge for every nearby pair: movement
+fanout and retained pair counts would scale with crowd density. Limit and
+benchmark active proximity watchers before broad AI or UI migration.
 
 ### 5.5 Writing relations
 
@@ -222,12 +272,26 @@ Builder calls:
 | `A.ui(ui)`, `A.ui_fragment(fragment, params...)` | UI (§16) |
 | `A.destroy_effects(message, sound, debris, neighbour_update)` | declared destruction effects |
 
+Registry declarations currently enroll an entity when its sparse behaviour
+runtime is started with `om_behaviour_start(entity)`. Membership is a non-owning
+entry in the same `/datum/registry` storage used by materialization registries.
+The object-model registry is created lazily, while legacy registries retain
+their existing eager build and keyed indexes. `om_registry_members(path, member_type)` returns
+a detached snapshot; `om_registry_has(path, entity)` tests one member. Releasing
+the runtime or destroying the entity removes membership. Declaration alone does
+not enroll newly constructed atoms, and constructor/materialization integration
+is a separate migration step for each legacy registry lifecycle.
+The two declaration APIs still differ in activation: `A.registry()` follows
+behaviour runtime activation, while `REGISTRY_MEMBERSHIP()` follows atom
+materialization. Do not declare the same membership through both paths.
+
 ### 6.2 Archetypes
 
-- **When they're built.** The first time a type is instantiated, the framework
-  runs its `declare()` chain once and builds one `/archetype`. Mapped types are
-  built during map load.
-- **Validation errors** stop the boot in tests:
+- **When they're built.** Runtime instances use a cached archetype, built on
+  first use if that is cheaper. CI enumerates and validates every converted
+  type's declaration; test boot may prebuild the same set. An unmapped type
+  cannot defer a declaration error to its first live-round spawn.
+- **Validation errors** fail CI and test boot:
   - an unknown config key, wrong unit or out-of-range value (checked against
     the behaviour's or the generated component's schema);
   - an unmet interface (§7.4);
@@ -242,9 +306,9 @@ Builder calls:
   - slot and relation definitions;
   - the UI;
   - the init plan.
-- **Instances carry only their own data.** Behaviours on a type need **no
-  per-instance registration**. Today every instance registers signals for its
-  components and elements.
+- **Instances carry only their own data.** Static behaviour dispatch needs no
+  per-instance signal registration. Sparse or dynamically granted behaviour
+  state may still need per-instance storage and teardown.
 - **Merging is explicit.** Parent declarations come first (`..()`), and a
   subtype adds, configures or removes. There's nothing to re-declare, and
   dm-health guarantees `..()`.
@@ -312,9 +376,11 @@ prefab with data.
 ### 7.2 Where behaviour data lives
 
 - **Per-type config** lives in the archetype, so it costs nothing per instance.
-- **Per-instance state for statically composed behaviours** is variables on
-  the prefab. The behaviour lists the variables it needs, and both the
-  archetype and dm-health check they exist.
+- **Per-instance state for statically composed behaviours** can be variables
+  on the prefab when almost every instance uses them. Rare or bulky state
+  belongs in a lazy, typed sidecar. The behaviour declares its state contract
+  and validation checks it; authors should not have to copy a cluster of
+  boilerplate fields into every prefab.
 - **Per-instance state for behaviours granted at runtime** goes in a lazy
   per-behaviour table on the entity.
 - **Heavy simulation state** (heat, gas, power) lives in Rust components
@@ -322,7 +388,9 @@ prefab with data.
 
 ### 7.3 Execution cost
 
-- **Event handlers are direct calls** from the dispatch table. Nothing iterates.
+- **Event dispatch uses precomputed handler tables.** It still pays for the
+  handlers and any table traversal; benchmark it against the signal path it
+  replaces. High-frequency Rust simulation updates stay batched in Rust.
 - **Periodic behaviours visit only their active set:** members whose
   requirement mask is satisfied and that are due. Members are spread across
   timer-wheel buckets so the load is staggered.
@@ -330,8 +398,8 @@ prefab with data.
   remove.
 - **Hot kinds can implement `on_tick_batch(list/members)`,** which avoids a
   proc call per entity.
-- **Every behaviour reports metrics** (calls, time, active count) to the MC
-  stat panel and the bench.
+- **Behaviours report metrics** (calls, time, active count) through sampled or
+  aggregated counters so instrumentation does not dominate cheap handlers.
 
 ### 7.4 Interfaces
 
@@ -347,8 +415,10 @@ every need on an entity is met.
 
 ## 8. Requirements: one vocabulary
 
-The same library gates tasks, interactions (replacing P2's `REQ_*`), UI
-actions, abilities (P5's `why_not`), behaviours and relation conditions.
+The same requirement semantics gate tasks, interactions, UI actions, abilities,
+behaviours and relation conditions. Reuse the existing P2 `REQ_*` predicates,
+reasons and selection rules as the starting vocabulary; a new `/datum/check`
+API must adapt them, not create a second set with different meanings.
 
 **Requirement types** are DEFs, used in declarations:
 
@@ -377,20 +447,24 @@ failure and its message. They're used in procs:
   - `range(value, low, high)`;
   - `unchanged(entity)` (§13);
   - `require(expression, message)`.
-- **Dependency capture.** Each check records what it read the first time it
-  runs. `can_reach` records movement of both parties, `holding` records equip
-  and unequip, `tool_active` records the tool's state. The caller then
-  subscribes to exactly those events.
-- **Coarse fallback.** A raw `require(expression)` falls back to the
-  participants' coarse change events. dm-health can narrow that down by
-  inferring which fields the expression reads.
+- **Explicit dependencies first.** Built-in checks declare their dependencies:
+  `can_reach` follows movement of both parties, `holding` follows equip and
+  unequip, and `tool_active` follows the tool's state. Running an arbitrary DM
+  expression cannot reveal which fields it read. A captured dependency is
+  valid only for a checker whose read path is instrumented and tested.
+- **Coarse fallback.** A raw `require(expression)` subscribes to documented
+  coarse participant changes and is rechecked at the action's commit. If
+  those changes do not cover every mutation, the author must declare more
+  dependencies or use a synchronous check. dm-health can suggest and verify
+  statically visible reads, but dynamic dispatch and reflection remain
+  explicit proof gaps.
 - **Cost ordering.** The library orders checks by cost and stops at the first
   failure.
 - **Consistent messages.** The library words failures the same way everywhere,
   and the same text drives disabled-button tooltips (§16).
-- **Requirement bits.** For gating, each entity keeps one bit per requirement.
-  A bit is re-evaluated only when that requirement's dependency fires for that
-  entity, so "is it active?" is a mask compare.
+- **Requirement state.** An active requirement can have a cached bit, updated
+  when a complete dependency fires. Store sparse state for entities with no
+  active gates; measure the bit and subscription overhead per instance.
 
 ## 9. Events
 
@@ -414,7 +488,8 @@ emit(/event/moved, src, old_loc, dir)
   and the hook signatures.
 - **Static subscriptions** come from archetype dispatch tables. **Dynamic
   subscriptions** are light edges (`subscribe(listener, source, /event/x)`),
-  cleaned up with either end.
+  cleaned up with either end. Event delivery and writes through observable
+  setters must remain one coherent path during a converted domain's rollout.
 - **Phases.** A `BEFORE` event's handlers may return a veto with a reason,
   replacing `COMPONENT_CANCEL_*` bitflags. An `AFTER` event only notifies.
 - **Delivery modes.** `IMMEDIATE`, or `DEFERRED_COALESCED`: ten "changed"
@@ -431,11 +506,45 @@ emit(/event/moved, src, old_loc, dir)
 - **Existing signals** become the dynamic-edge path, and their `COMSIG_*`
   kinds migrate to event types later.
 
+Broad typed-event observers live in a singleton `/datum/object_model/global_observer`
+subtype, started by `om_global_observer(path)`. Its shared plan may use
+`from_any()` and allocates one subscription per rule. Per-entity behaviour
+plans reject `from_any()` so a global listener cannot accidentally allocate
+one token per entity.
+
+The current bridge for existing signals is `owner.Observe(target, COMSIG_*,
+PROC_REF(handler))` or `owner.ObserveSet(targets, COMSIG_*, PROC_REF(handler))`.
+The owner retains one observation for each signal and handler; it owns cleanup
+on either endpoint's deletion. Repeating `ObserveSet` reconciles membership,
+and an unchanged set returns early. `Unobserve(signal, handler)` removes one
+watch. `on_lost` may name a callback for target
+deletion. Use a semantic relation only when the edge itself models game state;
+an interest in a target's movement needs an observation alone. Secbot
+surrender, door blockers, material services and container connections use
+this bridge.
+For a legacy component or service with many fixed `COMSIG_*` handlers on one
+parent, use a proc-local static `signal => PROC_REF(handler)` table with
+`RegisterSignalMap(parent, handlers)` and `UnregisterSignalMap(parent,
+handlers)`. Material responses and service diagnostics use this path: the
+existing signal table owns the hooks, preserves return bitfields and delivery
+order, and cleans them on listener deletion without allocating an `Observe`
+datum for every handler. A transferable listener must unregister from its old
+parent before registering on the new one. Use `Observe` for sources that change
+over time or need endpoint-loss callbacks.
+At 250 material assemblies with three movable ancestors, the movement-watch
+benchmark measured initial bind at 68.3 µs/service and moved rebind at 54.0
+µs/service, down from 194.7 and 226.9 µs/service with the prior per-target
+relation wiring. An unchanged rebind rose from 14.9 to 18.0 µs/service.
+Process memory sampling was unavailable in that run; the Rust heap sample was
+unchanged, but does not measure DM datum or list memory.
+
 ## 10. Scheduler
 
-Everything that happens later, repeatedly or conditionally goes through one
-scheduler. The MC is its budgeted executor, and the Rust reactor (timer wheel,
-wake lanes, `RateModel` crossings) is its backend.
+Converted work that happens later, repeatedly or conditionally uses one
+scheduling API. The MC is its budgeted executor, and the Rust reactor (timer
+wheel, wake lanes, `RateModel` crossings) is its backend. Existing mob Life
+and other subsystem schedulers coexist during migration; share reactor
+primitives first and remove a domain's old path only after parity is proved.
 
 | Primitive | API | Replaces |
 |---|---|---|
@@ -447,14 +556,70 @@ wake lanes, `RateModel` crossings) is its backend.
 | **Periodic behaviour** | `period` on a behaviour; only the active set, staggered | 445 `process()` procs, 224 `START_PROCESSING` calls, list-walking subsystems |
 | **Task** | §13 | `do_after` (660), `spawn` (677), `sleep` (546), `tgui_input`/`tgui_alert` (2,440) |
 
-- **Hibernation is universal.** An entity with no active behaviours costs
-  nothing.
+For one-shot calls to a proc on the owner, `After(delay, PROC_REF(handler))`
+returns a cancellable owned entry. `EnsureAfter(delay, PROC_REF(handler))`
+instead keeps at most one pending call for that proc and preserves its first
+deadline. `ReplaceAfter` moves the deadline; `CancelAfter` cancels it;
+`PendingAfter` inspects it. The keyed entry is removed before invoking the
+handler, so the handler can schedule itself again. These proc-keyed calls need
+no timer field or completion adapter. Use ordinary `After` entries when
+several independent calls to the same proc must coexist.
+
+- **Hibernation applies where dependencies are complete.** An entity with no
+  active behaviours leaves that scheduler's active set; its ownership and any
+  subscribed watches still have a measurable cost.
 - **Missed-wake audit.** This generalises today's
   `MOB_HIBERNATION_AUDIT`. In test builds, sleeping behaviours' requirements
   are periodically re-evaluated, and a mismatch fails the test. Missing
   dependencies surface immediately.
-- **DQ Medical's life systems** become behaviours under this scheduler. They
-  are co-designed with DQ Medical, who own mob Life.
+- **Mob Life** runs its existing ordered system composition inside one scheduled
+  behaviour per living mob. This preserves phase order, shared context and the
+  internal wake-bit scheduler while using the common behaviour runtime for cadence.
+  It is not one independently timed behaviour per Life system.
+- **Scheduled behaviours (implemented, opt-in).** A behaviour can declare
+  `run_change_mask`, `run_owned_inputs`, `run_relation_inputs`, `run_events`,
+  and `run_period`. Its `on_run(entity, seconds, config)` runs once per queued
+  owner and returns zero to sleep, a positive delay for its next run, or null
+  for `run_period`. A periodic behaviour can opt into `run_shared_cadence`:
+  `SSreactor` distributes all active owners of that behaviour type across shared
+  tick slices, while an explicit per-owner due time still uses its native timer.
+  Other scheduled behaviours retain their own pending state and deadline; one
+  native `REACT_AT` token per entity arms the earliest outstanding due time.
+  Local, owned and related tracked writes, relation membership and typed
+  events wake only declared dependents. The Rust reactor wakes the owner at
+  its deadline, then `SSreactor` budget-dispatches its queued DM `on_run` work.
+  Native-domain watches and rate crossings use the same reactor. An opt-in
+  `sleep_violation()` participates in the reactor's missed-wake audit.
+- **Dispatch diagnostics and priority (implemented).** Scheduled behaviours
+  declare `run_priority`, `run_max_lateness` and `run_cost_hint_ms`. The reactor
+  records exclusive callback cost, queue age, missed deadlines, work units,
+  deferral reasons and bounded overrun incidents. Shared cadence and pending
+  runtimes use measured inclusive cost to stay within the tick budget, with
+  age promotion to avoid starvation. `Scheduler Diagnostics` shows the live
+  state to admins; benchmark reports retain the same counters. See
+  `doc/rewrite/scheduler_diagnostics.md` for the API and attribution limits.
+- **Life migration status.** AFK and ambience have independent behaviours, and
+  living Life has one scheduled frame behaviour on the shared sliced cadence.
+  Awake frames have no recurring native timer; deferred Life wakes retain exact
+  per-mob deadlines in the reactor wheel. `SSmobs` registers living mobs
+  into a pending startup queue (including one initial scan for pre-existing
+  mobs), starts their behaviours in bounded batches, and keeps nonliving mobs
+  on its legacy list. It still owns the Life hibernation audit and profiling.
+  Producers can call typed `wake_life(event_or_family, reason)`; that bridge
+  maps event or system-family paths to the existing internal wake bits.
+- **Local clocks.** Behaviour deadlines can use per-entity virtual biology,
+  decay or action clocks through `run_clock`. Source-owned multiplier and
+  inhibition contributions compose; a zero rate parks a virtual deadline
+  until resume. `run_set` allows source-stacked suspension of a schedule set,
+  including the living biology frame during transformation. Detached organ
+  decay uses a scheduled behaviour on the decay clock. These clocks do not
+  change the real-time cadence of a living Life frame. Stasis and acceleration
+  choose how many biological steps are due; the normal frame runs once, and
+  only systems explicitly audited with `biology_catchup` receive extra
+  `tick_biology` passes with a fresh context per step. A per-frame cap bounds
+  catch-up work. Hibernation does not replay its elapsed biology on a later wake.
+  Presentation, actions, status counters and advanced disease symptom timers
+  retain their real-time semantics unless separately migrated.
 - **No-polling policy.** Only genuinely continuous work ticks, and only its
   active set:
   - atmos, heat and fire in Rust;
@@ -490,13 +655,139 @@ subscribe to transitions of.
   - `/watch/count_within`: N events within a window;
   - bands with hysteresis.
 
-  Each watch declares its dependencies once. It's evaluated only when a
-  dependency changes, never polled.
+  Each watch declares its dependencies once. Converted watches evaluate on
+  those changes; a test audit rechecks sleeping watches to detect missing
+  producers. Any fallback audit or coarse subscription has a measured cost.
 - **Dynamic watches** are owned edges, cancelled with their owner. For example,
   an AI calls `watch(src, /watch/in_range, target = T, range = 7)` and gets
   `on_in_range`.
 - **The rules engine's** hold, band and threshold logic becomes this evaluator
   for DM data.
+
+### 11.1 Derived caches
+
+**Implemented core API (September 2026).** A behaviour may declare
+`derived_input_mask`, `derived_owned_inputs`, and `derived_relation_inputs`.
+`om_derived_read(owner, /datum/object_model/behaviour/example)` refreshes a
+dirty value synchronously; `om_observe_derived(observer, owner, behaviour)`
+keeps it current while observed and coalesces repeated writes. The behaviour's
+`compute_derived()` returns the value, `derived_equal()` compares effective
+values, and `on_derived_changed()` receives actual transitions. Only the first
+read or observer creates cache state. A computed null is retained, recursive
+computes are rejected, and a compute retries if its inputs change mid-read.
+Value lists need an explicit `derived_equal()` override.
+
+`om_mark_changed(subject, GROUP_MASK)` is the authoritative setter notification.
+It invalidates local readers and readers of owned children or related targets.
+`om_track_change(subject, ONE_GROUP_BIT)` allocates a revision counter only for
+consumers that request one. Ordinary change marks do not allocate revision
+arrays. Archetypes declare the permitted bits with `track_changes(mask)`.
+Owned relation kinds can transfer lifetime authority alongside link changes;
+ordinary links leave lifetime ownership alone. Membership changes invalidate
+the relevant derived view even if no tracked field changed.
+Physical containment is exposed through the virtual
+`/datum/object_model/relation/physical_contents`: queries read BYOND `loc` and
+`contents`, and movement publishes membership changes. It keeps no parallel
+edge list. A contained atom's tracked write can invalidate a holder's derived
+view; ledger totals remain incremental and authoritative for aggregate reads.
+The existing slot ledger also exposes a virtual `slot_member` relation. Slot
+insertion, removal, reslotting and contribution changes publish typed object
+model events, while the ledger remains the sole index and aggregate authority.
+Tracked child writes and explicit ledger contribution refreshes invalidate
+derived views of the holder. Latent groups have a separate virtual
+`latent_slot_member` relation over ledger entries, with count-change events;
+they do not masquerade as physical atoms.
+An archetype can opt a tracked change group into ledger contribution refreshes
+when that member field affects a container aggregate. Unrelated tracked writes
+leave the ledger snapshot alone.
+
+The generated stat domain API lives in `tools/object_model/STATS.md`. It emits
+named DM getters, base setters and modifier builders from one catalog, without
+one datum per stat. Reusable event subscriptions and composed conditions live
+in `tools/object_model/SUBSCRIPTIONS.md`. Behaviour activation installs their
+plans and deactivation removes them. The `dm-health` `tracked(setter=...)`
+annotation checks typed direct and reflective writes in opted-in files; dynamic
+receivers still need review. No existing content domain has been migrated to
+these APIs yet.
+
+The generic grant runtime now keeps one owned token per entity, behaviour and
+source. Removing the source revokes its token and the behaviour deactivates
+when its last grant goes away. `om_bridge_signal(source, COMSIG_*, event_path)`
+can forward selected legacy signals into typed object-model events. The bridge
+is opt-in so existing signal producers and return semantics keep working.
+
+The older `om_cached()` declaration API below remains available. It describes
+an alternate scalar-key cache path and should be removed only after its users
+have moved to derived behaviours.
+
+A derived value is an ordinary DM compute proc declared once in the type's
+archetype, with the fields, slots and relation kinds it reads. Content calls
+`om_cached(PROC_REF(compute_value))`; it does not define a datum per cached
+field, write a string-key switch, or allocate a dependency list on each read.
+The declaration is shared by the type; per-instance cache state is lazy.
+The cache retains a computed null, rejects recursive computation of the same
+key, and notices writes made while computing.
+
+```dm
+/datum/body/om_declare(datum/object_model/archetype/A)
+	..()
+	A.cache(PROC_REF(compute_factors), fields = list(NAMEOF(src, factor_source_revision)))
+
+/datum/body/proc/factor_values()
+	return om_cached(PROC_REF(compute_factors))
+
+/datum/body/proc/factor_sources_changed()
+	factor_source_revision++
+	om_field_changed(src, NAMEOF(src, factor_source_revision))
+```
+
+The example shows the current scalar producer API. Declared slot and relation
+operations publish automatically. The linter must require a checked setter
+for a declared scalar dependency so ordinary direct writes cannot skip the
+notification; the declaration alone cannot intercept DM assignments.
+
+Change tracking is the common producer layer under caches, watches, tasks and
+UI sessions. Use the least detailed form that answers the consumer's question:
+
+| Form | Meaning | Typical consumers |
+|---|---|---|
+| Revision | An input changed since the last read; no history retained | derived cache, stale task check, UI snapshot version |
+| Dirty bit | Several changes can be recomputed together at a safe boundary | body factors, appearance, batched UI refresh |
+| Transition event | An occurrence or threshold crossing that must not be lost or coalesced as state | alarms, grants revoked, Rust watch crossings |
+| Delta journal | Exact members or fields added, removed or changed since a cursor | open UI list, incremental index, Rust-to-DM batch |
+| Spatial or temporal watch | Enter/leave or deadline from an indexed source | proximity, timed requirements, hibernation wake |
+
+The framework owns revisions for committed slot, ownership and relation
+operations. Declared scalar fields use setters that write and publish together;
+`NAMEOF()` or a checked proc reference gives authors a DM-native name, while
+the archetype can intern compact IDs internally. A converted domain's static
+check rejects direct writes to those fields, with an audited escape for
+reflective writes. Cross-object changes publish on the dependent owner as
+well. Tests compare selected cached values with uncached recomputation to
+catch missing producers. Do not track every DM var or scan whole objects for
+diffs each tick.
+
+Body factors are the main example: afflictions, reagents, modifiers, species,
+forms and worn items supply factor tables; the body's factor list is a derived
+fold over those sources. The existing combine rules and null-at-baseline fast
+path remain. Source addition, removal or value changes invalidate the body's
+factor channel, and a test audit compares the cached result with a fresh fold.
+The current bridge exposes `body.factor_view()` and
+`body.observe_factor_view(observer)` for a fresh derived snapshot and effective
+change event. The hot `L.factor(BF_*)` path keeps its existing dirty-bit cache;
+converting every producer to typed marks is a separate migration. An observed
+refresh copies and compares the roughly 60-value factor list, so use it for
+displays or aggregate listeners rather than every combat read.
+The public factor and worn-conductivity views return copies, as do their
+change-signal arguments. Callers may edit a snapshot without corrupting the
+cached value. Each read therefore allocates one list; use scalar getters in
+hot loops.
+The same pattern serves UI summaries, requirement results and derived slot
+properties. Keep the containment ledger's incremental aggregate accumulators
+for hot totals; caching the whole scan would make frequent inventory moves
+more expensive. Its committed slot mutations publish a contents revision, and
+child property changes must refresh the child's contribution and notify the
+holder.
 
 ## 12. Rates
 
@@ -537,6 +828,47 @@ A rate-valued field is exact at any moment and never ticks:
 
 ## 13. Tasks
 
+**Current implementation boundary.** The generic task and scheduler core is
+present (`task.dm`, `schedule.dm`): owned timers, periodic callbacks, coalesced
+wakes, prompts, revision stamps, deletion cancellation, and start/commit checks.
+For a callback owned by the same datum, use `After(delay, PROC_REF(callback))`
+or `Every(period, PROC_REF(callback))`. Both return an owned schedule entry that
+can be `qdel`ed to cancel. Use the lower-level `om_timer` when a distinct
+handler or named timer dispatch is needed.
+Tasks now have opt-in live guards for movement, held equipment and incapacity,
+and `om_start_timed_action()` provides asynchronous progress and timed checks
+for callback and selected-zone conditions. The shared `do_after` entry point
+now delegates its timing, guards and progress to `om_do_after_compat()`, preserving
+the boolean-return shape and yielding caller. Future callers can use task
+completion hooks directly to avoid a sleeping continuation. `AWAIT_TASK` below
+is still a design target. `tools/object_model/TASKS.md` has the migration API.
+The shared `expire()` helper also uses an owned schedule entry, so rearming
+cancels the prior expiry and deleting the atom cancels the pending callback.
+The stock market's recurring process timer uses the same owned scheduler and
+no longer needs a timer-specific `Destroy()` override.
+The germ-sensitive component's exposure countdown is owned as well; repeated
+movement preserves the existing countdown, while pickup and teardown cancel it.
+Shared wiring now claims an owned `om:wires` slot when constructed for a holder;
+`set_wires()` transfers or replaces it, and state restoration uses the setter.
+Wired atom types no longer need individual wire deletion in `Destroy()`.
+Disposal trunks now use an exclusive relation from their connection component;
+either endpoint's deletion unlinks it. Single-endpoint reads use
+`om_first_linked()` or `om_first_linked_to()` to avoid copying an endpoint list.
+NTNet DoS programs similarly select relays through a single relation instead
+of a mirrored target field and relay-side source list. Body worn conductivity
+has an optional observed derived view; ordinary reads still use the existing
+lazy cache, and observers receive only effective changes.
+Mind hosts use a single relation to their backing brain tissue; deleting or
+replacing the organ unlinks it while the existing `tissue` read remains usable.
+Single-outgoing relation setters now call `om_replace_related(source, kind,
+target)`. It validates the candidate before removing the old edge and attempts
+to restore the old edge if a reentrant hook defeats the new link. Relation
+hooks are synchronous, so callbacks can still observe unlink then link; code
+needing a truly atomic state transition must use a domain transaction.
+Robot installed cells similarly have a non-owning relation because physical
+containment owns the cell. Radio listener membership is exposed as a virtual
+relation over SSradio's existing channel lists.
+
 A task is a rich edge between its participants. It completes after a duration,
 unless its requirements break first.
 
@@ -564,18 +896,21 @@ start_task(/task/tool_use/weld_door, user, door, tool)   // returns the task, or
 
 - **When checks run:**
   - at start and at commit, always;
-  - in between, only when a captured dependency fires (§8), coalesced to once
-    per tick.
+  - in between, when a declared or verified dependency fires (§8), coalesced
+    to once per tick.
 
   Correctness only needs the start and commit checks. The checks in between
   exist only to cancel early for UX.
-- **Commit is atomic.** The requirements are re-checked immediately before
-  `complete()`, which may not sleep (checked statically).
-- **Exclusivity falls out of the requirements.** The first task to complete
-  changes the world, so a conflicting task fails at commit. Compatible tasks
-  both complete. The one rule: **a task's requirements must guard its own
-  effect** (`!door.welded`). dm-health warns when `complete()` writes a field
-  the check never reads.
+- **Commit is atomic only across a non-suspending effect path.** Requirements
+  are rechecked immediately before `complete()`; it and its transitive calls
+  may not sleep or await. Mutations and synchronous hooks must leave state
+  valid before control returns. The test suite runs competing tasks against
+  the same target and stock.
+- **Exclusivity needs a complete guard.** The first task to complete changes
+  guarded state, so a conflicting task fails at its own commit. Resource
+  quantities, indirect writes and multi-object effects need explicit revision
+  checks, claims or a domain transaction. A dm-health read/write warning is
+  useful evidence, not proof when procs, lists or reflection hide effects.
 - **Claims** are optional UX (don't start a 10-second job that can't finish;
   show "in use"). A claim is a relation plus a requirement over it, not a
   separate mechanism.
@@ -615,8 +950,9 @@ Tasks, owned timers and prompts-as-tasks remove nearly all of this.
 
 ## 14. Destruction
 
-`lifecycle.md`'s transaction (LC1, built on `rewrite/ledger-joint`) stays.
-This model changes it in five ways:
+`lifecycle.md`'s LC1–LC3 transaction exists in this checkout. Extend and test
+that pipeline with converted domains rather than installing a parallel
+destruction mechanism. This model revises its order in five ways:
 
 1. **Survivors leave first,** outermost first, while everything is intact:
    `TRANSFER` and `SPILL` resolve before anything is marked. The mind phase
@@ -633,21 +969,33 @@ This model changes it in five ways:
    z-level release and round end all batch.
 
 Further rules:
-- **Fast path.** An entity with no edges, no teardown behaviours and no
-  bindings leaves its owner slot, sets its flag and is freed by reference
-  counting. That's a few microseconds, against today's Destroy chains.
+- **Transfer failure and visibility.** Specify which tree and links hooks can
+  observe in each phase. A failed `TRANSFER` must either preserve the child
+  and abort the transaction or take a declared fallback; it must never leave
+  an unowned child. Reentrant hooks add work to the same bounded worklist.
+- **Fast path is conditional.** An entity with no tracked edges, teardown
+  behaviours or bindings can skip those phases, but a legacy list, callback,
+  engine reference or sleeping proc can still retain it. Verify eligible
+  types before enabling the fast path; measure its actual cost.
 - **Latent contents** are deleted as data and never materialised.
-- **Pooling** becomes safe for high-churn objects (projectiles, effects, damage
-  packets), because relations guarantee nothing holds a stale reference.
+- **Pooling** is allowed only after the object's handles, external references
+  and reset path are audited. Relations alone do not make reuse safe.
 - **SSgarbage becomes a verifier.**
-  - In test builds, every destroyed object is checked. Any survivor fails the
-    test, with its holder named by a find-references search.
+  - In tests, audit converted ownership and edges, and run reference searches
+    on survivors or sampled types. Measure the audit cost before making an
+    all-object search mandatory.
   - In production it's a cheap sampler plus the hard-delete fallback.
   - Most `QDEL_HINT_*` handling goes.
-- **`qdel` is private to the framework.** Callers state intent through
+- **`qdel` remains the engine-facing deletion operation.** Converted callers
+  state intent through
   `consume`, `replace_with`, lifetime/`expire`, slot operations,
-  `delete_on_death` and `destroy(target, cause)`. A lint bans bare `qdel` in
-  normal code.
+  `delete_on_death` and `destroy(target, cause)`. A domain ratchet bans bare
+  `qdel` only after that domain has moved to the new lifecycle. The practical
+  migration target is **framework-only `qdel` in converted gameplay code**:
+  content asks for a lifecycle operation, and the framework makes the final
+  engine call. A legacy or engine caller that still invokes `qdel` on a
+  converted object must enter the same transaction and produce the same
+  cleanup. Enforce this per converted domain, not across the unmigrated tree.
 - **Legitimate leftover `Destroy()`** is rare: a real consequence outside the
   object's declared relations. It's justified with `// LIFECYCLE:`, preferably
   written as a hook on the other party's relation, and the count is ratcheted.
@@ -687,9 +1035,10 @@ total.
 | HoloMiniMaps | 0.4 s |
 | Mapping | 0.3 s |
 
-**Estimates, to be confirmed with the bench store:**
-- the test map drops from 16.5 s to roughly 4–6 s;
-- live-map init, which atoms dominate, gets roughly 2–4× faster.
+**Hypotheses, not targets guaranteed by this model:** an earlier estimate put
+the test map at 4–6 s and live-map init at 2–4× faster. Re-run the baseline
+before quoting either figure; validate each startup change separately so
+unrelated asset and wiki work is not credited to archetypes.
 
 Build-time assets and the lazy wiki are independent quick wins.
 
@@ -743,16 +1092,33 @@ only 2 polling UIs, but manual.
 	heater.set_mode(mode)
 ```
 
-- **Change-driven.** A UI session is a rich edge from user to object. Its status
-  is the edge's requirements (`can_see`, `in_range`, `conscious`), so nothing is
-  polled. `data()` re-runs only on the object's change events, and only changed
-  fragments are resent. That's cheap in DM, with no nested-list diffing.
+- **Change-driven where complete.** A UI session is a rich edge with one
+  lifetime authority and links to user and object. Its status can subscribe to
+  `can_see`, `in_range` and `conscious` changes. Converted `data()` providers
+  rerun on documented changes; live simulation data may still need a bounded
+  refresh. Benchmark event volume and payload size before claiming a win.
 - **Actions** are `act_<name>` procs with typed parameters (`as num`/`as text`).
   They're validated centrally against a schema, and `can_act()` plus the
-  requirement library decide whether an action is enabled.
+  requirement library decide whether an action is enabled. The server checks
+  status, parameters and current state again when each action arrives; a
+  disabled client button is only presentation.
 - **Generated types.** dm-health reads `data()`, the fragments and the `act_*`
   signatures from the AST and generates both the TS types and the server-side
   parameter schema. Drift like `power: BooleanLike` becomes impossible.
+- **First framework pass:** `tools/object_model/ui_schemas.json` is the explicit
+  source for converted UI field and action contracts. Run
+  `python tools/object_model/ui_bindings.py` to generate
+  `code/datums/object_model/generated_ui_schema.dm` and
+  `tgui/packages/tgui/interfaces/ObjectModel/generatedSchemas.ts`; run it with
+  `--check` to reject stale output (CI does this). Each entry names a
+  `/datum/object_model/ui` subtype and its TGUI interface. The generated DM
+  subtype provides the action parameter rules and data schema consumed by the
+  server adapter; the generated TS supplies data/action types. Converted UIs
+  should put their data only through `ui_data.put()`, which checks generated
+  field types and required keys. The current OpenDream AST bridge is used by
+  dm-health, but extracting complete data/action contracts from arbitrary DM
+  bodies is still a later step; this explicit schema keeps both sides in sync
+  without guessing from control flow.
 - **The client** gets `useUi<SpaceHeater>()` with a typed `act()` and
   `can.<action>` carrying reasons. Buttons disable themselves with the same
   reason the server enforces.
@@ -776,8 +1142,10 @@ only 2 polling UIs, but manual.
 
 ## 18. dm-health: the static half
 
-`tools/dm-health` (OpenDream AST, flow analysis, access contracts) enforces
-what the runtime can't.
+`tools/dm-health` already has an OpenDream AST bridge, flow analysis and some
+access contracts. The rules below are the intended strict mode, not a list of
+current guarantees. Its README and `docs/type-system.md` distinguish the
+implemented checks from the proposal.
 
 ### 18.1 Null safety
 
@@ -847,7 +1215,9 @@ In order of preference:
   that it appears somewhere.
 - **Dependency completeness.** Fields and procs read by a requirement's
   `check()`, a watch or a UI `data()` must be covered by their declared or
-  captured dependencies. This catches stale filters.
+  captured dependencies. Static analysis reports unresolved dynamic reads;
+  the missed-wake audit supplies separate runtime evidence. Neither is
+  silently treated as complete when code uses reflection or external state.
 - **Task guards.** Warn when `complete()` writes a field its `check()` never
   reads.
 - **Suspension points.** An error on any object local or field read after an
@@ -858,11 +1228,17 @@ In order of preference:
   `act_*` procs (§16).
 - **Declaration validation.** Config keys, units and ranges are checked against
   behaviour and generated component schemas.
-- **No sleeping handlers** in events, `complete()` or hooks.
+- **No sleeping handlers** in events, `complete()` or hooks, including their
+  statically resolved call paths. Unknown callees require an explicit reviewed
+  boundary or the task cannot claim an atomic commit.
 
-## 19. Error classes removed
+## 19. Error classes reduced after conversion
 
-| Error class | Removed by |
+These are intended outcomes for a converted domain with complete producers,
+relations and guards. Legacy paths retain their current risks; a declaration
+alone does not remove an error class.
+
+| Error class | Reduced by |
 |---|---|
 | Hard deletes, dangling references | ownership and relations (§4, §5); SSgarbage as verifier |
 | Null-partner runtimes | participants resolved; required relations; typed nullability |
@@ -887,44 +1263,68 @@ In order of preference:
 
 | Risk | Mitigation |
 |---|---|
-| Indirection overhead in DM (proc calls around 1 µs, table lookups) | precomputed archetype tables; requirement bitmasks; no per-call allocation; batch procs for hot kinds; per-behaviour metrics; bench gates in CI |
+| Indirection overhead in DM and FFI | compare dispatch and handler cost with the path replaced; precompute sparse archetype tables, avoid per-event allocation, batch hot simulation work, and gate on idle and peak tick cost |
 | DM numbers are floats exact only to 2^24, so a bitmask variable holds about 24 flags | the framework spreads masks over several variables or packed lists and hides it |
-| Edge memory | light edges are about 32–48 B, lazy, and only on targets something points at. They replace hand-rolled back-lists and `datum/weakref` objects (100+ B each) |
+| Edge, subscription and base-datum memory | benchmark whole retained graph against the removed lists, weakrefs and callbacks; use lazy state, avoid adding several fields to every `/datum`, and count both ends of an edge |
+| Spatial fanout | use indexed queries and bounded observer subscriptions, not stored relations for every nearby pair; benchmark dense crowds and movement bursts |
+| Missed wakes and stale UIs | explicit dependencies, producer audits, test-time rechecks and per-domain coverage; never assume a raw expression or reflective write emits a complete change event |
+| Destruction cascades and transfers | specify phase visibility and failure behavior; use a bounded worklist and tests that destroy or relink endpoints from hooks |
+| Task races and indirect effects | non-suspending transitive commit paths, revision/claim checks for scarce resources, and concurrent-user tests |
 | Debuggability ("why didn't it run?") | variable-viewer panels showing the archetype, requirement bits with reasons, timers, watches and edges; an "explain" trace per entity; dm-health's viewer showing each prefab's static composition |
-| Learning curve | a small vocabulary (§23); a cookbook of real conversions; boot and CI errors that name the fix |
-| Two systems during migration | ratchets and codemods; finish one domain completely before the next |
+| Content-author boilerplate | compare a converted machine's declarations, fields and hooks with the original; add bundles only for repeated patterns, and use sparse behaviour state for rare data |
+| Learning curve | a small vocabulary (§23), a cookbook of real conversions, and CI errors that name the missing dependency or owner |
+| Two systems during migration | one lifetime/scheduling authority per converted domain; domain ratchets and codemods remove old paths once parity is proved |
 | Ordering and cascades | deterministic default order; declared before/after; deferred delivery for cascades |
 | dm-health depends on OpenDream's parser keeping up with BYOND 516, plus a .NET bridge in CI | pinned versions (hash-checked); loud failures on parse gaps; tracked as a real risk |
-| Boot cost of building archetypes | lazy, on first instantiation; cached |
+| Boot cost and late validation of archetypes | validate all converted types in CI; benchmark eager test validation and lazy cached runtime construction separately |
 | Compile time grows with the type count | offset by flattening prefab trees; tracked in the bench |
 | Balance drift (Poisson and rates replacing per-tick `prob`) | same-mean continuous equivalents; differential tests against the old tick behaviour |
-| Two scheduler models (DQ Medical's life systems) | converge into one model with DQ Medical |
+| Mob Life semantics during scheduler convergence | share reactor primitives first; preserve Life's composition and wake rules until medical parity, hibernation audit and benchmarks pass |
 
 ## 21. Plan
 
-Frameworks first. Callers migrate later, behind ratchets. Tests are written
-now and run when the testing freeze lifts. Ports are verified with
-differential tests (old against new on the same inputs), not by inspection.
+Implement the smallest primitives needed by real conversions, measure them,
+then widen the domain. Do not require tracks A–F to finish before any caller
+migrates. Convert all callers of an old mechanism **within one bounded domain**
+before removing that domain's old path; the whole codebase need not change in
+one patch. Ratchets count the remaining legacy patterns. Verify ports with
+differential tests on the same inputs, not inspection alone.
 
-| Track | Scope | Depends on |
+| Stage | Work | Exit gate |
 |---|---|---|
-| **A: Kinds, ownership, relations** | `object_kind`; the ledger generalised to datum slots; relation kinds (light and rich edges, shapes, `holds_while`, hooks, lifetime policies); `link`/`unlink`/`linked`; derived spatial relations; `REF_*` from LC2 re-expressed as relation kinds; grants re-expressed as a relation kind; destroy-pipeline changes (§14) | LC1–LC3 (built) |
-| **B: Scheduler** | wakes; owned timers; Poisson timers; the watch evaluator (DM side; Rust side from `rust_architecture.md`); rate fields and contributions; periodic behaviours with staggering; tasks and prompts with stamps; the test clock; the missed-wake audit; MC integration on the Rust reactor | A (edges) |
-| **C: Archetypes and behaviours** | `declare()` builder; archetype build and validation; bundles; behaviour singletons, config, interfaces, state machines; requirement types and the `/datum/check` library with dependency capture and messages; typed events with static dispatch, phases, delivery modes and bubbling | A; B for triggers |
-| **D: Startup quick wins** | build-time assets; lazy wiki; batched post-load init passes; bench before and after | none; can start now |
-| **E: UI** | `/ui` types, fragments, change-driven sessions, action schemas, generated TS types | C; F for generation |
-| **F: dm-health** | default-non-null flip with baseline; builtin stubs; narrowing rules; strict modules; `internal`, `observable`, field `readonly`; contracts from declarations; every-path `..()`; dependency-completeness, task-guard and suspension-point rules; event typing; TS and schema generation; porting the `check_grep` access and syntax rules | parallel to A–E |
-| **G: Migration** (later) | domain by domain: prefabs onto declarations, overrides and `qdel` onto verbs, `process()` onto behaviours and rates, `do_after` onto tasks, signals onto events, UIs onto `/ui`. Ratchets on every counted pattern | A–F |
+| **0. Baseline and contracts** | Reconcile this document with the current tree; classify lifetime authorities and tracked references; census instances, lists, edges, timers, hard deletes and manual cleanup. Record `bench --runs=3` test-map and live-map boot, retained memory, idle, peak tick and relevant scenarios. | Baseline and invariant list are reviewable; estimates are labelled as estimates. |
+| **1. Minimal lifetime pilot** | Prove the unified destroy worklist and direct-`qdel` bridge, then convert one bounded datum ownership family so all of its gameplay deletion calls use lifecycle verbs. Convert a paired atom relation such as sleeper and console next, including either-end deletion and replacement. | No bare gameplay `qdel` or mechanical `Destroy` cleanup remains in the converted family; both deletion entry paths, relation order, transfers and reentrant hooks have falsifiable tests; no regression in the pilot's memory and tick cost. |
+| **2. Complete machine pilot** | Convert the space heater's cell slot, processing trigger, interaction and UI action path using only the declarations needed for it. Keep the old and new implementations in a differential fixture, then remove the old path for the converted type. | Content code is materially simpler; UI types and server validation agree; boot, idle, active processing, memory and UI event volume meet measured gates. |
+| **3. Shared scheduler and requirements** | Put converted machine timers, watches and wake paths on the reactor. Reuse P2 predicate reasons and the rules engine's threshold semantics. Convert one machine family at a time; keep mob Life's author-facing API until separately proven. | Missed-wake audit, parity tests and bench pass; old processing tables are removed for each converted family. |
+| **4. Tasks and prompts** | Convert one resource-consuming timed interaction and one vending confirmation; add revision checks, claims where needed, a test clock and transitive no-sleep checks. | Competing-user, deletion, movement and stale-price tests pass without double spending. |
+| **5. Composition and generation** | Generalise patterns demonstrated by several conversions into archetypes, bundles, behaviour state contracts, UI fragments and generated schemas. Validate all converted types in CI. Grow dm-health strict mode by converted module. | Authors write fewer fields and hooks than before; errors identify missing owners, producers or schemas; no memory or boot regression. |
+| **6. Domain rollout** | Convert further machines and items, then complex body, power and atmos domains where the primitives fit. Remove each domain's old signals, timers, `Destroy` cleanup and UI glue only when its ratchet reaches zero. | Differential, focused tests and the repository bench pass for each domain; hard deletes and runtimes fall. |
 
-**DQ Medical** reviews this design before code lands. They own mob Life, bodies,
-organs, species and afflictions. Their life systems converge into behaviours
-and the scheduler (B/C), and their grant kinds (TRAIT, GENE) plug into A.
+Startup assets and lazy wiki are independent work and should be measured
+separately from the object model. DQ Medical's mob Life, bodies, organs,
+species and afflictions require a dedicated review before their author-facing
+model changes. Their existing hibernation audit is a gate, not something to
+discard when sharing the backend.
 
-**Definition of done for the frameworks:**
-- every section here is implemented;
-- the tests pass once the freeze lifts;
-- the bench shows no regression;
-- the cookbook covers each primitive with a real conversion.
+**Definition of done for a converted domain:** its ownership and dependency
+invariants are explicit; old and new behavior match in focused tests; its
+bench has no material regression in boot, retained memory, idle or peak tick;
+the old path is removed; and a content-author example demonstrates less
+manual lifecycle and scheduling code. The entire framework is done only when
+the remaining domains meet those gates and the legacy mechanisms can be
+deleted.
+
+### 21.1 Scope of consolidation
+
+The high-yield targets are repeated ownership cleanup, paired links, signal
+unregistration, timer cancellation, processing enrollment, interaction
+requirements, grants and UI parameter handling. A converted content type
+should mostly declare those relationships and write its distinctive effects.
+The generic model does not replace domain algorithms, Rust simulation loops,
+or every useful subtype. Measure **author effort** as well as code size: count
+declarations, state fields, hooks and special-case escape hatches for several
+real conversions. If the framework makes ordinary content longer or harder to
+debug, simplify its API before widening the migration.
 
 ## 22. Before and after, in brief
 
@@ -933,7 +1333,7 @@ and the scheduler (B/C), and their grant kinds (TRAIT, GENE) plug into A.
 | Machine composition | subtype tree with overrides | prefab `declare()` with bundles, behaviours and components |
 | Periodic work | `START_PROCESSING` plus `process()` polling | requirement-gated behaviours; timers, watches and rates; hibernation |
 | Cross-object links | var plus hand-written unlinking in both Destroys | relation kind with hooks and conditions |
-| Timed actions | `do_after` sleeping loop plus manual re-checks | task with captured dependencies and atomic commit |
+| Timed actions | `do_after` sleeping loop plus manual re-checks | task with explicit dependencies and a guarded non-suspending commit |
 | Confirmation prompts | sleeping `tgui_alert` plus stale state | prompt task with a stamp |
 | Destruction | `Destroy()` override chains and `qdel` everywhere | declared policies; the transaction; verbs; fast path |
 | UI | `tgui_data`, `tgui_act`, `update_uis`, hand-written TS types | `/ui` with fragments, generated types, change-driven sessions |
