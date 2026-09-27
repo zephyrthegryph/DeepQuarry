@@ -345,12 +345,11 @@ REF_OWNED(/datum/contract_requirement/event_count, "filter")
 	if(event_type)
 		event_types += event_type
 
+REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
+
+// LIFECYCLE: pending sustain timers are cancelled.
 /datum/contract_requirement/sustained_event/Destroy()
 	cancel_pending_timers()
-	QDEL_NULL(filter)
-	pending_tokens = null
-	pending_timers = null
-	completed_entities = null
 	return ..()
 
 /datum/contract_requirement/sustained_event/proc/require_any_value(key, list/allowed)
@@ -436,14 +435,11 @@ REF_OWNED(/datum/contract_requirement/event_count, "filter")
 	if(event_type)
 		event_types += event_type
 
+REF_OWNED(/datum/contract_requirement/staged_sustained_event, "filter")
+
+// LIFECYCLE: pending sustain timers are cancelled.
 /datum/contract_requirement/staged_sustained_event/Destroy()
 	cancel_pending_timers()
-	QDEL_NULL(filter)
-	stages = null
-	pending_tokens = null
-	pending_timers = null
-	pending_stage_indices = null
-	completed_stages = null
 	return ..()
 
 /datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)

@@ -118,6 +118,7 @@ REF_OWNED(/datum/contract_opportunity_signal, "filter")
 	for(var/datum/contract_opportunity_signal/signal in rule.signals)
 		facts_by_signal[signal.id] = list()
 
+// LIFECYCLE: its facts (nested per signal) go with it.
 /datum/contract_opportunity_window/Destroy()
 	for(var/signal_id in facts_by_signal)
 		var/list/facts = facts_by_signal[signal_id]
