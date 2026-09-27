@@ -87,23 +87,15 @@
 	rebuild_behaviors()
 	return ..()
 
+REF_OWNED(/datum/ai_brain, "model")
+
+// LIFECYCLE: a running behaviour is stopped and chunk sleep cancelled.
 /datum/ai_brain/Destroy()
 	cancel_chunk_sleep()
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
-	if(holder)
-		UnregisterSignal(holder, list(COMSIG_MOB_STATCHANGE, COMSIG_MOB_LOGIN, COMSIG_LIVING_INJURED))
 	manage_processing(0)
-	QDEL_NULL(model)
-	holder = null
-	primary_threat = null
-	active_target = null
-	active_source = null
-	effective_behaviors = null
-	behavior_state = null
-	personal = null
-	subscribed_signals = null
 	return ..()
 
 /datum/ai_brain/proc/get_owner()
@@ -517,7 +509,6 @@
 	for(var/btype in subscribed_signals[sig_type])
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))
-
 
 /// SSai reads this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
 /// action, or a behavior that blocks reselection (code/datums/om/task.dm, om_busy()).
