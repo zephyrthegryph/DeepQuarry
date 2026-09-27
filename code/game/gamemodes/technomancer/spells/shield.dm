@@ -24,10 +24,6 @@
 	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 
-/obj/item/spell/shield/Destroy()
-	spark_system = null
-	return ..()
-
 /obj/item/spell/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(user.incapacitated())
 		return 0

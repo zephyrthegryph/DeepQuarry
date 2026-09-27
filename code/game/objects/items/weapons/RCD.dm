@@ -35,10 +35,7 @@
 	spark_system.attach(src)
 	return ..()
 */
-/obj/item/rcd/Destroy()
-	QDEL_NULL(spark_system)
-	spark_system = null
-	return ..()
+REF_OWNED(/obj/item/rcd, "spark_system")
 
 /obj/item/rcd/examine(mob/user)
 	. = ..()
@@ -185,7 +182,6 @@
 	stored_matter = max_stored_matter
 	return ..()
 
-
 /obj/item/rcd/advanced
 	name = "advanced rapid construction device"
 	desc = "A device used to rapidly build and deconstruct. This version works at a range, builds faster, and has a much larger capacity. \
@@ -198,7 +194,6 @@
 /obj/item/rcd/advanced/loaded/Initialize(mapload)
 	stored_matter = max_stored_matter
 	return ..()
-
 
 // Electric RCDs.
 // Currently just a base for the mounted RCDs.
@@ -217,10 +212,7 @@
 		cell = new /obj/item/cell/high(src)
 	return ..()
 
-/obj/item/rcd/electric/Destroy()
-	if(cell)
-		QDEL_NULL(cell)
-	return ..()
+REF_OWNED(/obj/item/rcd/electric, "cell")
 
 /obj/item/rcd/electric/get_cell()
 	RETURN_TYPE(/obj/item/cell)
@@ -251,8 +243,6 @@
 		return "The power source connected to \the [src] has a charge of [cell.percent()]%."
 	return "It lacks a source of power, and cannot function."
 
-
-
 // 'Mounted' RCDs, used for borgs/RIGs/Mechas, all of which use their cells to drive the RCD.
 /obj/item/rcd/electric/mounted
 	name = "mounted electric rapid construction device"
@@ -276,7 +266,6 @@
 			return ME.chassis.cell
 	return null
 
-
 // RCDs for borgs.
 /obj/item/rcd/electric/mounted/borg
 	can_remove_rwalls = TRUE
@@ -294,16 +283,13 @@
 /obj/item/rcd/electric/mounted/borg/lesser
 	can_remove_rwalls = FALSE
 
-
 // RCDs for RIGs.
 /obj/item/rcd/electric/mounted/rig
-
 
 // RCDs for Mechs.
 /obj/item/rcd/electric/mounted/mecha
 	ranged = TRUE
 	toolspeed = 0.5
-
 
 // Infinite use RCD for debugging/adminbuse.
 /obj/item/rcd/debug
@@ -331,8 +317,6 @@
 /obj/item/rcd/debug/display_resources()
 	return "It has UNLIMITED POWER!"
 
-
-
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo
 	name = "compressed matter cartridge"
@@ -349,7 +333,6 @@
 	desc = "Do not ingest."
 	MATERIAL_MIX(list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500))
 	remaining = RCD_MAX_CAPACITY * 2
-
 
 // === merged from RCD_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/rcd

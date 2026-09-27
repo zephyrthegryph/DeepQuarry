@@ -15,9 +15,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		explanation_text = text
 	..()
 
-/datum/objective/Destroy()
-	. = ..()
-
 /datum/objective/proc/check_completion()
 	return completed
 
@@ -29,14 +26,11 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	if(possible_targets.len > 0)
 		target = pick(possible_targets)
 
-
 /datum/objective/proc/find_target_by_role(role, role_type=0)//Option sets either to check assigned role or special role. Default to assigned.
 	for(var/datum/mind/possible_target in SSticker.minds)
 		if((possible_target != owner) && ishuman(possible_target.current) && ((role_type ? possible_target.special_role : possible_target.assigned_role) == role) )
 			target = possible_target
 			break
-
-
 
 /datum/objective/assassinate/find_target()
 	..()
@@ -46,7 +40,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		explanation_text = "Free Objective"
 	return target
 
-
 /datum/objective/assassinate/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
@@ -55,14 +48,12 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		explanation_text = "Free Objective"
 	return target
 
-
 /datum/objective/assassinate/check_completion()
 	if(target && target.current)
 		if(target.current.stat == DEAD || issilicon(target.current) || isbrain(target.current) || target.current.z > 6 || !target.current.ckey) //Borgs/brains/AIs count as dead for traitor objectives. --NeoFite
 			return 1
 		return 0
 	return 1
-
 
 /datum/objective/anti_revolution/execute/find_target()
 	..()
@@ -71,7 +62,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		explanation_text = "Free Objective"
 	return target
-
 
 /datum/objective/anti_revolution/execute/find_target_by_role(role, role_type=0)
 	..(role, role_type)
@@ -98,7 +88,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		explanation_text = "Free Objective"
 	return target
-
 
 /datum/objective/anti_revolution/brig/find_target_by_role(role, role_type=0)
 	..(role, role_type)
@@ -162,7 +151,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		explanation_text = "Free Objective"
 	return target
 
-
 /datum/objective/debrain/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
@@ -185,7 +173,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			return 1
 	return 0
 
-
 //The opposite of killing a dude.
 /datum/objective/protect/find_target()
 	..()
@@ -194,7 +181,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		explanation_text = "Free Objective"
 	return target
-
 
 /datum/objective/protect/find_target_by_role(role, role_type=0)
 	..(role, role_type)
@@ -212,7 +198,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			return 0
 		return 1
 	return 0
-
 
 /datum/objective/hijack
 	explanation_text = "Hijack the emergency shuttle by escaping alone."
@@ -234,10 +219,8 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 					return 0
 	return 1
 
-
 /datum/objective/block
 	explanation_text = "Do not allow any organic lifeforms to escape on the shuttle alive."
-
 
 /datum/objective/block/check_completion()
 	if(!istype(owner.current, /mob/living/silicon))
@@ -275,10 +258,8 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 						return 0
 	return 1
 
-
 /datum/objective/escape
 	explanation_text = "Escape on the shuttle or an escape pod alive and free."
-
 
 /datum/objective/escape/check_completion()
 	if(issilicon(owner.current))
@@ -314,8 +295,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		return 0
 
-
-
 /datum/objective/survive
 	explanation_text = "Stay alive until the end."
 
@@ -338,7 +317,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		explanation_text = "Free Objective"
 	return target
-
 
 /datum/objective/brig/find_target_by_role(role, role_type=0)
 	..(role, role_type)
@@ -373,7 +351,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		explanation_text = "Free Objective"
 	return target
-
 
 /datum/objective/harm/find_target_by_role(role, role_type=0)
 	..(role, role_type)
@@ -411,11 +388,8 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			return 1
 	return 0
 
-
 /datum/objective/nuclear
 	explanation_text = "Destroy the station with a nuclear device."
-
-
 
 /datum/objective/steal
 	var/obj/item/steal_target
@@ -455,7 +429,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		"25 refined uranium bars" = /obj/item/stack/material/uranium,
 	)
 
-
 /datum/objective/steal/proc/set_target(item_name)
 	target_name = item_name
 	steal_target = possible_items[target_name]
@@ -464,10 +437,8 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Steal [target_name]."
 	return steal_target
 
-
 /datum/objective/steal/find_target()
 	return set_target(pick(possible_items))
-
 
 /datum/objective/steal/proc/select_target(mob/user)
 	var/list/possible_items_all = possible_items+possible_items_special+"custom"
@@ -550,7 +521,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Accumulate [target_amount] capture points."
 	return target_amount
 
-
 /datum/objective/capture/check_completion()//Basically runs through all the mobs in the area to determine how much they are worth.
 	var/captured_amount = 0
 	var/area/centcom/holding/A = locate()
@@ -568,11 +538,9 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			continue
 		captured_amount+=1
 
-
 	if(captured_amount<target_amount)
 		return 0
 	return 1
-
 
 /datum/objective/absorb/proc/gen_amount_goal(lowbound = 4, highbound = 6)
 	target_amount = rand (lowbound,highbound)
@@ -686,7 +654,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 	explanation_text = "It's a buyer's market out here. Steal [loot] for resale."
 
-
 /datum/objective/heist/loot/check_completion()
 	var/total_amount = 0
 
@@ -760,7 +727,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 	if(total_amount >= target_amount) return 1
 	return 0
-
 
 /datum/objective/heist/preserve_crew
 	explanation_text = "Do not leave anyone behind, alive or dead."
@@ -851,7 +817,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		explanation_text = "Free Objective"
 	return target
-
 
 /datum/objective/rev/find_target_by_role(role, role_type=0)
 	..(role, role_type)

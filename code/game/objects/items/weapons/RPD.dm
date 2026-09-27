@@ -58,10 +58,7 @@
 	if(!recipe)
 		recipe = first_atmos
 
-/obj/item/pipe_dispenser/Destroy()
-	QDEL_NULL(spark_system)
-	QDEL_NULL(tool)
-	return ..()
+REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 
 /obj/item/pipe_dispenser/attack_self(mob/user)
 	. = ..(user)

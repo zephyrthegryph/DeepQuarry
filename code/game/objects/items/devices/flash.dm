@@ -49,9 +49,7 @@
 	. = ..()
 	power_supply = new cell_type(src)
 
-/obj/item/flash/Destroy()
-	QDEL_NULL(power_supply)
-	return ..()
+REF_OWNED(/obj/item/flash, "power_supply")
 
 /obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
 	if(!broken)
@@ -262,7 +260,6 @@
 	if(flash_burn)
 		target.injure(INJURY_BURN, flash_burn * (flash_strength/5), BP_HEAD, src)
 	return TRUE
-
 
 /obj/item/flash/attack_self(mob/living/carbon/user, flag = 0, emp = 0)
 	. = ..(user)

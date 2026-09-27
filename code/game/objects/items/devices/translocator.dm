@@ -397,11 +397,6 @@ This device records all warnings given and teleport events for admin review in c
 	var/tele_network = null
 	flags = NOBLUDGEON
 
-/obj/item/perfect_tele_beacon/Destroy()
-	tele_name = null
-	tele_hand = null
-	return ..()
-
 /obj/item/perfect_tele_beacon/attack_hand(mob/user)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		warned_users |= user.ckey

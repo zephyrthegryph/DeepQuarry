@@ -327,10 +327,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if(special_frame)
 		add_overlay(special_frame)
 
-/obj/machinery/gear_dispenser/suit_fancy/Destroy()
-	QDEL_NULL(door)
-	held_gear_disp = null
-	return ..()
+REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 
 /obj/machinery/gear_dispenser/suit_fancy/power_change()
 	. = ..()

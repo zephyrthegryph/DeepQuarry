@@ -9,9 +9,6 @@
 	var/static/list/use_channels = list(EQUIP,ENVIRON,LIGHT)
 	equip_type = EQUIP_UTILITY
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/Destroy()
-	. = ..()
-
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/periodic_step()
 	if(!chassis || chassis.hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
 		set_ready_state(TRUE)

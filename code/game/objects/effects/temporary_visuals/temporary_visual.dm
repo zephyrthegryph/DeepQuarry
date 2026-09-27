@@ -16,10 +16,6 @@
 		dir = pick(list(NORTH, SOUTH, EAST, WEST))
 	timerid = QDEL_IN_STOPPABLE(src, duration)
 
-/obj/effect/temp_visual/Destroy()
-	. = ..()
-	deltimer(timerid)
-
 /obj/effect/temp_visual/singularity_act()
 	return
 

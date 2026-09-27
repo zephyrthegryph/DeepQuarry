@@ -53,7 +53,6 @@
 		new /obj/machinery/recharge_station/ghost_pod_recharger(src.loc)
 		qdel(src)
 
-
 // This type is triggered manually by a player discovering the pod and deciding to open it.
 /obj/structure/ghost_pod/manual
 	var/confirm_before_open = FALSE // Recommended to be TRUE if the pod contains a surprise.
@@ -117,11 +116,7 @@
 
 	create_occupant(user)
 
-
 REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
-
-/obj/structure/ghost_pod/Destroy()
-	. = ..()
 
 /obj/structure/ghost_pod
 	var/spawn_active = FALSE

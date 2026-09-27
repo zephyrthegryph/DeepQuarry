@@ -29,9 +29,6 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/effect/map_effect/interval/Destroy()
-	return ..()
-
 // Override this for the specific thing to do.
 /obj/effect/map_effect/interval/proc/trigger()
 	return

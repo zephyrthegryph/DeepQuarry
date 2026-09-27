@@ -224,9 +224,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 	anchored = TRUE
 	state = 20//So it doesn't interact based on the above. Not really necessary.
 
-/obj/structure/AIcore/deactivated/Destroy()
-	return ..()
-
 /obj/structure/AIcore/deactivated/proc/load_ai(mob/living/silicon/ai/transfer, obj/item/aicard/card, mob/user)
 
 	if(!istype(transfer) || locate(/mob/living/silicon/ai) in src)

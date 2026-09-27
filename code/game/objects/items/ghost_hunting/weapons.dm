@@ -22,10 +22,6 @@
 	// Make ghosts/phased entities slow when grabbed
 	// Make it so it searches in an AOE and grabs thing.
 
-/obj/item/ghost_catcher/Destroy()
-	grabbed_entity = null
-	return ..()
-
 /obj/item/ghost_catcher/update_icon()
 	if(om_busy(src))
 		icon_state = "ghost_beam_active"

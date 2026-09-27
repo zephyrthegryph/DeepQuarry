@@ -33,12 +33,7 @@
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
 
-/obj/item/radio/headset/Destroy()
-	qdel(keyslot1)
-	qdel(keyslot2)
-	keyslot1 = null
-	keyslot2 = null
-	return ..()
+REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 
 /obj/item/radio/headset/list_channels(mob/user)
 	return list_secure_channels()
@@ -106,7 +101,6 @@
 			user.drop_item()
 			W.loc = src
 			keyslot2 = W
-
 
 		recalculateChannels()
 
@@ -705,7 +699,6 @@
 		return -1 //Transciever Disabled.
 	return ..(freq, level, 1)
 
-
 //Badmin piece of clothing that applies a few effects to a mob, used specifically for events with "hunters"
 //This just helps me equip the hunters a little easier
 /obj/item/radio/headset/event
@@ -783,9 +776,6 @@
 		tele_threshold = initial(tele_threshold)
 	return TRUE
 
-
-
-
 /obj/item/radio/headset/outsider
 	name = "generic headset"
 	desc = "Headset used by those upon the planet, or in other words, outsiders."
@@ -793,7 +783,6 @@
 	adhoc_fallback = TRUE
 
 	ks1type = /obj/item/encryptionkey/headset_outsider
-
 
 /obj/item/encryptionkey/headset_outsider
 	name = "outsider radio encryption key"

@@ -14,13 +14,7 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/tvcamera/Destroy()
-	qdel(camera)
-	qdel(radio)
-	camera = null
-	radio = null
-	showing = null
-	. = ..()
+REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
 
 /obj/item/tvcamera/examine()
 	. = ..()
@@ -167,12 +161,7 @@
 	var/showing_name
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/bodycam/Destroy()
-	qdel(bcamera)
-	qdel(bradio)
-	bcamera = null
-	bradio = null
-	..()
+REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 
 /obj/item/clothing/accessory/bodycam/examine()
 	. = ..()

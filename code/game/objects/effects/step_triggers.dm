@@ -22,8 +22,6 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 		return
 	Trigger(H)
 
-
-
 /* Tosses things in a certain direction */
 
 /obj/effect/step_trigger/thrower
@@ -103,7 +101,6 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 		var/turf/T = locate(teleport_x, teleport_y, teleport_z)
 		move_object(AM, T)
 
-
 /obj/effect/step_trigger/teleporter/proc/move_object(atom/movable/AM, turf/T)
 	if(!T)
 		return
@@ -149,8 +146,6 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 			return
 	move_object(AM, T)
 
-
-
 /* Random teleporter, teleports atoms to locations ranging from teleport_x - teleport_x_offset, etc */
 
 /obj/effect/step_trigger/teleporter/random
@@ -182,8 +177,6 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 	if(the_landmark)
 		A.forceMove(get_turf(the_landmark))
 
-
-
 /obj/effect/landmark/teleport_mark
 	var/landmark_id = null
 
@@ -192,18 +185,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 /obj/effect/landmark/teleport_mark/Initialize(mapload)
 	. = ..()
 
-/obj/effect/landmark/teleport_mark/Destroy()
-	return ..()
-
 /* Teleporter which simulates falling out of the sky. */
 
 /obj/effect/step_trigger/teleporter/planetary_fall
 	var/datum/planet/planet = null
-
-
-/obj/effect/step_trigger/teleporter/planetary_fall/Destroy()
-	. = ..()
-	planet = null
 
 // First time setup, which planet are we aiming for?
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/find_planet()
@@ -314,7 +299,6 @@ But for now, for what it's been used for, it works.
 	H.equip_to_slot_or_del(new /obj/item/radio/headset(H),slot_l_ear)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/permit(H), slot_l_hand)
 
-
 /obj/effect/step_trigger/autostrip/proc/initMappedLink()
 	. = FALSE
 	target = GLOB.mapped_autostrips[targetid]
@@ -332,7 +316,6 @@ But for now, for what it's been used for, it works.
 	anchored = 1
 	invisibility = INVISIBILITY_BADMIN
 
-
 /obj/effect/autostriptarget/Initialize(mapload)
 	. = ..()
 	if(targetid)
@@ -345,7 +328,6 @@ But for now, for what it's been used for, it works.
 	. = ..()
 	if(targetid)
 		GLOB.mapped_autostrips_mob[targetid] = src
-
 
 /obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
 	. = ..()

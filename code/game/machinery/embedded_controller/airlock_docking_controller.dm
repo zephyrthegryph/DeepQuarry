@@ -23,16 +23,6 @@
 	if(display_name)
 		docking_program.display_name = display_name
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/Destroy()
-	// `program` owns the docking program and that datum in turn owns the airlock
-	// program. These two typed vars are aliases for UI convenience, not additional
-	// owners. Clear them before the base controller queues `program` for deletion
-	// or the still-live, already-destroyed controller retains both datums through
-	// the complete GC grace period.
-	airlock_program = null
-	docking_program = null
-	return ..()
-
 /obj/machinery/embedded_controller/radio/airlock/docking_port/multitool_act(mob/user, obj/item/tool)
 	var/datum/embedded_program/docking/airlock/docking_program = program
 	var/code = docking_program.docking_codes
@@ -68,9 +58,7 @@
 	airlock_program = A
 	airlock_program.master_prog = src
 
-/datum/embedded_program/docking/airlock/Destroy()
-	QDEL_NULL(airlock_program)
-	return ..()
+REF_OWNED(/datum/embedded_program/docking/airlock, "airlock_program")
 
 /datum/embedded_program/docking/airlock/receive_user_command(command)
 	if (command == "toggle_override")

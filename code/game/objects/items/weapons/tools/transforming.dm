@@ -12,10 +12,7 @@
 		welder = new weldertype(src)
 	on_tool_switch()
 
-/obj/item/tool/transforming/Destroy()
-	if(welder)
-		QDEL_NULL(welder)
-	. = ..()
+REF_OWNED(/obj/item/tool/transforming, "welder")
 
 /obj/item/tool/transforming/get_welder()
 	return welder

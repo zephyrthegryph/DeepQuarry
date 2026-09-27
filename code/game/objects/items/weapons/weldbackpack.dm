@@ -21,10 +21,7 @@
 	nozzle = new nozzle_type(src)
 	nozzle_attached = 1
 
-/obj/item/weldpack/Destroy()
-	qdel(nozzle)
-	nozzle = null
-	return ..()
+REF_OWNED(/obj/item/weldpack, "nozzle")
 
 /obj/item/weldpack/dropped(mob/user, equipping, slot)
 	..()
@@ -158,7 +155,6 @@
 	w_class = ITEMSIZE_LARGE
 	max_fuel = 100
 	nozzle_type = /obj/item/weldingtool/tubefed/survival
-
 
 /obj/item/weldpack
 	sprite_sheets = list(

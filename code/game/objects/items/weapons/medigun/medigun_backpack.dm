@@ -239,13 +239,7 @@
 		slaser = new slaser(src)
 	update_icon()
 
-/obj/item/medigun_backpack/Destroy()
-	QDEL_NULL(bcell)
-	QDEL_NULL(smodule)
-	QDEL_NULL(smanipulator)
-	QDEL_NULL(scapacitor)
-	QDEL_NULL(slaser)
-	. = ..()
+REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "scapacitor", "slaser"))
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	var/datum/component/tethered_item/TI = GetComponent(/datum/component/tethered_item)

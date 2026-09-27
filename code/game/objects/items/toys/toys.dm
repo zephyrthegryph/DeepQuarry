@@ -2169,9 +2169,7 @@
 	var/cooldown = 0
 	var/obj/stored_minature = null
 
-/obj/item/toy/minigibber/Destroy()
-	QDEL_NULL(stored_minature)
-	. = ..()
+REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 
 /obj/item/toy/minigibber/attack_self(mob/user)
 	. = ..(user)

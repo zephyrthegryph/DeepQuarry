@@ -21,10 +21,7 @@
 	set_wires(new /datum/wires/explosive/c4(src))
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
-/obj/item/plastique/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
+REF_OWNED(/obj/item/plastique, "wires")
 
 /obj/item/plastique/attackby(obj/item/I, mob/user)
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
@@ -132,7 +129,6 @@
 			else
 				to_chat(user, span_notice("The [I] is not any better than the component already installed into this charge!"))
 	return .
-
 
 /obj/item/plastique/seismic/locked
 	desc = "Used to dig holes in specific areas without too much extra hole. Has extra mechanism that safely implodes the bomb if it is used in close proximity to the facility."

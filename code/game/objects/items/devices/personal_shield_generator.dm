@@ -58,10 +58,7 @@
 	PERIODIC_STOP(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
-/obj/item/personal_shield_generator/Destroy()
-	. = ..()
-	QDEL_NULL(active_weapon)
-	QDEL_NULL(bcell)
+REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack

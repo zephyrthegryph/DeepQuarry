@@ -35,9 +35,7 @@
 	if(ispath(cell))
 		cell = new cell(src)
 
-/obj/item/suit_cooling_unit/Destroy()
-	QDEL_NULL(cell)
-	return ..()
+REF_OWNED(/obj/item/suit_cooling_unit, "cell")
 
 /obj/item/suit_cooling_unit/periodic_step()
 	if (!on || !cell)

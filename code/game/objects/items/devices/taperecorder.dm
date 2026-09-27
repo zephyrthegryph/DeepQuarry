@@ -31,12 +31,7 @@
 /obj/item/taperecorder/empty
 	mytape = null
 
-/obj/item/taperecorder/Destroy()
-	if(mytape)
-		qdel(mytape)
-		mytape = null
-	return ..()
-
+REF_OWNED(/obj/item/taperecorder, "mytape")
 
 /obj/item/taperecorder/attackby(obj/item/I, mob/user, params)
 	if(istype(I, /obj/item/rectape))
@@ -52,11 +47,9 @@
 		return
 	..()
 
-
 /// Heat behaviour rule: fire ruins the tape inside.
 /obj/item/taperecorder/proc/rule_ruin_tape(datum/rule/rule)
 	mytape?.ruin()
-
 
 /obj/item/taperecorder/attack_hand(mob/user)
 	if(user.get_inactive_hand() == src)
@@ -64,7 +57,6 @@
 			eject()
 			return
 	..()
-
 
 /obj/item/taperecorder/verb/eject()
 	set name = "Eject Tape"
@@ -86,7 +78,6 @@
 	mytape = null
 	update_icon()
 
-
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE, with_capitalization = TRUE)
 	// START OF
@@ -102,13 +93,11 @@
 	if(mytape && recording)
 		mytape.record_speech("[voice] [verb], \"[msg]\"")
 
-
 /obj/item/taperecorder/see_emote(mob/M as mob, text, emote_type)
 	if(emote_type != 2) //only hearable emotes
 		return
 	if(mytape && recording)
 		mytape.record_speech("[strip_html_properly(text)]")
-
 
 /obj/item/taperecorder/show_message(msg, type, alt, alt_type)
 	var/recordedtext
@@ -176,7 +165,6 @@
 	else
 		to_chat(usr, span_notice("The tape is full."))
 
-
 /// One second of recording: the tape fills up.
 /obj/item/taperecorder/proc/record_tick()
 	if(!mytape || !recording || mytape.used_capacity >= mytape.max_capacity)
@@ -221,7 +209,6 @@
 	else
 		to_chat(usr, span_notice("Stop what?"))
 
-
 /obj/item/taperecorder/verb/wipe_tape()
 	set name = "Wipe Tape"
 	set category = "Object"
@@ -243,7 +230,6 @@
 		mytape.used_capacity = 0
 		to_chat(usr, span_notice("You wipe the tape."))
 		return
-
 
 /obj/item/taperecorder/verb/playback_memory()
 	set name = "Playback Tape"
@@ -320,7 +306,6 @@
 	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": [words[n]]."))
 	om_after(src, 1 SECOND, PROC_REF(self_destruct_count), n - 1)
 
-
 /obj/item/taperecorder/verb/print_transcript()
 	set name = "Print Transcript"
 	set category = "Object"
@@ -356,7 +341,6 @@
 	canprint = FALSE
 	VARSET_IN(src, canprint, TRUE, 30 SECONDS)
 
-
 /obj/item/taperecorder/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -365,7 +349,6 @@
 		stop()
 	else
 		record()
-
 
 /obj/item/taperecorder/update_icon()
 	if(!mytape)
@@ -376,7 +359,6 @@
 		icon_state = "taperecorder_playing"
 	else
 		icon_state = "taperecorder_idle"
-
 
 /obj/item/rectape
 	name = "tape"
@@ -394,12 +376,10 @@
 	var/list/timestamp = new/list()
 	var/ruined = 0
 
-
 /obj/item/rectape/update_icon()
 	cut_overlays()
 	if(ruined)
 		add_overlay("ribbonoverlay")
-
 
 /obj/item/rectape/attack_self(mob/user)
 	. = ..(user)
@@ -409,27 +389,22 @@
 		to_chat(user, span_notice("You pull out all the tape!"))
 		ruin()
 
-
 /obj/item/rectape/proc/ruin()
 	ruined = 1
 	update_icon()
-
 
 /obj/item/rectape/proc/fix()
 	ruined = 0
 	update_icon()
 
-
 /obj/item/rectape/proc/record_speech(text)
 	timestamp += used_capacity
 	LAZYADD(storedinfo, "\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
-
 
 //shows up on the printed transcript as (Unrecognized sound)
 /obj/item/rectape/proc/record_noise(text)
 	timestamp += used_capacity
 	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
-
 
 /obj/item/rectape/attackby(obj/item/I, mob/user, params)
 	if(istype(I, /obj/item/pen))

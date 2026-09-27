@@ -22,12 +22,6 @@
 	var/cooldown_to_charge = 15 SECONDS
 	var/recharge_timer
 
-/obj/item/clothing/suit/armor/tesla/Destroy()
-	if(recharge_timer)
-		deltimer(recharge_timer)
-		recharge_timer = null
-	return ..()
-
 /obj/item/clothing/suit/armor/tesla/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	//First, some retaliation.
 	if(active)

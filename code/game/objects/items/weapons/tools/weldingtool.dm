@@ -54,11 +54,6 @@
 	if(always_process)
 		PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/weldingtool/Destroy()
-	if(welding || always_process)
-		PERIODIC_STOP(src)
-	return ..()
-
 /obj/item/weldingtool/get_welder()
 	return src
 
@@ -680,7 +675,6 @@
 			setWelding(TRUE, SLOT_ITEM(M, MECHA_SLOT_PILOT))
 		else
 			setWelding(FALSE, SLOT_ITEM(M, MECHA_SLOT_PILOT))
-
 
 /obj/item/weldingtool/dummy
 	name = "dummy welding tool"

@@ -29,10 +29,6 @@
 		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
 		spawn_delay += delayshift
 
-/obj/structure/prop/nest/Destroy()
-	den_mobs = null
-	. = ..()
-
 /obj/structure/prop/nest/attack_hand(mob/living/user) // Used to tell the player that this isn't useful for anything.
 	..()
 	if(user && prob(disturbance_spawn_chance))

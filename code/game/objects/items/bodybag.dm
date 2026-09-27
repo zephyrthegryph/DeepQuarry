@@ -41,7 +41,6 @@
 	qdel(src)
 	return
 
-
 /obj/item/storage/box/bodybags
 	name = "body bags"
 	desc = "This box contains body bags."
@@ -149,7 +148,6 @@
 	if(has_label)
 		add_overlay("bodybag_label")
 
-
 /obj/item/bodybag/cryobag
 	name = "stasis bag"
 	desc = "A non-reusable plastic bag designed to slow down bodily functions such as circulation and breathing, \
@@ -178,10 +176,7 @@
 	tank = new tank_type(null) //It's in nullspace to prevent ejection when the bag is opened.
 	..()
 
-/obj/structure/closet/body_bag/cryobag/Destroy()
-	QDEL_NULL(syringe)
-	QDEL_NULL(tank)
-	return ..()
+REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 
 /obj/structure/closet/body_bag/cryobag/attack_hand(mob/living/user)
 	if(used)

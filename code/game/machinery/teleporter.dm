@@ -40,9 +40,7 @@
 		hub.com = src
 		teleport_control.station = station
 
-/obj/machinery/computer/teleporter/Destroy()
-	QDEL_NULL(teleport_control)
-	return ..()
+REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 /obj/machinery/computer/teleporter/declare_interactions(list/into)
 	into += list(
@@ -280,7 +278,6 @@
 			com.icon_state = "tele0"
 	else
 		icon_state = "controller"
-
 
 /obj/effect/laser/Bump()
 	range--

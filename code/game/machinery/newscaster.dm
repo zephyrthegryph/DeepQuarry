@@ -183,10 +183,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	node = get_exonet_node()
 	update_icon()
 
-/obj/machinery/newscaster/Destroy()
-	node = null
-	return ..()
-
 /obj/machinery/newscaster/update_icon()
 	cut_overlays()
 	if(!ispowered || isbroken)
@@ -242,7 +238,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(!ispowered || isbroken)
 		return STATUS_CLOSE
 	. = ..()
-
 
 /obj/machinery/newscaster/declare_interactions(list/into)
 	into += list(

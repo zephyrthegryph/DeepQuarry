@@ -77,9 +77,6 @@
 		material.dq_apply_material_behaviors(src) // light + a self-processing rad/tox component.
 		update_force()
 
-/obj/item/material/Destroy()
-	. = ..()
-
 /obj/item/material/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)
 	. = ..()
 	// A melee strike is an impact + contact form trigger; a substance-infused

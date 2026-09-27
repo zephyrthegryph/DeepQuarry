@@ -22,11 +22,7 @@
 	anchored = TRUE
 	unacidable = TRUE
 
-/obj/structure/morgue/Destroy()
-	if(connected)
-		qdel(connected)
-		connected = null
-	return ..()
+REF_OWNED(/obj/structure/morgue, "connected")
 
 /obj/structure/morgue/proc/get_occupants()
 	LAZYCLEARLIST(occupants)
@@ -74,7 +70,6 @@
 	update()
 	return
 
-
 /obj/structure/morgue/proc/close()
 	for(var/atom/movable/A as mob|obj in src.connected.loc)
 		if (!( A.anchored ))
@@ -82,7 +77,6 @@
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	qdel(src.connected)
 	src.connected = null
-
 
 /obj/structure/morgue/proc/open()
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
@@ -100,7 +94,6 @@
 	else
 		qdel(src.connected)
 		src.connected = null
-
 
 /obj/structure/morgue/attackby(P as obj, mob/user as mob)
 	if (istype(P, /obj/item/pen))
@@ -173,7 +166,6 @@
 			if ((B.client && !( B.blinded )))
 				to_chat(B, span_warning("\The [user] stuffs [O] into [src]!"))
 	return
-
 
 /*
  * Crematorium
@@ -305,7 +297,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return
 
-
 /*
  * Crematorium tray
  */
@@ -346,13 +337,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 				C.cremate(null, user)
 	return TRUE
 
-
 /obj/structure/morgue/crematorium/vr
 	var/static/list/allowed_items = list(/obj/item/organ,
 			/obj/item/implant,
 			/obj/item/material/shard/shrapnel,
 			/mob/living)
-
 
 /obj/structure/morgue/crematorium/vr/cremate(atom/A, mob/user as mob)
 	if(cremating)

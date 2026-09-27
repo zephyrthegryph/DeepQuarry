@@ -36,12 +36,6 @@
 	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
 	// soundloop.start() // Removing soundloop for now.
 
-/turf/simulated/floor/water/Destroy()
-	// soundloop.stop() // Removing soundloop for now.
-	// QDEL_NULL(soundloop) // Removing soundloop for now.
-
-	. = ..()
-
 /turf/simulated/floor/water/update_icon()
 	..() // To get the edges.
 	handle_water_icons()
@@ -196,7 +190,6 @@
 
 GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 
-
 /turf/simulated/floor/water/is_safe_to_enter(mob/living/L)
 	// Aquatic flags simulated water as safe now
 	if(istype(L,/mob/living/carbon))
@@ -207,7 +200,6 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 	if(L.get_water_protection() < 1)
 		return FALSE
 	return ..()
-
 
 /turf/simulated/floor/water/blood
 	name = REAGENT_ID_BLOOD
@@ -232,7 +224,6 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 			to_chat(L, span_warning("You get drenched in blood from entering \the [src]!"))
 	AM.water_act(5)
 	..()
-
 
 /turf/simulated/floor/water/indoors //because it's nice to be able to use these indoors without having a blizzard ignore walls and areas.
 	outdoors = OUTDOORS_NO

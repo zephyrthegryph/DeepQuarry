@@ -58,9 +58,6 @@
 /turf/simulated/wall/proc/wall_radioactivity()
 	return dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
 
-/turf/simulated/wall/Destroy()
-	return ..()
-
 /turf/simulated/wall/examine_icon()
 	return icon(icon=initial(icon), icon_state=initial(icon_state))
 

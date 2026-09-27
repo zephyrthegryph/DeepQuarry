@@ -36,10 +36,7 @@
 		stat |= BROKEN
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/media/jukebox/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
+REF_OWNED(/obj/machinery/media/jukebox, "wires")
 
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
@@ -457,8 +454,6 @@
 		manual_track_remove()
 		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
 
-
-
 /obj/machinery/media/jukebox/casinojukebox
 	name = "space casino jukebox"
 	desc = "A jukebox to play the tracks on the golden goose, jazzy~"
@@ -470,7 +465,6 @@
 
 /obj/machinery/media/jukebox/casinojukebox/getTracksList()
 	return SSmedia_tracks.casino_tracks
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/media/jukebox/step_start_condition()

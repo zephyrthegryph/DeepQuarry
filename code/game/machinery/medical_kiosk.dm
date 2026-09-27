@@ -46,12 +46,6 @@
 	. = ..()
 	our_db = SStranscore.db_by_key(db_key)
 
-/obj/machinery/medical_kiosk/Destroy()
-	our_db = null //Remove the reference we have to our DB.
-	active_user = null
-	. = ..()
-
-
 /obj/machinery/medical_kiosk/update_icon()
 	. = ..()
 	if(panel_open)
@@ -220,9 +214,6 @@
 	var/tramadol_given = FALSE
 	var/inaprovaline_given = FALSE
 	var/medication_dispensed = FALSE
-
-
-
 
 	if(!can_dispense || (world.time < last_dispensed + dispense_cooldown))
 		able_to_dispense = FALSE

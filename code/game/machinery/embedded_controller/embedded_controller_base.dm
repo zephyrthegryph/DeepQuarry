@@ -13,10 +13,7 @@
 		program = new program(src)
 	return ..()
 
-/obj/machinery/embedded_controller/Destroy()
-	if(istype(program))
-		QDEL_NULL(program)
-	return ..()
+REF_OWNED(/obj/machinery/embedded_controller, "program")
 
 /obj/machinery/embedded_controller/examine(mob/user, infix, suffix)
 	. = ..()

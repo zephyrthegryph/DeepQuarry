@@ -856,10 +856,6 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	name += held_item.name
 	src.held_item = om_handle(held_item)
 
-/atom/movable/storage_slot/Destroy()
-	held_item = null
-	. = ..()
-
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)
 	ASSERT(islist(somethings))

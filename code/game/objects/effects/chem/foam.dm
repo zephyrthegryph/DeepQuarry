@@ -189,7 +189,6 @@
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
 
-
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"
 	icon_state = "mfoam" //Whiter
@@ -205,7 +204,4 @@
 /obj/effect/effect/foam/firefighting/proc/dissolve()
 	flick("[icon_state]-disolve", src)
 	QDEL_IN(src, 5)
-
-/obj/effect/effect/foam/firefighting/Destroy()
-	return ..()
 

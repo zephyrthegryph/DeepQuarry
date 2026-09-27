@@ -29,7 +29,6 @@
 				H.custom_pain("You feel a sharp pain in your hands!",1)
 	..()
 
-
 /obj/item/clothing/gloves/regen/dropped(mob/user, equipping, slot)
 	if(equipping)
 		return ..()
@@ -45,10 +44,6 @@
 
 /obj/item/clothing/gloves/regen/Initialize(mapload)
 	. = ..()
-
-/obj/item/clothing/gloves/regen/Destroy()
-	wearer = null
-	return ..()
 
 /// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/regen/periodic_step()

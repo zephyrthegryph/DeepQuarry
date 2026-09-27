@@ -60,7 +60,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	proxy.tank = src
 	src.proxyassembly = proxy
 
-
 /obj/item/tank/Initialize(mapload)
 	. = ..()
 	apply_blueprint_effects()
@@ -136,7 +135,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		. += span_warning("It seems to have [wired? "some wires ": ""][wired && src.proxyassembly.assembly? "and ":""][src.proxyassembly.assembly ? "some sort of assembly ":""]attached to it.")
 	if(src.valve_welded)
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
-
 
 /obj/item/tank/attackby(obj/item/W as obj, mob/user as mob)
 	..()
@@ -344,8 +342,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			else
 				to_chat(user, span_warning("You need something to connect to \the [src]."))
 
-
-
 /obj/item/tank/remove_air(amount)
 	return air_contents.remove(amount)
 
@@ -382,7 +378,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		update_gauge()
 	check_status()
 
-
 /obj/item/tank/proc/add_bomb_overlay()
 	if(src.wired)
 		add_overlay("bomb_assembly")
@@ -391,7 +386,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			test.Shift(SOUTH,1)
 			test.Shift(WEST,3)
 			add_overlay(test)
-
 
 /obj/item/tank/proc/update_gauge()
 	var/gauge_pressure = 0
@@ -412,11 +406,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	if(!GLOB.tank_gauge_cache[indicator])
 		GLOB.tank_gauge_cache[indicator] = image(icon, indicator)
 	add_overlay(GLOB.tank_gauge_cache[indicator])
-
-
-
-
-
 
 /obj/item/tank/proc/check_status()
 	//Handle exploding, leaking, and rupturing of the tank
@@ -456,8 +445,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			var/mult = ((src.air_contents.return_volume()/140)**(1/2)) * (air_contents.total_moles()**(2/3))/((29*0.64) **(2/3)) //tanks appear to be experiencing a reduction on scale of about 0.64 total moles
 			//tanks appear to be experiencing a reduction on scale of about 0.64 total moles
 
-
-
 			var/turf/simulated/T = get_turf(src)
 			T.hotspot_expose(src.air_contents.return_temperature(), 70, 1)
 			if(!T)
@@ -472,7 +459,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				round(min(BOMBCAP_FLASH_RADIUS, ((mult)*strength)*1.20)),
 				)
 
-
 			var/num_fragments = round(rand(8,10) * sqrt(strength * mult))
 			src.fragmentate(T, num_fragments, rand(5) + 7, list(/obj/item/projectile/bullet/pellet/fragment/tank/small = 7,/obj/item/projectile/bullet/pellet/fragment/tank = 2,/obj/item/projectile/bullet/pellet/fragment/strong = 1))
 
@@ -481,13 +467,11 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				TTV.remove_tank(src)
 				qdel(TTV)
 
-
 			if(src)
 				qdel(src)
 
 		else
 			tank_stress(70)
-
 
 	else if(pressure > material_rupture_pressure)
 		#ifdef FIREDBG
@@ -505,7 +489,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			visible_message("[icon2html(src,viewers(src))] " + span_danger("\The [src] flies apart!"), span_warning("You hear a bang!"))
 			T.hotspot_expose(air_contents.return_temperature(), 70, 1)
 
-
 			var/strength = 1+((pressure-material_leak_pressure)/material_fragment_scale)
 
 			var/mult = (air_contents.total_moles()**2/3)/((29*0.64) **2/3) //tanks appear to be experiencing a reduction on scale of about 0.64 total moles
@@ -517,7 +500,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				var/obj/item/transfer_valve/TTV = loc
 				TTV.remove_tank(src)
 
-
 			qdel(src)
 
 		else
@@ -526,7 +508,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				src.leaking = 1
 			else
 				tank_stress(50)
-
 
 	else if(leaking || pressure > material_leak_pressure || air_contents.return_temperature() > material_failure_temperature)
 
@@ -554,10 +535,8 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				log_world(span_warning("[x],[y] tank is leaking: [pressure] kPa, integrity [get_integrity()]"))
 				#endif
 
-
 		else
 			tank_stress(10)
-
 
 	else
 		if(get_integrity() < max_integrity)
@@ -585,7 +564,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/oxygen/welded
 	valve_welded = 1
 
-
 /////////////////////////////////
 ///Onetankbombs (added as actual items)
 /////////////////////////////////
@@ -600,7 +578,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	else if (!fill)
 		phoron_amt = 3
 		oxygen_amt = 4.5
-
 
 	src.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(src.air_contents, GAS_PHORON))
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
@@ -618,7 +595,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	add_overlay("bomb_assembly")
 
-
 /obj/item/tank/phoron/onetankbomb/Initialize(mapload, amount = 1)
 	. = ..()
 	onetankbomb(amount)
@@ -626,7 +602,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/oxygen/onetankbomb/Initialize(mapload, amount = 1)
 	. = ..()
 	onetankbomb(amount)
-
 
 /obj/item/tank/phoron/onetankbomb/full/Initialize(mapload)
 	. = ..(mapload, 2)
@@ -651,14 +626,8 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	var/obj/item/assembly_holder/assembly = null
 	item_flags = ABSTRACT
 
-
 /obj/item/tankassemblyproxy/receive_signal()	//This is mainly called by the sensor through sense() to the holder, and from the holder to here.
 	tank.ignite()	//boom (or not boom if you made shijwtty mix)
-
-/obj/item/tankassemblyproxy/Destroy()
-	. = ..()
-	tank = null
-	assembly = null
 
 /obj/item/tank/proc/assemble_bomb(W,user)	//Bomb assembly proc. This turns assembly+tank into a bomb
 	var/obj/item/assembly_holder/S = W
@@ -667,7 +636,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		return
 	if(isigniter(S.a_left) == isigniter(S.a_right))		//Check if either part of the assembly has an igniter, but if both parts are igniters, then fuck it
 		return
-
 
 	M.drop_item()			//Remove the assembly from your hands
 	M.remove_from_mob(src)	//Remove the tank from your character,in case you were holding it
@@ -679,11 +647,9 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	src.update_icon()
 
-
 	src.add_bomb_overlay()
 
 	return
-
 
 /obj/item/tank/proc/ignite()	//This happens when a bomb is told to explode
 
@@ -704,7 +670,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	src.update_gauge()
 
 	air_contents.add_thermal_energy(15000)
-
 
 /obj/item/tankassemblyproxy/update_icon()
 	if(assembly)

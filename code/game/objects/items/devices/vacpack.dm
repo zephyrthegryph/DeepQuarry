@@ -29,10 +29,6 @@
 	var/max_items = 20
 	flags = NOBLUDGEON
 
-/obj/item/vac_attachment/Destroy()
-	output_dest = null
-	. = ..()
-
 /obj/item/vac_attachment/attack_self(mob/user)
 	. = ..(user)
 	if(.)

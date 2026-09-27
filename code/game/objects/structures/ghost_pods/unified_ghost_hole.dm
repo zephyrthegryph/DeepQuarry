@@ -176,9 +176,6 @@
 	glows += emissive_appearance(icon, "rift_glow")
 	add_overlay(glows)
 
-/obj/structure/ghost_pod/ghost_activated/unified_hole/Destroy()
-	. = ..()
-
 /obj/structure/ghost_pod/ghost_activated/unified_hole/redgate
 	name = "Redspace inhabitant hole"
 	desc = "A starting location for critters who exist inside of the redgate!"
