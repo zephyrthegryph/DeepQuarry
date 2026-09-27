@@ -211,6 +211,7 @@
 #include "dq_shuttle_tests.dm"
 #include "dq_state_tests.dm"
 #include "dq_lifecycle_tests.dm"
+#include "dq_lifecycle_verb_tests.dm"
 #include "dq_surgery_tests.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
