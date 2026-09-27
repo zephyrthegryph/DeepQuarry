@@ -88,13 +88,7 @@ REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_f
 	cam_screen_tg = new
 	cam_screen_tg.generate_view(map_name)
 
-/datum/tgui_module/camera/Destroy()
-	if(active_camera)
-		UnregisterSignal(active_camera, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	active_camera = null
-	last_camera_turf = null
-	QDEL_NULL(cam_screen_tg)
-	return ..()
+REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
 
 /datum/tgui_module/camera/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(!user.client)
