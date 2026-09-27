@@ -58,10 +58,10 @@
 /obj/structure/closet/statue/dump_contents()
 	latent_materialize_all()
 
-	for(var/obj/O in src)
+	for(var/obj/O in slot_contents())
 		O.forceMove(get_turf(src))
 
-	for(var/mob/living/M in src)
+	for(var/mob/living/M in slot_contents())
 		M.forceMove(loc) // Might be in a belly
 		M.sdisabilities &= ~MUTE
 		UnregisterSignal(M, COMSIG_LIVING_INJURE)
@@ -92,13 +92,13 @@
 
 // Reaching 0 integrity shatters the statue, dusting the trapped mob.
 /obj/structure/closet/statue/atom_destruction(damage_flag)
-	for(var/mob/M in src)
+	for(var/mob/M in slot_contents())
 		shatter(M)
 	return ..()
 
 /obj/structure/closet/statue/attack_generic(mob/user, damage, attacktext, environment_smash)
 	if(damage && environment_smash)
-		for(var/mob/M in src)
+		for(var/mob/M in slot_contents())
 			shatter(M)
 
 /obj/structure/closet/statue/explosion_contents_severity(severity)

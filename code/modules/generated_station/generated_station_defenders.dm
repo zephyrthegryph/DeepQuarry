@@ -278,7 +278,7 @@
 		return
 	var/obj/item/stack/medical/medicine
 	var/area/medical_area = get_area(department_turfs["medical-1"])
-	for(var/obj/item/stack/medical/candidate in medical_area)
+	for(var/obj/item/stack/medical/candidate in area_contents_of_type(medical_area, /obj/item/stack/medical))
 		if(candidate.amount > 0)
 			medicine = candidate
 			break
@@ -318,7 +318,7 @@
 		return
 	var/obj/item/stack/material/materials
 	var/area/engineering_area = get_area(department_turfs["engineering-1"])
-	for(var/obj/item/stack/material/candidate in engineering_area)
+	for(var/obj/item/stack/material/candidate in area_contents_of_type(engineering_area, /obj/item/stack/material))
 		if(candidate.amount > 0)
 			materials = candidate
 			break

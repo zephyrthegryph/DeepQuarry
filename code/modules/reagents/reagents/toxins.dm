@@ -509,8 +509,8 @@
 	..()
 	if(istype(T, /turf/simulated/wall))
 		var/turf/simulated/wall/W = T
-		if(locate(/obj/effect/overlay/wallrot) in W)
-			for(var/obj/effect/overlay/wallrot/E in W)
+		if(locate_on(W, /obj/effect/overlay/wallrot))
+			for(var/obj/effect/overlay/wallrot/E in turf_contents_of_type(W, /obj/effect/overlay/wallrot))
 				qdel(E)
 			W.visible_message(span_notice("The fungi are completely dissolved by the solution!"))
 

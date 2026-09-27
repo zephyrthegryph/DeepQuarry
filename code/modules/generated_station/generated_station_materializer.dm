@@ -802,7 +802,7 @@
 				if(install_emergency_room_access(A))
 					continue
 				var/list/blockers = list()
-				for(var/turf/simulated/floor/blocked_floor in A)
+				for(var/turf/simulated/floor/blocked_floor in area_contents_of_type(A, /turf/simulated/floor))
 					for(var/atom/movable/blocker in blocked_floor)
 						if(blocker.density && !istype(blocker, /obj/machinery/door))
 							blockers += "[blocker.type]@[blocked_floor.x],[blocked_floor.y]"
@@ -821,7 +821,7 @@
 		if(get_area(furnishing) != A || !furnishing.density || istype(furnishing, /obj/machinery/door))
 			continue
 		var/turf/original = get_turf(furnishing)
-		for(var/turf/simulated/floor/candidate in A)
+		for(var/turf/simulated/floor/candidate in area_contents_of_type(A, /turf/simulated/floor))
 			if(candidate == original || !generated_station_furnishing_access_tile(candidate))
 				continue
 			furnishing.forceMove(candidate)
@@ -835,7 +835,7 @@
 /// it opens a wall between the room and an already-walkable station tile, never
 /// the exterior hull, then installs a tracked department airlock.
 /datum/generated_station_materializer/proc/install_emergency_room_access(area/generated_station/A)
-	for(var/turf/simulated/floor/inside in A)
+	for(var/turf/simulated/floor/inside in area_contents_of_type(A, /turf/simulated/floor))
 		for(var/direction in GLOB.cardinal)
 			var/turf/simulated/wall/wall = get_step(inside, direction)
 			if(!istype(wall))
@@ -866,9 +866,9 @@
 /// Returns whether a generated furnishing can move here without consuming an
 /// airlock approach, utility fixture, or another blocking object's footprint.
 /datum/generated_station_materializer/proc/generated_station_furnishing_access_tile(turf/simulated/floor/candidate)
-	if(!candidate || candidate.density || locate(/obj/machinery/door) in candidate)
+	if(!candidate || candidate.density || locate_on(candidate, /obj/machinery/door))
 		return FALSE
-	for(var/atom/movable/occupant in candidate)
+	for(var/atom/movable/occupant in turf_contents_of_type(candidate, /atom/movable))
 		if(occupant.density || istype(occupant, /obj/machinery))
 			return FALSE
 	for(var/direction in GLOB.cardinal)
@@ -1163,7 +1163,7 @@
 	return TRUE
 
 /datum/generated_station_materializer/proc/find_emergency_fixture_turf(area/generated_station/A, list/excluded)
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		generation_checkpoint("Selecting emergency closet position", 55)
 		if((excluded && (T in excluded)) || T.density || locate(/obj/machinery/door) in T)
 			continue
@@ -1189,7 +1189,7 @@
 /// occupying their selected floor cannot cut the room into sealed pockets.
 /proc/generated_station_area_removal_preserves_connectivity(turf/blocked_turf, area/generated_station/A)
 	var/list/available = list()
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(T != blocked_turf && generated_station_architectural_passable(T))
 			available |= T
 	if(length(available) <= 1)
@@ -1210,7 +1210,7 @@
 
 /proc/generated_station_area_is_connected(area/generated_station/A)
 	var/list/available = list()
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(generated_station_architectural_passable(T))
 			available |= T
 	if(length(available) <= 1)
@@ -1235,14 +1235,14 @@
 /proc/generated_station_room_area_is_accessible(area/generated_station/A)
 	if(!generated_station_area_is_connected(A))
 		return FALSE
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(!generated_station_architectural_passable(T))
 			continue
 		if(locate(/obj/machinery/door) in T)
 			return TRUE
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(T, direction)
-			if(generated_station_architectural_passable(neighbor) && locate(/obj/machinery/door) in neighbor)
+			if(generated_station_architectural_passable(neighbor) && locate_on(neighbor, /obj/machinery/door))
 				return TRUE
 	return FALSE
 
@@ -1282,7 +1282,7 @@
 		for(var/y in 1 to spec.grid_height)
 			var/turf/T = world_turf(x, y)
 			if(T)
-				for(var/atom/movable/occupant in T)
+				for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
 					if(!ismob(occupant))
 						qdel(occupant)
 				T.ChangeTurf(/turf/space, tell_universe = FALSE)
@@ -1660,8 +1660,8 @@
 			break
 	if(!T)
 		var/area/generated_station/docking/docking_area = department_areas[docking.id]
-		for(var/turf/simulated/floor/candidate in docking_area)
-			if(!candidate.density && !(locate(/obj/machinery/door) in candidate))
+		for(var/turf/simulated/floor/candidate in area_contents_of_type(docking_area, /turf/simulated/floor))
+			if(!candidate.density && !(locate_on(candidate, /obj/machinery/door)))
 				T = candidate
 				break
 	if(T)

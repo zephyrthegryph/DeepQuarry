@@ -111,7 +111,7 @@
 /datum/spell/aoe_turf/conjure/pylon/cast(list/targets)
 	..()
 	var/turf/spawn_place = pick(targets)
-	for(var/obj/structure/cult/pylon/P in spawn_place.contents)
+	for(var/obj/structure/cult/pylon/P in turf_contents_of_type(spawn_place, /obj/structure/cult/pylon))
 		if(P.isbroken)
 			P.repair(usr)
 		continue

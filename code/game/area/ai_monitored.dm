@@ -6,7 +6,7 @@
 /area/ai_monitored/Initialize(mapload)
 	. = ..()
 	// locate and store the motioncamera
-	for (var/obj/machinery/camera/M in src)
+	for (var/obj/machinery/camera/M in area_contents_of_type(src, /obj/machinery/camera))
 		if(M.isMotion())
 			motioncamera = M
 			M.area_motion = src

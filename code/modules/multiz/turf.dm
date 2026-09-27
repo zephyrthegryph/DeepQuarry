@@ -76,7 +76,7 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 	mover.fall()
 
 /turf/simulated/open/proc/update()
-	for(var/atom/movable/A in src)
+	for(var/atom/movable/A in turf_contents_of_type(src, /atom/movable))
 		A.fall()
 
 // Called when thrown object lands on this turf.

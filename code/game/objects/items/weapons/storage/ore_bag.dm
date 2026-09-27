@@ -107,7 +107,7 @@
 	var/failure = 0
 	var/current_pickup = 0
 	var/max_pickup_reached = 0
-	for(var/obj/item/ore/O in T) //Only ever grabs ores. Doesn't do any extraneous checks, as all ore is the same size. Tons of checks means it causes hanging for up to three seconds.
+	for(var/obj/item/ore/O in turf_contents_of_type(T, /obj/item/ore)) //Only ever grabs ores. Doesn't do any extraneous checks, as all ore is the same size. Tons of checks means it causes hanging for up to three seconds.
 		if(current_capacity >= max_storage_space)
 			failure = 1
 			break
@@ -153,12 +153,12 @@
 
 /obj/item/ore_bag/proc/autoload(mob/user)
 	SIGNAL_HANDLER
-	var/obj/item/ore/O = locate() in get_turf(user)
+	var/obj/item/ore/O = locate_on(get_turf(user), /obj/item/ore)
 	if(O)
 		gather_all(get_turf(user), user)
 
 /obj/item/ore_bag/proc/rangedload(atom/A, mob/user)
-	var/obj/item/ore/O = locate() in get_turf(A)
+	var/obj/item/ore/O = locate_on(get_turf(A), /obj/item/ore)
 	if(O)
 		gather_all(get_turf(A), user)
 

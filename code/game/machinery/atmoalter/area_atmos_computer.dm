@@ -116,7 +116,7 @@
 
 	var/found = 0
 	var/area/A = get_area(src)
-	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in A)
+	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in area_contents_of_type(A, /obj/machinery/portable_atmospherics/powered/scrubber/huge))
 		connectedscrubbers["[scrubber.id]"] = scrubber
 		found = 1
 

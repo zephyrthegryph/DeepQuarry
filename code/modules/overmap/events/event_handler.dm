@@ -117,7 +117,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		return
 
 	var/list/active_hazards = list()
-	for(var/obj/effect/overmap/event/E in T)
+	for(var/obj/effect/overmap/event/E in turf_contents_of_type(T, /obj/effect/overmap/event))
 		if(is_event_included(active_hazards, E, TRUE))
 			continue
 		active_hazards += E
@@ -128,7 +128,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		LAZYOR(hazard_by_turf, T)
 		LAZYSET(hazard_by_turf, T, active_hazards)
 
-	for(var/obj/effect/overmap/visitable/ship/ship in T)
+	for(var/obj/effect/overmap/visitable/ship/ship in turf_contents_of_type(T, /obj/effect/overmap/visitable/ship))
 		for(var/datum/event/E in ship_events[ship])
 			if(is_event_in_turf(E, T))
 				continue

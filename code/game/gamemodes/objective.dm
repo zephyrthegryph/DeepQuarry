@@ -555,14 +555,14 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	var/captured_amount = 0
 	var/area/centcom/holding/A = locate()
 
-	for(var/mob/living/carbon/human/M in A) // Humans (and subtypes).
+	for(var/mob/living/carbon/human/M in area_contents_of_type(A, /mob/living/carbon/human)) // Humans (and subtypes).
 		var/worth = M.species.rarity_value
 		if(M.stat==2)//Dead folks are worth less.
 			worth*=0.5
 			continue
 		captured_amount += worth
 
-	for(var/mob/living/carbon/alien/larva/M in A)//Larva are important for research.
+	for(var/mob/living/carbon/alien/larva/M in area_contents_of_type(A, /mob/living/carbon/alien/larva))//Larva are important for research.
 		if(M.stat==2)
 			captured_amount+=0.5
 			continue
@@ -642,7 +642,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		//	return 0 // They're loose. Close but no cigar.
 
 		var/area/shuttle/skipjack/A = locate() // Shuttle consensing
-		for(var/mob/living/carbon/human/M in A)
+		for(var/mob/living/carbon/human/M in area_contents_of_type(A, /mob/living/carbon/human))
 			if(target.current == M)
 				return 1 //They're restrained on the shuttle. Success.
 	else

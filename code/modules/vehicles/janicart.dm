@@ -117,7 +117,7 @@
 		if(tile && reagents.total_volume > 0)
 			if(reagents.has_reagent(REAGENT_ID_WATER) || reagents.has_reagent(REAGENT_ID_CLEANER))
 				tile.wash(CLEAN_SCRUB)
-			for(var/atom/movable/AM in tile.contents)
+			for(var/atom/movable/AM in turf_contents_of_type(tile, /atom/movable))
 				if(istype(AM, /mob/living))
 					var/mob/living/L = AM
 					if(L.is_incorporeal() || BUCKLED(L) == src) // Don't scrub shadekin our our rider

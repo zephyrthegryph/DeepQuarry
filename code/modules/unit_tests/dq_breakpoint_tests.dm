@@ -168,13 +168,13 @@
 
 /datum/unit_test/dq_destruction_debris/Run()
 	var/turf/T = test_floor()
-	for(var/obj/item/stack/rods/R in T)
+	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)
 	var/obj/structure/railing/railing = allocate(/obj/structure/railing, T)
 	railing.take_damage(railing.max_integrity * 2, BRUTE, MELEE, FALSE)
 	TEST_ASSERT(QDELETED(railing), "the railing is destroyed")
 	var/rods = 0
-	for(var/obj/item/stack/rods/R in T)
+	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		rods += R.get_amount()
 		qdel(R)
 	TEST_ASSERT_EQUAL(rods, 1, "its debris entry drops one rod")

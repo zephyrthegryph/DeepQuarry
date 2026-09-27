@@ -6,12 +6,12 @@
 	var/requires_noticeboard = TRUE
 
 /datum/persistent/paper/CheckTurfContents(turf/T, list/token)
-	if(requires_noticeboard && !(locate(/obj/structure/noticeboard) in T))
+	if(requires_noticeboard && !(locate_on(T, /obj/structure/noticeboard)))
 		new /obj/structure/noticeboard(T)
 	. = ..()
 
 /datum/persistent/paper/CreateEntryInstance(turf/creating, list/token)
-	var/obj/structure/noticeboard/board = locate() in creating
+	var/obj/structure/noticeboard/board = locate_on(creating, /obj/structure/noticeboard)
 	if(requires_noticeboard && LAZYLEN(board.notices) >= board.max_notices)
 		return
 	var/obj/item/paper/paper = new paper_type(creating)

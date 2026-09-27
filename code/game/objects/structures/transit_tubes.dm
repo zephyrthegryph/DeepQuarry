@@ -38,10 +38,18 @@
 	var/moving = 0
 	var/datum/gas_mixture/air_contents
 
-
+// C11: one slot for whoever's riding. Drop policy is left to this type's own
+// Destroy() below, which already spills its riders onto the turf before ..()
+// reaches the base Destroy()'s generic drop-policy pass.
+/datum/om/relation/slot/transit_pod
+	holder = /obj/structure/transit_tube_pod
+	slot_id = CONTAINER_SLOT_TRANSIT_POD
+	name = "riders"
+	drop_policy = SLOT_DROP_HOLDER
+	exposure = SLOT_EXPOSURE_INTERNAL
 
 /obj/structure/transit_tube_pod/Destroy()
-	for(var/atom/movable/AM in contents)
+	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_TRANSIT_POD))
 		AM.forceMove(get_turf(src))
 
 	. = ..()
@@ -72,7 +80,7 @@
 
 
 /obj/structure/transit_tube/Bumped(mob/AM as mob|obj)
-	var/obj/structure/transit_tube/T = locate() in AM.loc
+	var/obj/structure/transit_tube/T = locate_on(AM.loc, /obj/structure/transit_tube)
 	if(T)
 		to_chat(AM, span_warning("The tube's support pylons block your way."))
 		return ..()
@@ -82,8 +90,8 @@
 
 /obj/structure/transit_tube/station/Bumped(mob/AM as mob|obj)
 	if(!pod_moving && icon_state == "open" && istype(AM, /mob))
-		for(var/obj/structure/transit_tube_pod/pod in loc)
-			if(pod.contents.len)
+		for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
+			if(length(pod.slot_contents(CONTAINER_SLOT_TRANSIT_POD)))
 				to_chat(AM, span_notice("The pod is already occupied."))
 				return
 			else if(!pod.moving && (pod.dir in directions()))
@@ -105,7 +113,7 @@
 
 /obj/structure/transit_tube/station/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!pod_moving)
-		for(var/obj/structure/transit_tube_pod/pod in loc)
+		for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 			if(!pod.moving && (pod.dir in directions()))
 				if(icon_state == "closed")
 					open_animation()
@@ -135,7 +143,7 @@
 
 
 /obj/structure/transit_tube/station/proc/launch_pod()
-	for(var/obj/structure/transit_tube_pod/pod in loc)
+	for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 		if(!pod.moving && (pod.dir in directions()))
 			om_after(src, 5, PROC_REF(launch_close), pod)
 			return
@@ -381,7 +389,7 @@
 /obj/structure/transit_tube_pod/relaymove(mob/mob, direction)
 	if(istype(mob, /mob) && mob.client)
 		// If the pod is not in a tube at all, you can get out at any time.
-		if(!(locate(/obj/structure/transit_tube) in loc))
+		if(!(locate_on(loc, /obj/structure/transit_tube)))
 			mob.forceMove(get_turf(src))
 			mob.client.Move(get_step(loc, direction), direction)
 
@@ -390,7 +398,7 @@
 				//  Same direction as pod? Direcion you moved? Halfway between?
 
 		if(!moving)
-			for(var/obj/structure/transit_tube/station/station in loc)
+			for(var/obj/structure/transit_tube/station/station in turf_contents_of_type(loc, /obj/structure/transit_tube/station))
 				if(dir in station.directions())
 					if(!station.pod_moving)
 						if(direction == station.dir)
@@ -406,7 +414,7 @@
 							station.launch_pod()
 					return
 
-			for(var/obj/structure/transit_tube/tube in loc)
+			for(var/obj/structure/transit_tube/tube in turf_contents_of_type(loc, /obj/structure/transit_tube))
 				if(dir in tube.directions())
 					if(tube.has_exit(direction))
 						set_dir(direction)

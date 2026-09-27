@@ -130,7 +130,7 @@
 			var/adjacent_fields = 0
 			for(var/direction in GLOB.cardinal)
 				var/turf/T = get_step(SE, direction)
-				var/obj/effect/shield/S = locate() in T
+				var/obj/effect/shield/S = locate_on(T, /obj/effect/shield)
 				if(S)
 					adjacent_fields |= direction
 
@@ -195,7 +195,7 @@
 						//What's this mysterious 3rd shield touching us?
 						var/dir_to_them = turn(nonshield, 180)
 						var/turf/T = get_step(S, dir_to_them)
-						var/obj/effect/shield/SO = locate() in T
+						var/obj/effect/shield/SO = locate_on(T, /obj/effect/shield)
 						//They are a corner
 						if((SO.dir & (SO.dir - 1)) != 0)
 							continue
@@ -222,7 +222,7 @@
 			var/adjacent = startends[S]
 			// to_chat(world, "Processing startend [S] at [S?.x],[S?.y] adjacent=[adjacent]")
 			var/turf/T = get_step(S, adjacent)
-			var/obj/effect/shield/SO = locate() in T
+			var/obj/effect/shield/SO = locate_on(T, /obj/effect/shield)
 			S.set_dir(SO.dir)
 			if(S.dir == adjacent) //Flowing into them
 				S.enabled_icon_state = "shield_start"

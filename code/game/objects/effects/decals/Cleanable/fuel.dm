@@ -39,7 +39,7 @@
 		var/turf/simulated/target = get_step(src,d)
 		var/turf/simulated/origin = get_turf(src)
 		if(origin.CanPass(src, target) && target.CanPass(src, origin))
-			var/obj/effect/decal/cleanable/liquid_fuel/other_fuel = locate() in target
+			var/obj/effect/decal/cleanable/liquid_fuel/other_fuel = locate_on(target, /obj/effect/decal/cleanable/liquid_fuel)
 			if(other_fuel)
 				other_fuel.amount += amount*0.25
 				if(!(other_fuel in exclude))
@@ -71,7 +71,7 @@
 
 	for(var/d in list(turn(dir,90),turn(dir,-90), dir))
 		var/turf/simulated/O = get_step(S,d)
-		if(locate(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel) in O)
+		if(locate_on(O, /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel))
 			continue
 		if(O.CanPass(src, S) && S.CanPass(src, O))
 			var/new_pool_amount = amount * 0.25

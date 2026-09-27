@@ -32,7 +32,12 @@
 	void_shipping_ledger("crate opened")
 
 	var/mob/user = istype(usr, /mob) ? usr : null
-	if(rigged && locate(/obj/item/radio/electropack) in src)
+	var/obj/item/radio/electropack/rig
+	if(rigged)
+		for(var/obj/item/radio/electropack/E in slot_contents())
+			rig = E
+			break
+	if(rigged && rig)
 		if(isliving(user))
 			var/mob/living/L = user
 			if(L.electrocute_act(17, src))
@@ -792,7 +797,7 @@
 				qdel(src)
 			if(2 to 4)
 				visible_message(span_boldwarning("The anti-tamper mechanism of [src] causes a small fire!"))
-				for(var/i in 1 to length(contents) + latent_count()) // For every item in the box, we spawn a pile of ash.
+				for(var/i in 1 to length(slot_contents()) + latent_count()) // For every item in the box, we spawn a pile of ash.
 					new /obj/effect/decal/cleanable/ash(src.loc)
 				new /obj/effect/hotspot(src.loc)
 				qdel(src)

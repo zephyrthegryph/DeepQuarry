@@ -45,7 +45,7 @@
 		om_do_after(user, remove_delay, target = src, receiver = src, on_done = PROC_REF(stalled_remove), done_args = list(W, user, new_location))
 		return FALSE // the delay runs first; stalled_remove() retries the move
 
-	if(W in src)
+	if(W in slot_contents(CONTAINER_SLOT_STORAGE))
 		return TRUE // Item is still inside
 
 	return FALSE //Item was somehow already removed
@@ -221,8 +221,8 @@
 
 /obj/item/storage/pouch/flares/update_icon()
 	cut_overlays()
-	if(contents.len)
-		add_overlay("flare_[contents.len]")
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
+		add_overlay("flare_[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
 	..()
 
 /obj/item/storage/pouch/holster
@@ -242,7 +242,7 @@
 
 /obj/item/storage/pouch/holster/update_icon()
 	cut_overlays()
-	if(contents.len)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
 		add_overlay("pistol_layer")
 	..()
 
@@ -261,7 +261,7 @@
 
 /obj/item/storage/pouch/baton/update_icon()
 	cut_overlays()
-	if(contents.len)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
 		add_overlay("baton_layer")
 	..()
 

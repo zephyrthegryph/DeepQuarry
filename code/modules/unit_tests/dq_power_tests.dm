@@ -30,9 +30,9 @@
 /proc/dq_power_test_clear(turf/T)
 	if(!T)
 		return TRUE
-	if(locate(/obj/structure/cable) in T)
+	if(locate_on(T, /obj/structure/cable))
 		return FALSE
-	if(locate(/obj/machinery/power) in T)
+	if(locate_on(T, /obj/machinery/power))
 		return FALSE
 	return TRUE
 

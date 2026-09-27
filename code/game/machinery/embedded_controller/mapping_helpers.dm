@@ -48,7 +48,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 		return null
 
 	var/list/potentials = list()
-	for(var/obj/O in A)
+	for(var/obj/O in area_contents_of_type(A, /obj))
 		if(istype(O, my_controller_type))
 			potentials += O
 

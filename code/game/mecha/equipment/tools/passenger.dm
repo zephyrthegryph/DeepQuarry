@@ -103,7 +103,7 @@
 
 	var/obj/mecha/M = chassis
 	..()
-	if (M && !(locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in M))
+	if (M && !(locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in M.slot_contents()))
 		M.verbs -= /obj/mecha/proc/move_inside_passenger
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/get_equip_info()

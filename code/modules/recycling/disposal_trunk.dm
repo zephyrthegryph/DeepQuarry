@@ -24,7 +24,7 @@
 		return
 	//Disposal constructors
 	var/turf/T = get_turf(src)
-	for(var/obj/structure/disposalconstruct/C in T)
+	for(var/obj/structure/disposalconstruct/C in turf_contents_of_type(T, /obj/structure/disposalconstruct))
 		if(C.ptype == DISPOSAL_PIPE_BIN || C.ptype == DISPOSAL_PIPE_OUTLET || C.ptype == DISPOSAL_PIPE_CHUTE)
 			if(C.anchored)
 				return

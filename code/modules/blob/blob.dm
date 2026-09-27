@@ -62,47 +62,47 @@
 		var/turf/simulated/wall/SW = T
 		SW.take_damage(80)
 		return
-	var/obj/structure/girder/G = locate() in T
+	var/obj/structure/girder/G = locate_on(T, /obj/structure/girder)
 	if(G)
 		if(prob(40))
 			G.dismantle()
 		return
-	var/obj/structure/window/W = locate() in T
+	var/obj/structure/window/W = locate_on(T, /obj/structure/window)
 	if(W)
 		W.shatter()
 		return
-	var/obj/structure/grille/GR = locate() in T
+	var/obj/structure/grille/GR = locate_on(T, /obj/structure/grille)
 	if(GR)
 		qdel(GR)
 		return
-	for(var/obj/structure/reagent_dispensers/fueltank/Fuel in T)
+	for(var/obj/structure/reagent_dispensers/fueltank/Fuel in turf_contents_of_type(T, /obj/structure/reagent_dispensers/fueltank))
 		Fuel.ex_act(2)
 		return
-	for(var/obj/machinery/door/D in T) // There can be several - and some of them can be open, locate() is not suitable
+	for(var/obj/machinery/door/D in turf_contents_of_type(T, /obj/machinery/door)) // There can be several - and some of them can be open, locate() is not suitable
 		if(D.density)
 			D.ex_act(2)
 			return
-	var/obj/structure/foamedmetal/F = locate() in T
+	var/obj/structure/foamedmetal/F = locate_on(T, /obj/structure/foamedmetal)
 	if(F)
 		qdel(F)
 		return
-	var/obj/structure/inflatable/I = locate() in T
+	var/obj/structure/inflatable/I = locate_on(T, /obj/structure/inflatable)
 	if(I)
 		I.deflate(1)
 		return
 
-	var/obj/vehicle/V = locate() in T
+	var/obj/vehicle/V = locate_on(T, /obj/vehicle)
 	if(V)
 		V.ex_act(2)
 		return
-	var/obj/mecha/M = locate() in T
+	var/obj/mecha/M = locate_on(T, /obj/mecha)
 	if(M)
 		M.visible_message(span_danger("The blob attacks \the [M]!"))
 		M.take_damage(40)
 		return
 
 	// Above things, we destroy completely and thus can use locate. Mobs are different.
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(L.stat == DEAD)
 			continue
 		L.visible_message(span_danger("The blob attacks \the [L]!"), span_danger("The blob attacks you!"))

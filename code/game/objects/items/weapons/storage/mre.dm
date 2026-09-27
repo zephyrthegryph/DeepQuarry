@@ -341,7 +341,7 @@ MRE Stuff
 
 /obj/item/storage/box/tgmc_mre/remove_from_storage()
 	. = ..()
-	if(. && !contents.len && !gc_destroyed)
+	if(. && !length(slot_contents(CONTAINER_SLOT_STORAGE)) && !gc_destroyed)
 		qdel(src)
 
 /obj/item/storage/box/tgmc_mre/update_icon()

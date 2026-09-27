@@ -188,7 +188,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	if(dir in list(EAST, WEST)) // Apply an offset if flying sideways, to help maintain the illusion of depth.
 		for(var/i = 1 to 2)
 			var/turf/new_T = locate(T.x, T.y - i, T.z)
-			if(!new_T || locate(/obj/structure/cliff) in new_T)
+			if(!new_T || locate_on(new_T, /obj/structure/cliff))
 				break
 			T = new_T
 			displaced = TRUE
@@ -244,7 +244,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	L.injure(INJURY_BLUNT, damage * harm, target_zone, src, flags = INJURE_ARMORED)
 
 	// Now fall off more cliffs below this one if they exist.
-	var/obj/structure/cliff/bottom_cliff = locate() in T
+	var/obj/structure/cliff/bottom_cliff = locate_on(T, /obj/structure/cliff)
 	if(bottom_cliff)
 		visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
 		om_after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), L)

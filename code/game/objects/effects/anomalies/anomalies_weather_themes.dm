@@ -60,7 +60,7 @@
 	if(iswall(to_affect) || isopenturf(to_affect))
 		return
 
-	for(var/atom/thing in to_affect)
+	for(var/atom/thing in turf_contents_of_type(to_affect, /atom))
 		if(isliving(thing))
 			affect_mob(thing)
 			continue

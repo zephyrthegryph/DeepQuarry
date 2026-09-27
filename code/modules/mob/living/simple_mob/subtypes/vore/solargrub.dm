@@ -79,7 +79,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	if(!self.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
 		var/turf/S = self.loc
-		self.attached = locate(/obj/structure/cable) in S
+		self.attached = locate_on(S, /obj/structure/cable)
 		if(self.attached)
 			if(self.ai_brain) self.ai_busy_begin()
 			if(prob(2))

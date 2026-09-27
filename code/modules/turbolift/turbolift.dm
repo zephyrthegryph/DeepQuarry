@@ -184,7 +184,7 @@
 	if(!istype(origin) || !istype(destination) || (origin == destination))
 		return 0
 
-	for(var/turf/T in destination)
+	for(var/turf/T in area_contents_of_type(destination, /turf))
 		for(var/atom/movable/AM in T)
 			if(isliving(AM) && !(AM.is_incorporeal()))
 				var/mob/living/M = AM
@@ -194,7 +194,7 @@
 
 	origin.move_contents_to(destination)
 
-	if((locate(/obj/machinery/power) in destination) || (locate(/obj/structure/cable) in destination))
+	if((locate_in_area(destination, /obj/machinery/power)) || (locate_in_area(destination, /obj/structure/cable)))
 		SSmachines.power_reregister(get_area_turfs(destination))
 
 	current_floor = next_floor

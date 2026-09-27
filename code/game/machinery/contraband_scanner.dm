@@ -43,12 +43,12 @@
 		if(contraband_count && last_trigger < world.time - cooldown)
 			visible_message(span_danger(trigger_message))
 			playsound(src, trigger_sound, 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
-			for(var/obj/machinery/contraband_scanner/CS in A)
+			for(var/obj/machinery/contraband_scanner/CS in area_contents_of_type(A, /obj/machinery/contraband_scanner))
 				CS.last_trigger = world.time	//set everyone's trigger time at once, to cut down on spam
 				CS.contraband_count = 0		//clear all our contraband counts too
 			if(area_lockdown)
 				if(close_blastdoors)
-					for(var/obj/machinery/door/blast/B in A)
+					for(var/obj/machinery/door/blast/B in area_contents_of_type(A, /obj/machinery/door/blast))
 						if(!B.density)
 							INVOKE_ASYNC(B, TYPE_PROC_REF(/obj/machinery/door/blast, close))
 				if(power_fields)
@@ -60,7 +60,7 @@
 
 /obj/machinery/contraband_scanner/proc/auto_cancel_lockdown(area/A)
 	if(close_blastdoors)
-		for(var/obj/machinery/door/blast/B in A)
+		for(var/obj/machinery/door/blast/B in area_contents_of_type(A, /obj/machinery/door/blast))
 			if(B.density)
 				INVOKE_ASYNC(B, TYPE_PROC_REF(/obj/machinery/door/blast, open))
 	if(power_fields)

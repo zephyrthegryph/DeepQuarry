@@ -505,7 +505,7 @@
 	if(DirBlockedWithAccess(B,rdir, ID))
 		return 1
 
-	for(var/obj/O in B)
+	for(var/obj/O in turf_contents_of_type(B, /obj))
 		if(O.density && !istype(O, /obj/machinery/door) && !(O.flags & ON_BORDER))
 			return 1
 
@@ -514,12 +514,12 @@
 // Returns true if direction is blocked from loc
 // Checks doors against access with given ID
 /proc/DirBlockedWithAccess(turf/loc,dir,obj/item/card/id/ID)
-	for(var/obj/structure/window/D in loc)
+	for(var/obj/structure/window/D in turf_contents_of_type(loc, /obj/structure/window))
 		if(!D.density)			continue
 		if(D.dir == SOUTHWEST)	return 1
 		if(D.dir == dir)		return 1
 
-	for(var/obj/machinery/door/D in loc)
+	for(var/obj/machinery/door/D in turf_contents_of_type(loc, /obj/machinery/door))
 		if(!D.density)			continue
 
 		if(istype(D, /obj/machinery/door/airlock))

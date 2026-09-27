@@ -46,7 +46,7 @@
 	if(!metal && reagents)
 		var/turf/T = get_turf(src)
 		reagents.touch_turf(T)
-		for(var/obj/O in T)
+		for(var/obj/O in turf_contents_of_type(T, /obj))
 			reagents.touch_obj(O)
 
 /obj/effect/effect/foam/periodic_step()
@@ -61,7 +61,7 @@
 		if(!T.Enter(src))
 			continue
 
-		var/obj/effect/effect/foam/F = locate() in T
+		var/obj/effect/effect/foam/F = locate_on(T, /obj/effect/effect/foam)
 		if(F)
 			continue
 

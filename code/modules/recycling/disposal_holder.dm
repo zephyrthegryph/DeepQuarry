@@ -14,12 +14,26 @@
 	flags = REMOTEVIEW_ON_ENTER
 	dir = 0
 
+// C11: one slot, accepting anything (a holder in transit carries whatever was
+// flushed into it), drop policy left to this type's own Destroy() below,
+// which already spills everything onto qdelloc before ..() reaches the base
+// Destroy()'s generic drop-policy pass. Legacy forceMove()s into and out of
+// the holder (move(), the disposal machine's flush, pipe transit) are still
+// accounted for by doMove()'s bookkeeping, so nothing else here needs to
+// change to make slot_contents() correct.
+/datum/om/relation/slot/disposal_holder
+	holder = /obj/structure/disposalholder
+	slot_id = CONTAINER_SLOT_DISPOSAL
+	name = "contents"
+	drop_policy = SLOT_DROP_HOLDER
+	exposure = SLOT_EXPOSURE_SEALED
+
 /obj/structure/disposalholder/Destroy()
 	QDEL_NULL(gas)
-	if(contents.len)
+	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		var/turf/qdelloc = get_turf(src)
 		if(qdelloc)
-			for(var/atom/movable/AM in contents)
+			for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(qdelloc)
 		else
 			log_runtime("A disposal holder was deleted with contents in nullspace") //ideally, this should never happen
@@ -104,7 +118,7 @@
 	if(!T)
 		return null
 	var/fdir = turn(dir, 180)	// flip the movement direction
-	for(var/obj/structure/disposalpipe/P in T)
+	for(var/obj/structure/disposalpipe/P in turf_contents_of_type(T, /obj/structure/disposalpipe))
 		if(fdir & P.dpdir)		// find pipe direction mask that matches flipped dir
 			return P
 	// if no matching pipe, return null

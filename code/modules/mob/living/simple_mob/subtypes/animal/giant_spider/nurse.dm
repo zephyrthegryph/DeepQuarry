@@ -178,7 +178,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/lay_eggs(turf/T)
 	if(!istype(T) || !fed || !can_lay_eggs || om_busy(src))
 		return FALSE
-	if(locate(/obj/effect/spider/eggcluster) in T)
+	if(locate_on(T, /obj/effect/spider/eggcluster))
 		return FALSE // Already got eggs here.
 	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_eggs, T)))
 		return FALSE

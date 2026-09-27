@@ -426,7 +426,7 @@
 	if(is_ship && !is_type_in_typecache(T, typecacheof(/turf/space)))
 		return SHELTER_DEPLOY_SHIP_SPACE
 
-	for(var/obj/O in T)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if((O.density && O.anchored) || is_type_in_typecache(O, banned_objects))
 			return SHELTER_DEPLOY_ANCHORED_OBJECTS
 	return SHELTER_DEPLOY_ALLOWED

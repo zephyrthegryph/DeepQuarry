@@ -137,7 +137,7 @@
 /// The Marauder launchpad: bay doors open, portals, mass drivers, then the doors close.
 /proc/launch_mauraders()
 	var/area/centcom/specops/special_ops = locate()//Where is the specops area located?
-	for(var/obj/machinery/door/blast/M in special_ops)
+	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 		var/delay = marauder_bay_delay(M.id)
 		if(delay)
 			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/door, open))
@@ -165,7 +165,7 @@
 	om_after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), special_ops) //Doors remain open for 5 seconds.
 
 /proc/mauraders_close(area/centcom/specops/special_ops)
-	for(var/obj/machinery/door/blast/M in special_ops)
+	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 		if(marauder_bay_delay(M.id)) //Doors close at the same time.
 			M.close()
 	special_ops.readyreset()//Reset firealarm after the team launched.

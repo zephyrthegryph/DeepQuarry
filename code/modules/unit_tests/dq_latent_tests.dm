@@ -32,7 +32,7 @@
 /// Items on `T` that weren't there in `before`.
 /proc/dq_latent_new_items(turf/T, list/before)
 	. = list()
-	for(var/obj/item/I in T)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		if(!(I in before))
 			. += I
 
@@ -177,7 +177,7 @@
 /datum/unit_test/dq_latent_destroy_parity/Run()
 	var/turf/T = test_floor()
 	// A fresh closet swallows loose items on its turf; clear them first.
-	for(var/obj/item/I in T)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		qdel(I)
 	var/obj/structure/closet/dq_latent_test/latent = new(T)
 	var/obj/structure/closet/dq_latent_test/real = new(T)
@@ -231,7 +231,7 @@
 	var/tested = 0
 	var/unserializable = 0
 	var/turf/T = test_floor()
-	for(var/obj/item/I in T)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		qdel(I)
 	for(var/path in subtypesof(/obj/structure/closet))
 		if(is_abstract(path) || ispath(path, /obj/structure/closet/dq_latent_test))
@@ -287,7 +287,7 @@
 			if(!ismob(thing))
 				qdel(thing)
 		qdel(closet)
-		for(var/obj/item/I in T)
+		for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 			qdel(I)
 	TEST_ASSERT(tested > 0, "no latent closets found")
 	log_test("dq_latent_closet_types: [tested] latent closet types, [unserializable] hold real things that don't serialize")
@@ -343,7 +343,7 @@
 
 /datum/unit_test/dq_latent_storage_in_closet/Run()
 	var/turf/T = test_floor()
-	for(var/obj/item/I in T)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		qdel(I)
 	var/obj/structure/closet/dq_latent_storage_test/closet = allocate(/obj/structure/closet/dq_latent_storage_test, T)
 	TEST_ASSERT_EQUAL(length(closet.contents), 0, "the boxes are latent")

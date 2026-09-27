@@ -187,7 +187,7 @@
 
 //Splatter a turf.
 /datum/seed/proc/splatter(turf/T,obj/item/thrown)
-	if(splat_type && !(locate(/obj/effect/plant) in T))
+	if(splat_type && !(locate_on(T, /obj/effect/plant)))
 		var/obj/effect/plant/splat = new splat_type(T, src)
 		if(!istype(splat)) // Plants handle their own stuff.
 			splat.name = "[thrown.name] [pick("smear","smudge","splatter")]"
@@ -205,7 +205,7 @@
 			if(flesh_colour) splat.color = get_trait(TRAIT_PRODUCT_COLOUR)
 
 	if(chems && chems.len)
-		for(var/mob/living/M in T.contents)
+		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 			if(!M.reagents)
 				continue
 			var/body_coverage = HEAD|FACE|EYES|CHEST|LEGS|FEET|ARMS|HANDS
@@ -270,7 +270,7 @@
 				open_turfs |= neighbor
 
 		for(var/turf/T in valid_turfs)
-			for(var/mob/living/M in T.contents)
+			for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 				apply_special_effect(M)
 			splatter(T,thrown)
 		if(origin_turf)
@@ -324,7 +324,7 @@
 
 		if(get_trait(TRAIT_SPORING))
 			var/can_spore = TRUE
-			var/obj/machinery/portable_atmospherics/hydroponics/hometray = locate(/obj/machinery/portable_atmospherics/hydroponics) in current_turf
+			var/obj/machinery/portable_atmospherics/hydroponics/hometray = locate_on(current_turf, /obj/machinery/portable_atmospherics/hydroponics)
 
 			if(health_change > 2 || (hometray && hometray.closed_system))
 				can_spore = FALSE

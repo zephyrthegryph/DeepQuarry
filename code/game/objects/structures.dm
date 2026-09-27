@@ -100,11 +100,11 @@
 					break // breaks inner loop
 		if(!success)
 			blend_obj_loop:
-				for(var/obj/O in T)
+				for(var/obj/O in turf_contents_of_type(T, /obj))
 					for(var/b_type in blend_objects)
 						if(istype(O, b_type))
 							success = 1
-							for(var/obj/structure/S in T)
+							for(var/obj/structure/S in turf_contents_of_type(T, /obj/structure))
 								if(istype(S, src))
 									success = 0
 							for(var/nb_type in noblend_objects)

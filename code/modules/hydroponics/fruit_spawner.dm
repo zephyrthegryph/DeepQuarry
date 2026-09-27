@@ -10,7 +10,7 @@
 	if(!seedtype || !SSplants.seeds[seedtype])
 		return
 	var/turf/T = get_turf(src)
-	var/obj/structure/closet/C = locate() in T
+	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
 	var/datum/seed/S = SSplants.seeds[seedtype]
 	S.harvest(C || T,0,0,1)
 	return INITIALIZE_HINT_QDEL

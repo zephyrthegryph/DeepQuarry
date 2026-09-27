@@ -61,7 +61,7 @@
 		if(department.id != department_id)
 			continue
 		var/area/generated_station/A = site.station_materialization.department_areas[department.layout_node_id]
-		for(var/turf/T in A)
+		for(var/turf/T in area_contents_of_type(A, /turf))
 			if(!T.density && !locate(/obj/machinery/door) in T)
 				return T
 	return null

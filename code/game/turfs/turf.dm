@@ -101,7 +101,7 @@
 
 /turf/Initialize(mapload)
 	. = ..()
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
 		Entered(AM)
 
 	//Lighting related
@@ -152,11 +152,11 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 /turf/attack_hand(mob/user)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
 	if(!PULLING(user))
-		var/obj/machinery/door/airlock/AL = locate(/obj/machinery/door/airlock) in src.contents
+		var/obj/machinery/door/airlock/AL = locate_on(src, /obj/machinery/door/airlock)
 		if(AL)
 			AL.attack_hand(user)
 			return TRUE
-		var/obj/machinery/door/firedoor/FD = locate(/obj/machinery/door/firedoor) in src.contents
+		var/obj/machinery/door/firedoor/FD = locate_on(src, /obj/machinery/door/firedoor)
 		if(FD)
 			FD.attack_hand(user)
 			return TRUE
@@ -312,7 +312,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 	return 0
 
 /turf/proc/levelupdate()
-	for(var/obj/O in src)
+	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(O.hides_under_flooring() && !is_plating())
 
 /turf/proc/AdjacentTurfs(check_blockage = TRUE)
@@ -350,7 +350,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 /turf/proc/contains_dense_objects()
 	if(density)
 		return 1
-	for(var/atom/A in src)
+	for(var/atom/A in turf_contents_of_type(src, /atom))
 		if(A.density && !(A.flags & ON_BORDER))
 			return 1
 	return 0
@@ -385,7 +385,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		return
 
 	var/too_much_graffiti = 0
-	for(var/obj/effect/decal/writing/W in src)
+	for(var/obj/effect/decal/writing/W in turf_contents_of_type(src, /obj/effect/decal/writing))
 		too_much_graffiti++
 	if(too_much_graffiti >= 5)
 		to_chat(vandal, span_warning("There's too much graffiti here to add more."))

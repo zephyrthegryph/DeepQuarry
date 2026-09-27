@@ -61,7 +61,7 @@
 	return
 
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
-	for(var/obj/item/paper/P in T)
+	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
 		P.loc = src
 		toppaper = P
 		update_icon()

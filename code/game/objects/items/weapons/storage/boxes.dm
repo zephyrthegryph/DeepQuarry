@@ -46,7 +46,7 @@
 
 	//try to fold it
 	if(ispath(foldable))
-		if (contents.len)
+		if (length(slot_contents(CONTAINER_SLOT_STORAGE)))
 			return
 		var/found = 0
 		// Close any open UI windows first
@@ -65,7 +65,7 @@
 
 	//try to crush it
 	if(ispath(trash))
-		if(contents.len &&  IS_HARMING(user))  // only crumple with things inside on harmintent.
+		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) &&  IS_HARMING(user))  // only crumple with things inside on harmintent.
 			user.visible_message(span_danger("[user] crushes \the [src], spilling its contents everywhere!"), span_danger("You crush \the [src], spilling its contents everywhere!"))
 			spill()
 		else

@@ -315,7 +315,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/Destroy()
 	src.go_out()
-	for(var/mob/M in src) //Be Extra Sure
+	for(var/mob/M in slot_contents()) //Be Extra Sure
 		M.forceMove(get_turf(src))
 		M.loc.Entered(M)
 		if(M != SLOT_ITEM(src, MECHA_SLOT_PILOT))
@@ -746,7 +746,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	. = user.shared_living_tgui_distance(src_object) //allow them to interact with anything they can interact with normally.
 	if(. != STATUS_INTERACTIVE)
 		//Allow interaction with the mecha or anything that is part of the mecha
-		if(src_object == src || (src_object in src))
+		if(src_object == src || (src_object in slot_contents()))
 			return STATUS_INTERACTIVE
 		if(src.Adjacent(src_object))
 			src.occupant_message(span_notice("Interfacing with [src_object]..."))
@@ -1837,7 +1837,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return
 
 	for(var/turf/T in locs)
-		var/obj/machinery/atmospherics/portables_connector/possible_port = locate() in T
+		var/obj/machinery/atmospherics/portables_connector/possible_port = locate_on(T, /obj/machinery/atmospherics/portables_connector)
 		if(possible_port)
 			if(connect(possible_port))
 				occupant_message(span_notice("\The [name] connects to the port."))
@@ -2296,7 +2296,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			data["maint_can_req_access"] = !!add_req_access
 			data["maint_can_maint_access"] = !!maint_access
 			data["maint_can_set_air"] = (state > 0)
-			data["maint_can_remove_passenger"] = (state > 0) && (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in contents)
+			data["maint_can_remove_passenger"] = (state > 0) && (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in slot_contents())
 			return data
 	// Damage banner.
 	var/list/dam = list()

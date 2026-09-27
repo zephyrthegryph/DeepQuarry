@@ -78,11 +78,11 @@
 		for(var/turf/simulated/floor/F in view(1, T))
 			F.burn_tile(900)
 
-	for(var/obj/O in T)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O == src)
 			continue
 		qdel(O)
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		L.gib()
 
 	// Landed! Simmer

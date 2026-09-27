@@ -60,7 +60,7 @@
 		var/transit_state = ((direction & WEST ? world.maxx - src.x : src.x) + y_shift)%15
 		appearance = SSskybox.speedspace_cache["EW_[transit_state]"]
 
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
 		if (!AM.simulated)
 			continue
 
@@ -74,7 +74,7 @@
 
 // override for space turfs, since they should never hide anything
 /turf/space/levelupdate()
-	for(var/obj/O in src)
+	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(0)
 
 /turf/space/is_solid_structure()

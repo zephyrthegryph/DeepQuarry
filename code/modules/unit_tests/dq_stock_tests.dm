@@ -147,7 +147,7 @@
 	F.vend(R, 2)
 	TEST_ASSERT_EQUAL(dq_stock_count_in(floor, path), before + 2, "vending two made two")
 	TEST_ASSERT_EQUAL(R.get_amount(), 2, "two left")
-	for(var/obj/item/I in floor)
+	for(var/obj/item/I in turf_contents_of_type(floor, /obj/item))
 		if(I.type == path)
 			made += I
 	TEST_ASSERT_EQUAL(dq_stock_count_in(F, path), 0, "vending did not materialize the rest")
@@ -164,7 +164,7 @@
 	qdel(F)
 	TEST_ASSERT_EQUAL(dq_stock_count_in(floor, path), before + 3, "destroying the fridge spilled two latent and one real")
 	TEST_ASSERT(busy.loc == floor, "the real one spilled")
-	for(var/obj/item/I in floor)
+	for(var/obj/item/I in turf_contents_of_type(floor, /obj/item))
 		if(I.type == path)
 			made += I
 
@@ -195,7 +195,7 @@
 	TEST_ASSERT_EQUAL(R.get_amount(), 40, "sheets counted")
 	TEST_ASSERT_EQUAL(dq_stock_count_in(F, /obj/item/stack/material/steel), collapses ? 0 : 2, "stacks collapse only when they serialize")
 	F.vend(R, 25)
-	var/obj/item/stack/material/steel/S = locate() in floor
+	var/obj/item/stack/material/steel/S = locate_on(floor, /obj/item/stack/material/steel)
 	made += S
 	TEST_ASSERT(S && S.get_amount() == 25, "vended one stack of 25")
 	TEST_ASSERT_EQUAL(R.get_amount(), 15, "15 left")

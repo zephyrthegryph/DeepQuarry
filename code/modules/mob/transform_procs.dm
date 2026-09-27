@@ -82,13 +82,13 @@
 		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if (sloc.name != JOB_AI)
 				continue
-			if ((locate(/mob/living) in sloc.loc) || (locate(/obj/structure/AIcore) in sloc.loc))
+			if ((locate_on(sloc.loc, /mob/living)) || (locate_on(sloc.loc, /obj/structure/AIcore)))
 				continue
 			loc_landmark = sloc
 		if (!loc_landmark)
 			for(var/obj/effect/landmark/tripai in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 				if (tripai.name == "tripai")
-					if((locate(/mob/living) in tripai.loc) || (locate(/obj/structure/AIcore) in tripai.loc))
+					if((locate_on(tripai.loc, /mob/living)) || (locate_on(tripai.loc, /obj/structure/AIcore)))
 						continue
 					loc_landmark = tripai
 		if (!loc_landmark)

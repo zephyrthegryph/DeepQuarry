@@ -196,7 +196,7 @@
 			// for "grab adjacent loot, else disengage" which is close enough.
 			if(prob(30))
 				var/turf/T = get_turf(L)
-				var/obj/item/IT = locate() in T.contents
+				var/obj/item/IT = locate_on(T, /obj/item)
 				if(IT && !IT.anchored && !S.get_active_hand())
 					if(S.Adjacent(IT))
 						S.set_use_stance(I_HELP)

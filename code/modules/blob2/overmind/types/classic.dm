@@ -26,7 +26,7 @@
 
 		splash.set_up(F, 2, 3)
 
-		var/obj/effect/decal/cleanable/chemcoating/blood = locate() in T
+		var/obj/effect/decal/cleanable/chemcoating/blood = locate_on(T, /obj/effect/decal/cleanable/chemcoating)
 		if(!istype(blood))
 			blood = new(T)
 			blood.reagents.add_reagent(REAGENT_ID_BLOOD, 10,list("blood_colour" = color))

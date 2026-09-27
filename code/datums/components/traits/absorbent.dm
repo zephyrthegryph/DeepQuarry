@@ -18,7 +18,7 @@
 	if(istype(T))
 		if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))
 			//We do this first as it gives nutrition for each item on the turf.
-			for(var/obj/O in T)
+			for(var/obj/O in turf_contents_of_type(T, /obj))
 				if(O.wash(CLEAN_WASH))
 					H.adjust_nutrition(rand(5, 15))
 

@@ -27,12 +27,12 @@
 
 	for(var/direction in GLOB.cardinal)
 		var/turf/simulated/shielded_tile = get_step(get_turf(src), direction)
-		for(var/obj/effect/shield/S in shielded_tile)
+		for(var/obj/effect/shield/S in turf_contents_of_type(shielded_tile, /obj/effect/shield))
 			// 10kJ per pulse, but gap in the shield lasts for longer than regular diffusers.
 			if(istype(S) && !S.diffused_for && !S.disabled_for && cell.checked_use(10 KILOWATTS * CELLRATE))
 				S.diffuse(20)
 		// Legacy shield support
-		for(var/obj/effect/energy_field/S in shielded_tile)
+		for(var/obj/effect/energy_field/S in turf_contents_of_type(shielded_tile, /obj/effect/energy_field))
 			if(istype(S) && cell.checked_use(10 KILOWATTS * CELLRATE))
 				qdel(S)
 

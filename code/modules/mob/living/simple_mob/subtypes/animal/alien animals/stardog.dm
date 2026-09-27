@@ -662,7 +662,7 @@
 	var/include_enzyme = FALSE
 
 /area/redgate/stardog/flesh_abyss/EvalValidSpawnTurfs()
-	for(var/turf/simulated/floor/F in src)
+	for(var/turf/simulated/floor/F in area_contents_of_type(src, /turf/simulated/floor))
 		if(istype(F, /turf/simulated/floor/flesh))
 			LAZYOR(valid_spawn_turfs, F)
 

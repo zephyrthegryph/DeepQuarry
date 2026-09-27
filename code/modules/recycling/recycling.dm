@@ -130,7 +130,7 @@
 	for(var/mat in item_matter)
 		modified_mats[mat] = item_matter[mat] * effic_factor * trash // Trash multiplier
 	var/turf/T = get_step(src, dir)
-	for(var/obj/item/debris_pack/D in T.contents)
+	for(var/obj/item/debris_pack/D in turf_contents_of_type(T, /obj/item/debris_pack))
 		if(istype(D))
 			D.add_materials(modified_mats)
 			update_use_power(USE_POWER_IDLE)
@@ -234,7 +234,7 @@
 
 	var/stacktype = M.stack_type
 	var/turf/T = get_step(src, dir)
-	var/obj/item/stack/S = locate(stacktype) in T
+	var/obj/item/stack/S = locate_on(T, stacktype)
 	if(S && S.get_amount() < S.max_amount)
 		S.add(1)
 	else

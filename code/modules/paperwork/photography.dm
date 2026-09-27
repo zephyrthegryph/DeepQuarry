@@ -247,7 +247,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 
 /obj/item/camera/proc/get_mobs(turf/the_turf as turf)
 	var/mob_detail
-	for(var/mob/living/carbon/A in the_turf)
+	for(var/mob/living/carbon/A in turf_contents_of_type(the_turf, /mob/living/carbon))
 		if(A.invisibility) continue
 		var/holding = null
 		if(A.get_equipped_item(SLOT_ID_HAND_L) || A.get_equipped_item(SLOT_ID_HAND_R))

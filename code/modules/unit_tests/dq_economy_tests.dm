@@ -241,7 +241,7 @@
 	authorizer.registered_name = "Account Test Captain"
 	terminal.held_card = authorizer
 	var/list/preexisting_packages = list()
-	for(var/obj/item/smallDelivery/existing_package in test_turf)
+	for(var/obj/item/smallDelivery/existing_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
 		preexisting_packages += existing_package
 	var/accounts_before = REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS)
 	TEST_ASSERT(!create_station_funded_account("Rejected account", 40, terminal), "suspended station budget created a funded account")
@@ -259,7 +259,7 @@
 	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, destroyed_before, "internal account activation was counted as external destruction")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	GLOB.station_account = original_station
-	for(var/obj/item/smallDelivery/new_package in test_turf)
+	for(var/obj/item/smallDelivery/new_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
 		if(!(new_package in preexisting_packages))
 			qdel(new_package)
 	qdel(account)
@@ -483,7 +483,7 @@
 	var/refunds_before = SSsupply.currency_refunded
 	var/internal_refunds_before = SSsupply.currency_internal_refunded
 	var/list/preexisting_cash = list()
-	for(var/obj/item/spacecash/existing_cash in test_turf)
+	for(var/obj/item/spacecash/existing_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
 		preexisting_cash += existing_cash
 	service.money += 30
 	var/datum/service_invoice/invoice = SSsupply.create_service_external_invoice(service, "Anonymous refund test", list("Cash meal" = 1), list("Cash meal" = 30), "Cash customer", 30, "Cash")
@@ -503,7 +503,7 @@
 	service.money = service_money_before
 	service.monthly_expenses = service_expenses_before
 	service.total_expenses = service_total_expenses_before
-	for(var/obj/item/spacecash/new_cash in test_turf)
+	for(var/obj/item/spacecash/new_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
 		if(!(new_cash in preexisting_cash))
 			qdel(new_cash)
 	qdel(invoice)

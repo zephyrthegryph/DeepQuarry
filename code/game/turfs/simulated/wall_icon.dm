@@ -143,7 +143,7 @@
 		var/additional_dirs = 0
 		for(var/direction in GLOB.alldirs)
 			var/turf/T = get_step(src,direction)
-			if(T && (locate(/obj/structure/hull_corner) in T))
+			if(T && (locate_on(T, /obj/structure/hull_corner)))
 				dirs += direction
 				additional_dirs |= direction
 		if(additional_dirs)

@@ -60,13 +60,13 @@
 
 	//just check if there is a poster on or adjacent to the wall
 	var/stuff_on_wall = 0
-	if(locate(/obj/structure/sign/poster) in W)
+	if(locate_on(W, /obj/structure/sign/poster))
 		stuff_on_wall = 1
 
 	//crude, but will cover most cases. We could do stuff like check pixel_x/y but it's not really worth it.
 	for (var/dir in GLOB.cardinal)
 		var/turf/T = get_step(W, dir)
-		if (locate(/obj/structure/sign/poster) in T)
+		if (locate_on(T, /obj/structure/sign/poster))
 			stuff_on_wall = 1
 			break
 

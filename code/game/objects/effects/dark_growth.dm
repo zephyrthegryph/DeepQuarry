@@ -143,7 +143,7 @@
 		for(var/dirn in GLOB.cardinal)
 			var/turf/T2 = get_step(src, dirn)
 
-			if(!istype(T2) || locate(/obj/effect/dark) in T2 || istype(T2.loc, /area/arrival) || isspace(T2) || istype(T2, /turf/simulated/open))
+			if(!istype(T2) || locate_on(T2, /obj/effect/dark) || istype(T2.loc, /area/arrival) || isspace(T2) || istype(T2, /turf/simulated/open))
 				continue
 
 			if(T2.get_lumcount() >= 0.4)

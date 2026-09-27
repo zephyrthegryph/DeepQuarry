@@ -167,7 +167,7 @@
 	if(ismovable(thing) && !QDELETED(thing))
 		var/turf/T = get_turf(thing)
 		qdel(thing)
-		for(var/obj/item/stack/rods/R in T)
+		for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 			qdel(R)
 	if(floor)
 		floor.extinguish()
@@ -404,10 +404,10 @@
 	TEST_ASSERT(!QDELETED(bottle), "below the melting point it keeps its shape")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point + 10)
 	TEST_ASSERT(QDELETED(bottle), "at the melting point it is replaced")
-	TEST_ASSERT(locate(/obj/effect/decal/cleanable/molten_item) in T, "by a molten mass")
+	TEST_ASSERT(locate_on(T, /obj/effect/decal/cleanable/molten_item), "by a molten mass")
 	TEST_ASSERT_EQUAL(inside.loc, T, "and what was inside drops out")
 	qdel(inside)
-	for(var/obj/effect/decal/cleanable/molten_item/goo in T)
+	for(var/obj/effect/decal/cleanable/molten_item/goo in turf_contents_of_type(T, /obj/effect/decal/cleanable/molten_item))
 		qdel(goo)
 
 // ---- Parity: grille breaking point ----
@@ -443,10 +443,10 @@
 	TEST_ASSERT(binding.holding[break_index], "broken: the rule holds")
 	third.repair_damage(10)
 	TEST_ASSERT(!binding.holding[break_index], "repaired above the breaking point: the rule is re-armed")
-	for(var/obj/item/stack/rods/R in T)
+	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)
 
 /datum/unit_test/dq_rule_grille_parity/proc/count_rods(turf/T)
 	. = 0
-	for(var/obj/item/stack/rods/R in T)
+	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		. += R.get_amount()

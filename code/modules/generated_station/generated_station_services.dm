@@ -515,7 +515,7 @@
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-turf-mismatch", "Planned maintenance is not physical maintenance flooring.", key)
 			continue
 		maintenance_floors[T] = TRUE
-		if(spec.maintenance_doors[key] && !(locate(/obj/machinery/door/airlock/maintenance) in T))
+		if(spec.maintenance_doors[key] && !(locate_on(T, /obj/machinery/door/airlock/maintenance)))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-door-missing", "Planned maintenance access has no maintenance airlock.", key)
 		materializer?.generation_checkpoint("Validating maintenance services", 56)
 	if(length(maintenance_floors))

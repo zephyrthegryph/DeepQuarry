@@ -165,7 +165,7 @@
 	// Now for the stun.
 	var/mob/living/victim = null
 	// So player-controlled cyber horrors only need to click the tile to stun them.
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(L == src)
 			continue
 

@@ -16,7 +16,7 @@
 	for(var/turf/valid_turf in .)
 		new /obj/effect/overlay/bluespacify(valid_turf)
 	// Consume everything in our turf
-	for(var/atom/movable/A in src)
+	for(var/atom/movable/A in turf_contents_of_type(src, /atom/movable))
 		if(isliving(A))
 			qdel(A)
 			continue

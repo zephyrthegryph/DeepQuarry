@@ -698,7 +698,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	var/doodle_color = (choice.basecolor) ? choice.basecolor : "#A10808"
 
 	var/num_doodles = 0
-	for (var/obj/effect/decal/cleanable/blood/writing/W in T)
+	for (var/obj/effect/decal/cleanable/blood/writing/W in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood/writing))
 		num_doodles++
 	if (num_doodles > 4)
 		to_chat(src, span_warning("There is no space to write on!"))

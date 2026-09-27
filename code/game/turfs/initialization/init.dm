@@ -7,5 +7,5 @@
 /area/LateInitialize()
 	. = ..()
 	if(turf_initializer)
-		for(var/turf/simulated/T in src)
+		for(var/turf/simulated/T in area_contents_of_type(src, /turf/simulated))
 			turf_initializer.InitializeTurf(T)
