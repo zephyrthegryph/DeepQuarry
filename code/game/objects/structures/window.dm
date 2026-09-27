@@ -232,17 +232,7 @@
 				span_infoplain(span_bold("\The [user]") + " begins to wire \the [src] for electrochromic tinting."), \
 				span_notice("You begin to wire \the [src] for electrochromic tinting."), \
 				"You hear sparks.")
-			if(use_tool(user, C, src, delay = 2 SECONDS) && state == 0)
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
-				if(is_fulltile())
-					P.fulltile = TRUE
-					P.icon_state = "fwindow"
-				P.max_integrity = max_integrity
-				P.update_integrity(get_integrity())
-				P.state = state
-				P.anchored = anchored
-				qdel(src)
+			use_tool(user, C, src, delay = 2 SECONDS, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(state))
 	else if(istype(W,/obj/item/frame) && anchored)
 		var/obj/item/frame/F = W
 		F.try_build(src, user)
@@ -259,6 +249,20 @@
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 		..()
 	return
+
+/obj/structure/window/proc/attackby_tool_done(state)
+	if(!(state == 0))
+		return
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
+	if(is_fulltile())
+		P.fulltile = TRUE
+		P.icon_state = "fwindow"
+	P.max_integrity = max_integrity
+	P.update_integrity(get_integrity())
+	P.state = state
+	P.anchored = anchored
+	qdel(src)
 
 // Tool steps and weld repair: window_construction.dm.
 

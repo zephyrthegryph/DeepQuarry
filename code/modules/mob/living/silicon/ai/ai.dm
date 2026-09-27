@@ -813,12 +813,17 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if(user == deployed_shell)
 		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, message_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating..."))
-		user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, message_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
 	anchored = !anchored
 	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
 	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/ai/proc/wrench_act_tool_failed(mob/user)
+	user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
+	return ITEM_INTERACT_BLOCKING
 
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"

@@ -412,8 +412,10 @@
 		playsound(src, tool.usesound, 50, TRUE)
 		om_do_after(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
 		return ITEM_INTERACT_SUCCESS
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 0))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	anchored = !anchored
 	playsound(src, tool.usesound, 50, TRUE)
@@ -432,8 +434,12 @@
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start taking the water-cooler apart.") || bottle || cupholder)
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(mob/user)
+	if(bottle || cupholder)
+		return
 	to_chat(user, span_notice("You take the water-cooler apart."))
 	new /obj/item/stack/material/plastic(loc, 4)
 	qdel(src)

@@ -313,27 +313,31 @@
 		return
 	else if(seal_tool)
 		if(istype(W, seal_tool))
-			if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
-				if(opened) // cancel weld if opened mid-progress to prevent welder-traps
-					return
-				playsound(src, W.usesound, 50)
-				sealed = !sealed
-				update_icon()
-				for(var/mob/M in viewers(src))
-					M.show_message(span_warning("[src] has been [sealed?"sealed":"unsealed"] by [user.name]."), 3)
+			use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(W, user))
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/closet/proc/attackby_tool_done(obj/item/W, mob/user)
+	if(opened) // cancel weld if opened mid-progress to prevent welder-traps
+		return
+	playsound(src, W.usesound, 50)
+	sealed = !sealed
+	update_icon()
+	for(var/mob/M in viewers(src))
+		M.show_message(span_warning("[src] has been [sealed?"sealed":"unsealed"] by [user.name]."), 3)
 
 /obj/structure/closet/wrench_act(mob/user, obj/item/W)
 	if(!opened)
 		to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
 		return TRUE
 	user.visible_message("\The [user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
-	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0))
-		anchored = !anchored
-		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/closet/proc/wrench_act_tool_done(mob/user)
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 /obj/structure/closet/welder_act(mob/user, obj/item/W)
 	var/obj/item/weldingtool/WT = W.get_welder()
@@ -350,13 +354,17 @@
 		return TRUE
 	if(!seal_tool || !istype(W, seal_tool))
 		return TRUE
-	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0) && !opened)
-		playsound(src, W.usesound, 50)
-		sealed = !sealed
-		update_icon()
-		for(var/mob/M in viewers(src))
-			M.show_message(span_warning("[src] has been [sealed ? "sealed" : "unsealed"] by [user.name]."), 3)
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))
 	return TRUE
+
+/obj/structure/closet/proc/welder_act_tool_done(mob/user, obj/item/W)
+	if(!(!opened))
+		return
+	playsound(src, W.usesound, 50)
+	sealed = !sealed
+	update_icon()
+	for(var/mob/M in viewers(src))
+		M.show_message(span_warning("[src] has been [sealed ? "sealed" : "unsealed"] by [user.name]."), 3)
 
 /obj/structure/closet/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
 	if(istype(O, /atom/movable/screen))	//fix for HUD elements making their way into the world	-Pete

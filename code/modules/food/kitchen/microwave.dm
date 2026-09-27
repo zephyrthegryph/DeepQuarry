@@ -148,9 +148,10 @@
 	return TRUE
 
 /obj/machinery/microwave/proc/do_repair_step(mob/user, obj/item/tool, full_repair = FALSE)
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, \
-			message_self = "You start to fix part of \the [src].", message_others = "\The [user] starts to fix part of \the [src]."))
-		return TRUE
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start to fix part of \the [src].", message_others = "\The [user] starts to fix part of \the [src].", receiver = src, on_done = PROC_REF(do_repair_step_tool_done), done_args = list(user, full_repair))
+	return TRUE
+
+/obj/machinery/microwave/proc/do_repair_step_tool_done(mob/user, full_repair)
 
 	user.visible_message(
 		span_infoplain(span_bold("\The [user]") + (full_repair ? " fixes \the [src]." : " fixes part of \the [src].")),

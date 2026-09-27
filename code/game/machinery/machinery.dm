@@ -542,8 +542,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
 	if(!circuit)
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start disconnecting the monitor."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start disconnecting the monitor.", receiver = src, on_done = PROC_REF(deconstruct_display_tool_done), done_args = list(user))
+	return TRUE
+
+/obj/machinery/proc/deconstruct_display_tool_done(mob/user)
 	if(stat & BROKEN)
 		to_chat(user, span_notice("The broken glass falls out."))
 		new /obj/item/material/shard(loc)

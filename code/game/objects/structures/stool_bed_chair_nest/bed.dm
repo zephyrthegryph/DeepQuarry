@@ -402,7 +402,9 @@
 
 /obj/structure/dirtybed/wrench_act(mob/user, obj/item/W)
 	user.visible_message("[user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
-	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 100))
-		anchored = !anchored
-		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 100, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/dirtybed/proc/wrench_act_tool_done(mob/user)
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))

@@ -182,24 +182,25 @@
 			if(0)
 				to_chat(user, span_warning("\The [src] needs to be wrenched to the floor."))
 			if(1)
-				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-						message_self = "You start to weld [src] to the floor.", message_others = "[user.name] starts to weld [src] to the floor."))
-					if(!src)
-						return
-					state = 2
-					to_chat(user, "You weld [src] to the floor.")
-					connect_to_network()
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src] to the floor.", message_others = "[user.name] starts to weld [src] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
 			if(2)
-				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-						message_self = "You start to cut [src] free from the floor.", message_others = "[user.name] starts to cut [src] free from the floor."))
-					if(!src)
-						return
-					state = 1
-					to_chat(user, "You cut [src] free from the floor.")
-					disconnect_from_network()
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to cut [src] free from the floor.", message_others = "[user.name] starts to cut [src] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/emitter/proc/construction_tool_act_tool_done(mob/user)
+	if(!src)
+		return
+	state = 2
+	to_chat(user, "You weld [src] to the floor.")
+	connect_to_network()
+/obj/machinery/power/emitter/proc/construction_tool_act_tool_done2(mob/user)
+	if(!src)
+		return
+	state = 1
+	to_chat(user, "You cut [src] free from the floor.")
+	disconnect_from_network()
 
 /// Old attackby: repairing with steel sheets. `held_type` shows any material stack; `offered_when`
 /// restricts to steel, so a non-steel stack falls through (to the id/pda and scanner branches, then ..()).

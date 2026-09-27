@@ -28,28 +28,30 @@
 	return
 
 /obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
-	if(use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]"))
-		to_chat(user, "You remove the faceplate from the [src]")
-		var/obj/structure/frame/A = new /obj/structure/frame(loc)
-		A.circuit = circuit
-		A.frame_type = circuit.board_type
-		circuit = null
-		A.need_circuit = FALSE
-		A.pixel_x = pixel_x
-		A.pixel_y = pixel_y
-		A.set_dir(dir)
-		A.anchored = TRUE
-		for(var/obj/C in src)
-			if(istype(C, /obj/item/circuitboard))
-				C.forceMove(A)
-				continue
-			C.forceMove(loc)
-		A.forensic_data = forensic_data //carry crime data over.
-		A.state = FRAME_WIRED
-		A.update_icon()
-		qdel(src)
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
+	to_chat(user, "You remove the faceplate from the [src]")
+	var/obj/structure/frame/A = new /obj/structure/frame(loc)
+	A.circuit = circuit
+	A.frame_type = circuit.board_type
+	circuit = null
+	A.need_circuit = FALSE
+	A.pixel_x = pixel_x
+	A.pixel_y = pixel_y
+	A.set_dir(dir)
+	A.anchored = TRUE
+	for(var/obj/C in src)
+		if(istype(C, /obj/item/circuitboard))
+			C.forceMove(A)
+			continue
+		C.forceMove(loc)
+	A.forensic_data = forensic_data //carry crime data over.
+	A.state = FRAME_WIRED
+	A.update_icon()
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/keycard_auth/declare_interactions(list/into)
 	into += list(

@@ -125,17 +125,17 @@
 	if(state != "01" || anchored)
 		update_state()
 		return NONE
-	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50,
-			message_self = "You start to disassemble the windoor assembly.",
-			message_others = "[user] disassembles the windoor assembly."))
-		to_chat(user, span_notice("You disassembled the windoor assembly!"))
-		if(secure)
-			new /obj/item/stack/material/glass/reinforced(get_turf(src), 2)
-		else
-			new /obj/item/stack/material/glass(get_turf(src), 2)
-		qdel(src)
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to disassemble the windoor assembly.", message_others = "[user] disassembles the windoor assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/windoor_assembly/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You disassembled the windoor assembly!"))
+	if(secure)
+		new /obj/item/stack/material/glass/reinforced(get_turf(src), 2)
+	else
+		new /obj/item/stack/material/glass(get_turf(src), 2)
+	qdel(src)
 
 /obj/structure/windoor_assembly/wrench_act(mob/user, obj/item/W)
 	if(state != "01")
@@ -143,54 +143,53 @@
 		return NONE
 	if(!anchored)
 		//Wrenching an unsecure assembly anchors it in place. Step 4 complete
-		if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100,
-				message_self = "You start to secure the windoor assembly to the floor.",
-				message_others = "[user] secures the windoor assembly to the floor."))
-			to_chat(user,span_notice("You've secured the windoor assembly!"))
-			src.anchored = TRUE
-			step = 0
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "You start to secure the windoor assembly to the floor.", message_others = "[user] secures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	else
 		//Unwrenching an unsecure assembly un-anchors it. Step 4 undone
-		if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100,
-				message_self = "You start to unsecure the windoor assembly to the floor.",
-				message_others = "[user] unsecures the windoor assembly to the floor."))
-			to_chat(user,span_notice("You've unsecured the windoor assembly!"))
-			src.anchored = FALSE
-			step = null
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "You start to unsecure the windoor assembly to the floor.", message_others = "[user] unsecures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done2), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/windoor_assembly/proc/wrench_act_tool_done(mob/user)
+	to_chat(user,span_notice("You've secured the windoor assembly!"))
+	src.anchored = TRUE
+	step = 0
+/obj/structure/windoor_assembly/proc/wrench_act_tool_done2(mob/user)
+	to_chat(user,span_notice("You've unsecured the windoor assembly!"))
+	src.anchored = FALSE
+	step = null
 
 /obj/structure/windoor_assembly/wirecutter_act(mob/user, obj/item/W)
 	if(state != "02" || src.electronics)
 		update_state()
 		return NONE
 	//Removing wire from the assembly. Step 5 undone.
-	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100,
-			message_self = "You start to cut the wires from airlock assembly.",
-			message_others = "[user] cuts the wires from the airlock assembly."))
-		to_chat(user,span_notice("You cut the windoor wires.!"))
-		new/obj/item/stack/cable_coil(get_turf(user), 1)
-		src.state = "01"
-		step = 0
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, message_self = "You start to cut the wires from airlock assembly.", message_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/windoor_assembly/proc/wirecutter_act_tool_done(mob/user)
+	to_chat(user,span_notice("You cut the windoor wires.!"))
+	new/obj/item/stack/cable_coil(get_turf(user), 1)
+	src.state = "01"
+	step = 0
 
 /obj/structure/windoor_assembly/screwdriver_act(mob/user, obj/item/W)
 	if(state != "02" || !src.electronics)
 		update_state()
 		return NONE
 	//Screwdriver to remove airlock electronics. Step 6 undone.
-	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100,
-			message_self = "You start to uninstall electronics from the airlock assembly.",
-			message_others = "[user] removes the electronics from the airlock assembly."))
-		if(!src.electronics) return ITEM_INTERACT_SUCCESS
-		to_chat(user,span_notice("You've removed the airlock electronics!"))
-		step = 1
-		var/obj/item/airlock_electronics/ae = electronics
-		electronics = null
-		ae.loc = src.loc
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100, message_self = "You start to uninstall electronics from the airlock assembly.", message_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/windoor_assembly/proc/screwdriver_act_tool_done(mob/user)
+	if(!src.electronics) return ITEM_INTERACT_SUCCESS
+	to_chat(user,span_notice("You've removed the airlock electronics!"))
+	step = 1
+	var/obj/item/airlock_electronics/ae = electronics
+	electronics = null
+	ae.loc = src.loc
 
 /obj/structure/windoor_assembly/crowbar_act(mob/user, obj/item/W)
 	if(state != "02")
@@ -205,60 +204,60 @@
 		return ITEM_INTERACT_SUCCESS
 	// close TGUI panel (legacy browse(null))
 	SStgui.close_uis(src)
-	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100,
-			message_self = "You start prying the windoor into the frame.",
-			message_others = "[user] pries the windoor into the frame."))
-		density = TRUE //Shouldn't matter but just incase
-		to_chat(user,span_notice("You finish the windoor!"))
-
-		if(secure)
-			var/obj/machinery/door/window/brigdoor/windoor = new /obj/machinery/door/window/brigdoor(src.loc)
-			if(src.facing == "l")
-				windoor.icon_state = "leftsecureopen"
-				windoor.base_state = "leftsecure"
-			else
-				windoor.icon_state = "rightsecureopen"
-				windoor.base_state = "rightsecure"
-			windoor.set_dir(src.dir)
-			windoor.density = FALSE
-			if(created_name)
-				windoor.name = created_name
-			spawn(0)
-				windoor.close()
-
-			if(src.electronics.one_access)
-				windoor.req_access = null
-				windoor.req_one_access = src.electronics.conf_access
-			else
-				windoor.req_access = src.electronics.conf_access
-			windoor.electronics = src.electronics
-			src.electronics.loc = windoor
-		else
-			var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
-			if(src.facing == "l")
-				windoor.icon_state = "leftopen"
-				windoor.base_state = "left"
-			else
-				windoor.icon_state = "rightopen"
-				windoor.base_state = "right"
-			windoor.set_dir(src.dir)
-			windoor.density = FALSE
-			if(created_name)
-				windoor.name = created_name
-			spawn(0)
-				windoor.close()
-
-			if(src.electronics.one_access)
-				windoor.req_access = null
-				windoor.req_one_access = src.electronics.conf_access
-			else
-				windoor.req_access = src.electronics.conf_access
-			windoor.electronics = src.electronics
-			src.electronics.loc = windoor
-
-		qdel(src)
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start prying the windoor into the frame.", message_others = "[user] pries the windoor into the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/windoor_assembly/proc/crowbar_act_tool_done(mob/user)
+	density = TRUE //Shouldn't matter but just incase
+	to_chat(user,span_notice("You finish the windoor!"))
+
+	if(secure)
+		var/obj/machinery/door/window/brigdoor/windoor = new /obj/machinery/door/window/brigdoor(src.loc)
+		if(src.facing == "l")
+			windoor.icon_state = "leftsecureopen"
+			windoor.base_state = "leftsecure"
+		else
+			windoor.icon_state = "rightsecureopen"
+			windoor.base_state = "rightsecure"
+		windoor.set_dir(src.dir)
+		windoor.density = FALSE
+		if(created_name)
+			windoor.name = created_name
+		spawn(0)
+			windoor.close()
+
+		if(src.electronics.one_access)
+			windoor.req_access = null
+			windoor.req_one_access = src.electronics.conf_access
+		else
+			windoor.req_access = src.electronics.conf_access
+		windoor.electronics = src.electronics
+		src.electronics.loc = windoor
+	else
+		var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
+		if(src.facing == "l")
+			windoor.icon_state = "leftopen"
+			windoor.base_state = "left"
+		else
+			windoor.icon_state = "rightopen"
+			windoor.base_state = "right"
+		windoor.set_dir(src.dir)
+		windoor.density = FALSE
+		if(created_name)
+			windoor.name = created_name
+		spawn(0)
+			windoor.close()
+
+		if(src.electronics.one_access)
+			windoor.req_access = null
+			windoor.req_one_access = src.electronics.conf_access
+		else
+			windoor.req_access = src.electronics.conf_access
+		windoor.electronics = src.electronics
+		src.electronics.loc = windoor
+
+	qdel(src)
 
 /obj/structure/windoor_assembly/proc/update_state()
 	update_icon()

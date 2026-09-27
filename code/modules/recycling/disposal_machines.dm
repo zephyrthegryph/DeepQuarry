@@ -242,12 +242,14 @@
 		if(length(contents))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit."))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, "You sliced the floorweld off the disposal unit.")
-		atom_deconstruct(TRUE)
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/disposal/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You sliced the floorweld off the disposal unit.")
+	atom_deconstruct(TRUE)
 
 /obj/machinery/disposal/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

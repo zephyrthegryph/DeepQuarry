@@ -86,15 +86,16 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
-		var/obj/item/solar_assembly/S = new(loc)
-		S.anchored = TRUE
-		new glass_type(loc, 2)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		user.visible_message(span_notice("[user] takes the glass off the solar panel."))
-		qdel(src)
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
+	var/obj/item/solar_assembly/S = new(loc)
+	S.anchored = TRUE
+	new glass_type(loc, 2)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
+	qdel(src)
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)

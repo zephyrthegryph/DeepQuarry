@@ -86,10 +86,7 @@
 
 /obj/structure/mirror/wrench_act(mob/user, obj/item/I)
 	if(!glass)
-		if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
-			to_chat(user, span_notice("You unfasten the frame."))
-			new /obj/item/frame/mirror(loc)
-			qdel(src)
+		use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 		return TRUE
 	if(shattered)
 		to_chat(user, span_notice("The broken glass falls out."))
@@ -103,6 +100,11 @@
 	icon_state = "mirror_frame"
 	new /obj/item/stack/material/glass(loc, 2)
 	return TRUE
+
+/obj/structure/mirror/proc/wrench_act_tool_done(mob/user)
+	to_chat(user, span_notice("You unfasten the frame."))
+	new /obj/item/frame/mirror(loc)
+	qdel(src)
 
 /obj/structure/mirror/attack_generic(mob/user, damage)
 

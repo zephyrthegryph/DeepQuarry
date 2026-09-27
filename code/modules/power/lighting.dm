@@ -140,8 +140,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(stage == 3)
 		to_chat(user, "You have to unscrew the case first.")
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src]."))
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
 	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
 	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)

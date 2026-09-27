@@ -77,5 +77,7 @@
 	if(!panel_open)
 		return
 	to_chat(user, span_notice("\The [src] looks like it could be modified."))
-	if(use_tool(user, W, src, delay = 8 SECONDS, volume = 50))
-		to_chat(user, span_cult("\The [src] looks like it could be adapted to forge advanced materials via particle acceleration, somehow.."))
+	use_tool(user, W, src, delay = 8 SECONDS, volume = 50, receiver = src, on_done = PROC_REF(inspect_done_tool_done), done_args = list(user))
+
+/obj/machinery/the_singularitygen/proc/inspect_done_tool_done(mob/user)
+	to_chat(user, span_cult("\The [src] looks like it could be adapted to forge advanced materials via particle acceleration, somehow.."))

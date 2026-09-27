@@ -267,12 +267,15 @@
 /obj/machinery/atmospherics/pipe/welder_act(mob/user, obj/item/W)
 	if(!damaged_leak)
 		return NONE
-	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 1, volume = 50, \
-			message_self = "You begin welding the fatigue crack in \the [src].") && damaged_leak)
-		damaged_leak = FALSE
-		handle_leaking()
-		to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 1, volume = 50, message_self = "You begin welding the fatigue crack in \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/pipe/proc/welder_act_tool_done(mob/user)
+	if(!(damaged_leak))
+		return
+	damaged_leak = FALSE
+	handle_leaking()
+	to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
 
 /obj/machinery/atmospherics/pipe/wrench_act(mob/user, obj/item/W)
 	if(istype(src, /obj/machinery/atmospherics/pipe/tank))
@@ -298,15 +301,17 @@
 	else
 		to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 
-	if (use_tool(user, W, src, delay = 10, volume = 50))
-		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-			span_notice("You have unfastened \the [src]."), \
-			span_hear("You hear a ratchet."))
-		if(unsafe_wrenching)
-			unsafe_pressure_release(user, internal_pressure)
-		atom_deconstruct()
+	use_tool(user, W, src, delay = 10, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, unsafe_wrenching, internal_pressure))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/pipe/proc/wrench_act_tool_done(mob/user, unsafe_wrenching, internal_pressure)
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
+		span_notice("You have unfastened \the [src]."), \
+		span_hear("You hear a ratchet."))
+	if(unsafe_wrenching)
+		unsafe_pressure_release(user, internal_pressure)
+	atom_deconstruct()
 
 /obj/machinery/atmospherics/pipe/proc/change_color(new_color)
 	//only pass valid pipe colors please ~otherwise your pipe will turn invisible

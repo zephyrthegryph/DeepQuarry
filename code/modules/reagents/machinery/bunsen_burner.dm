@@ -66,8 +66,10 @@
 /obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
 	if(!panel_open || !isturf(loc))
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 5))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 5, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(mob/user)
 	drop_held_container()
 	to_chat(user, span_notice("You disassemble \the [src]."))
 	new /obj/item/stack/material/steel(get_turf(src), 1)

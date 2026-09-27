@@ -72,15 +72,7 @@
 			user.visible_message(span_notice("[user] piles dirt into \the [src.name]."), \
 									span_notice("You start to pile dirt into \the [src.name]."), \
 									span_notice("You hear dirt being moved."))
-			if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
-				user.visible_message(span_notice("[user] pats down the dirt on top of \the [src.name]."), \
-									span_notice("You finish filling in \the [src.name]."))
-				close()
-				return
-			else
-				user.visible_message(span_notice("[user] stops filling in \the [src.name]."), \
-									span_notice("You change your mind and stop filling in \the [src.name]."))
-				return
+			use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done_coffin), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed_coffin), fail_args = list(user))
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			src.MouseDrop_T(GRAB_TARGET(G), user)      //act like they were dragged onto the closet
@@ -109,31 +101,46 @@
 				user.visible_message(span_notice("[user] begins to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You start to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You hear dirt being moved."))
-				if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
-					user.visible_message(span_notice("[user] finishes smoothing out \the [src.name]."), \
-											span_notice("You finish smoothing out \the [src.name]."))
-					if(LAZYLEN(contents) || has_latent())
-						alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
-					else
-						qdel(src)	// Else, go away
-					return
-				else
-					user.visible_message(span_notice("[user] stops concealing \the [src.name]."), \
-											span_notice("You stop concealing \the [src.name]."))
-					return
+				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed2), fail_args = list(user))
 			else
 				user.visible_message(span_notice("[user] begins to unearth \the [src.name]."), \
 										span_notice("You start to unearth \the [src.name]."), \
 										span_notice("You hear dirt being moved."))
-				if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
-					user.visible_message(span_notice("[user] reaches the bottom of \the [src.name]."), \
-											span_notice("You finish digging out \the [src.name]."))
-					break_open()
-					return
-				else
-					user.visible_message(span_notice("[user] stops digging out \the [src.name]."), \
-											span_notice("You stop digging out \the [src.name]."))
-					return
+				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done3), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed3), fail_args = list(user))
+	return
+
+/obj/structure/closet/grave/proc/attackby_tool_done_coffin(mob/user)
+	user.visible_message(span_notice("[user] pats down the dirt on top of \the [src.name]."), \
+						span_notice("You finish filling in \the [src.name]."))
+	close()
+	return
+
+/obj/structure/closet/grave/proc/attackby_tool_failed_coffin(mob/user)
+	user.visible_message(span_notice("[user] stops filling in \the [src.name]."), \
+						span_notice("You change your mind and stop filling in \the [src.name]."))
+	return
+/obj/structure/closet/grave/proc/attackby_tool_done2(mob/user)
+	user.visible_message(span_notice("[user] finishes smoothing out \the [src.name]."), \
+							span_notice("You finish smoothing out \the [src.name]."))
+	if(LAZYLEN(contents) || has_latent())
+		alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
+	else
+		qdel(src)	// Else, go away
+	return
+
+/obj/structure/closet/grave/proc/attackby_tool_failed2(mob/user)
+	user.visible_message(span_notice("[user] stops concealing \the [src.name]."), \
+							span_notice("You stop concealing \the [src.name]."))
+	return
+/obj/structure/closet/grave/proc/attackby_tool_done3(mob/user)
+	user.visible_message(span_notice("[user] reaches the bottom of \the [src.name]."), \
+							span_notice("You finish digging out \the [src.name]."))
+	break_open()
+	return
+
+/obj/structure/closet/grave/proc/attackby_tool_failed3(mob/user)
+	user.visible_message(span_notice("[user] stops digging out \the [src.name]."), \
+							span_notice("You stop digging out \the [src.name]."))
 	return
 
 /obj/structure/closet/grave/close()

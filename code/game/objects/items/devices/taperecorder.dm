@@ -441,11 +441,14 @@
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
 	if(!ruined)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You start winding the tape back in...") && ruined)
-		to_chat(user, span_notice("You wound the tape back in."))
-		fix()
+	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/rectape/proc/screwdriver_act_tool_done(mob/user)
+	if(!(ruined))
+		return
+	to_chat(user, span_notice("You wound the tape back in."))
+	fix()
 
 //Random colour tapes
 /obj/item/rectape/random/Initialize(mapload)

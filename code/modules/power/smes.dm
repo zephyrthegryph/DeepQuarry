@@ -451,20 +451,22 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
 	else
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables..."))
-			if(prob(50) && electrocute_mob(user, term.powernet, term))
-				var/datum/effect/effect/system/spark_spread/sparks = new
-				sparks.set_up(5, 1, src)
-				sparks.start()
-				building_terminal = FALSE
-				if(user.has_status(EFFECT_STUNNED))
-					return ITEM_INTERACT_SUCCESS
-			new /obj/item/stack/cable_coil(loc, 10)
-			user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
-			LAZYREMOVE(terminals, term)
-			qdel(term)
+		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
 	building_terminal = FALSE
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/proc/wirecutter_act_tool_done(mob/user, obj/machinery/power/terminal/term)
+	if(prob(50) && electrocute_mob(user, term.powernet, term))
+		var/datum/effect/effect/system/spark_spread/sparks = new
+		sparks.set_up(5, 1, src)
+		sparks.start()
+		building_terminal = FALSE
+		if(user.has_status(EFFECT_STUNNED))
+			return ITEM_INTERACT_SUCCESS
+	new /obj/item/stack/cable_coil(loc, 10)
+	user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
+	LAZYREMOVE(terminals, term)
+	qdel(term)
 
 /obj/machinery/power/smes/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

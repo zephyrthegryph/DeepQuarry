@@ -23,20 +23,22 @@
 			to_chat(user, span_warning("Something in these cables make them too strong to cut!"))
 		return ITEM_INTERACT_BLOCKING
 
-	if(use_tool(user, W, src, delay = 25 SECONDS, quality = TOOL_WELDER, amount = 2, volume = 50))
-		var/obj/item/stack/cable_coil/heavyduty/CC
-		if(src.d1)
-			CC = new/obj/item/stack/cable_coil/heavyduty(T, 2, color)
-		else
-			CC = new/obj/item/stack/cable_coil/heavyduty(T, 1, color)
-
-		src.add_fingerprint(user)
-		src.transfer_fingerprints_to(CC)
-		for(var/mob/O in viewers(src, null))
-			O.show_message(span_warning("[user] cuts the cable."), 1)
-
-		qdel(src)
+	use_tool(user, W, src, delay = 25 SECONDS, quality = TOOL_WELDER, amount = 2, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, T))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/cable/heavyduty/proc/welder_act_tool_done(mob/user, turf/T)
+	var/obj/item/stack/cable_coil/heavyduty/CC
+	if(src.d1)
+		CC = new/obj/item/stack/cable_coil/heavyduty(T, 2, color)
+	else
+		CC = new/obj/item/stack/cable_coil/heavyduty(T, 1, color)
+
+	src.add_fingerprint(user)
+	src.transfer_fingerprints_to(CC)
+	for(var/mob/O in viewers(src, null))
+		O.show_message(span_warning("[user] cuts the cable."), 1)
+
+	qdel(src)
 
 /obj/structure/cable/heavyduty/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/cable_coil) && !istype(W, /obj/item/stack/cable_coil/heavyduty))

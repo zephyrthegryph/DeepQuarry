@@ -433,13 +433,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			if(terminal)
 				to_chat(user, span_warning("Disconnect the wires first."))
 				return ITEM_INTERACT_BLOCKING
-			if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_self = "You begin to remove the power control board...") && has_electronics == APC_HAS_ELECTRONICS_WIRED)
-				has_electronics = APC_HAS_ELECTRONICS_NONE
-				if(stat & BROKEN)
-					user.visible_message(span_warning("[user.name] has broken the charred power control board inside [name]!"), span_notice("You broke the charred power control board and remove the remains."), "You hear a crack!")
-				else
-					user.visible_message(span_warning("[user.name] has removed the power control board from [name]!"), span_notice("You remove the power control board."))
-					new /obj/item/module/power_control(loc)
+			use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_self = "You begin to remove the power control board...", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 		else if(opened != 2)
 			opened = 0
 			update_icon()
@@ -453,6 +447,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	opened = 1
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/proc/crowbar_act_tool_done(mob/user)
+	if(!(has_electronics == APC_HAS_ELECTRONICS_WIRED))
+		return
+	has_electronics = APC_HAS_ELECTRONICS_NONE
+	if(stat & BROKEN)
+		user.visible_message(span_warning("[user.name] has broken the charred power control board inside [name]!"), span_notice("You broke the charred power control board and remove the remains."), "You hear a crack!")
+	else
+		user.visible_message(span_warning("[user.name] has removed the power control board from [name]!"), span_notice("You remove the power control board."))
+		new /obj/item/module/power_control(loc)
 
 /obj/machinery/power/apc/screwdriver_act(mob/user, obj/item/tool)
 	wake_for_power_dependency()
@@ -491,26 +495,31 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, TRUE)
-	if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", message_others = "[user.name] starts dismantling the [src]'s power terminal.") && terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
-		if(prob(50) && electrocute_mob(user, terminal.powernet, terminal))
-			var/datum/effect/effect/system/spark_spread/sparks = new
-			sparks.set_up(5, 1, src)
-			sparks.start()
-			if(user.has_status(EFFECT_STUNNED))
-				return ITEM_INTERACT_SUCCESS
-		new /obj/item/stack/cable_coil(loc, 10)
-		to_chat(user, span_notice("You cut the cables and dismantle the power terminal."))
-		qdel(terminal)
+	use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", message_others = "[user.name] starts dismantling the [src]'s power terminal.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/proc/wirecutter_act_tool_done(mob/user)
+	if(!(terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED))
+		return
+	if(prob(50) && electrocute_mob(user, terminal.powernet, terminal))
+		var/datum/effect/effect/system/spark_spread/sparks = new
+		sparks.set_up(5, 1, src)
+		sparks.start()
+		if(user.has_status(EFFECT_STUNNED))
+			return ITEM_INTERACT_SUCCESS
+	new /obj/item/stack/cable_coil(loc, 10)
+	to_chat(user, span_notice("You cut the cables and dismantle the power terminal."))
+	qdel(terminal)
 
 /obj/machinery/power/apc/welder_act(mob/user, obj/item/tool)
 	wake_for_power_dependency()
 	add_fingerprint(user)
 	if(!opened || has_electronics != APC_HAS_ELECTRONICS_NONE || terminal)
 		return ..()
-	if(!use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WELDER, amount = 3, volume = 25, \
-			message_self = "You start welding the APC frame...", message_others = "[user.name] begins cutting apart [src] with [tool]."))
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WELDER, amount = 3, volume = 25, message_self = "You start welding the APC frame...", message_others = "[user.name] begins cutting apart [src] with [tool].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, tool))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/proc/welder_act_tool_done(mob/user, obj/item/tool)
 	if(emagged || (stat & BROKEN) || opened == 2)
 		new /obj/item/stack/material/steel(loc)
 		user.visible_message(span_warning("[src] has been cut apart by [user.name] with [tool]."), span_notice("You disassembled the broken APC frame."), "You hear welding.")

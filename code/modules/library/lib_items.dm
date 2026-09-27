@@ -49,8 +49,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/bookcase/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/wood(get_turf(src), 3)
 	for(var/obj/item/book/book in contents)

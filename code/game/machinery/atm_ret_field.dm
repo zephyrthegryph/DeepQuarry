@@ -71,11 +71,12 @@
 /obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
 	if(!hatch_open)
 		return NONE
-	if(use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, \
-			message_self = "You start to disassemble \the [src].", message_others = "[user] starts to disassemble \the [src]."))
-		to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
-		qdel(src)
+	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, message_self = "You start to disassemble \the [src].", message_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
+	qdel(src)
 
 /obj/machinery/atmospheric_field_generator/perma/Initialize(mapload)
 	. = ..()

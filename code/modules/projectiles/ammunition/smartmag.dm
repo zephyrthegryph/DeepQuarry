@@ -93,8 +93,10 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/cell/device/removed_cell = attached_cell
 	to_chat(user, "You begin removing \the [removed_cell] from \the [src].")
-	if(!use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, removed_cell))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/ammo_magazine/smart/proc/screwdriver_act_tool_done(mob/user, obj/item/cell/device/removed_cell)
 	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))
 	attached_cell = null

@@ -114,10 +114,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	if(!reinforced)
 		return ITEM_INTERACT_BLOCKING
 	remove_reinforced(tool, user)
-	if(!reinforced)
-		update_desc()
-		update_icon()
-		update_material()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/table/crowbar_act(mob/user, obj/item/tool)
@@ -134,13 +130,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		return ITEM_INTERACT_BLOCKING
 	if(material)
 		remove_material(tool, user)
-		if(!material)
-			update_connections(TRUE)
-			update_icon()
-			for(var/obj/structure/table/table in oview(src, 1))
-				table.update_icon()
-			update_desc()
-			update_material()
 		return ITEM_INTERACT_SUCCESS
 	dismantle(tool, user)
 	return ITEM_INTERACT_SUCCESS
@@ -151,9 +140,10 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.welding)
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1,
-			message_self = "You begin repairing damage to \the [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, message_self = "You begin repairing damage to \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/table/proc/welder_act_tool_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
 	repair_damage(max_integrity / 5)
 	return ITEM_INTERACT_SUCCESS
@@ -259,7 +249,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	call(src, done_proc)(M)
 
 // Returns the material to set the table to.
-/obj/structure/table/proc/common_material_remove(mob/user, datum/material/M, delay, what, type_holding, obj/item/tool)
+/// Removes the `which` layer ("reinforced" or "material") with a timed tool job.
+/obj/structure/table/proc/common_material_remove(mob/user, datum/material/M, delay, what, type_holding, obj/item/tool, which)
 	if(!M.stack_type)
 		to_chat(user, span_warning("You are unable to remove the [what] from this [src]!"))
 		return M
@@ -268,33 +259,55 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	manipulating = 1
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."),
 								span_notice("You begin removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."))
-	if(!use_tool(user, tool, src, delay = delay, volume = 50))
-		manipulating = 0
-		return M
+	use_tool(user, tool, src, delay = delay, volume = 50, receiver = src, on_done = PROC_REF(common_material_remove_tool_done), done_args = list(user, M, what, which), on_fail = PROC_REF(common_material_remove_tool_failed), fail_args = list(user, M, what))
+	return TRUE
+
+/obj/structure/table/proc/common_material_remove_tool_done(mob/user, datum/material/M, what, which)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes the [M.display_name] [what] from \the [src]."),
 								span_notice("You remove the [M.display_name] [what] from \the [src]."))
 	new M.stack_type(src.loc)
 	manipulating = 0
-	return null
+	if(which == "reinforced")
+		reinforced = null
+		update_desc()
+		update_icon()
+		update_material()
+		return
+	material = null
+	update_connections(TRUE)
+	update_icon()
+	for(var/obj/structure/table/table in oview(src, 1))
+		table.update_icon()
+	update_desc()
+	update_material()
+
+/obj/structure/table/proc/common_material_remove_tool_failed(mob/user, datum/material/M, what)
+	manipulating = 0
+	return M
 
 /obj/structure/table/proc/remove_reinforced(obj/item/S, mob/user)
-	reinforced = common_material_remove(user, reinforced, 40, "reinforcements", "screws", S)
+	common_material_remove(user, reinforced, 40, "reinforcements", "screws", S, "reinforced")
 
 /obj/structure/table/proc/remove_material(obj/item/W, mob/user)
-	material = common_material_remove(user, material, 20, "plating", "bolts", W)
+	common_material_remove(user, material, 20, "plating", "bolts", W, "material")
 
 /obj/structure/table/proc/dismantle(obj/item/W, mob/user)
 	if(manipulating) return
 	manipulating = 1
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins dismantling \the [src]."),
 							span_notice("You begin dismantling \the [src]."))
-	if(!use_tool(user, W, src, delay = 2 SECONDS, volume = 50))
-		manipulating = 0
-		return
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, receiver = src, on_done = PROC_REF(dismantle_tool_done), done_args = list(user), on_fail = PROC_REF(dismantle_tool_failed), fail_args = list(user))
+	return TRUE
+
+/obj/structure/table/proc/dismantle_tool_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."),
 							span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/steel(src.loc)
 	qdel(src)
+	return
+
+/obj/structure/table/proc/dismantle_tool_failed(mob/user)
+	manipulating = 0
 	return
 
 // Returns a list of /obj/item/material/shard objects that were created as a result of this table's breakage.

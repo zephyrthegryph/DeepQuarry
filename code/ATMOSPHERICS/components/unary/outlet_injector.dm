@@ -221,13 +221,15 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/outlet_injector/wrench_act(mob/user, obj/item/W)
-	if (use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-			span_notice("You have unfastened \the [src]."), \
-			"You hear a ratchet.")
-		atom_deconstruct()
+	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/unary/outlet_injector/proc/wrench_act_tool_done(mob/user)
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
+		span_notice("You have unfastened \the [src]."), \
+		"You hear a ratchet.")
+	atom_deconstruct()
 
 /obj/machinery/atmospherics/unary/outlet_injector/click_ctrl(mob/user)
 	if (volume_rate == ATMOS_DEFAULT_VOLUME_PUMP + 500 || use_power == USE_POWER_OFF)

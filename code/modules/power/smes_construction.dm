@@ -454,10 +454,12 @@
 	var/failure_probability = round(charge / capacity * 100)
 	if(failure_probability < 5)
 		failure_probability = 0
-	if(use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, message_self = "You begin to disassemble [src]!"))
-		if(failure_probability && prob(failure_probability))
-			total_system_failure(failure_probability, user)
-			return ITEM_INTERACT_SUCCESS
-		to_chat(user, span_red("You have disassembled the SMES cell!"))
-		dismantle()
+	use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, message_self = "You begin to disassemble [src]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, failure_probability))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/buildable/proc/crowbar_act_tool_done(mob/user, failure_probability)
+	if(failure_probability && prob(failure_probability))
+		total_system_failure(failure_probability, user)
+		return ITEM_INTERACT_SUCCESS
+	to_chat(user, span_red("You have disassembled the SMES cell!"))
+	dismantle()

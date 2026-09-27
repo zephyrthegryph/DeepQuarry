@@ -299,21 +299,23 @@
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/welder_act(mob/user, obj/item/W)
-	if(use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, message_self = "Now welding the vent."))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		playsound(src, W.usesound, 50, 1)
-		if(!welded)
-			user.visible_message(span_notice("<b>\The [user]</b> welds the vent shut."), span_notice("You weld the vent shut."), "You hear welding.")
-			welded = TRUE
-			invalidate_gas_dependencies()
-			update_icon()
-		else
-			user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
-			welded = FALSE
-			invalidate_gas_dependencies()
-			update_icon()
+	use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, message_self = "Now welding the vent.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/unary/vent_scrubber/proc/welder_act_tool_done(mob/user, obj/item/W)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, W.usesound, 50, 1)
+	if(!welded)
+		user.visible_message(span_notice("<b>\The [user]</b> welds the vent shut."), span_notice("You weld the vent shut."), "You hear welding.")
+		welded = TRUE
+		invalidate_gas_dependencies()
+		update_icon()
+	else
+		user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
+		welded = FALSE
+		invalidate_gas_dependencies()
+		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/wrench_act(mob/user, obj/item/W)
 	if (!(stat & NOPOWER) && use_power)
@@ -330,13 +332,15 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	if (use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-			span_notice("You have unfastened \the [src]."), \
-			"You hear a ratchet.")
-		atom_deconstruct()
+	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/unary/vent_scrubber/proc/wrench_act_tool_done(mob/user)
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
+		span_notice("You have unfastened \the [src]."), \
+		"You hear a ratchet.")
+	atom_deconstruct()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/examine(mob/user)
 	. = ..()

@@ -250,9 +250,7 @@
 			anchored = FALSE
 			return ..()
 		var/was_anchored = anchored
-		if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
-			to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
-			anchored = !anchored
+		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
 	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user)
@@ -270,6 +268,10 @@
 			damage(W.force)
 	else
 		return ..()
+
+/obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
+	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
+	anchored = !anchored
 
 /obj/structure/gargoyle/set_dir(new_dir)
 	. = ..()

@@ -33,10 +33,7 @@
 		if(O.has_tool_quality(TOOL_MULTITOOL))
 			to_chat(user, span_warning("Resetting circuitry..."))
 			playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
-			if(use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0))
-				locked = 0
-				to_chat(user, span_warning("You disable the locking modules."))
-				update_icon()
+			use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user))
 			return
 		else if(istype(O, /obj/item))
 			var/obj/item/W = O
@@ -84,12 +81,18 @@
 			else
 				to_chat(user, span_warning("Resetting circuitry..."))
 				playsound(src, 'sound/machines/lockenable.ogg', 50, 1)
-				if(use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0))
-					locked = 1
-					to_chat(user, span_warning("You re-enable the locking modules."))
+				use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user))
 				return
 		else
 			toggle_close_open()
+
+/obj/structure/fireaxecabinet/proc/attackby_tool_done(mob/user)
+	locked = 0
+	to_chat(user, span_warning("You disable the locking modules."))
+	update_icon()
+/obj/structure/fireaxecabinet/proc/attackby_tool_done2(mob/user)
+	locked = 1
+	to_chat(user, span_warning("You re-enable the locking modules."))
 
 /obj/structure/fireaxecabinet/attack_hand(mob/user as mob)
 

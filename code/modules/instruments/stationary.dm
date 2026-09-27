@@ -75,10 +75,10 @@
 
 
 /obj/structure/musician/wrench_act(mob/user, obj/item/tool)
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, \
-			message_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", \
-			message_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, message_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", message_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/musician/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
 	anchored = !anchored
 	return ITEM_INTERACT_SUCCESS

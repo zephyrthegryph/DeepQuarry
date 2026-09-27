@@ -359,13 +359,15 @@
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, span_notice("You deconstruct the frame."))
-		new /obj/item/stack/material/steel(src.loc, 2)
-		qdel(src)
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/conveyor_switch/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You deconstruct the frame."))
+	new /obj/item/stack/material/steel(src.loc, 2)
+	qdel(src)
 
 /obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)

@@ -374,12 +374,7 @@
 			to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
 			return ITEM_INTERACT_BLOCKING
 
-		if(use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0,
-				message_self = "You start welding the plasteel into place."))
-			to_chat(user, span_notice("You finish reinforcing \the [src]."))
-			heat_proof = TRUE
-			update_icon()
-			reinforcing = 0
+		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 
 	if(get_integrity() < max_integrity)
@@ -388,13 +383,19 @@
 			return ITEM_INTERACT_BLOCKING
 
 		var/repairtime = max_integrity - get_integrity()
-		if(use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0,
-				message_self = "You start to fix dents and repair \the [src]."))
-			to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
-			repair_damage(max_integrity)
-			atom_fix()
+		use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to fix dents and repair \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 	return NONE
+
+/obj/machinery/door/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You finish reinforcing \the [src]."))
+	heat_proof = TRUE
+	update_icon()
+	reinforcing = 0
+/obj/machinery/door/proc/welder_act_tool_done2(mob/user)
+	to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
+	repair_damage(max_integrity)
+	atom_fix()
 
 /obj/machinery/door/proc/try_to_activate_door(mob/user)
 	add_fingerprint(user)
