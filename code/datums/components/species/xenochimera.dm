@@ -289,15 +289,21 @@
 		return
 	// Sanity is mostly handled in chimera_regenerate()
 	if(stat == DEAD)
-		var/confirm = tgui_alert(src, "Are you sure you want to regenerate your corpse? This process can take up to thirty minutes. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", "Confirm Regeneration", list("Yes", "No"))
+		var/confirm = rerun_prompt(src, "a1", list("message" = "Are you sure you want to regenerate your corpse? This process can take up to thirty minutes. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(reconstitute_form), args)
+		if(isnull(confirm))
+			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 	else if(quickcheckuninjured())
-		var/confirm = tgui_alert(src, "Are you sure you want to regenerate? As you are uninjured this will only take 30 seconds. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", "Confirm Regeneration", list("Yes", "No"))
+		var/confirm = rerun_prompt(src, "a2", list("message" = "Are you sure you want to regenerate? As you are uninjured this will only take 30 seconds. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(reconstitute_form), args)
+		if(isnull(confirm))
+			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 	else
-		var/confirm = tgui_alert(src, "Are you sure you want to completely reconstruct your form? This process can take up to fifteen minutes, depending on how hungry you are, and you will be unable to move. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot", "Confirm Regeneration", list("Yes", "No"))
+		var/confirm = rerun_prompt(src, "a3", list("message" = "Are you sure you want to completely reconstruct your form? This process can take up to fifteen minutes, depending on how hungry you are, and you will be unable to move. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(reconstitute_form), args)
+		if(isnull(confirm))
+			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 
@@ -388,7 +394,9 @@
 		return //Hwhat?
 
 	// Default is use internal record, even if closes menu
-	var/reload_slot = tgui_alert(src, "Regenerate from your current form, or from the appearance of your current character slot(This will not change your current species or traits.)", "Regenerate Form", list("Current Form", "From Slot"))
+	var/reload_slot = rerun_prompt(src, "a4", list("message" = "Regenerate from your current form, or from the appearance of your current character slot(This will not change your current species or traits.)", "title" = "Regenerate Form", "choices" = list("Current Form", "From Slot"), "cancel_answer" = "Current Form"), PROC_REF(hatch), args)
+	if(isnull(reload_slot))
+		return
 
 	// Check if valid to load from this slot
 	var/from_slot = ""
@@ -404,7 +412,9 @@
 			return
 		from_slot = "You'll hatch using [client.prefs.read_preference(/datum/preference/name/real_name)]'s appearance"
 
-	var/confirm = tgui_alert(src, "Are you sure you want to hatch right now? This will be very obvious to anyone in view. [from_slot]! Are you sure?", "Confirm Regeneration", list("Yes", "No"))
+	var/confirm = rerun_prompt(src, "a5", list("message" = "Are you sure you want to hatch right now? This will be very obvious to anyone in view. [from_slot]! Are you sure?", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(hatch), args)
+	if(isnull(confirm))
+		return
 	if(confirm == "Yes")
 
 		///This makes xenochimera shoot out their robotic limbs if they're not a FBP.

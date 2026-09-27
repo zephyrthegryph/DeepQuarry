@@ -27,8 +27,8 @@
 	for(var/k in valid_variants)
 		return k
 
-/datum/gear_tweak/variant/get_metadata(user, metadata)
-	return tgui_input_list(user, "Choose a variant.", "Character Preference", valid_variants, metadata)
+/datum/gear_tweak/variant/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
+	return list(list("key" = "value", "kind" = "list", "message" = "Choose a variant.", "title" = title, "choices" = valid_variants, "default" = metadata))
 
 /datum/gear_tweak/variant/tweak_gear_data(metadata, datum/gear_data/gear_data)
 	if(!(metadata in valid_variants))

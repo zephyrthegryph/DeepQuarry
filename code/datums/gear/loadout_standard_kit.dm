@@ -117,15 +117,12 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 /datum/gear_tweak/pda_ringtone/get_contents(metadata)
 	return "Ringtone: [metadata || "beep"]"
 
-/datum/gear_tweak/pda_ringtone/get_metadata(user, metadata)
+/datum/gear_tweak/pda_ringtone/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
 	var/list/choices = list()
 	if(GLOB.device_ringtones)
 		for(var/key in GLOB.device_ringtones)
 			choices += key
-	var/picked = tgui_input_list(user, "Pick a ringtone", "Ringtone", choices, metadata)
-	if(isnull(picked))
-		return metadata
-	return picked
+	return list(list("key" = "value", "kind" = "list", "message" = "Pick a ringtone", "title" = "Ringtone", "choices" = choices, "default" = metadata))
 
 /datum/gear_tweak/pda_ringtone/tweak_item(obj/item/I, metadata)
 	if(istype(I, /obj/item/pda) && istext(metadata))

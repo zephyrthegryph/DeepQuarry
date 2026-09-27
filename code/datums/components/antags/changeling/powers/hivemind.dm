@@ -38,7 +38,9 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		to_chat(src, span_notice("The airwaves already have all of our DNA."))
 		return
 
-	var/S = tgui_input_list(src, "Select a DNA to channel:", "Channel DNA", names)
+	var/S = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select a DNA to channel:", "title" = "Channel DNA", "choices" = names), PROC_REF(changeling_hiveupload), args)
+	if(isnull(S))
+		return
 	if(!S)
 		return
 
@@ -70,7 +72,9 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		to_chat(src, span_notice("There's no new DNA to absorb from the air."))
 		return
 
-	var/S = tgui_input_list(src, "Select a DNA to absorb:", "Absorb DNA", names)
+	var/S = rerun_prompt(src, "a2", list("kind" = "list", "message" = "Select a DNA to absorb:", "title" = "Absorb DNA", "choices" = names), PROC_REF(changeling_hivedownload), args)
+	if(isnull(S))
+		return
 	if(!S)
 		return
 	var/datum/absorbed_dna/chosen_dna = names[S]

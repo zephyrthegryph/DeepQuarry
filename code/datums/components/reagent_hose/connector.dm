@@ -209,7 +209,9 @@
 		var/datum/component/hose_connector/AC = available_sockets[key]
 		AC.disconnect_action(usr)
 	else
-		var/choice = tgui_input_list(usr, "Select a target hose connector.", "Socket Disconnect", available_sockets)
+		var/choice = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Select a target hose connector.", "title" = "Socket Disconnect", "choices" = available_sockets), PROC_REF(disconnect_hose), args)
+		if(isnull(choice))
+			return
 		if(choice)
 			var/datum/component/hose_connector/AC = available_sockets[choice]
 			AC.disconnect_action(usr)

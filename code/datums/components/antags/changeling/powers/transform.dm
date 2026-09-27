@@ -22,7 +22,9 @@
 	for(var/datum/absorbed_dna/DNA in changeling.absorbed_dna)
 		names += "[DNA.name]"
 
-	var/S = tgui_input_list(src, "Select the target DNA:", "Target DNA", names)
+	var/S = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select the target DNA:", "title" = "Target DNA", "choices" = names), PROC_REF(changeling_transform), args)
+	if(isnull(S))
+		return
 	if(!S)
 		return
 

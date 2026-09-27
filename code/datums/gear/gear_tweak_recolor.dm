@@ -38,8 +38,8 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 // Modal flow is unused for this tweak — React drives all three modes inline through
 // the dedicated set_recolor action. Returning metadata unchanged means the legacy
 // Change-button flow is a no-op if someone routes through it.
-/datum/gear_tweak/recolor/get_metadata(user, metadata, datum/gear/gear)
-	return metadata
+/datum/gear_tweak/recolor/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
+	return null
 
 /datum/gear_tweak/recolor/tweak_item(obj/item/I, metadata)
 	if(!islist(metadata) || !istype(I))

@@ -274,7 +274,9 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/list/victims = list()
 	for(var/mob/living/carbon/C in oview(comp.sting_range))
 		victims += C
-	var/mob/living/carbon/T = tgui_input_list(src, "Who will we sting?", "Sting!", victims)
+	var/mob/living/carbon/T = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Who will we sting?", "title" = "Sting!", "choices" = victims), PROC_REF(changeling_sting), args)
+	if(isnull(T))
+		return
 
 	if(!T)
 		to_chat(src, span_warning("We have no targets in range to sting!"))

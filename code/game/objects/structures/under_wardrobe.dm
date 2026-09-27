@@ -112,11 +112,17 @@
 			var/datum/gear_tweak/gt = locate(params["tweak"])
 			if(!gt)
 				return TRUE
-			var/new_metadata = gt.get_metadata(usr, get_metadata(H, underwear, gt), "Wardrobe Underwear Selection")
-			if(!isnull(new_metadata))
-				set_metadata(H, underwear, gt, new_metadata)
-				H.hide_underwear[underwear] = FALSE
-				changed = TRUE
+			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), list("category" = underwear, "tweak" = gt), PROMPT_USABLE)
 	if(changed)
 		H.update_underwear()
 	return TRUE
+
+/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/prompt/P)
+	var/underwear = P.get("category")
+	var/datum/gear_tweak/gt = P.get("tweak")
+	if(!istype(H) || !(underwear in H.all_underwear))
+		return
+	set_metadata(H, underwear, gt, new_metadata)
+	H.hide_underwear[underwear] = FALSE
+	H.update_underwear()
+	SStgui.update_uis(src)

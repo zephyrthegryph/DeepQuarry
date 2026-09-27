@@ -7,8 +7,8 @@ invoke_async 112
 do_after 0
 sleep 24
 stoplag 51
-prompts 716
+prompts 587
 set_waitfor 69
 weakref 0
 del 13
-lc_refs 2682
+lc_refs 2683
