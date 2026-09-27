@@ -2109,3 +2109,29 @@
 	qdel(event)
 
 #endif
+
+/// Bulk damage in a contract batch publishes one aggregated fact per atom
+/// when the batch ends, not one per hit (init_and_turfs.md §2.1).
+/datum/unit_test/dq_contract_damage_batch_aggregates
+
+/datum/unit_test/dq_contract_damage_batch_aggregates/Run()
+	var/obj/structure/girder/target = allocate(/obj/structure/girder)
+	var/published_before = SScontracts.events_published
+	SScontracts.begin_contract_batch()
+	SScontracts.queue_damage_report(target, 20)
+	SScontracts.queue_damage_report(target, 30)
+	SScontracts.begin_contract_batch() // nested: only the outermost end flushes
+	SScontracts.queue_damage_report(target, 10)
+	SScontracts.end_contract_batch()
+	TEST_ASSERT_EQUAL(SScontracts.events_published, published_before, "a nested batch end published before the outer batch ended")
+	SScontracts.end_contract_batch()
+	TEST_ASSERT_EQUAL(SScontracts.events_published, published_before + 1, "three hits on one atom did not publish exactly one fact")
+	var/datum/contract_event/event = SScontracts.recent_events[length(SScontracts.recent_events)]
+	TEST_ASSERT_EQUAL(event.event_type, CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, "the batch published the wrong event type")
+	TEST_ASSERT(findtext(event.data["detail"], "sustained 60 integrity damage"), "the fact did not carry the batch's total damage: [event.data["detail"]]")
+	TEST_ASSERT_EQUAL(event.value("atom_id"), REF(target), "the fact lost its atom identity")
+	// A batch below the reporting minimum publishes nothing.
+	SScontracts.begin_contract_batch()
+	SScontracts.queue_damage_report(target, 5)
+	SScontracts.end_contract_batch()
+	TEST_ASSERT_EQUAL(SScontracts.events_published, published_before + 1, "damage under the minimum was published")
