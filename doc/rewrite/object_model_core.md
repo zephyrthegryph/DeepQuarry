@@ -863,6 +863,12 @@ fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never 
 ceilings are in `tools/ci/api_lints_baseline.txt`, `scheduler_lints_baseline.txt` and the
 allowlists next to each lint).
 
+Justified keeps of the scheduler alternatives (the MC, GC and failsafe, world and client
+procs, savefiles, vendored TGS, and leaves that block on external I/O, per §4.11 "What
+stays") are listed in `tools/ci/scheduler_lints_allowlist.txt`, one line per count and file
+with a required reason (`NAME path count  # reason`). Allowlisted sites don't count, so each
+counted total ratchets to 0.
+
 | To... | The one way | Not | Lint (count) |
 |---|---|---|---|
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |

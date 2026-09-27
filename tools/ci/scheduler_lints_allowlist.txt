@@ -1,0 +1,12 @@
+# Justified keeps for tools/ci/scheduler_lints.py (doc/rewrite/object_model_core.md
+# sec 4.11 "What stays", sec 16). One line per count and file:
+#   NAME path count  # reason (required)
+# Allowlisted sites don't count toward the ceiling; lower a line when sites go.
+del code/game/world.dm 1  # del(world): world shutdown
+del code/modules/tgs/core/datum.dm 1  # vendored TGS: del(world)
+del code/controllers/failsafe.dm 4  # MC failsafe: hard-kills a wedged Master
+del code/controllers/subsystems/garbage.dm 2  # GC: the hard delete behind qdel()
+del code/modules/admin/fix_player_notes_listing.dm 1  # savefile, not a datum
+del code/modules/admin/player_notes.dm 2  # savefile, not a datum
+del code/modules/client/client procs.dm 1  # client: disconnects the client
+del code/modules/admin/admin_verbs.dm 1  # client: kicks the client
