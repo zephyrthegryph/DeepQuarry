@@ -737,10 +737,14 @@
 
 	mouthshoot = 1
 	M.visible_message(span_red("[user] sticks their gun in their mouth, ready to pull the trigger..."))
-	if(!do_after(user, 4 SECONDS, target = src))
-		M.visible_message(span_blue("[user] decided life was worth living"))
-		mouthshoot = 0
-		return
+	om_do_after(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
+
+/obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
+	M?.visible_message(span_blue("[M] decided life was worth living"))
+	mouthshoot = 0
+
+/obj/item/gun/proc/suicide_trigger(mob/living/carbon/human/M)
+	var/mob/living/user = M
 	var/obj/item/projectile/in_chamber = consume_next_projectile()
 	if (istype(in_chamber))
 		user.visible_message(span_warning("[user] pulls the trigger."))

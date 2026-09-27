@@ -101,16 +101,19 @@
 	if(gun.loaded.len >= gun.max_shells)
 		to_chat(user, span_warning("[gun] is full."))
 		return FALSE
-	if(do_after(user, gun.reload_time * C.w_class, target = gun))
-		user.remove_from_mob(C)
-		C.loc = gun
-		gun.loaded.Insert(1, C)
-		user.visible_message("[user] inserts \a [C] into [gun].", span_notice("You insert \a [C] into [gun]."))
-		playsound(gun, 'sound/weapons/empty.ogg', 50, 1)
-		gun.update_icon()
-		user.hud_used.update_ammo_hud(user, gun)
-		return TRUE
-	return FALSE
+	var/started = om_do_after(user, gun.reload_time * C.w_class, gun, src, PROC_REF(casing_loaded), list(user, gun, C))
+	return !istext(started)
+
+/datum/ammo_provider/single_casing/proc/casing_loaded(mob/user, obj/item/gun/projectile/gun, obj/item/ammo_casing/C)
+	if(gun.loaded.len >= gun.max_shells)
+		return
+	user.remove_from_mob(C)
+	C.loc = gun
+	gun.loaded.Insert(1, C)
+	user.visible_message("[user] inserts \a [C] into [gun].", span_notice("You insert \a [C] into [gun]."))
+	playsound(gun, 'sound/weapons/empty.ogg', 50, 1)
+	gun.update_icon()
+	user.hud_used.update_ammo_hud(user, gun)
 
 /datum/ammo_provider/single_casing/unload(mob/user, allow_dump = TRUE)
 	var/obj/item/gun/projectile/gun = gun_ref?.resolve()
@@ -190,16 +193,19 @@
 		return FALSE
 	// C5: the magazine may still hold its rounds as a count.
 	AM.make_rounds_real()
-	if(do_after(user, gun.reload_time * AM.w_class, target = gun))
-		user.remove_from_mob(AM)
-		AM.loc = gun
-		gun.ammo_magazine = AM
-		user.visible_message("[user] inserts [AM] into [gun].", span_notice("You insert [AM] into [gun]."))
-		user.hud_used.update_ammo_hud(user, gun)
-		playsound(gun, 'sound/weapons/flipblade.ogg', 50, 1)
-		gun.update_icon()
-		return TRUE
-	return FALSE
+	var/started = om_do_after(user, gun.reload_time * AM.w_class, gun, src, PROC_REF(magazine_loaded), list(user, gun, AM))
+	return !istext(started)
+
+/datum/ammo_provider/magazine/proc/magazine_loaded(mob/user, obj/item/gun/projectile/gun, obj/item/ammo_magazine/AM)
+	if(gun.ammo_magazine)
+		return
+	user.remove_from_mob(AM)
+	AM.loc = gun
+	gun.ammo_magazine = AM
+	user.visible_message("[user] inserts [AM] into [gun].", span_notice("You insert [AM] into [gun]."))
+	user.hud_used.update_ammo_hud(user, gun)
+	playsound(gun, 'sound/weapons/flipblade.ogg', 50, 1)
+	gun.update_icon()
 
 /datum/ammo_provider/magazine/unload(mob/user, allow_dump = TRUE)
 	var/obj/item/gun/projectile/gun = gun_ref?.resolve()

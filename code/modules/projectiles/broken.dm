@@ -24,25 +24,25 @@
 
 /obj/item/broken_gun/examine(mob/user)
 	. = ..()
-	spawn()
-		if(get_dist(get_turf(user),get_turf(src)) <= 1)
-			to_chat(user, span_notice("You begin inspecting \the [src]."))
+	if(get_dist(get_turf(user),get_turf(src)) <= 1)
+		to_chat(user, span_notice("You begin inspecting \the [src]."))
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(inspect_done), list(user))
 
-			if(do_after(user, 5 SECONDS, target = src))
-				to_chat(user, span_notice("\The [src] can possibly be restored with:"))
-				for(var/obj/item/res as anything in material_needs)
-					if(material_needs[res] > 0)
-						var/res_name = ""
-						if(ispath(res,/obj/item/stack/material))
-							var/obj/item/stack/material/mat_stack = res
-							var/datum/material/mat = get_material_by_name("[initial(mat_stack.default_type)]")
-							if(material_needs[res]>1)
-								res_name = "[mat.use_name] [mat.sheet_plural_name]"
-							else
-								res_name = "[mat.use_name] [mat.sheet_singular_name]"
-						else
-							res_name = initial(res.name)
-						to_chat(user, span_notice("- x [material_needs[res]] [res_name]"))
+/obj/item/broken_gun/proc/inspect_done(mob/user)
+	to_chat(user, span_notice("\The [src] can possibly be restored with:"))
+	for(var/obj/item/res as anything in material_needs)
+		if(material_needs[res] > 0)
+			var/res_name = ""
+			if(ispath(res,/obj/item/stack/material))
+				var/obj/item/stack/material/mat_stack = res
+				var/datum/material/mat = get_material_by_name("[initial(mat_stack.default_type)]")
+				if(material_needs[res]>1)
+					res_name = "[mat.use_name] [mat.sheet_plural_name]"
+				else
+					res_name = "[mat.use_name] [mat.sheet_singular_name]"
+			else
+				res_name = initial(res.name)
+			to_chat(user, span_notice("- x [material_needs[res]] [res_name]"))
 
 /obj/item/broken_gun/proc/setup_gun(obj/item/gun/path)
 	if(ispath(path))
@@ -89,8 +89,7 @@
 
 /obj/item/broken_gun/attackby(obj/item/W as obj, mob/user as mob)
 	if(can_repair_with(W, user))
-		if(do_after(user, (rand() * 10 SECONDS + 5 SECONDS), target = src))
-			repair_with(W, user)
+		om_do_after(user, (rand() * 10 SECONDS + 5 SECONDS), src, src, PROC_REF(repair_with), list(W, user))
 		return
 
 	..()

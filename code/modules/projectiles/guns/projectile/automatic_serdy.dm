@@ -916,11 +916,20 @@
 
 //commented this out because it seems to be breaking the Kord -- Ocelot
 /*
+/obj/item/gun/projectile/automatic/serdy/kord/var/trigger_reached = FALSE
+
+/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(atom/A, mob/living/user, adjacent, params)
+	trigger_reached = TRUE
+	afteratt(A, user, adjacent, params)
+	trigger_reached = FALSE
+
 /obj/item/gun/projectile/automatic/serdy/kord/afteratt(atom/A, mob/living/user, adjacent, params)
 	if(user.size_multiplier <= 0.5) //They're 50% or lower. If they fire this gun, they're gonna get obliterated.
 		to_chat(user,span_warning("You struggle to reach the trigger. Maybe shooting such a big gun isn't such a good idea..."))
-		if(do_after(user, 5 SECONDS, src)) //Give them a chance to take it back.
-			. = ..() //RIP
+		if(!trigger_reached) //Give them a chance to take it back.
+			om_do_after(user, 5 SECONDS, src, src, PROC_REF(trigger_reached_done), list(A, user, adjacent, params))
+			return
+		. = ..() //RIP
 
 /obj/item/gun/projectile/automatic/serdy/kord/handle_post_fire(mob/living/user, atom/target, pointblank=0, reflex=0)
 	. = ..()
@@ -1444,14 +1453,16 @@
 			Fire_userless(user)
 			burst = burstsetting
 			return
-		if(do_after(user, 30, src))	//SHIT IS STEALTHY EYYYYY
-			icon_state = "sawnshotgun"
-			item_state = "sawnshotgun"
-
-			desc = "Omar's coming!"
-			to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
 	else
 		..()
+
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/sawed_off(mob/user)
+	icon_state = "sawnshotgun"
+	item_state = "sawnshotgun"
+
+	desc = "Omar's coming!"
+	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off()
 	sawn_off = TRUE

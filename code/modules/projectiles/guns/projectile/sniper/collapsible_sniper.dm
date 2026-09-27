@@ -17,18 +17,20 @@
 
 /obj/item/gun/projectile/heavysniper/proc/collapse_rifle(mob/user)
 	to_chat(user, span_warning("You begin removing \the [src]'s barrel."))
-	if(do_after(user, 4 SECONDS, target = src))
-		if(user.unEquip(src, force=1))
-			to_chat(user, span_warning("You remove \the [src]'s barrel."))
-			qdel(src)
-			var/obj/item/barrel = new /obj/item/sniper_rifle_part/barrel(user)
-			var/obj/item/sniper_rifle_part/assembly = new /obj/item/sniper_rifle_part/trigger_group(user)
-			var/obj/item/sniper_rifle_part/stock/stock = new(assembly)
-			assembly.stock = stock
-			assembly.part_count = 2
-			assembly.update_build(user)
-			user.put_in_any_hand_if_possible(assembly) || assembly.dropInto(user.loc)
-			user.put_in_any_hand_if_possible(barrel) || barrel.dropInto(user.loc)
+	om_do_after(user, 4 SECONDS, src, src, PROC_REF(barrel_removed), list(user))
+
+/obj/item/gun/projectile/heavysniper/proc/barrel_removed(mob/user)
+	if(user.unEquip(src, force=1))
+		to_chat(user, span_warning("You remove \the [src]'s barrel."))
+		qdel(src)
+		var/obj/item/barrel = new /obj/item/sniper_rifle_part/barrel(user)
+		var/obj/item/sniper_rifle_part/assembly = new /obj/item/sniper_rifle_part/trigger_group(user)
+		var/obj/item/sniper_rifle_part/stock/stock = new(assembly)
+		assembly.stock = stock
+		assembly.part_count = 2
+		assembly.update_build(user)
+		user.put_in_any_hand_if_possible(assembly) || assembly.dropInto(user.loc)
+		user.put_in_any_hand_if_possible(barrel) || barrel.dropInto(user.loc)
 
 
 /obj/item/sniper_rifle_part
@@ -78,9 +80,11 @@
 		return
 
 	to_chat(user, span_notice("You start disassembling \the [src]."))
-	if(!do_after(user, 4 SECONDS, target = src))
-		return
+	om_do_after(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))
 
+/obj/item/sniper_rifle_part/proc/disassembled(mob/user)
+	if(part_count == 1)
+		return
 	to_chat(user, span_notice("You disassemble \the [src]."))
 	for(var/obj/item/sniper_rifle_part/P in list(barrel, stock, trigger_group))
 		if(P.barrel != P)
@@ -98,11 +102,9 @@
 /obj/item/sniper_rifle_part/attackby(obj/item/sniper_rifle_part/A as obj, mob/user as mob)
 
 	to_chat(user, span_notice("You begin adding \the [A] to \the [src]."))
-	if(!do_after(user, 3 SECONDS, target = src))
-		return
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(part_added), list(A, user))
 
-
-
+/obj/item/sniper_rifle_part/proc/part_added(obj/item/sniper_rifle_part/A, mob/user)
 	if(istype(A, /obj/item/sniper_rifle_part/trigger_group))
 		if(A.part_count > 1 && src.part_count > 1)
 			to_chat(user, span_warning("Disassemble one of these parts first!"))
