@@ -68,10 +68,10 @@
 			if(idx < 1 || idx > 3)
 				return PREF_UPDATE_REJECTED
 			var/current = prefixes.len >= idx ? prefixes[idx] : ""
-			var/typed = tgui_input_text(user, "Prefix character for slot [idx] (single character)", "Language Prefix", current, 1)
+			// The answer re-runs this action.
+			var/typed = rerun_prompt(user, "prefix", list("kind" = "text", "message" = "Prefix character for slot [idx] (single character)", "title" = "Language Prefix", "default" = current, "max_length" = 1), PROC_REF(handle_action), args)
 			if(!typed)
 				return PREF_UPDATE_UNCHANGED
-			// tgui_input_text sleeps — re-verify prefs ownership.
 			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			if(length(typed) != 1)
@@ -79,6 +79,7 @@
 			prefixes.len = max(prefixes.len, 3)
 			prefixes[idx] = typed
 			preferences.update_preference_by_type(/datum/preference/language_prefixes, prefixes)
+			SStgui.update_uis(preferences)
 			return PREF_UPDATE_ACCEPTED
 		if("reset_prefixes")
 			var/list/defaults = CONFIG_GET(str_list/language_prefixes)
@@ -88,10 +89,9 @@
 			// prompt for the key. Replaces any prior binding for that key.
 			var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 			var/lang = params["language"]
-			var/typed = tgui_input_text(user, "Bind language '[lang]' to which single character?", "Language Key", null, 1)
+			var/typed = rerun_prompt(user, "key", list("kind" = "text", "message" = "Bind language '[lang]' to which single character?", "title" = "Language Key", "max_length" = 1), PROC_REF(handle_action), args)
 			if(!typed)
 				return PREF_UPDATE_UNCHANGED
-			// tgui_input_text sleeps — re-verify prefs ownership.
 			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			if(length(typed) != 1)
@@ -102,6 +102,7 @@
 					keys -= k
 			keys[typed] = lang
 			preferences.update_preference_by_type(/datum/preference/language_custom_keys, keys)
+			SStgui.update_uis(preferences)
 			return PREF_UPDATE_ACCEPTED
 		if("clear_custom_key")
 			var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()

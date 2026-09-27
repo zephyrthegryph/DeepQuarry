@@ -83,46 +83,39 @@
 			start_using(user)
 	return TRUE
 
+/// The questions re-run this proc; the bank is only taken (busy) once the retrieval starts.
 /obj/machinery/item_bank/proc/start_using(mob/living/user)
 	if(!ishuman(user))
 		return
 	if(busy_bank)
 		to_chat(user, span_warning("\The [src] is already in use."))
 		return
-	busy_bank = TRUE
 	var/I = persist_item_savefile_load(user, "type")
 	var/Iname = persist_item_savefile_load(user, "name")
-	var/choice = tgui_alert(user, "What would you like to do [src]?", "[src]", list("Check contents", "Retrieve item", "Info", "Cancel"), timeout = 10 SECONDS)
+	var/choice = rerun_prompt(user, "choice", list("message" = "What would you like to do [src]?", "title" = "[src]", "choices" = list("Check contents", "Retrieve item", "Info", "Cancel"), "timeout" = 10 SECONDS), PROC_REF(start_using), args)
 	if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open)
-		busy_bank = FALSE
 		return
 	else if(choice == "Check contents" && I)
 		to_chat(user, span_notice("\The [src] has \the [Iname] for you!"))
-		busy_bank = FALSE
 	else if(choice == "Retrieve item" && I)
 		if(user.hands_are_full())
 			to_chat(user,span_notice("Your hands are full!"))
-			busy_bank = FALSE
 			return
 		if(user.ckey in item_takers)
 			to_chat(user, span_warning("You have already taken something out of \the [src] this shift."))
-			busy_bank = FALSE
 			return
-		choice = tgui_alert(user, "If you remove this item from the bank, it will be unable to be stored again. Do you still want to remove it?", "[src]", list("No", "Yes"), timeout = 10 SECONDS)
+		choice = rerun_prompt(user, "retrieve", list("message" = "If you remove this item from the bank, it will be unable to be stored again. Do you still want to remove it?", "title" = "[src]", "choices" = list("No", "Yes"), "timeout" = 10 SECONDS), PROC_REF(start_using), args)
+		if(!choice || choice == "No" || !Adjacent(user) || inoperable() || panel_open || busy_bank)
+			return
+		busy_bank = TRUE
 		icon_state = "item_bank_o"
-		if(!choice || choice == "No" || !Adjacent(user) || inoperable() || panel_open)
-			busy_bank = FALSE
-			icon_state = "item_bank"
-			return
 		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(retrieve_done), done_args = list(user, I), on_fail = PROC_REF(bank_interrupted))
 		return
 	else if(choice == "Info")
 		to_chat(user, span_notice("\The [src] can store a single item for you between shifts! Anything that has been retrieved from the bank cannot be stored again in the same shift. Anyone can withdraw from the bank one time per shift. Some items are not able to be accepted by the bank."))
-		busy_bank = FALSE
 		return
 	else if(!I)
 		to_chat(user, span_warning("\The [src] doesn't seem to have anything for you..."))
-		busy_bank = FALSE
 
 /obj/machinery/item_bank/proc/bank_interrupted()
 	busy_bank = FALSE
@@ -171,29 +164,25 @@
 	if(busy_bank)
 		to_chat(user, span_warning("\The [src] is already in use."))
 		return TRUE
-	busy_bank = TRUE
 	var/I = persist_item_savefile_load(user, "type")
 	if(!istool(O) && O.persist_storable)
 		if(ispath(I))
 			to_chat(user, span_warning("You cannot store \the [O]. You already have something stored."))
-			busy_bank = FALSE
 			return TRUE
-		var/choice = tgui_alert(user, "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", "[src]", list("Store", "Cancel"), timeout = 10 SECONDS)
-		if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open)
-			busy_bank = FALSE
+		var/choice = rerun_prompt(user, "store", list("message" = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", "title" = "[src]", "choices" = list("Store", "Cancel"), "timeout" = 10 SECONDS), PROC_REF(interaction_store), args)
+		if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open || busy_bank || O.loc != user)
 			return TRUE
 		for(var/obj/item/check in O.contents)
 			if(!check.persist_storable || TETHER_HOST(check))
 				to_chat(user, span_warning("\The [src] buzzes. \The [O] contains [check], which cannot be stored. Please remove this item before attempting to store \the [O]. As a reminder, any contents of \the [O] will be lost if you store it with contents."))
-				busy_bank = FALSE
 				return TRUE
+		busy_bank = TRUE
 		user.visible_message(span_notice("\The [user] begins storing \the [O] in \the [src]."),span_notice("You begin storing \the [O] in \the [src]."))
 		icon_state = "item_bank_o"
 		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
 		return TRUE
 	else
 		to_chat(user, span_warning("You cannot store \the [O]. \The [src] either does not accept that, or it has already been retrieved from storage this shift."))
-		busy_bank = FALSE
 	return TRUE
 
 /////STORABLE ITEMS AND ALL THAT JAZZ/////

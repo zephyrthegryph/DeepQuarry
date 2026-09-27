@@ -842,15 +842,10 @@
 				item_meta = list()
 			var/list/cur_meta = item_meta["[tweak_idx]"]
 			var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
-			var/list/new_matrix
-			try
-				new_matrix = tgui_input_colormatrix(user, "Pick a color matrix for this item", "Matrix Recolor", G.path, cur_matrix, TRUE)
-			catch(var/exception/e)
-				log_world("recolor_pick_matrix: tgui_input_colormatrix THREW: [e?.name] @ [e?.file]:[e?.line]")
-				return PREF_UPDATE_REJECTED
+			// The answer re-runs this action, so the item is checked again.
+			var/list/new_matrix = rerun_prompt(user, "matrix", list("kind" = "colormatrix", "message" = "Pick a color matrix for this item", "title" = "Matrix Recolor", "preview" = G.path, "default" = cur_matrix, "matrix_only" = TRUE), PROC_REF(handle_action), args)
 			if(!islist(new_matrix) || length(new_matrix) < 12)
 				return PREF_UPDATE_UNCHANGED
-			// tgui_input_colormatrix sleeps — re-verify prefs ownership.
 			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			item_meta["[tweak_idx]"] = list("mode" = "matrix", "value" = new_matrix)
@@ -858,6 +853,7 @@
 			gear_list[loadout_key] = active
 			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
 			preferences.update_preview_icon()
+			SStgui.update_uis(preferences)
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_recolor")

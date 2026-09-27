@@ -245,7 +245,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return null
 
 	if(!CONFIG_GET(flag/guests_allowed) && IsGuestKey(key))
-		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // Not tgui_alert
+		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // S10 keeps: the client is deleted next, so the message must block until it's read
 		del(src)
 		return
 

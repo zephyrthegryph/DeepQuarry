@@ -17,10 +17,14 @@
 	var/current_style = prefs.read_preference(/datum/preference/choiced/ui_style)
 	var/current_alpha = prefs.read_preference(/datum/preference/numeric/ui_style_alpha)
 	var/current_color = prefs.read_preference(/datum/preference/color/ui_style_color)
-	var/UI_style_new = tgui_input_list(src, "Select a style. White is recommended for customization", "UI Style Choice", GLOB.all_ui_styles, current_style)
+	var/UI_style_new = client_prompt("a1", list("kind" = "list", "message" = "Select a style. White is recommended for customization", "title" = "UI Style Choice", "choices" = GLOB.all_ui_styles, "default" = current_style), VERB_REF(change_ui), args, 0)
+	if(isnull(UI_style_new))
+		return
 	if(!UI_style_new) return
 
-	var/UI_style_alpha_new = tgui_input_number(src, "Select a new alpha (transparency) parameter for your UI, between 50 and 255", null, current_alpha, 255, 50)
+	var/UI_style_alpha_new = client_prompt("a2", list("kind" = "number", "message" = "Select a new alpha (transparency) parameter for your UI, between 50 and 255", "default" = current_alpha, "max" = 255, "min" = 50), VERB_REF(change_ui), args, 0)
+	if(isnull(UI_style_alpha_new))
+		return
 	if(!UI_style_alpha_new || !(UI_style_alpha_new <= 255 && UI_style_alpha_new >= 50)) return
 
 	var/UI_style_color_new = tgui_color_picker(src, "Choose your UI color. Dark colors are not recommended!", null, current_color)
@@ -29,7 +33,10 @@
 	//update UI
 	usr.update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
 
-	if(tgui_alert(src, "Like it? Save changes?","Save?",list("Yes", "No")) == "Yes")
+	var/_answer_a3 = client_prompt("a3", list("message" = "Like it? Save changes?", "title" = "Save?", "choices" = list("Yes", "No")), VERB_REF(change_ui), args, 0)
+	if(isnull(_answer_a3))
+		return
+	if(_answer_a3 == "Yes")
 		usr.write_preference_directly(/datum/preference/choiced/ui_style, UI_style_new, WRITE_PREF_MANUAL)
 		usr.write_preference_directly(/datum/preference/numeric/ui_style_alpha, UI_style_alpha_new, WRITE_PREF_MANUAL)
 		usr.write_preference_directly(/datum/preference/color/ui_style_color, UI_style_color_new, WRITE_PREF_MANUAL)

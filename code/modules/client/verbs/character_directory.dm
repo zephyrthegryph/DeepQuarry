@@ -289,12 +289,16 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 		return
 	switch(action)
 		if ("setTag")
-			var/list/new_tag = tgui_input_list(user, "Pick a new Vore tag for the character directory", "Character Tag", GLOB.char_directory_tags)
+			var/list/new_tag = rerun_prompt(user, "k292", list("kind" = "list", "message" = "Pick a new Vore tag for the character directory", "title" = "Character Tag", "choices" = GLOB.char_directory_tags), PROC_REF(check_for_mind_or_prefs), args)
+			if(isnull(new_tag))
+				return
 			if(!new_tag)
 				return
 			return set_for_mind_or_prefs(user, action, new_tag, can_set_prefs, can_set_mind)
 		if ("setErpTag")
-			var/list/new_erptag = tgui_input_list(user, "Pick a new ERP tag for the character directory", "Character ERP Tag", GLOB.char_directory_erptags)
+			var/list/new_erptag = rerun_prompt(user, "k297", list("kind" = "list", "message" = "Pick a new ERP tag for the character directory", "title" = "Character ERP Tag", "choices" = GLOB.char_directory_erptags), PROC_REF(check_for_mind_or_prefs), args)
+			if(isnull(new_erptag))
+				return
 			if(!new_erptag)
 				return
 			return set_for_mind_or_prefs(user, action, new_erptag, can_set_prefs, can_set_mind)
@@ -308,17 +312,23 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			return set_for_mind_or_prefs(user, action, !visible, can_set_prefs, can_set_mind)
 		if ("editAd")
 			var/current_ad = (can_set_mind ? user.mind.directory_ad : null) || (can_set_prefs ? user.client.prefs.read_preference(/datum/preference/text/human/directory_ad) : null) // directory_ad migrated
-			var/new_ad = tgui_input_text(user, "Change your character ad", "Character Ad", current_ad, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+			var/new_ad = rerun_prompt(user, "k311", list("kind" = "text", "message" = "Change your character ad", "title" = "Character Ad", "default" = current_ad, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(check_for_mind_or_prefs), args)
+			if(isnull(new_ad))
+				return
 			if(isnull(new_ad))
 				return
 			return set_for_mind_or_prefs(user, action, new_ad, can_set_prefs, can_set_mind)
 		if("setGenderTag")
-			var/list/new_gendertag = tgui_input_list(usr, "Pick a new Gender tag for the character directory. This is YOUR gender, not what you prefer.", "Character Gender Tag", GLOB.char_directory_gendertags)
+			var/list/new_gendertag = rerun_prompt(user, "k316", list("kind" = "list", "message" = "Pick a new Gender tag for the character directory. This is YOUR gender, not what you prefer.", "title" = "Character Gender Tag", "choices" = GLOB.char_directory_gendertags), PROC_REF(check_for_mind_or_prefs), args)
+			if(isnull(new_gendertag))
+				return
 			if(!new_gendertag)
 				return
 			return set_for_mind_or_prefs(user, action, new_gendertag, can_set_prefs, can_set_mind)
 		if("setSexualityTag")
-			var/list/new_sexualitytag = tgui_input_list(usr, "Pick a new Sexuality/Orientation tag for the character directory", "Character Sexuality/Orientation Tag", GLOB.char_directory_sexualitytags)
+			var/list/new_sexualitytag = rerun_prompt(user, "k321", list("kind" = "list", "message" = "Pick a new Sexuality/Orientation tag for the character directory", "title" = "Character Sexuality/Orientation Tag", "choices" = GLOB.char_directory_sexualitytags), PROC_REF(check_for_mind_or_prefs), args)
+			if(isnull(new_sexualitytag))
+				return
 			if(!new_sexualitytag)
 				return
 			return set_for_mind_or_prefs(user, action, new_sexualitytag, can_set_prefs, can_set_mind)
@@ -326,7 +336,10 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			var/list/names_list = list()
 			for(var/C in GLOB.vantag_choices_list)
 				names_list[GLOB.vantag_choices_list[C]] = C
-			var/list/new_eventtag = tgui_input_list(usr, "Pick your preference for event involvement", "Event Preference Tag", usr?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference), names_list) // migrated pref
+			var/_answer_k329 = rerun_prompt(user, "k329", list("kind" = "list", "message" = "Pick your preference for event involvement", "title" = "Event Preference Tag", "choices" = names_list, "default" = user?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference)), PROC_REF(check_for_mind_or_prefs), args)
+			if(isnull(_answer_k329))
+				return
+			var/list/new_eventtag = _answer_k329 // migrated pref
 			if(!new_eventtag)
 				return
 			return set_for_mind_or_prefs(user, action, names_list[new_eventtag], can_set_prefs, can_set_mind)

@@ -29,7 +29,9 @@
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
-	var/confirm = tgui_alert(src, "Are you sure you want to commit suicide?", "Confirm Suicide", list("Yes", "No"))
+	var/confirm = rerun_prompt(src, "k32", list("message" = "Are you sure you want to commit suicide?", "title" = "Confirm Suicide", "choices" = list("Yes", "No")), VERB_REF(suicide), args)
+	if(isnull(confirm))
+		return
 
 	if(confirm == "Yes")
 		suiciding = 1
@@ -47,7 +49,9 @@
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
-	var/confirm = tgui_alert(src, "Are you sure you want to commit suicide?", "Confirm Suicide", list("Yes", "No"))
+	var/confirm = rerun_prompt(src, "k50", list("message" = "Are you sure you want to commit suicide?", "title" = "Confirm Suicide", "choices" = list("Yes", "No")), VERB_REF(suicide), args)
+	if(isnull(confirm))
+		return
 
 	if(confirm == "Yes")
 		suiciding = 1
@@ -65,7 +69,9 @@
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
-	var/confirm = tgui_alert(src, "Are you sure you want to commit suicide?", "Confirm Suicide", list("Yes", "No"))
+	var/confirm = rerun_prompt(src, "k68", list("message" = "Are you sure you want to commit suicide?", "title" = "Confirm Suicide", "choices" = list("Yes", "No")), VERB_REF(suicide), args)
+	if(isnull(confirm))
+		return
 
 	if(confirm == "Yes")
 		suiciding = 1
