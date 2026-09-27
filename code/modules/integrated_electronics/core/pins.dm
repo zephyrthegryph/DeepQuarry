@@ -144,27 +144,46 @@ list[](
 		//Now that we're removed from them, we gotta remove them from us.
 		LAZYREMOVE(linked, their_io)
 
-/datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"))
-	var/type_to_use = tgui_input_list(user, "Please choose a type to use.","[src] type setting", allowed_data_types)
-	if(!holder.check_interactivity(user))
-		return
+/// Asks `user` for a value (a type, then the value). When they finish, `on_value` is called on this
+/// pin as (user, value, P), with `data` readable from P; "null" gives a null value.
+/datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"), on_value, list/data)
+	var/list/all_data = data ? data.Copy() : list()
+	all_data["default"] = default
+	all_data["on_value"] = on_value
+	om_prompt_sequence(src, user, list(
+		list("key" = "type", "kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = allowed_data_types),
+		PROC_REF(ask_for_typed_value),
+	), PROC_REF(typed_value_entered), list("data" = all_data))
 
-	var/new_data = null
-	switch(type_to_use)
+/datum/integrated_io/proc/ask_for_typed_value(mob/user, datum/om/prompt/P)
+	var/default = P.get("default")
+	switch(P.get("type"))
 		if("string")
-			new_data = sanitizeSafe(tgui_input_text(user, "Now type in a string.","[src] string writing", istext(default) ? default : null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN, 0, 0)
-			if(istext(new_data) && holder.check_interactivity(user) )
-				to_chat(user, span_notice("You input [new_data] into the pin."))
-				return new_data
+			return list("key" = "value", "kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "default" = istext(default) ? default : null, "max_length" = MAX_NAME_LEN, "encode" = FALSE)
 		if("number")
-			new_data = tgui_input_number(user, "Now type in a number.","[src] number writing", isnum(default) ? default : 0, INFINITY, -INFINITY, 0, FALSE)
-			if(isnum(new_data) && holder.check_interactivity(user) )
-				to_chat(user, span_notice("You input [new_data] into the pin."))
-				return new_data
+			return list("key" = "value", "kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "default" = isnum(default) ? default : 0, "max" = INFINITY, "min" = -INFINITY, "round" = FALSE)
+	return null
+
+/datum/integrated_io/proc/typed_value_entered(mob/user, datum/om/prompt/P)
+	if(!holder?.check_interactivity(user))
+		return
+	var/new_data = null
+	switch(P.get("type"))
+		if("string")
+			new_data = sanitizeSafe(P.get("value"), MAX_NAME_LEN, 0, 0)
+			if(!istext(new_data))
+				return
+			to_chat(user, span_notice("You input [new_data] into the pin."))
+		if("number")
+			new_data = P.get("value")
+			if(!isnum(new_data))
+				return
+			to_chat(user, span_notice("You input [new_data] into the pin."))
 		if("null")
-			if(holder.check_interactivity(user))
-				to_chat(user, span_notice("You clear the pin's memory."))
-				return new_data
+			to_chat(user, span_notice("You clear the pin's memory."))
+		else
+			return
+	call(src, P.get("on_value"))(user, new_data, P)
 
 // Basically a null check
 /datum/integrated_io/proc/is_valid()
@@ -172,7 +191,9 @@ list[](
 
 // This proc asks for the data to write, then writes it.
 /datum/integrated_io/proc/ask_for_pin_data(mob/user, obj/item/I)
-	var/new_data = ask_for_data_type(user)
+	ask_for_data_type(user, on_value = PROC_REF(pin_data_chosen))
+
+/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/om/prompt/P)
 	write_data_to_pin(new_data)
 
 /datum/integrated_io/activate/ask_for_pin_data(mob/user) // This just pulses the pin.

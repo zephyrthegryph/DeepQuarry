@@ -3,18 +3,9 @@
 	name = "dir pin"
 
 /datum/integrated_io/dir/ask_for_pin_data(mob/user)
-	var/new_data = tgui_input_number(user, "Please type in a valid dir number.  \
-	Valid dirs are;\n\
-	North/Fore = [NORTH],\n\
-	South/Aft = [SOUTH],\n\
-	East/Starboard = [EAST],\n\
-	West/Port = [WEST],\n\
-	Northeast = [NORTHEAST],\n\
-	Northwest = [NORTHWEST],\n\
-	Southeast = [SOUTHEAST],\n\
-	Southwest = [SOUTHWEST],\n\
-	Up = [UP],\n\
-	Down = [DOWN]","[src] dir writing")
+	var/new_data = rerun_prompt(user, "k6", list("kind" = "number", "message" = "Please type in a valid dir number.  Valid dirs are;\nNorth/Fore = [NORTH],\nSouth/Aft = [SOUTH],\nEast/Starboard = [EAST],\nWest/Port = [WEST],\nNortheast = [NORTHEAST],\nNorthwest = [NORTHWEST],\nSoutheast = [SOUTHEAST],\nSouthwest = [SOUTHWEST],\nUp = [UP],\nDown = [DOWN]", "title" = "[src] dir writing"), PROC_REF(ask_for_pin_data), args)
+	if(isnull(new_data))
+		return
 	if(isnum(new_data) && holder.check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data] into the pin."))
 		write_data_to_pin(new_data)

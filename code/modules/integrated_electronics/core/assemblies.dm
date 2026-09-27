@@ -269,7 +269,10 @@
 	if(!check_interactivity(M))
 		return
 
-	var/input = sanitizeSafe(tgui_input_text(usr, "What do you want to name this?", "Rename", src.name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k272 = rerun_prompt(usr, "k272", list("kind" = "text", "message" = "What do you want to name this?", "title" = "Rename", "default" = src.name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	if(isnull(_answer_k272))
+		return
+	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
 	if(src && input)
 		to_chat(M, span_notice("The machine now has a label reading '[input]'."))
 		name = input
@@ -487,7 +490,9 @@
 
 	var/obj/item/integrated_circuit/input/choice
 	if(available_inputs)
-		var/selection = tgui_input_list(user, "What do you want to interact with?", "Interaction", input_selection)
+		var/selection = rerun_prompt(user, "k490", list("kind" = "list", "message" = "What do you want to interact with?", "title" = "Interaction", "choices" = input_selection), PROC_REF(attack_self), args)
+		if(isnull(selection))
+			return TRUE
 		if(selection)
 			var/index = input_selection.Find(selection)
 			choice = available_inputs[index]

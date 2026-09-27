@@ -77,7 +77,10 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	if(!check_interactivity(M))
 		return
 
-	var/input = sanitizeSafe(tgui_input_text(M, "What do you want to name the circuit?", "Rename", src.name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k80 = rerun_prompt(M, "k80", list("kind" = "text", "message" = "What do you want to name the circuit?", "title" = "Rename", "default" = src.name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_component), args)
+	if(isnull(_answer_k80))
+		return
+	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
 	if(src && input && assembly.check_interactivity(M))
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
 		displayed_name = input

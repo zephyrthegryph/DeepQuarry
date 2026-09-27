@@ -3,7 +3,10 @@
 	name = "char pin"
 
 /datum/integrated_io/char/ask_for_pin_data(mob/user)
-	var/new_data = sanitizeSafe(tgui_input_text(user, "Please type in one character.","[src] char writing", encode = FALSE), 1, 0, 0)
+	var/_answer_k6 = rerun_prompt(user, "k6", list("kind" = "text", "message" = "Please type in one character.", "title" = "[src] char writing", "encode" = FALSE), PROC_REF(ask_for_pin_data), args)
+	if(isnull(_answer_k6))
+		return
+	var/new_data = sanitizeSafe(_answer_k6, 1, 0, 0)
 	if(holder.check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data ? "new_data" : "NULL"] into the pin."))
 		write_data_to_pin(new_data)
