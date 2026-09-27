@@ -595,7 +595,7 @@
 /// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK or
 /// MOVE_HOOK_LATENCY is set. Must not move, qdel or sleep -- a debug assert
 /// in doMove() checks `loc` didn't change out from under it. May call
-/// REACT_AT/REACT_CANCEL and clock procs.
+/// om_world_at()/qdel(watch) and clock procs.
 /atom/movable/proc/move_hook_before()
 	return
 

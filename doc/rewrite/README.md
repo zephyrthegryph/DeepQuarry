@@ -39,7 +39,7 @@ It is based on seven code surveys and the profiles on disk (August–September 2
 ## Layers
 
 ```
-DM    SSreactor · Ledger & slots · Rules & constraints · Interactions · Damage pipeline · Thermal API
+DM    OM scheduler (world step) · Ledger & slots · Rules & constraints · Interactions · Damage pipeline · Thermal API
           │ commands in, one batched event drain per tick      ▲ generated bindings
 Rust  vg-ffi ──────────────────────────────────────────────────┘
       domains:  gas · atmos devices · power · heat · propagation · generation
@@ -55,7 +55,6 @@ Rust  vg-ffi ──────────────────────�
 | [fixes.md](fixes.md) | Bugs, quick wins, low-risk memory savings and dead code to handle first |
 | [rust_core.md](rust_core.md) | `vg-core`: threading, handles, stores, grid, watches, timers, the DM bridge, jobs, metrics and testing |
 | [simulation.md](simulation.md) | The field and network frameworks; gas, atmos devices, power, heat, propagation and generation |
-| [reactor.md](reactor.md) | SSreactor: the DM side of events, timers and continuous work |
 | [state.md](state.md) | State schema, serialization, deltas, lifecycle, registries and signals |
 | [rules.md](rules.md) | Properties, predicates, constraints, rules and abilities |
 | [containment.md](containment.md) | Ledger, slots, latent contents, equipment, inventory, storage, vore and occupants |

@@ -411,7 +411,7 @@ bit is left, `life_hibernate()` parks the mob.
   `partial`. The next `Life()` gets nominal seconds, not the length of the nap.
 - `/mob/living/proc/life_hibernate(reason)` parks the mob.
 - `SSmobs.hibernating_mobs` and `life_hibernating` are written only there;
-  `tools/ci/check_grep.sh` rejects other writes. Any other waker, such as SSreactor's REACT_ON
+  `tools/ci/check_grep.sh` rejects other writes. Any other waker, such as a world watch (`om_world_on_change()`)
   path, calls `life_wake()`.
 
 **Producers** (wake groups in `code/__defines/life_systems.dm`):

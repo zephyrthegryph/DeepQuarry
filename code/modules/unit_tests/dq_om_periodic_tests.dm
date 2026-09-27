@@ -134,7 +134,7 @@
 	om_test_watch(S, source, CHANGE_DATUM_B)
 	om_trace(S)
 	om_changed(source, CHANGE_DATUM_A)
-	react_test_ticks(4)
+	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(S), 0, "a change on an unwatched channel woke the watcher")
 	om_changed(source, CHANGE_DATUM_B)
 	TEST_ASSERT(om_wait_for_wake(S), "a watched channel did not wake the watcher")
@@ -142,13 +142,13 @@
 	om_unwatch(S, source, /datum/om/behaviour/sleeper/test_subscriber)
 	var/before = om_traced_count(S)
 	om_changed(source, CHANGE_DATUM_B)
-	react_test_ticks(4)
+	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(S), before, "an unwatched datum woke")
 
 	var/id = om_after(S, 1, /datum/proc/dq_om_test_timer_hit)
 	TEST_ASSERT(om_timer_pending(S, id), "the timer is not pending")
 	TEST_ASSERT(om_wait_for_wake(S, before), "the timer did not fire")
-	react_test_ticks(8)
+	om_test_ticks(8)
 	TEST_ASSERT(om_traced_count(S) == before + 1, "the timer did not fire exactly once")
 	TEST_ASSERT(!om_timer_pending(S, id), "a fired timer is still pending")
 	om_untrace(S)
@@ -272,7 +272,7 @@
 /datum/unit_test/dq_om_audit_finds_no_missed_wakes
 
 /datum/unit_test/dq_om_audit_finds_no_missed_wakes/Run()
-	react_test_ticks(10)
+	om_test_ticks(10)
 	var/list/missed = om_pipeline_audit(null, 100000, 100000, TRUE)
 	var/list/names = list()
 	for(var/datum/om/stage/T as anything in missed)
@@ -308,7 +308,7 @@
 	var/obj/item/holder/H = new(T, M)
 	TEST_ASSERT(!H.periodic_pipe, "a holder polls on a lane")
 	for(var/i in 1 to 40)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		if(QDELETED(H))
 			break
 	TEST_ASSERT(QDELETED(H), "a holder left on a turf was not cleaned up")
@@ -398,10 +398,10 @@
 	busy.work = 5
 	TEST_ASSERT(om_attached(idle, /datum/om/pipeline/machine), "a decl-listed machine did not join the pipeline")
 	for(var/i in 1 to 40)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		if(busy.steps)
 			break
-	react_test_ticks(MACHINE_PIPELINE_INTERVAL * 3 / world.tick_lag)
+	om_test_ticks(MACHINE_PIPELINE_INTERVAL * 3 / world.tick_lag)
 	TEST_ASSERT_EQUAL(idle.steps, 0, "a fresh machine with no work was stepped")
 	TEST_ASSERT(om_pipe_parked(idle, /datum/om/pipeline/machine), "a fresh machine with no work did not park")
 	TEST_ASSERT(busy.steps > 0, "a machine whose start condition holds was not woken")
@@ -427,7 +427,7 @@
 	var/mob/living/visitor = allocate(/mob/living, locate(1, 1, T.z))
 	visitor.forceMove(get_step(T, WEST))
 	for(var/i in 1 to 40)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		if(coin.periodic_pipe)
 			break
 	TEST_ASSERT(coin.periodic_pipe == PERIODIC_SLOW, "a mob coming near did not wake the radiation source")

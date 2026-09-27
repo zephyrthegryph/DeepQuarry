@@ -5,6 +5,7 @@
 // usage for budgets, and scheduler_advance(seconds).
 //
 // Per run, in order:
+//   0. the Rust world step (world_watch.dm), once per tick: its wakes queue on their lanes
 //   1. deadlines (bucketed wheel, guaranteed OM_DEADLINE_SHARE of the budget)
 //   2. borrow pass: rings about to breach their max_interval, from the whole budget
 //   3. each lane in order with its guaranteed share: eager derived values
@@ -290,6 +291,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/avail = max(tick_limit - start, 0)
 	var/done = TRUE
 
+	// 0. The Rust world step: timers, keys, rate crossings and native watches.
+	world_step()
+
 	// 1. Deadlines.
 	limit = start + avail * OM_DEADLINE_SHARE
 	cap = harness_deadline_cap
@@ -344,6 +348,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(lane == LANE_DERIVED)
 		if(!run_services())
 			return FALSE
+	if(!run_world_wakes(lane))
+		return FALSE
 	if(!run_wakes(lane))
 		return FALSE
 	for(var/datum/om/ring/R as anything in lane_rings[lane])

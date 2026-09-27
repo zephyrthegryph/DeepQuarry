@@ -7,4 +7,5 @@ vars_helpers 0
 vars_write 74
 timer_cooldown 3
 accessor_macros 0
+reactor_api 0
 raw_relation 0

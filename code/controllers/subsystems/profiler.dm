@@ -56,7 +56,6 @@ SUBSYSTEM_DEF(profiler)
 		"shuttles" = subsystem_diagnostics(SSshuttles),
 		"radiation" = subsystem_diagnostics(SSradiation),
 		"explosions" = subsystem_diagnostics(SSexplosions),
-		"reactor" = subsystem_diagnostics(SSreactor),
 	)
 	var/list/material_graphs = list()
 	for(var/id in SSmachines.power_regions)
@@ -103,8 +102,8 @@ SUBSYSTEM_DEF(profiler)
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
 	subsystems["radiation"] += SSradiation.performance_diagnostics()
 	subsystems["explosions"] += SSexplosions.performance_diagnostics()
-	// Wakes by type and reason class, continuous-lane cost, timer counts, dispatch time.
-	subsystems["reactor"] += SSreactor.performance_diagnostics()
+	// Rust world wakes (timers, keys, rate crossings, native watches) on the OM scheduler.
+	subsystems["world_step"] = om_world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
 		"world_time_ds" = world.time,

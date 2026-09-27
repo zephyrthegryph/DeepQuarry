@@ -227,7 +227,7 @@ connector's ledger slot (class 1), not from `anchored` (class 5).
 
 ## 8. Events
 
-Rust records events in each domain's outbox. SSreactor drains each domain
+Rust records events in each domain's outbox. The OM scheduler's world step drains each domain
 once per tick (one FFI call per domain), and the generated dispatcher calls the
 named handler on the atom after checking `atom.vg_entity == handle`. There are
 no per-object callbacks each tick and no pushed display values: a display

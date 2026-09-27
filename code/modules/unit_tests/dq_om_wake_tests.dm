@@ -10,9 +10,9 @@
  */
 /proc/om_wake_test(datum/D, datum/callback/change, ticks = 4)
 	om_trace(D)
-	react_test_ticks(ticks)
+	om_test_ticks(ticks)
 	var/before = om_traced_count(D)
-	react_test_ticks(ticks)
+	om_test_ticks(ticks)
 	if(om_traced_count(D) != before)
 		om_untrace(D)
 		return "[D.type] woke while its input held steady"
@@ -21,7 +21,7 @@
 	// little longer than `ticks` before calling one lost.
 	var/after = before
 	for(var/i in 1 to ticks * 10)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		after = om_traced_count(D)
 		if(after != before)
 			break
@@ -34,7 +34,7 @@
 /// Wakes ride the scheduler's lanes: a busy test world can take a few ticks longer.
 /proc/om_wait_for_wake(datum/D, count = 0, max_ticks = 40)
 	for(var/i in 1 to max_ticks)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		if(om_traced_count(D) > count)
 			return TRUE
 	return FALSE
@@ -73,7 +73,7 @@
 	A.schedule_door_timer()
 	TEST_ASSERT(!isnull(A.door_timer_token), "electrifying did not schedule the door's timer")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "an electrified airlock's audit failed")
-	react_test_ticks(20)
+	om_test_ticks(20)
 	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification deadline passed without a wake")
 	TEST_ASSERT(isnull(A.door_timer_token), "an airlock with no deadline kept a timer")
 
@@ -81,7 +81,7 @@
 	A.main_power_lost_until = world.time + 1
 	A.backup_power_lost_until = -1
 	A.schedule_door_timer()
-	react_test_ticks(20)
+	om_test_ticks(20)
 	TEST_ASSERT(A.main_power_lost_until <= 0, "main power did not return at its deadline ([A.main_power_lost_until])")
 
 	// A missing timer is what the audit catches.
@@ -108,7 +108,7 @@
 	TEST_ASSERT_NULL(C.om_sleep_violation(), "an idle camera is not asleep")
 	var/failure = om_wake_test(C, CALLBACK(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
-	react_test_ticks(4)
+	om_test_ticks(4)
 	TEST_ASSERT(!(C.stat & EMPED), "the camera did not recover at the end of its EMP")
 
 	C.upgradeMotion()
@@ -119,7 +119,7 @@
 	C.newTarget(H)
 	TEST_ASSERT(!isnull(C.camera_timer_token), "a motion target did not schedule the alarm")
 	TEST_ASSERT_NULL(C.om_sleep_violation(), "a tracking camera's audit failed")
-	react_test_ticks(20)
+	om_test_ticks(20)
 	TEST_ASSERT_EQUAL(C.detectTime, -1, "the motion alarm did not fire at its deadline")
 	H.set_stat(DEAD)
 	TEST_ASSERT(!(H in C.motionTargets), "a dead target was not dropped")
@@ -147,14 +147,14 @@
 	var/was_powered = L.has_power() && A.requires_power
 	A.power_light = FALSE
 	A.power_change()
-	react_test_ticks(4)
+	om_test_ticks(4)
 	if(was_powered && L.has_cell() && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
 		TEST_ASSERT(L.emergency_mode, "an unpowered charged light did not go to emergency power")
 		TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency discharge has no timer")
 	TEST_ASSERT_NULL(L.om_sleep_violation(), "an unpowered light's audit failed")
 	A.power_light = old_power
 	A.power_change()
-	react_test_ticks(4)
+	om_test_ticks(4)
 	if(L.has_power())
 		TEST_ASSERT(!L.emergency_mode, "power returned but the light stayed on its cell")
 		TEST_ASSERT(!L.emergency_discharge_at, "power returned but emergency discharge kept its deadline")
@@ -213,7 +213,7 @@
 	var/datum/looping_sound/dq_test/loop = new(list(source))
 	loop.start()
 	for(var/i in 1 to 60)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		if(loop.dormant_chunk_tokens || loop.has_listener())
 			break
 	if(loop.has_listener())
@@ -240,11 +240,11 @@
 	TEST_ASSERT(length(tokens), "watch_mob_chunks returned no chunks")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a player chunk subscription was not counted")
 	om_trace(players)
-	react_test_ticks(4)
+	om_test_ticks(4)
 	var/before = om_traced_count(players)
 	var/mob/living/npc = allocate(/mob/living, T)
 	npc.Move(get_step(T, NORTH))
-	react_test_ticks(4)
+	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(players), before, "a mob without a client woke a player chunk subscriber")
 	om_untrace(players)
 	var/failure = om_wake_test(players, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(publish_player_chunk), T))

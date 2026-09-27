@@ -268,14 +268,6 @@
 
 #endif
 
-/// Counts the area power key wakes the reactor delivers.
-/datum/dq_power_wake_probe
-	var/wakes = 0
-
-/datum/dq_power_wake_probe/on_react(reason, source, source_kind)
-	if(reason & REACT_REASON_KEY)
-		wakes++
-
 /// Power's wakes reach their subscribers: an area's power change raises its
 /// OM channel.
 /datum/unit_test/dq_power_area_key_wakes_subscriber

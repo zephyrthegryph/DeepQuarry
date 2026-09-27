@@ -99,8 +99,8 @@ commands applied in order.
   one call (`GAS_READ_*` layout); `get_gases()` is one call too.
 - **Reactions** run in DM. The field's `local` step checks registered reaction
   requirements per cell and reports `GasEvent::CellReactionReady`.
-- **Watches.** Gas is a reactor domain: `REACT_ON` / `REACT_WHEN` on
-  `REACT_GAS(mixture)` (a turf's air or a main-owned mixture) with the
+- **Watches.** Gas is a Rust world domain: `om_world_on_change()` / `om_world_when()` on
+  `WORLD_GAS_HANDLE(mixture)` (a turf's air or a main-owned mixture) with the
   `CH_GAS_*` channels.
 
 `xgm_compat.dm` and `tg_infra_compat.dm` keep the older XGM-style call

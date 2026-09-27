@@ -12,7 +12,7 @@ thread_local! {
 }
 
 /// Registers (or replaces) a host under a numeric id (a generated
-/// `VG_DOMAIN_*`/`REACT_DOMAIN_*` define, or a world kind's
+/// `VG_DOMAIN_*` define, or a world kind's
 /// `vg_core::registry::world_kind_domain`).
 pub fn register_domain(id: u32, domain: Box<dyn DomainRegistry>) {
     DOMAINS.with_borrow_mut(|d| d.register(id, domain));

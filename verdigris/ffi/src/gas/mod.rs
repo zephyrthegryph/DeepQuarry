@@ -783,7 +783,7 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
 
 // --- Gas handles as a reactor watch domain -----------------------------------
 
-/// Gas as a reactor domain: `REACT_ON` / `REACT_WHEN` on gas handles
+/// Gas as a reactor domain: `om_world_on_change` / `om_world_when` on gas handles
 /// ([`mix::watch`]).
 pub(crate) struct GasDomain;
 

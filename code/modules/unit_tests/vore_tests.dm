@@ -114,7 +114,7 @@
 /// Drive the predator, prey and the predator's belly through `cycles` Life
 /// and belly-process cycles directly, instead of sleeping for real game time
 /// (a mob Life tick is 2 s, so 10 cycles used to cost 20+ s per test).
-/// The calls are the same ones SSmobs and SSreactor make each cycle.
+/// The calls are the same ones SSmobs and the belly_cycle deadline make each cycle.
 /proc/_vore_test_run_cycles(mob/living/pred, mob/living/prey, cycles)
 	for(var/i in 1 to cycles)
 		om_run_frame_now(pred, /datum/om/pipeline/life)

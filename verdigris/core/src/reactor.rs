@@ -1,6 +1,6 @@
 //! The main-side reactor (`rust_core.md` §7, `reactor.md`): the timer wheel,
 //! wake lanes, rate models and DM-owned keys. Everything here is plain
-//! main-thread data with no locks; SSreactor (S1) drives it once per tick:
+//! main-thread data with no locks; the OM scheduler (S1) drives it once per tick:
 //!
 //! ```text
 //! sim.begin_tick();
@@ -15,11 +15,11 @@
 //! `f32`s):
 //!
 //! ```text
-//! vg_react_at(subscriber, lane, tick, token)                -> timer id     REACT_AT
-//! vg_react_cancel_timer(timer)                                               REACT_CANCEL
-//! vg_react_publish(key, mask)                                                REACT_PUBLISH
-//! vg_react_on_key(subscriber, key, mask, lane)                               REACT_ON_KEY
-//! vg_react_clear(subscriber)                                                 REACT_CLEAR
+//! vg_react_at(subscriber, lane, tick, token)                -> timer id     om_world_at
+//! vg_react_cancel_timer(timer)                                               qdel(watch)
+//! vg_react_publish(key, mask)                                                om_world_publish
+//! vg_react_on_key(subscriber, key, mask, lane)                               om_world_on_key
+//! vg_react_clear(subscriber)                                                 watch Destroy()
 //! vg_rate_linear(v0, rate, min, max)                        -> model id
 //! vg_rate_relax(v0, target, k)                              -> model id
 //! vg_rate_sum(v0, min, max)                                 -> model id
@@ -176,7 +176,7 @@ impl WakeLanes {
         self.delivered += (out.len() - start) as u64;
     }
 
-    /// Drops every pending wake of `sub` (`REACT_CLEAR`).
+    /// Drops every pending wake of `sub` (`watch Destroy()`).
     pub fn clear(&mut self, sub: Subscriber) {
         for l in &mut self.lanes {
             l.pending.remove(&sub);
@@ -238,7 +238,7 @@ struct ModelSlot {
 /// Something the wheel holds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Due {
-    /// A `REACT_AT` timer.
+    /// A `om_world_at` timer.
     Timer {
         subscriber: Subscriber,
         lane: Lane,
@@ -379,7 +379,7 @@ impl Reactor {
         }
     }
 
-    /// `REACT_AT`: wakes `subscriber` at tick `at` with reason `TIMER` and
+    /// `om_world_at`: wakes `subscriber` at tick `at` with reason `TIMER` and
     /// source `token`.
     pub fn at(&mut self, subscriber: Subscriber, lane: Lane, at: Tick, token: u32) -> TimerId {
         let id = self.wheel.insert(
@@ -406,7 +406,7 @@ impl Reactor {
         }
     }
 
-    /// `REACT_ON_KEY`.
+    /// `om_world_on_key`.
     pub fn subscribe_key(&mut self, subscriber: Subscriber, key: u64, mask: u32, lane: Lane) {
         let subs = self.key_subs.entry(key).or_default();
         match subs
@@ -440,7 +440,7 @@ impl Reactor {
         self.key_subs.len()
     }
 
-    /// `REACT_PUBLISH`: DM-owned state under `key` changed. Merged per tick
+    /// `om_world_publish`: DM-owned state under `key` changed. Merged per tick
     /// and dispatched at [`tick`](Self::tick); a key nobody subscribes to is
     /// never stored.
     pub fn publish(&mut self, key: u64, mask: u32) {
@@ -627,7 +627,7 @@ impl Reactor {
         }
     }
 
-    /// `REACT_CLEAR`: drops every timer, key subscription, model watch and
+    /// `watch Destroy()`: drops every timer, key subscription, model watch and
     /// pending wake of `subscriber`.
     pub fn clear(&mut self, subscriber: Subscriber) {
         for token in self.by_subscriber.remove(&subscriber).unwrap_or_default() {

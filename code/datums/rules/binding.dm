@@ -1,5 +1,5 @@
 // Per-object rule state, created only when an object with rules materializes
-// (rules.md §4). One binding per object holds its reactor subscriptions and,
+// (rules.md §4). One binding per object holds its world watches and,
 // per rule, whether the condition held at the last look.
 
 /// This object's rule binding. The binding holds its owner by OM handle, so it
@@ -100,8 +100,14 @@
 	var/list/nodes
 	/// Key kinds the owner must publish.
 	var/list/key_kinds
-	/// This binding's reactor id: the id of the owner's DM-owned keys.
+	/// The id of the owner's DM-owned keys (om_world_key_id()).
 	var/key_id
+	/// Every world watch made for this binding (dq_rx_*), deleted with it.
+	var/list/world_watches
+
+/datum/rule_binding/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + "world_watches"
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
@@ -179,7 +185,7 @@
 				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
 					return cancel_all(out)
 				if(!key_id)
-					key_id = dq_rx_id(src)
+					key_id = dq_rx_id()
 				out += dq_rx_on_key(src, trigger.key_kind, key_id, 1)
 				LAZYOR(key_kinds, trigger.key_kind)
 	return out

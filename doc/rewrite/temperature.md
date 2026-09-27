@@ -38,7 +38,7 @@ Energy is conserved everywhere, in SI units.
 /atom/proc/get_temperature()                  // from the view (or overlay); ambient if the atom has no heat node
 /atom/proc/add_heat(joules)                   // a command; creates the heat node on first divergence
 /atom/proc/thermal_properties()               // from materials and type properties: heat capacity, conductance, emissivity
-REACT_WHEN(src, THRESHOLD(src, CH_HEAT_TEMPERATURE, ABOVE, KELVIN(373)))
+// a native heat watch: /datum/native_watch/heat on src, HEAT_WATCH_ABOVE at KELVIN(373)
 ```
 
 - **Replaces** the ad-hoc `return_temperature()` procs on `/turf` (which returns the solid's temperature), gas mixtures, tanks, canisters and mecha. There is one meaning everywhere.

@@ -1,16 +1,19 @@
-// The one coupling point between rules and SSreactor (doc/rewrite/reactor.md §1).
+// The one coupling point between rules and the Rust world (om_world_* in
+// code/datums/om/world_watch.dm, object_model_core.md §4.8).
 //
 // Rules call only the dq_rx_* procs below and receive wakes as
-// rule_wake(reason, source). Nothing else in code/datums/rules/ uses a
-// REACT_* macro, a vg_* bind or a reactor constant.
+// rule_wake(reason, source). Nothing else in code/datums/rules/ uses an
+// om_world_* proc, a vg_* bind or a world constant. Every subscription is a
+// /datum/native_watch (its own token): dq_rx_cancel() qdels it, and
+// dq_rx_clear() qdels every watch the binding still holds.
 //
-//   dq_rx_when_threshold(D, node, ch, above, level, edges)  REACT_WHEN(D, COND_ABOVE/BELOW)
-//   dq_rx_when_band(D, node, ch, levels)                     REACT_WHEN(D, COND_BAND)
-//   dq_rx_on_change(D, node, ch)                             REACT_ON(D, handle, CH_BIT(ch))
-//   dq_rx_on_key(D, kind, id, mask) / dq_rx_publish(...)     REACT_ON_KEY / REACT_PUBLISH
-//   dq_rx_at(D, time)                                        REACT_AT
-//   dq_rx_rate_linear/read/set_rate/remove, dq_rx_on_rate    RATE_LINEAR ... / REACT_RATE
-//   dq_rx_cancel(D, token), dq_rx_clear(D), dq_rx_id(D)      REACT_CANCEL / REACT_CLEAR / REACT_ID
+//   dq_rx_when_threshold(D, node, ch, above, level, edges)  native heat watch
+//   dq_rx_when_band(D, node, ch, levels)                     native heat watch
+//   dq_rx_on_change(D, node, ch)                             native heat watch (body appears)
+//   dq_rx_on_key(D, kind, id, mask) / dq_rx_publish(...)     om_world_on_key / om_world_publish
+//   dq_rx_at(D, time)                                        om_world_at
+//   dq_rx_rate_linear/read/set_rate/remove, dq_rx_on_rate    om_rate_* / om_world_on_rate
+//   dq_rx_cancel(D, token), dq_rx_clear(D), dq_rx_id()       qdel / every watch / om_world_key_id
 //
 // Heat nodes (H3). An object's heat node is its heat body in the heat domain
 // (M4, code/modules/heat/heat.dm). A body exists only while the object
@@ -19,54 +22,62 @@
 // watches that follow the object's body (they relink when one is made). At
 // rest the object reads its surroundings' temperature and costs nothing.
 
-/// A rule_binding receives SSreactor wakes here.
-/datum/rule_binding/on_react(reason, source, source_kind)
-	rule_wake(reason, source)
-
 /// Called with the merged reasons of a wake. Read the current state; never count wakes.
 /datum/proc/rule_wake(reason, source)
 	return
 
-/proc/dq_rx_id(datum/D)
-	return REACT_ID(D)
+/// A world watch made for a rule binding fired.
+/datum/rule_binding/proc/on_world_wake(datum/native_watch/world/watch, reason, source, source_kind)
+	rule_wake(reason, source)
+
+/datum/rule_binding/proc/keep_watch(datum/native_watch/W)
+	if(W)
+		LAZYADD(world_watches, W)
+	return W
+
+/proc/dq_rx_id()
+	return om_world_key_id()
 
 /proc/dq_rx_now()
 	return world.time
 
-/proc/dq_rx_on_key(datum/D, kind, id, mask)
-	return REACT_ON_KEY(D, kind, id, mask)
+/proc/dq_rx_on_key(datum/rule_binding/D, kind, id, mask)
+	return D.keep_watch(om_world_on_key(D, kind, id, mask, TYPE_PROC_REF(/datum/rule_binding, on_world_wake)))
 
 /proc/dq_rx_publish(kind, id, mask)
-	REACT_PUBLISH(kind, id, mask)
+	om_world_publish(kind, id, mask)
 
-/proc/dq_rx_at(datum/D, time)
-	return REACT_AT(D, time)
+/proc/dq_rx_at(datum/rule_binding/D, time)
+	return D.keep_watch(om_world_at(D, time, TYPE_PROC_REF(/datum/rule_binding, on_world_wake)))
 
-/// Node watches are native heat watches; the rest are SSreactor's numbers.
-/proc/dq_rx_cancel(datum/D, token)
-	if(istype(token, /datum/native_watch))
+/// Every subscription is a watch: cancelling it is deleting it.
+/proc/dq_rx_cancel(datum/rule_binding/D, datum/native_watch/token)
+	if(istype(D))
+		LAZYREMOVE(D.world_watches, token)
+	if(istype(token) && !QDELETED(token))
 		qdel(token)
-		return
-	REACT_CANCEL(D, token)
 
-/proc/dq_rx_clear(datum/D)
-	REACT_CLEAR(D)
+/proc/dq_rx_clear(datum/rule_binding/D)
+	for(var/datum/native_watch/W as anything in D.world_watches)
+		if(!QDELETED(W))
+			qdel(W)
+	D.world_watches = null
 
 /proc/dq_rx_rate_linear(v0, per_second, lo, hi)
-	return RATE_LINEAR(v0, per_second, lo, hi)
+	return om_rate_linear(v0, per_second, lo, hi)
 
 /proc/dq_rx_rate_read(model)
-	return RATE_READ(model)
+	return om_rate_read(model)
 
 /proc/dq_rx_rate_set_rate(model, per_second)
-	RATE_SET_RATE(model, per_second)
+	om_rate_set_rate(model, per_second)
 
 /proc/dq_rx_rate_remove(model)
-	RATE_REMOVE(model)
+	om_rate_remove(model)
 
 /// Wake D when `model` reaches `level` (above) or falls to it; at once if it already has.
-/proc/dq_rx_on_rate(datum/D, model, above, level)
-	return REACT_RATE(D, model, above ? REACT_CMP_ABOVE : REACT_CMP_BELOW, level)
+/proc/dq_rx_on_rate(datum/rule_binding/D, model, above, level)
+	return D.keep_watch(om_world_on_rate(D, model, above ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, level, TYPE_PROC_REF(/datum/rule_binding, on_world_wake)))
 
 // ---- Heat nodes ----
 
@@ -166,7 +177,7 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Deterministic flush (doc/testing.md flaky notes): every caller of
 	// dq_rx_node_write() is test code, and a write alone doesn't run a heat
-	// frame or step SSreactor. Guarded because dq_rx_flush() only exists in
+	// frame or step the Rust world. Guarded because dq_rx_flush() only exists in
 	// a test/lint build and must never run from production DM authority.
 	dq_rx_flush()
 #endif

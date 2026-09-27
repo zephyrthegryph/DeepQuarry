@@ -230,10 +230,10 @@ verdigris/                  <- workspace root (this dir)
   regions DM rebuilds (region handle, member ports, prior regions, volume). A
   removed port's share is `Released` into the mixture DM named
   (`REMOVE_TO_MIXTURE`).
-- **Watches.** Gas is reactor domain `REACT_DOMAIN_GAS`
+- **Watches.** Gas is Rust world domain
   (`vg_ffi::reactor::ExternalDomain`): turf handles go to the field's watch port
   (evaluated in the frame), main-owned mixtures to a synchronous port evaluated
-  at each reactor step. DM: `REACT_ON` / `REACT_WHEN` on `REACT_GAS(mixture)`
+  at each reactor step. DM: `om_world_on_change` / `om_world_when` on `WORLD_GAS_HANDLE(mixture)`
   with the `CH_GAS_*` channels. Pipe regions are not watchable until M2 moves
   them into the frame.
 - **Heat.** `world::HeatGas` is the heat world's `GasExchange`: probes read the

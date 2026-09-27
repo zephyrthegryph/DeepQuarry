@@ -294,14 +294,61 @@ z-level without players costs nothing and nothing is tested per frame). `om_ui_b
 change moves the entity between rings and calls
 `om_native_bridge_relevance(E, level)`.
 
-### 4.8 Native (Rust) watches
+### 4.8 Native (Rust) watches and the world step
 
-`wake_on_native` bits are unioned per entity and passed to
-`om_native_bridge_watch(E, bits)` on attach and detach. The reactor's drain
-calls `om_native_deliver(E, bits)`, which runs `on_native(E, bits)` on each
-started behaviour declaring those bits. The two `om_native_bridge_*` procs
-are stubs today; the reactor track replaces their bodies with generated
-bindings. Nothing else in this API crosses the FFI.
+There is one scheduler. The Rust world (`verdigris/ffi/src/sched.rs`) holds what is cheaper
+to keep in Rust: the timer wheel, DM-owned keys, rate models and the watches on Rust-owned
+state (gas mixtures, heat bodies, probe cells). It has no DM subsystem of its own: the OM
+scheduler steps it at the start of every pass, once per tick (`world_step()`, one bind call,
+`vg_world_step(tick, world_budget)`), and queues each wake on the lane of the watch it names.
+`run_lane()` delivers a lane's world wakes before its OM wakes, under the same budget.
+
+**Watches are owned and declared.** A subscription is a `/datum/native_watch/world`: one Rust
+subscription, its own SSvg handle (the subscriber Rust reports), the owner held weakly, and the
+owner's proc and lane. A wake calls `call(owner, proc)(watch, reason, source, source_kind)` on
+that lane; nothing compares handles or keeps owner maps. `reason` is `WORLD_REASON_*` class bits
+OR-ed with channel bits (a change watch) or the key's mask (a key); Rust merges a watch's wakes
+in one tick. `source` is the cell, the key id (`source_kind` its kind) or the rate model. Read the
+current state; never count wakes.
+
+| Call | Wakes `proc` on `owner` when |
+|---|---|
+| `om_world_at(owner, time, proc, lane)` | the first tick at or after `time` (one-shot: the watch is freed after it fires) |
+| `om_world_on_key(owner, kind, id, mask, proc, lane)` | key `(kind, id)` is published (`om_world_publish(kind, id, mask)`) with a bit of `mask` |
+| `om_world_on_change(owner, handle, mask, proc, lane)` | a channel in `mask` of a Rust entity moves past its hysteresis (`WORLD_HANDLE(code, cell)`, `WORLD_GAS_HANDLE(mixture)`) |
+| `om_world_when(owner, COND_*(...), proc, lane)` | a threshold, band or difference condition becomes true (Rust validates it at registration) |
+| `om_world_on_rate(owner, model, WORLD_CMP_*, level, proc, lane)` | a rate model (`om_rate_linear/relax/sum`, `om_rate_read/set/set_rate/set_term/remove`) reaches `level`, at the exact tick |
+
+- **Cancel** with `qdel(watch)`. An owner keeps the watches it may cancel and deletes them in
+  `Destroy()`; a watch whose owner is gone is dropped (and freed) at its next wake.
+- **Lanes.** `lane` defaults to `LANE_SIMULATION`. `LANE_URGENT` watches are drained in full every
+  tick; the rest share `world_budget` (2000 wakes per tick) and wait in Rust when it runs out.
+- **Keys are numbers.** A key is a kind (`WORLD_KEY_*`) and an id from `om_world_key_id()`, never
+  a string (`tools/ci/check_grep.sh`). Game facts are not keys: they are OM change channels (§4.10,
+  "Timers and published facts"); keys remain for rule bindings' DM-owned properties.
+- **Heat watches** (`/datum/native_watch/heat`) follow an atom's heat body and are delivered by
+  the heat drain through `om_native_dispatch()`; the rules adapter
+  (`code/datums/rules/world_adapter.dm`) is the one place rules touch either kind.
+- **Continuous work is not a watch.** What really changes every tick is a declared continuous
+  periodic lane (`PERIODIC_START`, §4.10, each with a `continuous_why`), or a clock (§4.6).
+- `wake_on_native` bits are unioned per entity and passed to `om_native_bridge_watch(E, bits)` on
+  attach and detach; `om_native_deliver(E, bits)` runs `on_native(E, bits)` on each started
+  behaviour declaring those bits.
+
+**Signals or the scheduler?** A DCS signal when the listener must run now, in the same call
+stack (cancel an attack, modify a value in flight, react to an equip), the relationship is
+behavioural, and there are few listeners per sender. A channel, watch or timer when the work
+can wait for the next dispatch and many changes should merge into one wake, the dependency is on
+simulation state (gas, heat, power, networks) or on time, or thousands of objects depend on
+shared state.
+
+**Tests and metrics.** `om_world_wake_test(owner, change)` is the wake test for any owner: held
+steady it must not wake, after `change` it must (`dq_om_world_watch_tests.dm`, with the probe
+domain's `WORLD_HANDLE(VG_KIND_PROBE, cell)`). `om_world_diagnostics()` gives wakes delivered and
+dropped, wakes by owner type (bounded at `OM_MAX_STAT_TYPES`, the rest under `other`), queued
+wakes per lane, step time and the Rust counters; the profiler records it as
+`subsystems.world_step` and each benchmark window as `<window>_world_step` plus the metric
+`<window>_world_wakes`. The Rust counters are also in `verdigris_metrics()` as `world_sched.*`.
 
 ### 4.9 Diagnostics and tests
 

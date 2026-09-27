@@ -4716,7 +4716,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	om_trace(point_defense)
 	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
 	for(var/i in 1 to 40)
-		react_test_ticks(1)
+		om_test_ticks(1)
 		if(om_traced_count(point_defense))
 			break
 	TEST_ASSERT(om_traced_count(point_defense), "meteor dependency did not wake point defense")
@@ -5480,7 +5480,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// The exposure heats the paper's heat body; its ignition rule
 	// (code/datums/rules/declarations.dm) runs on the next heat frame.
 	dq_rx_flush()
-	react_test_ticks(10)
+	om_test_ticks(10)
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the

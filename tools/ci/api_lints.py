@@ -21,6 +21,8 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
                      (M.buckled_to(), I.slot_item(slot)) so it chains
     raw_relation     om_relation_of()/om_source_of()/om_related(_to)() outside
                      code/datums/om: call the relation's typed accessor proc
+    reactor_api      SSreactor, on_react(), react_every() or a REACT_* macro: Rust
+                     wakes are world watches on the OM scheduler (om_world_*, sec 4.8)
 
 Usage:
     python tools/ci/api_lints.py                 # the CI check
@@ -134,6 +136,7 @@ CHECKS = [
                                 r"|LEASH_OF|TETHERED_HANDHELD|TETHER_HOST|FOLLOWING|FOLLOWERS|BORER_HOST|BORER_OF"
                                 r"|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS"
                                 r"|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\(")),
+    ("reactor_api", pattern(r"(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)")),
     ("raw_relation", outside("code/datums/om/", r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(")),
 ]
 NAMES = [name for name, _ in CHECKS]

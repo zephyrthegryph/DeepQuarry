@@ -38,7 +38,7 @@
 #define HOSTILE_STANCE_EATING	99
 
 // The belly cycle that every per-cycle digestion/resize/drain constant is a rate
-// per. An occupied belly cycles on SSreactor at this period (belly_slot.dm); each
+// per. An occupied belly cycles on an OM deadline at this period (belly_slot.dm); each
 // cycle scales those rates by the real seconds it covers.
 #define BELLY_BASELINE_TICK		(6 SECONDS)
 // The cycle period in turbo mode (DM_FLAG_TURBOMODE): three times as often, same rates.

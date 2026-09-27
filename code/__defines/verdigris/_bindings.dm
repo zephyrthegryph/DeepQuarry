@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "7075c501f45c00c6"
+#define VERDIGRIS_ABI "3c19bd011bbeb26f"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -224,31 +224,6 @@
 // verdigris/ffi/src/power.rs
 #define POWER_NODE_MACHINE 1
 
-/// Reason class: a condition watch (Threshold, Band, Difference, ...).
-// verdigris/ffi/src/sched.rs
-#define REACT_REASON_CONDITION 0x100000
-
-/// The bits below the reason classes: channel bits, or a key's mask.
-// verdigris/ffi/src/sched.rs
-#define REACT_REASON_DETAIL 0x0FFFFF
-
-/// Reason class: a DM-owned key was published.
-// verdigris/ffi/src/sched.rs
-#define REACT_REASON_KEY 0x400000
-
-/// Reason class: a rate model crossed a watched level.
-// verdigris/ffi/src/sched.rs
-#define REACT_REASON_RATE 0x800000
-
-/// Reason class: a `REACT_AT` timer fired.
-// verdigris/ffi/src/sched.rs
-#define REACT_REASON_TIMER 0x200000
-
-/// Numbers per wake returned by `vg_world_step`:
-/// `subscriber, lane, reason, source, source_kind`.
-// verdigris/ffi/src/sched.rs
-#define REACT_WAKE_STRIDE 5
-
 // verdigris/ffi/src/heat_regulator.rs
 #define REGULATOR_MODE_BOTH 2
 
@@ -321,6 +296,31 @@
 /// `WORLD_KIND_BASE | kind_code` ([`crate::world::kind_code`]).
 // verdigris/core/src/registry.rs
 #define VG_WORLD_KIND_BASE 0x10000
+
+/// Reason class: a condition watch (Threshold, Band, Difference, ...).
+// verdigris/ffi/src/sched.rs
+#define WORLD_REASON_CONDITION 0x100000
+
+/// The bits below the reason classes: channel bits, or a key's mask.
+// verdigris/ffi/src/sched.rs
+#define WORLD_REASON_DETAIL 0x0FFFFF
+
+/// Reason class: a DM-owned key was published.
+// verdigris/ffi/src/sched.rs
+#define WORLD_REASON_KEY 0x400000
+
+/// Reason class: a rate model crossed a watched level.
+// verdigris/ffi/src/sched.rs
+#define WORLD_REASON_RATE 0x800000
+
+/// Reason class: a `om_world_at` timer fired.
+// verdigris/ffi/src/sched.rs
+#define WORLD_REASON_TIMER 0x200000
+
+/// Numbers per wake returned by `vg_world_step`:
+/// `subscriber, lane, reason, source, source_kind`.
+// verdigris/ffi/src/sched.rs
+#define WORLD_WAKE_STRIDE 5
 
 // Binds.
 
@@ -1570,7 +1570,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, handle, interest_mask)
 
-/// `REACT_AT`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
+/// `om_world_at`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
 /// at the next step). Returns the token.
 // /proc/world_at (verdigris/ffi/src/sched.rs)
 /proc/vg_world_at(sub, lane_v, tick)
@@ -1578,14 +1578,14 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(sub, lane_v, tick)
 
-/// `REACT_CANCEL`: drops one subscription. Returns 1 if the token was live.
+/// `qdel(watch)`: drops one subscription. Returns 1 if the token was live.
 // /proc/world_cancel (verdigris/ffi/src/sched.rs)
 /proc/vg_world_cancel(token_v)
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_cancel_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(token_v)
 
-/// `REACT_CLEAR`: drops every subscription and pending wake of `subscriber`.
+/// `watch Destroy()`: drops every subscription and pending wake of `subscriber`.
 /// Returns how many subscriptions it had.
 // /proc/world_clear (verdigris/ffi/src/sched.rs)
 /proc/vg_world_clear(sub)
@@ -1609,7 +1609,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// `REACT_ON_KEY`: wakes `subscriber` when key (`kind`, `id`) is published
+/// `om_world_on_key`: wakes `subscriber` when key (`kind`, `id`) is published
 /// with any bit of `mask`. Returns the token.
 // /proc/world_on_key (verdigris/ffi/src/sched.rs)
 /proc/vg_world_on_key(sub, kind, id, mask, lane_v)
@@ -1617,7 +1617,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(sub, kind, id, mask, lane_v)
 
-/// `REACT_PUBLISH`: DM-owned state under key (`kind`, `id`) changed. Merged
+/// `om_world_publish`: DM-owned state under key (`kind`, `id`) changed. Merged
 /// per tick; a key nobody subscribes to costs a lookup and is not stored.
 // /proc/world_publish (verdigris/ffi/src/sched.rs)
 /proc/vg_world_publish(kind, id, mask)
@@ -1716,10 +1716,10 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// SSreactor's one call per tick. Advances to tick `now` (firing timers and
+/// the OM scheduler's one call per tick. Advances to tick `now` (firing timers and
 /// rate crossings, dispatching key publications), collects every watch
 /// port's wakes, and returns up to `budget` normal/background wakes (urgent
-/// ones always) as a flat list, `REACT_WAKE_STRIDE` numbers per wake:
+/// ones always) as a flat list, `WORLD_WAKE_STRIDE` numbers per wake:
 /// `subscriber, lane, reason, source, source_kind`. `source` is the cell of
 /// a watch wake (a gas handle, or a component's `vg_entity`), the key id of
 /// a key wake (with `source_kind` its key kind), or the timer's or rate
@@ -1752,7 +1752,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// `REACT_WHEN` band: wakes when `cell`'s channel `ch` moves into a
+/// `om_world_when` band: wakes when `cell`'s channel `ch` moves into a
 /// different band of the increasing `levels` list (and once at registration).
 // /proc/world_watch_band (verdigris/ffi/src/sched.rs)
 /proc/vg_world_watch_band(code, sub, lane, cell, ch, levels, hysteresis)
@@ -1760,7 +1760,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(code, sub, lane, cell, ch, levels, hysteresis)
 
-/// `REACT_ON`: wakes when any channel in `mask` of `cell` moves past its
+/// `om_world_on_change`: wakes when any channel in `mask` of `cell` moves past its
 /// hysteresis. Returns the token.
 // /proc/world_watch_changed (verdigris/ffi/src/sched.rs)
 /proc/vg_world_watch_changed(code, sub, lane, cell, mask)
@@ -1768,7 +1768,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(code, sub, lane, cell, mask)
 
-/// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
+/// `om_world_when` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
 // /proc/world_watch_difference (verdigris/ffi/src/sched.rs)
 /proc/vg_world_watch_difference(code, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
@@ -1776,7 +1776,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(code, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 
-/// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
+/// `om_world_when` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
 /// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
 // /proc/world_watch_threshold (verdigris/ffi/src/sched.rs)
 /proc/vg_world_watch_threshold(code, sub, lane, cell, ch, cmp, value, hysteresis, both_edges)

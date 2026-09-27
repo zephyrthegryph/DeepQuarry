@@ -1,11 +1,11 @@
-//! SSreactor's binds (`doc/rewrite/reactor.md`) over the world's own
+//! the OM scheduler's binds (`doc/rewrite/object_model_core.md §4.8`) over the world's own
 //! scheduler (`vg_core::world::World`'s subscriptions): every subscription
 //! and rate model is a world entity, and DM's token for it is that entity's
 //! `vg_entity` value. Watches go through the watch port of a watchable
 //! `code` (a component kind code, or [`GAS_HANDLES`]) in the registry.
 //!
 //! DM holds numbers only: a **subscriber** is the datum's registry index
-//! (`reactor_id`, < 2^24). Each tick SSreactor makes one call,
+//! (a `/datum/native_watch/world` handle, < 2^24). Each tick the OM scheduler makes one call,
 //! `vg_world_step`, which fires due timers and rate crossings, dispatches
 //! key publications, collects every watch port's wakes, and returns the
 //! lanes' wakes for the tick, [`WAKE_STRIDE`] numbers per wake.
@@ -33,23 +33,23 @@ use crate::world::{list, num, whole, with_world};
 
 /// Numbers per wake returned by `vg_world_step`:
 /// `subscriber, lane, reason, source, source_kind`.
-/// @dm-define REACT_WAKE_STRIDE
+/// @dm-define WORLD_WAKE_STRIDE
 pub const WAKE_STRIDE: u32 = 5;
 
 /// Reason class: a condition watch (Threshold, Band, Difference, ...).
-/// @dm-define REACT_REASON_CONDITION
+/// @dm-define WORLD_REASON_CONDITION
 pub const REASON_CONDITION: u32 = 0x10_0000;
-/// Reason class: a `REACT_AT` timer fired.
-/// @dm-define REACT_REASON_TIMER
+/// Reason class: a `om_world_at` timer fired.
+/// @dm-define WORLD_REASON_TIMER
 pub const REASON_TIMER: u32 = 0x20_0000;
 /// Reason class: a DM-owned key was published.
-/// @dm-define REACT_REASON_KEY
+/// @dm-define WORLD_REASON_KEY
 pub const REASON_KEY: u32 = 0x40_0000;
 /// Reason class: a rate model crossed a watched level.
-/// @dm-define REACT_REASON_RATE
+/// @dm-define WORLD_REASON_RATE
 pub const REASON_RATE: u32 = 0x80_0000;
 /// The bits below the reason classes: channel bits, or a key's mask.
-/// @dm-define REACT_REASON_DETAIL
+/// @dm-define WORLD_REASON_DETAIL
 pub const REASON_DETAIL: u32 = 0x0F_FFFF;
 
 /// The watch code of gas handles (turf air, tanks, pipe networks; cells
@@ -188,10 +188,10 @@ fn subscription(v: &ByondValue) -> Option<EntityId> {
 
 // --- Binds ---------------------------------------------------------------------
 
-/// SSreactor's one call per tick. Advances to tick `now` (firing timers and
+/// the OM scheduler's one call per tick. Advances to tick `now` (firing timers and
 /// rate crossings, dispatching key publications), collects every watch
 /// port's wakes, and returns up to `budget` normal/background wakes (urgent
-/// ones always) as a flat list, `REACT_WAKE_STRIDE` numbers per wake:
+/// ones always) as a flat list, `WORLD_WAKE_STRIDE` numbers per wake:
 /// `subscriber, lane, reason, source, source_kind`. `source` is the cell of
 /// a watch wake (a gas handle, or a component's `vg_entity`), the key id of
 /// a key wake (with `source_kind` its key kind), or the timer's or rate
@@ -236,7 +236,7 @@ fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
     list(flat)
 }
 
-/// `REACT_AT`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
+/// `om_world_at`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
 /// at the next step). Returns the token.
 #[auxmacros::bind("/proc/world_at")]
 fn world_at(sub: ByondValue, lane_v: ByondValue, tick: ByondValue) -> Result<ByondValue> {
@@ -252,7 +252,7 @@ fn world_at(sub: ByondValue, lane_v: ByondValue, tick: ByondValue) -> Result<Byo
     })?))
 }
 
-/// `REACT_ON_KEY`: wakes `subscriber` when key (`kind`, `id`) is published
+/// `om_world_on_key`: wakes `subscriber` when key (`kind`, `id`) is published
 /// with any bit of `mask`. Returns the token.
 #[auxmacros::bind("/proc/world_on_key")]
 fn world_on_key(
@@ -266,7 +266,7 @@ fn world_on_key(
     let key = key(&kind, &id)?;
     let mask = whole(&mask, "mask")? & REASON_DETAIL;
     if mask == 0 {
-        bail!("key mask must be non-zero (below REACT_REASON_CONDITION)");
+        bail!("key mask must be non-zero (below WORLD_REASON_CONDITION)");
     }
     let lane = lane(&lane_v)?;
     Ok(token(with_world(|w| {
@@ -275,7 +275,7 @@ fn world_on_key(
     })?))
 }
 
-/// `REACT_PUBLISH`: DM-owned state under key (`kind`, `id`) changed. Merged
+/// `om_world_publish`: DM-owned state under key (`kind`, `id`) changed. Merged
 /// per tick; a key nobody subscribes to costs a lookup and is not stored.
 #[auxmacros::bind("/proc/world_publish")]
 fn world_publish(kind: ByondValue, id: ByondValue, mask: ByondValue) -> Result<ByondValue> {
@@ -287,7 +287,7 @@ fn world_publish(kind: ByondValue, id: ByondValue, mask: ByondValue) -> Result<B
     })
 }
 
-/// `REACT_CANCEL`: drops one subscription. Returns 1 if the token was live.
+/// `qdel(watch)`: drops one subscription. Returns 1 if the token was live.
 #[auxmacros::bind("/proc/world_cancel")]
 fn world_cancel(token_v: ByondValue) -> Result<ByondValue> {
     let Some(e) = subscription(&token_v) else {
@@ -300,7 +300,7 @@ fn world_cancel(token_v: ByondValue) -> Result<ByondValue> {
     Ok(yes(what.is_some()))
 }
 
-/// `REACT_CLEAR`: drops every subscription and pending wake of `subscriber`.
+/// `watch Destroy()`: drops every subscription and pending wake of `subscriber`.
 /// Returns how many subscriptions it had.
 #[auxmacros::bind("/proc/world_clear")]
 fn world_clear(sub: ByondValue) -> Result<ByondValue> {
@@ -353,7 +353,7 @@ fn world_sched_stats() -> Result<ByondValue> {
 
 // --- Watches ---------------------------------------------------------------------
 
-/// `REACT_ON`: wakes when any channel in `mask` of `cell` moves past its
+/// `om_world_on_change`: wakes when any channel in `mask` of `cell` moves past its
 /// hysteresis. Returns the token.
 #[auxmacros::bind("/proc/world_watch_changed")]
 fn world_watch_changed(
@@ -370,7 +370,7 @@ fn world_watch_changed(
     watch(&code, &sub, &lane, &cond)
 }
 
-/// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
+/// `om_world_when` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
 /// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
 #[auxmacros::bind("/proc/world_watch_threshold")]
 fn world_watch_threshold(
@@ -392,7 +392,7 @@ fn world_watch_threshold(
     watch(&code, &sub, &lane, &cond)
 }
 
-/// `REACT_WHEN` band: wakes when `cell`'s channel `ch` moves into a
+/// `om_world_when` band: wakes when `cell`'s channel `ch` moves into a
 /// different band of the increasing `levels` list (and once at registration).
 #[auxmacros::bind("/proc/world_watch_band")]
 fn world_watch_band(
@@ -421,7 +421,7 @@ fn world_watch_band(
     watch(&code, &sub, &lane, &cond)
 }
 
-/// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
+/// `om_world_when` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
 #[auxmacros::bind("/proc/world_watch_difference")]
 fn world_watch_difference(

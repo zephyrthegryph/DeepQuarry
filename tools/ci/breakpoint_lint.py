@@ -2,7 +2,7 @@
 """Breakpoint lint (damage.md §6, roadmap D4).
 
 Machines break through one base /obj/machinery/atom_break(), which sets BROKEN,
-sends COMSIG_MACHINERY_BROKEN and publishes REACT_KEY_MACHINE_BROKEN. This lint
+sends COMSIG_MACHINERY_BROKEN and raises CHANGE_MACHINE_BROKEN. This lint
 fails on:
   - any set_broken() definition: call atom_break() instead;
   - an atom_break()/atom_fix() override whose body only sets flags (calls the

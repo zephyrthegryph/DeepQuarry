@@ -36,11 +36,11 @@
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
 
-/// Run a heat frame and deliver its wakes, then let SSreactor step and dispatch.
+/// Run a heat frame and deliver its wakes, then let the OM scheduler step the world and dispatch.
 /proc/dq_rx_flush()
 	vg_world_run_steps(1)
 	SSair.dispatch_heat_wakes()
-	react_test_ticks(2)
+	om_test_ticks(2)
 
 /// Flushes until `rule` has fired `count` times on `thing`, for at most
 /// `max_flushes` (a key wake can take a few reactor ticks under load).

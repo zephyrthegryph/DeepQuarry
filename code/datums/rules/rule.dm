@@ -11,11 +11,11 @@
 //
 // Compiling. Each rule compiles once. Its condition compiles to a P2
 // predicate, and every property clause becomes a trigger:
-//   channel-backed measure vs literal   Threshold watch   (REACT_WHEN)
+//   channel-backed measure vs literal   Threshold watch   (native heat watch)
 //   channel-backed vs a static property Threshold watch, level read per instance
-//   channel-backed band                 Band watch        (REACT_WHEN)
-//   channel-backed vs channel-backed    change watches on both (REACT_ON)
-//   DM-owned property (dm_key_kind)     key subscription  (REACT_ON_KEY)
+//   channel-backed band                 Band watch        (native heat watch)
+//   channel-backed vs channel-backed    change watches on both (native heat watch)
+//   DM-owned property (dm_key_kind)     key subscription  (om_world_on_key)
 // Static clauses (tags, per-type measures) are only evaluated. A rule with no
 // trigger is a compile error: nothing could ever change its answer.
 //

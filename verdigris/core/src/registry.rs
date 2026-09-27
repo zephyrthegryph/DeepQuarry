@@ -1,6 +1,6 @@
 //! The domain registry (`rust_architecture.md` §5): **one** table of what
 //! every simulation host offers the FFI boundary, keyed by a numeric domain
-//! id DM names (a generated `VG_DOMAIN_*`/`REACT_DOMAIN_*` define).
+//! id DM names (a generated `VG_DOMAIN_*` define).
 //!
 //! The [`crate::world::World`] is registered here like any host: once for
 //! entity lifecycle (under [`crate::entity::WORLD_DOMAIN`]) and once per

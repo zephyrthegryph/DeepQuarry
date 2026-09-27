@@ -30,8 +30,8 @@
 	/// __verdigris_ffi_calls when the window began.
 	var/window_start_ffi_calls = 0
 	var/list/window_subsystem_fires
-	/// SSreactor.total_wakes when the window began.
-	var/window_reactor_wakes = 0
+	/// The OM scheduler's world wakes when the window began.
+	var/window_world_wakes = 0
 
 /// The scenario body. Call fail() to abort with a reason.
 /datum/benchmark/proc/Run()
@@ -90,7 +90,7 @@
 	window_start_time = REALTIMEOFDAY
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
-	window_reactor_wakes = SSreactor.total_wakes
+	window_world_wakes = GLOB.om_live_sched?.world_wakes
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
 	if(profiling)
@@ -134,11 +134,11 @@
 	metric("[prefix]_air_ms_per_s", (air ? air["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
 	metric("[prefix]_machines_ms_per_s", (machines ? machines["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
 	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
-	// Reactor wake reasons by type (cumulative since boot) and this window's wake count.
-	var/list/reactor = SSreactor.performance_diagnostics()
-	reactor["window_wakes"] = SSreactor.total_wakes - window_reactor_wakes
-	metric("[prefix]_reactor_wakes", reactor["window_wakes"], "wakes", "lower")
-	detail("[prefix]_reactor", reactor)
+	// Rust world wakes by owner type (cumulative since boot) and this window's wake count.
+	var/list/world_step = om_world_diagnostics()
+	world_step["window_wakes"] = world_step["total_wakes"] - window_world_wakes
+	metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
+	detail("[prefix]_world_step", world_step)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
 	if(profiling)

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Deadline-polling lint (doc/rewrite/reactor.md §10, roadmap S3).
+"""Deadline-polling lint (doc/rewrite/object_model_core.md §4.11, roadmap S3).
 
 A process() that compares world.time with a stored deadline is polling a timer: it runs
 every tick only to find out that the deadline has not passed yet. Such work belongs in a
-REACT_AT timer, which wakes the datum once, at the deadline.
+om_after() timer, which wakes the datum once, at the deadline.
 
-This flags every process() body (and react_every() is exempt: it is declared continuous
+This flags every process() body (periodic_step() on a declared continuous lane is exempt: it is continuous
 work) with a comparison between world.time and a variable, such as
 `world.time >= next_fire` or `close_at <= world.time`. Arithmetic like
 `world.time - last_run` is not a comparison against a deadline and is not flagged.
@@ -140,7 +140,7 @@ def main():
         print(f"{ALLOWLIST}:{allow[key]}: stale entry (nothing matches it any more): {key}")
     print(f"Deadline polling: {len(findings)} process() bodies found, {len(allow)} allowlisted, {len(bad)} new finding(s), {len(stale)} stale entr{'y' if len(stale) == 1 else 'ies'}.")
     if bad or stale:
-        print("Use REACT_AT(src, deadline) instead (doc/rewrite/reactor.md §3), or allowlist with a reason.")
+        print("Use om_after(src, deadline - world.time, PROC_REF(...)) instead (doc/rewrite/object_model_core.md §4.11), or allowlist with a reason.")
         return 1
     return 0
 

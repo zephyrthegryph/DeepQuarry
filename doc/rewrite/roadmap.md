@@ -22,7 +22,7 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 | **F** | Fixes, quick wins, baseline | [fixes.md](fixes.md) |
 | **R** | Rust core | [rust_core.md](rust_core.md) |
 | **M** | Simulation domains | [simulation.md](simulation.md) |
-| **S** | Scheduling (SSreactor) | [reactor.md](reactor.md) |
+| **S** | Scheduling (the OM scheduler; SSreactor folded in) | [object_model_core.md §4](object_model_core.md#4-scheduling-section-a) |
 | **L** | State and lifecycle | [state.md](state.md) |
 | **P** | Properties, rules, constraints, abilities | [rules.md](rules.md) |
 | **C** | Containment | [containment.md](containment.md) |
@@ -75,7 +75,7 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 
 | ID | Work | Needs | Done when |
 |---|---|---|---|
-| S1 | SSreactor: wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
+| S1 | SSreactor (since folded into the OM scheduler, object_model_core.md §4.8): wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
 | S2 | Move the SSmachines reactive keys, the non-device gas subscriptions and SSai's chunk hibernation onto the reactor, and delete their tables and helpers | S1, M1b | The `machines.dm` dependency code is deleted, and every former subscriber has a wake test |
 | S3 | Convert the pollers: airlocks, cameras, lights, status displays, looping sounds, shutoff valves and mob chunk keys | S1 | Idle Machines plus Timer time is down, and the deadline-polling lint is on |
 | S4 | Retire SSobj, SSprocessing, the SSfastprocess users, SSbellies, SSburning, SSmaterial_services and the heavy SStimer users | S3, C7, M4 | `START_PROCESSING` is gone outside the reactor, and every remaining continuous user is declared |
