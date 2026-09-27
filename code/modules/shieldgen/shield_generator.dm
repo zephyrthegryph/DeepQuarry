@@ -50,7 +50,6 @@
 		icon_state = "generator0"
 		set_light(0)
 
-
 /obj/machinery/power/shield_generator/Initialize(mapload)
 	. = ..()
 	set_wires(new /datum/wires/shield_generator(src))
@@ -63,13 +62,13 @@
 		mode_list.Add(SM)
 	toggle_flag(initial_shield_modes)
 
+// LIFECYCLE: its field shuts down.
 /obj/machinery/power/shield_generator/Destroy()
 	shutdown_field()
 	field_segments = null
 	damaged_segments = null
 	mode_list = null
 	. = ..()
-
 
 /obj/machinery/power/shield_generator/RefreshParts()
 	max_energy = 0
@@ -88,7 +87,6 @@
 	mitigation_heat = between(0, mitigation_heat, mitigation_max)
 	..()
 
-
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
 /obj/machinery/power/shield_generator/proc/shutdown_field()
 	for(var/obj/effect/shield/S in field_segments)
@@ -100,7 +98,6 @@
 	mitigation_physical = 0
 	mitigation_heat = 0
 	update_icon()
-
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
@@ -285,7 +282,6 @@
 				S.add_overlay(image(S.icon, icon_state = "shield_end", dir = EAST))
 				S.add_overlay(image(S.icon, icon_state = "shield_start", dir = SOUTH))
 
-
 // Recalculates and updates the upkeep multiplier
 /obj/machinery/power/shield_generator/proc/update_upkeep_multiplier()
 	var/new_upkeep = 1.0
@@ -294,7 +290,6 @@
 			new_upkeep *= SM.multiplier
 
 	upkeep_multiplier = new_upkeep * power_coefficient
-
 
 /obj/machinery/power/shield_generator/machine_step()
 	upkeep_power_usage = 0
@@ -582,7 +577,6 @@
 		return round(CLAMP01(current_energy / full_shield_strength) * 100)
 	return 0
 
-
 // Takes specific amount of damage
 /obj/machinery/power/shield_generator/proc/deal_shield_damage(damage, shield_damtype)
 	var/energy_to_use = damage * ENERGY_PER_HP
@@ -621,11 +615,9 @@
 		return SHIELD_BREACHED_MINOR
 	return SHIELD_ABSORBED
 
-
 // Checks whether specific flags are enabled
 /obj/machinery/power/shield_generator/proc/check_flag(flag)
 	return (shield_modes & flag)
-
 
 /obj/machinery/power/shield_generator/proc/toggle_flag(flag)
 	shield_modes ^= flag
@@ -641,7 +633,6 @@
 		mitigation_physical = 0
 		mitigation_heat = 0
 
-
 /obj/machinery/power/shield_generator/proc/get_flag_descriptions()
 	var/list/all_flags = list()
 	for(var/datum/shield_mode/SM in mode_list)
@@ -656,7 +647,6 @@
 			"multiplier" = SM.multiplier
 		)))
 	return all_flags
-
 
 // These two procs determine tiles that should be shielded given the field range. They are quite CPU intensive and may trigger BYOND infinite loop checks, therefore they are set
 // as background procs to prevent locking up the server. They are only called when the field is generated, or when hull mode is toggled on/off.
@@ -683,7 +673,6 @@
 			if(T)
 				out += T
 	return out
-
 
 /obj/machinery/power/shield_generator/proc/fieldtype_hull()
 	set background = 1
@@ -734,7 +723,6 @@
 			turfs.Add(T)
 
 	return turfs
-
 
 // Starts fully charged
 /obj/machinery/power/shield_generator/charged/Initialize(mapload)

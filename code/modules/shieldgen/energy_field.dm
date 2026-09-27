@@ -40,6 +40,7 @@
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
 
+// LIFECYCLE: leaves its generator's field; neighbouring fields redraw.
 /obj/effect/energy_field/Destroy()
 	update_nearby_tiles()
 	if(my_gen)
@@ -160,7 +161,6 @@
 	// Edge overlays
 	for(var/found_dir in adjacent_shields_dir)
 		add_overlay(image(src.icon, src, icon_state = "shield_edge", dir = found_dir))
-
 
 // Small visual effect, makes the shield tiles brighten up by becoming more opaque for a moment, and spreads to nearby shields.
 /obj/effect/energy_field/proc/impact_effect(i, list/affected_shields = list())
