@@ -2,58 +2,61 @@
 	if(!potential_prey || !istype(potential_prey))		// Did our prey cease to exist?
 		return
 
-	// Are we cool with this prey spawning in at all?
+	// Are we cool with this prey spawning in at all? The pred answers, then the prey confirms.
 	var/prey_name = potential_prey.prefs.read_preference(/datum/preference/name/real_name)
-	var/answer = tgui_alert(src, "[prey_name] wants to spawn in one of your bellies. Do you accept?", "Inbelly Spawning", list("Yes", "No"))
-	if(answer != "Yes")
-		to_chat(potential_prey, span_notice("Your request was turned down."))
-		return
+	om_prompt_sequence(src, src, list(
+		list("key" = "accept", "message" = "[prey_name] wants to spawn in one of your bellies. Do you accept?", "title" = "Inbelly Spawning", "choices" = list("Yes", "No"), "confirm" = "Yes", "on_stop" = PROC_REF(inbelly_spawn_declined)),
+		PROC_REF(inbelly_spawn_ask_belly),
+		PROC_REF(inbelly_spawn_ask_digest),
+		list("key" = "absorbed", "message" = "Do you want them to start absorbed?", "title" = "Inbelly Spawning", "choices" = list("Yes", "No"), "optional" = TRUE),
+		PROC_REF(inbelly_spawn_ask_sure),
+		PROC_REF(inbelly_spawn_ask_prey),
+	), PROC_REF(inbelly_spawn_answered), list("data" = list("prey" = potential_prey, "prey_name" = prey_name)))
 
+/mob/living/proc/inbelly_spawn_declined(mob/user, datum/om/prompt/ask)
+	to_chat(ask.get("prey"), span_notice("Your request was turned down."))
+
+/mob/living/proc/inbelly_spawn_ask_belly(mob/user, datum/om/prompt/ask)
 	// Let them know so that they don't spam it.
-	to_chat(potential_prey, span_notice("Predator agreed to your request. Wait a bit while they choose a belly."))
+	to_chat(ask.get("prey"), span_notice("Predator agreed to your request. Wait a bit while they choose a belly."))
+	return list("key" = "belly", "kind" = "list", "message" = "Choose Target Belly", "title" = "Belly Choice", "choices" = vore_organs, "on_stop" = PROC_REF(inbelly_spawn_no_belly))
 
-	// Where we dropping?
-	var/obj/belly/belly_choice = tgui_input_list(src, "Choose Target Belly", "Belly Choice", src.vore_organs)
+/mob/living/proc/inbelly_spawn_no_belly(mob/user, datum/om/prompt/ask)
+	to_chat(ask.get("prey"), span_notice("Something went wrong with predator selecting a belly. Try again?"))
+	to_chat(src, span_notice("No valid belly selected. Inbelly spawn cancelled."))
 
-	// Wdym nowhere?
-	if(!belly_choice || !istype(belly_choice))
-		to_chat(potential_prey, span_notice("Something went wrong with predator selecting a belly. Try again?"))
-		to_chat(src, span_notice("No valid belly selected. Inbelly spawn cancelled."))
-		return
-
-	// Extra caution never hurts
+// Extra caution never hurts
+/mob/living/proc/inbelly_spawn_ask_digest(mob/user, datum/om/prompt/ask)
+	var/obj/belly/belly_choice = ask.get("belly")
 	if(belly_choice.digest_mode == DM_DIGEST)
-		var/digest_answer = tgui_alert(src, "[belly_choice] is currently set to Digest. Are you sure you want to spawn prey there?", "Inbelly Spawning", list("Yes", "No"))
-		if(digest_answer != "Yes")
-			to_chat(potential_prey, span_notice("Something went wrong with predator selecting a belly. Try again?"))
-			to_chat(src, span_notice("Inbelly spawn cancelled."))
-			return
+		return list("key" = "digest_ok", "message" = "[belly_choice] is currently set to Digest. Are you sure you want to spawn prey there?", "title" = "Inbelly Spawning", "choices" = list("Yes", "No"), "confirm" = "Yes", "on_stop" = PROC_REF(inbelly_spawn_cancelled))
 
-	// Are they already fat (and/or appropriate equivalent)?
-	var/absorbed = FALSE
-	var/absorbed_answer = tgui_alert(src, "Do you want them to start absorbed?", "Inbelly Spawning", list("Yes", "No"))
+/mob/living/proc/inbelly_spawn_cancelled(mob/user, datum/om/prompt/ask)
+	to_chat(ask.get("prey"), span_notice("Something went wrong with predator selecting a belly. Try again?"))
+	to_chat(src, span_notice("Inbelly spawn cancelled."))
 
-	if(absorbed_answer == "Yes")
-		absorbed = TRUE
+// Final confirmation for pred
+/mob/living/proc/inbelly_spawn_ask_sure(mob/user, datum/om/prompt/ask)
+	return list("key" = "sure", "message" = "Are you certain that you want [ask.get("prey_name")] spawned in your [ask.get("belly")][ask.get("absorbed") == "Yes" ? ", absorbed" : ""]?", "title" = "Inbelly Spawning", "choices" = list("Yes", "No"), "confirm" = "Yes", "on_stop" = PROC_REF(inbelly_spawn_pred_gave_up))
 
-	// They disappeared?
-	if(!potential_prey)
-		to_chat(src, span_notice("No prey found. Something went wrong!"))
-		return
+/mob/living/proc/inbelly_spawn_pred_gave_up(mob/user, datum/om/prompt/ask)
+	to_chat(ask.get("prey"), span_notice("Your pred couldn't finish selection. Try again?"))
+	to_chat(src, span_notice("Inbelly spawn cancelled."))
 
-	// Final confirmation for pred
-	var/confirmation_pred = tgui_alert(src, "Are you certain that you want [prey_name] spawned in your [belly_choice][absorbed ? ", absorbed" : ""]?", "Inbelly Spawning", list("Yes", "No"))
-
-	if(confirmation_pred != "Yes")
-		to_chat(potential_prey, span_notice("Your pred couldn't finish selection. Try again?"))
-		to_chat(src, span_notice("Inbelly spawn cancelled."))
-		return
-
+// And final confirmation for prey
+/mob/living/proc/inbelly_spawn_ask_prey(mob/user, datum/om/prompt/ask)
 	to_chat(src, span_notice("Waiting for prey's confirmation..."))
+	return list("key" = "prey_ok", "user" = ask.get("prey"), "message" = "Are you certain that you to spawn in [src]'s [ask.get("belly")][ask.get("absorbed") == "Yes" ? ", absorbed" : ""]?", "title" = "Inbelly Spawning", "choices" = list("Yes", "No"), "confirm" = "Yes", "on_stop" = PROC_REF(inbelly_spawn_prey_declined))
 
-	// And final confirmation for prey
-	var/confirmation_prey = tgui_alert(potential_prey, "Are you certain that you to spawn in [src]'s [belly_choice][absorbed ? ", absorbed" : ""]?", "Inbelly Spawning", list("Yes", "No"))
+/mob/living/proc/inbelly_spawn_prey_declined(mob/user, datum/om/prompt/ask)
+	to_chat(ask.get("prey"), span_notice("Inbelly spawn cancelled."))
+	to_chat(src, span_notice("Prey declined."))
 
+/mob/living/proc/inbelly_spawn_answered(mob/user, datum/om/prompt/ask)
+	var/client/potential_prey = ask.get("prey")
+	var/obj/belly/belly_choice = ask.get("belly")
+	var/absorbed = ask.get("absorbed") == "Yes"
+	var/confirmation_prey = ask.get("prey_ok")
 	if(confirmation_prey == "Yes" && potential_prey && src && belly_choice)
 		//Now we finally spawn them in!
 		if(!is_alien_whitelisted(potential_prey, GLOB.all_species[potential_prey.prefs.read_preference(/datum/preference/choiced/species)]))
@@ -132,7 +135,10 @@
 	return new_character			// incase its ever needed
 
 /mob/living/proc/soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	if(tgui_alert(src, "[prey.name] wants to join into your Soulcatcher.","Soulcatcher Request",list("Deny", "Allow"), timeout=1 MINUTES) != "Allow")
+	var/_answer_a1 = rerun_prompt(src, "a1", list("message" = "[prey.name] wants to join into your Soulcatcher.", "title" = "Soulcatcher Request", "choices" = list("Deny", "Allow"), timeout=1 MINUTES), PROC_REF(soulcatcher_spawn_prompt), args)
+	if(isnull(_answer_a1))
+		return
+	if(_answer_a1 != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
@@ -154,7 +160,10 @@
 		soulgem.catch_mob(prey) //This will result in the prey being deleted so...
 
 /mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	if(tgui_alert(src, "[prey.name] wants to join into your Soulcatcher.","Soulcatcher Request",list("Deny", "Allow"), timeout=1 MINUTES) != "Allow")
+	var/_answer_a2 = rerun_prompt(src, "a2", list("message" = "[prey.name] wants to join into your Soulcatcher.", "title" = "Soulcatcher Request", "choices" = list("Deny", "Allow"), timeout=1 MINUTES), PROC_REF(nif_soulcatcher_spawn_prompt), args)
+	if(isnull(_answer_a2))
+		return
+	if(_answer_a2 != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 

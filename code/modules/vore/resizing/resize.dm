@@ -196,7 +196,9 @@
 
 	var/nagmessage = "Adjust your mass to be a size between 25 to 200% (or 1% to 600% in dormitories). (DO NOT ABUSE)"
 	var/default = size_multiplier * 100
-	var/new_size = tgui_input_number(src, nagmessage, "Pick a Size", default, 600, 1)
+	var/new_size = rerun_prompt(src, "a1", list("kind" = "number", "message" = nagmessage, "title" = "Pick a Size", "default" = default, "max" = 600, "min" = 1), PROC_REF(set_size), args)
+	if(isnull(new_size))
+		return
 	if(size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		// log_admin("[key_name(src)] used the resize command in-game to be [new_size]% size. [src ? ADMIN_JMP(src) : "null"]")

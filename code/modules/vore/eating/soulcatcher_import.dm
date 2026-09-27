@@ -9,7 +9,9 @@
 	if(LAZYLEN(soulcatcher_data) == 0)
 		return FALSE
 
-	var/confirm = tgui_alert(host, "WARNING: This will override your current soulcatcher settings!","Import soulcatcher?",list("Yes","Cancel"))
+	var/confirm = rerun_prompt(host, "a1", list("message" = "WARNING: This will override your current soulcatcher settings!", "title" = "Import soulcatcher?", "choices" = list("Yes","Cancel")), PROC_REF(import_soulcatcher), args)
+	if(isnull(confirm))
+		return
 
 	if(confirm != "Yes")
 		return FALSE

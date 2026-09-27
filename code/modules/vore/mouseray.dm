@@ -29,7 +29,9 @@
 		pick_type(user)
 
 /obj/item/gun/energy/mouseray/proc/pick_type(mob/user)
-	var/choice = tgui_input_list(user, "Select a type to turn things into.", "[src.name]", tf_possible_types)
+	var/choice = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a type to turn things into.", "title" = "[src.name]", "choices" = tf_possible_types), PROC_REF(pick_type), args)
+	if(isnull(choice))
+		return
 	if(!choice)
 		return
 	tf_type = tf_possible_types[choice]

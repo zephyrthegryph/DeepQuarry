@@ -56,12 +56,16 @@
 		return
 
 	if(vore_selected.digest_mode == DM_HOLD)
-		var/confirm = tgui_alert(user, "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", "Enabling [name]'s Digestion", list("Enable", "Cancel"))
+		var/confirm = rerun_prompt(user, "a1", list("message" = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", "title" = "Enabling [name]'s Digestion", "choices" = list("Enable", "Cancel")), PROC_REF(toggle_digestion), args)
+		if(isnull(confirm))
+			return
 		if(confirm == "Enable")
 			vore_selected.digest_mode = DM_DIGEST
 			addtimer(VARSET_CALLBACK(vore_selected, digest_mode, vore_default_mode), 20 MINUTES)
 	else
-		var/confirm = tgui_alert(user, "This mob is currently set to process all stomach contents. Do you want to disable this?", "Disabling [name]'s Digestion", list("Disable", "Cancel"))
+		var/confirm = rerun_prompt(user, "a2", list("message" = "This mob is currently set to process all stomach contents. Do you want to disable this?", "title" = "Disabling [name]'s Digestion", "choices" = list("Disable", "Cancel")), PROC_REF(toggle_digestion), args)
+		if(isnull(confirm))
+			return
 		if(confirm == "Disable")
 			vore_selected.digest_mode = DM_HOLD
 
@@ -121,7 +125,9 @@
 		to_chat(src, span_warning("You are too hungry to regenerate health."))
 		return
 	var/endurance_now = get_endurance()
-	var/heal_amount = tgui_input_number(src, "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]", "Regenerate health.", 1, min_value=1)
+	var/heal_amount = rerun_prompt(src, "a3", list("kind" = "number", "message" = "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]", "title" = "Regenerate health.", "default" = 1, "min" = 1), PROC_REF(nutrition_heal), args)
+	if(isnull(heal_amount))
+		return
 	if(!heal_amount)
 		return
 	var/missing = round((1 - vitality()) * get_endurance()) // re-read after the input prompt

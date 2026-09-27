@@ -26,7 +26,9 @@
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	var/mob/living/target = tgui_input_list(src, "Please select a target.", "Victim", targets)
+	var/mob/living/target = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets), PROC_REF(vertical_nom), args)
+	if(isnull(target))
+		return
 
 	if(!target)
 		return

@@ -52,7 +52,9 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/size_select = tgui_input_number(user, "Put the desired size (25-200%), (1-600%) in dormitory areas.", "Set Size", size_set_to * 100, RESIZE_MAXIMUM_DORMS * 100, RESIZE_MINIMUM_DORMS * 100)
+	var/size_select = rerun_prompt(user, "a1", list("kind" = "number", "message" = "Put the desired size (25-200%), (1-600%) in dormitory areas.", "title" = "Set Size", "default" = size_set_to * 100, "max" = RESIZE_MAXIMUM_DORMS * 100, "min" = RESIZE_MINIMUM_DORMS * 100), PROC_REF(select_size), args)
+	if(isnull(size_select))
+		return
 	if(!size_select)
 		return //cancelled
 	//We do valid resize testing in actual firings because people move after setting these things.
@@ -128,7 +130,9 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/size_select = tgui_input_number(user, "Put the desired size (1-600%)", "Set Size", size_set_to * 100, RESIZE_MAXIMUM_DORMS * 100, RESIZE_MINIMUM_DORMS * 100)
+	var/size_select = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Put the desired size (1-600%)", "title" = "Set Size", "default" = size_set_to * 100, "max" = RESIZE_MAXIMUM_DORMS * 100, "min" = RESIZE_MINIMUM_DORMS * 100), PROC_REF(select_size), args)
+	if(isnull(size_select))
+		return
 	if(!size_select)
 		return //cancelled
 	size_set_to = clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)

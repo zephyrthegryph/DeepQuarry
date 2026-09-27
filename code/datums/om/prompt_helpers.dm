@@ -150,3 +150,45 @@
 		stack_trace("client prompt re-run [proc_name]: [e]")
 	C.om_answers = null
 	C.om_answers_proc = null
+
+// ---------------------------------------------------------------- any proc
+//
+// rerun_prompt(user, key, spec, PROC_REF(this proc), args) is the same for any datum proc that
+// asks before it acts (a panel's action handler, an interaction): the answer calls the proc on
+// src again with the same arguments, and the same rerun_prompt() call returns it. Datum
+// arguments are held as handles (the re-run is dropped if one is gone). Ask everything before
+// doing anything; the proc re-checks whatever it checks.
+
+/// Answers of the re-runs in progress, by "[REF(datum)]:[proc]".
+GLOBAL_LIST_EMPTY(om_rerun_answers)
+
+/datum/proc/rerun_prompt(mob/user, key, list/spec, proc_name, list/proc_args)
+	var/list/answers = GLOB.om_rerun_answers["[REF(src)]:[proc_name]"]
+	if(answers && !isnull(answers[key]))
+		return om_prompt_unwrap(answers[key])
+	var/list/wrapped = list()
+	for(var/value in proc_args)
+		wrapped += list(om_prompt_wrap(value))
+	spec = spec.Copy()
+	spec["data"] = list("answers" = answers ? answers.Copy() : list(), "key" = key, "args" = wrapped, "proc" = proc_name)
+	om_prompt(src, user, spec, /proc/om_rerun_prompt_answered)
+	return null
+
+/proc/om_rerun_prompt_answered(datum/E, mob/user, answer, datum/om/prompt/P)
+	var/list/answers = P.get("answers")
+	answers[P.get("key")] = om_prompt_wrap(answer)
+	var/list/proc_args = list()
+	for(var/wrapped in P.get("args"))
+		var/value = om_prompt_unwrap(wrapped)
+		if(isnull(value) && !isnull(wrapped))
+			return
+		proc_args += list(value)
+	var/proc_name = P.get("proc")
+	var/id = "[REF(E)]:[proc_name]"
+	GLOB.om_rerun_answers[id] = answers
+	try
+		call(E, proc_name)(arglist(proc_args))
+	catch(var/exception/e)
+		stack_trace("prompt re-run [proc_name] on [E]: [e]")
+	GLOB.om_rerun_answers -= id
+	SStgui.update_uis(E)

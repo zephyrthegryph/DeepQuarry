@@ -323,7 +323,9 @@
 					host.vore_selected.set_messages(params["val"], BELLY_LIQUID_MESSAGE5, limit = BELLIES_MESSAGE_MAX)
 
 				if("reset")
-					var/confirm = tgui_alert(user,"This will delete any custom messages. Are you sure?","Confirmation",list("Cancel","DELETE"))
+					var/confirm = rerun_prompt(user, "a1", list("message" = "This will delete any custom messages. Are you sure?", "title" = "Confirmation", "choices" = list("Cancel","DELETE")), PROC_REF(set_attr), args)
+					if(isnull(confirm))
+						return
 					if(confirm != "DELETE")
 						return FALSE
 					host.vore_selected.digest_messages_prey = host.vore_selected.belly_shared_list("digest_messages_prey")
@@ -409,16 +411,18 @@
 			host.update_icon()
 			. = TRUE
 		if("b_belly_mob_mult")
-			var/new_prey_mult = tgui_input_number(user, "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size",
-			"Set Prey Multiplier", host.vore_selected.belly_mob_mult, max_value = 5, min_value = 0)
+			var/new_prey_mult = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size", "title" = "Set Prey Multiplier", "default" = host.vore_selected.belly_mob_mult, "max" = 5, "min" = 0), PROC_REF(set_attr), args)
+			if(isnull(new_prey_mult))
+				return
 			if(new_prey_mult == null)
 				return FALSE
 			host.vore_selected.belly_mob_mult = CLAMP(new_prey_mult, 0, 5) //Max at 5 because in no world will a borg have more than 5 bellies
 			host.update_icon()
 			. = TRUE
 		if("b_belly_item_mult")
-			var/new_item_mult = tgui_input_number(user, "Choose the multiplier for items contributing to belly size, \
-			ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", "Set Item Multiplier", host.vore_selected.belly_item_mult, max_value = 10, min_value = 0)
+			var/new_item_mult = rerun_prompt(user, "a3", list("kind" = "number", "message" = "Choose the multiplier for items contributing to belly size, ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", "title" = "Set Item Multiplier", "default" = host.vore_selected.belly_item_mult, "max" = 10, "min" = 0), PROC_REF(set_attr), args)
+			if(isnull(new_item_mult))
+				return
 			if(new_item_mult == null)
 				return FALSE
 			else
@@ -426,8 +430,9 @@
 			host.update_icon()
 			. = TRUE
 		if("b_belly_overall_mult")
-			var/new_overall_mult = tgui_input_number(user, "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.",
-			"Set minimum prey amount", host.vore_selected.belly_overall_mult, max_value = 5, min_value = 0)
+			var/new_overall_mult = rerun_prompt(user, "a4", list("kind" = "number", "message" = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", "title" = "Set minimum prey amount", "default" = host.vore_selected.belly_overall_mult, "max" = 5, "min" = 0), PROC_REF(set_attr), args)
+			if(isnull(new_overall_mult))
+				return
 			if(new_overall_mult == null)
 				return FALSE
 			else
@@ -852,7 +857,9 @@
 			host.vore_selected.save_digest_mode = !host.vore_selected.save_digest_mode
 			. = TRUE
 		if("b_del")
-			var/alert = tgui_alert(user, "Are you sure you want to delete your [lowertext(host.vore_selected.name)]?","Confirmation",list("Cancel","Delete"))
+			var/alert = rerun_prompt(user, "a5", list("message" = "Are you sure you want to delete your [lowertext(host.vore_selected.name)]?", "title" = "Confirmation", "choices" = list("Cancel","Delete")), PROC_REF(set_attr), args)
+			if(isnull(alert))
+				return
 			if(alert != "Delete")
 				return FALSE
 
