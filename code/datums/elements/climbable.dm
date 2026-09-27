@@ -77,13 +77,22 @@
 
 	user.visible_message(span_warning("[user] starts climbing onto \the [climbed_thing]!"))
 	LAZYADDASSOCLIST(current_climbers, climbed_thing, user)
-	om_do_after(user, (issmall(user) ? delay_time * 0.6 : delay_time), user, src, PROC_REF(climb_done), list(climbed_thing, user), on_fail = PROC_REF(climb_ended), fail_args = list(climbed_thing, user))
+	om_task_start(/datum/om/task/timed/climbable_climb, user, user, list("receiver" = src, "duration" = (issmall(user) ? delay_time * 0.6 : delay_time), "climbed_thing" = climbed_thing))
 
-/datum/element/climbable/proc/climb_ended(obj/climbed_thing, mob/living/user)
+/datum/element/climbable/proc/climb_ended(datum/om/task/timed/climbable_climb/task)
+	var/obj/climbed_thing = task.climbed_thing
+	var/mob/living/user = task.actor
 	if(climbed_thing)
 		LAZYREMOVEASSOC(current_climbers, climbed_thing, user)
 
-/datum/element/climbable/proc/climb_done(obj/climbed_thing, mob/living/user)
+/datum/om/task/timed/climbable_climb
+	complete_proc = /datum/element/climbable/proc/climb_done
+	cancel_proc = /datum/element/climbable/proc/climb_ended
+	var/obj/climbed_thing
+
+/datum/element/climbable/proc/climb_done(datum/om/task/timed/climbable_climb/task)
+	var/obj/climbed_thing = task.climbed_thing
+	var/mob/living/user = task.actor
 	if(can_climb(climbed_thing, user, post_climb_check=1))
 		climb_to(climbed_thing, user)
 		if(get_turf(user) == get_turf(climbed_thing))

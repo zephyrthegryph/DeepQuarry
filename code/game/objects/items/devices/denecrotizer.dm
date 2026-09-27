@@ -210,9 +210,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	user.visible_message("[user] presses [src] to [target]...", runemessage = "presses [src] to [target]")
-	om_do_after(user, revive_time, target = target, receiver = src, on_done = PROC_REF(basic_rez_timed_done), done_args = list(target, user), on_fail = PROC_REF(basic_rez_timed_failed), fail_args = list(target, user))
+	om_task_start(/datum/om/task/timed/denecrotizer_basic_rez, user, target, list("receiver" = src, "duration" = revive_time))
 
-/obj/item/denecrotizer/proc/basic_rez_timed_done(mob/living/simple_mob/target, mob/living/user)
+/datum/om/task/timed/denecrotizer_basic_rez
+	complete_proc = /obj/item/denecrotizer/proc/basic_rez_timed_done
+	cancel_proc = /obj/item/denecrotizer/proc/basic_rez_timed_failed
+
+/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/om/task/timed/denecrotizer_basic_rez/task)
+	var/mob/living/simple_mob/target = task.target
+	var/mob/living/user = task.actor
 	target.revive()
 	target.sight = initial(target.sight)
 	target.see_in_dark = initial(target.see_in_dark)
@@ -226,7 +232,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 		update_icon()
 	return
 
-/obj/item/denecrotizer/proc/basic_rez_timed_failed(mob/living/simple_mob/target, mob/living/user)
+/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/om/task/timed/denecrotizer_basic_rez/task)
+	var/mob/living/simple_mob/target = task.target
+	var/mob/living/user = task.actor
 	user.visible_message("[user] bonks [target] with [src]. Nothing happened.")
 	return
 

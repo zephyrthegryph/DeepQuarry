@@ -37,7 +37,7 @@
 				return
 			visible_message(span_danger("\The [user] is trying to remove \the [src]'s [A.name]!"))
 
-			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done5), done_args = list(user, suit, A))
+			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, list("receiver" = src, "duration" = HUMAN_STRIP_DELAY, "suit" = suit, "A" = A))
 			return
 		if("underwear")
 			var/datum/category_group/underwear/UWC = tgui_input_list(user, "Choose underwear. (Do not do this without OOC permission from the other player)", "Show/hide underwear", GLOB.global_underwear.categories)
@@ -90,7 +90,7 @@
 		else
 			visible_message(span_danger("\The [user] is trying to put \a [wrapped] on \the [src]!"))
 
-	om_do_after(user, HUMAN_STRIP_DELAY, target = src, max_interact_count = 15, receiver = src, on_done = PROC_REF(handle_strip_human_done6), done_args = list(slot_to_strip, user, target_slot, stripping, held))
+	om_task_start(/datum/om/task/timed/human_handle_strip_human2, user, src, list("receiver" = src, "duration" = HUMAN_STRIP_DELAY, "slot_to_strip" = slot_to_strip, "target_slot" = target_slot, "stripping" = stripping, "held_arg" = held, "max_interact_count" = 15))
 	return TRUE
 
 /mob/living/carbon/human/proc/handle_strip_human_done(mob/living/user)
@@ -101,7 +101,15 @@
 	toggle_sensors(user)
 /mob/living/carbon/human/proc/handle_strip_human_done4(mob/living/user)
 	toggle_internals(user)
-/mob/living/carbon/human/proc/handle_strip_human_done5(mob/living/user, obj/item/clothing/under/suit, obj/item/clothing/accessory/A)
+/datum/om/task/timed/human_handle_strip_human
+	complete_proc = /mob/living/carbon/human/proc/handle_strip_human_done5
+	var/obj/item/clothing/under/suit
+	var/obj/item/clothing/accessory/A
+
+/mob/living/carbon/human/proc/handle_strip_human_done5(datum/om/task/timed/human_handle_strip_human/task)
+	var/mob/living/user = task.actor
+	var/obj/item/clothing/under/suit = task.suit
+	var/obj/item/clothing/accessory/A = task.A
 
 	if(!A || suit.loc != src || !(A in suit.accessories))
 		return
@@ -113,7 +121,19 @@
 	suit.accessories -= A
 	update_inv_w_uniform()
 	return
-/mob/living/carbon/human/proc/handle_strip_human_done6(slot_to_strip, mob/living/user, obj/item/target_slot, stripping, obj/item/held)
+/datum/om/task/timed/human_handle_strip_human2
+	complete_proc = /mob/living/carbon/human/proc/handle_strip_human_done6
+	var/slot_to_strip
+	var/obj/item/target_slot
+	var/stripping
+	var/obj/item/held_arg
+
+/mob/living/carbon/human/proc/handle_strip_human_done6(datum/om/task/timed/human_handle_strip_human2/task)
+	var/slot_to_strip = task.slot_to_strip
+	var/mob/living/user = task.actor
+	var/obj/item/target_slot = task.target_slot
+	var/stripping = task.stripping
+	var/obj/item/held = task.held_arg
 
 	if(!stripping)
 		if(user.get_active_hand() != held)

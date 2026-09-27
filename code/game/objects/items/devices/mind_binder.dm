@@ -185,11 +185,19 @@
 
 	log_and_message_admins("attempted to take [key_name(target)]'s mind out of \an [item] with a Mind Binder.")
 	usr.visible_message(span_warning("[usr] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to download someone's mind from [item]!"))
-	om_do_after(usr, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(store_item_timed_done), done_args = list(item, target, usr))
+	om_task_start(/datum/om/task/timed/mindbinder_store_item, usr, item, list("receiver" = src, "target_arg" = target))
 
 	update_icon()
 
-/obj/item/mindbinder/proc/store_item_timed_done(obj/item/item, mob/living/voice/target, mob/usr_mob)
+/datum/om/task/timed/mindbinder_store_item
+	duration = 5 SECONDS
+	complete_proc = /obj/item/mindbinder/proc/store_item_timed_done
+	var/mob/living/voice/target_arg
+
+/obj/item/mindbinder/proc/store_item_timed_done(datum/om/task/timed/mindbinder_store_item/task)
+	var/obj/item/item = task.target
+	var/mob/living/voice/target = task.target_arg
+	var/mob/usr_mob = task.actor
 	if(possessed_voice.len == 0 && item.possessed_voice.Find(target))
 		inhabit_item(target, target.real_name, target.tf_mob_holder)
 		item.possessed_voice -= target

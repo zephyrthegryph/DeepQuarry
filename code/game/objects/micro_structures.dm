@@ -353,7 +353,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 				if(!choice)
 					return
 				to_chat(usr,span_notice("You begin moving..."))
-				om_do_after(usr, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(micro_interact_timed_done), done_args = list(contained_mobs, choice, usr))
+				om_task_start(/datum/om/task/timed/obj_micro_interact, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs, "choice" = choice))
 				return
 			if("Cancel")
 				return
@@ -364,7 +364,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		return
 
 	usr.visible_message(span_notice("\The [usr] begins climbing into \the [src]!"))
-	om_do_after(usr, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(micro_interact_timed_done2), done_args = list(contained_mobs, usr), on_fail = PROC_REF(micro_interact_timed_failed2), fail_args = list(contained_mobs, usr))
+	om_task_start(/datum/om/task/timed/obj_micro_interact2, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs))
 	return TRUE
 
 /obj/proc/micro_reach_failed(mob/usr_mob)
@@ -409,7 +409,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		usr_mob.visible_message(span_warning("\The [usr_mob] pulls \the [grabbed] out of \the [src]! ! !"))
 		return
 
-/obj/proc/micro_interact_timed_done(list/contained_mobs, choice, mob/usr_mob)
+/datum/om/task/timed/obj_micro_interact
+	duration = 10 SECONDS
+	complete_proc = /obj/proc/micro_interact_timed_done
+	var/list/contained_mobs
+	var/choice
+
+/obj/proc/micro_interact_timed_done(datum/om/task/timed/obj_micro_interact/task)
+	var/list/contained_mobs = task.contained_mobs
+	var/choice = task.choice
+	var/mob/usr_mob = task.actor
 	if(QDELETED(src))
 		return
 	if(usr_mob.loc != src)
@@ -441,7 +450,15 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	if(prob(25))
 		our_choice.visible_message(span_warning("Something moves inside of \the [our_choice]. . ."))
 	return
-/obj/proc/micro_interact_timed_done2(list/contained_mobs, mob/usr_mob)
+/datum/om/task/timed/obj_micro_interact2
+	duration = 10 SECONDS
+	complete_proc = /obj/proc/micro_interact_timed_done2
+	cancel_proc = /obj/proc/micro_interact_timed_failed2
+	var/list/contained_mobs
+
+/obj/proc/micro_interact_timed_done2(datum/om/task/timed/obj_micro_interact2/task)
+	var/list/contained_mobs = task.contained_mobs
+	var/mob/usr_mob = task.actor
 
 	usr_mob.visible_message(span_notice("\The [usr_mob] climbs into \the [src]!"))
 	usr_mob.forceMove(src)
@@ -463,7 +480,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	if(prob(25))
 		visible_message(span_warning("Something moves inside of \the [src]. . ."))
 
-/obj/proc/micro_interact_timed_failed2(list/contained_mobs, mob/usr_mob)
+/obj/proc/micro_interact_timed_failed2(datum/om/task/timed/obj_micro_interact2/task)
+	var/mob/usr_mob = task.actor
 	to_chat(usr_mob, span_warning("You didn't go into \the [src]!"))
 	return
 

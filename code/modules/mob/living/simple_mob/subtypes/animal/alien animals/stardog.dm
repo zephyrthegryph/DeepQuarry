@@ -257,10 +257,31 @@
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	om_do_after(src, 20 SECONDS, target = E, receiver = src, on_done = PROC_REF(eat_space_weather_stardog_done), done_args = list(E, nut, aff, mob, ore, tre, msg, heal, delet))
+	om_task_start(/datum/om/task/timed/stardog_eat_space_weather_stardog, src, E, list("nut" = nut, "aff" = aff, "mob" = mob, "ore" = ore, "tre" = tre, "msg" = msg, "heal" = heal, "delet" = delet))
 	return TRUE
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(obj/effect/overmap/event/E, nut, aff, mob, ore, tre, msg, heal, delet)
+/datum/om/task/timed/stardog_eat_space_weather_stardog
+	duration = 20 SECONDS
+	complete_proc = /mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done
+	var/nut
+	var/aff
+	var/mob
+	var/ore
+	var/tre
+	var/msg
+	var/heal
+	var/delet
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/om/task/timed/stardog_eat_space_weather_stardog/task)
+	var/obj/effect/overmap/event/E = task.target
+	var/nut = task.nut
+	var/aff = task.aff
+	var/mob = task.mob
+	var/ore = task.ore
+	var/tre = task.tre
+	var/msg = task.msg
+	var/heal = task.heal
+	var/delet = task.delet
 	to_chat(src, span_notice("[msg]"))
 	if(nut || aff)
 		adjust_nutrition(nut)

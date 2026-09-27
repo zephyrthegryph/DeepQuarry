@@ -313,7 +313,20 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/item/book/tome/proc/scribe_done(mob/living/user, chosen_rune, word1, word2, word3)
+/datum/om/task/timed/tome_scribe
+	duration = 5 SECONDS
+	complete_proc = /obj/item/book/tome/proc/scribe_done
+	var/chosen_rune
+	var/word1
+	var/word2
+	var/word3
+
+/obj/item/book/tome/proc/scribe_done(datum/om/task/timed/tome_scribe/task)
+	var/mob/living/user = task.actor
+	var/chosen_rune = task.chosen_rune
+	var/word1 = task.word1
+	var/word2 = task.word2
+	var/word3 = task.word3
 	var/area/A = get_area(user)
 	log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
 	var/mob/living/carbon/human/H = user
@@ -422,7 +435,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
 		user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
 		var/list/required = dictionary[chosen_rune]
-		om_do_after(user, 5 SECONDS, src, src, PROC_REF(scribe_done), list(user, chosen_rune, english[required[1]], english[required[2]], english[required[3]]))
+		om_task_start(/datum/om/task/timed/tome_scribe, user, src, list("receiver" = src, "chosen_rune" = chosen_rune, "word1" = english[required[1]], "word2" = english[required[2]], "word3" = english[required[3]]))
 		return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")

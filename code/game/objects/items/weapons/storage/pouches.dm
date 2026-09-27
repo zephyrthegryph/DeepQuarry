@@ -42,7 +42,7 @@
 		return TRUE // Skip delay
 
 	if(remove_delay && !stall_passed)
-		om_do_after(user, remove_delay, target = src, receiver = src, on_done = PROC_REF(stalled_remove), done_args = list(W, user, new_location))
+		om_task_start(/datum/om/task/timed/pouch_stalled_remove, user, src, list("receiver" = src, "duration" = remove_delay, "W" = W, "new_location" = new_location))
 		return FALSE // the delay runs first; stalled_remove() retries the move
 
 	if(W in src)
@@ -50,7 +50,15 @@
 
 	return FALSE //Item was somehow already removed
 
-/obj/item/storage/pouch/proc/stalled_remove(obj/item/W, mob/user, atom/new_location)
+/datum/om/task/timed/pouch_stalled_remove
+	complete_proc = /obj/item/storage/pouch/proc/stalled_remove
+	var/obj/item/W
+	var/atom/new_location
+
+/obj/item/storage/pouch/proc/stalled_remove(datum/om/task/timed/pouch_stalled_remove/task)
+	var/obj/item/W = task.W
+	var/mob/user = task.actor
+	var/atom/new_location = task.new_location
 	stall_passed = TRUE
 	remove_from_storage(W, new_location, user)
 	stall_passed = FALSE

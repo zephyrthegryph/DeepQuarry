@@ -123,7 +123,7 @@
 				to_chat(user, span_notice("There is already a window facing this way there."))
 				return
 		to_chat(user, span_notice("You start placing the window."))
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, ST, dir_to_set))
+		om_task_start(/datum/om/task/timed/grille_attackby, user, src, list("receiver" = src, "ST" = ST, "dir_to_set" = dir_to_set))
 		return
 
 //window placing end
@@ -140,7 +140,16 @@
 	..()
 	return
 
-/obj/structure/grille/proc/attackby_timed_done(mob/user, obj/item/stack/material/ST, dir_to_set)
+/datum/om/task/timed/grille_attackby
+	duration = 2 SECONDS
+	complete_proc = /obj/structure/grille/proc/attackby_timed_done
+	var/obj/item/stack/material/ST
+	var/dir_to_set
+
+/obj/structure/grille/proc/attackby_timed_done(datum/om/task/timed/grille_attackby/task)
+	var/mob/user = task.actor
+	var/obj/item/stack/material/ST = task.ST
+	var/dir_to_set = task.dir_to_set
 	for(var/obj/structure/window/WINDOW in loc)
 		if(WINDOW.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
 			to_chat(user, span_notice("There is already a window facing this way there."))

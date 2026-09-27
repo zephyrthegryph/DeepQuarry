@@ -62,13 +62,22 @@
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample]."))
 
-	om_do_after(user, 2 SECONDS, sample, src, PROC_REF(examine_done), list(user, sample), on_fail = PROC_REF(examine_stopped), fail_args = list(user, sample))
+	om_task_start(/datum/om/task/timed/microscope_examine, user, sample, list("receiver" = src))
 	return TRUE
 
-/obj/machinery/microscope/proc/examine_stopped(mob/user, obj/item/examined)
+/obj/machinery/microscope/proc/examine_stopped(datum/om/task/timed/microscope_examine/task)
+	var/mob/user = task.actor
+	var/obj/item/examined = task.target
 	to_chat(user, span_notice("You stop examining \the [examined]."))
 
-/obj/machinery/microscope/proc/examine_done(mob/user, obj/item/examined)
+/datum/om/task/timed/microscope_examine
+	duration = 2 SECONDS
+	complete_proc = /obj/machinery/microscope/proc/examine_done
+	cancel_proc = /obj/machinery/microscope/proc/examine_stopped
+
+/obj/machinery/microscope/proc/examine_done(datum/om/task/timed/microscope_examine/task)
+	var/mob/user = task.actor
+	var/obj/item/examined = task.target
 	if(sample != examined)
 		return
 	to_chat(user, span_notice("Printing findings now..."))

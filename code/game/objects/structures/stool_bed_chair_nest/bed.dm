@@ -126,11 +126,20 @@
 			to_chat(user, span_notice("\The [src] already has someone BUCKLED(src) to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		om_do_after(user, 2 SECONDS, target = GRAB_TARGET(G), target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user, affecting))
+		om_task_start(/datum/om/task/timed/bed_attackby, user, src, list("receiver" = src, "W" = W, "affecting" = affecting))
 	else
 		..()
 
-/obj/structure/bed/proc/attackby_timed_done(obj/item/W, mob/user, mob/living/affecting)
+/datum/om/task/timed/bed_attackby
+	duration = 2 SECONDS
+	complete_proc = /obj/structure/bed/proc/attackby_timed_done
+	var/obj/item/W
+	var/mob/living/affecting
+
+/obj/structure/bed/proc/attackby_timed_done(datum/om/task/timed/bed_attackby/task)
+	var/obj/item/W = task.W
+	var/mob/user = task.actor
+	var/mob/living/affecting = task.affecting
 	affecting.forceMove(loc)
 	INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
 	qdel(W)

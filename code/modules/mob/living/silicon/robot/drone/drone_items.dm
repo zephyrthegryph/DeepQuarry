@@ -15,10 +15,19 @@
 /obj/item/matter_decompiler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
-/obj/item/matter_decompiler/proc/decompile_drone_interrupted(mob/living/silicon/robot/D)
+/obj/item/matter_decompiler/proc/decompile_drone_interrupted(datum/om/task/timed/matter_decompiler_decompile_drone/task)
+	var/mob/living/silicon/robot/D = task.actor
 	to_chat(D, span_danger("You need to remain still while decompiling such a large object."))
 
-/obj/item/matter_decompiler/proc/decompile_drone_done(mob/living/silicon/robot/D, mob/M)
+/datum/om/task/timed/matter_decompiler_decompile_drone
+	duration = 5 SECONDS
+	complete_proc = /obj/item/matter_decompiler/proc/decompile_drone_done
+	cancel_proc = /obj/item/matter_decompiler/proc/decompile_drone_interrupted
+	var/mob/M
+
+/obj/item/matter_decompiler/proc/decompile_drone_done(datum/om/task/timed/matter_decompiler_decompile_drone/task)
+	var/mob/living/silicon/robot/D = task.actor
+	var/mob/M = task.M
 	to_chat(D, span_danger("You carefully and thoroughly decompile [M], storing as much of its resources as you can within yourself."))
 	qdel(M)
 	new/obj/effect/decal/cleanable/blood/oil(get_turf(src))
@@ -64,7 +73,7 @@
 
 			to_chat(D, span_danger("You begin decompiling [M]."))
 
-			om_do_after(D, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(decompile_drone_done), done_args = list(D, M), on_fail = PROC_REF(decompile_drone_interrupted), fail_args = list(D))
+			om_task_start(/datum/om/task/timed/matter_decompiler_decompile_drone, D, src, list("receiver" = src, "M" = M))
 			return
 		else
 			continue

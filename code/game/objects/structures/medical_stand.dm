@@ -130,7 +130,7 @@
 				else if(ishuman(target))
 					user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
 									span_notice("You begin inserting needle into [target]'s vein."))
-					om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_inserted), done_args = list(target, user), on_fail = PROC_REF(needle_slipped), fail_args = list(target, user))
+					om_task_start(/datum/om/task/timed/medical_stand_needle_inserted, user, target, list("receiver" = src))
 				update_icon()
 
 /obj/structure/medical_stand/proc/needle_removed()
@@ -140,14 +140,23 @@
 	attached = null
 	update_icon()
 
-/obj/structure/medical_stand/proc/needle_slipped(mob/living/carbon/human/target, mob/user)
+/obj/structure/medical_stand/proc/needle_slipped(datum/om/task/timed/medical_stand_needle_inserted/task)
+	var/mob/living/carbon/human/target = task.target
+	var/mob/user = task.actor
 	if(!target || !user)
 		return
 	user.visible_message(span_notice("\The [user]'s hand slips and pricks \the [target]."),
 				span_notice("Your hand slips and pricks \the [target]."))
 	target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 
-/obj/structure/medical_stand/proc/needle_inserted(mob/living/carbon/human/target, mob/user)
+/datum/om/task/timed/medical_stand_needle_inserted
+	duration = 5 SECONDS
+	complete_proc = /obj/structure/medical_stand/proc/needle_inserted
+	cancel_proc = /obj/structure/medical_stand/proc/needle_slipped
+
+/obj/structure/medical_stand/proc/needle_inserted(datum/om/task/timed/medical_stand_needle_inserted/task)
+	var/mob/living/carbon/human/target = task.target
+	var/mob/user = task.actor
 	if(attached)
 		return
 	user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),

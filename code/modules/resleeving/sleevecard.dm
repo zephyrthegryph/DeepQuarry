@@ -10,7 +10,16 @@
 /obj/item/paicard/sleevecard/attack_ghost(mob/user as mob)
 	return // No ghosts can invite, these are intended for sleevemates only
 
-/obj/item/paicard/sleevecard/proc/upload_mind_done(mob/user, obj/item/sleevemate/S, mind_name)
+/datum/om/task/timed/sleevecard_upload_mind
+	duration = 8 SECONDS
+	complete_proc = /obj/item/paicard/sleevecard/proc/upload_mind_done
+	var/obj/item/sleevemate/S
+	var/mind_name
+
+/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/om/task/timed/sleevecard_upload_mind/task)
+	var/mob/user = task.actor
+	var/obj/item/sleevemate/S = task.S
+	var/mind_name = task.mind_name
 	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind_name)
 	if(!db || pai)
 		return
@@ -27,7 +36,7 @@
 			var/datum/transcore_db/db = SStranscore.db_by_mind_name(M.name)
 			if(db)
 				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
-				om_do_after(user, 8 SECONDS, src, src, PROC_REF(upload_mind_done), list(user, S, M.name))
+				om_task_start(/datum/om/task/timed/sleevecard_upload_mind, user, src, list("receiver" = src, "S" = S, "mind_name" = M.name))
 			else
 				to_chat(user, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
 	else if(istype(I, /obj/item/card/emag))

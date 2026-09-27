@@ -260,10 +260,19 @@
 				to_chat(user, span_notice("We cannot get through that host's protective gear."))
 				return
 
-	om_do_after(src, 2, target = target, receiver = src, on_done = PROC_REF(do_infest_leech_done), done_args = list(user, target, M), on_fail = PROC_REF(do_infest_leech_failed), fail_args = list(user, target, M))
+	om_task_start(/datum/om/task/timed/leech_do_infest_leech, src, target, list("user" = user, "M" = M))
 	return TRUE
 
-/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done(mob/living/user, mob/living/target, mob/living/carbon/M)
+/datum/om/task/timed/leech_do_infest_leech
+	duration = 2
+	complete_proc = /mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done
+	cancel_proc = /mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed
+	var/mob/living/user
+	var/mob/living/carbon/M
+
+/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done(datum/om/task/timed/leech_do_infest_leech/task)
+	var/mob/living/user = task.user
+	var/mob/living/carbon/M = task.M
 
 	if(!M || !src)
 		return
@@ -293,7 +302,9 @@
 		to_chat(user, span_notice("They are no longer in range."))
 		return
 
-/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed(mob/living/user, mob/living/target, mob/living/carbon/M)
+/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed(datum/om/task/timed/leech_do_infest_leech/task)
+	var/mob/living/user = task.user
+	var/mob/living/carbon/M = task.M
 	to_chat(user, span_notice("As [M] moves away, we are dislodged and fall to the ground."))
 	return
 

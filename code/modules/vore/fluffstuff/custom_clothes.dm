@@ -2145,7 +2145,15 @@ Departamental Swimsuits, for general use
 			add_attack_logs(user, user, "Tried to put on \the [src] and was involuntarily teleported by it (via \the [translocator] within)!")
 			return
 
-/obj/item/clothing/head/fluff/nikki/proc/hat_warp_done(mob/living/target, mob/user, proximity_flag)
+/datum/om/task/timed/nikki_hat_warp
+	duration = 5 SECONDS
+	complete_proc = /obj/item/clothing/head/fluff/nikki/proc/hat_warp_done
+	var/proximity_flag
+
+/obj/item/clothing/head/fluff/nikki/proc/hat_warp_done(datum/om/task/timed/nikki_hat_warp/task)
+	var/mob/living/target = task.target
+	var/mob/user = task.actor
+	var/proximity_flag = task.proximity_flag
 	translocator?.afterattack(target, user, proximity_flag)
 
 /obj/item/clothing/head/fluff/nikki/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters)
@@ -2155,13 +2163,13 @@ Departamental Swimsuits, for general use
 		switch(user.use_stance())
 			if (I_HELP)
 				user.visible_message(span_notice("[user] guides \the [target] to the bottomless hole within \the [src]. They begin to climb inside..."))
-				om_do_after(user, 5 SECONDS, target, src, PROC_REF(hat_warp_done), list(target, user, proximity_flag))
+				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, list("receiver" = src, "proximity_flag" = proximity_flag))
 			if (I_DISARM)
 				user.visible_message(span_danger("[user] plops \the [src] onto \the [target]'s head!"))
 				translocator.afterattack(target, user, proximity_flag)
 			if (I_GRAB)
 				user.visible_message(span_danger("[user] begins stuffing [target] into \the [src]!"))
-				om_do_after(user, 5 SECONDS, target, src, PROC_REF(hat_warp_done), list(target, user, proximity_flag))
+				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, list("receiver" = src, "proximity_flag" = proximity_flag))
 			if (I_HURT)
 				user.visible_message(span_danger("[user] swipes \the [src] over \the [target]!"))
 				translocator.afterattack(target, user, proximity_flag)

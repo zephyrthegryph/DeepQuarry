@@ -198,14 +198,14 @@
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
 				if(istype(recipe, /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
-					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(A, user, queued_piping_layer))
+					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, list("receiver" = src, "queued_piping_layer" = queued_piping_layer))
 				else if(istype(recipe, /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
 					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
 				else if(istype(recipe, /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe
 					to_chat(user, span_notice("You start building a pipe..."))
-					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(A, user, queued_piping_layer, queued_p_dir, queued_p_flipped, R))
+					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack2, user, A, list("receiver" = src, "queued_piping_layer" = queued_piping_layer, "queued_p_dir" = queued_p_dir, "queued_p_flipped" = queued_p_flipped, "R" = R))
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
 				var/datum/pipe_recipe/disposal/R = recipe
@@ -217,7 +217,7 @@
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
-				om_do_after(user, 4, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done5), done_args = list(A, user, queued_p_dir, queued_p_flipped, R))
+				om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack3, user, A, list("receiver" = src, "queued_p_dir" = queued_p_dir, "queued_p_flipped" = queued_p_flipped, "R" = R))
 
 			else
 				return ..()
@@ -225,7 +225,15 @@
 /obj/item/pipe_dispenser/proc/afterattack_timed_done(atom/A)
 	activate()
 	animate_deletion(A)
-/obj/item/pipe_dispenser/proc/afterattack_timed_done2(atom/A, mob/user, queued_piping_layer)
+/datum/om/task/timed/pipe_dispenser_afterattack
+	duration = 2
+	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done2
+	var/queued_piping_layer
+
+/obj/item/pipe_dispenser/proc/afterattack_timed_done2(datum/om/task/timed/pipe_dispenser_afterattack/task)
+	var/atom/A = task.target
+	var/mob/user = task.actor
+	var/queued_piping_layer = task.queued_piping_layer
 	activate()
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(A))
 	PM.setAttachLayer(queued_piping_layer)
@@ -236,7 +244,21 @@
 	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(A))
 	if(mode & WRENCH_MODE)
 		do_wrench(GS, user)
-/obj/item/pipe_dispenser/proc/afterattack_timed_done4(atom/A, mob/user, queued_piping_layer, queued_p_dir, queued_p_flipped, datum/pipe_recipe/pipe/R)
+/datum/om/task/timed/pipe_dispenser_afterattack2
+	duration = 2
+	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done4
+	var/queued_piping_layer
+	var/queued_p_dir
+	var/queued_p_flipped
+	var/datum/pipe_recipe/pipe/R
+
+/obj/item/pipe_dispenser/proc/afterattack_timed_done4(datum/om/task/timed/pipe_dispenser_afterattack2/task)
+	var/atom/A = task.target
+	var/mob/user = task.actor
+	var/queued_piping_layer = task.queued_piping_layer
+	var/queued_p_dir = task.queued_p_dir
+	var/queued_p_flipped = task.queued_p_flipped
+	var/datum/pipe_recipe/pipe/R = task.R
 	activate()
 	var/obj/machinery/atmospherics/path = R.pipe_type
 	var/pipe_item_type = initial(path.construction_type) || /obj/item/pipe
@@ -253,7 +275,19 @@
 		do_wrench(P, user)
 	else
 		build_effect(P)
-/obj/item/pipe_dispenser/proc/afterattack_timed_done5(atom/A, mob/user, queued_p_dir, queued_p_flipped, datum/pipe_recipe/disposal/R)
+/datum/om/task/timed/pipe_dispenser_afterattack3
+	duration = 4
+	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done5
+	var/queued_p_dir
+	var/queued_p_flipped
+	var/datum/pipe_recipe/disposal/R
+
+/obj/item/pipe_dispenser/proc/afterattack_timed_done5(datum/om/task/timed/pipe_dispenser_afterattack3/task)
+	var/atom/A = task.target
+	var/mob/user = task.actor
+	var/queued_p_dir = task.queued_p_dir
+	var/queued_p_flipped = task.queued_p_flipped
+	var/datum/pipe_recipe/disposal/R = task.R
 	var/obj/structure/disposalconstruct/C = new(A, R.pipe_type, queued_p_dir, queued_p_flipped, R.subtype)
 
 	if(!C.can_place())

@@ -224,10 +224,17 @@
 	symptom_holder.symptoms += chosen
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
-	om_do_after(user, extract_time, target = target, receiver = src, on_done = PROC_REF(isolate_symptom_timed_done), done_args = list(user, target, symptom_holder))
+	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, list("receiver" = src, "duration" = extract_time, "symptom_holder" = symptom_holder))
 	return TRUE
 
-/obj/item/extrapolator/proc/isolate_symptom_timed_done(mob/living/user, atom/target, datum/disease/advance/symptom_holder)
+/datum/om/task/timed/extrapolator_isolate_symptom
+	complete_proc = /obj/item/extrapolator/proc/isolate_symptom_timed_done
+	var/datum/disease/advance/symptom_holder
+
+/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/om/task/timed/extrapolator_isolate_symptom/task)
+	var/mob/living/user = task.actor
+	var/atom/target = task.target
+	var/datum/disease/advance/symptom_holder = task.symptom_holder
 	create_culture(user, symptom_holder, target)
 	return TRUE
 
@@ -235,10 +242,17 @@
 	. = FALSE
 	user.visible_message(span_notice("[user] begins to thoroughly scan [target] with [src]..."), \
 		span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]..."))
-	om_do_after(user, isolate_time, target = target, receiver = src, on_done = PROC_REF(isolate_disease_timed_done), done_args = list(user, target, target_disease))
+	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, list("receiver" = src, "duration" = isolate_time, "target_disease" = target_disease))
 	return TRUE
 
-/obj/item/extrapolator/proc/isolate_disease_timed_done(mob/living/user, atom/target, datum/disease/advance/target_disease)
+/datum/om/task/timed/extrapolator_isolate_disease
+	complete_proc = /obj/item/extrapolator/proc/isolate_disease_timed_done
+	var/datum/disease/advance/target_disease
+
+/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/om/task/timed/extrapolator_isolate_disease/task)
+	var/mob/living/user = task.actor
+	var/atom/target = task.target
+	var/datum/disease/advance/target_disease = task.target_disease
 	create_culture(user, target_disease, target)
 	return TRUE
 

@@ -234,9 +234,23 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	if(om_busy(src))
 		return
 	to_chat(user, span_notice("You begin [verb]ing \the [src] with [M.display_name]."))
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(material_add_done), list(S, user, verb, done_proc, M), claims = TRUE)
+	om_task_start(/datum/om/task/timed/table_material_add, user, src, list("receiver" = src, "S" = S, "verb" = verb, "done_proc" = done_proc, "M" = M))
 
-/obj/structure/table/proc/material_add_done(obj/item/stack/material/S, mob/user, verb, done_proc, datum/material/M)
+/datum/om/task/timed/table_material_add
+	duration = 2 SECONDS
+	claims = TRUE
+	complete_proc = /obj/structure/table/proc/material_add_done
+	var/obj/item/stack/material/S
+	var/verb
+	var/done_proc
+	var/datum/material/M
+
+/obj/structure/table/proc/material_add_done(datum/om/task/timed/table_material_add/task)
+	var/obj/item/stack/material/S = task.S
+	var/mob/user = task.actor
+	var/verb = task.verb
+	var/done_proc = task.done_proc
+	var/datum/material/M = task.M
 	if(!S.use(1))
 		return
 	user.visible_message(span_notice("\The [user] [verb]es \the [src] with [M.display_name]."), span_notice("You finish [verb]ing \the [src]."))

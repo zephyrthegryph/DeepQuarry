@@ -96,11 +96,19 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		to_chat(user, span_notice("The battery has no charge."))
 	else
 		playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-		om_do_after(user, 2, target = C, receiver = src, on_done = PROC_REF(drain_battery_timed_done), done_args = list(user, C, charge_needed))
+		om_task_start(/datum/om/task/timed/rms_drain_battery, user, C, list("receiver" = src, "charge_needed" = charge_needed))
 	stored_charge = CLAMP(stored_charge, 0, max_charge)
 	update_icon()
 
-/obj/item/rms/proc/drain_battery_timed_done(user, obj/item/cell/C, charge_needed)
+/datum/om/task/timed/rms_drain_battery
+	duration = 2
+	complete_proc = /obj/item/rms/proc/drain_battery_timed_done
+	var/charge_needed
+
+/obj/item/rms/proc/drain_battery_timed_done(datum/om/task/timed/rms_drain_battery/task)
+	var/user = task.actor
+	var/obj/item/cell/C = task.target
+	var/charge_needed = task.charge_needed
 	stored_charge += C.charge
 	if(C.charge > charge_needed) //We only drain what we need!
 		C.use(charge_needed)
@@ -132,9 +140,17 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
 	playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
-	om_do_after(user, 5, target = A, receiver = src, on_done = PROC_REF(use_rms_timed_done), done_args = list(A, user, product))
+	om_task_start(/datum/om/task/timed/rms_use_rms, user, A, list("receiver" = src, "product" = product))
 
-/obj/item/rms/proc/use_rms_timed_done(atom/A, mob/living/user, obj/product)
+/datum/om/task/timed/rms_use_rms
+	duration = 5
+	complete_proc = /obj/item/rms/proc/use_rms_timed_done
+	var/obj/product
+
+/obj/item/rms/proc/use_rms_timed_done(datum/om/task/timed/rms_use_rms/task)
+	var/atom/A = task.target
+	var/mob/living/user = task.actor
+	var/obj/product = task.product
 	// Only deduct charge once the action actually completes, so an interrupted use refunds nothing-spent.
 	if(overcharge)
 		consume_resources(charge_cost * overcharge_modifier)

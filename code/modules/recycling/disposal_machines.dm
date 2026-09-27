@@ -145,7 +145,16 @@
 	name = "Insert"
 	effect = /obj/machinery/disposal/proc/interaction_disposal_insert
 
-/obj/machinery/disposal/proc/dunk_done(mob/user, mob/GM, obj/item/grab/G)
+/datum/om/task/timed/disposal_dunk
+	duration = 2 SECONDS
+	complete_proc = /obj/machinery/disposal/proc/dunk_done
+	var/mob/GM
+	var/obj/item/grab/G
+
+/obj/machinery/disposal/proc/dunk_done(datum/om/task/timed/disposal_dunk/task)
+	var/mob/user = task.actor
+	var/mob/GM = task.GM
+	var/obj/item/grab/G = task.G
 	GM.forceMove(src)
 	for (var/mob/C in viewers(src))
 		C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
@@ -185,7 +194,7 @@
 			var/mob/GM = GRAB_TARGET(G)
 			for (var/mob/V in viewers(user))
 				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
-			om_do_after(user, 2 SECONDS, src, src, PROC_REF(dunk_done), list(user, GM, G))
+			om_task_start(/datum/om/task/timed/disposal_dunk, user, src, list("receiver" = src, "GM" = GM, "G" = G))
 		return TRUE
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.

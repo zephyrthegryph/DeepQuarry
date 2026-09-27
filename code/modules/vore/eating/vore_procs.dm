@@ -58,11 +58,22 @@
 	if(!user.client && prey.has_status(EFFECT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
 		prey.status_at_least(EFFECT_STUNNED, min(prey.status_units(EFFECT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
 	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
-	var/started = om_do_after(user, swallow_time, prey, null, GLOBAL_PROC_REF(devour_timed_done), list(user, prey, pred, belly, message_range), hidden = TRUE)
+	var/started = om_task_start(/datum/om/task/timed/proc_devour, user, prey, list("duration" = swallow_time, "pred" = pred, "belly" = belly, "message_range" = message_range, "hidden" = TRUE))
 	return !istext(started)
 
+/datum/om/task/timed/proc_devour
+	complete_proc = /proc/devour_timed_done
+	var/mob/living/pred
+	var/obj/belly/belly
+	var/message_range
+
 /// A timed devour completed: eat the prey and let go of any grab the user had on it.
-/proc/devour_timed_done(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, message_range)
+/proc/devour_timed_done(datum/om/task/timed/proc_devour/task)
+	var/mob/living/user = task.actor
+	var/mob/living/prey = task.target
+	var/mob/living/pred = task.pred
+	var/obj/belly/belly = task.belly
+	var/message_range = task.message_range
 	for(var/obj/item/grab/G in GRABBED_BY(prey))
 		if(GRAB_ASSAILANT(G) == user)
 			qdel(G)

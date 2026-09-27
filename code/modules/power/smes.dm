@@ -313,13 +313,25 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(check_terminal_exists(tempLoc, user, tempDir))
 		return 1
 	to_chat(user, span_filter_notice(span_notice("You start adding cable to the [src].")))
-	var/started = om_do_after(user, 5 SECONDS, src, src, PROC_REF(terminal_done), list(user, CC, tempLoc, tempDir), on_fail = PROC_REF(terminal_ended))
+	var/started = om_task_start(/datum/om/task/timed/smes_terminal, user, src, list("receiver" = src, "CC" = CC, "tempLoc" = tempLoc, "tempDir" = tempDir))
 	return istext(started) ? 1 : 0
 
-/obj/machinery/power/smes/proc/terminal_ended()
+/obj/machinery/power/smes/proc/terminal_ended(datum/om/task/timed/smes_terminal/task)
 	building_terminal = 0
 
-/obj/machinery/power/smes/proc/terminal_done(mob/user, obj/item/stack/cable_coil/CC, turf/tempLoc, tempDir)
+/datum/om/task/timed/smes_terminal
+	duration = 5 SECONDS
+	complete_proc = /obj/machinery/power/smes/proc/terminal_done
+	cancel_proc = /obj/machinery/power/smes/proc/terminal_ended
+	var/obj/item/stack/cable_coil/CC
+	var/turf/tempLoc
+	var/tempDir
+
+/obj/machinery/power/smes/proc/terminal_done(datum/om/task/timed/smes_terminal/task)
+	var/mob/user = task.actor
+	var/obj/item/stack/cable_coil/CC = task.CC
+	var/turf/tempLoc = task.tempLoc
+	var/tempDir = task.tempDir
 	building_terminal = 0
 	if(check_terminal_exists(tempLoc, user, tempDir) || !CC.use(10))
 		return

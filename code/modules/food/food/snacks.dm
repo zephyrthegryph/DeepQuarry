@@ -253,7 +253,7 @@
 					feed_duration = 5 SECONDS
 
 				user.setClickCooldown(user.get_attack_speed(src))
-				om_do_after(user, feed_duration, human_eater, src, PROC_REF(feed_other_done), list(human_eater, user, swallow_whole, belly_target))
+				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, list("receiver" = src, "duration" = feed_duration, "swallow_whole" = swallow_whole, "belly_target" = belly_target))
 				return ITEM_INTERACT_SUCCESS
 
 			else
@@ -278,19 +278,35 @@
 			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
 			var/feed_duration = 3 SECONDS
 			user.setClickCooldown(user.get_attack_speed(src))
-			om_do_after(user, feed_duration, eater, src, PROC_REF(feed_whole_done), list(eater, user, belly_target))
+			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, list("receiver" = src, "duration" = feed_duration, "belly_target" = belly_target))
 			return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE
 
-/obj/item/reagent_containers/food/snacks/proc/feed_whole_done(mob/living/eater, mob/living/user, obj/belly/belly_target)
+/datum/om/task/timed/snacks_feed_whole
+	complete_proc = /obj/item/reagent_containers/food/snacks/proc/feed_whole_done
+	var/obj/belly/belly_target
+
+/obj/item/reagent_containers/food/snacks/proc/feed_whole_done(datum/om/task/timed/snacks_feed_whole/task)
+	var/mob/living/eater = task.target
+	var/mob/living/user = task.actor
+	var/obj/belly/belly_target = task.belly_target
 	add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
 	user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].")
 	user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
 	user.drop_item()
 	forceMove(belly_target)
 
-/obj/item/reagent_containers/food/snacks/proc/feed_other_done(mob/living/carbon/human/human_eater, mob/living/user, swallow_whole, obj/belly/belly_target)
+/datum/om/task/timed/snacks_feed_other
+	complete_proc = /obj/item/reagent_containers/food/snacks/proc/feed_other_done
+	var/swallow_whole
+	var/obj/belly/belly_target
+
+/obj/item/reagent_containers/food/snacks/proc/feed_other_done(datum/om/task/timed/snacks_feed_other/task)
+	var/mob/living/carbon/human/human_eater = task.target
+	var/mob/living/user = task.actor
+	var/swallow_whole = task.swallow_whole
+	var/obj/belly/belly_target = task.belly_target
 	if(!reagents || (reagents && !reagents.total_volume))
 		return
 

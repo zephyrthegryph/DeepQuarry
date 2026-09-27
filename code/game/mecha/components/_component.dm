@@ -148,9 +148,17 @@
 /obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)
 	if(get_integrity() >= max_integrity)
 		return
-	om_do_after(user, 1 SECOND, site, src, PROC_REF(paste_repair_done), list(user, NP, site))
+	om_task_start(/datum/om/task/timed/component_paste_repair, user, site, list("receiver" = src, "NP" = NP))
 
-/obj/item/mecha_parts/component/proc/paste_repair_done(mob/user, obj/item/stack/nanopaste/NP, atom/site)
+/datum/om/task/timed/component_paste_repair
+	duration = 1 SECOND
+	complete_proc = /obj/item/mecha_parts/component/proc/paste_repair_done
+	var/obj/item/stack/nanopaste/NP
+
+/obj/item/mecha_parts/component/proc/paste_repair_done(datum/om/task/timed/component_paste_repair/task)
+	var/mob/user = task.actor
+	var/obj/item/stack/nanopaste/NP = task.NP
+	var/atom/site = task.target
 	NP.use(1)
 	adjust_integrity(NP.mech_repair)
 	if(get_integrity() >= max_integrity)

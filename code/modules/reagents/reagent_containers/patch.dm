@@ -61,12 +61,21 @@
 		user.visible_message(span_warning("[user] attempts to place \the [src] onto [H]`s [affecting]."))
 
 		user.setClickCooldown(user.get_attack_speed(src))
-		om_do_after(user, 3 SECONDS, M, src, PROC_REF(apply_patch_done), list(user, H, affecting))
+		om_task_start(/datum/om/task/timed/patch_apply_patch, user, M, list("receiver" = src, "H" = H, "affecting" = affecting))
 		return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE
 
-/obj/item/reagent_containers/pill/patch/proc/apply_patch_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/affecting)
+/datum/om/task/timed/patch_apply_patch
+	duration = 3 SECONDS
+	complete_proc = /obj/item/reagent_containers/pill/patch/proc/apply_patch_done
+	var/mob/living/carbon/human/H
+	var/obj/item/organ/external/affecting
+
+/obj/item/reagent_containers/pill/patch/proc/apply_patch_done(datum/om/task/timed/patch_apply_patch/task)
+	var/mob/living/user = task.actor
+	var/mob/living/carbon/human/H = task.H
+	var/obj/item/organ/external/affecting = task.affecting
 	user.drop_from_inventory(src) //icon update
 	user.visible_message(span_warning("[user] applies \the [src] to [H]."))
 

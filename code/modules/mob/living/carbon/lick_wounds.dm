@@ -3,14 +3,26 @@
 	while(index <= length(wounds))
 		var/datum/affliction/wound/W = wounds[index]
 		if(!QDELETED(W) && !(W.bandaged && W.salved && W.disinfected))
-			om_do_after(src, W.damage/5, target = src, receiver = src, on_done = PROC_REF(lick_done), done_args = list(H, affecting, wounds, index), on_fail = PROC_REF(lick_interrupted))
+			om_task_start(/datum/om/task/timed/human_lick, src, src, list("duration" = W.damage/5, "H" = H, "affecting" = affecting, "wounds" = wounds, "index" = index))
 			return
 		index++
 
-/mob/living/carbon/human/proc/lick_interrupted()
+/mob/living/carbon/human/proc/lick_interrupted(datum/om/task/timed/human_lick/task)
 	to_chat(src, span_notice("You must stand still to clean wounds."))
 
-/mob/living/carbon/human/proc/lick_done(mob/living/carbon/human/H, obj/item/organ/external/affecting, list/wounds, index)
+/datum/om/task/timed/human_lick
+	complete_proc = /mob/living/carbon/human/proc/lick_done
+	cancel_proc = /mob/living/carbon/human/proc/lick_interrupted
+	var/mob/living/carbon/human/H
+	var/obj/item/organ/external/affecting
+	var/list/wounds
+	var/index
+
+/mob/living/carbon/human/proc/lick_done(datum/om/task/timed/human_lick/task)
+	var/mob/living/carbon/human/H = task.H
+	var/obj/item/organ/external/affecting = task.affecting
+	var/list/wounds = task.wounds
+	var/index = task.index
 	if(affecting.is_bandaged() && affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
 		to_chat(src, span_warning("The wounds on [H]'s [affecting.name] have already been treated."))
 		return

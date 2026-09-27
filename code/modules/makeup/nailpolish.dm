@@ -83,12 +83,22 @@
 	if(user == target)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " paints their nails with \the [src]."), span_infoplain("You paint your nails with \the [src]."))
 	else
-		om_do_after(user, 2 SECONDS, target, src, PROC_REF(paint_done), list(user, target, body_part, polish), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_notice("Both you and [target] must stay still!")))
+		om_task_start(/datum/om/task/timed/nailpolish_paint, user, target, list("receiver" = src, "body_part" = body_part, "polish" = polish, "fail_message" = span_notice("Both you and [target] must stay still!")))
 		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(polish)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/nailpolish/proc/paint_done(mob/living/user, mob/living/target, obj/item/organ/external/body_part, datum/nail_polish/polish)
+/datum/om/task/timed/nailpolish_paint
+	duration = 2 SECONDS
+	complete_proc = /obj/item/nailpolish/proc/paint_done
+	var/obj/item/organ/external/body_part
+	var/datum/nail_polish/polish
+
+/obj/item/nailpolish/proc/paint_done(datum/om/task/timed/nailpolish_paint/task)
+	var/mob/living/user = task.actor
+	var/mob/living/target = task.target
+	var/obj/item/organ/external/body_part = task.body_part
+	var/datum/nail_polish/polish = task.polish
 	if(body_part.nail_polish)
 		return
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " paints \the [target]'s nails with \the [src]."), span_infoplain("You paint \the [target]'s nails with \the [src]."))
@@ -137,12 +147,20 @@
 	if(user == target)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes their nail polish with \the [src]."), span_infoplain("You remove your nail polish with \the [src]."))
 	else
-		om_do_after(user, 2 SECONDS, target, src, PROC_REF(remove_done), list(user, target, body_part), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_notice("Both you and [target] must stay still!")))
+		om_task_start(/datum/om/task/timed/nailpolish_remover_remove, user, target, list("receiver" = src, "body_part" = body_part, "fail_message" = span_notice("Both you and [target] must stay still!")))
 		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(null)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/nailpolish_remover/proc/remove_done(mob/living/user, mob/living/target, obj/item/organ/external/body_part)
+/datum/om/task/timed/nailpolish_remover_remove
+	duration = 2 SECONDS
+	complete_proc = /obj/item/nailpolish_remover/proc/remove_done
+	var/obj/item/organ/external/body_part
+
+/obj/item/nailpolish_remover/proc/remove_done(datum/om/task/timed/nailpolish_remover_remove/task)
+	var/mob/living/user = task.actor
+	var/mob/living/target = task.target
+	var/obj/item/organ/external/body_part = task.body_part
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [target]'s nail polish with \the [src]."), span_infoplain("You remove \the [target]'s nail polish with \the [src]."))
 	body_part.set_polish(null)
 

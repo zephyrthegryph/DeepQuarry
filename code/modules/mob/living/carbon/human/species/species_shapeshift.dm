@@ -582,9 +582,18 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			oocnotes = 1
 		to_chat(character, span_notify("You begin to reform. You will need to remain still."))
 		character.visible_message(span_notify("[character] rapidly contorts and shifts!"), span_danger("You begin to reform."))
-		om_do_after(character, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_regenerate_human_done), done_args = list(character, flavour, oocnotes))
+		om_task_start(/datum/om/task/timed/human_shapeshifter_regenerate_human, character, src, list("receiver" = src, "flavour" = flavour, "oocnotes" = oocnotes))
 
-/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(mob/living/character, flavour, oocnotes)
+/datum/om/task/timed/human_shapeshifter_regenerate_human
+	duration = 4 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/shapeshifter_regenerate_human_done
+	var/flavour
+	var/oocnotes
+
+/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(datum/om/task/timed/human_shapeshifter_regenerate_human/task)
+	var/mob/living/character = task.actor
+	var/flavour = task.flavour
+	var/oocnotes = task.oocnotes
 	if(character.client.prefs)	//Make sure we didn't d/c
 		character.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE, FALSE)
 		character.visible_message(span_notify("[character] adopts a new form!"), span_danger("You have reformed."))

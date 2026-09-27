@@ -184,9 +184,14 @@
 		return
 	user.visible_message(span_warning("\The [user] holds \the [P] up to \the [src]. It looks like [user.p_theyre()] trying to burn it!"), \
 		span_warning("You hold \the [P] up to \the [src], burning it slowly."))
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(burnpaper_done), list(P, user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_warning("You must hold \the [P] steady to burn \the [src].")))
+	om_task_start(/datum/om/task/timed/shreddedp_burnpaper, user, src, list("receiver" = src, "fail_message" = span_warning("You must hold \the [P] steady to burn \the [src].")))
 
-/obj/item/shreddedp/proc/burnpaper_done(obj/item/flame/lighter/P, mob/user)
+/datum/om/task/timed/shreddedp_burnpaper
+	duration = 2 SECONDS
+	complete_proc = /obj/item/shreddedp/proc/burnpaper_done
+
+/obj/item/shreddedp/proc/burnpaper_done(datum/om/task/timed/shreddedp_burnpaper/task)
+	var/mob/user = task.actor
 	user.visible_message(span_danger("\The [user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap."), \
 		span_danger("You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap."))
 	FireBurn()

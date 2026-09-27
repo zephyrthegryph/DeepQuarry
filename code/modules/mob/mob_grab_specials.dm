@@ -7,14 +7,29 @@
 		return
 
 	user.visible_message(span_notice("[user] starts inspecting [GRAB_TARGET(src)]'s [E.name] carefully."))
-	om_do_after(user, 1 SECOND, target = H, receiver = src, on_done = PROC_REF(inspect_organ_grab_done), done_args = list(H, user, target_zone, E), on_fail = PROC_REF(inspect_organ_grab_failed), fail_args = list(H, user, target_zone, E))
+	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
 	return TRUE
 
-/obj/item/grab/proc/inspect_organ_grab_failed(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+/obj/item/grab/proc/inspect_organ_grab_failed(datum/om/task/timed/grab_inspect_organ_grab/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/target_zone = task.target_zone_arg
+	var/obj/item/organ/external/E = task.E
 	to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
 	inspect_bones(H, user, target_zone, E)
 
-/obj/item/grab/proc/inspect_organ_grab_done(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+/datum/om/task/timed/grab_inspect_organ_grab
+	duration = 1 SECOND
+	complete_proc = /obj/item/grab/proc/inspect_organ_grab_done
+	cancel_proc = /obj/item/grab/proc/inspect_organ_grab_failed
+	var/target_zone_arg
+	var/obj/item/organ/external/E
+
+/obj/item/grab/proc/inspect_organ_grab_done(datum/om/task/timed/grab_inspect_organ_grab/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/target_zone = task.target_zone_arg
+	var/obj/item/organ/external/E = task.E
 	if(length(E.get_wounds()))
 		to_chat(user, span_warning("You find [E.get_wounds_desc()]"))
 	else
@@ -39,12 +54,26 @@
 		to_chat(user, span_notice("The [E.encased ? E.encased : "bones in the [E.name]"] seem to be fine."))
 
 	to_chat(user, span_notice("Checking skin now..."))
-	om_do_after(user, 1 SECOND, target = H, receiver = src, on_done = PROC_REF(inspect_skin_done), done_args = list(H, user, target_zone, E), on_fail = PROC_REF(inspect_skin_failed), fail_args = list(H, user, target_zone, E))
+	om_task_start(/datum/om/task/timed/grab_inspect_skin, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
 
-/obj/item/grab/proc/inspect_internal_failed(mob/living/carbon/human/H, mob/user, obj/item/organ/external/E)
+/obj/item/grab/proc/inspect_internal_failed(datum/om/task/timed/grab_inspect_internal/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/obj/item/organ/external/E = task.E
 	to_chat(user, span_notice("You must stand still to check [H]'s [E.name] for internal injury."))
 
-/obj/item/grab/proc/inspect_internal_done(mob/living/carbon/human/H, mob/user, body_part, obj/item/organ/external/E)
+/datum/om/task/timed/grab_inspect_internal
+	duration = 5 SECONDS
+	complete_proc = /obj/item/grab/proc/inspect_internal_done
+	cancel_proc = /obj/item/grab/proc/inspect_internal_failed
+	var/body_part
+	var/obj/item/organ/external/E
+
+/obj/item/grab/proc/inspect_internal_done(datum/om/task/timed/grab_inspect_internal/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/body_part = task.body_part
+	var/obj/item/organ/external/E = task.E
 
 	///If we have a bad organ down here. Very non-specific. Doctor should ask how badly it hurt.
 	var/bad_organs = 0
@@ -96,11 +125,26 @@
 			to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
 			H.custom_pain("You feel pure agony as [src] pushes down on your [E.name]!", 200)
 
-/obj/item/grab/proc/inspect_skin_failed(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+/obj/item/grab/proc/inspect_skin_failed(datum/om/task/timed/grab_inspect_skin/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/target_zone = task.target_zone_arg
+	var/obj/item/organ/external/E = task.E
 	to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
 	inspect_internal(H, user, target_zone, E)
 
-/obj/item/grab/proc/inspect_skin_done(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+/datum/om/task/timed/grab_inspect_skin
+	duration = 1 SECOND
+	complete_proc = /obj/item/grab/proc/inspect_skin_done
+	cancel_proc = /obj/item/grab/proc/inspect_skin_failed
+	var/target_zone_arg
+	var/obj/item/organ/external/E
+
+/obj/item/grab/proc/inspect_skin_done(datum/om/task/timed/grab_inspect_skin/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/target_zone = task.target_zone_arg
+	var/obj/item/organ/external/E = task.E
 	var/bad = 0
 	// Palpation: the signs a hands-on examination picks up.
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/palpation)
@@ -138,7 +182,7 @@
 	var/body_part = parse_zone(target_zone)
 	if(body_part == BP_GROIN || body_part == BP_TORSO || body_part == BP_HEAD)
 		to_chat(user, span_notice("Checking for internal injury now..."))
-		om_do_after(user, 5 SECONDS, target = H, receiver = src, on_done = PROC_REF(inspect_internal_done), done_args = list(H, user, body_part, E), on_fail = PROC_REF(inspect_internal_failed), fail_args = list(H, user, E))
+		om_task_start(/datum/om/task/timed/grab_inspect_internal, user, H, list("receiver" = src, "body_part" = body_part, "E" = E))
 
 
 /obj/item/grab/proc/jointlock(mob/living/carbon/human/target, mob/attacker, target_zone)

@@ -52,11 +52,19 @@
 
 	add_fingerprint(user)
 
-	om_do_after(user, 1 SECOND, src, src, PROC_REF(scan_done), list(A, user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_warning("You must remain still for the device to complete its work.")))
+	om_task_start(/datum/om/task/timed/detective_scanner_scan, user, src, list("receiver" = src, "A" = A))
 	return 0
 
+/datum/om/task/timed/detective_scanner_scan
+	duration = 1 SECOND
+	complete_proc = /obj/item/detective_scanner/proc/scan_done
+	fail_message = span_warning("You must remain still for the device to complete its work.")
+	var/atom/A
+
 /// The scan: prints now, then fibres and blood (each a further timed action when analysed).
-/obj/item/detective_scanner/proc/scan_done(atom/A, mob/user)
+/obj/item/detective_scanner/proc/scan_done(datum/om/task/timed/detective_scanner_scan/task)
+	var/atom/A = task.A
+	var/mob/user = task.actor
 	// Contract evidence is authenticated by its ordinary paper/shipment
 	// metadata, not by a bespoke scanner mode. This runs before the traditional
 	// fingerprint early return so a clean document remains investigable.

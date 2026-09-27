@@ -39,14 +39,24 @@
 	update_icon()
 	to_chat(user, span_notice("Analyzing \the [held], please stand by..."))
 
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(scan_done), list(user, held), on_fail = PROC_REF(scan_failed), fail_args = list(user), claims = TRUE)
+	om_task_start(/datum/om/task/timed/chemical_analyzer_scan, user, src, list("receiver" = src, "held_arg" = held))
 	return TRUE
 
-/obj/machinery/chemical_analyzer/proc/scan_failed(mob/user)
+/obj/machinery/chemical_analyzer/proc/scan_failed(datum/om/task/timed/chemical_analyzer_scan/task)
+	var/mob/user = task.actor
 	to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
 	update_icon()
 
-/obj/machinery/chemical_analyzer/proc/scan_done(mob/user, obj/item/held)
+/datum/om/task/timed/chemical_analyzer_scan
+	duration = 2 SECONDS
+	claims = TRUE
+	complete_proc = /obj/machinery/chemical_analyzer/proc/scan_done
+	cancel_proc = /obj/machinery/chemical_analyzer/proc/scan_failed
+	var/obj/item/held_arg
+
+/obj/machinery/chemical_analyzer/proc/scan_done(datum/om/task/timed/chemical_analyzer_scan/task)
+	var/mob/user = task.actor
+	var/obj/item/held = task.held_arg
 	// First, identify it if it isn't already.
 	if(!held.is_identified(IDENTITY_FULL))
 		var/datum/identification/ID = held.identity

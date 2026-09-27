@@ -39,13 +39,22 @@
 	if(M.amount <= 0)
 		return
 	icon_state = "coinpress1"
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(press_sheet), list(user, M), on_fail = PROC_REF(press_interrupted), fail_args = list(user))
+	om_task_start(/datum/om/task/timed/mint_press_sheet, user, src, list("receiver" = src, "M" = M))
 
-/obj/machinery/mineral/mint/proc/press_interrupted(mob/user)
+/obj/machinery/mineral/mint/proc/press_interrupted(datum/om/task/timed/mint_press_sheet/task)
+	var/mob/user = task.actor
 	to_chat(user,span_warning("\The [src] is hand-operated and requires your full attention!"))
 	icon_state = "coinpress0"
 
-/obj/machinery/mineral/mint/proc/press_sheet(mob/user, obj/item/stack/material/M)
+/datum/om/task/timed/mint_press_sheet
+	duration = 2 SECONDS
+	complete_proc = /obj/machinery/mineral/mint/proc/press_sheet
+	cancel_proc = /obj/machinery/mineral/mint/proc/press_interrupted
+	var/obj/item/stack/material/M
+
+/obj/machinery/mineral/mint/proc/press_sheet(datum/om/task/timed/mint_press_sheet/task)
+	var/mob/user = task.actor
+	var/obj/item/stack/material/M = task.M
 	M.amount--
 	while(coinsToProduce-- > 0)
 		new M.coin_type(user.loc)

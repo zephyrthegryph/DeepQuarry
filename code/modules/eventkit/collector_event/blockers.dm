@@ -110,7 +110,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 	. = ..()
 
 
-/obj/structure/event_collector_blocker/proc/repair_step_done(obj/item/O, mob/user, step_count)
+/datum/om/task/timed/event_collector_blocker_repair_step
+	duration = 2 SECONDS
+	complete_proc = /obj/structure/event_collector_blocker/proc/repair_step_done
+	var/obj/item/O
+	var/step_count
+
+/obj/structure/event_collector_blocker/proc/repair_step_done(datum/om/task/timed/event_collector_blocker_repair_step/task)
+	var/obj/item/O = task.O
+	var/mob/user = task.actor
+	var/step_count = task.step_count
 	if(active_repair_steps.len != step_count)
 		return
 	post_repair_handling(O,active_repair_steps[active_repair_steps.len],user)
@@ -125,7 +134,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 		if(active_repair_steps.len >= 1)
 			if(O.has_tool_quality(active_repair_steps[active_repair_steps.len]))
 				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return
-				om_do_after(user, 2 SECONDS, src, src, PROC_REF(repair_step_done), list(O, user, active_repair_steps.len))
+				om_task_start(/datum/om/task/timed/event_collector_blocker_repair_step, user, src, list("receiver" = src, "O" = O, "step_count" = active_repair_steps.len))
 			else
 				to_chat(user,span_notice("this doesn't look like the right tool for the job..."))
 

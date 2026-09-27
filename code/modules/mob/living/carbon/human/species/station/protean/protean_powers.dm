@@ -139,28 +139,44 @@
 
 /datum/protean_power/blobform/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	if(F.is_form(/datum/form/protean_blob))
-		om_do_after(H, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_blobform_done), done_args = list(H, F), on_fail = PROC_REF(activate_blobform_failed), fail_args = list(H, F))
+		om_task_start(/datum/om/task/timed/blobform_activate_blobform, H, H, list("receiver" = src, "F" = F))
 		return
 	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		to_chat(H, span_warning("You can't do this while handcuffed!"))
 		return
 	to_chat(H, span_notice("You begin to disassociate your form."))
-	om_do_after(H, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_blobform_done2), done_args = list(H, F), on_fail = PROC_REF(activate_blobform_failed2), fail_args = list(H, F))
+	om_task_start(/datum/om/task/timed/blobform_activate_blobform2, H, H, list("receiver" = src, "F" = F))
 	return TRUE
 
-/datum/protean_power/blobform/proc/activate_blobform_done(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/om/task/timed/blobform_activate_blobform
+	duration = 2 SECONDS
+	complete_proc = /datum/protean_power/blobform/proc/activate_blobform_done
+	cancel_proc = /datum/protean_power/blobform/proc/activate_blobform_failed
+	var/datum/component/forms/protean/F
+
+/datum/protean_power/blobform/proc/activate_blobform_done(datum/om/task/timed/blobform_activate_blobform/task)
+	var/datum/component/forms/protean/F = task.F
 	if(F.form_control_check())
 		F.set_form(/datum/form/human)
 	return
 
-/datum/protean_power/blobform/proc/activate_blobform_failed(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/blobform/proc/activate_blobform_failed(datum/om/task/timed/blobform_activate_blobform/task)
+	var/mob/living/carbon/human/H = task.actor
 	to_chat(H, span_warning("You must remain still to reshape yourself!"))
 	return
-/datum/protean_power/blobform/proc/activate_blobform_done2(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/om/task/timed/blobform_activate_blobform2
+	duration = 2 SECONDS
+	complete_proc = /datum/protean_power/blobform/proc/activate_blobform_done2
+	cancel_proc = /datum/protean_power/blobform/proc/activate_blobform_failed2
+	var/datum/component/forms/protean/F
+
+/datum/protean_power/blobform/proc/activate_blobform_done2(datum/om/task/timed/blobform_activate_blobform2/task)
+	var/datum/component/forms/protean/F = task.F
 	if(F.form_control_check())
 		F.set_form(/datum/form/protean_blob)
 
-/datum/protean_power/blobform/proc/activate_blobform_failed2(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/blobform/proc/activate_blobform_failed2(datum/om/task/timed/blobform_activate_blobform2/task)
+	var/mob/living/carbon/human/H = task.actor
 	to_chat(H, span_warning("You must remain still to blobform!"))
 	return
 
@@ -283,10 +299,19 @@
 		return
 	F.set_form(/datum/form/protean_blob)
 	H.active_regen = TRUE
-	om_do_after(H, 5 SECONDS, target = H, receiver = src, on_done = PROC_REF(regrow_limb_reform_limb_done), done_args = list(H, refactory, choice), on_fail = PROC_REF(regrow_limb_reform_limb_failed), fail_args = list(H, refactory, choice))
+	om_task_start(/datum/om/task/timed/reform_limb_regrow_limb_reform_limb, H, H, list("receiver" = src, "refactory" = refactory, "choice" = choice))
 	H.active_regen = FALSE
 
-/datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_done(mob/living/carbon/human/H, obj/item/organ/internal/nano/refactory/refactory, choice)
+/datum/om/task/timed/reform_limb_regrow_limb_reform_limb
+	duration = 5 SECONDS
+	complete_proc = /datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_done
+	cancel_proc = /datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_failed
+	var/obj/item/organ/internal/nano/refactory/refactory
+	var/choice
+
+/datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_done(datum/om/task/timed/reform_limb_regrow_limb_reform_limb/task)
+	var/mob/living/carbon/human/H = task.actor
+	var/choice = task.choice
 	var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
 	if(oldlimb)
 		oldlimb.removed()
@@ -299,7 +324,8 @@
 	new_eo.sync_colour_to_human(H)
 	H.regenerate_icons()
 
-/datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_failed(mob/living/carbon/human/H, obj/item/organ/internal/nano/refactory/refactory, choice)
+/datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_failed(datum/om/task/timed/reform_limb_regrow_limb_reform_limb/task)
+	var/obj/item/organ/internal/nano/refactory/refactory = task.refactory
 	refactory.add_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST)
 
 /mob/living/carbon/human/proc/nano_partswap()
@@ -343,9 +369,18 @@
 		return
 	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
-	om_do_after(H, 4 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_reform_body_done3), done_args = list(H, flavour, oocnotes))
+	om_task_start(/datum/om/task/timed/reform_body_activate_reform_body, H, H, list("receiver" = src, "flavour" = flavour, "oocnotes" = oocnotes))
 
-/datum/protean_power/reform_body/proc/activate_reform_body_done3(mob/living/carbon/human/H, flavour, oocnotes)
+/datum/om/task/timed/reform_body_activate_reform_body
+	duration = 4 SECONDS
+	complete_proc = /datum/protean_power/reform_body/proc/activate_reform_body_done3
+	var/flavour
+	var/oocnotes
+
+/datum/protean_power/reform_body/proc/activate_reform_body_done3(datum/om/task/timed/reform_body_activate_reform_body/task)
+	var/mob/living/carbon/human/H = task.actor
+	var/flavour = task.flavour
+	var/oocnotes = task.oocnotes
 	if(!(H.client?.prefs))
 		return
 	H.client.prefs.vanity_copy_to(H, FALSE, flavour == "Yes", oocnotes == "Yes", TRUE, FALSE)
@@ -393,10 +428,19 @@
 		return
 	to_chat(H, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	om_do_after(H, 4 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_copy_form_done4), done_args = list(H, victim, input))
+	om_task_start(/datum/om/task/timed/copy_form_activate_copy_form, H, H, list("receiver" = src, "victim" = victim, "input" = input))
 	return TRUE
 
-/datum/protean_power/copy_form/proc/activate_copy_form_done4(mob/living/carbon/human/H, mob/living/carbon/human/victim, input)
+/datum/om/task/timed/copy_form_activate_copy_form
+	duration = 4 SECONDS
+	complete_proc = /datum/protean_power/copy_form/proc/activate_copy_form_done4
+	var/mob/living/carbon/human/victim
+	var/input
+
+/datum/protean_power/copy_form/proc/activate_copy_form_done4(datum/om/task/timed/copy_form_activate_copy_form/task)
+	var/mob/living/carbon/human/H = task.actor
+	var/mob/living/carbon/human/victim = task.victim
+	var/input = task.input
 	if(!aggressive_grab_on(H, victim))
 		to_chat(H, span_warning("You lost your grip on [victim]!"))
 		return

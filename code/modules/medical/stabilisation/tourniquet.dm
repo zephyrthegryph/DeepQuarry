@@ -60,13 +60,22 @@
 		balloon_alert(user, "\the [E.name] already has a tourniquet!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts cinching \a [src] around [H == user ? "their" : "[H]'s"] [E.name].", "cinching \the [src] around the [E.name].")
-	om_do_after(user, TOURNIQUET_APPLY_TIME, H, src, PROC_REF(cinch_done), list(user, H, E), on_fail = PROC_REF(cinch_failed), fail_args = list(user))
+	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, list("receiver" = src, "duration" = TOURNIQUET_APPLY_TIME, "E" = E))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/tourniquet/proc/cinch_failed(mob/living/user)
+/obj/item/tourniquet/proc/cinch_failed(datum/om/task/timed/tourniquet_cinch/task)
+	var/mob/living/user = task.actor
 	balloon_alert(user, "hold still to cinch the tourniquet!")
 
-/obj/item/tourniquet/proc/cinch_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/E)
+/datum/om/task/timed/tourniquet_cinch
+	complete_proc = /obj/item/tourniquet/proc/cinch_done
+	cancel_proc = /obj/item/tourniquet/proc/cinch_failed
+	var/obj/item/organ/external/E
+
+/obj/item/tourniquet/proc/cinch_done(datum/om/task/timed/tourniquet_cinch/task)
+	var/mob/living/user = task.actor
+	var/mob/living/carbon/human/H = task.target
+	var/obj/item/organ/external/E = task.E
 	// Re-validate after the delay.
 	if(loc != user || E.owner != H || E.tourniquet || !user.Adjacent(H))
 		return

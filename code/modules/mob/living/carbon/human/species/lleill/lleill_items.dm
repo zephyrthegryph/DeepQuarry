@@ -277,13 +277,21 @@
 		if(LL.ring_cooldown + 10 MINUTES > world.time)
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
-		om_do_after(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_glamour_ring_done), done_args = list(M, LL), on_fail = PROC_REF(attack_hand_glamour_ring_failed), fail_args = list(M, LL))
+		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, list("receiver" = src, "LL" = LL))
 		return
 
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(mob/living/M, datum/species/lleill/LL)
+/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring
+	duration = 10 SECONDS
+	complete_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done
+	cancel_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed
+	var/datum/species/lleill/LL
+
+/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
+	var/datum/species/lleill/LL = task.LL
 	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
 
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(mob/living/M, datum/species/lleill/LL)
+/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
+	var/mob/living/M = task.actor
 	to_chat(M, span_warning("You stop drawing energy."))
 	return
 

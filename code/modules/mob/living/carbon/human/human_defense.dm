@@ -587,10 +587,25 @@ emp_act
 		organ_chance = 75
 	user.next_move = world.time + 20
 	user.visible_message(span_danger("\The [user] begins to twist \the [W] around inside [src]'s [chest]!"))
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(shank_attack_human_done), done_args = list(W, G, user, organ_chance, damage, chest))
+	om_task_start(/datum/om/task/timed/human_shank_attack_human, user, src, list("receiver" = src, "W" = W, "G" = G, "organ_chance" = organ_chance, "damage" = damage, "chest" = chest))
 	return TRUE
 
-/mob/living/carbon/human/proc/shank_attack_human_done(obj/item/W, obj/item/grab/G, mob/user, organ_chance, damage, obj/item/organ/external/chest)
+/datum/om/task/timed/human_shank_attack_human
+	duration = 2 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/shank_attack_human_done
+	var/obj/item/W
+	var/obj/item/grab/G
+	var/organ_chance
+	var/damage
+	var/obj/item/organ/external/chest
+
+/mob/living/carbon/human/proc/shank_attack_human_done(datum/om/task/timed/human_shank_attack_human/task)
+	var/obj/item/W = task.W
+	var/obj/item/grab/G = task.G
+	var/mob/user = task.actor
+	var/organ_chance = task.organ_chance
+	var/damage = task.damage
+	var/obj/item/organ/external/chest = task.chest
 	if(!(G && GRAB_ASSAILANT(G) == user && GRAB_TARGET(G) == src)) //check that we still have a grab
 		return 0
 

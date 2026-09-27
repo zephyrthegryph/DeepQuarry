@@ -855,17 +855,25 @@
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	om_do_after(micro, escape_time, macro, src, PROC_REF(micro_escaped_macro), list(micro, macro), on_fail = PROC_REF(micro_pinned), fail_args = list(micro, macro))
+	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, list("receiver" = src, "duration" = escape_time))
 
 /obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
 	to_chat(micro, span_notice("You climb out of [src]!"))
 	micro.forceMove(loc)
 
-/obj/item/clothing/shoes/proc/micro_pinned(mob/living/micro, mob/living/carbon/human/macro)
+/obj/item/clothing/shoes/proc/micro_pinned(datum/om/task/timed/shoes_micro_escaped_macro/task)
+	var/mob/living/micro = task.actor
+	var/mob/living/carbon/human/macro = task.target
 	to_chat(micro, span_danger("You're pinned underfoot!"))
 	to_chat(macro, span_danger("You pin the escapee underfoot!"))
 
-/obj/item/clothing/shoes/proc/micro_escaped_macro(mob/living/micro, mob/living/carbon/human/macro)
+/datum/om/task/timed/shoes_micro_escaped_macro
+	complete_proc = /obj/item/clothing/shoes/proc/micro_escaped_macro
+	cancel_proc = /obj/item/clothing/shoes/proc/micro_pinned
+
+/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/om/task/timed/shoes_micro_escaped_macro/task)
+	var/mob/living/micro = task.actor
+	var/mob/living/carbon/human/macro = task.target
 	to_chat(micro, span_notice("You manage to escape [src]!"))
 	to_chat(macro, span_danger("Someone has climbed out of your [src]!"))
 	micro.forceMove(macro.loc)

@@ -213,12 +213,22 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		//put it in
 		user.visible_message("[user] begins to [pick(step_initiation_verbs)] \The [O] into \The [src]")
 		//wait a second or two
-		om_do_after(user, step_insertion_time, src, src, PROC_REF(insert_done), list(O, user, stored_index), on_fail = PROC_REF(insert_gave_up), fail_args = list(user))
+		om_task_start(/datum/om/task/timed/event_collector_insert, user, src, list("receiver" = src, "duration" = step_insertion_time, "O" = O, "stored_index" = stored_index))
 
-/obj/structure/event_collector/proc/insert_gave_up(mob/user)
+/obj/structure/event_collector/proc/insert_gave_up(datum/om/task/timed/event_collector_insert/task)
+	var/mob/user = task.actor
 	user?.visible_message("[user] gives up!") //shitty, change later
 
-/obj/structure/event_collector/proc/insert_done(obj/item/O, mob/user, stored_index)
+/datum/om/task/timed/event_collector_insert
+	complete_proc = /obj/structure/event_collector/proc/insert_done
+	cancel_proc = /obj/structure/event_collector/proc/insert_gave_up
+	var/obj/item/O
+	var/stored_index
+
+/obj/structure/event_collector/proc/insert_done(datum/om/task/timed/event_collector_insert/task)
+	var/obj/item/O = task.O
+	var/mob/user = task.actor
+	var/stored_index = task.stored_index
 	if(stored_index > length(active_recipe))
 		return
 	user.visible_message("[user] [pick(step_insertion_verbs)] \The [O] into \The [src]!")

@@ -17,7 +17,15 @@
 	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket(mob/living/carbon/human/user, mob/living/carbon/human/target, proximity)
+/datum/om/task/timed/thieves_pickpocket
+	duration = 1 SECOND
+	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket
+	var/proximity
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket(datum/om/task/timed/thieves_pickpocket/task)
+	var/mob/living/carbon/human/user = task.actor
+	var/mob/living/carbon/human/target = task.target
+	var/proximity = task.proximity
 	if(!proximity || !user || !target)
 		return 0
 
@@ -29,33 +37,62 @@
 
 	if(IS_HELPING(user))
 		if(istype(target.get_equipped_item(SLOT_ID_BACK),/obj/item/storage))
-			om_do_after(user, 3 SECONDS, target, src, PROC_REF(pickpocket_open), list(user, target, SLOT_ID_BACK), progress = FALSE)
+			om_task_start(/datum/om/task/timed/thieves_pickpocket_open, user, target, list("receiver" = src, "duration" = 3 SECONDS, "slot_id" = SLOT_ID_BACK, "progress" = FALSE))
 		else if(istype(target.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
-			om_do_after(user, 5 SECONDS, target, src, PROC_REF(pickpocket_open), list(user, target, SLOT_ID_BELT))
+			om_task_start(/datum/om/task/timed/thieves_pickpocket_open, user, target, list("receiver" = src, "duration" = 5 SECONDS, "slot_id" = SLOT_ID_BELT))
 		return 1
 
 	if(IS_DISARMING(user))
-		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_take), list(user, target, SLOT_ID_POCKET_L, slot_l_store))
+		om_task_start(/datum/om/task/timed/thieves_pickpocket_take, user, target, list("receiver" = src, "slot_id" = SLOT_ID_POCKET_L, "slot" = slot_l_store))
 		return 1
 
 	if(IS_GRABBING(user))
-		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_take), list(user, target, SLOT_ID_POCKET_R, slot_r_store))
+		om_task_start(/datum/om/task/timed/thieves_pickpocket_take, user, target, list("receiver" = src, "slot_id" = SLOT_ID_POCKET_R, "slot" = slot_r_store))
 		return 1
 
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_open(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id)
+/datum/om/task/timed/thieves_pickpocket_open
+	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_open
+	var/slot_id
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_open(datum/om/task/timed/thieves_pickpocket_open/task)
+	var/mob/living/carbon/human/user = task.actor
+	var/mob/living/carbon/human/target = task.target
+	var/slot_id = task.slot_id
 	var/obj/item/storage/S = target.get_equipped_item(slot_id)
 	if(istype(S))
 		S.open(user)
 
 // Swapping pocket contents is three timed actions: a rummage, taking theirs, giving yours.
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_take(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot)
+/datum/om/task/timed/thieves_pickpocket_take
+	duration = 1 SECOND
+	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_take
+	var/slot_id
+	var/slot
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_take(datum/om/task/timed/thieves_pickpocket_take/task)
+	var/mob/living/carbon/human/user = task.actor
+	var/mob/living/carbon/human/target = task.target
+	var/slot_id = task.slot_id
+	var/slot = task.slot
 	var/obj/item/theirs = target.get_equipped_item(slot_id)
 	if(istype(theirs))
-		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_took), list(user, target, slot_id, slot, theirs))
+		om_task_start(/datum/om/task/timed/thieves_pickpocket_took, user, target, list("receiver" = src, "slot_id" = slot_id, "slot" = slot, "theirs" = theirs))
 	else
 		pickpocket_give(user, target, slot_id, slot, null)
 
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_took(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot, obj/item/theirs)
+/datum/om/task/timed/thieves_pickpocket_took
+	duration = 1 SECOND
+	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_took
+	var/slot_id
+	var/slot
+	var/obj/item/theirs
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_took(datum/om/task/timed/thieves_pickpocket_took/task)
+	var/mob/living/carbon/human/user = task.actor
+	var/mob/living/carbon/human/target = task.target
+	var/slot_id = task.slot_id
+	var/slot = task.slot
+	var/obj/item/theirs = task.theirs
 	if(target.get_equipped_item(slot_id) != theirs)
 		return
 	target.drop_from_inventory(theirs)
@@ -82,7 +119,7 @@
 
 /obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity)
 	if(proximity && ishuman(usr) && ishuman(A))
-		om_do_after(usr, 1 SECOND, A, src, PROC_REF(pickpocket), list(usr, A, proximity))
+		om_task_start(/datum/om/task/timed/thieves_pickpocket, usr, A, list("receiver" = src, "proximity" = proximity))
 		return 1
 	return 0
 

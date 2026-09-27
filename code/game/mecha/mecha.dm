@@ -1682,10 +1682,19 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	visible_message(span_notice("[usr] starts to insert a brain into [src.name]"))
 
-	var/started = om_do_after(user, 4 SECONDS, src, src, PROC_REF(mmi_install_done), list(mmi_as_oc, user), IGNORE_HELD_ITEM, GLOBAL_PROC_REF(to_chat), list(user, "You stop attempting to install the brain."))
+	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, list("receiver" = src, "mmi_as_oc" = mmi_as_oc))
 	return !istext(started)
 
-/obj/mecha/proc/mmi_install_done(obj/item/mmi/mmi_as_oc, mob/user)
+/datum/om/task/timed/mecha_mmi_install
+	duration = 4 SECONDS
+	flags = IGNORE_HELD_ITEM
+	complete_proc = /obj/mecha/proc/mmi_install_done
+	fail_message = "You stop attempting to install the brain."
+	var/obj/item/mmi/mmi_as_oc
+
+/obj/mecha/proc/mmi_install_done(datum/om/task/timed/mecha_mmi_install/task)
+	var/obj/item/mmi/mmi_as_oc = task.mmi_as_oc
+	var/mob/user = task.actor
 	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		mmi_moved_inside(mmi_as_oc,user)
 	else
@@ -2006,10 +2015,17 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			GrantActions(occupant, 1)
 	else
 		visible_message(span_infoplain(span_bold("\The [user]") + " starts to climb into [src.name]"))
-		om_do_after(user, 4 SECONDS, src, src, PROC_REF(climb_in_done), list(user), IGNORE_HELD_ITEM, GLOBAL_PROC_REF(to_chat), list(user, "You stop entering the exosuit."))
+		om_task_start(/datum/om/task/timed/mecha_climb_in, user, src, list("receiver" = src))
 	return
 
-/obj/mecha/proc/climb_in_done(mob/user)
+/datum/om/task/timed/mecha_climb_in
+	duration = 4 SECONDS
+	flags = IGNORE_HELD_ITEM
+	complete_proc = /obj/mecha/proc/climb_in_done
+	fail_message = "You stop entering the exosuit."
+
+/obj/mecha/proc/climb_in_done(datum/om/task/timed/mecha_climb_in/task)
+	var/mob/user = task.actor
 	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		moved_inside(user)
 		if(ishuman(SLOT_ITEM(src, MECHA_SLOT_PILOT))) //Aeiou

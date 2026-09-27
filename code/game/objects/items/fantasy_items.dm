@@ -85,9 +85,18 @@
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		om_do_after(user, 2 SECONDS, target = GRAB_TARGET(G), receiver = src, on_done = PROC_REF(bath_buckle_done), done_args = list(I, user, affecting))
+		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, GRAB_TARGET(G), list("receiver" = src, "I" = I, "affecting" = affecting))
 
-/obj/structure/bed/bath/proc/bath_buckle_done(obj/item/I, mob/user, mob/living/affecting)
+/datum/om/task/timed/bath_bath_buckle
+	duration = 2 SECONDS
+	complete_proc = /obj/structure/bed/bath/proc/bath_buckle_done
+	var/obj/item/I
+	var/mob/living/affecting
+
+/obj/structure/bed/bath/proc/bath_buckle_done(datum/om/task/timed/bath_bath_buckle/task)
+	var/obj/item/I = task.I
+	var/mob/user = task.actor
+	var/mob/living/affecting = task.affecting
 	affecting.forceMove(loc)
 	if(buckle_mob(affecting))
 		affecting.visible_message(\
@@ -156,7 +165,7 @@
 				if(open && !swirlie)
 					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
 					swirlie_mob = om_handle(GM)
-					om_do_after(user, 3 SECONDS, target = GM, receiver = src, on_done = PROC_REF(wooden_swirlie_done), done_args = list(user, GM, swirlie))
+					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, list("receiver" = src))
 					swirlie_mob = null
 				else
 					user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
@@ -177,7 +186,13 @@
 		to_chat(user, "You carefully place \the [I] into the cistern.")
 		return
 
-/obj/structure/toilet/wooden/proc/wooden_swirlie_done(mob/living/user, mob/living/GM, mob/living/swirlie)
+/datum/om/task/timed/wooden_wooden_swirlie
+	duration = 3 SECONDS
+	complete_proc = /obj/structure/toilet/wooden/proc/wooden_swirlie_done
+
+/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/om/task/timed/wooden_wooden_swirlie/task)
+	var/mob/living/user = task.actor
+	var/mob/living/GM = task.target
 	user.visible_message(span_danger("[user] gives [GM.name] a swirlie!"), span_notice("You give [GM.name] a swirlie!"), "You hear a toilet flushing.")
 	if(!GM.internal)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water

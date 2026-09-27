@@ -918,7 +918,18 @@
 /*
 /obj/item/gun/projectile/automatic/serdy/kord/var/trigger_reached = FALSE
 
-/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(atom/A, mob/living/user, adjacent, params)
+/datum/om/task/timed/kord_trigger_reached
+	duration = 5 SECONDS
+	complete_proc = /obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done
+	var/atom/A
+	var/adjacent
+	var/params
+
+/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/om/task/timed/kord_trigger_reached/task)
+	var/atom/A = task.A
+	var/mob/living/user = task.actor
+	var/adjacent = task.adjacent
+	var/params = task.params
 	trigger_reached = TRUE
 	afteratt(A, user, adjacent, params)
 	trigger_reached = FALSE
@@ -927,7 +938,7 @@
 	if(user.size_multiplier <= 0.5) //They're 50% or lower. If they fire this gun, they're gonna get obliterated.
 		to_chat(user,span_warning("You struggle to reach the trigger. Maybe shooting such a big gun isn't such a good idea..."))
 		if(!trigger_reached) //Give them a chance to take it back.
-			om_do_after(user, 5 SECONDS, src, src, PROC_REF(trigger_reached_done), list(A, user, adjacent, params))
+			om_task_start(/datum/om/task/timed/kord_trigger_reached, user, src, list("receiver" = src, "A" = A, "adjacent" = adjacent, "params" = params))
 			return
 		. = ..() //RIP
 

@@ -42,6 +42,8 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/flags = NONE
 	/// A proc on the receiver called with the task on every re-check: FALSE cancels.
 	var/check_proc
+	/// Told to the user when the action is cancelled or fails (before cancel_proc runs).
+	var/fail_message
 	/// FALSE: no progress bar or cog.
 	var/progress = TRUE
 	/// TRUE: no cog for onlookers.
@@ -75,7 +77,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/mob/user = actor
 	if(!istype(user))
 		return "gone"
-	var/atom/A = target
+	var/atom/A = target != actor ? target : null // working on yourself has no separate target
 	if(A && !isatom(A))
 		CRASH("timed action [name] was given a non-atom target! [A]")
 	if(!interaction_key && A)
@@ -106,7 +108,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 
 /datum/om/task/timed/why_not_running()
 	var/mob/user = actor
-	var/atom/A = target
+	var/atom/A = target != actor ? target : null // working on yourself has no separate target
 	if(captured)
 		if(!(flags & IGNORE_USER_LOC_CHANGE) && om_handle(user.loc) != user_loc_h)
 			return "moved"
@@ -147,6 +149,8 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 
 /// The action was cancelled or failed its last check: cancel_proc on the receiver.
 /datum/om/task/timed/proc/timed_failed()
+	if(fail_message)
+		to_chat(actor, fail_message)
 	if(cancel_proc)
 		om_task_call(src, cancel_proc)
 

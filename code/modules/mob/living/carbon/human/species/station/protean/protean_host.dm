@@ -17,14 +17,23 @@
 		to_chat(H, span_warning("You can only do this while standing."))
 		return
 	to_chat(H, span_notice("You rapidly condense into your module."))
-	om_do_after(H, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_hardsuit_done), done_args = list(H, F), on_fail = PROC_REF(activate_hardsuit_failed), fail_args = list(H, F))
+	om_task_start(/datum/om/task/timed/hardsuit_activate_hardsuit, H, H, list("receiver" = src, "F" = F))
 	return TRUE
 
-/datum/protean_power/hardsuit/proc/activate_hardsuit_done(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/om/task/timed/hardsuit_activate_hardsuit
+	duration = 2 SECONDS
+	complete_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_done
+	cancel_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_failed
+	var/datum/component/forms/protean/F
+
+/datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/om/task/timed/hardsuit_activate_hardsuit/task)
+	var/mob/living/carbon/human/H = task.actor
+	var/datum/component/forms/protean/F = task.F
 	if(can_use(H, F) && F.form_control_check())
 		F.enter_rig()
 
-/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/om/task/timed/hardsuit_activate_hardsuit/task)
+	var/mob/living/carbon/human/H = task.actor
 	to_chat(H, span_warning("You must remain still to condense!"))
 	return
 
@@ -65,10 +74,20 @@
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
 	H.visible_message(span_warning("[H] is attempting to latch onto [target]!"), span_danger("You attempt to latch onto [target]!"))
-	om_do_after(H, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(activate_latch_host_done2), done_args = list(H, F, G, target))
+	om_task_start(/datum/om/task/timed/latch_host_activate_latch_host, H, target, list("receiver" = src, "F" = F, "G" = G))
 	return TRUE
 
-/datum/protean_power/latch_host/proc/activate_latch_host_done2(mob/living/carbon/human/H, datum/component/forms/protean/F, obj/item/grab/G, mob/living/carbon/human/target)
+/datum/om/task/timed/latch_host_activate_latch_host
+	duration = 5 SECONDS
+	complete_proc = /datum/protean_power/latch_host/proc/activate_latch_host_done2
+	var/datum/component/forms/protean/F
+	var/obj/item/grab/G
+
+/datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/om/task/timed/latch_host_activate_latch_host/task)
+	var/mob/living/carbon/human/H = task.actor
+	var/datum/component/forms/protean/F = task.F
+	var/obj/item/grab/G = task.G
+	var/mob/living/carbon/human/target = task.target
 	if(QDELETED(G) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
 		return
 	if(target.get_equipped_item(SLOT_ID_BACK))

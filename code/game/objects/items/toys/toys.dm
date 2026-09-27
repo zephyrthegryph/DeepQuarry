@@ -2190,11 +2190,20 @@
 /obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(O, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(O, user), claims = TRUE)
+		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, list("receiver" = src, "O" = O))
 
 	else ..()
 
-/obj/item/toy/minigibber/proc/attackby_timed_done(obj/O, mob/user)
+/datum/om/task/timed/minigibber_attackby
+	duration = 1 SECOND
+	claims = TRUE
+	complete_proc = /obj/item/toy/minigibber/proc/attackby_timed_done
+	cancel_proc = /obj/item/toy/minigibber/proc/attackby_timed_failed
+	var/obj/O
+
+/obj/item/toy/minigibber/proc/attackby_timed_done(datum/om/task/timed/minigibber_attackby/task)
+	var/obj/O = task.O
+	var/mob/user = task.actor
 	if(O.loc != user)
 		to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
 	else
@@ -2203,7 +2212,9 @@
 		O.forceMove(src)
 		stored_minature = O
 
-/obj/item/toy/minigibber/proc/attackby_timed_failed(obj/O, mob/user)
+/obj/item/toy/minigibber/proc/attackby_timed_failed(datum/om/task/timed/minigibber_attackby/task)
+	var/obj/O = task.O
+	var/mob/user = task.actor
 	user.visible_message(span_notice("You stop feeding \the [O] into \the [src]."),span_notice("[user] stops feeding \the [O] into \the [src]!"))
 
 /*

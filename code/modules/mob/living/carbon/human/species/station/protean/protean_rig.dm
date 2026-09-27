@@ -326,7 +326,7 @@
 
 		var/obj/item/rig_module/mod = W
 		to_chat(user, "You begin installing \the [mod] into \the [src].")
-		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_protean_done), done_args = list(W, user, mod))
+		om_task_start(/datum/om/task/timed/protean_attackby_protean, user, src, list("receiver" = src, "W" = W, "mod" = mod))
 		return 1
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
@@ -339,7 +339,16 @@
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
 
-/obj/item/rig/protean/proc/attackby_protean_done(obj/item/W, mob/living/user, obj/item/rig_module/mod)
+/datum/om/task/timed/protean_attackby_protean
+	duration = 4 SECONDS
+	complete_proc = /obj/item/rig/protean/proc/attackby_protean_done
+	var/obj/item/W
+	var/obj/item/rig_module/mod
+
+/obj/item/rig/protean/proc/attackby_protean_done(datum/om/task/timed/protean_attackby_protean/task)
+	var/obj/item/W = task.W
+	var/mob/living/user = task.actor
+	var/obj/item/rig_module/mod = task.mod
 	if(!user || !W)
 		return
 	if(!user.unEquip(mod))

@@ -41,7 +41,7 @@
 
 			to_chat(D, span_danger("You begin decompiling [M]."))
 
-			om_do_after(D, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(decompile_drone_done), done_args = list(D, M), on_fail = PROC_REF(decompile_drone_interrupted), fail_args = list(D))
+			om_task_start(/datum/om/task/timed/matter_decompiler_decompile_drone, D, src, list("receiver" = src, "M" = M))
 			return
 		else
 			continue

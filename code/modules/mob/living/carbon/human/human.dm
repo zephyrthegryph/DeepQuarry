@@ -1237,13 +1237,22 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return
 
 	to_chat(usr, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
-	om_do_after(usr, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(check_pulse_human_done), done_args = list(self, usr), on_fail = PROC_REF(check_pulse_human_failed), fail_args = list(self, usr))
+	om_task_start(/datum/om/task/timed/human_check_pulse_human, usr, src, list("receiver" = src, "self" = self))
 
-/mob/living/carbon/human/proc/check_pulse_human_done(self, mob/usr_mob)
+/datum/om/task/timed/human_check_pulse_human
+	duration = 6 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/check_pulse_human_done
+	cancel_proc = /mob/living/carbon/human/proc/check_pulse_human_failed
+	var/self
+
+/mob/living/carbon/human/proc/check_pulse_human_done(datum/om/task/timed/human_check_pulse_human/task)
+	var/self = task.self
+	var/mob/usr_mob = task.actor
 	var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
 	to_chat(usr_mob,message)
 
-/mob/living/carbon/human/proc/check_pulse_human_failed(self, mob/usr_mob)
+/mob/living/carbon/human/proc/check_pulse_human_failed(datum/om/task/timed/human_check_pulse_human/task)
+	var/mob/usr_mob = task.actor
 	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
 /mob/living/carbon/human/proc/set_species(new_species)
@@ -1583,10 +1592,21 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	om_do_after(U, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(relocate_human_done), done_args = list(S, U, self, current_limb))
+	om_task_start(/datum/om/task/timed/human_relocate_human, U, src, list("receiver" = src, "S" = S, "self" = self, "current_limb" = current_limb))
 	return TRUE
 
-/mob/living/carbon/human/proc/relocate_human_done(mob/S, mob/U, self, obj/item/organ/external/current_limb)
+/datum/om/task/timed/human_relocate_human
+	duration = 3 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/relocate_human_done
+	var/mob/S
+	var/self
+	var/obj/item/organ/external/current_limb
+
+/mob/living/carbon/human/proc/relocate_human_done(datum/om/task/timed/human_relocate_human/task)
+	var/mob/S = task.S
+	var/mob/U = task.actor
+	var/self = task.self
+	var/obj/item/organ/external/current_limb = task.current_limb
 	if(!current_limb || !S || !U)
 		return
 

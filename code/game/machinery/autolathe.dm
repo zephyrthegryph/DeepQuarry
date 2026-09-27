@@ -496,10 +496,18 @@
 		balloon_alert(user, "uploading design..."),
 		span_hear("You hear the chatter of a floppy drive."))
 
-	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_attackby_timed_done), done_args = list(user, O), on_fail = PROC_REF(interaction_attackby_timed_failed), fail_args = list(user, O), busy = src)
+	om_task_start(/datum/om/task/timed/autolathe_interaction_attackby, user, src, list("receiver" = src, "O" = O, "busy" = src))
 	return TRUE
 
-/obj/machinery/autolathe/proc/interaction_attackby_timed_done(mob/user, obj/item/O)
+/datum/om/task/timed/autolathe_interaction_attackby
+	duration = 1.5 SECONDS
+	complete_proc = /obj/machinery/autolathe/proc/interaction_attackby_timed_done
+	cancel_proc = /obj/machinery/autolathe/proc/interaction_attackby_timed_failed
+	var/obj/item/O
+
+/obj/machinery/autolathe/proc/interaction_attackby_timed_done(datum/om/task/timed/autolathe_interaction_attackby/task)
+	var/mob/user = task.actor
+	var/obj/item/O = task.O
 
 	var/list/not_imported
 	var/design_count = 0
@@ -539,7 +547,8 @@
 	update_static_data_for_all_viewers()
 	return TRUE
 
-/obj/machinery/autolathe/proc/interaction_attackby_timed_failed(mob/user, obj/item/O)
+/obj/machinery/autolathe/proc/interaction_attackby_timed_failed(datum/om/task/timed/autolathe_interaction_attackby/task)
+	var/mob/user = task.actor
 	update_static_data_for_all_viewers()
 	balloon_alert(user, "interrupted!")
 	return TRUE

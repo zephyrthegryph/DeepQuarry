@@ -121,11 +121,20 @@
 	if (istype(A, /obj/machinery/atmospherics/pipe/simple))
 		to_chat(user, span_notice("You begin to attach \the [src] to \the [A]..."))
 		var/C = locate(/obj/machinery/clamp) in get_turf(A)
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user, C))
+		om_task_start(/datum/om/task/timed/clamp_afterattack, user, src, list("receiver" = src, "A" = A, "C" = C))
 		if(C)
 			to_chat(user, span_notice("\The [C] is already attached to the pipe at this location!"))
 
-/obj/item/clamp/proc/afterattack_timed_done(atom/A, mob/user, C)
+/datum/om/task/timed/clamp_afterattack
+	duration = 3 SECONDS
+	complete_proc = /obj/item/clamp/proc/afterattack_timed_done
+	var/atom/A
+	var/C
+
+/obj/item/clamp/proc/afterattack_timed_done(datum/om/task/timed/clamp_afterattack/task)
+	var/atom/A = task.A
+	var/mob/user = task.actor
+	var/C = task.C
 	if(!(!C))
 		return
 	if(!user.unEquip(src))

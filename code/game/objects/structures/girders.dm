@@ -210,10 +210,22 @@
 
 	to_chat(user, span_notice("You begin adding the plating..."))
 
-	om_do_after(user, time_to_reinforce, target = src, receiver = src, on_done = PROC_REF(construct_wall_timed_done), done_args = list(S, user, amount_to_use, M, wall_fake))
+	om_task_start(/datum/om/task/timed/girder_construct_wall, user, src, list("receiver" = src, "duration" = time_to_reinforce, "S" = S, "amount_to_use" = amount_to_use, "M" = M, "wall_fake" = wall_fake))
 	return TRUE
 
-/obj/structure/girder/proc/construct_wall_timed_done(obj/item/stack/material/S, mob/user, amount_to_use, datum/material/M, wall_fake)
+/datum/om/task/timed/girder_construct_wall
+	complete_proc = /obj/structure/girder/proc/construct_wall_timed_done
+	var/obj/item/stack/material/S
+	var/amount_to_use
+	var/datum/material/M
+	var/wall_fake
+
+/obj/structure/girder/proc/construct_wall_timed_done(datum/om/task/timed/girder_construct_wall/task)
+	var/obj/item/stack/material/S = task.S
+	var/mob/user = task.actor
+	var/amount_to_use = task.amount_to_use
+	var/datum/material/M = task.M
+	var/wall_fake = task.wall_fake
 	if(!S.use(amount_to_use))
 		return
 
@@ -248,10 +260,19 @@
 		return 0
 
 	to_chat(user, span_notice("Now reinforcing..."))
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(reinforce_with_material_timed_done), done_args = list(S, user, M))
+	om_task_start(/datum/om/task/timed/girder_reinforce_with_material, user, src, list("receiver" = src, "S" = S, "M" = M))
 	return TRUE
 
-/obj/structure/girder/proc/reinforce_with_material_timed_done(obj/item/stack/material/S, mob/user, datum/material/M)
+/datum/om/task/timed/girder_reinforce_with_material
+	duration = 4 SECONDS
+	complete_proc = /obj/structure/girder/proc/reinforce_with_material_timed_done
+	var/obj/item/stack/material/S
+	var/datum/material/M
+
+/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/om/task/timed/girder_reinforce_with_material/task)
+	var/obj/item/stack/material/S = task.S
+	var/mob/user = task.actor
+	var/datum/material/M = task.M
 	if(!S.use(1))
 		return
 	to_chat(user, span_notice("You added reinforcement!"))

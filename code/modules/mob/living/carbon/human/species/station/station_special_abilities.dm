@@ -117,9 +117,18 @@
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	om_do_after(src, 30 SECONDS, target = B, receiver = src, on_done = PROC_REF(bloodsuck_human_done), done_args = list(B, noise, bleed))
+	om_task_start(/datum/om/task/timed/human_bloodsuck_human, src, B, list("noise" = noise, "bleed" = bleed))
 
-/mob/living/carbon/human/proc/bloodsuck_human_done(mob/living/carbon/human/B, noise, bleed)
+/datum/om/task/timed/human_bloodsuck_human
+	duration = 30 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/bloodsuck_human_done
+	var/noise
+	var/bleed
+
+/mob/living/carbon/human/proc/bloodsuck_human_done(datum/om/task/timed/human_bloodsuck_human/task)
+	var/mob/living/carbon/human/B = task.target
+	var/noise = task.noise
+	var/bleed = task.bleed
 	if(!Adjacent(B)) return
 	if(noise)
 		src.visible_message(span_infoplain(span_red(span_bold("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))))
@@ -544,9 +553,19 @@
 	last_special = world.time + vore_shred_time
 	visible_message(span_danger("[src] appears to be preparing to do something to [T]!")) //Let everyone know that bad times are ahead
 
-	om_do_after(src, vore_shred_time, target = T, receiver = src, on_done = PROC_REF(shred_limb_living_done), done_args = list(T, T_ext, T_int, B))
+	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, list("duration" = vore_shred_time, "T_ext" = T_ext, "T_int" = T_int, "B" = B))
 
-/mob/living/proc/shred_limb_living_done(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
+/datum/om/task/timed/living_shred_limb_living
+	complete_proc = /mob/living/proc/shred_limb_living_done
+	var/obj/item/organ/external/T_ext
+	var/obj/item/organ/internal/T_int
+	var/obj/belly/B
+
+/mob/living/proc/shred_limb_living_done(datum/om/task/timed/living_shred_limb_living/task)
+	var/mob/living/carbon/human/T = task.target
+	var/obj/item/organ/external/T_ext = task.T_ext
+	var/obj/item/organ/internal/T_int = task.T_int
+	var/obj/belly/B = task.B
 	if(can_shred(T) != T)
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
@@ -1459,9 +1478,20 @@
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
 	var/starting_loc = target.loc
-	om_do_after(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(absorb_devour_living_done), done_args = list(pred, belly, target, starting_loc))
+	om_task_start(/datum/om/task/timed/living_absorb_devour_living, src, target, list("pred" = pred, "belly" = belly, "starting_loc" = starting_loc))
 
-/mob/living/proc/absorb_devour_living_done(mob/living/pred, obj/belly/belly, mob/living/target, starting_loc)
+/datum/om/task/timed/living_absorb_devour_living
+	duration = 5 SECONDS
+	complete_proc = /mob/living/proc/absorb_devour_living_done
+	var/mob/living/pred
+	var/obj/belly/belly
+	var/starting_loc
+
+/mob/living/proc/absorb_devour_living_done(datum/om/task/timed/living_absorb_devour_living/task)
+	var/mob/living/pred = task.pred
+	var/obj/belly/belly = task.belly
+	var/mob/living/target = task.target
+	var/starting_loc = task.starting_loc
 	if(target.loc != starting_loc)
 		to_chat(src, span_notice("\The [target] is no longer within reach."))
 		return

@@ -686,13 +686,34 @@
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	var/started = om_do_after(user, 1 SECOND, src, src, PROC_REF(robo_repair_done), list(repair_amount, damage_type, damage_desc, tool, user, damage_amount, tool_proc, tool_args), on_fail = PROC_REF(robo_repair_failed), fail_args = list(user))
+	var/started = om_task_start(/datum/om/task/timed/external_robo_repair, user, src, list("receiver" = src, "repair_amount" = repair_amount, "damage_type" = damage_type, "damage_desc" = damage_desc, "tool" = tool, "damage_amount" = damage_amount, "tool_proc" = tool_proc, "tool_args" = tool_args))
 	return !istext(started)
 
-/obj/item/organ/external/proc/robo_repair_failed(mob/living/user)
+/obj/item/organ/external/proc/robo_repair_failed(datum/om/task/timed/external_robo_repair/task)
+	var/mob/living/user = task.actor
 	to_chat(user, span_warning("You must stand still to do that."))
 
-/obj/item/organ/external/proc/robo_repair_done(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user, damage_amount, tool_proc, list/tool_args)
+/datum/om/task/timed/external_robo_repair
+	duration = 1 SECOND
+	complete_proc = /obj/item/organ/external/proc/robo_repair_done
+	cancel_proc = /obj/item/organ/external/proc/robo_repair_failed
+	var/repair_amount
+	var/damage_type
+	var/damage_desc
+	var/obj/item/tool
+	var/damage_amount
+	var/tool_proc
+	var/list/tool_args
+
+/obj/item/organ/external/proc/robo_repair_done(datum/om/task/timed/external_robo_repair/task)
+	var/repair_amount = task.repair_amount
+	var/damage_type = task.damage_type
+	var/damage_desc = task.damage_desc
+	var/obj/item/tool = task.tool
+	var/mob/living/user = task.actor
+	var/damage_amount = task.damage_amount
+	var/tool_proc = task.tool_proc
+	var/list/tool_args = task.tool_args
 	// Repair by mechanism: plating for structural damage, wiring for scorching.
 	if(owner)
 		if(damage_type == BRUTE || damage_type == "omni")

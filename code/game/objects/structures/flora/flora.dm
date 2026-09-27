@@ -288,16 +288,25 @@
 		to_chat(user, span_notice("[I] is too big to fit inside [src]."))
 		return
 
-	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user), on_fail = PROC_REF(attackby_timed_failed2), fail_args = list(I, user))
+	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, list("receiver" = src, "I" = I))
 
-/obj/structure/flora/pottedplant/proc/attackby_timed_done2(obj/item/I, mob/user)
+/datum/om/task/timed/pottedplant_attackby
+	duration = 1 SECOND
+	complete_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_done2
+	cancel_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_failed2
+	var/obj/item/I
+
+/obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/om/task/timed/pottedplant_attackby/task)
+	var/obj/item/I = task.I
+	var/mob/user = task.actor
 	user.drop_from_inventory(I, src)
 	I.forceMove(src)
 	stored_item = I
 	src.visible_message("[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] [user] places [I] into [src].")
 	return
 
-/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(obj/item/I, mob/user)
+/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)
+	var/mob/user = task.actor
 	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
 	return
 

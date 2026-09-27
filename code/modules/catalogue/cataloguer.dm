@@ -114,13 +114,23 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	// beam (which ends itself) is never a captured argument.
 	var/list/effects = list(scan_beam, filter, box_segments)
 	// The scan claims the cataloguer: busy (om_busy()) until it ends.
-	var/started = om_do_after(user, scan_delay, target, src, PROC_REF(scan_succeeded), list(target, user, effects), IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, PROC_REF(scan_failed), list(target, user, effects, world.time), max_distance = scan_range, busy = src)
+	var/started = om_task_start(/datum/om/task/timed/cataloguer_scan, user, target, list("receiver" = src, "duration" = scan_delay, "effects" = effects, "scan_start_time" = world.time, "max_distance" = scan_range, "busy" = src))
 	if(istext(started))
 		scan_cleanup(target, user, effects)
 		return
 	update_icon()
 
-/obj/item/cataloguer/proc/scan_succeeded(atom/target, mob/user, list/effects)
+/datum/om/task/timed/cataloguer_scan
+	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
+	complete_proc = /obj/item/cataloguer/proc/scan_succeeded
+	cancel_proc = /obj/item/cataloguer/proc/scan_failed
+	var/list/effects
+	var/scan_start_time
+
+/obj/item/cataloguer/proc/scan_succeeded(datum/om/task/timed/cataloguer_scan/task)
+	var/atom/target = task.target
+	var/mob/user = task.actor
+	var/list/effects = task.effects
 	if(target.can_catalogue(user))
 		to_chat(user, span_notice("You successfully scan \the [target] with \the [src]."))
 		playsound(src, 'sound/machines/ping.ogg', 50)
@@ -134,7 +144,11 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	partial_scan_time = 0
 	scan_cleanup(target, user, effects)
 
-/obj/item/cataloguer/proc/scan_failed(atom/target, mob/user, list/effects, scan_start_time)
+/obj/item/cataloguer/proc/scan_failed(datum/om/task/timed/cataloguer_scan/task)
+	var/atom/target = task.target
+	var/mob/user = task.actor
+	var/list/effects = task.effects
+	var/scan_start_time = task.scan_start_time
 	to_chat(user, span_warning("You failed to finish scanning \the [target] with \the [src]."))
 	playsound(src, 'sound/machines/buzz-two.ogg', 50)
 	color_box(effects[3], "#FF0000", 3)

@@ -101,10 +101,17 @@
 	if(gun.loaded.len >= gun.max_shells)
 		to_chat(user, span_warning("[gun] is full."))
 		return FALSE
-	var/started = om_do_after(user, gun.reload_time * C.w_class, gun, src, PROC_REF(casing_loaded), list(user, gun, C))
+	var/started = om_task_start(/datum/om/task/timed/single_casing_casing_loaded, user, gun, list("receiver" = src, "duration" = gun.reload_time * C.w_class, "C" = C))
 	return !istext(started)
 
-/datum/ammo_provider/single_casing/proc/casing_loaded(mob/user, obj/item/gun/projectile/gun, obj/item/ammo_casing/C)
+/datum/om/task/timed/single_casing_casing_loaded
+	complete_proc = /datum/ammo_provider/single_casing/proc/casing_loaded
+	var/obj/item/ammo_casing/C
+
+/datum/ammo_provider/single_casing/proc/casing_loaded(datum/om/task/timed/single_casing_casing_loaded/task)
+	var/mob/user = task.actor
+	var/obj/item/gun/projectile/gun = task.target
+	var/obj/item/ammo_casing/C = task.C
 	if(gun.loaded.len >= gun.max_shells)
 		return
 	user.remove_from_mob(C)
@@ -193,10 +200,17 @@
 		return FALSE
 	// C5: the magazine may still hold its rounds as a count.
 	AM.make_rounds_real()
-	var/started = om_do_after(user, gun.reload_time * AM.w_class, gun, src, PROC_REF(magazine_loaded), list(user, gun, AM))
+	var/started = om_task_start(/datum/om/task/timed/magazine_magazine_loaded, user, gun, list("receiver" = src, "duration" = gun.reload_time * AM.w_class, "AM" = AM))
 	return !istext(started)
 
-/datum/ammo_provider/magazine/proc/magazine_loaded(mob/user, obj/item/gun/projectile/gun, obj/item/ammo_magazine/AM)
+/datum/om/task/timed/magazine_magazine_loaded
+	complete_proc = /datum/ammo_provider/magazine/proc/magazine_loaded
+	var/obj/item/ammo_magazine/AM
+
+/datum/ammo_provider/magazine/proc/magazine_loaded(datum/om/task/timed/magazine_magazine_loaded/task)
+	var/mob/user = task.actor
+	var/obj/item/gun/projectile/gun = task.target
+	var/obj/item/ammo_magazine/AM = task.AM
 	if(gun.ammo_magazine)
 		return
 	user.remove_from_mob(AM)

@@ -256,10 +256,18 @@
 
 	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [H]!"))
 
-	om_do_after(user, use_time, target = src, receiver = src, on_done = PROC_REF(place_legcuffs_timed_done), done_args = list(target, user, H))
+	om_task_start(/datum/om/task/timed/legcuffs_place_legcuffs, user, src, list("receiver" = src, "duration" = use_time, "target_arg" = target, "H" = H))
 	return TRUE
 
-/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(mob/living/carbon/target, mob/user, mob/living/carbon/human/H)
+/datum/om/task/timed/legcuffs_place_legcuffs
+	complete_proc = /obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done
+	var/mob/living/carbon/target_arg
+	var/mob/living/carbon/human/H
+
+/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/om/task/timed/legcuffs_place_legcuffs/task)
+	var/mob/living/carbon/target = task.target_arg
+	var/mob/user = task.actor
+	var/mob/living/carbon/human/H = task.H
 
 	if(!can_place(target, user)) //victim may have resisted out of the grab in the meantime
 		return 0

@@ -226,10 +226,19 @@
 		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 		return TRUE
 	to_chat(user, span_notice("You begin repairing \the [src]..."))
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(repair_done), list(user, P, amt))
+	om_task_start(/datum/om/task/timed/emitter_repair, user, src, list("receiver" = src, "P" = P, "amt" = amt))
 	return TRUE
 
-/obj/machinery/power/emitter/proc/repair_done(mob/user, obj/item/stack/material/P, amt)
+/datum/om/task/timed/emitter_repair
+	duration = 3 SECONDS
+	complete_proc = /obj/machinery/power/emitter/proc/repair_done
+	var/obj/item/stack/material/P
+	var/amt
+
+/obj/machinery/power/emitter/proc/repair_done(datum/om/task/timed/emitter_repair/task)
+	var/mob/user = task.actor
+	var/obj/item/stack/material/P = task.P
+	var/amt = task.amt
 	if(P.use(amt))
 		to_chat(user, span_notice("You have repaired \the [src]."))
 		repair_damage(max_integrity)

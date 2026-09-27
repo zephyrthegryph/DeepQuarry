@@ -101,11 +101,19 @@
 		return
 
 	if(!set_content && !sealed)
-		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(W, user))
+		om_task_start(/datum/om/task/timed/blank_attackby, user, user, list("receiver" = src, "W" = W))
 		return
 	return
 
-/obj/item/mail/blank/proc/attackby_timed_done(obj/item/W, mob/user)
+/datum/om/task/timed/blank_attackby
+	duration = 1.5 SECONDS
+	complete_proc = /obj/item/mail/blank/proc/attackby_timed_done
+	cancel_proc = /obj/item/mail/blank/proc/attackby_timed_failed
+	var/obj/item/W
+
+/obj/item/mail/blank/proc/attackby_timed_done(datum/om/task/timed/blank_attackby/task)
+	var/obj/item/W = task.W
+	var/mob/user = task.actor
 	user.drop_item()
 	W.forceMove(src)
 	balloon_alert(user, "placed \the [W] into \the [src]")
@@ -113,7 +121,7 @@
 	description_info = "Click with an empty hand to seal it, or Alt-Click to retrieve the object out."
 	return
 
-/obj/item/mail/blank/proc/attackby_timed_failed(obj/item/W, mob/user)
+/obj/item/mail/blank/proc/attackby_timed_failed(datum/om/task/timed/blank_attackby/task)
 	set_content = FALSE
 
 /obj/item/mail/proc/setRecipient(mob/user)

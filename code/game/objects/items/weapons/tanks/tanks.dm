@@ -158,17 +158,26 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	if(istype(W, /obj/item/assembly_holder))
 		if(wired)
 			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(W, user))
+			om_task_start(/datum/om/task/timed/tank_attackby, user, src, list("receiver" = src, "W" = W))
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
 
-/obj/item/tank/proc/attackby_timed_done(obj/item/W, mob/user)
+/datum/om/task/timed/tank_attackby
+	duration = 5 SECONDS
+	complete_proc = /obj/item/tank/proc/attackby_timed_done
+	cancel_proc = /obj/item/tank/proc/attackby_timed_failed
+	var/obj/item/W
+
+/obj/item/tank/proc/attackby_timed_done(datum/om/task/timed/tank_attackby/task)
+	var/obj/item/W = task.W
+	var/mob/user = task.actor
 	to_chat(user, span_notice("You finish attaching the assembly to \the [src]."))
 	GLOB.bombers += "[key_name(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]"
 	message_admins("[key_name_admin(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]")
 	assemble_bomb(W,user)
 
-/obj/item/tank/proc/attackby_timed_failed(obj/item/W, mob/user)
+/obj/item/tank/proc/attackby_timed_failed(datum/om/task/timed/tank_attackby/task)
+	var/mob/user = task.actor
 	to_chat(user, span_notice("You stop attaching the assembly."))
 
 /obj/item/tank/wirecutter_act(mob/user, obj/item/tool)
@@ -219,19 +228,30 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	if(WT?.remove_fuel(1,user))
 		if(!valve_welded)
 			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user, tool, WT), on_fail = PROC_REF(welder_act_timed_failed), fail_args = list(user, tool, WT))
+			om_task_start(/datum/om/task/timed/tank_welder_act, user, src, list("receiver" = src, "tool" = tool, "WT" = WT))
 			WT.eyecheck(user)
 		else
 			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
 	add_fingerprint(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/tank/proc/welder_act_timed_done(mob/user, obj/item/tool, obj/item/weldingtool/WT)
+/datum/om/task/timed/tank_welder_act
+	duration = 4 SECONDS
+	complete_proc = /obj/item/tank/proc/welder_act_timed_done
+	cancel_proc = /obj/item/tank/proc/welder_act_timed_failed
+	var/obj/item/tool
+	var/obj/item/weldingtool/WT
+
+/obj/item/tank/proc/welder_act_timed_done(datum/om/task/timed/tank_welder_act/task)
+	var/mob/user = task.actor
 	to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
 	src.valve_welded = 1
 	src.leaking = 0
 
-/obj/item/tank/proc/welder_act_timed_failed(mob/user, obj/item/tool, obj/item/weldingtool/WT)
+/obj/item/tank/proc/welder_act_timed_failed(datum/om/task/timed/tank_welder_act/task)
+	var/mob/user = task.actor
+	var/obj/item/tool = task.tool
+	var/obj/item/weldingtool/WT = task.WT
 	GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
 	message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
 	if(WT.welding)

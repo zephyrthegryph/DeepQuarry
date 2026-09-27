@@ -681,14 +681,24 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		om_do_after(user, windup, src, src, PROC_REF(slam_wall), list(user, W, attack_message), on_fail = PROC_REF(slam_lowered), fail_args = list(user))
+		om_task_start(/datum/om/task/timed/slam_slam_wall, user, src, list("receiver" = src, "duration" = windup, "W" = W, "attack_message" = attack_message))
 		return
 	qdel(src)
 
-/obj/item/spell/construct/slam/proc/slam_lowered(mob/living/user)
+/obj/item/spell/construct/slam/proc/slam_lowered(datum/om/task/timed/slam_slam_wall/task)
+	var/mob/living/user = task.actor
 	user?.visible_message(span_bold("\The [user]") + " lowers its fist.")
 
-/obj/item/spell/construct/slam/proc/slam_wall(mob/living/user, turf/simulated/wall/W, attack_message)
+/datum/om/task/timed/slam_slam_wall
+	complete_proc = /obj/item/spell/construct/slam/proc/slam_wall
+	cancel_proc = /obj/item/spell/construct/slam/proc/slam_lowered
+	var/turf/simulated/wall/W
+	var/attack_message
+
+/obj/item/spell/construct/slam/proc/slam_wall(datum/om/task/timed/slam_slam_wall/task)
+	var/mob/living/user = task.actor
+	var/turf/simulated/wall/W = task.W
+	var/attack_message = task.attack_message
 	W.visible_message(span_danger("\The [user] [attack_message] \the [W], obliterating it!"))
 	W.dismantle_wall(1)
 	qdel(src)

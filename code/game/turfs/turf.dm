@@ -399,10 +399,18 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		return FALSE
 
 	vandal.visible_message(span_warning("\The [vandal] begins carving something into \the [src]."))
-	om_do_after(vandal, max(2 SECONDS, length(message)), src, src, PROC_REF(graffiti_done), list(vandal, message, click_parameters))
+	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, list("receiver" = src, "duration" = max(2 SECONDS, length(message)), "message" = message, "click_parameters" = click_parameters))
 	return TRUE
 
-/turf/proc/graffiti_done(mob/vandal, message, click_parameters)
+/datum/om/task/timed/turf_graffiti
+	complete_proc = /turf/proc/graffiti_done
+	var/message
+	var/click_parameters
+
+/turf/proc/graffiti_done(datum/om/task/timed/turf_graffiti/task)
+	var/mob/vandal = task.actor
+	var/message = task.message
+	var/click_parameters = task.click_parameters
 	vandal.visible_message(span_danger("\The [vandal] carves some graffiti into \the [src]."))
 	var/obj/effect/decal/writing/graffiti = new(src)
 	graffiti.message = message

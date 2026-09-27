@@ -98,10 +98,20 @@
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
-	om_do_after(src, windup, target = src, progress = FALSE, hidden = TRUE, interaction_key = "melee_swing", receiver = src, on_done = PROC_REF(begin_melee_swing_living_done), done_args = list(target, weapon, windup, swing_tiles), on_fail = PROC_REF(begin_melee_swing_living_failed), fail_args = list(target, weapon, windup, swing_tiles))
+	om_task_start(/datum/om/task/timed/living_begin_melee_swing_living, src, src, list("duration" = windup, "target_arg" = target, "weapon" = weapon, "swing_tiles" = swing_tiles, "progress" = FALSE, "interaction_key" = "melee_swing", "hidden" = TRUE))
 	return TRUE
 
-/mob/living/proc/begin_melee_swing_living_done(mob/living/target, obj/item/weapon, windup, list/turf/swing_tiles)
+/datum/om/task/timed/living_begin_melee_swing_living
+	complete_proc = /mob/living/proc/begin_melee_swing_living_done
+	cancel_proc = /mob/living/proc/begin_melee_swing_living_failed
+	var/mob/living/target_arg
+	var/obj/item/weapon
+	var/list/turf/swing_tiles
+
+/mob/living/proc/begin_melee_swing_living_done(datum/om/task/timed/living_begin_melee_swing_living/task)
+	var/mob/living/target = task.target_arg
+	var/obj/item/weapon = task.weapon
+	var/list/turf/swing_tiles = task.swing_tiles
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
@@ -130,6 +140,6 @@
 
 	return TRUE
 
-/mob/living/proc/begin_melee_swing_living_failed(mob/living/target, obj/item/weapon, windup, list/turf/swing_tiles)
+/mob/living/proc/begin_melee_swing_living_failed(datum/om/task/timed/living_begin_melee_swing_living/task)
 	is_swinging = FALSE
 	return FALSE

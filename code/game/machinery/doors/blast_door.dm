@@ -223,7 +223,7 @@
 			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 			return TRUE
 		to_chat(user, span_notice("You begin repairing [src]..."))
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_attackby_timed_done), done_args = list(user, amt, P))
+		om_task_start(/datum/om/task/timed/blast_interaction_attackby, user, src, list("receiver" = src, "amt" = amt, "P" = P))
 
 	else if(src.density && (IS_HARMING(user))) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
 		var/obj/item/W = C
@@ -239,7 +239,16 @@
 			return TRUE
 	return TRUE
 
-/obj/machinery/door/blast/proc/interaction_attackby_timed_done(mob/user, amt, obj/item/stack/P)
+/datum/om/task/timed/blast_interaction_attackby
+	duration = 3 SECONDS
+	complete_proc = /obj/machinery/door/blast/proc/interaction_attackby_timed_done
+	var/amt
+	var/obj/item/stack/P
+
+/obj/machinery/door/blast/proc/interaction_attackby_timed_done(datum/om/task/timed/blast_interaction_attackby/task)
+	var/mob/user = task.actor
+	var/amt = task.amt
+	var/obj/item/stack/P = task.P
 	if(P.use(amt))
 		to_chat(user, span_notice("You have repaired \The [src]"))
 		src.repair()

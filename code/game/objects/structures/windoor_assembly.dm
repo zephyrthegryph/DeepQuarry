@@ -101,7 +101,7 @@
 			playsound(src, 'sound/items/Screwdriver.ogg', 100, 1)
 			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
-			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed2), fail_args = list(W, user))
+			om_task_start(/datum/om/task/timed/windoor_assembly_attackby, user, src, list("receiver" = src, "W" = W))
 		else
 			..()
 
@@ -113,7 +113,15 @@
 		to_chat(user,span_notice("You wire the windoor!"))
 		src.state = "02"
 		step = 1
-/obj/structure/windoor_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
+/datum/om/task/timed/windoor_assembly_attackby
+	duration = 4 SECONDS
+	complete_proc = /obj/structure/windoor_assembly/proc/attackby_timed_done2
+	cancel_proc = /obj/structure/windoor_assembly/proc/attackby_timed_failed2
+	var/obj/item/W
+
+/obj/structure/windoor_assembly/proc/attackby_timed_done2(datum/om/task/timed/windoor_assembly_attackby/task)
+	var/obj/item/W = task.W
+	var/mob/user = task.actor
 	if(!src) return
 
 	user.drop_item()
@@ -122,7 +130,8 @@
 	step = 2
 	src.electronics = W
 
-/obj/structure/windoor_assembly/proc/attackby_timed_failed2(obj/item/W, mob/user)
+/obj/structure/windoor_assembly/proc/attackby_timed_failed2(datum/om/task/timed/windoor_assembly_attackby/task)
+	var/obj/item/W = task.W
 	W.loc = src.loc
 
 /obj/structure/windoor_assembly/welder_act(mob/user, obj/item/W)

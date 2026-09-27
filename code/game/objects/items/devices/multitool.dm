@@ -119,10 +119,18 @@
 		return ..()
 	user.visible_message(span_notice("[user] plugs \the [src] into a diagnostic port on [H]'s [E.name] and starts recalibrating."), \
 		span_notice("You start recalibrating [H]'s [E.name]."))
-	om_do_after(user, 4 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H, E))
+	om_task_start(/datum/om/task/timed/multitool_attack, user, H, list("receiver" = src, "E" = E))
 	return TRUE
 
-/obj/item/multitool/proc/attack_timed_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/E)
+/datum/om/task/timed/multitool_attack
+	duration = 4 SECONDS
+	complete_proc = /obj/item/multitool/proc/attack_timed_done
+	var/obj/item/organ/external/E
+
+/obj/item/multitool/proc/attack_timed_done(datum/om/task/timed/multitool_attack/task)
+	var/mob/living/user = task.actor
+	var/mob/living/carbon/human/H = task.target
+	var/obj/item/organ/external/E = task.E
 	var/treated = H.mend(TREAT_CALIBRATION, 30, E.organ_tag)
 	if(E.organ_tag == BP_HEAD)
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)

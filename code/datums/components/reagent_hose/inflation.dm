@@ -80,10 +80,28 @@
 	// Display action
 	name = "[human_owner]'s [feedback]"
 	user.visible_message("\The [user] starts to connect the hose to \the [human_owner]'s [feedback]...")
-	var/started = om_do_after(user, 7 SECONDS, human_owner, src, PROC_REF(inflation_connected), list(user, other, origin, target, distancetonode, tubing, feedback), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_warning("You couldn't connect the hose!")))
+	var/started = om_task_start(/datum/om/task/timed/inflation_inflation_connected, user, human_owner, list("receiver" = src, "other" = other, "origin" = origin, "target_arg" = target, "distancetonode" = distancetonode, "tubing" = tubing, "feedback" = feedback))
 	return !istext(started)
 
-/datum/component/hose_connector/inflation/proc/inflation_connected(mob/user, datum/component/hose_connector/other, datum/component/hose_connector/origin, datum/component/hose_connector/target, distancetonode, obj/item/stack/tubing, feedback)
+/datum/om/task/timed/inflation_inflation_connected
+	duration = 7 SECONDS
+	complete_proc = /datum/component/hose_connector/inflation/proc/inflation_connected
+	fail_message = span_warning("You couldn't connect the hose!")
+	var/datum/component/hose_connector/other
+	var/datum/component/hose_connector/origin
+	var/datum/component/hose_connector/target_arg
+	var/distancetonode
+	var/obj/item/stack/tubing
+	var/feedback
+
+/datum/component/hose_connector/inflation/proc/inflation_connected(datum/om/task/timed/inflation_inflation_connected/task)
+	var/mob/user = task.actor
+	var/datum/component/hose_connector/other = task.other
+	var/datum/component/hose_connector/origin = task.origin
+	var/datum/component/hose_connector/target = task.target_arg
+	var/distancetonode = task.distancetonode
+	var/obj/item/stack/tubing = task.tubing
+	var/feedback = task.feedback
 	if(other.get_hose() || get_hose()) // SHouldn't be connected to anything yet!
 		to_chat(user,span_warning("You couldn't connect the hose, another hose is already connected!"))
 		return

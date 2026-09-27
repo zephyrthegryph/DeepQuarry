@@ -100,10 +100,18 @@
 	// Service begins, delay
 	visible_message(span_bold("\The [src]") + " scans [user] thoroughly!")
 	flick("kiosk_active", src)
-	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(start_using_timed_done), done_args = list(user, choice), on_fail = PROC_REF(start_using_timed_failed), fail_args = list(user, choice))
+	om_task_start(/datum/om/task/timed/medical_kiosk_start_using, user, src, list("receiver" = src, "choice" = choice))
 	return TRUE
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_done(mob/living/user, choice)
+/datum/om/task/timed/medical_kiosk_start_using
+	duration = 5 SECONDS
+	complete_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_done
+	cancel_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_failed
+	var/choice
+
+/obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/om/task/timed/medical_kiosk_start_using/task)
+	var/mob/living/user = task.actor
+	var/choice = task.choice
 	if(inoperable())
 		return
 
@@ -122,7 +130,7 @@
 	// Standby
 	suspend()
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_failed(mob/living/user, choice)
+/obj/machinery/medical_kiosk/proc/start_using_timed_failed(datum/om/task/timed/medical_kiosk_start_using/task)
 	suspend()
 	return
 

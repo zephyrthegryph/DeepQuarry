@@ -548,10 +548,19 @@
 		var/score2 = (scale2 * strength2)
 
 		var/competition = pick(score1;player1, score2;player2)
-		om_do_after(player1, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_armwrestle_human_done), done_args = list(player1, player2, competition), on_fail = PROC_REF(game_armwrestle_human_failed), fail_args = list(player1, player2, competition))
+		om_task_start(/datum/om/task/timed/human_game_armwrestle_human, player1, player2, list("receiver" = src, "competition" = competition))
 		return
 
-/mob/living/carbon/human/proc/game_armwrestle_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+/datum/om/task/timed/human_game_armwrestle_human
+	duration = 5 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/game_armwrestle_human_done
+	cancel_proc = /mob/living/carbon/human/proc/game_armwrestle_human_failed
+	var/competition
+
+/mob/living/carbon/human/proc/game_armwrestle_human_done(datum/om/task/timed/human_game_armwrestle_human/task)
+	var/mob/living/carbon/human/player1 = task.actor
+	var/mob/living/carbon/human/player2 = task.target
+	var/competition = task.competition
 	if(!hand_games_check(player1,player2))
 		return
 	if(competition == player1)
@@ -559,7 +568,8 @@
 	else
 		player2.visible_message(span_notice("[player2] manages to overpower [player1] and pin their arm down!"))
 
-/mob/living/carbon/human/proc/game_armwrestle_human_failed(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+/mob/living/carbon/human/proc/game_armwrestle_human_failed(datum/om/task/timed/human_game_armwrestle_human/task)
+	var/mob/living/carbon/human/player2 = task.target
 	player2.visible_message(span_notice("The players cancelled their competition!"))
 	return 0
 
@@ -600,10 +610,19 @@
 		var/score2 = (scale2 * strength2)
 
 		var/competition = pick(score1;player1, score2;player2)
-		om_do_after(player1, 1 SECOND, target = player2, receiver = src, on_done = PROC_REF(game_slaphands_human_done), done_args = list(player1, player2, competition), on_fail = PROC_REF(game_slaphands_human_failed), fail_args = list(player1, player2, competition))
+		om_task_start(/datum/om/task/timed/human_game_slaphands_human, player1, player2, list("receiver" = src, "competition" = competition))
 		return
 
-/mob/living/carbon/human/proc/game_slaphands_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+/datum/om/task/timed/human_game_slaphands_human
+	duration = 1 SECOND
+	complete_proc = /mob/living/carbon/human/proc/game_slaphands_human_done
+	cancel_proc = /mob/living/carbon/human/proc/game_slaphands_human_failed
+	var/competition
+
+/mob/living/carbon/human/proc/game_slaphands_human_done(datum/om/task/timed/human_game_slaphands_human/task)
+	var/mob/living/carbon/human/player1 = task.actor
+	var/mob/living/carbon/human/player2 = task.target
+	var/competition = task.competition
 	if(!hand_games_check(player1,player2))
 		return
 	playsound(player1, 'sound/effects/snap.ogg', 30, 1)
@@ -612,7 +631,8 @@
 	else
 		player2.visible_message(span_notice("[player2] manages to slap [player1]'s hand before they can react!"))
 
-/mob/living/carbon/human/proc/game_slaphands_human_failed(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+/mob/living/carbon/human/proc/game_slaphands_human_failed(datum/om/task/timed/human_game_slaphands_human/task)
+	var/mob/living/carbon/human/player2 = task.target
 	player2.visible_message(span_notice("The players cancelled their competition!"))
 	return 0
 
@@ -630,10 +650,17 @@
 		if(!hand_games_check(player1,player2))
 			return
 		player1.visible_message(span_notice("[player1] challenges [player2] to a thumb war!"))
-		om_do_after(player1, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_thumbwars_human_done), done_args = list(player1, player2), on_fail = PROC_REF(game_thumbwars_human_failed), fail_args = list(player1, player2))
+		om_task_start(/datum/om/task/timed/human_game_thumbwars_human, player1, player2, list("receiver" = src))
 		return
 
-/mob/living/carbon/human/proc/game_thumbwars_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
+/datum/om/task/timed/human_game_thumbwars_human
+	duration = 5 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/game_thumbwars_human_done
+	cancel_proc = /mob/living/carbon/human/proc/game_thumbwars_human_failed
+
+/mob/living/carbon/human/proc/game_thumbwars_human_done(datum/om/task/timed/human_game_thumbwars_human/task)
+	var/mob/living/carbon/human/player1 = task.actor
+	var/mob/living/carbon/human/player2 = task.target
 	if(!hand_games_check(player1,player2))
 		return
 	if(prob(50))
@@ -641,7 +668,8 @@
 	else
 		player2.visible_message(span_notice("After a gruelling battle, [player2] eventually manages to subdue the thumb of [player1]!"))
 
-/mob/living/carbon/human/proc/game_thumbwars_human_failed(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
+/mob/living/carbon/human/proc/game_thumbwars_human_failed(datum/om/task/timed/human_game_thumbwars_human/task)
+	var/mob/living/carbon/human/player2 = task.target
 	player2.visible_message(span_notice("The players cancelled their thumb war!"))
 	return 0
 

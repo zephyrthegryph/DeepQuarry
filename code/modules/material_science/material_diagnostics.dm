@@ -110,9 +110,22 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	om_do_after(user, 2 SECONDS, owner, src, PROC_REF(fit_stock_done), list(stock, user, role, quantity, material_id))
+	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner, list("receiver" = src, "stock" = stock, "role" = role, "quantity" = quantity, "material_id" = material_id))
 
-/datum/material_service/proc/fit_stock_done(obj/item/stack/material/stock, mob/user, role, quantity, material_id)
+/datum/om/task/timed/material_service_fit_stock
+	duration = 2 SECONDS
+	complete_proc = /datum/material_service/proc/fit_stock_done
+	var/obj/item/stack/material/stock
+	var/role
+	var/quantity
+	var/material_id
+
+/datum/material_service/proc/fit_stock_done(datum/om/task/timed/material_service_fit_stock/task)
+	var/obj/item/stack/material/stock = task.stock
+	var/mob/user = task.actor
+	var/role = task.role
+	var/quantity = task.quantity
+	var/material_id = task.material_id
 	if(!can_service(user) || !maintenance_open || stock.loc != user || !stock.use(quantity))
 		return
 	advance()

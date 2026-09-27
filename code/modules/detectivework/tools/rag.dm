@@ -88,9 +88,17 @@
 		user.visible_message(span_danger("\The [user] begins to wring out [src] over [target_text]."), span_notice("You begin to wring out [src] over [target_text]."))
 
 		//50 for a fully soaked rag
-		om_do_after(user, reagents.total_volume*5, src, src, PROC_REF(wring_done), list(user, trans_dest, target_text))
+		om_task_start(/datum/om/task/timed/rag_wring, user, src, list("receiver" = src, "duration" = reagents.total_volume*5, "trans_dest" = trans_dest, "target_text" = target_text))
 
-/obj/item/reagent_containers/glass/rag/proc/wring_done(mob/user, atom/trans_dest, target_text)
+/datum/om/task/timed/rag_wring
+	complete_proc = /obj/item/reagent_containers/glass/rag/proc/wring_done
+	var/atom/trans_dest
+	var/target_text
+
+/obj/item/reagent_containers/glass/rag/proc/wring_done(datum/om/task/timed/rag_wring/task)
+	var/mob/user = task.actor
+	var/atom/trans_dest = task.trans_dest
+	var/target_text = task.target_text
 	if(trans_dest)
 		reagents.trans_to(trans_dest, reagents.total_volume)
 	else

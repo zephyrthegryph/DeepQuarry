@@ -95,14 +95,23 @@
 				Hyd.die()
 	if (istype(A, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,A) <= 1)
 		to_chat(user, span_notice("You begin filling the tank on the chainsaw."))
-		om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user), on_fail = PROC_REF(afterattack_timed_failed), fail_args = list(A, user))
+		om_task_start(/datum/om/task/timed/chainsaw_afterattack, user, src, list("receiver" = src, "A" = A))
 
-/obj/item/chainsaw/proc/afterattack_timed_done(atom/A, mob/user)
+/datum/om/task/timed/chainsaw_afterattack
+	duration = 15
+	complete_proc = /obj/item/chainsaw/proc/afterattack_timed_done
+	cancel_proc = /obj/item/chainsaw/proc/afterattack_timed_failed
+	var/atom/A
+
+/obj/item/chainsaw/proc/afterattack_timed_done(datum/om/task/timed/chainsaw_afterattack/task)
+	var/atom/A = task.A
+	var/mob/user = task.actor
 	A.reagents.trans_to_obj(src, max_fuel)
 	playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
 	to_chat(user, span_notice("Chainsaw succesfully refueled."))
 
-/obj/item/chainsaw/proc/afterattack_timed_failed(atom/A, mob/user)
+/obj/item/chainsaw/proc/afterattack_timed_failed(datum/om/task/timed/chainsaw_afterattack/task)
+	var/mob/user = task.actor
 	to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
 
 /// Burns fuel every 2 s while running (turnOn() starts it); off, it sleeps.

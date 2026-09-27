@@ -197,7 +197,7 @@
 					if(S.get_amount() >= 2)
 						playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 						user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
-						om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(user, S, material_name))
+						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, list("receiver" = src, "S" = S, "material_name" = material_name))
 
 	else
 		..()
@@ -222,7 +222,16 @@
 	if (S.use(1))
 		to_chat(user, span_notice("You installed reinforced glass windows into the airlock assembly."))
 		glass = 1
-/obj/structure/door_assembly/proc/attackby_timed_done4(mob/user, obj/item/stack/S, material_name)
+/datum/om/task/timed/door_assembly_attackby
+	duration = 4 SECONDS
+	complete_proc = /obj/structure/door_assembly/proc/attackby_timed_done4
+	var/obj/item/stack/S
+	var/material_name
+
+/obj/structure/door_assembly/proc/attackby_timed_done4(datum/om/task/timed/door_assembly_attackby/task)
+	var/mob/user = task.actor
+	var/obj/item/stack/S = task.S
+	var/material_name = task.material_name
 	if(!(!glass))
 		return
 	if (S.use(2))

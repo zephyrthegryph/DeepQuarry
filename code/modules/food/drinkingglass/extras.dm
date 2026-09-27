@@ -97,9 +97,17 @@
 		return
 
 	user.visible_message(span_infoplain(span_bold("[user]") + " starts sipping on [victim] with [src]!"), span_info("You start sipping on [victim] with [src]."))
-	om_do_after(user, 3 SECONDS, victim, src, PROC_REF(sipp_done), list(victim, user, reagent_type))
+	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, list("receiver" = src, "reagent_type" = reagent_type))
 
-/obj/item/glass_extra/straw/proc/sipp_done(mob/living/victim, mob/user, reagent_type)
+/datum/om/task/timed/straw_sipp
+	duration = 3 SECONDS
+	complete_proc = /obj/item/glass_extra/straw/proc/sipp_done
+	var/reagent_type
+
+/obj/item/glass_extra/straw/proc/sipp_done(datum/om/task/timed/straw_sipp/task)
+	var/mob/living/victim = task.target
+	var/mob/user = task.actor
+	var/reagent_type = task.reagent_type
 	user.visible_message(span_infoplain(span_bold("[user]") + " sips some of [victim] with [src]!"), span_info("You take a sip of [victim] with [src]. Yum!"))
 	if(victim.vore_taste)
 		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_taste]!"))

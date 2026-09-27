@@ -179,7 +179,7 @@
 				return TRUE
 			visible_message(span_warning("[user] is trying to stuff a beacon into [src]'s [B.get_belly_name()]!"),
 				span_warning("[user] is trying to stuff a beacon into you!"))
-			om_do_after(user, 3 SECONDS, src, src, PROC_REF(beacon_insert_done), list(user, I, B))
+			om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, list("receiver" = src, "I" = I, "B" = B))
 			return TRUE //You don't get to hit someone 'later'
 
 	// Body writing
@@ -211,21 +211,41 @@
 			span_notice("You start writing on [canvas_user]'s [affecting.name]..."))
 
 		// Progress bar for writing on someone for better consent check.
-		om_do_after(attacker, 3 SECONDS, canvas_user, src, PROC_REF(body_writing_done), list(attacker, affecting, message), on_fail = PROC_REF(body_writing_stopped), fail_args = list(attacker), max_distance = 1)
+		om_task_start(/datum/om/task/timed/living_body_writing, attacker, canvas_user, list("receiver" = src, "affecting" = affecting, "message" = message, "max_distance" = 1))
 		return TRUE
 
 	return FALSE
 
-/mob/living/proc/beacon_insert_done(mob/user, obj/item/I, obj/belly/B)
+/datum/om/task/timed/living_beacon_insert
+	duration = 3 SECONDS
+	complete_proc = /mob/living/proc/beacon_insert_done
+	var/obj/item/I
+	var/obj/belly/B
+
+/mob/living/proc/beacon_insert_done(datum/om/task/timed/living_beacon_insert/task)
+	var/mob/user = task.actor
+	var/obj/item/I = task.I
+	var/obj/belly/B = task.B
 	if(user.get_active_hand() != I)
 		return
 	user.drop_item()
 	B.belly_insert(I, user)
 
-/mob/living/proc/body_writing_stopped(mob/living/attacker)
+/mob/living/proc/body_writing_stopped(datum/om/task/timed/living_body_writing/task)
+	var/mob/living/attacker = task.actor
 	to_chat(attacker, span_warning("You stop writing on [src]."))
 
-/mob/living/proc/body_writing_done(mob/living/attacker, obj/item/organ/external/affecting, message)
+/datum/om/task/timed/living_body_writing
+	duration = 3 SECONDS
+	complete_proc = /mob/living/proc/body_writing_done
+	cancel_proc = /mob/living/proc/body_writing_stopped
+	var/obj/item/organ/external/affecting
+	var/message
+
+/mob/living/proc/body_writing_done(datum/om/task/timed/living_body_writing/task)
+	var/mob/living/attacker = task.actor
+	var/obj/item/organ/external/affecting = task.affecting
+	var/message = task.message
 	var/mob/living/carbon/human/canvas_user = src
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
@@ -900,10 +920,21 @@
 
 	handle_eat_minerals()
 
-/mob/living/proc/eat_minerals_interrupted(obj/item/I)
+/mob/living/proc/eat_minerals_interrupted(datum/om/task/timed/living_eat_minerals/task)
+	var/obj/item/I = task.I
 	to_chat(src, span_notice("You were interrupted while gnawing on [I]!"))
 
-/mob/living/proc/eat_minerals_done(mob/living/feeder, obj/item/I, list/nom)
+/datum/om/task/timed/living_eat_minerals
+	flags = IGNORE_USER_LOC_CHANGE
+	complete_proc = /mob/living/proc/eat_minerals_done
+	cancel_proc = /mob/living/proc/eat_minerals_interrupted
+	var/obj/item/I
+	var/list/nom
+
+/mob/living/proc/eat_minerals_done(datum/om/task/timed/living_eat_minerals/task)
+	var/mob/living/feeder = task.actor
+	var/obj/item/I = task.I
+	var/list/nom = task.nom
 	if(feeder != src)
 		to_chat(feeder, span_notice("You feed [I] to [src]."))
 		log_admin("VORE: [feeder] fed [src] [I].")
@@ -1020,7 +1051,7 @@
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
-		om_do_after(feeder, T, src, src, PROC_REF(eat_minerals_done), list(feeder, I, nom), IGNORE_USER_LOC_CHANGE, PROC_REF(eat_minerals_interrupted), list(I))
+		om_task_start(/datum/om/task/timed/living_eat_minerals, feeder, src, list("receiver" = src, "duration" = T, "I" = I, "nom" = nom))
 		return TRUE
 
 	else //Not the droids we're looking for.

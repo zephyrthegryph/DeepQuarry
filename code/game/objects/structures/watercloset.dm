@@ -138,7 +138,7 @@
 			if(open && !swirlie)
 				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
 				swirlie_mob = om_handle(GM)
-				om_do_after(user, 3 SECONDS, target = GM, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, GM, swirlie))
+				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, list("receiver" = src))
 				swirlie_mob = null
 			else
 				user.visible_message(span_danger("[user] slams [GM] into the [src]!"), span_notice("You slam [GM] into the [src]!"))
@@ -167,7 +167,13 @@
 		to_chat(user, "You carefully place \the [I] into the cistern.")
 		return
 
-/obj/structure/toilet/proc/attackby_timed_done(mob/living/user, mob/living/GM, mob/living/swirlie)
+/datum/om/task/timed/toilet_attackby
+	duration = 3 SECONDS
+	complete_proc = /obj/structure/toilet/proc/attackby_timed_done
+
+/obj/structure/toilet/proc/attackby_timed_done(datum/om/task/timed/toilet_attackby/task)
+	var/mob/living/user = task.actor
+	var/mob/living/GM = task.target
 	if(!open) //Someone closed it while we were trying to swirlie. Rude.
 		open = TRUE //Open it.
 		update_icon()
@@ -1079,10 +1085,21 @@
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(O, user, I), on_fail = PROC_REF(attackby_timed_failed4), fail_args = list(O, user, I), claims = TRUE)
+	om_task_start(/datum/om/task/timed/sink_attackby, user, src, list("receiver" = src, "O" = O, "I" = I))
 	return TRUE
 
-/obj/structure/sink/proc/attackby_timed_done4(obj/item/O, mob/user, obj/item/I)
+/datum/om/task/timed/sink_attackby
+	duration = 4 SECONDS
+	claims = TRUE
+	complete_proc = /obj/structure/sink/proc/attackby_timed_done4
+	cancel_proc = /obj/structure/sink/proc/attackby_timed_failed4
+	var/obj/item/O
+	var/obj/item/I
+
+/obj/structure/sink/proc/attackby_timed_done4(datum/om/task/timed/sink_attackby/task)
+	var/obj/item/O = task.O
+	var/mob/user = task.actor
+	var/obj/item/I = task.I
 
 	O.wash(CLEAN_SCRUB)
 	O.water_act(rand(1,10))
@@ -1090,7 +1107,9 @@
 		span_notice("[user] washes \a [I] using \the [src]."), \
 		span_notice("You wash \a [I] using \the [src]."))
 
-/obj/structure/sink/proc/attackby_timed_failed4(obj/item/O, mob/user, obj/item/I)
+/obj/structure/sink/proc/attackby_timed_failed4(datum/om/task/timed/sink_attackby/task)
+	var/mob/user = task.actor
+	var/obj/item/I = task.I
 	to_chat(user, span_notice("You stop washing \the [I]."))
 	return
 

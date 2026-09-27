@@ -291,7 +291,7 @@
 		user.visible_message(span_cult("[user] aims \the [src] at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(howitzer_charged), list(A, user, target_turf, TRUE, target_zone, attack_modifier), on_fail = PROC_REF(howitzer_aborted), fail_args = list(list(beameffect), user, FALSE))
+		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, list("receiver" = src, "A" = A, "target_turf" = target_turf, "melee" = TRUE, "arg3" = target_zone, "arg4" = attack_modifier, "beam_holder" = list(beameffect), "click_empty" = FALSE))
 		return ITEM_INTERACT_SUCCESS
 	else
 		..(A, user, target_zone, attack_modifier) //If it can't fire, just bash with no delay.
@@ -312,13 +312,16 @@
 
 	if(!power_cycle)
 		power_cycle = TRUE
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(howitzer_charged), list(A, user, target_turf, FALSE, adjacent, params), on_fail = PROC_REF(howitzer_aborted), fail_args = list(list(beameffect), user, TRUE))
+		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, list("receiver" = src, "A" = A, "target_turf" = target_turf, "melee" = FALSE, "arg3" = adjacent, "arg4" = params, "beam_holder" = list(beameffect), "click_empty" = TRUE))
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 
 /obj/item/gun/energy/maghowitzer/var/charged_shot = FALSE
 
-/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(list/beam_holder, mob/living/user, click_empty)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/om/task/timed/maghowitzer_howitzer_charged/task)
+	var/list/beam_holder = task.beam_holder
+	var/mob/living/user = task.actor
+	var/click_empty = task.click_empty
 	var/datum/beam = beam_holder[1]
 	if(beam && !QDELETED(beam))
 		qdel(beam)
@@ -326,8 +329,26 @@
 		handle_click_empty(user)
 	power_cycle = FALSE
 
+/datum/om/task/timed/maghowitzer_howitzer_charged
+	duration = 3 SECONDS
+	complete_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_charged
+	cancel_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_aborted
+	var/atom/A
+	var/turf/target_turf
+	var/melee
+	var/arg3
+	var/arg4
+	var/list/beam_holder
+	var/click_empty
+
 /// Charged: attack() or afterattack() again, past the charge-up.
-/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(atom/A, mob/living/user, turf/target_turf, melee, arg3, arg4)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/om/task/timed/maghowitzer_howitzer_charged/task)
+	var/atom/A = task.A
+	var/mob/living/user = task.actor
+	var/turf/target_turf = task.target_turf
+	var/melee = task.melee
+	var/arg3 = task.arg3
+	var/arg4 = task.arg4
 	var/atom/aim = A
 	if(A.loc != target_turf)
 		aim = pick_random_target(target_turf) || target_turf
@@ -399,15 +420,29 @@
 	update_icon()
 	user.visible_message(span_notice("[user] starts charging the [src]!"), \
 						span_notice("You start charging the [src]!"))
-	om_do_after(user, 0.8 SECONDS, src, src, PROC_REF(spun_up), list(target, user, clickparams, pointblank, reflex), on_fail = PROC_REF(spin_ended))
+	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, list("receiver" = src, "target_arg" = target, "clickparams" = clickparams, "pointblank" = pointblank, "reflex" = reflex))
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE
 
-/obj/item/gun/energy/bfgtaser/proc/spin_ended()
+/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/om/task/timed/bfgtaser_spun_up/task)
 	spinning_up = FALSE
 
+/datum/om/task/timed/bfgtaser_spun_up
+	duration = 0.8 SECONDS
+	complete_proc = /obj/item/gun/energy/bfgtaser/proc/spun_up
+	cancel_proc = /obj/item/gun/energy/bfgtaser/proc/spin_ended
+	var/atom/target_arg
+	var/clickparams
+	var/pointblank
+	var/reflex
+
 /// Charged: Fire() again, past the spin-up.
-/obj/item/gun/energy/bfgtaser/proc/spun_up(atom/target, mob/living/user, clickparams, pointblank, reflex)
+/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/om/task/timed/bfgtaser_spun_up/task)
+	var/atom/target = task.target_arg
+	var/mob/living/user = task.actor
+	var/clickparams = task.clickparams
+	var/pointblank = task.pointblank
+	var/reflex = task.reflex
 	spinning_up = FALSE
 	spun = TRUE
 	Fire(target, user, clickparams, pointblank, reflex)

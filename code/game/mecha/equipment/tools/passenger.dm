@@ -30,14 +30,20 @@
 	if (chassis)
 		chassis.visible_message(span_notice("[user] starts to climb into [chassis]."))
 
-	om_do_after(user, 4 SECONDS, src, src, PROC_REF(boarded), list(user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_info("You stop entering the exosuit.")))
+	om_task_start(/datum/om/task/timed/passenger_boarded, user, src, list("receiver" = src))
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/forced_out(mob/user, mob/passenger_occupant)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " opens the hatch on \the [src] and removes [passenger_occupant]!"), span_notice("You open the hatch on \the [src] and remove [passenger_occupant]!"))
 	go_out()
 	mecha_log_message("[passenger_occupant] was removed.")
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(mob/user)
+/datum/om/task/timed/passenger_boarded
+	duration = 4 SECONDS
+	complete_proc = /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded
+	fail_message = span_info("You stop entering the exosuit.")
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/om/task/timed/passenger_boarded/task)
+	var/mob/user = task.actor
 	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
 			return

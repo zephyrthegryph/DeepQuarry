@@ -375,9 +375,16 @@
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_revive_charged), done_args = list(H, user, output_envelope), busy = src)
+	om_task_start(/datum/om/task/timed/shockpaddles_do_revive_charged, user, H, list("receiver" = src, "duration" = chargetime / output_envelope, "output_envelope" = output_envelope, "busy" = src))
 
-/obj/item/shockpaddles/proc/do_revive_charged(mob/living/carbon/human/H, mob/user, output_envelope)
+/datum/om/task/timed/shockpaddles_do_revive_charged
+	complete_proc = /obj/item/shockpaddles/proc/do_revive_charged
+	var/output_envelope
+
+/obj/item/shockpaddles/proc/do_revive_charged(datum/om/task/timed/shockpaddles_do_revive_charged/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/output_envelope = task.output_envelope
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
@@ -448,10 +455,19 @@
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_electrocute_timed_done), done_args = list(H, user, target_zone, output_envelope), busy = src)
+	om_task_start(/datum/om/task/timed/shockpaddles_do_electrocute, user, H, list("receiver" = src, "duration" = chargetime / output_envelope, "target_zone_arg" = target_zone, "output_envelope" = output_envelope, "busy" = src))
 	return TRUE
 
-/obj/item/shockpaddles/proc/do_electrocute_timed_done(mob/living/carbon/human/H, mob/user, target_zone, output_envelope)
+/datum/om/task/timed/shockpaddles_do_electrocute
+	complete_proc = /obj/item/shockpaddles/proc/do_electrocute_timed_done
+	var/target_zone_arg
+	var/output_envelope
+
+/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/om/task/timed/shockpaddles_do_electrocute/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/target_zone = task.target_zone_arg
+	var/output_envelope = task.output_envelope
 
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))

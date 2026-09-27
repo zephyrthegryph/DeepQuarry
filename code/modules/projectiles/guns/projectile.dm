@@ -630,10 +630,10 @@
 				if(!CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
 					if(!chambered)
 						if(bolt_open)
-							om_do_after(user, 0.5 SECONDS, src, src, PROC_REF(chamber_round), list(user, C, "[user] slides \the [C] into the [src]'s chamber."))
+							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, list("receiver" = src, "duration" = 0.5 SECONDS, "C" = C, "message" = "[user] slides \the [C] into the [src]'s chamber."))
 							return
 						else if(!(CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))))
-							om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(chamber_round), list(user, C, "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again."))
+							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, list("receiver" = src, "duration" = 1.5 SECONDS, "C" = C, "message" = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again."))
 							return
 						else
 							to_chat(user,span_warning("Open the bolt first before chambering a round!"))
@@ -695,8 +695,16 @@
 		return
 	om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
 
+/datum/om/task/timed/projectile_chamber_round
+	complete_proc = /obj/item/gun/projectile/proc/chamber_round
+	var/obj/item/ammo_casing/C
+	var/message
+
 /// A round slid into the chamber by hand.
-/obj/item/gun/projectile/proc/chamber_round(mob/user, obj/item/ammo_casing/C, message)
+/obj/item/gun/projectile/proc/chamber_round(datum/om/task/timed/projectile_chamber_round/task)
+	var/mob/user = task.actor
+	var/obj/item/ammo_casing/C = task.C
+	var/message = task.message
 	if(chambered)
 		return
 	user.visible_message(span_notice(message),span_notice("You slide \the [C] into the [src]'s chamber."))

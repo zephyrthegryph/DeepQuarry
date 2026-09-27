@@ -264,10 +264,15 @@
 		span_notice("\The [user] begins [anchored ? "unsecuring" : "securing"] \the [src]."),
 		span_notice("You attempt to [anchored ? "unsecure" : "secure"] \the [src].")
 	)
-	om_do_after(user, (2 SECONDS) / tool.toolspeed, src, src, PROC_REF(secure_done), list(user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_notice("You decide not to do that.")))
+	om_task_start(/datum/om/task/timed/microwave_secure, user, src, list("receiver" = src, "duration" = (2 SECONDS) / tool.toolspeed))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/microwave/proc/secure_done(mob/user)
+/datum/om/task/timed/microwave_secure
+	complete_proc = /obj/machinery/microwave/proc/secure_done
+	fail_message = span_notice("You decide not to do that.")
+
+/obj/machinery/microwave/proc/secure_done(datum/om/task/timed/microwave_secure/task)
+	var/mob/user = task.actor
 	user.visible_message(
 		span_notice("\The [user] [anchored ? "unsecures" : "secures"] \the [src]."),
 		span_notice("You [anchored ? "unsecure" : "secure"] \the [src].")

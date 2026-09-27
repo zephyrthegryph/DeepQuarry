@@ -208,7 +208,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			persist_nif_data(H)
 
 		usr.visible_message("[usr] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
-		om_do_after(usr, 8 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done), done_args = list(target, nif, usr), on_fail = PROC_REF(Topic_timed_failed), fail_args = list(target, nif, usr))
+		om_task_start(/datum/om/task/timed/sleevemate_topic, usr, target, list("receiver" = src, "nif" = nif))
 
 		return
 
@@ -220,7 +220,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		var/mob/living/carbon/human/H = target
 
 		usr.visible_message("[usr] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
-		om_do_after(usr, 8 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done2), done_args = list(target, H, usr), on_fail = PROC_REF(Topic_timed_failed2), fail_args = list(target, H, usr))
+		om_task_start(/datum/om/task/timed/sleevemate_topic2, usr, target, list("receiver" = src, "H" = H))
 
 		return
 
@@ -309,18 +309,37 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				return
 		to_chat(usr,span_notice("Unable to find that mind in Soulcatcher!"))
 
-/obj/item/sleevemate/proc/Topic_timed_done(mob/living/target, nif, mob/usr_mob)
+/datum/om/task/timed/sleevemate_topic
+	duration = 8 SECONDS
+	complete_proc = /obj/item/sleevemate/proc/Topic_timed_done
+	cancel_proc = /obj/item/sleevemate/proc/Topic_timed_failed
+	var/nif
+
+/obj/item/sleevemate/proc/Topic_timed_done(datum/om/task/timed/sleevemate_topic/task)
+	var/mob/living/target = task.target
+	var/nif = task.nif
+	var/mob/usr_mob = task.actor
 	our_db.m_backup(target.mind,nif,one_time = TRUE)
 	to_chat(usr_mob,span_notice("Mind backed up!"))
 
-/obj/item/sleevemate/proc/Topic_timed_failed(mob/living/target, nif, mob/usr_mob)
+/obj/item/sleevemate/proc/Topic_timed_failed(datum/om/task/timed/sleevemate_topic/task)
+	var/mob/usr_mob = task.actor
 	to_chat(usr_mob,span_warning("You must remain close to your target!"))
-/obj/item/sleevemate/proc/Topic_timed_done2(mob/living/target, mob/living/carbon/human/H, mob/usr_mob)
+/datum/om/task/timed/sleevemate_topic2
+	duration = 8 SECONDS
+	complete_proc = /obj/item/sleevemate/proc/Topic_timed_done2
+	cancel_proc = /obj/item/sleevemate/proc/Topic_timed_failed2
+	var/mob/living/carbon/human/H
+
+/obj/item/sleevemate/proc/Topic_timed_done2(datum/om/task/timed/sleevemate_topic2/task)
+	var/mob/living/carbon/human/H = task.H
+	var/mob/usr_mob = task.actor
 	var/datum/transhuman/body_record/BR = new()
 	BR.init_from_mob(H, TRUE, TRUE, database_key = db_key)
 	to_chat(usr_mob,span_notice("Body scanned!"))
 
-/obj/item/sleevemate/proc/Topic_timed_failed2(mob/living/target, mob/living/carbon/human/H, mob/usr_mob)
+/obj/item/sleevemate/proc/Topic_timed_failed2(datum/om/task/timed/sleevemate_topic2/task)
+	var/mob/usr_mob = task.actor
 	to_chat(usr_mob,span_warning("You must remain close to your target!"))
 /obj/item/sleevemate/proc/Topic_timed_done3(mob/living/target, mob/usr_mob)
 	if(!stored_mind && target.mind)

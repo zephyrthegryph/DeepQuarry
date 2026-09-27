@@ -149,10 +149,22 @@
 	if(should_stop(H, user, user.get_active_hand()))
 		return
 
-	om_do_after(user, 1 SECOND, target = user, timed_action_flags = IGNORE_USER_LOC_CHANGE, hidden = TRUE, receiver = src, on_done = PROC_REF(process_medigun_timed_done), done_args = list(H, user, filter, ishealing))
+	om_task_start(/datum/om/task/timed/linked_process_medigun, user, user, list("receiver" = src, "H" = H, "filter" = filter, "ishealing" = ishealing, "hidden" = TRUE))
 
 
-/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(mob/living/carbon/human/H, mob/user, filter, ishealing)
+/datum/om/task/timed/linked_process_medigun
+	duration = 1 SECOND
+	flags = IGNORE_USER_LOC_CHANGE
+	complete_proc = /obj/item/bork_medigun/linked/proc/process_medigun_timed_done
+	var/mob/living/carbon/human/H
+	var/filter
+	var/ishealing
+
+/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/om/task/timed/linked_process_medigun/task)
+	var/mob/living/carbon/human/H = task.H
+	var/mob/user = task.actor
+	var/filter = task.filter
+	var/ishealing = task.ishealing
 	var/washealing = ishealing // Did we heal last cycle
 	ishealing = FALSE // The default is 'we didn't heal this cycle'
 	if(!checked_use(5))

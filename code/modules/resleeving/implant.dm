@@ -107,7 +107,14 @@
 		else
 			to_chat(user, span_warning("\The [src] is already full!"))
 
-/obj/item/backup_implanter/proc/backup_implant_done(mob/living/M, mob/living/user, turf/T1)
+/datum/om/task/timed/backup_implanter_backup_implant
+	complete_proc = /obj/item/backup_implanter/proc/backup_implant_done
+	var/turf/T1
+
+/obj/item/backup_implanter/proc/backup_implant_done(datum/om/task/timed/backup_implanter_backup_implant/task)
+	var/mob/living/M = task.target
+	var/mob/living/user = task.actor
+	var/turf/T1 = task.T1
 	if((get_turf(M) == T1) && src.imps.len)
 		M.visible_message(span_notice("[M] has been backup implanted by [user]."))
 
@@ -130,7 +137,7 @@
 
 		var/turf/T1 = get_turf(M)
 		if(T1)
-			om_do_after(user, M == user ? 0 : 5 SECONDS, M, src, PROC_REF(backup_implant_done), list(M, user, T1))
+			om_task_start(/datum/om/task/timed/backup_implanter_backup_implant, user, M, list("receiver" = src, "duration" = M == user ? 0 : 5 SECONDS, "T1" = T1))
 		return ITEM_INTERACT_SUCCESS
 
 //The glass case for the implant

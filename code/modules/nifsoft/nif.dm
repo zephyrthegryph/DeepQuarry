@@ -701,12 +701,20 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),
 		span_notice("You begin installing [src] into [T]'s chest by just stuffing it in."),
 		"There's a wet SQUISH noise.")
-		om_do_after(user, 20 SECONDS, T, src, PROC_REF(stuff_in_done), list(user, T, eo), target_zone = BP_TORSO)
+		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, list("receiver" = src, "eo" = eo, "target_zone" = BP_TORSO))
 		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()
 
-/obj/item/nif/proc/stuff_in_done(mob/living/user, mob/living/carbon/human/T, obj/item/organ/external/eo)
+/datum/om/task/timed/nif_stuff_in
+	duration = 20 SECONDS
+	complete_proc = /obj/item/nif/proc/stuff_in_done
+	var/obj/item/organ/external/eo
+
+/obj/item/nif/proc/stuff_in_done(datum/om/task/timed/nif_stuff_in/task)
+	var/mob/living/user = task.actor
+	var/mob/living/carbon/human/T = task.target
+	var/obj/item/organ/external/eo = task.eo
 	user.unEquip(src)
 	forceMove(eo)
 	eo.implants |= src

@@ -335,17 +335,26 @@
 		return
 
 	visible_message("<b>\The [src]</b> begins significantly shifting their form.")
-	om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(polymorph_living_done), done_args = list(beast_options, chosen_beast, M), on_fail = PROC_REF(polymorph_living_failed), fail_args = list(beast_options, chosen_beast, M))
+	om_task_start(/datum/om/task/timed/living_polymorph_living, src, src, list("beast_options" = beast_options, "chosen_beast" = chosen_beast))
 	return TRUE
 
-/mob/living/proc/polymorph_living_done(list/beast_options, chosen_beast, mob/living/M)
+/datum/om/task/timed/living_polymorph_living
+	duration = 10 SECONDS
+	complete_proc = /mob/living/proc/polymorph_living_done
+	cancel_proc = /mob/living/proc/polymorph_living_failed
+	var/list/beast_options
+	var/chosen_beast
+
+/mob/living/proc/polymorph_living_done(datum/om/task/timed/living_polymorph_living/task)
+	var/list/beast_options = task.beast_options
+	var/chosen_beast = task.chosen_beast
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
 	om_after(src, 1 SECOND, PROC_REF(finish_polymorph), coolanimation, chosen_beast, beast_options[chosen_beast])
 
-/mob/living/proc/polymorph_living_failed(list/beast_options, chosen_beast, mob/living/M)
+/mob/living/proc/polymorph_living_failed(datum/om/task/timed/living_polymorph_living/task)
 	visible_message("<b>\The [src]</b> ceases shifting their form.")
 	return 0
 
