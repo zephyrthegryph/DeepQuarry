@@ -20,18 +20,8 @@
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
 
-// LIFECYCLE: an installed board leaves its machine's circuit slot.
-/obj/item/circuitboard/Destroy()
-	// Explosions can destroy an installed board before their containing machine.
-	// Sever the owner's typed reference immediately so the board never waits in
-	// GC behind a still-live (or separately queued) machine.
-	if(istype(loc, /obj/machinery))
-		var/obj/machinery/machine = loc
-		if(machine.circuit == src)
-			machine.circuit = null
-	if(isobject(board_type)) // Some boards use text instead of an instance...
-		QDEL_NULL(board_type)
-	return ..()
+REF_OWNED(/obj/item/circuitboard, "board_type")
+REF_HELD(/obj/machinery, "circuit")
 
 //Called when the circuitboard is used to contruct a new machine.
 /obj/item/circuitboard/proc/construct(obj/machinery/M)

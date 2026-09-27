@@ -53,13 +53,6 @@
 	build_path = /obj/item/radio/intercom
 	board_type = new /datum/frame/frame_types/intercom
 
-// LIFECYCLE: an installed board leaves its intercom's circuit slot.
-/obj/item/circuitboard/intercom/Destroy()
-	if(istype(loc, /obj/item/radio/intercom))
-		var/obj/item/radio/intercom/my_machine = loc
-		my_machine.circuit = null
-	. = ..()
-
 /obj/item/circuitboard/keycard_auth
 	name = T_BOARD("keycard authenticator")
 	build_path = /obj/machinery/keycard_auth
