@@ -317,20 +317,8 @@ REF_OWNED_LIST(/datum/generated_station_validation_result, "issues")
 	content_quality = list()
 	fixture_type_registry = list()
 
-/datum/generated_station_spec/Destroy()
-	QDEL_LIST(departments)
-	QDEL_LIST(department_definitions)
-	QDEL_LIST(layout_nodes)
-	QDEL_LIST(layout_edges)
-	circulation_tiles = null
-	maintenance_tiles = null
-	QDEL_LIST_ASSOC_VAL(maintenance_doors)
-	structural_tiles = null
-	QDEL_LIST(fixture_blueprint)
-	QDEL_LIST(network_blueprint)
-	content_quality = null
-	fixture_type_registry = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_spec, list("departments", "department_definitions", "layout_nodes", "layout_edges", "fixture_blueprint", "network_blueprint"))
+REF_OWNED_VALUES(/datum/generated_station_spec, "maintenance_doors")
 
 /datum/generated_station_spec/proc/validate()
 	var/datum/generated_station_validation_result/result = new

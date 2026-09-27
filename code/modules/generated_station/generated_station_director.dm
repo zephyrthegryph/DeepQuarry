@@ -81,24 +81,7 @@
 		return null
 	return new /datum/generated_station_director(simulation)
 
-/datum/generated_station_director/Destroy()
-	defense_runtime = null
-	simulation = null
-	for(var/id in reports)
-		qdel(reports[id])
-	for(var/id in squads)
-		qdel(squads[id])
-	for(var/id in orders)
-		qdel(orders[id])
-	reports = null
-	squads = null
-	orders = null
-	global_knowledge = null
-	local_knowledge = null
-	local_alert_levels = null
-	department_connected = null
-	dirty_departments = null
-	return ..()
+REF_OWNED_VALUES(/datum/generated_station_director, list("reports", "squads", "orders"))
 
 /datum/generated_station_director/proc/mark_dirty(department_id)
 	strategic_dirty = TRUE

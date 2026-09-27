@@ -91,14 +91,7 @@
 	for(var/y in 1 to grid_height)
 		tiles[coordinate_key(x, y)] = new /datum/generated_station_tile_intent(x, y)
 
-/datum/generated_station_tile_plan/Destroy()
-	QDEL_LIST_ASSOC_VAL(tiles)
-	errors = null
-	wall_fixture_edges = null
-	utility_floors_by_owner = null
-	utility_floors_by_zone = null
-	generation_owner = null
-	return ..()
+REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 
 /datum/generated_station_tile_plan/proc/coordinate_key(local_x, local_y)
 	return "[local_x],[local_y]"

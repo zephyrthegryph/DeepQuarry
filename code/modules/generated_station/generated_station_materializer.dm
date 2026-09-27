@@ -193,6 +193,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
+// LIFECYCLE: its areas revert to space and its built atoms go with it.
 /datum/generated_station_materialization/Destroy()
 	QDEL_NULL(entry)
 	var/area/space/space_area = generated_station_space_area()
