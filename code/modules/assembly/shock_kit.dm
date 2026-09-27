@@ -8,11 +8,7 @@
 	w_class = ITEMSIZE_HUGE
 	special_handling = TRUE
 
-/obj/item/assembly/shock_kit/Destroy()
-	qdel(part1)
-	qdel(part2)
-	..()
-	return
+REF_OWNED(/obj/item/assembly/shock_kit, list("part1", "part2"))
 
 /obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
 	if(!status)

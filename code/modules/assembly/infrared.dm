@@ -135,7 +135,6 @@
 				CHECK_TICK
 			return TRUE
 
-
 /***************************IBeam*********************************/
 
 /obj/effect/beam/i_beam
@@ -149,10 +148,6 @@
 /obj/effect/beam/i_beam/Initialize(mapload)
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
-
-/obj/effect/beam/i_beam/Destroy()
-	master = null
-	return ..()
 
 /obj/effect/beam/i_beam/proc/hit()
 	master?.trigger_beam()
