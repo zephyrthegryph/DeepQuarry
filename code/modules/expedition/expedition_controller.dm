@@ -28,11 +28,6 @@
 	z_level = new_site?.z_level
 	reason = new_reason
 
-/datum/expedition_teardown_job/Destroy()
-	controller = null
-	site = null
-	return ..()
-
 /// Clears the z as lane work (om_lane_work(), object_model_core.md §4.11): a turf at a time,
 /// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
