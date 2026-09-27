@@ -74,7 +74,7 @@ REF_OWNED(/datum/cinematic, "screen")
 		// Close watcher ui's, too, so they can watch it.
 		SStgui.close_user_uis(watching_mob)
 
-	// Actually plays the animation. This will sleep, likely.
+	// Actually plays the animation (its later frames run on om_after() timers; nothing sleeps).
 	play_cinematic()
 
 	// Cleans up after it's done playing.

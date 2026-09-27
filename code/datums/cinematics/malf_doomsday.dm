@@ -3,7 +3,11 @@
 
 /datum/cinematic/malf/play_cinematic()
 	flick("intro_malf", screen)
-	stoplag(7.6 SECONDS)
+	// The intro runs its course, then the blast (om_after(), no sleep: S10b).
+	om_after(src, 7.6 SECONDS, PROC_REF(play_malf_blast))
+
+/// The second half of the doomsday cinematic, after the intro animation.
+/datum/cinematic/malf/proc/play_malf_blast()
 	flick("station_explode_fade_red", screen)
 	play_cinematic_sound(sound('sound/effects/explosionfar.ogg'))
 	special_callback?.Invoke()
