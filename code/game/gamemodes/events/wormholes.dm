@@ -45,15 +45,11 @@
 //			to_world("DEBUG: number_of_selections: [number_of_selections] | sleep_duration: [sleep_duration]")
 
 			var/index = 1
+			var/list/pairs = list()
 			for(var/I = 1 to number_of_selections)
-
-				//we've run into overtime. End the event
-				if( end_time < world.time )
-//					to_world("DEBUG: we've run into overtime. End the event")
-					return
 				if( !pick_turfs.len )
 //					to_world("DEBUG: we've run out of turfs to pick. End the event")
-					return
+					break
 
 				//loop it round
 				index += increment
@@ -69,10 +65,15 @@
 //				pick_turfs -= exit
 				if( !exit || !istype(exit) )	continue	//sanity
 
-				create_wormhole(enter,exit,wormhole_min_duration,wormhole_max_duration)
+				pairs += list(list(enter, exit))
+			// One wormhole every sleep_duration, until the event runs into overtime.
+			om_stagger(null, pairs, sleep_duration, GLOBAL_PROC_REF(wormhole_open_pair), 1, list(end_time, wormhole_min_duration, wormhole_max_duration))
 
-				sleep(sleep_duration)						//have a well deserved nap!
 
+/proc/wormhole_open_pair(datum/owner, list/pair, end_time, min_duration, max_duration)
+	if(end_time < world.time)
+		return
+	create_wormhole(pair[1], pair[2], min_duration, max_duration)
 
 //maybe this proc can even be used as an admin tool for teleporting players without ruining immulsions?
 /proc/create_wormhole(turf/enter as turf, atom/exit, min_duration = 30 SECONDS, max_duration = 60 SECONDS)

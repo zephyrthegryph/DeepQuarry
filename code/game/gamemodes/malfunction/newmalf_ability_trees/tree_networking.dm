@@ -67,12 +67,13 @@
 
 	user.hacking = 1
 	to_chat(user, "Beginning APC system override...")
-	sleep(300)
-	to_chat(user, "APC hack completed. Uploading modified operation software..")
-	sleep(200)
-	to_chat(user, "Restarting APC to apply changes..")
-	sleep(100)
-	if(A)
+	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), user, "APC hack completed. Uploading modified operation software..")
+	om_after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), user, "Restarting APC to apply changes..")
+	om_after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), user, REF(A))
+
+/proc/malf_apc_hack_done(mob/living/silicon/ai/user, apc_ref)
+	var/obj/machinery/power/apc/A = locate(apc_ref)
+	if(istype(A))
 		A.ai_hack(user)
 		if(A.hacker == user)
 			to_chat(user, "Hack successful. You now have full control over the APC.")
@@ -156,23 +157,14 @@
 
 	var/duration = (remaining_apcs.len * 100)		// Calculates duration for announcing system
 	if(duration > 3000)								// Two types of announcements. Short hacks trigger immediate warnings. Long hacks are more "progressive".
-		spawn(0)
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("Caution, [station_name()]. We have detected abnormal behaviour in your network. It seems someone is trying to hack your electronic systems. We will update you when we have more information.", "Network Monitoring")
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("We started tracing the intruder. Whoever is doing this, they seem to be on the station itself. We suggest checking all network control terminals. We will keep you updated on the situation.", "Network Monitoring")
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("This is highly abnormal and somewhat concerning. The intruder is too fast, he is evading our traces. No man could be this fast...", "Network Monitoring")
-			sleep(duration/5)
-			if(!user || user.stat == DEAD)
-				return
-			GLOB.command_announcement.Announce("We have traced the intrude#, it seem& t( e yo3r AI s7stem, it &# *#ck@ng th$ sel$ destru$t mechani&m, stop i# bef*@!)$#&&@@  <CONNECTION LOST>", "Network Monitoring")
+		var/list/progress = list(
+			"Caution, [station_name()]. We have detected abnormal behaviour in your network. It seems someone is trying to hack your electronic systems. We will update you when we have more information.",
+			"We started tracing the intruder. Whoever is doing this, they seem to be on the station itself. We suggest checking all network control terminals. We will keep you updated on the situation.",
+			"This is highly abnormal and somewhat concerning. The intruder is too fast, he is evading our traces. No man could be this fast...",
+			"We have traced the intrude#, it seem& t( e yo3r AI s7stem, it &# *#ck@ng th$ sel$ destru$t mechani&m, stop i# bef*@!)$#&&@@  <CONNECTION LOST>",
+		)
+		for(var/i in 1 to length(progress))
+			om_after(user, duration / 5 * i, GLOBAL_PROC_REF(malf_override_announce), user, progress[i])
 	else
 		GLOB.command_announcement.Announce("We have detected a strong brute-force attack on your firewall which seems to be originating from your AI system. It already controls almost the whole network, and the only thing that's preventing it from accessing the self-destruct is this firewall. You don't have much time before it succeeds.", "Network Monitoring")
 	to_chat(user, "## BEGINNING SYSTEM OVERRIDE.")
@@ -180,23 +172,35 @@
 	user.hacking = 1
 	user.system_override = 1
 	// Now actually begin the hack. Each APC takes 10 seconds.
-	for(var/obj/machinery/power/apc/A in shuffle(remaining_apcs))
-		sleep(100)
-		if(!user || user.stat == DEAD)
-			return
-		if(!A || !istype(A) || A.aidisabled)
-			continue
-		A.ai_hack(user)
-		if(A.hacker == user)
-			to_chat(user, "## OVERRIDDEN: [A.name]")
+	om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, shuffle(remaining_apcs))
 
+/proc/malf_override_announce(mob/living/silicon/ai/user, message)
+	if(user.stat == DEAD)
+		return
+	GLOB.command_announcement.Announce(message, "Network Monitoring")
+
+/// Overrides the next APC every 10 seconds; the firewall falls 30 seconds after the last.
+/proc/malf_override_next_apc(mob/living/silicon/ai/user, list/remaining_apcs)
+	if(user.stat == DEAD)
+		return
+	if(length(remaining_apcs))
+		var/obj/machinery/power/apc/A = remaining_apcs[1]
+		remaining_apcs.Cut(1, 2)
+		if(istype(A) && !QDELETED(A) && !A.aidisabled)
+			A.ai_hack(user)
+			if(A.hacker == user)
+				to_chat(user, "## OVERRIDDEN: [A.name]")
+		if(length(remaining_apcs))
+			om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, remaining_apcs)
+			return
 	to_chat(user, "## REACHABLE APC SYSTEMS OVERTAKEN. BYPASSING PRIMARY FIREWALL.")
-	sleep(300)
+	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_override_finish), user)
+
+/proc/malf_override_finish(mob/living/silicon/ai/user)
 	// Hack all APCs, including those built during hack sequence.
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if((!A.hacker || A.hacker != src) && !A.aidisabled && (A.z in using_map.station_levels))
-			A.ai_hack(src)
-
+		if((!A.hacker || A.hacker != user) && !A.aidisabled && (A.z in using_map.station_levels))
+			A.ai_hack(user)
 
 	to_chat(user, "## PRIMARY FIREWALL BYPASSED. YOU NOW HAVE FULL SYSTEM CONTROL.")
 	GLOB.command_announcement.Announce("Our system administrators just reported that we've been locked out from your control network. Whoever did this now has full access to the station's systems.", "Network Administration Center")

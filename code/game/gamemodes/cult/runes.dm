@@ -118,68 +118,71 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 	LAZYOR(converting, target)
 	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
-	var/initial_message = 0
-	while(target in converting)
-		if(target.loc != src.loc || target.stat == DEAD)
-			LAZYREMOVE(converting, target)
-			if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
-				target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING), 500))
-			return 0
-
-		var/corruption_burn = rand(5, 20)
-		target.injure(INJURY_BURN, corruption_burn, source = src) // You dirty resister cannot handle the damage to your mind. Easily. - even cultists who accept right away should experience some effects
-		target.injure(INJURY_TOXIN, corruption_burn / 2, source = src, affliction = /datum/affliction/profane_corruption, flags = INJURE_SILENT)
-		// Resist messages go!
-		if(initial_message) //don't do this stuff right away, only if they resist or hesitate.
-			add_attack_logs(attacker,target,"Convert rune")
-			switch(target.injury_load(INJURY_CATEGORY_THERMAL))
-				if(0 to 25)
-					to_chat(target, span_cult("Your blood boils as you force yourself to resist the corruption invading every corner of your mind."))
-				if(25 to 45)
-					to_chat(target, span_cult("Your blood boils and your body burns as the corruption further forces itself into your body and mind."))
-				if(45 to 75)
-					to_chat(target, span_cult("You begin to hallucinate images of a dark and incomprehensible being and your entire body feels like its engulfed in flame as your mental defenses crumble."))
-					target.apply_effect(rand(1,10), STUTTER)
-				if(75 to 100)
-					to_chat(target, span_cult("Your mind turns to ash as the burning flames engulf your very soul and images of an unspeakable horror begin to bombard the last remnants of mental resistance."))
-					//broken mind - 5000 may seem like a lot I wanted the effect to really stand out for maxiumum losing-your-mind-spooky
-					//hallucination is reduced when the step off as well, provided they haven't hit the last stage...
-
-					//5000 is waaaay too much, in practice.
-					target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
-					target.apply_effect(10, STUTTER)
-					target.injure(INJURY_NEURAL, 1)
-				if(100 to INFINITY)
-					to_chat(target, span_cult("Your entire broken soul and being is engulfed in corruption and flames as your mind shatters away into nothing."))
-					//5000 is waaaay too much, in practice.
-					target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
-					target.apply_effect(15, STUTTER)
-					target.injure(INJURY_NEURAL, 1)
-
-		initial_message = 1
-		if (!target.can_feel_pain())
-			target.visible_message(span_warning("The markings below \the [target] glow a bloody red."))
-		else
-			target.visible_message(span_warning("[target] writhes in pain as the markings below [target.p_them()] glow a bloody red."), span_danger("AAAAAAHHHH!"), span_warning("You hear an anguished scream."))
-
-		if(!waiting_for_input[target]) //so we don't spam them with dialogs if they hesitate
-			waiting_for_input[target] = 1
-
-			if(!GLOB.cult.can_become_antag(target.mind) || jobban_isbanned(target, JOB_CULTIST))//putting jobban check here because is_convertable uses mind as argument
-				//waiting_for_input ensures this is only shown once, so they basically auto-resist from here on out. They still need to find a way to get off the freaking rune if they don't want to burn to death, though.
-				to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
-				to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
-
-			else spawn()
-				var/choice = tgui_alert(target,"Do you want to join the cult?","Submit to Nar'Sie",list("Resist","Submit"))
-				waiting_for_input[target] = 0
-				if(choice == "Submit") //choosing 'Resist' does nothing of course.
-					GLOB.cult.add_antagonist(target.mind)
-					LAZYREMOVE(converting, target)
-					target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
-
-		sleep(100) //proc once every 10 seconds
+	convert_tick(attacker, target, waiting_for_input, 0)
 	return 1
+
+/// One pass of a conversion (every 10 seconds while the target stays on the rune).
+/obj/effect/rune/proc/convert_tick(mob/attacker, mob/living/carbon/target, list/waiting_for_input, initial_message)
+	if(target.loc != src.loc || target.stat == DEAD)
+		LAZYREMOVE(converting, target)
+		if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
+			target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING), 500))
+		return 0
+
+	var/corruption_burn = rand(5, 20)
+	target.injure(INJURY_BURN, corruption_burn, source = src) // You dirty resister cannot handle the damage to your mind. Easily. - even cultists who accept right away should experience some effects
+	target.injure(INJURY_TOXIN, corruption_burn / 2, source = src, affliction = /datum/affliction/profane_corruption, flags = INJURE_SILENT)
+	// Resist messages go!
+	if(initial_message) //don't do this stuff right away, only if they resist or hesitate.
+		add_attack_logs(attacker,target,"Convert rune")
+		switch(target.injury_load(INJURY_CATEGORY_THERMAL))
+			if(0 to 25)
+				to_chat(target, span_cult("Your blood boils as you force yourself to resist the corruption invading every corner of your mind."))
+			if(25 to 45)
+				to_chat(target, span_cult("Your blood boils and your body burns as the corruption further forces itself into your body and mind."))
+			if(45 to 75)
+				to_chat(target, span_cult("You begin to hallucinate images of a dark and incomprehensible being and your entire body feels like its engulfed in flame as your mental defenses crumble."))
+				target.apply_effect(rand(1,10), STUTTER)
+			if(75 to 100)
+				to_chat(target, span_cult("Your mind turns to ash as the burning flames engulf your very soul and images of an unspeakable horror begin to bombard the last remnants of mental resistance."))
+				//broken mind - 5000 may seem like a lot I wanted the effect to really stand out for maxiumum losing-your-mind-spooky
+				//hallucination is reduced when the step off as well, provided they haven't hit the last stage...
+
+				//5000 is waaaay too much, in practice.
+				target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
+				target.apply_effect(10, STUTTER)
+				target.injure(INJURY_NEURAL, 1)
+			if(100 to INFINITY)
+				to_chat(target, span_cult("Your entire broken soul and being is engulfed in corruption and flames as your mind shatters away into nothing."))
+				//5000 is waaaay too much, in practice.
+				target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
+				target.apply_effect(15, STUTTER)
+				target.injure(INJURY_NEURAL, 1)
+
+	initial_message = 1
+	if (!target.can_feel_pain())
+		target.visible_message(span_warning("The markings below \the [target] glow a bloody red."))
+	else
+		target.visible_message(span_warning("[target] writhes in pain as the markings below [target.p_them()] glow a bloody red."), span_danger("AAAAAAHHHH!"), span_warning("You hear an anguished scream."))
+
+	if(!waiting_for_input[target]) //so we don't spam them with dialogs if they hesitate
+		waiting_for_input[target] = 1
+
+		if(!GLOB.cult.can_become_antag(target.mind) || jobban_isbanned(target, JOB_CULTIST))//putting jobban check here because is_convertable uses mind as argument
+			//waiting_for_input ensures this is only shown once, so they basically auto-resist from here on out. They still need to find a way to get off the freaking rune if they don't want to burn to death, though.
+			to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
+			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
+
+		else spawn()
+			var/choice = tgui_alert(target,"Do you want to join the cult?","Submit to Nar'Sie",list("Resist","Submit"))
+			waiting_for_input[target] = 0
+			if(choice == "Submit") //choosing 'Resist' does nothing of course.
+				GLOB.cult.add_antagonist(target.mind)
+				LAZYREMOVE(converting, target)
+				target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
+
+	if(target in converting)
+		om_after(src, 10 SECONDS, PROC_REF(convert_tick), attacker, target, waiting_for_input, 1) //proc once every 10 seconds
 
 /////////////////////////////////////////FOURTH RUNE
 
@@ -255,31 +258,40 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		span_danger("...but it wasn't nearly enough. You crave, crave for more. The hunger consumes you from within."), \
 		span_warning("You hear a heartbeat."))
 		user.bhunger += drain
-		src = user
-		spawn()
-			for (,user.bhunger>0,user.bhunger--)
-				sleep(50)
-				user.injure(INJURY_BLUNT, 3)
+		om_after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), user)
 		return
 	user.mend(TREAT_TISSUE_REPAIR, drain%5)
 	drain-=drain%5
-	for (,drain>0,drain-=5)
-		sleep(2)
-		user.mend(TREAT_TISSUE_REPAIR, 5)
-		if(ishuman(user))
-			var/mob/living/carbon/human/H = user
-			for(var/obj/item/organ/internal/I in H.internal_organs)
-				if(I.damage > 0)
-					H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
-				if(I.damage <= 5 && I.organ_tag == O_EYES)
-					H.sdisabilities &= ~BLIND
-			for(var/obj/item/organ/E in H.bad_external_organs)
-				var/obj/item/organ/external/affected = E
-				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
-					affected.status &= ~ORGAN_BROKEN
-				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
-					affected.remove_wound(W)
+	om_after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), user, drain)
 	return
+
+/// Blood hunger bites every 5 seconds until it is gone.
+/proc/cult_blood_hunger(mob/living/user)
+	if(user.bhunger <= 0)
+		return
+	user.injure(INJURY_BLUNT, 3)
+	user.bhunger--
+	om_after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), user)
+
+/// Drained blood mends 5 at a time, 0.2 seconds apart.
+/proc/cult_drain_mend(mob/living/user, drain)
+	if(drain <= 0)
+		return
+	user.mend(TREAT_TISSUE_REPAIR, 5)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		for(var/obj/item/organ/internal/I in H.internal_organs)
+			if(I.damage > 0)
+				H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
+			if(I.damage <= 5 && I.organ_tag == O_EYES)
+				H.sdisabilities &= ~BLIND
+		for(var/obj/item/organ/E in H.bad_external_organs)
+			var/obj/item/organ/external/affected = E
+			if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
+				affected.status &= ~ORGAN_BROKEN
+			for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+				affected.remove_wound(W)
+	om_after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), user, drain - 5)
 
 
 
@@ -358,8 +370,9 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				(Verbs -> Ghost -> Re-enter corpse)")))
 				break
 
-	sleep(10 SECONDS)
+	om_after(src, 10 SECONDS, PROC_REF(raise_finish), user, corpse_to_raise, body_to_sacrifice)
 
+/obj/effect/rune/proc/raise_finish(mob/living/user, mob/living/carbon/human/corpse_to_raise, mob/living/carbon/human/body_to_sacrifice)
 	if(corpse_to_raise.client)
 
 		GLOB.cult.add_antagonist(corpse_to_raise.mind)
@@ -422,14 +435,17 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		span_warning("You hear only complete silence for a moment."))
 		announce_ghost_joinleave(user.ghostize(1), 1, "You feel that they had to use some [pick("dark", "black", "blood", "forgotten", "forbidden")] magic to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place!")
 		L.ajourn = 1
-		while(L)
-			if(L.key)
-				L.ajourn=0
-				return
-			else
-				L.injure(INJURY_BLUNT, 3)
-			sleep(100)
+		cult_ajourney_tick(L)
+		return
 	return fizzle(user)
+
+/// The body left behind on an astral journey hurts every 10 seconds until its owner returns.
+/proc/cult_ajourney_tick(mob/living/carbon/human/L)
+	if(L.key)
+		L.ajourn=0
+		return
+	L.injure(INJURY_BLUNT, 3)
+	om_after(L, 10 SECONDS, GLOBAL_PROC_REF(cult_ajourney_tick), L)
 
 
 
@@ -482,15 +498,20 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		D.real_name += pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith")
 
 	log_and_message_admins("used a manifest rune.")
-	while(this_rune && user && user.stat==CONSCIOUS && user.client && user.loc==this_rune.loc)
+	this_rune.manifest_tick(user, D)
+	return
+
+/// The summoner bleeds for the homunculus every 3 seconds while they hold the rune; it dies when they stop.
+/obj/effect/rune/proc/manifest_tick(mob/living/user, mob/living/carbon/human/dummy/D)
+	if(user && user.stat==CONSCIOUS && user.client && user.loc==loc)
 		user.injure(INJURY_BLUNT, 1)
-		sleep(30)
+		om_after(src, 3 SECONDS, PROC_REF(manifest_tick), user, D)
+		return
 	if(D)
 		D.visible_message(span_danger("[D] slowly dissipates into dust and bones."), \
 		span_danger("You feel pain, as bonds formed between your soul and this homunculus break."), \
 		span_warning("You hear faint rustle."))
 		D.dust()
-	return
 
 
 
@@ -589,12 +610,15 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	user.visible_message(span_danger("\The [user] keels over dead, [user.p_their()] blood glowing blue as it escapes [user.p_their()] body and dissipates into thin air."), \
 	span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood."), \
 	span_warning("You hear faint rustle."))
-	for(,user.stat==2)
-		sleep(600)
-		if (!user)
-			return
-	GLOB.runedec-=10
+	om_after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), user)
 	return
+
+/// The mend rune's strain on reality lasts while its caster stays dead (checked every minute).
+/proc/cult_mend_rune_wait(mob/living/user)
+	if(user?.stat == DEAD)
+		om_after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), user)
+		return
+	GLOB.runedec-=10
 
 
 /////////////////////////////////////////FOURTEETH RUNE

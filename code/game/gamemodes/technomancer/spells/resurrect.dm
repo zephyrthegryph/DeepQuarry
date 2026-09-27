@@ -50,17 +50,19 @@
 
 				H.mend(TREAT_TISSUE_REPAIR, 40)
 				H.mend(TREAT_BURN_CARE, 40)
+				om_after(src, 10 SECONDS, PROC_REF(resurrect_finish), H, user)
 
-				sleep(10 SECONDS)
-				if(H.client)
-					L.set_stat(CONSCIOUS) //Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
-					GLOB.dead_mob_list -= H
-					GLOB.living_mob_list += H
-					H.timeofdeath = null
-					visible_message(span_danger("\The [H]'s eyes open!"))
-					to_chat(user, span_notice("It's alive!"))
-					adjust_instability(50)
-					log_and_message_admins("has resurrected [H].")
-				else
-					to_chat(user, span_warning("The body of \the [H] doesn't seem to respond, perhaps you could try again?"))
-					adjust_instability(10)
+/obj/item/spell/resurrect/proc/resurrect_finish(mob/living/carbon/human/H, mob/living/user)
+	var/mob/living/L = H
+	if(H.client)
+		L.set_stat(CONSCIOUS) //Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
+		GLOB.dead_mob_list -= H
+		GLOB.living_mob_list += H
+		H.timeofdeath = null
+		visible_message(span_danger("\The [H]'s eyes open!"))
+		to_chat(user, span_notice("It's alive!"))
+		adjust_instability(50)
+		log_and_message_admins("has resurrected [H].")
+	else
+		to_chat(user, span_warning("The body of \the [H] doesn't seem to respond, perhaps you could try again?"))
+		adjust_instability(10)

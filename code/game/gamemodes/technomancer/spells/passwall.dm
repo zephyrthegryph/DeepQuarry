@@ -58,8 +58,12 @@
 			if(!dense_objs_on_turf) //If we found a non-dense turf with nothing dense on it, then that's our destination.
 				found_turf = checked_turf
 				break
-		sleep(10)
 
+	// The search takes a second per tile checked.
+	om_after(src, (maximum_distance - i) SECONDS, PROC_REF(passwall_found), user, hit_atom, our_turf, found_turf, total_cost, spark_system)
+	return 1
+
+/obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost, datum/effect/effect/system/spark_spread/spark_system)
 	if(found_turf)
 		if(user.loc != our_turf)
 			to_chat(user, span_warning("You need to stand still in order to phase through \the [hit_atom]."))
