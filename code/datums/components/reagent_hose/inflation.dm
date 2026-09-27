@@ -13,10 +13,6 @@
 	human_owner = parent
 	remove_verb(human_owner,/atom/proc/disconnect_hose)
 
-/datum/component/hose_connector/inflation/Destroy()
-	human_owner = null
-	. = ..()
-
 /datum/component/hose_connector/inflation/on_examine(datum/source, mob/user, list/examine_texts)
 	return
 
@@ -175,10 +171,6 @@
 	. = ..()
 	borg_owner = parent
 
-/datum/component/hose_connector/input/borg/Destroy()
-	borg_owner = null
-	. = ..()
-
 /datum/component/hose_connector/input/borg/connected_reagents()
 	return borg_owner?.vore_selected?.reagents
 
@@ -194,10 +186,6 @@
 		return COMPONENT_INCOMPATIBLE
 	. = ..()
 	borg_owner = parent
-
-/datum/component/hose_connector/output/borg/Destroy()
-	borg_owner = null
-	. = ..()
 
 /datum/component/hose_connector/output/borg/connected_reagents()
 	return borg_owner?.vore_selected?.reagents

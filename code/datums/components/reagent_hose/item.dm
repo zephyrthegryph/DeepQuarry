@@ -19,10 +19,6 @@
 
 	var/remembered = null
 
-/obj/item/stack/hose/Destroy()
-	remembered = null
-	. = ..()
-
 /obj/item/stack/hose/item_ctrl_click(mob/user)
 	if(remembered)
 		to_chat(user, span_notice("You wind \the [src] back up."))

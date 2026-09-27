@@ -434,10 +434,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 /datum/changeling_panel
 	var/datum/component/antag/changeling/comp
 
-/datum/changeling_panel/Destroy(force)
-	comp = null
-	. = ..()
-
 /datum/changeling_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 

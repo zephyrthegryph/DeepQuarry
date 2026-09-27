@@ -104,12 +104,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	..()
 	src.flags = flags
 
-/datum/state_context/Destroy(force)
-	ids = null
-	by_id = null
-	pending = null
-	return ..()
-
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)
 

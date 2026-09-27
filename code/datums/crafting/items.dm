@@ -24,7 +24,6 @@
 	pass_color = TRUE
 	strict_color_stacking = TRUE
 
-
 /datum/material/frostscale
 	name = MAT_FROSCALE
 	icon_colour = "#0000CC"
@@ -277,10 +276,6 @@
 
 /obj/item/clothing/gloves/toxinregen/Initialize(mapload)
 	. = ..()
-
-/obj/item/clothing/gloves/toxinregen/Destroy()
-	wearer = null
-	return ..()
 
 /// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/toxinregen/periodic_step()

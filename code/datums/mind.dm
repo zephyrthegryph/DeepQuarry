@@ -71,11 +71,6 @@
 	antag_holder = new
 	..()
 
-/datum/mind/Destroy(force)
-	. = ..()
-	original_character = null
-	identity = null
-
 /// Low level: link this mind to `new_character`. Use transfer_mind() (or
 /// move_player_mind()), which logs. `share_identity` has the body wear the
 /// mind's identity without syncing its vars from it (temporary control).
@@ -126,7 +121,6 @@
 		new_character.client.init_verbs() // re-initialize character specific verbs
 
 	SSantag_job.update_antag_icons(src)
-
 
 /datum/mind/proc/store_memory(new_text)
 	memory += "[new_text]<BR>"
@@ -411,7 +405,6 @@
 	if(H)
 		qdel(H)
 
-
 // check whether this mind's mob has been brigged for the given duration
 // have to call this periodically for the duration to work properly
 /datum/mind/proc/is_brigged(duration)
@@ -571,7 +564,6 @@
 	. = ..()
 	mind.assigned_role = JOB_JUGGERNAUT
 	mind.special_role = JOB_CULTIST
-
 
 /datum/mind
 	var/vore_death = FALSE	// Was our last gasp a gurgle?

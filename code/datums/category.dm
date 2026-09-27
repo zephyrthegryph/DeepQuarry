@@ -61,7 +61,6 @@
 /datum/category_group/dd_SortValue()
 	return name
 
-
 /*****************
 * Category Items *
 *****************/
@@ -72,10 +71,6 @@
 /datum/category_item/New(datum/category_group/cg)
 	..()
 	category = cg
-
-/datum/category_item/Destroy()
-	category = null
-	return ..()
 
 /datum/category_item/dd_SortValue()
 	return name

@@ -247,6 +247,3 @@
 	/// The status effect we're linked to
 	var/datum/status_effect/attached_effect
 
-/atom/movable/screen/alert/status_effect/Destroy()
-	attached_effect = null //Don't keep a ref now
-	return ..()

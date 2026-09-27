@@ -27,10 +27,6 @@
 	src.effects_we_clear = typecacheof(effects_we_clear)
 	src.time_to_remove = time_to_remove
 
-/datum/component/effect_remover/Destroy(force)
-	on_clear_callback = null
-	return ..()
-
 /datum/component/effect_remover/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_ITEM_PRE_ATTACK, PROC_REF(try_remove_effect))
 

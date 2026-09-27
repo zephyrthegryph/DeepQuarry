@@ -28,10 +28,6 @@ GLOBAL_VAR(managed_browser_id_ticker)
 	if(display_when_created)
 		display()
 
-/datum/managed_browser/Destroy()
-	my_client = null
-	return ..()
-
 // Override if you want to have the browser title change conditionally.
 // Otherwise it's easier to just change the title variable directly.
 /datum/managed_browser/proc/get_title()

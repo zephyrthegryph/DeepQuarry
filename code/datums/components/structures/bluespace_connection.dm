@@ -37,10 +37,6 @@
 /datum/component/bluespace_connection/UnregisterFromParent()
 	UnregisterSignal(parent, list(COMSIG_CLOSET_CLOSED, COMSIG_ATOM_HITBY))
 
-/datum/component/bluespace_connection/Destroy()
-	assigned_closet = null
-	. = ..()
-
 /datum/component/bluespace_connection/proc/on_close()
 	SIGNAL_HANDLER
 

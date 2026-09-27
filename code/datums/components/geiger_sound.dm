@@ -80,10 +80,6 @@
 	var/last_insulation_to_target
 	var/wall_mounted = FALSE
 
-/datum/looping_sound/geiger/Destroy()
-	last_radiation_pulse = null
-	return ..()
-
 /datum/looping_sound/geiger/get_sound(starttime, _mid_sounds, danger)
 	if(wall_mounted) //Child does all the work.
 		return ..(starttime, mid_sounds[danger])

@@ -65,11 +65,6 @@
 	else if(!transformed && isturf(gargoyle.loc))
 		gargoyle.gargoyle_transformation()
 
-/datum/component/gargoyle/Destroy(force = FALSE)
-	gargoyle = null
-	statue = null
-	. = ..()
-
 /datum/component/gargoyle/proc/unpause()
 	SIGNAL_HANDLER
 	paused = FALSE
@@ -82,7 +77,6 @@
 	set category = "Abilities.Gargoyle"
 	set desc = "Turn yourself into (or back from) being a gargoyle."
 	SEND_SIGNAL(src, COMSIG_GARGOYLE_TRANSFORMATION)
-
 
 /datum/component/gargoyle/proc/gargoyle_transformation()
 	SIGNAL_HANDLER

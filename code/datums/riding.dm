@@ -13,10 +13,6 @@
 /datum/riding/New(atom/movable/_ridden)
 	ridden = _ridden
 
-/datum/riding/Destroy()
-	ridden = null
-	return ..()
-
 /datum/riding/proc/handle_vehicle_layer()
 	if(ridden.dir != NORTH)
 		ridden.layer = ABOVE_MOB_LAYER
@@ -125,8 +121,6 @@
 
 /datum/riding/space/Process_Spacemove(direction)
 	return TRUE
-
-
 
 // SUBTYPES
 
