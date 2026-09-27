@@ -102,7 +102,9 @@
 	var/list/roles = list()
 	for(var/role in owner.material_roles())
 		roles += role
-	var/role = tgui_input_list(user, "Which component should be replaced?", "Service assembly", roles)
+	var/role = rerun_prompt(user, "k105", list("kind" = "list", "message" = "Which component should be replaced?", "title" = "Service assembly", "choices" = roles), PROC_REF(fit_stock), args)
+	if(isnull(role))
+		return
 	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner.material_roles()))
 		return
 	var/quantity = max(1, CEILING((owner.role_amount(role) || SHEET_MATERIAL_AMOUNT) / SHEET_MATERIAL_AMOUNT, 1))
