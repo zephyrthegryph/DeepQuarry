@@ -138,7 +138,7 @@ pub struct JobInfo {
 
 /// Submit, poll, cancel and collect long jobs.
 pub struct JobRegistry {
-    pool: rayon::ThreadPool,
+    pool: Mutex<crate::pool::Pool>,
     inner: Arc<Mutex<Inner>>,
     frame_busy: Arc<AtomicBool>,
     metrics: Option<Arc<MetricsRegistry>>,
@@ -149,17 +149,23 @@ fn lock(inner: &Mutex<Inner>) -> MutexGuard<'_, Inner> {
 }
 
 impl JobRegistry {
+    /// Stops the job threads once running jobs finish, and joins them.
+    /// Later submissions never run.
+    pub fn shutdown(&self) {
+        self.pool
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .shutdown();
+    }
+
     /// A registry with `threads` job threads (named `vg-job-N`).
     ///
     /// # Errors
     /// If the pool cannot be created.
     pub fn new(threads: usize) -> Result<Self, rayon::ThreadPoolBuildError> {
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(threads.max(1))
-            .thread_name(|i| format!("vg-job-{i}"))
-            .build()?;
+        let pool = crate::pool::Pool::new(threads, "vg-job")?;
         Ok(Self {
-            pool,
+            pool: Mutex::new(pool),
             inner: Arc::new(Mutex::new(Inner {
                 next: 1,
                 ..Inner::default()
@@ -234,7 +240,11 @@ impl JobRegistry {
             frame_busy: Arc::clone(&self.frame_busy),
         };
         let inner = Arc::clone(&self.inner);
-        self.pool.spawn(move || {
+        let pool = self
+            .pool
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        pool.spawn(move || {
             let start = Instant::now();
             let state = if ctx.is_cancelled() {
                 State::Cancelled

@@ -12,7 +12,7 @@
 	/// The heat source is on.
 	var/tmp/heating = FALSE
 	/// Heat watch that wakes a hibernating cooker when it cools.
-	var/tmp/thermostat_watch
+	var/tmp/datum/native_watch/heat/thermostat_watch
 
 	var/light_x = 0
 	var/light_y = 0
@@ -172,21 +172,16 @@
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	thermostat_watch = heat_watch_threshold(src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE)
+	thermostat_watch = heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat))
 	return !isnull(thermostat_watch)
 
-/obj/machinery/appliance/cooker/on_heat_wake(watch, reason, source)
-	if(!heat_watch_is(thermostat_watch, watch))
-		return
-	heat_unwatch(thermostat_watch)
-	thermostat_watch = null
+/// Cooled below the thermostat band (thermostat_watch): heat again.
+/obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
+	QDEL_NULL(thermostat_watch)
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/appliance/cooker/Destroy()
-	if(!isnull(thermostat_watch))
-		heat_unwatch(thermostat_watch)
-		thermostat_watch = null
-	heat_unsubscribe()
+	QDEL_NULL(thermostat_watch)
 	return ..()
 
 /// Heat capacity from `resistance` (the old per-process heating step is

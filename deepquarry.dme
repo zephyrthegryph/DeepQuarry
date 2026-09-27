@@ -910,6 +910,7 @@
 #include "code\datums\om\entity.dm"
 #include "code\datums\om\event.dm"
 #include "code\datums\om\library.dm"
+#include "code\datums\om\native.dm"
 #include "code\datums\om\registry.dm"
 #include "code\datums\om\relation.dm"
 #include "code\datums\om\scheduler.dm"

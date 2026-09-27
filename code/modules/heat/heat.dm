@@ -82,6 +82,9 @@
 	heat_body = vg_heat_body_create(capacity, isnull(start_temperature) ? get_ambient_temperature() : start_temperature, coupling[1], coupling[2], heat_path_conductance(properties[THERMAL_CONDUCTANCE]), keep)
 	if(isnull(heat_body))
 		return FALSE
+	// Watches following this object move onto the new body.
+	for(var/datum/native_watch/heat/W as anything in heat_watches?.Copy())
+		W.relink()
 	// Rules watching this object's temperature subscribe to the new body.
 	if(dq_rules_for_type(type))
 		dq_rules_heat_body_created(src)
@@ -200,88 +203,124 @@
 
 // ---------------------------------------------------------------- watches
 
-/// "[watch index]" -> subscriber handle, for ThresholdSet crossings
-/// (index alone: `vg_heat_take_wakes()`'s crossing records carry only the
-/// watch's table index, not its generation -- see that proc's doc).
-GLOBAL_LIST_EMPTY(heat_watch_owners)
+/// Native heat watches on this atom (relinked when it gets a new body).
+/atom/var/tmp/list/heat_watches
 
-/// This datum's heat subscriber: an entity handle (0: none), bound in
-/// SSvg's entity table so wakes find the datum again (`SSvg.entity_lookup`).
-/datum/var/heat_subscriber = 0
+/**
+ * A heat watch (code/datums/om/native.dm): a threshold, band or ThresholdSet
+ * on a turf's solid or an atom's heat body. Threshold and band watches call
+ * `callback` on the owner as (watch, reason, source); a set calls it once
+ * per crossed entry as (watch, payload, entered, generation).
+ *
+ * `keep_body`: the target gets a body now and keeps it while watched. Without
+ * it the watch follows whatever body the target has, and waits while it is at
+ * rest (reading its surroundings, unwatched).
+ */
+/datum/native_watch/heat
+	var/atom/target
+	var/kind
+	var/level
+	var/both_edges = FALSE
+	var/lane = HEAT_LANE_NORMAL
+	var/keep_body = TRUE
+	/// Registered with Rust (the watch table's index and generation below).
+	var/live = FALSE
+	var/live_index
+	var/live_generation
+	/// The body `live` is on.
+	var/body
+	/// ThresholdSet entries: payload -> list(generation, limit, above, both_edges).
+	var/list/entries
 
-/// The datum's subscriber handle, allocated on first use.
-/datum/proc/heat_subscriber_index()
-	if(!heat_subscriber)
-		heat_subscriber = SSvg.bind_datum(src)
-	return heat_subscriber
-
-/// Frees the datum's subscriber handle (its watches must be removed first).
-/datum/proc/heat_unsubscribe()
-	if(!heat_subscriber)
-		return
-	SSvg.unbind_datum(src, heat_subscriber)
-	heat_subscriber = 0
-
-/// Watches `target`'s temperature for crossing `limit` (upwards if `above`).
-/// A turf watches its solid; any other atom its heat body (kept while watched).
-/// Returns the watch handle, `list(on_body, index, generation)` -- opaque to
-/// every caller except `heat_unwatch()`/`heat_watch_set_add()`/
-/// `vg_heat_watch_set_remove()`, which need it back apart to call the
-/// generic `vg_heat_unwatch`/`vg_heat_watch_set_*` binds (index and
-/// generation are their own numbers there, never packed into one, so
-/// neither is ever truncated). on_heat_wake(watch, reason, source) is called.
-/datum/proc/heat_watch_threshold(atom/target, limit, above = TRUE, both_edges = FALSE, lane = HEAT_LANE_NORMAL)
-	return heat_watch(target, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges, lane)
-
-/// Watches `target`'s temperature band over ascending `levels`: wakes on every
-/// band change, and once at registration.
-/datum/proc/heat_watch_band(atom/target, list/levels, lane = HEAT_LANE_NORMAL)
-	return heat_watch(target, HEAT_WATCH_BAND, levels, FALSE, lane)
-
-/// A ThresholdSet on `target`: add entries with heat_watch_set_add(); crossings
-/// call on_heat_crossing(watch, payload, entered, generation).
-/datum/proc/heat_watch_set(atom/target, lane = HEAT_LANE_NORMAL)
-	return heat_watch(target, HEAT_WATCH_SET, 0, FALSE, lane)
-
-/datum/proc/heat_watch(atom/target, kind, level, both_edges, lane)
-	var/subscriber = heat_subscriber_index()
-	var/on_body = !isturf(target)
-	var/list/id
-	if(!on_body)
-		id = vg_heat_watch(FALSE, target, subscriber, lane, kind, level, both_edges)
-	else
-		if(!target.create_heat_body(TRUE))
-			return null
-		vg_heat_body_keep(target.heat_body, TRUE)
-		id = vg_heat_watch(TRUE, target.heat_body, subscriber, lane, kind, level, both_edges)
-	if(isnull(id))
+/datum/native_watch/heat/proc/start(atom/target, kind, level, both_edges, lane, keep_body)
+	src.target = target
+	src.kind = kind
+	src.level = level
+	src.both_edges = both_edges
+	src.lane = lane
+	src.keep_body = keep_body
+	if(!isturf(target))
+		LAZYADD(target.heat_watches, src)
+	if(!register() && keep_body)
+		qdel(src)
 		return null
-	var/list/watch = list(on_body, id[1], id[2])
-	GLOB.heat_watch_owners["[id[1]]"] = subscriber
-	return watch
+	return src
 
-/proc/heat_watch_set_add(list/watch, payload, generation, limit, above = TRUE, both_edges = FALSE)
-	return vg_heat_watch_set_add(watch[1], watch[2], watch[3], payload, generation, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges)
+/datum/native_watch/heat/register()
+	if(!isturf(target))
+		if(keep_body)
+			if(!target.create_heat_body(TRUE))
+				return FALSE
+			vg_heat_body_keep(target.heat_body, TRUE)
+		else if(!isnull(target.heat_body) && isnull(vg_heat_body_temperature(target.heat_body)))
+			target.heat_body = null
+		body = target.heat_body
+		if(isnull(body))
+			return TRUE // at rest: relinked when the target gets a body
+	var/list/id = vg_heat_watch(!isturf(target), isturf(target) ? target : body, handle, lane, kind, level, both_edges)
+	if(isnull(id))
+		body = null
+		return FALSE
+	live = TRUE
+	live_index = id[1]
+	live_generation = id[2]
+	for(var/payload in entries)
+		var/list/entry = entries[payload]
+		vg_heat_watch_set_add(!isturf(target), live_index, live_generation, text2num(payload), entry[1], entry[3] ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, entry[2], entry[4])
+	return TRUE
 
-/proc/heat_unwatch(list/watch)
-	if(isnull(watch))
+/datum/native_watch/heat/unregister()
+	if(live)
+		vg_heat_unwatch(!isturf(target), live_index, live_generation)
+	live = FALSE
+	body = null
+	if(!isturf(target))
+		LAZYREMOVE(target?.heat_watches, src)
+	target = null
+
+/// The target's body changed (created, or released at rest): follow it.
+/datum/native_watch/heat/proc/relink()
+	if(isturf(target) || QDELETED(target) || (live && body == target.heat_body))
 		return
-	GLOB.heat_watch_owners -= "[watch[2]]"
-	return vg_heat_unwatch(watch[1], watch[2], watch[3])
+	if(live)
+		vg_heat_unwatch(TRUE, live_index, live_generation)
+		live = FALSE
+		body = null
+	register()
 
-/// Whether `index` (the watch argument on_heat_wake()/on_heat_crossing()
-/// receive: the watch's table index) names the handle `watch`.
-/proc/heat_watch_is(list/watch, index)
-	return !isnull(watch) && watch[2] == index
+/// Adds (or replaces) a ThresholdSet entry: crossing `limit` upwards (`above`) or downwards.
+/datum/native_watch/heat/proc/add_entry(payload, generation, limit, above = TRUE, both_edges = FALSE)
+	LAZYSET(entries, "[payload]", list(generation, limit, above, both_edges))
+	if(live)
+		vg_heat_watch_set_add(!isturf(target), live_index, live_generation, payload, generation, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges)
 
-/// A heat watch fired. `reason` is the vg-core reason mask, `source` the cell
-/// or body slot.
-/datum/proc/on_heat_wake(watch, reason, source)
-	return
+/datum/native_watch/heat/proc/remove_entry(payload)
+	LAZYREMOVE(entries, "[payload]")
+	if(live)
+		vg_heat_watch_set_remove(!isturf(target), live_index, live_generation, payload)
 
-/// A ThresholdSet entry was crossed (`entered`: TRUE entering, FALSE leaving).
-/datum/proc/on_heat_crossing(watch, payload, entered, generation)
-	return
+/// Whether the watch is registered with Rust right now (tests).
+/datum/native_watch/heat/proc/is_live()
+	return live
+
+/// Watches `target`'s temperature for crossing `limit` (upwards if `above`);
+/// `callback` runs on `owner` as (watch, reason, source). A turf watches its
+/// solid; any other atom its heat body. Returns the watch, or null.
+/proc/heat_watch_threshold(datum/owner, atom/target, limit, above, callback, both_edges = FALSE, lane = HEAT_LANE_NORMAL, keep_body = TRUE)
+	var/datum/native_watch/heat/W = new(owner, callback)
+	return W.start(target, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges, lane, keep_body)
+
+/// Watches `target`'s temperature band over ascending `levels`: fires on every
+/// band change, and once at registration.
+/proc/heat_watch_band(datum/owner, atom/target, list/levels, callback, lane = HEAT_LANE_NORMAL, keep_body = TRUE)
+	var/datum/native_watch/heat/W = new(owner, callback)
+	return W.start(target, HEAT_WATCH_BAND, levels, FALSE, lane, keep_body)
+
+/// A ThresholdSet on `target` (add entries with add_entry()); `callback` runs
+/// on `owner` as (watch, payload, entered, generation) per crossing.
+/proc/heat_watch_set(datum/owner, atom/target, callback, lane = HEAT_LANE_NORMAL)
+	var/datum/native_watch/heat/W = new(owner, callback)
+	return W.start(target, HEAT_WATCH_SET, 0, FALSE, lane, TRUE)
 
 // ------------------------------------------------------------------ ticks
 
@@ -296,19 +335,19 @@ GLOBAL_LIST_EMPTY(heat_watch_owners)
 	if(vg_heat_tick(elapsed) > 0)
 		dispatch_heat_wakes()
 
-/// Delivers collected heat wakes and ThresholdSet crossings.
+/// Delivers collected heat wakes and ThresholdSet crossings to their watches.
+/// Wire: [wake count], then [watch handle, index, reason, source] per wake,
+/// then [watch handle, payload, entered, generation] per crossing.
 /datum/controller/subsystem/air/proc/dispatch_heat_wakes()
 	var/list/flat = vg_heat_take_wakes()
 	var/wakes = length(flat) ? flat[1] : 0
 	var/i = 2
 	for(var/n in 1 to wakes)
-		var/datum/subscriber = SSvg.entity_lookup(flat[i])
-		if(subscriber && subscriber.heat_subscriber == flat[i] && !QDELETED(subscriber))
-			subscriber.on_heat_wake(flat[i + 1], flat[i + 2], flat[i + 3])
+		var/datum/native_watch/heat/W = om_native_watch_of(flat[i])
+		// A set's wakes arrive as its crossings, below.
+		if(W && W.kind != HEAT_WATCH_SET)
+			W.fire(list(flat[i + 2], flat[i + 3]))
 		i += 4
 	while(i + 3 <= length(flat))
-		var/owner = GLOB.heat_watch_owners["[flat[i]]"]
-		var/datum/subscriber = owner ? SSvg.entity_lookup(owner) : null
-		if(subscriber && subscriber.heat_subscriber == owner && !QDELETED(subscriber))
-			subscriber.on_heat_crossing(flat[i], flat[i + 1], flat[i + 2], flat[i + 3])
+		om_native_dispatch(flat[i], list(flat[i + 1], flat[i + 2], flat[i + 3]))
 		i += 4

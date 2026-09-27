@@ -22,7 +22,7 @@
 
 /datum/reagents/distilling
 	/// The ThresholdSet on my_atom's heat body, or null.
-	var/tmp/heat_set_watch
+	var/tmp/datum/native_watch/heat/heat_set_watch
 	/// Levels in the set (payload = index).
 	var/tmp/list/heat_set_levels
 
@@ -55,23 +55,20 @@
 	if(heat_set_levels ~= levels && !isnull(heat_set_watch))
 		return
 	if(isnull(heat_set_watch))
-		heat_set_watch = heat_watch_set(my_atom)
+		heat_set_watch = heat_watch_set(src, my_atom, PROC_REF(on_reaction_bound))
 		if(isnull(heat_set_watch))
 			return
 	for(var/i in 1 to length(levels))
-		heat_watch_set_add(heat_set_watch, i, 1, levels[i], TRUE, TRUE)
+		heat_set_watch.add_entry(i, 1, levels[i], TRUE, TRUE)
 	for(var/i in length(levels) + 1 to length(heat_set_levels))
-		vg_heat_watch_set_remove(heat_set_watch[1], heat_set_watch[2], heat_set_watch[3], i)
+		heat_set_watch.remove_entry(i)
 	heat_set_levels = levels
 
 /datum/reagents/distilling/proc/unwatch_reaction_temperatures()
-	if(!isnull(heat_set_watch))
-		heat_unwatch(heat_set_watch)
-		heat_set_watch = null
+	QDEL_NULL(heat_set_watch)
 	heat_set_levels = null
-	heat_unsubscribe()
 
 /// The holder's temperature crossed a reaction bound: react now.
-/datum/reagents/distilling/on_heat_crossing(watch, payload, entered, generation)
-	if(heat_watch_is(heat_set_watch, watch) && !QDELETED(my_atom))
+/datum/reagents/distilling/proc/on_reaction_bound(datum/native_watch/heat/watch, payload, entered, generation)
+	if(!QDELETED(my_atom))
 		handle_reactions()

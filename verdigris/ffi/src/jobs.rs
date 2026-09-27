@@ -20,6 +20,13 @@ pub fn registry() -> &'static JobRegistry {
     })
 }
 
+/// Joins the job threads, if the pool ever started.
+pub fn shutdown() {
+    if let Some(r) = JOBS.get() {
+        r.shutdown();
+    }
+}
+
 /// Job ids cross to DM as decimal strings (a float would lose bits).
 pub fn parse_id(value: &ByondValue) -> Result<JobId> {
     Ok(JobId(value.get_string()?.parse::<u64>()?))

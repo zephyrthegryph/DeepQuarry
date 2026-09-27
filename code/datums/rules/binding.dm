@@ -29,8 +29,8 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /proc/dq_rules_heat_body_created(atom/A)
 	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
 		return
+	// Existing bindings' node watches follow the body themselves.
 	if(GLOB.dq_rule_bindings[REF(A)])
-		dq_rx_heat_body_created(A)
 		return
 	// At rest the object followed its surroundings, unwatched: a rule whose
 	// condition holds now crossed while nothing watched it, so it fires.

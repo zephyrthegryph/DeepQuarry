@@ -97,10 +97,10 @@
 	var/wakes = 0
 	var/crossings = 0
 
-/datum/heat_test_subscriber/on_heat_wake(watch, reason, source)
+/datum/heat_test_subscriber/proc/on_threshold(datum/native_watch/heat/watch, reason, source)
 	wakes++
 
-/datum/heat_test_subscriber/on_heat_crossing(watch, payload, entered, generation)
+/datum/heat_test_subscriber/proc/on_crossing(datum/native_watch/heat/watch, payload, entered, generation)
 	crossings++
 
 /datum/unit_test/dq_heat_threshold_watches_wake_subscribers
@@ -110,9 +110,9 @@
 	TEST_ASSERT_NOTNULL(T, "no floor to test on")
 	heat_test_solid(T, 1000, 0.05, T20C)
 	var/datum/heat_test_subscriber/listener = new
-	var/watch = listener.heat_watch_threshold(T, 400)
-	var/set_watch = listener.heat_watch_set(T)
-	heat_watch_set_add(set_watch, 1, 1, 350)
+	var/datum/native_watch/heat/watch = heat_watch_threshold(listener, T, 400, TRUE, TYPE_PROC_REF(/datum/heat_test_subscriber, on_threshold))
+	var/datum/native_watch/heat/set_watch = heat_watch_set(listener, T, TYPE_PROC_REF(/datum/heat_test_subscriber, on_crossing))
+	set_watch.add_entry(1, 1, 350)
 	vg_world_run_steps(2)
 	SSair.dispatch_heat_wakes()
 	var/before = listener.wakes
@@ -121,9 +121,8 @@
 	SSair.dispatch_heat_wakes()
 	var/after = listener.wakes
 	var/crossings = listener.crossings
-	heat_unwatch(watch)
-	heat_unwatch(set_watch)
-	listener.heat_unsubscribe()
+	qdel(watch)
+	qdel(set_watch)
 	heat_test_restore(T)
 	vg_world_run_steps(1)
 	TEST_ASSERT_NOTNULL(watch, "the threshold watch was rejected")

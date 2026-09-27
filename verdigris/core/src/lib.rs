@@ -38,6 +38,7 @@ pub mod network;
 pub mod outbox;
 pub mod overlay;
 pub mod owner;
+pub mod pool;
 pub mod propagate;
 pub mod query;
 pub mod rate;

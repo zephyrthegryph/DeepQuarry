@@ -1263,12 +1263,12 @@ fn heat_unwatch(
 // ------------------------------------------------------------------- tick
 
 /// Takes every wake and `ThresholdSet` crossing collected since the last
-/// call, as one flat list matching the pre-port wire format exactly:
-/// `[wake count]`, then `[subscriber, watch, reason, source]` per wake,
-/// then `[watch, payload, entered, generation]` per `ThresholdSet`
-/// crossing. The world itself is driven by `SSvg`'s `vg_world_tick()`
-/// (`code/controllers/subsystems/vg.dm`), not a heat-specific pacer, so
-/// this bind only drains -- it never steps a frame.
+/// call, as one flat list: `[wake count]`, then `[subscriber, watch, reason,
+/// source]` per wake, then `[subscriber, payload, entered, generation]` per
+/// crossing. The subscriber is the watch's DM handle
+/// (`code/datums/om/native.dm`); a crossing's comes from its watch's wake in
+/// the same batch (every crossing also wakes its watch). The world itself is
+/// driven by `SSvg`'s `vg_world_tick()`; this bind only drains.
 #[auxmacros::bind("/proc/heat_take_wakes")]
 fn heat_take_wakes() -> Result<ByondValue> {
     let mut flat = Vec::new();
@@ -1278,8 +1278,12 @@ fn heat_take_wakes() -> Result<ByondValue> {
             w.drain_kind_wakes(body, &mut wakes);
         }
         w.drain_field_wakes::<SolidHeat>(&mut wakes);
+        let owners: HashMap<u32, Subscriber> = wakes
+            .iter()
+            .map(|wk| (wk.watch.index, wk.subscriber))
+            .collect();
         flat.push(wakes.len() as f32);
-        for wk in wakes {
+        for wk in &wakes {
             flat.extend_from_slice(&[
                 wk.subscriber as f32,
                 wk.watch.index as f32,
@@ -1287,19 +1291,12 @@ fn heat_take_wakes() -> Result<ByondValue> {
                 (wk.source & 0x00ff_ffff) as f32,
             ]);
         }
-        // `ThresholdSet` crossings: watch_index, payload, entered,
-        // payload_generation -- matching the pre-port wire format exactly.
-        // `crate::outbox::Event` (the core type a crossing rides in) only
-        // carries the watch's table *index*, not its generation
-        // (`core::world::ThresholdCrossing`'s doc), so -- like the pre-port
-        // `HeatWorld`'s own `cell_watch_owner`/`body_watch_owner` re-keying
-        // maps, which were also index-only internally -- `GLOB.
-        // heat_watch_owners` (heat.dm) looks up a crossing's owner by watch
-        // index alone, not the full (index, generation) handle DM otherwise
-        // holds for `heat_unwatch`/`heat_watch_set_add`/`remove`.
         for c in w.drain_threshold_crossings() {
+            let Some(&sub) = owners.get(&c.watch) else {
+                continue;
+            };
             flat.extend_from_slice(&[
-                c.watch as f32,
+                sub as f32,
                 c.payload as f32,
                 if c.entered { 1.0 } else { 0.0 },
                 c.generation as f32,

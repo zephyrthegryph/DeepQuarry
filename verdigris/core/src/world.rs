@@ -1769,6 +1769,12 @@ impl World {
 
     /// Runs one step now regardless of pacing and waits for its worker
     /// frame (tests, replay, shutdown; never on a DM tick).
+    /// Host shutdown: waits for the running frame and joins the frame
+    /// threads. The world must not step afterwards.
+    pub fn shutdown(&mut self) {
+        self.sim.shutdown();
+    }
+
     pub fn step_blocking(&mut self) {
         self.sim.wait_for_frame();
         self.begin_tick();

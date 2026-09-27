@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "11f7103907767122"
+#define VERDIGRIS_ABI "967073615d2afec9"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -873,12 +873,12 @@
 	return call_ext(__f)(records)
 
 /// Takes every wake and `ThresholdSet` crossing collected since the last
-/// call, as one flat list matching the pre-port wire format exactly:
-/// `[wake count]`, then `[subscriber, watch, reason, source]` per wake,
-/// then `[watch, payload, entered, generation]` per `ThresholdSet`
-/// crossing. The world itself is driven by `SSvg`'s `vg_world_tick()`
-/// (`code/controllers/subsystems/vg.dm`), not a heat-specific pacer, so
-/// this bind only drains -- it never steps a frame.
+/// call, as one flat list: `[wake count]`, then `[subscriber, watch, reason,
+/// source]` per wake, then `[subscriber, payload, entered, generation]` per
+/// crossing. The subscriber is the watch's DM handle
+/// (`code/datums/om/native.dm`); a crossing's comes from its watch's wake in
+/// the same batch (every crossing also wakes its watch). The world itself is
+/// driven by `SSvg`'s `vg_world_tick()`; this bind only drains.
 // /proc/heat_take_wakes (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_take_wakes()
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_take_wakes_ffi")
@@ -1721,6 +1721,12 @@
 // /proc/world_sched_stats (verdigris/ffi/src/sched.rs)
 /proc/vg_world_sched_stats()
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_sched_stats_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+// /proc/vg_shutdown (verdigris/ffi/src/world.rs)
+/proc/vg_world_shutdown()
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_shutdown_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 

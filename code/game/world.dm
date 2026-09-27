@@ -571,6 +571,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	#endif
 
 /world/Del()
+	// Joins verdigris' frame and job threads before BYOND unloads the DLL.
+	vg_world_shutdown()
 	QDEL_NULL(Tracy)
 	QDEL_NULL(Debugger)
 	. = ..()

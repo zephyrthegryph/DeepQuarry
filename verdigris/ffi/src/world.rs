@@ -46,6 +46,8 @@ use vg_core::world::{KindId, World, WorldBuilder, WorldConfig};
 use crate::{entity, registry};
 
 thread_local! {
+    /// Set by [`shutdown`]: the world is gone and is never rebuilt.
+    static SHUT_DOWN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static WORLD: RefCell<Option<World>> = const { RefCell::new(None) };
     /// The grid size the next (re)build uses ([`configure_world`]).
     static PENDING_DIMS: std::cell::Cell<GridDims> = std::cell::Cell::new(GridDims::new(2, 2, 2).expect("2x2x2 fits"));
@@ -196,6 +198,9 @@ pub fn reset() -> Result<()> {
 /// # Errors
 /// Whatever `f` returns, or a world build failure.
 pub fn with_world<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Result<T> {
+    if SHUT_DOWN.with(std::cell::Cell::get) {
+        bail!("verdigris is shut down");
+    }
     let missing = WORLD.with_borrow(Option::is_none);
     if missing {
         reset()?;
@@ -615,4 +620,39 @@ fn world_run_steps(steps: ByondValue) -> Result<ByondValue> {
         })?;
     }
     Ok(ByondValue::null())
+}
+
+/// Host shutdown (`world/Del()`): waits for the running frame, drops the
+/// world (joining the frame threads) and joins the job threads, so no
+/// verdigris thread outlives the DLL. Every later world call fails.
+pub fn shutdown() {
+    if let Some(mut w) = WORLD.with_borrow_mut(Option::take) {
+        w.shutdown();
+        drop(w);
+    }
+    SHUT_DOWN.with(|s| s.set(true));
+    crate::jobs::shutdown();
+}
+
+#[auxmacros::bind("/proc/vg_shutdown")]
+fn world_shutdown() -> Result<ByondValue> {
+    shutdown();
+    Ok(ByondValue::null())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shutdown_joins_the_threads_and_refuses_later_calls() {
+        with_world(|w| {
+            w.step_blocking();
+            Ok(())
+        })
+        .unwrap();
+        shutdown();
+        assert!(WORLD.with_borrow(Option::is_none));
+        assert!(with_world(|_| Ok(())).is_err(), "the world was rebuilt after shutdown");
+    }
 }

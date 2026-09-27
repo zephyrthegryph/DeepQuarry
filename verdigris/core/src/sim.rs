@@ -514,10 +514,7 @@ impl SimBuilder {
         if !errors.is_empty() {
             return Err(BuildError::Boot(errors));
         }
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(self.config.threads.max(1))
-            .thread_name(|i| format!("vg-frame-{i}"))
-            .build()?;
+        let pool = crate::pool::Pool::new(self.config.threads, "vg-frame")?;
         let mut tasks = self.apply_tasks;
         tasks.extend(self.tasks);
         tasks.extend(self.watch_tasks);
@@ -538,7 +535,7 @@ impl SimBuilder {
             frames: Vec::new(),
         });
         Ok(Sim {
-            pool: Arc::new(pool),
+            pool,
             world: Some(Box::new(world)),
             done: Arc::new(Latest::new()),
             ports: self.ports,
@@ -561,7 +558,7 @@ impl SimBuilder {
 /// DM thread, and nothing it does on that thread takes a lock.
 pub struct Sim {
     config: SimConfig,
-    pool: Arc<rayon::ThreadPool>,
+    pool: crate::pool::Pool,
     /// `Some` while no frame is running.
     world: Option<Box<World>>,
     done: Arc<Latest<Box<World>>>,
@@ -685,6 +682,13 @@ impl Sim {
     #[must_use]
     pub fn frame_running(&self) -> bool {
         self.world.is_none() && !self.done.is_full()
+    }
+
+    /// Host shutdown: waits for the running frame, then stops the frame pool
+    /// and joins its threads.
+    pub fn shutdown(&mut self) {
+        self.wait_for_frame();
+        self.pool.shutdown();
     }
 
     /// Blocks (yielding) until the running frame finishes. For tests,
