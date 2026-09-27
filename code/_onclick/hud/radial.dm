@@ -90,7 +90,6 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 	var/list/page_data //list of choices per page
 
-
 	var/selected_choice
 	var/list/atom/movable/screen/elements
 	var/atom/movable/screen/radial/center/close_button
@@ -311,7 +310,6 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		MA.appearance_flags |= RESET_TRANSFORM
 	return MA
 
-
 /datum/radial_menu/proc/next_page()
 	if(pages > 1)
 		current_page = WRAP(current_page + 1,1,pages+1)
@@ -413,9 +411,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	/// If provided, will display an info button that will put this text in your chat
 	var/info
 
-/datum/radial_menu_choice/Destroy(force)
-	. = ..()
-	QDEL_NULL(image)
+REF_OWNED(/datum/radial_menu_choice, "image")
 
 #undef NEXT_PAGE_ID
 #undef DEFAULT_CHECK_DELAY

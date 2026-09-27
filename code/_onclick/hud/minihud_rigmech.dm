@@ -30,12 +30,6 @@
 		S.master_ref = om_handle(owner_rig)
 	..()
 
-/datum/mini_hud/rig/Destroy()
-	if(owner_rig)
-		//owner_rig.minihud = null
-		owner_rig = null
-	return ..()
-
 /datum/mini_hud/rig/periodic_step()
 	if(!owner_rig)
 		qdel(src)
