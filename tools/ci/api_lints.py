@@ -136,7 +136,7 @@ CHECKS = [
                                 r"|LEASH_OF|TETHERED_HANDHELD|TETHER_HOST|FOLLOWING|FOLLOWERS|BORER_HOST|BORER_OF"
                                 r"|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS"
                                 r"|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\(")),
-    ("reactor_api", pattern(r"(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)")),
+    ("reactor_api", pattern(r"\b(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)\b")),
     ("raw_relation", outside("code/datums/om/", r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(")),
 ]
 NAMES = [name for name, _ in CHECKS]
