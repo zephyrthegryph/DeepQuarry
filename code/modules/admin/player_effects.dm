@@ -283,7 +283,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(!M.ckey)
 				return
 
-			var/obj/item/spawning = ui.user.client.get_path_from_partial_text()
+			var/obj/item/spawning = act_prompt(ui.user, action, params, ui, "item_path", list("kind" = "typepath", "message" = "Enter full or partial typepath.", "title" = "Typepath"))
+			if(isnull(spawning))
+				return
 
 			to_chat(ui.user,span_warning("spawning is: [spawning]"))
 

@@ -75,7 +75,9 @@
 			return TRUE
 
 		if("change_supplied_law_position")
-			var/new_position = tgui_input_number(ui.user, "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "Law Position", supplied_law_position, MAX_SUPPLIED_LAW_NUMBER, 1)
+			var/new_position = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "number", "message" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "title" = "Law Position", "default" = supplied_law_position, "max" = MAX_SUPPLIED_LAW_NUMBER, "min" = 1))
+			if(isnull(new_position))
+				return
 			if(isnum(new_position) && can_still_topic(ui.user, state))
 				supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
 			return TRUE
@@ -84,7 +86,9 @@
 			if(is_malf(ui.user))
 				var/datum/ai_law/AL = locate(params["edit_law"]) in owner.laws.all_laws()
 				if(AL)
-					var/new_law = tgui_input_text(ui.user, "Enter new law. Leaving the field blank will cancel the edit.", "Edit Law", AL.law, MAX_MESSAGE_LEN)
+					var/new_law = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Enter new law. Leaving the field blank will cancel the edit.", "title" = "Edit Law", "default" = AL.law, "max_length" = MAX_MESSAGE_LEN))
+					if(isnull(new_law))
+						return
 					if(new_law && new_law != AL.law && is_malf(ui.user) && can_still_topic(ui.user, state))
 						log_and_message_admins("has changed a law of [owner] from '[AL.law]' to '[new_law]'")
 						AL.law = new_law

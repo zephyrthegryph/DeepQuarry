@@ -816,13 +816,19 @@ SUBSYSTEM_DEF(supply)
 // Will delete the specified order from the user-side list
 /datum/controller/subsystem/supply/proc/delete_order(datum/supply_order/O, mob/user)
 	// Making sure they know what they're doing
-	if(tgui_alert(user, "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", "Delete Record",list("No","Yes")) == "Yes")
-		if(tgui_alert(user, "Are you really sure? There is no way to recover the order once deleted.", "Delete Record", list("No","Yes")) == "Yes")
-			refund_order(O, "Refund deleted order #[O.ordernum]: [O.object.name]")
-			release_market_order_reservation(O)
-			log_admin("[key_name(user)] has deleted supply order \ref[O] [O] from the user-side order history.")
-			order_history -= O
-	return
+	om_prompt_sequence(src, user, list(
+		list("key" = "sure", "message" = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
+		list("key" = "really", "message" = "Are you really sure? There is no way to recover the order once deleted.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
+	), PROC_REF(delete_order_confirmed), list("data" = list("order" = O)))
+
+/datum/controller/subsystem/supply/proc/delete_order_confirmed(mob/user, datum/om/prompt/ask)
+	var/datum/supply_order/O = ask.get("order")
+	if(!(O in order_history)) // deleted by someone else meanwhile
+		return
+	refund_order(O, "Refund deleted order #[O.ordernum]: [O.object.name]")
+	release_market_order_reservation(O)
+	log_admin("[key_name(user)] has deleted supply order [REF(O)] [O] from the user-side order history.")
+	order_history -= O
 
 // Will generate a new, requested order, for the given supply pack type
 /datum/controller/subsystem/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
@@ -900,24 +906,32 @@ SUBSYSTEM_DEF(supply)
 // Will delete the specified export receipt from the user-side list
 /datum/controller/subsystem/supply/proc/delete_export(datum/exported_crate/E, mob/user)
 	// Making sure they know what they're doing
-	if(tgui_alert(user, "Are you sure you want to delete this record?", "Delete Record",list("No","Yes")) == "Yes")
-		if(tgui_alert(user, "Are you really sure? There is no way to recover the receipt once deleted.", "Delete Record", list("No","Yes")) == "Yes")
-			log_admin("[key_name(user)] has deleted export receipt \ref[E] [E] from the user-side export history.")
-			exported_crates -= E
-	return
+	om_prompt_sequence(src, user, list(
+		list("key" = "sure", "message" = "Are you sure you want to delete this record?", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
+		list("key" = "really", "message" = "Are you really sure? There is no way to recover the receipt once deleted.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
+	), PROC_REF(delete_export_confirmed), list("data" = list("receipt" = E)))
+
+/datum/controller/subsystem/supply/proc/delete_export_confirmed(mob/user, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("receipt")
+	if(!(E in exported_crates))
+		return
+	log_admin("[key_name(user)] has deleted export receipt [REF(E)] [E] from the user-side export history.")
+	exported_crates -= E
 
 // Will add an item entry to the specified export receipt on the user-side list
 /datum/controller/subsystem/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
-	var/new_name = tgui_input_text(user, "Name", "Please enter the name of the item.")
-	if(!new_name)
-		return
+	om_prompt_sequence(src, user, list(
+		list("key" = "name", "kind" = "text", "message" = "Please enter the name of the item.", "title" = "Name"),
+		list("key" = "quantity", "kind" = "number", "message" = "Please enter the quantity of the item.", "title" = "Quantity"),
+		list("key" = "value", "kind" = "number", "message" = "Please enter the value of the item.", "title" = "Value"),
+	), PROC_REF(export_item_entered), list("data" = list("receipt" = E)))
 
-	var/new_quantity = tgui_input_number(user, "Name", "Please enter the quantity of the item.")
-	if(!new_quantity)
-		return
-
-	var/new_value = tgui_input_number(user, "Name", "Please enter the value of the item.")
-	if(!new_value)
+/datum/controller/subsystem/supply/proc/export_item_entered(mob/user, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("receipt")
+	var/new_name = ask.get("name")
+	var/new_quantity = ask.get("quantity")
+	var/new_value = ask.get("value")
+	if(!(E in exported_crates) || !new_name || !new_quantity || !new_value)
 		return
 
 	E.contents[++E.contents.len] = list(

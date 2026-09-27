@@ -130,10 +130,15 @@
 	switch(action)
 		if("race")
 			if(can_change(owner, APPEARANCE_RACE) && (params["race"] in valid_species))
+				// A custom species is named before the change (the answer re-runs this action).
+				var/custom_name
+				if(params["race"] == "Custom Species")
+					custom_name = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Input custom species name:", "title" = "Custom Species Name", "max_length" = MAX_NAME_LEN))
+					if(isnull(custom_name))
+						return
 				if(owner.change_species(params["race"]))
 					if(params["race"] == "Custom Species")
-						owner.custom_species = tgui_input_text(ui.user, "Input custom species name:",
-							"Custom Species Name", null, MAX_NAME_LEN)
+						owner.custom_species = custom_name
 					cut_data()
 					generate_data(ui.user, owner)
 					changed_hook(APPEARANCECHANGER_CHANGED_RACE)
@@ -152,7 +157,9 @@
 				return 1
 		if("skin_tone")
 			if(can_change_skin_tone(owner))
-				var/new_s_tone = tgui_input_number(ui.user, "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "Skin Tone", -owner.s_tone + 35, 220, 1)
+				var/new_s_tone = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "number", "message" = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "title" = "Skin Tone", "default" = -owner.s_tone + 35, "max" = 220, "min" = 1))
+				if(isnull(new_s_tone))
+					return
 				if(isnum(new_s_tone) && can_still_topic(ui.user, state))
 					new_s_tone = 35 - max(min( round(new_s_tone), 220),1)
 					changed_hook(APPEARANCECHANGER_CHANGED_SKINTONE)
@@ -458,7 +465,9 @@
 			return TRUE
 		if("rename")
 			if(owner)
-				var/raw_name = tgui_input_text(ui.user, "Choose the a name:", "Sleeve Name", encode = FALSE)
+				var/raw_name = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "Choose the a name:", "title" = "Sleeve Name", "encode" = FALSE))
+				if(isnull(raw_name))
+					return
 				if(!isnull(raw_name) && can_change(owner, APPEARANCE_RACE))
 					var/new_name = sanitize_name(raw_name, owner.species, FALSE) // can't edit synths
 					if(new_name)
@@ -471,20 +480,26 @@
 						return TRUE
 		if("char_name")
 			if(DC) // Only body designer does this. no hrefing
-				var/new_name = tgui_input_text(ui.user, "Input character's name:", "Name", owner.name, MAX_NAME_LEN)
+				var/new_name = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "text", "message" = "Input character's name:", "title" = "Name", "default" = owner.name, "max_length" = MAX_NAME_LEN))
+				if(isnull(new_name))
+					return
 				if(can_change(owner, APPEARANCE_RACE)) // new name can be empty, it uses base species if so
 					owner.name = new_name
 					owner.real_name = owner.name
 					owner.dna.real_name = owner.name
 					return TRUE
 		if("race_name")
-			var/new_name = tgui_input_text(ui.user, "Input custom species name:", "Custom Species Name", owner.custom_species, MAX_NAME_LEN)
+			var/new_name = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "text", "message" = "Input custom species name:", "title" = "Custom Species Name", "default" = owner.custom_species, "max_length" = MAX_NAME_LEN))
+			if(isnull(new_name))
+				return
 			if(can_change(owner, APPEARANCE_RACE)) // new name can be empty, it uses base species if so
 				owner.custom_species = new_name
 				return TRUE
 		if("base_icon")
 			if(can_change(owner, APPEARANCE_MISC))
-				var/new_species = tgui_input_list(ui.user, "Please select basic shape.", "Body Shape", GLOB.custom_species_bases)
+				var/new_species = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "list", "message" = "Please select basic shape.", "title" = "Body Shape", "choices" = GLOB.custom_species_bases))
+				if(isnull(new_species))
+					return
 				if(new_species)
 					owner.species.base_species = new_species
 					owner.species.icobase = owner.species.get_icobase()
@@ -498,7 +513,9 @@
 					return TRUE
 		if("blood_reagent") //you know, this feels REALLY odd to be able to change at will but WHATEVER, WE BALL.
 			if(can_change(owner, APPEARANCE_MISC))
-				var/new_blood_reagents = tgui_input_list(ui.user, "Please select blood restoration reagent:", "Character Preference", GLOB.valid_bloodreagents)
+				var/new_blood_reagents = act_prompt(ui.user, action, params, ui, "a7", list("kind" = "list", "message" = "Please select blood restoration reagent:", "title" = "Character Preference", "choices" = GLOB.valid_bloodreagents))
+				if(isnull(new_blood_reagents))
+					return
 				if(new_blood_reagents)
 					owner.dna.blood_reagents = new_blood_reagents
 					changed_hook(APPEARANCECHANGER_CHANGED_RACE)
@@ -511,11 +528,13 @@
 				changed_hook(APPEARANCECHANGER_CHANGED_RACE)
 				return TRUE
 		if("weight")
-			var/new_weight = tgui_input_number(ui.user, "Choose tbe character's relative body weight.\n\
-			This measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n\
-			([WEIGHT_MIN]-[WEIGHT_MAX])", "Character Preference", null, WEIGHT_MAX, WEIGHT_MIN, round_value=FALSE)
+			var/new_weight = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "number", "message" = "Choose tbe character's relative body weight.\nThis measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n([WEIGHT_MIN]-[WEIGHT_MAX])", "title" = "Character Preference", "max" = WEIGHT_MAX, "min" = WEIGHT_MIN, "round" = FALSE))
+			if(isnull(new_weight))
+				return
 			if(new_weight && can_change(owner, APPEARANCE_MISC))
-				var/unit_of_measurement = tgui_alert(ui.user, "Is that number in pounds (lb) or kilograms (kg)?", "Confirmation", list("Pounds", "Kilograms"))
+				var/unit_of_measurement = act_prompt(ui.user, action, params, ui, "a9", list("message" = "Is that number in pounds (lb) or kilograms (kg)?", "title" = "Confirmation", "choices" = list("Pounds", "Kilograms")))
+				if(isnull(unit_of_measurement))
+					return
 				if(unit_of_measurement)
 					if(unit_of_measurement == "Pounds")
 						new_weight = round(text2num(new_weight),4)
@@ -525,7 +544,9 @@
 					changed_hook(APPEARANCECHANGER_CHANGED_RACE)
 					return TRUE
 		if("size_scale")
-			var/new_size = tgui_input_number(ui.user, "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", "Set Size", null, RESIZE_MAXIMUM * 100, RESIZE_MINIMUM * 100)
+			var/new_size = act_prompt(ui.user, action, params, ui, "a10", list("kind" = "number", "message" = "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", "title" = "Set Size", "max" = RESIZE_MAXIMUM * 100, "min" = RESIZE_MINIMUM * 100))
+			if(isnull(new_size))
+				return
 			if(new_size && ISINRANGE(new_size,RESIZE_MINIMUM * 100,RESIZE_MAXIMUM * 100) && can_change(owner, APPEARANCE_MISC))
 				owner.size_multiplier = new_size / 100
 				owner.update_transform(TRUE)
@@ -557,7 +578,9 @@
 				return TRUE
 		if("species_sound")
 			var/list/possible_species_sound_types = GLOB.species_sound_map
-			var/choice = tgui_input_list(ui.user, "Which set of sounds would you like to use? (Cough, Sneeze, Scream, Pain, Gasp, Death)", "Species Sounds", possible_species_sound_types)
+			var/choice = act_prompt(ui.user, action, params, ui, "a11", list("kind" = "list", "message" = "Which set of sounds would you like to use? (Cough, Sneeze, Scream, Pain, Gasp, Death)", "title" = "Species Sounds", "choices" = possible_species_sound_types))
+			if(isnull(choice))
+				return
 			if(choice && can_change(owner, APPEARANCE_MISC))
 				owner.species.species_sounds = choice
 				return TRUE
@@ -567,14 +590,20 @@
 				if(select_key in owner.flavor_texts)
 					switch(select_key)
 						if("general")
-							var/msg = strip_html_simple(tgui_input_text(ui.user,"Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank.","Flavor Text",html_decode(owner.flavor_texts[select_key]), multiline = TRUE, prevent_enter = TRUE))
+							var/_answer_a12 = act_prompt(ui.user, action, params, ui, "a12", list("kind" = "text", "message" = "Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank.", "title" = "Flavor Text", "default" = html_decode(owner.flavor_texts[select_key]), "multiline" = TRUE))
+							if(isnull(_answer_a12))
+								return
+							var/msg = strip_html_simple(_answer_a12)
 							if(can_change(owner, APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
 								LAZYSET(owner.flavor_texts, select_key, msg)
 								return TRUE
 						else
-							var/msg = strip_html_simple(tgui_input_text(ui.user,"Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.","Flavor Text",html_decode(owner.flavor_texts[select_key]), multiline = TRUE, prevent_enter = TRUE))
+							var/_answer_a13 = act_prompt(ui.user, action, params, ui, "a13", list("kind" = "text", "message" = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.", "title" = "Flavor Text", "default" = html_decode(owner.flavor_texts[select_key]), "multiline" = TRUE))
+							if(isnull(_answer_a13))
+								return
+							var/msg = strip_html_simple(_answer_a13)
 							if(can_change(owner, APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
@@ -582,7 +611,10 @@
 								return TRUE
 		if("load_saveslot") //saveslot_load
 			if(can_change(owner, APPEARANCE_ALL_COSMETIC))
-				if(tgui_alert(owner, "Are you certain you wish to load the currently selected savefile?", "Load Savefile", list("No","Yes")) == "Yes")
+				var/_answer_a14 = act_prompt(owner, action, params, ui, "a14", list("message" = "Are you certain you wish to load the currently selected savefile?", "title" = "Load Savefile", "choices" = list("No","Yes")))
+				if(isnull(_answer_a14))
+					return
+				if(_answer_a14 == "Yes")
 					if(owner && owner.client) //sanity
 						owner.client.prefs.vanity_copy_to(owner, FALSE, TRUE, FALSE, FALSE, FALSE)
 						return TRUE
@@ -630,7 +662,9 @@
 			if(owner.changeling_locked)
 				to_chat(ui.user, span_warning("ERROR: Record too complex. Disk does not have enough space to store this record."))
 			else if(owner.resleeve_lock)
-				var/answer = tgui_alert(ui.user,"This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.","Mind Compatability",list("No","Yes"))
+				var/answer = act_prompt(ui.user, action, params, ui, "a15", list("message" = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", "title" = "Mind Compatability", "choices" = list("No","Yes")))
+				if(isnull(answer))
+					return
 				if(!answer)
 					return
 				if(answer == "No")

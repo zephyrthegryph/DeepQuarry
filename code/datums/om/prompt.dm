@@ -9,7 +9,9 @@
 // spec keys:
 //   "kind"       "alert" (buttons), "list" (choices), "text", "number", "color",
 //                "checkboxes" (a list of the ticked choices) or "colormatrix" (the ColorMate
-//                window: "preview", "matrix_only", "ui_state"). Default "alert".
+//                window: "preview", "matrix_only", "ui_state") or "typepath" (a typed part of a
+//                path under "root", default /atom; several matches are picked from a list, and
+//                the answer is the path). Default "alert".
 //   "message", "title"
 //   "choices"    alert buttons, list items or checkboxes
 //   "default", "timeout" (deciseconds)
@@ -23,6 +25,8 @@
 //                (never kept alive); if any is gone, the answer is dropped. Read with P.get().
 //   "on_refused" proc called as (user, reason, P) when a re-check fails
 //   "on_cancel"  proc called as (user, P) when the user closes the window or cancels
+//   "cancel_answer"  the answer a cancel, a closed window or a timeout gives instead (re-checked
+//                like any answer): "Yes" for a request that goes through unless refused in time
 // on_answer: a type proc called on E as (user, answer, P), or a global proc called as
 // (E, user, answer, P). A datum answer (a list pick) that was deleted meanwhile is dropped.
 //
@@ -316,6 +320,23 @@
 	var/mob/user = om_resolve(P.user_h)
 	if(!E || !user || !om_prompt_resolve_data(P))
 		return "gone"
+	if(P.spec["kind"] == "typepath" && istext(answer))
+		// The typed part of a path: one match is the answer, several are picked from a list.
+		var/list/matches = om_prompt_typepaths(answer, P.spec["root"] || /atom)
+		if(length(matches) == 1)
+			answer = matches[1]
+		else if(length(matches))
+			P.answered = FALSE
+			var/datum/tgui_list_input/om/L = new(user, "Select a type", P.spec["title"] || "Typepath", matches, null, 0, GLOB.tgui_always_state)
+			L.om_prompt = P
+			P.ui = L
+			L.tgui_interact(user)
+			return "picking"
+		else
+			to_chat(user, span_warning("No results found.  Sorry."))
+			answer = null
+	if(isnull(answer))
+		answer = P.spec["cancel_answer"]
 	if(isnull(answer))
 		if(P.spec["on_cancel"])
 			om_prompt_call(E, P.spec["on_cancel"], user, P)
@@ -358,9 +379,20 @@
 	catch(var/exception/e)
 		stack_trace("om prompt [proc_ref] on [E]: [e]")
 
-/// The user closed the window without answering.
+/// Types under `root` whose path contains `text`, for kind "typepath".
+/proc/om_prompt_typepaths(text, root)
+	var/list/matches = list()
+	for(var/path in typesof(root))
+		if(findtext("[path]", text))
+			matches += path
+	return matches
+
+/// The user closed the window without answering (or it timed out).
 /proc/om_prompt_closed(datum/om/prompt/P)
 	if(P.answered)
+		return
+	if(!isnull(P.spec["cancel_answer"]))
+		om_prompt_answer(P, P.spec["cancel_answer"])
 		return
 	P.answered = TRUE
 	P.ui = null
@@ -387,7 +419,7 @@
 			L.om_prompt = P
 			L.tgui_interact(user)
 			return L
-		if("text")
+		if("text", "typepath")
 			var/datum/tgui_input_text/om/T = new(user, S["message"], S["title"] || "Text Input", S["default"], S["max_length"] || MAX_TGUI_INPUT, S["multiline"], isnull(S["encode"]) ? TRUE : S["encode"], timeout, GLOB.tgui_always_state)
 			T.om_prompt = P
 			T.tgui_interact(user)

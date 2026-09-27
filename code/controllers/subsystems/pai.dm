@@ -192,10 +192,19 @@ SUBSYSTEM_DEF(pai)
 
 	// Send it!
 	to_chat(inquirer, span_info("A request has been sent!"))
-	var/client/target = ghost.client
-	var/response = tgui_alert(target, "[inquirer] is requesting a pAI personality. Would you like to play as a personal AI?", "pAI Request", list("Yes", "No", "Never for this round"))
-	if(!response || !target || !isobserver(target.mob) || ghost != target.mob)
+	om_prompt(card, ghost, list("message" = "[inquirer] is requesting a pAI personality. Would you like to play as a personal AI?", "title" = "pAI Request", "choices" = list("Yes", "No", "Never for this round"), "data" = list("inquirer" = inquirer, "ghost_ref" = ghost_ref)), GLOBAL_PROC_REF(pai_invite_answered))
+
+/// The ghost's answer to a pAI invite: the card, the ghost and their respawn are all checked again.
+/proc/pai_invite_answered(obj/item/paicard/card, mob/observer/ghost, response, datum/om/prompt/ask)
+	var/mob/inquirer = ask.get("inquirer")
+	var/client/target = ghost?.client
+	if(!response || !target || !isobserver(ghost) || SSpai.get_ghost_from_ref(ask.get("ghost_ref")) != ghost)
 		return // Nice try smartass
+	if(!inquirer)
+		return
+	SSpai.pai_invite_answer(inquirer, ghost, card, response, target)
+
+/datum/controller/subsystem/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
 	if(check_is_already_pai(target.ckey))
 		to_chat(inquirer, span_warning("This pAI has already been downloaded."))
 		return

@@ -18,7 +18,10 @@
 
 	switch(action)
 		if("set_tag")
-			var/new_ident = sanitize_text(tgui_input_text(ui.user, "Enter a new ident tag.", "Gyrotron Control", gyro_tag))
+			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Gyrotron Control", "default" = gyro_tag))
+			if(isnull(_answer_a1))
+				return
+			var/new_ident = sanitize_text(_answer_a1)
 			if(new_ident)
 				gyro_tag = new_ident
 			return TRUE

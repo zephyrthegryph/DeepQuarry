@@ -28,7 +28,10 @@
 			return TRUE
 
 		if("set_tag")
-			var/new_ident = sanitize_text(tgui_input_text(ui.user, "Enter a new ident tag.", "Core Control", core_tag))
+			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Core Control", "default" = core_tag))
+			if(isnull(_answer_a1))
+				return
+			var/new_ident = sanitize_text(_answer_a1)
 			if(new_ident)
 				core_tag = new_ident
 			return TRUE
