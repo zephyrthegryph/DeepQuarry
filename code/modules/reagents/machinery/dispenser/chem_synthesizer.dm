@@ -244,7 +244,7 @@
 /obj/machinery/chemical_synthesizer/screwdriver_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ..()
-	var/label = tgui_input_list(user, "Which cartridge would you like to remove?", "Chemical Synthesizer", cartridges)
+	var/label = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which cartridge would you like to remove?", "title" = "Chemical Synthesizer", "choices" = cartridges), TYPE_PROC_REF(/atom, screwdriver_act), args)
 	if(!label)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
@@ -373,7 +373,9 @@
 			queue -= queue[index]
 		if("clear_queue")
 			// Remove all entries from the queue except the currently processing recipe.
-			var/confirm = tgui_alert(usr, "Are you sure you want to clear the running queue?", "Confirm", list("No", "Yes"))
+			var/confirm = act_prompt(usr, action, params, ui, "a1", list("message" = "Are you sure you want to clear the running queue?", "title" = "Confirm", "choices" = list("No", "Yes")))
+			if(isnull(confirm))
+				return
 			if(confirm == "Yes")
 				if(busy)
 					// Oh no, I've broken code convention to remove all entries but the first.
@@ -394,7 +396,9 @@
 		if("emergency_stop")
 			// Stops everything if that's desirable for some reason.
 			if(busy)
-				var/confirm = tgui_alert(usr, "Are you sure you want to stall the machine?", "Confirm", list("Yes", "No"))
+				var/confirm = act_prompt(usr, action, params, ui, "a2", list("message" = "Are you sure you want to stall the machine?", "title" = "Confirm", "choices" = list("Yes", "No")))
+				if(isnull(confirm))
+					return
 				if(confirm == "Yes")
 					stalled = TRUE
 		if("bottle_product")
@@ -420,7 +424,9 @@
 		if("rem_recipe")
 			// Allows the user to remove recipes while the machine is idle.
 			if(!busy)
-				var/confirm = tgui_alert(usr, "Are you sure you want to remove this recipe?", "Confirm", list("No", "Yes"))
+				var/confirm = act_prompt(usr, action, params, ui, "a3", list("message" = "Are you sure you want to remove this recipe?", "title" = "Confirm", "choices" = list("No", "Yes")))
+				if(isnull(confirm))
+					return
 				if(confirm == "Yes")
 					var/index = params["rm_index"]
 					if(index in recipes)
@@ -515,28 +521,41 @@
 
 // This proc is lets users create recipes step-by-step and exports a comma delineated list to chat. It's intended to teach how to use the machine.
 /obj/machinery/chemical_synthesizer/proc/babystep_recipe(mob/user)
-	var/rec_name = sanitizeSafe(tgui_input_text(user, "Name your recipe. Consider including the output volume.", "Recipe naming"))
+	// Each answer re-runs this proc; steps are keyed by their number.
+	var/answer = rerun_prompt(user, "name", list("kind" = "text", "message" = "Name your recipe. Consider including the output volume.", "title" = "Recipe naming"), PROC_REF(babystep_recipe), args)
+	if(isnull(answer))
+		return
+	var/rec_name = sanitizeSafe(answer)
 	if(!rec_name || (rec_name in recipes)) // Code requires each recipe to have a unique name.
 		to_chat(user, "Please provide a unique recipe name!")
 		return
 
-	var/steps = 2 * tgui_input_number(user, "How many steps does your recipe contain ([RECIPE_MAX_STEPS] max)?", "Steps", 1, RECIPE_MAX_STEPS, 1) // Round to get a whole integer, clamp to ensure proper range.
+	var/step_count = rerun_prompt(user, "steps", list("kind" = "number", "message" = "How many steps does your recipe contain ([RECIPE_MAX_STEPS] max)?", "title" = "Steps", "default" = 1, "max" = RECIPE_MAX_STEPS, "min" = 1), PROC_REF(babystep_recipe), args)
+	if(isnull(step_count))
+		return
+	var/steps = 2 * step_count
 	if(!steps)
 		to_chat(user, "Please input a valid number of steps!")
 		return
 
 	var/list/new_rec = list() // This holds the actual recipe.
 	for(var/i = 1, i < steps, i += 2) // For the user, 1 step is both text and volume. For list arithmetic, that's 2 steps.
-		var/label = tgui_input_list(user, "Which chemical would you like to use?", "Chemical Synthesizer", cartridges)
+		var/label = rerun_prompt(user, "label[i]", list("kind" = "list", "message" = "Which chemical would you like to use?", "title" = "Chemical Synthesizer", "choices" = cartridges), PROC_REF(babystep_recipe), args)
+		if(isnull(label))
+			return
 		if(!label)
 			to_chat(user, "Please select a chemical!")
 			return
 		new_rec[++new_rec.len] = label // Add the reagent ID.
-		var/amount = tgui_input_number(user, "How much of the chemical would you like to add?", "Volume", 1, src.reagents.maximum_volume, 1)
+		var/amount = rerun_prompt(user, "amount[i]", list("kind" = "number", "message" = "How much of the chemical would you like to add?", "title" = "Volume", "default" = 1, "max" = src.reagents.maximum_volume, "min" = 1), PROC_REF(babystep_recipe), args)
+		if(isnull(amount))
+			return
 		if(!amount)
 			to_chat(user, "Please select a volume!")
 			return
 		new_rec[++new_rec.len] = amount // Add the amount of reagent.
+	if(recipes.len >= SYNTHESIZER_MAX_RECIPES || (rec_name in recipes))
+		return
 
 	recipes[rec_name] = new_rec
 	SStgui.update_uis(src)
@@ -545,12 +564,17 @@
 
 // This proc allows users to copy-paste a comma delineated list to create a recipe. The recipe will cause a stall() if formatted incorrectly.
 /obj/machinery/chemical_synthesizer/proc/import_recipe(mob/user)
-	var/rec_name = sanitizeSafe(tgui_input_text(user, "Name your recipe. Consider including the output volume.", "Recipe naming", max_length=MAX_NAME_LEN), MAX_NAME_LEN)
+	var/_answer_a2 = rerun_prompt(user, "a2", list("kind" = "text", "message" = "Name your recipe. Consider including the output volume.", "title" = "Recipe naming", "max_length" = MAX_NAME_LEN), PROC_REF(import_recipe), args)
+	if(isnull(_answer_a2))
+		return
+	var/rec_name = sanitizeSafe(_answer_a2, MAX_NAME_LEN)
 	if(!rec_name || (rec_name in recipes)) // Code requires each recipe to have a unique name.
 		to_chat(user, "Please provide a unique recipe name!")
 		return
 
-	var/rec_input = tgui_input_text(user, "Input your recipe as 'Chem1,vol1,Chem2,vol2,...'", "Import recipe")
+	var/rec_input = rerun_prompt(user, "a3", list("kind" = "text", "message" = "Input your recipe as 'Chem1,vol1,Chem2,vol2,...'", "title" = "Import recipe"), PROC_REF(import_recipe), args)
+	if(isnull(rec_input))
+		return
 	if(!rec_input || (length(rec_input) > RECIPE_MAX_STRING) || !findtext(rec_input, ",")) // The smallest possible recipe will contain 1 comma.
 		to_chat(user, "Invalid input or recipe max length exceeded!")
 		return

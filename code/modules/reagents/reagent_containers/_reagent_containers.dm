@@ -14,7 +14,9 @@
 	set name = "Set transfer amount"
 	set category = "Object"
 	set src in range(0)
-	var/N = tgui_input_number(usr, "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])","[src]",amount_per_transfer_from_this,max_transfer_amount,min_transfer_amount)
+	var/N = rerun_prompt(usr, "a1", list("kind" = "number", "message" = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", "title" = "[src]", "default" = amount_per_transfer_from_this, "max" = max_transfer_amount, "min" = min_transfer_amount), VERB_REF(set_APTFT), args)
+	if(isnull(N))
+		return
 	if(N)
 		amount_per_transfer_from_this = N
 
@@ -180,6 +182,8 @@
 		return
 	if(!max_transfer_amount)
 		return
-	var/N = tgui_input_number(user, "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])","[src]",amount_per_transfer_from_this,max_transfer_amount,min_transfer_amount)
+	var/N = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", "title" = "[src]", "default" = amount_per_transfer_from_this, "max" = max_transfer_amount, "min" = min_transfer_amount), TYPE_PROC_REF(/atom, click_alt), args)
+	if(isnull(N))
+		return
 	if(N)
 		amount_per_transfer_from_this = N

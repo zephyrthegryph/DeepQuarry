@@ -2063,14 +2063,23 @@
 			span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")
 		)
 		//wait 30 seconds, growth takes time yo
-		spawn(300) // S7 keeps: alert() sleeps (prompts, S10)
-			//allow it to bug them again now that we've waited
-			M.gender_change_cooldown = 0
-			//check if they want this to happen for pref sake
-			if (alert(M,"This chemical will change your gender, proceed?", "Warning", "Yes", "No") == "Yes")
-				M.change_gender_identity(gender_change)
-				M.change_gender(gender_change)
-				to_chat(M, span_warning("You feel like a new person."))
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(change_drug_ask), M, gender_change), 30 SECONDS)
+
+/// The gender change drug asks before it acts, for pref sake.
+/proc/change_drug_ask(mob/living/carbon/human/M, gender_change)
+	if(QDELETED(M))
+		return
+	//allow it to bug them again now that we've waited
+	M.gender_change_cooldown = 0
+	om_prompt(M, M, list("message" = "This chemical will change your gender, proceed?", "title" = "Warning", "choices" = list("Yes", "No"), "data" = list("gender" = gender_change)), TYPE_PROC_REF(/mob/living/carbon/human, change_drug_answered))
+
+/mob/living/carbon/human/proc/change_drug_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		return
+	var/gender_change = ask.get("gender")
+	change_gender_identity(gender_change)
+	change_gender(gender_change)
+	to_chat(src, span_warning("You feel like a new person."))
 
 //Chemist expansion
 //deathblood
