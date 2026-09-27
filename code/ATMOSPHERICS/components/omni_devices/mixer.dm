@@ -234,7 +234,9 @@
 			. = TRUE
 			if(!configuring || use_power)
 				return
-			var/new_flow_rate = tgui_input_number(ui.user,"Enter new flow rate limit (0-[max_flow_rate]L/s)","Flow Rate Control",set_flow_rate,max_flow_rate,0)
+			var/new_flow_rate = act_prompt(ui.user, action, params, ui, "k237", list("kind" = "number", "message" = "Enter new flow rate limit (0-[max_flow_rate]L/s)", "title" = "Flow Rate Control", "default" = set_flow_rate, "max" = max_flow_rate, "min" = 0))
+			if(isnull(new_flow_rate))
+				return
 			set_flow_rate = between(0, new_flow_rate, max_flow_rate)
 		if("switch_mode")
 			. = TRUE
@@ -318,7 +320,10 @@
 	if(non_locked < 1)
 		return
 
-	var/new_con = (tgui_input_number(user,"Enter a new concentration (0-[round(remain_con * 100, 0.5)])%","Concentration control", min(remain_con, old_con)*100, round(remain_con * 100, 0.5), 0)) / 100
+	var/_answer_k321 = rerun_prompt(user, "k321", list("kind" = "number", "message" = "Enter a new concentration (0-[round(remain_con * 100, 0.5)])%", "title" = "Concentration control", "default" = min(remain_con, old_con)*100, "max" = round(remain_con * 100, 0.5), "min" = 0), PROC_REF(change_concentration), args)
+	if(isnull(_answer_k321))
+		return
+	var/new_con = (_answer_k321) / 100
 
 	//cap it between 0 and the max remaining concentration
 	new_con = between(0, new_con, remain_con)

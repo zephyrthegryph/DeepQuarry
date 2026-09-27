@@ -233,7 +233,9 @@
 		if("set_flow_rate")
 			if(!configuring || use_power)
 				return
-			var/new_flow_rate = tgui_input_number(ui.user,"Enter new flow rate limit (0-[max_flow_rate]L/s)","Flow Rate Control",set_flow_rate,max_flow_rate,0)
+			var/new_flow_rate = act_prompt(ui.user, action, params, ui, "k236", list("kind" = "number", "message" = "Enter new flow rate limit (0-[max_flow_rate]L/s)", "title" = "Flow Rate Control", "default" = set_flow_rate, "max" = max_flow_rate, "min" = 0))
+			if(isnull(new_flow_rate))
+				return
 			set_flow_rate = between(0, new_flow_rate, max_flow_rate)
 			. = TRUE
 		if("switch_mode")
@@ -244,7 +246,9 @@
 		if("switch_filter")
 			if(!configuring || use_power)
 				return
-			var/new_filter = tgui_input_list(ui.user, "Select filter mode:", "Change filter", list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4))
+			var/new_filter = act_prompt(ui.user, action, params, ui, "k247", list("kind" = "list", "message" = "Select filter mode:", "title" = "Change filter", "choices" = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4)))
+			if(isnull(new_filter))
+				return
 			if(!new_filter)
 				return
 			switch_filter(dir_flag(params["dir"]), mode_return_switch(new_filter))
