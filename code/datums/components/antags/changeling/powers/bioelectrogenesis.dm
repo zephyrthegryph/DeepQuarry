@@ -177,5 +177,5 @@
 			if(success == FALSE)
 				to_chat(src, span_warning("We are unable to affect \the [target]."))
 			else
-				qdel(src)
+				consume(src, user)
 			return TRUE
