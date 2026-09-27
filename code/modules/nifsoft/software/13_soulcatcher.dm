@@ -296,6 +296,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
+// LIFECYCLE: the soulcatcher is told the mind unloaded.
 /mob/living/carbon/brain/caught_soul/Destroy()
 	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	if(soulcatcher)
@@ -458,12 +459,6 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 		var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
 		icon = new_icon
-
-/mob/observer/eye/ar_soul/Destroy()
-	if(parent_human) //It's POSSIBLE they've been deleted before the NIF somehow
-		UnregisterSignal(parent_human, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-		parent_human = null
-	return ..()
 
 /mob/observer/eye/ar_soul/EyeMove(n, direct)
 	var/initial = initial(sprint)
