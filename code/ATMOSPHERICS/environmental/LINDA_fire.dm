@@ -7,8 +7,6 @@
 
 	return fire_reactions
 
-
-
 /turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = 0)
 	return
 
@@ -406,12 +404,7 @@
 	var/drop_off_dist
 	COOLDOWN_DECLARE(update_sound_center)
 
-
-/datum/hot_group/Destroy()
-	. = ..()
-	current_sound_loc = null
-	spot_list = null
-	qdel(sound)
+REF_OWNED(/datum/hot_group, "sound")
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	spot_list -= target
