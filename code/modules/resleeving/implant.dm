@@ -36,9 +36,7 @@
 		src.db_key = db_key
 	our_db = SStranscore.db_by_key(src.db_key)
 
-/obj/item/implant/backup/Destroy()
-	our_db.implants -= src
-	return ..()
+REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
 	if(istype(H))
@@ -161,7 +159,6 @@
 	name = "backup implant"
 	desc = "A normal wireless cortical stack with neutrino and QE transmission for constant-stream consciousness upload."
 */
-
 
 //Infinite use implanter. Feel free to make proper sprites for it or whatnot.
 //I guess this would make more sense as a machine but there's all that extra machine code it doesn't need.

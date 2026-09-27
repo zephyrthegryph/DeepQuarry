@@ -43,6 +43,7 @@
 	our_db = SStranscore.db_by_key(db_key)
 	updatemodules()
 
+// LIFECYCLE: its pods are released.
 /obj/machinery/computer/transhuman/resleeving/Destroy()
 	releasepods()
 	current_br = null
