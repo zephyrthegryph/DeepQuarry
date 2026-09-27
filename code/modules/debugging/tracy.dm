@@ -17,7 +17,6 @@ GLOBAL_REAL(Tracy, /datum/tracy)
 		CRASH("Attempted to initialize /datum/tracy when global.Tracy is already set!")
 	Tracy = src
 
-/datum/tracy/Destroy()
 #ifndef OPENDREAM_REAL
 	if(enabled)
 		call_ext(TRACY_DLL_PATH, "destroy")()
