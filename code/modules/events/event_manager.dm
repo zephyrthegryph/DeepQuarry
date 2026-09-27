@@ -148,9 +148,7 @@
 		log_and_message_admins("increased timer for [GLOB.severity_to_string[EC.severity]] events by [increase/600] minute(s).")
 	else if(href_list["select_event"])
 		var/datum/event_container/EC = locate(href_list["select_event"])
-		var/datum/event_meta/EM = EC.SelectEvent()
-		if(EM)
-			log_and_message_admins("has queued the [GLOB.severity_to_string[EC.severity]] event '[EM.name]'.")
+		EC.SelectEvent()
 	else if(href_list["pause"])
 		var/datum/event_container/EC = locate(href_list["pause"])
 		EC.delayed = !EC.delayed
@@ -159,13 +157,18 @@
 		CONFIG_SET(flag/allow_random_events, text2num(href_list["pause_all"]))
 		log_and_message_admins("has [CONFIG_GET(flag/allow_random_events) ? "resumed" : "paused"] countdown for all events.")
 	else if(href_list["interval"])
-		var/delay = tgui_input_number(usr, "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", "Set Interval Modifier")
+		var/delay = topic_prompt(usr, href_list, "k160", list("kind" = "number", "message" = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", "title" = "Set Interval Modifier"))
+		if(isnull(delay))
+			return
 		if(delay && delay > 0)
 			var/datum/event_container/EC = locate(href_list["interval"])
 			EC.delay_modifier = delay
 			log_and_message_admins("has set the interval modifier for [GLOB.severity_to_string[EC.severity]] events to [EC.delay_modifier].")
 	else if(href_list["stop"])
-		if(tgui_alert(usr, "Stopping an event may have unintended side-effects. Continue?","Stopping Event!",list("Yes","No")) != "Yes")
+		var/_answer_k166 = topic_prompt(usr, href_list, "k166", list("message" = "Stopping an event may have unintended side-effects. Continue?", "title" = "Stopping Event!", "choices" = list("Yes","No")))
+		if(isnull(_answer_k166))
+			return
+		if(_answer_k166 != "Yes")
 			return
 		var/datum/event/E = locate(href_list["stop"])
 		var/datum/event_meta/EM = E.event_meta
@@ -176,17 +179,23 @@
 	else if(href_list["back"])
 		selected_event_container = null
 	else if(href_list["set_name"])
-		var/name = tgui_input_text(usr, "Enter event name.", "Set Name", "", MAX_LNAME_LEN)
+		var/name = topic_prompt(usr, href_list, "k177", list("kind" = "text", "message" = "Enter event name.", "title" = "Set Name", "max_length" = MAX_LNAME_LEN))
+		if(isnull(name))
+			return
 		if(name)
 			var/datum/event_meta/EM = locate(href_list["set_name"])
 			EM.name = name
 	else if(href_list["set_type"])
-		var/type = tgui_input_list(usr, "Select event type.", "Select", allEvents)
+		var/type = topic_prompt(usr, href_list, "k182", list("kind" = "list", "message" = "Select event type.", "title" = "Select", "choices" = allEvents))
+		if(isnull(type))
+			return
 		if(type)
 			var/datum/event_meta/EM = locate(href_list["set_type"])
 			EM.event_type = type
 	else if(href_list["set_weight"])
-		var/weight = tgui_input_number(usr, "Enter weight. A higher value means higher chance for the event of being selected.", "Set Weight")
+		var/weight = topic_prompt(usr, href_list, "k187", list("kind" = "number", "message" = "Enter weight. A higher value means higher chance for the event of being selected.", "title" = "Set Weight"))
+		if(isnull(weight))
+			return
 		if(weight && weight > 0)
 			var/datum/event_meta/EM = locate(href_list["set_weight"])
 			EM.weight = weight
@@ -202,7 +211,10 @@
 		EM.enabled = !EM.enabled
 		log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.")
 	else if(href_list["remove"])
-		if(tgui_alert(usr, "This will remove the event from rotation. Continue?","Removing Event!",list("Yes","No")) != "Yes")
+		var/_answer_k203 = topic_prompt(usr, href_list, "k203", list("message" = "This will remove the event from rotation. Continue?", "title" = "Removing Event!", "choices" = list("Yes","No")))
+		if(isnull(_answer_k203))
+			return
+		if(_answer_k203 != "Yes")
 			return
 		var/datum/event_meta/EM = locate(href_list["remove"])
 		var/datum/event_container/EC = locate(href_list["EC"])
@@ -211,7 +223,10 @@
 	else if(href_list["add"])
 		if(!new_event.name || !new_event.event_type)
 			return
-		if(tgui_alert(usr, "This will add a new event to the rotation. Continue?","Add Event!",list("Yes","No")) != "Yes")
+		var/_answer_k212 = topic_prompt(usr, href_list, "k212", list("message" = "This will add a new event to the rotation. Continue?", "title" = "Add Event!", "choices" = list("Yes","No")))
+		if(isnull(_answer_k212))
+			return
+		if(_answer_k212 != "Yes")
 			return
 		new_event.severity = selected_event_container.severity
 		selected_event_container.available_events += new_event
