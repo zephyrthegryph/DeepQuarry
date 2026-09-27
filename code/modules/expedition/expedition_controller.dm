@@ -1,3 +1,6 @@
+/// Turfs per batched destroy when a z-level is wiped.
+#define WIPE_Z_CHUNK 64
+
 // On-demand expedition z-level generator + lifecycle controller.
 //
 // Replaces the old SSquarry depth/elevator system. Each launch allocates (or
@@ -41,11 +44,15 @@
 /datum/expedition_teardown_job/proc/wipe_slice(cursor)
 	var/started = TICK_USAGE
 	var/area/space/space_area = generated_station_space_area()
-	for(var/i in cursor to length(turfs))
-		controller.wipe_turf(turfs[i], space_area)
-		if(i < length(turfs) && TICK_USAGE - started >= tick_budget)
+	var/i = cursor
+	while(i <= length(turfs))
+		// A chunk of turfs at a time, each chunk one batched destroy.
+		var/last = min(length(turfs), i + WIPE_Z_CHUNK - 1)
+		controller.wipe_turfs(turfs.Copy(i, last + 1), space_area)
+		i = last + 1
+		if(i <= length(turfs) && TICK_USAGE - started >= tick_budget)
 			yield_count++
-			return i + 1
+			return i
 	return null
 
 /datum/expedition_teardown_job/proc/finish()
@@ -450,10 +457,14 @@ SUBSYSTEM_DEF(expedition)
 /datum/controller/subsystem/expedition/proc/wipe_z_slice(list/cursor)
 	var/list/turfs = cursor[1]
 	var/area/space/space_area = generated_station_space_area()
-	for(var/i in cursor[2] to length(turfs))
-		wipe_turf(turfs[i], space_area)
-		if(i < length(turfs) && om_scheduler().out_of_budget())
-			cursor[2] = i + 1
+	var/i = cursor[2]
+	while(i <= length(turfs))
+		// A chunk of turfs at a time, each chunk one batched destroy.
+		var/last = min(length(turfs), i + WIPE_Z_CHUNK - 1)
+		wipe_turfs(turfs.Copy(i, last + 1), space_area)
+		i = last + 1
+		if(i <= length(turfs) && om_scheduler().out_of_budget())
+			cursor[2] = i
 			return cursor
 	return null
 
@@ -638,11 +649,18 @@ SUBSYSTEM_DEF(expedition)
 // station. Never deletes a connected player (defensive).
 /datum/controller/subsystem/expedition/proc/wipe_z(z)
 	var/area/space/space_area = generated_station_space_area()
-	var/wiped = 0
-	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
+	var/list/turfs = block(locate(1, 1, z), locate(world.maxx, world.maxy, z))
+	for(var/i = 1, i <= length(turfs), i += WIPE_Z_CHUNK)
+		wipe_turfs(turfs.Copy(i, min(length(turfs), i + WIPE_Z_CHUNK - 1) + 1), space_area)
+		CHECK_TICK
+
+/// Clears `turfs` back to vacuum: everything on them (and anything that
+/// would spill onto them) goes as one batched destroy (lifecycle/batch.dm),
+/// sparing connected players, then each turf becomes space.
+/datum/controller/subsystem/expedition/proc/wipe_turfs(list/turfs, area/space/space_area)
+	qdel_batch(null, turfs)
+	for(var/turf/T as anything in turfs)
 		wipe_turf(T, space_area)
-		if(++wiped % 1000 == 0)
-			CHECK_TICK
 
 /// Clears one turf of a released site back to vacuum, sparing connected players.
 /datum/controller/subsystem/expedition/proc/wipe_turf(turf/T, area/space/space_area)

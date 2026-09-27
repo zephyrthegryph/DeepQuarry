@@ -87,7 +87,10 @@
 	// Phase 6: effects. Declared destroy_effects data (L3).
 	tick = world.tick_usage
 	var/datum/destroy_effects_data/effects = D.destroy_effects()
-	var/turf/effects_turf = effects?.apply(D)
+	var/turf/effects_turf
+	// Under a batch (batch.dm) effects are merged per turf and neighbour updates run once at the end.
+	if(effects && !dq_batch_effects(D, effects))
+		effects_turf = effects.apply(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 
 	// Phase 7: leftover Destroy(). Only real domain consequences should

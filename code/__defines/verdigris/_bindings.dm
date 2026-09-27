@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "7075c501f45c00c6"
+#define VERDIGRIS_ABI "da330e490b7d7f90"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -617,6 +617,16 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_unbind_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
+
+/// Batched destroy's one unbind call (`doc/rewrite/init_and_turfs.md` §4.4):
+/// [`entity_unbind`] for every handle in `entities`, a list of `vg_entity`
+/// values. Zero/null entries are skipped; the first bad handle is an error
+/// after every earlier one has been freed.
+// /proc/entity_unbind_list (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_unbind_list(entities)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_unbind_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entities)
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
 // /proc/equalize_all_gases_in_list (verdigris/ffi/src/gas/binds.rs)

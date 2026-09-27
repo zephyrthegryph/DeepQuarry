@@ -1,5 +1,7 @@
 /mob/living/carbon/human/gib()
 	transforming = 1 //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
+	// Organs and limbs the gib deletes go as one batched destroy (batch.dm).
+	dq_destroy_collect_begin()
 
 	//Drop the NIF, they're expensive, why not recover them?
 	release_vore_contents(silent = TRUE)
@@ -23,7 +25,7 @@
 
 	for(var/obj/item/organ/I in internal_organs)
 		I.removed()
-		if(isturf(I?.loc)) // Some organs qdel themselves or other things when removed
+		if(!QDELETED(I) && isturf(I.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
 	for(var/obj/item/organ/external/E in src.organs)
@@ -35,6 +37,7 @@
 
 	..(species.gibbed_anim) // uses the default mob.dmi file for these, so we only need to specify the first argument
 	gibs(loc, dna, null, species.get_flesh_colour(src), species.get_blood_colour(src))
+	dq_destroy_collect_end()
 
 /mob/living/carbon/human/dust()
 	if(species)

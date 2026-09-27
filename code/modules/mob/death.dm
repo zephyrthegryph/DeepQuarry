@@ -1,6 +1,8 @@
 //This is the proc for gibbing a mob. Cannot gib ghosts.
 //added different sort of gibs and animations. N
 /mob/proc/gib(anim="blank", do_gibs, gib_file = 'icons/mob/mob.dmi')
+	// Everything the gib deletes on the way is destroyed as one batch (batch.dm).
+	dq_destroy_collect_begin()
 	if(stat != DEAD)
 		death(1)
 	transforming = 1
@@ -21,9 +23,11 @@
 
 	if (!QDELETED(src))
 		ghostize()
+	dq_destroy_collect_end()
 
 	om_qdel_after(animation, 15)
-	om_qdel_after(src, 15)
+	// The body and whatever is still inside it go as one batched destroy.
+	om_after(src, 15, /datum/proc/om_qdel_batch_self)
 
 //This is the proc for turning a mob into ash. Mostly a copy of gib code (above).
 //Originally created for wizard disintegrate. I've removed the virus code since it's irrelevant here.

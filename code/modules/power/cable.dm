@@ -139,7 +139,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return
 	vg_power_unbind_node(power_entity)
 	SSvg.untrack_entity(src, power_entity)
-	vg_entity_unbind(power_entity)
+	dq_entity_unbind(src, power_entity)
 	power_entity = 0
 
 /// Cables with the same non-zero link id connect wherever they are (enders).

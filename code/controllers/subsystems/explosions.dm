@@ -52,6 +52,8 @@ SUBSYSTEM_DEF(explosions)
 	VAR_PRIVATE/deferred_turf_update_index = 1
 	/// Changed turfs and their neighbours, for one appearance update each.
 	VAR_PRIVATE/list/deferred_appearance_updates = list()
+	/// Atoms this epoch destroyed through batched destroy.
+	var/epoch_batched_destroys = 0
 	VAR_PRIVATE/deferred_appearance_update_index = 1
 	VAR_PRIVATE/bulk_resolution_active = FALSE
 	VAR_PRIVATE/list/explosion_resistance_cache = list()
@@ -93,6 +95,7 @@ SUBSYSTEM_DEF(explosions)
 		"epoch_atoms_resolved" = epoch_atoms_resolved,
 		"epoch_atoms_deduplicated" = epoch_atoms_deduplicated,
 		"epoch_blast_batches" = epoch_blast_batches,
+		"epoch_batched_destroys" = epoch_batched_destroys,
 		"epoch_atom_collect_ms" = epoch_atom_collect_ms,
 		"epoch_atom_resolve_ms" = epoch_atom_resolve_ms,
 		"deferred_turf_updates" = max(0, length(deferred_turf_updates) - deferred_turf_update_index + 1),
@@ -365,6 +368,14 @@ SUBSYSTEM_DEF(explosions)
 /// bulk, before their own packet lands (a destroyed container spills them).
 /// Returns TRUE once every batch is delivered.
 /datum/controller/subsystem/explosions/proc/deliver_blast_batches(budget = blast_batch_budget, tick_checked = TRUE)
+	// Everything this slice of blast packets destroys goes as one batched
+	// destroy (code/datums/lifecycle/batch.dm), run before returning.
+	dq_destroy_collect_begin()
+	. = deliver_blast_batches_collected(budget, tick_checked)
+	epoch_batched_destroys += dq_destroy_collect_end()
+
+/datum/controller/subsystem/explosions/proc/deliver_blast_batches_collected(budget, tick_checked)
+	PRIVATE_PROC(TRUE)
 	var/profile_start = TICK_USAGE
 	var/delivered = 0
 	while(blast_batch_type_index <= length(blast_batch_order))
@@ -508,6 +519,7 @@ SUBSYSTEM_DEF(explosions)
 	epoch_visuals = 0
 	epoch_atoms_resolved = 0
 	epoch_atoms_deduplicated = 0
+	epoch_batched_destroys = 0
 	epoch_blast_batches = 0
 	epoch_atom_collect_ms = 0
 	epoch_atom_resolve_ms = 0

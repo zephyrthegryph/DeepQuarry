@@ -189,13 +189,23 @@
 			var/datum/child = copy[key]
 			if(isdatum(child))
 				qdel(child)
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)
+		var/datum/partner = D.vars[our_var]
+		if(batch && partner && batch.doomed[partner])
+			// Both ends doomed: the partner's own clear drops its side.
+			D.vars[our_var] = null
+			batch.edges_dropped++
+			continue
 		link_clear(D, our_var)
 	var/list/backlist = table["backlist"]
 	for(var/our_var in backlist)
 		var/datum/owner = D.vars[our_var]
 		D.vars[our_var] = null
+		if(batch && owner && batch.doomed[owner])
+			batch.edges_dropped++
+			continue // the owner's list goes with it
 		if(owner && !QDELETED(owner))
 			var/list_var = backlist[our_var]
 			var/list/L = owner.vars[list_var]

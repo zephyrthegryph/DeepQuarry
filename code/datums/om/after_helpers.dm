@@ -6,6 +6,14 @@
 /datum/proc/om_qdel_self()
 	qdel(src)
 
+/// om_after() target: deletes the owner as one batched destroy
+/// (code/datums/lifecycle/batch.dm), with `extra` in the same set.
+/datum/proc/om_qdel_batch_self(list/extra)
+	var/list/doomed = list(src)
+	if(extra)
+		doomed += extra
+	qdel_batch(doomed)
+
 /// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
 /proc/om_qdel_after(datum/D, delay)
 	if(D && !QDELETED(D))
