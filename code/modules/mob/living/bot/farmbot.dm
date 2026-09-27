@@ -365,8 +365,7 @@
 
 	to_chat(user, "You add the robot arm to [src].")
 
-	user.drop_from_inventory(S)
-	qdel(S)
+	consume(S, user)
 
 	new /obj/item/farmbot_arm_assembly(loc, src)
 
@@ -377,24 +376,21 @@
 		to_chat(user, "You add the plant analyzer to [src].")
 		name = "farmbot assembly"
 
-		user.remove_from_mob(W)
-		qdel(W)
+		consume(W, user)
 
 	else if((istype(W, /obj/item/reagent_containers/glass/bucket)) && (build_step == 1))
 		build_step++
 		to_chat(user, "You add a bucket to [src].")
 		name = "farmbot assembly with bucket"
 
-		user.remove_from_mob(W)
-		qdel(W)
+		consume(W, user)
 
 	else if((istype(W, /obj/item/material/minihoe)) && (build_step == 2))
 		build_step++
 		to_chat(user, "You add a minihoe to [src].")
 		name = "farmbot assembly with bucket and minihoe"
 
-		user.remove_from_mob(W)
-		qdel(W)
+		consume(W, user)
 
 	else if((isprox(W)) && (build_step == 3))
 		build_step++
@@ -403,9 +399,8 @@
 		var/mob/living/bot/farmbot/S = new /mob/living/bot/farmbot(get_turf(src), tank)
 		S.name = created_name
 
-		user.remove_from_mob(W)
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 
 	else if(istype(W, /obj/item/pen))
 		var/t = tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN)

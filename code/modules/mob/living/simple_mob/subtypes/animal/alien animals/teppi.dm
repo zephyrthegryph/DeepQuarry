@@ -531,8 +531,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		else
 			user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] casually."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] casually."))
 		adjust_nutrition(yum) //add the nutriment!
-		user.drop_from_inventory(O)
-		qdel(O)
+		consume(O, user)
 		playsound(src, 'sound/items/eatfood.ogg', 75, 1)
 		if(!client && lets_eat(user) && prob(1))
 			visible_message(span_danger("\The [src] scromfs \the [user] along with the food!"))

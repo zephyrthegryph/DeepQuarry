@@ -150,8 +150,7 @@
 
 /mob/living/carbon/human/proc/lleill_transmute_human_done(energy_cost, obj/item/I, obj/item/transmute_product)
 	visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [transmute_product.name]."))
-	drop_item(I)
-	qdel(I)
+	consume(I, src)
 	var/spawnloc = get_turf(src)
 	var/obj/item/N = new transmute_product(spawnloc)
 	put_in_active_hand(N)
@@ -391,8 +390,7 @@
 /mob/living/carbon/human/proc/lleill_alchemy_done(obj/item/potion_material/I, transmute_product, energy_cost)
 	var/obj/item/reagent_containers/glass/bottle/potion/product = transmute_product
 	visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [initial(product.name)]."))
-	drop_item(I)
-	qdel(I)
+	consume(I, src)
 	var/spawnloc = get_turf(src)
 	var/obj/item/N = new transmute_product(spawnloc)
 	put_in_active_hand(N)

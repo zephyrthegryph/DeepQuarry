@@ -760,12 +760,14 @@
 	playsound(src.loc, 'sound/items/bikehorn.ogg', 50, 1)
 
 //HOLOSEEDSPAWNCODE
+/mob/living/simple_mob/animal/synx/ai/pet/holo
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/animal/synx/ai/pet/holo/death()
 	..()
 	visible_message(span_notice("\The [src] fades away!"))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
-	qdel(src)
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/gib()
 	visible_message(span_notice("\The [src] fades away!"))

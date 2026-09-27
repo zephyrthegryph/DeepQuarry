@@ -97,8 +97,7 @@
 		say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!", "RAAAAAAAARGH!", "HNNNNNNNNNGGGGGGH!", "GWAAAAAAAARRRHHH!", "AAAAAAARRRGH!" ))
 
 	var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)
-	drop_from_inventory(ripped)
-	qdel(ripped)
+	consume(ripped, src)
 	var/obj/buckled = BUCKLED(src)
 	if(buckled && buckled.buckle_require_restraints)
 		buckled.unbuckle_mob()

@@ -259,6 +259,5 @@
 	var/turf/where = get_turf(assembly)
 	var/mob/living/bot/cleanbot/edCLN/bot = new /mob/living/bot/cleanbot/edCLN(where)
 	bot.name = assembly.created_name
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE

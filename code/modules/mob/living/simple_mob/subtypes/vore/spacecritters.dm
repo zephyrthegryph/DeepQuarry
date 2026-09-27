@@ -40,12 +40,10 @@
 
 /mob/living/simple_mob/vore/spacecritter/attackby(obj/item/O, mob/user)
 	if(istype(O, evolvekey))
-		user.drop_from_inventory(O)
-		qdel(O)
+		consume(O, user)
 		evolve()
 	else if(istype(O, feed))
-		user.drop_from_inventory(O)
-		qdel(O)
+		consume(O, user)
 		duplicate()
 	else
 		.=..()

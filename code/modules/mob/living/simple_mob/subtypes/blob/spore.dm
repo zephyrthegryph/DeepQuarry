@@ -63,11 +63,13 @@
 		infested = null
 	return ..()
 
+/mob/living/simple_mob/blob/spore
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/blob/spore/death(gibbed, deathmessage = "bursts!")
 	if(overmind)
 		overmind.blob_type.on_spore_death(src)
 	..(gibbed, deathmessage)
-	qdel(src)
 
 /mob/living/simple_mob/blob/spore/update_icons()
 	..() // This will cut our overlays.

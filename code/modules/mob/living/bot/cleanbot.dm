@@ -297,13 +297,12 @@
 	..()
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic left arm") || (W.name == "robotic right arm"))))
 		user.drop_item()
-		qdel(W)
+		consume(W, user)
 		var/turf/T = get_turf(loc)
 		var/mob/living/bot/cleanbot/A = new /mob/living/bot/cleanbot(T)
 		A.name = created_name
 		to_chat(user, span_notice("You add the robot arm to the bucket and sensor assembly. Beep boop!"))
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 
 	else if(istype(W, /obj/item/pen))
 		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)

@@ -139,6 +139,9 @@
 /mob/living/simple_mob/vore/aggressive/mimic/will_show_tooltip()
 	return FALSE
 
+/mob/living/simple_mob/vore/aggressive/mimic
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/aggressive/mimic/death()
 	..()
 	if(real_crate)
@@ -146,7 +149,6 @@
 	else
 		new/obj/structure/closet/crate(loc)
 	real_crate = null
-	qdel(src)
 
 /obj/structure/closet/crate/mimic/airlock
 	name = "Dusty Airlock"
@@ -317,12 +319,14 @@
 /mob/living/simple_mob/vore/aggressive/mimic/closet/will_show_tooltip()
 	return FALSE
 
+/mob/living/simple_mob/vore/aggressive/mimic/closet
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/aggressive/mimic/closet/death()
 	..()
 	if(real_crate)
 		real_crate.forceMove(loc)
 	real_crate = null
-	qdel(src)
 
 //Floor Mimics... Because mimics you have to interact with to activate was not enough...
 

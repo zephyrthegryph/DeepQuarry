@@ -67,6 +67,9 @@
 	active_spell = null
 	return ..()
 
+/mob/living/simple_mob/mechanical/technomancer_golem
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/technomancer_golem/death()
 	..()
 	visible_message("\The [src] disintegrates!")
@@ -74,7 +77,6 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	qdel(src)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))

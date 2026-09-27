@@ -28,9 +28,11 @@
 
 	var/mob/living/owner = null // The mob that made the ward, if any. Used to ensure the ward does not interfere with its creator.
 
+/mob/living/simple_mob/mechanical/ward
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/ward/death()
 	..(null,"is smashed into pieces!")
-	qdel(src)
 
 /mob/living/simple_mob/mechanical/ward/Destroy()
 	owner = null

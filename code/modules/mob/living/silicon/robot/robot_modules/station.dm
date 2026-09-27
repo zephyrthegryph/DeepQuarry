@@ -114,7 +114,7 @@
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
 	robot.module = null
-	qdel(src)
+	consume(src, robot)
 
 /obj/item/robot_module/Destroy()
 	QDEL_LIST(modules)

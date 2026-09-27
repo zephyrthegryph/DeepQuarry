@@ -152,7 +152,7 @@
 			var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)
 			royalty.faction = user.faction
 
-			qdel(src)
+			consume(src, user)
 
 		else
 			to_chat(user, "You need more space to release the egg!")

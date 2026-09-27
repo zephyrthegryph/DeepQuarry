@@ -82,11 +82,13 @@
 	QDEL_NULL(my_storage)
 	return ..()
 
+/mob/living/simple_mob/mechanical/mining_drone
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/mining_drone/death()
 	my_storage.forceMove(get_turf(src))
 	my_storage = null
 	..(null,"suddenly breaks apart.")
-	qdel(src)
 
 /mob/living/simple_mob/mechanical/mining_drone/Process_Spacemove(check_drift = 0)
 	return TRUE

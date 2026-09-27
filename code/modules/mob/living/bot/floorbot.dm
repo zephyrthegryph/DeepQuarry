@@ -339,8 +339,7 @@
 		var/obj/item/toolbox_tiles/B = new /obj/item/toolbox_tiles
 		user.put_in_hands(B)
 		to_chat(user, span_notice("You add the tiles into the empty toolbox. They protrude from the top."))
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 	else
 		to_chat(user, span_warning("You need 10 floor tiles for a floorbot."))
 	return
@@ -360,13 +359,12 @@
 /obj/item/toolbox_tiles/attackby(obj/item/W, mob/user as mob)
 	..()
 	if(isprox(W))
-		qdel(W)
+		consume(W, user)
 		var/obj/item/toolbox_tiles_sensor/B = new /obj/item/toolbox_tiles_sensor()
 		B.created_name = created_name
 		user.put_in_hands(B)
 		to_chat(user, span_notice("You add the sensor to the toolbox and tiles!"))
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 	else if (istype(W, /obj/item/pen))
 		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(!t)
@@ -390,13 +388,12 @@
 /obj/item/toolbox_tiles_sensor/attackby(obj/item/W, mob/user as mob)
 	..()
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic right arm") || (W.name == "robotic left arm"))))
-		qdel(W)
+		consume(W, user)
 		var/turf/T = get_turf(user.loc)
 		var/mob/living/bot/floorbot/A = new /mob/living/bot/floorbot(T)
 		A.name = created_name
 		to_chat(user, span_notice("You add the robot arm to the odd looking toolbox assembly! Boop beep!"))
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 	else if(istype(W, /obj/item/pen))
 		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(!t)

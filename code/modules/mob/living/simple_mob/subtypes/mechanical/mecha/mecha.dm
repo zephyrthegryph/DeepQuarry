@@ -53,6 +53,9 @@
 	QDEL_NULL(sparks)
 	return ..()
 
+/mob/living/simple_mob/mechanical/mecha
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/mecha/death()
 	..(0,"explodes!") // Do everything else first.
 
@@ -68,7 +71,6 @@
 	if(wreckage)
 		new wreckage(loc) // Leave some wreckage.
 
-	qdel(src) // Then delete us since we don't actually have a body.
 
 /datum/om/stage/life/special/mechanical/mecha
 	of = /mob/living/simple_mob/mechanical/mecha

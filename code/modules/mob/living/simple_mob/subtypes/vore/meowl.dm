@@ -104,8 +104,7 @@
 		if(stat == DEAD)
 			return
 		user.visible_message(span_notice("\The [src] happily gulps down \the [O] right out of \the [user]'s hand, it seems pretty content now."),span_notice("\The [src] happily gulps down \the [O] right out of your hand, it seems pretty content now."))
-		user.drop_from_inventory(O)
-		qdel(O)
+		consume(O, user)
 		well_fed = world.time
 		return
 	return ..()

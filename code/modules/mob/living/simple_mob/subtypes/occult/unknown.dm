@@ -54,10 +54,12 @@
 	fire_sound = 'sound/effects/uncloak.ogg'
 	combustion = TRUE
 
+/mob/living/simple_mob/glitch_boss
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/glitch_boss/death(gibbed, deathmessage="suddenly %runtime error in unknown.dm, line 56%")
 	. = ..()
 	new /obj/effect/temp_visual/glitch(get_turf(src))
-	qdel(src)
 
 /mob/living/simple_mob/glitch_boss/update_health_display()
 	. = ..()

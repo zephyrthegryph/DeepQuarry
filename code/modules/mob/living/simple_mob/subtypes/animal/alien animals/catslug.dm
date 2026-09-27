@@ -142,8 +142,7 @@
 		adjust_nutrition(yum) //add the nutriment!
 	O.bitecount ++
 	if(O.bitecount >= 3)
-		user.drop_from_inventory(O)
-		qdel(O)
+		consume(O, user)
 		visible_message(span_notice("\The [src] eats \the [O]."))
 	else
 		to_chat(user, span_notice("\The [src] takes a bite of \the [O]."))

@@ -233,7 +233,7 @@
 		cut_overlays()
 		icon_state = ""
 		flick("tp_out",src)
-		QDEL_IN(src, 1 SECOND)
+		expire(1 SECOND)
 		. = ..(FALSE, deathmessage)
 	else
 		if(comp.respite_activating)
