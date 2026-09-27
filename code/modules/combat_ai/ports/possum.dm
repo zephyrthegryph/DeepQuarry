@@ -24,11 +24,11 @@
 			if(!is_angry)
 				visible_message(span_infoplain(span_bold("\The [src]") + " hisses!"))
 				is_angry = TRUE
-				be_angery_until = world.time + rand(30 SECONDS, 1 MINUTE)
+				COOLDOWN_START(src, be_angery_until, rand(30 SECONDS, 1 MINUTE))
 			else
 				visible_message(span_infoplain(span_bold("\The [src]") + " dies!"))
 				resting = TRUE
-				play_dead_until = world.time + rand(1 MINUTE, 2 MINUTES)
+				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
 		update_icon()
 
 /mob/living/simple_mob/animal/passive/opossum/update_icon()
@@ -63,7 +63,7 @@
 
 /datum/ai_behavior/possum_play_dead/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/animal/passive/opossum/possum = brain.holder
-	if(possum.resting && world.time < possum.play_dead_until)
+	if(possum.resting && !COOLDOWN_FINISHED(possum, play_dead_until))
 		return DQ_BEHAVIOR_DONE
 	var/last_resting = possum.resting
 	var/last_angery = possum.is_angry
@@ -71,7 +71,7 @@
 	if(!possum.resting)
 		brain.wander = TRUE
 		possum.set_stat(CONSCIOUS)
-		possum.is_angry = (world.time < possum.be_angery_until) || prob(1)
+		possum.is_angry = (!COOLDOWN_FINISHED(possum, be_angery_until)) || prob(1)
 	else
 		brain.wander = FALSE
 		possum.set_stat(UNCONSCIOUS)

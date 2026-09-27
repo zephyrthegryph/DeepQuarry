@@ -116,7 +116,7 @@
 			return FALSE
 
 	if(ranged_cooldown_time) //If you have a non-zero number in a mob's variables, this pattern begins.
-		if(ranged_cooldown <= world.time) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
+		if(COOLDOWN_FINISHED(src, ranged_cooldown)) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
 			visible_message(span_danger(span_bold("\The [src]") + " fires at \the [A]!")) //Leave notice of shooting.
 			shoot(A) //Perform the shoot action
 			if(casingtype) //If the mob is designated to leave casings...

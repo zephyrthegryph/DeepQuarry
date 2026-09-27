@@ -399,14 +399,14 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 		soundloop.mid_sounds = list('sound/machines/sm/loops/calm.ogg' = 1)
 
 	// Play Delam/Neutral sounds at rate determined by power and damage.
-	if(last_accent_sound < world.time && prob(20))
+	if(COOLDOWN_FINISHED(src, last_accent_sound) && prob(20))
 		var/aggression = min(((damage / 800) * (power / 2500)), 1.0) * 100
 		if(damage >= 300)
 			playsound(src, "smdelam", max(50, aggression), FALSE, 10)
 		else
 			playsound(src, "smcalm", max(50, aggression), FALSE, 10)
 		var/next_sound = round((100 - aggression) * 5)
-		last_accent_sound = world.time + max(SUPERMATTER_ACCENT_SOUND_COOLDOWN, next_sound)
+		COOLDOWN_START(src, last_accent_sound, max(SUPERMATTER_ACCENT_SOUND_COOLDOWN, next_sound))
 
 	//Ok, get the air from the turf
 	var/datum/gas_mixture/removed = null

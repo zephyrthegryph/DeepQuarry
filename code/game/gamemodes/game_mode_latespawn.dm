@@ -40,7 +40,7 @@
 	if(hours >= 2 && mins >= 40) // Don't do anything in the last twenty minutes of the round, as well.
 		return
 
-	if(world.time < next_spawn)
+	if(!COOLDOWN_FINISHED(src, next_spawn))
 		return
 
 	message_admins("[uppertext(name)]: Attempting spawn.")
@@ -60,7 +60,7 @@
 		usable_templates -= spawn_antag
 		if(spawn_antag.attempt_late_spawn(player))
 			message_admins("[uppertext(name)]: Attempting to latespawn [spawn_antag.id]. ([spawn_antag.get_antag_count()]/[spawn_antag.cur_max])")
-			next_spawn = world.time + rand(min_autotraitor_delay, max_autotraitor_delay)
+			COOLDOWN_START(src, next_spawn, rand(min_autotraitor_delay, max_autotraitor_delay))
 			return
 	message_admins("[uppertext(name)]: Failed to proc a viable spawn template.")
-	next_spawn = world.time + rand(min_autotraitor_delay, max_autotraitor_delay)
+	COOLDOWN_START(src, next_spawn, rand(min_autotraitor_delay, max_autotraitor_delay))

@@ -2749,7 +2749,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 		return TRUE
 	if(user.stat || !ishuman(user))
 		return
-	if(world.time < next_use)
+	if(!COOLDOWN_FINISHED(src, next_use))
 		to_chat(user, span_notice("You need to wait a bit longer before you can pull out another acorn!"))
 		return
 	var/mob/living/carbon/human/H = user

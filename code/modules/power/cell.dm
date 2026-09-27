@@ -163,9 +163,9 @@
 	return material_superconducting
 
 /obj/item/cell/proc/material_phase_feedback(quenching)
-	if(world.time < material_feedback_cooldown)
+	if(!COOLDOWN_FINISHED(src, material_feedback_cooldown))
 		return
-	material_feedback_cooldown = world.time + 2 SECONDS
+	COOLDOWN_START(src, material_feedback_cooldown, 2 SECONDS)
 	var/atom/device = isobj(loc) ? loc : src
 	if(quenching)
 		device.visible_message(span_warning("[device] snaps with a harsh electrical crack as frost flashes from its casing!"))

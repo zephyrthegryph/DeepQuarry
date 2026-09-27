@@ -52,7 +52,7 @@ GLOBAL_LIST_INIT(list_symptoms, subtypesof(/datum/symptom))
 /datum/symptom/proc/Start(datum/disease/advance/A)
 	if(neutered)
 		return FALSE
-	next_activaction = world.time + rand(symptom_delay_min, symptom_delay_max)
+	COOLDOWN_START(src, next_activaction, rand(symptom_delay_min, symptom_delay_max))
 	return TRUE
 
 /datum/symptom/proc/severityset(datum/disease/advance/A)
@@ -75,10 +75,10 @@ GLOBAL_LIST_INIT(list_symptoms, subtypesof(/datum/symptom))
 		return FALSE
 	if(neutered || stopped)
 		return FALSE
-	if(world.time < next_activaction)
+	if(!COOLDOWN_FINISHED(src, next_activaction))
 		return FALSE
 	else
-		next_activaction = world.time + rand(symptom_delay_min, symptom_delay_max)
+		COOLDOWN_START(src, next_activaction, rand(symptom_delay_min, symptom_delay_max))
 		return TRUE
 
 // Called when the host dies

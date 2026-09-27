@@ -694,11 +694,11 @@
 		to_chat(usr, span_warning("This paper has already been used to create an area."))
 		return
 
-	if(usr.stat || world.time < area_cooldown)
+	if(usr.stat || !COOLDOWN_FINISHED(src, area_cooldown))
 		to_chat(usr, span_warning("You recently used this paper to try to create an area. Wait one minute before using it again."))
 		return
 
-	area_cooldown = world.time + 600 //Anti spam.
+	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
 
 	create_new_area(usr)
 	add_fingerprint(usr)

@@ -606,7 +606,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return ..()
 
 /mob/living/simple_mob/proc/CanPounceTarget(mob/living/M) //returns either FALSE or a %chance of success
-	if(!M.canmove || issilicon(M) || world.time < vore_pounce_cooldown) //eliminate situations where pouncing CANNOT happen
+	if(!M.canmove || issilicon(M) || !COOLDOWN_FINISHED(src, vore_pounce_cooldown)) //eliminate situations where pouncing CANNOT happen
 		return FALSE
 	if(M.is_incorporeal())
 		return FALSE
@@ -621,7 +621,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return max(0,(vore_pounce_successrate - (vore_pounce_falloff * TargetHealthPercent)))
 
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
-	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
+	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.status_adjust(EFFECT_STUNNED, 2)

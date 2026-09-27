@@ -872,11 +872,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(world.time >= xylophone)
+	if(COOLDOWN_FINISHED(src, xylophone))
 		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
 		var/song = pick('sound/effects/xylophone1.ogg','sound/effects/xylophone2.ogg','sound/effects/xylophone3.ogg')
 		playsound(src, song, 50, 1, -1)
-		xylophone = world.time + 2 MINUTES
+		COOLDOWN_START(src, xylophone, 2 MINUTES)
 	return
 
 /mob/living/proc/check_has_mouth()

@@ -25,7 +25,7 @@
 		to_chat(src, span_warning("\The [player.current] cannot be \a [faction.faction_role_text]!"))
 		return
 
-	if(world.time < player.rev_cooldown)
+	if(!COOLDOWN_FINISHED(player, rev_cooldown))
 		to_chat(src, span_danger("You must wait five seconds between attempts."))
 		return
 
@@ -33,7 +33,7 @@
 	log_admin("[src]([src.ckey]) attempted to convert [player.current].")
 	message_admins(span_danger("[src]([src.ckey]) attempted to convert [player.current]."))
 
-	player.rev_cooldown = world.time+100
+	COOLDOWN_START(player, rev_cooldown, 100)
 	var/choice = tgui_alert(player.current, "Asked by [src]: Do you want to join the [faction.faction_descriptor]?", "Join the [faction.faction_descriptor]?", list("No!","Yes!"))
 	if(choice == "Yes!" && faction.add_antagonist_mind(player, 0, faction.faction_role_text, faction.faction_welcome))
 		to_chat(src, span_notice("\The [player.current] joins the [faction.faction_descriptor]!"))

@@ -239,7 +239,7 @@
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
 		return
-	if(world.time < next_sonar_ping)
+	if(!COOLDOWN_FINISHED(src, next_sonar_ping))
 		to_chat(src, span_warning("You need another moment to focus."))
 		return
 	if(is_deaf() || is_below_sound_pressure(get_turf(src)))
