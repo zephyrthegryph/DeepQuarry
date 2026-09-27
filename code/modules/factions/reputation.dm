@@ -227,16 +227,8 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	for(var/department in get_reputation_departments())
 		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
 
-/datum/station_faction_relations/Destroy()
-	for(var/department in department_ledgers)
-		qdel(department_ledgers[department])
-	department_ledgers = null
-	for(var/account_number in personal_ledgers)
-		qdel(personal_ledgers[account_number])
-	personal_ledgers = null
-	QDEL_LIST(agent_records)
-	agent_records = null
-	return ..()
+REF_OWNED_VALUES(/datum/station_faction_relations, list("department_ledgers", "personal_ledgers"))
+REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 
 /datum/station_faction_relations/proc/get_reputation_departments()
 	return list(
