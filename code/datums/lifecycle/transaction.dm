@@ -53,6 +53,8 @@
 	// (lifecycle_dematerialize() overrides), for every datum.
 	tick = world.tick_usage
 	D.lifecycle_dematerialize()
+	if(ismovable(D))
+		dq_lifecycle_release_from_holder(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
 
 	if(isatom(D))

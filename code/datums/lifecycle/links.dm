@@ -33,6 +33,11 @@
 /datum/proc/declared_owned_list_vars()
 	return null
 
+/// Names of `src`'s own assoc list vars whose *values* are children (keyed by
+/// id): each value is deleted in phase 4 (was QDEL_LIST_ASSOC_VAL).
+/datum/proc/declared_owned_value_vars()
+	return null
+
 /// Assoc: our var name -> the *other* object's var name that points back to
 /// us. Declaring this on both sides (A's entry says "b_var", B's says
 /// "a_var") is what makes link_set()/link_clear() find the reciprocal var
@@ -52,6 +57,13 @@
 /// moves it to src's drop location if it is still inside src. The one-thing
 /// SPILL slot, for holders that have no ledger slots.
 /datum/proc/declared_spill_vars()
+	return null
+
+/// Names of `src`'s vars that name a thing it holds in its contents without a
+/// destroy policy of their own (a machine's installed board). Like the owned
+/// and spill vars, they are nulled when that thing is destroyed while still
+/// inside src (dq_lifecycle_release_from_holder()).
+/datum/proc/declared_held_vars()
 	return null
 
 /// Names of `src`'s list vars whose members spill the same way.
@@ -81,13 +93,30 @@
 		table = list(
 			"owned" = D.declared_owned_vars(),
 			"owned_list" = D.declared_owned_list_vars(),
+			"owned_values" = D.declared_owned_value_vars(),
 			"pair" = D.declared_pair_vars(),
 			"backlist" = D.declared_backlist_vars(),
 			"spill" = D.declared_spill_vars(),
 			"spill_list" = D.declared_spill_list_vars(),
+			"held" = D.declared_held_vars(),
 		)
 		cache[key] = table
 	return table
+
+/// Phase 2, for a movable destroyed inside another atom: the holder's declared
+/// owned, spill and held vars that name it are nulled -- a cell deleted in its
+/// APC, a board in its machine -- so no child clears its holder's typed var by
+/// hand.
+/proc/dq_lifecycle_release_from_holder(atom/movable/AM)
+	var/atom/holder = AM.loc
+	if(!holder || isturf(holder) || QDELETED(holder))
+		return
+	var/list/table = dq_lifecycle_link_table(holder)
+	var/static/list/holder_keys = list("owned", "spill", "held")
+	for(var/key in holder_keys)
+		for(var/var_name in table[key])
+			if(holder.vars[var_name] == AM)
+				holder.vars[var_name] = null
 
 /// Phase 3, for declared spill vars (REF_SPILL/REF_SPILL_LIST): each thing
 /// still inside `AM` goes to its drop location. When that location is itself
@@ -116,7 +145,8 @@
 		for(var/atom/movable/thing in things.Copy())
 			if(thing.loc != AM || QDELETED(thing))
 				continue
-			things -= thing
+			if(things != AM.contents)
+				things -= thing
 			if(doomed)
 				qdel(thing)
 			else
@@ -148,6 +178,17 @@
 		children.Cut()
 		for(var/datum/child in copy)
 			qdel(child)
+	var/list/owned_values = table["owned_values"]
+	for(var/var_name in owned_values)
+		var/list/by_key = D.vars[var_name]
+		if(!islist(by_key) || !length(by_key))
+			continue
+		var/list/copy = by_key.Copy()
+		by_key.Cut()
+		for(var/key in copy)
+			var/datum/child = copy[key]
+			if(isdatum(child))
+				qdel(child)
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)
 		link_clear(D, our_var)

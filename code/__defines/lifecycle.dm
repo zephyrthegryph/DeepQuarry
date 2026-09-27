@@ -29,8 +29,13 @@
 #define REF_OWNED_LIST(PATH, NAMES) ##PATH/declared_owned_list_vars() { . = ..(); . = (. || list()) + NAMES; }
 /// One inserted thing (a beaker, a card) spilled to the drop location in phase 3.
 #define REF_SPILL(PATH, NAMES) ##PATH/declared_spill_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// A thing held in contents with no policy of its own (an installed board): the
+/// var is nulled if the thing is destroyed while inside.
+#define REF_HELD(PATH, NAMES) ##PATH/declared_held_vars() { . = ..(); . = (. || list()) + NAMES; }
 /// A list var's members spilled to the drop location in phase 3.
 #define REF_SPILL_LIST(PATH, NAMES) ##PATH/declared_spill_list_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Owned assoc lists whose values are children: deleted in phase 4 (was QDEL_LIST_ASSOC_VAL).
+#define REF_OWNED_VALUES(PATH, NAMES) ##PATH/declared_owned_value_vars() { . = ..(); . = (. || list()) + NAMES; }
 /// Pairs, our var -> the partner's var pointing back: nulled on both sides in phase 4.
 #define REF_PAIR(PATH, PAIRS) ##PATH/declared_pair_vars() { return lifecycle_merge_assoc(..(), PAIRS); }
 /// Back-lists, our var (the owner) -> the owner's list var we sit in: removed in phase 4.
