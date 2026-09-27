@@ -93,8 +93,7 @@
 	pressed(user)
 	if(floor == lift.current_floor && !(lift.target_floor))	//Make sure we're not going anywhere before opening doors
 		lift.open_doors()
-		spawn(3)
-			reset()
+		om_after(src, 3, PROC_REF(reset))
 		return
 	lift.queue_move_to(floor)
 
@@ -209,5 +208,3 @@
 		icon_state = initial(icon_state)
 
 // End panel.
-
-

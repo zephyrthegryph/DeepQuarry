@@ -330,8 +330,7 @@
 			if(!bibledelay)
 				new /obj/item/storage/bible(src.loc)
 				bibledelay = 1
-				spawn(60)
-					bibledelay = 0
+				om_after(src, 6 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "bibledelay", 0)
 			else
 				for(var/mob/V in hearers(src))
 					V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Bible printer currently unavailable, please wait a moment.\""))
@@ -425,8 +424,7 @@
 					V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 				return TRUE
 			bibledelay = 1
-			spawn(6)
-				bibledelay = 0
+			om_after(src, 6, TYPE_PROC_REF(/datum, om_set_var), "bibledelay", 0)
 			var/datum/db_query/query = SSdbcore.NewQuery(
 				"SELECT id, author, title, content FROM library WHERE id = :id",
 				list("id" = numeric_id)

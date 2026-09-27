@@ -264,7 +264,6 @@
 
 		var/turf/target = locate(trueX, trueY, z_co)
 		last_target = target
-		var/area/A = get_area(target)
 		flick("pad-beam", telepad)
 
 		if(spawn_time > 15) // 1.5 seconds
@@ -273,94 +272,7 @@
 			teleporting = 1
 			temp_msg = "Powering up bluespace crystals. Please wait."
 
-		spawn(spawn_time) // in deciseconds
-			if(!telepad)
-				return
-			if(telepad.inoperable())
-				return
-			teleporting = 0
-			COOLDOWN_START(src, teleport_cooldown, (spawn_time * 2))
-			teles_left -= 1
-
-			// use a lot of power
-			use_power(trueDistance * 10000)
-
-			var/datum/effect/effect/system/spark_spread/S = new /datum/effect/effect/system/spark_spread()
-			S.set_up(5, 1, get_turf(telepad))
-			S.start()
-
-			if(!A || (A.flag_check(BLUE_SHIELDED)) || (target.block_tele)) // consistency smh
-				telefail()
-				temp_msg = "ERROR! Target is shielded from bluespace intersection!"
-				return
-
-			temp_msg = "Teleport successful. "
-			if(teles_left < 10)
-				temp_msg += "Calibration required soon. "
-			temp_msg += "Data printed below."
-
-			var/sparks = get_turf(target)
-			var/datum/effect/effect/system/spark_spread/Y = new /datum/effect/effect/system/spark_spread()
-			Y.set_up(5, 1, sparks)
-			Y.start()
-
-			var/turf/source = target
-			var/turf/dest = get_turf(telepad)
-			var/log_msg = ""
-			log_msg += ": [key_name(user)] has teleported "
-
-			if(sending)
-				source = dest
-				dest = target
-
-			var/list/sent_atoms = list()
-			flick("pad-beam", telepad)
-			playsound(telepad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
-			for(var/atom/movable/ROI in source)
-				// if is anchored, don't let through
-				if(ROI.anchored)
-					if(isliving(ROI))
-						var/mob/living/L = ROI
-						if(BUCKLED(L))
-							// TP people on office chairs
-							var/atom/movable/_tmp_buck_45 = BUCKLED(L)
-							if(_tmp_buck_45.anchored)
-								continue
-
-							log_msg += "[key_name(L)] (on a chair), "
-						else
-							continue
-					else if(!isobserver(ROI))
-						continue
-				if(ismob(ROI))
-					var/mob/T = ROI
-					log_msg += "[key_name(T)], "
-				else
-					log_msg += "[ROI.name]"
-					if (istype(ROI, /obj/structure/closet))
-						var/obj/structure/closet/C = ROI
-						log_msg += " ("
-						C.latent_materialize_all() // teleported contents are real (C5)
-						for(var/atom/movable/Q as mob|obj in C) // latent-ok
-							if(ismob(Q))
-								log_msg += "[key_name(Q)], "
-							else
-								log_msg += "[Q.name], "
-						if (dd_hassuffix(log_msg, "("))
-							log_msg += "empty)"
-						else
-							log_msg += ")"
-					log_msg += ", "
-				sent_atoms += ROI
-				do_teleport(ROI, dest)
-			// Either works for the experiment scan, so fire signals on both
-			SEND_SIGNAL(src, COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
-			SEND_SIGNAL(telepad, COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
-
-			if (!dd_hassuffix(log_msg, ", "))
-				log_msg += "nothing"
-			log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
-			investigate_log(log_msg, "telesci")
+		om_after(src, spawn_time, PROC_REF(finish_teleport), user, trueDistance, spawn_time, target, trueX, trueY) // in deciseconds
 
 /obj/machinery/computer/telescience/proc/teleport(mob/user)
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown))
@@ -407,3 +319,93 @@
 	var/dest_x = src_x + distance*sin(rotation);
 	var/dest_y = src_y + distance*cos(rotation);
 	return new /datum/projectile_data(src_x, src_y, time, distance, 0, 0, dest_x, dest_y)
+
+/obj/machinery/computer/telescience/proc/finish_teleport(mob/user, trueDistance, spawn_time, turf/target, trueX, trueY)
+	var/area/A = get_area(target)
+	if(!telepad)
+		return
+	if(telepad.inoperable())
+		return
+	teleporting = 0
+	COOLDOWN_START(src, teleport_cooldown, (spawn_time * 2))
+	teles_left -= 1
+
+	// use a lot of power
+	use_power(trueDistance * 10000)
+
+	var/datum/effect/effect/system/spark_spread/S = new /datum/effect/effect/system/spark_spread()
+	S.set_up(5, 1, get_turf(telepad))
+	S.start()
+
+	if(!A || (A.flag_check(BLUE_SHIELDED)) || (target.block_tele)) // consistency smh
+		telefail()
+		temp_msg = "ERROR! Target is shielded from bluespace intersection!"
+		return
+
+	temp_msg = "Teleport successful. "
+	if(teles_left < 10)
+		temp_msg += "Calibration required soon. "
+	temp_msg += "Data printed below."
+
+	var/sparks = get_turf(target)
+	var/datum/effect/effect/system/spark_spread/Y = new /datum/effect/effect/system/spark_spread()
+	Y.set_up(5, 1, sparks)
+	Y.start()
+
+	var/turf/source = target
+	var/turf/dest = get_turf(telepad)
+	var/log_msg = ""
+	log_msg += ": [key_name(user)] has teleported "
+
+	if(sending)
+		source = dest
+		dest = target
+
+	var/list/sent_atoms = list()
+	flick("pad-beam", telepad)
+	playsound(telepad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
+	for(var/atom/movable/ROI in source)
+		// if is anchored, don't let through
+		if(ROI.anchored)
+			if(isliving(ROI))
+				var/mob/living/L = ROI
+				if(BUCKLED(L))
+					// TP people on office chairs
+					var/atom/movable/_tmp_buck_45 = BUCKLED(L)
+					if(_tmp_buck_45.anchored)
+						continue
+
+					log_msg += "[key_name(L)] (on a chair), "
+				else
+					continue
+			else if(!isobserver(ROI))
+				continue
+		if(ismob(ROI))
+			var/mob/T = ROI
+			log_msg += "[key_name(T)], "
+		else
+			log_msg += "[ROI.name]"
+			if (istype(ROI, /obj/structure/closet))
+				var/obj/structure/closet/C = ROI
+				log_msg += " ("
+				C.latent_materialize_all() // teleported contents are real (C5)
+				for(var/atom/movable/Q as mob|obj in C) // latent-ok
+					if(ismob(Q))
+						log_msg += "[key_name(Q)], "
+					else
+						log_msg += "[Q.name], "
+				if (dd_hassuffix(log_msg, "("))
+					log_msg += "empty)"
+				else
+					log_msg += ")"
+			log_msg += ", "
+		sent_atoms += ROI
+		do_teleport(ROI, dest)
+	// Either works for the experiment scan, so fire signals on both
+	SEND_SIGNAL(src, COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
+	SEND_SIGNAL(telepad, COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
+
+	if (!dd_hassuffix(log_msg, ", "))
+		log_msg += "nothing"
+	log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
+	investigate_log(log_msg, "telesci")

@@ -111,8 +111,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	adjust_difficulty(RM_DIFF_DECAY_AMT)
 
 	if(!manual) //If it was called manually somehow, then don't start the timer, just decay now.
-		spawn(RM_DIFF_DECAY_TIME)
-			decay()
+		om_after(src, RM_DIFF_DECAY_TIME, PROC_REF(decay))
 	return difficulty
 
 /datum/controller/rogue/proc/dbg(message)
@@ -195,7 +194,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 
 	if(length(clean_zones) <= 1) //Need to clean the oldest one, too.
 		GLOB.rm_controller.dbg("RMC(pnz): Cleaning up oldest zone.")
-		spawn(0) //Detatch it so we can return the new zone for now.
+		spawn(0) //Detatch it so we can return the new zone for now. // S7 keeps: clean_zone() sleeps between deletions (long loop: a lane with a budget, S10)
 			var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()
 			if(ZM_oldest) ZM_oldest.clean_zone()
 

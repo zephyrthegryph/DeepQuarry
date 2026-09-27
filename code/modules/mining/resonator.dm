@@ -79,8 +79,7 @@
 		playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
 		new /obj/effect/resonance(T, WEAKREF(creator), burst_time)
 		fieldsactive++
-		spawn(burst_time)
-			fieldsactive--
+		om_after(src, burst_time, PROC_REF(field_burst))
 
 /obj/item/resonator/attack_self(mob/user)
 	. = ..(user)
@@ -160,3 +159,6 @@
 	. = ..()
 	transform = matrix()*1.5
 	animate(src, transform = matrix()*0.1, alpha = 50, time = 4)
+
+/obj/item/resonator/proc/field_burst()
+	fieldsactive--

@@ -37,10 +37,7 @@
 
 	if(reveal_blood && target.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood found on [target]. Analysing..."))
-		spawn(15)
-			var/list/blooddna = target.forensic_data.get_blooddna()
-			for(var/blood in blooddna)
-				to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))
+		om_after(user, 15, /proc/detective_scanner_blood_report, user, target)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/detective_scanner/afterattack(atom/A as obj|turf, mob/user, proximity)
@@ -202,3 +199,8 @@
 	icon_state = "forensic_neo"
 	reveal_fibers = TRUE
 	reveal_incompletes = TRUE
+
+/proc/detective_scanner_blood_report(mob/user, atom/target)
+	var/list/blooddna = target.forensic_data.get_blooddna()
+	for(var/blood in blooddna)
+		to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))

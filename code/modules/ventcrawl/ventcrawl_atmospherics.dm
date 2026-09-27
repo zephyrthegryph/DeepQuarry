@@ -57,8 +57,7 @@
 			user.forceMove(src.loc)
 			user.visible_message("You hear something squeezing through the pipes.", "You climb out the ventilation system.")
 	user.canmove = 0
-	spawn(1)
-		user.canmove = 1
+	om_after(user, 1, TYPE_PROC_REF(/datum, om_set_var), "canmove", 1)
 
 /obj/machinery/atmospherics/proc/can_crawl_through()
 	return 1

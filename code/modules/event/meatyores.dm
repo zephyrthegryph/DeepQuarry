@@ -18,7 +18,7 @@
 
 	if(!affecting_z.len)
 		return
-	spawn() spawn_meteors(get_wave_size(), get_meatyores(), pick_side, pick(affecting_z))
+	spawn_meteors(get_wave_size(), get_meatyores(), pick_side, pick(affecting_z))
 	next_meteor += rand(next_meteor_lower, next_meteor_upper) / severity
 	waves--
 	endWhen = worst_case_end()

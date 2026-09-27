@@ -11,13 +11,8 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 
 /datum/lore/news/New()
 	..()
-	spawn(50) //Give it a second or it gets fucky.
-		for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
-			if(F.channel_name == "Vir News Network")
-				station_newspaper = F
-				break
-	spawn(300) // Yes, again.
-		fill_codex_news()
+	om_after(src, 5 SECONDS, PROC_REF(find_station_newspaper)) //Give it a second or it gets fucky.
+	om_after(src, 30 SECONDS, PROC_REF(fill_codex_news)) // Yes, again.
 	if (!news_codex.newsindex)
 		return
 	else
@@ -37,3 +32,9 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 		GLOB.news_network.SubmitArticle("[child.data]", "Oculum", "Vir News Network", null, 1, "", "[child.name]")
 
 	return 1
+
+/datum/lore/news/proc/find_station_newspaper()
+	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
+		if(F.channel_name == "Vir News Network")
+			station_newspaper = F
+			break

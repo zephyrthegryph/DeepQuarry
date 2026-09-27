@@ -650,9 +650,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 			categories &= ~CAT_COIN
 
 	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
-		spawn(0)
-			speak(vend_reply)
-			last_reply = world.time
+		speak(vend_reply)
+		last_reply = world.time
 
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
@@ -777,8 +776,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		if(!(stat & NOPOWER))
 			icon_state = initial(icon_state)
 		else
-			spawn(rand(0, 15))
-				icon_state = "[initial(icon_state)]-off"
+			om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var), "icon_state", "[initial(icon_state)]-off")
 
 //Oh no we're malfunctioning!  Dump out some product and break.
 /obj/machinery/vending/proc/malfunction()

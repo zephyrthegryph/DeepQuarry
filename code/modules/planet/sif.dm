@@ -94,8 +94,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	spawn(1)
-		update_sun_deferred(new_brightness, new_color)
+	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
 
 // We're gonna pretend there are 32 hours in a Sif day instead of 32.64 for the purposes of not losing sanity.  We lose 38m 24s but the alternative is a path to madness.
 /datum/time/sif

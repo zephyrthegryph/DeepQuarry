@@ -262,15 +262,18 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			GetDrilled()
 
 	if(severity <= 2) // Now to expose the ore lying under the sand.
-		spawn(1) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
-			for(var/ore in resources)
-				var/amount_to_give = rand(CEILING(resources[ore]/2, 1), resources[ore])  // Should result in at least one piece of ore.
-				var/oretype = ore_types[ore]
-				if(!oretype)
-					return // this turf can't give that type
-				for(var/i=1, i <= amount_to_give, i++)
-					new oretype(src)
-				resources[ore] = 0
+		om_after(src, 1, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
+
+/// After a blast: the ore lying under the sand spills out.
+/turf/simulated/mineral/proc/expose_ore()
+	for(var/ore in resources)
+		var/amount_to_give = rand(CEILING(resources[ore]/2, 1), resources[ore])  // Should result in at least one piece of ore.
+		var/oretype = ore_types[ore]
+		if(!oretype)
+			return // this turf can't give that type
+		for(var/i=1, i <= amount_to_give, i++)
+			new oretype(src)
+		resources[ore] = 0
 
 /turf/simulated/mineral/bullet_act(obj/item/projectile/Proj) // only emitters for now
 	if(Proj.excavation_amount)

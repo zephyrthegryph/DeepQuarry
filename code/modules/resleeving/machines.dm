@@ -22,8 +22,7 @@
 	attempting = 1 //One at a time!!
 	locked = 1
 	eject_wait = 1
-	spawn(30)
-		eject_wait = 0
+	om_after(src, 3 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "eject_wait", 0)
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
 	remove_biomass(CLONE_BIOMASS)
@@ -480,9 +479,7 @@
 	//Re-supply a NIF if one was backed up with them.
 	if(MR.nif_path)
 		var/obj/item/nif/nif = new MR.nif_path(occupant,null,MR.nif_savedata)
-		spawn(0)			//Delay to not install software before NIF is fully installed
-			for(var/path in MR.nif_software)
-				new path(nif)
+		om_after(nif, 0, /proc/install_nif_software, nif, MR.nif_software) //Delay to not install software before NIF is fully installed
 		nif.durability = MR.nif_durability //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences

@@ -156,7 +156,7 @@
 	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
-		spawn()
+		spawn() // S7 keeps: receive_request() sleeps through the confirm window (S8)
 			KA.receive_request(src)
 
 	sleep(confirm_delay)

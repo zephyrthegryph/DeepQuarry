@@ -556,11 +556,7 @@
 
 /datum/lore/organization/tsc/nanotrasen/New()
 	..()
-	spawn(1) // BYOND shenanigans means using_map is not initialized yet.  Wait a tick.
-		// Get rid of the current map from the list, so ships flying in don't say they're coming to the current map.
-		var/string_to_test = "[using_map.station_name] in [using_map.starsys_name]"
-		if(string_to_test in destination_names)
-			LAZYREMOVE(destination_names, string_to_test)
+	om_after(src, 1, PROC_REF(forget_current_map_destination)) // BYOND shenanigans means using_map is not initialized yet.  Wait a tick.
 
 /datum/lore/organization/tsc/hephaestus
 	name = "Hephaestus Industries"
@@ -3039,3 +3035,9 @@
 
 	//ex: "Phalanx One-Niner", "Sledgehammer Actual" (CO/VIP), "Kodiak Seven-Four", "Tomahawk Two-Zero"
 	//probably a more elegant (read: fancier) way to do the second part but fuck it, this works just fine
+
+/datum/lore/organization/tsc/nanotrasen/proc/forget_current_map_destination()
+	// Get rid of the current map from the list, so ships flying in don't say they're coming to the current map.
+	var/string_to_test = "[using_map.station_name] in [using_map.starsys_name]"
+	if(string_to_test in destination_names)
+		LAZYREMOVE(destination_names, string_to_test)

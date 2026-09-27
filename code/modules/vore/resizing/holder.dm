@@ -1,8 +1,6 @@
 /obj/item/holder/dropped(mob/user, equipping, slot)
 	..()
-	spawn(1)
-		if(!throwing && isturf(loc))
-			qdel(src)
+	om_after(src, 1, PROC_REF(delete_if_dropped))
 
 /obj/item/holder/attack_hand(mob/living/user as mob) //straight up just copypasted from objects/items.dm with a few things changed (doesn't called dropped unless +actually dropped+)
 	if (!user) return
@@ -56,3 +54,7 @@
 		"},"OOC Warning")
 	// EDIT END.
 	return
+
+/obj/item/holder/proc/delete_if_dropped()
+	if(!throwing && isturf(loc))
+		qdel(src)

@@ -50,8 +50,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
 		return "Update already in progress! Please wait a moment..."
 	GLOB.client_record_update_lock = TRUE
-	spawn(60 SECONDS)
-		GLOB.client_record_update_lock = FALSE
+	om_after(null, 60 SECONDS, /proc/client_record_update_unlock) // the global owner: a global lock
 
 	if(!active || !console_path)
 		if(COM && !QDELETED(COM))
@@ -134,3 +133,6 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 		playsound(COM, 'sound/machines/ding.ogg', 50, 1)
 
 	return "Record syncronized."
+
+/proc/client_record_update_unlock()
+	GLOB.client_record_update_lock = FALSE

@@ -36,8 +36,7 @@
 	myshuttle_landmark = locate(/obj/effect/shuttle_landmark) in myarea
 	if(!istype(myshuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
-	spawn(10) //This is called from controller New() and freaks out if this calls back too fast.
-		GLOB.rm_controller.mark_clean(src)
+	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
 
 ///////////////////////////////
 ///// Utility Procs ///////////
@@ -444,3 +443,6 @@
 ///////////////////////////////
 
 //Throw a meteor at a player in the zone
+
+/datum/rogue/zonemaster/proc/report_clean()
+	GLOB.rm_controller.mark_clean(src)

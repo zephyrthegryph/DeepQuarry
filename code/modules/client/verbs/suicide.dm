@@ -34,9 +34,7 @@
 	if(confirm == "Yes")
 		suiciding = 1
 		to_chat(viewers(loc),span_danger("[src]'s brain is growing dull and lifeless. It looks like it's lost the will to live."))
-		spawn(50)
-			death(0)
-			suiciding = 0
+		om_after(src, 5 SECONDS, PROC_REF(brain_suicide_ends))
 
 /mob/living/silicon/ai/verb/suicide()
 	set hidden = 1
@@ -90,3 +88,7 @@
 	else
 		to_chat(src, "Aborting suicide attempt.")
 */
+
+/mob/living/carbon/brain/proc/brain_suicide_ends()
+	death(0)
+	suiciding = 0

@@ -16,12 +16,10 @@
 		location = get_turf(loca)
 
 /datum/effect/effect/system/grav_pull/start()
-	spawn(0)
-		if(holder)
-			location = get_turf(holder)
-		for(var/i = 0, i < number, i++)
-			do_pull()
-			sleep(25)
+	if(holder)
+		location = get_turf(holder)
+	for(var/i = 0, i < number, i++)
+		om_after(src, i * 25, PROC_REF(do_pull))
 
 /datum/effect/effect/system/grav_pull/proc/do_pull()
 	// Let's just make this one loop.

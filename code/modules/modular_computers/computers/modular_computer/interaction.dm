@@ -25,9 +25,7 @@
 		update_icon()
 		shutdown_computer()
 		to_chat(usr, "You press a hard-reset button on \the [src]. It displays a brief debug screen before shutting down.")
-		spawn(2 SECONDS)
-			bsod = 0
-			update_icon()
+		om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var_then), "bsod", 0, TYPE_PROC_REF(/atom, update_icon))
 
 
 // Eject ID card from computer, if it has ID slot with card inside.

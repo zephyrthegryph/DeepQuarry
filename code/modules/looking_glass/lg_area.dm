@@ -51,14 +51,13 @@
 
 	active = FALSE
 
-	spawn(2 SECONDS)
-		our_landmark?.drop_image()
+	if(our_landmark)
+		om_after(our_landmark, 2 SECONDS, TYPE_PROC_REF(/obj/effect/landmark/looking_glass, drop_image))
 
 /area/looking_glass/proc/toggle_optional(transparent)
 	for(var/turf/simulated/floor/looking_glass/lgt as anything in our_optional_turfs)
 		lgt.center = !transparent
 		if(active)
 			lgt.deactivate()
-			spawn(3 SECONDS)
-				lgt.activate()
+			om_after(lgt, 3 SECONDS, TYPE_PROC_REF(/turf/simulated/floor/looking_glass, activate))
 

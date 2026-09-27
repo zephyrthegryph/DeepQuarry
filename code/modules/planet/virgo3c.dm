@@ -112,8 +112,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	spawn(1)
-		update_sun_deferred(new_brightness, new_color)
+	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
 
 
 /datum/weather_holder/virgo3c

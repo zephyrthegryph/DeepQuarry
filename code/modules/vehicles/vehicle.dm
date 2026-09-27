@@ -168,14 +168,10 @@
 	pulse2.anchored = TRUE
 	pulse2.set_dir(pick(GLOB.cardinal))
 
-	spawn(10)
-		qdel(pulse2)
+	om_qdel_after(pulse2, 1 SECOND)
 	if(on)
 		turn_off()
-	spawn(severity*300)
-		stat &= ~EMPED
-		if(was_on)
-			turn_on()
+	om_after(src, severity*300, PROC_REF(emp_recover), was_on)
 
 /obj/vehicle/attack_ai(mob/user as mob)
 	return
@@ -426,3 +422,7 @@
 	exclusive = TRUE
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
+/obj/vehicle/proc/emp_recover(was_on)
+	stat &= ~EMPED
+	if(was_on)
+		turn_on()

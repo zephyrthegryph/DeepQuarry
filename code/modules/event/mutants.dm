@@ -72,14 +72,13 @@
 			max_number = 6
 			vermstring = "mutant lizards"
 
-	spawn(0)
-		var/num = rand(2,max_number)
-		while(turfs.len > 0 && num > 0)
-			var/turf/simulated/floor/T = pick(turfs)
-			turfs.Remove(T)
-			num--
-			var/spawn_type = pick(spawn_types)
-			new spawn_type(T)
+	var/num = rand(2,max_number)
+	while(turfs.len > 0 && num > 0)
+		var/turf/simulated/floor/T = pick(turfs)
+		turfs.Remove(T)
+		num--
+		var/spawn_type = pick(spawn_types)
+		new spawn_type(T)
 
 /datum/event/mutants/announce()
 	GLOB.command_announcement.Announce("Bioscans indicate... What are those? It looks like [vermstring] have been breeding in [locstring]. Clear them out, just in case.", "Vermin infestation")
