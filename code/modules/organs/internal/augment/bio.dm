@@ -116,9 +116,7 @@
 	. = ..()
 	med_analyzer = new /obj/item/healthanalyzer/advanced
 
-/obj/item/organ/internal/augment/bioaugment/health_scan/Destroy()
-	QDEL_NULL(med_analyzer)
-	return ..()
+REF_OWNED(/obj/item/organ/internal/augment/bioaugment/health_scan, "med_analyzer")
 
 /obj/item/organ/internal/augment/bioaugment/health_scan/augment_action()
 	if(!owner)
