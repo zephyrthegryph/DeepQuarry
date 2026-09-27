@@ -127,11 +127,6 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	update_icon()
 	updatename()
 
-/mob/living/silicon/robot/drone/Destroy()
-	revoke_ability(ABILITY_ID_ROBOT_PICK_SHELL, src)
-	revoke_ability(ABILITY_ID_ROBOT_SET_MAIL_TAG, src)
-	return ..()
-
 /mob/living/silicon/robot/drone/setup_camera()
 	if(scrambledcodes || foreign_droid)
 		photo_camera_type = null

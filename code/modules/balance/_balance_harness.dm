@@ -38,11 +38,11 @@
 	/// Free-text notes about what a run measured (assumptions, fallbacks).
 	var/list/notes
 	/// Where test mobs and items are spawned.
-	var/turf/site
+	var/tmp/turf/site
 	/// Everything this scenario spawned, deleted by cleanup().
 	var/list/spawned
 
-/datum/balance_scenario/Destroy()
+/datum/balance_scenario/Destroy() // LIFECYCLE: the scenario owns what it spawned; cleanup() removes it.
 	cleanup()
 	site = null
 	return ..()

@@ -70,7 +70,7 @@ code/modules/economy/cargo_market.dm 6
 code/modules/economy/trader.dm 1
 code/modules/entopics/alternate_appearance.dm 1
 code/modules/error_handler/error_viewer.dm 1
-code/modules/expedition/expedition_objective.dm 7
+code/modules/expedition/expedition_objective.dm 8
 code/modules/expedition/expedition_site.dm 1
 code/modules/factions/reputation.dm 4
 code/modules/gamemaster/event2/events/everyone/electrical_fault.dm 1
