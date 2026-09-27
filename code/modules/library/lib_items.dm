@@ -34,7 +34,10 @@
 		O.loc = src
 		update_icon()
 	else if(istype(O, /obj/item/pen))
-		var/newname = sanitizeSafe(tgui_input_text(user, "What would you like to title this bookshelf?", null, null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to title this bookshelf?", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_answer_k37))
+			return TRUE
+		var/newname = sanitizeSafe(_answer_k37, MAX_NAME_LEN)
 		if(!newname)
 			return
 		else
@@ -62,7 +65,9 @@
 
 /obj/structure/bookcase/attack_hand(mob/user)
 	if(contents.len)
-		var/obj/item/book/choice = tgui_input_list(user, "Which book would you like to remove from the shelf?", "Book Selection", contents)
+		var/obj/item/book/choice = rerun_prompt(user, "k65", list("kind" = "list", "message" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = contents), TYPE_PROC_REF(/atom, attack_hand), args)
+		if(isnull(choice))
+			return TRUE
 		if(choice)
 			if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
 				return
@@ -245,10 +250,15 @@ Book Cart End
 		if(unique)
 			to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
 			return
-		var/choice = tgui_input_list(user, "What would you like to change?", "Change What?", list("Title", "Contents", "Author", "Cancel"))
+		var/choice = rerun_prompt(user, "k248", list("kind" = "list", "message" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(choice))
+			return TRUE
 		switch(choice)
 			if("Title")
-				var/newtitle = reject_bad_text(sanitizeSafe(tgui_input_text(user, "Write a new title:", encode = FALSE)))
+				var/_answer_k251 = rerun_prompt(user, "k251", list("kind" = "text", "message" = "Write a new title:", "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(_answer_k251))
+					return TRUE
+				var/newtitle = reject_bad_text(sanitizeSafe(_answer_k251))
 				if(!newtitle)
 					to_chat(user, "The title is invalid.")
 					return
@@ -256,14 +266,18 @@ Book Cart End
 					src.name = newtitle
 					src.title = newtitle
 			if("Contents")
-				var/content = tgui_input_text(user, "Write your book's contents (HTML NOT allowed):", max_length=MAX_BOOK_MESSAGE_LEN, multiline=TRUE)
+				var/content = rerun_prompt(user, "k259", list("kind" = "text", "message" = "Write your book's contents (HTML NOT allowed):", "max_length" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(content))
+					return TRUE
 				if(!content)
 					to_chat(user, "The content is invalid.")
 					return
 				else
 					src.dat += content
 			if("Author")
-				var/newauthor = tgui_input_text(user, "Write the author's name:", "", "", MAX_LNAME_LEN)
+				var/newauthor = rerun_prompt(user, "k266", list("kind" = "text", "message" = "Write the author's name:", "max_length" = MAX_LNAME_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(newauthor))
+					return TRUE
 				if(!newauthor)
 					to_chat(user, "The name is invalid.")
 					return

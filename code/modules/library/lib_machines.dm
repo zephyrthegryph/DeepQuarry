@@ -70,24 +70,30 @@
 	data["results"] = last_results || list()
 	return data
 
-/obj/machinery/librarypubliccomp/tgui_act(action, list/params)
+/obj/machinery/librarypubliccomp/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
 	switch(action)
 		if("settitle")
-			var/newtitle = tgui_input_text(usr, "Enter a title to search for:", max_length = MAX_MESSAGE_LEN)
+			var/newtitle = act_prompt(usr, action, params, ui, "k79", list("kind" = "text", "message" = "Enter a title to search for:", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(newtitle))
+				return
 			if(newtitle)
 				title = newtitle
 			return TRUE
 		if("setcategory")
-			var/newcategory = tgui_input_list(usr, "Choose a category to search for:", "Category", list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
+			var/newcategory = act_prompt(usr, action, params, ui, "k84", list("kind" = "list", "message" = "Choose a category to search for:", "title" = "Category", "choices" = list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion")))
+			if(isnull(newcategory))
+				return
 			if(!newcategory)
 				newcategory = "Any"
 			category = newcategory
 			return TRUE
 		if("setauthor")
-			var/newauthor = tgui_input_text(usr, "Enter an author to search for:", max_length = MAX_MESSAGE_LEN)
+			var/newauthor = act_prompt(usr, action, params, ui, "k90", list("kind" = "text", "message" = "Enter an author to search for:", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(newauthor))
+				return
 			if(newauthor)
 				author = newauthor
 			return TRUE
@@ -318,7 +324,7 @@
 	data["external_archive"] = external
 	return data
 
-/obj/machinery/librarycomp/tgui_act(action, list/params)
+/obj/machinery/librarycomp/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
@@ -354,10 +360,16 @@
 				checkoutperiod = 1
 			return TRUE
 		if("editbook")
-			buffer_book = sanitizeSafe(tgui_input_text(usr, "Enter the book's title:", encode = FALSE))
+			var/_answer_k357 = act_prompt(usr, action, params, ui, "k357", list("kind" = "text", "message" = "Enter the book's title:", "encode" = FALSE))
+			if(isnull(_answer_k357))
+				return
+			buffer_book = sanitizeSafe(_answer_k357)
 			return TRUE
 		if("editmob")
-			buffer_mob = tgui_input_text(usr, "Enter the recipient's name:", null, null, MAX_NAME_LEN)
+			var/_answer_k360 = act_prompt(usr, action, params, ui, "k360", list("kind" = "text", "message" = "Enter the recipient's name:", "max_length" = MAX_NAME_LEN))
+			if(isnull(_answer_k360))
+				return
+			buffer_mob = _answer_k360
 			return TRUE
 		if("checkout")
 			var/datum/borrowbook/b = new
@@ -378,19 +390,25 @@
 				LAZYREMOVE(inventory, b)
 			return TRUE
 		if("setauthor")
-			var/newauthor = tgui_input_text(usr, "Enter the author's name:", "", "", MAX_MESSAGE_LEN)
+			var/newauthor = act_prompt(usr, action, params, ui, "k381", list("kind" = "text", "message" = "Enter the author's name:", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(newauthor))
+				return
 			if(newauthor && scanner?.cache)
 				scanner.cache.author = newauthor
 			return TRUE
 		if("setcategory")
-			var/newcategory = tgui_input_list(usr, "Choose a category:", "Category", list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
+			var/newcategory = act_prompt(usr, action, params, ui, "k386", list("kind" = "list", "message" = "Choose a category:", "title" = "Category", "choices" = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion")))
+			if(isnull(newcategory))
+				return
 			if(newcategory)
 				upload_category = newcategory
 			return TRUE
 		if("upload")
 			if(!scanner?.cache)
 				return TRUE
-			var/choice = tgui_alert(usr, "Are you certain you wish to upload this title to the Archive?", "Confirmation", list("Confirm", "Abort"))
+			var/choice = act_prompt(usr, action, params, ui, "k393", list("message" = "Are you certain you wish to upload this title to the Archive?", "title" = "Confirmation", "choices" = list("Confirm", "Abort")))
+			if(isnull(choice))
+				return
 			if(choice != "Confirm")
 				return TRUE
 			if(scanner.cache.unique)
@@ -465,9 +483,11 @@
 			qdel(query)
 			return TRUE
 		if("orderbyid")
-			var/orderid = tgui_input_number(usr, "Enter your order:")
+			var/orderid = act_prompt(usr, action, params, ui, "k468", list("kind" = "number", "message" = "Enter your order:"))
+			if(isnull(orderid))
+				return
 			if(orderid && isnum(orderid))
-				tgui_act("targetid", list("id" = "[orderid]"))
+				tgui_act("targetid", list("id" = "[orderid]"), ui, state)
 			return TRUE
 		if("sort")
 			var/field = params["field"]
@@ -557,7 +577,7 @@
 	data["has_book"] = has_book
 	return data
 
-/obj/machinery/libraryscanner/tgui_act(action, list/params)
+/obj/machinery/libraryscanner/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
