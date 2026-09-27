@@ -158,6 +158,9 @@ GLOBAL_VAR(restart_counter)
 	vg_heat_reset()
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
 	log_world("Verdigris loaded: [vg_verdigris_version()] | features: [vg_verdigris_features()]")
+#ifdef BENCHMARK
+	benchmark_rust_mark("world: New (globals and compiled map loaded)")
+#endif
 
 	GLOB.world_startup_time = world.timeofday
 	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
@@ -183,6 +186,9 @@ GLOBAL_VAR(restart_counter)
 		return
 
 	make_datum_reference_lists()
+#ifdef BENCHMARK
+	benchmark_rust_mark("world: datum reference lists")
+#endif
 
 	var servername = CONFIG_GET(string/servername)
 	if(config && servername != null && CONFIG_GET(flag/server_suffix) && world.port > 0)
@@ -214,6 +220,9 @@ GLOBAL_VAR(restart_counter)
 	log_test("If you did not intend to enable this please check code/__defines/unit_testing.dm")
 #endif
 
+#ifdef BENCHMARK
+	benchmark_rust_mark("world: before Master init")
+#endif
 	Master.Initialize(10, FALSE, TRUE)
 
 	RunUnattendedFunctions()

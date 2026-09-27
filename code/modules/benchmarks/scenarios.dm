@@ -678,8 +678,83 @@
 	metric("icon_objects", icons, "icons", "none")
 	metric("image_objects", images, "images", "none")
 	metric("mutable_appearances", mutables, "objects", "none")
+	global_sizes()
+	pool_probe()
 
 	// Freeing things and watching private memory does not work: BYOND keeps
 	// freed memory in its own pools (clearing every overlay and all
 	// lighting moved private memory by +5 MB each). The growth through boot
 	// is measured instead, from the per-subsystem marks (boot_profile).
+
+/// Deep size of each GLOB var: list entries and datums reachable through
+/// lists and datum list vars, each counted once across all globals, in
+/// descending order. Private memory before world/New is mostly these.
+/datum/benchmark/memory_breakdown/proc/global_sizes(top = 40)
+	var/list/seen = list()
+	var/list/sizes = list()
+	for(var/name in GLOB.vars)
+		var/value = GLOB.vars[name]
+		if(!islist(value) && !istype(value, /datum))
+			continue
+		var/list/counts = list(0, 0)
+		var/list/stack = list(value)
+		while(length(stack))
+			var/thing = stack[length(stack)]
+			stack.len--
+			var/key = ref(thing)
+			if(seen[key])
+				continue
+			seen[key] = TRUE
+			if(islist(thing))
+				var/list/L = thing
+				counts[1] += length(L)
+				for(var/entry in L)
+					if(islist(entry) || (istype(entry, /datum) && !isatom(entry)))
+						stack += list(entry)
+					if(!isnum(entry) && !isnull(entry))
+						var/assoc = L[entry]
+						if(islist(assoc) || (istype(assoc, /datum) && !isatom(assoc)))
+							stack += list(assoc)
+			else if(istype(thing, /datum) && !isatom(thing))
+				var/datum/D = thing
+				counts[2]++
+				for(var/var_name in D.vars)
+					var/v = D.vars[var_name]
+					if(islist(v) && var_name != "vars")
+						stack += list(v)
+			CHECK_TICK
+		if(counts[1] + counts[2] > 1000)
+			sizes[name] = counts[1] * 12 + counts[2] * 64
+			sizes["[name]:detail"] = "[counts[1]] entries, [counts[2]] datums"
+	var/list/order = list()
+	for(var/name in sizes)
+		if(!findtext(name, ":detail"))
+			order[name] = sizes[name]
+	order = sortTim(order, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	var/list/out = list()
+	var/total = 0
+	for(var/name in order)
+		total += order[name]
+		if(length(out) < top)
+			out[name] = "[round(order[name] / 1048576, 0.1)] MB est ([sizes["[name]:detail"]])"
+	metric("globals_est_mb", total / 1048576, "MB", "none")
+	detail("globals_top", out)
+
+/// How much of private memory is free space inside BYOND's own pools:
+/// allocates `count` lists of 20 numbers (about 180 bytes each, ~180 MB for a
+/// million) and records how much private memory grew. Growth well under the
+/// allocation means the pools already held that much free, reusable memory
+/// (BYOND never returns freed memory to the OS, so private memory is a
+/// high-water mark, not what is live).
+/datum/benchmark/memory_breakdown/proc/pool_probe()
+	var/count = param("probe_lists", 1000000)
+	var/before = stage("probe_before")
+	var/list/hold = new /list(count)
+	for(var/i in 1 to count)
+		hold[i] = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
+		if(!(i % 50000))
+			CHECK_TICK
+	var/after = stage("probe_after")
+	metric("probe_allocated_mb_est", count * 184 / 1048576, "MB", "none")
+	metric("probe_private_growth_mb", after - before, "MB", "none")
+	hold = null

@@ -642,6 +642,9 @@ async function runTestWorld(
       '-close',
       ddSecurityFlag(),
       '-verbose',
+      // A profiled bench also profiles global variable initialisation and the
+      // compiled map load, which run before any DM code could start it.
+      ...(worldParams.bench_profile ? ['-profile'] : []),
       '-params',
       params,
     );
