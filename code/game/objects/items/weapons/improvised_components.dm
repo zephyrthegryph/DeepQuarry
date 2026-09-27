@@ -9,8 +9,7 @@
 /obj/item/material/butterflyconstruction/screwdriver_act(mob/user, obj/item/tool)
 	to_chat(user, "You finish the concealed blade weapon.")
 	playsound(src, tool.usesound, 50, 1)
-	new /obj/item/material/butterfly(user.loc, material.name)
-	qdel(src)
+	replace_with(src, /obj/item/material/butterfly, material.name)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/butterflyblade

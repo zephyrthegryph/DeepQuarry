@@ -45,8 +45,7 @@
 	..()
 	if(istype(W, /obj/item/surgical/circular_saw) || istype(W, /obj/item/material/knife/machete/hatchet) || istype(W, /obj/item/material/knife))
 		to_chat(user, span_notice("You use [W] to fashion a pipe out of the corn cob!"))
-		new /obj/item/clothing/mask/smokable/pipe/cobpipe (user.loc)
-		qdel(src)
+		replace_with(src, /obj/item/clothing/mask/smokable/pipe/cobpipe)
 		return
 
 /obj/item/bananapeel

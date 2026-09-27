@@ -202,8 +202,7 @@
 
 /obj/structure/railing/proc/wrench_act_timed_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."), span_notice("You dismantle \the [src]."))
-	new /obj/item/stack/material/steel(get_turf(user), 2)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/railing/welder_act(mob/user, obj/item/W)
 	if(get_integrity() >= max_integrity)

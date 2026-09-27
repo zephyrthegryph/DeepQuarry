@@ -189,8 +189,7 @@
 
 			if(seed.kitchen_tag == PLANT_PUMPKIN) // Ugggh these checks are awful.
 				user.show_message(span_notice("You carve a face into [src]!"), 1)
-				new /obj/item/clothing/head/pumpkinhead (user.loc)
-				qdel(src)
+				replace_with(src, /obj/item/clothing/head/pumpkinhead)
 				return
 
 			if(seed.chems)

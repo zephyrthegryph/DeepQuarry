@@ -1622,6 +1622,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/put_in_hands(obj/item/W)
 	if(!W)
 		return 0
+	if(is_in_hands(W))
+		return 1
 	if(put_in_active_hand(W))
 		update_inv_l_hand()
 		update_inv_r_hand()

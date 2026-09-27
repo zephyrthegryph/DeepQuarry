@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1224 in 982 files. qdel total: 2238 in 961 files.
+# Destroy total: 1224 in 982 files. qdel total: 2226 in 956 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -1316,7 +1316,6 @@ code/game/objects/items/weapons/grenades/supermatter.dm 1
 code/game/objects/items/weapons/implants/implant.dm 7
 code/game/objects/items/weapons/implants/implantaugment.dm 2
 code/game/objects/items/weapons/implants/implantcircuits.dm 1
-code/game/objects/items/weapons/improvised_components.dm 1
 code/game/objects/items/weapons/inducer.dm 1
 code/game/objects/items/weapons/lego.dm 2
 code/game/objects/items/weapons/material/ashtray.dm 1
@@ -1324,7 +1323,6 @@ code/game/objects/items/weapons/material/chainsaw.dm 1
 code/game/objects/items/weapons/material/gravemarker.dm 1
 code/game/objects/items/weapons/material/material_armor.dm 4
 code/game/objects/items/weapons/material/material_weapons.dm 2
-code/game/objects/items/weapons/material/misc.dm 2
 code/game/objects/items/weapons/material/shards.dm 2
 code/game/objects/items/weapons/material/twohanded.dm 2
 code/game/objects/items/weapons/medigun/bork_medigun.dm 1
@@ -1332,7 +1330,7 @@ code/game/objects/items/weapons/medigun/medigun_backpack_ui.dm 1
 code/game/objects/items/weapons/melee/misc.dm 1
 code/game/objects/items/weapons/melee/shock_maul.dm 1
 code/game/objects/items/weapons/mop_deploy.dm 1
-code/game/objects/items/weapons/picnic_blankets.dm 3
+code/game/objects/items/weapons/picnic_blankets.dm 1
 code/game/objects/items/weapons/policetape.dm 2
 code/game/objects/items/weapons/storage/bags.dm 1
 code/game/objects/items/weapons/storage/boxes.dm 1
@@ -1376,7 +1374,6 @@ code/game/objects/structures/mirror.dm 1
 code/game/objects/structures/morgue.dm 5
 code/game/objects/structures/props/puzzledoor.dm 1
 code/game/objects/structures/props/swarm.dm 2
-code/game/objects/structures/railing.dm 1
 code/game/objects/structures/reflectors.dm 1
 code/game/objects/structures/salvageable.dm 1
 code/game/objects/structures/signs.dm 5
@@ -1562,8 +1559,7 @@ code/modules/heat/heat.dm 1
 code/modules/holodeck/HolodeckControl.dm 4
 code/modules/holodeck/HolodeckObjects.dm 6
 code/modules/holomap/mapper.dm 1
-code/modules/hydroponics/grown.dm 2
-code/modules/hydroponics/grown_inedible.dm 1
+code/modules/hydroponics/grown.dm 1
 code/modules/hydroponics/seed.dm 2
 code/modules/hydroponics/seed_storage.dm 5
 code/modules/hydroponics/spreading/spreading.dm 2
@@ -1602,7 +1598,7 @@ code/modules/medical/diagnosis/renderers.dm 1
 code/modules/medical/scenarios/scenarios.dm 1
 code/modules/mind_body/_perk.dm 1
 code/modules/mining/abandonedcrates.dm 1
-code/modules/mining/fulton.dm 2
+code/modules/mining/fulton.dm 1
 code/modules/mining/machinery/machine_processing.dm 3
 code/modules/mining/machinery/machine_stacking.dm 1
 code/modules/mining/mine_outcrops.dm 2
@@ -1714,7 +1710,6 @@ code/modules/mob/living/simple_mob/subtypes/vore/lion.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm 10
 code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/slug.dm 1
-code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm 2
 code/modules/mob/living/simple_mob/subtypes/vore/solargrub.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm 1
@@ -1778,7 +1773,7 @@ code/modules/persistence/storage/smartfridge.dm 1
 code/modules/polls/poll_dialogs.dm 14
 code/modules/power/antimatter/containment_jar.dm 1
 code/modules/power/apc.dm 4
-code/modules/power/batteryrack.dm 2
+code/modules/power/batteryrack.dm 1
 code/modules/power/breaker_box.dm 2
 code/modules/power/cable.dm 4
 code/modules/power/cable_heavyduty.dm 1

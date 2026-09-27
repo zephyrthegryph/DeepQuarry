@@ -249,12 +249,14 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	GLOB.woof_current--
 	. = ..()
 
+/mob/living/simple_mob/vore/woof/hostile/aweful
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/woof/hostile/aweful/death()
 	. = ..()
 	var/thismany = rand(0,3)
 	if(!thismany || killswitch || GLOB.woof_maximum >= 20)
 		visible_message(span_notice("\The [src] evaporates into nothing..."))
-		qdel(src)
 		return
 	var/list/possiblewoofs = list(/mob/living/simple_mob/vore/woof/hostile/aweful/melee, /mob/living/simple_mob/vore/woof/hostile/aweful/ranged)
 	for(var/i = 1 to thismany)
@@ -262,7 +264,6 @@ GLOBAL_VAR_INIT(woof_current, 0)
 		new woof(loc, src)
 		GLOB.woof_maximum++
 		visible_message(span_warning("Another [src] appears!"))
-	qdel(src)
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/melee
 
