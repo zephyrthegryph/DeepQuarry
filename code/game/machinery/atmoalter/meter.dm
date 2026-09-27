@@ -98,7 +98,7 @@
 			return PROCESS_KILL
 
 		var/datum/signal/signal = new
-		signal.source = src
+		signal.source_handle = om_handle(src)
 		signal.transmission_method = TRANSMISSION_RADIO
 		signal.data = list(
 			"tag" = id,

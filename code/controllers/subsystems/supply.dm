@@ -607,7 +607,7 @@ SUBSYSTEM_DEF(supply)
 		clear_turfs.Cut(i,i+1)
 
 		SO.status = SUP_ORDER_SHIPPED
-		var/datum/supply_pack/SP = SO.object
+		var/datum/supply_pack/SP = SO.supply_pack_of()
 		emit_contract_event(CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, list(
 			"actor_account" = SO.funding_account_number,
 			"department" = SO.funding_department,
@@ -708,7 +708,7 @@ SUBSYSTEM_DEF(supply)
 		var/datum/money_account/funding_account = GLOB.department_accounts[O.funding_department]
 		if(funding_account?.procurement_limit > 0 && price > funding_account.procurement_limit)
 			return FALSE
-		if(!funding_account || !funding_account.debit(price, "Supply procurement", "Order #[O.ordernum]: [O.object.name]", "Supply console"))
+		if(!funding_account || !funding_account.debit(price, "Supply procurement", "Order #[O.ordernum]: [O.supply_pack_of().name]", "Supply console"))
 			return FALSE
 	else if(O.paid_amount != price || !get_account(O.funding_account_number))
 		return FALSE
@@ -784,7 +784,7 @@ SUBSYSTEM_DEF(supply)
 		idname = H.get_authentification_name()
 	else if(issilicon(user))
 		idname = user.real_name
-	refund_order(O, "Refund order #[O.ordernum]: [O.object.name]")
+	refund_order(O, "Refund order #[O.ordernum]: [O.supply_pack_of().name]")
 	release_market_order_reservation(O)
 
 	// Update order status
@@ -818,7 +818,7 @@ SUBSYSTEM_DEF(supply)
 	// Making sure they know what they're doing
 	if(tgui_alert(user, "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", "Delete Record",list("No","Yes")) == "Yes")
 		if(tgui_alert(user, "Are you really sure? There is no way to recover the order once deleted.", "Delete Record", list("No","Yes")) == "Yes")
-			refund_order(O, "Refund deleted order #[O.ordernum]: [O.object.name]")
+			refund_order(O, "Refund deleted order #[O.ordernum]: [O.supply_pack_of().name]")
 			release_market_order_reservation(O)
 			log_admin("[key_name(user)] has deleted supply order \ref[O] [O] from the user-side order history.")
 			order_history -= O
@@ -840,7 +840,7 @@ SUBSYSTEM_DEF(supply)
 
 	new_order.ordernum = ++ordernum // Ordernum is used to track the order between the playerside list of orders and the adminside list
 	new_order.index = new_order.ordernum // Index can be fabricated, or falsified. Ordernum is a permanent marker used to track the order
-	new_order.object = S
+	new_order.object_handle = om_handle(S)
 	new_order.name = S.name
 	new_order.cost = S.cost
 	new_order.market_listing_id = market_listing_id
@@ -874,7 +874,7 @@ SUBSYSTEM_DEF(supply)
 
 	adm_order.ordernum = new_order.ordernum
 	adm_order.index = new_order.index
-	adm_order.object = new_order.object
+	adm_order.object_handle = om_handle(new_order.supply_pack_of())
 	adm_order.name = new_order.name
 	adm_order.cost = new_order.cost
 	adm_order.funding_department = new_order.funding_department
@@ -948,7 +948,7 @@ SUBSYSTEM_DEF(supply)
 /datum/supply_order
 	var/ordernum							// Unfabricatable index
 	var/index								// Fabricatable index
-	var/datum/supply_pack/object = null
+	var/object_handle
 	var/cost								// Cost of the supply pack (Fabricatable) (Changes not reflected when purchasing supply packs, this is cosmetic only)
 	var/name								// Name of the supply pack datum (Fabricatable)
 	var/ordered_by = null					// Who requested the order
@@ -968,3 +968,7 @@ SUBSYSTEM_DEF(supply)
 #undef ALLOCATION_POLICY_STAFFING
 #undef ALLOCATION_POLICY_PAYROLL
 #undef DEPARTMENT_BASE_OPERATING_ALLOCATION
+
+/// LC-refs: the supply pack this order is for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
+	return om_resolve(object_handle)

@@ -283,7 +283,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	if(!frequency) return
 
 	var/datum/signal/status_signal = new
-	status_signal.source = src
+	status_signal.source_handle = om_handle(src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

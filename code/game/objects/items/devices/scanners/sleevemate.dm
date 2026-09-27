@@ -21,13 +21,11 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/datum/transcore_db/our_db // These persist all round and are never destroyed, just keep a hard ref
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/sleevemate/Initialize(mapload)
 	. = ..()
-	our_db = SStranscore.db_by_key(db_key)
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
@@ -97,7 +95,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			clear_mind()
 		if("Backup")
 			to_chat(user,span_notice("Internal copy of [stored_mind.name] backed up to database."))
-			our_db.m_backup(stored_mind,null,one_time = TRUE)
+			our_db().m_backup(stored_mind,null,one_time = TRUE)
 		if("Cancel")
 			return
 
@@ -319,7 +317,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	var/mob/living/target = task.target
 	var/nif = task.nif
 	var/mob/usr_mob = task.actor
-	our_db.m_backup(target.mind,nif,one_time = TRUE)
+	our_db().m_backup(target.mind,nif,one_time = TRUE)
 	to_chat(usr_mob,span_notice("Mind backed up!"))
 
 /obj/item/sleevemate/proc/Topic_timed_failed(datum/om/task/timed/sleevemate_topic/task)
@@ -377,3 +375,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		new /obj/item/mindbinder(src.loc)
 	qdel(src)
 	return 1
+
+/// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
+/obj/item/sleevemate/proc/our_db() as /datum/transcore_db
+	return SStranscore.db_by_key(db_key)

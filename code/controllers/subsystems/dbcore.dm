@@ -465,8 +465,6 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 	var/sql
 	var/arguments
 
-	var/datum/callback/success_callback
-	var/datum/callback/fail_callback
 
 	// Status information
 	/// Current status of the query.

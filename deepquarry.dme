@@ -901,6 +901,7 @@
 #include "code\datums\om\pipeline.dm"
 #include "code\datums\om\periodic.dm"
 #include "code\datums\om\native.dm"
+#include "code\datums\om\ref_relations.dm"
 #include "code\datums\om\registry.dm"
 #include "code\datums\om\relation.dm"
 #include "code\datums\om\scheduler.dm"

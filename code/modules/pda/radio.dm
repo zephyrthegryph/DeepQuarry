@@ -42,7 +42,7 @@
 		return
 
 	var/datum/signal/signal = new()
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	signal.transmission_method = TRANSMISSION_RADIO
 	signal.data[key] = value
 	if(key2)
@@ -75,13 +75,13 @@
 			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
 
 /obj/item/radio/integrated/receive_signal(datum/signal/signal)
-	if(bot_type && isbot(signal.source) && signal.data["type"] == bot_type)
+	if(bot_type && isbot(signal.source()) && signal.data["type"] == bot_type)
 		if(!botlist)
 			botlist = new()
 
-		botlist |= signal.source
+		botlist |= signal.source()
 
-		if(active == signal.source)
+		if(active == signal.source())
 			var/list/b = signal.data
 			botstatus = b.Copy()
 
@@ -123,7 +123,7 @@
 	GLOB.lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
 
 	var/datum/signal/signal = new
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	signal.encryption = code
 	signal.data["message"] = message
 

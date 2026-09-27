@@ -556,7 +556,7 @@
 	return market_bids?[bid_id]
 
 /datum/controller/subsystem/supply/proc/order_price(datum/supply_order/order)
-	return order?.quoted_price > 0 ? order.quoted_price : pack_price(order.object)
+	return order?.quoted_price > 0 ? order.quoted_price : pack_price(order.supply_pack_of())
 
 /datum/controller/subsystem/supply/proc/market_contract_funding(reservation_key, mob/living/user, price) as /datum/contract/faction_agent
 	if(!reservation_key || !isnum(price) || price <= 0)
@@ -640,7 +640,7 @@
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
 	if(!counterparty)
 		return FALSE
-	var/datum/cargo_market_transaction/transaction = record_market_transaction(CARGO_MARKET_BUY, counterparty.id, "Purchased [order.object.name] (order #[order.ordernum])", order.paid_amount, order.market_requester_account, order.market_cover_name, order.market_contract_key)
+	var/datum/cargo_market_transaction/transaction = record_market_transaction(CARGO_MARKET_BUY, counterparty.id, "Purchased [order.supply_pack_of().name] (order #[order.ordernum])", order.paid_amount, order.market_requester_account, order.market_cover_name, order.market_contract_key)
 	adjust_station_faction_reputation(counterparty.faction_id, 1)
 	adjust_department_faction_reputation(order.funding_department, counterparty.faction_id, 2)
 	if(order.market_requester_account)
@@ -657,9 +657,9 @@
 		"market_transaction_id" = transaction?.id,
 		"market_funding" = order.market_contract_funded ? CARGO_MARKET_FUNDING_CONTRACT : (order.personal_order ? CARGO_MARKET_FUNDING_PERSONAL : CARGO_MARKET_FUNDING_DEPARTMENT),
 		"order_id" = order.ordernum,
-		"pack_type" = order.object.type,
-		"pack_group" = order.object.group,
-		"contraband" = !!order.object.contraband,
+		"pack_type" = order.supply_pack_of().type,
+		"pack_group" = order.supply_pack_of().group,
+		"contraband" = !!order.supply_pack_of().contraband,
 		"fact_id" = "market-purchase:[order.ordernum]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,

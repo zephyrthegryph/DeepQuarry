@@ -52,25 +52,26 @@ SUBSYSTEM_DEF(transcore)
 		src.current_run.Cut()
 		for(var/key in databases)
 			var/datum/transcore_db/db = databases[key]
-			for(var/obj/item/implant/backup/imp as anything in db.implants)
-				src.current_run[imp] = db
+			for(var/imp_handle in db.implants)
+				src.current_run[imp_handle] = db
 
 	var/list/current_run = src.current_run
 	while(length(current_run))
-		var/obj/item/implant/backup/imp = current_run[length(current_run)]
-		var/datum/transcore_db/db = current_run[imp]
+		var/imp_handle = current_run[length(current_run)]
+		var/datum/transcore_db/db = current_run[imp_handle]
 		current_run.len--
+		var/obj/item/implant/backup/imp = om_resolve(imp_handle)
 
-		//Remove if not in a human anymore.
+		//Remove if deleted, or not in a human anymore.
 		if(!imp || !isorgan(imp.loc))
-			db.implants -= imp
+			db.implants -= imp_handle
 			continue
 
 		//We're in an organ, at least.
 		var/obj/item/organ/external/EO = imp.loc
 		var/mob/living/carbon/human/H = EO.owner
 		if(!H)
-			db.implants -= imp
+			db.implants -= imp_handle
 			continue
 
 		//In a human
@@ -207,7 +208,8 @@ SUBSYSTEM_DEF(transcore)
 	var/list/datum/transhuman/mind_record/backed_up = list()	// All known mind records, indexed by MR.mindname/mind.name
 	var/list/datum/transhuman/mind_record/has_left		// Why do we even have this?
 	var/list/datum/transhuman/body_record/body_scans = list()	// All known body records, indexed by BR.mydna.name
-	var/list/obj/item/implant/backup/implants = list()	// All OPERATING implants that are being ticked
+	/// All OPERATING backup implants that are being ticked, as OM handles (a deleted one is dropped on its next tick).
+	var/list/implants = list()
 
 	var/core_dumped = FALSE
 	var/key // Key for this DB
@@ -295,3 +297,9 @@ SUBSYSTEM_DEF(transcore)
 
 #undef SSTRANSCORE_BACKUPS
 #undef SSTRANSCORE_IMPLANTS
+
+/// The database owns its records: mind records (backed_up, and has_left once they cryo) and
+/// body records, keyed by name. A core dump moves the mind records to the disk first.
+/datum/transcore_db/declared_owned_list_vars()
+	. = ..()
+	. = (. || list()) + list("backed_up", "has_left", "body_scans")

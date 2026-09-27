@@ -15,7 +15,6 @@
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/datum/transcore_db/our_db // These persist all round and are never destroyed, just keep a hard ref
 
 /obj/item/implant/backup/get_data()
 	var/dat = {"
@@ -34,16 +33,11 @@
 	. = ..()
 	if(!isnull(db_key))
 		src.db_key = db_key
-	our_db = SStranscore.db_by_key(src.db_key)
-
-/obj/item/implant/backup/Destroy()
-	our_db.implants -= src
-	return ..()
 
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
 	if(istype(H))
 		BITSET(H.hud_updateflag, BACKUP_HUD)
-		our_db.implants |= src
+		our_db().implants |= om_handle(src)
 
 		return 1
 
@@ -230,3 +224,7 @@
 /obj/structure/backup_implanter_ch/proc/wrench_done(mob/user, anchoring)
 	to_chat(user, span_notice(anchoring ? "You wrench the implanter into place." : "You unwrench the implanter."))
 	anchored = anchoring
+
+/// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
+/obj/item/implant/backup/proc/our_db() as /datum/transcore_db
+	return SStranscore.db_by_key(db_key)

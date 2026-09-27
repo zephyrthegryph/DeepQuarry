@@ -18,8 +18,8 @@
 	var/list/chunk_manifest
 	var/list/chunk_files
 	var/list/window_geometry_manifest
-	var/datum/asset/simple/shell_assets
-	var/datum/asset/simple/namespaced/chunk_assets
+	var/shell_assets_handle
+	var/chunk_assets_handle
 
 /datum/tgui_asset_generation/proc/get_default_geometry(interface_name)
 	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)
@@ -31,23 +31,23 @@
 	return LAZYACCESS(chunk_manifest, interface_name)
 
 /datum/tgui_asset_generation/proc/get_chunk_base_url()
-	if(istype(chunk_assets, /datum/asset/simple/namespaced/tgui_live_generation_chunks))
-		var/datum/asset/simple/namespaced/tgui_live_generation_chunks/live_chunks = chunk_assets
+	if(istype(chunk_assets(), /datum/asset/simple/namespaced/tgui_live_generation_chunks))
+		var/datum/asset/simple/namespaced/tgui_live_generation_chunks/live_chunks = chunk_assets()
 		return live_chunks.get_public_base_url()
-	if(istype(chunk_assets, /datum/asset/simple/namespaced/tgui_chunks))
-		var/datum/asset/simple/namespaced/tgui_chunks/boot_chunks = chunk_assets
+	if(istype(chunk_assets(), /datum/asset/simple/namespaced/tgui_chunks))
+		var/datum/asset/simple/namespaced/tgui_chunks/boot_chunks = chunk_assets()
 		return boot_chunks.get_public_base_url()
 	return null
 
 /datum/tgui_asset_generation/proc/get_chunk_assets(list/filenames)
 	if(!islist(filenames) || !length(filenames))
 		return null
-	if(istype(chunk_assets, /datum/asset/simple/namespaced/tgui_live_generation_chunks))
-		var/datum/asset/simple/namespaced/tgui_live_generation_chunks/live_chunks = chunk_assets
+	if(istype(chunk_assets(), /datum/asset/simple/namespaced/tgui_live_generation_chunks))
+		var/datum/asset/simple/namespaced/tgui_live_generation_chunks/live_chunks = chunk_assets()
 		return live_chunks.get_assets(filenames)
 	var/list/result = list()
 	for(var/filename in filenames)
-		var/datum/asset_cache_item/item = chunk_assets?.assets[filename]
+		var/datum/asset_cache_item/item = chunk_assets()?.assets[filename]
 		if(item)
 			result[filename] = item
 	return result
@@ -154,8 +154,8 @@ SUBSYSTEM_DEF(tgui)
 	generation.chunk_manifest = chunk_manifest
 	generation.chunk_files = chunk_files
 	generation.window_geometry_manifest = window_geometry_manifest
-	generation.shell_assets = get_asset_datum(/datum/asset/simple/tgui)
-	generation.chunk_assets = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+	generation.shell_assets_handle = om_handle(get_asset_datum(/datum/asset/simple/tgui))
+	generation.chunk_assets_handle = om_handle(get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks))
 	asset_generations += generation
 	current_asset_generation = generation
 	return generation
@@ -197,8 +197,8 @@ SUBSYSTEM_DEF(tgui)
 	generation.chunk_manifest = new_manifest
 	generation.chunk_files = new_chunk_files
 	generation.window_geometry_manifest = new_geometry_manifest
-	generation.shell_assets = new_shell
-	generation.chunk_assets = new_chunks
+	generation.shell_assets_handle = om_handle(new_shell)
+	generation.chunk_assets_handle = om_handle(new_chunks)
 	asset_generations += generation
 	// The single assignment is the publication point. A window sees the complete
 	// old generation or the complete new one, never partially-updated state.
@@ -314,7 +314,7 @@ SUBSYSTEM_DEF(tgui)
 	window.initialize(
 		strict_mode = TRUE,
 		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
-		assets = list(get_current_asset_generation().shell_assets),
+		assets = list(get_current_asset_generation().shell_assets()),
 	)
 	var/flush_queue = window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/fontawesome))
 	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgfont))
@@ -626,3 +626,11 @@ SUBSYSTEM_DEF(tgui)
 	// Clear the old list.
 	source.tgui_open_uis.Cut()
 	return TRUE
+
+/// LC-refs: the shell asset bundle of this generation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_asset_generation/proc/shell_assets() as /datum/asset/simple
+	return om_resolve(shell_assets_handle)
+
+/// LC-refs: the chunk asset bundle of this generation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_asset_generation/proc/chunk_assets() as /datum/asset/simple/namespaced
+	return om_resolve(chunk_assets_handle)

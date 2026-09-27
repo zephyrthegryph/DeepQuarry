@@ -191,7 +191,7 @@
 		return
 
 	var/datum/signal/status_signal = new
-	status_signal.source = source
+	status_signal.source_handle = om_handle(source)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

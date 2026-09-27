@@ -427,16 +427,21 @@ SUBSYSTEM_DEF(timer)
 
 	bucketJoin()
 
-/datum/timedevent/Destroy()
-	..()
-	if (flags & TIMER_UNIQUE && hash)
-		timer_subsystem.hashes -= hash
-
+/// Phase 1: leave the callback target's active-timer list while the callback (owned, deleted
+/// in phase 4) still names it.
+/datum/timedevent/lifecycle_unbind()
 	if (callBack && callBack.object && callBack.object != GLOBAL_PROC && callBack.object._active_timers)
 		callBack.object._active_timers -= src
 		UNSETEMPTY(callBack.object._active_timers)
 
-	callBack = null
+/datum/timedevent/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("callBack")
+
+/datum/timedevent/Destroy()
+	..()
+	if (flags & TIMER_UNIQUE && hash)
+		timer_subsystem.hashes -= hash
 
 	if (flags & TIMER_STOPPABLE)
 		timer_subsystem.timer_id_dict -= id

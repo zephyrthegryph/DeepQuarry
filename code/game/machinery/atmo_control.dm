@@ -393,7 +393,7 @@
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -564,7 +564,7 @@
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -699,7 +699,7 @@
 
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.source = src
+		signal.source_handle = om_handle(src)
 
 		signal.data = list(
 			"tag" = device_tag,
@@ -743,7 +743,7 @@
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source = src
+			signal.source_handle = om_handle(src)
 			signal.data = list(
 				"tag" = device_tag,
 				"status" = 1,
@@ -764,7 +764,7 @@
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source = src
+			signal.source_handle = om_handle(src)
 			signal.data = list(
 				"tag" = device_tag,
 				"power_toggle" = 1,
@@ -780,7 +780,7 @@
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source = src
+			signal.source_handle = om_handle(src)
 			signal.data = list(
 				"tag" = device_tag,
 				"inject" = 1,

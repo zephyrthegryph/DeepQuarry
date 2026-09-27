@@ -127,7 +127,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/datum/radio_frequency/frequency = SSradio.return_frequency(1311)
 	if(!frequency) return
 	var/datum/signal/status_signal = new
-	status_signal.source = src
+	status_signal.source_handle = om_handle(src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 	frequency.post_signal(src, status_signal)

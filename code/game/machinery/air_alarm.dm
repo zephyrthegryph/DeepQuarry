@@ -588,7 +588,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source = src
+	signal.source_handle = om_handle(src)
 
 	signal.data = command
 	signal.data["tag"] = target
@@ -646,7 +646,7 @@
 		return
 
 	var/datum/signal/alert_signal = new
-	alert_signal.source = src
+	alert_signal.source_handle = om_handle(src)
 	alert_signal.transmission_method = TRANSMISSION_RADIO
 	alert_signal.data["zone"] = alarm_area.name
 	alert_signal.data["type"] = "Atmospheric"

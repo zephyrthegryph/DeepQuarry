@@ -131,7 +131,7 @@
 			strict_mode = TRUE,
 			fancy = user.read_preference(/datum/preference/toggle/tgui_fancy),
 			assets = list(
-				SStgui.get_current_asset_generation().shell_assets,
+				SStgui.get_current_asset_generation().shell_assets(),
 				))
 	else
 		window.send_message("ping")

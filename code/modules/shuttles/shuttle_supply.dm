@@ -15,7 +15,7 @@
 
 	// Set the supply shuttle displays to read out the ETA
 	var/datum/signal/S = new()
-	S.source = src
+	S.source_handle = om_handle(src)
 	S.data = list("command" = "supply")
 	var/datum/radio_frequency/F = SSradio.return_frequency(1435)
 	F.post_signal(src, S)

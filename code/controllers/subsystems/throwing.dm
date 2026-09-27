@@ -39,15 +39,30 @@ SUBSYSTEM_DEF(throwing)
 
 	currentrun = null
 
+/// A throw in flight -> the movable being thrown (which holds it as `throwing`). Read with
+/// throw_subject(). Deleting the movable deletes the throw; the unlink takes the movable out of
+/// SSthrowing and clears its `throwing`.
+/datum/om/relation/throw_of
+	name = "throw"
+	source_single = TRUE
+	target_single = TRUE
+	on_target_delete = OM_END_DELETE_OTHER
+
+/datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	source.UnregisterSignal(target, COMSIG_LIVING_TURF_COLLISION)
+	SSthrowing.processing -= target
+	SSthrowing.currentrun -= target
+	if(target.throwing == source)
+		target.throwing = null
+
 /datum/thrownthing
-	///Defines the atom that has been thrown (Objects and Mobs, mostly.)
-	var/atom/movable/thrownthing
 	///OM handle to the original intended target of the throw, to prevent hardDels
 	var/initial_target
-	///The turf that the target was on, if it's not a turf itself.
-	var/turf/target_turf
-	///The turf that we were thrown from.
-	var/turf/starting_turf
+	///OM handle to the turf that the target was on, if it's not a turf itself.
+	var/target_turf
+	///OM handle to the turf that we were thrown from.
+	var/starting_turf
 	///If the target happens to be a carbon and that carbon has a body zone aimed at, this is carried on here.
 	var/target_zone
 	///The initial direction of the thrower of the thrownthing for building the trajectory of the throw.
@@ -80,7 +95,7 @@ SUBSYSTEM_DEF(throwing)
 	var/gentle = FALSE
 	///How many tiles that need to be moved in order to travel to the target.
 	var/diagonal_error
-	///If a thrown thing has a callback, it can be invoked here within thrownthing.
+	///If a thrown thing has a callback, it can be invoked here within thrownthing. Owned: it goes with the throw.
 	var/datum/callback/callback
 	///Mainly exists for things that would freeze a thrown object in place, like a timestop'd tile. Or a Tractor Beam.
 	var/paused = FALSE
@@ -93,11 +108,11 @@ SUBSYSTEM_DEF(throwing)
 
 /datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, callback, target_zone)
 	. = ..()
-	src.thrownthing = thrownthing
-	RegisterSignal(thrownthing, COMSIG_QDELETING, PROC_REF(on_thrownthing_qdel))
+	om_link(src, thrownthing, /datum/om/relation/throw_of)
 	RegisterSignal(thrownthing, COMSIG_LIVING_TURF_COLLISION, PROC_REF(hit_atom))
-	src.starting_turf = get_turf(thrownthing)
-	src.target_turf = get_turf(target)
+	src.starting_turf = om_handle(get_turf(thrownthing))
+	var/turf/target_turf = get_turf(target)
+	src.target_turf = om_handle(target_turf)
 	if(target_turf != target)
 		src.initial_target = om_handle(target)
 	src.init_dir = init_dir
@@ -133,23 +148,9 @@ SUBSYSTEM_DEF(throwing)
 
 	start_time = world.time
 
-/datum/thrownthing/Destroy()
-	UnregisterSignal(thrownthing, COMSIG_QDELETING)
-	UnregisterSignal(thrownthing, COMSIG_LIVING_TURF_COLLISION)
-	SSthrowing.processing -= thrownthing
-	SSthrowing.currentrun -= thrownthing
-	thrownthing.throwing = null
-	thrownthing = null
-	thrower = null
-	initial_target = null
-	callback = null
-	return ..()
-
-///Defines the datum behavior on the thrownthing's qdeletion event.
-/datum/thrownthing/proc/on_thrownthing_qdel(atom/movable/source, force)
-	SIGNAL_HANDLER
-
-	qdel(src)
+/datum/thrownthing/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("callback")
 
 /// Returns the thrower, or null
 /datum/thrownthing/proc/get_thrower()
@@ -158,8 +159,8 @@ SUBSYSTEM_DEF(throwing)
 		thrower = null
 
 /datum/thrownthing/proc/tick()
-	var/atom/movable/AM = thrownthing
-	if (!isturf(AM.loc) || !AM.throwing)
+	var/atom/movable/AM = throw_subject()
+	if (!AM || !isturf(AM.loc) || !AM.throwing)
 		finalize()
 		return
 
@@ -167,7 +168,7 @@ SUBSYSTEM_DEF(throwing)
 		delayed_time += world.time - last_move
 		return
 
-	if (dist_travelled && hitcheck(get_turf(thrownthing))) //to catch sneaky things moving on our tile while we slept
+	if (dist_travelled && hitcheck(get_turf(AM))) //to catch sneaky things moving on our tile while we slept
 		finalize()
 		return
 
@@ -177,6 +178,7 @@ SUBSYSTEM_DEF(throwing)
 	last_move = world.time
 
 	//calculate how many tiles to move, making up for any missed ticks.
+	var/turf/target_turf = om_resolve(src.target_turf)
 	var/tilestomove = CEILING(min(((((world.time+world.tick_lag) - start_time + delayed_time) * speed) - (dist_travelled ? dist_travelled : -1)), speed*MAX_TICKS_TO_MAKE_UP) * (world.tick_lag * SSthrowing.wait), 1)
 	while (tilestomove-- > 0)
 		if ((dist_travelled >= maxrange || AM.loc == target_turf) && (A && A.get_gravity()))
@@ -221,6 +223,7 @@ SUBSYSTEM_DEF(throwing)
 /datum/thrownthing/proc/finalize(hit = FALSE, t_target=null)
 	set waitfor = FALSE
 	//done throwing, either because it hit something or it finished moving
+	var/atom/movable/thrownthing = throw_subject()
 	if(QDELETED(thrownthing))
 		return
 	thrownthing.throwing = null
@@ -256,6 +259,8 @@ SUBSYSTEM_DEF(throwing)
 
 /datum/thrownthing/proc/hitcheck(turf/T)
 	var/atom/movable/hit_thing
+	var/atom/movable/thrownthing = throw_subject()
+	var/mob/thrower = get_thrower()
 	for (var/thing in T)
 		var/atom/movable/AM = thing
 		if (AM == thrownthing || (AM == thrower && !ismob(thrownthing)))

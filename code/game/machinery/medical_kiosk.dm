@@ -33,7 +33,6 @@
 
 	var/mob/living/active_user
 	var/db_key
-	var/datum/transcore_db/our_db
 
 	//These are the variables that control 'When we were
 	var/last_dispensed
@@ -42,12 +41,7 @@
 	/// This determines if the kiosk can dispense or not. Edit the below line to FALSE if you don't want them to do such.
 	var/can_dispense = TRUE
 
-/obj/machinery/medical_kiosk/Initialize(mapload)
-	. = ..()
-	our_db = SStranscore.db_by_key(db_key)
-
 /obj/machinery/medical_kiosk/Destroy()
-	our_db = null //Remove the reference we have to our DB.
 	active_user = null
 	. = ..()
 
@@ -121,7 +115,7 @@
 			var/health_report = medical_scan(user)
 			to_chat(user, span_boldnotice("Health report results:")+health_report)
 		if("Backup Scan")
-			if(!our_db)
+			if(!our_db())
 				to_chat(user, span_notice(span_bold("Backup scan results:")) + "<br>DATABASE ERROR!")
 			else
 				var/scan_report = do_backup_scan(user)
@@ -354,7 +348,7 @@
 	if(nif)
 		persist_nif_data(user)
 
-	our_db.m_backup(user.mind,nif,one_time = TRUE)
+	our_db().m_backup(user.mind,nif,one_time = TRUE)
 	var/datum/transhuman/body_record/BR = new()
 	BR.init_from_mob(user, TRUE, TRUE, database_key = db_key)
 
@@ -378,3 +372,7 @@
 #undef ALCOHOL_POISONING
 #undef BLOODLOSS
 #undef WEIRD_ORGANS // malignants
+
+/// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
+/obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
+	return SStranscore.db_by_key(db_key)
