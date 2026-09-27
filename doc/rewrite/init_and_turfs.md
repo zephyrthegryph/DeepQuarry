@@ -111,6 +111,58 @@ target can be planned in full.
 | 19 | `/turf/unsimulated/floor` | 6,548 | 7 | 622 | 1 | Type table |
 | 20 | `/obj/structure/cable/green` | 3,121 | 17 | 3 k / 12 k | 1 | Intern `atom_colours` |
 
+### 0.4 Where the rest of private memory goes (2026-09-27)
+
+Runs `r2-*` (memory marks read DreamDaemon's private bytes, sampled once a
+second from outside). Southern Cross, warm caches, 3 boots:
+
+| Stage | Private MB | Growth |
+|---|---|---|
+| empty DM world (reference) | 4 | |
+| `world/New()` entered: compiled world, globals, compiled map | 680-700 | **~680** |
+| datum reference lists, before Master init | ~740 | +40 |
+| Atoms init | ~985 | +245 |
+| air (turf registration, pipenets) | ~1,070 | +85 |
+| Lighting | ~1,140 | +70 |
+| MC init done | ~1,150 | |
+| round start and the 10 s settle | 1,195-1,220 | +45-70 (was +320-390) |
+| **booted** | **1,190-1,220** (was 1,480-1,590) | |
+| peak over the run | 1,210-1,380 (was 1,820-1,880) | |
+
+What the experiments showed:
+
+- **The ~680 MB before `world/New()` is the compiled world itself, not
+  the map and not DM data.** The minitest map (30 k turfs) enters
+  `world/New()` at 635 MB against 680-700 for Southern Cross (393 k
+  turfs). The GLOB lists hold ~8 MB in total (deep counts, `globals_top`:
+  largest `dq_icon_metadata_cache` 1.9 MB, `state_schemas` 1.6 MB,
+  `asset_datums` 1.2 MB). A profile started with the process (`-profile`)
+  shows no DM proc time before `world/New()`: it is BYOND loading the .dmb
+  (47 MB) and the .rsc (208 MB, which compiles in 224 MB of `sound/` and
+  379 MB of `icons/gen/` sources), growing linearly for ~11 s.
+- **Private memory is live memory.** Freeing every overlay and all lighting
+  did not lower it (BYOND keeps freed memory in its pools), but a probe that
+  allocated ~180 MB of lists grew it by 217 MB: the pools held no reusable
+  free space.
+- **Appearances are small.** 42,961 unique atom appearances, 24,137 unique
+  overlay/underlay appearances and 531,878 overlay references over 488 k
+  atoms; 1,331 `/icon` objects, no stray images or mutable appearances. At
+  BYOND's ~100-200 bytes per appearance that is 10-15 MB plus ~2 MB of
+  references.
+- **Round start regenerated every batched spritesheet** (+260 MB, on every
+  Asset Loading fire): `SMART_CACHE_ASSETS` defaulted off. Fixed (on by
+  default; it invalidates itself).
+
+Fixes, by size:
+
+| Item | Size | Fix |
+|---|---|---|
+| Compiled world (.dmb + .rsc load) | ~680 MB | Keep sounds out of the .rsc: play them from files served by the asset CDN / `file()` at runtime (224 MB of sources). Prune unused icon states and the `icons/gen` duplicates. Measure with a sound-stripped build first. |
+| Atoms (map objects, their vars and lists) | ~245 MB | §3.1 type tables (space turfs 92 MB est.), rule bindings as type tables, interned per-type lists (§0.3). |
+| Lighting datums | ~70 MB | §5 option A. |
+| Batched spritesheets at round start | 260 MB | Done (smart cache on). |
+| Appearances, strings | ~15 MB | Not worth a change now: appearances are already shared by BYOND; string interning is automatic in BYOND. |
+
 ## 1. Boot profile
 
 ### 1.1 Subsystems (clean builds, 3 boots)
