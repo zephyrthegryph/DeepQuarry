@@ -16,6 +16,7 @@
 	if((status & ORGAN_DEAD) && dead_icon)
 		icon_state = dead_icon
 
+// LIFECYCLE: it leaves its owner's organ tables.
 /obj/item/organ/internal/Destroy()
 	if(owner)
 		owner.internal_organs -= src
