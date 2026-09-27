@@ -9,11 +9,11 @@
 /obj/effect/calldown_attack/Initialize(mapload)
 	. = ..()
 	var/delay = rand(2.5 SECONDS, 3 SECONDS)
-	addtimer(CALLBACK(src, PROC_REF(spawn_object)), delay - 0.7 SECONDS)
+	om_after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object))
 
 /obj/effect/calldown_attack/proc/spawn_object()
 	new /obj/effect/falling_effect/calldown_attack(loc)
-	QDEL_IN(src, 0.7 SECONDS)
+	expire(0.7 SECONDS)
 
 /obj/effect/falling_effect/calldown_attack
 	falling_type = /obj/effect/illusionary_fall

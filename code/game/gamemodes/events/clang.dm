@@ -84,7 +84,7 @@
 
 	// Get steps needed and then await that to despawn
 	var/despawn_time = sqrt(((end.x - loc.x)**2) + ((end.y - loc.y)**2)) // distance of a line...
-	QDEL_IN(src, despawn_time + 5 SECONDS) //Give a small extra time before we disappear entirely.
+	expire(despawn_time + 5 SECONDS) //Give a small extra time before we disappear entirely.
 
 /obj/effect/immovablerod/Bump(atom/clong)
 
@@ -123,12 +123,12 @@
 			has_hunted_unlucky = TRUE
 			walk(src, 0)
 			//stone_grinding.ogg
-			addtimer(CALLBACK(src, PROC_REF(fetch_boy), unlucky_bugger), 1 SECOND, TIMER_DELETE_ME)
+			om_after(src, 1 SECOND, PROC_REF(fetch_boy), unlucky_bugger)
 			break
 
 /obj/effect/immovablerod/proc/fetch_boy(unlucky_bugger)
 	walk_towards(src, unlucky_bugger, 1)
-	addtimer(CALLBACK(src, PROC_REF(resume_path)), 2 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 2 SECONDS, PROC_REF(resume_path))
 
 /obj/effect/immovablerod/proc/resume_path()
 	walk(src, 0)

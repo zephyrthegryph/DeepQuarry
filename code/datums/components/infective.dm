@@ -31,7 +31,7 @@
 
 	if(expire_in)
 		expire_time = world.time + expire_in
-		QDEL_IN(src, expire_in)
+		om_qdel_after(src, expire_in)
 
 	is_weak = weak
 	src.weak_infection_chance = weak_infection_chance

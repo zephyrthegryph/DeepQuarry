@@ -149,7 +149,7 @@
 	var/temploc = src.loc//Saves the current location to know where to step away from
 	walk_away(src,temploc,stepdist)//I must go, my people need me
 
-	addtimer(CALLBACK(src, PROC_REF(detonate)), rand(15, 60), TIMER_DELETE_ME)
+	om_after(src, rand(15, 60), PROC_REF(detonate))
 
 /obj/item/grenade/flashbang/cluster
 	banglet = TRUE
@@ -163,7 +163,7 @@
 	var/temploc = src.loc
 	walk_away(src,temploc,stepdist)
 
-	addtimer(CALLBACK(src, PROC_REF(detonate)), rand(15, 60), TIMER_DELETE_ME)
+	om_after(src, rand(15, 60), PROC_REF(detonate))
 
 /obj/item/grenade/flashbang/clusterbang/primed
 	desc = "This clusterbang seems to have already been activated. Uhoh."

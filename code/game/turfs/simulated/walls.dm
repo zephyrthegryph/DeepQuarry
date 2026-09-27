@@ -293,7 +293,7 @@
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	addtimer(CALLBACK(src, PROC_REF(thermitemelt_cleanup), O), 10 SECONDS)
+	om_after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), O)
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
@@ -320,7 +320,7 @@
 
 /turf/simulated/wall/proc/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
-		addtimer(CALLBACK(src, PROC_REF(burn_collapse), temperature, girder_material.name), 2)
+		om_after(src, 2, PROC_REF(burn_collapse), temperature, girder_material.name)
 
 /turf/simulated/wall/proc/burn_collapse(temperature, girder_mat_name)
 	new /obj/structure/girder(src, girder_mat_name)

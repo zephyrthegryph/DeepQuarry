@@ -54,7 +54,7 @@
 		if(prob(15))
 			person.status_at_least(EFFECT_STUNNED, 2)
 			to_chat(person, span_danger(pick("You have a coughing fit!", "You can't stop coughing!")))
-			addtimer(CALLBACK(src, PROC_REF(extraCough), person), 3 SECONDS)
+			om_after(src, 3 SECONDS, PROC_REF(extraCough), person)
 
 	for(var/turf/simulated/floor/ground in circleviewturfs(src, 3))
 		if(ground.can_dirty)
@@ -69,7 +69,7 @@
 
 /obj/effect/anomaly/dust/proc/extraCough(mob/living/coughing)
 	coughing.emote("cough")
-	addtimer(CALLBACK(coughing, TYPE_PROC_REF(/mob, emote), "cough"), 3 SECONDS)
+	om_after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), "cough")
 
 /obj/effect/anomaly/dust/detonate()
 	COOLDOWN_RESET(src, pulse_cooldown)

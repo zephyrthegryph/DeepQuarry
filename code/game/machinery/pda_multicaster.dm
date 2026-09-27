@@ -129,7 +129,7 @@
 	stat |= EMPED
 	update_power()
 	var/duration = (300 * 10)/severity
-	addtimer(CALLBACK(src, PROC_REF(emp_recover)), rand(duration - 20, duration + 20), TIMER_DELETE_ME)
+	om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover))
 	update_icon()
 	..()
 

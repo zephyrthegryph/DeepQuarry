@@ -96,7 +96,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	setup_tgui_camera()
 
 	//This is a pretty terrible way of doing this.
-	addtimer(CALLBACK(src, PROC_REF(register_to_holder)), 5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(register_to_holder))
 
 
 

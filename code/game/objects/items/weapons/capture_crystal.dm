@@ -487,7 +487,7 @@
 	var/image/coolanimation = image('icons/obj/capture_crystal_vr.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	thing.overlays += coolanimation
-	addtimer(CALLBACK(src, PROC_REF(animate_action_finished),thing,coolanimation), 1.1 SECOND, TIMER_DELETE_ME)
+	om_after(src, 1.1 SECOND, PROC_REF(animate_action_finished), thing, coolanimation)
 
 /obj/item/capture_crystal/proc/animate_action_finished(atom/thing,image/coolanimation)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -515,14 +515,14 @@
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 	else if(!active)					//The ball isn't set up, let's try to set it up.
 		if(isliving(target))	//We're hitting a mob, let's try to capture it.
-			addtimer(CALLBACK(src, PROC_REF(activate), thrower, target), 10, TIMER_DELETE_ME)
+			om_after(src, 10, PROC_REF(activate), thrower, target)
 			return
-		addtimer(CALLBACK(src, PROC_REF(activate), thrower, src), 10, TIMER_DELETE_ME)
+		om_after(src, 10, PROC_REF(activate), thrower, src)
 	else if(!bound_mob)				//We hit something else, and we don't have a mob, so we can't really do anything!
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 	else if(bound_mob in contents)	//We have our mob! Let's try to let it out.
-		addtimer(CALLBACK(src, PROC_REF(unleash), thrower, src), 10, TIMER_DELETE_ME)
+		om_after(src, 10, PROC_REF(unleash), thrower, src)
 	else						//Our mob isn't here, we can't do anything.
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)

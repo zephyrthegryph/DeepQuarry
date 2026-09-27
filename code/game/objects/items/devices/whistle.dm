@@ -8,7 +8,7 @@
 	slot_flags = SLOT_EARS
 
 	var/use_message = "Halt! Security!"
-	var/spamcheck = 0
+	COOLDOWN_DECLARE(spamcheck)
 	var/insults
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
@@ -35,7 +35,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if (spamcheck)
+	if (!COOLDOWN_FINISHED(src, spamcheck))
 		return
 
 	if(isnull(insults))
@@ -50,8 +50,7 @@
 		else
 			to_chat(user, span_danger("*BZZZZZZZZT*"))
 
-	spamcheck = 1
-	addtimer(VARSET_CALLBACK(src, spamcheck, 0), 2 SECONDS)
+	COOLDOWN_START(src, spamcheck, 2 SECONDS)
 
 /obj/item/hailer/emag_act(remaining_charges, mob/user)
 	if(isnull(insults))

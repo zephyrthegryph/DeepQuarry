@@ -134,7 +134,7 @@
 		var/drop_y = src.y - 2
 		var/drop_z = src.z
 		GLOB.command_announcement.Announce("[using_map.starsys_name] Rapid Fabrication priority supply request #[rand(1000,9999)]-[rand(100,999)] received. Shipment dispatched via ballistic supply pod for immediate delivery. Have a nice day.", "Thank You For Your Patronage")
-		addtimer(CALLBACK(src, PROC_REF(drop_supply), drop_x, drop_y, drop_z), rand(100, 300), TIMER_DELETE_ME)
+		om_after(src, rand(100, 300), PROC_REF(drop_supply), drop_x, drop_y, drop_z)
 
 /obj/machinery/power/supply_beacon/proc/drop_supply(drop_x, drop_y, drop_z)
 	new /datum/random_map/droppod/supply(null, drop_x, drop_y, drop_z, supplied_drop = drop_type) // Splat.

@@ -29,7 +29,7 @@
 
 /obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
 	. = ..()
-	QDEL_IN(src, 2 MINUTES)
+	expire(2 MINUTES)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/decal/cleanable/greenglow/Destroy()

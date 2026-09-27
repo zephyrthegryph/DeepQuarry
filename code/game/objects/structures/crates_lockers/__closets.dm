@@ -551,7 +551,7 @@
 			animate(door_obj, transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag, flags = ANIMATION_END_NOW)
 		else
 			animate(transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag)
-	addtimer(CALLBACK(src, PROC_REF(end_door_animation), closing), closet_appearance.door_anim_time, TIMER_UNIQUE|TIMER_OVERRIDE)
+	om_after_replace(src, closet_appearance.door_anim_time, PROC_REF(end_door_animation), closing)
 
 /obj/structure/closet/proc/end_door_animation(closing = FALSE)
 	is_animating_door = FALSE

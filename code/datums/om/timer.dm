@@ -397,3 +397,30 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		if(!length(T))
 			rec.timers = null
 		om_timers_reschedule(rec)
+
+// ---------------------------------------------------------------- real time
+//
+// Client-facing delays (a flicked overlay, a UI fade) follow the wall clock, not game time,
+// which slows under time dilation. They go on the global owner. The wheel runs in game
+// time, so a real-time timer is due at a REALTIMEOFDAY, and re-arms for what is left when the
+// wheel fires it early. (Was TIMER_CLIENT_TIME.)
+
+/// Runs `proc` after `delay` deciseconds of real time, on the global owner. Arguments are
+/// captured weakly, as om_after() does. A global proc gets the arguments; a type proc runs on
+/// the first argument and gets the rest.
+/proc/om_after_realtime(delay, proc_ref, ...)
+	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
+	return om_after(arglist(list(null, delay, /proc/om_realtime_fire, REALTIMEOFDAY + max(delay, 0), proc_ref) + call_args))
+
+/proc/om_realtime_fire(due, proc_ref, ...)
+	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
+	var/left = due - REALTIMEOFDAY
+	if(left > 0)
+		om_after(arglist(list(null, left, /proc/om_realtime_fire, due, proc_ref) + call_args))
+		return
+	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+		call(proc_ref)(arglist(call_args))
+	else if(length(call_args))
+		// A type proc: the first argument is the datum it runs on.
+		var/datum/target = call_args[1]
+		call(target, proc_ref)(arglist(call_args.Copy(2)))

@@ -281,7 +281,7 @@ SUBSYSTEM_DEF(contracts)
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
-	addtimer(CALLBACK(src, PROC_REF(reconcile_subject_availability), subject, key), 0)
+	om_after(src, 0, PROC_REF(reconcile_subject_availability), subject, key)
 
 /datum/controller/subsystem/contracts/proc/reconcile_subject_availability(mob/living/carbon/human/subject, key)
 	pending_subject_reconciliations -= key

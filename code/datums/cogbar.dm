@@ -87,7 +87,7 @@
 
 	animate(cog, alpha = 0, time = COGBAR_ANIMATION_TIME)
 
-	QDEL_IN(src, COGBAR_ANIMATION_TIME)
+	om_qdel_after(src, COGBAR_ANIMATION_TIME)
 
 
 /// When the user is deleted, remove the cog

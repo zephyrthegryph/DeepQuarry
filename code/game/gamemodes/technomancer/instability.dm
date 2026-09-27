@@ -94,7 +94,7 @@
 	last_instability_event = world.time
 	var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
 	add_overlay(instability_flash)
-	addtimer(CALLBACK(src, PROC_REF(instability_flash_clear), instability_flash), 4)
+	om_after(src, 4, PROC_REF(instability_flash_clear), instability_flash)
 
 /mob/living/proc/instability_flash_clear(image/instability_flash)
 	cut_overlay(instability_flash)

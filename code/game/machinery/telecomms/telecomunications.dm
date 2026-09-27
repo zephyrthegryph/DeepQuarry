@@ -166,7 +166,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/Destroy()
 	if(thermal_timer)
-		deltimer(thermal_timer)
+		om_cancel_timer(src, thermal_timer)
 		thermal_timer = null
 	for(var/obj/machinery/telecomms/comm in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		LAZYREMOVE(comm.links, src)
@@ -210,7 +210,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/machine_step()
 	if(thermal_timer)
-		deltimer(thermal_timer)
+		om_cancel_timer(src, thermal_timer)
 		thermal_timer = null
 	var/power_changed = update_power()
 
@@ -234,7 +234,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 /obj/machinery/telecomms/proc/schedule_thermal_check()
 	if(thermal_timer || QDELETED(src))
 		return
-	thermal_timer = addtimer(CALLBACK(src, PROC_REF(thermal_check_due)), max((initial(delay) + 1) * SSmachines.wait, 1), TIMER_STOPPABLE)
+	thermal_timer = om_after(src, max((initial(delay) + 1) * SSmachines.wait, 1), PROC_REF(thermal_check_due))
 
 /obj/machinery/telecomms/proc/thermal_check_due()
 	thermal_timer = null

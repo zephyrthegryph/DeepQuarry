@@ -563,7 +563,7 @@
 		LAZYSET(alarm_area.air_scrub_names, m_id, new_name)
 	else
 		return
-	addtimer(CALLBACK(src, PROC_REF(send_signal),m_id, list("init" = new_name)), 10, TIMER_DELETE_ME)
+	om_after(src, 10, PROC_REF(send_signal), m_id, list("init" = new_name))
 
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area.air_vent_names)
@@ -1046,7 +1046,7 @@
 	..()
 	var/delay_time = rand(0,15)
 	if(delay_time)
-		addtimer(CALLBACK(src, PROC_REF(process_power_change)), delay_time, TIMER_DELETE_ME)
+		om_after(src, delay_time, PROC_REF(process_power_change))
 		return
 	process_power_change()
 

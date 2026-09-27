@@ -312,7 +312,7 @@
 	update_icon()
 	playsound(src, 'sound/machines/blender.ogg', 40, 1)
 	use_power(S * 30)
-	addtimer(CALLBACK(src, PROC_REF(finish_processing)), (S + 15) / eat_eff, TIMER_DELETE_ME)
+	om_after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
 
 /obj/machinery/biogenerator/proc/finish_processing()
 	processing = 0

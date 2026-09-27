@@ -36,7 +36,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 	if(make_beams_on_init)
 		create_beams()
 	if(use_timer)
-		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), initial_delay)
+		om_after(src, initial_delay, PROC_REF(handle_beam_timer))
 	return ..()
 
 /obj/effect/map_effect/beam_point/Destroy()
@@ -133,12 +133,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		if(timer_off_index > off_duration.len)
 			timer_off_index = 1
 
-		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), off_duration[timer_off_index])
+		om_after(src, off_duration[timer_off_index], PROC_REF(handle_beam_timer))
 
 	else // Currently off.
 		// If nobody's around, keep the beams off to avoid wasteful beam process(), if they have one.
 		if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-			addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), retry_delay)
+			om_after(src, retry_delay, PROC_REF(handle_beam_timer))
 			return
 
 		create_beams()
@@ -148,7 +148,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		if(timer_on_index > on_duration.len)
 			timer_on_index = 1
 
-		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), on_duration[timer_on_index])
+		om_after(src, on_duration[timer_on_index], PROC_REF(handle_beam_timer))
 
 
 

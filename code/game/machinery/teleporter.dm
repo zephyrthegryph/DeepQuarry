@@ -209,7 +209,7 @@
 	desc = "It's the station thingy of a teleport thingy." //seriously, wtf.
 	icon_state = "controller"
 	dir = 4
-	var/active = 0
+	COOLDOWN_DECLARE(active)
 	var/engaged = 0
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
@@ -260,16 +260,15 @@
 	return
 
 /obj/machinery/teleport/station/proc/testfire()
-	if(!com || active)
+	if(!com || !COOLDOWN_FINISHED(src, active))
 		return
 
-	active = TRUE
+	COOLDOWN_START(src, active, 3 SECONDS)
 	visible_message(span_notice("Test firing!"))
 	com.teleport()
 	use_power(5000)
 	flick(src, "controller-c")
 
-	VARSET_IN(src, active, FALSE, 3 SECONDS)
 
 /obj/machinery/teleport/station/power_change()
 	..()

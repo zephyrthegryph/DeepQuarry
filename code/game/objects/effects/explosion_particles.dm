@@ -8,7 +8,7 @@
 
 /obj/effect/expl_particles/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 1.5 SECONDS)
+	expire(1.5 SECONDS)
 
 /datum/effect/system/expl_particles
 	var/number = 10
@@ -42,7 +42,7 @@
 
 /obj/effect/explosion/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 1 SECOND)
+	expire(1 SECOND)
 
 /datum/effect/system/explosion
 	var/turf/location
@@ -56,7 +56,7 @@
 	var/datum/effect/system/expl_particles/P = new/datum/effect/system/expl_particles()
 	P.set_up(10,location)
 	P.start()
-	addtimer(CALLBACK(src, PROC_REF(spread_smoke)), 0.5 SECONDS)
+	om_after(src, 0.5 SECONDS, PROC_REF(spread_smoke))
 
 /datum/effect/system/explosion/proc/spread_smoke()
 	PRIVATE_PROC(TRUE)

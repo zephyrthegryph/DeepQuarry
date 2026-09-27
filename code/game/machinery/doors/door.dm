@@ -414,7 +414,7 @@
 /obj/machinery/door/emag_act(remaining_charges)
 	if(density && operable())
 		do_animate("spark")
-		addtimer(CALLBACK(src, PROC_REF(trigger_emag)), 0.6 SECONDS)
+		om_after(src, 0.6 SECONDS, PROC_REF(trigger_emag))
 		return TRUE
 
 /obj/machinery/door/proc/trigger_emag()
@@ -507,14 +507,14 @@
 	do_animate("opening")
 	icon_state = "door0"
 	set_opacity(0)
-	addtimer(CALLBACK(src, PROC_REF(open_internalsetdensity),forced), anim_length_before_density)
+	om_after(src, anim_length_before_density, PROC_REF(open_internalsetdensity), forced)
 
 /obj/machinery/door/proc/open_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	density = FALSE
 	update_nearby_tiles()
-	addtimer(CALLBACK(src, PROC_REF(open_internalfinish),forced), anim_length_before_finalize)
+	om_after(src, anim_length_before_finalize, PROC_REF(open_internalfinish), forced)
 
 /obj/machinery/door/proc/open_internalfinish(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
@@ -528,7 +528,7 @@
 	/*
 	var/obj/effect/step_trigger/claymore_laser/las = locate() in loc
 	if(las)
-		addtimer(CALLBACK(las, TYPE_PROC_REF(/obj/effect/step_trigger/claymore_laser,Trigger), src), 5)
+		om_after(las, 5, TYPE_PROC_REF(/obj/effect/step_trigger/claymore_laser,Trigger), src)
 	*/
 
 	if(autoclose)
@@ -565,7 +565,7 @@
 
 	close_door_at = 0
 	do_animate("closing")
-	addtimer(CALLBACK(src, PROC_REF(close_internalsetdensity),forced), anim_length_before_density)
+	om_after(src, anim_length_before_density, PROC_REF(close_internalsetdensity), forced)
 
 /obj/machinery/door/proc/close_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
@@ -574,7 +574,7 @@
 	explosion_resistance = initial(explosion_resistance)
 	layer = closed_layer
 	update_nearby_tiles()
-	addtimer(CALLBACK(src, PROC_REF(close_internalfinish),forced), anim_length_before_finalize)
+	om_after(src, anim_length_before_finalize, PROC_REF(close_internalfinish), forced)
 
 /obj/machinery/door/proc/close_internalfinish(forced = 0)
 	PROTECTED_PROC(TRUE) //do not touch this or BYOND will devour you
@@ -594,7 +594,7 @@
 	/*
 	var/obj/effect/step_trigger/claymore_laser/las = locate() in loc
 	if(las)
-		addtimer(CALLBACK(las, TYPE_PROC_REF(/obj/effect/step_trigger/claymore_laser,Trigger), src), 1)
+		om_after(las, 1, TYPE_PROC_REF(/obj/effect/step_trigger/claymore_laser,Trigger), src)
 	*/
 
 	return TRUE

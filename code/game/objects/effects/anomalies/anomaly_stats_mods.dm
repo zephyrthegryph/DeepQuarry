@@ -35,12 +35,12 @@
 /datum/anomaly_modifiers/invisible/on_add(anomaly)
 	if(!..())
 		return
-	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, cloak)), 2 SECONDS)
+	om_after(attached_anomaly, 2 SECONDS, TYPE_PROC_REF(/atom/movable, cloak))
 
 /datum/anomaly_modifiers/invisible/on_remove(anomaly)
 	if(!..())
 		return
-	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, uncloak)), 2 SECONDS)
+	om_after(attached_anomaly, 2 SECONDS, TYPE_PROC_REF(/atom/movable, uncloak))
 
 /datum/anomaly_modifiers/move
 	name = "Move"

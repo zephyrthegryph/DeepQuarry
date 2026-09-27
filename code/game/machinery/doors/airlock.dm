@@ -41,7 +41,7 @@
 	var/safe = 1
 	normalspeed = 1
 	var/obj/item/airlock_electronics/electronics = null
-	var/hasShocked = 0 //Prevents multiple shocks from happening
+	COOLDOWN_DECLARE(hasShocked) //Prevents multiple shocks from happening
 	var/secured_wires = 0
 	var/security_level = 1 //Acts as a multiplier on the time required to hack an airlock with a hacktool
 
@@ -201,7 +201,7 @@
 
 	// Runs in a seperate timer loop, because making every airlock process every tick just to check for unfreezing is a bad idea.
 	// By default airlocks only tick if they are waiting for their opening/closing times to tick down.
-	addtimer(CALLBACK(src, PROC_REF(check_for_freeze)), rand(10,20) SECONDS, TIMER_DELETE_ME)
+	om_after(src, rand(10,20) SECONDS, PROC_REF(check_for_freeze))
 
 /*
 About the new airlock wires panel:
@@ -381,11 +381,10 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/shock(mob/user, prb)
 	if(!arePowerSystemsOn())
 		return FALSE
-	if(hasShocked)
+	if(!COOLDOWN_FINISHED(src, hasShocked))
 		return FALSE	//Already shocked someone recently?
 	if(..())
-		hasShocked = 1
-		VARSET_IN(src, hasShocked, FALSE, 1 SECOND)
+		COOLDOWN_START(src, hasShocked, 1 SECOND)
 		return TRUE
 	else
 		return FALSE

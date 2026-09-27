@@ -360,7 +360,7 @@
 					printing = TRUE
 					// playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, TRUE)
 					SStgui.update_uis(src)
-					addtimer(CALLBACK(src, PROC_REF(print_finish)), 5 SECONDS)
+					om_after(src, 5 SECONDS, PROC_REF(print_finish))
 			else
 				return FALSE
 

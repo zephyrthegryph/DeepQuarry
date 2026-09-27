@@ -281,7 +281,7 @@ SUBSYSTEM_DEF(tgui)
 		if(window.status == TGUI_WINDOW_READY && window.asset_generation != get_current_asset_generation())
 			window.status = TGUI_WINDOW_CLOSED
 		if(window.status == TGUI_WINDOW_READY)
-			addtimer(CALLBACK(src, PROC_REF(maintain_client_prewarm), user.client), 1 SECOND, TIMER_UNIQUE)
+			om_after_unique(src, 1 SECOND, PROC_REF(maintain_client_prewarm), user.client)
 			return window
 		if(window.status == TGUI_WINDOW_CLOSED)
 			window.status = TGUI_WINDOW_LOADING
@@ -291,7 +291,7 @@ SUBSYSTEM_DEF(tgui)
 		log_tgui(user, "Error: Pool exhausted",
 			context = "SStgui/request_pooled_window")
 		return null
-	addtimer(CALLBACK(src, PROC_REF(maintain_client_prewarm), user.client), 1 SECOND, TIMER_UNIQUE)
+	om_after_unique(src, 1 SECOND, PROC_REF(maintain_client_prewarm), user.client)
 	return window
 
 /**
@@ -347,9 +347,7 @@ SUBSYSTEM_DEF(tgui)
 	if(!client)
 		return
 	for(var/index in 1 to prewarm_window_reserve)
-		var/datum/callback/prewarm_callback = CALLBACK(src, PROC_REF(maintain_client_prewarm), client)
-		var/prewarm_delay = (1 + ((index - 1) * 2)) SECONDS
-		addtimer(prewarm_callback, prewarm_delay)
+		om_after_realtime((1 + ((index - 1) * 2)) SECONDS, PROC_REF(maintain_client_prewarm), src, client)
 
 /**
  * public

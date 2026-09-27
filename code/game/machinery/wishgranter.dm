@@ -66,7 +66,7 @@
 			if("To Kill")
 				to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
 				to_chat(user, span_danger("The Wish Granter is outraged at your excessive wickedness, yet grants you your wish regardless. Someone will be killed soon."))
-				addtimer(CALLBACK(src, PROC_REF(gib_wisher), user), 100, TIMER_DELETE_ME)
+				om_after(src, 100, PROC_REF(gib_wisher), user)
 			if("Peace")
 				to_chat(user, span_infoplain(span_bold("Whatever alien sentience that the Wish Granter possesses is satisfied with your wish. There is a distant wailing as the last of the Faithless begin to die, then silence.")))
 				to_chat(user, span_infoplain("You feel as if you just narrowly avoided a terrible fate..."))

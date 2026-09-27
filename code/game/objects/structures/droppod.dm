@@ -38,7 +38,7 @@
 	for(var/turf/TN in turfs_nearby)
 		new /obj/effect/temporary_effect/shuttle_landing(TN)
 
-	addtimer(CALLBACK(src, PROC_REF(do_fall), auto_open, T), 4 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 4 SECONDS, PROC_REF(do_fall), auto_open, T)
 
 /obj/structure/drop_pod/proc/do_fall(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -53,14 +53,14 @@
 	animate(src, alpha = 255, time = 1 SECOND, flags = ANIMATION_PARALLEL)
 	filters += filter(type="drop_shadow", x=-64, y=100, size=10)
 	animate(filters[filters.len], x=0, y=0, size=0, time=3 SECONDS, flags=ANIMATION_PARALLEL, easing=SINE_EASING|EASE_OUT)
-	addtimer(CALLBACK(src, PROC_REF(after_fall), auto_open, T), 2 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 2 SECONDS, PROC_REF(after_fall), auto_open, T)
 
 /obj/structure/drop_pod/proc/after_fall(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	new /obj/effect/effect/smoke(T)
 	T.hotspot_expose(900)
-	addtimer(CALLBACK(src, PROC_REF(on_impact), auto_open, T), 1 SECOND, TIMER_DELETE_ME)
+	om_after(src, 1 SECOND, PROC_REF(on_impact), auto_open, T)
 
 /obj/structure/drop_pod/proc/on_impact(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -90,7 +90,7 @@
 	icon_state = "[initial(icon_state)]"
 
 	if(auto_open)
-		addtimer(CALLBACK(src, PROC_REF(open_pod), TRUE), 2 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 2 SECONDS, PROC_REF(open_pod), TRUE)
 	else
 		for(var/mob/M in src)
 			to_chat(M, span_danger("You've landed! Open the hatch if you think it's safe! \The [src] has enough air to last for a while..."))

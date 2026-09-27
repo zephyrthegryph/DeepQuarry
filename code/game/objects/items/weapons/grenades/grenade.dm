@@ -28,7 +28,7 @@
 
 		activate(user)
 		add_fingerprint(user)
-		addtimer(CALLBACK(src, PROC_REF(detonate)), 5, TIMER_DELETE_ME)
+		om_after(src, 5, PROC_REF(detonate))
 		return 0
 	return 1
 
@@ -68,7 +68,7 @@
 	active = 1
 	playsound(src, arm_sound, 75, 1, -3)
 
-	addtimer(CALLBACK(src, PROC_REF(detonate)), det_time, TIMER_DELETE_ME)
+	om_after(src, det_time, PROC_REF(detonate))
 
 /obj/item/grenade/proc/detonate()
 //	playsound(src, 'sound/items/Welder2.ogg', 25, 1)
@@ -113,6 +113,6 @@
 
 	spraying.start(start_data)
 	if(duration > 0)
-		addtimer(CALLBACK(src, PROC_REF(effect_spraying), spraying, --duration), 1 SECOND, TIMER_DELETE_ME)
+		om_after(src, 1 SECOND, PROC_REF(effect_spraying), spraying, --duration)
 		return
 	qdel(src)

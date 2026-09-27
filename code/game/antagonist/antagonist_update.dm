@@ -12,7 +12,7 @@
 		if(holder) qdel(holder)
 	player.original_character = om_handle(player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
-		addtimer(CALLBACK(src, PROC_REF(deferred_set_appearance), player), 3)
+		om_after(src, 3, PROC_REF(deferred_set_appearance), player)
 	return player.current
 
 /datum/antagonist/proc/deferred_set_appearance(datum/mind/player)

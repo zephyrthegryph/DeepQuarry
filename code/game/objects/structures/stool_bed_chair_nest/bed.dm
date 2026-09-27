@@ -249,7 +249,7 @@
 		else
 			visible_message("[user] collapses \the [src.name].")
 			new rollertype(get_turf(src))
-			QDEL_IN(src, 0)
+			expire(0)
 		return
 	..()
 
@@ -353,7 +353,7 @@
 		if(has_buckled_mobs())	return 0
 		visible_message("[usr] collapses \the [src.name].")
 		new rollertype(get_turf(src))
-		QDEL_IN(src, 0)
+		expire(0)
 		return
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_bed

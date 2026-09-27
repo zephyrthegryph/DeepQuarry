@@ -671,7 +671,7 @@
 			flick("nt_pod_emptying", fluid) // 8ds
 
 			// Door opens
-			addtimer(CALLBACK(src, PROC_REF(delayed_flick), door, "nothing", "nt_pod_opening", 0.9 SECONDS), 0.8 SECONDS) // 9ds
+			om_after(src, 0.8 SECONDS, PROC_REF(delayed_flick), door, "nothing", "nt_pod_opening", 0.9 SECONDS) // 9ds
 
 		if("closed")
 			changing_state = TRUE
@@ -684,7 +684,7 @@
 			door.icon_state = "nt_pod_glass"
 			flick("nt_pod_closing", door) // 9ds
 			// Fluid fills
-			addtimer(CALLBACK(src, PROC_REF(delayed_flick), fluid, "nt_pod_liquid", "nt_pod_filling"), 0.9 SECONDS) // 8ds
+			om_after(src, 0.9 SECONDS, PROC_REF(delayed_flick), fluid, "nt_pod_liquid", "nt_pod_filling") // 8ds
 
 		if("panel_open")
 			cut_overlay("nt_pod_panel")
@@ -699,7 +699,7 @@
 	flick(flicked, ovrl)
 	// GET OUT
 	if(get_out_time)
-		addtimer(CALLBACK(src, PROC_REF(get_out)), get_out_time)
+		om_after(src, get_out_time, PROC_REF(get_out))
 		return
 	changing_state = FALSE
 

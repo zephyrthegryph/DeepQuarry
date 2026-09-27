@@ -5,7 +5,7 @@
 
 /image/client_only/motion_echo/New(icon, loc, icon_state, layer, dir)
 	. = ..()
-	QDEL_IN(src, 2 SECONDS)
+	om_after(null, 2 SECONDS, GLOBAL_PROC_REF(qdel), src)
 
 /image/client_only/motion_echo/place_from_root(turf/At)
 	. = ..()

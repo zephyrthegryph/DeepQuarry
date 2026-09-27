@@ -75,4 +75,4 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 			if(16 to INFINITY)
 				icon_state = "track_far"
 
-	addtimer(CALLBACK(src, PROC_REF(track)), 5)
+	om_after(src, 5, PROC_REF(track))

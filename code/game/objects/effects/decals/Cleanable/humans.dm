@@ -41,7 +41,7 @@
 		return INITIALIZE_HINT_QDEL
 	update_icon()
 	if(!mapload)
-		addtimer(CALLBACK(src, PROC_REF(dry)), DRYING_TIME * (amount+1))
+		om_after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
 		return
 	if(src.type == /obj/effect/decal/cleanable/blood)

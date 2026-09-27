@@ -488,7 +488,7 @@
 		stat &= ~NOPOWER
 		update_icon()
 	else
-		addtimer(CALLBACK(src, PROC_REF(power_off_delayed)), rand(0, 15), TIMER_DELETE_ME)
+		om_after(src, rand(0, 15), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
 	stat |= NOPOWER
@@ -585,8 +585,16 @@
 	if(stat & (NOPOWER|BROKEN))
 		return
 	attacked = TRUE
-	addtimer(CALLBACK(src, PROC_REF(retaliate_end)), TURRET_RETALIATION_TIME, TIMER_DELETE_ME)
+	om_after(src, TURRET_RETALIATION_TIME, PROC_REF(retaliate_end))
 	playsound(src, 'sound/machines/terminal_alert.ogg', 150)
+
+/// om_after() target: back on after an emag's grace period.
+/obj/machinery/porta_turret/proc/emag_reenable()
+	enabled = TRUE
+
+/// om_after() target: a stumble's grudge wears off, quietly.
+/obj/machinery/porta_turret/proc/calm_down()
+	attacked = FALSE
 
 /obj/machinery/porta_turret/proc/retaliate_end()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -620,7 +628,7 @@
 		controllock = TRUE
 		enabled = FALSE //turns off the turret temporarily
 		// 6 seconds for the traitor to gtfo of the area before the turret decides to ruin his shit.
-		VARSET_IN(src, enabled, TRUE, 6 SECONDS) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
+		om_after(src, 6 SECONDS, PROC_REF(emag_reenable)) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
 		return 1
 
 // While the cover is closed the turret is heavily armored: incoming damage is
@@ -668,7 +676,7 @@
 			emagged = TRUE
 
 		enabled=0
-		addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(60, 600), TIMER_DELETE_ME)
+		om_after(src, rand(60, 600), PROC_REF(emp_reenable))
 
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
@@ -685,7 +693,7 @@
 	if (. & EMP_PROTECT_SELF || prob(75)) // Superior alien technology, I guess.
 		return
 	enabled = FALSE
-	addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(1 MINUTE, 2 MINUTES), TIMER_DELETE_ME)
+	om_after(src, rand(1 MINUTE, 2 MINUTES), PROC_REF(emp_reenable))
 
 /obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
 	atom_break()
@@ -866,7 +874,7 @@
 	flick_holder.layer = layer + 0.1
 	flick("popup_[turret_type]", flick_holder)
 	playsound(src, 'sound/machines/turrets/turret_deploy.ogg', 100, 1)
-	addtimer(CALLBACK(src, PROC_REF(popup_finish), flick_holder), 1 SECOND, TIMER_DELETE_ME)
+	om_after(src, 1 SECOND, PROC_REF(popup_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popup_finish(flick_holder)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -900,7 +908,7 @@
 	flick_holder.layer = layer + 0.1
 	flick("popdown_[turret_type]", flick_holder)
 	playsound(src, 'sound/machines/turrets/turret_retract.ogg', 100, 1)
-	addtimer(CALLBACK(src, PROC_REF(popdown_finish), flick_holder), 1 SECOND, TIMER_DELETE_ME)
+	om_after(src, 1 SECOND, PROC_REF(popdown_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popdown_finish(flick_holder)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -943,7 +951,7 @@
 	if(last_fired || !raised)
 		return
 	last_fired = TRUE
-	addtimer(CALLBACK(src, PROC_REF(shot_reload)), current_delay, TIMER_DELETE_ME)
+	om_after(src, current_delay, PROC_REF(shot_reload))
 
 	if(!isturf(get_turf(src)) || !isturf(get_turf(target)))
 		return

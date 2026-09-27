@@ -11,7 +11,7 @@
 /obj/effect/temporary_effect/eruption/Initialize(mapload, ttd = 10 SECONDS, newcolor)
 	if(ttd)
 		time_to_die += ttd
-	addtimer(CALLBACK(src, PROC_REF(on_eruption), get_turf(src)), time_to_die - 0.2 SECONDS, TIMER_DELETE_ME)
+	om_after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), get_turf(src))
 
 	if(newcolor)
 		color = newcolor

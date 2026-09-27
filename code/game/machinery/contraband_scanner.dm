@@ -54,7 +54,7 @@
 				if(power_fields)
 					A.arfgs_activate()
 				if(auto_cancel)
-					addtimer(CALLBACK(src, PROC_REF(auto_cancel_lockdown), A), cooldown, TIMER_DELETE_ME)
+					om_after(src, cooldown, PROC_REF(auto_cancel_lockdown), A)
 
 	..()
 

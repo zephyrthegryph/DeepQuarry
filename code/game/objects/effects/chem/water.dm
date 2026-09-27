@@ -7,7 +7,7 @@
 
 /obj/effect/effect/water/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 15 SECONDS)
+	expire(15 SECONDS)
 
 /obj/effect/effect/water/proc/set_color() // Call it after you move reagents to it
 	icon += reagents.get_color()
@@ -34,16 +34,16 @@
 				M = A
 		if(M)
 			reagents.splash(M, reagents.total_volume)
-			QDEL_IN(src, 1 SECOND)
+			expire(1 SECOND)
 			return
 		if(T == get_turf(target))
-			QDEL_IN(src, 1 SECOND)
+			expire(1 SECOND)
 			return
 
 	if(step_count > 0)
-		addtimer(CALLBACK(src, PROC_REF(step_process), target, step_count, delay, iteration), delay)
+		om_after(src, delay, PROC_REF(step_process), target, step_count, delay, iteration)
 		return
-	QDEL_IN(src, 1 SECOND)
+	expire(1 SECOND)
 
 /obj/effect/effect/water/Move(turf/newloc)
 	if(newloc.density)

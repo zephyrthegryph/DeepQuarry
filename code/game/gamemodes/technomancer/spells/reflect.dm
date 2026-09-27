@@ -22,7 +22,7 @@
 	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 	to_chat(owner, span_notice("Your shield will expire in 5 seconds!"))
-	QDEL_IN(src, 5 SECONDS)
+	expire(5 SECONDS)
 
 /obj/item/spell/reflect/Destroy()
 	if(owner)
@@ -66,7 +66,7 @@
 
 				if(!reflecting)
 					reflecting = 1
-					addtimer(CALLBACK(src, PROC_REF(expire_reflect)), 2 SECONDS) //To ensure that most or all of a burst fire cycle is reflected.
+					om_after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
 
 				return PROJECTILE_CONTINUE // complete projectile permutation
 
@@ -84,7 +84,7 @@
 
 				if(!reflecting)
 					reflecting = 1
-					addtimer(CALLBACK(src, PROC_REF(expire_reflect)), 2 SECONDS) //To ensure that most or all of a burst fire cycle is reflected.
+					om_after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
 		return 1
 	return 0
 

@@ -8,7 +8,7 @@
 	var/obj/item/assembly/attached_device
 	var/mob/attacher = null
 	var/valve_open = 0
-	var/toggle = 1
+	COOLDOWN_DECLARE(toggle)
 
 /obj/item/transfer_valve/attackby(obj/item/item, mob/user)
 	var/turf/location = get_turf(src) // For admin logs
@@ -120,10 +120,9 @@
 		add_fingerprint(ui.user)
 
 /obj/item/transfer_valve/proc/process_activation(obj/item/D)
-	if(toggle)
-		toggle = FALSE
+	if(COOLDOWN_FINISHED(src, toggle))
+		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
-		VARSET_IN(src, toggle, TRUE, 5 SECONDS)
 
 /obj/item/transfer_valve/update_icon()
 	cut_overlays()

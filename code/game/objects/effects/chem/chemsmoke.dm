@@ -193,7 +193,7 @@
 	if(initial(smoke.opacity))
 		smoke.set_opacity(1)		//switching opacity on after the smoke has spawned, and then
 	var/lifespan = 150 + rand(0, 20)
-	addtimer(CALLBACK(src, PROC_REF(fadeOut), smoke), lifespan)
+	om_after(src, lifespan, PROC_REF(fadeOut), smoke)
 
 /datum/effect/effect/system/smoke_spread/chem/spores/spawnSmoke(turf/T, icon/I, dist = 1)
 	var/obj/effect/effect/smoke/chem/spores = new /obj/effect/effect/smoke/chem(location)
@@ -208,7 +208,7 @@
 	if(frames == 0)
 		frames = 1 //We will just assume that by 0 frames, the coder meant "during one frame".
 	animate(A, alpha = 0, time = frames)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), A), frames, TIMER_UNIQUE)
+	om_qdel_after(A, frames)
 
 /datum/effect/effect/system/smoke_spread/chem/proc/smokeFlow() // Smoke pathfinder. Uses a flood fill method based on zones to quickly check what turfs the smoke (airflow) can actually reach.
 

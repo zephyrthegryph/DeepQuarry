@@ -82,7 +82,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
 	om_drift(steam, direction, steps, 5)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), steam), 20 + steps * 5)
+	steam.expire(20 + steps * 5)
 
 /datum/effect/effect/system/steam_spread/start()
 	var/i = 0
@@ -109,7 +109,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
-	QDEL_IN(src, 5 SECONDS)
+	expire(5 SECONDS)
 
 /obj/effect/effect/sparks/Destroy()
 	var/turf/T = src.loc
@@ -148,7 +148,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
 	om_drift(sparks, direction, steps, 5)
-	addtimer(CALLBACK(src, PROC_REF(dec_sparks)), 20 + steps * 5)
+	om_after(src, 20 + steps * 5, PROC_REF(dec_sparks))
 
 /datum/effect/effect/system/spark_spread/proc/dec_sparks()
 	src.total_sparks--
@@ -186,7 +186,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/smoke/Initialize(mapload)
 	. = ..()
 	if(time_to_live)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), time_to_live, TIMER_DELETE_ME)
+		expire(time_to_live)
 
 /obj/effect/effect/smoke/Crossed(mob/living/carbon/M as mob )
 	if(M.is_incorporeal())
@@ -389,7 +389,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
 	om_drift(smoke, direction, steps, 10)
-	addtimer(CALLBACK(src, PROC_REF(expire_smoke), smoke), steps * 10 + smoke.time_to_live*0.75+rand(10,30))
+	om_after(src, steps * 10 + smoke.time_to_live*0.75+rand(10,30), PROC_REF(expire_smoke), smoke)
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
 	if(smoke)
@@ -466,8 +466,8 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			I.set_dir(src.holder.dir)
 			flick("ion_fade", I)
 			I.icon_state = "blank"
-			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), I), 20)
-	addtimer(CALLBACK(src, PROC_REF(reschedule_trail)), 2)
+			I.expire(20)
+	om_after(src, 2, PROC_REF(reschedule_trail))
 
 /datum/effect/effect/system/ion_trail_follow/proc/reschedule_trail()
 	if(src.on)
@@ -513,8 +513,8 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		src.number++
 		src.oldposition = get_turf(holder)
 		I.set_dir(src.holder.dir)
-		addtimer(CALLBACK(src, PROC_REF(expire_steam_trail), I), 10)
-	addtimer(CALLBACK(src, PROC_REF(reschedule_steam)), 2)
+		om_after(src, 10, PROC_REF(expire_steam_trail), I)
+	om_after(src, 2, PROC_REF(reschedule_steam))
 
 /datum/effect/effect/system/steam_trail_follow/proc/expire_steam_trail(obj/effect/effect/steam/I)
 	qdel(I)
@@ -608,7 +608,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /obj/effect/effect/teleport_greyscale/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 2 SECONDS)
+	expire(2 SECONDS)
 
 /datum/effect/effect/system/teleport_greyscale
 	var/color = "#FFFFFF"
@@ -645,7 +645,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/confetti/Initialize(mapload)
 	. = ..()
 	if(time_to_live)
-		QDEL_IN(src, time_to_live)
+		expire(time_to_live)
 				//make confetti on ground cleanable decal to spawn
 
 /datum/effect/effect/system/confetti_spread
@@ -680,7 +680,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
 	om_drift(confetti, direction, steps, 10)
-	addtimer(CALLBACK(src, PROC_REF(expire_confetti), confetti), steps * 10 + confetti.time_to_live*0.75+rand(10,30))
+	om_after(src, steps * 10 + confetti.time_to_live*0.75+rand(10,30), PROC_REF(expire_confetti), confetti)
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
 	if(confetti)

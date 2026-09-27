@@ -83,7 +83,7 @@
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
 	//to_chat(user, span_notice("You slowly deflate the inflatable wall."))
 	visible_message("[src] slowly deflates.")
-	addtimer(CALLBACK(src, PROC_REF(deflate_finish)), 5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
 /obj/structure/inflatable/proc/deflate_finish()
 	var/obj/item/inflatable/R = new /obj/item/inflatable(loc)
@@ -210,7 +210,7 @@
 /obj/structure/inflatable/door/deflate()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
 	visible_message("[src] slowly deflates.")
-	addtimer(CALLBACK(src, PROC_REF(deflate_finish)), 5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
 /obj/structure/inflatable/door/deflate_finish()
 	var/obj/item/inflatable/door/R = new /obj/item/inflatable/door(loc)

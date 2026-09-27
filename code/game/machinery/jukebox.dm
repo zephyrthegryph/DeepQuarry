@@ -245,7 +245,7 @@
 						M.status_at_least(EFFECT_PARALYZED, 4)
 					else
 						M.status_adjust(EFFECT_JITTERY, 500)
-				addtimer(CALLBACK(src, PROC_REF(explode)), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+				om_after_unique(src, 1.5 SECONDS, PROC_REF(explode))
 			else if(current_track == null)
 				to_chat(ui.user, "No track selected.")
 			else

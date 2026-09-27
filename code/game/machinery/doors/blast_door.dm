@@ -94,7 +94,7 @@
 	update_icon()
 	set_opacity(0)
 	rad_insulation = RAD_NO_INSULATION
-	addtimer(CALLBACK(src, PROC_REF(complete_force_open)), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	om_after_unique(src, 1.5 SECONDS, PROC_REF(complete_force_open))
 
 /obj/machinery/door/blast/proc/complete_force_open()
 	PRIVATE_PROC(TRUE)
@@ -121,7 +121,7 @@
 		set_opacity(0)
 	else
 		set_opacity(1)
-	addtimer(CALLBACK(src, PROC_REF(complete_force_close), yeet_turfs), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	om_after_unique(src, 1.5 SECONDS, PROC_REF(complete_force_close), yeet_turfs)
 
 /obj/machinery/door/blast/proc/complete_force_close(list/yeet_turfs)
 	PRIVATE_PROC(TRUE)
@@ -319,7 +319,7 @@
 		force_open()
 
 	if(autoclose && src.operating && !(stat & BROKEN || stat & NOPOWER))
-		addtimer(CALLBACK(src, PROC_REF(close)), 15 SECONDS)
+		om_after(src, 15 SECONDS, PROC_REF(close))
 	return 1
 
 // Proc: close()

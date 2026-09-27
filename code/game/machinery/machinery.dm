@@ -312,7 +312,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		pulse2.name = "emp sparks"
 		pulse2.anchored = TRUE
 		pulse2.set_dir(pick(GLOB.cardinal))
-		QDEL_IN(pulse2, 1 SECOND)
+		pulse2.expire(1 SECOND)
 
 
 /obj/machinery/vv_edit_var(var_name, new_value)

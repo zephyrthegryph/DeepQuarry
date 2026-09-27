@@ -350,7 +350,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	dir = SOUTH
 	move_self = 0
 	flick("narsie_spawn_anim",src)
-	addtimer(CALLBACK(src, PROC_REF(after_animation)), 1.1 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 1.1 SECONDS, PROC_REF(after_animation))
 
 /obj/singularity/narsie/proc/after_animation()
 	move_self = 1

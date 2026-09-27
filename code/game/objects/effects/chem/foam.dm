@@ -23,9 +23,9 @@
 	metal = ismetal
 	playsound(src, 'sound/effects/bubbles2.ogg', 80, 1, -3)
 	if(dries)
-		addtimer(CALLBACK(src, PROC_REF(post_spread)), 3 + metal * 3)
-		addtimer(CALLBACK(src, PROC_REF(pre_harden)), 12 SECONDS)
-		addtimer(CALLBACK(src, PROC_REF(harden)), 15 SECONDS)
+		om_after(src, 3 + metal * 3, PROC_REF(post_spread))
+		om_after(src, 12 SECONDS, PROC_REF(pre_harden))
+		om_after(src, 15 SECONDS, PROC_REF(harden))
 
 /obj/effect/effect/foam/proc/post_spread()
 	periodic_step()
@@ -40,7 +40,7 @@
 		M.metal = metal
 		M.update_icon()
 	flick("[icon_state]-disolve", src)
-	QDEL_IN(src, 5)
+	expire(5)
 
 /obj/effect/effect/foam/proc/checkReagents() // transfer any reagents to the floor
 	if(!metal && reagents)
@@ -78,7 +78,7 @@
 	if(metal)
 		return
 	flick("[icon_state]-disolve", src)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 5)
+	expire(5)
 
 /obj/effect/effect/foam/Crossed(atom/movable/AM)
 	if(AM.is_incorporeal())
@@ -204,7 +204,7 @@
 
 /obj/effect/effect/foam/firefighting/proc/dissolve()
 	flick("[icon_state]-disolve", src)
-	QDEL_IN(src, 5)
+	expire(5)
 
 /obj/effect/effect/foam/firefighting/Destroy()
 	return ..()

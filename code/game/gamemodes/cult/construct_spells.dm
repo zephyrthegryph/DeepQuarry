@@ -46,7 +46,7 @@
 /datum/spell/aoe_turf/conjure/floor/conjure_animation(atom/movable/overlay/animation, turf/target)
 	animation.icon_state = "cultfloor"
 	flick("cultfloor",animation)
-	QDEL_IN(animation, 1 SECOND)
+	animation.expire(1 SECOND)
 
 /datum/spell/aoe_turf/conjure/wall
 	name = "Lesser Construction"
@@ -64,7 +64,7 @@
 /datum/spell/aoe_turf/conjure/wall/conjure_animation(atom/movable/overlay/animation, turf/target)
 	animation.icon_state = "cultwall"
 	flick("cultwall",animation)
-	QDEL_IN(animation, 1 SECOND)
+	animation.expire(1 SECOND)
 
 /datum/spell/aoe_turf/conjure/wall/reinforced
 	name = "Greater Construction"

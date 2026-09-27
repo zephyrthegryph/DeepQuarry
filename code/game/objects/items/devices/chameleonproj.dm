@@ -57,7 +57,7 @@
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
 		flick("emppulse",T)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), T), 0.8 SECONDS, TIMER_DELETE_ME)
+		T.expire(0.8 SECONDS)
 	else
 		playsound(src, 'sound/effects/pop.ogg', 100, 1, -6)
 		var/obj/O = new saved_item(src)
@@ -71,7 +71,7 @@
 		var/obj/effect/overlay/T = new/obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
 		flick("emppulse",T)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), T), 0.8 SECONDS, TIMER_DELETE_ME)
+		T.expire(0.8 SECONDS)
 
 /obj/item/chameleon/proc/disrupt(delete_dummy = 1)
 	if(active_dummy)
@@ -84,7 +84,7 @@
 			qdel(active_dummy)
 		active_dummy = null
 		can_use = 0
-		addtimer(CALLBACK(src, PROC_REF(allow_use)), 5 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 5 SECONDS, PROC_REF(allow_use))
 
 /obj/item/chameleon/proc/allow_use()
 	can_use = 1
@@ -144,15 +144,15 @@
 		can_move = 0
 		switch(user.bodytemperature)
 			if(300 to INFINITY)
-				addtimer(CALLBACK(src, PROC_REF(allow_move)), 1 SECOND, TIMER_DELETE_ME)
+				om_after(src, 1 SECOND, PROC_REF(allow_move))
 			if(295 to 300)
-				addtimer(CALLBACK(src, PROC_REF(allow_move)), 1.3 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 1.3 SECONDS, PROC_REF(allow_move))
 			if(280 to 295)
-				addtimer(CALLBACK(src, PROC_REF(allow_move)), 1.6 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 1.6 SECONDS, PROC_REF(allow_move))
 			if(260 to 280)
-				addtimer(CALLBACK(src, PROC_REF(allow_move)), 2 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 2 SECONDS, PROC_REF(allow_move))
 			else
-				addtimer(CALLBACK(src, PROC_REF(allow_move)), 2.5 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 2.5 SECONDS, PROC_REF(allow_move))
 		step(src, direction)
 	return
 

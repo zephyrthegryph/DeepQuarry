@@ -296,7 +296,7 @@
 	bottle.reagents.add_reagent(REAGENT_ID_VACCINE, 15, list(get_by_index("resistances", id)))
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 5)
 	wait = TRUE
-	addtimer(CALLBACK(src, PROC_REF(reset_replicator_cooldown)), 20 SECONDS)
+	om_after(src, 20 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
 /obj/machinery/computer/pandemic/proc/create_culture_bottle(index)
@@ -328,7 +328,7 @@
 	bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 10)
 	wait = TRUE
-	addtimer(CALLBACK(src, PROC_REF(reset_replicator_cooldown)), 5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
 /obj/machinery/computer/pandemic/proc/get_beaker_cures(disease_id)

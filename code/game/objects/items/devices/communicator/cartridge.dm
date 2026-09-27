@@ -315,7 +315,7 @@
 		var/obj/machinery/door/blast/B = locate(href_list["toggle_blast_door"])
 		if(!B)
 			return
-		addtimer(CALLBACK(src, PROC_REF(toggle_blast_door_deferred), B), 0)
+		om_after(src, 0, PROC_REF(toggle_blast_door_deferred), B)
 
 
 /obj/item/commcard/proc/toggle_blast_door_deferred(obj/machinery/door/blast/B)

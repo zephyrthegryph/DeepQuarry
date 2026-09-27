@@ -7,7 +7,7 @@
 	anchored = TRUE
 	unacidable = TRUE
 	var/unwrenched = 0
-	var/wait = 0
+	COOLDOWN_DECLARE(wait)
 	var/p_layer = PIPING_LAYER_REGULAR
 	var/static/list/pipe_layers = list(
 		"Regular" = PIPING_LAYER_REGULAR,
@@ -80,7 +80,7 @@
 		if("p_layer")
 			p_layer = text2num(params["p_layer"])
 		if("dispense_pipe")
-			if(!wait)
+			if(COOLDOWN_FINISHED(src, wait))
 				var/datum/pipe_recipe/recipe = locate(params["ref"])
 				if(!istype(recipe))
 					return
@@ -107,8 +107,7 @@
 					return
 
 				created_object.add_fingerprint(ui.user)
-				wait = TRUE
-				VARSET_IN(src, wait, FALSE, 15)
+				COOLDOWN_START(src, wait, 15)
 
 
 /datum/interaction/machine_item/pipedispenser_return

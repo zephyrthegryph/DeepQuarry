@@ -25,7 +25,7 @@
 	var/status = FALSE
 	var/throw_amount = THROWER_MIN
 	var/lit = FALSE	//on or off
-	var/operating = FALSE //cooldown
+	COOLDOWN_DECLARE(operating)
 	var/turf/previousturf = null
 	var/obj/item/weldingtool/weldtool = null
 	var/obj/item/assembly/igniter/igniter = null
@@ -77,7 +77,7 @@
 	return
 
 /obj/item/flamethrower/afterattack(atom/target, mob/user, proximity)
-	if(!lit || operating)
+	if(!lit || !COOLDOWN_FINISHED(src, operating))
 		return
 	if(user && user.get_active_hand() == src)
 		if(IS_HELPING(user) && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
@@ -102,8 +102,7 @@
 			lit = FALSE
 			update_icon()
 		// prevent spam
-		operating = TRUE
-		addtimer(VARSET_CALLBACK(src, operating, FALSE), 15)
+		COOLDOWN_START(src, operating, 15)
 	return
 
 /obj/item/flamethrower/proc/thrower_spew_percent()
