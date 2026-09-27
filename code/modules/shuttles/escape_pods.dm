@@ -60,7 +60,6 @@
 /datum/shuttle/autodock/ferry/escape_pod/can_cancel()
 	return 0
 
-
 //This controller goes on the escape pod itself
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod
 	name = "escape pod controller"
@@ -68,10 +67,6 @@
 	program = /datum/embedded_program/docking/simple
 	var/datum/shuttle/autodock/ferry/escape_pod/pod
 	valid_actions = list("toggle_override", "force_door")
-
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/Destroy()
-	pod = null
-	return ..()
 
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/tgui_data(mob/user)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
@@ -99,7 +94,6 @@
 			else if(SSemergency_shuttle.departed && pod.can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
 				pod.launch(src)
 			. = TRUE
-
 
 //This controller is for the escape pod berth (station side)
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth
@@ -144,7 +138,6 @@
 	if(!armed)
 		armed = 1
 		open_door()
-
 
 /datum/embedded_program/docking/simple/escape_pod_berth/receive_user_command(command)
 	if (!armed)

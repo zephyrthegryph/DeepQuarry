@@ -315,11 +315,9 @@
 	autopath = null
 	my_shuttle.autopilot = FALSE
 
-
 /*************
  * Autopaths *
  *************/
-
 
 // Fourth datum, this one essentially acts as directions for an autopilot to go to the correct places.
 /datum/shuttle_autopath
@@ -327,10 +325,6 @@
 	var/datum/shuttle_destination/start = null
 	var/list/path_nodes
 	var/index = 1
-
-/datum/shuttle_autopath/Destroy()
-	master = null
-	return ..()
 
 /datum/shuttle_autopath/proc/reset_path()
 	index = 1
