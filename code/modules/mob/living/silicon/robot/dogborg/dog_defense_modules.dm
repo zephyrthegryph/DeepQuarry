@@ -68,12 +68,14 @@
 	if(!R.draw_power(ROBOT_CELL_JOULES(power_tick), src, ROBOT_CELL_JOULES(500))) //We don't want to drain ourselves too far down during exploration
 		to_chat(R, span_warning("Not enough power to initialize the repair system."))
 		return
-	if(do_after(R, tick_delay, target = R))
-		if(!C)
-			return
-		R.mend(TREAT_PLATING_REPAIR, heal_per_tick, C)
-		R.mend(TREAT_WIRING_REPAIR, heal_per_tick, C)
-		src.self_repair(R, C, tick_delay, heal_per_tick)
+	om_do_after(R, tick_delay, target = R, receiver = src, on_done = PROC_REF(self_repair_self_repair_system_done), done_args = list(R, C, tick_delay, heal_per_tick))
+
+/obj/item/self_repair_system/proc/self_repair_self_repair_system_done(mob/living/silicon/robot/R, datum/robot_component/C, tick_delay, heal_per_tick)
+	if(!C)
+		return
+	R.mend(TREAT_PLATING_REPAIR, heal_per_tick, C)
+	R.mend(TREAT_WIRING_REPAIR, heal_per_tick, C)
+	src.self_repair(R, C, tick_delay, heal_per_tick)
 
 // To repair multiple modules
 /obj/item/self_repair_system/advanced

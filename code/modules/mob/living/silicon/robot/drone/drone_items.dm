@@ -15,6 +15,23 @@
 /obj/item/matter_decompiler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
+/obj/item/matter_decompiler/proc/decompile_drone_interrupted(mob/living/silicon/robot/D)
+	to_chat(D, span_danger("You need to remain still while decompiling such a large object."))
+
+/obj/item/matter_decompiler/proc/decompile_drone_done(mob/living/silicon/robot/D, mob/M)
+	to_chat(D, span_danger("You carefully and thoroughly decompile [M], storing as much of its resources as you can within yourself."))
+	qdel(M)
+	new/obj/effect/decal/cleanable/blood/oil(get_turf(src))
+
+	if(metal)
+		metal.add_charge(15000)
+	if(glass)
+		glass.add_charge(15000)
+	if(wood)
+		wood.add_charge(2000)
+	if(plastic)
+		plastic.add_charge(1000)
+
 /obj/item/matter_decompiler/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity, params)
 
 	if(!proximity) return //Not adjacent.
@@ -47,24 +64,7 @@
 
 			to_chat(D, span_danger("You begin decompiling [M]."))
 
-			if(!do_after(D, 5 SECONDS, target = src))
-				to_chat(D, span_danger("You need to remain still while decompiling such a large object."))
-				return
-
-			if(!M || !D) return
-
-			to_chat(D, span_danger("You carefully and thoroughly decompile [M], storing as much of its resources as you can within yourself."))
-			qdel(M)
-			new/obj/effect/decal/cleanable/blood/oil(get_turf(src))
-
-			if(metal)
-				metal.add_charge(15000)
-			if(glass)
-				glass.add_charge(15000)
-			if(wood)
-				wood.add_charge(2000)
-			if(plastic)
-				plastic.add_charge(1000)
+			om_do_after(D, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(decompile_drone_done), done_args = list(D, M), on_fail = PROC_REF(decompile_drone_interrupted), fail_args = list(D))
 			return
 		else
 			continue

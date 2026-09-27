@@ -347,12 +347,7 @@
 			playsound(src, 'sound/weapons/handcuffs.ogg', 30, 1, -2)
 			visible_message(span_warning("\The [src] is trying to put handcuffs on \the [H]!"))
 			busy = TRUE
-			if(do_after(src, 6 SECONDS, H))
-				if(!H.get_equipped_item(SLOT_ID_HANDCUFFED))
-					if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
-						H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), slot_handcuffed) // Better to be cable cuffed than stun-locked
-					else
-						H.equip_to_slot_or_del(new /obj/item/handcuffs(H), slot_handcuffed)
+			om_do_after(src, 6 SECONDS, target = H, receiver = src, on_done = PROC_REF(UnarmedAttack_secbot_done), done_args = list(H))
 			busy = FALSE
 	else if(isliving(M))
 		var/mob/living/L = M
@@ -366,6 +361,13 @@
 			update_icons()
 		visible_message(span_warning("\The [M] was beaten by \the [src] with a stun baton!"))
 		insult(L)
+
+/mob/living/bot/secbot/proc/UnarmedAttack_secbot_done(mob/living/carbon/human/H)
+	if(!H.get_equipped_item(SLOT_ID_HANDCUFFED))
+		if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
+			H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), slot_handcuffed) // Better to be cable cuffed than stun-locked
+		else
+			H.equip_to_slot_or_del(new /obj/item/handcuffs(H), slot_handcuffed)
 
 /mob/living/bot/secbot/slime/UnarmedAttack(mob/living/L, proximity)
 	..()

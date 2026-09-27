@@ -88,7 +88,6 @@
 	special_attack_cooldown = 10 SECONDS
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A)
-	set waitfor = FALSE
 	if(ai_brain) ai_brain.busy = TRUE
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
@@ -97,7 +96,10 @@
 	// Telegraph to give a small window to dodge if really close.
 	flick("bloodout",A)
 	icon_state = "bloodout"
-	sleep(jaunt_warning) // For the telegraphing.
+	om_after(src, jaunt_warning, PROC_REF(do_special_attack_1), A, destination, starting_turf) // For the telegraphing.
+
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
 
 	// Do the dig!
 	visible_message(span_danger("\The [src] sinks into a puddle of blood \the [A]!"))

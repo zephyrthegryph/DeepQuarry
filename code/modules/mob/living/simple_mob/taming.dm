@@ -29,10 +29,9 @@
 
 	return FALSE
 
+/// Per-mob extra condition on a taming item (the old half-second wait is gone).
 /mob/living/simple_mob/proc/unique_tame_check(obj/O, mob/user)
-	if(do_after(user, 0.5 SECONDS, target = src))
-		return TRUE
-	return FALSE
+	return TRUE
 
 /mob/living/simple_mob/proc/tame_prob(obj/O, mob/user)
 	for(var/path in tame_items)

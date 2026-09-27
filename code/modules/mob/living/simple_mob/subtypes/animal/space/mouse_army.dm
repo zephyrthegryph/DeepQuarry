@@ -138,17 +138,17 @@
 
 	var/ruptured = 0
 
+/mob/living/simple_mob/animal/space/mouse_army/proc/warning_flash(i, count)
+	if(i > count)
+		return
+	color = (i % 2 == 0) ? "#000000" : "#FF0000"
+	om_after(src, 1, PROC_REF(warning_flash), i + 1, count)
+
 /mob/living/simple_mob/animal/space/mouse_army/pyro/death()
 	visible_message(span_critical("\The [src]'s tank groans!"))
 	var/delay = rand(1, 3)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#000000"
-			else
-				color = "#FF0000"
-			sleep(1)
+	// Flash black and red as a warning.
+	warning_flash(1, delay)
 
 	spawn(rand (1,5))
 		if(!ruptured)
@@ -189,14 +189,8 @@
 /mob/living/simple_mob/animal/space/mouse_army/ammo/death()
 	visible_message(span_critical("\The [src]'s body begins to rupture!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#000000"
-			else
-				color = "#FF0000"
-			sleep(1)
+	// Flash black and red as a warning.
+	warning_flash(1, delay)
 
 	spawn(rand(1,5))
 		if(src && !exploded)

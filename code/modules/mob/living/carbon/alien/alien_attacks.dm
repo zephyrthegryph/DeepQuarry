@@ -3,6 +3,9 @@
 /mob/living/carbon/alien/attack_ui(slot_id)
 	return
 
+/atom/movable/proc/step_away_from(atom/A)
+	step_away(src, A, 15)
+
 /mob/living/carbon/alien/attack_hand(mob/living/carbon/M as mob)
 
 	..()
@@ -35,11 +38,9 @@
 			if (prob(90))
 				if (M.has_mutation(HULK))
 					damage += 5
-					spawn(0)
-						status_at_least(EFFECT_PARALYZED, 1)
-						step_away(src,M,15)
-						sleep(3)
-						step_away(src,M,15)
+					status_at_least(EFFECT_PARALYZED, 1)
+					step_away(src,M,15)
+					om_after(src, 3, TYPE_PROC_REF(/atom/movable, step_away_from), M)
 				playsound(src, "punch", 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))

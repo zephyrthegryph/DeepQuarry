@@ -859,56 +859,16 @@
 /mob/proc/embedded_needs_process()
 	return (LAZYLEN(embedded) > 0)
 
-/mob/proc/yank_out_object()
-	set category = "Object"
-	set name = "Yank out object"
-	set desc = "Remove an embedded item at the cost of bleeding and pain."
-	set src in view(1)
-
-	if(!isliving(usr) || !usr.checkClickCooldown())
-		return
-	usr.setClickCooldown(20)
-
-	if(usr.stat == 1)
-		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
-		return
-
-	if(usr.restrained())
-		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
-		return
-
+/mob/proc/yank_out_done(mob/U, obj/item/selection, self)
 	var/mob/S = src
-	var/mob/U = usr
-	var/list/valid_objects = list()
-	var/self = null
-
-	if(S == U)
-		self = 1 // Removing object from yourself.
-
-	valid_objects = get_visible_implants(0)
-	if(!valid_objects.len)
-		if(self)
-			to_chat(src, span_filter_notice("You have nothing stuck in your body that is large enough to remove."))
-		else
-			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
-		return
-
-	var/obj/item/selection = tgui_input_list(usr, "What do you want to yank out?", "Embedded objects", valid_objects)
-
-	if(self)
-		to_chat(src, span_warning("You attempt to get a good grip on [selection] in your body."))
-	else
-		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
-
-	if(!do_after(U, 3 SECONDS, target = src))
-		return
+	var/list/valid_objects
 	if(!selection || !S || !U)
 		return
 
 	if(self)
 		visible_message(span_boldwarning("[src] rips [selection] out of their body."),span_boldwarning("You rip [selection] out of your body."))
 	else
-		visible_message(span_boldwarning("[usr] rips [selection] out of [src]'s body."),span_boldwarning("[usr] rips [selection] out of your body."))
+		visible_message(span_boldwarning("[U] rips [selection] out of [src]'s body."),span_boldwarning("[U] rips [selection] out of your body."))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
 		remove_verb(src, /mob/proc/yank_out_object)
@@ -952,6 +912,50 @@
 		if(!LAZYLEN(pinned))
 			anchored = FALSE
 	return 1
+
+/mob/proc/yank_out_object()
+	set category = "Object"
+	set name = "Yank out object"
+	set desc = "Remove an embedded item at the cost of bleeding and pain."
+	set src in view(1)
+
+	if(!isliving(usr) || !usr.checkClickCooldown())
+		return
+	usr.setClickCooldown(20)
+
+	if(usr.stat == 1)
+		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
+		return
+
+	if(usr.restrained())
+		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
+		return
+
+	var/mob/S = src
+	var/mob/U = usr
+	var/list/valid_objects = list()
+	var/self = null
+
+	if(S == U)
+		self = 1 // Removing object from yourself.
+
+	valid_objects = get_visible_implants(0)
+	if(!valid_objects.len)
+		if(self)
+			to_chat(src, span_filter_notice("You have nothing stuck in your body that is large enough to remove."))
+		else
+			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
+		return
+
+	var/obj/item/selection = tgui_input_list(usr, "What do you want to yank out?", "Embedded objects", valid_objects)
+
+	if(self)
+		to_chat(src, span_warning("You attempt to get a good grip on [selection] in your body."))
+	else
+		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
+
+	om_do_after(U, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(yank_out_done), done_args = list(U, selection, self))
+
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()

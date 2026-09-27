@@ -143,8 +143,10 @@
 	var/obj/item/organ/external/E = get_active_hand()
 	if(!check_can_attach_modular_limb(E))
 		return FALSE
-	if(!do_after(src, 2 SECONDS, target = src))
-		return FALSE
+	om_do_after(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attach_limb_verb_human_done), done_args = list(E))
+	return TRUE
+
+/mob/living/carbon/human/proc/attach_limb_verb_human_done(obj/item/organ/external/E)
 	if(!check_can_attach_modular_limb(E))
 		return FALSE
 
@@ -175,8 +177,10 @@
 	var/obj/item/organ/external/E = tgui_input_list(src, "Which limb do you wish to detach?", "Limb Removal", detachable_limbs)
 	if(!check_can_detach_modular_limb(E))
 		return FALSE
-	if(!do_after(src, 2 SECONDS, target = src))
-		return FALSE
+	om_do_after(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
+	return TRUE
+
+/mob/living/carbon/human/proc/detach_limb_verb_human_done(obj/item/organ/external/E)
 	if(!check_can_detach_modular_limb(E))
 		return FALSE
 

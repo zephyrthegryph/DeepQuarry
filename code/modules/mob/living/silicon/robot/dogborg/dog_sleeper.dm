@@ -81,6 +81,19 @@
 	var/datum/gas_mixture/belly_air/air = new(1000)
 	return air
 
+/obj/item/dogborg/sleeper/proc/intake_patient_done(mob/living/carbon/human/H, mob/living/silicon/user)
+	if(BUCKLED(H))
+		return
+	if(patient)
+		return //If you try to eat two people at once, you can only eat one.
+	else //If you don't have someone in you, proceed.
+		H.forceMove(src)
+		update_patient()
+		START_PROCESSING(SSobj, src)
+		user.visible_message(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside."), span_notice("Your [src] lights up as [H] slips inside. Life support functions engaged."))
+		log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+		playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+
 /obj/item/dogborg/sleeper/afterattack(atom/movable/target, mob/living/silicon/user, proximity_flag, click_parameters)
 	hound = loc
 	if(!istype(target))
@@ -105,28 +118,12 @@
 				to_chat(user, span_warning("\The [target] is too large to fit into your [src.name]"))
 				return
 			user.visible_message(span_warning("[hound.name] is ingesting [target.name] into their [src.name]."), span_notice("You start ingesting [target] into your [src.name]..."))
-			if(do_after(user, 3 SECONDS, target) && length(contents) < max_item_count)
-				target.forceMove(src)
-				user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside."), span_notice("Your [src.name] groans lightly as [target] slips inside."))
-				playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
-				if(delivery)
-					if(islist(deliverylists[delivery_tag]))
-						deliverylists[delivery_tag] |= target
-					to_chat(user, span_notice("\The [target.name] added to cargo compartment slot: [delivery_tag]."))
-				update_patient()
+			om_do_after(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
 			return
 		if(istype(target, /mob/living/simple_mob/animal/passive/mouse)) //Edible mice, dead or alive whatever. Mostly for carcass picking you cruel bastard :v
 			var/mob/living/simple_mob/trashmouse = target
 			user.visible_message(span_warning("[hound.name] is ingesting [trashmouse] into their [src.name]."), span_notice("You start ingesting [trashmouse] into your [src.name]..."))
-			if(do_after(user, 3 SECONDS, target = trashmouse) && length(contents) < max_item_count)
-				trashmouse.forceMove(src)
-				user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashmouse] slips inside."), span_notice("Your [src.name] groans lightly as [trashmouse] slips inside."))
-				playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
-				if(delivery)
-					if(islist(deliverylists[delivery_tag]))
-						deliverylists[delivery_tag] |= trashmouse
-					to_chat(user, span_notice("\The [trashmouse] added to cargo compartment slot: [delivery_tag]."))
-				update_patient()
+			om_do_after(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
 			return
 		else if(ishuman(target))
 			var/mob/living/carbon/human/trashman = target
@@ -137,18 +134,7 @@
 				to_chat(user, span_warning("[trashman] is buckled and can not be put into your [src.name]."))
 				return
 			user.visible_message(span_warning("[hound.name] is ingesting [trashman] into their [src.name]."), span_notice("You start ingesting [trashman] into your [src.name]..."))
-			if(do_after(user, 3 SECONDS, target = trashman) && !patient && !BUCKLED(trashman) && length(contents) < max_item_count)
-				trashman.forceMove(src)
-				START_PROCESSING(SSobj, src)
-				user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashman] slips inside."), span_notice("Your [src.name] groans lightly as [trashman] slips inside."))
-				log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-				playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
-				if(delivery)
-					if(islist(deliverylists[delivery_tag]))
-						deliverylists[delivery_tag] |= trashman
-					to_chat(user, span_notice("\The [trashman] added to cargo compartment slot: [delivery_tag]."))
-					to_chat(trashman, span_notice("[hound.name] has added you to their cargo compartment slot: [delivery_tag]."))
-				update_patient()
+			om_do_after(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
 			return
 		return
 
@@ -161,18 +147,45 @@
 			to_chat(user, span_warning("Your [src.name] is already occupied."))
 			return
 		user.visible_message(span_warning("[hound.name] is ingesting [H.name] into their [src.name]."), span_notice("You start ingesting [H] into your [src]..."))
-		if(!patient && !BUCKLED(H) && do_after (user, 50, H))
-			if(!proximity_flag)
-				return //If they moved away, you can't eat them.
-			if(patient)
-				return //If you try to eat two people at once, you can only eat one.
-			else //If you don't have someone in you, proceed.
-				H.forceMove(src)
-				update_patient()
-				START_PROCESSING(SSobj, src)
-				user.visible_message(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside."), span_notice("Your [src] lights up as [H] slips inside. Life support functions engaged."))
-				log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-				playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+		om_do_after(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
+
+
+/obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
+	if(!(length(contents) < max_item_count))
+		return
+	target.forceMove(src)
+	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside."), span_notice("Your [src.name] groans lightly as [target] slips inside."))
+	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	if(delivery)
+		if(islist(deliverylists[delivery_tag]))
+			deliverylists[delivery_tag] |= target
+		to_chat(user, span_notice("\The [target.name] added to cargo compartment slot: [delivery_tag]."))
+	update_patient()
+/obj/item/dogborg/sleeper/proc/afterattack_sleeper_done2(mob/living/silicon/user, mob/living/simple_mob/trashmouse)
+	if(!(length(contents) < max_item_count))
+		return
+	trashmouse.forceMove(src)
+	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashmouse] slips inside."), span_notice("Your [src.name] groans lightly as [trashmouse] slips inside."))
+	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	if(delivery)
+		if(islist(deliverylists[delivery_tag]))
+			deliverylists[delivery_tag] |= trashmouse
+		to_chat(user, span_notice("\The [trashmouse] added to cargo compartment slot: [delivery_tag]."))
+	update_patient()
+/obj/item/dogborg/sleeper/proc/afterattack_sleeper_done3(mob/living/silicon/user, mob/living/carbon/human/trashman)
+	if(!(!patient && !BUCKLED(trashman) && length(contents) < max_item_count))
+		return
+	trashman.forceMove(src)
+	START_PROCESSING(SSobj, src)
+	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashman] slips inside."), span_notice("Your [src.name] groans lightly as [trashman] slips inside."))
+	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	if(delivery)
+		if(islist(deliverylists[delivery_tag]))
+			deliverylists[delivery_tag] |= trashman
+		to_chat(user, span_notice("\The [trashman] added to cargo compartment slot: [delivery_tag]."))
+		to_chat(trashman, span_notice("[hound.name] has added you to their cargo compartment slot: [delivery_tag]."))
+	update_patient()
 
 /obj/item/dogborg/sleeper/proc/ingest_atom(atom/ingesting)
 	if (!ingesting || ingesting == hound)

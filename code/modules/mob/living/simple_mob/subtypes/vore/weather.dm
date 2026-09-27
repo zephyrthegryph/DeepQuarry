@@ -189,7 +189,6 @@
 			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A), 4 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
-	set waitfor = FALSE
 	if(ai_brain) ai_brain.busy = TRUE
 	if(!A)
 		return
@@ -198,14 +197,16 @@
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 
-	sleep(5) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	om_after(src, 5, PROC_REF(dash_attack_1), A) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+
+
+/mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack_1(atom/A)
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
 	var/turf/T = get_turf(src) // Where we landed. This might be different than A's turf.
 
-	. = FALSE
 
 	// Now for the stun.
 	var/mob/living/victim = null

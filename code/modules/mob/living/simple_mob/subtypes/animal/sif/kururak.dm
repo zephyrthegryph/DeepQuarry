@@ -286,12 +286,14 @@
 		M.take_damage(damage_to_apply)
 		if(prob(3))
 			visible_message(span_critical("\The [src] begins digging its claws into \the [M]'s hatch!"))
-			if(do_after(src, 1 SECOND, target = M))
-				visible_message(span_critical("\The [src] rips \the [M]'s access hatch open, dragging [SLOT_ITEM(M, MECHA_SLOT_PILOT)] out!"))
-				M.go_out()
+			om_do_after(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
 
 	else
 		A.attack_generic(src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
+
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(obj/mecha/M)
+	visible_message(span_critical("\The [src] rips \the [M]'s access hatch open, dragging [SLOT_ITEM(M, MECHA_SLOT_PILOT)] out!"))
+	M.go_out()
 
 /mob/living/simple_mob/animal/sif/kururak/verb/rally_pack()	// Mostly for telling other players to follow you. AI Kururaks will auto-follow, if set to.
 	set name = "Rally Pack"

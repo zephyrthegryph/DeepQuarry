@@ -57,11 +57,12 @@
 
 // The actual leaping attack.
 /mob/living/simple_mob/animal/giant_spider/hunter/do_special_attack(atom/A)
-	set waitfor = FALSE
 	if(ai_brain) ai_brain.busy = TRUE
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	sleep(leap_warmup) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(hunter_leap), A) // For the telegraphing.
+
+/mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_leap(atom/A)
 
 	// Do the actual leap.
 	status_flags |= LEAPING // Lets us pass over everything.
@@ -69,14 +70,14 @@
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	sleep(5) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	om_after(src, 5, PROC_REF(hunter_land)) // For the throw to complete.
+
+/mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_land()
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
 	var/turf/T = get_turf(src) // Where we landed. This might be different than A's turf.
-
-	. = FALSE
 
 	// Now for the stun.
 	var/mob/living/victim = null
@@ -96,7 +97,6 @@
 		victim.status_at_least(EFFECT_WEAKENED, 2)
 		victim.visible_message(span_danger("\The [src] knocks down \the [victim]!"))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
-		. = TRUE
 
 	if(ai_brain) ai_brain.busy = FALSE
 //		var/obj/item/grab/G = new(src, victim)

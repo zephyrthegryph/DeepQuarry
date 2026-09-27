@@ -83,14 +83,17 @@
 		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
 
-		if(do_after(src, 10 SECONDS, target = pred_body))
-			restore_control()
-		else
-			to_chat(src, span_notice("Your attempt to regain control has been interrupted..."))
-			to_chat(pred_body, span_notice("The dominant sensation fades away..."))
+		om_do_after(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 		..()
+
+/mob/living/dominated_brain/proc/process_resist_dominated_brain_done()
+	restore_control()
+
+/mob/living/dominated_brain/proc/process_resist_dominated_brain_failed()
+	to_chat(src, span_notice("Your attempt to regain control has been interrupted..."))
+	to_chat(pred_body, span_notice("The dominant sensation fades away..."))
 
 /mob/living/dominated_brain/proc/restore_control(ask = TRUE)
 
@@ -219,14 +222,19 @@
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you exert your will over them!"))
-	if(!do_after(prey, 10 SECONDS, target = pred))
-		to_chat(prey, span_notice("Your attempt to regain control has been interrupted..."))
-		to_chat(pred, span_notice("The dominant sensation fades away..."))
-		return
+	om_do_after(prey, 10 SECONDS, target = pred, receiver = src, on_done = PROC_REF(dominate_predator_mob_done), done_args = list(pred, prey), on_fail = PROC_REF(dominate_predator_mob_failed), fail_args = list(pred, prey))
+	return TRUE
+
+/mob/proc/dominate_predator_mob_done(mob/living/pred, mob/living/prey)
 
 	to_chat(prey, span_danger("You plunge your conciousness into \the [pred], assuming control over their very body, leaving your own behind within \the [pred]'s [loc]."))
 	to_chat(pred, span_danger("You feel your body move on its own, as you are pushed to the background, and an alien consciousness displaces yours."))
 	take_over_predator(prey, pred, "prey domination")
+
+/mob/proc/dominate_predator_mob_failed(mob/living/pred, mob/living/prey)
+	to_chat(prey, span_notice("Your attempt to regain control has been interrupted..."))
+	to_chat(pred, span_notice("The dominant sensation fades away..."))
+	return
 
 /mob/proc/release_predator()
 	set category = "Abilities.Vore"
@@ -259,13 +267,16 @@
 		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
 
-		if(do_after(src, 10 SECONDS, target = src))
-			restore_control()
-		else
-			to_chat(src, span_notice("Your attempt to regain control has been interrupted..."))
-			to_chat(pred_body, span_notice("The dominant sensation fades away..."))
+		om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(resist_control_dominated_brain_done), done_args = list(), on_fail = PROC_REF(resist_control_dominated_brain_failed), fail_args = list())
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
+
+/mob/living/dominated_brain/proc/resist_control_dominated_brain_done()
+	restore_control()
+
+/mob/living/dominated_brain/proc/resist_control_dominated_brain_failed()
+	to_chat(src, span_notice("Your attempt to regain control has been interrupted..."))
+	to_chat(pred_body, span_notice("The dominant sensation fades away..."))
 
 /mob/living/proc/dominate_prey()
 	set category = "Abilities.Vore"
@@ -315,10 +326,10 @@
 
 	if(istype(G) && M == GRAB_TARGET(G))
 		src.visible_message(span_danger("[src] seems to be doing something to [M], resulting in [M]'s body looking increasingly drowsy with every passing moment!"))
-	if(!do_after(src, 10 SECONDS, target = M))
-		to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
-		to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
-		return
+	om_do_after(src, 10 SECONDS, target = M, receiver = src, on_done = PROC_REF(dominate_prey_living_done), done_args = list(G, M), on_fail = PROC_REF(dominate_prey_living_failed), fail_args = list(G, M))
+	return TRUE
+
+/mob/living/proc/dominate_prey_living_done(obj/item/grab/G, mob/living/M)
 	if(!isbelly(M.loc) && !(istype(G) && M == GRAB_TARGET(G) && G.state == GRAB_NECK)) // Let dominate prey work on grabbed people
 		to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
 		to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
@@ -330,6 +341,11 @@
 	if(istype(G) && M == GRAB_TARGET(G))
 		visible_message(span_danger("[src] seems to finish whatever they were doing to [M]."))
 
+/mob/living/proc/dominate_prey_living_failed(obj/item/grab/G, mob/living/M)
+	to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
+	to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
+	return
+
 /mob/living/dominated_brain/proc/cease_this_foolishness()
 	set category = "Abilities.Vore"
 	set name = "Return to Body"
@@ -338,19 +354,22 @@
 	if(prey_body && prey_body.loc.loc == pred_body)
 		to_chat(src, span_notice("You exert your will and attempt to return to your body!!!"))
 		to_chat(pred_body, span_warning("\The [src] resists your hold and attempts to return to their body!"))
-		if(do_after(src, 10 SECONDS, target = pred_body))
-			if(prey_body && prey_body.loc.loc == pred_body)
-
-				return_to_body()
-			else
-				to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
-		else
-			to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
+		om_do_after(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(cease_this_foolishness_dominated_brain_done), done_args = list(), on_fail = PROC_REF(cease_this_foolishness_dominated_brain_failed), fail_args = list())
 	else if(prey_body)
 		to_chat(src, span_warning("You can sense your body... but it is not contained within [pred_body]... You cannot return to it at this time."))
 	else
 		to_chat(src, span_warning("Your body seems to no longer exist, so, you cannot return to it."))
 		remove_verb(src, /mob/living/dominated_brain/proc/cease_this_foolishness)
+
+/mob/living/dominated_brain/proc/cease_this_foolishness_dominated_brain_done()
+	if(prey_body && prey_body.loc.loc == pred_body)
+
+		return_to_body()
+	else
+		to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
+
+/mob/living/dominated_brain/proc/cease_this_foolishness_dominated_brain_failed()
+	to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 
 /mob/living/proc/lend_prey_control()
 	set category = "Abilities.Vore"
@@ -400,14 +419,19 @@
 		return
 	to_chat(pred, span_warning("You diminish your will, reducing it and allowing will of your prey to take over..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you are given control over them!"))
-	if(!do_after(pred, 10 SECONDS, target = prey))
-		to_chat(pred, span_notice("Your attempt to share control has been interrupted..."))
-		to_chat(prey, span_notice("The dominant sensation fades away..."))
-		return
+	om_do_after(pred, 10 SECONDS, target = prey, receiver = src, on_done = PROC_REF(lend_prey_control_living_done), done_args = list(prey, pred), on_fail = PROC_REF(lend_prey_control_living_failed), fail_args = list(prey, pred))
+	return TRUE
+
+/mob/living/proc/lend_prey_control_living_done(mob/living/prey, mob/living/pred)
 
 	to_chat(prey, span_danger("You plunge your conciousness into \the [pred], assuming control over their very body, leaving your own behind within \the [pred]'s [loc]."))
 	to_chat(pred, span_danger("You feel your body move on its own, as you move to the background, and an alien consciousness displaces yours."))
 	take_over_predator(prey, pred, "pred submission")
+
+/mob/living/proc/lend_prey_control_living_failed(mob/living/prey, mob/living/pred)
+	to_chat(pred, span_notice("Your attempt to share control has been interrupted..."))
+	to_chat(prey, span_notice("The dominant sensation fades away..."))
+	return
 
 /// The mind-move half of prey domination and pred submission: `prey`'s mind
 /// takes `pred`'s body and the predator's mind (if any) moves into a back seat.

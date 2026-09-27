@@ -337,6 +337,15 @@
 		var/obj/belly/B = self.loc
 		self.sting(B.owner)
 
+/// Flops away from M, up to `steps` tiles, 0.3 s apart.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_flee(mob/living/M, steps)
+	var/turf/T = get_step_away(src, M)
+	if(!T || !is_type_in_list(T, GLOB.suitable_fish_turf_types))
+		return
+	Move(T)
+	if(steps > 1)
+		om_after(src, 3, PROC_REF(koi_flee), M, steps - 1)
+
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/attack_hand(mob/living/L)
 	..()
 	if(isliving(L) && Adjacent(L))
@@ -348,13 +357,7 @@
 				to_chat(M, span_warning("You feel a tiny prick."))
 		if(is_dead())
 			return
-		for(var/i = 1 to 3)
-			var/turf/T = get_step_away(src, M)
-			if(T && is_type_in_list(T, GLOB.suitable_fish_turf_types))
-				Move(T)
-			else
-				break
-			sleep(3)
+		koi_flee(M, 3)
 /*
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/react_to_attack(atom/A)
 	if(isliving(A) && Adjacent(A))
@@ -366,13 +369,7 @@
 				to_chat(M, span_warning("You feel a tiny prick."))
 		if(is_dead())
 			return
-		for(var/i = 1 to 3)
-			var/turf/T = get_step_away(src, M)
-			if(T && is_type_in_list(T, GLOB.suitable_fish_turf_types))
-				Move(T)
-			else
-				break
-			sleep(3)
+		koi_flee(M, 3)
 */
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/sting(mob/living/M)
 	if(!M.reagents)

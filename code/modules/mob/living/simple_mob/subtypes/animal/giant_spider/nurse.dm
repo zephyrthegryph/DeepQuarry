@@ -102,10 +102,10 @@
 
 	// Get our AI to stay still.
 	if(ai_brain) ai_brain.busy = TRUE
-	if(!do_after(src,5 SECONDS, AM))
-		if(ai_brain) ai_brain.busy = FALSE
-		to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
-		return FALSE
+	om_do_after(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM))
+	return TRUE
+
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(atom/movable/AM)
 
 	if(ai_brain) ai_brain.busy = FALSE
 	if(!AM) // Make sure it didn't get deleted for whatever reason.
@@ -145,6 +145,11 @@
 	ai_brain?.lose_target()
 
 	return TRUE
+
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_failed(atom/movable/AM)
+	if(ai_brain) ai_brain.busy = FALSE
+	to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
+	return FALSE
 
 /datum/om/stage/life/special/animal/giant_spider/nurse
 	of = /mob/living/simple_mob/animal/giant_spider/nurse

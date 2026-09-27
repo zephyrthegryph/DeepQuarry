@@ -159,18 +159,21 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	forceMove(vent)
 	playsound(vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
 	vent.visible_message("\The [src] wiggles into \the [vent]!")
-	var/redirect_attempts = 3
-	while(redirect_attempts)
-		var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
-		sleep(travel_time)
-		if(end_vent.welded)
-			end_vent = get_safe_ventcrawl_target(vent)
-			if(!end_vent)
-				forceMove(get_turf(vent))
-				return
-			redirect_attempts--
-			continue
-		break
+	ventcrawl_travel(vent, end_vent, 3)
+
+/// Travel time through the ducts; welded exits redirect up to `redirect_attempts` times.
+/mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_travel(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
+	var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
+	om_after(src, travel_time, PROC_REF(ventcrawl_arrive), vent, end_vent, redirect_attempts)
+
+/mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_arrive(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
+	if(end_vent.welded && redirect_attempts)
+		end_vent = get_safe_ventcrawl_target(vent)
+		if(!end_vent)
+			forceMove(get_turf(vent))
+			return
+		ventcrawl_travel(vent, end_vent, redirect_attempts - 1)
+		return
 	playsound(end_vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
 	forceMove(get_turf(end_vent))
 

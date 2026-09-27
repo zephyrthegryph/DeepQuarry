@@ -117,34 +117,33 @@
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	if(do_after(src, 30 SECONDS, target = B))
-		if(!Adjacent(B)) return
-		if(noise)
-			src.visible_message(span_infoplain(span_red(span_bold("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))))
-		else
-			src.visible_message(span_infoplain(span_red(span_italics("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))), range = 1)
-		if(bleed)
-			B.injure(INJURY_PIERCE, 10, BP_HEAD, src)
-			var/obj/item/organ/external/E = B.get_organ(BP_HEAD)
-			if(!(E.status & ORGAN_BLEEDING))
-				E.status |= ORGAN_BLEEDING //If 10 points of piercing didn't make the organ bleed, we are making it bleed.
+	om_do_after(src, 30 SECONDS, target = B, receiver = src, on_done = PROC_REF(bloodsuck_human_done), done_args = list(B, noise, bleed))
+
+/mob/living/carbon/human/proc/bloodsuck_human_done(mob/living/carbon/human/B, noise, bleed)
+	if(!Adjacent(B)) return
+	if(noise)
+		src.visible_message(span_infoplain(span_red(span_bold("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))))
+	else
+		src.visible_message(span_infoplain(span_red(span_italics("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))), range = 1)
+	if(bleed)
+		B.injure(INJURY_PIERCE, 10, BP_HEAD, src)
+		var/obj/item/organ/external/E = B.get_organ(BP_HEAD)
+		if(!(E.status & ORGAN_BLEEDING))
+			E.status |= ORGAN_BLEEDING //If 10 points of piercing didn't make the organ bleed, we are making it bleed.
 
 
-		else
-			B.injure(INJURY_PIERCE, 5, BP_HEAD, src) //You're getting fangs pushed into your neck. What do you expect????
+	else
+		B.injure(INJURY_PIERCE, 5, BP_HEAD, src) //You're getting fangs pushed into your neck. What do you expect????
 
 
-		if(!noise && !bleed) //If we're quiet and careful, there should be no blood to serve as evidence
-			B.remove_blood(82) //Removing in one go since we dont want splatter
-			adjust_nutrition(410) //We drink it all, not letting any go to waste!
-		else //Otherwise, we're letting blood drop to the floor
-			B.drip(80) //Remove enough blood to make them a bit woozy, but not take oxyloss.
-			adjust_nutrition(400)
-			sleep(50)
-			B.drip(1)
-			sleep(50)
-			B.drip(1)
-
+	if(!noise && !bleed) //If we're quiet and careful, there should be no blood to serve as evidence
+		B.remove_blood(82) //Removing in one go since we dont want splatter
+		adjust_nutrition(410) //We drink it all, not letting any go to waste!
+	else //Otherwise, we're letting blood drop to the floor
+		B.drip(80) //Remove enough blood to make them a bit woozy, but not take oxyloss.
+		adjust_nutrition(400)
+		om_after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
+		om_after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
 
 //Welcome to the adapted changeling absorb code.
 /mob/living/carbon/human/proc/succubus_drain()
@@ -173,42 +172,59 @@
 		return
 
 	C.absorbing_prey = 1
-	for(var/stage = 1, stage<=100, stage++) //100 stages.
-		switch(stage)
-			if(1)
-				to_chat(C, span_notice("You begin to drain [T]..."))
-				to_chat(T, span_danger("An odd sensation flows through your body as [C] begins to drain you!"))
-				C.nutrition = (C.nutrition + (T.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
-				T.nutrition = T.nutrition*0.95
-			if(2)
-				to_chat(C, span_notice("You feel stronger with every passing moment of draining [T]."))
-				src.visible_message(span_danger("[C] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
-				to_chat(T, span_danger("You feel weaker with every passing moment as [C] drains you!"))
-				C.nutrition = (C.nutrition + (T.nutrition*0.1))
-				T.nutrition = T.nutrition*0.9
-			if(3 to 99)
-				C.nutrition = (C.nutrition + (T.nutrition*0.1)) //Just keep draining them.
-				T.nutrition = T.nutrition*0.9
-				T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-				if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
-					stage = 99
-				if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
-					stage = 3
-			if(100)
-				C.nutrition = (C.nutrition + T.nutrition)
-				T.nutrition = 0 //Completely drained of everything.
-				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
-				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-				C.absorbing_prey = FALSE
-				to_chat(C, span_notice("You have completely drained [T], causing them to pass out."))
-				to_chat(T, span_danger("You feel weak, as if you have no control over your body whatsoever as [C] finishes draining you.!"))
-				add_attack_logs(C,T,"Succubus drained")
-				return
+	succubus_drain_step(T, G, 1)
 
-		if(!do_after(src, 5 SECONDS, T) || G.state != GRAB_NECK) //One drain tick every 5 seconds.
-			to_chat(src, span_warning("Your draining of [T] has been interrupted!"))
+/// One stage of succubus_drain; each stage waits 5 seconds of holding the grab.
+/mob/living/carbon/human/proc/succubus_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	stage = succubus_drain_stage(T, stage)
+	if(!stage)
+		return
+	om_do_after(src, 5 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_drain_tick), done_args = list(T, G, stage), on_fail = PROC_REF(succubus_drain_interrupted), fail_args = list(T))
+
+/mob/living/carbon/human/proc/succubus_drain_tick(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	if(QDELETED(G) || G.state != GRAB_NECK)
+		succubus_drain_interrupted(T)
+		return
+	succubus_drain_step(T, G, stage + 1)
+
+/mob/living/carbon/human/proc/succubus_drain_interrupted(mob/living/carbon/human/T)
+	to_chat(src, span_warning("Your draining of [T] has been interrupted!"))
+	absorbing_prey = FALSE
+
+/// Runs stage `stage`; returns the stage to continue from, or 0 when done.
+/mob/living/carbon/human/proc/succubus_drain_stage(mob/living/carbon/human/T, stage)
+	var/mob/living/carbon/human/C = src
+	switch(stage)
+		if(1)
+			to_chat(C, span_notice("You begin to drain [T]..."))
+			to_chat(T, span_danger("An odd sensation flows through your body as [C] begins to drain you!"))
+			C.nutrition = (C.nutrition + (T.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
+			T.nutrition = T.nutrition*0.95
+		if(2)
+			to_chat(C, span_notice("You feel stronger with every passing moment of draining [T]."))
+			src.visible_message(span_danger("[C] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
+			to_chat(T, span_danger("You feel weaker with every passing moment as [C] drains you!"))
+			C.nutrition = (C.nutrition + (T.nutrition*0.1))
+			T.nutrition = T.nutrition*0.9
+		if(3 to 99)
+			C.nutrition = (C.nutrition + (T.nutrition*0.1)) //Just keep draining them.
+			T.nutrition = T.nutrition*0.9
+			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+			if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
+				stage = 99
+			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+				stage = 3
+		if(100)
+			C.nutrition = (C.nutrition + T.nutrition)
+			T.nutrition = 0 //Completely drained of everything.
+			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
+			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
 			C.absorbing_prey = FALSE
-			return
+			to_chat(C, span_notice("You have completely drained [T], causing them to pass out."))
+			to_chat(T, span_danger("You feel weak, as if you have no control over your body whatsoever as [C] finishes draining you.!"))
+			add_attack_logs(C,T,"Succubus drained")
+			return 0
+	return stage
 
 /mob/living/carbon/human/proc/succubus_drain_lethal()
 	set name = "Lethally drain prey" //Provide a warning that THIS WILL KILL YOUR PREY.
@@ -236,77 +252,93 @@
 		return
 
 	absorbing_prey = 1
-	for(var/stage = 1, stage<=100, stage++) //100 stages.
-		switch(stage)
-			if(1)
-				if(T.stat == DEAD)
-					to_chat(src, span_warning("[T] is dead and can not be drained.."))
-					return
-				to_chat(src, span_notice("You begin to drain [T]..."))
-				to_chat(T, span_danger("An odd sensation flows through your body as [src] begins to drain you!"))
-				nutrition = (nutrition + (T.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
-				T.nutrition = T.nutrition*0.95
-			if(2)
-				to_chat(src, span_notice("You feel stronger with every passing moment as you drain [T]."))
-				visible_message(span_danger("[src] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
-				to_chat(T, span_danger("You feel weaker with every passing moment as [src] drains you!"))
-				nutrition = (nutrition + (T.nutrition*0.1))
-				T.nutrition = T.nutrition*0.9
-			if(3 to 48) //Should be more than enough to get under 100.
-				nutrition = (nutrition + (T.nutrition*0.1)) //Just keep draining them.
-				T.nutrition = T.nutrition*0.9
-				T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-				if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
-					stage = 49
-			if(49)
-				if(T.nutrition < 100)//Did they somehow not get drained below 100 nutrition yet? If not, go back to stage 3 and repeat until they get drained.
-					stage = 3 //Otherwise, advance to stage 50 (Lethal draining.)
-			if(50)
-				if(!T.digestable)
-					to_chat(src, span_danger("You feel invigorated as you completely drain [T] and begin to move onto draining them lethally before realizing they are too strong for you to do so!"))
-					to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
-					nutrition = (nutrition + T.nutrition)
-					T.nutrition = 0 //Completely drained of everything.
-					var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
-					T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-					absorbing_prey = 0 //Clean this up before we return
-					return
-				to_chat(src, span_notice("You begin to drain [T] completely..."))
-				to_chat(T, span_danger("An odd sensation flows through your body as you as [src] begins to drain you to dangerous levels!"))
-			if(51 to 98)
-				if(T.stat == DEAD)
-					if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
-						soulgem.catch_mob(T)
-					T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Bit of fluff.
-					absorbing_prey = 0
-					to_chat(src, span_notice("You have completely drained [T], killing them."))
-					to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
-					add_attack_logs(src,T,"Succubus drained (almost lethal)")
-					return
-				if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
-					T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
-				T.status_adjust(EFFECT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
-				nutrition = (nutrition + 25) //Assuming brain damage kills at 60, this gives 300 nutrition.
-			if(99)
-				if(drain_finalized != 1)
-					stage = 51
-			if(100) //They shouldn't  survive long enough to get here, but just in case.
+	succubus_drain_lethal_step(T, G, 1)
+
+/// One stage of succubus_drain_lethal; each stage waits 5 seconds of holding the grab.
+/mob/living/carbon/human/proc/succubus_drain_lethal_step(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	stage = succubus_drain_lethal_stage(T, stage)
+	if(!stage)
+		return
+	om_do_after(src, 5 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_drain_lethal_tick), done_args = list(T, G, stage), on_fail = PROC_REF(succubus_drain_lethal_interrupted), fail_args = list(T))
+
+/mob/living/carbon/human/proc/succubus_drain_lethal_tick(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	if(QDELETED(G) || G.state != GRAB_NECK)
+		succubus_drain_lethal_interrupted(T)
+		return
+	succubus_drain_lethal_step(T, G, stage + 1)
+
+/mob/living/carbon/human/proc/succubus_drain_lethal_interrupted(mob/living/carbon/human/T)
+	to_chat(src, span_warning("Your draining of [T] has been interrupted!"))
+	absorbing_prey = FALSE
+
+/// Runs stage `stage`; returns the stage to continue from, or 0 when done.
+/mob/living/carbon/human/proc/succubus_drain_lethal_stage(mob/living/carbon/human/T, stage)
+	switch(stage)
+		if(1)
+			if(T.stat == DEAD)
+				to_chat(src, span_warning("[T] is dead and can not be drained.."))
+				return 0
+			to_chat(src, span_notice("You begin to drain [T]..."))
+			to_chat(T, span_danger("An odd sensation flows through your body as [src] begins to drain you!"))
+			nutrition = (nutrition + (T.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
+			T.nutrition = T.nutrition*0.95
+		if(2)
+			to_chat(src, span_notice("You feel stronger with every passing moment as you drain [T]."))
+			visible_message(span_danger("[src] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
+			to_chat(T, span_danger("You feel weaker with every passing moment as [src] drains you!"))
+			nutrition = (nutrition + (T.nutrition*0.1))
+			T.nutrition = T.nutrition*0.9
+		if(3 to 48) //Should be more than enough to get under 100.
+			nutrition = (nutrition + (T.nutrition*0.1)) //Just keep draining them.
+			T.nutrition = T.nutrition*0.9
+			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+			if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
+				stage = 49
+		if(49)
+			if(T.nutrition < 100)//Did they somehow not get drained below 100 nutrition yet? If not, go back to stage 3 and repeat until they get drained.
+				stage = 3 //Otherwise, advance to stage 50 (Lethal draining.)
+		if(50)
+			if(!T.digestable)
+				to_chat(src, span_danger("You feel invigorated as you completely drain [T] and begin to move onto draining them lethally before realizing they are too strong for you to do so!"))
+				to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
+				nutrition = (nutrition + T.nutrition)
+				T.nutrition = 0 //Completely drained of everything.
+				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
+				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
+				absorbing_prey = 0 //Clean this up before we return
+				return 0
+			to_chat(src, span_notice("You begin to drain [T] completely..."))
+			to_chat(T, span_danger("An odd sensation flows through your body as you as [src] begins to drain you to dangerous levels!"))
+		if(51 to 98)
+			if(T.stat == DEAD)
 				if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 					soulgem.catch_mob(T)
-				T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Kill them.
-				if(T.stat != DEAD)
-					T.death()
-				absorbing_prey = FALSE
-				to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
-				to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
-				visible_message(span_danger("[src] seems to finish whatever they were doing to [T]."))
-				add_attack_logs(src,T,"Succubus drained (lethal)")
-				return
-
-		if(!do_after(src, 5 SECONDS, T) || G.state != GRAB_NECK) //One drain tick every 5 seconds.
-			to_chat(src, span_warning("Your draining of [T] has been interrupted!"))
+				T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Bit of fluff.
+				absorbing_prey = 0
+				to_chat(src, span_notice("You have completely drained [T], killing them."))
+				to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
+				add_attack_logs(src,T,"Succubus drained (almost lethal)")
+				return 0
+			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
+				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
+			T.status_adjust(EFFECT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
+			nutrition = (nutrition + 25) //Assuming brain damage kills at 60, this gives 300 nutrition.
+		if(99)
+			if(drain_finalized != 1)
+				stage = 51
+		if(100) //They shouldn't  survive long enough to get here, but just in case.
+			if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
+				soulgem.catch_mob(T)
+			T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Kill them.
+			if(T.stat != DEAD)
+				T.death()
 			absorbing_prey = FALSE
-			return
+			to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
+			to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
+			visible_message(span_danger("[src] seems to finish whatever they were doing to [T]."))
+			add_attack_logs(src,T,"Succubus drained (lethal)")
+			return 0
+	return stage
 
 /mob/living/carbon/human/proc/slime_feed()
 	set name = "Feed prey with self"
@@ -333,41 +365,58 @@
 		return
 
 	C.absorbing_prey = 1
-	for(var/stage = 1, stage<=100, stage++) //100 stages.
-		switch(stage)
-			if(1)
-				to_chat(C, span_notice("You begin to feed [T]..."))
-				to_chat(T, span_notice("An odd sensation flows through your body as [C] begins to feed you!"))
-				T.nutrition = (T.nutrition + (C.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
-				C.nutrition = C.nutrition*0.95
-			if(2)
-				to_chat(C, span_notice("You feel weaker with every passing moment of feeding [T]."))
-				src.visible_message(span_notice("[C] seems to be doing something to [T], resulting in [T]'s body looking stronger with every passing moment!"))
-				to_chat(T, span_notice("You feel stronger with every passing moment as [C] feeds you!"))
-				T.nutrition = (T.nutrition + (C.nutrition*0.1))
-				C.nutrition = C.nutrition*0.90
-			if(3 to 99)
-				T.nutrition = (T.nutrition + (C.nutrition*0.1)) //Just keep draining them.
-				C.nutrition = C.nutrition*0.9
-				T.status_adjust(EFFECT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
-				if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
-					stage = 99
-				if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
-					stage = 3
-			if(100)
-				T.nutrition = (T.nutrition + C.nutrition)
-				C.nutrition = 0 //Completely drained of everything.
-				C.absorbing_prey = FALSE
-				to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
-				to_chat(T, span_notice("You feel quite strong and well fed, as [C] finishes feeding \himself to you!"))
-				add_attack_logs(C,T,"Slime fed")
-				C.feed_grabbed_to_self_falling_nom(T,C) //Reused this proc instead of making a new one to cut down on code usage.
-				return
+	slime_feed_step(T, G, 1)
 
-		if(!do_after(src, 5 SECONDS, T) || !G.state) //One drain tick every 5 seconds.
-			to_chat(src, span_warning("Your feeding of [T] has been interrupted!"))
+/// One stage of slime_feed; each stage waits 5 seconds of holding the grab.
+/mob/living/carbon/human/proc/slime_feed_step(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	stage = slime_feed_stage(T, stage)
+	if(!stage)
+		return
+	om_do_after(src, 5 SECONDS, target = T, receiver = src, on_done = PROC_REF(slime_feed_tick), done_args = list(T, G, stage), on_fail = PROC_REF(slime_feed_interrupted), fail_args = list(T))
+
+/mob/living/carbon/human/proc/slime_feed_tick(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	if(QDELETED(G) || !G.state)
+		slime_feed_interrupted(T)
+		return
+	slime_feed_step(T, G, stage + 1)
+
+/mob/living/carbon/human/proc/slime_feed_interrupted(mob/living/carbon/human/T)
+	to_chat(src, span_warning("Your feeding of [T] has been interrupted!"))
+	absorbing_prey = FALSE
+
+/// Runs stage `stage`; returns the stage to continue from, or 0 when done.
+/mob/living/carbon/human/proc/slime_feed_stage(mob/living/carbon/human/T, stage)
+	var/mob/living/carbon/human/C = src
+	switch(stage)
+		if(1)
+			to_chat(C, span_notice("You begin to feed [T]..."))
+			to_chat(T, span_notice("An odd sensation flows through your body as [C] begins to feed you!"))
+			T.nutrition = (T.nutrition + (C.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
+			C.nutrition = C.nutrition*0.95
+		if(2)
+			to_chat(C, span_notice("You feel weaker with every passing moment of feeding [T]."))
+			src.visible_message(span_notice("[C] seems to be doing something to [T], resulting in [T]'s body looking stronger with every passing moment!"))
+			to_chat(T, span_notice("You feel stronger with every passing moment as [C] feeds you!"))
+			T.nutrition = (T.nutrition + (C.nutrition*0.1))
+			C.nutrition = C.nutrition*0.90
+		if(3 to 99)
+			T.nutrition = (T.nutrition + (C.nutrition*0.1)) //Just keep draining them.
+			C.nutrition = C.nutrition*0.9
+			T.status_adjust(EFFECT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
+			if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
+				stage = 99
+			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+				stage = 3
+		if(100)
+			T.nutrition = (T.nutrition + C.nutrition)
+			C.nutrition = 0 //Completely drained of everything.
 			C.absorbing_prey = FALSE
-			return
+			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
+			to_chat(T, span_notice("You feel quite strong and well fed, as [C] finishes feeding \himself to you!"))
+			add_attack_logs(C,T,"Slime fed")
+			C.feed_grabbed_to_self_falling_nom(T,C) //Reused this proc instead of making a new one to cut down on code usage.
+			return 0
+	return stage
 
 /mob/living/carbon/human/proc/succubus_drain_finalize()
 	set name = "Drain/Feed Finalization"
@@ -495,47 +544,49 @@
 	last_special = world.time + vore_shred_time
 	visible_message(span_danger("[src] appears to be preparing to do something to [T]!")) //Let everyone know that bad times are ahead
 
-	if(do_after(src, vore_shred_time, target = T)) //Ten seconds. You have to be in a neckgrab for this, so you're already in a bad position.
-		if(can_shred(T) != T)
-			to_chat(src,span_warning("Looks like you lost your chance..."))
-			return
+	om_do_after(src, vore_shred_time, target = T, receiver = src, on_done = PROC_REF(shred_limb_living_done), done_args = list(T, T_ext, T_int, B))
+
+/mob/living/proc/shred_limb_living_done(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
+	if(can_shred(T) != T)
+		to_chat(src,span_warning("Looks like you lost your chance..."))
+		return
 
 // T.add_modifier(/datum/modifier/gory_devourment, 10 SECONDS) // Don't need this because we don't do resleeving sickness.
 
-		//Removing an internal organ
-		if(T_int && T_int.damage >= 25) //Internal organ and it's been severely damaged
-			T.injure(INJURY_CUT, 15, T_ext.organ_tag, src) //Damage the external organ they're going through.
-			T_int.removed()
-			if(B)
-				T_int.forceMove(B) //Move to pred's gut
-				visible_message(span_danger("[src] severely damages [T_int.name] of [T]!"))
-			else
-				T_int.forceMove(T.loc)
-				visible_message(span_danger("[src] severely damages [T_ext.name] of [T], resulting in their [T_int.name] coming out!"),span_warning("You tear out [T]'s [T_int.name]!"))
-
-		//Removing an external organ
-		else if(!T_int && (T_ext.damage >= 25 || T_ext.get_trauma() >= 25))
-			T_ext.droplimb(1,DROPLIMB_EDGE) //Clean cut so it doesn't kill the prey completely.
-
-			//Is it groin/chest? You can't remove those.
-			if(T_ext.cannot_amputate)
-				T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
-				visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
-			else if(B)
-				T_ext.forceMove(B)
-				visible_message(span_warning("[src] swallows [T]'s [T_ext.name] into their [lowertext(B.name)]!"))
-			else
-				T_ext.forceMove(T.loc)
-				visible_message(span_warning("[src] tears off [T]'s [T_ext.name]!"),span_warning("You tear off [T]'s [T_ext.name]!"))
-
-		//Not targeting an internal organ w/ > 25 damage , and the limb doesn't have < 25 damage.
+	//Removing an internal organ
+	if(T_int && T_int.damage >= 25) //Internal organ and it's been severely damaged
+		T.injure(INJURY_CUT, 15, T_ext.organ_tag, src) //Damage the external organ they're going through.
+		T_int.removed()
+		if(B)
+			T_int.forceMove(B) //Move to pred's gut
+			visible_message(span_danger("[src] severely damages [T_int.name] of [T]!"))
 		else
-			if(T_int)
-				T.injure(INJURY_CUT, 25, T_int, src, affliction = /datum/affliction/lesion/laceration)
+			T_int.forceMove(T.loc)
+			visible_message(span_danger("[src] severely damages [T_ext.name] of [T], resulting in their [T_int.name] coming out!"),span_warning("You tear out [T]'s [T_int.name]!"))
+
+	//Removing an external organ
+	else if(!T_int && (T_ext.damage >= 25 || T_ext.get_trauma() >= 25))
+		T_ext.droplimb(1,DROPLIMB_EDGE) //Clean cut so it doesn't kill the prey completely.
+
+		//Is it groin/chest? You can't remove those.
+		if(T_ext.cannot_amputate)
 			T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
 			visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
+		else if(B)
+			T_ext.forceMove(B)
+			visible_message(span_warning("[src] swallows [T]'s [T_ext.name] into their [lowertext(B.name)]!"))
+		else
+			T_ext.forceMove(T.loc)
+			visible_message(span_warning("[src] tears off [T]'s [T_ext.name]!"),span_warning("You tear off [T]'s [T_ext.name]!"))
 
-		add_attack_logs(src,T,"Shredded (hardvore)")
+	//Not targeting an internal organ w/ > 25 damage , and the limb doesn't have < 25 damage.
+	else
+		if(T_int)
+			T.injure(INJURY_CUT, 25, T_int, src, affliction = /datum/affliction/lesion/laceration)
+		T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
+		visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
+
+	add_attack_logs(src,T,"Shredded (hardvore)")
 
 /mob/living/proc/shred_limb_temp()
 	set name = "Damage/Remove Prey's Organ (beartrap)"
@@ -636,21 +687,23 @@
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	if(do_after(src, 25, target = src))
-		var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
-		forceMove(C)
+	om_do_after(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
 
-		var/mob_holder_type = src.holder_type || /obj/item/holder
-		C.w_class = src.size_multiplier * 4 //Egg size and weight scaled to match occupant.
-		var/obj/item/holder/H = new mob_holder_type(C, src)
-		C.max_storage_space = H.w_class
-		C.icon_scale_x = 0.25 * C.w_class
-		C.icon_scale_y = 0.25 * C.w_class
-		C.update_transform()
-		//egg_contents -= src
-		C.contents -= src
-		var/datum/tgui_module/appearance_changer/cocoon/V = new(src, src)
-		V.tgui_interact(src)
+/mob/living/carbon/human/proc/enter_cocoon_human_done()
+	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
+	forceMove(C)
+
+	var/mob_holder_type = src.holder_type || /obj/item/holder
+	C.w_class = src.size_multiplier * 4 //Egg size and weight scaled to match occupant.
+	var/obj/item/holder/H = new mob_holder_type(C, src)
+	C.max_storage_space = H.w_class
+	C.icon_scale_x = 0.25 * C.w_class
+	C.icon_scale_y = 0.25 * C.w_class
+	C.update_transform()
+	//egg_contents -= src
+	C.contents -= src
+	var/datum/tgui_module/appearance_changer/cocoon/V = new(src, src)
+	V.tgui_interact(src)
 
 /mob/living/carbon/human/proc/water_stealth()
 	set name = "Dive under water / Resurface"
@@ -728,18 +781,20 @@
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
-	if(do_after(src, 5 SECONDS, target))
-		if(target.loc != starting_loc)
-			to_chat(target, span_warning("You got away from whatever that was..."))
-			to_chat(src, span_notice("They got away."))
-			return
-		if(BUCKLED(target)) //how are you BUCKLED(src) in the water?!
-			var/atom/movable/_tmp_buck_19 = BUCKLED(target)
-			_tmp_buck_19.unbuckle_mob()
-		target.visible_message(span_vwarning("\The [target] suddenly disappears, being dragged into the water!"),\
-			span_vdanger("You are dragged below the water and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
-		to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected.get_belly_name()]."))
-		vore_selected.nom_atom(target)
+	om_do_after(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
+
+/mob/living/carbon/human/proc/underwater_devour_human_done(mob/living/target, starting_loc)
+	if(target.loc != starting_loc)
+		to_chat(target, span_warning("You got away from whatever that was..."))
+		to_chat(src, span_notice("They got away."))
+		return
+	if(BUCKLED(target)) //how are you BUCKLED(src) in the water?!
+		var/atom/movable/_tmp_buck_19 = BUCKLED(target)
+		_tmp_buck_19.unbuckle_mob()
+	target.visible_message(span_vwarning("\The [target] suddenly disappears, being dragged into the water!"),\
+		span_vdanger("You are dragged below the water and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
+	to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected.get_belly_name()]."))
+	vore_selected.nom_atom(target)
 
 /mob/living/carbon/human/proc/toggle_pain_module()
 	set name = "Toggle pain simulation."
@@ -1019,24 +1074,25 @@
 		to_chat(target, span_danger("\The [src] focuses on you!"))
 		// Telegraph, since getting stunned suddenly feels bad.
 		do_windup_animation(target, leap_warmup)
-		sleep(leap_warmup) // For the telegraphing.
+		om_after(src, leap_warmup, PROC_REF(target_lunge_leap), target, leap_sound) // For the telegraphing.
 
-		if(target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-			return FALSE
+/mob/living/proc/target_lunge_leap(mob/living/target, leap_sound)
+	if(target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+		return FALSE
 
-		// Do the actual leap.
-		status_flags |= LEAPING // Lets us pass over everything.
-		visible_message(span_critical("\The [src] leaps at \the [target]!"))
-		throw_at(get_step(target, get_turf(src)), 7, 1, src)
-		playsound(src, leap_sound, 75, 1)
+	// Do the actual leap.
+	status_flags |= LEAPING // Lets us pass over everything.
+	visible_message(span_critical("\The [src] leaps at \the [target]!"))
+	throw_at(get_step(target, get_turf(src)), 7, 1, src)
+	playsound(src, leap_sound, 75, 1)
+	om_after(src, 5, PROC_REF(target_lunge_land), target) // For the throw to complete.
 
-		sleep(5) // For the throw to complete.
+/mob/living/proc/target_lunge_land(mob/living/target)
+	if(status_flags & LEAPING)
+		status_flags &= ~LEAPING // Revert special passage ability.
 
-		if(status_flags & LEAPING)
-			status_flags &= ~LEAPING // Revert special passage ability.
-
-		if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-			target.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		target.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
 
 /mob/living/proc/injection() // Allows the user to inject reagents into others somehow, like stinging, or biting.
@@ -1160,31 +1216,33 @@
 
 
 		visible_message(span_warning("[src] is preparing to [trait_injection_verb] [target]!"))
-		if(do_after(src, 5 SECONDS, target)) //A decent enough timer.
-			add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
-			if(target.reagents && (trait_injection_amount > 0) && !synth)
-				target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
-			var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
-			switch(zone_sel.selecting)
-				if(BP_HEAD)
-					ourmsg += "on the head!"
-				if(BP_TORSO)
-					ourmsg += "on the chest!"
-				if(BP_GROIN)
-					ourmsg += "on the groin!"
-				if(BP_R_ARM, BP_L_ARM)
-					ourmsg += "on the arm!"
-				if(BP_R_HAND, BP_L_HAND)
-					ourmsg += "on the hand!"
-				if(BP_R_LEG, BP_L_LEG)
-					ourmsg += "on the leg!"
-				if(BP_R_FOOT, BP_L_FOOT)
-					ourmsg += "on the foot!"
-				if("mouth")
-					ourmsg += "on the mouth!"
-				if("eyes")
-					ourmsg += "on the eyes!"
-			visible_message(span_warning(ourmsg))
+		om_do_after(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
+
+/mob/living/proc/injection_living_done(mob/living/target, synth)
+	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
+	if(target.reagents && (trait_injection_amount > 0) && !synth)
+		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
+	var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
+	switch(zone_sel.selecting)
+		if(BP_HEAD)
+			ourmsg += "on the head!"
+		if(BP_TORSO)
+			ourmsg += "on the chest!"
+		if(BP_GROIN)
+			ourmsg += "on the groin!"
+		if(BP_R_ARM, BP_L_ARM)
+			ourmsg += "on the arm!"
+		if(BP_R_HAND, BP_L_HAND)
+			ourmsg += "on the hand!"
+		if(BP_R_LEG, BP_L_LEG)
+			ourmsg += "on the leg!"
+		if(BP_R_FOOT, BP_L_FOOT)
+			ourmsg += "on the foot!"
+		if("mouth")
+			ourmsg += "on the mouth!"
+		if("eyes")
+			ourmsg += "on the eyes!"
+	visible_message(span_warning(ourmsg))
 
 //succuby bite is back baby
 /mob/living/proc/succubus_bite()
@@ -1225,22 +1283,24 @@
 
 	src.visible_message(span_bolddanger("[src] moves their head next to [T]'s neck, seemingly looking for something!"))
 
-	if(do_after(src, 30 SECONDS, target = T)) //Thrirty seconds.
-		if(choice == REAGENT_APHRODISIAC)
-			src.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
-			src.visible_message(span_red("[src] sinks their fangs into [T]!"))
-			T.bloodstr.add_reagent(REAGENT_ID_APHRODIAC_FLUID,100)
-			return 0
-		else if(choice == "Numbing")
-			src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
-			src.visible_message(span_red("[src] sinks their fangs into [T]!"))
-			T.bloodstr.add_reagent(REAGENT_ID_NUMBING_FLUID,20) //Poisons should work when more units are injected
-		else if(choice == "Paralyzing")
-			src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
-			src.visible_message(span_red("[src] sinks their fangs into [T]!"))
-			T.bloodstr.add_reagent(REAGENT_ID_PARALYZE_FLUID,20) //Poisons should work when more units are injected
-		else
-			return //Should never happen
+	om_do_after(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
+
+/mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
+	if(choice == REAGENT_APHRODISIAC)
+		src.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
+		src.visible_message(span_red("[src] sinks their fangs into [T]!"))
+		T.bloodstr.add_reagent(REAGENT_ID_APHRODIAC_FLUID,100)
+		return 0
+	else if(choice == "Numbing")
+		src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
+		src.visible_message(span_red("[src] sinks their fangs into [T]!"))
+		T.bloodstr.add_reagent(REAGENT_ID_NUMBING_FLUID,20) //Poisons should work when more units are injected
+	else if(choice == "Paralyzing")
+		src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
+		src.visible_message(span_red("[src] sinks their fangs into [T]!"))
+		T.bloodstr.add_reagent(REAGENT_ID_PARALYZE_FLUID,20) //Poisons should work when more units are injected
+	else
+		return //Should never happen
 
 /datum/reagent/succubi_aphrodisiac
 	name = REAGENT_APHRODISIAC
@@ -1314,28 +1374,30 @@
 	if(!choice)
 		return
 
-	if(do_after(src, 30 SECONDS, target = src)) //Thrirty seconds.
-		if(choice == "Make a Egg" && eggs > 5)
-			src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
-			return 0
-		else if(choice == "Make a Egg")
-			src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
-			C.nutrition -=150
-			eggs += 1
-			return 0
-		else if(choice == "lay your Eggs" && eggs > 0)
-			src.visible_message(span_infoplain(span_white("[src] freezes and vissibly tries to squat down")))
+	om_do_after(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(C, choice))
 
-			while(eggs > 0)
-				src.show_message(span_warning("You lay a egg!"))
-				eggs--
-				var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
-				E.pixel_x = rand(-6,6)
-				E.pixel_y = rand(-6,6)
-			return
-		else
-			src.visible_message(span_warning("you dont have any eggs!"))
-			return //Should never happen
+/mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
+	if(choice == "Make a Egg" && eggs > 5)
+		src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
+		return 0
+	else if(choice == "Make a Egg")
+		src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
+		C.nutrition -=150
+		eggs += 1
+		return 0
+	else if(choice == "lay your Eggs" && eggs > 0)
+		src.visible_message(span_infoplain(span_white("[src] freezes and vissibly tries to squat down")))
+
+		while(eggs > 0)
+			src.show_message(span_warning("You lay a egg!"))
+			eggs--
+			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
+			E.pixel_x = rand(-6,6)
+			E.pixel_y = rand(-6,6)
+		return
+	else
+		src.visible_message(span_warning("you dont have any eggs!"))
+		return //Should never happen
 
 /mob/living/proc/insect_sting()
 	set name = "Insect Sting"
@@ -1398,17 +1460,19 @@
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
 	var/starting_loc = target.loc
-	if(do_after(src, 5 SECONDS, target))
-		if(target.loc != starting_loc)
-			to_chat(src, span_notice("\The [target] is no longer within reach."))
-			return
-		if(BUCKLED(target))
-			var/atom/movable/_tmp_buck_20 = BUCKLED(target)
-			_tmp_buck_20.unbuckle_mob()
-		to_chat(src, span_vwarning("You manage to [lowertext(belly.vore_verb)] \the [target]!"))
-		to_chat(pred, span_vnotice("Your [belly] manages to [lowertext(belly.vore_verb)] \the [target]."))
-		to_chat(target, span_vwarning("You are [lowertext(belly.vore_verb)]ed by \The [pred]'s [belly]!"))
-		return pred.begin_instant_nom(src, target, pred, belly, FALSE)
+	om_do_after(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(absorb_devour_living_done), done_args = list(pred, belly, target, starting_loc))
+
+/mob/living/proc/absorb_devour_living_done(mob/living/pred, obj/belly/belly, mob/living/target, starting_loc)
+	if(target.loc != starting_loc)
+		to_chat(src, span_notice("\The [target] is no longer within reach."))
+		return
+	if(BUCKLED(target))
+		var/atom/movable/_tmp_buck_20 = BUCKLED(target)
+		_tmp_buck_20.unbuckle_mob()
+	to_chat(src, span_vwarning("You manage to [lowertext(belly.vore_verb)] \the [target]!"))
+	to_chat(pred, span_vnotice("Your [belly] manages to [lowertext(belly.vore_verb)] \the [target]."))
+	to_chat(target, span_vwarning("You are [lowertext(belly.vore_verb)]ed by \The [pred]'s [belly]!"))
+	return pred.begin_instant_nom(src, target, pred, belly, FALSE)
 
 /mob/living/proc/name_change_verb()
 	set name = "Change Name"

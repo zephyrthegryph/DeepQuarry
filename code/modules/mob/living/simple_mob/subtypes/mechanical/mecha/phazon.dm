@@ -55,22 +55,7 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a red missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
-
-	for(var/i = 1 to 2)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/big/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the red missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket/big, 2, "\The [src] retracts the red missile rack.")
 
 /obj/item/projectile/arc/explosive_rocket/big
 	name = "rocket"
@@ -88,22 +73,7 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a blue missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
-
-	for(var/i = 1 to 2)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the blue missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 2, "\The [src] retracts the blue missile rack.")
 
 /obj/item/projectile/arc/explosive_rocket/blue
 	name = "rocket"
@@ -121,22 +91,7 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a yellow missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
-
-	for(var/i = 1 to 2)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/spread/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the yellow missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket/spread, 2, "\The [src] retracts the yellow missile rack.")
 
 /obj/item/projectile/arc/explosive_rocket/spread
 	name = "rocket"

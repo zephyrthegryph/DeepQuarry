@@ -312,8 +312,9 @@
 	src.visible_message(span_danger("\The [src] leaps at [T]!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	playsound(src, 'sound/voice/hiss5.ogg', 50, 1)
+	om_after(src, 5, PROC_REF(leap_land), T)
 
-	sleep(5)
+/mob/living/carbon/human/proc/leap_land(mob/living/T)
 
 	if(status_flags & LEAPING) status_flags &= ~LEAPING
 

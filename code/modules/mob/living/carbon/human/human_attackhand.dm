@@ -104,6 +104,11 @@
 /// This condenses them and makes it less of a cluster.
 
 ///Help Intent
+/mob/living/carbon/human/proc/cpr_done(mob/living/carbon/human/H)
+	H.visible_message(span_danger("\The [H] performs CPR on \the [src]!"))
+	to_chat(H, span_warning("Repeat at least every 7 seconds."))
+	perform_cpr(H)
+
 /mob/living/carbon/human/proc/attack_hand_help_intent(mob/living/carbon/human/H, mob/living/M, has_hands)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -144,13 +149,7 @@
 
 		H.visible_message(span_danger("\The [H] is trying to perform CPR on \the [src]!"))
 
-		if(!do_after(H, 3 SECONDS, target = src))
-			return FALSE
-
-		H.visible_message(span_danger("\The [H] performs CPR on \the [src]!"))
-		to_chat(H, span_warning("Repeat at least every 7 seconds."))
-
-		perform_cpr(H)
+		om_do_after(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
 
 	else if(!(M == src && apply_pressure(M, M.zone_sel.selecting)))
 		help_shake_act(M)
@@ -466,11 +465,14 @@
 		return FALSE
 
 	user.visible_message(span_warning("[user] begins to dislocate [src]'s [organ.joint]!"))
-	if(do_after(user, 10 SECONDS, target = src))
-		organ.dislocate(1)
-		src.visible_message(span_danger("[src]'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
-		return TRUE
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
+	return TRUE
 	return FALSE
+
+/mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
+	organ.dislocate(1)
+	src.visible_message(span_danger("[src]'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
+	return TRUE
 
 //Breaks all grips and pulls that the mob currently has.
 /mob/living/carbon/human/proc/break_all_grabs(mob/living/carbon/user)
@@ -516,23 +518,25 @@
 		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You start applying pressure to your [organ.name]!"))
 	else
 		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [src]'s [organ.name]!"), span_filter_notice("You start applying pressure to [src]'s [organ.name]!"))
-	spawn(0)
-		organ.applied_pressure = user
+	organ.applied_pressure = user
 
-		//apply pressure as long as they stay still and keep grabbing
-		//This USED to have a 'target_zone' check that never actually worked so whatever.
-		//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
-		//You're already locking yourself down when you do so.
-		do_after(user, INFINITY, organ, hidden = TRUE)
-
-		organ.applied_pressure = null
-
-		if(user == src)
-			user.visible_message(span_filter_notice("\The [user] stops applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You stop applying pressure to your [organ]!"))
-		else
-			user.visible_message(span_filter_notice("\The [user] stops applying pressure to [src]'s [organ.name]!"), span_filter_notice("You stop applying pressure to [src]'s [organ.name]!"))
-
+	//apply pressure as long as they stay still and keep grabbing
+	//This USED to have a 'target_zone' check that never actually worked so whatever.
+	//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
+	//You're already locking yourself down when you do so.
+	om_do_after(user, INFINITY, target = organ, receiver = src, on_done = PROC_REF(pressure_released), done_args = list(user, organ), on_fail = PROC_REF(pressure_released), fail_args = list(user, organ), hidden = TRUE)
 	return TRUE
+
+/mob/living/carbon/human/proc/pressure_released(mob/living/user, obj/item/organ/external/organ)
+	if(!organ)
+		return
+	organ.applied_pressure = null
+	if(!user)
+		return
+	if(user == src)
+		user.visible_message(span_filter_notice("\The [user] stops applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You stop applying pressure to your [organ]!"))
+	else
+		user.visible_message(span_filter_notice("\The [user] stops applying pressure to [src]'s [organ.name]!"), span_filter_notice("You stop applying pressure to [src]'s [organ.name]!"))
 
 // check_attacks verb body relocated to code/modules/mob/living/carbon/human/attacks_panel.dm (structured TGUI).
 
@@ -651,8 +655,10 @@
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
 	rescuer.visible_message(span_danger("\The [rescuer] wraps [rescuer.p_their()] arms around \the [src] and thrusts hard under the ribs!"))
-	if(!do_after(rescuer, 2 SECONDS, target = src))
-		return FALSE
+	om_do_after(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
+	return TRUE
+
+/mob/living/carbon/human/proc/perform_heimlich_human_done(datum/affliction/airway_obstruction/choke)
 	if(QDELETED(choke) || choke.body != body)
 		return FALSE
 	choke.receive_tagged_treatment(TREAT_AIRWAY, rand(20, 45))

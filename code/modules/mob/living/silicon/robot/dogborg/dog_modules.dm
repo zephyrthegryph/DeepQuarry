@@ -129,6 +129,36 @@
 			icon_state = "synthtongue"
 		update_icon()
 
+/obj/item/robot_tongue/proc/tongue_eat_trash(atom/target, mob/user)
+	busy = 0
+	user.visible_message(span_filter_notice("[user] finishes eating \the [target.name]."), span_notice("You finish eating \the [target.name]."))
+	to_chat(user, span_notice("You finish off \the [target.name]."))
+	qdel(target)
+	var/mob/living/silicon/robot/R = user
+	R.add_power(ROBOT_CELL_JOULES(250), src)
+	water.use_charge(5)
+
+/obj/item/robot_tongue/proc/tongue_eat_food(atom/target, mob/user)
+	busy = 0
+	user.visible_message("[user] finishes eating \the [target.name].", span_notice("You finish eating \the [target.name]."))
+	user << span_notice("You finish off \the [target.name].")
+	qdel(target)
+	var/mob/living/silicon/robot/R = user
+	R.add_power(ROBOT_CELL_JOULES(250), src)
+
+/obj/item/robot_tongue/proc/tongue_eat_cell(atom/target, mob/user)
+	busy = 0
+	user.visible_message(span_filter_notice("[user] finishes gulping down \the [target.name]."), span_notice("You finish swallowing \the [target.name]."))
+	to_chat(user, span_notice("You finish off \the [target.name], and gain some charge!"))
+	var/mob/living/silicon/robot/R = user
+	var/obj/item/cell/C = target
+	R.add_power(ROBOT_CELL_JOULES(C.charge / 3), src)
+	water.use_charge(5)
+	qdel(target)
+
+/obj/item/robot_tongue/proc/tongue_stop()
+	busy = 0
+
 /obj/item/robot_tongue/afterattack(atom/target, mob/user, proximity)
 	if(!proximity)
 		return
@@ -146,69 +176,34 @@
 			return
 		user.visible_message(span_filter_notice("[user] begins to lap up water from [target.name]."), span_notice("You begin to lap up water from [target.name]."))
 		busy = 1
-		if(do_after(user, 5 SECONDS, target))
-			water.add_charge(250)
-			to_chat(src, span_filter_notice("You refill some of your water reserves."))
-		busy = 0
+		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), on_fail = PROC_REF(tongue_stop))
 	else if(water.energy < 5)
 		to_chat(user, span_notice("Your mouth feels dry. You should drink up some water ."))
 		return
 	else if(istype(target,/obj/effect/decal/cleanable))
 		user.visible_message(span_filter_notice("[user] begins to lick off \the [target.name]."), span_notice("You begin to lick off \the [target.name]..."))
 		busy = 1
-		if(do_after(user, 5 SECONDS, target))
-			to_chat(user, span_notice("You finish licking off \the [target.name]."))
-			water.use_charge(5)
-			qdel(target)
-			var/mob/living/silicon/robot/R = user
-			R.add_power(ROBOT_CELL_JOULES(50), src)
-		busy = 0
+		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), on_fail = PROC_REF(tongue_stop))
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
 			user.visible_message(span_filter_notice("[user] nibbles away at \the [target.name]."), span_notice("You begin to nibble away at \the [target.name]..."))
 			busy = 1
-			if(do_after (user, 5 SECONDS, target))
-				user.visible_message(span_filter_notice("[user] finishes eating \the [target.name]."), span_notice("You finish eating \the [target.name]."))
-				to_chat(user, span_notice("You finish off \the [target.name]."))
-				qdel(target)
-				var/mob/living/silicon/robot/R = user
-				R.add_power(ROBOT_CELL_JOULES(250), src)
-				water.use_charge(5)
-			busy = 0 // prevents abuse
+			om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), on_fail = PROC_REF(tongue_stop))
 			return
 		if(istype(target,/obj/item/reagent_containers/food))
 			user.visible_message("[user] nibbles away at \the [target.name].", span_notice("You begin to nibble away at \the [target.name]..."))
 			busy = 1 // prevents abuse
-			if(do_after (user, 5 SECONDS, target))
-				user.visible_message("[user] finishes eating \the [target.name].", span_notice("You finish eating \the [target.name]."))
-				user << span_notice("You finish off \the [target.name].")
-				qdel(target)
-				var/mob/living/silicon/robot/R = user
-				R.add_power(ROBOT_CELL_JOULES(250), src)
-			busy = 0 // prevents abuse
+			om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), on_fail = PROC_REF(tongue_stop))
 			return
 		if(istype(target,/obj/item/cell))
 			user.visible_message(span_filter_notice("[user] begins cramming \the [target.name] down its throat."), span_notice("You begin cramming \the [target.name] down your throat..."))
 			busy = 1
-			if(do_after (user, 5 SECONDS, target))
-				user.visible_message(span_filter_notice("[user] finishes gulping down \the [target.name]."), span_notice("You finish swallowing \the [target.name]."))
-				to_chat(user, span_notice("You finish off \the [target.name], and gain some charge!"))
-				var/mob/living/silicon/robot/R = user
-				var/obj/item/cell/C = target
-				R.add_power(ROBOT_CELL_JOULES(C.charge / 3), src)
-				water.use_charge(5)
-				qdel(target)
-			busy = 0 // prevents abuse
+			om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), on_fail = PROC_REF(tongue_stop))
 			return
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
 		busy = 1
-		if(do_after(user, 5 SECONDS, target))
-			to_chat(user, span_notice("You clean \the [target.name]."))
-			water.use_charge(5)
-			var/obj/effect/decal/cleanable/C = locate() in target
-			qdel(C)
-			target.wash(CLEAN_WASH)
-		busy = 0
+		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), on_fail = PROC_REF(tongue_stop))
+		return
 	else if(ishuman(target))
 		if(src.emagged)
 			var/mob/living/silicon/robot/R = user
@@ -232,17 +227,38 @@
 	else
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
 		busy = 1
-		if(do_after(user, 5 SECONDS, target))
-			to_chat(user, span_notice("You clean \the [target.name]."))
-			var/obj/effect/decal/cleanable/C = locate() in target
-			qdel(C)
-			target.wash(CLEAN_WASH)
-			water.use_charge(5)
-			if(istype(target, /turf/simulated))
-				var/turf/simulated/T = target
-				T.dirt = 0
+		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), on_fail = PROC_REF(tongue_stop))
+		return
 	busy = 0
-	return
+
+/obj/item/robot_tongue/proc/afterattack_robot_tongue_done()
+	busy = 0
+	water.add_charge(250)
+	to_chat(src, span_filter_notice("You refill some of your water reserves."))
+/obj/item/robot_tongue/proc/afterattack_robot_tongue_done2(atom/target, mob/user)
+	busy = 0
+	to_chat(user, span_notice("You finish licking off \the [target.name]."))
+	water.use_charge(5)
+	qdel(target)
+	var/mob/living/silicon/robot/R = user
+	R.add_power(ROBOT_CELL_JOULES(50), src)
+/obj/item/robot_tongue/proc/afterattack_robot_tongue_done3(atom/target, mob/user)
+	busy = 0
+	to_chat(user, span_notice("You clean \the [target.name]."))
+	water.use_charge(5)
+	var/obj/effect/decal/cleanable/C = locate() in target
+	qdel(C)
+	target.wash(CLEAN_WASH)
+/obj/item/robot_tongue/proc/afterattack_robot_tongue_done4(atom/target, mob/user)
+	busy = 0
+	to_chat(user, span_notice("You clean \the [target.name]."))
+	var/obj/effect/decal/cleanable/C = locate() in target
+	qdel(C)
+	target.wash(CLEAN_WASH)
+	water.use_charge(5)
+	if(istype(target, /turf/simulated))
+		var/turf/simulated/T = target
+		T.dirt = 0
 
 /obj/item/pupscrubber
 	name = "floor scrubber"
@@ -298,15 +314,18 @@
 				return
 			to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
 			cooldown = 1
-			if(do_after(user, 5 SECONDS, target = src))
-				glass.use_charge(125)
-				add_uses(1)
-				cooldown = 0
-			else
-				cooldown = 0
+			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_dogborg_done), done_args = list(), on_fail = PROC_REF(attack_self_dogborg_failed), fail_args = list())
 		else
 			to_chat(user, span_filter_notice("It has [uses] lights remaining."))
 			return
+
+/obj/item/lightreplacer/dogborg/proc/attack_self_dogborg_done()
+	glass.use_charge(125)
+	add_uses(1)
+	cooldown = 0
+
+/obj/item/lightreplacer/dogborg/proc/attack_self_dogborg_failed()
+	cooldown = 0
 
 /obj/item/dogborg/stasis_clamp
 	name = "stasis clamp"
@@ -413,8 +432,11 @@
 	pixel_y = default_pixel_y
 
 	if(!bluespace)
-		sleep(5)
+		om_after(src, 5, PROC_REF(leap_land), T)
+		return
+	leap_land(T)
 
+/mob/living/silicon/robot/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) status_flags &= ~LEAPING
 
 	if(!src.Adjacent(T))

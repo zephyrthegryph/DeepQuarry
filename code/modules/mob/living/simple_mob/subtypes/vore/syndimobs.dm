@@ -80,24 +80,27 @@
 	return ..()
 
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A)
-	set waitfor = FALSE
 	if(ai_brain) ai_brain.busy = TRUE
 	do_windup_animation(A, leap_warmup)
-	sleep(leap_warmup) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.
+
+
+/mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
 
 	status_flags |= LEAPING
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	sleep(5)
+	om_after(src, 5, PROC_REF(do_special_attack_2))
+
+/mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
 
 	var/turf/T = get_turf(src)
 
-	. = FALSE
 
 	// Now for the stun.
 	var/mob/living/victim = null
@@ -216,17 +219,17 @@
 	var/oursize = rand(90, 200) / 100
 	resize(oursize)
 
+/mob/living/simple_mob/vore/wolftaur/syndicate/proc/warning_flash(i, count)
+	if(i > count)
+		return
+	color = (i % 2 == 0) ? "#FFFFFF" : "#FF7777"
+	om_after(src, 1, PROC_REF(warning_flash), i + 1, count)
+
 /mob/living/simple_mob/vore/wolftaur/syndicate/death()
 	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#FFFFFF"
-			else
-				color = "#FF7777"
-			sleep(1)
+	// Flash white and red as a warning.
+	warning_flash(1, delay)
 
 	spawn(delay)
 		// The actual boom.

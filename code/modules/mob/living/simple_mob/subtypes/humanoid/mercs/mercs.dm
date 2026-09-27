@@ -290,8 +290,6 @@
 	. = ..()
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/shoot_target(atom/A)
-	set waitfor = FALSE
-
 	if(!istype(A) || QDELETED(A))
 		return
 
@@ -304,8 +302,12 @@
 	if(ranged_attack_delay)
 		A = get_turf(orig_targ)
 		ranged_pre_animation(A)
-		handle_attack_delay(A, ranged_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+		handle_attack_delay(A, ranged_attack_delay, PROC_REF(sniper_fire), orig_targ)
+		return TRUE
+	return sniper_fire(A, orig_targ)
 
+/// The sniper's shot once the laser sight has held long enough.
+/mob/living/simple_mob/humanoid/merc/ranged/sniper/proc/sniper_fire(atom/A, atom/orig_targ)
 	if(needs_reload)
 		if(reload_count >= reload_max)
 			try_reload()

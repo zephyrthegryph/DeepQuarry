@@ -115,20 +115,27 @@
 
 	stating_laws[prefix] = 1
 
-	var/can_state = statelaw("[prefix]Current Active Laws:")
-
+	var/list/lines = list("[prefix]Current Active Laws:")
 	for(var/datum/ai_law/law in laws.laws_to_state())
-		can_state = statelaw("[prefix][law.get_index()]. [law.law]")
-		if(!can_state)
-			break
+		lines += "[prefix][law.get_index()]. [law.law]"
+	state_law_line(method, prefix, lines, 1)
 
-	if(!can_state)
+/// Says one law line, then the next a second later.
+/mob/living/silicon/proc/state_law_line(method, prefix, list/lines, index)
+	if(!statelaw(lines[index]))
 		to_chat(src, span_danger("[method]: Unable to state laws. Communication method unavailable."))
+		stating_laws[prefix] = 0
+		return
+	if(index >= length(lines))
+		om_after(src, 1 SECOND, PROC_REF(state_laws_done), prefix)
+		return
+	om_after(src, 1 SECOND, PROC_REF(state_law_line), method, prefix, lines, index + 1)
+
+/mob/living/silicon/proc/state_laws_done(prefix)
 	stating_laws[prefix] = 0
 
 /mob/living/silicon/proc/statelaw(law)
 	if(direct_say(law))
-		sleep(10)
 		return 1
 
 	return 0

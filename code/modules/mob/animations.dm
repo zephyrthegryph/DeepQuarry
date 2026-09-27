@@ -66,7 +66,6 @@
 	is_floating = 0
 
 /atom/movable/proc/fade_towards(atom/A,time = 2)
-	set waitfor = FALSE
 
 	var/pixel_x_diff = 0
 	var/pixel_y_diff = 0
@@ -95,7 +94,9 @@
 		default_pixel_y = mob.default_pixel_y
 
 	animate(src, alpha = 0, pixel_x = pixel_x + pixel_x_diff, pixel_y = pixel_y + pixel_y_diff, pixel_z = pixel_z + pixel_z_diff, time = time)
-	sleep(time+1) //So you can wait on this proc to finish if you want to time your next steps
+	om_after(src, time + 1, PROC_REF(fade_towards_reset), default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha)
+
+/atom/movable/proc/fade_towards_reset(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha)
 	pixel_x = default_pixel_x
 	pixel_y = default_pixel_y
 	pixel_z = default_pixel_z
@@ -207,28 +208,37 @@
 	update_icon()
 	return TRUE //Found an item, doing item attack animation.
 
+/// Faces each direction in `dirs` in turn, one tick apart.
+/atom/movable/proc/turn_through(list/dirs, index = 1)
+	if(index > length(dirs))
+		return
+	set_dir(dirs[index])
+	om_after(src, 1, PROC_REF(turn_through), dirs, index + 1)
+
 /mob/proc/spin(spintime, speed)
 	if(!speed || speed < 1)		// Do NOT spin with infinite speed, it will break the reality
 		return
 	if(istype(BUCKLED(src),/obj/structure/bed/chair/office)) // WEEEE!!!
 		playsound(src, 'sound/effects/roll.ogg', 100, 1)
-	spawn()
-		var/D = dir
-		while(spintime >= speed)
-			sleep(speed)
-			switch(D)
-				if(NORTH)
-					D = EAST
-				if(SOUTH)
-					D = WEST
-				if(EAST)
-					D = SOUTH
-				if(WEST)
-					D = NORTH
-			set_dir(D)
-			if(istype(BUCKLED(src),/obj/structure/bed/chair/office))
-				var/obj/structure/bed/chair/office/O = BUCKLED(src)
-				O.dir = D
-				O.set_dir(D)
-			spintime -= speed
-	return
+	if(spintime >= speed)
+		om_after(src, speed, PROC_REF(spin_step), dir, spintime, speed)
+
+/// One quarter-turn of spin(); reschedules until spintime runs out.
+/mob/proc/spin_step(D, spintime, speed)
+	switch(D)
+		if(NORTH)
+			D = EAST
+		if(SOUTH)
+			D = WEST
+		if(EAST)
+			D = SOUTH
+		if(WEST)
+			D = NORTH
+	set_dir(D)
+	if(istype(BUCKLED(src),/obj/structure/bed/chair/office))
+		var/obj/structure/bed/chair/office/O = BUCKLED(src)
+		O.dir = D
+		O.set_dir(D)
+	spintime -= speed
+	if(spintime >= speed)
+		om_after(src, speed, PROC_REF(spin_step), D, spintime, speed)

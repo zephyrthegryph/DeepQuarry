@@ -80,42 +80,11 @@
 	infest_target(infest_target)
 
 /// Infests mob with borer.
-/mob/living/simple_mob/animal/borer/proc/infest_target(mob/living/carbon/human/infest_target)
-	var/mob/living/carbon/human/host = BORER_HOST(src)
-	if(!istype(infest_target))
-		to_chat(src, span_warning("\The [infest_target] is not suitable for infestation..."))
-		return
-	if(!(Adjacent(infest_target)))
-		to_chat(src, span_warning("\The [infest_target] has escaped your range..."))
-		return
-	if(infest_target.has_brain_worms())
-		to_chat(src, span_warning("You cannot infest someone who is already infested!"))
-		return
+/mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)
+	to_chat(src, span_danger("As [infest_target] moves away, you are dislodged and fall to the ground."))
 
-	var/entering_timer = 30
-	var/protected = FALSE
-	var/obj/item/organ/external/E = infest_target.organs_by_name[BP_HEAD]
-	if(!E || E.is_stump())
-		to_chat(src, span_warning("\The [infest_target] does not have a head!"))
-		return
-
-	if(!infest_target.should_have_organ(O_BRAIN))
-		to_chat(src, span_warning("\The [infest_target] does not seem to have an ear canal to breach."))
-		return
-	if(infest_target.check_head_coverage())
-		to_chat(src, span_alien("You begin to flatten and squirm into \the [infest_target]'s helmet to find a way inside them."))
-		entering_timer = 55
-		protected = TRUE
-
-	if(!protected)
-		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
-	else
-		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
-	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
-
-	if(!do_after(src, entering_timer, target = infest_target))
-		to_chat(src, span_danger("As [infest_target] moves away, you are dislodged and fall to the ground."))
-		return
+/mob/living/simple_mob/animal/borer/proc/infest_done(mob/living/carbon/human/infest_target)
+	var/mob/living/carbon/human/host
 	if(!infest_target || QDELETED(src))
 		return
 	if(stat)
@@ -149,6 +118,41 @@
 	*/
 
 	add_attack_logs(src, host, "infested target (borer)")
+
+/mob/living/simple_mob/animal/borer/proc/infest_target(mob/living/carbon/human/infest_target)
+	if(!istype(infest_target))
+		to_chat(src, span_warning("\The [infest_target] is not suitable for infestation..."))
+		return
+	if(!(Adjacent(infest_target)))
+		to_chat(src, span_warning("\The [infest_target] has escaped your range..."))
+		return
+	if(infest_target.has_brain_worms())
+		to_chat(src, span_warning("You cannot infest someone who is already infested!"))
+		return
+
+	var/entering_timer = 30
+	var/protected = FALSE
+	var/obj/item/organ/external/E = infest_target.organs_by_name[BP_HEAD]
+	if(!E || E.is_stump())
+		to_chat(src, span_warning("\The [infest_target] does not have a head!"))
+		return
+
+	if(!infest_target.should_have_organ(O_BRAIN))
+		to_chat(src, span_warning("\The [infest_target] does not seem to have an ear canal to breach."))
+		return
+	if(infest_target.check_head_coverage())
+		to_chat(src, span_alien("You begin to flatten and squirm into \the [infest_target]'s helmet to find a way inside them."))
+		entering_timer = 55
+		protected = TRUE
+
+	if(!protected)
+		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
+	else
+		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
+	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
+
+	om_do_after(src, entering_timer, target = infest_target, receiver = src, on_done = PROC_REF(infest_done), done_args = list(infest_target), on_fail = PROC_REF(infest_dislodged), fail_args = list(infest_target))
+
 
 /**
  * Releases chemicals from the borer into their host. Can be used as a standalone chemist in your head for an antag cooperating with their borer.

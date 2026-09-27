@@ -290,52 +290,55 @@
 		src.visible_message(span_filter_notice(span_bold("[src]") + "'s flesh begins to mend..."))
 
 	var/delay_length = round(active_regen_delay * species.active_regen_mult)
-	if(do_after(src, delay_length, target = src))
-		adjust_nutrition(-200)
+	om_do_after(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
 
-		for(var/obj/item/organ/internal/I in internal_organs)
-			if(I.robotic >= ORGAN_ROBOT) // No free robofix.
-				continue
-			if(I.damage > 0)
-				mend(TREAT_RESTORATION, 30, I) //Repair functionally half of a dead internal organ.
-				I.restore_status()	// Wipe status, as it's being regenerated from possibly dead (a dead brain stays dead).
-				to_chat(src, span_notice("You feel a soothing sensation within your [I.name]..."))
+/mob/living/carbon/human/proc/regenerate_human_done()
+	adjust_nutrition(-200)
 
-		// Replace completely missing limbs.
-		for(var/limb_type in src.species.has_limbs)
-			var/obj/item/organ/external/E = src.organs_by_name[limb_type]
+	for(var/obj/item/organ/internal/I in internal_organs)
+		if(I.robotic >= ORGAN_ROBOT) // No free robofix.
+			continue
+		if(I.damage > 0)
+			mend(TREAT_RESTORATION, 30, I) //Repair functionally half of a dead internal organ.
+			I.restore_status()	// Wipe status, as it's being regenerated from possibly dead (a dead brain stays dead).
+			to_chat(src, span_notice("You feel a soothing sensation within your [I.name]..."))
 
-			if(E && E.disfigured)
-				E.disfigured = 0
-			if(E && (E.is_stump() || (E.status & (ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))))
-				E.removed()
-				qdel(E)
-				E = null
-			if(!E)
-				var/list/organ_data = src.species.has_limbs[limb_type]
-				var/limb_path = organ_data["path"]
-				var/obj/item/organ/O = new limb_path(src)
-				organ_data["descriptor"] = O.name
-				to_chat(src, span_notice("You feel a slithering sensation as your [O.name] reform."))
+	// Replace completely missing limbs.
+	for(var/limb_type in src.species.has_limbs)
+		var/obj/item/organ/external/E = src.organs_by_name[limb_type]
 
-				var/agony_to_apply = round(0.66 * O.max_damage) // 66% of the limb's health is converted into pain.
-				injure(INJURY_PAIN, agony_to_apply, O.organ_tag)
+		if(E && E.disfigured)
+			E.disfigured = 0
+		if(E && (E.is_stump() || (E.status & (ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))))
+			E.removed()
+			qdel(E)
+			E = null
+		if(!E)
+			var/list/organ_data = src.species.has_limbs[limb_type]
+			var/limb_path = organ_data["path"]
+			var/obj/item/organ/O = new limb_path(src)
+			organ_data["descriptor"] = O.name
+			to_chat(src, span_notice("You feel a slithering sensation as your [O.name] reform."))
 
-		for(var/organtype in species.has_organ) // Replace completely missing internal organs. -After- external ones, so they all should exist.
-			if(!src.internal_organs_by_name[organtype])
-				var/organpath = species.has_organ[organtype]
-				var/obj/item/organ/Int = new organpath(src, TRUE)
+			var/agony_to_apply = round(0.66 * O.max_damage) // 66% of the limb's health is converted into pain.
+			injure(INJURY_PAIN, agony_to_apply, O.organ_tag)
 
-				Int.rejuvenate(TRUE)
+	for(var/organtype in species.has_organ) // Replace completely missing internal organs. -After- external ones, so they all should exist.
+		if(!src.internal_organs_by_name[organtype])
+			var/organpath = species.has_organ[organtype]
+			var/obj/item/organ/Int = new organpath(src, TRUE)
 
-		process_organs() // Update everything
+			Int.rejuvenate(TRUE)
 
-		update_icons_body()
-		active_regen = FALSE
-	else
-		to_chat(src, span_critical("Your regeneration is interrupted!"))
-		adjust_nutrition(-75)
-		active_regen = FALSE
+	process_organs() // Update everything
+
+	update_icons_body()
+	active_regen = FALSE
+
+/mob/living/carbon/human/proc/regenerate_human_failed()
+	to_chat(src, span_critical("Your regeneration is interrupted!"))
+	adjust_nutrition(-75)
+	active_regen = FALSE
 
 /mob/living/carbon/human/proc/setmonitor_state()
 	set name = "Set monitor display"
@@ -372,13 +375,14 @@
 	if(stat == DEAD) return
 
 	to_chat(src, span_notice("Performing reagent purge, please wait..."))
-	sleep(50)
+	om_after(src, 5 SECONDS, PROC_REF(reagent_purge_done))
+	return TRUE
+
+/mob/living/carbon/human/proc/reagent_purge_done()
 	src.bloodstr.clear_reagents()
 	src.ingested.clear_reagents()
 	src.touching.clear_reagents()
 	to_chat(src, span_notice("Reagents purged!"))
-
-	return TRUE
 
 /mob/living/carbon/human/verb/toggle_eyes_layer()
 	set name = "Switch Eyes/Monitor Layer"
@@ -542,15 +546,20 @@
 		var/score2 = (scale2 * strength2)
 
 		var/competition = pick(score1;player1, score2;player2)
-		if(!do_after(player1, 5 SECONDS, target = player2))
-			player2.visible_message(span_notice("The players cancelled their competition!"))
-			return 0
-		if(!hand_games_check(player1,player2))
-			return
-		if(competition == player1)
-			player1.visible_message(span_notice("[player1] manages to overpower [player2] and pin their arm down!"))
-		else
-			player2.visible_message(span_notice("[player2] manages to overpower [player1] and pin their arm down!"))
+		om_do_after(player1, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_armwrestle_human_done), done_args = list(player1, player2, competition), on_fail = PROC_REF(game_armwrestle_human_failed), fail_args = list(player1, player2, competition))
+		return
+
+/mob/living/carbon/human/proc/game_armwrestle_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+	if(!hand_games_check(player1,player2))
+		return
+	if(competition == player1)
+		player1.visible_message(span_notice("[player1] manages to overpower [player2] and pin their arm down!"))
+	else
+		player2.visible_message(span_notice("[player2] manages to overpower [player1] and pin their arm down!"))
+
+/mob/living/carbon/human/proc/game_armwrestle_human_failed(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+	player2.visible_message(span_notice("The players cancelled their competition!"))
+	return 0
 
 /////// Slap Hands! Each player gets a modifier based on their size and can choose the reaction time of their character, then a weighted roll is made. This one gives the advantage to smaller players.
 
@@ -589,16 +598,21 @@
 		var/score2 = (scale2 * strength2)
 
 		var/competition = pick(score1;player1, score2;player2)
-		if(!do_after(player1, 1 SECOND, target = player2))
-			player2.visible_message(span_notice("The players cancelled their competition!"))
-			return 0
-		if(!hand_games_check(player1,player2))
-			return
-		playsound(player1, 'sound/effects/snap.ogg', 30, 1)
-		if(competition == player1)
-			player1.visible_message(span_notice("[player1] manages to slap [player2]'s hand before they can react!"))
-		else
-			player2.visible_message(span_notice("[player2] manages to slap [player1]'s hand before they can react!"))
+		om_do_after(player1, 1 SECOND, target = player2, receiver = src, on_done = PROC_REF(game_slaphands_human_done), done_args = list(player1, player2, competition), on_fail = PROC_REF(game_slaphands_human_failed), fail_args = list(player1, player2, competition))
+		return
+
+/mob/living/carbon/human/proc/game_slaphands_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+	if(!hand_games_check(player1,player2))
+		return
+	playsound(player1, 'sound/effects/snap.ogg', 30, 1)
+	if(competition == player1)
+		player1.visible_message(span_notice("[player1] manages to slap [player2]'s hand before they can react!"))
+	else
+		player2.visible_message(span_notice("[player2] manages to slap [player1]'s hand before they can react!"))
+
+/mob/living/carbon/human/proc/game_slaphands_human_failed(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
+	player2.visible_message(span_notice("The players cancelled their competition!"))
+	return 0
 
 ///// Thumb wars! This one is just pure chance to allow people to do just quick RNG.
 
@@ -614,15 +628,20 @@
 		if(!hand_games_check(player1,player2))
 			return
 		player1.visible_message(span_notice("[player1] challenges [player2] to a thumb war!"))
-		if(!do_after(player1, 5 SECONDS, target = player2))
-			player2.visible_message(span_notice("The players cancelled their thumb war!"))
-			return 0
-		if(!hand_games_check(player1,player2))
-			return
-		if(prob(50))
-			player1.visible_message(span_notice("After a gruelling battle, [player1] eventually manages to subdue the thumb of [player2]!"))
-		else
-			player2.visible_message(span_notice("After a gruelling battle, [player2] eventually manages to subdue the thumb of [player1]!"))
+		om_do_after(player1, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_thumbwars_human_done), done_args = list(player1, player2), on_fail = PROC_REF(game_thumbwars_human_failed), fail_args = list(player1, player2))
+		return
+
+/mob/living/carbon/human/proc/game_thumbwars_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
+	if(!hand_games_check(player1,player2))
+		return
+	if(prob(50))
+		player1.visible_message(span_notice("After a gruelling battle, [player1] eventually manages to subdue the thumb of [player2]!"))
+	else
+		player2.visible_message(span_notice("After a gruelling battle, [player2] eventually manages to subdue the thumb of [player1]!"))
+
+/mob/living/carbon/human/proc/game_thumbwars_human_failed(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
+	player2.visible_message(span_notice("The players cancelled their thumb war!"))
+	return 0
 
 ///Play dead for sparkledog memes
 

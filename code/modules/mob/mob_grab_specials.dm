@@ -7,16 +7,29 @@
 		return
 
 	user.visible_message(span_notice("[user] starts inspecting [GRAB_TARGET(src)]'s [E.name] carefully."))
-	if(!do_after(user, 1 SECOND, H))
-		to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
-	else if(length(E.get_wounds()))
+	om_do_after(user, 1 SECOND, target = H, receiver = src, on_done = PROC_REF(inspect_organ_grab_done), done_args = list(H, user, target_zone, E), on_fail = PROC_REF(inspect_organ_grab_failed), fail_args = list(H, user, target_zone, E))
+	return TRUE
+
+/obj/item/grab/proc/inspect_organ_grab_failed(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+	to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
+	inspect_bones(H, user, target_zone, E)
+
+/obj/item/grab/proc/inspect_organ_grab_done(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+	if(length(E.get_wounds()))
 		to_chat(user, span_warning("You find [E.get_wounds_desc()]"))
 	else
 		to_chat(user, span_notice("You find no visible wounds."))
+	inspect_bones(H, user, target_zone, E)
 
+/obj/item/grab/proc/inspect_bones(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 	to_chat(user, span_notice("Checking bones now..."))
-	if(!do_after(user, 2 SECONDS, H))
-		to_chat(user, span_notice("You must stand still to feel [E] for fractures."))
+	om_do_after(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(inspect_bones_done), done_args = list(H, user, target_zone, E), on_fail = PROC_REF(inspect_bones_failed), fail_args = list(H, user, target_zone, E))
+
+/obj/item/grab/proc/inspect_bones_failed(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+	to_chat(user, span_notice("You must stand still to feel [E] for fractures."))
+	inspect_bones_done(H, user, target_zone, E)
+
+/obj/item/grab/proc/inspect_bones_done(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 	if(E.nonsolid && E.cannot_break) //boneless!
 		to_chat(user, span_warning("You are unable to feel any bones in the [E.name]!"))
 	else if(E.status & ORGAN_BROKEN)
@@ -26,96 +39,107 @@
 		to_chat(user, span_notice("The [E.encased ? E.encased : "bones in the [E.name]"] seem to be fine."))
 
 	to_chat(user, span_notice("Checking skin now..."))
-	if(!do_after(user, 1 SECOND, H))
-		to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
-	else
-		var/bad = 0
-		// Palpation: the signs a hands-on examination picks up.
-		var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/palpation)
-		for(var/datum/diagnosis_finding/F as anything in D?.findings_of(DIAG_FINDING_SIGN))
-			to_chat(user, span_warning(F.name))
+	om_do_after(user, 1 SECOND, target = H, receiver = src, on_done = PROC_REF(inspect_skin_done), done_args = list(H, user, target_zone, E), on_fail = PROC_REF(inspect_skin_failed), fail_args = list(H, user, target_zone, E))
+
+/obj/item/grab/proc/inspect_internal_failed(mob/living/carbon/human/H, mob/user, obj/item/organ/external/E)
+	to_chat(user, span_notice("You must stand still to check [H]'s [E.name] for internal injury."))
+
+/obj/item/grab/proc/inspect_internal_done(mob/living/carbon/human/H, mob/user, body_part, obj/item/organ/external/E)
+
+	///If we have a bad organ down here. Very non-specific. Doctor should ask how badly it hurt.
+	var/bad_organs = 0
+	///If we have appendicitis or not.
+	var/appendicitis = FALSE
+	switch(body_part)
+
+		if(BP_GROIN)
+			var/obj/item/organ/internal/intestine/intestine = H.internal_organs_by_name[O_INTESTINE]
+			var/obj/item/organ/internal/stomach/stomach = H.internal_organs_by_name[O_STOMACH]
+			var/obj/item/organ/internal/kidneys/kidneys = H.internal_organs_by_name[O_KIDNEYS]
+			var/obj/item/organ/internal/liver/liver = H.internal_organs_by_name[O_LIVER]
+			var/obj/item/organ/internal/spleen/spleen = H.internal_organs_by_name[O_SPLEEN]
+			var/obj/item/organ/internal/appendix/appendix = H.internal_organs_by_name[O_APPENDIX]
+			if(intestine && intestine.is_bruised())
+				bad_organs++
+			if(stomach && stomach.is_bruised())
+				bad_organs++
+			if(kidneys && kidneys.is_bruised())
+				bad_organs++
+			if(liver && liver.is_bruised())
+				bad_organs++
+			if(spleen && spleen.is_bruised())
+				bad_organs++
+			if(appendix && (appendix.is_bruised() || appendix.inflamed))
+				bad_organs++
+				appendicitis = TRUE
+
+		if(BP_TORSO)
+			var/obj/item/organ/internal/lungs/lungs = H.internal_organs_by_name[O_LUNGS]
+			var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+			if(lungs && lungs.is_bruised())
+				bad_organs++
+			if(heart && heart.is_bruised())
+				bad_organs++
+
+		if(BP_HEAD)
+			var/obj/item/organ/internal/voicebox/voicebox = H.internal_organs_by_name[O_VOICE]
+			if(voicebox && voicebox.is_bruised())
+				bad_organs++
+
+	if(bad_organs)
+		to_chat(user, span_warning("[H]'s [E.name] appears to be tender when you press on it, indicating an internal injury."))
+		H.custom_pain("Your [E.name] hurts where it's poked.", bad_organs*20)
+
+	if(appendicitis)
+		var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.factor(BF_ANALGESIA) < 60)
+		if(pain_check) //They can feel pain.
+			to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
+			H.custom_pain("You feel pure agony as [src] pushes down on your [E.name]!", 200)
+
+/obj/item/grab/proc/inspect_skin_failed(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+	to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
+	inspect_internal(H, user, target_zone, E)
+
+/obj/item/grab/proc/inspect_skin_done(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+	var/bad = 0
+	// Palpation: the signs a hands-on examination picks up.
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/palpation)
+	for(var/datum/diagnosis_finding/F as anything in D?.findings_of(DIAG_FINDING_SIGN))
+		to_chat(user, span_warning(F.name))
+		bad = 1
+	qdel(D)
+	var/saturation = H.body?.oxygenation()
+	if(!isnull(saturation) && saturation < 90)
+		to_chat(user, span_warning("[H]'s skin is unusually pale."))
+		bad = 1
+	if(E.status & ORGAN_DEAD)
+		to_chat(user, span_warning("[E] is decaying!"))
+		bad = 1
+	if(E.status & ORGAN_DEAD) //this is also infection level 3
+		to_chat(user, span_bolddanger("[H]'s [E.name] is gangreous and completely dead!"))
+		bad = 1
+	else if(E.germ_level > INFECTION_LEVEL_ONE)
+		if(E.germ_level > INFECTION_LEVEL_TWO)
+			to_chat(user, span_danger("[H]'s [E.name] shows signs of a severe infection!"))
 			bad = 1
-		qdel(D)
-		var/saturation = H.body?.oxygenation()
-		if(!isnull(saturation) && saturation < 90)
-			to_chat(user, span_warning("[H]'s skin is unusually pale."))
+		else
+			to_chat(user, span_warning("[H] shows signs of infection in the [E.name]."))
 			bad = 1
-		if(E.status & ORGAN_DEAD)
-			to_chat(user, span_warning("[E] is decaying!"))
-			bad = 1
-		if(E.status & ORGAN_DEAD) //this is also infection level 3
-			to_chat(user, span_bolddanger("[H]'s [E.name] is gangreous and completely dead!"))
-			bad = 1
-		else if(E.germ_level > INFECTION_LEVEL_ONE)
-			if(E.germ_level > INFECTION_LEVEL_TWO)
-				to_chat(user, span_danger("[H]'s [E.name] shows signs of a severe infection!"))
-				bad = 1
-			else
-				to_chat(user, span_warning("[H] shows signs of infection in the [E.name]."))
-				bad = 1
-		for(var/datum/affliction/wound/W as anything in E.get_wounds())
-			if(W.internal)
-				to_chat(user, span_danger("You find a large, swelling hematoma in the skin")) //INTERNAL BLEEDING, BE VERY AFRAID.
-				break
-		if(!bad)
-			to_chat(user, span_notice("[H]'s skin is normal."))
+	for(var/datum/affliction/wound/W as anything in E.get_wounds())
+		if(W.internal)
+			to_chat(user, span_danger("You find a large, swelling hematoma in the skin")) //INTERNAL BLEEDING, BE VERY AFRAID.
+			break
+	if(!bad)
+		to_chat(user, span_notice("[H]'s skin is normal."))
+	inspect_internal(H, user, target_zone, E)
+
+/obj/item/grab/proc/inspect_internal(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 
 	var/body_part = parse_zone(target_zone)
 	if(body_part == BP_GROIN || body_part == BP_TORSO || body_part == BP_HEAD)
 		to_chat(user, span_notice("Checking for internal injury now..."))
-		if(!do_after(user, 5 SECONDS, H))
-			to_chat(user, span_notice("You must stand still to check [H]'s [E.name] for internal injury."))
-		else
+		om_do_after(user, 5 SECONDS, target = H, receiver = src, on_done = PROC_REF(inspect_internal_done), done_args = list(H, user, body_part, E), on_fail = PROC_REF(inspect_internal_failed), fail_args = list(H, user, E))
 
-			///If we have a bad organ down here. Very non-specific. Doctor should ask how badly it hurt.
-			var/bad_organs = 0
-			///If we have appendicitis or not.
-			var/appendicitis = FALSE
-			switch(body_part)
-
-				if(BP_GROIN)
-					var/obj/item/organ/internal/intestine/intestine = H.internal_organs_by_name[O_INTESTINE]
-					var/obj/item/organ/internal/stomach/stomach = H.internal_organs_by_name[O_STOMACH]
-					var/obj/item/organ/internal/kidneys/kidneys = H.internal_organs_by_name[O_KIDNEYS]
-					var/obj/item/organ/internal/liver/liver = H.internal_organs_by_name[O_LIVER]
-					var/obj/item/organ/internal/spleen/spleen = H.internal_organs_by_name[O_SPLEEN]
-					var/obj/item/organ/internal/appendix/appendix = H.internal_organs_by_name[O_APPENDIX]
-					if(intestine && intestine.is_bruised())
-						bad_organs++
-					if(stomach && stomach.is_bruised())
-						bad_organs++
-					if(kidneys && kidneys.is_bruised())
-						bad_organs++
-					if(liver && liver.is_bruised())
-						bad_organs++
-					if(spleen && spleen.is_bruised())
-						bad_organs++
-					if(appendix && (appendix.is_bruised() || appendix.inflamed))
-						bad_organs++
-						appendicitis = TRUE
-
-				if(BP_TORSO)
-					var/obj/item/organ/internal/lungs/lungs = H.internal_organs_by_name[O_LUNGS]
-					var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
-					if(lungs && lungs.is_bruised())
-						bad_organs++
-					if(heart && heart.is_bruised())
-						bad_organs++
-
-				if(BP_HEAD)
-					var/obj/item/organ/internal/voicebox/voicebox = H.internal_organs_by_name[O_VOICE]
-					if(voicebox && voicebox.is_bruised())
-						bad_organs++
-
-			if(bad_organs)
-				to_chat(user, span_warning("[H]'s [E.name] appears to be tender when you press on it, indicating an internal injury."))
-				H.custom_pain("Your [E.name] hurts where it's poked.", bad_organs*20)
-
-			if(appendicitis)
-				var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.factor(BF_ANALGESIA) < 60)
-				if(pain_check) //They can feel pain.
-					to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
-					H.custom_pain("You feel pure agony as [src] pushes down on your [E.name]!", 200)
 
 /obj/item/grab/proc/jointlock(mob/living/carbon/human/target, mob/attacker, target_zone)
 	if(state < GRAB_AGGRESSIVE)
@@ -210,10 +234,14 @@
 		return
 
 	attacker.visible_message(span_danger("[attacker] starts forcing [target] to the ground!"))
-	if(do_after(attacker, 2 SECONDS, target) && target)
-		last_action = world.time
-		attacker.visible_message(span_danger("[attacker] forces [target] to the ground!"))
-		apply_pinning(target, attacker)
+	om_do_after(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
+
+/obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
+	if(!(target))
+		return
+	last_action = world.time
+	attacker.visible_message(span_danger("[attacker] forces [target] to the ground!"))
+	apply_pinning(target, attacker)
 
 /obj/item/grab/proc/apply_pinning(mob/target, mob/attacker)
 	force_down = 1

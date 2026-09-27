@@ -617,6 +617,13 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	return
 
 //I am the icon meister. Bow fefore me.	//>fefore
+/mob/living/silicon/ai/proc/hologram_from_dummy(mob/living/carbon/human/dummy/dummy)
+	dummy.regenerate_icons()
+	var/new_holo = getHologramIcon(getCompoundIcon(dummy))
+	qdel(holo_icon)
+	qdel(dummy)
+	holo_icon = new_holo
+
 /mob/living/silicon/ai/proc/ai_hologram_change()
 	set name = "Change Hologram"
 	set desc = "Change the default hologram available to AI to something else."
@@ -664,13 +671,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 					var/mob/living/carbon/human/dummy/dummy = new ()
 					//This doesn't include custom_items because that's ... hard.
 					client.prefs.dress_preview_mob(dummy)
-					sleep(1 SECOND) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
-					dummy.regenerate_icons()
-
-					var/new_holo = getHologramIcon(getCompoundIcon(dummy))
-					qdel(holo_icon)
-					qdel(dummy)
-					holo_icon = new_holo
+					om_after(src, 1 SECOND, PROC_REF(hologram_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 
 				else //A premade from the dmi
 					var/icon_list[] = list(

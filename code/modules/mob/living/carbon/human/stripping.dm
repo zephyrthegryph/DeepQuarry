@@ -14,23 +14,19 @@
 		// Handle things that are part of this interface but not removing/replacing a given item.
 		if("pockets")
 			visible_message(span_danger("\The [user] is trying to empty \the [src]'s pockets!"))
-			if(do_after(user, HUMAN_STRIP_DELAY, target = src))
-				empty_pockets(user)
+			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
 			return
 		if("splints")
 			visible_message(span_danger("\The [user] is trying to remove \the [src]'s splints!"))
-			if(do_after(user, HUMAN_STRIP_DELAY, target = src))
-				remove_splints(user)
+			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
 			return
 		if("sensors")
 			visible_message(span_danger("\The [user] is trying to set \the [src]'s sensors!"))
-			if(do_after(user, HUMAN_STRIP_DELAY, target = src))
-				toggle_sensors(user)
+			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
 			return
 		if("internals")
 			visible_message(span_danger("\The [user] is trying to set \the [src]'s internals!"))
-			if(do_after(user, HUMAN_STRIP_DELAY, target = src))
-				toggle_internals(user)
+			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
 			return
 		if("tie")
 			var/obj/item/clothing/under/suit = get_equipped_item(SLOT_ID_UNIFORM)
@@ -41,18 +37,7 @@
 				return
 			visible_message(span_danger("\The [user] is trying to remove \the [src]'s [A.name]!"))
 
-			if(!do_after(user, HUMAN_STRIP_DELAY, target = src))
-				return
-
-			if(!A || suit.loc != src || !(A in suit.accessories))
-				return
-
-			if(istype(A, /obj/item/clothing/accessory/badge) || istype(A, /obj/item/clothing/accessory/medal))
-				user.visible_message(span_danger("\The [user] tears off \the [A] from [src]'s [suit.name]!"))
-			add_attack_logs(user,src,"Stripped [A.name] off [suit.name]")
-			A.on_removed(user)
-			suit.accessories -= A
-			update_inv_w_uniform()
+			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done5), done_args = list(user, suit, A))
 			return
 		if("underwear")
 			var/datum/category_group/underwear/UWC = tgui_input_list(user, "Choose underwear. (Do not do this without OOC permission from the other player)", "Show/hide underwear", GLOB.global_underwear.categories)
@@ -105,8 +90,30 @@
 		else
 			visible_message(span_danger("\The [user] is trying to put \a [wrapped] on \the [src]!"))
 
-	if(!do_after(user, HUMAN_STRIP_DELAY, target = src, max_interact_count = 15))
+	om_do_after(user, HUMAN_STRIP_DELAY, target = src, max_interact_count = 15, receiver = src, on_done = PROC_REF(handle_strip_human_done6), done_args = list(slot_to_strip, user, target_slot, stripping, held))
+	return TRUE
+
+/mob/living/carbon/human/proc/handle_strip_human_done(mob/living/user)
+	empty_pockets(user)
+/mob/living/carbon/human/proc/handle_strip_human_done2(mob/living/user)
+	remove_splints(user)
+/mob/living/carbon/human/proc/handle_strip_human_done3(mob/living/user)
+	toggle_sensors(user)
+/mob/living/carbon/human/proc/handle_strip_human_done4(mob/living/user)
+	toggle_internals(user)
+/mob/living/carbon/human/proc/handle_strip_human_done5(mob/living/user, obj/item/clothing/under/suit, obj/item/clothing/accessory/A)
+
+	if(!A || suit.loc != src || !(A in suit.accessories))
 		return
+
+	if(istype(A, /obj/item/clothing/accessory/badge) || istype(A, /obj/item/clothing/accessory/medal))
+		user.visible_message(span_danger("\The [user] tears off \the [A] from [src]'s [suit.name]!"))
+	add_attack_logs(user,src,"Stripped [A.name] off [suit.name]")
+	A.on_removed(user)
+	suit.accessories -= A
+	update_inv_w_uniform()
+	return
+/mob/living/carbon/human/proc/handle_strip_human_done6(slot_to_strip, mob/living/user, obj/item/target_slot, stripping, obj/item/held)
 
 	if(!stripping)
 		if(user.get_active_hand() != held)

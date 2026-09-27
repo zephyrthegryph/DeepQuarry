@@ -320,7 +320,9 @@
 	busy = 1
 
 	C.forceMove(loc)
-	sleep(2)
+	om_after(src, 2, PROC_REF(load_finish), C)
+
+/mob/living/bot/mulebot/proc/load_finish(atom/movable/C)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.
 		busy = 0
 		return
