@@ -284,7 +284,6 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	if(. && !issilicon(ui.user))
 		playsound(src, "terminal_type", 50, 1)
 
-
 /obj/machinery/computer/ship/navigation
 	name = "navigation console"
 	icon_keyboard = "generic_key"
@@ -303,9 +302,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	if(.)
 		nav_tgui?.attempt_hook_up(sector)
 
-/obj/machinery/computer/ship/navigation/Destroy()
-	QDEL_NULL(nav_tgui)
-	. = ..()
+REF_OWNED(/obj/machinery/computer/ship/navigation, "nav_tgui")
 
 /obj/machinery/computer/ship/navigation/sync_linked(user)
 	return nav_tgui?.sync_linked()

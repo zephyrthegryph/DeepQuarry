@@ -7,10 +7,6 @@
 	..()
 	nozzle = _holder
 
-/datum/ship_engine/gas_thruster/Destroy()
-	nozzle = null
-	. = ..()
-
 /datum/ship_engine/gas_thruster/get_status()
 	return nozzle.get_status()
 
@@ -215,7 +211,6 @@
 // 	base_type = /obj/machinery/atmospherics/unary/engine
 // 	stock_part_presets = list(/datum/decl/stock_part_preset/terminal_setup)
 // 	uncreated_component_parts = list(/obj/item/stock_parts/power/terminal/buildable = 1)
-
 
 //These connect at the corner 2 steps and 3 steps in the dir from their loc
 /obj/machinery/atmospherics/unary/engine/bigger
