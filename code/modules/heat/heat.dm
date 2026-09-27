@@ -269,6 +269,11 @@ GLOBAL_LIST_EMPTY(heat_watch_owners)
 	GLOB.heat_watch_owners -= "[watch[2]]"
 	return vg_heat_unwatch(watch[1], watch[2], watch[3])
 
+/// Whether `index` (the watch argument on_heat_wake()/on_heat_crossing()
+/// receive: the watch's table index) names the handle `watch`.
+/proc/heat_watch_is(list/watch, index)
+	return !isnull(watch) && watch[2] == index
+
 /// A heat watch fired. `reason` is the vg-core reason mask, `source` the cell
 /// or body slot.
 /datum/proc/on_heat_wake(watch, reason, source)

@@ -337,6 +337,28 @@ vg_core::law! {
     }
 }
 
+vg_core::law! {
+    /// A body's own heat source (`HeatBody::power`, W) each step. A relaxing
+    /// body's analytic model already carries it, so this adds nothing then.
+    pub BodyPower("heat_body_power"): () => HeatBody, |ctx, dt| {
+        let body = &mut ctx.writes;
+        if body.power == 0.0 {
+            return Settle::Sleep;
+        }
+        if body.relax {
+            return Settle::Active;
+        }
+        let joules = body.power * dt.0;
+        add_body_energy(body, joules);
+        if joules > 0.0 {
+            ctx.ledger().source("heat_energy", joules);
+        } else {
+            ctx.ledger().sink("heat_energy", -joules);
+        }
+        Settle::Active
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

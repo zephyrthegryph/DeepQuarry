@@ -156,7 +156,8 @@
 	// The heat source adds energy.
 	vg_world_run_steps(1)
 	var/start = dq_h3_energy(things)
-	vg_world_run_steps(5)
+	// Ten 0.5 s world steps: five seconds.
+	vg_world_run_steps(10)
 	TEST_ASSERT(dq_h3_energy(things) - start >= oven.heating_power * 4, "the heat source put at least four seconds of power in")
 	// With the source off, the hot oven heats its contents and no joule is
 	// made or lost: the isolated oven plus contents keep their energy.
@@ -165,7 +166,7 @@
 	vg_world_run_steps(1)
 	start = dq_h3_energy(things)
 	var/contents_start = dq_h3_energy(things - oven)
-	vg_world_run_steps(10)
+	vg_world_run_steps(20)
 	var/moved = dq_h3_energy(things - oven) - contents_start
 	var/drift = abs(dq_h3_energy(things) - start)
 	TEST_ASSERT(moved > 0, "the oven heated its contents")

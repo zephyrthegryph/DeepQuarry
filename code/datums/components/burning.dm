@@ -87,7 +87,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 
 /// The parent cooled below the burn-out temperature.
 /datum/component/burning/on_heat_wake(watch, reason, source)
-	if(watch != cool_watch || QDELETED(src))
+	if(!heat_watch_is(cool_watch, watch) || QDELETED(src))
 		return
 	var/atom/atom_parent = parent
 	if(atom_parent.get_temperature() < burn_out_temperature())

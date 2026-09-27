@@ -176,7 +176,7 @@
 	return !isnull(thermostat_watch)
 
 /obj/machinery/appliance/cooker/on_heat_wake(watch, reason, source)
-	if(watch != thermostat_watch)
+	if(!heat_watch_is(thermostat_watch, watch))
 		return
 	heat_unwatch(thermostat_watch)
 	thermostat_watch = null

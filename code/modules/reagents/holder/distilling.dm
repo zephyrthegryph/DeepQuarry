@@ -73,5 +73,5 @@
 
 /// The holder's temperature crossed a reaction bound: react now.
 /datum/reagents/distilling/on_heat_crossing(watch, payload, entered, generation)
-	if(watch == heat_set_watch && !QDELETED(my_atom))
+	if(heat_watch_is(heat_set_watch, watch) && !QDELETED(my_atom))
 		handle_reactions()

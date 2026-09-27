@@ -110,6 +110,7 @@ pub fn register(b: &mut WorldBuilder) -> FieldKey<SolidHeat> {
     let _ = b.add_law::<SolidBodyExchange>();
     let _ = b.add_law::<BodyBodyExchange>();
     let _ = b.add_law::<RegulatorHeatPump>();
+    let _ = b.add_law::<vg_heat::laws::BodyPower>();
     b.add_global(
         vg_core::component::Ownership::Worker,
         vg_heat::laws::MixtureProbes::default(),
@@ -778,6 +779,9 @@ fn heat_body_power(h: ByondValue, watts: ByondValue) -> Result<ByondValue> {
         b.power = watts;
         let ok = w.put(e, b).is_ok();
         wake_body_couplings(w, e.index());
+        if let Ok(k) = kind_of(w, "HeatBody") {
+            let _ = w.wake_row(e, k);
+        }
         Ok(ok)
     })?;
     Ok(ok.into())
@@ -1458,5 +1462,84 @@ mod tests {
         }
         let t = mix::load(r).unwrap().get_temperature();
         assert!(t > 281.0, "the tank warmed: {t}");
+    }
+
+    fn body_at(w: &mut vg_core::world::World, t: f64, power: f64) -> vg_core::entity::EntityId {
+        w.bind_value(
+            None,
+            HeatBody {
+                capacity: 1_000.0,
+                energy: 1_000.0 * t,
+                power,
+                keep: true,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+    }
+
+    fn set_temp(w: &mut vg_core::world::World, e: vg_core::entity::EntityId, t: f64) {
+        let mut b = w.read::<HeatBody>(e).unwrap();
+        b.relax = false;
+        b.energy = 1_000.0 * t;
+        w.put(e, b).unwrap();
+        wake_body_couplings(w, e.index());
+    }
+
+    #[test]
+    fn a_body_watch_set_sees_a_dm_temperature_write() {
+        let crossings = with_world(|w| {
+            let e = body_at(w, 300.0, 0.0);
+            let kind_id = kind_of(w, "HeatBody")?;
+            let chans = w.channels(kind_id).map_err(|e| eyre!("{e}"))?;
+            let ch = channel_of(&chans, "temperature")?;
+            let id = w
+                .watch(
+                    kind_id,
+                    7,
+                    Lane::Normal,
+                    &Cond::ThresholdSet {
+                        cell: e.index(),
+                        ch,
+                    },
+                )
+                .map_err(|e| eyre!("{e}"))?;
+            w.add_watch_entry(
+                kind_id,
+                id,
+                SetEntry {
+                    payload: 3,
+                    generation: 1,
+                    cmp: Cmp::Above,
+                    limit: vg_core::channel::Quantity::new(320.0, vg_core::channel::Unit::Kelvin),
+                    hysteresis: None,
+                    edge: Edge::Enter,
+                },
+            )
+            .map_err(|e| eyre!("{e}"))?;
+            w.step_blocking();
+            let _ = w.drain_threshold_crossings();
+            set_temp(w, e, 330.0);
+            w.step_blocking();
+            Ok(w.drain_threshold_crossings())
+        })
+        .unwrap();
+        assert_eq!(crossings.len(), 1, "{crossings:?}");
+    }
+
+    #[test]
+    fn an_isolated_body_with_power_heats() {
+        let (t0, t1) = with_world(|w| {
+            let e = body_at(w, 300.0, 1_000.0);
+            w.step_blocking();
+            let t0 = w.read::<HeatBody>(e).unwrap().energy;
+            for _ in 0..5 {
+                w.step_blocking();
+            }
+            Ok((t0, w.read::<HeatBody>(e).unwrap().energy))
+        })
+        .unwrap();
+        // Five 0.5 s steps of 1 kW.
+        assert!((t1 - t0 - 2_500.0).abs() < 1.0, "{t0} -> {t1}");
     }
 }
