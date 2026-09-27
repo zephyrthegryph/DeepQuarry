@@ -95,7 +95,7 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 
 
 	if(teleatom.has_buckled_mobs())
-		for(var/mob/living/rider in BUCKLED_MOBS(teleatom))
+		for(var/mob/living/rider in teleatom?.buckled_mob_list())
 			teleatom.unbuckle_mob(rider, TRUE)
 
 			var/rider_success = do_teleport(rider, destination, precision, channel = channel, no_effects = TRUE)
@@ -214,12 +214,12 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 							break
 					else
 						break
-			if(BUCKLED(living))
-				var/atom/movable/_tmp_buck_2 = BUCKLED(living)
+			if(living?.buckled_to())
+				var/atom/movable/_tmp_buck_2 = living?.buckled_to()
 				if(_tmp_buck_2.anchored)
 					break
 				else
-					var/obj/buckle_obj = BUCKLED(living)
+					var/obj/buckle_obj = living?.buckled_to()
 					buckle_obj.unbuckle_mob(living)
 		if(!(container_flags & TELEPORT_CONTAINER_INCLUDE_CLOSET) && istype(movable, /obj/structure/closet))
 			break

@@ -6,7 +6,7 @@
 
 // Cleaning up the refs during deletion
 /mob/living/carbon/brain/caught_soul/vore/Destroy()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		QDEL_NULL(eyeobj)
 		gem?.notify_holder("[name] ended SR projection.")
@@ -46,23 +46,23 @@
 
 // Say proc for captures souls
 /mob/living/carbon/brain/caught_soul/vore/say(message, datum/language/speaking = null, whispering = 0)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	gem.use_speech(message, src, eyeobj)
 
 // Emote proc for captured souls
 /mob/living/carbon/brain/caught_soul/vore/custom_emote(m_type, message)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	gem.use_emote(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/vore/me_verb_subtle(message as message)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	gem.use_emote(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/vore/whisper(message as text)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	gem.use_speech(message,src,eyeobj,TRUE)
 
@@ -155,7 +155,7 @@
 
 // SR project as captured soul
 /mob/living/carbon/brain/caught_soul/vore/ar_project()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "AR/SR Project"
 	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
 	set category = "Soulcatcher"
@@ -177,7 +177,7 @@
 
 // Jump to the owner as SR projection
 /mob/living/carbon/brain/caught_soul/vore/jump_to_owner()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Jump to Owner"
 	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
 	set category = "Soulcatcher"
@@ -190,7 +190,7 @@
 
 // End SR projecting and return to the soulcatcher containing the soul
 /mob/living/carbon/brain/caught_soul/vore/reenter_soulcatcher()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Re-enter Soulcatcher"
 	set desc = "Leave SR projection and drop back into the soulcatcher."
 	set category = "Soulcatcher"
@@ -223,7 +223,7 @@
 
 // Allows the captured owner to transfer themselves to valid nearby objects
 /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Transfer Self"
 	set desc = "Transfer youself while being in your own soulcatcher into a nearby Sleevemate or MMI."
 	set category = "Soulcatcher"
@@ -245,7 +245,7 @@
 
 // Allows the owner to reenter the body after being caught or having given away control
 /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Re-enter Body"
 	set desc = "Return to your body after self capturing."
 	set category = "Soulcatcher"

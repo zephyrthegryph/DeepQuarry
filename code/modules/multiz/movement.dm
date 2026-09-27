@@ -13,7 +13,7 @@
 		to_chat(src, span_notice("You move down."))
 
 /mob/proc/zMove(direction)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		return eyeobj.zMove(direction)
 	if(istype(loc,/obj/mecha))
@@ -166,11 +166,11 @@
 	if(isliving(src))
 		var/list/atom/movable/pulling = list()
 		var/mob/living/L = src
-		var/atom/movable/L_pulling = PULLING(L)
+		var/atom/movable/L_pulling = L?.pulling_target()
 		if(L_pulling && !L_pulling.anchored)
 			pulling |= L_pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
-			pulling |= GRAB_TARGET(G)
+			pulling |= G?.grab_target()
 		if(direction == UP)
 			src.audible_message(span_notice("[src] moves up."))
 		else if(direction == DOWN)
@@ -340,7 +340,7 @@
 				L.stop_flying()
 			else
 				return
-		if(LAZYLEN(GRABBED_BY(L))) //If you're grabbed (presumably by someone flying) let's not have you fall. This also allows people to grab onto you while you jump over a railing to prevent you from falling!
+		if(LAZYLEN(L?.grabbed_by_list())) //If you're grabbed (presumably by someone flying) let's not have you fall. This also allows people to grab onto you while you jump over a railing to prevent you from falling!
 			return
 
 	if(can_fall() && can_fall_to(below))
@@ -723,7 +723,7 @@
 		Move(landing)
 		if(isliving(src))
 			var/mob/living/L = src
-			var/atom/movable/L_pulling = PULLING(L)
+			var/atom/movable/L_pulling = L?.pulling_target()
 			if(L_pulling)
 				L_pulling.forceMove(landing)
 		return TRUE

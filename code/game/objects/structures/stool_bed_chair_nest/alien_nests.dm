@@ -14,7 +14,7 @@
 
 /obj/structure/bed/nest/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	if(buckled_mob)
-		if(BUCKLED(buckled_mob) == src)
+		if(buckled_mob?.buckled_to() == src)
 			if(buckled_mob != user)
 				buckled_mob.visible_message(\
 					span_notice("[user.name] pulls [buckled_mob.name] free from the sticky nest!"),\
@@ -37,7 +37,7 @@
 
 /// The end of a struggle out of the resin.
 /obj/structure/bed/nest/proc/struggle_free(mob/user, mob/living/buckled_mob)
-	if(BUCKLED(user) == src)
+	if(user?.buckled_to() == src)
 		buckled_mob.last_special = world.time
 		buckled_mob.pixel_y = 0
 		buckled_mob.old_y = 0
@@ -46,7 +46,7 @@
 #undef NEST_RESIST_TIME
 
 /obj/structure/bed/nest/user_buckle_mob(mob/M as mob, mob/user as mob)
-	if ( !ismob(M) || (get_dist(src, user) > 1) || (M.loc != src.loc) || user.restrained() || user.stat || BUCKLED(M) || ispAI(user) )
+	if ( !ismob(M) || (get_dist(src, user) > 1) || (M.loc != src.loc) || user.restrained() || user.stat || M?.buckled_to() || ispAI(user) )
 		return
 
 	unbuckle_mob()

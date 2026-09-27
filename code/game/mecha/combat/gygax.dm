@@ -124,7 +124,7 @@
 		return 0
 
 /obj/mecha/combat/gygax/serenity/go_out()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(ishuman(occupant))
 		var/mob/living/carbon/human/H = occupant
 		if(H.get_equipped_item(SLOT_ID_EYES) == hud)

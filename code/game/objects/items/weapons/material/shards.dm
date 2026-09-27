@@ -109,7 +109,7 @@
 	if(isliving(AM))
 		var/mob/M = AM
 
-		if(BUCKLED(M)) //wheelchairs, office chairs, rollerbeds
+		if(M?.buckled_to()) //wheelchairs, office chairs, rollerbeds
 			return
 
 		playsound(src, 'sound/effects/glass_step.ogg', 50, 1) // not sure how to handle metal shards with sounds

@@ -62,7 +62,7 @@
 
 /obj/item/beartrap/attack_hand(mob/user as mob)
 	if(has_buckled_mobs() && can_use(user))
-		var/victim = english_list(BUCKLED_MOBS(src))
+		var/victim = english_list(src?.buckled_mob_list())
 		user.visible_message(
 			span_notice("[user] begins freeing [victim] from \the [src]."),
 			span_notice("You carefully begin to free [victim] from \the [src]."),
@@ -82,7 +82,7 @@
 
 /obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
 	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
-	for(var/A in BUCKLED_MOBS(src))
+	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	anchored = FALSE
 /obj/item/beartrap/proc/attack_hand_timed_done2(mob/user)
@@ -373,7 +373,7 @@
 	if(blocked >= 100)
 		return
 
-	if(BUCKLED(L)) //wheelchairs, office chairs, rollerbeds
+	if(L?.buckled_to()) //wheelchairs, office chairs, rollerbeds
 		return
 
 	shock(L, 100, target_zone)

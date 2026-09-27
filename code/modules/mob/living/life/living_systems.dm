@@ -103,7 +103,7 @@
 
 /// Followers are dragged along on Moved; spell buttons only matter for casters.
 /datum/om/stage/life/upkeep/idle(mob/living/self)
-	return !LAZYLEN(FOLLOWERS(self)) && !LAZYLEN(self.spell_masters)
+	return !LAZYLEN(self?.follower_list()) && !LAZYLEN(self.spell_masters)
 
 // --- Light --------------------------------------------------------------------------------------
 
@@ -361,7 +361,7 @@
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
 /datum/om/stage/life/movement/idle(mob/living/self)
-	return !PULLING(self) && !(locate(/obj/item/grab) in self)
+	return !self?.pulling_target() && !(locate(/obj/item/grab) in self)
 
 /datum/om/stage/life/movement/rewake_delay(mob/living/self)
 	return self.client ? 30 SECONDS : 0

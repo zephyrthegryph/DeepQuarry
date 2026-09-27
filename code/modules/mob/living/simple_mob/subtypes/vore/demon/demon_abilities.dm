@@ -24,10 +24,10 @@
 	var/original_canmove = canmove
 	status_set(EFFECT_STUNNED, 0)
 	status_set(EFFECT_WEAKENED, 0)
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
 		pulledby.stop_pulling()
 	stop_pulling()
@@ -110,10 +110,10 @@
 	var/original_canmove = canmove
 	status_set(EFFECT_STUNNED, 0)
 	status_set(EFFECT_WEAKENED, 0)
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
 		pulledby.stop_pulling()
 	stop_pulling()
@@ -260,7 +260,7 @@
 	if(!istype(G))
 		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
 		return
-	var/mob/living/carbon/human/T = GRAB_TARGET(G)
+	var/mob/living/carbon/human/T = G?.grab_target()
 	if(!istype(T))
 		to_chat(src, span_warning("\The [T] is not able to be affected."))
 		return
@@ -301,7 +301,7 @@
 	if(!istype(G))
 		to_chat(src, span_warning("You must be grabbing a creature in your active hand to affect them."))
 		return
-	var/mob/living/carbon/human/T = GRAB_TARGET(G)
+	var/mob/living/carbon/human/T = G?.grab_target()
 	if(!istype(T))
 		to_chat(src, span_warning("\The [T] is not able to be affected."))
 		return

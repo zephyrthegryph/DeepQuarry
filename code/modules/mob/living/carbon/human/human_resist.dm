@@ -85,7 +85,7 @@
 	om_do_after(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(break_straight_jacket_human_done), done_args = list())
 
 /mob/living/carbon/human/proc/break_straight_jacket_human_done()
-	if(!get_equipped_item(SLOT_ID_SUIT) || BUCKLED(src))
+	if(!get_equipped_item(SLOT_ID_SUIT) || src?.buckled_to())
 		return
 
 	visible_message(
@@ -99,7 +99,7 @@
 	var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)
 	drop_from_inventory(ripped)
 	qdel(ripped)
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled && buckled.buckle_require_restraints)
 		buckled.unbuckle_mob()
 

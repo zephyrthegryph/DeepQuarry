@@ -189,8 +189,8 @@
 	else if(istype(W,/obj/item/grab))
 		if((state == EMPTY_OPEN) && hacked)
 			var/obj/item/grab/G = W
-			if(ishuman(GRAB_ASSAILANT(G)) && (iscorgi(GRAB_TARGET(G)) || ishuman(GRAB_TARGET(G))))
-				user.visible_message("[user] begins stuffing [GRAB_TARGET(G)] into the [src]!", "You begin stuffing [GRAB_TARGET(G)] into the [src]!")
+			if(ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
+				user.visible_message("[user] begins stuffing [G?.grab_target()] into the [src]!", "You begin stuffing [G?.grab_target()] into the [src]!")
 				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
@@ -215,14 +215,14 @@
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
 	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
-		var/mob/grabbed = GRAB_TARGET(G)
+		var/mob/grabbed = G?.grab_target()
 		user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
 		grabbed.forceMove(src)
 		LAZYADD(washing, grabbed)
 		qdel(G)
 		state = FULL_CLOSED
 	else
-		to_chat(user, "You can't shove [GRAB_TARGET(G)] in unless the washer is empty and open!")
+		to_chat(user, "You can't shove [G?.grab_target()] in unless the washer is empty and open!")
 
 /obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
 	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING

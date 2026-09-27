@@ -50,7 +50,7 @@
 			src.mecha_log_message("Activated.")
 			PERIODIC_START(src, PERIODIC_SLOW)
 		chassis.add_overlay(droid_overlay)
-		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/periodic_step()

@@ -113,7 +113,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	remove_verb(src, silicon_subsystems)
 
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 
 	announcement = new()
 	announcement.title = "A.I. Announcement"
@@ -248,7 +248,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 /mob/living/silicon/ai/Destroy()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 
 	QDEL_NULL(announcement)
 	QDEL_NULL(eyeobj)
@@ -310,7 +310,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	return 0
 
 /mob/living/silicon/ai/SetName(pickedName as text)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	..()
 	announcement.announcer = pickedName
 	if(eyeobj)
@@ -515,7 +515,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	return
 
 /mob/living/silicon/ai/proc/camera_visibility(mob/observer/eye/aiEye/moved_eye)
-	GLOB.cameranet.visibility(moved_eye, client, EYES_OF(src))
+	GLOB.cameranet.visibility(moved_eye, client, src?.eyes_list())
 
 /mob/living/silicon/ai/forceMove(atom/destination, direction, movetime)
 	. = ..()
@@ -523,7 +523,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 		end_multicam()
 
 /mob/living/silicon/ai/reset_perspective(atom/new_eye)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(camera)
 		camera.set_light(0)
 	if(istype(new_eye,/obj/machinery/camera))
@@ -543,7 +543,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 
 /mob/living/silicon/ai/proc/switchCamera(obj/machinery/camera/C)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if (!C || stat == DEAD) //C.can_use())
 		return 0
 
@@ -580,7 +580,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	return cameralist
 
 /mob/living/silicon/ai/proc/ai_network_change(network in get_camera_network_list())
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set category = "AI.Camera Control"
 	set name = "Jump To Network"
 	unset_machine()
@@ -776,7 +776,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 // It will get the nearest camera from the eyeobj, lighting it.
 
 /mob/living/silicon/ai/proc/lightNearbyCamera()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(camera_light_on && camera_light_on < world.timeofday)
 		if(src.camera)
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
@@ -1032,7 +1032,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	is_dummy = 1
 
 /mob/living/silicon/ai/announcer/Initialize(mapload)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	. = ..()
 	QDEL_NULL(eyeobj)
 
@@ -1047,7 +1047,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	of = /mob/living/silicon/ai/announcer
 
 /datum/om/stage/life/delist/silicon/ai/announcer/perform(mob/living/silicon/ai/announcer/self, datum/om/frame/life/ctx)
-	qdel(ACTIVE_EYE(self))
+	qdel(self?.active_eye())
 
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO

@@ -121,9 +121,9 @@
 
 	else if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
-		var/mob/living/affecting = GRAB_TARGET(G)
+		var/mob/living/affecting = G?.grab_target()
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
-			to_chat(user, span_notice("\The [src] already has someone BUCKLED(src) to it."))
+			to_chat(user, span_notice("\The [src] already has someone src?.buckled_to() to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		om_task_start(/datum/om/task/timed/bed_attackby, user, src, list("receiver" = src, "W" = W, "affecting" = affecting))
@@ -162,8 +162,8 @@
 /obj/structure/bed/proc/deferred_buckle(mob/living/affecting, buckler_name)
 	if(buckle_mob(affecting))
 		affecting.visible_message(\
-			span_danger("[affecting.name] is BUCKLED(src) to [src] by [buckler_name]!"),\
-			span_danger("You are BUCKLED(src) to [src] by [buckler_name]!"),\
+			span_danger("[affecting.name] is src?.buckled_to() to [src] by [buckler_name]!"),\
+			span_danger("You are src?.buckled_to() to [src] by [buckler_name]!"),\
 			span_notice("You hear metal clanking."))
 
 /obj/structure/bed/proc/remove_padding()
@@ -208,7 +208,7 @@
 	. = ..(mapload, MAT_WOOD, MAT_CLOTH)
 
 /obj/structure/bed/double/post_buckle_mob(mob/living/M as mob)
-	if(BUCKLED(M) == src)
+	if(M?.buckled_to() == src)
 		M.pixel_y = 13
 		M.old_y = 13
 	else
@@ -244,7 +244,7 @@
 		return
 	else if(istype(W,/obj/item/roller_holder))
 		if(has_buckled_mobs())
-			for(var/A in BUCKLED_MOBS(src))
+			for(var/A in src?.buckled_mob_list())
 				user_unbuckle_mob(A, user)
 		else
 			visible_message("[user] collapses \the [src.name].")
@@ -333,7 +333,7 @@
 	playsound(src, 'sound/effects/roll.ogg', 100, 1)
 
 /obj/structure/bed/roller/post_buckle_mob(mob/living/M as mob)
-	if(BUCKLED(M) == src)
+	if(M?.buckled_to() == src)
 		M.pixel_y = 6
 		M.old_y = 6
 		density = TRUE

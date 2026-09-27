@@ -145,7 +145,7 @@
 	for(var/atom/movable/A as anything in vis_locs)
 		A.vis_contents -= src
 
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
 		pulledby.stop_pulling()
 
@@ -522,7 +522,7 @@
 	SEND_SIGNAL(src, COMSIG_MOVABLE_IMPACT, hit_atom, throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
-		if(BUCKLED(M) == src)
+		if(M?.buckled_to() == src)
 			return // Don't hit the thing we're buckled to.
 		M.hitby(src, throwingdatum)
 
@@ -541,7 +541,7 @@
 	if (!target || speed <= 0 || QDELETED(src) || (target.z != src.z))
 		return FALSE
 
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if (pulledby)
 		pulledby.stop_pulling()
 

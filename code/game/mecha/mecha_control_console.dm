@@ -90,7 +90,7 @@
 		data["cellCharge"] = M.cell.charge
 		data["cellMaxCharge"] = M.cell.maxcharge
 	data["airtank"] = M.return_pressure()
-	data["pilot"] = SLOT_ITEM(M, MECHA_SLOT_PILOT)
+	data["pilot"] = M?.slot_item(MECHA_SLOT_PILOT)
 	data["location"] = get_area(M)
 	data["active"] = M.selected
 	if(istype(M, /obj/mecha/working/ripley))

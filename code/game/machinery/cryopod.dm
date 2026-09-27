@@ -296,7 +296,7 @@
 // spills it through the ledger's drop policy, so this just keeps the
 // pre-eject "let them fall asleep, not collapse" behaviour.
 /obj/machinery/cryopod/Destroy()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		occupant.resting = 1
 	return ..()
@@ -350,7 +350,7 @@
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
 /obj/machinery/cryopod/machine_step()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!occupant)
 		return PROCESS_KILL
 	if(occupant)
@@ -593,14 +593,14 @@
 	effect = /obj/machinery/cryopod/proc/interaction_insert_grab
 
 /obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_notice("\The [src] is in use."))
 		return TRUE
 
-	if(!ismob(GRAB_TARGET(grab)))
+	if(!ismob(grab?.grab_target()))
 		return TRUE
-	go_in(GRAB_TARGET(grab), user)
+	go_in(grab?.grab_target(), user)
 	return TRUE
 
 /// Old object verb.
@@ -611,7 +611,7 @@
 	effect = /obj/machinery/cryopod/proc/interaction_eject
 
 /obj/machinery/cryopod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	icon_state = base_icon_state
 
 	//Eject any items that aren't meant to be in the pod.
@@ -640,7 +640,7 @@
 	effect = /obj/machinery/cryopod/proc/interaction_enter
 
 /obj/machinery/cryopod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!check_occupant_allowed(user))
 		return TRUE
 
@@ -661,7 +661,7 @@
 	return TRUE
 
 /obj/machinery/cryopod/proc/interaction_enter_timed_done(mob/user)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!user || !user.client)
 		return TRUE
 
@@ -676,8 +676,8 @@
 	if(isliving(user) && applies_stasis)
 		var/mob/living/L = user
 		L.set_stasis(/datum/modifier/stasis/total, src)
-	if(BUCKLED(user) && istype(BUCKLED(user), /obj/structure/bed/chair/wheelchair))
-		var/atom/movable/_tmp_buck_6 = BUCKLED(user)
+	if(user?.buckled_to() && istype(user?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_6 = user?.buckled_to()
 		_tmp_buck_6.loc = user.loc
 
 	icon_state = occupied_icon_state
@@ -715,7 +715,7 @@
 		G.icon_state = "off"
 
 /obj/machinery/cryopod/proc/go_out(skip_move = FALSE)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 
 	if(!occupant)
 		return
@@ -732,7 +732,7 @@
 	return
 
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(new_occupant)
 		MACHINE_WAKE(src)
 	name = initial(name)
@@ -740,7 +740,7 @@
 		name = "[name] ([occupant])"
 
 /obj/machinery/cryopod/proc/go_in(mob/M, mob/user)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!check_occupant_allowed(M))
 		return
 	if(!M)
@@ -777,8 +777,8 @@
 	if(isliving(M) && applies_stasis)
 		var/mob/living/L = M
 		L.set_stasis(/datum/modifier/stasis/total, src)
-	if(BUCKLED(M) && istype(BUCKLED(M), /obj/structure/bed/chair/wheelchair))
-		var/atom/movable/_tmp_buck_7 = BUCKLED(M)
+	if(M?.buckled_to() && istype(M?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_7 = M?.buckled_to()
 		_tmp_buck_7.loc = M.loc
 
 	// Book keeping!
@@ -790,7 +790,7 @@
 	add_fingerprint(M)
 
 /obj/machinery/cryopod/proc/go_in_timed_done(mob/M, mob/user)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return

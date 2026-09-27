@@ -432,7 +432,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		A.attack_robot(user)
 		return
 	// buckled cannot prevent machine interlinking but stops arm movement
-	if(BUCKLED(user))
+	if(user?.buckled_to())
 		return
 
 	if(W == A)

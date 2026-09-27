@@ -301,7 +301,7 @@
 				continue
 	var/obj/item/grab/G = src.get_active_hand()
 	if(istype(G))
-		var/mob/living/L = GRAB_TARGET(G)
+		var/mob/living/L = G?.grab_target()
 		if(istype(L) && L.allow_mind_transfer)
 			if(G.state != GRAB_NECK)
 				possible_mobs |= "~~[L.name]~~ (reinforce grab first)"
@@ -333,7 +333,7 @@
 	to_chat(M, span_warning("You can feel the will of another pulling you away from your body..."))
 	to_chat(src, span_warning("You can feel the will of your prey diminishing as you gather them!"))
 
-	if(istype(G) && M == GRAB_TARGET(G))
+	if(istype(G) && M == G?.grab_target())
 		src.visible_message(span_danger("[src] seems to be doing something to [M], resulting in [M]'s body looking increasingly drowsy with every passing moment!"))
 	om_task_start(/datum/om/task/timed/living_dominate_prey_living, src, M, list("G" = G))
 	return TRUE
@@ -347,7 +347,7 @@
 /mob/living/proc/dominate_prey_living_done(datum/om/task/timed/living_dominate_prey_living/task)
 	var/obj/item/grab/G = task.G
 	var/mob/living/M = task.target
-	if(!isbelly(M.loc) && !(istype(G) && M == GRAB_TARGET(G) && G.state == GRAB_NECK)) // Let dominate prey work on grabbed people
+	if(!isbelly(M.loc) && !(istype(G) && M == G?.grab_target() && G.state == GRAB_NECK)) // Let dominate prey work on grabbed people
 		to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
 		to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
 		return
@@ -355,7 +355,7 @@
 	gather_prey_mind(M)
 	to_chat(src, span_notice("You feel your mind expanded as [M] is incorporated into you."))
 	to_chat(M, span_warning("Your mind is gathered into \the [src], becoming part of them..."))
-	if(istype(G) && M == GRAB_TARGET(G))
+	if(istype(G) && M == G?.grab_target())
 		visible_message(span_danger("[src] seems to finish whatever they were doing to [M]."))
 
 /mob/living/proc/dominate_prey_living_failed(datum/om/task/timed/living_dominate_prey_living/task)

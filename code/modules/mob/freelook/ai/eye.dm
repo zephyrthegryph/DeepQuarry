@@ -18,7 +18,7 @@
 	. = ..()
 
 /mob/observer/eye/aiEye/setLoc(T, cancel_tracking = 1)
-	var/mob/owner = EYE_OWNER(src)
+	var/mob/owner = src?.eye_owner()
 	if(owner)
 		T = get_turf(T)
 		loc = T
@@ -50,7 +50,7 @@
 	var/obj/machinery/hologram/holopad/holo = null
 
 /mob/living/silicon/ai/proc/destroy_eyeobj(atom/new_eye)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj) return
 	if(!new_eye)
 		new_eye = src
@@ -59,7 +59,7 @@
 	reset_perspective(new_eye)
 
 /mob/living/silicon/ai/proc/create_eyeobj(newloc)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		destroy_eyeobj()
 	if(!newloc)
@@ -73,14 +73,14 @@
 /atom/proc/move_camera_by_click()
 	if(isAI(usr))
 		var/mob/living/silicon/ai/AI = usr
-		var/mob/observer/eye/eyeobj = ACTIVE_EYE(AI)
+		var/mob/observer/eye/eyeobj = AI?.active_eye()
 		if(eyeobj && (AI.multicam_on || (AI.client.eye == eyeobj)))
 			var/turf/T = get_turf(src)
 			if(T)
 				eyeobj.setLoc(T)
 
 /mob/living/silicon/ai/proc/view_core()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	camera = null
 	unset_machine()
 
@@ -94,7 +94,7 @@
 	eyeobj.setLoc(src)
 
 /mob/living/silicon/ai/proc/toggle_acceleration()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set category = "AI.Settings"
 	set name = "Toggle Camera Acceleration"
 

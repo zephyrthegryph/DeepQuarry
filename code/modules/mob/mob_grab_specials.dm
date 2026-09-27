@@ -6,7 +6,7 @@
 		to_chat(user, span_notice("[H] is missing that bodypart."))
 		return
 
-	user.visible_message(span_notice("[user] starts inspecting [GRAB_TARGET(src)]'s [E.name] carefully."))
+	user.visible_message(span_notice("[user] starts inspecting [src?.grab_target()]'s [E.name] carefully."))
 	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
 	return TRUE
 
@@ -277,14 +277,14 @@
 		return
 
 /obj/item/grab/proc/pin_down(mob/target, mob/attacker)
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(state < GRAB_AGGRESSIVE)
 		to_chat(attacker, span_warning("You require a better grab to do this."))
 		return
 	if(force_down)
 		to_chat(attacker, span_warning("You are already pinning [target] to the ground."))
 		return
-	if(size_difference(GRAB_TARGET(src), assailant) > 0)
+	if(size_difference(src?.grab_target(), assailant) > 0)
 		to_chat(attacker, span_warning("You are too small to do that!"))
 		return
 

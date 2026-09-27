@@ -1,12 +1,12 @@
 /atom/movable/proc/get_mob()
-	var/list/mobs = BUCKLED_MOBS(src)
+	var/list/mobs = src?.buckled_mob_list()
 	if(mobs) return mobs.Copy()
 
 /obj/mecha/get_mob()
-	return SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	return src?.slot_item(MECHA_SLOT_PILOT)
 
 /obj/vehicle_old/train/get_mob()
-	return BUCKLED_MOBS(src)
+	return src?.buckled_mob_list()
 
 /mob/get_mob()
 	return src

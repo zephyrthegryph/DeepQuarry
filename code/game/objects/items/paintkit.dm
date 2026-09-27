@@ -225,7 +225,7 @@
 		to_chat(user, "That kit isn't meant for use on this class of exosuit.")
 		return
 
-	if(SLOT_ITEM(M, MECHA_SLOT_PILOT))
+	if(M?.slot_item(MECHA_SLOT_PILOT))
 		to_chat(user, "You can't customize a mech while someone is piloting it - that would be unsafe!")
 		return
 

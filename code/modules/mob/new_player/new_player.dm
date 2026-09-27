@@ -237,10 +237,10 @@
 	equip_custom_items(character) // readded to enable custom_item.txt
 
 	// Moving wheelchair if they have one
-	if(BUCKLED(character) && istype(BUCKLED(character), /obj/structure/bed/chair/wheelchair))
-		var/atom/movable/_tmp_buck_32 = BUCKLED(character)
+	if(character?.buckled_to() && istype(character?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_32 = character?.buckled_to()
 		_tmp_buck_32.loc = character.loc
-		var/atom/movable/_tmp_buck_33 = BUCKLED(character)
+		var/atom/movable/_tmp_buck_33 = character?.buckled_to()
 		_tmp_buck_33.set_dir(character.dir)
 
 	SSticker.mode.latespawn(character)

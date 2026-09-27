@@ -180,8 +180,8 @@
 		return//I really wish I did not need this
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
-		if(isliving(GRAB_TARGET(G)))
-			var/mob/living/M = GRAB_TARGET(G)
+		if(isliving(G?.grab_target()))
+			var/mob/living/M = G?.grab_target()
 			var/state = G.state
 			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
@@ -417,10 +417,10 @@
 		if(G.state<2)
 			to_chat(user, span_warning("You need a better grip to do that!"))
 			return
-		var/mob/grabbed = GRAB_TARGET(G)
+		var/mob/grabbed = G?.grab_target()
 		grabbed.loc = src.loc
 		grabbed.status_at_least(EFFECT_WEAKENED, 5)
-		visible_message(span_warning("[GRAB_ASSAILANT(G)] dunks [grabbed] into the [src]!"), 3)
+		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
 		qdel(W)
 		return
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)

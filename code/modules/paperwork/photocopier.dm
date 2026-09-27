@@ -72,7 +72,7 @@
 				to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
 				copyitem = null
 			else if(has_buckled_mobs())
-				to_chat(BUCKLED_MOBS(src)[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
+				to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
 			. = TRUE
 		if("set_copies")
 			copies = clamp(text2num(params["num_copies"]), 1, maxcopies)
@@ -288,9 +288,9 @@
 
 /obj/machinery/photocopier/proc/copyass(mob/user)
 	var/icon/temp_img
-	if(!has_buckled_mobs()) // Are there no mobs BUCKLED(src) to the photocopier?
+	if(!has_buckled_mobs()) // Are there no mobs src?.buckled_to() to the photocopier?
 		return
-	var/mob/sitter = BUCKLED_MOBS(src)[1] // You have to be sitting on the copier/BUCKLED(src) to it and either be a xeno or a human without clothes on that cover your ass.
+	var/mob/sitter = src?.buckled_mob_list()[1] // You have to be sitting on the copier/BUCKLED(src) to it and either be a xeno or a human without clothes on that cover your ass.
 	if(ishuman(sitter)) // Suit checks are in can_buckle_mobs at the bottom of the file.
 		var/mob/living/carbon/human/H = sitter // All human subtypes.
 		var/species_to_check = H.get_species()

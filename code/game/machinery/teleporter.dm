@@ -178,9 +178,9 @@
 		// ition Start: Prevent taurriding abuse
 		if(isliving(M))
 			var/mob/living/L = M
-			if(LAZYLEN(BUCKLED_MOBS(L)))
+			if(LAZYLEN(L?.buckled_mob_list()))
 				var/datum/riding/R = L.riding_datum
-				for(var/rider in BUCKLED_MOBS(L))
+				for(var/rider in L?.buckled_mob_list())
 					R.force_dismount(rider)
 		// ition End: Prevent taurriding abuse
 		if(prob(5) && !accurate) //oh dear a problem, put em in deep space

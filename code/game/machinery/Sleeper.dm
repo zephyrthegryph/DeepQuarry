@@ -181,7 +181,7 @@
 		return
 
 /obj/machinery/sleeper/attack_hand(mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!controls_inside)
 		return FALSE
 
@@ -195,7 +195,7 @@
 		ui.open()
 
 /obj/machinery/sleeper/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	var/data[0]
 	data["amounts"] = amounts
 	data["hasOccupant"] = occupant ? 1 : 0
@@ -306,7 +306,7 @@
 
 
 /obj/machinery/sleeper/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(..())
 		return TRUE
 	if(!controls_inside && ui.user == occupant)
@@ -353,7 +353,7 @@
 	add_fingerprint(ui.user)
 
 /obj/machinery/sleeper/machine_step()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(stat & (NOPOWER|BROKEN))
 		return PROCESS_KILL
 	if(!occupant)
@@ -386,16 +386,16 @@
 				toggle_pump()
 
 /obj/machinery/sleeper/update_icon()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	icon_state = "sleeper_[occupant ? "1" : "0"]"
 
 /obj/machinery/sleeper/attackby(obj/item/I, mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	add_fingerprint(user)
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		if(GRAB_TARGET(G))
-			go_in(GRAB_TARGET(G), user)
+		if(G?.grab_target())
+			go_in(G?.grab_target(), user)
 		return
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
@@ -411,15 +411,15 @@
 			return
 
 /obj/machinery/sleeper/screwdriver_act(mob/user, obj/item/tool)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/sleeper/crowbar_act(mob/user, obj/item/tool)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/sleeper/verb/move_eject()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	set name = "Eject occupant"
 	set category = "Object"
 	set src in oview(1)
@@ -453,7 +453,7 @@
 	go_out()
 
 /obj/machinery/sleeper/emp_act(severity, recursive)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
@@ -472,26 +472,26 @@
 		go_out()
 
 /obj/machinery/sleeper/proc/toggle_filter()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!occupant || !beaker)
 		filtering = 0
 		return
 	filtering = !filtering
 
 /obj/machinery/sleeper/proc/toggle_pump()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!occupant || !beaker)
 		pumping = 0
 		return
 	pumping = !pumping
 
 /obj/machinery/sleeper/proc/go_in(mob/M, mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!M)
 		return
 	if(stat & (BROKEN|NOPOWER))
 		return
-	if(BUCKLED(M))
+	if(M?.buckled_to())
 		return
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
@@ -507,8 +507,8 @@
 	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 
 /obj/machinery/sleeper/proc/go_in_timed_done(mob/M, mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
-	if(BUCKLED(M))
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
+	if(M?.buckled_to())
 		return
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
@@ -523,7 +523,7 @@
 	update_icon()
 
 /obj/machinery/sleeper/proc/go_out()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!occupant || occupant.loc != src)
 		occupant?.cozyloop?.stop() // Cozy Music
 		return
@@ -542,7 +542,7 @@
 	MACHINE_SLEEP(src)
 
 /obj/machinery/sleeper/power_change()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	. = ..()
 	if(. && occupant)
 		MACHINE_WAKE(src)
@@ -554,7 +554,7 @@
 		toggle_filter()
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(stat & (BROKEN|NOPOWER))
 		return
 	if(!(amount in amounts))

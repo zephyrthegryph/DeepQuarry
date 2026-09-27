@@ -343,7 +343,7 @@
 /mob/living/carbon/can_use_hands()
 	if(get_equipped_item(SLOT_ID_HANDCUFFED))
 		return 0
-	if(BUCKLED(src) && istype(BUCKLED(src), /obj/structure/bed/nest)) // buckling does not restrict hands
+	if(src?.buckled_to() && istype(src?.buckled_to(), /obj/structure/bed/nest)) // buckling does not restrict hands
 		return 0
 	return 1
 
@@ -361,7 +361,7 @@
 	..()
 	if(slot_id == SLOT_ID_HANDCUFFED)
 		update_handcuffed()
-		var/obj/buckled = BUCKLED(src)
+		var/obj/buckled = src?.buckled_to()
 		if(buckled && buckled.buckle_require_restraints)
 			buckled.unbuckle_mob()
 
@@ -403,7 +403,7 @@
 
 /mob/living/carbon/slip(slipped_on,stun_duration=8)
 	SEND_SIGNAL(src, COMSIG_ON_CARBON_SLIP, slipped_on, stun_duration)
-	if(BUCKLED(src))
+	if(src?.buckled_to())
 		return FALSE
 	stop_pulling()
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))

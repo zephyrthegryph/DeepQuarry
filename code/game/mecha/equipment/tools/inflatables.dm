@@ -36,9 +36,9 @@
 		return
 
 	if(istype(target, /turf))
-		my_deployer.try_deploy_inflatable(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+		my_deployer.try_deploy_inflatable(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 	if(istype(target, /obj/item/inflatable) || istype(target, /obj/structure/inflatable))
-		my_deployer.pick_up(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+		my_deployer.pick_up(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)

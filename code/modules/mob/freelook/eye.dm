@@ -42,7 +42,7 @@
 
 /datum/om/relation/eye_of/on_unlink(mob/observer/eye/source, mob/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(ACTIVE_EYE(target) == source)
+	if(target?.active_eye() == source)
 		om_unlink(target, source, /datum/om/relation/active_eye)
 
 /// mob -> the eye it currently moves and sees with. Implies eye_of.
@@ -61,13 +61,13 @@
 
 /// Stop looking through the active eye (it stays alive; the caller deletes it if needed).
 /mob/proc/drop_eye()
-	var/mob/observer/eye/E = ACTIVE_EYE(src)
+	var/mob/observer/eye/E = src?.active_eye()
 	if(E)
 		om_unlink(E, src, /datum/om/relation/eye_of)
 	return E
 
 /mob/observer/eye/Move(n, direct)
-	var/mob/owner = EYE_OWNER(src)
+	var/mob/owner = src?.eye_owner()
 	if(owner == src)
 		return EyeMove(n, direct)
 	return 0
@@ -89,7 +89,7 @@
 // Use this when setting the eye's location.
 // It will also stream the chunk that the new loc is in.
 /mob/observer/eye/proc/setLoc(T)
-	var/mob/owner = EYE_OWNER(src)
+	var/mob/owner = src?.eye_owner()
 	if(owner)
 		T = get_turf(T)
 		if(T != loc)
@@ -106,21 +106,21 @@
 	return 0
 
 /mob/observer/eye/proc/getLoc()
-	var/mob/owner = EYE_OWNER(src)
+	var/mob/owner = src?.eye_owner()
 	if(owner)
 		if(!isturf(owner.loc) || !owner.client)
 			return
 		return loc
 
 /mob/proc/EyeMove(n, direct)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		return
 
 	return eyeobj.EyeMove(n, direct)
 
 /mob/observer/eye/proc/GetViewerClient()
-	var/mob/owner = EYE_OWNER(src)
+	var/mob/owner = src?.eye_owner()
 	if(owner)
 		return owner.client
 	return null

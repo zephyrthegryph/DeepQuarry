@@ -225,14 +225,14 @@
 			handleAdjacentTarget()
 		else
 			handleRangedTarget()
-		if(!wait_if_pulled || !PULLED_BY(src))
+		if(!wait_if_pulled || !src?.pulled_by_mob())
 			bot_steps(target_speed + panic_speed_mod, 20 / (target_speed + panic_speed_mod + 1), PROC_REF(stepToTarget))
 		if(max_frustration && frustration > max_frustration * target_speed)
 			handleFrustrated(1)
 	else
 		resetTarget()
 		lookForTargets()
-		if(will_patrol && !PULLED_BY(src) && !target)
+		if(will_patrol && !src?.pulled_by_mob() && !target)
 			if(patrol_path && patrol_path.len)
 				bot_steps(patrol_speed + panic_speed_mod, 20 / (patrol_speed + 1), PROC_REF(handlePatrol))
 				if(max_frustration && frustration > max_frustration * patrol_speed)
@@ -240,7 +240,7 @@
 			else
 				startPatrol()
 		else
-			if((locate(/obj/machinery/door) in loc) && !PULLED_BY(src)) //Don't hang around blocking doors, but don't run off if someone tries to pull us through one.
+			if((locate(/obj/machinery/door) in loc) && !src?.pulled_by_mob()) //Don't hang around blocking doors, but don't run off if someone tries to pull us through one.
 				var/turf/my_turf = get_turf(src)
 				var/list/can_go = my_turf.CardinalTurfsWithAccess(botcard)
 				if(LAZYLEN(can_go))

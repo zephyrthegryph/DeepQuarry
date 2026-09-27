@@ -151,7 +151,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 
 /turf/attack_hand(mob/user)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
-	if(!PULLING(user))
+	if(!user?.pulling_target())
 		var/obj/machinery/door/airlock/AL = locate(/obj/machinery/door/airlock) in src.contents
 		if(AL)
 			AL.attack_hand(user)
@@ -161,7 +161,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 			FD.attack_hand(user)
 			return TRUE
 
-	var/atom/movable/pulling = PULLING(user)
+	var/atom/movable/pulling = user?.pulling_target()
 	if(!(user.canmove) || user.restrained() || !pulling)
 		return 0
 	if(pulling.anchored || !isturf(pulling.loc))
@@ -170,7 +170,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		return 0
 	if(ismob(pulling))
 		var/mob/M = pulling
-		var/atom/movable/t = PULLING(M)
+		var/atom/movable/t = M?.pulling_target()
 		M.stop_pulling()
 		step(pulling, get_dir(pulling.loc, src))
 		M.start_pulling(t)
@@ -228,7 +228,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		return
 	if(istype(O, /atom/movable/screen))
 		return
-	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(GRABBED_BY(user)) || user.is_paralyzed())
+	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
 		return
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
 		return

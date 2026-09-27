@@ -34,8 +34,8 @@
 // Attacking someone with a weapon while they are neck-grabbed
 /mob/living/carbon/proc/check_neckgrab_attack(obj/item/W, mob/user, hit_zone)
 	if(IS_HARMING(user))
-		for(var/obj/item/grab/G in GRABBED_BY(src))
-			if(GRAB_ASSAILANT(G) == user)
+		for(var/obj/item/grab/G in src?.grabbed_by_list())
+			if(G?.grab_assailant() == user)
 				if(G.state >= GRAB_AGGRESSIVE)
 					if(hit_zone == BP_TORSO && shank_attack(W, G, user))
 						return 1
@@ -67,7 +67,7 @@
 	var/obj/item/W = task.W
 	var/obj/item/grab/G = task.G
 	var/mob/user = task.actor
-	if(!(G && GRAB_ASSAILANT(G) == user && GRAB_TARGET(G) == src)) //check that we still have a grab
+	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
 		return 0
 
 	var/damage_mod = 1

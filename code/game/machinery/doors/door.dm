@@ -208,7 +208,7 @@
 	if(istype(AM, /obj/mecha))
 		var/obj/mecha/mecha = AM
 		if(density)
-			if(SLOT_ITEM(mecha, MECHA_SLOT_PILOT) && (allowed(SLOT_ITEM(mecha, MECHA_SLOT_PILOT)) || check_access_list(mecha.operation_req_access)))
+			if(mecha?.slot_item(MECHA_SLOT_PILOT) && (allowed(mecha?.slot_item(MECHA_SLOT_PILOT)) || check_access_list(mecha.operation_req_access)))
 				open()
 			else
 				do_animate("deny")
@@ -217,7 +217,7 @@
 	if(istype(AM, /obj/structure/bed/chair/wheelchair))
 		var/obj/structure/bed/chair/wheelchair/wheel = AM
 		if(density)
-			if(PULLING(wheel) && (allowed(PULLING(wheel))))
+			if(wheel?.pulling_target() && (allowed(wheel?.pulling_target())))
 				open()
 			else
 				do_animate("deny")

@@ -84,7 +84,7 @@
 		if(!human_source.has_organ(BP_L_FOOT) && !human_source.has_organ(BP_R_FOOT))
 			return
 
-	if(BUCKLED(source) || source.lying || source.throwing || source.is_incorporeal())
+	if(source?.buckled_to() || source.lying || source.throwing || source.is_incorporeal())
 		return
 	if(!get_gravity(source) && prob(75))
 		return

@@ -40,8 +40,8 @@
 
 	if(istype(target, /obj/item/grab))
 		var/obj/item/grab/G = target
-		if(GRAB_TARGET(G))
-			var/mob/M = GRAB_TARGET(G)
+		if(G?.grab_target())
+			var/mob/M = G?.grab_target()
 			charged_item = mob_charge(M)
 
 	if(istype(target, /obj/item/spellbook/oneuse))

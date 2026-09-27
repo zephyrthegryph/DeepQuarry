@@ -221,9 +221,9 @@
 			potential_targets += L
 
 	for(var/obj/mecha/M in view(src))
-		if(!SLOT_ITEM(M, MECHA_SLOT_PILOT))
+		if(!M?.slot_item(MECHA_SLOT_PILOT))
 			continue // Just a hunk of metal
-		if(can_attack(SLOT_ITEM(M, MECHA_SLOT_PILOT)))
+		if(can_attack(M?.slot_item(MECHA_SLOT_PILOT)))
 			potential_targets += M
 
 	if(potential_targets.len)

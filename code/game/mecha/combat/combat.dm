@@ -42,7 +42,7 @@
 		return
 	if(isliving(T))
 		var/mob/living/M = T
-		if(IS_HARMING(SLOT_ITEM(src, MECHA_SLOT_PILOT)) || istype(SLOT_ITEM(src, MECHA_SLOT_PILOT), /mob/living/carbon/brain)) //Brains cannot change intents; Exo-piloting brains lack any form of physical feedback for control, limiting the ability to 'play nice'.
+		if(IS_HARMING(src?.slot_item(MECHA_SLOT_PILOT)) || istype(src?.slot_item(MECHA_SLOT_PILOT), /mob/living/carbon/brain)) //Brains cannot change intents; Exo-piloting brains lack any form of physical feedback for control, limiting the ability to 'play nice'.
 			playsound(src, 'sound/weapons/heavysmash.ogg', 50, 1)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)
@@ -81,7 +81,7 @@
 	else
 		if(istype(T, /obj/machinery/disposal)) // Stops mechs from climbing into disposals
 			return
-		if(IS_HARMING(SLOT_ITEM(src, MECHA_SLOT_PILOT)) || istype(SLOT_ITEM(src, MECHA_SLOT_PILOT), /mob/living/carbon/brain)) // Don't smash unless we mean it
+		if(IS_HARMING(src?.slot_item(MECHA_SLOT_PILOT)) || istype(src?.slot_item(MECHA_SLOT_PILOT), /mob/living/carbon/brain)) // Don't smash unless we mean it
 			if(melee_injury_kind == INJURY_BLUNT)
 				src.occupant_message("You hit [T].")
 				src.visible_message(span_bolddanger("[src.name] hits [T]"))
@@ -106,7 +106,7 @@
 		return 0
 
 /obj/mecha/combat/mmi_moved_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(..())
 		if(occupant.client)
 			occupant.client.mouse_pointer_icon = file("icons/mecha/mecha_mouse.dmi")
@@ -115,9 +115,9 @@
 		return 0
 
 /obj/mecha/combat/go_out()
-	var/mob/living/_tmp_occ_1 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
-	if(SLOT_ITEM(src, MECHA_SLOT_PILOT) && _tmp_occ_1.client)
-		var/mob/living/_tmp_occ_2 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/mob/living/_tmp_occ_1 = src?.slot_item(MECHA_SLOT_PILOT)
+	if(src?.slot_item(MECHA_SLOT_PILOT) && _tmp_occ_1.client)
+		var/mob/living/_tmp_occ_2 = src?.slot_item(MECHA_SLOT_PILOT)
 		_tmp_occ_2.client.mouse_pointer_icon = initial(_tmp_occ_2.client.mouse_pointer_icon)
 	..()
 	return

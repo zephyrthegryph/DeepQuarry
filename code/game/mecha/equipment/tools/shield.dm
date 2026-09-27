@@ -66,7 +66,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/proc/toggle_shield()
 	if(chassis)
-		my_shield.attack_self(SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+		my_shield.attack_self(chassis?.slot_item(MECHA_SLOT_PILOT))
 		if(my_shield.active)
 			set_ready_state(FALSE)
 			step_delay = 4

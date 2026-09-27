@@ -4,7 +4,7 @@
 
 /mob/proc/update_floating(dense_object=0)
 
-	if(anchored||BUCKLED(src))
+	if(anchored||src?.buckled_to())
 		make_floating(0)
 		return
 	if(ishuman(src)) // . Floating code.
@@ -33,7 +33,7 @@
 	return
 
 /mob/proc/make_floating(n)
-	if(BUCKLED(src))
+	if(src?.buckled_to())
 		if(is_floating)
 			stop_floating()
 		return
@@ -211,7 +211,7 @@
 /mob/proc/spin(spintime, speed)
 	if(!speed || speed < 1)		// Do NOT spin with infinite speed, it will break the reality
 		return
-	if(istype(BUCKLED(src),/obj/structure/bed/chair/office)) // WEEEE!!!
+	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
 		playsound(src, 'sound/effects/roll.ogg', 100, 1)
 	om_task_start(/datum/om/task/spin, src, null, list("left" = spintime, "speed" = speed, "facing" = dir))
 
@@ -241,8 +241,8 @@
 			D = NORTH
 	T.facing = D
 	set_dir(D)
-	if(istype(BUCKLED(src),/obj/structure/bed/chair/office))
-		var/obj/structure/bed/chair/office/O = BUCKLED(src)
+	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office))
+		var/obj/structure/bed/chair/office/O = src?.buckled_to()
 		O.dir = D
 		O.set_dir(D)
 	T.left -= speed

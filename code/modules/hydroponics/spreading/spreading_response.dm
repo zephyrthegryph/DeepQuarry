@@ -15,7 +15,7 @@
 	if(M.is_incorporeal()) // Don't buckle phased entities.
 		return
 
-	if(!has_buckled_mobs() && !BUCKLED(M) && !M.anchored && (issmall(M) || prob(round(seed.get_trait(TRAIT_POTENCY)/3))))
+	if(!has_buckled_mobs() && !M?.buckled_to() && !M.anchored && (issmall(M) || prob(round(seed.get_trait(TRAIT_POTENCY)/3))))
 		//wait a tick for the Entered() proc that called HasProximity() to finish (and thus the moving animation),
 		//so we don't appear to teleport from two tiles away when moving into a turf adjacent to vines.
 		om_after(src, 1, PROC_REF(entangle), M)
@@ -64,8 +64,8 @@
 		if(seed)
 			chance = round(100/(20*seed.get_trait(TRAIT_POTENCY)/100))
 		if(prob(chance))
-			for(var/mob/living/L as anything in BUCKLED_MOBS(src))
-				if(!(user in BUCKLED_MOBS(src)))
+			for(var/mob/living/L as anything in src?.buckled_mob_list())
+				if(!(user in src?.buckled_mob_list()))
 					L.visible_message(\
 					span_infoplain(span_bold("\The [user]") + " frees \the [L] from \the [src]."),\
 					span_infoplain(span_bold("\The [user]") + " frees you from \the [src]."),\
@@ -92,7 +92,7 @@
 	if(has_buckled_mobs())
 		return
 
-	if(BUCKLED(victim) || victim.anchored)
+	if(victim?.buckled_to() || victim.anchored)
 		return
 
 	//grabbing people

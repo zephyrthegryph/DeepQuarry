@@ -60,7 +60,7 @@
 	if(H.stat != CONSCIOUS)
 		return
 	// Traitgenes Monkeys perform emotes based on their traits
-	if(H.canmove && isturf(H.loc) && !PULLED_BY(H)) //won't move if being pulled
+	if(H.canmove && isturf(H.loc) && !H?.pulled_by_mob()) //won't move if being pulled
 		if(prob(33))
 			step(H, pick(GLOB.cardinal))
 		if(prob(5))

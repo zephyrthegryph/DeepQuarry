@@ -190,7 +190,7 @@
 	if(istype(AM, /mob/living/carbon) || istype(AM, /mob/living/silicon))
 		var/mob/living/L = AM
 
-		if(L.m_intent == I_RUN && !BUCKLED(L))
+		if(L.m_intent == I_RUN && !L?.buckled_to())
 			if(has_buckled_mobs())
 				return
 			buckle_mob(L)

@@ -44,8 +44,8 @@
 	if(destination)
 		if(ismob(AM))
 			var/mob/living/L = AM
-			if(BUCKLED(L))
-				var/atom/movable/_tmp_buck_5 = BUCKLED(L)
+			if(L?.buckled_to())
+				var/atom/movable/_tmp_buck_5 = L?.buckled_to()
 				_tmp_buck_5.unbuckle_mob()
 		AM.forceMove(destination)
 		AM.visible_message(span_infoplain(span_bold("\The [AM]") + " vanishes!"))

@@ -63,7 +63,7 @@
 	if(!istype(G))
 		to_chat(H, span_warning("You need to be grabbing a humanoid mob aggressively to latch onto them."))
 		return
-	var/mob/living/carbon/human/target = GRAB_TARGET(G)
+	var/mob/living/carbon/human/target = G?.grab_target()
 	if(!istype(target))
 		to_chat(H, span_warning("You can only latch onto humanoid mobs!"))
 		return

@@ -80,12 +80,12 @@
 		return
 	else if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		var/mob/living/affecting = GRAB_TARGET(G)
+		var/mob/living/affecting = G?.grab_target()
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, GRAB_TARGET(G), list("receiver" = src, "I" = I, "affecting" = affecting))
+		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), list("receiver" = src, "I" = I, "affecting" = affecting))
 
 /datum/om/task/timed/bath_bath_buckle
 	duration = 2 SECONDS
@@ -154,8 +154,8 @@
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
 
-		if(isliving(GRAB_TARGET(G)))
-			var/mob/living/GM = GRAB_TARGET(G)
+		if(isliving(G?.grab_target()))
+			var/mob/living/GM = G?.grab_target()
 
 			if(G.state>1)
 				if(!GM.loc == get_turf(src))

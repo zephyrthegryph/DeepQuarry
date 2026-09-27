@@ -81,7 +81,7 @@
 			plant.layer = layer + 0.1
 
 	if(has_buckled_mobs())
-		for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+		for(var/mob/living/L as anything in src?.buckled_mob_list())
 			seed.do_sting(L,src)
 			if(seed.get_trait(TRAIT_CARNIVOROUS))
 				seed.do_thorns(L,src)

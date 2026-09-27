@@ -354,8 +354,8 @@ Pipelines + Other Objects -> Pipe network
 	// otherwise, edge_target_turf uses a random cardinal direction
 	// range is pressures / 250
 	// speed is pressures / 1250
-	if(BUCKLED(user))
-		var/atom/movable/_tmp_buck_1 = BUCKLED(user)
+	if(user?.buckled_to())
+		var/atom/movable/_tmp_buck_1 = user?.buckled_to()
 		_tmp_buck_1.unbuckle_mob(user, TRUE)
 	user.throw_at(get_edge_target_turf(user, get_dir(src, user) || pick(GLOB.cardinal)), pressures / 250, pressures / 1250)
 

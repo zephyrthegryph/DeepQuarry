@@ -24,7 +24,7 @@
 		produce_species = pick(possible_species)
 
 /obj/machinery/vr_sleeper/alien/machine_step()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return PROCESS_KILL
 	if(stat & (BROKEN))
@@ -51,7 +51,7 @@
 	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl
 
 /obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl(mob/user, obj/item/I, datum/interaction/interaction)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
@@ -65,7 +65,7 @@
 	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl
 
 /obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(stat & (BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
 		perform_exit()
 	else
@@ -74,7 +74,7 @@
 	return TRUE
 
 /obj/machinery/vr_sleeper/alien/go_out()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return
 
@@ -99,7 +99,7 @@
 	update_icon()
 
 /obj/machinery/vr_sleeper/alien/enter_vr()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 
 	// No mob to transfer a mind from
 	if(!occupant)

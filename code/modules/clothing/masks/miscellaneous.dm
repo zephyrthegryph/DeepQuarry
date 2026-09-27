@@ -248,7 +248,7 @@
 
 /obj/item/clothing/mask/ai/dropped(mob/user, equipping, slot)
 	..()
-	if(EYE_OWNER(eye) == user)
+	if(eye?.eye_owner() == user)
 		for(var/datum/chunk/c in eye.visibleChunks)
 			c.remove(eye)
 

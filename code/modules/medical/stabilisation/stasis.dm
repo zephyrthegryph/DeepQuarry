@@ -134,7 +134,7 @@
 /// matches stasis applied without one (admin).
 /mob/living/proc/stasis_modifier_from(datum/source)
 	for(var/datum/modifier/stasis/S in modifiers)
-		if(STASIS_SOURCE(S) == source)
+		if(S?.stasis_source() == source)
 			return S
 	return null
 

@@ -108,7 +108,7 @@
 // stumble override removed.
 
 /obj/machinery/suit_storage_unit/stumble_into(mob/living/M)
-	if(!ishuman(M) || !isopen || !ispowered || isbroken || SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE) || HELMET || SUIT)
+	if(!ishuman(M) || !isopen || !ispowered || isbroken || src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE) || HELMET || SUIT)
 		return ..()
 	playsound(src, 'sound/effects/clang.ogg', 25, 1, -1)
 	visible_message(span_warning("[M] [pick("tripped", "stumbled")] into \the [src]!"))

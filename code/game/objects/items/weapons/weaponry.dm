@@ -125,7 +125,7 @@
 
 /obj/effect/energy_net/Destroy()
 	if(has_buckled_mobs())
-		for(var/A in BUCKLED_MOBS(src))
+		for(var/A in src?.buckled_mob_list())
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
 
@@ -143,7 +143,7 @@
 	unbuckle_mob(buckled_mob)
 
 /obj/effect/energy_net/post_buckle_mob(mob/living/M)
-	if(BUCKLED(M) == src) //Just BUCKLED(src) someone
+	if(M?.buckled_to() == src) //Just src?.buckled_to() someone
 		..()
 		layer = M.layer+1
 		M.can_pull_size = 0
@@ -166,7 +166,7 @@
 
 /obj/effect/energy_net/shrink/periodic_step()
 	..()
-	for(var/A in BUCKLED_MOBS(src))
+	for(var/A in src?.buckled_mob_list())
 		if(istype(A, /mob/living))
 			var/mob/living/L = A
 			L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)

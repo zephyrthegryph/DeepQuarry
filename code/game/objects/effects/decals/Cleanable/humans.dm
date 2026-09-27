@@ -85,7 +85,7 @@
 	var/hasfeet = 1
 	if((!l_foot || l_foot.is_stump()) && (!r_foot || r_foot.is_stump()))
 		hasfeet = 0
-	if(perp.get_equipped_item(SLOT_ID_SHOES) && !BUCKLED(perp))//Adding blood to shoes
+	if(perp.get_equipped_item(SLOT_ID_SHOES) && !perp?.buckled_to())//Adding blood to shoes
 		var/obj/item/clothing/shoes/S = perp.get_equipped_item(SLOT_ID_SHOES)
 		if(istype(S))
 			dq_set_blood_color(S, basecolor)
@@ -108,8 +108,8 @@
 		LAZYINITLIST(perp.feet_blood_DNA)
 		perp.feet_blood_DNA |= init_forensic_data().get_blooddna().Copy()
 		perp.update_bloodied()
-	else if (BUCKLED(perp) && istype(BUCKLED(perp), /obj/structure/bed/chair/wheelchair))
-		var/obj/structure/bed/chair/wheelchair/W = BUCKLED(perp)
+	else if (perp?.buckled_to() && istype(perp?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+		var/obj/structure/bed/chair/wheelchair/W = perp?.buckled_to()
 		W.bloodiness = 4
 
 	if(viruses)

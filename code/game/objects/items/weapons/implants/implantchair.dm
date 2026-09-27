@@ -38,7 +38,7 @@
 /obj/machinery/implantchair/Topic(href, href_list)
 	if((get_dist(src, usr) <= 1) || isAI(usr))
 		if(href_list["implant"])
-			if(SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR))
+			if(src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR))
 				injecting = 1
 				go_out()
 				ready = 0
@@ -70,7 +70,7 @@
 /obj/machinery/implantchair/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/grab = G
-		var/mob/M = GRAB_TARGET(grab)
+		var/mob/M = grab?.grab_target()
 		if(!ismob(M))
 			return TRUE
 		if(M.has_buckled_mobs())
@@ -83,7 +83,7 @@
 
 
 /obj/machinery/implantchair/proc/go_out(mob/M)
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR)
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR)
 	if(!occupant)
 		return
 	if(M == occupant) // so that the guy inside can't eject himself -Agouri
@@ -103,7 +103,7 @@
 	if(!iscarbon(M))
 		to_chat(usr, span_warning("\The [src] cannot hold this!"))
 		return
-	if(SLOT_ITEM(src, OCCUPANT_SLOT_IMPLANT_CHAIR))
+	if(src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR))
 		to_chat(usr, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()

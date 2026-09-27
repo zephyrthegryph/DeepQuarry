@@ -43,7 +43,7 @@
 
 /datum/om/stage/life/type_post/bot/secbot/perform(mob/living/bot/secbot/self, datum/om/frame/life/ctx)
 	..()
-	var/mob/puller = PULLED_BY(self)
+	var/mob/puller = self?.pulled_by_mob()
 	if(self.stat != DEAD && self.on && puller)
 		if(isliving(puller))
 			var/pull_allowed = FALSE

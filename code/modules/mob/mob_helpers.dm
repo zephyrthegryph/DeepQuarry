@@ -144,10 +144,10 @@
 
 	if(!ranged_attack)
 		// you cannot miss if your target is prone or restrained
-		if(BUCKLED(target) || target.lying)
+		if(target?.buckled_to() || target.lying)
 			return zone
 		// if your target is being grabbed aggressively by someone you cannot miss either
-		for(var/obj/item/grab/G in GRABBED_BY(target))
+		for(var/obj/item/grab/G in target?.grabbed_by_list())
 			if(G.state >= GRAB_AGGRESSIVE)
 				return zone
 
@@ -502,7 +502,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	return 1
 
 /mob/living/silicon/ai/switch_to_camera(obj/machinery/camera/C)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!C.can_use() || !is_in_chassis())
 		return 0
 

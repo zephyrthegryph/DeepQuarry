@@ -52,7 +52,7 @@
 	. = ..()
 	if(.)
 		if(has_buckled_mobs())
-			for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+			for(var/mob/living/L as anything in src?.buckled_mob_list())
 				L.set_dir(dir)
 
 /obj/structure/bed/chair/wheelchair/attackby(obj/item/W as obj, mob/user as mob)
@@ -72,17 +72,17 @@
 	// no longer store pulling/pulledby at all (OM relations step 6) -- PULLING()
 	// is a live graph read, so this re-fetches it after every om_unlink() rather
 	// than trusting a cached local, matching the old field's always-live reads.
-	var/mob/living/pulling = PULLING(src)
+	var/mob/living/pulling = src?.pulling_target()
 	if(user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_PARALYZED) || user.lying || user.restrained())
 		if(user==pulling)
 			om_unlink(src, pulling, /datum/om/relation/pulling)
 			to_chat(user, span_warning("You lost your grip!"))
 		return
-	if(has_buckled_mobs() && pulling && (user in BUCKLED_MOBS(src)))
+	if(has_buckled_mobs() && pulling && (user in src?.buckled_mob_list()))
 		if(pulling.stat || pulling.has_status(EFFECT_STUNNED) || pulling.has_status(EFFECT_WEAKENED) || pulling.has_status(EFFECT_PARALYZED) || pulling.lying || pulling.restrained())
 			om_unlink(src, pulling, /datum/om/relation/pulling)
-			pulling = PULLING(src)
-	if(PULLING(user) && (user == pulling))
+			pulling = src?.pulling_target()
+	if(user?.pulling_target() && (user == pulling))
 		om_unlink(src, pulling, /datum/om/relation/pulling)
 		return
 	if(propelled)
@@ -90,13 +90,13 @@
 	if(pulling && (get_dist(src, pulling) > 1))
 		var/mob/living/was_pulling = pulling
 		om_unlink(src, pulling, /datum/om/relation/pulling)
-		pulling = PULLING(src)
+		pulling = src?.pulling_target()
 		if(user==was_pulling)
 			return
 	if(pulling && (get_dir(src.loc, pulling.loc) == direction))
 		to_chat(user, span_warning("You cannot go there."))
 		return
-	if(pulling && has_buckled_mobs() && (user in BUCKLED_MOBS(src)))
+	if(pulling && has_buckled_mobs() && (user in src?.buckled_mob_list()))
 		to_chat(user, span_warning("You cannot drive while being pushed."))
 		return
 
@@ -105,7 +105,7 @@
 	var/turf/T = null
 	//--1---Move occupant---1--//
 	if(has_buckled_mobs())
-		for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+		for(var/mob/living/L as anything in src?.buckled_mob_list())
 			// Transient, not a relation change.
 			L.skip_buckled_move_redirect = TRUE
 			step(L, direction)
@@ -118,7 +118,7 @@
 	//--3--Move wheelchair--3--//
 	step(src, direction)
 	if(has_buckled_mobs()) // Make sure it stays beneath the occupant
-		var/mob/living/L = BUCKLED_MOBS(src)[1]
+		var/mob/living/L = src?.buckled_mob_list()[1]
 		Move(L.loc)
 	set_dir(direction)
 	if(pulling) // Driver
@@ -134,7 +134,7 @@
 	. = ..()
 	playsound(src, 'sound/effects/roll.ogg', 75, 1)
 	if(has_buckled_mobs())
-		for(var/mob/living/occupant as anything in BUCKLED_MOBS(src))
+		for(var/mob/living/occupant as anything in src?.buckled_mob_list())
 			if(!driving)
 				// Transient, not a relation change.
 				occupant.skip_buckled_move_redirect = TRUE
@@ -147,7 +147,7 @@
 								Bump(O)
 					else
 						unbuckle_mob()
-				var/mob/living/pulling = PULLING(src)
+				var/mob/living/pulling = src?.pulling_target()
 				if (pulling && (get_dist(src, pulling) > 1))
 					var/mob/living/was_pulling = pulling
 					om_unlink(src, pulling, /datum/om/relation/pulling)
@@ -157,23 +157,23 @@
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
 /obj/structure/bed/chair/wheelchair/attack_hand(mob/living/user as mob)
-	if (PULLING(src))
+	if (src?.pulling_target())
 		MouseDrop(user)
 	else
 		if(has_buckled_mobs())
-			for(var/A in BUCKLED_MOBS(src))
+			for(var/A in src?.buckled_mob_list())
 				user_unbuckle_mob(A, user)
 	return
 
 /obj/structure/bed/chair/wheelchair/click_ctrl(mob/user)
 	if(in_range(src, user))
 		if(!ishuman(user))	return
-		if(has_buckled_mobs() && (user in BUCKLED_MOBS(src)))
+		if(has_buckled_mobs() && (user in src?.buckled_mob_list()))
 			to_chat(user, span_warning("You realize you are unable to push the wheelchair you sit in."))
 			return
-		var/mob/living/pulling = PULLING(src)
+		var/mob/living/pulling = src?.pulling_target()
 		if(!pulling)
-			if(PULLING(user))
+			if(user?.pulling_target())
 				user.stop_pulling()
 			om_link(src, user, /datum/om/relation/pulling)
 			user.set_dir(get_dir(user, src))
@@ -187,7 +187,7 @@
 	..()
 	if(!has_buckled_mobs())	return
 
-	var/mob/living/pulling = PULLING(src)
+	var/mob/living/pulling = src?.pulling_target()
 	if(propelled || (pulling && (IS_HARMING(pulling))))
 		var/mob/living/occupant = unbuckle_mob()
 
@@ -234,7 +234,7 @@
 	bloodiness--
 
 /obj/structure/bed/chair/wheelchair/buckle_mob(mob/M as mob, mob/user as mob)
-	var/mob/living/pulling = PULLING(src)
+	var/mob/living/pulling = src?.pulling_target()
 	if(M == pulling)
 		om_unlink(src, pulling, /datum/om/relation/pulling)
 	..()
@@ -255,11 +255,11 @@
 		return
 
 /obj/structure/bed/chair/wheelchair/proc/check_pulled_along()
-	var/mob/living/pulling = PULLING(src)
+	var/mob/living/pulling = src?.pulling_target()
 	if(!pulling)
 		return
 	if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
 		om_unlink(src, pulling, /datum/om/relation/pulling)
-	pulling = PULLING(src)
+	pulling = src?.pulling_target()
 	if(pulling)
 		pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair

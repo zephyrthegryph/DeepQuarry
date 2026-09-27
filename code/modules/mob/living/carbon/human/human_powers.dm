@@ -41,7 +41,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, span_notice("You cannot tackle someone in your current state."))
 		return
 
@@ -60,7 +60,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, span_notice("You cannot tackle in your current state."))
 		return
 

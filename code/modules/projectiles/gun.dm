@@ -644,9 +644,9 @@
 	//determine multiplier due to the target being grabbed
 	if(ismob(target))
 		var/mob/M = target
-		if(LAZYLEN(GRABBED_BY(M)))
+		if(LAZYLEN(M?.grabbed_by_list()))
 			var/grabstate = 0
-			for(var/obj/item/grab/G in GRABBED_BY(M))
+			for(var/obj/item/grab/G in M?.grabbed_by_list())
 				grabstate = max(grabstate, G.state)
 			if(grabstate >= GRAB_NECK)
 				damage_mult = 2.5

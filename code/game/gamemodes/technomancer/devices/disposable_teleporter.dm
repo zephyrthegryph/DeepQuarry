@@ -51,8 +51,8 @@
 		sparks.attach(user)
 		sparks.start()
 
-		if(user && BUCKLED(user))
-			var/atom/movable/_tmp_buck_4 = BUCKLED(user)
+		if(user && user?.buckled_to())
+			var/atom/movable/_tmp_buck_4 = user?.buckled_to()
 			_tmp_buck_4.unbuckle_mob()
 
 		var/list/targets = list()

@@ -65,8 +65,8 @@
 	var/obj/item/radio/stranger = allocate(/obj/item/radio)
 	var/obj/machinery/telecomms/receiver/RX = allocate(/obj/machinery/telecomms/receiver)
 	TEST_ASSERT(istype(om_link(R, RX, /datum/om/relation/bluespace_tx_to), /datum/om/edge), "linking the radio should succeed")
-	TEST_ASSERT_EQUAL(BS_TX_TARGET(R), RX, "BS_TX_TARGET(radio) is the receiver")
-	TEST_ASSERT(R in BS_TX_RADIOS(RX), "the radio is in BS_TX_RADIOS(receiver)")
+	TEST_ASSERT_EQUAL(R?.bs_tx_target(), RX, "radio?.bs_tx_target() is the receiver")
+	TEST_ASSERT(R in RX?.bs_tx_radios(), "the radio is in receiver?.bs_tx_radios()")
 
 	var/datum/signal/ok = new
 	ok.transmission_method = TRANSMISSION_BLUESPACE
@@ -78,7 +78,7 @@
 	TEST_ASSERT(!RX.check_receive_level(bad), "the receiver refuses an unlinked radio")
 
 	qdel(RX)
-	TEST_ASSERT_NULL(BS_TX_TARGET(R), "deleting the receiver drops the radio's link")
+	TEST_ASSERT_NULL(R?.bs_tx_target(), "deleting the receiver drops the radio's link")
 
 /// A bluespace radio receiving from a broadcaster: deleting the radio drops it
 /// from BS_RX_RADIOS.
@@ -88,10 +88,10 @@
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	var/obj/machinery/telecomms/broadcaster/TX = allocate(/obj/machinery/telecomms/broadcaster)
 	om_link(R, TX, /datum/om/relation/bluespace_rx_from)
-	TEST_ASSERT_EQUAL(BS_RX_SOURCE(R), TX, "BS_RX_SOURCE(radio) is the broadcaster")
-	TEST_ASSERT(R in BS_RX_RADIOS(TX), "the radio is in BS_RX_RADIOS(broadcaster)")
+	TEST_ASSERT_EQUAL(R?.bs_rx_source(), TX, "radio?.bs_rx_source() is the broadcaster")
+	TEST_ASSERT(R in TX?.bs_rx_radios(), "the radio is in broadcaster?.bs_rx_radios()")
 	qdel(R)
-	TEST_ASSERT_EQUAL(length(BS_RX_RADIOS(TX)), 0, "deleting the radio drops it from the broadcaster")
+	TEST_ASSERT_EQUAL(length(TX?.bs_rx_radios()), 0, "deleting the radio drops it from the broadcaster")
 
 // ---------------------------------------------------------------- gripper
 
@@ -104,12 +104,12 @@
 	var/obj/item/A = allocate(/obj/item/tape_roll)
 	var/obj/item/B = allocate(/obj/item/tape_roll)
 	om_link(G, A, /datum/om/relation/gripper_holding)
-	TEST_ASSERT_EQUAL(GRIPPER_HELD(G), A, "GRIPPER_HELD is the wrapped item")
+	TEST_ASSERT_EQUAL(G?.gripper_held(), A, "GRIPPER_HELD is the wrapped item")
 	om_link(G, B, /datum/om/relation/gripper_holding)
-	TEST_ASSERT_EQUAL(GRIPPER_HELD(G), B, "wrapping another item replaces the first")
+	TEST_ASSERT_EQUAL(G?.gripper_held(), B, "wrapping another item replaces the first")
 	TEST_ASSERT_NULL(dq_test_find_edge(G, A, /datum/om/relation/gripper_holding), "no edge is left to the first item")
 	qdel(B)
-	TEST_ASSERT_NULL(GRIPPER_HELD(G), "the wrapped item being deleted clears the hold")
+	TEST_ASSERT_NULL(G?.gripper_held(), "the wrapped item being deleted clears the hold")
 
 // ---------------------------------------------------------------- UAV
 
@@ -123,15 +123,15 @@
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
 	U.add_master(H)
 	U.add_master(H2)
-	TEST_ASSERT(H in UAV_MASTERS(U), "add_master() makes the mob a master")
-	TEST_ASSERT_EQUAL(length(UAV_MASTERS(U)), 2, "a UAV can have several masters")
+	TEST_ASSERT(H in U?.uav_masters(), "add_master() makes the mob a master")
+	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 2, "a UAV can have several masters")
 	U.state = 1 // UAV_ON (undefined outside uav.dm)
 	TEST_ASSERT(U.relaymove(H, NORTH), "a master's movement is taken by the UAV")
 	TEST_ASSERT(!U.relaymove(allocate(/mob/living/carbon/human), NORTH), "a stranger's is not")
 	qdel(H)
-	TEST_ASSERT_EQUAL(length(UAV_MASTERS(U)), 1, "a deleted master is dropped")
+	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 1, "a deleted master is dropped")
 	U.clear_masters()
-	TEST_ASSERT_EQUAL(length(UAV_MASTERS(U)), 0, "clear_masters() drops every master")
+	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 0, "clear_masters() drops every master")
 	U.state = 0 // UAV_OFF
 
 // ---------------------------------------------------------------- stasis source
@@ -146,10 +146,10 @@
 	H.set_stasis(/datum/modifier/stasis/light, source)
 	var/datum/modifier/stasis/S = H.stasis_modifier_from(source)
 	TEST_ASSERT_NOTNULL(S, "the source's stasis is found")
-	TEST_ASSERT_EQUAL(STASIS_SOURCE(S), source, "STASIS_SOURCE is the source")
+	TEST_ASSERT_EQUAL(S?.stasis_source(), source, "STASIS_SOURCE is the source")
 	TEST_ASSERT(H.has_stasis_from(source), "has_stasis_from() agrees")
 	qdel(source)
-	TEST_ASSERT_NULL(STASIS_SOURCE(S), "deleting the source unlinks it")
+	TEST_ASSERT_NULL(S?.stasis_source(), "deleting the source unlinks it")
 	H.set_stasis(null, null)
 	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "the leftover stasis is released as sourceless")
 

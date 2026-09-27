@@ -76,8 +76,8 @@
 		if(!L.stat)
 			return ..()
 		else
-			if (L.anchored && BUCKLED(L) && !(PULLED_BY(L) || PULLED_BY(BUCKLED(L)))) //don't have them trying to unbuckle someone on something that's being pulled because that's just annoying as fuck esp for a medic or something
-				var/atom/movable/_tmp_buck_22 = BUCKLED(L)
+			if (L.anchored && L?.buckled_to() && !(L?.pulled_by_mob() || (L?.buckled_to())?.pulled_by_mob())) //don't have them trying to unbuckle someone on something that's being pulled because that's just annoying as fuck esp for a medic or something
+				var/atom/movable/_tmp_buck_22 = L?.buckled_to()
 				_tmp_buck_22.unbuckle_mob(L)
 			if (!L.anchored)
 				return spin_cocoon(L)

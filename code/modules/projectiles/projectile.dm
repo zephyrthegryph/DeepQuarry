@@ -560,7 +560,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		return FALSE
 	if(!ignore_source_check && firer)
 		var/mob/M = firer
-		if((target == firer) || ((target == firer.loc) && istype(firer.loc, /obj/mecha)) || (target in BUCKLED_MOBS(firer)) || (istype(M) && (BUCKLED(M) == target)))
+		if((target == firer) || ((target == firer.loc) && istype(firer.loc, /obj/mecha)) || (target in firer?.buckled_mob_list()) || (istype(M) && (M?.buckled_to() == target)))
 			return FALSE
 	if(!ignore_loc && (loc != target.loc))
 		return FALSE
@@ -609,20 +609,20 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			//if they have a neck grab on someone, that person gets hit instead
 			var/obj/item/grab/G = locate() in M
 			if(G && G.state >= GRAB_NECK)
-				var/mob/grabbed = GRAB_TARGET(G)
+				var/mob/grabbed = G?.grab_target()
 				if(grabbed.stat == DEAD)
 					var/shield_chance = min(80, (30 * (M.mob_size / 10)))	//Small mobs have a harder time keeping a dead body as a shield than a human-sized one. Unathi would have an easier job, if they are made to be SIZE_LARGE in the future. -Mech
 					if(prob(shield_chance))
-						visible_message(span_danger("\The [M] uses [GRAB_TARGET(G)] as a shield!"))
+						visible_message(span_danger("\The [M] uses [G?.grab_target()] as a shield!"))
 						if(bump_targets)
-							if(Bump(GRAB_TARGET(G)))
+							if(Bump(G?.grab_target()))
 								return
 					else
-						visible_message(span_danger("\The [M] tries to use [GRAB_TARGET(G)] as a shield, but fails!"))
+						visible_message(span_danger("\The [M] tries to use [G?.grab_target()] as a shield, but fails!"))
 				else
-					visible_message(span_danger("\The [M] uses [GRAB_TARGET(G)] as a shield!"))
+					visible_message(span_danger("\The [M] uses [G?.grab_target()] as a shield!"))
 					if(bump_targets)
-						if(Bump(GRAB_TARGET(G)))
+						if(Bump(G?.grab_target()))
 							return //If Bump() returns 0 (keep going) then we continue on to attack M.
 
 			if(bump_targets)

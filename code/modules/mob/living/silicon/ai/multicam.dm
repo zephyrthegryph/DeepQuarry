@@ -205,7 +205,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 //AI procs
 
 /mob/living/silicon/ai/proc/drop_new_multicam(silent = FALSE)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!multicam_allowed)
 		if(!silent)
 			to_chat(src, span_warning("This action is currently disabled. Contact an administrator to enable this feature."))
@@ -262,7 +262,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 
 /mob/living/silicon/ai/proc/select_main_multicam_window(atom/movable/screen/movable/pic_in_pic/ai/P)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(master_multicam == P)
 		return
 

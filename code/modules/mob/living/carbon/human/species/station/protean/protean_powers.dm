@@ -234,8 +234,8 @@
 	var/mob/living/target = pick(potentials)
 	if(!can_spontaneous_vore(H, target))
 		return
-	if(BUCKLED(target))
-		var/atom/movable/_tmp_buck_18 = BUCKLED(target)
+	if(target?.buckled_to())
+		var/atom/movable/_tmp_buck_18 = target?.buckled_to()
 		_tmp_buck_18.unbuckle_mob(target, force = TRUE)
 	H.vore_selected.nom_atom(target)
 	to_chat(target, span_warning("\The [H] quickly engulfs you, [H.vore_selected.vore_verb]ing you into their [H.vore_selected.get_belly_name()]!"))
@@ -400,7 +400,7 @@
 
 /datum/protean_power/copy_form/proc/aggressive_grab_on(mob/living/carbon/human/H, mob/living/victim)
 	for(var/obj/item/grab/G in H)
-		if(G.state >= GRAB_AGGRESSIVE && (!victim || GRAB_TARGET(G) == victim))
+		if(G.state >= GRAB_AGGRESSIVE && (!victim || G?.grab_target() == victim))
 			return G
 	return null
 
@@ -409,7 +409,7 @@
 	if(!G)
 		to_chat(H, span_notice("You need to be aggressively grabbing someone before you can copy their form."))
 		return
-	var/mob/living/carbon/human/victim = GRAB_TARGET(G)
+	var/mob/living/carbon/human/victim = G?.grab_target()
 	if(!istype(victim))
 		to_chat(H, span_warning("You can only perform this on human mobs!"))
 		return

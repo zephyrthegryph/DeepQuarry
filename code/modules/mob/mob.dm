@@ -41,7 +41,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	for(var/key in alerts) //clear out alerts
 		clear_alert(key)
 	QDEL_NULL_LIST(viruses)
-	if(PULLING(src))
+	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
 	if(ability_master)
@@ -52,7 +52,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(vorePanel)
 		QDEL_NULL(vorePanel)
 
-	for(var/mob/observer/dead/M in FOLLOWERS(src))
+	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	previewing_belly = null // from code/modules/vore/eating/mob_ch.dm
 	vore_selected = null // from code/modules/vore/eating/mob_vr
@@ -213,7 +213,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/buckled()
 	// Preliminary work for a future buckle rewrite,
 	// where one might be fully restrained (like an elecrical chair), or merely secured (shuttle chair, keeping you safe but not otherwise restrained from acting)
-	if(!BUCKLED(src))
+	if(!src?.buckled_to())
 		return UNBUCKLED
 	return restrained() ? FULLY_BUCKLED : PARTIALLY_BUCKLED
 
@@ -610,7 +610,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set name = "Stop Pulling"
 	set category = "IC.Game"
 
-	var/atom/movable/pulling = PULLING(src)
+	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
 		if(ishuman(pulling))
 			var/mob/living/carbon/human/H = pulling
@@ -653,11 +653,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		// kind of mob pull value AT ALL, you will be able to pull
 		// them, so don't bother checking that explicitly.
 
-		if(LAZYLEN(GRABBED_BY(M)))
+		if(LAZYLEN(M?.grabbed_by_list()))
 			// Only start pulling when nobody else has a grab on them
 			. = 1
-			for(var/obj/item/grab/G in GRABBED_BY(M))
-				if(GRAB_ASSAILANT(G) != usr)
+			for(var/obj/item/grab/G in M?.grabbed_by_list())
+				if(G?.grab_assailant() != usr)
 					. = 0
 				else
 					qdel(G)
@@ -680,7 +680,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			to_chat(src, span_warning("It won't budge!"))
 			return
 
-	var/pulling_old = PULLING(src)
+	var/pulling_old = src?.pulling_target()
 	if(pulling_old)
 		stop_pulling()
 		// Are we pulling the same thing twice? Just stop pulling.
@@ -797,7 +797,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		DEBUG_INPUT("Denying Facedir for [src] (moving=[client?.moving])")
 		return 0
 	set_dir(ndir)
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled && buckled.buckle_movable)
 		buckled.set_dir(ndir)
 	setMoveCooldown(movement_delay())
@@ -1014,7 +1014,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/set_dir()
 	if(facing_dir)
-		if(!canface() || lying || BUCKLED(src) || restrained())
+		if(!canface() || lying || src?.buckled_to() || restrained())
 			facing_dir = null
 		else if(dir != facing_dir)
 			return ..(facing_dir)

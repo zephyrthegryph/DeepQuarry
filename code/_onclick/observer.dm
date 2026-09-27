@@ -31,7 +31,7 @@
 		ManualFollow(A)
 	// Otherwise jump
 	else
-		if(FOLLOWING(src))
+		if(src?.following_target())
 			stop_following()
 		forceMove(get_turf(A))
 

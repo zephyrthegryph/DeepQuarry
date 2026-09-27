@@ -62,7 +62,7 @@
 //Required for the riding datum to behave:
 /obj/vehicle/train/engine/quadbike/snowmobile/MouseDrop_T(atom/movable/C, mob/user as mob)
 	if(ismob(C))
-		if(C in BUCKLED_MOBS(src))
+		if(C in src?.buckled_mob_list())
 			user_unbuckle_mob(C, user)
 		else
 			user_buckle_mob(C, user)
@@ -74,7 +74,7 @@
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")
 		return
-	if(user in BUCKLED_MOBS(src))
+	if(user in src?.buckled_mob_list())
 		unbuckle_mob(user)
 		return
 	else if(!load && load(user, user))

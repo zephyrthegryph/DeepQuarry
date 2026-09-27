@@ -74,8 +74,8 @@
 	var/mob/living/pred = task.pred
 	var/obj/belly/belly = task.belly
 	var/message_range = task.message_range
-	for(var/obj/item/grab/G in GRABBED_BY(prey))
-		if(GRAB_ASSAILANT(G) == user)
+	for(var/obj/item/grab/G in prey?.grabbed_by_list())
+		if(G?.grab_assailant() == user)
 			qdel(G)
 	devour_and_move_prey(user, prey, pred, belly, message_range)
 

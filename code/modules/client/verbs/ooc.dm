@@ -156,7 +156,7 @@
 		if(viewer.client && viewer.client.prefs?.read_preference(/datum/preference/toggle/show_looc))
 			receivers |= viewer.client
 		else if(isEye(viewer)) // For AI eyes and the like
-			var/mob/owner = EYE_OWNER(viewer)
+			var/mob/owner = viewer?.eye_owner()
 			if(owner?.client)
 				receivers |= owner.client
 
@@ -186,7 +186,7 @@
 	return src
 
 /mob/living/silicon/ai/get_looc_source()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		return eyeobj
 	return src

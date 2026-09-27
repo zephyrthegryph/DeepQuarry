@@ -1,7 +1,7 @@
 GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
 /turf/simulated/floor/outdoors/newdirt/attack_hand(mob/user)
-	if(PULLING(user))
+	if(user?.pulling_target())
 		return ..()
 	if(!Adjacent(user))
 		return ..()

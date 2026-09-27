@@ -59,13 +59,13 @@
 	var/turf/ourturf = find_our_turf(M)		//Find the turf on the opposite side of the target
 	if(!ourturf.check_density(TRUE,TRUE))	//Make sure there isn't a wall there
 		M.unbuckle_all_mobs(TRUE)
-		if(isliving(M) && PULLING(M))
-			var/atom/movable/pulled = PULLING(M)
+		if(isliving(M) && M?.pulling_target())
+			var/atom/movable/pulled = M?.pulling_target()
 			M.stop_pulling()
 			playsound(src,'sound/effects/ominous-hum-2.ogg', 100,1)
 			M.forceMove(ourturf)
 			if(is_type_in_list(pulled, exceptions))
-				for(var/mob/living/buckled_on in BUCKLED_MOBS(pulled))
+				for(var/mob/living/buckled_on in pulled?.buckled_mob_list())
 					if(!buckled_on.key || is_type_in_list(M, restrictions))
 						pulled.unbuckle_mob(buckled_on, TRUE)
 				pulled.forceMove(ourturf)

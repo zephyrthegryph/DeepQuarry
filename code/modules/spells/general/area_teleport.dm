@@ -54,8 +54,8 @@
 		to_chat(user, span_warning("The spell matrix was unable to locate a suitable teleport destination for an unknown reason. Sorry."))
 		return
 
-	if(user && BUCKLED(user))
-		var/atom/movable/_tmp_buck_40 = BUCKLED(user)
+	if(user && user?.buckled_to())
+		var/atom/movable/_tmp_buck_40 = user?.buckled_to()
 		_tmp_buck_40.unbuckle_mob( user, TRUE)
 
 	var/attempt = null

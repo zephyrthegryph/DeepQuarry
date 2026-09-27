@@ -190,8 +190,8 @@
 
 	var/obj/item/grab/G = I
 	if(istype(G))	// handle grabbed mob
-		if(ismob(GRAB_TARGET(G)))
-			var/mob/GM = GRAB_TARGET(G)
+		if(ismob(G?.grab_target()))
+			var/mob/GM = G?.grab_target()
 			for (var/mob/V in viewers(user))
 				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
 			om_task_start(/datum/om/task/timed/disposal_dunk, user, src, list("receiver" = src, "GM" = GM, "G" = G))
@@ -370,7 +370,7 @@
 		return
 	if(user.stat || !user.canmove || !istype(target))
 		return
-	if(BUCKLED(target) || get_dist(user, src) > 1 || get_dist(user, target) > 1)
+	if(target?.buckled_to() || get_dist(user, src) > 1 || get_dist(user, target) > 1)
 		return
 
 	add_fingerprint(user)

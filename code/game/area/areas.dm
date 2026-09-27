@@ -457,7 +457,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 	if(ishuman(mob))
 		var/mob/living/carbon/human/H = mob
-		if(BUCKLED(H))
+		if(H?.buckled_to())
 			return // Being buckled to something solid keeps you in place.
 		if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
 			return

@@ -6,7 +6,7 @@
 	color = "#666666"
 	base_icon = "chair"
 	buckle_dir = 0
-	buckle_lying = 0 //force people to sit up in chairs when BUCKLED(src)
+	buckle_lying = 0 //force people to sit up in chairs when src?.buckled_to()
 	var/propelled = 0 // Check for fire-extinguisher-driven chairs
 
 /obj/structure/bed/chair/Initialize(mapload, new_material, new_padding_material)
@@ -63,7 +63,7 @@
 	..()
 	update_layer()
 	if(has_buckled_mobs())
-		for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+		for(var/mob/living/L as anything in src?.buckled_mob_list())
 			L.set_dir(dir)
 
 /obj/structure/bed/chair/shuttle
@@ -193,7 +193,7 @@
 	playsound(src, 'sound/effects/roll.ogg', 100, 1)
 
 /obj/structure/bed/chair/office/handle_buckled_mob_movement(atom/new_loc, direction, movetime)
-	for(var/mob/living/occupant as anything in BUCKLED_MOBS(src))
+	for(var/mob/living/occupant as anything in src?.buckled_mob_list())
 		// Transient: not establishing/breaking the buckled_to relation, just
 		// stopping Move() from treating the occupant as still-BUCKLED(src) for the
 		// duration of this one forced step.
@@ -211,7 +211,7 @@
 	if(!has_buckled_mobs())	return
 
 	if(propelled)
-		for(var/a in BUCKLED_MOBS(src))
+		for(var/a in src?.buckled_mob_list())
 			var/mob/living/occupant = unbuckle_mob(a)
 
 			var/def_zone = ran_zone()

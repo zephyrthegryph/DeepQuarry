@@ -79,7 +79,7 @@
 
 //I'll break this down later
 /obj/mecha/combat/marauder/relaymove(mob/user,direction)
-	if(user != SLOT_ITEM(src, MECHA_SLOT_PILOT)) //While not "realistic", this piece is player friendly.
+	if(user != src?.slot_item(MECHA_SLOT_PILOT)) //While not "realistic", this piece is player friendly.
 		user.forceMove(get_turf(src))
 		to_chat(user, "You climb out from [src]")
 		return 0

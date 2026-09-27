@@ -205,7 +205,7 @@
 	if(stat)
 		to_chat(src, span_warning("You can't go do that when weakened like this."))
 		return
-	if(BUCKLED(src))
+	if(src?.buckled_to())
 		to_chat(src,span_warning("You can't do that when restrained."))
 
 	var/r_action = tgui_alert(src, "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", "Actions", list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"))

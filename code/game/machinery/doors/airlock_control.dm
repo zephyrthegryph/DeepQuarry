@@ -147,7 +147,7 @@
 	..(AM)
 	if(istype(AM, /obj/mecha))
 		var/obj/mecha/mecha = AM
-		if(density && radio_connection && SLOT_ITEM(mecha, MECHA_SLOT_PILOT) && (src.allowed(SLOT_ITEM(mecha, MECHA_SLOT_PILOT)) || src.check_access_list(mecha.operation_req_access)))
+		if(density && radio_connection && mecha?.slot_item(MECHA_SLOT_PILOT) && (src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)) || src.check_access_list(mecha.operation_req_access)))
 			send_status(1)
 	return
 

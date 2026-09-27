@@ -611,7 +611,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			grabbing_but_not_enough = TRUE
 			return
 		else
-			victim = GRAB_TARGET(G)
+			victim = G?.grab_target()
 	if (!victim)
 		if (grabbing_but_not_enough)
 			to_chat(character, span_warning("You need a better grip to do that!"))
@@ -641,7 +641,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	var/checking = FALSE
 	for(var/obj/item/grab/G in character)
-		if(GRAB_TARGET(G) == victim && G.state >= GRAB_AGGRESSIVE)
+		if(G?.grab_target() == victim && G.state >= GRAB_AGGRESSIVE)
 			checking = TRUE
 	if (!checking)
 		to_chat(character, span_warning("You lost your grip on [victim]!"))
@@ -654,7 +654,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 /mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
 	var/checking = FALSE
 	for(var/obj/item/grab/G in src)
-		if(GRAB_TARGET(G) == victim && G.state >= GRAB_AGGRESSIVE)
+		if(G?.grab_target() == victim && G.state >= GRAB_AGGRESSIVE)
 			checking = TRUE
 	if (!checking)
 		to_chat(src, span_warning("You lost your grip on [victim]!"))

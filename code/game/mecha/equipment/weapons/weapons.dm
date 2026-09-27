@@ -35,7 +35,7 @@
 	chassis.visible_message(span_warning("[chassis] fires [src]!"))
 	occupant_message(span_warning("You fire [src]!"))
 	src.mecha_log_message("Fired from [src], targeting [target].")
-	add_attack_logs(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),target,"Fired exosuit weapon [src.name] (MANUAL)")
+	add_attack_logs(chassis?.slot_item(MECHA_SLOT_PILOT),target,"Fired exosuit weapon [src.name] (MANUAL)")
 
 	for(var/i = 1 to min(projectiles, projectiles_per_shot))
 		var/turf/aimloc = targloc
@@ -65,7 +65,7 @@
 //	set_ready_state(FALSE)
 
 // redundant code removed. Fixes weapon lock on mob kill.
-	add_attack_logs(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),target, "Fired exosuit weapon [src.name] (MANUAL)")
+	add_attack_logs(chassis?.slot_item(MECHA_SLOT_PILOT),target, "Fired exosuit weapon [src.name] (MANUAL)")
 
 	do_after_cooldown()
 
@@ -75,8 +75,8 @@
 	if(istype(A, /obj/item/projectile))	// Sanity.
 		var/obj/item/projectile/P = A
 		P.dispersion = deviation
-		process_accuracy(P, SLOT_ITEM(chassis, MECHA_SLOT_PILOT), target)
-		P.launch_projectile_from_turf(target, chassis.get_pilot_zone_sel(), SLOT_ITEM(chassis, MECHA_SLOT_PILOT), params)
+		process_accuracy(P, chassis?.slot_item(MECHA_SLOT_PILOT), target)
+		P.launch_projectile_from_turf(target, chassis.get_pilot_zone_sel(), chassis?.slot_item(MECHA_SLOT_PILOT), params)
 	else if(istype(A, /atom/movable))
 		var/atom/movable/AM = A
 		AM.throw_at(target, 7, 1, chassis)

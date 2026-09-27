@@ -83,8 +83,8 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	// TODO: Find a way to fake the glide or something.
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(PULLING(L))
-			var/atom/movable/pulled = PULLING(L)
+		if(L?.pulling_target())
+			var/atom/movable/pulled = L?.pulling_target()
 			L.stop_pulling()
 			// For some reason, trying to put the pulled object behind the person makes the drag stop and it doesn't even move to the other side.
 		//	pulled.forceMove(get_turf(counterpart))

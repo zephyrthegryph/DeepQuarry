@@ -464,7 +464,7 @@
 
 /obj/item/stack/Moved(atom/old_loc, direction, forced)
 	. = ..()
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby && isturf(loc))
 		combine_in_loc()
 
@@ -521,7 +521,7 @@
 /obj/item/stack/proc/merge(obj/item/stack/S) //Merge src into S, as much as possible
 	var/transfer = get_amount()
 	transfer = min(transfer, S.max_amount - S.amount)
-	var/mob/pulledby2 = PULLED_BY(src)
+	var/mob/pulledby2 = src?.pulled_by_mob()
 	if(pulledby2)
 		pulledby2.start_pulling(S)
 	transfer_fingerprints_to(S)

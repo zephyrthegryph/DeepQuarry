@@ -51,7 +51,7 @@
 	update_icon()
 
 /obj/machinery/vr_sleeper/Destroy()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(occupant && occupant.vr_link)
 		occupant.vr_link.exit_vr()
 	. = ..()
@@ -59,7 +59,7 @@
 /// Watches its occupant (death, power loss) while it has one; empty, it sleeps until someone
 /// gets in.
 /obj/machinery/vr_sleeper/machine_step()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
@@ -72,17 +72,17 @@
 		occupant.exit_vr(FALSE)
 
 /obj/machinery/vr_sleeper/update_icon()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	icon_state = "[base_state][occupant ? "1" : "0"]"
 
 /obj/machinery/vr_sleeper/examine(mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	. = ..()
 	if(occupant)
 		. += span_notice("[occupant] is inside.")
 
 /obj/machinery/vr_sleeper/Topic(href, href_list)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(..())
 		return 1
 
@@ -114,7 +114,7 @@
 	effect = /obj/machinery/vr_sleeper/proc/interaction_scan
 
 /obj/machinery/vr_sleeper/proc/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
@@ -123,7 +123,7 @@
 
 
 /obj/machinery/vr_sleeper/crowbar_act(mob/user, obj/item/tool)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	if(occupant && avatar)
@@ -154,7 +154,7 @@
 
 
 /obj/machinery/vr_sleeper/emp_act(severity, recursive)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
 		return
@@ -178,7 +178,7 @@
 	effect = /obj/machinery/vr_sleeper/proc/interaction_eject
 
 /obj/machinery/vr_sleeper/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(stat & (BROKEN|NOPOWER) || occupant && occupant.stat == DEAD)
 		perform_exit()
 	else
@@ -205,7 +205,7 @@
 	perform_exit()
 
 /obj/machinery/vr_sleeper/proc/go_in(mob/M, mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!M)
 		return
 	if(stat & (BROKEN|NOPOWER))
@@ -226,7 +226,7 @@
 	return
 
 /obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
@@ -244,7 +244,7 @@
 	enter_vr()
 
 /obj/machinery/vr_sleeper/proc/go_out()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return
 
@@ -256,7 +256,7 @@
 
 //The actual bulk of the exit code.
 /obj/machinery/vr_sleeper/proc/perform_exit()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return
 
@@ -275,7 +275,7 @@
 	update_icon()
 
 /obj/machinery/vr_sleeper/proc/enter_vr()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 
 	// No mob to transfer a mind from
 	if(!occupant)

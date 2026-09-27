@@ -105,7 +105,7 @@
 			to_chat(usr, span_warning(" You don't think kickstands work here..."))
 			return
 		visible_message("[user] puts down \the [src]'s kickstand.")
-		var/mob/pulledby = PULLED_BY(src)
+		var/mob/pulledby = src?.pulled_by_mob()
 		if(pulledby)
 			pulledby.stop_pulling()
 
@@ -115,7 +115,7 @@
 /obj/vehicle/bike/load(atom/movable/C, mob/user as mob)
 	var/mob/living/M = C
 	if(!istype(C)) return 0
-	if(BUCKLED(M) || M.restrained() || !Adjacent(M) || !M.Adjacent(src))
+	if(M?.buckled_to() || M.restrained() || !Adjacent(M) || !M.Adjacent(src))
 		return 0
 	return ..(M, user)
 
@@ -150,7 +150,7 @@
 	if(on && cell)
 		cell.use(charge_use)
 
-	if(is_vehicle_inpassable(newloc) || PULLED_BY(src))
+	if(is_vehicle_inpassable(newloc) || src?.pulled_by_mob())
 		if(!space_speed)
 			return FALSE
 		move_delay = space_speed
@@ -166,7 +166,7 @@
 
 	update_icon()
 
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
 		pulledby.stop_pulling()
 	..()
@@ -181,7 +181,7 @@
 
 /obj/vehicle/bike/bullet_act(obj/item/projectile/Proj)
 	if(has_buckled_mobs() && prob(protection_percent))
-		var/mob/living/L = pick(BUCKLED_MOBS(src))
+		var/mob/living/L = pick(src?.buckled_mob_list())
 		L.bullet_act(Proj)
 		return
 	..()

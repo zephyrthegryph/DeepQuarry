@@ -409,7 +409,7 @@ emp_act
 		var/mass = thrown_object.w_class/THROWNOBJ_KNOCKBACK_DIVISOR
 		var/momentum = speed*mass
 
-		if(thrown_object.throw_source && momentum >= THROWNOBJ_KNOCKBACK_SPEED && !BUCKLED(src))
+		if(thrown_object.throw_source && momentum >= THROWNOBJ_KNOCKBACK_SPEED && !src?.buckled_to())
 			var/dir = get_dir(thrown_object.throw_source, src)
 
 			visible_message(span_filter_warning("[span_red("[src] staggers under the impact!")]"),span_filter_warning("[span_red("You stagger under the impact!")]"))
@@ -606,7 +606,7 @@ emp_act
 	var/organ_chance = task.organ_chance
 	var/damage = task.damage
 	var/obj/item/organ/external/chest = task.chest
-	if(!(G && GRAB_ASSAILANT(G) == user && GRAB_TARGET(G) == src)) //check that we still have a grab
+	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
 		return 0
 
 	user.visible_message(span_danger("\The [user] twists \the [W] around inside [src]'s [chest]!"))

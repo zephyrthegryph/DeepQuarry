@@ -95,12 +95,12 @@
 				om_link(src, RX, /datum/om/relation/bluespace_tx_to)
 				break
 		//Hmm, howabout an AIO machine
-		if(!BS_TX_TARGET(src))
+		if(!src?.bs_tx_target())
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_tx_preload_id)
 					om_link(src, AIO, /datum/om/relation/bluespace_tx_to)
 					break
-		if(!BS_TX_TARGET(src))
+		if(!src?.bs_tx_target())
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
 
 	if(bs_rx_preload_id)
@@ -474,7 +474,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	/* ###### Bluespace radios talk directly to receivers (and only directly to receivers) ###### */
 	if(bluespace_radio)
 		//Nothing to transmit to
-		var/obj/machinery/telecomms/tx_to = BS_TX_TARGET(src)
+		var/obj/machinery/telecomms/tx_to = src?.bs_tx_target()
 		if(!tx_to)
 			to_chat(loc, span_warning("\The [src] buzzes to inform you of the lack of a functioning connection."))
 			return FALSE

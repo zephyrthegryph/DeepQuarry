@@ -56,7 +56,7 @@
 	om_do_after(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done2), done_args = list(I))
 
 /mob/living/carbon/proc/cuff_resist_carbon_done(obj/item/handcuffs/I)
-	if(!I || BUCKLED(src))
+	if(!I || src?.buckled_to())
 		return
 	visible_message(span_danger("[src] manages to break [I]!"),
 		span_warning("You successfully break your [I]."))
@@ -64,7 +64,7 @@
 
 	drop_from_inventory(I)
 
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled && buckled.buckle_require_restraints)
 		buckled.unbuckle_mob()
 
@@ -78,7 +78,7 @@
 	drop_from_inventory(I)
 
 /mob/living/carbon/resist_buckle()
-	if(!BUCKLED(src))
+	if(!src?.buckled_to())
 		return
 
 	if(!restrained())
@@ -93,7 +93,7 @@
 	om_do_after(src, 2 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_buckle_carbon_done), done_args = list())
 
 /mob/living/carbon/proc/resist_buckle_carbon_done()
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(!buckled)
 		return
 	visible_message(span_danger("[src] manages to unbuckle themself!"),

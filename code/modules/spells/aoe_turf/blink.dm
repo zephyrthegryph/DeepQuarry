@@ -19,8 +19,8 @@
 	var/turf/T = pick(targets)
 	var/turf/starting = get_turf(user)
 	if(T)
-		if(BUCKLED(user))
-			var/atom/movable/_tmp_buck_39 = BUCKLED(user)
+		if(user?.buckled_to())
+			var/atom/movable/_tmp_buck_39 = user?.buckled_to()
 			_tmp_buck_39.unbuckle_mob( user, TRUE)
 		user.forceMove(T)
 

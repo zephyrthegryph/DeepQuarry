@@ -735,8 +735,8 @@
 /obj/item/clothing/shoes/proc/handle_inshoe_stepping(mob/living/carbon/human/pred, mob/living/carbon/human/prey)
 	if(!istype(pred)) return //Sorry, inshoe steppies only for carbon/human/ for now. Based on the regular stepping mechanics
 	if(!istype(prey)) return
-	if(!pred.canmove || BUCKLED(pred)) return //We can't be stepping on anyone if BUCKLED(src) or incapable of moving
-	if(pred in BUCKLED_MOBS(src)) return
+	if(!pred.canmove || pred?.buckled_to()) return //We can't be stepping on anyone if src?.buckled_to() or incapable of moving
+	if(pred in src?.buckled_mob_list()) return
 	if(pred.flying) return //If we're flying, can't really step.
 
 	// I kept interactions very similar to normal steppies, and removed some attack logs unless harm intent:
@@ -1452,7 +1452,7 @@
 /obj/item/clothing/shoes/MouseDrop_T(mob/living/target, mob/living/user)
 	if(!istype(user)) return ..() // If the user passed in isn't a living mob, exit
 	if(target != user) return ..() // If the user didn't drag themselves, exit
-	if(user.incapacitated() || BUCKLED(user)) return ..() // If user is incapacitated or BUCKLED(src), exit
+	if(user.incapacitated() || user?.buckled_to()) return ..() // If user is incapacitated or src?.buckled_to(), exit
 	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return ..() // No jumping into your own equipment
 	if(ishuman(user) && user.get_effective_size() > 0.25) return ..() // Only micro characters
 

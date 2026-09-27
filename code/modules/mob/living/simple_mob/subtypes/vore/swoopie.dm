@@ -216,7 +216,7 @@
 			self.Vac.afterattack(T, self, 1)
 			return
 	for(var/mob/living/L in T)
-		if(!L.anchored && L.devourable && L != self && !BUCKLED(L) && L.can_be_drop_prey)
+		if(!L.anchored && L.devourable && L != self && !L?.buckled_to() && L.can_be_drop_prey)
 			self.Vac.afterattack(L, self, 1)
 			return
 

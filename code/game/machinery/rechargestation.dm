@@ -42,7 +42,7 @@
 	return cell && cell.percent() > 0
 
 /obj/machinery/recharge_station/machine_step()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(!cell) // Shouldn't be possible, but sanity check
@@ -85,7 +85,7 @@
 
 //Processes the occupant, drawing from the internal power cell if needed.
 /obj/machinery/recharge_station/proc/process_occupant()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	if(isrobot(occupant))
 		var/mob/living/silicon/robot/R = occupant
 		var/overcharged = FALSE
@@ -182,7 +182,7 @@
 	effect = /obj/machinery/recharge_station/proc/interaction_part_replacement_impl
 
 /obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	return !occupant
 
 /obj/machinery/recharge_station/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
@@ -199,11 +199,11 @@
 	if(get_dist(src, actor) >= 2)
 		return FALSE
 	var/obj/item/grab/G = held
-	return isliving(GRAB_TARGET(G))
+	return isliving(G?.grab_target())
 
 /obj/machinery/recharge_station/proc/interaction_insert_grab(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/grab/G = held
-	var/mob/living/M = GRAB_TARGET(G)
+	var/mob/living/M = G?.grab_target()
 	qdel(held)
 	go_in(M)
 	return FALSE
@@ -243,11 +243,11 @@
 	return TRUE
 
 /obj/machinery/recharge_station/screwdriver_act(mob/user, obj/item/tool)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/recharge_station/crowbar_act(mob/user, obj/item/tool)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/recharge_station/RefreshParts()
@@ -289,7 +289,7 @@
 			add_overlay("statn_c100")
 
 /obj/machinery/recharge_station/update_icon()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
 	if(stat & BROKEN)
 		icon_state = "borgcharger0"
@@ -310,7 +310,7 @@
 	go_in(L)
 
 /obj/machinery/recharge_station/proc/go_in(mob/living/L)
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 
 	if(occupant)
 		return
@@ -361,7 +361,7 @@
 		return
 
 /obj/machinery/recharge_station/proc/go_out()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	if(!occupant)
 		return
 	slot_remove(occupant, get_turf(src))
@@ -378,7 +378,7 @@
 	icon = 'icons/obj/structures.dmi'
 
 /obj/machinery/recharge_station/ghost_pod_recharger/update_icon()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
 	if(stat & BROKEN)
 		icon_state = "borg_pod_closed"

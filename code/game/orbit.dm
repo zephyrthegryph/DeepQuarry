@@ -50,7 +50,7 @@
 /datum/om/relation/orbiting/proc/maybe_unwatch(atom/movable/AM)
 	if(QDELETED(AM))
 		return
-	if(ORBIT_TARGET(AM) || LAZYLEN(ORBITERS(AM)))
+	if(AM?.orbit_target() || LAZYLEN(AM?.orbiter_list()))
 		return
 	UnregisterSignal(AM, COMSIG_MOVABLE_MOVED)
 
@@ -58,17 +58,17 @@
 	SIGNAL_HANDLER
 	var/involved = FALSE
 	// An orbiter that left its center's turf stops orbiting.
-	var/atom/center = ORBIT_TARGET(mover)
+	var/atom/center = mover?.orbit_target()
 	if(center)
 		involved = TRUE
 		if(mover.loc != get_turf(center))
 			om_unlink(mover, center, /datum/om/relation/orbiting)
 	// A center (or something holding one) moved: bring its orbiters along.
-	if(LAZYLEN(ORBITERS(mover)))
+	if(LAZYLEN(mover?.orbiter_list()))
 		involved = TRUE
 		follow(mover)
 	for(var/atom/movable/inner in mover.get_all_contents())
-		if(inner != mover && LAZYLEN(ORBITERS(inner)))
+		if(inner != mover && LAZYLEN(inner?.orbiter_list()))
 			involved = TRUE
 			follow(inner)
 	if(!involved)
@@ -76,7 +76,7 @@
 
 /datum/om/relation/orbiting/proc/follow(atom/movable/center)
 	var/turf/T = get_turf(center)
-	for(var/atom/movable/orbiter as anything in ORBITERS(center))
+	for(var/atom/movable/orbiter as anything in center?.orbiter_list())
 		if(!T)
 			om_unlink(orbiter, center, /datum/om/relation/orbiting)
 			continue
@@ -120,7 +120,7 @@
 
 /// Ends this atom's orbit, if any.
 /atom/movable/proc/stop_orbit()
-	var/atom/center = ORBIT_TARGET(src)
+	var/atom/center = src?.orbit_target()
 	if(center)
 		om_unlink(src, center, /datum/om/relation/orbiting)
 
@@ -131,5 +131,5 @@
 
 /// Ends every orbit around this atom.
 /atom/proc/stop_orbiters()
-	for(var/atom/movable/orbiter as anything in ORBITERS(src))
+	for(var/atom/movable/orbiter as anything in src?.orbiter_list())
 		om_unlink(orbiter, src, /datum/om/relation/orbiting)

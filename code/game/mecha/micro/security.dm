@@ -7,9 +7,9 @@
 		return 0
 
 /obj/mecha/micro/sec/go_out()
-	var/mob/living/_tmp_occ_14 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
-	if(SLOT_ITEM(src, MECHA_SLOT_PILOT) && _tmp_occ_14.client)
-		var/mob/living/_tmp_occ_15 = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/mob/living/_tmp_occ_14 = src?.slot_item(MECHA_SLOT_PILOT)
+	if(src?.slot_item(MECHA_SLOT_PILOT) && _tmp_occ_14.client)
+		var/mob/living/_tmp_occ_15 = src?.slot_item(MECHA_SLOT_PILOT)
 		_tmp_occ_15.client.mouse_pointer_icon = initial(_tmp_occ_15.client.mouse_pointer_icon)
 	..()
 	return

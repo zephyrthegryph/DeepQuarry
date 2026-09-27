@@ -31,7 +31,7 @@
 	set category = "Abilities.General"
 
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite anyone in your current state!")
 		return
 
@@ -67,7 +67,7 @@
 
 	if(last_special > world.time) return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite in your current state.")
 		return
 	if(B.vessel.total_volume <= 0 || B.isSynthetic()) //Do they have any blood in the first place, and are they synthetic?
@@ -200,7 +200,7 @@
 		to_chat(C, span_warning("You must be grabbing a creature in your active hand to absorb them."))
 		return
 
-	var/mob/living/carbon/human/T = GRAB_TARGET(G) // I must say, this is a quite ingenious way of doing it. Props to the original coders.
+	var/mob/living/carbon/human/T = G?.grab_target() // I must say, this is a quite ingenious way of doing it. Props to the original coders.
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not able to be drained."))
 		return
@@ -263,7 +263,7 @@
 		to_chat(src, span_warning("You must be grabbing a creature in your active hand to drain them."))
 		return
 
-	var/mob/living/carbon/human/T = GRAB_TARGET(G) // I must say, this is a quite ingenious way of doing it. Props to the original coders.
+	var/mob/living/carbon/human/T = G?.grab_target() // I must say, this is a quite ingenious way of doing it. Props to the original coders.
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not able to be drained."))
 		return
@@ -360,7 +360,7 @@
 		to_chat(C, span_warning("You must be grabbing a creature in your active hand to feed them."))
 		return
 
-	var/mob/living/carbon/human/T = GRAB_TARGET(G) // I must say, this is a quite ingenious way of doing it. Props to the original coders.
+	var/mob/living/carbon/human/T = G?.grab_target() // I must say, this is a quite ingenious way of doing it. Props to the original coders.
 	if(!istype(T))
 		to_chat(src, span_warning("\The [T] is not able to be fed."))
 		return
@@ -427,7 +427,7 @@
 		to_chat(src,span_warning("You can't shred that type of creature."))
 		return FALSE
 	//Needs to be capable (replace with incapacitated call?)
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src,span_warning("You cannot do that in your current state!"))
 		return FALSE
 	//Needs to be adjacent, at the very least.
@@ -453,7 +453,7 @@
 		to_chat(src,span_warning("You must have a tighter grip to severely damage this creature!"))
 		return FALSE
 
-	return ..(GRAB_TARGET(G))
+	return ..(G?.grab_target())
 
 //PAIs, borgs, and animals don't need a grab or anything
 /mob/living/silicon/pai/can_shred(mob/living/carbon/human/target)
@@ -652,7 +652,7 @@
 		to_chat(C, span_notice("You are already hovering and/or anchored in place!"))
 		return
 
-	if(!C.anchored && !PULLED_BY(C)) //Not currently anchored, and not pulled by anyone.
+	if(!C.anchored && !C?.pulled_by_mob()) //Not currently anchored, and not pulled by anyone.
 		C.anchored = TRUE //This is the only way to stop the inertial_drift.
 		C.adjust_nutrition(-25)
 		update_floating()
@@ -683,7 +683,7 @@
 		to_chat(src, "You don't have enough space to spin a cocoon!")
 		return
 
-	if(BUCKLED(src) ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(src?.buckled_to() ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -788,8 +788,8 @@
 		to_chat(target, span_warning("You got away from whatever that was..."))
 		to_chat(src, span_notice("They got away."))
 		return
-	if(BUCKLED(target)) //how are you BUCKLED(src) in the water?!
-		var/atom/movable/_tmp_buck_19 = BUCKLED(target)
+	if(target?.buckled_to()) //how are you src?.buckled_to() in the water?!
+		var/atom/movable/_tmp_buck_19 = target?.buckled_to()
 		_tmp_buck_19.unbuckle_mob()
 	target.visible_message(span_vwarning("\The [target] suddenly disappears, being dragged into the water!"),\
 		span_vdanger("You are dragged below the water and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
@@ -1264,7 +1264,7 @@
 		to_chat(C, span_warning("You must be grabbing a creature in your active hand to bite them."))
 		return
 
-	var/mob/living/carbon/human/T = GRAB_TARGET(G)
+	var/mob/living/carbon/human/T = G?.grab_target()
 
 	if(!istype(T) || T.isSynthetic())
 		to_chat(src, span_warning("\The [T] is not able to be bitten."))
@@ -1477,8 +1477,8 @@
 	if(target.loc != starting_loc)
 		to_chat(src, span_notice("\The [target] is no longer within reach."))
 		return
-	if(BUCKLED(target))
-		var/atom/movable/_tmp_buck_20 = BUCKLED(target)
+	if(target?.buckled_to())
+		var/atom/movable/_tmp_buck_20 = target?.buckled_to()
 		_tmp_buck_20.unbuckle_mob()
 	to_chat(src, span_vwarning("You manage to [lowertext(belly.vore_verb)] \the [target]!"))
 	to_chat(pred, span_vnotice("Your [belly] manages to [lowertext(belly.vore_verb)] \the [target]."))

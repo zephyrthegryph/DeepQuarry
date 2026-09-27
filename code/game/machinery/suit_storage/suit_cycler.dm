@@ -159,7 +159,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if(shock(user, 100))
 			return TRUE
 
-	var/mob/grabbed = GRAB_TARGET(G)
+	var/mob/grabbed = G?.grab_target()
 	if(!(ismob(grabbed)))
 		return TRUE
 
@@ -178,9 +178,9 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/interaction_insert_grab_timed_done(mob/user, obj/item/grab/G)
-	if(!G || !GRAB_TARGET(G))
+	if(!G || !G?.grab_target())
 		return TRUE
-	var/mob/M = GRAB_TARGET(G)
+	var/mob/M = G?.grab_target()
 	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_CYCLER))
 		return TRUE
 
@@ -348,7 +348,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		ui.open()
 
 /obj/machinery/suit_cycler/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 	var/list/data = list()
 
 	data["model_text"] = model_text
@@ -402,7 +402,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	return data
 
 /obj/machinery/suit_cycler/tgui_act(action, params, datum/tgui/ui)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 	if(..())
 		return TRUE
 
@@ -488,7 +488,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			suit.wash(CLEAN_SCRUB)
 
 /obj/machinery/suit_cycler/machine_step()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(electrified > 0)
 		electrified--
@@ -554,7 +554,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/eject_occupant(mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(locked || active)
 		to_chat(user, span_warning("The cycler is locked."))

@@ -183,7 +183,7 @@
 			busy_bank = FALSE
 			return TRUE
 		for(var/obj/item/check in O.contents)
-			if(!check.persist_storable || TETHER_HOST(check))
+			if(!check.persist_storable || check?.tether_host())
 				to_chat(user, span_warning("\The [src] buzzes. \The [O] contains [check], which cannot be stored. Please remove this item before attempting to store \the [O]. As a reminder, any contents of \the [O] will be lost if you store it with contents."))
 				busy_bank = FALSE
 				return TRUE

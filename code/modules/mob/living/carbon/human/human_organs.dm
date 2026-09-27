@@ -61,7 +61,7 @@
 			E.periodic_step()
 			self.number_wounds += length(E.get_wounds())
 
-			if (!self.lying && !BUCKLED(self) && world.time - self.l_move_time < 15)
+			if (!self.lying && !self?.buckled_to() && world.time - self.l_move_time < 15)
 			//Moving around with fractured ribs won't do you any good
 				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
 					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
@@ -83,7 +83,7 @@
 	stance_damage = 0
 
 	// Buckled to a bed/chair. Stance damage is forced to 0 since they're sitting on something solid
-	if (istype(BUCKLED(src), /obj/structure/bed))
+	if (istype(src?.buckled_to(), /obj/structure/bed))
 		return
 
 	var/limb_pain = FALSE

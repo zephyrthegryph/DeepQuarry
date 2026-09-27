@@ -196,7 +196,7 @@
 			to_chat(user, span_warning("That's not going to fit."))
 			return 0
 
-		if(!isliving(GRAB_TARGET(G)))
+		if(!isliving(G?.grab_target()))
 			to_chat(user, span_warning("You can't cook that."))
 			return 0
 
@@ -264,8 +264,8 @@
 
 	if(result == 2)
 		var/obj/item/grab/G = I
-		if (G && istype(G) && GRAB_TARGET(G))
-			cook_mob(GRAB_TARGET(G), user)
+		if (G && istype(G) && G?.grab_target())
+			cook_mob(G?.grab_target(), user)
 			return
 
 	//From here we can start cooking food

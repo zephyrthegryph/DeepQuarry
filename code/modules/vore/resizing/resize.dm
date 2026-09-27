@@ -1,7 +1,7 @@
 /mob/living/Crossed(atom/movable/AM)
 	..()
 	var/mob/living/target = AM
-	if(istype(target) && src.lying && target.loc && BUCKLED(target) != src)
+	if(istype(target) && src.lying && target.loc && target?.buckled_to() != src)
 		// src.lying being true means that in theory this code shouldn't run at the same time as the existing code for this in Bump. Probably.
 		// And optionally, this could be gated behind another preference, to prevent stunlock being abused.
 		if((mob_always_swap || (IS_HELPING(src) || src.restrained()) && (IS_HELPING(target) || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
@@ -224,7 +224,7 @@
 		if(mob_size < MOB_SMALL && src == M)
 			return FALSE
 	if(size_diff >= 0.50 || mob_size < MOB_SMALL || size_diff >= get_effective_size() || ignore_size)
-		if(BUCKLED(src))
+		if(src?.buckled_to())
 			to_chat(src,span_notice("You have to unbuckle \the [src] before you pick them up."))
 			return FALSE
 		holder_type = /obj/item/holder/micro
@@ -245,7 +245,7 @@
 	if(is_incorporeal() || tmob.is_incorporeal())
 		return FALSE
 	//Riding and being moved to us or something similar
-	if(tmob in BUCKLED_MOBS(src))
+	if(tmob in src?.buckled_mob_list())
 		return TRUE
 
 	//Both small! Go ahead and go.
@@ -301,13 +301,13 @@
 	if(tmob.flying)
 		return
 	//We can't be stepping on anyone
-	if(!canmove || BUCKLED(src))
+	if(!canmove || src?.buckled_to())
 		return
 	if(is_incorporeal() || tmob.is_incorporeal())
 		return
 
 	//Riding and being moved to us or something similar
-	if(tmob in BUCKLED_MOBS(src))
+	if(tmob in src?.buckled_mob_list())
 		return TRUE
 
 	//Test/set if human

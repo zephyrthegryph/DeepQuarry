@@ -1,5 +1,5 @@
 /mob/living/proc/update_pulling()
-	if(PULLING(src))
+	if(src?.pulling_target())
 		if(incapacitated())
 			stop_pulling()
 

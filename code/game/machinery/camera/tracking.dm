@@ -26,7 +26,7 @@
 
 
 /mob/living/silicon/ai/proc/ai_camera_list(camera in get_camera_list())
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set category = "AI.Camera Control"
 	set name = "Show Camera List"
 
@@ -42,7 +42,7 @@
 	return
 
 /mob/living/silicon/ai/proc/ai_store_location(loc as text)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set category = "AI.Camera Control"
 	set name = "Store Camera Location"
 	set desc = "Stores your current camera location by the given name"
@@ -72,7 +72,7 @@
 	return sortList(stored_locations)
 
 /mob/living/silicon/ai/proc/ai_goto_location(loc in sorted_stored_locations())
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set category = "AI.Camera Control"
 	set name = "Goto Camera Location"
 	set desc = "Returns to the selected camera location"
@@ -185,7 +185,7 @@
 			ai_cancel_tracking(1)
 			return
 
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		view_core()
 		return
@@ -197,7 +197,7 @@
 		return
 	if (!src.can_use())
 		return
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+	var/mob/observer/eye/eyeobj = user?.active_eye()
 	eyeobj?.setLoc(get_turf(src))
 
 

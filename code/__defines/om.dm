@@ -327,67 +327,10 @@
 /// Every target of `E`'s edges of relation `REL` (E is the source).
 #define OM_REL_TARGETS(E, REL) om_related(E, REL)
 
-/// The one thing in `E`'s slot `SLOT` (null: its default slot), or null.
-#define SLOT_ITEM(E, SLOT) ((E) ? (E).slot_item(SLOT) : null)
-/// A copy of what is in `E`'s slot `SLOT` (null: every slot, in slot order).
-#define SLOT_LIST(E, SLOT) ((E) ? (E).slot_contents(SLOT) : list())
 
-/// What `M` is buckled to, or null.
-#define BUCKLED(M) OM_REL_TARGET(M, /datum/om/relation/buckled_to)
-/// Every mob buckled to `A`.
-#define BUCKLED_MOBS(A) OM_REL_SOURCES(A, /datum/om/relation/buckled_to)
-/// What `M` is pulling, or null.
-#define PULLING(M) OM_REL_TARGET(M, /datum/om/relation/pulling)
-/// Who is pulling `A`, or null.
-#define PULLED_BY(A) OM_REL_SOURCE(A, /datum/om/relation/pulling)
-/// Every grab item holding `M`.
-#define GRABBED_BY(M) OM_REL_SOURCES(M, /datum/om/relation/grabbing)
-/// The mob looking through eye `E` (an AI, a soulcatcher soul, a camera-mask wearer), or null.
-#define EYE_OWNER(E) OM_REL_TARGET(E, /datum/om/relation/eye_of)
-/// Every eye `M` looks through (an AI's main eye plus its multicam eyes).
-#define EYES_OF(M) OM_REL_SOURCES(M, /datum/om/relation/eye_of)
-/// The eye `M` currently moves and sees with, or null.
-#define ACTIVE_EYE(M) OM_REL_TARGET(M, /datum/om/relation/active_eye)
-/// The mob `G` (a grab item) is grabbing, or null.
-#define GRAB_TARGET(G) OM_REL_TARGET(G, /datum/om/relation/grabbing)
-/// What `A` is orbiting, or null.
-#define ORBIT_TARGET(A) OM_REL_TARGET(A, /datum/om/relation/orbiting)
-/// Everything orbiting `A`.
-#define ORBITERS(A) OM_REL_SOURCES(A, /datum/om/relation/orbiting)
-/// The mob holding grab item `G` (the grab lives in the assailant's hand), or null.
-#define GRAB_ASSAILANT(G) ((G) && ishuman((G).loc) ? (G).loc : null)
-/// The mob leashed to leash item `L`, or null.
-#define LEASH_PET(L) OM_REL_SOURCE(L, /datum/om/relation/leashed_to)
-/// The mob holding leash item `L`, or null.
-#define LEASH_MASTER(L) OM_REL_TARGET(L, /datum/om/relation/leash_held_by)
-/// The leash item `M` is on, or null.
-#define LEASH_OF(M) OM_REL_TARGET(M, /datum/om/relation/leashed_to)
-/// The handheld item tethered to host item `H`, or null.
-#define TETHERED_HANDHELD(H) OM_REL_SOURCE(H, /datum/om/relation/tethered_to)
-/// The host item handheld `I` is tethered to, or null.
-#define TETHER_HOST(I) OM_REL_TARGET(I, /datum/om/relation/tethered_to)
-/// What ghost `G` is following, or null.
-#define FOLLOWING(G) OM_REL_TARGET(G, /datum/om/relation/following)
-/// Every ghost following `A`.
-#define FOLLOWERS(A) OM_REL_SOURCES(A, /datum/om/relation/following)
-/// The human borer `B` has infested, or null.
-#define BORER_HOST(B) OM_REL_TARGET(B, /datum/om/relation/host_of)
-/// The borer infesting `H`, or null.
-#define BORER_OF(H) OM_REL_SOURCE(H, /datum/om/relation/host_of)
-/// The telecomms machine bluespace radio `R` transmits to, or null.
-#define BS_TX_TARGET(R) OM_REL_TARGET(R, /datum/om/relation/bluespace_tx_to)
-/// Every bluespace radio transmitting to telecomms machine `M`.
-#define BS_TX_RADIOS(M) OM_REL_SOURCES(M, /datum/om/relation/bluespace_tx_to)
-/// The telecomms machine bluespace radio `R` receives from, or null.
-#define BS_RX_SOURCE(R) OM_REL_TARGET(R, /datum/om/relation/bluespace_rx_from)
-/// Every bluespace radio receiving from telecomms machine `M`.
-#define BS_RX_RADIOS(M) OM_REL_SOURCES(M, /datum/om/relation/bluespace_rx_from)
-/// The item gripper `G` is wrapping, or null.
-#define GRIPPER_HELD(G) OM_REL_TARGET(G, /datum/om/relation/gripper_holding)
-/// Every mob flying UAV `U`.
-#define UAV_MASTERS(U) OM_REL_SOURCES(U, /datum/om/relation/uav_master)
-/// What holds stasis modifier `S`'s mob in stasis, or null.
-#define STASIS_SOURCE(S) OM_REL_TARGET(S, /datum/om/relation/stasis_held_by)
+
+// Named relation reads are typed procs on /datum (code/datums/om/relation.dm):
+// M.buckled_to(), A.buckled_mob_list(), M.pulling_target(), ... E.slot_item(slot).
 
 // ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
 

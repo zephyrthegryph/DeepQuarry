@@ -176,9 +176,9 @@
 /obj/structure/foamedmetal/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		var/mob/grabbed = GRAB_TARGET(G)
+		var/mob/grabbed = G?.grab_target()
 		grabbed.loc = src.loc
-		visible_message(span_warning("[GRAB_ASSAILANT(G)] smashes [grabbed] through the foamed metal wall."))
+		visible_message(span_warning("[G?.grab_assailant()] smashes [grabbed] through the foamed metal wall."))
 		qdel(I)
 		qdel(src)
 		return

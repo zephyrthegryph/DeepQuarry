@@ -33,7 +33,7 @@
 	UnregisterSignal(host_item, COMSIG_ATOM_ATTACKBY)
 	UnregisterSignal(host_item, COMSIG_MOVABLE_MOVED)
 	host_item.verbs -= /obj/item/proc/toggle_tethered_handheld
-	var/obj/item/hand_held = TETHERED_HANDHELD(host_item)
+	var/obj/item/hand_held = host_item?.tethered_handheld()
 	if(hand_held)
 		UnregisterSignal(hand_held, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
 		qdel(hand_held)
@@ -50,7 +50,7 @@
 /datum/component/tethered_item/proc/on_attackself(obj/item/source, mob/living/carbon/human/user)
 	SIGNAL_HANDLER
 	var/obj/item/host_item = parent
-	var/obj/item/hand_held = TETHERED_HANDHELD(host_item)
+	var/obj/item/hand_held = host_item?.tethered_handheld()
 	if(hand_held.loc != host_item)
 		reattach_handheld()
 		return COMPONENT_CANCEL_ATTACK_CHAIN
@@ -71,7 +71,7 @@
 /datum/component/tethered_item/proc/make_handheld()
 	// Not directly a signal handler, but putting this anywhere else makes this way more confusing.
 	var/obj/item/host_item = parent
-	if(TETHERED_HANDHELD(host_item))
+	if(host_item?.tethered_handheld())
 		return
 	var/obj/item/hand_held = new held_path(host_item)
 	om_link(hand_held, host_item, /datum/om/relation/tethered_to)
@@ -88,14 +88,14 @@
 	if(!QDELETED(host_item))
 		make_handheld()
 		host_item.update_icon()
-		var/obj/item/remade = TETHERED_HANDHELD(host_item)
+		var/obj/item/remade = host_item?.tethered_handheld()
 		remade?.update_icon()
 
 // Absolutely illegal to be anywhere else except in the slot you were allowed to remove it from
 /datum/component/tethered_item/proc/on_moved(atom/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
 	SIGNAL_HANDLER
 	var/obj/item/host_item = parent
-	var/obj/item/hand_held = TETHERED_HANDHELD(host_item)
+	var/obj/item/hand_held = host_item?.tethered_handheld()
 	if(!hand_held || hand_held.loc == host_item) // handheld item is safely inside us
 		return
 	if(slot_check() && hand_held.loc == host_item.loc) // We are safely worn by our mob, and handheld item is safely inside our mob
@@ -107,7 +107,7 @@
 /datum/component/tethered_item/proc/on_attackby(obj/item/source, obj/item/W, mob/user, params)
 	SIGNAL_HANDLER
 	var/obj/item/host_item = parent
-	var/obj/item/hand_held = TETHERED_HANDHELD(host_item)
+	var/obj/item/hand_held = host_item?.tethered_handheld()
 	if(W == hand_held)
 		reattach_handheld()
 		return COMPONENT_CANCEL_ATTACK_CHAIN
@@ -116,7 +116,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/component/tethered_item/proc/reattach_handheld()
 	var/obj/item/host_item = parent
-	var/obj/item/hand_held = TETHERED_HANDHELD(host_item)
+	var/obj/item/hand_held = host_item?.tethered_handheld()
 	if(!hand_held)
 		return
 	// Retracts back to host
@@ -131,7 +131,7 @@
 
 // Some objects need to communicate the state of the handheld item back to the host
 /datum/component/tethered_item/proc/get_handheld()
-	return TETHERED_HANDHELD(parent)
+	return parent?.tethered_handheld()
 
 // By default this expects to be worn on your back
 /datum/component/tethered_item/proc/slot_check()

@@ -24,7 +24,7 @@
 		ridden.layer = OBJ_LAYER
 
 /datum/riding/proc/on_vehicle_move()
-	for(var/mob/living/M in BUCKLED_MOBS(ridden))
+	for(var/mob/living/M in ridden?.buckled_mob_list())
 		ride_check(M)
 	handle_vehicle_offsets()
 	handle_vehicle_layer()
@@ -39,7 +39,7 @@
 	var/ridden_dir = "[ridden.dir]"
 	var/passindex = 0
 	if(ridden.has_buckled_mobs())
-		for(var/m in BUCKLED_MOBS(ridden))
+		for(var/m in ridden?.buckled_mob_list())
 			passindex++
 			var/mob/living/buckled_mob = m
 			var/list/offsets = get_offsets(passindex)
@@ -90,7 +90,7 @@
 		Unbuckle(user)
 		return
 
-	var/list/ridden_buckled = BUCKLED_MOBS(ridden)
+	var/list/ridden_buckled = ridden?.buckled_mob_list()
 	if(only_one_driver && ridden_buckled.len)
 		var/mob/living/driver = ridden_buckled[1]
 		if(driver != user)

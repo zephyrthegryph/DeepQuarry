@@ -116,7 +116,7 @@
 		return 0
 	if(!climbed_thing.Adjacent(user))
 		return 0
-	if (user.restrained() || BUCKLED(user))
+	if (user.restrained() || user?.buckled_to())
 		to_chat(user, span_notice("You need your hands and legs free for this."))
 		return 0
 	if (user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING) || user.lying || user.has_status(EFFECT_WEAKENED))
@@ -147,7 +147,7 @@
 			continue
 		if(M.lying) //No spamming this on people.
 			continue
-		if(PULLING(M) == climbed_thing) // Pulling stuff up stairs can get weird
+		if(M?.pulling_target() == climbed_thing) // Pulling stuff up stairs can get weird
 			continue
 
 		// Knock off climbers

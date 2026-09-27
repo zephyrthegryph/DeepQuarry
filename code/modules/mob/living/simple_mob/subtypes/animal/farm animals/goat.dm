@@ -48,7 +48,7 @@
 			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate() in self.loc
 			qdel(SP)
 
-		if(!PULLED_BY(self))
+		if(!self?.pulled_by_mob())
 			var/obj/effect/plant/food
 			food = locate(/obj/effect/plant) in oview(5,self.loc)
 			if(food)

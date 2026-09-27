@@ -78,7 +78,7 @@
 			use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done_coffin), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed_coffin), fail_args = list(user))
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
-			src.MouseDrop_T(GRAB_TARGET(G), user)      //act like they were dragged onto the closet
+			src.MouseDrop_T(G?.grab_target(), user)      //act like they were dragged onto the closet
 			return 0
 		if(istype(W,/obj/item/tk_grab))
 			return 0

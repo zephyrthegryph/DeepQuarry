@@ -160,7 +160,7 @@
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target) || WC)
 		return
 	// Traitgenes Do not allow buckled or ridden mobs
-	if(BUCKLED(target))
+	if(target?.buckled_to())
 		return
 	if(target.has_buckled_mobs())
 		to_chat(user, span_warning("\The [target] has other entities attached to it. Remove them first."))
@@ -229,7 +229,7 @@
 	else if(!istype(item, /obj/item/grab))
 		return
 	var/obj/item/grab/G = item
-	var/mob/living/grabbed = GRAB_TARGET(G)
+	var/mob/living/grabbed = G?.grab_target()
 	if(!ismob(grabbed))
 		return
 	if(get_occupant())

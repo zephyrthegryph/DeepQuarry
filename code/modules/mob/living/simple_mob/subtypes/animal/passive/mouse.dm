@@ -270,7 +270,7 @@
 
 /mob/living/proc/mouse_scooped(mob/living/carbon/grabber, self_grab)
 
-	if(!holder_type || BUCKLED(src) || LAZYLEN(pinned))
+	if(!holder_type || src?.buckled_to() || LAZYLEN(pinned))
 		return
 
 	if(self_grab)

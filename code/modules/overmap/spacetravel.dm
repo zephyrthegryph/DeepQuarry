@@ -60,7 +60,7 @@
 		if(!AM.lost_in_space())
 			return FALSE
 	if(has_buckled_mobs())
-		for(var/mob/M in BUCKLED_MOBS(src))
+		for(var/mob/M in src?.buckled_mob_list())
 			if(!M.lost_in_space())
 				return FALSE
 
@@ -152,7 +152,7 @@
 		A.forceMove(dest)
 		if(ismob(A))
 			var/mob/D = A
-			var/atom/movable/D_pulling = PULLING(D)
+			var/atom/movable/D_pulling = D?.pulling_target()
 			if(D_pulling)
 				D_pulling.forceMove(dest)
 	else

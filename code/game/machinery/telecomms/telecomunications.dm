@@ -359,7 +359,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		var/obj/item/radio/R = signal.data["radio"]
 
 		//Who're you?
-		if(!R || BS_TX_TARGET(R) != src)
+		if(!R || R?.bs_tx_target() != src)
 			signal.data["reject"] = 1
 			return 0
 

@@ -24,9 +24,9 @@
 
 /// Launches once an occupant confirms; until then it sleeps.
 /obj/machinery/transportpod/machine_step()
-	if(!in_transit || !SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
+	if(!in_transit || !src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
 		return PROCESS_KILL
-	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
+	if(src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
 		if(in_transit)
 			var/locNum = rand(1, 8) //pick a random location
 			var/turf/L = locate(xc[locNum], yc[locNum], 1) // Pairs the X and Y to get an actual location.
@@ -53,7 +53,7 @@
 
 /obj/machinery/transportpod/update_icon()
 	..()
-	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
+	if(src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
 		icon_state = "borg_pod_closed"
 	else
 		icon_state = "borg_pod_opened"
@@ -62,7 +62,7 @@
 	go_in(O)
 
 /obj/machinery/transportpod/proc/go_in(mob/living/carbon/human/O)
-	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
+	if(src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
 		return
 
 	if(O.incapacitated()) //aint no sleepy people getting in here
@@ -81,7 +81,7 @@
 	return 1
 
 /obj/machinery/transportpod/proc/go_out()
-	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD)
+	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD)
 	if(!occupant)
 		return
 	slot_remove(occupant, src.loc)

@@ -21,7 +21,7 @@
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/proc/scan_done(atom/target)
-	my_scanner.ScanTurf(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT), exact_scan)
+	my_scanner.ScanTurf(target, chassis?.slot_item(MECHA_SLOT_PILOT), exact_scan)
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/action(atom/target)
 	if(!action_checks(target) || get_dist(chassis, target) > 5)
@@ -33,7 +33,7 @@
 	chassis.Beam(target, "g_beam", 'icons/effects/beam.dmi', 2 SECONDS, 10, /obj/effect/ebeam, 2)
 
 	// The beam ends itself after 2 seconds.
-	om_do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 2 SECONDS, target, src, PROC_REF(scan_done), list(target), IGNORE_HELD_ITEM)
+	om_do_after(chassis?.slot_item(MECHA_SLOT_PILOT), 2 SECONDS, target, src, PROC_REF(scan_done), list(target), IGNORE_HELD_ITEM)
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/advanced
 	name = "advanced ore scanner"

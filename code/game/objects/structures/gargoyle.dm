@@ -72,8 +72,8 @@
 	stored_examine = H.examine(H)
 	description_fluff = H.get_description_fluff()
 
-	if(BUCKLED(H))
-		var/atom/movable/_tmp_buck_10 = BUCKLED(H)
+	if(H?.buckled_to())
+		var/atom/movable/_tmp_buck_10 = H?.buckled_to()
 		_tmp_buck_10.unbuckle_mob(H, TRUE)
 	//icon = H.icon
 	//copy_overlays(H)

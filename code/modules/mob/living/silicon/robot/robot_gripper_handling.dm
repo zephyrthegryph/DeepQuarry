@@ -419,7 +419,7 @@
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no
 /obj/item/gripper/proc/get_wrapped_item() //done as a proc so snowflake code can be found later down the line and consolidated.
-	var/obj/item/wrapped = GRIPPER_HELD(src)
+	var/obj/item/wrapped = src?.gripper_held()
 	return wrapped
 
 /// Consolidates material stacks by searching our pockets to see if we currently have any stacks. Done in /obj/item/stack/attackby

@@ -156,7 +156,7 @@
 		verbs += /obj/vehicle/train/engine/verb/stop_engine
 
 /obj/vehicle/train/RunOver(mob/living/M)
-	if(PULLED_BY(src) == M) // Don't destroy people pulling vehicles up stairs
+	if(src?.pulled_by_mob() == M) // Don't destroy people pulling vehicles up stairs
 		return
 
 	var/list/parts = list(BP_HEAD, BP_TORSO, BP_L_LEG, BP_R_LEG, BP_L_ARM, BP_R_ARM)

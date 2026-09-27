@@ -148,7 +148,7 @@
 	if(seed && seed.get_trait(TRAIT_JUICY) == 2)
 		if(istype(M))
 
-			if(BUCKLED(M))
+			if(M?.buckled_to())
 				return
 
 			if(ishuman(M))

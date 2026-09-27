@@ -44,21 +44,21 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/om/task/timed/passenger_boarded/task)
 	var/mob/user = task.actor
-	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
+	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
 			return
 		src.mecha_log_message("[user] boarded.")
 		occupant_message("[user] boarded.")
-	else if(SLOT_ITEM(src, MECHA_SLOT_PILOT) != user)
-		to_chat(user, span_warning("[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
+	else if(src?.slot_item(MECHA_SLOT_PILOT) != user)
+		to_chat(user, span_warning("[src?.slot_item(MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/container_resist(mob/living)
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	if(occupant == living)
 		eject()
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/verb/eject()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	set name = "Eject"
 	set category = "Exosuit Interface"
 	set src = usr.loc
@@ -73,7 +73,7 @@
 	passenger_disembark(occupant)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/emergency_unlocked(mob/living/carbon/occupant)
-	if(occupant != SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)) //Check if someone's released/replaced/bombed him already
+	if(occupant != src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)) //Check if someone's released/replaced/bombed him already
 		return
 	if(door_locked)
 		door_locked = FALSE
@@ -90,7 +90,7 @@
 	add_fingerprint(occupant)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/go_out()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	if(!occupant)
 		return
 	slot_remove(occupant, get_turf(src))
@@ -102,7 +102,7 @@
 		chassis.verbs |= /obj/mecha/proc/move_inside_passenger
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/detach()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	if(occupant)
 		occupant_message("Unable to detach [src] - equipment occupied.")
 		return
@@ -113,7 +113,7 @@
 		M.verbs -= /obj/mecha/proc/move_inside_passenger
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/get_equip_info()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	return "[..()] <br />[occupant? "\[Occupant: [occupant]\]|" : ""]Exterior Hatch: <a href='byond://?src=\ref[src];toggle_lock=1'>Toggle Lock</a>"
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/Topic(href,href_list)
@@ -159,7 +159,7 @@
 	//search for a valid passenger compartment
 	var/feedback = 0 //for nicer user feedback
 	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in src)
-		if (SLOT_ITEM(P, MECHA_SLOT_PILOT))
+		if (P?.slot_item(MECHA_SLOT_PILOT))
 			feedback |= OCCUPIED
 			continue
 		if (P.door_locked)

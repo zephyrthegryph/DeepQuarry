@@ -1,6 +1,6 @@
 /// Death is decided by the AI machine plan; this is the one pass that follows it.
 /mob/living/silicon/ai/death(gibbed)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 
 	if(stat == DEAD)
 		return

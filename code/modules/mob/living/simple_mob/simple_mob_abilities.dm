@@ -195,8 +195,8 @@
 				if(isliving(M) && M != src)
 					var/mob/living/LM = M
 
-					if(BUCKLED(M)) // make sure they fall when weakened
-						var/atom/movable/_tmp_buck_21 = BUCKLED(M)
+					if(M?.buckled_to()) // make sure they fall when weakened
+						var/atom/movable/_tmp_buck_21 = M?.buckled_to()
 						_tmp_buck_21.unbuckle_mob()
 
 					LM.status_at_least(EFFECT_WEAKENED, 5)

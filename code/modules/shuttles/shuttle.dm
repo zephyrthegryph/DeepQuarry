@@ -362,8 +362,8 @@
 			for(var/mob/living/M in A)
 				if(M.is_incorporeal())
 					continue
-				if(BUCKLED(M))
-					to_chat(M, span_red("Sudden acceleration presses you into \the [BUCKLED(M)]!"))
+				if(M?.buckled_to())
+					to_chat(M, span_red("Sudden acceleration presses you into \the [M?.buckled_to()]!"))
 					shake_camera(M, 3, 1)
 				else
 					to_chat(M, span_red("The floor lurches beneath you!"))

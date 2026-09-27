@@ -25,7 +25,7 @@
 
 /obj/structure/gootrap/attack_hand(mob/user as mob)
 	if(has_buckled_mobs() && can_use(user))
-		var/victim = english_list(BUCKLED_MOBS(src))
+		var/victim = english_list(src?.buckled_mob_list())
 		user.visible_message(
 			span_notice("[user] begins freeing [victim] from \the [src]."),
 			span_notice("You carefully begin to free [victim] from \the [src]."),
@@ -36,7 +36,7 @@
 
 /obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
 	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
-	for(var/A in BUCKLED_MOBS(src))
+	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	anchored = 0
 

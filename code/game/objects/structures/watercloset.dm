@@ -125,8 +125,8 @@
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
 
-		if(isliving(GRAB_TARGET(G)))
-			var/mob/living/GM = GRAB_TARGET(G)
+		if(isliving(G?.grab_target()))
+			var/mob/living/GM = G?.grab_target()
 
 			if(G.state <= GRAB_PASSIVE)
 				to_chat(user, span_notice("You need a tighter grip."))
@@ -241,7 +241,7 @@
 		if(istype(I) && !I.anchored)
 			bowl_contents += I
 	for(var/mob/living/L in loc.contents)
-		if(BUCKLED(L) || !(L.resting || L.lying))
+		if(L?.buckled_to() || !(L.resting || L.lying))
 			continue
 		var/bin_bonus = 0.15
 		if(bin)
@@ -412,8 +412,8 @@
 /obj/structure/urinal/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		if(isliving(GRAB_TARGET(G)))
-			var/mob/living/GM = GRAB_TARGET(G)
+		if(isliving(G?.grab_target()))
+			var/mob/living/GM = G?.grab_target()
 			if(G.state>1)
 				if(GM.loc != get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the urinal."))

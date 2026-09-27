@@ -159,19 +159,19 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(source)
+	var/mob/living/carbon/human/assailant = source?.grab_assailant()
 	target.reveal(span_warning("You are revealed as [assailant] grabs you."))
 	if(!assailant)
 		return
 	assailant.reveal(span_warning("You reveal yourself as you grab [target]."))
 	// If the assailant is also currently grabbed by their new victim, both
 	// grabs enter "dancing" (facing each other, e.g. a wrestling clinch).
-	for(var/obj/item/grab/G in GRABBED_BY(assailant))
-		if(GRAB_ASSAILANT(G) == target && GRAB_TARGET(G) == assailant)
+	for(var/obj/item/grab/G in assailant?.grabbed_by_list())
+		if(G?.grab_assailant() == target && G?.grab_target() == assailant)
 			G.dancing = TRUE
 			G.adjust_position()
 			source.dancing = TRUE
-	if(PULLING(assailant) == target)
+	if(assailant?.pulling_target() == target)
 		assailant.stop_pulling()
 
 /datum/om/relation/grabbing/on_unlink(obj/item/grab/source, mob/living/target, datum/om/edge/edge)

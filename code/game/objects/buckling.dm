@@ -15,7 +15,7 @@
 //		user_unbuckle_mob(user)
 
 	if(can_buckle && has_buckled_mobs())
-		var/list/mobs = BUCKLED_MOBS(src)
+		var/list/mobs = src?.buckled_mob_list()
 		if(mobs.len > 1)
 			var/unbuckled = tgui_input_list(user, "Who do you wish to unbuckle?","Unbuckle Who?", mobs)
 			if(unbuckled && user_unbuckle_mob(unbuckled, user))
@@ -45,7 +45,7 @@
 		return TRUE
 
 /atom/movable/proc/has_buckled_mobs()
-	return LAZYLEN(BUCKLED_MOBS(src))
+	return LAZYLEN(src?.buckled_mob_list())
 
 
 
@@ -80,11 +80,11 @@
 /atom/movable/proc/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	if(!buckled_mob) // If we didn't get told which mob needs to get unbuckled, just assume its the first one on the list.
 		if(has_buckled_mobs())
-			buckled_mob = BUCKLED_MOBS(src)[1]
+			buckled_mob = src?.buckled_mob_list()[1]
 		else
 			return
 
-	if(buckled_mob && BUCKLED(buckled_mob) == src)
+	if(buckled_mob && buckled_mob?.buckled_to() == src)
 		. = buckled_mob
 		// on_unlink() (code/datums/om/library.dm) does the actual unbuckling.
 		om_unlink(buckled_mob, src, /datum/om/relation/buckled_to)
@@ -92,7 +92,7 @@
 /atom/movable/proc/unbuckle_all_mobs(force = FALSE)
 	if(!has_buckled_mobs())
 		return
-	for(var/m in BUCKLED_MOBS(src))
+	for(var/m in src?.buckled_mob_list())
 		unbuckle_mob(m, force)
 
 //Handle any extras after buckling/unbuckling
@@ -107,13 +107,13 @@
 		return FALSE // Is this really needed?
 	if(!user.Adjacent(M) || user.restrained() || user.stat || ispAI(user))
 		return FALSE
-	if(M in BUCKLED_MOBS(src))
+	if(M in src?.buckled_mob_list())
 		to_chat(user, span_warning("\The [M] is already buckled to \the [src]."))
 		return FALSE
 	if(!can_buckle_check(M, forced, TRUE))
 		return FALSE
 
-	var/list/buckled_here = BUCKLED_MOBS(src)
+	var/list/buckled_here = src?.buckled_mob_list()
 	if(has_buckled_mobs() && buckled_here.len >= max_buckled_mobs)
 		for(var/mob/living/L in buckled_here)
 			if(istype(L) && can_stumble_vore(prey = L, pred = M))
@@ -176,7 +176,7 @@
 	return M
 
 /atom/movable/proc/handle_buckled_mob_movement(atom/old_loc, direct, movetime)
-	for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+	for(var/mob/living/L as anything in src?.buckled_mob_list())
 		if(!L.Move(loc, direct, movetime))
 			L.forceMove(loc, direct, movetime)
 			L.last_move = last_move
@@ -191,13 +191,13 @@
 	if(!istype(M))
 		return FALSE
 
-	if((!can_buckle && !forced) || BUCKLED(M) || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
+	if((!can_buckle && !forced) || M?.buckled_to() || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
 		return FALSE
-	if(LAZYLEN(GRABBED_BY(M)) && !forced)
+	if(LAZYLEN(M?.grabbed_by_list()) && !forced)
 		to_chat(M, span_boldwarning("You can not buckle while grabbed!"))
 		return FALSE
 
-	var/list/buckled_here2 = BUCKLED_MOBS(src)
+	var/list/buckled_here2 = src?.buckled_mob_list()
 	if(has_buckled_mobs() && buckled_here2.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
 		if(can_do_spont_vore && is_vore_predator(M) && M.vore_selected)
 			for(var/mob/living/buckled in buckled_here2)

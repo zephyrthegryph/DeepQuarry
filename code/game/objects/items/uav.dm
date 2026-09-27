@@ -195,7 +195,7 @@
 		power_down()
 		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 
-	if(length(UAV_MASTERS(src)))
+	if(length(src?.uav_masters()))
 		no_masters_time = 0
 	else if(no_masters_time++ > 50)
 		power_down()
@@ -274,7 +274,7 @@
 	return cell
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
-	if(signal && state == UAV_ON && (user in UAV_MASTERS(src)))
+	if(signal && state == UAV_ON && (user in src?.uav_masters()))
 		if(next_move <= world.time)
 			next_move = world.time + (1 SECOND/signal)
 			step(src, direction)
@@ -291,7 +291,7 @@
 	om_unlink(M, src, /datum/om/relation/uav_master)
 
 /obj/item/uav/proc/clear_masters()
-	for(var/mob/living/M as anything in UAV_MASTERS(src))
+	for(var/mob/living/M as anything in src?.uav_masters())
 		remove_master(M)
 
 /obj/item/uav/proc/start_hover()
@@ -316,19 +316,19 @@
 
 /obj/item/uav/hear_talk(mob/M, list/message_pieces, verb)
 	var/name_used = M.GetVoice()
-	for(var/mob/master as anything in UAV_MASTERS(src))
+	for(var/mob/master as anything in src?.uav_masters())
 		var/list/combined = master.combine_message(message_pieces, verb, M)
 		var/message = combined["formatted"]
 		var/rendered = span_game(span_say(span_italics("UAV received: " + span_name("[name_used]") + " [message]")))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/see_emote(mob/living/M, text)
-	for(var/mob/master as anything in UAV_MASTERS(src))
+	for(var/mob/master as anything in src?.uav_masters())
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[text]"))))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/show_message(msg, type, alt, alt_type)
-	for(var/mob/master as anything in UAV_MASTERS(src))
+	for(var/mob/master as anything in src?.uav_masters())
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 

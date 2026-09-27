@@ -52,10 +52,10 @@
 		set_light(0)
 
 /obj/machinery/bodyscanner/attackby(obj/item/G, user as mob)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/H = G
-		var/mob/M = GRAB_TARGET(H)
+		var/mob/M = H?.grab_target()
 		if(panel_open)
 			to_chat(user, span_notice("Close the maintenance panel first."))
 			return
@@ -82,15 +82,15 @@
 		SStgui.update_uis(src)
 
 /obj/machinery/bodyscanner/screwdriver_act(mob/user, obj/item/tool)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/bodyscanner/crowbar_act(mob/user, obj/item/tool)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/bodyscanner/MouseDrop_T(mob/living/carbon/human/O, mob/user as mob)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(!istype(O))
 		return 0 //not a mob
 	if(user.incapacitated())
@@ -108,7 +108,7 @@
 		to_chat(user, span_notice("\The [src] is already occupied."))
 		return 0 //occupied
 
-	if(BUCKLED(O))
+	if(O?.buckled_to())
 		return 0
 	if(O.abiotic())
 		to_chat(user, span_notice("Subject cannot have abiotic items on."))
@@ -145,7 +145,7 @@
 	add_fingerprint(usr)
 
 /obj/machinery/bodyscanner/proc/go_out()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if ((!(occupant) || src.locked))
 		return
 	slot_remove(occupant, get_turf(src))
@@ -157,7 +157,7 @@
 	return severity
 
 /obj/machinery/bodyscanner/tgui_host(mob/user)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(user == occupant)
 		return src
 	return console ? console : src
@@ -176,7 +176,7 @@
 	return dq_build_tgui_data()
 
 /obj/machinery/bodyscanner/tgui_act(action, params, datum/tgui/ui)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(..())
 		return TRUE
 
@@ -227,7 +227,7 @@
 /// The printed report: the body scanner diagnosis (paper renderer) plus the
 /// patient details a printout carries (species, reagents, allergens, implants).
 /obj/machinery/bodyscanner/proc/generate_printing_text()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(!istype(occupant))
 		return span_blue(span_bold("Occupant Statistics:")) + "<br>\The [src] is empty."
 	var/list/dat = list(span_blue(span_bold("Occupant Statistics:")))
@@ -390,7 +390,7 @@
 	return incoming
 
 /obj/machinery/bodyscanner/update_icon()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	cut_overlays()
 
 	if(!occupant)

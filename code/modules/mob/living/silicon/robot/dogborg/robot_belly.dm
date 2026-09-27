@@ -36,7 +36,7 @@
 	for(var/obj/item/ore_bag/bag as anything in active_ore_bags)
 		bag.dropped(R)
 	active_ore_bags = null
-	for(var/rider in BUCKLED_MOBS(R))
+	for(var/rider in R?.buckled_mob_list())
 		R.riding_datum?.force_dismount(rider)
 	QDEL_NULL(R.riding_datum)
 	R.can_buckle = initial(R.can_buckle)

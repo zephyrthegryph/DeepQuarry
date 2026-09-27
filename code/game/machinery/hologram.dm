@@ -86,7 +86,7 @@ Possible to do for anyone motivated enough:
 	/*There are pretty much only three ways to interact here.
 	I don't need to check for client since they're clicking on an object.
 	This may change in the future but for now will suffice.*/
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+	var/mob/observer/eye/eyeobj = user?.active_eye()
 	if(eyeobj?.loc != src.loc)//Set client eye on the object if it's not already.
 		eyeobj?.setLoc(get_turf(src))
 	else if(!LAZYACCESS(masters, user))//If there is no hologram, possibly make one.
@@ -96,7 +96,7 @@ Possible to do for anyone motivated enough:
 	return
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+	var/mob/observer/eye/eyeobj = user?.active_eye()
 	if(!(stat & NOPOWER) && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
 		if(user.holo)
 			to_chat(user, span_danger("ERROR:") + " Image feed in progress.")
@@ -178,7 +178,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 
 /obj/machinery/hologram/holopad/machine_step()
 	for (var/mob/living/silicon/ai/master in masters)
-		var/active_ai = (master && !master.stat && master.client && ACTIVE_EYE(master))//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
+		var/active_ai = (master && !master.stat && master.client && master?.active_eye())//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
 		if((stat & NOPOWER) || !active_ai)
 			clear_holo(master)
 			continue
@@ -190,7 +190,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/proc/move_hologram(mob/living/silicon/ai/user)
 	if(LAZYACCESS(masters, user))
 		var/obj/effect/overlay/aiholo/H = LAZYACCESS(masters, user)
-		var/mob/observer/eye/eyeobj = ACTIVE_EYE(user)
+		var/mob/observer/eye/eyeobj = user?.active_eye()
 		walk_towards(H, eyeobj)
 		//Hologram left the screen (got stuck on a wall or something)
 		if(get_dist(H, eyeobj) > world.view)

@@ -927,7 +927,7 @@
 	if(isturf(wearer.loc))
 		if(wearer.restrained())//Why being pulled while cuffed prevents you from moving
 			for(var/mob/M in range(wearer, 1))
-				if(PULLING(M) == wearer)
+				if(M?.pulling_target() == wearer)
 					if(!M.restrained() && M.stat == 0 && M.canmove && wearer.Adjacent(M))
 						to_chat(user, span_notice("Your host is restrained! They can't move!"))
 						return 0
@@ -938,31 +938,31 @@
 		to_chat(src, span_notice("Your host is pinned to a wall by [wearer.pinned[1]]!"))
 		return 0
 
-	if(istype(BUCKLED(wearer), /obj/vehicle))
+	if(istype(wearer?.buckled_to(), /obj/vehicle))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
 		wearer_move_delay = world.time
-		var/atom/movable/_tmp_buck_13 = BUCKLED(wearer)
+		var/atom/movable/_tmp_buck_13 = wearer?.buckled_to()
 		return _tmp_buck_13.relaymove(wearer, direction)
 
 	if(istype(wearer.get_current_machine(), /obj/machinery))
 		if(wearer.get_current_machine().relaymove(wearer, direction))
 			return
 
-	var/mob/wearer_puller = PULLED_BY(wearer)
-	if(wearer_puller || BUCKLED(wearer)) // Wheelchair driving!
+	var/mob/wearer_puller = wearer?.pulled_by_mob()
+	if(wearer_puller || wearer?.buckled_to()) // Wheelchair driving!
 		if(istype(wearer.loc, /turf/space))
 			return // No wheelchair driving in space
 		if(istype(wearer_puller, /obj/structure/bed/chair/wheelchair))
 			return wearer_puller.relaymove(wearer, direction)
-		else if(istype(BUCKLED(wearer), /obj/structure/bed/chair/wheelchair))
-			if(ishuman(BUCKLED(wearer)))
+		else if(istype(wearer?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+			if(ishuman(wearer?.buckled_to()))
 				var/obj/item/organ/external/l_hand = wearer.get_organ(BP_L_HAND)
 				var/obj/item/organ/external/r_hand = wearer.get_organ(BP_R_HAND)
 				if((!l_hand || (l_hand.status & ORGAN_DESTROYED)) && (!r_hand || (r_hand.status & ORGAN_DESTROYED)))
 					return // No hands to drive your chair? Tough luck!
 			wearer_move_delay += 2
-			var/atom/movable/_tmp_buck_14 = BUCKLED(wearer)
+			var/atom/movable/_tmp_buck_14 = wearer?.buckled_to()
 			return _tmp_buck_14.relaymove(wearer,direction)
 
 	var/power_cost = 50

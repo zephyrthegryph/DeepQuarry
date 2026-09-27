@@ -7,7 +7,7 @@
 	//if we are being grabbed
 	if(isliving(mob))
 		var/mob/living/L = mob
-		if(!L.canmove && LAZYLEN(GRABBED_BY(L)))
+		if(!L.canmove && LAZYLEN(L?.grabbed_by_list()))
 			L.resist() //shortcut for resisting grabs
 
 		//if we are grabbing someone
@@ -58,9 +58,9 @@
 
 //Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
 /obj/item/grab/proc/throw_held()
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/affecting = src?.grab_target()
 	if(affecting)
-		if(BUCKLED(affecting))
+		if(affecting?.buckled_to())
 			return null
 		if(state >= GRAB_AGGRESSIVE)
 			animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1)
@@ -71,10 +71,10 @@
 
 //This makes sure that the grab screen object is displayed in the correct hand.
 /obj/item/grab/proc/synch() //why is this needed?
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(QDELETED(src))
 		return
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/affecting = src?.grab_target()
 	if(affecting)
 		if(assailant.get_equipped_item(SLOT_ID_HAND_R) == src)
 			hud.screen_loc = ui_rhand
@@ -82,12 +82,12 @@
 			hud.screen_loc = ui_lhand
 
 /obj/item/grab/periodic_step()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(QDELETED(src)) // GC is trying to delete us, we'll kill our processing so we can cleanly GC
 		return PROCESS_KILL
 
 	confirm()
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/affecting = src?.grab_target()
 	if(!assailant)
 		qdel(src) // Same here, except we're trying to delete ourselves.
 		return PROCESS_KILL
@@ -101,15 +101,15 @@
 		//disallow upgrading if we're grabbing more than one person
 		if((assailant.get_equipped_item(SLOT_ID_HAND_L) && assailant.get_equipped_item(SLOT_ID_HAND_L) != src && istype(assailant.get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab)))
 			var/obj/item/grab/G = assailant.get_equipped_item(SLOT_ID_HAND_L)
-			if(GRAB_TARGET(G) != affecting)
+			if(G?.grab_target() != affecting)
 				allow_upgrade = 0
 		if((assailant.get_equipped_item(SLOT_ID_HAND_R) && assailant.get_equipped_item(SLOT_ID_HAND_R) != src && istype(assailant.get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab)))
 			var/obj/item/grab/G = assailant.get_equipped_item(SLOT_ID_HAND_R)
-			if(GRAB_TARGET(G) != affecting)
+			if(G?.grab_target() != affecting)
 				allow_upgrade = 0
 
 		//disallow upgrading past aggressive if we're being grabbed aggressively
-		for(var/obj/item/grab/G in GRABBED_BY(affecting))
+		for(var/obj/item/grab/G in affecting?.grabbed_by_list())
 			if(G == src) continue
 			if(G.state >= GRAB_AGGRESSIVE)
 				allow_upgrade = 0
@@ -151,8 +151,8 @@
 	adjust_position()
 
 /obj/item/grab/proc/handle_eye_mouth_covering(mob/living/carbon/target, mob/user, target_zone)
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
+	var/mob/living/affecting = src?.grab_target()
 	var/announce = (target_zone != last_hit_zone) //only display messages when switching between different target zones
 	last_hit_zone = target_zone
 
@@ -183,12 +183,12 @@
 //Updating pixelshift, position and direction
 //Gets called on process, when the grab gets upgraded or the assailant moves
 /obj/item/grab/proc/adjust_position()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
+	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
 		qdel(src)
 		return
-	if(BUCKLED(affecting))
+	if(affecting?.buckled_to())
 		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
 		return
 	if(affecting.lying && state != GRAB_KILL)
@@ -230,10 +230,10 @@
 			animate(affecting, pixel_x =-shift, pixel_y = initial(affecting.pixel_y), 5, 1, LINEAR_EASING)
 
 /obj/item/grab/proc/s_click(atom/movable/screen/S)
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(QDELETED(src))
 		return
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
 		return
 	if(state == GRAB_UPGRADING)
@@ -286,8 +286,8 @@
 
 //This is used to make sure the victim hasn't managed to yackety sax away before using the grab.
 /obj/item/grab/proc/confirm()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
+	var/mob/living/affecting = src?.grab_target()
 	if(!assailant || !affecting)
 		qdel(src)
 		return 0
@@ -300,10 +300,10 @@
 	return 1
 
 /obj/item/grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(QDELETED(src))
 		return ITEM_INTERACT_FAILURE
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
 		return ITEM_INTERACT_FAILURE
 	if(world.time < (last_action + 20))
@@ -345,16 +345,16 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/grab/proc/reset_kill_state()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
+	var/mob/living/affecting = src?.grab_target()
 	if(state == GRAB_KILL)
 		assailant.visible_message(span_warning("[assailant] lost [assailant.p_their()] tight grip on [affecting]'s neck!"))
 		hud.icon_state = "kill"
 		state = GRAB_NECK
 
 /obj/item/grab/proc/handle_resist()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
-	var/mob/living/affecting = GRAB_TARGET(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
+	var/mob/living/affecting = src?.grab_target()
 	var/grab_name
 	var/break_strength = 1
 	var/list/break_chance_table = list(100)
@@ -406,7 +406,7 @@
 	return mob_size_difference(A.mob_size, B.mob_size)
 
 /obj/item/grab/Destroy()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
+	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	// The grabbing relation (code/datums/om/library.dm) unlinks -- clearing
 	// `affecting` and this grab's entry in the victim's `grabbed_by`, and
 	// running the pixel/plane reset -- in the destroy transaction's phase 5

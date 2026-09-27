@@ -13,7 +13,7 @@
 	if(isrobot(user) || user == H)
 		return TRUE
 
-	for (var/obj/item/grab/G in GRABBED_BY(H))
+	for (var/obj/item/grab/G in H?.grabbed_by_list())
 		if (G.loc == user && G.state >= GRAB_AGGRESSIVE)
 			return TRUE
 

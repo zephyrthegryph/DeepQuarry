@@ -180,7 +180,7 @@
 	effect = /obj/machinery/conveyor/proc/interaction_push_pulled
 
 /obj/machinery/conveyor/proc/interaction_push_pulled(mob/user, obj/item/held, datum/interaction/interaction)
-	var/atom/movable/pulling = PULLING(user)
+	var/atom/movable/pulling = user?.pulling_target()
 	if ((!( user.canmove ) || user.restrained() || !pulling))
 		return TRUE
 	if (pulling.anchored)

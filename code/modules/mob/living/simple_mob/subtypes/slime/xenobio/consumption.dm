@@ -143,7 +143,7 @@
 			return FALSE
 	// ition end
 	if(L.has_buckled_mobs())
-		for(var/A in BUCKLED_MOBS(L))
+		for(var/A in L?.buckled_mob_list())
 			if(istype(A, /mob/living/simple_mob/slime/xenobio))
 				if(A != src)
 					to_chat(src, "\The [A] is already feeding on this subject...")

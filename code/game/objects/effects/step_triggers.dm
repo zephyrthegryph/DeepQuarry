@@ -112,8 +112,8 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(PULLING(L))
-			var/atom/movable/P = PULLING(L)
+		if(L?.pulling_target())
+			var/atom/movable/P = L?.pulling_target()
 			L.stop_pulling()
 			P.forceMove(T)
 			L.forceMove(T)

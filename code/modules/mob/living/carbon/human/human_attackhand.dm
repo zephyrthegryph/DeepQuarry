@@ -249,17 +249,17 @@
 		return
 	if(M == src || anchored)
 		return
-	for(var/obj/item/grab/G in GRABBED_BY(src))
-		if(GRAB_ASSAILANT(G) == M)
+	for(var/obj/item/grab/G in src?.grabbed_by_list())
+		if(G?.grab_assailant() == M)
 			to_chat(M, span_notice("You already grabbed [src]."))
 			return
 	if(get_equipped_item(SLOT_ID_UNIFORM))
 		get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
-	if(BUCKLED(src))
-		to_chat(M, span_notice("You cannot grab [src], [M.p_theyre()] BUCKLED(src) in!"))
+	if(src?.buckled_to())
+		to_chat(M, span_notice("You cannot grab [src], [M.p_theyre()] src?.buckled_to() in!"))
 		return
-	var/obj/item/grab/G = new /obj/item/grab(M, src) //If this is put before the BUCKLED(src) check, the user will be perma-slowed due to a grab existing in nullspace.
+	var/obj/item/grab/G = new /obj/item/grab(M, src) //If this is put before the src?.buckled_to() check, the user will be perma-slowed due to a grab existing in nullspace.
 	if(!G)	//the grab will delete itself in New if affecting is anchored
 		return
 	M.put_in_active_hand(G)
@@ -308,11 +308,11 @@
 			if(canmove && src!=H && prob(20))
 				block = 1
 
-	if(LAZYLEN(GRABBED_BY(M)))
+	if(LAZYLEN(M?.grabbed_by_list()))
 		// Someone got a good grip on them, they won't be able to do much damage
 		rand_damage = max(1, rand_damage - 2)
 
-	if(LAZYLEN(GRABBED_BY(src)) || BUCKLED(src) || !src.canmove || src==H)
+	if(LAZYLEN(src?.grabbed_by_list()) || src?.buckled_to() || !src.canmove || src==H)
 		accurate = 1 // certain circumstances make it impossible for us to evade punches
 		rand_damage = 5
 
@@ -449,7 +449,7 @@
 /mob/living/carbon/human/proc/grab_joint(mob/living/user, def_zone)
 	var/has_grab = 0
 	for(var/obj/item/grab/G in list(user.get_equipped_item(SLOT_ID_HAND_L), user.get_equipped_item(SLOT_ID_HAND_R)))
-		if(GRAB_TARGET(G) == src && G.state == GRAB_NECK)
+		if(G?.grab_target() == src && G.state == GRAB_NECK)
 			has_grab = 1
 			break
 
@@ -477,7 +477,7 @@
 //Breaks all grips and pulls that the mob currently has.
 /mob/living/carbon/human/proc/break_all_grabs(mob/living/carbon/user)
 	var/success = FALSE
-	var/atom/movable/pulling = PULLING(src)
+	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
 		visible_message(span_danger("[user] has broken [src]'s grip on [pulling]!"))
 		success = TRUE
@@ -485,14 +485,14 @@
 
 	if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab))
 		var/obj/item/grab/lgrab = get_equipped_item(SLOT_ID_HAND_L)
-		if(GRAB_TARGET(lgrab))
-			visible_message(span_danger("[user] has broken [src]'s grip on [GRAB_TARGET(lgrab)]!"))
+		if(lgrab?.grab_target())
+			visible_message(span_danger("[user] has broken [src]'s grip on [lgrab?.grab_target()]!"))
 			success = TRUE
 		drop_from_inventory(lgrab)
 	if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab))
 		var/obj/item/grab/rgrab = get_equipped_item(SLOT_ID_HAND_R)
-		if(GRAB_TARGET(rgrab))
-			visible_message(span_danger("[user] has broken [src]'s grip on [GRAB_TARGET(rgrab)]!"))
+		if(rgrab?.grab_target())
+			visible_message(span_danger("[user] has broken [src]'s grip on [rgrab?.grab_target()]!"))
 			success = TRUE
 		drop_from_inventory(rgrab)
 	return success

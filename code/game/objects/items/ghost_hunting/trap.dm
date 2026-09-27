@@ -177,7 +177,7 @@
 
 /obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
 	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
-	for(var/A in BUCKLED_MOBS(src))
+	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	anchored = FALSE
 	deployed = FALSE

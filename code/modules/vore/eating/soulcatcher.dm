@@ -329,7 +329,7 @@
 /obj/soulgem/proc/show_vore_fx(mob/living/L, severity = 0)
 	if(!linked_belly || !flag_check(SOULGEM_SHOW_VORE_SFX))
 		return
-	if(!istype(L) || ACTIVE_EYE(L))
+	if(!istype(L) || L?.active_eye())
 		return
 	linked_belly.vore_fx(L, severity)
 

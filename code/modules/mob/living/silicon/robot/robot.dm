@@ -1155,13 +1155,13 @@
 	tgui_input_colormatrix(src, "Allows you to recolor yourself", "Robot Recolor", src, ui_state = GLOB.tgui_conscious_state)
 
 /mob/living/silicon/robot/attack_hand(mob/user)
-	if(LAZYLEN(BUCKLED_MOBS(src)))
+	if(LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
-		if(user in BUCKLED_MOBS(src))
+		if(user in src?.buckled_mob_list())
 			riding_datum?.force_dismount(user)
 		//We're kicking everyone off!
 		if(user == src)
-			for(var/rider in BUCKLED_MOBS(src))
+			for(var/rider in src?.buckled_mob_list())
 				riding_datum?.force_dismount(rider)
 		return
 
@@ -1775,7 +1775,7 @@
 		return FALSE
 	if(!ishuman(M))
 		return FALSE
-	if(M in BUCKLED_MOBS(src))
+	if(M in src?.buckled_mob_list())
 		return FALSE
 	if(M.size_multiplier > size_multiplier * 1.2)
 		to_chat(src, span_warning("This isn't a pony show! You need to be bigger for them to ride."))
@@ -1793,7 +1793,7 @@
 	. = ..()
 	if(.)
 		riding_datum.rider_size = M.size_multiplier
-		BUCKLED_MOBS(src)[M] = "riding"
+		src?.buckled_mob_list()[M] = "riding"
 
 /mob/living/silicon/robot/MouseDrop_T(mob/living/M, mob/living/user) //Prevention for forced relocation caused by can_buckle. Base proc has no other use.
 	return
@@ -1803,13 +1803,13 @@
 	set category = "Abilities.General"
 	set desc = "Let people ride on you."
 
-	if(LAZYLEN(BUCKLED_MOBS(src)))
-		for(var/rider in BUCKLED_MOBS(src))
+	if(LAZYLEN(src?.buckled_mob_list()))
+		for(var/rider in src?.buckled_mob_list())
 			riding_datum?.force_dismount(rider)
 		return
 	if (stat != CONSCIOUS)
 		return
-	if(!can_buckle || !istype(M) || !M.Adjacent(src) || BUCKLED(M))
+	if(!can_buckle || !istype(M) || !M.Adjacent(src) || M?.buckled_to())
 		return
 	if(buckle_mob(M))
 		visible_message(span_notice("[M] starts riding [name]!"))

@@ -17,7 +17,7 @@
 	return ..()
 
 /mob/living/silicon/ai/verb/holo_nom()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Hardlight Nom"
 	set category = "AI.Vore"
 	set desc = "Wrap up a person in hardlight holograms."

@@ -45,7 +45,7 @@
 		return 0
 	if(!Adjacent(user))
 		return 0
-	if (user.restrained() || BUCKLED(user))
+	if (user.restrained() || user?.buckled_to())
 		to_chat(user, span_notice("You need your hands and legs free for this."))
 		return 0
 	if (user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING) || user.lying || user.has_status(EFFECT_WEAKENED))

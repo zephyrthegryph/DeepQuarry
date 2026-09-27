@@ -16,6 +16,11 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
                      (serializer, links, tasks, VV); gameplay calls a setter
     timer_cooldown   TIMER_COOLDOWN_START(): a cooldown is COOLDOWN_START() and
                      COOLDOWN_FINISHED(), a time compared, with no timer
+    accessor_macros  BUCKLED(), PULLING(), SLOT_ITEM() and the other relation/slot
+                     accessor macros: a relation read is a typed proc
+                     (M.buckled_to(), I.slot_item(slot)) so it chains
+    raw_relation     om_relation_of()/om_source_of()/om_related(_to)() outside
+                     code/datums/om: call the relation's typed accessor proc
 
 Usage:
     python tools/ci/api_lints.py                 # the CI check
@@ -108,12 +113,28 @@ def pattern(regex):
     return check
 
 
+def outside(prefix, regex):
+    inner = pattern(regex)
+
+    def check(rel, text):
+        if rel.startswith(prefix):
+            return
+        yield from inner(rel, text)
+    return check
+
+
 CHECKS = [
     ("do_after_state", do_after_state),
     ("use_tool_state", use_tool_state),
     ("vars_helpers", pattern(r"\b(?:om_set_var(?:_then)?|om_toggle_var|cure_temporary_s?disability)\b")),
     ("vars_write", pattern(r"\bvars\[[^\]]*\]\s*=(?!=)")),
     ("timer_cooldown", pattern(r"\bS?_?TIMER_COOLDOWN_START\s*\(")),
+    ("accessor_macros", pattern(r"(?<![\w/])(?:BUCKLED|BUCKLED_MOBS|PULLING|PULLED_BY|GRABBED_BY|EYE_OWNER|EYES_OF"
+                                r"|ACTIVE_EYE|GRAB_TARGET|ORBIT_TARGET|ORBITERS|GRAB_ASSAILANT|LEASH_PET|LEASH_MASTER"
+                                r"|LEASH_OF|TETHERED_HANDHELD|TETHER_HOST|FOLLOWING|FOLLOWERS|BORER_HOST|BORER_OF"
+                                r"|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS"
+                                r"|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\(")),
+    ("raw_relation", outside("code/datums/om/", r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(")),
 ]
 NAMES = [name for name, _ in CHECKS]
 

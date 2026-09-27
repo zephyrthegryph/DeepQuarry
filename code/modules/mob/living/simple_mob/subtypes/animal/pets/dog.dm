@@ -133,7 +133,7 @@
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!self.stat && !self.resting && !BUCKLED(self))
+	if(!self.stat && !self.resting && !self?.buckled_to())
 		self.turns_since_scan++
 		if(self.turns_since_scan > 5)
 			self.turns_since_scan = 0
@@ -181,7 +181,7 @@
 /datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa/perform(mob/living/simple_mob/animal/passive/dog/corgi/Lisa/self, datum/om/frame/life/ctx)
 	..()
 
-	if(!self.stat && !self.resting && !BUCKLED(self))
+	if(!self.stat && !self.resting && !self?.buckled_to())
 		self.turns_since_scan++
 		if(self.turns_since_scan > 15)
 			self.turns_since_scan = 0

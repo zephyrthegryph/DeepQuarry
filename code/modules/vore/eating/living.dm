@@ -103,57 +103,57 @@
 	//Handle case: /obj/item/grab
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		var/mob/living/carbon/victim = GRAB_TARGET(G)
+		var/mob/living/carbon/victim = G?.grab_target()
 
 		//Has to be aggressive grab, has to be living click-er and non-silicon grabbed
-		if(G.state >= GRAB_AGGRESSIVE && (isliving(user) && !issilicon(GRAB_TARGET(G))))
+		if(G.state >= GRAB_AGGRESSIVE && (isliving(user) && !issilicon(G?.grab_target())))
 			var/mob/living/attacker = user  // Typecast to living
 
 			// src is the mob clicked on and attempted predator
 
 			///// If user clicked on themselves
-			if(src == GRAB_ASSAILANT(G) && is_vore_predator(src))
+			if(src == G?.grab_assailant() && is_vore_predator(src))
 				if(istype(victim) && !victim.client && !victim.ai_brain)
-					log_and_message_admins("attempted to eat [key_name_admin(GRAB_TARGET(G))] whilst they were AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", src)
-				if(feed_grabbed_to_self(src, GRAB_TARGET(G)))
+					log_and_message_admins("attempted to eat [key_name_admin(G?.grab_target())] whilst they were AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", src)
+				if(feed_grabbed_to_self(src, G?.grab_target()))
 					return TRUE
 				else
-					log_vore("[attacker] attempted to feed [GRAB_TARGET(G)] to [user] ([user.type]) but it failed.")
+					log_vore("[attacker] attempted to feed [G?.grab_target()] to [user] ([user.type]) but it failed.")
 
 			///// If user clicked on their grabbed target
-			else if((src == GRAB_TARGET(G)) && (IS_GRABBING(attacker)) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(GRAB_TARGET(G))))
+			else if((src == G?.grab_target()) && (IS_GRABBING(attacker)) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(G?.grab_target())))
 				if(istype(victim) && !victim.client && !victim.ai_brain) //Check whether the victim is: A carbon mob, has no client, but has a ckey. This should indicate an SSD player.
-					log_and_message_admins("attempted to force feed themselves to [key_name_admin(GRAB_TARGET(G))] whilst they were AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", attacker)
+					log_and_message_admins("attempted to force feed themselves to [key_name_admin(G?.grab_target())] whilst they were AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 				if(!victim.feeding)
-					to_chat(user, span_vnotice("[GRAB_TARGET(G)] isn't willing to be fed."))
-					log_and_message_admins("attempted to feed themselves to [key_name_admin(GRAB_TARGET(G))] against their prefs ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", src)
+					to_chat(user, span_vnotice("[G?.grab_target()] isn't willing to be fed."))
+					log_and_message_admins("attempted to feed themselves to [key_name_admin(G?.grab_target())] against their prefs ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", src)
 					return FALSE
 
-				if(attacker.feed_self_to_grabbed(attacker, GRAB_TARGET(G)))
+				if(attacker.feed_self_to_grabbed(attacker, G?.grab_target()))
 					return TRUE
 				else
 					log_vore("[attacker] attempted to feed [user] to [victim] ([victim ? victim.type : "null"]) but it failed.")
 
 			///// If user clicked on anyone else but their grabbed target
-			else if((src != GRAB_TARGET(G)) && (src != GRAB_ASSAILANT(G)) && (is_vore_predator(src)))
+			else if((src != G?.grab_target()) && (src != G?.grab_assailant()) && (is_vore_predator(src)))
 				if(istype(victim) && !victim.client && !victim.ai_brain)
-					log_and_message_admins("attempted to feed [key_name_admin(GRAB_TARGET(G))] to [key_name_admin(src)] whilst [key_name_admin(GRAB_TARGET(G))] was AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", attacker)
+					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] whilst [key_name_admin(G?.grab_target())] was AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 				var/mob/living/carbon/victim_fed = src
 				if(istype(victim_fed) && !victim_fed.client && !victim_fed.ai_brain)
-					log_and_message_admins("attempted to feed [key_name_admin(GRAB_TARGET(G))] to [key_name_admin(src)] whilst [key_name_admin(src)] was AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", attacker)
+					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] whilst [key_name_admin(src)] was AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 
 				if(!feeding)
 					to_chat(user, span_vnotice("[src] isn't willing to be fed."))
-					log_and_message_admins("attempted to feed [key_name_admin(GRAB_TARGET(G))] to [key_name_admin(src)] against predator's prefs ([src ? ADMIN_JMP(src) : "null"])", attacker)
+					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] against predator's prefs ([src ? ADMIN_JMP(src) : "null"])", attacker)
 					return FALSE
 				if(!(victim.devourable))
-					to_chat(user, span_vnotice("[GRAB_TARGET(G)] isn't able to be devoured."))
-					log_and_message_admins("attempted to feed [key_name_admin(GRAB_TARGET(G))] to [key_name_admin(src)] against prey's prefs ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", attacker)
+					to_chat(user, span_vnotice("[G?.grab_target()] isn't able to be devoured."))
+					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] against prey's prefs ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 					return FALSE
-				if(attacker.feed_grabbed_to_other(attacker, GRAB_TARGET(G), src))
+				if(attacker.feed_grabbed_to_other(attacker, G?.grab_target(), src))
 					return TRUE
 				else
-					log_vore("[attacker] attempted to feed [GRAB_TARGET(G)] to [src] ([type]) but it failed.")
+					log_vore("[attacker] attempted to feed [G?.grab_target()] to [src] ([type]) but it failed.")
 
 	//Handle case: /obj/item/holder
 	else if(istype(I, /obj/item/holder))
@@ -498,7 +498,7 @@
 		visible_message(span_vwarning("[src] licks themself!"),span_notice("You lick yourself. You taste rather like [tasted.get_taste_message()]."),span_infoplain(span_bold("Slurp!")))
 		//balloon_alert_visible("licks themself!", "tastes like [tasted.get_taste_message()]")
 	else
-		if((tasted.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(GRABBED_BY(tasted)) || !tasted.stat))
+		if((tasted.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(tasted?.grabbed_by_list()) || !tasted.stat))
 			visible_message(span_warning("[src] tries to lick [tasted], but they dodge out of the way!"),span_warning("You try to lick [tasted], but they deftly avoid your attempt."))
 			return
 		if(tasted.skin_reagent && ishuman(src) && (tasted != src))
@@ -552,7 +552,7 @@
 		visible_message(span_vwarning("[src] smells themself!"),span_notice("You smell yourself. You smell like [smelled.get_smell_message()]."),span_infoplain(span_bold("Sniff!")))
 		//balloon_alert_visible("smells themself!", "smells like [smelled.get_smell_message()]")
 	else
-		if((smelled.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(GRABBED_BY(smelled)) || !smelled.stat))
+		if((smelled.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(smelled?.grabbed_by_list()) || !smelled.stat))
 			visible_message(span_warning("[src] tries to smell [smelled], but they dodge out of the way!"),span_warning("You try to smell [smelled], but they deftly avoid your attempt."))
 			return
 		visible_message(span_vwarning("[src] smells [smelled]!"),span_notice("You smell [smelled]. They smell like [smelled.get_smell_message()]."),span_infoplain(span_bold("Sniff!")))

@@ -45,7 +45,7 @@
 
 /obj/singularity/energy_ball/periodic_step(wait = 20)
 	set waitfor = FALSE
-	if(!ORBIT_TARGET(src))
+	if(!src?.orbit_target())
 		if (handle_energy())
 			return
 
@@ -144,7 +144,7 @@
 /// The miniballs orbiting this ball (ghosts may orbit it too; they don't count).
 /obj/singularity/energy_ball/proc/orbiting_balls()
 	. = list()
-	for(var/obj/singularity/energy_ball/EB in ORBITERS(src))
+	for(var/obj/singularity/energy_ball/EB in src?.orbiter_list())
 		. += EB
 
 /obj/singularity/energy_ball/orbit(obj/singularity/energy_ball/target)

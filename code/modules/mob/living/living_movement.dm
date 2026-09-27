@@ -48,7 +48,7 @@ default behaviour is:
 		return FALSE
 
 /mob/living/Bump(atom/movable/AM)
-	if(now_pushing || !loc || BUCKLED(src) == AM || AM.is_incorporeal())
+	if(now_pushing || !loc || src?.buckled_to() == AM || AM.is_incorporeal())
 		return
 	now_pushing = TRUE
 	if (isliving(AM))
@@ -58,12 +58,12 @@ default behaviour is:
 		spreadFire(tmob)
 
 		for(var/mob/living/M in range(tmob, 1))
-			if(LAZYLEN(tmob.pinned) ||  ((PULLING(M) == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(GRABBED_BY(tmob)))) )
+			if(LAZYLEN(tmob.pinned) ||  ((M?.pulling_target() == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(tmob?.grabbed_by_list()))) )
 				if ( !(world.time % 5) )
 					to_chat(src, span_warning("[tmob] is restrained, you cannot push past"))
 				now_pushing = FALSE
 				return
-			if( PULLING(tmob) == M && ( M.restrained() && !( tmob.restrained() ) && tmob.stat == CONSCIOUS) )
+			if( tmob?.pulling_target() == M && ( M.restrained() && !( tmob.restrained() ) && tmob.stat == CONSCIOUS) )
 				if ( !(world.time % 5) )
 					to_chat(src, span_warning("[tmob] is restraining [M], you cannot push past"))
 				now_pushing = FALSE
@@ -95,7 +95,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && tmob.canmove && canmove && !BUCKLED(tmob) && !BUCKLED(src) && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
+		if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
 			var/turf/oldloc = loc
 
 			//check bumpnom chance, if it's a simplemob that's doing the bumping
@@ -204,9 +204,9 @@ default behaviour is:
 		if(AM.Move(T2, t, move_time))
 			Move(T, t, move_time)
 
-		if(ishuman(AM) && GRABBED_BY(AM))
-			for(var/obj/item/grab/G in GRABBED_BY(AM))
-				step(GRAB_ASSAILANT(G), get_dir(GRAB_ASSAILANT(G), AM))
+		if(ishuman(AM) && AM?.grabbed_by_list())
+			for(var/obj/item/grab/G in AM?.grabbed_by_list())
+				step(G?.grab_assailant(), get_dir(G?.grab_assailant(), AM))
 				G.adjust_position()
 		now_pushing = FALSE
 
@@ -225,21 +225,21 @@ default behaviour is:
 		MB.runOver(src)
 
 	if(istype(AM, /obj/vehicle))
-		if(!istype(BUCKLED(src), /obj/vehicle) && !is_incorporeal()) // Don't run ourselves over, needed for going down stairs in vehicles!
+		if(!istype(src?.buckled_to(), /obj/vehicle) && !is_incorporeal()) // Don't run ourselves over, needed for going down stairs in vehicles!
 			// Checks if we are riding a vehicle instead of our BUCKLED(src) vehicle, so that our trailers don't flatten us either!
 			var/obj/vehicle/V = AM
 			V.RunOver(src)
 
 // Almost all of this handles pulling movables behind us
 /mob/living/Move(atom/newloc, direct, movetime)
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled && !skip_buckled_move_redirect && buckled.loc != newloc) //not updating position
 		if(!buckled.anchored && buckled.buckle_movable)
 			return buckled.Move(newloc, direct)
 		else
 			return 0
 
-	var/atom/movable/pullee = PULLING(src)
+	var/atom/movable/pullee = src?.pulling_target()
 	// Prior to our move it's already too far away
 	if(pullee && get_dist(src, pullee) > 1)
 		stop_pulling()
@@ -253,7 +253,7 @@ default behaviour is:
 	// Will move our mob (probably)
 	. = ..() // Moved() called at this point if successful
 
-	var/mob/pulledby = PULLED_BY(src)
+	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby && moving_diagonally != FIRST_DIAG_STEP && get_dist(src, pulledby) > 1) //seperated from our puller and not in the middle of a diagonal move
 		pulledby.stop_pulling()
 
@@ -262,7 +262,7 @@ default behaviour is:
 
 /mob/living/proc/dragged(mob/living/dragger, oldloc, forced)
 	var/area/A = get_area(src)
-	if(forced || (lying && !BUCKLED(src) && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
+	if(forced || (lying && !src?.buckled_to() && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
 		injure(INJURY_BLUNT, 2, null, dragger)
 		visible_message(span_danger("\The [src]'s [isSynthetic() ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
 		return TRUE
@@ -284,7 +284,7 @@ default behaviour is:
 		layer = initial(layer)
 		plane = initial(plane)
 
-	var/atom/movable/pulling = PULLING(src)
+	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling) // we were pulling a thing and didn't lose it during our move.
 		var/pull_dir = get_dir(src, pulling)
 
@@ -301,7 +301,7 @@ default behaviour is:
 				var/mob/living/M = pulling
 				M.dragged(src, oldloc)
 
-			pulling = PULLING(src)
+			pulling = src?.pulling_target()
 			if(pulling)								// Check it AGAIN after previous steps just in case
 				pulling.Move(oldloc, 0, movetime) // the pullee tries to reach our previous position
 				if(get_dist(src, pulling) > 1) // the pullee couldn't keep up
@@ -338,7 +338,7 @@ default behaviour is:
 /mob/living/proc/handle_inertial_drift(locthen)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!anchored && !PULLED_BY(src) && loc == locthen)
+	if(!anchored && !src?.pulled_by_mob() && loc == locthen)
 		var/stepdir = inertia_dir ? inertia_dir : last_move
 		if(!stepdir)
 			return

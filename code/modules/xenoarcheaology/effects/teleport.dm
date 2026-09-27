@@ -10,8 +10,8 @@
 	var/weakness = GetAnomalySusceptibility(user)
 	if(prob(100 * weakness))
 		to_chat(user, span_red("You are suddenly zapped away elsewhere!"))
-		if (BUCKLED(user))
-			var/atom/movable/_tmp_buck_48 = BUCKLED(user)
+		if (user?.buckled_to())
+			var/atom/movable/_tmp_buck_48 = user?.buckled_to()
 			_tmp_buck_48.unbuckle_mob()
 
 		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
@@ -35,8 +35,8 @@
 			var/weakness = GetAnomalySusceptibility(M)
 			if(prob(100 * weakness))
 				to_chat(M, span_red("You are displaced by a strange force!"))
-				if(BUCKLED(M))
-					var/atom/movable/_tmp_buck_49 = BUCKLED(M)
+				if(M?.buckled_to())
+					var/atom/movable/_tmp_buck_49 = M?.buckled_to()
 					_tmp_buck_49.unbuckle_mob(M)
 
 				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
@@ -59,8 +59,8 @@
 			var/weakness = GetAnomalySusceptibility(M)
 			if(prob(100 * weakness))
 				to_chat(M, span_red("You are displaced by a strange force!"))
-				if(BUCKLED(M))
-					var/atom/movable/_tmp_buck_50 = BUCKLED(M)
+				if(M?.buckled_to())
+					var/atom/movable/_tmp_buck_50 = M?.buckled_to()
 					_tmp_buck_50.unbuckle_mob()
 
 				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()

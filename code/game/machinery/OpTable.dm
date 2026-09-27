@@ -70,7 +70,7 @@
 		user.visible_message("[user] climbs on \the [src].","You climb on \the [src].")
 	else
 		visible_message(span_notice("\The [C] has been laid on \the [src] by [user]."))
-	var/mob/puller = PULLED_BY(C)
+	var/mob/puller = C?.pulled_by_mob()
 	if(puller)
 		puller.stop_pulling()
 	C.resting = 1
@@ -114,8 +114,8 @@
 /obj/machinery/optable/attackby(obj/item/W, mob/living/carbon/user)
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
-		if(iscarbon(GRAB_TARGET(G)) && check_table(GRAB_TARGET(G), user))
-			take_victim(GRAB_TARGET(G), user)
+		if(iscarbon(G?.grab_target()) && check_table(G?.grab_target(), user))
+			take_victim(G?.grab_target(), user)
 			qdel(W)
 			return
 
@@ -124,7 +124,7 @@
 	if(victim && get_turf(victim) == get_turf(src) && victim.lying)
 		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return 0
-	if(BUCKLED(patient))
+	if(patient?.buckled_to())
 		to_chat(user, span_notice("Unbuckle \the [patient] first!"))
 		return 0
 	return 1

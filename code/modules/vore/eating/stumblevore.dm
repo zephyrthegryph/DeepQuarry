@@ -3,19 +3,19 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(!L.is_incorporeal())
-			if(BUCKLED(src) != AM && (((has_status(EFFECT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying && flight_vore))
+			if(src?.buckled_to() != AM && (((has_status(EFFECT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying && flight_vore))
 				AM.stumble_into(src)
 	return ..()
 // Because flips toggle density
 /mob/living/Crossed(atom/movable/AM)
 	if(isliving(AM) && isturf(loc) && AM != src)
 		var/mob/living/AMV = AM
-		if(BUCKLED(AMV) != src && (((AMV.has_status(EFFECT_CONFUSED) || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
+		if(AMV?.buckled_to() != src && (((AMV.has_status(EFFECT_CONFUSED) || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
 			INVOKE_ASYNC(src,TYPE_PROC_REF(/atom/movable, stumble_into), AMV)
 	..()
 
 /mob/living/stumble_into(mob/living/M)
-	if(BUCKLED(src) || BUCKLED(M))
+	if(src?.buckled_to() || M?.buckled_to())
 		return
 
 	//Stumblevore occurs here. Look at the 'stumblevore' element for more information.

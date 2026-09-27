@@ -29,8 +29,8 @@
 	contained = animal
 	animal.forceMove(src)
 	animal.set_stasis(/datum/modifier/stasis/total, src)
-	if(BUCKLED(animal) && istype(BUCKLED(animal), /obj/effect/energy_net))
-		var/atom/movable/_tmp_buck_11 = BUCKLED(animal)
+	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
+		var/atom/movable/_tmp_buck_11 = animal?.buckled_to()
 		_tmp_buck_11.forceMove(animal.loc)
 	icon_state = "critter"
 	desc = initial(desc) + " \The [contained] is kept inside."
@@ -40,8 +40,8 @@
 		return
 
 	contained.dropInto(src)
-	if(BUCKLED(contained) && istype(BUCKLED(contained), /obj/effect/energy_net))
-		var/atom/movable/_tmp_buck_12 = BUCKLED(contained)
+	if(contained?.buckled_to() && istype(contained?.buckled_to(), /obj/effect/energy_net))
+		var/atom/movable/_tmp_buck_12 = contained?.buckled_to()
 		_tmp_buck_12.dropInto(src)
 	contained.set_stasis(null, src)
 	contained = null
@@ -60,7 +60,7 @@
 		return
 	if(istype(over_object) && Adjacent(over_object) && CanMouseDrop(over_object, user))
 
-		if(!BUCKLED(src) || !istype(BUCKLED(src), /obj/effect/energy_net))
+		if(!src?.buckled_to() || !istype(src?.buckled_to(), /obj/effect/energy_net))
 			to_chat(user, "It's going to be difficult to convince \the [src] to move into \the [over_object] without capturing it in a net.")
 			return
 

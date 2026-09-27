@@ -17,6 +17,6 @@
 	var/turf/MT = get_turf(chassis)
 	var/turf/TT = get_turf(target)
 	if(!MT.is_outdoors() || !TT.is_outdoors())
-		to_chat(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), span_notice("\The [src]'s control system prevents you from firing due to a blocked firing arc."))
+		to_chat(chassis?.slot_item(MECHA_SLOT_PILOT), span_notice("\The [src]'s control system prevents you from firing due to a blocked firing arc."))
 		return 0
 	return ..()

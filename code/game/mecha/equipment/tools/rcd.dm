@@ -21,7 +21,7 @@
 	if(!action_checks(target) || get_dist(chassis, target) > 3)
 		return FALSE
 
-	my_rcd.use_rcd(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
+	my_rcd.use_rcd(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/Topic(href,href_list)
 	..()

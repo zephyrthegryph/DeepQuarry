@@ -72,7 +72,7 @@
 	add_overlay("grjam")
 
 /obj/machinery/gibber/update_icon()
-	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
+	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 	cut_overlays()
 	if (dirty)
 		add_overlay("grbloody")
@@ -119,7 +119,7 @@
 		to_chat(user, span_danger("You need a better grip to do that!"))
 		return
 
-	move_into_gibber(user,GRAB_TARGET(G))
+	move_into_gibber(user,G?.grab_target())
 	// Grab() process should clean up the grab item, no need to del it.
 
 /obj/machinery/gibber/MouseDrop_T(mob/target, mob/user)
@@ -128,7 +128,7 @@
 	move_into_gibber(user,target)
 
 /obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
-	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
+	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 
 	if(occupant)
 		to_chat(user, span_danger("The gibber is full, empty it first!"))
@@ -156,7 +156,7 @@
 	om_do_after(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
 
 /obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
-	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER))
+	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || src?.slot_item(OCCUPANT_SLOT_GIBBER))
 		return
 	if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
 		return
@@ -175,7 +175,7 @@
 	return
 
 /obj/machinery/gibber/proc/go_out()
-	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
+	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 	if(operating || !occupant)
 		return
 	for(var/obj/O in src)
@@ -186,7 +186,7 @@
 
 
 /obj/machinery/gibber/proc/startgibbing(mob/user as mob)
-	var/mob/living/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER)
+	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 	if(src.operating)
 		return
 	if(!occupant)
@@ -232,7 +232,7 @@
 /obj/machinery/gibber/proc/finish_gibbing(occupant_handle, list/byproducts)
 	var/mob/living/occupant = om_resolve(occupant_handle)
 	occupant?.gib()
-	occupant = SLOT_ITEM(src, OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
+	occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
 	if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
 		// remains stay physically in the slot, but are no longer "the occupant" --
 		// unlink without a ledger move (the remains stay physically where they are).

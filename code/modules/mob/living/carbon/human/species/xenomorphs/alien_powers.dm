@@ -283,7 +283,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -302,7 +302,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || BUCKLED(src))
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -366,16 +366,16 @@
 
 	last_special = world.time + 50
 
-	visible_message(span_warning(span_bold("\The [src]") + " rips viciously at \the [GRAB_TARGET(G)]'s body with its claws!"))
+	visible_message(span_warning(span_bold("\The [src]") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 
-	if(ishuman(GRAB_TARGET(G)))
-		var/mob/living/carbon/human/H = GRAB_TARGET(G)
+	if(ishuman(G?.grab_target()))
+		var/mob/living/carbon/human/H = G?.grab_target()
 		H.injure(INJURY_CUT, 50, null, src)
 		if(H.stat == 2)
 			H.gib()
 
 	else
-		var/mob/living/M = GRAB_TARGET(G)
+		var/mob/living/M = G?.grab_target()
 		if(!istype(M)) return //wut
 		M.injure(INJURY_CUT, 50, null, src)
 		if(M.stat == 2)

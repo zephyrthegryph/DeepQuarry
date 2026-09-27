@@ -173,7 +173,7 @@ Works together with spawning an observer, noted above.
 		return_to_spawn()
 
 /mob/observer/dead/proc/return_to_spawn()
-	if(FOLLOWING(src))
+	if(src?.following_target())
 		stop_following()
 	var/obj/O = locate("landmark*Observer-Start")
 	if(istype(O))
@@ -419,7 +419,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	if(get_z(destination) in using_map?.secret_levels)
 		to_chat(src,span_warning("Sorry, that z-level does not allow ghosts."))
-		if(FOLLOWING(src))
+		if(src?.following_target())
 			stop_following()
 		return
 
@@ -427,7 +427,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/area/A = get_area(destination)
 	if(A?.flag_check(AREA_BLOCK_GHOSTS) && !isbelly(destination) && !admin_ghosted && !just_spawned)
 		to_chat(src,span_warning("Sorry, that area does not allow ghosts."))
-		if(FOLLOWING(src))
+		if(src?.following_target())
 			stop_following()
 		return
 	//RS Port #658 End
@@ -439,7 +439,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	if(get_z(newloc) in using_map?.secret_levels)
 		to_chat(src,span_warning("Sorry, that z-level does not allow ghosts."))
-		if(FOLLOWING(src))
+		if(src?.following_target())
 			stop_following()
 		return
 
@@ -497,14 +497,14 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
 
 /mob/observer/dead/proc/stop_following()
-	var/atom/movable/followed = FOLLOWING(src)
+	var/atom/movable/followed = src?.following_target()
 	if(followed)
 		om_unlink(src, followed, /datum/om/relation/following)
 	stop_orbit()
 
 /mob/proc/update_following()
 	. = get_turf(src)
-	for(var/mob/observer/dead/M in FOLLOWERS(src))
+	for(var/mob/observer/dead/M in src?.follower_list())
 		if(!.)
 			M.stop_following()
 		else if(M.loc != .)
@@ -589,7 +589,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	to_chat(src, span_filter_notice(span_red("You are dead! You have no mind to store memory!")))
 
 /mob/observer/dead/Post_Incorpmove()
-	if(FOLLOWING(src)) //This wasn't here before. It meant that we would do stop_following repeatedly every movement we made...Resulting in a DOS on our client.
+	if(src?.following_target()) //This wasn't here before. It meant that we would do stop_following repeatedly every movement we made...Resulting in a DOS on our client.
 		stop_following()
 
 /mob/observer/dead/verb/analyze_air()
@@ -869,7 +869,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	return
 
 /mob/extra_ghost_link(atom/ghost)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(client && eyeobj)
 		return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
 

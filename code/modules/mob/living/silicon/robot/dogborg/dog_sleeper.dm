@@ -82,7 +82,7 @@
 	return air
 
 /obj/item/dogborg/sleeper/proc/intake_patient_done(mob/living/carbon/human/H, mob/living/silicon/user)
-	if(BUCKLED(H))
+	if(H?.buckled_to())
 		return
 	if(patient)
 		return //If you try to eat two people at once, you can only eat one.
@@ -130,7 +130,7 @@
 			if(patient)
 				to_chat(user, span_warning("Your [src.name] is already occupied."))
 				return
-			if(BUCKLED(trashman))
+			if(trashman?.buckled_to())
 				to_chat(user, span_warning("[trashman] is buckled and can not be put into your [src.name]."))
 				return
 			user.visible_message(span_warning("[hound.name] is ingesting [trashman] into their [src.name]."), span_notice("You start ingesting [trashman] into your [src.name]..."))
@@ -140,7 +140,7 @@
 
 	else if(ishuman(target))
 		var/mob/living/carbon/human/H = target
-		if(BUCKLED(H))
+		if(H?.buckled_to())
 			to_chat(user, span_warning("The user is buckled and can not be put into your [src.name]."))
 			return
 		if(patient)
@@ -173,7 +173,7 @@
 		to_chat(user, span_notice("\The [trashmouse] added to cargo compartment slot: [delivery_tag]."))
 	update_patient()
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done3(mob/living/silicon/user, mob/living/carbon/human/trashman)
-	if(!(!patient && !BUCKLED(trashman) && length(contents) < max_item_count))
+	if(!(!patient && !trashman?.buckled_to() && length(contents) < max_item_count))
 		return
 	trashman.forceMove(src)
 	PERIODIC_START(src, PERIODIC_SLOW)

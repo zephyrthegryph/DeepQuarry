@@ -400,9 +400,9 @@
 		return
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
-		if(!ismob(GRAB_TARGET(G)))
+		if(!ismob(G?.grab_target()))
 			return
-		var/mob/M = GRAB_TARGET(G)
+		var/mob/M = G?.grab_target()
 		if(put_mob(M))
 			qdel(G)
 			return //Don't call up else we'll get attack messsages
@@ -432,7 +432,7 @@
 		to_chat(user, span_notice("Close the maintenance panel first."))
 		return 0 //panel open
 
-	if(BUCKLED(O))
+	if(O?.buckled_to())
 		return 0
 	if(O.has_buckled_mobs())
 		to_chat(user, span_warning("\The [O] has other entities attached to it. Remove them first."))

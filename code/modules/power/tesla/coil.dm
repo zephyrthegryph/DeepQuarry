@@ -166,7 +166,7 @@
 	return IS_GRABBING(actor)
 
 /obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
-	return user_buckle_mob(PULLING(user), user) ? TRUE : FALSE
+	return user_buckle_mob(user?.pulling_target(), user) ? TRUE : FALSE
 
 /obj/machinery/power/tesla_coil/proc/coil_act(power, explosive, current_jumps)
 	var/power_produced = power / power_loss
@@ -385,7 +385,7 @@
 	return IS_GRABBING(actor)
 
 /obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
-	return user_buckle_mob(PULLING(user), user) ? TRUE : FALSE
+	return user_buckle_mob(user?.pulling_target(), user) ? TRUE : FALSE
 
 //Mapspawn variants of each.
 /obj/machinery/power/tesla_coil/pre_mapped

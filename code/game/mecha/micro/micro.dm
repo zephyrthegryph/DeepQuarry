@@ -28,7 +28,7 @@
 	if(!melee_can_hit || !istype(target, /atom)) return
 	if(isliving(target))
 		var/mob/living/M = target
-		if(IS_HARMING(SLOT_ITEM(src, MECHA_SLOT_PILOT)))
+		if(IS_HARMING(src?.slot_item(MECHA_SLOT_PILOT)))
 			playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)
@@ -67,7 +67,7 @@
 					src.visible_message(span_bolddanger("[src.name] hits [target]."))
 					if(!istype(target, /turf/simulated/wall))
 						var/atom/target_atom = target
-						target_atom.attackby(src,SLOT_ITEM(src, MECHA_SLOT_PILOT))
+						target_atom.attackby(src,src?.slot_item(MECHA_SLOT_PILOT))
 					else
 						playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 					melee_can_hit = 0

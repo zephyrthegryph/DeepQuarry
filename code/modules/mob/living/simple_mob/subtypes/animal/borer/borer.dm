@@ -94,7 +94,7 @@
 	request_player()
 
 /mob/living/simple_mob/animal/borer/Destroy()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	motiontracker_unsubscribe()
 	QDEL_NULL(ghost_check)
 	if(host)
@@ -115,7 +115,7 @@
 	. += "Chemicals: [FLOOR(chemicals,1)]"
 
 /mob/living/simple_mob/animal/borer/proc/handle_chemicals()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(stat == DEAD || !host || host.stat == DEAD)
 		return
 	if(chemicals >= BORER_MAX_CHEMS || docile)
@@ -131,7 +131,7 @@
 		to_chat(host, span_alien("Your chemicals have increased to [new_chem * 10]"))
 
 /mob/living/simple_mob/animal/borer/proc/handle_docile()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(stat == DEAD)
 		docile_counter = 0
 		return
@@ -163,7 +163,7 @@
 		docile_counter = 0
 
 /mob/living/simple_mob/animal/borer/proc/handle_braindamage()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(QDELETED(src) || !host || QDELETED(host) || !controlling)
 		return
 	if(prob(2))
@@ -172,7 +172,7 @@
 		host.say("*[pick(list("blink","blink_r","choke","aflap","drool","twitch","twitch_v","gasp"))]")
 
 /mob/living/simple_mob/animal/borer/proc/can_use_power_in_host()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(QDELETED(src))
 		return FALSE
 	if(!host || QDELETED(host))
@@ -184,7 +184,7 @@
 	return TRUE
 
 /mob/living/simple_mob/animal/borer/proc/can_use_power_controlling_host()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(!can_use_power_in_host())
 		return FALSE
 	if(!controlling)
@@ -196,13 +196,13 @@
 	return TRUE
 
 /mob/living/simple_mob/animal/borer/proc/can_use_power_docile()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(docile)
 		to_chat(controlling ? host : src, span_info("You are feeling far too docile to do that."))
 	return !docile
 
 /mob/living/simple_mob/animal/borer/proc/use_chems(amount)
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(chemicals < amount)
 		to_chat(controlling ? host : src, span_warning("You don't have enough chemicals, requires [amount]! Currently you have [FLOOR(chemicals,1)]."))
 		return FALSE
@@ -240,7 +240,7 @@
 				self.borer_chem_display.icon_state = "ling_chems80e"
 
 /mob/living/simple_mob/animal/borer/proc/detatch()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(!host || !controlling)
 		return
 
@@ -290,7 +290,7 @@
 	// End horrible ip swapping code for bans
 
 /mob/living/simple_mob/animal/borer/proc/leave_host()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	if(!host)
 		return
 
@@ -323,7 +323,7 @@
 	to_chat(src, "You can speak to your victim with <b>say</b>, to other borers with <b>say :x</b>, and use your Abilities tab to access powers.")
 
 /mob/living/simple_mob/animal/borer/cannot_use_vents()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	return host || stat
 
 /mob/living/simple_mob/animal/borer/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)
@@ -341,7 +341,7 @@
 
 // This is awful but its literally say code.
 /mob/living/simple_mob/animal/borer/say(message, datum/language/speaking = null, whispering = 0)
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	message = sanitize(message)
 	message = capitalize(message)
 

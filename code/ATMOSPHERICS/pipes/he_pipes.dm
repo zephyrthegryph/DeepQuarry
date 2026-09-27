@@ -150,7 +150,7 @@
 				parent.radiate_heat_to_space(surface, 1)
 
 		if(has_buckled_mobs())
-			for(var/mob/living/L as anything in BUCKLED_MOBS(src))
+			for(var/mob/living/L as anything in src?.buckled_mob_list())
 				var/hc = pipe_air.heat_capacity()
 				var/avg_temp = (pipe_air.return_temperature() * hc + L.bodytemperature * HUMAN_HEAT_CAPACITY) / (hc + HUMAN_HEAT_CAPACITY)
 				pipe_air.set_temperature(avg_temp)

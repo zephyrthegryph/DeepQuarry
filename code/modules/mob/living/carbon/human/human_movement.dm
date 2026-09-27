@@ -39,13 +39,13 @@
 	if(riding_datum) //Bit of slowdown for taur rides if rider is bigger or fatter than mount.
 		var/datum/riding/R = riding_datum
 		var/mob/living/L = R.ridden
-		for(var/mob/living/M in BUCKLED_MOBS(L))
+		for(var/mob/living/M in L?.buckled_mob_list())
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
 				if(H.size_multiplier > L.size_multiplier)
 					. += 1
 
-	if(istype(BUCKLED(src), /obj/structure/bed/chair/wheelchair))
+	if(istype(src?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		for(var/organ_name in list(BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM))
 			var/obj/item/organ/external/E = get_organ(organ_name)
 			if(!E || E.is_stump())
@@ -74,7 +74,7 @@
 	var/item_tally = calculate_item_encumbrance()
 
 	// Dragging heavy objects will also slow you down, similar to above.
-	var/atom/movable/pulling = PULLING(src)
+	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
 		if(istype(pulling, /obj/item))
 			var/obj/item/pulled = pulling

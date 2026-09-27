@@ -113,8 +113,8 @@
 
 		var/direction = get_dir(src,target)
 
-		if(BUCKLED(user) && isobj(BUCKLED(user)))
-			propel_object(BUCKLED(user), user, turn(direction,180))
+		if(user?.buckled_to() && isobj(user?.buckled_to()))
+			propel_object(user?.buckled_to(), user, turn(direction,180))
 
 		var/turf/T = get_turf(target)
 		var/turf/T1 = get_step(T,turn(direction, 90))

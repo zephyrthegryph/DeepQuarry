@@ -299,7 +299,7 @@
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
 /mob/living/carbon/brain/caught_soul/Destroy()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(soulcatcher)
 		soulcatcher.notify_into("Mind unloaded: [name]")
 		soulcatcher.brainmobs -= src
@@ -369,31 +369,31 @@
 	..()
 
 /mob/living/carbon/brain/caught_soul/face_atom(atom/A)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		return eyeobj.face_atom(A)
 	else
 		return ..(A)
 
 /mob/living/carbon/brain/caught_soul/set_dir(direction)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		return eyeobj.set_dir(direction)
 	else
 		return ..(direction)
 
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.say_into(message,src,eyeobj)
 
@@ -415,7 +415,7 @@
 		return FALSE
 
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj)
 
@@ -599,7 +599,7 @@
 ///////////////////
 //Verbs for soulbrains
 /mob/living/carbon/brain/caught_soul/verb/ar_project()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "AR/SR Project"
 	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
 	set category = "Soulcatcher"
@@ -619,7 +619,7 @@
 	soulcatcher.notify_into("[src] now AR projecting.")
 
 /mob/living/carbon/brain/caught_soul/verb/jump_to_owner()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Jump to Owner"
 	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
 	set category = "Soulcatcher"
@@ -631,7 +631,7 @@
 	eyeobj.forceMove(get_turf(nif))
 
 /mob/living/carbon/brain/caught_soul/verb/reenter_soulcatcher()
-	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Re-enter Soulcatcher"
 	set desc = "Leave AR projection and drop back into the soulcatcher."
 	set category = "Soulcatcher"

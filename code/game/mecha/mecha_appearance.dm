@@ -22,7 +22,7 @@
 	return
 
 /obj/mecha/update_icon()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!initial_icon)
 		initial_icon = initial(icon_state)
 

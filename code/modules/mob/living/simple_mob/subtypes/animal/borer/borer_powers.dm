@@ -2,7 +2,7 @@
  * Put a nearby target to sleep to allow for infestation.
  */
 /mob/living/simple_mob/animal/borer/verb/knockout_victim()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	set category = "Abilities.Borer"
 	set name = "Knockout Victim"
 	set desc = "Use your psychic influence to put a target into a temporary catatonic state."
@@ -52,7 +52,7 @@
  * Crawls inside of a target mob, and adds the borer as an implant to the mob's brain. If no brain exists the body will become a borer husk zombie.
  */
 /mob/living/simple_mob/animal/borer/verb/infest()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	set category = "Abilities.Borer"
 	set name = "Infest"
 	set desc = "Infest a suitable humanoid host."
@@ -158,7 +158,7 @@
  * Releases chemicals from the borer into their host. Can be used as a standalone chemist in your head for an antag cooperating with their borer.
  */
 /mob/living/simple_mob/animal/borer/verb/secrete_chemicals()
-	var/mob/living/carbon/human/host = BORER_HOST(src)
+	var/mob/living/carbon/human/host = src?.borer_host()
 	set category = "Abilities.Borer"
 	set name = "Secrete Chemicals"
 	set desc = "Drain some chemicals into your host's bloodstream."
@@ -172,7 +172,7 @@
 		return
 
 	var/injection_choice = tgui_input_list(src, "Select a chemical to secrete.", "Chemicals", borer_chem_list)
-	host = BORER_HOST(src) // may have changed while choosing
+	host = src?.borer_host() // may have changed while choosing
 	if(injection_choice == "Revive Dead Host")
 		if(!can_use_power_in_host())
 			return

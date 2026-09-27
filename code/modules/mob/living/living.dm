@@ -265,7 +265,7 @@
 /// Performs the actual healing of Aheal, seperate from revive() because it does not use client prefs. Will not heal everything, and expects to be called through revive() or with a bodyrecord doing a respawn/revive.
 /mob/living/proc/revival_healing_action()
 	rejuvenate()
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()
 	if(iscarbon(src))
@@ -386,7 +386,7 @@
 		return TRUE
 
 	//unbuckling yourself
-	if(BUCKLED(src))
+	if(src?.buckled_to())
 		resist_buckle()
 		return TRUE
 
@@ -402,7 +402,7 @@
 			resist_restraints()
 
 /mob/living/proc/resist_buckle()
-	var/obj/buckled = BUCKLED(src)
+	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/vehicle = buckled
@@ -412,7 +412,7 @@
 
 /mob/living/proc/resist_grab()
 	var/resisting = 0
-	for(var/obj/item/grab/G in GRABBED_BY(src))
+	for(var/obj/item/grab/G in src?.grabbed_by_list())
 		resisting++
 		G.handle_resist()
 	if(resisting)
@@ -637,7 +637,7 @@
 		lying = FALSE
 		canmove = TRUE
 	else
-		var/obj/buckled = BUCKLED(src)
+		var/obj/buckled = src?.buckled_to()
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/V = buckled
 			if(is_physically_disabled())
@@ -695,7 +695,7 @@
 			pass_flags &= ~PASSTABLE
 		passtable_crawl_checked = FALSE
 
-	for(var/obj/item/grab/G in GRABBED_BY(src))
+	for(var/obj/item/grab/G in src?.grabbed_by_list())
 		if(G.state >= GRAB_AGGRESSIVE)
 			canmove = 0
 			break
@@ -704,9 +704,9 @@
 		lying_prev = lying
 		update_transform()
 		update_mob_action_buttons()
-		if(lying && LAZYLEN(BUCKLED_MOBS(src)))
-			for(var/mob/living/L as anything in BUCKLED_MOBS(src))
-				if(BUCKLED_MOBS(src)[L] != "riding")
+		if(lying && LAZYLEN(src?.buckled_mob_list()))
+			for(var/mob/living/L as anything in src?.buckled_mob_list())
+				if(src?.buckled_mob_list()[L] != "riding")
 					continue // Only boot off riders
 				if(riding_datum)
 					riding_datum.force_dismount(L)

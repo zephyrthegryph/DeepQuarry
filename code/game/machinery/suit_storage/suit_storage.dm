@@ -43,7 +43,7 @@
 	name = "suit storage unit"
 
 /obj/machinery/suit_storage_unit/update_icon()
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	var/hashelmet = 0
 	var/hassuit = 0
 	var/hashuman = 0
@@ -101,7 +101,7 @@
 		ui.open()
 
 /obj/machinery/suit_storage_unit/tgui_data()
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	var/list/data = list()
 
 	data["broken"] = isbroken
@@ -223,7 +223,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/dump_everything()
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	islocked = 0 //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
@@ -240,7 +240,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/toggle_open(mob/user)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(islocked || isUV)
 		to_chat(user, span_warning("Unable to open unit."))
 		return
@@ -252,7 +252,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/toggle_lock(mob/user)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(OCCUPANT && safetieson)
 		to_chat(user, span_warning("The Unit's safety protocols disallow locking when a biological form is detected inside its compartments."))
 		return
@@ -263,7 +263,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/start_UV(mob/user)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(isUV || isopen) //I'm bored of all these sanity checks
 		return
 	if(OCCUPANT && safetieson)
@@ -283,7 +283,7 @@
 
 /// One five-second pass of the cauterisation cycle; pass 3 ends it.
 /obj/machinery/suit_storage_unit/proc/uv_cycle_step(i)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(OCCUPANT)
 		OCCUPANT.apply_effect(50, IRRADIATE)
 		var/obj/item/organ/internal/diona/nutrients/rad_organ = locate() in OCCUPANT.internal_organs
@@ -332,7 +332,7 @@
 
 
 /obj/machinery/suit_storage_unit/proc/eject_occupant(mob/user as mob)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(islocked)
 		return
 
@@ -375,7 +375,7 @@
 	effect = /obj/machinery/suit_storage_unit/proc/interaction_move_inside
 
 /obj/machinery/suit_storage_unit/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(user.stat != 0)
 		return TRUE
 	if(!isopen)
@@ -409,12 +409,12 @@
 	effect = /obj/machinery/suit_storage_unit/proc/interaction_use_item
 
 /obj/machinery/suit_storage_unit/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
-	var/mob/living/carbon/human/OCCUPANT = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_STORAGE)
+	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(!ispowered)
 		return TRUE
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
-		var/mob/grabbed = GRAB_TARGET(G)
+		var/mob/grabbed = G?.grab_target()
 		if(!(ismob(grabbed)))
 			return TRUE
 		if(!isopen)
@@ -472,8 +472,8 @@
 	return TRUE
 
 /obj/machinery/suit_storage_unit/proc/interaction_use_item_timed_done(mob/user, obj/item/grab/G)
-	if(!G || !GRAB_TARGET(G)) return TRUE //derpcheck
-	var/mob/M = GRAB_TARGET(G)
+	if(!G || !G?.grab_target()) return TRUE //derpcheck
+	var/mob/M = G?.grab_target()
 	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
 		return TRUE
 	isopen = 0 //close ittt

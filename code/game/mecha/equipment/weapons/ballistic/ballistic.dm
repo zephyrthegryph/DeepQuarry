@@ -12,7 +12,7 @@
 			projectiles++
 			projectiles_to_add--
 			chassis.use_power(projectile_energy_cost)
-	send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	src.mecha_log_message("Rearmed [src.name].")
 	return
 

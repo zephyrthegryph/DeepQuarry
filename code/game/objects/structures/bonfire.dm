@@ -282,7 +282,7 @@
 		extinguish()
 
 /obj/structure/bonfire/post_buckle_mob(mob/living/M)
-	if(BUCKLED(M) == src) // Just buckled someone
+	if(M?.buckled_to() == src) // Just buckled someone
 		M.pixel_y += 13
 	else // Just unbuckled someone
 		M.pixel_y -= 13

@@ -200,8 +200,8 @@
 	// Slamming.
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
-		if(isliving(GRAB_TARGET(G)))
-			var/mob/living/M = GRAB_TARGET(G)
+		if(isliving(G?.grab_target()))
+			var/mob/living/M = G?.grab_target()
 			var/state = G.state
 			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)

@@ -57,7 +57,7 @@
 			if(isliving(usr))
 				var/mob/living/carbon/C = usr
 				if(!C.get_active_hand())
-					if(PULLING(C))
+					if(C?.pulling_target())
 						C.stop_pulling()
 						return
 					to_chat(usr, span_red("You have nothing to drop in your hand."))
@@ -71,7 +71,7 @@
 /client/verb/delete_key_pressed()
 	set hidden = 1
 
-	if(!PULLING(usr))
+	if(!usr?.pulling_target())
 		to_chat(usr, span_blue("You are not pulling anything."))
 		return
 	usr.stop_pulling()
@@ -194,7 +194,7 @@
 		return
 
 	// If we have an eyeobj, it moves instead
-	if(ACTIVE_EYE(my_mob))
+	if(my_mob?.active_eye())
 		return my_mob.EyeMove(n,direct)
 
 	// This is sota the goto stop mobs from moving var (for some reason)
@@ -234,7 +234,7 @@
 	// Why being pulled while cuffed prevents you from moving
 	if(my_mob.restrained())
 		for(var/mob/M in range(my_mob, 1))
-			if(PULLING(M) == my_mob)
+			if(M?.pulling_target() == my_mob)
 				if(!M.restrained() && M.stat == 0 && M.canmove && my_mob.Adjacent(M))
 					to_chat(src, span_blue("You're restrained! You can't move!"))
 					my_mob.setMoveCooldown(my_mob.movement_delay()) //Prevent no-cooldown attempts at moving while restrained.
@@ -248,28 +248,28 @@
 
 	var/old_delay = mob.next_move
 
-	if(istype(BUCKLED(my_mob), /obj/vehicle) || ismob(BUCKLED(my_mob)))
+	if(istype(my_mob?.buckled_to(), /obj/vehicle) || ismob(my_mob?.buckled_to()))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
 		my_mob.next_move = world.time
 		//drunk driving
 		if(my_mob.has_status(EFFECT_CONFUSED) && prob(20)) //vehicles tend to keep moving in the same direction
 			direct = turn(direct, pick(90, -90))
-		if(ismob(BUCKLED(my_mob)))
-			var/mob/M = BUCKLED(my_mob)
+		if(ismob(my_mob?.buckled_to()))
+			var/mob/M = my_mob?.buckled_to()
 			if(M.next_move > my_mob.next_move) // Don't let piggyback riders move their mob IN ADDITION TO the mob moving
 				return
-		var/atom/movable/_tmp_buck_30 = BUCKLED(my_mob)
+		var/atom/movable/_tmp_buck_30 = my_mob?.buckled_to()
 		return _tmp_buck_30.relaymove(my_mob,direct)
 
 	var/total_delay = my_mob.movement_delay(n, direct)
 
-	if(PULLED_BY(my_mob) || BUCKLED(my_mob)) // Wheelchair driving!
+	if(my_mob?.pulled_by_mob() || my_mob?.buckled_to()) // Wheelchair driving!
 		if(isspace(loc))
 			return // No wheelchair driving in space
-		if(istype(PULLED_BY(my_mob), /obj/structure/bed/chair/wheelchair))
+		if(istype(my_mob?.pulled_by_mob(), /obj/structure/bed/chair/wheelchair))
 			total_delay += 3
-		else if(istype(BUCKLED(my_mob), /obj/structure/bed/chair/wheelchair))
+		else if(istype(my_mob?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 			if(ishuman(my_mob))
 				var/mob/living/carbon/human/driver = my_mob
 				var/obj/item/organ/external/l_hand = driver.get_organ(BP_L_HAND)
@@ -304,11 +304,11 @@
 					n = get_step(my_mob, direct)
 
 
-	var/mob/my_mob_puller = PULLED_BY(my_mob)
+	var/mob/my_mob_puller = my_mob?.pulled_by_mob()
 	if(istype(my_mob_puller, /obj/structure/bed/chair/wheelchair))
 		. = my_mob_puller.relaymove(my_mob, direct)
-	else if(istype(BUCKLED(my_mob), /obj/structure/bed/chair/wheelchair))
-		var/atom/movable/_tmp_buck_31 = BUCKLED(my_mob)
+	else if(istype(my_mob?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_31 = my_mob?.buckled_to()
 		. = _tmp_buck_31.relaymove(my_mob,direct)
 	else
 		. = my_mob.SelfMove(n, direct, total_delay)
@@ -358,7 +358,7 @@
 		if (G.state == GRAB_NECK)
 			mob.set_dir(GLOB.reverse_dir[direct])
 		G.adjust_position()
-	for (var/obj/item/grab/G in GRABBED_BY(my_mob))
+	for (var/obj/item/grab/G in my_mob?.grabbed_by_list())
 		G.adjust_position()
 
 	// We're not in the middle of a move anymore

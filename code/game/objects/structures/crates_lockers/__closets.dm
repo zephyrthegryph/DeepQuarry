@@ -145,7 +145,7 @@
 	return !anchored
 
 /mob/living/slot_loose(mob/actor, atom/target, obj/item/held)
-	return !anchored && !BUCKLED(src) && !LAZYLEN(pinned)
+	return !anchored && !src?.buckled_to() && !LAZYLEN(pinned)
 
 //Cham Projector Exception: the dummy is anchored but hides in closets.
 /obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
@@ -288,7 +288,7 @@
 	if(opened)
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
-			MouseDrop_T(GRAB_TARGET(G), user)      //act like they were dragged onto the closet
+			MouseDrop_T(G?.grab_target(), user)      //act like they were dragged onto the closet
 			return 0
 		if(istype(W,/obj/item/tk_grab))
 			return 0

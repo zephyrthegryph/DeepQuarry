@@ -208,7 +208,7 @@
 	s.start()
 	if(istype(M, /obj/mecha))
 		var/obj/mecha/E = M
-		M = SLOT_ITEM(E, MECHA_SLOT_PILOT)
+		M = E?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(M))
 		qdel(M.client)
 	qdel(src)

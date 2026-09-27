@@ -59,7 +59,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 /obj/machinery/telecomms/broadcaster/receive_information_delayed(datum/signal/signal)
 	signal.data["level"] |= using_map.get_map_levels(listening_level, TRUE, overmap_range)
 
-	var/list/forced_radios = BS_RX_RADIOS(src)
+	var/list/forced_radios = src?.bs_rx_radios()
 
 	/** #### - Normal Broadcast - #### **/
 	if(signal.data["type"] == SIGNAL_NORMAL)
@@ -180,7 +180,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	/* ###### Broadcast a message using signal.data ###### */
 	var/datum/radio_frequency/connection = signal.data["connection"]
 
-	var/list/forced_radios = BS_RX_RADIOS(src) | BS_TX_RADIOS(src)
+	var/list/forced_radios = src?.bs_rx_radios() | src?.bs_tx_radios()
 
 	Broadcast_Message(
 		signal.data["connection"],
@@ -235,7 +235,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	var/datum/radio_frequency/connection = signal.data["connection"]
 
-	var/list/forced_radios = BS_RX_RADIOS(src) | BS_TX_RADIOS(src)
+	var/list/forced_radios = src?.bs_rx_radios() | src?.bs_tx_radios()
 
 	if(connection.frequency in GLOB.antag_frequencies) // if antag broadcast, just
 		Broadcast_Message(signal.data["connection"], signal.data["mob"],
