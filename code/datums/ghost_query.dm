@@ -29,7 +29,7 @@
 
 /datum/ghost_query/proc/our_timer(current_wait_time)
 	if(current_wait_time)
-		addtimer(CALLBACK(src, PROC_REF(our_timer), FALSE), current_wait_time, TIMER_DELETE_ME)
+		om_after(src, current_wait_time, PROC_REF(our_timer), FALSE)
 	else
 		for(var/mob/observer/dead/D as anything in candidates)
 			if(!evaluate_candidate(D))

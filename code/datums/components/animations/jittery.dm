@@ -17,7 +17,7 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 	owner = parent
 	was_resting = owner.resting
 	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
-	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME) // Needs to be a LOT faster than life ticks
+	om_after(src, 1, PROC_REF(handle_tick)) // Needs to be a LOT faster than life ticks
 
 /datum/component/jittery_shake/proc/handle_tick()
 	if(QDELETED(parent))
@@ -35,7 +35,7 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 		owner.pixel_x = owner.old_x + rand(-amplitude, amplitude)
 		owner.pixel_y = owner.old_y + rand(-amplitude/3, amplitude/3)
 
-	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME)
+	om_after(src, 1, PROC_REF(handle_tick))
 
 /datum/component/jittery_shake/proc/mob_death()
 	SIGNAL_HANDLER

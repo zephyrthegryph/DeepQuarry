@@ -166,7 +166,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 			locked = target
 			locked_name = target.name
 			icon_state = "minion1"
-			addtimer(CALLBACK(src, PROC_REF(check_to_close),target), 5 MINUTES, TIMER_DELETE_ME)
+			om_after(src, 5 MINUTES, PROC_REF(check_to_close), target)
 			return
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
@@ -177,7 +177,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		locked = L[desc]
 		locked_name = desc
 		icon_state = "minion1"
-		addtimer(CALLBACK(src, PROC_REF(check_to_close_desc),locked), 5 MINUTES, TIMER_DELETE_ME)
+		om_after(src, 5 MINUTES, PROC_REF(check_to_close_desc), locked)
 		return
 	else if(!istype(user, /mob/living))
 		return

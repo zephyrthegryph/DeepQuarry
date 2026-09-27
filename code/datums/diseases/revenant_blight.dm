@@ -69,4 +69,4 @@
 					human.change_hair_color(255, 255, 255)
 				affected_mob.visible_message(span_warning("[affected_mob] looks terrifyingly gaunt..."), span_danger("You suddenly feel like your skin is <i>wrong</i>..."))
 				affected_mob.add_atom_colour("#1d2953", TEMPORARY_COLOUR_PRIORITY)
-				addtimer(CALLBACK(src, PROC_REF(cure)), 10 SECONDS)
+				om_after(src, 10 SECONDS, PROC_REF(cure))

@@ -41,7 +41,7 @@
 	SIGNAL_HANDLER
 	var/mob/living/H = user
 	if(istype(H) && can_climb(climbed_thing,H))
-		addtimer(CALLBACK(src, PROC_REF(do_climb), climbed_thing, user, climb_delay), 0, TIMER_DELETE_ME) // Isolate from signal handler
+		om_after(src, 0, PROC_REF(do_climb), climbed_thing, user, climb_delay) // Isolate from signal handler
 
 /// Check if the mob is in any condition to climb the object, if the destination is blocked, and how to climb it
 /datum/element/climbable/proc/can_climb(obj/climbed_thing, mob/living/user, post_climb_check=0)

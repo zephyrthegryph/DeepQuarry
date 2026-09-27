@@ -57,7 +57,7 @@
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
-			addtimer(CALLBACK(src, PROC_REF(allergy_gib), H), rand(3,6), TIMER_DELETE_ME)
+			om_after(src, rand(3,6), PROC_REF(allergy_gib), H)
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
 			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)
@@ -69,7 +69,7 @@
 			else if(prob(80))
 				if(prob(30))
 					to_chat(H, span_warning("You feel like you are about to sneeze!"))
-				addtimer(CALLBACK(src, PROC_REF(allergy_sneeze), H), rand(0.75,3) SECOND, TIMER_DELETE_ME)
+				om_after(src, rand(0.75,3) SECOND, PROC_REF(allergy_sneeze), H)
 
 	if(species.allergen_reaction & AG_COUGH)
 		if(prob(disable_severity/2))
@@ -91,7 +91,7 @@
 	if(remaining > 0)
 		H.emote(pick(list("whimper","belch","shiver")))
 		remaining--
-		addtimer(CALLBACK(src, PROC_REF(allergy_gib), H, remaining), rand(1,1.2) SECOND, TIMER_DELETE_ME)
+		om_after(src, rand(1,1.2) SECOND, PROC_REF(allergy_gib), H, remaining)
 		return
 	H.emote("belch")
 	H.gib()

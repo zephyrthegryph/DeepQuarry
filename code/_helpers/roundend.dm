@@ -109,7 +109,7 @@
 	if(unit_test_is_focused_run())
 		report_delay = 0
 	#endif
-	addtimer(CALLBACK(src, PROC_REF(standard_reboot)), report_delay + extra_delay)
+	om_after(src, report_delay + extra_delay, PROC_REF(standard_reboot))
 
 /datum/controller/subsystem/ticker/proc/standard_reboot()
 	if(ready_for_reboot)

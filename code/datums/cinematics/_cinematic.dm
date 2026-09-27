@@ -83,7 +83,7 @@
 	play_cinematic()
 
 	// Cleans up after it's done playing.
-	addtimer(CALLBACK(src, PROC_REF(clean_up_cinematic), ooc_toggled), cleanup_time)
+	om_after(src, cleanup_time, PROC_REF(clean_up_cinematic), ooc_toggled)
 
 /// Cleans up the cinematic after a set timer of it sticking on the end screen.
 /datum/cinematic/proc/clean_up_cinematic(was_ooc_toggled = FALSE)

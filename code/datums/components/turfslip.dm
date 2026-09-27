@@ -55,7 +55,7 @@
 	// Only start the slip timer if we are not already sliding
 	if(!already_slipping)
 		owner.slip("the [floor_type] floor", slip_stun)
-		addtimer(CALLBACK(src, PROC_REF(next_slip)), 1)
+		om_after(src, 1, PROC_REF(next_slip))
 
 /datum/component/turfslip/proc/move_react(atom/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
 	SIGNAL_HANDLER
@@ -83,7 +83,7 @@
 		// Lube slips forever, if we re-enter the lube then restore our slip
 		slip_dist = 99
 
-	addtimer(CALLBACK(src, PROC_REF(next_slip)), 1)
+	om_after(src, 1, PROC_REF(next_slip))
 
 /datum/component/turfslip/proc/next_slip()
 	// check tile for next slip

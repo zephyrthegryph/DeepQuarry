@@ -170,10 +170,10 @@ Thus, the two variables affect pump operation are set in New():
 	update_rust_device()
 
 	if(signal.data["status"])
-		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
+		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
+	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

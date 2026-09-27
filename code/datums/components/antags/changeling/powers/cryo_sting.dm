@@ -30,7 +30,7 @@
 		T.reagents.add_reagent(REAGENT_ID_CRYOTOXIN, inject_amount)
 	feedback_add_details("changeling_powers","CS")
 	comp.set_cooldown(CRYO_STING, 3 MINUTES) //Set the cooldown to 3 minutes.
-	addtimer(CALLBACK(src, PROC_REF(changeling_cryo_sting_ready)), 3 MINUTES, TIMER_DELETE_ME) //Calling a proc with arguments
+	om_after(src, 3 MINUTES, PROC_REF(changeling_cryo_sting_ready)) //Calling a proc with arguments
 	return TRUE
 
 /mob/proc/changeling_cryo_sting_ready()

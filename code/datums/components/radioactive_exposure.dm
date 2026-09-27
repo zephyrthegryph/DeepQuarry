@@ -35,7 +35,7 @@
 	src.radioactive_areas = radioactive_areas
 
 	// We use generally long times, so it's probably easier and more interpretable to just use a timer instead of processing the component
-	addtimer(CALLBACK(src, PROC_REF(attempt_irradiate)), minimum_exposure_time)
+	om_after(src, minimum_exposure_time, PROC_REF(attempt_irradiate))
 
 	RegisterSignal(parent, COMSIG_MOVABLE_EXITED_AREA, PROC_REF(on_exited))
 
@@ -56,7 +56,7 @@
 		irradiation_chance = max(irradiation_chance - irradiation_chance_increment, irradiation_chance_base)
 
 	// Even if they are immune, or got irradiated plan a new check in-case they lose their protection or irradiation
-	addtimer(CALLBACK(src, PROC_REF(attempt_irradiate)), irradiation_interval)
+	om_after(src, irradiation_interval, PROC_REF(attempt_irradiate))
 
 /datum/component/radioactive_exposure/proc/on_exited(atom/movable/also_parent, area/old_area, direction)
 	SIGNAL_HANDLER

@@ -400,11 +400,11 @@
 	update_rust_device()
 
 	if(signal.data["status"] != null)
-		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
+		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
 		//log_admin("DEBUG \[[world.timeofday]\]: vent_pump/receive_signal: unknown command \"[signal.data["command"]]\"\n[signal.debug_print()]")
-	addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
+	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

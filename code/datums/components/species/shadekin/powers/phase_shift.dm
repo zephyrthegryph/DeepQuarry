@@ -202,7 +202,7 @@
 		alpha = 0
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
 
-		addtimer(CALLBACK(src, PROC_REF(shadekin_complete_phase_in), original_canmove, SK), SK.phase_time, TIMER_DELETE_ME)
+		om_after(src, SK.phase_time, PROC_REF(shadekin_complete_phase_in), original_canmove, SK)
 
 
 /mob/living/proc/shadekin_complete_phase_in(original_canmove, datum/component/shadekin/SK)
@@ -243,7 +243,7 @@
 	//Affect nearby lights
 	for(var/obj/machinery/light/L in range(SK.flicker_distance, src))
 		if(prob(SK.flicker_break_chance))
-			addtimer(CALLBACK(L, TYPE_PROC_REF(/obj/machinery/light, broken)), rand(5,25), TIMER_DELETE_ME)
+			om_after(L, rand(5,25), TYPE_PROC_REF(/obj/machinery/light, broken))
 		else
 			if(SK.flicker_color)
 				L.flicker(SK.flicker_time, SK.flicker_color)
@@ -309,7 +309,7 @@
 		add_modifier(/datum/modifier/shadekin_phase_vision)
 		if(SK.normal_phase)
 			add_modifier(/datum/modifier/phased_out)
-		addtimer(CALLBACK(src, PROC_REF(complete_phase_out), original_canmove, SK), SK.phase_time, TIMER_DELETE_ME)
+		om_after(src, SK.phase_time, PROC_REF(complete_phase_out), original_canmove, SK)
 
 
 /mob/living/proc/complete_phase_out(original_canmove, datum/component/shadekin/SK)

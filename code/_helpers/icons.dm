@@ -392,7 +392,7 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 /proc/set_cached_examine_icon(atom/A, icon/I, expiry = 12000)
 	GLOB.cached_examine_icons[om_handle(A)] = I
 	if(expiry)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(uncache_examine_icon), om_handle(A)), expiry, TIMER_UNIQUE)
+		om_after_unique(null, expiry, GLOBAL_PROC_REF(uncache_examine_icon), om_handle(A))
 
 /proc/get_cached_examine_icon(atom/A)
 	var/WR = om_handle(A)
