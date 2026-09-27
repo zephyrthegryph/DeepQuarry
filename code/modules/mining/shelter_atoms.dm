@@ -861,9 +861,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	var/buildstackamount = 5
 
 // start - fans weren't updating atmos when destroyed or placed
-/obj/structure/fans/Destroy()
-	update_nearby_tiles()
-	return ..()
 
 /obj/structure/fans/Initialize(mapload)
 	.=..()

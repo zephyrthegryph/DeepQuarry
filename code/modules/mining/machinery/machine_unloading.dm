@@ -1,6 +1,5 @@
 /**********************Unloading unit**************************/
 
-
 /obj/machinery/mineral/unloading_machine
 	name = "unloading machine"
 	icon = 'icons/obj/machines/mining_machines.dmi'
@@ -22,12 +21,10 @@
 			break
 	watch_input(input)
 
-/obj/machinery/mineral/unloading_machine/Destroy()
-	// LIFECYCLE: drops the turf watch on its input marker (a watch on another entity).
+/// Phase 2: drops the turf watch on its input marker.
+/obj/machinery/mineral/unloading_machine/lifecycle_dematerialize()
+	. = ..()
 	unwatch_input(input)
-	input = null
-	output = null
-	return ..()
 
 /obj/machinery/mineral/unloading_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -100,7 +97,6 @@
 						ore_chunk.icon_state = "ore_painite"
 					else
 						ore_chunk.icon_state = "boulder[rand(1,4)]"
-
 
 					i++
 					if (i>=3) //Let's make it staggered so it looks like a lot is happening.
