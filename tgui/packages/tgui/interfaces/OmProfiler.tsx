@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   Input,
   LabeledList,
@@ -188,9 +187,7 @@ const BehavioursTab = (props) => {
         </Table.Row>
         {rows.map((b) => (
           <Table.Row key={b.type}>
-            <Table.Cell>
-              <Box title={b.type}>{b.name}</Box>
-            </Table.Cell>
+            <Table.Cell>{b.name}</Table.Cell>
             <Table.Cell>{b.lane}</Table.Cell>
             <Table.Cell>{b.runs}</Table.Cell>
             <Table.Cell>{b.ms}</Table.Cell>
