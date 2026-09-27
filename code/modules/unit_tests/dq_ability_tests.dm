@@ -107,6 +107,19 @@
 	TEST_ASSERT(!H.has_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT), "an ordinary human has no grant")
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you don't have that ability", "refused before any requirement runs")
 
+/// Ability grants are OM grants: deleting the source revokes what it granted, with no
+/// Destroy() bookkeeping of its own.
+/datum/unit_test/dq_ability_grant_dies_with_source
+
+/datum/unit_test/dq_ability_grant_dies_with_source/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/source = new /datum()
+	H.grant_ability("dq_test_ability", source)
+	TEST_ASSERT(H.has_ability("dq_test_ability"), "granted")
+	TEST_ASSERT(list(GRANT_ABILITY, "dq_test_ability") ~= om_grants_from(H, source)[1], "the grant is in the contribution store")
+	qdel(source)
+	TEST_ASSERT(!H.has_ability("dq_test_ability"), "deleting the source revokes its grant")
+
 /// Two sources granting the same ability: it survives either one alone being revoked.
 /datum/unit_test/dq_ability_grant_survives_while_any_source_remains
 

@@ -483,6 +483,17 @@
 	var/list/per_key = om_value_of(target, kind)
 	return islist(per_key) && per_key[id] > 0
 
+/// The sources granting `target` the `kind` grant `id` (a list), or null when none does.
+/proc/om_grant_sources(datum/target, kind, id)
+	var/datum/om/rec/rec = target?.om_rec
+	if(!rec?.contribs)
+		return null
+	var/eidx = om_registry().effect(kind).idx
+	var/list/C = rec.contribs
+	for(var/i in 1 to length(C) step OM_C_STRIDE)
+		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_KEY] == id)
+			LAZYADD(., C[i + OM_C_SOURCE])
+
 /// Every grant `source` gives `target`: list of list(kind, id).
 /proc/om_grants_from(datum/target, datum/source)
 	. = list()

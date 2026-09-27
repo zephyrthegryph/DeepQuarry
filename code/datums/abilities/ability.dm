@@ -163,34 +163,28 @@
 	return A.attempt(actor, target, actor.get_active_hand()) == INTERACTION_TRY_RAN
 
 // ---------------------------------------------------------------------------
-// Grants: source-tracked, so an ability stays available while any source remains.
-
-/// id -> list of sources currently granting it. LAZYLIST: null for a mob with no grants.
-/mob/living/var/list/ability_grants
+// Grants: source-tracked, so an ability stays available while any source remains. They are OM
+// grants (object_model_core.md §8, GRANT_ABILITY with the ability id as key): one store for
+// every grant, released when the source is deleted, readable with om_grants_from(). (The
+// rewrite/grants branch's own grant store is superseded by this.)
 
 /// `source` now grants `id`. Idempotent: granting the same (id, source) twice is a no-op.
-/mob/living/proc/grant_ability(id, source)
+/mob/living/proc/grant_ability(id, datum/source)
 	if(!id || !source)
 		CRASH("grant_ability() needs both an id and a source")
-	LAZYINITLIST(ability_grants)
-	LAZYINITLIST(ability_grants[id])
-	ability_grants[id] |= source
+	om_grant(src, GRANT_ABILITY, id, source)
 
 /// `source` no longer grants `id`. The ability stays available if another source still does.
-/mob/living/proc/revoke_ability(id, source)
-	if(!ability_grants || !ability_grants[id])
-		return
-	ability_grants[id] -= source
-	if(!length(ability_grants[id]))
-		ability_grants -= id
+/mob/living/proc/revoke_ability(id, datum/source)
+	om_revoke(src, GRANT_ABILITY, id, source)
 
 /// TRUE if any source currently grants `id`.
 /mob/living/proc/has_ability(id)
-	return length(ability_grants?[id]) > 0
+	return om_has_grant(src, GRANT_ABILITY, id)
 
 /// The sources currently granting `id` (for UI/debugging), or null.
 /mob/living/proc/ability_sources(id)
-	return ability_grants?[id]
+	return om_grant_sources(src, GRANT_ABILITY, id)
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).
