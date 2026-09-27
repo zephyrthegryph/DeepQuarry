@@ -158,7 +158,7 @@
 	var/percentage = charge/maxcharge
 	newcell.charge = newcell.maxcharge * percentage
 	newcell.persist_storable = persist_storable
-	qdel(src)
+	consume(src, user)
 
 // Bloo friendlier hybrid tech
 /obj/item/cell/device/weapon/recharge/alien/hybrid

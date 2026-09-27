@@ -44,12 +44,7 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/pda_multicaster/Destroy()
-	// Snapshot: qdel pulls members out of contents mid-iteration.
-	for(var/atom/movable/AM in contents.Copy())
-		qdel(AM)
-	QDEL_NULL(soundloop)
-	. = ..()
+REF_OWNED(/obj/machinery/pda_multicaster, "soundloop")
 
 /obj/machinery/pda_multicaster/update_icon()
 	if(on)
@@ -136,7 +131,6 @@
 /obj/machinery/pda_multicaster/proc/emp_recover()
 	stat &= ~EMPED
 	update_power()
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/pda_multicaster/step_start_condition()

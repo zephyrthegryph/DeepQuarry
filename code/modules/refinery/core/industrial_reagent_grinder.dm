@@ -18,11 +18,7 @@
 	update_neighbours()
 	update_icon()
 
-/obj/machinery/reagent_refinery/grinder/Destroy()
-	for(var/obj/O in holdingitems)
-		O.forceMove(get_turf(src))
-	holdingitems.Cut()
-	. = ..()
+REF_SPILL_LIST(/obj/machinery/reagent_refinery/grinder, "holdingitems")
 
 /obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
 	// Old attackby tried the parent's attackby FIRST, only falling to its own

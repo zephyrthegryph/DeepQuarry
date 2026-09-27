@@ -115,12 +115,6 @@
 		om_qdel_after(src, timeout)
 	color_matrix_last = default.Copy()
 
-/datum/tgui_input_colormatrix/Destroy(force)
-	SStgui.close_uis(src)
-	state = null
-	target = null
-	return ..()
-
 /**
  * Waits for a user's response to the tgui_input_colormatrix's prompt before returning. Returns early if
  * the window was closed by the user.

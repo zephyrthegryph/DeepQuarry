@@ -91,11 +91,6 @@
 		start_time = world.time
 		om_qdel_after(src, timeout)
 
-/datum/tgui_input_text/Destroy(force)
-	SStgui.close_uis(src)
-	state = null
-	return ..()
-
 /**
  * Waits for a user's response to the tgui_text_input's prompt before returning. Returns early if
  * the window was closed by the user.

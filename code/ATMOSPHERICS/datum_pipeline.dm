@@ -35,6 +35,9 @@
 	if(clear_backlink && edge)
 		edge.unregister_edge_pipeline(src)
 
+// Rust-owned wrappers refuse deletion; a legacy line stores its gas back
+// into its pipes and releases its network.
+// LIFECYCLE: LETMELIVE for rust-owned lines; legacy gas hand-back.
 /datum/pipeline/Destroy()
 	if(network?.rust_authoritative)
 		return QDEL_HINT_LETMELIVE

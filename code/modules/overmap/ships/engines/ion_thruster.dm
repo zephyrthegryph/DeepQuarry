@@ -6,10 +6,6 @@
 	..()
 	thruster = _holder
 
-/datum/ship_engine/ion/Destroy()
-	thruster = null
-	. = ..()
-
 /datum/ship_engine/ion/get_status()
 	return thruster.get_status()
 
@@ -54,9 +50,7 @@
 	controller = new(src)
 	add_glow()
 
-/obj/machinery/ion_engine/Destroy()
-	QDEL_NULL(controller)
-	. = ..()
+REF_OWNED(/obj/machinery/ion_engine, "controller")
 
 /obj/machinery/ion_engine/proc/add_glow()
 	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay")

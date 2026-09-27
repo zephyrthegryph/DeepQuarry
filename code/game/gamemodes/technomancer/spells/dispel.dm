@@ -20,4 +20,4 @@
 		var/mob/living/target = hit_atom
 		target.remove_modifiers_of_type(/datum/modifier/technomancer)
 	user.adjust_instability(10)
-	qdel(src)
+	consume(src, user)

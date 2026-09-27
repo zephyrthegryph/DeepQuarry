@@ -59,7 +59,3 @@
 		owner.status_adjust(EFFECT_JITTERY, 30 + rand(10, 30))
 		owner.emote(DEFAULTPICK(motor_tics, null))
 
-/datum/component/tourettes_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

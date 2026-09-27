@@ -29,6 +29,7 @@
 	in_space = FALSE
 	var/datum/expedition_site/site
 
+// LIFECYCLE: its site forgets its sector.
 /obj/effect/overmap/visitable/sector/expedition/Destroy()
 	if(site && site.overmap_sector == src)
 		site.overmap_sector = null
@@ -51,6 +52,7 @@
 		for(var/mob/living/L in A)
 			site.participants |= L
 
+// LIFECYCLE: its site forgets its landing waypoint.
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/Destroy()
 	if(site && site.landing_waypoint == src)
 		site.landing_waypoint = null
@@ -62,11 +64,12 @@
 	var/datum/expedition_site/active_expedition
 	var/next_expedition_plot = 0
 
+REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
+
+// LIFECYCLE: its expedition forgets its origin console.
 /obj/machinery/computer/shuttle_control/explore/Destroy()
-	QDEL_NULL(flight_operations_ui)
-	if(active_expedition && active_expedition.origin_console == src)
+	if(active_expedition?.origin_console == src)
 		active_expedition.origin_console = null
-	active_expedition = null
 	return ..()
 
 /obj/machinery/computer/shuttle_control/explore/proc/expedition_data()

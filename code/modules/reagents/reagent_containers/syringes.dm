@@ -7,7 +7,6 @@
 
 #define SYRINGE_CAPPED 10
 
-
 /obj/item/reagent_containers/syringe
 	name = "syringe"
 	desc = "A syringe."
@@ -44,10 +43,7 @@
 	. = ..()
 	update_icon()
 
-/obj/item/reagent_containers/syringe/Destroy()
-	QDEL_LIST_NULL(viruses)
-	LAZYCLEARLIST(targets)
-	return ..()
+REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 
 /obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)
@@ -230,7 +226,6 @@
 				to_chat(user, span_notice("You fill the syringe with [trans] units of the solution."))
 				update_icon()
 
-
 			if(!reagents.get_free_space())
 				mode = SYRINGE_INJECT
 				update_icon()
@@ -338,8 +333,7 @@
 		if(target != user && armor_val >= 5 && prob(50+armor_val)) // High armor can deflect syringe stabs
 			for(var/mob/O in viewers(world.view, user))
 				O.show_message(span_bolddanger("[user] tries to stab [target] in \the [hit_area] with [src.name], but the attack is deflected by armor!"), 1)
-			user.remove_from_mob(src)
-			qdel(src)
+			consume(src, user)
 
 			add_attack_logs(user,target,"Syringe harmclick")
 
@@ -352,8 +346,6 @@
 	else
 		balloon_alert_visible("stabs [user] in \the [target] with [src.name]!")
 		target.injure(INJURY_PIERCE, 3, source = src)// 7 is the same as crowbar punch
-
-
 
 	var/syringestab_amount_transferred = rand(max(reagents.total_volume - 10, 0), (reagents.total_volume - 5)) //nerfed by popular demand
 	var/contained = reagents.get_reagents()

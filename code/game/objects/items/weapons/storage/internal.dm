@@ -13,10 +13,6 @@
 	name = master_item.name
 	verbs -= /obj/item/verb/verb_pickup	//make sure this is never picked up.
 
-/obj/item/storage/internal/Destroy()
-	master_item = null
-	. = ..()
-
 /obj/item/storage/internal/attack_hand()
 	return		//make sure this is never picked up
 

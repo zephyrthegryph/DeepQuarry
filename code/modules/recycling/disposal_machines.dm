@@ -77,6 +77,7 @@
 			mode = DISPOSALMODE_CHARGED
 	update_icon()
 
+// LIFECYCLE: it unlinks and ejects its contents.
 /obj/machinery/disposal/Destroy()
 	if(power_retry_timer)
 		om_cancel_timer(src, power_retry_timer)
@@ -158,7 +159,7 @@
 	GM.forceMove(src)
 	for (var/mob/C in viewers(src))
 		C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
-	qdel(G)
+	consume(G, user)
 
 	add_attack_logs(user,GM,"Disposals dunked")
 
@@ -212,7 +213,7 @@
 				if(victim.client)
 					log_and_message_admins("placed [victim] inside \the [src]", user)
 				victim.forceMove(src)
-			qdel(I)
+			consume(I, user)
 			user.visible_message(
 				span_danger("[user] tosses \the [victim] into \the [src]."),
 				span_danger("You toss \the [victim] into \the [src]."),
@@ -645,7 +646,7 @@
 	// We don't ever want digestion remains going through disposals, but people understandably thing they're doing right by trashing them
 	// So let's just delete them instead!
 	for(var/obj/item/digestion_remains/bone in src)
-		qdel(bone)
+		consume(bone)
 
 	var/list/flushed_items = list()
 	for(var/atom/movable/AM in src)
@@ -749,7 +750,6 @@
 	//..() //*cough
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //unlinks in destroy, too.
 	qdel(src) //Parent above should do this, but that's not a thing as of writing this.
-
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them

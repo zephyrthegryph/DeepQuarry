@@ -21,10 +21,9 @@
 			damage *= B.overmind.blob_type.burn_multiplier
 		B.adjust_integrity(-damage)
 
-	new/obj/effect/effect/sparks(src.loc)
 	new/obj/effect/effect/smoke/illumination(loc, 5, 30, 30, "#FFFFFF")
 
-	qdel(src)
+	replace_with(src, /obj/effect/effect/sparks)
 
 /obj/item/grenade/flashbang/proc/bang(turf/T , mob/living/carbon/M)					// Added a new proc called 'bang' that takes a location and a person to be banged.
 	if(M.is_incorporeal())
@@ -98,11 +97,6 @@
 	else if(M.ear_damage >= 5)
 		to_chat(M, span_danger("Your ears start to ring!"))
 
-/obj/item/grenade/flashbang/Destroy()
-	walk(src, 0) // Because we might have called walk_away, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	return ..()
-
-
 /obj/item/grenade/flashbang/clusterbang//Created by Polymorph, fixed by Sieve
 	desc = "Use of this weapon may constiute a war crime in your area, consult your local " + JOB_SITE_MANAGER + "."
 	name = "clusterbang"
@@ -129,7 +123,7 @@
 	for(var/do_again = again, do_again > 0, do_again--)
 		new /obj/item/grenade/flashbang/clusterbang/segment(src.loc)//Creates a 'segment' that launches a few more flashbangs
 		playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
-	qdel(src)
+	consume(src)
 	return
 
 /obj/item/grenade/flashbang/clusterbang/segment

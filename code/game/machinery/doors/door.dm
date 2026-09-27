@@ -70,7 +70,6 @@
 		layer = open_layer
 		explosion_resistance = 0
 
-
 	if(width > 1)
 		if(dir in list(EAST, WEST))
 			bound_width = width * world.icon_size
@@ -83,16 +82,10 @@
 
 	update_nearby_tiles(need_rebuild=1)
 
-/obj/machinery/door/Destroy()
-	clear_autoclose_blockers()
-	density = FALSE
-	update_nearby_tiles()
+/// Phase 2: stops waiting on whatever blocked its autoclose.
+/obj/machinery/door/lifecycle_dematerialize()
 	. = ..()
-	/*
-	var/obj/effect/step_trigger/claymore_laser/las = locate() in loc
-	if(las)
-		las.Trigger(src)
-	*/
+	clear_autoclose_blockers()
 
 // Door deadlines (autoclose here; power and electrification on airlocks) are one om_after() timer on
 // the earliest of them, never a process() poll.
@@ -263,7 +256,6 @@
 	. = ..()
 	if(damage && !QDELETED(src))
 		update_icon()
-
 
 /obj/machinery/door/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
@@ -440,19 +432,16 @@
 	if(.)
 		on_broken()
 
-
 /obj/machinery/door/examine(mob/user)
 	. = ..()
 	if(stat & BROKEN)
 		. += "It is broken!"
-
 
 /// What a door does when it breaks, after the base machinery break.
 /obj/machinery/door/proc/on_broken()
 	for (var/mob/O in viewers(src, null))
 		if ((O.client && !( O.blinded )))
 			O.show_message("[name] breaks!" )
-
 
 /obj/machinery/door/emp_act(severity, recursive)
 	. = ..()
@@ -474,7 +463,6 @@
 	else
 		icon_state = "door0"
 	return
-
 
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)
@@ -639,7 +627,6 @@
 
 /obj/machinery/door/morgue
 	icon = 'icons/obj/doors/doormorgue.dmi'
-
 
 /obj/machinery/door/proc/toggle()
 	if(glass)

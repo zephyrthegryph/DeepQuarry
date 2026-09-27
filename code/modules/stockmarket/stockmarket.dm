@@ -12,12 +12,6 @@
 		generateStocks()
 		schedule_process()
 
-/datum/stockMarket/Destroy()
-	if(process_timer)
-		om_cancel_timer(src, process_timer)
-		process_timer = null
-	return ..()
-
 /datum/stockMarket/proc/schedule_process()
 	if(QDELETED(src) || process_timer)
 		return

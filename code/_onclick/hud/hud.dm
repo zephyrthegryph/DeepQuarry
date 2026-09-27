@@ -20,7 +20,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 		GLOB.global_hud.holomap
 ))
 
-
 /datum/global_hud
 	var/atom/movable/screen/druggy
 	var/atom/movable/screen/blurry
@@ -198,7 +197,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/datum/action_group/listed/listed_actions
 	var/list/floating_actions
 
-
 	var/list/slot_info
 
 	var/icon/ui_style
@@ -215,34 +213,18 @@ GLOBAL_LIST_INIT(global_huds, list(
 	instantiate()
 	..()
 
+REF_OWNED(/datum/hud, list("toggle_palette", "palette_down", "palette_up", "palette_actions", "listed_actions"))
+REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions"))
+REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hud", "palette_up" = "our_hud"))
+
+// LIFECYCLE: takes its ammo counters off its mob's screen and lets the mob go.
 /datum/hud/Destroy()
-	if(mymob.hud_used == src)
+	if(mymob?.hud_used == src)
 		mymob.hud_used = null
-
-	QDEL_NULL_LIST(minihuds)
-
-	// Actions
-	QDEL_NULL(toggle_palette)
-	QDEL_NULL(palette_down)
-	QDEL_NULL(palette_up)
-	QDEL_NULL(palette_actions)
-	QDEL_NULL(listed_actions)
-	QDEL_LIST(floating_actions)
-
-	lingchemdisplay = null
-	wiz_instability_display = null
-	wiz_energy_display = null
-	blobpwrdisplay = null
-	blobhealthdisplay = null
-	r_hand_hud_object = null
-	l_hand_hud_object = null
-	combat_mode_button = null
-	move_intent = null
-	control_vtec = null
-	adding = null
-	other = null
-	other_important = null
-	hotkeybuttons = null
+	for (var/x in ammo_hud_list)
+		remove_ammo_hud(mymob, x)
+	ammo_hud_list = null
+	return ..()
 //	item_action_list = null // ?
 	for (var/x in ammo_hud_list)
 		remove_ammo_hud(mymob, x)
@@ -298,7 +280,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 					if(slot_wear_mask)
 						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = null
 
-
 /datum/hud/proc/persistant_inventory_update()
 	if(!mymob)
 		return
@@ -335,7 +316,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = null
 					if(slot_r_store)
 						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = null
-
 
 /datum/hud/proc/instantiate()
 	if(!ismob(mymob))
@@ -517,27 +497,27 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 	if(hud_used.hud_shown)
 		hud_used.hud_shown = 0
-		if(src.hud_used.adding)
-			src.client.screen -= src.hud_used.adding
-		if(src.hud_used.other)
-			src.client.screen -= src.hud_used.other
-		if(src.hud_used.hotkeybuttons)
-			src.client.screen -= src.hud_used.hotkeybuttons
-		src.client.screen -= src.internals
-		if(src.hud_used.combat_mode_button)
-			src.client.screen += src.hud_used.combat_mode_button		//we want the combat mode button visible
+		if(hud_used.adding)
+			client.screen -= hud_used.adding
+		if(hud_used.other)
+			client.screen -= hud_used.other
+		if(hud_used.hotkeybuttons)
+			client.screen -= hud_used.hotkeybuttons
+		client.screen -= internals
+		if(hud_used.combat_mode_button)
+			client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 	else
 		hud_used.hud_shown = 1
-		if(src.hud_used.adding)
-			src.client.screen += src.hud_used.adding
-		if(src.hud_used.other && src.hud_used.inventory_shown)
-			src.client.screen += src.hud_used.other
-		if(src.hud_used.hotkeybuttons && !src.hud_used.hotkey_ui_hidden)
-			src.client.screen += src.hud_used.hotkeybuttons
-		if(src.internals)
-			src.client.screen |= src.internals
-		if(src.hud_used.combat_mode_button)
-			src.hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
+		if(hud_used.adding)
+			client.screen += hud_used.adding
+		if(hud_used.other && hud_used.inventory_shown)
+			client.screen += hud_used.other
+		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
+			client.screen += hud_used.hotkeybuttons
+		if(internals)
+			client.screen |= internals
+		if(hud_used.combat_mode_button)
+			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()

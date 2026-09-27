@@ -99,14 +99,12 @@
 		to_chat(user, span_blue("The object you are trying to wrap is unsuitable for the sorting machinery!"))
 
 	if (src.amount <= 0 && !isrobot(loc))
-		new /obj/item/c_tube(get_turf(src))
-		qdel(src)
+		replace_with(src, /obj/item/c_tube)
 
 /obj/item/packageWrap/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 0)
 		. += span_blue("There are [amount] units of package wrap left!")
-
 
 // Borg version that refills over time
 /obj/item/packageWrap/borg
@@ -115,9 +113,6 @@
 	var/recharge_ticker = 0
 
 /obj/item/packageWrap/borg/Initialize(mapload)
-	. = ..()
-
-/obj/item/packageWrap/borg/Destroy()
 	. = ..()
 
 /// Refills one sheet per 12 s while short (wrap_used() starts it); full, it sleeps.

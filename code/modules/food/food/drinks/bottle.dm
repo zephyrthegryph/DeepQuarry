@@ -24,15 +24,7 @@
 		drop_sound = 'sound/items/drop/bottle.ogg'
 		pickup_sound = 'sound/items/pickup/bottle.ogg'
 
-/obj/item/reagent_containers/food/drinks/bottle/Destroy()
-	if(rag)
-		var/turf/possible_loc = get_turf(src)
-		if(possible_loc)
-			rag.forceMove(possible_loc)
-		else
-			qdel(rag)
-		rag = null
-	return ..()
+REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 
 //when thrown on impact, bottles smash and spill their contents
 /obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback)
@@ -816,7 +808,6 @@
 /obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_DRGIBB, 50)
-
 
 /obj/item/reagent_containers/food/drinks/bottle/snaps
 	name = REAGENT_SNAPS

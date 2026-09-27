@@ -115,9 +115,7 @@
 		name = new_name
 	return new_name
 
-/obj/item/reagent_containers/food/snacks/customizable/Destroy()
-	QDEL_LIST_NULL(ingredients)
-	return ..()
+REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredients")
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/drawTopping()
 	var/image/I = topping
@@ -136,7 +134,7 @@
 /obj/item/reagent_containers/food/snacks/customizable/sandwich/attackby(obj/item/I,mob/user)
 	if(istype(I,/obj/item/reagent_containers/food/snacks/slice/bread) && !addTop)
 		I.reagents.trans_to_holder(reagents,I.reagents.total_volume)
-		qdel(I)
+		consume(I, user)
 		addTop = 1
 		src.drawTopping()
 	else
@@ -183,7 +181,7 @@
 			return
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/sandwich(get_turf(src),I) //boy ain't this a mouthful
 		F.attackby(I, user)
-		qdel(src)
+		consume(src, user)
 	else
 		return ..()
 
@@ -192,22 +190,22 @@
 	if(istype(I,/obj/item/reagent_containers/food/snacks/meatball))
 		new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
 		to_chat(user, "You make a burger.")
-		qdel(I)
-		qdel(src)
+		consume(I, user)
+		consume(src, user)
 
 	// Bun + cutlet = hamburger
 	else if(istype(I, /obj/item/reagent_containers/food/snacks/cutlet))
 		new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
 		to_chat(user, "You make a burger.")
-		qdel(I)
-		qdel(src)
+		consume(I, user)
+		consume(src, user)
 
 	// Bun + sausage = hotdog
 	else if(istype(I, /obj/item/reagent_containers/food/snacks/sausage))
 		new /obj/item/reagent_containers/food/snacks/hotdog(src)
 		to_chat(user, "You make a hotdog.")
-		qdel(I)
-		qdel(src)
+		consume(I, user)
+		consume(src, user)
 
 	if(istype(I,/obj/item/reagent_containers/food/snacks))
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
@@ -215,7 +213,7 @@
 			return
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/burger(get_turf(src),I)
 		F.attackby(I, user)
-		qdel(src)
+		consume(src, user)
 	else
 		return ..()
 
@@ -226,7 +224,7 @@
 			return
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/pizza(get_turf(src),I)
 		F.attackby(I, user)
-		qdel(src)
+		consume(src, user)
 	else
 		return ..()
 
@@ -237,7 +235,7 @@
 			return
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/pasta(get_turf(src),I)
 		F.attackby(I, user)
-		qdel(src)
+		consume(src, user)
 	else
 		return ..()
 
@@ -256,7 +254,7 @@
 			return
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/soup(get_turf(src),I)
 		F.attackby(I, user)
-		qdel(src)
+		consume(src, user)
 	else
 		return ..()
 

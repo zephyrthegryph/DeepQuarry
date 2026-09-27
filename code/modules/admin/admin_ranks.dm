@@ -42,6 +42,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(init_edit_rights)
 		can_edit_rights = init_edit_rights
 
+// LIFECYCLE: refuses deletion from advanced proc calls (permission elevation).
 /datum/admin_rank/Destroy()
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
@@ -331,7 +332,6 @@ GLOBAL_PROTECT(protected_ranks)
 	#endif
 	return dbfail
 
-
 /proc/sync_ranks_with_db()
 	set waitfor = FALSE
 
@@ -344,7 +344,6 @@ GLOBAL_PROTECT(protected_ranks)
 		sql_ranks += list(list("rank" = R.name, "flags" = R.include_rights, "exclude_flags" = R.exclude_rights, "can_edit_flags" = R.can_edit_rights))
 	SSdbcore.MassInsert(format_table_name("admin_ranks"), sql_ranks, duplicate_key = TRUE)
 	update_everything_flag_in_db()
-
 
 /proc/update_everything_flag_in_db()
 	for(var/datum/admin_rank/R as anything in GLOB.admin_ranks)
@@ -376,7 +375,6 @@ GLOBAL_PROTECT(protected_ranks)
 				return
 			qdel(query_update_everything_ranks)
 		qdel(query_check_everything_ranks)
-
 
 /proc/sync_admins_with_db()
 	if(IsAdminAdvancedProcCall())

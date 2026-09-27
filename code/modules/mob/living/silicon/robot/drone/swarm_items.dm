@@ -120,6 +120,7 @@
 	else
 		qdel(src)
 
+// LIFECYCLE: a pulse ending inside a wall blows it open.
 /obj/effect/temporary_effect/pulse/disintegrate/Destroy()
 	if(istype(get_turf(src), /turf/simulated/wall))
 		explosion(get_turf(src), -1, 1, 2, 5, adminlog = 1)

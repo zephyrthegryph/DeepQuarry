@@ -210,6 +210,7 @@
 #include "dq_shuttle_tests.dm"
 #include "dq_state_tests.dm"
 #include "dq_lifecycle_tests.dm"
+#include "dq_lifecycle_verb_tests.dm"
 #include "dq_surgery_tests.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
@@ -238,6 +239,7 @@
 #include "dq_om_scheduler_tests.dm"
 #include "dq_refs_tests.dm"
 #include "dq_om_timed_action_tests.dm"
+#include "dq_base_proc_moves_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -13,12 +13,6 @@
 	stockpiles = list()
 	minimum_stockpiles = list()
 
-/datum/generated_station_department_runtime/Destroy()
-	department = null
-	stockpiles = null
-	minimum_stockpiles = null
-	return ..()
-
 /datum/generated_station_department_runtime/proc/has_resources()
 	for(var/resource_id in minimum_stockpiles)
 		if((stockpiles[resource_id] || 0) < minimum_stockpiles[resource_id])
@@ -51,16 +45,13 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 	if(spec?.id)
 		GLOB.generated_station_runtimes[spec.id] = src
 
-/datum/generated_station_simulation/Destroy()
+REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
+
+/// Phase 2: leaves the station runtime index.
+/datum/generated_station_simulation/lifecycle_dematerialize()
+	. = ..()
 	if(spec?.id && GLOB.generated_station_runtimes[spec.id] == src)
 		GLOB.generated_station_runtimes -= spec.id
-	spec = null
-	for(var/id in departments)
-		qdel(departments[id])
-	departments = null
-	capabilities = null
-	power_areas = null
-	return ..()
 
 /datum/generated_station_simulation/proc/configure_default_resources()
 	for(var/id in departments)

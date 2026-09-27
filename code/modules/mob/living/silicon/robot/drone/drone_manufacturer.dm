@@ -39,10 +39,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 /obj/machinery/drone_fabricator/Initialize(mapload)
 	. = ..()
 
-
-/obj/machinery/drone_fabricator/Destroy()
-	. = ..()
-
 /obj/machinery/drone_fabricator/power_change()
 	..()
 	if (stat & NOPOWER)
@@ -100,7 +96,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 		new_drone.transfer_personality(player)
 
 	return new_drone
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/drone_fabricator/step_start_condition()

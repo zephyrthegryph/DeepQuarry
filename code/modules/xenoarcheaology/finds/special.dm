@@ -13,9 +13,6 @@
 			spawning_id = new_chem
 			break
 
-/obj/item/reagent_containers/glass/replenishing/Destroy()
-	. = ..()
-
 /obj/item/reagent_containers/glass/replenishing/periodic_step()
 	reagents.add_reagent(spawning_id, 0.3)
 
@@ -26,9 +23,6 @@
 	var/max_stored_messages = 100
 
 /obj/item/clothing/mask/gas/poltergeist/Initialize(mapload)
-	. = ..()
-
-/obj/item/clothing/mask/gas/poltergeist/Destroy()
 	. = ..()
 
 /// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
@@ -68,9 +62,6 @@
 /obj/item/vampiric/Initialize(mapload)
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
-
-/obj/item/vampiric/Destroy()
-	. = ..()
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/item/vampiric/periodic_step()
@@ -164,9 +155,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	loc_last_process = src.loc
 
-/obj/effect/decal/cleanable/blood/splatter/animated/Destroy()
-	. = ..()
-
 /// Crawls toward its target turf every 2 s; arrived, it sleeps.
 /obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
 	if(!target_turf)
@@ -199,9 +187,6 @@
 /obj/effect/shadow_wight/Initialize(mapload)
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
-
-/obj/effect/shadow_wight/Destroy()
-	. = ..()
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/effect/shadow_wight/periodic_step()

@@ -69,7 +69,6 @@
 	and terrifying."
 	value = CATALOGUER_REWARD_SUPERHARD
 
-
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced
 	name = "advanced dark gygax"
 	desc = "An experimental exosuit that utilizes advanced materials to allow for greater protection while still being lightweight and fast. \
@@ -93,11 +92,7 @@
 	projectilesound = 'sound/weapons/wave.ogg'
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
-/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/Destroy()
-	if(energy_ball)
-		energy_ball.stop_orbit()
-		qdel(energy_ball)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, "energy_ball")
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
@@ -233,7 +228,6 @@
 /obj/item/projectile/arc/microsingulo/on_impact(turf/T)
 	new /obj/effect/temporary_effect/pulse/microsingulo(T)
 
-
 /obj/effect/temporary_effect/pulse/microsingulo
 	name = "micro singularity"
 	desc = "It's sucking everything in!"
@@ -250,7 +244,6 @@
 /obj/effect/temporary_effect/pulse/microsingulo/on_pulse()
 	for(var/atom/A in range(pull_radius, src))
 		A.singularity_pull(src, pull_strength)
-
 
 // The Advanced Dark Gygax's AI.
 // The mob has three special attacks, based on the current intent.

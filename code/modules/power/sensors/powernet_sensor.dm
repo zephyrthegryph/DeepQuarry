@@ -46,6 +46,7 @@
 /obj/machinery/power/sensor/proc/auto_set_name()
 	name = "[name_tag] - Powernet Sensor"
 
+// LIFECYCLE: power monitors refresh their sensor lists once it is gone.
 /obj/machinery/power/sensor/Destroy()
 	if(record_timer)
 		om_cancel_timer(src, record_timer)
@@ -180,7 +181,6 @@
 
 	return L
 
-
 // Proc: return_reading_text()
 // Parameters: None
 // Description: Generates string which contains HTML table with reading data.
@@ -192,7 +192,6 @@
 	if(!powernet) // No powernet.
 		out = "# SYSTEM ERROR - NO POWERNET #"
 		return out
-
 
 	var/list/L = find_apcs()
 	var/total_apc_load = 0
@@ -286,7 +285,6 @@
 		data["load_percentage"] = 100
 	data["alarm"] = powernet.problem ? 1 : 0
 	return data
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/sensor/step_start_condition()

@@ -42,8 +42,3 @@
 /obj/item/computer_hardware/processor_unit/is_critical_slot()
 	return TRUE
 
-/obj/item/computer_hardware/processor_unit/Destroy()
-	var/slot = get_slot_var()
-	if(holder2 && (holder2.vars[slot] == src))
-		holder2.vars[slot] = null
-	return ..()

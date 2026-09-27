@@ -29,7 +29,6 @@
 		last_move_dir_pressed = movement
 	#endif
 
-	mob.focus?.key_down(movekey, src)
 
 /client/verb/moveKeyUp(movekeyName as text)
 	set instant = TRUE
@@ -55,7 +54,6 @@
 		DEBUG_INPUT("Saving [dirs2text(movement)] into next_move_dir_SUB")
 		next_move_dir_sub |= movement
 
-	mob.focus?.key_up(movekey, src)
 
 // Called every game tick
 /client/keyLoop()

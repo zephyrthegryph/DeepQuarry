@@ -57,15 +57,12 @@
 	assign_uid()
 	id_tag = num2text(uid)
 
-/obj/machinery/atmospherics/unary/vent_scrubber/Destroy()
-	// rust_unregister_device() runs as part of the base class's
-	// rust_unregister_pipe_topology() (atmospherics.dm's Destroy()), below.
-	// vent_scrubber is a Rust device edge with no DM gas watch to clear.
-	unregister_radio(src, frequency)
+/// Phase 2: leaves its area's scrubber index.
+/obj/machinery/atmospherics/unary/vent_scrubber/lifecycle_dematerialize()
+	. = ..()
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_scrub_info, id_tag)
 		LAZYREMOVE(initial_loc.air_scrub_names, id_tag)
-	return ..()
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::Scrubber). rust_bind_pipe_port fires once the

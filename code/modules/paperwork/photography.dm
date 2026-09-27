@@ -189,7 +189,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 			return
 		to_chat(user, span_notice("You insert [I] into [src]."))
 		user.drop_item()
-		qdel(I)
+		consume(I, user)
 		pictures_left = pictures_max
 		return
 	..()

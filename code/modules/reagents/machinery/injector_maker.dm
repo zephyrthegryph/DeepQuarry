@@ -94,7 +94,7 @@
 		to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
 		return TRUE
 	count_small_injector = count_small_injector + 1
-	qdel(E)
+	consume(E, user)
 	update_icon()
 	return TRUE
 
@@ -112,7 +112,7 @@
 		to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
 		return TRUE
 	count_large_injector = count_large_injector + 1
-	qdel(E)
+	consume(E, user)
 	update_icon()
 	return TRUE
 

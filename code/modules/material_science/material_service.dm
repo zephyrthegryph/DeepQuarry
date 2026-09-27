@@ -220,6 +220,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	register_diagnostics()
 	schedule(1 SECOND)
 
+// LIFECYCLE: unregisters diagnostics and its service behaviour; its owner forgets it.
 /datum/material_service/Destroy()
 	unregister_diagnostics()
 	om_cancel_after(src, /datum/om/behaviour/material_service)

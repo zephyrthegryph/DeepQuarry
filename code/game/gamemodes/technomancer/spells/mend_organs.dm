@@ -51,4 +51,4 @@
 					affected.remove_wound(W)
 
 			H.restore_blood() // Fix bloodloss
-		qdel(src)
+		consume(src, user)

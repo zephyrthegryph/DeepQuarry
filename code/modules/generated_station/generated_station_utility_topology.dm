@@ -117,16 +117,7 @@
 	scrub_tanks = list()
 	alarms = list()
 
-/datum/generated_station_utility_topology/Destroy()
-	QDEL_LIST(power_objects)
-	QDEL_LIST(atmos_objects)
-	apcs = null
-	supply_vents = null
-	supply_tanks = null
-	scrubbers = null
-	scrub_tanks = null
-	alarms = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", "atmos_objects"))
 
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
@@ -815,7 +806,6 @@
 	station_utilities = builder.build(station_spec, station_materialization)
 	qdel(builder)
 	return !!station_utilities
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/generator/generated_station/step_start_condition()

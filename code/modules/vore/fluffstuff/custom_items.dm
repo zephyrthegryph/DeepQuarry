@@ -138,7 +138,7 @@
 	qdel(O)
 	parts -= cost
 	if(!parts && delete_on_empty)
-		qdel(src)
+		consume(src, user)
 // S END
 
 //DEBUG ITEM
@@ -175,7 +175,6 @@
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	hitsound = 'sound/weapons/bladeslice.ogg'
-
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
@@ -222,7 +221,6 @@
 	registered_name = "Joan Risu"
 	assignment = "Centcom Officer"
 	special_handling = TRUE
-
 
 /obj/item/card/id/centcom/station/fluff/joanbadge/attack_self(mob/user)
 	. = ..(user)
@@ -336,7 +334,6 @@
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "flag_advent_mob"
 
-
 //Vorrakul: Kaitlyn Fiasco
 /obj/item/toy/plushie/mouse/fluff
 	name = "Mouse Plushie"
@@ -391,7 +388,6 @@
 	force = 8
 	attack_verb = list("flogged", "whipped", "lashed", "flayed")
 
-
 // joey4298:Emoticon
 /obj/item/fluff/id_kit_mime
 	name = "Mime ID reprinter"
@@ -406,7 +402,7 @@
 		O.icon_state = new_icon // Changes the icon without changing the access.
 		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
 		user.visible_message(span_warning(" [user] reprints their ID."))
-		qdel(src)
+		consume(src, user)
 	else if(O.icon_state == new_icon)
 		to_chat(user, span_notice("[O] already has been reprinted."))
 		return
@@ -464,7 +460,6 @@
 /obj/item/clothing/suit/armor/vest/wolftaur/serdy/fit_constraint()
 	return null
 
-
 /obj/item/clothing/head/serdyhelmet //SilencedMP5A5's specialty helmet.
 	name = "custom security helmet"
 	desc = "An old production model steel-ceramic lined helmet with a white stripe and a custom orange holographic visor. It has ear holes, and smells of dog."
@@ -482,7 +477,6 @@
 	ear_protection = 1
 	drop_sound = 'sound/items/drop/helm.ogg'
 
-
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit
 	name = "Serdykov's armor modification kit"
@@ -495,7 +489,6 @@
 	from_suit = /obj/item/clothing/suit/armor/vest/wolftaur
 	to_helmet = /obj/item/clothing/head/serdyhelmet
 	to_suit = /obj/item/clothing/suit/armor/vest/wolftaur/serdy
-
 
 //Cameron653: Diana Kuznetsova
 /obj/item/clothing/suit/fluff/purp_robes
@@ -555,6 +548,7 @@
 	. = ..()
 	update_state(0)
 
+// LIFECYCLE: an active crystal finishes its step.
 /obj/item/clothing/accessory/collar/khcrystal/Destroy() //Waitwaitwait
 	if(state == 1)
 		periodic_step() //Nownownow
@@ -686,7 +680,7 @@
 		O.desc = new_desc
 		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
 		user.visible_message(span_warning(" [user] reprints their ID."))
-		qdel(src)
+		consume(src, user)
 	else if(O.icon_state == new_icon)
 		to_chat(user, span_notice("[O] already has been reprinted."))
 		return
@@ -725,9 +719,7 @@
 	soundloop = new(list(src), FALSE)
 	return ..()
 
-/obj/item/storage/backpack/saddlebag/tempest/Destroy()
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	ambulance = !(ambulance)
@@ -1044,7 +1036,6 @@
 	. = ..()
 	new /obj/item/melee/baton/fluff/stunstaff(src)
 
-
 /*
  * Awoo Sword
  */
@@ -1140,7 +1131,6 @@
 	edge = TRUE
 	icon_state = "[active_state]_sharp"
 	injury_kind = INJURY_CUT
-
 
 /obj/item/melee/fluffstuff/wolfgirlsword/deactivate(mob/living/user)
 	if(active)
@@ -1256,7 +1246,6 @@
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
 	return list(HOLD_ONLY(stores))
 
-
 /obj/item/rig/nikki/attackby(obj/item/W, mob/living/user)
 	//This thing accepts ONLY mounted sizeguns. That's IT. Nothing else!
 	if(open && istype(W,/obj/item/rig_module) && !istype(W,/obj/item/rig_module/mounted/sizegun))
@@ -1277,7 +1266,6 @@
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "bombersec"
-
 
 //pimientopyro - Scylla Casmus
 /obj/item/clothing/glasses/fluff/scylla
@@ -1369,10 +1357,8 @@
 				qdel(V)
 			user.update_hair()
 
-
 	else
 		to_chat(user, span_warning("\The [src] isn't compatible with your body as it is now."))
-
 
 End */
 
@@ -1434,7 +1420,6 @@ End */
 	attack_verb = list("mauled", "bit", "sawed", "butchered")
 	dulled = 1
 	default_material = MAT_GLASS
-
 
 //Ashling - Antoinette deKaultieste
 /obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette
@@ -1511,7 +1496,6 @@ End */
 	name = "Lucky's armor"
 	desc = "A chain mail suit with a badly drawn one eared cat on the front."
 
-
 //RevolverEloise - Revolver Eloise
 /obj/item/sword/fluff/revolver
 	name = "Catnip"
@@ -1550,7 +1534,6 @@ End */
 	nano_printer = new/obj/item/computer_hardware/nano_printer(src)
 	battery_module = new/obj/item/computer_hardware/battery_module(src)
 	battery_module.charge_to_full()
-
 
 //Stobarico - Kyu Comet
 /obj/item/instrument/piano_synth/fluff/kyutar
@@ -1617,7 +1600,6 @@ End */
 /obj/item/dice/loaded/ceph/Initialize(mapload)
 	. = ..()
 	icon_state = "ceph_d6[rand(1,sides)]"
-
 
 //abc123: Mira Nesyne
 /obj/item/clothing/accessory/medal/silver/fluff/abc314

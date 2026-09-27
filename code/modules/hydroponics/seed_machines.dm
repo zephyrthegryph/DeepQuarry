@@ -63,12 +63,7 @@
 	..()
 */
 
-/obj/machinery/botany/Destroy()
-	if(seed)
-		seed.forceMove(get_turf(src))
-	if(loaded_disk)
-		loaded_disk.forceMove(get_turf(src))
-	. = ..()
+REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 
 /obj/machinery/botany/machine_step()
 
@@ -282,7 +277,7 @@
 				genetics = seed.seed
 				degradation = 0
 
-			qdel(seed)
+			consume(seed)
 			seed = null
 			return TRUE
 
@@ -390,7 +385,6 @@
 				seed.seed.apply_gene(gene)
 				seed.modified += rand(5,10)
 			return TRUE
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/botany/step_start_condition()

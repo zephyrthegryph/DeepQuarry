@@ -105,8 +105,7 @@
 //Deletes contents of container.
 //Used when food is burned, before replacing it with a burned mess
 /obj/item/reagent_containers/cooking_container/proc/clear()
-	for (var/atom/a in contents)
-		qdel(a)
+	slot_clear()
 
 	if (reagents)
 		reagents.clear_reagents()

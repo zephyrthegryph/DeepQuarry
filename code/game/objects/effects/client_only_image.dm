@@ -9,6 +9,7 @@
 	C.images += src
 	LAZYADD(clients, om_handle(C))
 
+// LIFECYCLE: comes off every client it was shown to (clients aren't datums).
 /image/client_only/Destroy(force)
 	. = ..()
 	for(var/CW in clients)

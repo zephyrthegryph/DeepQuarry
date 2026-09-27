@@ -37,15 +37,12 @@
 				user.gib()
 			else
 				explosion(get_turf(src), -1, -1, -1, 1)
-			qdel(src)
+			consume(src, user)
 
 /obj/item/reagent_containers/food/drinks/cans/periodic_step(seconds_per_tick)
 	if(shaken <= 0)
 		return PROCESS_KILL
 	shaken -= seconds_per_tick
-
-/obj/item/reagent_containers/food/drinks/Destroy()
-	. = ..()
 
 //DRINKS
 
@@ -751,7 +748,6 @@
 /obj/item/reagent_containers/food/drinks/cans/nukie_one/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_NUKIEONE, 60)
-
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur
 	name = "bottled wataur"

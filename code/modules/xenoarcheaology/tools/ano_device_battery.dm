@@ -15,9 +15,6 @@
 	. = ..()
 	if(Adjacent(user))
 		. += "It currently has a charge of [stored_charge] out of [capacity]"
-/obj/item/anobattery/Destroy()
-	battery_effect = null
-	. = ..()
 
 /obj/item/anobattery/moderate
 	name = "moderate anomaly battery"
@@ -64,12 +61,6 @@
 	var/mob/last_user_touched
 
 /obj/item/anodevice/Initialize(mapload)
-	. = ..()
-
-/obj/item/anodevice/Destroy()
-	inserted_battery = null
-	archived_loc = null
-	last_user_touched = null
 	. = ..()
 
 /obj/item/anodevice/equipped(mob/user, slot)

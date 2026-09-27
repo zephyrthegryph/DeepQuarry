@@ -24,18 +24,18 @@
 	tank = new spawn_type (src)
 	contained = new mask_type (src)
 
+REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
+
+// LIFECYCLE: the mask retracts from its breather.
 /obj/machinery/oxygen_pump/Destroy()
 	if(breather)
 		breather.internal = null
 		if(breather.internals)
 			breather.internals.icon_state = "internal0"
 		breather.remove_from_mob(contained)
-		breather.cozyloop.stop() // Cozy Music
+		breather.cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
 		breather = null
-
-	QDEL_NULL(tank)
-	QDEL_NULL(contained)
 	return ..()
 
 /obj/machinery/oxygen_pump/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
@@ -166,7 +166,6 @@
 		. += "The meter shows [round(tank.air_contents.return_pressure())] kPa."
 	else
 		. += span_warning("It is missing a tank!")
-
 
 /// Runs while a mask is on someone; with nobody attached it sleeps until attach_mask().
 /obj/machinery/oxygen_pump/machine_step()

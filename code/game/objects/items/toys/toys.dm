@@ -61,7 +61,7 @@
 				if(O.reagents.has_reagent(REAGENT_ID_PACID, 1))
 					to_chat(user, "The acid chews through the balloon!")
 					O.reagents.splash(user, reagents.total_volume)
-					qdel(src)
+					consume(src, user)
 				else
 					src.desc = "A translucent balloon with some form of liquid sloshing around in it."
 					to_chat(user, span_notice("You fill the balloon with the contents of [O]."))
@@ -247,10 +247,9 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	new /obj/effect/decal/cleanable/ash(src.loc)
 	src.visible_message(span_warning("The [src.name] explodes!"),span_warning("You hear a snap!"))
 	playsound(src, 'sound/effects/snap.ogg', 50, 1)
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /obj/item/toy/snappop/Crossed(atom/movable/H as mob|obj)
 	if(H.is_incorporeal())
@@ -263,10 +262,9 @@
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(2, 0, src)
 			s.start()
-			new /obj/effect/decal/cleanable/ash(src.loc)
 			src.visible_message(span_warning("The [src.name] explodes!"),span_warning("You hear a snap!"))
 			playsound(src, 'sound/effects/snap.ogg', 50, 1)
-			qdel(src)
+			replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /*
  * Bosun's whistle
@@ -2165,9 +2163,7 @@
 	var/cooldown = 0
 	var/obj/stored_minature = null
 
-/obj/item/toy/minigibber/Destroy()
-	QDEL_NULL(stored_minature)
-	. = ..()
+REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 
 /obj/item/toy/minigibber/attack_self(mob/user)
 	. = ..(user)

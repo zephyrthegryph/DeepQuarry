@@ -92,14 +92,14 @@
 	..()
 	atom_ref = om_handle(A)
 
-/datum/dq_rx_node/Destroy()
-	for(var/datum/native_watch/W as anything in watches?.Copy())
-		qdel(W)
-	watches = null
+REF_OWNED_LIST(/datum/dq_rx_node, "watches")
+
+/// Phase 1 (unbind): the node leaves its atom.
+/datum/dq_rx_node/lifecycle_unbind()
+	. = ..()
 	var/atom/A = atom_of()
 	if(A?.rx_node == src)
 		A.rx_node = null
-	return ..()
 
 /datum/dq_rx_node/proc/atom_of()
 	var/atom/A = om_resolve(atom_ref)

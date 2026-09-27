@@ -14,7 +14,6 @@
 	var/list/ui_templates     // List of ui templates the commcard can access
 	var/list/internal_data = list()	   // Data that shouldn't be updated every time nanoUI updates, or needs to persist between updates
 
-
 /obj/item/commcard/proc/get_device_status()
 	var/list/L = list()
 	var/i = 1
@@ -24,7 +23,6 @@
 		else
 			L[++L.len] = list("name" = I.name, "active" = 0, "index" = i++)
 	return L
-
 
 // cartridge.get_data() returns a list of tuples:
 // The field element is the tag used to access the information by the template
@@ -317,7 +315,6 @@
 			return
 		om_after(src, 0, PROC_REF(toggle_blast_door_deferred), B)
 
-
 /obj/item/commcard/proc/toggle_blast_door_deferred(obj/machinery/door/blast/B)
 	if(B.density)
 		B.open()
@@ -364,11 +361,9 @@
 		if("alert")
 			internal_data["stat_display_special"] = signal.data["picture_state"]
 
-
 ///////////////////////////
 // SUBTYPES
 ///////////////////////////
-
 
 // Engineering Cartridge:
 // Devices
@@ -407,7 +402,6 @@
 	. = ..()
 	LAZYADD(internal_devices, new /obj/item/analyzer(src))
 
-
 // Medical Cartridge:
 // Devices
 //  *- Halogen Counter
@@ -427,7 +421,6 @@
 /obj/item/commcard/medical/get_data()
 	return list(list("field" = "med_records", "value" = get_med_records()))
 
-
 // Chemistry Cartridge:
 // Devices
 //  *- Halogen Counter
@@ -442,7 +435,6 @@
 /obj/item/commcard/medical/chemistry/Initialize(mapload)
 	. = ..()
 	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
-
 
 // Detective Cartridge:
 // Devices
@@ -464,7 +456,6 @@
 	data[++data.len] = list("field" = "sec_records", "value" = get_sec_records())
 	return data
 
-
 // Internal Affairs Cartridge:
 // Templates
 //  *- Security Records
@@ -482,7 +473,6 @@
 			list("field" = "emp_records", "value" = get_emp_records()),
 			list("field" = "sec_records", "value" = get_sec_records())
 		)
-
 
 // Security Cartridge:
 // Templates
@@ -502,7 +492,6 @@
 			list("field" = "sec_bot_access", "value" = get_sec_bot_access())
 		)
 
-
 // Janitor Cartridge:
 // Templates
 //  *- Janitorial Locator Magicbox
@@ -517,7 +506,6 @@
 	return list(
 			list("field" = "janidata", "value" = get_janitorial_locations())
 		)
-
 
 // Signal Cartridge:
 // Devices
@@ -540,7 +528,6 @@
 			list("field" = "signaler_access", "value" = get_int_signalers())
 		)
 
-
 // Science Cartridge:
 // Devices
 //  *- Signaler
@@ -558,7 +545,6 @@
 	. = ..()
 	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
 	LAZYADD(internal_devices, new /obj/item/analyzer(src))
-
 
 // Supply Cartridge:
 // Templates
@@ -602,7 +588,6 @@
 			list("field" = "supply_packs",		"value" = pack_list)
 		)
 
-
 // Command Cartridge:
 // Templates
 //  *- Status Display Access
@@ -624,11 +609,6 @@
 	internal_data["stat_display_active1"] = null
 	internal_data["stat_display_active2"] = null
 	internal_data["stat_display_special"] = null
-
-/obj/item/commcard/head/Destroy()
-	// Have to unregister the commcard for proper bookkeeping
-	SSradio.remove_object(src, 1435)
-	..()
 
 /obj/item/commcard/head/get_data()
 	return list(
@@ -654,7 +634,6 @@
 			list("name" = "Supply Records", "template" = "supply_records.tmpl"),
 			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl")
 		)
-
 
 /obj/item/commcard/head/hop/get_data()
 	var/list/data = ..()
@@ -688,7 +667,6 @@
 
 	return data
 
-
 // Head of Security Cartridge:
 // Templates
 //  *- Status Display Access
@@ -712,7 +690,6 @@
 	// Sec bot access
 	data[++data.len] = list("field" = "sec_bot_access", "value" = get_sec_bot_access())
 	return data
-
 
 // Research Director Cartridge:
 // Devices
@@ -743,7 +720,6 @@
 	// Signaler access
 	data[++data.len] = list("field" = "signaler_access", "value" = get_int_signalers())
 	return data
-
 
 // Chief Medical Officer Cartridge:
 // Devices
@@ -809,7 +785,6 @@
 	data[++data.len] = list("field" = "powernet_monitoring", "value" = get_powernet_monitoring_list())
 	data[++data.len] = list("field" = "powernet_target", "value" = get_powernet_target(internal_data["powernet_target"]))
 	return data
-
 
 // Captain Cartridge:
 // Devices
@@ -899,7 +874,6 @@
 
 	return data
 
-
 // Mercenary Cartridge
 // Templates
 //  *- Merc Shuttle Door Controller
@@ -927,7 +901,6 @@
 	return list(
 			list("field" = "blast_door", "value" = door_status)
 		)
-
 
 // Explorer Cartridge
 // Devices

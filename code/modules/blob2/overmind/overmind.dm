@@ -56,6 +56,7 @@
 
 REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
+// LIFECYCLE: its blobs and spores lose their overmind and recolour.
 /mob/observer/blob/Destroy()
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)

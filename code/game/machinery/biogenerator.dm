@@ -303,7 +303,7 @@
 		if(I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) < 0.1)
 			points += 1
 		else points += I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 10 * eat_eff
-		qdel(I)
+		consume(I)
 	if(!S)
 		to_chat(user, span_warning("Error: No growns inside. Please insert growns."))
 		return

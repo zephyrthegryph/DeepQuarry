@@ -63,6 +63,7 @@
 	default_apply_parts()
 	update_icon()
 
+// LIFECYCLE: its containers drop out and the growing clone is ejected.
 /obj/machinery/clonepod/Destroy()
 	for(var/obj/container in containers)
 		UnregisterSignal(container, COMSIG_QDELETING)
@@ -491,7 +492,6 @@
 		icon_state = "pod_1"
 	else if(mess)
 		icon_state = "pod_g"
-
 
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()

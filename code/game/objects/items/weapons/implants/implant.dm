@@ -77,12 +77,6 @@
 		known_implant = TRUE
 		post_implant(H)
 
-/obj/item/implant/Destroy()
-	// The implant site slot's teardown (destroy transaction phase 5, before
-	// Destroy(), OM relations step 2) already cleared part/imp_in and this
-	// implant's entry in the organ's implants list, if it had one.
-	return ..()
-
 /obj/item/implant/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/implanter))
 		var/obj/item/implanter/implanter = I
@@ -94,8 +88,6 @@
 		implanter.update()
 	else
 		..()
-
-
 
 //////////////////////////////
 //	Tracking Implant
@@ -119,6 +111,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/post_implant(mob/source)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
+// LIFECYCLE: leaves its limb's implant list.
 /obj/item/implant/tracking/Destroy()
 	if(part)
 		part.implants -= src
@@ -198,12 +191,10 @@ Implant Specifics:<BR>"}
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
 
-
 /obj/item/implant/dexplosive/trigger(emote, source as mob)
 	if(emote == "deathgasp")
 		src.activate("death")
 	return
-
 
 /obj/item/implant/dexplosive/activate(cause)
 	if((!cause) || (!src.imp_in))	return 0
@@ -474,7 +465,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 "} + span_bold("Integrity:") + {"Implant can only be used three times before the nanobots are depleted."}
 	return dat
 
-
 /obj/item/implant/adrenalin/trigger(emote, mob/source as mob)
 	if (src.uses < 1)	return 0
 	if (emote == "pale")
@@ -511,9 +501,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 "} + span_bold("Special Features:") + {"Alerts crew to crewmember death.<BR>
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
-
-/obj/item/implant/death_alarm/Destroy()
-	. = ..()
 
 /obj/item/implant/death_alarm/periodic_step()
 	if (!implanted) return
@@ -616,7 +603,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		imp_in.put_in_hands(scanned)
 	else
 		scanned.loc = t
-	qdel(src)
+	consume(src)
 
 /obj/item/implant/compressed/post_implant(mob/source)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
@@ -627,10 +614,8 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		source.mind.store_memory("Compressed matter implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.", 0, 0)
 	to_chat(source, "The implanted compressed matter implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
 
-
 /obj/item/implant/compressed/islegal()
 	return 0
-
 
 // === merged from implant_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/implant/vrlanguage
@@ -721,7 +706,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			return
 		hear(say_in_me.group[2])
 
-
 /obj/item/implant/sizecontrol/hear(msg)
 	if (malfunction)
 		return
@@ -741,12 +725,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 					var/resizing_value = text2num(size_mult.match)
 					H.resize(CLAMP(resizing_value/100 , RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS), uncapped = H.has_large_resize_bounds()) // Let resize handle size limits. It's meant to do that.
 
-
-
 /obj/item/implant/sizecontrol/post_implant(mob/source, mob/living/user = usr)
 	if(source != user)
 		owner = user
-
 
 /obj/item/implant/sizecontrol/emp_act(severity, recursive)
 	. = ..()
@@ -771,7 +752,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	. = ..()
 	src.imp = new /obj/item/implant/sizecontrol( src )
 	update()
-
 
 //////////////////////////////
 //	Compliance Implant
@@ -810,7 +790,6 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 			implant.laws = newlaws //Organic
 	else //No using other implants.
 		to_chat(user,span_notice("A red warning pops up on the implanter's micro-screen: 'INVALID IMPLANT DETECTED.'"))
-
 
 /obj/item/implant/compliance
 	name = "compliance implant"

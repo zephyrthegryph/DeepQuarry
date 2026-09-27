@@ -36,7 +36,6 @@
 /datum/say_list/infested
 	emote_see = list("shambles around", "twitches", "stares")
 
-
 /mob/living/simple_mob/blob/spore/infesting
 	name = "infesting blob spore"
 	can_infest = TRUE
@@ -53,21 +52,23 @@
 		LAZYADD(factory.spores, src)
 	return ..()
 
+REF_BACKLIST(/mob/living/simple_mob/blob/spore, list("factory" = "spores"))
+
+// LIFECYCLE: the infested body falls out as the spore bursts.
 /mob/living/simple_mob/blob/spore/Destroy()
-	if(factory)
-		LAZYREMOVE(factory.spores, src)
-	factory = null
 	if(infested)
 		infested.forceMove(get_turf(src))
 		visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts."))
 		infested = null
 	return ..()
 
+/mob/living/simple_mob/blob/spore
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/blob/spore/death(gibbed, deathmessage = "bursts!")
 	if(overmind)
 		overmind.blob_type.on_spore_death(src)
 	..(gibbed, deathmessage)
-	qdel(src)
 
 /mob/living/simple_mob/blob/spore/update_icons()
 	..() // This will cut our overlays.

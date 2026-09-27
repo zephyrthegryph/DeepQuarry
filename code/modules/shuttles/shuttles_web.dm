@@ -35,10 +35,7 @@
 	helmets = list()
 	..()
 
-/datum/shuttle/autodock/web_shuttle/Destroy()
-	QDEL_NULL(web_master)
-	helmets.Cut()
-	return ..()
+REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /datum/shuttle/autodock/web_shuttle/current_dock_target()
 	// TODO - Probably don't even need to override this right?  Debug testing code below will check!
@@ -249,7 +246,6 @@
 			travel_time = "[ (route.travel_time * travel_modifier) / (1 SECOND)] second\s"
 		routes.Add(list(list("name" = html_encode(capitalize(route.display_route(shuttle.web_master.current_destination) )), "index" = i, "travel_time" = travel_time)))
 
-
 	var/shuttle_location = shuttle.web_master.current_destination.name // Destination related, not loc.
 	var/future_location = null
 	if(shuttle.web_master.future_destination)
@@ -431,10 +427,6 @@
 /obj/shuttle_connector/Initialize(mapload)
 	. = ..()
 	RegisterSignal(SSshuttles,COMSIG_OBSERVER_SHUTTLE_ADDED,PROC_REF(setup_routes))
-
-/obj/shuttle_connector/Destroy()
-	UnregisterSignal(SSshuttles,COMSIG_OBSERVER_SHUTTLE_ADDED)
-	. = ..()
 
 // This is called whenever a shuttle is initialized.  If its our shuttle, do our thing!
 /obj/shuttle_connector/proc/setup_routes(new_shuttle)

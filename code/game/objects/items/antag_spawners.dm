@@ -12,9 +12,7 @@
 	sparks.set_up(5, 0, src)
 	sparks.attach(loc)
 
-/obj/item/antag_spawner/Destroy()
-	QDEL_NULL(sparks)
-	return ..()
+REF_OWNED(/obj/item/antag_spawner, "sparks")
 
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
@@ -89,14 +87,11 @@
 	GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
 	equip_antag(H)
 	used = 1
-	qdel(src)
+	consume(src, H)
 
 /obj/item/antag_spawner/technomancer_apprentice/equip_antag(mob/technomancer_mob)
 	var/datum/antagonist/technomancer/antag_datum = SSantag_job.all_antag_types[MODE_TECHNOMANCER]
 	antag_datum.equip_apprentice(technomancer_mob)
-
-
-
 
 /obj/item/antag_spawner/syndicate_drone
 	name = "drone teleporter"
@@ -138,7 +133,7 @@
 
 /obj/item/antag_spawner/syndicate_drone/proc/finish_drone_spawn(mob/living/silicon/robot/R)
 	GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
-	qdel(src)
+	consume(src, R)
 
 /obj/item/antag_spawner/syndicate_drone/protector
 	drone_type = /mob/living/silicon/robot/syndicate/protector

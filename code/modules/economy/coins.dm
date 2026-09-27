@@ -103,9 +103,6 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/coin/uranium/Destroy()
-	. = ..()
-
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/coin/uranium/periodic_step()
 	if(!mob_near(world.view))
@@ -195,7 +192,6 @@
 							span_notice("You throw \the [src]. It lands on [comment]!"))
 	balloon_alert_visible("\the [src] lands on [comment]!", "\the [src] lands on [comment]!")
 
-
 //Weird coins that I would prefer didn't work with normal vending machines. Might use them to make weird vending machines later.
 
 /obj/item/aliencoin
@@ -236,7 +232,6 @@
 	icon_state = "triangle-p"
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. This one's markings appear to reveal a purple material underneath."
 	value = 20
-
 
 /obj/item/aliencoin/attack_self(mob/user)
 	. = ..(user)

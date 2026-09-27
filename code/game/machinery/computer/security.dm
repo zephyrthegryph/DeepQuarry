@@ -51,11 +51,6 @@
 		"criminal" = list("*Arrest*", "Incarcerated", "Parolled", "Released", "None"),
 	)
 
-/obj/machinery/computer/secure_data/Destroy()
-	active1 = null
-	active2 = null
-	return ..()
-
 /obj/machinery/computer/secure_data/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_verb/secure_data_eject_id,
@@ -119,7 +114,6 @@
 		ui = new(user, src, "SecurityRecords", "Security Records") // 800, 380
 		ui.open()
 		ui.set_autoupdate(FALSE)
-
 
 /obj/machinery/computer/secure_data/tgui_data(mob/user)
 	var/data[0]
@@ -496,7 +490,6 @@
 	), "security-disposition:[REF(active2)]:[length(active2.disposition_history)]", src, user)
 	return TRUE
 
-
 /**
  * Called when the print timer finishes
  */
@@ -532,7 +525,6 @@
 	P.name = "paper - 'Security Record: [active1.fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)
-
 
 /**
  * Sets a temporary message to display to the user

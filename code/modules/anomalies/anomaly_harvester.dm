@@ -21,10 +21,6 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/anomaly_harvester/Destroy()
-	harvested = null
-	return ..()
-
 /obj/machinery/anomaly_harvester/RefreshParts()
 	var/efficient = get_part_rating(/obj/item/stock_parts/manipulator) - 2 * get_part_count(/obj/item/stock_parts/manipulator)
 	var/rating = get_part_rating(/obj/item/stock_parts/micro_laser) - 2 * get_part_count(/obj/item/stock_parts/micro_laser)
@@ -207,7 +203,6 @@
 			for(var/obj/item/research_sample/sample in src)
 				sample.forceMove(get_turf(src))
 			return TRUE
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/anomaly_harvester/step_start_condition()

@@ -27,6 +27,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	our_human = parent
 	make_timer()
 
+// LIFECYCLE: a held hallucination item is removed.
 /datum/component/hallucinations/Destroy(force)
 	if(halitem.len)
 		remove_hallucination_item()

@@ -19,10 +19,7 @@
 	. = ..()
 	rcon = new(src)
 
-/obj/machinery/computer/rcon/Destroy()
-	qdel(rcon)
-	rcon = null
-	. = ..()
+REF_OWNED(/obj/machinery/computer/rcon, "rcon")
 
 /obj/machinery/computer/rcon/declare_interactions(list/into)
 	into += list(

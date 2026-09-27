@@ -9,11 +9,11 @@
 /datum/exonet_log_panel/New(mob/observer/dead/host_mob)
 	host = host_mob
 
-/datum/exonet_log_panel/Destroy(force, ...)
-	if(host)
+/// Phase 2: its host's panel cache lets go.
+/datum/exonet_log_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host?.dq_exonet_log_panel_cache == src)
 		host.dq_exonet_log_panel_cache = null
-	host = null
-	return ..()
 
 /datum/exonet_log_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state

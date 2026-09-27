@@ -2,7 +2,6 @@
 	Pins both hold data for circuits, as well move data between them.  Some also cause circuits to do their function.  DATA_CHANNEL pins are the data holding/moving kind,
 where as PULSE_CHANNEL causes circuits to work() when their pulse hits them.
 
-
 A visualization of how pins work is below.  Imagine the below image involves an addition circuit.
 When the bottom pin, the activator, receives a pulse, all the numbers on the left (input) get added, and the answer goes on the right side (output).
 
@@ -14,8 +13,6 @@ C [4]-/|++|
 D [1]/  ||
 		||
 	Activator
-
-
 
 */
 /datum/integrated_io
@@ -34,6 +31,7 @@ D [1]/  ||
 	if(!istype(holder))
 		message_admins("ERROR: An integrated_io ([src.name]) spawned without a valid holder!  This is a bug.")
 
+// LIFECYCLE: a pin disconnects from its linked pins.
 /datum/integrated_io/Destroy()
 	disconnect()
 	data = null
@@ -42,7 +40,6 @@ D [1]/  ||
 
 /datum/integrated_io/tgui_host()
 	return holder.tgui_host()
-
 
 /datum/integrated_io/proc/data_as_type(as_type)
 	if(!ic_is_ref(data))

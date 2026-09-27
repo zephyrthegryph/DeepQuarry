@@ -10,8 +10,3 @@
 /obj/item/computer_hardware/tesla_link/get_slot_var()
 	return "tesla_link"
 
-/obj/item/computer_hardware/tesla_link/Destroy()
-	var/slot = get_slot_var()
-	if(holder2 && (holder2.vars[slot] == src))
-		holder2.vars[slot] = null
-	return ..()

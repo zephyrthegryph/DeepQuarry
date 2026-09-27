@@ -42,10 +42,6 @@
 	if(label_str)
 		label = label_str
 
-/datum/accessory_stat_modifier/Destroy()
-	target = null
-	return ..()
-
 /*
  * proc/apply(obj/item/clothing/clothing)
  *
@@ -71,7 +67,6 @@
 	clothing.slowdown -= slowdown_delta
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta).scaled(-1)))
-
 
 /datum/accessory_slot_registry
 	/// Assoc list of slot_flag (number) → display name (string).
@@ -175,6 +170,7 @@
 	if(!LAZYLEN(active_modifiers))
 		active_modifiers = null
 
+// LIFECYCLE: remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/Destroy()
 	// Revert all remaining modifiers to leave the world consistent.
 	if(LAZYLEN(active_modifiers))

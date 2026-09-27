@@ -11,11 +11,10 @@ code/game/machinery/computer/arcade.dm 1
 code/game/machinery/cryopod.dm 1
 code/game/machinery/floorlayer.dm 4
 code/game/machinery/machinery.dm 2
-code/game/machinery/pda_multicaster.dm 2
+code/game/machinery/pda_multicaster.dm 1
 code/game/machinery/suit_storage/suit_cycler.dm 1
 code/game/machinery/telecrystal_storage.dm 1
 code/game/machinery/virtual_reality/ar_console.dm 1
-code/game/machinery/washing_machine.dm 1
 code/game/objects/items/bodybag.dm 5
 code/game/objects/items/devices/lightreplacer.dm 1
 code/game/objects/items/devices/vacpack.dm 1

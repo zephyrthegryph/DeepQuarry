@@ -44,11 +44,7 @@
 	utility_requirements = build_utility_requirements()
 	variant_options = build_variant_options()
 
-/datum/generated_room_feature/Destroy()
-	QDEL_LIST(constraints)
-	utility_requirements = null
-	variant_options = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_room_feature, "constraints")
 
 /datum/generated_room_feature/proc/build_constraints()
 	return list()
@@ -281,10 +277,7 @@
 	feature_types = build_feature_types()
 	constraints = build_constraints()
 
-/datum/generated_room_feature_group/Destroy()
-	feature_types = null
-	QDEL_LIST(constraints)
-	return ..()
+REF_OWNED_LIST(/datum/generated_room_feature_group, "constraints")
 
 /datum/generated_room_feature_group/proc/build_feature_types()
 	return list()
@@ -478,11 +471,7 @@
 	constraints = build_constraints()
 	occupied_offsets = build_occupied_offsets()
 
-/datum/generated_room_fragment/Destroy()
-	QDEL_LIST(sockets)
-	QDEL_LIST(constraints)
-	occupied_offsets = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_room_fragment, list("sockets", "constraints"))
 
 /datum/generated_room_fragment/proc/build_sockets()
 	return list()
@@ -728,12 +717,6 @@
 	group_types = list()
 	fragment_types = list()
 
-/datum/generated_room_content_plan/Destroy()
-	feature_types = null
-	group_types = null
-	fragment_types = null
-	return ..()
-
 /// Visual language for a generated room, independent of its functional contents.
 /datum/generated_room_style
 	var/floor_type = /turf/simulated/floor/tiled
@@ -847,15 +830,8 @@
 	variant_options = build_variant_options()
 	room_style = build_room_style()
 
-/datum/generated_room_definition/Destroy()
-	required_features = null
-	required_groups = null
-	optional_groups = null
-	fragment_options = null
-	QDEL_LIST(constraints)
-	variant_options = null
-	QDEL_NULL(room_style)
-	return ..()
+REF_OWNED(/datum/generated_room_definition, "room_style")
+REF_OWNED_LIST(/datum/generated_room_definition, "constraints")
 
 /datum/generated_room_definition/proc/build_required_features()
 	return list()

@@ -56,6 +56,13 @@
 	if(!economic_sellable_attached)
 		AddElement(/datum/element/sellable/manufactured)
 
+/// Phase 1 (unbind): an object that blocked air reopens its tile. It is
+/// already QDELETED (phase 0), so the recomputed air_block_mask() skips it.
+/obj/lifecycle_unbind()
+	. = ..()
+	if(can_atmos_pass != ATMOS_PASS_YES && isturf(loc))
+		update_nearby_tiles()
+
 /obj/Destroy()
 	QDEL_NULL(material_service)
 

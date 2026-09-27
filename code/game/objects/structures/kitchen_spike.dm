@@ -22,7 +22,7 @@
 			visible_message(span_danger("[user] has forced [G?.grab_target()] onto the spike, killing [G.p_them()] instantly!"))
 			var/mob/M = G?.grab_target()
 			M.forceMove(src)
-			qdel(G)
+			consume(G, user)
 			qdel(M)
 		else
 			to_chat(user, span_danger("They are too big for the spike, try something smaller!"))

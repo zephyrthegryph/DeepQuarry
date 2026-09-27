@@ -81,7 +81,7 @@
 
 		user.remove_from_mob(src)
 		dismantle()
-		qdel(src)
+		consume(src, user)
 		var/mob/living/T = M
 		T.status_at_least(EFFECT_WEAKENED, 10)
 		T.injure(INJURY_BLUNT, 20, null, src)
@@ -102,8 +102,7 @@
 			return
 		var/obj/item/stack/C = W
 		if(C.get_amount() < 1) // How??
-			user.drop_from_inventory(C)
-			qdel(C)
+			consume(C, user)
 			return
 		var/padding_type
 		//CHOMPstation Start: making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack

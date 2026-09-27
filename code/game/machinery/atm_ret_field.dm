@@ -218,11 +218,7 @@
 	update_connections(1)
 	update_icon()
 
-/obj/structure/atmospheric_retention_field/Destroy()
-	for(var/obj/structure/atmospheric_retention_field/W in orange(1, src.loc))
-		W.update_connections(1)
-	update_nearby_tiles() //Force ZAS update
-	. = ..()
+DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
 /obj/structure/atmospheric_retention_field/attack_hand(mob/user as mob)
 	if(density)

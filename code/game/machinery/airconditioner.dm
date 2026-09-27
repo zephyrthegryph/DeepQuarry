@@ -157,10 +157,6 @@
 	default_apply_parts()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/power/thermoregulator/Destroy()
-	clear_gas_dependency()
-	return ..()
-
 /obj/machinery/power/thermoregulator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	wake_for_state_change()

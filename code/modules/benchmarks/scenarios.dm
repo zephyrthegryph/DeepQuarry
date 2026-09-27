@@ -205,11 +205,6 @@
 	var/turf/open/event_center
 	var/list/turf/open/event_turfs
 
-/datum/benchmark/major_events/Destroy()
-	event_center = null
-	event_turfs = null
-	return ..()
-
 /datum/benchmark/major_events/Run()
 	wait_for_assets()
 	var/list/events = splittext(param("events", "large_explosion,supermatter,mass_fire,decompression"), ",")
@@ -273,10 +268,6 @@
 	description = "Expedition station generation and release (bench_cycles, default 1)"
 	var/datum/expedition_site/generated_site
 	var/generation_done = FALSE
-
-/datum/benchmark/generation/Destroy()
-	generated_site = null
-	return ..()
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
@@ -757,3 +748,9 @@
 	metric("probe_allocated_mb_est", count * 184 / 1048576, "MB", "none")
 	metric("probe_private_growth_mb", after - before, "MB", "none")
 	hold = null
+
+// Bisect aid (init_and_turfs.md §0.5): -DBISECT_EXTRA_PROCS adds 1,000 empty
+// procs on /datum, to measure the per-type proc table cost on this codebase.
+#ifdef BISECT_EXTRA_PROCS
+#include "../../../tools/bisect/extra_procs.dm"
+#endif

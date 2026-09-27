@@ -7,11 +7,6 @@
 	host = new_host
 	forced_vessel = new_forced_vessel
 
-/datum/flight_operations_ui/Destroy()
-	host = null
-	forced_vessel = null
-	return ..()
-
 /datum/flight_operations_ui/tgui_host()
 	return host
 

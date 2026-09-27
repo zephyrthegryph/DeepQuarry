@@ -88,11 +88,6 @@
 	else
 		src.window_key = "[REF(src_object)]-main"
 
-/datum/tgui/Destroy()
-	user = null
-	src_object = null
-	return ..()
-
 /**
  * public
  *

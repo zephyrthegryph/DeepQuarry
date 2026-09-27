@@ -52,12 +52,7 @@
 
 	src.special_callback = special_callback
 
-/datum/cinematic/Destroy()
-	QDEL_NULL(screen)
-	special_callback = null
-	LAZYCLEARLIST(watching)
-	locked.Cut()
-	return ..()
+REF_OWNED(/datum/cinematic, "screen")
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)

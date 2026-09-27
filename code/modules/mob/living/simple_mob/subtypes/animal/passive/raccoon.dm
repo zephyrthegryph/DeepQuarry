@@ -42,9 +42,6 @@
 	ghostjoin_icon()
 	registry_join(REGISTRY_GHOST_PODS, src)
 
-/mob/living/simple_mob/animal/passive/raccoon/Destroy()
-	. = ..()
-
 /datum/say_list/raccoon
 	speak = list("HSSSSS")
 	emote_see = list("shakes their head", "shivers","grooms self", "nibbles on some trash")

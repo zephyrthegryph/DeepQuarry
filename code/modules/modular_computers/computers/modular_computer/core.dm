@@ -78,6 +78,7 @@
 	update_verbs()
 	. = ..()
 
+// LIFECYCLE: its program is killed and hardware uninstalled.
 /obj/item/modular_computer/Destroy()
 	kill_program(1)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
@@ -218,7 +219,6 @@
 	update_icon()
 	if(istype(user))
 		tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
-
 
 /obj/item/modular_computer/proc/run_program(prog)
 	var/datum/computer_file/program/P = null

@@ -240,27 +240,12 @@
 /obj/machinery/atmospherics/omni/proc/sort_ports()
 	return
 
-
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/omni/get_neighbor_nodes_for_init()
 	var/list/neighbor_nodes = list()
 	for(var/datum/omni_port/P in ports)
 		neighbor_nodes += P.node
 	return neighbor_nodes
-
-/obj/machinery/atmospherics/omni/Destroy()
-	rust_unregister_pipe_topology()
-	clear_gas_dependencies()
-	// Disconnect all ports before ..() so node.disconnect(src) runs against
-	// still-valid state.
-	for(var/datum/omni_port/P in ports)
-		if(P.node)
-			P.node.disconnect(src)
-			rust_release_network_wrapper(P.network)
-			P.node = null
-		P.network = null
-	ports = null
-	. = ..()
 
 /obj/machinery/atmospherics/omni/atmos_init()
 	for(var/datum/omni_port/P in ports)

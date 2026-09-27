@@ -14,13 +14,7 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/tvcamera/Destroy()
-	qdel(camera)
-	qdel(radio)
-	camera = null
-	radio = null
-	showing = null
-	. = ..()
+REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
 
 /obj/item/tvcamera/examine()
 	. = ..()
@@ -167,12 +161,7 @@
 	var/showing_name
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/bodycam/Destroy()
-	qdel(bcamera)
-	qdel(bradio)
-	bcamera = null
-	bradio = null
-	..()
+REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 
 /obj/item/clothing/accessory/bodycam/examine()
 	. = ..()
@@ -297,11 +286,10 @@
 		..()
 		return
 	var/obj/item/TVAssembly/A = new(user)
-	qdel(S)
+	consume(S, user)
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the infrared sensor to the robot head."))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/TVAssembly
 	name = "\improper TV Camera Assembly"
@@ -319,14 +307,14 @@
 				var/obj/item/robot_parts/robot_component/camera/CA = W
 				to_chat(user, span_notice("You add the camera module to [src]"))
 				user.drop_item()
-				qdel(CA)
+				consume(CA, user)
 				desc = "This TV camera assembly has a camera module."
 				buildstep++
 		if(1)
 			if(istype(W, /obj/item/taperecorder))
 				var/obj/item/taperecorder/T = W
 				user.drop_item()
-				qdel(T)
+				consume(T, user)
 				buildstep++
 				to_chat(user, span_notice("You add the tape recorder to [src]"))
 		if(2)
@@ -355,8 +343,7 @@
 				to_chat(user, span_notice("You encase the assembly in a Ward-Takeshi casing."))
 				var/turf/T = get_turf(src)
 				new /obj/item/tvcamera(T)
-				user.drop_from_inventory(src)
-				qdel(src)
+				consume(src, user)
 				return
 
 	..()

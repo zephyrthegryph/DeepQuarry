@@ -124,26 +124,18 @@
 	//Misc stuff we need to do
 	add_verb(owner, /mob/living/proc/shadekin_control_panel)
 
+REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
+
+// LIFECYCLE: revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
 /datum/component/shadekin/Destroy(force)
 	if(owner)
 		for(var/ability_id in shadekin_granted_abilities)
 			owner.revoke_ability(ability_id, src)
-	if(ishuman(owner))
-		UnregisterSignal(owner, COMSIG_SHADEKIN_COMPONENT)
-	else
+	if(!ishuman(owner))
 		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
-	UnregisterSignal(owner, list(COMSIG_HUMAN_GET_VOICE, COMSIG_HUMAN_GET_ALT_NAME, COMSIG_HUMAN_GET_VISIBLE_NAME))
 	remove_verb(owner, /mob/living/proc/shadekin_control_panel)
-	for(var/obj/effect/abstract/dark_maw/dm as anything in active_dark_maws) //if the component gets destroyed so does your precious maws
-		if(!QDELETED(dm))
-			qdel(dm)
-	// Only touch the owner's HUD when the component is removed from a LIVE mob
-	// (e.g. species change), not while owner itself is mid-deletion.
-	if(owner && !QDELING(owner))
-		if(owner.shadekin_display)
-			owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT //hide it
-	LAZYCLEARLIST(active_dark_maws)
-	owner = null
+	if(owner && !QDELING(owner) && owner.shadekin_display)
+		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
 	. = ..()
 
 /datum/component/shadekin/proc/recalc_values()

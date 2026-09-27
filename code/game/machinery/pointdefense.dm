@@ -134,10 +134,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	default_apply_parts()
 	update_icon()
 
-/obj/machinery/pointdefense/Destroy(force, ...)
-	. = ..()
-	engaging = null
-
 /obj/machinery/pointdefense/get_description_interaction()
 	. = ..()
 	if(!id_tag)

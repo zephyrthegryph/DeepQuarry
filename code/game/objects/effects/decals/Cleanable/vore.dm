@@ -36,9 +36,6 @@
 	update_icon()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/effect/decal/cleanable/blood/reagent/Destroy()
-	return ..()
-
 /obj/effect/decal/cleanable/blood/reagent/update_icon()
 	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
 

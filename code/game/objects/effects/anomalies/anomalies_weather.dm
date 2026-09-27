@@ -120,6 +120,7 @@
 		for(var/mob/mob in area)
 			selected_weather.hear_sounds(mob, FALSE)
 
+// LIFECYCLE: clears the weather it caused.
 /obj/effect/anomaly/weather/Destroy()
 	clear_weather()
 	. = ..()

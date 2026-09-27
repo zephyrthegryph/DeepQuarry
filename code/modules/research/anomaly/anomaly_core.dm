@@ -59,7 +59,7 @@
 		releaser.icon_state = releaser.used_icon_state
 		releaser.used = TRUE
 		releaser.name = "used " + releaser.name
-		qdel(src)
+		consume(src, user)
 
 /obj/item/assembly/signaler/anomaly/flux
 	name = "\improper flux anomaly core"

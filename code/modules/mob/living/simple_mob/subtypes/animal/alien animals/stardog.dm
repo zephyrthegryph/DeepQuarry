@@ -36,7 +36,6 @@
 	attack_sound = 'sound/voice/bork.ogg'
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
-
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
 	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
@@ -92,7 +91,6 @@
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
-
 
 /datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
 	of = /mob/living/simple_mob/vore/overmap/stardog
@@ -151,13 +149,7 @@
 	. = ..()
 	child_om_marker?.set_light(5, 1, "#ff8df5")
 
-/mob/living/simple_mob/vore/overmap/stardog/Destroy()
-	if(control_node)
-		control_node.host = null
-		control_node = null
-	for(var/anything in weather_areas)
-		weather_areas -= anything
-	return ..()
+REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "host"))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -402,7 +394,6 @@
 /turf/simulated/floor/outdoors/fur/ex_act(severity)
 	return
 
-
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
 	if(ishuman(AM))
@@ -431,7 +422,6 @@
 
 	apply_layer(MOB_WATER_LAYER)
 
-
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)
 	. = ..()
 	if(tree_chance && prob(tree_chance) && !check_density())
@@ -440,7 +430,6 @@
 			tree.color = tree_color
 		else
 			tree.color = color
-
 
 /turf/simulated/floor/outdoors/fur/verb/pet()
 	set name = "Pet Fur"
@@ -789,12 +778,10 @@
 		if(!Turf.check_density())
 			new F(Turf)
 
-
 /area/redgate/stardog/flesh_abyss/play_ambience(mob/living/L, initial = TRUE)
 	if(!L.check_sound_preference(/datum/preference/toggle/digestion_noises))
 		return
 	..()
-
 
 /obj/structure/control_pod	//god someone is going to try to fuck with this, everyone is going to be angry, I'm so sorry
 	name = "node"
@@ -823,11 +810,7 @@
 			host = dog
 			dog.control_node = src
 
-/obj/structure/control_pod/Destroy()
-	if(host)
-		host.control_node = null
-		host = null
-	return ..()
+REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 
 /obj/structure/control_pod/attack_hand(mob/living/user)
 	. = ..()
@@ -893,7 +876,6 @@
 	. = ..()
 	var/area/a = get_area(src)
 	name = a.name
-
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye
 	name = "visual nexus"
@@ -987,7 +969,6 @@
 	icon_state = "bluwhicir"
 
 	var/list/our_eyes
-
 
 /area/redgate/stardog/eyes/Entered(mob/M)
 	. = ..()
@@ -1259,11 +1240,6 @@
 		we_process = FALSE
 		return PROCESS_KILL
 
-/turf/simulated/floor/water/digestive_enzymes/Destroy()
-	if(we_process)
-		PERIODIC_STOP(src)
-	. = ..()
-
 /turf/simulated/floor/water/digestive_enzymes/proc/can_digest(atom/movable/digest_target)
 	. = FALSE
 	if(digest_target.loc != src)
@@ -1369,7 +1345,6 @@
 				how_much = how_much / 10	//Braindead mobs are worth less
 			linked_mob.adjust_nutrition(how_much)
 
-
 /obj/structure/auto_flesh_door	//It's like a simple door, but it opens and closes automatically now and then!
 	name = "flesh valve"
 	density = TRUE
@@ -1398,10 +1373,6 @@
 	countdown = rand(50,250)
 	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
-
-/obj/structure/auto_flesh_door/Destroy()
-	update_nearby_tiles()
-	return ..()
 
 /// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
 /obj/structure/auto_flesh_door/periodic_step()

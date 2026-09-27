@@ -7,10 +7,6 @@
 	var/category = "General"	// the category to list it in on the main menu
 	var/obj/item/pda/pda	// if this is null, and the app is running code, something's gone wrong
 
-/datum/data/pda/Destroy()
-	pda = null
-	return ..()
-
 /datum/data/pda/proc/start()
 	return
 
@@ -74,14 +70,12 @@
 
 /datum/data/pda/app/proc/update_ui(mob/user, list/data)
 
-
 // Utilities just have a button on the home screen, but custom code when clicked
 /datum/data/pda/utility
 	name = "Utility"
 	icon = "gear"
 	size = 1
 	category = "Utilities"
-
 
 /datum/data/pda/utility/scanmode
 	var/base_name

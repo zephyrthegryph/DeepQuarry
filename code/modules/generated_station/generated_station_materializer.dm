@@ -11,10 +11,7 @@
 	..()
 	reserved_frontage = list()
 
-/datum/generated_room_placement/Destroy()
-	QDEL_NULL(feature)
-	reserved_frontage = null
-	return ..()
+REF_OWNED(/datum/generated_room_placement, "feature")
 
 /// Complete, inspectable result of resolving one room definition.
 /datum/generated_room_solution
@@ -47,14 +44,7 @@
 	occupied = list()
 	issues = list()
 
-/datum/generated_room_solution/Destroy()
-	QDEL_LIST(placements)
-	QDEL_LIST(fragments)
-	circulation = null
-	door_circulation = null
-	occupied = null
-	issues = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_room_solution, list("placements", "fragments"))
 
 /datum/generated_room_solution/proc/tile_key(x, y)
 	return "[x],[y]"
@@ -72,9 +62,7 @@
 	var/rotation = 0
 	var/mirrored = FALSE
 
-/datum/generated_room_fragment_placement/Destroy()
-	QDEL_NULL(fragment)
-	return ..()
+REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 
 /// Area types owned by a materialized station. Separate instances are created
 /// for every department so APC and alarm state cannot bleed between rooms.
@@ -115,9 +103,6 @@
 /obj/effect/landmark/generated_station_entry
 	name = "generated station entry slot"
 	var/station_id
-
-/obj/effect/landmark/generated_station_entry/Destroy()
-	return ..(TRUE)
 
 /obj/machinery/door/airlock/generated_station_exterior
 	name = "exterior EVA airlock"
@@ -208,6 +193,7 @@
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
+// LIFECYCLE: its areas revert to space and its built atoms go with it.
 /datum/generated_station_materialization/Destroy()
 	QDEL_NULL(entry)
 	var/area/space/space_area = generated_station_space_area()
@@ -282,18 +268,7 @@
 	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
 
-/datum/generated_station_materializer/Destroy()
-	spec = null
-	nodes_by_id = null
-	department_areas = null
-	module_areas = null
-	transit_area = null
-	maintenance_area = null
-	result = null
-	QDEL_NULL(last_architecture_validation)
-	QDEL_NULL(tile_plan)
-	active_job = null
-	return ..()
+REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan"))
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
@@ -721,8 +696,6 @@
 /datum/generated_station_materializer/proc/world_turf(local_x, local_y)
 	return locate(min_x + local_x - 1, min_y + local_y - 1, z_level)
 
-
-
 /// Resolves cross-room access constraints after every authored fragment and
 /// generated furnishing exists, while the station can still be rejected safely.
 /datum/generated_station_materializer/proc/finalize_furnishing_access()
@@ -1121,8 +1094,6 @@
 	if(!current || current.structure_kind != GENERATED_STATION_TILE_EXTERIOR)
 		return
 	tile_plan.claim(local_x, local_y, "transit", "transit", GENERATED_STATION_TILE_FLOOR, floor_type, null)
-
-
 
 /// Installs baseline fire detection and emergency supplies independently of room decoration.
 /datum/generated_station_materializer/proc/place_emergency_equipment()
@@ -1668,8 +1639,6 @@
 		result.entry = new(T)
 		result.entry.station_id = spec.id
 		result.register_furnishing(new /obj/item/card/id/generated_station_master(T))
-
-
 
 /datum/generated_station_materializer/proc/finalize()
 	// All topology changes are complete before publishing the new z topology or

@@ -28,7 +28,6 @@
 // END_FILE_DIR
 
 // BEGIN_PREFERENCES
-#define DEBUG
 // END_PREFERENCES
 
 // BEGIN_INCLUDE
@@ -611,6 +610,7 @@
 #include "code\datums\containment\paths.dm"
 #include "code\datums\containment\slot_def.dm"
 #include "code\datums\containment\stock.dm"
+#include "code\datums\lifecycle\batch.dm"
 #include "code\datums\lifecycle\links.dm"
 #include "code\datums\lifecycle\transaction.dm"
 #include "code\datums\lifecycle\verbs.dm"

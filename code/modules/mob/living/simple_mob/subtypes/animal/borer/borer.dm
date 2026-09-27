@@ -93,6 +93,7 @@
 /mob/living/simple_mob/animal/borer/LateInitialize()
 	request_player()
 
+// LIFECYCLE: a borer detaches from and leaves its host.
 /mob/living/simple_mob/animal/borer/Destroy()
 	var/mob/living/carbon/human/host = src?.borer_host()
 	motiontracker_unsubscribe()
@@ -396,7 +397,6 @@
 			continue
 		else if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 			to_chat(M, "[src.true_name] whispers to [host], \"[message]\"")
-
 
 /datum/decl/mob_organ_names/borer
 	hit_zones = list("head", "central segment", "tail segment")

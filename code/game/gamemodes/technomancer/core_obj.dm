@@ -36,6 +36,7 @@
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
 
+// LIFECYCLE: its summons are dismissed with it.
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
 	return ..()
@@ -338,7 +339,6 @@
 	max_energy = 25000
 	regen_rate = 100 //250 seconds to full
 	instability_modifier = 0.75
-
 
 /obj/item/technomancer_core/verb/toggle_lock()
 	set name = "Toggle Core Lock"

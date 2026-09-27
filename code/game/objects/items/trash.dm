@@ -18,6 +18,7 @@
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
+// LIFECYCLE: persistent trash forgets this item.
 /obj/item/trash/Destroy()
 	SSpersistence.forget_value(src, /datum/persistent/filth/trash)
 	. = ..()
@@ -431,7 +432,6 @@
 	drop_sound = 'sound/items/drop/soda.ogg'
 	pickup_sound = 'sound/items/pickup/soda.ogg'
 
-
 /obj/item/trash/pasty
 	name = "pasty packaging"
 	icon_state = "pasty"
@@ -488,7 +488,6 @@
 /obj/item/trash/candy/cb10
 	name = "\improper Shantak Bar wrapper"
 	icon_state = "cb10"
-
 
 // Custom garbage or whatever
 

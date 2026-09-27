@@ -38,11 +38,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 		setup()
 	return INITIALIZE_HINT_QDEL
 
-/obj/effect/map_helper/airlock/Destroy()
-	my_controller = null
-	my_device = null
-	return ..()
-
 /obj/effect/map_helper/airlock/proc/get_controller(area/A)
 	if(!A)
 		return null
@@ -77,7 +72,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/proc/setup()
 	return //Stub for subtypes
 
-
 /*
 	Doors
 */
@@ -110,7 +104,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	tag_addon = "_hatch"
 	my_controller_type = /obj/machinery/embedded_controller/radio/simple_docking_controller
 
-
 /*
 	Atmos
 */
@@ -137,7 +130,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	name = "air dump output"
 	icon_state = "pumpdout"
 	tag_addon = "_pump_out_external"
-
 
 /*
 	Sensors - did you know they function as buttons? You don't also need a button.

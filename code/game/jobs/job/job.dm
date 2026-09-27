@@ -214,8 +214,7 @@
 	equip_preview(mannequin)
 	if(mannequin.get_equipped_item(SLOT_ID_BACK))
 		var/obj/O = mannequin.get_equipped_item(SLOT_ID_BACK)
-		mannequin.drop_from_inventory(O)
-		qdel(O)
+		consume(O, mannequin)
 
 ///Assigns minimum age by race & brain type. Code says Positronic = mechanical and Drone = digital because nothing can be simple.
 ///Will first check based on brain type, then based on species.

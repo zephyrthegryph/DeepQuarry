@@ -48,7 +48,6 @@
 	die()
 	return ..()
 
-
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
 
@@ -85,6 +84,7 @@
 	. = ..()
 	get_light_and_color(parent)
 
+// LIFECYCLE: leaves the implant list of the limb it was laid in.
 /obj/effect/spider/eggcluster/Destroy()
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
@@ -157,10 +157,6 @@
 	if(amount_grown != -1 && prob(50))
 		amount_grown = 1
 	get_light_and_color(parent)
-
-/obj/effect/spider/spiderling/Destroy()
-	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	return ..()
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -261,7 +257,7 @@
 			GS.faction = faction
 			if(stunted)
 				om_after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
-			qdel(src)
+			replace_with(src, GS)
 
 /obj/effect/spider/spiderling/stunted
 	stunted = TRUE
@@ -296,6 +292,7 @@
 	. = ..()
 	icon_state = pick("cocoon1","cocoon2","cocoon3")
 
+// LIFECYCLE: the cocoon splits open and drops its contents.
 /obj/effect/spider/cocoon/Destroy()
 	src.visible_message(span_warning("\The [src] splits open."))
 	for(var/atom/movable/A in contents)
@@ -309,7 +306,7 @@
 	visible_message(span_cult("[src] stops squirming."))
 	var/obj/effect/decal/cleanable/tendril_remains/remains = new /obj/effect/decal/cleanable/tendril_remains(src.loc)
 	remains.color = color
-	qdel(src)
+	replace_with(src, remains)
 
 /obj/effect/decal/cleanable/tendril_remains
 	name = "tendril remains"
@@ -317,11 +314,9 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "tendril_dead"
 
-
 // === merged from spiders_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/spider/spiderling/virgo
 	grow_as = list(/mob/living/simple_mob/animal/giant_spider/event, /mob/living/simple_mob/animal/giant_spider/hunter/event)
-
 
 // === merged from spiders_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Eggs
@@ -330,7 +325,6 @@
 
 /obj/effect/spider/eggcluster/royal/broodling
 	spider_type = /obj/effect/spider/spiderling/varied/broodling
-
 
 //Spiderling types
 /obj/effect/spider/spiderling/broodling

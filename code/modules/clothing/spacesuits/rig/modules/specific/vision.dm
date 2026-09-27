@@ -88,7 +88,6 @@
 	desc = "A complete visor system of optical scanners and vision modes."
 	icon_state = "fulloptics"
 
-
 	interface_name = "multi optical visor"
 	interface_desc = "An integrated multi-mode vision system."
 
@@ -97,7 +96,6 @@
 						/datum/rig_vision/thermal,
 						/datum/rig_vision/sechud,
 						/datum/rig_vision/medhud)
-
 
 /obj/item/rig_module/vision/meson
 
@@ -204,16 +202,13 @@
 
 	vision_modes = list(/datum/rig_vision/medhud)
 
-
 // There should only ever be one vision module installed in a suit.
 /obj/item/rig_module/vision/installed()
 	..()
 	holder.visor = src
 
-/obj/item/rig_module/vision/Destroy()
-	if(holder?.visor == src)
-		holder.visor = null
-	return ..()
+REF_PAIR(/obj/item/rig_module/vision, list("holder" = "visor"))
+REF_PAIR(/obj/item/rig, list("visor" = "holder"))
 
 /obj/item/rig_module/vision/engage()
 

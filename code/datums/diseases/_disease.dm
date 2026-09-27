@@ -39,10 +39,11 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 
 REGISTRY_MEMBERSHIP(/datum/disease, REGISTRY_ACTIVE_DISEASES)
 
+// LIFECYCLE: a running disease ends its effects.
 /datum/disease/Destroy()
-	affected_mob = null
 	if(global_flag_check(virus_modifiers, PROCESSING))
 		End()
+	affected_mob = null
 	return ..()
 
 /datum/disease/proc/try_infect(mob/living/infectee, make_copy = TRUE)

@@ -79,7 +79,7 @@
 	reagents.trans_to_holder(C.ingested, 1)
 	bites++
 	if(bites >= 5)
-		qdel(src)
+		consume(src, user)
 /obj/item/soap/proc/afterattack_timed_done2(atom/target, mob/user)
 	user.balloon_alert(user, "you scrub \the [target] out.")
 	qdel(target)

@@ -14,10 +14,7 @@
 		overmind.resource_blobs += src
 	return ..()
 
-/obj/structure/blob/resource/Destroy()
-	if(overmind)
-		overmind.resource_blobs -= src
-	return ..()
+REF_BACKLIST(/obj/structure/blob/resource, list("overmind" = "resource_blobs"))
 
 /obj/structure/blob/resource/pulsed()
 	. = ..()

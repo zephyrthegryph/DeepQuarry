@@ -66,8 +66,7 @@
 		S.dna.real_name = newname
 	if(S.mind)
 		S.mind.name = S.name
-	qdel(src)
-
+	consume(src, candidate)
 
 // More or less functionally identical to the telecrystal tele.
 /obj/item/slime_crystal
@@ -83,7 +82,7 @@
 /obj/item/slime_crystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	target.visible_message(span_warning("\The [target] has been teleported with \the [src] by \the [user]!"))
 	safe_blink(target, 14)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/slime_crystal/attack_self(mob/user)
 	. = ..(user)
@@ -91,7 +90,7 @@
 		return TRUE
 	user.visible_message(span_warning("\The [user] teleports themselves with \the [src]!"))
 	safe_blink(user, 14)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/slime_crystal/throw_impact(atom/movable/AM)
 	if(!istype(AM))
@@ -103,7 +102,6 @@
 	AM.visible_message(span_warning("\The [AM] has been teleported with \the [src]!"))
 	safe_blink(AM, 14)
 	qdel(src)
-
 
 /obj/item/disposable_teleporter/slime
 	name = "greater slime crystal"
@@ -128,7 +126,6 @@
 /obj/item/reagent_containers/food/snacks/slime/Initialize(mapload)
 	. = ..()
 	bitesize = 5
-
 
 //Flashlight
 
@@ -198,17 +195,11 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/slime_irradiator/Destroy()
-	return ..()
-
-
 //BS Pouch
 /obj/item/storage/backpack/holding/slime
 	name = "bluespace slime pouch"
 	desc = "A slimy pouch that opens into a localized pocket of bluespace."
 	icon_state = "slimepouch"
-
-
 
 //Slime Chems
 

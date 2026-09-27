@@ -27,11 +27,10 @@
 	if (istype(component,src))
 		to_chat(user, span_notice("You assemble a pillow pile!"))
 		user.drop_item()
-		qdel(component)
+		consume(component, user)
 		var/turf/T = get_turf(src)
 		new pile_type(T)
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 	else
 		to_chat(user, span_notice("You can't assemble a pillow pile out of mismatched stuff, it'd look hideous!"))
 
@@ -73,8 +72,7 @@
 /obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
 	if(!src) return
 	to_chat(user, span_notice("You dissasembled the large pillow pile!"))
-	new sourcepillow(src.loc)
-	qdel(src)
+	replace_with(src, sourcepillow)
 
 /obj/structure/bed/pillowpilefront/attack_hand(mob/user)
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
@@ -83,8 +81,7 @@
 /obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)
 	if(!src) return
 	to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))
-	new sourcepillow(src.loc)
-	qdel(src)
+	replace_with(src, sourcepillow)
 
 //Colours
 

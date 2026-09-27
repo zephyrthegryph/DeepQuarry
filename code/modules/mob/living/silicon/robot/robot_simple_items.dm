@@ -51,7 +51,6 @@
 		CRASH("Robotic Multibelt is not in a robot or module. This should not happen.")
 	return module
 
-
 //'Alterate Tools' means we do special tool handling in Init
 /obj/item/robotic_multibelt/Initialize(mapload, custom_handling = FALSE)
 	. = ..()
@@ -78,13 +77,10 @@
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
 
+// LIFECYCLE: its integrated tools (assoc values) go with it.
 /obj/item/robotic_multibelt/Destroy()
-	selected_item = null
 	QDEL_LIST_ASSOC_VAL(cyborg_integrated_tools)
-	integrated_tools_by_name.Cut()
-	integrated_tool_images.Cut()
 	. = ..()
-
 
 /obj/item/robotic_multibelt/attack_self(mob/user)
 	. = ..(user)
@@ -514,9 +510,7 @@
 
 	. = ..()
 
-/obj/item/robotic_multibelt/materials/Destroy()
-	QDEL_LIST(cyborg_integrated_tools)
-	. = ..()
+REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 
 ///Allows the material fabricator to pick up materials if they hit an appropriate stack.
 /obj/item/robotic_multibelt/materials/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -597,15 +591,7 @@
 	RegisterSignal(our_robot, COMSIG_DO_AFTER_BEGAN, PROC_REF(begin_using))
 	RegisterSignal(our_robot, COMSIG_DO_AFTER_ENDED, PROC_REF(end_using))
 
-/obj/item/gripper/Destroy()
-	current_pocket = null
-	QDEL_LIST(pockets)
-	if(our_robot) //In case we returned INITIALIZE_HINT_QDEL earlier in initalize.
-		UnregisterSignal(our_robot, COMSIG_DO_AFTER_BEGAN)
-		UnregisterSignal(our_robot, COMSIG_DO_AFTER_ENDED)
-	our_robot = null
-	. = ..()
-
+REF_OWNED_LIST(/obj/item/gripper, "pockets")
 
 /obj/item/gripper/examine(mob/user)
 	. = ..()
@@ -648,65 +634,54 @@
 	desc = "A strange grasping tool that can hold anything a human can, but still maintains the limitations of application its more limited cousins have."
 	icon_state = "gripper-omni"
 
-
 // VEEEEERY limited version for mining borgs. Basically only for swapping cells and upgrading the drills.
 /obj/item/gripper/miner
 	name = "drill maintenance gripper"
 	desc = "A simple grasping tool for the maintenance of heavy drilling machines."
 	icon_state = "gripper-mining"
 
-
 /obj/item/gripper/security
 	name = "security gripper"
 	desc = "A simple grasping tool for corporate security work."
 	icon_state = "gripper-sec"
 
-
 /obj/item/gripper/paperwork
 	name = "paperwork gripper"
 	desc = "A simple grasping tool for clerical work."
-
 
 /obj/item/gripper/medical
 	name = "medical gripper"
 	desc = "A simple grasping tool for medical work."
 	icon_state = "gripper-flesh"
 
-
 /obj/item/gripper/research //A general usage gripper, used for toxins/robotics/xenobio/etc
 	name = "scientific gripper"
 	icon_state = "gripper-sci"
 	desc = "A simple grasping tool suited to assist in a wide array of research applications."
-
 
 /obj/item/gripper/circuit
 	name = "circuit assembly gripper"
 	icon_state = "gripper-circ"
 	desc = "A complex grasping tool used for working with circuitry."
 
-
 /obj/item/gripper/service //Used to handle food, drinks, seeds, and cards.
 	name = "service gripper"
 	icon_state = "gripper-sheet"
 	desc = "A simple grasping tool used to perform tasks in the service sector, such as handling food, drinks, and seeds. It can also hold cards and fake casino chips for hosting card games."
-
 
 /obj/item/gripper/gravekeeper	//Used for handling grave things, flowers, etc.
 	name = "grave gripper"
 	icon_state = "gripper-old"
 	desc = "A specialized grasping tool used in the preparation and maintenance of graves."
 
-
 /obj/item/gripper/scene
 	name = "misc gripper"
 	desc = "A simple grasping tool that can hold a variety of 'general' objects..."
-
 
 /obj/item/gripper/no_use/organ
 	name = "organ gripper"
 	icon_state = "gripper-flesh"
 	desc = "A specialized grasping tool used to preserve and manipulate organic material."
-
 
 /obj/item/gripper/no_use/organ/Entered(atom/movable/AM)
 	if(istype(AM, /obj/item/organ))
@@ -729,12 +704,10 @@
 	icon_state = "gripper-flesh"
 	desc = "A specialized grasping tool used in robotics work."
 
-
 /obj/item/gripper/no_use/mech
 	name = "exosuit gripper"
 	icon_state = "gripper-mech"
 	desc = "A large, heavy-duty grasping tool used in construction of mechs."
-
 
 	special_handling = TRUE
 
@@ -751,12 +724,10 @@
 	desc = "A specialized loading device, designed to pick up and insert sheets of materials inside machines."
 	icon_state = "gripper-sheet"
 
-
 /obj/item/gripper/syndicate
 	name = "syndicate gripper"
 	desc = "A simple grasping tool for off-the-books syndicate work."
 	icon_state = "gripper-sec"
-
 
 /*
  * Misc tools
@@ -782,12 +753,6 @@
 			forceMove(R)
 		if(loc == R)
 			hud_layerise()
-
-/obj/item/reagent_containers/glass/bucket/cyborg/Destroy()
-	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	R = null
-	last_robot_loc = null
-	..()
 
 // What each gripper can pick up: its hold constraint (P3), checked through
 // dq_constraint_refusal() like any other holder.

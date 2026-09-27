@@ -27,9 +27,7 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/reagent_refinery/furnace/Destroy()
-	. = ..()
-	QDEL_NULL(beaker)
+REF_OWNED(/obj/machinery/reagent_refinery/furnace, "beaker")
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()
 	if(!anchored)

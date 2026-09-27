@@ -55,10 +55,7 @@
 	oil.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
 	AddComponent(/datum/component/hose_connector/input/fryer)
 
-/obj/machinery/appliance/cooker/fryer/Destroy()
-	QDEL_NULL(fry_loop)
-	QDEL_NULL(oil)
-	return ..()
+REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 
 /obj/machinery/appliance/cooker/fryer/examine(mob/user)
 	. = ..()
@@ -105,7 +102,6 @@
 			//We're above optimal, efficiency goes down as we pass too much over it
 			oil_efficiency = 1 - (oil_efficiency - 1)
 
-
 	cooking_power *= oil_efficiency
 
 /obj/machinery/appliance/cooker/fryer/update_icon() // We add our own version of the proc to use the special fryer double-lights.
@@ -146,7 +142,6 @@
 		CI.oil += buffer.total_volume
 		CI.container.soak_reagent(buffer)
 
-
 //To solve any odd logic problems with results having oil as part of their compiletime ingredients.
 //Upon finishing a recipe the fryer will analyse any oils in the result, and replace them with our oil
 //As well as capping the total to the max oil
@@ -170,7 +165,6 @@
 					else
 						total_our_oil += R.volume
 		SEND_SIGNAL(I, COMSIG_ITEM_FRIED)
-
 
 	if (total_removed > 0 || total_oil != CI.max_oil)
 		total_oil = min(total_oil, CI.max_oil)

@@ -52,6 +52,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	..(process, D)
 	return
 
+// LIFECYCLE: running symptoms end their effects.
 /datum/disease/advance/Destroy()
 	if(s_processing)
 		for(var/datum/symptom/S in symptoms)
@@ -189,7 +190,6 @@ GLOBAL_LIST_INIT(advance_cures, list(
 		var/actual_name = A.name
 		if(actual_name != DEVELOPER_WARNING_NAME)
 			name = actual_name
-
 
 /datum/disease/advance/proc/GenerateProperties()
 	resistance = 0

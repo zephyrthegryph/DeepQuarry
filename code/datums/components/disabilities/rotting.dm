@@ -37,7 +37,3 @@
 				owner.add_modifier(/datum/modifier/numbness/deep, 3 SECONDS) // what limb? Extreme nerve damage. Can't feel a thing + shock
 				E.droplimb(TRUE, DROPLIMB_ACID)
 
-/datum/component/rotting_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

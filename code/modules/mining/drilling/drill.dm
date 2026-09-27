@@ -92,7 +92,6 @@
 	var/need_update_field = 0
 	var/need_player_check = 0
 
-
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
 	if(Adjacent(user))
@@ -119,10 +118,7 @@
 	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/mining/drill/Destroy()
-	QDEL_NULL(faultreporter)
-	QDEL_NULL(cell)
-	return ..()
+REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
@@ -470,7 +466,6 @@
 	else
 		balloon_alert(user, "move an ore box to the drill before unloading it.")
 	return TRUE
-
 
 /obj/machinery/mining/brace
 	maintenance_flags = MACHINE_MAINT_STANDARD

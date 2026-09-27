@@ -40,6 +40,7 @@
 			price_tag = null
 	return
 
+// LIFECYCLE: micros inside drop out.
 /obj/item/reagent_containers/food/drinks/Destroy()
 	if(food_inserted_micros)
 		for(var/mob/mob in food_inserted_micros)
@@ -68,8 +69,7 @@
 
 		living_mob.forceMove(src)
 		holder.held_mob = null
-		user.drop_from_inventory(holder)
-		qdel(holder)
+		consume(holder, user)
 
 		food_inserted_micros += living_mob
 
@@ -239,7 +239,6 @@
 			. += span_notice("It is almost full!")
 		else
 			. += span_notice("It is full!")
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Drinks. END

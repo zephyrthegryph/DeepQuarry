@@ -70,11 +70,13 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
+/mob/living/simple_mob/humanoid/cultist/human
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/human/death()
 	new /obj/effect/decal/remains/human (src.loc)
 	..(null,"let's out a maddening laugh as his body crumbles away.")
 	ghostize()
-	qdel(src)
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt //Teleporting Cultists
 
@@ -231,11 +233,13 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
+/mob/living/simple_mob/humanoid/cultist/tesh
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/tesh/death()
 	new /obj/effect/decal/cleanable/ash (src.loc)
 	..(null,"let's out a shrill chirp as his body turns to dust.")
 	ghostize()
-	qdel(src)
 
 ////////////////////////////
 //		Lizard Cultist
@@ -279,11 +283,13 @@
 	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
 
+/mob/living/simple_mob/humanoid/cultist/lizard
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/lizard/death()
 	new /obj/effect/decal/remains/unathi (src.loc)
 	..(null,"hisses as he collapses into a pile of bones.")
 	ghostize()
-	qdel(src)
 
 ////////////////////////////
 //		Blood Mage
@@ -324,12 +330,14 @@
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
 
+/mob/living/simple_mob/humanoid/cultist/caster
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/caster/death()
 	new /obj/effect/decal/remains/human (src.loc)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	..(null,"melts into a pile of blood and bones.")
 	ghostize()
-	qdel(src)
 
 ////////////////////////////
 //		Blood Initiate
@@ -370,11 +378,13 @@
 	movement_cooldown = 4
 
 
+/mob/living/simple_mob/humanoid/cultist/initiate
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/initiate/death()
 	new /obj/effect/decal/remains/human (src.loc)
 	..(null,"lets out a horrified scream as his body crumbles away.")
 	ghostize()
-	qdel(src)
 
 ////////////////////////////
 //		Teshari Mage
@@ -413,11 +423,13 @@
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
 
+/mob/living/simple_mob/humanoid/cultist/castertesh
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/castertesh/death()
 	new /obj/effect/decal/cleanable/ash (src.loc)
 	..(null,"burns away into nothing.")
 	ghostize()
-	qdel(src)
 
 ////////////////////////////
 //		Elite Cultist
@@ -478,6 +490,9 @@
 	else
 		..()
 
+/mob/living/simple_mob/humanoid/cultist/elite
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/elite/death()
 	new /obj/effect/decal/remains/human (src.loc)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -485,7 +500,6 @@
 	..(null,"shatters into bone and blood like pieces like the now shattered mirror.")
 	playsound(src, 'sound/effects/Glassbr2.ogg', 100, 1)
 	ghostize()
-	qdel(src)
 
 ////////////////////////////
 //		Cult Magus
@@ -527,11 +541,13 @@
 	var/obj/item/shield_projector/shields = null
 
 
+/mob/living/simple_mob/humanoid/cultist/magus
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/magus/death()
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	..(null,"let's out a dark laugh as it collapses into a puddle of blood.")
 	ghostize()
-	qdel(src)
 
 /mob/living/simple_mob/humanoid/cultist/magus/Initialize(mapload)
 	shields = new /obj/item/shield_projector/rectangle/automatic/magus(src)
@@ -584,11 +600,13 @@
 	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
 
 
+/mob/living/simple_mob/humanoid/cultist/hunter
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/cultist/hunter/death()
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	..(null,"laughs as he melts away. His laughs echo through the air even after only a dense red goo remains.")
 	ghostize()
-	qdel(src)
 
 
 ////////////////////////////

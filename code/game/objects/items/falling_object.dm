@@ -35,7 +35,7 @@
 		dropped.flags |= ADMIN_SPAWNED
 	animate(dropped, pixel_y = initial_y, pixel_x = initial_x , time = 7)
 	om_after(dropped, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable,end_fall), crushing)
-	qdel(src)
+	expire(0)
 
 /atom/movable/proc/end_fall(crushing = FALSE)
 	if(isliving(src))

@@ -36,6 +36,7 @@
 		return COMPONENT_INCOMPATIBLE
 	set_tissue(tissue)
 
+// LIFECYCLE: the brain view is detached before the tissue drops, so it isn't killed on the way out.
 /datum/component/mind_host/Destroy(force)
 	// Detach the view before dropping the tissue, so it isn't put through a death on the way out.
 	if(view)

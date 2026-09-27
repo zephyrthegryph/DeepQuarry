@@ -63,6 +63,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
+// LIFECYCLE: leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/Destroy()
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
@@ -272,7 +273,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 #undef MOVING
 #undef SANITIZE_SPEED
 #undef CHANGE_SPEED_BY
-
 
 /obj/effect/overmap/visitable/ship/MouseDrop(atom/over)
 	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))

@@ -31,8 +31,7 @@
 	if(IS_HARMING(user))
 		to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
 		visible_message(span_notice("[user.name] crushes the [src] under their foot, breaking it!"))
-		new brokentype(get_turf(src))
-		qdel(src)
+		replace_with(src, brokentype)
 /*	else
 		radio.interact(user)
 */
@@ -120,7 +119,7 @@
 			if(linkedmonitor)
 				linkedmonitor.unpair(src)
 			linkedmonitor = null
-			qdel(src)
+			consume(src, user)
 		..()
 
 /obj/item/camerabug/wrench_act(mob/user, obj/item/tool)
@@ -133,12 +132,12 @@
 
 /obj/item/camerabug/bullet_act()
 	visible_message("The [src] lens shatters!")
-	new brokentype(get_turf(src))
 	if(linkedmonitor)
 		linkedmonitor.unpair(src)
 	linkedmonitor = null
-	qdel(src)
+	replace_with(src, brokentype)
 
+// LIFECYCLE: its monitor unpairs it.
 /obj/item/camerabug/Destroy()
 	if(linkedmonitor)
 		linkedmonitor.unpair(src)

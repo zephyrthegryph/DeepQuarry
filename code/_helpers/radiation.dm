@@ -61,12 +61,6 @@
 	/// Index into `targets` of the next one to apply.
 	var/next_target = 1
 
-/datum/radiation_pulse_information/Destroy(force)
-	. = ..()
-	source_ref = null
-	targets = null
-	transmissions = null
-
 /// How many targets this pulse still has to visit.
 /datum/radiation_pulse_information/proc/remaining_targets()
 	return max(length(targets) - next_target + 1, 0)

@@ -1,12 +1,12 @@
 // Known Languages — structured TGUI replacing the legacy admin_log_show panel.
 
-/mob/proc/dq_open_languages_panel(mob/user)
+/proc/dq_open_languages_panel(mob/source, mob/user)
 	if(!istype(user))
 		return
-	var/key = "[REF(src)]"
+	var/key = "[REF(source)]"
 	var/datum/languages_panel/panel = LAZYACCESS(GLOB.dq_languages_panels, key)
 	if(!panel)
-		panel = new(src)
+		panel = new(source)
 		GLOB.dq_languages_panels[key] = panel
 	panel.tgui_interact(user)
 
@@ -18,11 +18,11 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 /datum/languages_panel/New(mob/host_mob)
 	host = host_mob
 
-/datum/languages_panel/Destroy(force, ...)
+/// Phase 2: leaves the per-host panel index.
+/datum/languages_panel/lifecycle_dematerialize()
+	. = ..()
 	if(host)
 		GLOB.dq_languages_panels -= "[REF(host)]"
-	host = null
-	return ..()
 
 /datum/languages_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -87,4 +87,4 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	set name = "Check Known Languages"
 	set category = "IC.Game"
 	set src = usr
-	dq_open_languages_panel(src)
+	dq_open_languages_panel(src, src)

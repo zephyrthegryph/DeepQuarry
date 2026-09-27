@@ -70,8 +70,7 @@
 			to_chat(user, span_warning("\The [src] is full; please empty it before you continue."))
 			return TRUE
 		paperamount += paper_result
-		user.drop_from_inventory(W)
-		qdel(W)
+		consume(W, user)
 		playsound(src, 'sound/items/pshred.ogg', 75, 1)
 		flick(shred_anim, src)
 		if(paperamount > max_paper)
@@ -200,5 +199,4 @@
 	var/mob/living/M = loc
 	if(istype(M))
 		M.drop_from_inventory(src)
-	new /obj/effect/decal/cleanable/ash(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/ash)

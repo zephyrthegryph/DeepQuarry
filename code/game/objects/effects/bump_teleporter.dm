@@ -15,9 +15,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/bump_teleporter, REGISTRY_BUMP_TELEPORTERS)
 /obj/effect/bump_teleporter/Initialize(mapload)
 	. = ..()
 
-/obj/effect/bump_teleporter/Destroy()
-	return ..()
-
 /obj/effect/bump_teleporter/Bumped(atom/user)
 	if(!ismob(user))
 		//user.loc = src.loc	//Stop at teleporter location

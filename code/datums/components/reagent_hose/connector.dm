@@ -32,15 +32,11 @@
 	if(my_hose || reagents.total_volume)
 		PERIODIC_START(src, PERIODIC_SLOW)
 
+REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
+
+// LIFECYCLE: the carrier loses its disconnect verb.
 /datum/component/hose_connector/Destroy()
-	UnregisterSignal(carrier, COMSIG_ATOM_EXAMINE)
-	UnregisterSignal(carrier, COMSIG_MOVABLE_MOVED)
-	UnregisterSignal(carrier, COMSIG_HOSE_FORCEPUMP)
 	carrier.verbs -= /atom/proc/disconnect_hose
-	carrier = null
-	if(my_hose)
-		QDEL_NULL(my_hose)
-	QDEL_NULL(reagents)
 	. = ..()
 
 /datum/component/hose_connector/proc/get_carrier()
@@ -214,7 +210,6 @@
 			var/datum/component/hose_connector/AC = available_sockets[choice]
 			AC.disconnect_action(usr)
 
-
 /*
  * Standard subtypes
  */
@@ -270,7 +265,6 @@
 /datum/component/hose_connector/endless_drain/handle_pump(datum/reagents/connected_to)
 	ASSERT(connected_to)
 	connected_to.clear_reagents()
-
 
 /// Moo, needed because it has a seperate reagent container as udder.
 /datum/component/hose_connector/output/cow

@@ -135,7 +135,7 @@
 	new /obj/item/clothing/head/paper_crown(spawnloc)
 	var/obj/item/paper/cracker_joke/J = new(spawnloc)
 	J.info = joke
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/cracker/shrinking

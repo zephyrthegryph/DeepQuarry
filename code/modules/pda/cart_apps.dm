@@ -55,7 +55,6 @@
 
 	frequency.post_signal(src, status_signal)
 
-
 /datum/data/pda/app/signaller
 	name = "Signaler System"
 	icon = "rss"
@@ -106,9 +105,7 @@
 	power_monitor = new(src)
 	. = ..()
 
-/datum/data/pda/app/power/Destroy()
-	QDEL_NULL(power_monitor)
-	return ..()
+REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 
 /datum/data/pda/app/power/update_ui(mob/user, list/data)
 	data.Add(power_monitor.tgui_data(user))

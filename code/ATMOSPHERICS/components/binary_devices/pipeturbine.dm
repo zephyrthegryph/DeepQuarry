@@ -39,22 +39,6 @@
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/rotatable)
 
-/obj/machinery/atmospherics/pipeturbine/Destroy()
-	rust_unregister_pipe_topology()
-	// disconnect/qdel BEFORE ..() so node derefs are valid.
-	if(node1)
-		node1.disconnect(src)
-		rust_release_network_wrapper(network1)
-	if(node2)
-		node2.disconnect(src)
-		rust_release_network_wrapper(network2)
-
-	node1 = null
-	node2 = null
-	network1 = null
-	network2 = null
-	return ..()
-
 /obj/machinery/atmospherics/pipeturbine/machine_step()
 	..()
 	if(!anchored || (stat & BROKEN))
@@ -218,7 +202,6 @@
 		node2 = null
 
 	return null
-
 
 /obj/machinery/power/turbinemotor
 	name = "motor"

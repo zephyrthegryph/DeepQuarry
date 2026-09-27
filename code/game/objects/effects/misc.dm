@@ -140,12 +140,12 @@
 			if(3 to INFINITY)
 				light_spot.icon_state = "far"
 
+REF_OWNED(/obj/effect/abstract/directional_lighting, "light_spot")
+
+// LIFECYCLE: only its light component may delete it.
 /obj/effect/abstract/directional_lighting/Destroy(force)
 	if(!force)
 		stack_trace("Directional light atom deleted, but not by our component")
 		return QDEL_HINT_LETMELIVE
-
 	vis_contents.Cut()
-	QDEL_NULL(light_spot)
-
 	return ..()

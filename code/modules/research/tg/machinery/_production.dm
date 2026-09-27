@@ -46,11 +46,7 @@
 	RefreshParts()
 	update_icon()
 
-/obj/machinery/rnd/production/Destroy()
-	QDEL_NULL(print_sound)
-	materials = null
-	cached_designs = null
-	return ..()
+REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 
 /obj/machinery/rnd/production/update_icon()
 	cut_overlays()

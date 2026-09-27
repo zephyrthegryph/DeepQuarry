@@ -17,7 +17,6 @@
 	if(A > upper) return 0
 	return 1
 
-
 /proc/Get_Angle(atom/movable/start,atom/movable/end)//For beams.
 	if(!start || !end) return 0
 	var/dy
@@ -125,8 +124,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	return destination
 
-
-
 /proc/LinkBlocked(turf/A, turf/B)
 	if(A == null || B == null) return 1
 	var/adir = get_dir(A,B)
@@ -142,7 +139,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	if(DirBlocked(A,adir)) return 1
 	if(DirBlocked(B,rdir)) return 1
 	return 0
-
 
 /proc/DirBlocked(turf/loc,dir)
 	for(var/obj/structure/window/D in loc)
@@ -256,8 +252,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	frequency = text2num(frequency)
 	return frequency * 10
 
-
-
 //This will update a mob's name, real_name, mind.name, data_core records, pda and id
 //Calling this proc without an oldname will only update the mob and skip updating the pda, id and records ~Carn
 /mob/proc/fully_replace_character_name(oldname,newname)
@@ -302,8 +296,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					search_pda = 0
 	return 1
 
-
-
 //Generalised helper proc for letting mobs rename themselves. Used to be clname() and ainame()
 //Last modified by Carn
 /mob/proc/rename_self(role, allow_numbers=0)
@@ -341,10 +333,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 				// Set eyeobj name
 				A.SetName(newname)
 
-
 		fully_replace_character_name(oldname,newname)
-
-
 
 //Picks a string of symbols to display as the law number for hacked or ion laws
 /proc/ionnum()
@@ -549,7 +538,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	return locate(x,y,A.z)
 
-
 // returns turf relative to A offset in dx and dy tiles
 // bound to map limits
 /proc/get_offset_target_turf(atom/A, dx, dy)
@@ -645,7 +633,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			for(var/turf/T in N) turfs += T
 	return turfs
 
-
 //Takes: An instance of the area.
 //Returns: A list of all turfs in that area.
 //Side note: I don't know why this was never a thing. Did everyone just ignore the Blueprint item?! - C.L.
@@ -657,7 +644,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	for(var/turf/counted_turfs in checked_area.contents) //Cheap. Efficient. Lovely.
 		turfs += counted_turfs
 	return turfs
-
 
 //Takes: Area type as text string or as typepath OR an instance of the area.
 //Returns: A list of all atoms	(objs, turfs, mobs) in areas of that type of that type in the world.
@@ -674,7 +660,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			for(var/atom/A in N)
 				atoms += A
 	return atoms
-
 
 //Takes: Area as an instance of the area.
 //Returns: A list of all atoms	(objs, turfs, mobs) in the selected area.
@@ -834,7 +819,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					O.vars[V] = original.vars[V]
 	return O
 
-
 /area/proc/copy_contents_to(area/A , platingRequired = 0 )
 	//Takes: Area. Optional: If it should copy to areas that don't have plating
 	//Returns: Nothing.
@@ -881,7 +865,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	var/copiedobjs = list()
 
-
 	moving:
 		for (var/turf/T in refined_src)
 			var/datum/coords/C_src = refined_src[T]
@@ -919,10 +902,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 						objs += O
 
-
 					for(var/obj/O in objs)
 						newobjs += DuplicateObject(O , 1)
-
 
 					for(var/obj/O in newobjs)
 						O.loc = X
@@ -953,16 +934,11 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					refined_trg -= B
 					continue moving
 
-
-
-
 	if(toupdate.len)
 		for(var/turf/simulated/T1 in toupdate)
 			SSair.mark_for_update(T1)
 
 	return copiedobjs
-
-
 
 /proc/get_cardinal_dir(atom/A, atom/B)
 	var/dx = abs(B.x - A.x)
@@ -983,7 +959,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		if (M.client)
 			mobs += M
 	return mobs
-
 
 /proc/parse_zone(zone)
 	if(zone == BP_R_HAND) return "right hand"
@@ -1010,7 +985,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /proc/get_turf_or_move(turf/location)
 	return get_turf(location)
 
-
 //Quick type checks for some tools
 GLOBAL_LIST_INIT(common_tools, list(
 /obj/item/stack/cable_coil,
@@ -1026,7 +1000,6 @@ GLOBAL_LIST_INIT(common_tools, list(
 	if(O && is_type_in_list(O, GLOB.common_tools))
 		return 1
 	return 0
-
 
 /proc/is_hot(obj/item/W as obj)
 	switch(W.type)
@@ -1151,7 +1124,6 @@ GLOBAL_LIST_INIT(common_tools, list(
 					if(O.pixel_x < -10)
 						return 1
 
-
 	//Some stuff is placed directly on the wallturf (signs)
 	for(var/obj/O in get_step(loc, dir))
 		if(O.flags & WALL_ITEM)
@@ -1214,6 +1186,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /mob/dview/skips_registry(registry_id)
 	return TRUE
 
+// LIFECYCLE: shared dview mob refuses deletion unless forced, then is replaced.
 /mob/dview/Destroy(force)
 	stack_trace("Attempt to delete the dview_mob: [log_info_line(src)]")
 	if (!force)
@@ -1245,8 +1218,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 			return "[round(number / 1e9, 0.1)] G[symbol]" // giga
 		if(1e12 to 1e15-1)
 			return "[round(number / 1e12, 0.1)] T[symbol]" // tera
-
-
 
 //ultra range (no limitations on distance, faster than range for distances > 8); including areas drastically decreases performance
 /proc/urange(dist=0, atom/center=usr, orange=0, areas=0)
@@ -1634,12 +1605,10 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(!dist)
 		return atom_list
 
-
 	var/turf/checked_turf
 	var/y
 	var/x
 	var/c_dist = 1
-
 
 	while( c_dist <= dist )
 		y = t_center.y + c_dist
@@ -1676,7 +1645,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		c_dist++
 
 	return atom_list
-
 
 /*
 	get_holder_at_turf_level(): Similar to get_turf(), will return the "highest up" holder of this atom, excluding the turf.

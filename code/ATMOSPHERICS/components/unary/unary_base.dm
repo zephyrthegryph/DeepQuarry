@@ -72,25 +72,6 @@
 /obj/machinery/atmospherics/unary/get_neighbor_nodes_for_init()
 	return list(node)
 
-/obj/machinery/atmospherics/unary/Destroy()
-	rust_unregister_pipe_topology()
-	// om_watch_disarm_all() (called from /obj/machinery/Destroy() below, via ..()) removes
-	// every watch this device holds keyed by its own ref string (code/datums/om/watch.dm) --
-	// no handle needed, so unlike the old subscribe_gas_dependency() transport this doesn't
-	// race qdel() setting gc_destroyed before Destroy() runs.
-	// Disconnect/qdel BEFORE ..() so node deref is valid.
-	var/datum/pipe_network/old_network = network
-	if(old_network?.normal_members)
-		old_network.normal_members -= src
-		unregister_network_membership(old_network)
-	if(node)
-		node.disconnect(src)
-		rust_release_network_wrapper(old_network)
-
-	node = null
-	network = null
-	return ..()
-
 /obj/machinery/atmospherics/unary/atmos_init()
 	invalidate_gas_dependencies()
 	if(node)

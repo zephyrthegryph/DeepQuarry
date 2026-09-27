@@ -19,10 +19,6 @@
 		// + 2 coming from the off-by-one of copytext, and then another from the slash
 		key = copytext("[type]", length("[parent_type]") + 2)
 
-/datum/preference_middleware/Destroy()
-	preferences = null
-	return ..()
-
 /// Append all of these into ui_data
 /datum/preference_middleware/proc/get_ui_data(mob/user, datum/tgui/ui)
 	return list()

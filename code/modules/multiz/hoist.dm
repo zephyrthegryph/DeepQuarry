@@ -16,7 +16,7 @@
 		return TRUE
 	new /obj/structure/hoist (get_turf(user), user.dir)
 	user.visible_message(span_warning("[user] deploys the hoist kit!"), span_notice("You deploy the hoist kit!"), span_notice("You hear the sound of parts snapping into place."))
-	qdel(src)
+	consume(src, user)
 
 /obj/effect/hoist_hook
 	name = "hoist clamp"
@@ -111,14 +111,12 @@
 	source_hook = new(newloc)
 	source_hook.source_hoist = src
 
+REF_OWNED(/obj/structure/hoist, "source_hook")
+
+// LIFECYCLE: whatever hangs from the hoist is released.
 /obj/structure/hoist/Destroy()
 	if(hoistee)
 		release_hoistee()
-	QDEL_NULL(src.source_hook)
-	return ..()
-
-/obj/effect/hoist_hook/Destroy()
-	source_hoist = null
 	return ..()
 
 /obj/structure/hoist/proc/check_consistency()
@@ -199,8 +197,7 @@
 	om_do_after(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
 
 /obj/structure/hoist/proc/collapse_kit()
-	new /obj/item/hoist_kit(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/item/hoist_kit)
 
 /obj/structure/hoist/verb/collapse_hoist()
 	set name = "Collapse Hoist"

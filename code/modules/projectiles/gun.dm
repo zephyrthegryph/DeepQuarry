@@ -155,11 +155,7 @@
 	// Initialise the firemode selector.
 	firemode_selector  = new /datum/gun_firemode_selector(src)
 
-/obj/item/gun/Destroy()
-	QDEL_NULL(firemode_selector)
-	// The attached_lock is parented to src (loc = src), qdel cascade handles it.
-	attached_lock = null
-	return ..()
+REF_OWNED(/obj/item/gun, "firemode_selector")
 
 /obj/item/gun/update_twohanding()
 	if(one_handed_penalty)
@@ -185,7 +181,6 @@
 				LAZYSET(item_state_slots, slot_l_hand_str, initial(item_state))
 				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
 	..()
-
 
 //Checks whether a given mob can use the gun
 //Any checks that shouldn't result in handle_click_empty() being called if they fail should go here.
@@ -547,7 +542,6 @@
 				om_after(src, burst_delay, PROC_REF(handle_userless_gunfire), target, ++ticker, TRUE)
 
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
-
 
 //obtains the next projectile to fire
 /obj/item/gun/proc/consume_next_projectile()

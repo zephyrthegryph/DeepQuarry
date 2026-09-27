@@ -29,11 +29,7 @@
 	curr_health = max_health
 	stability = ANOMALY_STABLE
 
-/datum/anomaly_stats/Destroy(force)
-	QDEL_NULL(modifier)
-	attached_anomaly = null
-	attached_harvester = null
-	return ..()
+REF_OWNED(/datum/anomaly_stats, "modifier")
 
 /datum/anomaly_stats/proc/randomize_particle_types()
 	var/list/particles = list(ANOMALY_PARTICLE_SIGMA, ANOMALY_PARTICLE_DELTA, ANOMALY_PARTICLE_ZETA, ANOMALY_PARTICLE_EPSILON)

@@ -407,6 +407,8 @@ export const DmTarget = new Juke.Target({
     return [`${DME_NAME}.dmb`, `${DME_NAME}.rsc`];
   },
   executes: async ({ get }) => {
+    // Production build: no DEBUG (no runtime line numbers, ~56 MB less at world
+    // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
     await DreamMaker(`${DME_NAME}.dme`, {
       defines: ['CBT', ...get(DefineParameter)],
       warningsAsErrors: get(WarningParameter).includes('error'),
@@ -931,7 +933,10 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
   return record;
 }
 
-const TEST_DEFINES = ['CBT', 'CIBUILDING', 'CITESTING'];
+// DEBUG (line numbers in runtimes) is off in the production .dmb: it costs
+// ~56 MB at world load (doc/rewrite/init_and_turfs.md §0.5). Test, bench and
+// autowiki builds turn it back on here; a local dev build can pass -D DEBUG.
+const TEST_DEFINES = ['CBT', 'CIBUILDING', 'CITESTING', 'DEBUG'];
 
 // ---------------------------------------------------------------------------
 // Domains, tiers and `--affected` (`dm-test --domains=a,b`, `--tier=fast`,
@@ -1776,7 +1781,7 @@ export const AutowikiTarget = new Juke.Target({
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
     await DreamMaker(`${DME_NAME}.test.dme`, {
-      defines: ['CBT', 'AUTOWIKI', ...get(DefineParameter)],
+      defines: ['CBT', 'AUTOWIKI', 'DEBUG', ...get(DefineParameter)],
       warningsAsErrors: get(WarningParameter).includes('error'),
       ignoreWarningCodes: get(NoWarningParameter),
       namedDmVersion: get(DmVersionParameter),

@@ -59,10 +59,7 @@
 	assay_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, minimum_amount)
 	event_types = list(CONTRACT_EVENT_MATERIAL_CERTIFIED, CONTRACT_EVENT_ITEM_EXPORTED)
 
-/datum/contract_requirement/qualified_material_delivery/Destroy()
-	QDEL_NULL(assay_filter)
-	qualified_lots = null
-	return ..()
+REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter")
 
 /datum/contract_requirement/qualified_material_delivery/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING)
@@ -130,11 +127,6 @@
 /datum/contract/social/alternative_fuel_trial
 	var/datum/contract_requirement/staged_sustained_event/output_requirement
 	var/datum/contract_requirement/sustained_event/thermal_requirement
-
-/datum/contract/social/alternative_fuel_trial/Destroy()
-	output_requirement = null
-	thermal_requirement = null
-	return ..()
 
 /datum/contract/social/alternative_fuel_trial/on_negotiated_terms_changed()
 	..()
@@ -363,10 +355,6 @@
 
 /datum/contract/social/balanced_operations
 	var/datum/contract_requirement/event_count/cycle_requirement
-
-/datum/contract/social/balanced_operations/Destroy()
-	cycle_requirement = null
-	return ..()
 
 /datum/contract/social/balanced_operations/on_negotiated_terms_changed()
 	..()

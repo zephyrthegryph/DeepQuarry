@@ -49,10 +49,11 @@
 	region_id = id
 	..()
 
-/datum/powernet/Destroy()
-	if(problem_timer)
-		om_cancel_timer(src, problem_timer)
-		problem_timer = null
+REF_OWNED(/datum/powernet, "material_graph")
+
+/// Phase 1 (unbind): the region leaves SSmachines, its nodes and cables let go.
+/datum/powernet/lifecycle_unbind()
+	. = ..()
 	if(region_id && SSmachines.power_regions[region_id] == src)
 		SSmachines.power_regions -= region_id
 	for(var/obj/machinery/power/M as anything in nodes)
@@ -60,9 +61,6 @@
 			M.powernet = null
 	nodes = null
 	release_material_cables()
-	QDEL_NULL(material_graph)
-	material_consumers = null
-	return ..()
 
 /// The region is gone; its machines were rebound by the same step.
 /datum/powernet/proc/retire()

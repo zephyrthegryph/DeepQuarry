@@ -103,7 +103,7 @@
 		// Check the new name against the chat filter. If it triggers the IC chat filter, give an option to confirm.
 		//if(newname && !(is_ic_filtered(newname) || is_soft_ic_filtered(newname) && tgui_alert(usr, "Your selected name contains words restricted by IC chat filters. Confirm this new name?", "IC Chat Filter Conflict", list("Confirm", "Cancel")) != "Confirm"))
 		if(newname)
-			vv_auto_rename(newname)
+			vv_auto_rename(src, newname)
 
 	if(href_list[VV_HK_EDIT_FILTERS])
 		if(!check_rights(R_VAREDIT))
@@ -180,5 +180,5 @@
 			//update_appearance()
 			update_icon()
 
-/atom/proc/vv_auto_rename(newname)
-	name = newname
+/proc/vv_auto_rename(atom/target, newname)
+	target.name = newname

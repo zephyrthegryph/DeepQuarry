@@ -55,10 +55,6 @@
 	created_at = world.time
 	payload = _payload ? deepCopyList(_payload) : list()
 
-/datum/contract_evidence/Destroy()
-	payload = null
-	return ..()
-
 /datum/controller/subsystem/contracts/proc/subject_identity(mob/living/subject) as /datum/contract_subject_identity
 	if(!subject)
 		return null
@@ -211,6 +207,7 @@
 		return COMPONENT_INCOMPATIBLE
 	evidence_id = _evidence_id
 
+// LIFECYCLE: releases its evidence id.
 /datum/component/contract_evidence_carrier/Destroy()
 	SScontracts?.release_evidence(evidence_id)
 	evidence_id = null

@@ -58,9 +58,6 @@
 /turf/simulated/wall/proc/wall_radioactivity()
 	return dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
 
-/turf/simulated/wall/Destroy()
-	return ..()
-
 /turf/simulated/wall/examine_icon()
 	return icon(icon=initial(icon), icon_state=initial(icon_state))
 
@@ -393,8 +390,7 @@
 		cartridge.remaining -= can_store
 		if(!cartridge.remaining)
 			to_chat(user, span_warning("\The [cartridge] dissolves as it empties of compressed matter."))
-			user.drop_from_inventory(W)
-			qdel(W)
+			consume(W, user)
 		loaded = 1
 	if(istype(W,/obj/item/stack))
 		var/obj/item/stack/S = W

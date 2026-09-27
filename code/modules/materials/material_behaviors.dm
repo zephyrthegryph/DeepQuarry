@@ -73,9 +73,8 @@
 		PERIODIC_STOP(src)
 		processing = FALSE
 
+// LIFECYCLE: a luminescent item goes dark.
 /datum/component/material_behaviors/Destroy(force)
-	if(processing)
-		PERIODIC_STOP(src)
 	var/obj/item/I = parent
 	if(istype(I) && luminescence > 0)
 		I.set_light(0)

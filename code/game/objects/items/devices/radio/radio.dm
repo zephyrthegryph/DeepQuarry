@@ -121,10 +121,7 @@
 		if(!found)
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
 
-/obj/item/radio/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
+REF_OWNED(/obj/item/radio, "wires")
 
 /obj/item/radio/proc/recalculateChannels()
 	return
@@ -181,7 +178,6 @@
 		data["useSyndMode"] = TRUE
 	else
 		data["useSyndMode"] = FALSE
-
 
 	data["minFrequency"] = PUBLIC_LOW_FREQ
 	data["maxFrequency"] = PUBLIC_HIGH_FREQ
@@ -398,7 +394,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	if(M.client)
 		mobkey = M.key // assign the mob's key
 
-
 	var/jobname // the mob's "job"
 
 	// --- Human: use their actual job ---
@@ -425,7 +420,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	// --- Unidentifiable mob ---
 	else
 		jobname = "Unknown"
-
 
 	// --- Modifications to the mob's identity ---
 
@@ -547,7 +541,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		src, message_pieces, displayname, jobname, real_name, M.voice_name,
 		filter_type, signal.data["compression"], using_map.get_map_levels(pos_z), connection.frequency, verb)
 
-
 /obj/item/radio/hear_talk(mob/M as mob, list/message_pieces, verb = "says")
 	if(broadcasting)
 		if(get_dist(src, M) <= canhear_range)
@@ -594,7 +587,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	var/range = receive_range(freq, level)
 	if(range > -1 && loudspeaker)
 		return get_mobs_or_objects_in_view(range, src)
-
 
 /obj/item/radio/examine(mob/user)
 	. = ..()
@@ -644,10 +636,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	canhear_range = 0
 	subspace_transmission = TRUE
 	subspace_switchable = TRUE
-
-/obj/item/radio/borg/Destroy()
-	myborg = null
-	return ..()
 
 /obj/item/radio/borg/list_channels(mob/user)
 	return list_secure_channels(user)
@@ -862,7 +850,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 /obj/item/radio/bluespacehandset/linked/talon_prelinked
 	bs_tx_preload_id = "talon_aio" //Transmit to a receiver
 	bs_rx_preload_id = "talon_aio" //Recveive from a transmitter
-
 
 //* Bluespace Radio *//
 /obj/item/bluespaceradio/relicbase_prelinked

@@ -21,9 +21,7 @@
 	welder = new /obj/item/weldingtool/spell(src)
 	welder.setWelding(1)
 
-/obj/item/spell/flame_tongue/Destroy()
-	QDEL_NULL(welder)
-	return ..()
+REF_OWNED(/obj/item/spell/flame_tongue, "welder")
 
 /obj/item/weldingtool/spell
 	name = "flame"
@@ -60,5 +58,5 @@
 			welder.loc = src
 		else
 			welder = null
-			qdel(src)
+			consume(src, user)
 			return

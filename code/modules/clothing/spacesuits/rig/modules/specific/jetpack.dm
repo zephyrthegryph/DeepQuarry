@@ -50,11 +50,7 @@
 	. = ..()
 	jets = new(src)
 
-/obj/item/rig_module/maneuvering_jets/Destroy()
-	if(jets)
-		jets.holder = null
-	QDEL_NULL(jets)
-	return ..()
+REF_OWNED(/obj/item/rig_module/maneuvering_jets, "jets")
 
 /obj/item/rig_module/maneuvering_jets/installed()
 	..()

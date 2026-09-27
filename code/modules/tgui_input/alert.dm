@@ -80,12 +80,6 @@
 		start_time = world.time
 		om_qdel_after(src, timeout)
 
-/datum/tgui_alert/Destroy(force, ...)
-	SStgui.close_uis(src)
-	state = null
-	buttons?.Cut()
-	. = ..()
-
 /**
  * Waits for a user's response to the tgui_modal's prompt before returning. Returns early if
  * the window was closed by the user.
@@ -189,9 +183,7 @@
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
 	src.callback = callback
 
-/datum/tgui_alert/async/Destroy(force, ...)
-	QDEL_NULL(callback)
-	. = ..()
+REF_OWNED(/datum/tgui_alert/async, "callback")
 
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()

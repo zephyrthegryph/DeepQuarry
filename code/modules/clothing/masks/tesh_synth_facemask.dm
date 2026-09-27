@@ -26,10 +26,6 @@
 	PERIODIC_STOP(src)
 	..()
 
-/obj/item/clothing/mask/synthfacemask/Destroy()
-	maskmaster = null
-	. = ..()
-
 /obj/item/clothing/mask/synthfacemask/equip_constraint()
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade")))
 
@@ -56,7 +52,6 @@
 		if(lstat == DEAD)
 			visor_state = DEAD
 		update_icon()
-
 
 //LOADOUT ITEM
 /datum/gear/mask/synthface/

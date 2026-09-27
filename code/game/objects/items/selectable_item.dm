@@ -22,7 +22,7 @@
 		var/obj/item/result = new chosen_item(get_turf(user))
 		user.put_in_active_hand(result)
 		result.add_fingerprint(user)
-		qdel(src)
+		consume(src, user)
 	return
 
 

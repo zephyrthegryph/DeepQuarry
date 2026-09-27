@@ -64,6 +64,7 @@
 		else
 			return
 
+// LIFECYCLE: a charged blade punishes its wielder.
 /obj/item/melee/artifact_blade/Destroy()
 	if(stored_blood && last_touched && last_touched.stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched, span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
@@ -82,7 +83,6 @@
 	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.
 	last_touched = null //Get rid of the reference to our owner.
 	. = ..()
-
 
 /obj/item/melee/artifact_blade/cultify()
 	return
@@ -260,7 +260,6 @@
 	else
 		return
 
-
 /// While this COULD just use the cultify() proc ultimately, I decided against that as this isn't meant to be
 /// Some sort of weapon of mass destruction. It's supposed to be a funny, spooky artifact that you find.
 /// Thus, it uses the 'occult_act' proc, which does a HEAVILY watered down version of the cultify() proc.
@@ -270,7 +269,6 @@
 		convert_turf(A, user)
 	else
 		..()
-
 
 /// The fancy animation it plays when you hit something to convert it!
 /obj/item/melee/artifact_blade/proc/conjure_animation(turf/target) //Taken from occult wizard code.

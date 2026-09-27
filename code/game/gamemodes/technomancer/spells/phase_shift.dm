@@ -31,6 +31,7 @@
 	set_light(3, 5, l_color = "#FA58F4")
 	PERIODIC_START(src, PERIODIC_SLOW)
 
+// LIFECYCLE: whatever phased inside comes back out on the turf.
 /obj/effect/phase_shift/Destroy()
 	for(var/atom/movable/AM in contents) //Eject everything out.
 		AM.forceMove(get_turf(src))
@@ -59,7 +60,7 @@
 			to_chat(user, span_info("You create an unstable rift, and go through it.  Be sure to not stay too long."))
 			user.forceMove(PS)
 			adjust_instability(10)
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, span_warning("You don't have enough energy to make a rift!"))
 	else //We're already in a rift or something like a closet.

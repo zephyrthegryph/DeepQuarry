@@ -502,15 +502,13 @@
 		for(var/reactant in react_pool)
 			AddParticles(reactant, react_pool[reactant])
 
+REF_OWNED_LIST(/obj/effect/fusion_em_field, "particle_catchers")
+REF_PAIR(/obj/effect/fusion_em_field, list("owned_core" = "owned_field"))
+REF_PAIR(/obj/machinery/power/fusion_core, list("owned_field" = "owned_core"))
+
+// LIFECYCLE: a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/Destroy()
-	set_light(0)
 	RadiateAll()
-	// Snapshot: catcher Destroy() removes itself from particle_catchers.
-	for(var/obj/effect/fusion_particle_catcher/catcher in LAZYCOPY(particle_catchers))
-		qdel(catcher)
-	if(owned_core)
-		owned_core.owned_field = null
-		owned_core = null
 	. = ..()
 
 /obj/effect/fusion_em_field/bullet_act(obj/item/projectile/Proj)

@@ -15,9 +15,7 @@
 	interaction_message = "On the monitor it displays '[uppertext(message_to_play)]'."
 	return ..()
 
-/obj/structure/prop/transmitter/Destroy()
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/structure/prop/transmitter, "soundloop")
 
 /obj/structure/prop/transmitter/vv_edit_var(var_name, var_value)
 	if(var_name == "message_to_play")

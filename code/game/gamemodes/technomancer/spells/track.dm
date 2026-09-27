@@ -22,11 +22,6 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 	var/atom/movable/tracked = null // The thing to point towards.
 	var/tracking = 0 // If one, points towards tracked.
 
-/obj/item/spell/track/Destroy()
-	tracked = null
-	tracking = 0
-	return ..()
-
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
 		tracking = 0

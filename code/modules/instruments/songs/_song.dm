@@ -135,6 +135,7 @@
 	if(new_range)
 		instrument_range = new_range
 
+// LIFECYCLE: stops playing and leaves its instrument.
 /datum/song/Destroy()
 	stop_playing()
 	SSinstruments.on_song_del(src)
@@ -327,7 +328,6 @@
 		repeat = 0
 	if(repeat > max_repeats)
 		repeat = max_repeats
-
 
 /**
  * Sanitizes tempo to a value that makes sense and fits the current world.tick_lag.

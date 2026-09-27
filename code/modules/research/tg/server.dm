@@ -24,10 +24,7 @@
 	LAZYOR(stored_research.techweb_servers, src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
 
-/obj/machinery/rnd/server/Destroy()
-	if(stored_research)
-		LAZYREMOVE(stored_research.techweb_servers, src)
-	return ..()
+REF_BACKLIST(/obj/machinery/rnd/server, list("stored_research" = "techweb_servers"))
 
 /obj/machinery/rnd/server/update_icon()
 	if(stat & NOPOWER)

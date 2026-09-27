@@ -82,11 +82,7 @@
 	start_time = world.time
 	om_after(src, time_til_open, /datum/proc/qdel_self)
 
-/obj/structure/timer_door/Destroy()
-	visible_message(span_danger("\The [src] opens up!"))
-	playsound(src, 'sound/effects/bang.ogg', 75, 1)
-	return ..()
-
+DESTROY_EFFECTS(/obj/structure/timer_door, new /datum/destroy_effects_data(message = "%SRC% opens up!", message_class = "danger", sound = 'sound/effects/bang.ogg', sound_volume = 75))
 
 /obj/structure/timer_door/ten
 	time_til_open = 10 MINUTES

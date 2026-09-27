@@ -21,9 +21,7 @@
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -28 : 28)
 		pixel_y = (dir & 3)? (dir == 1 ? -30 : 30) : 0
 
-/obj/structure/mirror/Destroy()
-	QDEL_NULL(M)
-	. = ..()
+REF_OWNED(/obj/structure/mirror, "M")
 
 /obj/structure/mirror/attack_hand(mob/user)
 	if(!glass) return
@@ -45,7 +43,6 @@
 	icon_state = "mirror_broke"
 	playsound(src, "shatter", 70, 1)
 	desc = "Oh no, seven years of bad luck!"
-
 
 /obj/structure/mirror/bullet_act(obj/item/projectile/Proj)
 
@@ -105,8 +102,7 @@
 
 /obj/structure/mirror/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You unfasten the frame."))
-	new /obj/item/frame/mirror(loc)
-	qdel(src)
+	replace_with(src, /obj/item/frame/mirror)
 
 /obj/structure/mirror/attack_generic(mob/user, damage)
 

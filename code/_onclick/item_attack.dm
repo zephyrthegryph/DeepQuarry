@@ -123,25 +123,20 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
 	if(secondary)
-		switch(tool_quality)
-			if(TOOL_SCREWDRIVER) return screwdriver_act_secondary(user, tool)
-			if(TOOL_CROWBAR) return crowbar_act_secondary(user, tool)
-			if(TOOL_WRENCH) return wrench_act_secondary(user, tool)
-			if(TOOL_WIRECUTTER) return wirecutter_act_secondary(user, tool)
-			if(TOOL_MULTITOOL) return multitool_act_secondary(user, tool)
-			if(TOOL_WELDER) return welder_act_secondary(user, tool)
-	else
-		switch(tool_quality)
-			if(TOOL_SCREWDRIVER) return screwdriver_act(user, tool)
-			if(TOOL_CROWBAR) return crowbar_act(user, tool)
-			if(TOOL_WRENCH) return wrench_act(user, tool)
-			if(TOOL_WIRECUTTER) return wirecutter_act(user, tool)
-			if(TOOL_MULTITOOL) return multitool_act(user, tool)
-			if(TOOL_WELDER) return welder_act(user, tool)
-		// Every other TOOL_* quality has no focused hook: it goes straight to the
-		// interactions that name it (doc/rewrite/interactions.md §9).
-		return interaction_tool_act(user, tool, tool_quality)
-	return NONE
+		// Secondary (right-click) tool use has no focused hooks: it runs the declared
+		// interactions for this quality whose default action is Alternate
+		// (doc/rewrite/interactions.md §9).
+		return interaction_tool_act(user, tool, tool_quality, TRUE)
+	switch(tool_quality)
+		if(TOOL_SCREWDRIVER) return screwdriver_act(user, tool)
+		if(TOOL_CROWBAR) return crowbar_act(user, tool)
+		if(TOOL_WRENCH) return wrench_act(user, tool)
+		if(TOOL_WIRECUTTER) return wirecutter_act(user, tool)
+		if(TOOL_MULTITOOL) return multitool_act(user, tool)
+		if(TOOL_WELDER) return welder_act(user, tool)
+	// Every other TOOL_* quality has no focused hook: it goes straight to the
+	// interactions that name it (doc/rewrite/interactions.md §9).
+	return interaction_tool_act(user, tool, tool_quality)
 
 /atom/proc/screwdriver_act(mob/user, obj/item/tool)
 	return interaction_tool_act(user, tool, TOOL_SCREWDRIVER)
@@ -155,18 +150,6 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	return interaction_tool_act(user, tool, TOOL_MULTITOOL)
 /atom/proc/welder_act(mob/user, obj/item/tool)
 	return interaction_tool_act(user, tool, TOOL_WELDER)
-/atom/proc/screwdriver_act_secondary(mob/user, obj/item/tool)
-	return NONE
-/atom/proc/crowbar_act_secondary(mob/user, obj/item/tool)
-	return NONE
-/atom/proc/wrench_act_secondary(mob/user, obj/item/tool)
-	return NONE
-/atom/proc/wirecutter_act_secondary(mob/user, obj/item/tool)
-	return NONE
-/atom/proc/multitool_act_secondary(mob/user, obj/item/tool)
-	return NONE
-/atom/proc/welder_act_secondary(mob/user, obj/item/tool)
-	return NONE
 
 /**
  * Used with an item. Converted handlers (I7) are interactions with

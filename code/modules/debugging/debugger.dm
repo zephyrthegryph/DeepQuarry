@@ -22,7 +22,6 @@ GLOBAL_REAL(Debugger, /datum/debugger)
 	enable()
 #endif
 
-/datum/debugger/Destroy()
 #ifndef OPENDREAM_REAL
 	if(enabled)
 		call_ext(dll_path, "auxtools_shutdown")()

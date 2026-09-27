@@ -24,11 +24,6 @@
 		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
-/obj/machinery/bluespace_denier/Destroy()
-	if(timerid)
-		om_cancel_timer(src, timerid)
-	. = ..()
-
 /obj/machinery/bluespace_denier/power_change()
 	..()
 	if(!(stat & NOPOWER))

@@ -25,11 +25,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 	default_apply_parts()
 	AddElement(/datum/element/rotatable)
 
-/obj/machinery/fusion_fuel_injector/Destroy()
-	if(cur_assembly)
-		cur_assembly.forceMove(get_turf(src))
-		cur_assembly = null
-	return ..()
+REF_SPILL(/obj/machinery/fusion_fuel_injector, "cur_assembly")
 
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE

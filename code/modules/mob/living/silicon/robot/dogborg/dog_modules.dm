@@ -86,7 +86,6 @@
 	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // More chems for Medihound
 	var/datum/matter_synth/water = null
 
-
 /obj/item/reagent_containers/borghypo/hound/lost
 	name = "Hound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves."
@@ -96,7 +95,6 @@
 	name = "Hound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves."
 	reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_OXYCODONE, REAGENT_ID_DEXALIN ,REAGENT_ID_SPACEACILLIN)
-
 
 //Tongue stuff
 /obj/item/robot_tongue
@@ -327,10 +325,6 @@
 		to_chat(user, span_warning("Pipe clamping is unavailable until LINDA's atmos machinery is wired in."))
 		return
 
-/obj/item/dogborg/stasis_clamp/Destroy()
-	LAZYCLEARLIST(clamps)
-	. = ..()
-
 //Pounce stuff for K-9
 /obj/item/dogborg/pounce
 	name = "pounce"
@@ -456,12 +450,6 @@
 			forceMove(R)
 		if(loc == R)
 			hud_layerise()
-
-/obj/item/reagent_containers/glass/beaker/large/borg/Destroy()
-	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	R = null
-	last_robot_loc = null
-	. = ..()
 
 /obj/item/mining_scanner/robot
 	name = "integrated deep scan device"

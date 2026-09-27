@@ -9,6 +9,7 @@
 	. = ..()
 	AddComponent(/datum/component/holographic_nature)
 
+// LIFECYCLE: its bellies go back to the AI.
 /obj/effect/overlay/aiholo/Destroy()
 	for(var/obj/belly/B in src)
 		B.forceMove(master)
@@ -53,7 +54,6 @@
 	if(!istype(prey))
 		to_chat(src, span_vwarning("Invalid mob choice!"))
 		return
-
 
 	hologram.visible_message("[hologram] starts engulfing [prey] in hardlight holograms!")
 	to_chat(src, span_vnotice("You begin engulfing [prey] in hardlight holograms.")) //Can't be part of the above, because the above is from the hologram.

@@ -114,6 +114,7 @@
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
+// LIFECYCLE: the wrapped thing is unwrapped onto the floor.
 /obj/structure/bigDelivery/Destroy()
 	if(wrapped) //sometimes items can disappear. For example, bombs. --rastaf0
 		wrapped.forceMove(get_turf(src))
@@ -150,7 +151,7 @@
 		else
 			wrapped.loc = get_turf(src)
 
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/item/smallDelivery/attackby(obj/item/W as obj, mob/user as mob)

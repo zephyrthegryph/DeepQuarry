@@ -26,10 +26,10 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	..(new_client)
 	display()
 
+// LIFECYCLE: clears the client's back-reference (clients aren't datums).
 /datum/managed_browser/feedback_form/Destroy()
 	if(my_client)
 		my_client.feedback_form = null
-	SStgui.close_uis(src)
 	return ..()
 
 // Privacy option is allowed if both the config allows it, and the pepper file exists and isn't blank.

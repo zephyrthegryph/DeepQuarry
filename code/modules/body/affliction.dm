@@ -132,6 +132,7 @@
 	src.location = location
 	configure(location)
 
+// LIFECYCLE: an affliction leaves its body (symptoms end, factors recompute).
 /datum/affliction/Destroy()
 	if(body)
 		body.remove_affliction(src)
@@ -143,7 +144,6 @@
 /// systemic afflictions, reference prototypes). Virtual.
 /datum/affliction/proc/configure(location)
 	return
-
 
 // --- Lifecycle hooks -----------------------------------------------------------
 
@@ -164,7 +164,6 @@
 	if(body)
 		body.remove_affliction(src)
 	qdel(src)
-
 
 // --- Severity -------------------------------------------------------------------
 
@@ -235,7 +234,6 @@
 
 /datum/affliction/proc/consciousness_penalty()
 	return consciousness_at_max * severity / AFFLICTION_SEVERITY_TERMINAL
-
 
 // --- Tick -------------------------------------------------------------------------
 
@@ -344,7 +342,6 @@
 				continue
 			spawn_child_affliction(o.condition_type)
 
-
 // --- Stages -------------------------------------------------------------------
 
 /// Per-stage table: stage id -> list("name", "description", "symptom_pool",
@@ -395,7 +392,6 @@
 				continue
 			spawn_child_affliction(T)
 
-
 // --- Symptoms ---------------------------------------------------------------------
 
 /// Evolve `active_symptoms` from `symptom_pool`. Symptoms ACCUMULATE:
@@ -442,7 +438,6 @@
 		LAZYADD(active_symptoms, symptom_type)
 		affliction_symptom(symptom_type).on_present(owner, src)
 
-
 // --- Spontaneous emotes -----------------------------------------------------------------
 // Mechanical effects (slowdown, accuracy, dropped items, blocked actions) are
 // body factors: see `factors` and code/modules/body/factors.dm.
@@ -452,7 +447,6 @@
 		return
 	if(prob(spontaneous_emote_prob))
 		owner.emote(pick(spontaneous_emotes))
-
 
 // --- Complications & organ damage ---------------------------------------------------
 
@@ -505,7 +499,6 @@
 	if(!istype(H))
 		return null
 	return _dq_resolve_organ_on(H, tag)
-
 
 // --- Helpers ----------------------------------------------------------------------------
 

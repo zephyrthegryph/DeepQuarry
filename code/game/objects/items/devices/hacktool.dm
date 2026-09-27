@@ -23,12 +23,13 @@
 	supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 	hack_state = new(src)
 
+REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
+
+// LIFECYCLE: stops observing its known targets' destruction.
 /obj/item/multitool/hacktool/Destroy()
 	for(var/atom/target as anything in known_targets)
 		target.unregister(OBSERVER_EVENT_DESTROY, src)
 	known_targets.Cut()
-	qdel(hack_state)
-	hack_state = null
 	return ..()
 
 /obj/item/multitool/hacktool/screwdriver_act(mob/user, obj/item/tool)
@@ -154,10 +155,6 @@
 /datum/tgui_state/default/must_hack/New(hacktool)
 	src.hacktool = hacktool
 	..()
-
-/datum/tgui_state/default/must_hack/Destroy()
-	hacktool = null
-	return ..()
 
 /datum/tgui_state/default/must_hack/can_use_topic(src_object, mob/user)
 	if(!hacktool || !hacktool.in_hack_mode || !(src_object in hacktool.known_targets))

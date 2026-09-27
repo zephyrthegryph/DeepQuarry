@@ -27,14 +27,10 @@
 	pixel_y = rand(3,-3)
 	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 
-/obj/effect/metroid/egg/Destroy()
-	return ..()
-
 /// Hatches (its growth timer).
 /obj/effect/metroid/egg/proc/hatch()
 	if(QDELETED(src))
 		return
 	amount_grown = 100
 	if(amount_grown >= 100)
-		new metroid_type(src.loc, src)
-		qdel(src)
+		replace_with(src, metroid_type, src)

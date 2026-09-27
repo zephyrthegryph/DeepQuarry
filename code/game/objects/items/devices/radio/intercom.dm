@@ -29,13 +29,7 @@
 	SIGNAL_HANDLER
 	update_icon()
 
-/obj/item/radio/intercom/Destroy()
-	var/area/A = get_area(src)
-	if(A)
-		UnregisterSignal(A, COMSIG_OBSERVER_APC)
-	if(circuit)
-		QDEL_NULL(circuit)
-	return ..()
+REF_OWNED(/obj/item/radio/intercom, "circuit")
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"
@@ -157,7 +151,6 @@
 		return ITEM_INTERACT_BLOCKING
 	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
 	playsound(src, tool.usesound, 50, TRUE)
-	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
 	frame.frame_type = board.board_type
@@ -169,7 +162,7 @@
 	frame.state = 2
 	frame.update_icon()
 	board.atom_deconstruct(TRUE, src)
-	qdel(src)
+	replace_with(src, /obj/item/stack/cable_coil, 5)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/radio/intercom/receive_range(freq, level)

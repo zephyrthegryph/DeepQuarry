@@ -27,8 +27,7 @@
 /datum/blob_type/ectoplasmic_horror/on_pulse(obj/structure/blob/B)
 	if(B.type == /obj/structure/blob && (locate(/obj/structure/blob/node) in oview(2, get_turf(B))))
 		B.visible_message(span_alien("The [name] quakes, before hardening."))
-		new/obj/structure/blob/shield(get_turf(B), B.overmind)
-		qdel(B)
+		replace_with(B, /obj/structure/blob/shield, B.overmind)
 
 	if(istype(B, /obj/structure/blob/factory))
 		listclearnulls(active_beams)

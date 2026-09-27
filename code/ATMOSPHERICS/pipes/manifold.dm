@@ -38,19 +38,6 @@
 /obj/machinery/atmospherics/pipe/manifold/pipeline_expansion()
 	return list(node1, node2, node3)
 
-/obj/machinery/atmospherics/pipe/manifold/Destroy()
-	if(node1)
-		node1.disconnect(src)
-		node1 = null
-	if(node2)
-		node2.disconnect(src)
-		node2 = null
-	if(node3)
-		node3.disconnect(src)
-		node3 = null
-
-	. = ..()
-
 /obj/machinery/atmospherics/pipe/manifold/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
@@ -114,10 +101,8 @@
 		add_underlay(T, node3, node3_direction, icon_connect_type)
 		directions -= node3_direction
 
-
 	for(var/D in directions)
 		add_underlay(T,,D,icon_connect_type)
-
 
 /obj/machinery/atmospherics/pipe/manifold/update_underlays()
 	..()
@@ -136,7 +121,6 @@
 			if (node1)
 				break
 
-
 	for(var/direction in GLOB.cardinal)
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
@@ -146,7 +130,6 @@
 					break
 			if (node2)
 				break
-
 
 	for(var/direction in GLOB.cardinal)
 		if(direction&connect_directions)

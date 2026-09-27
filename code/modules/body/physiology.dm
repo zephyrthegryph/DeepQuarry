@@ -45,11 +45,6 @@
 	/// Optional validity check (performer adjacent, machine powered...).
 	var/datum/callback/still_valid
 
-/datum/body_support/Destroy()
-	source = null
-	still_valid = null
-	return ..()
-
 /datum/body_support/proc/is_valid()
 	if(expires_at && world.time >= expires_at)
 		return FALSE
@@ -145,7 +140,6 @@
 		if(S.factor_id == id && !isnull(S.floor))
 			return TRUE
 	return FALSE
-
 
 // --- Queries (the physio -> diag contract) ----------------------------------------------------
 // Each returns null when the body plan (or this species) has no such system.
@@ -243,7 +237,6 @@
 /mob/living/proc/add_oxygen_debt(amount, source)
 	return body ? body.add_oxygen_debt(amount, source) : 0
 
-
 // --- Physiology -----------------------------------------------------------------------------
 
 /datum/physiology
@@ -274,10 +267,6 @@
 /datum/physiology/New(datum/body/new_body)
 	..()
 	body = new_body
-
-/datum/physiology/Destroy()
-	body = null
-	return ..()
 
 /// Recompute the derived values. Plans override. FALSE if the owner can't be
 /// evaluated yet (still being set up).
@@ -336,7 +325,6 @@
 
 /datum/physiology/proc/respiratory_rate()
 	return null
-
 
 // --- Humanoid physiology -----------------------------------------------------------------------
 
@@ -483,7 +471,6 @@
 		return 12
 	var/rate = 14 + round(min(oxygen_debt, 60) / 4) + body.get_factor(BF_RESP_RATE)
 	return max(0, round(rate))
-
 
 // --- Life system -------------------------------------------------------------------------------
 

@@ -51,12 +51,7 @@
 	update_connections(1)
 	update_icon()
 
-/obj/structure/low_wall/Destroy()
-	var/turf/location = loc
-	. = ..()
-	for(var/obj/structure/low_wall/W in orange(1, location))
-		W.update_connections()
-		W.update_icon()
+DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbor_type = /obj/structure/low_wall))
 
 /obj/structure/low_wall/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
 	src.add_fingerprint(user)
@@ -333,12 +328,7 @@
 	update_connections(1)
 	update_icon()
 
-/obj/structure/grille/bay/Destroy()
-	var/turf/location = loc
-	. = ..()
-	for(var/obj/structure/grille/G in orange(1, location))
-		G.update_connections()
-		G.update_icon()
+DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
 /obj/structure/grille/bay/update_icon()
 	var/on_frame = locate(/obj/structure/low_wall/bay) in loc
@@ -463,7 +453,6 @@
 	damage_per_fire_tick = 1.0 // This should last for 80 fire ticks if the window is not damaged at all. The idea is that borosilicate windows have something like ablative layer that protects them for a while.
 	max_integrity = 160
 	force_threshold = 10
-
 
 /obj/structure/window/eris
 	icon = 'icons/obj/eris_window.dmi'

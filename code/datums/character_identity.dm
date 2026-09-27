@@ -34,13 +34,6 @@
 	/// world.time the character's last body died (0 = alive).
 	var/time_of_death = 0
 
-/datum/character_identity/Destroy(force)
-	dna = null
-	languages = null
-	flavor_texts = null
-	genetic_modifiers = null
-	return ..()
-
 /// The identity's DNA, or null if the datum was replaced and deleted.
 /datum/character_identity/proc/get_dna()
 	if(QDELETED(dna))
@@ -53,7 +46,6 @@
 		if(ispath(path, modifier_type))
 			return TRUE
 	return FALSE
-
 
 // --- Mob side ------------------------------------------------------------------------
 
@@ -116,7 +108,6 @@
 	else
 		LAZYREMOVE(identity.genetic_modifiers, modifier_type)
 
-
 // --- Mind side -----------------------------------------------------------------------
 
 /datum/mind
@@ -130,7 +121,6 @@
 		var/mob/living/L = current
 		identity = L.identity
 	return identity
-
 
 // --- Moving minds --------------------------------------------------------------------
 

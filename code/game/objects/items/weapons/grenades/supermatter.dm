@@ -5,11 +5,6 @@
 	arm_sound = 'sound/effects/3.wav'
 	var/implode_at
 
-/obj/item/grenade/supermatter/Destroy()
-	if(implode_at)
-		PERIODIC_STOP(src)
-	. = ..()
-
 /obj/item/grenade/supermatter/detonate()
 	..()
 	PERIODIC_START(src, PERIODIC_SLOW)

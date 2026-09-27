@@ -23,10 +23,8 @@
 	. = ..()
 	create_reagents(1000)
 
-/obj/item/grenade/chem_grenade/Destroy()
-	QDEL_NULL(detonator)
-	QDEL_LIST_NULL(beakers)
-	return ..()
+REF_OWNED(/obj/item/grenade/chem_grenade, "detonator")
+REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 
 /obj/item/grenade/chem_grenade/attack_self(mob/user)
 	. = ..(user)
@@ -192,7 +190,6 @@
 
 	invisibility = INVISIBILITY_MAXIMUM //Why am i doing this?
 	om_qdel_after(src, 5 SECONDS) //To make sure all reagents can work correctly before deleting the grenade.
-
 
 /obj/item/grenade/chem_grenade/large
 	name = "large chem grenade"

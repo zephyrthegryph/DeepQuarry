@@ -11,6 +11,7 @@
 
 /datum/event_manager_panel
 
+// LIFECYCLE: SSevents forgets its manager panel.
 /datum/event_manager_panel/Destroy()
 	if(SSevents?.tgui_event_manager_panel == src)
 		SSevents.tgui_event_manager_panel = null
@@ -169,7 +170,6 @@
 		if("add_event")
 			forward(list("add" = "[params["container_ref"]]"))
 			return TRUE
-
 
 /datum/controller/subsystem/events
 	var/datum/event_manager_panel/tgui_event_manager_panel

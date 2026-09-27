@@ -15,7 +15,6 @@
 	var/mopping = 0
 	var/mopcount = 0
 
-
 /obj/item/mop_deploy/Initialize(mapload)
 	. = ..()
 	create_reagents(5)
@@ -51,9 +50,6 @@
 	if(istype(I, /obj/item/mop_deploy) || istype(I, /obj/item/soap))
 		return
 	..()
-
-/obj/item/mop_deploy/Destroy()
-	. = ..()
 
 /obj/item/mop_deploy/attack_self(mob/user)
 	. = ..(user)

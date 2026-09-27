@@ -56,10 +56,7 @@
 				if(what_to_emote)
 					illusion.emote(what_to_emote)
 
-/obj/item/spell/illusion/Destroy()
-	QDEL_NULL(illusion)
-	copied = null
-	return ..()
+REF_OWNED(/obj/item/spell/illusion, "illusion")
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
 /obj/item/spell/illusion/update_icon()

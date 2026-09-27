@@ -38,6 +38,9 @@
 		return
 	..()
 
+/mob/living/simple_mob/construct/shade
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/construct/shade/death()
 	..()
 	for(var/mob/M in viewers(src, null))
@@ -45,8 +48,6 @@
 			M.show_message(span_red("[src] lets out a contented sigh as their form unwinds."))
 
 	ghostize()
-	qdel(src)
-	return
 
 /datum/decl/mob_organ_names/shade
 	hit_zones = list("spectral robe", "featureless visage", "haunting glow")

@@ -152,16 +152,16 @@
 
 	calibrate_size()
 
+REF_OWNED(/obj/item/storage, "hud")
+
+// LIFECYCLE: closes on everyone looking into it and leaves its wearer.
 /obj/item/storage/Destroy()
 	close_all()
 	for(var/mob/M as anything in is_seeing?.Copy())
 		hide_from(M)
-	QDEL_NULL(hud)
-
 	if(ismob(loc))
 		var/mob/M = loc
 		M.remove_from_mob(src)
-
 	. = ..()
 
 /obj/item/storage/pickup(mob/user)
@@ -465,7 +465,7 @@
 			if(L.status == 0 && LP.uses < LP.max_uses)
 				LP.add_uses(1)
 				amt_inserted++
-				qdel(L)
+				consume(L, user)
 		if(amt_inserted)
 			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
 			return
@@ -689,15 +689,14 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	GLOB.storage_hud_count++
 	layout()
 
+REF_OWNED(/datum/storage_hud, "closer")
+REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
+
+// LIFECYCLE: shown items lose their count text; the global hud count drops.
 /datum/storage_hud/Destroy()
 	GLOB.storage_hud_count--
-	QDEL_LIST(catchers)
-	QDEL_LIST(backdrop)
-	QDEL_NULL(closer)
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""
-	shown = null
-	storage = null
 	return ..()
 
 /datum/storage_hud/proc/new_backdrop(master, state)
@@ -855,10 +854,6 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	ASSERT(held_item)
 	name += held_item.name
 	src.held_item = om_handle(held_item)
-
-/atom/movable/storage_slot/Destroy()
-	held_item = null
-	. = ..()
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)

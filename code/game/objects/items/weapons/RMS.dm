@@ -61,7 +61,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	var/static/image/radial_image_stone = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-sandstone")
 	var/static/image/radial_image_random = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-random")
 
-
 /obj/item/rms/Initialize(mapload)
 	. = ..()
 	src.spark_system = new /datum/effect/effect/system/spark_spread
@@ -69,9 +68,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	spark_system.attach(src)
 	add_overlay("rms_charge[charge_stage]")
 
-/obj/item/rms/Destroy()
-	QDEL_NULL(spark_system)
-	return ..()
+REF_OWNED(/obj/item/rms, "spark_system")
 
 /obj/item/rms/update_icon()
 	charge_stage = round((stored_charge/max_charge)*4)
@@ -121,7 +118,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	stored_charge -= amount
 	update_icon()
 	return
-
 
 /obj/item/rms/proc/can_afford(amount)
 	if(stored_charge < amount)
@@ -317,7 +313,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	else
 		to_chat(user, span_notice("The Rapid Material Synthesizer resumes normal operation."))
 	return ITEM_INTERACT_SUCCESS
-
 
 #undef RMS_STEEL
 #undef RMS_GLASS

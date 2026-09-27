@@ -40,7 +40,7 @@
 			to_chat(user, span_info("You insert [I] into [src]."))
 			spawn_casinochips(round(worth / 5), src.loc)
 			src.attack_hand(user)
-			qdel(I)
+			consume(I, user)
 
 	if(istype(I, /obj/item/spacecasinocash))
 		var/obj/item/spacecasinocash/chips = I
@@ -55,7 +55,7 @@
 		var/worth = clamp(chips.worth, 0, round(CHIPMACHINE_MAX_WORTH / 5))
 		spawn_money(round(worth * 5), src.loc)
 		src.attack_hand(user)
-		qdel(I)
+		consume(I, user)
 	return TRUE
 
 /obj/item/spacecasinocash
@@ -89,7 +89,7 @@
 			h_user.drop_from_inventory(SC)
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the casino chips to a stack of [SC.worth] casino credits."))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/spacecasinocash/update_icon()
 	overlays.Cut()
@@ -270,7 +270,7 @@
 			h_user.drop_from_inventory(SC)
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the casino chips to a stack of [SC.worth] replica casino credits."))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/spacecasinocash_fake/update_icon()
 	overlays.Cut()

@@ -34,6 +34,7 @@
 
 	max_integrity = 80
 
+// LIFECYCLE: admins are told an emitter was deleted.
 /obj/machinery/power/emitter/Destroy()
 	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("EMITTER([x],[y],[z]) Destroyed/deleted.")
@@ -354,7 +355,6 @@
 	connect_to_network()
 	update_icon()
 
-
 /obj/machinery/power/emitter
 	icon = 'icons/obj/singularity_vr.dmi' // New emitter sprite
 	icon_state = "emitter0"
@@ -406,7 +406,6 @@
 	. = ..()
 	connect_to_network()
 	update_icon()
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/emitter/step_start_condition()

@@ -23,10 +23,6 @@
 	for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(1, src))
 		MACHINE_WAKE(tray)
 
-/obj/effect/effect/smoke/chem/Destroy()
-	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	return ..()
-
 /obj/effect/effect/smoke/chem/transparent
 	opacity = FALSE
 
@@ -58,13 +54,7 @@
 	chemholder = new/obj()
 	chemholder.create_reagents(500)
 
-/datum/effect/effect/system/smoke_spread/chem/Destroy()
-	QDEL_NULL(chemholder)
-	if(targetTurfs)
-		targetTurfs.Cut()
-	if(wallList)
-		wallList.Cut()
-	. = ..()
+REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 
 //Sets up the chem smoke effect
 // Calculates the max range smoke can travel, then gets all turfs in that view range.

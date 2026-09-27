@@ -22,11 +22,7 @@
 	src.item_ref = om_handle(item)
 	src.item_callback = item_callback
 
-/datum/component/action_item_overlay/Destroy(force)
-	item_ref = null
-	QDEL_NULL(item_callback)
-	item_appearance = null
-	return ..()
+REF_OWNED(/datum/component/action_item_overlay, "item_callback")
 
 /datum/component/action_item_overlay/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_ACTION_OVERLAY_APPLY, PROC_REF(on_overlays_applied))

@@ -38,10 +38,10 @@
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return
 
-	analyze_gases(src, user)
+	analyze_gases_by(src, src, user)
 	return
 
 /obj/item/analyzer/afterattack(obj/O, mob/user, proximity)
 	if(proximity)
-		analyze_gases(O, user)
+		analyze_gases_by(src, O, user)
 	return

@@ -37,10 +37,12 @@
 	power_source = new(src)
 	update_icon() // So it starts with the full overlay.
 
+REF_OWNED(/obj/item/radio_jammer, "power_source")
+
+// LIFECYCLE: a running jammer stops jamming.
 /obj/item/radio_jammer/Destroy()
 	if(on)
 		turn_off()
-	QDEL_NULL(power_source)
 	return ..()
 
 /obj/item/radio_jammer/get_cell()
@@ -73,7 +75,6 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 	else
 		power_source.use(tick_cost)
 		update_icon()
-
 
 /obj/item/radio_jammer/attack_hand(mob/user)
 	if(user.get_inactive_hand() == src && power_source)

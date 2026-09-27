@@ -84,6 +84,7 @@
 
 	special_handling = TRUE
 
+// LIFECYCLE: child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/Destroy()
 
 	if(parent && parent.children)
@@ -737,7 +738,6 @@
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [owner]'s [src.name] with [tool]."))
 	if(tool_proc)
 		call(tool, tool_proc)(arglist(list(user) + (tool_args || list())))
-
 
 /*
 This function completely restores a damaged organ to perfect condition.
@@ -1730,7 +1730,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 #undef DROPLIMB_THRESHOLD_EDGE
 #undef DROPLIMB_THRESHOLD_DESTROY
-
 
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)

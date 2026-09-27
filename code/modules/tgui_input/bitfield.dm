@@ -8,7 +8,6 @@
 //
 // Returns the new bitfield value (an int) or null if the user cancelled.
 
-
 // Replacement for the legacy /proc/input_bitfield. Same callsite shape
 // (5+ positional args), same return type. Width/height/slide_color are
 // kept for source compatibility but are no longer used (TGUI handles
@@ -17,7 +16,6 @@
 // a {name → bit} list. We forward it unchanged.
 /proc/input_bitfield(mob/user, title, bitfield, current_value, width, height, slide_color, allowed_edit_field = ALL)
 	return tgui_input_bitfield(user, title, bitfield, current_value, allowed_edit_field)
-
 
 /proc/tgui_input_bitfield(mob/user, title, bitfield_path, current_value, allowed_edit_field = ALL, timeout = 0)
 	if(!user)
@@ -40,7 +38,6 @@
 		return null
 	. = input.submitted ? input.value : null
 	qdel(input)
-
 
 /datum/tgui_bitfield_input
 	var/title
@@ -68,11 +65,6 @@
 		src.timeout = timeout
 		start_time = world.time
 		om_qdel_after(src, timeout)
-
-/datum/tgui_bitfield_input/Destroy(force)
-	SStgui.close_uis(src)
-	bitflags = null
-	return ..()
 
 /datum/tgui_bitfield_input/proc/wait()
 	while(!submitted && !closed && !QDELETED(src))

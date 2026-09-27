@@ -43,12 +43,10 @@
 	//what tools we need
 	var/list/active_repair_steps = list()
 
-
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
 
 /obj/structure/event_collector_blocker/Initialize(mapload)
 	. = ..()
-
 
 	if(GLOB.event_collector_associations == null)
 		GLOB.event_collector_associations = list()
@@ -58,13 +56,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 
 	GLOB.event_collector_associations[blocker_channel] |= src
 
-/obj/structure/event_collector_blocker/Destroy()
-
-
+/// Phase 2: leaves its channel's blocker list.
+/obj/structure/event_collector_blocker/lifecycle_dematerialize()
+	. = ..()
 	if(GLOB.event_collector_associations[blocker_channel])
 		GLOB.event_collector_associations[blocker_channel] -= src
-	. = ..()
-
 
 /obj/structure/event_collector_blocker/update_icon()
 	. = ..()
@@ -98,7 +94,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 			. += span_warning("Looks like the breaker flipped!")
 	else
 		. += span_notice("Looks like it's functioning normally")
-
 
 /obj/structure/event_collector_blocker/proc/get_repair_message(mob/user)
 	return "[user] repairs \the [src]!"

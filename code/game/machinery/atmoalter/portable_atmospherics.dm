@@ -28,11 +28,7 @@
 		connect(port)
 		update_icon()
 
-/obj/machinery/portable_atmospherics/Destroy()
-	clear_gas_dependency()
-	QDEL_NULL(air_contents)
-	QDEL_NULL(holding)
-	return ..()
+REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 
 // Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
 // (code/game/machinery/machine_pipeline.dm, "canisters" section).
@@ -184,8 +180,6 @@
 	update_icon()
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
-
-
 
 /obj/machinery/portable_atmospherics/powered
 	material_template = /datum/material_template/pump

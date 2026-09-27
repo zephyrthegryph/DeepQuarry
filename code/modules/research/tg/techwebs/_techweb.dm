@@ -91,14 +91,10 @@
 	// initialize_published_papers()
 	return ..()
 
-/datum/techweb/Destroy()
-	researched_nodes = null
-	researched_designs = null
-	available_nodes = null
-	visible_nodes = null
-	custom_designs = null
+/// Phase 2: leaves SSresearch's techwebs.
+/datum/techweb/lifecycle_dematerialize()
+	. = ..()
 	SSresearch.techwebs -= src
-	return ..()
 
 /datum/techweb/proc/recalculate_nodes(recalculate_designs = FALSE, wipe_custom_designs = FALSE)
 	var/list/datum/techweb_node/processing = list()

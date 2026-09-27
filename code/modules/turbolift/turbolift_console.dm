@@ -29,7 +29,6 @@
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " presses the lift button."))
 
-
 /obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
 	. = ..()
 	lift = _lift
@@ -58,11 +57,8 @@
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-/obj/structure/lift/button/Destroy()
-	if(floor && floor.ext_panel == src)
-		floor.ext_panel = null
-	floor = null
-	return ..()
+REF_PAIR(/obj/structure/lift/button, list("floor" = "ext_panel"))
+REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 
 /obj/structure/lift/button/proc/reset()
 	light_up = FALSE

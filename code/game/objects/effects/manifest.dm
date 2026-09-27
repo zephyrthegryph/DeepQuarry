@@ -17,5 +17,5 @@
 	P.info = dat
 	P.name = "paper- 'Crew Manifest'"
 	//SN src = null
-	qdel(src)
+	replace_with(src, P)
 	return

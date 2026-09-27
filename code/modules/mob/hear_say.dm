@@ -30,7 +30,7 @@
 			if(SP.speaking.flags & INAUDIBLE)
 				piece = ""
 			else
-				piece = saypiece_scramble(SP)
+				piece = saypiece_scramble(src, SP)
 				if(isliving(speaker))
 					var/mob/living/S = speaker
 					if(istype(S.say_list) && length(S.say_list.speak))
@@ -56,9 +56,9 @@
 		.["formatted"] += "\""
 		.["raw"] = trim(raw_msg)
 
-/mob/proc/saypiece_scramble(datum/multilingual_say_piece/SP)
+/proc/saypiece_scramble(mob/source, datum/multilingual_say_piece/SP)
 	if(SP.speaking)
-		return SP.speaking.scramble(SP.message, languages) // fix for partial understanding
+		return SP.speaking.scramble(SP.message, source.languages) // fix for partial understanding
 	else
 		return stars(SP.message)
 

@@ -72,6 +72,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
 	update_icon()
 
+// LIFECYCLE: the last console of a department takes it off the request lists.
 /obj/machinery/requests_console/Destroy()
 	var/lastDeptRC = 1
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
@@ -311,7 +312,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 #undef RCS_VIEWMSGS
 #undef RCS_MESSAUTH
 #undef RCS_ANNOUNCE
-
 
 // Request Console Presets!  Make mapping 400% easier!
 // By using these presets we can rename the departments easily.

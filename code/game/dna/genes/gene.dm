@@ -12,7 +12,6 @@
 	// Any of a number of GENE_ flags.
 	var/flags=0
 
-
 /**
 * Is the gene active in this mob's DNA?
 */
@@ -46,18 +45,13 @@
 // You probably shouldn't mark traits as traitgenes if they are custom species only, species locked, or species banned traits however... - Willbird
 /////////////////////
 
-
 /datum/gene/trait
 	desc="Gene linked to a trait."
 	var/datum/trait/linked_trait = null // Internal use, do not assign.
 	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
-/datum/gene/trait/Destroy()
-	// unlink circular reference
-	if(linked_trait)
-		linked_trait.linked_gene = null
-	linked_trait = null
-	. = ..()
+REF_PAIR(/datum/gene/trait, list("linked_trait" = "linked_gene"))
+REF_PAIR(/datum/trait, list("linked_gene" = "linked_trait"))
 
 // Use these when displaying info to players
 /datum/gene/trait/proc/get_name()

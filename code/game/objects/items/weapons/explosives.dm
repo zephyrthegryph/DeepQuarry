@@ -21,10 +21,7 @@
 	set_wires(new /datum/wires/explosive/c4(src))
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
-/obj/item/plastique/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
+REF_OWNED(/obj/item/plastique, "wires")
 
 /obj/item/plastique/attackby(obj/item/I, mob/user)
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
@@ -102,7 +99,7 @@
 			target.ex_act(1)
 	if(target)
 		target.cut_overlay(image_overlay)
-	qdel(src)
+	consume(src)
 
 /obj/item/plastique/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -124,15 +121,13 @@
 			var/new_blast_power = max(1, round(SP.rating * 2) + 1)
 			if(new_blast_power > blast_heavy)
 				to_chat(user, span_notice("You install \the [I] into \the [src]."))
-				user.drop_from_inventory(I)
-				qdel(I)
+				consume(I, user)
 				blast_heavy = new_blast_power
 				blast_light = blast_heavy + round(new_blast_power * 0.5)
 				blast_flash = blast_light + round(new_blast_power * 0.75)
 			else
 				to_chat(user, span_notice("The [I] is not any better than the component already installed into this charge!"))
 	return .
-
 
 /obj/item/plastique/seismic/locked
 	desc = "Used to dig holes in specific areas without too much extra hole. Has extra mechanism that safely implodes the bomb if it is used in close proximity to the facility."
@@ -147,7 +142,7 @@
 	if((T.z in using_map.station_levels) || (T.z in using_map.admin_levels))
 		target.visible_message(span_danger("\The [src] lets out a loud beep as safeties trigger, before imploding and falling apart."))
 		target.cut_overlay(image_overlay)
-		qdel(src)
+		consume(src)
 		return 0
 	else
 		return ..()

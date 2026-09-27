@@ -58,10 +58,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 		COMSIG_MOVABLE_MOVED,
 	))
 
-/datum/component/germ_sensitive/Destroy()
-	remove_timer()
-	return ..()
-
 /datum/component/germ_sensitive/proc/remove_timer()
 	if(!timer_id)
 		return
@@ -102,7 +98,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 		examine_list += span_warning("[parent] looks dirty and not safe to consume.")
 
 /datum/component/germ_sensitive/proc/expose_to_germs()
-
 
 	if(infective)
 		return

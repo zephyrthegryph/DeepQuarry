@@ -32,9 +32,7 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/reagent_refinery/reactor/Destroy()
-	. = ..()
-	QDEL_NULL(internal_tank)
+REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 
 /obj/machinery/reagent_refinery/reactor/refinery_step()
 	if(!anchored)

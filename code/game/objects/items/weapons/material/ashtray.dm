@@ -65,7 +65,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 					var/mob/living/voice/V = cig.possessed_voice[1]
 					butt.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 					qdel(V)
-				qdel(cig)
+				consume(cig, user)
 				W = butt
 				//spawn(1)
 				//	TemperatureAct(150)

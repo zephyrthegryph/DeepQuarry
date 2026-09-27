@@ -17,9 +17,7 @@
 	monitor = new(src)
 	monitor.core_tag = id_tag
 
-/obj/machinery/computer/fusion_core_control/Destroy()
-	QDEL_NULL(monitor)
-	. = ..()
+REF_OWNED(/obj/machinery/computer/fusion_core_control, "monitor")
 
 /obj/machinery/computer/fusion_core_control/declare_interactions(list/into)
 	into += list(

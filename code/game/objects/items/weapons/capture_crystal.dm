@@ -27,6 +27,7 @@
 	update_icon()
 
 //Let's make sure we clean up our references and things if the crystal goes away (such as when it's digested)
+// LIFECYCLE: the bound mob is unleashed and freed of its command.
 /obj/item/capture_crystal/Destroy()
 	if(bound_mob)
 		if(bound_mob in contents)
@@ -889,7 +890,6 @@
 		return ITEM_INTERACT_FAILURE
 	. = ..()
 
-
 /obj/item/capture_crystal/loadout/capture_chance()
 	return 0
 
@@ -897,7 +897,6 @@
 	name = "cheap capture crystal"
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing. This one seems to be cheaply made and can only handle a willing mind."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
-
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/cheap/capture(mob/living/M, mob/living/U)
@@ -916,7 +915,6 @@
 		bound_mob.capture_caught = TRUE
 		persist_storable = FALSE
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing. This one seems to be cheaply made and can only handle a willing mind."
-
 
 /obj/item/capture_crystal/cheap/activate(mob/living/user, target)
 	if(!cooldown_check())		//Are we ready to do things yet?

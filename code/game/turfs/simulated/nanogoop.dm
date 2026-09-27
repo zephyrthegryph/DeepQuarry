@@ -29,7 +29,6 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	var/linkedsmes //when the nanites digest something, it becomes power in an SMES
 	var/id = null
 
-
 /turf/simulated/floor/water/digestive_enzymes/nanites/Initialize(mapload)
 	. = ..()
 	for(var/obj/machinery/power/smes/tolink in REGISTRY_MEMBERS(REGISTRY_SMES))
@@ -274,7 +273,6 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		targetrobot.add_power(ROBOT_CELL_JOULES(amt * 20), src)
 		return
 
-
 /turf/simulated/floor/water/digestive_enzymes/nanites/return_air_for_internal_lifeform(mob/living/targetmob)
 	if(!can_digest(targetmob))
 		return return_air() //Nanites should always be nonlethal until the AI turns on digestion
@@ -339,7 +337,3 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		Entered(AM)
 	update_icon()
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/Destroy()
-	moblink = null
-	linkedsmes = null
-	return ..()

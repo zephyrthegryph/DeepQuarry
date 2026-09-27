@@ -41,7 +41,6 @@
 /datum/om/stage/life/type_post/simple_mob
 	of = /mob/living/simple_mob
 
-
 /// Refreshes the health HUD, nutrition alert and injury slowdown. Death itself
 /// is handled by the body plan (total load >= endurance -> death()).
 /mob/living/simple_mob/proc/update_health_display()
@@ -302,7 +301,3 @@
 /mob/living/simple_mob/proc/callback_update_icon()
 	update_icon()
 
-/mob/living/simple_mob/Destroy()
-	om_cancel_timer(src, update_icon_timer)
-	update_icon_timer = null
-	. = ..()

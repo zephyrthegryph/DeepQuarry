@@ -253,8 +253,7 @@
 	slime_assembly.build_step = 8
 	slime_assembly.created_name = assembly.created_name
 	slime_assembly.lasercolor = assembly.lasercolor
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE
 
 /datum/interaction/construction/secbot/ed209/attach_gun
@@ -286,6 +285,5 @@
 	var/turf/where = get_turf(assembly)
 	var/mob/living/bot/secbot/ed209/bot = new /mob/living/bot/secbot/ed209(where)
 	bot.name = assembly.created_name
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE

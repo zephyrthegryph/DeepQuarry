@@ -15,11 +15,12 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	var/list/viewing_clients
 	var/list/popup_plane_masters
 
+REF_OWNED_LIST(/atom/movable/screen/map_view_tg, "popup_plane_masters")
+
+// LIFECYCLE: hides itself from every client still viewing it (client refs are handles).
 /atom/movable/screen/map_view_tg/Destroy()
 	for(var/client_ref in viewing_clients)
 		hide_from_client(om_resolve(client_ref))
-	QDEL_LIST_NULL(popup_plane_masters)
-	LAZYCLEARLIST(viewing_clients)
 	return ..()
 
 /atom/movable/screen/map_view_tg/proc/generate_view(map_key)

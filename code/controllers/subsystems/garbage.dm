@@ -417,15 +417,30 @@ SUBSYSTEM_DEF(garbage)
 		del(to_delete)
 		return
 
+	if(!isnull(to_delete.gc_destroyed))
+		if(to_delete.gc_destroyed == GC_BATCH_DOOMED)
+			return // qdel_batch() owns it and will run its transaction
+		SSgarbage.items[to_delete.type]?.qdels++
+		if(to_delete.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)
+			CRASH("[to_delete.type] destroy proc was called multiple times, likely due to a qdel loop in the Destroy logic")
+		return
+
+	// A collecting scope (dq_destroy_collect_begin(), batch.dm) defers movables into one batch.
+	if(GLOB.dq_destroy_collect_depth && ismovable(to_delete) && dq_destroy_collect_live())
+		to_delete.gc_destroyed = GC_BATCH_DOOMED
+		GLOB.dq_destroy_collected[to_delete] = force
+		return
+
+	dq_qdel_run(to_delete, force)
+
+/// qdel()'s body once `to_delete` is known to need destroying: the destroy
+/// transaction plus the GC hint. qdel_batch() calls it directly for each
+/// doomed datum (their gc_destroyed is already set, so qdel() would skip them).
+/proc/dq_qdel_run(datum/to_delete, force)
 	var/datum/qdel_item/trash = SSgarbage.items[to_delete.type]
 	if (isnull(trash))
 		trash = SSgarbage.items[to_delete.type] = new /datum/qdel_item(to_delete.type)
 	trash.qdels++
-
-	if(!isnull(to_delete.gc_destroyed))
-		if(to_delete.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)
-			CRASH("[to_delete.type] destroy proc was called multiple times, likely due to a qdel loop in the Destroy logic")
-		return
 
 
 	// L1 (doc/rewrite/lifecycle.md §2): destroy_transaction() is the whole

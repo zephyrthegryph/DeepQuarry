@@ -192,12 +192,6 @@
 	stock_suggested_prices = list()
 	stock_stocker_accounts = list()
 
-/obj/machinery/department_storefront/Destroy()
-	stock_prices = null
-	stock_suggested_prices = null
-	stock_stocker_accounts = null
-	return ..()
-
 /obj/machinery/department_storefront/examine(mob/user)
 	. = ..()
 	. += "It deposits revenue into the [department_id] budget. Department staff can stock it by using an item on it."

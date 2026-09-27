@@ -26,7 +26,6 @@
 	if(cur_command)
 		MACHINE_WAKE(src)
 
-
 /obj/machinery/door/airlock/proc/execute_current_command()
 	if(operating)
 		return //emagged or busy doing something else
@@ -132,16 +131,13 @@
 		last_reported_density = density
 		last_reported_locked = locked
 
-
 /obj/machinery/door/airlock/open(surpress_send)
 	. = ..()
 	if(!surpress_send) send_status()
 
-
 /obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
 	. = ..()
 	if(!forced) send_status()
-
 
 /obj/machinery/door/airlock/Bumped(atom/AM)
 	..(AM)
@@ -160,11 +156,6 @@
 
 	if(new_frequency)
 		radio_connection = SSradio.add_object(src, new_frequency, RADIO_AIRLOCK)
-
-/obj/machinery/door/airlock/Destroy()
-	if(frequency && SSradio)
-		SSradio.remove_object(src,frequency)
-	return ..()
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -273,11 +264,6 @@
 /obj/machinery/airlock_sensor/Initialize(mapload)
 	. = ..()
 	set_frequency(frequency)
-
-/obj/machinery/airlock_sensor/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
-	return ..()
 
 /obj/machinery/airlock_sensor/examine(mob/user, infix, suffix)
 	. = ..()
@@ -429,15 +415,9 @@
 	frequency = new_frequency
 	radio_connection = SSradio.add_object(src, frequency, RADIO_AIRLOCK)
 
-
 /obj/machinery/access_button/Initialize(mapload)
 	. = ..()
 	set_frequency(frequency)
-
-/obj/machinery/access_button/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src, frequency)
-	return ..()
 
 /obj/machinery/access_button/airlock_interior
 	frequency = AIRLOCK_FREQ

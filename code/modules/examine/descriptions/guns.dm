@@ -155,7 +155,7 @@
 	else
 		weapon_stats += "\nIt isn't loaded!"
 	if(force)
-		weapon_stats += "\nIf used in melee, it deals [describe_power()] [sharp ? "sharp" : "blunt"] damage, [describe_penetration()], and has [describe_speed()]."
+		weapon_stats += "\nIf used in melee, it deals [describe_power(src)] [sharp ? "sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
 	if(can_cleave)
 		weapon_stats += "\nIt is capable of hitting multiple targets with a single swing."
 	if(reach > 1)

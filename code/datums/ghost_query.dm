@@ -11,10 +11,6 @@
 	var/wait_time = 60 SECONDS 	// How long to wait until returning the list of candidates.
 	var/cutoff_number = 0		// If above 0, when candidates list reaches this number, further potential candidates are rejected.
 
-/datum/ghost_query/Destroy(force)
-	candidates = null
-	. = ..()
-
 /// Begin the ghost asking
 /datum/ghost_query/proc/query()
 	// First, ask all the ghosts who want to be asked.
@@ -36,8 +32,6 @@
 				candidates -= D
 		finished = TRUE
 		SEND_SIGNAL(src, COMSIG_GHOST_QUERY_COMPLETE)
-
-
 
 /// Test a candidate for allowance to join as this
 /datum/ghost_query/proc/evaluate_candidate(mob/observer/dead/candidate)
@@ -149,7 +143,6 @@
 	check_bans = list(JOB_XENOMORPH)
 	cutoff_number = 1
 
-
 /datum/ghost_query/blob
 	role_name = "Blob"
 	question = "A rapidly expanding Blob has just appeared on the facility.  Would you like to play as it?"
@@ -221,7 +214,6 @@
 	You MUST NOT use your station character!!!"
 	be_special_flag = BE_SURVIVOR
 	cutoff_number = 1
-
 
 /*
 /datum/ghost_query/morph

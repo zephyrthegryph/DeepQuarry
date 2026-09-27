@@ -17,7 +17,6 @@
 
 	var/datum/component/artifact_master/artifact_master = /datum/component/artifact_master
 
-
 /// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
 /// ARTIFACT_HEAT_BREAK (and re-arms when moved).
 /obj/machinery/artifact/machine_step()
@@ -39,6 +38,7 @@
 	if(isturf(loc) && !QDELETED(src))
 		MACHINE_WAKE(src)
 
+// LIFECYCLE: its artifact master component is removed.
 /obj/machinery/artifact/Destroy()
 	if(artifact_master)
 		var/datum/component/artifact_master/arti_mstr = artifact_master
@@ -99,7 +99,6 @@
 		icon_state = "ano[icon_num]1"
 	else
 		icon_state = "ano[icon_num]0"
-
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

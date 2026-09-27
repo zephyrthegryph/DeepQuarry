@@ -29,9 +29,7 @@
 	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 	ion_trail.set_up(src)
 
-/obj/item/tank/jetpack/Destroy()
-	QDEL_NULL(ion_trail)
-	return ..()
+REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()
@@ -141,6 +139,3 @@
 /obj/item/tank/jetpack/rig/get_gas_supply()
 	return holder?.air_supply?.air_contents
 
-/obj/item/tank/jetpack/rig/Destroy()
-	holder = null
-	return ..()

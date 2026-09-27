@@ -8,7 +8,6 @@
 	///All currently stored conductivities changes
 	var/list/thermal_conductivities
 
-
 	/**
 	 * used for mapping and for breathing while in walls (because that's a thing that needs to be accounted for...)
 	 * string parsed by /datum/gas/proc/copy_from_turf
@@ -68,21 +67,19 @@
 	if(SSair.initialized)
 		update_air_ref(0, air_block_mask())
 
-/turf/open/Destroy()
-	if(active_hotspot)
-		QDEL_NULL(active_hotspot)
-	// Unregister src from the Rust arena so the next SSair tick doesn't process
-	// this dying turf. Rust drops its adjacency and wakes the turfs that shared
-	// air with it. ChangeTurf-style replacement swaps a new turf into the same
-	// coordinates, which registers itself in Initialize.
-	if(SSair)
-		SSair.remove_from_active(src)
+/// Phase 1 (unbind): its fire goes out first (it cools the air it sits in),
+/// then the turf leaves the Rust air arena (Rust drops its
+/// adjacency and wakes the turfs that shared air with it; a ChangeTurf
+/// successor registers itself in Initialize), and its own air handle goes.
+/// Shared immutable air (vacuum, planetary mixes) is only let go.
+/turf/open/lifecycle_unbind()
+	. = ..()
+	QDEL_NULL(active_hotspot)
+	SSair?.remove_from_active(src)
 	if(immutable_atmos)
-		// Shared vacuum (see Initialize); other turfs still use it.
 		air = null
 	else
 		QDEL_NULL(air)
-	return ..()
 
 /////////////////GAS MIXTURE PROCS///////////////////
 
@@ -154,7 +151,6 @@
 // pass; nothing in the (deleted) DM turf engine reads it anymore.
 
 /////////////////////////GAS OVERLAYS//////////////////////////////
-
 
 /**
  * Recompute this turf's gas overlays from its (arena-backed) air contents and

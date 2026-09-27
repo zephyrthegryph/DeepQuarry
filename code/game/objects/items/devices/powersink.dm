@@ -26,9 +26,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/powersink/Destroy()
-	. = ..()
-
 /obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
 	if(mode == 0)
 		var/turf/T = loc
@@ -106,7 +103,6 @@
 					drained += drain_val
 	power_drained += drained
 	return 1
-
 
 /// Every 2 s while operating: drain the attached powernet (and its APCs), then dissipate.
 /obj/item/powersink/periodic_step()

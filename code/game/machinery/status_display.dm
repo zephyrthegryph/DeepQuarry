@@ -61,11 +61,6 @@
 	var/tmp/shuttle_key_token
 	var/tmp/shuttle_key_id = 0
 
-/obj/machinery/status_display/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
-	return ..()
-
 /obj/machinery/status_display/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/status_display_use,

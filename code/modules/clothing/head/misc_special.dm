@@ -40,7 +40,6 @@
 		return TRUE
 	toggle()
 
-
 /obj/item/clothing/head/welding/verb/toggle()
 	set category = "Object"
 	set name = "Adjust welding mask"
@@ -119,9 +118,6 @@
 		SLOT_ID_RIGHT_HAND = "ararwelding",
 		)
 
-
-
-
 /*
  * Cakehat
  */
@@ -162,7 +158,6 @@
 		injury_kind = INJURY_BLUNT
 		icon_state = "cake0"
 	return
-
 
 /*
  * Ushanka
@@ -301,15 +296,11 @@
 		if(flavor_drop)
 			to_chat(user, flavor_drop)
 
-/obj/item/clothing/head/psy_crown/Destroy()
-	return ..()
-
 /obj/item/clothing/head/psy_crown/periodic_step()
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)
 			activate_ability(L)
-
 
 /obj/item/clothing/head/psy_crown/wrath
 	name = "red crown"
@@ -354,7 +345,6 @@
 	body_parts_covered = HEAD
 	attack_verb = list("warned", "cautioned", "smashed")
 	armor_spec = "melee=5"
-
 
 /obj/item/clothing/head/cone
 	sprite_sheets = list(

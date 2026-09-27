@@ -28,9 +28,7 @@
 	default_apply_parts()
 	update_icon()
 
-/obj/machinery/pipelayer/Destroy()
-	QDEL_NULL(W)
-	. = ..()
+REF_OWNED(/obj/machinery/pipelayer, "W")
 
 /obj/machinery/pipelayer/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
@@ -103,7 +101,7 @@
 		user.drop_from_inventory(W)
 		metal += pipe_cost
 		to_chat(user, span_notice("You recycle \the [W]."))
-		qdel(W)
+		consume(W, user)
 	return TRUE
 
 /// Load steel stacks into internal storage.

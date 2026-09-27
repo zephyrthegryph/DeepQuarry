@@ -11,10 +11,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 	name = text
 	src.target = target
 
-/obj/effect/statclick/Destroy()
-	target = null
-	return ..()
-
 /obj/effect/statclick/proc/cleanup()
 	SIGNAL_HANDLER
 	qdel(src)

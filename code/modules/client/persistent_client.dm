@@ -45,6 +45,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	GLOB.persistent_clients_by_ckey[ckey] = src
 	join_registries()
 
+// LIFECYCLE: persistent clients refuse deletion.
 /datum/persistent_client/Destroy(force)
 	SHOULD_CALL_PARENT(FALSE)
 	. = QDEL_HINT_LETMELIVE

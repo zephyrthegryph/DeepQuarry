@@ -134,6 +134,3 @@
 	walk(src, 0)
 	walk_towards(src, despawn_loc, 1)
 
-/obj/effect/immovablerod/Destroy()
-	walk(src, 0) // Because we might have called walk_towards, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	return ..()

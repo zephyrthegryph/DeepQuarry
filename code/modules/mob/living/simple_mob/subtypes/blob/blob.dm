@@ -44,12 +44,7 @@
 		color = null
 	..()
 
-/mob/living/simple_mob/blob/Destroy()
-	if(overmind)
-		overmind.blob_mobs -= src
-	if(blob_type)
-		blob_type = null
-	return ..()
+REF_BACKLIST(/mob/living/simple_mob/blob, list("overmind" = "blob_mobs"))
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)

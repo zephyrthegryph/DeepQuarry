@@ -23,7 +23,7 @@
 	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
 	sparks.set_up(3, 1, src)
 	sparks.start()
-	qdel(src)
+	consume(src, user)
 
 /obj/item/anomaly_releaser
 	icon = 'icons/obj/devices/syndie_gadget.dmi'
@@ -80,10 +80,6 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 	var/buffered_anomaly = null
-
-/obj/item/anomaly_scanner/Destroy()
-	. = ..()
-	buffered_anomaly = null
 
 /obj/item/anomaly_scanner/attack_self(mob/living/user)
 	. = ..(user)
@@ -214,6 +210,3 @@
 		anomaly_type = choices[choice]
 		picked = TRUE
 
-/obj/item/assembly/signaler/anomaly/choice/Destroy()
-	// Sample anomaly objects are qdel'd at creation; `choices` only holds type paths, so nothing to clean here.
-	. = ..()

@@ -81,7 +81,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 								signal.data["message"], DATA_NORMAL, null,
 								signal.data["compression"], listening_level, forced_radios)
 
-
 	/** #### - Artificial Broadcast - #### **/
 			// (Imitates a mob)
 
@@ -105,12 +104,12 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	/* --- Do a snazzy animation! --- */
 	flick("broadcaster_send", src)
 
+// LIFECYCLE: releases the global message-delay latch.
 /obj/machinery/telecomms/broadcaster/Destroy()
 	// In case message_delay is left on 1, otherwise it won't reset the list and people can't say the same thing twice anymore.
 	if(GLOB.message_delay)
 		GLOB.message_delay = 0
 	. = ..()
-
 
 /*
 	Basically just an empty shell for receiving and broadcasting radio messages. Not
@@ -174,7 +173,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		if(signal.data["slow"] > 0)
 			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
-
 
 /obj/machinery/telecomms/allinone/proc/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -254,7 +252,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 							signal.data["realname"], signal.data["vname"], DATA_ANTAG,
 							signal.data["compression"], list(0), connection.frequency,
 							signal.data["verb"], forced_radios)
-
 
 /**
 
@@ -428,7 +425,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 			else
 				heard_garbled += R
 
-
 	/* ###### Begin formatting and sending the message ###### */
 	if(length(heard_masked) || length(heard_normal) || length(heard_voice) || length(heard_garbled) || length(heard_gibberish))
 
@@ -445,7 +441,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		var/part_c = "</span> <span class='message'>" // Tweaked for security headsets -- TLE
 		var/part_d = "</span>"
 		var/part_e = "</span>"
-
 
 		// --- Filter the message; place it in quotes apply a verb ---
 		var/quotedmsg = null
@@ -556,7 +551,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 			if(position && position.z == level)
 				receive |= R.send_hear(display_freq, level)
 
-
 	// --- Broadcast only to intercoms and station-bounced radios ---
 
 	else if(data == DATA_LOCAL)
@@ -568,7 +562,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 			if(position && position.z == level)
 				receive |= R.send_hear(display_freq)
 
-
 	// --- Broadcast to antag radios! ---
 
 	else if(data == DATA_ANTAG)
@@ -579,7 +572,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 				if(position && position.z == level)
 					receive |= R.send_hear(freq)
 
-
 	// --- Broadcast to ALL radio devices ---
 
 	else
@@ -587,7 +579,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 			var/turf/position = get_turf(R)
 			if(position && position.z == level)
 				receive |= R.send_hear(display_freq)
-
 
 	/* ###### Organize the receivers into categories for displaying the message ###### */
 
@@ -624,7 +615,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 			// - Just display a garbled message -
 
 			heard_garbled += R
-
 
 	/* ###### Begin formatting and sending the message ###### */
 	if(length(heard_normal) || length(heard_garbled) || length(heard_gibberish))
@@ -698,7 +688,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 			for (var/mob/R in heard_garbled)
 				R.show_message(rendered, 2)
 
-
 		/* --- Complete gibberish. Usually happens when there's a compressed message --- */
 
 		if(length(heard_gibberish))
@@ -710,9 +699,9 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 //Use this to test if an obj can communicate with a Telecommunications Network
 
-/atom/proc/test_telecomms()
-	var/datum/signal/signal = src.telecomms_process()
-	var/pos_z = get_z(src)
+/proc/test_telecomms(atom/source)
+	var/datum/signal/signal = source.telecomms_process()
+	var/pos_z = get_z(source)
 	return ((pos_z in signal.data["level"]) && signal.data["done"])
 
 /atom/proc/telecomms_process(do_sleep = 1)
@@ -742,7 +731,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	//to_world_log("Level: [signal.data["level"]] - Done: [signal.data["done"]]")
 
 	return signal
-
 
 //This is meant for essentially linking a separate z-level to the rest with telecomms
 /obj/machinery/telecomms/allinone/link

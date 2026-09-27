@@ -106,13 +106,14 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	human.nif = null
 
 //Destructor cleans up references
+REF_OWNED(/obj/item/nif, "comm")
+REF_OWNED_LIST(/obj/item/nif, "nifsofts")
+
+// LIFECYCLE: the NIF unregisters from its human.
 /obj/item/nif/Destroy()
 	if(human)
 		unregister_human()
 		human = null
-	QDEL_LIST_NULL(nifsofts)
-	QDEL_NULL(comm)
-	LAZYCLEARLIST(nifsofts_life)
 	return ..()
 
 //Being implanted in some mob

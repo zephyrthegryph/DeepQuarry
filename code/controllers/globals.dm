@@ -25,6 +25,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 
 	Initialize()
 
+// LIFECYCLE: protected GLOB holder; never runs the parent chain (admin var-edit exploit).
 /datum/controller/global_vars/Destroy(force)
 	// This is done to prevent an exploit where admins can get around protected vars
 	SHOULD_CALL_PARENT(FALSE)
@@ -54,7 +55,36 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 
 	for(var/I in global_procs)
 		var/start_tick = world.time
+#ifdef BENCHMARK
+		var/started = REALTIMEOFDAY
+		var/mb_before = benchmark_early_private_mb()
+#endif
 		call(src, I)()
+#ifdef BENCHMARK
+		benchmark_early_note("global [replacetext("[I]", "/datum/controller/global_vars/proc/InitGlobal", "")]", REALTIMEOFDAY - started, mb_before)
+#endif
 		var/end_tick = world.time
 		if(end_tick - start_tick)
 			WARNING("Global [replacetext("[I]", "InitGlobal", "")] slept during initialization!")
+
+#ifdef BENCHMARK
+/// Early boot notes for the memory breakdown (init_and_turfs.md §0.4), kept
+/// in a plain global because GLOB may not exist yet: list(name, ds, MB
+/// before, MB after) for every step that took time or memory.
+var/global/list/benchmark_early_notes = list()
+
+/// DreamDaemon's private MB from the bench sampler's file (null outside a bench).
+/proc/benchmark_early_private_mb()
+	if(!fexists("data/bench/process.json"))
+		return null
+	var/text = file2text("data/bench/process.json")
+	if(!length(text))
+		return null
+	var/list/decoded = json_decode(text)
+	return decoded?["private_mb"]
+
+/proc/benchmark_early_note(name, ds, mb_before)
+	var/mb_after = benchmark_early_private_mb()
+	if(ds >= 1 || (isnum(mb_before) && isnum(mb_after) && mb_after - mb_before >= 2))
+		global.benchmark_early_notes += list(list(name, ds, mb_before, mb_after))
+#endif

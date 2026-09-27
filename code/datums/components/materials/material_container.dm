@@ -66,11 +66,6 @@
 		for(var/signal in container_signals)
 			parent.RegisterSignal(src, signal, container_signals[signal])
 
-/datum/component/material_container/Destroy(force)
-	materials = null
-	allowed_materials = null
-	return ..()
-
 /datum/component/material_container/RegisterWithParent()
 	. = ..()
 
@@ -172,7 +167,6 @@
 	return primary_mat
 //===================================================================================
 
-
 //===============================MID LEVEL===================================================
 /**
  * For inserting an amount of material. Use this to add materials to the container directly
@@ -251,7 +245,6 @@
 
 	return MATERIAL_INSERT_ITEM_FAILURE
 //============================================================================================
-
 
 //===================================HIGH LEVEL===================================================
 /**
@@ -489,7 +482,6 @@
 	return TRUE
 //===============================================================================================
 
-
 //======================================Material Validation=======================================
 
 //=========================================LOW LEVEL===================================
@@ -517,7 +509,6 @@
 	return FALSE
 //========================================================================================
 
-
 //===================================MID LEVEL=============================================
 
 /**
@@ -533,7 +524,6 @@
 	if(!istype(mat))
 		mat = GET_MATERIAL_REF(mat)
 	return materials[mat]
-
 
 /**
  * Returns the amount of material relevant to this container;
@@ -554,7 +544,6 @@
 	return material_amount
 //================================================================================================
 
-
 //=========================================HIGH LEVEL==========================================
 /// returns the total amount of material in the container
 /datum/component/material_container/proc/total_amount()
@@ -571,7 +560,6 @@
  */
 /datum/component/material_container/proc/has_enough_of_material(datum/material/req_mat, amount = 1)
 	return get_material_amount(req_mat) >= OPTIMAL_COST(amount)
-
 
 /**
  * Checks if its possible to afford a certain amount of materials. Takes a dictionary of materials.
@@ -594,7 +582,6 @@
 
 	return TRUE
 //==========================================================================================================
-
 
 //================================================Material Usage============================================
 
@@ -641,7 +628,6 @@
 
 	return amount_removed
 //============================================================================================
-
 
 //===========================================HIGH LEVEL=======================================
 
@@ -731,7 +717,6 @@
 /// List format is list(list(name = ..., amount = ..., ref = ..., etc.), list(...))
 /datum/component/material_container/tgui_data(mob/user, skip_empty = FALSE)
 	var/list/data = list()
-
 
 	for(var/datum/material/material as anything in materials)
 		var/amount = materials[material]

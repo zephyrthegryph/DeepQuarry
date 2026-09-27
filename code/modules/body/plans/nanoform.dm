@@ -179,7 +179,6 @@
 		log_game("NANOFORM: [key_name(H)] regrew [regrown] part(s).")
 	return regrown
 
-
 // --- Core dormancy ---------------------------------------------------------------------
 
 /// A nanoform body that lost cohesion retreats into its core. It neither dies
@@ -232,6 +231,7 @@
 	release()
 	return ..()
 
+// LIFECYCLE: a dormant core is released.
 /datum/affliction/core_dormancy/Destroy()
 	release()
 	return ..()
@@ -347,7 +347,7 @@
 			if(patient.mend(TREAT_CALIBRATION, 1))
 				playsound(site, 'sound/items/Deconstruct.ogg', 50, 1)
 				to_chat(user, span_notice("You carefully slot [W] into [site]."))
-				qdel(W)
+				consume(W, user)
 		if(DORMANCY_PROGRAMMED)
 			var/obj/item/stack/nanopaste/paste = W
 			if(paste.use(1) && patient.mend(TREAT_PLATING_REPAIR, 1))

@@ -18,9 +18,7 @@
 	..()
 	message_core = new
 
-/datum/computer_file/program/comm/Destroy()
-	QDEL_NULL(message_core)
-	return ..()
+REF_OWNED(/datum/computer_file/program/comm, "message_core")
 
 /datum/computer_file/program/comm/clone()
 	var/datum/computer_file/program/comm/temp = ..()

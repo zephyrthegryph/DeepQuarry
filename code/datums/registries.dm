@@ -95,6 +95,8 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 
 /// Leaves a member. Only leave_registries() and registry_leave() call this.
 /datum/registry/proc/remove(datum/member)
+	if(dq_batch_defer_registry_leave(src, member))
+		return // qdel_batch() removes every doomed member in one pass
 	if(conditional)
 		if(!present[member])
 			return
@@ -102,6 +104,17 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 	members -= member
 	if(keyed)
 		unfile_member(member)
+
+/// Batched destroy's one pass (code/datums/lifecycle/batch.dm): every member
+/// of `leaving` leaves at once.
+/datum/registry/proc/remove_many(list/leaving)
+	if(conditional)
+		leaving = leaving & present
+		present -= leaving
+	members -= leaving
+	if(keyed)
+		for(var/datum/member as anything in leaving)
+			unfile_member(member)
 
 /// TRUE if `member` is in this registry.
 /datum/registry/proc/has(datum/member)

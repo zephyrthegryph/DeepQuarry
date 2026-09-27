@@ -12,4 +12,4 @@
 		new spawner_type(T)
 		to_chat(user, span_notice("You shift \the [src] onto \the [T]."))
 		log_and_message_admins("has casted [src] at [T.x],[T.y],[T.z].")
-		qdel(src)
+		consume(src, user)

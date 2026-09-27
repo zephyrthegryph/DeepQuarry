@@ -62,7 +62,6 @@
 
 	return calculate_vote_result(voted || list(), choices, vote_result_type)
 
-
 /datum/vote/proc/calculate_vote_result(list/voted, list/choices, vote_result_type)
 	var/list/results = list()
 
@@ -135,6 +134,7 @@
 		handle_result(result)
 		qdel(src)
 
+// LIFECYCLE: SSvote forgets it.
 /datum/vote/Destroy(force)
 	if(SSvote.active_vote == src)
 		SSvote.active_vote = null

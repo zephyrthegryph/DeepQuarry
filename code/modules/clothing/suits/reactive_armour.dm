@@ -24,9 +24,8 @@
 		if(!armour_path)
 			armour_path = /obj/item/clothing/suit/armor/reactive/stealth
 		to_chat(user, span_notice("You insert [anomaly] into the chest plate, and the armour gently hums to life."))
-		new armour_path(get_turf(src))
-		qdel(src)
-		qdel(anomaly)
+		replace_with(src, armour_path)
+		consume(anomaly, user)
 		return TRUE
 
 /obj/item/clothing/suit/armor/reactive

@@ -50,9 +50,6 @@
 	PERIODIC_STOP(src)
 	..()
 
-/obj/item/clothing/mask/chewable/Destroy()
-	. = ..()
-
 /obj/item/clothing/mask/chewable/proc/chew()
 	chewtime--
 	if(reagents && reagents.total_volume)
@@ -79,7 +76,6 @@
 	chem_volume = 50
 	chewtime = 300
 	brand = "tobacco"
-
 
 /obj/item/clothing/mask/chewable/proc/spitout(transfer_color = 1, no_message = 0)
 	if(type_butt)
@@ -267,7 +263,6 @@
 	if(chewtime < 1)
 		spitout(0)
 
-
 /obj/item/clothing/mask/chewable/candy/lolli/container_resist(mob/living/M)
 	if(istype(M, /mob/living/voice)) return
 	if(victims)
@@ -322,8 +317,7 @@
 
 		M.forceMove(src)
 		H.held_mob = null
-		user.drop_from_inventory(H)
-		qdel(H)
+		consume(H, user)
 
 		victims += M
 
@@ -336,7 +330,6 @@
 	if(Adjacent(user))
 		if(victims && victims.len)
 			. += span_notice("It has [english_list(victims)] stuck on it.")
-
 
 /obj/item/clothing/mask/chewable/candy/lolli/Initialize(mapload)
 	. = ..()

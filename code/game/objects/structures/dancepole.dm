@@ -19,5 +19,4 @@
 
 /obj/structure/dancepole/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You disassembled \the [src]!"))
-	new /obj/item/stack/material/steel(loc, 1)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 1)

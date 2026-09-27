@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Convert sites to forceMove()
 # or the slot API (code/datums/containment/api.dm) and lower the count;
 # `python tools/ci/containment_lint.py --update` rewrites it.
-# Total: 605 sites in 283 files.
+# Total: 601 sites in 280 files.
 code/_helpers/refinery.dm 1
 code/_helpers/turfs.dm 2
 code/_helpers/unsorted.dm 7
@@ -11,7 +11,6 @@ code/_onclick/hud/screen_objects.dm 12
 code/_onclick/observer.dm 2
 code/_onclick/telekinesis.dm 1
 code/controllers/subsystems/mail.dm 1
-code/core/image/Transform.dm 1
 code/datums/components/antags/changeling/powers/lesser_form.dm 1
 code/datums/components/structures/bluespace_connection.dm 1
 code/datums/gear/loadout_shoes.dm 1
@@ -54,7 +53,6 @@ code/game/machinery/computer/message.dm 1
 code/game/machinery/computer/security.dm 2
 code/game/machinery/computer/skills.dm 1
 code/game/machinery/computer/supply.dm 1
-code/game/machinery/cryo.dm 1
 code/game/machinery/cryopod.dm 2
 code/game/machinery/doors/airlock.dm 1
 code/game/machinery/doors/windowdoor.dm 1
@@ -78,7 +76,6 @@ code/game/mecha/equipment/tools/jetpack.dm 1
 code/game/mecha/mecha.dm 1
 code/game/mecha/mecha_wreckage_salvage.dm 1
 code/game/mecha/micro/micro_equipment.dm 4
-code/game/mecha/working/ripley.dm 1
 code/game/objects/effects/alien/aliens.dm 1
 code/game/objects/effects/chem/foam.dm 1
 code/game/objects/effects/decals/posters/posters.dm 1
@@ -261,7 +258,7 @@ code/modules/samples/container.dm 1
 code/modules/samples/samples.dm 1
 code/modules/scripting/stack.dm 2
 code/modules/spells/targeted/equip/equip.dm 1
-code/modules/spells/targeted/ethereal_jaunt.dm 3
+code/modules/spells/targeted/ethereal_jaunt.dm 2
 code/modules/tgui/modules/ntos-only/cardmod.dm 1
 code/modules/unit_tests/vore_tests.dm 2
 code/modules/vehicles/Securitrain.dm 1

@@ -27,7 +27,7 @@
 			give_new_spell(biased_random_spell())
 		else
 			give_new_spell(random_spell())
-		qdel(src)
+		consume(src, user)
 
 /obj/item/spell/gambit/proc/give_new_spell(spell_type)
 	owner.drop_from_inventory(src, null)

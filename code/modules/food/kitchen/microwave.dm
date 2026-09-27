@@ -85,11 +85,13 @@
 	soundloop = new(list(src), FALSE)
 	update_icon()
 
+REF_OWNED(/obj/machinery/microwave, "soundloop")
+
+// LIFECYCLE: its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/Destroy()
 	dispose(FALSE)
 	if(paicard)
-		ejectpai() // Lets not delete the pAI.
-	QDEL_NULL(soundloop)
+		ejectpai()
 	return ..()
 
 /*******************
@@ -353,7 +355,7 @@
 
 	for(var/item in item_count)
 		var/display_name = item
-		var/plural_name = display_name + plural_s(display_name)
+		var/plural_name = display_name + plural_s(src, display_name)
 		var/ingredient_amt = item_count[item]
 		data.Add(list(list(
 			"name" = capitalize(display_name),
@@ -553,7 +555,7 @@
 			var/obj/item/holder/H = O
 			if(H.held_mob)
 				qdel(H.held_mob)
-		qdel(O)
+		consume(O)
 	src.reagents.clear_reagents()
 	ffuu.reagents.add_reagent(REAGENT_ID_CARBON, amount)
 	ffuu.reagents.add_reagent(REAGENT_ID_TOXIN, amount/10)

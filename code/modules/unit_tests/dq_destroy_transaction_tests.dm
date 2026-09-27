@@ -38,9 +38,11 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	dq_destroy_transaction_log("guard")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_unbind()
+	. = ..()
 	dq_destroy_transaction_log("unbind")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_dematerialize()
+	. = ..()
 	dq_destroy_transaction_log("dematerialize")
 
 /obj/item/dq_destroy_transaction_phase_probe/declared_owned_vars()
@@ -385,3 +387,100 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	TEST_ASSERT_NOTNULL(info, "qdel recorded stats for the type")
 	TEST_ASSERT_NOTNULL(info.phase_ms, "and per-phase timing (doc/rewrite/lifecycle.md §8)")
 	TEST_ASSERT_NOTNULL(info.phase_ms[LIFECYCLE_PHASE_DESTROY], "phase 7 (leftover Destroy()) was timed")
+
+// ---- Tests: batched destroy (code/datums/lifecycle/batch.dm, init_and_turfs.md §4.4) ----
+
+/// Logs every move onto a turf, so a test can tell "deleted without moving".
+/obj/item/dq_containment_test/wood/dq_batch_probe
+
+/obj/item/dq_containment_test/wood/dq_batch_probe/Moved()
+	. = ..()
+	if(isturf(loc))
+		dq_destroy_transaction_log("moved:[REF(src)]")
+
+/datum/unit_test/dq_destroy_batch_doomed_contents_not_moved
+
+/datum/unit_test/dq_destroy_batch_doomed_contents_not_moved/Run()
+	var/turf/T = dq_containment_floor()
+	var/list/boxes = list()
+	var/list/items = list()
+	for(var/i in 1 to 20)
+		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
+		var/obj/item/dq_containment_test/wood/dq_batch_probe/item = allocate(/obj/item/dq_containment_test/wood/dq_batch_probe, T)
+		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		boxes += box
+		items += item
+	dq_destroy_transaction_log_reset()
+
+	// The turf is doomed: everything on it, and everything that would spill onto it, goes.
+	var/destroyed = qdel_batch(null, list(T))
+
+	TEST_ASSERT(destroyed >= 40, "the batch destroyed every box and item (got [destroyed])")
+	for(var/obj/item/dq_containment_box/box as anything in boxes)
+		TEST_ASSERT(QDELETED(box), "every box is gone")
+	for(var/obj/item/dq_containment_test/wood/dq_batch_probe/item as anything in items)
+		TEST_ASSERT(QDELETED(item), "every item went with its box")
+	TEST_ASSERT_EQUAL(length(GLOB.dq_destroy_transaction_log), 0, "no item was moved onto the doomed turf first")
+	TEST_ASSERT_NULL(GLOB.dq_destroy_batch, "no batch left running")
+
+/datum/unit_test/dq_destroy_batch_spills_to_surviving_turf
+
+/datum/unit_test/dq_destroy_batch_spills_to_surviving_turf/Run()
+	var/turf/T = dq_containment_floor()
+	var/list/boxes = list()
+	var/list/items = list()
+	for(var/i in 1 to 10)
+		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
+		var/obj/item/dq_containment_test/wood/item = allocate(/obj/item/dq_containment_test/wood, T)
+		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		boxes += box
+		items += item
+
+	qdel_batch(boxes)
+
+	for(var/obj/item/dq_containment_box/box as anything in boxes)
+		TEST_ASSERT(QDELETED(box), "every box is gone")
+	for(var/obj/item/dq_containment_test/wood/item as anything in items)
+		TEST_ASSERT(!QDELETED(item), "contents whose drop survives are not doomed")
+		TEST_ASSERT_EQUAL(item.loc, T, "they spilled to the turf as usual")
+
+/datum/unit_test/dq_destroy_batch_edges_dropped
+
+/datum/unit_test/dq_destroy_batch_edges_dropped/Run()
+	var/datum/dq_destroy_transaction_pair_fixture/A = allocate(/datum/dq_destroy_transaction_pair_fixture)
+	var/datum/dq_destroy_transaction_pair_fixture/B = allocate(/datum/dq_destroy_transaction_pair_fixture)
+	var/datum/dq_destroy_transaction_pair_fixture/C = allocate(/datum/dq_destroy_transaction_pair_fixture)
+	var/datum/dq_destroy_transaction_pair_fixture/D = allocate(/datum/dq_destroy_transaction_pair_fixture)
+	link_set(A, "partner", B, "partner")
+	link_set(C, "partner", D, "partner")
+
+	// A and B are doomed together; C is doomed with its partner D surviving.
+	qdel_batch(list(A, B, C))
+
+	TEST_ASSERT(QDELETED(A) && QDELETED(B) && QDELETED(C), "the set is gone")
+	TEST_ASSERT_NULL(A.partner, "a doomed pair is dropped")
+	TEST_ASSERT_NULL(B.partner, "on both sides")
+	TEST_ASSERT(!QDELETED(D), "the surviving partner lives")
+	TEST_ASSERT_NULL(D.partner, "and its side of an edge out of the set is still cleared")
+
+/datum/unit_test/dq_destroy_batch_collecting_scope
+
+/datum/unit_test/dq_destroy_batch_collecting_scope/Run()
+	var/turf/T = dq_containment_floor()
+	var/list/things = list()
+	for(var/i in 1 to 10)
+		things += allocate(/obj/item/dq_containment_test, T)
+
+	dq_destroy_collect_begin()
+	for(var/obj/item/dq_containment_test/thing as anything in things)
+		qdel(thing)
+	for(var/obj/item/dq_containment_test/thing as anything in things)
+		TEST_ASSERT(QDELETED(thing), "marked first: QDELETED as soon as qdel() defers it")
+		TEST_ASSERT_EQUAL(thing.gc_destroyed, GC_BATCH_DOOMED, "and doomed, not yet destroyed")
+	var/destroyed = dq_destroy_collect_end()
+
+	TEST_ASSERT_EQUAL(destroyed, 10, "closing the scope ran one batch over everything collected")
+	for(var/obj/item/dq_containment_test/thing as anything in things)
+		TEST_ASSERT(thing.gc_destroyed != GC_BATCH_DOOMED, "every transaction ran")
+		TEST_ASSERT_NULL(thing.loc, "and every thing left its turf")
+	TEST_ASSERT_EQUAL(GLOB.dq_destroy_collect_depth, 0, "the scope is closed")

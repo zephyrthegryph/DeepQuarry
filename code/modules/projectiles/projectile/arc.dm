@@ -25,10 +25,7 @@
 	shadow = new(get_turf(src))
 	return ..()
 
-/obj/item/projectile/arc/Destroy()
-	QDEL_NULL(shadow)
-	return ..()
-
+REF_OWNED(/obj/item/projectile/arc, "shadow")
 
 /obj/item/projectile/arc/proc/calculate_initial_pixel_distance(atom/user, atom/target)
 	var/datum/point/A = new(user)
@@ -60,7 +57,6 @@
 	..()
 	fired_dir = get_dir(source, target)
 	distance_to_fly = calculate_initial_pixel_distance(source, target)
-
 
 /obj/item/projectile/arc/fire(angle, atom/direct_target)
 	..() // The trajectory must exist for set_pixel_speed() to work.
@@ -97,7 +93,6 @@
 			shadow.forceMove(loc)
 			shadow.pixel_x = pixel_x
 			shadow.pixel_y = pixel_y + visual_y_offset
-
 
 /obj/effect/projectile_shadow
 	name = "shadow"

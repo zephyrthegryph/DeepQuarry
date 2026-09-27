@@ -121,7 +121,7 @@
 		new ore(H.loc)
 		i--
 	H.drop_from_inventory(src,get_turf(H))
-	qdel(src)
+	consume(src, H)
 
 /obj/item/research_sample/attack_self(mob/user)
 	. = ..(user)

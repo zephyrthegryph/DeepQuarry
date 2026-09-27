@@ -125,6 +125,9 @@
 		H.ContractDisease(base_disease)
 	ai_busy_end()
 */
+/mob/living/simple_mob/vore/aggressive/macrophage
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/aggressive/macrophage/death()
 	..()
 	if(isbelly(loc))
@@ -141,7 +144,6 @@
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
 		sick.viruses += base_disease
-	qdel(src)
 
 /obj/belly/macrophage
 	name = "capsid"

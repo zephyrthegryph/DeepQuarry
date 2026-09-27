@@ -133,8 +133,7 @@
 	trailer.build_stage = 1
 	trailer.set_build_visuals(1, "framed [initial(trailer.name)]")
 	to_chat(actor, span_notice("You convert \the [assembly] into \the [trailer]."))
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE
 
 /datum/interaction/construction/vehicle/quadbike/wire
@@ -215,8 +214,7 @@
 	product.cell = assembly.cell
 	assembly.cell.forceMove(product)
 	assembly.cell = null
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE
 
 /datum/interaction/construction/vehicle/quadbike/finish_wrench
@@ -288,8 +286,7 @@
 	to_chat(actor, span_notice("You close up \the [trailer]."))
 	var/obj/vehicle/train/trolley/trailer/product = new(trailer)
 	product.loc = get_turf(trailer)
-	actor.drop_from_inventory(trailer)
-	qdel(trailer)
+	consume(trailer, actor)
 	return TRUE
 
 /*
@@ -423,8 +420,7 @@
 	product.cell = assembly.cell
 	assembly.cell.forceMove(product)
 	assembly.cell = null
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE
 
 /datum/interaction/construction/vehicle/spacebike/finish_wrench
@@ -583,8 +579,7 @@
 	product.cell = assembly.cell
 	assembly.cell.forceMove(product)
 	assembly.cell = null
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE
 
 /datum/interaction/construction/vehicle/snowmobile/finish_wrench

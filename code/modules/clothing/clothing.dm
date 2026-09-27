@@ -237,7 +237,7 @@
 		O.add_fingerprint(user)
 
 	if(istype(src,/obj/item/clothing/ears/offear))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/clothing/ears/update_clothing_icon()
 	if (ismob(src.loc))
@@ -252,15 +252,12 @@
 			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)
-				H.drop_from_inventory(src)
-				qdel(src)
+				consume(src, H)
 			else
 				. = ..()
-				H.drop_from_inventory(O)
-				qdel(O)
+				consume(O, H)
 		else
 			. = ..()
-
 
 /obj/item/clothing/ears/offear
 	name = "Other ear"
@@ -320,15 +317,8 @@
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-/obj/item/clothing/gloves/Destroy()
-	for(var/mob/living/M in contents)
-		M.forceMove(get_turf(src))
-	if(ring)
-		QDEL_NULL(ring)
-	if(gloves)
-		QDEL_NULL(gloves)
-	wearer = null
-	return ..()
+REF_OWNED(/obj/item/clothing/gloves, list("ring", "gloves"))
+REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 
 /obj/item/clothing/proc/set_clothing_index()
 	return
@@ -346,7 +336,6 @@
 	. = ..()
 	transfer_blood = 0
 	update_icon()
-
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
 	wearer = om_handle(user)
@@ -643,12 +632,7 @@
 		span_red("More motion while \the [name] move, feet pressing down against you.")
 	)
 
-/obj/item/clothing/shoes/Destroy()
-	if(shoes)
-		QDEL_NULL(shoes)
-	if(holding)
-		QDEL_NULL(holding)
-	return ..()
+REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 
 /obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	set name = "Draw Boot Knife"
@@ -917,7 +901,6 @@
 	preserve_item = 1
 	equip_sound = 'sound/items/jumpsuit_equip.ogg'
 
-
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi'
@@ -937,9 +920,7 @@
 	toggleicon = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/clothing/suit/Destroy()
-	QDEL_NULL(hood)
-	return ..()
+REF_OWNED(/obj/item/clothing/suit, "hood")
 
 /obj/item/clothing/suit/update_icon()
 	. = ..()
@@ -1036,7 +1017,6 @@
 			standing.add_overlay(I)
 	else
 		return ..()
-
 
 ///////////////////////////////////////////////////////////////////////
 //Under clothing
@@ -1201,7 +1181,6 @@
 
 	set_clothing_index()
 
-
 /obj/item/clothing/under/examine(mob/user)
 	. = ..()
 	switch(src.sensor_mode)
@@ -1340,14 +1319,14 @@
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
+REF_SPILL_LIST(/obj/item/clothing, "contents")
+
+// LIFECYCLE: its integrated circuit goes with it.
 /obj/item/clothing/Destroy()
 	if(IC)
 		IC.clothing = null
-		action_circuit = null // Will get deleted by qdel-ing the IC assembly.
+		action_circuit = null
 		QDEL_NULL(IC)
-	for(var/mob/living/M in contents)
-		M.forceMove(get_turf(src))
-	wearer = null
 	return ..()
 
 /obj/item/clothing/proc/handle_digitigrade(mob/user)
@@ -1369,7 +1348,6 @@
 				// otherwise, keep the old non-digi icon_define (or nothing)
 				if(icon_state && icon_states_fast(update_icon_define_digi):Find(icon_state)) //Unsure what to do to this seeing as it does :Find()
 					update_icon_define = update_icon_define_digi
-
 
 		// if not-digitigrade, only act if the clothing was previously fit for a digitigrade char
 		else
@@ -1428,7 +1406,6 @@
 /obj/item/clothing/head/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
 
-
 /obj/item/clothing/head/attack_robot(mob/living/silicon/robot/user)
 	. = ..()
 
@@ -1443,7 +1420,6 @@
 		return
 	user.place_on_head(src)
 	balloon_alert(user, "picked up hat")
-
 
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)
@@ -1467,7 +1443,6 @@
 		user.forceMove(src)
 
 	return ..()
-
 
 /obj/item/clothing
 	COOLDOWN_DECLARE(struggle_cooldown)

@@ -27,7 +27,6 @@
 	mind."
 	value = CATALOGUER_REWARD_MEDIUM
 
-
 #define TURRET_PRIORITY_TARGET 2
 #define TURRET_SECONDARY_TARGET 1
 #define TURRET_NOT_TARGET 0
@@ -228,7 +227,6 @@
 	check_all = FALSE
 	check_down = FALSE
 
-
 /obj/machinery/porta_turret/lasertag/red
 	turret_type = "red"
 	installation = /obj/item/gun/energy/lasertag/red
@@ -294,9 +292,7 @@
 	add_overlay(turret_opened_overlay)
 	return ..()
 
-/obj/machinery/porta_turret/Destroy()
-	QDEL_NULL(spark_system)
-	return ..()
+REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 
 /obj/machinery/porta_turret/update_icon()
 	if(stat & BROKEN) // Turret is dead.
@@ -318,7 +314,6 @@
 	else
 		// Its closed.
 		icon_state = "turret_cover_[turret_type]"
-
 
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable
@@ -494,7 +489,6 @@
 	stat |= NOPOWER
 	update_icon()
 
-
 /datum/interaction/machine_item/porta_turret_lock
 	id = "porta_turret_lock"
 	name = "Toggle lock"
@@ -559,7 +553,7 @@
 	if(om_busy(src)) // a wrenching job claims the turret
 		to_chat(user, span_warning("Someone is already [anchored ? "un" : ""]securing the turret!"))
 		return ITEM_INTERACT_SUCCESS
-	if(!anchored && isinspace())
+	if(!anchored && isinspace(src))
 		to_chat(user, span_warning("Cannot secure turrets in space!"))
 		return ITEM_INTERACT_SUCCESS
 
@@ -1125,7 +1119,7 @@
 		to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
 		return TRUE
 	to_chat(user, span_notice("You add the prox sensor to the turret."))
-	qdel(I)
+	consume(I, user)
 	return TRUE
 	//attack_hand() removes the gun
 
@@ -1200,8 +1194,7 @@
 			if(!anchored)
 				playsound(src, tool.usesound, 75, 1)
 				to_chat(user, span_notice("You dismantle the turret construction."))
-				new /obj/item/stack/material/steel(loc, 5)
-				qdel(src)
+				replace_with(src, /obj/item/stack/material/steel, 5)
 				return ITEM_INTERACT_SUCCESS
 		if(7)
 			playsound(src, tool.usesound, 75, 1)
@@ -1304,7 +1297,6 @@
 #undef TURRET_EMAG_FIRERATE
 #undef TURRET_POPCOOLDOWN
 
-
 // === merged from portable_turret_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/porta_turret/stationary/CIWS
 	name = "CIWS turret"
@@ -1337,7 +1329,6 @@
 	check_weapons = TRUE
 	auto_repair = TRUE
 	can_salvage = FALSE
-
 
 // === merged from portable_turret_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/porta_turret/rcd

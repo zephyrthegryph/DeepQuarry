@@ -49,14 +49,6 @@
 	update_icon()
 	AddElement(/datum/element/sellable/material_stack)
 
-/obj/item/stack/Destroy()
-	if (src && usr && usr.check_current_machine(src))
-		// stack window is TGUI now; close via SStgui
-		SStgui.close_uis(src)
-	if(islist(synths))
-		synths.Cut()
-	return ..()
-
 /obj/item/stack/get_material_composition(breakdown_flags)
 	. = ..()
 	for(var/M in .)
@@ -514,7 +506,6 @@
 /datum/stack_recipe_list/New(title, recipes)
 	src.title = title
 	src.recipes = recipes
-
 
 // Porting stack dragging/auto stacking from TG.
 

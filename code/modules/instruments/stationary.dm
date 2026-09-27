@@ -13,9 +13,7 @@
 	song = new(src, allowed_instrument_ids)
 	allowed_instrument_ids = null
 
-/obj/structure/musician/Destroy()
-	QDEL_NULL(song)
-	return ..()
+REF_OWNED(/obj/structure/musician, "song")
 
 /obj/structure/musician/proc/can_play(atom/music_player)
 	if(!anchored && !can_play_unanchored)
@@ -72,7 +70,6 @@
 	desc = "This is a minimoog, like a space piano, but more spacey!"
 	icon_state = "minimoog"
 	broken_icon_state = "minimoogbroken"
-
 
 /obj/structure/musician/wrench_act(mob/user, obj/item/tool)
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, message_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", message_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))

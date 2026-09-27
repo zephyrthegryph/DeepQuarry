@@ -36,11 +36,7 @@
 	if(src.anchored)
 		update_icon(0)
 
-/obj/structure/railing/Destroy()
-	var/turf/location = loc
-	. = ..()
-	for(var/obj/structure/railing/R in orange(location, 1))
-		R.update_icon()
+DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor_type = /obj/structure/railing, neighbor_reconnect = FALSE))
 
 /obj/structure/railing/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))
@@ -183,7 +179,7 @@
 					M.forceMove(get_turf(src))
 				M.status_at_least(EFFECT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] throws [M] over \the [src]!"))
-			qdel(W)
+			consume(W, user)
 			return
 
 	else
@@ -202,8 +198,7 @@
 
 /obj/structure/railing/proc/wrench_act_timed_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."), span_notice("You dismantle \the [src]."))
-	new /obj/item/stack/material/steel(get_turf(user), 2)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/railing/welder_act(mob/user, obj/item/W)
 	if(get_integrity() >= max_integrity)

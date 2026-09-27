@@ -14,4 +14,4 @@
 		if(istype(c, /obj/structure/cable))
 			if(prob(33))
 				qdel(c)
-	qdel(src)
+	return INITIALIZE_HINT_QDEL

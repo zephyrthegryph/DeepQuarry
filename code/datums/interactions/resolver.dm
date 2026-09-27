@@ -22,12 +22,6 @@
 	src.target = target
 	src.held = held
 
-/datum/interaction_resolution/Destroy()
-	actor = null
-	target = null
-	held = null
-	return ..()
-
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)
 	return best_of(available, action, null)
@@ -191,8 +185,9 @@
 	return null
 
 /// The tool_act path: the base *_act procs end here, so subtype overrides that call ..() reach it.
-/atom/proc/interaction_tool_act(mob/user, obj/item/tool, quality)
-	switch(try_interaction(user, src, tool, INPUT_ACTION_USE, quality))
+/// `secondary` (right-click tool use) runs the quality's Alternate interactions instead of Use.
+/atom/proc/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
+	switch(try_interaction(user, src, tool, secondary ? INPUT_ACTION_ALTERNATE : INPUT_ACTION_USE, quality))
 		if(INTERACTION_TRY_RAN)
 			return ITEM_INTERACT_SUCCESS
 		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)

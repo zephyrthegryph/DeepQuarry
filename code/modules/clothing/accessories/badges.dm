@@ -278,7 +278,6 @@
 	icon_state = "tag_bishop"
 	badge_string = "Bishop"
 
-
 /obj/item/clothing/accessory/dosimeter
 	name = "dosimeter"
 	desc = "A small device used to measure body radiation and warning one after a certain threshold. \
@@ -296,9 +295,7 @@
 	update_state(current_film.state)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/clothing/accessory/dosimeter/Destroy()
-	QDEL_NULL(current_film)
-	return ..()
+REF_OWNED(/obj/item/clothing/accessory/dosimeter, "current_film")
 
 /obj/item/clothing/accessory/dosimeter/periodic_step()
 	check_holder()

@@ -166,8 +166,7 @@
 	if(bee_count || length(frames))
 		return
 	user.visible_message(span_notice("[user] dismantles \the [src]."), span_notice("You dismantle \the [src]."))
-	new /obj/item/beehive_assembly(loc)
-	qdel(src)
+	replace_with(src, /obj/item/beehive_assembly)
 
 /datum/interaction/machine_hand/ungated/beehive_harvest
 	id = "beehive_harvest"
@@ -377,8 +376,7 @@
 /obj/item/beehive_assembly/proc/assemble_done(mob/user)
 	user.visible_message(span_notice("[user] constructs a beehive."), span_notice("You construct a beehive."))
 	new /obj/machinery/beehive(get_turf(user))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/stack/material/wax
 	name = "wax"

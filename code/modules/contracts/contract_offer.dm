@@ -27,10 +27,6 @@
 	priority = _priority
 	context = _context ? deepCopyList(_context) : list()
 
-/datum/contract_offer_candidate/Destroy()
-	context = null
-	return ..()
-
 /datum/contract_lifecycle_entry
 	var/time
 	var/action

@@ -68,12 +68,7 @@
 
 	update_icon()
 
-/obj/item/gun/projectile/Destroy()
-	QDEL_NULL(ammo_provider)
-	loaded = null
-	ammo_magazine = null
-	chambered = null
-	return ..()
+REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
@@ -135,7 +130,6 @@
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
-
 
 //attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
 /obj/item/gun/projectile/proc/unload_ammo(mob/user, allow_dump=1)
@@ -308,7 +302,6 @@
 		return chambered.BB ? 1 : 0
 	else // Failsafe, or completely unloaded
 		return 0
-
 
 #define BOLT_NOEVENT 0
 #define BOLT_CLOSED 1
@@ -580,7 +573,7 @@
 	if(count && user)
 		user.visible_message("[user] feeds [count] round\s into [src].", span_notice("You load [count] round\s into [src]."))
 	if(H && !QDELETED(H) && !H.stored_ammo.len)
-		qdel(H)
+		consume(H, user)
 	update_icon()
 
 // Attempts to load A into src, depending on the type of thing being loaded and the load_method.

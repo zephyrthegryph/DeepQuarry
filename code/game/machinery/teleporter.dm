@@ -40,9 +40,7 @@
 		hub.com = src
 		teleport_control.station = station
 
-/obj/machinery/computer/teleporter/Destroy()
-	QDEL_NULL(teleport_control)
-	return ..()
+REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 /obj/machinery/computer/teleporter/declare_interactions(list/into)
 	into += list(
@@ -77,7 +75,7 @@
 		to_chat(user, "You insert the coordinates into the machine.")
 		to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
 		user.drop_item()
-		qdel(C)
+		consume(C, user)
 
 		if(C.data == "Clown Land")
 			//whoops
@@ -156,6 +154,7 @@
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
 	default_apply_parts()
 
+// LIFECYCLE: the teleporter console forgets its hub.
 /obj/machinery/teleport/hub/Destroy()
 	com?.teleport_control.hub = null
 	com = null
@@ -222,6 +221,7 @@
 	add_overlay("controller-wires")
 	default_apply_parts()
 
+// LIFECYCLE: the teleporter console forgets its station.
 /obj/machinery/teleport/station/Destroy()
 	com?.com?.teleport_control.station = null
 	com = null
@@ -280,7 +280,6 @@
 	else
 		icon_state = "controller"
 
-
 /obj/effect/laser/Bump()
 	range--
 	return
@@ -288,9 +287,6 @@
 /obj/effect/laser/Move()
 	range--
 	return
-
-/atom/proc/laserhit(L as obj)
-	return 1
 
 /// A test fire's calibration lapses.
 /obj/machinery/teleport/hub/proc/calibration_lapses()

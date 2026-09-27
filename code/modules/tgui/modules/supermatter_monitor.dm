@@ -5,11 +5,6 @@
 	var/list/supermatters
 	var/obj/machinery/power/supermatter/active = null		// Currently selected supermatter crystal.
 
-/datum/tgui_module/supermatter_monitor/Destroy()
-	. = ..()
-	active = null
-	supermatters = null
-
 /datum/tgui_module/supermatter_monitor/New()
 	..()
 	refresh()

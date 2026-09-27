@@ -11,7 +11,6 @@
 
 #define LAST_BUILDMODE		10
 
-
 /proc/togglebuildmode(mob/M as mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	set name = "Toggle Build Mode"
 	set category = "Special Verbs"
@@ -59,6 +58,7 @@
 	icon = 'icons/misc/buildmode.dmi'
 	var/obj/effect/bmode/buildholder/master = null
 
+// LIFECYCLE: comes off its builder's screen (clients aren't datums).
 /obj/effect/bmode/Destroy()
 	if(master && master.cl)
 		master.cl.screen -= src
@@ -213,20 +213,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildholder/Initialize(mapload)
 	. = ..()
 
+REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmode", "buildquit"))
+
+// LIFECYCLE: AI mobs it selected are deselected.
 /obj/effect/bmode/buildholder/Destroy()
-	qdel(builddir)
-	builddir = null
-	qdel(buildhelp)
-	buildhelp = null
-	qdel(buildmode)
-	buildmode = null
-	qdel(buildquit)
-	buildquit = null
-	throw_atom = null
 	for(var/mob/living/unit in selected_mobs)
 		deselect_AI_mob(cl, unit)
 	LAZYCLEARLIST(selected_mobs)
-	cl = null
 	return ..()
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)

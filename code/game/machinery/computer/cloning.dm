@@ -32,10 +32,11 @@
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
+REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
+
+// LIFECYCLE: its linked cloners are released.
 /obj/machinery/computer/cloning/Destroy()
 	releasecloner()
-	for(var/datum/transhuman/body_record/BR in records)
-		qdel(BR)
 	return ..()
 
 /obj/machinery/computer/cloning/machine_step()

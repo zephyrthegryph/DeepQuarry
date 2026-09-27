@@ -9,17 +9,11 @@
 	var/air_frequency = ALERT_FREQ
 	autoclose = 0
 
-/obj/machinery/door/airlock/alarmlock/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,air_frequency)
-	. = ..()
-
 /obj/machinery/door/airlock/alarmlock/Initialize(mapload)
 	. = ..()
 	SSradio.remove_object(src, air_frequency)
 	air_connection = SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM)
 	open()
-
 
 /obj/machinery/door/airlock/alarmlock/receive_signal(datum/signal/signal)
 	..()

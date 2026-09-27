@@ -30,9 +30,10 @@
 	src.callback = callback
 	handle = SSvg.bind_datum(src)
 
-/datum/native_watch/Destroy()
+/// Phase 1 (unbind): the Rust-side watch is cancelled.
+/datum/native_watch/lifecycle_unbind()
+	. = ..()
 	cancel()
-	return ..()
 
 /// Stops the watch: drops its Rust registration and frees its handle.
 /datum/native_watch/proc/cancel()

@@ -19,10 +19,7 @@
 
 	cerealmaker_loop = new(list(src), FALSE)
 
-/obj/machinery/appliance/mixer/cereal/Destroy()
-	. = ..()
-
-	QDEL_NULL(cerealmaker_loop)
+REF_OWNED(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop")
 
 /obj/machinery/appliance/mixer/cereal/update_icon()
 	. = ..()

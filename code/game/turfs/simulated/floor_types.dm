@@ -100,10 +100,6 @@
 	if(takes_underlays)
 		underlay_update()
 
-/turf/simulated/shuttle/Destroy()
-	landed_holder = null
-	return ..()
-
 // For joined corners touching static lighting turfs, add an overlay to cancel out that part of our lighting overlay.
 /turf/simulated/shuttle/proc/update_breaklights()
 	cut_overlay(antilight_cache["[join_flags]"])
@@ -215,7 +211,6 @@
 /turf/simulated/shuttle/floor/black
 	icon_state = "floor_black"
 
-
 /turf/simulated/shuttle/floor/alien
 	icon_state = "alienpod1"
 	light_range = 3
@@ -293,7 +288,6 @@
 /turf/simulated/shuttle/floor/voidcraft/external // For avoiding active edges.
 // The actual temperature adjustment is defined if the SC or other future map is compiled.
 
-
 /turf/simulated/shuttle/floor/voidcraft/external/light
 
 /turf/simulated/floor/tiled/material
@@ -315,10 +309,6 @@
 /turf/simulated/floor/tiled/material/uranium/Initialize(mapload)
 	. = ..()
 	RegisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(radiate))
-
-/turf/simulated/floor/tiled/material/uranium/Destroy()
-	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
-	. = ..()
 
 /turf/simulated/floor/tiled/material/uranium/proc/radiate()
 	SIGNAL_HANDLER
@@ -362,7 +352,6 @@
 	icon_base = "gold"
 	build_type = /obj/item/stack/tile/floor/gold
 
-
 /datum/decl/flooring/tiling/material/silver
 	name = "silver floor"
 	icon_base = "silver"
@@ -376,7 +365,6 @@
 	name = "diamond floor"
 	icon_base = "diamond"
 	build_type = /obj/item/stack/tile/floor/diamond
-
 
 /turf/simulated/floor/flesh
 	name = "flesh"

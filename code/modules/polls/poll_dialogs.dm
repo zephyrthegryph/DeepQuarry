@@ -17,7 +17,6 @@
 #define PRIVACY_OPTION_LATER     "later"
 #define PRIVACY_OPTION_ABSTAIN   "abstain"
 
-
 // ============================================================
 // Privacy poll
 // ============================================================
@@ -29,11 +28,8 @@
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
 	src.owner = owner
 
-/datum/privacy_poll_dialog/Destroy()
-	if(owner && owner.privacy_poll_dialog == src)
-		owner.privacy_poll_dialog = null
-	owner = null
-	return ..()
+REF_PAIR(/datum/privacy_poll_dialog, list("owner" = "privacy_poll_dialog"))
+REF_PAIR(/mob/new_player, list("privacy_poll_dialog" = "owner"))
 
 /datum/privacy_poll_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -109,7 +105,6 @@
 	qdel(src)
 	return TRUE
 
-
 // ============================================================
 // Player poll browser
 // ============================================================
@@ -127,14 +122,8 @@
 	poll_meta = list()
 	refresh_poll_list()
 
-/datum/poll_browser_dialog/Destroy()
-	if(owner && owner.poll_browser_dialog == src)
-		owner.poll_browser_dialog = null
-	owner = null
-	poll_ids = null
-	poll_meta = null
-	cached_detail = null
-	return ..()
+REF_PAIR(/datum/poll_browser_dialog, list("owner" = "poll_browser_dialog"))
+REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 
 /datum/poll_browser_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -418,7 +407,6 @@
 				cached_detail = build_poll_detail(selected_pollid)
 			return TRUE
 
-
 // ============================================================
 // /mob/new_player extensions (re-open type to add per-mob refs)
 // ============================================================
@@ -426,7 +414,6 @@
 /mob/new_player
 	var/datum/privacy_poll_dialog/privacy_poll_dialog
 	var/datum/poll_browser_dialog/poll_browser_dialog
-
 
 #undef PRIVACY_OPTION_SIGNED
 #undef PRIVACY_OPTION_ANONYMOUS

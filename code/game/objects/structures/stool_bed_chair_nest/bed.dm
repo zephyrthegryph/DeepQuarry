@@ -88,8 +88,7 @@
 			return
 		var/obj/item/stack/C = W
 		if(C.get_amount() < 1) // How??
-			user.drop_from_inventory(C)
-			qdel(C)
+			consume(C, user)
 			return
 		var/padding_type
 		// making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
@@ -142,7 +141,7 @@
 	var/mob/living/affecting = task.affecting
 	affecting.forceMove(loc)
 	INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
-	qdel(W)
+	consume(W, user)
 
 /obj/structure/bed/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
@@ -279,7 +278,7 @@
 		return TRUE
 	var/obj/structure/bed/roller/R = new bedtype(user.loc)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/roller/attackby(obj/item/W as obj, mob/user as mob)
 

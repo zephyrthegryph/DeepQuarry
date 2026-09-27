@@ -54,6 +54,7 @@
 
 	fullUpdateWeedOverlays()
 
+// LIFECYCLE: neighbouring weeds redraw their overlays without it.
 /obj/effect/alien/weeds/Destroy()
 	var/turf/T = get_turf(src)
 	// To not mess up the overlay updates.
@@ -92,9 +93,6 @@
 	linked_node = src
 
 	PERIODIC_START(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
-
-/obj/effect/alien/weeds/node/Destroy()
-	return ..()
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()
 	cut_overlays()
@@ -190,7 +188,6 @@
 	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return ITEM_INTERACT_SUCCESS
-
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /obj/effect/alien/weeds/attack_hand(mob/user as mob)

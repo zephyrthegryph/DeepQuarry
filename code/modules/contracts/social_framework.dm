@@ -22,10 +22,6 @@
 	maximum_approved = max(0, _maximum_approved)
 	minimum_contribution = max(0, _minimum_contribution)
 
-/datum/contract_stakeholder_role/Destroy()
-	eligible_departments = null
-	return ..()
-
 /datum/contract_stakeholder_role/proc/account_is_eligible(datum/money_account/account)
 	return account && (!length(eligible_departments) || (account.department_id in eligible_departments))
 
@@ -75,15 +71,7 @@
 	stakeholder_roles = list()
 	stakeholder_proposals = list()
 
-/datum/contract/social/Destroy()
-	for(var/role_id in stakeholder_roles)
-		qdel(stakeholder_roles[role_id])
-	stakeholder_roles = null
-	for(var/proposal_key in stakeholder_proposals)
-		qdel(stakeholder_proposals[proposal_key])
-	stakeholder_proposals = null
-	personal_side_definitions = null
-	return ..()
+REF_OWNED_VALUES(/datum/contract/social, list("stakeholder_roles", "stakeholder_proposals"))
 
 /datum/contract/social/on_negotiated_terms_changed()
 	..()

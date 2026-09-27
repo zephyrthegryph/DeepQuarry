@@ -116,9 +116,7 @@
 	update_integrity(max_integrity)
 	update_connections(1)
 
-/obj/structure/barricade/sandbag/Destroy()
-	update_connections(1, src)
-	. = ..()
+DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_data(neighbor_type = /obj/structure/barricade/sandbag))
 
 /obj/structure/barricade/sandbag/dismantle()
 	update_connections(1, src)

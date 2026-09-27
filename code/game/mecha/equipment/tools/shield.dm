@@ -25,14 +25,12 @@
 	my_shield.adjust_health(-200)
 	return
 
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/combat_shield, "my_shield")
+
+// LIFECYCLE: the shield drone overlay comes off the chassis and its shields drop.
 /obj/item/mecha_parts/mecha_equipment/combat_shield/Destroy()
-	chassis.cut_overlay(drone_overlay)
-	my_shield.forceMove(src)
-	my_shield.destroy_shields()
-	my_shield.my_tool = null
-	my_shield.my_mecha = null
-	qdel(my_shield)
-	my_shield = null
+	chassis?.cut_overlay(drone_overlay)
+	my_shield?.destroy_shields()
 	. = ..()
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/add_equip_overlay(obj/mecha/M as obj)

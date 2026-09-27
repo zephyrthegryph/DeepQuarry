@@ -70,27 +70,6 @@
 /obj/machinery/atmospherics/trinary/get_neighbor_nodes_for_init()
 	return list(node1, node2, node3)
 
-/obj/machinery/atmospherics/trinary/Destroy()
-	rust_unregister_pipe_topology()
-	// Disconnect/qdel BEFORE ..() so node derefs are valid.
-	if(node1)
-		node1.disconnect(src)
-		rust_release_network_wrapper(network1)
-	if(node2)
-		node2.disconnect(src)
-		rust_release_network_wrapper(network2)
-	if(node3)
-		node3.disconnect(src)
-		rust_release_network_wrapper(network3)
-
-	node1 = null
-	node2 = null
-	node3 = null
-	network1 = null
-	network2 = null
-	network3 = null
-	return ..()
-
 // Get the direction each node is facing to connect.
 // It now returns as a list so it can be fetched nicely, each entry corresponds to node of same number.
 /obj/machinery/atmospherics/trinary/get_node_connect_dirs()

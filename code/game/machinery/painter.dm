@@ -54,10 +54,7 @@
 	else
 		icon_state = "colormate"
 
-/obj/machinery/gear_painter/Destroy()
-	if(inserted) //please i beg you do not drop nulls
-		inserted.forceMove(drop_location())
-	return ..()
+REF_SPILL(/obj/machinery/gear_painter, "inserted")
 
 /obj/machinery/gear_painter/declare_interactions(list/into)
 	into += list(

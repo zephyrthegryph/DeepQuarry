@@ -50,9 +50,7 @@
 
 	update_brightness()
 
-/obj/item/flashlight/Destroy()
-	QDEL_NULL(cell)
-	return ..()
+REF_OWNED(/obj/item/flashlight, "cell")
 
 /obj/item/flashlight/get_cell()
 	return cell
@@ -265,7 +263,6 @@
 		OL.directional_atom.color = flicker_color
 	do_flicker(amount, flicker_color, original_color, original_on, OL, 1)
 
-
 /// Args:
 /// amount is how many timer to flicker.
 /// flicker_color is what to set the flashlight to when we flicker.
@@ -289,7 +286,6 @@
 	on = original_on
 	flickering = FALSE
 	update_brightness()
-
 
 /obj/item/flashlight/pen
 	name = "penlight"
@@ -394,7 +390,6 @@
 	icon_state = "bananalamp"
 	center_of_mass_x = 15
 	center_of_mass_y = 11
-
 
 /*
  * Flares

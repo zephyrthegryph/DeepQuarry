@@ -121,7 +121,7 @@
 	var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
 	R.unavailable_to_build = 0
 	to_chat(user, span_notice("Installed [D.company] blueprints!"))
-	qdel(D)
+	consume(D, user)
 
 /// Old attackby: upload species modification files from a disk.
 /datum/interaction/machine_item/prosfab_species_disk
@@ -142,7 +142,7 @@
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_done(mob/user, obj/item/disk/species/D)
 	species_types |= D.species
 	to_chat(user, span_notice("Uploaded [D.species] files!"))
-	qdel(D)
+	consume(D, user)
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/create_new_part(datum/design_techweb/dispensed_design)
 	if(istype(dispensed_design, /datum/design_techweb/prosfab/pros/torso))

@@ -26,8 +26,7 @@
 
 	if(!parts)
 		to_chat(user, span_warning("This kit has no parts for this modification left."))
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 		return
 
 	var/allowed = 0
@@ -63,8 +62,7 @@
 		parts &= ~MODKIT_SUIT
 
 	if(!parts)
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 
 #undef MODKIT_HELMET
 #undef MODKIT_SUIT

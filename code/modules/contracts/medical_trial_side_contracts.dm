@@ -35,6 +35,7 @@
 		"evidence_ids" = list(evidence_id),
 	), "document-created:[evidence_id]", parent)
 
+// LIFECYCLE: releases its evidence id.
 /datum/component/contract_document/Destroy()
 	SScontracts?.release_evidence(evidence_id)
 	evidence_id = null

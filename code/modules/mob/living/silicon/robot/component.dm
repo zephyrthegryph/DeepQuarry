@@ -37,11 +37,7 @@
 	owner = R
 	slot = new_slot
 
-/datum/robot_component/Destroy(force)
-	if(wrapped)
-		QDEL_NULL(wrapped)
-	owner = null
-	return ..()
+REF_OWNED(/datum/robot_component, "wrapped")
 
 /// Put `part` into this slot. Afflictions the part carried rejoin the body here.
 /datum/robot_component/proc/install(obj/item/part)
@@ -219,7 +215,6 @@
 	powered = new_state
 	return TRUE
 
-
 // --- Parts ------------------------------------------------------------------------
 
 // ACTUATOR: movement. Draws active_usage per tile.
@@ -307,7 +302,6 @@
 /datum/robot_component/core/is_powered()
 	return is_intact()
 
-
 // --- Robot helpers --------------------------------------------------------------------
 
 /// Component type per slot. Subtypes override to change a part.
@@ -361,7 +355,6 @@
 		return FALSE
 	return draw_power(C.active_usage * CYBORG_POWER_USAGE_MULTIPLIER, C)
 
-
 // --- Carried afflictions ------------------------------------------------------------
 // Holds a removed part's afflictions while it sits outside a robot.
 
@@ -373,9 +366,7 @@
 	if(!isitem(parent))
 		return COMPONENT_INCOMPATIBLE
 
-/datum/component/carried_afflictions/Destroy(force)
-	QDEL_LIST(afflictions)
-	return ..()
+REF_OWNED_LIST(/datum/component/carried_afflictions, "afflictions")
 
 /datum/component/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
@@ -392,7 +383,6 @@
 	for(var/datum/affliction/A as anything in afflictions)
 		if(istype(A, /datum/affliction/load))
 			. += A.load_value()
-
 
 // --- Component objects ----------------------------------------------------------------
 

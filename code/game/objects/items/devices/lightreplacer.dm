@@ -88,12 +88,12 @@
 				if(!user.unEquip(W))
 					return
 				add_uses(1)
-				qdel(L)
+				consume(L, user)
 		else
 			if(!user.unEquip(W))
 				return
 			new_bulbs += AddShards(1)
-			qdel(L)
+			consume(L, user)
 		if(new_bulbs != 0)
 			playsound(src, 'sound/machines/ding.ogg', 50, 1)
 		to_chat(user, "You insert \the [L.name] into \the [src.name]. You have [uses] light\s remaining.")
@@ -113,12 +113,12 @@
 				if(L.status == LIGHT_OK)
 					replaced_something = TRUE
 					add_uses(1)
-					qdel(L)
+					consume(L, user)
 
 				else if(L.status == LIGHT_BROKEN || L.status == LIGHT_BURNED)
 					replaced_something = TRUE
 					AddShards(1)
-					qdel(L)
+					consume(L, user)
 
 		if(!found_lightbulbs)
 			to_chat(user, span_warning("\The [S] contains no bulbs."))

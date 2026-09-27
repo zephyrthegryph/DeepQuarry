@@ -45,7 +45,7 @@
 			user.put_in_hands(I)
 			user.visible_message(span_notice("\A [I] appears in \the [user]'s hand!"))
 			add_attack_logs(user,I,"Stolen with [src]")
-			qdel(src)
+			consume(src, user)
 		//Now let's try to teleport a living mob.
 		else if(isliving(hit_atom))
 			var/mob/living/L = hit_atom
@@ -64,7 +64,7 @@
 /obj/item/spell/apportation/proc/finish_apportation_grab(mob/living/user, mob/living/L)
 	if(!user.Adjacent(L))
 		to_chat(user, span_warning("\The [L] is out of your reach."))
-		qdel(src)
+		consume(src, user)
 		return
 
 	L.status_at_least(EFFECT_WEAKENED, 3)
@@ -77,4 +77,4 @@
 	G.state = GRAB_PASSIVE
 	G.icon_state = "grabbed1"
 	G.synch()
-	qdel(src)
+	consume(src, user)

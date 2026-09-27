@@ -275,7 +275,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	drop_policy = SLOT_DROP_HOLDER
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
-
 /// External: equipment is bolted to the hull's hardpoints, not inside it.
 /// Capacity stays with mecha_equipment.dm's per-category limits.
 ///
@@ -313,6 +312,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
+REF_OWNED(/obj/mecha, "minihud")
+REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
+
+// LIFECYCLE: the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
 /obj/mecha/Destroy()
 	src.go_out()
 	for(var/mob/M in src) //Be Extra Sure
@@ -387,8 +390,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	GLOB.mech_destroyed_roundstat++
 
 	QDEL_NULL(spark_system)
-	QDEL_NULL(minihud)
-
 
 	. = ..()
 
@@ -567,7 +568,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		src.occupant_message(span_red("Recalibration failed."))
 		src.mecha_log_message("Recalibration of coordination system failed with 1 error.",1)
 
-
 /obj/mecha/proc/check_for_support()
 	var/list/things = orange(1, src)
 
@@ -596,7 +596,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	else
 		. += "It does not seem to have a completed hull."
-
 
 	var/integrity = get_integrity()/max_integrity*100
 	switch(integrity)
@@ -667,7 +666,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			// TGUI: open MechaInterface.tsx instead of browse().
 			tgui_subview = "main"
 			tgui_interact(occupant)
-
 
 ////////////////////////////
 ///// Action processing ////
@@ -760,7 +758,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/range_action(atom/target)
 	return
-
 
 //////////////////////////////////
 ////////  Movement procs  ////////
@@ -899,7 +896,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			step_energy_drain = initial(step_energy_drain)
 			src.occupant_message(span_red("Leg actuators damage threshold exceded. Disabling overload."))
 
-
 	var/move_result = 0
 
 	if(hasInternalDamage(MECHA_INT_CONTROL_LOST))
@@ -943,7 +939,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	else
 		move_result	= mechstep(direction)
 
-
 	if(move_result)
 		can_move = 0
 		use_power(step_energy_drain)
@@ -979,7 +974,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(strafing)	//Also for strafing
 		set_dir(current_dir)
 	return result
-
 
 /obj/mecha/proc/mechsteprand()
 	var/result = get_step_rand(src)
@@ -1055,7 +1049,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/hasInternalDamage(int_dam_flag=null)
 	return int_dam_flag ? internal_damage&int_dam_flag : internal_damage
 
-
 /obj/mecha/proc/setInternalDamage(int_dam_flag)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	internal_damage |= int_dam_flag
@@ -1075,7 +1068,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(MECHA_INT_TANK_BREACH)
 			occupant_message(span_infoplain(span_blue(span_bold("Damaged internal tank has been sealed."))))
 	return
-
 
 ////////////////////////////////////////
 ////////  Health related procs  ////////
@@ -1289,7 +1281,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 //				src.visible_message("\The [A] manages to pierce \the [src] armor")
 				pass_damage_reduc_mod = 1
 
-
 			for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 				pass_damage = ME.handle_ranged_contact(A, pass_damage)
 
@@ -1298,7 +1289,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
 				src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 	return
-
 
 /obj/mecha/bullet_act(obj/item/projectile/Proj) //wrapper
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
@@ -1643,7 +1633,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 */
 	return
 
-
 /*
 /obj/mecha/attack_ai(mob/living/silicon/ai/user as mob)
 	if(!isAI(user))
@@ -1730,7 +1719,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return 1
 	else
 		return 0
-
 
 /////////////////////////////////////
 ////////  Atmospheric stuff  ////////
@@ -1822,11 +1810,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	mecha_log_message("Disconnected from gas port.")
 	return 1
 
-
 /////////////////////////
 ////////  Verbs  ////////
 /////////////////////////
-
 
 /obj/mecha/verb/connect_to_port()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
@@ -1858,7 +1844,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				return
 		else
 			occupant_message("Nothing happens")
-
 
 /obj/mecha/verb/disconnect_from_port()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
@@ -1898,7 +1883,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	playsound(src, 'sound/mecha/heavylightswitch.ogg', 50, 1)
 	return
 
-
 /obj/mecha/verb/toggle_internal_tank()
 	set name = "Toggle internal airtank usage"
 	set category = "Exosuit Interface"
@@ -1925,7 +1909,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	src.mecha_log_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
 	playsound(src, 'sound/mecha/gasdisconnected.ogg', 30, 1)
 	return
-
 
 /obj/mecha/verb/toggle_strafing()
 	set name = "Toggle strafing"
@@ -2137,7 +2120,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	add_fingerprint(usr)
 	return
 
-
 /obj/mecha/proc/go_out() //Eject/Exit the mech. Yes this is for easier searching.
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!src?.slot_item(MECHA_SLOT_PILOT)) return
@@ -2197,7 +2179,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return 1
 	return 0
 
-
 /obj/mecha/proc/internals_access_allowed(mob/living/carbon/human/H)
 	if(istype(H))
 		for(var/atom/ID in list(H.get_active_hand(), H.get_equipped_item(SLOT_ID_ID), H.get_equipped_item(SLOT_ID_BELT)))
@@ -2208,7 +2189,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(src.check_access(R.idcard,src.internals_req_access))
 			return 1
 	return 0
-
 
 /obj/mecha/check_access(obj/item/card/id/I, list/access_list)
 	if(!istype(access_list))
@@ -2229,7 +2209,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(req in I.GetAccess())
 				return 1
 	return 1
-
 
 ////////////////////////////////////
 ///// Rendering stats window ///////
@@ -2503,7 +2482,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			Topic(null, list("remove_passenger" = "1", "user" = "\ref[usr]"))
 			return TRUE
 
-
 /obj/mecha/proc/report_internal_damage()
 	var/output = null
 	var/list/dam_reports = list(
@@ -2521,7 +2499,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(return_pressure() > WARNING_HIGH_PRESSURE)
 		output += span_red(span_bold("DANGEROUSLY HIGH CABIN PRESSURE")) + "<br />"
 	return output
-
 
 /obj/mecha/proc/get_stats_part()
 	var/integrity = get_integrity()/max_integrity*100
@@ -2550,7 +2527,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 						<b>Lights: </b>[lights?"on":"off"]<br>
 						[src.dna?"<b>DNA-locked:</b><br> <span style='font-size:10px;letter-spacing:-1px;'>[src.dna]</span> \[<a href='byond://?src=\ref[src];reset_dna=1'>Reset</a>\]<br>":null]
 					"}
-
 
 	if(defence_mode_possible)
 		output += span_bold("Defence mode: [defence_mode?"on":"off"]") + "<br>"
@@ -2651,7 +2627,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	output += "</div>"
 	return output
 
-
 /obj/mecha/proc/get_log_html()
 	var/output = "<html><head><title>[src.name] Log</title></head><body style='font: 13px 'Courier', monospace;'>"
 	for(var/list/entry in log)
@@ -2670,7 +2645,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			"message" = entry["message"],
 		)))
 	return data
-
 
 // fully-structured TGUI access dialog. The id_card is cached
 // as an OM handle so tgui_data can rebuild the available-keycode list each
@@ -2692,7 +2666,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	tgui_subview = "maint"
 	tgui_interact(user)
 	return
-
 
 ////////////////////////////////
 /////// Messages and Log ///////
@@ -2719,7 +2692,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		message = span_red(message)
 	last_entry["message"] += "<br>" + message
 	return
-
 
 /////////////////
 ///// Topic /////
@@ -2936,7 +2908,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return
 	*/
 
-
 /*
 
 	if (href_list["ai_take_control"])
@@ -3067,7 +3038,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	return 1
 
-
 /////////////////////////////////////////
 //////// Mecha process() helpers ////////
 /////////////////////////////////////////
@@ -3077,7 +3047,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/start_process(process)
 	current_processes |= process
 	PERIODIC_START(src, PERIODIC_SLOW)
-
 
 /////////////
 /obj/mecha/cloak()
@@ -3091,7 +3060,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
 		occupant.client.images -= dq_get_cloaked_selfimage(src)
 	return ..()
-
 
 /obj/mecha/proc/update_cell_alerts()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
@@ -3134,8 +3102,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 
 	return TRUE
-
-
 
 // === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/mecha

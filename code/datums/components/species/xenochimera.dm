@@ -23,12 +23,11 @@
 		handle_record()
 	add_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
 
+REF_OWNED(/datum/component/xenochimera, "revival_record")
+
+// LIFECYCLE: the owner loses the reconstitute verb.
 /datum/component/xenochimera/Destroy(force)
-	UnregisterSignal(owner, COMSIG_XENOCHIMERA_COMPONENT)
-	UnregisterSignal(owner, COMSIG_HUMAN_DNA_FINALIZED)
 	remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
-	QDEL_NULL(revival_record)
-	owner = null
 	. = ..()
 
 /datum/component/xenochimera/proc/handle_record()
@@ -486,7 +485,6 @@
 /obj/effect/gibspawner/human/xenochimera
 	fleshcolor = "#14AD8B"
 	bloodcolor = "#14AD8B"
-
 
 ///This is bad and should not be done this way, but xenochimera was hardcoded in SO many places that it's going to be a hassle to completely undo.
 /mob/proc/get_feralness()

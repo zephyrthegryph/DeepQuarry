@@ -144,10 +144,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
-	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
 	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, sheets_refunded)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/wirecutter_act(mob/user, obj/item/tool)
@@ -175,7 +174,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		finished_light.cell = cell
 		cell.forceMove(finished_light)
 		cell = null
-	qdel(src)
+	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/small
@@ -351,14 +350,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
-/obj/machinery/light/Destroy()
+REF_OWNED(/obj/machinery/light, "cell")
+
+/// Phase 2: stops watching player chunks for flicker.
+/obj/machinery/light/lifecycle_dematerialize()
+	. = ..()
 	stop_flicker_watch()
-	var/area/A = get_area(src)
-	if(A)
-		on = 0
-//		A.update_lights()
-	QDEL_NULL(cell)
-	return ..()
 
 /obj/machinery/light/update_icon()
 
@@ -738,7 +735,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/flamp/proc/interaction_add_shade(mob/user, obj/item/lampshade/W, datum/interaction/interaction)
 	lamp_shade = 1
-	qdel(W)
+	consume(W, user)
 	update_icon()
 	return TRUE
 
@@ -747,8 +744,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return NONE
 	playsound(src, tool.usesound, 75, TRUE)
 	user.visible_message("[user.name] opens [src]'s casing.", "You open [src]'s casing.", "You hear a noise.")
-	new construct_type(loc, src)
-	qdel(src)
+	replace_with(src, construct_type, src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light/multitool_act(mob/user, obj/item/tool)
@@ -955,7 +951,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		on = has_power()
 		update()
 	return TRUE
-
 
 /obj/machinery/light/attack_tk(mob/user)
 	if(status == LIGHT_EMPTY)

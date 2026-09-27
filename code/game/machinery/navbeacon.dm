@@ -1,7 +1,6 @@
 // Navigation beacon for AI robots
 // Functions as a transponder: looks for incoming signal matching
 
-
 /obj/machinery/navbeacon
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "navbeacon0-f"
@@ -188,10 +187,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 			LAZYREMOVE(codes, codekey)
 			return TRUE
 
-/obj/machinery/navbeacon/Destroy()
-	. = ..()
-
-
 //
 // Nav Beacon Mapping
 // These subtypes are what you should actually put into maps! they will make your life much easier.
@@ -216,7 +211,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 
 /obj/machinery/navbeacon/delivery/west
 	codes = list("delivery" = 1, "dir" = WEST)
-
 
 // For part of the patrol route
 // You MUST set "location"

@@ -174,12 +174,6 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 		damaged = 0
 	return ..()
 
-/obj/machinery/floor_light/Destroy()
-	var/area/A = get_area(src)
-	if(A)
-		on = 0
-	. = ..()
-
 /obj/machinery/floor_light/cultify()
 	default_light_colour = "#FF0000"
 	update_brightness()

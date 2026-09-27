@@ -5,11 +5,7 @@
 	var/atom/movable/screen/background/cam_foreground
 	var/atom/movable/screen/skybox/local_skybox
 
-/atom/movable/screen/map_view_tg/camera/Destroy()
-	QDEL_NULL(cam_background)
-	QDEL_NULL(cam_foreground)
-	QDEL_NULL(local_skybox)
-	return ..()
+REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_foreground", "local_skybox"))
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
@@ -61,7 +57,6 @@
 	cam_background.fill_rect(1, 1, DEFAULT_MAP_SIZE, DEFAULT_MAP_SIZE)
 	local_skybox.cut_overlays()
 
-
 /datum/tgui_module/camera
 	name = "Security Cameras"
 	tgui_id = "CameraConsole"
@@ -93,13 +88,7 @@
 	cam_screen_tg = new
 	cam_screen_tg.generate_view(map_name)
 
-/datum/tgui_module/camera/Destroy()
-	if(active_camera)
-		UnregisterSignal(active_camera, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	active_camera = null
-	last_camera_turf = null
-	QDEL_NULL(cam_screen_tg)
-	return ..()
+REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
 
 /datum/tgui_module/camera/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(!user.client)

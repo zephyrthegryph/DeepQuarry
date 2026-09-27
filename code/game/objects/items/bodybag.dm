@@ -26,7 +26,7 @@
 		if(syringe)
 			R.syringe = syringe
 			syringe = null
-		qdel(src)
+		consume(src, user)
 		return
 	if(robotic)
 		var/obj/structure/closet/body_bag/cryobag/robobag/R = new /obj/structure/closet/body_bag/cryobag/robobag(user.loc)
@@ -34,13 +34,12 @@
 		if(syringe)
 			R.syringe = syringe
 			syringe = null
-		qdel(src)
+		consume(src, user)
 		return
 	var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 	return
-
 
 /obj/item/storage/box/bodybags
 	name = "body bags"
@@ -74,7 +73,7 @@
 		return TRUE
 	var/obj/structure/closet/body_bag/large/R = new /obj/structure/closet/body_bag/large(user.loc)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/closet/body_bag/large
 	name = "mass grave body bag"
@@ -149,7 +148,6 @@
 	if(has_label)
 		add_overlay("bodybag_label")
 
-
 /obj/item/bodybag/cryobag
 	name = "stasis bag"
 	desc = "A non-reusable plastic bag designed to slow down bodily functions such as circulation and breathing, \
@@ -178,10 +176,7 @@
 	tank = new tank_type(null) //It's in nullspace to prevent ejection when the bag is opened.
 	..()
 
-/obj/structure/closet/body_bag/cryobag/Destroy()
-	QDEL_NULL(syringe)
-	QDEL_NULL(tank)
-	return ..()
+REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 
 /obj/structure/closet/body_bag/cryobag/attack_hand(mob/living/user)
 	if(used)
@@ -194,8 +189,7 @@
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()
 	if(used)
-		new /obj/item/usedcryobag(loc)
-		qdel(src)
+		replace_with(src, /obj/item/usedcryobag)
 
 /obj/structure/closet/body_bag/cryobag/update_icon()
 	..()

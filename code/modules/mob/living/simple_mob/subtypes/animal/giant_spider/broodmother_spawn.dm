@@ -168,12 +168,6 @@
 	adjust_scale(0.75)
 	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death))
 
-/mob/living/simple_mob/animal/giant_spider/broodling/Destroy()
-	if(deathtimer)
-		om_cancel_timer(src, deathtimer)
-		deathtimer = null
-	. = ..()
-
 /mob/living/simple_mob/animal/giant_spider/broodling/death()
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 

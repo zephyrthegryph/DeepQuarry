@@ -25,13 +25,7 @@
 	if(self.germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		self.germ_level++
 
-/mob/living/carbon/Destroy()
-	QDEL_NULL(ingested)
-	QDEL_NULL(touching)
-	// We don't qdel(bloodstr) because it's the same as qdel(reagents)
-	bloodstr = null
-	QDEL_NULL(cozyloop)
-	return ..()
+REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
 
 /mob/living/carbon/rejuvenate()
 	bloodstr.clear_reagents()
@@ -365,7 +359,6 @@
 		if(buckled && buckled.buckle_require_restraints)
 			buckled.unbuckle_mob()
 
-
 //generates realistic-ish pulse output based on preset levels
 /mob/living/carbon/proc/get_pulse(method)	//method 0 is for hands, 1 is for machines, more accurate
 	var/temp = 0								//see setup.dm:694
@@ -682,7 +675,6 @@
 		if(clothing.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE && (clothing.heat_protection & HANDS) && (clothing.body_parts_covered & HANDS))
 			return TRUE
 	return FALSE
-
 
 /mob/living/carbon
 	var/datum/looping_sound/mob/cozyloop/cozyloop

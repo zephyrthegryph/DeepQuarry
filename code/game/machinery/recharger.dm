@@ -62,12 +62,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/recharger/Destroy()
-	if(charging)
-		charging.update_icon()
-		charging.forceMove(src.loc)
-		set_charging(null)
-	. = ..()
+REF_SPILL(/obj/machinery/recharger, "charging")
 
 /obj/machinery/recharger/examine(mob/user)
 	. = ..()
@@ -336,7 +331,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	icon_state = icon_state_charged
 	update_use_power(USE_POWER_IDLE)
 	return
-
 
 /obj/machinery/recharger/update_icon()	// Immediate feedback; the power stage refines it (charged, charging) each frame.
 	if(charging)

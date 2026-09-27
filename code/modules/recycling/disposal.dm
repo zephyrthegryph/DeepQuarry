@@ -234,10 +234,11 @@
 	C.anchored = TRUE
 	C.update()
 
-	qdel(src)
+	replace_with(src, C)
 
 // pipe is deleted
 // ensure if holder is present, it is expelled
+// LIFECYCLE: a holder travelling in it is expelled.
 /obj/structure/disposalpipe/Destroy()
 	var/obj/structure/disposalholder/H = locate() in src
 	if(H)

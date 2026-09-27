@@ -1,7 +1,6 @@
 GLOBAL_VAR_CONST(max_jellyfish, 50)
 GLOBAL_VAR_INIT(jellyfish_count, 0)
 
-
 /datum/category_item/catalogue/fauna/space_jellyfish
 	name = "Alien Wildlife - Space Jellyfish"
 	desc = "A hostile space predator. \
@@ -11,7 +10,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			Notable weakness to rapid cooling from ice based weaponry.\
 			The flesh is typically non-toxic and quite delicious. Their cores are considered a delicacy in many regions."
 	value = CATALOGUER_REWARD_EASY
-
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish
 	name = "space jellyfish"
@@ -26,7 +24,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	has_eye_glow = TRUE
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
-
 
 	faction = FACTION_JELLYFISH
 	endurance = 100
@@ -45,7 +42,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	melee_damage_upper = 2
 	attack_sound = 'sound/weapons/tap.ogg'
 	attacktext = list("drained", "bludgeoned", "wraped", "tentacle whipped")
-
 
 	min_oxy = 0
 	max_oxy = 0
@@ -89,7 +85,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 /datum/say_list/jellyfish
 	emote_see = list("flickers", "flashes", "looms","pulses","sways","shimmers hypnotically")
 
-
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -101,7 +96,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	B.digestchance = 0
 	B.absorbchance = 0
 	B.escapechance = 15
-
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/apply_melee_effects(atom/A)
 	if(isliving(A))
@@ -121,11 +115,14 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(parent)
 		parent.faction = faction
 
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/death()
 	. = ..()
 	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
-	qdel(src)
 
+// LIFECYCLE: the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Destroy()
 	GLOB.jellyfish_count --
 	return ..()

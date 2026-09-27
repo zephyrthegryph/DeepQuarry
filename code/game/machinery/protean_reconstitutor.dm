@@ -144,7 +144,7 @@
 		if(nanomass_reserve > nanotank_max)
 			nanomass_reserve = nanotank_max
 		to_chat(user,span_notice("You fill \the [src] with paste from \the [NP]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
-		qdel(NP)
+		consume(NP, user)
 	update_icon()
 	return ..()
 

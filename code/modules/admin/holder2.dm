@@ -42,7 +42,6 @@ GLOBAL_PROTECT(href_token)
 
 	var/given_profiling = FALSE
 
-
 /datum/admins/New(list/datum/admin_rank/ranks, ckey, force_active = FALSE, protected)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
@@ -65,6 +64,7 @@ GLOBAL_PROTECT(href_token)
 		GLOB.protected_admins[target] = src
 	activate()
 
+// LIFECYCLE: refuses deletion from advanced proc calls; its fax reply goes with it.
 /datum/admins/Destroy()
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)

@@ -74,16 +74,14 @@
 		return TRUE
 	if(IS_HARMING(user))
 		to_chat(user, span_notice("You smash the snowball in your hand."))
-		var/atom/S = new /obj/item/stack/material/snow(user.loc)
-		qdel(src)
+		var/atom/S = replace_with(src, /obj/item/stack/material/snow)
 		user.put_in_hands(S)
 	else
 		to_chat(user, span_notice("You start compacting the snowball."))
 		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 
 /obj/item/material/snow/snowball/proc/attack_self_timed_done(mob/user)
-	var/atom/S = new /obj/item/material/snow/snowball/reinforced(user.loc)
-	qdel(src)
+	var/atom/S = replace_with(src, /obj/item/material/snow/snowball/reinforced)
 	user.put_in_hands(S)
 
 /obj/item/material/snow/snowball/reinforced

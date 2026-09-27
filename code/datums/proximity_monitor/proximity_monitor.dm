@@ -44,11 +44,6 @@
 	SIGNAL_HANDLER
 	qdel(src)
 
-/datum/proximity_monitor/Destroy()
-	host = null
-	hasprox_receiver = null
-	return ..()
-
 /datum/proximity_monitor/proc/set_range(range, force_rebuild = FALSE)
 	if(!force_rebuild && range == current_range)
 		return FALSE

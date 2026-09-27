@@ -59,6 +59,7 @@
 /datum/wires/state_exclude()
 	return ..() + list("holder", "assemblies")
 
+// LIFECYCLE: attached signalers drop out of the machine.
 /datum/wires/Destroy()
 	for(var/color in assemblies)
 		detach_assembly(color)

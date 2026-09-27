@@ -190,13 +190,14 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 
 	c_tag = "[A.name] #[number]"
 
-/obj/machinery/camera/autoname/Destroy()
+/// Phase 2: leaves its area's autoname index.
+/obj/machinery/camera/autoname/lifecycle_dematerialize()
+	. = ..()
 	var/area/A = get_area(src)
 	if(!A || !by_area || !by_area[A.name])
-		return ..()
+		return
 	var/list/my_area = by_area[A.name]
 	my_area -= src
-	return ..()
 
 // CHECKS
 

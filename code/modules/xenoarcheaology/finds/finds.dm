@@ -55,7 +55,7 @@
 			visible_message(span_info("\The [src] is mined away, revealing \the [inside]."))
 		else
 			visible_message(span_info("\The [src] is mined away into nothing."))
-		qdel(src)
+		consume(src, user)
 		return
 
 	if(istype(I, /obj/item/core_sampler))
@@ -66,7 +66,7 @@
 	..()
 	if(prob(33))
 		src.visible_message(span_warning("[src] crumbles away, leaving some dust and gravel behind."))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/strangerock/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()

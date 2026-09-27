@@ -92,9 +92,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
-/obj/machinery/message_server/Destroy()
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/machinery/message_server, "soundloop")
 
 /obj/machinery/message_server/examine(mob/user, distance, infix, suffix)
 	. = ..()
@@ -159,7 +157,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 					LAZYADD(Console.message_log, list(list("Message from [sender]", "[authmsg]")))
 			Console.set_light(2)
 
-
 /obj/machinery/message_server/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/message_server_upgrade,
@@ -197,7 +194,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 /obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
 	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
 	user.drop_item()
-	qdel(O)
+	consume(O, user)
 	to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
 	return TRUE
 
@@ -210,7 +207,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 		icon_state = "server-on"
 
 	return
-
 
 /datum/feedback_variable
 	var/variable
@@ -311,6 +307,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
+// LIFECYCLE: the blackbox respawns with its logs.
 /obj/machinery/blackbox_recorder/Destroy()
 	var/turf/T = locate(1,1,2)
 	if(T)
@@ -368,7 +365,6 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	feedback_add_details("radio_usage","OTH-[messages.len]")
 	feedback_add_details("radio_usage","PDA-[pda_msg_amt]")
 	feedback_add_details("radio_usage","RC-[rc_msg_amt]")
-
 
 	feedback_set_details("round_end","[time2text(world.realtime)]") //This one MUST be the last one that gets set.
 
@@ -473,7 +469,6 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 
 #undef MESSAGE_SERVER_SPAM_REJECT
 #undef MESSAGE_SERVER_DEFAULT_SPAM_LIMIT
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/message_server/step_start_condition()

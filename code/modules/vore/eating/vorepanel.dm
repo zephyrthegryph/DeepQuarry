@@ -56,10 +56,6 @@
 		host = new_host
 	. = ..()
 
-/datum/vore_look/Destroy()
-	host = null
-	. = ..()
-
 /datum/vore_look/tgui_close(mob/user)
 	if(user)
 		user.write_preference_directly(/datum/preference/text/preset_colors, preset_colors)

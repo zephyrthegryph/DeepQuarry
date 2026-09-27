@@ -30,11 +30,11 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
+REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
+
+// LIFECYCLE: its crystals are ejected.
 /obj/machinery/computer/telescience/Destroy()
 	eject()
-	if(inserted_gps)
-		inserted_gps.forceMove(loc)
-		inserted_gps = null
 	return ..()
 
 /obj/machinery/computer/telescience/examine(mob/user)
@@ -311,7 +311,6 @@
 	teles_left = rand(40, 50)
 	distance_off = rand(-4, 4)
 	rotation_off = rand(-10, 10)
-
 
 // Procedure that calculates the actual trajectory taken!
 /proc/simple_projectile_trajectory(src_x, src_y, rotation, distance)

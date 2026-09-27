@@ -68,6 +68,7 @@
 	. = ..()
 	update_media_source()
 
+// LIFECYCLE: disconnects from its media source.
 /obj/machinery/media/Destroy()
 	disconnect_media_source()
 	. = ..()

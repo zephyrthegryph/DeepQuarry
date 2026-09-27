@@ -40,29 +40,12 @@
 	var/list/pending_consumers
 	var/pending_total_source = 0
 
-/datum/material_power_graph/Destroy()
+/// Phase 1 (unbind): the Rust material power graph is dropped.
+/datum/material_power_graph/lifecycle_unbind()
+	. = ..()
 	if(rust_handle)
 		vg_drop_material_power_graph(rust_handle)
 		rust_handle = 0
-	vertices = null
-	indices = null
-	edges = null
-	voltages = null
-	efficiencies = null
-	last_injections = null
-	numeric_topology = null
-	energized_cables = null
-	core_vertices = null
-	core_edges = null
-	leaf_order = null
-	solver_source_edges = null
-	cable_edges = null
-	dirty_edges = null
-	equipment_vertices = null
-	pending_reduced = null
-	pending_sources = null
-	pending_consumers = null
-	return ..()
 
 /datum/material_power_graph/proc/build(list/cables)
 	vertices = list()

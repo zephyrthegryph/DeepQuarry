@@ -21,18 +21,8 @@
 	else
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
-/atom/movable/screen/movable/ability_master/Destroy()
-	//Get rid of the ability objects.
-	remove_all_abilities()
-	LAZYCLEARLIST(ability_objects)
-
-	// After that, remove ourselves from the mob seeing us, so we can qdel cleanly.
-	if(my_mob)
-		my_mob.ability_master = null
-		if(my_mob.client && my_mob.client.screen)
-			my_mob.client.screen -= src
-		my_mob = null
-	return ..()
+REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
+REF_PAIR(/atom/movable/screen/movable/ability_master, list("my_mob" = "ability_master"))
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)
@@ -185,16 +175,7 @@
 
 //	var/icon/last_charged_icon
 
-/atom/movable/screen/ability/Destroy()
-	if(ability_master)
-		LAZYREMOVE(ability_master.ability_objects, src)
-		if(ability_master.my_mob && ability_master.my_mob.client)
-			ability_master.my_mob.client.screen -= src
-	if(ability_master && !length(ability_master.ability_objects))
-		ability_master.update_icon()
-//		qdel(ability_master)
-	ability_master = null
-	. = ..()
+REF_BACKLIST(/atom/movable/screen/ability, list("ability_master" = "ability_objects"))
 
 /atom/movable/screen/ability/update_icon()
 

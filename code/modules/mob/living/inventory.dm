@@ -70,7 +70,6 @@
 	if(I.drop_sound)
 		playsound(I, I.drop_sound, 25, 0, preference = /datum/preference/toggle/drop_sounds)
 
-
 //Drops the item in our left hand
 /mob/living/drop_l_hand(atom/Target)
 	return drop_from_inventory(get_left_hand(), Target)
@@ -206,10 +205,6 @@
 	host = new_host
 	. = ..()
 
-/datum/inventory_panel/Destroy()
-	host = null
-	. = ..()
-
 /datum/inventory_panel/tgui_host(mob/user)
 	return host.tgui_host()
 
@@ -304,7 +299,6 @@
 		if("targetSlot")
 			H.handle_strip(params["slot"], ui.user)
 			return TRUE
-
 
 /datum/inventory_panel/human/ui_assets(mob/user)
 	return list(

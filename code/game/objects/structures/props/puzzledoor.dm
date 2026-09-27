@@ -45,6 +45,7 @@
 			LAZYOR(L.linked_objects, src)
 			LAZYOR(locks, L)
 
+// LIFECYCLE: many-to-many with locks: leaves each lock's door list.
 /obj/machinery/door/blast/puzzle/Destroy()
 	if(length(locks))
 		for(var/obj/structure/prop/lock/L in locks)
@@ -106,7 +107,7 @@
 
 	else if(istype(C, /obj/item/plastique))
 		to_chat(user, span_danger("On contacting \the [src], a flash of light envelops \the [C] as it is turned to ash. Oh."))
-		qdel(C)
+		consume(C, user)
 		return TRUE
 	return TRUE
 

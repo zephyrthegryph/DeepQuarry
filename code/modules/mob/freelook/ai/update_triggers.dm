@@ -62,9 +62,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/camera, REGISTRY_CAMERAS)
 	on_open_network = 0
 	return ..()
 
-/obj/machinery/camera/Destroy()
+/// Phase 2: the camera leaves every network it was on.
+/obj/machinery/camera/lifecycle_dematerialize()
+	. = ..()
 	clear_all_networks()
-	return ..()
 
 // Mobs
 /mob/living/silicon/ai/rejuvenate()

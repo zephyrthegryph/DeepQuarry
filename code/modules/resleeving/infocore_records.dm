@@ -103,6 +103,7 @@
 	else if(ishuman(copyfrom))
 		init_from_mob(copyfrom, add_to_db, ckeylock)
 
+// LIFECYCLE: records ask for a hard delete (machines hold them untracked).
 /datum/transhuman/body_record/Destroy()
 	QDEL_NULL(mydna.dna)
 	QDEL_NULL(mydna)
@@ -123,7 +124,6 @@
 	//The mob is a changeling, don't allow anyone to possess them. Not using locked as locked gives OOC notices.
 	if(is_changeling(M))
 		changeling_locked = TRUE
-
 
 	var/datum/species/S = GLOB.all_species["[M.dna.species]"]
 	if(S)

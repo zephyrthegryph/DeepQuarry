@@ -33,10 +33,6 @@
 	if(gun)
 		gun_ref = om_handle(gun)
 
-/datum/gun_firemode_selector/Destroy()
-	gun_ref = null
-	return ..()
-
 /// Returns the currently active /datum/firemode, or null if no firemodes set.
 /datum/gun_firemode_selector/proc/current_mode()
 	var/obj/item/gun/gun = om_resolve(gun_ref)

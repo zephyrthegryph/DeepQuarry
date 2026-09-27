@@ -1546,17 +1546,17 @@
 /mob/living/silicon/ai/can_centcom_reply()
 	return common_radio != null && !check_unable(2)
 
-/atom/proc/extra_admin_link()
-	return
-
-/mob/extra_admin_link(source)
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(client && eyeobj)
-		return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[eyeobj]'>EYE</A>"
-
-/mob/observer/dead/extra_admin_link(source)
-	if(mind && mind.current)
-		return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[mind.current]'>BDY</A>"
+/proc/extra_admin_link(atom/target, source)
+	if(isobserver(target))
+		var/mob/observer/dead/ghost = target
+		if(ghost.mind && ghost.mind.current)
+			return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[ghost.mind.current]'>BDY</A>"
+		return
+	if(ismob(target))
+		var/mob/M = target
+		var/mob/observer/eye/eyeobj = M?.active_eye()
+		if(M.client && eyeobj)
+			return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[eyeobj]'>EYE</A>"
 
 /proc/admin_jump_link(atom/target, source)
 	if(!target) return
@@ -1567,4 +1567,4 @@
 		source = "_src_=holder"
 
 	. = "<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[target]'>JMP</A>"
-	. += target.extra_admin_link(source)
+	. += extra_admin_link(target, source)

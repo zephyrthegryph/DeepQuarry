@@ -3,7 +3,6 @@
 /// follows from a numeric material coefficient, the product geometry, and a
 /// real event such as impact, radiation, heat, surgery, or reagent contact.
 
-
 /datum/material/proc/dq_apply_material_responses(obj/item/item)
 	if(!item)
 		return
@@ -67,12 +66,10 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(electrical_form && (material.radiovoltaic_efficiency > 0 || material.scintillation_efficiency > 0))
 		registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
 
-/datum/component/material_response/Destroy(force)
+/// Phase 2: the parent leaves the radiovoltaic items.
+/datum/component/material_response/lifecycle_dematerialize()
+	. = ..()
 	registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
-	if(scintillation_timer)
-		om_cancel_timer(src, scintillation_timer)
-		scintillation_timer = null
-	return ..()
 
 /datum/component/material_response/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))

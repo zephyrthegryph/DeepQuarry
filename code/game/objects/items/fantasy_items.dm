@@ -103,7 +103,7 @@
 			span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
 			span_danger("You are buckled to [src] by [user.name]!"),\
 			span_notice("You hear metal clanking."))
-	qdel(I)
+	consume(I, user)
 
 /obj/structure/bed/bath/Initialize(mapload)
 	create_reagents(300)
