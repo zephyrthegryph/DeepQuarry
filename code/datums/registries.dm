@@ -124,7 +124,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 
 /datum/registry/proc/file_member(datum/member)
 	PRIVATE_PROC(TRUE)
-	var/key = registry_key(member, id)
+	var/key = member.registry_key(id)
 	member_keys[member] = key
 	if(isnull(key))
 		return
@@ -155,7 +155,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 	return FALSE
 
 /// A keyed registry files this member under the returned key (null: unfiled).
-/proc/registry_key(datum/source, registry_id)
+/datum/proc/registry_key(registry_id)
 	return null
 
 /// The registries this datum's type joins, cached per type.
@@ -183,10 +183,10 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 /// /atom/on_dematerialize() calls this; the destroy transaction calls it for
 /// every other datum (dq_lifecycle_leave_registries()), so a deleted member
 /// is never left behind and nothing removes itself by hand.
-/proc/leave_registries(datum/source)
-	for(var/datum/registry/registry as anything in source.type_registries())
-		if(!source.skips_registry(registry.id))
-			registry.remove(source)
+/datum/proc/leave_registries()
+	for(var/datum/registry/registry as anything in type_registries())
+		if(!skips_registry(registry.id))
+			registry.remove(src)
 
 /// Puts `member` in conditional registry `id` (idempotent). Its type must
 /// declare REGISTRY_MEMBERSHIP() for `id`. It leaves again with
@@ -230,4 +230,4 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 	var/list/registries = registries_by_type_table()[D.type]
 	if(registries && !length(registries))
 		return // cached: this type joins nothing
-	leave_registries(D)
+	D.leave_registries()

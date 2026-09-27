@@ -187,10 +187,10 @@
 /// Passes each thing in this holder's slots its share of `packet`, per the
 /// path rules. Each share is a packet of its own, delivered through the
 /// child's receive_damage(), so nested holders pass it on in turn.
-/proc/propagate_damage(atom/owner_atom, datum/damage_packet/packet)
-	if(!length(owner_atom.contents) || !dq_slot_defs_for(owner_atom))
+/atom/proc/propagate_damage(datum/damage_packet/packet)
+	if(!length(contents) || !dq_slot_defs_for(src))
 		return 0
-	var/datum/ledger/L = dq_ledger(owner_atom)
+	var/datum/ledger/L = dq_ledger(src)
 	if(!L)
 		return 0
 	. = 0
@@ -206,7 +206,7 @@
 			if(incoming[kind] > 0 && dq_path_point_kind(kind) && def.damage_share(kind) > 0)
 				point_targets["[kind]"] = pick(things)
 		for(var/atom/movable/child as anything in things)
-			if(QDELETED(child) || child.loc != owner_atom)
+			if(QDELETED(child) || child.loc != src)
 				continue
 			var/datum/damage_packet/share_packet
 			for(var/kind in 1 to DAMAGE_KIND_COUNT)
@@ -215,7 +215,7 @@
 					continue
 				if(dq_path_point_kind(kind) && point_targets["[kind]"] != child)
 					continue
-				var/share = dq_path_step(owner_atom, child, PATH_EFFECT_DAMAGE, kind, packet.penetration)
+				var/share = dq_path_step(src, child, PATH_EFFECT_DAMAGE, kind, packet.penetration)
 				if(share <= 0)
 					continue
 				if(!share_packet)
@@ -225,7 +225,7 @@
 				continue
 			. += child.receive_damage(share_packet)
 			share_packet.release()
-		if(QDELETED(owner_atom))
+		if(QDELETED(src))
 			return
 
 // ---- Heat (fire exposure today; heat_adapter.dm for the heat domain) ----
@@ -233,23 +233,23 @@
 /// Exposes each thing in this holder's slots to its share of a fire of
 /// `exposed_temperature`: what crosses the path raises it above the interior's
 /// ambient temperature. Returns how many things were exposed.
-/proc/propagate_fire(atom/source, exposed_temperature, exposed_volume)
-	if(!length(source.contents) || !dq_slot_defs_for(source))
+/atom/proc/propagate_fire(exposed_temperature, exposed_volume)
+	if(!length(contents) || !dq_slot_defs_for(src))
 		return 0
-	var/datum/ledger/L = dq_ledger(source)
+	var/datum/ledger/L = dq_ledger(src)
 	if(!L)
 		return 0
-	var/ambient = dq_heat_path_ambient(source)
+	var/ambient = dq_heat_path_ambient(src)
 	if(exposed_temperature <= ambient)
 		return 0
 	. = 0
 	for(var/atom/movable/child as anything in L.ordered())
-		if(QDELETED(child) || child.loc != source)
+		if(QDELETED(child) || child.loc != src)
 			continue
-		var/share = dq_path_step(source, child, PATH_EFFECT_HEAT)
+		var/share = dq_path_step(src, child, PATH_EFFECT_HEAT)
 		if(share <= 0)
 			continue
 		child.fire_act(ambient + (exposed_temperature - ambient) * share, exposed_volume)
 		.++
-		if(QDELETED(source))
+		if(QDELETED(src))
 			return

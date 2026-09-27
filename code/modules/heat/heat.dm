@@ -62,12 +62,12 @@
 
 
 /// This atom's heat capacity changed (reagents added or removed): update its body.
-/proc/heat_capacity_changed(atom/source)
-	if(isnull(source.heat_body))
+/atom/proc/heat_capacity_changed()
+	if(isnull(heat_body))
 		return
-	var/list/properties = source.thermal_properties()
+	var/list/properties = thermal_properties()
 	if(properties[THERMAL_CAPACITY] > 0)
-		vg_heat_body_capacity(source.heat_body, properties[THERMAL_CAPACITY])
+		vg_heat_body_capacity(heat_body, properties[THERMAL_CAPACITY])
 
 /// Creates this atom's heat body at its surroundings' temperature, coupled to
 /// them. Returns TRUE on success.
@@ -116,14 +116,14 @@
 	// Moving off a burning tile ends the fire coupling.
 	var/atom/movable/self = src
 	if(istype(self) && !isnull(self.heat_fire_turf) && self.heat_fire_turf != loc)
-		decouple_from_fire(self)
+		self.decouple_from_fire()
 
 /// Releases this atom's heat body: its excess heat goes to its surroundings.
-/proc/release_heat_body(atom/source)
-	if(isnull(source.heat_body))
+/atom/proc/release_heat_body()
+	if(isnull(heat_body))
 		return
-	vg_heat_body_release(source.heat_body)
-	source.heat_body = null
+	vg_heat_body_release(heat_body)
+	heat_body = null
 
 // ------------------------------------------------------------------ turfs
 

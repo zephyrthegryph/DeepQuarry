@@ -70,12 +70,12 @@
 	reset_perspective(eyeobj)
 	SetName(src.name)
 
-/proc/move_camera_by_click(atom/source)
+/atom/proc/move_camera_by_click()
 	if(isAI(usr))
 		var/mob/living/silicon/ai/AI = usr
 		var/mob/observer/eye/eyeobj = ACTIVE_EYE(AI)
 		if(eyeobj && (AI.multicam_on || (AI.client.eye == eyeobj)))
-			var/turf/T = get_turf(source)
+			var/turf/T = get_turf(src)
 			if(T)
 				eyeobj.setLoc(T)
 

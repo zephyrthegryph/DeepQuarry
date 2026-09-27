@@ -401,7 +401,7 @@
 /obj/item/proc/moved(mob/user as mob, old_loc as turf)
 	return
 
-/proc/get_volume_by_throwforce_and_or_w_class(obj/item/source)
+/proc/get_volume_by_throwforce_and_or_w_class(obj/item/source) // This is used for figuring out how loud our sounds are for throwing.
 	if(source.throwforce && source.w_class)
 		return CLAMP((source.throwforce + source.w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
 	else if(source.w_class)

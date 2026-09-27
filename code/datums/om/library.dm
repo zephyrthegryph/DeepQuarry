@@ -336,7 +336,7 @@
 	wake_on = CHANGE_MOB_VITALS | CHANGE_MOB_STAT
 
 /datum/om/behaviour/hud_on_vitals/on_wake(datum/E, changes)
-	om_refresh_vitals_hud(E)
+	E.om_refresh_vitals_hud()
 
-/proc/om_refresh_vitals_hud(datum/source)
+/datum/proc/om_refresh_vitals_hud()
 	return

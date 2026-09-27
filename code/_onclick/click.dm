@@ -195,7 +195,7 @@
 	return 1
 
 /// MouseWheelOn
-/proc/MouseWheelOn(mob/source, atom/A, delta_x, delta_y, params)
+/mob/proc/MouseWheelOn(atom/A, delta_x, delta_y, params)
 
 /mob/proc/check_click_intercept(params,A)
 	//Client level intercept

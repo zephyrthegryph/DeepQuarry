@@ -347,7 +347,7 @@
 			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
 			self.status_set(EFFECT_BLINDED, 0)
-			clear_fullscreens(self)
+			self.clear_fullscreens()
 			self.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf

@@ -332,7 +332,7 @@
 
 	usr << ftp(this_icon,"[A.name].png")
 
-/proc/AddCamoOverlay(mob/owner_atom, atom/A)
+/proc/AddCamoOverlay(mob/owner_atom, atom/A) //A is the atom which we are using as the overlay.
 	var/icon/opacity_icon = new(A.icon, A.icon_state)//Don't really care for overlays/underlays.
 	//Now we need to culculate overlays+underlays and add them together to form an image for a mask.
 	//var/icon/alpha_mask = getFlatIcon(owner_atom)//Accurate but SLOW. Not designed for running each tick. Could have other uses I guess.

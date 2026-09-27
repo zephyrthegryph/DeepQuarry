@@ -122,10 +122,10 @@
 		return
 	update_air_ref(0, update ? air_block_mask() : AIR_BLOCK_KEEP)
 
-/proc/move_update_air(atom/movable/source, turf/target_turf)
+/atom/movable/proc/move_update_air(turf/target_turf)
 	if(isturf(target_turf))
 		target_turf.air_update_turf(TRUE, FALSE) //You're empty now
-	source.air_update_turf(TRUE, TRUE) //You aren't
+	air_update_turf(TRUE, TRUE) //You aren't
 
 /atom/proc/atmos_spawn_air(text) //because a lot of people loves to copy paste awful code lets just make an easy proc to spawn your plasma fires
 	var/turf/open/local_turf = get_turf(src)

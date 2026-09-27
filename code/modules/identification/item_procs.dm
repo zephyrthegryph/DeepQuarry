@@ -8,7 +8,7 @@
 		QDEL_NULL(identity)
 	return ..()
 
-/proc/hide_identity(obj/item/source)
+/proc/hide_identity(obj/item/source) // Mostly for admins to make things secret.
 	if(!source.identity)
 		source.identity = new source.identity_type(source)
 	else

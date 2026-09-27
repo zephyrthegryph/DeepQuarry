@@ -15,10 +15,10 @@
 		return
 	// Heat reaches the holder's contents through its slots' paths (C2).
 	if(length(contents))
-		propagate_fire(src, exposed_temperature, exposed_volume)
+		propagate_fire(exposed_temperature, exposed_volume)
 		if(QDELETED(src))
 			return
-	expose_heat(src, exposed_temperature)
+	expose_heat(exposed_temperature)
 	// Generic map machinery remains dormant under nominal room conditions, but
 	// crossing into an actual thermal hazard activates its material assembly so
 	// continued exposure, cooling, diagnostics, and repair use the same model as
@@ -33,7 +33,7 @@
 /obj/ex_act(severity)
 	if(..())
 		return
-	receive_explosion(src, severity)
+	receive_explosion(severity)
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
 /// emp_integrity_factor lose integrity to it.
@@ -96,7 +96,7 @@
 	// transaction's phase 3 uses (code/datums/containment/lifecycle.dm),
 	// directly -- deconstruct() isn't itself going through qdel() yet here.
 	if(!disassembled)
-		dq_lifecycle_resolve_contents(src)
+		dq_lifecycle_resolve_contents()
 
 	for(var/obj/item/item in contents)
 		if(item.item_flags & ABSTRACT)

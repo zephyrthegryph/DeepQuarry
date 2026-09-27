@@ -466,7 +466,7 @@
 		if(stat & BROKEN)
 			open(1)
 		else
-			receive_blob(src, B)
+			receive_blob(B)
 
 /obj/machinery/door/update_icon()
 	if(density)

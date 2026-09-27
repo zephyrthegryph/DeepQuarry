@@ -28,9 +28,9 @@
 /**
  * Counts number of conflicts on something that have a conflict checking element.
  */
-/proc/ConflictElementCount(atom/source, id)
+/atom/proc/ConflictElementCount(id)
 	. = 0
-	for(var/i in source.GetAllContents())
+	for(var/i in GetAllContents())
 		var/atom/movable/AM = i
 		if(SEND_SIGNAL(AM, COMSIG_CONFLICT_ELEMENT_CHECK, id) & ELEMENT_CONFLICT_FOUND)
 			++.

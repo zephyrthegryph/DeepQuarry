@@ -46,43 +46,43 @@
 /// An explicit exposure to fire at `temperature` (lava, a flamethrower, a
 /// bonfire): `seconds` of contact through fire_conductance(), never past the
 /// flame's temperature. Returns the joules added.
-/proc/expose_heat(atom/source, temperature, seconds = FIRE_EXPOSURE_SECONDS)
-	if(!isnum(temperature) || !source.create_heat_body())
+/atom/proc/expose_heat(temperature, seconds = FIRE_EXPOSURE_SECONDS)
+	if(!isnum(temperature) || !create_heat_body())
 		return 0
-	var/current = source.get_temperature()
+	var/current = get_temperature()
 	if(!(temperature > current))
 		return 0
-	var/list/properties = source.thermal_properties()
-	var/per_kelvin = min(source.fire_conductance() * seconds, properties[THERMAL_CAPACITY])
-	return source.add_heat(per_kelvin * (temperature - current))
+	var/list/properties = thermal_properties()
+	var/per_kelvin = min(fire_conductance() * seconds, properties[THERMAL_CAPACITY])
+	return add_heat(per_kelvin * (temperature - current))
 
 // ------------------------------------------------------- burning tiles
 
 /// Couples this object's heat body to `location`'s gas at fire conductance
 /// (slot 1), creating and keeping the body while the tile burns. The heat
 /// domain then moves the heat both ways, conserving it. Returns TRUE if coupled.
-/proc/couple_to_fire(atom/movable/source, turf/location)
-	if(source.heat_fire_turf == location && !isnull(source.heat_body))
+/atom/movable/proc/couple_to_fire(turf/location)
+	if(heat_fire_turf == location && !isnull(heat_body))
 		return TRUE
 	// Resting on the floor it was at the floor's temperature, not the flame's.
-	if(!source.create_heat_body(TRUE, min(location.get_temperature(), source.get_ambient_temperature())))
+	if(!create_heat_body(TRUE, min(location.get_temperature(), get_ambient_temperature())))
 		return FALSE
-	vg_heat_body_keep(source.heat_body, TRUE)
-	vg_heat_body_couple(source.heat_body, 1, HEAT_TARGET_TURF_AIR, location, source.fire_conductance())
-	source.heat_fire_turf = location
+	vg_heat_body_keep(heat_body, TRUE)
+	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_TURF_AIR, location, fire_conductance())
+	heat_fire_turf = location
 	return TRUE
 
 /// Ends the fire coupling: the body relaxes to its surroundings and is
 /// released at equilibrium again.
-/proc/decouple_from_fire(atom/movable/source)
-	if(isnull(source.heat_fire_turf))
+/atom/movable/proc/decouple_from_fire()
+	if(isnull(heat_fire_turf))
 		return
-	source.heat_fire_turf = null
-	if(isnull(source.heat_body))
+	heat_fire_turf = null
+	if(isnull(heat_body))
 		return
-	vg_heat_body_couple(source.heat_body, 1, HEAT_TARGET_NONE, 0, 0)
-	if(!source.GetComponent(/datum/component/burning))
-		vg_heat_body_keep(source.heat_body, FALSE)
+	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
+	if(!GetComponent(/datum/component/burning))
+		vg_heat_body_keep(heat_body, FALSE)
 
 /// A hotspot heats everything on its tile through each object's heat node:
 /// objects are coupled once to the burning gas, and the heat domain does the
@@ -99,7 +99,7 @@
 			continue
 		if(!thing.heats_in_fire())
 			continue
-		couple_to_fire(thing, location)
+		thing.couple_to_fire(location)
 
 /// Whether a fire on this object's tile heats it: a physical object that
 /// something happens to when hot (it has heat rules).
@@ -115,7 +115,7 @@
 /obj/effect/hotspot/proc/cool_tile(turf/location)
 	for(var/atom/movable/thing as anything in location)
 		if(thing.heat_fire_turf == location)
-			decouple_from_fire(thing)
+			thing.decouple_from_fire()
 
 // ---------------------------------------------------------- overheating
 

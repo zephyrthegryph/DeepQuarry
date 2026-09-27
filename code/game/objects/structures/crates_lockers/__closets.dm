@@ -172,7 +172,7 @@
 			. += "It is full."
 
 	if(!opened && isobserver(user))
-		var/list/latent = latent_names(src)
+		var/list/latent = latent_names()
 		. += "It contains: [counting_english_list(user.client, contents)][length(latent) ? "; [english_list(latent)]" : ""]"
 
 /obj/structure/closet/CanPass(atom/movable/mover, turf/target)
@@ -196,7 +196,7 @@
 	return 1
 
 /obj/structure/closet/proc/dump_contents()
-	slot_empty(src, CONTAINER_SLOT_INTERIOR, loc)
+	slot_empty(CONTAINER_SLOT_INTERIOR, loc)
 
 /obj/structure/closet/proc/open()
 	if(opened)

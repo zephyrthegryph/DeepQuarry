@@ -185,22 +185,22 @@
 	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_LIGHT_FLAGS, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
-/proc/update_dynamic_luminosity(atom/movable/source)
+/atom/movable/proc/update_dynamic_luminosity()
 	var/highest = 0
-	var/list/adl = dq_get_affected_dynamic_lights(source)
+	var/list/adl = dq_get_affected_dynamic_lights(src)
 	for(var/i in adl)
 		if(adl[i] <= highest)
 			continue
 		highest = adl[i]
-	if(highest == source.affecting_dynamic_lumi)
+	if(highest == affecting_dynamic_lumi)
 		return
-	source.luminosity -= source.affecting_dynamic_lumi
-	source.affecting_dynamic_lumi = highest
-	source.luminosity += source.affecting_dynamic_lumi
+	luminosity -= affecting_dynamic_lumi
+	affecting_dynamic_lumi = highest
+	luminosity += affecting_dynamic_lumi
 
 
 ///Helper to change several lighting overlay settings.
-/proc/set_light_range_power_color(atom/movable/source, range, power, color)
-	source.set_light_range(range)
-	source.set_light_power(power)
-	source.set_light_color(color)
+/atom/movable/proc/set_light_range_power_color(range, power, color)
+	set_light_range(range)
+	set_light_power(power)
+	set_light_color(color)

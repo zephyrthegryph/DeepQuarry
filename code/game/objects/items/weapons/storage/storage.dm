@@ -93,7 +93,7 @@
 	if(!isitem(thing))
 		return "that can't go in a container"
 	var/obj/item/W = thing
-	if(actor && isEquipped(actor, W) && !actor.canUnEquip(W))
+	if(actor && actor.isEquipped(W) && !actor.canUnEquip(W))
 		return "you can't let go of \the [W]"
 	if(holder.storage_slots != null && count_used(holder) >= holder.storage_slots)
 		return "\the [holder] is full"
@@ -893,9 +893,9 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 //Like storage depth, but returns the depth to the nearest turf
 //Returns -1 if no top level turf (a loc was null somewhere, or a non-turf atom's loc was an area somehow).
-/proc/storage_depth_turf(atom/source)
+/atom/proc/storage_depth_turf()
 	var/depth = 0
-	var/atom/cur_atom = source
+	var/atom/cur_atom = src
 
 	while (cur_atom && !isturf(cur_atom))
 		if (isarea(cur_atom))

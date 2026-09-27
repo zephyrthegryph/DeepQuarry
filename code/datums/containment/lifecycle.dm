@@ -34,36 +34,36 @@
 /// (not recursing into children beyond what qdel() already does for
 /// SLOT_DROP_DELETE -- see file header). Skips is_mind_slot entries: phase
 /// 0.5 already resolved those, tree-wide, before this ever runs.
-/proc/dq_lifecycle_resolve_contents(atom/movable/source)
-	var/datum/ledger/L = dq_ledger(source, destroying = TRUE) // builds it (and resolves a latent generator) if this is its first use
+/atom/movable/proc/dq_lifecycle_resolve_contents()
+	var/datum/ledger/L = dq_ledger(src, destroying = TRUE) // builds it (and resolves a latent generator) if this is its first use
 	if(!L)
 		return
-	var/atom/drop = source.drop_location()
-	var/atom/movable/successor = source.lifecycle_successor
+	var/atom/drop = drop_location()
+	var/atom/movable/successor = lifecycle_successor
 	// Slot types that keep latent contents of their own (stock records) apply their policy to
 	// them first; the ledger then handles the real things. The L1 move lost this call.
 	for(var/datum/om/relation/slot/def as anything in L.defs)
 		if(!def.is_mind_slot)
-			def.drop_latent(source, drop)
+			def.drop_latent(src, drop)
 	for(var/datum/om/relation/slot/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
 			continue
 		var/list/things = L.slots[def.slot_id]
 		for(var/atom/movable/thing as anything in things.Copy())
 			if(!QDELETED(thing))
-				dq_lifecycle_resolve_slot_entry(source, def, thing, drop, successor)
+				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor)
 	dq_lifecycle_resolve_latent(L, drop, successor)
 
 /// Destroy()'s check that the contents phase did its job: TRUE when something still sits in a
 /// slot whose policy the transaction must carry out. SLOT_DROP_HOLDER slots (a mob's worn and
 /// held items) and mind slots keep their contents on purpose: the base Destroy() deletes them.
-/proc/dq_holds_unreleased(atom/movable/source)
-	if(!length(source.contents) && !source.has_latent())
+/atom/movable/proc/dq_holds_unreleased()
+	if(!length(contents) && !has_latent())
 		return FALSE
-	var/datum/ledger/L = source.ledger
+	var/datum/ledger/L = ledger
 	if(!L)
 		// No ledger: phase 3 had nothing to go on, so only holder-kept slot sets are fine.
-		for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(source))
+		for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(src))
 			if(def.drop_policy != SLOT_DROP_HOLDER && !def.is_mind_slot)
 				return TRUE
 		return FALSE

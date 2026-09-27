@@ -82,6 +82,6 @@
 
 /obj/item/storage/laundry_basket/offhand/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(FALSE)
-	if(isEquipped(user, linked))
+	if(user.isEquipped(linked))
 		user.drop_from_inventory(linked)
 	return

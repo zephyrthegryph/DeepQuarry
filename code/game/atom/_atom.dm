@@ -71,7 +71,7 @@
 	dematerialize()
 	// ---- end L2 ----
 	if(!isnull(heat_body))
-		release_heat_body(src)
+		release_heat_body()
 	if(reagents)
 		QDEL_NULL(reagents)
 	if(light)
@@ -183,9 +183,9 @@
 
 // Called when a blob expands onto the tile the atom occupies.
 /atom/proc/blob_act(obj/structure/blob/B)
-	receive_blob(src, B)
+	receive_blob(B)
 
-/proc/in_contents_of(atom/source, container)
+/proc/in_contents_of(atom/source, container) //can take class or object instance as argument
 	if(ispath(container))
 		if(istype(source.loc, container))
 			return 1
@@ -279,10 +279,10 @@
 	return TRUE
 
 // Called to set the atom's invisibility and usd to add behavior to invisibility changes.
-/proc/set_invisibility(atom/source, new_invisibility)
-	if(source.invisibility == new_invisibility)
+/atom/proc/set_invisibility(new_invisibility)
+	if(invisibility == new_invisibility)
 		return FALSE
-	source.invisibility = new_invisibility
+	invisibility = new_invisibility
 	return TRUE
 
 /atom/proc/ex_act(strength = 3)

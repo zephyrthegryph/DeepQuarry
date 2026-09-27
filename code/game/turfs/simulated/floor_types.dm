@@ -335,7 +335,7 @@
 		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = 1
 	)
-	propagate_radiation_pulse(src)
+	propagate_radiation_pulse()
 	last_event = world.time
 	active = FALSE
 

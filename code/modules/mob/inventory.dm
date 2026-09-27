@@ -121,8 +121,8 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	return id ? dq_slot_num(id) : 0
 
 ///Get the item on the mob in the storage slot identified by the id passed in
-/proc/get_item_by_slot(mob/source, slot_id)
-	return source.get_equipped_item(slot_id)
+/mob/proc/get_item_by_slot(slot_id)
+	return get_equipped_item(slot_id)
 
 /// Worn and held items.
 /mob/proc/get_equipped_items()
@@ -136,8 +136,8 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 			. += things
 
 ///Returns the thing we're currently holding
-/proc/get_active_held_item(mob/source)
-	return source.get_active_hand()
+/mob/proc/get_active_held_item() //Currently just a proc for when we do change to /tg/'s item handling.
+	return get_active_hand()
 
 //Returns the thing in our active hand
 /mob/proc/get_active_hand() as /obj/item
@@ -162,10 +162,10 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(I)
 		. += I
 
-/proc/isEquipped(mob/source, obj/item/I)
+/mob/proc/isEquipped(obj/item/I)
 	if(!I)
 		return 0
-	return source.get_inventory_slot(I) != 0
+	return get_inventory_slot(I) != 0
 
 /mob/proc/canUnEquip(obj/item/I)
 	if(!I) //If there's nothing to drop, the drop is automatically successful.
@@ -173,7 +173,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/slot = get_inventory_slot(I)
 	return I.mob_can_unequip(src, slot)
 
-/proc/getBackSlot(mob/source)
+/mob/proc/getBackSlot()
 	return SLOT_BACK
 
 // ---- Slot signals ----
@@ -237,8 +237,8 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
  * on the item in the slot if the users active hand is empty
  */
 /mob/proc/attack_ui(slot, params)
-	var/obj/item/active_item = get_active_held_item(src)
-	var/obj/item/equipped_item = get_item_by_slot(src, slot)
+	var/obj/item/active_item = get_active_held_item()
+	var/obj/item/equipped_item = get_item_by_slot(slot)
 	var/list/modifiers = params2list(params)
 
 	if(istype(equipped_item))
@@ -285,9 +285,9 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		return FALSE
 	switch(slot)
 		if(slot_in_backpack)
-			return equip_to_backpack(src, W)
+			return equip_to_backpack(W)
 		if(slot_tie)
-			return equip_accessory(src, W)
+			return equip_accessory(W)
 	var/id = dq_slot_id(slot)
 	if(!id)
 		to_chat(src, span_red("You are trying to equip this item to an unsupported inventory slot. How the heck did you manage that? Stop it..."))
@@ -313,28 +313,28 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	on_equipment_changed()
 
 /// slot_in_backpack: into the worn backpack's storage.
-/proc/equip_to_backpack(mob/source, obj/item/W)
-	var/obj/item/storage/B = source.get_equipped_item(SLOT_ID_BACK)
+/mob/proc/equip_to_backpack(obj/item/W)
+	var/obj/item/storage/B = get_equipped_item(SLOT_ID_BACK)
 	if(!istype(B))
 		return FALSE
-	if(W.loc == source && !source.remove_from_mob(W, B))
+	if(W.loc == src && !remove_from_mob(W, B))
 		return FALSE
 	// The backpack's own rules were checked by the slot_in_backpack predicate.
-	if(W.loc != B && !W.move_into(B, null, source))
+	if(W.loc != B && !W.move_into(B, null, src))
 		W.forceMove(B)
 	if(W.loc != B)
 		return FALSE
-	source.on_equipment_changed()
+	on_equipment_changed()
 	return TRUE
 
 /// slot_tie: attached to the first worn clothing that takes it.
-/proc/equip_accessory(mob/source, obj/item/W)
+/mob/proc/equip_accessory(obj/item/W)
 	if(!istype(W, /obj/item/clothing/accessory))
 		return FALSE
 	for(var/id in GLOB.slot_ids_worn_clothing)
-		var/obj/item/clothing/C = source.get_equipped_item(id)
-		if(istype(C) && C.attempt_attach_accessory(W, source))
-			source.on_equipment_changed()
+		var/obj/item/clothing/C = get_equipped_item(id)
+		if(istype(C) && C.attempt_attach_accessory(W, src))
+			on_equipment_changed()
 			return TRUE
 	return FALSE
 
@@ -343,13 +343,13 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	return equip_to_slot_if_possible(W, slot, 1, 1, 0, ignore_obstructions)
 
 //hurgh. these feel hacky, but they're the only way I could get the damn thing to work. I guess they could be handy for antag spawners too?
-/proc/equip_voidsuit_to_slot_or_del_with_refit(mob/source, obj/item/clothing/suit/space/void/W, slot, species = SPECIES_HUMAN)
+/mob/proc/equip_voidsuit_to_slot_or_del_with_refit(obj/item/clothing/suit/space/void/W, slot, species = SPECIES_HUMAN)
 	W.refit_for_species(species)
-	return source.equip_to_slot_if_possible(W, slot, 1, 1, 0)
+	return equip_to_slot_if_possible(W, slot, 1, 1, 0)
 
-/proc/equip_voidhelm_to_slot_or_del_with_refit(mob/source, obj/item/clothing/head/helmet/space/void/W, slot, species = SPECIES_HUMAN)
+/mob/proc/equip_voidhelm_to_slot_or_del_with_refit(obj/item/clothing/head/helmet/space/void/W, slot, species = SPECIES_HUMAN)
 	W.refit_for_species(species)
-	return source.equip_to_slot_if_possible(W, slot, 1, 1, 0)
+	return equip_to_slot_if_possible(W, slot, 1, 1, 0)
 
 //Checks if a given slot can be accessed at this time, either to equip or unequip I
 /mob/proc/slot_is_accessible(slot, obj/item/I, mob/user=null)
@@ -371,31 +371,31 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 
 /// Puts `W` in hand slot `id` (SLOT_ID_HAND_L or SLOT_ID_HAND_R): a ledger
 /// move, then equipped(). Returns TRUE on success.
-/proc/put_in_hand_slot(mob/source, obj/item/W, id)
+/mob/proc/put_in_hand_slot(obj/item/W, id)
 	if(!istype(W))
 		return FALSE
 	if(QDELETED(W))
 		if(!(W.item_flags & DROPDEL))
-			log_runtime("[source] tried to pick up a qdeleted object [W]")
+			log_runtime("[src] tried to pick up a qdeleted object [W]")
 		return FALSE
-	if(source.get_equipped_item(id))
+	if(get_equipped_item(id))
 		return FALSE
-	var/old_id = source.inventory_slot_id(W)
-	if(!W.move_into(source, id, source))
+	var/old_id = inventory_slot_id(W)
+	if(!W.move_into(src, id, src))
 		return FALSE
 	if(old_id && old_id != id)
-		source.slot_vacated(old_id, W)
-	W.equipped(source, dq_slot_num(id))
-	W.add_fingerprint(source)
+		slot_vacated(old_id, W)
+	W.equipped(src, dq_slot_num(id))
+	W.add_fingerprint(src)
 	return TRUE
 
 //Puts the item into your l_hand if possible and calls all necessary triggers/updates. returns 1 on success.
 /mob/proc/put_in_l_hand(obj/item/W)
-	return put_in_hand_slot(src, W, SLOT_ID_HAND_L)
+	return put_in_hand_slot(W, SLOT_ID_HAND_L)
 
 //Puts the item into your r_hand if possible and calls all necessary triggers/updates. returns 1 on success.
 /mob/proc/put_in_r_hand(obj/item/W)
-	return put_in_hand_slot(src, W, SLOT_ID_HAND_R)
+	return put_in_hand_slot(W, SLOT_ID_HAND_R)
 
 //Puts the item into our active hand if possible. returns 1 on success.
 /mob/proc/put_in_active_hand(obj/item/W)
@@ -475,10 +475,10 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	return TRUE
 
 /// Where a dropped item lands: `target`, or where dropInto() would put it.
-/proc/inventory_drop_destination(mob/source, atom/movable/I, atom/target)
+/mob/proc/inventory_drop_destination(atom/movable/I, atom/target)
 	if(target)
 		return target
-	var/atom/destination = source.drop_location()
+	var/atom/destination = drop_location()
 	while(istype(destination))
 		var/atom/next = destination.onDropInto(I)
 		if(!istype(next) || next == destination)
@@ -489,11 +489,11 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /// Takes `I` out of this mob to `destination` (null: nullspace) as a ledger
 /// move. A destination holder that refuses it still receives it, as before
 /// the ledger: callers of the inventory procs have already decided.
-/proc/inventory_release(mob/source, atom/movable/I, atom/destination)
+/mob/proc/inventory_release(atom/movable/I, atom/destination)
 	if(!destination)
 		I.moveToNullspace()
 		return
-	if(I.loc == source && source.slot_remove(I, destination, source))
+	if(I.loc == src && slot_remove(I, destination, src))
 		return
 	I.forceMove(destination)
 
@@ -507,7 +507,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	item_dropping.reset_plane_and_layer()
 	item_dropping.screen_loc = null
 	if(isitem(item_dropping))
-		inventory_release(src, item_dropping, inventory_drop_destination(src, item_dropping, target))
+		inventory_release(item_dropping, inventory_drop_destination(item_dropping, target))
 		if(id)
 			slot_vacated(id, item_dropping)
 		has_unequipped(item_dropping, FALSE)

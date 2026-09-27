@@ -192,7 +192,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 
 	var/obj/structure/dq_emp_probe/target = allocate(/obj/structure/dq_emp_probe, test_floor())
 	for(var/severity in EMP_HEAVY to EMP_HARMLESS)
-		receive_ionic(target, emp_ionic_damage(severity))
+		target.receive_ionic(emp_ionic_damage(severity))
 		TEST_ASSERT_EQUAL(target.last_severity, severity, "an ionic hit pulses at the ladder's severity")
 
 	var/obj/item/projectile/ion/bolt = allocate(/obj/item/projectile/ion)

@@ -75,19 +75,19 @@
 		deltimer(lifecycle_lifetime_timer)
 	lifecycle_lifetime_timer = addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), after, TIMER_STOPPABLE)
 
-/proc/lifecycle_arm_lifetime(atom/movable/source)
-	if(source.lifecycle_lifetime > 0)
-		source.expire(source.lifecycle_lifetime)
+/atom/movable/proc/lifecycle_arm_lifetime()
+	if(lifecycle_lifetime > 0)
+		expire(lifecycle_lifetime)
 
 // ---- slot_clear() / ledger_empty() ----
 
 /// Deletes everything currently in `slot_id` (null: every slot), right now.
 /// Replaces a `for(var/x in slot_contents(id)) qdel(x)` loop. Returns how
 /// many were deleted.
-/proc/slot_clear(atom/source, slot_id)
+/atom/proc/slot_clear(slot_id)
 	. = 0
-	source.latent_materialize_all(slot_id)
-	for(var/atom/movable/thing as anything in source.slot_contents(slot_id))
+	latent_materialize_all(slot_id)
+	for(var/atom/movable/thing as anything in slot_contents(slot_id))
 		if(QDELETED(thing))
 			continue
 		qdel(thing)
@@ -99,11 +99,11 @@
 /// slots, then `qdel(the body)` -- the disposition is a one-off choice made
 /// at the point of gibbing, not a change to what the slot normally does.
 /// Returns how many things were affected.
-/proc/ledger_empty(atom/source, policy, slot_id)
-	var/datum/ledger/L = dq_ledger(source)
+/atom/proc/ledger_empty(policy, slot_id)
+	var/datum/ledger/L = dq_ledger(src)
 	if(!L)
 		return 0
-	var/atom/drop = source.drop_location()
+	var/atom/drop = drop_location()
 	var/list/defs = isnull(slot_id) ? L.defs : list(L.def_by_id(slot_id))
 	. = 0
 	for(var/datum/om/relation/slot/def as anything in defs)
@@ -112,7 +112,7 @@
 		for(var/atom/movable/thing as anything in L.slots[def.slot_id].Copy())
 			if(QDELETED(thing))
 				continue
-			dq_lifecycle_apply_policy_now(source, def, thing, policy, drop)
+			dq_lifecycle_apply_policy_now(src, def, thing, policy, drop)
 			.++
 
 /// Shared by ledger_empty(): applies `policy` (which may differ from `def`'s

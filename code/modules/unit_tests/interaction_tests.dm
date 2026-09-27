@@ -18,9 +18,22 @@
 	primary_wrench_calls++
 	return wrench_result
 
-/atom/movable/unit_test_interaction_target/wrench_act_secondary(mob/user, obj/item/tool)
+/// Secondary tool use reaches declared interactions whose default action is Alternate.
+/datum/interaction/unit_test_secondary_wrench
+	id = "unit_test_secondary_wrench"
+	name = "Test secondary wrench"
+	category = INTERACTION_CAT_CONFIGURE
+	default_action = INPUT_ACTION_ALTERNATE
+	tool = TOOL_WRENCH
+	effect = /atom/movable/unit_test_interaction_target/proc/note_secondary_wrench
+
+/atom/movable/unit_test_interaction_target/declare_interactions(list/into)
+	..()
+	into += /datum/interaction/unit_test_secondary_wrench
+
+/atom/movable/unit_test_interaction_target/proc/note_secondary_wrench(mob/actor, obj/item/held, datum/interaction/interaction)
 	secondary_wrench_calls++
-	return ITEM_INTERACT_BLOCKING
+	return TRUE
 
 /atom/movable/unit_test_interaction_target/attackby(obj/item/tool, mob/user, attack_modifier, click_parameters)
 	attackby_calls++
@@ -46,7 +59,7 @@
 	RegisterSignal(tool, COMSIG_ITEM_TOOL_ACTED, PROC_REF(on_tool_acted))
 	RegisterSignal(tool, COMSIG_TOOL_ATOM_ACTED_PRIMARY(TOOL_WRENCH), PROC_REF(on_quality_acted))
 
-	var/primary_result = item_interaction(target, null, tool, list())
+	var/primary_result = target.item_interaction(null, tool, list())
 	TEST_ASSERT(primary_result & ITEM_INTERACT_SUCCESS, "Primary tool interaction did not report success.")
 	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 1, "The first quality was not attempted exactly once.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "A later quality was not attempted after the first declined.")
@@ -55,9 +68,12 @@
 	TEST_ASSERT_EQUAL(quality_acted_calls, 1, "A successful tool interaction did not emit its quality-specific success signal exactly once.")
 	TEST_ASSERT_EQUAL(last_acted_quality, TOOL_WRENCH, "The generic tool success signal reported the wrong successful quality.")
 
-	var/secondary_result = item_interaction_secondary(target, null, tool, list())
-	TEST_ASSERT(secondary_result & ITEM_INTERACT_BLOCKING, "Secondary tool interaction did not preserve blocking semantics.")
-	TEST_ASSERT_EQUAL(target.secondary_wrench_calls, 1, "Secondary dispatch did not reach its dedicated hook.")
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	target.forceMove(user.loc)
+	user.put_in_hands(tool)
+	var/secondary_result = target.item_interaction_secondary(user, tool, list())
+	TEST_ASSERT(secondary_result & ITEM_INTERACT_SUCCESS, "Secondary tool use did not run the declared Alternate interaction.")
+	TEST_ASSERT_EQUAL(target.secondary_wrench_calls, 1, "Secondary dispatch did not reach the declared interaction.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "Secondary dispatch incorrectly invoked the primary hook.")
 
 	target.primary_crowbar_calls = 0

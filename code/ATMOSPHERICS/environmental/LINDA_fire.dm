@@ -377,7 +377,7 @@
 		var/mob/living/immolated = arrived
 		immolated.fire_act(temperature, volume)
 	else if(arrived.heats_in_fire())
-		couple_to_fire(arrived, loc)
+		arrived.couple_to_fire(loc)
 
 /obj/effect/hotspot/singularity_pull(atom/singularity, current_size)
 	return

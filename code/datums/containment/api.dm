@@ -156,20 +156,20 @@
 	return thing.loc == destination
 
 /// Move `thing` from one of this holder's slots into `new_holder`'s slot.
-/proc/slot_transfer(atom/source, atom/movable/thing, atom/new_holder, slot_id, mob/actor)
-	var/datum/ledger/L = dq_ledger(source)
+/atom/proc/slot_transfer(atom/movable/thing, atom/new_holder, slot_id, mob/actor)
+	var/datum/ledger/L = dq_ledger(src)
 	if(!L?.entries[thing])
 		return FALSE
 	return thing.move_into(new_holder, slot_id, actor)
 
 /// Remove everything in `slot_id` (null: every slot) to `destination`.
 /// Returns how many things left.
-/proc/slot_empty(atom/source, slot_id, atom/destination, mob/actor)
+/atom/proc/slot_empty(slot_id, atom/destination, mob/actor)
 	. = 0
 	// Pulling things out materializes them (C5).
-	source.latent_materialize_all(slot_id)
-	for(var/atom/movable/thing as anything in source.slot_contents(slot_id))
-		if(source.slot_remove(thing, destination, actor))
+	latent_materialize_all(slot_id)
+	for(var/atom/movable/thing as anything in slot_contents(slot_id))
+		if(slot_remove(thing, destination, actor))
 			.++
 
 /// A copy of what is in `slot_id` (null: every slot, in slot order).
@@ -192,12 +192,12 @@
 	return (L.used[id] || 0) + (def ? def.latent_used(src) : 0)
 
 /// The limit of `slot_id` on this holder, or null when it has none.
-/proc/slot_capacity(atom/source, slot_id)
-	var/datum/ledger/L = dq_ledger(source)
+/atom/proc/slot_capacity(slot_id)
+	var/datum/ledger/L = dq_ledger(src)
 	var/datum/om/relation/slot/def = L?.def_by_id(slot_id || L.default_id)
 	if(!def || def.capacity_model == SLOT_CAPACITY_NONE)
 		return null
-	return def.capacity_for(source)
+	return def.capacity_for(src)
 
 /// The one thing in `slot_id` (null: the default slot), or null if it holds
 /// none. For a single-item slot (organ, equipment): the whole point of

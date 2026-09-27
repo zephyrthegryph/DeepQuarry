@@ -62,7 +62,7 @@
 	click_ctrl_shift(user)
 
 /obj/machinery/door/airlock/BorgCtrlShiftClick(mob/living/silicon/robot/user)
-	AIclick_ctrl_shift(src, user)
+	AIclick_ctrl_shift(user)
 
 /atom/proc/BorgShiftClick(mob/living/silicon/robot/user) //forward to human click if not overriden
 	ShiftClick(user)

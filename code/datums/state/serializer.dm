@@ -144,7 +144,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(ismob(D))
 		refuse("[D.type] is a mob; mobs stay real")
 		return null
-	var/refusal = state_refusal(D)
+	var/refusal = D.state_refusal()
 	if(refusal)
 		refuse("[D.type] [refusal]")
 		return null

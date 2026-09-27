@@ -272,11 +272,11 @@
  * Arguments:
  * * datum/component/c_type The typepath of the component you want to get a reference to
  */
-/proc/GetExactComponent(datum/source, datum/component/c_type)
+/datum/proc/GetExactComponent(datum/component/c_type)
 	RETURN_TYPE(c_type)
 	if(initial(c_type.dupe_mode) == COMPONENT_DUPE_ALLOWED || initial(c_type.dupe_mode) == COMPONENT_DUPE_SELECTIVE)
 		stack_trace("GetComponent was called to get a component of which multiple copies could be on an object. This can easily break and should be changed. Type: \[[c_type]\]")
-	var/list/dc = source._datum_components
+	var/list/dc = _datum_components
 	if(!dc)
 		return null
 	var/datum/component/C = dc[c_type]
@@ -340,7 +340,7 @@
 	raw_args[1] = src
 	if(dupe_mode != COMPONENT_DUPE_ALLOWED && dupe_mode != COMPONENT_DUPE_SELECTIVE && dupe_mode != COMPONENT_DUPE_SOURCES)
 		if(!dupe_type)
-			old_component = GetExactComponent(src, component_type)
+			old_component = GetExactComponent(component_type)
 		else
 			old_component = GetComponent(dupe_type)
 
@@ -409,9 +409,9 @@
 /**
  * Removes a component source from this datum
  */
-/proc/RemoveComponentSource(datum/owner_atom, source, datum/component/component_type)
+/datum/proc/RemoveComponentSource(source, datum/component/component_type)
 	if(ispath(component_type))
-		component_type = GetExactComponent(owner_atom, component_type)
+		component_type = GetExactComponent(component_type)
 	if(!component_type)
 		return
 	component_type.on_source_remove(source)
@@ -450,20 +450,20 @@
  * Arguments:
  * * datum/component/target Target datum to transfer to
  */
-/proc/TakeComponent(datum/source, datum/component/target)
-	if(!target || target.parent == source)
+/datum/proc/TakeComponent(datum/component/target)
+	if(!target || target.parent == src)
 		return
 	if(target.parent)
 		target.RemoveComponent()
-	target.parent = source
+	target.parent = src
 	var/result = target.PostTransfer()
 	switch(result)
 		if(COMPONENT_INCOMPATIBLE)
 			var/c_type = target.type
 			qdel(target)
-			CRASH("Incompatible [c_type] transfer attempt to a [source.type]!")
+			CRASH("Incompatible [c_type] transfer attempt to a [type]!")
 
-	if(target == source.AddComponent(target))
+	if(target == AddComponent(target))
 		target._JoinParent()
 
 /**
@@ -474,8 +474,8 @@
  * Arguments:
  * * /datum/target the target to move the components to
  */
-/proc/TransferComponents(datum/source, datum/target)
-	var/list/dc = source._datum_components
+/datum/proc/TransferComponents(datum/target)
+	var/list/dc = _datum_components
 	if(!dc)
 		return
 	for(var/component_key in dc)
@@ -483,11 +483,11 @@
 		if(islist(component_or_list))
 			for(var/datum/component/I in component_or_list)
 				if(I.can_transfer)
-					TakeComponent(target, I)
+					target.TakeComponent(I)
 		else
 			var/datum/component/C = component_or_list
 			if(C.can_transfer)
-				TakeComponent(target, C)
+				target.TakeComponent(C)
 
 /**
  * Return the object that is the host of any UI's that this component has

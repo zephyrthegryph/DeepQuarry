@@ -118,7 +118,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return
 
 /**
- * One Use run as a Disarm or Grab (use_attack_variant(src) has set the variant).
+ * One Use run as a Disarm or Grab (use_attack_variant() has set the variant).
  * Only actors with hands have the variants; others do nothing.
  */
 /datum/input_adapter/proc/use_variant(mob/user, atom/target, variant)
@@ -246,7 +246,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 
 	// Atoms on turfs: A is a turf, on a turf, or in something on a turf (pen in a box),
 	// but not something in something on a turf (pen in a box in a backpack).
-	sdepth = storage_depth_turf(A)
+	sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
 		if(currently_restrained)
 			if(ismob(A) && A.Adjacent(user)) // restrained and adjacent
@@ -450,7 +450,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	if(!isturf(user.loc))
 		return
 
-	var/sdepth = storage_depth_turf(A)
+	var/sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
 		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm, allows robots to use ranged melee weapons
 			SEND_SIGNAL(user, COMSIG_ROBOT_ITEM_ATTACK, W, user, params) // we ATTEMPTED to attack someone.

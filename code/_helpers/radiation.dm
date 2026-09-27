@@ -104,9 +104,9 @@
 
 /// A common proc used to send COMSIG_ATOM_PROPAGATE_RAD_PULSE to adjacent atoms
 /// Only used for uranium (false/tram)walls to spread their radiation pulses
-/proc/propagate_radiation_pulse(atom/source)
-	for(var/atom/atom in orange(1,source))
-		SEND_SIGNAL(atom, COMSIG_ATOM_PROPAGATE_RAD_PULSE, source)
+/atom/proc/propagate_radiation_pulse()
+	for(var/atom/atom in orange(1,src))
+		SEND_SIGNAL(atom, COMSIG_ATOM_PROPAGATE_RAD_PULSE, src)
 
 #undef MEDIUM_RADIATION_THRESHOLD_RANGE
 #undef EXTREME_RADIATION_CHANCE

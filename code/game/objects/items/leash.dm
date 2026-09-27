@@ -264,7 +264,7 @@
 /obj/item/leash/proc/drop_effects(mob/user)
 	SIGNAL_HANDLER
 	var/mob/living/leash_master = LEASH_MASTER(src)
-	if(leash_master && (leash_master.item_is_in_hands(src) || get_item_by_slot(leash_master, SLOT_TIE) == src))
+	if(leash_master && (leash_master.item_is_in_hands(src) || leash_master.get_item_by_slot(SLOT_TIE) == src))
 		return  //Dom still has the leash as it turns out. Cancel the proc.
 	if(leash_master)
 		leash_master.visible_message(span_notice("\The [leash_master] drops \the [src]."), span_notice("You drop \the [src]."))

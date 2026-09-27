@@ -10,7 +10,7 @@
  *   held like modifiers: while one is down, clicks, bumps and struggles are
  *   disarms or grabs, and releasing it clears the variant. The Disarm and Grab
  *   interactions (the Menu on a living target, the attack category key) run
- *   one Use as that variant with use_attack_variant(src). AI brains set it to
+ *   one Use as that variant with use_attack_variant(). AI brains set it to
  *   hold their chosen special attack (set_use_stance()).
  *
  * Legacy handlers read the outcome with IS_HELPING/IS_HARMING/IS_DISARMING/

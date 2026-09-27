@@ -314,7 +314,7 @@
 	if(!owner)
 		thing.forceMove(get_turf(src))
 		return
-	enter_belly(thing, src) // Atom movable proc, does nothing by default. Overridden in children for special behavior.
+	thing.enter_belly(src) // Atom movable proc, does nothing by default. Overridden in children for special behavior.
 	if(!cycle_token)
 		belly_reschedule()
 	if(owner && istype(owner.loc,/turf/simulated) && !cycle_sloshed && reagents.total_volume > 0)
@@ -410,7 +410,7 @@
 	. = ..()
 	if(QDELETED(owner))
 		return
-	exit_belly(thing, src) // atom movable proc, does nothing by default. Overridden in children for special behavior.
+	thing.exit_belly(src) // atom movable proc, does nothing by default. Overridden in children for special behavior.
 	if(!length(contents))
 		belly_reschedule()
 	if(isbelly(thing.loc))
@@ -914,7 +914,7 @@
 	var/old_entrance_logs = target.entrance_logs
 	if(silent)
 		target.entrance_logs = FALSE
-	slot_transfer(src, content, target, BELLY_SLOT_INTERIOR)
+	slot_transfer(content, target, BELLY_SLOT_INTERIOR)
 	target.entrance_logs = old_entrance_logs
 	if(isitem(content))
 		var/obj/item/I = content

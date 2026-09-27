@@ -364,10 +364,10 @@ GLOBAL_LIST_INIT(global_huds, list(
 	HUD.ui_style = ui_style2icon(read_preference(/datum/preference/choiced/ui_style))
 	HUD.ui_color = read_preference(/datum/preference/color/ui_style_color)
 	HUD.ui_alpha = read_preference(/datum/preference/numeric/ui_style_alpha)
-	set_hud_used(src, HUD)
+	set_hud_used(HUD)
 
-/proc/set_hud_used(mob/source, datum/hud/new_hud)
-	source.hud_used = new_hud
+/mob/proc/set_hud_used(datum/hud/new_hud)
+	hud_used = new_hud
 	new_hud.build_action_groups()
 
 /mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
@@ -505,43 +505,43 @@ GLOBAL_LIST_INIT(global_huds, list(
 		client.screen -= zone_sel	//zone_sel is a mob variable for some reason.
 
 //Similar to button_pressed_F12() but keeps zone_sel, gun_setting_icon, and healths.
-/proc/toggle_zoom_hud(mob/source)
-	if(!source.hud_used)
+/mob/proc/toggle_zoom_hud()
+	if(!hud_used)
 		return
-	if(!ishuman(source))
+	if(!ishuman(src))
 		return
-	if(!source.client)
+	if(!client)
 		return
-	if(source.client.view != world.view)
+	if(client.view != world.view)
 		return
 
-	if(source.hud_used.hud_shown)
-		source.hud_used.hud_shown = 0
-		if(source.hud_used.adding)
-			source.client.screen -= source.hud_used.adding
-		if(source.hud_used.other)
-			source.client.screen -= source.hud_used.other
-		if(source.hud_used.hotkeybuttons)
-			source.client.screen -= source.hud_used.hotkeybuttons
-		source.client.screen -= source.internals
-		if(source.hud_used.combat_mode_button)
-			source.client.screen += source.hud_used.combat_mode_button		//we want the combat mode button visible
+	if(hud_used.hud_shown)
+		hud_used.hud_shown = 0
+		if(hud_used.adding)
+			client.screen -= hud_used.adding
+		if(hud_used.other)
+			client.screen -= hud_used.other
+		if(hud_used.hotkeybuttons)
+			client.screen -= hud_used.hotkeybuttons
+		client.screen -= internals
+		if(hud_used.combat_mode_button)
+			client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 	else
-		source.hud_used.hud_shown = 1
-		if(source.hud_used.adding)
-			source.client.screen += source.hud_used.adding
-		if(source.hud_used.other && source.hud_used.inventory_shown)
-			source.client.screen += source.hud_used.other
-		if(source.hud_used.hotkeybuttons && !source.hud_used.hotkey_ui_hidden)
-			source.client.screen += source.hud_used.hotkeybuttons
-		if(source.internals)
-			source.client.screen |= source.internals
-		if(source.hud_used.combat_mode_button)
-			source.hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
+		hud_used.hud_shown = 1
+		if(hud_used.adding)
+			client.screen += hud_used.adding
+		if(hud_used.other && hud_used.inventory_shown)
+			client.screen += hud_used.other
+		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
+			client.screen += hud_used.hotkeybuttons
+		if(internals)
+			client.screen |= internals
+		if(hud_used.combat_mode_button)
+			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
-	source.hud_used.hidden_inventory_update()
-	source.hud_used.persistant_inventory_update()
-	source.update_action_buttons(TRUE)
+	hud_used.hidden_inventory_update()
+	hud_used.persistant_inventory_update()
+	update_action_buttons(TRUE)
 
 /mob/proc/add_click_catcher()
 	client.screen += client.void

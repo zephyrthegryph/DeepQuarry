@@ -250,15 +250,15 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	//STINGS//	//They get a pretty header because there's just so fucking many of them ;_;
 	//////////
 
-/proc/sting_can_reach(mob/owner_atom, mob/M as mob, sting_range = 1)
-	if(M.loc == owner_atom.loc)
+/mob/proc/sting_can_reach(mob/M as mob, sting_range = 1)
+	if(M.loc == loc)
 		return 1 //target and source are in the same thing
-	if(!isturf(owner_atom.loc) || !isturf(M.loc))
-		to_chat(owner_atom, span_warning("We cannot reach \the [M] with a sting!"))
+	if(!isturf(loc) || !isturf(M.loc))
+		to_chat(src, span_warning("We cannot reach \the [M] with a sting!"))
 		return 0 //One is inside, the other is outside something.
 	// Maximum queued turfs set to 25; I don't *think* anything raises sting_range above 2, but if it does the 25 may need raising
-	if(!AStar(owner_atom.loc, M.loc, /turf/proc/AdjacentTurfsRangedSting, /turf/proc/Distance, max_nodes=25, max_node_depth=sting_range)) //If we can't find a path, fail
-		to_chat(owner_atom, span_warning("We cannot find a path to sting \the [M] by!"))
+	if(!AStar(loc, M.loc, /turf/proc/AdjacentTurfsRangedSting, /turf/proc/Distance, max_nodes=25, max_node_depth=sting_range)) //If we can't find a path, fail
+		to_chat(src, span_warning("We cannot find a path to sting \the [M] by!"))
 		return 0
 	return 1
 
@@ -286,7 +286,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
 	if(!(T in view(comp.sting_range))) return
-	if(!sting_can_reach(src, T, comp.sting_range)) return
+	if(!sting_can_reach(T, comp.sting_range)) return
 	if(!changeling_power(required_chems)) return
 
 	comp.chem_charges -= required_chems

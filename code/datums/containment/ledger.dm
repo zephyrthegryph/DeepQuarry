@@ -569,9 +569,9 @@
 /// Re-reads and re-indexes `thing`'s key in whichever of its holder's slots
 /// it is in. Call this after something changes what slot_key() answers for
 /// a thing that is already inserted into a keyed slot.
-/proc/ledger_rekey(atom/movable/source)
-	var/datum/ledger/L = dq_ledger_peek(source.loc)
-	L?.rekey(source)
+/atom/movable/proc/ledger_rekey()
+	var/datum/ledger/L = dq_ledger_peek(loc)
+	L?.rekey(src)
 
 // ---- Dynamic tags (J7) ----
 
@@ -581,9 +581,9 @@
 /// on its own, so anything that can change while a thing sits still --
 /// today, only TAG_CLOCKED (dynamic_state.dm) -- must call this itself right
 /// after it changes. A no-op when `src` isn't in a slot right now.
-/proc/ledger_refresh_contribution(atom/movable/source)
-	var/datum/ledger/L = dq_ledger_peek(source.loc)
-	L?.refresh(source)
+/atom/movable/proc/ledger_refresh_contribution()
+	var/datum/ledger/L = dq_ledger_peek(loc)
+	L?.refresh(src)
 
 // ---- J5: the move hook gate ----
 

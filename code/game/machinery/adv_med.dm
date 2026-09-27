@@ -241,7 +241,7 @@
 	qdel(D)
 	dat += "<hr>"
 	if(occupant.has_status(EFFECT_PARALYZED) && !(occupant.status_flags & FAKEDEATH))
-		dat += "Paralysis: [round(status_seconds(occupant, EFFECT_PARALYZED))] seconds left."
+		dat += "Paralysis: [round(occupant.status_seconds(EFFECT_PARALYZED))] seconds left."
 	var/list/allergen_list = assembly_allergy_list(occupant.species.allergens, occupant.species.medallergens)
 	if(length(allergen_list))
 		dat += "Allergens: [english_list(allergen_list)]"

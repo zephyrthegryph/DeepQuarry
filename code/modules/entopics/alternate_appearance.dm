@@ -61,42 +61,42 @@
 
 /atom/Destroy()
 	. = ..()
-	remove_all_alt_appearances(src)
+	remove_all_alt_appearances()
 
-/proc/add_alt_appearance(atom/source, key, img, list/displayTo = list())
+/atom/proc/add_alt_appearance(key, img, list/displayTo = list())
 	if(!key || !img)
 		return
-	var/list/owned = dq_get_alt_appearances(source, create = TRUE)
+	var/list/owned = dq_get_alt_appearances(src, create = TRUE)
 
 	var/datum/alternate_appearance/AA = new()
 	AA.img = img
 	AA.key = key
-	AA.owner = source
+	AA.owner = src
 
 	if(owned[key])
 		qdel(owned[key])
 	owned[key] = AA
 	if(displayTo && displayTo.len)
-		display_alt_appearance(source, key, displayTo)
+		display_alt_appearance(key, displayTo)
 
 
-/proc/remove_alt_appearance(atom/source, key)
-	var/list/owned = dq_get_alt_appearances(source)
+/atom/proc/remove_alt_appearance(key)
+	var/list/owned = dq_get_alt_appearances(src)
 	if(owned && owned[key])
 		qdel(owned[key])
 
-/proc/remove_all_alt_appearances(atom/source)
-	var/list/owned = dq_get_alt_appearances(source)
+/atom/proc/remove_all_alt_appearances()
+	var/list/owned = dq_get_alt_appearances(src)
 	if(!owned)
 		return
 	for(var/key in owned)
 		if(owned[key])
 			qdel(owned[key])
 			owned.Remove(key)
-	dq_clear_alt_appearances_component(source)
+	dq_clear_alt_appearances_component(src)
 
-/proc/display_alt_appearance(atom/source, key, list/displayTo)
-	var/list/owned = dq_get_alt_appearances(source)
+/atom/proc/display_alt_appearance(key, list/displayTo)
+	var/list/owned = dq_get_alt_appearances(src)
 	if(!owned || !key)
 		return
 	var/datum/alternate_appearance/AA = owned[key]
@@ -105,8 +105,8 @@
 	AA.display_to(displayTo)
 
 
-/proc/hide_alt_appearance(atom/source, key, list/hideFrom)
-	var/list/owned = dq_get_alt_appearances(source)
+/atom/proc/hide_alt_appearance(key, list/hideFrom)
+	var/list/owned = dq_get_alt_appearances(src)
 	if(!owned || !key)
 		return
 	var/datum/alternate_appearance/AA = owned[key]

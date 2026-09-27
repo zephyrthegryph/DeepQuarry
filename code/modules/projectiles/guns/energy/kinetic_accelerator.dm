@@ -207,7 +207,7 @@
 	overheat = TRUE
 	update_icon()
 
-	var/carried = max(1, ConflictElementCount(loc, CONFLICT_ELEMENT_KA))
+	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
 	deltimer(recharge_timerid)
 	recharge_timerid = addtimer(CALLBACK(src, PROC_REF(reload)), recharge_time * carried, TIMER_STOPPABLE)

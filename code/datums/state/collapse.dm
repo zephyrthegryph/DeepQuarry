@@ -2,7 +2,7 @@
  * Collapse eligibility (doc/rewrite/state.md section 1): an object may collapse
  * into a latent entry only if nothing live depends on it. The checks:
  *   - outgoing references the codecs refuse (the serializer's errors);
- *   - active timers and processing (state_refusal(src));
+ *   - active timers and processing (state_refusal());
  *   - per-instance signal registrations with anything outside the subtree
  *     (type elements are fine: they are type behaviour, state.md section 8);
  *   - incoming references: refcount() of each object in the subtree must equal

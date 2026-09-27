@@ -42,7 +42,7 @@
 	return
 
 /// Floors do their tool work only on help intent; otherwise the tool attacks the tile (attackby).
-/turf/simulated/floor/interaction_tool_act(mob/user, obj/item/tool, quality)
+/turf/simulated/floor/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
 	if(isliving(user))
 		var/mob/living/L = user
 		if(!IS_HELPING(L))
