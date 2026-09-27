@@ -3,12 +3,12 @@
 # Lower a line when a sweep removes sites: `python tools/ci/scheduler_lints.py --update`.
 spawn 27
 addtimer 790
-invoke_async 112
+invoke_async 110
 do_after 0
 sleep 24
 stoplag 51
-prompts 334
-set_waitfor 69
+prompts 128
+set_waitfor 68
 weakref 0
 del 13
 lc_refs 2683
