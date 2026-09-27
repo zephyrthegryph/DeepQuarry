@@ -41,18 +41,6 @@
 	visible_friendlies = list()
 	visible_neutrals = list()
 
-/datum/world_model/Destroy()
-	owner_ref = null
-	last_attacker = null
-	last_known_threat_turf = null
-	visible_hostiles = null
-	visible_friendlies = null
-	visible_neutrals = null
-	recent_damage_events = null
-	heard_sounds = null
-	known_hazards = null
-	return ..()
-
 /datum/world_model/proc/get_owner()
 	return om_resolve(owner_ref)
 

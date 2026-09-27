@@ -28,11 +28,6 @@
 	holder = owner
 	..()
 
-/datum/slime_state/Destroy()
-	holder = null
-	grudges = null
-	return ..()
-
 // ---------------------------------------------------------------------------
 // Discipline math (formerly /datum/ai_holder/simple_mob/xenobio_slime).
 // ---------------------------------------------------------------------------

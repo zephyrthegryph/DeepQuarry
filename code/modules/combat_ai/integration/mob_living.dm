@@ -88,6 +88,4 @@
 	if(!ai_brain)
 		initialize_ai_brain()
 
-/mob/living/Destroy()
-	QDEL_NULL(ai_brain)
-	return ..()
+REF_OWNED(/mob/living, "ai_brain")
