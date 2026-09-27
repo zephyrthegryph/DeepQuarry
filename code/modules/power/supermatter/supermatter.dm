@@ -720,7 +720,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 	desc = "The shattered remains of a supermatter shard plinth. It doesn't look safe to be around."
 	icon = 'icons/obj/supermatter.dmi'
 	icon_state = "darkmatter_broken"
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
@@ -732,7 +732,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 	SIGNAL_HANDLER
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -743,7 +743,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = 25
 	)
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /obj/machinery/power/supermatter/station
