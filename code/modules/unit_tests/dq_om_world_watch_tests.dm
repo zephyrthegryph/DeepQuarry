@@ -184,15 +184,8 @@
 		watches += om_world_on_key(S, WORLD_KEY_TEST, key_id, 1, WORLD_TEST_WAKE, LANE_URGENT)
 		urgent += S
 	om_world_publish(WORLD_KEY_TEST, key_id, 1)
-	// Wait until every normal wake has arrived (a loaded MC tick can skip the scheduler's pass).
-	for(var/tick in 1 to 40)
-		om_test_ticks(1)
-		var/pending = FALSE
-		for(var/datum/world_test_subscriber/S as anything in normal + urgent)
-			if(!length(S.wakes))
-				pending = TRUE
-		if(!pending)
-			break
+	// Bounded: six normal wakes at two per tick take three ticks; eight allows for a late pass.
+	om_test_ticks(8)
 	sched.world_budget = old_budget
 	var/first_urgent_tick
 	for(var/datum/world_test_subscriber/S as anything in urgent)
@@ -202,15 +195,19 @@
 		if(isnull(first_urgent_tick))
 			first_urgent_tick = wake[4]
 		TEST_ASSERT_EQUAL(wake[4], first_urgent_tick, "urgent wakes were spread over ticks")
-	var/list/per_tick = list()
+	// Per step: at most the budget times the ticks it covers (skipped ticks carry over).
+	var/list/per_step = list()
+	var/list/allowed = list()
 	for(var/datum/world_test_subscriber/S as anything in normal)
 		TEST_ASSERT_EQUAL(length(S.wakes), 1, "normal wakes")
+		if(!length(S.wakes))
+			continue
 		var/list/wake = S.wakes[1]
 		TEST_ASSERT_EQUAL(wake[6], LANE_SIMULATION, "a default watch ran on lane [wake[6]]")
-		per_tick["[wake[4]]"]++
-	TEST_ASSERT(length(per_tick) >= 3, "six normal wakes with a budget of 2 took [length(per_tick)] ticks")
-	for(var/tick in per_tick)
-		TEST_ASSERT(per_tick[tick] <= 2, "[per_tick[tick]] normal wakes in one tick, over the budget")
+		per_step["[wake[4]]"]++
+		allowed["[wake[4]]"] = 2 * clamp(wake[4] - wake[5], 1, 8)
+	for(var/step in per_step)
+		TEST_ASSERT(per_step[step] <= allowed[step], "[per_step[step]] normal wakes in step [step], over its budget [allowed[step]]")
 	for(var/datum/native_watch/W as anything in watches)
 		qdel(W)
 

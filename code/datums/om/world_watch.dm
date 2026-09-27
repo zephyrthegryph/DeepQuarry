@@ -27,6 +27,11 @@
 // Periodic work is not a world watch: it is a periodic lane (PERIODIC_START,
 // §4.10) or a clock (§4.6).
 
+/// Ticks of world budget one late step may take (skipped MC ticks carry over up to this).
+#define OM_WORLD_MAX_CATCHUP 8
+/// World wakes a non-urgent lane delivers per pass even when its budget share is spent.
+#define OM_WORLD_MIN_PER_PASS 16
+
 /// OM lane -> Rust wake lane (0 urgent, drained in full; 1 normal; 2 background).
 /proc/om_world_rust_lane(lane)
 	switch(lane)
@@ -192,9 +197,13 @@
 	if(tick <= world_step_tick)
 		return
 	var/start = TICK_USAGE_REAL
+	// The budget is per tick, not per step: a pass that runs after skipped ticks (an overloaded
+	// MC) takes the skipped ticks' share too, so a normal-lane wake is delivered within a bound
+	// of ticks rather than of steps. Capped so one late pass can't take a flood.
+	var/elapsed = world_step_tick < 0 ? 1 : clamp(tick - world_step_tick, 1, OM_WORLD_MAX_CATCHUP)
 	world_previous_step_tick = world_step_tick
 	world_step_tick = tick
-	var/list/wakes = vg_world_step(tick, world_budget)
+	var/list/wakes = vg_world_step(tick, world_budget * elapsed)
 	if(!world_q)
 		world_q = new /list(OM_LANE_COUNT)
 		for(var/lane in 1 to OM_LANE_COUNT)
@@ -216,6 +225,7 @@
 	if(!length(Q))
 		return TRUE
 	var/i = 1
+	var/delivered = 0
 	while(i <= length(Q))
 		var/datum/native_watch/world/W = Q[i]
 		var/list/arguments = list(Q[i + 1], Q[i + 2], Q[i + 3])
@@ -240,8 +250,11 @@
 			error("world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
 		if(W.one_shot)
 			W.cancel()
-		// Urgent wakes drain in full, like Rust's urgent lane; the rest yield to the budget.
-		if(lane != LANE_URGENT && out_of_budget() && i <= length(Q))
+		// Urgent wakes drain in full, like Rust's urgent lane. The rest yield to the budget, but
+		// only after OM_WORLD_MIN_PER_PASS wakes: a lane whose share is already spent when it
+		// starts (a pass behind on other work) still moves, so its wakes can't starve.
+		delivered++
+		if(lane != LANE_URGENT && delivered >= OM_WORLD_MIN_PER_PASS && out_of_budget() && i <= length(Q))
 			Q.Cut(1, i)
 			return FALSE
 	Q.Cut()
