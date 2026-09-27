@@ -43,12 +43,11 @@
 
 	default_apply_parts()
 
-/obj/machinery/conveyor/Destroy()
-	if(loc)
-		UnregisterSignal(loc, COMSIG_ATOM_ENTERED)
+/// Phase 2: conveyor switches drop it.
+/obj/machinery/conveyor/lifecycle_dematerialize()
+	. = ..()
 	for(var/obj/machinery/conveyor_switch/conveyor_switch in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		LAZYREMOVE(conveyor_switch.conveyors, src)
-	return ..()
 
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
 	if(old_loc)
