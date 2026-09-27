@@ -38,11 +38,6 @@
 	var/turn_start_time = 0
 	var/winner
 
-/datum/board_game/checkers/Destroy(force)
-	player_one = null
-	player_two = null
-	. = ..()
-
 /datum/board_game/checkers/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)

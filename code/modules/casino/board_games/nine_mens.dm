@@ -90,11 +90,6 @@
 	var/winner
 	var/phase = GAME_PHASE_PLACING
 
-/datum/board_game/nine_mens/Destroy(force)
-	player_one = null
-	player_two = null
-	. = ..()
-
 /datum/board_game/nine_mens/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
