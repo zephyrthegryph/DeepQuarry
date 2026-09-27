@@ -71,9 +71,9 @@ SUBSYSTEM_DEF(internal_wiki)
 ///////////////////////////////////////////////////////////////////////////////////
 // Donation system, for the joke of course
 ///////////////////////////////////////////////////////////////////////////////////
-/datum/controller/subsystem/internal_wiki/proc/pay_with_card( obj/item/card/id/I, mob/M, obj/device, paying_amount)
+/datum/controller/subsystem/internal_wiki/proc/pay_with_card( obj/item/card/id/I, mob/M, obj/device, paying_amount, pin)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!purchase_with_id_card(I, M, "Bingle.Co.LLC.UK.M.XM.WMP.AVI.COM", device.name, "Donation", paying_amount))
+	if(!purchase_with_id_card(I, M, "Bingle.Co.LLC.UK.M.XM.WMP.AVI.COM", device.name, "Donation", paying_amount, null, pin))
 		return FALSE
 	// Keep tabs on donations
 	var/datum/money_account/customer_account = get_account(I.associated_account_number)

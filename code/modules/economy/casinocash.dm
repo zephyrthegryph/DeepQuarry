@@ -139,7 +139,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/amount = tgui_input_number(user, "How much credits worth of chips do you want to take? (0 to [src.worth])", "Take chips", 20, src.worth)
+	var/amount = rerun_prompt(user, "k142", list("kind" = "number", "message" = "How much credits worth of chips do you want to take? (0 to [src.worth])", "title" = "Take chips", "default" = 20, "max" = src.worth), PROC_REF(attack_self), args)
+	if(isnull(amount))
+		return TRUE
 	if(!src || QDELETED(src))
 		return
 	amount = round(CLAMP(amount, 0, src.worth))
@@ -320,7 +322,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/amount = tgui_input_number(user, "How much credits worth of chips do you want to take? (0 to [src.worth])", "Take chips", 20, src.worth)
+	var/amount = rerun_prompt(user, "k323", list("kind" = "number", "message" = "How much credits worth of chips do you want to take? (0 to [src.worth])", "title" = "Take chips", "default" = 20, "max" = src.worth), PROC_REF(attack_self), args)
+	if(isnull(amount))
+		return TRUE
 	if(!src || QDELETED(src))
 		return
 	amount = round(CLAMP(amount, 0, src.worth))

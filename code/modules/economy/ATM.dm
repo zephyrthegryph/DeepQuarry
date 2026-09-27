@@ -322,7 +322,9 @@ log transactions
 				if(new_sec_level < authenticated_account.security_level)
 					var/card_present = held_card && held_card.associated_account_number == authenticated_account.account_number
 					if(!card_present)
-						var/tried_pin = tgui_input_number(ui.user, "Re-enter your account PIN to lower the security level", "Confirm PIN")
+						var/tried_pin = act_prompt(ui.user, action, params, ui, "k325", list("kind" = "number", "message" = "Re-enter your account PIN to lower the security level", "title" = "Confirm PIN"))
+						if(isnull(tried_pin))
+							return
 						// Re-validate auth/state after the sleeping input.
 						if(!authenticated_account || QDELETED(src))
 							return

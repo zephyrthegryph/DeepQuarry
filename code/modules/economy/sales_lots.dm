@@ -112,15 +112,18 @@
 		preview += "\nUncredited cargo: [jointext(ineligible, ", ")]"
 	if(length(producer_values))
 		preview += "\nDetected contributors: [length(producer_values)]"
-	if(tgui_alert(user, preview, "Freight valuation", list("Continue", "Cancel")) != "Continue" || crate.opened || get_dist(src, crate) > 1)
+	// Each answer re-runs this certification with every check above made again.
+	var/go_on = rerun_prompt(user, "value", list("message" = preview, "title" = "Freight valuation", "choices" = list("Continue", "Cancel")), PROC_REF(certify_freight_crate), args)
+	if(go_on != "Continue" || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
-	var/destination = stripped_input(user, "Who is this shipment consigned to?", "Freight ledger", "External buyer", 80)
+	var/destination = rerun_prompt(user, "destination", list("kind" = "text", "message" = "Who is this shipment consigned to?", "title" = "Freight ledger", "default" = "External buyer", "max_length" = 80), PROC_REF(certify_freight_crate), args)
+	destination = trim(destination, 80)
 	if(!destination || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
 	var/list/producer_percentages = list()
 	if(length(producer_values))
-		var/allocation_choice = tgui_alert(user, "Suggested producer pool: 5% divided by authenticated contribution value. Cargo always receives 20%.", "Producer allocation", list("Use suggested", "Edit shares", "No producer share", "Cancel"))
-		if(allocation_choice == "Cancel")
+		var/allocation_choice = rerun_prompt(user, "allocation", list("message" = "Suggested producer pool: 5% divided by authenticated contribution value. Cargo always receives 20%.", "title" = "Producer allocation", "choices" = list("Use suggested", "Edit shares", "No producer share", "Cancel")), PROC_REF(certify_freight_crate), args)
+		if(isnull(allocation_choice) || allocation_choice == "Cancel")
 			return FALSE
 		if(allocation_choice == "Use suggested")
 			var/remaining = 5
@@ -135,7 +138,7 @@
 			var/allocated = 0
 			for(var/account_number in producer_values)
 				var/datum/money_account/producer = get_account(text2num(account_number))
-				var/share = tgui_input_number(user, "Percentage for [producer?.owner_name || "account [account_number]"] (maximum remaining: [20 - allocated]%)", "Producer allocation", 0, 20 - allocated, 0)
+				var/share = rerun_prompt(user, "share[account_number]", list("kind" = "number", "message" = "Percentage for [producer?.owner_name || "account [account_number]"] (maximum remaining: [20 - allocated]%)", "title" = "Producer allocation", "default" = 0, "max" = 20 - allocated, "min" = 0, "round" = FALSE), PROC_REF(certify_freight_crate), args)
 				if(isnull(share) || crate.opened || get_dist(src, crate) > 1)
 					return FALSE
 				share = round(CLAMP(share, 0, 20 - allocated), 0.1)
@@ -153,7 +156,9 @@
 	var/final_summary = "Consignee: [destination]\n[department]: [department_percent]%\nCargo: 20%"
 	if(length(producer_rows))
 		final_summary += "\n[jointext(producer_rows, "\n")]"
-	if(tgui_alert(user, final_summary, "Print freight ledger?", list("Print", "Cancel")) != "Print" || crate.opened || get_dist(src, crate) > 1)
+	if(rerun_prompt(user, "print", list("message" = final_summary, "title" = "Print freight ledger?", "choices" = list("Print", "Cancel")), PROC_REF(certify_freight_crate), args) != "Print" || crate.opened || get_dist(src, crate) > 1)
+		return FALSE
+	if(!length(freight_form_paper))
 		return FALSE
 	crate.void_shipping_ledger("superseded by scanner certification")
 	var/obj/item/paper/ledger = freight_form_paper[length(freight_form_paper)]
@@ -345,7 +350,10 @@
 		to_chat(user, span_warning("The sale could not be authorized."))
 		return FALSE
 	if(customer.security_level)
-		var/attempt_pin = tgui_input_number(user, "Enter your account PIN", "Storefront purchase")
+		// Keyed by the price, so a price change asks again.
+		var/attempt_pin = rerun_prompt(user, "pin[item_ref]:[price]", list("kind" = "number", "message" = "Enter your account PIN", "title" = "Storefront purchase"), PROC_REF(storefront_purchase), args)
+		if(isnull(attempt_pin))
+			return FALSE
 		if(QDELETED(item) || item.loc != src || stock_prices[item_ref] != price || get_dist(src, user) > 1 || src.z != user.z)
 			return FALSE
 		customer = attempt_account_access(id_card.associated_account_number, attempt_pin, 2)

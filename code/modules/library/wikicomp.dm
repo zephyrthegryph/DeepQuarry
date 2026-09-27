@@ -254,13 +254,19 @@
 				if(!ishuman(H) || !H.IsAdvancedToolUser(TRUE))
 					to_chat(ui.user,"Donating to Bingle.exo is Byond your comprehension!")
 				else if(amount)
-					pay_donation(H.GetIdCard(), ui.user, amount, ui)
+					var/obj/item/card/id/card = H.GetIdCard()
+					var/pin
+					if(id_card_needs_pin(card))
+						pin = act_prompt(ui.user, action, params, ui, "pin", list("kind" = "number", "message" = "Enter pin code", "title" = "Donation"))
+						if(isnull(pin))
+							return TRUE
+					pay_donation(card, ui.user, amount, ui, pin)
 			. = TRUE
 
-/obj/machinery/librarywikicomp/proc/pay_donation(obj/item/card/id/I, mob/user, amount, datum/tgui/ui)
+/obj/machinery/librarywikicomp/proc/pay_donation(obj/item/card/id/I, mob/user, amount, datum/tgui/ui, pin)
 	visible_message(span_info("[user] swipes a card through [src]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
-	if(SSinternal_wiki.pay_with_card(I, user, src, amount))
+	if(SSinternal_wiki.pay_with_card(I, user, src, amount, pin))
 		playsound(src, 'sound/machines/ping.ogg', 50, 1)
 		just_donated = TRUE
 		SStgui.update_user_uis(user, ui)

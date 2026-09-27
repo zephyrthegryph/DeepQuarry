@@ -300,8 +300,13 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		if(D.account_number == account_number)
 			return D
 
-//Performing purchases by ID card
-/proc/purchase_with_id_card(obj/item/card/id/I, mob/M, purchase_title = "Company", purchase_terminal = "Terminal", purchase_desc = "Purchase of Something", price = 0, datum/money_account/recipient)
+/// Whether paying with this card needs its account PIN (ask it before paying: purchase_with_id_card() takes it).
+/proc/id_card_needs_pin(obj/item/card/id/I)
+	var/datum/money_account/customer_account = get_account(I?.associated_account_number)
+	return customer_account && customer_account.security_level != 0
+
+//Performing purchases by ID card. `pin` is the PIN the customer entered, when the account needs one.
+/proc/purchase_with_id_card(obj/item/card/id/I, mob/M, purchase_title = "Company", purchase_terminal = "Terminal", purchase_desc = "Purchase of Something", price = 0, datum/money_account/recipient, pin)
 	// Check if account can pay at all
 	var/datum/money_account/customer_account = get_account(I.associated_account_number)
 	if(!customer_account)
@@ -313,8 +318,10 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 	// Have the customer punch in the PIN before checking if there's enough money. Prevents people from figuring out acct is
 	// empty at high security levels
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		var/attempt_pin = tgui_input_number(M, "Enter pin code", "Vendor transaction")
-		customer_account = attempt_account_access(I.associated_account_number, attempt_pin, 2)
+		if(isnull(pin))
+			to_chat(M, span_warning("Unable to access account: PIN required."))
+			return FALSE
+		customer_account = attempt_account_access(I.associated_account_number, pin, 2)
 		if(!customer_account)
 			to_chat(M, span_warning("Unable to access account: incorrect credentials."))
 			return FALSE

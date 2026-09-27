@@ -89,7 +89,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/amount = tgui_input_number(user, "How many [initial_name]s do you want to take? (0 to [src.worth])", "Take Money", 20, src.worth)
+	var/amount = rerun_prompt(user, "k92", list("kind" = "number", "message" = "How many [initial_name]s do you want to take? (0 to [src.worth])", "title" = "Take Money", "default" = 20, "max" = src.worth), PROC_REF(attack_self), args)
+	if(isnull(amount))
+		return TRUE
 	if(!src || QDELETED(src))
 		return
 	amount = round(CLAMP(amount, 0, src.worth))
