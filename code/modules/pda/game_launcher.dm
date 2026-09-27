@@ -105,21 +105,4 @@
 			return TRUE
 	return TRUE
 
-/datum/data/pda/app/game_launcher/Destroy()
-	if(voresweeper)
-		QDEL_NULL(voresweeper)
-	if(fourrow)
-		QDEL_NULL(fourrow)
-	if(spacebattle)
-		QDEL_NULL(spacebattle)
-	if(rpgdice)
-		QDEL_NULL(rpgdice)
-	if(chess)
-		QDEL_NULL(chess)
-	if(checkers)
-		QDEL_NULL(checkers)
-	if(ninemens)
-		QDEL_NULL(ninemens)
-	if(tictactoe)
-		QDEL_NULL(tictactoe)
-	. = ..()
+REF_OWNED(/datum/data/pda/app/game_launcher, list("voresweeper", "fourrow", "spacebattle", "rpgdice", "chess", "checkers", "ninemens", "tictactoe"))
