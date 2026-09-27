@@ -32,14 +32,7 @@
 				break
 	update_icon()
 
-/obj/structure/ladder/Destroy()
-	if(target_down)
-		target_down.target_up = null
-		target_down = null
-	if(target_up)
-		target_up.target_down = null
-		target_up = null
-	return ..()
+REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = "target_down"))
 
 /obj/structure/ladder/attack_generic(mob/user)
 	//Simple Animal

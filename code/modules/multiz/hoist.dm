@@ -111,10 +111,12 @@
 	source_hook = new(newloc)
 	source_hook.source_hoist = src
 
+REF_OWNED(/obj/structure/hoist, "source_hook")
+
+// LIFECYCLE: whatever hangs from the hoist is released.
 /obj/structure/hoist/Destroy()
 	if(hoistee)
 		release_hoistee()
-	QDEL_NULL(src.source_hook)
 	return ..()
 
 /obj/structure/hoist/proc/check_consistency()

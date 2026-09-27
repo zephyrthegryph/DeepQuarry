@@ -77,14 +77,7 @@
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/bottom/Destroy()
-	if(top)
-		top.bottom = null
-	if(middle)
-		middle.bottom = null
-	top = null
-	middle = null
-	. = ..()
+REF_PAIR(/obj/structure/stairs/bottom, list("top" = "bottom", "middle" = "bottom"))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(var/obj/structure/stairs/bottom/B = null,
@@ -185,7 +178,6 @@
 		for(var/atom/movable/P in pulling)
 			P.forceMove(get_turf(src)) // They will move onto the turf but won't get past the check earlier in crossed. Aligns animation more cleanly
 
-
 		// Move to Top
 		AM.forceMove(get_turf(top))
 
@@ -237,7 +229,6 @@
 	else
 		AM.forceMove(get_turf(top))
 
-
 //////////////////////////////////////////////////////////////////////
 // Middle piece that you are animated onto/off of ////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -256,14 +247,7 @@
 		return INITIALIZE_HINT_QDEL
 	AddElement(/datum/element/climbable)
 
-/obj/structure/stairs/middle/Destroy()
-	if(top)
-		top.middle = null
-	if(bottom)
-		bottom.middle = null
-	top = null
-	bottom = null
-	. = ..()
+REF_PAIR(/obj/structure/stairs/middle, list("top" = "middle", "bottom" = "middle"))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(var/obj/structure/stairs/bottom/B = null,
@@ -340,14 +324,7 @@
 		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/top/Destroy()
-	if(middle)
-		middle.top = null
-	if(bottom)
-		bottom.top = null
-	middle = null
-	bottom = null
-	. = ..()
+REF_PAIR(/obj/structure/stairs/top, list("middle" = "top", "bottom" = "top"))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(var/obj/structure/stairs/bottom/B = null,
@@ -366,7 +343,6 @@
 		O = locate(/turf/simulated/open) in GetAbove(bottom)
 		if(..(bottom, middle, src, O))
 			return TRUE
-
 
 	O = get_step(src, turn(src.dir, 180))
 	var/turf/B1 = GetBelow(O)
