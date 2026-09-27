@@ -307,6 +307,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
+// LIFECYCLE: the blackbox respawns with its logs.
 /obj/machinery/blackbox_recorder/Destroy()
 	var/turf/T = locate(1,1,2)
 	if(T)

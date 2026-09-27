@@ -79,6 +79,7 @@ other types of metals and chemistry for reagents).
 /datum/design_techweb/New()
 	. = ..()
 
+// LIFECYCLE: designs are immutable globals; deleting one is an error.
 /datum/design_techweb/Destroy()
 	// Designs are immutable global datums registered at startup via SSresearch.
 	// Destroying one at runtime would corrupt every techweb that holds a reference to its ID.
