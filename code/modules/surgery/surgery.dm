@@ -348,13 +348,13 @@ GLOBAL_PROTECT(surgical_steps)
 		if(result && result != SURGERY_REFUSED)
 			. += S
 
-/proc/can_do_surgery(obj/item/source, mob/living/carbon/M, mob/living/user)
+/obj/item/proc/can_do_surgery(mob/living/carbon/M, mob/living/user)
 	return TRUE
 
 /// Attack-chain entry: try to operate on `M` with this item. TRUE when the
 /// attack was consumed by surgery.
 /obj/item/proc/do_surgery(mob/living/carbon/M, mob/living/user)
-	if(!can_do_surgery(src, M, user) || !ishuman(M))
+	if(!can_do_surgery(M, user) || !ishuman(M))
 		return FALSE
 	if(user.a_intent == I_HURT)
 		return FALSE

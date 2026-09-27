@@ -328,7 +328,7 @@
 		publish_mob_move(old_loc, src, !!client)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
-		restore_remote_views(src)
+		restore_remote_views()
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)

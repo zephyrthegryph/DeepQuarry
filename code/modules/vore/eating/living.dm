@@ -237,12 +237,12 @@
 //
 //	Verb for saving vore preferences to save file
 //
-/proc/save_vore_prefs(mob/source)
-	if(!source.client || !source.client.prefs_vr)
+/mob/proc/save_vore_prefs()
+	if(!client || !client.prefs_vr)
 		return FALSE
-	if(!source.copy_to_prefs_vr())
+	if(!copy_to_prefs_vr())
 		return FALSE
-	if(!source.client.prefs_vr.save_vore())
+	if(!client.prefs_vr.save_vore())
 		return FALSE
 
 	return TRUE
@@ -329,18 +329,18 @@
 
 	return TRUE
 
-/proc/load_vore_prefs_from_slot(mob/source)
+/mob/proc/load_vore_prefs_from_slot()
 
-	var/datum/preferences/P = source.client.prefs
+	var/datum/preferences/P = client.prefs
 
-	var/remembered_default = P.load_vore_prefs_from_client(source) //Loads the preferences of a chosen slot
+	var/remembered_default = P.load_vore_prefs_from_client(src) //Loads the preferences of a chosen slot
 	if(!remembered_default)
 		return
 
-	source.apply_vore_prefs() //Applies the vore preferences of said slot
+	apply_vore_prefs() //Applies the vore preferences of said slot
 
 	if(remembered_default)
-		P.return_to_character_slot(source, remembered_default) //sets you back to the original default slot
+		P.return_to_character_slot(src, remembered_default) //sets you back to the original default slot
 
 	return TRUE
 

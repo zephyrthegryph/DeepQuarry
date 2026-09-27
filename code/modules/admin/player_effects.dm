@@ -830,7 +830,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			log_and_message_admins("replied to [ui.user]'s message: [reply].", target)
 
 		if("stop-orbits")
-			stop_orbiters(target)
+			target.stop_orbiters()
 
 		if("revert-mob-tf")
 			var/mob/living/Tar = target

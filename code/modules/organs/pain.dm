@@ -1,5 +1,5 @@
-/proc/flash_pain(mob/source)
-	flick("pain",source.pain)
+/mob/proc/flash_pain()
+	flick("pain",pain)
 
 /mob/var/list/pain_stored = list()
 /mob/var/last_pain_message = ""
@@ -92,10 +92,10 @@
 			if(1 to 10)
 				msg =  "Your [damaged_organ.name] [burning ? "burns" : "hurts"]."
 			if(11 to 90)
-				flash_weak_pain(self)
+				self.flash_weak_pain()
 				msg = span_normal("Your [damaged_organ.name] [burning ? "burns" : "hurts"] badly!")
 			if(91 to 10000)
-				flash_pain(self)
+				self.flash_pain()
 				msg = span_large("OH GOD! Your [damaged_organ.name] is [burning ? "on fire" : "hurting terribly"]!")
 		self.custom_pain(msg, maxdam, prob(10))
 

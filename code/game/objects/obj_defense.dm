@@ -48,8 +48,8 @@
 	return custom_fire_overlay
 
 ///called when the obj is destroyed by acid.
-/proc/acid_melt(obj/source)
-	source.deconstruct(FALSE)
+/obj/proc/acid_melt()
+	deconstruct(FALSE)
 
 /// Should be called when the atom is destroyed by fire, comparable to acid_melt() proc
 /obj/proc/burn()
@@ -111,23 +111,23 @@
 /obj/atom_destruction(damage_flag)
 	. = ..()
 	if(damage_flag == ACID)
-		acid_melt(src)
+		acid_melt()
 	else if(damage_flag == FIRE)
 		burn()
 	else
-		spawn_debris(src)
+		spawn_debris()
 		deconstruct(FALSE)
 
 /// This type's debris: path -> amount, or null. A shared list; don't modify it.
-/proc/debris_entries(obj/source)
-	if(!source.debris_type)
+/obj/proc/debris_entries()
+	if(!debris_type)
 		return null
-	return list((source.debris_type) = source.debris_amount)
+	return list((debris_type) = debris_amount)
 
 /// Create the debris entries on the turf. Stacks get their amount.
-/proc/spawn_debris(obj/source)
-	var/turf/T = get_turf(source)
-	var/list/entries = debris_entries(source)
+/obj/proc/spawn_debris()
+	var/turf/T = get_turf(src)
+	var/list/entries = debris_entries()
 	if(!T || !length(entries))
 		return
 	for(var/path in entries)

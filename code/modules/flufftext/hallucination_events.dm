@@ -245,7 +245,7 @@
 /datum/component/hallucinations/proc/event_attacker()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/attacker = create_hallucination_attacker(our_human, forced_type = /obj/effect/fake_attacker/human/attacker) // Currently just uses the attacker type for now, remove argument to use any other subtype
+	var/attacker = our_human.create_hallucination_attacker(forced_type = /obj/effect/fake_attacker/human/attacker) // Currently just uses the attacker type for now, remove argument to use any other subtype
 	if(attacker)
 		QDEL_IN(attacker, rand(25,30) SECONDS)
 

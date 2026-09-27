@@ -178,7 +178,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		whispering = 1
 
 	//Parse the radio code and consume it
-	var/message_mode = parse_message_mode(src, message, "headset")
+	var/message_mode = parse_message_mode(message, "headset")
 	if(message_mode)
 		if(message_mode == "headset")
 			message = copytext(message, 2)	//it would be really nice if the parse procs could do this for us.

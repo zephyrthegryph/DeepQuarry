@@ -53,7 +53,7 @@
 	combat_mode = new_mode
 	sync_use_stance()
 	SEND_SIGNAL(src, COMSIG_MOB_COMBAT_MODE_CHANGED, new_mode)
-	update_combat_mode_hud(src)
+	update_combat_mode_hud()
 
 /// Sets the attack variant (an ATTACK_VARIANT_* or null).
 /mob/proc/set_attack_variant(variant)
@@ -94,13 +94,13 @@
  * Runs one Use on `target` as `variant` (the Disarm or Grab interaction), then
  * puts the previous variant back. Returns what the Use returned.
  */
-/proc/use_attack_variant(mob/source, atom/target, variant)
-	var/previous = source.attack_variant
-	source.set_attack_variant(variant)
-	var/datum/input_adapter/adapter = source.input_adapter()
-	. = adapter.use_variant(source, target, variant)
-	if(!QDELETED(source))
-		source.set_attack_variant(previous)
+/mob/proc/use_attack_variant(atom/target, variant)
+	var/previous = attack_variant
+	set_attack_variant(variant)
+	var/datum/input_adapter/adapter = input_adapter()
+	. = adapter.use_variant(src, target, variant)
+	if(!QDELETED(src))
+		set_attack_variant(previous)
 
 // ---------------------------------------------------------------------------
 // Controls
@@ -146,9 +146,9 @@
 		set_attack_variant(null)
 
 /// Redraws the combat mode HUD button, if the mob has one.
-/proc/update_combat_mode_hud(mob/source)
-	var/atom/movable/screen/combat_mode/button = source.hud_used?.combat_mode_button
-	button?.update_for(source)
+/mob/proc/update_combat_mode_hud()
+	var/atom/movable/screen/combat_mode/button = hud_used?.combat_mode_button
+	button?.update_for(src)
 
 /**
  * The combat mode HUD button. It replaces the intent selector: clicking it
@@ -213,5 +213,5 @@
 
 /// Effect of the Disarm and Grab interactions.
 /mob/living/proc/receive_attack_variant(mob/actor, obj/item/held, datum/interaction/attack_variant/interaction)
-	use_attack_variant(actor, src, interaction.variant)
+	actor.use_attack_variant(src, interaction.variant)
 	return TRUE

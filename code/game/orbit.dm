@@ -67,7 +67,7 @@
 	if(LAZYLEN(ORBITERS(mover)))
 		involved = TRUE
 		follow(mover)
-	for(var/atom/movable/inner in get_all_contents(mover))
+	for(var/atom/movable/inner in mover.get_all_contents())
 		if(inner != mover && LAZYLEN(ORBITERS(inner)))
 			involved = TRUE
 			follow(inner)
@@ -130,6 +130,6 @@
 	return
 
 /// Ends every orbit around this atom.
-/proc/stop_orbiters(atom/source)
-	for(var/atom/movable/orbiter as anything in ORBITERS(source))
-		om_unlink(orbiter, source, /datum/om/relation/orbiting)
+/atom/proc/stop_orbiters()
+	for(var/atom/movable/orbiter as anything in ORBITERS(src))
+		om_unlink(orbiter, src, /datum/om/relation/orbiting)

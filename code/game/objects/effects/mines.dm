@@ -20,12 +20,12 @@
 	. = ..()
 	if(ispath(trap))
 		trap = new trap(src)
-	register_dangerous_to_step(src)
+	register_dangerous_to_step()
 	if(camo_net)
 		alpha = 50
 
 /obj/effect/mine/Destroy()
-	unregister_dangerous_to_step(src)
+	unregister_dangerous_to_step()
 	if(trap)
 		QDEL_NULL(trap)
 	QDEL_NULL(wires)
@@ -480,7 +480,7 @@
 	var/turf/O = get_turf(src)
 	if(!O)
 		return
-	launch_many_projectiles(src, O, spread_range, beam_types)
+	src.launch_many_projectiles(O, spread_range, beam_types)
 	visible_message("\The [src.name] detonates!")
 	qdel(src)
 

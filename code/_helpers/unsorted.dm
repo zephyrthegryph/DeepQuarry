@@ -306,43 +306,43 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 //Generalised helper proc for letting mobs rename themselves. Used to be clname() and ainame()
 //Last modified by Carn
-/proc/rename_self(mob/source, role, allow_numbers=0)
+/mob/proc/rename_self(role, allow_numbers=0)
 	spawn(0) // S7 keeps: tgui_input_text() sleeps (prompts, S10)
-		var/oldname = source.real_name
+		var/oldname = real_name
 
 		var/time_passed = world.time
 		var/newname
 
 		for(var/i=1,i<=3,i++)	//we get 3 attempts to pick a suitable name.
 			//newname = tgui_input_text(src,"You are \a [role]. Would you like to change your name to something else?", "Name change",oldname)
-			newname = tgui_input_text(source,"You are \a [role]. Would you like to change your name to something else?", "Name change",oldname, MAX_NAME_LEN)
+			newname = tgui_input_text(src,"You are \a [role]. Would you like to change your name to something else?", "Name change",oldname, MAX_NAME_LEN)
 			if((world.time-time_passed)>3000)
 				return	//took too long
 			newname = sanitizeName(newname, ,allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 
 			for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				if(M == source)
+				if(M == src)
 					continue
 				if(!newname || M.real_name == newname)
 					newname = null
 					break
 			if(newname)
 				break	//That's a suitable name!
-			to_chat(source, "Sorry, that [role]-name wasn't appropriate, please try another. It's possibly too long/short, has bad characters or is already taken.")
+			to_chat(src, "Sorry, that [role]-name wasn't appropriate, please try another. It's possibly too long/short, has bad characters or is already taken.")
 
 		if(!newname)	//we'll stick with the oldname then
 			return
 
 		if(cmptext("ai",role))
-			if(isAI(source))
-				var/mob/living/silicon/ai/A = source
+			if(isAI(src))
+				var/mob/living/silicon/ai/A = src
 				oldname = null//don't bother with the records update crap
 				play_simple_announcement(world, ANNOUNCER_MSG_NEW_AI)
 				// Set eyeobj name
 				A.SetName(newname)
 
 
-		source.fully_replace_character_name(oldname,newname)
+		fully_replace_character_name(oldname,newname)
 
 
 
@@ -1592,7 +1592,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
  */
 /proc/split_materials_uniformly(list/custom_materials, multiplier, obj/item/target_object)
 	if(!length(target_object.contents)) //most common case where the object is just 1 thing
-		set_custom_materials(target_object, custom_materials, multiplier)
+		target_object.set_custom_materials(custom_materials, multiplier)
 		return
 
 	//Step 1: Get recursive contents of all objects, only filter obj cause that what's material container accepts
@@ -1631,7 +1631,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		for(var/mat as anything in material_map_amounts)
 			var/list/mat_per_item = material_map_amounts[mat]
 			final_material_list[mat] = mat_per_item[index]
-		set_custom_materials(object, final_material_list, multiplier)
+		object.set_custom_materials(final_material_list, multiplier)
 		index += 1
 
 /proc/spiral_range(dist = 0, center = usr, orange = FALSE)

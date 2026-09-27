@@ -487,7 +487,7 @@
 
 	var/turf/canister_turf = get_turf(M)
 	var/datum/gas_mixture/canister_environment = canister_turf ? canister_turf.return_air() : null
-	material_observe_gases(M, M.air_contents, canister_environment)
+	M.material_observe_gases(M.air_contents, canister_environment)
 
 	var/reaction_result = M.react_or_update()
 	var/material_active = M.process_material_vessel()

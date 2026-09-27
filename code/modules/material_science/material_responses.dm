@@ -281,12 +281,12 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
 	component?.respond_to_impact(cause)
 
-/proc/material_reactive_absorb(obj/item/source, damage)
-	var/datum/component/material_response/component = source.GetComponent(/datum/component/material_response)
+/obj/item/proc/material_reactive_absorb(damage)
+	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
 	return component?.absorb_reactive_hit(damage) || FALSE
 
-/proc/material_cell_use_cost(obj/item/source, amount)
-	var/datum/component/material_response/component = source.GetComponent(/datum/component/material_response)
+/obj/item/proc/material_cell_use_cost(amount)
+	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
 	component?.settle_cell_energy()
 	// Superconductors eliminate conductor loss; they do not multiply stored
 	// energy. Throughput and heat are handled by the cell's conductor role.

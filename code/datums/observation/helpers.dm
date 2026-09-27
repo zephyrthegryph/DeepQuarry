@@ -7,8 +7,8 @@
 	if(T && T != loc)
 		forceMove(T)
 
-/proc/recursive_dir_set(atom/source, atom/a, old_dir, new_dir)
-	source.set_dir(new_dir)
+/atom/proc/recursive_dir_set(atom/a, old_dir, new_dir)
+	set_dir(new_dir)
 
 /datum/proc/qdel_self()
 	SIGNAL_HANDLER

@@ -268,22 +268,25 @@ the variant loader and map aliases.
   166/323/132/103/127/588 to 147/313/132/102/127/585. A new rarely used proc
   belongs in a global proc or a helper datum.
 
-  A second pass moved 134 more to global procs (taking the former `src` as
-  their first argument): 60 on `/mob`, 39 on `/obj/item`, 21 on `/obj`, 9 on
-  `/atom`, 3 on `/atom/movable`, 2 on `/datum`; and deleted the six empty
-  `*_act_secondary` tool stubs: secondary (right-click) tool use now runs the
+  A second pass kept 17 more as global procs (taking the former `src` first),
+  all admin, debug, logging or text helpers: `plural_s`, `_search_references`,
+  `log_mob_tag`, `log_the_emote`, `format_emote`, `saypiece_scramble`,
+  `describe_power`/`_speed`/`_throwpower`/`_penetration`, `examine_tags`,
+  `embedded_info`, `GetJobName`, `AddCamoOverlay`, `SkinCmd`,
+  `dq_open_languages_panel`, `update_Login_details`. It also deleted the six
+  empty `*_act_secondary` tool stubs: secondary (right-click) tool use runs the
   declared interactions for that quality whose default action is Alternate
-  (`interaction_tool_act(..., secondary = TRUE)`). Estimated ~53 MB. Only
-  admin, debug, logging, text or formatting helpers and one-off utilities may
-  leave the base types. API that belongs to the type stays: containment and
-  lifecycle, OM statuses and state, components, filters, interactions and
-  clicks, damage propagation, inventory, movement, heat and light, HUD.
-  `base_proc_lint.py` enforces it: a global proc taking a base-type object
-  first whose name or file matches those families fails the lint (existing
-  global API is listed in `base_proc_protected_allowlist.txt`). Ceilings now
-  145/298/129/81/88/525. Per-proc value differs by type: a proc on `/datum`
-  or `/atom` is ~1 MB, on `/obj` ~0.7 MB, on `/obj/item` ~0.44 MB, on `/mob`
-  only ~0.08 MB (~3.5 k mob types).
+  (`interaction_tool_act(..., secondary = TRUE)`). Estimated ~11 MB.
+  Gameplay API stays on the type. `base_proc_lint.py` fails a global proc
+  taking a base-type object first whose name or file is in a protected family:
+  containment, lifecycle, OM, components, filters, interactions and clicks,
+  damage, inventory, movement, heat and light, materials, construction,
+  constraints, surgery, combat and attack variants, identification. Existing
+  global API in those families is listed in
+  `base_proc_protected_allowlist.txt`. Ceilings now 145/306/132/100/123/577.
+  Per-proc value differs by type: a proc on `/datum` or `/atom` is ~1 MB, on
+  `/obj` ~0.7 MB, on `/obj/item` ~0.44 MB, on `/mob` only ~0.08 MB (~3.5 k mob
+  types).
 - **Measured** (bench `boot_profile`, minitest, one boot each, bench build
   with `DEBUG`): private MB at `world/New()` 698.1 before, 666.5 after
   (-31.6); booted 841.3 before, 809.1 after (-32.2).

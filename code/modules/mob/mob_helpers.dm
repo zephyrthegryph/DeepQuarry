@@ -510,8 +510,8 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	return 1
 
 // Returns true if the mob has a client which has been active in the last given X minutes.
-/proc/is_client_active(mob/source, active = 1)
-	return source.client && source.client.inactivity < active MINUTES
+/mob/proc/is_client_active(active = 1)
+	return client && client.inactivity < active MINUTES
 
 /mob/proc/can_eat()
 	return 1
@@ -688,21 +688,21 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		var/area/A = get_area(spot)
 		return A.sound_env
 
-/proc/position_hud_item(mob/source, obj/item/item, slot)
-	if(!istype(source.hud_used) || !slot || !LAZYLEN(source.hud_used.slot_info))
+/mob/proc/position_hud_item(obj/item/item, slot)
+	if(!istype(hud_used) || !slot || !LAZYLEN(hud_used.slot_info))
 		return
 
 	//They may have hidden their entire hud but the hands
-	if(!source.hud_used.hud_shown && slot > slot_r_hand)
+	if(!hud_used.hud_shown && slot > slot_r_hand)
 		item.screen_loc = null
 		return
 
 	//They may have hidden the icons in the bottom left with the hide button
-	if(!source.hud_used.inventory_shown && slot > slot_r_store)
+	if(!hud_used.inventory_shown && slot > slot_r_store)
 		item.screen_loc = null
 		return
 
-	var/screen_place = source.hud_used.slot_info["[slot]"]
+	var/screen_place = hud_used.slot_info["[slot]"]
 	if(!screen_place)
 		item.screen_loc = null
 		return

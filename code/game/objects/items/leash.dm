@@ -178,7 +178,7 @@
 		clear_leash()
 		return
 	//Yank the pet. Yank em in close.
-	apply_tug_mob_to_mob(src, leash_pet, leash_master, 1)
+	apply_tug_mob_to_mob(leash_pet, leash_master, 1)
 
 /obj/item/leash/proc/on_master_move()
 	SIGNAL_HANDLER
@@ -198,7 +198,7 @@
 	var/mob/living/leash_master = LEASH_MASTER(src)
 	if(!leash_master || !leash_pet) //Just to stop error messages
 		return
-	apply_tug_mob_to_mob(src, leash_pet, leash_master, 2)
+	apply_tug_mob_to_mob(leash_pet, leash_master, 2)
 
 	//Knock the pet over if they get further behind. Shouldn't happen too often.
 	om_after(src, 0.3 SECONDS, PROC_REF(leash_trip_check)) //This way running normally won't just yank the pet to the ground.
@@ -328,14 +328,14 @@
 	factors = alist(BF_SLOWDOWN = 5)
 
 // Utility functions
-/proc/apply_tug_mob_to_mob(obj/item/source, mob/living/tug_pet, mob/living/tug_master, distance = 2)
-	source.apply_tug_position(tug_pet, tug_pet.x, tug_pet.y, tug_master.x, tug_master.y, distance)
+/obj/item/proc/apply_tug_mob_to_mob(mob/living/tug_pet, mob/living/tug_master, distance = 2)
+	apply_tug_position(tug_pet, tug_pet.x, tug_pet.y, tug_master.x, tug_master.y, distance)
 
-/proc/apply_tug_mob_to_object(obj/item/source, mob/living/tug_pet, obj/tug_master, distance = 2)
-	source.apply_tug_position(tug_pet, tug_pet.x, tug_pet.y, tug_master.x, tug_master.y, distance)
+/obj/item/proc/apply_tug_mob_to_object(mob/living/tug_pet, obj/tug_master, distance = 2)
+	apply_tug_position(tug_pet, tug_pet.x, tug_pet.y, tug_master.x, tug_master.y, distance)
 
-/proc/apply_tug_object_to_mob(obj/item/source, obj/tug_pet, mob/living/tug_master, distance = 2)
-	source.apply_tug_position(tug_pet, tug_pet.x, tug_pet.y, tug_master.x, tug_master.y, distance)
+/obj/item/proc/apply_tug_object_to_mob(obj/tug_pet, mob/living/tug_master, distance = 2)
+	apply_tug_position(tug_pet, tug_pet.x, tug_pet.y, tug_master.x, tug_master.y, distance)
 
 // TODO: improve this for bigger distances, where it's easy to hide behind something and break the tugging
 /obj/item/proc/apply_tug_position(tug_pet, tug_pet_x, tug_pet_y, tug_master_x, tug_master_y, distance = 2)

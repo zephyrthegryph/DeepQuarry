@@ -8,19 +8,19 @@
 	return TRUE
 
 // Helper for anything checking if it can inject a container like a syringe.
-/proc/is_injectable_container(atom/movable/source)
-	return source.is_open_container() || \
-		istype(source, /obj/item/reagent_containers/food) || \
-		istype(source, /obj/item/slime_extract) || \
-		istype(source, /obj/item/clothing/mask/smokable/cigarette) || \
-		istype(source, /obj/item/storage/fancy/cigarettes) || \
-		istype(source, /obj/item/clothing/mask/chewable)
+/atom/movable/proc/is_injectable_container()
+	return is_open_container() || \
+		istype(src, /obj/item/reagent_containers/food) || \
+		istype(src, /obj/item/slime_extract) || \
+		istype(src, /obj/item/clothing/mask/smokable/cigarette) || \
+		istype(src, /obj/item/storage/fancy/cigarettes) || \
+		istype(src, /obj/item/clothing/mask/chewable)
 
 /obj/can_be_injected_by(atom/injector)
 	if(!..())
 		return FALSE
 	// Then check if this is a type of container that can be injected
-	return is_injectable_container(src)
+	return is_injectable_container()
 
 /mob/living/can_be_injected_by(atom/injector)
 	return ..() && (can_inject(null, 0, BP_TORSO) || can_inject(null, 0, BP_GROIN))

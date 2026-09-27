@@ -96,20 +96,20 @@
 		VENTCRAWL_SMALLITEM_WHITELIST
 		)
 
-/proc/start_ventcrawl(mob/source)
+/mob/proc/start_ventcrawl()
 	var/atom/pipe
 	var/list/pipes = list()
 	for(var/obj/machinery/atmospherics/unary/U in range(1))
-		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && source.Adjacent(U) && !U.welded)
+		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && Adjacent(U) && !U.welded)
 			pipes |= U
 	if(!pipes || !pipes.len)
-		to_chat(source, "There are no pipes that you can ventcrawl into within range!")
+		to_chat(src, "There are no pipes that you can ventcrawl into within range!")
 		return
 	if(pipes.len == 1)
 		pipe = pipes[1]
 	else
-		pipe = tgui_input_list(source, "Crawl Through Vent", "Pick a pipe", pipes)
-	if(source.canmove && pipe)
+		pipe = tgui_input_list(src, "Crawl Through Vent", "Pick a pipe", pipes)
+	if(canmove && pipe)
 		return pipe
 
 /mob/living/carbon/alien/ventcrawl_carry()

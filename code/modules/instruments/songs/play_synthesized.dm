@@ -131,4 +131,4 @@
 		else
 			for(var/i in hearing_mobs)
 				var/mob/M = i
-				set_sound_channel_volume(M, channelnumber, (current_volume * 0.01) * volume * using_instrument.volume_multiplier)
+				M.set_sound_channel_volume(channelnumber, (current_volume * 0.01) * volume * using_instrument.volume_multiplier)

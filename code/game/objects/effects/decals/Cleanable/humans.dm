@@ -92,7 +92,7 @@
 			S.track_blood = max(amount,S.track_blood)
 			S.update_icon() // Cut previous overlays
 			if(!S.blood_overlay)
-				generate_blood_overlay(S)
+				S.generate_blood_overlay()
 			if(!forensic_data?.has_blooddna())
 				S.blood_overlay.color = basecolor
 				S.add_overlay(S.blood_overlay)

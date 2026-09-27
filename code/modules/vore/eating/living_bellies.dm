@@ -93,11 +93,11 @@
 	var/old_fullness = vore_fullness
 	var/list/old_fullness_ex = vore_fullness_ex.Copy()
 	update_fullness()
-	if(old_fullness == vore_fullness && fullness_buckets_match(src, old_fullness_ex, vore_fullness_ex))
+	if(old_fullness == vore_fullness && fullness_buckets_match(old_fullness_ex, vore_fullness_ex))
 		return
 	update_icon()
 
-/proc/fullness_buckets_match(mob/source, list/old_ex, list/new_ex)
+/mob/proc/fullness_buckets_match(list/old_ex, list/new_ex)
 	if(length(old_ex) != length(new_ex))
 		return FALSE
 	for(var/belly_class in new_ex)

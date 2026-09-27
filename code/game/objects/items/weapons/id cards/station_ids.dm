@@ -79,7 +79,7 @@
 	id_card.sex = capitalize(name_gender())
 
 	// Save time by reusing our ID card photo instead of generating it for the char directory specifically
-	set_chardirectory_photo(src, id_card.front)
+	set_chardirectory_photo(id_card.front)
 
 /obj/item/card/id/tgui_data(mob/user)
 	var/list/data = list()

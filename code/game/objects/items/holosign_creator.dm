@@ -25,7 +25,7 @@
 
 /obj/item/holosign_creator/afterattack(atom/target, mob/user, clickchain_flags, list/params)
 	. = ..()
-	if(!check_allowed_items(src, target, 1))
+	if(!check_allowed_items(target, 1))
 		return
 	var/turf/T = get_turf(target)
 	var/obj/structure/holosign/H = locate(holosign_type) in T

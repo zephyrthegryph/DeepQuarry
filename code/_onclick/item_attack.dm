@@ -119,7 +119,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	// deliberate diagnostic interaction is itself their admission event.
 	if(secondary && tool_quality == TOOL_MULTITOOL && isobj(src))
 		var/obj/object = src
-		result = material_diagnostics_tool_act(object, user, tool)
+		result = object.material_diagnostics_tool_act(user, tool)
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
 	if(secondary)

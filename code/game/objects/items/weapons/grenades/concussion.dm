@@ -10,16 +10,16 @@
 
 /obj/item/grenade/concussion/detonate()
 	..()
-	concussion_blast(src, get_turf(src), blast_radius)
+	concussion_blast(get_turf(src), blast_radius)
 	qdel(src)
 	return
 
-/proc/concussion_blast(obj/source, atom/target, radius = 5)
+/obj/proc/concussion_blast(atom/target, radius = 5)
 	var/turf/T = get_turf(target)
 	if(is_below_sound_pressure(T))
-		source.visible_message(span_notice("Whump."))
+		visible_message(span_notice("Whump."))
 		return
-	playsound(source, 'sound/effects/bang.ogg', 75, 1, -3)
+	playsound(src, 'sound/effects/bang.ogg', 75, 1, -3)
 	if(istype(T))
 		for(var/mob/living/L in orange(T, radius))
 			if(ishuman(L))
@@ -30,14 +30,14 @@
 
 				var/bang_effectiveness = H.species.sound_mod
 
-				if((get_dist(H, T) <= round(radius * 0.3 * bang_effectiveness) || source.loc == H.loc || source.loc == H))
+				if((get_dist(H, T) <= round(radius * 0.3 * bang_effectiveness) || loc == H.loc || loc == H))
 					if(ear_safety > 0)
 						H.status_at_least(EFFECT_CONFUSED, 2)
 					else
 						H.status_at_least(EFFECT_CONFUSED, 8)
 						H.status_at_least(EFFECT_WEAKENED, 1)
 						H.deaf_loop.start() // Ear Ringing/Deafness
-						if ((prob(14) || (H == source.loc && prob(70))))
+						if ((prob(14) || (H == loc && prob(70))))
 							H.ear_damage += rand(1, 10)
 						else
 							H.ear_damage += rand(0, 5)

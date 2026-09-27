@@ -2,10 +2,10 @@
 	var/list/learned_spells
 
 /// Refreshes the spell HUD buttons. Part of every mob's upkeep (living mobs: the upkeep system).
-/proc/update_spell_masters(mob/source)
-	if(source.spell_masters && source.spell_masters.len)
-		for(var/atom/movable/screen/movable/spell_master/spell_master in source.spell_masters)
-			spell_master.update_spells(0, source)
+/mob/proc/update_spell_masters()
+	if(spell_masters && spell_masters.len)
+		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
+			spell_master.update_spells(0, src)
 
 /mob/Login()
 	..()

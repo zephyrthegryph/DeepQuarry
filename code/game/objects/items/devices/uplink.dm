@@ -2,11 +2,11 @@
 // You place this in your uplinkable item to check if an uplink is active or not.
 // If it is, it will display the uplink menu and return 1, else it'll return false.
 // If it returns true, I recommend closing the item's normal menu
-/proc/active_uplink_check(obj/item/source, mob/user as mob)
+/obj/item/proc/active_uplink_check(mob/user as mob)
 	// Activates the uplink if it's active
-	if(source.hidden_uplink)
-		if(source.hidden_uplink.active)
-			source.hidden_uplink.trigger(user)
+	if(hidden_uplink)
+		if(hidden_uplink.active)
+			hidden_uplink.trigger(user)
 			return TRUE
 	return FALSE
 

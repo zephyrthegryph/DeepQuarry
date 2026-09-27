@@ -11,7 +11,7 @@
 	var/material_accuracy_delta = 0
 	var/material_recoil_delta = 0
 
-/proc/apply_engineered_material(obj/item/source, datum/material/material, application_profile)
+/obj/item/proc/apply_engineered_material(datum/material/material, application_profile)
 	if(!istype(material) || !application_profile)
 		return FALSE
 	var/datum/material_template/template = material_template_for_application(application_profile)
@@ -19,7 +19,7 @@
 	for(var/primary_role in template.roles)
 		choices[primary_role] = material.name
 		break
-	return source.apply_material_construction(choices, template.type, SHEET_MATERIAL_AMOUNT)
+	return apply_material_construction(choices, template.type, SHEET_MATERIAL_AMOUNT)
 
 /obj/item/proc/apply_material_role_effects(application_profile)
 	var/datum/material/primary = primary_construction_material()

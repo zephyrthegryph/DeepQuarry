@@ -161,5 +161,5 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 			gt.tweak_item(item, metadata["[i]"])
 	var/mob/M = location
 	if(istype(M) && exploitable) //Update exploitable info records for the mob without creating a duplicate object at their feet.
-		amend_exploitable(M, item)
+		M.amend_exploitable(item)
 	return item

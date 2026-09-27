@@ -1,19 +1,19 @@
 #define POINT_TIME (2.5 SECONDS)
 
-/proc/point_at(atom/movable/source, atom/pointed_atom)
-	if(!isturf(source.loc))
+/atom/movable/proc/point_at(atom/pointed_atom)
+	if(!isturf(loc))
 		return
 
-	if (pointed_atom in source)
-		source.create_point_bubble(pointed_atom)
+	if (pointed_atom in src)
+		create_point_bubble(pointed_atom)
 		return
 
 	var/turf/tile = get_turf(pointed_atom)
 	if (!tile)
 		return
 
-	var/turf/our_tile = get_turf(source)
-	var/obj/visual = new /obj/effect/temp_visual/point(our_tile, source.invisibility)
+	var/turf/our_tile = get_turf(src)
+	var/obj/visual = new /obj/effect/temp_visual/point(our_tile, invisibility)
 
 	animate(visual, pixel_x = (tile.x - our_tile.x) * world.icon_size + pointed_atom.pixel_x, pixel_y = (tile.y - our_tile.y) * world.icon_size + pointed_atom.pixel_y, time = 1.7, easing = EASE_OUT)
 
@@ -83,7 +83,7 @@
 	if(client && !(pointing_at in view(client.view, src)))
 		return FALSE
 
-	point_at(src, pointing_at)
+	point_at(pointing_at)
 
 	face_atom(pointing_at)
 	return TRUE

@@ -123,7 +123,7 @@
 				title = "🔍 | Flavor Text"
 
 		. += span_details(title, rendered_text)
-	var/is_antagish = antag_check(source)
+	var/is_antagish = source.antag_check()
 	var/antag_info_temp = A.get_description_antag()
 	if(is_antagish && antag_info_temp)
 		. += span_details("🏴‍☠️ | Antag Information", antag_info_temp)
@@ -134,19 +134,19 @@
 			temp += a + "\n"
 		. += span_details("🛠️ | Interaction Information",temp)
 
-/proc/antag_check(mob/source)
-	if(source.mind && (source.mind.special_role || source.mind.antag_holder.is_antag())) //We're a /mob and have a mind and antag status.
+/mob/proc/antag_check()
+	if(mind && (mind.special_role || mind.antag_holder.is_antag())) //We're a /mob and have a mind and antag status.
 		return TRUE
-	if(isobserver(source)) //We're an observer. We always are able to see stuff antags see.
+	if(isobserver(src)) //We're an observer. We always are able to see stuff antags see.
 		return TRUE
-	var/datum/component/antag/comp = source.GetComponent(/datum/component/antag)
+	var/datum/component/antag/comp = GetComponent(/datum/component/antag)
 	if(comp)
 		return TRUE
 	return FALSE
 
 /mob/proc/update_examine_panel(atom/A)
 	if(client)
-		var/is_antag = antag_check(src)
+		var/is_antag = antag_check()
 		client.update_description_holders(A, is_antag)
 		SSstatpanels.set_examine_tab(client)
 

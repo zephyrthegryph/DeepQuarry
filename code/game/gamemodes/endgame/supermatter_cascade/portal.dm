@@ -24,7 +24,7 @@
 /obj/singularity/narsie/large/exit/periodic_step()
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
-			see_rift(M, src)
+			M.see_rift(src)
 	eat()
 
 /obj/singularity/narsie/large/exit/acquire(mob/food)
@@ -74,21 +74,21 @@
 	//thou shall always be able to see the rift
 	var/tmp/image/riftimage = null
 
-/proc/see_rift(mob/source, obj/singularity/narsie/large/exit/R)
-	var/turf/T_mob = get_turf(source)
+/mob/proc/see_rift(obj/singularity/narsie/large/exit/R)
+	var/turf/T_mob = get_turf(src)
 	if((R.z == T_mob.z) && (get_dist(R,T_mob) <= (R.consume_range+10)) && !(R in view(T_mob)))
-		if(!source.riftimage)
-			source.riftimage = image('icons/obj/rift.dmi',T_mob,"rift",1,1)
-			source.riftimage.plane = PLANE_LIGHTING_ABOVE
-			source.riftimage.mouse_opacity = 0
+		if(!riftimage)
+			riftimage = image('icons/obj/rift.dmi',T_mob,"rift",1,1)
+			riftimage.plane = PLANE_LIGHTING_ABOVE
+			riftimage.mouse_opacity = 0
 
 		var/new_x = 32 * (R.x - T_mob.x) + R.pixel_x
 		var/new_y = 32 * (R.y - T_mob.y) + R.pixel_y
-		source.riftimage.pixel_x = new_x
-		source.riftimage.pixel_y = new_y
-		source.riftimage.loc = T_mob
+		riftimage.pixel_x = new_x
+		riftimage.pixel_y = new_y
+		riftimage.loc = T_mob
 
-		source << source.riftimage
+		src << riftimage
 	else
-		if(source.riftimage)
-			qdel(source.riftimage)
+		if(riftimage)
+			qdel(riftimage)

@@ -37,15 +37,15 @@ SUBSYSTEM_DEF(overlays)
 	iconbro.icon = icon
 	return iconbro.appearance
 
-/proc/build_appearance_list(atom/source, list/build_overlays)
+/atom/proc/build_appearance_list(list/build_overlays)
 	if (!islist(build_overlays))
 		build_overlays = list(build_overlays)
-	if(source.priority_overlays)
+	if(priority_overlays)
 		var/list/prio_overlay_temp
-		if(!islist(source.priority_overlays))
-			prio_overlay_temp = list(source.priority_overlays)
+		if(!islist(priority_overlays))
+			prio_overlay_temp = list(priority_overlays)
 		else
-			var/list/prio = source.priority_overlays
+			var/list/prio = priority_overlays
 			prio_overlay_temp = prio.Copy()
 		prio_overlay_temp |= build_overlays
 		build_overlays = prio_overlay_temp
@@ -57,7 +57,7 @@ SUBSYSTEM_DEF(overlays)
 			// This is too expensive to run normally but running it during CI is a good test
 
 			var/index = build_overlays.Find(overlay)
-			build_overlays[index] = iconstate2appearance(source.icon, overlay)
+			build_overlays[index] = iconstate2appearance(icon, overlay)
 		else if(isicon(overlay))
 			var/index = build_overlays.Find(overlay)
 			build_overlays[index] = icon2appearance(overlay)
@@ -83,7 +83,7 @@ SUBSYSTEM_DEF(overlays)
 			priority_overlays = null
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays -= build_appearance_list(src, remove_overlays)
+	overlays -= build_appearance_list(remove_overlays)
 	//POST_OVERLAY_CHANGE(src)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
@@ -103,7 +103,7 @@ SUBSYSTEM_DEF(overlays)
 			else
 				priority_overlays = list(priority_overlays) + add_overlays
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays += build_appearance_list(src, add_overlays) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
+	overlays += build_appearance_list(add_overlays) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)
 	//POST_OVERLAY_CHANGE(src)
 	STAT_STOP_STOPWATCH

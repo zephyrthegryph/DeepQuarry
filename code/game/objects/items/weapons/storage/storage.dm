@@ -238,7 +238,7 @@
 	else if(!W.move_into(src, CONTAINER_SLOT_STORAGE, user))
 		return FALSE
 
-	on_enter_storage(W, src)
+	W.on_enter_storage(src)
 	if(user)
 		add_fingerprint(user)
 		if(use_sound)
@@ -295,7 +295,7 @@
 
 	if(W.maptext)
 		W.maptext = ""
-	on_exit_storage(W, src)
+	W.on_exit_storage(src)
 	update_icon()
 	return TRUE
 

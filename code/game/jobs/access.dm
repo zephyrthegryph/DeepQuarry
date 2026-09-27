@@ -4,11 +4,11 @@
 /obj/var/list/req_one_access
 
 /// Swaps req_access and req_one_access for the shared copy with the same contents.
-/proc/intern_access_lists(obj/source)
-	if(length(source.req_access) && is_access_id_list(source.req_access))
-		source.req_access = string_list(source.req_access)
-	if(length(source.req_one_access) && is_access_id_list(source.req_one_access))
-		source.req_one_access = string_list(source.req_one_access)
+/obj/proc/intern_access_lists()
+	if(length(req_access) && is_access_id_list(req_access))
+		req_access = string_list(req_access)
+	if(length(req_one_access) && is_access_id_list(req_one_access))
+		req_one_access = string_list(req_one_access)
 
 /proc/is_access_id_list(list/L)
 	for(var/entry in L)

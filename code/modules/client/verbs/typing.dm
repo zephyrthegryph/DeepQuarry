@@ -39,7 +39,7 @@
 	if(mob.status_flags & FAKEDEATH)
 		return FALSE
 	ADD_TRAIT(mob, TRAIT_THINKING_IN_CHARACTER, CURRENTLY_TYPING_TRAIT)
-	create_thinking_indicator(mob)
+	mob.create_thinking_indicator()
 
 /** Removes typing/thinking indicators and flags the mob as not thinking */
 /client/proc/stop_thinking(channel)
@@ -51,13 +51,13 @@
  */
 /client/proc/start_typing(channel)
 	var/mob/client_mob = mob
-	remove_thinking_indicator(client_mob)
+	client_mob.remove_thinking_indicator()
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator) || !HAS_TRAIT(client_mob, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
 	if(channel == "Whis" || channel == "Subtle" || channel == "whisper" || channel == "subtle")
 		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
 			return FALSE
-	create_typing_indicator(client_mob)
+	client_mob.create_typing_indicator()
 	addtimer(CALLBACK(src, PROC_REF(stop_typing), channel), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_STOPPABLE)
 
 /**
@@ -68,12 +68,12 @@
 	if(isnull(mob))
 		return FALSE
 	var/mob/client_mob = mob
-	remove_typing_indicator(client_mob)
+	client_mob.remove_typing_indicator()
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator) || !HAS_TRAIT(client_mob, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
 	if(channel == "Whis" || channel == "Subtle" || channel == "whisper" || channel == "subtle")
 		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
 			return FALSE
-	create_thinking_indicator(client_mob)
+	client_mob.create_thinking_indicator()
 
 #undef IC_VERBS

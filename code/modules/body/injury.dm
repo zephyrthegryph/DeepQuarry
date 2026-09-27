@@ -117,7 +117,7 @@
 	BITSET(hud_updateflag, HEALTH_HUD)
 	om_changed(src, CHANGE_MOB_HEALTH)
 	if(!(flags & INJURE_SILENT))
-		flash_weak_pain(src)
+		flash_weak_pain()
 	body.on_status_changed()
 	SEND_SIGNAL(src, COMSIG_LIVING_INJURED, kind, ., zone, source, flags)
 

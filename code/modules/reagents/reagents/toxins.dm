@@ -863,7 +863,7 @@
 
 /datum/reagent/chloralhydrate/overdose(mob/living/carbon/M, alien, removed)
 	..()
-	SetLosebreath(M, 10) // Respiratory depression: no breaths are drawn.
+	M.SetLosebreath(10) // Respiratory depression: no breaths are drawn.
 
 /datum/reagent/chloralhydrate/beer2 //disguised as normal beer for use by emagged brobots
 	name = REAGENT_BEER2

@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	narsiefloor(get_turf(loc))
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
-			see_narsie(M, src,movement_dir)
+			M.see_narsie(src,movement_dir)
 
 /obj/singularity/narsie/proc/narsiefloor(turf/T)//leaving "footprints"
 	if(!(istype(T, /turf/simulated/wall/cult)||istype(T, /turf/space)))
@@ -325,7 +325,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	icon_state ="narsie-chains"
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))//removing the client image of nar-sie while it is chained
 		if(M.client)
-			see_narsie(M, src)
+			M.see_narsie(src)
 
 /obj/singularity/narsie/large/on_release()
 	chained = 0

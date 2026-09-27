@@ -386,7 +386,7 @@
 		return
 	step_towards(O, loc)
 	if(user != O)
-		show_viewers(user, span_danger("[user] stuffs [O] into [src]!"))
+		user.show_viewers(span_danger("[user] stuffs [O] into [src]!"))
 	add_fingerprint(user)
 	return
 

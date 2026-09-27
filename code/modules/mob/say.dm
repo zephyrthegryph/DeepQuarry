@@ -137,13 +137,13 @@
 			verb = "asks"
 	return verb
 
-/proc/get_ear(mob/source)
+/mob/proc/get_ear()
 	// returns an atom representing a location on the map from which this
 	// mob can hear things
 
 	// should be overloaded for all mobs whose "ear" is separate from their "mob"
 
-	return get_turf(source)
+	return get_turf(src)
 
 /proc/say_test(text)
 	var/ending = copytext(text, length(text))
@@ -156,7 +156,7 @@
 //parses the message mode code (e.g. :h, :w) from text, such as that supplied to say.
 //returns the message mode string or null for no message mode.
 //standard mode is the mode returned for the special ';' radio code.
-/proc/parse_message_mode(mob/source, message, standard_mode = "headset")
+/mob/proc/parse_message_mode(message, standard_mode = "headset")
 	if(length(message) >= 1 && copytext(message, 1, 2) == ";")
 		return standard_mode
 
@@ -176,7 +176,7 @@
 	if(new_message)
 		message = new_message
 
-/proc/find_valid_prefixes(mob/source, message)
+/mob/proc/find_valid_prefixes(message)
 	var/list/prefixes = list() // [["Common", start, end], ["Gutter", start, end]]
 	for(var/i in 1 to length(message))
 		// This grabs 3 character substrings, to allow for up to 1 prefix, 1 letter language key, and one post-key character to more strictly control where the language breaks happen
@@ -184,27 +184,27 @@
 		// The first character in the selection will always be the prefix (if this is a valid language invocation)
 		var/prefix = copytext(selection, 1, 2)
 		var/language_key = copytext(selection, 2, 3)
-		var/multilingual_mode = source.client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode)
-		if(source.is_language_prefix(prefix))
+		var/multilingual_mode = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode)
+		if(is_language_prefix(prefix))
 			// Okay, we're definitely now trying to invoke a language (probably)
 			// This "[]" is probably unnecessary but BYOND will runtime if a number is used
 			var/datum/language/L = GLOB.language_keys["[language_key]"]
-			if((language_key in source.language_keys) && source.language_keys[language_key])
-				L = source.language_keys[language_key]
+			if((language_key in language_keys) && language_keys[language_key])
+				L = language_keys[language_key]
 
 			// MULTILINGUAL_SPACE enforces a space after the language key
-			if(source.client && (multilingual_mode == MULTILINGUAL_SPACE) && (text2ascii(copytext(selection, 3, 4)) != 32)) // If we're looking for a space and we don't find one
+			if(client && (multilingual_mode == MULTILINGUAL_SPACE) && (text2ascii(copytext(selection, 3, 4)) != 32)) // If we're looking for a space and we don't find one
 				continue
 
 			// MULTILINGUAL_DOUBLE_DELIMITER enforces a delimiter (valid prefix) after the language key
-			if(source.client && (multilingual_mode == MULTILINGUAL_DOUBLE_DELIMITER) && !source.is_language_prefix(copytext(selection, 3, 4)))
+			if(client && (multilingual_mode == MULTILINGUAL_DOUBLE_DELIMITER) && !is_language_prefix(copytext(selection, 3, 4)))
 				continue
 
-			if(source.client && (multilingual_mode in list(MULTILINGUAL_DEFAULT)))
+			if(client && (multilingual_mode in list(MULTILINGUAL_DEFAULT)))
 				selection = copytext(selection, 1, 3) // These modes only use two characters, not three
 
 			// It's kinda silly that we have to check L != null and this isn't done for us by can_speak (it runtimes instead), but w/e
-			if(L && source.can_speak(L))
+			if(L && can_speak(L))
 				// So we have a valid language invocation, and we can speak that language, let's make a piece for it
 				// This language will be the language until the next prefixes[] index, or the end of the message if there are none.
 				prefixes[++prefixes.len] = list(L, i, i + length(selection))
@@ -214,10 +214,10 @@
 			continue
 		if(i == 1)
 			// This covers the case of "no prefixes in use."
-			prefixes[++prefixes.len] = list(source.get_default_language(), i, i)
+			prefixes[++prefixes.len] = list(get_default_language(), i, i)
 
 		// If multilingualism is disabled, then after the first pass we're guaranteed to have either found a language key at the start, or else there isn't one and we're using the default for the whole message
-		if(source.client && (multilingual_mode == MULTILINGUAL_OFF))
+		if(client && (multilingual_mode == MULTILINGUAL_OFF))
 			break
 
 	return prefixes
@@ -251,7 +251,7 @@
 		return list(new /datum/multilingual_say_piece(GLOB.all_languages["Noise"], trim(strip_prefixes(copytext(message, 2)))))
 
 	// Scan the message for prefixes
-	var/list/prefix_locations = find_valid_prefixes(src, message)
+	var/list/prefix_locations = find_valid_prefixes(message)
 	if(!LAZYLEN(prefix_locations)) // There are no prefixes... or at least, no _valid_ prefixes.
 		. += new /datum/multilingual_say_piece(get_default_language(), trim(strip_prefixes(message))) // So we'll just strip those pesky things and still make the message.
 

@@ -41,9 +41,9 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 	if(metadata["state"] == "Not Enabled")
 		return
 	else if(metadata["state"] == "Anyone")
-		item_tf_spawnpoint_set(I)
+		I.item_tf_spawnpoint_set()
 	else if(metadata["state"] == "Only Specific Players")
-		item_tf_spawnpoint_set(I)
+		I.item_tf_spawnpoint_set()
 		I.ckeys_allowed_itemspawn = metadata["valid"]
 
 // React inline-edit accepts a boolean: TRUE -> "Anyone" with empty valid list,

@@ -99,7 +99,7 @@
 /datum/om/stage/life/upkeep/perform(mob/living/self, datum/om/frame/life/ctx)
 	// to catch teleports etc which directly set loc
 	self.update_following()
-	update_spell_masters(self)
+	self.update_spell_masters()
 
 /// Followers are dragged along on Moved; spell buttons only matter for casters.
 /datum/om/stage/life/upkeep/idle(mob/living/self)
@@ -352,7 +352,7 @@
 	woken_by = "Moved; start_pulling; equipping a grab; status setters"
 
 /datum/om/stage/life/movement/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.update_gravity(mob_get_gravity(self))
+	self.update_gravity(self.mob_get_gravity())
 
 	self.update_pulling()
 
@@ -479,7 +479,7 @@
 /datum/om/stage/life/hud/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
-	if(!hud_available(self))
+	if(!self.hud_available())
 		return FALSE
 	darksight(self)
 	health_icons(self)

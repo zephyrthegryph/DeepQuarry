@@ -163,7 +163,7 @@
 	holder.set_material_mix(null)
 	TEST_ASSERT(!length(holder.material_totals()), "an empty mix means made of nothing")
 	var/obj/item/dq_matter_test/tool/scaled = allocate(/obj/item/dq_matter_test/tool)
-	scale_materials(scaled, 0.5)
+	scaled.scale_materials(0.5)
 	TEST_ASSERT_EQUAL(dq_matter_sum(scaled.material_totals()), 500, "scaling a blueprint scales its total")
 
 	// Material sheets: made of their material, per sheet, with nothing stored per stack.

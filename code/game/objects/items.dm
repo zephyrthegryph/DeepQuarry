@@ -181,7 +181,7 @@
 
 	// Handle celaning up our actions list
 	for(var/datum/action/action as anything in actions)
-		remove_item_action(src, action)
+		remove_item_action(action)
 
 	return ..()
 
@@ -227,22 +227,22 @@
 		// We're being held or are equipped by someone while adding an action?
 		// Then they should also probably be granted the action, given it's in a correct slot
 		var/mob/holder = loc
-		give_item_action(src, action, holder, holder.get_inventory_slot(src))
+		give_item_action(action, holder, holder.get_inventory_slot(src))
 
 	return action
 
 /// Removes an instance of an action from our list of item actions.
-/proc/remove_item_action(obj/item/source, datum/action/action)
+/obj/item/proc/remove_item_action(datum/action/action)
 	if(!action)
 		return
 
-	source.UnregisterSignal(action, COMSIG_QDELETING)
-	LAZYREMOVE(source.actions, action)
+	UnregisterSignal(action, COMSIG_QDELETING)
+	LAZYREMOVE(actions, action)
 	qdel(action)
 
 // Check if target is reasonable for us to operate on.
-/proc/check_allowed_items(obj/item/source, atom/target, not_inside, target_self)
-	if(((source in target) && !target_self) || ((!istype(target.loc, /turf)) && (!istype(target, /turf)) && (not_inside)))
+/obj/item/proc/check_allowed_items(atom/target, not_inside, target_self)
+	if(((src in target) && !target_self) || ((!istype(target.loc, /turf)) && (!istype(target, /turf)) && (not_inside)))
 		return FALSE
 	else
 		return TRUE
@@ -401,11 +401,11 @@
 /obj/item/proc/moved(mob/user as mob, old_loc as turf)
 	return
 
-/proc/get_volume_by_throwforce_and_or_w_class(obj/item/source) // This is used for figuring out how loud our sounds are for throwing.
-	if(source.throwforce && source.w_class)
-		return CLAMP((source.throwforce + source.w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
-	else if(source.w_class)
-		return CLAMP(source.w_class * 8, 20, 100) // Multiply the item's weight class by 8, then clamp the value between 20 and 100
+/obj/item/proc/get_volume_by_throwforce_and_or_w_class() // This is used for figuring out how loud our sounds are for throwing.
+	if(throwforce && w_class)
+		return CLAMP((throwforce + w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
+	else if(w_class)
+		return CLAMP(w_class * 8, 20, 100) // Multiply the item's weight class by 8, then clamp the value between 20 and 100
 	else
 		return 0
 
@@ -413,7 +413,7 @@
 	..()
 	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
-		var/volume = get_volume_by_throwforce_and_or_w_class(src)
+		var/volume = get_volume_by_throwforce_and_or_w_class()
 		if (throwforce > 0)
 			if (mob_throw_hit_sound)
 				playsound(hit_atom, mob_throw_hit_sound, volume, TRUE, -1)
@@ -460,11 +460,11 @@
 	return
 
 // called when this item is removed from a storage item, which is passed on as S. The loc variable is already set to the new destination before this is called.
-/proc/on_exit_storage(obj/item/source, obj/item/storage/S as obj)
+/obj/item/proc/on_exit_storage(obj/item/storage/S as obj)
 	return
 
 // called when this item is added into a storage item, which is passed on as S. The loc variable is already set to the storage item.
-/proc/on_enter_storage(obj/item/source, obj/item/storage/S as obj)
+/obj/item/proc/on_enter_storage(obj/item/storage/S as obj)
 	return
 
 // called when "found" in pockets and storage items. Returns 1 if the search should end.
@@ -480,9 +480,9 @@
 	om_changed(user, CHANGE_MOB_HANDS)
 	// Give out actions our item has to people who equip it.
 	for(var/datum/action/action as anything in actions)
-		give_item_action(src, action, user, slot)
+		give_item_action(action, user, slot)
 	hud_layerise()
-	position_hud_item(user, src,slot)
+	user.position_hud_item(src,slot)
 	if(user.client)	user.client.screen |= src
 	if(PULLING(user) == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
@@ -502,9 +502,9 @@
 	M.update_held_icons()
 
 /// Gives one of our item actions to a mob, when equipped to a certain slot
-/proc/give_item_action(obj/item/source, datum/action/action, mob/to_who, slot)
+/obj/item/proc/give_item_action(datum/action/action, mob/to_who, slot)
 	// Some items only give their actions buttons when in a specific slot.
-	if(!item_action_slot_check(source, slot, to_who))
+	if(!item_action_slot_check(slot, to_who))
 		// There is a chance we still have our item action currently,
 		// and are moving it from a "valid slot" to an "invalid slot".
 		// So call Remove() here regardless, even if excessive.
@@ -514,7 +514,7 @@
 	action.Grant(to_who)
 
 //sometimes we only want to grant the item's action if it's equipped in a specific slot.
-/proc/item_action_slot_check(obj/item/source, slot, mob/user)
+/obj/item/proc/item_action_slot_check(slot, mob/user)
 	if(slot == SLOT_BACK || slot == LEGS) //these aren't true slots, so avoid granting actions there
 		return FALSE
 	return TRUE
@@ -587,13 +587,13 @@
 /obj/item/proc/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	return 0
 
-/proc/get_loc_turf(obj/item/source)
-	var/atom/L = source.loc
+/obj/item/proc/get_loc_turf()
+	var/atom/L = loc
 	while(L && !isturf(L))
 		L = L.loc
-	return source.loc
+	return loc
 
-/proc/eyestab(obj/item/source, mob/living/carbon/M as mob, mob/living/carbon/user as mob)
+/obj/item/proc/eyestab(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
 
 	var/mob/living/carbon/human/H = M
 	var/mob/living/carbon/human/U = user
@@ -612,16 +612,16 @@
 	var/hit_zone = get_zone_with_miss_chance(U.zone_sel.selecting, M, U.get_accuracy_penalty(U))
 	if(!hit_zone)
 		U.do_attack_animation(M)
-		playsound(source, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
-		source.visible_message(span_danger("\The [U] attempts to stab \the [M] in the eyes, but misses!"))
+		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		visible_message(span_danger("\The [U] attempts to stab \the [M] in the eyes, but misses!"))
 		return ITEM_INTERACT_FAILURE
 
-	add_attack_logs(user,M,"Attack eyes with [source.name]")
+	add_attack_logs(user,M,"Attack eyes with [name]")
 
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(M)
 
-	source.add_fingerprint(user)
+	add_fingerprint(user)
 	//if(CLUMSY_HARM_CHANCE(user))
 	//	M = user
 		/*
@@ -636,16 +636,16 @@
 
 		if(H != user)
 			for(var/mob/O in (viewers(M) - user - M))
-				O.show_message(span_danger("[M] has been stabbed in the eye with [source] by [user]."), 1)
-			to_chat(M, span_danger("[user] stabs you in the eye with [source]!"))
-			to_chat(user, span_danger("You stab [M] in the eye with [source]!"))
+				O.show_message(span_danger("[M] has been stabbed in the eye with [src] by [user]."), 1)
+			to_chat(M, span_danger("[user] stabs you in the eye with [src]!"))
+			to_chat(user, span_danger("You stab [M] in the eye with [src]!"))
 		else
 			user.visible_message( \
-				span_danger("[user] has stabbed themself with [source]!"), \
-				span_danger("You stab yourself in the eyes with [source]!") \
+				span_danger("[user] has stabbed themself with [src]!"), \
+				span_danger("You stab yourself in the eyes with [src]!") \
 			)
 
-		H.injure(INJURY_CUT, rand(3, 4), eyes, source, flags = INJURE_SILENT)
+		H.injure(INJURY_CUT, rand(3, 4), eyes, src, flags = INJURE_SILENT)
 		if(eyes.damage >= eyes.min_bruised_damage)
 			if(M.stat != 2)
 				if(!(eyes.robotic >= ORGAN_ROBOT)) //robot eyes bleeding might be a bit silly
@@ -660,9 +660,9 @@
 			if (eyes.damage >= eyes.min_broken_damage)
 				if(M.stat != 2)
 					to_chat(M, span_warning("You go blind!"))
-		H.injure(INJURY_BLUNT, 7, BP_HEAD, source)
+		H.injure(INJURY_BLUNT, 7, BP_HEAD, src)
 	else
-		M.injure(INJURY_PIERCE, 7, BP_HEAD, source)
+		M.injure(INJURY_PIERCE, 7, BP_HEAD, src)
 	M.status_adjust(EFFECT_BLURRY, rand(3,4))
 	return ITEM_INTERACT_SUCCESS
 
@@ -682,7 +682,7 @@
 
 	//if we haven't made our blood_overlay already
 	if(!blood_overlay)
-		generate_blood_overlay(src)
+		generate_blood_overlay()
 	else
 		overlays.Remove(blood_overlay)
 
@@ -695,23 +695,23 @@
 	return 1 //we applied blood to the item
 
 GLOBAL_LIST_EMPTY(blood_overlays_by_type)
-/proc/generate_blood_overlay(obj/item/source)
+/obj/item/proc/generate_blood_overlay()
 	// Already got one
-	if(source.blood_overlay)
+	if(blood_overlay)
 		return
 
 	// Already cached
-	if(GLOB.blood_overlays_by_type[source.type])
-		source.blood_overlay = GLOB.blood_overlays_by_type[source.type]
+	if(GLOB.blood_overlays_by_type[type])
+		blood_overlay = GLOB.blood_overlays_by_type[type]
 		return
 
 	// Firsties!
 	var/image/blood = image(icon = 'icons/effects/blood.dmi', icon_state = "itemblood") // Needs to be a new one each time since we're slicing it up with filters.
-	blood.filters += filter(type = "alpha", icon = icon(source.icon, source.icon_state)) // Same, this filter is unique for each blood overlay per type
-	GLOB.blood_overlays_by_type[source.type] = blood
+	blood.filters += filter(type = "alpha", icon = icon(icon, icon_state)) // Same, this filter is unique for each blood overlay per type
+	GLOB.blood_overlays_by_type[type] = blood
 
 	// And finally
-	source.blood_overlay = blood
+	blood_overlay = blood
 
 /obj/item/proc/showoff(mob/user)
 	for (var/mob/M in view(user))
@@ -779,7 +779,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	return FALSE
 
 // Called when you swap hands away from the item
-/proc/in_inactive_hand(obj/item/source, mob/user)
+/obj/item/proc/in_inactive_hand(mob/user)
 	return
 
 //Used for selecting a random pixel placement, usually on initialize. Checks for pixel_x/y to not interfere with mapped in items.
@@ -796,7 +796,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	//Get the required information about the base icon
 	var/icon/icon2use = get_worn_icon_file(body_type = body_type, slot_name = slot_name, default_icon = default_icon, inhands = inhands)
 	var/state2use = get_worn_icon_state(slot_name = slot_name)
-	var/layer2use = get_worn_layer(src, default_layer = default_layer)
+	var/layer2use = get_worn_layer(default_layer = default_layer)
 
 	//Snowflakey inhand icons in a specific slot
 	if(inhands && icon2use == icon_override)
@@ -818,8 +818,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	var/icon/standing_icon = icon(icon = icon2use, icon_state = state2use)
 
 	if(!inhands)
-		apply_custom(src, standing_icon)		//Pre-image overridable proc to customize the thing
-		apply_addblends(src, icon2use,standing_icon)		//Some items have ICON_ADD blend shaders
+		apply_custom(standing_icon)		//Pre-image overridable proc to customize the thing
+		apply_addblends(icon2use,standing_icon)		//Some items have ICON_ADD blend shaders
 
 	var/image/standing = image(standing_icon)
 	standing.alpha = alpha
@@ -835,7 +835,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		apply_accessories(standing)		//Some items sport accessories like webbing
 
 	//Apply overlays to our...overlay
-	apply_overlays(src, standing)
+	apply_overlays(standing)
 
 	//Return our icon
 	return standing
@@ -905,25 +905,25 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return icon_state
 
 //Returns the layer that should be used for the worn icon (as a FLOAT_LAYER layer, so negative)
-/proc/get_worn_layer(obj/item/source, default_layer = 0)
+/obj/item/proc/get_worn_layer(default_layer = 0)
 
 	//1: worn_layer variable
-	if(!isnull(source.worn_layer)) //Can be zero, so...
-		return BODY_LAYER+source.worn_layer
+	if(!isnull(worn_layer)) //Can be zero, so...
+		return BODY_LAYER+worn_layer
 
 	//2: your default
 	return BODY_LAYER+default_layer
 
 //Apply the addblend blends onto the icon
-/proc/apply_addblends(obj/item/source, source_icon, icon/standing_icon)
+/obj/item/proc/apply_addblends(source_icon, icon/standing_icon)
 
 	//If we have addblends, blend them onto the provided icon
-	if(source.addblends && standing_icon && source_icon)
-		var/addblend_icon = icon("icon" = source_icon, "icon_state" = source.addblends)
+	if(addblends && standing_icon && source_icon)
+		var/addblend_icon = icon("icon" = source_icon, "icon_state" = addblends)
 		standing_icon.Blend(addblend_icon, ICON_ADD)
 
 //STUB
-/proc/apply_custom(obj/item/source, icon/standing_icon)
+/obj/item/proc/apply_custom(icon/standing_icon)
 	return standing_icon
 
 //STUB
@@ -934,8 +934,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /obj/item/proc/apply_accessories(image/standing)
 	return standing
 
-/proc/apply_overlays(obj/item/source, image/standing)
-	if(!source.blocks_emissive)
+/obj/item/proc/apply_overlays(image/standing)
+	if(!blocks_emissive)
 		return standing
 
 	var/mutable_appearance/blocker_overlay = mutable_appearance(standing.icon, standing.icon_state, plane = PLANE_EMISSIVE, appearance_flags = KEEP_APART)
@@ -1046,15 +1046,15 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
-/proc/item_tf_spawnpoint_set(obj/item/source)
-	if(!source.item_tf_spawn_allowed)
-		source.item_tf_spawn_allowed = TRUE
-		registry_join(REGISTRY_ITEM_TF_SPAWNPOINTS, source)
+/obj/item/proc/item_tf_spawnpoint_set()
+	if(!item_tf_spawn_allowed)
+		item_tf_spawn_allowed = TRUE
+		registry_join(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
-/proc/item_tf_spawnpoint_used(obj/item/source)
-	if(source.item_tf_spawn_allowed)
-		source.item_tf_spawn_allowed = FALSE
-		registry_leave(REGISTRY_ITEM_TF_SPAWNPOINTS, source)
+/obj/item/proc/item_tf_spawnpoint_used()
+	if(item_tf_spawn_allowed)
+		item_tf_spawn_allowed = FALSE
+		registry_leave(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 // Ported from TG, used when dropping items on tables/closets.
 /obj/item/proc/do_drop_animation(atom/moving_from)
@@ -1127,7 +1127,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
 	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!
-	item_tf_spawnpoint_used(src) // Item TF spawnpoints
+	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me
 		new_voice.emote_type = 1

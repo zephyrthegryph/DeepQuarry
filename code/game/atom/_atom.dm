@@ -185,11 +185,11 @@
 /atom/proc/blob_act(obj/structure/blob/B)
 	receive_blob(B)
 
-/proc/in_contents_of(atom/source, container) //can take class or object instance as argument
+/atom/proc/in_contents_of(container)//can take class or object instance as argument
 	if(ispath(container))
-		if(istype(source.loc, container))
+		if(istype(loc, container))
 			return 1
-	else if(source in container)
+	else if(src in container)
 		return 1
 	return
 
@@ -453,8 +453,8 @@
 /atom/movable/onDropInto(atom/movable/AM)
 	return loc // If onDropInto returns something, then dropInto will attempt to drop AM there.
 
-/proc/InsertedContents(atom/source)
-	return source.contents
+/atom/proc/InsertedContents()
+	return contents
 
 /atom/proc/get_gravity(turf/T)
 	if(!T || !isturf(T))
@@ -620,8 +620,8 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 	)
 
 /// Returns the src and all recursive contents as a list.
-/proc/get_all_contents(atom/source, ignore_flag_1)
-	. = list(source)
+/atom/proc/get_all_contents(ignore_flag_1)
+	. = list(src)
 	var/i = 0
 	while(i < length(.))
 		var/atom/checked_atom = .[++i]

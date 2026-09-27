@@ -62,7 +62,7 @@
 	var/turf/environment_turf = get_turf(src)
 	var/datum/gas_mixture/environment = environment_turf ? environment_turf.return_air() : null
 	for(var/datum/gas_mixture/air as anything in material_service_gases())
-		material_observe_gases(src, air, environment)
+		material_observe_gases(air, environment)
 	if(!material_service)
 		return
 	// Transferring gas preserves its existing thermal energy, but compression

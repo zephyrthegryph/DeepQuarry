@@ -28,7 +28,8 @@ BASE_TYPES = ["/datum", "/atom", "/atom/movable", "/obj", "/obj/item", "/mob"]
 INCLUDE = re.compile(r'^#include "(.+\.dm)"')
 
 # API surface that must stay on the type (containment, lifecycle, OM, components,
-# filters, interactions, damage, inventory, click, movement, heat/light). Only
+# filters, interactions, damage, inventory, click, movement, heat/light,
+# materials, construction, constraints, surgery, combat, identification). Only
 # admin, debug, logging, text/formatting helpers and one-off utilities may leave
 # the base types as global procs; a global proc taking a base-type object first
 # ("/proc/x(atom/source, ...)") whose name or file matches these is an error.
@@ -49,12 +50,19 @@ PROTECTED_PREFIXES = (
     "set_light", "update_light", "update_dynamic_luminosity", "set_invisibility",
     "add_alt_appearance", "remove_alt_appearance", "remove_all_alt_appearances", "display_alt_appearance",
     "hide_alt_appearance",
+    # materials, construction, constraints, surgery, combat, identification
+    "material_", "apply_engineered_material", "scale_materials", "set_custom_materials", "set_material",
+    "process_material", "construction_", "constraint_", "adopt_constraint", "clear_constraint",
+    "declared_spec", "can_do_surgery", "surgery_", "use_attack_variant", "attack_variant", "set_focus",
+    "apply_tug", "cleave", "combat_", "update_combat", "hide_identity", "is_identified", "identify",
 )
 PROTECTED_PATHS = (
     "code/datums/containment/", "code/datums/lifecycle/", "code/datums/om/", "code/datums/components/",
     "code/datums/elements/", "code/datums/interactions/", "code/_onclick/", "code/modules/heat/",
     "code/modules/lighting/", "code/game/atom/atom_defense.dm", "code/game/atom/damage_packet.dm",
     "code/modules/mob/inventory.dm", "code/game/atoms_movable.dm", "code/modules/multiz/movement.dm",
+    "code/modules/material_science/", "code/modules/materials/", "code/modules/surgery/",
+    "code/modules/identification/", "code/datums/constraints/",
 )
 MOVED_API = re.compile(r"^/proc/(\w+)\((datum|atom|atom/movable|obj|obj/item|mob)/\w+")
 

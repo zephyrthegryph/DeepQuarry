@@ -99,20 +99,20 @@
 	return material_total
 
 /// Material id filling `role`: this object's override, else the template default.
-/proc/material_id_for_role(obj/source, role)
-	var/material_id = source.material_overrides?[role]
+/obj/proc/material_id_for_role(role)
+	var/material_id = material_overrides?[role]
 	if(material_id)
 		return material_id
-	if(role == MATERIAL_ROLE_BULK && source.material_template == /datum/material_template/bulk)
-		return source.material_bulk_material
-	var/datum/material_template/template = source.get_material_template()
+	if(role == MATERIAL_ROLE_BULK && material_template == /datum/material_template/bulk)
+		return material_bulk_material
+	var/datum/material_template/template = get_material_template()
 	return template?.default_material(role)
 
 /obj/proc/material_for_role(role) as /datum/material
 	var/datum/material_template/template = get_material_template()
 	if(!template || !(role in template.roles))
 		return null
-	var/material_id = material_id_for_role(src, role)
+	var/material_id = material_id_for_role(role)
 	return material_id ? get_material_by_name(material_id) : null
 
 /// The roles of this object's blueprint, in order. Read-only.
@@ -135,7 +135,7 @@
 		return .
 	var/list/amounts = template.role_amounts(get_material_total())
 	for(var/role in amounts)
-		var/material_id = material_id_for_role(src, role)
+		var/material_id = material_id_for_role(role)
 		if(material_id && amounts[role])
 			.[material_id] = (.[material_id] || 0) + amounts[role]
 
@@ -161,16 +161,16 @@
 	material_overrides = material_overrides_intern(overrides)
 
 /// Rebuild this object to another blueprint: template, total and chosen materials.
-/proc/set_material_blueprint(obj/source, template_path, total, list/materials_by_role)
-	source.material_template = template_path
-	source.material_total = total
-	var/datum/material_template/template = source.get_material_template()
+/obj/proc/set_material_blueprint(template_path, total, list/materials_by_role)
+	material_template = template_path
+	material_total = total
+	var/datum/material_template/template = get_material_template()
 	var/list/overrides = list()
 	for(var/role in materials_by_role)
 		var/material_id = materials_by_role[role]
 		if(material_id && material_id != template?.default_material(role))
 			overrides[role] = material_id
-	source.material_overrides = material_overrides_intern(overrides)
+	material_overrides = material_overrides_intern(overrides)
 
 /// Make this object of one plain material, or of nothing with a null material.
 /obj/proc/set_bulk_material(material_id, total)
@@ -194,7 +194,7 @@
 	if(!length(resolved))
 		return FALSE
 	material_custom_assembly = customized
-	set_material_blueprint(src, template_path, total, resolved)
+	set_material_blueprint(template_path, total, resolved)
 	if(isitem(src))
 		var/obj/item/item = src
 		item.apply_material_role_effects(template.application)
@@ -236,12 +236,12 @@
 		material_service.buffer_energy = source.material_service.buffer_energy
 	return has_functional_construction()
 
-/proc/construction_summary(obj/source)
+/obj/proc/construction_summary()
 	var/list/summary = list()
-	if(!source.has_functional_construction())
+	if(!has_functional_construction())
 		return summary
-	for(var/role in source.material_roles())
-		var/datum/material/material = source.material_for_role(role)
+	for(var/role in material_roles())
+		var/datum/material/material = material_for_role(role)
 		if(material)
 			summary += "[role]: [material.display_name]"
 	return summary
@@ -264,18 +264,18 @@
 		conductance = 1 / (1 / conductance + 1 / insulation_conductance)
 	return conductance
 
-/proc/construction_pressure_limit(obj/source, radius_mm, wall_thickness_mm, temperature)
-	var/datum/material/structure = source.material_for_role(MATERIAL_ROLE_STRUCTURE) || source.primary_construction_material()
+/obj/proc/construction_pressure_limit(radius_mm, wall_thickness_mm, temperature)
+	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	return structure ? structure.material_pressure_limit(radius_mm, wall_thickness_mm, temperature) : null
 
-/proc/construction_radiation_transmission(obj/source, thickness_mm)
-	var/datum/material/jacket = source.material_for_role(MATERIAL_ROLE_JACKET) || source.material_for_role(MATERIAL_ROLE_STRUCTURE) || source.primary_construction_material()
+/obj/proc/construction_radiation_transmission(thickness_mm)
+	var/datum/material/jacket = material_for_role(MATERIAL_ROLE_JACKET) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	return jacket ? jacket.material_radiation_transmission(thickness_mm) : 1
 
 /obj/examine(mob/user)
 	. = ..()
 	if(has_functional_construction())
-		. += span_notice("Construction: [jointext(construction_summary(src), "; ")].")
+		. += span_notice("Construction: [jointext(construction_summary(), "; ")].")
 
 // ---- Bulk material holders ----
 // Debris from recyclers and digestion, random scrap and custom-material objects hold
@@ -306,14 +306,14 @@
 		material_mix[material_id] = (material_mix[material_id] || 0) + added[material_id]
 
 /// Scale every amount in this item's composition (lathe efficiency).
-/proc/scale_materials(obj/item/source, factor)
-	if(source.material_mix || source.material_template == /datum/material_template/mix)
-		var/list/scaled = source.material_totals()
+/obj/item/proc/scale_materials(factor)
+	if(material_mix || material_template == /datum/material_template/mix)
+		var/list/scaled = material_totals()
 		for(var/material_id in scaled)
 			scaled[material_id] = CEILING(scaled[material_id] * factor, 1)
-		source.set_material_mix(scaled)
+		set_material_mix(scaled)
 		return
-	source.material_total = CEILING(source.material_total * factor, 1)
+	material_total = CEILING(material_total * factor, 1)
 
 /// A type's material totals (material id -> units) from its declared blueprint,
 /// read without an instance. Null if the type has no composition.

@@ -79,5 +79,5 @@
 /mob/proc/update_inv_ears()
 	return
 
-/proc/update_targeted(mob/source)
+/mob/proc/update_targeted()
 	return

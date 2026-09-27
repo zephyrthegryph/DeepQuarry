@@ -336,7 +336,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 
 /obj/item/tape/attack_hand(mob/user as mob)
 	if (IS_HELPING(user) && src.allowed(user))
-		show_viewers(user, span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
+		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
 			T.lift(100) //~10 seconds
 	else

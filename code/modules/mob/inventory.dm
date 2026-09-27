@@ -308,7 +308,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(slot != slot_handcuffed) // Restraints were never "equipped".
 		W.equipped(src, slot)
 	W.hud_layerise()
-	in_inactive_hand(W, src)
+	W.in_inactive_hand(src)
 	W.equip_special()
 	on_equipment_changed()
 

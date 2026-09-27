@@ -62,7 +62,7 @@
 			// Created straight into a holder with a ledger: record it now (containment C1).
 			location.ledger?.note_enter(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
-			created_atoms += get_all_contents(A)
+			created_atoms += A.get_all_contents()
 
 	#ifdef BENCHMARK_DEEP_PROFILE
 	benchmark_init_frame_end(bench_depth, the_type, bench_init_mark)

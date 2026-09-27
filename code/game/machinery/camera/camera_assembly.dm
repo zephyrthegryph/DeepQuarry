@@ -53,7 +53,7 @@
 		anchored = TRUE
 		state = 1
 		update_icon()
-		auto_turn(src)
+		auto_turn()
 		return TRUE
 	if(state == 1)
 		playsound(src, tool.usesound, 50, TRUE)
@@ -119,7 +119,7 @@
 	var/obj/machinery/camera/C = new(loc)
 	loc = C
 	C.assembly = src
-	auto_turn(C)
+	C.auto_turn()
 	C.replace_networks(uniqueList(tempnetwork))
 	C.c_tag = input
 	for(var/i = 5; i >= 0; i -= 1)
