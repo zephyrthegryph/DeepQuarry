@@ -186,11 +186,11 @@
 
 /obj/item/robot_module/proc/apply_status_flags(mob/living/silicon/robot/R)
 	if(!can_be_pushed)
-		R.status_flags &= ~CANPUSH
+		R.add_push_disable_source(PUSH_SOURCE_ROBOT_MODULE)
 
 /obj/item/robot_module/proc/remove_status_flags(mob/living/silicon/robot/R)
 	if(!can_be_pushed)
-		R.status_flags |= CANPUSH
+		R.remove_push_disable_source(PUSH_SOURCE_ROBOT_MODULE)
 
 /obj/item/robot_module/proc/handle_shell(mob/living/silicon/robot/R)
 	if(R.braintype == BORG_BRAINTYPE_AI_SHELL)

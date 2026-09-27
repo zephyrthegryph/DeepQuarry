@@ -114,7 +114,7 @@
 /mob/living/simple_mob/vore/demonAI/cloak()
 	if(dq_get_cloaked(src))
 		return
-	animate(src, alpha = cloaked_alpha, time = 1 SECOND)
+	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 
@@ -122,7 +122,7 @@
 	last_uncloak = world.time // This is assigned even if it isn't dq_get_cloaked(src) already, to 'reset' the timer if the spider is continously getting attacked.
 	if(!dq_get_cloaked(src))
 		return
-	animate(src, alpha = initial(alpha), time = 1 SECOND)
+	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 // Check if cloaking if possible.

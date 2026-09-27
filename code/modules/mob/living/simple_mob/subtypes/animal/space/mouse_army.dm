@@ -220,7 +220,7 @@
 	last_uncloak = world.time
 	if(!dq_get_cloaked(src))
 		return
-	animate(src, alpha = initial(alpha), time = 1 SECOND)
+	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/break_cloak()

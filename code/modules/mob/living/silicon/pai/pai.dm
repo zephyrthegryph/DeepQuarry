@@ -68,6 +68,11 @@
 	var/obj/item/radio/integrated/signal/sradio // AI's signaller
 
 	var/translator_on = 0 // keeps track of the translator module
+	/// Languages the translator module actually granted (as opposed to ones this pai
+	/// already knew) -- only these are removed when the translator toggles off, so
+	/// toggling doesn't strip a language the pai natively knows. See
+	/// /datum/pai_software/translator in software_modules.dm.
+	var/list/translator_added_languages
 
 	var/current_pda_messaging = null
 

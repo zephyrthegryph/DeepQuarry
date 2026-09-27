@@ -541,4 +541,16 @@
 #define DQAI_PROCESSING (1<<0)
 #define DQAI_FASTPROCESSING (1<<1)
 
+// Source keys for /mob/living/proc/set_alpha_source() / clear_alpha_source() (see
+// code/modules/mob/_alpha_sources.dm). One per stealth/cloak-style effect that fades
+// a mob's alpha, so concurrent effects combine instead of clobbering one another.
+#define ALPHA_SOURCE_UNDERWATER_STEALTH "underwater_stealth"
+#define ALPHA_SOURCE_AMBUSH "ambush"
+#define ALPHA_SOURCE_ROBOT_CLOAK "robot_cloak"
+#define ALPHA_SOURCE_CREATURE_CLOAK "creature_cloak"
+
+// Source keys for /mob/living/proc/add_push_disable_source() / remove_push_disable_source()
+// (see code/modules/mob/_push_sources.dm). One per thing that wants a mob unpushable.
+#define PUSH_SOURCE_ROBOT_MODULE "robot_module"
+
 #define SPECIES_GREY_YW             "Grey"

@@ -18,6 +18,17 @@
 		return TRUE
 	return FALSE
 
+/**
+ * Undoes whatever `action()` did to `R` (verbs added, vars flipped, ...).
+ * Called on module reset (see /mob/living/silicon/robot/proc/module_reset())
+ * so an upgrade doesn't leave permanent side effects on a robot whose module
+ * -- and therefore, conceptually, this upgrade along with it -- was reset.
+ * No-ops by default; override alongside `action()` for any upgrade that
+ * mutates the robot outside of `is_installed(R)`'s own detection surface.
+ */
+/obj/item/borg/upgrade/proc/remove_upgrade(mob/living/silicon/robot/R)
+	return
+
 /obj/item/borg/upgrade/proc/generic_error(mob/user, mob/living/silicon/robot/R, obj/item/borg/type)
 	type = lowertext(initial(type.name))
 	to_chat(R, span_warning("Upgrade mounting error! No suitable hardpoint for \the \"[type]\" detected!"))
@@ -130,6 +141,14 @@
 	R.hud_used.toggle_vtec_control()
 	to_chat(R, span_notice("Actuator overdrive enabled!"))
 	return TRUE
+
+/obj/item/borg/upgrade/basic/vtec/remove_upgrade(mob/living/silicon/robot/R)
+	if(!is_installed(R))
+		return
+	remove_verb(R, /mob/living/silicon/robot/proc/toggle_vtec)
+	R.vtec_active = FALSE
+	if(R.hud_used)
+		R.hud_used.toggle_vtec_control()
 
 /obj/item/borg/upgrade/basic/sizeshift
 	name = "robot size alteration module"

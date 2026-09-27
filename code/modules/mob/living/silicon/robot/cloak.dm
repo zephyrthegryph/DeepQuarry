@@ -128,13 +128,13 @@
 	modified_evasion = 60*cloak_strength //60 at full strength, 30 at half strength.
 	cloaked_factors = alist(BF_EVASION = modified_evasion)
 	set_factors(cloaked_factors)
-	animate(holder, alpha = visibility, time = 1 SECOND)
+	holder.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, visibility/255, animate_time = 1 SECOND)
 	RegisterSignal(holder, COMSIG_MOB_APPLY_DAMAGE, PROC_REF(damage_inflicted))
 	RegisterSignal(holder, COMSIG_ROBOT_ITEM_ATTACK, PROC_REF(attacked_in_cloak))
 	return
 
 /datum/modifier/robot_cloak/on_expire()
-	holder.alpha = initial(holder.alpha)
+	holder.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
 	UnregisterSignal(holder, COMSIG_MOB_APPLY_DAMAGE)
 	UnregisterSignal(holder, COMSIG_ROBOT_ITEM_ATTACK)
 	remove_wibble(TRUE)
@@ -149,7 +149,7 @@
 		reset_cloak()
 
 	if(dq_get_cloaked(src) && !times_hit) //The !times_hit is here so it doesn't interfere with the animation.
-		animate(holder, alpha = visibility, time = 1 SECOND)
+		holder.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, visibility/255, animate_time = 1 SECOND)
 
 /datum/modifier/robot_cloak/proc/damage_inflicted(mob/living/source, damage)
 	SIGNAL_HANDLER
@@ -167,7 +167,10 @@
 
 /datum/modifier/robot_cloak/proc/flick_cloak(alpha_to_show)
 	animate(holder, alpha = alpha_to_show, time = 0.1 SECONDS, loop = 0.5 SECONDS)
-	animate(alpha = visibility, time = 0.1 SECONDS)
+	// Settle back to the mob's full combined alpha (this cloak's own
+	// contribution plus any other concurrently active alpha source), not a
+	// raw `visibility`, so we don't clobber another source mid-flourish.
+	holder.apply_combined_alpha(0.1 SECONDS)
 	apply_wibbly_filters(holder, 0.5 SECONDS)
 	addtimer(CALLBACK(src, PROC_REF(remove_wibble), 0.1 SECOND), 0.5 SECONDS, TIMER_DELETE_ME) //Calling a proc with no arguments
 
@@ -185,7 +188,7 @@
 			remove_wibbly_filters(holder, 0.1 SECOND)
 
 /datum/modifier/robot_cloak/proc/drop_cloak()
-	holder.alpha = initial(holder.alpha)
+	holder.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
 	dq_set_cloaked(src, FALSE)
 	set_factors(null)
 

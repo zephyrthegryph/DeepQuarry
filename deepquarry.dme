@@ -3162,6 +3162,8 @@
 #include "code\modules\mob\hear_say.dm"
 #include "code\modules\mob\holder.dm"
 #include "code\modules\mob\inventory.dm"
+#include "code\modules\mob\_alpha_sources.dm"
+#include "code\modules\mob\_push_sources.dm"
 #include "code\modules\mob\login.dm"
 #include "code\modules\mob\logout.dm"
 #include "code\modules\mob\mob.dm"

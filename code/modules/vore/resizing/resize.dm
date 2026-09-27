@@ -98,6 +98,34 @@
  * Resizes the mob immediately to the desired mod, animating it growing/shrinking.
  * It can be used by anything that calls it.
  *
+ * `resize()`, not a body factor, stays the single writer of `size_multiplier`.
+ * Body factors (code/modules/body/factors.dm) model quantities that many
+ * independent sources contribute to and that get recombined into one flat
+ * number on demand -- a good fit for BF_ICON_SCALE_X/Y, which are exactly
+ * that: a pure cosmetic sprite-scale multiplier folded in from species,
+ * forms and modifiers, read only by the icon transform.
+ *
+ * `size_multiplier` is a different kind of thing. It is not purely cosmetic:
+ * it drives clamping against the map's pixel-size limit, a resize_guard
+ * component for extreme sizes, human clothing-stripping thresholds, and
+ * animated grow/shrink + aura effects -- all imperative, order-dependent
+ * side effects that happen exactly once per call, not something to
+ * transparently recombine from N concurrent sources on every read. It is
+ * also read directly, as a plain instance var, in roughly 280 places across
+ * vore/holder/digestion/grab mechanics (get_effective_size(), belly
+ * fullness, digestion nutrition, macro/micro pickup math, ...) that expect a
+ * single settled number, not something that would need to call through a
+ * factor accessor. Turning it into a factor would mean rebuilding all of
+ * that around a reactive recombine-on-read model for comparatively little
+ * benefit, since size only ever has one contributor active at a time in
+ * practice (see the bluespace collar's ratio-based restore below, which
+ * already solves the actual multi-source clobber this file used to have).
+ *
+ * So: every writer of size_multiplier (mob_spawner.dm, appearance_changer.dm,
+ * the bluespace collar in accessory.dm) is required to route through this
+ * proc rather than writing size_multiplier directly, but resize() itself
+ * remains a plain imperative setter, not a factor consumer.
+ *
  * Arguments:
  * * new_size - CHANGE_ME.
  * * animate - CHANGE_ME. Default: TRUE

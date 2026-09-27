@@ -719,11 +719,10 @@
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
-	var/static/list/spells = list("/spell/targeted/unrestricted/mend", "/spell/targeted/unrestricted/plasmastun")
+	var/static/list/spells = list(/datum/spell/targeted/unrestricted/mend, /datum/spell/targeted/unrestricted/plasmastun)
 	var/list/remove_spells	//Reference to spells that'll get removed
-	/// Movement delay added while worn (a body factor). Admins may edit it in-round.
+	/// Movement delay added while worn (a body factor, via worn_factors). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
-	var/item_slowdown_reset = 0	//Vars to copy and reset later
 	light_range = 6
 	light_power = 0				//Set this to 0 if you don't want a light
 	light_color = "#ffaaaa"
@@ -750,9 +749,6 @@
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
 				LAZYADD(remove_spells, SP)
-		if(slowdown_to_set != 0)
-			item_slowdown_reset = H.species.item_slowdown_mod
-			H.species.item_slowdown_mod = 0
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
@@ -766,8 +762,6 @@
 			for(var/datum/spell/SP in remove_spells)
 				H.remove_spell(SP)
 				qdel(SP)
-		if(slowdown_to_set != 0)
-			H.species.item_slowdown_mod = item_slowdown_reset
 
 /obj/item/radio/headset/event/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(!telez)
