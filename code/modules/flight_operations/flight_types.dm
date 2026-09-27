@@ -55,12 +55,6 @@
 	var/discovered = TRUE
 	var/list/active_plans
 
-/datum/flight_destination/Destroy()
-	target = null
-	expedition = null
-	active_plans = null
-	return ..()
-
 /datum/flight_destination/proc/is_available()
 	if(kind == FLIGHT_DEST_SYSTEM)
 		return FALSE
@@ -81,12 +75,7 @@
 	/// Reserved port occupied by the vessel, if physically docked.
 	var/docked_port_id
 
-/datum/flight_vessel/Destroy()
-	ship = null
-	shuttle = null
-	QDEL_NULL(active_plan)
-	active_expedition = null
-	return ..()
+REF_OWNED(/datum/flight_vessel, "active_plan")
 
 /datum/flight_vessel/proc/has_capabilities(required)
 	return (capabilities & required) == required
@@ -111,13 +100,6 @@
 	var/datum/flight_plan/reserved_by
 	/// Ports in the same physical bay exclude one another even when their alignment landmarks differ.
 	var/berth_group
-
-/datum/flight_port/Destroy()
-	landmark = null
-	occupied_by = null
-	reserved_by = null
-	serves_destination_ids = null
-	return ..()
 
 /datum/flight_port/proc/serves(destination_id)
 	return host_destination_id == destination_id || (destination_id in serves_destination_ids)
