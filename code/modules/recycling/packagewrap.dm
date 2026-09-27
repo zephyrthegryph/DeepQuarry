@@ -107,7 +107,6 @@
 	if(get_dist(user, src) <= 0)
 		. += span_blue("There are [amount] units of package wrap left!")
 
-
 // Borg version that refills over time
 /obj/item/packageWrap/borg
 	name = "packaging dispenser"
@@ -115,9 +114,6 @@
 	var/recharge_ticker = 0
 
 /obj/item/packageWrap/borg/Initialize(mapload)
-	. = ..()
-
-/obj/item/packageWrap/borg/Destroy()
 	. = ..()
 
 /// Refills one sheet per 12 s while short (wrap_used() starts it); full, it sleeps.

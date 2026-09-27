@@ -197,7 +197,6 @@
 		user.stop_pulling()
 	return TRUE
 
-
 // make the conveyor broken
 // also propagate inoperability to any connected conveyor with the same ID
 /obj/machinery/conveyor/proc/broken()
@@ -211,7 +210,6 @@
 	C = locate() in get_step(src, turn(dir,180))
 	if(C)
 		C.set_operable(turn(dir,180), id, 0)
-
 
 //set the operable var if ID matches, propagating in the given direction
 
@@ -256,8 +254,6 @@
 	anchored = TRUE
 	var/speed_active = FALSE // are the linked conveyors on SSfastprocess?
 
-
-
 /obj/machinery/conveyor_switch/Initialize(mapload)
 	..()
 	update()
@@ -268,10 +264,6 @@
 	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			conveyors += C
-
-/obj/machinery/conveyor_switch/Destroy()
-	conveyors = null
-	return ..()
 
 /obj/machinery/conveyor_switch/proc/toggle_speed(forced)
 	speed_active = !speed_active // switching gears
@@ -291,7 +283,6 @@
 		icon_state = "switch-fwd"
 	else
 		icon_state = "switch-off"
-
 
 // timed process
 // if the switch changed, update the linked conveyors

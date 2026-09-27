@@ -32,11 +32,6 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 			break
 	return
 
-/obj/machinery/v_garbosystem/Destroy()
-	crusher = null
-	button = null
-	. = ..()
-
 /obj/machinery/v_garbosystem/examine(mob/user, infix, suffix)
 	. = ..()
 	. += span_infoplain("The internal fluid tank reads: [reagents.total_volume]/[reagents.maximum_volume]")
@@ -133,7 +128,6 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	if(prob(10) || amt >= 5)
 		reagents.add_reagent(REAGENT_ID_TOXIN, amt)
 		visible_message("\The [src] gurgles.")
-
 
 /obj/machinery/button/garbosystem
 	name = "garbage grinder switch"
