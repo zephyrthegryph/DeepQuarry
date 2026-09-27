@@ -437,12 +437,6 @@
 	set_pin_data(IC_INPUT, 2, code)
 	addtimer(CALLBACK(src, PROC_REF(set_frequency), frequency), 40)
 
-/obj/item/integrated_circuit/input/signaler/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
-	frequency = ZERO_FREQ
-	. = ..()
-
 /obj/item/integrated_circuit/input/signaler/on_data_written()
 	var/new_freq = get_pin_data(IC_INPUT, 1)
 	var/new_code = get_pin_data(IC_INPUT, 2)
@@ -529,12 +523,7 @@
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	node = get_exonet_node()
 
-/obj/item/integrated_circuit/input/EPv2/Destroy()
-	if(exonet)
-		exonet.remove_address()
-		qdel(exonet)
-		exonet = null
-	return ..()
+REF_OWNED(/obj/item/integrated_circuit/input/EPv2, "exonet")
 
 /obj/item/integrated_circuit/input/EPv2/do_work()
 	var/target_address = get_pin_data(IC_INPUT, 1)

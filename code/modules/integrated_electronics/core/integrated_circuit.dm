@@ -43,20 +43,7 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/on_data_written() //Override this for special behaviour when new data gets pushed to the circuit.
 	return
 
-/obj/item/integrated_circuit/Destroy()
-	for(var/datum/integrated_io/I in inputs)
-		qdel(I)
-	for(var/datum/integrated_io/O in outputs)
-		qdel(O)
-	for(var/datum/integrated_io/A in activators)
-		qdel(A)
-	// Pins are owned by the circuit. qdel() is deferred, so retaining the owner
-	// lists here keeps every queued pin alive and forces SSgarbage to hard-delete
-	// it later. Break the ownership edge as part of the same lifecycle operation.
-	inputs = null
-	outputs = null
-	activators = null
-	. = ..()
+REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activators"))
 
 /obj/item/integrated_circuit/emp_act(severity, recursive)
 	. = ..()
@@ -203,7 +190,6 @@ a creative player the means to solve many problems.  Circuits are held inside an
 			else
 				to_chat(ui.user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
 			return
-
 
 		if("examine")
 			var/obj/item/integrated_circuit/examined = locate(params["ref"])
