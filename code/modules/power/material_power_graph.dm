@@ -1,6 +1,7 @@
 /// Reduced resistor graph. Degree-two cable runs form one edge. Junctions and
 /// equipment attachment points remain vertices. Only weak object references
-/// survive a rebuild, so a deleted cable cannot be retained by a cached graph.
+/// survive a rebuild, so a deleted cable cannot be retained by a cached graph;
+/// every map is keyed by the object's weakref datum, never REF() text.
 /datum/material_power_graph
 	var/list/vertices
 	var/list/indices
@@ -87,28 +88,27 @@
 		adjacency[cable] = neighbors
 		if(length(neighbors) != 2 || has_attachment)
 			vertices += WEAKREF(cable)
-			indices[REF(cable)] = length(vertices)
+			indices[WEAKREF(cable)] = length(vertices)
 	if(!length(vertices) && length(cables))
 		var/obj/structure/cable/first = cables[1]
 		vertices += WEAKREF(first)
-		indices[REF(first)] = 1
+		indices[WEAKREF(first)] = 1
 	var/list/visited = list()
 	for(var/start_index in 1 to length(vertices))
 		var/datum/weakref/start_ref = vertices[start_index]
 		var/obj/structure/cable/start = start_ref.resolve()
 		for(var/obj/structure/cable/neighbor as anything in adjacency[start])
-			var/forward_key = "[REF(start)]>[REF(neighbor)]"
-			if(visited[forward_key])
+			if(WEAKREF(neighbor) in visited[WEAKREF(start)])
 				continue
 			var/list/run = list(WEAKREF(start))
 			var/obj/structure/cable/previous = start
 			var/obj/structure/cable/current = neighbor
 			var/end_index
 			while(current)
-				visited["[REF(previous)]>[REF(current)]"] = TRUE
-				visited["[REF(current)]>[REF(previous)]"] = TRUE
+				LAZYADD(visited[WEAKREF(previous)], WEAKREF(current))
+				LAZYADD(visited[WEAKREF(current)], WEAKREF(previous))
 				run += WEAKREF(current)
-				end_index = indices[REF(current)]
+				end_index = indices[WEAKREF(current)]
 				if(end_index)
 					break
 				var/list/next_neighbors = adjacency[current]
@@ -119,10 +119,10 @@
 				var/list/edge = list(start_index, end_index, 1, run, 0, null, FALSE, FALSE)
 				edges += list(edge)
 				for(var/datum/weakref/reference as anything in run)
-					var/list/attached = cable_edges[reference.reference]
+					var/list/attached = cable_edges[reference]
 					if(!attached)
 						attached = list()
-						cable_edges[reference.reference] = attached
+						cable_edges[reference] = attached
 					attached += list(edge)
 	voltages = new /list(length(vertices))
 	refresh_resistance()
@@ -174,7 +174,7 @@
 	LAZYADD(dirty_edges, list(edge))
 
 /datum/material_power_graph/proc/invalidate_cable(obj/structure/cable/cable)
-	for(var/list/edge as anything in cable_edges?[REF(cable)])
+	for(var/list/edge as anything in cable_edges?[WEAKREF(cable)])
 		queue_resistance_edge(edge)
 
 /// Strip pendant branches once per topology. Their currents are determined by
@@ -227,14 +227,14 @@
 
 /datum/material_power_graph/proc/vertex_for(atom/equipment)
 	if(istype(equipment, /obj/structure/cable))
-		return indices[REF(equipment)]
-	var/key = REF(equipment)
+		return indices[WEAKREF(equipment)]
+	var/key = WEAKREF(equipment)
 	var/cached = equipment_vertices[key]
 	if(cached)
 		return cached
 	var/turf/location = get_turf(equipment)
 	var/obj/structure/cable/cable = location?.get_cable_node()
-	var/index = cable ? indices[REF(cable)] : null
+	var/index = cable ? indices[WEAKREF(cable)] : null
 	if(index)
 		equipment_vertices[key] = index
 	return index
@@ -349,7 +349,7 @@
 		var/atom/consumer = reference.resolve()
 		var/index = vertex_for(consumer)
 		if(index && consumer)
-			efficiencies[REF(consumer)] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
+			efficiencies[WEAKREF(consumer)] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
 	pending_reduced = null
 	pending_sources = null
 	pending_consumers = null
@@ -423,7 +423,7 @@
 	for(var/datum/weakref/reference as anything in consumers)
 		var/index = vertex_for(reference.resolve())
 		if(index)
-			efficiencies[REF(reference.resolve())] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
+			efficiencies[reference] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
 
 /// Heat exactly the energy debited for cable loss, apportioned by the solved
 /// I^2 R distribution. No thermal energy is minted by an accounting estimate.

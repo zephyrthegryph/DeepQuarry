@@ -198,62 +198,43 @@ fn load_reactions() -> Result<()> {
     Ok(())
 }
 
-/// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
+/// Installs the gas registry (`vg_gas::gate`) from DM's per-gas rows, one
+/// per gas id in order: `list(specific_heat, molar_mass, moles_visible)`
+/// (`build_auxmos_gas_registry()`), then loads the reactions. Ids and paths
+/// are Rust's own (`gas/ids.rs`); DM only supplies the data it declares.
 #[auxmacros::bind("/proc/auxtools_atmos_init")]
-fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
-    let data = gas_data.read_var_id(byond_string!("datums"))?;
-    let mut gases: Vec<(usize, GasType)> = Vec::new();
-    for (_, gas_datum) in data.iter()? {
-        let path = gas_datum.read_string_id(byond_string!("id"))?;
-        let idx = gas::gas_id_for_path(&path)
-            .ok_or_else(|| eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        if let Ok(dm_idx) = gas_datum.read_number_id(byond_string!("idx"))
-            && dm_idx as usize != idx
-        {
-            bail!("{path}: DM idx {dm_idx} disagrees with GAS_PATHS ID {idx}");
-        }
-        let specific_heat = gas_datum.read_number_id(byond_string!("specific_heat"))?;
+fn hook_init(rows: ByondValue) -> Result<ByondValue> {
+    let rows = rows.get_list_values()?;
+    if rows.len() != gas::GAS_COUNT {
+        bail!(
+            "gas registry needs one row per gas id ({} of {})",
+            rows.len(),
+            gas::GAS_COUNT
+        );
+    }
+    let mut gases = Vec::with_capacity(gas::GAS_COUNT);
+    for (idx, row) in rows.iter().enumerate() {
+        let path = vg_gas::gas::ids::GAS_PATHS[idx];
+        let values = row
+            .get_list_values()
+            .map_err(|_| eyre!("{path} has no registry row"))?;
+        let number = |i: usize| values.get(i).and_then(|v| v.get_number().ok());
+        let specific_heat = number(0).ok_or_else(|| eyre!("{path}: no specific heat"))?;
         if specific_heat != vg_gas::cell::SPECIFIC_HEATS[idx] {
             bail!(
                 "{path} has specific_heat {specific_heat} in DM but {} in verdigris cell.rs SPECIFIC_HEATS",
                 vg_gas::cell::SPECIFIC_HEATS[idx]
             );
         }
-        let number = |var| gas_datum.read_number_id(var);
-        let fire = if let Ok(temperature) = number(byond_string!("oxidation_temperature")) {
-            Fire::Oxidizer {
-                temperature,
-                power: number(byond_string!("oxidation_rate"))?,
-            }
-        } else if let Ok(temperature) = number(byond_string!("fire_temperature")) {
-            Fire::Fuel {
-                temperature,
-                burn_rate: number(byond_string!("fire_burn_rate"))?,
-            }
-        } else {
-            Fire::None
-        };
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let flags = number(byond_string!("flags")).unwrap_or_default() as u32;
-        let entry = GasType {
-            id: path.into_boxed_str(),
-            flags,
-            molar_mass: number(byond_string!("molar_mass")).unwrap_or_default(),
-            visible: number(byond_string!("moles_visible")).ok(),
-            fire,
-        };
-        gases.push((idx, entry));
+        gases.push(GasType {
+            id: path.into(),
+            flags: 0,
+            molar_mass: number(1).unwrap_or_default(),
+            visible: number(2),
+            fire: Fire::None,
+        });
     }
-    gases.sort_by_key(|g| g.0);
-    if gases.iter().map(|g| g.0).ne(0..gas::GAS_COUNT) {
-        bail!(
-            "gas registry must hold every GAS_PATHS entry exactly once ({} of {})",
-            gases.len(),
-            gas::GAS_COUNT
-        );
-    }
-    vg_gas::gate::install_gases(gases.into_iter().map(|g| g.1).collect());
+    vg_gas::gate::install_gases(gases);
     load_reactions()?;
     Ok(true.into())
 }

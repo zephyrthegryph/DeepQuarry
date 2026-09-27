@@ -3,7 +3,7 @@
 // The Rust gas-math backend IS live: /datum/gas_mixture is an opaque handle
 // over the Rust arena, and every gas proc in gasmixtures/gas_mixture.dm routes
 // through the generated vg_* procs (code/__defines/verdigris/_bindings.dm).
-// This file carries the gas-registry adapter; the registry
+// This file hands Rust the gas registry rows; the registry
 // is populated by ensure_auxmos_gas_registry() below, called from
 // SSair.Initialize AND lazily from /datum/gas_mixture/New() (mapload turf air
 // is created before SSair inits, so the lazy path is load-bearing — see the
@@ -39,67 +39,23 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 	GLOB.auxmos_seen_errors[key] = TRUE
 	log_world("AUXMOS_STACK_TRACE: [key]")
 
-// === Gas registry adapter ===
+// === Gas registry rows ===
 //
-// auxmos hook_init reads gas_data.datums as an ASSOC list (id -> gas datum). Each
-// gas is identified by its type-path TEXT ("/datum/gas/plasma"), which Rust maps
-// to the fixed numeric ID in verdigris gas/ids.rs; that ID is generated into DM as
-// GAS_ID_* and set as /datum/gas/var/idx. Gas binds then take only numbers.
+// Rust owns the gas registry (verdigris/domains/gas/src/gate.rs) and each
+// gas's id (gas/ids.rs, generated into DM as GAS_ID_* = /datum/gas/var/idx).
+// DM hands it only the per-gas data it declares, one row per id in order:
+// list(specific_heat, molar_mass, moles_visible). Rust checks the row count
+// and each specific heat against its own table.
 
-/// Lightweight metadata datum shaped for auxmos hook_register_gas.
-/// NOTE: auxmos reads combustion vars via byond_string!("oxidation_temperature")
-/// etc., which PANICS (NonExistentString) if the var-name string was never
-/// emitted into the compiled DM. DeepQuarry has no such vars (they're /tg/-isms),
-/// so we MUST declare every name auxmos looks up here — even unused ones — so the
-/// strings exist. Left null; auxmos then resolves them to FireInfo::None.
-/datum/auxmos_gas_meta
-	var/id
-	/// GAS_ID_* number; Rust checks it against its own table.
-	var/idx
-	var/name
-	var/specific_heat
-	/// kg/mol, from GLOB.gas_data.molar_mass (xgm_compat.dm's canonical
-	/// table): the entropy-limited power-budget math filter_gas()/mix_gas()
-	/// used to run in DM (_atmospherics_helpers.dm) needs this alongside
-	/// specific_heat, so it's plumbed into GasType here too
-	/// (rust_architecture.md §8.5 step 6's filter/mixer slice).
-	var/molar_mass = 0
-	var/flags = 0
-	var/fusion_power = 0
-	var/moles_visible
-	// Combustion metadata auxmos hook_register_gas reads (kept null — reactions
-	// run in DM, not auxmos; these exist only to satisfy the string lookups).
-	var/oxidation_temperature
-	var/oxidation_rate
-	var/fire_temperature
-	var/fire_burn_rate
-	var/fire_products
-	var/enthalpy
-	var/fire_radiation_released
-
-/// Container passed to auxtools_atmos_init; exposes `datums` (assoc id -> meta).
-/datum/auxmos_gas_registry
-	var/list/datums
-
-/// Build the auxmos gas registry from the /datum/gas roster, keyed by path-text.
 /proc/build_auxmos_gas_registry()
-	var/datum/auxmos_gas_registry/reg = new
-	reg.datums = list()
+	var/list/rows = new /list(GAS_ID_COUNT)
 	for(var/gp in subtypesof(/datum/gas))
 		var/datum/gas/g = gp
 		var/gid = initial(g.id)
 		if(!gid)
 			continue
-		var/datum/auxmos_gas_meta/m = new
-		m.id = "[gp]"                     // "/datum/gas/plasma"
-		m.idx = initial(g.idx)
-		m.name = "[initial(g.name)]"
-		m.specific_heat = initial(g.specific_heat)
-		m.molar_mass = GLOB.gas_data.molar_mass[gid] || (initial(g.specific_heat) * 0.05)
-		m.fusion_power = initial(g.fusion_power)
-		m.moles_visible = initial(g.moles_visible)
-		reg.datums["[gp]"] = m
-	return reg
+		rows[initial(g.idx) + 1] = list(initial(g.specific_heat), GLOB.gas_data.molar_mass[gid] || (initial(g.specific_heat) * 0.05), initial(g.moles_visible))
+	return rows
 
 // adjust_moles_temp is the one arena mole-accessor gas_mixture.dm doesn't already
 // define (get_moles/set_moles/adjust_moles now live there, arena-backed).

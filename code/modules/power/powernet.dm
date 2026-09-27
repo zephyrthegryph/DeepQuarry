@@ -110,7 +110,7 @@
 /datum/powernet/proc/draw_power(amount, atom/consumer)
 	if(amount <= 0)
 		return 0
-	var/efficiency = consumer ? (material_graph?.efficiencies?[REF(consumer)] || 1) : 1
+	var/efficiency = consumer ? (material_graph?.efficiencies?[WEAKREF(consumer)] || 1) : 1
 	var/drawn
 	if(!region_id)
 		// A detached network (tests): its own numbers are the ledger.
