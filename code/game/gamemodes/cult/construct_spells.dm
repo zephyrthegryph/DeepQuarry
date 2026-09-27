@@ -529,19 +529,29 @@
 	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
 
 	T.add_overlay(target_image)
-	var/list/shot = list(hit_atom, user, T, target_image)
-	om_do_after(user, pre_shot_delay, src, src, PROC_REF(delayed_shot), shot + TRUE, on_fail = PROC_REF(delayed_shot), fail_args = shot + FALSE)
+	om_task_start(/datum/om/task/timed/construct_shot, user, src, list("duration" = pre_shot_delay, "receiver" = src, "aimed_at" = hit_atom, "marked" = T, "marker" = target_image))
 	return FALSE
 
 /obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
-/obj/item/spell/construct/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, turf/T, image/target_image, fire)
-	T?.cut_overlay(target_image)
-	qdel(target_image)
-	if(!fire || !hit_atom || !user)
+/// A construct's charged shot: the target turf is marked while it charges, then it fires.
+/datum/om/task/timed/construct_shot
+	complete_proc = /obj/item/spell/construct/projectile/proc/shot_charged
+	cancel_proc = /obj/item/spell/construct/projectile/proc/shot_unmark
+	var/atom/aimed_at
+	var/turf/marked
+	var/image/marker
+
+/obj/item/spell/construct/projectile/proc/shot_unmark(datum/om/task/timed/construct_shot/task)
+	task.marked?.cut_overlay(task.marker)
+	qdel(task.marker)
+
+/obj/item/spell/construct/projectile/proc/shot_charged(datum/om/task/timed/construct_shot/task)
+	shot_unmark(task)
+	if(!task.aimed_at)
 		return
 	shot_ready = TRUE
-	on_ranged_cast(hit_atom, user)
+	on_ranged_cast(task.aimed_at, task.actor)
 	shot_ready = FALSE
 
 /obj/item/spell/construct/spawner

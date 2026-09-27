@@ -300,20 +300,39 @@
 		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
 		return 0
 
-	var/list/seal_args = list(M, seal_target, instant, booting_L, booting_R)
 	if(!instant)
 		M.visible_message(span_notice("[M]'s suit emits a quiet hum as it begins to adjust its seals."),span_notice("With a quiet hum, the suit begins running checks and adjusting components."))
 		if(seal_delay)
-			om_do_after(M, seal_delay, src, src, PROC_REF(seal_piece), seal_args + 1, IGNORE_TARGET_LOC_CHANGE, PROC_REF(seal_interrupted), seal_args)
+			om_task_start(/datum/om/task/timed/rig_seal, M, src, list("duration" = seal_delay, "receiver" = src, "seal_target" = seal_target, "booting_L" = booting_L, "booting_R" = booting_R))
 			return 1
 	seal_piece(M, seal_target, instant, booting_L, booting_R, 1)
 	return 1
 
-/obj/item/rig/proc/seal_interrupted(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R)
+/// One timed stage of sealing the suit: the overall check (no piece), or one piece. Each
+/// continues in seal_piece() with the next piece.
+/datum/om/task/timed/rig_seal
+	flags = IGNORE_TARGET_LOC_CHANGE
+	complete_proc = /obj/item/rig/proc/seal_stage_done
+	cancel_proc = /obj/item/rig/proc/seal_interrupted
+	var/seal_target
+	var/atom/movable/screen/rig_booting/booting_L
+	var/atom/movable/screen/rig_booting/booting_R
+	/// The piece this stage seals (null: the overall check) and its place in the order.
+	var/obj/item/piece
+	var/msg_type
+	var/index = 0
+
+/obj/item/rig/proc/seal_interrupted(datum/om/task/timed/rig_seal/task)
+	var/mob/living/carbon/human/M = task.actor
 	if(M)
 		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
 		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
-	seal_finish(M, seal_target, booting_L, booting_R, TRUE)
+	seal_finish(M, task.seal_target, task.booting_L, task.booting_R, TRUE)
+
+/obj/item/rig/proc/seal_stage_done(datum/om/task/timed/rig_seal/task)
+	if(task.piece)
+		seal_one_piece(task.actor, task.piece, task.msg_type, task.seal_target)
+	seal_piece(task.actor, task.seal_target, FALSE, task.booting_L, task.booting_R, task.index + 1)
 
 /// Seals pieces from `index` on (boots, gloves, helmet, chest); a piece with a seal delay is a
 /// timed action that comes back here for the next one.
@@ -342,16 +361,11 @@
 			return
 
 		if(seal_delay && !instant)
-			var/list/seal_args = list(M, seal_target, instant, booting_L, booting_R)
-			om_do_after(M, seal_delay, src, src, PROC_REF(seal_piece_done), seal_args + list(piece, msg_type, i), IGNORE_TARGET_LOC_CHANGE, PROC_REF(seal_interrupted), seal_args)
+			om_task_start(/datum/om/task/timed/rig_seal, M, src, list("duration" = seal_delay, "receiver" = src, "seal_target" = seal_target, "booting_L" = booting_L, "booting_R" = booting_R, "piece" = piece, "msg_type" = msg_type, "index" = i))
 			return
 		seal_one_piece(M, piece, msg_type, seal_target)
 
 	seal_finish(M, seal_target, booting_L, booting_R, FALSE)
-
-/obj/item/rig/proc/seal_piece_done(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, obj/item/piece, msg_type, index)
-	seal_one_piece(M, piece, msg_type, seal_target)
-	seal_piece(M, seal_target, instant, booting_L, booting_R, index + 1)
 
 /obj/item/rig/proc/seal_one_piece(mob/living/carbon/human/M, obj/item/piece, msg_type, seal_target)
 	piece.icon_state = "[suit_state][!seal_target ? "_sealed" : ""]"

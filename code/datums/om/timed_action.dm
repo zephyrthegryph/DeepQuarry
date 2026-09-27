@@ -106,6 +106,18 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 			cog = new(user, icon, iconstate)
 	SEND_SIGNAL(user, COMSIG_DO_AFTER_BEGAN)
 
+/// A repeating timed action (steps) shows a fresh bar for each step.
+/datum/om/task/timed/on_rescheduled(delay)
+	var/mob/user = actor
+	if(!progress || !istype(user))
+		return
+	if(!QDELETED(progbar))
+		progbar.end_progress(TRUE)
+	progbar = null
+	if(user.client && delay > 0)
+		progbar = new(user, delay, target || user)
+		progbar.animate_fill(delay)
+
 /datum/om/task/timed/why_not_running()
 	var/mob/user = actor
 	var/atom/A = target != actor ? target : null // working on yourself has no separate target
@@ -128,8 +140,9 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	return null
 
 /datum/om/task/timed/on_complete()
-	// The last change may have arrived in the same tick as the deadline.
-	var/why = why_not_running()
+	// The last change may have arrived in the same tick as the deadline (a steps task's last
+	// step has already acted, so it isn't second-guessed).
+	var/why = spec.compiled_steps ? null : why_not_running()
 	timed_action_end(isnull(why))
 	if(!isnull(why))
 		state = OM_TASK_CANCELLED
@@ -299,10 +312,6 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	if(!receiver)
 		return
 	return call(receiver, proc_ref)(arglist(call_args || list()))
-
-/// A timed action's check_proc for a legacy /datum/callback extra check.
-/proc/om_check_callback(datum/callback/C)
-	return C.Invoke()
 
 /// Running timed actions of `user` (on `target`, when given).
 /proc/om_timed_actions(mob/user, atom/target)

@@ -38,13 +38,24 @@
 
 /obj/item/grab/proc/inspect_bones(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 	to_chat(user, span_notice("Checking bones now..."))
-	om_do_after(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(inspect_bones_done), done_args = list(H, user, target_zone, E), on_fail = PROC_REF(inspect_bones_failed), fail_args = list(H, user, target_zone, E))
+	om_task_start(/datum/om/task/timed/grab_inspect_bones, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
 
-/obj/item/grab/proc/inspect_bones_failed(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
-	to_chat(user, span_notice("You must stand still to feel [E] for fractures."))
-	inspect_bones_done(H, user, target_zone, E)
+/datum/om/task/timed/grab_inspect_bones
+	duration = 2 SECONDS
+	complete_proc = /obj/item/grab/proc/inspect_bones_done
+	cancel_proc = /obj/item/grab/proc/inspect_bones_failed
+	var/target_zone_arg
+	var/obj/item/organ/external/E
 
-/obj/item/grab/proc/inspect_bones_done(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
+/obj/item/grab/proc/inspect_bones_failed(datum/om/task/timed/grab_inspect_bones/task)
+	to_chat(task.actor, span_notice("You must stand still to feel [task.E] for fractures."))
+	inspect_bones_done(task)
+
+/obj/item/grab/proc/inspect_bones_done(datum/om/task/timed/grab_inspect_bones/task)
+	var/mob/living/carbon/human/H = task.target
+	var/mob/user = task.actor
+	var/target_zone = task.target_zone_arg
+	var/obj/item/organ/external/E = task.E
 	if(E.nonsolid && E.cannot_break) //boneless!
 		to_chat(user, span_warning("You are unable to feel any bones in the [E.name]!"))
 	else if(E.status & ORGAN_BROKEN)

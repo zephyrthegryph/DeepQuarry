@@ -50,7 +50,15 @@
 	src.icon_state += "_[active]"
 	return
 
-/obj/item/implanter/proc/implant_done(mob/living/M, mob/living/user, turf/T1)
+/// Implanting the target: at once into yourself, else five seconds while it holds still.
+/datum/om/task/timed/implant
+	complete_proc = /obj/item/implanter/proc/implant_done
+	var/turf/start_turf
+
+/obj/item/implanter/proc/implant_done(datum/om/task/timed/implant/task)
+	var/mob/living/M = task.target
+	var/mob/living/user = task.actor
+	var/turf/T1 = task.start_turf
 	if(!(user && M && (get_turf(M) == T1) && src && src.imp))
 		return
 	M.visible_message(span_warning("[M] has been implanted by [user]."))
@@ -79,11 +87,8 @@
 			user.do_attack_animation(M)
 
 			var/turf/T1 = get_turf(M)
-			if(T1 && M == user)
-				implant_done(M, user, T1)
-				return ITEM_INTERACT_SUCCESS
 			if(T1)
-				om_do_after(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(implant_done), done_args = list(M, user, T1))
+				om_task_start(/datum/om/task/timed/implant, user, M, list("duration" = M == user ? 0 : 5 SECONDS, "receiver" = src, "start_turf" = T1))
 				return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You need to activate \the [src.name] first."))

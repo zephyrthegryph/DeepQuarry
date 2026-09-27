@@ -93,8 +93,17 @@
 	. = ..()
 	EXTRAPOLATOR_ACT_ADD_DISEASES(., viruses)
 
-/obj/item/reagent_containers/syringe/proc/draw_blood_stopped()
+/// Drawing `amount` of blood from the target.
+/datum/om/task/timed/syringe_draw
+	complete_proc = /obj/item/reagent_containers/syringe/proc/draw_blood_taken
+	cancel_proc = /obj/item/reagent_containers/syringe/proc/draw_blood_stopped
+	var/amount
+
+/obj/item/reagent_containers/syringe/proc/draw_blood_stopped(datum/om/task/timed/syringe_draw/task)
 	drawing = FALSE
+
+/obj/item/reagent_containers/syringe/proc/draw_blood_taken(datum/om/task/timed/syringe_draw/task)
+	draw_blood_done(task.actor, task.target, task.amount, TRUE)
 
 /obj/item/reagent_containers/syringe/proc/draw_blood_done(mob/user, mob/living/carbon/T, amount, from_blood)
 	drawing = FALSE
@@ -112,15 +121,28 @@
 		mode = SYRINGE_INJECT
 		update_icon()
 
-/// One injection cycle into a mob: 5u, then the next after `cycle_time` while any is left.
-/obj/item/reagent_containers/syringe/proc/inject_cycle(mob/user, mob/target, cycle_time, trans, contained)
-	trans += reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
+/// Injecting a mob (the target): a warmup, then 5u per cycle while any is left.
+/datum/om/task/timed/syringe_inject
+	steps = list(/obj/item/reagent_containers/syringe/proc/inject_cycle = 0)
+	complete_proc = /obj/item/reagent_containers/syringe/proc/inject_ended
+	cancel_proc = /obj/item/reagent_containers/syringe/proc/inject_ended
+	var/warmup = 0
+	var/cycle_time = 0
+	var/trans = 0
+	var/contained
+	var/warmed = FALSE
+
+/obj/item/reagent_containers/syringe/proc/inject_cycle(datum/om/task/timed/syringe_inject/task)
+	if(!task.warmed)
+		task.warmed = TRUE
+		return STEP_REPEAT(task.warmup)
+	task.trans += reagents.trans_to_mob(task.target, amount_per_transfer_from_this, CHEM_BLOOD)
 	update_icon()
-	if(reagents.total_volume)
-		var/list/finish_args = list(user, target, trans, contained)
-		om_do_after(user, cycle_time, target, src, PROC_REF(inject_cycle), list(user, target, cycle_time, trans, contained), on_fail = PROC_REF(inject_finish), fail_args = finish_args)
-		return
-	inject_finish(user, target, trans, contained)
+	return reagents.total_volume ? STEP_REPEAT(task.cycle_time) : STEP_DONE
+
+/obj/item/reagent_containers/syringe/proc/inject_ended(datum/om/task/timed/syringe_inject/task)
+	if(task.warmed && (task.state == OM_TASK_DONE || task.trans))
+		inject_finish(task.actor, task.target, task.trans, task.contained)
 
 /obj/item/reagent_containers/syringe/proc/inject_finish(mob/user, atom/target, trans, contained)
 	if (reagents.total_volume <= 0 && mode == SYRINGE_INJECT)
@@ -187,12 +209,12 @@
 							H.reagents.trans_to_obj(src, amount)
 							draw_blood_done(user, T, amount, FALSE)
 						else if(H != user)
-							om_do_after(user, time, target, src, PROC_REF(draw_blood_done), list(user, T, amount, TRUE), on_fail = PROC_REF(draw_blood_stopped))
+							om_task_start(/datum/om/task/timed/syringe_draw, user, T, list("duration" = time, "receiver" = src, "amount" = amount))
 							return
 						else
 							draw_blood_done(user, T, amount, TRUE)
 					else
-						om_do_after(user, time, target, src, PROC_REF(draw_blood_done), list(user, T, amount, TRUE), on_fail = PROC_REF(draw_blood_stopped))
+						om_task_start(/datum/om/task/timed/syringe_draw, user, T, list("duration" = time, "receiver" = src, "amount" = amount))
 						return
 
 			else //if not mob
@@ -287,7 +309,7 @@
 			var/contained = reagentlist()
 			if(ismob(target))
 				// Then 5u per cycle, each cycle a timed action.
-				om_do_after(user, warmup_time, target, src, PROC_REF(inject_cycle), list(user, target, cycle_time, 0, contained))
+				om_task_start(/datum/om/task/timed/syringe_inject, user, target, list("receiver" = src, "warmup" = warmup_time, "cycle_time" = cycle_time, "contained" = contained))
 				return
 			var/trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
 			inject_finish(user, target, trans, contained)

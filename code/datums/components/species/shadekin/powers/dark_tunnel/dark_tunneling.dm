@@ -30,7 +30,7 @@
 	smoke.set_up(10, 0, T)
 	smoke.start()
 	actor.visible_message(span_notice("[actor] begins pulling dark energies around themselves."))
-	var/started = om_do_after(actor, DARK_TUNNEL_CHANNEL_TIME, actor, src, PROC_REF(cost_paid), list(actor, target, held))
+	var/started = om_task_start(/datum/om/task/timed/interaction_cost, actor, null, list("duration" = DARK_TUNNEL_CHANNEL_TIME, "receiver" = src, "acted_on" = target, "held" = held))
 	return istext(started) ? FALSE : USE_TOOL_PENDING
 
 /mob/living/proc/dq_pred_no_dark_tunnel_yet(mob/living/actor, atom/target, obj/item/held)

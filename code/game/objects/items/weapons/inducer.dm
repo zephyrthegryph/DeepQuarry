@@ -152,36 +152,47 @@
 		spark_system.set_up(5, 0, get_turf(A))
 		spark_system.attach(A)
 
-		recharge_step(user, A, C, O, coefficient, FALSE, charge_beam, filter)
+		om_task_start(/datum/om/task/timed/induce, user, null, list("duration" = 2 SECONDS, "receiver" = src, "charged" = A, "charging" = C, "device" = O, "coefficient" = coefficient, "beam" = charge_beam, "filter" = filter))
 		return TRUE
 	else //Couldn't find a cell
 		to_chat(user, span_warning("Error unable to interface with device."))
 
 	recharging = FALSE
 
-/// Charges C in 2-second pulses until it is full or the user stops.
-/obj/item/inducer/proc/recharge_step(mob/user, atom/A, obj/item/cell/C, obj/O, coefficient, done_any, datum/beam/charge_beam, filter)
-	if(C.charge < C.maxcharge)
-		om_do_after(user, 2 SECONDS, target = user, receiver = src, on_done = PROC_REF(recharge_pulse), done_args = list(user, A, C, O, coefficient, done_any, charge_beam, filter), on_fail = PROC_REF(recharge_end), fail_args = list(user, A, done_any, charge_beam, filter))
-		return
-	recharge_end(user, A, done_any, charge_beam, filter)
+/// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
+/datum/om/task/timed/induce
+	steps = list(/obj/item/inducer/proc/recharge_pulse = 2 SECONDS)
+	complete_proc = /obj/item/inducer/proc/recharge_end
+	cancel_proc = /obj/item/inducer/proc/recharge_end
+	unheld = list("beam")
+	/// What is being charged, its cell, and the object whose icon shows the charge.
+	var/atom/charged
+	var/obj/item/cell/charging
+	var/obj/device
+	var/coefficient = 1
+	var/done_any = FALSE
+	/// Ends itself.
+	var/datum/beam/beam
+	var/filter
 
-/obj/item/inducer/proc/recharge_pulse(mob/user, atom/A, obj/item/cell/C, obj/O, coefficient, done_any, datum/beam/charge_beam, filter)
+/obj/item/inducer/proc/recharge_pulse(datum/om/task/timed/induce/task)
 	if(!cell?.charge)
-		recharge_end(user, A, done_any, charge_beam, filter)
-		return
-	induce(C, coefficient)
+		return STEP_DONE
+	var/obj/item/cell/C = task.charging
+	induce(C, task.coefficient)
 	spark_system?.start()
-	if(O)
-		O.update_icon()
-	recharge_step(user, A, C, O, coefficient, TRUE, charge_beam, filter)
+	task.device?.update_icon()
+	task.done_any = TRUE
+	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
 
-/obj/item/inducer/proc/recharge_end(mob/user, atom/A, done_any, datum/beam/charge_beam, filter)
-	qdel(charge_beam)
+/obj/item/inducer/proc/recharge_end(datum/om/task/timed/induce/task)
+	var/mob/user = task.actor
+	var/atom/A = task.charged
+	qdel(task.beam)
 	QDEL_NULL(spark_system)
 	if(A)
-		A.filters -= filter
-	if(done_any && user) // Only show a message if we succeeded at least once
+		A.filters -= task.filter
+	if(task.done_any && user) // Only show a message if we succeeded at least once
 		user.visible_message(span_notice("[user] recharged [A]!"), span_notice("You recharged [A]!"))
 	recharging = FALSE
 

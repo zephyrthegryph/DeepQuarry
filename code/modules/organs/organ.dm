@@ -612,11 +612,21 @@
 		to_chat(user, span_danger("You are preparing to butcher \the [src]!"))
 		user.visible_message(span_danger("[user] prepares to butcher \the [src]!"))
 		//They can queue this up on multiple organs.
-		var/started = om_do_after(user, 10 SECONDS * O.toolspeed, src, src, PROC_REF(butcher_done), list(user, newtarget), on_fail = PROC_REF(butcher_failed), fail_args = list(user))
+		var/started = om_task_start(/datum/om/task/timed/organ_butcher, user, src, list("duration" = 10 SECONDS * O.toolspeed, "receiver" = src, "meat_dest" = newtarget))
 		return !istext(started)
 	return butcher_done(null, newtarget)
 
-/obj/item/organ/proc/butcher_failed(mob/living/user)
+/// Butchering an organ by hand; the meat goes to `meat_dest` (default: the organ's turf).
+/datum/om/task/timed/organ_butcher
+	complete_proc = /obj/item/organ/proc/butcher_task_done
+	cancel_proc = /obj/item/organ/proc/butcher_failed
+	var/atom/meat_dest
+
+/obj/item/organ/proc/butcher_task_done(datum/om/task/timed/organ_butcher/task)
+	butcher_done(task.actor, task.meat_dest)
+
+/obj/item/organ/proc/butcher_failed(datum/om/task/timed/organ_butcher/task)
+	var/mob/living/user = task.actor
 	to_chat(user, span_notice("You reconsider butchering \the [src]..."))
 	user.visible_message(span_notice("[user] reconsiders butchering \the [src]!"))
 

@@ -132,14 +132,22 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 		to_chat(user,"You cast \the [P.name] into \the [src].")
 		R.cast = TRUE
 		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
-		om_do_after(user, fishing_time, user, src, PROC_REF(fishing_done), list(user, R), on_fail = PROC_REF(fishing_ended), fail_args = list(R), busy = src)
+		om_task_start(/datum/om/task/timed/fishing, user, null, list("duration" = fishing_time, "receiver" = src, "rod" = R, "busy" = src))
 	else ..()
 
-/turf/simulated/floor/water/proc/fishing_ended(obj/item/material/fishing_rod/R)
-	if(R)
-		R.cast = FALSE
+/// A line in the water until something bites; the water is busy meanwhile.
+/datum/om/task/timed/fishing
+	complete_proc = /turf/simulated/floor/water/proc/fishing_done
+	cancel_proc = /turf/simulated/floor/water/proc/fishing_ended
+	var/obj/item/material/fishing_rod/rod
 
-/turf/simulated/floor/water/proc/fishing_done(mob/user, obj/item/material/fishing_rod/R)
+/turf/simulated/floor/water/proc/fishing_ended(datum/om/task/timed/fishing/task)
+	if(task.rod)
+		task.rod.cast = FALSE
+
+/turf/simulated/floor/water/proc/fishing_done(datum/om/task/timed/fishing/task)
+	var/mob/user = task.actor
+	var/obj/item/material/fishing_rod/R = task.rod
 	var/obj/item/P = R
 	playsound(src, 'sound/effects/slosh.ogg', 5, 1, 5)
 	to_chat(user,span_notice("You feel a tug and begin pulling!"))
@@ -165,7 +173,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 			if(prob(33))	// Dead on hook. Good for food, not so much for live catch.
 				L.death()
 		to_chat(user,span_notice("You fish out \the [fished] from the water with [P.name]!"))
-	fishing_ended(R)
+	fishing_ended(task)
 
 /obj/random/fishing_junk
 	name = "junk"

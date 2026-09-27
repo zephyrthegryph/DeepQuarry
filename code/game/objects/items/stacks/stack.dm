@@ -191,12 +191,22 @@
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-		om_do_after(user, recipe.time, target = src, receiver = src, on_done = PROC_REF(produce_recipe_done), done_args = list(recipe, user, required, produced), claims = TRUE)
-		return
-	produce_recipe_done(recipe, user, required, produced)
+	om_task_start(/datum/om/task/timed/stack_build, user, src, list("duration" = recipe.time, "receiver" = src, "recipe" = recipe, "required" = required, "produced" = produced))
+
+/// Building a stack recipe (at once when it takes no time): the stack is claimed meanwhile.
+/datum/om/task/timed/stack_build
+	claims = TRUE
+	complete_proc = /obj/item/stack/proc/produce_recipe_done
+	var/datum/stack_recipe/recipe
+	var/required
+	var/produced
 
 /// The build time is over: spend the stack and make the thing.
-/obj/item/stack/proc/produce_recipe_done(datum/stack_recipe/recipe, mob/user, required, produced)
+/obj/item/stack/proc/produce_recipe_done(datum/om/task/timed/stack_build/task)
+	var/datum/stack_recipe/recipe = task.recipe
+	var/mob/user = task.actor
+	var/required = task.required
+	var/produced = task.produced
 	if (use(required))
 		var/atom/O
 		if(recipe.use_material)

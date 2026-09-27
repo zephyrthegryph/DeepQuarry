@@ -282,22 +282,32 @@
 	eat_consume(objectOrMob)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_door_hit(obj/machinery/door/D, hit, total_hits)
-	om_do_after(src, 5, target = D, receiver = src, on_done = PROC_REF(eat_door_struck), done_args = list(D, hit, total_hits), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+	om_task_start(/datum/om/task/timed/worm_batter_door, src, D, list("hits_left" = total_hits - hit + 1))
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(obj/machinery/door/D, hit, total_hits)
+/// Battering a door (the target) a hit every half second until it breaks or the hits run out,
+/// then swallowing it.
+/datum/om/task/timed/worm_batter_door
+	steps = list(/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck = 5)
+	cancel_proc = /mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed
+	var/hits_left = 1
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed(datum/om/task/timed/task)
+	eat_finished(FALSE)
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/om/task/timed/worm_batter_door/task)
+	var/obj/machinery/door/D = task.target
 	D.visible_message(span_danger("Something crashes against \the [D]!"))
 	D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
 	if(QDELETED(D))
-		eat_finished(FALSE)
-		return
+		return STEP_FAIL("gone")
 	if(D.stat & (BROKEN|NOPOWER))
 		D.open(TRUE)
 		eat_consume(D)
-		return
-	if(hit < total_hits)
-		eat_door_hit(D, hit + 1, total_hits)
-		return
+		return STEP_DONE
+	if(--task.hits_left > 0)
+		return STEP_REPEAT(5)
 	eat_consume(D)
+	return STEP_DONE
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_field_done(obj/effect/energy_field/EF)
 	EF.adjust_strength(rand(-8, -10))

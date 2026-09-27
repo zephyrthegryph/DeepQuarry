@@ -19,15 +19,26 @@
 		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_they()] [user.p_are()] trying to burn it!</span>", \
 		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
 
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(cursed_burn_done), list(P, user, class), on_fail = PROC_REF(cursed_burn_failed), fail_args = list(P, user))
+		om_task_start(/datum/om/task/timed/cursed_burn, user, src, list("receiver" = src, "flame" = P, "class" = class))
 
-/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(obj/item/flame/P, mob/user)
-	to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+/// Holding a flame to the cursed form: letting go sears you.
+/datum/om/task/timed/cursed_burn
+	duration = 2 SECONDS
+	complete_proc = /obj/item/paper/carbon/cursedform/proc/cursed_burn_done
+	cancel_proc = /obj/item/paper/carbon/cursedform/proc/cursed_burn_failed
+	var/obj/item/flame/flame
+	var/class
+
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(datum/om/task/timed/cursed_burn/task)
+	var/mob/user = task.actor
+	to_chat(user, span_red("You must hold \the [task.flame] steady to burn \the [src]."))
 	cursed_sear(user)
 
-/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(obj/item/flame/P, mob/user, class)
-	if(!P.lit)
-		cursed_burn_failed(P, user)
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(datum/om/task/timed/cursed_burn/task)
+	var/mob/user = task.actor
+	var/class = task.class
+	if(!task.flame?.lit)
+		cursed_burn_failed(task)
 		return
 	user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
 	"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")

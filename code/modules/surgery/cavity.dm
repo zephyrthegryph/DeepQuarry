@@ -176,18 +176,30 @@
 	if(!removed || !(removed in part.implants))
 		to_chat(user, span_notice("You draw \the [tool] back out of [target]'s [part.name]."))
 		return
+	var/wait = 0
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed
 		if(!imp.islegal())
 			to_chat(user, span_notice("\The [imp] is anchored deep; you work it loose carefully..."))
-			om_do_after(user, duration, target, src, PROC_REF(extract_done), list(user, target, part, removed, tool), on_fail = PROC_REF(extract_slipped), fail_args = list(user, imp), max_distance = tool.reach)
-			return
-	extract_done(user, target, part, removed, tool)
+			wait = duration
+	om_task_start(/datum/om/task/timed/extract_foreign_body, user, target, list("duration" = wait, "receiver" = src, "part" = part, "removed" = removed, "tool" = tool, "max_distance" = tool.reach))
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(mob/living/user, obj/item/implant/imp)
-	to_chat(user, span_warning("\The [imp] slips back out of your grip."))
+/// Working a foreign body (`removed`) out of `part`: at once, or slowly for an anchored implant.
+/datum/om/task/timed/extract_foreign_body
+	complete_proc = /datum/surgical_step/treat/extract_foreign_body/proc/extract_done
+	cancel_proc = /datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped
+	var/obj/item/organ/external/part
+	var/atom/movable/removed
+	var/obj/item/tool
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, atom/movable/removed, obj/item/tool)
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(datum/om/task/timed/extract_foreign_body/task)
+	to_chat(task.actor, span_warning("\The [task.removed] slips back out of your grip."))
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(datum/om/task/timed/extract_foreign_body/task)
+	var/mob/living/user = task.actor
+	var/mob/living/carbon/human/target = task.target
+	var/obj/item/organ/external/part = task.part
+	var/atom/movable/removed = task.removed
 	if(!(removed in part.implants))
 		return
 	part.implants -= removed

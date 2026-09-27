@@ -173,7 +173,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 	if(!can_enter(user))
 		user.visible_message(span_warning("\The [user] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_reach_done), done_args = list(user), on_fail = PROC_REF(micro_reach_failed), fail_args = list(user))
+		om_task_start(/datum/om/task/timed/micro_reach/tunnel, user, src, list("receiver" = src))
 		return
 
 	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
@@ -195,7 +195,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	return
 
 /// Reached into the tunnel: pull whatever is inside out.
-/obj/structure/micro_tunnel/proc/tunnel_reach_done(mob/living/user)
+/obj/structure/micro_tunnel/proc/tunnel_reach_done(datum/om/task/timed/micro_reach/tunnel/task)
+	var/mob/living/user = task.actor
 	if(!src.contents.len)
 		to_chat(user, span_warning("There was nothing inside."))
 		user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
@@ -360,18 +361,31 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
 		usr.visible_message(span_warning("\The [usr] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-		om_do_after(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(micro_reach_done), done_args = list(contained_mobs, usr), on_fail = PROC_REF(micro_reach_failed), fail_args = list(usr))
+		om_task_start(/datum/om/task/timed/micro_reach, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs))
 		return
 
 	usr.visible_message(span_notice("\The [usr] begins climbing into \the [src]!"))
 	om_task_start(/datum/om/task/timed/obj_micro_interact2, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs))
 	return TRUE
 
-/obj/proc/micro_reach_failed(mob/usr_mob)
+/// Reaching into something small for whoever is inside.
+/datum/om/task/timed/micro_reach
+	duration = 3 SECONDS
+	complete_proc = /obj/proc/micro_reach_done
+	cancel_proc = /obj/proc/micro_reach_failed
+	var/list/contained_mobs
+
+/datum/om/task/timed/micro_reach/tunnel
+	complete_proc = /obj/structure/micro_tunnel/proc/tunnel_reach_done
+
+/obj/proc/micro_reach_failed(datum/om/task/timed/micro_reach/task)
+	var/mob/usr_mob = task.actor
 	usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
 
 /// Reached into the tunnel: pull a random occupant out.
-/obj/proc/micro_reach_done(list/contained_mobs, mob/usr_mob)
+/obj/proc/micro_reach_done(datum/om/task/timed/micro_reach/task)
+	var/list/contained_mobs = task.contained_mobs
+	var/mob/usr_mob = task.actor
 
 	if(!contained_mobs.len)
 		to_chat(usr_mob, span_warning("There was nothing inside."))

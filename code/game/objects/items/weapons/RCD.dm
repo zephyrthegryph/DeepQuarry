@@ -136,23 +136,37 @@
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 
 	perform_effect(A, true_delay)
-	// The beam travels in a list: it ends itself, so it is never a captured argument.
-	var/list/beam_box = list(rcd_beam)
-	var/started = om_do_after(user, true_delay, target = A, receiver = src, on_done = PROC_REF(use_rcd_timed_done), done_args = list(A, user, rcd_results, output_envelope, beam_box), on_fail = PROC_REF(use_rcd_interrupted), fail_args = list(A, beam_box), busy = allow_concurrent_building ? null : src)
+	var/started = om_task_start(/datum/om/task/timed/rcd_build, user, A, list("duration" = true_delay, "receiver" = src, "rcd_results" = rcd_results, "output_envelope" = output_envelope, "beam" = rcd_beam, "busy" = allow_concurrent_building ? null : src))
 	if(istext(started))
-		use_rcd_interrupted(A, beam_box)
+		use_rcd_interrupted(A, rcd_beam)
 	return FALSE
 
+/// An RCD operation on the target: its beam shows while it runs.
+/datum/om/task/timed/rcd_build
+	complete_proc = /obj/item/rcd/proc/use_rcd_timed_done
+	cancel_proc = /obj/item/rcd/proc/use_rcd_cancelled
+	unheld = list("beam")
+	var/list/rcd_results
+	var/output_envelope
+	/// Ends itself.
+	var/datum/beam/beam
+
+/obj/item/rcd/proc/use_rcd_cancelled(datum/om/task/timed/rcd_build/task)
+	use_rcd_interrupted(task.target, task.beam)
+
 /// The operation stopped (they moved, or it never started): kill the beam and the effect.
-/obj/item/rcd/proc/use_rcd_interrupted(atom/A, list/beam_box)
-	var/datum/beam/rcd_beam = beam_box?[1]
+/obj/item/rcd/proc/use_rcd_interrupted(atom/A, datum/beam/rcd_beam)
 	if(!QDELETED(rcd_beam))
 		rcd_beam.End()
 	if(A)
 		cleanup_effect(A)
 
-/obj/item/rcd/proc/use_rcd_timed_done(atom/A, mob/living/user, list/rcd_results, output_envelope, list/beam_box)
-	var/datum/beam/rcd_beam = beam_box?[1]
+/obj/item/rcd/proc/use_rcd_timed_done(datum/om/task/timed/rcd_build/task)
+	var/atom/A = task.target
+	var/mob/living/user = task.actor
+	var/list/rcd_results = task.rcd_results
+	var/output_envelope = task.output_envelope
+	var/datum/beam/rcd_beam = task.beam
 	if(!QDELETED(rcd_beam))
 		rcd_beam.End()
 	// Doing another check in case we lost matter during the delay for whatever reason.

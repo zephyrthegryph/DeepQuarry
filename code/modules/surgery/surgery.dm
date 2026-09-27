@@ -379,13 +379,21 @@ GLOBAL_PROTECT(surgical_steps)
 
 	if(target == user)
 		to_chat(user, span_critical("You focus on attempting to perform surgery upon yourself."))
-		om_do_after(user, 3 SECONDS, target, src, PROC_REF(choose_surgical_step), list(user, target, zone, cleanliness))
-		return TRUE
-	choose_surgical_step(user, target, zone, cleanliness)
+	om_task_start(/datum/om/task/timed/surgery_focus, user, target, list("duration" = target == user ? 3 SECONDS : 0, "receiver" = src, "zone" = zone, "cleanliness" = cleanliness))
 	return TRUE
 
+/// Getting ready to operate: at once, or three seconds of focus to operate on yourself.
+/datum/om/task/timed/surgery_focus
+	complete_proc = /obj/item/proc/choose_surgical_step
+	var/zone
+	var/cleanliness
+
 /// Picks the step to perform at `zone` (asking when there are several) and runs it.
-/obj/item/proc/choose_surgical_step(mob/living/user, mob/living/carbon/human/target, zone, cleanliness)
+/obj/item/proc/choose_surgical_step(datum/om/task/timed/surgery_focus/task)
+	var/mob/living/user = task.actor
+	var/mob/living/carbon/human/target = task.target
+	var/zone = task.zone
+	var/cleanliness = task.cleanliness
 	var/list/available = available_surgical_steps(user, target, zone, src)
 	if(!length(available))
 		return
@@ -416,29 +424,42 @@ GLOBAL_PROTECT(surgical_steps)
 
 	var/chance = step.success_chance(user, target, part, src, cleanliness)
 	var/delay = step.duration * (2 - cleanliness / 100) * toolspeed
-	// The patient owns the continuation: the zone lock is released whatever else is gone.
-	var/list/step_args = list(src, step, user, zone, cleanliness, part, work_target, chance)
-	var/started = om_do_after(user, delay, target, target, TYPE_PROC_REF(/mob/living/carbon/human, surgical_step_done), step_args, on_fail = TYPE_PROC_REF(/mob/living/carbon/human, surgical_step_interrupted), fail_args = step_args, target_zone = zone, max_distance = reach)
+	var/started = om_task_start(/datum/om/task/timed/surgical_step, user, target, list("duration" = delay, "receiver" = target, "tool" = src, "surgery_step" = step, "zone" = zone, "cleanliness" = cleanliness, "part" = part, "work_target" = work_target, "chance" = chance, "target_zone" = zone, "max_distance" = reach))
 	if(istext(started))
 		LAZYREMOVE(target.surgery_zones_in_progress, zone)
 		return FALSE
 	return TRUE
 
-/mob/living/carbon/human/proc/surgical_step_interrupted(obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
+/// One surgical step: `tool` performing `surgery_step` at `zone`. The patient (the target and
+/// receiver) owns the continuation: the zone lock is released whatever else is gone.
+/datum/om/task/timed/surgical_step
+	complete_proc = /mob/living/carbon/human/proc/surgical_step_done
+	cancel_proc = /mob/living/carbon/human/proc/surgical_step_interrupted
+	var/obj/item/tool
+	var/datum/surgical_step/surgery_step
+	var/zone
+	var/cleanliness
+	var/obj/item/organ/external/part
+	var/atom/work_target
+	var/chance
+
+/mob/living/carbon/human/proc/surgical_step_interrupted(datum/om/task/timed/surgical_step/task)
+	var/mob/living/user = QDELETED(task.actor) ? null : task.actor
 	if(user)
 		to_chat(user, span_warning("You must remain close to and keep focused on your patient to conduct surgery."))
 		user.balloon_alert(user, "you must remain close to and keep focused on your patient")
-	if(!tool || !user)
-		LAZYREMOVE(surgery_zones_in_progress, zone)
+	if(!task.tool || !user || !task.surgery_step)
+		LAZYREMOVE(surgery_zones_in_progress, task.zone)
 		update_surgery()
 		return
-	surgical_step_ended(FALSE, tool, step, user, zone, cleanliness, part, work_target, chance)
+	surgical_step_ended(FALSE, task.tool, task.surgery_step, user, task.zone, task.cleanliness, task.part, task.work_target, task.chance)
 
-/mob/living/carbon/human/proc/surgical_step_done(obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
-	if(part && !step.target_still_valid(src, part, work_target))
-		LAZYREMOVE(surgery_zones_in_progress, zone)
+/mob/living/carbon/human/proc/surgical_step_done(datum/om/task/timed/surgical_step/task)
+	var/datum/surgical_step/step = task.surgery_step
+	if(task.part && !step.target_still_valid(src, task.part, task.work_target))
+		LAZYREMOVE(surgery_zones_in_progress, task.zone)
 		return
-	surgical_step_ended(prob(chance), tool, step, user, zone, cleanliness, part, work_target, chance)
+	surgical_step_ended(prob(task.chance), task.tool, step, task.actor, task.zone, task.cleanliness, task.part, task.work_target, task.chance)
 
 /mob/living/carbon/human/proc/surgical_step_ended(success, obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
 	if(success)

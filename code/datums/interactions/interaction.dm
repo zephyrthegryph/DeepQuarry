@@ -165,6 +165,16 @@
 /datum/interaction/proc/pay_cost(mob/actor, atom/target, obj/item/held)
 	return use_tool(actor, tool ? held : null, target, src, receiver = src, on_done = PROC_REF(cost_paid), done_args = list(actor, target, held))
 
+/// An interaction's time cost paid outside the tool pipeline (a pay_cost() override that
+/// waits): cost_paid() runs after it. The actor waits on itself; `acted_on` is the target.
+/datum/om/task/timed/interaction_cost
+	complete_proc = /datum/interaction/proc/cost_task_done
+	var/atom/acted_on
+	var/obj/item/held
+
+/datum/interaction/proc/cost_task_done(datum/om/task/timed/interaction_cost/task)
+	cost_paid(task.actor, task.acted_on, task.held)
+
 /// The cost is paid: the rest of attempt() (re-check, effect, feedback).
 /datum/interaction/proc/cost_paid(mob/actor, atom/target, obj/item/held)
 	var/result = finish_attempt(actor, target, held)

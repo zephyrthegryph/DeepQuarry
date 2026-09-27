@@ -18,7 +18,7 @@
 	effect = /mob/living/proc/dq_do_dark_maw
 
 /datum/interaction/ability/self/shadekin_dark_maw/pay_cost(mob/actor, atom/target, obj/item/held)
-	var/started = om_do_after(actor, 1 SECOND, actor, src, PROC_REF(cost_paid), list(actor, target, held))
+	var/started = om_task_start(/datum/om/task/timed/interaction_cost, actor, null, list("duration" = 1 SECOND, "receiver" = src, "acted_on" = target, "held" = held))
 	return istext(started) ? FALSE : USE_TOOL_PENDING
 
 /mob/living/proc/dq_pred_dark_maw_dark_enough(mob/living/actor, atom/target, obj/item/held)

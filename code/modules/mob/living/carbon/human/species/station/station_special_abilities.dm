@@ -154,6 +154,39 @@
 		om_after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
 		om_after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
 
+/// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
+/// the target, then the next stage.
+/datum/om/task/timed/grab_drain
+	duration = 5 SECONDS
+	complete_proc = /mob/living/carbon/human/proc/grab_drain_held
+	cancel_proc = /mob/living/carbon/human/proc/grab_drain_interrupted
+	var/obj/item/grab/grab
+	var/stage
+	/// A proc on the drainer: (target, stage) runs that stage and returns the next, or 0 when done.
+	var/stage_proc
+	/// The grab state the drain needs (0: any grab).
+	var/needed_grab = 0
+	/// "draining", "feeding": for the interruption message.
+	var/what
+
+/// Runs stage `stage` of a drain, and holds the grab for the next one.
+/mob/living/carbon/human/proc/grab_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage, stage_proc, needed_grab, what)
+	stage = call(src, stage_proc)(T, stage)
+	if(!stage)
+		return
+	om_task_start(/datum/om/task/timed/grab_drain, src, T, list("grab" = G, "stage" = stage, "stage_proc" = stage_proc, "needed_grab" = needed_grab, "what" = what))
+
+/mob/living/carbon/human/proc/grab_drain_held(datum/om/task/timed/grab_drain/task)
+	var/obj/item/grab/G = task.grab
+	if(QDELETED(G) || (task.needed_grab ? G.state != task.needed_grab : !G.state))
+		grab_drain_interrupted(task)
+		return
+	grab_drain_step(task.target, G, task.stage + 1, task.stage_proc, task.needed_grab, task.what)
+
+/mob/living/carbon/human/proc/grab_drain_interrupted(datum/om/task/timed/grab_drain/task)
+	to_chat(src, span_warning("Your [task.what] of [task.target] has been interrupted!"))
+	absorbing_prey = FALSE
+
 //Welcome to the adapted changeling absorb code.
 /mob/living/carbon/human/proc/succubus_drain()
 	set name = "Drain prey of nutrition"
@@ -181,24 +214,7 @@
 		return
 
 	C.absorbing_prey = 1
-	succubus_drain_step(T, G, 1)
-
-/// One stage of succubus_drain; each stage waits 5 seconds of holding the grab.
-/mob/living/carbon/human/proc/succubus_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	stage = succubus_drain_stage(T, stage)
-	if(!stage)
-		return
-	om_do_after(src, 5 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_drain_tick), done_args = list(T, G, stage), on_fail = PROC_REF(succubus_drain_interrupted), fail_args = list(T))
-
-/mob/living/carbon/human/proc/succubus_drain_tick(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	if(QDELETED(G) || G.state != GRAB_NECK)
-		succubus_drain_interrupted(T)
-		return
-	succubus_drain_step(T, G, stage + 1)
-
-/mob/living/carbon/human/proc/succubus_drain_interrupted(mob/living/carbon/human/T)
-	to_chat(src, span_warning("Your draining of [T] has been interrupted!"))
-	absorbing_prey = FALSE
+	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
 /mob/living/carbon/human/proc/succubus_drain_stage(mob/living/carbon/human/T, stage)
@@ -261,24 +277,7 @@
 		return
 
 	absorbing_prey = 1
-	succubus_drain_lethal_step(T, G, 1)
-
-/// One stage of succubus_drain_lethal; each stage waits 5 seconds of holding the grab.
-/mob/living/carbon/human/proc/succubus_drain_lethal_step(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	stage = succubus_drain_lethal_stage(T, stage)
-	if(!stage)
-		return
-	om_do_after(src, 5 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_drain_lethal_tick), done_args = list(T, G, stage), on_fail = PROC_REF(succubus_drain_lethal_interrupted), fail_args = list(T))
-
-/mob/living/carbon/human/proc/succubus_drain_lethal_tick(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	if(QDELETED(G) || G.state != GRAB_NECK)
-		succubus_drain_lethal_interrupted(T)
-		return
-	succubus_drain_lethal_step(T, G, stage + 1)
-
-/mob/living/carbon/human/proc/succubus_drain_lethal_interrupted(mob/living/carbon/human/T)
-	to_chat(src, span_warning("Your draining of [T] has been interrupted!"))
-	absorbing_prey = FALSE
+	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_lethal_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
 /mob/living/carbon/human/proc/succubus_drain_lethal_stage(mob/living/carbon/human/T, stage)
@@ -374,24 +373,7 @@
 		return
 
 	C.absorbing_prey = 1
-	slime_feed_step(T, G, 1)
-
-/// One stage of slime_feed; each stage waits 5 seconds of holding the grab.
-/mob/living/carbon/human/proc/slime_feed_step(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	stage = slime_feed_stage(T, stage)
-	if(!stage)
-		return
-	om_do_after(src, 5 SECONDS, target = T, receiver = src, on_done = PROC_REF(slime_feed_tick), done_args = list(T, G, stage), on_fail = PROC_REF(slime_feed_interrupted), fail_args = list(T))
-
-/mob/living/carbon/human/proc/slime_feed_tick(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	if(QDELETED(G) || !G.state)
-		slime_feed_interrupted(T)
-		return
-	slime_feed_step(T, G, stage + 1)
-
-/mob/living/carbon/human/proc/slime_feed_interrupted(mob/living/carbon/human/T)
-	to_chat(src, span_warning("Your feeding of [T] has been interrupted!"))
-	absorbing_prey = FALSE
+	grab_drain_step(T, G, 1, PROC_REF(slime_feed_stage), 0, "feeding")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
 /mob/living/carbon/human/proc/slime_feed_stage(mob/living/carbon/human/T, stage)

@@ -524,10 +524,19 @@
 	//This USED to have a 'target_zone' check that never actually worked so whatever.
 	//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
 	//You're already locking yourself down when you do so.
-	om_do_after(user, INFINITY, target = organ, receiver = src, on_done = PROC_REF(pressure_released), done_args = list(user, organ), on_fail = PROC_REF(pressure_released), fail_args = list(user, organ), hidden = TRUE)
+	om_task_start(/datum/om/task/timed/apply_pressure, user, organ, list("receiver" = src))
 	return TRUE
 
-/mob/living/carbon/human/proc/pressure_released(mob/living/user, obj/item/organ/external/organ)
+/// Pressure on a bleeding organ (the target), held until the user lets go or moves.
+/datum/om/task/timed/apply_pressure
+	duration = INFINITY
+	hidden = TRUE
+	complete_proc = /mob/living/carbon/human/proc/pressure_released
+	cancel_proc = /mob/living/carbon/human/proc/pressure_released
+
+/mob/living/carbon/human/proc/pressure_released(datum/om/task/timed/apply_pressure/task)
+	var/mob/living/user = task.actor
+	var/obj/item/organ/external/organ = task.target
 	if(!organ)
 		return
 	organ.applied_pressure = null

@@ -69,11 +69,19 @@
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-		om_do_after(user, recipe.time, target = src, receiver = src, on_done = PROC_REF(produce_sandbag_done), done_args = list(recipe, user, required, produced))
-		return
-	produce_sandbag_done(recipe, user, required, produced)
+	om_task_start(/datum/om/task/timed/sandbag_build, user, src, list("duration" = recipe.time, "receiver" = src, "recipe" = recipe, "required" = required, "produced" = produced))
 
-/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/stack_recipe/recipe, mob/user, required, produced)
+/datum/om/task/timed/sandbag_build
+	complete_proc = /obj/item/stack/sandbags/proc/produce_sandbag_done
+	var/datum/stack_recipe/recipe
+	var/required
+	var/produced
+
+/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/om/task/timed/sandbag_build/task)
+	var/datum/stack_recipe/recipe = task.recipe
+	var/mob/user = task.actor
+	var/required = task.required
+	var/produced = task.produced
 	if (use(required))
 		var/atom/O = new recipe.result_type(user.loc, bag_material)
 

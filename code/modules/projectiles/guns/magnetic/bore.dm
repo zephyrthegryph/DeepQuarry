@@ -100,23 +100,31 @@
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS
 
-/// One sheet every 1.5 seconds (a timed action each) until full or the stack runs out.
-/obj/item/gun/magnetic/matfed/proc/load_sheet_step(mob/user, obj/item/stack/material/M, loaded_any)
-	if(mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M.get_amount())
-		om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(sheet_loaded), list(user, M), on_fail = PROC_REF(sheets_done), fail_args = list(user, M, loaded_any))
-		return
-	sheets_done(user, M, loaded_any)
+/// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
+/datum/om/task/timed/load_sheets
+	steps = list(/obj/item/gun/magnetic/matfed/proc/sheet_loaded = 1.5 SECONDS)
+	complete_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
+	cancel_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
+	var/obj/item/stack/material/sheets
+	var/loaded_any = FALSE
 
-/obj/item/gun/magnetic/matfed/proc/sheet_loaded(mob/user, obj/item/stack/material/M)
+/obj/item/gun/magnetic/matfed/proc/can_load_sheet(obj/item/stack/material/M)
+	return mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M?.get_amount()
+
+/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/om/task/timed/load_sheets/task)
+	if(!can_load_sheet(task.sheets))
+		return STEP_DONE
 	mat_storage += SHEET_MATERIAL_AMOUNT
 	playsound(src, 'sound/effects/phasein.ogg', 15, 1)
-	M.use(1)
-	load_sheet_step(user, M, TRUE)
+	task.loaded_any = TRUE
+	task.sheets.use(1)
+	return can_load_sheet(task.sheets) ? STEP_REPEAT(1.5 SECONDS) : STEP_DONE
 
-/obj/item/gun/magnetic/matfed/proc/sheets_done(mob/user, obj/item/stack/material/M, loaded_any)
+/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/om/task/timed/load_sheets/task)
 	loading = FALSE
-	if(loaded_any && user)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [M]."))
+	var/mob/user = task.actor
+	if(task.loaded_any && user)
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [task.sheets]."))
 		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 	update_icon()
 
@@ -148,7 +156,8 @@
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 			loading = TRUE
-			load_sheet_step(user, M, FALSE)
+			if(!can_load_sheet(M) || istext(om_task_start(/datum/om/task/timed/load_sheets, user, src, list("receiver" = src, "sheets" = M))))
+				loading = FALSE
 			return
 
 		else //ore

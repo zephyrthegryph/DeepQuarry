@@ -40,7 +40,7 @@
 	var/interrupt_on = 0
 	/// Steps (object_model_core.md §4.11): list(/type/proc/x = delay, ...), in order. A step
 	/// proc of the task's own type runs on the task with no arguments; any other runs on the
-	/// actor with the task. It returns STEP_NEXT, STEP_REPEAT(d), STEP_DONE or STEP_FAIL(reason).
+	/// receiver (default: the actor) with the task. It returns STEP_NEXT, STEP_REPEAT(d), STEP_DONE or STEP_FAIL(reason).
 	/// Past the last step the task completes. With steps, `duration` is unused.
 	var/list/steps
 	/// A proc called on the receiver with the task when it completes / is cancelled (a /proc/
@@ -50,6 +50,9 @@
 	var/cancel_proc
 	/// TRUE: a zero duration completes at once, inside om_task_start() (timed actions).
 	var/instant_at_zero = FALSE
+	/// State vars that are not held (a beam or effect that ends itself): deleting what they
+	/// hold doesn't cancel the task, so read them with QDELETED() checks.
+	var/list/unheld
 
 	// ---- run state
 	/// The compiled prototype of this task's type (or bundle row).
@@ -67,7 +70,7 @@
 	/// Further claim edges (the actor, a tool, a holder: om_task_claim()), released with the task.
 	var/list/extra_claims
 	/// Edges to the datums in the task's state (edge = var name): deleting one cancels the task.
-	var/list/held
+	var/list/held_edges
 	/// Index of the next step (steps tasks), 1-based over spec.compiled_steps' pairs.
 	var/step_no = 0
 
@@ -115,6 +118,10 @@
 
 /// Called once the task is running (UI, signals).
 /datum/om/task/proc/on_started()
+	return
+
+/// A steps task's next step is due in `delay` (a repeat, or the next step).
+/datum/om/task/proc/on_rescheduled(delay)
 	return
 
 /// Per-run conditions that aren't table checks (the actor has not moved since the start, ...):
@@ -270,7 +277,7 @@
 		var/datum/om/edge/edge = om_link(T, D, /datum/om/relation/task_holds)
 		if(istext(edge))
 			return "gone"
-		LAZYSET(T.held, edge, name)
+		LAZYSET(T.held_edges, edge, name)
 	return null
 
 /// The vars a task type adds for its state (and `receiver`): the ones held while it runs.
@@ -288,7 +295,7 @@
 	names = list("receiver")
 	var/datum/om/task/proto = new path
 	for(var/name in proto.vars)
-		if(!base_vars[name])
+		if(!base_vars[name] && !(name in proto.unheld))
 			names += name
 	by_type[path] = names
 	return names
@@ -393,8 +400,10 @@
 		var/step_proc = S[i]
 		if(om_task_own_proc(T, step_proc))
 			result = om_guarded_call(T, step_proc, null)
+		else if(QDELETED(T.receiver))
+			result = STEP_FAIL("gone")
 		else
-			result = om_guarded_call(T.actor, step_proc, list(T))
+			result = om_guarded_call(T.receiver, step_proc, list(T))
 		if(result == OM_CALLEE_SLEPT)
 			result = STEP_FAIL("slept")
 	catch(var/exception/e)
@@ -407,6 +416,7 @@
 		switch(R[1])
 			if(OM_STEP_REPEAT)
 				T.ends_at = t + max(R[2], 0)
+				T.on_rescheduled(max(R[2], 0))
 				return
 			if(OM_STEP_FAIL)
 				om_task_cancel(T, R[2] || "failed")
@@ -420,6 +430,7 @@
 		om_task_complete(T)
 		return
 	T.ends_at = t + S[T.step_no * 2]
+	T.on_rescheduled(S[T.step_no * 2])
 
 /// TRUE when `proc_ref` is a proc of the task's own type (a step that runs on the task).
 /proc/om_task_own_proc(datum/om/task/T, proc_ref)
@@ -443,9 +454,9 @@
 		T.extra_claims = null
 		for(var/datum/om/edge/edge as anything in edges)
 			om_unlink_edge(edge)
-	if(T.held)
-		var/list/edges = T.held
-		T.held = null
+	if(T.held_edges)
+		var/list/edges = T.held_edges
+		T.held_edges = null
 		for(var/datum/om/edge/edge as anything in edges)
 			om_unlink_edge(edge)
 
@@ -546,10 +557,10 @@
 
 /datum/om/relation/task_holds/on_unlink(datum/source, datum/target, datum/om/edge/edge)
 	var/datum/om/task/T = source
-	if(!istype(T) || T.state != OM_TASK_RUNNING || !(edge in T.held))
+	if(!istype(T) || T.state != OM_TASK_RUNNING || !(edge in T.held_edges))
 		return
-	var/name = T.held[edge]
-	T.held -= edge
+	var/name = T.held_edges[edge]
+	T.held_edges -= edge
 	if(T.vars[name] == target)
 		T.vars[name] = null
 	om_task_cancel(T, "gone")

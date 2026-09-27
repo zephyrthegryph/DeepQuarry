@@ -533,30 +533,48 @@
 	// picked straight off a turf or out of a latent holder.
 	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
-	feed_round_step(H, user, 0)
-
-/// One round from the handful per reload_time (a timed action each) until full or out.
-/obj/item/gun/projectile/proc/feed_round_step(obj/item/ammo_magazine/handful/H, mob/user, count)
-	if(H.stored_ammo.len && loaded.len < max_shells)
-		var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
-		if(rd.caliber == caliber)
-			om_do_after(user, reload_time, src, src, PROC_REF(feed_round), list(H, user, count), on_fail = PROC_REF(feed_done), fail_args = list(H, user, count))
-			return
-	feed_done(H, user, count)
-
-/obj/item/gun/projectile/proc/feed_round(obj/item/ammo_magazine/handful/H, mob/user, count)
-	// re-validate after the wait; the stack may have shrunk or moved.
-	if(!H.stored_ammo.len || loaded.len >= max_shells)
-		feed_done(H, user, count)
+	if(can_feed_from(H))
+		om_task_start(/datum/om/task/timed/feed_rounds, user, src, list("receiver" = src, "handful" = H))
 		return
+	feed_done(H, user, 0)
+
+/// TRUE while the handful's next round fits and there is room for it.
+/obj/item/gun/projectile/proc/can_feed_from(obj/item/ammo_magazine/handful/H)
+	if(!H.stored_ammo.len || loaded.len >= max_shells)
+		return FALSE
+	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
+	return rd.caliber == caliber
+
+/// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
+/datum/om/task/timed/feed_rounds
+	steps = list(/obj/item/gun/projectile/proc/feed_round = 0)
+	complete_proc = /obj/item/gun/projectile/proc/feed_ended
+	cancel_proc = /obj/item/gun/projectile/proc/feed_ended
+	var/obj/item/ammo_magazine/handful/handful
+	var/count = 0
+	var/waited = FALSE
+
+/obj/item/gun/projectile/proc/feed_round(datum/om/task/timed/feed_rounds/task)
+	if(!task.waited)
+		task.waited = TRUE
+		return STEP_REPEAT(reload_time)
+	// re-validate after the wait; the stack may have shrunk or moved.
+	var/obj/item/ammo_magazine/handful/H = task.handful
+	if(!can_feed_from(H))
+		return STEP_DONE
 	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
 	H.stored_ammo -= rd
 	rd.forceMove(src)
 	loaded.Insert(1, rd) //add to the head of the list
 	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 	H.update_icon()
+	var/mob/user = task.actor
 	user.hud_used.update_ammo_hud(user, src)
-	feed_round_step(H, user, count + 1)
+	task.count++
+	return can_feed_from(H) ? STEP_REPEAT(reload_time) : STEP_DONE
+
+/obj/item/gun/projectile/proc/feed_ended(datum/om/task/timed/feed_rounds/task)
+	feed_done(task.handful, task.actor, task.count)
 
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
 	if(count && user)

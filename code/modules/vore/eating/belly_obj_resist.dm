@@ -70,9 +70,21 @@
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
 
-	om_do_after(living_prey, escapetime, src, src, PROC_REF(default_escape_done), list(living_prey, prey_item), IGNORE_INCAPACITATED, PROC_REF(escape_failed), list(living_prey))
+	om_task_start(/datum/om/task/timed/belly_escape, living_prey, src, list("duration" = escapetime, "receiver" = src, "prey_item" = prey_item))
 
-/obj/belly/proc/default_escape_done(mob/living/living_prey, obj/item/prey_item)
+/// Prey (the actor) working its way out of a belly, with `prey_item` if it is one.
+/datum/om/task/timed/belly_escape
+	flags = IGNORE_INCAPACITATED
+	complete_proc = /obj/belly/proc/default_escape_done
+	cancel_proc = /obj/belly/proc/escape_interrupted
+	var/obj/item/prey_item
+
+/obj/belly/proc/escape_interrupted(datum/om/task/timed/belly_escape/task)
+	escape_failed(task.actor)
+
+/obj/belly/proc/default_escape_done(datum/om/task/timed/belly_escape/task)
+	var/mob/living/living_prey = task.actor
+	var/obj/item/prey_item = task.prey_item
 	if((owner.stat || escapable)) //Can still escape?
 		if(prey_item)
 			release_specific_contents(prey_item)

@@ -112,12 +112,17 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 		if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
 			to_chat(user, span_notice("You do not have an experiment selected!"))
 		return
-	if(!(config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION))
-		om_do_after(user, 1 SECOND, target, src, PROC_REF(run_handheld_experiment), list(source, target, user))
-		return
-	run_handheld_experiment(source, target, user)
+	om_task_start(/datum/om/task/timed/handheld_experiment, user, target, list("duration" = (config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION) ? 0 : 1 SECOND, "receiver" = src, "scanner" = source))
 
-/datum/component/experiment_handler/proc/run_handheld_experiment(datum/source, atom/target, mob/user)
+/// Scanning the target for the selected experiment with a handheld handler (`scanner`).
+/datum/om/task/timed/handheld_experiment
+	complete_proc = /datum/component/experiment_handler/proc/run_handheld_experiment
+	var/datum/scanner
+
+/datum/component/experiment_handler/proc/run_handheld_experiment(datum/om/task/timed/handheld_experiment/task)
+	var/datum/source = task.scanner
+	var/atom/target = task.target
+	var/mob/user = task.actor
 	if(action_experiment(source, target))
 		playsound(user, 'sound/machines/ping.ogg', 25)
 		to_chat(user, span_notice("You scan [target]."))

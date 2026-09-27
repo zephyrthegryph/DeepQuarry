@@ -123,11 +123,23 @@
 	// The delay, and test for if the scan succeeds or not. The grab claims the catcher
 	// (om_busy()) until it ends; the effects travel in a list (the beam ends itself).
 	var/list/effects = list(scan_beam, filter, box_segments)
-	var/started = om_do_after(user, 60 SECONDS, target = target, timed_action_flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, max_distance = grab_range, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user, effects), on_fail = PROC_REF(grab_ended), fail_args = list(target, user, effects), busy = src)
+	var/started = om_task_start(/datum/om/task/timed/ghost_grab, user, target, list("receiver" = src, "max_distance" = grab_range, "effects" = effects, "busy" = src))
 	if(istext(started))
 		grab_ended(target, user, effects)
 		return
 	update_icon()
+
+/// Holding a ghost in the beam, up to a minute; the catcher is busy until it ends.
+/datum/om/task/timed/ghost_grab
+	duration = 60 SECONDS
+	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
+	complete_proc = /obj/item/ghost_catcher/proc/grab_timed_out
+	cancel_proc = /obj/item/ghost_catcher/proc/grab_broken
+	/// The beam, the filter and the box: not held (the beam ends itself).
+	var/list/effects
+
+/obj/item/ghost_catcher/proc/grab_broken(datum/om/task/timed/ghost_grab/task)
+	grab_ended(task.target, task.actor, task.effects)
 
 /// The grab is over (broken or done): clean up the effects and start the cooldown.
 /obj/item/ghost_catcher/proc/grab_ended(atom/target, mob/user, list/effects)
@@ -142,7 +154,10 @@
 	grabbed_entity = null
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
 
-/obj/item/ghost_catcher/proc/afterattack_timed_done(atom/target, mob/user, list/effects)
+/obj/item/ghost_catcher/proc/grab_timed_out(datum/om/task/timed/ghost_grab/task)
+	var/atom/target = task.target
+	var/mob/user = task.actor
+	var/list/effects = task.effects
 	to_chat(user, span_warning("With a buzz, \the [src] flashes red, the beam on \the [target] has broken!"))
 	playsound(src, 'sound/machines/buzz-two.ogg', 50)
 	color_box(effects[3], "#330099", 3)

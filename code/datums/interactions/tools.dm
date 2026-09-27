@@ -74,31 +74,73 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		else if(self_text)
 			to_chat(actor, span_notice(self_text))
 
-	// 4. The wait: a timed action (timed_action.dm) that finishes in use_tool_finish().
-	var/list/finish_args = list(actor, tool, target, quality, tier, amount, silent, receiver, on_done, done_args, on_fail, fail_args)
-	if(time <= 0)
-		return use_tool_finish(arglist(finish_args))
-	var/started = om_do_after(actor, time, target, null, GLOBAL_PROC_REF(use_tool_finish), finish_args, 		on_fail = GLOBAL_PROC_REF(use_tool_interrupted), fail_args = list(receiver, on_fail, fail_args), 		check_proc = extra_checks ? GLOBAL_PROC_REF(om_check_callback) : null, check_args = extra_checks ? list(extra_checks) : null, claims = claims, busy = busy)
-	return istext(started) ? FALSE : USE_TOOL_PENDING
+	// 4. The wait: a tool job task, finished in use_tool_finish().
+	var/datum/om/task/timed/tool_job/job = om_task_start(claims ? /datum/om/task/timed/tool_job/claiming : /datum/om/task/timed/tool_job, actor, target, list(
+		"duration" = max(time, 0),
+		"tool" = tool,
+		"quality" = quality,
+		"tier" = tier,
+		"amount" = amount,
+		"silent" = silent,
+		"on_behalf_of" = receiver,
+		"done_proc" = on_done,
+		"done_args" = done_args,
+		"fail_proc" = on_fail,
+		"fail_args" = fail_args,
+		"extra_checks" = extra_checks,
+		"busy" = busy))
+	if(istext(job))
+		return FALSE
+	if(job.state == OM_TASK_DONE)
+		return job.succeeded
+	return USE_TOOL_PENDING
+
+/// A tool job (use_tool()): the wait, then the tool must still do the job and pays for it, and
+/// `done_proc` runs on whoever asked (`on_behalf_of`) with `done_args`; `fail_proc` if it was
+/// interrupted or the tool gave out. The caller's procs take at most two arguments: anything
+/// more is state, and belongs on its own task type.
+/datum/om/task/timed/tool_job
+	complete_proc = /proc/use_tool_finish
+	cancel_proc = /proc/use_tool_interrupted
+	var/obj/item/tool
+	var/quality
+	var/tier = 1
+	var/amount = 0
+	var/silent = FALSE
+	var/datum/on_behalf_of
+	var/done_proc
+	var/list/done_args
+	var/fail_proc
+	var/list/fail_args
+	var/datum/callback/extra_checks
+	/// Set when the job completed and the tool did it.
+	var/succeeded = FALSE
+
+/datum/om/task/timed/tool_job/claiming
+	claims = TRUE
+
+/datum/om/task/timed/tool_job/timed_check()
+	return !extra_checks || extra_checks.Invoke()
 
 /**
  * The end of a tool job: after the wait, the tool must still do the job (the wait may
- * have turned the welder off or emptied it), then the resources are used and `on_done`
- * runs on `receiver` with `done_args` (a /proc/ path is called globally). TRUE if it did.
+ * have turned the welder off or emptied it), then the resources are used and `done_proc`
+ * runs with `done_args` (a /proc/ path is called globally). Sets the task's `succeeded`.
  */
-/proc/use_tool_finish(mob/actor, obj/item/tool, atom/target, quality, tier, amount, silent, datum/receiver, on_done, list/done_args, on_fail, list/fail_args)
-	if(QDELETED(target) || (tool && QDELETED(tool)) || (quality && tool_quality_failure(tool, quality, tier)))
-		om_call_ref(receiver, on_fail, fail_args)
-		return FALSE
+/proc/use_tool_finish(datum/om/task/timed/tool_job/job)
+	var/obj/item/tool = job.tool
+	if(QDELETED(job.target) || (job.quality && tool_quality_failure(tool, job.quality, job.tier)))
+		use_tool_interrupted(job)
+		return
 	// 5. Resources.
-	if(tool && !tool.tool_use_resources(actor, amount, silent))
-		om_call_ref(receiver, on_fail, fail_args)
-		return FALSE
-	om_call_ref(receiver, on_done, done_args)
-	return TRUE
+	if(tool && !tool.tool_use_resources(job.actor, job.amount, job.silent))
+		use_tool_interrupted(job)
+		return
+	job.succeeded = TRUE
+	om_call_ref(job.on_behalf_of, job.done_proc, job.done_args)
 
-/proc/use_tool_interrupted(datum/receiver, on_fail, list/fail_args)
-	om_call_ref(receiver, on_fail, fail_args)
+/proc/use_tool_interrupted(datum/om/task/timed/tool_job/job)
+	om_call_ref(job.on_behalf_of, job.fail_proc, job.fail_args)
 
 /// Why `tool` can't be used as `quality` at `tier`, or null if it can.
 /proc/tool_quality_failure(obj/item/tool, quality, tier = 1)

@@ -267,6 +267,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!teleport_checks(target,user))
 		return //The checks proc can send them a message if it wants.
 
+	var/struggle = 0
 	if(isliving(target))
 		var/mob/living/L = target
 		if(!L.stat)
@@ -274,12 +275,18 @@ This device records all warnings given and teleport events for admin review in c
 				if(!IS_HELPING(L) || (L.ai_brain != null))
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
-					om_do_after(user, 3 SECONDS, target = L, receiver = src, on_done = PROC_REF(teleport_now), done_args = list(target, user, ignore_fail_chance))
-					return
-	teleport_now(target, user, ignore_fail_chance)
+					struggle = 3 SECONDS
+	om_task_start(/datum/om/task/timed/translocate, user, target, list("duration" = struggle, "receiver" = src, "ignore_fail_chance" = ignore_fail_chance))
 
-/// Sends `target` to the chosen beacon (after any struggle).
-/obj/item/perfect_tele/proc/teleport_now(mob/living/target, mob/user, ignore_fail_chance)
+/// Sending the target to the chosen beacon: at once, or after a struggle with someone resisting.
+/datum/om/task/timed/translocate
+	complete_proc = /obj/item/perfect_tele/proc/teleport_now
+	var/ignore_fail_chance = 0
+
+/obj/item/perfect_tele/proc/teleport_now(datum/om/task/timed/translocate/task)
+	var/mob/living/target = task.target
+	var/mob/user = task.actor
+	var/ignore_fail_chance = task.ignore_fail_chance
 	if(!ready || !destination || !power_source)
 		return
 	//Bzzt.

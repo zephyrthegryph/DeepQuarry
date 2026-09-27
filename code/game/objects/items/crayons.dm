@@ -68,13 +68,20 @@
 				if(!drawtype || get_dist(target, user) > 1 || !(user.z == target.z))
 					return
 				to_chat(user, "You start drawing an arrow on the [target.name].")
-		if(instant)
-			draw_done(target, user, drawtype, click_parameters)
-		else
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(draw_done), done_args = list(target, user, drawtype, click_parameters))
+		om_task_start(/datum/om/task/timed/crayon_draw, user, src, list("duration" = instant ? 0 : 5 SECONDS, "receiver" = src, "surface" = target, "drawtype" = drawtype, "click_parameters" = click_parameters))
 	return
 
-/obj/item/pen/crayon/proc/draw_done(atom/target, mob/user, drawtype, click_parameters)
+/datum/om/task/timed/crayon_draw
+	complete_proc = /obj/item/pen/crayon/proc/draw_done
+	var/atom/surface
+	var/drawtype
+	var/click_parameters
+
+/obj/item/pen/crayon/proc/draw_done(datum/om/task/timed/crayon_draw/task)
+	var/atom/target = task.surface
+	var/mob/user = task.actor
+	var/drawtype = task.drawtype
+	var/click_parameters = task.click_parameters
 	var/list/mouse_control = params2list(click_parameters)
 	var/p_x = 0
 	var/p_y = 0

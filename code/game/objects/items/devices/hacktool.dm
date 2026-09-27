@@ -102,16 +102,22 @@
 		to_chat(user, span_notice("You begin hacking \the [D]..."))
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
 		// Reduced hack duration to compensate for the reduced functionality, multiplied by door sec level
-		om_do_after(user, (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), target = src, receiver = src, on_done = PROC_REF(hack_airlock_done), done_args = list(user, D), on_fail = PROC_REF(hack_airlock_failed), fail_args = list(user, D), claims = TRUE)
+		om_task_start(/datum/om/task/timed/hacktool_airlock, user, src, list("duration" = (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), "receiver" = src, "door" = D))
 		return 0 // the hack is under way; the door is handled when it lands
 
-/obj/item/multitool/hacktool/proc/hack_airlock_failed(mob/user, obj/machinery/door/airlock/D)
-	to_chat(user, span_warning("Your hacking attempt failed!"))
+/// Hacking an airlock: the tool is busy with it (claimed) until it lands.
+/datum/om/task/timed/hacktool_airlock
+	claims = TRUE
+	complete_proc = /obj/item/multitool/hacktool/proc/hack_airlock_done
+	fail_message = span_warning("Your hacking attempt failed!")
+	var/obj/machinery/door/airlock/door
 
 /// The airlock hack landed: remember the door and act on it as a hacked target.
-/obj/item/multitool/hacktool/proc/hack_airlock_done(mob/user, obj/machinery/door/airlock/D)
+/obj/item/multitool/hacktool/proc/hack_airlock_done(datum/om/task/timed/hacktool_airlock/task)
+	var/mob/user = task.actor
+	var/obj/machinery/door/airlock/D = task.door
 	if(!in_hack_mode)
-		hack_airlock_failed(user, D)
+		to_chat(user, task.fail_message)
 		return
 	to_chat(user, span_notice("Your hacking attempt was succesful!"))
 	user.playsound_local(get_turf(src), 'sound/runtime/instruments/piano/An6.ogg', 50)

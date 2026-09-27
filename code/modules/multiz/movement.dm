@@ -62,7 +62,7 @@
 			var/pull_up_time = max((3 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 			to_chat(src, span_notice("You start diving underwater..."))
 			src.audible_message(span_notice("[src] begins to dive under the water."), runemessage = "splish splosh")
-			om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You reach the sea floor."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You stopped swimming downwards.")))
+			om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You reach the sea floor.", "fail_message" = span_warning("You stopped swimming downwards.")))
 			return 0
 
 		else if(!destination.CanZPass(src, direction)) // one for the down and non-special case
@@ -84,14 +84,14 @@
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
 				to_chat(src, span_notice("You grab \the [lattice] and start pulling yourself upward..."))
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You pull yourself up."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You gave up on pulling yourself up.")))
+				om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You pull yourself up.", "fail_message" = span_warning("You gave up on pulling yourself up.")))
 				return 0
 
 			else if(isdiveablewater(destination))
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 				to_chat(src, span_notice("You start swimming upwards..."))
 				src.audible_message(span_notice("[src] begins to swim towards the surface."), runemessage = "splish splosh")
-				om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You reach the surface."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You stopped swimming upwards.")))
+				om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You reach the surface.", "fail_message" = span_warning("You stopped swimming upwards.")))
 				return 0
 
 			else if(catwalk?.hatch_open)
@@ -103,7 +103,7 @@
 					to_chat(src, span_notice("There's something in the way up above in that direction, try another."))
 					return 0
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You pull yourself up."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You gave up on pulling yourself up.")))
+				om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You pull yourself up.", "fail_message" = span_warning("You gave up on pulling yourself up.")))
 				return 0
 
 			// Explicit check if the destination turf allows full passing
@@ -121,7 +121,7 @@
 					var/fly_time = max(7 SECONDS + (H.movement_delay() * 10), 1) //So it's not too useful for combat. Could make this variable somehow, but that's down the road.
 					to_chat(src, span_notice("You begin to fly upwards..."))
 					H.audible_message(span_notice("[H] begins to flap \his wings, preparing to move upwards!"), runemessage = "flap flap")
-					om_do_after(H, fly_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You fly upwards.", TRUE), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You stopped flying upwards.")))
+					om_task_start(/datum/om/task/timed/zmove, H, null, list("duration" = fly_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You fly upwards.", "needs_flight" = TRUE, "fail_message" = span_warning("You stopped flying upwards.")))
 					return 0
 				else
 					to_chat(src, span_warning("Gravity stops you from moving upward."))
@@ -133,15 +133,26 @@
 
 	return zmove_finish(direction, start, destination)
 
-/// A timed z-move (diving, climbing, swimming, flying) completed: move.
-/mob/proc/zmove_timed_done(direction, turf/start, turf/destination, message, needs_flight)
-	if(needs_flight)
+/// A timed z-move: diving, climbing, swimming or flying from `start` to `destination`.
+/datum/om/task/timed/zmove
+	complete_proc = /mob/proc/zmove_timed_done
+	var/direction
+	var/turf/start
+	var/turf/destination
+	var/done_message
+	/// Flying up: the mob must still be flying at the end.
+	var/needs_flight = FALSE
+
+/// A timed z-move completed: move.
+/mob/proc/zmove_timed_done(datum/om/task/timed/zmove/task)
+	if(task.needs_flight)
 		var/mob/living/H = src
 		if(!istype(H) || !H.flying)
 			to_chat(src, span_warning("You stopped flying upwards."))
 			return
-	to_chat(src, span_notice(message))
-	if(zmove_finish(direction, start, destination))
+	to_chat(src, span_notice(task.done_message))
+	var/direction = task.direction
+	if(zmove_finish(direction, task.start, task.destination))
 		to_chat(src, span_notice(direction == UP ? "You move upwards." : "You move down."))
 
 /// The end of a z-move: blockers at the destination, then the move and whatever is pulled along.

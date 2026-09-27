@@ -34,24 +34,44 @@
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 	update_icon()
 
-/// Mass reloading: one matching shell from `floor` per half second (a timed action each).
-/obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor, boolets)
-	if(box.stored_ammo.len < box.max_ammo)
-		for(var/obj/item/ammo_casing/bullet in floor)
-			if(box.caliber == bullet.caliber && bullet.BB)
-				if (boolets < 1)
-					to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
-				om_do_after(user, 0.5 SECONDS, box, src, PROC_REF(shell_collected), list(user, box, floor, boolets, bullet), on_fail = PROC_REF(collect_done), fail_args = list(user, box, boolets))
-				return
-	collect_done(user, box, boolets)
+/// Mass reloading: one matching shell from `floor` into the box every half second.
+/obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
+	if(next_shell(box, floor))
+		to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
+		om_task_start(/datum/om/task/timed/collect_shells, user, box, list("duration" = 0.5 SECONDS, "receiver" = src, "floor" = floor))
+		return
+	collect_done(user, box, 0)
 
-/obj/item/ammo_casing/proc/shell_collected(mob/user, obj/item/ammo_magazine/box, turf/floor, boolets, obj/item/ammo_casing/bullet)
-	if(box.stored_ammo.len < box.max_ammo && bullet.loc == floor) // Double check because these can change during the wait.
-		bullet.forceMove(box)
-		box.stored_ammo.Add(bullet)
-		box.update_icon()
-		boolets++
-	collect_shell(user, box, floor, boolets)
+/// The next shell on `floor` that fits `box`, or null (the box is full, or there is none).
+/obj/item/ammo_casing/proc/next_shell(obj/item/ammo_magazine/box, turf/floor)
+	if(box.stored_ammo.len >= box.max_ammo)
+		return null
+	for(var/obj/item/ammo_casing/bullet in floor)
+		if(box.caliber == bullet.caliber && bullet.BB)
+			return bullet
+	return null
+
+/// Collecting shells from the floor into the box (the target), one every half second.
+/datum/om/task/timed/collect_shells
+	steps = list(/obj/item/ammo_casing/proc/shell_collected = 0.5 SECONDS)
+	complete_proc = /obj/item/ammo_casing/proc/collect_ended
+	cancel_proc = /obj/item/ammo_casing/proc/collect_ended
+	var/turf/floor
+	var/collected = 0
+
+/obj/item/ammo_casing/proc/shell_collected(datum/om/task/timed/collect_shells/task)
+	var/obj/item/ammo_magazine/box = task.target
+	var/obj/item/ammo_casing/bullet = next_shell(box, task.floor)
+	if(!bullet)
+		return STEP_DONE
+	bullet.forceMove(box)
+	box.stored_ammo.Add(bullet)
+	box.update_icon()
+	task.collected++
+	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
+
+/obj/item/ammo_casing/proc/collect_ended(datum/om/task/timed/collect_shells/task)
+	collect_done(task.actor, task.target, task.collected)
 
 /obj/item/ammo_casing/proc/collect_done(mob/user, obj/item/ammo_magazine/box, boolets)
 	if(!box)
@@ -68,7 +88,7 @@
 		if (!box.can_remove_ammo || box.reloading)
 			return ..()
 		box.reloading = TRUE
-		collect_shell(user, box, loc, 0)
+		collect_shell(user, box, loc)
 	else if(istype(I, /obj/item/ammo_casing)) // Gather two loose rounds into a handful.
 		var/obj/item/ammo_casing/other = I
 		if(other == src)

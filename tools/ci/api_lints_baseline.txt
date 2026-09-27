@@ -1,0 +1,5 @@
+# One-way-to-do-it lint ceilings (doc/rewrite/object_model_core.md sec 16).
+# tools/ci/api_lints.py fails when a count rises above its line here.
+# Lower a line when a sweep removes sites: `python tools/ci/api_lints.py --update`.
+do_after_state 0
+use_tool_state 6

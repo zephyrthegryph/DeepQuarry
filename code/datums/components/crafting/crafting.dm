@@ -229,13 +229,26 @@
 
 	//If we're a mob it's a timed action; non mobs will instead instantly construct the item
 	if(ismob(a))
-		var/started = om_do_after(a, R.time, a, src, PROC_REF(construct_item_now), list(a, R, material_choices, on_built), on_fail = PROC_REF(construct_item_interrupted), fail_args = list(a, R, on_built), busy = busy)
+		var/started = om_task_start(/datum/om/task/timed/craft, a, null, list("duration" = R.time, "receiver" = src, "recipe" = R, "material_choices" = material_choices, "on_built" = on_built, "busy" = busy))
 		return istext(started) ? "." : null
 	return construct_item_now(a, R, material_choices, null)
 
-/datum/component/personal_crafting/proc/construct_item_interrupted(atom/a, datum/crafting_recipe/R, on_built)
-	if(on_built)
-		call(src, on_built)(a, R, ".")
+/// A mob crafting `recipe`: on_built, a proc on the crafting component, hears how it went.
+/datum/om/task/timed/craft
+	complete_proc = /datum/component/personal_crafting/proc/craft_done
+	cancel_proc = /datum/component/personal_crafting/proc/craft_interrupted
+	var/datum/crafting_recipe/recipe
+	var/list/material_choices
+	var/on_built
+
+/datum/component/personal_crafting/proc/craft_interrupted(datum/om/task/timed/craft/task)
+	if(task.on_built)
+		call(src, task.on_built)(task.actor, task.recipe, ".")
+
+/datum/component/personal_crafting/proc/craft_done(datum/om/task/timed/craft/task)
+	var/result = construct_item_checked(task.actor, task.recipe, task.material_choices)
+	if(task.on_built)
+		call(src, task.on_built)(task.actor, task.recipe, result)
 
 /datum/component/personal_crafting/proc/construct_item_now(atom/a, datum/crafting_recipe/R, list/material_choices, on_built)
 	. = construct_item_checked(a, R, material_choices)

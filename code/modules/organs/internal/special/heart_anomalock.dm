@@ -99,7 +99,7 @@
 			balloon_alert(user, "can't remove core!")
 			return FALSE
 		balloon_alert(user, "removing core...")
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(remove_core), list(user), on_fail = TYPE_PROC_REF(/atom, balloon_alert), fail_args = list(user, "interrupted!"))
+		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, list("receiver" = src))
 		return TRUE
 
 	return ..()
@@ -113,7 +113,16 @@
 	playsound(src, 'sound/machines/click.ogg')
 	update_icon()
 
-/obj/item/organ/internal/heart/machine/anomalock/proc/remove_core(mob/user)
+/datum/om/task/timed/anomalock_remove_core
+	duration = 3 SECONDS
+	complete_proc = /obj/item/organ/internal/heart/machine/anomalock/proc/remove_core
+	cancel_proc = /obj/item/organ/internal/heart/machine/anomalock/proc/remove_core_interrupted
+
+/obj/item/organ/internal/heart/machine/anomalock/proc/remove_core_interrupted(datum/om/task/timed/anomalock_remove_core/task)
+	balloon_alert(task.actor, "interrupted!")
+
+/obj/item/organ/internal/heart/machine/anomalock/proc/remove_core(datum/om/task/timed/anomalock_remove_core/task)
+	var/mob/user = task.actor
 	if(!core)
 		return
 	balloon_alert(user, "core removed")

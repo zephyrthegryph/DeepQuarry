@@ -117,15 +117,39 @@
 		to_chat(user,span_notice("Fibers/Materials detected.[reveal_fibers ? " Analysing..." : " Acquisition of fibers for H.R.F.S. analysis advised."]"))
 		flick("[icon_state]1",src)
 		if(reveal_fibers)
-			om_do_after(user, 5 SECONDS, src, src, PROC_REF(fibers_done), list(A, user), on_fail = PROC_REF(scan_blood), fail_args = list(A, user))
+			om_task_start(/datum/om/task/timed/forensic_scan, user, src, list("receiver" = src, "scanned" = A, "stage" = "fibers"))
 			return
 	scan_blood(A, user)
 
-/obj/item/detective_scanner/proc/fibers_done(atom/A, mob/user)
-	to_chat(user, span_notice("Apparel samples scanned:"))
-	for(var/sample in A.forensic_data?.get_fibres())
-		to_chat(user, " - " + span_notice("[sample]"))
-	scan_blood(A, user)
+/// One five-second stage of a forensic scan (fibers, then blood). Interrupted, the scan skips
+/// to the next stage.
+/datum/om/task/timed/forensic_scan
+	duration = 5 SECONDS
+	complete_proc = /obj/item/detective_scanner/proc/scan_stage_done
+	cancel_proc = /obj/item/detective_scanner/proc/scan_stage_skipped
+	var/atom/scanned
+	var/stage
+
+/obj/item/detective_scanner/proc/scan_stage_done(datum/om/task/timed/forensic_scan/task)
+	var/atom/A = task.scanned
+	var/mob/user = task.actor
+	if(task.stage == "fibers")
+		to_chat(user, span_notice("Apparel samples scanned:"))
+		for(var/sample in A.forensic_data?.get_fibres())
+			to_chat(user, " - " + span_notice("[sample]"))
+		scan_blood(A, user)
+		return
+	flick("[icon_state]1",src)
+	var/list/blood_data = A.forensic_data?.get_blooddna()
+	for(var/blood in blood_data)
+		to_chat(user, "Blood type: " + span_warning("[blood_data[blood]]") + " DNA: " + span_warning("[blood]"))
+	scan_finish(A, user)
+
+/obj/item/detective_scanner/proc/scan_stage_skipped(datum/om/task/timed/forensic_scan/task)
+	if(task.stage == "fibers")
+		scan_blood(task.scanned, task.actor)
+	else
+		scan_finish(task.scanned, task.actor)
 
 /obj/item/detective_scanner/proc/scan_blood(atom/A, mob/user)
 	if(!A || !user)
@@ -133,15 +157,8 @@
 	if (A.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood detected.[reveal_blood ? " Analysing..." : " Acquisition of swab for H.R.F.S. analysis advised."]"))
 		if(reveal_blood)
-			om_do_after(user, 5 SECONDS, src, src, PROC_REF(blood_done), list(A, user), on_fail = PROC_REF(scan_finish), fail_args = list(A, user))
+			om_task_start(/datum/om/task/timed/forensic_scan, user, src, list("receiver" = src, "scanned" = A, "stage" = "blood"))
 			return
-	scan_finish(A, user)
-
-/obj/item/detective_scanner/proc/blood_done(atom/A, mob/user)
-	flick("[icon_state]1",src)
-	var/list/blood_data = A.forensic_data?.get_blooddna()
-	for(var/blood in blood_data)
-		to_chat(user, "Blood type: " + span_warning("[blood_data[blood]]") + " DNA: " + span_warning("[blood]"))
 	scan_finish(A, user)
 
 /obj/item/detective_scanner/proc/scan_finish(atom/A, mob/user)

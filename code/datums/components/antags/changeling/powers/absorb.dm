@@ -64,20 +64,29 @@
 			T.injure(INJURY_PIERCE, 39, affecting, src)
 
 	feedback_add_details("changeling_powers","A[stage]")
-	om_do_after(src, 15 SECONDS, T, src, PROC_REF(changeling_absorb_stage_done), list(T, G, stage), on_fail = PROC_REF(changeling_absorb_interrupted), fail_args = list(T))
+	om_task_start(/datum/om/task/timed/changeling_absorb, src, T, list("grab" = G, "stage" = stage))
 
-/mob/living/proc/changeling_absorb_interrupted(mob/living/carbon/human/T)
-	to_chat(src, span_warning("Our absorption of [T] has been interrupted!"))
+/// One stage of absorbing the target: 15 seconds holding it in a kill grab.
+/datum/om/task/timed/changeling_absorb
+	duration = 15 SECONDS
+	complete_proc = /mob/living/proc/changeling_absorb_stage_done
+	cancel_proc = /mob/living/proc/changeling_absorb_interrupted
+	var/obj/item/grab/grab
+	var/stage = 1
+
+/mob/living/proc/changeling_absorb_interrupted(datum/om/task/timed/changeling_absorb/task)
+	to_chat(src, span_warning("Our absorption of [task.target] has been interrupted!"))
 	var/datum/component/antag/changeling/changeling = is_changeling(src)
 	if(changeling)
 		changeling.isabsorbing = FALSE
 
-/mob/living/proc/changeling_absorb_stage_done(mob/living/carbon/human/T, obj/item/grab/G, stage)
-	if(G.state != GRAB_KILL)
-		changeling_absorb_interrupted(T)
+/mob/living/proc/changeling_absorb_stage_done(datum/om/task/timed/changeling_absorb/task)
+	var/mob/living/carbon/human/T = task.target
+	if(task.grab?.state != GRAB_KILL)
+		changeling_absorb_interrupted(task)
 		return
-	if(stage < 3)
-		changeling_absorb_stage(T, G, stage + 1)
+	if(task.stage < 3)
+		changeling_absorb_stage(T, task.grab, task.stage + 1)
 		return
 	var/datum/component/antag/changeling/changeling = is_changeling(src)
 	var/datum/component/antag/changeling/target_changeling = is_changeling(T)

@@ -49,7 +49,7 @@ define, hence `ALL_OF`.
 | Check | `/datum/om/check/<x>` |
 | Derived value | `/datum/om/derived/<x>`, or a `DERIVE*()` row |
 | Effect | a row in an `effects` table; `/datum/om/effect/<x>` only for custom logic |
-| Task | a row in a `tasks` table, or `/datum/om/task_def/<x>` |
+| Task | `/datum/om/task/<x>` (a timed action: `/datum/om/task/timed/<x>`), or a row in a `tasks` table |
 | Service (global observer) | `/datum/om/service/<x>` |
 | Bundle | `/datum/om/bundle/<x>` |
 | Entity table | `/datum/om/decl/<x>` with `of = /entity/type` or `of = list(types)` |
@@ -177,7 +177,7 @@ declarations. `SUM_OF(...)` sums effects.
   slot (`/datum/om/relation/slot/occupant`), not a relation of its own.
 - **Bundles:** `powered_machine`, `storage`, `occupant_seat`,
   `powered_vehicle`, `stasis`, `hud_on_vitals`, `ui_live`.
-- **Tasks:** `/datum/om/task_def/timed_tool` (params `tool`, `duration`).
+- **Tasks:** `/datum/om/task/timed_tool` (state `tool`), `/datum/om/task/mob_work/*`, `/datum/om/task/hold`.
 
 ## 4. Scheduling (section A)
 
@@ -650,13 +650,39 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
 
 ## 11. Tasks and UI (sections I, J)
 
-- `om_task_start(actor, name_or_type, target, params)` returns the task or a
-  reason. It checks `requires`, claims the target (a `target_single`,
-  refusing claim relation: the loser gets "is in use"), and sets one
-  deadline. It completes by that deadline, and is cancelled when its
-  requires fail (re-checked on their channels on actor or target), when an
-  `interrupted_by` event reaches the actor, or when either end is deleted.
-  `on_complete` / `on_cancel` run once. Nothing polls.
+- **A task is its type.** `/datum/om/task/<x>` declares `duration`, `claims`, `requires`,
+  `interrupted_by`, `steps` and `complete_proc`/`cancel_proc` (procs on the receiver, called
+  with the task; or override `on_complete()`/`on_cancel()`), and its vars are the run's state:
+
+  ```dm
+  /datum/om/task/timed/lockpick
+  	duration = 5 SECONDS
+  	complete_proc = /obj/item/lockpick/proc/pick_done
+  	var/obj/structure/simple_door/door
+
+  om_task_start(/datum/om/task/timed/lockpick, user, src, list("receiver" = src, "door" = D))
+  ```
+
+  `om_task_start(type, actor, target, params)` returns the task or a reason. `params` sets vars
+  by name (state, or any declaration to override per run: `duration`, `receiver`, `flags`).
+  It checks `requires`, claims the target (a `target_single`, refusing claim relation: the
+  loser gets "is in use"), and sets one deadline. It completes by that deadline or its last
+  step, and is cancelled when its requires fail (re-checked on their channels on actor or
+  target), when an `interrupted_by` event reaches the actor, or when the actor, the target or
+  **any datum in its state** is deleted: every datum var is held by the `task_holds`
+  relation, which clears the var and cancels the task (`unheld = list("beam")` opts out a
+  var whose datum ends itself). `on_complete` / `on_cancel` run once. Nothing polls.
+- **Timed actions** (what `do_after` was) are `/datum/om/task/timed/<x>`: a progress bar and a
+  cog, cancelled when the user moves, changes hands or is incapacitated, or the target moves
+  (`flags`: `IGNORE_*`), leaves `max_distance` or the aim leaves `target_zone`; `check_proc` on
+  the receiver re-checks; `fail_message` is told to the user on cancel. A zero duration
+  completes inside `om_task_start()`, so "instant or timed" is one call with
+  `"duration" = instant ? 0 : d`. Repeating work (one sheet, round or pulse at a time) is a
+  steps task returning `STEP_REPEAT(d)`, with a fresh bar per step.
+  `om_do_after(user, delay, target, receiver, on_done, done_args, ...)` remains only for the
+  zero-state case: at most two arguments across `done_args`, `fail_args` and `check_args`
+  (`tools/ci/api_lints.py`, `do_after_state`, is 0). A done proc taking a third argument, or a
+  `*_timed_done2` proc threading the same arguments through, is a task type instead.
 - **Busy is a claim, not a flag.** A task can also claim what does the work: its actor
   (`claims_actor`), or a tool, bot or machine (`om_task_claim()`, `om_do_after(..., busy = X)`,
   `use_tool(..., busy = X)`), on the `busy` relation so a busy worker can still be someone's

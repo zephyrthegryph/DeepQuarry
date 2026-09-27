@@ -1,0 +1,170 @@
+"""One-way-to-do-it lints (doc/rewrite/object_model_core.md sec 16, "One way to do X").
+
+Each count is a banned alternative to the object model's one mechanism for a
+job. tools/ci/api_lints_baseline.txt holds the ceilings: a count may fall,
+never rise. Most are at 0; the rest are ratchets a sweep lowers.
+
+    do_after_state   om_do_after() with more than two arguments across done_args,
+                     fail_args and check_args, or a list built elsewhere: state
+                     belongs on a named task type (/datum/om/task/timed/x)
+    use_tool_state   the same for use_tool()'s done_args/fail_args
+
+Usage:
+    python tools/ci/api_lints.py                 # the CI check
+    python tools/ci/api_lints.py --report NAME   # every site of one count
+    python tools/ci/api_lints.py --update        # rewrite the baseline to today's counts
+"""
+import glob
+import os
+import re
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+from state_schema_lint import code_only  # noqa: E402
+
+ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+BASELINE = os.path.join(ROOT, "tools", "ci", "api_lints_baseline.txt")
+
+
+def split_args(s):
+    out, depth, cur = [], 0, ""
+    for c in s:
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        if c == "," and depth == 0:
+            out.append(cur.strip())
+            cur = ""
+        else:
+            cur += c
+    if cur.strip():
+        out.append(cur.strip())
+    return out
+
+
+def calls(text, name):
+    """(line number, argument text) of every call of `name` (strings already blanked)."""
+    for m in re.finditer(r"(?<![\w/.])" + name + r"\s*\(", text):
+        if text[max(0, m.start() - 5):m.start()] == "proc/":
+            continue
+        i, depth = m.end(), 1
+        while depth and i < len(text):
+            if text[i] == "(":
+                depth += 1
+            elif text[i] == ")":
+                depth -= 1
+            i += 1
+        yield text.count("\n", 0, m.start()) + 1, text[m.end():i - 1]
+
+
+def state_args(argtext, positional_lists, named_lists):
+    """How many arguments the call passes through its argument lists (99: a list built elsewhere)."""
+    n = 0
+    for i, arg in enumerate(split_args(argtext)):
+        m = re.match(r"(\w+)\s*=(?!=)\s*(.*)$", arg, re.S)
+        if m and m.group(1) in named_lists:
+            value = m.group(2).strip()
+        elif not m and i in positional_lists:
+            value = arg
+        else:
+            continue
+        if value in ("null", ""):
+            continue
+        lm = re.match(r"list\((.*)\)$", value, re.S)
+        n += len(split_args(lm.group(1))) if lm else 99
+    return n
+
+
+def do_after_state(rel, text):
+    for line, args in calls(text, "om_do_after"):
+        if state_args(args, {5, 8, 10}, {"done_args", "fail_args", "check_args"}) > 2:
+            yield line
+
+
+def use_tool_state(rel, text):
+    for line, args in calls(text, "use_tool"):
+        if state_args(args, set(), {"done_args", "fail_args"}) > 2:
+            yield line
+
+
+CHECKS = [
+    ("do_after_state", do_after_state),
+    ("use_tool_state", use_tool_state),
+]
+NAMES = [name for name, _ in CHECKS]
+
+
+def scan():
+    sites = {name: [] for name in NAMES}
+    for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
+        rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
+        if "/unit_tests/" in rel:
+            continue
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            text = code_only(handle.read())
+        for name, check in CHECKS:
+            for line in check(rel, text):
+                sites[name].append((rel, line))
+    return sites
+
+
+def read_baseline():
+    base = {}
+    if os.path.exists(BASELINE):
+        with open(BASELINE, encoding="utf-8") as handle:
+            for line in handle:
+                line = line.split("#", 1)[0].strip()
+                if line:
+                    name, count = line.split()
+                    base[name] = int(count)
+    return base
+
+
+def write_baseline(counts):
+    lines = [
+        "# One-way-to-do-it lint ceilings (doc/rewrite/object_model_core.md sec 16).",
+        "# tools/ci/api_lints.py fails when a count rises above its line here.",
+        "# Lower a line when a sweep removes sites: `python tools/ci/api_lints.py --update`.",
+    ]
+    for name in NAMES:
+        lines.append("%s %d" % (name, counts[name]))
+    with open(BASELINE, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(lines) + "\n")
+
+
+def main(argv):
+    sites = scan()
+    counts = {name: len(sites[name]) for name in NAMES}
+    if "--update" in argv:
+        write_baseline(counts)
+        print("api lints baseline: " + ", ".join("%s %d" % (n, counts[n]) for n in NAMES))
+        return 0
+    if "--report" in argv:
+        wanted = argv[argv.index("--report") + 1:] or NAMES
+        for name in wanted:
+            for rel, line in sites[name]:
+                print("%s:%d: %s" % (rel, line, name))
+        return 0
+    base = read_baseline()
+    failed = False
+    for name in NAMES:
+        ceiling = base.get(name)
+        if ceiling is None:
+            print("%-16s %5d  FAIL (no ceiling in the baseline)" % (name, counts[name]))
+            failed = True
+        elif counts[name] > ceiling:
+            print("%-16s %5d  FAIL (ceiling %d)" % (name, counts[name], ceiling))
+            failed = True
+        elif counts[name] < ceiling:
+            print("%-16s %5d  below ceiling %d: lower it with --update" % (name, counts[name], ceiling))
+        else:
+            print("%-16s %5d  ok" % (name, counts[name]))
+    if failed:
+        print("A count rose above its ceiling: use the one mechanism doc/rewrite/object_model_core.md sec 16 names; `--report NAME` lists the sites.")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

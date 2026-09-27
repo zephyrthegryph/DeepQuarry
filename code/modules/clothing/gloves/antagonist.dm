@@ -101,10 +101,24 @@
 /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_give(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot, obj/item/took)
 	var/obj/item/mine = user.get_equipped_item(slot_id)
 	if(istype(mine))
-		var/list/swap_args = list(user, target, slot, took, mine)
-		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_swapped), swap_args + TRUE, on_fail = PROC_REF(pickpocket_swapped), fail_args = swap_args + FALSE)
+		om_task_start(/datum/om/task/timed/pickpocket_swap, user, target, list("receiver" = src, "slot" = slot, "took" = took, "mine" = mine))
 	else
 		pickpocket_swapped(user, target, slot, took, null, FALSE)
+
+/// Slipping your own pocket item into theirs after taking: a second of holding still.
+/datum/om/task/timed/pickpocket_swap
+	duration = 1 SECOND
+	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_gave
+	cancel_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_kept
+	var/slot
+	var/obj/item/took
+	var/obj/item/mine
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_gave(datum/om/task/timed/pickpocket_swap/task)
+	pickpocket_swapped(task.actor, task.target, task.slot, task.took, task.mine, TRUE)
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_kept(datum/om/task/timed/pickpocket_swap/task)
+	pickpocket_swapped(task.actor, task.target, task.slot, task.took, task.mine, FALSE)
 
 /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_swapped(mob/living/carbon/human/user, mob/living/carbon/human/target, slot, obj/item/took, obj/item/mine, gave)
 	if(!user)
