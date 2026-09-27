@@ -153,11 +153,37 @@ What the experiments showed:
   Asset Loading fire): `SMART_CACHE_ASSETS` defaulted off. Fixed (on by
   default; it invalidates itself).
 
+The world-load experiments (one boot each, `r3-*`):
+
+| Build | Private MB at `world/New()` |
+|---|---|
+| Southern Cross, as is | 682-703 |
+| Southern Cross, all 3,235 sounds stubbed to 4 bytes (217 MB out of the .rsc) | 698 |
+| minitest, as is | 635-667 |
+| minitest, all 1,982 .dmi stubbed to one 211-byte icon (372 MB out) | 658 |
+| empty world | 4 |
+| synthetic: 20,000 /obj types, 3 vars each (4.4 MB .dmb) | 19 |
+| synthetic: same plus 5 procs each (10.8 MB .dmb) | 35 |
+
+So the ~680 MB is **not** resources (sounds and icons are read from the
+.rsc on demand), **not** the map (minitest's 30 k turfs vs Southern Cross's
+393 k differ by ~40 MB) and **not** DM code we can see: per-global and
+per-subsystem-constructor notes (`early_notes`) show memory already at
+611 MB when global init starts, and those steps take no measurable time.
+It grows over ~10 s while BYOND loads the 47 MB .dmb, before any DM proc
+runs, about 13x the file size (the synthetic worlds expand 3-4x). The type
+count alone does not explain it (20 k synthetic types cost 15 MB). What
+remains is the .dmb's own content: 42 k types' var tables and initial
+values, proc bytecode and the string table. Moving sounds out of the .rsc
+was **not implemented**: it saves nothing. The next step is to bisect the
+.dmb by module (build with large modules' types removed) to find which part
+of the compiled code expands.
+
 Fixes, by size:
 
 | Item | Size | Fix |
 |---|---|---|
-| Compiled world (.dmb + .rsc load) | ~680 MB | Keep sounds out of the .rsc: play them from files served by the asset CDN / `file()` at runtime (224 MB of sources). Prune unused icon states and the `icons/gen` duplicates. Measure with a sound-stripped build first. |
+| Compiled world (.dmb load) | ~680 MB | Not sounds or icons (measured). Bisect the .dmb by module; candidates are type var tables and the string table. |
 | Atoms (map objects, their vars and lists) | ~245 MB | §3.1 type tables (space turfs 92 MB est.), rule bindings as type tables, interned per-type lists (§0.3). |
 | Lighting datums | ~70 MB | §5 option A. |
 | Batched spritesheets at round start | 260 MB | Done (smart cache on). |
