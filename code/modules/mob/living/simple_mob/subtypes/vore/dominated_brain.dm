@@ -65,12 +65,6 @@
 		UnregisterSignal(pred_body, COMSIG_QDELETING)
 		pred_body = null
 
-/mob/living/dominated_brain/Destroy()
-	lets_unregister_our_signals()
-	prey_mind = null
-	pred_mind = null
-	. = ..()
-
 /mob/living/dominated_brain/process_resist()
 	//Resisting control by an alien mind.
 	if(pred_mind && pred_body.mind == pred_mind)
@@ -117,7 +111,6 @@
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
 		add_verb(prey_goes_here, /mob/living/dominated_brain/proc/cease_this_foolishness)
-
 
 	else		//The prey body does not exist, let's put them in the back seat instead!
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name)

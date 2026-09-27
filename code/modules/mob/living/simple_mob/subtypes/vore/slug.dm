@@ -152,6 +152,7 @@
 			qdel(G) //Prevent glue layering
 */ //Not including this due to performance concerns but keeping as comments for reference.
 
+// LIFECYCLE: its slug may lay more glue.
 /obj/effect/slug_glue/Destroy()
 	. = ..()
 	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)

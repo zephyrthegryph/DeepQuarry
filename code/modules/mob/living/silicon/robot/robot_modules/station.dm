@@ -116,11 +116,7 @@
 	robot.module = null
 	qdel(src)
 
-/obj/item/robot_module/Destroy()
-	QDEL_LIST(modules)
-	QDEL_LIST(emag)
-	QDEL_LIST(synths)
-	return ..()
+REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /// Module items are pulsed once by content recursion: stowed ones inside the
 /// module, equipped ones inside the robot. Only the matter synths (datums)
@@ -341,7 +337,6 @@
 /obj/item/robot_module/robot/medical/surgeon
 	name = "surgeon robot module"
 
-
 /obj/item/robot_module/robot/medical/surgeon/create_equipment(mob/living/silicon/robot/robot)
 	..()
 	src.modules += new /obj/item/healthanalyzer(src)
@@ -464,7 +459,6 @@
 		PS.reagents.add_reagent(REAGENT_ID_PACID, 2 * amount)
 
 	..()
-
 
 /obj/item/robot_module/robot/engineering
 	staffing_role = DEPARTMENT_ENGINEERING
@@ -897,7 +891,6 @@
 
 	src.modules += new /obj/item/dogborg/sleeper/K9/ert(src)
 	src.modules += new /obj/item/dogborg/pounce(src)
-
 
 /* Drones */
 

@@ -32,7 +32,6 @@
 	item_state = "nothing"
 	w_class = ITEMSIZE_HUGE
 
-
 /obj/item/grab/Initialize(mapload, mob/victim)
 	. = ..()
 	var/mob/living/carbon/human/assailant = loc
@@ -55,7 +54,6 @@
 
 	adjust_position()
 
-
 //Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
 /obj/item/grab/proc/throw_held()
 	var/mob/living/affecting = GRAB_TARGET(src)
@@ -67,7 +65,6 @@
 			return affecting
 
 	return null
-
 
 //This makes sure that the grab screen object is displayed in the correct hand.
 /obj/item/grab/proc/synch() //why is this needed?
@@ -178,7 +175,6 @@
 	if(.)
 		return TRUE
 	return s_click(hud)
-
 
 //Updating pixelshift, position and direction
 //Gets called on process, when the grab gets upgraded or the assailant moves
@@ -375,7 +371,6 @@
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 
-
 		if(GRAB_KILL)
 			grab_name = "stranglehold"
 			break_chance_table = list(5, 20, 40, 80, 100)
@@ -405,17 +400,6 @@
 /obj/item/grab/proc/size_difference(mob/A, mob/B)
 	return mob_size_difference(A.mob_size, B.mob_size)
 
-/obj/item/grab/Destroy()
-	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
-	// The grabbing relation (code/datums/om/library.dm) unlinks -- clearing
-	// `affecting` and this grab's entry in the victim's `grabbed_by`, and
-	// running the pixel/plane reset -- in the destroy transaction's phase 5
-	// teardown, before Destroy() runs.
-	if(assailant)
-		if(assailant.client)
-			assailant.client.screen -= hud
-	qdel(hud)
-	hud = null
-	return ..()
+REF_OWNED(/obj/item/grab, "hud")
 
 #undef UPGRADE_KILL_TIMER

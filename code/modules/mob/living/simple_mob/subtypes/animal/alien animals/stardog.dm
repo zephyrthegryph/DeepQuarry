@@ -149,13 +149,7 @@
 	. = ..()
 	child_om_marker?.set_light(5, 1, "#ff8df5")
 
-/mob/living/simple_mob/vore/overmap/stardog/Destroy()
-	if(control_node)
-		control_node.host = null
-		control_node = null
-	for(var/anything in weather_areas)
-		weather_areas -= anything
-	return ..()
+REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "host"))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -795,11 +789,7 @@
 			host = dog
 			dog.control_node = src
 
-/obj/structure/control_pod/Destroy()
-	if(host)
-		host.control_node = null
-		host = null
-	return ..()
+REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 
 /obj/structure/control_pod/attack_hand(mob/living/user)
 	. = ..()
@@ -1362,10 +1352,6 @@
 	countdown = rand(50,250)
 	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
-
-/obj/structure/auto_flesh_door/Destroy()
-	update_nearby_tiles()
-	return ..()
 
 /// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
 /obj/structure/auto_flesh_door/periodic_step()

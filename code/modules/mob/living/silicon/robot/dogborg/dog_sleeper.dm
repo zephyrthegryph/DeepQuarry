@@ -63,12 +63,11 @@
 	. = ..()
 	med_analyzer = new /obj/item/healthanalyzer
 
+REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
+
+// LIFECYCLE: the patient is let out.
 /obj/item/dogborg/sleeper/Destroy()
 	go_out()
-	if(ore_bag)
-		QDEL_NULL(ore_bag)
-	if(med_analyzer)
-		QDEL_NULL(med_analyzer)
 	. = ..()
 
 /obj/item/dogborg/sleeper/Exit(atom/movable/O)
@@ -148,7 +147,6 @@
 			return
 		user.visible_message(span_warning("[hound.name] is ingesting [H.name] into their [src.name]."), span_notice("You start ingesting [H] into your [src]..."))
 		om_do_after(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
-
 
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
 	if(!(length(contents) < max_item_count))

@@ -325,10 +325,6 @@
 		to_chat(user, span_warning("Pipe clamping is unavailable until LINDA's atmos machinery is wired in."))
 		return
 
-/obj/item/dogborg/stasis_clamp/Destroy()
-	LAZYCLEARLIST(clamps)
-	. = ..()
-
 //Pounce stuff for K-9
 /obj/item/dogborg/pounce
 	name = "pounce"

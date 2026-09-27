@@ -101,10 +101,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	update_icon()
 	return ..()
 
-/mob/living/simple_mob/slime/Destroy()
-	if(hat)
-		drop_hat()
-	return ..()
+REF_SPILL(/mob/living/simple_mob/slime, "hat")
 
 /mob/living/simple_mob/slime/ventcrawl_get_item_whitelist()
 	return list(
@@ -265,7 +262,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 /datum/decl/mob_organ_names/slime
 	hit_zones = list("cytoplasmic membrane")
-
 
 // === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime

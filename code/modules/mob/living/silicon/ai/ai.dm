@@ -244,18 +244,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
+REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio"))
+
+// LIFECYCLE: the AI's eye goes with it.
 /mob/living/silicon/ai/Destroy()
 	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
-
-	QDEL_NULL(announcement)
 	QDEL_NULL(eyeobj)
-	QDEL_NULL(psupply)
-	QDEL_NULL(aiPDA)
-	QDEL_NULL(aiCommunicator)
-	QDEL_NULL(aiMulti)
-	QDEL_NULL(aiRadio)
-	hack = null
-
 	destroy_eyeobj()
 	return ..()
 

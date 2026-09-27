@@ -11,12 +11,11 @@
 	aiEye = new /mob/observer/eye/aiEye/pic_in_pic()
 	aiEye.screen = src
 
+REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, "aiEye")
+
+// LIFECYCLE: the AI loses this multicam window.
 /atom/movable/screen/movable/pic_in_pic/ai/Destroy()
 	. = ..()
-	if(!QDELETED(aiEye))
-		QDEL_NULL(aiEye)
-	else
-		aiEye = null
 	set_ai(null)
 
 /atom/movable/screen/movable/pic_in_pic/ai/Click()
@@ -130,10 +129,11 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 	qdel(GLOB.ai_camera_room_landmark)
 	GLOB.ai_camera_room_landmark = src
 
-/obj/effect/landmark/ai_multicam_room/Destroy()
+/// Phase 2: stops being the multicam room.
+/obj/effect/landmark/ai_multicam_room/lifecycle_dematerialize()
+	. = ..()
 	if(GLOB.ai_camera_room_landmark == src)
 		GLOB.ai_camera_room_landmark = null
-	return ..()
 
 //Dummy camera eyes
 
@@ -194,12 +194,11 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		C.update_icon()
 	cameras_telegraphed.Cut()
 
+REF_OWNED(/mob/observer/eye/aiEye/pic_in_pic, "screen")
+
+// LIFECYCLE: stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/Destroy()
 	disable_camera_telegraphing()
-	if(!QDELETED(screen))
-		QDEL_NULL(screen)
-	else
-		screen = null
 	return ..()
 
 //AI procs
@@ -259,7 +258,6 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 			P.unshow_to(client)
 	reset_perspective(src)
 	to_chat(src, span_notice("Multiple-camera viewing mode deactivated."))
-
 
 /mob/living/silicon/ai/proc/select_main_multicam_window(atom/movable/screen/movable/pic_in_pic/ai/P)
 	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)

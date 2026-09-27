@@ -13,22 +13,21 @@
 /turf/drain_power()
 	return -1
 
-/turf/simulated/Destroy()
+/// Phase 2: freelook nets see the turf go.
+/turf/simulated/lifecycle_dematerialize()
+	. = ..()
 	updateVisibility(src)
-	// ZAS zone cleanup removed; LINDA tracks active turfs in SSair.active_turfs,
-	// which automatically prunes destroyed turfs without explicit cleanup.
-	return ..()
 
 /turf/simulated/Initialize(mapload)
 	. = ..()
 	updateVisibility(src)
 
-
 // STRUCTURES
 
-/obj/structure/Destroy()
+/// Phase 2: freelook nets see the structure go.
+/obj/structure/lifecycle_dematerialize()
+	. = ..()
 	updateVisibility(src)
-	return ..()
 
 /obj/structure/Initialize(mapload)
 	. = ..()
@@ -36,9 +35,10 @@
 
 // EFFECTS
 
-/obj/effect/Destroy()
+/// Phase 2: freelook nets see the effect go.
+/obj/effect/lifecycle_dematerialize()
+	. = ..()
 	updateVisibility(src)
-	return ..()
 
 /obj/effect/Initialize(mapload)
 	. = ..()

@@ -147,7 +147,6 @@
 	vore_fullness_ex = list()
 	vore_icon_bellies = list()
 
-
 // --- Lifecycle ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
@@ -286,6 +285,7 @@
 
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
+// LIFECYCLE: the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
 /mob/living/silicon/robot/Destroy()
 	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
@@ -374,7 +374,6 @@
 		uneq_all()
 	update_senses()
 	update_icon()
-
 
 // --- Power ledger ----------------------------------------------------------------------------
 // draw_power() and add_power() are the only writers of the cell's charge in
@@ -502,7 +501,6 @@
 /mob/living/silicon/robot/machine_power_ok()
 	return has_power
 
-
 // --- Parts -----------------------------------------------------------------------------------
 
 /// A part was installed, removed, destroyed, toggled or its integrity
@@ -540,7 +538,6 @@
 		// A worn camera sees through noise.
 		set_fullscreen(component_function(ROBOT_SLOT_CAMERA) < 0.5 || (disabilities & NEARSIGHTED), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
 
-
 // --- Lights -----------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/set_lights(new_state)
@@ -559,7 +556,6 @@
 		self.set_light(self.integrated_light_power, 1, self.robot_light_col)
 		return TRUE
 	return ..()
-
 
 // --- Countdowns ------------------------------------------------------------------------------
 
@@ -596,7 +592,6 @@
 /mob/living/silicon/robot/proc/end_weapon_lock()
 	weapon_lock = null
 	to_chat(src, span_danger("Weapon Lock Timed Out!"))
-
 
 // --- Naming ------------------------------------------------------------------------------------
 
@@ -776,13 +771,11 @@
 		. += "Internal Atmosphere Info: [current_jetpack.name]"
 		. += "Tank Pressure: [current_jetpack.air_contents.return_pressure()]"
 
-
 // this function returns the robots jetpack, if one is installed
 /mob/living/silicon/robot/proc/installed_jetpack()
 	if(module)
 		return (locate(/obj/item/tank/jetpack) in module.modules)
 	return 0
-
 
 // this function displays the cyborgs current cell charge in the stat panel
 /mob/living/silicon/robot/proc/show_cell_power()
@@ -821,7 +814,6 @@
 	..(Proj)
 	if(prob(75) && Proj.damage > 0) spark_system.start()
 	return 2
-
 
 // --- Tool and item interactions ---------------------------------------------------------------
 
@@ -1271,7 +1263,6 @@
 			return 1
 	return 0
 
-
 // --- Appearance: overlay providers --------------------------------------------------------------
 // update_icon() composes the sprite from providers: base, accents, status,
 // belly, panel and hat.
@@ -1379,7 +1370,6 @@
 	if(open_overlay)
 		add_overlay(open_overlay)
 
-
 // --- Hats (robots and drones) -----------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
@@ -1476,7 +1466,6 @@
 	if(src.camera)
 		src.camera.clear_all_networks()
 
-
 /mob/living/silicon/robot/proc/ResetSecurityCodes()
 	set category = "Abilities.Silicon"
 	set name = "Reset Identity Codes"
@@ -1543,7 +1532,6 @@
 		return FALSE
 	return use_component(ROBOT_SLOT_COMMS)
 
-
 // --- AI link -----------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/notify_ai(notifytype, first_arg, second_arg)
@@ -1601,7 +1589,6 @@
 	set_master_ai(AI)
 	notify_ai(ROBOT_NOTIFICATION_NEW_UNIT)
 	sync()
-
 
 // --- Subversion ------------------------------------------------------------------------------------
 
@@ -1703,7 +1690,6 @@
 
 /mob/living/silicon/robot/is_sentient()
 	return braintype != BORG_BRAINTYPE_DRONE
-
 
 /mob/living/silicon/robot/drop_item(atom/Target)
 	if(module_active && istype(module_active,/obj/item/gripper))
@@ -1824,7 +1810,6 @@
 	grabber.update_inv_l_hand()
 	grabber.update_inv_r_hand()
 	return H
-
 
 /mob/living/silicon/robot/onTransitZ(old_z, new_z)
 	if(shell)

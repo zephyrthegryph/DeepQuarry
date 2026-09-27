@@ -18,11 +18,11 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 /datum/languages_panel/New(mob/host_mob)
 	host = host_mob
 
-/datum/languages_panel/Destroy(force, ...)
+/// Phase 2: leaves the per-host panel index.
+/datum/languages_panel/lifecycle_dematerialize()
+	. = ..()
 	if(host)
 		GLOB.dq_languages_panels -= "[REF(host)]"
-	host = null
-	return ..()
 
 /datum/languages_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state

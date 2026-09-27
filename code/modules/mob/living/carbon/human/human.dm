@@ -7,7 +7,6 @@
 
 	has_huds = TRUE 					//We do have HUDs (like health, wanted, status, not inventory slots)
 
-
 	vore_capacity = 3
 	vore_capacity_ex = list("stomach" = 3, "taur belly" = 3)
 	vore_fullness_ex = list("stomach" = 0, "taur belly" = 0)
@@ -53,7 +52,6 @@
 
 	nutrition = rand(200,400)
 
-
 	. = ..()
 
 	hide_underwear.Cut()
@@ -83,6 +81,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
+// LIFECYCLE: organs are deleted from a snapshot; nif and blood vessel go with the body.
 /mob/living/carbon/human/Destroy()
 	// Each organ's Destroy() removes itself (and qdels its children/internals)
 	// out of src.organs, so iterating the live list skips entries — skipped
@@ -124,7 +123,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(P)
 		. += "Phoron Stored: [P.stored_plasma]/[P.max_plasma]"
 
-
 	if(get_equipped_item(SLOT_ID_BACK) && istype(get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
 		var/obj/item/rig/suit = get_equipped_item(SLOT_ID_BACK)
 		var/cell_status = "ERROR"
@@ -138,7 +136,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		. += "Re-Adaptations: [comp.readapts]/[comp.max_readapts]"
 	if(species)
 		species.get_status_tab_items(src)
-
 
 /mob/proc/RigPanel(obj/item/rig/R)
 	if(R && !R.canremove && length(R.installed_modules))
@@ -411,7 +408,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	// A strong current across the chest can throw the heart into VF.
 	if(. > 30 && prob(. - 20))
 		induce_arrhythmia(CARDIAC_RHYTHM_VF)
-
 
 /mob/living/carbon/human/Topic(href, href_list)
 	if (href_list["mach_close"]) // This is horrible.
@@ -865,7 +861,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return 1
 
 	return 0
-
 
 /mob/living/carbon/human/proc/check_dna()
 	dna.check_integrity(src)
@@ -1841,7 +1836,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	else
 		return ..()
 
-
 // Drag damage is handled in a parent
 /mob/living/carbon/human/dragged(mob/living/dragger, oldloc, trigged_bleeding)
 	if(..())
@@ -2049,7 +2043,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		H.ChangeToSkeleton()
 		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
 
-
 	if(href_list[VK_HK_TURN_AI])
 		if(!check_rights(R_SPAWN))
 			return
@@ -2143,7 +2136,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 		qdel(src)
 	*/
-
 
 /mob/living/carbon/human/proc/synth_reag_toggle()
 	set name = "Toggle Reagent Processing"

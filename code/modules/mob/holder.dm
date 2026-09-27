@@ -101,6 +101,7 @@
 		schedule_cleanup_check()
 
 /// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
+// LIFECYCLE: the held mob is put down and its view reset.
 /obj/item/holder/Destroy()
 	if(held_mob)
 		var/mob/cached_mob = held_mob

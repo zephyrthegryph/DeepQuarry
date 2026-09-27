@@ -18,11 +18,11 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 /datum/flavor_panel/New(mob/living/carbon/human/host_mob)
 	host = host_mob
 
-/datum/flavor_panel/Destroy(force, ...)
+/// Phase 2: leaves the per-host panel index.
+/datum/flavor_panel/lifecycle_dematerialize()
+	. = ..()
 	if(host)
 		GLOB.dq_flavor_panels -= "[REF(host)]"
-	host = null
-	return ..()
 
 /datum/flavor_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state

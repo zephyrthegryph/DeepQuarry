@@ -77,11 +77,9 @@
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
 
+// LIFECYCLE: its integrated tools (assoc values) go with it.
 /obj/item/robotic_multibelt/Destroy()
-	selected_item = null
 	QDEL_LIST_ASSOC_VAL(cyborg_integrated_tools)
-	integrated_tools_by_name.Cut()
-	integrated_tool_images.Cut()
 	. = ..()
 
 /obj/item/robotic_multibelt/attack_self(mob/user)
@@ -512,9 +510,7 @@
 
 	. = ..()
 
-/obj/item/robotic_multibelt/materials/Destroy()
-	QDEL_LIST(cyborg_integrated_tools)
-	. = ..()
+REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 
 ///Allows the material fabricator to pick up materials if they hit an appropriate stack.
 /obj/item/robotic_multibelt/materials/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -595,14 +591,7 @@
 	RegisterSignal(our_robot, COMSIG_DO_AFTER_BEGAN, PROC_REF(begin_using))
 	RegisterSignal(our_robot, COMSIG_DO_AFTER_ENDED, PROC_REF(end_using))
 
-/obj/item/gripper/Destroy()
-	current_pocket = null
-	QDEL_LIST(pockets)
-	if(our_robot) //In case we returned INITIALIZE_HINT_QDEL earlier in initalize.
-		UnregisterSignal(our_robot, COMSIG_DO_AFTER_BEGAN)
-		UnregisterSignal(our_robot, COMSIG_DO_AFTER_ENDED)
-	our_robot = null
-	. = ..()
+REF_OWNED_LIST(/obj/item/gripper, "pockets")
 
 /obj/item/gripper/examine(mob/user)
 	. = ..()

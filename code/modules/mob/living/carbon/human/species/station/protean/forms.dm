@@ -63,6 +63,7 @@
 	REMOVE_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 	H.holder_type = prior_holder_type
 
+// LIFECYCLE: its form mobs are deleted after it detaches.
 /datum/component/forms/Destroy(force)
 	. = ..() // Detaches from the parent first; UnregisterFromParent still needs `current`.
 	current = null
@@ -130,7 +131,6 @@
 	if(source.stat == DEAD)
 		return
 	current.on_life(src, source)
-
 
 // --- Forms --------------------------------------------------------------------------
 
@@ -213,7 +213,6 @@
 
 /datum/form/human/announce_enter(mob/living/carbon/human/H)
 	return
-
 
 // --- Body-drawing hooks ---------------------------------------------------------------
 

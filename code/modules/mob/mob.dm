@@ -74,7 +74,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
 
-
 /mob/proc/remove_screen_obj_references()
 	hands = null
 	pullin = null
@@ -205,7 +204,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 		if (M.real_name == text("[]", msg))
 			return M
 	return 0
-
 
 #define UNBUCKLED 0
 #define PARTIALLY_BUCKLED 1
@@ -542,7 +540,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 
 	var/list/targets = list()
 
-
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
@@ -791,7 +788,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 /mob/proc/update_canmove()
 	return canmove
 
-
 /mob/proc/facedir(ndir)
 	if(!canface() || (client && (client.moving || !checkMoveCooldown())))
 		DEBUG_INPUT("Denying Facedir for [src] (moving=[client?.moving])")
@@ -803,26 +799,21 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 	setMoveCooldown(movement_delay())
 	return 1
 
-
 /mob/verb/eastface()
 	set hidden = 1
 	return facedir(client.client_dir(EAST))
-
 
 /mob/verb/westface()
 	set hidden = 1
 	return facedir(client.client_dir(WEST))
 
-
 /mob/verb/northface()
 	set hidden = 1
 	return facedir(client.client_dir(NORTH))
 
-
 /mob/verb/southface()
 	set hidden = 1
 	return facedir(client.client_dir(SOUTH))
-
 
 //This might need a rename but it should replace the can this mob use things check
 /mob/proc/IsAdvancedToolUser()
@@ -962,7 +953,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
 
 	om_do_after(U, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(yank_out_done), done_args = list(U, selection, self))
-
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()
@@ -1146,7 +1136,7 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 		exploit_record += exploitmsg
 		I.exploit_for = om_handle(src)
 
-
+// LIFECYCLE: exploit add-ons forget the item (the exploited mob is a handle).
 /obj/item/Destroy(force, ...)
 	if(exploit_for)
 		var/mob/exploited = om_resolve(exploit_for)
@@ -1154,7 +1144,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 		exploit_for = null
 	user_vars_remembered = null
 	. = ..()
-
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)
@@ -1502,7 +1491,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 
 		new new_organ(M)
 
-
 	if(href_list[VV_HK_REMOVEORGAN])
 		if(!check_rights(R_SPAWN))
 			return
@@ -1608,7 +1596,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	//	if(NAMEOF(src, logging))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
-
 
 // === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

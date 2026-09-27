@@ -86,6 +86,7 @@
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
+// LIFECYCLE: the protean core spills out; a dormant one repairs on the body.
 /obj/item/rig/protean/Destroy()
 	stop_soaking()
 	if(myprotean)
@@ -100,7 +101,6 @@
 			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster."))
 		myprotean = null
 	return ..()
-
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
 	if(istype(B,/obj/item/storage/backpack))
@@ -471,7 +471,6 @@
 	stop_soaking()
 	return ..()
 
-
 // --- Power ledger ------------------------------------------------------------------------
 // draw_power() and add_power() are the protean cluster's writers of its cell,
 // as for robots (robot.dm). Amounts are joules; the cell stores joules * CELLRATE.
@@ -505,7 +504,6 @@
 	if(stored > 0)
 		P.adjust_nutrition(-stored * CELLRATE * PROTEAN_RIG_NUTRITION_PER_UNIT)
 	return stored
-
 
 // --- Dormancy -------------------------------------------------------------------------------
 
@@ -580,7 +578,6 @@
 	. = ..()
 	charge = maxcharge
 	update_icon()
-
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
 	..()

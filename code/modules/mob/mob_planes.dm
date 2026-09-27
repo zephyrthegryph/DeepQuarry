@@ -244,10 +244,10 @@ REF_OWNED_LIST(/datum/plane_holder, "plane_masters")
 	. = ..()
 	my_mob = M
 
-/atom/movable/screen/plane_master/augmented/Destroy()
-	registry_leave(REGISTRY_ENTOPIC_USERS, my_mob)
-	my_mob = null
+/// Phase 2: its mob leaves the entopic users.
+/atom/movable/screen/plane_master/augmented/lifecycle_dematerialize()
 	. = ..()
+	registry_leave(REGISTRY_ENTOPIC_USERS, my_mob)
 
 /atom/movable/screen/plane_master/augmented/set_visibility(want = FALSE)
 	. = ..()
