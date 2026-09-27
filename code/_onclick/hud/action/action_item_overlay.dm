@@ -71,3 +71,14 @@
 
 	current_button.add_overlay(muse_appearance)
 	item_appearance = muse_appearance
+
+/// Phase 1: take our overlay off the parent's buttons while we still hold its appearance (owned,
+/// dropped in phase 4, before UnregisterFromParent() runs).
+/datum/component/action_item_overlay/lifecycle_unbind()
+	var/datum/action/parent_action = parent
+	if(parent_action && !QDELING(parent_action))
+		parent_action.build_all_button_icons(UPDATE_BUTTON_OVERLAY)
+
+/datum/component/action_item_overlay/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("item_callback", "item_appearance")

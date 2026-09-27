@@ -35,7 +35,7 @@
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/lleill/A = new /atom/movable/screen/ability/verb_based/lleill()
-	A.ability_master = src
+	A.ability_master_handle = om_handle(src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
@@ -43,5 +43,5 @@
 	if(arguments)
 		A.arguments_to_use = arguments
 	LAZYADD(ability_objects, A)
-	if(my_mob && my_mob.client)
+	if(my_mob()?.client)
 		toggle_open(2)

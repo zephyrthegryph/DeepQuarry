@@ -6,3 +6,19 @@
 /// The movable a throw is carrying (/datum/om/relation/throw_of).
 /datum/proc/throw_subject() as /atom/movable
 	return om_relation_of(src, /datum/om/relation/throw_of)
+
+/// The datum an action acts for (/datum/om/relation/action_for).
+/datum/proc/action_target() as /datum
+	return om_relation_of(src, /datum/om/relation/action_for)
+
+/// The mob an action is granted to (/datum/om/relation/action_granted_to).
+/datum/proc/action_owner() as /mob
+	return om_relation_of(src, /datum/om/relation/action_granted_to)
+
+/// A spell master's buttons (/datum/om/relation/spell_button_on).
+/datum/proc/spell_buttons() as /list
+	return om_related_to(src, /datum/om/relation/spell_button_on)
+
+/// The spell master a spell button is listed on (/datum/om/relation/spell_button_on).
+/datum/proc/spell_master_of() as /atom/movable/screen/movable/spell_master
+	return om_relation_of(src, /datum/om/relation/spell_button_on)

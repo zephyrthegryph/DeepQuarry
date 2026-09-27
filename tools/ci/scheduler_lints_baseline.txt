@@ -11,4 +11,4 @@ prompts 2235
 set_waitfor 70
 weakref 0
 del 13
-lc_refs 2622
+lc_refs 2523

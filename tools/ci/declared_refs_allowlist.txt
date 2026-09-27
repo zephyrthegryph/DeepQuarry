@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2509 vars in 1141 files.
+# Total: 2410 vars in 1124 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -35,23 +35,6 @@ code/ATMOSPHERICS/pipes/manifold4w.dm 2
 code/ATMOSPHERICS/pipes/pipe_base.dm 3
 code/ATMOSPHERICS/rust_pipenets.dm 1
 code/ATMOSPHERICS/tg_infra_compat.dm 1
-code/_onclick/hud/ability_screen_objects.dm 4
-code/_onclick/hud/action/action.dm 2
-code/_onclick/hud/action/action_group.dm 3
-code/_onclick/hud/action/action_item_overlay.dm 2
-code/_onclick/hud/action/action_screen_objects.dm 6
-code/_onclick/hud/hud.dm 31
-code/_onclick/hud/minihud.dm 1
-code/_onclick/hud/minihud_mapper.dm 1
-code/_onclick/hud/minihud_rigmech.dm 10
-code/_onclick/hud/picture_in_picture.dm 7
-code/_onclick/hud/popups.dm 1
-code/_onclick/hud/radial.dm 7
-code/_onclick/hud/radial_persistent.dm 1
-code/_onclick/hud/screen_objects.dm 15
-code/_onclick/hud/skybox.dm 1
-code/_onclick/hud/spell_screen_objects.dm 5
-code/_onclick/telekinesis.dm 2
 code/datums/EPv2.dm 1
 code/datums/ai_laws.dm 6
 code/datums/beam.dm 4

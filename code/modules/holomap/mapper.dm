@@ -140,7 +140,7 @@
 	if(!ishuman(loc) || user != loc)
 		to_chat(H, span_warning("This device needs to be on your person."))
 
-	if(hud_datum?.main_hud)
+	if(hud_datum?.main_hud())
 		hide_device()
 		to_chat(H, span_notice("You put \the [src] away."))
 	else

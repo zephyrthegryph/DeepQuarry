@@ -230,10 +230,10 @@
 			client.screen += HUD.control_vtec
 
 /datum/hud/proc/toggle_vtec_control()
-	if(!isrobot(mymob))
+	if(!isrobot(mymob()))
 		return
 
-	var/mob/living/silicon/robot/R = mymob
+	var/mob/living/silicon/robot/R = mymob()
 	if(!control_vtec)
 		var/atom/movable/screen/using = new /atom/movable/screen()
 		using.name = "control_vtec"
@@ -257,20 +257,20 @@
 		R.speed = 0
 
 /datum/hud/proc/toggle_show_robot_modules()
-	if(!isrobot(mymob))
+	if(!isrobot(mymob()))
 		return
 
-	var/mob/living/silicon/robot/r = mymob
+	var/mob/living/silicon/robot/r = mymob()
 
 	r.shown_robot_modules = !r.shown_robot_modules
 	update_robot_modules_display()
 
 
 /datum/hud/proc/update_robot_modules_display(reset = FALSE)
-	if(!isrobot(mymob))
+	if(!isrobot(mymob()))
 		return
 
-	var/mob/living/silicon/robot/r = mymob
+	var/mob/living/silicon/robot/r = mymob()
 
 	if(r.shown_robot_modules && !reset)
 		//Modules display is shown

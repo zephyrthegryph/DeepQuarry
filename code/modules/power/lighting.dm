@@ -968,7 +968,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
-	O.host = user
+	O.host_handle = om_handle(user)
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()

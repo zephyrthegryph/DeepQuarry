@@ -69,9 +69,13 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
 /// A turf's handle is its ref text ("[0x...]"): turfs are never deleted and a turf's
 /// ref is its position, so it survives ChangeTurf() (which resets the turf's vars).
+/// A client's is "@ckey", resolved through GLOB.directory.
 /proc/om_handle(datum/D)
 	if(isturf(D))
 		return REF(D)
+	if(isclient(D))
+		var/client/C = D
+		return "@[C.ckey]" // a client is its ckey: it reads null while that player is disconnected
 	if(!isdatum(D) || QDELETED(D))
 		return null
 	var/list/slots = GLOB.om_handle_slots
@@ -91,13 +95,26 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		D.om_hid = id
 	return "[id]:[gens[id]]"
 
+/// The handle `D` already has, even while `D` is being deleted (until phase 5 releases it), or null
+/// if it never had one. Never allocates. For taking a dying datum out of a handle-keyed list.
+/proc/om_handle_of(datum/D)
+	if(isturf(D) || isclient(D))
+		return om_handle(D)
+	if(!isdatum(D))
+		return null
+	var/id = D.om_hid
+	return id ? "[id]:[GLOB.om_handle_gens[id]]" : null
+
 /// The datum a handle names, or null if it has been deleted (whatever now uses its id).
 /proc/om_resolve(h)
 	if(!istext(h))
 		return null
-	if(text2ascii(h) == 91) // "[": a turf's ref (om_handle())
-		var/turf/T = locate(h)
-		return isturf(T) ? T : null
+	switch(text2ascii(h))
+		if(91) // "[": a turf's ref (om_handle())
+			var/turf/T = locate(h)
+			return isturf(T) ? T : null
+		if(64) // "@": a client's ckey
+			return GLOB.directory[copytext(h, 2)]
 	var/sep = findtext(h, ":")
 	if(!sep)
 		return null
@@ -137,7 +154,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
 /// whether it still resolves.
 /proc/om_is_handle(h)
-	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\])$")
+	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\]|@\w+)$")
 	return istext(h) && shape.Find(h)
 
 /// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).

@@ -134,47 +134,47 @@
 	var/atom/movable/screen/using
 	using = new /atom/movable/screen/ghost/returntomenu()
 	using.screen_loc = ui_ghost_returntomenu
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/jumptomob()
 	using.screen_loc = ui_ghost_jumptomob
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/orbit()
 	using.screen_loc = ui_ghost_orbit
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/reenter_corpse()
 	using.screen_loc = ui_ghost_reenter_corpse
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/teleport()
 	using.screen_loc = ui_ghost_teleport
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/pai()
 	using.screen_loc = ui_ghost_pai
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/up()
 	using.screen_loc = ui_ghost_updown
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/down()
 	using.screen_loc = ui_ghost_updown
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/ghost/vr()
 	using.screen_loc = ui_ghost_vr
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	if(client && apply_to_client)

@@ -32,7 +32,7 @@
 		inv_box.icon = HUD.ui_style
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
-		inv_box.hud = HUD
+		inv_box.hud_handle = om_handle(HUD)
 
 		var/list/slot_data =  hud_data.gear[gear_slot]
 		inv_box.name =        gear_slot
@@ -110,7 +110,7 @@
 		adding |= using
 
 		inv_box = new /atom/movable/screen/inventory/hand()
-		inv_box.hud = HUD
+		inv_box.hud_handle = om_handle(HUD)
 		inv_box.name = "r_hand"
 		inv_box.icon = HUD.ui_style
 		inv_box.icon_state = "r_hand_inactive"
@@ -125,7 +125,7 @@
 		slot_info["[slot_r_hand]"] = inv_box.screen_loc
 
 		inv_box = new /atom/movable/screen/inventory/hand()
-		inv_box.hud = HUD
+		inv_box.hud_handle = om_handle(HUD)
 		inv_box.name = "l_hand"
 		inv_box.icon = HUD.ui_style
 		inv_box.icon_state = "l_hand_inactive"
@@ -146,7 +146,7 @@
 		using.screen_loc = ui_swaphand1
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		using.hud = HUD
+		using.hud_handle = om_handle(HUD)
 		adding += using
 
 		using = new /atom/movable/screen/inventory()
@@ -156,7 +156,7 @@
 		using.screen_loc = ui_swaphand2
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		using.hud = HUD
+		using.hud_handle = om_handle(HUD)
 		adding += using
 
 	if(hud_data.has_resist)

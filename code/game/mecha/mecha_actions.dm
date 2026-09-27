@@ -136,7 +136,7 @@
 /datum/action/innate/mecha/mech_defence_mode/Activate()
 	button_icon_state = "mech_defense_mode_[chassis.defence_mode ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.defence_mode(owner)
+	chassis.defence_mode(action_owner())
 
 
 
@@ -147,7 +147,7 @@
 /datum/action/innate/mecha/mech_overload_mode/Activate()
 	button_icon_state = "mech_overload_[chassis.overload ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.overload(owner)
+	chassis.overload(action_owner())
 
 
 
@@ -158,7 +158,7 @@
 /datum/action/innate/mecha/mech_smoke/Activate()
 	//button_icon_state = "mech_smoke_[chassis.smoke ? "off" : "on"]"
 	//build_all_button_icons()	//Dual colors notneeded ATM
-	chassis.smoke(owner)
+	chassis.smoke(action_owner())
 
 
 
@@ -169,7 +169,7 @@
 /datum/action/innate/mecha/mech_zoom/Activate()
 	button_icon_state = "mech_zoom_[chassis.zoom ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.zoom(owner)
+	chassis.zoom(action_owner())
 
 
 
@@ -180,7 +180,7 @@
 /datum/action/innate/mecha/mech_toggle_thrusters/Activate()
 	button_icon_state = "mech_thrusters_[chassis.thrusters ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.thrusters(owner)
+	chassis.thrusters(action_owner())
 
 
 
@@ -233,7 +233,7 @@
 	button_icon_state = "mech_damtype_[chassis.melee_damtype_icon()]"
 	playsound(src, 'sound/mecha/mechmove01.ogg', 50, 1)
 	build_all_button_icons()
-	chassis.query_damtype(owner)
+	chassis.query_damtype(action_owner())
 
 
 
@@ -244,7 +244,7 @@
 /datum/action/innate/mecha/mech_toggle_phasing/Activate()
 	button_icon_state = "mech_phasing_[chassis.phasing ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.phasing(owner)
+	chassis.phasing(action_owner())
 
 
 
@@ -255,7 +255,7 @@
 /datum/action/innate/mecha/mech_toggle_cloaking/Activate()
 	button_icon_state = "mech_phasing_[dq_get_cloaked(chassis) ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.toggle_cloaking(owner)
+	chassis.toggle_cloaking(action_owner())
 
 
 

@@ -1,6 +1,6 @@
 /datum/action_group
 	/// The hud we're owned by
-	var/datum/hud/owner
+	var/owner_handle
 	/// The actions we're managing
 	var/list/atom/movable/screen/movable/action_button/actions
 	/// The initial vertical offset of our action buttons
@@ -24,10 +24,9 @@
 /datum/action_group/New(datum/hud/owner)
 	..()
 	actions = list()
-	src.owner = owner
+	src.owner_handle = om_handle(owner)
 
 /datum/action_group/Destroy()
-	owner = null
 	QDEL_NULL(landing)
 	QDEL_LIST(actions)
 	return ..()
@@ -92,7 +91,7 @@
 	return "WEST[coord_col]:[coord_col_offset],NORTH[coord_row]:-[pixel_north_offset]"
 
 /datum/action_group/proc/check_against_view()
-	var/owner_view = owner?.mymob?.client?.view
+	var/owner_view = owner()?.mymob()?.client?.view
 	if(!owner_view)
 		return
 	// Unlikey as it is, we may have been changed. Want to start from our target position and fail down
@@ -154,28 +153,28 @@
 
 /datum/action_group/palette/insert_action(atom/movable/screen/action, index)
 	. = ..()
-	var/atom/movable/screen/button_palette/palette = owner.toggle_palette
+	var/atom/movable/screen/button_palette/palette = owner().toggle_palette
 	palette.play_item_added()
 
 /datum/action_group/palette/remove_action(atom/movable/screen/action)
 	. = ..()
-	var/atom/movable/screen/button_palette/palette = owner.toggle_palette
+	var/atom/movable/screen/button_palette/palette = owner().toggle_palette
 	palette.play_item_removed()
 	if(!length(actions))
 		palette.set_expanded(FALSE)
 
 /datum/action_group/palette/refresh_actions()
-	var/atom/movable/screen/button_palette/palette = owner.toggle_palette
-	var/atom/movable/screen/palette_scroll/scroll_down = owner.palette_down
-	var/atom/movable/screen/palette_scroll/scroll_up = owner.palette_up
+	var/atom/movable/screen/button_palette/palette = owner().toggle_palette
+	var/atom/movable/screen/palette_scroll/scroll_down = owner().palette_down
+	var/atom/movable/screen/palette_scroll/scroll_up = owner().palette_up
 	if(!palette || !scroll_down || !scroll_up)
 		return
 
-	var/actions_above = round((owner.listed_actions.size() - 1) / owner.listed_actions.column_max)
+	var/actions_above = round((owner().listed_actions.size() - 1) / owner().listed_actions.column_max)
 	north_offset = initial(north_offset) + actions_above
 
 	palette.screen_loc = ui_action_palette_offset(actions_above)
-	var/action_count = length(owner?.mymob?.actions)
+	var/action_count = length(owner()?.mymob()?.actions)
 	var/our_row_count = round((length(actions) - 1) / column_max)
 	if(!action_count)
 		palette.screen_loc = null
@@ -190,7 +189,7 @@
 	return ..()
 
 /datum/action_group/palette/ButtonNumberToScreenCoords(number, landing)
-	var/atom/movable/screen/button_palette/palette = owner.toggle_palette
+	var/atom/movable/screen/button_palette/palette = owner().toggle_palette
 	if(palette.expanded)
 		return ..()
 
@@ -209,4 +208,16 @@
 
 /datum/action_group/listed/refresh_actions()
 	. = ..()
-	owner?.palette_actions.refresh_actions() // We effect them, so we gotta refresh em
+	owner()?.palette_actions.refresh_actions() // We effect them, so we gotta refresh em
+
+/// LC-refs: the hud that owns this group -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/action_group/proc/owner() as /datum/hud
+	return om_resolve(owner_handle)
+
+/datum/action_group/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("landing")
+
+/datum/action_group/declared_owned_list_vars()
+	. = ..()
+	. = (. || list()) + list("actions")

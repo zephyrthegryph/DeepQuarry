@@ -63,7 +63,7 @@
 	if(!aiEye) // Exploit Fix
 		qdel(src)
 		return
-	aiEye.setLoc(get_turf(center))
+	aiEye.setLoc(get_turf(center()))
 
 /atom/movable/screen/movable/pic_in_pic/ai/proc/highlight()
 	if(highlighted)
@@ -273,6 +273,6 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 	if(P)
 		P.highlight()
-		eyeobj.setLoc(get_turf(P.center))
+		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
 		master_multicam = P

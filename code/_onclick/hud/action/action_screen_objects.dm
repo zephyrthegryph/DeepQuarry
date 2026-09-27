@@ -1,6 +1,6 @@
 /atom/movable/screen/movable/action_button
-	var/datum/action/linked_action
-	var/datum/hud/our_hud
+	var/linked_action_handle
+	var/our_hud_handle
 	var/actiontooltipstyle = ""
 	screen_loc = null
 	icon = null // we don't use the base icon at all, just underlays and overlays
@@ -21,21 +21,22 @@
 	var/last_hovored_ref
 
 /atom/movable/screen/movable/action_button/Destroy()
-	if(our_hud)
-		var/mob/viewer = our_hud.mymob
-		our_hud.hide_action(src)
+	var/datum/hud/hud = our_hud()
+	if(hud)
+		var/mob/viewer = hud.mymob()
+		hud.hide_action(src)
 		viewer?.client?.screen -= src
-		linked_action.viewers -= our_hud
-		viewer.update_action_buttons()
-		our_hud = null
-	linked_action = null
-	last_hovored_ref = null
+		viewer?.update_action_buttons()
+	var/datum/action/action = linked_action()
+	if(action && our_hud_handle)
+		action.viewers -= our_hud_handle
 	return ..()
 
 /atom/movable/screen/movable/action_button/proc/can_use(mob/user)
 
-	if(linked_action)
-		if(linked_action.viewers[user.hud_used])
+	var/datum/action/action = linked_action()
+	if(action)
+		if(user.hud_used && action.viewers[om_handle(user.hud_used)])
 			return TRUE
 		return FALSE
 
@@ -56,7 +57,7 @@
 	var/trigger_flags
 	if(LAZYACCESS(modifiers, RIGHT_CLICK))
 		trigger_flags |= TRIGGER_SECONDARY_ACTION
-	linked_action.Trigger(trigger_flags = trigger_flags)
+	linked_action().Trigger(trigger_flags = trigger_flags)
 	return TRUE
 
 // Entered and Exited won't fire while you're dragging something, because you're still "holding" it
@@ -121,7 +122,7 @@
 	save_position()
 
 /atom/movable/screen/movable/action_button/proc/save_position()
-	var/mob/user = our_hud.mymob
+	var/mob/user = our_hud().mymob()
 	if(!user?.client)
 		return
 	var/position_info = ""
@@ -136,14 +137,14 @@
 	LAZYSET(user.client.prefs.action_button_screen_locs, "[name]_[id]", position_info)
 
 /atom/movable/screen/movable/action_button/proc/load_position()
-	var/mob/user = our_hud.mymob
+	var/mob/user = our_hud().mymob()
 	if(!user)
 		return
 	var/position_info = LAZYACCESS(user.client?.prefs?.action_button_screen_locs, "[name]_[id]") || SCRN_OBJ_DEFAULT
 	user.hud_used.position_action(src, position_info)
 
 /atom/movable/screen/movable/action_button/proc/dump_save()
-	var/mob/user = our_hud.mymob
+	var/mob/user = our_hud().mymob()
 	if(!user?.client?.prefs)
 		return
 	LAZYREMOVE(user.client.prefs.action_button_screen_locs, "[name]_[id]")
@@ -187,7 +188,7 @@
 		return
 
 	for(var/datum/action/action as anything in actions)
-		var/atom/movable/screen/movable/action_button/button = action.viewers[hud_used]
+		var/atom/movable/screen/movable/action_button/button = action.viewers[om_handle(hud_used)]
 		action.build_all_button_icons()
 		if(reload_screen)
 			client.screen += button
@@ -247,16 +248,16 @@
 	icon = 'icons/hud/64x16_actions.dmi'
 	icon_state = "screen_gen_palette"
 	screen_loc = ui_action_palette
-	var/datum/hud/our_hud
+	var/our_hud_handle
 	var/expanded = FALSE
 	/// Id of any currently running timers that set our color matrix
 	var/color_timer_id
 
 /atom/movable/screen/button_palette/Destroy()
-	if(our_hud)
-		our_hud.mymob?.client?.screen -= src
-		our_hud.toggle_palette = null
-		our_hud = null
+	if(our_hud())
+		our_hud().mymob()?.client?.screen -= src
+		our_hud().toggle_palette = null
+		our_hud_handle = null
 	return ..()
 
 /atom/movable/screen/button_palette/Initialize(mapload)
@@ -265,7 +266,7 @@
 	update_name()
 
 /atom/movable/screen/button_palette/proc/set_hud(datum/hud/our_hud)
-	src.our_hud = our_hud
+	src.our_hud_handle = om_handle(our_hud)
 	refresh_owner()
 
 // /atom/movable/screen/button_palette/update_name(updates)
@@ -277,7 +278,7 @@
 		name = "Show Buttons"
 
 /atom/movable/screen/button_palette/proc/refresh_owner()
-	var/mob/viewer = our_hud.mymob
+	var/mob/viewer = our_hud().mymob()
 	if(viewer.client)
 		viewer.client.screen |= src
 
@@ -330,9 +331,10 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 	if(LAZYACCESS(modifiers, ALT_CLICK))
 		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
-			for(var/datum/hud/hud as anything in action.viewers)
-				var/atom/movable/screen/movable/action_button/button = action.viewers[hud]
-				hud.position_action(button, SCRN_OBJ_DEFAULT)
+			for(var/hud_handle in action.viewers)
+				var/datum/hud/hud = om_resolve(hud_handle)
+				var/atom/movable/screen/movable/action_button/button = action.viewers[hud_handle]
+				hud?.position_action(button, SCRN_OBJ_DEFAULT)
 		to_chat(usr, span_notice("Action button positions have been reset."))
 		return TRUE
 
@@ -347,7 +349,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 		UnregisterSignal(source, COMSIG_CLIENT_CLICK)
 
 /atom/movable/screen/button_palette/proc/set_expanded(new_expanded)
-	var/datum/action_group/our_group = our_hud.palette_actions
+	var/datum/action_group/our_group = our_hud().palette_actions
 	if(!length(our_group.actions)) //Looks dumb, trust me lad
 		new_expanded = FALSE
 	if(expanded == new_expanded)
@@ -374,7 +376,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	/// How should we move the palette's actions?
 	/// Positive scrolls down the list, negative scrolls back
 	var/scroll_direction = 0
-	var/datum/hud/our_hud
+	var/our_hud_handle
 
 /atom/movable/screen/palette_scroll/proc/can_use(mob/user)
 	if(isobserver(user))
@@ -384,11 +386,11 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return TRUE
 
 /atom/movable/screen/palette_scroll/proc/set_hud(datum/hud/our_hud)
-	src.our_hud = our_hud
+	src.our_hud_handle = om_handle(our_hud)
 	refresh_owner()
 
 /atom/movable/screen/palette_scroll/proc/refresh_owner()
-	var/mob/viewer = our_hud.mymob
+	var/mob/viewer = our_hud().mymob()
 	if(viewer.client)
 		viewer.client.screen |= src
 
@@ -398,7 +400,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 /atom/movable/screen/palette_scroll/Click(location, control, params)
 	if(!can_use(usr))
 		return
-	our_hud.palette_actions.scroll(scroll_direction)
+	our_hud().palette_actions.scroll(scroll_direction)
 
 /atom/movable/screen/palette_scroll/MouseEntered(location, control, params)
 	. = ..()
@@ -417,10 +419,10 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	scroll_direction = 1
 
 /atom/movable/screen/palette_scroll/down/Destroy()
-	if(our_hud)
-		our_hud.mymob?.client?.screen -= src
-		our_hud.palette_down = null
-		our_hud = null
+	if(our_hud())
+		our_hud().mymob()?.client?.screen -= src
+		our_hud().palette_down = null
+		our_hud_handle = null
 	return ..()
 
 /atom/movable/screen/palette_scroll/up
@@ -430,10 +432,10 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	scroll_direction = -1
 
 /atom/movable/screen/palette_scroll/up/Destroy()
-	if(our_hud)
-		our_hud.mymob?.client?.screen -= src
-		our_hud.palette_up = null
-		our_hud = null
+	if(our_hud())
+		our_hud().mymob()?.client?.screen -= src
+		our_hud().palette_up = null
+		our_hud_handle = null
 	return ..()
 
 /// Exists so you have a place to put your buttons when you move them around
@@ -444,23 +446,24 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	icon_state = "reserved"
 	// We want our whole 32x32 space to be clickable, so dropping's forgiving
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
-	var/datum/action_group/owner
+	var/owner_handle
 
 /atom/movable/screen/action_landing/Destroy()
-	if(owner)
-		owner.landing = null
-		owner?.owner?.mymob?.client?.screen -= src
-		owner.refresh_actions()
-		owner = null
+	var/datum/action_group/group = owner()
+	if(group)
+		group.landing = null
+		var/datum/hud/hud = group.owner()
+		hud?.mymob()?.client?.screen -= src
+		group.refresh_actions()
 	return ..()
 
 /atom/movable/screen/action_landing/proc/set_owner(datum/action_group/owner)
-	src.owner = owner
+	src.owner_handle = om_handle(owner)
 	refresh_owner()
 
 /atom/movable/screen/action_landing/proc/refresh_owner()
-	var/datum/hud/our_hud = owner.owner
-	var/mob/viewer = our_hud.mymob
+	var/datum/hud/our_hud = owner()?.owner()
+	var/mob/viewer = our_hud.mymob()
 	if(viewer.client)
 		viewer.client.screen |= src
 
@@ -469,5 +472,29 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 /// Reacts to having a button dropped on it
 /atom/movable/screen/action_landing/proc/hit_by(atom/movable/screen/movable/action_button/button)
-	var/datum/hud/our_hud = owner.owner
-	our_hud.position_action(button, owner.location)
+	var/datum/hud/our_hud = owner()?.owner()
+	our_hud.position_action(button, owner().location)
+
+/// LC-refs: the action this button triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/action_button/proc/linked_action() as /datum/action
+	return om_resolve(linked_action_handle)
+
+/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/action_button/proc/our_hud() as /datum/hud
+	return om_resolve(our_hud_handle)
+
+/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/button_palette/proc/our_hud() as /datum/hud
+	return om_resolve(our_hud_handle)
+
+/// LC-refs: the hud this is shown on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/palette_scroll/proc/our_hud() as /datum/hud
+	return om_resolve(our_hud_handle)
+
+/// LC-refs: the action group this landing belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/action_landing/proc/owner() as /datum/action_group
+	return om_resolve(owner_handle)
+
+/atom/movable/screen/movable/action_button/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("button_overlay")

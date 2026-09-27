@@ -3,14 +3,13 @@
 # this file: a file may not exceed its count. Make the list an owned-children
 # list, a backlist, a declared cache with an invalidation rule, a relation or
 # a registry, or key it by OM handle, and lower the count with --update.
-# Total: 596 writes in 142 files.
+# Total: 595 writes in 141 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
 code/ATMOSPHERICS/datum_pipe_network.dm 5
 code/ATMOSPHERICS/environmental/LINDA_fire.dm 1
 code/ATMOSPHERICS/xgm_compat.dm 2
-code/_onclick/hud/action/action.dm 1
 code/datums/category.dm 4
 code/datums/components/materials/material_container.dm 1
 code/datums/containment/ledger.dm 2

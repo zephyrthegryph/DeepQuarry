@@ -8,18 +8,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	plane = PLANE_PLAYER_HUD_ABOVE
 	vis_flags = VIS_INHERIT_PLANE
 	var/click_on_hover = FALSE
-	var/datum/radial_menu/parent
+	var/parent_handle
 
 /atom/movable/screen/radial/proc/set_parent(new_value)
-	if(parent)
-		UnregisterSignal(parent, COMSIG_QDELETING)
-	parent = new_value
-	if(parent)
-		RegisterSignal(parent, COMSIG_QDELETING, PROC_REF(handle_parent_del))
-
-/atom/movable/screen/radial/proc/handle_parent_del()
-	SIGNAL_HANDLER
-	set_parent(null)
+	parent_handle = om_handle(new_value)
 
 /atom/movable/screen/radial/slice
 	icon_state = "radial_slice"
@@ -29,35 +21,35 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 /atom/movable/screen/radial/slice/set_parent(new_value)
 	. = ..()
-	if(parent)
-		icon_state = parent.radial_slice_icon
+	if(parent())
+		icon_state = parent().radial_slice_icon
 
 /atom/movable/screen/radial/slice/MouseEntered(location, control, params)
 	. = ..()
-	if(next_page || !parent)
+	if(next_page || !parent())
 		icon_state = "radial_slice_focus"
 	else
-		icon_state = "[parent.radial_slice_icon]_focus"
+		icon_state = "[parent().radial_slice_icon]_focus"
 	if(tooltips)
 		openToolTip(usr, src, params, title = name)
-	if (click_on_hover && !isnull(usr) && !isnull(parent))
+	if (click_on_hover && !isnull(usr) && !isnull(parent()))
 		Click(location, control, params)
 
 /atom/movable/screen/radial/slice/MouseExited(location, control, params)
 	. = ..()
-	if(next_page || !parent)
+	if(next_page || !parent())
 		icon_state = "radial_slice"
 	else
-		icon_state = parent.radial_slice_icon
+		icon_state = parent().radial_slice_icon
 	if(tooltips)
 		closeToolTip(usr, src)
 
 /atom/movable/screen/radial/slice/Click(location, control, params)
-	if(usr.client == parent.current_user)
+	if(usr.client == parent().current_user())
 		if(next_page)
-			parent.next_page()
+			parent().next_page()
 		else
-			parent.element_chosen(choice, usr, params)
+			parent().element_chosen(choice, usr, params)
 
 /atom/movable/screen/radial/center
 	name = "Close Menu"
@@ -72,8 +64,8 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	icon_state = "radial_center"
 
 /atom/movable/screen/radial/center/Click(location, control, params)
-	if(usr.client == parent.current_user)
-		parent.finished = TRUE
+	if(usr.client == parent().current_user())
+		parent().finished = TRUE
 
 /datum/radial_menu
 	/// List of choice IDs
@@ -94,8 +86,8 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/selected_choice
 	var/list/atom/movable/screen/elements
 	var/atom/movable/screen/radial/center/close_button
-	var/client/current_user
-	var/atom/anchor
+	var/current_user_handle
+	var/anchor_handle
 	var/image/menu_holder
 	var/finished = FALSE
 	var/datum/callback/custom_check_callback
@@ -120,17 +112,17 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 //If we swap to vis_contens inventory these will need a redo
 /datum/radial_menu/proc/check_screen_border(mob/user)
-	var/atom/movable/AM = anchor
+	var/atom/movable/AM = anchor()
 	if(!istype(AM) || !AM.screen_loc)
 		return
 	if(AM in user.client.screen)
 		if(hudfix_method)
-			anchor = user
+			anchor_handle = om_handle(user)
 		else
 			py_shift = 32
 			restrict_to_dir(NORTH) //I was going to parse screen loc here but that's more effort than it's worth.
 	else if(hudfix_method && AM.loc)
-		anchor = get_atom_on_turf(anchor)
+		anchor_handle = om_handle(get_atom_on_turf(anchor()))
 
 //Sets defaults
 //These assume 45 deg min_angle
@@ -318,24 +310,24 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		update_screen_objects()
 
 /datum/radial_menu/proc/show_to(mob/M, offset_x = 0, offset_y = 0)
-	if(current_user)
+	if(current_user())
 		hide()
-	if(!M.client || !anchor)
+	if(!M.client || !anchor())
 		return
-	current_user = M.client
+	current_user_handle = om_handle(M.client)
 	//Blank
-	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor,icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
+	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
 	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE
 	menu_holder.appearance_flags |= KEEP_APART|RESET_ALPHA|RESET_COLOR|RESET_TRANSFORM
 	menu_holder.vis_contents += elements + close_button
-	current_user.images += menu_holder
+	current_user().images += menu_holder
 
 /datum/radial_menu/proc/hide()
-	if(current_user)
-		current_user.images -= menu_holder
+	if(current_user())
+		current_user().images -= menu_holder
 
 /datum/radial_menu/proc/wait(atom/user, atom/anchor, require_near = FALSE)
-	while (current_user && !finished && !selected_choice)
+	while (current_user() && !finished && !selected_choice)
 		if(require_near && !in_range(anchor, user))
 			return
 		if(custom_check_callback && next_check < world.time)
@@ -345,14 +337,25 @@ GLOBAL_LIST_EMPTY(radial_menus)
 				next_check = world.time + check_delay
 		stoplag(1)
 
+/// Phase 1: take the menu off the user's screen while its holder image (owned) still exists.
+/datum/radial_menu/lifecycle_unbind()
+	hide()
+
 /datum/radial_menu/Destroy()
 	Reset()
-	hide()
-	custom_check_callback = null
 	. = ..()
 
+/// The menu's slices, centre button, holder image and check callback are its own.
+/datum/radial_menu/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("close_button", "menu_holder", "custom_check_callback")
+
+/datum/radial_menu/declared_owned_list_vars()
+	. = ..()
+	. = (. || list()) + list("elements")
+
 /*
-	Presents radial menu to user anchored to anchor (or user if the anchor is currently in users screen)
+	Presents radial menu to user anchored to anchor() (or user if the anchor() is currently in users screen)
 	Choices should be a list where list keys are movables or text used for element names and return value
 	and list values are movables/icons/images used for element icons
 */
@@ -379,7 +382,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		menu.radius = radius
 	if(istype(custom_check))
 		menu.custom_check_callback = custom_check
-	menu.anchor = user_space ? user : anchor
+	menu.anchor_handle = om_handle(user_space ? user : anchor)
 	menu.radial_slice_icon = radial_slice_icon
 	menu.check_screen_border(user) //Do what's needed to make it look good near borders or on hud
 	menu.set_choices(choices, tooltips, click_on_hover)
@@ -419,3 +422,15 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 #undef NEXT_PAGE_ID
 #undef DEFAULT_CHECK_DELAY
+
+/// LC-refs: the radial menu this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/radial/proc/parent() as /datum/radial_menu
+	return om_resolve(parent_handle)
+
+/// LC-refs: the client the menu is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/radial_menu/proc/current_user() as /client
+	return om_resolve(current_user_handle)
+
+/// LC-refs: the atom the menu is anchored to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/radial_menu/proc/anchor() as /atom
+	return om_resolve(anchor_handle)

@@ -66,3 +66,7 @@
 #undef SKYBOX_PADDING
 #undef SKYBOX_PIXELS
 #undef SKYBOX_TURFS
+
+/client/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + list("skybox")

@@ -10,12 +10,12 @@
 
 	screen_loc = ui_spell_master // TODO: Rename
 
-	var/mob/my_mob = null // The mob that possesses this hud object.
+	var/my_mob_handle	// The mob that possesses this hud object.
 
 /atom/movable/screen/movable/ability_master/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		my_mob = loc
+		my_mob_handle = om_handle(loc)
 		update_abilities(0, loc)
 		overlays.Add(closed_state)
 	else
@@ -27,11 +27,11 @@
 	LAZYCLEARLIST(ability_objects)
 
 	// After that, remove ourselves from the mob seeing us, so we can qdel cleanly.
-	if(my_mob)
-		my_mob.ability_master = null
-		if(my_mob.client && my_mob.client.screen)
-			my_mob.client.screen -= src
-		my_mob = null
+	if(my_mob())
+		my_mob().ability_master = null
+		if(my_mob().client && my_mob().client.screen)
+			my_mob().client.screen -= src
+		my_mob_handle = null
 	return ..()
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
@@ -50,8 +50,8 @@
 /atom/movable/screen/movable/ability_master/proc/toggle_open(forced_state = 0)
 	if(showing && (forced_state != 2)) // We are closing the ability master, hide the abilities.
 		for(var/atom/movable/screen/ability/O in ability_objects)
-			if(my_mob && my_mob.client)
-				my_mob.client.screen -= O
+			if(my_mob() && my_mob().client)
+				my_mob().client.screen -= O
 //			O.handle_icon_updates = 0
 		showing = 0
 		overlays.len = 0
@@ -82,9 +82,9 @@
 		var/xpos = x_position + (x_position < 8 ? 1 : -1)*(i%7)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		A.screen_loc = "[encode_screen_X(xpos)]:[x_pix],[encode_screen_Y(ypos)]:[y_pix]"
-		if(my_mob && my_mob.client)
-			my_mob.client.screen += A
-			my_mob.client.screen |= src
+		if(my_mob() && my_mob().client)
+			my_mob().client.screen += A
+			my_mob().client.screen |= src
 //			A.handle_icon_updates = 1
 
 /atom/movable/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
@@ -112,7 +112,7 @@
 //		return
 
 	var/atom/movable/screen/ability/new_button = new /atom/movable/screen/ability
-	new_button.ability_master = src
+	new_button.ability_master_handle = om_handle(src)
 //	new_button.spell = spell
 
 //	spell.connected_button = newscreen
@@ -121,7 +121,7 @@
 	new_button.ability_icon_state = name_given
 	new_button.update_icon(1)
 	LAZYADD(ability_objects, new_button)
-	if(my_mob.client)
+	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
@@ -154,7 +154,7 @@
 
 /atom/movable/screen/movable/ability_master/proc/get_ability_by_instance(obj/instance/)
 	for(var/atom/movable/screen/ability/obj_based/O in ability_objects)
-		if(O.object == instance)
+		if(O.object() == instance)
 			return O
 	return null
 
@@ -181,19 +181,19 @@
 	var/index = 0
 
 //	var/spell/spell = null
-	var/atom/movable/screen/movable/ability_master/ability_master
+	var/ability_master_handle
 
 //	var/icon/last_charged_icon
 
 /atom/movable/screen/ability/Destroy()
-	if(ability_master)
-		LAZYREMOVE(ability_master.ability_objects, src)
-		if(ability_master.my_mob && ability_master.my_mob.client)
-			ability_master.my_mob.client.screen -= src
-	if(ability_master && !length(ability_master.ability_objects))
-		ability_master.update_icon()
+	if(master_of())
+		LAZYREMOVE(master_of().ability_objects, src)
+		if(master_of().my_mob() && master_of().my_mob().client)
+			master_of().my_mob().client.screen -= src
+	if(master_of() && !length(master_of().ability_objects))
+		master_of().update_icon()
 //		qdel(ability_master)
-	ability_master = null
+	ability_master_handle = null
 	. = ..()
 
 /atom/movable/screen/ability/update_icon()
@@ -223,9 +223,9 @@
 		return
 	if(istype(A, /atom/movable/screen/ability))
 		var/atom/movable/screen/ability/ability = A
-		if(ability.ability_master && ability.ability_master == src.ability_master)
-			LAZYINITLIST(ability_master.ability_objects); ability_master.ability_objects.Swap(src.index, ability.index)
-			ability_master.toggle_open(2) // To update the UI.
+		if(ability.master_of() && ability.master_of() == src.master_of())
+			LAZYINITLIST(master_of().ability_objects); master_of().ability_objects.Swap(src.index, ability.index)
+			master_of().toggle_open(2) // To update the UI.
 
 // Makes the ability be triggered.  The subclasses of this are responsible for carrying it out in whatever way it needs to.
 /atom/movable/screen/ability/proc/activate()
@@ -272,7 +272,7 @@
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/A = new /atom/movable/screen/ability/verb_based()
-	A.ability_master = src
+	A.ability_master_handle = om_handle(src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
@@ -280,7 +280,7 @@
 	if(arguments)
 		A.arguments_to_use = arguments
 	LAZYADD(ability_objects, A)
-	if(my_mob.client)
+	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 //Changeling Abilities
@@ -296,7 +296,7 @@
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/changeling/A = new /atom/movable/screen/ability/verb_based/changeling()
-	A.ability_master = src
+	A.ability_master_handle = om_handle(src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
@@ -304,7 +304,7 @@
 	if(arguments)
 		A.arguments_to_use = arguments
 	LAZYADD(ability_objects, A)
-	if(my_mob.client)
+	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /////////Obj Abilities////////
@@ -312,11 +312,11 @@
 //////////////////////////////
 
 /atom/movable/screen/ability/obj_based
-	var/obj/object = null
+	var/object_handle
 
 /atom/movable/screen/ability/obj_based/activate()
-	if(object)
-		object.Click()
+	if(object())
+		object().Click()
 
 // Technomancer
 /atom/movable/screen/ability/obj_based/technomancer
@@ -329,10 +329,26 @@
 	if(get_ability_by_instance(object_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/obj_based/technomancer/A = new /atom/movable/screen/ability/obj_based/technomancer()
-	A.ability_master = src
-	A.object = object_given
+	A.ability_master_handle = om_handle(src)
+	A.object_handle = om_handle(object_given)
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
 	LAZYADD(ability_objects, A)
-	if(my_mob.client)
+	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
+
+/// LC-refs: the mob these abilities belong to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/ability_master/proc/my_mob() as /mob
+	return om_resolve(my_mob_handle)
+
+/// LC-refs: the object this ability clicks -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/ability/obj_based/proc/object() as /obj
+	return om_resolve(object_handle)
+
+/// LC-refs: the ability master listing this ability -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/ability/proc/master_of() as /atom/movable/screen/movable/ability_master
+	return om_resolve(ability_master_handle)
+
+/atom/movable/screen/movable/ability_master/declared_owned_list_vars()
+	. = ..()
+	. = (. || list()) + list("ability_objects")

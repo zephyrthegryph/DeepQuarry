@@ -101,14 +101,14 @@
 			continue
 		var/list/copy = children.Copy()
 		children.Cut()
-		// An assoc list (key -> child) owns its values; a plain list owns its entries.
+		// An assoc list (key -> child) owns its values, never its keys; a plain list owns its entries.
 		for(var/entry in copy)
-			if(isdatum(entry))
+			var/value = isnum(entry) ? null : copy[entry]
+			if(!isnull(value))
+				if(isdatum(value))
+					qdel(value)
+			else if(isdatum(entry))
 				qdel(entry)
-			else if(!isnum(entry))
-				var/datum/child = copy[entry]
-				if(isdatum(child))
-					qdel(child)
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)
 		link_clear(D, our_var)
