@@ -184,7 +184,15 @@
 		watches += om_world_on_key(S, WORLD_KEY_TEST, key_id, 1, WORLD_TEST_WAKE, LANE_URGENT)
 		urgent += S
 	om_world_publish(WORLD_KEY_TEST, key_id, 1)
-	om_test_ticks(8)
+	// Wait until every normal wake has arrived (a loaded MC tick can skip the scheduler's pass).
+	for(var/tick in 1 to 40)
+		om_test_ticks(1)
+		var/pending = FALSE
+		for(var/datum/world_test_subscriber/S as anything in normal + urgent)
+			if(!length(S.wakes))
+				pending = TRUE
+		if(!pending)
+			break
 	sched.world_budget = old_budget
 	var/first_urgent_tick
 	for(var/datum/world_test_subscriber/S as anything in urgent)

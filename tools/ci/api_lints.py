@@ -1,7 +1,8 @@
 """One-way-to-do-it lints (doc/rewrite/object_model_core.md sec 16, "One way to do X").
 
 Each count is a banned alternative to the object model's one mechanism for a
-job. tools/ci/api_lints_baseline.txt holds the ceilings: a count may fall,
+job. tools/ci/api_lints_baseline.txt holds the ceilings (tools/ci/api_lints_allowlist.txt
+lists reflection sites a count skips, each with a reason): a count may fall,
 never rise. Most are at 0; the rest are ratchets a sweep lowers.
 
     do_after_state   om_do_after() with more than two arguments across done_args,
@@ -153,7 +154,25 @@ CHECKS = [
 NAMES = [name for name, _ in CHECKS]
 
 
+ALLOWLIST = os.path.join(ROOT, "tools", "ci", "api_lints_allowlist.txt")
+
+
+def read_allowlist():
+    """(count, file) pairs skipped, each with a reason in the file."""
+    allowed = set()
+    with open(ALLOWLIST, encoding="utf-8") as handle:
+        for line in handle:
+            body, _, reason = line.partition("#")
+            parts = body.split()
+            if len(parts) == 2:
+                if not reason.strip():
+                    raise SystemExit("api_lints_allowlist.txt: %s %s has no reason" % tuple(parts))
+                allowed.add((parts[0], parts[1]))
+    return allowed
+
+
 def scan():
+    allowed = read_allowlist()
     sites = {name: [] for name in NAMES}
     for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
         rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
@@ -162,6 +181,8 @@ def scan():
         with open(path, encoding="utf-8", errors="replace") as handle:
             text = code_only(handle.read())
         for name, check in CHECKS:
+            if (name, rel) in allowed:
+                continue
             for line in check(rel, text):
                 sites[name].append((rel, line))
     return sites

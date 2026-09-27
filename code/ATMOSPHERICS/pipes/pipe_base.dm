@@ -301,7 +301,7 @@
 	else
 		to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 
-	use_tool(user, W, src, delay = 10, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, unsafe_wrenching, internal_pressure))
+	use_tool(user, W, src, delay = 10, volume = 50, receiver = src, job_type = /datum/om/task/timed/tool_job/pipe_unwrench, job_params = list("unsafe" = unsafe_wrenching, "pressure" = internal_pressure))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/pipe/proc/wrench_act_tool_done(mob/user, unsafe_wrenching, internal_pressure)

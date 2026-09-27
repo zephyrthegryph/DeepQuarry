@@ -57,7 +57,7 @@
 	if(!broken)
 		return ITEM_INTERACT_SKIP_TO_ATTACK
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " starts trying to repair \the [src]'s bulb."))
-	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool), on_fail = PROC_REF(screwdriver_act_tool_failed), fail_args = list(user, tool))
+	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/om/task/timed/tool_job/flash_repair)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flash/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)

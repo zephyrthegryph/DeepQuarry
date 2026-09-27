@@ -870,7 +870,7 @@ allowlists next to each lint).
 | Ask a player | `om_prompt(E, user, spec, on_answer)` | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()` | `scheduler_lints.py` (`prompts`) |
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()` | `api_lints.py` (`timer_cooldown`) |
-| Change a var that a stage, behaviour or watch reads | its declared field's setter, `E.set_x(v)` or `om_set(E, "x", v)` (§5.1) | `x = v`, `E.x = v`, `x |= v` on a declared field; `vars[name] = v`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |
+| Change a var that a stage, behaviour or watch reads | its declared field's setter, `E.set_x(v)` or `om_set(E, "x", v)` (§5.1) | `x = v`, `E.x = v`, `x |= v` on a declared field; `vars[name] = v` outside the reflection sites in `api_lints_allowlist.txt`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |
 | Read a relation or a slot | the typed accessor proc, `M.buckled_to()`, `I.slot_item(slot)` (§7) | `BUCKLED()`, `PULLING()`, `SLOT_ITEM()`... macros; `om_relation_of()` outside `code/datums/om` | `api_lints.py` (`accessor_macros`, `raw_relation`) |
 | Wake on Rust-owned state, a DM key, a rate crossing or a tick-precise time | a world watch, `om_world_at/on_key/on_change/when/on_rate()`, delivered on the watch's lane (§4.8) | `SSreactor`, `REACT_*`, `on_react()`; a raw `vg_world_*` subscription bind | `api_lints.py` (`reactor_api`, `raw_world_bind`) |
 | Name a DM-owned key | a number from `om_world_key_id()` | a string key | `api_lints.py` (`string_keys`), `check_grep.sh` |
@@ -878,5 +878,5 @@ allowlists next to each lint).
 | Wait for a deadline | `om_after()` / `om_deadline()` | comparing `world.time` with a stored deadline in periodic work | `check_deadline_polling.py` |
 | Remember an object | an OM handle, `om_handle(E)` / `om_resolve(h)` (§4.11) | `weakref` | `scheduler_lints.py` (`weakref`) |
 | Hold an object reference | a relation or slot, an owned child, an OM handle or a declared cache (§4.11) | an undeclared object-typed var | `scheduler_lints.py` (`lc_refs`), `declared_refs_lint.py` |
-| Delete something | `qdel()` and the lifecycle verbs | `del()` | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` |
+| Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |
 | Keep a set of live instances | an OM registry (`REGISTRY_MEMBERS()`) | a `GLOB` list of instances; a list allocated per instance | `registry_lint.py`, `instance_list_lint.py` |

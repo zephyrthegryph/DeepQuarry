@@ -163,7 +163,7 @@
  * override that waits must name as its on_done.
  */
 /datum/interaction/proc/pay_cost(mob/actor, atom/target, obj/item/held)
-	return use_tool(actor, tool ? held : null, target, src, receiver = src, on_done = PROC_REF(cost_paid), done_args = list(actor, target, held))
+	return use_tool(actor, tool ? held : null, target, src, receiver = src, job_type = /datum/om/task/timed/tool_job/interaction, job_params = list("held" = held))
 
 /// An interaction's time cost paid outside the tool pipeline (a pay_cost() override that
 /// waits): cost_paid() runs after it. The actor waits on itself; `acted_on` is the target.

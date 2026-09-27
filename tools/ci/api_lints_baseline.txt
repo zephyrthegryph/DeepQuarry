@@ -2,9 +2,9 @@
 # tools/ci/api_lints.py fails when a count rises above its line here.
 # Lower a line when a sweep removes sites: `python tools/ci/api_lints.py --update`.
 do_after_state 0
-use_tool_state 6
+use_tool_state 0
 vars_helpers 0
-vars_write 74
+vars_write 0
 timer_cooldown 3
 accessor_macros 0
 field_write 0

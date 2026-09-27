@@ -31,7 +31,7 @@
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
 
-/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy)
+/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params)
 	if(!actor || !target)
 		return FALSE
 	if(interaction)
@@ -75,7 +75,9 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 			to_chat(actor, span_notice(self_text))
 
 	// 4. The wait: a tool job task, finished in use_tool_finish().
-	var/datum/om/task/timed/tool_job/job = om_task_start(claims ? /datum/om/task/timed/tool_job/claiming : /datum/om/task/timed/tool_job, actor, target, list(
+	// A job with state is its own tool_job subtype (`job_type`, its vars in `job_params`); it
+	// overrides tool_done()/tool_failed() instead of passing done_args.
+	var/list/job_vars = list(
 		"duration" = max(time, 0),
 		"tool" = tool,
 		"quality" = quality,
@@ -88,7 +90,12 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		"fail_proc" = on_fail,
 		"fail_args" = fail_args,
 		"extra_checks" = extra_checks,
-		"busy" = busy))
+		"busy" = busy)
+	for(var/key in job_params)
+		job_vars[key] = job_params[key]
+	if(!job_type)
+		job_type = claims ? /datum/om/task/timed/tool_job/claiming : /datum/om/task/timed/tool_job
+	var/datum/om/task/timed/tool_job/job = om_task_start(job_type, actor, target, job_vars)
 	if(istext(job))
 		return FALSE
 	if(job.state == OM_TASK_DONE)
@@ -137,10 +144,66 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		use_tool_interrupted(job)
 		return
 	job.succeeded = TRUE
-	om_call_ref(job.on_behalf_of, job.done_proc, job.done_args)
+	job.tool_done()
 
 /proc/use_tool_interrupted(datum/om/task/timed/tool_job/job)
-	om_call_ref(job.on_behalf_of, job.fail_proc, job.fail_args)
+	job.tool_failed()
+
+/// The tool did the job. Subtypes with state call their receiver with it.
+/datum/om/task/timed/tool_job/proc/tool_done()
+	om_call_ref(on_behalf_of, done_proc, done_args)
+
+/// The job was interrupted or the tool gave out.
+/datum/om/task/timed/tool_job/proc/tool_failed()
+	om_call_ref(on_behalf_of, fail_proc, fail_args)
+
+// ---- tool jobs with state (use_tool(job_type = ...)): the state is on the task.
+
+/// An interaction's time cost paid by a tool: cost_paid() runs with the held item.
+/datum/om/task/timed/tool_job/interaction
+	var/obj/item/held
+
+/datum/om/task/timed/tool_job/interaction/tool_done()
+	var/datum/interaction/I = on_behalf_of
+	I?.cost_paid(actor, target, held)
+
+/// Unwrenching a pipe: whether it was under pressure when the job started, and how much.
+/datum/om/task/timed/tool_job/pipe_unwrench
+	var/unsafe = FALSE
+	var/pressure = 0
+
+/datum/om/task/timed/tool_job/pipe_unwrench/tool_done()
+	var/obj/machinery/atmospherics/pipe/P = target
+	P.wrench_act_tool_done(actor, unsafe, pressure)
+
+/// Repairing a flash's bulb with a screwdriver.
+/datum/om/task/timed/tool_job/flash_repair/tool_done()
+	var/obj/item/flash/F = target
+	F.screwdriver_act_tool_done(actor, tool)
+
+/datum/om/task/timed/tool_job/flash_repair/tool_failed()
+	var/obj/item/flash/F = target
+	F.screwdriver_act_tool_failed(actor, tool)
+
+/// Welding a disposal pipe segment in place: what kind of segment it was.
+/datum/om/task/timed/tool_job/disposal_weld
+	var/nicetype
+	var/ispipe = FALSE
+
+/datum/om/task/timed/tool_job/disposal_weld/tool_done()
+	var/obj/structure/disposalconstruct/C = target
+	C.welder_act_tool_done(actor, nicetype, ispipe)
+
+/// Removing a table's material or reinforcement layer.
+/datum/om/task/timed/tool_job/table_layer_remove
+	claims = TRUE
+	var/datum/material/material
+	var/what
+	var/which
+
+/datum/om/task/timed/tool_job/table_layer_remove/tool_done()
+	var/obj/structure/table/T = target
+	T.common_material_remove_tool_done(actor, material, what, which)
 
 /// Why `tool` can't be used as `quality` at `tier`, or null if it can.
 /proc/tool_quality_failure(obj/item/tool, quality, tier = 1)

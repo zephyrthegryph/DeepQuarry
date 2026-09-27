@@ -266,7 +266,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	if(om_busy(src)) return M
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."),
 								span_notice("You begin removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."))
-	use_tool(user, tool, src, delay = delay, volume = 50, receiver = src, on_done = PROC_REF(common_material_remove_tool_done), done_args = list(user, M, what, which), claims = TRUE)
+	use_tool(user, tool, src, delay = delay, volume = 50, receiver = src, job_type = /datum/om/task/timed/tool_job/table_layer_remove, job_params = list("material" = M, "what" = what, "which" = which))
 	return TRUE
 
 /obj/structure/table/proc/common_material_remove_tool_done(mob/user, datum/material/M, what, which)

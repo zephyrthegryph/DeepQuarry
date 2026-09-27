@@ -333,7 +333,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/start = start_messages(actor, target, held)
 	return use_tool(actor, held, target, delay = alt_delay(actor, target, held), volume = 0,
 		message_self = fill_message(start?[1], actor, target), message_others = fill_message(start?[2], actor, target),
-		receiver = src, on_done = PROC_REF(cost_paid), done_args = list(actor, target, held))
+		receiver = src, job_type = /datum/om/task/timed/tool_job/interaction, job_params = list("held" = held))
 
 /// Why `held` won't do for this edge's item, or null.
 /datum/interaction/construction/proc/item_failure(obj/item/held)
