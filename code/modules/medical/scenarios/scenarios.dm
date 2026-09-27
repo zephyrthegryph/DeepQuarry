@@ -227,7 +227,9 @@ ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/dq_medical_scenario subtypes defined."))
 		return
-	var/picked_key = tgui_input_list(user.mob, "Which scenario?", "DQ Medical Scenario", options)
+	var/picked_key = verb_prompt(user.mob, "k230", list("kind" = "list", "message" = "Which scenario?", "title" = "DQ Medical Scenario", "choices" = options), args)
+	if(isnull(picked_key))
+		return
 	if(!picked_key)
 		return
 	var/scenario_type = options[picked_key]

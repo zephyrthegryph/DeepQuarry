@@ -20,7 +20,9 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = tgui_input_list(user.mob, "Target patient:", "DQ Medical", candidates)
+	var/picked_target_key = verb_prompt(user.mob, "k23", list("kind" = "list", "message" = "Target patient:", "title" = "DQ Medical", "choices" = candidates), args)
+	if(isnull(picked_target_key))
+		return
 	if(!picked_target_key)
 		return
 	var/mob/living/carbon/human/target = candidates[picked_target_key]
@@ -33,7 +35,9 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/affliction subtypes defined."))
 		return
-	var/picked_key = tgui_input_list(user.mob, "Which condition?", "DQ Medical", options)
+	var/picked_key = verb_prompt(user.mob, "k36", list("kind" = "list", "message" = "Which condition?", "title" = "DQ Medical", "choices" = options), args)
+	if(isnull(picked_key))
+		return
 	if(!picked_key)
 		return
 	var/condition_type = options[picked_key]
@@ -42,7 +46,9 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 		organ_options["[O.name] (external)"] = O
 	for(var/obj/item/organ/O as anything in target.internal_organs)
 		organ_options["[O.name] (internal)"] = O
-	var/organ_key = tgui_input_list(user.mob, "Which organ?", "DQ Medical", organ_options)
+	var/organ_key = verb_prompt(user.mob, "k45", list("kind" = "list", "message" = "Which organ?", "title" = "DQ Medical", "choices" = organ_options), args)
+	if(isnull(organ_key))
+		return
 	if(!organ_key)
 		return
 	var/obj/item/organ/picked_organ = organ_options[organ_key]
@@ -66,7 +72,9 @@ ADMIN_VERB(dq_clear_conditions, R_DEBUG, "DQ Clear Medical Conditions", "Remove 
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = tgui_input_list(user.mob, "Target patient:", "DQ Medical", candidates)
+	var/picked_target_key = verb_prompt(user.mob, "k69", list("kind" = "list", "message" = "Target patient:", "title" = "DQ Medical", "choices" = candidates), args)
+	if(isnull(picked_target_key))
+		return
 	if(!picked_target_key)
 		return
 	var/mob/living/carbon/human/target = candidates[picked_target_key]
@@ -82,7 +90,9 @@ ADMIN_VERB(dq_dump_conditions, R_DEBUG, "DQ Inspect Medical Conditions", "Print 
 	if(!length(candidates))
 		to_chat(user, span_warning("No human targets in view."))
 		return
-	var/picked_target_key = tgui_input_list(user.mob, "Target patient:", "DQ Medical", candidates)
+	var/picked_target_key = verb_prompt(user.mob, "k85", list("kind" = "list", "message" = "Target patient:", "title" = "DQ Medical", "choices" = candidates), args)
+	if(isnull(picked_target_key))
+		return
 	if(!picked_target_key)
 		to_chat(user, span_warning("DQ Inspect: cancelled (no target picked)."))
 		return

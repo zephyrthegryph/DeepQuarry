@@ -139,7 +139,10 @@
 	if(!length(cinched))
 		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
 		return
-	var/choice = length(cinched) == 1 ? cinched[1] : tgui_input_list(user, "Loosen which tourniquet?", "Tourniquet", cinched)
+	var/_answer_k142 = rerun_prompt(user, "k142", list("kind" = "list", "message" = "Loosen which tourniquet?", "title" = "Tourniquet", "choices" = cinched), VERB_REF(loosen_tourniquet), args)
+	if(isnull(_answer_k142))
+		return
+	var/choice = length(cinched) == 1 ? cinched[1] : _answer_k142
 	if(!choice)
 		return
 	var/obj/item/organ/external/E = cinched[choice]
