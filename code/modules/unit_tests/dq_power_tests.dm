@@ -276,8 +276,8 @@
 	if(reason & REACT_REASON_KEY)
 		wakes++
 
-/// Power's wakes reach their subscriber: an area's power change publishes its
-/// key, and the reactor finds the subscriber by its SSvg handle.
+/// Power's wakes reach their subscribers: an area's power change raises its
+/// OM channel.
 /datum/unit_test/dq_power_area_key_wakes_subscriber
 
 /datum/unit_test/dq_power_area_key_wakes_subscriber/Run()
@@ -285,15 +285,19 @@
 	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
 	if(!A)
 		return
-	var/datum/dq_power_wake_probe/probe = new
-	// The urgent lane drains in full each step: earlier tests' queued light wakes
-	// (normal lane, budgeted) cannot defer this one.
-	var/token = SSreactor.on_key(probe, REACT_KEY_AREA_POWER, REACT_ID(A.area), REACT_AREA_POWER_CHANGED, REACT_LANE_URGENT)
-	TEST_ASSERT(token, "the area power key subscription was refused")
-	TEST_ASSERT_EQUAL(SSvg.entity_lookup(probe.reactor_id), probe, "the reactor id is not the subscriber's SSvg handle")
-	A.area.power_change()
-	// Step the reactor directly: the wake must come from this publish, not the MC's schedule.
-	SSreactor.fire(FALSE)
-	TEST_ASSERT(probe.wakes >= 1, "the area's power change did not wake its subscriber")
-	qdel(probe)
-	TEST_ASSERT_EQUAL(probe.reactor_id, 0, "deleting the subscriber kept its reactor id")
+	// Area power is an OM channel (CHANGE_AREA_POWER); whatever watches it (lights,
+	// machines asleep on sleep_until_keys()) is woken by the raise. Count the raise.
+	var/area/area = A.area
+	var/datum/om/rec/rec = om_rec_of(area)
+	var/datum/om/scheduler/sched = rec.sched
+	var/old_listen = area.om_listen
+	area.om_listen |= CHANGE_AREA_POWER
+	sched.test_raises = list()
+	area.power_change()
+	var/raised = 0
+	for(var/list/raise as anything in sched.test_raises)
+		if(raise[1] == area && (raise[2] & CHANGE_AREA_POWER))
+			raised++
+	sched.test_raises = null
+	area.om_listen = old_listen
+	TEST_ASSERT(raised >= 1, "the area's power change did not raise CHANGE_AREA_POWER")
