@@ -495,10 +495,23 @@
 	for(var/atom/movable/AM as anything in src) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)
 
+/atom/movable/proc/reset_glide_size()
+	glide_size = initial(glide_size)
+
+/// Anchors or frees it: a machine hears CHANGE_MACHINE_ANCHORED, a mob CHANGE_MOB_CAN_MOVE.
+/atom/movable/proc/set_anchored(state)
+	if(anchored == state)
+		return
+	anchored = state
+	if(ismob(src))
+		om_changed(src, CHANGE_MOB_CAN_MOVE)
+	else if(istype(src, /obj/machinery))
+		om_changed(src, CHANGE_MACHINE_ANCHORED)
+
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(movetime), 1)
-		om_after(src, movetime, TYPE_PROC_REF(/datum, om_set_var), "glide_size", initial(glide_size))
+		om_after(src, movetime, PROC_REF(reset_glide_size))
 	else
 		glide_size = initial(glide_size)
 

@@ -1423,7 +1423,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(!struggle_anim_stomach)
 		struggle_anim_stomach = TRUE
 		update_vore_belly_sprite()
-		om_after(src, 12, TYPE_PROC_REF(/datum, om_set_var_then), "struggle_anim_stomach", FALSE, PROC_REF(update_vore_belly_sprite))
+		om_after(src, 12, PROC_REF(end_belly_struggle_anim))
 
 /mob/living/carbon/human/proc/update_vore_tail_sprite()
 	if(QDESTROYING(src))
@@ -1458,7 +1458,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(tail_style.struggle_anim && !struggle_anim_taur)
 		struggle_anim_taur = TRUE
 		update_vore_tail_sprite()
-		om_after(src, 12, TYPE_PROC_REF(/datum, om_set_var_then), "struggle_anim_taur", FALSE, PROC_REF(update_vore_tail_sprite))
+		om_after(src, 12, PROC_REF(end_tail_struggle_anim))
 
 /mob/living/carbon/human/proc/GetAppearanceFromPrefs(flavourtext, oocnotes)
 	/* Jank code that effectively creates the client's mob from save, then copies its appearance to our current mob.
@@ -1485,3 +1485,11 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 			identity.ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
 			identity.ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 			identity.ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+
+/mob/living/carbon/human/proc/end_belly_struggle_anim()
+	struggle_anim_stomach = FALSE
+	update_vore_belly_sprite()
+
+/mob/living/carbon/human/proc/end_tail_struggle_anim()
+	struggle_anim_taur = FALSE
+	update_vore_tail_sprite()

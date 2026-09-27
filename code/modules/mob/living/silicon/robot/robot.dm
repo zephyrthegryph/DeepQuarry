@@ -538,7 +538,7 @@
 	else
 		clear_fullscreen("blind")
 		// A worn camera sees through noise.
-		set_fullscreen(component_function(ROBOT_SLOT_CAMERA) < 0.5 || (disabilities & NEARSIGHTED), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
+		set_fullscreen(component_function(ROBOT_SLOT_CAMERA) < 0.5 || is_nearsighted(), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
 
 
 // --- Lights -----------------------------------------------------------------------------------

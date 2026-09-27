@@ -8,6 +8,14 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
                      fail_args and check_args, or a list built elsewhere: state
                      belongs on a named task type (/datum/om/task/timed/x)
     use_tool_state   the same for use_tool()'s done_args/fail_args
+    vars_helpers     om_set_var(), om_set_var_then(), om_toggle_var(),
+                     cure_temporary_(s)disability(): a var written back by name.
+                     Use the thing's own setter (om_after(E, d, PROC_REF(setter)))
+                     or a timed status/contribution (status_at_least(), om_apply())
+    vars_write       any other `vars[name] = value`: framework plumbing only
+                     (serializer, links, tasks, VV); gameplay calls a setter
+    timer_cooldown   TIMER_COOLDOWN_START(): a cooldown is COOLDOWN_START() and
+                     COOLDOWN_FINISHED(), a time compared, with no timer
 
 Usage:
     python tools/ci/api_lints.py                 # the CI check
@@ -88,9 +96,24 @@ def use_tool_state(rel, text):
             yield line
 
 
+def pattern(regex):
+    compiled = re.compile(regex)
+
+    def check(rel, text):
+        for no, line in enumerate(text.split("\n"), 1):
+            if line.lstrip().startswith("#define"):
+                continue
+            for _ in compiled.finditer(line):
+                yield no
+    return check
+
+
 CHECKS = [
     ("do_after_state", do_after_state),
     ("use_tool_state", use_tool_state),
+    ("vars_helpers", pattern(r"\b(?:om_set_var(?:_then)?|om_toggle_var|cure_temporary_s?disability)\b")),
+    ("vars_write", pattern(r"\bvars\[[^\]]*\]\s*=(?!=)")),
+    ("timer_cooldown", pattern(r"\bS?_?TIMER_COOLDOWN_START\s*\(")),
 ]
 NAMES = [name for name, _ in CHECKS]
 

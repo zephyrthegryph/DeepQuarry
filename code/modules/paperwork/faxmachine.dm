@@ -270,7 +270,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 					sendfax(destination, ui.user)
 
 				if (sendcooldown)
-					om_after(src, sendcooldown, TYPE_PROC_REF(/datum, om_set_var), "sendcooldown", 0) // cooldown time
+					om_after(src, sendcooldown, PROC_REF(cooldown_over))
 
 		if("dept")
 			var/lastdestination = destination
@@ -641,3 +641,6 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		role_request_discord_message("An automated request for crew has been made.\nJob: [jobname]\nReason: [reason]\n\n<@&[roleid]>")
 	else
 		role_request_discord_message("An automated request for crew has been made.\nJob: [jobname]\nReason: [reason]")
+
+/obj/machinery/photocopier/faxmachine/proc/cooldown_over()
+	sendcooldown = 0

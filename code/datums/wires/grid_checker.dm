@@ -54,7 +54,7 @@
 				return
 
 			G.wire_locked_out = TRUE
-			om_after(G, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "wire_locked_out", FALSE)
+			om_after(G, 30 SECONDS, TYPE_PROC_REF(/obj/machinery/power/grid_checker, end_wire_lockout))
 
 		if(WIRE_ELECTRIFY)
 			if(G.wire_locked_out)

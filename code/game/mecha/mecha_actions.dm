@@ -334,7 +334,7 @@
 		src.occupant_message(span_red("You don't have any smoke left in stock!"))
 		return
 
-	if(smoke_ready)
+	if(COOLDOWN_FINISHED(src, smoke_cooldown_end))
 		smoke_reserve--	//Remove ammo
 		src.occupant_message(span_red("Smoke fired. [smoke_reserve] usages left."))
 
@@ -344,8 +344,7 @@
 		smoke.start()
 		playsound(src, 'sound/effects/smoke.ogg', 50, 1, -3)
 
-		smoke_ready = 0
-		om_after(src, smoke_cooldown, TYPE_PROC_REF(/datum, om_set_var), "smoke_ready", 1)
+		COOLDOWN_START(src, smoke_cooldown_end, smoke_cooldown)
 	return
 
 

@@ -1597,7 +1597,7 @@
 			self.clear_alert("blind")
 
 		var/apply_nearsighted_overlay = FALSE
-		if(self.disabilities & NEARSIGHTED)
+		if(self.is_nearsighted())
 			apply_nearsighted_overlay = TRUE
 
 			if(self.get_equipped_item(SLOT_ID_EYES))

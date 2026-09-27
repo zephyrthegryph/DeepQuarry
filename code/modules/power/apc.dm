@@ -1207,8 +1207,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/do_grid_check()
 	if(is_critical)
 		return
-	grid_check = TRUE
-	om_after(src, 15 MINUTES, TYPE_PROC_REF(/datum, om_set_var), "grid_check", FALSE)
+	set_grid_check(TRUE)
+	om_after(src, 15 MINUTES, PROC_REF(set_grid_check), FALSE)
+
+/// The grid checker suspends (or releases) this APC: Rust and the machine pipeline hear it.
+/obj/machinery/power/apc/proc/set_grid_check(state)
+	if(grid_check == state)
+		return
+	grid_check = state
+	power_sync()
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
+
+/obj/machinery/power/apc/proc/set_locked(state)
+	locked = state
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
 	set waitfor = FALSE

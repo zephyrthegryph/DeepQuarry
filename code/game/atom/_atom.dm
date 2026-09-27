@@ -683,3 +683,11 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 /// Sets the wire datum of an atom
 /atom/proc/set_wires(datum/wires/new_wires)
 	wires = new_wires
+
+/// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
+/atom/proc/set_icon_state(new_state)
+	icon_state = new_state
+
+/// Its base colour, under any colour layers (a debug or effect tint that reverts later).
+/atom/proc/set_base_color(new_color)
+	color = new_color

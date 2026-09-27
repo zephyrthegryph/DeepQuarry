@@ -277,7 +277,7 @@
 			dat += span_red("[capitalize(initial(O.name))]: MISSING")
 	if(occupant.sdisabilities & BLIND)
 		dat += span_red("Cataracts detected.")
-	if(occupant.disabilities & NEARSIGHTED)
+	if(occupant.is_nearsighted())
 		dat += span_red("Retinal misalignment detected.")
 	for(var/addic in occupant.get_all_addictions())
 		var/level = occupant.get_addiction_to_reagent(addic)

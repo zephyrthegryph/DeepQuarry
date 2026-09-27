@@ -348,10 +348,7 @@
 				to_chat(user, span_danger("You go blind!"))
 				user.status_at_least(EFFECT_BLINDED, 5)
 				user.status_set(EFFECT_BLURRY, 5)
-				// Don't cure being nearsighted
-				if(!(H.disabilities & NEARSIGHTED))
-					user.disabilities |= NEARSIGHTED
-					om_after(user, 10 SECONDS, TYPE_PROC_REF(/mob, cure_temporary_disability), NEARSIGHTED)
+				user.status_at_least(EFFECT_NEARSIGHTED, 2)
 	return
 
 /obj/item/weldingtool/is_hot()

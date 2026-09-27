@@ -250,7 +250,7 @@
 	. = ..()
 	if(.)
 		icon_state = "engine_on"
-		om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "icon_state", initial(icon_state))
+		om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
 
 /obj/machinery/atmospherics/unary/engine/biggest
 	name = "huge rocket nozzle"
@@ -269,7 +269,7 @@
 	. = ..()
 	if(.)
 		icon_state = "engine_on"
-		om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "icon_state", initial(icon_state))
+		om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
 
 /obj/machinery/atmospherics/unary/engine/biggest/atmos_init()
 	if(node)

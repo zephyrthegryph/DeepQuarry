@@ -469,7 +469,7 @@
 				P.info += span_bold("Description:") + " [R.description]"
 			P.info += "<br><br><b>Notes:</b><br>"
 			P.name = "Chemical Analysis - [R.name]"
-			om_after(src, 5 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "printing", FALSE)
+			om_after(src, 5 SECONDS, PROC_REF(printing_done))
 		else
 			. = FALSE
 
@@ -524,3 +524,6 @@
 /obj/machinery/chem_master/condimaster
 	name = "CondiMaster 3000"
 	condi = 1
+
+/obj/machinery/chem_master/proc/printing_done()
+	printing = FALSE

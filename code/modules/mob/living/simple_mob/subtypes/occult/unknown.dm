@@ -228,7 +228,7 @@
 	if(base_attack_cooldown == initial(base_attack_cooldown))
 		base_attack_cooldown = 1 SECOND
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
-		om_after(src, duration, TYPE_PROC_REF(/datum, om_set_var), "base_attack_cooldown", initial(base_attack_cooldown))
+		om_after(src, duration, PROC_REF(end_speed_boost))
 
 /mob/living/simple_mob/glitch_boss/do_special_attack(atom/A)
 	. = TRUE
@@ -317,3 +317,6 @@
 	if(client)
 		to_chat(src, span_critical("You feel confused!"))
 	new /obj/effect/temp_visual/confuse(get_turf(src))
+
+/mob/living/simple_mob/glitch_boss/proc/end_speed_boost()
+	base_attack_cooldown = initial(base_attack_cooldown)

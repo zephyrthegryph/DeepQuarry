@@ -109,9 +109,12 @@
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
-	om_after(src, 2, TYPE_PROC_REF(/datum, om_set_var), "canmove", 1)
+	om_after(src, 2, PROC_REF(allow_move))
 
 /obj/effect/dummy/spell_jaunt/ex_act(blah)
 	return
 /obj/effect/dummy/spell_jaunt/bullet_act(blah)
 	return
+
+/obj/effect/dummy/spell_jaunt/proc/allow_move()
+	canmove = 1

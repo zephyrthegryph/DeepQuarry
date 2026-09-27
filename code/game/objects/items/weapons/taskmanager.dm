@@ -371,7 +371,7 @@
 		qdel(P)
 		to_chat(user, span_notice("Format accepted, printing voucher!"))
 		ready = 0
-		om_after(src, 300 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "ready", 1)
+		om_after(src, 300 SECONDS, PROC_REF(set_ready))
 		return
 	if(!findtext(P.info,format))
 		to_chat(user, span_notice("Incorrect format!"))
@@ -407,3 +407,6 @@
 #undef TM_MODE_SCIENCE
 #undef TM_MODE_SERVICE
 #undef TM_MODE_SECURITY
+
+/obj/item/taskmanager/proc/set_ready()
+	ready = 1

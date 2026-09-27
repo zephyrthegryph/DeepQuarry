@@ -54,7 +54,7 @@
 		ispowered = 1
 		update_icon()
 	else
-		om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var_then), "ispowered", 0, TYPE_PROC_REF(/atom, update_icon))
+		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/slot_machine/wrench_act(mob/user, obj/item/tool)
 	if(om_busy(src))
@@ -201,7 +201,7 @@
 		ispowered = 1
 		update_icon()
 	else
-		om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var_then), "ispowered", 0, TYPE_PROC_REF(/atom, update_icon))
+		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/station_slot_machine/wrench_act(mob/user, obj/item/tool)
 	if(om_busy(src))
@@ -433,3 +433,11 @@
 /obj/machinery/station_slot_machine/proc/pay_out(winnings)
 	spawn_money(winnings, src.loc)
 	icon_state = "ntslotmachine"
+
+/obj/machinery/slot_machine/proc/lose_power()
+	ispowered = 0
+	update_icon()
+
+/obj/machinery/station_slot_machine/proc/lose_power()
+	ispowered = 0
+	update_icon()

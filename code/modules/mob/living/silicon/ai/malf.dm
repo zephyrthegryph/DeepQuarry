@@ -43,11 +43,10 @@
 	if(!malfunctioning)
 		return
 	if(!research)
-		if(!errored)
-			errored = 1
+		if(COOLDOWN_FINISHED(src, research_error_cooldown))
+			COOLDOWN_START(src, research_error_cooldown, 2 MINUTES)
 			log_world("## ERROR malf_process() called on AI without research datum. Report this.")
 			message_admins("ERROR: malf_process() called on AI without research datum. If admin modified one of the AI's vars revert the change and don't modify variables directly, instead use ProcCall or admin panels.")
-			om_after(src, 2 MINUTES, TYPE_PROC_REF(/datum, om_set_var), "errored", 0)
 		return
 	recalc_cpu()
 	if(APU_power || aiRestorePowerRoutine != 0)

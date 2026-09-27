@@ -706,7 +706,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"[news_call]\""),2)
 		alert = 1
 		update_icon()
-		om_after(src, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var_then), "alert", 0, TYPE_PROC_REF(/atom, update_icon))
+		om_after(src, 30 SECONDS, PROC_REF(clear_alert))
 // playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) // less peeps pls
 	else
 		for(var/mob/O in hearers(world.view-1, T))
@@ -716,4 +716,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /obj/machinery/newscaster/proc/lose_power()
 	ispowered = 0
+	update_icon()
+
+/obj/machinery/newscaster/proc/clear_alert()
+	alert = 0
 	update_icon()

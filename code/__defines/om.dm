@@ -127,6 +127,8 @@
 #define EFFECT_BLURRY "blurry"
 /// Temporary deafness (was ear_deaf).
 #define EFFECT_DEAFENED "deafened"
+/// Temporary nearsightedness (a flash, a sting); the lasting kind is the NEARSIGHTED disability.
+#define EFFECT_NEARSIGHTED "nearsighted"
 #define EFFECT_STUTTERING "stuttering"
 /// Can't speak (was silent).
 #define EFFECT_MUTED "muted"

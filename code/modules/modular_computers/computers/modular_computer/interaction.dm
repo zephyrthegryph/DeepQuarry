@@ -25,7 +25,7 @@
 		update_icon()
 		shutdown_computer()
 		to_chat(usr, "You press a hard-reset button on \the [src]. It displays a brief debug screen before shutting down.")
-		om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var_then), "bsod", 0, TYPE_PROC_REF(/atom, update_icon))
+		om_after(src, 2 SECONDS, PROC_REF(clear_bsod))
 
 
 // Eject ID card from computer, if it has ID slot with card inside.
@@ -208,3 +208,7 @@
 	if(card_slot.stored_card.dna_hash != user.master_dna)
 		return FALSE
 	return proximity_flag
+
+/obj/item/modular_computer/proc/clear_bsod()
+	bsod = 0
+	update_icon()

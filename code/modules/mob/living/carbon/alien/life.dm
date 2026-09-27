@@ -124,7 +124,7 @@
 			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
 			self.clear_fullscreen("blind")
-			self.set_fullscreen(self.disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
+			self.set_fullscreen(self.is_nearsighted(), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
 			self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
 			self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 

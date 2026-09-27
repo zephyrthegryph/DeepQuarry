@@ -10,7 +10,6 @@
 	idle_power_usage = 5
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/grinder
-	var/inuse = 0
 	var/obj/item/reagent_containers/beaker = null
 	var/limit = 10
 	var/list/holdingitems
@@ -32,7 +31,7 @@
 		. += span_warning("You're too far away to examine [src]'s contents and display!")
 		return
 
-	if(inuse)
+	if(om_busy(src))
 		. += span_warning("\The [src] is operating.")
 		return
 
@@ -173,7 +172,7 @@
 	return TRUE
 
 /obj/machinery/reagentgrinder/interact(mob/user) // The microwave Menu //I am reasonably certain that this is not a microwave
-	if(inuse || user.incapacitated())
+	if(om_busy(src) || user.incapacitated())
 		return
 
 	var/list/options = list()
@@ -193,7 +192,7 @@
 	var/choice = show_radial_menu(user, src, options, require_near = !issilicon(user), autopick_single_option = FALSE)
 
 	// post choice verification
-	if(inuse || (isAI(user) && stat & NOPOWER) || user.incapacitated())
+	if(om_busy(src) || (isAI(user) && stat & NOPOWER) || user.incapacitated())
 		return
 
 	switch(choice)
@@ -225,10 +224,7 @@
 		return
 
 	playsound(src, 'sound/machines/blender.ogg', 50, 1)
-	inuse = 1
-
-	// Reset the machine.
-	om_after(src, 6 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "inuse", 0)
+	om_hold_busy(src, 6 SECONDS)
 
 	// Process.
 	grind_items_to_reagents(holdingitems,beaker.reagents)

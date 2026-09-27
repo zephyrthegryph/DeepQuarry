@@ -196,7 +196,7 @@
 		s.set_up(5, 1, src)
 		s.start()
 		accurate = 1
-		om_after(src, 5 MINUTES, TYPE_PROC_REF(/datum, om_set_var), "accurate", 0) //Accurate teleporting for 5 minutes
+		om_after(src, 5 MINUTES, PROC_REF(calibration_lapses)) //Accurate teleporting for 5 minutes
 		for(var/mob/B in hearers(src, null))
 			B.show_message(span_notice("Test fire completed."))
 	return
@@ -292,3 +292,7 @@
 
 /atom/proc/laserhit(L as obj)
 	return 1
+
+/// A test fire's calibration lapses.
+/obj/machinery/teleport/hub/proc/calibration_lapses()
+	accurate = 0

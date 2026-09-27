@@ -162,5 +162,5 @@
 	if(!update_locked)
 		set_state(!on)
 		update_locked = 1
-		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
+		om_after(src, 1 MINUTE, PROC_REF(unlock_updates))
 

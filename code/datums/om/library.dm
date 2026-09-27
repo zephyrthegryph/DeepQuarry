@@ -31,6 +31,7 @@
 		EFFECT_CONFUSED = om_mob_status_row(list("scaled" = TRUE, "alert" = "confused", "alert_type" = /atom/movable/screen/alert/confused, "indicator" = "confused")),
 		EFFECT_BLINDED = om_mob_status_row(list("scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_BLIND, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned)),
 		EFFECT_BLURRY = om_mob_status_row(list("rate" = 1)),
+		EFFECT_NEARSIGHTED = om_mob_status_row(list("rate" = 1)),
 		EFFECT_DEAFENED = om_mob_status_row(list("on_start" = /mob/proc/status_deafness_started, "on_end" = /mob/proc/status_deafness_ended)),
 		EFFECT_STUTTERING = om_mob_status_row(list("rate" = 1)),
 		EFFECT_MUTED = om_mob_status_row(list("rate" = 1)),

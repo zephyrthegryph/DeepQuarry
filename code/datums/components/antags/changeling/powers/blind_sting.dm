@@ -18,18 +18,13 @@
 		return FALSE
 	add_attack_logs(src,T,"Blind sting (changeling)")
 	to_chat(T, span_danger("Your eyes burn horrificly!"))
-	T.disabilities |= NEARSIGHTED
 	var/duration = 30 SECONDS
 	if(comp.recursive_enhancement)
 		duration = duration + 15 SECONDS
 		to_chat(src, span_notice("They will be deprived of sight for longer."))
-	addtimer(CALLBACK(T, PROC_REF(nearsighted_sting_complete),T), duration, TIMER_DELETE_ME)
+	T.status_at_least(EFFECT_NEARSIGHTED, CEILING(duration / LIFE_CYCLE, 1))
 	T.status_at_least(EFFECT_BLINDED, 10)
 	T.status_set(EFFECT_BLURRY, 20)
 	feedback_add_details("changeling_powers","BS")
 	return TRUE
 
-/mob/proc/nearsighted_sting_complete(mob/target, mode)
-	if(!target)
-		return
-	target.disabilities &= ~NEARSIGHTED

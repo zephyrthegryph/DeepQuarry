@@ -145,7 +145,7 @@
 
 	var/smoke_possible = 0
 	var/smoke_reserve = 5			//How many shots you have. Might make a reload later on. MIGHT.
-	var/smoke_ready = 1				//This is a check for the whether or not the cooldown is ongoing.
+	COOLDOWN_DECLARE(smoke_cooldown_end)
 	var/smoke_cooldown = 100		//How long you have between uses.
 	var/datum/effect/effect/system/smoke_spread/smoke_system
 
@@ -1005,7 +1005,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(istype(O, /obj/effect/portal))	//derpfix
 			src.anchored = 0				// Portals can only move unanchored objects.
 			O.Crossed(src)
-			om_after(src, 0, TYPE_PROC_REF(/datum, om_set_var), "anchored", 1) //countering the portal's deferred teleport
+			om_after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), TRUE) //countering the portal's deferred teleport
 		if(O.anchored)
 			obstacle.Bumped(src)
 		else

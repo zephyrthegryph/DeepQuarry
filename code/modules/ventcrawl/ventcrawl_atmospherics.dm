@@ -56,8 +56,7 @@
 			user.remove_ventcrawl()
 			user.forceMove(src.loc)
 			user.visible_message("You hear something squeezing through the pipes.", "You climb out the ventilation system.")
-	user.canmove = 0
-	om_after(user, 1, TYPE_PROC_REF(/datum, om_set_var), "canmove", 1)
+	user.setMoveCooldown(1)
 
 /obj/machinery/atmospherics/proc/can_crawl_through()
 	return 1

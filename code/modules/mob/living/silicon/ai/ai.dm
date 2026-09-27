@@ -84,7 +84,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/system_override = 0						// Set to 1 if system override is initiated, 2 if succeeded.
 	var/hack_can_fail = 1						// If 0, all abilities have zero chance of failing.
 	var/hack_fails = 0							// This increments with each failed hack, and determines the warning message text.
-	var/errored = 0								// Set to 1 if runtime error occurs. Only way of this happening i can think of is admin fucking up with varedit.
+	/// The missing-research error is reported at most every two minutes.
+	COOLDOWN_DECLARE(research_error_cooldown)
 	var/bombing_core = 0						// Set to 1 if core auto-destruct is activated
 	var/bombing_station = 0						// Set to 1 if station nuke auto-destruct is activated
 	var/override_CPUStorage = 0					// Bonus/Penalty CPU Storage. For use by admins/testers.
@@ -381,14 +382,14 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 		if(new_sprite) selected_sprite = new_sprite
 	update_icon()
 
-/mob/living/silicon/ai/var/message_cooldown = 0
+/mob/living/silicon/ai/var/announcement_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
 	set category = "AI.Station Commands"
 	set name = "Make Station Announcement"
 	if(check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
 
-	if(message_cooldown)
+	if(!COOLDOWN_FINISHED(src, announcement_cooldown))
 		to_chat(src, span_filter_notice("Please allow one minute to pass between announcements."))
 		return
 	var/input = tgui_input_text(src, "Please write a message to announce to the station crew.", "A.I. Announcement")
@@ -399,8 +400,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 		return
 
 	announcement.Announce(input)
-	message_cooldown = 1
-	om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "message_cooldown", 0) //One minute cooldown
+	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
 	set category = "AI.Station Commands"
@@ -445,7 +445,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
-	if(emergency_message_cooldown)
+	if(!COOLDOWN_FINISHED(src, emergency_message_cooldown))
 		to_chat(src, span_warning("Arrays recycling. Please stand by."))
 		return
 	var/input = tgui_input_text(src, "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "To abort, send an empty message.", "", MAX_MESSAGE_LEN)
@@ -454,8 +454,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	CentCom_announce(input, src)
 	to_chat(src, span_notice("Message transmitted."))
 	log_game("[key_name(src)] has made an IA [using_map.boss_short] announcement: [input]")
-	emergency_message_cooldown = 1
-	om_after(src, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "emergency_message_cooldown", 0)
+	COOLDOWN_START(src, emergency_message_cooldown, 30 SECONDS)
 
 /mob/living/silicon/ai/restrained()
 	return 0
@@ -1069,3 +1068,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/ai_powersupply/step_start_condition()
 	return TRUE // made when an AI needs power
+
+/// A short system operation (an emergency forcefield) is over.
+/mob/living/silicon/ai/proc/hacking_done()
+	hacking = 0

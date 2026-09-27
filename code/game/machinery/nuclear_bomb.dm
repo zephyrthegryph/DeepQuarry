@@ -381,13 +381,13 @@ GLOBAL_VAR(bomb_set)
 				to_chat(usr, "You can't pulse a cut wire.")
 				return TRUE
 			if(light_wire == wire)
-				lighthack = !lighthack
-				om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_toggle_var), "lighthack")
+				toggle_lighthack()
+				om_after(src, 10 SECONDS, PROC_REF(toggle_lighthack))
 			if(timing_wire == wire && timing)
 				explode()
 			if(safety_wire == wire)
-				safety = !safety
-				om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_toggle_var), "safety")
+				toggle_safety()
+				om_after(src, 10 SECONDS, PROC_REF(toggle_safety))
 				if(safety == 1)
 					visible_message(span_notice("The [src] quiets down."))
 					if(!lighthack && icon_state == "nuclearbomb2")
@@ -517,3 +517,9 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/nuclearbomb/step_start_condition()
 	return timing
+
+/obj/machinery/nuclearbomb/proc/toggle_lighthack()
+	lighthack = !lighthack
+
+/obj/machinery/nuclearbomb/proc/toggle_safety()
+	safety = !safety

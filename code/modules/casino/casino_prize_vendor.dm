@@ -236,7 +236,7 @@
 		if(!(stat & NOPOWER))
 			icon_state = initial(icon_state)
 		else
-			om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var), "icon_state", "[initial(icon_state)]-off")
+			om_after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), "[initial(icon_state)]-off")
 
 /obj/machinery/casino_prize_dispenser/declare_interactions(list/into)
 	into += list(

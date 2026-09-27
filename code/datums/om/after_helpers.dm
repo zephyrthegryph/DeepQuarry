@@ -1,24 +1,18 @@
-// Small targets for om_after() (object_model_core.md §4.11), for the one-liners that
-// used to be `spawn(d)` bodies: delete the owner, clear or set a var, or set a var and
-// then call a proc, all on the owner's clock and cancelled with it.
+// Small behaviours on the OM wheel (object_model_core.md §4.11): deleting later, and
+// sequences a thing plays out over a few ticks. Each is a real behaviour, not a generic write:
+// state that changes later changes through its own setter (om_after(E, d, PROC_REF(setter)))
+// so its channel is raised, and a "temporary X that undoes itself" is a timed status or
+// contribution (om_apply(), status_at_least()), never a var written back by name.
 
 /// om_after() target: deletes the owner.
 /datum/proc/om_qdel_self()
 	qdel(src)
 
-/// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
+/// Deletes `D` after `delay` deciseconds of its own clock (0: once the current proc returns).
+/// Null-safe. An atom that should always die after a while declares `lifecycle_lifetime`.
 /proc/om_qdel_after(datum/D, delay)
 	if(D && !QDELETED(D))
-		om_after(D, delay, /datum/proc/om_qdel_self)
-
-/// om_after() target: sets var `name` on the owner to `value`.
-/datum/proc/om_set_var(name, value)
-	vars[name] = value
-
-/// om_after() target: sets var `name` on the owner, then calls `proc_ref` on it.
-/datum/proc/om_set_var_then(name, value, proc_ref)
-	vars[name] = value
-	call(src, proc_ref)()
+		return om_after(D, delay, /datum/proc/om_qdel_self)
 
 /// Knocks the thing about: `steps` random steps, a few deciseconds apart.
 /atom/movable/proc/scatter_steps(steps)
@@ -41,7 +35,7 @@
 /atom/proc/color_sequence(list/colors, interval = 1)
 	var/delay = 0
 	for(var/c in colors)
-		om_after(src, delay, TYPE_PROC_REF(/datum, om_set_var), "color", c)
+		om_after(src, delay, TYPE_PROC_REF(/atom, set_base_color), c)
 		delay += interval
 
 /// om_after() target: a message to the owner (a mob, or anything to_chat accepts).
@@ -52,14 +46,6 @@
 /// om_after() target: plays a sound at the owner.
 /atom/proc/om_playsound(soundin, vol, vary)
 	playsound(src, soundin, vol, vary)
-
-/// om_after() target: a temporary disability (`flag` of `disabilities`) wears off.
-/mob/proc/cure_temporary_disability(flag)
-	disabilities &= ~flag
-
-/// om_after() target: flips boolean var `name` on the owner (a temporary toggle undoing itself).
-/datum/proc/om_toggle_var(name)
-	vars[name] = !vars[name]
 
 /// om_after() target: one step in direction `d`.
 /atom/movable/proc/om_step(d)
@@ -75,10 +61,10 @@
 	for(var/i in 0 to times - 1)
 		om_after(src, i * interval, PROC_REF(start))
 
-/// om_after() target: a temporary sensory disability (`flag` of `sdisabilities`) wears off.
-/mob/proc/cure_temporary_sdisability(flag)
-	sdisabilities &= ~flag
-
 /// om_after() target: takes an image off a mob's client screen (after a fade-out).
 /proc/remove_client_image(mob/M, image/I)
 	M.client?.images -= I
+
+/// Nearsighted for good (the disability) or for a while (EFFECT_NEARSIGHTED: a flash, a sting).
+/mob/proc/is_nearsighted()
+	return (disabilities & NEARSIGHTED) || has_status(EFFECT_NEARSIGHTED)

@@ -60,20 +60,16 @@
 /// `lifetime`, because a couple of existing effect types already declare
 /// their own unrelated `lifetime` var and this must not collide with them.
 /atom/movable/var/lifecycle_lifetime = 0
-/// The armed self-destruct timer, or null. Cancelled if something else
-/// qdels this first (the timer target is weak-refd and Destroy() cancels
-/// timers already; this var exists so expire() itself can be called again
-/// to re-arm with a new delay).
+/// The armed self-destruct (an OM timer id on this atom), or null: kept so expire() can re-arm
+/// with a new delay. The timer dies with the atom.
 /atom/movable/var/tmp/lifecycle_lifetime_timer
 
 /// Arms (or re-arms) this atom's self-destruct for `after` deciseconds from
-/// now, cancelling any previous one. `expire(after)` with no
-/// `lifecycle_lifetime` set is how a one-off timed delete (a thrown effect,
-/// a spawner) declares it without a type-level lifetime var.
+/// now, cancelling any previous one: om_qdel_after() that re-arms.
 /atom/movable/proc/expire(after)
 	if(lifecycle_lifetime_timer)
-		deltimer(lifecycle_lifetime_timer)
-	lifecycle_lifetime_timer = addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), after, TIMER_STOPPABLE)
+		om_cancel_timer(src, lifecycle_lifetime_timer)
+	lifecycle_lifetime_timer = om_qdel_after(src, after)
 
 /atom/movable/proc/lifecycle_arm_lifetime()
 	if(lifecycle_lifetime > 0)

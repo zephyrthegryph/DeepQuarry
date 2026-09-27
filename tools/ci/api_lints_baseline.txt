@@ -3,3 +3,6 @@
 # Lower a line when a sweep removes sites: `python tools/ci/api_lints.py --update`.
 do_after_state 0
 use_tool_state 6
+vars_helpers 0
+vars_write 74
+timer_cooldown 3

@@ -489,7 +489,7 @@
 /mob/living/simple_mob/animal/synx/proc/handle_mimic()
 	name = pick(voices)
 	om_after(src, 2, TYPE_PROC_REF(/mob, say), pick(speak))
-	om_after(src, 5, TYPE_PROC_REF(/datum, om_set_var), "name", realname)
+	om_after(src, 5, PROC_REF(end_mimic))
 
 //lo- procs adjusted to mobs.
 
@@ -978,3 +978,7 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 
 #undef SYNX_LOWER_DAMAGE
 #undef SYNX_UPPER_DAMAGE
+
+/// Stops mimicking a voice.
+/mob/living/simple_mob/animal/synx/proc/end_mimic()
+	name = realname

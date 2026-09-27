@@ -568,10 +568,7 @@ BLIND     // can't see anything
 		if(M.get_equipped_item(SLOT_ID_EYES) == src)
 			M.status_at_least(EFFECT_BLINDED, 3)
 			M.status_set(EFFECT_BLURRY, 5)
-			// Don't cure being nearsighted
-			if(!(M.disabilities & NEARSIGHTED))
-				M.disabilities |= NEARSIGHTED
-				om_after(M, 10 SECONDS, TYPE_PROC_REF(/mob, cure_temporary_disability), NEARSIGHTED)
+			M.status_at_least(EFFECT_NEARSIGHTED, 2)
 
 /obj/item/clothing/glasses/thermal/Initialize(mapload)
 	. = ..()

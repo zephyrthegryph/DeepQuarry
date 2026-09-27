@@ -43,8 +43,8 @@
 	switch(wire)
 		if(WIRE_SMES_RCON)
 			if(S.RCon)
-				S.RCon = 0
-				om_after(S, 1 SECOND, TYPE_PROC_REF(/datum, om_set_var), "RCon", 1)
+				S.set_rcon(FALSE)
+				om_after(S, 1 SECOND, TYPE_PROC_REF(/obj/machinery/power/smes/buildable, set_rcon), TRUE)
 		if(WIRE_SMES_INPUT)
 			S.toggle_input()
 		if(WIRE_SMES_OUTPUT)
@@ -54,6 +54,6 @@
 			om_changed(S, CHANGE_MACHINE_SETTINGS)
 		if(WIRE_SMES_FAILSAFES)
 			if(S.safeties_enabled)
-				S.safeties_enabled = 0
-				om_after(S, 1 SECOND, TYPE_PROC_REF(/datum, om_set_var), "safeties_enabled", 1)
+				S.set_safeties(FALSE)
+				om_after(S, 1 SECOND, TYPE_PROC_REF(/obj/machinery/power/smes/buildable, set_safeties), TRUE)
 	..()

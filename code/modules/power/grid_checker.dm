@@ -122,7 +122,7 @@
 			var/obj/machinery/power/apc/A = T.master
 			if(A.is_critical)
 				continue
-			A.grid_check = FALSE
+			A.set_grid_check(FALSE)
 
 	for(var/obj/machinery/power/smes/smes in powernet.nodes) // These are "upstream"
 		smes.grid_check = FALSE
@@ -130,3 +130,7 @@
 /obj/machinery/power/grid_checker/proc/power_failure_times_out()
 	if(power_failing) // Check to see if engineering didn't beat us to it.
 		end_power_failure(TRUE)
+
+/// The lockout a pulsed wire imposed is over.
+/obj/machinery/power/grid_checker/proc/end_wire_lockout()
+	wire_locked_out = FALSE

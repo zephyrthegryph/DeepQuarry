@@ -25,9 +25,8 @@
 
 	switch(wire)
 		if(WIRE_IDSCAN)
-			A.locked = FALSE
-
-			om_after(A, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "locked", TRUE)
+			A.set_locked(FALSE)
+			om_after(A, 30 SECONDS, TYPE_PROC_REF(/obj/machinery/power/apc, set_locked), TRUE)
 
 		if(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
 			if(!A.shorted)

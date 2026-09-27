@@ -1471,7 +1471,7 @@
 
 
 /obj/item/clothing
-	var/recent_struggle = 0
+	COOLDOWN_DECLARE(struggle_cooldown)
 
 //This is a crazy 'sideways' override.
 /obj/item/clothing/shoes/attackby(obj/item/I, mob/user)
@@ -1516,12 +1516,9 @@
 
 /obj/item/clothing/relaymove(mob/living/user,direction)
 
-	if(recent_struggle)
+	if(!COOLDOWN_FINISHED(src, struggle_cooldown))
 		return
-
-	recent_struggle = 1
-
-	om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "recent_struggle", 0)
+	COOLDOWN_START(src, struggle_cooldown, 10 SECONDS)
 
 	if(ishuman(src.loc)) //Is this on a person?
 		var/mob/living/carbon/human/H = src.loc

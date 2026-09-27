@@ -148,7 +148,8 @@
 	var/checkoutperiod = 5 // In minutes
 	var/obj/machinery/libraryscanner/scanner // Book scanner that will be used when uploading books to the Archive
 
-	var/bibledelay = 0 // LOL NO SPAM (1 minute delay) -- Doohl
+	/// Printing a bible or a book: at most one per few seconds.
+	COOLDOWN_DECLARE(print_cooldown)
 
 	var/static/list/all_books
 
@@ -327,10 +328,9 @@
 			screenstate = text2num(params["screen"])
 			return TRUE
 		if("print_bible")
-			if(!bibledelay)
+			if(COOLDOWN_FINISHED(src, print_cooldown))
 				new /obj/item/storage/bible(src.loc)
-				bibledelay = 1
-				om_after(src, 6 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "bibledelay", 0)
+				COOLDOWN_START(src, print_cooldown, 6 SECONDS)
 			else
 				for(var/mob/V in hearers(src))
 					V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Bible printer currently unavailable, please wait a moment.\""))
@@ -419,12 +419,11 @@
 			if(!SSdbcore.IsConnected())
 				tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 				return TRUE
-			if(bibledelay)
+			if(!COOLDOWN_FINISHED(src, print_cooldown))
 				for(var/mob/V in hearers(src))
 					V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 				return TRUE
-			bibledelay = 1
-			om_after(src, 6, TYPE_PROC_REF(/datum, om_set_var), "bibledelay", 0)
+			COOLDOWN_START(src, print_cooldown, 6)
 			var/datum/db_query/query = SSdbcore.NewQuery(
 				"SELECT id, author, title, content FROM library WHERE id = :id",
 				list("id" = numeric_id)

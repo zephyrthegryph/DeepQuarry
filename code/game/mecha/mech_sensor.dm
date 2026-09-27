@@ -14,7 +14,8 @@
 
 	var/frequency = AIRLOCK_FREQ
 	var/datum/radio_frequency/radio_connection
-	var/feedback_timer = 0
+	/// Without it the feedback becomes horribly spammy.
+	COOLDOWN_DECLARE(feedback_cooldown)
 
 /obj/machinery/mech_sensor/CanPass(atom/movable/mover, turf/target)
 	if(!enabled())
@@ -38,7 +39,7 @@
 
 /obj/machinery/mech_sensor/proc/give_feedback(O as obj)
 	var/block_message = span_warning("Movement control overridden. Area denial active.")
-	if(feedback_timer)
+	if(!COOLDOWN_FINISHED(src, feedback_cooldown))
 		return
 
 	if(istype(O, /obj/mecha))
@@ -50,8 +51,7 @@
 		if(E && E.load && E.is_train_head())
 			to_chat(E.load,block_message)
 
-	feedback_timer = 1
-	om_after(src, 5 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "feedback_timer", 0) //Without this timer the feedback becomes horribly spamy
+	COOLDOWN_START(src, feedback_cooldown, 5 SECONDS)
 
 /obj/machinery/mech_sensor/proc/enabled()
 	return on && !(stat & NOPOWER)

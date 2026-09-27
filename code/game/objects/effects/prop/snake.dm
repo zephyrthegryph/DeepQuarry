@@ -106,7 +106,7 @@
 	if(T)
 		T.color = "#00ff00"
 
-		om_after(T, 3 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "color", initial(T.color))
+		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
 	hunting = locate(/mob/living) in range(7, src)

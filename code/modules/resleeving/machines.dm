@@ -22,7 +22,7 @@
 	attempting = 1 //One at a time!!
 	locked = 1
 	eject_wait = 1
-	om_after(src, 3 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "eject_wait", 0)
+	om_after(src, 3 SECONDS, PROC_REF(allow_eject))
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
 	remove_biomass(CLONE_BIOMASS)
@@ -570,3 +570,7 @@
 		return
 	put_mob(usr)
 	return
+
+/// The fresh clone may be ejected now.
+/obj/machinery/clonepod/transhuman/proc/allow_eject()
+	eject_wait = 0

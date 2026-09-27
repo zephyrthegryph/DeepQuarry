@@ -32,7 +32,7 @@
 	var/list/offset_x[0] //offsets stored for later
 	var/list/offset_y[0] //usage by the photocopier
 	var/rigged = 0
-	var/spam_flag = 0
+	COOLDOWN_DECLARE(honk_cooldown)
 	var/age = 0
 	var/last_modified_ckey
 	/// Machine-authenticated clinical evidence embedded by a medical scanner.
@@ -335,10 +335,9 @@
 		return
 	user.examinate(src)
 	if(rigged && (GLOB.Holiday == "April Fool's Day"))
-		if(spam_flag == 0)
-			spam_flag = 1
+		if(COOLDOWN_FINISHED(src, honk_cooldown))
+			COOLDOWN_START(src, honk_cooldown, 2 SECONDS)
 			playsound(src, 'sound/items/bikehorn.ogg', 50, 1)
-			om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "spam_flag", 0)
 	return
 
 // AI/cyborg viewer routes through the same TGUI paper window.

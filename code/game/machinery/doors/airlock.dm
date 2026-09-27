@@ -36,7 +36,8 @@
 	autoclose = 1
 	var/assembly_type = /obj/structure/door_assembly
 	var/mineral = null
-	var/justzap = 0
+	/// A second between shocks from bumping it.
+	COOLDOWN_DECLARE(bump_zap_cooldown)
 	var/safe = 1
 	normalspeed = 1
 	var/obj/item/airlock_electronics/electronics = null
@@ -219,12 +220,11 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/bumpopen(mob/living/user) //Airlocks now zap you when you 'bump' them open when they're electrified. --NeoFite
 	if(!issilicon(user))
 		if(isElectrified())
-			if(!justzap)
+			if(COOLDOWN_FINISHED(src, bump_zap_cooldown))
 				if(shock(user, 100))
-					justzap = 1
-					om_after(src, 1 SECOND, TYPE_PROC_REF(/datum, om_set_var), "justzap", 0)
+					COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
 					return
-			else /*if(justzap)*/
+			else
 				return
 		else if(user.status_units(EFFECT_HALLUCINATING) > 50 && prob(10) && operating == 0)
 			to_chat(user, span_danger("You feel a powerful shock course through your body!"))
