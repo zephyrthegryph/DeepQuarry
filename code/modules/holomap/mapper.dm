@@ -165,7 +165,6 @@
 		cell.forceMove(src)
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
 
-
 /obj/item/mapping_unit/proc/first_run(mob/user)
 	hud_datum = new(user.hud_used, src)
 	hud_item = hud_datum.screenobjs[1]
@@ -184,8 +183,6 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 	PERIODIC_START(src, PERIODIC_SLOW)
 	periodic_step()
 
-
-
 /obj/item/mapping_unit/proc/stop_updates()
 	registry_leave(REGISTRY_MAPPING_UNITS, src)
 	PERIODIC_STOP(src)
@@ -202,7 +199,6 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		qdel(hud_datum)
 	hud_datum = null
 	hud_item = null
-
 
 /obj/item/mapping_unit/periodic_step()
 	if(!updating || (uses_power && !cell))
@@ -432,9 +428,6 @@ REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 	icon_state = "[initial(icon_state)][in_list ? "_on" : ""]"
 	to_chat(user,span_notice("The [src] is now [in_list ? "broadcasting" : "disabled"]."))
 
-/obj/item/holomap_beacon/Destroy()
-	return ..()
-
 /obj/item/holomap_beacon/deathsquad
 	name = "deathsquad holomap beacon"
 	icon_state = "holochip_ds"
@@ -449,7 +442,6 @@ REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 	name = "ert holomap beacon"
 	icon_state = "holochip_ert"
 	mapper_filter = HOLOMAP_FILTER_ERT
-
 
 #undef HOLOMAP_ERROR
 #undef HOLOMAP_YOU
