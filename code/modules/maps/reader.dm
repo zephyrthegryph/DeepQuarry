@@ -323,10 +323,10 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	if(TICK_CHECK) { \
 		if(loading) { \
 			SSatoms.map_loader_stop(REF(src)); \
-			stoplag(); \
+			stoplag(); /* S10b keeps: map loading yields per chunk (lane-work conversion pending) */ \
 			SSatoms.map_loader_begin(REF(src)); \
 		} else { \
-			stoplag(); \
+			stoplag(); /* S10b keeps: map loading yields per chunk (lane-work conversion pending) */ \
 		} \
 	}
 #endif
