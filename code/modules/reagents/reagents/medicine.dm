@@ -2395,8 +2395,7 @@
 
 /datum/reagent/dryagent/touch_obj(obj/O, amount)
 	if(istype(O, /obj/item/clothing/shoes/galoshes) && O.loc)
-		new /obj/item/clothing/shoes/dry_galoshes(O.loc)
-		qdel(O)
+		replace_with(O, /obj/item/clothing/shoes/dry_galoshes)
 		remove_self(10)
 
 /datum/reagent/dryagent/touch_turf(turf/T)

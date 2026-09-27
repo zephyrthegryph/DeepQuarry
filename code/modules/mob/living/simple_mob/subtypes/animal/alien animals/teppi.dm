@@ -673,8 +673,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		else if (not_hungy)
 			var/nutrition_cost = 500 + (self.nutrition / 2)
 			self.adjust_nutrition(-nutrition_cost)
-			new /mob/living/simple_mob/vore/alienanimals/teppi(self.loc, self.store_teppi_data(self))
-			qdel(self)
+			replace_with(self, /mob/living/simple_mob/vore/alienanimals/teppi, self.store_teppi_data(self))
 			return
 		else
 			self.visible_message("\The [self] whines pathetically...", runemessage = "whines")

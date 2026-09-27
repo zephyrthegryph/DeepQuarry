@@ -52,7 +52,7 @@
 /obj/structure/closet/crate/mimic/ex_act(severity)
 	latent_discard()
 	for(var/obj/O in src.contents) // latent-ok: discarded above
-		qdel(O)
+		consume(O)
 	qdel(src)
 	return
 
@@ -61,7 +61,7 @@
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
 		for(var/obj/O in src.contents) // latent-ok: discarded above
-			qdel(O)
+			consume(O)
 	return ..()
 
 /obj/structure/closet/crate/mimic/safe
@@ -188,7 +188,7 @@
 /obj/structure/closet/crate/mimic/airlock/ex_act(severity) //Stores Mimic Contents for later
 	latent_discard()
 	for(var/obj/O in src.contents) // latent-ok: discarded above
-		qdel(O)
+		consume(O)
 	qdel(src)
 	return
 
@@ -197,7 +197,7 @@
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		latent_discard()
 		for(var/obj/O in src.contents) // latent-ok: discarded above
-			qdel(O)
+			consume(O)
 	return ..()
 
 /obj/structure/closet/crate/mimic/airlock/safe
@@ -276,7 +276,7 @@
 /obj/structure/closet/crate/mimic/closet/ex_act(severity) //Stores Mimic Contents for later
 	latent_discard()
 	for(var/obj/O in src.contents) // latent-ok: discarded above
-		qdel(O)
+		consume(O)
 	qdel(src)
 	return
 
@@ -285,7 +285,7 @@
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
 		for(var/obj/O in src.contents) // latent-ok: discarded above
-			qdel(O)
+			consume(O)
 	return ..()
 
 /obj/structure/closet/crate/mimic/closet/safe
@@ -367,7 +367,7 @@
 		return
 	var/mob/living/simple_mob/vore/aggressive/mimic/floor/new_mimic = new mimic_type(drop_location())
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
-	qdel(src)
+	replace_with(src, new_mimic)
 
 /obj/effect/floormimic/attackby(obj/item/I, mob/living/L)
 	if(mimic_active)
