@@ -12,7 +12,10 @@
 
 /obj/structure/ladder_assembly/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for the ladder.", "Ladder Name", src.created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+		var/_answer_k15 = rerun_prompt(user, "k15", list("kind" = "text", "message" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_answer_k15))
+			return TRUE
+		var/t = sanitizeSafe(_answer_k15, MAX_NAME_LEN)
 		if(in_range(src, user))
 			created_name = t
 		return
