@@ -117,7 +117,6 @@
 
 /obj/item/mail/proc/setRecipient(mob/user)
 	var/list/recipients = list()
-	var/mob/living/recipient_mob
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!SSantag_job.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player

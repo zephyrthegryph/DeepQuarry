@@ -340,10 +340,7 @@
 		if("ejectify")
 			go_out()
 		if("changestasis")
-			var/new_stasis = tgui_input_list(ui.user, "Levels deeper than 50% stasis level will render the patient unconscious.","Stasis Level", stasis_choices)
-			if(new_stasis && (new_stasis in stasis_choices))
-				stasis_level = stasis_choices[new_stasis]
-				log_game("STASIS: [key_name(ui.user)] set [src] at [AREACOORD(src)] to [new_stasis] (occupant: [key_name(occupant)]).")
+			om_prompt(src, ui.user, list("kind" = "list", "message" = "Levels deeper than 50% stasis level will render the patient unconscious.", "title" = "Stasis Level", "choices" = stasis_choices, "requires" = PROMPT_USABLE), PROC_REF(stasis_level_chosen))
 		if("auto_eject_dead_on")
 			auto_eject_dead = TRUE
 		if("auto_eject_dead_off")
@@ -351,6 +348,12 @@
 		else
 			return FALSE
 	add_fingerprint(ui.user)
+
+/obj/machinery/sleeper/proc/stasis_level_chosen(mob/user, new_stasis, datum/om/prompt/ask)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	if(new_stasis in stasis_choices)
+		stasis_level = stasis_choices[new_stasis]
+		log_game("STASIS: [key_name(user)] set [src] at [AREACOORD(src)] to [new_stasis] (occupant: [key_name(occupant)]).")
 
 /obj/machinery/sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)

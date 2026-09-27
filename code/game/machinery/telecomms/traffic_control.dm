@@ -161,21 +161,22 @@
 
 	if(href_list["network"])
 
-		var/newnet = tgui_input_text(usr, "Which network do you want to view?", "Comm Monitor", network, 15)
-
-		if(newnet && ((usr in range(1, src)) || issilicon(usr)))
-			if(length(newnet) > 15)
-				temp = span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -")
-
-			else
-
-				network = newnet
-				screen = 0
-				servers = list()
-				temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
+		om_prompt(src, usr, list("kind" = "text", "message" = "Which network do you want to view?", "title" = "Comm Monitor", "default" = network, "max_length" = 15, "requires" = PROMPT_USABLE), PROC_REF(network_entered))
 
 	updateUsrDialog(usr)
 	return
+
+/obj/machinery/computer/telecomms/traffic/proc/network_entered(mob/user, newnet, datum/om/prompt/ask)
+	if(newnet && ((user in range(1, src)) || issilicon(user)))
+		if(length(newnet) > 15)
+			temp = span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -")
+
+		else
+
+			network = newnet
+			screen = 0
+			servers = list()
+			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
 
 /obj/machinery/computer/telecomms/traffic/emag_act(remaining_charges, mob/user)
 	if(!emagged)

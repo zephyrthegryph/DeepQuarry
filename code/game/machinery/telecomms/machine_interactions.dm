@@ -203,17 +203,23 @@
 	switch(action)
 		if("change_freq")
 			. = TRUE
-			var/newfreq = tgui_input_number(ui.user, "Specify a new frequency for new signals to change to. Enter null to turn off frequency changing. Decimals assigned automatically.", src, network, round_value=FALSE)
-			if(canAccess(ui.user))
-				if(newfreq)
-					if(findtext(num2text(newfreq), "."))
-						newfreq *= 10 // shift the decimal one place
-					if(newfreq < 10000)
-						change_frequency = newfreq
-						set_temp("-% New frequency to change to assigned: \"[newfreq] GHz\" %-", "average")
-				else
-					change_frequency = ZERO_FREQ
-					set_temp("-% Frequency changing deactivated %-", "average")
+			om_prompt(src, ui.user, list("kind" = "number", "message" = "Specify a new frequency for new signals to change to. Enter null to turn off frequency changing. Decimals assigned automatically.", "title" = "[src]", "default" = network, "round" = FALSE, "requires" = PROMPT_USABLE, "on_cancel" = PROC_REF(change_frequency_cleared)), PROC_REF(change_frequency_entered))
+
+/obj/machinery/telecomms/bus/proc/change_frequency_cleared(mob/user, datum/om/prompt/ask)
+	change_frequency_entered(user, null, ask)
+
+/obj/machinery/telecomms/bus/proc/change_frequency_entered(mob/user, newfreq, datum/om/prompt/ask)
+	if(!canAccess(user))
+		return
+	if(newfreq)
+		if(findtext(num2text(newfreq), "."))
+			newfreq *= 10 // shift the decimal one place
+		if(newfreq < 10000)
+			change_frequency = newfreq
+			set_temp("-% New frequency to change to assigned: \"[newfreq] GHz\" %-", "average")
+	else
+		change_frequency = ZERO_FREQ
+		set_temp("-% Frequency changing deactivated %-", "average")
 
 // BROADCASTER
 /obj/machinery/telecomms/broadcaster/Options_Menu()
@@ -273,37 +279,16 @@
 			. = TRUE
 
 		if("id")
-			var/newid = copytext(reject_bad_text(tgui_input_text(ui.user, "Specify the new ID for this machine", src, id)),1,MAX_MESSAGE_LEN)
-			if(newid && canAccess(ui.user))
-				id = newid
-				set_temp("-% New ID assigned: \"[id]\" %-", "average")
-				. = TRUE
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Specify the new ID for this machine", "title" = "[src]", "default" = id, "requires" = PROMPT_USABLE), PROC_REF(id_entered))
+			. = TRUE
 
 		if("network")
-			var/newnet = tgui_input_text(ui.user, "Specify the new network for this machine. This will break all current links.", src, network, 15)
-			if(newnet && canAccess(ui.user))
-
-				if(length(newnet) > 15)
-					set_temp("-% Too many characters in new network tag %-", "average")
-
-				else
-					for(var/obj/machinery/telecomms/T in links)
-						LAZYREMOVE(T.links, src)
-
-					network = newnet
-					links = list()
-					set_temp("-% New network tag assigned: \"[network]\" %-", "average")
-				. = TRUE
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Specify the new network for this machine. This will break all current links.", "title" = "[src]", "default" = network, "max_length" = 15, "requires" = PROMPT_USABLE), PROC_REF(network_entered))
+			. = TRUE
 
 		if("freq")
-			var/newfreq = tgui_input_number(ui.user, "Specify a new frequency to filter (GHz). Decimals assigned automatically.", src, max_value=9999)
-			if(newfreq && canAccess(ui.user))
-				if(findtext(num2text(newfreq), "."))
-					newfreq *= 10 // shift the decimal one place
-				if(!(newfreq in freq_listening) && newfreq < 10000)
-					LAZYADD(freq_listening, newfreq)
-					set_temp("-% New frequency filter assigned: \"[newfreq/10] GHz\" %-", "average")
-				. = TRUE
+			om_prompt(src, ui.user, list("kind" = "number", "message" = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", "title" = "[src]", "max" = 9999, "requires" = PROMPT_USABLE), PROC_REF(filter_frequency_entered))
+			. = TRUE
 
 		if("delete")
 			var/x = text2num(params["delete"])
@@ -359,6 +344,41 @@
 		. = TRUE
 
 	add_fingerprint(ui.user)
+
+/obj/machinery/telecomms/proc/id_entered(mob/user, newid, datum/om/prompt/ask)
+	newid = copytext(reject_bad_text(newid),1,MAX_MESSAGE_LEN)
+	if(newid && canAccess(user))
+		id = newid
+		set_temp("-% New ID assigned: \"[id]\" %-", "average")
+		SStgui.update_uis(src)
+
+/obj/machinery/telecomms/proc/network_entered(mob/user, newnet, datum/om/prompt/ask)
+	if(!canAccess(user))
+		return
+	SStgui.update_uis(src)
+
+	if(length(newnet) > 15)
+		set_temp("-% Too many characters in new network tag %-", "average")
+
+	else
+		for(var/obj/machinery/telecomms/T in links)
+			LAZYREMOVE(T.links, src)
+
+		network = newnet
+		links = list()
+		set_temp("-% New network tag assigned: \"[network]\" %-", "average")
+	. = TRUE
+
+/obj/machinery/telecomms/proc/filter_frequency_entered(mob/user, newfreq, datum/om/prompt/ask)
+	if(!newfreq || !canAccess(user))
+		return
+	SStgui.update_uis(src)
+	if(findtext(num2text(newfreq), "."))
+		newfreq *= 10 // shift the decimal one place
+	if(!(newfreq in freq_listening) && newfreq < 10000)
+		LAZYADD(freq_listening, newfreq)
+		set_temp("-% New frequency filter assigned: \"[newfreq/10] GHz\" %-", "average")
+	. = TRUE
 
 /obj/machinery/telecomms/proc/canAccess(mob/user)
 	if(issilicon(user) || in_range(user, src))

@@ -209,8 +209,7 @@
 		//Find a server
 		if("find")
 			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-				linkedServer = tgui_input_list(ui.user,"Please select a server.", "Select a server.", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
-				set_temp("NOTICE: Server selected.", "alert")
+				om_prompt(src, ui.user, list("kind" = "list", "message" = "Please select a server.", "title" = "Select a server.", "choices" = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), "requires" = PROMPT_USABLE), PROC_REF(server_selected))
 			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 				linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
@@ -249,19 +248,7 @@
 			. = TRUE
 		//Change the password - KEY REQUIRED
 		if("pass")
-			var/dkey = trim(tgui_input_text(ui.user, "Please enter the current decryption key."))
-			if(dkey && dkey != "")
-				if(linkedServer.decryptkey == dkey)
-					var/newkey = trim(tgui_input_text(ui.user,"Please enter the new key (3 - 16 characters max):",null,null,16))
-					if(length(newkey) <= 3)
-						set_temp("NOTICE: Decryption key too short!", "average")
-					else if(length(newkey) > 16)
-						set_temp("NOTICE: Decryption key too long!", "average")
-					else if(newkey && newkey != "")
-						linkedServer.decryptkey = newkey
-					set_temp("NOTICE: Decryption key set.", "average")
-				else
-					temp = incorrectkey
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Please enter the current decryption key.", "requires" = PROMPT_USABLE), PROC_REF(current_key_entered))
 			. = TRUE
 		//Delete the log.
 		if("delete")
@@ -331,13 +318,46 @@
 			. = TRUE
 
 		if("addtoken")
-			linkedServer.spamfilter += tgui_input_text(ui.user,"Enter text you want to be filtered out","Token creation")
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter text you want to be filtered out", "title" = "Token creation", "requires" = PROMPT_USABLE), PROC_REF(token_entered))
 			. = TRUE
 
 		if("deltoken")
 			var/tokennum = text2num(params["deltoken"])
 			linkedServer.spamfilter.Cut(tokennum, tokennum + 1)
 			. = TRUE
+
+/obj/machinery/computer/message_monitor/proc/server_selected(mob/user, server, datum/om/prompt/ask)
+	linkedServer = server
+	set_temp("NOTICE: Server selected.", "alert")
+	SStgui.update_uis(src)
+
+/obj/machinery/computer/message_monitor/proc/current_key_entered(mob/user, dkey, datum/om/prompt/ask)
+	dkey = trim(dkey)
+	if(!dkey || !linkedServer)
+		return
+	if(linkedServer.decryptkey != dkey)
+		temp = incorrectkey
+		SStgui.update_uis(src)
+		return
+	om_prompt_chain(ask, list("kind" = "text", "message" = "Please enter the new key (3 - 16 characters max):", "max_length" = 16), PROC_REF(new_key_entered))
+
+/obj/machinery/computer/message_monitor/proc/new_key_entered(mob/user, newkey, datum/om/prompt/ask)
+	newkey = trim(newkey)
+	if(!linkedServer)
+		return
+	if(length(newkey) <= 3)
+		set_temp("NOTICE: Decryption key too short!", "average")
+	else if(length(newkey) > 16)
+		set_temp("NOTICE: Decryption key too long!", "average")
+	else if(newkey && newkey != "")
+		linkedServer.decryptkey = newkey
+	set_temp("NOTICE: Decryption key set.", "average")
+	SStgui.update_uis(src)
+
+/obj/machinery/computer/message_monitor/proc/token_entered(mob/user, token, datum/om/prompt/ask)
+	if(linkedServer)
+		linkedServer.spamfilter += token
+		SStgui.update_uis(src)
 
 /obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)

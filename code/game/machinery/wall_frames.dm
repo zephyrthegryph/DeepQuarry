@@ -27,18 +27,20 @@
 	if(.)
 		return TRUE
 	update_type_list()
-	var/datum/frame/frame_types/frame_type
 	if(!build_machine_type && !build_wall_only)
-		var/datum/frame/frame_types/response = tgui_input_list(user, "What kind of frame would you like to make?", "Frame type request", frame_types_floor)
-		if(!response)
-			return
-		frame_type = response
+		om_prompt(src, user, list("kind" = "list", "message" = "What kind of frame would you like to make?", "title" = "Frame type request", "choices" = frame_types_floor, "requires" = PROMPT_HELD), PROC_REF(floor_frame_chosen))
+		return
+	build_on_floor(user, null)
 
-		build_machine_type = /obj/structure/frame
+/obj/item/frame/proc/floor_frame_chosen(mob/user, datum/frame/frame_types/frame_type, datum/om/prompt/ask)
+	if(build_machine_type)
+		return
+	build_machine_type = /obj/structure/frame
+	if(frame_type.frame_size != 5)
+		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
+	build_on_floor(user, frame_type)
 
-		if(frame_type.frame_size != 5)
-			new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
-
+/obj/item/frame/proc/build_on_floor(mob/user, datum/frame/frame_types/frame_type)
 	var/ndir
 	ndir = user.dir
 	if(!(ndir in GLOB.cardinal))
@@ -79,18 +81,20 @@
 		to_chat(user, span_danger("There's already an item on this wall!"))
 		return
 
-	var/datum/frame/frame_types/frame_type
 	if(!build_machine_type)
-		var/datum/frame/frame_types/response = tgui_input_list(user, "What kind of frame would you like to make?", "Frame type request", frame_types_wall)
-		if(!response)
-			return
-		frame_type = response
+		om_prompt(src, user, list("kind" = "list", "message" = "What kind of frame would you like to make?", "title" = "Frame type request", "choices" = frame_types_wall, "requires" = PROMPT_HELD, "data" = list("loc" = loc, "dir" = ndir)), PROC_REF(wall_frame_chosen))
+		return
+	build_on_wall(user, loc, ndir, null)
 
-		build_machine_type = /obj/structure/frame
+/obj/item/frame/proc/wall_frame_chosen(mob/user, datum/frame/frame_types/frame_type, datum/om/prompt/ask)
+	if(build_machine_type)
+		return
+	build_machine_type = /obj/structure/frame
+	if(frame_type.frame_size != 5)
+		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
+	build_on_wall(user, ask.get("loc"), ask.get("dir"), frame_type)
 
-		if(frame_type.frame_size != 5)
-			new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
-
+/obj/item/frame/proc/build_on_wall(mob/user, turf/loc, ndir, datum/frame/frame_types/frame_type)
 	var/obj/machinery/M = new build_machine_type(loc, ndir, 1, frame_type)
 	M.init_forensic_data().merge_allprints(forensic_data)
 	if(istype(src.loc, /obj/item/gripper)) //Typical gripper shenanigans

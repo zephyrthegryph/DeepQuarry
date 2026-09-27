@@ -4,12 +4,10 @@
 	board_type = new /datum/frame/frame_types/button
 
 /obj/item/circuitboard/airlock_cycling/multitool_act(mob/user, obj/item/tool)
-	var/result = tgui_input_list(
-		user,
-		"What do you want to reconfigure the board to?",
-		"Multitool-Circuitboard interface",
-		list("Button", "Sensor", "Controller - Standard", "Controller - Advanced", "Controller - Access"),
-	)
+	om_prompt(src, user, list("kind" = "list", "message" = "What do you want to reconfigure the board to?", "title" = "Multitool-Circuitboard interface", "choices" = list("Button", "Sensor", "Controller - Standard", "Controller - Advanced", "Controller - Access"), "requires" = PROMPT_ADJACENT), PROC_REF(board_type_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/circuitboard/airlock_cycling/proc/board_type_chosen(mob/user, result, datum/om/prompt/ask)
 	switch(result)
 		if("Button")
 			name = T_BOARD("cycling airlock button")

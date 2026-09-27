@@ -296,11 +296,7 @@
 					set_temp(client_update_record(src,ui.user))
 			if("edit_notes")
 				// The modal input in tgui is busted for this sadly...
-				var/new_notes = strip_html_simple(tgui_input_text(ui.user,"Enter new information here.","Character Preference", html_decode(active2.fields["notes"]), MAX_RECORD_LENGTH, TRUE, prevent_enter = TRUE), MAX_RECORD_LENGTH)
-				if(ui.user.Adjacent(src))
-					if(new_notes != "" || tgui_alert(ui.user, "Are you sure you want to delete the current record's notes?", "Confirm Delete", list("Delete", "No")) == "Delete")
-						if(ui.user.Adjacent(src))
-							active2.fields["notes"] = new_notes
+				om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter new information here.", "title" = "Character Preference", "default" = html_decode(active2.fields["notes"]), "max_length" = MAX_RECORD_LENGTH, "multiline" = TRUE, "requires" = PROMPT_ADJACENT, "data" = list("record" = active2)), PROC_REF(record_notes_entered))
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
 				if(!GLOB.data_core.general.Find(general_record))
@@ -380,6 +376,20 @@
 					active1.fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
 			else
 				return FALSE
+
+/obj/machinery/computer/secure_data/proc/record_notes_entered(mob/user, new_notes, datum/om/prompt/ask)
+	new_notes = strip_html_simple(new_notes, MAX_RECORD_LENGTH)
+	ask.put("notes", new_notes)
+	if(new_notes != "")
+		record_notes_confirmed(user, "Delete", ask)
+		return
+	om_prompt_chain(ask, list("message" = "Are you sure you want to delete the current record's notes?", "title" = "Confirm Delete", "choices" = list("Delete", "No")), PROC_REF(record_notes_confirmed))
+
+/obj/machinery/computer/secure_data/proc/record_notes_confirmed(mob/user, answer, datum/om/prompt/ask)
+	var/datum/data/record/R = ask.get("record")
+	if(answer == "Delete" && R == active2)
+		active2.fields["notes"] = ask.get("notes")
+		SStgui.update_uis(src)
 
 /**
  * Called in tgui_act() to process modal actions

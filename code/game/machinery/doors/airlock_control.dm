@@ -290,27 +290,19 @@
 			. += "It's panel is open."
 
 /obj/machinery/airlock_sensor/multitool_act(mob/user, obj/item/tool)
-	var/choice = tgui_alert(user, "What would you like to configure?", "[src] Configuration", list("Master Tag", "ID Tag", "Frequency", "Command", "None"))
+	om_prompt(src, user, list("message" = "What would you like to configure?", "title" = "[src] Configuration", "choices" = list("Master Tag", "ID Tag", "Frequency", "Command", "None"), "requires" = PROMPT_ADJACENT), PROC_REF(config_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/airlock_sensor/proc/config_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Master Tag")
-			var/new_value = tgui_input_text(user, "The current master tag is \"[master_tag]\", what would you like it to be?", "[src] Master Tag", master_tag, 30, encode = TRUE)
-			if(new_value)
-				master_tag = new_value
+			ask_text_var(user, "master_tag", "The current master tag is \"[master_tag]\", what would you like it to be?", "[src] Master Tag", 30)
 		if("ID Tag")
-			var/new_value = tgui_input_text(user, "The current id tag is \"[id_tag]\", what would you like it to be?", "[src] ID Tag", id_tag, 30, encode = TRUE)
-			if(new_value)
-				id_tag = new_value
+			ask_text_var(user, "id_tag", "The current id tag is \"[id_tag]\", what would you like it to be?", "[src] ID Tag", 30)
 		if("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-			if(new_frequency)
-				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				set_frequency(new_frequency)
+			ask_frequency(user, frequency)
 		if("Command")
-			var/new_value = tgui_input_text(user, "The current command is \"[command]\", what would you like it to be? Valid options include: cycle, cycle_interior, cycle_exterior.", "[src] command", command, encode = TRUE)
-			if(new_value)
-				command = new_value
-
-	return ITEM_INTERACT_SUCCESS
+			ask_text_var(user, "command", "The current command is \"[command]\", what would you like it to be? Valid options include: cycle, cycle_interior, cycle_exterior.", "[src] command", MAX_TGUI_INPUT)
 
 /obj/machinery/airlock_sensor/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -383,23 +375,17 @@
 	return TRUE
 
 /obj/machinery/access_button/multitool_act(mob/user, obj/item/tool)
-	var/choice = tgui_alert(user, "What would you like to change?", "[src] Settings", list("Tag", "Frequency", "Command", "None"))
+	om_prompt(src, user, list("message" = "What would you like to change?", "title" = "[src] Settings", "choices" = list("Tag", "Frequency", "Command", "None"), "requires" = PROMPT_ADJACENT), PROC_REF(setting_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/access_button/proc/setting_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Tag")
-			var/new_id = tgui_input_text(user, "[src] has an master tag of \"[master_tag]\". What would you like it to be?", "[src] ID", master_tag, 30, FALSE, TRUE)
-			if(new_id)
-				master_tag = new_id
+			ask_text_var(user, "master_tag", "[src] has an master tag of \"[master_tag]\". What would you like it to be?", "[src] ID", 30)
 		if("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-			if(new_frequency)
-				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				set_frequency(new_frequency)
+			ask_frequency(user, frequency)
 		if("Command")
-			var/new_command = tgui_input_text(user, "[src] has a command of \"[command]\". Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interion', and 'cycle_exterior' '", "[src] command", command, encode = TRUE)
-			if(new_command)
-				command = new_command
-
-	return ITEM_INTERACT_SUCCESS
+			ask_text_var(user, "command", "[src] has a command of \"[command]\". Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interion', and 'cycle_exterior' '", "[src] command", MAX_TGUI_INPUT)
 
 /datum/interaction/machine_hand/ungated/access_button_use
 	id = "access_button_use"

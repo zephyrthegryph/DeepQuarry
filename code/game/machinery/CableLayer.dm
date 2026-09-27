@@ -69,7 +69,13 @@
 	if(!cable || !cable.get_amount())
 		to_chat(user, span_warning("There's no more cable on the reel."))
 		return ITEM_INTERACT_BLOCKING
-	var/amount = tgui_input_number(user, "Please specify the length of cable to cut", "Cut cable", min(cable.get_amount(), 30))
+	om_prompt(src, user, list("kind" = "number", "message" = "Please specify the length of cable to cut", "title" = "Cut cable", "default" = min(cable.get_amount(), 30), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(cable_length_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/cablelayer/proc/cable_length_entered(mob/user, amount, datum/om/prompt/ask)
+	var/obj/item/tool = ask.get("tool")
+	if(!cable)
+		return
 	amount = min(amount, cable.get_amount(), 30)
 	if(amount)
 		playsound(src, tool.usesound, 50, TRUE)

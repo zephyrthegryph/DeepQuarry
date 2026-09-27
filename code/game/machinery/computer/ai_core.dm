@@ -156,10 +156,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You connect the monitor."))
 			if(!brain)
-				var/open_for_latejoin = tgui_alert(user, "Would you like this core to be open for latejoining AIs?", "Latejoin", list("Yes", "No")) == "Yes"
 				var/obj/structure/AIcore/deactivated/D = new(loc)
-				if(open_for_latejoin)
-					registry_join(REGISTRY_EMPTY_AI_CORES, D)
+				om_prompt(D, user, list("message" = "Would you like this core to be open for latejoining AIs?", "title" = "Latejoin", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(ai_core_latejoin_answered))
 			else
 				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
@@ -170,6 +168,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			qdel(src)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
+
+/proc/ai_core_latejoin_answered(obj/structure/AIcore/deactivated/D, mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
+		registry_join(REGISTRY_EMPTY_AI_CORES, D)
 
 /obj/structure/AIcore/crowbar_act(mob/user, obj/item/tool)
 	switch(state)
@@ -291,9 +293,10 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	for(var/obj/structure/AIcore/deactivated/current_ai_struct in REGISTRY_MEMBERS(REGISTRY_AI_CORES_DEACTIVATED))
 		cores["[current_ai_struct] ([current_ai_struct.loc.loc])"] = current_ai_struct
 
-	var/id = tgui_input_list(user, "Which core?", "Toggle AI Core Latejoin", cores)
-	if(!id)
-		return
+	om_prompt(user, user, list("kind" = "list", "message" = "Which core?", "title" = "Toggle AI Core Latejoin", "choices" = cores, "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER|R_EVENT), "data" = list("cores" = cores)), GLOBAL_PROC_REF(empty_ai_core_latejoin_chosen))
+
+/proc/empty_ai_core_latejoin_chosen(client/C, mob/user, id, datum/om/prompt/ask)
+	var/list/cores = ask.get("cores")
 
 	var/obj/structure/AIcore/deactivated/ai_struct = cores[id]
 	if(!ai_struct)

@@ -143,42 +143,49 @@
 		playsound(loc, 'sound/machines/buzz-sigh.ogg', 50, 1)
 		return
 	if(!(printing) && D)
-		var/reason = tgui_input_text(user,"Enter a reason for the release", "Write", multiline = TRUE)
-		if(!reason)
-			return
-		reason += "<span class=\"paper_field\"></span>"
-		var/english_symptoms = list()
-		for(var/I in D.symptoms)
-			var/datum/symptom/S = I
-			english_symptoms += S.name
-		var/symptoms = english_list(english_symptoms)
+		om_prompt_sequence(src, user, list(
+			list("key" = "reason", "kind" = "text", "message" = "Enter a reason for the release", "title" = "Write", "multiline" = TRUE),
+			list("key" = "sign", "message" = "Would you like to add your signature?", "title" = "Signature", "choices" = list("Yes","No")),
+		), PROC_REF(release_form_written), list("requires" = PROMPT_USABLE, "data" = list("disease" = D)))
 
-		var/signature
-		if(tgui_alert(user, "Would you like to add your signature?", "Signature", list("Yes","No")) == "Yes")
-			signature = "<font face=\"Times New Roman\">" + span_italics("[user ? user.real_name : "Anonymous"]") + "</font>"
-		else
-			signature = "<span class=\"paper_field\"></span>"
+/obj/machinery/computer/pandemic/proc/release_form_written(mob/living/user, datum/om/prompt/ask)
+	var/datum/disease/advance/D = ask.get("disease")
+	var/reason = ask.get("reason")
+	if(printing || !reason)
+		return
+	reason += "<span class=\"paper_field\"></span>"
+	var/english_symptoms = list()
+	for(var/I in D.symptoms)
+		var/datum/symptom/S = I
+		english_symptoms += S.name
+	var/symptoms = english_list(english_symptoms)
 
-		printing = TRUE
-		var/obj/item/paper/P = new /obj/item/paper(loc)
-		visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
-		playsound(loc, 'sound/machines/printer.ogg', 50, 1)
+	var/signature
+	if(ask.get("sign") == "Yes")
+		signature = "<font face=\"Times New Roman\">" + span_italics("[user ? user.real_name : "Anonymous"]") + "</font>"
+	else
+		signature = "<span class=\"paper_field\"></span>"
 
-		P.info = span_underline(span_huge(span_bold("<center> Releasing Virus </center>")))
-		P.info += "<HR>"
-		P.info += span_underline("Name of the Virus:") + " [D.name] <BR>"
-		P.info += span_underline("Symptoms:") + " [symptoms]<BR>"
-		P.info += span_underline("Spreads by:") + " [D.spread_text]<BR>"
-		P.info += span_underline("Cured by:") + " [D.cure_text]<BR>"
-		P.info += "<BR>"
-		P.info += span_underline("Reason for releasing:") + " [reason]"
-		P.info += "<HR>"
-		P.info += "The Virologist is responsible for any biohazards caused by the virus released.<BR>"
-		P.info += span_underline("Virologist's sign:") + " [signature]<BR>"
-		P.info += "If approved, stamp below with the Chief Medical Officer's stamp, and/or the Captain's stamp if required:"
-		P.updateinfolinks()
-		P.name = "Releasing Virus - [D.name]"
-		printing = FALSE
+	printing = TRUE
+	var/obj/item/paper/P = new /obj/item/paper(loc)
+	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
+	playsound(loc, 'sound/machines/printer.ogg', 50, 1)
+
+	P.info = span_underline(span_huge(span_bold("<center> Releasing Virus </center>")))
+	P.info += "<HR>"
+	P.info += span_underline("Name of the Virus:") + " [D.name] <BR>"
+	P.info += span_underline("Symptoms:") + " [symptoms]<BR>"
+	P.info += span_underline("Spreads by:") + " [D.spread_text]<BR>"
+	P.info += span_underline("Cured by:") + " [D.cure_text]<BR>"
+	P.info += "<BR>"
+	P.info += span_underline("Reason for releasing:") + " [reason]"
+	P.info += "<HR>"
+	P.info += "The Virologist is responsible for any biohazards caused by the virus released.<BR>"
+	P.info += span_underline("Virologist's sign:") + " [signature]<BR>"
+	P.info += "If approved, stamp below with the Chief Medical Officer's stamp, and/or the Captain's stamp if required:"
+	P.updateinfolinks()
+	P.name = "Releasing Virus - [D.name]"
+	printing = FALSE
 
 /obj/machinery/computer/pandemic/attack_ai(mob/user)
 	return attack_hand(user)

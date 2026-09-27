@@ -92,8 +92,14 @@
 
 	// User requests service
 	user.visible_message(span_bold("[user]") + " wakes [src].", "You wake [src].")
-	var/choice = tgui_alert(user, "What service would you like?", "[src]", list("Health Scan", "Backup Scan", "Cancel"), timeout = 10 SECONDS)
-	if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open)
+	om_prompt(src, user, list("message" = "What service would you like?", "title" = "[src]", "choices" = list("Health Scan", "Backup Scan", "Cancel"), "timeout" = 10 SECONDS, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(service_cancelled), "on_refused" = PROC_REF(service_cancelled)), PROC_REF(service_chosen))
+	return TRUE
+
+/obj/machinery/medical_kiosk/proc/service_cancelled(mob/living/user, datum/om/prompt/ask)
+	suspend()
+
+/obj/machinery/medical_kiosk/proc/service_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	if(choice == "Cancel" || inoperable() || panel_open)
 		suspend()
 		return
 

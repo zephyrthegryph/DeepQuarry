@@ -104,31 +104,55 @@
 	if(state != 3)
 		return FALSE
 	playsound(src, tool.usesound, 50, TRUE)
-	var/input = tgui_input_text(user, "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", "Set Network", camera_network ? camera_network : NETWORK_DEFAULT, MAX_MESSAGE_LEN)
-	if(!input)
-		to_chat(user, "No input found please hang up and try your call again.")
-		return TRUE
-	var/list/tempnetwork = splittext(input, ",")
-	if(tempnetwork.len < 1)
-		to_chat(user, "No network found please hang up and try your call again.")
-		return TRUE
+	om_prompt_sequence(src, user, list(
+		list("key" = "networks", "kind" = "text", "message" = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", "title" = "Set Network", "default" = camera_network ? camera_network : NETWORK_DEFAULT, "max_length" = MAX_MESSAGE_LEN),
+		PROC_REF(ask_camera_name),
+	), PROC_REF(camera_configured), list("requires" = PROMPT_ADJACENT))
+	return TRUE
+
+/obj/item/camera_assembly/proc/ask_camera_name(mob/user, datum/om/prompt/ask)
+	var/list/tempnetwork = splittext(ask.get("networks") || "", ",")
+	if(!length(tempnetwork))
+		return null
 	var/area/camera_area = get_area(src)
 	var/temptag = "[sanitize(camera_area.name)] ([rand(1, 999)])"
-	input = sanitizeSafe(tgui_input_text(user, "How would you like to name the camera?", "Set Camera Name", camera_name ? camera_name : temptag, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	return list("key" = "name", "kind" = "text", "message" = "How would you like to name the camera?", "title" = "Set Camera Name", "default" = camera_name ? camera_name : temptag, "max_length" = MAX_NAME_LEN, "encode" = FALSE)
+
+/obj/item/camera_assembly/proc/camera_configured(mob/user, datum/om/prompt/ask)
+	if(!ask.get("networks"))
+		to_chat(user, "No input found please hang up and try your call again.")
+		return
+	var/list/tempnetwork = splittext(ask.get("networks"), ",")
+	if(tempnetwork.len < 1)
+		to_chat(user, "No network found please hang up and try your call again.")
+		return
+	if(state != 3)
+		return
 	state = 4
 	var/obj/machinery/camera/C = new(loc)
 	loc = C
 	C.assembly = src
 	C.auto_turn()
 	C.replace_networks(uniqueList(tempnetwork))
-	C.c_tag = input
-	for(var/i = 5; i >= 0; i -= 1)
-		var/direct = tgui_input_list(user, "Direction?", "Assembling Camera", list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT"))
-		if(direct != "LEAVE IT")
-			C.dir = text2dir(direct)
-		if(i != 0 && tgui_alert(user, "Is this what you want? Chances Remaining: [i]", "Confirmation", list("Yes", "No")) == "Yes")
-			break
-	return TRUE
+	C.c_tag = sanitizeSafe(ask.get("name"), MAX_NAME_LEN)
+	ask_camera_direction(user, C, 5)
+
+/// Turns the new camera until the builder is happy, with up to `chances` more tries.
+/obj/item/camera_assembly/proc/ask_camera_direction(mob/user, obj/machinery/camera/C, chances)
+	om_prompt(C, user, list("kind" = "list", "message" = "Direction?", "title" = "Assembling Camera", "choices" = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT"), "requires" = PROMPT_ADJACENT, "data" = list("assembly" = src, "chances" = chances)), GLOBAL_PROC_REF(camera_direction_chosen))
+
+/proc/camera_direction_chosen(obj/machinery/camera/C, mob/user, direct, datum/om/prompt/ask)
+	if(direct != "LEAVE IT")
+		C.dir = text2dir(direct)
+	var/chances = ask.get("chances")
+	if(chances > 0)
+		om_prompt_chain(ask, list("message" = "Is this what you want? Chances Remaining: [chances]", "title" = "Confirmation", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(camera_direction_confirmed))
+
+/proc/camera_direction_confirmed(obj/machinery/camera/C, mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
+		return
+	var/obj/item/camera_assembly/assembly = ask.get("assembly")
+	assembly.ask_camera_direction(user, C, ask.get("chances") - 1)
 
 /obj/item/camera_assembly/update_icon()
 	if(anchored)

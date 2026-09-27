@@ -71,11 +71,7 @@
 		if(metal < 1)
 			to_chat(user, "\The [src] is empty.")
 			return TRUE
-		var/answer = tgui_alert(user, "Do you want to eject all the metal in \the [src]?", "Eject?", list("Yes","No"))
-		if(answer == "Yes")
-			var/amount_ejected = eject_metal()
-			user.visible_message(span_notice("[user] removes [amount_ejected] sheet\s of [MAT_STEEL] from the \the [src]."),
-				span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from \the [src]."))
+		om_prompt(src, user, list("message" = "Do you want to eject all the metal in \the [src]?", "title" = "Eject?", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(eject_answered))
 		return TRUE
 	if(!metal && !on)
 		to_chat(user, span_warning("\The [src] doesn't work without metal."))
@@ -84,6 +80,13 @@
 	old_turf = get_turf(src)
 	old_dir = dir
 	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
+	return TRUE
+
+/obj/machinery/pipelayer/proc/eject_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && panel_open)
+		var/amount_ejected = eject_metal()
+		user.visible_message(span_notice("[user] removes [amount_ejected] sheet\s of [MAT_STEEL] from the \the [src]."),
+			span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from \the [src]."))
 	return TRUE
 
 /// Recycle a pipe into internal metal storage.
@@ -130,9 +133,11 @@
 /obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
 	if(panel_open)
 		return ITEM_INTERACT_BLOCKING
-	P_type_t = tgui_input_list(user, "Choose pipe type", "Pipe type", Pipes)
-	if(!P_type_t || !Adjacent(user))
-		return ITEM_INTERACT_BLOCKING
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose pipe type", "title" = "Pipe type", "choices" = Pipes, "requires" = PROMPT_ADJACENT), PROC_REF(pipe_type_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pipelayer/proc/pipe_type_chosen(mob/user, choice, datum/om/prompt/ask)
+	P_type_t = choice
 	P_type = Pipes[P_type_t]
 	user.visible_message(span_notice("[user] has set \the [src] to manufacture [P_type_t]."), span_notice("You set \the [src] to manufacture [P_type_t]."))
 	return ITEM_INTERACT_SUCCESS

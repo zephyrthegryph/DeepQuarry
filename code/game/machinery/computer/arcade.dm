@@ -1171,13 +1171,21 @@
 	// Have the customer punch in the PIN before checking if there's enough money. Prevents people from figuring out acct is
 	// empty at high security levels
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		var/attempt_pin = tgui_input_number(user, "Enter pin code", "Vendor transaction")
-		customer_account = attempt_account_access(I.associated_account_number, attempt_pin, 2)
+		om_prompt(src, user, list("kind" = "number", "message" = "Enter pin code", "title" = "Vendor transaction", "requires" = PROMPT_ADJACENT, "data" = list("account" = I.associated_account_number)), PROC_REF(card_pin_entered))
+		return 0
+	return charge_account(customer_account)
 
-		if(!customer_account)
-			visible_message(span_info("Unable to access account: incorrect credentials."))
-			return 0
+/// The PIN arrived: the play is paid once the account accepts it.
+/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(mob/user, attempt_pin, datum/om/prompt/ask)
+	var/datum/money_account/customer_account = attempt_account_access(ask.get("account"), attempt_pin, 2)
+	if(!customer_account)
+		visible_message(span_info("Unable to access account: incorrect credentials."))
+		return
+	if(!gamepaid && charge_account(customer_account))
+		gamepaid = 1
+		instructions = "Hit start to play!"
 
+/obj/machinery/computer/arcade/clawmachine/proc/charge_account(datum/money_account/customer_account)
 	if(gameprice > customer_account.money)
 		visible_message(span_info("Insufficient funds in account."))
 		return 0

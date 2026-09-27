@@ -398,39 +398,36 @@
 	return (custom_tracks + ..())
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_add()
-	var/client/C = usr.client
 	if(!check_rights(R_FUN|R_ADMIN))
 		return
 
-	// Required
-	var/url = tgui_input_text(C, "REQUIRED: Provide URL for track", "Track URL")
-	if(!url)
-		return
+	om_prompt_sequence(src, usr, list(
+		list("key" = "url", "kind" = "text", "message" = "REQUIRED: Provide URL for track", "title" = "Track URL"),
+		list("key" = "title", "kind" = "text", "message" = "REQUIRED: Provide title for track", "title" = "Track Title"),
+		list("key" = "duration", "kind" = "number", "message" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "title" = "Track Duration"),
+		list("key" = "artist", "kind" = "text", "message" = "Optional: Provide artist for track", "title" = "Track Artist"),
+	), PROC_REF(manual_track_entered), list("requires" = PROMPT_ADMIN(R_FUN|R_ADMIN)))
 
-	var/title = tgui_input_text(C, "REQUIRED: Provide title for track", "Track Title")
-	if(!title)
+/obj/machinery/media/jukebox/ghost/proc/manual_track_entered(mob/user, datum/om/prompt/ask)
+	var/url = ask.get("url")
+	var/title = ask.get("title")
+	var/duration = ask.get("duration")
+	var/artist = ask.get("artist")
+	if(!url || !title || !duration)
 		return
-
-	var/duration = tgui_input_number(C, "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "Track Duration")
-	if(!duration)
-		return
-
-	// Optional
-	var/artist = tgui_input_text(C, "Optional: Provide artist for track", "Track Artist")
-	if(isnull(artist)) // Cancel rather than empty string
-		return
-
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
 
 	LAZYADD(custom_tracks, new /datum/track(url, title, duration, artist, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
-	var/client/C = usr.client
 	if(!check_rights(R_FUN|R_ADMIN))
 		return
 
-	var/track = tgui_input_text(C, "Input track title or URL to remove (must be exact)", "Remove Track")
+	om_prompt(src, usr, list("kind" = "text", "message" = "Input track title or URL to remove (must be exact)", "title" = "Remove Track", "requires" = PROMPT_ADMIN(R_FUN|R_ADMIN)), PROC_REF(manual_track_removal_entered))
+
+/obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(mob/user, track, datum/om/prompt/ask)
+	var/client/C = user.client
 	if(!track)
 		return
 

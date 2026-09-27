@@ -1150,11 +1150,13 @@
 
 /obj/machinery/porta_turret_construct/proc/interaction_rename(mob/user, obj/item/I, datum/interaction/interaction)
 	//you can rename turrets like bots!
-	var/t = sanitizeSafe(tgui_input_text(user, "Enter new turret name", name, finish_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter new turret name", "title" = name, "default" = finish_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(turret_named))
+	return TRUE
+
+/obj/machinery/porta_turret_construct/proc/turret_named(mob/user, t, datum/om/prompt/ask)
+	t = sanitizeSafe(t, MAX_NAME_LEN)
 	if(!t)
-		return TRUE
-	if(!in_range(src, user) && loc != user)
-		return TRUE
+		return
 
 	finish_name = t
 	return TRUE

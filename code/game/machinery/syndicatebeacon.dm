@@ -46,11 +46,14 @@
 		message += "\n\n[temptext]"
 	if(can_traitor)
 		var/offer = pick("I want to switch teams.", "I want to work for you.", "Let me join you.", "I can be of use to you.", "You want me working for you, and here's why...", "Give me an objective.", "How's the 401k over at the Syndicate?")
-		if(tgui_alert(user, message, "Ominous Beacon", list(offer, "Hang up")) == offer)
-			Topic("betraitor=1;traitormob=\ref[user]", list("betraitor" = "1", "traitormob" = "\ref[user]"))
+		om_prompt(src, user, list("message" = message, "title" = "Ominous Beacon", "choices" = list(offer, "Hang up"), "requires" = PROMPT_ADJACENT, "data" = list("offer" = offer)), PROC_REF(beacon_offer_answered))
 	else
-		tgui_alert(user, message, "Ominous Beacon", list("Hang up"))
+		om_prompt(src, user, list("message" = message, "title" = "Ominous Beacon", "choices" = list("Hang up")))
 	return TRUE
+
+/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == ask.get("offer"))
+		Topic("betraitor=1;traitormob=\ref[user]", list("betraitor" = "1", "traitormob" = "\ref[user]"))
 
 /obj/machinery/syndicate_beacon/Topic(href, href_list)
 	if(..())

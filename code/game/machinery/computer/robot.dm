@@ -232,11 +232,15 @@
 			var/mob/living/silicon/robot/R = locate(params["ref"])
 			if(!can_hack(ui.user, R))
 				return
-			var/choice = tgui_alert(ui.user, "Really hack [R.name]? This cannot be undone.", "Hack?", list("Yes", "No"))
-			if(choice != "Yes")
-				return
-			log_game("[key_name(ui.user)] emagged [key_name(R)] using robotic console!")
-			message_admins(span_notice("[key_name_admin(ui.user)] emagged [key_name_admin(R)] using robotic console!"))
-			R.emagged = TRUE
-			to_chat(R, span_notice("Failsafe protocols overridden. New tools available."))
+			om_prompt(src, ui.user, list("message" = "Really hack [R.name]? This cannot be undone.", "title" = "Hack?", "choices" = list("Yes", "No"), "requires" = PROMPT_USABLE, "data" = list("borg" = R)), PROC_REF(hack_confirmed))
 			. = TRUE
+
+/obj/machinery/computer/robotics/proc/hack_confirmed(mob/user, choice, datum/om/prompt/ask)
+	var/mob/living/silicon/robot/R = ask.get("borg")
+	if(choice != "Yes" || !can_hack(user, R))
+		return
+	log_game("[key_name(user)] emagged [key_name(R)] using robotic console!")
+	message_admins(span_notice("[key_name_admin(user)] emagged [key_name_admin(R)] using robotic console!"))
+	R.emagged = TRUE
+	to_chat(R, span_notice("Failsafe protocols overridden. New tools available."))
+	. = TRUE

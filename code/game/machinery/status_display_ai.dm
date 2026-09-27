@@ -41,9 +41,9 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 /proc/set_ai_status_displays(mob/user as mob)
 	var/list/ai_emotions = get_ai_emotions(user.ckey)
-	var/emote = tgui_input_list(user, "Please, select a status:", "AI Status", ai_emotions)
-	if(!emote)
-		return
+	om_prompt(null, user, list("kind" = "list", "message" = "Please, select a status:", "title" = "AI Status", "choices" = ai_emotions), GLOBAL_PROC_REF(ai_status_display_chosen))
+
+/proc/ai_status_display_chosen(datum/E, mob/user, emote, datum/om/prompt/ask)
 	for (var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		if(istype(M, /obj/machinery/ai_status_display))
 			var/obj/machinery/ai_status_display/AISD = M
@@ -99,9 +99,9 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 /obj/machinery/ai_status_display/attack_ai(mob/user as mob)
 	var/list/ai_emotions = get_ai_emotions(user.ckey)
-	var/emote = tgui_input_list(user, "Please, select a status:", "AI Status", ai_emotions)
-	if(!emote)
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Please, select a status:", "title" = "AI Status", "choices" = ai_emotions), PROC_REF(emotion_chosen))
+
+/obj/machinery/ai_status_display/proc/emotion_chosen(mob/user, emote, datum/om/prompt/ask)
 	emotion = emote
 
 /obj/machinery/ai_status_display/proc/update()

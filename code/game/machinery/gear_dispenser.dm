@@ -196,16 +196,18 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 			dispenser_flags &= ~GD_BUSY
 			return TRUE
 
-		var/choice = tgui_input_list(user, "Select equipment to dispense.", "Equipment Dispenser", gear_list)
-
-		if(!choice)
-			dispenser_flags &= ~GD_BUSY
-			return TRUE
-
-		dispense(gear_list[choice],user)
+		om_prompt(src, user, list("kind" = "list", "message" = "Select equipment to dispense.", "title" = "Equipment Dispenser", "choices" = gear_list, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(dispense_cancelled), "on_refused" = PROC_REF(dispense_cancelled), "data" = list("gear" = gear_list)), PROC_REF(gear_chosen))
 	else
 		dispense(one_setting,user)
 	return TRUE
+
+/obj/machinery/gear_dispenser/proc/dispense_cancelled(mob/living/carbon/human/user, datum/om/prompt/ask)
+	dispenser_flags &= ~GD_BUSY
+
+/obj/machinery/gear_dispenser/proc/gear_chosen(mob/living/carbon/human/user, choice, datum/om/prompt/ask)
+	var/list/gear_list = ask.get("gear")
+
+	dispense(gear_list[choice],user)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -708,9 +710,9 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
 	 * "req_one_access" = array of numbers (accesses)
 	 */
-	var/input = tgui_input_text(usr, "Paste new gear pack JSON below. See example/code comments.", "Admin-load Dispenser", example, multiline = TRUE)
-	if(!input)
-		return
+	om_prompt(src, usr, list("kind" = "text", "message" = "Paste new gear pack JSON below. See example/code comments.", "title" = "Admin-load Dispenser", "default" = example, "multiline" = TRUE, "requires" = PROMPT_ADMIN(R_DEBUG|R_FUN)), PROC_REF(gear_pack_entered))
+
+/obj/machinery/gear_dispenser/proc/gear_pack_entered(mob/user, input, datum/om/prompt/ask)
 
 	var/list/parsed = json_decode(input)
 
@@ -746,7 +748,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 			G.req_one_access = access
 
 		running[option_name] = G
-	to_chat(usr, "[src] added [running.len] entries")
+	to_chat(user, "[src] added [running.len] entries")
 	dispenses = running
 
 ////////////////////////////// RANDOM SUIT AND WEAPON DISPENSERS ///////////////////////////

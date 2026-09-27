@@ -81,49 +81,49 @@
 
 /obj/machinery/food_replicator/interact(mob/user)
 	if(!isemptylist(products))
-		var/choice = tgui_input_list(user, "What would you like to print?", "Print a dish", products)
-
-		if(!choice || printing || (stat & (BROKEN|NOPOWER)))
-			return
-
-		var/product_path = products[choice]
-		var/obj/item/reagent_containers/foodItem = new product_path
-
-		var/total = foodItem.reagents.total_volume
-		qdel(foodItem)
-
-		if(!container)
-			to_chat(user, span_warning("There is no container!"))
-			return
-
-		if(container && container.reagents)
-			if(!container.reagents.has_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency)))
-				playsound(src, "sound/machines/buzz-sigh.ogg", 25, 0)
-				to_chat(user, span_warning("Not enough nutriment available!"))
-				return
-
-			container.reagents.remove_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency))
-
-			update_use_power(USE_POWER_ACTIVE)
-			printing = TRUE
-			update_icon()
-
-			if(product_path)
-				foodItem = new product_path(src)
-
-				if(istype(foodItem, /obj/item/reagent_containers/food/snacks/donkpocket))
-					var/obj/item/reagent_containers/food/snacks/donkpocket/donkp = foodItem
-					donkp.heat()
-
-				if(foodItem.reagents.has_reagent("supermatter"))
-					self_destruct()
-
-			visible_message(span_notice("\The [src] begins to shape a nutriment slurry."))
-
-			om_after(src, print_delay/speed, PROC_REF(print_done), foodItem)
-
+		om_prompt(src, user, list("kind" = "list", "message" = "What would you like to print?", "title" = "Print a dish", "choices" = products, "requires" = PROMPT_ADJACENT), PROC_REF(dish_chosen))
 	else
 		to_chat(user, span_warning("There is no food to replicate!"))
+
+/obj/machinery/food_replicator/proc/dish_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(printing || (stat & (BROKEN|NOPOWER)))
+		return
+
+	var/product_path = products[choice]
+	var/obj/item/reagent_containers/foodItem = new product_path
+
+	var/total = foodItem.reagents.total_volume
+	qdel(foodItem)
+
+	if(!container)
+		to_chat(user, span_warning("There is no container!"))
+		return
+
+	if(container && container.reagents)
+		if(!container.reagents.has_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency)))
+			playsound(src, "sound/machines/buzz-sigh.ogg", 25, 0)
+			to_chat(user, span_warning("Not enough nutriment available!"))
+			return
+
+		container.reagents.remove_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency))
+
+		update_use_power(USE_POWER_ACTIVE)
+		printing = TRUE
+		update_icon()
+
+		if(product_path)
+			foodItem = new product_path(src)
+
+			if(istype(foodItem, /obj/item/reagent_containers/food/snacks/donkpocket))
+				var/obj/item/reagent_containers/food/snacks/donkpocket/donkp = foodItem
+				donkp.heat()
+
+			if(foodItem.reagents.has_reagent("supermatter"))
+				self_destruct()
+
+		visible_message(span_notice("\The [src] begins to shape a nutriment slurry."))
+
+		om_after(src, print_delay/speed, PROC_REF(print_done), foodItem)
 
 
 /// Scan a food item to learn its recipe.

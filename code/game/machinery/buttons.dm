@@ -85,13 +85,17 @@
 	effect = /obj/machinery/button/mob_spawner_button/proc/interaction_spawn
 
 /obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
-	var/mob_wanted = tgui_input_list(user, "Which Mob do you want to spawn?", "Mob spawn", GLOB.vr_mob_spawner_options)
-	if(!mob_wanted)
-		return TRUE
+	om_prompt_sequence(src, user, list(
+		list("key" = "mob", "kind" = "list", "message" = "Which Mob do you want to spawn?", "title" = "Mob spawn", "choices" = GLOB.vr_mob_spawner_options),
+		list("key" = "faction", "message" = "Do you want the mob's faction to remain the same or be passive?", "title" = "Faction", "choices" = list("Normal","Neutral")),
+	), PROC_REF(spawn_choices_made), list("requires" = PROMPT_ADJACENT))
+	return TRUE
+
+/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(mob/living/user, datum/om/prompt/ask)
 	var/neutral = FALSE
-	var/mobtype = GLOB.vr_mob_spawner_options[mob_wanted]
-	var/faction = tgui_alert(user, "Do you want the mob's faction to remain the same or be passive?","Faction",list("Normal","Neutral"))
-	if(!faction)
+	var/mobtype = GLOB.vr_mob_spawner_options[ask.get("mob")]
+	var/faction = ask.get("faction")
+	if(!mobtype || !faction)
 		return TRUE
 	QDEL_NULL(mobspawned)
 	if(faction == "Neutral")

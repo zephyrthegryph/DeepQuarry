@@ -291,12 +291,7 @@
 				if(speed <= 0)
 					speed = 1
 			if("setpath")
-				var/newpath = tgui_input_text(usr, "Please define a new path!",,path, MAX_MESSAGE_LEN)
-				if(newpath && newpath != "")
-					moving = 0 // stop moving
-					path = newpath
-					pathpos = 1 // reset position
-					filter_path() // renders rpath
+				om_prompt(src, usr, list("kind" = "text", "message" = "Please define a new path!", "default" = path, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE), PROC_REF(magnet_path_entered))
 
 			if("togglemoving")
 				moving = !moving
@@ -304,6 +299,14 @@
 					MagnetMove()
 
 	updateUsrDialog(usr)
+
+/obj/machinery/magnetic_controller/proc/magnet_path_entered(mob/user, newpath, datum/om/prompt/ask)
+	updateUsrDialog(user)
+	if(newpath && newpath != "")
+		moving = 0 // stop moving
+		path = newpath
+		pathpos = 1 // reset position
+		filter_path() // renders rpath
 
 /obj/machinery/magnetic_controller/proc/MagnetMove()
 	if(looping) return

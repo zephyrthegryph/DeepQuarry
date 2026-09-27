@@ -157,10 +157,7 @@
 
 /obj/machinery/meter/multitool_act(mob/user, obj/item/tool)
 	if(open)
-		id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_pipe'.", "Set ID Tag", id, MAX_NAME_LEN)
-		var/obj/item/multitool/multitool = tool.get_multitool()
-		if(multitool)
-			multitool.connectable = src
+		om_prompt(src, user, list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'exhaust_pipe'.", "title" = "Set ID Tag", "default" = id, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(meter_id_entered))
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
 		LAZYOR(pipes_on_turf, pipe)
@@ -170,6 +167,16 @@
 	LAZYREMOVE(pipes_on_turf, target)
 	LAZYADD(pipes_on_turf, target)
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/meter/proc/meter_id_entered(mob/user, new_id, datum/om/prompt/ask)
+	if(!open)
+		return
+	id = new_id
+	var/obj/item/tool = ask.get("tool")
+	var/obj/item/multitool/multitool = tool.get_multitool()
+	if(multitool)
+		multitool.connectable = src
 	return ITEM_INTERACT_SUCCESS
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS

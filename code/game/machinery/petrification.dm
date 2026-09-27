@@ -173,30 +173,9 @@
 		return
 	switch(option)
 		if("tint")
-			var/new_color = tgui_color_picker(user, "Choose the color for the [identifier] to be:", "Statue color", tint)
-			if (new_color)
-				tint = new_color
+			om_prompt(src, user, list("kind" = "color", "message" = "Choose the color for the [identifier] to be:", "title" = "Statue color", "default" = tint, "requires" = PROMPT_USABLE), PROC_REF(tint_chosen))
 		if("material","identifier","adjective")
-			var/input = tgui_input_text(user, "What should the [option] be?", "Statue [option]", vars[option], MAX_NAME_LEN)
-			input = sanitizeSafe(input, 25)
-			if (length(input) <= 0)
-				return
-			if (option == "adjective")
-				if (copytext_char(input, -1) != "s")
-					switch(copytext_char(input, -2))
-						if ("ss")
-							input += "es"
-						if ("sh")
-							input += "es"
-						if ("ch")
-							input += "es"
-						else
-							switch(copytext_char(input, -1))
-								if("s", "x", "z")
-									input += "es"
-								else
-									input += "s"
-			vars[option] = input
+			om_prompt(src, user, list("kind" = "text", "message" = "What should the [option] be?", "title" = "Statue [option]", "default" = vars[option], "max_length" = MAX_NAME_LEN, "requires" = PROMPT_USABLE, "data" = list("option" = option)), PROC_REF(statue_text_entered))
 		if("able_to_unpetrify", "discard_clothes")
 			vars[option] = !vars[option]
 		if("target")
@@ -204,17 +183,57 @@
 			if (!length(targets))
 				popup_msg(user, "No targets within range. Make sure there is a humanoid being within a 3x3 metre square in front of the interface.")
 				return
-			var/selected = tgui_input_list(user, "Choose the target.", "Petrification Target", targets)
-			if (selected && ishuman(targets[selected]) && is_valid_target(targets[selected]))
-				var/confirmation = tgui_alert(targets[selected], "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.","Petrification Target",list("Confirm", "Cancel"))
-				if (confirmation != "Confirm")
-					popup_msg(user, "They declined the request.", FALSE)
-					return
-				var/double = tgui_alert(targets[selected], "This is your last warning, are you -certain-?","Petrification Target",list("Confirm", "Cancel"))
-				if (confirmation == "Confirm" && double == "Confirm")
-					target = targets[selected]
+			om_prompt(src, user, list("kind" = "list", "message" = "Choose the target.", "title" = "Petrification Target", "choices" = targets, "requires" = PROMPT_USABLE, "data" = list("targets" = targets)), PROC_REF(petrify_target_chosen))
+
+/obj/machinery/petrification/proc/tint_chosen(mob/user, new_color, datum/om/prompt/ask)
+	if (new_color)
+		tint = new_color
+
+/obj/machinery/petrification/proc/statue_text_entered(mob/user, input, datum/om/prompt/ask)
+	var/option = ask.get("option")
+	input = sanitizeSafe(input, 25)
+	if (length(input) <= 0)
+		return
+	if (option == "adjective")
+		if (copytext_char(input, -1) != "s")
+			switch(copytext_char(input, -2))
+				if ("ss")
+					input += "es"
+				if ("sh")
+					input += "es"
+				if ("ch")
+					input += "es"
 				else
-					popup_msg(user, "They declined the request.", FALSE)
+					switch(copytext_char(input, -1))
+						if("s", "x", "z")
+							input += "es"
+						else
+							input += "s"
+	vars[option] = input
+
+/obj/machinery/petrification/proc/petrify_target_chosen(mob/user, selected, datum/om/prompt/ask)
+	var/list/targets = ask.get("targets")
+	var/mob/living/carbon/human/H = targets[selected]
+	if(!ishuman(H) || !is_valid_target(H))
+		return
+	om_prompt_sequence(src, H, list(
+		list("key" = "confirm", "message" = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.", "title" = "Petrification Target", "choices" = list("Confirm", "Cancel")),
+		PROC_REF(ask_petrify_certain),
+	), PROC_REF(petrify_consent_answered), list("on_cancel" = PROC_REF(petrify_declined), "data" = list("operator" = user)))
+
+/obj/machinery/petrification/proc/ask_petrify_certain(mob/living/carbon/human/H, datum/om/prompt/ask)
+	if(ask.get("confirm") == "Confirm")
+		return list("key" = "double", "message" = "This is your last warning, are you -certain-?", "title" = "Petrification Target", "choices" = list("Confirm", "Cancel"))
+
+/obj/machinery/petrification/proc/petrify_declined(mob/living/carbon/human/H, datum/om/prompt/ask)
+	popup_msg(ask.get("operator"), "They declined the request.", FALSE)
+
+/obj/machinery/petrification/proc/petrify_consent_answered(mob/living/carbon/human/H, datum/om/prompt/ask)
+	if(ask.get("confirm") == "Confirm" && ask.get("double") == "Confirm" && is_valid_target(H))
+		target = H
+		SStgui.update_uis(src)
+	else
+		popup_msg(ask.get("operator"), "They declined the request.", FALSE)
 
 /obj/machinery/petrification/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())

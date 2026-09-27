@@ -216,14 +216,17 @@ Deployable items
 
 /obj/structure/barricade/cutout/attackby(obj/I, mob/user)
 	if(is_type_in_list(I, painters))
-		var/choice = tgui_input_list(user, "What would you like to paint the cutout as?", "Cutout Painting", cutout_types)
-		if(!choice || !Adjacent(user) || I != user.get_active_hand())
-			return TRUE
-		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
+		om_prompt(src, user, list("kind" = "list", "message" = "What would you like to paint the cutout as?", "title" = "Cutout Painting", "choices" = cutout_types, "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(cutout_type_chosen))
 		return TRUE
 
 	else
 		return ..()
+
+/obj/structure/barricade/cutout/proc/cutout_type_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(!Adjacent(user))
+		return
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
+	return TRUE
 
 /obj/structure/barricade/cutout/proc/cutout_paint_done(choice)
 	var/picked_type = cutout_types[choice]

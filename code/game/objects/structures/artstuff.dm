@@ -575,8 +575,6 @@
 		var/title = painting["title"]
 		var/author_name = painting["author"]
 		var/author_ckey = painting["ckey"]
-		var/persistence_id = painting["persistence_id"]
-		var/png = "data/persistent/paintings/[persistence_id]/[painting["md5"]].png"
 		to_chat(usr, span_notice("The chosen painting is the following \n\n \
 		Title: [title] \n \
 		Author's Name: [author_name]. \n \

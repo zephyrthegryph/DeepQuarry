@@ -147,11 +147,13 @@
 		return
 
 	if(container)
-		var/response = tgui_alert(user, "What do you want to do?", "Bioprinter Menu", list("Print Limbs", "Cancel"))
-		if(response == "Print Limbs")
-			printing_menu(user)
+		om_prompt(src, user, list("message" = "What do you want to do?", "title" = "Bioprinter Menu", "choices" = list("Print Limbs", "Cancel"), "requires" = PROMPT_ADJACENT), PROC_REF(bioprinter_menu_answered))
 	else
 		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
+
+/obj/machinery/organ_printer/proc/bioprinter_menu_answered(mob/user, response, datum/om/prompt/ask)
+	if(response == "Print Limbs")
+		printing_menu(user)
 
 /obj/machinery/organ_printer/proc/printing_menu(mob/user)
 	var/list/possible_list = list()
@@ -169,9 +171,11 @@
 		possible_list |= engineered_products
 	// end
 
-	var/choice = tgui_input_list(user, "What would you like to print?", "Print Choice", possible_list)
+	om_prompt(src, user, list("kind" = "list", "message" = "What would you like to print?", "title" = "Print Choice", "choices" = possible_list, "requires" = PROMPT_ADJACENT, "data" = list("options" = possible_list)), PROC_REF(print_choice_made))
 
-	if(!choice || printing || (stat & (BROKEN|NOPOWER)))
+/obj/machinery/organ_printer/proc/print_choice_made(mob/user, choice, datum/om/prompt/ask)
+	var/list/possible_list = ask.get("options")
+	if(printing || (stat & (BROKEN|NOPOWER)))
 		return
 
 	if(!can_print(choice, possible_list[choice][2]))

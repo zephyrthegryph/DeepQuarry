@@ -24,7 +24,13 @@
 /obj/machinery/mass_driver/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/new_id = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)
+	om_prompt(src, user, list("kind" = "number", "message" = "[src] has an id of \"[id]\". What would you like it to be?", "title" = "[src] ID]", "default" = id, "max" = 9999, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(driver_id_cancelled)), PROC_REF(driver_id_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/mass_driver/proc/driver_id_cancelled(mob/user, datum/om/prompt/ask)
+	to_chat(user, "No input found please hang up and try your call again.")
+
+/obj/machinery/mass_driver/proc/driver_id_entered(mob/user, new_id, datum/om/prompt/ask)
 	if(!new_id)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

@@ -248,13 +248,7 @@
 			var/contract_funding = !!params["contract"]
 			if(!personal_funding && !contract_funding && !can_trade_market(ui.user))
 				return FALSE
-			var/reason = tgui_input_text(ui.user, "Procurement justification", "Why should the station purchase this market listing?", "External market procurement", MAX_MESSAGE_LEN)
-			if(!reason)
-				return FALSE
-			if(!SSsupply.request_market_order(listing, ui.user, reason, can_order_contraband || (authorization & SUP_CONTRABAND), personal_funding, contract_funding))
-				to_chat(ui.user, span_warning("The market listing is no longer available."))
-				return FALSE
-			to_chat(ui.user, span_notice("The quoted market order was submitted[contract_funding ? " against the contract allowance" : (personal_funding ? " with personal funding" : " for departmental approval")]."))
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Procurement justification", "title" = "Why should the station purchase this market listing?", "default" = "External market procurement", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("listing" = listing, "personal" = personal_funding, "contract" = contract_funding)), PROC_REF(market_request_justified))
 			. = TRUE
 		if("market_route")
 			var/datum/cargo_market_bid/bid = SSsupply.market_bid(params["bid"])
@@ -296,55 +290,10 @@
 				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
 				return FALSE
 
-			var/amount = clamp(tgui_input_number(ui.user, "How many crates? (0 to 20)", null, null, 20, 0), 0, 20)
-			if(!amount)
-				return FALSE
-
-			var/timeout = world.time + 600
-			var/reason = tgui_input_text(ui.user, "Reason:","Why do you require this item?","", MAX_MESSAGE_LEN)
-			if(world.time > timeout)
-				to_chat(ui.user, span_warning("Error. Request timed out."))
-				return FALSE
-			if(!reason)
-				return FALSE
-
-			var/personal_funding = !!params["personal"]
-			var/orders_created = 0
-			for(var/i in 1 to amount)
-				if(!SSsupply.create_order(S, ui.user, reason, personal_funding))
-					break
-				orders_created++
-			if(!orders_created)
-				to_chat(ui.user, span_warning("The order could not be funded."))
-				return FALSE
-
-			var/idname = "*None Provided*"
-			var/idrank = "*None Provided*"
-			if(ishuman(ui.user))
-				var/mob/living/carbon/human/H = ui.user
-				idname = H.get_authentification_name()
-				idrank = H.get_assignment()
-			else if(issilicon(ui.user))
-				idname = ui.user.real_name
-				idrank = "Stationbound synthetic"
-
-			var/obj/item/paper/reqform = new /obj/item/paper(loc)
-			reqform.name = "Requisition Form - [S.name]"
-			reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
-			reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
-			reqform.info += "REQUESTED BY: [idname]<br>"
-			reqform.info += "RANK: [idrank]<br>"
-			reqform.info += "REASON: [reason]<br>"
-			reqform.info += "SUPPLY CRATE TYPE: [S.name]<br>"
-			reqform.info += "ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"
-			reqform.info += "AMOUNT: [orders_created]<br>"
-			reqform.info += "CONTENTS:<br>"
-			reqform.info +=  S.get_html_manifest()
-			reqform.info += "<hr>"
-			reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
-
-			reqform.update_icon()	//Fix for appearing blank when printed.
-			reqtime = (world.time + 5) % 1e5
+			om_prompt_sequence(src, ui.user, list(
+				list("key" = "amount", "kind" = "number", "message" = "How many crates? (0 to 20)", "max" = 20, "min" = 0),
+				list("key" = "reason", "kind" = "text", "message" = "Reason:", "title" = "Why do you require this item?", "default" = "", "max_length" = MAX_MESSAGE_LEN),
+			), PROC_REF(crates_requested), list("requires" = PROMPT_USABLE, "timeout" = 1 MINUTE, "data" = list("pack" = S, "personal" = !!params["personal"])))
 			. = TRUE
 
 		if("request_crate")
@@ -361,44 +310,7 @@
 				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
 				return FALSE
 
-			var/timeout = world.time + 600
-			var/reason = tgui_input_text(ui.user, "Reason:","Why do you require this item?","", MAX_MESSAGE_LEN)
-			if(world.time > timeout)
-				to_chat(ui.user, span_warning("Error. Request timed out."))
-				return FALSE
-			if(!reason)
-				return FALSE
-
-			if(!SSsupply.create_order(S, ui.user, reason, !!params["personal"]))
-				to_chat(ui.user, span_warning("The order could not be funded."))
-				return FALSE
-
-			var/idname = "*None Provided*"
-			var/idrank = "*None Provided*"
-			if(ishuman(ui.user))
-				var/mob/living/carbon/human/H = ui.user
-				idname = H.get_authentification_name()
-				idrank = H.get_assignment()
-			else if(issilicon(ui.user))
-				idname = ui.user.real_name
-				idrank = "Stationbound synthetic"
-
-			var/obj/item/paper/reqform = new /obj/item/paper(loc)
-			reqform.name = "Requisition Form - [S.name]"
-			reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
-			reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
-			reqform.info += "REQUESTED BY: [idname]<br>"
-			reqform.info += "RANK: [idrank]<br>"
-			reqform.info += "REASON: [reason]<br>"
-			reqform.info += "SUPPLY CRATE TYPE: [S.name]<br>"
-			reqform.info += "ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"
-			reqform.info += "CONTENTS:<br>"
-			reqform.info +=  S.get_html_manifest()
-			reqform.info += "<hr>"
-			reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
-
-			reqform.update_icon()	//Fix for appearing blank when printed.
-			reqtime = (world.time + 5) % 1e5
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Reason:", "title" = "Why do you require this item?", "default" = "", "max_length" = MAX_MESSAGE_LEN, "timeout" = 1 MINUTE, "requires" = PROMPT_USABLE, "data" = list("pack" = S, "personal" = !!params["personal"])), PROC_REF(crate_requested))
 			. = TRUE
 		// Approving Orders
 		if("edit_order_value")
@@ -407,38 +319,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			var/new_val = tgui_input_text(ui.user, params["edit"], "Enter the new value for this field:", params["default"], MAX_MESSAGE_LEN)
-			if(!new_val)
-				return FALSE
-
-			switch(params["edit"])
-				if("Supply Pack")
-					O.name = new_val
-
-				if("Cost")
-					var/num = text2num(new_val)
-					if(num)
-						O.cost = num
-
-				if("Index")
-					var/num = text2num(new_val)
-					if(num)
-						O.index = num
-
-				if("Reason")
-					O.comment = new_val
-
-				if("Ordered by")
-					O.ordered_by = new_val
-
-				if("Ordered at")
-					O.ordered_at = new_val
-
-				if("Approved by")
-					O.approved_by = new_val
-
-				if("Approved at")
-					O.approved_at = new_val
+			om_prompt(src, ui.user, list("kind" = "text", "message" = params["edit"], "title" = "Enter the new value for this field:", "default" = params["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("order" = O, "field" = params["edit"])), PROC_REF(order_value_entered))
 			. = TRUE
 		if("approve_order")
 			var/datum/supply_order/O = locate(params["ref"])
@@ -477,28 +358,10 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			var/list/L = E.contents[params["index"]]
-			var/field = tgui_alert(ui.user, "Select which field to edit", "Field Choice", list("Name", "Quantity", "Value"))
-			if(!field)
-				return FALSE
-
-			var/new_val = tgui_input_text(ui.user, field, "Enter the new value for this field:", L[lowertext(field)], MAX_MESSAGE_LEN)
-			if(!new_val)
-				return
-
-			switch(field)
-				if("Name")
-					L["object"] = new_val
-
-				if("Quantity")
-					var/num = text2num(new_val)
-					if(num)
-						L["quantity"] = num
-
-				if("Value")
-					var/num = text2num(new_val)
-					if(num)
-						L["value"] = num
+			om_prompt_sequence(src, ui.user, list(
+				list("key" = "field", "message" = "Select which field to edit", "title" = "Field Choice", "choices" = list("Name", "Quantity", "Value")),
+				PROC_REF(ask_export_value),
+			), PROC_REF(export_field_edited), list("requires" = PROMPT_USABLE, "data" = list("crate" = E, "index" = params["index"])))
 			. = TRUE
 		if("export_delete_field")
 			var/datum/exported_crate/E = locate(params["ref"])
@@ -525,18 +388,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			var/new_val = tgui_input_text(ui.user, params["edit"], "Enter the new value for this field:", params["default"], MAX_MESSAGE_LEN)
-			if(!new_val)
-				return
-
-			switch(params["edit"])
-				if("Name")
-					E.name = new_val
-
-				if("Value")
-					var/num = text2num(new_val)
-					if(num)
-						E.value = num
+			om_prompt(src, ui.user, list("kind" = "text", "message" = params["edit"], "title" = "Enter the new value for this field:", "default" = params["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("crate" = E, "field" = params["edit"])), PROC_REF(export_value_entered))
 			. = TRUE
 		if("export_delete")
 			var/datum/exported_crate/E = locate(params["ref"])
@@ -570,6 +422,179 @@
 			. = TRUE
 
 	add_fingerprint(ui.user)
+
+/obj/machinery/computer/supplycomp/proc/market_request_justified(mob/user, reason, datum/om/prompt/ask)
+	var/datum/cargo_market_listing/listing = ask.get("listing")
+	var/personal_funding = ask.get("personal")
+	var/contract_funding = ask.get("contract")
+	if(!reason)
+		return FALSE
+	if(!SSsupply.request_market_order(listing, user, reason, can_order_contraband || (authorization & SUP_CONTRABAND), personal_funding, contract_funding))
+		to_chat(user, span_warning("The market listing is no longer available."))
+		return FALSE
+	to_chat(user, span_notice("The quoted market order was submitted[contract_funding ? " against the contract allowance" : (personal_funding ? " with personal funding" : " for departmental approval")]."))
+	. = TRUE
+
+/obj/machinery/computer/supplycomp/proc/crates_requested(mob/user, datum/om/prompt/ask)
+	var/datum/supply_pack/S = ask.get("pack")
+	var/amount = clamp(ask.get("amount"), 0, 20)
+	var/reason = ask.get("reason")
+	if(!amount || !reason)
+		return FALSE
+
+	var/personal_funding = !!ask.get("personal")
+	var/orders_created = 0
+	for(var/i in 1 to amount)
+		if(!SSsupply.create_order(S, user, reason, personal_funding))
+			break
+		orders_created++
+	if(!orders_created)
+		to_chat(user, span_warning("The order could not be funded."))
+		return FALSE
+
+	var/idname = "*None Provided*"
+	var/idrank = "*None Provided*"
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		idname = H.get_authentification_name()
+		idrank = H.get_assignment()
+	else if(issilicon(user))
+		idname = user.real_name
+		idrank = "Stationbound synthetic"
+
+	var/obj/item/paper/reqform = new /obj/item/paper(loc)
+	reqform.name = "Requisition Form - [S.name]"
+	reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
+	reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
+	reqform.info += "REQUESTED BY: [idname]<br>"
+	reqform.info += "RANK: [idrank]<br>"
+	reqform.info += "REASON: [reason]<br>"
+	reqform.info += "SUPPLY CRATE TYPE: [S.name]<br>"
+	reqform.info += "ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"
+	reqform.info += "AMOUNT: [orders_created]<br>"
+	reqform.info += "CONTENTS:<br>"
+	reqform.info +=  S.get_html_manifest()
+	reqform.info += "<hr>"
+	reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
+
+	reqform.update_icon()	//Fix for appearing blank when printed.
+	reqtime = (world.time + 5) % 1e5
+	. = TRUE
+
+/obj/machinery/computer/supplycomp/proc/crate_requested(mob/user, reason, datum/om/prompt/ask)
+	var/datum/supply_pack/S = ask.get("pack")
+	if(!reason)
+		return FALSE
+
+	if(!SSsupply.create_order(S, user, reason, !!ask.get("personal")))
+		to_chat(user, span_warning("The order could not be funded."))
+		return FALSE
+
+	var/idname = "*None Provided*"
+	var/idrank = "*None Provided*"
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		idname = H.get_authentification_name()
+		idrank = H.get_assignment()
+	else if(issilicon(user))
+		idname = user.real_name
+		idrank = "Stationbound synthetic"
+
+	var/obj/item/paper/reqform = new /obj/item/paper(loc)
+	reqform.name = "Requisition Form - [S.name]"
+	reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
+	reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
+	reqform.info += "REQUESTED BY: [idname]<br>"
+	reqform.info += "RANK: [idrank]<br>"
+	reqform.info += "REASON: [reason]<br>"
+	reqform.info += "SUPPLY CRATE TYPE: [S.name]<br>"
+	reqform.info += "ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"
+	reqform.info += "CONTENTS:<br>"
+	reqform.info +=  S.get_html_manifest()
+	reqform.info += "<hr>"
+	reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
+
+	reqform.update_icon()	//Fix for appearing blank when printed.
+	reqtime = (world.time + 5) % 1e5
+	. = TRUE
+
+/obj/machinery/computer/supplycomp/proc/order_value_entered(mob/user, new_val, datum/om/prompt/ask)
+	var/datum/supply_order/O = ask.get("order")
+	if(!new_val || !(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+
+	switch(ask.get("field"))
+		if("Supply Pack")
+			O.name = new_val
+
+		if("Cost")
+			var/num = text2num(new_val)
+			if(num)
+				O.cost = num
+
+		if("Index")
+			var/num = text2num(new_val)
+			if(num)
+				O.index = num
+
+		if("Reason")
+			O.comment = new_val
+
+		if("Ordered by")
+			O.ordered_by = new_val
+
+		if("Ordered at")
+			O.ordered_at = new_val
+
+		if("Approved by")
+			O.approved_by = new_val
+
+		if("Approved at")
+			O.approved_at = new_val
+	. = TRUE
+
+/obj/machinery/computer/supplycomp/proc/ask_export_value(mob/user, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("crate")
+	var/list/L = E.contents[ask.get("index")]
+	var/field = ask.get("field")
+	return list("key" = "value", "kind" = "text", "message" = field, "title" = "Enter the new value for this field:", "default" = L[lowertext(field)], "max_length" = MAX_MESSAGE_LEN)
+
+/obj/machinery/computer/supplycomp/proc/export_field_edited(mob/user, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("crate")
+	var/list/L = E.contents[ask.get("index")]
+	var/field = ask.get("field")
+	var/new_val = ask.get("value")
+	if(!new_val || !islist(L) || !(authorization & SUP_ACCEPT_ORDERS))
+		return
+	switch(field)
+		if("Name")
+			L["object"] = new_val
+
+		if("Quantity")
+			var/num = text2num(new_val)
+			if(num)
+				L["quantity"] = num
+
+		if("Value")
+			var/num = text2num(new_val)
+			if(num)
+				L["value"] = num
+	. = TRUE
+
+/obj/machinery/computer/supplycomp/proc/export_value_entered(mob/user, new_val, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("crate")
+	if(!new_val || !(authorization & SUP_ACCEPT_ORDERS))
+		return
+
+	switch(ask.get("field"))
+		if("Name")
+			E.name = new_val
+
+		if("Value")
+			var/num = text2num(new_val)
+			if(num)
+				E.value = num
+	. = TRUE
 
 /obj/machinery/computer/supplycomp/proc/post_signal(command)
 	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)

@@ -53,19 +53,21 @@
 			to_chat(user, span_warning("This guest pass is already deactivated!"))
 			return
 
-		var/confirm = tgui_alert(user, "Do you really want to deactivate this guest pass? (you can't reactivate it)", "Confirm Deactivation", list("Yes", "No"))
-		if(confirm == "Yes")
-			//rip guest pass </3
-			user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
-			icon_state = "guest-invalid"
-			update_icon()
-			expiration_time = world.time
-			expired = 1
+		om_prompt(src, user, list("message" = "Do you really want to deactivate this guest pass? (you can't reactivate it)", "title" = "Confirm Deactivation", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(deactivation_confirmed))
 	else
 		user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
 			"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
 
 		src.add_fingerprint(user)
+
+/obj/item/card/id/guest/proc/deactivation_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
+	if(confirm == "Yes" && icon_state != "guest-invalid")
+		//rip guest pass </3
+		user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
+		icon_state = "guest-invalid"
+		update_icon()
+		expiration_time = world.time
+		expired = 1
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
@@ -217,20 +219,11 @@
 			mode = params["mode"]
 
 		if("giv_name")
-			var/nam = sanitizeName(tgui_input_text(ui.user, "Person pass is issued to", "Name", giv_name))
-			if(nam)
-				giv_name = nam
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Person pass is issued to", "title" = "Name", "default" = giv_name, "requires" = PROMPT_USABLE), PROC_REF(pass_name_entered))
 		if("reason")
-			var/reas = tgui_input_text(ui.user, "Reason why pass is issued", "Reason", reason, MAX_MESSAGE_LEN)
-			if(reas)
-				reason = reas
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Reason why pass is issued", "title" = "Reason", "default" = reason, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE), PROC_REF(pass_reason_entered))
 		if("duration")
-			var/dur = tgui_input_number(ui.user, "Duration (in minutes) during which pass is valid (up to 360 minutes).", "Duration", null, 360, 0)
-			if(dur)
-				if(dur > 0 && dur <= 360)
-					duration = dur
-				else
-					to_chat(ui.user, span_warning("Invalid duration."))
+			om_prompt(src, ui.user, list("kind" = "number", "message" = "Duration (in minutes) during which pass is valid (up to 360 minutes).", "title" = "Duration", "max" = 360, "min" = 0, "requires" = PROMPT_USABLE), PROC_REF(pass_duration_entered))
 		if("access")
 			var/A = text2num(params["access"])
 			if(A in accesses)
@@ -290,3 +283,23 @@
 
 	add_fingerprint(ui.user)
 	return TRUE
+
+/obj/machinery/computer/guestpass/proc/pass_name_entered(mob/user, nam, datum/om/prompt/ask)
+	nam = sanitizeName(nam)
+	if(nam)
+		giv_name = nam
+		SStgui.update_uis(src)
+
+/obj/machinery/computer/guestpass/proc/pass_reason_entered(mob/user, reas, datum/om/prompt/ask)
+	if(reas)
+		reason = reas
+		SStgui.update_uis(src)
+
+/obj/machinery/computer/guestpass/proc/pass_duration_entered(mob/user, dur, datum/om/prompt/ask)
+	if(!dur)
+		return
+	if(dur > 0 && dur <= 360)
+		duration = dur
+		SStgui.update_uis(src)
+	else
+		to_chat(user, span_warning("Invalid duration."))

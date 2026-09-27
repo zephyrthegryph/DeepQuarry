@@ -40,11 +40,10 @@
 	set category = "Abilities.VR"
 	set desc = "Become a different creature"
 
-	var/tf = null
-	var/k = tgui_input_list(usr, "Please select a creature:", "Mob list", GLOB.vr_mob_tf_options)
-	if(!k)
-		return 0
-	tf = GLOB.vr_mob_tf_options[k]
+	om_prompt(src, src, list("kind" = "list", "message" = "Please select a creature:", "title" = "Mob list", "choices" = GLOB.vr_mob_tf_options, "requires" = PROMPT_CONSCIOUS), PROC_REF(vr_creature_chosen))
+
+/mob/living/carbon/human/proc/vr_creature_chosen(mob/user, k, datum/om/prompt/ask)
+	var/tf = GLOB.vr_mob_tf_options[k]
 
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check
@@ -62,9 +61,11 @@
 	set name = "Log Out Of Virtual Reality"
 	set category = "Abilities.VR"
 
-	if(tgui_alert(src, "Would you like to log out of virtual reality?", "Log out?", list("Yes", "No")) != "Yes")
-		return
+	om_prompt(src, src, list("message" = "Would you like to log out of virtual reality?", "title" = "Log out?", "choices" = list("Yes", "No")), PROC_REF(fake_exit_vr_answered))
 
+/mob/living/carbon/human/proc/fake_exit_vr_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		return
 	release_vore_contents(TRUE)
 	for(var/obj/item/I in src)
 		drop_from_inventory(I)
@@ -102,6 +103,9 @@
 	avatar.virtual_reality_mob = TRUE
 	log_and_message_admins("[key_name_admin(avatar)] joined virtual reality from the ghost menu.")
 
-	var/newname = tgui_input_text(avatar, "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "Name change", null, MAX_NAME_LEN)
+	om_prompt(avatar, avatar, list("kind" = "text", "message" = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), GLOBAL_PROC_REF(vr_avatar_renamed))
+
+/proc/vr_avatar_renamed(mob/living/carbon/human/avatar, mob/user, newname, datum/om/prompt/ask)
 	if(newname)
 		avatar.real_name = newname
+		avatar.name = newname

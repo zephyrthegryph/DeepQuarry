@@ -155,9 +155,13 @@
 	if(!protean_brain && !protean_orchestrator && !protean_refactory)
 		to_chat(user, "\The [src] does not have any protean components you can retrieve.")
 		return ITEM_INTERACT_BLOCKING
-	var/atom/movable/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(protean_brain, protean_orchestrator, protean_refactory))
-	if(!choice)
-		return ITEM_INTERACT_BLOCKING
+	om_prompt(src, user, list("kind" = "list", "message" = "What component would you like to remove?", "title" = "Remove Component", "choices" = list(protean_brain, protean_orchestrator, protean_refactory), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(component_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/protean_reconstitutor/proc/component_chosen(mob/user, atom/movable/choice, datum/om/prompt/ask)
+	var/obj/item/tool = ask.get("tool")
+	if(processing_revive || choice.loc != src)
+		return
 	to_chat(user, "You fish \the [choice] out of \the [src].")
 	choice.forceMove(get_turf(src))
 	playsound(src, tool.usesound, 50, TRUE)

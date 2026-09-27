@@ -401,11 +401,7 @@ update_flag
 					"\[Air\]" = "grey", \
 					"\[CAUTION\]" = "yellow", \
 				)
-				var/label = tgui_input_list(ui.user, "Choose canister label", "Gas canister", colors)
-				if(label)
-					canister_color = colors[label]
-					icon_state = colors[label]
-					name = "Canister: [label]"
+				om_prompt(src, ui.user, list("kind" = "list", "message" = "Choose canister label", "title" = "Gas canister", "choices" = colors, "requires" = PROMPT_USABLE, "data" = list("colors" = colors)), PROC_REF(label_chosen))
 		if("pressure")
 			var/pressure = params["pressure"]
 			if(pressure == "reset")
@@ -418,9 +414,8 @@ update_flag
 				pressure = 10*ONE_ATMOSPHERE
 				. = TRUE
 			else if(pressure == "input")
-				pressure = tgui_input_number(ui.user, "New release pressure ([ONE_ATMOSPHERE/10]-[10*ONE_ATMOSPHERE] kPa):", name, release_pressure, 10*ONE_ATMOSPHERE, ONE_ATMOSPHERE/10)
-				if(!isnull(pressure) && !..())
-					. = TRUE
+				om_prompt(src, ui.user, list("kind" = "number", "message" = "New release pressure ([ONE_ATMOSPHERE/10]-[10*ONE_ATMOSPHERE] kPa):", "title" = name, "default" = release_pressure, "max" = 10*ONE_ATMOSPHERE, "min" = ONE_ATMOSPHERE/10, "requires" = PROMPT_USABLE), PROC_REF(release_pressure_entered))
+				return TRUE
 			else if(text2num(pressure) != null)
 				pressure = text2num(pressure)
 				. = TRUE
@@ -454,6 +449,19 @@ update_flag
 
 	add_fingerprint(ui.user)
 	update_icon()
+
+/obj/machinery/portable_atmospherics/canister/proc/label_chosen(mob/user, label, datum/om/prompt/ask)
+	var/list/colors = ask.get("colors")
+	if(!can_label)
+		return
+	if(label)
+		canister_color = colors[label]
+		icon_state = colors[label]
+		name = "Canister: [label]"
+
+/obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(mob/user, pressure, datum/om/prompt/ask)
+	release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
+	SStgui.update_uis(src)
 
 /obj/machinery/portable_atmospherics/canister/phoron/Initialize(mapload)
 	. = ..()
