@@ -236,6 +236,7 @@
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
 	update_icon()
 
+// LIFECYCLE: its field deactivates.
 /obj/machinery/suspension_gen/Destroy()
 	deactivate()
 	. = ..()
@@ -254,7 +255,4 @@
 	anchored = 1
 	density = 1
 
-/obj/effect/suspension_field/Destroy()
-	for(var/atom/movable/I in src)
-		I.dropInto(loc)
-	return ..()
+REF_SPILL_LIST(/obj/effect/suspension_field, "contents")

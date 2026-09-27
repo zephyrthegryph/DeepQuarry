@@ -138,6 +138,7 @@
 		my_effects.Remove(to_remove_effect)
 		qdel(AE)
 
+// LIFECYCLE: its effects go with it.
 /datum/component/artifact_master/Destroy()
 	do_unregister()
 	holder = null
@@ -145,7 +146,6 @@
 		AE.master = null
 		my_effects -= AE
 		qdel(AE)
-
 
 	. = ..()
 
@@ -311,7 +311,6 @@
 			if(my_effect.effect == EFFECT_TOUCH && my_effect.activated) //We are activated and have a touch effect!
 				my_effect.DoEffectTouch(M)
 
-
 	if(warn && isliving(M))
 		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder].")))
 
@@ -343,7 +342,6 @@
 
 	else
 		to_chat(user, span_filter_notice(span_bold("You touch [holder],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
-
 
 /datum/component/artifact_master/proc/on_attackby()
 	SIGNAL_HANDLER
