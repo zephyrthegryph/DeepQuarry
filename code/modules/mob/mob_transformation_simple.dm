@@ -2,6 +2,10 @@
 //This proc is the most basic of the procs. All it does is make a new mob on the same tile and transfer over a few variables.
 //Returns the new mob
 //Note that this proc does NOT do MMI related stuff!
+/mob/proc/mob_type_entered(mob/user, new_type, datum/om/prompt/ask)
+	if(new_type)
+		change_mob_type(new_type, ask.get("location"), ask.get("name"), ask.get("delete"), ask.get("subspecies"))
+
 /mob/proc/change_mob_type(new_type = null, turf/location = null, new_name = null as text, delete_old_mob = 0 as num, subspecies)
 
 	if(isnewplayer(src))
@@ -9,7 +13,8 @@
 		return
 
 	if(!new_type)
-		new_type = tgui_input_text(src, "Mob type path:", "Mob type")
+		om_prompt(src, src, list("kind" = "text", "message" = "Mob type path:", "title" = "Mob type", "data" = list("location" = location, "name" = new_name, "delete" = delete_old_mob, "subspecies" = subspecies)), PROC_REF(mob_type_entered))
+		return
 
 	if(istext(new_type))
 		new_type = text2path(new_type)

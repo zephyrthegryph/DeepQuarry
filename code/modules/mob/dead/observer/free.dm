@@ -5,8 +5,10 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 	set category = "OOC.Game"
 	set desc = "Free your job slot, remove yourself from the manifest, and prevent respawning as this character for this round."
 
-	var/confirm = tgui_alert(src, "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another \
-	character if you like. Do this now?","Quit This Round",list("Quit Round","Cancel"))
+	om_prompt(src, src, list("message" = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another \
+	character if you like. Do this now?", "title" = "Quit This Round", "choices" = list("Quit Round","Cancel")), PROC_REF(quit_round_confirmed))
+
+/mob/observer/dead/proc/quit_round_confirmed(mob/user, confirm, datum/om/prompt/ask)
 	if(confirm != "Quit Round")
 		return
 

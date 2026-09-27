@@ -50,6 +50,11 @@
 	var/seq_index = 0
 	var/seq_done
 
+/// The prompt and the tgui input showing it point at each other.
+/datum/om/prompt/declared_pair_vars()
+	var/static/list/pairs = list("ui" = "om_prompt")
+	return pairs
+
 /// Test schedulers collect prompts here instead of opening a window.
 /datum/om/scheduler/var/list/test_prompts
 
@@ -353,6 +358,10 @@
 /datum/tgui_alert/om
 	var/datum/om/prompt/om_prompt
 
+/datum/tgui_alert/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
+
 /datum/tgui_alert/om/set_choice(choice)
 	. = ..()
 	if(om_prompt && !isnull(src.choice))
@@ -369,6 +378,10 @@
 
 /datum/tgui_list_input/om
 	var/datum/om/prompt/om_prompt
+
+/datum/tgui_list_input/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
 
 /datum/tgui_list_input/om/set_choice(choice)
 	. = ..()
@@ -387,6 +400,10 @@
 /datum/tgui_input_text/om
 	var/datum/om/prompt/om_prompt
 
+/datum/tgui_input_text/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
+
 /datum/tgui_input_text/om/set_entry(entry)
 	. = ..()
 	if(om_prompt && !isnull(src.entry))
@@ -403,6 +420,10 @@
 
 /datum/tgui_input_number/om
 	var/datum/om/prompt/om_prompt
+
+/datum/tgui_input_number/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
 
 /datum/tgui_input_number/om/set_entry(entry)
 	. = ..()
@@ -421,6 +442,10 @@
 /datum/tgui_color_picker/om
 	var/datum/om/prompt/om_prompt
 
+/datum/tgui_color_picker/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
+
 /datum/tgui_color_picker/om/set_choice(choice)
 	. = ..()
 	if(om_prompt && !isnull(src.choice))
@@ -437,6 +462,10 @@
 
 /datum/tgui_checkbox_input/om
 	var/datum/om/prompt/om_prompt
+
+/datum/tgui_checkbox_input/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
 
 /datum/tgui_checkbox_input/om/set_choices(list/selections)
 	. = ..()

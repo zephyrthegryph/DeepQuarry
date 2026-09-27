@@ -244,8 +244,9 @@
 /mob/living/carbon/human/Animalize(mob/user)
 
 	var/list/mobtypes = typesof(/mob/living/simple_mob)
-	var/mobpath = tgui_input_list(user, "Which type of mob should [src] turn into?", "Choose a type", mobtypes)
+	om_prompt(src, user, list("kind" = "list", "message" = "Which type of mob should [src] turn into?", "title" = "Choose a type", "choices" = mobtypes, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(animalize_type_chosen))
 
+/mob/living/carbon/human/proc/animalize_type_chosen(mob/user, mobpath, datum/om/prompt/ask)
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return
@@ -277,8 +278,9 @@
 /mob/proc/Animalize(mob/user)
 
 	var/list/mobtypes = typesof(/mob/living/simple_mob)
-	var/mobpath = tgui_input_list(user, "Which type of mob should [src] turn into?", "Choose a type", mobtypes)
+	om_prompt(src, user, list("kind" = "list", "message" = "Which type of mob should [src] turn into?", "title" = "Choose a type", "choices" = mobtypes, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(mob_animalize_type_chosen))
 
+/mob/proc/mob_animalize_type_chosen(mob/user, mobpath, datum/om/prompt/ask)
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return

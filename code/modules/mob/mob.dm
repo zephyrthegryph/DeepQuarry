@@ -378,10 +378,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set src in usr
 	if(usr != src)
 		to_chat(src, "No.")
-	var/msg = tgui_input_text(src,"Set the flavor text in your 'examine' verb.","Flavor Text",html_decode(flavor_text), MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+	om_prompt(src, src, list("kind" = "text", "message" = "Set the flavor text in your 'examine' verb.", "title" = "Flavor Text", "default" = html_decode(flavor_text), "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(flavor_text_entered))
 
-	if(msg != null)
-		flavor_text = msg
+/mob/proc/flavor_text_entered(mob/user, msg, datum/om/prompt/ask)
+	flavor_text = msg
 
 /mob/proc/warn_flavor_changed()
 	if(flavor_text && flavor_text != "") // don't spam people that don't use it!
@@ -443,50 +443,61 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	// Final chance to abort "respawning"
 	if(mind && timeofdeath) // They had spawned before
-		var/choice = tgui_alert(src, "Returning to the menu will prevent your character from being revived in-round. Are you sure?", "Confirmation", list("No, wait", "Yes, leave"))
-		if(!choice || choice == "No, wait")
-			return
-		else if(mind.assigned_role)
-			var/extra_check = tgui_alert(src, "Do you want to Quit This Round before you return to lobby?\
-			This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!",
-			"Quit This Round",list("Quit Round","No"))
-			if(extra_check == "Quit Round")
-				//Update any existing objectives involving this mob.
-				for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
-					if(O.target == mind)
-						if(O.owner && O.owner.current)
-							to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
-						qdel(O)
+		om_prompt_sequence(src, src, list(
+			list("key" = "leave", "message" = "Returning to the menu will prevent your character from being revived in-round. Are you sure?", "title" = "Confirmation", "choices" = list("No, wait", "Yes, leave")),
+			PROC_REF(abandon_ask_quit_round),
+		), PROC_REF(abandon_mob_answered))
+		return
+	abandon_mob_finish(FALSE)
 
-				//Resleeving cleanup
-				if(mind)
-					SStranscore.leave_round(src)
+/mob/proc/abandon_ask_quit_round(mob/user, datum/om/prompt/ask)
+	if(ask.get("leave") == "Yes, leave" && mind?.assigned_role)
+		return list("key" = "quit", "message" = "Do you want to Quit This Round before you return to lobby?\
+		This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!", "title" = "Quit This Round", "choices" = list("Quit Round","No"))
 
-				//Job slot cleanup
-				var/job = mind.assigned_role
-				SSjob.free_role(job)
+/mob/proc/abandon_mob_answered(mob/user, datum/om/prompt/ask)
+	if(ask.get("leave") == "Yes, leave" && stat == DEAD)
+		abandon_mob_finish(ask.get("quit") == "Quit Round")
 
-				//Their objectives cleanup
-				if(length(mind.objectives))
-					QDEL_LIST(mind.objectives)
-					mind.special_role = null
+/// Leaves the body for the lobby; `quit_round` also frees the job and removes the records.
+/mob/proc/abandon_mob_finish(quit_round)
+	if(quit_round && mind)
+		//Update any existing objectives involving this mob.
+		for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
+			if(O.target == mind)
+				if(O.owner && O.owner.current)
+					to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
+				qdel(O)
 
-				//Cut the PDA manifest (ugh)
-				if(GLOB.PDA_Manifest.len)
-					GLOB.PDA_Manifest.Cut()
-				for(var/datum/data/record/R in GLOB.data_core.medical)
-					if((R.fields["name"] == real_name))
-						qdel(R)
-				for(var/datum/data/record/T in GLOB.data_core.security)
-					if((T.fields["name"] == real_name))
-						qdel(T)
-				for(var/datum/data/record/G in GLOB.data_core.general)
-					if((G.fields["name"] == real_name))
-						qdel(G)
+		//Resleeving cleanup
+		if(mind)
+			SStranscore.leave_round(src)
 
-				//This removes them from being 'active' list on join screen
-				mind.assigned_role = null
-				to_chat(src,span_notice("Your job has been free'd up, and you can rejoin as another character or quit. Thanks for properly quitting round, it helps the server!"))
+		//Job slot cleanup
+		var/job = mind.assigned_role
+		SSjob.free_role(job)
+
+		//Their objectives cleanup
+		if(length(mind.objectives))
+			QDEL_LIST(mind.objectives)
+			mind.special_role = null
+
+		//Cut the PDA manifest (ugh)
+		if(GLOB.PDA_Manifest.len)
+			GLOB.PDA_Manifest.Cut()
+		for(var/datum/data/record/R in GLOB.data_core.medical)
+			if((R.fields["name"] == real_name))
+				qdel(R)
+		for(var/datum/data/record/T in GLOB.data_core.security)
+			if((T.fields["name"] == real_name))
+				qdel(T)
+		for(var/datum/data/record/G in GLOB.data_core.general)
+			if((G.fields["name"] == real_name))
+				qdel(G)
+
+		//This removes them from being 'active' list on join screen
+		mind.assigned_role = null
+		to_chat(src,span_notice("Your job has been free'd up, and you can rejoin as another character or quit. Thanks for properly quitting round, it helps the server!"))
 
 	// Beyond this point, you're going to respawn
 
@@ -551,14 +562,12 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	client.perspective = EYE_PERSPECTIVE
 
-	var/eye_name = null
-
 	var/ok = "[is_admin ? "Admin Observe" : "Observe"]"
-	eye_name = tgui_input_list(src, "Select something to [ok]:", "Select Target", targets)
+	om_prompt(src, src, list("kind" = "list", "message" = "Select something to [ok]:", "title" = "Select Target", "choices" = targets, "data" = list("targets" = targets, "admin" = is_admin)), PROC_REF(observe_target_chosen))
 
-	if (!eye_name)
-		return
-
+/mob/proc/observe_target_chosen(mob/user, eye_name, datum/om/prompt/ask)
+	var/list/targets = ask.get("targets")
+	var/is_admin = ask.get("admin")
 	var/mob/mob_eye = targets[eye_name]
 
 	if(client && mob_eye)
@@ -954,8 +963,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
 		return
 
-	var/obj/item/selection = tgui_input_list(usr, "What do you want to yank out?", "Embedded objects", valid_objects)
+	om_prompt(src, U, list("kind" = "list", "message" = "What do you want to yank out?", "title" = "Embedded objects", "choices" = valid_objects, "requires" = PROMPT_ADJACENT, "data" = list("self" = self)), PROC_REF(yank_object_chosen))
 
+/mob/proc/yank_object_chosen(mob/U, obj/item/selection, datum/om/prompt/ask)
+	var/self = ask.get("self")
+	var/mob/S = src
+	if(!(selection in get_visible_implants(0)))
+		return
 	if(self)
 		to_chat(src, span_warning("You attempt to get a good grip on [selection] in your body."))
 	else
@@ -1347,6 +1361,51 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	//VV_DROPDOWN_OPTION(VV_HK_OFFER_GHOSTS, "Offer Control to Ghosts")
 	//VV_DROPDOWN_OPTION(VV_HK_VIEW_PLANES, "View/Edit Planes")
 
+/mob/proc/vv_language_added(mob/user, new_language, datum/om/prompt/ask)
+	if(add_language(new_language))
+		to_chat(user, "Added [new_language] to [src].")
+		return
+	to_chat(user, "Mob already knows that language.")
+
+/mob/proc/vv_language_removed(mob/user, datum/language/rem_language, datum/om/prompt/ask)
+	if(remove_language(rem_language.name))
+		to_chat(user, "Removed [rem_language] from [src].")
+		return
+	to_chat(user, "Mob doesn't know that language.")
+
+/mob/proc/vv_verb_added(mob/user, verb, datum/om/prompt/ask)
+	if(verb != "Cancel")
+		add_verb(src, verb)
+
+/mob/proc/vv_verb_removed(mob/user, verb, datum/om/prompt/ask)
+	remove_verb(src, verb)
+
+/mob/proc/vv_organ_added(mob/user, new_organ, datum/om/prompt/ask)
+	var/mob/living/carbon/M = src
+	if(locate(new_organ) in M.internal_organs)
+		to_chat(user, "Mob already has that organ.")
+		return
+	new new_organ(M)
+
+/mob/proc/vv_organ_removed(mob/user, obj/item/organ/rem_organ, datum/om/prompt/ask)
+	var/mob/living/carbon/M = src
+	if(!(locate(rem_organ) in M.internal_organs))
+		to_chat(user, "Mob does not have that organ.")
+		return
+	to_chat(user, "Removed [rem_organ] from [M].")
+	rem_organ.removed()
+	qdel(rem_organ)
+
+/mob/proc/vv_ai_configured(mob/user, datum/om/prompt/ask)
+	var/mob/living/L = src
+	if(!istype(L) || !L.ai_brain)
+		return
+	L.faction = ask.get("faction")
+	if(ask.get("stance"))
+		L.set_use_stance(ask.get("stance"))
+	if(ask.get("wake") == "Yes")
+		L.status_adjust(EFFECT_SLEEPING, -100)
+
 /mob/vv_do_topic(list/href_list)
 	. = ..()
 
@@ -1381,19 +1440,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			to_chat(usr, "This can only be done to instances of type /mob")
 			return
 
-		var/new_language = tgui_input_list(usr, "Please choose a language to add.", "Language", GLOB.all_languages)
-		if(!new_language)
-			return
-
-		if(!H)
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-
-		if(H.add_language(new_language))
-			to_chat(usr, "Added [new_language] to [H].")
-			return
-
-		to_chat(usr, "Mob already knows that language.")
+		om_prompt(src, usr, list("kind" = "list", "message" = "Please choose a language to add.", "title" = "Language", "choices" = GLOB.all_languages, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(vv_language_added))
 
 	if(href_list[VV_HK_REMOVELANGUAGE])
 		if(!check_rights(R_SPAWN))
@@ -1408,20 +1455,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			to_chat(usr, "This mob knows no languages.")
 			return
 
-		var/datum/language/rem_language = tgui_input_list(usr, "Please choose a language to remove.", "Language", H.languages)
-
-		if(!rem_language)
-			return
-
-		if(!H)
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-
-		if(H.remove_language(rem_language.name))
-			to_chat(usr, "Removed [rem_language] from [H].")
-			return
-
-		to_chat(usr, "Mob doesn't know that language.")
+		om_prompt(src, usr, list("kind" = "list", "message" = "Please choose a language to remove.", "title" = "Language", "choices" = H.languages, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(vv_language_removed))
 
 	if(href_list[VV_HK_ADDVERB])
 		if(!check_rights(R_DEBUG))
@@ -1450,15 +1484,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		possibleverbs -= H.verbs
 		possibleverbs += "Cancel" 								// ...And one for the bottom
 
-		var/verb = tgui_input_list(usr, "Select a verb!", "Verbs", possibleverbs)
-		if(!verb || verb == "Cancel")
-			return
-
-		if(!H)
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-
-		add_verb(H, verb)
+		om_prompt(src, usr, list("kind" = "list", "message" = "Select a verb!", "title" = "Verbs", "choices" = possibleverbs, "requires" = PROMPT_ADMIN(R_DEBUG)), PROC_REF(vv_verb_added))
 
 	if(href_list[VV_HK_REMOVEVERB])
 		if(!check_rights(R_DEBUG))
@@ -1469,15 +1495,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		if(!istype(H))
 			to_chat(usr, "This can only be done to instances of type /mob")
 			return
-		var/verb = tgui_input_list(usr, "Please choose a verb to remove.", "Verbs", H.verbs)
-		if(!verb)
-			return
-
-		if(!H)
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-
-		remove_verb(H, verb)
+		om_prompt(src, usr, list("kind" = "list", "message" = "Please choose a verb to remove.", "title" = "Verbs", "choices" = H.verbs, "requires" = PROMPT_ADMIN(R_DEBUG)), PROC_REF(vv_verb_removed))
 
 	if(href_list[VV_HK_ADDORGAN])
 		if(!check_rights(R_SPAWN))
@@ -1488,19 +1506,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			to_chat(usr, "This can only be done to instances of type /mob/living/carbon")
 			return
 
-		var/new_organ = tgui_input_list(usr, "Please choose an organ to add.", "Organ", subtypesof(/obj/item/organ))
-		if(!new_organ)
-			return
-
-		if(!M)
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-
-		if(locate(new_organ) in M.internal_organs)
-			to_chat(usr, "Mob already has that organ.")
-			return
-
-		new new_organ(M)
+		om_prompt(src, usr, list("kind" = "list", "message" = "Please choose an organ to add.", "title" = "Organ", "choices" = subtypesof(/obj/item/organ), "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(vv_organ_added))
 
 
 	if(href_list[VV_HK_REMOVEORGAN])
@@ -1512,21 +1518,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			to_chat(usr, "This can only be done to instances of type /mob/living/carbon")
 			return
 
-		var/obj/item/organ/rem_organ = tgui_input_list(usr, "Please choose an organ to remove.", "Organ", M.internal_organs)
-		if(!rem_organ)
-			return
-
-		if(!M)
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-
-		if(!(locate(rem_organ) in M.internal_organs))
-			to_chat(usr, "Mob does not have that organ.")
-			return
-
-		to_chat(usr, "Removed [rem_organ] from [M].")
-		rem_organ.removed()
-		qdel(rem_organ)
+		om_prompt(src, usr, list("kind" = "list", "message" = "Please choose an organ to remove.", "title" = "Organ", "choices" = M.internal_organs, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(vv_organ_removed))
 
 	if(href_list[VV_HK_GIVE_AI])
 		if(!check_rights(R_HOLDER))
@@ -1546,12 +1538,11 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			L.ai_brain = null
 			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 		L.initialize_ai_brain()
-		L.faction = tgui_input_text(usr, "Please input AI faction", "AI faction", "neutral", MAX_MESSAGE_LEN)
-		var/stance = tgui_input_list(usr, "Please choose AI combat mode", "AI combat mode", list(I_HURT, I_HELP))
-		if(stance)
-			L.set_use_stance(stance)
-		if(tgui_alert(usr, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")
-			L.status_adjust(EFFECT_SLEEPING, -100)
+		om_prompt_sequence(src, usr, list(
+			list("key" = "faction", "kind" = "text", "message" = "Please input AI faction", "title" = "AI faction", "default" = "neutral", "max_length" = MAX_MESSAGE_LEN),
+			list("key" = "stance", "kind" = "list", "message" = "Please choose AI combat mode", "title" = "AI combat mode", "choices" = list(I_HURT, I_HELP)),
+			list("key" = "wake", "message" = "Make mob wake up? This is needed for carbon mobs.", "title" = "Wake mob?", "choices" = list("Yes", "No")),
+		), PROC_REF(vv_ai_configured), list("requires" = PROMPT_ADMIN(R_HOLDER)))
 
 	//if(href_list[VV_HK_GIVE_AI_SPEECH])
 	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_ai_speech, src)

@@ -446,12 +446,7 @@
 /obj/item/secbot_assembly/attackby(obj/item/W, mob/user)
 	..()
 	if(istype(W, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(!t)
-			return
-		if(!in_range(src, user) && loc != user)
-			return
-		created_name = t
+		ask_name_var(user)
 
 /**
  * The Securitron assembly: a helmet welded open, then a signaler (added by

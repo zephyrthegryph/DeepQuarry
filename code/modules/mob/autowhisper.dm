@@ -26,7 +26,12 @@
 	set category = "IC.Settings"
 
 
-	var/choice = tgui_input_list(src, "Select Custom Subtle Mode", "Custom Subtle Mode", list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme"))
+	om_prompt(src, src, list("kind" = "list", "message" = "Select Custom Subtle Mode", "title" = "Custom Subtle Mode", "choices" = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme"), "on_cancel" = PROC_REF(autowhisper_mode_reset)), PROC_REF(autowhisper_mode_chosen))
+
+/mob/living/proc/autowhisper_mode_reset(mob/user, datum/om/prompt/ask)
+	autowhisper_mode_chosen(user, null, ask)
+
+/mob/living/proc/autowhisper_mode_chosen(mob/user, choice, datum/om/prompt/ask)
 	if(!choice || choice == "Adjacent Turfs (Default)")
 		autowhisper_mode = null
 		balloon_alert(src, "subtles returned to default setting")

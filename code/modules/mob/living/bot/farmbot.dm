@@ -408,13 +408,7 @@
 		qdel(src)
 
 	else if(istype(W, /obj/item/pen))
-		var/t = tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN)
-		if(!t)
-			return
-		if(!in_range(src, user) && loc != user)
-			return
-
-		created_name = t
+		ask_name_var(user)
 
 /obj/item/farmbot_arm_assembly/attack_hand(mob/user as mob)
 	return //it's a converted watertank, no you cannot pick it up and put it in your backpack

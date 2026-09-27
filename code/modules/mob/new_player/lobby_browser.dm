@@ -102,50 +102,7 @@
 			if(!SSticker || SSticker.current_state == GAME_STATE_STARTUP)
 				to_chat(src, span_warning("The game is still setting up, please try again later."))
 				return TRUE
-			if(tgui_alert(src,"Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.","Observe Round?",list("Yes","No")) == "Yes")
-				if(QDELETED(src) || !client)
-					return TRUE
-
-				//Make a new mannequin quickly, and allow the observer to take the appearance
-				var/mob/living/carbon/human/dummy/mannequin = get_mannequin(client.ckey)
-				client.prefs.dress_preview_mob(mannequin)
-				var/mob/observer/dead/observer = new(mannequin)
-				observer.moveToNullspace() //Let's not stay in our doomed mannequin
-
-				spawning = 1
-				if(client.media)
-					client.media.stop_music() // MAD JAMS cant last forever yo
-
-				observer.started_as_observer = 1
-				close_spawn_windows()
-				var/obj/O = locate("landmark*Observer-Start")
-				if(istype(O))
-					to_chat(src, span_notice("Now teleporting."))
-					observer.forceMove(O.loc)
-				else
-					to_chat(src, span_danger("Could not locate an observer spawn point. Use the Teleport verb to jump to the station map."))
-
-				announce_ghost_joinleave(src)
-
-				if(client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random))
-					client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(client.prefs.read_preference(/datum/preference/choiced/gender/identifying)))
-				observer.real_name = client.prefs.read_preference(/datum/preference/name/real_name)
-				observer.name = observer.real_name
-				if(!check_rights_for(client, R_HOLDER) && !CONFIG_GET(flag/antag_hud_allowed))           // For new ghosts we remove the verb from even showing up if it's not allowed.
-					remove_verb(observer, /mob/observer/dead/verb/toggle_antagHUD)        // Poor guys, don't know what they are missing!
-
-				observer.key = key
-
-				observer.set_respawn_timer(time_till_respawn()) // Will keep their existing time if any, or return 0 and pass 0 into set_respawn_timer which will use the defaults
-				observer.client.init_verbs()
-				QDEL_NULL(mind)
-				qdel(src)
-
-				// pAI notify if we have be pAI invite on
-				SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
-				if(SSpai.invite_valid(observer))
-					observer.pai_card_ping()
-
+			om_prompt(src, src, list("message" = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.", "title" = "Observe Round?", "choices" = list("Yes","No")), PROC_REF(observe_confirmed))
 			return TRUE
 		if("give_feedback")
 			if(!SSsqlite.can_submit_feedback(persistent_client.client))
@@ -176,3 +133,50 @@
 			SSticker.start_immediately = TRUE
 			if(SSticker.current_state == GAME_STATE_STARTUP)
 				to_chat(usr, span_admin("The server is still setting up, but the round will be started as soon as possible."))
+
+/mob/new_player/proc/observe_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && !spawning)
+		if(QDELETED(src) || !client)
+			return TRUE
+
+		//Make a new mannequin quickly, and allow the observer to take the appearance
+		var/mob/living/carbon/human/dummy/mannequin = get_mannequin(client.ckey)
+		client.prefs.dress_preview_mob(mannequin)
+		var/mob/observer/dead/observer = new(mannequin)
+		observer.moveToNullspace() //Let's not stay in our doomed mannequin
+
+		spawning = 1
+		if(client.media)
+			client.media.stop_music() // MAD JAMS cant last forever yo
+
+		observer.started_as_observer = 1
+		close_spawn_windows()
+		var/obj/O = locate("landmark*Observer-Start")
+		if(istype(O))
+			to_chat(src, span_notice("Now teleporting."))
+			observer.forceMove(O.loc)
+		else
+			to_chat(src, span_danger("Could not locate an observer spawn point. Use the Teleport verb to jump to the station map."))
+
+		announce_ghost_joinleave(src)
+
+		if(client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random))
+			client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(client.prefs.read_preference(/datum/preference/choiced/gender/identifying)))
+		observer.real_name = client.prefs.read_preference(/datum/preference/name/real_name)
+		observer.name = observer.real_name
+		if(!check_rights_for(client, R_HOLDER) && !CONFIG_GET(flag/antag_hud_allowed))           // For new ghosts we remove the verb from even showing up if it's not allowed.
+			remove_verb(observer, /mob/observer/dead/verb/toggle_antagHUD)        // Poor guys, don't know what they are missing!
+
+		observer.key = key
+
+		observer.set_respawn_timer(time_till_respawn()) // Will keep their existing time if any, or return 0 and pass 0 into set_respawn_timer which will use the defaults
+		observer.client.init_verbs()
+		QDEL_NULL(mind)
+		qdel(src)
+
+		// pAI notify if we have be pAI invite on
+		SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
+		if(SSpai.invite_valid(observer))
+			observer.pai_card_ping()
+
+	return TRUE

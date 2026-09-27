@@ -368,12 +368,7 @@
 		user.drop_from_inventory(src)
 		qdel(src)
 	else if (istype(W, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(!t)
-			return
-		if(!in_range(src, user) && loc != user)
-			return
-		created_name = t
+		ask_name_var(user)
 
 /obj/item/toolbox_tiles_sensor
 	desc = "It's a toolbox with tiles sticking out the top and a sensor attached"
@@ -398,9 +393,4 @@
 		user.drop_from_inventory(src)
 		qdel(src)
 	else if(istype(W, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(!t)
-			return
-		if(!in_range(src, user) && loc != user)
-			return
-		created_name = t
+		ask_name_var(user)
