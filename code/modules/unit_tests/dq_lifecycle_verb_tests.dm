@@ -75,6 +75,8 @@
 	TEST_ASSERT(first, "expire() should arm a timer")
 	E.expire(20 MINUTES)
 	TEST_ASSERT(E.lifecycle_lifetime_timer && E.lifecycle_lifetime_timer != first, "a second expire() should replace the timer")
+	E.expire(null)
+	TEST_ASSERT(!E.lifecycle_lifetime_timer && !om_timer_count(E), "expire(null) should disarm the timer")
 	qdel(E)
 	TEST_ASSERT(QDELETED(E), "the effect should be deleted")
 

@@ -94,6 +94,32 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!("cancelled" in live.log), "a cancelled timer never runs")
 
+/// TIMER_UNIQUE and TIMER_OVERRIDE as keyed om_after: the key is (owner, proc, arguments).
+/datum/unit_test/om/timer_keyed
+
+/datum/unit_test/om/timer_keyed/run_om(list/made)
+	var/datum/om_test_entity/E = entity(made)
+	var/first = om_after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once")
+	TEST_ASSERT_EQUAL(om_after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once"), first, "a pending identical call is not scheduled twice")
+	om_after_unique(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "other")
+	TEST_ASSERT_EQUAL(om_timer_count(E), 2, "different arguments are a different key")
+	scheduler_advance(0.6)
+	var/replaced = om_after_replace(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "once")
+	TEST_ASSERT(replaced != first && !om_timer_pending(E, first), "replace cancels the pending call")
+	scheduler_advance(0.6)
+	TEST_ASSERT(!("once" in E.log), "a replaced call restarts its delay")
+	TEST_ASSERT("other" in E.log, "the other key ran on time")
+	scheduler_advance(0.6)
+	var/runs = 0
+	for(var/entry in E.log)
+		if(entry == "once")
+			runs++
+	TEST_ASSERT_EQUAL(runs, 1, "the replaced call ran once")
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "a")
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "b")
+	TEST_ASSERT_EQUAL(om_cancel_calls(E, /datum/om_test_entity/proc/timer_hit), 2, "cancel_calls drops every call of the proc")
+	TEST_ASSERT_EQUAL(om_timer_count(E), 0, "nothing is left pending")
+
 /datum/unit_test/om/timer_follows_clock
 
 /datum/unit_test/om/timer_follows_clock/run_om(list/made)
