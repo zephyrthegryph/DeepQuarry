@@ -303,3 +303,30 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 /// Deletes the datum: om_after(src, delay, TYPE_PROC_REF(/datum, om_delete_self)).
 /datum/proc/om_delete_self()
 	qdel(src)
+
+// ---------------------------------------------------------------- owned flags
+
+/// Token per held flag ("\ref[holder]:[varname]" -> token). Only the latest hold may expire it.
+GLOBAL_LIST_EMPTY(om_flag_tokens)
+GLOBAL_VAR_INIT(om_flag_seq, 0)
+
+/// Sets `holder.vars[varname]` TRUE for a converted action and owns it: if the
+/// action's continuation never runs (its timer was dropped because an argument
+/// was deleted, or the task was cancelled), the flag clears itself after
+/// `max_time`. The normal continuation still clears it as before; a later hold
+/// supersedes this one, so a stale expiry never clears a newer hold.
+/proc/om_flag_hold(datum/holder, varname, max_time = 1 MINUTE)
+	if(!holder)
+		return
+	holder.vars[varname] = TRUE
+	var/token = ++GLOB.om_flag_seq
+	GLOB.om_flag_tokens["\ref[holder]:[varname]"] = token
+	om_after(holder, max_time, /proc/om_flag_expire, holder, varname, token)
+	return token
+
+/proc/om_flag_expire(datum/holder, varname, token)
+	var/key = "\ref[holder]:[varname]"
+	if(GLOB.om_flag_tokens[key] != token)
+		return
+	GLOB.om_flag_tokens -= key
+	holder.vars[varname] = FALSE

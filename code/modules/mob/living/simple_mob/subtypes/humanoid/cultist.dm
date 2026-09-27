@@ -88,7 +88,7 @@
 	special_attack_cooldown = 10 SECONDS
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A)
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)

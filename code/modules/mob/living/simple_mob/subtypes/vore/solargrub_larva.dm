@@ -120,7 +120,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 /mob/living/simple_mob/animal/solargrub_larva/proc/enter_machine(obj/machinery/M)
 	if(!istype(M))
 		return
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	forceMove(M)
 	powermachine.draining = 2
 	visible_message(span_warning("\The [src] finds an opening and crawls inside \the [M]."))

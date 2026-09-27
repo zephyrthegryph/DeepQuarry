@@ -175,7 +175,7 @@
 	if(stat & (BROKEN|NOPOWER))
 		return
 	event_source = source
-	busy = 1
+	om_flag_hold(src, "busy")
 	active = 1
 	icon_state = "auth_on"
 	om_after(src, confirm_delay, PROC_REF(receive_window_closed))

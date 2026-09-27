@@ -161,7 +161,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.

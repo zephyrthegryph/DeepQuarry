@@ -162,7 +162,7 @@
 //		return TRUE
 
 /mob/living/simple_mob/proc/try_reload()
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	om_do_after(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), on_fail = PROC_REF(reload_stopped))
 
 /mob/living/simple_mob/proc/reload_done()
@@ -274,7 +274,7 @@
 // Waits out an attack telegraph, then calls `then_proc(A, extra)` on src.
 // Also makes sure the AI doesn't do anything stupid in the middle of the delay.
 /mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount, then_proc, extra)
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	// Click delay modifiers also affect telegraphing time.
 	// This means berserked enemies will leave less time to dodge.
 	var/true_attack_delay = delay_amount * factor(BF_ATTACK_SPEED)

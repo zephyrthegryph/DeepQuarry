@@ -218,7 +218,7 @@
 			if(currentlyEating != obstacle)
 				currentlyEating = obstacle
 
-			if(ai_brain) ai_brain.busy = TRUE
+			if(ai_brain) om_flag_hold(ai_brain, "busy")
 			AttemptToEat(obstacle)
 	else
 		currentlyEating = null

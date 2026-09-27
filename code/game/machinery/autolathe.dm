@@ -301,7 +301,7 @@
 	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
 	current_producer_account = producer_id?.associated_account_number || 0
 	current_producer_department = department_for_mob(ui.user) || DEPARTMENT_ENGINEERING
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	icon_state = "autolathe_n"
 	SStgui.update_uis(src)
 	// play this after all checks passed individually for each item.
@@ -471,7 +471,7 @@
 	user.visible_message(span_notice("[user] begins to load \the [O] in \the [src]..."),
 		balloon_alert(user, "uploading design..."),
 		span_hear("You hear the chatter of a floppy drive."))
-	busy = TRUE
+	om_flag_hold(src, "busy")
 
 	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_attackby_timed_done), done_args = list(user, O), on_fail = PROC_REF(interaction_attackby_timed_failed), fail_args = list(user, O))
 	return TRUE

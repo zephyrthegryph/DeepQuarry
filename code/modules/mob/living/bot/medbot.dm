@@ -148,7 +148,7 @@
 	if(declare_treatment)
 		var/area/location = get_area(src)
 		GLOB.global_announcer.autosay("[src] is treating <b>[H]</b> in <b>[location]</b>", "[src]", "Medical")
-	busy = 1
+	om_flag_hold(src, "busy")
 	update_icons()
 	om_do_after(src, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(UnarmedAttack_medbot_done), done_args = list(H, t))
 

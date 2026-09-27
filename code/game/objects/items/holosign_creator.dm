@@ -44,7 +44,7 @@
 		if(length(signs) < max_signs)
 			playsound(src.loc, 'sound/machines/click.ogg', 20, 1)
 			if(creation_time)
-				holocreator_busy = TRUE
+				om_flag_hold(src, "holocreator_busy")
 				om_do_after(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), on_fail = PROC_REF(create_sign_failed))
 				return
 			create_sign(user, T, FALSE)

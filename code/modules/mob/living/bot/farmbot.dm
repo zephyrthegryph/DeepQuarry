@@ -188,28 +188,28 @@
 				update_icons()
 				visible_message(span_notice("[src] starts [T.dead? "removing the plant from" : "harvesting"] \the [A]."))
 
-				busy = 1
+				om_flag_hold(src, "busy")
 				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
 				visible_message(span_notice("[src] starts watering \the [A]."))
 
-				busy = 1
+				om_flag_hold(src, "busy")
 				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done2), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
 				visible_message(span_notice("[src] starts uprooting the weeds in \the [A]."))
 
-				busy = 1
+				om_flag_hold(src, "busy")
 				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done3), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
 				visible_message(span_notice("[src] starts fertilizing \the [A]."))
 
-				busy = 1
+				om_flag_hold(src, "busy")
 				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done4), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 
 	else if(istype(A, /obj/structure/sink))
@@ -219,12 +219,12 @@
 		update_icons()
 		visible_message(span_notice("[src] starts refilling its tank from \the [A]."))
 
-		busy = 1
+		om_flag_hold(src, "busy")
 		refill_step(A)
 	else if(emagged && ishuman(A))
 		var/action = pick("weed", "water")
 
-		busy = 1
+		om_flag_hold(src, "busy")
 		spawn(50) // Some delay
 
 			busy = 0

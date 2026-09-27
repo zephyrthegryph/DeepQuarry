@@ -189,7 +189,7 @@
 			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A), 4 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	if(!A)
 		return
 

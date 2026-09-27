@@ -552,7 +552,7 @@
 			. = TRUE
 
 /datum/component/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	tgui_interact(user)
 	var/result = construct_item(user, TR, material_choices, PROC_REF(make_finished))
 	if(!isnull(result))

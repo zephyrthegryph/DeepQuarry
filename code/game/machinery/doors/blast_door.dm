@@ -279,7 +279,7 @@
 /obj/machinery/door/blast/attack_generic(mob/living/user, damage)
 	if(stat & (BROKEN|NOPOWER))
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-			if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
+			if(user.ai_brain) om_flag_hold(user.ai_brain, "busy") // If the mob doesn't have an AI attached, this won't do anything.
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
 				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user))

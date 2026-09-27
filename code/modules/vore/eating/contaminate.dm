@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	if(istype(I) && I.gurgled)
 		to_chat(user, span_notice("You start washing [I]."))
 
-		busy = TRUE
+		om_flag_hold(src, "busy")
 		om_do_after(user, 4 SECONDS, src, src, PROC_REF(wash_gurgled_done), list(user, I), on_fail = PROC_REF(wash_gurgled_ended))
 	else
 		..()

@@ -343,7 +343,7 @@
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
 	if(can_use(user, H))
-		busy = TRUE
+		om_flag_hold(src, "busy")
 		update_icon()
 
 		do_revive(H, user)
@@ -356,7 +356,7 @@
 //Since harm-intent now skips the delay for deliberate placement, you have to be able to hit them in combat in order to shock people.
 /obj/item/shockpaddles/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(ishuman(target) && can_use(user, target))
-		busy = 1
+		om_flag_hold(src, "busy")
 		update_icon()
 
 		do_electrocute(target, user, hit_zone)

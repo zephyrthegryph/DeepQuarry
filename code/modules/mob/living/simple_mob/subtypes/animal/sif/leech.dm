@@ -112,11 +112,11 @@
 	if(istype(A, /mob/living/carbon))
 		switch(use_stance())
 			if(I_DISARM) // Poison
-				if(ai_brain) ai_brain.busy = TRUE
+				if(ai_brain) om_flag_hold(ai_brain, "busy")
 				poison_inject(src, A)
 				if(ai_brain) ai_brain.busy = FALSE
 			if(I_GRAB) // Infesting!
-				if(ai_brain) ai_brain.busy = TRUE
+				if(ai_brain) om_flag_hold(ai_brain, "busy")
 				do_infest(src, A)
 				if(ai_brain) ai_brain.busy = FALSE
 /datum/om/stage/life/special/animal/sif/leech

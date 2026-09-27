@@ -101,7 +101,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			to_chat(user, span_warning("Scanning new target. Previous scan buffer cleared."))
 
 	// Start the special effects.
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon_state = "rped_upgrade", time = scan_delay)
 	var/filter = filter(type = "outline", size = 1, color = "#FFFFFF")
@@ -213,7 +213,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		to_chat(user, span_warning("\The [src] is busy doing something else."))
 		return
 
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	update_icon()
 	playsound(src, 'sound/machines/beep.ogg', 50)
 
@@ -290,7 +290,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /obj/item/cataloguer/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/card/id) && !busy)
-		busy = TRUE
+		om_flag_hold(src, "busy")
 		var/obj/item/card/id/ID = W
 		if(points_stored)
 			var/datum/money_account/account = get_account(ID.associated_account_number)

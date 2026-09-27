@@ -98,7 +98,7 @@
 /*
 /mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A)
 	. = TRUE
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(charge), A), 20, TIMER_STOPPABLE)
 

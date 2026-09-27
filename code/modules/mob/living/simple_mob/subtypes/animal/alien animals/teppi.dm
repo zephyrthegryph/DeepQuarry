@@ -801,7 +801,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	if(client)
 		return ..()
 	var/current_affinity = affinity[T.real_name]
-	ai_brain.busy = TRUE
+	om_flag_hold(ai_brain, "busy")
 	T.stop_pulling()
 	if(current_affinity >= 50)
 		var/tumby = vore_selected
@@ -823,7 +823,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		var/teppi_checks = teppi_checks(user, prey, pred, belly)
 		if(teppi_checks)
 			belly = teppi_checks
-		ai_brain.busy = TRUE
+		om_flag_hold(ai_brain, "busy")
 		prey.stop_pulling()
 	..()
 	if(!client)
@@ -834,7 +834,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		var/teppi_checks = teppi_checks(user, prey, pred, belly)
 		if(teppi_checks)
 			belly = teppi_checks
-		ai_brain.busy = TRUE
+		om_flag_hold(ai_brain, "busy")
 		prey.stop_pulling()
 	..()
 	if(!client)

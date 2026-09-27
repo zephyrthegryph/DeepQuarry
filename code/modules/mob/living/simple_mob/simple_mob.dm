@@ -660,7 +660,7 @@
 	// ai_log("vr/EatTarget() [M]",2) // AI TEMPORARY REMOVAL
 	// stop_automated_movement = 1 // AI TEMPORARY REMOVAL
 	var/old_target = M
-	if(ai_brain) ai_brain.busy = 1 // AI TEMPORARY EDIT
+	if(ai_brain) om_flag_hold(ai_brain, "busy") // AI TEMPORARY EDIT
 	. = animal_nom(M)
 	playsound(src, swallowsound, 50, 1)
 	update_icon()
@@ -767,7 +767,7 @@
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
-		if(ai_brain) ai_brain.busy = TRUE
+		if(ai_brain) om_flag_hold(ai_brain, "busy")
 		spawn()
 			animal_nom(tmob)
 			update_icon()

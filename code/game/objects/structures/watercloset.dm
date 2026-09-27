@@ -998,7 +998,7 @@
 	to_chat(user, span_notice("You start washing your hands."))
 	playsound(src, 'sound/effects/sink_long.ogg', 75, 1)
 
-	busy = 1
+	om_flag_hold(src, "busy")
 	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
 	return TRUE
 
@@ -1084,7 +1084,7 @@
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
-	busy = 1
+	om_flag_hold(src, "busy")
 	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(O, user, I), on_fail = PROC_REF(attackby_timed_failed4), fail_args = list(O, user, I))
 	return TRUE
 

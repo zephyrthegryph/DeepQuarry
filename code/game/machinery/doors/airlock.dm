@@ -77,7 +77,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(locked || welded)
 				visible_message(span_danger("\The [user] begins breaking into \the [src] internals!"))
-				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
+				if(user.ai_brain) om_flag_hold(user.ai_brain, "busy") // If the mob doesn't have an AI attached, this won't do anything.
 				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user))
 				if(user.ai_brain) user.ai_brain.busy = FALSE
 			else if(density)

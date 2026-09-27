@@ -115,7 +115,7 @@
 	if(D.loc != loc)
 		return
 
-	busy = 1
+	om_flag_hold(src, "busy")
 	update_icons()
 	var/cleantime = 0
 	if(istype(D, /obj/effect/decal/cleanable))

@@ -249,13 +249,13 @@
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
+				if(user.ai_brain) om_flag_hold(user.ai_brain, "busy") // If the mob doesn't have an AI attached, this won't do anything.
 				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user))
 				if(user.ai_brain) user.ai_brain.busy = FALSE
 			else
 				time_to_force = (time_to_force / 2)
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
+				if(user.ai_brain) om_flag_hold(user.ai_brain, "busy") // If the mob doesn't have an AI attached, this won't do anything.
 				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user))
 				if(user.ai_brain) user.ai_brain.busy = FALSE
 		else

@@ -317,7 +317,7 @@
 	if(istype(crate))
 		crate.close()
 
-	busy = 1
+	om_flag_hold(src, "busy")
 
 	C.forceMove(loc)
 	om_after(src, 2, PROC_REF(load_finish), C)
@@ -340,7 +340,7 @@
 	if(!load || busy)
 		return
 
-	busy = 1
+	om_flag_hold(src, "busy")
 	cut_overlays()
 
 	load.forceMove(loc)

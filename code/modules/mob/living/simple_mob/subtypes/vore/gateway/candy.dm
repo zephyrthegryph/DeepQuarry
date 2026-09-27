@@ -364,7 +364,7 @@
 			)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A)
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(chargeend), A), 20)
 

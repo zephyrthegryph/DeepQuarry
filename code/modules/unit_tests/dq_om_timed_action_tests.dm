@@ -96,3 +96,30 @@
 	TEST_ASSERT(("mine" in witness.log) && ("shared" in witness.log), "both complete")
 	var/datum/om/task/timed/next = om_do_after(other, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("next"), claims = TRUE)
 	TEST_ASSERT(istype(next), "the claim is released on completion: [next]")
+
+/datum/om_test_entity/flagged
+	var/busy = FALSE
+
+/// A flag set before a converted action is owned by it: when the action's
+/// timer is dropped (an argument was deleted), the flag still clears itself,
+/// and a stale expiry never clears a newer hold.
+/datum/unit_test/om/timed_action_flag_owned
+
+/datum/unit_test/om/timed_action_flag_owned/run_om(list/made)
+	var/datum/om_test_entity/flagged/holder = entity(made, /datum/om_test_entity/flagged)
+	var/datum/om_test_entity/arg = entity(made)
+	om_flag_hold(holder, "busy", 2 SECONDS)
+	TEST_ASSERT(holder.busy, "the hold sets the flag")
+	// The continuation that would clear it is dropped with its deleted argument.
+	om_after(holder, 1 SECOND, /datum/om_test_entity/proc/timer_hit, arg)
+	qdel(arg)
+	scheduler_advance(1.5)
+	TEST_ASSERT(holder.busy, "the flag is still held before its expiry")
+	scheduler_advance(1)
+	TEST_ASSERT(!holder.busy, "a dropped continuation doesn't leave the flag set forever")
+
+	om_flag_hold(holder, "busy", 1 SECOND)
+	holder.busy = FALSE // the continuation ran and cleared it
+	om_flag_hold(holder, "busy", 5 SECONDS) // a newer action holds it again
+	scheduler_advance(1.5)
+	TEST_ASSERT(holder.busy, "a stale expiry doesn't clear a newer hold")

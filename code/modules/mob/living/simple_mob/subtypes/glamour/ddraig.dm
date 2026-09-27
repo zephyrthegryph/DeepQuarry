@@ -152,7 +152,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -187,7 +187,7 @@
 	glow_toggle = 1
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	flames = 1
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
 	do_windup_animation(A, charge_warmup)
 	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
@@ -209,7 +209,7 @@
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam(atom/A)
 	if(!isturf(get_turf(A)))
 		return
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] begins to shimmer with a rainbow hue!"))
 	do_windup_animation(A, tf_warmup)
 	om_after(src, tf_warmup, PROC_REF(tfbeam_1), A)

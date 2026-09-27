@@ -37,7 +37,7 @@
 	var/i = maximum_distance
 
 	visible_message(span_info("[user] rests a hand on \the [hit_atom]."))
-	busy = 1
+	om_flag_hold(src, "busy")
 
 	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, our_turf)

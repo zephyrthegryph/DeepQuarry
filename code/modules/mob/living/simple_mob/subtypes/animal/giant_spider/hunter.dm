@@ -57,7 +57,7 @@
 
 // The actual leaping attack.
 /mob/living/simple_mob/animal/giant_spider/hunter/do_special_attack(atom/A)
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
 	om_after(src, leap_warmup, PROC_REF(hunter_leap), A) // For the telegraphing.

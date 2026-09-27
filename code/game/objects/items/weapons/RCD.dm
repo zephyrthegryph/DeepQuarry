@@ -135,7 +135,7 @@
 		if(!isturf(beam_origin.loc))
 			beam_origin = user.loc
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
-	busy = TRUE
+	om_flag_hold(src, "busy")
 
 	perform_effect(A, true_delay)
 	om_do_after(user, true_delay, target = A, receiver = src, on_done = PROC_REF(use_rcd_timed_done), done_args = list(A, user, rcd_results, output_envelope))

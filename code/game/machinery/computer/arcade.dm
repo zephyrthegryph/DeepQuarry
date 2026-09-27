@@ -437,7 +437,7 @@
 
 	if(busy)
 		return
-	busy = 1
+	om_flag_hold(src, "busy")
 
 	if (href_list["continue"]) //Continue your travels
 		if(gameStatus == ORION_STATUS_NORMAL && !event && turns != 7)
