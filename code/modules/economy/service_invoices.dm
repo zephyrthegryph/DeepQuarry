@@ -92,13 +92,6 @@
 	/// Closed accounting periods are final evidence and cannot be refunded.
 	var/settled = FALSE
 
-/datum/service_invoice/Destroy()
-	items = null
-	prices = null
-	verified_item_types = null
-	verified_items = null
-	return ..()
-
 /datum/service_invoice/proc/as_row()
 	return list(
 		"invoice_id" = id,

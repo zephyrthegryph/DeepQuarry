@@ -52,10 +52,6 @@
 	R.add_overlay(stampoverlay)
 	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
 
-/obj/item/eftpos/Destroy()
-	linked_account = null
-	return ..()
-
 /obj/item/eftpos/proc/print_reference()
 	var/obj/item/paper/R = new(src.loc)
 	R.name = "Reference: [eftpos_name]"
