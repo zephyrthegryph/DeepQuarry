@@ -16,9 +16,7 @@
 	..()
 	load_settings()
 
-/datum/nifsoft/soulcatcher/Destroy()
-	QDEL_LIST_NULL(brainmobs)
-	return ..()
+REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 /datum/nifsoft/soulcatcher/activate()
 	if((. = ..()))

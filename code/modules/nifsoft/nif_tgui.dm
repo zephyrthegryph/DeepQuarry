@@ -29,10 +29,7 @@
 		return COMPONENT_INCOMPATIBLE
 	. = ..()
 
-/datum/component/nif_menu/Destroy(force)
-	if(screen_icon)
-		QDEL_NULL(screen_icon)
-	. = ..()
+REF_OWNED(/datum/component/nif_menu, "screen_icon")
 
 /datum/component/nif_menu/RegisterWithParent()
 	. = ..()
@@ -52,7 +49,6 @@
 			QDEL_NULL(screen_icon)
 		if(ishuman(parent))
 			remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
-
 
 /datum/component/nif_menu/proc/create_mob_button(mob/user)
 	SIGNAL_HANDLER
@@ -129,7 +125,6 @@
 
 	data["nif_percent"] = round((durability/initial(durability))*100)
 	data["nif_stat"] = stat
-
 
 	var/list/modules = list()
 	if(stat == NIF_WORKING)
