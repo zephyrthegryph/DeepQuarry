@@ -13,10 +13,7 @@
 	requirements = list()
 	provisions = list()
 
-/datum/generated_station_department_definition/Destroy()
-	QDEL_LIST(requirements)
-	QDEL_LIST(provisions)
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_department_definition, list("requirements", "provisions"))
 
 /// A capability consumed by a department. Providers may be implemented later
 /// by rooms, machinery, networks, or another department.
@@ -47,10 +44,6 @@
 	var/datum/generated_station_department_definition/definition
 	var/desired_area = 1
 	var/layout_node_id
-
-/datum/generated_station_department_instance/Destroy()
-	definition = null
-	return ..()
 
 /// Abstract layout vertex. Geometry generation consumes this graph later.
 /datum/generated_station_layout_node
@@ -92,15 +85,7 @@
 	eva_vestibules = list()
 	room_program = list()
 
-/datum/generated_station_layout_node/Destroy()
-	territory = null
-	frontage_reservation = null
-	local_circulation = null
-	partition_walls = null
-	QDEL_LIST(frontage_sockets)
-	QDEL_LIST(eva_vestibules)
-	QDEL_LIST(room_program)
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_layout_node, list("frontage_sockets", "eva_vestibules", "room_program"))
 
 /datum/generated_station_layout_node/proc/owns_tile(x, y)
 	return territory["[x],[y]"]
@@ -140,12 +125,7 @@
 	content_circulation = list()
 	fixture_ids = list()
 
-/datum/generated_station_room_allocation/Destroy()
-	tiles = null
-	QDEL_LIST(door_sockets)
-	content_circulation = null
-	fixture_ids = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_room_allocation, "door_sockets")
 
 /datum/generated_station_room_allocation/proc/add_tile(x, y)
 	tiles["[x],[y]"] = TRUE
@@ -169,10 +149,6 @@
 	..()
 	required_access = list()
 
-/datum/generated_station_fixture_placement/Destroy()
-	required_access = null
-	return ..()
-
 /// Exact utility topology emitted with the Rust content blueprint.
 /datum/generated_station_network_blueprint
 	var/id
@@ -184,11 +160,6 @@
 	..()
 	backbone = list()
 	endpoint_fixture_ids = list()
-
-/datum/generated_station_network_blueprint/Destroy()
-	backbone = null
-	endpoint_fixture_ids = null
-	return ..()
 
 /// Planner-owned opening through a structural boundary.
 /datum/generated_station_door_socket
@@ -234,10 +205,7 @@
 	tiles = list()
 	door_sockets = list()
 
-/datum/generated_station_eva_vestibule/Destroy()
-	tiles = null
-	QDEL_LIST(door_sockets)
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_eva_vestibule, "door_sockets")
 
 /// Abstract relationship between two layout vertices.
 /datum/generated_station_layout_edge
@@ -255,10 +223,6 @@
 /datum/generated_station_layout_edge/New()
 	..()
 	path = list()
-
-/datum/generated_station_layout_edge/Destroy()
-	path = null
-	return ..()
 
 /// One actionable validation finding.
 /datum/generated_station_validation_issue
@@ -282,9 +246,7 @@
 	..()
 	issues = list()
 
-/datum/generated_station_validation_result/Destroy()
-	QDEL_LIST(issues)
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_validation_result, "issues")
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
 	issues += new /datum/generated_station_validation_issue(severity, code, message, subject_id)

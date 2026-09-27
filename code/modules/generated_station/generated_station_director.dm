@@ -22,10 +22,6 @@
 	..()
 	member_ids = list()
 
-/datum/generated_station_squad/Destroy()
-	member_ids = null
-	return ..()
-
 /datum/generated_station_squad/proc/add_member(member_id)
 	if(!member_id || (member_id in member_ids) || length(member_ids) >= GENERATED_STATION_MAX_SQUAD_MEMBERS)
 		return FALSE

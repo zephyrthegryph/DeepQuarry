@@ -35,11 +35,6 @@
 	utility_intents = list()
 	utility_wall_directions = list()
 
-/datum/generated_station_tile_intent/Destroy()
-	utility_intents = null
-	utility_wall_directions = null
-	return ..()
-
 /// Returns whether this coordinate is authoritative structural support for a wall fixture.
 /datum/generated_station_tile_intent/proc/is_structural_wall()
 	return structure_kind == GENERATED_STATION_TILE_HULL

@@ -13,12 +13,6 @@
 	stockpiles = list()
 	minimum_stockpiles = list()
 
-/datum/generated_station_department_runtime/Destroy()
-	department = null
-	stockpiles = null
-	minimum_stockpiles = null
-	return ..()
-
 /datum/generated_station_department_runtime/proc/has_resources()
 	for(var/resource_id in minimum_stockpiles)
 		if((stockpiles[resource_id] || 0) < minimum_stockpiles[resource_id])

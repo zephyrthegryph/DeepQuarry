@@ -18,10 +18,6 @@
 	feature_types = build_feature_types()
 	return ..()
 
-/datum/generated_room_fragment/activity_motif/Destroy()
-	feature_types = null
-	return ..()
-
 /datum/generated_room_fragment/activity_motif/proc/build_feature_types()
 	return list()
 
