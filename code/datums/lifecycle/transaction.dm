@@ -42,19 +42,22 @@
 			dq_lifecycle_resolve_minds(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_MIND, tick)
 
-			// Phase 1: unbind. Hook point -- R10 entity bindings, heat
-			// bodies, pipe/cable topology are outside this track's scope.
-			tick = world.tick_usage
-			dq_lifecycle_unbind(AM)
-			dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
+	// Phase 1: unbind, for every datum: Rust entity bindings, pipe/cable
+	// topology, heat bodies (lifecycle_unbind() overrides). Must precede
+	// dematerialize.
+	tick = world.tick_usage
+	D.lifecycle_unbind()
+	dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
 
-			// Phase 2: dematerialize. Hook point for registries (L3) not
-			// already covered by the base Destroy() (phase 7) or links
-			// (phase 4).
-			tick = world.tick_usage
-			dq_lifecycle_dematerialize(AM)
-			dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
+	// Phase 2: dematerialize. Index leaves that aren't registries yet
+	// (lifecycle_dematerialize() overrides), for every datum.
+	tick = world.tick_usage
+	D.lifecycle_dematerialize()
+	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
 
+	if(isatom(D))
+		var/atom/movable/AM = D
+		if(ismovable(AM))
 			// Phase 3: contents. Every slot's declared destroy policy,
 			// post-order (children before parents -- see
 			// code/datums/containment/lifecycle.dm's file header for why
@@ -121,9 +124,6 @@
 /datum/proc/lifecycle_unbind()
 	return
 
-/proc/dq_lifecycle_unbind(atom/movable/AM)
-	AM.lifecycle_unbind()
-
 // ---- Phase 2: dematerialize (hook point) ----
 
 /// Phase 2: leave registries and drop rule bindings, same as today (most of
@@ -132,9 +132,6 @@
 /// sites over time). Hook point for now.
 /datum/proc/lifecycle_dematerialize()
 	return
-
-/proc/dq_lifecycle_dematerialize(atom/movable/AM)
-	AM.lifecycle_dematerialize()
 
 // ---- Phase 5: teardown ----
 
