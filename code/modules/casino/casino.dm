@@ -407,7 +407,10 @@
 	if(user.incapacitated())
 		return TRUE
 	if(ishuman(user) || isrobot(user))
-		switch(tgui_input_list(user,"Choose what to do","Wheel Of Fortune", list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel")))
+		var/_answer_k410 = rerun_prompt(user, "k410", list("kind" = "list", "message" = "Choose what to do", "title" = "Wheel Of Fortune", "choices" = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel")), PROC_REF(interaction_use), args)
+		if(isnull(_answer_k410))
+			return
+		switch(_answer_k410)
 			if("Cancel")
 				return TRUE
 			if("Spin the Wheel! (Not Lottery)")
@@ -442,7 +445,10 @@
 
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		switch(tgui_input_list(user,"Choose what to do (Management)","Wheel Of Fortune (Management)", list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel")))
+		var/_answer_k445 = rerun_prompt(user, "k445", list("kind" = "list", "message" = "Choose what to do (Management)", "title" = "Wheel Of Fortune (Management)", "choices" = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel")), PROC_REF(interaction_id), args)
+		if(isnull(_answer_k445))
+			return
+		switch(_answer_k445)
 			if("Cancel")
 				return TRUE
 			if("Spin the Lottery Wheel!")
@@ -466,7 +472,9 @@
 				to_chat(user,span_notice("Public spins has been disabled."))
 
 			if("Reset Lottery")
-				var/confirm = tgui_alert(user, "Are you sure you want to reset Lottery?", "Confirm Lottery Reset", list("Yes", "No"))
+				var/confirm = rerun_prompt(user, "k469", list("message" = "Are you sure you want to reset Lottery?", "title" = "Confirm Lottery Reset", "choices" = list("Yes", "No")), PROC_REF(interaction_id), args)
+				if(isnull(confirm))
+					return
 				if(confirm == "Yes")
 					to_chat(user, span_warning("Lottery has been Reset!"))
 					lottery_entries = 0
@@ -553,7 +561,9 @@
 	if(usr.incapacitated())
 		return
 	if(ishuman(usr) || isrobot(usr))
-		var/new_interval = tgui_input_number(usr, "Put the desired interval (1-1000)", "Set Interval", null, 1000, 1)
+		var/new_interval = rerun_prompt(usr, "k556", list("kind" = "number", "message" = "Put the desired interval (1-1000)", "title" = "Set Interval", "max" = 1000, "min" = 1), PROC_REF(interaction_setinterval), args)
+		if(isnull(new_interval))
+			return
 		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
 			to_chat(usr, span_notice("Invalid interval."))
 			return
@@ -601,7 +611,10 @@
 		return TRUE
 
 	if(ishuman(user) || isrobot(user))
-		switch(tgui_input_list(user,"Choose what to do","SPASM", list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel")))
+		var/_answer_k604 = rerun_prompt(user, "k604", list("kind" = "list", "message" = "Choose what to do", "title" = "SPASM", "choices" = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel")), PROC_REF(interaction_use), args)
+		if(isnull(_answer_k604))
+			return
+		switch(_answer_k604)
 			if("Cancel")
 				return TRUE
 			if("Show selected Prize")
@@ -621,7 +634,10 @@
 					to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
 
 			if("Select Prize")
-				selected_collar = tgui_input_list(user, "Select a prize", "Chose a collar", collar_list)
+				var/_answer_k624 = rerun_prompt(user, "k624", list("kind" = "list", "message" = "Select a prize", "title" = "Chose a collar", "choices" = collar_list), PROC_REF(interaction_use), args)
+				if(isnull(_answer_k624))
+					return
+				selected_collar = _answer_k624
 				if(QDELETED(selected_collar))
 					collar_list -= selected_collar
 					sentientprizes_ckeys_list -= selected_collar?.sentientprizeckey
@@ -636,13 +652,17 @@
 				if(safety_ckey in sentientprizes_ckeys_list)
 					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
 					return TRUE
-				var/confirm = tgui_alert(user, "Are you sure you want to become a sentient prize?", "Confirm Sentient Prize", list("Yes", "No"))
+				var/confirm = rerun_prompt(user, "k639", list("message" = "Are you sure you want to become a sentient prize?", "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No")), PROC_REF(interaction_use), args)
+				if(isnull(confirm))
+					return
 				if(!confirm)
 					return TRUE
 				if(confirm == "No")
 					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
 					return TRUE
-				var/confirmitemtf = tgui_alert(user, "Would you like to allow others to turn you into an item upon claiming you if they choose to?", "Confirm Item TF Preference", list("Yes", "No"))
+				var/confirmitemtf = rerun_prompt(user, "k645", list("message" = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", "title" = "Confirm Item TF Preference", "choices" = list("Yes", "No")), PROC_REF(interaction_use), args)
+				if(isnull(confirmitemtf))
+					return
 				var/allowitemtf = FALSE
 				if(confirmitemtf == "Yes")
 					allowitemtf = TRUE
@@ -714,7 +734,9 @@
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please ask your owner to free you with collar swipe on the SPASM, or contact staff if you need assistance."))
 			return TRUE
 	if(user.name == C.ownername)
-		var/confirm = tgui_alert(user, "Are you sure you want to wipe [C.sentientprizename] entry?", "Confirm Sentient Prize Release", list("Yes", "No"))
+		var/confirm = rerun_prompt(user, "k717", list("message" = "Are you sure you want to wipe [C.sentientprizename] entry?", "title" = "Confirm Sentient Prize Release", "choices" = list("Yes", "No")), PROC_REF(interaction_collar), args)
+		if(isnull(confirm))
+			return
 		if(confirm == "Yes")
 			to_chat(user, span_warning("[C.sentientprizename] collar has been deleted from registry!"))
 			C.icon_state = "casinoslave"
@@ -740,7 +762,10 @@
 
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		switch(tgui_input_list(user,"Choose what to do (Management)","SPASM (Management)", list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel")))
+		var/_answer_k743 = rerun_prompt(user, "k743", list("kind" = "list", "message" = "Choose what to do (Management)", "title" = "SPASM (Management)", "choices" = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel")), PROC_REF(interaction_id), args)
+		if(isnull(_answer_k743))
+			return
+		switch(_answer_k743)
 			if("Cancel")
 				return TRUE
 
@@ -767,7 +792,9 @@
 					selected_collar = null
 					return TRUE
 				var/safety_ckey = selected_collar.sentientprizeckey
-				var/confirm = tgui_alert(user, "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", "Confirm Sentient Prize", list("Yes", "No"))
+				var/confirm = rerun_prompt(user, "k770", list("message" = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No")), PROC_REF(interaction_id), args)
+				if(isnull(confirm))
+					return
 				if(confirm == "Yes")
 					if(safety_ckey == selected_collar.sentientprizeckey)
 						to_chat(user, span_warning("[selected_collar.sentientprizename] collar has been deleted from registry!"))
@@ -787,34 +814,44 @@
 				setprice(user)
 	return TRUE
 
+/// The prize customises the item they become (each question optional), then is transformed.
 /obj/machinery/casinosentientprize_handler/proc/do_item_tf(mob/living/sentient_prize, target_item_name)
 	var/item_type = GLOB.item_tf_options[target_item_name]
-	var/obj/item/newitem = new item_type(null) // Starts off in nullspace while we customize!
-	var/item_color = newitem.color
+	if(!ispath(item_type))
+		return
+	var/obj/item/item_path = item_type
+	var/item_label = initial(item_path.name)
+	om_prompt_sequence(src, sentient_prize, list(
+		list("key" = "name", "kind" = "text", "message" = "Choose your item name for \the [item_label] (Leave blank or cancel to use its default name)", "title" = "TF Item Name", "optional" = TRUE),
+		list("key" = "desc", "kind" = "text", "message" = "Choose your item description for \the [item_label] (Leave blank or cancel to use its default description)", "title" = "TF Item Description", "optional" = TRUE),
+		list("key" = "recolor", "message" = "Do you want to customize your item's color?", "title" = "Item TF Color", "choices" = list("Yes", "No"), "optional" = TRUE),
+		PROC_REF(item_tf_ask_color),
+	), PROC_REF(item_tf_customised), list("data" = list("item_type" = item_type), "on_cancel" = PROC_REF(item_tf_uncustomised)))
 
-	var/item_name = tgui_input_text(sentient_prize, "Choose your item name for \the [newitem] (Leave blank or cancel to use its default name)", "TF Item Name")
+/obj/machinery/casinosentientprize_handler/proc/item_tf_ask_color(mob/living/sentient_prize, datum/om/prompt/P)
+	if(P.get("recolor") != "Yes")
+		return null
+	var/obj/item/item_path = P.get("item_type")
+	return list("key" = "color", "kind" = "color", "message" = "Choose the color for your item.", "title" = "Item TF Color", "default" = initial(item_path.color), "optional" = TRUE)
 
-	var/item_desc = tgui_input_text(sentient_prize, "Choose your item description for \the [newitem] (Leave blank or cancel to use its default description)", "TF Item Description")
+/// A closed question still transforms them, with the defaults.
+/obj/machinery/casinosentientprize_handler/proc/item_tf_uncustomised(mob/living/sentient_prize, datum/om/prompt/P)
+	item_tf_customised(sentient_prize, P)
 
-	var/choice_color = tgui_alert(sentient_prize, "Do you want to customize your item's color?", "Item TF Color", list("Yes", "No"))
-	if(choice_color == "Yes")
-		item_color = tgui_color_picker(sentient_prize, "Choose the color for \the [newitem].", "Item TF Color", newitem.color)
-
-	// Sanity check in case the item got garbage collected or something while customizing
-	if(!newitem)
-		newitem = new item_type(get_turf(sentient_prize))
-
-	// We apply the customization options afterward for the same reason as the sanity check.
+/obj/machinery/casinosentientprize_handler/proc/item_tf_customised(mob/living/sentient_prize, datum/om/prompt/P)
+	if(QDELETED(sentient_prize) || sentient_prize.stat == DEAD)
+		return
+	var/item_type = P.get("item_type")
+	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
+	var/item_name = P.get("name")
+	var/item_desc = P.get("desc")
 	if(LAZYLEN(item_name))
 		newitem.name = item_name
 	if(LAZYLEN(item_desc))
 		newitem.desc = item_desc
-	newitem.color = item_color
-
-	// Once that's all done, TF the prize up!
-	newitem.forceMove(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
+	if(P.get("color"))
+		newitem.color = P.get("color")
 	sentient_prize.tf_into(newitem, TRUE, item_name)
-	return newitem
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)
 	// Snapshot the shared instance var: it can be reassigned/nulled by another user's
@@ -841,14 +878,19 @@
 	var/list/tf_choice = null
 	var/declined_tf = FALSE
 	if(buystate == "buy" && collar.sentientprizeitemtf)
-		var/confirm_item_tf_claim = tgui_alert(user, "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", "Confirm Prize Item Transformation", list("Yes", "No"))
+		var/confirm_item_tf_claim = rerun_prompt(user, "k854", list("message" = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", "title" = "Confirm Prize Item Transformation", "choices" = list("Yes", "No")), PROC_REF(insert_chip), args)
+		if(isnull(confirm_item_tf_claim))
+			return
 		// Re-validate the snapshotted collar after the sleeping dialog: it may have been
 		// claimed/nulled in the meantime. No charge taken yet, so we just bail.
 		if(QDELETED(collar) || collar.ownername)
 			to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
 			return
 		if(confirm_item_tf_claim == "Yes")
-			tf_choice = tgui_input_list(user, "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", "Choose Sentient Prize Item", GLOB.item_tf_options)
+			var/_answer_k861 = rerun_prompt(user, "k861", list("kind" = "list", "message" = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", "title" = "Choose Sentient Prize Item", "choices" = GLOB.item_tf_options, "cancel_answer" = ""), PROC_REF(insert_chip), args)
+			if(isnull(_answer_k861))
+				return
+			tf_choice = _answer_k861
 			if(QDELETED(collar) || collar.ownername)
 				to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
 				return
@@ -902,7 +944,9 @@
 	if(user.incapacitated())
 		return
 	if(ishuman(user) || isrobot(user))
-		var/new_price = tgui_input_number(user, "Select the desired price (1-1000)", "Set Price", null, 1000, 1)
+		var/new_price = rerun_prompt(user, "k915", list("kind" = "number", "message" = "Select the desired price (1-1000)", "title" = "Set Price", "max" = 1000, "min" = 1), PROC_REF(setprice), args)
+		if(isnull(new_price))
+			return
 		if(!isnum(new_price) || new_price < 1 || new_price > 1000)
 			to_chat(user,span_notice("Invalid price."))
 			return
