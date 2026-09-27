@@ -229,6 +229,16 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	cl = null
 	return ..()
 
+/// The first base-turf deletion asks once; the answer does that deletion.
+/obj/effect/bmode/buildholder/proc/base_turf_acknowledged(mob/user, warning, datum/om/prompt/ask)
+	var/turf/T = ask.get("turf")
+	if(warning != "Yes")
+		return
+	warned = 1
+	log_admin("[key_name(user)] has acknowledged the deletion of [T] and turned it into base turf. This could have resulted in spacing.")
+	T.ChangeTurf(get_base_turf_by_area(T)) //Defaults to Z if area does not have a special base turf.
+	T.flags |= ADMIN_SPAWNED
+
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
 	LAZYADD(selected_mobs, unit)
 	C.images += unit.selected_image
@@ -277,71 +287,29 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 				return 1
 			if(BUILDMODE_ADVANCED)
-				objholder = get_path_from_partial_text()
+				ask_path(usr, "objholder")
 
 			if(BUILDMODE_EDIT)
-				var/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
-
-				master.buildmode.varholder = tgui_input_text(usr,"Enter variable name:" ,"Name", "name")
-				if((master.buildmode.varholder in locked) && !check_rights(R_DEBUG,0))
-					return 1
-				var/thetype = tgui_input_list(usr,"Select variable type:", "Type", list("text","number","mob-reference","obj-reference","turf-reference"))
-				if(!thetype) return 1
-				switch(thetype)
-					if("text")
-						master.buildmode.valueholder = tgui_input_text(usr,"Enter variable value:" ,"Value", "value")
-					if("number")
-						master.buildmode.valueholder = tgui_input_number(usr,"Enter variable value:" ,"Value", 123)
-					if("mob-reference")
-						master.buildmode.valueholder = tgui_input_list(usr,"Enter variable value:", "Value", REGISTRY_MEMBERS(REGISTRY_MOBS))
-					if("obj-reference")
-						master.buildmode.valueholder = tgui_input_list(usr,"Enter variable value:", "Value", world)
-					if("turf-reference")
-						master.buildmode.valueholder = tgui_input_list(usr,"Enter variable value:", "Value", world)
-				log_admin("BUILDMODE: [key_name(usr)] set var-edit: [valueholder].")
+				om_prompt_sequence(src, usr, list(
+					list("key" = "var", "kind" = "text", "message" = "Enter variable name:", "title" = "Name", "default" = "name"),
+					list("key" = "type", "kind" = "list", "message" = "Select variable type:", "title" = "Type", "choices" = list("text","number","mob-reference","obj-reference","turf-reference")),
+					PROC_REF(ask_edit_value),
+				), PROC_REF(edit_answered), list("requires" = PROMPT_ADMIN(R_BUILDMODE)))
 
 			if(BUILDMODE_ROOM)
-				switch(tgui_alert(usr, "Would you like to generate a new area as well?","Room Builder", list("No", "Yes")))
-					if(null)
-						return
-					if("No")
-						area_enabled = 0
-					if("Yes")
-						area_enabled = 1
-						area_name = tgui_input_text(usr, "New area name", "Room Buildmode", max_length = MAX_NAME_LEN)
-						if(isnull(area_name))
-							to_chat(usr, span_notice("You must enter a non-null name."))
-							area_enabled = 0
-							return
-						area_name = sanitize(area_name,MAX_NAME_LEN)
-						log_admin("BUILDMODE ROOM: [key_name(usr)] area: [area_name].")
-				var/choice = tgui_alert(usr, "Would you like to change the floor or wall holders?","Room Builder", list("Floor", "Wall"))
-				switch(choice)
-					if("Floor")
-						floor_holder = get_path_from_partial_text(/turf/simulated/floor/plating)
-					if("Wall")
-						wall_holder = get_path_from_partial_text(/turf/simulated/wall)
+				om_prompt_sequence(src, usr, list(
+					list("key" = "area", "message" = "Would you like to generate a new area as well?", "title" = "Room Builder", "choices" = list("No", "Yes")),
+					PROC_REF(ask_area_name),
+					list("key" = "holder", "message" = "Would you like to change the floor or wall holders?", "title" = "Room Builder", "choices" = list("Floor", "Wall"), "optional" = TRUE),
+				), PROC_REF(room_answered), list("requires" = PROMPT_ADMIN(R_BUILDMODE)))
 
 			if(BUILDMODE_LIGHTS)
-				var/choice = tgui_alert(usr, "Change the new light range, power, or color?", "Light Maker", list("Range", "Power", "Color"))
-				switch(choice)
-					if("Range")
-						var/input = tgui_input_number(usr, "New light range.","Light Maker",3)
-						if(input)
-							new_light_range = input
-							log_admin("BUILDMODE: [key_name(usr)] set light r to [new_light_range].")
-					if("Power")
-						var/input = tgui_input_number(usr, "New light power.","Light Maker",3)
-						if(input)
-							new_light_intensity = input
-							log_admin("BUILDMODE: [key_name(usr)] set light i to [new_light_intensity].")
-					if("Color")
-						var/input = tgui_color_picker(usr, "New light color.","Light Maker",new_light_color)
-						if(input)
-							new_light_color = input
-							log_admin("BUILDMODE: [key_name(usr)] set light c to [new_light_color].")
+				om_prompt_sequence(src, usr, list(
+					list("key" = "what", "message" = "Change the new light range, power, or color?", "title" = "Light Maker", "choices" = list("Range", "Power", "Color")),
+					PROC_REF(ask_light_value),
+				), PROC_REF(lights_answered), list("requires" = PROMPT_ADMIN(R_BUILDMODE)))
 			if(BUILDMODE_DROP)
-				objholder = get_path_from_partial_text()
+				ask_path(usr, "objholder")
 	return 1
 
 /proc/build_click(mob/user, buildmode, params, obj/object)
@@ -380,12 +348,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				else if(istype(object,/turf/simulated/floor))
 					var/turf/T = object
 					if(!holder.warned)
-						var/warning = tgui_alert(user, "Are you -sure- you want to delete this turf and make it the base turf for this Z level?", "GRIEF ALERT", list("No", "Yes"))
-						if(warning == "Yes")
-							holder.warned = 1
-							log_admin("[key_name(usr)] has acknowledged the deletion of [T] and turned it into base turf. This could have resulted in spacing.")
-						else
-							return
+						om_prompt(holder, user, list("message" = "Are you -sure- you want to delete this turf and make it the base turf for this Z level?", "title" = "GRIEF ALERT", "choices" = list("No", "Yes"), "requires" = PROMPT_ADMIN(R_BUILDMODE), "data" = list("turf" = T)), TYPE_PROC_REF(/obj/effect/bmode/buildholder, base_turf_acknowledged))
+						return
 					T.ChangeTurf(get_base_turf_by_area(T)) //Defaults to Z if area does not have a special base turf.
 					T.flags |= ADMIN_SPAWNED
 					return
@@ -771,32 +735,94 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			log_admin("[key_name(usr)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
 			return
 
-/obj/effect/bmode/buildmode/proc/get_path_from_partial_text(default_path)
-	var/desired_path = tgui_input_text(usr, "Enter full or partial typepath.","Typepath","[default_path]")
+/obj/effect/bmode/buildmode/proc/ask_edit_value(mob/user, datum/om/prompt/ask)
+	var/static/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
+	if((ask.get("var") in locked) && !check_rights_for(user.client, R_DEBUG))
+		return PROMPT_STOP
+	switch(ask.get("type"))
+		if("text")
+			return list("key" = "value", "kind" = "text", "message" = "Enter variable value:", "title" = "Value", "default" = "value")
+		if("number")
+			return list("key" = "value", "kind" = "number", "message" = "Enter variable value:", "title" = "Value", "default" = 123)
+		if("mob-reference")
+			return list("key" = "value", "kind" = "list", "message" = "Enter variable value:", "title" = "Value", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if("obj-reference", "turf-reference")
+			return list("key" = "value", "kind" = "list", "message" = "Enter variable value:", "title" = "Value", "choices" = world)
 
-	if(!desired_path) // If you don't give it anything it builds a list of every possible thing in the game and crashes your client.
-		return // And the main way for it to do that is to push the cancel button, which should just do nothing. :U
+/obj/effect/bmode/buildmode/proc/edit_answered(mob/user, datum/om/prompt/ask)
+	master.buildmode.varholder = ask.get("var")
+	master.buildmode.valueholder = ask.get("value")
+	log_admin("BUILDMODE: [key_name(user)] set var-edit: [valueholder].")
 
-	var/list/types = typesof(/atom)
-	var/list/matches = list()
+/obj/effect/bmode/buildmode/proc/ask_area_name(mob/user, datum/om/prompt/ask)
+	if(ask.get("area") == "Yes")
+		return list("key" = "area_name", "kind" = "text", "message" = "New area name", "title" = "Room Buildmode", "max_length" = MAX_NAME_LEN)
 
-	for(var/path in types)
-		if(findtext("[path]", desired_path))
-			matches += path
+/obj/effect/bmode/buildmode/proc/room_answered(mob/user, datum/om/prompt/ask)
+	area_enabled = 0
+	if(ask.get("area") == "Yes")
+		area_enabled = 1
+		area_name = sanitize(ask.get("area_name"), MAX_NAME_LEN)
+		log_admin("BUILDMODE ROOM: [key_name(user)] area: [area_name].")
+	switch(ask.get("holder"))
+		if("Floor")
+			ask_path(user, "floor_holder", /turf/simulated/floor/plating)
+		if("Wall")
+			ask_path(user, "wall_holder", /turf/simulated/wall)
 
-	if(matches.len==0)
-		tgui_alert_async(usr, "No results found.  Sorry.")
+/obj/effect/bmode/buildmode/proc/ask_light_value(mob/user, datum/om/prompt/ask)
+	switch(ask.get("what"))
+		if("Range")
+			return list("key" = "value", "kind" = "number", "message" = "New light range.", "title" = "Light Maker", "default" = 3)
+		if("Power")
+			return list("key" = "value", "kind" = "number", "message" = "New light power.", "title" = "Light Maker", "default" = 3)
+		if("Color")
+			return list("key" = "value", "kind" = "color", "message" = "New light color.", "title" = "Light Maker", "default" = new_light_color)
+
+/obj/effect/bmode/buildmode/proc/lights_answered(mob/user, datum/om/prompt/ask)
+	var/input = ask.get("value")
+	if(!input)
 		return
+	switch(ask.get("what"))
+		if("Range")
+			new_light_range = input
+			log_admin("BUILDMODE: [key_name(user)] set light r to [new_light_range].")
+		if("Power")
+			new_light_intensity = input
+			log_admin("BUILDMODE: [key_name(user)] set light i to [new_light_intensity].")
+		if("Color")
+			new_light_color = input
+			log_admin("BUILDMODE: [key_name(user)] set light c to [new_light_color].")
 
-	var/result = null
+/// The atom paths containing `text`.
+/obj/effect/bmode/buildmode/proc/paths_matching(text)
+	var/list/matches = list()
+	for(var/path in typesof(/atom))
+		if(findtext("[path]", text))
+			matches += path
+	return matches
 
-	if(matches.len==1)
-		result = matches[1]
-	else
-		result = tgui_input_list(usr, "Select an atom type", "Spawn Atom", matches, strict_modern = TRUE)
-		if(result)
-			log_admin("BUILDMODE/ITEM GENERATION: [key_name(usr)] selected [result] to be spawned.")
-	return result
+/// Asks for a typepath (typed in part, then picked from the matches) and stores it in `var_name`.
+/obj/effect/bmode/buildmode/proc/ask_path(mob/user, var_name, default_path)
+	om_prompt_sequence(src, user, list(
+		list("key" = "text", "kind" = "text", "message" = "Enter full or partial typepath.", "title" = "Typepath", "default" = "[default_path]"),
+		PROC_REF(ask_path_match),
+	), PROC_REF(path_answered), list("requires" = PROMPT_ADMIN(R_BUILDMODE), "data" = list("var" = var_name)))
+
+/obj/effect/bmode/buildmode/proc/ask_path_match(mob/user, datum/om/prompt/ask)
+	var/list/matches = paths_matching(ask.get("text"))
+	if(!matches.len)
+		tgui_alert_async(user, "No results found.  Sorry.")
+		return PROMPT_STOP
+	if(matches.len == 1)
+		ask.put("path", matches[1])
+		return null
+	return list("key" = "path", "kind" = "list", "message" = "Select an atom type", "title" = "Spawn Atom", "choices" = matches)
+
+/obj/effect/bmode/buildmode/proc/path_answered(mob/user, datum/om/prompt/ask)
+	var/result = ask.get("path")
+	log_admin("BUILDMODE/ITEM GENERATION: [key_name(user)] selected [result] to be spawned.")
+	vars[ask.get("var")] = result
 
 /obj/effect/bmode/buildmode/proc/make_rectangle(turf/A, turf/B, turf/wall_type, turf/floor_type, area_enabled, area_name)
 	if(!A || !B) // No coords

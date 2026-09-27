@@ -12,12 +12,15 @@
 								SMITE_SHADEKIN_ATTACK,SMITE_SHADEKIN_NOMF,SMITE_AD_SPAM,SMITE_REDSPACE_ABDUCT,SMITE_AUTOSAVE,SMITE_AUTOSAVE_WIDE,SMITE_SPICEREQUEST,SMITE_PEPPERNADE,SMITE_TERROR,
 								SMITE_PIE, SMITE_SPICE, SMITE_HOTDOG) //pie, spicy air and hot dog
 
-	var/smite_choice = tgui_input_list(usr, "Select the type of SMITE for [target]","SMITE Type Choice", smite_types)
+	var/smite_choice = client_prompt("a1", list("kind" = "list", "message" = "Select the type of SMITE for [target]", "title" = "SMITE Type Choice", "choices" = smite_types), PROC_REF(smite), args, R_FUN)
+	if(isnull(smite_choice))
+		return
 	if(!smite_choice)
 		return
 
-	log_and_message_admins("has used SMITE ([smite_choice]) on [key_name(target)].", src)
-	feedback_add_details("admin_verb","SMITE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	if(length(om_answers) <= 1) // Once: later questions of a smite re-run this.
+		log_and_message_admins("has used SMITE ([smite_choice]) on [key_name(target)].", src)
+		feedback_add_details("admin_verb","SMITE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 	switch(smite_choice)
 		if(SMITE_BREAKLEGS)
@@ -98,14 +101,18 @@
 				"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 				"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
 				"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-			var/kin_type = tgui_input_list(usr, "Select the type of shadekin for [target] nomf","Shadekin Type Choice", kin_types)
+			var/kin_type = client_prompt("a2", list("kind" = "list", "message" = "Select the type of shadekin for [target] nomf", "title" = "Shadekin Type Choice", "choices" = kin_types), PROC_REF(smite), args, R_FUN)
+			if(isnull(kin_type))
+				return
 			if(!kin_type || !target)
 				return
 
 
 			kin_type = kin_types[kin_type]
 
-			var/myself = tgui_alert(usr, "Control the shadekin yourself or delete pred and prey after?","Control Shadekin?",list("Control","Cancel","Delete"))
+			var/myself = client_prompt("a3", list("message" = "Control the shadekin yourself or delete pred and prey after?", "title" = "Control Shadekin?", "choices" = list("Control","Cancel","Delete")), PROC_REF(smite), args, R_FUN)
+			if(isnull(myself))
+				return
 			if(!myself || myself == "Cancel" || !target)
 				return
 

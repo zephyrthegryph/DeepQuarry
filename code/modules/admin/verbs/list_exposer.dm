@@ -2,7 +2,7 @@
 
 /datum/admins/proc/list_bombers()
 	if(!SSticker.HasRoundStarted())
-		tgui_alert(usr, "The game hasn't started yet!")
+		tgui_alert_async(usr, "The game hasn't started yet!")
 		return
 	// structured TGUI AdminReport.
 	var/list/lines = list()
@@ -12,7 +12,7 @@
 
 /datum/admins/proc/list_signalers()
 	if(!SSticker.HasRoundStarted())
-		tgui_alert(usr, "The game hasn't started yet!")
+		tgui_alert_async(usr, "The game hasn't started yet!")
 		return
 	// structured TGUI AdminReport.
 	var/list/lines = list()
@@ -22,7 +22,7 @@
 
 /datum/admins/proc/list_law_changes()
 	if(!SSticker.HasRoundStarted())
-		tgui_alert(usr, "The game hasn't started yet!")
+		tgui_alert_async(usr, "The game hasn't started yet!")
 		return
 	// structured TGUI AdminReport.
 	var/list/lines = list()
@@ -59,7 +59,7 @@
 
 /datum/admins/proc/show_manifest()
 	if(!SSticker.HasRoundStarted())
-		tgui_alert(usr, "The game hasn't started yet!")
+		tgui_alert_async(usr, "The game hasn't started yet!")
 		return
 	// structured TGUI AdminReport; manifest body stays as
 	// pre-formatted HTML (per-department tables formatted by data_core).

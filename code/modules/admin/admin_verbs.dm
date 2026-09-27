@@ -31,7 +31,10 @@ ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.
 ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the option to return at any time.", ADMIN_CATEGORY_GAME)
 	var/build_mode
 	if(user.buildmode)
-		build_mode = tgui_alert(user, "You appear to be currently in buildmode. Do you want to re-enter buildmode after aghosting?", "Buildmode", list("Yes", "No"))
+		var/_answer_a1 = verb_prompt(user, "a1", list("message" = "You appear to be currently in buildmode. Do you want to re-enter buildmode after aghosting?", "title" = "Buildmode", "choices" = list("Yes", "No")), args)
+		if(isnull(_answer_a1))
+			return
+		build_mode = _answer_a1
 		if(build_mode != "Yes")
 			to_chat(user, "Will not re-enter buildmode after switch.")
 
@@ -167,7 +170,10 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 		if(isnewplayer(user.mob))
 			user.mob.name = capitalize(user.ckey)
 	else
-		var/new_key = ckeyEx(tgui_input_text(user, "Enter your desired display name.", "Fake Key", user.key))
+		var/_answer_a2 = verb_prompt(user, "a2", list("kind" = "text", "message" = "Enter your desired display name.", "title" = "Fake Key", "default" = user.key), args)
+		if(isnull(_answer_a2))
+			return
+		var/new_key = ckeyEx(_answer_a2)
 		if(!new_key)
 			return
 		if(length(new_key) >= 26)
@@ -224,7 +230,9 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strength at your location.", ADMIN_CATEGORY_FUN_DO_NOT) // Some admin dickery that can probably be done better -- TLE
 	var/turf/epicenter = user.mob.loc
 	var/list/choices = list("Small Bomb", "Medium Bomb", "Big Bomb", "Maxcap Bomb", "SM Blast", "Custom Bomb", "Cancel")
-	var/choice = tgui_input_list(user, "What size explosion would you like to produce?", "Explosion Choice", choices)
+	var/choice = verb_prompt(user, "a3", list("kind" = "list", "message" = "What size explosion would you like to produce?", "title" = "Explosion Choice", "choices" = choices), args)
+	if(isnull(choice))
+		return
 	switch(choice)
 		if(null)
 			return FALSE
@@ -241,10 +249,18 @@ ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strengt
 		if("SM Blast")
 			explosion(epicenter, 8, 16, 24, 32)
 		if("Custom Bomb")
-			var/devastation_range = tgui_input_number(user, "Devastation range (in tiles):")
-			var/heavy_impact_range = tgui_input_number(user, "Heavy impact range (in tiles):")
-			var/light_impact_range = tgui_input_number(user, "Light impact range (in tiles):")
-			var/flash_range = tgui_input_number(user, "Flash range (in tiles):")
+			var/devastation_range = verb_prompt(user, "a4", list("kind" = "number", "message" = "Devastation range (in tiles):"), args)
+			if(isnull(devastation_range))
+				return
+			var/heavy_impact_range = verb_prompt(user, "a5", list("kind" = "number", "message" = "Heavy impact range (in tiles):"), args)
+			if(isnull(heavy_impact_range))
+				return
+			var/light_impact_range = verb_prompt(user, "a6", list("kind" = "number", "message" = "Light impact range (in tiles):"), args)
+			if(isnull(light_impact_range))
+				return
+			var/flash_range = verb_prompt(user, "a7", list("kind" = "number", "message" = "Flash range (in tiles):"), args)
+			if(isnull(flash_range))
+				return
 			explosion(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 	message_admins(span_blue("[user.ckey] creating an admin explosion at [epicenter.loc]."))
 	feedback_add_details("admin_verb","DB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -256,10 +272,14 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 
 	var/list/possible_modifiers = subtypesof(/datum/modifier)
 
-	var/new_modifier_type = tgui_input_list(user, "What modifier should we add to [living_target]?", "Modifier Type", possible_modifiers)
+	var/new_modifier_type = verb_prompt(user, "a8", list("kind" = "list", "message" = "What modifier should we add to [living_target]?", "title" = "Modifier Type", "choices" = possible_modifiers), args)
+	if(isnull(new_modifier_type))
+		return
 	if(!new_modifier_type)
 		return
-	var/duration = tgui_input_number(user, "How long should the new modifier last, in seconds.  To make it last forever, write '0'.", "Modifier Duration")
+	var/duration = verb_prompt(user, "a9", list("kind" = "number", "message" = "How long should the new modifier last, in seconds.  To make it last forever, write '0'.", "title" = "Modifier Duration"), args)
+	if(isnull(duration))
+		return
 	if(duration == 0)
 		duration = null
 	else
@@ -272,7 +292,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(make_sound, R_FUN, "Make Sound", "Display a message 
 	if(!target_object)
 		return
 
-	var/message = tgui_input_text(user, "What do you want the message to be?", "Make Sound", "", MAX_MESSAGE_LEN)
+	var/message = verb_prompt(user, "a10", list("kind" = "text", "message" = "What do you want the message to be?", "title" = "Make Sound", "max_length" = MAX_MESSAGE_LEN), args)
+	if(isnull(message))
+		return
 	if(!message)
 		return
 	target_object.audible_message(message)
@@ -323,18 +345,25 @@ ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the c
 	user.holder.output_ai_laws()
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/silicon_target = tgui_input_list(user, "Select silicon.", "Rename Silicon.", REGISTRY_MEMBERS(REGISTRY_SILICONS))
+	var/mob/living/silicon/silicon_target = verb_prompt(user, "a11", list("kind" = "list", "message" = "Select silicon.", "title" = "Rename Silicon.", "choices" = REGISTRY_MEMBERS(REGISTRY_SILICONS)), args)
+	if(isnull(silicon_target))
+		return
 	if(!silicon_target)
 		return
 
-	var/new_name = sanitizeSafe(tgui_input_text(user, "Enter new name. Leave blank or as is to cancel.", "[silicon_target.real_name] - Enter new silicon name", silicon_target.real_name, encode = FALSE))
+	var/_answer_a12 = verb_prompt(user, "a12", list("kind" = "text", "message" = "Enter new name. Leave blank or as is to cancel.", "title" = "[silicon_target.real_name] - Enter new silicon name", "default" = silicon_target.real_name, "encode" = FALSE), args)
+	if(isnull(_answer_a12))
+		return
+	var/new_name = sanitizeSafe(_answer_a12)
 	if(new_name && new_name != silicon_target.real_name)
 		log_and_message_admins("has renamed the silicon '[silicon_target.real_name]' to '[new_name]'")
 		silicon_target.SetName(new_name)
 	feedback_add_details("admin_verb","RAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows to modify silicon laws.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/selected_silicon = tgui_input_list(user, "Select silicon.", "Manage Silicon Laws", REGISTRY_MEMBERS(REGISTRY_SILICONS))
+	var/mob/living/silicon/selected_silicon = verb_prompt(user, "a13", list("kind" = "list", "message" = "Select silicon.", "title" = "Manage Silicon Laws", "choices" = REGISTRY_MEMBERS(REGISTRY_SILICONS)), args)
+	if(isnull(selected_silicon))
+		return
 	if(!selected_silicon)
 		return
 
@@ -344,10 +373,15 @@ ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows 
 	feedback_add_details("admin_verb","MSL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets the station security level.", ADMIN_CATEGORY_EVENTS)
-	var/sec_level = tgui_input_list(user, "It's currently code [get_security_level()].", "Select Security Level", (list("green","yellow","violet","orange","blue","red","delta")-get_security_level()))
+	var/sec_level = verb_prompt(user, "a14", list("kind" = "list", "message" = "It's currently code [get_security_level()].", "title" = "Select Security Level", "choices" = (list("green","yellow","violet","orange","blue","red","delta")-get_security_level())), args)
+	if(isnull(sec_level))
+		return
 	if(!sec_level)
 		return
-	if(tgui_alert(user, "Switch from code [get_security_level()] to code [sec_level]?","Change security level?",list("Yes","No")) == "Yes")
+	var/_answer_a15 = verb_prompt(user, "a15", list("message" = "Switch from code [get_security_level()] to code [sec_level]?", "title" = "Change security level?", "choices" = list("Yes","No")), args)
+	if(isnull(_answer_a15))
+		return
+	if(_answer_a15 == "Yes")
 		set_security_level(sec_level)
 		log_admin("[key_name(user)] changed the security level to code [sec_level].")
 
@@ -365,7 +399,9 @@ ADMIN_VERB(free_slot, R_ADMIN|R_FUN|R_EVENT, "Free Job Slot", "Frees another job
 	if(!jobs.len)
 		to_chat(usr, "There are no fully staffed jobs.")
 		return
-	var/job = tgui_input_list(usr, "Please select job slot to free", "Free job slot", jobs)
+	var/job = verb_prompt(usr, "a16", list("kind" = "list", "message" = "Please select job slot to free", "title" = "Free job slot", "choices" = jobs), args)
+	if(isnull(job))
+		return
 	if(job)
 		SSjob.free_role(job)
 		message_admins("A job slot for [job] has been opened by [key_name_admin(usr)]")
@@ -384,11 +420,16 @@ ADMIN_VERB(toggledrones, R_ADMIN|R_FUN|R_EVENT, "Toggle maintenance drones", "To
 	message_admins("Admin [key_name_admin(user)] has [CONFIG_GET(flag/allow_drone_spawn) ? "en" : "dis"]abled maintenance drones.")
 
 ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/mob/living/living_target = tgui_input_list(user, "Who to tell to man up and deal with it.", "Man up", REGISTRY_MEMBERS(REGISTRY_MOBS))
+	var/mob/living/living_target = verb_prompt(user, "a17", list("kind" = "list", "message" = "Who to tell to man up and deal with it.", "title" = "Man up", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)), args)
+	if(isnull(living_target))
+		return
 	if(!living_target)
 		return
 
-	if(tgui_alert(user, "Are you sure you want to tell them to man up?", "Confirmation", list("Deal with it","No")) != "Deal with it")
+	var/_answer_a18 = verb_prompt(user, "a18", list("message" = "Are you sure you want to tell them to man up?", "title" = "Confirmation", "choices" = list("Deal with it","No")), args)
+	if(isnull(_answer_a18))
+		return
+	if(_answer_a18 != "Deal with it")
 		return
 
 	to_chat(living_target, span_filter_system(span_boldnotice(span_large("Man up and deal with it."))))
@@ -398,7 +439,10 @@ ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with i
 	message_admins(span_blue("[key_name_admin(user)] told [key_name(living_target)] to man up and deal with it."), 1)
 
 ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	if(tgui_alert(user, "Are you sure you want to tell the whole server up?","Confirmation",list("Deal with it","No")) != "Deal with it")
+	var/_answer_a19 = verb_prompt(user, "a19", list("message" = "Are you sure you want to tell the whole server up?", "title" = "Confirmation", "choices" = list("Deal with it","No")), args)
+	if(isnull(_answer_a19))
+		return
+	if(_answer_a19 != "Deal with it")
 		return
 
 	for (var/mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -408,7 +452,9 @@ ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man
 	log_and_message_admins("told everyone to man up and deal with it.", user)
 
 ADMIN_VERB(give_spell, R_FUN, "Give Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/spell_recipient)
-	var/datum/spell/S = tgui_input_list(user, "Choose the spell to give to that guy", "ABRAKADABRA", typesof(/datum/spell))
+	var/datum/spell/S = verb_prompt(user, "a20", list("kind" = "list", "message" = "Choose the spell to give to that guy", "title" = "ABRAKADABRA", "choices" = typesof(/datum/spell)), args)
+	if(isnull(S))
+		return
 	if(!S)
 		return
 	spell_recipient.spell_list += new S
@@ -424,7 +470,9 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	if(!length(target_spell_list))
 		return
 
-	var/chosen_spell = tgui_input_list(user, "Choose the spell to remove from [removal_target]", "ABRAKADABRA", sortList(target_spell_list))
+	var/chosen_spell = verb_prompt(user, "a21", list("kind" = "list", "message" = "Choose the spell to remove from [removal_target]", "title" = "ABRAKADABRA", "choices" = sortList(target_spell_list)), args)
+	if(isnull(chosen_spell))
+		return
 	if(isnull(chosen_spell))
 		return
 	var/datum/spell/to_remove = target_spell_list[chosen_spell]
@@ -441,7 +489,9 @@ ADMIN_VERB(debug_statpanel, R_DEBUG, "Debug Stat Panel", "Toggles local debug of
 	user.stat_panel.send_message("create_debug")
 
 ADMIN_VERB(spawn_reagent, R_DEBUG|R_EVENT, "Spawn Reagent", "Spawn any reagent.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/datum/reagent/new_reagent = tgui_input_list(user, "Select a reagent to spawn", "Reagent Spawner", subtypesof(/datum/reagent))
+	var/datum/reagent/new_reagent = verb_prompt(user, "a22", list("kind" = "list", "message" = "Select a reagent to spawn", "title" = "Reagent Spawner", "choices" = subtypesof(/datum/reagent)), args)
+	if(isnull(new_reagent))
+		return
 	if(!new_reagent)
 		return
 
@@ -459,7 +509,9 @@ ADMIN_VERB(add_hidden_area, R_ADMIN|R_FUN, "Add Ghostsight Block Area", "Blocks 
 		if(!current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
 			blocked_areas[current_area.name] = current_area
 	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
-	var/selected_area = tgui_input_list(user, "Pick an area to hide from ghost", "Select Area to hide", blocked_areas)
+	var/selected_area = verb_prompt(user, "a23", list("kind" = "list", "message" = "Pick an area to hide from ghost", "title" = "Select Area to hide", "choices" = blocked_areas), args)
+	if(isnull(selected_area))
+		return
 	var/area/target_area = blocked_areas[selected_area]
 	if(!target_area)
 		return
@@ -473,7 +525,9 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 		if(current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
 			blocked_areas[current_area.name] = current_area
 	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
-	var/selected_area = tgui_input_list(user, "Pick a from ghost hidden area to let them see it again", "Select Hidden Area", blocked_areas)
+	var/selected_area = verb_prompt(user, "a24", list("kind" = "list", "message" = "Pick a from ghost hidden area to let them see it again", "title" = "Select Hidden Area", "choices" = blocked_areas), args)
+	if(isnull(selected_area))
+		return
 	var/area/target_area = blocked_areas[selected_area]
 	if(!target_area)
 		return
@@ -491,7 +545,10 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 
 	var/datum/marked_datum = user.holder.marked_datum
 	if(marked_datum)
-		input = tgui_alert(user, "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", "Orbit", list("Center", "Orbiter", "Neither"))
+		var/_answer_a25 = verb_prompt(user, "a25", list("message" = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", "title" = "Orbit", "choices" = list("Center", "Orbiter", "Neither")), args)
+		if(isnull(_answer_a25))
+			return
+		input = _answer_a25
 		switch(input)
 			if("Center")
 				center = marked_datum
@@ -505,10 +562,16 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		if(isobj(T))
 			possible_things |= T
 	if(!center)
-		center = tgui_input_list(user, "What should act as the center of the orbit?", "Center", possible_things)
+		var/_answer_a26 = verb_prompt(user, "a26", list("kind" = "list", "message" = "What should act as the center of the orbit?", "title" = "Center", "choices" = possible_things), args)
+		if(isnull(_answer_a26))
+			return
+		center = _answer_a26
 		possible_things -= center
 	if(!orbiter)
-		orbiter = tgui_input_list(user, "What should act as the orbiter of the orbit?", "Orbiter", possible_things)
+		var/_answer_a27 = verb_prompt(user, "a27", list("kind" = "list", "message" = "What should act as the orbiter of the orbit?", "title" = "Orbiter", "choices" = possible_things), args)
+		if(isnull(_answer_a27))
+			return
+		orbiter = _answer_a27
 	if(!center || !orbiter)
 		to_chat(user, span_warning("A center of orbit and an orbiter must be configured. You can also do this by marking a target."))
 		return
@@ -518,9 +581,15 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 	if(isturf(orbiter))
 		to_chat(user, span_warning("The orbiter cannot be a turf. It can only be used as a center."))
 		return
-	var/distance = tgui_input_number(user, "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", "Orbit Radius", 32)
-	var/speed = tgui_input_number(user, "How fast will they orbit (negative numbers spin clockwise)", "Orbit Speed", 20)
-	var/segments = tgui_input_number(user, "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", "Orbit Segments", 36)
+	var/distance = verb_prompt(user, "a28", list("kind" = "number", "message" = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", "title" = "Orbit Radius", "default" = 32), args)
+	if(isnull(distance))
+		return
+	var/speed = verb_prompt(user, "a29", list("kind" = "number", "message" = "How fast will they orbit (negative numbers spin clockwise)", "title" = "Orbit Speed", "default" = 20), args)
+	if(isnull(speed))
+		return
+	var/segments = verb_prompt(user, "a30", list("kind" = "number", "message" = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", "title" = "Orbit Segments", "default" = 36), args)
+	if(isnull(segments))
+		return
 	var/clock = FALSE
 	if(!distance)
 		distance = 32
@@ -531,15 +600,23 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		speed *= -1
 	if(!segments)
 		segments = 36
-	if(tgui_alert(user, "\The [orbiter] will orbit around [center]. Is this okay?", "Confirm Orbit", list("Yes", "No")) == "Yes")
+	var/_answer_a31 = verb_prompt(user, "a31", list("message" = "\The [orbiter] will orbit around [center]. Is this okay?", "title" = "Confirm Orbit", "choices" = list("Yes", "No")), args)
+	if(isnull(_answer_a31))
+		return
+	if(_answer_a31 == "Yes")
 		orbiter.orbit(center, distance, clock, speed, segments)
 
 ADMIN_VERB(removetickets, R_ADMIN, "Security Tickets", "Allows one to remove tickets from the global list.", ADMIN_CATEGORY_INVESTIGATE)
 	if(GLOB.security_printer_tickets.len >= 1)
-		var/input = tgui_input_list(user, "Which message?", "Security Tickets", GLOB.security_printer_tickets)
+		var/input = verb_prompt(user, "a32", list("kind" = "list", "message" = "Which message?", "title" = "Security Tickets", "choices" = GLOB.security_printer_tickets), args)
+		if(isnull(input))
+			return
 		if(!input)
 			return
-		if(tgui_alert(user, "Do you want to remove the following message from the global list? \"[input]\"", "Remove Ticket", list("Yes", "No")) == "Yes")
+		var/_answer_a33 = verb_prompt(user, "a33", list("message" = "Do you want to remove the following message from the global list? \"[input]\"", "title" = "Remove Ticket", "choices" = list("Yes", "No")), args)
+		if(isnull(_answer_a33))
+			return
+		if(_answer_a33 == "Yes")
 			GLOB.security_printer_tickets -= input
 			log_and_message_admins("removed a security ticket from the global list: \"[input]\"", user)
 
@@ -577,7 +654,9 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 	panel.tgui_interact(user.mob)
 
 ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/Robot recolour verb", "Makes it so new robots/simple_mobs spawn with a verb to recolour themselves for this round. You must set them separately.", ADMIN_CATEGORY_SERVER_GAME)
-	var/which = tgui_alert(user, "Which do you want to toggle?", "Choose Recolour Toggle", list("Robot", "Simple Mob"))
+	var/which = verb_prompt(user, "a34", list("message" = "Which do you want to toggle?", "title" = "Choose Recolour Toggle", "choices" = list("Robot", "Simple Mob")), args)
+	if(isnull(which))
+		return
 	switch(which)
 		if("Robot")
 			CONFIG_SET(flag/allow_robot_recolor, !CONFIG_GET(flag/allow_robot_recolor))

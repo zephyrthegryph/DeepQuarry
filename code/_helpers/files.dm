@@ -4,7 +4,9 @@
  * However it'd be ok to use for accessing attack logs and such too, which are even laggier.
  */
 
-/client/proc/browse_files(root_type=BROWSE_ROOT_ALL_LOGS, max_iterations=10, list/valid_extensions=list("txt","log","htm", "html", "gz", "json"))
+/// Browses files under the root one folder at a time and calls `on_chosen` on this client as
+/// (path) with the file picked. Nothing waits: each pick asks the next question.
+/client/proc/browse_files(root_type=BROWSE_ROOT_ALL_LOGS, on_chosen, max_iterations=10, list/valid_extensions=list("txt","log","htm", "html", "gz", "json"))
 	// wow why was this ever a parameter
 	var/root = "data/logs/"
 	switch(root_type)
@@ -12,35 +14,38 @@
 			root = "data/logs/"
 		if(BROWSE_ROOT_CURRENT_LOGS)
 			root = GLOB.log_directory
-	var/path = root
+	browse_files_ask(list("root" = root, "path" = root, "left" = max_iterations, "extensions" = valid_extensions, "on_chosen" = on_chosen))
 
-	for(var/i in 1 to max_iterations)
-		var/list/choices = flist(path)
-		if(path != root)
-			choices.Insert(1,"/")
-		choices = sortList(choices) + "Download Folder"
+/client/proc/browse_files_ask(list/state)
+	if(state["left"] <= 0)
+		return
+	var/path = state["path"]
+	var/list/choices = flist(path)
+	if(path != state["root"])
+		choices.Insert(1,"/")
+	choices = sortList(choices) + "Download Folder"
+	om_prompt(src, src, list("kind" = "list", "message" = "Choose a file to access:", "title" = "Download", "choices" = choices, "data" = state), PROC_REF(browse_files_chosen))
 
-		var/choice = tgui_input_list(src,"Choose a file to access:","Download",choices)
-		switch(choice)
-			if(null)
-				return
-			if("/")
-				path = root
-				continue
-			if("Download Folder")
-				var/list/comp_flist = flist(path)
-				var/confirmation = tgui_alert(src, "Are you SURE you want to download all the files in this folder? (This will open [length(comp_flist)] prompt[length(comp_flist) == 1 ? "" : "s"])", "Confirmation", list("Yes", "No"))
-				if(confirmation != "Yes")
-					continue
-				for(var/file in comp_flist)
-					src << ftp(path + file)
-				return
-		path += choice
-
-		if(copytext_char(path, -1) != "/") //didn't choose a directory, no need to iterate again
-			break
+/client/proc/browse_files_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/list/state = ask.values.Copy()
+	var/path = state["path"]
+	state["left"] -= 1
+	switch(choice)
+		if("/")
+			state["path"] = state["root"]
+			browse_files_ask(state)
+			return
+		if("Download Folder")
+			var/list/comp_flist = flist(path)
+			om_prompt(src, src, list("message" = "Are you SURE you want to download all the files in this folder? (This will open [length(comp_flist)] prompt[length(comp_flist) == 1 ? "" : "s"])", "title" = "Confirmation", "choices" = list("Yes", "No"), "data" = state), PROC_REF(browse_files_folder_confirmed))
+			return
+	path += choice
+	if(copytext_char(path, -1) == "/") //chose a directory: go into it
+		state["path"] = path
+		browse_files_ask(state)
+		return
 	var/extensions
-	for(var/i in valid_extensions)
+	for(var/i in state["extensions"])
 		if(extensions)
 			extensions += "|"
 		extensions += "[i]"
@@ -48,8 +53,15 @@
 	if( !fexists(path) || !(valid_ext.Find(path)) )
 		to_chat(src, span_red("Error: browse_files(): File not found/Invalid file([path])."))
 		return
+	call(src, state["on_chosen"])(path)
 
-	return path
+/client/proc/browse_files_folder_confirmed(mob/user, confirmation, datum/om/prompt/ask)
+	var/list/state = ask.values.Copy()
+	if(confirmation != "Yes")
+		browse_files_ask(state)
+		return
+	for(var/file in flist(state["path"]))
+		src << ftp(state["path"] + file)
 
 #define FTPDELAY 200 //200 tick delay to discourage spam
 #define ADMIN_FTPDELAY_MODIFIER 0.5 //Admins get to spam files faster since we ~trust~ them!

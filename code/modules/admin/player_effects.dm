@@ -33,6 +33,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 /datum/eventkit/player_effects/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
 
+/datum/eventkit/player_effects/proc/popup_replied(mob/target, reply, datum/om/prompt/ask)
+	if(reply)
+		log_and_message_admins("replied to [ask.get("admin")]'s message: [reply].", target)
+
 /datum/eventkit/player_effects/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
 	if(.)
@@ -40,7 +44,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 	if(!check_rights_for(ui.user.client, R_SPAWN))
 		return
 
-	log_and_message_admins("used player effect: [action] on [target.ckey] playing [target.name]", ui.user)
+	if(!params["om_reentry"]) // Answers to its questions re-run the action.
+		log_and_message_admins("used player effect: [action] on [target.ckey] playing [target.name]", ui.user)
 
 	switch(action)
 
@@ -132,14 +137,18 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 				"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
 				"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-			var/kin_type = tgui_input_list(ui.user, "Select the type of shadekin for [target] nomf","Shadekin Type Choice", kin_types)
+			var/kin_type = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Select the type of shadekin for [target] nomf", "title" = "Shadekin Type Choice", "choices" = kin_types))
+			if(isnull(kin_type))
+				return
 			if(!kin_type || !target)
 				return
 
 
 			kin_type = kin_types[kin_type]
 
-			var/myself = tgui_alert(ui.user, "Control the shadekin yourself or delete pred and prey after?","Control Shadekin?",list("Control","Cancel","Delete"))
+			var/myself = act_prompt(ui.user, action, params, ui, "a2", list("message" = "Control the shadekin yourself or delete pred and prey after?", "title" = "Control Shadekin?", "choices" = list("Control","Cancel","Delete")))
+			if(isnull(myself))
+				return
 			if(!myself || myself == "Cancel" || !target)
 				return
 
@@ -201,11 +210,17 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			Tar.fear = 200
 
 		if("spin")
-			var/speed = tgui_input_number(ui.user, "Spin speed (minimum 0.1):", "Speed")
+			var/speed = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "number", "message" = "Spin speed (minimum 0.1):", "title" = "Speed"))
+			if(isnull(speed))
+				return
 			if(speed < 0.1)
 				return
-			var/loops = tgui_input_number(ui.user, "Number of loops (-1 for infinite):", "Loops")
-			var/direction_ask = tgui_alert(ui.user, "Clockwise or Anti-Clockwise", "Direction", list("Clockwise", "Anti-Clockwise", "Cancel"))
+			var/loops = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "number", "message" = "Number of loops (-1 for infinite):", "title" = "Loops"))
+			if(isnull(loops))
+				return
+			var/direction_ask = act_prompt(ui.user, action, params, ui, "a5", list("message" = "Clockwise or Anti-Clockwise", "title" = "Direction", "choices" = list("Clockwise", "Anti-Clockwise", "Cancel")))
+			if(isnull(direction_ask))
+				return
 			var/direction
 			if(direction_ask == "Clockwise")
 				direction = 1
@@ -248,7 +263,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 
 			var/list/types = typesof(/mob/living)
-			var/chosen_beast = tgui_input_list(ui.user, "Which form would you like to take?", "Choose Beast Form", types)
+			var/chosen_beast = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "list", "message" = "Which form would you like to take?", "title" = "Choose Beast Form", "choices" = types))
+			if(isnull(chosen_beast))
+				return
 
 			if(!chosen_beast)
 				return
@@ -287,7 +304,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 
 		if("wet_floors")
 			var/chem
-			var/reagent_choice = tgui_alert(ui.user, "Which reagent do you want to place on the floors around them?", "Reagent", list("Water", "Space Lube", "Other", "Cancel"))
+			var/reagent_choice = act_prompt(ui.user, action, params, ui, "a7", list("message" = "Which reagent do you want to place on the floors around them?", "title" = "Reagent", "choices" = list("Water", "Space Lube", "Other", "Cancel")))
+			if(isnull(reagent_choice))
+				return
 			if(!reagent_choice || (reagent_choice == "Cancel"))
 				return
 			if(reagent_choice ==  "Water")
@@ -296,7 +315,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				chem = REAGENT_ID_LUBE
 			if(reagent_choice == "Other")
 				var/list/chem_list = typesof(/datum/reagent)
-				var/datum/reagent/chemical = tgui_input_list(ui.user, "Which chemical would you like to use?", "Chemicals", chem_list)
+				var/datum/reagent/chemical = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "list", "message" = "Which chemical would you like to use?", "title" = "Chemicals", "choices" = chem_list))
+				if(isnull(chemical))
+					return
 				if(!chemical)
 					return
 				chem = chemical.id
@@ -338,14 +359,20 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				organs |= I
 			for(var/obj/item/organ/I in Tar.internal_organs)
 				organs |= I
-			var/obj/item/organ/our_organ = tgui_input_list(ui.user, "Choose an organ to damage:", "Organs", organs)
+			var/obj/item/organ/our_organ = act_prompt(ui.user, action, params, ui, "a9", list("kind" = "list", "message" = "Choose an organ to damage:", "title" = "Organs", "choices" = organs))
+			if(isnull(our_organ))
+				return
 			if(!our_organ)
 				return
-			var/effect = tgui_alert(ui.user, "What do you want to do to the Organ", "Effect", list("Damage", "Kill", "Bruise", "Cancel"))
+			var/effect = act_prompt(ui.user, action, params, ui, "a10", list("message" = "What do you want to do to the Organ", "title" = "Effect", "choices" = list("Damage", "Kill", "Bruise", "Cancel")))
+			if(isnull(effect))
+				return
 			if(effect == "Cancel")
 				return
 			if(effect == "Damage")
-				var/organ_damage = tgui_input_number(ui.user, "Add how much damage? It is currently at [our_organ.damage].", "Damage")
+				var/organ_damage = act_prompt(ui.user, action, params, ui, "a11", list("kind" = "number", "message" = "Add how much damage? It is currently at [our_organ.damage].", "title" = "Damage"))
+				if(isnull(organ_damage))
+					return
 				if(organ_damage > 0 && our_organ.owner == Tar)
 					Tar.injure(INJURY_BLUNT, organ_damage, our_organ, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 			if(effect == "Kill")
@@ -362,7 +389,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				organs |= I
 			for(var/obj/item/organ/I in Tar.internal_organs)
 				organs |= I
-			var/obj/item/organ/our_organ = tgui_input_list(ui.user, "Choose an organ to become assisted:", "Organs", organs)
+			var/obj/item/organ/our_organ = act_prompt(ui.user, action, params, ui, "a12", list("kind" = "list", "message" = "Choose an organ to become assisted:", "title" = "Organs", "choices" = organs))
+			if(isnull(our_organ))
+				return
 			if(!our_organ)
 				return
 			our_organ.mechassist()
@@ -376,7 +405,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				organs |= I
 			for(var/obj/item/organ/I in Tar.internal_organs)
 				organs |= I
-			var/obj/item/organ/our_organ = tgui_input_list(ui.user, "Choose an organ to become robotic:", "Organs", organs)
+			var/obj/item/organ/our_organ = act_prompt(ui.user, action, params, ui, "a13", list("kind" = "list", "message" = "Choose an organ to become robotic:", "title" = "Organs", "choices" = organs))
+			if(isnull(our_organ))
+				return
 			if(!our_organ)
 				return
 			our_organ.robotize()
@@ -390,14 +421,20 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				organs |= I
 			for(var/obj/item/organ/I in Tar.internal_organs)
 				organs |= I
-			var/obj/item/organ/our_organ = tgui_input_list(ui.user, "Choose an organ to heal:", "Organs", organs)
+			var/obj/item/organ/our_organ = act_prompt(ui.user, action, params, ui, "a14", list("kind" = "list", "message" = "Choose an organ to heal:", "title" = "Organs", "choices" = organs))
+			if(isnull(our_organ))
+				return
 			if(!our_organ)
 				return
-			var/effect = tgui_alert(ui.user, "What do you want to do to the Organ", "Effect", list("Heal", "Rejuvenate", "Cancel"))
+			var/effect = act_prompt(ui.user, action, params, ui, "a15", list("message" = "What do you want to do to the Organ", "title" = "Effect", "choices" = list("Heal", "Rejuvenate", "Cancel")))
+			if(isnull(effect))
+				return
 			if(effect == "Cancel")
 				return
 			if(effect == "Heal")
-				var/organ_damage = tgui_input_number(ui.user, "Add how much damage? It is currently at [our_organ.damage].", "Damage")
+				var/organ_damage = act_prompt(ui.user, action, params, ui, "a16", list("kind" = "number", "message" = "Add how much damage? It is currently at [our_organ.damage].", "title" = "Damage"))
+				if(isnull(organ_damage))
+					return
 				if(organ_damage > 0 && our_organ.owner == Tar)
 					Tar.mend(TREAT_RESTORATION, organ_damage, our_organ)
 			if(effect == "Rejuvenate")
@@ -412,7 +449,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				organs |= I
 			for(var/obj/item/organ/I in Tar.internal_organs)
 				organs |= I
-			var/obj/item/organ/our_organ = tgui_input_list(ui.user, "Choose an organ to damage:", "Organs", organs)
+			var/obj/item/organ/our_organ = act_prompt(ui.user, action, params, ui, "a17", list("kind" = "list", "message" = "Choose an organ to damage:", "title" = "Organs", "choices" = organs))
+			if(isnull(our_organ))
+				return
 			if(!our_organ)
 				return
 			our_organ.removed()
@@ -424,7 +463,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/list/organs = list()
 			for(var/obj/item/organ/external/E in Tar.organs)
 				organs |= E
-			var/obj/item/organ/external/our_organ = tgui_input_list(ui.user, "Choose an bone to break:", "Organs", organs)
+			var/obj/item/organ/external/our_organ = act_prompt(ui.user, action, params, ui, "a18", list("kind" = "list", "message" = "Choose an bone to break:", "title" = "Organs", "choices" = organs))
+			if(isnull(our_organ))
+				return
 			if(!our_organ)
 				return
 			our_organ.fracture()
@@ -443,18 +484,24 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(!istype(Tar))
 				return
 			var/list/chem_list = typesof(/datum/reagent)
-			var/datum/reagent/chemical = tgui_input_list(ui.user, "Which chemical would you like to add?", "Chemicals", chem_list)
+			var/datum/reagent/chemical = act_prompt(ui.user, action, params, ui, "a19", list("kind" = "list", "message" = "Which chemical would you like to add?", "title" = "Chemicals", "choices" = chem_list))
+			if(isnull(chemical))
+				return
 
 			if(!chemical)
 				return
 
 			var/chem = chemical.id
 
-			var/amount = tgui_input_number(ui.user, "How much of the chemical would you like to add?", "Amount", 5)
+			var/amount = act_prompt(ui.user, action, params, ui, "a20", list("kind" = "number", "message" = "How much of the chemical would you like to add?", "title" = "Amount", "default" = 5))
+			if(isnull(amount))
+				return
 			if(!amount)
 				return
 
-			var/location = tgui_alert(ui.user, "Where do you want to add the chemical?", "Location", list("Blood", "Stomach", "Skin", "Cancel"))
+			var/location = act_prompt(ui.user, action, params, ui, "a21", list("message" = "Where do you want to add the chemical?", "title" = "Location", "choices" = list("Blood", "Stomach", "Skin", "Cancel")))
+			if(isnull(location))
+				return
 
 			if(!location || location == "Cancel")
 				return
@@ -498,7 +545,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(!istype(Tar))
 				return
 			var/current_darksight = Tar.species.darksight
-			var/change_sight = tgui_input_number(ui.user, "What level do you wish to set their darksight to? It is currently [current_darksight].", "Darksight")
+			var/change_sight = act_prompt(ui.user, action, params, ui, "a22", list("kind" = "number", "message" = "What level do you wish to set their darksight to? It is currently [current_darksight].", "title" = "Darksight"))
+			if(isnull(change_sight))
+				return
 			if(change_sight)
 				Tar.species.darksight = change_sight
 
@@ -531,9 +580,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/mob/living/carbon/human/Tar = target
 			if(!istype(Tar))
 				return
-			var/energy_max = tgui_input_number(ui.user, "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", "Max energy")
+			var/energy_max = act_prompt(ui.user, action, params, ui, "a23", list("kind" = "number", "message" = "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", "title" = "Max energy"))
+			if(isnull(energy_max))
+				return
 			Tar.species.lleill_energy_max = energy_max
-			var/energy_new = tgui_input_number(ui.user, "What should their current lleill energy be set to? It is currently [Tar.species.lleill_energy].", "Max energy")
+			var/energy_new = act_prompt(ui.user, action, params, ui, "a24", list("kind" = "number", "message" = "What should their current lleill energy be set to? It is currently [Tar.species.lleill_energy].", "title" = "Max energy"))
+			if(isnull(energy_new))
+				return
 			Tar.species.lleill_energy = energy_new
 
 		if("lleill_invisibility")
@@ -622,7 +675,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/mob/living/carbon/human/Tar = target
 			if(!istype(Tar))
 				return
-			var/confirm = tgui_alert(ui.user, "Make [Tar] drop everything?", "Message", list("Yes", "No"))
+			var/confirm = act_prompt(ui.user, action, params, ui, "a25", list("message" = "Make [Tar] drop everything?", "title" = "Message", "choices" = list("Yes", "No")))
+			if(isnull(confirm))
+				return
 			if(confirm != "Yes")
 				return
 
@@ -637,7 +692,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 
 			var/list/items = Tar.get_equipped_items()
-			var/item_to_drop = tgui_input_list(ui.user, "Choose item to force drop:", "Drop Specific Item", items)
+			var/item_to_drop = act_prompt(ui.user, action, params, ui, "a26", list("kind" = "list", "message" = "Choose item to force drop:", "title" = "Drop Specific Item", "choices" = items))
+			if(isnull(item_to_drop))
+				return
 			if(item_to_drop)
 				Tar.drop_from_inventory(item_to_drop)
 
@@ -706,7 +763,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 
 				var/list/show_NIFs = sortList(NIFs) // the list that will be shown to the user to pick from
 
-				input_NIF = tgui_input_list(ui.user, "Pick the NIF type","Quick NIF", show_NIFs)
+				var/_answer_a27 = act_prompt(ui.user, action, params, ui, "a27", list("kind" = "list", "message" = "Pick the NIF type", "title" = "Quick NIF", "choices" = show_NIFs))
+				if(isnull(_answer_a27))
+					return
+				input_NIF = _answer_a27
 				var/chosen_NIF = NIFs[capitalize(input_NIF)]
 
 				if(chosen_NIF)
@@ -719,30 +779,41 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/resize, target)
 
 		if("teleport")
-			var/where = tgui_alert(ui.user, "Where to teleport?", "Where?", list("To Me", "To Mob", "To Area", "Cancel"))
+			var/where = act_prompt(ui.user, action, params, ui, "a28", list("message" = "Where to teleport?", "title" = "Where?", "choices" = list("To Me", "To Mob", "To Area", "Cancel")))
+			if(isnull(where))
+				return
 			if(where == "Cancel")
 				return
 			if(where == "To Me")
 				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/Getmob, target)
 			if(where == "To Mob")
-				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target] to:", "Jump to mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
+				var/mob/selection = act_prompt(ui.user, action, params, ui, "a29", list("kind" = "list", "message" = "Select a mob to jump [target] to:", "title" = "Jump to mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)))
+				if(isnull(selection))
+					return
 				target.on_mob_jump()
 				target.forceMove(get_turf(selection))
 				log_admin("[key_name(ui.user)] jumped [target] to [selection]")
 			if(where == "To Area")
 				var/area/A
-				A = tgui_input_list(ui.user, "Pick an area to teleport [target] to:", "Jump to Area", return_sorted_areas())
+				var/_answer_a30 = act_prompt(ui.user, action, params, ui, "a30", list("kind" = "list", "message" = "Pick an area to teleport [target] to:", "title" = "Jump to Area", "choices" = return_sorted_areas()))
+				if(isnull(_answer_a30))
+					return
+				A = _answer_a30
 				target.on_mob_jump()
 				target.forceMove(pick(get_area_turfs(A)))
 				log_admin("[key_name(ui.user)] jumped [target] to [A]")
 
 		if("gib")
-			var/death = tgui_alert(ui.user, "Are you sure you want to destroy [target]?", "Gib?", list("KILL", "Cancel"))
+			var/death = act_prompt(ui.user, action, params, ui, "a31", list("message" = "Are you sure you want to destroy [target]?", "title" = "Gib?", "choices" = list("KILL", "Cancel")))
+			if(isnull(death))
+				return
 			if(death == "KILL")
 				target.gib()
 
 		if("dust")
-			var/death = tgui_alert(ui.user, "Are you sure you want to destroy [target]?", "Dust?", list("KILL", "Cancel"))
+			var/death = act_prompt(ui.user, action, params, ui, "a32", list("message" = "Are you sure you want to destroy [target]?", "title" = "Dust?", "choices" = list("KILL", "Cancel")))
+			if(isnull(death))
+				return
 			if(death == "KILL")
 				target.dust()
 
@@ -778,16 +849,25 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				to_chat(ui.user, span_warning("This cannot be used on player mobs!"))
 				return
 
+			// Everything is asked first: the answers re-run this action, so nothing changes until the last one.
+			var/faction = act_prompt(ui.user, action, params, ui, "a33", list("kind" = "text", "message" = "Please input AI faction", "title" = "AI faction", "default" = "neutral", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(faction))
+				return
+			var/stance = act_prompt(ui.user, action, params, ui, "a34", list("kind" = "list", "message" = "Please choose AI combat mode", "title" = "AI combat mode", "choices" = list(I_HURT, I_HELP)))
+			if(isnull(stance))
+				return
+			var/wake = act_prompt(ui.user, action, params, ui, "a35", list("message" = "Make mob wake up? This is needed for carbon mobs.", "title" = "Wake mob?", "choices" = list("Yes", "No")))
+			if(isnull(wake))
+				return
 			if(L.ai_brain)	//Cleaning up the original ai
 				var/datum/ai_brain/old_brain = L.ai_brain
 				L.ai_brain = null
 				qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 			L.initialize_ai_brain()
-			L.faction = tgui_input_text(ui.user, "Please input AI faction", "AI faction", "neutral", MAX_MESSAGE_LEN)
-			var/stance = tgui_input_list(ui.user, "Please choose AI combat mode", "AI combat mode", list(I_HURT, I_HELP))
+			L.faction = faction
 			if(stance)
 				L.set_use_stance(stance)
-			if(tgui_alert(ui.user, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")
+			if(wake == "Yes")
 				L.status_adjust(EFFECT_SLEEPING, -100)
 
 		if("cloaking")
@@ -799,11 +879,15 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 		if("give_quest")
 			if(!target)
 				return
-			var/admin_quest =  tgui_alert(ui.user, "Do you want to give a random quest or a personalised one?", "Quest!", list("Random", "Personalised", "Cancel"))
+			var/admin_quest =  act_prompt(ui.user, action, params, ui, "a36", list("message" = "Do you want to give a random quest or a personalised one?", "title" = "Quest!", "choices" = list("Random", "Personalised", "Cancel")))
+			if(isnull(admin_quest))
+				return
 			if(!admin_quest || (admin_quest == "Cancel"))
 				return
 			if(admin_quest == "Personalised")
-				var/specific_quest = tgui_input_text(ui.user, "What is their quest?", "Quest!!!")
+				var/specific_quest = act_prompt(ui.user, action, params, ui, "a37", list("kind" = "text", "message" = "What is their quest?", "title" = "Quest!!!"))
+				if(isnull(specific_quest))
+					return
 				if(!specific_quest)
 					return
 				target.quest_from_above(specific_quest)
@@ -820,14 +904,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			Tar.rejuvenate()
 
 		if("popup-box")
-			var/message = tgui_input_text(ui.user, "Write a message to send to the user with a space for them to reply without using the text box:", "Message")
+			var/message = act_prompt(ui.user, action, params, ui, "a38", list("kind" = "text", "message" = "Write a message to send to the user with a space for them to reply without using the text box:", "title" = "Message"))
+			if(isnull(message))
+				return
 			if(!message)
 				return
 			log_admin("[key_name(ui.user)] sent message to [target]: [message]")
-			var/reply = tgui_input_text(target, "An admin has sent you a message: [message]", "Reply")
-			if(!reply)
-				return
-			log_and_message_admins("replied to [ui.user]'s message: [reply].", target)
+			// The player answers in their own time; the reply doesn't need this panel open.
+			om_prompt(src, target, list("kind" = "text", "message" = "An admin has sent you a message: [message]", "title" = "Reply", "data" = list("admin" = key_name(ui.user))), PROC_REF(popup_replied))
 
 		if("stop-orbits")
 			target.stop_orbiters()

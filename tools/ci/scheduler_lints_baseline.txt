@@ -1,13 +1,13 @@
 # One-scheduler lint ceilings (roadmap S6, doc/rewrite/object_model_core.md sec 4.11).
 # tools/ci/scheduler_lints.py fails when a count rises above its line here.
 # Lower a line when a sweep removes sites: `python tools/ci/scheduler_lints.py --update`.
-spawn 29
+spawn 28
 addtimer 789
 invoke_async 112
 do_after 0
 sleep 24
 stoplag 51
-prompts 1396
+prompts 996
 set_waitfor 69
 weakref 0
 del 13

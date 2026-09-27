@@ -250,7 +250,7 @@
 	var/obj/item/i = user.get_active_hand()
 	var/iscrayon = 0
 	if(!istype(i, /obj/item/pen))
-		tgui_alert(user, "You aren't holding a pen anymore! If you want to keep your work, grab one.", "No Pen!")
+		tgui_alert_async(user, "You aren't holding a pen anymore! If you want to keep your work, grab one.", "No Pen!")
 		i = user.get_active_hand()
 	if(!istype(i, /obj/item/pen))
 		var/mob/living/M = user

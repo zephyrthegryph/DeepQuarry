@@ -5,17 +5,20 @@ ADMIN_VERB(get_current_logs, (R_ADMIN | R_SERVER), "Get Current Logs", "View or 
 	user.browseserverlogs(current=TRUE)
 
 /client/proc/browseserverlogs(current=FALSE)
-	var/path = browse_files(current ? BROWSE_ROOT_CURRENT_LOGS : BROWSE_ROOT_ALL_LOGS)
-	if(!path)
-		return
+	browse_files(current ? BROWSE_ROOT_CURRENT_LOGS : BROWSE_ROOT_ALL_LOGS, PROC_REF(serverlog_chosen))
 
+/client/proc/serverlog_chosen(path)
 	if(file_spam_check())
 		return
 
 	message_admins("[key_name_admin(src)] accessed file: [path]")
 	feedback_add_details("admin_verb","VTL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	switch(tgui_alert(usr,"View (in game), Open (in your system's text editor), or Download?", path, list("View", "Open", "Download")))
+	om_prompt(src, src, list("message" = "View (in game), Open (in your system's text editor), or Download?", "title" = path, "choices" = list("View", "Open", "Download"), "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER), "data" = list("path" = path)), PROC_REF(serverlog_action_chosen))
+
+/client/proc/serverlog_action_chosen(mob/user, action, datum/om/prompt/ask)
+	var/path = ask.get("path")
+	switch(action)
 		if ("View")
 			// structured TGUI AdminReport.
 			dq_admin_report_html(src.mob, path, "<pre style='word-wrap: break-word; white-space: pre-wrap;'>[html_encode(file2text(file(path)))]</pre>")

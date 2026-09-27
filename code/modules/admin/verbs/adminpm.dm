@@ -18,7 +18,9 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 				targets["[T.mob.real_name](as [T.mob.name]) - [T]"] = T
 		else
 			targets["(No Mob) - [T]"] = T
-	var/target = tgui_input_list(user, "To whom shall we send a message?", "Admin PM", sortList(targets))
+	var/target = verb_prompt(user, "a1", list("kind" = "list", "message" = "To whom shall we send a message?", "title" = "Admin PM", "choices" = sortList(targets)), args)
+	if(isnull(target))
+		return
 	if(!target) //Admin canceled
 		return
 	user.cmd_admin_pm(targets[target], null)
@@ -44,14 +46,33 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	if(T)
 		message_admins(span_pm("[key_name_admin(src)] has started replying to [key_name(C, 0, 0)]'s admin help."))
-	var/msg = tgui_input_text(src,"Message:", "Private message to [key_name(C, 0, 0)]", multiline = TRUE, encode = FALSE)
+	om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Private message to [key_name(C, 0, 0)]", "multiline" = TRUE, "encode" = FALSE, "on_cancel" = PROC_REF(ahelp_reply_cancelled), "data" = list("whom" = C, "ticket" = T)), PROC_REF(ahelp_reply_entered))
+
+/client/proc/ahelp_reply_cancelled(mob/user, datum/om/prompt/ask)
+	message_admins(span_pm("[key_name_admin(src)] has cancelled their reply to [key_name(ask.get("whom"), 0, 0)]'s admin help."))
+
+/client/proc/ahelp_reply_entered(mob/user, msg, datum/om/prompt/ask)
 	if (!msg)
-		message_admins(span_pm("[key_name_admin(src)] has cancelled their reply to [key_name(C, 0, 0)]'s admin help."))
+		ahelp_reply_cancelled(user, ask)
 		return
-	cmd_admin_pm(whom, msg, T)
+	cmd_admin_pm(ask.get("whom"), msg, ask.get("ticket"))
 
 //takes input from cmd_admin_pm_context, cmd_admin_pm_panel or /client/Topic and sends them a PM.
 //Fetching a message if needed. src is the sender and C is the target client
+/// A popup PM's reply (on the recipient): to the sender, or an adminhelp if they left.
+/client/proc/admin_pm_popup_replied(mob/user, reply, datum/om/prompt/ask)
+	if(!reply)
+		return
+	var/client/sender = GLOB.directory[ask.get("sender")]
+	if(sender)
+		cmd_admin_pm(sender, reply)										//sender is still about, let's reply to them
+	else
+		adminhelp(reply)													//sender has left, adminhelp instead
+
+/client/proc/admin_pm_entered(mob/user, msg, datum/om/prompt/ask)
+	if(msg)
+		cmd_admin_pm(ask.get("whom"), msg, ask.get("ticket"))
+
 /client/proc/cmd_admin_pm(whom, msg, datum/ticket/T)
 	if(prefs.muted & MUTE_ADMINHELP)
 		to_chat(src, span_admin_pm_warning("Error: Admin-PM: You are unable to use admin PM-s (muted)."))
@@ -74,7 +95,8 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
-		msg = tgui_input_text(src, "Message:", "Private message to [key_name(recipient, 0, 0)]", multiline = TRUE, encode = FALSE)
+		om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Private message to [key_name(recipient, 0, 0)]", "multiline" = TRUE, "encode" = FALSE, "data" = list("whom" = recipient, "ticket" = T)), PROC_REF(admin_pm_entered))
+		return
 
 	//clean the message if it's not sent by a high-rank admin
 	if(!check_rights(R_SERVER|R_DEBUG, FALSE))//no sending html to the poor bots
@@ -140,16 +162,8 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 			//AdminPM popup for ApocStation and anybody else who wants to use it. Set it with POPUP_ADMIN_PM in config.txt ~Carn
 			if(CONFIG_GET(flag/popup_admin_pm))
-				spawn()	//so we don't hold the caller proc up // S7 keeps: admin PM popup: tgui_input_text() sleeps (admin verb, prompts)
-					var/sender = src
-					var/sendername = key
-					var/reply = tgui_input_text(recipient, msg,"Admin PM from-[sendername]", "", multiline = TRUE)	//show message and await a reply
-					if(recipient && reply)
-						if(sender)
-							recipient.cmd_admin_pm(sender,reply)										//sender is still about, let's reply to them
-						else
-							adminhelp(reply)													//sender has left, adminhelp instead
-					return
+				// The recipient replies in their own time; the reply goes back to us if we're still here.
+				om_prompt(recipient, recipient, list("kind" = "text", "message" = msg, "title" = "Admin PM from-[key]", "multiline" = TRUE, "data" = list("sender" = ckey)), PROC_REF(admin_pm_popup_replied))
 
 		else		//neither are admins
 			to_chat(src, span_admin_pm_warning("Error: Admin-PM: Non-admin to non-admin PM communication is forbidden."))

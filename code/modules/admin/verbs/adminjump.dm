@@ -14,7 +14,10 @@ ADMIN_VERB(Jump, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Area", "Area to jump to
 	if(areaname)
 		target_area = return_sorted_areas()[areaname]
 	else
-		target_area = return_sorted_areas()[tgui_input_list(user, "Pick an area:", "Jump to Area", return_sorted_areas())]
+		var/_answer_a1 = verb_prompt(user, "a1", list("kind" = "list", "message" = "Pick an area:", "title" = "Jump to Area", "choices" = return_sorted_areas()), args)
+		if(isnull(_answer_a1))
+			return
+		target_area = return_sorted_areas()[_answer_a1]
 
 	if(!target_area)
 		return
@@ -43,6 +46,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptoturf, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to 
 ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Mob", "Jump to the selected mob.", ADMIN_CATEGORY_GAME, mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	user.do_jumptomob(M)
 
+/client/proc/jump_mob_picked(mob/admin, mob/M, datum/om/prompt/ask)
+	do_jumptomob(M)
+
 /// Performs the jumps, also called from admin Topic() for JMP links
 /client/proc/do_jumptomob(mob/M)
 	if(!CONFIG_GET(flag/allow_admin_jump))
@@ -50,8 +56,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		return
 
 	if(!M)
-		M = tgui_input_list(usr, "Pick a mob:", "Jump to Mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
-	if(!M)
+		om_prompt(src, usr, list("kind" = "list", "message" = "Pick a mob:", "title" = "Jump to Mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS), "requires" = PROMPT_ADMIN(R_ADMIN|R_MOD|R_DEBUG|R_EVENT)), PROC_REF(jump_mob_picked))
 		return
 
 	var/mob/A = src.mob // Impossible to be unset, enforced by byond
@@ -71,9 +76,18 @@ ADMIN_VERB(jumptocoord, R_ADMIN|R_MOD|R_DEBUG|R_EVENT,"Jump to Coordinate", "Jum
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
 	if(!tx || !ty || !tz)
-		tx = tgui_input_number(user, "Select the target x coordinate", "X Loc", 1, world.maxx, 1)
-		ty = tgui_input_number(user, "Select the target y coordinate", "Y Loc", 1, world.maxy, 1)
-		tz = tgui_input_number(user, "Select the target z coordinate", "Z Loc", 1, world.maxz, 1)
+		var/_answer_a2 = verb_prompt(user, "a2", list("kind" = "number", "message" = "Select the target x coordinate", "title" = "X Loc", "default" = 1, "max" = world.maxx, "min" = 1), args)
+		if(isnull(_answer_a2))
+			return
+		tx = _answer_a2
+		var/_answer_a3 = verb_prompt(user, "a3", list("kind" = "number", "message" = "Select the target y coordinate", "title" = "Y Loc", "default" = 1, "max" = world.maxy, "min" = 1), args)
+		if(isnull(_answer_a3))
+			return
+		ty = _answer_a3
+		var/_answer_a4 = verb_prompt(user, "a4", list("kind" = "number", "message" = "Select the target z coordinate", "title" = "Z Loc", "default" = 1, "max" = world.maxz, "min" = 1), args)
+		if(isnull(_answer_a4))
+			return
+		tz = _answer_a4
 
 	var/mob/user_mob = user.mob
 	user_mob.on_mob_jump()
@@ -94,7 +108,9 @@ ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a p
 	var/list/keys = list()
 	for(var/mob/player_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += player_mob.client
-	var/client/selection = tgui_input_list(user, "Select a key:", "Jump to Key", sortKey(keys))
+	var/client/selection = verb_prompt(user, "a5", list("kind" = "list", "message" = "Select a key:", "title" = "Jump to Key", "choices" = sortKey(keys)), args)
+	if(isnull(selection))
+		return
 	if(!selection)
 		return
 	var/mob/selected_mob = selection.mob
@@ -113,7 +129,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(Getmob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Mob",  "
 		return
 
 	if(!living_mob)
-		living_mob = tgui_input_list(user, "Pick a mob:", "Get Mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
+		var/_answer_a6 = verb_prompt(user, "a6", list("kind" = "list", "message" = "Pick a mob:", "title" = "Get Mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)), args)
+		if(isnull(_answer_a6))
+			return
+		living_mob = _answer_a6
 	if(!living_mob)
 		return
 	var/msg = "jumped [key_name(living_mob)] to them."
@@ -132,7 +151,9 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	var/list/keys = list()
 	for(var/mob/curernt_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += curernt_mob.client
-	var/client/selection = tgui_input_list(user, "Pick a key:", "Get Key", sortKey(keys))
+	var/client/selection = verb_prompt(user, "a7", list("kind" = "list", "message" = "Pick a key:", "title" = "Get Key", "choices" = sortKey(keys)), args)
+	if(isnull(selection))
+		return
 	if(!selection)
 		return
 
@@ -156,12 +177,17 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
-		var/area/A = tgui_input_list(usr, "Pick an area:", "Send Mob", return_sorted_areas())
-		if(!A)
-			return
-		var/mob/M = tgui_input_list(usr, "Pick a mob:", "Send Mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
-		if(!M)
-			return
+		om_prompt_sequence(src, usr, list(
+			list("key" = "area", "kind" = "list", "message" = "Pick an area:", "title" = "Send Mob", "choices" = return_sorted_areas()),
+			list("key" = "mob", "kind" = "list", "message" = "Pick a mob:", "title" = "Send Mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)),
+		), PROC_REF(sendmob_answered), list("requires" = PROMPT_ADMIN(R_ADMIN|R_MOD|R_DEBUG|R_EVENT)))
+	else
+		tgui_alert_async(usr, "Admin jumping disabled")
+
+/client/proc/sendmob_answered(mob/admin, datum/om/prompt/ask)
+	var/area/A = ask.get("area")
+	var/mob/M = ask.get("mob")
+	if(CONFIG_GET(flag/allow_admin_jump))
 		M.on_mob_jump()
 		M.reset_perspective(M) // Force reset to self before teleport
 		M.forceMove(pick(get_area_turfs(A)))
@@ -174,6 +200,9 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	else
 		tgui_alert_async(usr, "Admin jumping disabled")
 
+/client/proc/move_atom_coords_chosen(mob/admin, datum/om/prompt/ask)
+	cmd_admin_move_atom(ask.get("atom"), ask.get("x"), ask.get("y"), ask.get("z"))
+
 /client/proc/cmd_admin_move_atom(atom/movable/AM, tx as num, ty as num, tz as num)
 	set category = "Admin.Game"
 	set name = "Move Atom to Coordinate"
@@ -182,15 +211,15 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
-		if(isnull(tx))
-			tx = tgui_input_number(usr, "Select X coordinate", "Move Atom", null, null)
-			if(!tx) return
-		if(isnull(ty))
-			ty = tgui_input_number(usr, "Select Y coordinate", "Move Atom", null, null)
-			if(!ty) return
-		if(isnull(tz))
-			tz = tgui_input_number(usr, "Select Z coordinate", "Move Atom", null, null)
-			if(!tz) return
+		if(isnull(tx) || isnull(ty) || isnull(tz))
+			om_prompt_sequence(src, usr, list(
+				isnull(tx) ? list("key" = "x", "kind" = "number", "message" = "Select X coordinate", "title" = "Move Atom", "max" = world.maxx) : null,
+				isnull(ty) ? list("key" = "y", "kind" = "number", "message" = "Select Y coordinate", "title" = "Move Atom", "max" = world.maxy) : null,
+				isnull(tz) ? list("key" = "z", "kind" = "number", "message" = "Select Z coordinate", "title" = "Move Atom", "max" = world.maxz) : null,
+			), PROC_REF(move_atom_coords_chosen), list("requires" = PROMPT_ADMIN(R_ADMIN|R_DEBUG|R_EVENT), "data" = list("atom" = AM, "x" = tx, "y" = ty, "z" = tz)))
+			return
+		if(!tx || !ty || !tz)
+			return
 		var/turf/T = locate(tx, ty, tz)
 		if(!T)
 			to_chat(usr, span_warning("Those coordinates are outside the boundaries of the map."))

@@ -1,13 +1,19 @@
 ADMIN_VERB_VISIBILITY(set_server_fps, ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG)
 ADMIN_VERB(set_server_fps, R_DEBUG, "Set Server FPS", "Sets game speed in frames-per-second. Can potentially break the game", ADMIN_CATEGORY_DEBUG_DANGEROUS)
 	var/cfg_fps = CONFIG_GET(number/fps)
-	var/new_fps = round(tgui_input_number(user, "Sets game frames-per-second. Can potentially break the game (default: [cfg_fps])","FPS", world.fps))
+	var/_answer_a1 = verb_prompt(user, "a1", list("kind" = "number", "message" = "Sets game frames-per-second. Can potentially break the game (default: [cfg_fps])", "title" = "FPS", "default" = world.fps), args)
+	if(isnull(_answer_a1))
+		return
+	var/new_fps = round(_answer_a1)
 
 	if(new_fps <= 0)
 		to_chat(user, span_danger("Error: set_server_fps(): Invalid world.fps value. No changes made."), confidential = TRUE)
 		return
 	if(new_fps > cfg_fps * 1.5)
-		if(tgui_alert(user, "You are setting fps to a high value:\n\t[new_fps] frames-per-second\n\tconfig.fps = [cfg_fps]","Warning!",list("Confirm","ABORT-ABORT-ABORT")) != "Confirm")
+		var/_answer_a2 = verb_prompt(user, "a2", list("message" = "You are setting fps to a high value:\n\t[new_fps] frames-per-second\n\tconfig.fps = [cfg_fps]", "title" = "Warning!", "choices" = list("Confirm","ABORT-ABORT-ABORT")), args)
+		if(isnull(_answer_a2))
+			return
+		if(_answer_a2 != "Confirm")
 			return
 
 	var/msg = "[key_name(user)] has modified world.fps to [new_fps]"

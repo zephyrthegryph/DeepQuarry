@@ -2,13 +2,17 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize", mob/li
 	user.do_resize(living_target)
 
 ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any living mob without any restrictions on size.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/mob/target_mob = tgui_input_list(user, "Select target to resize.", "Resize Target", REGISTRY_MEMBERS(REGISTRY_MOBS))
+	var/mob/target_mob = verb_prompt(user, "a1", list("kind" = "list", "message" = "Select target to resize.", "title" = "Resize Target", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)), args)
+	if(isnull(target_mob))
+		return
 	if(!target_mob)
 		return
 	user.do_resize(target_mob)
 
 /client/proc/do_resize(mob/living/living_target)
-	var/size_multiplier = tgui_input_number(src, "Input size multiplier.", "Resize", 1, round_value=FALSE)
+	var/size_multiplier = client_prompt("a1", list("kind" = "number", "message" = "Input size multiplier.", "title" = "Resize", "default" = 1, "round" = FALSE), PROC_REF(do_resize), args, (R_ADMIN|R_FUN|R_VAREDIT))
+	if(isnull(size_multiplier))
+		return
 	if(!size_multiplier)
 		return //cancelled
 

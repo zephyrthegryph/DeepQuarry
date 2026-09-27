@@ -1,6 +1,7 @@
 
 //Either pass the mob you wish to ban in the 'banned_mob' attribute, or the banckey, banip and bancid variables. If both are passed, the mob takes priority! If a mob is not passed, banckey is the minimum that needs to be passed! banip and bancid are optional.
-/datum/admins/proc/DB_ban_record(bantype, mob/banned_mob, duration = -1, reason, job = "", rounds = 0, banckey = null, banip = null, bancid = null)
+/// `unseen_ok`: the admin already confirmed banning a ckey the server hasn't seen.
+/datum/admins/proc/DB_ban_record(bantype, mob/banned_mob, duration = -1, reason, job = "", rounds = 0, banckey = null, banip = null, bancid = null, unseen_ok = FALSE)
 
 	if(!check_rights(R_MOD,0) && !check_rights(R_BAN))	return
 
@@ -49,24 +50,11 @@
 	if(query.NextRow())
 		validckey = 1
 	qdel(query)
-	if(!validckey)
+	if(!validckey && !unseen_ok)
 		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) // .
-			var/confirm = tgui_alert(usr, "This ckey hasn't been seen, are you sure?", "Confirm Badmin", list("Yes", "No"))
-			if(confirm != "Yes")
-				return
-			// The alert above sleeps; the target may have disconnected or been deleted.
-			// Re-read the identifiers from the (possibly now-absent) client so we never
-			// record a stale or partially-populated computerid/ip snapshot.
-			if(ismob(banned_mob))
-				if(QDELETED(banned_mob))
-					return
-				ckey = banned_mob.ckey
-				if(banned_mob.client)
-					computerid = banned_mob.client.computer_id
-					ip = banned_mob.client.address
-				else
-					computerid = null
-					ip = null
+			// The answer records the ban again from the start, re-reading the target's identifiers.
+			om_prompt(src, usr, list("message" = "This ckey hasn't been seen, are you sure?", "title" = "Confirm Badmin", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_MOD|R_BAN), "data" = list("args" = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid), "mob" = banned_mob)), PROC_REF(unseen_ban_confirmed))
+			return
 
 	var/a_ckey
 	var/a_computerid
@@ -171,7 +159,17 @@
 
 	DB_ban_unban_by_id(ban_id)
 
-/datum/admins/proc/DB_ban_edit(client/user, banid = null, param = null)
+/datum/admins/proc/unseen_ban_confirmed(mob/admin, confirm, datum/om/prompt/ask)
+	if(confirm != "Yes")
+		return
+	var/list/ban_args = ask.get("args")
+	var/mob/banned_mob = ask.get("mob")
+	if(banned_mob)
+		ban_args[2] = banned_mob
+	usr = admin // DB_ban_record() reads usr for the banning admin, as when it asked.
+	DB_ban_record(arglist(ban_args + TRUE))
+
+/datum/admins/proc/DB_ban_edit(client/user, banid = null, param = null, value = null)
 
 	if(!check_rights_for(user, R_BAN))
 		return
@@ -199,16 +197,15 @@
 
 	qdel(query)
 	reason = sql_sanitize_text(reason)
-	var/value
-
 	switch(param)
 		if("reason")
 			if(!value)
-				value = tgui_input_text(user, "Insert the new reason for [pckey]'s ban", "New Reason", "[reason]", MAX_MESSAGE_LEN)
-				value = sql_sanitize_text(value)
-				if(!value)
-					to_chat(user, "Cancelled")
-					return
+				om_prompt(src, user, list("kind" = "text", "message" = "Insert the new reason for [pckey]'s ban", "title" = "New Reason", "default" = "[reason]", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADMIN(R_BAN), "data" = list("banid" = banid, "param" = param)), PROC_REF(ban_edit_value_entered))
+				return
+			value = sql_sanitize_text(value)
+			if(!value)
+				to_chat(user, "Cancelled")
+				return
 
 			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET reason = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban reason from <cite><b>\"', :old_reason, '\"</b></cite> to <cite><b>\"', :value, '\"</b></cite><BR>')) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_reason" = reason, "banid" = banid))
 			update_query.Execute()
@@ -217,10 +214,11 @@
 			return
 		if("duration")
 			if(!value)
-				value = tgui_input_number(user, "Insert the new duration (in minutes) for [pckey]'s ban", "New Duration", "[duration]", null)
-				if(!isnum(value) || !value)
-					to_chat(user, "Cancelled")
-					return
+				om_prompt(src, user, list("kind" = "number", "message" = "Insert the new duration (in minutes) for [pckey]'s ban", "title" = "New Duration", "default" = text2num(duration), "requires" = PROMPT_ADMIN(R_BAN), "data" = list("banid" = banid, "param" = param)), PROC_REF(ban_edit_value_entered))
+				return
+			if(!isnum(value) || !value)
+				to_chat(user, "Cancelled")
+				return
 
 			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET duration = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban duration from ', :old_duration, ' to ', :value, '<br>')), expiration_time = DATE_ADD(bantime, INTERVAL :value MINUTE) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_duration" = duration, "banid" = banid))
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s duration from [duration] to [value]")
@@ -228,11 +226,21 @@
 			qdel(update_query)
 			return
 		if("unban")
-			if(tgui_alert(user, "Unban [pckey]?", "Unban?", list("Yes", "No")) == "Yes")
+			if(value == "Yes")
 				DB_ban_unban_by_id(banid)
+				return
+			if(!value)
+				om_prompt(src, user, list("message" = "Unban [pckey]?", "title" = "Unban?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_BAN), "data" = list("banid" = banid, "param" = param)), PROC_REF(ban_edit_value_entered))
 				return
 	to_chat(user, span_filter_adminlog("Cancelled"))
 	return
+
+/// The value asked for re-enters DB_ban_edit(), which re-reads the ban.
+/datum/admins/proc/ban_edit_value_entered(mob/admin, value, datum/om/prompt/ask)
+	if(!admin.client)
+		return
+	usr = admin // DB_ban_edit() reads usr for the editing admin.
+	DB_ban_edit(admin.client, ask.get("banid"), ask.get("param"), value)
 
 /datum/admins/proc/DB_ban_unban_by_id(id)
 

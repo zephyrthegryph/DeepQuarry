@@ -44,11 +44,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			gets logged in case of abuse."))
 			log_and_message_admins("has added [L.ckey]'s mob to their entity narrate list", user)
 			return
-		var/unique_name = tgui_input_text(user, "Please give the entity a unique name to track internally. \
-		This doesn't override how it appears in game", "tracker", L.name, MAX_MESSAGE_LEN)
+		var/unique_name = verb_prompt(user, "a1", list("kind" = "text", "message" = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", "title" = "tracker", "default" = L.name, "max_length" = MAX_MESSAGE_LEN), args)
+		if(isnull(unique_name))
+			return
 		if(unique_name in holder.entity_names)
 			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
-			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/add_mob_for_narration, L) //Recursively calling ourselves until cancelled or a unique name is given.
 			return
 		LAZYADD(holder.entity_names, unique_name)
 		LAZYSET(holder.entity_refs, unique_name, om_handle(L))
@@ -57,11 +57,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 	//Covering functionality for turfs and objs. We need static type to access the name var
 	else if(istype(E, /atom))
 		var/atom/A = E
-		var/unique_name = tgui_input_text(user, "Please give the entity a unique name to track internally. \
-		This doesn't override how it appears in game", "tracker", A.name, MAX_MESSAGE_LEN)
+		var/unique_name = verb_prompt(user, "a2", list("kind" = "text", "message" = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", "title" = "tracker", "default" = A.name, "max_length" = MAX_MESSAGE_LEN), args)
+		if(isnull(unique_name))
+			return
 		if(unique_name in holder.entity_names)
 			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
-			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/add_mob_for_narration, A)
 			return
 		LAZYADD(holder.entity_names, unique_name)
 		LAZYSET(holder.entity_refs, unique_name, om_handle(A))
@@ -78,9 +78,14 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
 
 	var/options = (holder.entity_names || list()) + "Clear All"
-	var/removekey = tgui_input_list(user, "Choose which entity to remove", "remove reference", options, null)
+	var/removekey = verb_prompt(user, "a3", list("kind" = "list", "message" = "Choose which entity to remove", "title" = "remove reference", "choices" = options), args)
+	if(isnull(removekey))
+		return
 	if(removekey == "Clear All")
-		if(tgui_alert(user, "Do you really want to clear your entity list?", "confirm", list("Yes", "No")) != "Yes")
+		var/_answer_a4 = verb_prompt(user, "a4", list("message" = "Do you really want to clear your entity list?", "title" = "confirm", "choices" = list("Yes", "No")), args)
+		if(isnull(_answer_a4))
+			return
+		if(_answer_a4 != "Yes")
 			return
 		holder.entity_names = list()
 		holder.entity_refs = list()
@@ -103,15 +108,20 @@ ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visi
 
 	//Obtaining and sanitizing arguments for the actual proc
 	var/choices = (holder.entity_names || list()) + "Open TGUI"
-	var/which_entity = tgui_input_list(user, "Choose which mob to narrate", "Narrate mob", choices, null)
+	var/which_entity = verb_prompt(user, "a5", list("kind" = "list", "message" = "Choose which mob to narrate", "title" = "Narrate mob", "choices" = choices), args)
+	if(isnull(which_entity))
+		return
 	if(!which_entity) return
 	if(which_entity == "Open TGUI")
 		holder.tgui_interact(user.mob)
 	else
-		var/mode = tgui_alert(user, "Speak or emote?", "mode", list("Speak", "Emote", "Cancel"))
+		var/mode = verb_prompt(user, "a6", list("message" = "Speak or emote?", "title" = "mode", "choices" = list("Speak", "Emote", "Cancel")), args)
+		if(isnull(mode))
+			return
 		if(!mode || mode == "Cancel") return
-		var/message = tgui_input_text(user, "Input what you want [which_entity] to [mode]", "narrate",
-		null, multiline = TRUE, prevent_enter = TRUE)
+		var/message = verb_prompt(user, "a7", list("kind" = "text", "message" = "Input what you want [which_entity] to [mode]", "title" = "narrate", "multiline" = TRUE), args)
+		if(isnull(message))
+			return
 		if(message)
 			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/narrate_mob_args, which_entity, mode, message)
 
@@ -148,9 +158,13 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	if(isliving(selection))
 		var/mob/living/our_entity = selection
 		if(our_entity.client) //Making sure we can't speak for players
-			log_and_message_admins("used entity-narrate to speak through [our_entity.ckey]'s mob", user)
+			if(!om_answers) // Once: the message prompt re-runs this.
+				log_and_message_admins("used entity-narrate to speak through [our_entity.ckey]'s mob", user)
 		if(!message)
-			message = tgui_input_text(user, "Input what you want [our_entity] to [mode]", "narrate", null, encode = FALSE) //say/emote sanitize already
+			var/_answer_a8 = verb_prompt(user, "a8", list("kind" = "text", "message" = "Input what you want [our_entity] to [mode]", "title" = "narrate", "encode" = FALSE), args)
+			if(isnull(_answer_a8))
+				return
+			message = _answer_a8 //say/emote sanitize already
 		if(message && mode == "Speak")
 			our_entity.say(message)
 		else if(message && mode == "Emote")
@@ -163,7 +177,10 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	else if(istype(selection, /atom))
 		var/atom/our_entity = selection
 		if(!message)
-			message = tgui_input_text(user, "Input what you want [our_entity] to [mode]", "narrate", null)
+			var/_answer_a9 = verb_prompt(user, "a9", list("kind" = "text", "message" = "Input what you want [our_entity] to [mode]", "title" = "narrate"), args)
+			if(isnull(_answer_a9))
+				return
+			message = _answer_a9
 		message = encode_html_emphasis(sanitize(message))
 		if(message && mode == "Speak")
 			our_entity.audible_message(span_bold("[our_entity.name]") + " [message]")

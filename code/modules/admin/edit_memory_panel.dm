@@ -93,19 +93,25 @@
 
 	switch(action)
 		if("edit_role")
-			var/new_role = tgui_input_list(ui.user, "Select new role", "Assigned role", SSjob.occupations_by_name, target_mind.assigned_role)
+			var/new_role = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Select new role", "title" = "Assigned role", "choices" = SSjob.occupations_by_name, "default" = target_mind.assigned_role))
+			if(isnull(new_role))
+				return
 			if(new_role)
 				target_mind.assigned_role = new_role
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit_memory")
-			var/new_memo = tgui_input_text(ui.user, "Write new memory", "Memory", target_mind.memory, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+			var/new_memo = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Write new memory", "title" = "Memory", "default" = target_mind.memory, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+			if(isnull(new_memo))
+				return
 			if(!isnull(new_memo))
 				target_mind.memory = new_memo
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit_ambitions")
-			var/new_amb = tgui_input_text(ui.user, "Enter a new ambition", "Ambition", target_mind.ambitions, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+			var/new_amb = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "Enter a new ambition", "title" = "Ambition", "default" = target_mind.ambitions, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+			if(isnull(new_amb))
+				return
 			if(isnull(new_amb))
 				return TRUE
 			target_mind.ambitions = new_amb

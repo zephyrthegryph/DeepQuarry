@@ -18,7 +18,9 @@
 
 ADMIN_VERB(admin_convert_savefile, R_ADMIN, "Convert Player Savefile", "Convert a player's preferences.sav to preferences.json or vice versa. Player must be logged off.", ADMIN_CATEGORY_SERVER_ADMIN)
 	// Pick your target.
-	var/target_ckey = tgui_input_text(user, "Enter the ckey of the player whose save file you want to convert.", "Convert Player Savefile")
+	var/target_ckey = verb_prompt(user, "a1", list("kind" = "text", "message" = "Enter the ckey of the player whose save file you want to convert.", "title" = "Convert Player Savefile"), args)
+	if(isnull(target_ckey))
+		return
 	if(!target_ckey)
 		return
 	target_ckey = lowertext(target_ckey)
@@ -54,16 +56,14 @@ ADMIN_VERB(admin_convert_savefile, R_ADMIN, "Convert Player Savefile", "Convert 
 	if(has_json)
 		options += "preferences.json -> preferences.sav"
 
-	var/direction = tgui_input_list(user, "Select the conversion to perform for '[target_ckey]'.", "Convert Player Savefile", options)
+	var/direction = verb_prompt(user, "a2", list("kind" = "list", "message" = "Select the conversion to perform for '[target_ckey]'.", "title" = "Convert Player Savefile", "choices" = options), args)
+	if(isnull(direction))
+		return
 	if(!direction)
 		return
 
 	// Warn the admin in case the player has logged in since we checked.
-	var/confirm = tgui_alert(
-		user,
-		"WARNING: '[target_ckey]' should be logged off before this runs. Proceeding while they are online can corrupt their save.\n\nAre you sure [target_ckey] is logged off?",
-		"Convert Player Savefile",
-		list("Cancel", "Yes, they are logged off"))
+	var/confirm = verb_prompt(user, "confirm", list("message" = "WARNING: '[target_ckey]' should be logged off before this runs. Proceeding while they are online can corrupt their save.\n\nAre you sure [target_ckey] is logged off?", "title" = "Convert Player Savefile", "choices" = list("Cancel", "Yes, they are logged off")), args)
 	if(confirm != "Yes, they are logged off")
 		return
 

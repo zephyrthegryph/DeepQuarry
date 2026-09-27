@@ -129,13 +129,17 @@
 			if(!check_rights(R_SERVER))
 				return
 			if(SSemergency_shuttle.wait_for_launch)
-				var/new_time_left = tgui_input_number(ui.user, "Enter new shuttle launch countdown (seconds):", "Edit Shuttle Launch Time", SSemergency_shuttle.estimate_launch_time())
+				var/new_time_left = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = SSemergency_shuttle.estimate_launch_time()))
+				if(isnull(new_time_left))
+					return
 				if(isnum(new_time_left))
 					SSemergency_shuttle.launch_time = world.time + (new_time_left * 10)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
 			else if(SSemergency_shuttle.shuttle.has_arrive_time())
-				var/new_time_left = tgui_input_number(ui.user, "Enter new shuttle arrival time (seconds):", "Edit Shuttle Arrival Time", SSemergency_shuttle.estimate_arrival_time())
+				var/new_time_left = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = SSemergency_shuttle.estimate_arrival_time()))
+				if(isnull(new_time_left))
+					return
 				if(isnum(new_time_left))
 					SSemergency_shuttle.shuttle.arrive_time = world.time + (new_time_left * 10)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left]")

@@ -16,39 +16,32 @@
 		to_chat(usr, span_red("There are [(6000-world.time)/10] seconds remaining before it may be called."))
 		return
 
-	var/datum/antagonist/deathsquad/team
+	om_prompt_sequence(src, usr, list(
+		list("key" = "type", "kind" = "list", "message" = "Select type of strike team:", "title" = "Strike Team", "choices" = list("Heavy Asset Protection", "Mercenaries")),
+		PROC_REF(strike_team_ask_sure),
+		list("key" = "mission", "kind" = "text", "message" = "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.\n\nPlease specify which mission the strike team shall undertake.", "title" = "Specify Mission", "max_length" = MAX_MESSAGE_LEN),
+	), PROC_REF(strike_team_answered), list("requires" = PROMPT_ADMIN(R_HOLDER)))
 
-	var/choice = tgui_input_list(usr, "Select type of strike team:", "Strike Team", list("Heavy Asset Protection", "Mercenaries"))
-	if(!choice)
-		return
-
+/client/proc/strike_team_datum(choice)
 	switch(choice)
 		if("Heavy Asset Protection")
-			team = GLOB.deathsquad
+			return GLOB.deathsquad
 		if("Mercenaries")
-			team = GLOB.commandos
-		else
-			return
+			return GLOB.commandos
 
+/client/proc/strike_team_ask_sure(mob/admin, datum/om/prompt/ask)
+	var/datum/antagonist/deathsquad/team = strike_team_datum(ask.get("type"))
 	if(team.deployed)
 		to_chat(usr, span_red("Someone is already sending a team."))
-		return
+		return PROMPT_STOP
+	return list("key" = "sure", "message" = "Do you want to send in a strike team? Once enabled, this is irreversible.", "title" = "Strike Team", "choices" = list("Yes","No"), "confirm" = "Yes")
 
-	if(tgui_alert(usr, "Do you want to send in a strike team? Once enabled, this is irreversible.","Strike Team",list("Yes","No"))!="Yes")
-		return
-
-	tgui_alert(usr, "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.") // Should remain tgui_alert() (blocking)
-
-	choice = null
-	while(!choice)
-		choice = tgui_input_text(src, "Please specify which mission the strike team shall undertake.", "Specify Mission", "", MAX_MESSAGE_LEN)
-		if(!choice)
-			if(tgui_alert(usr, "Error, no mission set. Do you want to exit the setup process?","Strike Team",list("Yes","No"))!="No")
-				return
+/client/proc/strike_team_answered(mob/admin, datum/om/prompt/ask)
+	var/datum/antagonist/deathsquad/team = strike_team_datum(ask.get("type"))
 	consider_ert_load()
 
 	if(team.deployed)
-		to_chat(usr, "Looks like someone beat you to it.")
+		to_chat(admin, "Looks like someone beat you to it.")
 		return
 
 	team.attempt_random_spawn()
@@ -69,12 +62,21 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 	if(GLOB.send_emergency_team)
 		to_chat(user, span_danger("[using_map.boss_name] has already dispatched an emergency response team!"))
 		return
-	if(tgui_alert(user, "Do you want to dispatch an Emergency Response Team?", "ERT", list("Yes","No")) != "Yes")
+	var/_answer_a1 = verb_prompt(user, "a1", list("message" = "Do you want to dispatch an Emergency Response Team?", "title" = "ERT", "choices" = list("Yes","No")), args)
+	if(isnull(_answer_a1))
 		return
-	if(tgui_alert(user, "Do you want this Response Team to be announced?", "ERT", list("Yes","No")) != "Yes")
+	if(_answer_a1 != "Yes")
+		return
+	var/_answer_a2 = verb_prompt(user, "a2", list("message" = "Do you want this Response Team to be announced?", "title" = "ERT", "choices" = list("Yes","No")), args)
+	if(isnull(_answer_a2))
+		return
+	if(_answer_a2 != "Yes")
 		GLOB.silent_ert = TRUE
 	if(get_security_level() != "red") // Allow admins to reconsider if the alert level isn't Red
-		if(tgui_alert(user, "The station is not in red alert. Do you still want to dispatch a response team?", "ERT", list("Yes","No")) != "Yes")
+		var/_answer_a3 = verb_prompt(user, "a3", list("message" = "The station is not in red alert. Do you still want to dispatch a response team?", "title" = "ERT", "choices" = list("Yes","No")), args)
+		if(isnull(_answer_a3))
+			return
+		if(_answer_a3 != "Yes")
 			return
 	if(GLOB.send_emergency_team)
 		to_chat(user, span_danger("Looks like somebody beat you to it!"))

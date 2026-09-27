@@ -7,7 +7,9 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	return
 	#endif
 
-	var/task = tgui_input_list(user, "Select Action", "Select the Memo Action.", list("write","show","delete"))
+	var/task = verb_prompt(user, "a1", list("kind" = "list", "message" = "Select Action", "title" = "Select the Memo Action.", "choices" = list("write","show","delete")), args)
+	if(isnull(task))
+		return
 	if(!task)
 		return
 
@@ -23,7 +25,9 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 /client/proc/admin_memo_write()
 	var/savefile/F = new(MEMOFILE)
 	if(F)
-		var/memo = tgui_input_text(src,"Type your memo\n(Leaving it blank will delete your current memo):","Write Memo",null, multiline = TRUE, prevent_enter = TRUE)
+		var/memo = client_prompt("a1", list("kind" = "text", "message" = "Type your memo\n(Leaving it blank will delete your current memo):", "title" = "Write Memo", "multiline" = TRUE), PROC_REF(admin_memo_write), args, 0)
+		if(isnull(memo))
+			return
 		switch(memo)
 			if(null)
 				return
@@ -52,7 +56,10 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 	if(F)
 		var/ckey
 		if(check_rights(R_SERVER,0))	//high ranking admins can delete other admin's memos
-			ckey = tgui_input_list(src,"Whose memo shall we remove?","Remove Memo", F.dir)
+			var/_answer_a1 = client_prompt("a1", list("kind" = "list", "message" = "Whose memo shall we remove?", "title" = "Remove Memo", "choices" = F.dir), PROC_REF(admin_memo_delete), args, 0)
+			if(isnull(_answer_a1))
+				return
+			ckey = _answer_a1
 		else
 			ckey = src.ckey
 		if(ckey)
