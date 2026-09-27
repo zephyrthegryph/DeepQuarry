@@ -53,7 +53,7 @@
 
 	return data
 
-/datum/wires/airlock/tgui_act(action, list/params)
+/datum/wires/airlock/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
@@ -62,7 +62,9 @@
 
 	switch(action)
 		if("set_id_tag")
-			var/new_id = tgui_input_text(usr, "Enter a new ID tag for [A]", "[A] ID Tag", A.id_tag, 60, FALSE, TRUE)
+			var/new_id = act_prompt(usr, action, params, ui, "k65", list("kind" = "text", "message" = "Enter a new ID tag for [A]", "title" = "[A] ID Tag", "default" = A.id_tag, "max_length" = 60, "multiline" = FALSE, "encode" = TRUE))
+			if(isnull(new_id))
+				return
 			if(new_id)
 				A.id_tag = new_id
 				return TRUE

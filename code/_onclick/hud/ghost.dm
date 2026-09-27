@@ -104,7 +104,9 @@
 	record_found = find_general_record("name", G.client.prefs.read_preference(/datum/preference/name/real_name))
 	// Found their record, they were spawned previously. Remind them corpses cannot play games.
 	if(record_found)
-		var/answer = tgui_alert(G, "You seem to have previously joined this round. If you are currently dead, you should not enter VR as this character. Would you still like to proceed?", "Previously spawned",list("Yes", "No"))
+		var/answer = rerun_prompt(G, "k107", list("message" = "You seem to have previously joined this round. If you are currently dead, you should not enter VR as this character. Would you still like to proceed?", "title" = "Previously spawned", "choices" = list("Yes", "No")), "Click" /* a built-in proc, which nameof cannot name */, args)
+		if(isnull(answer))
+			return
 		if(answer != "Yes")
 			return
 
@@ -115,7 +117,10 @@
 	if(!LAZYLEN(vr_landmarks))
 		to_chat(G, "There are no available spawn locations in virtual reality.")
 		return
-	S = tgui_input_list(G, "Please select a location to spawn your avatar at:", "Spawn location", vr_landmarks)
+	var/_answer_k118 = rerun_prompt(G, "k118", list("kind" = "list", "message" = "Please select a location to spawn your avatar at:", "title" = "Spawn location", "choices" = vr_landmarks), "Click" /* a built-in proc, which nameof cannot name */, args)
+	if(isnull(_answer_k118))
+		return
+	S = _answer_k118
 	if(!S)
 		return 0
 	for(var/obj/effect/landmark/virtual_reality/i in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))

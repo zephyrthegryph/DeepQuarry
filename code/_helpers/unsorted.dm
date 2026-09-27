@@ -306,43 +306,39 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 //Generalised helper proc for letting mobs rename themselves. Used to be clname() and ainame()
 //Last modified by Carn
-/mob/proc/rename_self(role, allow_numbers=0)
-	spawn(0) // S7 keeps: tgui_input_text() sleeps (prompts, S10)
-		var/oldname = real_name
+/mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
+	if(isnull(started_at))
+		started_at = world.time
+	om_prompt(src, src, list("kind" = "text", "message" = "You are \a [role]. Would you like to change your name to something else?", "title" = "Name change", "default" = real_name, "max_length" = MAX_NAME_LEN, "data" = list("role" = role, "allow_numbers" = allow_numbers, "attempt" = attempt, "started_at" = started_at)), TYPE_PROC_REF(/mob, rename_self_entered))
 
-		var/time_passed = world.time
-		var/newname
+/// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
+/mob/proc/rename_self_entered(mob/user, newname, datum/om/prompt/P)
+	var/role = P.get("role")
+	if((world.time - P.get("started_at")) > 5 MINUTES)
+		return	//took too long
+	newname = sanitizeName(newname, , P.get("allow_numbers"))	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(M == src)
+			continue
+		if(!newname || M.real_name == newname)
+			newname = null
+			break
+	if(!newname)
+		to_chat(src, "Sorry, that [role]-name wasn't appropriate, please try another. It's possibly too long/short, has bad characters or is already taken.")
+		if(P.get("attempt") < 3)
+			rename_self(role, P.get("allow_numbers"), P.get("attempt") + 1, P.get("started_at"))
+		return
 
-		for(var/i=1,i<=3,i++)	//we get 3 attempts to pick a suitable name.
-			//newname = tgui_input_text(src,"You are \a [role]. Would you like to change your name to something else?", "Name change",oldname)
-			newname = tgui_input_text(src,"You are \a [role]. Would you like to change your name to something else?", "Name change",oldname, MAX_NAME_LEN)
-			if((world.time-time_passed)>3000)
-				return	//took too long
-			newname = sanitizeName(newname, ,allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	var/oldname = real_name
+	if(cmptext("ai",role))
+		if(isAI(src))
+			var/mob/living/silicon/ai/A = src
+			oldname = null//don't bother with the records update crap
+			play_simple_announcement(world, ANNOUNCER_MSG_NEW_AI)
+			// Set eyeobj name
+			A.SetName(newname)
 
-			for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				if(M == src)
-					continue
-				if(!newname || M.real_name == newname)
-					newname = null
-					break
-			if(newname)
-				break	//That's a suitable name!
-			to_chat(src, "Sorry, that [role]-name wasn't appropriate, please try another. It's possibly too long/short, has bad characters or is already taken.")
-
-		if(!newname)	//we'll stick with the oldname then
-			return
-
-		if(cmptext("ai",role))
-			if(isAI(src))
-				var/mob/living/silicon/ai/A = src
-				oldname = null//don't bother with the records update crap
-				play_simple_announcement(world, ANNOUNCER_MSG_NEW_AI)
-				// Set eyeobj name
-				A.SetName(newname)
-
-
-		fully_replace_character_name(oldname,newname)
+	fully_replace_character_name(oldname,newname)
 
 
 
@@ -351,19 +347,23 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return "[pick("1","2","3","4","5","6","7","8","9","0")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")]"
 
 //When an AI is activated, it can choose from a list of non-slaved borgs to have as a slave.
-/proc/freeborg()
-	var/select = null
+/// The pick re-runs `proc_name` on `asker` with `proc_args` (null while waiting, or with no borgs).
+/proc/freeborg(mob/user, datum/asker, proc_name, list/proc_args)
+	var/list/borgs = free_borg_choices()
+	if(!borgs.len)
+		return
+	var/select = asker.rerun_prompt(user, "borg", list("kind" = "list", "message" = "Unshackled borg signals detected:", "title" = "Borg selection", "choices" = borgs), proc_name, proc_args)
+	if(select)
+		return borgs[select]
+
+/proc/free_borg_choices()
 	var/list/borgs = list()
 	for (var/mob/living/silicon/robot/A in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if (A.stat == 2 || A.connected_ai || A.scrambledcodes || istype(A,/mob/living/silicon/robot/drone))
 			continue
 		var/name = "[A.real_name] ([A.modtype] [A.braintype])"
 		borgs[name] = A
-
-	if (borgs.len)
-		select = tgui_input_list(usr, "Unshackled borg signals detected:", "Borg selection", borgs)
-		if(select)
-			return borgs[select]
+	return borgs
 
 //When a borg is activated, it can choose which AI it wants to be slaved to
 /proc/active_ais()
@@ -386,12 +386,16 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	return selected
 
-/proc/select_active_ai(mob/user)
+/// Without a user (or asker) an AI is picked at random; else `user` picks, and the answer
+/// re-runs `proc_name` on `asker` with `proc_args` (null meanwhile).
+/proc/select_active_ai(mob/user, datum/asker, proc_name, list/proc_args)
 	var/list/ais = active_ais()
-	if(ais.len)
-		if(user)	. = tgui_input_list(user, "AI signals detected:", "AI selection", ais)
-		else		. = pick(ais)
-	return .
+	if(!ais.len)
+		return
+	if(!user || !asker)
+		return pick(ais)
+	var/mob/living/silicon/ai/picked = asker.rerun_prompt(user, "ai", list("kind" = "list", "message" = "AI signals detected:", "title" = "AI selection", "choices" = ais), proc_name, proc_args)
+	return (picked in active_ais()) ? picked : null
 
 //Returns a list of all mobs with their name
 /proc/getmobs()

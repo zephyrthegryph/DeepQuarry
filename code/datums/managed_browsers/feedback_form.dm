@@ -77,7 +77,10 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 
 	switch(action)
 		if("edit_body")
-			feedback_body = tgui_input_text(my_client, "Please write your feedback here.", "Feedback Body", feedback_body, multiline = TRUE, prevent_enter = TRUE)
+			var/_answer_k80 = act_prompt(my_client, action, params, ui, "k80", list("kind" = "text", "message" = "Please write your feedback here.", "title" = "Feedback Body", "default" = feedback_body, "multiline" = TRUE))
+			if(isnull(_answer_k80))
+				return
+			feedback_body = _answer_k80
 			return TRUE
 
 		if("set_hide_author")
@@ -88,7 +91,9 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 			return TRUE
 
 		if("choose_topic")
-			var/picked = tgui_input_list(my_client, "Choose the topic you want to submit your feedback under.", "Feedback Topic", CONFIG_GET(str_list/sqlite_feedback_topics))
+			var/picked = act_prompt(my_client, action, params, ui, "k91", list("kind" = "list", "message" = "Choose the topic you want to submit your feedback under.", "title" = "Feedback Topic", "choices" = CONFIG_GET(str_list/sqlite_feedback_topics)))
+			if(isnull(picked))
+				return
 			if(picked)
 				feedback_topic = picked
 			return TRUE
@@ -104,7 +109,10 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 				to_chat(my_client, span_warning("It appears you didn't write anything, or it was invalid."))
 				return TRUE
 
-			if(tgui_alert(my_client, "Are you sure you want to submit your feedback?", "Confirm Submission", list("No", "Yes")) != "Yes")
+			var/_answer_k107 = act_prompt(my_client, action, params, ui, "k107", list("message" = "Are you sure you want to submit your feedback?", "title" = "Confirm Submission", "choices" = list("No", "Yes")))
+			if(isnull(_answer_k107))
+				return
+			if(_answer_k107 != "Yes")
 				return TRUE
 
 			var/author_text = my_client.ckey

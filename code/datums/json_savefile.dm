@@ -109,7 +109,7 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 	if(!istype(requester) || !path)
 		return
 
-	if(!json_export_checks(requester))
+	if(!json_export_checks(requester, account_name))
 		return
 
 	// COOLDOWN_START(src, download_cooldown, (CONFIG_GET(number/seconds_cooldown_for_preferences_export) * (1 SECONDS)))
@@ -128,12 +128,13 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 
 /// Proc that just handles all of the checks for exporting a preferences file, returns TRUE if all checks are passed, FALSE otherwise.
 /// Just done like this to make the code in the export_json_to_client() proc a bit cleaner.
-/datum/json_savefile/proc/json_export_checks(mob/requester)
+/// The confirmation re-runs export_json_to_client() (FALSE while it waits).
+/datum/json_savefile/proc/json_export_checks(mob/requester, account_name)
 	if(!COOLDOWN_FINISHED(src, download_cooldown))
 		tgui_alert_async(requester, "You must wait [DisplayTimeText(COOLDOWN_TIMELEFT(src, download_cooldown))] before exporting your preferences again!", "Export Preferences JSON")
 		return FALSE
 
-	if(tgui_alert(requester, "Are you sure you want to export your preferences as a JSON file? This will save to a file on your computer.", "Export Preferences JSON", list("Cancel", "Yes")) == "Yes")
+	if(rerun_prompt(requester, "confirm", list("message" = "Are you sure you want to export your preferences as a JSON file? This will save to a file on your computer.", "title" = "Export Preferences JSON", "choices" = list("Cancel", "Yes")), PROC_REF(export_json_to_client), list(requester, account_name)) == "Yes")
 		return TRUE
 
 	return FALSE

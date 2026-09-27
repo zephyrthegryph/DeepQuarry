@@ -8,7 +8,10 @@
 	return attack_hand(user)
 
 /obj/structure/signpost/attack_hand(mob/user as mob)
-	if(tgui_alert(user, "Travel back to ss13?","Return?",list("Yes","No")) == "Yes")
+	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), TYPE_PROC_REF(/atom, attack_hand), args)
+	if(isnull(_answer_k11))
+		return TRUE
+	if(_answer_k11 == "Yes")
 		if(user.z != src.z)	return
 		user.forceMove(get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))))
 
