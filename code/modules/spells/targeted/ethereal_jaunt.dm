@@ -92,11 +92,7 @@
 	. = ..()
 	last_valid_turf = get_turf(loc)
 
-/obj/effect/dummy/spell_jaunt/Destroy()
-	// Eject contents if deleted somehow
-	for(var/atom/movable/AM in src)
-		AM.loc = get_turf(src)
-	return ..()
+REF_SPILL_LIST(/obj/effect/dummy/spell_jaunt, "contents")
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return

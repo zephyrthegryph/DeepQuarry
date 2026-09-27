@@ -16,11 +16,7 @@
 	var/proj_trail_icon_state = "trail"
 	var/list/trails
 
-/obj/item/projectile/spell_projectile/Destroy()
-	for(var/trail in trails)
-		qdel(trail)
-	carried = null
-	return ..()
+REF_OWNED_LIST(/obj/item/projectile/spell_projectile, "trails")
 
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails
