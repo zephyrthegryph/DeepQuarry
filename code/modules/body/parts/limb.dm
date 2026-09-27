@@ -110,7 +110,7 @@
 /// excess becomes shock, as in apply_wound_damage(). Returns the amount the
 /// wounds took.
 /obj/item/organ/external/proc/accumulate_wound_damage(wound_kind, amount)
-	if(amount <= 0 || (owner?.status_flags & GODMODE))
+	if(amount <= 0 || (owner && om_has(owner, EFFECT_GODMODE)))
 		return 0
 	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
 	var/inflict = amount
