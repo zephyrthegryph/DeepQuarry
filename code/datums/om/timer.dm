@@ -225,6 +225,44 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return call(proc_ref)(arglist(call_args || list()))
 	return call(E, proc_ref)(arglist(call_args || list()))
 
+// ---------------------------------------------------------------- sleep guard
+
+/datum/om/scheduler/var/callees_slept = 0
+/// Test hook: while set, a sleeping callee is counted and logged but does not fail the test.
+GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
+
+/// Runs a scheduler callback without letting it stall the scheduler. The call goes through
+/// a waitfor = FALSE trampoline: if the callee sleeps, control comes back here at once, the
+/// rest of the callee finishes on its own later, and the sleep is reported. Returns the
+/// callee's return value, or OM_CALLEE_SLEPT. Runtimes re-throw as before.
+/proc/om_guarded_call(datum/E, proc_ref, list/call_args)
+	var/list/state = list(TRUE, null, null) // running, result, exception
+	om_trampoline(state, E, proc_ref, call_args)
+	if(state[3])
+		throw state[3]
+	if(!state[1])
+		return state[2]
+	var/datum/om/scheduler/sched = om_scheduler()
+	sched.callees_slept++
+	log_runtime("OM: SLEPT [proc_ref] on [E]")
+#ifdef UNIT_TESTS
+	if(!GLOB.om_expect_sleep && GLOB.current_test)
+		var/datum/unit_test/test = GLOB.current_test
+		test.Fail("OM: SLEPT [proc_ref] on [E]: scheduler callbacks must not sleep")
+#endif
+	return OM_CALLEE_SLEPT
+
+/proc/om_trampoline(list/state, datum/E, proc_ref, list/call_args)
+	set waitfor = FALSE
+	try
+		if(E)
+			state[2] = om_invoke(E, proc_ref, call_args)
+		else
+			state[2] = call(proc_ref)(arglist(call_args || list()))
+	catch(var/exception/e)
+		state[3] = e
+	state[1] = FALSE
+
 /// Resolves captured handles in place. FALSE if any is gone.
 /proc/om_resolve_captured(list/captured, list/positions)
 	for(var/i in positions)
@@ -263,7 +301,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 			rec.sched.timers_dropped++
 			continue
 		try
-			om_invoke(E, proc_ref, captured)
+			om_guarded_call(E, proc_ref, captured)
 		catch(var/exception/e)
 			stack_trace("om timer [proc_ref] on [E]: [e]")
 	om_timers_reschedule(rec)

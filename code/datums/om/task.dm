@@ -268,7 +268,9 @@
 	var/i = T.step_no * 2 - 1
 	var/result
 	try
-		result = call(T.actor, S[i])(T)
+		result = om_guarded_call(T.actor, S[i], list(T))
+		if(result == OM_CALLEE_SLEPT)
+			result = STEP_FAIL("slept")
 	catch(var/exception/e)
 		stack_trace("om task [T.def.name] step [S[i]]: [e]")
 		result = STEP_FAIL("error")

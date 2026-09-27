@@ -374,6 +374,8 @@
 #define BORER_OF(H) OM_REL_SOURCE(H, /datum/om/relation/host_of)
 
 // ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
+/// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
+#define OM_CALLEE_SLEPT "__om_callee_slept"
 #define STEP_NEXT 1
 #define STEP_DONE 2
 #define OM_STEP_REPEAT 3

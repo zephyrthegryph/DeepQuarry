@@ -230,3 +230,42 @@
 	TEST_ASSERT_EQUAL(om_resolve(hb), B, "the new handle resolves")
 	TEST_ASSERT_NULL(om_resolve("junk"), "junk resolves to null")
 	TEST_ASSERT_NULL(om_resolve(null), "null resolves to null")
+
+// ---------------------------------------------------------------- sleep guard
+
+/datum/om_test_entity/proc/sleepy_hit(tag)
+	sleep(1)
+	log += "[tag] woke"
+
+/datum/om_test_entity/proc/step_sleepy(datum/om/task/T)
+	sleep(1)
+	return STEP_NEXT
+
+/datum/om/task_def/test_steps_sleepy
+	name = "test_steps_sleepy"
+	steps = list(/datum/om_test_entity/proc/step_sleepy = 1 SECONDS, /datum/om_test_entity/proc/step_a = 1 SECONDS)
+	complete_proc = /datum/om_test_entity/proc/task_completed
+	cancel_proc = /datum/om_test_entity/proc/task_cancelled
+
+/// A sleeping timer or step callee can't stall the scheduler: it is cut loose, counted and
+/// logged (and fails any test that doesn't expect it), and a sleeping step fails its task.
+/datum/unit_test/om/sleeping_callee_is_caught
+
+/datum/unit_test/om/sleeping_callee_is_caught/run_om(list/made)
+	var/datum/om/scheduler/sched = om_scheduler()
+	var/datum/om_test_entity/E = entity(made)
+	GLOB.om_expect_sleep = TRUE
+	var/before = sched.callees_slept
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/sleepy_hit, "sleepy")
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "after")
+	scheduler_advance(1.5)
+	TEST_ASSERT_EQUAL(sched.callees_slept, before + 1, "the sleeping timer callee is counted")
+	TEST_ASSERT("after" in E.log, "a timer due with the sleeping one still runs in the same pass")
+
+	E.log.Cut()
+	var/datum/om/task/T = om_task_start(E, /datum/om/task_def/test_steps_sleepy)
+	scheduler_advance(1.5)
+	GLOB.om_expect_sleep = FALSE
+	TEST_ASSERT_EQUAL(sched.callees_slept, before + 2, "the sleeping step is counted")
+	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "a sleeping step fails its task")
+	TEST_ASSERT_EQUAL(T.reason, "slept", "with the reason 'slept'")
