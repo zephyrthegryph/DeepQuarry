@@ -22,9 +22,6 @@
 		ui.set_autoupdate(FALSE)
 		ui.open()
 
-/datum/eventkit/mob_spawner/Destroy()
-	. = ..()
-
 /datum/eventkit/mob_spawner/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
 

@@ -1,6 +1,5 @@
 GLOBAL_LIST_INIT(event_collector_associations,list())
 
-
 /obj/structure/event_collector //set anchored, solid, etc to taste.
 	name = "event collector"
 	desc = "you really should set this up properly :("
@@ -9,12 +8,10 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 
 	var/blocker_channel = "collector" //used for list management - blockers that have the same key will add themselves as a disabler to every collector with the same key
 
-
 	var/recipe_size = 3 //how many ingredients do we pick out from the ingredients list for a "recipe"?
 
 	var/blocker_insertion_impedement_threshold = -1 //if we have more blockers than this, we can't place item in :(
 	var/show_blocker_in_examine = TRUE
-
 
 	var/list/possible_ingredients = list(
 		/obj/item/trash,
@@ -64,17 +61,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 /obj/structure/event_collector/Initialize(mapload)
 	. = ..()
 
-/obj/structure/event_collector/Destroy()
-	. = ..()
-
-
 /obj/structure/event_collector/proc/get_blockers()
 	. = 0
 	if(GLOB.event_collector_associations)
 		if(GLOB.event_collector_associations[blocker_channel])
 			for(var/obj/structure/event_collector_blocker/blocker in GLOB.event_collector_associations[blocker_channel])
 				. += blocker.block_amount
-
 
 /obj/structure/event_collector/proc/jiggle_animation(intensity = 1)
 	var/matrix/secondary_effect = matrix()
@@ -109,8 +101,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 /obj/structure/event_collector/update_icon()
 	. = ..() //here more as a reminder than anything
-
-
 
 /obj/structure/event_collector/proc/recipe_failed() //called when reset by an admin assuming they want it to be
 	return
