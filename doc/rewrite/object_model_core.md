@@ -37,7 +37,7 @@ Every framework type lives under `/datum/om/`, because `/datum/event` and
 `/datum/effect` already exist (random events, xenoarchaeology). Procs start
 with `om_`, except the dt helpers (`approach`, `decay`, `chance_over`,
 `move_toward`, `clamp01`), the combinators (`ALL_OF`, `ANY_OF`, `NOT_OF`,
-`SUM_OF`, `CHECK`), `scheduler_advance` and `AWAIT`. `ALL` was already a
+`SUM_OF`, `CHECK`) and `scheduler_advance`. `ALL` was already a
 define, hence `ALL_OF`.
 
 | Concept | Path |
@@ -440,9 +440,8 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
 
 **What stays.**
-- `sleep` and `waitfor = FALSE` remain in the MC, in world/Topic and client procs, in admin and debug verbs, and in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL). Those sit behind their own async wrappers with callbacks.
+- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. `waitfor = FALSE` remains in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL), behind async wrappers with callbacks. Admin prompt waits (tgui_input/alert) stay until S10.
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
-- `AWAIT(task, timeout)` stays only while legacy procs are converted.
 
 **Weak capture.** Object arguments to `om_after` and to tasks are held as OM handles, never as references. When the timer fires, or a task step runs, each handle is resolved first: if any argument has been deleted, the call is dropped (a timer) or fails with the reason `"gone"` (a task). A deferred call can't keep a deleted object alive or run against one.
 
@@ -666,8 +665,6 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   delete. An ability whose continuation is a timer holds its worker with `om_hold_busy(X, d,
   on_end)` (a claiming task done at its deadline; `om_release_busy()` ends it early). There
   are no `busy`/`in_use` vars guarding timed actions.
-- `AWAIT(task, timeout)` is for legacy procs that must sleep; the timeout is
-  mandatory and a missing one is an error.
 - `om_ui_bind(session, target, mask)` is a watch that holds the target at
   `WATCHED`. Changes coalesce into one `session.om_ui_push()` per run, and at
   most one per 0.2 s per session (the rest arrive by deadline). `/datum/tgui`
@@ -686,7 +683,7 @@ Each has a regression test in `dq_om_core_tests.dm`.
 | An odd return value killing a behaviour | return values are ignored |
 | A runtime killing a behaviour or its ring | hooks are caught per slot; the loop resumes at the next entity |
 | Null holder in relation hooks | hooks get both ends as arguments, before `Destroy()` |
-| Waits without timeouts | `AWAIT` needs one; tasks end by deadline |
+| Waits without timeouts | nothing sleeps on a task; tasks end by deadline |
 | Shared mutable per-type config | DEFs are compiled once; per-entity state is on the entity |
 | Subtype events missing handlers | handler tables flatten inheritance |
 | Re-entrant events silently dropped | queued and delivered; veto re-entry is an error |

@@ -257,13 +257,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			for(var/area/AffectedArea in affected_areas)
 				AffectedArea.power_light = 0
 				AffectedArea.power_change()
-				spawn(rand(25,50)) // S7 keeps: admin verb (allowlist)
-					AffectedArea.power_light = 1
-					AffectedArea.power_change()
+				om_after(AffectedArea, rand(25,50), GLOBAL_PROC_REF(chilling_wind_relight), AffectedArea)
 
-			sleep(100)
-			for(var/mob/M in affected_mobs)
-				M.show_message(span_notice("The chilling wind suddenly stops..."), 1)
+			om_after(null, 10 SECONDS, GLOBAL_PROC_REF(chilling_wind_stops), affected_mobs.Copy())
 			affected_mobs.Cut()
 			affected_areas.Cut()
 
@@ -424,3 +420,11 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	if(holder)
 		log_admin("[key_name(holder)] used secret: [action].")
 #undef HIGHLANDER_DELAY_TEXT
+
+/proc/chilling_wind_relight(area/A)
+	A.power_light = 1
+	A.power_change()
+
+/proc/chilling_wind_stops(list/affected_mobs)
+	for(var/mob/M in affected_mobs)
+		M.show_message(span_notice("The chilling wind suddenly stops..."), 1)

@@ -135,22 +135,23 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 // Increments the ERT chance automatically, so that the later it is in the round,
 // the more likely an ERT is to be able to be called.
 /proc/increment_ert_chance()
-	while(GLOB.send_emergency_team == 0) // There is no ERT at the time.
-		if(get_security_level() == "green")
-			GLOB.ert_base_chance += 1
-		if(get_security_level() == "yellow")
-			GLOB.ert_base_chance += 1
-		if(get_security_level() == "violet")
-			GLOB.ert_base_chance += 2
-		if(get_security_level() == "orange")
-			GLOB.ert_base_chance += 2
-		if(get_security_level() == "blue")
-			GLOB.ert_base_chance += 2
-		if(get_security_level() == "red")
-			GLOB.ert_base_chance += 3
-		if(get_security_level() == "delta")
-			GLOB.ert_base_chance += 10           // Need those big guns
-		sleep(600 * 3) // Minute * Number of Minutes
+	if(GLOB.send_emergency_team) // An ERT is out; the chance stops growing.
+		return
+	if(get_security_level() == "green")
+		GLOB.ert_base_chance += 1
+	if(get_security_level() == "yellow")
+		GLOB.ert_base_chance += 1
+	if(get_security_level() == "violet")
+		GLOB.ert_base_chance += 2
+	if(get_security_level() == "orange")
+		GLOB.ert_base_chance += 2
+	if(get_security_level() == "blue")
+		GLOB.ert_base_chance += 2
+	if(get_security_level() == "red")
+		GLOB.ert_base_chance += 3
+	if(get_security_level() == "delta")
+		GLOB.ert_base_chance += 10           // Need those big guns
+	om_after(null, 3 MINUTES, GLOBAL_PROC_REF(increment_ert_chance))
 
 
 /proc/trigger_armed_response_team(force = 0)
@@ -178,7 +179,9 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 	GLOB.send_emergency_team = 1
 	consider_ert_load()
 
-	sleep(600 * 5)
+	om_after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
+
+/proc/close_armed_response_team()
 	GLOB.send_emergency_team = 0 // Can no longer join the ERT.
 
 GLOBAL_VAR(ert_loaded)

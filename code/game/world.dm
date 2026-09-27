@@ -512,7 +512,6 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				return FALSE
 
 /world/proc/FinishTestRun()
-	set waitfor = FALSE
 	var/list/fail_reasons
 	if(GLOB)
 		if(GLOB.total_runtimes != 0)
@@ -529,9 +528,27 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
 	else
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
-	// S8 allowlist: world proc (test-run shutdown).
-	sleep(0) //yes, 0, this'll let Reboot finish and prevent byond memes
-	qdel(src) //shut it down
+	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
+	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
+	world_next_tick(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(world_finish_test_shutdown)))
+
+/proc/world_finish_test_shutdown()
+	qdel(world) //shut it down
+
+/// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
+/// whose follow-up must run after they return, including after the MC has shut down.
+GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
+
+/proc/world_next_tick(datum/callback/C)
+	GLOB.world_next_tick_callbacks += C
+
+/world/Tick()
+	if(!GLOB || !length(GLOB.world_next_tick_callbacks))
+		return
+	var/list/due = GLOB.world_next_tick_callbacks
+	GLOB.world_next_tick_callbacks = list()
+	for(var/datum/callback/C as anything in due)
+		C.InvokeAsync()
 
 /world/Reboot(reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff

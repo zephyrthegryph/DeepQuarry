@@ -5,8 +5,8 @@
 // requires fail (re-checked only when their channels change on the actor or
 // target), when an interrupted_by event reaches the actor, or when either
 // end is deleted. Exclusivity is a claim relation (target_single, refuse):
-// a second claimant gets the reason back. Legacy sleeping procs wait with
-// AWAIT(task, timeout); the timeout is mandatory.
+// a second claimant gets the reason back. Nothing waits on a task: its
+// on_complete/on_cancel (or steps) carry the rest.
 
 /datum/om/task_def
 	abstract_type = /datum/om/task_def
@@ -321,21 +321,6 @@
 		om_task_complete(T)
 		return
 	T.ends_at = t + S[T.step_no * 2]
-
-/// Legacy procs that must sleep: waits for `T` with a mandatory timeout
-/// (deciseconds). TRUE if it completed.
-/proc/om_await(datum/om/task/T, timeout)
-	if(isnull(timeout) || timeout <= 0)
-		CRASH("om_await() needs a timeout")
-	if(!istype(T))
-		return FALSE
-	var/end = world.time + timeout
-	while(T.state == OM_TASK_RUNNING && world.time < end)
-		// S8 allowlist: AWAIT(task, timeout) for legacy callers (object_model_core 4.11).
-		sleep(world.tick_lag)
-	if(T.state == OM_TASK_RUNNING)
-		om_task_cancel(T, "timed out")
-	return T.state == OM_TASK_DONE
 
 /// Drops every claim `T` holds (its target's and the extra ones).
 /proc/om_task_release_claims(datum/om/task/T)

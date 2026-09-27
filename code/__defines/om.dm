@@ -213,8 +213,6 @@
 #define EVENT_VETO 1
 
 // ---- Tasks (section I). ----
-/// Legacy sleeping procs wait on a task with a mandatory timeout (deciseconds).
-#define AWAIT(task, timeout) om_await(task, timeout)
 #define OM_TASK_RUNNING 0
 #define OM_TASK_DONE 1
 #define OM_TASK_CANCELLED 2

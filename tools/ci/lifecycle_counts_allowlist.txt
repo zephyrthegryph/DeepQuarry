@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1224 in 982 files. qdel total: 2917 in 1163 files.
+# Destroy total: 1224 in 982 files. qdel total: 2913 in 1164 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -1505,7 +1505,7 @@ code/modules/admin/game_panel_panel.dm 1
 code/modules/admin/holder2.dm 4
 code/modules/admin/modify_robot.dm 16
 code/modules/admin/permissionedit.dm 25
-code/modules/admin/player_effects.dm 6
+code/modules/admin/player_effects.dm 2
 code/modules/admin/player_notes.dm 1
 code/modules/admin/player_panel_tgui.dm 1
 code/modules/admin/round_status_panel.dm 1
@@ -1519,7 +1519,7 @@ code/modules/admin/verbs/event_triggers.dm 6
 code/modules/admin/verbs/mapping.dm 3
 code/modules/admin/verbs/randomverbs.dm 1
 code/modules/admin/verbs/secrets.dm 3
-code/modules/admin/verbs/smite.dm 4
+code/modules/admin/verbs/smite.dm 2
 code/modules/admin/view_variables/admin_delete.dm 1
 code/modules/admin/view_variables/nobody_wants_to_learn_matrix_math.dm 1
 code/modules/admin/view_variables/topic_basic.dm 1
@@ -1621,7 +1621,7 @@ code/modules/events/spider_migration.dm 1
 code/modules/events/supply_demand.dm 1
 code/modules/examine/descriptions/guns.dm 2
 code/modules/expedition/expedition_building.dm 1
-code/modules/expedition/expedition_controller.dm 14
+code/modules/expedition/expedition_controller.dm 18
 code/modules/expedition/expedition_debug.dm 7
 code/modules/expedition/expedition_mission.dm 1
 code/modules/expedition/expedition_objective.dm 2
@@ -1660,7 +1660,8 @@ code/modules/generated_station/generated_station_architecture_validation.dm 6
 code/modules/generated_station/generated_station_defenders.dm 2
 code/modules/generated_station/generated_station_director.dm 5
 code/modules/generated_station/generated_station_fragments.dm 3
-code/modules/generated_station/generated_station_materializer.dm 13
+code/modules/generated_station/generated_station_jobs.dm 1
+code/modules/generated_station/generated_station_materializer.dm 10
 code/modules/generated_station/generated_station_room_definitions.dm 11
 code/modules/generated_station/generated_station_runtime.dm 3
 code/modules/generated_station/generated_station_rust_contract.dm 18

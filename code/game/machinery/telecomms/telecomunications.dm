@@ -682,11 +682,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 				log.name = "data packet ([md5(identifier)])"
 
 				if(Compiler && autoruncode)
-					Compiler.Run(signal)	// execute the code
+					if(!Compiler.Run(signal, relay = TRUE))	// execute the code
+						return // the script sleeps: it relays the signal when it is done
 
-			var/can_send = relay_information(signal, /obj/machinery/telecomms/hub)
-			if(!can_send)
-				relay_information(signal, /obj/machinery/telecomms/broadcaster)
+			relay_signal(signal)
+
+/// Sends a processed signal on: to a hub, or straight to the broadcasters.
+/obj/machinery/telecomms/server/proc/relay_signal(datum/signal/signal)
+	var/can_send = relay_information(signal, /obj/machinery/telecomms/hub)
+	if(!can_send)
+		relay_information(signal, /obj/machinery/telecomms/broadcaster)
 
 
 /obj/machinery/telecomms/server/proc/setcode(t)

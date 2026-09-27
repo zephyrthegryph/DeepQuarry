@@ -287,12 +287,17 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 
 	//Sanitized AND we still have a chance to send it? Wow!
 	if(LAZYLEN(decomposed))
+		var/delay = 0
 		for(var/i = 1; i < decomposed.len; i++)
 			var/this_sender = decomposed[i]
 			var/this_message = decomposed[++i]
 			var/this_wait = decomposed[++i]
-			GLOB.global_announcer.autosay("[this_message]", "[this_sender]", "[channel == "Common" ? null : channel]", states = speech_verb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
-			sleep(this_wait SECONDS)
+			// Each line is a timer at its cumulative offset (no sleeping in the verb).
+			om_after(null, delay, GLOBAL_PROC_REF(admin_intercom_line), "[this_message]", "[this_sender]", "[channel == "Common" ? null : channel]", speech_verb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
+			delay += this_wait SECONDS
+
+/proc/admin_intercom_line(message, sender, channel, speech_verb)
+	GLOB.global_announcer.autosay(message, sender, channel, states = speech_verb)
 
 ADMIN_VERB(toggleooc, R_ADMIN, "Toggle Player OOC", "Globally Toggles OOC.", ADMIN_CATEGORY_SERVER_CHAT)
 	CONFIG_SET(flag/ooc_allowed, !CONFIG_GET(flag/ooc_allowed))

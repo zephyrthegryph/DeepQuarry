@@ -306,3 +306,41 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 			call(on_end)(arglist(list(E) + (extra || list())))
 		else
 			call(E, on_end)(arglist(extra || list()))
+
+// ---------------------------------------------------------------- lane work
+
+/**
+ * Long work as lane work (object_model_core.md §4.11: what a stoplag()/sleep(-1) loop was).
+ * `slice_proc`, a proc on E called as (cursor), does one bounded slice and returns the next
+ * cursor (lists pass as they are), or null when the work is done. Slices run back to back while the OM scheduler's budget
+ * lasts; the rest resumes by its cursor on a later pass, on E's clock. `on_done`, a proc on E or
+ * a /datum/callback, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
+ * slice runs at once. Deleting E drops the rest.
+ */
+/proc/om_lane_work(datum/E, slice_proc, cursor, on_done, now = FALSE)
+	if(now || !SSbehaviours?.initialized || !Master?.processing)
+		while(!isnull(cursor) && !QDELETED(E))
+			cursor = call(E, slice_proc)(cursor)
+		if(!QDELETED(E))
+			om_lane_work_done(E, on_done)
+		return
+	// on_done travels in a list: a callback passed to om_after() on its own is held weakly.
+	om_after(E, 0, /proc/om_lane_work_run, E, slice_proc, cursor, list(on_done))
+
+/proc/om_lane_work_run(datum/E, slice_proc, cursor, list/done_box)
+	var/datum/om/scheduler/sched = E.om_rec?.sched || om_scheduler()
+	do
+		cursor = call(E, slice_proc)(cursor)
+	while(!isnull(cursor) && !sched.out_of_budget())
+	if(!isnull(cursor))
+		om_after(E, world.tick_lag, /proc/om_lane_work_run, E, slice_proc, cursor, done_box)
+		return
+	om_lane_work_done(E, done_box[1])
+
+/// `on_done`: a proc on E, or a /datum/callback.
+/proc/om_lane_work_done(datum/E, on_done)
+	if(istype(on_done, /datum/callback))
+		var/datum/callback/C = on_done
+		C.Invoke()
+	else if(on_done)
+		call(E, on_done)()

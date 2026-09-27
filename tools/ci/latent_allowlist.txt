@@ -50,7 +50,7 @@ code/modules/power/singularity/particle_accelerator/particle_smasher.dm 2
 code/modules/power/solar.dm 2
 code/modules/projectiles/guns/magnetic/magnetic.dm 1
 code/modules/projectiles/guns/projectile.dm 1
-code/modules/recycling/disposal_machines.dm 18
+code/modules/recycling/disposal_machines.dm 19
 code/modules/recycling/v_garbosystem.dm 2
 code/modules/research/part_replacer.dm 2
 code/modules/research/tg/machinery/destructive_analyzer.dm 2

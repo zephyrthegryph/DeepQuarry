@@ -90,11 +90,6 @@
 
 // --- Miscellaneous functions ---
 
-// Clone of sleep()
-/proc/delay(time)
-	// S8 allowlist: NTSL interpreter builtin (user scripts call delay()).
-	sleep(time)
-
 // Clone of prob()
 /proc/prob_chance(chance)
 	return prob(chance)

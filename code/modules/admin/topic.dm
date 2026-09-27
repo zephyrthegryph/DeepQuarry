@@ -720,8 +720,6 @@
 		//so they black out before warping
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
-		if(!M)	return
 
 		M.forceMove(prison_cell)
 		if(ishuman(M))
@@ -775,10 +773,8 @@
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdome1))
-		spawn(50) // S7 keeps: admin verb (allowlist)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 1)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Team 1)")
 
@@ -801,10 +797,8 @@
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdome2))
-		spawn(50) // S7 keeps: admin verb (allowlist)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 2)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Team 2)")
 
@@ -824,10 +818,8 @@
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdomeadmin))
-		spawn(50) // S7 keeps: admin verb (allowlist)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Admin.)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Admin.)")
 
@@ -854,10 +846,8 @@
 			observer.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(observer), slot_shoes)
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdomeobserve))
-		spawn(50) // S7 keeps: admin verb (allowlist)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Observer.)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Observer.)")
 

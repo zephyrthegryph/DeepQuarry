@@ -1040,17 +1040,6 @@
 	qdel(target)
 	TEST_ASSERT_EQUAL(T4.state, OM_TASK_CANCELLED, "deleting the target cancels")
 
-/// Regression: waits must have a timeout.
-/datum/unit_test/om/regression_await_needs_timeout
-
-/datum/unit_test/om/regression_await_needs_timeout/run_om(list/made)
-	var/caught = FALSE
-	try
-		om_await(null, null)
-	catch
-		caught = TRUE
-	TEST_ASSERT(caught, "om_await() without a timeout must fail")
-
 // ---------------------------------------------------------------- J: UI
 
 /datum/unit_test/om/ui_bind_coalesces_and_throttles

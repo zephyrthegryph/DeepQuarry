@@ -40,10 +40,10 @@
  * Initializes tgui panel.
  */
 /datum/tgui_panel/proc/initialize(force = FALSE)
-	set waitfor = FALSE
-	// Minimal sleep to defer initialization to after client constructor
-	// S8 allowlist: client proc: defer until after the client constructor.
-	sleep(1 TICKS)
+	// Deferred a tick, until after the client constructor: a timer, the constructor never waits.
+	om_after(src, 1 TICKS, PROC_REF(initialize_window))
+
+/datum/tgui_panel/proc/initialize_window()
 	initialized_at = world.time
 	// Perform a clean initialization
 	window.initialize(

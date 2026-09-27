@@ -85,7 +85,7 @@
 		get_additional_spawns(map[current_cell],T,get_spawn_dir(x, y))
 	return T
 
-/datum/random_map/automata/cave_system/apply_to_map()
+/datum/random_map/automata/cave_system/apply_finished()
 	. = ..()
 
 	for(var/turf/simulated/mineral/T as anything in turfs_changed)

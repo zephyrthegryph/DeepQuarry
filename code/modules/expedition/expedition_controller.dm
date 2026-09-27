@@ -18,6 +18,8 @@
 	var/reason
 	var/yield_count = 0
 	var/tick_budget = 60
+	/// The z's turfs, in wipe order, while the job runs.
+	var/tmp/list/turfs
 
 /datum/expedition_teardown_job/New(datum/controller/subsystem/expedition/new_controller, datum/expedition_site/new_site, new_reason)
 	..()
@@ -31,17 +33,32 @@
 	site = null
 	return ..()
 
-/datum/expedition_teardown_job/proc/checkpoint()
-	if(TICK_USAGE >= tick_budget)
-		yield_count++
-		sleep(0) // S8 allowlist: budgeted background teardown job yielding the tick.
-
+/// Clears the z as lane work (om_lane_work(), object_model_core.md §4.11): a turf at a time,
+/// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
 	if(!controller || !site || QDELETED(site))
 		qdel(src)
 		return
+	turfs = block(locate(1, 1, z_level), locate(world.maxx, world.maxy, z_level))
+	om_lane_work(src, PROC_REF(wipe_slice), 1, PROC_REF(finish))
+
+/// A slice of the wipe: turfs from `cursor` while the slice's budget lasts.
+/datum/expedition_teardown_job/proc/wipe_slice(cursor)
+	var/started = TICK_USAGE
+	var/area/space/space_area = generated_station_space_area()
+	for(var/i in cursor to length(turfs))
+		controller.wipe_turf(turfs[i], space_area)
+		if(i < length(turfs) && TICK_USAGE - started >= tick_budget)
+			yield_count++
+			return i + 1
+	return null
+
+/datum/expedition_teardown_job/proc/finish()
+	turfs = null
+	if(!controller || !site || QDELETED(site))
+		qdel(src)
+		return
 	var/site_name = site.name
-	controller.wipe_z(z_level, src)
 	if(z_level >= 1 && z_level <= world.maxz)
 		controller.free_z |= z_level
 	controller.teardown_z -= "[z_level]"
@@ -161,7 +178,7 @@ SUBSYSTEM_DEF(expedition)
 		return TRUE
 	plan.generation_progress = 5
 	plan.generation_stage = "Allocating planetary survey area"
-	INVOKE_ASYNC(src, PROC_REF(materialize_site_async), site, plan)
+	materialize_site_async(site, plan)
 	return TRUE
 
 /datum/controller/subsystem/expedition/proc/materialize_site_async(datum/expedition_site/descriptor, datum/flight_plan/plan)
@@ -171,7 +188,10 @@ SUBSYSTEM_DEF(expedition)
 	descriptor.mission = null
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
-	var/datum/expedition_site/site = generate_site(mission, descriptor.difficulty, descriptor.assigned_shuttle, descriptor.origin_console, plan)
+	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle, descriptor.origin_console, plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
+
+/// The generated site replaces its descriptor (the destination the crew planned against).
+/datum/controller/subsystem/expedition/proc/site_materialized(datum/expedition_site/descriptor, datum/flight_plan/plan, datum/expedition_mission/mission, datum/expedition_site/site)
 	if(!site)
 		descriptor.mission = mission
 		if(plan && !QDELETED(plan))
@@ -344,6 +364,107 @@ SUBSYSTEM_DEF(expedition)
 		qdel(station_spec)
 		station_spec = null
 		wipe_z(z)
+	return publish_generated_site(mission, difficulty, assigned_shuttle, origin_console, flight_plan, z, gen_started, t_zalloc, generation_seed, station_spec, station_materialization, materialization_yields, materialization_elapsed)
+
+/// generate_site() for the live game: the same attempts, but planning and materializing run as
+/// lane work and timers (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked
+/// with the site, or null.
+/datum/controller/subsystem/expedition/proc/generate_site_async(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null, datum/callback/on_done)
+	if(mission)
+		difficulty = mission.difficulty
+	var/gen_started = REALTIMEOFDAY
+	var/list/needs_wipe = list()
+	var/z = acquire_z(needs_wipe)
+	if(!isnum(z) || z < 1)
+		log_world("SSexpedition: failed to acquire a z-level for a new site.")
+		on_done?.Invoke(null)
+		return
+	var/list/generation = list(
+		"mission" = mission,
+		"difficulty" = difficulty,
+		"shuttle" = assigned_shuttle,
+		"console" = origin_console,
+		"plan" = flight_plan,
+		"z" = z,
+		"started" = gen_started,
+		"zalloc" = REALTIMEOFDAY,
+		// Build a reproducible station instead of seeding legacy biome content.
+		"seed" = max(1, round((world.realtime + world.time * 1009 + z * 7919) % 2147483646)),
+		"attempt" = 0,
+		"yields" = 0,
+		"elapsed" = 0,
+		"done" = on_done,
+	)
+	if(flight_plan && !QDELETED(flight_plan))
+		flight_plan.generation_progress = 20
+		flight_plan.generation_stage = "Survey volume reserved"
+	if(length(needs_wipe))
+		// Pooled levels must expose vacuum beyond the generated hull even if a failed or
+		// interrupted teardown left another substrate behind.
+		wipe_z_async(z, CALLBACK(src, PROC_REF(generation_attempt), generation))
+		return
+	generation_attempt(generation)
+
+/// The next planning attempt (a live destination is monotonic once its z-level is reserved:
+/// retry with deterministic alternate seeds, then publish a small emergency station).
+/datum/controller/subsystem/expedition/proc/generation_attempt(list/generation)
+	generation["attempt"]++
+	if(generation["attempt"] > 3)
+		generation_publish(generation, null, null)
+		return
+	var/attempt_seed = ((generation["seed"] + (generation["attempt"] - 1) * 104729 - 1) % 16000000) + 1
+	generation["attempt_seed"] = attempt_seed
+	var/datum/generated_station_planner/planner = new
+	planner.plan_async(attempt_seed, 160, 160, CALLBACK(src, PROC_REF(generation_planned), generation, planner))
+
+/datum/controller/subsystem/expedition/proc/generation_planned(list/generation, datum/generated_station_planner/planner, datum/generated_station_spec/station_spec)
+	var/planner_error = planner.error_message
+	qdel(planner)
+	if(!station_spec)
+		log_world("SSexpedition: generated-station planning attempt [generation["attempt"]] failed on z[generation["z"]] (seed [generation["attempt_seed"]]): [planner_error || "no specification"].")
+		generation_attempt(generation)
+		return
+	var/datum/generated_station_materializer/materializer = new
+	materializer.strict_room_contracts = FALSE
+	var/origin_x = max(1, round((world.maxx - station_spec.grid_width) / 2))
+	var/origin_y = max(1, round((world.maxy - station_spec.grid_height) / 2))
+	materializer.materialize_async(station_spec, generation["z"], origin_x, origin_y, generation["plan"], FALSE, CALLBACK(src, PROC_REF(generation_materialized), generation, materializer, station_spec))
+
+/datum/controller/subsystem/expedition/proc/generation_materialized(list/generation, datum/generated_station_materializer/materializer, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
+	generation["yields"] += materializer.last_yield_count
+	generation["elapsed"] += materializer.last_elapsed_seconds
+	var/materialization_error = materializer.last_failure_details
+	qdel(materializer)
+	if(station_materialization)
+		generation["seed"] = generation["attempt_seed"]
+		generation_publish(generation, station_spec, station_materialization)
+		return
+	log_world("SSexpedition: generated-station materialization attempt [generation["attempt"]] failed on z[generation["z"]] (seed [generation["attempt_seed"]]): [materialization_error || "no result"].")
+	qdel(station_spec)
+	wipe_z_async(generation["z"], CALLBACK(src, PROC_REF(generation_attempt), generation))
+
+/datum/controller/subsystem/expedition/proc/generation_publish(list/generation, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
+	var/datum/expedition_site/site = publish_generated_site(generation["mission"], generation["difficulty"], generation["shuttle"], generation["console"], generation["plan"], generation["z"], generation["started"], generation["zalloc"], generation["seed"], station_spec, station_materialization, generation["yields"], generation["elapsed"])
+	var/datum/callback/on_done = generation["done"]
+	on_done?.Invoke(site)
+
+/// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
+/datum/controller/subsystem/expedition/proc/wipe_z_async(z, datum/callback/on_done)
+	om_lane_work(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
+
+/datum/controller/subsystem/expedition/proc/wipe_z_slice(list/cursor)
+	var/list/turfs = cursor[1]
+	var/area/space/space_area = generated_station_space_area()
+	for(var/i in cursor[2] to length(turfs))
+		wipe_turf(turfs[i], space_area)
+		if(i < length(turfs) && om_scheduler().out_of_budget())
+			cursor[2] = i + 1
+			return cursor
+	return null
+
+/// The rest of a generation once the station stands (or every attempt failed): the emergency
+/// annex if needed, the site, its runtime, landing zone and mission. Returns the site.
+/datum/controller/subsystem/expedition/proc/publish_generated_site(datum/expedition_mission/mission, difficulty, datum/shuttle/autodock/overmap/assigned_shuttle, obj/machinery/computer/shuttle_control/explore/origin_console, datum/flight_plan/flight_plan, z, gen_started, t_zalloc, generation_seed, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization, materialization_yields, materialization_elapsed)
 	if(!station_materialization)
 		generation_seed = max(1, generation_seed % 16000000)
 		station_spec = generated_station_emergency_spec(generation_seed)
@@ -431,7 +552,9 @@ SUBSYSTEM_DEF(expedition)
 
 // Reuse a pooled z if available, else allocate a fresh one — capped so runaway
 // launches can't grow world.maxz without bound. Returns null on failure.
-/datum/controller/subsystem/expedition/proc/acquire_z()
+/// `needs_wipe`: instead of wiping a pooled level that isn't vacuum, add it to this list (the
+/// caller wipes it as lane work).
+/datum/controller/subsystem/expedition/proc/acquire_z(list/needs_wipe)
 	while(length(free_z))
 		var/z = free_z[1]
 		free_z.Cut(1, 2)
@@ -439,7 +562,10 @@ SUBSYSTEM_DEF(expedition)
 			// Pooled levels must expose vacuum beyond the generated hull even if a
 			// failed or interrupted teardown left another substrate behind.
 			if(!istype(locate(1, 1, z), /turf/space))
-				wipe_z(z)
+				if(islist(needs_wipe))
+					needs_wipe += z
+				else
+					wipe_z(z)
 			return z
 	// Pool is empty: only allocate a new z if we're under the site-z cap.
 	if((length(sites) + length(free_z) + length(teardown_z)) >= EXP_MAX_SITE_ZLEVELS)
@@ -511,38 +637,38 @@ SUBSYSTEM_DEF(expedition)
 	QDEL_NULL(site.overmap_sector)
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(src, site, reason)
-	INVOKE_ASYNC(job, TYPE_PROC_REF(/datum/expedition_teardown_job, execute))
+	job.execute()
 
 // Clear every movable off a z and reset it to vacuum for the next generated
 // station. Never deletes a connected player (defensive).
-/datum/controller/subsystem/expedition/proc/wipe_z(z, datum/expedition_teardown_job/job)
-	var/wiped = 0
+/datum/controller/subsystem/expedition/proc/wipe_z(z)
 	var/area/space/space_area = generated_station_space_area()
+	var/wiped = 0
 	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
-		// Deleting a closet or crate spills what it holds onto the turf (its
-		// drop policy), so sweep again until only connected players are left.
-		for(var/pass in 1 to 8)
-			var/list/doomed = list()
-			for(var/atom/movable/AM in T)
-				if(ismob(AM))
-					var/mob/M = AM
-					if(M.client)
-						continue
-				doomed += AM
-			if(!length(doomed))
-				break
-			for(var/atom/movable/AM as anything in doomed)
-				if(!QDELETED(AM))
-					qdel(AM)
-				job?.checkpoint()
-		if(!istype(T, /turf/space))
-			T.ChangeTurf(/turf/space, tell_universe = FALSE)
-		ChangeArea(T, space_area)
-		wiped++
-		if(job)
-			job.checkpoint()
-		else if(wiped % 1000 == 0)
+		wipe_turf(T, space_area)
+		if(++wiped % 1000 == 0)
 			CHECK_TICK
+
+/// Clears one turf of a released site back to vacuum, sparing connected players.
+/datum/controller/subsystem/expedition/proc/wipe_turf(turf/T, area/space/space_area)
+	// Deleting a closet or crate spills what it holds onto the turf (its
+	// drop policy), so sweep again until only connected players are left.
+	for(var/pass in 1 to 8)
+		var/list/doomed = list()
+		for(var/atom/movable/AM in T)
+			if(ismob(AM))
+				var/mob/M = AM
+				if(M.client)
+					continue
+			doomed += AM
+		if(!length(doomed))
+			break
+		for(var/atom/movable/AM as anything in doomed)
+			if(!QDELETED(AM))
+				qdel(AM)
+	if(!istype(T, /turf/space))
+		T.ChangeTurf(/turf/space, tell_universe = FALSE)
+	ChangeArea(T, space_area)
 
 // ---- Helpers --------------------------------------------------------------
 

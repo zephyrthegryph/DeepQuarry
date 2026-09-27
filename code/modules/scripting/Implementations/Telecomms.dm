@@ -46,15 +46,21 @@
  * Executes the compiled code.
  * Arguments:
  *   var/datum/signal/signal - a telecomms signal
- * Returns: None
+ *   relay - the server relays the signal once the script is done (it may sleep first)
+ * Returns: TRUE when the script finished at once; FALSE when it didn't run, or sleeps (a task
+ * resumes it, and relays the signal if asked).
  */
-/datum/TCS_Compiler/proc/Run(datum/signal/signal)
+/datum/TCS_Compiler/proc/Run(datum/signal/signal, relay = FALSE)
 
 	if(!ready)
-		return
+		return TRUE
 
 	if(!interpreter)
-		return
+		return TRUE
+
+	// A script that sleeps runs as a task claiming the compiler: one run at a time.
+	if(om_busy(src))
+		return TRUE
 
 	interpreter.container = src
 
@@ -116,7 +122,7 @@
 
 				@param time: 		time to sleep in deciseconds (1/10th second)
 	*/
-	interpreter.SetProc("sleep", GLOBAL_PROC_REF(delay))
+	interpreter.SetProc("sleep", "script_sleep", interpreter, list("time"))
 
 	/*
 		-> Replaces a string with another string
@@ -189,7 +195,48 @@
 
 	// Run the compiled code
 	interpreter.Run()
+	if(interpreter.IsSuspended())
+		// The script called sleep(): the rest runs as task steps.
+		if(istype(om_task_start(src, /datum/om/task_def/ntsl_script, null, list("signal" = signal, "relay" = relay)), /datum/om/task))
+			return FALSE
+		script_dropped()
+	apply_signal(signal)
+	return TRUE
 
+/// A telecomms script that called sleep(): each step resumes it after its sleep; once it is done
+/// the signal gets the script's changes and, for a server run, is relayed. The task claims the
+/// compiler; deleting the compiler or the signal drops the rest of the script.
+/datum/om/task_def/ntsl_script
+	name = "ntsl script"
+	claims_actor = TRUE
+	steps = list(/datum/TCS_Compiler/proc/script_step = 0)
+	cancel_proc = /datum/TCS_Compiler/proc/script_cancelled
+
+/datum/TCS_Compiler/proc/script_step(datum/om/task/T)
+	var/list/P = T.params
+	if(!P["waited"])
+		P["waited"] = TRUE
+		return STEP_REPEAT(interpreter.yield_for)
+	if(!interpreter.Resume())
+		return STEP_REPEAT(interpreter.yield_for)
+	var/datum/signal/signal = T.param("signal")
+	if(!signal)
+		return STEP_FAIL("gone")
+	apply_signal(signal)
+	if(P["relay"])
+		Holder?.relay_signal(signal)
+	return STEP_DONE
+
+/datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T, reason)
+	script_dropped()
+
+/// Forgets a suspended run.
+/datum/TCS_Compiler/proc/script_dropped()
+	interpreter.resume_frames = null
+	interpreter.yield_for = null
+
+/// Backwards-applies the script's variables onto the signal data.
+/datum/TCS_Compiler/proc/apply_signal(datum/signal/signal)
 	// Backwards-apply variables onto signal data
 	/* sanitize EVERYTHING. fucking players can't be trusted with SHIT */
 

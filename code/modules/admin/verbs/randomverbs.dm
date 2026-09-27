@@ -30,14 +30,12 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 		//teleport person to cell
 		target_mob.status_at_least(EFFECT_PARALYZED, 5)
 		target_mob.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)	//so they black out before warping
 		target_mob.forceMove(pick(GLOB.prisonwarp))
 		if(ishuman(target_mob))
 			var/mob/living/carbon/human/prisoner = target_mob
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), slot_w_uniform)
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(prisoner), slot_shoes)
-		spawn(50) // S7 keeps: admin verb (allowlist)
-			to_chat(target_mob, span_bolddanger("You have been sent to the prison station!"))
+		om_after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), target_mob, span_bolddanger("You have been sent to the prison station!"))
 		log_admin("[key_name(user)] sent [key_name(target_mob)] to the prison station.")
 		message_admins(span_blue("[key_name_admin(user)] sent [key_name_admin(target_mob)] to the prison station."), 1)
 		feedback_add_details("admin_verb","PRISON") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
