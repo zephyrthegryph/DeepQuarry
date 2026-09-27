@@ -173,6 +173,7 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
+// LIFECYCLE: an active beacon deactivates.
 /obj/machinery/power/singularity_beacon/Destroy()
 	if(active)
 		Deactivate()
@@ -189,7 +190,6 @@
 /obj/machinery/power/singularity_beacon/syndicate
 	icontype = "beaconsynd"
 	icon_state = "beaconsynd0"
-
 
 //  Virgo modified syndie beacon, does not give objectives
 

@@ -111,11 +111,8 @@ REF_OWNED(/datum/embedded_program/docking/airlock, "airlock_program")
 /datum/embedded_program/airlock/docking
 	var/datum/embedded_program/docking/airlock/master_prog
 
-/datum/embedded_program/airlock/docking/Destroy()
-	if(master_prog)
-		master_prog.airlock_program = null
-		master_prog = null
-	return ..()
+REF_PAIR(/datum/embedded_program/airlock/docking, list("master_prog" = "airlock_program"))
+REF_PAIR(/datum/embedded_program/docking/airlock, list("airlock_program" = "master_prog"))
 
 /datum/embedded_program/airlock/docking/receive_user_command(command)
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled

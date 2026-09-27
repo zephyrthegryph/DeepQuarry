@@ -44,12 +44,12 @@
 	lethal = TRUE
 	icon_state = "control_kill"
 
-/obj/machinery/turretid/Destroy()
-	if(control_area)
-		var/area/A = control_area
-		if(A && istype(A))
-			LAZYREMOVE(A.turret_controls, src)
+/// Phase 2: leaves its area's turret controls.
+/obj/machinery/turretid/lifecycle_dematerialize()
 	. = ..()
+	var/area/A = control_area
+	if(istype(A))
+		LAZYREMOVE(A.turret_controls, src)
 
 /obj/machinery/turretid/Initialize(mapload)
 	if(!control_area)

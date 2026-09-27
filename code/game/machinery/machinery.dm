@@ -83,7 +83,6 @@ Class Procs:
 	process()                  'game/machinery/machine.dm'
 		Called by the 'master_controller' once per game tick for each machine that is listed in the 'machines' list.
 
-
 	Compiled by Aygar
 */
 
@@ -187,6 +186,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
+// LIFECYCLE: the base machine: board and parts deleted, occupants put out.
 /obj/machinery/Destroy()
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
@@ -313,7 +313,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		pulse2.anchored = TRUE
 		pulse2.set_dir(pick(GLOB.cardinal))
 		QDEL_IN(pulse2, 1 SECOND)
-
 
 /obj/machinery/vv_edit_var(var_name, new_value)
 	if(var_name == NAMEOF(src, use_power))

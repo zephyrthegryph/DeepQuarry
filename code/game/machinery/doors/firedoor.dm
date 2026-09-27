@@ -73,14 +73,13 @@
 			LAZYADD(A.all_doors, src)
 			areas_added += A
 
-/obj/machinery/door/firedoor/Destroy()
-	if(turbolift_floor)
-		turbolift_floor.doors -= src
-		turbolift_floor = null
-	clear_gas_dependencies()
+REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
+
+/// Phase 2: leaves the door lists of every area it guards.
+/obj/machinery/door/firedoor/lifecycle_dematerialize()
+	. = ..()
 	for(var/area/A in areas_added)
 		LAZYREMOVE(A.all_doors, src)
-	. = ..()
 
 /obj/machinery/door/firedoor/get_material()
 	return get_material_by_name(MAT_STEEL)
@@ -514,7 +513,6 @@
 			flick("door_closing", src)
 	return
 
-
 /obj/machinery/door/firedoor/update_icon()
 	cut_overlays()
 	if(density)
@@ -567,7 +565,6 @@
 		else
 			return 1
 
-
 	update_nearby_tiles(need_rebuild)
 		if(!SSair) return 0
 
@@ -602,7 +599,6 @@
 #undef FIREDOOR_ALERT_COLD
 // Not used #undef FIREDOOR_ALERT_LOWPRESS
 
-
 //Glass variation of the 2x1 firedoor
 /obj/machinery/door/firedoor/multi_tile/glass
 	icon = 'icons/obj/doors/DoorHazardGlass2x1.dmi'
@@ -616,7 +612,6 @@
 
 /obj/machinery/door/firedoor/border_only/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	return (src.dir != dir) || ..()
-
 
 /obj/machinery/door/firedoor/glass/hidden
 	name = "\improper Emergency Shutter System"

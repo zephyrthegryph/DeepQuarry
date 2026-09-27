@@ -43,13 +43,13 @@
 	slot_id = OCCUPANT_SLOT_VR_POD
 	name = "VR pod"
 
-
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	smoke = new
 	update_icon()
 
+// LIFECYCLE: its occupant exits VR.
 /obj/machinery/vr_sleeper/Destroy()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
 	if(occupant && occupant.vr_link)
@@ -121,7 +121,6 @@
 		I.attack(occupant, user)
 	return TRUE
 
-
 /obj/machinery/vr_sleeper/crowbar_act(mob/user, obj/item/tool)
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
 	if(!panel_open)
@@ -131,7 +130,6 @@
 		avatar = null
 		perform_exit()
 	return ..()
-
 
 /datum/interaction/machine_drag/vr_sleeper_enter
 	id = "vr_sleeper_enter"
@@ -150,8 +148,6 @@
 		return TRUE
 	go_in(target, user)
 	return TRUE
-
-
 
 /obj/machinery/vr_sleeper/emp_act(severity, recursive)
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)

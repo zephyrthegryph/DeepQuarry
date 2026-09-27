@@ -28,10 +28,7 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-/obj/machinery/bodyscanner/Destroy()
-	if(console)
-		console.scanner = null
-	return ..()
+REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/body_scanner
@@ -42,7 +39,6 @@
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// are its only writer now -- there is no generic field-link mechanism
 	// left to do it for them.
-
 
 /obj/machinery/bodyscanner/power_change()
 	..()
@@ -306,10 +302,7 @@
 	. = ..()
 	findscanner()
 
-/obj/machinery/body_scanconsole/Destroy()
-	if(scanner)
-		scanner.console = null
-	return ..()
+REF_PAIR(/obj/machinery/body_scanconsole, list("scanner" = "console"))
 
 /obj/machinery/body_scanconsole/attackby(obj/item/I, mob/user)
 	return attack_hand(user)
@@ -356,7 +349,6 @@
 
 	if(scanner)
 		return scanner.tgui_interact(user)
-
 
 // === merged from adv_med_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/bodyscanner
@@ -455,7 +447,6 @@
 		gradient.plane = plane
 		gradient.layer = layer + 0.3
 		add_overlay(gradient)
-
 
 /obj/machinery/body_scanconsole/update_icon(h_ratio)
 	if(stat & (NOPOWER|BROKEN))

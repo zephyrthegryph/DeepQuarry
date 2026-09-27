@@ -9,7 +9,6 @@
 	Hello, friends, this is Doohl from sexylands. You may be wondering what this
 	monstrous code file is. Sit down, boys and girls, while I tell you the tale.
 
-
 	The machines defined in this file were designed to be compatible with any radio
 	signals, provided they use subspace transmission. Currently they are only used for
 	headsets, but they can eventually be outfitted for real COMPUTER networks. This
@@ -17,7 +16,6 @@
 
 	Look at radio.dm for the prequel to this code.
 */
-
 
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
@@ -99,7 +97,6 @@
 		else
 			machine.receive_information(signal, src)
 
-
 	if(send_count > 0 && is_freq_listening(signal))
 		traffic++
 
@@ -127,14 +124,12 @@
 	else
 		return 0
 
-
 REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/Initialize(mapload)
 	..()
 	default_apply_parts()
 	return INITIALIZE_HINT_LATELOAD
-
 
 /obj/machinery/telecomms/LateInitialize()
 	//Set the listening_level if there's none.
@@ -164,15 +159,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			soundloop.mid_length = 30
 	soundloop.start()
 
-/obj/machinery/telecomms/Destroy()
-	if(thermal_timer)
-		deltimer(thermal_timer)
-		thermal_timer = null
+REF_OWNED(/obj/machinery/telecomms, "soundloop")
+
+/// Phase 2: every other telecomms machine drops its link to this one.
+/obj/machinery/telecomms/lifecycle_dematerialize()
+	. = ..()
 	for(var/obj/machinery/telecomms/comm in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		LAZYREMOVE(comm.links, src)
-	links = list()
-	QDEL_NULL(soundloop)
-	. = ..()
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)
@@ -280,8 +273,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(on)
 		produce_heat()
 
-
-
 /obj/machinery/telecomms/proc/produce_heat()
 	if (!produces_heat)
 		return
@@ -383,7 +374,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		return 0
 	return 1
 
-
 /*
 	The HUB idles until it receives information. It then passes on that information
 	depending on where it came from.
@@ -417,7 +407,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			// Get a list of relays that we're linked to, then send the signal to their levels.
 			relay_information(signal, /obj/machinery/telecomms/relay, 1)
 			relay_information(signal, /obj/machinery/telecomms/broadcaster, 1) // Send it to a broadcaster.
-
 
 /*
 	The relay idles until it receives information. It then passes on that information
@@ -525,8 +514,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			if(can_send)
 				break
 
-
-
 /*
 	The processor is a very simple machine that decompresses subspace signals and
 	transfers them back to the original bus. It is essential in producing audible
@@ -564,14 +551,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			signal.data["slow"] += rand(5, 10) // slow the signal down
 			relay_information(signal, /obj/machinery/telecomms/server)
 
-
 /*
 	The server logs all traffic and signal data. Once it records the signal, it sends
 	it to the subspace broadcaster.
 
 	Store a maximum of 100 logs and then deletes them.
 */
-
 
 /obj/machinery/telecomms/server
 	name = "Telecommunication Server"
@@ -693,7 +678,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(!can_send)
 		relay_information(signal, /obj/machinery/telecomms/broadcaster)
 
-
 /obj/machinery/telecomms/server/proc/setcode(t)
 	if(t)
 		if(istext(t))
@@ -722,9 +706,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	log.parameters["timecode"] = stationtime2text()
 	LAZYADD(log_entries, log)
 	update_logs()
-
-
-
 
 // Simple log entry datum
 

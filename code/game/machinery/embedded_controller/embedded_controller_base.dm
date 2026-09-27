@@ -107,11 +107,6 @@ REF_OWNED(/obj/machinery/embedded_controller, "program")
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
-/obj/machinery/embedded_controller/radio/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
-	. = ..()
-
 /obj/machinery/embedded_controller/radio/update_icon()
 	if(on && program)
 		if(program.memory["processing"])

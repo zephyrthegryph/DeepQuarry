@@ -175,11 +175,6 @@
 
 	magnet_active = 0
 
-/obj/machinery/magnetic_module/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src, freq)
-	. = ..()
-
 /obj/machinery/magnetic_controller
 	name = "Magnetic Control Console"
 	icon = 'icons/obj/airlock_machines.dmi' // uses an airlock machine icon, THINK GREEN HELP THE ENVIRONMENT - RECYCLING!
@@ -357,12 +352,6 @@
 			LAZYADD(rpath, copytext(path, i, i+1)) // else, add to list
 
 		// there doesn't HAVE to be separators but it makes paths syntatically visible
-
-/obj/machinery/magnetic_controller/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src, frequency)
-	. = ..()
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/magnetic_module/step_start_condition()

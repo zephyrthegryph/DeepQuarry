@@ -54,11 +54,6 @@
 		visible_message("[src] shatters!")
 	qdel(src)
 
-/obj/machinery/door/window/Destroy()
-	density = FALSE
-	update_nearby_tiles()
-	return ..()
-
 /obj/machinery/door/window/Bumped(atom/movable/AM as mob|obj)
 	if (!( ismob(AM) ))
 		var/mob/living/bot/bot = AM
@@ -98,7 +93,6 @@
 	if(get_dir(mover, target) == dir) // From here to elsewhere, can't move in our dir
 		return !density
 	return TRUE
-
 
 /obj/machinery/door/window/CanZASPass(turf/T, is_zone)
 	if(get_dir(T, loc) == turn(dir, 180))

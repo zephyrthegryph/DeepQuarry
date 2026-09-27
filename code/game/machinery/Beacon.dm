@@ -20,11 +20,7 @@
 
 	hide(!T.is_plating())
 
-/obj/machinery/bluespace_beacon/Destroy()
-	if(Beacon)
-		UnregisterSignal(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
-		qdel(Beacon)
-	. = ..()
+REF_OWNED(/obj/machinery/bluespace_beacon, "Beacon")
 
 // update the invisibility and icon
 /obj/machinery/bluespace_beacon/hide(intact)
@@ -63,7 +59,6 @@
 	if(source == Beacon && QDELETED(source))
 		Beacon = null
 	MACHINE_WAKE(src)
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/bluespace_beacon/step_start_condition()

@@ -33,7 +33,6 @@
 	var/timing = FALSE		// boolean, true/1 timer is on, false/0 means it's not timing
 	var/list/obj/machinery/targets = list()
 
-
 	maptext_height = 26
 	maptext_width = 32
 
@@ -60,12 +59,6 @@
 		stat |= BROKEN
 	update_icon()
 
-/obj/machinery/door_timer/Destroy()
-	for(var/atom/movable/target as anything in targets)
-		UnregisterSignal(target, COMSIG_QDELETING)
-	LAZYCLEARLIST(targets)
-	return ..()
-
 /obj/machinery/door_timer/proc/target_deleted(datum/source)
 	SIGNAL_HANDLER
 	LAZYREMOVE(targets, source)
@@ -85,7 +78,6 @@
 	update_icon()
 	if(!timing)
 		return PROCESS_KILL
-
 
 // has the door power situation changed, if so update icon.
 /obj/machinery/door_timer/power_change()
@@ -227,7 +219,6 @@
 				activation_time = world.time
 		else
 			. = FALSE
-
 
 //icon update function
 // if NOPOWER, display blank

@@ -503,6 +503,7 @@ GLOBAL_VAR(bomb_set)
 
 REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
+// LIFECYCLE: the last disk respawns at a blob start.
 /obj/item/disk/nuclear/Destroy()
 	if(!REGISTRY_COUNT(REGISTRY_NUKE_DISKS) && GLOB.blobstart.len > 0)
 		var/obj/D = new /obj/item/disk/nuclear(pick(GLOB.blobstart))
@@ -512,7 +513,6 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
 /obj/item/disk/nuclear/touch_map_edge()
 	qdel(src)
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/nuclearbomb/step_start_condition()

@@ -295,6 +295,7 @@
 // C8a: the occupant's a sealed slot (containment.md §10); the base Destroy()
 // spills it through the ledger's drop policy, so this just keeps the
 // pre-eject "let them fall asleep, not collapse" behaviour.
+// LIFECYCLE: its sleeper is left lying down as the pod goes.
 /obj/machinery/cryopod/Destroy()
 	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
@@ -308,7 +309,6 @@
 	slot_id = OCCUPANT_SLOT_CRYOPOD
 	name = "cryopod"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
-
 
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
@@ -542,7 +542,6 @@
 
 		//TODO: Check objectives/mode, update new targets if this mob is the target, spawn new antags?
 
-
 		//Make an announcement and log the person entering storage.
 		LAZYADD(control_computer.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
 		LAZYADD(control_computer._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
@@ -550,7 +549,6 @@
 
 		var/depart_announce = TRUE
 		var/departing_job = to_despawn.mind.role_alt_title
-
 
 		if(istype(to_despawn, /mob/living/dominated_brain))
 			depart_announce = FALSE
@@ -561,7 +559,6 @@
 		if(depart_announce)
 			announce.autosay("[to_despawn.real_name][departing_job ? ", [departing_job], " : " "][on_store_message]", "[on_store_name]", announce_channel, using_map.get_map_levels(z, TRUE, om_range = DEFAULT_OVERMAP_RANGE))
 			visible_message(span_notice("\The [initial(name)] [on_store_visible_message_1] [to_despawn.real_name] [on_store_visible_message_2]"), 3)
-
 
 	// begin: Dont delete mobs-in-mobs
 	if(to_despawn.client && to_despawn.stat<2)
@@ -876,7 +873,6 @@
 
 	if(control_computer && control_computer.allow_items)
 		LAZYADD(control_computer.frozen_items, "[item_name] ([char_name])")
-
 
 /obj/machinery/cryopod/robot/door/gateway/quiet
 	name = "departure teleporter"

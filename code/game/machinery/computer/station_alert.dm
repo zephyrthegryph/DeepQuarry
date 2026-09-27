@@ -22,10 +22,12 @@
 	alarm_monitor.register_alarm(src, "update_console_icon")
 	. = ..()
 
-/obj/machinery/computer/station_alert/Destroy()
-	alarm_monitor.unregister_alarm(src)
-	qdel(alarm_monitor)
+REF_OWNED(/obj/machinery/computer/station_alert, "alarm_monitor")
+
+/// Phase 2: leaves its alarm monitor's listeners.
+/obj/machinery/computer/station_alert/lifecycle_dematerialize()
 	. = ..()
+	alarm_monitor?.unregister_alarm(src)
 
 /obj/machinery/computer/station_alert/attack_ai(mob/user)
 	add_fingerprint(user)

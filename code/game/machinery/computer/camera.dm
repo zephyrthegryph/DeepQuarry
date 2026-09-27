@@ -128,13 +128,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 	radio.canhear_range = world.view // Same as default sight range.
 	power_change()
 
+REF_OWNED(/obj/machinery/computer/security/telescreen/entertainment, list("pinboard", "radio"))
+
+// LIFECYCLE: stops showing its feed.
 /obj/machinery/computer/security/telescreen/entertainment/Destroy()
 	if(showing)
 		stop_showing()
 	vis_contents.Cut()
-	QDEL_NULL(pinboard)
-	QDEL_NULL(radio)
-	showing = null
 	return ..()
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/toggle()
