@@ -23,6 +23,9 @@
 	//var/datum/gas_mixture/air_transient = null
 
 
+// Rust-owned networks refuse deletion; a legacy network hands each member
+// its share of the gas before the topology splits.
+// LIFECYCLE: LETMELIVE for rust-owned networks; legacy gas split.
 /datum/pipe_network/Destroy()
 	if(rust_authoritative)
 		return QDEL_HINT_LETMELIVE

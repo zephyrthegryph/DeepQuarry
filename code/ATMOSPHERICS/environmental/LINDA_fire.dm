@@ -355,6 +355,7 @@
 	dir = pick(GLOB.cardinals)
 	update_color()
 
+// LIFECYCLE: a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/Destroy()
 	SSair.hotspots -= src
 	var/turf/open/cur_turf = loc

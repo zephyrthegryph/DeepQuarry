@@ -51,7 +51,6 @@
 	var/static/start_sound = 'sound/machines/air_pump/airpumpstart.ogg'
 	var/static/stop_sound = 'sound/machines/air_pump/airpumpshutdown.ogg'
 
-
 /obj/machinery/atmospherics/unary/vent_pump/on
 	use_power = USE_POWER_IDLE
 	icon_state = "map_vent_out"
@@ -156,17 +155,11 @@
 	assign_uid()
 	id_tag = num2text(uid)
 
-
-/obj/machinery/atmospherics/unary/vent_pump/Destroy()
-	// rust_unregister_device() runs as part of the base class's
-	// rust_unregister_pipe_topology() (atmospherics.dm's Destroy()), below.
-	// vent_pump is a Rust device edge with no DM gas watch to clear.
-	unregister_radio(src, frequency)
+/// Phase 2: leaves its area's vent index.
+/obj/machinery/atmospherics/unary/vent_pump/lifecycle_dematerialize()
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_vent_info, id_tag)
 		LAZYREMOVE(initial_loc.air_vent_names, id_tag)
-	//QDEL_NULL(soundloop)
-	return ..()
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume
 	name = "Large Air Vent"
@@ -195,7 +188,6 @@
 	if(isnull(T))
 		return ..()
 	return T.return_air()
-
 
 /obj/machinery/atmospherics/unary/vent_pump/engine
 	name = "Engine Core Vent"
@@ -228,7 +220,6 @@
 	else
 		vent_icon += "[pump_direction ? "out" : "in"]"
 		playsound(src, start_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
-
 
 	add_overlay(GLOB.icon_manager.get_atmos_icon("device", , , vent_icon))
 
@@ -315,7 +306,6 @@
 	radio_connection.post_signal(src, signal, radio_filter_out)
 
 	return 1
-
 
 /obj/machinery/atmospherics/unary/vent_pump/atmos_init()
 	..()

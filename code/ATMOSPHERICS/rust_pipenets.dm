@@ -20,12 +20,10 @@
 	src.index = index
 	handle = SSvg.bind_datum(src)
 
-/datum/pipe_port/Destroy()
+/datum/pipe_port/lifecycle_unbind()
 	if(handle)
 		SSvg.unbind_datum(src, handle)
 		handle = 0
-	machine = null
-	return ..()
 
 /// The live port behind `handle`, or null.
 /proc/rust_pipe_port_of(handle)
@@ -50,7 +48,6 @@
 	var/list/rust_pipe_port_ids
 	/// Only components without a pre-existing gas slot (valves/connectors) use this.
 	var/list/datum/gas_mixture/rust_unbound_port_air
-
 
 	/// M2: this machine's (one) device edge, an entity handle bound to this
 	/// machine (SSvg.bind_datum()), or 0 if it has none

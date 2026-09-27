@@ -22,20 +22,12 @@
 	// transferred in one Rust batch and can dependency-sleep when equalized.
 	leaking = TRUE
 
-
 /obj/machinery/atmospherics/pipe/vent/init_dir()
 	initialize_directions = dir
 
 /obj/machinery/atmospherics/pipe/vent/high_volume
 	name = "Larger vent"
 	volume = 1000
-
-/obj/machinery/atmospherics/pipe/vent/Destroy()
-	if(node1)
-		node1.disconnect(src)
-		node1 = null
-
-	. = ..()
 
 /obj/machinery/atmospherics/pipe/vent/pipeline_expansion()
 	return list(node1)

@@ -53,11 +53,18 @@ Pipelines + Other Objects -> Pipe network
 /obj/machinery/atmospherics/proc/unregister_network_membership(datum/pipe_network/network)
 	LAZYREMOVE(network_memberships, network)
 
-/obj/machinery/atmospherics/Destroy()
+/// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
+/// (get_neighbor_nodes_for_init(), each type's topology declaration)
+/// forgets this machine, and every network roster holding it lets go. One
+/// place for every atmos type; neighbours that are being destroyed too are
+/// skipped (their own unbind drops the edge).
+/obj/machinery/atmospherics/lifecycle_unbind()
 	rust_unregister_pipe_topology()
-	// Pipe adjacency is a bidirectional ownership edge. Topology destruction can
-	// delete one side first, so sever the common node slots on surviving peers
-	// before this machine enters the GC queue.
+	for(var/obj/machinery/atmospherics/neighbour in get_neighbor_nodes_for_init())
+		if(!QDELETED(neighbour))
+			neighbour.disconnect(src)
+	// Pipe adjacency is a bidirectional edge: sever the common node slots on
+	// surviving peers that point here without being our declared nodes.
 	var/list/adjacent_machines = list()
 	for(var/obj/machinery/atmospherics/neighbour in orange(1, src))
 		adjacent_machines += neighbour
@@ -72,14 +79,9 @@ Pipelines + Other Objects -> Pipe network
 			neighbour.node1 = null
 		if(neighbour.node2 == src)
 			neighbour.node2 = null
-	node1 = null
-	node2 = null
-	var/list/old_memberships = network_memberships
+	for(var/datum/pipe_network/network as anything in network_memberships?.Copy())
+		rust_release_network_wrapper(network)
 	network_memberships = null
-	for(var/datum/pipe_network/network as anything in old_memberships)
-		if(network?.normal_members)
-			network.normal_members -= src
-	return ..()
 
 /obj/machinery/atmospherics/proc/engineered_material()
 	return material_for_role(MATERIAL_ROLE_STRUCTURE) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)

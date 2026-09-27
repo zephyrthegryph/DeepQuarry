@@ -26,13 +26,6 @@
 /obj/machinery/atmospherics/pipe/tank/init_dir()
 	initialize_directions = dir
 
-/obj/machinery/atmospherics/pipe/tank/Destroy()
-	if(node1)
-		node1.disconnect(src)
-		node1 = null
-
-	. = ..()
-
 /obj/machinery/atmospherics/pipe/tank/pipeline_expansion()
 	return list(node1)
 
@@ -94,7 +87,6 @@
 
 	air_temporary.adjust_multi(GAS_O2,  (start_pressure*O2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()), \
 								GAS_N2,(start_pressure*N2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
 
 	. = ..()
 	icon_state = "air"
@@ -184,7 +176,6 @@
 
 	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 	icon_state = "ch4"
-
 
 /obj/machinery/atmospherics/pipe/tank/phoron/full
 	start_pressure = 15000
