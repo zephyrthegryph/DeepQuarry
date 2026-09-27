@@ -90,16 +90,17 @@
 	for(var/var_name in owned)
 		var/datum/child = D.vars[var_name]
 		D.vars[var_name] = null
-		if(child)
+		// A typed var may still hold a type path (never materialized) or a list.
+		if(isdatum(child))
 			qdel(child)
 	var/list/owned_list = table["owned_list"]
 	for(var/var_name in owned_list)
 		var/list/children = D.vars[var_name]
-		if(!length(children))
+		if(!islist(children) || !length(children))
 			continue
 		var/list/copy = children.Copy()
 		children.Cut()
-		for(var/datum/child as anything in copy)
+		for(var/datum/child in copy)
 			qdel(child)
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)
@@ -179,3 +180,10 @@
 		return
 	var/list/L = owner.vars[list_var]
 	L?.Remove(member)
+
+/// REF_PAIR/REF_BACKLIST helper: the parent type's assoc declaration plus
+/// `extra`, as a new list (the parent's is a shared per-type table).
+/proc/lifecycle_merge_assoc(list/parent, list/extra)
+	. = parent ? parent.Copy() : list()
+	for(var/key in extra)
+		.[key] = extra[key]
