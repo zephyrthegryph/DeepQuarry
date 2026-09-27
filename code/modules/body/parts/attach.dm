@@ -273,7 +273,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	on_status_changed()
 	// Losing a vital part kills (organ.dm's old removed()). After all the
 	// bookkeeping, so death() sees a consistent body.
-	if(length(vital_lost) && owner.stat != DEAD)
+	if(length(vital_lost) && !owner.is_dead())
 		var/obj/item/organ/first = vital_lost[1]
 		log_game("PARTS: [key_name(owner)] lost vital part [first] ([first.type]); dying")
 		if(ishuman(owner))
