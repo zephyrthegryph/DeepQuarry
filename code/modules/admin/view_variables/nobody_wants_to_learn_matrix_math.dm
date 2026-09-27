@@ -15,9 +15,7 @@
 	src.target = target
 	testing_matrix = matrix(target.transform)
 
-/datum/nobody_wants_to_learn_matrix_math/Destroy(force)
-	QDEL_NULL(testing_matrix)
-	return ..()
+REF_OWNED(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix")
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)

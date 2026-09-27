@@ -21,11 +21,6 @@
 	source = src_mind
 	recipient = recipient_mob
 
-/datum/mind_memory_panel/Destroy(force, ...)
-	source = null
-	recipient = null
-	return ..()
-
 /datum/mind_memory_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
@@ -67,10 +62,6 @@
 /datum/tag_menu_panel/New(datum/admins/owner_holder)
 	..()
 	holder = owner_holder
-
-/datum/tag_menu_panel/Destroy(force, ...)
-	holder = null
-	return ..()
 
 /datum/tag_menu_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -147,10 +138,6 @@
 	..()
 	addresses = addr || list()
 
-/datum/dq_torban_panel/Destroy(force, ...)
-	addresses = null
-	return ..()
-
 /datum/dq_torban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_SERVER)
 
@@ -173,11 +160,6 @@
 	..()
 	subject = subj
 	log_text = text
-
-/datum/dq_investigate_panel/Destroy(force, ...)
-	subject = null
-	log_text = null
-	return ..()
 
 /datum/dq_investigate_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD|R_SERVER)
@@ -210,11 +192,6 @@
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
 	holder = owner_holder
-
-/datum/unban_panel/Destroy(force, ...)
-	holder = null
-	cached_rows = null
-	return ..()
 
 /datum/unban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -508,10 +485,6 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	user_name = viewer_name
 	entries = log_entries || list()
 
-/datum/dq_vending_log_panel/Destroy(force, ...)
-	entries = null
-	return ..()
-
 /datum/dq_vending_log_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
@@ -546,11 +519,6 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	our_comp = comp
 	books = book_rows || list()
 	error_msg = error || ""
-
-/datum/dq_delete_book_panel/Destroy(force, ...)
-	our_comp = null
-	books = null
-	return ..()
 
 /datum/dq_delete_book_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)

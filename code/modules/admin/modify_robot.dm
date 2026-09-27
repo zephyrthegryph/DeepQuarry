@@ -36,10 +36,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 		ui = new(user, src, "ModifyRobot", "Modify Robot")
 		ui.open()
 
-/datum/eventkit/modify_robot/Destroy()
-	if(source)
-		qdel(source)
-	. = ..()
+REF_OWNED(/datum/eventkit/modify_robot, "source")
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target)
@@ -83,7 +80,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 				.["target"]["pka"] += get_pka(kin)
 			for(var/obj/item/robotic_multibelt/multibelt in target.module.modules)
 				.["target"]["multibelt"] += list(get_mult_belt(multibelt))
-
 
 			// Radio section
 			var/list/radio_channels = list()
@@ -156,7 +152,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	.["channel"] = target.lawchannel
 	.["channels"] = channels
 	.["law_sets"] = package_multiple_laws(law_list)
-
 
 /datum/eventkit/modify_robot/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
@@ -708,7 +703,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	multi_belt_list["integrated_tools"] = integrated_tools
 	multi_belt_list["tools"] = tools
 	return multi_belt_list
-
 
 /datum/eventkit/modify_robot/proc/get_cells()
 	var/list/cell_options = list()
