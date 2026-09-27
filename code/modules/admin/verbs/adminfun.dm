@@ -1,20 +1,20 @@
 ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, atom/orignator as obj|mob|turf)
-	var/devastation = verb_prompt(user, "a1", list("kind" = "number", "message" = "Range of total devastation. -1 to none", "title" = text("Input"), min_value=-1), args)
+	var/devastation = verb_prompt(user, "a1", list("kind" = "number", "message" = "Range of total devastation. -1 to none", "title" = text("Input"), "min" = -1), args)
 	if(isnull(devastation))
 		return
 	if(devastation == null)
 		return
-	var/heavy = verb_prompt(user, "a2", list("kind" = "number", "message" = "Range of heavy impact. -1 to none", "title" = text("Input"), min_value=-1), args)
+	var/heavy = verb_prompt(user, "a2", list("kind" = "number", "message" = "Range of heavy impact. -1 to none", "title" = text("Input"), "min" = -1), args)
 	if(isnull(heavy))
 		return
 	if(heavy == null)
 		return
-	var/light = verb_prompt(user, "a3", list("kind" = "number", "message" = "Range of light impact. -1 to none", "title" = text("Input"), min_value=-1), args)
+	var/light = verb_prompt(user, "a3", list("kind" = "number", "message" = "Range of light impact. -1 to none", "title" = text("Input"), "min" = -1), args)
 	if(isnull(light))
 		return
 	if(light == null)
 		return
-	var/flash = verb_prompt(user, "a4", list("kind" = "number", "message" = "Range of flash. -1 to none", "title" = text("Input"), min_value=-1), args)
+	var/flash = verb_prompt(user, "a4", list("kind" = "number", "message" = "Range of flash. -1 to none", "title" = text("Input"), "min" = -1), args)
 	if(isnull(flash))
 		return
 	if(flash == null)

@@ -102,7 +102,7 @@
 			use_custom_ai = !use_custom_ai
 			return TRUE
 		if("set_faction")
-			var/_answer_a2 = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Please input your mobs' faction", "title" = "Faction", "default" = (faction ? faction : "neutral"), MAX_MESSAGE_LEN))
+			var/_answer_a2 = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Please input your mobs' faction", "title" = "Faction", "default" = (faction ? faction : "neutral"), "max_length" = MAX_MESSAGE_LEN))
 			if(isnull(_answer_a2))
 				return
 			faction = _answer_a2

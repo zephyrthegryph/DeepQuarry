@@ -536,7 +536,7 @@
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
 		return release_mob(M)
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
-		var/_answer_a3 = rerun_prompt(M, "a3", list("message" = "Do you really want to allow [owner] to delete you? On decline, you'll be ghosted.", "title" = "Allow Deletion", "choices" = list("No", "Yes"), timeout=1 MINUTES), PROC_REF(delete_mob), args)
+		var/_answer_a3 = rerun_prompt(M, "a3", list("message" = "Do you really want to allow [owner] to delete you? On decline, you'll be ghosted.", "title" = "Allow Deletion", "choices" = list("No", "Yes"), "timeout" = 1 MINUTES), PROC_REF(delete_mob), args)
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")

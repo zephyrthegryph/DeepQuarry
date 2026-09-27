@@ -589,13 +589,13 @@ ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time
 		return
 	var/datum/time/current_time_datum = planet.current_time
 	var/planet_hours = max(round(current_time_datum.seconds_in_day / 36000) - 1, 0)
-	var/new_hour = verb_prompt(user, "a12", list("kind" = "number", "message" = "What hour do you want to change to?", "title" = "Change Time", "default" = text2num(current_time_datum.show_time("hh")), planet_hours), args)
+	var/new_hour = verb_prompt(user, "a12", list("kind" = "number", "message" = "What hour do you want to change to?", "title" = "Change Time", "default" = text2num(current_time_datum.show_time("hh")), "max" = planet_hours), args)
 	if(isnull(new_hour))
 		return
 	if(isnull(new_hour))
 		return
 	var/planet_minutes = max(round(current_time_datum.seconds_in_hour / 600) - 1, 0)
-	var/new_minute = verb_prompt(user, "a13", list("kind" = "number", "message" = "What minute do you want to change to?", "title" = "Change Time", "default" = text2num(current_time_datum.show_time("mm")), planet_minutes), args)
+	var/new_minute = verb_prompt(user, "a13", list("kind" = "number", "message" = "What minute do you want to change to?", "title" = "Change Time", "default" = text2num(current_time_datum.show_time("mm")), "max" = planet_minutes), args)
 	if(isnull(new_minute))
 		return
 	if(isnull(new_minute))

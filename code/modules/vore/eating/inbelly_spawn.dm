@@ -135,7 +135,7 @@
 	return new_character			// incase its ever needed
 
 /mob/living/proc/soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	var/_answer_a1 = rerun_prompt(src, "a1", list("message" = "[prey.name] wants to join into your Soulcatcher.", "title" = "Soulcatcher Request", "choices" = list("Deny", "Allow"), timeout=1 MINUTES), PROC_REF(soulcatcher_spawn_prompt), args)
+	var/_answer_a1 = rerun_prompt(src, "a1", list("message" = "[prey.name] wants to join into your Soulcatcher.", "title" = "Soulcatcher Request", "choices" = list("Deny", "Allow"), "timeout" = 1 MINUTES), PROC_REF(soulcatcher_spawn_prompt), args)
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Allow")
@@ -160,7 +160,7 @@
 		soulgem.catch_mob(prey) //This will result in the prey being deleted so...
 
 /mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	var/_answer_a2 = rerun_prompt(src, "a2", list("message" = "[prey.name] wants to join into your Soulcatcher.", "title" = "Soulcatcher Request", "choices" = list("Deny", "Allow"), timeout=1 MINUTES), PROC_REF(nif_soulcatcher_spawn_prompt), args)
+	var/_answer_a2 = rerun_prompt(src, "a2", list("message" = "[prey.name] wants to join into your Soulcatcher.", "title" = "Soulcatcher Request", "choices" = list("Deny", "Allow"), "timeout" = 1 MINUTES), PROC_REF(nif_soulcatcher_spawn_prompt), args)
 	if(isnull(_answer_a2))
 		return
 	if(_answer_a2 != "Allow")
