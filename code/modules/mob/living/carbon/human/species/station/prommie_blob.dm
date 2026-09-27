@@ -99,9 +99,9 @@
 	set category = "Abilities.Promethean"
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || world.time < last_special)
+	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 2.5 SECONDS
+	COOLDOWN_START(src, last_special, 2.5 SECONDS)
 	B.is_wide = !B.is_wide
 	if(B.is_wide)
 		visible_message(span_infoplain(span_bold("[name]") + " flows outwards, their goop expanding!"))
@@ -115,9 +115,9 @@
 	set category = "Abilities.Promethean"
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || world.time < last_special)
+	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 2.5 SECONDS
+	COOLDOWN_START(src, last_special, 2.5 SECONDS)
 	B.shiny = !B.shiny
 	if(B.shiny)
 		visible_message(span_infoplain(span_bold("[name]") + " glistens and sparkles, shining brilliantly."))
@@ -129,9 +129,9 @@
 	set name = "Select Body Colour"
 	set category = "Abilities.Promethean"
 
-	if(!istype(current_form(), /datum/form/promethean_blob) || stat || world.time < last_special)
+	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 2.5 SECONDS
+	COOLDOWN_START(src, last_special, 2.5 SECONDS)
 	var/new_skin = tgui_color_picker(src, "Please select a new body color.", "Shapeshifter Colour", rgb(r_skin, g_skin, b_skin))
 	if(!new_skin || stat)
 		return

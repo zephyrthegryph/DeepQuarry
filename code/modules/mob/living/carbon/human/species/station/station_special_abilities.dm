@@ -56,7 +56,7 @@
 			HARM - Loud, Causes Bleeding"))
 		return
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, "You cannot suck blood so quickly in a row!")
 		return
 
@@ -65,7 +65,7 @@
 
 	if(!Adjacent(B)) return
 
-	if(last_special > world.time) return
+	if(!COOLDOWN_FINISHED(src, last_special)) return
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite in your current state.")
@@ -74,7 +74,7 @@
 		to_chat(src, span_red("There appears to be no blood in this prey..."))
 		return
 
-	last_special = world.time + 600
+	COOLDOWN_START(src, last_special, 600)
 
 	var/control_pref = src.species.bloodsucker_controlmode
 	var/noise = TRUE
@@ -435,7 +435,7 @@
 		to_chat(src,span_warning("You must be next to your target."))
 		return FALSE
 	//Cooldown on abilities
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src,span_warning("You can't perform an ability again so soon!"))
 		return FALSE
 
@@ -532,7 +532,7 @@
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
-	last_special = world.time + vore_shred_time
+	COOLDOWN_START(src, last_special, vore_shred_time)
 	visible_message(span_danger("[src] appears to be preparing to do something to [T]!")) //Let everyone know that bad times are ahead
 
 	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, list("duration" = vore_shred_time, "T_ext" = T_ext, "T_int" = T_int, "B" = B))
@@ -683,7 +683,7 @@
 		to_chat(src, "You don't have enough space to spin a cocoon!")
 		return
 
-	if(src?.buckled_to() ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(src?.buckled_to() ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -710,9 +710,9 @@
 	set desc = "Dive under water, allowing for you to be stealthy and move faster."
 	set category = "Abilities.General"
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 50 //No spamming!
+	COOLDOWN_START(src, last_special, 50) //No spamming!
 
 	if(has_modifier_of_type(/datum/modifier/underwater_stealth))
 		to_chat(src, "You resurface!")
@@ -742,9 +742,9 @@
 	set desc = "Grab something in the water with you and devour them with your selected stomach."
 	set category = "Abilities.Vore"
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 50 //No spamming!
+	COOLDOWN_START(src, last_special, 50) //No spamming!
 
 	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
 		to_chat(src, span_notice("You cannot do that while in your current state."))
@@ -817,11 +817,11 @@
 	set category = "Abilities.Vore"
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special || is_incorporeal()) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	last_special = world.time + 10 //Anti-spam.
+	COOLDOWN_START(src, last_special, 10) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -879,7 +879,7 @@
 		//Code to shoot the beam here.
 		var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 		appendage_attack.launch_projectile(target, BP_TORSO, src) //Send it.
-		last_special = world.time + 100 //Cooldown for successful strike.
+		COOLDOWN_START(src, last_special, 100) //Cooldown for successful strike.
 
 
 
@@ -1032,11 +1032,11 @@
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	last_special = world.time + 10 //Anti-spam.
+	COOLDOWN_START(src, last_special, 10) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -1100,11 +1100,11 @@
 	set category = "Abilities.General"
 	set desc = "Inject another being with something!"
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //Epic copypasta from tongue grabbing.
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	last_special = world.time + 10 //Anti-spam.
+	COOLDOWN_START(src, last_special, 10) //Anti-spam.
 
 	var/list/choices = list("Inject")
 
@@ -1250,7 +1250,7 @@
 	set desc = "Bite prey and inject them with various toxins."
 	set category = "Abilities.Succubus"
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(!ishuman(src))
@@ -1276,7 +1276,7 @@
 
 	var/choice = tgui_input_list(src, "What do you wish to inject?", "Reagent", list(REAGENT_APHRODISIAC, "Numbing", "Paralyzing"))
 
-	last_special = world.time + 600
+	COOLDOWN_START(src, last_special, 600)
 
 	if(!choice)
 		return
@@ -1365,11 +1365,11 @@
 
 	var/mob/living/carbon/human/C = src
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	var/choice = tgui_input_list(src, "What do you want to do?", "Egg Option", list("Make a Egg", "lay your Eggs"))
-	last_special = world.time + 600
+	COOLDOWN_START(src, last_special, 600)
 
 	if(!choice)
 		return
@@ -1404,7 +1404,7 @@
 	set desc = "Sting a target and inject a small amount of toxin"
 	set category = "Abilities.General"
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	var/list/victims = list()
@@ -1422,7 +1422,7 @@
 	to_chat(T, span_danger("You feel a stabbing pain as you are stung!"))
 	src.visible_message(span_infoplain(span_red("[src] sinks their stinger into [T]!")))
 	T.bloodstr.add_reagent(REAGENT_ID_CONDENSEDCAPSAICINV,3)
-	last_special = world.time + (5 SECONDS) // Many little jabs instead of one big one
+	COOLDOWN_START(src, last_special, (5 SECONDS)) // Many little jabs instead of one big one
 
 /mob/living/proc/absorb_devour()
 	if(!absorbed || !isbelly(loc))
@@ -1490,7 +1490,7 @@
 	set desc = "Change your name. Notifies admins."
 	set category = "Abilities.Superpower"
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	var/chosen_name = tgui_input_text(src, "What would you like your name to become?", "Name change", name, MAX_NAME_LEN)
@@ -1498,7 +1498,7 @@
 	if(!chosen_name || !length(chosen_name))
 		return
 
-	last_special = world.time + (5 SECONDS) //don't spam check the global list pls
+	COOLDOWN_START(src, last_special, (5 SECONDS)) //don't spam check the global list pls
 	for(var/mob/checkplayer in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(checkplayer == src)
 			continue

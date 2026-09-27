@@ -38,7 +38,7 @@
 	set name = "Tackle"
 	set desc = "Tackle someone down."
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -57,14 +57,14 @@
 
 	if(!Adjacent(T)) return
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, span_notice("You cannot tackle in your current state."))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/failed
 	if(prob(75))

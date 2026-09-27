@@ -873,7 +873,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	set category = "Abilities.Mob"
 	set desc = "Select a target to pounce at."
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, "Your legs need some more rest.")
 		return
 
@@ -892,14 +892,14 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	status_flags |= LEAPING
 	pixel_y = pixel_y + 10
 

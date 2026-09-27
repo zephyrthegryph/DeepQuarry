@@ -79,10 +79,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Hair"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 
 	var/list/valid_hairstyles = list()
 	var/list/valid_facialhairstyles = list()
@@ -131,10 +131,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Gender"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/new_gender = tgui_input_list(src, "Please select a gender.", "Shapeshifter Gender", list(FEMALE, MALE, NEUTER, PLURAL))
 	if(!new_gender)
@@ -153,10 +153,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Body Shape"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/new_species = null
 	new_species = tgui_input_list(src, "Please select a species to emulate.", "Shapeshifter Body", species.get_valid_shapeshifter_forms(src))
@@ -180,10 +180,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Body Colour"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/new_skin = tgui_color_picker(src, "Please select a new body color.", "Shapeshifter Colour", rgb(r_skin, g_skin, b_skin))
 	if(!new_skin)
@@ -210,10 +210,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Hair Colors"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/new_hair = tgui_color_picker(src, "Please select a new hair color.", "Hair Colour")
 	if(!new_hair)
@@ -291,10 +291,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Eye Color"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/current_color = rgb(r_eyes,g_eyes,b_eyes)
 	var/new_eyes = tgui_color_picker(src, "Pick a new color for your eyes.","Eye Color", current_color)
@@ -322,10 +322,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Ears"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	// Construct the list of names allowed for this user.
 	var/list/pretty_ear_styles = list("Normal" = null)
 	for(var/path in GLOB.ear_styles_list)
@@ -380,9 +380,9 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Secondary Ears"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 1 SECONDS
+	COOLDOWN_START(src, last_special, 1 SECONDS)
 
 	// Construct the list of names allowed for this user.
 	var/list/pretty_ear_styles = list("Normal" = null)
@@ -416,10 +416,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Tail"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	// Construct the list of names allowed for this user.
 	var/list/pretty_tail_styles = list("Normal" = null)
 	for(var/path in GLOB.tail_styles_list)
@@ -474,10 +474,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Wings"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	// Construct the list of names allowed for this user.
 	var/list/pretty_wing_styles = list("None" = null)
 	for(var/path in GLOB.wing_styles_list)
@@ -533,10 +533,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Toggle Transparency"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	for(var/obj/item/organ/external/L as anything in src.organs)
 		L.transparent = !L.transparent
@@ -669,10 +669,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Complete Reform"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	if (tgui_alert(src, "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", "Reform", list("Yes","Cancel")) != "Yes")
 		return

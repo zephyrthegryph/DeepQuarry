@@ -538,9 +538,9 @@ REF_OWNED(/datum/protean_power, "button")
 	activate_protean_power(/datum/protean_power/transparency)
 
 /mob/living/carbon/human/proc/toggle_limb_transparency(include_head)
-	if(world.time < last_special)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 5 SECONDS
+	COOLDOWN_START(src, last_special, 5 SECONDS)
 	for(var/obj/item/organ/external/limb as anything in organs)
 		if(!include_head && limb.organ_tag == BP_HEAD)
 			continue
@@ -558,9 +558,9 @@ REF_OWNED(/datum/protean_power, "button")
 	verb_path = /mob/living/carbon/human/proc/absorb_implant
 
 /datum/protean_power/absorb_implant/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
-	if(world.time < H.last_special)
+	if(!COOLDOWN_FINISHED(H, last_special))
 		return
-	H.last_special = world.time + 5 SECONDS
+	COOLDOWN_START(H, last_special, 5 SECONDS)
 	var/obj/item/organ/internal/augment/A = H.get_active_hand()
 	if(!istype(A))
 		to_chat(H, span_danger("You cannot integrate this into your body."))
