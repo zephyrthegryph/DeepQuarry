@@ -125,10 +125,6 @@ GLOBAL_LIST_INIT(legacy_tg_space_type_cache, typecacheof(/turf/space))
 		f_value = number_tiles + heuristic
 	// otherwise, no parent node means this is from a subscan lateral scan, so we just need the tile for now until we call [datum/jps/proc/update_parent] on it
 
-/datum/tg_jps_node/Destroy(force, ...)
-	previous_node = null
-	return ..()
-
 /datum/tg_jps_node/proc/update_parent(datum/tg_jps_node/new_parent)
 	previous_node = new_parent
 	node_goal = previous_node.node_goal
