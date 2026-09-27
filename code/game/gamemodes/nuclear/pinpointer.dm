@@ -19,10 +19,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/pinpointer/Destroy()
-	active = 0
-	return ..()
-
 /obj/item/pinpointer/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -66,8 +62,6 @@
 	for(var/obj/machinery/nuclearbomb/bomb in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(bomb.timing)
 			. += "Extreme danger.  Arming signal detected.   Time remaining: [bomb.timeleft]"
-
-
 
 /obj/item/pinpointer/advpinpointer
 	name = "Advanced Pinpointer"
@@ -184,11 +178,9 @@
 
 			return attack_self()
 
-
 ///////////////////////
 //nuke op pinpointers//
 ///////////////////////
-
 
 /obj/item/pinpointer/nukeop
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
@@ -277,7 +269,6 @@
 			if(16 to INFINITY)
 				icon_state = "pinonfar"
 
-
 // This one only points to the ship.  Useful if there is no nuking to occur today.
 /obj/item/pinpointer/shuttle
 	var/shuttle_comp_id = null
@@ -326,7 +317,6 @@
 				icon_state = "pinonmedium"
 			if(16 to INFINITY)
 				icon_state = "pinonfar"
-
 
 /obj/item/pinpointer/shuttle/merc
 	shuttle_comp_id = "Mercenary"

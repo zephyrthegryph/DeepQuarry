@@ -80,6 +80,7 @@
 	control_overlay = image('icons/obj/spells.dmi',"controlled")
 	return ..()
 
+// LIFECYCLE: controlled mobs are released.
 /obj/item/spell/control/Destroy()
 	for(var/mob/living/L in controlled_mobs)
 		deselect(L)
@@ -93,7 +94,6 @@
 			for(var/mob/living/L in controlled_mobs)
 				deselect(L)
 			to_chat(user, span_notice("You've released control of all entities you had in control."))
-
 
 /obj/item/spell/control/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(isliving(hit_atom))

@@ -22,9 +22,9 @@
 	. = ..()
 	SSplanets.addTurf(src)
 
-/turf/unsimulated/wall/planetary/Destroy()
+/// Phase 2: leaves its planet's turf set.
+/turf/unsimulated/wall/planetary/lifecycle_dematerialize()
 	SSplanets.removeTurf(src)
-	return ..()
 
 /turf/unsimulated/wall/planetary/set_temperature(new_temperature)
 	if(new_temperature == temperature)
@@ -40,7 +40,6 @@
 /turf/unsimulated/wall/planetary/normal
 	oxygen = MOLES_O2STANDARD
 	nitrogen = MOLES_N2STANDARD
-
 
 // Wiki says it's 92.6 kPa, composition 18.1% O2 80.8% N2 1.1% trace.  We're gonna pretend trace is actually nitrogen.
 /turf/unsimulated/wall/planetary/sif

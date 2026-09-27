@@ -83,11 +83,6 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/omni_shield, "shields")
 	var/y_dif = (my_icon.Height() - world.icon_size) / 2
 	shift_y = round(y_dif, 1)
 
-/obj/item/shield_projector/rectangle/mecha/Destroy()
-	UnregisterSignal(my_mech, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	my_mech = null
-	. = ..()
-
 /obj/item/shield_projector/rectangle/mecha/create_shield()
 	. = ..()
 	if(shift_x || shift_y)

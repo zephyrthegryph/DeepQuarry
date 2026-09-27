@@ -26,7 +26,6 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 	unacidable = TRUE
 	layer = TURF_LAYER
 
-
 	var/word1
 	var/word2
 	var/word3
@@ -72,19 +71,19 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		if(our_ai.client)
 			our_ai.client.images += blood_image
 
+REF_OWNED(/obj/effect/rune, "blood_image")
+
+// LIFECYCLE: the rune's blood image comes off every AI client that was shown it.
 /obj/effect/rune/Destroy()
 	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			our_ai.client.images -= blood_image
-	qdel(blood_image)
-	blood_image = null
 	. = ..()
 
 /obj/effect/rune/examine(mob/user)
 	. = ..()
 	if(iscultist(user))
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
-
 
 /obj/effect/rune/attackby(obj/I, mob/user)
 	if(istype(I, /obj/item/book/tome) && iscultist(user))
@@ -96,7 +95,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		qdel(src)
 		return
 	return
-
 
 /obj/effect/rune/attack_hand(mob/living/user)
 	if(!iscultist(user))
@@ -159,7 +157,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		return runestun(null, user)
 	else
 		return fizzle(user)
-
 
 /obj/effect/rune/proc/fizzle(mob/living/user)
 	if(istype(src,/obj/effect/rune))
@@ -311,7 +308,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		O.show_message(span_warning("\The [user] beats \the [M] with \the [src]!"), 1)
 	to_chat(M, span_danger("You feel searing heat inside!"))
 	return ITEM_INTERACT_SUCCESS
-
 
 /obj/item/book/tome/proc/scribe_done(mob/living/user, chosen_rune, word1, word2, word3)
 	var/area/A = get_area(user)

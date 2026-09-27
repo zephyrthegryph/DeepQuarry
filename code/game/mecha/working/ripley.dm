@@ -40,15 +40,14 @@
 					ore_box.stored_ore[ore.material]++
 					qdel(ore)
 
+REF_OWNED(/obj/mecha/working/ripley, "orescanner")
+
+// LIFECYCLE: cargo spills around the wreck.
 /obj/mecha/working/ripley/Destroy()
 	for(var/atom/movable/A in src.cargo)
-		A.loc = loc
-		var/turf/T = loc
-		if(istype(T))
-			T.Entered(A)
+		A.forceMove(loc)
 		step_rand(A)
 	LAZYCLEARLIST(cargo)
-	QDEL_NULL(orescanner)
 	. = ..()
 
 /obj/mecha/working/ripley/firefighter
@@ -123,7 +122,6 @@
 	icon_scale_x = 1
 	icon_scale_y = 1
 
-
 /obj/mecha/working/ripley/Initialize(mapload)
 	. = ..()
 	orescanner = new /obj/item/mining_scanner
@@ -136,7 +134,6 @@
 
 	orescanner.attack_self(usr)
 
-
 //Meant for random spawns.
 /obj/mecha/working/ripley/mining/old
 	desc = "An old, dusty mining ripley."
@@ -146,7 +143,6 @@
 	max_integrity = 190	//Just slightly worse.
 	update_integrity(25)
 	cell.charge = rand(0, cell.charge)
-
 
 /obj/mecha/working/ripley
 	minimum_penetration = 0

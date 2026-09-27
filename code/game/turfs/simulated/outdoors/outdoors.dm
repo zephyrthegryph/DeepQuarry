@@ -25,10 +25,10 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	// When a turf gets demoted or promoted, this list gets adjusted.  The top-most layer is the layer on the bottom of the list, due to how pop() works.
 	// var/list/turf_layers = list(/turf/simulated/floor/outdoors/rocks) kill. See outdoors_ch.dm for replacement.
 
-/turf/simulated/floor/Destroy()
+/// Phase 2: an outdoor floor leaves its planet's weather set.
+/turf/simulated/floor/lifecycle_dematerialize()
 	if(is_outdoors())
 		SSplanets.removeTurf(src)
-	return ..()
 
 /turf/simulated/floor/outdoors/get_dig_loot_type(mob/user, obj/item/W)
 	return pick( \
@@ -154,7 +154,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 				return
 	demote()
 
-
 /turf/simulated/floor/tiled/asteroid_steel/outdoors
 	name = "weathered tiles"
 	desc = "Old tiles left out in the elements."
@@ -192,7 +191,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	flooring_override = pickweight(possibledirts)
 	return ..()
 
-
 /turf/simulated/floor/outdoors/newdirt_nograss
 	name = "dirt"
 	desc = "Looks dirty."
@@ -211,7 +209,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	)
 	flooring_override = pickweight(possibledirts)
 	return ..()
-
 
 /turf/simulated/floor/outdoors/sidewalk
 	name = "sidewalk"
@@ -268,7 +265,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	icon_state = "side-walk"
 	initial_flooring = /datum/decl/flooring/outdoors/sidewalk/side
 
-
 /datum/decl/flooring/outdoors/sidewalk/side
 	icon_base = "sidewalk"
 	build_type = /obj/item/stack/tile/floor/sidewalk/side
@@ -284,7 +280,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	build_type = /obj/item/stack/tile/floor/sidewalk/slab
 
 /obj/item/stack/tile/floor/sidewalk/slab/
-
 
 /datum/decl/flooring/outdoors/sidewalk/slab/city
 	icon_base = "cityslab"
@@ -306,7 +301,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 
 /datum/decl/flooring/concrete
 	build_type = /obj/item/stack/tile/floor/concrete
-
 
 /turf/simulated/floor/outdoors
 	var/demote_to = /turf/simulated/floor/outdoors/rocks
@@ -342,9 +336,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 // General sif turf defines for unit test, overridden in map for specific values
 /turf/simulated/floor/plating/sif/planetuse
 
-
 /turf/simulated/floor/plating/sif/planetuse
-
 
 /turf/simulated/sky/moving/north/sif/planet_fall/find_planet()
 	return GLOB.planet_sif
@@ -353,14 +345,11 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 
 /turf/simulated/floor/outdoors/dirt/sif/planetuse
 
-
 /turf/simulated/floor/outdoors/rocks/sif/planetuse
 
 /turf/simulated/floor/outdoors/mud/sif/planetuse
 
-
 /turf/simulated/floor/outdoors/grass/sif/planetuse
-
 
 /obj/effect/step_trigger/teleporter/planetary_fall/sif/find_planet()
 	planet = GLOB.planet_sif
