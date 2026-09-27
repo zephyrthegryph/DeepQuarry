@@ -428,11 +428,11 @@ GLOBAL_PROTECT(surgical_steps)
 	if(user)
 		to_chat(user, span_warning("You must remain close to and keep focused on your patient to conduct surgery."))
 		user.balloon_alert(user, "you must remain close to and keep focused on your patient")
-	if(!tool || !user)
-		LAZYREMOVE(surgery_zones_in_progress, zone)
-		update_surgery()
-		return
-	surgical_step_ended(FALSE, tool, step, user, zone, cleanliness, part, work_target, chance)
+	// An interrupted step is abandoned, not botched: no complication roll, and the target may be
+	// gone (a removed organ, a detached limb), so nothing touches it (audit D16).
+	log_game("SURGERY: [key_name(user)] interrupted [step?.name] on [key_name(src)] at [zone]; no complication.")
+	LAZYREMOVE(surgery_zones_in_progress, zone)
+	update_surgery()
 
 /mob/living/carbon/human/proc/surgical_step_done(obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
 	if(part && !step.target_still_valid(src, part, work_target))

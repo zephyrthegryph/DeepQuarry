@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Cyborgs recover from thermal runaway once their cooling loop circulates again."
+  - bugfix: "Vodka and godka lower radiation instead of doubling it."
+  - bugfix: "A new mind keeps its body's identity (traits such as no-clone, notes, time of death)."
+  - bugfix: "Tourniquets cause ischemia on every limb below them, not just the cinched one."
+  - bugfix: "An interrupted surgery step no longer counts as a botched one."
+  - bugfix: "Fixed runtimes on detached limbs and in the brain's Notify Transcore verb."

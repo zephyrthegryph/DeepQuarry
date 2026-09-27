@@ -460,7 +460,7 @@
 
 	if(is_fractured() && brute)
 		jostle_bone(brute)
-		if(organ_can_feel_pain() && prob(40) && !isbelly(owner.loc) && !istype(owner.loc, /obj/item/dogborg/sleeper))
+		if(owner && organ_can_feel_pain() && prob(40) && !isbelly(owner.loc) && !istype(owner.loc, /obj/item/dogborg/sleeper)) // detached limbs have no owner (D14)
 			owner.emote("scream")	//getting hit on broken hand hurts
 	if(used_weapon)
 		add_autopsy_data("[used_weapon]", brute + burn)
@@ -513,7 +513,7 @@
 				spillover += burn_overflow
 
 		//If there is pain to dispense.
-		if(spillover)
+		if(spillover && owner) // detached limbs have no owner (D14)
 			owner.shock_stage += spillover * CONFIG_GET(number/organ_damage_spillover_multiplier)
 
 	// sync the organ's damage with its wounds
@@ -721,7 +721,7 @@ This function completely restores a damaged organ to perfect condition.
 			continue
 		implanted_object.loc = get_turf(src)
 		LAZYREMOVE(implants, implanted_object)
-	if(!owner.has_embedded_objects())
+	if(owner && !owner.has_embedded_objects()) // rejuvenating a detached limb has no owner (D13)
 		owner.clear_alert("embeddedobject")
 
 	if(owner && !ignore_prosthetic_prefs)
