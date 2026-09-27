@@ -125,7 +125,9 @@
 
 /datum/nifsoft/sizechange/activate()
 	if((. = ..()))
-		var/new_size = tgui_input_number(usr, "Put the desired size (25-200%), or (1-600%) in dormitory areas.", "Set Size", 200, 600, 1)
+		var/new_size = rerun_prompt(usr, "k128", list("kind" = "number", "message" = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", "title" = "Set Size", "default" = 200, "max" = 600, "min" = 1), PROC_REF(activate), args)
+		if(isnull(new_size))
+			return
 
 		if (!nif.human.size_range_check(new_size))
 			if(new_size)

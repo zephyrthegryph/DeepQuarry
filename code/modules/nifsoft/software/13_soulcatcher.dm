@@ -137,7 +137,6 @@
 	sender.log_message("NME (NIF:[nif.human.real_name]): [message]", LOG_EMOTE, color="#ff00c8")
 
 /datum/nifsoft/soulcatcher/proc/show_settings(mob/living/carbon/human/H)
-	set waitfor = FALSE
 	var/settings_list = list(
 	"Catching You \[[setting_flags & NIF_SC_CATCHING_ME ? "Enabled" : "Disabled"]\]" = NIF_SC_CATCHING_ME,
 	"Catching Prey \[[setting_flags & NIF_SC_CATCHING_OTHERS ? "Enabled" : "Disabled"]\]" = NIF_SC_CATCHING_OTHERS,
@@ -147,15 +146,16 @@
 	"AR Projecting \[[setting_flags & NIF_SC_PROJECTING ? "Enabled" : "Disabled"]\]" = NIF_SC_PROJECTING,
 	"Design Inside",
 	"Erase Contents")
-	var/choice = tgui_input_list(nif.human,"Select a setting to modify:","Soulcatcher NIFSoft", settings_list)
+	var/choice = rerun_prompt(nif.human, "k150", list("kind" = "list", "message" = "Select a setting to modify:", "title" = "Soulcatcher NIFSoft", "choices" = settings_list), PROC_REF(show_settings), args)
+	if(isnull(choice))
+		return
 	if(choice in settings_list)
 		switch(choice)
 
 			if("Design Inside")
-				var/new_flavor = tgui_input_text(nif.human, "Type what the prey sees after being 'caught'. This will be \
-				printed after an intro ending with: \"Around you, you see...\" to the prey. If you already \
-				have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", \
-				"VR Environment", html_decode(inside_flavor), MAX_MESSAGE_LEN*2, TRUE, prevent_enter = TRUE)
+				var/new_flavor = rerun_prompt(nif.human, "k155", list("kind" = "text", "message" = "Type what the prey sees after being 'caught'. This will be printed after an intro ending with: \"Around you, you see...\" to the prey. If you already have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", "title" = "VR Environment", "default" = html_decode(inside_flavor), "max_length" = MAX_MESSAGE_LEN*2, "multiline" = TRUE), PROC_REF(show_settings), args)
+				if(isnull(new_flavor))
+					return
 				inside_flavor = new_flavor
 				nif.notify("Updating VR environment...")
 				for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
@@ -164,9 +164,13 @@
 				return TRUE
 
 			if("Erase Contents")
-				var/mob/living/carbon/brain/caught_soul/brainpick = tgui_input_list(nif.human,"Select a mind to delete:","Erase Mind", brainmobs)
+				var/mob/living/carbon/brain/caught_soul/brainpick = rerun_prompt(nif.human, "k164", list("kind" = "list", "message" = "Select a mind to delete:", "title" = "Erase Mind", "choices" = brainmobs), PROC_REF(show_settings), args)
+				if(isnull(brainpick))
+					return
 
-				var/warning = tgui_alert(nif.human,"Are you SURE you want to erase \"[brainpick]\"?","Erase Mind",list("CANCEL","DELETE"))
+				var/warning = rerun_prompt(nif.human, "k166", list("message" = "Are you SURE you want to erase \"[brainpick]\"?", "title" = "Erase Mind", "choices" = list("CANCEL","DELETE")), PROC_REF(show_settings), args)
+				if(isnull(warning))
+					return
 				if(warning == "DELETE")
 					brainmobs -= brainpick
 					qdel(brainpick)
@@ -560,7 +564,10 @@
 		to_chat(src,span_warning("You need a loaded mind to use NSay."))
 		return
 	if(!message)
-		message = tgui_input_text(src, "Type a message to say.","Speak into Soulcatcher", encode = FALSE)
+		var/_answer_k560 = rerun_prompt(src, "k560", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "encode" = FALSE), PROC_REF(nsay_act), args)
+		if(isnull(_answer_k560))
+			return ITEM_INTERACT_BLOCKING
+		message = _answer_k560
 	if(message)
 		var/sane_message = sanitize(message)
 		SC.say_into(sane_message,src)
@@ -591,7 +598,10 @@
 		return
 
 	if(!message)
-		message = tgui_input_text(src, "Type an action to perform.","Emote into Soulcatcher", encode = FALSE)
+		var/_answer_k591 = rerun_prompt(src, "k591", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "encode" = FALSE), PROC_REF(nme_act), args)
+		if(isnull(_answer_k591))
+			return ITEM_INTERACT_BLOCKING
+		message = _answer_k591
 	if(message)
 		var/sane_message = sanitize(message)
 		SC.emote_into(sane_message,src)
@@ -649,7 +659,10 @@
 	set category = "Soulcatcher"
 
 	if(!message)
-		message = tgui_input_text(src, "Type a message to say.","Speak into Soulcatcher", encode = FALSE)
+		var/_answer_k649 = rerun_prompt(src, "k649", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "encode" = FALSE), VERB_REF(nsay_brain), args)
+		if(isnull(_answer_k649))
+			return
+		message = _answer_k649
 	if(message)
 		var/sane_message = sanitize(message)
 		soulcatcher.say_into(sane_message,src,null)
@@ -660,7 +673,10 @@
 	set category = "Soulcatcher"
 
 	if(!message)
-		message = tgui_input_text(src, "Type an action to perform.","Emote into Soulcatcher", encode = FALSE)
+		var/_answer_k660 = rerun_prompt(src, "k660", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "encode" = FALSE), VERB_REF(nme_brain), args)
+		if(isnull(_answer_k660))
+			return
+		message = _answer_k660
 	if(message)
 		var/sane_message = sanitize(message)
 		soulcatcher.emote_into(sane_message,src,null)
