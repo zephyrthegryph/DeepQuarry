@@ -135,6 +135,7 @@ SUBSYSTEM_DEF(throwing)
 
 /// Phase 2: the throw leaves SSthrowing's run (keyed by the thrown movable).
 /datum/thrownthing/lifecycle_dematerialize()
+	. = ..()
 	if(thrownthing)
 		SSthrowing.processing -= thrownthing
 		SSthrowing.currentrun -= thrownthing

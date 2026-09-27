@@ -497,6 +497,7 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 
 /// Phase 1 (unbind): the rust-g query handle closes and SSdbcore's rosters let go.
 /datum/db_query/lifecycle_unbind()
+	. = ..()
 	Close()
 	SSdbcore.all_queries -= src
 	SSdbcore.queries_standby -= src

@@ -38,9 +38,11 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	dq_destroy_transaction_log("guard")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_unbind()
+	. = ..()
 	dq_destroy_transaction_log("unbind")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_dematerialize()
+	. = ..()
 	dq_destroy_transaction_log("dematerialize")
 
 /obj/item/dq_destroy_transaction_phase_probe/declared_owned_vars()

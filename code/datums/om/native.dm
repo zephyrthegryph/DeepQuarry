@@ -32,6 +32,7 @@
 
 /// Phase 1 (unbind): the Rust-side watch is cancelled.
 /datum/native_watch/lifecycle_unbind()
+	. = ..()
 	cancel()
 
 /// Stops the watch: drops its Rust registration and frees its handle.

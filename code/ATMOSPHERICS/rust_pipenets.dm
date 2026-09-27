@@ -21,6 +21,7 @@
 	handle = SSvg.bind_datum(src)
 
 /datum/pipe_port/lifecycle_unbind()
+	. = ..()
 	if(handle)
 		SSvg.unbind_datum(src, handle)
 		handle = 0

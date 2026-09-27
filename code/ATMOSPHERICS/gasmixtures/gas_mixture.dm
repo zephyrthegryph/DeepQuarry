@@ -78,6 +78,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
 /// Phase 1 (unbind): frees the Rust arena slot for reuse.
 /datum/gas_mixture/lifecycle_unbind()
+	. = ..()
 	vg_unregister_gasmixture_hook(src)
 
 // LIFECYCLE: returns QDEL_HINT_IWILLGC (no reference-check queue for handles).

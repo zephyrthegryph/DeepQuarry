@@ -38,6 +38,7 @@
 REF_OWNED(/datum/radial_menu/persistent, "select_proc_callback")
 
 /datum/radial_menu/persistent/lifecycle_dematerialize()
+	. = ..()
 	GLOB.radial_menus -= uniqueid
 
 /*

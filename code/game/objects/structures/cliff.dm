@@ -51,6 +51,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/structure/cliff/lifecycle_dematerialize()
+	. = ..()
 	unregister_dangerous_to_step()
 
 /obj/structure/cliff/Moved(atom/oldloc)

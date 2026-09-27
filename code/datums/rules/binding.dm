@@ -126,6 +126,7 @@
 
 /// Phase 1 (unbind): drops its rules and frees its Rust reactor nodes.
 /datum/rule_binding/lifecycle_unbind()
+	. = ..()
 	for(var/i in 1 to length(rules))
 		drop(i)
 	for(var/property in nodes)

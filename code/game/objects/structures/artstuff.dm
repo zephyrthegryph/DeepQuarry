@@ -405,6 +405,7 @@
 
 /// Phase 2: leaves the persistent painting frames.
 /obj/structure/sign/painting/lifecycle_dematerialize()
+	. = ..()
 	SSpersistence.painting_frames -= src
 
 /obj/structure/sign/painting/attackby(obj/item/I, mob/user, params)

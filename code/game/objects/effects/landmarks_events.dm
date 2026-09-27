@@ -42,6 +42,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 
 /// Phase 2: leaves its creator's event trigger list.
 /obj/effect/landmark/event_trigger/lifecycle_dematerialize()
+	. = ..()
 	if(GLOB.event_triggers[creator_ckey])
 		GLOB.event_triggers[creator_ckey] -= src
 

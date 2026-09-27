@@ -73,6 +73,7 @@
 /// successor registers itself in Initialize), and its own air handle goes.
 /// Shared immutable air (vacuum, planetary mixes) is only let go.
 /turf/open/lifecycle_unbind()
+	. = ..()
 	QDEL_NULL(active_hotspot)
 	SSair?.remove_from_active(src)
 	if(immutable_atmos)

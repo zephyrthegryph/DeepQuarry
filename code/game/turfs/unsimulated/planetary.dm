@@ -24,6 +24,7 @@
 
 /// Phase 2: leaves its planet's turf set.
 /turf/unsimulated/wall/planetary/lifecycle_dematerialize()
+	. = ..()
 	SSplanets.removeTurf(src)
 
 /turf/unsimulated/wall/planetary/set_temperature(new_temperature)

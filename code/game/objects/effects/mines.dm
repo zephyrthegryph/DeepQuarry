@@ -28,6 +28,7 @@ REF_OWNED(/obj/effect/mine, list("trap", "wires"))
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()
+	. = ..()
 	unregister_dangerous_to_step()
 
 /obj/effect/mine/Moved(atom/oldloc)

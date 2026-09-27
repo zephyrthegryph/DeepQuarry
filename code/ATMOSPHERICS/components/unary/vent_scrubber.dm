@@ -59,6 +59,7 @@
 
 /// Phase 2: leaves its area's scrubber index.
 /obj/machinery/atmospherics/unary/vent_scrubber/lifecycle_dematerialize()
+	. = ..()
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_scrub_info, id_tag)
 		LAZYREMOVE(initial_loc.air_scrub_names, id_tag)

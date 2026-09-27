@@ -120,6 +120,7 @@ GLOBAL_LIST_EMPTY(multi_point_spawns)
 
 /// Phase 2: leaves its multi-point spawn group.
 /obj/random_multi/lifecycle_dematerialize()
+	. = ..()
 	var/list/spawnpoints = GLOB.multi_point_spawns[id]
 	spawnpoints -= src
 	if(!length(spawnpoints))

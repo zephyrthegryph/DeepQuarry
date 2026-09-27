@@ -157,6 +157,7 @@
 
 /// Phase 2: leaves its area's vent index.
 /obj/machinery/atmospherics/unary/vent_pump/lifecycle_dematerialize()
+	. = ..()
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_vent_info, id_tag)
 		LAZYREMOVE(initial_loc.air_vent_names, id_tag)

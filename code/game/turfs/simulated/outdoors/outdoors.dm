@@ -27,6 +27,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 
 /// Phase 2: an outdoor floor leaves its planet's weather set.
 /turf/simulated/floor/lifecycle_dematerialize()
+	. = ..()
 	if(is_outdoors())
 		SSplanets.removeTurf(src)
 

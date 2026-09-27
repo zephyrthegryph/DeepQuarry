@@ -86,6 +86,7 @@ REF_OWNED_LIST(/datum/dq_rx_node, "watches")
 
 /// Phase 1 (unbind): the node leaves its atom.
 /datum/dq_rx_node/lifecycle_unbind()
+	. = ..()
 	var/atom/A = atom_of()
 	if(A?.rx_node == src)
 		A.rx_node = null
