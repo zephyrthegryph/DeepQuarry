@@ -60,5 +60,5 @@
 			welder.loc = src
 		else
 			welder = null
-			qdel(src)
+			consume(src, user)
 			return

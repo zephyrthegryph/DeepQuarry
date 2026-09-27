@@ -18,8 +18,7 @@
 		frame_types_wall = GLOB.construction_frame_wall
 
 /obj/item/frame/wrench_act(mob/user, obj/item/tool)
-	new refund_type(get_turf(src), refund_amt)
-	qdel(src)
+	replace_with(src, refund_type, refund_amt)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/frame/attack_self(mob/user)
@@ -48,7 +47,7 @@
 	M.init_forensic_data().merge_allprints(forensic_data)
 	if(istype(src.loc, /obj/item/gripper)) //Typical gripper shenanigans
 		user.drop_item()
-	qdel(src)
+	consume(src, user)
 
 /obj/item/frame/proc/try_build(turf/on_wall, mob/user as mob)
 	update_type_list()
@@ -95,7 +94,7 @@
 	M.init_forensic_data().merge_allprints(forensic_data)
 	if(istype(src.loc, /obj/item/gripper)) //Typical gripper shenanigans
 		user.drop_item()
-	qdel(src)
+	consume(src, user)
 
 /obj/item/frame/light
 	name = "light fixture frame"

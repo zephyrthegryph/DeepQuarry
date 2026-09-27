@@ -97,7 +97,7 @@
 		uses--
 		if(!uses)
 			to_chat(user, span_warning("You used up your crayon!"))
-			qdel(src)
+			consume(src, user)
 
 /obj/item/pen/crayon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user)
@@ -112,7 +112,7 @@
 			uses -= 5
 			if(uses <= 0)
 				to_chat(user, span_warning("You ate your crayon!"))
-				qdel(src)
+				consume(src, user)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -171,7 +171,7 @@
 			uses -= 5
 			if(uses <= 0)
 				to_chat(user, span_warning("You ate the marker!"))
-				qdel(src)
+				consume(src, user)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()

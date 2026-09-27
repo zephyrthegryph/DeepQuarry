@@ -34,6 +34,6 @@
 		var/obj/item/material/butterflyblade/B = W
 		to_chat(user, "You attach the two concealed blade parts.")
 		new /obj/item/material/butterflyconstruction(user.loc, B.material.name)
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 		return

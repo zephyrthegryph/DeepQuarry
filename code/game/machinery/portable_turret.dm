@@ -1117,7 +1117,7 @@
 		to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
 		return TRUE
 	to_chat(user, span_notice("You add the prox sensor to the turret."))
-	qdel(I)
+	consume(I, user)
 	return TRUE
 	//attack_hand() removes the gun
 
@@ -1192,8 +1192,7 @@
 			if(!anchored)
 				playsound(src, tool.usesound, 75, 1)
 				to_chat(user, span_notice("You dismantle the turret construction."))
-				new /obj/item/stack/material/steel(loc, 5)
-				qdel(src)
+				replace_with(src, /obj/item/stack/material/steel, 5)
 				return ITEM_INTERACT_SUCCESS
 		if(7)
 			playsound(src, tool.usesound, 75, 1)

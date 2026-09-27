@@ -64,7 +64,7 @@
 			to_chat(user, span_danger("That was stupid of you."))
 			explosion(get_turf(src),-1,0,2)
 			if(src)
-				qdel(src)
+				consume(src, user)
 			return
 		else if(T.status)
 			if(T.welding)

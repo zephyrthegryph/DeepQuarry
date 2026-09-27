@@ -40,7 +40,7 @@
 		user.unEquip(W)
 		W.forceMove(src)
 		restore_gamma_loot(w_type)
-		qdel(W)
+		consume(W, user)
 	else
 		return ..()
 

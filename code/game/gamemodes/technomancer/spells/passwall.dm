@@ -73,7 +73,7 @@
 			to_chat(user, span_info("You find a destination on the other side of \the [hit_atom], and phase through it."))
 			spark_system.start()
 			user.forceMove(found_turf)
-			qdel(src)
+			consume(src, user)
 			return 1
 		else
 			to_chat(user, span_warning("You don't have enough energy to phase through these walls!"))

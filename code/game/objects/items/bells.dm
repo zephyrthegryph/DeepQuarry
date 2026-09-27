@@ -98,8 +98,7 @@
 
 /obj/item/deskbell/proc/wrench_act_timed_done(mob/user)
 	to_chat(user, span_notice("You disassemble the desk bell."))
-	new /obj/item/stack/material/steel(get_turf(src), 1)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 1)
 
 /obj/item/deskbell/proc/break_bell(mob/user)
 	to_chat(user,span_notice("The ringing abruptly stops as [src]'s ringer gets jammed inside!"))

@@ -18,6 +18,13 @@
 		return FALSE
 	if(dq_ledger_removal_refusal(item, actor))
 		return FALSE
+	// Held or worn: take it off the mob the way drop_from_inventory() did at
+	// the call sites this replaces, so dropped() hooks, hand HUD and slowdown
+	// update before the item goes (qdel alone gets there too, but later and
+	// from inside the transaction).
+	if(ismob(item.loc) && isitem(item))
+		var/mob/holder = item.loc
+		holder.drop_from_inventory(item)
 	qdel(item)
 	return TRUE
 
@@ -33,23 +40,30 @@
 	if(!original || QDELETED(original))
 		return null
 	var/atom/holder = original.loc
-	var/list/entry
+	var/slot_id
 	var/datum/ledger/L = dq_ledger_peek(holder)
-	if(L)
-		entry = L.entries[original]
+	if(L && dq_slot_defs_for(holder))
+		var/list/entry = L.entries[original]
+		if(entry)
+			slot_id = entry[LEDGER_E_SLOT]
+	// Built on the turf when the original sits in a slot (a mob's hand, a
+	// bag): the constructor must not see a half-filled holder. Otherwise in
+	// the original's own loc -- a turf, or a plain container without slots.
+	var/atom/where = (slot_id || !holder || isturf(holder)) ? get_turf(original) : holder
 	// arglist() can't be combined with a positional arg in the same call, so
-	// the turf goes into the same list as the rest of the constructor args.
-	var/list/ctor_args = list(get_turf(original)) + args.Copy(3)
+	// the loc goes into the same list as the rest of the constructor args.
+	var/list/ctor_args = list(where) + args.Copy(3)
 	var/atom/movable/successor = new path(arglist(ctor_args))
 	if(QDELETED(successor))
 		return null
 	original.lifecycle_successor = successor
-	if(entry && dq_slot_defs_for(holder))
-		var/slot_id = entry[LEDGER_E_SLOT]
-		// Best effort: the slot may refuse the successor (different accepts
-		// predicate) -- it still exists on the turf either way.
-		successor.move_into(holder, slot_id)
 	qdel(original)
+	// Into the slot only once the original has left it: a one-item slot (a
+	// hand) would refuse the successor while the original still filled it.
+	// Best effort: the slot may refuse the successor (different accepts
+	// predicate) -- it still exists on the turf either way.
+	if(slot_id && !QDELETED(holder) && !QDELETED(successor))
+		successor.move_into(holder, slot_id)
 	return successor
 
 // ---- lifetime / expire() ----
@@ -69,11 +83,23 @@
 /// Arms (or re-arms) this atom's self-destruct for `after` deciseconds from
 /// now, cancelling any previous one. `expire(after)` with no
 /// `lifecycle_lifetime` set is how a one-off timed delete (a thrown effect,
-/// a spawner) declares it without a type-level lifetime var.
+/// a spawner) declares it without a type-level lifetime var. The timer is
+/// owned by this atom (a callback on src, not on the global qdel proc), so
+/// deleting it first cancels the timer instead of leaving a queued strong
+/// reference behind -- the hard-delete trap QDEL_IN() works around with a
+/// handle.
 /atom/movable/proc/expire(after)
 	if(lifecycle_lifetime_timer)
 		deltimer(lifecycle_lifetime_timer)
-	lifecycle_lifetime_timer = addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), after, TIMER_STOPPABLE)
+		lifecycle_lifetime_timer = null
+	if(QDELETED(src))
+		return
+	lifecycle_lifetime_timer = addtimer(CALLBACK(src, PROC_REF(lifecycle_expire_now)), max(after, 0), TIMER_STOPPABLE)
+
+/atom/movable/proc/lifecycle_expire_now()
+	PRIVATE_PROC(TRUE)
+	lifecycle_lifetime_timer = null
+	qdel(src)
 
 /atom/movable/proc/lifecycle_arm_lifetime()
 	if(lifecycle_lifetime > 0)
@@ -86,8 +112,17 @@
 /// many were deleted.
 /atom/proc/slot_clear(slot_id)
 	. = 0
-	latent_materialize_all(slot_id)
-	for(var/atom/movable/thing as anything in slot_contents(slot_id))
+	// DELETE never materializes a latent entry (lifecycle.md §3): drop them
+	// as data.
+	if(has_latent())
+		var/datum/ledger/L = dq_ledger(src)
+		for(var/datum/latent_entry/entry as anything in L?.latent_list(slot_id))
+			. += entry.count
+			L.latent_set_count(entry, 0)
+	// A holder without declared slots owns its plain contents: slot_clear()
+	// with no slot named deletes those, the loop this verb replaces.
+	var/list/things = (isnull(slot_id) && !dq_slot_defs_for(src)) ? contents.Copy() : slot_contents(slot_id)
+	for(var/atom/movable/thing as anything in things)
 		if(QDELETED(thing))
 			continue
 		qdel(thing)
@@ -142,11 +177,25 @@
 /// that opt in.
 /mob/living/var/delete_on_death = FALSE
 
-/// DQ Medical's O5 death pipeline calls this as its final hook, for every
-/// mob (doc/rewrite/lifecycle.md §5, §7). A no-op unless delete_on_death is set.
+/// Called once the whole death() chain has finished (every subtype's code
+/// after its `..()` included), for every mob that sets delete_on_death
+/// (doc/rewrite/lifecycle.md §5, §7). /mob/proc/death() arms it on a zero
+/// timer rather than calling it inline: a subtype's `..()` returns into
+/// code that still spawns remains or prints messages at the mob's loc, which
+/// must run before the mob goes. Skipped if the mob was revived or deleted
+/// (gibbed) in the meantime.
 /mob/living/proc/lifecycle_on_death_finalized()
-	if(delete_on_death)
+	if(delete_on_death && stat == DEAD && !QDELETED(src))
 		qdel(src)
+
+/// The death pipeline's final hook: arms lifecycle_on_death_finalized() when
+/// this mob declares delete_on_death.
+/mob/proc/lifecycle_arm_death_delete()
+	return
+
+/mob/living/lifecycle_arm_death_delete()
+	if(delete_on_death)
+		addtimer(CALLBACK(src, PROC_REF(lifecycle_on_death_finalized)), 0)
 
 // ---- destroy_effects (declared, phase 6) ----
 

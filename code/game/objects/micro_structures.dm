@@ -482,4 +482,4 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		var/obj/structure/micro_tunnel/tunnel = new (get_turf(src.loc))
 		tunnel.set_dir(dir)
 
-	qdel(src)
+	return INITIALIZE_HINT_QDEL

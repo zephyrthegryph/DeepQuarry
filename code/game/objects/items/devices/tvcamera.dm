@@ -297,11 +297,10 @@
 		..()
 		return
 	var/obj/item/TVAssembly/A = new(user)
-	qdel(S)
+	consume(S, user)
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the infrared sensor to the robot head."))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/TVAssembly
 	name = "\improper TV Camera Assembly"
@@ -355,8 +354,7 @@
 				to_chat(user, span_notice("You encase the assembly in a Ward-Takeshi casing."))
 				var/turf/T = get_turf(src)
 				new /obj/item/tvcamera(T)
-				user.drop_from_inventory(src)
-				qdel(src)
+				consume(src, user)
 				return
 
 	..()

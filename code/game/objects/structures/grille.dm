@@ -169,8 +169,7 @@
 /obj/structure/grille/wirecutter_act(mob/user, obj/item/W)
 	if(!shock(user, 100))
 		playsound(src, W.usesound, 100, 1)
-		new /obj/item/stack/rods(get_turf(src), destroyed ? 1 : 2)
-		qdel(src)
+		replace_with(src, /obj/item/stack/rods, destroyed ? 1 : 2)
 	return TRUE
 
 /obj/structure/grille/screwdriver_act(mob/user, obj/item/W)
@@ -246,6 +245,5 @@
 	icon_state = "grillerustic-b"
 
 /obj/structure/grille/occult_act(mob/living/user)
-	new /obj/structure/grille/cult(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/structure/grille/cult)
 	return TRUE

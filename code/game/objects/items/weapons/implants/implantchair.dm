@@ -77,7 +77,7 @@
 			to_chat(user, span_warning("\The [M] has other entities attached to them. Remove them first."))
 			return TRUE
 		if(put_mob(M))
-			qdel(G)
+			consume(G, user)
 	src.updateUsrDialog(user)
 	return TRUE
 

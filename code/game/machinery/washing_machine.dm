@@ -219,7 +219,7 @@
 		user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
 		grabbed.forceMove(src)
 		LAZYADD(washing, grabbed)
-		qdel(G)
+		consume(G, user)
 		state = FULL_CLOSED
 	else
 		to_chat(user, "You can't shove [GRAB_TARGET(G)] in unless the washer is empty and open!")

@@ -19,7 +19,7 @@
 	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
 	if(uses<1)
 		user.drop_item()
-		qdel(src)
+		consume(src, user)
 
 /obj/item/kit/proc/can_customize(obj/item/I)
 	return is_type_in_list(I, allowed_types)

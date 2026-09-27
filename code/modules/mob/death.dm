@@ -138,6 +138,7 @@
 	set_respawn_timer()
 	update_icon()
 	refresh_hud()
+	lifecycle_arm_death_delete()
 	refresh_vision()
 
 	if(SSticker && SSticker.mode)

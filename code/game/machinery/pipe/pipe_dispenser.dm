@@ -122,7 +122,7 @@
 	if (istype(W, /obj/item/pipe) || istype(W, /obj/item/pipe_meter))
 		to_chat(user, span_notice("You put [W] back in [src]."))
 		user.drop_item()
-		qdel(W)
+		consume(W, user)
 		return TRUE
 	return FALSE
 

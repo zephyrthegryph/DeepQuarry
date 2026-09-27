@@ -56,8 +56,7 @@
 
 /obj/structure/curtain/proc/wirecutter_act_timed_done(mob/user)
 	to_chat(user, span_notice("You cut the shower curtains."))
-	new /obj/item/stack/material/plastic(loc, 3)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/plastic, 3)
 
 /obj/structure/curtain/black
 	name = "black curtain"

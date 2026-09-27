@@ -53,8 +53,7 @@
 	var/obj/item/weldingtool/WT = C.get_welder()
 	if(WT.welding && WT.remove_fuel(0, user))
 		to_chat(user, span_notice("Slicing lattice joints ..."))
-		new /obj/item/stack/rods(loc, 1)
-		qdel(src)
+		replace_with(src, /obj/item/stack/rods, 1)
 	return TRUE
 
 /obj/structure/lattice/proc/updateOverlays()
@@ -67,8 +66,7 @@
 	to_chat(user, span_notice("You start connecting \the [R.name] to \the [src.name] ..."))
 	R.use(1)
 	src.alpha = 0 // Note: I don't know why this is set, Eris did it, just trusting for now. ~Leshana
-	new /obj/structure/catwalk(src.loc)
-	qdel(src)
+	replace_with(src, /obj/structure/catwalk)
 
 /obj/structure/lattice/proc/update_overlays_now()
 	cut_overlays()

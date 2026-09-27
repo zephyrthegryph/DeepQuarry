@@ -88,8 +88,7 @@
 			return
 		var/obj/item/stack/C = W
 		if(C.get_amount() < 1) // How??
-			user.drop_from_inventory(C)
-			qdel(C)
+			consume(C, user)
 			return
 		var/padding_type
 		// making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
@@ -133,7 +132,7 @@
 /obj/structure/bed/proc/attackby_timed_done(obj/item/W, mob/user, mob/living/affecting)
 	affecting.forceMove(loc)
 	INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
-	qdel(W)
+	consume(W, user)
 
 /obj/structure/bed/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
@@ -240,7 +239,7 @@
 		else
 			visible_message("[user] collapses \the [src.name].")
 			new rollertype(get_turf(src))
-			QDEL_IN(src, 0)
+			expire(0)
 		return
 	..()
 
@@ -270,7 +269,7 @@
 		return TRUE
 	var/obj/structure/bed/roller/R = new bedtype(user.loc)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/roller/attackby(obj/item/W as obj, mob/user as mob)
 
@@ -344,7 +343,7 @@
 		if(has_buckled_mobs())	return 0
 		visible_message("[usr] collapses \the [src.name].")
 		new rollertype(get_turf(src))
-		QDEL_IN(src, 0)
+		expire(0)
 		return
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_bed

@@ -183,8 +183,7 @@
 	if(QDELETED(src))
 		return
 	to_chat(user, span_notice("You unwrench \the [src]."))
-	new /obj/item/frame/doorbell(loc)
-	qdel(src)
+	replace_with(src, /obj/item/frame/doorbell)
 	return ITEM_INTERACT_SUCCESS
 
 ////////////////////DOORBELL SWITCH CONSTRUCTION///////////////////////////////////////

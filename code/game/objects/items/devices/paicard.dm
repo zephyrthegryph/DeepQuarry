@@ -601,38 +601,31 @@
 /obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	cell = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done3(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	processor = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done4(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	board = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done5(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	capacitor = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done6(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	projector = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done7(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	emitter = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done8(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	speech_synthesizer = PP_FUNCTIONAL
-	user.drop_from_inventory(I)
-	qdel(I)
+	consume(I, user)
 
 /obj/item/paicard/attack_self(mob/user, callback)
 	. = ..(user)

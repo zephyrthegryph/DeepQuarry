@@ -183,7 +183,7 @@
 					M.forceMove(get_turf(src))
 				M.status_at_least(EFFECT_WEAKENED, 5)
 				visible_message(span_danger("[GRAB_ASSAILANT(G)] throws [M] over \the [src]!"))
-			qdel(W)
+			consume(W, user)
 			return
 
 	else

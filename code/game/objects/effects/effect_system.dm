@@ -109,7 +109,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
-	QDEL_IN(src, 5 SECONDS)
+	expire(5 SECONDS)
 
 /obj/effect/effect/sparks/Destroy()
 	var/turf/T = src.loc
@@ -608,7 +608,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /obj/effect/effect/teleport_greyscale/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 2 SECONDS)
+	expire(2 SECONDS)
 
 /datum/effect/effect/system/teleport_greyscale
 	var/color = "#FFFFFF"
@@ -645,7 +645,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/confetti/Initialize(mapload)
 	. = ..()
 	if(time_to_live)
-		QDEL_IN(src, time_to_live)
+		expire(time_to_live)
 				//make confetti on ground cleanable decal to spawn
 
 /datum/effect/effect/system/confetti_spread

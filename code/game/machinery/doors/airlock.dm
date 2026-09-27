@@ -800,7 +800,7 @@ About the new airlock wires panel:
 		// This is just funny
 		if(istype(C, /obj/item/pen/crayon))
 			to_chat(user, span_notice("You try to use \the [C] to clear the ice, but it crumbles away!"))
-			qdel(C)
+			consume(C, user)
 			return TRUE
 
 		// Check if we have something that can deice properly, and then use it's deice speed

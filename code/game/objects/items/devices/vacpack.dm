@@ -407,4 +407,4 @@
 	blend_mode = BLEND_ADD
 
 /obj/effect/vac_visual/proc/ready(effect_time)
-	QDEL_IN(src, effect_time)
+	expire(effect_time)

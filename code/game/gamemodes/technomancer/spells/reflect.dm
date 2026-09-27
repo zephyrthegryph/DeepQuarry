@@ -22,7 +22,7 @@
 	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 	to_chat(owner, span_notice("Your shield will expire in 5 seconds!"))
-	QDEL_IN(src, 5 SECONDS)
+	expire(5 SECONDS)
 
 /obj/item/spell/reflect/Destroy()
 	if(owner)
@@ -38,7 +38,7 @@
 
 	if(!pay_energy(damage_to_energy_cost))
 		to_chat(owner, span_danger("Your shield fades due to lack of energy!"))
-		qdel(src)
+		consume(src, user)
 		return 0
 
 	//block as long as they are not directly behind us

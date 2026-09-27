@@ -81,7 +81,7 @@
 				src.food_inserted_micros += F
 
 	if (loading.reagents.total_volume <= 0)
-		qdel(loading)
+		consume(loading, user)
 	update_icon()
 
 /obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)

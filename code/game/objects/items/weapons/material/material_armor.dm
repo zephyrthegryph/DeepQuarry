@@ -315,7 +315,7 @@
 		var/obj/item/clothing/suit/armor/material/makeshift/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
 		qdel(second_plate)
-		qdel(src)
+		consume(src, user)
 	else
 		..()
 
@@ -335,7 +335,7 @@
 		var/obj/item/clothing/accessory/material/makeshift/heavy/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
 		qdel(second_plate)
-		qdel(src)
+		consume(src, user)
 		return
 
 	if(istype(O, /obj/item/stack/material))
@@ -346,7 +346,7 @@
 				user.drop_from_inventory(src)
 				var/obj/item/clothing/accessory/material/makeshift/legguards/new_armor = new(null, src.material.name)
 				user.put_in_hands(new_armor)
-				qdel(src)
+				consume(src, user)
 				return
 
 /obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
@@ -387,8 +387,7 @@
 			to_chat(user, span_notice("You apply some [S.material.use_name] to \the [src].  Hopefully it'll make the makeshift helmet stronger."))
 			var/obj/item/clothing/head/helmet/material/makeshift/helmet = new(null, S.material.name)
 			user.put_in_hands(helmet)
-			user.drop_from_inventory(src)
-			qdel(src)
+			consume(src, user)
 			return
 		else
 			to_chat(user, span_warning("You don't have enough material to build a helmet!"))

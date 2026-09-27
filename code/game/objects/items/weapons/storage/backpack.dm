@@ -95,7 +95,7 @@
 /obj/item/storage/backpack/holding/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/storage/backpack/holding))
 		to_chat(user, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
-		qdel(W)
+		consume(W, user)
 		return
 	. = ..()
 

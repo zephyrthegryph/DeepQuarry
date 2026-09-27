@@ -27,4 +27,4 @@
 	if (linked?.petrify(user, src))
 		visible_message(span_notice("A ray of purple light streams out of \the [src], aimed directly at [target]. Everywhere the light touches on them quickly [adjective] into [material]."))
 		to_chat(user, span_warning("The device fizzles and crumbles into dust."))
-		qdel(src)
+		consume(src, user)

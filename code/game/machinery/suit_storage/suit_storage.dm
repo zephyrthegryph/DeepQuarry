@@ -479,7 +479,7 @@
 	isopen = 0 //close ittt
 
 	add_fingerprint(user)
-	qdel(G)
+	consume(G, user)
 	update_icon()
 	return TRUE
 

@@ -50,8 +50,7 @@
 	icon_state = icon_state_opened
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	if(needscharger)
-		new /obj/machinery/recharge_station/ghost_pod_recharger(src.loc)
-		qdel(src)
+		replace_with(src, /obj/machinery/recharge_station/ghost_pod_recharger)
 
 
 // This type is triggered manually by a player discovering the pod and deciding to open it.

@@ -27,4 +27,4 @@
 		core.give_energy(amount)
 		adjust_instability(50)
 	playsound(src, 'sound/effects/supermatter.ogg', 75, 1)
-	qdel(src)
+	consume(src, user)

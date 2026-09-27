@@ -60,8 +60,7 @@
 		// Now make the cardboard
 		to_chat(user, span_notice("You fold [src] flat."))
 		playsound(src, 'sound/items/storage/boxfold.ogg', 30, 1)
-		new foldable(get_turf(src))
-		qdel(src)
+		replace_with(src, foldable)
 
 	//try to crush it
 	if(ispath(trash))

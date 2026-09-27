@@ -22,8 +22,7 @@
 
 /obj/structure/plasticflaps/proc/wirecutter_act_tool_done(mob/user)
 	to_chat(user, span_notice("You cut the plastic flaps."))
-	new /obj/item/stack/material/plastic(loc, 4)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/plastic, 4)
 
 /obj/structure/plasticflaps/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	if(isliving(actor))

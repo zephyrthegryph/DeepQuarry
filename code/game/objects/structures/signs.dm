@@ -1619,7 +1619,7 @@
 	P.description_info = description_info
 	P.description_fluff = description_fluff
 	P.flagtype = type
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/sign/flag/Destroy()
 	if(linked_flag?.linked_flag == src) //Catches other instances where one half might be destroyed, say by a broken wall, to avoid runtimes.

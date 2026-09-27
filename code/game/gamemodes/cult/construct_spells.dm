@@ -557,7 +557,7 @@
 		new spawner_type(T)
 		to_chat(user, span_cult("You shift \the [src] onto \the [T]."))
 		log_and_message_admins("has casted [src] at [T.x],[T.y],[T.z].")
-		qdel(src)
+		consume(src, user)
 
 //Harvester Laser.
 
@@ -648,7 +648,7 @@
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
 		L.add_modifier(/datum/modifier/mend_occult, 150)
-	qdel(src)
+	consume(src, user)
 
 //Juggernaut Slam
 /obj/item/spell/construct/slam
@@ -683,7 +683,7 @@
 			windup = cooldown * 2
 		om_do_after(user, windup, src, src, PROC_REF(slam_wall), list(user, W, attack_message), on_fail = PROC_REF(slam_lowered), fail_args = list(user))
 		return
-	qdel(src)
+	consume(src, user)
 
 /obj/item/spell/construct/slam/proc/slam_lowered(mob/living/user)
 	user?.visible_message(span_bold("\The [user]") + " lowers its fist.")
@@ -938,7 +938,7 @@
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
 		L.add_modifier(/datum/modifier/mend_purity, 150)
-	qdel(src)
+	consume(src, user)
 
 /datum/modifier/mend_purity
 	name = "holy mending"

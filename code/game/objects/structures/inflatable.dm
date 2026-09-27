@@ -77,7 +77,7 @@
 	var/obj/structure/inflatable/R = new deploy_path(location)
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/inflatable/proc/deflate()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)

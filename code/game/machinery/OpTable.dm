@@ -116,7 +116,7 @@
 		var/obj/item/grab/G = W
 		if(iscarbon(GRAB_TARGET(G)) && check_table(GRAB_TARGET(G), user))
 			take_victim(GRAB_TARGET(G), user)
-			qdel(W)
+			consume(W, user)
 			return
 
 /obj/machinery/optable/proc/check_table(mob/living/carbon/patient, mob/living/user)

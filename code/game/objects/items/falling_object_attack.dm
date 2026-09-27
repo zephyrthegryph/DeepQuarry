@@ -13,7 +13,7 @@
 
 /obj/effect/calldown_attack/proc/spawn_object()
 	new /obj/effect/falling_effect/calldown_attack(loc)
-	QDEL_IN(src, 0.7 SECONDS)
+	expire(0.7 SECONDS)
 
 /obj/effect/falling_effect/calldown_attack
 	falling_type = /obj/effect/illusionary_fall

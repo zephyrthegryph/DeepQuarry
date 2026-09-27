@@ -26,7 +26,7 @@
 		if(syringe)
 			R.syringe = syringe
 			syringe = null
-		qdel(src)
+		consume(src, user)
 		return
 	if(robotic)
 		var/obj/structure/closet/body_bag/cryobag/robobag/R = new /obj/structure/closet/body_bag/cryobag/robobag(user.loc)
@@ -34,11 +34,11 @@
 		if(syringe)
 			R.syringe = syringe
 			syringe = null
-		qdel(src)
+		consume(src, user)
 		return
 	var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 	return
 
 
@@ -74,7 +74,7 @@
 		return TRUE
 	var/obj/structure/closet/body_bag/large/R = new /obj/structure/closet/body_bag/large(user.loc)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/closet/body_bag/large
 	name = "mass grave body bag"
@@ -194,8 +194,7 @@
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()
 	if(used)
-		new /obj/item/usedcryobag(loc)
-		qdel(src)
+		replace_with(src, /obj/item/usedcryobag)
 
 /obj/structure/closet/body_bag/cryobag/update_icon()
 	..()

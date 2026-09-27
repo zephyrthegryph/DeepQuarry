@@ -253,8 +253,7 @@
 	glass = 0
 /obj/structure/door_assembly/proc/welder_act_tool_done3(mob/user)
 	to_chat(user, span_notice("You dissasembled the airlock assembly!"))
-	new /obj/item/stack/material/steel(src.loc, 4)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 4)
 
 /obj/structure/door_assembly/wrench_act(mob/user, obj/item/W)
 	if(state != 0)
@@ -321,8 +320,7 @@
 	else
 		path = text2path("/obj/machinery/door/airlock[airlock_type]")
 
-	new path(src.loc, src)
-	qdel(src)
+	replace_with(src, path, src)
 
 /obj/structure/door_assembly/proc/update_state()
 	icon_state = "door_as_[glass == 1 ? "g" : ""][istext(glass) ? glass : base_icon_state][state]"

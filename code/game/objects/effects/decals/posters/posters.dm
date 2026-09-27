@@ -82,12 +82,12 @@
 	return TRUE
 
 	P.roll_and_drop(P.loc)
-	qdel(src)
+	consume(src, user)
 	return FALSE
 
 /obj/item/poster/proc/afterattack_timed_done(mob/user)
 	to_chat(user, span_notice("You place the poster!"))
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 //############################## THE ACTUAL DECALS ###########################

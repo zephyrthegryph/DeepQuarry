@@ -296,8 +296,7 @@
 		icon_state = "displaced"
 
 /obj/structure/girder/cult/dismantle()
-	new /obj/effect/decal/remains/human(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/remains/human)
 
 /obj/structure/girder/cult/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))

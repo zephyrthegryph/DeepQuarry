@@ -47,7 +47,7 @@
 
 	if(!pay_energy(damage_to_energy_cost))
 		to_chat(owner, span_danger("Your shield fades due to lack of energy!"))
-		qdel(src)
+		consume(src, user)
 		return 0
 
 	//block as long as they are not directly behind us

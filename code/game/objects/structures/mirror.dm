@@ -105,8 +105,7 @@
 
 /obj/structure/mirror/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You unfasten the frame."))
-	new /obj/item/frame/mirror(loc)
-	qdel(src)
+	replace_with(src, /obj/item/frame/mirror)
 
 /obj/structure/mirror/attack_generic(mob/user, damage)
 

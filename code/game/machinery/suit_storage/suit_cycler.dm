@@ -185,7 +185,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		return TRUE
 
 	add_fingerprint(user)
-	qdel(G)
+	consume(G, user)
 
 /// Fit a helmet, excluding hardsuit (rig) helmets.
 /datum/interaction/machine_item/suit_cycler_insert_helmet

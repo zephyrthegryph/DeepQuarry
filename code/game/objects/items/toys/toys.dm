@@ -61,7 +61,7 @@
 				if(O.reagents.has_reagent(REAGENT_ID_PACID, 1))
 					to_chat(user, "The acid chews through the balloon!")
 					O.reagents.splash(user, reagents.total_volume)
-					qdel(src)
+					consume(src, user)
 				else
 					src.desc = "A translucent balloon with some form of liquid sloshing around in it."
 					to_chat(user, span_notice("You fill the balloon with the contents of [O]."))

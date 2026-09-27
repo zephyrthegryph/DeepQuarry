@@ -250,7 +250,7 @@
 		confetti_nade.desc = span_bolddanger("What the hell are you looking at it for?! RUN!!")
 		confetti_nade.activate()
 	playsound(loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
 	var/current_title = recipient.role_alt_title ? recipient.role_alt_title : recipient.assigned_role
