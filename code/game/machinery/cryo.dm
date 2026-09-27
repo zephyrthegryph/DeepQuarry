@@ -3,7 +3,10 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
-/// 72 kg of tissue at about 3470 J/(kg K).
+/// Mend per tick at the base rate (oxygenation below freezing).
+#define CRYO_BASE_RATE 1
+/// Below this the cell repairs tissue, faster the colder it is.
+#define CRYO_DEEP_COLD 225
 
 /obj/machinery/atmospherics/unary/cryo_cell
 	name = "cryo cell"
@@ -240,26 +243,66 @@
 		if(occupant.bodytemperature < T0C)
 			occupant.status_at_least(EFFECT_SLEEPING, max(5, (1/occupant.bodytemperature)*2000))
 			occupant.status_at_least(EFFECT_PARALYZED, max(5, (1/occupant.bodytemperature)*3000))
-			occupant.mend(TREAT_OXYGENATION, 1)
-			//severe damage should heal waaay slower without proper chemicals
-			if(occupant.bodytemperature < 225)
-				var/toxic_load = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-				if(toxic_load)
-					occupant.mend(TREAT_ANTITOXIN, min(1, 20 / toxic_load))
-				if(occupant.radiation || occupant.accumulated_rads)
-					occupant.radiation -= 25
-					occupant.accumulated_rads -= 25
-				var/physical_load = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-				if(physical_load)
-					occupant.mend(TREAT_TISSUE_REPAIR, min(1, 20 / physical_load))
-				var/thermal_load = occupant.injury_load(INJURY_CATEGORY_THERMAL)
-				if(thermal_load)
-					occupant.mend(TREAT_BURN_CARE, min(1, 20 / thermal_load))
+			if(!treat_occupant())
+				return
 		var/has_cryo = occupant.reagents.get_reagent_amount(REAGENT_ID_CRYOXADONE) >= 1
 		var/has_clonexa = occupant.reagents.get_reagent_amount(REAGENT_ID_CLONEXADONE) >= 1
 		var/has_cryo_medicine = has_cryo || has_clonexa
 		if(beaker && !has_cryo_medicine)
 			beaker.reagents.trans_to_mob(occupant, 1, CHEM_BLOOD, 10, can_dialysis = FALSE)
+
+/// One tick of cold treatment, decided by automated triage: mend the demanded
+/// tags at the cell's rates, or release a patient triage finds healthy.
+/// Returns FALSE when the occupant was released.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/treat_occupant()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
+	if(!occupant)
+		return FALSE
+	var/list/demand = occupant.treatment_demand(/datum/diagnostic_profile/automation)
+	if(demand)
+		var/list/rates = cryo_treatment_rates(occupant.bodytemperature)
+		for(var/tag in rates)
+			if(demand[tag])
+				occupant.mend(tag, rates[tag])
+	else
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+		var/healthy = D?.band == DIAG_BAND_NONE && D.status == DIAG_STATUS_ALIVE
+		qdel(D)
+		if(healthy)
+			release_treated_occupant()
+			return FALSE
+	if(occupant.bodytemperature < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
+		occupant.radiation -= 25
+		occupant.accumulated_rads -= 25
+	return TRUE
+
+/// What the cell's cold (and the beaker's chemistry) treats this tick at
+/// `temperature`: TREAT_* -> amount. Below freezing the cell only oxygenates;
+/// below CRYO_DEEP_COLD it repairs tissue, colder being faster, and each
+/// beaker reagent's treatment tags multiply the matching rates.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_treatment_rates(temperature)
+	var/list/rates = list(TREAT_OXYGENATION = CRYO_BASE_RATE)
+	if(temperature >= CRYO_DEEP_COLD)
+		return rates
+	var/cold = CRYO_BASE_RATE * (1 + (CRYO_DEEP_COLD - temperature) / CRYO_DEEP_COLD)
+	for(var/tag in list(TREAT_TISSUE_REPAIR, TREAT_HEMOSTATIC, TREAT_BURN_CARE, TREAT_ANTITOXIN, TREAT_GENETIC_REPAIR))
+		rates[tag] = cold
+	for(var/datum/reagent/R as anything in beaker?.reagents?.reagent_list)
+		for(var/tag in R.treatment_tags)
+			if(rates[tag])
+				rates[tag] *= 1 + R.treatment_tags[tag]
+	return rates
+
+/// Triage finds nothing left to treat: stop the treatment and release the
+/// occupant (once awake enough to leave).
+/obj/machinery/atmospherics/unary/cryo_cell/proc/release_treated_occupant()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
+	if(!occupant)
+		return
+	log_game("CRYO: [src] released [key_name(occupant)]: automated triage reports no remaining treatment demand.")
+	visible_message(span_notice("\The [src] pings: treatment complete."))
+	playsound(src, 'sound/machines/ping.ogg', 50, FALSE)
+	go_out()
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()
 	if(air_contents.total_moles() < 1)
@@ -384,3 +427,6 @@
 
 /obj/machinery/atmospherics/unary/cryo_cell/step_has_work()
 	return on && node
+
+#undef CRYO_BASE_RATE
+#undef CRYO_DEEP_COLD

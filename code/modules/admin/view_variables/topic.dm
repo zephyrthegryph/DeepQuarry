@@ -54,72 +54,24 @@
 		vv_update_display(A, "dir", dir2text(A.dir))
 
 
-	else if(href_list["adjustDamage"] && href_list["mobToDamage"])
-
+	else if(href_list["adjustBody"] && href_list["mobToDamage"])
 		var/mob/living/L = locate(href_list["mobToDamage"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
-		if(!istype(L))
+		if(!istype(L) || !L.body)
 			return
-
-		var/Text = href_list["adjustDamage"]
-
-		var/amount = tgui_input_number(src, "Deal how much damage to mob? (Negative values here heal)", "Adjust [Text]loss", 0, min_value=-INFINITY, round_value=FALSE)
-
-		if (isnull(amount))
+		var/action = href_list["adjustBody"]
+		var/log_msg = L.vv_adjust_body(src, action)
+		if(!log_msg)
 			return
-
-		if(!L)
+		if(QDELETED(L))
 			to_chat(usr, "Mob doesn't exist anymore", confidential = TRUE)
 			return
-
-		var/newamt
-		var/kind
-		var/list/heal_tags
-		switch(Text)
-			if("brute")
-				kind = INJURY_BLUNT
-				heal_tags = list(TREAT_TISSUE_REPAIR, TREAT_BONE_REPAIR, TREAT_PLATING_REPAIR)
-			if("fire")
-				kind = INJURY_BURN
-				heal_tags = list(TREAT_BURN_CARE, TREAT_WIRING_REPAIR)
-			if("toxin")
-				kind = INJURY_TOXIN
-				heal_tags = list(TREAT_ANTITOXIN)
-			if("oxygen")
-				// Not an injury: oxygen debt, added or paid down directly.
-				if(amount > 0)
-					L.add_oxygen_debt(amount, "admin [key_name(usr)]")
-				else if(amount < 0)
-					L.mend(TREAT_OXYGENATION, -amount)
-				newamt = L.oxygen_debt()
-			if("brain")
-				kind = INJURY_NEURAL
-				heal_tags = list(TREAT_NEURAL_REPAIR, TREAT_SYSTEM_RESTORE)
-			if("clone")
-				kind = INJURY_CELLULAR
-				heal_tags = list(TREAT_GENETIC_REPAIR)
-			//if("brain")
-			//	L.adjustOrganLoss(ORGAN_SLOT_BRAIN, amount)
-			//	newamt = L.get_organ_loss(ORGAN_SLOT_BRAIN)
-			//if("stamina")
-			//	L.adjustStaminaLoss(amount, forced = TRUE)
-			//	newamt = L.getStaminaLoss()
-			else
-				to_chat(usr, "You caused an error. DEBUG: Text:[Text] Mob:[L]", confidential = TRUE)
-				return
-		if(kind)
-			if(amount > 0)
-				L.injure(kind, amount, flags = INJURE_IGNORE_RESISTANCE)
-			else if(amount < 0)
-				for(var/tag in heal_tags)
-					L.mend(tag, -amount)
-			newamt = L.injury_load(injury_category(kind))
-
-		if(amount != 0)
-			var/log_msg = "[key_name(usr)] dealt [amount] amount of [Text] damage to [key_name(L)]"
-			message_admins("[key_name(usr)] dealt [amount] amount of [Text] damage to [ADMIN_LOOKUPFLW(L)]")
-			log_admin(log_msg)
-			admin_ticket_log(L, "<font color='blue'>[log_msg]</font>")
-			vv_update_display(L, Text, "[newamt]")
+		log_msg = "[key_name(usr)] [log_msg] on [key_name(L)]"
+		message_admins("[log_msg] ([ADMIN_LOOKUPFLW(L)])")
+		log_admin(log_msg)
+		admin_ticket_log(L, "<font color='blue'>[log_msg]</font>")
+		vv_update_display(L, "vitality", "[round(L.vitality() * 100)]%")
+		vv_update_display(L, "afflictions", "[LAZYLEN(L.body?.afflictions)]")
+		vv_update_display(L, "oxygen_debt", "[round(L.oxygen_debt(), 0.1)]")
 
 	else if(href_list["item_to_tweak"] && href_list["var_tweak"])
 

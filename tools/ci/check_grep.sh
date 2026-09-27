@@ -457,6 +457,21 @@ if grep -RInE --exclude-dir=node_modules --include='*.dm' --include='*.ts' --inc
 	FAILED=1
 fi;
 
+part "diagnosis: automation decides from treatment demand"
+# Automated treatment (medbots, crisis drones, mediguns, cryo, recharge
+# stations, nanopaste, robobags, leeches, the mecha injury mirror, the VV body
+# editor) decides from treatment_demand(profile) / diagnose(profile), never
+# from injury_load() thresholds or per-category heal amounts.
+if grep -RInE --include='*.dm' '\binjury_load\(|\b(heal_threshold|treatment_brute|treatment_fire|treatment_tox|treatment_oxy|brute_heal|burn_heal|tox_heal|oxy_heal|clone_heal|hal_heal|adjustDamage)\b' \
+	code/modules/mob/living/bot code/game/mecha code/game/objects/items/weapons/medigun \
+	code/game/machinery/cryo.dm code/game/machinery/rechargestation.dm \
+	code/game/objects/items/stacks/nanopaste.dm code/game/objects/items/robobag.dm \
+	code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm code/modules/admin/view_variables; then
+	echo
+	echo -e "${RED}ERROR: automated treatment reading injury loads detected. Decide from M.treatment_demand(/datum/diagnostic_profile/...) (demand_urgency(), best_reagent_for_demand()) and heal with mend(TREAT_*).${NC}"
+	FAILED=1
+fi;
+
 part "organ damage outside the body"
 # Organ and limb integrity belong to the body (doc/body_architecture.md): harm
 # goes through injure(kind, amount, organ) and healing through

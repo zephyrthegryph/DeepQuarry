@@ -3126,24 +3126,52 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
 
-/// Copies the aggregate injury state of one mob onto another (used when an AI is temporarily moved into a mecha shell).
-/// The target is fully healed first, then re-injured with the source's per-category injury load.
+/// Copies one mob's injuries onto another (used when an AI is temporarily
+/// moved into a mecha shell and back). The target is fully healed first, then
+/// each of the source's injuries is re-inflicted as the injury kind that makes
+/// it, at the same part, and the source's oxygen debt is carried over.
 /obj/mecha/proc/mirror_injury_state(mob/living/source_mob, mob/living/target_mob)
-	if(!source_mob || !target_mob)
+	if(!source_mob?.body || !target_mob)
 		return
 	target_mob.fully_heal()
-	var/physical = source_mob.injury_load(INJURY_CATEGORY_PHYSICAL)
-	var/thermal = source_mob.injury_load(INJURY_CATEGORY_THERMAL)
-	var/toxic = source_mob.injury_load(INJURY_CATEGORY_TOXIC)
+	for(var/datum/affliction/A as anything in source_mob.body.afflictions)
+		var/kind = mirrored_injury_kind(A)
+		var/amount = A.load_value()
+		if(!kind || amount <= 0)
+			continue
+		target_mob.injure(kind, amount, A.location?.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	var/oxygen_debt = source_mob.oxygen_debt()
-	if(physical)
-		target_mob.injure(INJURY_BLUNT, physical, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(thermal)
-		target_mob.injure(INJURY_BURN, thermal, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(toxic)
-		target_mob.injure(INJURY_TOXIN, toxic, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	if(oxygen_debt)
 		target_mob.add_oxygen_debt(oxygen_debt, src)
+
+/// The injury kind (INJURY_*) that re-creates affliction `A`, or null when it
+/// is not an injury (a disease, a lesion, a vital-system state).
+/obj/mecha/proc/mirrored_injury_kind(datum/affliction/A)
+	if(!A.injury_category)
+		return null
+	if(istype(A, /datum/affliction/wound))
+		var/datum/affliction/wound/W = A
+		switch(W.damage_type)
+			if(CUT)
+				return INJURY_CUT
+			if(PIERCE)
+				return INJURY_PIERCE
+			if(BURN)
+				return INJURY_BURN
+	switch(A.injury_category)
+		if(INJURY_CATEGORY_PHYSICAL)
+			return INJURY_BLUNT
+		if(INJURY_CATEGORY_THERMAL)
+			return INJURY_BURN
+		if(INJURY_CATEGORY_TOXIC)
+			return INJURY_TOXIN
+		if(INJURY_CATEGORY_GENETIC)
+			return INJURY_CELLULAR
+		if(INJURY_CATEGORY_NEURAL)
+			return INJURY_NEURAL
+		if(INJURY_CATEGORY_PAIN)
+			return INJURY_PAIN
+	return null
 
 /// Icon-state suffix for the melee-mode action button, keyed on the mecha's melee injury kind.
 /obj/mecha/proc/melee_damtype_icon()

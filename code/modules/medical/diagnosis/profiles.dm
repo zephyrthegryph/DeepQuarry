@@ -164,6 +164,13 @@
 	localize = TRUE
 	hints = TRUE
 
+/// Field automation (exosuit crisis drones): automated triage that also
+/// reads a synthetic diagnostic bus, for the drones that repair plating.
+/datum/diagnostic_profile/automation/field
+	name = "field triage"
+	senses = PRESENT_VISIBLE | PRESENT_SURFACE | PRESENT_SYNTHETIC
+	biology = BIOLOGY_ORGANIC | BIOLOGY_SYNTHETIC
+
 /// Admins see everything, through feigned death.
 /datum/diagnostic_profile/admin
 	name = "admin scan"
