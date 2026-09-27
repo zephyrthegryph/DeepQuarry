@@ -27,12 +27,6 @@
 	if(bot_filter)
 		add_to_radio(bot_filter)
 
-/obj/item/radio/integrated/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src, control_freq)
-	hostpda = null
-	return ..()
-
 /obj/item/radio/integrated/proc/post_signal(freq, key, value, key2, value2, key3, value3, s_filter)
 
 	//to_world("Post: [freq]: [key]=[value], [key2]=[value2]")
@@ -95,12 +89,6 @@
 /obj/item/radio/integrated/signal
 	frequency = RSD_FREQ
 	var/code = 30.0
-
-/obj/item/radio/integrated/signal/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src, frequency)
-	radio_connection = null
-	return ..()
 
 /obj/item/radio/integrated/signal/Initialize(mapload)
 	. = ..()
