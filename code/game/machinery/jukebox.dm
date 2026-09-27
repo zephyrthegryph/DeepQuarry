@@ -361,11 +361,10 @@
 	return
 /obj/machinery/media/jukebox/ghost/visible_message(message, blind_message, list/exclude_mobs, range, runemessage)
 	return
-/obj/machinery/media/jukebox/ghost/attackby(obj/item/W as obj, mob/user as mob)
+/// Untouchable: no interactions at all (the old attackby/attack_hand returned).
+/obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
 	return
 /obj/machinery/media/jukebox/ghost/attack_ai(mob/user as mob)
-	return
-/obj/machinery/media/jukebox/ghost/attack_hand(mob/user as mob)
 	return
 /obj/machinery/media/jukebox/ghost/update_use_power(new_use_power)
 	return

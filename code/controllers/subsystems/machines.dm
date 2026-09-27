@@ -42,6 +42,7 @@ SUBSYSTEM_DEF(machines)
 	var/last_pump_commit_turfs = 0
 
 	/// Dirty-mixture notification batch retained while a Machines fire yields.
+	/// Gas dependency observations (vg_drain_dirty_gas_observations()) retained while a Machines fire yields.
 	var/list/pending_dirty_gas_mixtures
 	var/pending_dirty_gas_index = 1
 	var/gas_wake_complete = TRUE
@@ -73,7 +74,7 @@ SUBSYSTEM_DEF(machines)
 	msg += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]"
 	msg += "} "
 	msg += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
-	msg += "PN:[length(power_regions)] ev:[power_last_events][power_batch_depth ? " - BATCH" : ""]|"
+	msg += "PN:[length(power_regions)]|"
 	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 	return ..()
 
@@ -163,7 +164,6 @@ SUBSYSTEM_DEF(machines)
 	process_power()
 
 /datum/controller/subsystem/machines/Recover()
-	power_ops = SSmachines.power_ops
 	power_regions = SSmachines.power_regions
 	power_dirty_areas = SSmachines.power_dirty_areas
 	power_material_cables = SSmachines.power_material_cables
@@ -172,12 +172,10 @@ SUBSYSTEM_DEF(machines)
 	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
 	gas_wake_complete = SSmachines.gas_wake_complete
 
-/// Drains Rust's dirty-gas-mixture batch and dispatches each mixture's watches
-/// (code/datums/om/watch.dm: om_watch_dispatch_gas()) -- the only subscriber table left. A
-/// watch's own wake_callback (set when it was armed) does whatever per-type wake work used to
-/// live in wake_gas_subscriber()'s istype dispatch (a leaking pipe re-marks its network dirty
-/// instead of re-entering process(), material_service recomputes its corrosion cache and calls
-/// environment_changed(), everything else MACHINE_WAKE()s or om_changed()s itself).
+/// Hands this batch of gas dependency observations to their native watches
+/// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
+/// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
+/// out to every om_watch armed on that mixture (om_watch_dispatch_gas()).
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
@@ -186,12 +184,17 @@ SUBSYSTEM_DEF(machines)
 		gas_dirty_last = length(pending_dirty_gas_mixtures) / GAS_DEPENDENCY_OBSERVATION_STRIDE
 		gas_woken_last = 0
 		gas_dead_last = 0
-	while(pending_dirty_gas_index <= length(pending_dirty_gas_mixtures))
-		var/observation_index = pending_dirty_gas_index
-		var/mixture_id = pending_dirty_gas_mixtures[pending_dirty_gas_index]
-		var/change_mask = pending_dirty_gas_mixtures[pending_dirty_gas_index + 1]
+	var/list/observations = pending_dirty_gas_mixtures
+	while(pending_dirty_gas_index <= length(observations))
+		var/record = pending_dirty_gas_index
 		pending_dirty_gas_index += GAS_DEPENDENCY_OBSERVATION_STRIDE
-		om_watch_dispatch_gas(mixture_id, change_mask, pending_dirty_gas_mixtures, observation_index)
+		var/datum/native_watch/gas/W = om_native_watch_of(observations[record])
+		if(!W)
+			gas_dead_last++
+			continue
+		current_gas_wake_subscribers++
+		// The owner reads the record from its mixture id on (index + 1).
+		W.fire(list(observations[record + 1], observations[record + 2], observations, record + 1))
 		if(MC_TICK_CHECK)
 			current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
 			return FALSE

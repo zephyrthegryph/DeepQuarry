@@ -67,7 +67,8 @@ Thus, the two variables affect pump operation are set in New():
 		return
 	var/effective_rate = transfer_rate * material_pump_power(power_rating) / max(power_rating, 1)
 	var/max_output = overclocked ? 0 : VOLUME_PUMP_MAX_OUTPUT_PRESSURE
-	rust_set_device(1, 2, RUST_DEVICE_LAW_VOLUME_PUMP, effective_rate, max_output)
+	rust_set_device(1, 2)
+	rust_set_device_flow(0, RUST_FLOW_VOLUME, effective_rate, RUST_DIR_FORCED, RUST_SIDE_B, max_output > 0 ? RUST_STOP_AT_LEAST : RUST_STOP_NONE, max_output)
 
 /obj/machinery/atmospherics/binary/volume_pump/rust_device_stepped(moles, power_w, target_reached)
 	last_flow_rate = 0

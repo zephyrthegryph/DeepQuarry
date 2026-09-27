@@ -126,8 +126,10 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 
 
 /// A blast batch is one power topology commit (M3, fixes.md Q13): cables the
-/// blast destroys queue their removal, and the edits reach Rust together when
-/// the explosion epoch ends.
+/// blast destroys unbind from the Rust graph as they're deleted, but the
+/// topology itself only rebuilds on the next `process_power()` -- cutting
+/// both cables within the same explosion epoch still yields one clean split,
+/// not an intermediate state.
 /datum/unit_test/dq_explosion_batch/one_topology_commit
 
 /datum/unit_test/dq_explosion_batch/one_topology_commit/Run()
@@ -136,19 +138,24 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	if(!run)
 		return
 	var/list/cables = dq_power_test_line(run)
-	SSmachines.power_flush(TRUE)
-	var/sent = SSmachines.power_edits_sent
-	SSmachines.power_batch_begin()
+	var/obj/structure/cable/left_end = cables[1]
+	var/obj/structure/cable/right_end = cables[4]
+	SSmachines.process_power()
+	var/datum/powernet/before = SSmachines.power_region_of(left_end.power_entity)
+	TEST_ASSERT_NOTNULL(before, "the line should already have a region before the blast")
+	TEST_ASSERT(SSmachines.power_region_of(right_end.power_entity) == before, "the run should start as one network")
+
 	var/obj/structure/cable/cut_a = cables[2]
 	var/obj/structure/cable/cut_b = cables[3]
 	blast(list(cut_a, cut_b), 1)
 	TEST_ASSERT(QDELETED(cut_a) && QDELETED(cut_b), "a devastating blast should cut the cables")
-	SSmachines.power_flush()
-	TEST_ASSERT_EQUAL(SSmachines.power_edits_sent, sent, "edits reached Rust inside the explosion epoch")
-	TEST_ASSERT(length(SSmachines.power_ops), "the cut cables did not queue their removal")
-	SSmachines.power_batch_end()
-	TEST_ASSERT(!length(SSmachines.power_ops), "ending the epoch did not send the batch")
-	TEST_ASSERT(SSmachines.power_edits_sent > sent, "the batch was not sent")
+	SSmachines.process_power()
+	var/datum/powernet/left_after = SSmachines.power_region_of(left_end.power_entity)
+	var/datum/powernet/right_after = SSmachines.power_region_of(right_end.power_entity)
+	TEST_ASSERT_NOTNULL(left_after, "the left side lost its network after the batched cut")
+	TEST_ASSERT_NOTNULL(right_after, "the right side lost its network after the batched cut")
+	TEST_ASSERT(left_after != right_after, "cutting both cables in the same explosion epoch should still split the network")
+
 	for(var/obj/structure/cable/C as anything in cables)
 		if(!QDELETED(C))
 			qdel(C)

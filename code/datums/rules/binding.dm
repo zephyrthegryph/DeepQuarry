@@ -2,12 +2,17 @@
 // (rules.md §4). One binding per object holds its reactor subscriptions and,
 // per rule, whether the condition held at the last look.
 
-/// REF(object) -> /datum/rule_binding. Keyed by text and holding the owner by
-/// OM handle, so a binding is no outside reference to its object (collapse).
-GLOBAL_LIST_EMPTY(dq_rule_bindings)
+/// This object's rule binding. The binding holds its owner by OM handle, so it
+/// is no outside reference to its object (collapse).
+/datum/var/tmp/datum/rule_binding/rule_binding
+
+/datum/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + "rule_binding"
 
 /proc/dq_rule_binding_of(datum/thing)
-	return GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = thing?.rule_binding
+	return QDELETED(binding) ? null : binding
 
 /// ---- Lifecycle (L2) ----
 /// Subscribes `A`'s rules. /atom/on_materialize() calls it. Types whose rules
@@ -16,7 +21,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/list/rules = dq_rules_for_type(A.type)
 	if(!rules || (!force && dq_rules_heat_deferred(A.type)))
 		return
-	if(GLOB.dq_rule_bindings[REF(A)])
+	if(dq_rule_binding_of(A))
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
@@ -29,8 +34,8 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /proc/dq_rules_heat_body_created(atom/A)
 	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
 		return
-	if(GLOB.dq_rule_bindings[REF(A)])
-		dq_rx_heat_body_created(A)
+	// Existing bindings' node watches follow the body themselves.
+	if(dq_rule_binding_of(A))
 		return
 	// At rest the object followed its surroundings, unwatched: a rule whose
 	// condition holds now crossed while nothing watched it, so it fires.
@@ -40,7 +45,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(A)]
+	var/datum/rule_binding/binding = dq_rule_binding_of(A)
 	if(binding)
 		qdel(binding)
 
@@ -48,7 +53,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /// to destroy the object (take_damage before atom_destruction), so every rule
 /// that the change triggered runs first, in the order the old code ran it.
 /proc/dq_rules_settle(datum/thing)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	binding?.evaluate()
 
 /// The live binding of `thing` if one of its rules replaces the legacy path `flag`.
@@ -57,18 +62,18 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /proc/dq_rules_binding_replacing(atom/thing, flag)
 	if(!RULES_REPLACE(thing.type, flag))
 		return null
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	return binding?.replaces(flag) ? binding : null
 
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	if(binding?.key_id && (key_kind in binding.key_kinds))
 		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	if(!binding)
 		return null
 	. = binding.nodes ? binding.nodes[property] : null
@@ -111,7 +116,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	tokens = new /list(count)
 	hold_models = new /list(count)
 	hold_tokens = new /list(count)
-	GLOB.dq_rule_bindings[owner_key] = src
+	owner.rule_binding = src
 	for(var/i in 1 to count)
 		tokens[i] = subscribe(rules[i])
 		fired[i] = 0
@@ -128,8 +133,9 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	if(GLOB.dq_rule_bindings[owner_key] == src)
-		GLOB.dq_rule_bindings -= owner_key
+	var/datum/owner_now = locate(owner_key)
+	if(owner_now?.rule_binding == src)
+		owner_now.rule_binding = null
 	owner = null
 	owner_ref = null
 	return ..()

@@ -17,10 +17,6 @@
 	var/surface = 2	//surface area in m^2
 	var/icon_temperature = T20C //stop small changes in temperature causing an icon refresh
 	var/stable_temperature_cycles = 0
-	var/sleeping_turf_mixture_id
-	var/sleeping_turf_revision = -1
-	var/sleeping_pipe_mixture_id
-	var/sleeping_pipe_revision = -1
 
 	minimum_temperature_difference = 20
 	thermal_conductivity = OPEN_HEAT_TRANSFER_COEFFICIENT

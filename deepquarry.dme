@@ -900,6 +900,7 @@
 #include "code\datums\om\library.dm"
 #include "code\datums\om\pipeline.dm"
 #include "code\datums\om\periodic.dm"
+#include "code\datums\om\native.dm"
 #include "code\datums\om\registry.dm"
 #include "code\datums\om\relation.dm"
 #include "code\datums\om\scheduler.dm"
@@ -2834,6 +2835,7 @@
 #include "code\modules\genetics\side_effects.dm"
 #include "code\modules\ghosttrap\trap.dm"
 #include "code\modules\heat\heat.dm"
+#include "code\modules\heat\heat_entities.dm"
 #include "code\modules\heat\heat_objects.dm"
 #include "code\modules\holodeck\HolodeckControl.dm"
 #include "code\modules\holodeck\HolodeckObjects.dm"
@@ -5296,7 +5298,6 @@
 #include "code\ATMOSPHERICS\gasmixtures\immutable_mixtures.dm"
 #include "code\ATMOSPHERICS\gasmixtures\reaction_factors.dm"
 #include "code\ATMOSPHERICS\gasmixtures\reactions.dm"
-#include "code\ATMOSPHERICS\gas_mix_holder.dm"
 // atom_flags_1 declares /atom/flags_1 so /atom/Initialize can set INITIALIZED_1
 // for SSair.add_to_active routing.
 #include "code\ATMOSPHERICS\atom_flags_1.dm"

@@ -4,22 +4,22 @@
  * The reconciler and per-sweep maintenance for the Rust binding layer
  * (doc/rewrite/rust_bindings.md §7). Every `wait`, this subsystem:
  *
- * 1. Ticks every registered Rust domain once (`vg_entity_tick_all()`), so a
- *    component's state is never more than one sweep old even though nothing
- *    writes it per idle tick.
+ * 1. Feeds the elapsed time to the Rust world's pacer (`vg_world_tick()`),
+ *    which steps every law when a step is owed, and ticks the Rust hosts
+ *    that are not on the world yet (`vg_entity_tick_all()`).
  * 2. Recomputes a budget's worth of bound atoms' declared inputs and
  *    compares them with what Rust has stored, through `vg_reconcile()`
  *    (generated per bound type). A mismatch is repaired (the generated
  *    reconcile proc pushes the recomputed value before returning it as a
  *    finding) and logged.
  *
- * 3. Drains and dispatches every domain's events (§8), through the
- *    generated `vg_drain_events()`: one `entity_drain_domain_events()` FFI
- *    call per domain, each event resolved to its bound atom by
- *    `entity_lookup()` and checked against `atom.vg_entity` before the
- *    generated dispatcher is called, so a component detached between the
- *    event firing and this drain is silently dropped rather than
- *    misdelivered.
+ * 3. Drains and dispatches every typed event (§8), through the generated
+ *    `vg_drain_events()`: one `vg_world_events()` FFI call returns them
+ *    all; a component event is resolved to its bound atom by
+ *    `entity_lookup()` and checked against `atom.vg_entity` before its
+ *    handler is called, so a component detached between the event firing
+ *    and this drain is silently dropped rather than misdelivered. Domain
+ *    events call the generated `SSvg.on_<domain>_<event>()` handlers.
  *
  * `bound` (which atoms to sweep) and `entities_by_index` (which atom a
  * `vg_entity` belongs to) are maintained by `on_materialize()`/
@@ -35,7 +35,7 @@
  */
 SUBSYSTEM_DEF(vg)
 	name = "Verdigris Bindings"
-	wait = 10 SECONDS
+	wait = 0.5 SECONDS
 	priority = FIRE_PRIORITY_VG
 	flags = SS_BACKGROUND
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
@@ -48,11 +48,13 @@ SUBSYSTEM_DEF(vg)
 	var/list/entities_by_index = list()
 	/// Where the production sweep left off.
 	var/sweep_index = 1
-	/// Atoms checked per fire(). §7: 5,000 atoms over 60s is ~85/s; at the
-	/// default 10s `wait` that is about 850 per fire — this stays well
-	/// under that so a single fire() never dominates a tick, and covers a
-	/// smaller population (the common case) within one lap easily.
-	var/sweep_batch = 100
+	/// Atoms checked per fire(). Scaled against `wait` to keep the same
+	/// atoms/s reconciliation rate as before `wait` dropped from 10
+	/// seconds to 0.5 (rust_architecture.md step 6: gas needs `vg_world_tick()`
+	/// paced for its own real-time cadence, and this is the one driver, so
+	/// `wait` itself moved instead of adding a second tick caller) — 100
+	/// atoms per 10s was ~10/s; 5 per 0.5s keeps that rate.
+	var/sweep_batch = 5
 
 	/// COUNT metric (§12): must stay 0. Repairs this sweep / lifetime.
 	var/last_repairs = 0
@@ -70,6 +72,7 @@ SUBSYSTEM_DEF(vg)
 	return ..()
 
 /datum/controller/subsystem/vg/fire(resumed)
+	vg_world_tick(wait / (1 SECONDS))
 	vg_entity_tick_all()
 	vg_drain_events()
 	if(!length(bound))
@@ -127,6 +130,36 @@ SUBSYSTEM_DEF(vg)
 			sweep_index--
 	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 	if(entities_by_index[slot] == mover)
+		entities_by_index[slot] = null
+
+/// Gives `D` (any datum) its own entity handle, bound in `entities_by_index`
+/// like an atom's: `entity_lookup()` finds it. Returns the handle.
+/datum/controller/subsystem/vg/proc/bind_datum(datum/D)
+	var/entity = vg_entity_spawn()
+	track_entity(D, entity)
+	return entity
+
+/// Frees an entity `bind_datum()` gave out.
+/datum/controller/subsystem/vg/proc/unbind_datum(datum/D, entity)
+	untrack_entity(D, entity)
+	vg_entity_unbind(entity)
+
+/// Records `D` as the datum behind `entity`, an entity some other bind made
+/// (a cable's network node): `entity_lookup()` finds it.
+/datum/controller/subsystem/vg/proc/track_entity(datum/D, entity)
+	if(!entity)
+		return
+	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(length(entities_by_index) < slot)
+		entities_by_index.len = slot
+	entities_by_index[slot] = D
+
+/// Forgets `D` behind `entity` (the entity itself is the caller's to free).
+/datum/controller/subsystem/vg/proc/untrack_entity(datum/D, entity)
+	if(!entity)
+		return
+	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(slot <= length(entities_by_index) && entities_by_index[slot] == D)
 		entities_by_index[slot] = null
 
 /// The atom `entity`'s index belongs to, or null. Event dispatch (§8) still

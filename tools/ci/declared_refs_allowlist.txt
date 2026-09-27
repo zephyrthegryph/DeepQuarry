@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2575 vars in 1163 files.
+# Total: 2574 vars in 1162 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -64,7 +64,6 @@ code/controllers/subsystem.dm 2
 code/controllers/subsystems/communications.dm 1
 code/controllers/subsystems/dbcore.dm 2
 code/controllers/subsystems/internal_wiki.dm 1
-code/controllers/subsystems/reactor.dm 1
 code/controllers/subsystems/supply.dm 1
 code/controllers/subsystems/tgui.dm 2
 code/controllers/subsystems/throwing.dm 4

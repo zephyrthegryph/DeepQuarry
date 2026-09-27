@@ -9,6 +9,13 @@
 //      types initialize with their preset gas content
 //   5. SSair init — gas singleton metadata reached Rust via auxtools_atmos_init
 
+/// Records the gas dependency wakes its watches deliver.
+/datum/dq_gas_dependency_probe
+	var/list/heard
+
+/datum/dq_gas_dependency_probe/proc/on_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	LAZYADD(heard, mixture_id)
+
 /// Empty both halves of the dependency publication pipeline before a focused
 /// wake assertion. A full-suite run can inherit thousands of observations from
 /// earlier fixtures; bounding an assertion by an arbitrary number of scans then
@@ -3928,7 +3935,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.update_use_power(USE_POWER_IDLE)
 	V.external_pressure_bound = T.air.return_pressure() + 50
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
-	vg_drain_dirty_gas_mixtures()
+	vg_drain_dirty_gas_observations()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
 	V.register_gas_dependencies()
 	var/vent_wakes = V.gas_dependency_wake_count
@@ -4148,7 +4155,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// alarm rather than harmless drift.
 	T.air.set_temperature(T20C)
 	dq_atmos_test_drain_dependency_queue()
-	vg_drain_dirty_gas_mixtures()
+	vg_drain_dirty_gas_observations()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
 	TEST_ASSERT_EQUAL(F.machine_step(), PROCESS_KILL, "stable closed firedoor retained timed polling")
@@ -5466,7 +5473,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SSair.run_gas_frames(1)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
-	vg_heat_debug_run_frames(2)
+	vg_world_run_steps(2)
 	// The exposure heats the paper's heat body; its ignition rule
 	// (code/datums/rules/declarations.dm) runs on the next heat frame.
 	dq_rx_flush()
@@ -7107,28 +7114,28 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_dirty_gas_publication_is_watch_scoped
 
 /datum/unit_test/dq_dirty_gas_publication_is_watch_scoped/Run()
+	dq_atmos_test_drain_dependency_queue()
 	var/datum/gas_mixture/air = new(2500)
+	var/datum/gas_mixture/other = new(2500)
 	var/mixture_id = air.arena_id()
-	vg_drain_dirty_gas_mixtures()
-	air.set_temperature(T20C + 5)
-	var/list/changes = vg_drain_dirty_gas_mixtures()
-	for(var/index in 1 to length(changes) step 2)
-		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture was published to DM")
-	watch_dirty_gas_mixture(mixture_id)
+	var/datum/dq_gas_dependency_probe/probe = new
+	var/datum/dq_gas_dependency_probe/bystander = new
+	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
+	var/datum/native_watch/gas/B = gas_dependency_watch(bystander, other.arena_id(), GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	air.set_temperature(T20C + 10)
-	changes = vg_drain_dirty_gas_mixtures()
-	var/found_watched = FALSE
-	for(var/index in 1 to length(changes) step 2)
-		if(changes[index] == mixture_id)
-			found_watched = TRUE
-			break
-	TEST_ASSERT(found_watched, "watched mixture mutation was not published to DM")
-	vg_unwatch_dirty_gas_mixture(mixture_id)
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(length(probe.heard), 1, "the watch's owner did not hear its mixture change once")
+	TEST_ASSERT_EQUAL(probe.heard?[1], mixture_id, "the watch reported the wrong mixture")
+	TEST_ASSERT(!length(bystander.heard), "a watch on another mixture heard this one")
+	qdel(W)
 	air.set_temperature(T20C + 15)
-	changes = vg_drain_dirty_gas_mixtures()
-	for(var/index in 1 to length(changes) step 2)
-		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture resumed publication after unsubscribe")
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(length(probe.heard), 1, "a cancelled watch still delivered")
+	qdel(B)
 	qdel(air)
+	qdel(other)
 
 /datum/unit_test/dq_dirty_gas_observation_matches_air_alarm
 
@@ -7147,18 +7154,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	air.set_moles(/datum/gas/nitrous_oxide, 0.3)
 	air.set_moles(/datum/gas/volatile_fuel, 0.4)
 	var/mixture_id = air.arena_id()
-	watch_dirty_gas_mixture(mixture_id)
+	var/datum/dq_gas_dependency_probe/probe = new
+	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	vg_drain_dirty_gas_observations()
 	air.adjust_moles(/datum/gas/oxygen, 1)
 	var/list/observation = vg_drain_dirty_gas_observations()
 	TEST_ASSERT_EQUAL(length(observation), GAS_DEPENDENCY_OBSERVATION_STRIDE, "dirty gas observation did not use the documented atomic stride")
-	TEST_ASSERT_EQUAL(observation[1], mixture_id, "dirty gas observation returned the wrong arena mixture")
+	TEST_ASSERT_EQUAL(observation[1], W.handle, "dirty gas observation named the wrong watch")
+	TEST_ASSERT_EQUAL(observation[2], mixture_id, "dirty gas observation returned the wrong arena mixture")
 	TEST_ASSERT(abs(observation[GAS_DEPENDENCY_OBSERVATION_STRIDE] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
 	var/obj/machinery/alarm/alarm = new(test_turf)
 	var/direct_signature = alarm.atmospheric_control_signature(air)
-	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 1)
+	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 2)
 	TEST_ASSERT_EQUAL(observed_signature, direct_signature, "atomic Rust gas observation changed air-alarm threshold semantics")
-	vg_unwatch_dirty_gas_mixture(mixture_id)
+	qdel(W)
 	qdel(alarm)
 	qdel(air)
 

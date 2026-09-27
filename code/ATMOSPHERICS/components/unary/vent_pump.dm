@@ -120,7 +120,6 @@
 	if(!environment)
 		rust_unregister_device()
 		return
-	var/mode = pump_direction ? RUST_VENT_MODE_RELEASE : RUST_VENT_MODE_SIPHON
 	var/min_kpa = 0
 	var/max_kpa = 1e30
 	if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
@@ -129,7 +128,11 @@
 		else
 			min_kpa = external_pressure_bound
 	var/max_rate = air_contents.return_volume() * 50
-	rust_set_turf_device(1, environment, RUST_DEVICE_LAW_VENT_PUMP, mode, min_kpa, max_kpa, max_rate)
+	rust_set_turf_device(1, environment)
+	if(pump_direction)
+		rust_set_device_flow(0, RUST_FLOW_VOLUME, max_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_LEAST, max_kpa)
+	else
+		rust_set_device_flow(0, RUST_FLOW_VOLUME, max_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_MOST, min_kpa)
 
 /obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
 	last_flow_rate = abs(moles)

@@ -7,7 +7,7 @@
 //
 // M3: the distributor (channels, cell charging, load shedding) runs in Rust
 // (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:
-// power_sync() sends its settings, and power_event() applies what Rust
+// power_sync() sends its settings, and power_poll() applies what Rust
 // reports (channels, charging, status, alarm, the cell charge). It runs on the
 // machine pipeline (machine_pipeline.dm): its power stage ends a power failure by
 // rewake, and its present stage updates the icon at most every
@@ -84,7 +84,7 @@
 	var/obj/machinery/power/terminal/terminal = null
 	var/mob/living/silicon/ai/hacker = null // Malf AI that has full control of this APC.
 	var/wiresexposed = FALSE
-	powernet = 0                    // set so APCs aren't found as powernet nodes
+	powernet = null                 // set by connect_to_network() (the APC IS a network node now, step 3)
 	var/debug = 0
 	var/has_electronics = APC_HAS_ELECTRONICS_NONE
 	var/beenhit = 0                 // hit counter, used for Alien claws
@@ -119,13 +119,7 @@
 	var/charging    = 0
 	var/chargemode  = 1
 	var/chargecount = 0
-	var/autoflag    = 0
 	var/longtermpower = 10
-	var/lastused_light    = 0
-	var/lastused_equip    = 0
-	var/lastused_environ  = 0
-	var/lastused_charging = 0
-	var/lastused_total    = 0
 	var/main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 	/// Monotonic revision for correction-aware contract power telemetry.
 	var/contract_power_revision = 0
@@ -138,13 +132,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/connect_to_network(bind_now = TRUE)
-	// Override: APC does not directly connect to the network; it goes through a terminal.
+	// Override: the APC's own vg_entity is the network node (rust_architecture.md
+	// step 3: ApcTick is a row law over Apc + InRegion<Cables>), placed at the
+	// terminal's cell -- the terminal object itself is a construction/visual
+	// anchor only, not separately bound.
 	if(!terminal)
 		make_terminal()
 	if(terminal)
 		terminal.connect_to_network(bind_now)
+		if(vg_entity)
+			vg_power_bind_machine(vg_entity, terminal.x, terminal.y, terminal.z)
+			if(bind_now)
+				power_bind_now()
 	power_sync()
-	return !!terminal?.powernet
+	return !!powernet
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
 	wake_for_power_dependency()
@@ -203,8 +204,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	update()
 
 /obj/machinery/power/apc/Destroy()
-	if(power_key)
-		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
+	if(vg_entity)
+		vg_power_unbind_node(vg_entity)
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
 	om_changed(src, CHANGE_MACHINE_MODE)
@@ -247,55 +248,50 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/power_autoconnect()
 	return
 
-/// Sends this APC's settings, cell charge, channel settings and terminal to
-/// the Rust power domain. DM's copies are current (every power step writes
-/// them back), so sending them is always safe.
+/// Sends this APC's settings and cell state to the Rust power domain
+/// (generated accessors, verdigris/domains/power/src/components.rs).
+/// DM's cell is authoritative for capacity (a new cell, a swap); Rust's
+/// `charge` field is authoritative for charge (a law drains/fills it) --
+/// power_poll() reads it back, so this never overwrites a tick's own work.
 /obj/machinery/power/apc/proc/power_sync()
-	if(QDELETED(src))
+	if(QDELETED(src) || !vg_entity)
 		return
-	if(!power_key)
-		power_key = power_key_alloc(src)
-	var/flags = 0
-	if(area?.requires_power && !(stat & (BROKEN | MAINT)) && !failure_timer)
-		flags |= POWER_APC_ACTIVE
-	if(cell)
-		flags |= POWER_APC_HAS_CELL
-	if(failure_timer)
-		flags |= POWER_APC_FAILED
-	if(shorted || grid_check)
-		flags |= POWER_APC_SHORTED
-	if(operating)
-		flags |= POWER_APC_OPERATING
-	if(chargemode)
-		flags |= POWER_APC_CHARGEMODE
-	var/terminal_key = terminal?.power_key || -1
-	SSmachines.power_queue(list(POWER_OP_APC, 10, power_key, terminal_key, flags, cell ? cell.maxcharge : 0, chargelevel, cell ? cell.charge : 0, equipment, lighting, environ, autoflag))
+	set_active(area?.requires_power && !(stat & (BROKEN | MAINT)) && !failure_timer ? 1 : 0)
+	set_has_cell(cell ? 1 : 0)
+	set_failed(failure_timer ? 1 : 0)
+	set_shorted_or_grid_check(shorted || grid_check ? 1 : 0)
+	set_operating(operating)
+	set_chargemode(chargemode)
+	set_chargelevel(chargelevel)
+	set_capacity(cell ? cell.maxcharge : 0)
 	area?.power_loads_changed()
 
-/// A POWER_EV_APC record at `at`: key, charge, eqp, lgt, env, charging,
-/// main_status, alarm, autoflag, used eqp/lgt/env/charging/total, area bits.
-/obj/machinery/power/apc/proc/power_event(list/events, at)
-	power_event_count++
+/// Reads back what Rust's `ApcTick` did this step (verdigris/domains/power/src/laws.rs):
+/// channels, charging, the cell charge, and the load it served.
+/obj/machinery/power/apc/proc/power_poll()
+	if(!vg_entity)
+		return
+	var/charge_changed = FALSE
 	if(cell)
-		cell.charge = events[at + 1]
-	var/new_equipment = events[at + 2]
-	var/new_lighting = events[at + 3]
-	var/new_environ = events[at + 4]
-	var/new_charging = events[at + 5]
-	var/new_status = events[at + 6]
+		var/new_charge = get_charge()
+		charge_changed = new_charge != cell.charge
+		cell.charge = new_charge
+	var/new_equipment = get_channels(0)
+	var/new_lighting = get_channels(1)
+	var/new_environ = get_channels(2)
+	var/new_charging = get_charging()
+	power_refresh_network()
+	var/new_status = !powernet ? APC_EXTERNAL_POWER_NOTCONNECTED : (powernet.avail > 0 && powernet.netexcess < 0 ? APC_EXTERNAL_POWER_NOENERGY : (powernet.avail > 0 ? APC_EXTERNAL_POWER_GOOD : APC_EXTERNAL_POWER_NOTCONNECTED))
 	var/shown_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ || new_charging != charging || new_status != main_status
 	equipment = new_equipment
 	lighting = new_lighting
 	environ = new_environ
 	charging = new_charging
 	main_status = new_status
-	autoflag = events[at + 8]
-	lastused_equip = events[at + 9]
-	lastused_light = events[at + 10]
-	lastused_environ = events[at + 11]
-	lastused_charging = events[at + 12]
-	lastused_total = events[at + 13]
-	var/alarm = !!events[at + 7]
+	var/alarm = !!get_alarm()
+	// Counts polls that saw Rust change something (tests: a settled APC hears nothing).
+	if(shown_changed || charge_changed || alarm != power_alarm_raised)
+		power_event_count++
 	if(alarm != power_alarm_raised)
 		power_alarm_raised = alarm
 		if(alarm)
@@ -329,6 +325,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	queue_icon_update()
 	update()
 
+/// A newly assigned `cell`'s charge becomes Rust's `Apc.charge` (a
+/// take-reconciliation adjust, §4.2: `charge` is conserved, so DM's own
+/// absolute assignments to it cross as a delta, not an overwrite).
+/obj/machinery/power/apc/proc/sync_cell_charge()
+	if(!cell || !vg_entity)
+		return
+	adjust_charge(cell.charge - get_charge())
+
 /obj/machinery/power/apc/proc/make_terminal()
 	terminal = new /obj/machinery/power/terminal(loc)
 	terminal.set_dir(dir)
@@ -339,6 +343,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(cell_type)
 		cell = new cell_type(src)
 		cell.charge = start_charge * cell.maxcharge / 100.0
+		sync_cell_charge()
 
 	var/area/A = loc.loc
 
@@ -618,6 +623,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		user.drop_item()
 		W.forceMove(src)
 		cell = W
+		sync_cell_charge()
 		user.visible_message(\
 			span_warning("[user.name] has inserted a power cell into [name]!"),\
 			span_notice("You insert the power cell."))
@@ -812,8 +818,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		"powerCellStatus" = cell ? cell.percent() : 0,
 		"chargeMode"      = chargemode,
 		"chargingStatus"  = charging,
-		"totalLoad"       = round(lastused_total),
-		"totalCharging"   = round(lastused_charging),
+		"totalLoad"       = round(channel_load_total()),
+		"totalCharging"   = 0,
 		"failTime"        = failure_until > world.time ? CEILING((failure_until - world.time) / 10, 1) : 0,
 		"gridCheck"       = grid_check,
 		"coverLocked"     = coverlocked,
@@ -824,7 +830,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		"powerChannels" = list(
 			list(
 				"title"       = "Equipment",
-				"powerLoad"   = lastused_equip,
+				"powerLoad"   = channel_load(0),
 				"status"      = equipment,
 				"topicParams" = list(
 					"auto" = list("eqp" = 3),
@@ -834,7 +840,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			),
 			list(
 				"title"       = "Lighting",
-				"powerLoad"   = round(lastused_light),
+				"powerLoad"   = round(channel_load(1)),
 				"status"      = lighting,
 				"topicParams" = list(
 					"auto" = list("lgt" = 3),
@@ -844,7 +850,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			),
 			list(
 				"title"       = "Environment",
-				"powerLoad"   = round(lastused_environ),
+				"powerLoad"   = round(channel_load(2)),
 				"status"      = environ,
 				"topicParams" = list(
 					"auto" = list("env" = 3),
@@ -857,7 +863,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	return data
 
 /obj/machinery/power/apc/proc/report()
-	return "[area.name] : [equipment]/[lighting]/[environ] ([lastused_equip+lastused_light+lastused_environ]) : [cell ? cell.percent() : "N/C"] ([charging])"
+	return "[area.name] : [equipment]/[lighting]/[environ] ([channel_load_total()]) : [cell ? cell.percent() : "N/C"] ([charging])"
 
 // update() — send settings to Rust and push channel state to the area.
 /obj/machinery/power/apc/proc/update()
@@ -894,7 +900,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			"metrics" = list(
 				"powered_channels" = powered_channels,
 				"cell_percent" = cell ? cell.percent() : 0,
-				"load" = lastused_total,
+				"load" = channel_load_total(),
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
 		), "power-service:[REF(src)]:[contract_power_revision]", src)
@@ -915,7 +921,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(user.lying)
 		to_chat(user, span_warning("You must stand to use [src]!"))
 		return 0
-	autoflag = 5
 	if(istype(user, /mob/living/silicon))
 		var/permit = 0
 		var/mob/living/silicon/ai/AI = user
@@ -988,10 +993,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		if("channel")
 			if(params["eqp"])
 				equipment = setsubsystem(text2num(params["eqp"]))
+				set_channels(0, equipment)
 			else if(params["lgt"])
 				lighting = setsubsystem(text2num(params["lgt"]))
+				set_channels(1, lighting)
 			else if(params["env"])
 				environ = setsubsystem(text2num(params["env"]))
+				set_channels(2, environ)
 			update_icon()
 			update()
 		if("reboot")
@@ -1144,15 +1152,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	lighting = POWERCHAN_ON_AUTO
 	equipment = POWERCHAN_ON_AUTO
 	environ = POWERCHAN_ON_AUTO
+	if(vg_entity)
+		set_channels(0, equipment)
+		set_channels(1, lighting)
+		set_channels(2, environ)
 	charging = 0
 	chargecount = 0
-	autoflag = 0
 	longtermpower = 10
-	lastused_light = 0
-	lastused_equip = 0
-	lastused_environ = 0
-	lastused_charging = 0
-	lastused_total = 0
 	main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 
 	// Breaker off; chargemode in default state; all channels on auto.
@@ -1236,3 +1242,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 // All APC defines are declared in code/__defines/apc.dm and are not #undef'd
 // here because they are shared with apc_icon_renderer.
 
+
+/// Watts channel `index` (0 equipment, 1 lighting, 2 environment) draws now, read from Rust.
+/obj/machinery/power/apc/proc/channel_load(index)
+	return vg_entity ? get_static_load(index) + get_oneoff(index) : 0
+
+/// Watts all three channels draw now.
+/obj/machinery/power/apc/proc/channel_load_total()
+	return channel_load(0) + channel_load(1) + channel_load(2)

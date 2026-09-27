@@ -3,32 +3,76 @@
 // Do not edit it by hand: run `tools/build/build.sh verdigris-bindings`.
 // CI fails when it is stale. See doc/rewrite/rust_bindings.md.
 
-/atom/movable
+/datum
 	/// The entity handle (rust_bindings.md §1). 0: unbound.
 	var/tmp/vg_entity = 0
 	/// Which gas component kind (a VG_GAS_* define), or 0.
 	var/tmp/vg_gas = 0
+	/// Which heat component kind (a VG_HEAT_* define), or 0.
+	var/tmp/vg_heat = 0
+	/// Which power component kind (a VG_POWER_* define), or 0.
+	var/tmp/vg_power = 0
+	/// Which test_domain component kind (a VG_TEST_DOMAIN_* define), or 0.
+	var/tmp/vg_test_domain = 0
 
-/// Binds this atom's gas component (if the type declares one) and
+/// Binds this datum's gas component (if the type declares one) and
 /// returns the (possibly newly created) entity handle. Overridden per
 /// bound type below.
-/atom/movable/proc/vg_bind_gas(entity)
+/datum/proc/vg_bind_gas(entity)
 	return entity
 
-/// Reconciler (§7): mismatches between this atom's declared inputs and
+/// Reconciler (§7): mismatches between this datum's declared inputs and
 /// what Rust has stored for its gas component, repairing as it goes.
 /// Overridden per bound type below.
-/atom/movable/proc/vg_reconcile_gas()
+/datum/proc/vg_reconcile_gas()
 	return list()
 
-/// Dispatches one drained gas event (§8) to its named handler.
-/// Overridden per bound type below (only on types that declare events).
-/atom/movable/proc/vg_dispatch_gas_event(event_id)
-	return
+/// Binds this datum's heat component (if the type declares one) and
+/// returns the (possibly newly created) entity handle. Overridden per
+/// bound type below.
+/datum/proc/vg_bind_heat(entity)
+	return entity
 
-// ---- Pump (gas kind 1; verdigris/domains/gas/src/kind/pump.rs) ----
+/// Reconciler (§7): mismatches between this datum's declared inputs and
+/// what Rust has stored for its heat component, repairing as it goes.
+/// Overridden per bound type below.
+/datum/proc/vg_reconcile_heat()
+	return list()
+
+/// Binds this datum's power component (if the type declares one) and
+/// returns the (possibly newly created) entity handle. Overridden per
+/// bound type below.
+/datum/proc/vg_bind_power(entity)
+	return entity
+
+/// Reconciler (§7): mismatches between this datum's declared inputs and
+/// what Rust has stored for its power component, repairing as it goes.
+/// Overridden per bound type below.
+/datum/proc/vg_reconcile_power()
+	return list()
+
+/// Binds this datum's test_domain component (if the type declares one) and
+/// returns the (possibly newly created) entity handle. Overridden per
+/// bound type below.
+/datum/proc/vg_bind_test_domain(entity)
+	return entity
+
+/// Reconciler (§7): mismatches between this datum's declared inputs and
+/// what Rust has stored for its test_domain component, repairing as it goes.
+/// Overridden per bound type below.
+/datum/proc/vg_reconcile_test_domain()
+	return list()
+
+// ---- Pump (gas kind 1, owner worker; verdigris/domains/gas/src/kind/pump.rs) ----
 
 #define VG_GAS_PUMP 1
+/// The code the generic vg_component_* binds take for Pump.
+#define VG_KIND_PUMP 1
+#define VG_PUMP_FIELD_TARGET_PRESSURE 0
+#define VG_PUMP_FIELD_POWER_RATING 1
+#define VG_PUMP_FIELD_ON 2
+#define VG_PUMP_FIELD_OPERABLE 3
+#define VG_PUMP_FIELD_FLOW_RATE 4
 
 /obj/machinery/atmospherics/binary/pump
 	vg_gas = VG_GAS_PUMP
@@ -44,31 +88,31 @@
 
 /// kPa; clamped to VG_PUMP_TARGET_PRESSURE_MIN..MAX.
 /obj/machinery/atmospherics/binary/pump/proc/get_target_pressure()
-	return vg_pump_get_target_pressure(vg_entity) // kPa
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, 0) // kPa
 
 /// Returns the stored value.
 /obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
-	return vg_pump_set_target_pressure(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, -1, value)
 
 /// W; clamped to VG_PUMP_POWER_RATING_MIN..MAX.
 /obj/machinery/atmospherics/binary/pump/proc/get_power_rating()
-	return vg_pump_get_power_rating(vg_entity) // W
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, 0) // W
 
 /// Returns the stored value.
 /obj/machinery/atmospherics/binary/pump/proc/set_power_rating(value)
-	return vg_pump_set_power_rating(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, -1, value)
 
 /// unitless;.
 /obj/machinery/atmospherics/binary/pump/proc/get_on()
-	return vg_pump_get_on(vg_entity)
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, 0)
 
 /// Returns the stored value.
 /obj/machinery/atmospherics/binary/pump/proc/set_on(value)
-	return vg_pump_set_on(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, -1, value)
 
 /// mol/s, read-only (state).
 /obj/machinery/atmospherics/binary/pump/proc/get_flow_rate()
-	return vg_pump_get_flow_rate(vg_entity) // mol/s
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_FLOW_RATE, 0) // mol/s
 
 /// Pure proc over Pump's declared input sources (construction, integrity).
 /// Override per subtype if the default doesn't apply.
@@ -78,14 +122,18 @@
 /// What Rust currently has stored, for the reconciler (§7). Compare
 /// against pump_input_operable(); never used for game logic.
 /obj/machinery/atmospherics/binary/pump/proc/get_operable()
-	return vg_pump_get_operable(vg_entity)
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_OPERABLE, 0)
+
+/// Pushes the input's current value to Rust.
+/obj/machinery/atmospherics/binary/pump/proc/push_operable(value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_OPERABLE, -1, value)
 
 /// target_pressure, power_rating, on, flow_rate in one call.
 /obj/machinery/atmospherics/binary/pump/proc/pump_query_ui()
-	return vg_pump_query_ui(vg_entity)
+	return vg_component_get_many(vg_entity, VG_KIND_PUMP, list(VG_PUMP_FIELD_TARGET_PRESSURE, VG_PUMP_FIELD_POWER_RATING, VG_PUMP_FIELD_ON, VG_PUMP_FIELD_FLOW_RATE))
 
 /obj/machinery/atmospherics/binary/pump/vg_bind_gas(entity)
-	return vg_pump_bind(entity, init_target_pressure, init_power_rating, init_on, pump_input_operable())
+	return vg_component_bind(entity, VG_KIND_PUMP, list(VG_PUMP_FIELD_TARGET_PRESSURE, init_target_pressure, VG_PUMP_FIELD_POWER_RATING, init_power_rating, VG_PUMP_FIELD_ON, init_on, VG_PUMP_FIELD_OPERABLE, pump_input_operable()))
 
 /// Compares every declared input against what Rust has stored (§7);
 /// repairs any mismatch and returns "field: expected=.. actual=.." for
@@ -96,7 +144,7 @@
 	var/actual_operable = get_operable()
 	if(!expected_operable != !actual_operable)
 		mismatches += "operable: expected=[expected_operable] actual=[actual_operable]"
-		vg_pump_push_operable(vg_entity, expected_operable)
+		push_operable(expected_operable)
 	return mismatches
 
 /obj/machinery/atmospherics/binary/pump/vg_reconcile_gas()
@@ -106,12 +154,12 @@
 /obj/machinery/atmospherics/binary/pump/atom_break(damage_flag)
 	. = ..()
 	if(vg_entity)
-		vg_pump_push_operable(vg_entity, pump_input_operable())
+		push_operable(pump_input_operable())
 
 /obj/machinery/atmospherics/binary/pump/atom_fix()
 	. = ..()
 	if(vg_entity)
-		vg_pump_push_operable(vg_entity, pump_input_operable())
+		push_operable(pump_input_operable())
 
 #define VG_PUMP_EVENT_TARGET_REACHED 0
 #define VG_PUMP_EVENT_STARVED 1
@@ -124,86 +172,1102 @@
 /obj/machinery/atmospherics/binary/pump/proc/on_pump_starved()
 	return
 
-/// Dispatches one drained event (§8) to its named handler.
-/obj/machinery/atmospherics/binary/pump/proc/pump_dispatch_event(event_id)
-	switch(event_id)
-		if(0)
-			on_pump_target_reached()
-		if(1)
-			on_pump_starved()
+// ---- DeviceFlow (gas kind 3, owner main; verdigris/domains/gas/src/kind/device.rs) ----
 
-/obj/machinery/atmospherics/binary/pump/vg_dispatch_gas_event(event_id)
-	pump_dispatch_event(event_id)
+#define VG_GAS_DEVICEFLOW 3
+/// The code the generic vg_component_* binds take for DeviceFlow.
+#define VG_KIND_DEVICEFLOW 3
+#define VG_DEVICEFLOW_FIELD_DEVICE 0
+#define VG_DEVICEFLOW_FIELD_GASES 1
+#define VG_DEVICEFLOW_FIELD_RATE_KIND 2
+#define VG_DEVICEFLOW_FIELD_RATE 3
+#define VG_DEVICEFLOW_FIELD_DIRECTION 4
+#define VG_DEVICEFLOW_FIELD_STOP_SIDE 5
+#define VG_DEVICEFLOW_FIELD_STOP_CMP 6
+#define VG_DEVICEFLOW_FIELD_STOP_KPA 7
 
-// ---- GasMix (gas kind 2; verdigris/domains/gas/src/kind/gas_mix.rs) ----
+/// Creates (`entity` 0) or replaces (otherwise) a bare DeviceFlow
+/// row and returns its entity handle -- never a DM object (this
+/// component declares no `dm` type).
+/proc/vg_bind_device_flow(entity, device, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	return vg_component_bind(entity, VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, device, VG_DEVICEFLOW_FIELD_GASES, gases, VG_DEVICEFLOW_FIELD_RATE_KIND, rate_kind, VG_DEVICEFLOW_FIELD_RATE, rate, VG_DEVICEFLOW_FIELD_DIRECTION, direction, VG_DEVICEFLOW_FIELD_STOP_SIDE, stop_side, VG_DEVICEFLOW_FIELD_STOP_CMP, stop_cmp, VG_DEVICEFLOW_FIELD_STOP_KPA, stop_kpa))
 
-#define VG_GAS_GASMIX 2
-
-/obj/item/gas_mix_holder
-	vg_gas = VG_GAS_GASMIX
-
-/obj/item/gas_mix_holder/var/tmp/init_temperature = T20C
-/obj/item/gas_mix_holder/var/tmp/init_volume = 70.0
-
-#define VG_GASMIX_MOLES_MIN 0
-#define VG_GASMIX_MOLES_MAX 1000000
-#define VG_GASMIX_TEMPERATURE_MIN 2.7
-#define VG_GASMIX_TEMPERATURE_MAX 10000
-#define VG_GASMIX_VOLUME_MIN 0
-#define VG_GASMIX_VOLUME_MAX 100000
-
-/// mol; clamped to VG_GASMIX_MOLES_MIN..MAX.
-/obj/item/gas_mix_holder/proc/get_moles(index)
-	return vg_gas_mix_get_moles(vg_entity, index) // mol
+/// unitless;.
+/proc/get_device_flow_device(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, 0)
 
 /// Returns the stored value.
-/obj/item/gas_mix_holder/proc/set_moles(index, value)
-	return vg_gas_mix_set_moles(vg_entity, index, value)
+/proc/set_device_flow_device(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DEVICE, -1, value)
 
-/// K; clamped to VG_GASMIX_TEMPERATURE_MIN..MAX.
-/obj/item/gas_mix_holder/get_temperature()
-	return vg_gas_mix_get_temperature(vg_entity) // K
-
-/// Returns the stored value.
-/obj/item/gas_mix_holder/proc/set_temperature(value)
-	return vg_gas_mix_set_temperature(vg_entity, value)
-
-/// L; clamped to VG_GASMIX_VOLUME_MIN..MAX.
-/obj/item/gas_mix_holder/proc/get_volume()
-	return vg_gas_mix_get_volume(vg_entity) // L
+/// unitless;.
+/proc/get_device_flow_gases(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, 0)
 
 /// Returns the stored value.
-/obj/item/gas_mix_holder/proc/set_volume(value)
-	return vg_gas_mix_set_volume(vg_entity, value)
+/proc/set_device_flow_gases(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_GASES, -1, value)
 
-/// temperature, volume in one call.
-/obj/item/gas_mix_holder/proc/gas_mix_query_ui()
-	return vg_gas_mix_query_ui(vg_entity)
+/// unitless;.
+/proc/get_device_flow_rate_kind(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, 0)
 
-/obj/item/gas_mix_holder/vg_bind_gas(entity)
-	return vg_gas_mix_bind(entity, init_temperature, init_volume)
+/// Returns the stored value.
+/proc/set_device_flow_rate_kind(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE_KIND, -1, value)
 
-#define VG_GASMIX_EVENT_OVERPRESSURE 0
-#define VG_GASMIX_EVENT_DEPLETED 1
+/// mol/s;.
+/proc/get_device_flow_rate(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, 0) // mol/s
 
-/// Generated no-op default. Override to react to the event.
-/obj/item/gas_mix_holder/proc/on_gas_mix_overpressure()
+/// Returns the stored value.
+/proc/set_device_flow_rate(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_RATE, -1, value)
+
+/// unitless;.
+/proc/get_device_flow_direction(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, 0)
+
+/// Returns the stored value.
+/proc/set_device_flow_direction(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_DIRECTION, -1, value)
+
+/// unitless;.
+/proc/get_device_flow_stop_side(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, 0)
+
+/// Returns the stored value.
+/proc/set_device_flow_stop_side(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_SIDE, -1, value)
+
+/// unitless;.
+/proc/get_device_flow_stop_cmp(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, 0)
+
+/// Returns the stored value.
+/proc/set_device_flow_stop_cmp(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_CMP, -1, value)
+
+/// kPa;.
+/proc/get_device_flow_stop_kpa(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, 0) // kPa
+
+/// Returns the stored value.
+/proc/set_device_flow_stop_kpa(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, -1, value)
+
+// ---- DeviceValve (gas kind 4, owner main; verdigris/domains/gas/src/kind/device.rs) ----
+
+#define VG_GAS_DEVICEVALVE 4
+/// The code the generic vg_component_* binds take for DeviceValve.
+#define VG_KIND_DEVICEVALVE 4
+#define VG_DEVICEVALVE_FIELD_DEVICE 0
+#define VG_DEVICEVALVE_FIELD_OPEN 1
+
+/// Creates (`entity` 0) or replaces (otherwise) a bare DeviceValve
+/// row and returns its entity handle -- never a DM object (this
+/// component declares no `dm` type).
+/proc/vg_bind_device_valve(entity, device, open)
+	return vg_component_bind(entity, VG_KIND_DEVICEVALVE, list(VG_DEVICEVALVE_FIELD_DEVICE, device, VG_DEVICEVALVE_FIELD_OPEN, open))
+
+/// unitless;.
+/proc/get_device_valve_device(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, 0)
+
+/// Returns the stored value.
+/proc/set_device_valve_device(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_DEVICE, -1, value)
+
+/// unitless;.
+/proc/get_device_valve_open(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, 0)
+
+/// Returns the stored value.
+/proc/set_device_valve_open(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEVALVE, VG_DEVICEVALVE_FIELD_OPEN, -1, value)
+
+// ---- HeatBody (heat kind 1, owner worker; verdigris/domains/heat/src/components.rs) ----
+
+#define VG_HEAT_HEATBODY 1
+/// The code the generic vg_component_* binds take for HeatBody.
+#define VG_KIND_HEATBODY 513
+#define VG_HEATBODY_FIELD_CAPACITY 0
+#define VG_HEATBODY_FIELD_ENERGY 1
+#define VG_HEATBODY_FIELD_POWER 2
+#define VG_HEATBODY_FIELD_PHASE_TEMPERATURE 3
+#define VG_HEATBODY_FIELD_PHASE_LATENT 4
+#define VG_HEATBODY_FIELD_KEEP 5
+#define VG_HEATBODY_FIELD_FLOW 6
+#define VG_HEATBODY_FIELD_RELAX 7
+#define VG_HEATBODY_FIELD_SINCE 8
+#define VG_HEATBODY_FIELD_AMBIENT 9
+#define VG_HEATBODY_FIELD_TEMPERATURE 10
+
+/atom/movable/vg_heat_body
+	vg_heat = VG_HEAT_HEATBODY
+
+/atom/movable/vg_heat_body/var/tmp/init_capacity = 1.0
+/atom/movable/vg_heat_body/var/tmp/init_power = 0.0
+/atom/movable/vg_heat_body/var/tmp/init_phase_temperature = 0.0
+/atom/movable/vg_heat_body/var/tmp/init_phase_latent = 0.0
+/atom/movable/vg_heat_body/var/tmp/init_keep = FALSE
+
+#define VG_HEATBODY_CAPACITY_MIN 0.0001
+#define VG_HEATBODY_CAPACITY_MAX 1000000000000
+#define VG_HEATBODY_POWER_MIN -1000000000
+#define VG_HEATBODY_POWER_MAX 1000000000
+#define VG_HEATBODY_PHASE_TEMPERATURE_MIN 0
+#define VG_HEATBODY_PHASE_TEMPERATURE_MAX 1000000
+#define VG_HEATBODY_PHASE_LATENT_MIN 0
+#define VG_HEATBODY_PHASE_LATENT_MAX 1000000000000
+
+/// J/K; clamped to VG_HEATBODY_CAPACITY_MIN..MAX.
+/atom/movable/vg_heat_body/proc/get_capacity()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_CAPACITY, 0) // J/K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body/proc/set_capacity(value)
+	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_CAPACITY, -1, value)
+
+/// W; clamped to VG_HEATBODY_POWER_MIN..MAX.
+/atom/movable/vg_heat_body/proc/get_power()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_POWER, 0) // W
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body/proc/set_power(value)
+	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_POWER, -1, value)
+
+/// K; clamped to VG_HEATBODY_PHASE_TEMPERATURE_MIN..MAX.
+/atom/movable/vg_heat_body/proc/get_phase_temperature()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_TEMPERATURE, 0) // K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body/proc/set_phase_temperature(value)
+	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_TEMPERATURE, -1, value)
+
+/// J; clamped to VG_HEATBODY_PHASE_LATENT_MIN..MAX.
+/atom/movable/vg_heat_body/proc/get_phase_latent()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_LATENT, 0) // J
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body/proc/set_phase_latent(value)
+	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_LATENT, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_body/proc/get_keep()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_KEEP, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body/proc/set_keep(value)
+	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_KEEP, -1, value)
+
+/// J, read-only (state).
+/atom/movable/vg_heat_body/proc/get_energy()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_ENERGY, 0) // J
+
+/// J, read-only (state).
+/atom/movable/vg_heat_body/proc/get_flow()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_FLOW, 0) // J
+
+/// unitless, read-only (state).
+/atom/movable/vg_heat_body/proc/get_relax()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_RELAX, 0)
+
+/// unitless, read-only (state).
+/atom/movable/vg_heat_body/proc/get_since()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_SINCE, 0)
+
+/// K, read-only (state).
+/atom/movable/vg_heat_body/proc/get_ambient()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_AMBIENT, 0) // K
+
+/// K, read-only (computed readout).
+/atom/movable/vg_heat_body/get_temperature()
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_TEMPERATURE, 0) // K
+
+/// Take reconciliation (heat_energy): adds `delta` to what Rust holds now;
+/// returns the part of a removal that was not there.
+/atom/movable/vg_heat_body/proc/adjust_energy(delta)
+	return vg_component_adjust(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_ENERGY, 0, delta)
+
+/atom/movable/vg_heat_body/vg_bind_heat(entity)
+	return vg_component_bind(entity, VG_KIND_HEATBODY, list(VG_HEATBODY_FIELD_CAPACITY, init_capacity, VG_HEATBODY_FIELD_POWER, init_power, VG_HEATBODY_FIELD_PHASE_TEMPERATURE, init_phase_temperature, VG_HEATBODY_FIELD_PHASE_LATENT, init_phase_latent, VG_HEATBODY_FIELD_KEEP, init_keep))
+
+// ---- SolidCoupling (heat kind 2, owner worker; verdigris/domains/heat/src/components.rs) ----
+
+#define VG_HEAT_SOLIDCOUPLING 2
+/// The code the generic vg_component_* binds take for SolidCoupling.
+#define VG_KIND_SOLIDCOUPLING 514
+#define VG_SOLIDCOUPLING_FIELD_BODY 0
+#define VG_SOLIDCOUPLING_FIELD_CELL 1
+#define VG_SOLIDCOUPLING_FIELD_CONDUCTANCE 2
+#define VG_SOLIDCOUPLING_FIELD_SLOT 3
+
+/atom/movable/vg_heat_solid_coupling
+	vg_heat = VG_HEAT_SOLIDCOUPLING
+
+/atom/movable/vg_heat_solid_coupling/var/tmp/init_body = 0
+/atom/movable/vg_heat_solid_coupling/var/tmp/init_cell = 0
+/atom/movable/vg_heat_solid_coupling/var/tmp/init_conductance = 0.0
+/atom/movable/vg_heat_solid_coupling/var/tmp/init_slot = 0
+
+#define VG_SOLIDCOUPLING_CONDUCTANCE_MIN 0
+#define VG_SOLIDCOUPLING_CONDUCTANCE_MAX 1000000000
+
+/// unitless;.
+/atom/movable/vg_heat_solid_coupling/proc/get_body()
+	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_BODY, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_solid_coupling/proc/set_body(value)
+	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_BODY, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_solid_coupling/get_cell()
+	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CELL, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_solid_coupling/proc/set_cell(value)
+	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CELL, -1, value)
+
+/// W/K; clamped to VG_SOLIDCOUPLING_CONDUCTANCE_MIN..MAX.
+/atom/movable/vg_heat_solid_coupling/proc/get_conductance()
+	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, 0) // W/K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_solid_coupling/proc/set_conductance(value)
+	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_solid_coupling/proc/get_slot()
+	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_SLOT, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_solid_coupling/proc/set_slot(value)
+	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_SLOT, -1, value)
+
+/atom/movable/vg_heat_solid_coupling/vg_bind_heat(entity)
+	return vg_component_bind(entity, VG_KIND_SOLIDCOUPLING, list(VG_SOLIDCOUPLING_FIELD_BODY, init_body, VG_SOLIDCOUPLING_FIELD_CELL, init_cell, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, init_conductance, VG_SOLIDCOUPLING_FIELD_SLOT, init_slot))
+
+// ---- BodyCoupling (heat kind 3, owner worker; verdigris/domains/heat/src/components.rs) ----
+
+#define VG_HEAT_BODYCOUPLING 3
+/// The code the generic vg_component_* binds take for BodyCoupling.
+#define VG_KIND_BODYCOUPLING 515
+#define VG_BODYCOUPLING_FIELD_BODY 0
+#define VG_BODYCOUPLING_FIELD_OTHER 1
+#define VG_BODYCOUPLING_FIELD_CONDUCTANCE 2
+#define VG_BODYCOUPLING_FIELD_SLOT 3
+
+/atom/movable/vg_heat_body_coupling
+	vg_heat = VG_HEAT_BODYCOUPLING
+
+/atom/movable/vg_heat_body_coupling/var/tmp/init_body = 0
+/atom/movable/vg_heat_body_coupling/var/tmp/init_other = 0
+/atom/movable/vg_heat_body_coupling/var/tmp/init_conductance = 0.0
+/atom/movable/vg_heat_body_coupling/var/tmp/init_slot = 0
+
+#define VG_BODYCOUPLING_CONDUCTANCE_MIN 0
+#define VG_BODYCOUPLING_CONDUCTANCE_MAX 1000000000
+
+/// unitless;.
+/atom/movable/vg_heat_body_coupling/proc/get_body()
+	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_BODY, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body_coupling/proc/set_body(value)
+	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_BODY, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_body_coupling/proc/get_other()
+	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_OTHER, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body_coupling/proc/set_other(value)
+	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_OTHER, -1, value)
+
+/// W/K; clamped to VG_BODYCOUPLING_CONDUCTANCE_MIN..MAX.
+/atom/movable/vg_heat_body_coupling/proc/get_conductance()
+	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_CONDUCTANCE, 0) // W/K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body_coupling/proc/set_conductance(value)
+	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_CONDUCTANCE, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_body_coupling/proc/get_slot()
+	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_SLOT, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_body_coupling/proc/set_slot(value)
+	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_SLOT, -1, value)
+
+/atom/movable/vg_heat_body_coupling/vg_bind_heat(entity)
+	return vg_component_bind(entity, VG_KIND_BODYCOUPLING, list(VG_BODYCOUPLING_FIELD_BODY, init_body, VG_BODYCOUPLING_FIELD_OTHER, init_other, VG_BODYCOUPLING_FIELD_CONDUCTANCE, init_conductance, VG_BODYCOUPLING_FIELD_SLOT, init_slot))
+
+// ---- GasCoupling (heat kind 4, owner worker; verdigris/domains/heat/src/components.rs) ----
+
+#define VG_HEAT_GASCOUPLING 4
+/// The code the generic vg_component_* binds take for GasCoupling.
+#define VG_KIND_GASCOUPLING 516
+#define VG_GASCOUPLING_FIELD_BODY 0
+#define VG_GASCOUPLING_FIELD_KIND 1
+#define VG_GASCOUPLING_FIELD_TARGET 2
+#define VG_GASCOUPLING_FIELD_CONDUCTANCE 3
+#define VG_GASCOUPLING_FIELD_SLOT 4
+
+/atom/movable/vg_heat_gas_coupling
+	vg_heat = VG_HEAT_GASCOUPLING
+
+/atom/movable/vg_heat_gas_coupling/var/tmp/init_body = 0
+/atom/movable/vg_heat_gas_coupling/var/tmp/init_kind = 0
+/atom/movable/vg_heat_gas_coupling/var/tmp/init_target = 0
+/atom/movable/vg_heat_gas_coupling/var/tmp/init_conductance = 0.0
+/atom/movable/vg_heat_gas_coupling/var/tmp/init_slot = 0
+
+#define VG_GASCOUPLING_CONDUCTANCE_MIN 0
+#define VG_GASCOUPLING_CONDUCTANCE_MAX 1000000000
+
+/// unitless;.
+/atom/movable/vg_heat_gas_coupling/proc/get_body()
+	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_BODY, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_gas_coupling/proc/set_body(value)
+	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_BODY, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_gas_coupling/proc/get_kind()
+	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_KIND, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_gas_coupling/proc/set_kind(value)
+	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_KIND, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_gas_coupling/proc/get_target()
+	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_TARGET, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_gas_coupling/proc/set_target(value)
+	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_TARGET, -1, value)
+
+/// W/K; clamped to VG_GASCOUPLING_CONDUCTANCE_MIN..MAX.
+/atom/movable/vg_heat_gas_coupling/proc/get_conductance()
+	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_CONDUCTANCE, 0) // W/K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_gas_coupling/proc/set_conductance(value)
+	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_CONDUCTANCE, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_gas_coupling/proc/get_slot()
+	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_SLOT, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_gas_coupling/proc/set_slot(value)
+	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_SLOT, -1, value)
+
+/atom/movable/vg_heat_gas_coupling/vg_bind_heat(entity)
+	return vg_component_bind(entity, VG_KIND_GASCOUPLING, list(VG_GASCOUPLING_FIELD_BODY, init_body, VG_GASCOUPLING_FIELD_KIND, init_kind, VG_GASCOUPLING_FIELD_TARGET, init_target, VG_GASCOUPLING_FIELD_CONDUCTANCE, init_conductance, VG_GASCOUPLING_FIELD_SLOT, init_slot))
+
+// ---- Regulator (heat kind 5, owner worker; verdigris/domains/heat/src/components.rs) ----
+
+#define VG_HEAT_REGULATOR 5
+/// The code the generic vg_component_* binds take for Regulator.
+#define VG_KIND_REGULATOR 517
+#define VG_REGULATOR_FIELD_CONTROLLED 0
+#define VG_REGULATOR_FIELD_OTHER 1
+#define VG_REGULATOR_FIELD_TARGET 2
+#define VG_REGULATOR_FIELD_MAX_POWER 3
+#define VG_REGULATOR_FIELD_MODE 4
+#define VG_REGULATOR_FIELD_CARNOT_FRACTION 5
+#define VG_REGULATOR_FIELD_MAX_COP 6
+#define VG_REGULATOR_FIELD_RESISTIVE_HEATING 7
+#define VG_REGULATOR_FIELD_DEADBAND 8
+
+/atom/movable/vg_heat_regulator
+	vg_heat = VG_HEAT_REGULATOR
+
+/atom/movable/vg_heat_regulator/var/tmp/init_controlled = 0
+/atom/movable/vg_heat_regulator/var/tmp/init_other = 0
+/atom/movable/vg_heat_regulator/var/tmp/init_target = 293.15
+/atom/movable/vg_heat_regulator/var/tmp/init_max_power = 0.0
+/atom/movable/vg_heat_regulator/var/tmp/init_mode = 2
+/atom/movable/vg_heat_regulator/var/tmp/init_carnot_fraction = 0.5
+/atom/movable/vg_heat_regulator/var/tmp/init_max_cop = 10.0
+/atom/movable/vg_heat_regulator/var/tmp/init_resistive_heating = TRUE
+/atom/movable/vg_heat_regulator/var/tmp/init_deadband = 0.05
+
+#define VG_REGULATOR_TARGET_MIN 0
+#define VG_REGULATOR_TARGET_MAX 1000000
+#define VG_REGULATOR_MAX_POWER_MIN 0
+#define VG_REGULATOR_MAX_POWER_MAX 1000000000
+#define VG_REGULATOR_CARNOT_FRACTION_MIN 0
+#define VG_REGULATOR_CARNOT_FRACTION_MAX 1
+#define VG_REGULATOR_MAX_COP_MIN 1
+#define VG_REGULATOR_MAX_COP_MAX 1000
+#define VG_REGULATOR_DEADBAND_MIN 0
+#define VG_REGULATOR_DEADBAND_MAX 100
+
+/// unitless;.
+/atom/movable/vg_heat_regulator/proc/get_controlled()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CONTROLLED, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_controlled(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CONTROLLED, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_regulator/proc/get_other()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_OTHER, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_other(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_OTHER, -1, value)
+
+/// K; clamped to VG_REGULATOR_TARGET_MIN..MAX.
+/atom/movable/vg_heat_regulator/proc/get_target()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_TARGET, 0) // K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_target(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_TARGET, -1, value)
+
+/// W; clamped to VG_REGULATOR_MAX_POWER_MIN..MAX.
+/atom/movable/vg_heat_regulator/proc/get_max_power()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_POWER, 0) // W
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_max_power(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_POWER, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_regulator/proc/get_mode()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MODE, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_mode(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MODE, -1, value)
+
+/// unitless; clamped to VG_REGULATOR_CARNOT_FRACTION_MIN..MAX.
+/atom/movable/vg_heat_regulator/proc/get_carnot_fraction()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CARNOT_FRACTION, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_carnot_fraction(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CARNOT_FRACTION, -1, value)
+
+/// unitless; clamped to VG_REGULATOR_MAX_COP_MIN..MAX.
+/atom/movable/vg_heat_regulator/proc/get_max_cop()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_COP, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_max_cop(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_COP, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_regulator/proc/get_resistive_heating()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_RESISTIVE_HEATING, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_resistive_heating(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_RESISTIVE_HEATING, -1, value)
+
+/// K; clamped to VG_REGULATOR_DEADBAND_MIN..MAX.
+/atom/movable/vg_heat_regulator/proc/get_deadband()
+	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_DEADBAND, 0) // K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_regulator/proc/set_deadband(value)
+	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_DEADBAND, -1, value)
+
+/atom/movable/vg_heat_regulator/vg_bind_heat(entity)
+	return vg_component_bind(entity, VG_KIND_REGULATOR, list(VG_REGULATOR_FIELD_CONTROLLED, init_controlled, VG_REGULATOR_FIELD_OTHER, init_other, VG_REGULATOR_FIELD_TARGET, init_target, VG_REGULATOR_FIELD_MAX_POWER, init_max_power, VG_REGULATOR_FIELD_MODE, init_mode, VG_REGULATOR_FIELD_CARNOT_FRACTION, init_carnot_fraction, VG_REGULATOR_FIELD_MAX_COP, init_max_cop, VG_REGULATOR_FIELD_RESISTIVE_HEATING, init_resistive_heating, VG_REGULATOR_FIELD_DEADBAND, init_deadband))
+
+// ---- MobHeat (heat kind 6, owner worker; verdigris/domains/heat/src/mob.rs) ----
+
+#define VG_HEAT_MOBHEAT 6
+/// The code the generic vg_component_* binds take for MobHeat.
+#define VG_KIND_MOBHEAT 518
+#define VG_MOBHEAT_FIELD_CAPACITY 0
+#define VG_MOBHEAT_FIELD_TEMPERATURE 1
+#define VG_MOBHEAT_FIELD_METABOLIC_WATTS 2
+#define VG_MOBHEAT_FIELD_COOLANT 3
+#define VG_MOBHEAT_FIELD_INSULATION 4
+#define VG_MOBHEAT_FIELD_AMBIENT 5
+#define VG_MOBHEAT_FIELD_SETPOINT 6
+#define VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W 7
+#define VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W 8
+#define VG_MOBHEAT_FIELD_TIME_SCALE 9
+#define VG_MOBHEAT_FIELD_EXTERNAL_WATTS 10
+
+/atom/movable/vg_heat_mob
+	vg_heat = VG_HEAT_MOBHEAT
+
+/atom/movable/vg_heat_mob/var/tmp/init_capacity = 1.0
+/atom/movable/vg_heat_mob/var/tmp/init_metabolic_watts = 0.0
+/atom/movable/vg_heat_mob/var/tmp/init_coolant = FALSE
+/atom/movable/vg_heat_mob/var/tmp/init_insulation = 0.0
+/atom/movable/vg_heat_mob/var/tmp/init_ambient = BODYTEMP_NORMAL
+/atom/movable/vg_heat_mob/var/tmp/init_setpoint = BODYTEMP_NORMAL
+/atom/movable/vg_heat_mob/var/tmp/init_sweat_capacity_w = 0.0
+/atom/movable/vg_heat_mob/var/tmp/init_shiver_capacity_w = 0.0
+/atom/movable/vg_heat_mob/var/tmp/init_time_scale = 1.0
+
+#define VG_MOBHEAT_CAPACITY_MIN 0.0001
+#define VG_MOBHEAT_CAPACITY_MAX 1000000000
+#define VG_MOBHEAT_METABOLIC_WATTS_MIN -1000000
+#define VG_MOBHEAT_METABOLIC_WATTS_MAX 1000000
+#define VG_MOBHEAT_INSULATION_MIN 0
+#define VG_MOBHEAT_INSULATION_MAX 1000000
+#define VG_MOBHEAT_AMBIENT_MIN 0
+#define VG_MOBHEAT_AMBIENT_MAX 1000000
+#define VG_MOBHEAT_SETPOINT_MIN 0
+#define VG_MOBHEAT_SETPOINT_MAX 1000000
+#define VG_MOBHEAT_SWEAT_CAPACITY_W_MIN 0
+#define VG_MOBHEAT_SWEAT_CAPACITY_W_MAX 1000000
+#define VG_MOBHEAT_SHIVER_CAPACITY_W_MIN 0
+#define VG_MOBHEAT_SHIVER_CAPACITY_W_MAX 1000000
+#define VG_MOBHEAT_TIME_SCALE_MIN 0
+#define VG_MOBHEAT_TIME_SCALE_MAX 100
+#define VG_MOBHEAT_EXTERNAL_WATTS_MIN -1000000
+#define VG_MOBHEAT_EXTERNAL_WATTS_MAX 1000000
+
+/// J/K; clamped to VG_MOBHEAT_CAPACITY_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_capacity()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_CAPACITY, 0) // J/K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_capacity(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_CAPACITY, -1, value)
+
+/// W; clamped to VG_MOBHEAT_METABOLIC_WATTS_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_metabolic_watts()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_METABOLIC_WATTS, 0) // W
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_metabolic_watts(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_METABOLIC_WATTS, -1, value)
+
+/// unitless;.
+/atom/movable/vg_heat_mob/proc/get_coolant()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_COOLANT, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_coolant(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_COOLANT, -1, value)
+
+/// W/K; clamped to VG_MOBHEAT_INSULATION_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_insulation()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_INSULATION, 0) // W/K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_insulation(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_INSULATION, -1, value)
+
+/// K; clamped to VG_MOBHEAT_AMBIENT_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_ambient()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_AMBIENT, 0) // K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_ambient(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_AMBIENT, -1, value)
+
+/// K; clamped to VG_MOBHEAT_SETPOINT_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_setpoint()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SETPOINT, 0) // K
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_setpoint(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SETPOINT, -1, value)
+
+/// W; clamped to VG_MOBHEAT_SWEAT_CAPACITY_W_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_sweat_capacity_w()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W, 0) // W
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_sweat_capacity_w(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W, -1, value)
+
+/// W; clamped to VG_MOBHEAT_SHIVER_CAPACITY_W_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_shiver_capacity_w()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W, 0) // W
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_shiver_capacity_w(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W, -1, value)
+
+/// unitless; clamped to VG_MOBHEAT_TIME_SCALE_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_time_scale()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_TIME_SCALE, 0)
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_time_scale(value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_TIME_SCALE, -1, value)
+
+/// W; clamped to VG_MOBHEAT_EXTERNAL_WATTS_MIN..MAX.
+/atom/movable/vg_heat_mob/proc/get_external_watts(index)
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_EXTERNAL_WATTS, index) // W
+
+/// Returns the stored value.
+/atom/movable/vg_heat_mob/proc/set_external_watts(index, value)
+	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_EXTERNAL_WATTS, index, value)
+
+/// K, read-only (state).
+/atom/movable/vg_heat_mob/get_temperature()
+	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_TEMPERATURE, 0) // K
+
+/atom/movable/vg_heat_mob/vg_bind_heat(entity)
+	return vg_component_bind(entity, VG_KIND_MOBHEAT, list(VG_MOBHEAT_FIELD_CAPACITY, init_capacity, VG_MOBHEAT_FIELD_METABOLIC_WATTS, init_metabolic_watts, VG_MOBHEAT_FIELD_COOLANT, init_coolant, VG_MOBHEAT_FIELD_INSULATION, init_insulation, VG_MOBHEAT_FIELD_AMBIENT, init_ambient, VG_MOBHEAT_FIELD_SETPOINT, init_setpoint, VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W, init_sweat_capacity_w, VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W, init_shiver_capacity_w, VG_MOBHEAT_FIELD_TIME_SCALE, init_time_scale))
+
+// ---- Producer (power kind 2, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_PRODUCER 2
+/// The code the generic vg_component_* binds take for Producer.
+#define VG_KIND_PRODUCER 258
+#define VG_PRODUCER_FIELD_SUPPLY 0
+#define VG_PRODUCER_FIELD_PULSE 1
+
+/obj/machinery/power
+	vg_power = VG_POWER_PRODUCER
+
+/obj/machinery/power/var/tmp/init_supply = 0.0
+/obj/machinery/power/var/tmp/init_pulse = 0.0
+
+#define VG_PRODUCER_SUPPLY_MIN 0
+#define VG_PRODUCER_SUPPLY_MAX 1000000
+#define VG_PRODUCER_PULSE_MIN 0
+#define VG_PRODUCER_PULSE_MAX 10000000
+
+/// W; clamped to VG_PRODUCER_SUPPLY_MIN..MAX.
+/obj/machinery/power/proc/get_supply()
+	return vg_component_get(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/proc/set_supply(value)
+	return vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, -1, value)
+
+/// W; clamped to VG_PRODUCER_PULSE_MIN..MAX.
+/obj/machinery/power/proc/get_pulse()
+	return vg_component_get(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/proc/set_pulse(value)
+	return vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, -1, value)
+
+/obj/machinery/power/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_PRODUCER, list(VG_PRODUCER_FIELD_SUPPLY, init_supply, VG_PRODUCER_FIELD_PULSE, init_pulse))
+
+// ---- Apc (power kind 3, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_APC 3
+/// The code the generic vg_component_* binds take for Apc.
+#define VG_KIND_APC 259
+#define VG_APC_FIELD_ACTIVE 0
+#define VG_APC_FIELD_HAS_CELL 1
+#define VG_APC_FIELD_FAILED 2
+#define VG_APC_FIELD_SHORTED_OR_GRID_CHECK 3
+#define VG_APC_FIELD_OPERATING 4
+#define VG_APC_FIELD_CHARGEMODE 5
+#define VG_APC_FIELD_CHARGELEVEL 6
+#define VG_APC_FIELD_CAPACITY 7
+#define VG_APC_FIELD_RATE 8
+#define VG_APC_FIELD_CHARGE 9
+#define VG_APC_FIELD_CHANNELS 10
+#define VG_APC_FIELD_CHARGING 11
+#define VG_APC_FIELD_CHARGECOUNT 12
+#define VG_APC_FIELD_LONGTERMPOWER 13
+#define VG_APC_FIELD_AUTOFLAG 14
+#define VG_APC_FIELD_ALARM 15
+#define VG_APC_FIELD_STATIC_LOAD 16
+#define VG_APC_FIELD_ONEOFF 17
+#define VG_APC_FIELD_POLICY_FULL_ABOVE_PCT 18
+#define VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT 19
+#define VG_APC_FIELD_POLICY_FULL_ALLOW 20
+#define VG_APC_FIELD_POLICY_PARTIAL_ALLOW 21
+#define VG_APC_FIELD_POLICY_MIN_ALLOW 22
+#define VG_APC_FIELD_POLICY_NEUTRAL_ALLOW 23
+
+/obj/machinery/power/apc
+	vg_power = VG_POWER_APC
+
+/obj/machinery/power/apc/var/tmp/init_active = TRUE
+/obj/machinery/power/apc/var/tmp/init_has_cell = TRUE
+/obj/machinery/power/apc/var/tmp/init_failed = FALSE
+/obj/machinery/power/apc/var/tmp/init_shorted_or_grid_check = FALSE
+/obj/machinery/power/apc/var/tmp/init_operating = TRUE
+/obj/machinery/power/apc/var/tmp/init_chargemode = TRUE
+/obj/machinery/power/apc/var/tmp/init_chargelevel = 0.0005
+/obj/machinery/power/apc/var/tmp/init_capacity = 0.0
+/obj/machinery/power/apc/var/tmp/init_rate = 0.002
+/obj/machinery/power/apc/var/tmp/init_policy_full_above_pct = 30.0
+/obj/machinery/power/apc/var/tmp/init_policy_partial_below_pct = 15.0
+
+#define VG_APC_CHARGELEVEL_MIN 0
+#define VG_APC_CHARGELEVEL_MAX 1
+#define VG_APC_CAPACITY_MIN 0
+#define VG_APC_CAPACITY_MAX 1000000000
+#define VG_APC_STATIC_LOAD_MIN 0
+#define VG_APC_STATIC_LOAD_MAX 1000000
+#define VG_APC_ONEOFF_MIN 0
+#define VG_APC_ONEOFF_MAX 1000000
+#define VG_APC_POLICY_FULL_ABOVE_PCT_MIN 0
+#define VG_APC_POLICY_FULL_ABOVE_PCT_MAX 100
+#define VG_APC_POLICY_PARTIAL_BELOW_PCT_MIN 0
+#define VG_APC_POLICY_PARTIAL_BELOW_PCT_MAX 100
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_active()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_active(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_has_cell()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_has_cell(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_failed()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_failed(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_shorted_or_grid_check()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_shorted_or_grid_check(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_operating()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_operating(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_chargemode()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_chargemode(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, -1, value)
+
+/// unitless; clamped to VG_APC_CHARGELEVEL_MIN..MAX.
+/obj/machinery/power/apc/proc/get_chargelevel()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_chargelevel(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, -1, value)
+
+/// J; clamped to VG_APC_CAPACITY_MIN..MAX.
+/obj/machinery/power/apc/proc/get_capacity()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, 0) // J
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_capacity(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_rate()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_rate(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_channels(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_channels(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index, value)
+
+/// W; clamped to VG_APC_STATIC_LOAD_MIN..MAX.
+/obj/machinery/power/apc/proc/get_static_load(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index) // W
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_static_load(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index, value)
+
+/// W; clamped to VG_APC_ONEOFF_MIN..MAX.
+/obj/machinery/power/apc/proc/get_oneoff(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index) // W
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_oneoff(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index, value)
+
+/// unitless; clamped to VG_APC_POLICY_FULL_ABOVE_PCT_MIN..MAX.
+/obj/machinery/power/apc/proc/get_policy_full_above_pct()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_full_above_pct(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, -1, value)
+
+/// unitless; clamped to VG_APC_POLICY_PARTIAL_BELOW_PCT_MIN..MAX.
+/obj/machinery/power/apc/proc/get_policy_partial_below_pct()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_partial_below_pct(value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, -1, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_full_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_full_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_partial_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_partial_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_min_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_min_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index, value)
+
+/// unitless;.
+/obj/machinery/power/apc/proc/get_policy_neutral_allow(index)
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index)
+
+/// Returns the stored value.
+/obj/machinery/power/apc/proc/set_policy_neutral_allow(index, value)
+	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index, value)
+
+/// J, read-only (state).
+/obj/machinery/power/apc/proc/get_charge()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGE, 0) // J
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_charging()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGING, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_chargecount()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGECOUNT, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_longtermpower()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_LONGTERMPOWER, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_autoflag()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_AUTOFLAG, 0)
+
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_alarm()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ALARM, 0)
+
+/// Take reconciliation (power_apc_charge): adds `delta` to what Rust holds now;
+/// returns the part of a removal that was not there.
+/obj/machinery/power/apc/proc/adjust_charge(delta)
+	return vg_component_adjust(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGE, 0, delta)
+
+/obj/machinery/power/apc/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_APC, list(VG_APC_FIELD_ACTIVE, init_active, VG_APC_FIELD_HAS_CELL, init_has_cell, VG_APC_FIELD_FAILED, init_failed, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, init_shorted_or_grid_check, VG_APC_FIELD_OPERATING, init_operating, VG_APC_FIELD_CHARGEMODE, init_chargemode, VG_APC_FIELD_CHARGELEVEL, init_chargelevel, VG_APC_FIELD_CAPACITY, init_capacity, VG_APC_FIELD_RATE, init_rate, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, init_policy_full_above_pct, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, init_policy_partial_below_pct))
+
+// ---- Smes (power kind 4, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_SMES 4
+/// The code the generic vg_component_* binds take for Smes.
+#define VG_KIND_SMES 260
+#define VG_SMES_FIELD_INPUT_ENABLED 0
+#define VG_SMES_FIELD_OUTPUT_ENABLED 1
+#define VG_SMES_FIELD_INPUT_LEVEL 2
+#define VG_SMES_FIELD_OUTPUT_LEVEL 3
+#define VG_SMES_FIELD_CAPACITY 4
+#define VG_SMES_FIELD_RATE 5
+#define VG_SMES_FIELD_CHARGE 6
+
+/obj/machinery/power/smes
+	vg_power = VG_POWER_SMES
+
+/obj/machinery/power/smes/var/tmp/init_input_enabled = FALSE
+/obj/machinery/power/smes/var/tmp/init_output_enabled = TRUE
+/obj/machinery/power/smes/var/tmp/init_input_level = 50000.0
+/obj/machinery/power/smes/var/tmp/init_output_level = 50000.0
+/obj/machinery/power/smes/var/tmp/init_capacity = 0.0
+/obj/machinery/power/smes/var/tmp/init_rate = 0.03333
+
+#define VG_SMES_INPUT_LEVEL_MIN 0
+#define VG_SMES_INPUT_LEVEL_MAX 10000000
+#define VG_SMES_OUTPUT_LEVEL_MIN 0
+#define VG_SMES_OUTPUT_LEVEL_MAX 10000000
+#define VG_SMES_CAPACITY_MIN 0
+#define VG_SMES_CAPACITY_MAX 10000000000
+
+/// unitless;.
+/obj/machinery/power/smes/proc/get_input_enabled()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_input_enabled(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, -1, value)
+
+/// unitless;.
+/obj/machinery/power/smes/proc/get_output_enabled()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_output_enabled(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, -1, value)
+
+/// W; clamped to VG_SMES_INPUT_LEVEL_MIN..MAX.
+/obj/machinery/power/smes/proc/get_input_level()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_input_level(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, -1, value)
+
+/// W; clamped to VG_SMES_OUTPUT_LEVEL_MIN..MAX.
+/obj/machinery/power/smes/proc/get_output_level()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, 0) // W
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_output_level(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, -1, value)
+
+/// J; clamped to VG_SMES_CAPACITY_MIN..MAX.
+/obj/machinery/power/smes/proc/get_capacity()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, 0) // J
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_capacity(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, -1, value)
+
+/// unitless;.
+/obj/machinery/power/smes/proc/get_rate()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/smes/proc/set_rate(value)
+	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, -1, value)
+
+/// J, read-only (state).
+/obj/machinery/power/smes/proc/get_charge()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
+
+/// Take reconciliation (power_smes_charge): adds `delta` to what Rust holds now;
+/// returns the part of a removal that was not there.
+/obj/machinery/power/smes/proc/adjust_charge(delta)
+	return vg_component_adjust(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0, delta)
+
+/obj/machinery/power/smes/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_SMES, list(VG_SMES_FIELD_INPUT_ENABLED, init_input_enabled, VG_SMES_FIELD_OUTPUT_ENABLED, init_output_enabled, VG_SMES_FIELD_INPUT_LEVEL, init_input_level, VG_SMES_FIELD_OUTPUT_LEVEL, init_output_level, VG_SMES_FIELD_CAPACITY, init_capacity, VG_SMES_FIELD_RATE, init_rate))
+
+// ---- SmesInputTerminal (power kind 5, owner main; verdigris/domains/power/src/components.rs) ----
+
+#define VG_POWER_SMESINPUTTERMINAL 5
+/// The code the generic vg_component_* binds take for SmesInputTerminal.
+#define VG_KIND_SMESINPUTTERMINAL 261
+#define VG_SMESINPUTTERMINAL_FIELD_UNIT 0
+
+/obj/machinery/power/terminal/smes_input
+	vg_power = VG_POWER_SMESINPUTTERMINAL
+
+/obj/machinery/power/terminal/smes_input/var/tmp/init_unit = 0
+
+
+/// unitless;.
+/obj/machinery/power/terminal/smes_input/proc/get_unit()
+	return vg_component_get(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, 0)
+
+/// Returns the stored value.
+/obj/machinery/power/terminal/smes_input/proc/set_unit(value)
+	return vg_component_set(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, -1, value)
+
+/obj/machinery/power/terminal/smes_input/vg_bind_power(entity)
+	return vg_component_bind(entity, VG_KIND_SMESINPUTTERMINAL, list(VG_SMESINPUTTERMINAL_FIELD_UNIT, init_unit))
+
+// ---- Probe (test_domain kind 1, owner main; verdigris/ffi/src/sched.rs) ----
+
+#define VG_TEST_DOMAIN_PROBE 1
+/// The code the generic vg_component_* binds take for Probe.
+#define VG_KIND_PROBE 3841
+#define VG_PROBE_FIELD_KPA 0
+#define VG_PROBE_FIELD_KELVIN 1
+
+/// Creates (`entity` 0) or replaces (otherwise) a bare Probe
+/// row and returns its entity handle -- never a DM object (this
+/// component declares no `dm` type).
+/proc/vg_bind_probe(entity, kpa, kelvin)
+	return vg_component_bind(entity, VG_KIND_PROBE, list(VG_PROBE_FIELD_KPA, kpa, VG_PROBE_FIELD_KELVIN, kelvin))
+
+/// kPa;.
+/proc/get_probe_kpa(entity)
+	return vg_component_get(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KPA, 0) // kPa
+
+/// Returns the stored value.
+/proc/set_probe_kpa(entity, value)
+	return vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KPA, -1, value)
+
+/// K;.
+/proc/get_probe_kelvin(entity)
+	return vg_component_get(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, 0) // K
+
+/// Returns the stored value.
+/proc/set_probe_kelvin(entity, value)
+	return vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, -1, value)
+
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_cell_reaction_ready(cell, reaction)
 	return
 
-/// Generated no-op default. Override to react to the event.
-/obj/item/gas_mix_holder/proc/on_gas_mix_depleted()
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_cell_visual_change(cell, vis)
 	return
 
-/// Dispatches one drained event (§8) to its named handler.
-/obj/item/gas_mix_holder/proc/gas_mix_dispatch_event(event_id)
-	switch(event_id)
-		if(0)
-			on_gas_mix_overpressure()
-		if(1)
-			on_gas_mix_depleted()
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_pressure_jump(cell, neighbor, delta)
+	return
 
-/obj/item/gas_mix_holder/vg_dispatch_gas_event(event_id)
-	gas_mix_dispatch_event(event_id)
+/// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_heat_settled()
+	return
+
+/// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_heat_mixture_heat(target, joules)
+	return
+
+/// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_power_brownout()
+	return
+
+/// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_power_restored()
+	return
+
+/// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_power_apc_channel_changed()
+	return
 
 // ---- One entry point per bound atom -------------------------------------
 
@@ -212,6 +1276,12 @@
 	var/entity = 0
 	if(vg_gas)
 		entity = vg_bind_gas(entity)
+	if(vg_heat)
+		entity = vg_bind_heat(entity)
+	if(vg_power)
+		entity = vg_bind_power(entity)
+	if(vg_test_domain)
+		entity = vg_bind_test_domain(entity)
 	vg_entity = entity
 
 /// Every declared-input mismatch across every bound domain (§7). SSvg's
@@ -222,19 +1292,52 @@
 	var/list/mismatches = list()
 	if(vg_gas)
 		mismatches += vg_reconcile_gas()
+	if(vg_heat)
+		mismatches += vg_reconcile_heat()
+	if(vg_power)
+		mismatches += vg_reconcile_power()
+	if(vg_test_domain)
+		mismatches += vg_reconcile_test_domain()
 	return mismatches
 
-/// Drains and dispatches every domain's events (§8). SSvg calls this once
-/// per tick; one `entity_drain_domain_events()` FFI call per domain.
+/// Drains and dispatches every typed event since the last call (§4.8).
+/// SSvg calls this once per tick after vg_world_tick(). Component events
+/// go to the bound atom (checked against vg_entity: a detached component's
+/// late event is dropped); domain events go to SSvg's handlers.
 /proc/vg_drain_events()
-	vg_drain_gas_events()
-
-/proc/vg_drain_gas_events()
-	var/list/flat = vg_entity_drain_domain_events(VG_DOMAIN_GAS)
-	for(var/i = 1; i <= length(flat); i += 3)
+	var/list/flat = vg_world_events()
+	var/i = 1
+	while(i + 2 <= length(flat))
+		var/header = flat[i]
 		var/entity = flat[i + 1]
-		var/event_id = flat[i + 2]
-		var/atom/movable/mover = SSvg.entity_lookup(entity)
-		if(mover && mover.vg_entity == entity)
-			mover.vg_dispatch_gas_event(event_id)
+		var/len = flat[i + 2]
+		var/p = i + 3
+		i = p + len
+		switch(header)
+			if(256)
+				var/atom/movable/mover = SSvg.entity_lookup(entity)
+				if(mover && mover.vg_entity == entity)
+					var/obj/machinery/atmospherics/binary/pump/target = mover
+					target.on_pump_target_reached()
+			if(257)
+				var/atom/movable/mover = SSvg.entity_lookup(entity)
+				if(mover && mover.vg_entity == entity)
+					var/obj/machinery/atmospherics/binary/pump/target = mover
+					target.on_pump_starved()
+			if(0)
+				SSvg.on_gas_cell_reaction_ready(flat[p + 0], flat[p + 1])
+			if(1)
+				SSvg.on_gas_cell_visual_change(flat[p + 0], flat[p + 1])
+			if(2)
+				SSvg.on_gas_pressure_jump(flat[p + 0], flat[p + 1], flat[p + 2])
+			if(131072)
+				SSvg.on_heat_settled()
+			if(131073)
+				SSvg.on_heat_mixture_heat(flat[p + 0], flat[p + 1])
+			if(65536)
+				SSvg.on_power_brownout()
+			if(65537)
+				SSvg.on_power_restored()
+			if(65538)
+				SSvg.on_power_apc_channel_changed()
 

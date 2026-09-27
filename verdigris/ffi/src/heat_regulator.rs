@@ -16,15 +16,15 @@
 // convention (one parameter per Regulator setting plus both bodies'
 // state); an item-level #[allow] doesn't reach the warning, which is
 // emitted inside ::byondapi::bind's own macro expansion (see
-// ffi/src/reactor.rs's file-level allow and its comment for the same
+// ffi/src/sched.rs's file-level allow and its comment for the same
 // reason).
 #![allow(clippy::too_many_arguments)]
 
 use byondapi::prelude::*;
 use eyre::Result;
 use vg_core::thermo::ThermalBody;
+use vg_core::thermo::{Regulator, RegulatorMode};
 use vg_core::units::{HeatCapacity, Kelvin};
-use vg_heat::{Regulator, RegulatorMode};
 
 /// `RegulatorMode` as DM sends it.
 /// @dm-define REGULATOR_MODE_HEAT
@@ -118,7 +118,7 @@ fn heat_regulator_cooling_cop(
     carnot_fraction: ByondValue,
     max_cop: ByondValue,
 ) -> Result<ByondValue> {
-    let cop = vg_heat::regulator::cooling_cop(
+    let cop = vg_core::thermo::cooling_cop(
         num(&cold)?,
         num(&hot)?,
         num(&carnot_fraction)?,

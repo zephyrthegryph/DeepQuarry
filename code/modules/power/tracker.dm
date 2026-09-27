@@ -22,6 +22,12 @@
 /obj/machinery/power/tracker/Initialize(mapload, glass_type)
 	. = ..()
 	update_icon()
+
+/// `connect_to_network()` needs `vg_entity` bound, which only happens once
+/// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
+/// docs (`code/modules/power/power.dm`).
+/obj/machinery/power/tracker/on_materialize()
+	. = ..()
 	connect_to_network()
 
 /obj/machinery/power/tracker/Destroy()

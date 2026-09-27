@@ -11,26 +11,35 @@ mod query;
 /// `vg_core::vg`. Field roles are declared with `#[vg(config|state|input, ...)]`;
 /// see the doc for the full grammar.
 #[proc_macro_attribute]
-pub fn component(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	component::expand(attr, item)
+pub fn component(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    component::expand(attr, item)
 }
 
 /// `#[query(Type, name = [fields...], ...)]` (§3): one query method per
 /// named group. Re-exported as `vg::query`.
 #[proc_macro_attribute]
-pub fn query(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	let extra = query::expand(attr);
-	let mut out = item;
-	out.extend(extra);
-	out
+pub fn query(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let extra = query::expand(attr);
+    let mut out = item;
+    out.extend(extra);
+    out
 }
 
 /// `#[events(Type)] pub enum FooEvent { ... }` (§3, §8): numeric ids and
 /// `snake_case` names for the generated DM dispatcher. Re-exported as
 /// `vg::events`.
 #[proc_macro_attribute]
-pub fn events(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	events::expand(attr, item)
+pub fn events(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    events::expand(attr, item)
 }
 
 /// The one verdigris bind macro. Every function DM can call is declared with it:
@@ -52,64 +61,64 @@ pub fn events(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 /// `load_ext` handle. The function MUST return `eyre::Result<ByondValue>`.
 #[proc_macro_attribute]
 pub fn bind(
-	attr: proc_macro::TokenStream,
-	item: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-	wrap_bind(attr, item, quote!(::byondapi::bind))
+    wrap_bind(attr, item, quote!(::byondapi::bind))
 }
 
 /// As [`bind`], for variadic binds: the body sees the DM arguments as `args`.
 /// The generated DM proc is `/proc/vg_<fn>(...)`.
 #[proc_macro_attribute]
 pub fn bind_raw_args(
-	attr: proc_macro::TokenStream,
-	item: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-	wrap_bind(attr, item, quote!(::byondapi::bind_raw_args))
+    wrap_bind(attr, item, quote!(::byondapi::bind_raw_args))
 }
 
 fn wrap_bind(
-	attr: proc_macro::TokenStream,
-	item: proc_macro::TokenStream,
-	inner: TokenStream,
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+    inner: TokenStream,
 ) -> proc_macro::TokenStream {
-	let attr = TokenStream::from(attr);
-	let input = syn::parse_macro_input!(item as syn::ItemFn);
-	let attrs = &input.attrs;
-	let vis = &input.vis;
-	let sig = &input.sig;
-	let block = &input.block;
-	let context = format!("in verdigris bind `{}`", sig.ident);
-	quote! {
-		#[#inner(#attr)]
-		#(#attrs)*
-		#vis #sig {
-			::auxcallback::panic_guard::run_guarded(#context, move || #block)
-		}
-	}
-	.into()
+    let attr = TokenStream::from(attr);
+    let input = syn::parse_macro_input!(item as syn::ItemFn);
+    let attrs = &input.attrs;
+    let vis = &input.vis;
+    let sig = &input.sig;
+    let block = &input.block;
+    let context = format!("in verdigris bind `{}`", sig.ident);
+    quote! {
+        #[#inner(#attr)]
+        #(#attrs)*
+        #vis #sig {
+            ::auxcallback::panic_guard::run_guarded(#context, move || #block)
+        }
+    }
+    .into()
 }
 
 fn strip_mut_and_filter(arg: &syn::FnArg) -> Option<syn::FnArg> {
-	let syn::FnArg::Typed(pattype) = arg else {
-		return None;
-	};
-	let mut ident_clone = pattype.clone();
+    let syn::FnArg::Typed(pattype) = arg else {
+        return None;
+    };
+    let mut ident_clone = pattype.clone();
 
-	match &mut *ident_clone.pat {
-		syn::Pat::Ident(p) => {
-			p.mutability = None;
-			Some(syn::FnArg::Typed(ident_clone))
-		}
-		syn::Pat::Tuple(tuple) => {
-			tuple.elems.iter_mut().for_each(|item| {
-				let syn::Pat::Ident(item) = item else { return };
-				item.mutability = None;
-			});
-			Some(syn::FnArg::Typed(ident_clone))
-		}
-		_ => Some(syn::FnArg::Typed(ident_clone)),
-	}
+    match &mut *ident_clone.pat {
+        syn::Pat::Ident(p) => {
+            p.mutability = None;
+            Some(syn::FnArg::Typed(ident_clone))
+        }
+        syn::Pat::Tuple(tuple) => {
+            tuple.elems.iter_mut().for_each(|item| {
+                let syn::Pat::Ident(item) = item else { return };
+                item.mutability = None;
+            });
+            Some(syn::FnArg::Typed(ident_clone))
+        }
+        _ => Some(syn::FnArg::Typed(ident_clone)),
+    }
 }
 
 /// This macros generates simd versions of functions as well as regular ones,
@@ -127,75 +136,75 @@ fn strip_mut_and_filter(arg: &syn::FnArg) -> Option<syn::FnArg> {
 /// ```
 #[proc_macro_attribute]
 pub fn generate_simd_functions(
-	_: proc_macro::TokenStream,
-	item: proc_macro::TokenStream,
+    _: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-	let input = syn::parse_macro_input!(item as syn::ItemFn);
+    let input = syn::parse_macro_input!(item as syn::ItemFn);
 
-	let attrs = input
-		.attrs
-		.into_iter()
-		.map(|attr| quote! { #attr })
-		.collect::<TokenStream>();
+    let attrs = input
+        .attrs
+        .into_iter()
+        .map(|attr| quote! { #attr })
+        .collect::<TokenStream>();
 
-	let func_name = &input.sig.ident;
-	let func_name_disp = quote!(#func_name).to_string();
-	let func_name_simd = format!("{func_name_disp}_simd");
-	let func_ident_simd = Ident::new(&func_name_simd, func_name.span());
-	let func_name_fallback = format!("{func_name_disp}_fallback");
-	let func_ident_fallback = Ident::new(&func_name_fallback, func_name.span());
+    let func_name = &input.sig.ident;
+    let func_name_disp = quote!(#func_name).to_string();
+    let func_name_simd = format!("{func_name_disp}_simd");
+    let func_ident_simd = Ident::new(&func_name_simd, func_name.span());
+    let func_name_fallback = format!("{func_name_disp}_fallback");
+    let func_ident_fallback = Ident::new(&func_name_fallback, func_name.span());
 
-	let args = &input.sig.inputs;
-	let body = input.block;
-	let func_return = input.sig.output;
+    let args = &input.sig.inputs;
+    let body = input.block;
+    let func_return = input.sig.output;
 
-	if let Some(recv) = args
-		.iter()
-		.find(|item| matches!(item, syn::FnArg::Receiver(_)))
-	{
-		return syn::Error::new(recv.span(), "Self is not supported!")
-			.to_compile_error()
-			.into();
-	}
+    if let Some(recv) = args
+        .iter()
+        .find(|item| matches!(item, syn::FnArg::Receiver(_)))
+    {
+        return syn::Error::new(recv.span(), "Self is not supported!")
+            .to_compile_error()
+            .into();
+    }
 
-	let args_nonmut = args
-		.iter()
-		.filter_map(strip_mut_and_filter)
-		.map(|item| quote! {#item})
-		.collect::<syn::punctuated::Punctuated<TokenStream, syn::Token![,]>>();
+    let args_nonmut = args
+        .iter()
+        .filter_map(strip_mut_and_filter)
+        .map(|item| quote! {#item})
+        .collect::<syn::punctuated::Punctuated<TokenStream, syn::Token![,]>>();
 
-	let args_typeless = args
-		.iter()
-		.filter_map(strip_mut_and_filter)
-		.filter_map(|arg| {
-			let syn::FnArg::Typed(pattype) = arg else {
-				return None;
-			};
-			let pattype = &*pattype.pat;
-			Some(quote! {#pattype})
-		})
-		.collect::<syn::punctuated::Punctuated<TokenStream, syn::Token![,]>>();
+    let args_typeless = args
+        .iter()
+        .filter_map(strip_mut_and_filter)
+        .filter_map(|arg| {
+            let syn::FnArg::Typed(pattype) = arg else {
+                return None;
+            };
+            let pattype = &*pattype.pat;
+            Some(quote! {#pattype})
+        })
+        .collect::<syn::punctuated::Punctuated<TokenStream, syn::Token![,]>>();
 
-	quote! {
-		#attrs
-		fn #func_name(#args_nonmut) #func_return {
-			// This `unsafe` block is safe because we're testing
-			// that the `avx2` feature is indeed available on our CPU.
-			if *crate::_SIMD_DETECTED.get_or_init(|| is_x86_feature_detected!("avx2")) {
-				unsafe { #func_ident_simd(#args_typeless) }
-			} else {
-				#func_ident_fallback(#args_typeless)
-			}
-		}
+    quote! {
+        #attrs
+        fn #func_name(#args_nonmut) #func_return {
+            // This `unsafe` block is safe because we're testing
+            // that the `avx2` feature is indeed available on our CPU.
+            if *crate::_SIMD_DETECTED.get_or_init(|| is_x86_feature_detected!("avx2")) {
+                unsafe { #func_ident_simd(#args_typeless) }
+            } else {
+                #func_ident_fallback(#args_typeless)
+            }
+        }
 
-		#[target_feature(enable = "avx2")]
-		unsafe fn #func_ident_simd(#args_nonmut) #func_return {
-			#func_ident_fallback(#args_typeless)
-		}
+        #[target_feature(enable = "avx2")]
+        unsafe fn #func_ident_simd(#args_nonmut) #func_return {
+            #func_ident_fallback(#args_typeless)
+        }
 
-		#[inline(always)]
-		fn #func_ident_fallback(#args) #func_return
-		#body
-	}
-	.into()
+        #[inline(always)]
+        fn #func_ident_fallback(#args) #func_return
+        #body
+    }
+    .into()
 }

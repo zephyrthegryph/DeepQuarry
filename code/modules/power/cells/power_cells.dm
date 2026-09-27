@@ -164,7 +164,6 @@
 	icon = 'icons/mob/slimes.dmi' //'icons/obj/harvest.dmi'
 	icon_state = "yellow slime extract" //"potato_battery"
 	connector_type = "slime"
-	description_info = "This 'cell' holds a max charge of 20k and self recharges over time."
 	charge = 20000
 	maxcharge = 20000
 	charge_amount = 500 // 2.5%.

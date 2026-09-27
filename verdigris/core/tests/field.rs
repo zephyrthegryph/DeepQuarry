@@ -11,7 +11,7 @@ use vg_core::field::toy::{
     GasCell, GasCmd, GasToy, HEAT_CONDUCTANCE, HeatCell, HeatCmd, HeatToy, heat_ch,
 };
 use vg_core::field::{FieldConfig, FieldKind, FieldState, Geom, GeomCmd, add_field};
-use vg_core::grid::{DirMask, Face, GridDims};
+use vg_core::grid::{Dir, Face, GridDims};
 use vg_core::outbox::Lane;
 use vg_core::owner::apply_op;
 use vg_core::sim::{SimBuilder, SimConfig};
@@ -41,7 +41,7 @@ impl<K: FieldKind> World<K> {
     }
 
     fn step(&mut self, pool: &rayon::ThreadPool) {
-        pool.install(|| self.field.step(&mut self.cells, &self.geom));
+        pool.install(|| self.field.step(&mut self.cells, &self.geom, None));
     }
 
     fn cell(&self, i: u32) -> K::Value {
@@ -207,7 +207,7 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
             let t = 100.0 + f32::from(u8::try_from((x * 13 + y * 29) % 17).unwrap()) * 40.0;
             let mut g = Geom::cell(cap);
             if x == wall_x {
-                g.blocked = DirMask::NONE.with(Face::East);
+                g.blocked = Dir::NONE.with(Face::East);
             }
             w.geom.set(i, g);
             w.cells.set(i, HeatCell::at(cap, t));
@@ -230,7 +230,7 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
     let mut g = w.geom.get(door).unwrap();
     apply_op::<vg_core::field::Geometry<HeatToy>>(
         &mut g,
-        &vg_core::command::Op::Apply(GeomCmd::Blocked(DirMask::NONE)),
+        &vg_core::command::Op::Apply(GeomCmd::Blocked(Dir::NONE)),
     );
     w.geom.set(door, g);
     let before = w.totals()[0];
@@ -376,9 +376,9 @@ fn geom_of(kind: u8, cap: u8, mask: u8) -> Geom {
     Geom {
         capacity,
         blocked: if mask % 4 == 0 {
-            DirMask(mask >> 2)
+            Dir(mask >> 2)
         } else {
-            DirMask::NONE
+            Dir::NONE
         },
         reservoir: kind % 23 == 1,
     }
@@ -463,7 +463,7 @@ fn check_conservation<K: FieldKind>(
                             0.3 + f32::from(amount % 200) / 40.0
                         };
                     } else {
-                        g.blocked = DirMask(u8::try_from(amount % 64).unwrap());
+                        g.blocked = Dir(u8::try_from(amount % 64).unwrap());
                     }
                     w.geom.set(cell, g);
                 }
@@ -655,6 +655,7 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
             dt: 1.0,
             max_substeps: 16,
         },
+        None,
     );
     let watches = b.add_watches(key.cells);
     let mut sim = b.build().unwrap();
@@ -727,5 +728,76 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
     assert!(
         v.get(probe).unwrap().temperature > 280.0,
         "refresh caches T"
+    );
+}
+
+// ------------------------------------------------------- z-links
+
+#[test]
+fn z_links_gate_vertical_flux_and_a_non_adjacent_link_still_conducts() {
+    use vg_core::grid::Grid;
+
+    let dims = GridDims::new(2, 1, 4).unwrap();
+    let mut b = SimBuilder::new(SimConfig {
+        threads: 2,
+        seed: 3,
+        ..SimConfig::default()
+    });
+    // z=0 and z=1 are numerically adjacent but NOT linked; z=0 IS linked to
+    // z=3 (far away in flat index space, the shape a real expedition site's
+    // z takes relative to the station).
+    let mut grid = Grid::new(dims);
+    grid.set_z_link(0, Some(3), None);
+    grid.set_z_link(3, None, Some(0));
+    let grid_res = b.add_resource("grid", grid);
+    let key = add_field::<HeatToy>(
+        &mut b,
+        dims,
+        FieldConfig {
+            dt: 1.0,
+            max_substeps: 16,
+        },
+        Some(grid_res),
+    );
+    let mut sim = b.build().unwrap();
+    sim.begin_tick();
+
+    for z in 0..4u32 {
+        let cell = dims.index(0, 0, z).unwrap();
+        sim.port(key.geometry).put(cell, Geom::cell(2.0)).unwrap();
+        let t = if z == 0 { 400.0 } else { 280.0 };
+        sim.port(key.cells).put(cell, HeatCell::at(2.0, t)).unwrap();
+    }
+    sim.settle();
+
+    let hot = dims.index(0, 0, 0).unwrap();
+    let unlinked_adjacent = dims.index(0, 0, 1).unwrap();
+    let linked_far = dims.index(0, 0, 3).unwrap();
+    for _ in 0..40 {
+        sim.begin_tick();
+        let _ = sim.drain(key.cells);
+        if !sim.dispatch_frame() {
+            continue;
+        }
+        sim.wait_for_frame();
+    }
+    sim.begin_tick();
+    let _ = sim.drain(key.cells);
+
+    let v = Arc::clone(sim.port(key.cells).pinned());
+    assert!(
+        (v.get(unlinked_adjacent).unwrap().temperature - 280.0).abs() < 0.5,
+        "z=0 and the numerically-adjacent but unlinked z=1 never exchange: {:?}",
+        v.get(unlinked_adjacent)
+    );
+    assert!(
+        v.get(linked_far).unwrap().temperature > 285.0,
+        "z=0 and its linked z=3 (far in index space) do exchange: {:?}",
+        v.get(linked_far)
+    );
+    assert!(
+        v.get(hot).unwrap().temperature < 400.0,
+        "the source cooled by giving energy to its linked neighbour: {:?}",
+        v.get(hot)
     );
 }

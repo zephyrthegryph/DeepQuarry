@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1221 in 979 files. qdel total: 2910 in 1159 files.
+# Destroy total: 1224 in 982 files. qdel total: 2918 in 1163 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -39,6 +39,7 @@ code/ATMOSPHERICS/pipes/pipe_base.dm 1
 code/ATMOSPHERICS/pipes/simple.dm 1
 code/ATMOSPHERICS/pipes/tank.dm 1
 code/ATMOSPHERICS/pipes/vent.dm 1
+code/ATMOSPHERICS/rust_pipenets.dm 1
 code/_helpers/legacy_tg_path.dm 2
 code/_helpers/radiation.dm 1
 code/_helpers/unsorted.dm 1
@@ -149,12 +150,14 @@ code/datums/managed_browsers/feedback_form.dm 1
 code/datums/managed_browsers/feedback_viewer.dm 1
 code/datums/mind.dm 1
 code/datums/mixed.dm 1
+code/datums/om/native.dm 1
 code/datums/position_point_vector.dm 1
 code/datums/progressbar.dm 1
 code/datums/proximity_monitor/proximity_monitor.dm 1
 code/datums/repositories/decls.dm 1
 code/datums/riding.dm 1
 code/datums/rules/binding.dm 1
+code/datums/rules/reactor_adapter.dm 1
 code/datums/soul_link.dm 1
 code/datums/state/serializer.dm 1
 code/datums/status_effects/_status_effect.dm 2
@@ -998,7 +1001,7 @@ code/ATMOSPHERICS/pipes/manifold.dm 1
 code/ATMOSPHERICS/pipes/manifold4w.dm 1
 code/ATMOSPHERICS/pipes/pipe_base.dm 4
 code/ATMOSPHERICS/pipes/simple.dm 1
-code/ATMOSPHERICS/rust_pipenets.dm 15
+code/ATMOSPHERICS/rust_pipenets.dm 16
 code/_helpers/atom_movables.dm 1
 code/_helpers/game.dm 1
 code/_helpers/icons.dm 4
@@ -1103,9 +1106,11 @@ code/datums/mind.dm 2
 code/datums/modules.dm 1
 code/datums/observation/helpers.dm 1
 code/datums/om/after_helpers.dm 1
+code/datums/om/native.dm 1
 code/datums/om/prompt.dm 5
 code/datums/om/relation.dm 2
 code/datums/om/timer.dm 1
+code/datums/om/watch.dm 1
 code/datums/outfits/costumes/halloween.dm 1
 code/datums/outfits/horror_killers.dm 1
 code/datums/outfits/jobs/command.dm 1
@@ -1115,6 +1120,7 @@ code/datums/repositories/ammomaterial.dm 1
 code/datums/repositories/crew.dm 1
 code/datums/rules/binding.dm 6
 code/datums/rules/declarations.dm 2
+code/datums/rules/reactor_adapter.dm 3
 code/datums/state/collapse.dm 2
 code/datums/state/schema.dm 4
 code/datums/state/serializer.dm 4
@@ -1662,6 +1668,7 @@ code/modules/generated_station/generated_station_services.dm 6
 code/modules/generated_station/generated_station_simulation.dm 1
 code/modules/generated_station/generated_station_utility_topology.dm 1
 code/modules/halloween/items.dm 1
+code/modules/heat/heat.dm 1
 code/modules/holodeck/HolodeckControl.dm 4
 code/modules/holodeck/HolodeckObjects.dm 7
 code/modules/holomap/mapper.dm 1
@@ -1957,7 +1964,7 @@ code/modules/power/grid_checker.dm 1
 code/modules/power/lighting.dm 5
 code/modules/power/lightswitch.dm 3
 code/modules/power/port_gen.dm 8
-code/modules/power/power_bridge.dm 1
+code/modules/power/power_bridge.dm 2
 code/modules/power/powernet.dm 1
 code/modules/power/sensors/sensor_monitoring.dm 1
 code/modules/power/singularity/act.dm 3

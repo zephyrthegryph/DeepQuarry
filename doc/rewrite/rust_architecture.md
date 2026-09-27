@@ -54,14 +54,14 @@ A domain crate **may not**:
 CI (`tools/ci/check_rust_core_consolidation.py`) enforces every item above. Its
 allow-list may only shrink.
 
-**Line budgets** (non-test code). Exceeding a budget means infrastructure has
-leaked into the domain.
+The CI check also fails if a domain depends on `byondapi`, the FFI crates
+or another domain.
 
-| Domain | Today | Budget |
-|---|---|---|
-| power | ~1,600 | **≤ 400** |
-| heat | ~3,000 (plus 600 of binds in gas) | **≤ 600** |
-| gas | ~8,700 | **≤ 1,600** (mixture maths, registry and reaction data dominate) |
+**Review before merge.** Every domain change gets a review, before it
+merges, confirming that no core machinery is reimplemented in the domain:
+no stores, handles, registries, queues, drivers, dirty tracking or FFI. A
+domain holds declarations and laws; anything else found there moves to
+`vg-core` (or `vg-ffi`) and the copy is deleted.
 
 ## 3. Crate map
 
@@ -360,7 +360,392 @@ together once test isolation and speed have landed and master is green.
 
 **Definition of done** for the Rust phase:
 - the CI consolidation check passes with an **empty** allow-list;
-- the line budgets are met;
+- every domain change has passed the review in §2;
 - all law, property and scenario tests pass;
 - no domain depends on `byondapi`;
 - `pump.rs` is under 30 lines.
+
+## 8. Consolidation plan (2026-09)
+
+This section records the September 2026 audit of the branch after the first
+round of core work, and the ordered plan that finishes the consolidation. It
+refines §7: §7 says *who*, this says *what is left and in which order*.
+
+### 8.1 Audit: where the lines are
+
+Every domain was still **60–75% generic machinery**.
+
+Power's host did not disappear, it **moved** to `ffi/src/power.rs`:
+`PowerHost`, the `storage_offer`/`asks` maps, its own `step`, the
+`push_changed`/`reported` presentation diffing, a `Vec<f32>` encoding, a
+`thread_local!` and positional `apply`. The CI check
+(`tools/ci/check_rust_core_consolidation.py`) only scans `domains/*/src`, so
+none of that is caught.
+
+**Duplicated machinery** (each row is one generic facility implemented
+several times):
+
+| Concept | Copies |
+|---|---|
+| Handles | heat `BodyHandle`, `mob::pack`, heat watch slots, gas `Mains`, pipe `slot_of`, reactor `Tokens`, `EntityTable` (7) |
+| Sim / pacing | gas world, heat world, heat mob, `body::add_bodies`, `PowerHost::step`, reactor `Host::step`; `law::Pacer` exists and is unused (6) |
+| Networks | gas `PipeNet` vs `NetworkHost` |
+| Watches | gas `MixWatches`, heat `WatchCond`, reactor `ProbeDomain`, `core::watch` (4) |
+| Dirty / presentation | gas `Signature`/`Dirty`, power `reported` |
+| Events out | gas `Post`/tick encoding, heat `take_wakes` ×2, power `push`, reactor list vs outbox (5) |
+| Conservation | `HeatLedger`, `Totals`, `PipeNet` totals, `Mains` totals vs `conservation::Ledger` (5) |
+| Thermal exchange | `heat/couple.rs` `pair_exchange` vs `core/thermo.rs`; regulator stepping vs `laws::regulator_step`; `temperature_of`/`energy_at` vs `laws::phase_*` |
+| Probes | 3 |
+| Constants | `units.rs` defines `TCMB` twice |
+
+**Crate-map violations.** `vg-gas` depends on `vg-heat` and `vg-ffi`
+(forbidden by §3). The allow-list holds **21 entries**: 16 gas (the
+`byondapi` dependency, 5 `bind_attr`, 4 `thread_local`, 2 `key_map`, the pipes
+revision counter, `dirty_set`, `sim_construct`, `vec_f32_return`) and 5 heat
+(`key_map`, 2 `sim_construct`, 2 `vec_f32_return`), plus heat's handle
+constants and packing, which the check does not catch.
+
+**Core gaps** (why the domains could not port yet):
+- laws were not executed as `frame::Task`s over component-store columns: the
+  `Query` trait was an open marker;
+- no single driver owned the `Pacer`, activity, `Settle::Sleep`, periods and
+  ordering;
+- component stores had no declared owner (`main`/`worker`) and no take
+  reconciliation;
+- the typed event codec and DM generator were not the only event path;
+- conservation was not auto-wired;
+- `grid` had no block layers addressed by `CellId`/`Dir`;
+- `RateModel` and `RateStore` were not merged.
+
+**`layout` is not a sim domain.** It is the procedural station/cave generator
+(~11,500 lines). It moves to `verdigris/gen/layout`, is exempt from the domain
+rules, and its largest files are split.
+
+### 8.2 Steps
+
+| Step | Scope | Depends on |
+|---|---|---|
+| 0 | Differential harnesses per domain (old host vs new driver on recorded scenarios). **Deferred**: testing comes after the Rust implementation. | — |
+| 1a | Core driver: `Law`s run as `frame::Task`s over component columns through a finished `Query`; one `World` owning `Pacer`, activity bitsets, `Settle::Sleep`, periods and ordering; conservation auto-wired (ledgers checked after each frame); one `units::consts`; one rate module; `thermo` as the only exchange math (`phase_*`, `pair_exchange`, regulator stepping). | — |
+| 1b | Core bindings: component stores with a declared owner and take reconciliation; one `DomainRegistry`; `#[vg::component]` generating the whole binding with no `byondapi` in the domain crate (`pump.rs` < 30 lines); typed event codec + DM generator as the only event path; generic entity handles (reactor tokens, heat bodies and watches); one watch facility covering the `MixWatches`/`WatchCond`/`ProbeDomain` cases; a probe (field-read) facility; publishing without display-diff caches. | 1a |
+| 1c | `grid::Grid` block layers (masks) with `CellId`/`Dir` addressing; absorbs power `geom.rs`'s generic parts. | — |
+| 2 | Heat dedup onto core `thermo`. | 1a |
+| 3 | Power onto the driver: delete `PowerHost`, `reported`, the hand binds. | 1a, 1b, 1c |
+| 4 | Heat onto the driver; move heat's binds out of gas. | 1a, 1b, 2 |
+| 5 | Gas pipes onto `NetworkHost`. | 1a, 1b |
+| 6 | Gas: `GasMix` main-owned component + generated API; delete `lib.rs` binds, `turf.rs`, `Mains`, `Dirty`, `MixWatches`, `Post`; drop `byondapi`. | 4, 5 |
+| 7 | Delete the reactor as its own module: `Tokens` become `World::spawn`/`despawn`, its `RateModel` timers become `LawCtx::schedule`/`schedule_crossing`, `ProbeDomain` becomes a main-owned component watched generically. Repoint DM callers at the generic world/component binds, remove `REACT_DOMAIN_*` and the reactor module entirely; anything genuinely missing (e.g. an exact `RateModel` crossing not already in core) moves into core first. | 1b |
+| 8 | Move `layout` to `gen/`, split its largest files. | — |
+| 9 | CI: crate-dependency checks, `ffi/` scanning; the allow-list is empty. | 3–7 |
+
+About **120 agent-hours** in total. The critical path is **1b → 4 → 6 → 9**.
+
+### 8.3 Status
+
+- **Done on `rewrite/rust-core2`:** every step but 0 (differential
+  harnesses, deferred: domains are covered by their own tests and the
+  focused DM tests). The allow-list is empty.
+- **Gas (steps 5, 6).** Turf gas is the `TurfGas` field on the shared
+  World (`vg-ffi`'s `gas/mod.rs` registers it with its laws, its watches
+  and the turf binds; air masks are the grid's `Air` layer, z links the
+  grid's, planet relaxation is `FieldKind::relax`). Every
+  `/datum/gas_mixture` handle (`MixRef`), the main-mixture slab and the
+  ~60 legacy binds are `vg-ffi`'s (`gas/mix.rs`, `gas/binds.rs`). Machines'
+  dirty subscriptions and reactor gas watches are core `Changed`/
+  `Threshold` watches over the `TurfGas` channels (with a `COMPOSITION`
+  vector channel): turf cells through the field's watches, main and pipe
+  mixtures through a core `WatchState` over a mirror. `vg-gas` is
+  declarations and laws: no `byondapi`, host-buildable, one registry
+  (`gate.rs`: gases and reaction requirements) and a fixed-size `Mixture`.
+- **Heat (step 4, finished).** Every body coupling runs through one
+  function over an `Env` (a solid cell, a body, a gas cell). A gas is any
+  field whose cells implement `vg_core::thermo::Thermal`, so
+  `SolidGasExchange<G>`/`BodyGasExchange<G>` are generic laws `vg-ffi`
+  registers with `TurfGas`: heat depends on no other domain.
+- **Power (step 3, finished).** Cable reach is computed at bind in
+  `vg-ffi` (DM names turfs by `x, y, z`); the domain keeps the connection
+  rule, the ledger and the laws.
+- **The reactor (step 7).** `ffi/src/reactor.rs` is gone. Subscriptions
+  and rate models are world entities (`World::sched_*`, `rate_*`,
+  `core/src/world/subscriptions.rs`); the timer wheel, keys and wake lanes
+  are the world's; watches go through the watch port of a code (a
+  component kind, or `VG_GAS_HANDLES`); the probe is an ordinary `Probe`
+  component. DM calls the generic `vg_world_*` binds; `REACT_DOMAIN_*` is
+  gone and handles are `list(code, cell)`. DM timers keep tick precision,
+  so they stay on the scheduler's wheel rather than `LawCtx::schedule`
+  (world steps are 0.5 s).
+- **Core additions:** `law!` (a law in one item, generic form too),
+  `rate_store!`, `#[vg::component(links = [..], computed = [x: "K"])]`,
+  `thermo::Thermal`, `FieldKind::relax`, `World::drain_field_wakes`,
+  `World::evaluate_main_watches`, `EntityTable::at`, and component channel
+  names validate (component kinds are watchable).
+
+### 8.4 Facilities
+
+Each entry names the module, its API and what a domain does with it.
+
+#### The driver: `vg_core::world`
+
+One `World` per DLL (`vg-ffi` keeps it; `world::with_world`). It owns the
+entity table, every component store, networks, globals, the grid, fields,
+the only `Pacer`, and every law.
+
+```rust
+let mut b = WorldBuilder::new(WorldConfig { dt: Seconds(1.0), backlog_cap: 2, .. });
+let apc = b.add_component::<Apc>();                  // KindId; owner from the declaration
+b.add_network::<Cables>(Ownership::Main);           // NetworkHost<Cables> in the main phase
+b.add_grid(dims);                                   // the one Grid (block layers, z links)
+let solid = b.add_field::<SolidHeat>(config);       // blocked faces from grid layer K::BLOCK
+b.watch_field(solid);                               // turf temperature watches
+b.add_global(Ownership::Main, RadiationLayer::default());
+b.add_law::<ApcTick>();
+b.add_law::<PowerBalance>().after::<ApcTick>();
+b.conserve("energy", Tolerance::default());
+b.conserve_network::<Cables>();
+let mut world = b.build()?;                         // laws that name unregistered or other-phase data fail here
+
+world.tick(elapsed);                                // once per DM tick: pace, main phase, dispatch worker frame
+let e = world.bind(None, apc, &[(field, None, value)])?;
+world.get(e, apc, field, 0)?; world.set(e, apc, field, None, v)?; world.adjust(e, kind, field, 0, -3.0)?;
+world.read::<Apc>(e); world.put(e, value)?; world.submit::<Apc>(e, &cmd)?;
+world.watch(kind, subscriber, lane, &cond)?;  world.drain_wakes(&mut wakes);
+world.drain_events();                               // EventSink: the one wire list for DM
+world.violations();                                 // conservation, per phase
+world.edit_network::<Pipes>(|host| ...)?; world.drain_transitions::<Pipes>();
+world.edit_grid(|g| g.set_blocked(BlockKind::Air, cell, Dir::ALL))?;
+world.read_cell(solid, cell); world.submit_cell(solid, cell, cmd)?;
+world.spawn()? / world.despawn(e)?                  // generic handles (reactor tokens, probes)
+world.law_stats();                                  // stepped/awake per law
+```
+
+- **Two phases.** Data owned by the main thread (main-owned components,
+  main networks such as pipes and cables, main globals) is stepped by
+  main-phase laws, run synchronously inside `tick`; worker-owned data is
+  stepped in the frame on the pool. A law's phase is its anchor's owner. The
+  phases run in lockstep, one step per tick at most; DM never waits.
+- **Pacing.** `WorldConfig::dt` and `backlog_cap` feed the only `Pacer`;
+  `Period::Ticks(n)` laws become `Task::every(n)` with `dt * n`.
+- **Ordering.** Registration order, constrained by `after`/`before`
+  (`order_laws`); within a phase the frame schedule runs laws with disjoint
+  access in parallel and orders the rest.
+- **Conservation.** `conserve(name, tolerance)` declares a quantity.
+  Sources are summed automatically: every component field declared
+  `conserve = "name"` (both owners), `conserve_network::<K>()` payloads,
+  fields registered with `FieldKind::QUANTITY_NAMES` (cells plus reservoir
+  inflow), and `conserve_resource`. Sinks and sources are what laws record
+  through `ctx.ledger()` plus every DM command's effect on conserved fields,
+  measured when the command is applied (`Domain::conserved`,
+  `DomainState::crossings`), so DM taking gas is a crossing, not a leak.
+  Checked after every step when `check_conservation` is on (debug and test
+  builds by default).
+- **Known gap.** The flight recorder records domain command batches only;
+  the world's own per-dispatch inputs (row presence, DM wakes, network
+  edits, the grid snapshot) are not recorded, so `Sim::replay` cannot yet
+  replay a world session.
+
+#### Laws and queries: `vg_core::law`, `vg_core::query`
+
+```rust
+pub trait Law: 'static {
+    type Reads; type Writes;                       // plain types in tests; Query/WriteQuery to register
+    const NAME: &'static str;
+    const PERIOD: Period = Period::Frame;
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, dt: Seconds) -> Settle;
+}
+ctx.reads / ctx.writes
+ctx.emit(event) / ctx.emit_for(entity, event)      // typed events
+ctx.wake(index) / ctx.wake_entity(entity)          // this law's item / every row law's entity
+ctx.schedule(at) / ctx.schedule_crossing(&model, level) / ctx.schedule_store(&store, rate)
+ctx.ledger()                                       // sources and sinks
+LawCtx::new(&reads, &mut writes, &mut Effects::default())   // a law's own tests
+```
+
+| Query | Anchor | Fetch / write |
+|---|---|---|
+| component `C` | rows of `C` | the item entity's row; written back only if changed |
+| `Option<C>` | — | a join that may be absent |
+| `Global<T>` | once per step | a whole global (`Clone + PartialEq`) |
+| `Payload<K>`, `Summary<K>` | regions of `K` | a region's pooled state / aggregate |
+| `Members<K, C>` | regions of `K` | every member entity's `C` row (read-only) |
+| `InRegion<K>` | — | the region the item entity's node is in |
+| `Sides<K>`, `DeviceData<K>` | devices of `K` | both regions a device joins; its parameters |
+| `RegionCell<K, F>` | devices of `K` | a region ↔ field-cell device (vents) |
+| `Cell<F>` | active cells of field `F` | one field cell; a second `Cell<G>` joins field `G` at the same cell |
+| tuples of the above | first anchor | all of them |
+
+The first query in `Writes` (else `Reads`) with an anchor decides what the
+law iterates:
+- **rows** iterate the law's activity bitset: an item is woken by a bind, a
+  DM write to it, a timer, `wake`, or any law's `wake_entity`, and sleeps
+  when the step returns `Settle::Sleep` (or its data is gone);
+- **regions and devices** iterate densely and skip items whose revision
+  (payload, summary, membership, parameters, either side for a device) has
+  not moved since they last ran, unless awake;
+- **cells** iterate the field's active chunks.
+
+A worker law may read main-owned data (a snapshot taken at dispatch) and a
+main law may read worker-owned data (the view pinned this tick); neither may
+write the other phase's data (`LawError::WrongOwner` at build).
+
+#### Components and stores: `vg_core::component`, `vg_core::store`, `#[vg::component]`
+
+```rust
+#[vg::component(domain = gas, kind = 1, dm = "/obj/machinery/atmospherics/binary/pump",
+                owner = worker, computed = [pressure])]
+pub struct Pump {
+    #[vg(config, unit = "kPa", range = 0.0..=15000.0, default = 101.325, on_invalid = clamp, hysteresis = 1.0)]
+    target_pressure: f32,
+    #[vg(state, unit = "mol", conserve = "gas_moles")]
+    held: [f32; N],
+}
+```
+
+generates, with no `byondapi` in the domain crate: `Default`, `PumpKind`
+(the `Domain` marker, with `conserved`), `PumpCommand` (per-field variants,
+`FieldAt` for arrays, `Adjust(field, index, delta)`), validators,
+`impl Component` (`FIELDS`, `get_field`, `set_command`, `adjust_command`,
+`conserved`) and `impl Channels for PumpKind` (one watch channel per numeric
+field and computed readout). `kind/pump.rs` is 26 lines.
+
+- **Rows are indexed by entity slot** (`store::kind_layout`), in
+  copy-on-write chunks of 256, so joins across kinds need no map. §4.2's
+  row → entity back-map is `store::Rows` (presence plus the full id).
+- **Owners.** `owner = worker`: a domain of the one `Sim`; DM writes are
+  commands through the overlay (read-your-writes). `owner = main`:
+  `store::MainKind` on the main thread, written synchronously; worker laws
+  read its dispatch snapshot (`store::WorkerKind`).
+- **Take reconciliation** is `Adjust`: DM's removal is a delta applied to
+  the owner's current value, clamped at zero with the shortfall reported,
+  and recorded as a conservation crossing.
+- Numeric domain ids are one table, `component::domains`; `domain_id` is a
+  const fn, so an unknown domain is a compile error.
+
+#### Events: `vg_core::event`, `#[vg::events]`
+
+`#[vg::events(Pump)]` (component events) or `#[vg::events(domain = power)]`
+(region/domain events); variants are unit or carry named numeric fields
+(`#[vg(unit = "K")]` documents one). The macro implements `Event` (`id`,
+`encode`, `decode`, `VARIANTS` schema). `EventSink` is the one wire format:
+`header, entity, len, payload...` per record, `header = domain << 16 | kind
+<< 8 | variant`. `World::drain_events` returns every law's events of the
+step; `vg_world_events()` hands them to DM; the generator writes
+`vg_drain_events()`, which dispatches component events to the bound atom
+(`on_pump_starved()`) and domain events to `SSvg.on_power_brownout()`.
+
+#### Watches and probes
+
+- Every component kind is watchable (`World::watch`, cells = entity slots;
+  from DM, the reactor's watch binds with `REACT_DOMAIN_<NAME>` and entity
+  handles as cells). Worker kinds evaluate in the frame, main kinds after
+  the main phase. This covers gas `MixWatches` (a `Changed`/`Threshold` on a
+  `GasMix` row), heat `WatchCond` (a threshold on a body or a turf cell) and
+  the reactor's `ProbeDomain` (a main-owned component DM writes).
+- Fields are watchable with `WorldBuilder::watch_field` /
+  `World::watch_cells`.
+- The **probe** (field-read) facility: `World::get`/`vg_component_get_many`
+  for component fields, `World::read_cell`/`submit_cell` for field cells,
+  `Cell<F>` for laws. No domain keeps a `GasProbe`/`GasExchange` adapter.
+- Nothing publishes presentation: DM reads current values through the
+  generic reads; there are no display-diff caches.
+
+#### Networks: `vg_core::network::{host, law}`
+
+`NetworkHost<K>` gains region and device **revisions** (sleep until a side
+changes), dense `devices()`/`regions()`, `set_payload` (moves the revision
+only on a change), `device_pair`, cell devices (`bind_cell_device`),
+`set_device_data`, `transitions(&events)` (DM-facing: members, prior
+regions, retired, keyed by region handle), `take_released` (a removed
+node's share, by entity and cell) and `impl Conserved` (payloads plus
+unclaimed releases). This is everything gas `PipeNet` does by hand: device
+steps are a device law over `Sides<Pipes>` (+ `DeviceData`, + the device's
+own component such as `Pump`), vents are `RegionCell<Pipes, TurfGas>`,
+totals come from `conserve_network`, and DM's rebuilds come from
+`drain_transitions`.
+
+#### Grid: `vg_core::grid`
+
+`CellId` (the turf index), `Dir` (a BYOND direction: `reverse`,
+`is_diagonal`, `planar`, `faces`; also a face set, replacing `DirMask`),
+`Grid::step(cell, dir)` (diagonals and z links), and block layers that share
+chunks copy-on-write and carry per-chunk revisions. Fields read their faces
+from the world's grid (`FieldKind::BLOCK`) and wake exactly the chunks whose
+revision moved. `Geom::blocked` remains only for hosts that predate the
+grid and is deleted when gas and heat port.
+
+#### Registry, rates, thermo, units
+
+- `vg_core::registry`: `DomainRegistry` and `Registry` live in core (a
+  domain crate can implement it without depending on `vg-ffi`); `vg-ffi`
+  keeps the one instance. The world is registered under
+  `entity::WORLD_DOMAIN` (lifecycle) and `registry::world_kind_domain(code)`
+  per kind (watch ports).
+- `vg_core::rate`: `RateStore::flow`/`next_bound` with
+  `LawCtx::schedule_store`; `RateModel` for the reactor and relaxing bodies.
+- `vg_core::thermo`: the only exchange math (pair exchange, `Phase` plateau,
+  `relax_toward`, `thermo::regulator`).
+- `vg_core::units::consts` is the only home of `TCMB`/`T0C`/`T20C`.
+
+#### FFI: `vg-ffi`
+
+- `world.rs`: the World, the **registration list** (`register`: the one
+  place every domain's declarations are added), and the generic binds:
+  `vg_component_bind/detach/has/get/get_many/set/adjust`,
+  `vg_world_tick/events/violations/laws`. There are no per-component binds.
+- `entity.rs` works on the world's entity table.
+- `vg-gas` no longer depends on `vg-ffi`; `vg-ffi` depends on the domains
+  and registers gas's turf watch port.
+- The DM generator emits `VG_KIND_<NAME>` codes, field ids and typed
+  wrappers over the generic binds, plus the event dispatcher.
+
+### 8.5 What each domain does to port
+
+- **Power (step 3).** Declare `Cable`, `Apc`, `Smes`, `Consumer`,
+  `Producer` as `#[vg::component(domain = power, owner = main)]`; register
+  `add_network::<Cables>(Ownership::Main)`. Move the ledger, brownout flag
+  and storage offers into `PowerLedger` (the payload). `PowerBalance`
+  becomes a region law: `Reads = (Members<Cables, Consumer>, Members<Cables,
+  Producer>, Members<Cables, Smes>)`, `Writes = Payload<Cables>`. `ApcTick`
+  is a row law over `Apc` with `InRegion<Cables>`, sleeping on
+  `ctx.schedule_store(&apc.cell, net)`. Events are `PowerEvent`
+  (already typed). Replace `geom::pos` with `CellId` and `Grid::step`.
+  Delete `ffi/src/power.rs`'s `PowerHost`, `storage_offer`/`asks`,
+  `push_changed`/`reported`, the `Vec<f32>` encoding and the thread-local;
+  DM uses the generated accessors.
+- **Heat (step 4).** `SolidHeat` registers with `WorldBuilder::add_field`
+  (`BLOCK = BlockKind::Heat`, `QUANTITY_NAMES = ["heat_energy"]`) and
+  `watch_field`; bodies become a `HeatBody` component (worker), mob bodies
+  `MobHeat`, the regulator a `Regulator` component whose law calls
+  `thermo::Regulator::step`. Couplings are laws: solid↔gas over
+  `(Cell<SolidHeat>, Cell<TurfGas>)`, body↔environment over `HeatBody` rows,
+  analytic bodies sleep with `ctx.schedule_crossing(&relax_model, level)`.
+  Delete `world.rs`'s host, `BodyHandle`, `HeatLedger`/`Totals`,
+  `take_wakes`, the handle constants, `couple.rs`'s `GasExchange` and gas's
+  `heat.rs` binds.
+- **Gas pipes (step 5).** `Pipes` on `add_network::<Pipes>(Ownership::Main)`,
+  `PipeGas: Conserved`, `conserve_network::<Pipes>()`; the flow law as a
+  device law over `(Sides<Pipes>, DeviceData<Pipes>)` or the device entity's
+  component, vents as `RegionCell<Pipes, TurfGas>`. Delete `PipeNet`'s
+  maps, `seen`/`revisions`, slots and `commit`'s transitions (use
+  `drain_transitions`).
+- **Gas (step 6).** Tanks and lungs bind `GasMix` (main-owned, done);
+  `TurfGas` registers with `add_field` over the grid; `MixWatches` become
+  world watches; `Post`/tick encoding become `GasEvent`s; `lib.rs`'s legacy
+  binds become `GasMix` accessors and queries. Then drop `byondapi` and the
+  `vg-heat` dependency.
+- **Reactor (step 7): delete it, don't port it.** The reactor was always a
+  generic-handle-plus-timer-plus-probe facility wearing a domain's clothes;
+  by step 7 every piece it needs is core's own. `Tokens` become
+  `World::spawn`/`despawn` (a reactor token was already just an entity with
+  no components); its `RateModel` timers become `LawCtx::schedule`/
+  `schedule_crossing` (move any exact-crossing case core's `RateModel`
+  doesn't already cover into `vg_core::rate` first, so nothing is lost);
+  `ProbeDomain` becomes an ordinary main-owned component, watched the same
+  generic way every other component kind is (§4.8's watch facility). Once
+  DM's callers are repointed at the generic `vg_component_*`/`vg_world_*`
+  binds and `REACT_DOMAIN_*`, the reactor module and its FFI file are
+  deleted outright -- there is no reactor crate or leftover shim once this
+  lands, only core facilities plus whatever domain actually owns the
+  component that used to be a "reactor probe."
+- **CI (step 9).** Crate-dependency checks (no domain depends on
+  `vg-ffi`, `byondapi` or another domain) and scanning `ffi/src`; the
+  allow-list reaches empty as 3–7 land.

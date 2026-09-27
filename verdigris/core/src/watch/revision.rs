@@ -112,7 +112,11 @@ mod tests {
         let mut r = BandRevision::<2>::new();
         r.update([None, Some(5.0)], [1.0, 1.0]);
         assert_eq!(r.revision, 1);
-        assert_eq!(r.recorded(), [0.0, 5.0], "unknown channel keeps its baseline");
+        assert_eq!(
+            r.recorded(),
+            [0.0, 5.0],
+            "unknown channel keeps its baseline"
+        );
     }
 
     #[test]

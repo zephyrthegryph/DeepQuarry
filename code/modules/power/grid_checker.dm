@@ -17,10 +17,16 @@
 
 /obj/machinery/power/grid_checker/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 	set_wires(new /datum/wires/grid_checker(src))
 	default_apply_parts()
+
+/// `connect_to_network()` needs `vg_entity` bound, which only happens once
+/// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
+/// docs (`code/modules/power/power.dm`).
+/obj/machinery/power/grid_checker/on_materialize()
+	. = ..()
+	connect_to_network()
 
 /obj/machinery/power/grid_checker/Destroy()
 	qdel(wires)

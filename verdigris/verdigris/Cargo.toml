@@ -16,10 +16,11 @@ crate-type = ["cdylib", "rlib"]
 eyre = { workspace = true }
 
 [target.'cfg(target_arch = "x86")'.dependencies]
-# Gas features: turf_processing (diffusion + decompression, turfs/processing.rs) and
-# heat (the M4 heat domain binds and gas adapter, turfs/heat.rs, over vg-heat). Reactions run in
-# DM (see code/ATMOSPHERICS/README.md).
-vg-gas = { path = "../domains/gas", default-features = false, features = ["turf_processing", "heat"] }
+# Gas features: turf_processing (diffusion + decompression, turfs/processing.rs).
+# The heat domain (M4) is vg-ffi's own binds (ffi/src/heat.rs) over vg-heat and
+# vg_core::world::World, not a vg-gas feature. Reactions run in DM (see
+# code/ATMOSPHERICS/README.md).
+vg-gas = { path = "../domains/gas", default-features = false, features = ["turf_processing"] }
 vg-ffi = { path = "../ffi" }
 # material_power.rs still carries its own binds (it belongs to another session and
 # moves to vg-ffi / the power domain with its owner's agreement).

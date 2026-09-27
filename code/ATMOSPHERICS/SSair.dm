@@ -35,10 +35,10 @@ SUBSYSTEM_DEF(air)
 	var/num_equalize_processed = 0
 
 	/// Turf gas runs on the Rust gas field (verdigris/domains/gas, M1b): each
-	/// fire pins the newest frame, starts the next and hands DM its events.
-	/// Events of the current fire still to dispatch (GAS_EVENT_STRIDE each).
-	var/list/pending_gas_events
-	var/gas_event_index = 1
+	/// fire pins the newest frame, starts the next, and pushes its events
+	/// (reactions, visuals, spacewind) as typed events -- vg_drain_events()
+	/// dispatches them to SSvg's on_gas_cell_*() overrides, same as every
+	/// other domain's events (rust_architecture.md §4.8).
 	/// Gas frames started so far (vg_gas_stats()[1]).
 	var/gas_frames = 0
 	/// Events dispatched by the last fire.
@@ -164,28 +164,24 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
-	// === Turf gas (the Rust gas field) ===
-	// One call pins the newest frame, collects its events and watch wakes,
-	// applies heat, and starts the next frame on the gas pool; it never waits.
-	// Then DM dispatches the frame's events: reactions, visuals, spacewind.
+	// === Turf gas (the TurfGas field on the shared Rust World) ===
+	// The world is stepped by SSvg (vg_world_tick()); its reaction, visual and
+	// spacewind notifications are typed events, dispatched to SSvg's
+	// on_gas_cell_*() overrides below by vg_drain_events().
 	if(currentpart == SSAIR_TURFS)
 		timer = TICK_USAGE_REAL
-		if(!resumed)
-			cached_cost = 0
-			pending_gas_events = vg_gas_tick()
-			gas_event_index = 1
-			gas_frames++
-			cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
-			gas_events_last = 0
-			gas_reactions_last = 0
-			gas_visuals_last = 0
-			gas_pressure_last = 0
-		process_gas_events(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_gas_events = MC_AVERAGE(cost_gas_events, TICK_DELTA_TO_MS(cached_cost))
-		pending_gas_events = null
+		gas_events_last = 0
+		gas_reactions_last = 0
+		gas_visuals_last = 0
+		gas_pressure_last = 0
+		vg_drain_events()
+		gas_frames++
+		cached_cost = TICK_USAGE_REAL - timer
+		// Dispatch no longer has a cost separate from the tick itself (both
+		// happen in this one non-resumable step now); tracked identically
+		// so the stat panel/profiler/benchmarks keep reading a real number.
+		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(cached_cost))
+		cost_gas_events = cost_turfs
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
 
@@ -229,59 +225,53 @@ SUBSYSTEM_DEF(air)
 	currentrun = SSair.currentrun
 	queued_for_activation = SSair.queued_for_activation
 
-/// Dispatches the gas field's events for this fire (GAS_EVENT_STRIDE values
-/// each: kind, turf, value, other turf). Resumable.
-/datum/controller/subsystem/air/proc/process_gas_events(resumed = FALSE)
-	var/list/events = pending_gas_events
-	var/count = length(events)
-	while(gas_event_index <= count)
-		var/kind = events[gas_event_index]
-		var/turf/open/T = events[gas_event_index + 1]
-		var/value = events[gas_event_index + 2]
-		var/turf/other = events[gas_event_index + 3]
-		gas_event_index += GAS_EVENT_STRIDE
-		gas_events_last++
-		if(!istype(T))
-			continue
-		switch(kind)
-			if(GAS_EVENT_REACT)
-				gas_reactions_last++
-				if(T.air)
-					T.air.react(T)
-			if(GAS_EVENT_VISUAL)
-				gas_visuals_last++
-				T.set_visuals()
-			if(GAS_EVENT_PRESSURE)
-				gas_pressure_last++
-				T.consider_pressure_difference(other, value)
-		if(MC_TICK_CHECK)
-			return
-
 /// Test hook: runs `frames` gas frames to completion, deterministically (no
-/// wall clock), and dispatches their events like fire() does.
+/// wall clock), and dispatches their events like fire() does (`vg_drain_
+/// events()` -- see the SSAIR_TURFS step's own docs).
 /datum/controller/subsystem/air/proc/run_gas_frames(frames = 1)
-	pending_gas_events = vg_gas_run_frames(frames)
-	gas_event_index = 1
+	gas_events_last = 0
+	gas_reactions_last = 0
+	gas_visuals_last = 0
+	gas_pressure_last = 0
+	vg_world_run_steps(frames)
+	vg_drain_events()
 	gas_frames += frames
-	while(gas_event_index <= length(pending_gas_events))
-		var/list/events = pending_gas_events
-		var/kind = events[gas_event_index]
-		var/turf/open/T = events[gas_event_index + 1]
-		var/value = events[gas_event_index + 2]
-		var/turf/other = events[gas_event_index + 3]
-		gas_event_index += GAS_EVENT_STRIDE
-		if(!istype(T))
-			continue
-		switch(kind)
-			if(GAS_EVENT_REACT)
-				if(T.air)
-					T.air.react(T)
-			if(GAS_EVENT_VISUAL)
-				T.set_visuals()
-			if(GAS_EVENT_PRESSURE)
-				T.consider_pressure_difference(other, value)
-	pending_gas_events = null
 	process_high_pressure_delta()
+
+/// A turf's gas may react (`GasEvent::CellReactionReady`,
+/// verdigris/domains/gas/src/laws.rs): the same `air.react(turf)` the old
+/// flat-encoded `GAS_EVENT_REACT` dispatched.
+/datum/controller/subsystem/vg/on_gas_cell_reaction_ready(cell, reaction)
+	SSair.gas_events_last++
+	var/turf/open/T = vg_turf_of(cell)
+	if(!istype(T))
+		return
+	SSair.gas_reactions_last++
+	if(T.air)
+		T.air.react(T)
+
+/// A turf's visible gas changed (`GasEvent::CellVisualChange`): the same
+/// `set_visuals()` the old `GAS_EVENT_VISUAL` dispatched.
+/datum/controller/subsystem/vg/on_gas_cell_visual_change(cell, vis)
+	SSair.gas_events_last++
+	var/turf/open/T = vg_turf_of(cell)
+	if(!istype(T))
+		return
+	SSair.gas_visuals_last++
+	T.set_visuals()
+
+/// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
+/// more than the threshold (`GasEvent::PressureJump`): the same
+/// `consider_pressure_difference(other, value)` the old `GAS_EVENT_PRESSURE`
+/// dispatched.
+/datum/controller/subsystem/vg/on_gas_pressure_jump(cell, neighbor, delta)
+	SSair.gas_events_last++
+	var/turf/open/T = vg_turf_of(cell)
+	var/turf/open/other = vg_turf_of(neighbor)
+	if(!istype(T) || !istype(other))
+		return
+	SSair.gas_pressure_last++
+	T.consider_pressure_difference(other, delta)
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)

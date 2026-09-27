@@ -72,7 +72,6 @@
 /datum/controller/master/perf_tick_usage # d: MC singleton, filled every tick
 /datum/controller/subsystem/machines/power_dirty_areas # d: SSmachines singleton (M3 power); one instance
 /datum/controller/subsystem/machines/power_material_cables # d: SSmachines singleton (M3 power); one instance
-/datum/controller/subsystem/machines/power_ops # d: SSmachines singleton (M3 power); one instance
 /datum/controller/subsystem/mapping/multiz_levels # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/mapping/z_list # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/rolling_usage # d: one per subsystem; the usage ring buffer is always in use
@@ -439,8 +438,6 @@
 # Other active areas (listed in memory_lists_audit.md, not edited here).
 /datum/design_techweb/materials # composition rewrite: design materials are being replaced; not edited here
 /datum/dq_containment_listener/events # containment (C1/C4): landed on master unlisted; not edited here
-/datum/dq_rx_nodes/node_watches # reactive nodes: landed on master unlisted; not edited here
-/datum/dq_rx_nodes/watches # reactive nodes: landed on master unlisted; not edited here
 /datum/hot_group/spot_list # atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
 /datum/interaction_resolution/available # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
 /datum/interaction_resolution/blocked # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
@@ -542,9 +539,6 @@
 
 # baseline when CI was wired (2026-09-26); convert or give a real reason.
 /datum/component/shadekin/shadekin_granted_abilities # baseline when CI was wired (2026-09-26); convert or give a real reason
-/datum/dq_rx_nodes/by_atom # baseline when CI was wired (2026-09-26); convert or give a real reason
-/datum/dq_rx_nodes/keys # baseline when CI was wired (2026-09-26); convert or give a real reason
-/datum/dq_rx_nodes/owners # baseline when CI was wired (2026-09-26); convert or give a real reason
 /datum/life_z_presence/members # baseline when CI was wired (2026-09-26); convert or give a real reason
 /datum/om/rec/att # baseline when CI was wired (2026-09-26); convert or give a real reason
 /datum/om/rec/att_pend # baseline when CI was wired (2026-09-26); convert or give a real reason
