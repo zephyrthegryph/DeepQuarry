@@ -61,13 +61,8 @@
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
-
-
-/obj/machinery/maint_vendor/Destroy()
-	. = ..()
-	QDEL_LIST(product_datums)
-	qdel(monitor_screen)
-	monitor_screen = null
+REF_OWNED(/obj/machinery/maint_vendor, "monitor_screen")
+REF_OWNED_LIST(/obj/machinery/maint_vendor, "product_datums")
 
 /obj/machinery/maint_vendor/declare_interactions(list/into)
 	into += list(
@@ -97,7 +92,6 @@
 		entry.purchased_by[user.client.ckey] = 0
 	if(!can_user_purchase(user,entry))
 		return
-
 
 	dispense_item_from_datum(user,entry)
 	credit_user(user,-entry.item_cost)
@@ -157,7 +151,6 @@
 	monitor_screen.icon_state = state
 	addtimer(CALLBACK(src, PROC_REF(reset_screen_state)), duration)
 
-
 /obj/machinery/maint_vendor/proc/reset_screen_state()
 	if(!is_on)
 		monitor_screen.icon_state = "screen_off"
@@ -180,8 +173,6 @@
 		var/datum/maint_recycler_vendor_entry/entry = product_datums[params["index"]]
 		attempt_purchase(ui.user,entry)
 		return TRUE
-
-
 
 /obj/machinery/maint_vendor/tgui_interact(mob/user,datum/tgui/ui)
 	ui = SStgui.try_update_ui(user,src,ui)
@@ -224,7 +215,6 @@
 	if(!user || !user.client || !user.client.prefs) return
 	var/currentValue = 	user.client?.prefs?.read_preference(/datum/preference/numeric/recycler_points)
 	user.client?.prefs?.write_preference_by_type(/datum/preference/numeric/recycler_points, currentValue + amount)
-
 
 /obj/machinery/maint_vendor/proc/set_on_state(state)
 	if(is_on == state) return
