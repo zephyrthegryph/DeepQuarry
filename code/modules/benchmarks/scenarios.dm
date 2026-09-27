@@ -623,9 +623,7 @@
 
 /// Where the memory outside DM objects goes (init_and_turfs.md §0.4). Counts
 /// unique appearances (atoms' own and their overlay/underlay entries), icons,
-/// images and mutable appearances, then frees things in stages and records
-/// the private-memory drop after each: overlays and underlays, lighting,
-/// then every movable. Destructive: run it alone.
+/// images and mutable appearances.
 /datum/benchmark/memory_breakdown
 	id = "memory_breakdown"
 	description = "Appearance counts and staged private-memory drops"
@@ -681,35 +679,7 @@
 	metric("image_objects", images, "images", "none")
 	metric("mutable_appearances", mutables, "objects", "none")
 
-	// Stage 1: every overlay and underlay.
-	for(var/atom/A in world)
-		if(length(A.overlays))
-			A.cut_overlays()
-			A.overlays.Cut()
-		if(length(A.underlays))
-			A.underlays.Cut()
-		CHECK_TICK
-	var/no_overlays = stage("no_overlays")
-	metric("freed_mb_overlays", base - no_overlays, "MB", "none")
-
-	// Stage 2: lighting objects, corners and sources.
-	SSlighting.can_fire = FALSE
-	for(var/datum/lighting_object/O)
-		qdel(O, force = TRUE)
-		CHECK_TICK
-	for(var/datum/light_source/L)
-		qdel(L, force = TRUE)
-		CHECK_TICK
-	for(var/datum/lighting_corner/C)
-		qdel(C, force = TRUE)
-		CHECK_TICK
-	var/no_lighting = stage("no_lighting")
-	metric("freed_mb_lighting", no_overlays - no_lighting, "MB", "none")
-
-	// Stage 3: every obj (machines, structures, items, effects).
-	for(var/obj/O in world)
-		qdel(O, force = TRUE)
-		CHECK_TICK
-	var/no_objs = stage("no_objs")
-	metric("freed_mb_objs", no_lighting - no_objs, "MB", "none")
-	metric("remaining_mb", no_objs, "MB", "none")
+	// Freeing things and watching private memory does not work: BYOND keeps
+	// freed memory in its own pools (clearing every overlay and all
+	// lighting moved private memory by +5 MB each). The growth through boot
+	// is measured instead, from the per-subsystem marks (boot_profile).
