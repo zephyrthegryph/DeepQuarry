@@ -148,7 +148,7 @@
 	. = ..()
 	icon_living = "spookyghost-[rand(1,2)]"
 	icon_state = icon_living
-	addtimer(CALLBACK(src, PROC_REF(death)), 35 SECONDS)
+	om_after(src, 35 SECONDS, PROC_REF(death))
 	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/death(gibbed, deathmessage = "fades away!")

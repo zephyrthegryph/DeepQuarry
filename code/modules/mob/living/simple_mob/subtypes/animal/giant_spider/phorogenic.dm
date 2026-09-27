@@ -73,5 +73,5 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
-	addtimer(CALLBACK(src, PROC_REF(explode)), delay, TIMER_DELETE_ME)
+	om_after(src, delay, PROC_REF(explode))
 	return ..()

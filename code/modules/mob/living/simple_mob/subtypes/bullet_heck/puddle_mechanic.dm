@@ -41,7 +41,7 @@
 
 /obj/item/grenade/shooter/auto_explode/Initialize(mapload)
 	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(detonate)), fuse_time, TIMER_DELETE_ME)
+	om_after(src, fuse_time, PROC_REF(detonate))
 
 /obj/item/grenade/shooter/auto_explode/blood_boss
 	spread_range = 2

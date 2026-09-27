@@ -366,7 +366,7 @@
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	addtimer(CALLBACK(src, PROC_REF(chargeend), A), 20)
+	om_after(src, 20, PROC_REF(chargeend), A)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/proc/chargeend(atom/A)
 	if(stat) //you are dead

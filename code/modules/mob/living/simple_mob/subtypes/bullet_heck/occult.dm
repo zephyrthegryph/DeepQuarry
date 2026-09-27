@@ -48,11 +48,11 @@
 	rng_cycle = rand(1,2)
 	switch(attackcycle)
 		if(1)
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/lingering/blood_flower), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/lingering/blood_flower)
 			attackcycle = 0
 		if(2)
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/occult_fireball), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/occult_fireball)
 			attackcycle = 0
 		if(3)
-			addtimer(CALLBACK(src, PROC_REF(cross_spin), A, rng_cycle, 3), 1.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 1.5 SECONDS, PROC_REF(cross_spin), A, rng_cycle, 3)
 			attackcycle = 0

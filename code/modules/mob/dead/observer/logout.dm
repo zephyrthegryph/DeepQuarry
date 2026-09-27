@@ -8,4 +8,4 @@
 		return
 	if(mind && mind.assigned_role)
 		return
-	cleanup_timer = QDEL_IN_STOPPABLE(src, 10 MINUTES)
+	expire(10 MINUTES)

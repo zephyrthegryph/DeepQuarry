@@ -87,7 +87,7 @@
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()
 	if(locate(/mob/living/carbon/human) in vore_selected)
-		addtimer(CALLBACK(src, TYPE_PROC_REF(/mob/living/simple_mob/vore/aggressive/macrophage, deathcheck)), 3 MINUTES)
+		om_after(src, 3 MINUTES, TYPE_PROC_REF(/mob/living/simple_mob/vore/aggressive/macrophage, deathcheck))
 	else
 		death()
 
@@ -100,7 +100,7 @@
 	. = TRUE
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	addtimer(CALLBACK(src, PROC_REF(charge), A), 20, TIMER_STOPPABLE)
+	om_after(src, 20, PROC_REF(charge), A)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))

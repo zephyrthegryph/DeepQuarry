@@ -190,7 +190,7 @@
 	ai_busy_begin()
 	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
 	do_windup_animation(A, charge_warmup)
-	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
+	firebreathtimer = om_after(src, charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)
@@ -246,7 +246,7 @@
 
 		M.tf_into(new_mob)
 
-		addtimer(CALLBACK(new_mob, TYPE_PROC_REF(/mob/living, revert_mob_tf)), 30 SECONDS, TIMER_DELETE_ME)
+		om_after(new_mob, 30 SECONDS, TYPE_PROC_REF(/mob/living, revert_mob_tf))
 
 /obj/item/projectile/beam/mouselaser/ddraig/spawn_mob(mob/living/target)
 	var/list/tf_list = list(/mob/living/simple_mob/animal/passive/mouse,

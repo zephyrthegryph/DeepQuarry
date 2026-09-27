@@ -65,7 +65,7 @@
 	if(key != user.key)
 		key = user.key
 	SetName("[modtype] [braintype]-[rand(100,999)]")
-	addtimer(CALLBACK(src, PROC_REF(welcome_client)), 1)
+	om_after(src, 1, PROC_REF(welcome_client))
 	qdel(user)
 
 /mob/living/silicon/robot/platform/proc/welcome_client()

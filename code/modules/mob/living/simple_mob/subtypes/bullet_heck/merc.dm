@@ -44,11 +44,11 @@
 	rng_cycle = rand(1,2)
 	switch(attackcycle)
 		if(1)
-			addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 3), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(bomb_lines), A, 3)
 			attackcycle = 0
 		if(2)
-			addtimer(CALLBACK(src, PROC_REF(bomb_chaos), A, 3, 5), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), A, 3, 5)
 			attackcycle = 0
 		if(3)
-			addtimer(CALLBACK(src, PROC_REF(gattlingfire), A, rng_cycle, 9, 2), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(gattlingfire), A, rng_cycle, 9, 2)
 			attackcycle = 0

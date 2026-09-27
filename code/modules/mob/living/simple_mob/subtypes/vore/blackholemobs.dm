@@ -77,7 +77,7 @@
 
 	do_windup_animation(A, leap_warmup)
 
-	addtimer(CALLBACK(src, PROC_REF(doLeap), L), leap_warmup, TIMER_DELETE_ME)
+	om_after(src, leap_warmup, PROC_REF(doLeap), L)
 	return TRUE
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/proc/doLeap(mob/living/L)
@@ -92,7 +92,7 @@
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	addtimer(CALLBACK(src, PROC_REF(afterLeap), L), 0.5 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 0.5 SECONDS, PROC_REF(afterLeap), L)
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/proc/afterLeap(mob/living/L)
 	if(status_flags & LEAPING)
@@ -770,7 +770,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)
-	addtimer(CALLBACK(src, PROC_REF(explode)), delay, TIMER_DELETE_ME)
+	om_after(src, delay, PROC_REF(explode))
 	return ..()
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/proc/explode()
@@ -784,7 +784,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)
-	addtimer(CALLBACK(src, PROC_REF(explode)), delay, TIMER_DELETE_ME)
+	om_after(src, delay, PROC_REF(explode))
 	return ..()
 
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/explode()
@@ -800,7 +800,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)
-	addtimer(CALLBACK(src, PROC_REF(explode)), delay, TIMER_DELETE_ME)
+	om_after(src, delay, PROC_REF(explode))
 	return ..()
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///

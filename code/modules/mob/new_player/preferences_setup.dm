@@ -269,7 +269,7 @@
 	if(updating_preview_icon)
 		return
 	update_preview_icon(south_only = TRUE)
-	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, update_preview_icon)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
+	om_after_replace(src, 1, TYPE_PROC_REF(/datum/preferences, update_preview_icon))
 
 /datum/preferences/proc/dq_preference_affects_preview(datum/preference/preference)
 	if(!preference || preference.savefile_identifier != PREFERENCE_CHARACTER)
@@ -308,7 +308,7 @@
 	if(dq_data_push_pending)
 		return
 	dq_data_push_pending = TRUE
-	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push)), 0, TIMER_UNIQUE | TIMER_OVERRIDE)
+	om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push))
 
 /datum/preferences/proc/dq_flush_data_push()
 	dq_data_push_pending = FALSE
@@ -321,7 +321,7 @@
 	if(dq_preview_pending)
 		return
 	dq_preview_pending = TRUE
-	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push)), 0, TIMER_UNIQUE | TIMER_OVERRIDE)
+	om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push))
 
 /datum/preferences/proc/dq_flush_static_push()
 	dq_preview_pending = FALSE

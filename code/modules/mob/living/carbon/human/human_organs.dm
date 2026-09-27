@@ -100,7 +100,7 @@
 				spark_system.set_up(5, 0, src)
 				spark_system.attach(src)
 				spark_system.start()
-				QDEL_IN(spark_system, 1 SECOND)
+				om_qdel_after(spark_system, 1 SECOND)
 		else if (E.is_broken())
 			stance_damage += 1
 		else if (E.is_dislocated())

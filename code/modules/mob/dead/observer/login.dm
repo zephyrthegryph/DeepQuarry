@@ -8,6 +8,4 @@
 	plane_holder.set_vis(VIS_AUGMENTED, TRUE) // GHOST VISION IS AUGMENTED
 	plane_holder.set_vis(VIS_SOULCATCHER, TRUE) // Soulcatcher
 	plane = PLANE_GHOSTS
-	if(cleanup_timer)
-		deltimer(cleanup_timer)
-		cleanup_timer = null
+	cancel_expire()

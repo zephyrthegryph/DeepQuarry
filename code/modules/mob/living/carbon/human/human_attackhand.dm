@@ -141,11 +141,10 @@
 			to_chat(H, span_notice("Remove [src]'s mask!"))
 			return FALSE
 
-		if (!cpr_time)
+		if (!COOLDOWN_FINISHED(src, cpr_time))
 			return FALSE
 
-		cpr_time = 0
-		addtimer(VARSET_CALLBACK(src, cpr_time, 1), 3 SECONDS, TIMER_DELETE_ME)
+		COOLDOWN_START(src, cpr_time, 3 SECONDS)
 
 		H.visible_message(span_danger("\The [H] is trying to perform CPR on \the [src]!"))
 

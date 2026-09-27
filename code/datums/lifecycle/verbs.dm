@@ -71,6 +71,12 @@
 		om_cancel_timer(src, lifecycle_lifetime_timer)
 	lifecycle_lifetime_timer = om_qdel_after(src, after)
 
+/// Disarms the self-destruct expire() armed (a ghost whose player came back).
+/atom/movable/proc/cancel_expire()
+	if(lifecycle_lifetime_timer)
+		om_cancel_timer(src, lifecycle_lifetime_timer)
+		lifecycle_lifetime_timer = null
+
 /atom/movable/proc/lifecycle_arm_lifetime()
 	if(lifecycle_lifetime > 0)
 		expire(lifecycle_lifetime)

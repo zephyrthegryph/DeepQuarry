@@ -358,7 +358,7 @@
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
 		step_to(src,movement_target,1)
-		addtimer(CALLBACK(src, PROC_REF(chase_target), ++ticker), 3, TIMER_DELETE_ME)
+		om_after(src, 3, PROC_REF(chase_target), ++ticker)
 		return
 
 	face_atom(movement_target)

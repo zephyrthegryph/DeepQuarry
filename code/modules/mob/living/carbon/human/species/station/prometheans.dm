@@ -184,7 +184,7 @@
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)
 	if(!H)
 		return
-	addtimer(CALLBACK(H, TYPE_PROC_REF(/mob, gib)), 1)
+	om_after(H, 1, TYPE_PROC_REF(/mob, gib))
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
 	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
@@ -254,12 +254,12 @@
 	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_EQUIPPED_ITEM))
 	om_stage_remove(parent, /datum/om/stage/life/trait/promethean_biology)
 	if(still_timer)
-		deltimer(still_timer)
+		om_cancel_timer(src, still_timer)
 		still_timer = null
 
 /datum/component/promethean_biology/proc/restart_stillness()
 	still = FALSE
-	still_timer = addtimer(CALLBACK(src, PROC_REF(became_still)), PROMETHEAN_STILLNESS_TIME, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_STOPPABLE)
+	still_timer = om_after_replace(src, PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
 
 /datum/component/promethean_biology/proc/became_still()
 	still = TRUE

@@ -30,13 +30,13 @@
 	. = TRUE // So we don't fire a bolt as well.
 	switch(attackcycle)
 		if(1)
-			addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 2), 2 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 2 SECONDS, PROC_REF(bomb_lines), A, 2)
 			attackcycle = 0
 		if(2)
-			addtimer(CALLBACK(src, PROC_REF(dual_spin), A, 3, 7), 1 SECOND, TIMER_DELETE_ME)
+			om_after(src, 1 SECOND, PROC_REF(dual_spin), A, 3, 7)
 			attackcycle = 0
 		if(3)
-			addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 12, 1, 0.5 SECONDS), 1 SECOND, TIMER_DELETE_ME)
+			om_after(src, 1 SECOND, PROC_REF(quad_random_firing), A, 12, 1, 0.5 SECONDS)
 			attackcycle = 0
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/nanoweavetower
@@ -75,24 +75,24 @@
 			specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
 			rng_cycle = rand(1,4)
 			direct_say("PROTOCOL: CROSS X.")
-			addtimer(CALLBACK(src, PROC_REF(star_burst), A, rng_cycle), 2 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 2 SECONDS, PROC_REF(star_burst), A, rng_cycle)
 			attackcycle = 0
 		if(2)
 			specialattackprojectile = /obj/item/projectile/energy/wallbreaker/boss
 			rng_cycle = rand(1,4)
 			direct_say("PROTOCOL: PRECISION. SWEEP.")
-			addtimer(CALLBACK(src, PROC_REF(dual_spin), A, rng_cycle, 7), 2 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 2 SECONDS, PROC_REF(dual_spin), A, rng_cycle, 7)
 			attackcycle = 0
 		if(3)
 			specialattackprojectile = /obj/item/projectile/energy/lightingspark/nanoweave
 			rng_cycle = rand(1,4)
 			direct_say("PROTOCOL: DISCHARGE.")
-			addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 12, rng_cycle, 15), 1 SECOND, TIMER_DELETE_ME)
+			om_after(src, 1 SECOND, PROC_REF(quad_random_firing), A, 12, rng_cycle, 15)
 			attackcycle = 0
 		if(4)
 			specialattackprojectile = /obj/item/projectile/arc/explosive_rocket/big
 			rng_cycle = rand(1,4)
 			Beam(A, icon_state = "r_beam", time = 1 SECOND, maxdistance = INFINITY)
 			direct_say("PROTOCOL: MISSILE.")
-			addtimer(CALLBACK(src, PROC_REF(singleproj), A, rng_cycle), 2 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 2 SECONDS, PROC_REF(singleproj), A, rng_cycle)
 			attackcycle = 0

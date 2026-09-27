@@ -180,13 +180,13 @@
 			H.muffled = FALSE
 			H.forced_psay = FALSE
 
-			addtimer(CALLBACK(H, TYPE_PROC_REF(/mob/living, can_leave_dark)), 5 MINUTES, TIMER_DELETE_ME)
+			om_after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 		else
 			H.add_modifier(/datum/modifier/dark_respite, 25 MINUTES)
 
-			addtimer(CALLBACK(H, TYPE_PROC_REF(/mob/living, enter_the_dark)), 1 SECOND, TIMER_DELETE_ME)
+			om_after(H, 1 SECOND, TYPE_PROC_REF(/mob/living, enter_the_dark))
 
-			addtimer(CALLBACK(H, TYPE_PROC_REF(/mob/living, can_leave_dark)), 15 MINUTES, TIMER_DELETE_ME)
+			om_after(H, 15 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 
 		return TRUE
 

@@ -233,7 +233,7 @@
 		cut_overlays()
 		icon_state = ""
 		flick("tp_out",src)
-		QDEL_IN(src, 1 SECOND)
+		expire(1 SECOND)
 		. = ..(FALSE, deathmessage)
 	else
 		if(comp.respite_activating)
@@ -290,10 +290,10 @@
 					toggle_hud_vis()
 			stop_sound_channel(CHANNEL_PREYLOOP)
 
-			addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 10 MINUTES, TIMER_DELETE_ME)
+			om_after(src, 10 MINUTES, PROC_REF(can_leave_dark))
 		else
-			addtimer(CALLBACK(src, PROC_REF(enter_the_dark)), 1 SECOND, TIMER_DELETE_ME)
-			addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 15 MINUTES, TIMER_DELETE_ME)
+			om_after(src, 1 SECOND, PROC_REF(enter_the_dark))
+			om_after(src, 15 MINUTES, PROC_REF(can_leave_dark))
 
 /mob/living/simple_mob/shadekin/enter_the_dark()
 	comp.respite_activating = FALSE

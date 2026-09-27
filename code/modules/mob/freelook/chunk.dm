@@ -62,7 +62,7 @@
 	if(visible || update_now)
 		if(!updating)
 			updating = 1
-			addtimer(CALLBACK(src, PROC_REF(update)), UPDATE_BUFFER, TIMER_DELETE_ME) // Batch large changes, such as many doors opening or closing at once
+			om_after(src, UPDATE_BUFFER, PROC_REF(update)) // Batch large changes, such as many doors opening or closing at once
 	else
 		changed = 1
 

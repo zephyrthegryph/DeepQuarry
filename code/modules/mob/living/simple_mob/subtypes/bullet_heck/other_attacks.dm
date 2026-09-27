@@ -57,11 +57,11 @@
 
 /obj/effect/artillery_attack/LateInitialize()
 	var/delay = rand(25, 30)
-	addtimer(CALLBACK(src, PROC_REF(spawner)), delay, TIMER_DELETE_ME)
+	om_after(src, delay, PROC_REF(spawner))
 
 /obj/effect/artillery_attack/proc/spawner()
 	new ammmotype(src.loc)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 0.7 SECONDS, TIMER_DELETE_ME)
+	expire(0.7 SECONDS)
 
 /obj/effect/falling_effect/callstrike_bomb
 	falling_type = /obj/effect/callstrike
@@ -83,7 +83,7 @@
 		if(!L.injure(INJURY_BURN, 70, target_zone, src, flags = INJURE_ARMORED))
 			break
 	playsound(src, 'sound/effects/clang2.ogg', 50, 1)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 0.25 SECONDS, TIMER_DELETE_ME)
+	expire(0.25 SECONDS)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/gravity_surge(atom/target, next_cycle, pull_radius, pull_strength)
 	if(!target)

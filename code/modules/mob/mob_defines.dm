@@ -125,7 +125,7 @@
 	var/name_archive //For admin things like possession
 
 	var/timeofdeath = 0.0//Living
-	var/cpr_time = 1.0//Carbon
+	COOLDOWN_DECLARE(cpr_time) //Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL
 	var/charges = 0.0

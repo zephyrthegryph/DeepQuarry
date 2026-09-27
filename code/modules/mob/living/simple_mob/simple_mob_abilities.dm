@@ -329,7 +329,7 @@
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		addtimer(CALLBACK(src, PROC_REF(speen_throw), am), 1)
+		om_after(src, 1, PROC_REF(speen_throw), am)
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 /mob/living/simple_mob/proc/speen_throw(atom/movable/AM, gentle = 0, damage = 10)
