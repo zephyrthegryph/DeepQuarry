@@ -473,6 +473,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
+#ifdef BENCHMARK
+	benchmark_rust_mark("mc: init done")
+#endif
 
 
 

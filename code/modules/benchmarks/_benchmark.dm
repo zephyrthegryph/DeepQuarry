@@ -291,6 +291,7 @@
 
 /proc/RunBenchmarks()
 	CHECK_TICK
+	benchmark_rust_mark("bench: start")
 	// Same isolation as RunUnitTests: mapped patrol bots add unrelated load.
 	for(var/mob/living/bot/map_bot in world)
 		qdel(map_bot)
