@@ -1094,6 +1094,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	// fallback: string
 	return text
 
+// LIFECYCLE: stops the map loader and asks for a hard delete.
 /datum/parsed_map/Destroy()
 	..()
 	SSatoms.map_loader_stop(REF(src)) // Just in case, I don't want to double up here
