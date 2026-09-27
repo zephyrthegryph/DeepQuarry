@@ -184,11 +184,6 @@
 	. = ..()
 	update_nearby_tiles()
 
-/obj/effect/blob/shield/Destroy()
-	density = FALSE
-	update_nearby_tiles()
-	. = ..()
-
 /obj/effect/blob/shield/update_icon()
 	if(get_integrity() > max_integrity * 2 / 3)
 		icon_state = "blob_idle"
