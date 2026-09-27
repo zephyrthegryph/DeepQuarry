@@ -12,11 +12,8 @@
 	..()
 	src.owner_admin = owner_admin
 
-/datum/game_panel/Destroy()
-	if(owner_admin?.tgui_game_panel == src)
-		owner_admin.tgui_game_panel = null
-	owner_admin = null
-	return ..()
+REF_PAIR(/datum/game_panel, list("owner_admin" = "tgui_game_panel"))
+REF_PAIR(/datum/admins, list("tgui_game_panel" = "owner_admin"))
 
 /datum/game_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -60,7 +57,6 @@
 			var/setting = "[params["setting"]]"
 			owner_admin.Topic("vsc=[setting]", list("vsc" = setting))
 			return TRUE
-
 
 /datum/admins
 	var/datum/game_panel/tgui_game_panel
