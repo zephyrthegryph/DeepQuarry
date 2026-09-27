@@ -1177,7 +1177,7 @@
 		return
 	if(muffin_mode)
 		if(muffinmonster)
-			thing.forceMove(muffinmonster.vore_selected)
+			thing.move_into(muffinmonster.vore_selected, BELLY_SLOT_INTERIOR)
 		else
 			muffin_mode = FALSE
 
@@ -1194,7 +1194,7 @@
 					for(var/atom/movable/C in contents)
 						if(C == muffinmonster)
 							continue
-						C.forceMove(muffinmonster.vore_selected)
+						C.move_into(muffinmonster.vore_selected, BELLY_SLOT_INTERIOR)
 				else
 					muffinmonster.name = "Activate Muffin Monster"
 					muffinmonster.release_vore_contents(include_absorbed = TRUE, silent = TRUE)

@@ -325,7 +325,7 @@
 // Additionally, RADIATION_SPEED_COEFFICIENT = 0.1
 
 /// Radiation burns on a random organic limb: skin sloughing from a heavy dose.
-/mob/living/carbon/human/proc/radiation_burn(amount)
+/mob/living/carbon/human/proc/radiation_burn(amount, flags = NONE)
 	var/list/candidates = list()
 	for(var/obj/item/organ/external/E as anything in organs)
 		if(E.robotic < ORGAN_ROBOT && !E.is_stump())
@@ -333,7 +333,7 @@
 	if(!length(candidates))
 		return 0
 	var/obj/item/organ/external/E = pick(candidates)
-	return injure(INJURY_BURN, amount, E.organ_tag, null, 0, /datum/affliction/radiation_burns)
+	return injure(INJURY_BURN, amount, E.organ_tag, null, 0, /datum/affliction/radiation_burns, flags)
 
 /datum/om/stage/life/radiation/carbon/human
 	of = /mob/living/carbon/human
@@ -470,13 +470,13 @@
 			self.accumulated_rads += 300 * RADIATION_SPEED_COEFFICIENT
 
 			if(!self.isSynthetic())
-				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT) //3 burn damage a tick as your body melts.
-				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT) //1.5 cellular damage a tick as your cells mutate and break down.
+				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
+				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
 
 				I = self.internal_organs_by_name[O_EYES]
 				if(I)
 					I.add_autopsy_data("Radiation Burns", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
-					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //3 eye damage a tick as your eyes melt down.
+					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE | INJURE_CONTINUOUS) //3 eye damage a tick as your eyes melt down.
 					self.status_adjust(EFFECT_BLURRY, 10)
 
 				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
@@ -507,7 +507,7 @@
 
 		if(damage)
 			damage *= rad_mod
-			self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning)
+			self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
 			if(!self.isSynthetic() && self.organs.len)
 				var/obj/item/organ/external/O = pick(self.organs)
 				if(istype(O)) O.add_autopsy_data("Radiation Poisoning", damage)
@@ -944,9 +944,9 @@
 
 	if(istype(self.loc, /turf/space)) //No FBPs overheating on space turfs inside mechs or people.
 		//Don't bother if the temperature drop is less than 0.1 anyways. Hopefully BYOND is smart enough to turn this constant expression into a constant
-		if(self.bodytemperature > (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + COSMIC_RADIATION_TEMPERATURE)
+		if(self.bodytemperature > (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + TCMB)
 			//Thermal radiation into space
-			var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - COSMIC_RADIATION_TEMPERATURE)**4)
+			var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - TCMB)**4)
 			var/temperature_loss = heat_loss/HUMAN_HEAT_CAPACITY
 			self.bodytemperature -= temperature_loss
 	else
@@ -962,7 +962,8 @@
 			if(self.allowtemp)
 				loc_temp = b.bellytemperature
 			else
-				loc_temp = self.species.body_temperature //Should be safe for just about anyone
+				// The predator's body temperature, kept within this prey's comfort: harmless unless they opted into temperature play.
+				loc_temp = clamp(b.get_interior_temperature(), self.species.cold_discomfort_level, self.species.heat_discomfort_level)
 		else
 			loc_temp = environment.return_temperature()
 
@@ -1003,7 +1004,7 @@
 			else
 				self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
 			if(self.digestable && b.temperature_damage)
-				self.injure(INJURY_BURN, heat_dam) // High body temperature
+				self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
 		else if(b.bellytemperature <= self.species.cold_discomfort_level)
 			var/cold_dam = 0
 			if(b.bellytemperature <= self.species.cold_level_1)
@@ -1020,7 +1021,7 @@
 			else
 				self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
 			if(self.digestable && b.temperature_damage)
-				self.injure(INJURY_FROSTBITE, cold_dam) // Low body temperature
+				self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
 		else self.clear_alert("temp")
 
 	// +/- 50 degrees from 310.15K is the 'safe' zone, where no damage is dealt.
@@ -1044,7 +1045,7 @@
 				heat_dam = HEAT_DAMAGE_LEVEL_1
 				self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 
-		self.injure(INJURY_BURN, heat_dam) // High body temperature
+		self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
 
 	else if(self.bodytemperature <= self.species.cold_discomfort_level)
 		//Body temperature is too cold.
@@ -1064,7 +1065,7 @@
 				else
 					cold_dam = COLD_DAMAGE_LEVEL_1
 
-			self.injure(INJURY_FROSTBITE, cold_dam) // Low body temperature
+			self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
 
 	else self.clear_alert("temp")
 
@@ -1078,7 +1079,7 @@
 		if(self.stat == DEAD)
 			pressure_damage = pressure_damage/2
 		if(!istype(self.loc, /obj/structure/closet/body_bag/cryobag))
-			self.injure(INJURY_BLUNT, pressure_damage) // Crushing pressure
+			self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Crushing pressure
 		self.throw_alert("pressure", /atom/movable/screen/alert/highpressure, 2)
 	else if(adjusted_pressure >= self.species.warning_high_pressure)
 		self.throw_alert("pressure", /atom/movable/screen/alert/highpressure, 1)
@@ -1092,7 +1093,7 @@
 				var/pressure_damage = LOW_PRESSURE_DAMAGE
 				if(self.stat==DEAD)
 					pressure_damage = pressure_damage/2
-				self.injure(INJURY_BLUNT, pressure_damage) // Decompression: ruptured capillaries and tissue
+				self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Decompression: ruptured capillaries and tissue
 				// Ebullition in the lungs: gas exchange fails even on internals,
 				// less the better the suit holds pressure.
 				var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE

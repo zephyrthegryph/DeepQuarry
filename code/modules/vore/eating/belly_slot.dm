@@ -49,6 +49,16 @@
 	radiation_transmission = 1
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
+/// The inside of a belly is inside the predator: its contents see the predator's
+/// body temperature (the belly air is made at it, and prey who haven't opted into
+/// temperature play feel it). A prey who allows it feels `bellytemperature`
+/// instead (see the human environment life system).
+/obj/belly/get_interior_temperature()
+	var/mob/living/pred = owner
+	if(istype(pred))
+		return pred.bodytemperature
+	return ..()
+
 /// Seconds per cycle for this belly: the baseline, or a third of it in turbo mode.
 /obj/belly/proc/belly_cycle_period()
 	return (speedy_mob_processing || (mode_flags & DM_FLAG_TURBOMODE)) ? BELLY_TURBO_TICK : BELLY_BASELINE_TICK

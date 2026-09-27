@@ -163,7 +163,7 @@
 
 	var/environment_temp = environment.return_temperature()
 	if(environment_temp > (T0C+66))
-		self.injure(INJURY_BURN, (environment_temp - (T0C+66))/5, null, null, 0, null, INJURE_SILENT) // Might be too high, check in testing.
+		self.injure(INJURY_BURN, (environment_temp - (T0C+66)) / 5, null, null, 0, null, INJURE_SILENT | INJURE_CONTINUOUS) // Might be too high, check in testing.
 		self.throw_alert("alien_fire", /atom/movable/screen/alert/alien_fire)
 		if(prob(20))
 			to_chat(self, span_red("You feel a searing heat!"))

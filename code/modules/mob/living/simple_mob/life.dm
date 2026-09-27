@@ -228,10 +228,10 @@
 
 	//Atmos effect
 	if(self.bodytemperature < self.minbodytemp)
-		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc)
+		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 	else if(self.bodytemperature > self.maxbodytemp)
-		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc)
+		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else
 		self.clear_alert("temp")

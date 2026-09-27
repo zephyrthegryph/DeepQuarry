@@ -108,7 +108,8 @@
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				possessed_voice -= V
 				qdel(V)
-			NR.forceMove(eater.vore_selected)
+			if(!NR.move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, eater))
+				NR.forceMove(get_turf(eater))
 		if(trash)
 			var/obj/item/TrashItem = new trash(eater)
 			eater.put_in_hands(TrashItem)
@@ -288,7 +289,8 @@
 	user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].")
 	user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
 	user.drop_item()
-	forceMove(belly_target)
+	if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
+		forceMove(get_turf(user))
 
 /obj/item/reagent_containers/food/snacks/proc/feed_other_done(mob/living/carbon/human/human_eater, mob/living/user, swallow_whole, obj/belly/belly_target)
 	if(!reagents || (reagents && !reagents.total_volume))
@@ -311,7 +313,8 @@
 /obj/item/reagent_containers/food/snacks/proc/finish_feeding(mob/living/eater, mob/living/user, swallow_whole, obj/belly/belly_target)
 	if(swallow_whole)
 		user.drop_item()
-		forceMove(belly_target)
+		if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
+			return ITEM_INTERACT_FAILURE
 		return ITEM_INTERACT_SUCCESS
 	else if(reagents)								//Handle ingestion of the reagent.
 		playsound(eater, eating_sound, rand(10,50), 1)

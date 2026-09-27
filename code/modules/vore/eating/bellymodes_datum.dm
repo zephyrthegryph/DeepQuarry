@@ -63,13 +63,14 @@ GLOBAL_LIST_INIT(digest_modes, list())
 
 	// Deal digestion damage (and feed the pred)
 	// The digest_* belly settings are saved player prefs; each maps onto the injury that describes it.
+	// They are rates per BELLY_BASELINE_TICK: continuous harm, so turbo and normal cycles land the same totals.
 	var/old_vitality = L.vitality()
 	var/was_critical = L.is_critical()
-	var/actual_brute = B.digest_brute > 0 ? L.injure(INJURY_DIGESTION, B.digest_brute * delta_factor, source = B) : 0
-	var/actual_burn = B.digest_burn > 0 ? L.injure(INJURY_CORROSIVE, B.digest_burn * delta_factor, source = B) : 0
+	var/actual_brute = B.digest_brute > 0 ? L.injure(INJURY_DIGESTION, B.digest_brute * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
+	var/actual_burn = B.digest_burn > 0 ? L.injure(INJURY_CORROSIVE, B.digest_burn * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
 	var/actual_oxy = B.digest_oxy > 0 ? L.add_oxygen_debt(B.digest_oxy * delta_factor, B) : 0
-	var/actual_tox = B.digest_tox > 0 ? L.injure(INJURY_TOXIN, B.digest_tox * delta_factor, source = B) : 0
-	var/actual_clone = B.digest_clone > 0 ? L.injure(INJURY_CELLULAR, B.digest_clone * delta_factor, source = B) : 0
+	var/actual_tox = B.digest_tox > 0 ? L.injure(INJURY_TOXIN, B.digest_tox * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
+	var/actual_clone = B.digest_clone > 0 ? L.injure(INJURY_CELLULAR, B.digest_clone * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
 	L.attempt_multishock(SHOCKFLAG_DIGESTION)
 	// Send a message when a prey-thing goes down (crit, or knocked out of consciousness).
 	if(iscarbon(L) && L.stat != DEAD && ((!was_critical && L.is_critical()) || (oldstat == CONSCIOUS && L.stat == UNCONSCIOUS)))

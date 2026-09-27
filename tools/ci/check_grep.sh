@@ -236,7 +236,7 @@ fi;
 
 part "thermal constants: no hardcoded body temperatures or human heat capacities (H1)"
 # 310.15 K is BODYTEMP_NORMAL and 280000 J/K is HUMAN_HEAT_CAPACITY. Comments are
-# ignored. emergent.dm's T0C + 37 belongs to the body rewrite (fixes.md B22).
+# ignored.
 if $grep -n '\b(310(\.(15|055|0?5))?|280000|249840)\b' "${code_files[@]}" | sed 's#//.*##' \
 	| grep -E '^[^:]+:[0-9]+:.*\b(310(\.(15|055|0?5))?|280000|249840)\b' | grep -iE 'temp|heat|capacit' \
 	| grep -v '^code/__defines/verdigris/_bindings\.dm'; then
@@ -244,7 +244,7 @@ if $grep -n '\b(310(\.(15|055|0?5))?|280000|249840)\b' "${code_files[@]}" | sed 
 	echo -e "${RED}ERROR: hardcoded body temperature or human heat capacity. Use BODYTEMP_NORMAL / HUMAN_HEAT_CAPACITY (generated from verdigris/domains/heat/src/consts.rs).${NC}"
 	FAILED=1
 fi;
-if $grep -n '^[^/]*(\bT0C[[:space:]]*\+[[:space:]]*37\b|\b37[[:space:]]*\+[[:space:]]*T0C\b)' "${code_files[@]}" | grep -v '^code/modules/medical/emergent\.dm:'; then
+if $grep -n '^[^/]*(\bT0C[[:space:]]*\+[[:space:]]*37\b|\b37[[:space:]]*\+[[:space:]]*T0C\b)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: T0C + 37 is BODYTEMP_NORMAL.${NC}"
 	FAILED=1
