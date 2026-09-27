@@ -326,10 +326,6 @@
 	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SELF, PROC_REF(on_attack_self))
 	RegisterSignal(parent, COMSIG_ITEM_ATTACK, PROC_REF(on_attack))
 
-/datum/component/economic_adoption/Destroy()
-	UnregisterSignal(parent, list(COMSIG_ITEM_ATTACK_SELF, COMSIG_ITEM_ATTACK))
-	return ..()
-
 /datum/component/economic_adoption/proc/on_attack_self(obj/item/source, mob/user)
 	SIGNAL_HANDLER
 	record_use(user)
