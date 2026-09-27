@@ -23,8 +23,10 @@
 		user.bombing_core = 0
 		return
 
-	var/choice = tgui_alert(user, "Really destroy core?", "Core self-destruct", list("YES", "NO"))
-	if(choice != "YES")
+	om_prompt(user, user, list("message" = "Really destroy core?", "title" = "Core self-destruct", "choices" = list("YES", "NO"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_core_bomb_confirmed))
+
+/proc/malf_core_bomb_confirmed(mob/living/silicon/ai/user, mob/answerer, choice, datum/om/prompt/ask)
+	if(choice != "YES" || user.bombing_core)
 		return
 
 	if(!ability_prechecks(user, 0, 1))
@@ -71,7 +73,6 @@
 	set name = "Destroy Station"
 	set desc = "Activates or deactivates self destruct sequence of this station. Sequence takes two minutes, and if you are shut down before timer reaches zero it will be cancelled."
 	var/mob/living/silicon/ai/user = usr
-	var/obj/item/radio/radio = new/obj/item/radio()
 
 
 	if(!ability_prechecks(user, 0, 0))
@@ -85,9 +86,12 @@
 		user.bombing_station = 0
 		return
 
-	var/choice = tgui_alert(user, "Really destroy station?", "Station self-destruct", list("YES", "NO"))
-	if(choice != "YES")
+	om_prompt(user, user, list("message" = "Really destroy station?", "title" = "Station self-destruct", "choices" = list("YES", "NO"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_station_bomb_confirmed))
+
+/proc/malf_station_bomb_confirmed(mob/living/silicon/ai/user, mob/answerer, choice, datum/om/prompt/ask)
+	if(choice != "YES" || user.bombing_station)
 		return
+	var/obj/item/radio/radio = new/obj/item/radio()
 	if(!ability_prechecks(user, 0, 0))
 		return
 	to_chat(user, "***** STATION SELF-DESTRUCT SEQUENCE INITIATED *****")

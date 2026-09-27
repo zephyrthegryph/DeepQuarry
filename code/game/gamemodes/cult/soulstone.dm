@@ -180,7 +180,13 @@
 	if(!A)
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone is empty! Go kill someone!")
 		return;
-	var/construct_class = tgui_input_list(U, "Please choose which type of construct you wish to create.", "Construct Type", possible_constructs)
+	om_prompt(src, U, list("kind" = "list", "message" = "Please choose which type of construct you wish to create.", "title" = "Construct Type", "choices" = possible_constructs, "target" = T, "requires" = PROMPT_ADJACENT, "data" = list("shell" = T)), PROC_REF(construct_type_chosen))
+
+/obj/item/soulstone/proc/construct_type_chosen(mob/U, construct_class, datum/om/prompt/ask)
+	var/obj/structure/constructshell/T = ask.get("shell")
+	var/mob/living/simple_mob/construct/shade/A = locate() in src
+	if(!A)
+		return
 	switch(construct_class)
 		if("Juggernaut")
 			var/mob/living/simple_mob/construct/juggernaut/Z = new /mob/living/simple_mob/construct/juggernaut (get_turf(T.loc))

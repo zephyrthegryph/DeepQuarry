@@ -94,9 +94,16 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	var/title = tgui_input_text(usr, "Select message title: ")
-	var/text = tgui_input_text(usr, "Select message text: ")
-	if(!title || !text || !ability_pay(user, price))
+	om_prompt_sequence(user, user, list(
+		list("key" = "title", "kind" = "text", "message" = "Select message title: "),
+		list("key" = "text", "kind" = "text", "message" = "Select message text: "),
+	), GLOBAL_PROC_REF(malf_encryption_hack_written), list("requires" = PROMPT_CONSCIOUS))
+
+/proc/malf_encryption_hack_written(mob/living/silicon/ai/user, mob/answerer, datum/om/prompt/ask)
+	var/price = 75
+	var/title = ask.get("title")
+	var/text = ask.get("text")
+	if(!title || !text || !ability_prechecks(user, price) || !ability_pay(user, price))
 		to_chat(user, "Hack Aborted")
 		return
 
@@ -121,8 +128,11 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	var/alert_target = tgui_input_list(user, "Select new alert level:", "Alert Level", list("green", "yellow", "violet", "orange", "blue", "red", "delta"))
-	if(!alert_target || !ability_pay(user, price))
+	om_prompt(user, user, list("kind" = "list", "message" = "Select new alert level:", "title" = "Alert Level", "choices" = list("green", "yellow", "violet", "orange", "blue", "red", "delta"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_alert_hack_chosen))
+
+/proc/malf_alert_hack_chosen(mob/living/silicon/ai/user, mob/answerer, alert_target, datum/om/prompt/ask)
+	var/price = 200
+	if(!alert_target || !ability_prechecks(user, price) || !ability_pay(user, price))
 		to_chat(user, "Hack Aborted")
 		return
 
@@ -139,9 +149,12 @@
 	set category = "Software"
 	set name = "System Override"
 	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
-	var/price = 500
 	var/mob/living/silicon/ai/user = usr
-	if (tgui_alert(user, "Begin system override? This cannot be stopped once started. The network administrators will probably notice this.", "System Override:", list("Yes", "No")) != "Yes")
+	om_prompt(user, user, list("message" = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this.", "title" = "System Override:", "choices" = list("Yes", "No"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_system_override_confirmed))
+
+/proc/malf_system_override_confirmed(mob/living/silicon/ai/user, mob/answerer, answer, datum/om/prompt/ask)
+	var/price = 500
+	if(answer != "Yes")
 		return
 	if (!ability_prechecks(user, price) || !ability_pay(user, price) || user.system_override)
 		if(user.system_override)

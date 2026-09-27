@@ -50,21 +50,31 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 			return ..()
 		var/mob/living/carbon/human/checker = user
 		if(checker.nif)//Proteans have NIFS
-			var/choice1 = tgui_input_list(user, "Do you wish interface with \the [src]", "Desired state", list("On", "Off"))
-			switch(choice1)
-				if("On")
-					var/choice2 = tgui_input_list(user, "Which entities do you wish for \the [src] to recycle?", "Desired targets", list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics"))
-					if(checker.isSynthetic())
-						to_chat(checker, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
-					else
-						to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
-					user.visible_message(span_warning("\The [user] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-					om_do_after(user, 3 SECONDS, src, src, PROC_REF(interface_on), list(user, choice2))
-				if("Off")
-					if(active)
-						user.visible_message(span_warning("\The [user] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-						om_do_after(user, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
+			om_prompt_sequence(src, user, list(
+				list("key" = "state", "kind" = "list", "message" = "Do you wish interface with \the [src]", "title" = "Desired state", "choices" = list("On", "Off")),
+				PROC_REF(ask_nanite_targets),
+			), PROC_REF(nanite_interface_chosen), list("requires" = PROMPT_ADJACENT))
 	return ..()
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/ask_nanite_targets(mob/user, datum/om/prompt/ask)
+	if(ask.get("state") == "On")
+		return list("key" = "targets", "kind" = "list", "message" = "Which entities do you wish for \the [src] to recycle?", "title" = "Desired targets", "choices" = list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics"))
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, datum/om/prompt/ask)
+	switch(ask.get("state"))
+		if("On")
+			if(!ask.get("targets"))
+				return
+			if(checker.isSynthetic())
+				to_chat(checker, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
+			else
+				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
+			checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
+			om_do_after(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, ask.get("targets")))
+		if("Off")
+			if(active)
+				checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
+				om_do_after(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
 	moblink = om_handle(user)
@@ -100,10 +110,17 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 					return ..()
 				if(!locate(user) in range(1, src))// AI can always control adjacent nanite tiles
 					return ..()
-	var/choice1 = tgui_input_list(user, "Do you wish interface with \the [src]", "Desired state", list("On", "Off"))
-	switch(choice1)
+	om_prompt_sequence(src, user, list(
+		list("key" = "state", "kind" = "list", "message" = "Do you wish interface with \the [src]", "title" = "Desired state", "choices" = list("On", "Off")),
+		PROC_REF(ask_nanite_targets),
+	), PROC_REF(nanite_ai_interface_chosen))
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, datum/om/prompt/ask)
+	var/choice2 = ask.get("targets")
+	switch(ask.get("state"))
 		if("On")
-			var/choice2 = tgui_input_list(user, "Which entities do you wish for [src] to recycle?", "Desired targets", list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics"))
+			if(!choice2)
+				return
 			to_chat(user, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			switch(choice2)
 				if("None")

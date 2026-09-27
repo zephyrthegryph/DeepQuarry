@@ -174,16 +174,23 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
-		else spawn()
-			var/choice = tgui_alert(target,"Do you want to join the cult?","Submit to Nar'Sie",list("Resist","Submit"))
-			waiting_for_input[target] = 0
-			if(choice == "Submit") //choosing 'Resist' does nothing of course.
-				GLOB.cult.add_antagonist(target.mind)
-				LAZYREMOVE(converting, target)
-				target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
+		else
+			om_prompt(src, target, list("message" = "Do you want to join the cult?", "title" = "Submit to Nar'Sie", "choices" = list("Resist","Submit"), "on_cancel" = PROC_REF(convert_closed), "data" = list("waiting" = waiting_for_input)), PROC_REF(convert_answered))
 
 	if(target in converting)
 		om_after(src, 10 SECONDS, PROC_REF(convert_tick), attacker, target, waiting_for_input, 1) //proc once every 10 seconds
+
+/obj/effect/rune/proc/convert_closed(mob/living/carbon/target, datum/om/prompt/ask)
+	var/list/waiting_for_input = ask.get("waiting")
+	waiting_for_input[target] = 0
+
+/obj/effect/rune/proc/convert_answered(mob/living/carbon/target, choice, datum/om/prompt/ask)
+	var/list/waiting_for_input = ask.get("waiting")
+	waiting_for_input[target] = 0
+	if(choice == "Submit") //choosing 'Resist' does nothing of course.
+		GLOB.cult.add_antagonist(target.mind)
+		LAZYREMOVE(converting, target)
+		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
 
 /////////////////////////////////////////FOURTH RUNE
 
@@ -624,7 +631,13 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 // returns 0 if the rune is not used. returns 1 if the rune is used.
 /obj/effect/rune/proc/communicate(mob/living/user)
 	. = 1 // Default output is 1. If the rune is deleted it will return 1
-	var/input = tgui_input_text(user, "Please choose a message to tell to the other acolytes.", "Voice of Blood", "", MAX_MESSAGE_LEN)//sanitize() below, say() and whisper() have their own
+	om_prompt(src, user, list("kind" = "text", "message" = "Please choose a message to tell to the other acolytes.", "title" = "Voice of Blood", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(communicate_cancelled)), PROC_REF(communicate_entered))
+	return 1
+
+/obj/effect/rune/proc/communicate_cancelled(mob/living/user, datum/om/prompt/ask)
+	fizzle(user)
+
+/obj/effect/rune/proc/communicate_entered(mob/living/user, input, datum/om/prompt/ask)
 	if(!input)
 		if (istype(src))
 			fizzle(user)
@@ -838,40 +851,48 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			users+=C
 	var/dam = round(15 / users.len)
 	if(users.len>=3)
-		var/mob/living/carbon/cultist = tgui_input_list(user, "Choose the one who you want to free", "Followers of Geometer", (cultists - users))
-		if(!cultist)
-			return fizzle(user)
-		if (cultist == user) //just to be sure.
-			return
-		if(!(BUCKLED(cultist) || \
-			cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
-			istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
-			(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
-			(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked) || \
-			(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
-		))
-			to_chat(user, span_warning("The [cultist] is already free."))
-			return
-		if(BUCKLED(cultist))
-			var/atom/movable/_tmp_buck_3 = BUCKLED(cultist)
-			_tmp_buck_3.unbuckle_mob(cultist, TRUE)
-		if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
-			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
-		if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
-			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
-		if (istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle))
-			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_MASK))
-		if(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded)
-			cultist.loc:welded = 0
-		if(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked)
-			cultist.loc:locked = 0
-		if(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked)
-			cultist.loc:locked = 0
-		for(var/mob/living/carbon/C in users)
-			user.injure(INJURY_BLUNT, dam)
-			C.say("Khari[pick("'","`")]d! Gual'te nikka!")
-		qdel(src)
+		om_prompt(src, user, list("kind" = "list", "message" = "Choose the one who you want to free", "title" = "Followers of Geometer", "choices" = (cultists - users), "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(ritual_cancelled), "data" = list("users" = users, "dam" = dam)), PROC_REF(freedom_target_chosen))
+		return
+
+/obj/effect/rune/proc/ritual_cancelled(mob/living/user, datum/om/prompt/ask)
+	fizzle(user)
 	return fizzle(user)
+
+/obj/effect/rune/proc/freedom_target_chosen(mob/living/user, mob/living/carbon/cultist, datum/om/prompt/ask)
+	var/list/users = ask.get("users")
+	var/dam = ask.get("dam")
+	if(!cultist)
+		return fizzle(user)
+	if (cultist == user) //just to be sure.
+		return
+	if(!(BUCKLED(cultist) || \
+		cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
+		istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
+		(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
+		(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked) || \
+		(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
+	))
+		to_chat(user, span_warning("The [cultist] is already free."))
+		return
+	if(BUCKLED(cultist))
+		var/atom/movable/_tmp_buck_3 = BUCKLED(cultist)
+		_tmp_buck_3.unbuckle_mob(cultist, TRUE)
+	if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+	if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+	if (istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle))
+		cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_MASK))
+	if(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded)
+		cultist.loc:welded = 0
+	if(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked)
+		cultist.loc:locked = 0
+	if(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked)
+		cultist.loc:locked = 0
+	for(var/mob/living/carbon/C in users)
+		user.injure(INJURY_BLUNT, dam)
+		C.say("Khari[pick("'","`")]d! Gual'te nikka!")
+	qdel(src)
 
 /////////////////////////////////////////NINETEENTH RUNE
 
@@ -885,32 +906,36 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		if(iscultist(C) && !C.stat)
 			users += C
 	if(users.len>=3)
-		var/mob/living/carbon/cultist = tgui_input_list(user, "Choose the one who you want to summon", "Followers of Geometer", (cultists - user))
-		if(!cultist)
-			return fizzle(user)
-		if (cultist == user) //just to be sure.
-			return
-		if(BUCKLED(cultist) || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
-			to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
-			return fizzle(user)
-		cultist.forceMove(src.loc)
-		cultist.lying = 1
-		cultist.regenerate_icons()
-
-		var/dam = round(25 / (users.len/2))	//More people around the rune less damage everyone takes. Minimum is 3 cultists
-
-		for(var/mob/living/carbon/human/C in users)
-			if(iscultist(C) && !C.stat)
-				C.say("N'ath reth sh'yro eth d[pick("'","`")]rekkathnor!")
-				C.injure(INJURY_BLUNT, dam)
-				if(users.len <= 4)				// You did the minimum, this is going to hurt more and we're going to stun you.
-					C.apply_effect(rand(3,6), STUN)
-					C.apply_effect(1, WEAKEN)
-		user.visible_message(span_warning("Rune disappears with a flash of red light, and in its place now a body lies."), \
-		span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body."), \
-		span_warning("You hear a pop and smell ozone."))
-		qdel(src)
+		om_prompt(src, user, list("kind" = "list", "message" = "Choose the one who you want to summon", "title" = "Followers of Geometer", "choices" = (cultists - user), "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(ritual_cancelled), "data" = list("users" = users)), PROC_REF(summon_target_chosen))
+		return
 	return fizzle(user)
+
+/obj/effect/rune/proc/summon_target_chosen(mob/living/user, mob/living/carbon/cultist, datum/om/prompt/ask)
+	var/list/users = ask.get("users")
+	if(!cultist)
+		return fizzle(user)
+	if (cultist == user) //just to be sure.
+		return
+	if(BUCKLED(cultist) || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
+		to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
+		return fizzle(user)
+	cultist.forceMove(src.loc)
+	cultist.lying = 1
+	cultist.regenerate_icons()
+
+	var/dam = round(25 / (users.len/2))	//More people around the rune less damage everyone takes. Minimum is 3 cultists
+
+	for(var/mob/living/carbon/human/C in users)
+		if(iscultist(C) && !C.stat)
+			C.say("N'ath reth sh'yro eth d[pick("'","`")]rekkathnor!")
+			C.injure(INJURY_BLUNT, dam)
+			if(users.len <= 4)				// You did the minimum, this is going to hurt more and we're going to stun you.
+				C.apply_effect(rand(3,6), STUN)
+				C.apply_effect(1, WEAKEN)
+	user.visible_message(span_warning("Rune disappears with a flash of red light, and in its place now a body lies."), \
+	span_warning("You are blinded by the flash of red light! After you're able to see again, you see that now instead of the rune there's a body."), \
+	span_warning("You hear a pop and smell ozone."))
+	qdel(src)
 
 /////////////////////////////////////////TWENTIETH RUNES
 

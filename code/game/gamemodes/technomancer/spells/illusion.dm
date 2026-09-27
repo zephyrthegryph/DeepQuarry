@@ -42,19 +42,23 @@
 				illusion.ai_brain?.give_destination(T)
 /obj/item/spell/illusion/on_use_cast(mob/user)
 	if(illusion)
-		var/choice = tgui_alert(user, "Would you like to have \the [illusion] speak, or do an emote?", "Illusion", list("Speak","Emote","Cancel"))
-		switch(choice)
-			if("Cancel")
-				return
-			if("Speak")
-				var/what_to_say = tgui_input_text(user, "What do you want \the [illusion] to say?","Illusion Speak", encode = FALSE)
-				//what_to_say = sanitize(what_to_say) //Sanitize occurs inside say() already.
-				if(what_to_say)
-					illusion.say(what_to_say)
-			if("Emote")
-				var/what_to_emote = tgui_input_text(user, "What do you want \the [illusion] to do?","Illusion Emote", encode = FALSE)
-				if(what_to_emote)
-					illusion.emote(what_to_emote)
+		om_prompt(src, user, list("message" = "Would you like to have \the [illusion] speak, or do an emote?", "title" = "Illusion", "choices" = list("Speak","Emote","Cancel")), PROC_REF(illusion_action_chosen))
+
+/obj/item/spell/illusion/proc/illusion_action_chosen(mob/user, choice, datum/om/prompt/ask)
+	switch(choice)
+		if("Speak")
+			om_prompt_chain(ask, list("kind" = "text", "message" = "What do you want \the [illusion] to say?", "title" = "Illusion Speak", "encode" = FALSE), PROC_REF(illusion_speak))
+		if("Emote")
+			om_prompt_chain(ask, list("kind" = "text", "message" = "What do you want \the [illusion] to do?", "title" = "Illusion Emote", "encode" = FALSE), PROC_REF(illusion_emote))
+
+/obj/item/spell/illusion/proc/illusion_speak(mob/user, what_to_say, datum/om/prompt/ask)
+	//Sanitize occurs inside say() already.
+	if(what_to_say && illusion)
+		illusion.say(what_to_say)
+
+/obj/item/spell/illusion/proc/illusion_emote(mob/user, what_to_emote, datum/om/prompt/ask)
+	if(what_to_emote && illusion)
+		illusion.emote(what_to_emote)
 
 /obj/item/spell/illusion/Destroy()
 	QDEL_NULL(illusion)

@@ -88,7 +88,9 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		testing("rogue_ai set_antag_name called on non-silicon mob [player]!")
 		return
 	// Choose a name, if any.
-	var/newname = tgui_input_text(player, "You are a [role_text]. Would you like to change your name to something else?", "Name change", null, MAX_NAME_LEN)
+	om_prompt(src, player, list("kind" = "text", "message" = "You are a [role_text]. Would you like to change your name to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(rogue_ai_name_chosen))
+
+/datum/antagonist/rogue_ai/proc/rogue_ai_name_chosen(mob/living/silicon/player, newname, datum/om/prompt/ask)
 	if (newname)
 		player.SetName(newname)
 	if(player.mind) player.mind.name = player.name

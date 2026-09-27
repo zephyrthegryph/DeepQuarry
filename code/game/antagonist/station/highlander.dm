@@ -67,7 +67,7 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
  */
 /client/proc/only_one(was_delayed = FALSE)
 	if(!SSticker.HasRoundStarted())
-		tgui_alert(usr,"The game hasn't started yet!")
+		tgui_alert_async(usr, "The game hasn't started yet!")
 		return
 
 	if(was_delayed) //sends more accurate logs

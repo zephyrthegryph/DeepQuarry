@@ -47,7 +47,11 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	if (tgui_alert(user, "Really recall the shuttle?", "Recall Shuttle: ", list(list("Yes", "No"))) != "Yes")
+	om_prompt(user, user, list("message" = "Really recall the shuttle?", "title" = "Recall Shuttle: ", "choices" = list("Yes", "No"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_recall_shuttle_confirmed))
+
+/proc/malf_recall_shuttle_confirmed(mob/living/silicon/ai/user, mob/living/silicon/ai/answerer, answer, datum/om/prompt/ask)
+	var/price = 25
+	if(answer != "Yes" || !ability_prechecks(user, price))
 		return
 
 	if(!ability_pay(user, price))
@@ -95,22 +99,30 @@
 			return
 
 
-		var/targetname = tgui_input_list(user, "Select unlock target:", "Unlock Target", robot_names)
-		if(!targetname)
-			return
-		for(var/mob/living/silicon/robot/R in robots)
-			if(targetname == R.name)
-				target = R
-				break
+		om_prompt(user, user, list("kind" = "list", "message" = "Select unlock target:", "title" = "Unlock Target", "choices" = robot_names, "requires" = PROMPT_CONSCIOUS, "data" = list("robots" = robots)), GLOBAL_PROC_REF(malf_unlock_target_chosen))
+		return
+	malf_unlock_confirm(user, target)
 
+/proc/malf_unlock_target_chosen(mob/living/silicon/ai/user, mob/living/silicon/ai/answerer, targetname, datum/om/prompt/ask)
+	for(var/mob/living/silicon/robot/R in ask.get("robots"))
+		if(targetname == R.name)
+			malf_unlock_confirm(user, R)
+			return
+
+/proc/malf_unlock_confirm(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target)
-		if(tgui_alert(user, "Really try to unlock cyborg [target.name]?", "Unlock Cyborg", list("Yes", "No")) != "Yes")
-			return
-		if(!ability_pay(user, price))
-			return
-		user.hacking = 1
-		to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
-		om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
+		om_prompt(user, user, list("message" = "Really try to unlock cyborg [target.name]?", "title" = "Unlock Cyborg", "choices" = list("Yes", "No"), "requires" = PROMPT_CONSCIOUS, "data" = list("target" = target)), GLOBAL_PROC_REF(malf_unlock_confirmed))
+
+/proc/malf_unlock_confirmed(mob/living/silicon/ai/user, mob/living/silicon/ai/answerer, answer, datum/om/prompt/ask)
+	var/mob/living/silicon/robot/target = ask.get("target")
+	var/price = 125
+	if(answer != "Yes")
+		return
+	if(!ability_pay(user, price))
+		return
+	user.hacking = 1
+	to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
+	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
 
 /proc/malf_unlock_cyborg_done(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target && target.lockcharge)
@@ -157,18 +169,23 @@
 		return
 
 	if(target)
-		if(tgui_alert(user, "Really try to hack cyborg [target.name]?", "Hack Cyborg", list("Yes", "No")) != "Yes")
-			return
-		if(!ability_pay(user, price))
-			return
-		user.hacking = 1
-		to_chat(usr, "Beginning hack sequence. Estimated time until completed: 30 seconds.")
-		om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "on_done" = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, "script" = list(
-			list(0, null, "SYSTEM LOG: Remote Connection Estabilished (IP #UNKNOWN#)"),
-			list(10 SECONDS, "SYSTEM LOG: Connection Closed", "SYSTEM LOG: User Admin logged on. (L1 - SysAdmin)"),
-			list(5 SECONDS, "SYSTEM LOG: User Admin disconnected.", "SYSTEM LOG: User Admin - manual resynchronisation triggered."),
-			list(5 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Manual resynchronisation confirmed. Select new AI to connect: [user.name] == ACCEPTED"),
-			list(10 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].", "Hack completed."))))
+		om_prompt(user, user, list("message" = "Really try to hack cyborg [target.name]?", "title" = "Hack Cyborg", "choices" = list("Yes", "No"), "requires" = PROMPT_CONSCIOUS, "data" = list("target" = target)), GLOBAL_PROC_REF(malf_hack_cyborg_confirmed))
+
+/proc/malf_hack_cyborg_confirmed(mob/living/silicon/ai/user, mob/living/silicon/ai/answerer, answer, datum/om/prompt/ask)
+	var/mob/living/silicon/robot/target = ask.get("target")
+	var/price = 350
+	if(answer != "Yes")
+		return
+	if(!ability_pay(user, price))
+		return
+	user.hacking = 1
+	to_chat(user, "Beginning hack sequence. Estimated time until completed: 30 seconds.")
+	om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "on_done" = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, "script" = list(
+		list(0, null, "SYSTEM LOG: Remote Connection Estabilished (IP #UNKNOWN#)"),
+		list(10 SECONDS, "SYSTEM LOG: Connection Closed", "SYSTEM LOG: User Admin logged on. (L1 - SysAdmin)"),
+		list(5 SECONDS, "SYSTEM LOG: User Admin disconnected.", "SYSTEM LOG: User Admin - manual resynchronisation triggered."),
+		list(5 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Manual resynchronisation confirmed. Select new AI to connect: [user.name] == ACCEPTED"),
+		list(10 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].", "Hack completed."))))
 
 
 /datum/game_mode/malfunction/verb/hack_ai(mob/living/silicon/ai/target as mob in get_other_ais(usr))
@@ -193,27 +210,32 @@
 		return
 
 	if(target)
-		if(tgui_alert(user, "Really try to hack AI [target.name]?", "Hack AI", list("Yes", "No")) != "Yes")
-			return
-		if(!ability_pay(user, price))
-			return
-		user.hacking = 1
-		to_chat(usr, "Beginning hack sequence. Estimated time until completed: 2 minutes")
-		var/list/script = list(
-			list(0, null, "SYSTEM LOG: Brute-Force login password hack attempt detected from IP #UNKNOWN#"),
-			list(90 SECONDS, "SYSTEM LOG: Connection from IP #UNKNOWN# closed. Hack attempt failed.", "SYSTEM LOG: User: Admin  Password: ******** logged in. (L1 - SysAdmin)", "Successfully hacked into AI's remote administration system. Modifying settings."),
-			list(10 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost", "SYSTEM LOG: User: Admin - Password Changed. New password: ********************"),
-			list(5 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", "SYSTEM LOG: User: Admin - Accessed file: sys//core//laws.db"),
-			list(5 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", list("SYSTEM LOG: User: Admin - Accessed administration console", "SYSTEM LOG: Restart command received. Rebooting system...")),
-			list(10 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", "SYSTEM LOG: System re'3RT5°^#COMU@(#$)TED)@$", "Hack succeeded. The AI is now under your exclusive control."))
-		for(var/i = 1 to 5)
-			script += list(list(i == 1 ? 0 : 5, null, pick("1101000100101001010001001001",\
-								"0101000100100100000100010010",\
-								"0000010001001010100100111100",\
-								"1010010011110000100101000100",\
-								"0010010100010011010001001010")))
-		script += list(list(5, null, "OPERATING KEYCODES RESET. SYSTEM FAILURE. EMERGENCY SHUTDOWN FAILED. SYSTEM FAILURE."))
-		om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "script" = script, "on_done" = /mob/living/silicon/ai/proc/malf_hack_ai_done))
+		om_prompt(user, user, list("message" = "Really try to hack AI [target.name]?", "title" = "Hack AI", "choices" = list("Yes", "No"), "requires" = PROMPT_CONSCIOUS, "data" = list("target" = target)), GLOBAL_PROC_REF(malf_hack_ai_confirmed))
+
+/proc/malf_hack_ai_confirmed(mob/living/silicon/ai/user, mob/living/silicon/ai/answerer, answer, datum/om/prompt/ask)
+	var/mob/living/silicon/ai/target = ask.get("target")
+	var/price = 600
+	if(answer != "Yes")
+		return
+	if(!ability_pay(user, price))
+		return
+	user.hacking = 1
+	to_chat(user, "Beginning hack sequence. Estimated time until completed: 2 minutes")
+	var/list/script = list(
+		list(0, null, "SYSTEM LOG: Brute-Force login password hack attempt detected from IP #UNKNOWN#"),
+		list(90 SECONDS, "SYSTEM LOG: Connection from IP #UNKNOWN# closed. Hack attempt failed.", "SYSTEM LOG: User: Admin  Password: ******** logged in. (L1 - SysAdmin)", "Successfully hacked into AI's remote administration system. Modifying settings."),
+		list(10 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost", "SYSTEM LOG: User: Admin - Password Changed. New password: ********************"),
+		list(5 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", "SYSTEM LOG: User: Admin - Accessed file: sys//core//laws.db"),
+		list(5 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", list("SYSTEM LOG: User: Admin - Accessed administration console", "SYSTEM LOG: Restart command received. Rebooting system...")),
+		list(10 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", "SYSTEM LOG: System re'3RT5°^#COMU@(#$)TED)@$", "Hack succeeded. The AI is now under your exclusive control."))
+	for(var/i = 1 to 5)
+		script += list(list(i == 1 ? 0 : 5, null, pick("1101000100101001010001001001",\
+							"0101000100100100000100010010",\
+							"0000010001001010100100111100",\
+							"1010010011110000100101000100",\
+							"0010010100010011010001001010")))
+	script += list(list(5, null, "OPERATING KEYCODES RESET. SYSTEM FAILURE. EMERGENCY SHUTDOWN FAILED. SYSTEM FAILURE."))
+	om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "script" = script, "on_done" = /mob/living/silicon/ai/proc/malf_hack_ai_done))
 
 
 // END ABILITY VERBS

@@ -29,7 +29,11 @@
 		*/ //Chomp DISABLE END
 	else
 		msg = "Your birthday has passed! Do you want to increase your character's listed age?"	//sad, but thus is the life of an adult
-	if(tgui_alert(src, msg,"BIRTHDAY! ([read_preference(/datum/preference/numeric/human/bday_month)]/[read_preference(/datum/preference/numeric/human/bday_day)])",list("Level me up, baby","No way, I'mma stay young forever")) == "Level me up, baby")
+	om_prompt(src, src, list("message" = msg, "title" = "BIRTHDAY! ([read_preference(/datum/preference/numeric/human/bday_month)]/[read_preference(/datum/preference/numeric/human/bday_day)])", "choices" = list("Level me up, baby","No way, I'mma stay young forever"), "data" = list("lastyear" = lastyear)), PROC_REF(birthday_answered))
+
+/mob/living/carbon/human/proc/birthday_answered(mob/user, answer, datum/om/prompt/ask)
+	var/lastyear = ask.get("lastyear")
+	if(answer == "Level me up, baby")
 		if(lastyear == 0)	//We've never been asked, so let's just assume you were keeping track before now and only add 1
 			age += 1
 		else

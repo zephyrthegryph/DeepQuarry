@@ -150,9 +150,9 @@
 	..()
 
 /obj/mecha/combat/phazon/janus/query_damtype()
-	var/new_damtype = tgui_alert(SLOT_ITEM(src, MECHA_SLOT_PILOT),"Gauntlet Phase Emitter Mode","Damage Type",list("Force","Energy","Stun"))
-	if(!new_damtype)
-		return
+	om_prompt(src, SLOT_ITEM(src, MECHA_SLOT_PILOT), list("message" = "Gauntlet Phase Emitter Mode", "title" = "Damage Type", "choices" = list("Force","Energy","Stun"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(janus_damtype_chosen))
+
+/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(mob/user, new_damtype, datum/om/prompt/ask)
 	switch(new_damtype)
 		if("Force")
 			melee_injury_kind = INJURY_BLUNT

@@ -411,9 +411,9 @@
 /obj/mecha/proc/query_damtype(mob/user)
 	if(user!=SLOT_ITEM(src, MECHA_SLOT_PILOT))
 		return
-	var/new_damtype = tgui_alert(SLOT_ITEM(src, MECHA_SLOT_PILOT),"Melee Damage Type","Damage Type",list("Brute","Fire","Toxic"))
-	if(!new_damtype)
-		return
+	om_prompt(src, user, list("message" = "Melee Damage Type", "title" = "Damage Type", "choices" = list("Brute","Fire","Toxic"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(melee_damtype_chosen))
+
+/obj/mecha/proc/melee_damtype_chosen(mob/user, new_damtype, datum/om/prompt/ask)
 	switch(new_damtype)
 		if("Brute")
 			melee_injury_kind = INJURY_BLUNT

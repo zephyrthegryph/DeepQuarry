@@ -9,8 +9,15 @@
 
 /proc/profile_memory()
 	if(usr?.client)
-		if(tgui_alert(usr,"Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end", "Profile memory", list("Yes", "No")) != "Yes")
-			return
+		om_prompt(null, usr, list("message" = "Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end", "title" = "Profile memory", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_DEBUG)), GLOBAL_PROC_REF(profile_memory_confirmed))
+		return
+	profile_memory_run()
+
+/proc/profile_memory_confirmed(datum/E, mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
+		profile_memory_run()
+
+/proc/profile_memory_run()
 	var/list/types_count = list()
 	var/list/mem_count = list()
 	var/list/by_variable = list()

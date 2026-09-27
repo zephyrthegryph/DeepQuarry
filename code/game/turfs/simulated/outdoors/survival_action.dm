@@ -15,11 +15,13 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 		to_chat(user, span_notice("The [name] isn't clear."))
 		return
 	else
-		var/choice= tgui_alert(user, "Do you want to build a growplot out of the dirt?", "Build growplot?" , list("Yes", "No"))
-		if(!choice||choice=="No")
-			return
-		user.visible_message("[user] starts piling up \the [src]...", "You start piling up \the [src]...")
-		om_do_after(user, 5 SECONDS, src, src, PROC_REF(pile_done))
+		om_prompt(src, user, list("message" = "Do you want to build a growplot out of the dirt?", "title" = "Build growplot?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(growplot_answered))
+
+/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(mob/user, choice, datum/om/prompt/ask)
+	if(choice != "Yes" || (locate(/obj) in src))
+		return
+	user.visible_message("[user] starts piling up \the [src]...", "You start piling up \the [src]...")
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(pile_done))
 
 /turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done()
 	if(!(icon_state in GLOB.has_rocks))
