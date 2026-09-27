@@ -114,10 +114,8 @@
 
 /datum/riding/proc/Unbuckle(atom/movable/M)
 //	addtimer(CALLBACK(ridden, TYPE_PROC_REF(/atom/movable, unbuckle_mob), M), 0, TIMER_UNIQUE)
-	spawn(0)
-	// On /tg/ this uses the fancy CALLBACK system. Not entirely sure why they needed to do so with a duration of 0,
-	// so if there is a reason, this should replicate it close enough. Hopefully.
-		ridden.unbuckle_mob(M)
+	// Deferred to the next scheduler slot, as /tg/ does with a zero-length timer.
+	om_after(ridden, 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), M)
 
 /datum/riding/proc/Process_Spacemove(direction)
 	if(ridden.get_gravity())

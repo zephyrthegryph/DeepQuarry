@@ -218,7 +218,7 @@ GLOBAL_VAR(restart_counter)
 
 	RunUnattendedFunctions()
 
-	spawn(3000)		//so we aren't adding to the round-start lag
+	spawn(3000)		//so we aren't adding to the round-start lag // S7 keeps: world/New (world procs); the ToR ban update is blocking external I/O
 		if(CONFIG_GET(flag/ToRban))
 			ToRban_autoupdate()
 

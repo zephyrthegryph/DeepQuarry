@@ -495,8 +495,7 @@
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(movetime), 1)
-		spawn(movetime)
-			glide_size = initial(glide_size)
+		om_after(src, movetime, TYPE_PROC_REF(/datum, om_set_var), "glide_size", initial(glide_size))
 	else
 		glide_size = initial(glide_size)
 

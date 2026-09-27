@@ -293,10 +293,8 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	return
 
 /datum/datacore/proc/manifest()
-	spawn()
-		for(var/mob/living/carbon/human/H in GLOB.player_list)
-			manifest_inject(H)
-		return
+	for(var/mob/living/carbon/human/H in GLOB.player_list)
+		manifest_inject(H)
 
 /datum/datacore/proc/manifest_modify(name, assignment, rank)
 	ResetPDAManifest()

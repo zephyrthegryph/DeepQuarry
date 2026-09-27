@@ -82,3 +82,7 @@
 /// om_after() target: a temporary sensory disability (`flag` of `sdisabilities`) wears off.
 /mob/proc/cure_temporary_sdisability(flag)
 	sdisabilities &= ~flag
+
+/// om_after() target: takes an image off a mob's client screen (after a fade-out).
+/proc/remove_client_image(mob/M, image/I)
+	M.client?.images -= I

@@ -116,11 +116,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		if(rig.air_supply)
 			player.internal = rig.air_supply
 
-	spawn(10)
-		if(player.internal)
-			player.internals.icon_state = "internal1"
-		else
-			to_chat(player, span_danger("You forgot to turn on your internals! Quickly, toggle the valve!"))
+	om_after(player, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, ninja_internals_check))
 
 /datum/antagonist/ninja/proc/generate_ninja_directive(side)
 	var/directive = "[side=="face"?"[using_map.company_name]":"A criminal syndicate"] is your employer. "//Let them know which side they're on.
@@ -165,3 +161,9 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		else
 			directive += "There are no special supplemental instructions at this time."
 	return directive
+
+/mob/living/carbon/human/proc/ninja_internals_check()
+	if(internal)
+		internals.icon_state = "internal1"
+	else
+		to_chat(src, span_danger("You forgot to turn on your internals! Quickly, toggle the valve!"))

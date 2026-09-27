@@ -11,13 +11,7 @@
 		if(announced)
 			return
 		announced = 1
-		spawn(0)
-			if(spawn_announcement_delay)
-				sleep(spawn_announcement_delay)
-			if(spawn_announcement_sound)
-				GLOB.command_announcement.Announce("[spawn_announcement]", "[spawn_announcement_title ? spawn_announcement_title : "Priority Alert"]", new_sound = spawn_announcement_sound)
-			else
-				GLOB.command_announcement.Announce("[spawn_announcement]", "[spawn_announcement_title ? spawn_announcement_title : "Priority Alert"]")
+		om_after(src, spawn_announcement_delay, /proc/delayed_command_announcement, "[spawn_announcement]", "[spawn_announcement_title ? spawn_announcement_title : "Priority Alert"]", spawn_announcement_sound)
 	return
 
 /datum/antagonist/proc/place_mob(mob/living/mob)

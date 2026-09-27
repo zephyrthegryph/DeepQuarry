@@ -166,8 +166,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				if(E.operating)
 					E.nextstate = FIREDOOR_CLOSED
 				else if(!E.density)
-					spawn(0)
-						E.close()
+					E.close()
 
 // Open all firedoors in the area
 /area/proc/firedoors_open()
@@ -180,8 +179,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				if(E.operating)
 					E.nextstate = FIREDOOR_OPEN
 				else if(E.density)
-					spawn(0)
-						E.open()
+					E.open()
 
 // atmospheric_field_generator (atm_ret_field.dm) was a ZAS-only machine.
 // Without LINDA replacement these procs neutered; the area-level toggle still
