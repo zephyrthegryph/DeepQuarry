@@ -46,30 +46,10 @@ SUBSYSTEM_DEF(machines)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	var/list/hibernating_vents = list()
-	var/list/sleeping_gas_devices = list()
-	/// Rust gas arena ID -> assoc list of weakrefs for sleeping gas-dependent devices.
-	var/list/gas_mixture_subscribers = list()
-	/// Material services are grouped separately so a harmless composition event
-	/// can be rejected once per mixture instead of once per object on that turf.
-	var/list/material_gas_subscribers = list()
-	var/list/material_gas_subscriber_masks = list()
-	var/list/material_gas_corrosion = list()
-	/// Rust gas arena ID -> weakref reference -> dependency mask captured when the
-	/// device went to sleep. This permits rejecting irrelevant semantic events
-	/// before resolving a weakref or invoking a device-specific predicate.
-	var/list/gas_mixture_subscriber_masks = list()
-	/// Per mixture, one count for each semantic dependency bit. Maintaining these
-	/// incrementally makes subscribe/unsubscribe O(number of bits), rather than
-	/// rescanning every vent/firedoor sharing a large pipenet.
-	var/list/gas_mixture_interest_counts = list()
-	/// Last aggregate mask published to Rust. An explosion can remove hundreds of
-	/// subscribers without crossing the FFI unless the actual aggregate changes.
-	var/list/gas_mixture_watch_masks = list()
-	/// Mixture key -> list(id, desired mask), coalesced while an explosion bulk
-	/// transaction destroys many subscribers.
-	var/list/pending_gas_watch_updates = list()
+	/// Vents asleep on their gas dependencies (profiler count).
+	var/hibernating_vent_count = 0
 	/// Dirty-mixture notification batch retained while a Machines fire yields.
+	/// Gas dependency observations (vg_drain_dirty_gas_observations()) retained while a Machines fire yields.
 	var/list/pending_dirty_gas_mixtures
 	var/pending_dirty_gas_index = 1
 	/// Leak faces collapse to one network-owned transaction per dirty batch.
@@ -146,7 +126,7 @@ SUBSYSTEM_DEF(machines)
 	msg += "MC:[length(SSmachines.processing_machines)]|"
 	msg += "PN:[length(power_regions)]|"
 	msg += "PO:[length(SSmachines.powerobjs)]|"
-	msg += "HV:[length(SSmachines.hibernating_vents)]|"
+	msg += "HV:[SSmachines.hibernating_vent_count]|"
 	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]|"
 	msg += "MC/MS:[round((cost_machinery ? length(SSmachines.processing_machines)/cost_machinery : 0),0.1)]"
 	return ..()
@@ -475,20 +455,13 @@ SUBSYSTEM_DEF(machines)
 	powerobjs = SSmachines.powerobjs
 	current_run = SSmachines.current_run
 	pending_pump_transfers = SSmachines.pending_pump_transfers
-	hibernating_vents = SSmachines.hibernating_vents
-	sleeping_gas_devices = SSmachines.sleeping_gas_devices
-	gas_mixture_subscribers = SSmachines.gas_mixture_subscribers
-	gas_mixture_subscriber_masks = SSmachines.gas_mixture_subscriber_masks
-	gas_mixture_interest_counts = SSmachines.gas_mixture_interest_counts
-	material_gas_subscribers = SSmachines.material_gas_subscribers
-	material_gas_subscriber_masks = SSmachines.material_gas_subscriber_masks
-	material_gas_corrosion = SSmachines.material_gas_corrosion
-	gas_mixture_watch_masks = SSmachines.gas_mixture_watch_masks
-	pending_gas_watch_updates = SSmachines.pending_gas_watch_updates
+	hibernating_vent_count = SSmachines.hibernating_vent_count
 	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
 	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
 	gas_wake_complete = SSmachines.gas_wake_complete
 
+/// Hands this batch of gas dependency observations to their watches
+/// (/datum/native_watch/gas): each calls its owner's on_gas_dependency().
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
@@ -498,79 +471,17 @@ SUBSYSTEM_DEF(machines)
 		gas_dirty_last = length(pending_dirty_gas_mixtures) / GAS_DEPENDENCY_OBSERVATION_STRIDE
 		gas_woken_last = 0
 		gas_dead_last = 0
-	while(pending_dirty_gas_index <= length(pending_dirty_gas_mixtures))
-		var/observation_index = pending_dirty_gas_index
-		var/mixture_id = pending_dirty_gas_mixtures[pending_dirty_gas_index]
-		var/change_mask = pending_dirty_gas_mixtures[pending_dirty_gas_index + 1]
+	var/list/observations = pending_dirty_gas_mixtures
+	while(pending_dirty_gas_index <= length(observations))
+		var/record = pending_dirty_gas_index
 		pending_dirty_gas_index += GAS_DEPENDENCY_OBSERVATION_STRIDE
-		var/list/subscribers = gas_mixture_subscribers["[mixture_id]"]
-		if(length(subscribers))
-			var/list/subscriber_masks = gas_mixture_subscriber_masks["[mixture_id]"]
-			var/list/to_wake
-			for(var/key in subscribers)
-				if(!((subscriber_masks?[key] || GAS_DEPENDENCY_ALL) & change_mask))
-					continue
-				current_gas_wake_subscribers++
-				var/datum/weakref/WR = subscribers[key]
-				var/datum/observed = WR?.resolve()
-				if(istype(observed, /datum/material_service))
-					var/datum/material_service/service = observed
-					if(!service.timer && service.gas_dependency_changed(mixture_id, change_mask, pending_dirty_gas_mixtures, observation_index))
-						service.environment_changed(FALSE)
-					continue
-				if(!sleeping_gas_devices[WR?.reference])
-					continue
-				var/obj/machinery/subscriber = WR?.resolve()
-				if(!subscriber)
-					gas_dead_last++
-					LAZYADD(to_wake, WR)
-				else if(istype(subscriber, /obj/machinery/atmospherics/pipe))
-					var/obj/machinery/atmospherics/pipe/leaking_pipe = subscriber
-					// Rust already filtered this to a material change in one of the
-					// two subscribed mixtures. The network's atomic batch computes
-					// the residual for all faces together; repeating pressure,
-					// temperature, and per-gas FFI reads for every pipe here is both
-					// redundant and the dominant post-explosion machine cost.
-					if(leaking_pipe.leaking && leaking_pipe.parent?.network)
-						pending_leak_network_wakes[leaking_pipe.parent.network] = TRUE
-					else if(leaking_pipe.leaking)
-						LAZYADD(to_wake, WR)
-				else if(profile_machine_types)
-					var/machine_type = "[subscriber.type]"
-					var/predicate_started = TICK_USAGE
-					var/should_wake = subscriber.gas_dependency_changed(mixture_id, change_mask, pending_dirty_gas_mixtures, observation_index)
-					gas_predicate_profile_cost[machine_type] += TICK_DELTA_TO_MS(TICK_USAGE - predicate_started)
-					gas_predicate_profile_calls[machine_type]++
-					if(should_wake)
-						LAZYADD(to_wake, WR)
-				else if(subscriber.gas_dependency_changed(mixture_id, change_mask, pending_dirty_gas_mixtures, observation_index))
-					LAZYADD(to_wake, WR)
-			for(var/datum/weakref/WR as anything in to_wake)
-				gas_woken_last++
-				wake_gas_subscriber(WR, "gas:[mixture_id]:[change_mask]")
-		var/list/material_subscribers = material_gas_subscribers["[mixture_id]"]
-		if(length(material_subscribers))
-			var/material_change_mask = change_mask
-			if(material_change_mask & GAS_DEPENDENCY_COMPOSITION)
-				var/temperature = pending_dirty_gas_mixtures[observation_index + 4]
-				var/volume = max(pending_dirty_gas_mixtures[observation_index + 5], 1)
-				var/corrosive_moles = pending_dirty_gas_mixtures[observation_index + 8] * 0.03 + pending_dirty_gas_mixtures[observation_index + 12] * 0.01 + pending_dirty_gas_mixtures[observation_index + 13] * 0.1
-				if(temperature >= 500)
-					corrosive_moles += pending_dirty_gas_mixtures[observation_index + 6] * 0.02
-				var/new_corrosion = corrosive_moles * R_IDEAL_GAS_EQUATION * temperature / volume / ONE_ATMOSPHERE * max(0.25, 1 + (temperature - T20C) / 600)
-				var/old_corrosion = material_gas_corrosion["[mixture_id]"] || 0
-				material_gas_corrosion["[mixture_id]"] = new_corrosion
-				if(abs(new_corrosion - old_corrosion) <= 0.000001)
-					material_change_mask &= ~GAS_DEPENDENCY_COMPOSITION
-			if(material_change_mask)
-				for(var/key in material_subscribers)
-					var/datum/weakref/material_ref = material_subscribers[key]
-					var/datum/material_service/service = material_ref?.resolve()
-					if(!service || !(service.gas_dependency_interest_mask() & material_change_mask))
-						continue
-					current_gas_wake_subscribers++
-					if(service.gas_dependency_changed(mixture_id, material_change_mask, pending_dirty_gas_mixtures, observation_index))
-						service.environment_changed(FALSE)
+		var/datum/native_watch/gas/W = om_native_watch_of(observations[record])
+		if(!W)
+			gas_dead_last++
+			continue
+		current_gas_wake_subscribers++
+		// The owner reads the record from its mixture id on (index + 1).
+		W.fire(list(observations[record + 1], observations[record + 2], observations, record + 1))
 		if(MC_TICK_CHECK)
 			current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
 			return FALSE
@@ -585,130 +496,29 @@ SUBSYSTEM_DEF(machines)
 	gas_wake_subscribers_last = current_gas_wake_subscribers
 	return TRUE
 
+/// Watches `mixture_id` for `WR`'s datum, with its gas_dependency_interest_mask();
+/// it hears on_gas_dependency(). Idempotent per mixture.
 /datum/controller/subsystem/machines/proc/subscribe_gas_dependency(mixture_id, datum/weakref/WR)
-	if(isnull(mixture_id) || !WR)
+	var/datum/owner = WR?.resolve()
+	if(isnull(mixture_id) || !owner)
 		return
-	var/key = "[mixture_id]"
-	var/datum/subscriber = WR.resolve()
-	if(istype(subscriber, /datum/material_service))
-		var/datum/material_service/service = subscriber
-		var/list/material_subscribers = material_gas_subscribers[key]
-		if(!material_subscribers)
-			material_subscribers = list()
-			material_gas_subscribers[key] = material_subscribers
-		if(material_subscribers[WR.reference])
+	for(var/datum/native_watch/gas/W as anything in owner.gas_dependency_watches)
+		if(W.mixture_id == mixture_id)
 			return
-		var/material_mask = service.gas_dependency_interest_mask()
-		material_subscribers[WR.reference] = WR
-		var/list/material_masks = material_gas_subscriber_masks[key]
-		if(!material_masks)
-			material_masks = list()
-			material_gas_subscriber_masks[key] = material_masks
-		material_masks[WR.reference] = material_mask
-		adjust_gas_interest_counts(key, NONE, material_mask)
-		refresh_gas_watch_mask(mixture_id)
-		return
-	var/list/subscribers = gas_mixture_subscribers[key]
-	if(!subscribers)
-		subscribers = list()
-		gas_mixture_subscribers[key] = subscribers
-	var/list/subscriber_masks = gas_mixture_subscriber_masks[key]
-	if(!subscriber_masks)
-		subscriber_masks = list()
-		gas_mixture_subscriber_masks[key] = subscriber_masks
-	var/old_mask = subscriber_masks[WR.reference] || NONE
-	var/new_mask = GAS_DEPENDENCY_ALL
-	if(istype(subscriber, /obj/machinery))
-		var/obj/machinery/machine = subscriber
-		new_mask = machine.gas_dependency_interest_mask()
-	subscribers[WR.reference] = WR
-	subscriber_masks[WR.reference] = new_mask
-	adjust_gas_interest_counts(key, old_mask, new_mask)
-	refresh_gas_watch_mask(mixture_id)
-
-/datum/controller/subsystem/machines/proc/gas_dependency_bits()
-	var/static/list/bits = list(GAS_DEPENDENCY_PRESSURE, GAS_DEPENDENCY_TEMPERATURE, GAS_DEPENDENCY_COMPOSITION)
-	return bits
-
-/datum/controller/subsystem/machines/proc/adjust_gas_interest_counts(key, old_mask, new_mask)
-	var/list/counts = gas_mixture_interest_counts[key]
-	if(!counts)
-		counts = list()
-		gas_mixture_interest_counts[key] = counts
-	for(var/bit in gas_dependency_bits())
-		var/old_has_bit = old_mask & bit
-		var/new_has_bit = new_mask & bit
-		if(old_has_bit == new_has_bit)
-			continue
-		var/bit_key = "[bit]"
-		counts[bit_key] = max((counts[bit_key] || 0) + (new_has_bit ? 1 : -1), 0)
-
-/datum/controller/subsystem/machines/proc/refresh_gas_watch_mask(mixture_id)
-	var/key = "[mixture_id]"
-	var/aggregate_mask = NONE
-	var/list/counts = gas_mixture_interest_counts[key]
-	for(var/bit in gas_dependency_bits())
-		if(counts?["[bit]"] > 0)
-			aggregate_mask |= bit
-	if(SSexplosions?.is_bulk_resolving())
-		pending_gas_watch_updates[key] = list(mixture_id, aggregate_mask)
-		return
-	publish_gas_watch_mask(mixture_id, aggregate_mask)
-
-/datum/controller/subsystem/machines/proc/publish_gas_watch_mask(mixture_id, aggregate_mask)
-	var/key = "[mixture_id]"
-	var/old_aggregate = gas_mixture_watch_masks[key] || NONE
-	if(aggregate_mask == old_aggregate)
-		return
-	if(aggregate_mask)
-		gas_mixture_watch_masks[key] = aggregate_mask
-		watch_dirty_gas_mixture(mixture_id, aggregate_mask)
-	else
-		gas_mixture_watch_masks.Remove(key)
-		vg_unwatch_dirty_gas_mixture(mixture_id)
-
-/datum/controller/subsystem/machines/proc/flush_gas_watch_updates()
-	if(!length(pending_gas_watch_updates))
-		return
-	var/list/updates = pending_gas_watch_updates
-	pending_gas_watch_updates = list()
-	for(var/key in updates)
-		var/list/update = updates[key]
-		publish_gas_watch_mask(update[1], update[2])
+	var/datum/native_watch/gas/W = gas_dependency_watch(owner, mixture_id, owner.gas_dependency_interest_mask(), TYPE_PROC_REF(/datum, on_gas_dependency))
+	if(W)
+		LAZYADD(owner.gas_dependency_watches, W)
 
 /datum/controller/subsystem/machines/proc/unsubscribe_gas_dependency(mixture_id, datum/weakref/WR)
-	if(isnull(mixture_id) || !WR)
+	// Not resolve(): owners unsubscribe from their own Destroy().
+	var/datum/owner = WR ? locate(WR.reference) : null
+	if(isnull(mixture_id) || !owner || owner.weak_reference != WR)
 		return
-	var/key = "[mixture_id]"
-	var/list/material_subscribers = material_gas_subscribers[key]
-	if(material_subscribers?[WR.reference])
-		var/list/material_masks = material_gas_subscriber_masks[key]
-		var/old_material_mask = material_masks?[WR.reference] || NONE
-		material_subscribers.Remove(WR.reference)
-		material_masks?.Remove(WR.reference)
-		adjust_gas_interest_counts(key, old_material_mask, NONE)
-		if(!length(material_subscribers))
-			material_gas_subscribers.Remove(key)
-			material_gas_subscriber_masks.Remove(key)
-			material_gas_corrosion.Remove(key)
-		if(!length(material_subscribers) && !length(gas_mixture_subscribers[key]))
-			gas_mixture_interest_counts.Remove(key)
-		refresh_gas_watch_mask(mixture_id)
-		return
-	var/list/subscribers = gas_mixture_subscribers[key]
-	if(!subscribers)
-		return
-	subscribers.Remove(WR.reference)
-	var/list/subscriber_masks = gas_mixture_subscriber_masks[key]
-	var/old_mask = subscriber_masks?[WR.reference] || NONE
-	subscriber_masks?.Remove(WR.reference)
-	adjust_gas_interest_counts(key, old_mask, NONE)
-	if(!length(subscribers))
-		gas_mixture_subscribers.Remove(key)
-		gas_mixture_subscriber_masks.Remove(key)
-		if(!length(material_gas_subscribers[key]))
-			gas_mixture_interest_counts.Remove(key)
-	refresh_gas_watch_mask(mixture_id)
+	for(var/datum/native_watch/gas/W as anything in owner.gas_dependency_watches)
+		if(W.mixture_id == mixture_id)
+			LAZYREMOVE(owner.gas_dependency_watches, W)
+			qdel(W)
+			return
 
 /datum/controller/subsystem/machines/proc/hibernate_vent(obj/machinery/atmospherics/unary/V)
 	if(!V)
@@ -716,8 +526,10 @@ SUBSYSTEM_DEF(machines)
 	var/datum/weakref/WR = WEAKREF(V)
 	if(!WR)
 		return
-	hibernating_vents[WR.reference] = WR
-	sleeping_gas_devices[WR.reference] = WR
+	if(!V.vent_hibernating)
+		V.vent_hibernating = TRUE
+		hibernating_vent_count++
+	V.gas_asleep = TRUE
 	V.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(V)
 
@@ -727,7 +539,7 @@ SUBSYSTEM_DEF(machines)
 	var/datum/weakref/WR = WEAKREF(P)
 	if(!WR)
 		return
-	sleeping_gas_devices[WR.reference] = WR
+	P.gas_asleep = TRUE
 	P.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(P)
 
@@ -736,18 +548,18 @@ SUBSYSTEM_DEF(machines)
 		return
 	var/datum/weakref/WR = WEAKREF(A)
 	if(subscribe)
-		sleeping_gas_devices[WR.reference] = WR
+		A.gas_asleep = TRUE
 		A.register_gas_dependencies(WR)
 	else
 		A.unregister_gas_dependencies(WR)
-		sleeping_gas_devices.Remove(WR.reference)
+		A.gas_asleep = FALSE
 	STOP_MACHINE_PROCESSING(A)
 
 /datum/controller/subsystem/machines/proc/hibernate_air_sensor(obj/machinery/air_sensor/S)
 	if(!S)
 		return
 	var/datum/weakref/WR = WEAKREF(S)
-	sleeping_gas_devices[WR.reference] = WR
+	S.gas_asleep = TRUE
 	S.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(S)
 
@@ -755,7 +567,7 @@ SUBSYSTEM_DEF(machines)
 	if(!S)
 		return
 	var/datum/weakref/WR = WEAKREF(S)
-	sleeping_gas_devices[WR.reference] = WR
+	S.gas_asleep = TRUE
 	S.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(S)
 
@@ -763,7 +575,7 @@ SUBSYSTEM_DEF(machines)
 	if(!M)
 		return
 	var/datum/weakref/WR = WEAKREF(M)
-	sleeping_gas_devices[WR.reference] = WR
+	M.gas_asleep = TRUE
 	M.register_gas_dependency(WR)
 	STOP_MACHINE_PROCESSING(M)
 
@@ -771,7 +583,7 @@ SUBSYSTEM_DEF(machines)
 	if(!G)
 		return
 	var/datum/weakref/WR = WEAKREF(G)
-	sleeping_gas_devices[WR.reference] = WR
+	G.gas_asleep = TRUE
 	G.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(G)
 
@@ -779,14 +591,10 @@ SUBSYSTEM_DEF(machines)
 	wake_gas_subscriber(WR)
 
 /datum/controller/subsystem/machines/proc/wake_gas_subscriber(datum/weakref/WR, reason = "gas")
-	if(!WR)
+	var/obj/machinery/subscriber = WR?.resolve()
+	if(!istype(subscriber) || !subscriber.gas_asleep)
 		return
-	if(WR.reference && !sleeping_gas_devices[WR.reference])
-		return
-	var/atom/subscriber = WR.resolve()
-	if(istype(subscriber, /obj/machinery))
-		var/obj/machinery/woken_machine = subscriber
-		woken_machine.gas_dependency_wake_count++
+	subscriber.gas_dependency_wake_count++
 	if(istype(subscriber, /obj/machinery/atmospherics/unary))
 		var/obj/machinery/atmospherics/unary/V = subscriber
 		// Unary devices usually settle again in one fire. Keep their arena
@@ -811,7 +619,7 @@ SUBSYSTEM_DEF(machines)
 	else if(istype(subscriber, /obj/machinery/alarm))
 		var/obj/machinery/alarm/A = subscriber
 		// Dependency registrations describe topology, not scheduler state. Keep
-		// them while the device performs its one active pass; sleeping_gas_devices
+		// them while the device performs its one active pass; gas_asleep
 		// gates delivery, and hibernation refreshes its revision/signature. This
 		// avoids two arena FFI calls for every harmless pressure notification.
 		START_MACHINE_PROCESSING(A)
@@ -851,10 +659,12 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/power/generator/G = subscriber
 		G.clear_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(G)
-	if(WR.reference)
-		sleeping_gas_devices.Remove(WR.reference)
-		hibernating_vents[WR.reference] = null
-		hibernating_vents.Remove(WR.reference)
+	subscriber.gas_asleep = FALSE
+	if(istype(subscriber, /obj/machinery/atmospherics/unary))
+		var/obj/machinery/atmospherics/unary/vent = subscriber
+		if(vent.vent_hibernating)
+			vent.vent_hibernating = FALSE
+			hibernating_vent_count--
 
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS

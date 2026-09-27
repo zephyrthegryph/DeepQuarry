@@ -96,7 +96,7 @@
 		sleeping_mixture_ids[key] = mixture_id
 		sleeping_mixture_revisions[key] = P.air.revision()
 		SSmachines.subscribe_gas_dependency(mixture_id, WR)
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
@@ -106,7 +106,7 @@
 	sleeping_mixture_ids = null
 	sleeping_mixture_revisions = null
 	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		gas_asleep = FALSE
 
 /obj/machinery/atmospherics/omni/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || !use_power || (stat & (NOPOWER|BROKEN)))

@@ -103,7 +103,7 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 	sleeping_turf_mixture_id = environment?.arena_id()
 	sleeping_turf_revision = environment?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
 	STOP_MACHINE_PROCESSING(src)
 
@@ -113,7 +113,7 @@
 	sleeping_turf_mixture_id = null
 	sleeping_turf_revision = -1
 	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		gas_asleep = FALSE
 
 /obj/machinery/disposal/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || mixture_id != sleeping_turf_mixture_id || mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))

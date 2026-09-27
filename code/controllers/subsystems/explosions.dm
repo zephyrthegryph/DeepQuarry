@@ -529,7 +529,6 @@ SUBSYSTEM_DEF(explosions)
 		atmos_topology_batch_open = FALSE
 		SSair.rust_commit_pending_pipenets()
 		vg_power_commit()
-	SSmachines.flush_gas_watch_updates()
 	// we've finished. Pause because was have no more work to do.
 	if(!can_fire) // already asleep
 		return

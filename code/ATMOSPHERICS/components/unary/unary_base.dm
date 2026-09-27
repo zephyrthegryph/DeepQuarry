@@ -13,6 +13,8 @@
 
 	var/welded = FALSE //defining this here for ventcrawl stuff
 	/// Arena dependencies captured while this device is absent from SSmachines.
+	/// Counted in SSmachines.hibernating_vent_count while asleep.
+	var/tmp/vent_hibernating = FALSE
 	var/sleeping_turf_mixture_id
 	var/sleeping_turf_revision = -1
 	var/sleeping_turf_pressure = 0
@@ -127,12 +129,12 @@
 	// we're done with it.
 	var/datum/weakref/self_ref = weak_reference
 	unregister_gas_dependencies(self_ref)
-	// A device destroyed while asleep must also drop out of the sleeping/hibernating
-	// registries directly -- those are only cleared on wake, and Destroy() is not
-	// guaranteed to route through a wake first.
-	if(self_ref?.reference)
-		SSmachines.sleeping_gas_devices -= self_ref.reference
-		SSmachines.hibernating_vents -= self_ref.reference
+	// A device destroyed while asleep leaves the hibernating count directly:
+	// Destroy() is not guaranteed to route through a wake first.
+	gas_asleep = FALSE
+	if(vent_hibernating)
+		vent_hibernating = FALSE
+		SSmachines.hibernating_vent_count--
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
 	var/datum/pipe_network/old_network = network
 	if(old_network?.normal_members)

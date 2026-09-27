@@ -180,7 +180,7 @@
 	sleeping_input_revision = air1?.revision() || -1
 	sleeping_output_mixture_id = air2?.arena_id()
 	sleeping_output_revision = air2?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
 	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
 	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
@@ -198,7 +198,7 @@
 	sleeping_output_mixture_id = null
 	sleeping_output_revision = -1
 	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		gas_asleep = FALSE
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !use_power || (stat & (NOPOWER|BROKEN)))

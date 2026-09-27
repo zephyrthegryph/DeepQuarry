@@ -179,7 +179,7 @@
 	leak_sleeping_turf_revision = environment?.revision() || -1
 	leak_sleeping_pipe_mixture_id = pipe_air?.arena_id()
 	leak_sleeping_pipe_revision = pipe_air?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	SSmachines.subscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
 	SSmachines.subscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
 	STOP_MACHINE_PROCESSING(src)
@@ -193,7 +193,17 @@
 	leak_sleeping_pipe_mixture_id = null
 	leak_sleeping_pipe_revision = -1
 	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		gas_asleep = FALSE
+
+/// Exposed pipe faces are network-owned transactions: a leaking pipe's wake
+/// goes to its network's batch, with no per-pipe predicate.
+/obj/machinery/atmospherics/pipe/on_gas_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	if(!gas_asleep || !leaking)
+		return
+	if(parent?.network && SSmachines.pending_leak_network_wakes)
+		SSmachines.pending_leak_network_wakes[parent.network] = TRUE
+	else
+		SSmachines.wake_gas_subscriber(WEAKREF(src))
 
 /obj/machinery/atmospherics/pipe/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || !leaking)

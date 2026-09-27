@@ -91,19 +91,19 @@
 		return
 	var/datum/weakref/WR = WEAKREF(src)
 	sleeping_device_mixture_id = device_air.arena_id()
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	SSmachines.subscribe_gas_dependency(sleeping_device_mixture_id, WR)
 
 /obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
 	var/datum/weakref/WR = WEAKREF(src)
 	if(isnull(sleeping_device_mixture_id))
 		if(WR?.reference)
-			SSmachines.sleeping_gas_devices.Remove(WR.reference)
+			gas_asleep = FALSE
 		return
 	SSmachines.unsubscribe_gas_dependency(sleeping_device_mixture_id, WR)
 	sleeping_device_mixture_id = null
 	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		gas_asleep = FALSE
 
 /obj/machinery/atmospherics/portables_connector/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_ALL))

@@ -10,15 +10,15 @@
 //   call(owner, callback)(watch, ...wake arguments)
 //
 // Owners never compare handles or keep owner maps: each watch knows its own
-// callback. Cancel with qdel(watch) (or watch.cancel()); a watch whose owner
-// is gone is dropped at its next wake.
+// callback. Cancel with qdel(watch) (or watch.cancel()). The watch holds its
+// owner weakly: a watch whose owner is gone is dropped at its next wake.
 //
 // Domain subtypes (/datum/native_watch/heat, /gas) implement register() and
 // unregister() against their Rust binds.
 
 /datum/native_watch
-	/// The datum whose proc runs.
-	var/datum/owner
+	/// The datum whose proc runs (weak: the owner holds its watches, not the reverse).
+	var/datum/weakref/owner_ref
 	/// Proc path called on `owner` as (watch, ...).
 	var/callback
 	/// SSvg entity handle: this watch's identity, and the subscriber Rust reports.
@@ -26,7 +26,7 @@
 
 /datum/native_watch/New(datum/owner, callback)
 	..()
-	src.owner = owner
+	owner_ref = WEAKREF(owner)
 	src.callback = callback
 	handle = SSvg.bind_datum(src)
 
@@ -41,7 +41,7 @@
 	unregister()
 	SSvg.unbind_datum(src, handle)
 	handle = 0
-	owner = null
+	owner_ref = null
 
 /// Registers with the Rust domain. Returns FALSE if it was refused.
 /datum/native_watch/proc/register()
@@ -53,7 +53,8 @@
 
 /// Calls the owner's proc with this watch and `args`.
 /datum/native_watch/proc/fire(list/arguments)
-	if(!owner || QDELETED(owner))
+	var/datum/owner = owner_ref?.resolve()
+	if(!owner)
 		qdel(src)
 		return
 	call(owner, callback)(arglist(list(src) + arguments))

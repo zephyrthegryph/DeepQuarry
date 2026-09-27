@@ -14,9 +14,10 @@
 //! `TurfGas` channels: turf cells through the field's own watches, main and
 //! pipe mixtures through a [`WatchState`] over a mirror of their gas (kept
 //! for watched handles only, refreshed on every write this module makes).
-//! Machines' dirty subscriptions (`watch_dirty_gas_mixture`) are ordinary
-//! `Changed` watches on pressure, temperature and composition, owned by
-//! subscriber [`DIRTY`].
+//! Gas dependency watches (`watch_dirty_gas_mixture`) are ordinary
+//! `Changed` watches on pressure, temperature and composition, one per DM
+//! watch handle (`code/datums/om/native.dm`), on their own mirror port so
+//! DM handles never meet reactor subscriber ids.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -175,8 +176,33 @@ struct Slot {
     live: bool,
 }
 
-/// The dirty-watch subscriber: machines' `watch_dirty_gas_mixture`.
-const DIRTY: Subscriber = 0;
+/// Mirror ports: the reactor's watches on main and pipe mixtures, and the
+/// dependency watches (subscribers are DM watch handles).
+const REACTOR_PORT: u8 = 1;
+const DEPENDENCY_PORT: u8 = 2;
+
+/// A watch port over the mixture mirrors.
+struct Mirror {
+    state: WatchState<TurfGas>,
+    port: WatchPort<TurfGas>,
+}
+
+impl Mirror {
+    fn new(layout: ChunkLayout) -> Self {
+        Self {
+            state: WatchState::new(layout),
+            port: WatchPort::new(layout),
+        }
+    }
+
+    fn evaluate(&mut self, probes: &CowStore<GasCell>) -> Vec<Wake> {
+        let mut outbox: Outbox<GasCell> = Outbox::default();
+        self.port.dispatch(&mut self.state);
+        self.state.evaluate(probes, &mut outbox);
+        self.port.filter(&mut outbox);
+        outbox.wakes().to_vec()
+    }
+}
 
 struct Mixes {
     slots: Vec<Slot>,
@@ -184,14 +210,14 @@ struct Mixes {
     live: usize,
     /// Mirrors of watched main and pipe mixtures, by handle id.
     probes: CowStore<GasCell>,
-    state: WatchState<TurfGas>,
-    port: WatchPort<TurfGas>,
+    reactor: Mirror,
+    deps: Mirror,
     /// Watches per handle id (only watched handles are mirrored).
     watched: HashMap<u32, u32>,
-    /// The cells of each main/pipe watch, to unmirror them.
-    cells: HashMap<WatchId, Vec<u32>>,
-    /// Dirty watches, by handle id: `(watch, turf field or not)`.
-    dirty: HashMap<u32, WatchId>,
+    /// The cells of each mirrored watch, by `(port, watch)`, to unmirror them.
+    cells: HashMap<(u8, WatchId), Vec<u32>>,
+    /// Dependency watches, by DM watch handle: `(mixture id, watch)`.
+    dirty: HashMap<Subscriber, (u32, WatchId)>,
 }
 
 impl Default for Mixes {
@@ -202,8 +228,8 @@ impl Default for Mixes {
             free: Vec::new(),
             live: 0,
             probes: CowStore::new(layout),
-            state: WatchState::new(layout),
-            port: WatchPort::new(layout),
+            reactor: Mirror::new(layout),
+            deps: Mirror::new(layout),
             watched: HashMap::new(),
             cells: HashMap::new(),
             dirty: HashMap::new(),
@@ -254,9 +280,18 @@ pub fn alloc(mix: Mixture) -> Result<u32> {
     })
 }
 
-/// Frees a main-owned slot and its dirty watch.
+/// Frees a main-owned slot and its dependency watches.
 pub fn free(i: u32) {
-    unwatch_dirty(i);
+    let subs: Vec<Subscriber> = with_mixes(|m| {
+        m.dirty
+            .iter()
+            .filter(|(_, (id, _))| *id == i)
+            .map(|(&s, _)| s)
+            .collect()
+    });
+    for s in subs {
+        unwatch_dirty(s);
+    }
     with_mixes(|m| {
         if let Some(slot) = m.slots.get_mut(i as usize).filter(|s| s.live) {
             slot.live = false;
@@ -562,39 +597,52 @@ pub fn watch(sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)> 
     if refs.iter().any(|r| matches!(r, MixRef::Turf(_))) {
         bail!("a gas watch takes turf gas or other mixtures, not both");
     }
-    watch_mirrored(sub, lane, cond, ids).map(|id| (1, id))
+    watch_mirrored(REACTOR_PORT, sub, lane, cond, ids).map(|id| (REACTOR_PORT, id))
 }
 
 /// Registers `cond` on the mirror port (any handles, turf cells included:
 /// their mirror is refreshed from DM's own view at each drain) and primes
 /// it with the current values, so a write right after registering fires.
-fn watch_mirrored(sub: Subscriber, lane: Lane, cond: &Cond, ids: Vec<u32>) -> Result<WatchId> {
+fn watch_mirrored(
+    port: u8,
+    sub: Subscriber,
+    lane: Lane,
+    cond: &Cond,
+    ids: Vec<u32>,
+) -> Result<WatchId> {
     let loaded: Vec<(u32, Option<Mixture>)> = ids
         .iter()
         .map(|&h| (h, MixRef::from_id(h).and_then(load)))
         .collect();
     let (id, primed) = with_mixes(|m| {
-        let id = m.port.watch(sub, lane, cond).map_err(|e| eyre!("{e:?}"))?;
+        let mirror = if port == DEPENDENCY_PORT {
+            &mut m.deps
+        } else {
+            &mut m.reactor
+        };
+        let id = mirror
+            .port
+            .watch(sub, lane, cond)
+            .map_err(|e| eyre!("{e:?}"))?;
         for (h, mix) in loaded {
             *m.watched.entry(h).or_default() += 1;
             if let Some(mix) = mix {
                 m.probes.set(h, cell_of_mixture(&mix));
             }
         }
-        m.cells.insert(id, ids);
+        m.cells.insert((port, id), ids);
         Ok::<_, eyre::Report>((id, evaluate(m)))
     })?;
-    HELD.with_borrow_mut(|h| h.2.extend(primed));
+    HELD.with_borrow_mut(|h| {
+        h.2.extend(primed.0);
+        h.1.extend(primed.1);
+    });
     Ok(id)
 }
 
-/// Runs the mirror port's watches once.
-fn evaluate(m: &mut Mixes) -> Vec<Wake> {
-    let mut outbox: Outbox<GasCell> = Outbox::default();
-    m.port.dispatch(&mut m.state);
-    m.state.evaluate(&m.probes, &mut outbox);
-    m.port.filter(&mut outbox);
-    outbox.wakes().to_vec()
+/// Runs both mirror ports' watches once: `(reactor wakes, dependency wakes)`.
+fn evaluate(m: &mut Mixes) -> (Vec<Wake>, Vec<Wake>) {
+    (m.reactor.evaluate(&m.probes), m.deps.evaluate(&m.probes))
 }
 
 /// Removes a watch [`watch`] returned.
@@ -604,8 +652,13 @@ pub fn unwatch(port: u8, id: WatchId) {
         return;
     }
     with_mixes(|m| {
-        let _ = m.port.unwatch(id);
-        for h in m.cells.remove(&id).unwrap_or_default() {
+        let mirror = if port == DEPENDENCY_PORT {
+            &mut m.deps
+        } else {
+            &mut m.reactor
+        };
+        let _ = mirror.port.unwatch(id);
+        for h in m.cells.remove(&(port, id)).unwrap_or_default() {
             if let Some(n) = m.watched.get_mut(&h) {
                 *n -= 1;
                 if *n == 0 {
@@ -643,13 +696,18 @@ fn take_wakes() -> Vec<Wake> {
         .into_iter()
         .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
         .collect();
-    with_mixes(|m| {
+    let deps = with_mixes(|m| {
         for (h, c) in fresh {
             m.probes.set(h, c);
         }
-        out.extend(evaluate(m));
+        let (reactor, deps) = evaluate(m);
+        out.extend(reactor);
+        deps
     });
-    out.extend(HELD.with_borrow_mut(|h| std::mem::take(&mut h.2)));
+    HELD.with_borrow_mut(|h| {
+        h.1.extend(deps);
+        out.append(&mut h.2);
+    });
     out
 }
 
@@ -659,17 +717,11 @@ thread_local! {
     static HELD: RefCell<(Vec<Wake>, Vec<Wake>, Vec<Wake>)> = const { RefCell::new((Vec::new(), Vec::new(), Vec::new())) };
 }
 
+/// Collects every pending wake: the reactor's into `HELD.0`, the
+/// dependency watches' into `HELD.1`.
 fn split_wakes() {
     let wakes = take_wakes();
-    HELD.with_borrow_mut(|(reactor, dirty, _)| {
-        for w in wakes {
-            if w.subscriber == DIRTY {
-                dirty.push(w)
-            } else {
-                reactor.push(w)
-            }
-        }
-    });
+    HELD.with_borrow_mut(|(reactor, _, _)| reactor.extend(wakes));
 }
 
 /// The reactor's gas wakes since the last call.
@@ -692,10 +744,10 @@ const DIRTY_CHANNELS: [(u8, vg_core::channel::ChannelId); 3] = [
     (GAS_CHANGE_COMPOSITION, gas_ch::COMPOSITION),
 ];
 
-/// Watches handle `id` for pressure, temperature or composition changes
-/// (`mask`: `GAS_CHANGE_*`), replacing any earlier dirty watch on it.
-pub fn watch_dirty(id: u32, mask: u8) {
-    unwatch_dirty(id);
+/// DM watch `sub` watches mixture `id` for pressure, temperature or
+/// composition changes (`mask`: `GAS_CHANGE_*`), replacing its earlier watch.
+pub fn watch_dirty(id: u32, sub: Subscriber, mask: u8) {
+    unwatch_dirty(sub);
     let bits = DIRTY_CHANNELS
         .iter()
         .filter(|(b, _)| mask & b != 0)
@@ -707,38 +759,21 @@ pub fn watch_dirty(id: u32, mask: u8) {
         cell: id,
         mask: bits,
     };
-    if let Ok(w) = watch_mirrored(DIRTY, Lane::Normal, &cond, vec![id]) {
-        with_mixes(|m| m.dirty.insert(id, pack((1, w))));
+    if let Ok(w) = watch_mirrored(DEPENDENCY_PORT, sub, Lane::Normal, &cond, vec![id]) {
+        with_mixes(|m| m.dirty.insert(sub, (id, w)));
     }
 }
 
-/// A dirty watch's `(port, id)` in one [`WatchId`]: the port rides in the
-/// top bit of the index.
-const fn pack((port, id): (u8, WatchId)) -> WatchId {
-    WatchId {
-        index: id.index | ((port as u32) << 31),
-        generation: id.generation,
+/// Drops DM watch `sub`'s dependency watch.
+pub fn unwatch_dirty(sub: Subscriber) {
+    if let Some((_, w)) = with_mixes(|m| m.dirty.remove(&sub)) {
+        unwatch(DEPENDENCY_PORT, w);
     }
 }
 
-/// Drops `id`'s dirty watch.
-pub fn unwatch_dirty(id: u32) {
-    if let Some(w) = with_mixes(|m| m.dirty.remove(&id)) {
-        #[allow(clippy::cast_possible_truncation)]
-        let port = (w.index >> 31) as u8;
-        unwatch(
-            port,
-            WatchId {
-                index: w.index & !(1 << 31),
-                generation: w.generation,
-            },
-        );
-    }
-}
-
-/// Drains dirty notifications with the control-relevant state of each
-/// mixture, `GAS_DEPENDENCY_OBSERVATION_STRIDE` floats per record: id,
-/// mask, revision, pressure, temperature, volume, o2, co2, plasma,
+/// Drains dependency notifications with the control-relevant state of each
+/// mixture, `GAS_DEPENDENCY_OBSERVATION_STRIDE` floats per record: watch
+/// handle, mixture id, mask, revision, pressure, temperature, volume, o2, co2, plasma,
 /// methane, n2o, volatile fuel, miasma, zauker, total moles.
 pub fn drain_observations() -> Vec<f32> {
     use vg_gas::gas::ids::{
@@ -746,20 +781,20 @@ pub fn drain_observations() -> Vec<f32> {
         GAS_VOLATILE_FUEL, GAS_ZAUKER,
     };
     split_wakes();
-    let mut masks: Vec<(u32, u8)> = Vec::new();
+    let mut masks: Vec<(Subscriber, u32, u8)> = Vec::new();
     HELD.with_borrow_mut(|(_, dirty, _)| {
         for w in dirty.drain(..) {
             let mask = DIRTY_CHANNELS
                 .iter()
                 .filter(|(_, ch)| w.reason & ch.bit() != 0)
                 .fold(0u8, |acc, (b, _)| acc | b);
-            masks.push((w.source, mask));
+            masks.push((w.subscriber, w.source, mask));
         }
     });
     masks.sort_unstable();
     masks.dedup_by(|b, a| {
         if a.0 == b.0 {
-            a.1 |= b.1;
+            a.2 |= b.2;
             true
         } else {
             false
@@ -775,14 +810,15 @@ pub fn drain_observations() -> Vec<f32> {
         GAS_MIASMA,
         GAS_ZAUKER,
     ];
-    let mut values = Vec::with_capacity(masks.len() * 15);
-    for (id, mask) in masks {
+    let mut values = Vec::with_capacity(masks.len() * GAS_OBSERVATION_STRIDE);
+    for (sub, id, mask) in masks {
         let Some(r) = MixRef::from_id(id) else {
             continue;
         };
         let Some(m) = load(r) else { continue };
         #[allow(clippy::cast_precision_loss)]
         values.extend([
+            sub as f32,
             id as f32,
             f32::from(mask),
             (revision(r) & 0x00FF_FFFF) as f32,
@@ -798,7 +834,7 @@ pub fn drain_observations() -> Vec<f32> {
 
 /// Floats per record returned by `drain_dirty_gas_observations`.
 /// @dm-define GAS_DEPENDENCY_OBSERVATION_STRIDE
-pub const GAS_OBSERVATION_STRIDE: usize = 15;
+pub const GAS_OBSERVATION_STRIDE: usize = 16;
 
 #[cfg(test)]
 mod tests {
@@ -810,6 +846,38 @@ mod tests {
         m.set_moles(GAS_OXYGEN, moles);
         m.set_temperature(293.15);
         m
+    }
+
+    #[test]
+    fn each_dependency_watch_hears_its_own_mixture() {
+        with_world(|_| Ok(())).unwrap();
+        let (a, b) = (alloc(tank(10.0)).unwrap(), alloc(tank(10.0)).unwrap());
+        let (ra, rb) = (MixRef::Main(a), MixRef::Main(b));
+        watch_dirty(ra.id(), 7, GAS_CHANGE_PRESSURE);
+        watch_dirty(ra.id(), 9, GAS_CHANGE_PRESSURE);
+        watch_dirty(rb.id(), 11, GAS_CHANGE_TEMPERATURE);
+        let _ = drain_observations();
+        let before = load(ra).unwrap();
+        store(ra, &before, &tank(20.0));
+        let obs = drain_observations();
+        let heard: Vec<(f32, f32)> = obs
+            .chunks_exact(GAS_OBSERVATION_STRIDE)
+            .map(|o| (o[0], o[1]))
+            .collect();
+        #[allow(clippy::cast_precision_loss)]
+        let id = ra.id() as f32;
+        assert_eq!(heard, vec![(7.0, id), (9.0, id)], "{obs:?}");
+        unwatch_dirty(7);
+        let before = load(ra).unwrap();
+        store(ra, &before, &tank(30.0));
+        let obs = drain_observations();
+        assert_eq!(
+            obs.len(),
+            GAS_OBSERVATION_STRIDE,
+            "only watch 9 is left: {obs:?}"
+        );
+        free(a);
+        free(b);
     }
 
     #[test]

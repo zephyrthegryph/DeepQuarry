@@ -653,6 +653,9 @@ mod tests {
         .unwrap();
         shutdown();
         assert!(WORLD.with_borrow(Option::is_none));
-        assert!(with_world(|_| Ok(())).is_err(), "the world was rebuilt after shutdown");
+        assert!(
+            with_world(|_| Ok(())).is_err(),
+            "the world was rebuilt after shutdown"
+        );
     }
 }

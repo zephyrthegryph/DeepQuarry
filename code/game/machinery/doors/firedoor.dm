@@ -468,7 +468,7 @@
 		LAZYSET(sleeping_mixture_ids, key, mixture_id)
 		SSmachines.subscribe_gas_dependency(mixture_id, WR)
 	sleeping_atmos_signature = firedoor_cached_atmos_signature()
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
@@ -481,7 +481,7 @@
 	sleeping_mixture_ids = null
 	sleeping_atmos_signature = null
 	// sleeping_atmos_snapshot is kept for reuse; the null signature marks it stale.
-	SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	gas_asleep = FALSE
 
 /obj/machinery/door/firedoor/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & (GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE)))

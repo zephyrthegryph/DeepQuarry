@@ -292,7 +292,7 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 	sleeping_mixture_id = environment?.arena_id()
 	sleeping_mixture_revision = environment?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
 	STOP_MACHINE_PROCESSING(src)
 
@@ -302,7 +302,7 @@
 	sleeping_mixture_id = null
 	sleeping_mixture_revision = -1
 	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		gas_asleep = FALSE
 
 /obj/machinery/power/thermoregulator/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE) || mixture_id != sleeping_mixture_id || !on)

@@ -46,21 +46,10 @@ fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
     auxcallback::callback_processing_hook(remaining)
 }
 
-#[auxmacros::bind("/proc/drain_dirty_gas_mixtures")]
-fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
-    #[allow(clippy::cast_precision_loss)]
-    let changes = mix::drain_observations()
-        .chunks_exact(mix::GAS_OBSERVATION_STRIDE)
-        .flat_map(|o| [ByondValue::from(o[0]), ByondValue::from(o[1])])
-        .collect::<Vec<_>>();
-    let list = ByondValue::new_list()?;
-    list.write_list(&changes)?;
-    Ok(list)
-}
-
-/// Drains dirty notifications and captures the control-relevant gas state in
-/// one call, so sleeping air alarms evaluate thresholds without crossing the
-/// FFI once per value. Flat stride: id, mask, revision, pressure,
+/// Drains dependency notifications and captures the control-relevant gas
+/// state in one call, so sleeping devices evaluate thresholds without
+/// crossing the FFI once per value. Flat stride: watch handle, mixture id,
+/// mask, revision, pressure,
 /// temperature, volume, o2, co2, plasma, methane, n2o, volatile_fuel,
 /// miasma, zauker, total_moles.
 #[auxmacros::bind("/proc/drain_dirty_gas_observations")]
@@ -71,17 +60,25 @@ fn drain_dirty_gas_observations() -> Result<ByondValue> {
     Ok(list)
 }
 
+/// DM watch `handle` (a `/datum/native_watch/gas`) watches mixture `id`
+/// for `interest_mask` (`GAS_DEPENDENCY_*`) changes.
 #[auxmacros::bind("/proc/watch_dirty_gas_mixture")]
-fn watch_dirty_gas_mixture(id: ByondValue, interest_mask: ByondValue) -> Result<ByondValue> {
-    let (id, mask) = (id.get_number()? as u32, interest_mask.get_number()? as u8);
-    mix::watch_dirty(id, mask);
+fn watch_dirty_gas_mixture(
+    id: ByondValue,
+    handle: ByondValue,
+    interest_mask: ByondValue,
+) -> Result<ByondValue> {
+    let id = id.get_number()? as u32;
+    let handle = crate::world::whole(&handle, "watch handle")?;
+    let mask = interest_mask.get_number()? as u8;
+    mix::watch_dirty(id, handle, mask);
     Ok(ByondValue::null())
 }
 
+/// Drops DM watch `handle`'s dependency watch.
 #[auxmacros::bind("/proc/unwatch_dirty_gas_mixture")]
-fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
-    let id = id.get_number()? as u32;
-    mix::unwatch_dirty(id);
+fn unwatch_dirty_gas_mixture(handle: ByondValue) -> Result<ByondValue> {
+    mix::unwatch_dirty(crate::world::whole(&handle, "watch handle")?);
     Ok(ByondValue::null())
 }
 

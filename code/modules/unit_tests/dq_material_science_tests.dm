@@ -499,7 +499,7 @@
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
 	for(var/subscribed_id in service.mixture_ids)
-		TEST_ASSERT(REF(service) in SSmachines.material_gas_subscribers["[subscribed_id]"], "Material subscriptions must use the coalesced mixture registry")
+		TEST_ASSERT(dq_gas_watches(service, subscribed_id), "Material subscriptions must be gas dependency watches")
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
 	SSmaterial_services.unqueue(service)
 	service.timer = FALSE
@@ -513,16 +513,14 @@
 	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), queued_count, "Repeated gas publications must coalesce into one queued exposure, not allocate timers")
 	cell.forceMove(destination)
 	service.rebind()
-	var/list/ids = service.mixture_ids.Copy()
+	var/list/watches = service.gas_dependency_watches?.Copy()
+	TEST_ASSERT(length(watches), "A bound assembly must watch its mixtures")
 	var/reference = REF(service)
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
 	TEST_ASSERT(!SSmaterial_services.scheduled_indices[reference], "Deleting an assembly must remove its queued exposure work")
-	for(var/id in ids)
-		var/list/subscribers = SSmachines.gas_mixture_subscribers["[id]"]
-		TEST_ASSERT(!(reference in subscribers), "Deleted assemblies must release mixture subscriptions")
-		var/list/material_subscribers = SSmachines.material_gas_subscribers["[id]"]
-		TEST_ASSERT(!(reference in material_subscribers), "Deleted assemblies must release coalesced material subscriptions")
+	for(var/datum/native_watch/gas/W as anything in watches)
+		TEST_ASSERT(QDELETED(W), "Deleted assemblies must release their gas dependency watches")
 
 /datum/unit_test/dq_material_gas_publication_filtering
 

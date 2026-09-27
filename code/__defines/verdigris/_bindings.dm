@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "967073615d2afec9"
+#define VERDIGRIS_ABI "f4c199701399b1d6"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -53,7 +53,7 @@
 
 /// Floats per record returned by `drain_dirty_gas_observations`.
 // verdigris/ffi/src/gas/mix.rs
-#define GAS_DEPENDENCY_OBSERVATION_STRIDE 15
+#define GAS_DEPENDENCY_OBSERVATION_STRIDE 16
 
 /// Dirty-change bits DM machinery interest masks use.
 // verdigris/ffi/src/gas/mix.rs
@@ -526,15 +526,10 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
 
-// /proc/drain_dirty_gas_mixtures (verdigris/ffi/src/gas/binds.rs)
-/proc/vg_drain_dirty_gas_mixtures()
-	var/static/__f = load_ext(VERDIGRIS, "byond:drain_dirty_gas_mixtures_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
-
-/// Drains dirty notifications and captures the control-relevant gas state in
-/// one call, so sleeping air alarms evaluate thresholds without crossing the
-/// FFI once per value. Flat stride: id, mask, revision, pressure,
+/// Drains dependency notifications and captures the control-relevant gas
+/// state in one call, so sleeping devices evaluate thresholds without
+/// crossing the FFI once per value. Flat stride: watch handle, mixture id,
+/// mask, revision, pressure,
 /// temperature, volume, o2, co2, plasma, methane, n2o, volatile_fuel,
 /// miasma, zauker, total_moles.
 // /proc/drain_dirty_gas_observations (verdigris/ffi/src/gas/binds.rs)
@@ -1455,11 +1450,12 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
+/// Drops DM watch `handle`'s dependency watch.
 // /proc/unwatch_dirty_gas_mixture (verdigris/ffi/src/gas/binds.rs)
-/proc/vg_unwatch_dirty_gas_mixture(id)
+/proc/vg_unwatch_dirty_gas_mixture(handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:unwatch_dirty_gas_mixture_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id)
+	return call_ext(__f)(handle)
 
 /// For updating reaction informations for auxmos, only call this when it is changed.
 // /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/ffi/src/gas/mod.rs)
@@ -1578,11 +1574,13 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
+/// DM watch `handle` (a `/datum/native_watch/gas`) watches mixture `id`
+/// for `interest_mask` (`GAS_DEPENDENCY_*`) changes.
 // /proc/watch_dirty_gas_mixture (verdigris/ffi/src/gas/binds.rs)
-/proc/vg_watch_dirty_gas_mixture(id, interest_mask)
+/proc/vg_watch_dirty_gas_mixture(id, handle, interest_mask)
 	var/static/__f = load_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id, interest_mask)
+	return call_ext(__f)(id, handle, interest_mask)
 
 /// `REACT_AT`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
 /// at the next step). Returns the token.

@@ -59,6 +59,10 @@
 	sleeping_pipe_mixture_id = null
 	sleeping_pipe_revision = -1
 
+/// Heat-exchange pipes wake on their own predicate, not the leak path.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/on_gas_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	gas_dependency_wake_if_changed(mixture_id, change_mask, observation, observation_index)
+
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE))
 		return FALSE

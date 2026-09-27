@@ -287,11 +287,16 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// Environmental assemblies care about thermal/composition changes. Pressure is
 /// relevant only to pressure-rated objects, so ordinary machine housings do not
 /// wake whenever their turf's atmos revision advances.
-/datum/material_service/proc/gas_dependency_interest_mask()
+/datum/material_service/gas_dependency_interest_mask()
 	var/mask = GAS_DEPENDENCY_TEMPERATURE | GAS_DEPENDENCY_COMPOSITION
 	if(owner.material_service_rating() > 0)
 		mask |= GAS_DEPENDENCY_PRESSURE
 	return mask
+
+/// A dependency changed: queue an exposure if it matters.
+/datum/material_service/on_gas_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	if(gas_dependency_changed(mixture_id, change_mask, observation, observation_index))
+		environment_changed(FALSE)
 
 /// Filter Rust's compact gas publication before entering the exposure queue.
 /// This is deliberately a semantic threshold, not a timer: cumulative changes

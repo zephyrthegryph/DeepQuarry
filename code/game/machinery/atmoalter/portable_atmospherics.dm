@@ -48,7 +48,7 @@
 	sleeping_mixture_id = air_contents?.arena_id()
 	if(isnull(sleeping_mixture_id))
 		return
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	gas_asleep = TRUE
 	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
 	STOP_MACHINE_PROCESSING(src)
 
@@ -57,13 +57,13 @@
 	var/ref_key = WR?.reference
 	if(isnull(sleeping_mixture_id))
 		if(ref_key)
-			SSmachines.sleeping_gas_devices.Remove(ref_key)
+			gas_asleep = FALSE
 		return
 	if(WR)
 		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
 	sleeping_mixture_id = null
 	if(ref_key)
-		SSmachines.sleeping_gas_devices.Remove(ref_key)
+		gas_asleep = FALSE
 
 /obj/machinery/portable_atmospherics/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_ALL))

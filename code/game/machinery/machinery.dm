@@ -224,10 +224,33 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/proc/gas_dependency_changed(mixture_id, change_mask)
 	return TRUE
 
-/// Change classes this machine can act on while sleeping. Rust uses the
-/// aggregate mask to avoid publishing irrelevant notifications into DM.
-/obj/machinery/proc/gas_dependency_interest_mask()
+/// Change classes this machine can act on while sleeping (its watches' mask).
+/obj/machinery/gas_dependency_interest_mask()
 	return GAS_DEPENDENCY_ALL
+
+/// Asleep on its gas dependencies: their watches may wake it.
+/obj/machinery/var/tmp/gas_asleep = FALSE
+
+/// A dependency changed: wake if asleep and it matters.
+/obj/machinery/on_gas_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	gas_dependency_wake_if_changed(mixture_id, change_mask, observation, observation_index)
+
+/// Wakes the sleeping machine when gas_dependency_changed() says the change matters.
+/obj/machinery/proc/gas_dependency_wake_if_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!gas_asleep)
+		return
+	var/should_wake
+	if(SSmachines.profile_machine_types)
+		var/machine_type = "[type]"
+		var/predicate_started = TICK_USAGE
+		should_wake = gas_dependency_changed(mixture_id, change_mask, observation, observation_index)
+		SSmachines.gas_predicate_profile_cost[machine_type] += TICK_DELTA_TO_MS(TICK_USAGE - predicate_started)
+		SSmachines.gas_predicate_profile_calls[machine_type]++
+	else
+		should_wake = gas_dependency_changed(mixture_id, change_mask, observation, observation_index)
+	if(should_wake)
+		SSmachines.gas_woken_last++
+		SSmachines.wake_gas_subscriber(WEAKREF(src), "gas:[mixture_id]:[change_mask]")
 
 /obj/machinery/emp_act(severity, recursive)
 	if(material_emp_resistance && prob(material_emp_resistance))
