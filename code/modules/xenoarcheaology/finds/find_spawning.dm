@@ -15,7 +15,9 @@
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
-	var/type_to_spawn = tgui_input_number(usr, "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", "Spawn Artifact", 0)
+	var/type_to_spawn = rerun_prompt(usr, "k18", list("kind" = "number", "message" = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", "title" = "Spawn Artifact", "default" = 0), PROC_REF(artifact_spawn_debug_tool), args)
+	if(isnull(type_to_spawn))
+		return
 	new /obj/item/archaeological_find(src.loc, type_to_spawn)
 
 /obj/item/archaeological_find/Initialize(mapload, new_item_type)

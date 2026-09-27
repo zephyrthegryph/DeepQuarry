@@ -348,12 +348,18 @@
 			return TRUE
 		if(inserted_mob.client)
 			var/response //Let's see if they are SURE they accept the fact they will be a clothing, plushie, or something else.
-			response = tgui_alert(inserted_mob, "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", "WARNING: Are you sure you want to be put in the machine and transformed?", list("No", "Certain"))
+			var/_answer_k351 = rerun_prompt(inserted_mob, "k351", list("message" = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", "title" = "WARNING: Are you sure you want to be put in the machine and transformed?", "choices" = list("No", "Certain")), PROC_REF(interaction_insert), args)
+			if(isnull(_answer_k351))
+				return
+			response = _answer_k351
 			if(response != "Certain") //If they don't agree, stop.
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else //If they /do/ agree, give them one last chance.
-				response = tgui_alert(inserted_mob, "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", "WARNING: FINAL CHANCE!", list("No", "Certain"))
+				var/_answer_k356 = rerun_prompt(inserted_mob, "k356", list("message" = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", "title" = "WARNING: FINAL CHANCE!", "choices" = list("No", "Certain")), PROC_REF(interaction_insert), args)
+				if(isnull(_answer_k356))
+					return
+				response = _answer_k356
 				if(response != "Certain")
 					to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 					return TRUE
@@ -377,12 +383,18 @@
 			return TRUE
 		if(inserted_mob.client)
 			var/response
-			response = tgui_alert(inserted_mob, "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", "WARNING: Are you sure you want to be put in the machine and transformed?", list("No", "Certain"))
+			var/_answer_k380 = rerun_prompt(inserted_mob, "k380", list("message" = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", "title" = "WARNING: Are you sure you want to be put in the machine and transformed?", "choices" = list("No", "Certain")), PROC_REF(interaction_insert), args)
+			if(isnull(_answer_k380))
+				return
+			response = _answer_k380
 			if(response != "Certain")
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else
-				response = tgui_alert(inserted_mob, "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", "WARNING: FINAL CHANCE!", list("No", "Certain"))
+				var/_answer_k385 = rerun_prompt(inserted_mob, "k385", list("message" = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", "title" = "WARNING: FINAL CHANCE!", "choices" = list("No", "Certain")), PROC_REF(interaction_insert), args)
+				if(isnull(_answer_k385))
+					return
+				response = _answer_k385
 				if(response != "Certain")
 					to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 					return TRUE
@@ -601,12 +613,18 @@
 			return TRUE
 		if(inserted_mob.client)
 			var/response //Let's see if they are SURE they accept the fact they will be a clothing, plushie, or something else.
-			response = tgui_alert(inserted_mob, "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", "WARNING: Are you sure you want to be put in the machine and transformed?", list("No", "Certain"))
+			var/_answer_k604 = rerun_prompt(inserted_mob, "k604", list("message" = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", "title" = "WARNING: Are you sure you want to be put in the machine and transformed?", "choices" = list("No", "Certain")), PROC_REF(interaction_insert), args)
+			if(isnull(_answer_k604))
+				return
+			response = _answer_k604
 			if(response != "Certain") //If they don't agree, stop.
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else //If they /do/ agree, give them one last chance.
-				response = tgui_alert(inserted_mob, "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", "WARNING: FINAL CHANCE!", list("No", "I accept the possibilities"))
+				var/_answer_k609 = rerun_prompt(inserted_mob, "k609", list("message" = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", "title" = "WARNING: FINAL CHANCE!", "choices" = list("No", "I accept the possibilities")), PROC_REF(interaction_insert), args)
+				if(isnull(_answer_k609))
+					return
+				response = _answer_k609
 				if(response != "I accept the possibilities")
 					to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 					return TRUE
@@ -630,12 +648,18 @@
 			return TRUE
 		if(inserted_mob.client)
 			var/response
-			response = tgui_alert(inserted_mob, "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", "WARNING: Are you sure you want to be put in the machine and transformed?", list("No", "Certain"))
+			var/_answer_k633 = rerun_prompt(inserted_mob, "k633", list("message" = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", "title" = "WARNING: Are you sure you want to be put in the machine and transformed?", "choices" = list("No", "Certain")), PROC_REF(interaction_insert), args)
+			if(isnull(_answer_k633))
+				return
+			response = _answer_k633
 			if(response != "Certain")
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else
-				response = tgui_alert(inserted_mob, "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", "WARNING: FINAL CHANCE!", list("No", "I accept the possibilities"))
+				var/_answer_k638 = rerun_prompt(inserted_mob, "k638", list("message" = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", "title" = "WARNING: FINAL CHANCE!", "choices" = list("No", "I accept the possibilities")), PROC_REF(interaction_insert), args)
+				if(isnull(_answer_k638))
+					return
+				response = _answer_k638
 				if(response != "I accept the possibilities")
 					to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 					return TRUE

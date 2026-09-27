@@ -159,7 +159,10 @@
 		if("drainbattery")
 			if(inserted_battery)
 				if(inserted_battery.battery_effect && inserted_battery.stored_charge > 0)
-					if(tgui_alert(ui.user, "This action will dump all charge, safety gear is recommended before proceeding","Warning",list("Continue","Cancel")) == "Continue")
+					var/_answer_k162 = act_prompt(ui.user, action, params, ui, "k162", list("message" = "This action will dump all charge, safety gear is recommended before proceeding", "title" = "Warning", "choices" = list("Continue","Cancel")))
+					if(isnull(_answer_k162))
+						return
+					if(_answer_k162 == "Continue")
 						if(!inserted_battery.battery_effect.activated)
 							inserted_battery.battery_effect.ToggleActivate(1)
 						harvesting = -1
@@ -222,7 +225,9 @@
 			atom_say("Cannot harvest. No harvestable energy emitting from source.")
 			return
 
-		var/artifact_selection = tgui_input_list(user, "Which effect do you wish to harvest?", "Effect Selection", effects_to_show)
+		var/artifact_selection = rerun_prompt(user, "k225", list("kind" = "list", "message" = "Which effect do you wish to harvest?", "title" = "Effect Selection", "choices" = effects_to_show), PROC_REF(harvest), args)
+		if(isnull(artifact_selection))
+			return
 		var/datum/artifact_effect/selected_effect
 		if(artifact_selection && (artifact_selection in effects_to_show))
 			selected_effect = artifact_selection

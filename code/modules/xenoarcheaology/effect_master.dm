@@ -120,7 +120,9 @@
 	return effects
 
 /datum/component/artifact_master/proc/add_effect()
-	var/effect_type = tgui_input_list(usr, "What type do you want?", "Effect Type", subtypesof(/datum/artifact_effect))
+	var/effect_type = rerun_prompt(usr, "k123", list("kind" = "list", "message" = "What type do you want?", "title" = "Effect Type", "choices" = subtypesof(/datum/artifact_effect)), PROC_REF(add_effect), args)
+	if(isnull(effect_type))
+		return
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
 		if(istype(holder, my_effect.req_type))
@@ -131,7 +133,9 @@
 			qdel(my_effect)
 
 /datum/component/artifact_master/proc/remove_effect()
-	var/to_remove_effect = tgui_input_list(usr, "What effect do you want to remove?", "Remove Effect", my_effects)
+	var/to_remove_effect = rerun_prompt(usr, "k134", list("kind" = "list", "message" = "What effect do you want to remove?", "title" = "Remove Effect", "choices" = my_effects), PROC_REF(remove_effect), args)
+	if(isnull(to_remove_effect))
+		return
 
 	if(to_remove_effect)
 		var/datum/artifact_effect/AE = to_remove_effect

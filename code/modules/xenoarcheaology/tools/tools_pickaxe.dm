@@ -168,7 +168,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/depth = tgui_input_number(user, "Put the desired depth (1-60 centimeters).", "Set Depth", excavation_amount, 60, 1)
+	var/depth = rerun_prompt(user, "k171", list("kind" = "number", "message" = "Put the desired depth (1-60 centimeters).", "title" = "Set Depth", "default" = excavation_amount, "max" = 60, "min" = 1), PROC_REF(attack_self), args)
+	if(isnull(depth))
+		return TRUE
 	if(depth>60 || depth<1)
 		to_chat(user, span_notice("Invalid depth."))
 		return
