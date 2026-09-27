@@ -106,7 +106,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 		to_chat(L, span_warning("The global automated relays are still recalibrating. Try again later or relay your request in written form for processing."))
 		return
 
-	var/confirmation = tgui_alert(L, "Are you sure you want to send automated crew request?", "Confirmation", list("Yes", "No", "Cancel"))
+	var/confirmation = rerun_prompt(L, "k109", list("message" = "Are you sure you want to send automated crew request?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel")), PROC_REF(request_roles), args)
+	if(isnull(confirmation))
+		return
 	if(confirmation != "Yes")
 		return
 
@@ -125,7 +127,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 				if(J.offmap_spawn)
 					jobs |= job
 
-	var/role = tgui_input_list(L, "Pick the job to request.", "Job Request", jobs)
+	var/role = rerun_prompt(L, "k128", list("kind" = "list", "message" = "Pick the job to request.", "title" = "Job Request", "choices" = jobs), PROC_REF(request_roles), args)
+	if(isnull(role))
+		return
 	if(!role)
 		return
 
@@ -133,9 +137,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	var/reason = "Unspecified"
 	var/list/possible_reasons = list("Unspecified", "General duties", "Emergency situation")
 	possible_reasons += job_to_request.get_request_reasons()
-	reason = tgui_input_list(L, "Pick request reason.", "Request reason", possible_reasons)
+	var/_answer_k136 = rerun_prompt(L, "k136", list("kind" = "list", "message" = "Pick request reason.", "title" = "Request reason", "choices" = possible_reasons), PROC_REF(request_roles), args)
+	if(isnull(_answer_k136))
+		return
+	reason = _answer_k136
 
-	var/final_conf = tgui_alert(L, "You are about to request [role]. Are you sure?", "Confirmation", list("Yes", "No", "Cancel"))
+	var/final_conf = rerun_prompt(L, "k138", list("message" = "You are about to request [role]. Are you sure?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel")), PROC_REF(request_roles), args)
+	if(isnull(final_conf))
+		return
 	if(final_conf != "Yes")
 		return
 
@@ -255,15 +264,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	switch(action)
 		if("rename")
 			if(copyitem)
-				var/new_name = tgui_input_text(ui.user, "Enter new paper title", "This will show up in the preview for staff chat on discord when sending \
-				to central.", copyitem.name, MAX_NAME_LEN)
+				var/new_name = act_prompt(ui.user, action, params, ui, "k258", list("kind" = "text", "message" = "Enter new paper title", "title" = "This will show up in the preview for staff chat on discord when sending to central.", "default" = copyitem.name, "max_length" = MAX_NAME_LEN))
+				if(isnull(new_name))
+					return
 				if(!new_name)
 					return
 				copyitem.name = new_name
 		if("send")
 			if(copyitem)
 				if (destination in GLOB.admin_departments)
-					if(check_if_default_title_and_rename(ui.user))
+					if(check_if_default_title_and_rename(ui.user, action, params, ui))
 						return
 					send_admin_fax(ui.user, destination)
 				else
@@ -274,16 +284,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 
 		if("dept")
 			var/lastdestination = destination
-			destination = tgui_input_list(ui.user, "Which department?", "Choose a department", (GLOB.alldepartments + GLOB.admin_departments))
+			var/_answer_k276 = act_prompt(ui.user, action, params, ui, "k276", list("kind" = "list", "message" = "Which department?", "title" = "Choose a department", "choices" = (GLOB.alldepartments + GLOB.admin_departments)))
+			if(isnull(_answer_k276))
+				return
+			destination = _answer_k276
 			if(!destination)
 				destination = lastdestination
 
 	return TRUE
 
 
-/obj/machinery/photocopier/faxmachine/proc/check_if_default_title_and_rename(mob/user)
+/obj/machinery/photocopier/faxmachine/proc/check_if_default_title_and_rename(mob/user, action, list/params, datum/tgui/ui)
 /*
-Returns TRUE only on "Cancel" or invalid newname, else returns null/false
+Returns TRUE on "Cancel", an invalid newname or while the questions wait (their answers re-run the
+send action), else returns null/false.
 Extracted to its own procedure for easier logic handling with paper bundles.
 */
 	var/question_text = "Your fax is set to its default name. It's advisable to rename it to something self-explanatory to"
@@ -301,14 +315,11 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	else if(copyitem.name != initial(copyitem.name))
 		return FALSE
 
-	var/choice = tgui_alert(user, "[question_text] improve response time from staff when sending to discord. \
-	Renaming it changes its preview in staff chat.", \
-	"Default name detected", list("Change Title","Continue", "Cancel"))
+	var/choice = act_prompt(user, action, params, ui, "default_title", list("message" = "[question_text] improve response time from staff when sending to discord. Renaming it changes its preview in staff chat.", "title" = "Default name detected", "choices" = list("Change Title","Continue", "Cancel")))
 	if(!choice || choice == "Cancel")
 		return TRUE
 	else if(choice == "Change Title")
-		var/new_name = tgui_input_text(user, "Enter new fax title", "This will show up in the preview for staff chat on discord when sending \
-		to central.", copyitem.name, MAX_NAME_LEN)
+		var/new_name = act_prompt(user, action, params, ui, "new_title", list("kind" = "text", "message" = "Enter new fax title", "title" = "This will show up in the preview for staff chat on discord when sending to central.", "default" = copyitem.name, "max_length" = MAX_NAME_LEN))
 		if(!new_name)
 			return TRUE
 		copyitem.name = new_name
@@ -352,7 +363,9 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 /obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = tgui_input_text(user, "What Department ID would you like to give this fax machine?", "Multitool-Fax Machine Interface", department, MAX_MESSAGE_LEN)
+	var/input = rerun_prompt(user, "k352", list("kind" = "text", "message" = "What Department ID would you like to give this fax machine?", "title" = "Multitool-Fax Machine Interface", "default" = department, "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(input))
+		return ITEM_INTERACT_BLOCKING
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

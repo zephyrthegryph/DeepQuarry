@@ -95,7 +95,10 @@
 		if(W.move_into(src, CONTAINER_SLOT_PAGES, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
 	else if(istype(W, /obj/item/pen))
-		var/n_name = sanitizeSafe(tgui_input_text(user, "What would you like to label the folder?", "Folder Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+		var/_answer_k98 = rerun_prompt(user, "k98", list("kind" = "text", "message" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_answer_k98))
+			return TRUE
+		var/n_name = sanitizeSafe(_answer_k98, MAX_NAME_LEN)
 		if(in_range(user, src) && user.stat == 0)
 			name = "folder[(n_name ? text("- '[n_name]'") : null)]"
 	return

@@ -121,7 +121,9 @@
 
 	var/list/show_stamps = list("EXIT" = null) + sortList(stamps) // the list that will be shown to the user to pick from
 
-	var/input_stamp = tgui_input_list(user, "Choose a stamp to disguise as:", "Stamp Choice", show_stamps)
+	var/input_stamp = rerun_prompt(user, "k124", list("kind" = "list", "message" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = show_stamps), PROC_REF(attack_self), args)
+	if(isnull(input_stamp))
+		return TRUE
 
 	if(user && (src in user.contents)) // Er, how necessary is this in attack_self?
 

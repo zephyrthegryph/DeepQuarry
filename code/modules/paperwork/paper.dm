@@ -244,7 +244,9 @@
 	if(free_space <= 0)
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
-	var/t = tgui_input_text(user, "Enter what you want to write:", "Write", "", MAX_PAPER_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+	var/t = rerun_prompt(user, "k247", list("kind" = "text", "message" = "Enter what you want to write:", "title" = "Write", "max_length" = MAX_PAPER_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(do_write_action), args)
+	if(isnull(t))
+		return
 	if(!t)
 		return
 	var/obj/item/i = user.get_active_hand()
@@ -306,7 +308,10 @@
 	if(CLUMSY_FAIL_CHANCE(usr))
 		to_chat(usr, span_warning("You cut yourself on the paper."))
 		return
-	var/n_name = sanitizeSafe(tgui_input_text(usr, "What would you like to label the paper?", "Paper Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k309 = rerun_prompt(usr, "k309", list("kind" = "text", "message" = "What would you like to label the paper?", "title" = "Paper Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	if(isnull(_answer_k309))
+		return
+	var/n_name = sanitizeSafe(_answer_k309, MAX_NAME_LEN)
 
 	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/rename()
 	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0 && n_name)

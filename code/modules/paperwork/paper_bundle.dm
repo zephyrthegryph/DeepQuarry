@@ -186,7 +186,10 @@
 	set category = "Object"
 	set src in usr
 
-	var/n_name = sanitizeSafe(tgui_input_text(usr, "What would you like to label the bundle?", "Bundle Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k189 = rerun_prompt(usr, "k189", list("kind" = "text", "message" = "What would you like to label the bundle?", "title" = "Bundle Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	if(isnull(_answer_k189))
+		return
+	var/n_name = sanitizeSafe(_answer_k189, MAX_NAME_LEN)
 	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0)
 		name = "[(n_name ? text("[n_name]") : "paper")]"
 	add_fingerprint(usr)

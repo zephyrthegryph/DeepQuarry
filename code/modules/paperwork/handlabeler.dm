@@ -75,7 +75,10 @@
 	if(mode)
 		to_chat(user, span_notice("You turn on \the [src]."))
 		//Now let them chose the text.
-		var/str = sanitizeSafe(tgui_input_text(user,"Label text?","Set label","",MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+		var/_answer_k78 = rerun_prompt(user, "k78", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+		if(isnull(_answer_k78))
+			return TRUE
+		var/str = sanitizeSafe(_answer_k78, MAX_NAME_LEN)
 		if(!str || !length(str))
 			to_chat(user, span_warning("Invalid text."))
 			return

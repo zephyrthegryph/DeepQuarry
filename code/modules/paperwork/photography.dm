@@ -50,7 +50,9 @@ GLOBAL_VAR_INIT(photo_count, 0)
 
 /obj/item/photo/attackby(obj/item/P as obj, mob/user as mob)
 	if(istype(P, /obj/item/pen))
-		var/txt = tgui_input_text(user, "What would you like to write on the back?", "Photo Writing", null, 128)
+		var/txt = rerun_prompt(user, "k53", list("kind" = "text", "message" = "What would you like to write on the back?", "title" = "Photo Writing", "max_length" = 128), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(txt))
+			return TRUE
 		if(loc == user && user.stat == 0)
 			scribble = txt
 	..()
@@ -94,7 +96,10 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	set category = "Object"
 	set src in usr
 
-	var/n_name = sanitizeSafe(tgui_input_text(usr, "What would you like to label the photo?", "Photo Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k97 = rerun_prompt(usr, "k97", list("kind" = "text", "message" = "What would you like to label the photo?", "title" = "Photo Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	if(isnull(_answer_k97))
+		return
+	var/n_name = sanitizeSafe(_answer_k97, MAX_NAME_LEN)
 	//loc.loc check is for making possible renaming photos in clipboards
 	if(( (loc == usr || (loc.loc && loc.loc == usr)) && usr.stat == 0))
 		name = "[(n_name ? text("[n_name]") : "photo")]"
@@ -162,7 +167,9 @@ GLOBAL_VAR_INIT(photo_count, 0)
 /obj/item/camera/verb/change_size()
 	set name = "Set Photo Focus"
 	set category = "Object"
-	var/nsize = tgui_input_list(usr, "Photo Size","Pick a size of resulting photo.", list(1,3,5,7))
+	var/nsize = rerun_prompt(usr, "k165", list("kind" = "list", "message" = "Photo Size", "title" = "Pick a size of resulting photo.", "choices" = list(1,3,5,7)), VERB_REF(change_size), args)
+	if(isnull(nsize))
+		return
 	if(nsize)
 		size = nsize
 		to_chat(usr, span_notice("Camera will now take [size]x[size] photos."))

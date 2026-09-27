@@ -1,5 +1,7 @@
 //Adminpaper - it's like paper, but more adminny!
 /obj/item/paper/admin
+	/// The name the [sign] tags of the last write sign with.
+	var/admin_signature
 	name = "administrative paper"
 	desc = "If you see this, something has gone horribly wrong."
 	var/datum/admins/admindatum = null
@@ -36,11 +38,10 @@
 	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];clear=1'>Clear page</A> "
 	interactions += "</center>"
 
-/obj/item/paper/admin/proc/generateHeader()
+/obj/item/paper/admin/proc/generateHeader(logo)
 	var/originhash = md5("[origin]")
 	var/timehash = copytext(md5("[world.time]"),1,10)
 	var/text = null
-	var/logo = tgui_alert(usr, "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?","Fax Logo",list("NanoTrasen","SolGov", "Talon", "Trader")) // Trader
 	if(!logo)
 		return
 	if(logo == "SolGov")
@@ -76,10 +77,14 @@
 // segment-based body + structured admin controls; tgui_act handles
 // the admin actions. No more byond:// hrefs, no more interactions HTML.
 /obj/item/paper/admin/proc/adminbrowse()
-	generateHeader()
 	generateFooter()
 	tgui_view = "write"
-	tgui_interact(usr)
+	// Closing the logo question opens the fax without a header.
+	om_prompt(src, usr, list("message" = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", "title" = "Fax Logo", "choices" = list("NanoTrasen","SolGov", "Talon", "Trader"), "cancel_answer" = "", "requires" = PROMPT_ADMIN(R_ADMIN|R_EVENT)), PROC_REF(header_logo_chosen))
+
+/obj/item/paper/admin/proc/header_logo_chosen(mob/user, logo, datum/om/prompt/ask)
+	generateHeader(logo)
+	tgui_interact(user)
 
 /obj/item/paper/admin/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -99,7 +104,7 @@
 	data["is_crayon"] = !!isCrayon
 	return data
 
-/obj/item/paper/admin/tgui_act(action, list/params)
+/obj/item/paper/admin/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
@@ -111,7 +116,7 @@
 			admin_write("end", usr)
 			return TRUE
 		if("confirm")
-			switch(tgui_alert(usr, "Are you sure you want to send the fax as is?", "Send Fax", list("Yes", "No")))
+			switch(act_prompt(usr, action, params, ui, "send", list("message" = "Are you sure you want to send the fax as is?", "title" = "Send Fax", "choices" = list("Yes", "No"))))
 				if("Yes")
 					if(headerOn)
 						info = header + info
@@ -144,9 +149,15 @@
 	if(free_space <= 0)
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
-	var/t = tgui_input_text(user, "Enter what you want to write:", "Write", "", free_space, TRUE, prevent_enter = TRUE)
+	// The answers re-run this write.
+	var/t = rerun_prompt(user, "text", list("kind" = "text", "message" = "Enter what you want to write:", "title" = "Write", "max_length" = free_space, "multiline" = TRUE), PROC_REF(admin_write), args)
 	if(!t)
 		return
+	if(findtext(t, "\[sign\]"))
+		var/signature = rerun_prompt(user, "signature", list("kind" = "text", "message" = "Enter the name you wish to sign the paper with", "title" = "Signature"), PROC_REF(admin_write), args)
+		if(isnull(signature))
+			return
+		admin_signature = signature
 	var/last_fields_value = fields
 	t = replacetext(t, "\n", "<BR>")
 	t = parsepencode(t, null, null, isCrayon)
@@ -165,5 +176,6 @@
 /obj/item/paper/admin/proc/updateDisplay()
 	SStgui.update_uis(src)
 
-/obj/item/paper/admin/get_signature()
-	return tgui_input_text(usr, "Enter the name you wish to sign the paper with (will prompt for multiple entries, in order of entry)", "Signature")
+/// The signature the admin gave for the [sign] tags of their last write.
+/obj/item/paper/admin/get_signature(obj/item/pen/P, mob/user)
+	return admin_signature || "Anonymous"
