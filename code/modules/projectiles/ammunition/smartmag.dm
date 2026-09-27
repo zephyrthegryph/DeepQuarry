@@ -30,9 +30,6 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/ammo_magazine/smart/Destroy()
-	. = ..()
-
 /obj/item/ammo_magazine/smart/periodic_step()
 	if(!holding_gun)	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
 		if(istype(src.loc, /obj/item/gun))
@@ -204,7 +201,6 @@
 		stored_ammo.Insert(1, W) //add to the head of the list
 		return 1
 	return 0
-
 
 // This verb clears out the smart mag's copied data, but only if it's empty
 /obj/item/ammo_magazine/smart/verb/clear_ammo_data()

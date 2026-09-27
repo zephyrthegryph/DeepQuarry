@@ -29,10 +29,6 @@
 	if(gun)
 		gun_ref = om_handle(gun)
 
-/datum/ammo_provider/Destroy()
-	gun_ref = null
-	return ..()
-
 /// Returns the next projectile object to be fired, or null if empty.
 /// Implementations must advance the internal ammo state (decrement loaded list,
 /// advance magazine pointer, etc.) as part of this call.

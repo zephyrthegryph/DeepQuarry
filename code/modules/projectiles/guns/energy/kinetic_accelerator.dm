@@ -248,10 +248,6 @@
 	damage = 40
 	range = 5
 
-/obj/item/projectile/kinetic/Destroy()
-	kinetic_gun = null
-	return ..()
-
 /obj/item/projectile/kinetic/Bump(atom/target)
 	if(kinetic_gun)
 		var/list/mods = kinetic_gun.get_modkits()
@@ -426,7 +422,6 @@
 /obj/item/borg/upgrade/modkit/range/modify_projectile(obj/item/projectile/kinetic/K)
 	K.range += modifier
 
-
 //Damage
 /obj/item/borg/upgrade/modkit/damage
 	name = "damage increase"
@@ -435,7 +430,6 @@
 
 /obj/item/borg/upgrade/modkit/damage/modify_projectile(obj/item/projectile/kinetic/K)
 	K.damage += modifier
-
 
 //Cooldown
 /obj/item/borg/upgrade/modkit/cooldown
@@ -452,7 +446,6 @@
 		KA.overheat_time = max(0, KA.overheat_time - modifier)
 		decreased = old - KA.overheat_time
 
-
 /obj/item/borg/upgrade/modkit/cooldown/uninstall(obj/item/gun/energy/kinetic_accelerator/KA)
 	KA.overheat_time += decreased
 	..()
@@ -467,7 +460,6 @@
 	cost = 0
 	minebot_upgrade = TRUE
 	minebot_exclusive = TRUE
-
 
 //AoE blasts
 /obj/item/borg/upgrade/modkit/aoe
