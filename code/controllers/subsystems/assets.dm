@@ -39,6 +39,7 @@ SUBSYSTEM_DEF(assets)
 		if (type != initial(A._abstract))
 			load_asset_datum(type)
 
+	asset_cache_save_hashes()
 	transport.Initialize(cache)
 
 	return SS_INIT_SUCCESS

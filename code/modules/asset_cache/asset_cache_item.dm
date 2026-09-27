@@ -28,8 +28,13 @@
 ///pass in a valid file_hash if you have one to save it from needing to do it again.
 ///pass in a valid dmi file path string e.g. "icons/path/to/dmi_file.dmi" to make generating the hash less expensive
 /datum/asset_cache_item/New(name, file, file_hash, dmi_file_path)
-	if(!isfile(file))
+	// A compiled-in resource is the same bytes for the whole build, so its
+	// hash is kept in the cross-round cache (asset_cache_known_hash()).
+	var/compiled = isfile(file)
+	if(!compiled)
 		file = fcopy_rsc(file)
+	if(!file_hash && compiled)
+		file_hash = asset_cache_known_hash(name)
 
 	if(length(file) == 0)
 		log_asset("WARNING: [name] is an empty file, this is almost certainly not intended and could indicate a bad boot!")
@@ -47,6 +52,8 @@
 		if (!hash)
 			CRASH("invalid asset sent to asset cache")
 		log_runtime("asset cache unexpected success of second fcopy_rsc")
+	if(compiled)
+		asset_cache_remember_hash(name, hash)
 	src.name = name
 	var/extstart = findlasttext(name, ".")
 	if(extstart)
