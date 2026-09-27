@@ -62,22 +62,22 @@
 			M.status_at_least(EFFECT_CONFUSED, 10)
 			M.status_at_least(EFFECT_WEAKENED, 3)
 			if ((prob(14) || (M == src.loc && prob(70))))
-				M.ear_damage += rand(1, 10)
+				M.set_ear_damage(M.ear_damage + (rand(1, 10)))
 			else
-				M.ear_damage += rand(0, 5)
+				M.set_ear_damage(M.ear_damage + (rand(0, 5)))
 				M.status_at_least(EFFECT_DEAFENED, 15)
 				M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(get_dist(M, T) <= round(max_range * 0.5 * bang_effectiveness))
 		if(!ear_safety)
 			M.status_at_least(EFFECT_CONFUSED, 8)
-			M.ear_damage += rand(0, 3)
+			M.set_ear_damage(M.ear_damage + (rand(0, 3)))
 			M.status_at_least(EFFECT_DEAFENED, 10)
 			M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(!ear_safety && get_dist(M, T) <= (max_range * 0.7 * bang_effectiveness))
 		M.status_at_least(EFFECT_CONFUSED, 4)
-		M.ear_damage += rand(0, 1)
+		M.set_ear_damage(M.ear_damage + (rand(0, 1)))
 		M.status_at_least(EFFECT_DEAFENED, 5)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 
@@ -94,7 +94,7 @@
 		if(!banglet && !(istype(src , /obj/item/grenade/flashbang/clusterbang)))
 			if (prob(M.ear_damage - 10 + 5))
 				to_chat(M, span_danger("You can't hear anything!"))
-				M.sdisabilities |= DEAF
+				M.set_sdisabilities(M.sdisabilities | (DEAF))
 	else if(M.ear_damage >= 5)
 		to_chat(M, span_danger("Your ears start to ring!"))
 

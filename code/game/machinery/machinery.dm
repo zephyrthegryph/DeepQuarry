@@ -257,8 +257,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!M || QDELETED(M))
 		return
 	M.machine_wake_count++
-	M.step_active = TRUE
-	M.step_waiting_power = FALSE
+	M.set_step_active(TRUE)
+	M.set_step_waiting_power(FALSE)
 	if(!om_attached(M, /datum/om/pipeline/machine))
 		om_attach(M, /datum/om/pipeline/machine)
 		// Joined asleep (on_start); this wake is the reason it joined, so it is awake now.
@@ -271,14 +271,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
 /proc/machine_sleep(obj/machinery/M)
 	if(M)
-		M.step_active = FALSE
-		M.step_waiting_power = FALSE
+		M.set_step_active(FALSE)
+		M.set_step_waiting_power(FALSE)
 
 /// For machine_step(): the machine can't act without power (or while broken). Ends its step work
 /// until power returns and it is whole (power_change(), atom_fix()), then it runs again. Returns
 /// PROCESS_KILL: `return sleep_until_powered()`.
 /obj/machinery/proc/sleep_until_powered()
-	step_waiting_power = TRUE
+	set_step_waiting_power(TRUE)
 	return PROCESS_KILL
 
 /// A player (or program) changed the machine through an interaction or its UI: a machine with step

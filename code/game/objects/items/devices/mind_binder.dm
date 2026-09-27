@@ -87,9 +87,9 @@
 	if(!target.ckey)
 		usr_mob.mind.transfer_to(target)
 	if(!target.tf_mob_holder)
-		target.tf_mob_holder = usr_mob
+		target.set_tf_mob_holder(usr_mob)
 	if(target.tf_mob_holder == target)
-		target.tf_mob_holder = null
+		target.set_tf_mob_holder(null)
 	self_bind = !self_bind
 	update_icon()
 	to_chat(usr_mob,span_notice("Your mind as been bound to [target]."))
@@ -98,9 +98,9 @@
 		var/mob/living/voice/V = possessed_voice[1]
 		V.mind.transfer_to(target)
 		if(!target.tf_mob_holder)
-			target.tf_mob_holder = V.tf_mob_holder
+			target.set_tf_mob_holder(V.tf_mob_holder)
 		if(target.tf_mob_holder == target)
-			target.tf_mob_holder = null
+			target.set_tf_mob_holder(null)
 		possessed_voice -= V
 		qdel(V)
 		to_chat(usr_mob,span_notice("Mind bound to [target]."))

@@ -54,7 +54,7 @@
 		return
 
 	if(prob(50/severity))
-		on = !on
+		set_on(!on)
 
 	if(prob(100/severity))
 		direction_out = !direction_out
@@ -175,7 +175,7 @@
 
 	switch(action)
 		if("power")
-			on = !on
+			set_on(!on)
 			if(on)
 				om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = 1
@@ -266,7 +266,7 @@
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/machine_step()
 	if(!anchored || (stat & (NOPOWER|BROKEN)))
-		on = 0
+		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
 		update_icon()
@@ -347,7 +347,7 @@
 /obj/machinery/portable_atmospherics/powered/pump/huge/stationary/purge/power_change()
 	..()
 	if(!(stat & (NOPOWER|BROKEN)))
-		on = 1
+		set_on(1)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()

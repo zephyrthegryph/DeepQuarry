@@ -74,16 +74,16 @@
 
 	if(overmind)
 		color = overmind.blob_type.complementary_color
-		glow_color = color
-		glow_toggle = TRUE
+		set_glow_color(color)
+		set_glow_toggle(TRUE)
 	else if(blob_type)
 		color = blob_type.complementary_color
-		glow_color = color
-		glow_toggle = TRUE
+		set_glow_color(color)
+		set_glow_toggle(TRUE)
 	else
 		color = null
-		glow_color = null
-		glow_toggle = FALSE
+		set_glow_color(null)
+		set_glow_toggle(FALSE)
 
 	if(is_infesting)
 		icon = infested.icon

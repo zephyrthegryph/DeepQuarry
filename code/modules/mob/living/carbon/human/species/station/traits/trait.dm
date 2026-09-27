@@ -75,7 +75,7 @@
 	if(disability)
 		H.disabilities |= disability // bitflag
 	if(sdisability)
-		H.sdisabilities |= sdisability // bitflag
+		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
 	add_verb(H, /mob/living/carbon/human/proc/trait_tutorial)
 	if(special_env)
 		LAZYADD(S.env_traits, src)
@@ -110,7 +110,7 @@
 	if(disability)
 		H.disabilities &= ~disability // bitflag
 	if(sdisability)
-		H.sdisabilities &= ~sdisability // bitflag
+		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
 	if(special_env)
 		LAZYREMOVE(S.env_traits, src)
 	if(added_component_path)

@@ -359,7 +359,7 @@
 			var/mob/living/new_form = avatar.transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
 			if(isliving(new_form)) // Make sure the mob spawned properly.
 				add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
-				new_form.virtual_reality_mob = TRUE
+				new_form.set_virtual_reality_mob(TRUE)
 
 		add_verb(avatar, /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
 		avatar.status_at_least(EFFECT_SLEEPING, 1)

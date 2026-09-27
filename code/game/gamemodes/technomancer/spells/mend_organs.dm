@@ -35,7 +35,7 @@
 				if(O.damage > 0) // Fix internal damage
 					H.mend(TREAT_RESTORATION, heal_power / 2, O)
 				if(O.damage <= 5 && O.organ_tag == O_EYES) // Fix eyes
-					H.sdisabilities &= ~BLIND
+					H.set_sdisabilities(H.sdisabilities & (~BLIND))
 
 			for(var/obj/item/organ/external/O in H.organs) // Fix limbs
 				if(O.robotic >= ORGAN_ROBOT) // No robot parts for this.

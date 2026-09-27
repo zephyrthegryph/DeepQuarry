@@ -38,9 +38,9 @@
 						H.status_at_least(EFFECT_WEAKENED, 1)
 						H.deaf_loop.start() // Ear Ringing/Deafness
 						if ((prob(14) || (H == src.loc && prob(70))))
-							H.ear_damage += rand(1, 10)
+							H.set_ear_damage(H.ear_damage + (rand(1, 10)))
 						else
-							H.ear_damage += rand(0, 5)
+							H.set_ear_damage(H.ear_damage + (rand(0, 5)))
 							H.status_at_least(EFFECT_DEAFENED, 15)
 					if(H.client)
 						if(prob(50))
@@ -51,7 +51,7 @@
 				else if(get_dist(H, T) <= round(radius * 0.5 * bang_effectiveness))
 					if(!ear_safety)
 						H.status_at_least(EFFECT_CONFUSED, 6)
-						H.ear_damage += rand(0, 3)
+						H.set_ear_damage(H.ear_damage + (rand(0, 3)))
 						H.status_at_least(EFFECT_DEAFENED, 10)
 						H.deaf_loop.start() // Ear Ringing/Deafness
 
@@ -63,7 +63,7 @@
 
 				else if(!ear_safety && get_dist(H, T) <= (radius * bang_effectiveness))
 					H.status_at_least(EFFECT_CONFUSED, 4)
-					H.ear_damage += rand(0, 1)
+					H.set_ear_damage(H.ear_damage + (rand(0, 1)))
 					H.status_at_least(EFFECT_DEAFENED, 5)
 					H.deaf_loop.start() // Ear Ringing/Deafness
 
@@ -73,7 +73,7 @@
 
 					if(prob(H.ear_damage - 5))
 						to_chat(H, span_danger("You can't hear anything!"))
-						H.sdisabilities |= DEAF
+						H.set_sdisabilities(H.sdisabilities | (DEAF))
 				else if(H.ear_damage >= 5)
 					to_chat(H, span_danger("Your ears start to ring!"))
 					H.deaf_loop.start() // Ear Ringing/Deafness

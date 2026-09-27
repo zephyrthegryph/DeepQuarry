@@ -175,7 +175,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 		self.set_light(2.5, 1, COLOR_YELLOW)
 		return 1
 	else if(self.is_dead())
-		self.glow_override = FALSE
+		self.set_glow_override(FALSE)
 
 /mob/living/simple_mob/vore/solargrub/load_default_bellies()
 	. = ..()

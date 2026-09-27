@@ -396,3 +396,10 @@
 #define CACHE_ON_EVENT(path) list("event", path)
 /// Cleared when an edge of relation `path` is added to or removed from the entity.
 #define CACHE_ON_RELATION(path) list("relation", path)
+
+// ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
+
+/// Generates `T/proc/set_F(value)`, the typed setter of declared field F: it writes the var and
+/// raises the field's declared channel, and does nothing when the value is unchanged. Returns
+/// TRUE on a change. tools/ci/api_lints.py (field_write) checks F is declared for T.
+#define OM_SETTER(T, F) T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, om_field_channel(src, #F)); return TRUE } }

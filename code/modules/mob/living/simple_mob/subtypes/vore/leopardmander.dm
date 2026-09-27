@@ -175,7 +175,7 @@
 	set desc = "Switch between glowing and not glowing."
 	set category = "Abilities.Leopardmander"
 
-	glow_toggle = !glow_toggle
+	set_glow_toggle(!glow_toggle)
 
 /mob/living/simple_mob/vore/leopardmander/exotic/Initialize(mapload)
 	. = ..()

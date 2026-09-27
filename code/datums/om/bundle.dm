@@ -45,6 +45,9 @@
 	var/list/self_effects
 	/// grant kind -> id or list of ids the entity holds on itself.
 	var/list/self_grants
+	/// Declared fields (fields.dm): var name -> the channel a change of it raises. Written only
+	/// through om_set() or its OM_SETTER() setter.
+	var/list/fields
 	/// For relations and slots: effect id -> value held on the target (the holder).
 	var/list/contributes
 	/// For relations and slots: effect id -> value held on the source (the occupant).

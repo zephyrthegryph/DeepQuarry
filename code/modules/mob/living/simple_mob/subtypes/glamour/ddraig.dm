@@ -184,7 +184,7 @@
 		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathstart(atom/A) //Borrowed from le big dragon
-	glow_toggle = 1
+	set_glow_toggle(1)
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	flames = 1
 	ai_busy_begin()
@@ -203,7 +203,7 @@
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
-	glow_toggle = 0
+	set_glow_toggle(0)
 	flames = 0
 
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam(atom/A)

@@ -28,7 +28,7 @@
 		M.status_set(EFFECT_SLEEPING, 0)
 		M.status_adjust(EFFECT_DEAFENED, 30)
 		M.deaf_loop.start() // Ear Ringing/Deafness
-		M.ear_damage += rand(5, 20)
+		M.set_ear_damage(M.ear_damage + (rand(5, 20)))
 		M.status_at_least(EFFECT_WEAKENED, 3)
 		M.status_at_least(EFFECT_STUNNED, 5)
 	chassis.use_power(energy_drain)

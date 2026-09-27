@@ -89,6 +89,7 @@
 /// Ear damage heals; a deafness disability keeps deafness up. Temporary blindness, deafness and
 /// blur are timed statuses that end on their own (update_senses() follows blindness ending).
 /datum/om/stage/life/robot_senses
+	reads = list("sdisabilities", "ear_damage")
 	order = LIFE_PHASE_INPUT + 30
 	name = "robot senses"
 	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_STATUS
@@ -97,7 +98,7 @@
 
 /datum/om/stage/life/robot_senses/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.ear_damage < 25)
-		self.ear_damage = max(self.ear_damage - 0.05, 0)
+		self.set_ear_damage(max(self.ear_damage - 0.05, 0))
 	if(self.sdisabilities & DEAF)
 		self.status_at_least(EFFECT_DEAFENED, 1)
 

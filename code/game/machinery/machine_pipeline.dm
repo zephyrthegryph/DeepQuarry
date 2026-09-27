@@ -250,6 +250,7 @@
 	order = 15
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_SETTINGS | CHANGE_RELATED
 	woken_by = "MACHINE_WAKE(): the machine's own producers; power_change()/atom_fix() after sleep_until_powered(); for a machine asleep on changes, a watched channel or its own settings"
+	reads = list("step_active", "step_waiting_power", "speed_process")
 
 /datum/om/stage/machine/step/applies(obj/machinery/M)
 	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/machine)
@@ -266,10 +267,10 @@
 			M.cancel_sleep_keys()
 		else if(!M.step_on_power_change && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN))))
 			return STAGE_IDLE
-		M.step_active = TRUE
-	M.step_waiting_power = FALSE
+		M.set_step_active(TRUE)
+	M.set_step_waiting_power(FALSE)
 	if(M.machine_step() == PROCESS_KILL)
-		M.step_active = FALSE
+		M.set_step_active(FALSE)
 	if(!M.step_active)
 		return STAGE_IDLE
 
@@ -298,6 +299,7 @@
 
 /datum/om/stage/machine/power/recharger
 	of = /obj/machinery/recharger
+	reads = list("charging")
 
 /datum/om/stage/machine/power/recharger/perform(obj/machinery/recharger/M, datum/om/frame/machine/F)
 	if(!F.usable())
@@ -326,6 +328,7 @@
 
 /datum/om/stage/machine/power/cell_charger
 	of = /obj/machinery/cell_charger
+	reads = list("charging")
 
 /datum/om/stage/machine/power/cell_charger/perform(obj/machinery/cell_charger/M, datum/om/frame/machine/F)
 	if(!F.usable())
@@ -398,6 +401,7 @@
 /// instead of a dedicated timer — the one rewake_delay fallback in this family.
 /datum/om/stage/machine/power/firealarm
 	of = /obj/machinery/firealarm
+	reads = list("timing")
 
 /datum/om/stage/machine/power/firealarm/perform(obj/machinery/firealarm/M, datum/om/frame/machine/F)
 	if(M.stat & (NOPOWER|BROKEN))
@@ -409,7 +413,7 @@
 		if(M.time <= 0)
 			M.alarm()
 			M.time = 0
-			M.timing = 0
+			M.set_timing(0)
 
 	if(M.detecting && (locate(/obj/effect/hotspot) in M.loc))
 		M.alarm()
@@ -436,6 +440,7 @@
 	of = /obj/machinery/alarm
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_OCCUPANT | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
 	woken_by = "power_change(); atom_break()/atom_fix(); wire shorts; TLV/thermostat settings; elect_main_air_alarm(); a watched gas crossing"
+	reads = list("regulating_temperature")
 
 /datum/om/stage/machine/power/alarm/perform(obj/machinery/alarm/M, datum/om/frame/machine/F)
 	if(!M.alarm_area)
@@ -479,10 +484,11 @@
 	of = /obj/machinery/portable_atmospherics/canister
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
 	woken_by = "power_change(); atom_break()/atom_fix(); valve/label/eject topic actions; a subscribed gas mixture changing"
+	reads = list("om_settled", "valve_open")
 
 /datum/om/stage/machine/power/canister/perform(obj/machinery/portable_atmospherics/canister/M, datum/om/frame/machine/F)
 	if(M.destroyed)
-		M.om_settled = TRUE
+		M.set_om_settled(TRUE)
 		return STAGE_IDLE
 
 	var/turf/canister_turf = get_turf(M)
@@ -492,7 +498,7 @@
 	var/reaction_result = M.react_or_update()
 	var/material_active = M.process_material_vessel()
 	if(M.destroyed)
-		M.om_settled = TRUE
+		M.set_om_settled(TRUE)
 		return STAGE_IDLE
 
 	if(M.valve_open)
@@ -521,7 +527,7 @@
 
 	M.can_label = M.air_contents.return_pressure() < 1
 
-	M.om_settled = !M.valve_open && reaction_result == NO_REACTION && !material_active
+	M.set_om_settled(!M.valve_open && reaction_result == NO_REACTION && !material_active)
 	if(M.om_settled)
 		M.hibernate_until_gas_changes()
 	return STAGE_IDLE
@@ -541,6 +547,7 @@
 	of = /obj/machinery/portable_atmospherics/powered/pump
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
 	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
+	reads = list("on")
 
 /datum/om/stage/machine/power/portable_pump/perform(obj/machinery/portable_atmospherics/powered/pump/M, datum/om/frame/machine/F)
 	M.pump_step()
@@ -553,6 +560,7 @@
 	of = /obj/machinery/portable_atmospherics/powered/scrubber
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
 	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
+	reads = list("on")
 
 /datum/om/stage/machine/power/portable_scrubber/perform(obj/machinery/portable_atmospherics/powered/scrubber/M, datum/om/frame/machine/F)
 	M.scrubber_step()
@@ -572,9 +580,10 @@
 	of = /obj/machinery/atmospherics
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
 	woken_by = "power_change(); atom_break()/atom_fix(); wrenching; settings and topology (MACHINE_WAKE()); its gas watch"
+	reads = list("step_active")
 
 /datum/om/stage/machine/power/step/perform(obj/machinery/M, datum/om/frame/machine/F)
-	M.step_active = M.machine_step() != PROCESS_KILL
+	M.set_step_active(M.machine_step() != PROCESS_KILL)
 	if(!M.step_active)
 		return STAGE_IDLE
 
@@ -618,3 +627,65 @@
 /// The distillery: every frame while on (heating, pumping beakers); off, it parks until toggled.
 /datum/om/stage/machine/power/step/reagent_distillery
 	of = /obj/machinery/portable_atmospherics/powered/reagent_distillery
+
+// ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
+// What the machine stages read to decide there is work, and the channel each raises. Written only
+// through the setters below (or om_set()); the registry checks each stage's wake_on covers them.
+
+/datum/om/decl/machine_fields
+	of = /obj/machinery
+	fields = list(
+		"step_active" = CHANGE_EXPLICIT,
+		"step_waiting_power" = CHANGE_MACHINE_POWER,
+		"speed_process" = CHANGE_MACHINE_SETTINGS,
+	)
+
+OM_SETTER(/obj/machinery, step_active)
+OM_SETTER(/obj/machinery, step_waiting_power)
+OM_SETTER(/obj/machinery, speed_process)
+
+/datum/om/decl/recharger_fields
+	of = /obj/machinery/recharger
+	fields = list("charging" = CHANGE_MACHINE_OCCUPANT)
+
+OM_SETTER(/obj/machinery/recharger, charging)
+
+/datum/om/decl/cell_charger_fields
+	of = /obj/machinery/cell_charger
+	fields = list("charging" = CHANGE_MACHINE_OCCUPANT)
+
+OM_SETTER(/obj/machinery/cell_charger, charging)
+
+/datum/om/decl/firealarm_fields
+	of = /obj/machinery/firealarm
+	fields = list("timing" = CHANGE_MACHINE_SETTINGS)
+
+OM_SETTER(/obj/machinery/firealarm, timing)
+
+/datum/om/decl/air_alarm_fields
+	of = /obj/machinery/alarm
+	fields = list("regulating_temperature" = CHANGE_MACHINE_SETTINGS)
+
+OM_SETTER(/obj/machinery/alarm, regulating_temperature)
+
+/datum/om/decl/canister_fields
+	of = /obj/machinery/portable_atmospherics/canister
+	fields = list(
+		"valve_open" = CHANGE_MACHINE_SETTINGS,
+		"om_settled" = CHANGE_MACHINE_SETTINGS,
+	)
+
+OM_SETTER(/obj/machinery/portable_atmospherics/canister, valve_open)
+OM_SETTER(/obj/machinery/portable_atmospherics/canister, om_settled)
+
+/datum/om/decl/portable_pump_fields
+	of = /obj/machinery/portable_atmospherics/powered/pump
+	fields = list("on" = CHANGE_MACHINE_SETTINGS)
+
+OM_SETTER(/obj/machinery/portable_atmospherics/powered/pump, on)
+
+/datum/om/decl/portable_scrubber_fields
+	of = /obj/machinery/portable_atmospherics/powered/scrubber
+	fields = list("on" = CHANGE_MACHINE_SETTINGS)
+
+OM_SETTER(/obj/machinery/portable_atmospherics/powered/scrubber, on)

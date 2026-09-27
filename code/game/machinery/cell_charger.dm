@@ -96,7 +96,7 @@
 
 	user.drop_item()
 	W.loc = src
-	charging = W
+	set_charging(W)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 	chargelevel = -1
@@ -129,7 +129,7 @@
 		charging.update_icon()
 		user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
 
-		charging = null
+		set_charging(null)
 		chargelevel = -1
 		om_changed(src, CHANGE_MACHINE_OCCUPANT)
 		update_icon()
@@ -141,7 +141,7 @@
 			user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
 			charging.loc = src.loc
 			charging.update_icon()
-			charging = null
+			set_charging(null)
 			om_changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
 

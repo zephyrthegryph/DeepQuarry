@@ -17,7 +17,7 @@
 
 			f_loss += 60
 
-			ear_damage += 30
+			set_ear_damage(ear_damage + (30))
 			status_adjust(EFFECT_DEAFENED, 120)
 			deaf_loop.start() // Ear Ringing/Deafness
 
@@ -25,7 +25,7 @@
 			b_loss += 30
 			if (prob(50))
 				status_at_least(EFFECT_PARALYZED, 1)
-			ear_damage += 15
+			set_ear_damage(ear_damage + (15))
 			status_adjust(EFFECT_DEAFENED, 60)
 			deaf_loop.start() // Ear Ringing/Deafness
 

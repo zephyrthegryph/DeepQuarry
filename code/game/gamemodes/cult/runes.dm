@@ -282,7 +282,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			if(I.damage > 0)
 				H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
-				H.sdisabilities &= ~BLIND
+				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 		for(var/obj/item/organ/E in H.bad_external_organs)
 			var/obj/item/organ/external/affected = E
 			if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
@@ -928,7 +928,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
 			affected += C
 			if(prob(1))
-				C.sdisabilities |= DEAF
+				C.set_sdisabilities(C.sdisabilities | (DEAF))
 		if(affected.len)
 			user.say("Sti[pick("'","`")] kaliedir!")
 			to_chat(user,span_warning("The world becomes quiet as the deafening rune dissipates into fine dust."))
@@ -972,7 +972,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			if(prob(5))
 				C.disabilities |= NEARSIGHTED
 				if(prob(10))
-					C.sdisabilities |= BLIND
+					C.set_sdisabilities(C.sdisabilities | (BLIND))
 			C.show_message(span_warning("Suddenly you see a red flash that blinds you."), 3)
 			affected += C
 		if(affected.len)

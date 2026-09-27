@@ -1117,7 +1117,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	new_voice.mind = candidate.mind					//Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
 	candidate.mind = null // Remove the mind from the mob to avoid issues with multi TF interactions
-	new_voice.tf_mob_holder = candidate_original_form //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
+	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
 	else

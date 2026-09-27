@@ -63,7 +63,7 @@
 
 	for(var/mob/living/M in src)
 		M.forceMove(loc) // Might be in a belly
-		M.sdisabilities &= ~MUTE
+		M.set_sdisabilities(M.sdisabilities & (~MUTE))
 		UnregisterSignal(M, COMSIG_LIVING_INJURE)
 		if(get_integrity() < original_int) //any new damage the statue incurred is transfered to the mob
 			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)

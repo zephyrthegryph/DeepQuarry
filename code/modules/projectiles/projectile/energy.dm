@@ -245,14 +245,14 @@
 	else if (!ear_safety)
 		M.status_at_least(EFFECT_STUNNED, 10)
 		M.status_at_least(EFFECT_WEAKENED, 2)
-		M.ear_damage += rand(1, 10)
+		M.set_ear_damage(M.ear_damage + (rand(1, 10)))
 		M.status_at_least(EFFECT_DEAFENED, 15)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))
 		if (prob(M.ear_damage - 5))
 			to_chat(M, span_danger("You can't hear anything!"))
-			M.sdisabilities |= DEAF
+			M.set_sdisabilities(M.sdisabilities | (DEAF))
 			M.deaf_loop.start() // Ear Ringing/Deafness
 	else
 		if (M.ear_damage >= 5)

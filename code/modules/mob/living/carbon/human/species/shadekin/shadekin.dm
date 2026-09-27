@@ -147,7 +147,7 @@
 			H.mend(TREAT_RESTORATION, I.max_damage, I)
 			I.restore_status()
 			if(I.organ_tag == O_EYES)
-				H.sdisabilities &= ~BLIND
+				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 			if(I.organ_tag == O_LUNGS)
 				H.SetLosebreath(0)
 		H.nutrition = 0

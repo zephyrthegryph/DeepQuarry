@@ -753,7 +753,7 @@
 /obj/machinery/porta_turret/proc/set_processing_speed(fast)
 	if(fast == speed_process)
 		return
-	speed_process = fast
+	set_speed_process(fast)
 
 	// high gear
 	if(speed_process)

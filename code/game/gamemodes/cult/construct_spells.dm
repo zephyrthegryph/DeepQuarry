@@ -761,14 +761,14 @@
 	else if (!ear_safety)
 		M.status_at_least(EFFECT_STUNNED, 10)
 		M.status_at_least(EFFECT_WEAKENED, 2)
-		M.ear_damage += rand(1, 10)
+		M.set_ear_damage(M.ear_damage + (rand(1, 10)))
 		M.status_at_least(EFFECT_DEAFENED, 15)
 		// M.deaf_loop.start() // used Downstream
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))
 		if (prob(M.ear_damage - 5))
 			to_chat(M, span_danger("You can't hear anything!"))
-			M.sdisabilities |= DEAF
+			M.set_sdisabilities(M.sdisabilities | (DEAF))
 			// M.deaf_loop.start() // used Downstream
 	else
 		if (M.ear_damage >= 5)
@@ -987,7 +987,7 @@
 				if(O.damage > 0)
 					H.mend(TREAT_RESTORATION, 2, O)
 				if(O.damage <= 5 && O.organ_tag == O_EYES)
-					H.sdisabilities &= ~BLIND
+					H.set_sdisabilities(H.sdisabilities & (~BLIND))
 
 			for(var/obj/item/organ/external/O in H.organs)
 				H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)

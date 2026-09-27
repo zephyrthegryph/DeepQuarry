@@ -147,12 +147,12 @@
 	var/mob/living/living_guy = parent
 	if(!glows)
 		if(living_guy.glow_override) //Toggled glow off while we were still actively glowing.
-			living_guy.glow_override = FALSE
+			living_guy.set_glow_override(FALSE)
 			living_guy.set_light(0)
 			living_guy.remove_filter("rad_glow")
 		return
 	if(living_guy.radiation < radiation_glow_threshold)
-		living_guy.glow_override = FALSE
+		living_guy.set_glow_override(FALSE)
 		living_guy.set_light(0)
 		living_guy.remove_filter("rad_glow")
 		return
@@ -162,7 +162,7 @@
 		var/light_power = CLAMP(living_guy.radiation/intensity_coefficient * intensity_mod, 1, 10)
 
 		living_guy.set_light(l_range = light_range, l_power = light_power, l_color = radiation_color, l_on = TRUE)
-		living_guy.glow_override = TRUE
+		living_guy.set_glow_override(TRUE)
 		if(toony)
 			var/filter = living_guy.get_filter("rad_glow")
 			if(!filter)

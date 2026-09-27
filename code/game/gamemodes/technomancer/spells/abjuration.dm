@@ -32,7 +32,7 @@
 		else if(istype(L, /mob/living/simple_mob/construct))
 			var/mob/living/simple_mob/construct/evil = L
 			to_chat(evil, span_danger("\The [user]'s abjuration purges your form!"))
-			evil.purge = 3
+			evil.set_purge(3)
 		adjust_instability(5)
 	// In case NarNar comes back someday.
 	if(istype(hit_atom, /obj/singularity/narsie))

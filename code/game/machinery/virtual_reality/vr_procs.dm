@@ -4,6 +4,7 @@
 
 // Gross system which runs every Life() to check for escaped VR mobs. Tried to do this with Exited() on area/vr but ended up being too heavy.
 /datum/om/stage/life/vr_derez
+	reads = list("virtual_reality_mob")
 	order = LIFE_PHASE_OUTPUT + 50
 	name = "vr derez"
 	run_if = LIFE_RUN_IF_PLACED
@@ -49,7 +50,7 @@
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check
 		add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
-		new_form.virtual_reality_mob = TRUE
+		new_form.set_virtual_reality_mob(TRUE)
 
 /mob/living/proc/vr_revert_mob_tf()
 	set name = "Revert Transformation"
@@ -99,7 +100,7 @@
 	add_verb(avatar,/mob/living/carbon/human/proc/fake_exit_vr)
 	add_verb(avatar,/mob/living/carbon/human/proc/vr_transform_into_mob)
 	add_verb(avatar,/mob/living/proc/set_size)
-	avatar.virtual_reality_mob = TRUE
+	avatar.set_virtual_reality_mob(TRUE)
 	log_and_message_admins("[key_name_admin(avatar)] joined virtual reality from the ghost menu.")
 
 	var/newname = tgui_input_text(avatar, "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "Name change", null, MAX_NAME_LEN)

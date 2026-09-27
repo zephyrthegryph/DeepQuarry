@@ -120,7 +120,7 @@
 				src.flash_eyes(3)	//3 allows it to bypass any tier of eye protection, necessary or else sec sunglasses/etc. protect you from this
 			status_at_least(EFFECT_BLINDED, max(0,blind_dur))
 		if(species.emp_sensitivity & EMP_DEAFEN)
-			src.ear_damage += rand(0,deafen_dur) //this will heal pretty quickly, but spamming them at someone could cause serious damage
+			src.set_ear_damage(src.ear_damage + (rand(0,deafen_dur))) //this will heal pretty quickly, but spamming them at someone could cause serious damage
 			src.status_at_least(EFFECT_DEAFENED, deafen_dur)
 			src.deaf_loop.start() // Ear Ringing/Deafness
 		if(species.emp_sensitivity & EMP_CONFUSE)

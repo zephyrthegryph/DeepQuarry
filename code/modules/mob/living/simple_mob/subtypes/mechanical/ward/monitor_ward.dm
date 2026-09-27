@@ -71,10 +71,10 @@
 /mob/living/simple_mob/mechanical/ward/monitor/update_icon()
 	if(seen_mobs.len)
 		icon_living = "[initial(icon_state)]_spotted"
-		glow_color = "#FF0000"
+		set_glow_color("#FF0000")
 	else
 		icon_living = "[initial(icon_state)]"
-		glow_color = "#00FF00"
+		set_glow_color("#00FF00")
 	refresh_glow() // Update the light immediately.
 	..()
 

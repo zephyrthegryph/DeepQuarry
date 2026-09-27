@@ -343,7 +343,7 @@
 
 			if (E.damage >= E.min_broken_damage)
 				to_chat(user, span_danger("You go blind!"))
-				user.sdisabilities |= BLIND
+				user.set_sdisabilities(user.sdisabilities | (BLIND))
 			else if (E.damage >= E.min_bruised_damage)
 				to_chat(user, span_danger("You go blind!"))
 				user.status_at_least(EFFECT_BLINDED, 5)

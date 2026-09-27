@@ -38,7 +38,7 @@
 		C.status_set(EFFECT_BLINDED, 0)
 		C.status_set(EFFECT_BLURRY, 0)
 		C.status_set(EFFECT_DEAFENED, 0)
-		C.ear_damage = 0
+		C.set_ear_damage(0)
 
 		// make the icons look correct
 		C.regenerate_icons()

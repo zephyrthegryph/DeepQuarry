@@ -1436,10 +1436,10 @@
 			self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 		else if(!self.has_status(EFFECT_DEAFENED))	// deafness wears off on its own; ears don't heal meanwhile
 			if(self.get_ear_protection() >= 2)	//resting your ears with earmuffs heals ear damage faster
-				self.ear_damage = max(self.ear_damage-0.15, 0)
+				self.set_ear_damage(max(self.ear_damage-0.15, 0))
 				self.status_at_least(EFFECT_DEAFENED, 1)
 			else if(self.ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
-				self.ear_damage = max(self.ear_damage-0.05, 0)
+				self.set_ear_damage(max(self.ear_damage-0.05, 0))
 
 		//Resting eases pain faster than it fades on its own.
 		if(self.resting)

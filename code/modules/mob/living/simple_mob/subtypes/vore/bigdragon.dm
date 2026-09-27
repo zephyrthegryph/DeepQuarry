@@ -282,7 +282,7 @@ I think I covered everything.
 	set desc = "Switch between glowing and not glowing."
 	set category = "Abilities.Settings"
 
-	glow_toggle = !glow_toggle
+	set_glow_toggle(!glow_toggle)
 
 /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle()
 	set name = "Toggle Small Sprite"
@@ -784,7 +784,7 @@ I think I covered everything.
 		yeet(target, gentle)
 	ai_busy_end()
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathstart(atom/A)
-	glow_toggle = 1
+	set_glow_toggle(1)
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	if(!enraged)
 		ai_busy_begin()
@@ -803,7 +803,7 @@ I think I covered everything.
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
-	glow_toggle = 0
+	set_glow_toggle(0)
 	flames = 0
 	build_icons()
 

@@ -50,6 +50,9 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/min_interval = 0
 	/// What raises the wake_on channels (audit messages).
 	var/woken_by
+	/// Declared fields (fields.dm) of `of` that idle() and perform() read to decide there is work.
+	/// The registry checks at boot that wake_on covers each one's channel.
+	var/list/reads
 
 	// ---- compiled by the registry ----
 	var/family
@@ -814,13 +817,21 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/datum/om/frame/S = om_pipe_state(E, src)
 	if(!S || !S.asleep)
 		return null
-	var/datum/om/scheduler/sched = E.om_rec.sched
+	var/datum/om/rec/rec = E.om_rec
+	var/datum/om/scheduler/sched = rec.sched
+	// Channels raised for this pipeline but not yet delivered (the wake queue drains at the
+	// start of the lane, so a change raised by a frame later in the same pass waits for the
+	// next one): a stage they wake is not a miss, its wake is on its way.
+	var/att_i = rec.att.Find(src)
+	var/pending = att_i ? rec.att_pend[att_i] : 0
 	var/datum/om/frame/F = frame_acquire(sched, E, 0)
 	. = null
 	for(var/i in 1 to S.plan.n)
 		if(!(S.bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i)))
 			continue
 		var/datum/om/stage/T = S.plan.stages[i]
+		if(pending & T.wake_mask)
+			continue
 		if(om_deadline_pending(E, src, OM_DL_STAGE - 1 + T.pos))
 			continue
 		if(T.fact_req || T.fact_forbid)

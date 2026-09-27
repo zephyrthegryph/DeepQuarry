@@ -17,9 +17,7 @@
 // Parameters: 0
 // Description: Does nothing, because inheritence.
 /mob/living/proc/adjust_instability(amount)
-	instability = between(0, round(instability + amount, TECHNOMANCER_INSTABILITY_PRECISION), 200)
-	if(instability)
-		om_changed(src, CHANGE_MOB_CONDITIONS)
+	set_instability(between(0, round(instability + amount, TECHNOMANCER_INSTABILITY_PRECISION), 200))
 
 // Proc: adjust_instability()
 // Parameters: 1 (amount - how much instability to give)
@@ -48,6 +46,7 @@
 // Instability system: makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
 // from causing bad effects more than one every ten seconds, to prevent sudden death from angry RNG.
 /datum/om/stage/life/instability
+	reads = list("instability")
 	order = LIFE_PHASE_INPUT + 30
 	name = "instability"
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
@@ -58,7 +57,7 @@
 	return !self.instability
 
 /datum/om/stage/life/instability/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.instability = between(0, round(self.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200)
+	self.set_instability(between(0, round(self.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200))
 	self.last_instability = self.instability
 
 	//This should cushon against really bad luck.

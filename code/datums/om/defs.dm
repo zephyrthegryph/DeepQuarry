@@ -43,6 +43,10 @@
 	var/list/relevance
 	/// Channels on the entity that wake this behaviour (on_wake).
 	var/wake_on = 0
+	/// Declared fields (fields.dm) of `reads_of` this behaviour reads to decide there is work;
+	/// the registry checks at boot that wake_on covers each one's channel.
+	var/list/reads
+	var/reads_of
 	/// relation type (or list of relation types, a path) -> channel mask on the
 	/// related entity. CHANGE_RELATION_ADDED/REMOVED here mean edges of that
 	/// relation being added to or removed from this entity.

@@ -66,7 +66,7 @@
 		tf_mob_holder.vore_organs = list()
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
-		tf_mob_holder = null
+		set_tf_mob_holder(null)
 	QDEL_NULL_LIST(hud_list)
 	QDEL_NULL(selected_image)
 	temp_language_sources = null
@@ -301,7 +301,7 @@
 	radiation = 0
 	nutrition = 400
 	bodytemperature = T20C
-	sdisabilities = 0
+	set_sdisabilities(0)
 	disabilities = 0
 	resting = FALSE
 
@@ -313,7 +313,7 @@
 	status_set(EFFECT_BLINDED, 0)
 	status_set(EFFECT_BLURRY, 0)
 	status_set(EFFECT_DEAFENED, 0)
-	ear_damage = 0
+	set_ear_damage(0)
 
 	// fix all of our organs
 	restore_all_organs()
@@ -500,14 +500,14 @@
 
 //damage/heal the mob ears and adjust the deaf amount
 /mob/living/adjustEarDamage(damage, deaf)
-	ear_damage = max(0, ear_damage + damage)
+	set_ear_damage(max(0, ear_damage + damage))
 	if(deaf)
 		status_adjust(EFFECT_DEAFENED, deaf)
 
 //pass a negative argument to skip one of the variable
 /mob/living/setEarDamage(damage, deaf)
 	if(damage >= 0)
-		ear_damage = damage
+		set_ear_damage(damage)
 	if(deaf >= 0)
 		status_set(EFFECT_DEAFENED, deaf)
 

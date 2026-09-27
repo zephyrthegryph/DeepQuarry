@@ -119,7 +119,7 @@
 		self.set_light(2.5, 1, COLOR_ORANGE)
 		return 1
 	else if(self.is_dead())
-		self.glow_override = FALSE
+		self.set_glow_override(FALSE)
 
 /mob/living/simple_mob/vore/oregrub/lava/death()
 	set_light(0)

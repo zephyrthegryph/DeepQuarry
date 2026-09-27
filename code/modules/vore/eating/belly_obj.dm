@@ -667,7 +667,7 @@
 		M.tf_mob_holder.mob_belly_transfer(M)
 
 	if(M.tf_mob_holder)
-		M.tf_mob_holder = null
+		M.set_tf_mob_holder(null)
 
 	// If digested prey is also a pred... anyone inside their bellies gets moved up.
 	if(is_vore_predator(M))
@@ -729,7 +729,7 @@
 	//Incase they have the loop going, let's double check to stop it.
 	M.stop_sound_channel(CHANNEL_PREYLOOP)
 	//Don't let glows stick
-	M.glow_toggle = FALSE
+	M.set_glow_toggle(FALSE)
 	M.set_light(0)
 	// Delete the digested mob
 	// Changed qdel to a forceMove to allow reforming, and... handled robots special.

@@ -544,6 +544,38 @@ A setter writes its state, then calls `om_changed(E, bits)`:
   entity and dispatched once at the end. Events with `skip_in_bulk` are
   dropped inside a bulk.
 
+### 5.1 Declared fields
+
+A missed wake is a var a stage reads changing without its channel being raised. Declared fields
+make that impossible by construction for the vars they cover:
+
+- **Declared.** A decl lists the vars its type's stages, behaviours and watches read, with the
+  channel each one's change raises: `fields = list("on" = CHANGE_MACHINE_SETTINGS)`
+  (`code/datums/om/fields.dm`). Fields merge down the type tree like every decl row.
+- **Written through the core.** `om_set(E, "on", TRUE)` or the typed setter
+  `OM_SETTER(/obj/machinery/portable_atmospherics/powered/pump, on)` generates (`E.set_on(TRUE)`)
+  write the var and raise the declared channel, and do nothing when the value is unchanged. A field
+  edited in place (a list) calls `om_field_changed(E, "name")`.
+- **Linted.** `tools/ci/field_write_lint.py` (count `field_write` in `api_lints.py`, ceiling 0) finds
+  every direct write (`on = x`, `src.on = x`, `thing.on = x` for a typed `thing`, `on |= x`, `on++`)
+  in a proc of a related type outside the setter and `Initialize()`/`New()`, and checks every
+  `OM_SETTER()` names a declared field.
+- **Checked at boot.** A stage names what it reads (`reads = list("on")`; behaviours add `reads_of`).
+  The registry's `check_field_reads()` fails boot (and `dq_om_declared_fields_cover_reads`) when a
+  stage's `wake_on` doesn't cover the channel of a field it reads, or reads an undeclared field.
+
+Declared today: the machine step stage (`step_active`, `step_waiting_power`, `speed_process`),
+rechargers and cell chargers (`charging`), fire alarms (`timing`), air alarms
+(`regulating_temperature`), canisters (`valve_open`, `om_settled`), portable pumps and scrubbers
+(`on`); on mobs `instability`, `virtual_reality_mob`, the `glow_*` vars, `tf_mob_holder`,
+`sdisabilities`, `ear_damage` and simple mobs' `purge`. Stage rules that read procs
+(`step_has_work()`, `power_settled()`, `body.life_settled()`) or relations are covered by the
+producers of what those read, and by the audit.
+
+**The audit.** `om_pipeline_audit()` skips a stage whose wake is already queued (the entity's
+pending bits for the pipeline cover its `wake_mask`): the wake queue drains at the start of a lane,
+so a change a frame raises later in the same pass is delivered on the next one, not missed.
+
 ## 6. Derived values (section C)
 
 A derived value has `inputs` (own channels), `derived_inputs` (other derived

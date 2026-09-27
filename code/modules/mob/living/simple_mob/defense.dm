@@ -124,7 +124,7 @@
 		effective_force = 0
 	if(supernatural && istype(O,/obj/item/nullrod))
 		effective_force *= 2
-		purge = 3
+		set_purge(3)
 	if(O.force <= resistance)
 		to_chat(user,span_danger("This weapon is ineffective, it does no damage."))
 		return 2 //???

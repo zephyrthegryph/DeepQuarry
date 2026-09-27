@@ -95,7 +95,7 @@
 				if(I.damage > 0)
 					H.mend(TREAT_RESTORATION, 0.25, I)
 				if(I.damage <= 5 && I.organ_tag == O_EYES)
-					H.sdisabilities &= ~BLIND
+					H.set_sdisabilities(H.sdisabilities & (~BLIND))
 			for(var/obj/item/organ/external/O in H.organs)
 				if(O.status & ORGAN_BROKEN)
 					O.mend_fracture()		//Only works if the bone won't rebreak, as usual

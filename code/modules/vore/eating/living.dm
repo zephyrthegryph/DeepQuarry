@@ -644,7 +644,7 @@
 					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 					return
 				to_chat(src,span_notice("You have no body."))
-				src.tf_mob_holder = null
+				src.set_tf_mob_holder(null)
 				return
 			if(ourmob.ckey)
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
@@ -848,7 +848,7 @@
 
 	//I don't really see a point to any sort of checking here.
 	//If they're passed out, the light won't help them. Same with buckled. Really, I think it's fine to do this whenever.
-	glow_toggle = !glow_toggle
+	set_glow_toggle(!glow_toggle)
 
 	to_chat(src,span_notice("You " + span_bold("[glow_toggle ? "en" : "dis"]") + "able your body's glow."))
 
@@ -861,7 +861,7 @@
 	//Even if they open the box 900 times, who cares, they get the wrong color and do it again.
 	var/new_color = tgui_color_picker(src,"Select a new color","Body Glow",glow_color)
 	if(new_color)
-		glow_color = new_color
+		set_glow_color(new_color)
 
 /mob/living/proc/get_digestion_nutrition_modifier()
 	return 1

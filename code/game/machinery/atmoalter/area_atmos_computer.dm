@@ -61,7 +61,7 @@
 			if(!validscrubber(S))
 				connectedscrubbers -= S
 				return TRUE
-			S.on = !S.on
+			S.set_on(!S.on)
 			S.update_icon()
 			MACHINE_WAKE(S)
 			. = TRUE
@@ -83,7 +83,7 @@
 		if(!validscrubber(S))
 			connectedscrubbers -= S
 			continue
-		S.on = on
+		S.set_on(on)
 		S.update_icon()
 		MACHINE_WAKE(S)
 		CHECK_TICK

@@ -72,7 +72,7 @@
 	if(ourmob.loc != src)
 		if(isnull(ourmob.loc))
 			to_chat(src,span_notice("You have no body."))
-			tf_mob_holder = null
+			set_tf_mob_holder(null)
 			return
 		if(istype(ourmob.loc, /mob/living)) //Check for if body was transformed
 			ourmob = ourmob.loc
@@ -89,19 +89,19 @@
 				theirmind.current = null
 				transfer_mind(ourmind, ourmob, "mob transform body swap with [src]", force = TRUE)
 				transfer_mind(theirmind, src, "mob transform body swap with [ourmob]", force = TRUE)
-				ourmob.tf_mob_holder = null
-				src.tf_mob_holder = null
+				ourmob.set_tf_mob_holder(null)
+				src.set_tf_mob_holder(null)
 			else
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
 			return
 		move_player(src, ourmob, "reverted mob transform from [src]")
-		tf_mob_holder = null
+		set_tf_mob_holder(null)
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
 	// when the mob's stat changes via its COMSIG_MOB_STATCHANGE handler.
 	return_player_to_tf_holder("reverted mob transform")
-	tf_mob_holder = null
+	set_tf_mob_holder(null)
 	var/turf/get_dat_turf = get_turf(src)
 	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
@@ -128,6 +128,7 @@
 		qdel(src)
 
 /datum/om/stage/life/tf_holder
+	reads = list("tf_mob_holder")
 	order = LIFE_PHASE_OUTPUT + 40
 	name = "tf holder"
 	run_if = LIFE_RUN_IF_PLACED
@@ -211,7 +212,7 @@
 			// no longer needed; modern brain spawns fresh on the new mob.
 			forceMove(new_mob)
 			src.forceMove(new_mob)
-			new_mob.tf_mob_holder = src
+			new_mob.set_tf_mob_holder(src)
 			return new_mob
 
 // Used to check if THIS MOB has been transformed into a different mob, as only the NEW mob uses tf_mob_holder.

@@ -68,13 +68,13 @@
 		prey_mind.active = TRUE
 		transfer_mind(prey_mind, user, "bodysnatcher swap")
 		if(M.tf_mob_holder == user)
-			M.tf_mob_holder = null
+			M.set_tf_mob_holder(null)
 		else
-			M.tf_mob_holder = user
+			M.set_tf_mob_holder(user)
 		if(user.tf_mob_holder == M)
-			user.tf_mob_holder = null
+			user.set_tf_mob_holder(null)
 		else
-			user.tf_mob_holder = M
+			user.set_tf_mob_holder(M)
 		user.status_set(EFFECT_SLEEPING, 10) //Device knocks out both the user and the target.
 		user.status_set(EFFECT_BLURRY, 30) //Blurry vision while they both get used to their new body's vision
 		user.status_set(EFFECT_SLURRING, 50) //And let's also have them slurring while they attempt to get used to using their new body.

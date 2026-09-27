@@ -64,9 +64,9 @@
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
-		speed_process = forced
+		set_speed_process(forced)
 	else
-		speed_process = !speed_process // switching gears
+		set_speed_process(!speed_process) // switching gears
 	if(speed_process) // high gear
 		update_active_power_usage(initial(idle_power_usage) * 4)
 	else // low gear

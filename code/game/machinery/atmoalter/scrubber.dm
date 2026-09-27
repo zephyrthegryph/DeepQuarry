@@ -32,7 +32,7 @@
 		return
 
 	if(prob(50/severity))
-		on = !on
+		set_on(!on)
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
 		update_icon()
@@ -142,7 +142,7 @@
 
 	switch(action)
 		if("power")
-			on = !on
+			set_on(!on)
 			if(on)
 				om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
@@ -222,7 +222,7 @@
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
 	if(!anchored || (stat & (NOPOWER|BROKEN)))
-		on = 0
+		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
 		update_icon()

@@ -67,7 +67,7 @@
 	primitive_expression_messages=list("screams without a sound.")
 
 /datum/trait/negative/disability_mute/environment_effects(mob/living/carbon/human/H)
-	H.sdisabilities |= sdisability 		// In space, no one can hear you scream
+	H.set_sdisabilities(H.sdisabilities | (sdisability)) 		// In space, no one can hear you scream
 
 /datum/trait/negative/disability_deaf
 	name = "Deaf"
@@ -83,7 +83,7 @@
 	primitive_expression_messages=list("stares blanky.")
 
 /datum/trait/negative/disability_deaf/environment_effects(mob/living/carbon/human/H)
-	H.sdisabilities |= sdisability 		// In space, I can't hear shit
+	H.set_sdisabilities(H.sdisabilities | (sdisability)) 		// In space, I can't hear shit
 
 /datum/trait/negative/disability_deaf/apply(datum/species/S,mob/living/carbon/human/H)
 	. = ..()

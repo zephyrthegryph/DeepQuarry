@@ -203,7 +203,7 @@
 	M.fully_heal()
 	M.status_set(EFFECT_HALLUCINATING, 0)
 	M.disabilities = 0
-	M.sdisabilities = 0
+	M.set_sdisabilities(0)
 	M.status_set(EFFECT_BLURRY, 0)
 	M.status_set(EFFECT_BLINDED, 0)
 	M.status_set(EFFECT_WEAKENED, 0)

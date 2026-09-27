@@ -678,7 +678,7 @@
 				return
 			// Eye repair is imidazoline's TREAT_OCULAR tag (body/treatment.dm).
 			if(E.damage <= 5 && E.organ_tag == O_EYES)
-				H.sdisabilities &= ~BLIND
+				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 
 /datum/reagent/peridaxon
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 20))
@@ -706,7 +706,7 @@
 				H.status_at_least(EFFECT_CONFUSED, 5)
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
 				H.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + 10, 250)) //Eyes need to reset, or something
-				H.sdisabilities &= ~BLIND
+				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 		if(alien == IS_SLIME)
 			if(prob(33))
 				H.status_at_least(EFFECT_CONFUSED, 10)

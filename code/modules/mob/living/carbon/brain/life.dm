@@ -77,7 +77,7 @@
 			emp_damage -= 1
 		if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
 			status_set(EFFECT_BLURRY, 1)
-			ear_damage = 1
+			set_ear_damage(1)
 			if(!alert)
 				emote("alert")
 				to_chat(src, span_red("Primary systems are now online."))
@@ -87,7 +87,7 @@
 		if(10)
 			alert = 0
 			status_set(EFFECT_BLURRY, 0)
-			ear_damage = 0
+			set_ear_damage(0)
 			emp_damage -= 1
 		if(2 to 9)//Low level of EMP damage, has few effects(handled elsewhere)
 			if(!alert)

@@ -308,7 +308,7 @@
 	primitive_expression_messages=list("stumbles aimlessly.")
 
 /datum/trait/negative/blindness/environment_effects(mob/living/carbon/human/H)
-	H.sdisabilities |= sdisability 		//no matter what you do, the blindess still comes for you // Traitgenes tweaked to be consistant with other gene traits by using var
+	H.set_sdisabilities(H.sdisabilities | (sdisability)) 		//no matter what you do, the blindess still comes for you // Traitgenes tweaked to be consistant with other gene traits by using var
 
 /datum/trait/negative/agoraphobia
 	name = "Agoraphobia"

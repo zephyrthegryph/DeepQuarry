@@ -2072,7 +2072,7 @@
 	if(possessed_voice && LAZYLEN(possessed_voice))
 		var/mob/living/voice/V = possessed_voice[1]
 		V.mind.transfer_to(H)
-		H.tf_mob_holder = V.tf_mob_holder
+		H.set_tf_mob_holder(V.tf_mob_holder)
 		qdel(V)
 	qdel(src)
 	return H

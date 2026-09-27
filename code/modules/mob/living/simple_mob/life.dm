@@ -261,6 +261,7 @@
 	return !(LAZYLEN(self.internal_organs) && (locate(/obj/item/organ) in self.internal_organs)) && !(LAZYLEN(self.organs) && (locate(/obj/item/organ) in self.organs))
 
 /datum/om/stage/life/supernatural
+	reads = list("purge")
 	order = LIFE_PHASE_TAIL + 120
 	name = "supernatural"
 	wake_on = CHANGE_MOB_STATUS
@@ -270,7 +271,7 @@
 /// Holy purge wears off.
 /datum/om/stage/life/supernatural/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	if(self.purge)
-		self.purge -= 1
+		self.set_purge(self.purge - (1))
 
 /datum/om/stage/life/supernatural/idle(mob/living/simple_mob/self)
 	return !self.purge

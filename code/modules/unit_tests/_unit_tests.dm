@@ -215,6 +215,7 @@
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_om_world_watch_tests.dm"
+#include "dq_om_fields_tests.dm"
 #include "dq_om_key_tests.dm"
 #include "dq_om_periodic_tests.dm"
 #include "dq_power_tests.dm"

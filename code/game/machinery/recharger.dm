@@ -66,7 +66,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(charging)
 		charging.update_icon()
 		charging.forceMove(src.loc)
-		charging = null
+		set_charging(null)
 	. = ..()
 
 /obj/machinery/recharger/examine(mob/user)
@@ -173,7 +173,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		return TRUE
 	user.drop_item()
 	G.forceMove(src)
-	charging = G
+	set_charging(G)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	update_icon()
 	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
@@ -183,7 +183,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(!do_allowed_checks(G, user))
 		return TRUE
 	G.forceMove(src)
-	charging = G
+	set_charging(G)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	update_icon()
 	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
@@ -207,7 +207,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
 		charging.update_icon()
 		user.put_in_hands(charging)
-		charging = null
+		set_charging(null)
 		om_changed(src, CHANGE_MACHINE_OCCUPANT)
 		update_icon()
 	return TRUE
@@ -218,7 +218,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
 			charging.update_icon()
 			charging.forceMove(src.loc)
-			charging = null
+			set_charging(null)
 			om_changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
 
@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 /obj/machinery/recharger/proc/charge_pai(obj/item/paicard/pcard)
 	if(pcard.is_damage_critical())
 		pcard.forceMove(get_turf(src))
-		charging = null
+		set_charging(null)
 		update_icon()
 		return
 	if(pcard.pai.is_injured())
@@ -282,7 +282,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		pcard.pai.mend(TREAT_TISSUE_REPAIR, 5)
 		pcard.pai.mend(TREAT_BURN_CARE, 5)
 	else
-		charging = null
+		set_charging(null)
 		update_icon()
 		visible_message(span_notice("\The [src] ejects the [pcard]!"))
 		pcard.forceMove(get_turf(src))

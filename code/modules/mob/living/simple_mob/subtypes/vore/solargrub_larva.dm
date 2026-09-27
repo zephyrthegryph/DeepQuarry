@@ -196,7 +196,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		self.set_light(1.5, 1, COLOR_YELLOW)
 		return 1
 	else if(self.is_dead())
-		self.glow_override = FALSE
+		self.set_glow_override(FALSE)
 
 
 /obj/machinery/abstract_grub_machine

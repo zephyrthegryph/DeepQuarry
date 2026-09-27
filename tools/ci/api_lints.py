@@ -21,6 +21,9 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
                      (M.buckled_to(), I.slot_item(slot)) so it chains
     raw_relation     om_relation_of()/om_source_of()/om_related(_to)() outside
                      code/datums/om: call the relation's typed accessor proc
+    field_write      a direct write to a declared field (fields.dm) outside its setter and
+                     Initialize()/New(): om_set() or the OM_SETTER() setter raises its channel
+                     (tools/ci/field_write_lint.py has the rules)
     reactor_api      SSreactor, on_react(), react_every() or a REACT_* macro: Rust
                      wakes are world watches on the OM scheduler (om_world_*, sec 4.8)
 
@@ -36,6 +39,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
+import field_write_lint  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "api_lints_baseline.txt")
@@ -129,13 +133,15 @@ CHECKS = [
     ("do_after_state", do_after_state),
     ("use_tool_state", use_tool_state),
     ("vars_helpers", pattern(r"\b(?:om_set_var(?:_then)?|om_toggle_var|cure_temporary_s?disability)\b")),
-    ("vars_write", pattern(r"\bvars\[[^\]]*\]\s*=(?!=)")),
+    # om_set() (code/datums/om/fields.dm) is the one sanctioned write by name: it raises the field's channel.
+    ("vars_write", outside("code/datums/om/fields.dm",r"\bvars\[[^\]]*\]\s*=(?!=)")),
     ("timer_cooldown", pattern(r"\bS?_?TIMER_COOLDOWN_START\s*\(")),
     ("accessor_macros", pattern(r"(?<![\w/])(?:BUCKLED|BUCKLED_MOBS|PULLING|PULLED_BY|GRABBED_BY|EYE_OWNER|EYES_OF"
                                 r"|ACTIVE_EYE|GRAB_TARGET|ORBIT_TARGET|ORBITERS|GRAB_ASSAILANT|LEASH_PET|LEASH_MASTER"
                                 r"|LEASH_OF|TETHERED_HANDHELD|TETHER_HOST|FOLLOWING|FOLLOWERS|BORER_HOST|BORER_OF"
                                 r"|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS"
                                 r"|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\(")),
+    ("field_write", field_write_lint.check),
     ("reactor_api", pattern(r"\b(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)\b")),
     ("raw_relation", outside("code/datums/om/", r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(")),
 ]

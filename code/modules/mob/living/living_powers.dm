@@ -85,13 +85,13 @@
 	set category = "Abilities.Sparkledog"
 
 	if(!glow_toggle)
-		glow_range = 3
-		glow_intensity = 2
-		glow_color = "#FFFFFF"
-		glow_toggle = TRUE
+		set_glow_range(3)
+		set_glow_intensity(2)
+		set_glow_color("#FFFFFF")
+		set_glow_toggle(TRUE)
 		add_modifier(/datum/modifier/sparkle, null, src)
 	else
-		glow_toggle = FALSE
+		set_glow_toggle(FALSE)
 
 /datum/modifier/sparkle
 	name = "sparkling"

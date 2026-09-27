@@ -96,6 +96,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	build_event_tables()
 	build_tasks()
 	build_services()
+	check_field_reads()
 
 // ---------------------------------------------------------------- bundles
 

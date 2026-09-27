@@ -216,7 +216,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 				f_loss = f_loss/1.5
 
 			if (get_ear_protection() < 2)
-				ear_damage += 30
+				set_ear_damage(ear_damage + (30))
 				status_adjust(EFFECT_DEAFENED, 120)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(70) && !shielded)
@@ -228,7 +228,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			if (prob(injury_armor(ARMOR_BLAST, null)))
 				b_loss = b_loss/2
 			if (get_ear_protection() < 2)
-				ear_damage += 15
+				set_ear_damage(ear_damage + (15))
 				status_adjust(EFFECT_DEAFENED, 60)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(50) && !shielded)

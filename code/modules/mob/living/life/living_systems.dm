@@ -109,6 +109,7 @@
 
 /// Mob glow (glow_toggle, technomancer instability). Also run on demand by refresh_glow().
 /datum/om/stage/life/light
+	reads = list("glow_override", "glow_toggle", "glow_range", "glow_intensity", "glow_color", "instability")
 	order = LIFE_PHASE_INPUT + 70
 	name = "light"
 	run_if = LIFE_RUN_IF_PLACED
@@ -409,6 +410,7 @@
 
 /// Eye and ear damage recovery.
 /datum/om/stage/life/disabilities
+	reads = list("sdisabilities", "ear_damage")
 	order = LIFE_PHASE_MIND + 10
 	name = "disabilities"
 	wake_on = CHANGE_MOB_STATUS
@@ -552,3 +554,45 @@
 
 /datum/om/stage/life/vision/rewake_delay(mob/living/self)
 	return self.client ? 5 SECONDS : 0
+
+// ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
+// What Life stages read to decide there is work, and the channel each raises. Written only through
+// the setters below (or om_set()); the registry checks each stage's wake_on covers them.
+
+/datum/om/decl/living_fields
+	of = /mob/living
+	fields = list(
+		"instability" = CHANGE_MOB_CONDITIONS,
+		"virtual_reality_mob" = CHANGE_MOB_CONDITIONS,
+		"glow_toggle" = CHANGE_MOB_CONDITIONS,
+		"glow_override" = CHANGE_MOB_CONDITIONS,
+		"glow_range" = CHANGE_MOB_CONDITIONS,
+		"glow_intensity" = CHANGE_MOB_CONDITIONS,
+		"glow_color" = CHANGE_MOB_CONDITIONS,
+		"tf_mob_holder" = CHANGE_MOB_CONDITIONS,
+	)
+
+/// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
+/datum/om/decl/mob_sense_fields
+	of = /mob
+	fields = list(
+		"sdisabilities" = CHANGE_MOB_STATUS,
+		"ear_damage" = CHANGE_MOB_STATUS,
+	)
+
+OM_SETTER(/mob/living, instability)
+OM_SETTER(/mob/living, virtual_reality_mob)
+OM_SETTER(/mob/living, glow_toggle)
+OM_SETTER(/mob/living, glow_override)
+OM_SETTER(/mob/living, glow_range)
+OM_SETTER(/mob/living, glow_intensity)
+OM_SETTER(/mob/living, glow_color)
+OM_SETTER(/mob/living, tf_mob_holder)
+OM_SETTER(/mob, sdisabilities)
+OM_SETTER(/mob, ear_damage)
+
+/datum/om/decl/simple_mob_fields
+	of = /mob/living/simple_mob
+	fields = list("purge" = CHANGE_MOB_STATUS)
+
+OM_SETTER(/mob/living/simple_mob, purge)

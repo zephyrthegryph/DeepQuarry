@@ -438,13 +438,13 @@ update_flag
 				else
 					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 					log_open()
-			valve_open = !valve_open
+			set_valve_open(!valve_open)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
 		if("eject")
 			if(holding)
 				if(valve_open)
-					valve_open = 0
+					set_valve_open(0)
 					release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
 				if(istype(holding, /obj/item/tank))
 					holding.manipulated_by = ui.user.real_name
@@ -532,7 +532,7 @@ update_flag
 /// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/portable_atmospherics/canister/arm_wakes()
 	..()
-	om_settled = !valve_open
+	set_om_settled(!valve_open)
 	hibernate_until_gas_changes()
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

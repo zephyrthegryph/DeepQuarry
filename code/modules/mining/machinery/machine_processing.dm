@@ -239,9 +239,9 @@
 /obj/machinery/mineral/processing_unit/proc/toggle_speed(forced)
 	var/area/refinery_area = get_area(src)
 	if(forced)
-		speed_process = forced
+		set_speed_process(forced)
 	else
-		speed_process = !speed_process // switching gears
+		set_speed_process(!speed_process) // switching gears
 	if(speed_process) // high gear
 		MACHINE_SLEEP(src)
 		PERIODIC_START(src, PERIODIC_FAST)
