@@ -158,7 +158,7 @@
 			if (!(--filerate))
 				filerate = startingfilerate
 				client.browse_queue_flush()
-			stoplag(0) //queuing calls like this too quickly can cause issues in some client versions
+			stoplag(0) //queuing calls like this too quickly can cause issues in some client versions // S10b keeps: paces browse_rsc sends to the client; browse_queue_flush waits on the client
 
 /// Check the config is valid to load this transport
 /// Returns TRUE or FALSE

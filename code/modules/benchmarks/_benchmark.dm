@@ -63,7 +63,7 @@
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
 	var/waited = 0
 	while((length(SSasset_loading.generate_queue) || SSasset_loading.assets_generating || SSasset_loading.last_queue_len) && waited++ < world.fps * timeout_seconds)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")
 
@@ -74,16 +74,16 @@
 	while(subsystem.times_fired < target)
 		if(REALTIMEOFDAY > deadline)
 			fail("[subsystem.name] fired [count - (target - subsystem.times_fired)]/[count] times in [timeout_seconds]s")
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 
 /datum/benchmark/proc/wait_seconds(seconds)
 	var/until = REALTIMEOFDAY + seconds * 10
 	while(REALTIMEOFDAY < until)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 
 /// Starts a measurement window. Pair with end_window().
 /datum/benchmark/proc/begin_window()
-	stoplag() // start on a fresh tick so setup work isn't counted
+	stoplag() // start on a fresh tick so setup work isn't counted // S10b keeps: benchmark harness measures across real MC ticks
 	Master.perf_outliers.Cut()
 	Master.perf_worst_tick = list()
 	window_start_position = Master.perf_samples_total + 1
