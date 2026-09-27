@@ -107,19 +107,29 @@
 		return
 	drop_stored_atom(removing, user)
 
-/mob/living/silicon/robot/platform/verb/drop_stored_atom_verb()
-	set name = "Eject Cargo"
-	set category = "Abilities.Silicon"
-	set desc = "Drop something from your internal storage."
+/datum/interaction/ability/self/robot_eject_cargo
+	id = ABILITY_ID_ROBOT_EJECT_CARGO
+	name = "Eject cargo"
+	category = ABILITY_CAT_UTILITY
+	requires = list(
+		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_incapacitated, "you are not in any state to do that"),
+		REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/platform/proc/dq_pred_has_stored_atoms, "you have nothing in your cargo compartment"),
+	)
+	effect = /mob/living/silicon/robot/platform/proc/dq_do_eject_cargo
 
-	if(incapacitated())
-		to_chat(src, span_warning("You are not in any state to do that."))
-		return
+/datum/interaction/ability/self/robot_eject_cargo/applies_to(atom/target)
+	return istype(target, /mob/living/silicon/robot/platform)
 
-	if(length(stored_atoms))
-		drop_stored_atom(user = src)
-	else
-		to_chat(src, span_warning("You have nothing in your cargo compartment."))
+/mob/living/proc/dq_pred_not_incapacitated(mob/living/actor, atom/target, obj/item/held)
+	return !actor.incapacitated() || "you are not in any state to do that"
+
+/mob/living/silicon/robot/platform/proc/dq_pred_has_stored_atoms(mob/living/silicon/robot/platform/actor, atom/target, obj/item/held)
+	return length(actor.stored_atoms) || "you have nothing in your cargo compartment"
+
+/// Drop something from your internal storage.
+/mob/living/silicon/robot/platform/proc/dq_do_eject_cargo(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+	drop_stored_atom(user = src)
+	return TRUE
 
 /mob/living/silicon/robot/platform/MouseDrop_T(atom/movable/dropping, mob/living/user)
 	if(!istype(user) || !istype(dropping) || user.incapacitated())

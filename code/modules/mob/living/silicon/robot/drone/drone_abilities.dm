@@ -1,14 +1,21 @@
 // DRONE ABILITIES
-/mob/living/silicon/robot/drone/verb/set_mail_tag()
-	set name = "Set Mail Tag"
-	set desc = "Tag yourself for delivery through the disposals system."
-	set category = "Abilities.Silicon"
 
+/datum/interaction/ability/self/robot_set_mail_tag
+	id = ABILITY_ID_ROBOT_SET_MAIL_TAG
+	name = "Set mail tag"
+	category = ABILITY_CAT_UTILITY
+	effect = /mob/living/silicon/robot/drone/proc/dq_do_set_mail_tag
+
+/datum/interaction/ability/self/robot_set_mail_tag/applies_to(atom/target)
+	return istype(target, /mob/living/silicon/robot/drone)
+
+/// Tag yourself for delivery through the disposals system.
+/mob/living/silicon/robot/drone/proc/dq_do_set_mail_tag(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	var/new_tag = tgui_input_list(src, "Select the desired destination.", "Set Mail Tag", GLOB.tagger_locations)
 
 	if(!new_tag)
 		mail_destination = ""
-		return
+		return TRUE
 
 	to_chat(src, span_notice("You configure your internal beacon, tagging yourself for delivery to '[new_tag]'."))
 	mail_destination = new_tag
@@ -19,16 +26,4 @@
 		to_chat(src, span_notice("\The [D] acknowledges your signal."))
 		D.flush_count = D.flush_every_ticks
 
-	return
-
-/mob/living/silicon/robot/drone/MouseDrop(atom/over_object)
-	var/mob/living/carbon/human/H = over_object
-	if(!istype(H) || !Adjacent(H))
-		return ..()
-	if(IS_GRABBING(H) && hat && !(H.get_equipped_item(SLOT_ID_HAND_L) && H.get_equipped_item(SLOT_ID_HAND_R)))
-		var/obj/item/removed_hat = remove_hat(get_turf(src))
-		H.put_in_hands(removed_hat)
-		H.visible_message(span_danger("\The [H] removes \the [src]'s [removed_hat]."))
-		return
-	else
-		return ..()
+	return TRUE

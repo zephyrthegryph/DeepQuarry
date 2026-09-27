@@ -95,16 +95,69 @@
 	// ...). Every subtype's own requires are checked only once this holds.
 	return list(REQ_SELF) + ..()
 
+/**
+ * A targeted ability whose target isn't known in advance (self, hover, or a
+ * click) but is chosen interactively from a candidate list at use time -
+ * "feed the nearest mob", "mount someone", "heal whoever's closest and hurt" -
+ * the shape the legacy verb argument syntax (`mob/living/T in living_mobs(1)`)
+ * used to give for free. Subtypes override candidates() (and optionally
+ * picker_title/picker_prompt); the keybind path (dq_use_ability()) calls
+ * pick_target() instead of the hover/self fallback. Reached through the Menu
+ * too, same as any ability - there candidates() isn't consulted, the target
+ * is whatever the Menu is open on, same as a plain targeted ability.
+ *
+ *	/datum/interaction/ability/picker/example
+ *		id = "example"
+ *		name = "Example"
+ *		picker_title = "Pick a target"
+ *		picker_prompt = "Feed whom?"
+ *		effect = /mob/living/proc/dq_do_example
+ *
+ *	/datum/interaction/ability/picker/example/candidates(mob/living/actor)
+ *		return living_mobs_in_view(1, actor) - actor
+ */
+/datum/interaction/ability/picker
+	/// tgui_input_list()'s title.
+	var/picker_title = "Choose a target"
+	/// tgui_input_list()'s message.
+	var/picker_prompt = "Select:"
+
+/// The atoms `actor` could target right now, or an empty list for none. Called
+/// fresh every time (never cached): the world moves between key presses.
+/datum/interaction/ability/picker/proc/candidates(mob/living/actor)
+	return list()
+
+/**
+ * Picks one candidate interactively, or null (having told `actor` why) if
+ * there's nothing to pick or they cancelled. Overridable for a picker whose
+ * "no valid target" case is itself an action (robot_mount's dismount) rather
+ * than a plain refusal.
+ */
+/datum/interaction/ability/picker/proc/pick_target(mob/living/actor)
+	var/list/choices = candidates(actor)
+	if(!length(choices))
+		to_chat(actor, span_warning("There's nothing nearby to [lowertext(name)]."))
+		return null
+	return tgui_input_list(actor, picker_prompt, picker_title, choices)
+
 /// Runs `ability_id` on `actor`: the keybind path (code/modules/keybindings/abilities.dm),
 /// used instead of the general resolver because a key binds to one specific
 /// ability, not "the best interaction of a category". A /self ability always
-/// targets the actor; any other ability targets whatever's hovered (or the
-/// tile in front, same fallback as a category key - hover.dm).
+/// targets the actor; a /picker ability asks pick_target(); any other ability
+/// targets whatever's hovered (or the tile in front, same fallback as a
+/// category key - hover.dm).
 /proc/dq_use_ability(mob/living/actor, id)
 	var/datum/interaction/ability/A = ABILITY_BY_ID(id)
 	if(!istype(A))
 		return FALSE
-	var/atom/target = istype(A, /datum/interaction/ability/self) ? actor : (actor.client?.hovered_atom() || get_step(actor, actor.dir))
+	var/atom/target
+	if(istype(A, /datum/interaction/ability/self))
+		target = actor
+	else if(istype(A, /datum/interaction/ability/picker))
+		var/datum/interaction/ability/picker/P = A
+		target = P.pick_target(actor)
+	else
+		target = actor.client?.hovered_atom() || get_step(actor, actor.dir)
 	if(!target || !A.applies_to(target))
 		return FALSE
 	return A.attempt(actor, target, actor.get_active_hand()) == INTERACTION_TRY_RAN

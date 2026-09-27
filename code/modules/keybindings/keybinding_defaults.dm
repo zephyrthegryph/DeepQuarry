@@ -64,9 +64,13 @@
 		list("combat_mode_toggle_alt", "Toggle combat mode (second key)", KEYBIND_CAT_COMBAT, ".combat-mode toggle", null, KB_BOTH("INSERT", "G", "CTRL+G")),
 
 		// Robot modules
-		list("module_1", "Module 1", KEYBIND_CAT_ROBOT, "toggle-module 1", null, KB_ROBOT("1", "CTRL+1")),
-		list("module_2", "Module 2", KEYBIND_CAT_ROBOT, "toggle-module 2", null, KB_ROBOT("2", "CTRL+2")),
-		list("module_3", "Module 3", KEYBIND_CAT_ROBOT, "toggle-module 3", null, KB_ROBOT("3", "CTRL+3")),
+		// Module select is an ability (robot_abilities.dm) reached through the
+		// generic ability keybind verb; these rows just keep its historical
+		// default keys, which the generic per-ability row (keybinding_defaults.dm's
+		// GLOB.ability_interaction_types loop, below) leaves unbound.
+		list("module_1", "Module 1", KEYBIND_CAT_ROBOT, ".use-ability [ABILITY_ID_ROBOT_TOGGLE_MODULE_1]", null, KB_ROBOT("1", "CTRL+1")),
+		list("module_2", "Module 2", KEYBIND_CAT_ROBOT, ".use-ability [ABILITY_ID_ROBOT_TOGGLE_MODULE_2]", null, KB_ROBOT("2", "CTRL+2")),
+		list("module_3", "Module 3", KEYBIND_CAT_ROBOT, ".use-ability [ABILITY_ID_ROBOT_TOGGLE_MODULE_3]", null, KB_ROBOT("3", "CTRL+3")),
 		list("unequip_module", "Unequip module", KEYBIND_CAT_ROBOT, "unequip-module", null, KB_ROBOT("Q", "CTRL+Q")),
 
 		// Targeting

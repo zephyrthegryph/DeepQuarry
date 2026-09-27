@@ -591,7 +591,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				add_verb(Tar, /mob/living/simple_mob/proc/ColorMate)
 			if(istype(target,/mob/living/silicon/robot))
 				var/mob/living/silicon/robot/Tar = target
-				add_verb(Tar, /mob/living/silicon/robot/proc/ColorMate)
+				Tar.grant_ability(ABILITY_ID_ROBOT_RECOLOUR, Tar)
 
 		if("be_event_invis")
 			var/mob/living/Tar = target

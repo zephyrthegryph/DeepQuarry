@@ -183,7 +183,14 @@
 /datum/unit_test/dq_ability_dark_respite_needs_dark_area
 
 /datum/unit_test/dq_ability_dark_respite_needs_dark_area/Run()
-	var/mob/living/carbon/human/H = dq_phase_test_human() // not moved into /area/shadekin
+	var/mob/living/carbon/human/H = dq_phase_test_human()
+	var/turf/T = get_turf(H)
+	// Explicitly not /area/shadekin: in the full suite, some other test earlier
+	// in the run may have left an /area/shadekin (or another area entirely) on
+	// whatever turf test_floor() resolves to - this test is about the
+	// requirement, not about what state the shared test floor happens to be in.
+	if(istype(get_area(T), /area/shadekin))
+		ChangeArea(T, new /area())
 	var/datum/interaction/ability/A = dq_respite_ability()
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you can only trigger Dark Respite in the Dark", "blocked outside the Dark")
 
@@ -294,6 +301,60 @@
 	TEST_ASSERT_EQUAL(A.attempt(R, R, null), INTERACTION_TRY_RAN, "toggling runs")
 	TEST_ASSERT_NOTEQUAL(R.lights_on, before, "the light state flipped")
 	qdel(R)
+
+// ---- Targeted, picked abilities (code/datums/abilities/ability.dm's /picker) ----
+// tgui_input_list() itself needs a live client and isn't exercised here; what's
+// tested is the data candidates() builds and, for robot_mount, the branch that
+// never reaches a picker at all (dismounting).
+
+/datum/unit_test/dq_ability_robot_nom_candidates
+
+/datum/unit_test/dq_ability_robot_nom_candidates/Run()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	var/mob/living/carbon/human/nearby = allocate(/mob/living/carbon/human, get_step(T, NORTH))
+	var/datum/interaction/ability/picker/robot_nom/A = ABILITY_BY_ID(ABILITY_ID_ROBOT_NOM)
+	TEST_ASSERT_NOTNULL(A, "robot_nom is registered")
+	TEST_ASSERT(R.has_ability(ABILITY_ID_ROBOT_NOM), "every robot is granted this on spawn")
+	var/list/candidates = A.candidates(R)
+	TEST_ASSERT(nearby in candidates, "a nearby mob is a candidate")
+	TEST_ASSERT(!(R in candidates), "the robot itself never is")
+
+/datum/unit_test/dq_ability_robot_mount_candidates
+
+/datum/unit_test/dq_ability_robot_mount_candidates/Run()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	var/mob/living/carbon/human/adjacent = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/far = allocate(/mob/living/carbon/human, get_step(get_step(T, NORTH), NORTH))
+	var/datum/interaction/ability/picker/robot_mount/A = ABILITY_BY_ID(ABILITY_ID_ROBOT_MOUNT)
+	TEST_ASSERT_NOTNULL(A, "robot_mount is registered")
+	var/list/candidates = A.candidates(R)
+	TEST_ASSERT(adjacent in candidates, "an adjacent, unbuckled mob is a candidate")
+	TEST_ASSERT(!(far in candidates), "a distant mob is not")
+	TEST_ASSERT(!(R in candidates), "the robot itself never is")
+
+/datum/unit_test/dq_ability_robot_mount_dismounts_without_picking
+
+/datum/unit_test/dq_ability_robot_mount_dismounts_without_picking/Run()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	var/mob/living/carbon/human/rider = allocate(/mob/living/carbon/human, T)
+	var/datum/interaction/ability/picker/robot_mount/A = ABILITY_BY_ID(ABILITY_ID_ROBOT_MOUNT)
+	TEST_ASSERT(istype(om_link(rider, R, /datum/om/relation/buckled_to), /datum/om/edge), "the rider should buckle to the robot")
+	// With a rider already buckled, pick_target() dismounts directly - no tgui
+	// prompt, so this is safe to call from a headless test.
+	TEST_ASSERT_NULL(A.pick_target(R), "dismounting doesn't pick a new rider")
+
+/datum/unit_test/dq_ability_robot_toggle_module
+
+/datum/unit_test/dq_ability_robot_toggle_module/Run()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
+	var/datum/interaction/ability/A1 = ABILITY_BY_ID(ABILITY_ID_ROBOT_TOGGLE_MODULE_1)
+	TEST_ASSERT_NOTNULL(A1, "robot_toggle_module_1 is registered")
+	TEST_ASSERT(R.has_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1), "granted while alive")
+	R.remove_robot_verbs()
+	TEST_ASSERT(!R.has_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1), "revoked with the rest of robot_verbs_default on death")
 
 /// Test-only area that blocks phase shift.
 /area/dq_test_phase_block

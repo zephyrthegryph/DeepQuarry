@@ -130,11 +130,3 @@
 	QDEL_NULL(decal_control)
 	..()
 
-/mob/living/silicon/robot/verb/toggle_robot_decals()
-	set category = "Abilities.Settings"
-	set name = "Control Robot Decals & Animations"
-
-	if(!sprite_datum)
-		return
-
-	decal_control.tgui_interact(src)
