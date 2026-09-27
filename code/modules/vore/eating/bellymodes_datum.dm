@@ -68,14 +68,16 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	var/was_critical = L.is_critical()
 	var/actual_brute = B.digest_brute > 0 ? L.injure(INJURY_DIGESTION, B.digest_brute * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
 	var/actual_burn = B.digest_burn > 0 ? L.injure(INJURY_CORROSIVE, B.digest_burn * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
-	var/actual_oxy = B.digest_oxy > 0 ? L.add_oxygen_debt(B.digest_oxy * delta_factor, B) : 0
+	// digest_oxy is not harm dealt here: it makes the belly's air stale, and
+	// the prey's own breathing reports that as breath quality
+	// (/obj/belly/breath_quality_for()).
 	var/actual_tox = B.digest_tox > 0 ? L.injure(INJURY_TOXIN, B.digest_tox * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
 	var/actual_clone = B.digest_clone > 0 ? L.injure(INJURY_CELLULAR, B.digest_clone * delta_factor, source = B, flags = INJURE_CONTINUOUS) : 0
 	L.attempt_multishock(SHOCKFLAG_DIGESTION)
 	// Send a message when a prey-thing goes down (crit, or knocked out of consciousness).
 	if(iscarbon(L) && L.stat != DEAD && ((!was_critical && L.is_critical()) || (oldstat == CONSCIOUS && L.stat == UNCONSCIOUS)))
 		to_chat(B.owner, span_notice("You feel [L] go still within your [lowertext(B.name)]."))
-	var/damage_gain = (actual_brute + actual_burn + actual_oxy/2 + actual_tox + actual_clone*2)*(B.nutrition_percent / 100)
+	var/damage_gain = (actual_brute + actual_burn + actual_tox + actual_clone*2)*(B.nutrition_percent / 100)
 	if(B.slow_digestion)
 		damage_gain = damage_gain * 0.5
 	var/offset = (1 + ((L.weight - 137) / 137)) // 130 pounds = .95 140 pounds = 1.02

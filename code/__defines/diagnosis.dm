@@ -29,7 +29,9 @@
 #define VITALS_TEMP          (1<<3)
 #define VITALS_RESP          (1<<4)
 #define VITALS_CONSCIOUSNESS (1<<5)
-#define VITALS_ALL           (VITALS_PULSE | VITALS_BP | VITALS_SPO2 | VITALS_TEMP | VITALS_RESP | VITALS_CONSCIOUSNESS)
+/// Cardiac rhythm (an ECG trace): RHYTHM_*.
+#define VITALS_RHYTHM        (1<<6)
+#define VITALS_ALL           (VITALS_PULSE | VITALS_BP | VITALS_SPO2 | VITALS_TEMP | VITALS_RESP | VITALS_CONSCIOUSNESS | VITALS_RHYTHM)
 
 // --- Part detail ------------------------------------------------------------------
 #define DIAG_PARTS_NONE  0

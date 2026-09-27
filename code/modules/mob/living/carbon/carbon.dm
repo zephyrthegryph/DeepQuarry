@@ -224,7 +224,7 @@
 					status += "weirdly shapen"
 				if(org.dislocated == 1)
 					status += "dislocated"
-				if(org.status & ORGAN_BROKEN)
+				if(org.is_fractured())
 					status += "[can_feel_pain(org) ? "hurting and " : ""]abnormally bent"
 				//infection stuff
 				if(org.status & ORGAN_DEAD)

@@ -393,7 +393,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 		var/mob/living/carbon/human/H = target.current
 		for(var/obj/item/organ/external/E in H.organs)
-			if(E.status & ORGAN_BROKEN)
+			if(E.is_fractured())
 				return 1
 		for(var/limb_tag in H.species.has_limbs) //todo check prefs for robotic limbs and amputations.
 			var/list/organ_data = H.species.has_limbs[limb_tag]

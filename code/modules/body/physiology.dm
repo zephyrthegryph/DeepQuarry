@@ -184,6 +184,12 @@
 	ensure_physiology()
 	return physiology?.heart_rate()
 
+/// The heart's rhythm as an ECG shows it (RHYTHM_*), or null for bodies
+/// without a heart.
+/datum/body/proc/heart_rhythm()
+	ensure_physiology()
+	return physiology?.heart_rhythm()
+
 /// list(systolic, diastolic) in mmHg.
 /datum/body/proc/blood_pressure()
 	ensure_physiology()
@@ -208,10 +214,14 @@
 	return physiology.pay_debt(amount)
 
 /// The Breathing system's report of the last breath (0 = nothing usable,
-/// 1 = normal air).
+/// 1 = normal air). Where the owner is breathing can spoil it further
+/// (/atom/proc/breath_quality_for(): a belly's stale air).
 /datum/body/proc/set_breath_quality(quality)
 	if(!physiology)
 		return
+	var/atom/where = owner?.loc
+	if(where)
+		quality *= where.breath_quality_for(owner)
 	quality = clamp(quality, 0, 1)
 	if(quality == physiology.breath_quality)
 		return
@@ -228,6 +238,11 @@
 	physiology.blood_fraction = fraction
 	invalidate(BODY_DIRTY_PHYSIOLOGY)
 
+/// Circulation was just restored (cardioversion, revival). See
+/// /datum/physiology/proc/begin_revival_grace().
+/datum/body/proc/begin_revival_grace(source)
+	physiology?.begin_revival_grace(source)
+
 /// One physiology step of `seconds` (the Physiology life system).
 /datum/body/proc/physiology_tick(seconds)
 	if(!physiology)
@@ -236,6 +251,11 @@
 		prune_supports()
 	ensure_physiology()
 	physiology.tick(seconds)
+
+/// How much of a normal breath the air here offers `L`, 0..1. Most places
+/// don't change it; the air is judged by the Breathing system itself.
+/atom/proc/breath_quality_for(mob/living/L)
+	return 1
 
 /mob/living/proc/oxygen_debt()
 	return body?.oxygen_debt() || 0
@@ -270,6 +290,8 @@
 	var/blood_fraction = 1
 	/// Debt band last logged.
 	var/debt_band = 0
+	/// world.time the post-revival grace ends (0 = none).
+	var/revival_grace_until = 0
 
 /datum/physiology/New(datum/body/new_body)
 	..()
@@ -297,8 +319,27 @@
 	else
 		var/surplus = delivery - PHYSIOLOGY_CRITICAL_RATIO * demand
 		if(surplus > 0)
-			set_debt(oxygen_debt - surplus * PHYSIOLOGY_REPAY_RATE * seconds)
+			set_debt(oxygen_debt - surplus * PHYSIOLOGY_REPAY_RATE * (in_revival_grace() ? PHYSIOLOGY_REVIVAL_REPAY_MULT : 1) * seconds)
 	debt_consequences(seconds)
+
+// Post-revival policy. A body whose circulation has just been restored
+// (cardioversion, a defibrillator revival) still carries the debt it ran up
+// while it had none. For PHYSIOLOGY_REVIVAL_GRACE afterwards:
+//  - the debt is repaid PHYSIOLOGY_REVIVAL_REPAY_MULT times faster, and
+//  - while it is being repaid (no shortfall), it grows no new ischemic
+//    lesions: the brain damage done before the revival stays, but a timely
+//    revival doesn't die anyway from the debt it is already paying off.
+// If delivery fails again during the grace (a new shortfall), the debt grows
+// and harms the brain as usual. The grace is not renewed by the passage of
+// time, only by another restoration of circulation.
+
+/// Start (or restart) the post-revival grace.
+/datum/physiology/proc/begin_revival_grace(source)
+	revival_grace_until = world.time + PHYSIOLOGY_REVIVAL_GRACE
+	log_runtime("PHYSIOLOGY: [key_name(body?.owner)] circulation restored by [source]; post-revival grace for [PHYSIOLOGY_REVIVAL_GRACE / (1 SECONDS)]s with [round(oxygen_debt)] debt outstanding")
+
+/datum/physiology/proc/in_revival_grace()
+	return revival_grace_until && world.time < revival_grace_until
 
 /datum/physiology/proc/add_debt(amount, source)
 	var/before = oxygen_debt
@@ -332,6 +373,9 @@
 	return null
 
 /datum/physiology/proc/blood_pressure()
+	return null
+
+/datum/physiology/proc/heart_rhythm()
 	return null
 
 /datum/physiology/proc/respiratory_rate()
@@ -436,6 +480,8 @@
 /datum/physiology/humanoid/debt_consequences(seconds)
 	if(oxygen_debt < DQ_HYPOXIA_BRAIN_DAMAGE)
 		return
+	if(!shortfall && in_revival_grace())
+		return
 	var/mob/living/carbon/human/H = body.owner
 	if(!H.should_have_organ(O_BRAIN))
 		return
@@ -461,6 +507,29 @@
 	if(H.stat == DEAD)
 		return 0
 	return max(0, round(rate))
+
+/// From the heart itself and its cardiac_arrhythmia: no heart (or a dead one)
+/// is a flatline; so is a corpse with no arrhythmia left to read.
+/datum/physiology/humanoid/heart_rhythm()
+	if(!circulates)
+		return null
+	var/mob/living/carbon/human/H = body.owner
+	var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+	if(!heart || (heart.status & ORGAN_DEAD))
+		return RHYTHM_ASYSTOLE
+	var/datum/affliction/cardiac_arrhythmia/A = body.find_affliction(/datum/affliction/cardiac_arrhythmia)
+	if(A)
+		switch(A.rhythm)
+			if(CARDIAC_RHYTHM_SINUS)
+				return RHYTHM_POST_ARREST
+			if(CARDIAC_RHYTHM_TACHY)
+				return RHYTHM_TACHY
+			if(CARDIAC_RHYTHM_VF)
+				return RHYTHM_VFIB
+		return RHYTHM_ASYSTOLE
+	if(H.stat == DEAD)
+		return RHYTHM_ASYSTOLE
+	return RHYTHM_SINUS
 
 /datum/physiology/humanoid/blood_pressure()
 	if(!circulates)

@@ -26,6 +26,8 @@
 	/// SpO2, 0..100
 	var/oxygenation
 	var/respiratory_rate
+	/// RHYTHM_* cardiac rhythm.
+	var/heart_rhythm
 	/// Core temperature, °C.
 	var/temperature
 	/// "alert", "drowsy", "unresponsive" or "none".

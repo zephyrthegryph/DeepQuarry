@@ -107,11 +107,13 @@
 #define BF_STASIS            69
 /// Stasis deeper than this keeps the patient asleep.
 #define STASIS_SLEEP_THRESHOLD 0.5
+/// mult: how readily a disordered heart rhythm deteriorates (tissue hypoxia raises it).
+#define BF_CARDIAC_IRRITABILITY 70
 // --- Armour -----------------------------------------------------------------------------
 /// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
 /// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
 /// BF_ARMOR(1) is the first id after the last named factor.
-#define BF_ARMOR_BASE        69
+#define BF_ARMOR_BASE        70
 #define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
 #define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 

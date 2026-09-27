@@ -1825,7 +1825,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if((limb.status & ORGAN_BROKEN && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
+			if((limb.is_fractured() && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()
@@ -1836,7 +1836,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if(((limb.status & ORGAN_BROKEN) || (limb.status & ORGAN_BLEEDING)) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
+			if((limb.is_fractured() || (limb.status & ORGAN_BLEEDING)) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()

@@ -478,6 +478,7 @@
 	registry_join(REGISTRY_LIVING_MOBS, M)
 
 	M.timeofdeath = 0
+	M.body?.begin_revival_grace(src)
 	M.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
 	M.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
 	M.reload_fullscreen()

@@ -2023,7 +2023,7 @@
 
 	// Lastly, mend broken bones. May remove this if it's abused.
 	for(var/obj/item/organ/external/E in H.bad_external_organs)
-		if (E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			if (prob(mend_prob))
 				if (E.mend_fracture())
 					to_chat(H, span_alien("We feel something reshape and mend within our [E.name]..."))

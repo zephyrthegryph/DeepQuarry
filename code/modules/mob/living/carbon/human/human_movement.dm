@@ -52,7 +52,7 @@
 				. += 4
 			else if(E.splinted && E.splinted.loc != E)
 				. += 0.5
-			else if(E.status & ORGAN_BROKEN)
+			else if(E.is_fractured())
 				. += 1.5
 	else
 		. += max(2 * stance_damage, 0) //Handles missing feet/legs

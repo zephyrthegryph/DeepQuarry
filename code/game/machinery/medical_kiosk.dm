@@ -134,7 +134,7 @@
 
 	var/problems = 0
 	for(var/obj/item/organ/external/E in user)
-		if(E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			problems |= BROKEN_BONES
 		if(E.status & (ORGAN_DEAD|ORGAN_DESTROYED))
 			problems |= SERIOUS_EXTERNAL_DAMAGE
@@ -149,7 +149,7 @@
 			problems |= INFECTION
 
 	for(var/obj/item/organ/internal/I in user)
-		if(I.status & (ORGAN_BROKEN|ORGAN_DEAD|ORGAN_DESTROYED))
+		if(I.is_fractured() || (I.status & (ORGAN_DEAD|ORGAN_DESTROYED)))
 			problems |= SERIOUS_INTERNAL_DAMAGE
 		if(I.status & ORGAN_BLEEDING)
 			problems |= INTERNAL_BLEEDING

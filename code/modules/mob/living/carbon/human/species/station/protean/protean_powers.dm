@@ -316,14 +316,15 @@
 
 /datum/protean_power/reform_body/proc/rebuild_done(mob/living/carbon/human/H)
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
-	if(!refactory || !refactory.consume_stored_material(MAT_STEEL, refactory.get_stored_material(MAT_STEEL)))
+	var/datum/body/humanoid/nanoform/B = H.body
+	if(!refactory || !istype(B) || !refactory.consume_stored_material(MAT_STEEL, TOTAL_REBUILD_STEEL_COST))
 		return
-	H.fully_heal()
-	log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly.")
+	var/repaired = B.total_reassembly(TOTAL_REBUILD_STEEL_COST)
+	log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly ([TOTAL_REBUILD_STEEL_COST] steel, [repaired] points repaired).")
 
 /datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	var/input = tgui_alert(H, {"Do you want to rebuild or reassemble yourself?
-	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs as well as repair all damage over a 40s period.
+	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs and your cohesion, and spend the steel repairing your plating and wiring over a 40s period.
 	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."}, "Reassembly", list("Rebuild", "Reassemble", "Cancel"))
 	if(!input || input == "Cancel" || !can_use(H, F))
 		return

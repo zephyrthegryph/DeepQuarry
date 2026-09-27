@@ -218,7 +218,7 @@
 		. += span_bolddanger("The [name] is dead.")
 	if(status & ORGAN_MUTATED)
 		. += span_danger("The [name] is mutated and deformed.")
-	if(status & ORGAN_BROKEN)
+	if(is_fractured())
 		. += span_danger("The [name] is broken.")
 
 	//Descriptors for 'how infected is this organ'
@@ -355,8 +355,13 @@
 /obj/item/organ/proc/is_bruised()
 	return damage >= min_bruised_damage
 
+/// Is this organ's bone fractured? Only limbs have bones to break
+/// (/obj/item/organ/external/is_fractured()).
+/obj/item/organ/proc/is_fractured()
+	return FALSE
+
 /obj/item/organ/proc/is_broken()
-	return (damage >= min_broken_damage || (status & ORGAN_CUT_AWAY) || (status & ORGAN_BROKEN))
+	return (damage >= min_broken_damage || (status & ORGAN_CUT_AWAY) || is_fractured())
 
 //Germs
 /obj/item/organ/proc/handle_antibiotics()
@@ -412,7 +417,6 @@
 
 /obj/item/organ/proc/robotize() //Being used to make robutt hearts, etc
 	robotic = ORGAN_ROBOT
-	src.status &= ~ORGAN_BROKEN
 	src.status &= ~ORGAN_BLEEDING
 	src.status &= ~ORGAN_CUT_AWAY
 	shed_mismatched_afflictions()

@@ -100,7 +100,7 @@
 /obj/item/organ/internal/regennetwork/proc/get_strain_percent(cost)
 	adjust_strain(cost)
 
-	if((status & ORGAN_CUT_AWAY) || (status & ORGAN_BROKEN) || (status & ORGAN_DEAD))
+	if((status & ORGAN_CUT_AWAY) || is_fractured() || (status & ORGAN_DEAD))
 		return 1
 
 	return round((strain / min_broken_damage) * 10) / 10

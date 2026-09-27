@@ -744,7 +744,7 @@
 		totalvol += volume
 		if(totalvol >= 1)
 			for(var/obj/item/organ/external/O in H.bad_external_organs)
-				if(O.status & ORGAN_BROKEN)
+				if(O.is_fractured())
 					O.mend_fracture()		//Only works if the bone won't rebreak, as usual
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
 					H.status_adjust(EFFECT_WEAKENED, 10)		//Bones being regrown will knock you over

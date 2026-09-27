@@ -470,7 +470,7 @@
 			if(H.bad_external_organs.len)
 				for(var/obj/item/organ/external/E in H.bad_external_organs)
 					if(prob(bone_heal))
-						E.status &= ~ORGAN_BROKEN
+						E.mend_fracture()
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/toggle_drone()
 	if(chassis)

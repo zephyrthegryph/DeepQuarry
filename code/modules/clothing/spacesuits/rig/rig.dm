@@ -512,7 +512,7 @@
 		malfunction()
 
 	for(var/obj/item/rig_module/module in installed_modules)
-		cell.use(module.periodic_step()*10)
+		draw_power(module.periodic_step() * 10 / CELLRATE, module, partial = TRUE)
 
 /obj/item/rig/proc/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
 
@@ -547,8 +547,34 @@
 			if(module.active && module.disruptable)
 				module.deactivate()
 
-	cell.use(cost*10)
+	draw_power(cost * 10 / CELLRATE, mod || user, partial = TRUE)
 	return 1
+
+// --- Power ledger ------------------------------------------------------------------------
+// draw_power() and add_power() are the only writers of a rig's cell (module
+// upkeep, seals and activation, cooling, suit movement, power sinks, the
+// protean cluster's recharge), as for robots (robot.dm). Amounts are joules; the cell stores joules * CELLRATE.
+
+/// Take `joules` from the cell, all or nothing. `reserve` joules must remain
+/// afterwards. `partial` takes whatever is there instead. Returns TRUE if
+/// anything was drawn.
+/obj/item/rig/proc/draw_power(joules, datum/source, reserve = 0, partial = FALSE)
+	if(joules <= 0)
+		return TRUE
+	if(!cell)
+		return FALSE
+	var/units = joules * CELLRATE
+	if(partial)
+		return cell.use(units, FALSE) > 0
+	if(!cell.check_charge(units + max(reserve, 0) * CELLRATE))
+		return FALSE
+	return cell.use(units, FALSE) >= units
+
+/// Put up to `joules` into the cell. Returns the joules actually stored.
+/obj/item/rig/proc/add_power(joules, datum/source)
+	if(joules <= 0 || !cell)
+		return 0
+	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
 
 /obj/item/rig/update_icon(update_mob_icon)
 
@@ -954,7 +980,7 @@
 	var/power_cost = 50
 	if(!ai_moving)
 		power_cost = 20
-	cell.use(power_cost) //Arbitrary, TODO
+	draw_power(power_cost / CELLRATE, wearer, partial = TRUE)
 	wearer.Move(get_step(get_turf(wearer),direction),direction)
 
 // This returns the rig if you are contained inside one, but not if you are wearing it

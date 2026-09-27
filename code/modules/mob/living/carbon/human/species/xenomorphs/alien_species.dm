@@ -154,7 +154,7 @@
 
 	//next mend broken bones, approx 10 ticks each
 	for(var/obj/item/organ/external/E in H.bad_external_organs)
-		if (E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			if (prob(mend_prob))
 				if (E.mend_fracture())
 					to_chat(H, span_alien("You feel something mend itself inside your [E.name]."))

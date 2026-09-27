@@ -39,13 +39,6 @@
 
 	dq_dispatch_damage_event(wound_class, organ_tag, damage, cumulative, src, part_biology)
 
-	// Broken-bone class is its own pseudo-wound that fires when the
-	// organ flips to ORGAN_BROKEN. We dispatch it here for free since
-	// create_wound() is the wound funnel; the bone-fracture cause picks
-	// it up via wound_class = "broken_bone".
-	if(status & ORGAN_BROKEN)
-		dq_dispatch_damage_event("broken_bone", organ_tag, damage, cumulative, src, part_biology)
-
 
 /datum/affliction_trigger/injury
 	/// Biologies of the injured part this trigger fires for.

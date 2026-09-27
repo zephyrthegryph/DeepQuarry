@@ -40,7 +40,6 @@
 		qdel(D)
 		if(vitals_text)
 			. += span_notice(vitals_text)
-		. += span_notice("Rhythm: [victim.cardiac_rhythm_reading()]")
 
 		var/brain_activity = "none"
 		var/breathing = "none"
