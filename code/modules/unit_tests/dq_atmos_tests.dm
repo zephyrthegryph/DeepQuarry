@@ -4621,7 +4621,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(power_sensor.machine_step(), PROCESS_KILL, "power sensor polled between history samples")
 	TEST_ASSERT(power_sensor.record_timer, "power sensor did not schedule its next history sample")
 	MACHINE_SLEEP(power_sensor)
-	deltimer(power_sensor.record_timer)
+	om_cancel_timer(power_sensor, power_sensor.record_timer)
 	power_sensor.record_timer = null
 	power_sensor.wake_for_record()
 	TEST_ASSERT(!machine_stepping(power_sensor), "timer-driven power history sample unnecessarily entered machinery processing")

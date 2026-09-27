@@ -91,8 +91,8 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 /// Running behaviour the object started on itself: timers and processing.
 /proc/dq_lifecycle_running(datum/D)
 	. = list()
-	if(length(D._active_timers))
-		. += "[length(D._active_timers)] timer(s)"
+	if(om_timer_count(D))
+		. += "[om_timer_count(D)] timer(s)"
 	if(D.datum_flags & DF_ISPROCESSING)
 		. += "processing"
 

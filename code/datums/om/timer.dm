@@ -181,6 +181,10 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 			return TRUE
 	return FALSE
 
+/// How many om_after() timers E has pending.
+/proc/om_timer_count(datum/E)
+	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
+
 /proc/om_timer_pending(datum/E, id)
 	var/list/T = (E || om_global_owner()).om_rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)

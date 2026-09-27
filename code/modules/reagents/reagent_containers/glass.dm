@@ -101,11 +101,11 @@
 		to_chat(user, span_warning("[target] does not have venom you can express. Open the beaker to drink from it."))
 		return ITEM_INTERACT_FAILURE
 
-	if(TIMER_COOLDOWN_RUNNING(target, COOLDOWN_VENOM_MILKING))
+	if(!COOLDOWN_FINISHED(target, venom_milking_cd))
 		user.visible_message(span_warning("[user] attempts to express venom from [target], but nothing happens."), span_warning("[target] had their venom expressed too recently, try again later."))
 		return ITEM_INTERACT_FAILURE
 
-	TIMER_COOLDOWN_START(target, COOLDOWN_VENOM_MILKING, 30 SECONDS)
+	COOLDOWN_START(target, venom_milking_cd, 30 SECONDS)
 	user.visible_message(span_notice("[user] expresses venom from [target]."))
 	reagents.add_reagent(reagent, amount)
 	return ITEM_INTERACT_SUCCESS
@@ -526,3 +526,6 @@
 
 /obj/item/reagent_containers/glass/beaker/zombiepowder
 	prefill = list(REAGENT_ID_ZOMBIEPOWDER = 50)
+
+/// Venom was expressed from this mob recently (a COOLDOWN; attempt_snake_milking()).
+/mob/living/var/tmp/venom_milking_cd = 0

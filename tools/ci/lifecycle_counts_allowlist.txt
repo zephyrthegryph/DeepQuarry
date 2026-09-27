@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1224 in 982 files. qdel total: 2914 in 1165 files.
+# Destroy total: 1221 in 979 files. qdel total: 2907 in 1164 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -69,7 +69,6 @@ code/controllers/master.dm 1
 code/controllers/subsystem.dm 1
 code/controllers/subsystems/dbcore.dm 1
 code/controllers/subsystems/throwing.dm 1
-code/controllers/subsystems/timer.dm 1
 code/core/image/Transform.dm 1
 code/datums/EPv2.dm 1
 code/datums/beam.dm 3
@@ -245,7 +244,6 @@ code/game/machinery/fire_alarm.dm 1
 code/game/machinery/floor_light.dm 1
 code/game/machinery/gear_dispenser.dm 1
 code/game/machinery/hologram.dm 1
-code/game/machinery/holoposter.dm 1
 code/game/machinery/jukebox.dm 1
 code/game/machinery/lightswitch.dm 1
 code/game/machinery/machinery.dm 1
@@ -321,7 +319,6 @@ code/game/objects/effects/simple_portals.dm 1
 code/game/objects/effects/spiders.dm 3
 code/game/objects/effects/step_triggers.dm 2
 code/game/objects/effects/temporary_visuals/projectiles/tracer.dm 1
-code/game/objects/effects/temporary_visuals/temporary_visual.dm 1
 code/game/objects/items.dm 1
 code/game/objects/items/antag_spawners.dm 1
 code/game/objects/items/blueprints.dm 1
@@ -1043,7 +1040,6 @@ code/controllers/subsystems/robot_sprites.dm 2
 code/controllers/subsystems/supply.dm 6
 code/controllers/subsystems/throwing.dm 2
 code/controllers/subsystems/ticker.dm 3
-code/controllers/subsystems/timer.dm 6
 code/controllers/subsystems/transcore.dm 1
 code/controllers/subsystems/vis_overlays.dm 1
 code/datums/beam.dm 3
@@ -1093,7 +1089,7 @@ code/datums/components/traits/unlucky.dm 1
 code/datums/components/turfslip.dm 6
 code/datums/containment/latent.dm 3
 code/datums/containment/stock.dm 1
-code/datums/datum.dm 3
+code/datums/datum.dm 2
 code/datums/diseases/_disease.dm 1
 code/datums/diseases/advance/advance.dm 1
 code/datums/elements/lootable/_lootable.dm 1

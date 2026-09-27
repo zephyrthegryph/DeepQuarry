@@ -83,7 +83,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 /// Running behaviour: timers and processing.
 /proc/state_running_blockers(datum/node)
 	. = list()
-	if(length(node._active_timers))
+	if(om_timer_count(node))
 		. += "[node.type] has active timers"
 	if(node.datum_flags & DF_ISPROCESSING)
 		. += "[node.type] is processing"

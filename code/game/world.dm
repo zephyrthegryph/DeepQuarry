@@ -760,7 +760,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
 // Called whenver world.tick_lag or world.fps are changed.
 /world/proc/on_tickrate_change()
-	SStimer?.reset_buckets()
+	return
 
 /proc/auxtools_stack_trace(msg)
 	CRASH(msg)

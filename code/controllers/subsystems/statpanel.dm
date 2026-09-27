@@ -195,7 +195,6 @@ SUBSYSTEM_DEF(statpanels)
 			"cpu" = world.cpu,
 			"instances" = length(world.contents),
 			"clients" = length(GLOB.clients),
-			"timers" = length(SStimer.timer_id_dict),
 			"tick_drift" = Master.tickdrift,
 			"sleep_delta" = Master.sleep_delta,
 			"queue_priority" = Master.queue_priority_count,

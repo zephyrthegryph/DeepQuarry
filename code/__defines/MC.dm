@@ -59,7 +59,7 @@
 /// (also forces it to run first in the tick, above even SS_NO_TICK_CHECK subsystems)
 /// (implies all runlevels because of how it works)
 /// (overrides SS_BACKGROUND)
-/// This is designed for basically anything that works as a mini-mc (like SStimer)
+/// This is designed for basically anything that works as a mini-mc (like SSrunechat)
 #define SS_TICKER 16
 
 /** keep the subsystem's timing on point by firing early if it fired late last fire because of lag */
@@ -98,14 +98,6 @@
 	PreInit();\
 }\
 /datum/controller/subsystem/##X
-
-#define TIMER_SUBSYSTEM_DEF(X) GLOBAL_REAL(SS##X, /datum/controller/subsystem/timer/##X);\
-/datum/controller/subsystem/timer/##X/New(){\
-	NEW_SS_GLOBAL(SS##X);\
-	PreInit();\
-}\
-/datum/controller/subsystem/timer/##X/fire() {..() /*just so it shows up on the profiler*/} \
-/datum/controller/subsystem/timer/##X
 
 #define VERB_MANAGER_SUBSYSTEM_DEF(X) GLOBAL_REAL(SS##X, /datum/controller/subsystem/verb_manager/##X);\
 /datum/controller/subsystem/verb_manager/##X/New(){\

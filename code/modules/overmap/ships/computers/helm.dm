@@ -15,6 +15,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	name = "flight operations console"
 	icon_keyboard = "teleport_key"
 	icon_screen = "helm"
+	COOLDOWN_DECLARE(map_refresh_cd)
 	light_color = "#7faaff"
 	circuit = /obj/item/circuitboard/helm
 	var/autopilot = 0
@@ -169,11 +170,11 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 	switch(action)
 		if("update_camera_view")
-			if(TIMER_COOLDOWN_RUNNING(src, COOLDOWN_SHIP_REFRESH))
+			if(!COOLDOWN_FINISHED(src, map_refresh_cd))
 				to_chat(ui.user, span_warning("You cannot refresh the map so often."))
 				return
 			update_map()
-			TIMER_COOLDOWN_START(src, COOLDOWN_SHIP_REFRESH, 5 SECONDS)
+			COOLDOWN_START(src, map_refresh_cd, 5 SECONDS)
 			. = TRUE
 		if("add")
 			var/datum/computer_file/data/waypoint/R = new()

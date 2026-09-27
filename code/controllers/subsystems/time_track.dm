@@ -153,7 +153,7 @@ SUBSYSTEM_DEF(time_track)
 			time_dilation_avg,
 			time_dilation_avg_slow,
 			MAPTICK_LAST_INTERNAL_TICK_USAGE,
-			length(SStimer.timer_id_dict),
+			0, // SStimer timers: gone (om_after timers live on their owners)
 			SSair.cost_turfs,
 			SSair.cost_gas_events,
 			SSair.cost_highpressure,
@@ -186,7 +186,7 @@ SUBSYSTEM_DEF(time_track)
 			SSbehaviours.tick_overrun,
 			REGISTRY_COUNT(REGISTRY_MOBS),
 			SSai.cost,
-			SStimer.cost,
+			0, // SStimer cost: gone
 			SSdbcore.all_queries_num,
 			SSdbcore.queries_active_num,
 			SSdbcore.queries_standby_num

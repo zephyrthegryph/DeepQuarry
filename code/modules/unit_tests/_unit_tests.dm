@@ -122,7 +122,6 @@
 #include "subsystem_init.dm"
 #include "techwebs.dm"
 #include "tgui_create_message.dm"
-#include "timer_sanity.dm"
 #include "trait_tests.dm"
 #include "unit_test.dm"
 #include "vbo_tests.dm"

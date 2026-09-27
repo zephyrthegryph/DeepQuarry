@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2574 vars in 1162 files.
+# Total: 2568 vars in 1159 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -67,7 +67,6 @@ code/controllers/subsystems/internal_wiki.dm 1
 code/controllers/subsystems/supply.dm 1
 code/controllers/subsystems/tgui.dm 2
 code/controllers/subsystems/throwing.dm 4
-code/controllers/subsystems/timer.dm 1
 code/controllers/subsystems/transcore.dm 4
 code/datums/EPv2.dm 1
 code/datums/ai_laws.dm 6
@@ -146,7 +145,6 @@ code/datums/om/pipeline.dm 4
 code/datums/om/prompt.dm 5
 code/datums/om/registry.dm 6
 code/datums/om/scheduler.dm 2
-code/datums/om/task.dm 4
 code/datums/om/watch.dm 4
 code/datums/progressbar.dm 4
 code/datums/properties/predicates.dm 6
@@ -156,7 +154,6 @@ code/datums/rules/rule.dm 5
 code/datums/soul_link.dm 2
 code/datums/status_effects/_status_effect.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 2
-code/datums/tgs_event_handler.dm 1
 code/datums/uplink/uplink_categories.dm 1
 code/datums/uplink/uplink_items.dm 4
 code/datums/wires/wires.dm 1

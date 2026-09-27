@@ -25,8 +25,6 @@
 	/// Lazy, since this case is semi rare
 	var/tmp/list/open_tguis // FIXME: open_uis
 
-	/// Active timers with this datum as the target
-	var/tmp/list/_active_timers
 	/// Status traits attached to this datum. associative list of the form: list(trait name (string) = list(source1, source2, source3,...))
 	var/tmp/list/_status_traits
 
@@ -48,14 +46,6 @@
 	/// Datum level flags
 	var/tmp/datum_flags = NONE
 
-
-	/*
-	* Lazy associative list of currently active cooldowns.
-	*
-	* cooldowns [ COOLDOWN_INDEX ] = add_timer()
-	* add_timer() returns the truthy value of -1 when not stoppable, and else a truthy numeric index
-	*/
-	var/tmp/list/cooldowns
 
 
 	/// List for handling persistent filters.
@@ -101,15 +91,6 @@
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	tag = null
-
-	//clear timers
-	if(_active_timers)
-		var/list/timers = _active_timers
-		_active_timers = null
-		for(var/datum/timedevent/timer as anything in timers)
-			if (timer.spent && !(timer.flags & TIMER_DELETE_ME))
-				continue
-			qdel(timer)
 
 	#ifdef REFERENCE_TRACKING
 	#ifdef REFERENCE_TRACKING_DEBUG
@@ -163,34 +144,6 @@
 
 	for(var/target in _signal_procs)
 		UnregisterSignal(target, _signal_procs[target])
-
-/**
- * Callback called by a timer to end an associative-list-indexed cooldown.
- *
- * Arguments:
- * * source - datum storing the cooldown
- * * index - string index storing the cooldown on the cooldowns associative list
- *
- * This sends a signal reporting the cooldown end.
- */
-/proc/end_cooldown(datum/source, index)
-	if(QDELETED(source))
-		return
-	TIMER_COOLDOWN_END(source, index)
-
-/**
- * Proc used by stoppable timers to end a cooldown before the time has ran out.
- *
- * Arguments:
- * * source - datum storing the cooldown
- * * index - string index storing the cooldown on the cooldowns associative list
- *
- * This sends a signal reporting the cooldown end, passing the time left as an argument.
- */
-/proc/reset_cooldown(datum/source, index)
-	if(QDELETED(source))
-		return
-	TIMER_COOLDOWN_END(source, index)
 
 /** Add a filter to the datum.
  * This is on datum level, despite being most commonly / primarily used on atoms, so that filters can be applied to images / mutable appearances.
