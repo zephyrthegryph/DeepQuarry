@@ -82,6 +82,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 	AddElement(/datum/element/climbable/table)
 
+// LIFECYCLE: neighbouring tables re-smooth without it.
 /obj/structure/table/Destroy()
 	material = null
 	reinforced = null
@@ -439,7 +440,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 				connections |= nextT.get_all_connected_tables(connections)
 
 	return connections
-
 
 #define CORNER_NONE 0
 #define CORNER_COUNTERCLOCKWISE 1
