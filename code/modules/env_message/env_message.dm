@@ -14,9 +14,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 /obj/effect/env_message/Initialize(mapload)
 	.=..()
 
-/obj/effect/env_message/Destroy()
-	return ..()
-
 /obj/effect/env_message/examine(mob/user)
 	. = ..()
 	for(var/tckey in message_list)
