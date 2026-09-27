@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1219 in 978 files. qdel total: 2971 in 1177 files.
+# Destroy total: 1219 in 978 files. qdel total: 2919 in 1161 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -1018,7 +1018,7 @@ code/_onclick/hud/popups.dm 1
 code/_onclick/hud/radial.dm 1
 code/_onclick/hud/screen_objects.dm 1
 code/_onclick/hud/spell_screen_objects.dm 6
-code/_onclick/telekinesis.dm 6
+code/_onclick/telekinesis.dm 5
 code/controllers/admin.dm 1
 code/controllers/configuration/configuration.dm 1
 code/controllers/configuration/legacy.dm 3
@@ -1101,6 +1101,7 @@ code/datums/managed_browsers/feedback_viewer.dm 1
 code/datums/mind.dm 2
 code/datums/modules.dm 1
 code/datums/observation/helpers.dm 1
+code/datums/om/after_helpers.dm 1
 code/datums/om/prompt.dm 5
 code/datums/om/relation.dm 2
 code/datums/om/timer.dm 1
@@ -1121,7 +1122,6 @@ code/datums/status_effects/_status_effect_helpers.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 12
 code/datums/status_effects/grouped_effect.dm 1
 code/datums/vending/stored_item.dm 3
-code/datums/wires/mines.dm 1
 code/defines/procs/statistics.dm 3
 code/game/antagonist/antagonist_equip.dm 1
 code/game/antagonist/antagonist_update.dm 3
@@ -1145,7 +1145,6 @@ code/game/gamemodes/events/black_hole.dm 5
 code/game/gamemodes/events/clang.dm 2
 code/game/gamemodes/events/dust.dm 2
 code/game/gamemodes/events/holidays/Christmas.dm 1
-code/game/gamemodes/events/wormholes.dm 1
 code/game/gamemodes/malfunction/newmalf_ability_trees/HARDWARE.dm 1
 code/game/gamemodes/malfunction/newmalf_ability_trees/tree_manipulation.dm 2
 code/game/gamemodes/meteor/meteors.dm 3
@@ -1156,7 +1155,7 @@ code/game/gamemodes/technomancer/core_obj.dm 4
 code/game/gamemodes/technomancer/devices/disposable_teleporter.dm 1
 code/game/gamemodes/technomancer/devices/shield_armor.dm 1
 code/game/gamemodes/technomancer/instability.dm 3
-code/game/gamemodes/technomancer/spell_objs.dm 2
+code/game/gamemodes/technomancer/spell_objs.dm 1
 code/game/gamemodes/technomancer/spells/abjuration.dm 1
 code/game/gamemodes/technomancer/spells/apportation.dm 3
 code/game/gamemodes/technomancer/spells/aura/biomed_aura.dm 1
@@ -1229,7 +1228,6 @@ code/game/machinery/hologram.dm 1
 code/game/machinery/iv_drip.dm 1
 code/game/machinery/jukebox.dm 3
 code/game/machinery/machinery.dm 6
-code/game/machinery/magnet.dm 1
 code/game/machinery/newscaster.dm 1
 code/game/machinery/nuclear_bomb.dm 1
 code/game/machinery/overview.dm 4
@@ -1260,7 +1258,6 @@ code/game/mecha/equipment/tools/generator.dm 1
 code/game/mecha/equipment/tools/shield.dm 1
 code/game/mecha/equipment/tools/sleeper.dm 2
 code/game/mecha/equipment/tools/weldinglaser.dm 1
-code/game/mecha/equipment/tools/wormhole.dm 1
 code/game/mecha/equipment/weapons/energy/pulse.dm 1
 code/game/mecha/mecha.dm 7
 code/game/mecha/mecha_construction_paths.dm 1
@@ -1304,7 +1301,7 @@ code/game/objects/items.dm 2
 code/game/objects/items/antag_spawners.dm 2
 code/game/objects/items/apc_frame.dm 2
 code/game/objects/items/bells.dm 1
-code/game/objects/items/bodybag.dm 6
+code/game/objects/items/bodybag.dm 5
 code/game/objects/items/contraband.dm 4
 code/game/objects/items/crayons.dm 3
 code/game/objects/items/devices/chameleonproj.dm 3
@@ -1351,7 +1348,7 @@ code/game/objects/items/stacks/sandbags.dm 1
 code/game/objects/items/stacks/stack.dm 4
 code/game/objects/items/stacks/tickets.dm 1
 code/game/objects/items/surplus_voucher.dm 6
-code/game/objects/items/toys/toys.dm 5
+code/game/objects/items/toys/toys.dm 4
 code/game/objects/items/uav.dm 1
 code/game/objects/items/weapons/RCD.dm 3
 code/game/objects/items/weapons/RPD.dm 2
@@ -1367,7 +1364,6 @@ code/game/objects/items/weapons/explosives.dm 4
 code/game/objects/items/weapons/flamethrower.dm 2
 code/game/objects/items/weapons/gift_wrappaper.dm 5
 code/game/objects/items/weapons/grenades/anti_photon_grenade.dm 1
-code/game/objects/items/weapons/grenades/chem_grenade.dm 1
 code/game/objects/items/weapons/grenades/concussion.dm 1
 code/game/objects/items/weapons/grenades/confetti.dm 1
 code/game/objects/items/weapons/grenades/emgrenade.dm 1
@@ -1380,8 +1376,8 @@ code/game/objects/items/weapons/grenades/spawnergrenade.dm 1
 code/game/objects/items/weapons/grenades/supermatter.dm 1
 code/game/objects/items/weapons/id cards/cards.dm 2
 code/game/objects/items/weapons/id cards/station_ids.dm 1
-code/game/objects/items/weapons/implants/implant.dm 9
-code/game/objects/items/weapons/implants/implantaugment.dm 4
+code/game/objects/items/weapons/implants/implant.dm 8
+code/game/objects/items/weapons/implants/implantaugment.dm 2
 code/game/objects/items/weapons/implants/implantchair.dm 1
 code/game/objects/items/weapons/implants/implantcircuits.dm 1
 code/game/objects/items/weapons/improvised_components.dm 3
@@ -1400,7 +1396,7 @@ code/game/objects/items/weapons/medigun/bork_medigun.dm 1
 code/game/objects/items/weapons/medigun/medigun_backpack_ui.dm 1
 code/game/objects/items/weapons/melee/misc.dm 1
 code/game/objects/items/weapons/melee/shock_maul.dm 1
-code/game/objects/items/weapons/mop_deploy.dm 3
+code/game/objects/items/weapons/mop_deploy.dm 1
 code/game/objects/items/weapons/picnic_blankets.dm 3
 code/game/objects/items/weapons/policetape.dm 2
 code/game/objects/items/weapons/storage/backpack.dm 1
@@ -1415,7 +1411,7 @@ code/game/objects/items/weapons/tanks/tanks.dm 6
 code/game/objects/items/weapons/tape.dm 3
 code/game/objects/items/weapons/taskmanager.dm 1
 code/game/objects/items/weapons/tools/wirecutters.dm 1
-code/game/objects/items/weapons/weaponry.dm 5
+code/game/objects/items/weapons/weaponry.dm 4
 code/game/objects/items/weapons/weldbackpack.dm 2
 code/game/objects/mail.dm 1
 code/game/objects/micro_event.dm 1
@@ -1428,7 +1424,7 @@ code/game/objects/structures/barricades.dm 2
 code/game/objects/structures/bedsheet_bin.dm 1
 code/game/objects/structures/bonfire.dm 7
 code/game/objects/structures/catwalk.dm 3
-code/game/objects/structures/crates_lockers/__closets.dm 2
+code/game/objects/structures/crates_lockers/__closets.dm 1
 code/game/objects/structures/crates_lockers/closets/coffin.dm 1
 code/game/objects/structures/crates_lockers/closets/egg.dm 1
 code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm 2
@@ -1473,7 +1469,6 @@ code/game/objects/structures/snowman.dm 1
 code/game/objects/structures/stool_bed_chair_nest/bed.dm 5
 code/game/objects/structures/stool_bed_chair_nest/chairs.dm 1
 code/game/objects/structures/stool_bed_chair_nest/stools.dm 4
-code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm 1
 code/game/objects/structures/stool_bed_chair_nest/wheelchair_item.dm 1
 code/game/objects/structures/trash_pile.dm 2
 code/game/objects/structures/watercloset.dm 7
@@ -1488,7 +1483,6 @@ code/game/turfs/simulated/wall_construction.dm 1
 code/game/turfs/simulated/walls.dm 39
 code/game/turfs/space/space.dm 6
 code/game/turfs/turf_changing.dm 2
-code/game/turfs/turf_flick_animations.dm 1
 code/game/world.dm 1
 code/modules/admin/DB ban/ban_panle_ui.dm 2
 code/modules/admin/DB ban/functions.dm 9
@@ -1640,7 +1634,7 @@ code/modules/food/food/cans.dm 1
 code/modules/food/food/drinks.dm 3
 code/modules/food/food/drinks/bottle.dm 2
 code/modules/food/food/sandwich.dm 2
-code/modules/food/food/snacks.dm 38
+code/modules/food/food/snacks.dm 37
 code/modules/food/food/snacks/meat.dm 1
 code/modules/food/food/superfoods.dm 5
 code/modules/food/food/z_custom_food.dm 12
@@ -1679,7 +1673,7 @@ code/modules/hydroponics/seed.dm 4
 code/modules/hydroponics/seed_machines.dm 1
 code/modules/hydroponics/seed_storage.dm 5
 code/modules/hydroponics/spreading/spreading.dm 2
-code/modules/hydroponics/spreading/spreading_growth.dm 5
+code/modules/hydroponics/spreading/spreading_growth.dm 4
 code/modules/hydroponics/trays/tray.dm 3
 code/modules/hydroponics/trays/tray_soil.dm 6
 code/modules/integrated_electronics/core/integrated_circuit.dm 3
@@ -1722,7 +1716,7 @@ code/modules/mining/machinery/machine_stacking.dm 1
 code/modules/mining/mine_items.dm 1
 code/modules/mining/mine_outcrops.dm 2
 code/modules/mining/mine_turfs.dm 2
-code/modules/mining/ore.dm 2
+code/modules/mining/ore.dm 1
 code/modules/mining/ore_box.dm 1
 code/modules/mining/ore_redemption_machine/equipment_vendor.dm 1
 code/modules/mining/resonator.dm 2
@@ -1733,7 +1727,6 @@ code/modules/mob/_modifiers/modifiers.dm 2
 code/modules/mob/dead/observer/free.dm 5
 code/modules/mob/dead/observer/logout.dm 1
 code/modules/mob/dead/observer/observer.dm 2
-code/modules/mob/death.dm 6
 code/modules/mob/freelook/ai/eye.dm 1
 code/modules/mob/holder.dm 1
 code/modules/mob/inventory.dm 2
@@ -1755,7 +1748,6 @@ code/modules/mob/living/carbon/carbon_powers.dm 1
 code/modules/mob/living/carbon/human/MedicalSideEffects.dm 2
 code/modules/mob/living/carbon/human/examine.dm 1
 code/modules/mob/living/carbon/human/human.dm 5
-code/modules/mob/living/carbon/human/human_organs.dm 1
 code/modules/mob/living/carbon/human/human_powers.dm 3
 code/modules/mob/living/carbon/human/human_resist.dm 1
 code/modules/mob/living/carbon/human/inventory.dm 1
@@ -1792,7 +1784,6 @@ code/modules/mob/living/silicon/robot/death.dm 2
 code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm 6
 code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm 4
 code/modules/mob/living/silicon/robot/drone/drone_items.dm 3
-code/modules/mob/living/silicon/robot/drone/swarm_abilities.dm 1
 code/modules/mob/living/silicon/robot/drone/swarm_items.dm 5
 code/modules/mob/living/silicon/robot/robot.dm 2
 code/modules/mob/living/silicon/robot/robot_items.dm 5
@@ -1811,7 +1802,6 @@ code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spacewhale.dm 4
 code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm 2
 code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm 5
-code/modules/mob/living/simple_mob/subtypes/animal/alien animals/succlet.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm 2
 code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm 3
 code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm 1
@@ -1823,7 +1813,7 @@ code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spaw
 code/modules/mob/living/simple_mob/subtypes/animal/passive/cockroach.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard_mutant_event.dm 2
 code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse_mutant_event.dm 2
-code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm 3
+code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm 1
@@ -1846,7 +1836,7 @@ code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/boss.dm 1
 code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/hivebot.dm 1
 code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm 1
 code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/adv_dark_gygax.dm 2
-code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm 2
+code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm 1
 code/modules/mob/living/simple_mob/subtypes/mechanical/viscerator.dm 1
 code/modules/mob/living/simple_mob/subtypes/mechanical/ward/ward.dm 1
 code/modules/mob/living/simple_mob/subtypes/metroid/metJuvenile.dm 1
@@ -1869,7 +1859,6 @@ code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm 19
 code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/otie.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm 4
-code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm 2
 code/modules/mob/living/simple_mob/subtypes/vore/slug.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm 2
 code/modules/mob/living/simple_mob/subtypes/vore/solargrub.dm 1
@@ -1878,19 +1867,18 @@ code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm 3
 code/modules/mob/living/simple_mob/subtypes/vore/vore_hostile.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/weather.dm 1
 code/modules/mob/living/simple_mob/taming.dm 2
-code/modules/mob/living/voice/voice.dm 1
 code/modules/mob/login.dm 1
 code/modules/mob/mob.dm 9
 code/modules/mob/mob_grab.dm 7
 code/modules/mob/mob_grab_specials.dm 2
-code/modules/mob/mob_transformation_simple.dm 2
+code/modules/mob/mob_transformation_simple.dm 1
 code/modules/mob/new_player/lobby_browser.dm 1
 code/modules/mob/new_player/logout.dm 1
 code/modules/mob/new_player/new_player.dm 4
 code/modules/mob/new_player/poll.dm 12
 code/modules/mob/new_player/preferences_setup.dm 1
 code/modules/mob/say.dm 2
-code/modules/mob/transform_procs.dm 13
+code/modules/mob/transform_procs.dm 10
 code/modules/modular_computers/computers/modular_computer/core.dm 1
 code/modules/modular_computers/computers/modular_computer/damage.dm 1
 code/modules/modular_computers/computers/modular_computer/interaction.dm 1
@@ -1915,9 +1903,8 @@ code/modules/organs/internal/augment.dm 1
 code/modules/organs/internal/augment/bio.dm 1
 code/modules/organs/internal/brain.dm 3
 code/modules/organs/internal/malignant/malignant.dm 4
-code/modules/organs/misc.dm 1
 code/modules/organs/organ.dm 3
-code/modules/organs/organ_external.dm 10
+code/modules/organs/organ_external.dm 9
 code/modules/organs/organ_stump.dm 1
 code/modules/organs/subtypes/diona.dm 3
 code/modules/organs/subtypes/machine.dm 2
@@ -1963,11 +1950,11 @@ code/modules/power/fusion/core/core_field.dm 4
 code/modules/power/fusion/fuel_assembly/fuel_assembly.dm 2
 code/modules/power/fusion/fuel_assembly/fuel_compressor.dm 1
 code/modules/power/fusion/fuel_assembly/fuel_injector.dm 1
-code/modules/power/fusion/fusion_reactions.dm 2
+code/modules/power/fusion/fusion_reactions.dm 1
 code/modules/power/fusion_coil.dm 1
 code/modules/power/gravitygenerator.dm 3
 code/modules/power/grid_checker.dm 1
-code/modules/power/lighting.dm 6
+code/modules/power/lighting.dm 5
 code/modules/power/lightswitch.dm 3
 code/modules/power/port_gen.dm 8
 code/modules/power/power_bridge.dm 1
@@ -1980,7 +1967,7 @@ code/modules/power/singularity/generator.dm 3
 code/modules/power/singularity/particle_accelerator/particle.dm 1
 code/modules/power/singularity/particle_accelerator/particle_control.dm 1
 code/modules/power/singularity/particle_accelerator/particle_smasher.dm 4
-code/modules/power/singularity/singularity.dm 3
+code/modules/power/singularity/singularity.dm 2
 code/modules/power/smes.dm 2
 code/modules/power/smes_construction.dm 2
 code/modules/power/solar.dm 5
@@ -2001,14 +1988,13 @@ code/modules/projectiles/guns/launcher/confetti.dm 1
 code/modules/projectiles/guns/launcher/crossbow.dm 2
 code/modules/projectiles/guns/launcher/pneumatic.dm 4
 code/modules/projectiles/guns/magnetic/bore.dm 1
-code/modules/projectiles/guns/magnetic/magnetic.dm 5
+code/modules/projectiles/guns/magnetic/magnetic.dm 4
 code/modules/projectiles/guns/magnetic/magnetic_construction.dm 3
 code/modules/projectiles/guns/projectile.dm 2
 code/modules/projectiles/guns/projectile/shotgun.dm 1
 code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm 2
 code/modules/projectiles/precursor/eclipse.dm 1
-code/modules/projectiles/projectile.dm 11
-code/modules/projectiles/projectile/beams.dm 1
+code/modules/projectiles/projectile.dm 10
 code/modules/projectiles/projectile/bullets.dm 2
 code/modules/projectiles/projectile/change.dm 3
 code/modules/projectiles/projectile/explosive.dm 2
@@ -2037,7 +2023,7 @@ code/modules/reagents/reagents/other.dm 1
 code/modules/reagents/reagents/toxins.dm 2
 code/modules/recycling/conveyor2.dm 1
 code/modules/recycling/disposal-construction.dm 1
-code/modules/recycling/disposal.dm 8
+code/modules/recycling/disposal.dm 7
 code/modules/recycling/disposal_holder.dm 1
 code/modules/recycling/disposal_machines.dm 6
 code/modules/recycling/disposal_mail.dm 2
@@ -2073,9 +2059,8 @@ code/modules/shuttles/shuttle.dm 1
 code/modules/shuttles/shuttles_web.dm 1
 code/modules/shuttles/web_datums.dm 4
 code/modules/spells/aoe_turf/charge.dm 1
-code/modules/spells/aoe_turf/conjure/conjure.dm 2
+code/modules/spells/aoe_turf/conjure/conjure.dm 1
 code/modules/spells/aoe_turf/conjure/forcewall.dm 1
-code/modules/spells/spell_code.dm 1
 code/modules/spells/spell_projectile.dm 3
 code/modules/spells/spellbook.dm 2
 code/modules/spells/spells.dm 2
@@ -2120,7 +2105,7 @@ code/modules/vehicles/bike.dm 2
 code/modules/vehicles/cargo_train.dm 1
 code/modules/vehicles/construction.dm 5
 code/modules/vehicles/rover.dm 1
-code/modules/vehicles/vehicle.dm 2
+code/modules/vehicles/vehicle.dm 1
 code/modules/vore/eating/belly_obj.dm 5
 code/modules/vore/eating/bellymodes.dm 4
 code/modules/vore/eating/digest_act.dm 9
@@ -2147,7 +2132,6 @@ code/modules/xenoarcheaology/effect_master.dm 6
 code/modules/xenoarcheaology/effects/forcefield.dm 1
 code/modules/xenoarcheaology/effects/vampire.dm 1
 code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm 1
-code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm 1
 code/modules/xenoarcheaology/finds/find_spawning.dm 1
 code/modules/xenoarcheaology/finds/finds.dm 3
 code/modules/xenoarcheaology/finds/fossils.dm 3

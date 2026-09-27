@@ -121,25 +121,6 @@
 	processing = FALSE
 	playsound(src, 'sound/machines/ding.ogg', 50, 1)
 
-/obj/machinery/processor/proc/extract(atom/movable/AM)
-	if(istype(AM, /mob/living/simple_mob/slime))
-		var/mob/living/simple_mob/slime/S = AM
-		while(S.cores)
-			var/atom/new_core = new S.coretype(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
-			S.cores--
-			sleep(1 SECOND)
-		LAZYREMOVE(to_be_processed, S)
-		qdel(S)
-
-	if(ishuman(AM))
-		var/mob/living/carbon/human/M = AM
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		LAZYREMOVE(to_be_processed, M)
-		qdel(M)
-		monkeys_recycled++
-		sleep(1 SECOND)
-
 /obj/machinery/processor/proc/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
