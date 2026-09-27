@@ -158,10 +158,12 @@
 	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
-		spawn()
-			KA.receive_request(src)
+		KA.receive_request(src)
 
-	sleep(confirm_delay)
+	om_after(src, confirm_delay, PROC_REF(request_window_closed), user)
+
+/// The confirmation window is over: fire the event if someone confirmed it.
+/obj/machinery/keycard_auth/proc/request_window_closed(mob/user)
 	if(confirmed)
 		confirmed = 0
 		trigger_event(user)
@@ -176,9 +178,9 @@
 	busy = 1
 	active = 1
 	icon_state = "auth_on"
+	om_after(src, confirm_delay, PROC_REF(receive_window_closed))
 
-	sleep(confirm_delay)
-
+/obj/machinery/keycard_auth/proc/receive_window_closed()
 	event_source = null
 	icon_state = "auth_off"
 	active = 0

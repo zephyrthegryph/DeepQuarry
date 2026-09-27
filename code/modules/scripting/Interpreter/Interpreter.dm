@@ -90,6 +90,7 @@ Runs each statement in a block of code.
 	if(cur_statements < max_statements)
 
 		for(var/datum/node/statement/S in Block.statements)
+			// S8 allowlist: NTSL interpreter pause loop.
 			while(paused) sleep(10)
 
 			cur_statements++

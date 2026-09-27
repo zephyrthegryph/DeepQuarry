@@ -114,23 +114,8 @@
 			busy_bank = FALSE
 			icon_state = "item_bank"
 			return
-		else if(!do_after(user, 10 SECONDS, target = src) || inoperable())
-			busy_bank = FALSE
-			icon_state = "item_bank"
-			return
-		var/obj/item/N = new I(get_turf(src))
-		log_admin("[key_name_admin(user)] retrieved [N] from the item bank.")
-		visible_message(span_notice("\The [src] dispenses the [N] to \the [user]."))
-		user.put_in_hands(N)
-		N.persist_storable = FALSE
-		var/path = src.persist_item_savefile_path(user)
-		var/savefile/F = new /savefile(src.persist_item_savefile_path(user))
-		F["persist item"] << null
-		F["persist name"] << null
-		fdel(path)
-		item_takers += user.ckey
-		busy_bank = FALSE
-		icon_state = "item_bank"
+		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(retrieve_done), done_args = list(user, I), on_fail = PROC_REF(bank_interrupted))
+		return
 	else if(choice == "Info")
 		to_chat(user, span_notice("\The [src] can store a single item for you between shifts! Anything that has been retrieved from the bank cannot be stored again in the same shift. Anyone can withdraw from the bank one time per shift. Some items are not able to be accepted by the bank."))
 		busy_bank = FALSE
@@ -139,6 +124,28 @@
 		to_chat(user, span_warning("\The [src] doesn't seem to have anything for you..."))
 		busy_bank = FALSE
 
+/obj/machinery/item_bank/proc/bank_interrupted()
+	busy_bank = FALSE
+	icon_state = "item_bank"
+
+/obj/machinery/item_bank/proc/retrieve_done(mob/living/user, I)
+	if(inoperable())
+		bank_interrupted()
+		return
+	var/obj/item/N = new I(get_turf(src))
+	log_admin("[key_name_admin(user)] retrieved [N] from the item bank.")
+	visible_message(span_notice("\The [src] dispenses the [N] to \the [user]."))
+	user.put_in_hands(N)
+	N.persist_storable = FALSE
+	var/path = src.persist_item_savefile_path(user)
+	var/savefile/F = new /savefile(src.persist_item_savefile_path(user))
+	F["persist item"] << null
+	F["persist name"] << null
+	fdel(path)
+	item_takers += user.ckey
+	busy_bank = FALSE
+	icon_state = "item_bank"
+
 /// Old attackby: entirely self-contained, never called ..(), so it catches every item.
 /datum/interaction/machine_item/item_bank_store
 	id = "item_bank_store"
@@ -146,6 +153,17 @@
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item
 	effect = /obj/machinery/item_bank/proc/interaction_store
+
+/obj/machinery/item_bank/proc/store_done(mob/living/user, obj/item/O)
+	if(inoperable())
+		bank_interrupted()
+		return
+	src.persist_item_savefile_save(user, O)
+	user.visible_message(span_notice("\The [user] stores \the [O] in \the [src]."),span_notice("You stored \the [O] in \the [src]."))
+	log_admin("[key_name_admin(user)] stored [O] in the item bank.")
+	qdel(O)
+	busy_bank = FALSE
+	icon_state = "item_bank"
 
 /obj/machinery/item_bank/proc/interaction_store(mob/living/user, obj/item/O, datum/interaction/interaction)
 	if(!ishuman(user))
@@ -171,16 +189,8 @@
 				return TRUE
 		user.visible_message(span_notice("\The [user] begins storing \the [O] in \the [src]."),span_notice("You begin storing \the [O] in \the [src]."))
 		icon_state = "item_bank_o"
-		if(!do_after(user, 10 SECONDS, target = src) || inoperable())
-			busy_bank = FALSE
-			icon_state = "item_bank"
-			return TRUE
-		src.persist_item_savefile_save(user, O)
-		user.visible_message(span_notice("\The [user] stores \the [O] in \the [src]."),span_notice("You stored \the [O] in \the [src]."))
-		log_admin("[key_name_admin(user)] stored [O] in the item bank.")
-		qdel(O)
-		busy_bank = FALSE
-		icon_state = "item_bank"
+		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
+		return TRUE
 	else
 		to_chat(user, span_warning("You cannot store \the [O]. \The [src] either does not accept that, or it has already been retrieved from storage this shift."))
 		busy_bank = FALSE

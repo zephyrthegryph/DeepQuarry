@@ -49,6 +49,7 @@
 /datum/tgui_say/proc/initialize()
 	set waitfor = FALSE
 	// Sleep to defer initialization to after client constructor
+	// S8 allowlist: client proc: defer until after the client constructor.
 	sleep(3 SECONDS)
 	window.initialize(
 			strict_mode = TRUE,

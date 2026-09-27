@@ -322,6 +322,7 @@
 		return FALSE
 	var/end = world.time + timeout
 	while(T.state == OM_TASK_RUNNING && world.time < end)
+		// S8 allowlist: AWAIT(task, timeout) for legacy callers (object_model_core 4.11).
 		sleep(world.tick_lag)
 	if(T.state == OM_TASK_RUNNING)
 		om_task_cancel(T, "timed out")

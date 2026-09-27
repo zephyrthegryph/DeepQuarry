@@ -529,6 +529,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
 	else
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
+	// S8 allowlist: world proc (test-run shutdown).
 	sleep(0) //yes, 0, this'll let Reboot finish and prevent byond memes
 	qdel(src) //shut it down
 

@@ -44,7 +44,9 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	jps_wipe_colors_after_sleeping(turfs, time)
 
 /proc/jps_wipe_colors_after_sleeping(list/turf/turfs, time)
-	sleep(time)
+	om_after(null, time, /proc/jps_wipe_colors_now, turfs)
+
+/proc/jps_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
 		T.color = null
 		T.maptext = null
@@ -411,6 +413,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		node_top_pos = node_top.pos
 		#ifdef JPS_DEBUGGING
 		node_top.pos.color = JPS_VISUAL_COLOR_CURRENT
+		// S8 allowlist: debug-only search visualisation (JPS_DEBUGGING builds).
 		sleep(GLOB.jps_visualization_delay)
 		#else
 		CHECK_TICK
