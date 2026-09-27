@@ -189,7 +189,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/zodiac = tgui_input_list(user, "Which of todays zodiacs do you want to read?", "Zodiac", zodiacs)
+	var/zodiac = rerun_prompt(user, "k192", list("kind" = "list", "message" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = zodiacs), PROC_REF(attack_self), args)
+	if(isnull(zodiac))
+		return TRUE
 	if(zodiac)
 		switch(zodiac)
 			if("aries")
@@ -448,7 +450,10 @@
 /obj/item/entrepreneur/spirit_board/click_alt(mob/living/carbon/user)
 	if(!istype(user)) //admins can be cheeky
 		return 0
-	next_result = tgui_input_list(user, "What should it land on next?", "Next result", possible_results)
+	var/_answer_k451 = rerun_prompt(user, "k451", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, click_alt), args)
+	if(isnull(_answer_k451))
+		return
+	next_result = _answer_k451
 
 /obj/item/entrepreneur/spirit_board/attack_ghost(mob/observer/dead/user)
 	if(!ghost_enabled)
@@ -456,7 +461,10 @@
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot interact with this board because you are banned from playing ghost roles."))
 		return
-	next_result = tgui_input_list(user, "What should it land on next?", "Next result", possible_results)
+	var/_answer_k459 = rerun_prompt(user, "k459", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, attack_ghost), args)
+	if(isnull(_answer_k459))
+		return
+	next_result = _answer_k459
 	if(!is_admin(user) || !accurate) //admins can bypass this for event stuff
 		if(prob(25))
 			next_result = 0 //25% chance for the ghost to fail to manipulate the board
