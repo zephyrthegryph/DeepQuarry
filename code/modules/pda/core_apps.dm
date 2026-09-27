@@ -72,7 +72,9 @@
 		return TRUE
 	switch(action)
 		if("Edit")
-			var/n = tgui_input_text(ui.user, "Please enter message", name, notehtml, multiline = TRUE, prevent_enter = TRUE)
+			var/n = act_prompt(ui.user, action, params, ui, "k75", list("kind" = "text", "message" = "Please enter message", "title" = name, "default" = notehtml, "multiline" = TRUE))
+			if(isnull(n))
+				return
 			if(pda.loc == ui.user)
 				note = adminscrub(n)
 				notehtml = html_decode(note)
@@ -81,7 +83,9 @@
 				pda.close(ui.user)
 			return TRUE
 		if("Titleset")
-			var/n = tgui_input_text(ui.user, "Please enter title", name, notetitle, multiline = FALSE)
+			var/n = act_prompt(ui.user, action, params, ui, "k84", list("kind" = "text", "message" = "Please enter title", "title" = name, "default" = notetitle, "multiline" = FALSE))
+			if(isnull(n))
+				return
 			if(pda.loc == ui.user)
 				notetitle = adminscrub(n)
 			else
