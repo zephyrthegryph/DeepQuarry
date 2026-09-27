@@ -52,7 +52,6 @@
 	/// A list of traits to apply while the reagent is being metabolized.
 	var/list/metabolized_traits
 
-
 	var/coolant_modifier = -0.5 // this is multiplied by the volume of the reagent. Most things are not good coolant. EX: Water is 1, coolant is 2. -1 would be a bad reagent for cooling.
 
 	var/glass_icon_file = null
@@ -256,12 +255,6 @@
 	for(var/key in schema)
 		if(!(key in data))
 			stack_trace("[type] ([id]) validate_data(): data is missing required key '[key]'.")
-
-/datum/reagent/Destroy() // This should only be called by the holder, so it's already handled clearing its references
-	holder = null
-	if(islist(data))
-		data.Cut()
-	. = ..()
 
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)

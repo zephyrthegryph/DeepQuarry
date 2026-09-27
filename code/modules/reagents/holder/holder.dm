@@ -27,11 +27,10 @@
 	if(!length(SSchemistry.chemical_reagents))
 		SSchemistry.initialize_chemical_reagents()
 
+REF_OWNED_LIST(/datum/reagents, "reagent_list")
+
+// LIFECYCLE: its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
 /datum/reagents/Destroy()
-	for(var/datum/reagent/R in reagent_list)
-		qdel(R)
-	reagent_list = null
-	reagent_by_id = null
 	if(my_atom && my_atom.reagents == src)
 		my_atom.reagents = null
 	return ..()
@@ -404,12 +403,10 @@
 	if(!amount)
 		return
 
-
 	var/datum/reagents/F = new /datum/reagents(amount)
 	var/tmpdata = get_data(rtype)
 	F.add_reagent(rtype, amount, tmpdata)
 	remove_reagent(rtype, amount)
-
 
 	if (istype(target, /atom))
 		return F.trans_to(target, amount) // Let this proc check the atom's type
@@ -562,7 +559,6 @@
 		R.trans_to_holder(TR, turfportion, 1, 0)
 		TR.splash_turf(T)
 	qdel(R)
-
 
 //Spreads the contents of this reagent holder all over the target turf, dividing among things in it.
 //50% is divided between mobs, 20% between objects, and whatever is left on the turf itself
