@@ -25,8 +25,8 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	var/digest_robot = FALSE
 	var/active = FALSE
 	var/usesmes = TRUE
-	var/datum/weakref/moblink
-	var/datum/weakref/linkedsmes //when the nanites digest something, it becomes power in an SMES
+	var/moblink
+	var/linkedsmes //when the nanites digest something, it becomes power in an SMES
 	var/id = null
 
 
@@ -38,11 +38,11 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(!get_area(tolink))
 			continue
 		if(get_area(tolink) == get_area(src))
-			linkedsmes = WEAKREF(tolink)
+			linkedsmes = om_handle(tolink)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/attack_hand(mob/user)
-	var/mob/living/nutrienttarget = moblink?.resolve()
-	var/obj/machinery/power/smes/smes = linkedsmes?.resolve()
+	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
 	if(check_target() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
 		return ..()
 	if(ishuman(user))
@@ -59,35 +59,35 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 					else
 						to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 					user.visible_message(span_warning("\The [user] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-					if(do_after(user, 3 SECONDS, src))
-						moblink = WEAKREF(user)
-						switch(choice2)
-							if("None")
-								moblink = WEAKREF(user)
-								toggle_all(TRUE)
-							if("All")
-								moblink = WEAKREF(user)
-								toggle_all(TRUE, TRUE, TRUE, TRUE)
-							if("Organics and Cyborgs")
-								moblink = WEAKREF(user)
-								toggle_all(TRUE, TRUE, TRUE)
-							if("Organics and Synthetics")
-								moblink = WEAKREF(user)
-								toggle_all(TRUE, TRUE, FALSE, TRUE)
-							if("Only Organics")
-								moblink = WEAKREF(user)
-								toggle_all(TRUE, TRUE)
-
+					om_do_after(user, 3 SECONDS, src, src, PROC_REF(interface_on), list(user, choice2))
 				if("Off")
 					if(active)
 						user.visible_message(span_warning("\The [user] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-						if(do_after(user, 3 SECONDS, src))
-							toggle_all(FALSE)
+						om_do_after(user, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 	return ..()
 
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
+	moblink = om_handle(user)
+	switch(choice2)
+		if("None")
+			moblink = om_handle(user)
+			toggle_all(TRUE)
+		if("All")
+			moblink = om_handle(user)
+			toggle_all(TRUE, TRUE, TRUE, TRUE)
+		if("Organics and Cyborgs")
+			moblink = om_handle(user)
+			toggle_all(TRUE, TRUE, TRUE)
+		if("Organics and Synthetics")
+			moblink = om_handle(user)
+			toggle_all(TRUE, TRUE, FALSE, TRUE)
+		if("Only Organics")
+			moblink = om_handle(user)
+			toggle_all(TRUE, TRUE)
+
 /turf/simulated/floor/water/digestive_enzymes/nanites/attack_ai(mob/user)
-	var/mob/living/nutrienttarget = moblink?.resolve()
-	var/obj/machinery/power/smes/smes = linkedsmes?.resolve()
+	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
 	if(isrobot(user) && !isshell(user))
 		if(smes || isAI(nutrienttarget))
 			return ..()
@@ -107,19 +107,19 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 			to_chat(user, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			switch(choice2)
 				if("None")
-					moblink = WEAKREF(user)
+					moblink = om_handle(user)
 					toggle_all(TRUE)
 				if("All")
-					moblink = WEAKREF(user)
+					moblink = om_handle(user)
 					toggle_all(TRUE, TRUE, TRUE, TRUE)
 				if("Organics and Cyborgs")
-					moblink = WEAKREF(user)
+					moblink = om_handle(user)
 					toggle_all(TRUE, TRUE, TRUE)
 				if("Organics and Synthetics")
-					moblink = WEAKREF(user)
+					moblink = om_handle(user)
 					toggle_all(TRUE, TRUE, FALSE, TRUE)
 				if("Only Organics")
-					moblink = WEAKREF(user)
+					moblink = om_handle(user)
 					toggle_all(TRUE, TRUE)
 
 		if("Off")
@@ -128,7 +128,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/can_digest(atom/movable/AM) //copypasting the entire proc because we use an SMES instead of a linked mob
 	. = FALSE
-	var/mob/living/nutrienttarget = moblink?.resolve()
+	var/mob/living/nutrienttarget = om_resolve(moblink)
 	if(!active)
 		return FALSE
 	if(!check_target())
@@ -178,8 +178,8 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		return TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/check_target()//check if the target is in the area, or if this is a
-	var/mob/living/nutrienttarget = moblink?.resolve()
-	var/obj/machinery/power/smes/smes = linkedsmes?.resolve()
+	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
 	if(nutrienttarget)
 		if(nutrienttarget.client && !nutrienttarget.stat)
 			if(smes && isAI(nutrienttarget))
@@ -258,8 +258,8 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	give_nutrients(nutrients)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/give_nutrients(amt)
-	var/mob/living/nutrienttarget = moblink?.resolve()
-	var/obj/machinery/power/smes/smes = linkedsmes?.resolve()
+	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
 	if(smes)
 		smes.charge += (amt * 20)
 		return
@@ -281,12 +281,12 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	return ..()
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/toggle_all(on = TRUE, digest = FALSE, robot = FALSE, synth = FALSE)
-	var/mob/living/nutrienttarget = moblink?.resolve()
+	var/mob/living/nutrienttarget = om_resolve(moblink)
 	for(var/turf/simulated/floor/water/digestive_enzymes/nanites/nanites in REGISTRY_MEMBERS(REGISTRY_NANITE_TURFS))
 		if(nanites.id == id)
 			nanites.moblink = null
 			if(on)
-				nanites.moblink = WEAKREF(nutrienttarget)
+				nanites.moblink = om_handle(nutrienttarget)
 			nanites.select_state(on, digest, robot, synth)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/select_state(on = TRUE, digest = FALSE, robot = FALSE, synth = FALSE)

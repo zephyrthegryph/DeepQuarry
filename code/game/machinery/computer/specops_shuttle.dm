@@ -32,26 +32,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	if(announcer)
 		announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
 
-	while(GLOB.specops_shuttle_time - world.timeofday > 0)
-		var/ticksleft = GLOB.specops_shuttle_time - world.timeofday
+	specops_countdown(message_tracker, announcer, /proc/specops_return_arrive)
 
-		if(ticksleft > 1e5)
-			GLOB.specops_shuttle_time = world.timeofday + 10	// midnight rollover
-		GLOB.specops_shuttle_timeleft = (ticksleft / 10)
-
-		//All this does is announce the time before launch.
-		if(announcer)
-			var/rounded_time_left = round(GLOB.specops_shuttle_timeleft)//Round time so that it will report only once, not in fractions.
-			if(rounded_time_left in message_tracker)//If that time is in the list for message announce.
-				message = "\"ALERT: [rounded_time_left] SECOND[(rounded_time_left!=1)?"S":""] REMAIN\""
-				if(rounded_time_left==0)
-					message = "\"ALERT: TAKEOFF\""
-				announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
-				message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
-				//Should call all the numbers but lag could mean some issues. Oh well. Not much I can do about that.
-
-		sleep(5)
-
+/// Arrival half of the countdown (runs when it hits zero).
+/proc/specops_return_arrive(obj/item/radio/intercom/announcer)
 	GLOB.specops_shuttle_moving_to_station = 0
 	GLOB.specops_shuttle_moving_to_centcom = 0
 
@@ -98,7 +82,6 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	qdel(announcer)
 
 /proc/specops_process()
-	var/area/centcom/specops/special_ops = locate()//Where is the specops area located?
 	var/obj/item/radio/intercom/announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
@@ -109,26 +92,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 //		message = "ARMORED SQUAD TAKE YOUR POSITION ON GRAVITY LAUNCH PAD"
 //		announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
 
-	while(GLOB.specops_shuttle_time - world.timeofday > 0)
-		var/ticksleft = GLOB.specops_shuttle_time - world.timeofday
+	specops_countdown(message_tracker, announcer, /proc/specops_launch)
 
-		if(ticksleft > 1e5)
-			GLOB.specops_shuttle_time = world.timeofday + 10	// midnight rollover
-		GLOB.specops_shuttle_timeleft = (ticksleft / 10)
-
-		//All this does is announce the time before launch.
-		if(announcer)
-			var/rounded_time_left = round(GLOB.specops_shuttle_timeleft)//Round time so that it will report only once, not in fractions.
-			if(rounded_time_left in message_tracker)//If that time is in the list for message announce.
-				message = "\"ALERT: [rounded_time_left] SECOND[(rounded_time_left!=1)?"S":""] REMAIN\""
-				if(rounded_time_left==0)
-					message = "\"ALERT: TAKEOFF\""
-				announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
-				message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
-				//Should call all the numbers but lag could mean some issues. Oh well. Not much I can do about that.
-
-		sleep(5)
-
+/// Arrival half of the countdown (runs when it hits zero).
+/proc/specops_launch(obj/item/radio/intercom/announcer)
 	GLOB.specops_shuttle_moving_to_station = 0
 	GLOB.specops_shuttle_moving_to_centcom = 0
 
@@ -139,72 +106,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		to_chat(usr, span_warning("The Special Operations shuttle is unable to leave."))
 		return
 
-	//Begin Marauder launchpad.
-	spawn(0)//So it parallel processes it.
-		for(var/obj/machinery/door/blast/M in special_ops)
-			switch(M.id)
-				if("ASSAULT0")
-					spawn(10)//1 second delay between each.
-						M.open()
-				if("ASSAULT1")
-					spawn(20)
-						M.open()
-				if("ASSAULT2")
-					spawn(30)
-						M.open()
-				if("ASSAULT3")
-					spawn(40)
-						M.open()
-
-		sleep(10)
-
-		var/spawn_marauder[] = new()
-		for(var/obj/effect/landmark/L in GLOB.landmarks_list)
-			if(L.name == "Marauder Entry")
-				spawn_marauder.Add(L)
-		for(var/obj/effect/landmark/L in GLOB.landmarks_list)
-			if(L.name == "Marauder Exit")
-				var/obj/effect/portal/P = new(L.loc)
-				P.invisibility = INVISIBILITY_ABSTRACT//So it is not seen by anyone.
-				P.failchance = 0//So it has no fail chance when teleporting.
-				P.target = pick(spawn_marauder)//Where the marauder will arrive.
-				spawn_marauder.Remove(P.target)
-
-		sleep(10)
-
-		for(var/obj/machinery/mass_driver/M in special_ops)
-			switch(M.id)
-				if("ASSAULT0")
-					spawn(10)
-						M.drive()
-				if("ASSAULT1")
-					spawn(20)
-						M.drive()
-				if("ASSAULT2")
-					spawn(30)
-						M.drive()
-				if("ASSAULT3")
-					spawn(40)
-						M.drive()
-
-		sleep(50)//Doors remain open for 5 seconds.
-
-		for(var/obj/machinery/door/blast/M in special_ops)
-			switch(M.id)//Doors close at the same time.
-				if("ASSAULT0")
-					spawn(0)
-						M.close()
-				if("ASSAULT1")
-					spawn(0)
-						M.close()
-				if("ASSAULT2")
-					spawn(0)
-						M.close()
-				if("ASSAULT3")
-					spawn(0)
-						M.close()
-		special_ops.readyreset()//Reset firealarm after the team launched.
-	//End Marauder launchpad.
+	launch_mauraders() // the Marauder launchpad (shuttle_specops.dm)
 
 	var/area/start_location = locate(/area/shuttle/specops/centcom)
 	var/area/end_location = locate(/area/shuttle/specops/station)
@@ -237,6 +139,27 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
 
 	qdel(announcer)
+
+/// Counts the shuttle timer down in half-second steps, announcing on the way,
+/// then calls `done_proc(announcer)`.
+/proc/specops_countdown(list/message_tracker, obj/item/radio/intercom/announcer, done_proc)
+	var/ticksleft = GLOB.specops_shuttle_time - world.timeofday
+	if(ticksleft <= 0)
+		call(done_proc)(announcer)
+		return
+	if(ticksleft > 1e5)
+		GLOB.specops_shuttle_time = world.timeofday + 10	// midnight rollover
+	GLOB.specops_shuttle_timeleft = (ticksleft / 10)
+	//All this does is announce the time before launch.
+	if(announcer)
+		var/rounded_time_left = round(GLOB.specops_shuttle_timeleft)//Round time so that it will report only once, not in fractions.
+		if(rounded_time_left in message_tracker)//If that time is in the list for message announce.
+			var/message = "\"ALERT: [rounded_time_left] SECOND[(rounded_time_left!=1)?"S":""] REMAIN\""
+			if(rounded_time_left==0)
+				message = "\"ALERT: TAKEOFF\""
+			announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
+			message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
+	om_after(null, 5, /proc/specops_countdown, message_tracker, announcer, done_proc)
 
 /proc/specops_can_move()
 	if(GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom)
@@ -277,8 +200,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 		GLOB.specops_shuttle_moving_to_centcom = 1
 		GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
-		spawn(0)
-			specops_return()
+		specops_return()
 
 	else if (href_list["sendtostation"])
 		if(GLOB.specops_shuttle_at_station || GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom) return
@@ -298,8 +220,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		GLOB.specops_shuttle_moving_to_station = 1
 
 		GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
-		spawn(0)
-			specops_process()
+		specops_process()
 
 	else if (href_list["mainmenu"])
 		temp = null
@@ -312,3 +233,6 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 #undef SPECOPS_STATION_AREATYPE
 #undef SPECOPS_DOCK_AREATYPE
 #undef SPECOPS_RETURN_DELAY
+
+/// Assault pod launch order: door and driver ASSAULTn goes (n+1) seconds into its phase.
+GLOBAL_LIST_INIT(specops_assault_stagger, list("ASSAULT0" = 1 SECOND, "ASSAULT1" = 2 SECONDS, "ASSAULT2" = 3 SECONDS, "ASSAULT3" = 4 SECONDS))

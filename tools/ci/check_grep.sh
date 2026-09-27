@@ -141,7 +141,7 @@ part "R10 bindings: init_* seeds referenced outside a var-edit"
 # this never flags an unrelated init_* proc (init_dir() and the like).
 seeds_file="code/__defines/verdigris/_bindings_types.dm"
 seeds=$( [ -f "$seeds_file" ] && $grep -o 'var/tmp/init_[A-Za-z0-9_]+' "$seeds_file" | sed 's#var/tmp/##' | sort -u | paste -sd'|' - )
-if [ -n "$seeds" ] && $grep -nE "\\b($seeds)\\b" "${code_files[@]}" \
+if [ -n "$seeds" ] && $grep -n "\\b($seeds)\\b" "${code_files[@]}" \
 	| $grep -v '^code/__defines/verdigris/' \
 	| $grep -vP ':\s*(//|/\*|\*)' \
 	| $grep -vP "^[^:]+:\d+:\s*($seeds)(\s*=\s*[^=].*)?\s*\$"; then
@@ -158,8 +158,8 @@ part "R10 bindings: no member-var caching of a binding read"
 # the call directly and never assign it to a var. Names are read from the
 # generated file, not guessed (a blanket get_* would catch get_turf() and
 # every other ordinary getter in the codebase).
-readers=$( [ -f "$seeds_file" ] && $grep -oE 'proc/(get_[A-Za-z0-9_]+|[a-z][a-z0-9_]*_query_[A-Za-z0-9_]+)' "$seeds_file" | sed 's#proc/##' | sort -u | paste -sd'|' - )
-if [ -n "$readers" ] && $grep -nE "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg_)?($readers)\(" "${code_files[@]}" \
+readers=$( [ -f "$seeds_file" ] && $grep -o 'proc/(get_[A-Za-z0-9_]+|[a-z][a-z0-9_]*_query_[A-Za-z0-9_]+)' "$seeds_file" | sed 's#proc/##' | sort -u | paste -sd'|' - )
+if [ -n "$readers" ] && $grep -n "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg_)?($readers)\(" "${code_files[@]}" \
 	| $grep -vP '^[^:]+:\d+:\s*var/' \
 	| $grep -v '^code/__defines/verdigris/'; then
 	echo
@@ -333,12 +333,12 @@ part "interactions: converted domains (I7)"
 i7_converted_types='/obj/machinery'
 i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
 i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|medical_kiosk|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/(Operating|cloning|medical)\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
-if $grep -nE "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
+if $grep -n "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
 	echo
 	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
 	FAILED=1
 fi;
-if $grep -nE '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
+if $grep -n '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
 	echo
 	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
 	FAILED=1

@@ -25,9 +25,7 @@
 		update_icon()
 		shutdown_computer()
 		to_chat(usr, "You press a hard-reset button on \the [src]. It displays a brief debug screen before shutting down.")
-		spawn(2 SECONDS)
-			bsod = 0
-			update_icon()
+		om_after(src, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var_then), "bsod", 0, TYPE_PROC_REF(/atom, update_icon))
 
 
 // Eject ID card from computer, if it has ID slot with card inside.
@@ -178,11 +176,14 @@
 		to_chat(user, "\The [src] does not require repairs.")
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You begin repairing damage to \the [src]...")
-	if(!welder.remove_fuel(round(missing / 75)) || !do_after(user, missing / 10, target = src))
+	if(!welder.remove_fuel(round(missing / 75)))
 		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, missing / 10, src, src, PROC_REF(weld_repair_done), list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/modular_computer/proc/weld_repair_done(mob/user)
 	repair_damage(max_integrity)
 	to_chat(user, "You repair \the [src].")
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/modular_computer/screwdriver_act(mob/user, obj/item/tool)
 	var/list/all_components = get_all_components()

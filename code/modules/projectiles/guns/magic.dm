@@ -34,14 +34,14 @@
 	. = ..()
 	charges = max_charges
 	if(can_charge)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/gun/magic/Destroy()
 	if(can_charge)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/gun/magic/process()
+/obj/item/gun/magic/periodic_step()
 	if (charges >= max_charges)
 		charge_tick = 0
 		return

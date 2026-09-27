@@ -6,7 +6,7 @@
 // /datum/target_selector singletons. State that can't be class-level lives in
 // the world model (per-tick perception) or behavior_state (per-mob cooldowns).
 //
-// Duck-typed compatible with SSai/SSaifast: exposes `holder`, `busy`,
+// Duck-typed compatible with SSai/SSaifast: exposes `holder`, `is_busy()`,
 // `handle_strategicals()`, `handle_tactics()`, `process_flags`, `set_stance`.
 // SSai sleeps mobs by calling set_stance(STANCE_IDLE) — we accept the call as
 // a no-op since the brain has no stance enum.
@@ -19,7 +19,6 @@
 /datum/ai_brain
 	// --- SSai duck-typed surface ---
 	var/mob/living/holder = null    // SSai reads this. Same name as ai_holder.
-	var/busy = FALSE                // SSai reads this. Set TRUE while a behavior locks reselection.
 	var/process_flags = 0           // bitmask of DQAI_PROCESSING / FASTPROCESSING.
 
 	// --- Configuration ---
@@ -47,7 +46,7 @@
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
 
 	// --- Personal relationships. Lazylist. ---
-	var/list/personal = null             // weakref => list("disp", "expires")
+	var/list/personal = null             // OM handle => list("disp", "expires")
 
 	// --- Signal subscriptions ---
 	var/list/subscribed_signals = null   // signal_type => list(behavior_typepath, ...)
@@ -56,7 +55,7 @@
 	var/last_attack_at = 0           // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/turf/home_turf = null        // for guard / return_home behaviors
-	var/datum/weakref/leader_ref = null  // for follow_leader / cooperative AI
+	var/leader_ref = null  // for follow_leader / cooperative AI
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
@@ -65,7 +64,7 @@
 	/// brain uses a long discovery cadence while combat stays responsive.
 	var/next_strategic_at = 0
 	var/idle_strategic_interval = 10 SECONDS
-	/// While hibernating: the (token, kind) pairs from SSreactor.sleep_on_keys().
+	/// While hibernating: the chunks it watches (watch_mob_chunks()).
 	var/tmp/list/react_sleep_tokens
 
 /datum/ai_brain/New(mob/living/owner)
@@ -111,10 +110,10 @@
 	return holder
 
 /datum/ai_brain/proc/get_leader()
-	return leader_ref?.resolve()
+	return om_resolve(leader_ref)
 
 /datum/ai_brain/proc/set_leader(mob/leader)
-	leader_ref = leader ? WEAKREF(leader) : null
+	leader_ref = leader ? om_handle(leader) : null
 
 // ---------------------------------------------------------------------------
 // SSai-compatible surface.
@@ -162,7 +161,7 @@
 			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 		sync_fast_processing()
 		return
-	if(busy)
+	if(is_busy())
 		return
 
 	if(active_behavior_type)
@@ -326,10 +325,10 @@
 	active_behavior_type = null
 	active_target = null
 	active_source = null
-	// Defensive: if a behavior's start() runtimed before clearing busy, the
+	// Defensive: if a behavior's start() runtimed before releasing its hold, the
 	// brain would lock up. stop_active is the funnel for every termination,
-	// so always release the lock here regardless of blocks_reselection.
-	busy = FALSE
+	// so always release the hold here regardless of blocks_reselection.
+	holder?.ai_busy_end()
 	// Force the next tick to re-pick rather than wait for the slow tick to
 	// flip selection_dirty.
 	selection_dirty = TRUE
@@ -395,7 +394,7 @@
 	if(!other || other == holder)
 		return DQ_DISPOSITION_ALLY
 	if(personal)
-		var/ref = WEAKREF(other)
+		var/ref = om_handle(other)
 		var/list/entry = personal[ref]
 		if(entry)
 			if(entry["expires"] && entry["expires"] < world.time)
@@ -424,7 +423,7 @@
 	if(!other)
 		return
 	LAZYINITLIST(personal)
-	personal[WEAKREF(other)] = list(
+	personal[om_handle(other)] = list(
 		"disp" = disposition,
 		"expires" = duration ? world.time + duration : 0,
 		"reason" = reason,
@@ -518,3 +517,22 @@
 	for(var/btype in subscribed_signals[sig_type])
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))
+
+
+/// SSai reads this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
+/// action, or a behavior that blocks reselection (code/datums/om/task.dm, om_busy()).
+/datum/ai_brain/proc/is_busy()
+	return holder ? om_busy(holder) : FALSE
+
+/// An AI mob starts an ability whose later steps are timers: a hold task claims the mob, so its
+/// brain stops choosing, until ai_busy_end() or `cap` runs out. No-op without an AI.
+/mob/living/proc/ai_busy_begin(cap = 1 MINUTE)
+	if(!ai_brain)
+		return
+	return om_hold_busy(src, cap)
+
+/// Ends the hold ai_busy_begin() started (a timed action's own claim ends with its task).
+/mob/living/proc/ai_busy_end()
+	var/datum/om/task/T = om_claiming_task(src)
+	if(T?.def.type == /datum/om/task_def/hold)
+		om_task_cancel(T, "done")

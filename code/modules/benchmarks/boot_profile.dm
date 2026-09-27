@@ -37,8 +37,8 @@
 GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 
 /// Rust heap marks through boot: list(name, current MB, peak MB, parts), where
-/// parts are the gas and heat worlds' structures above 1 MB
-/// (`vg_verdigris_memory_report`). The peak is process-wide and monotonic, so
+/// parts are Rust structures above 1 MB (empty until the shared World binds a
+/// memory report). The peak is process-wide and monotonic, so
 /// the first mark whose peak jumps names the stage that set it.
 GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 
@@ -50,25 +50,28 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
 		fired[S] = S.times_fired
 		cost[S] = S.cost
-	for(var/i in 1 to seconds)
-		sleep(1 SECONDS)
-		var/list/names = list()
-		for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-			var/delta = S.times_fired - fired[S]
-			if(delta > 0)
-				names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
-			fired[S] = S.times_fired
-		benchmark_rust_mark("t+[i]s: [jointext(names, ", ")]")
+	// A mark a second, on timers (nothing sleeps).
+	om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), list(fired), 1, seconds)
+
+/proc/benchmark_mark_second(list/fired_box, i, seconds)
+	var/list/fired = fired_box[1]
+	var/list/names = list()
+	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
+		var/delta = S.times_fired - fired[S]
+		if(delta > 0)
+			names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
+		fired[S] = S.times_fired
+	benchmark_rust_mark("t+[i]s: [jointext(names, ", ")]")
+	if(i < seconds)
+		om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), fired_box, i + 1, seconds)
 
 /proc/benchmark_rust_mark(name)
 	var/list/heap = vg_verdigris_allocator_diagnostics()
 	if(!islist(heap))
 		return
+	// Per-structure parts need a Rust memory report, which the shared World (rust-core2)
+	// does not bind yet: the marks carry the allocator totals only.
 	var/list/parts = list()
-	var/list/report = vg_verdigris_memory_report()
-	for(var/i = 1, i < length(report), i += 2)
-		if(report[i + 1] >= 1048576)
-			parts[report[i]] = round(report[i + 1] / 1048576, 0.1)
 	var/list/process = benchmark_process_memory()
 	GLOB.benchmark_rust_marks += list(list(
 		"name" = name,

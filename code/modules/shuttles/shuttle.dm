@@ -134,31 +134,33 @@
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	spawn(warmup_time*10)
+	om_after(src, warmup_time*10, PROC_REF(short_jump_warmed_up), start_location, destination)
 
-		make_sounds(HYPERSPACE_WARMUP)
-		create_warning_effect(destination)
-		sleep(5 SECONDS) // so the sound finishes.
+/datum/shuttle/proc/short_jump_warmed_up(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
+	make_sounds(HYPERSPACE_WARMUP)
+	create_warning_effect(destination)
+	om_after(src, 5 SECONDS, PROC_REF(short_jump_go), start_location, destination) // so the sound finishes.
 
-		if(!post_warmup_checks())
-			cancel_launch(null)
+/datum/shuttle/proc/short_jump_go(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
+	if(!post_warmup_checks())
+		cancel_launch(null)
 
-		if(!fuel_check()) //fuel error (probably out of fuel) occured, so cancel the launch
-			cancel_launch(null)
+	if(!fuel_check()) //fuel error (probably out of fuel) occured, so cancel the launch
+		cancel_launch(null)
 
-		if (moving_status == SHUTTLE_IDLE)
-			make_sounds(HYPERSPACE_END)
-			return	//someone cancelled the launch
-
-		moving_status = SHUTTLE_INTRANSIT //shouldn't matter but just to be safe
-		on_shuttle_departure(start_location, destination)
-
-		attempt_move(destination)
-
-		moving_status = SHUTTLE_IDLE
-		on_shuttle_arrival(start_location, destination)
-
+	if (moving_status == SHUTTLE_IDLE)
 		make_sounds(HYPERSPACE_END)
+		return	//someone cancelled the launch
+
+	moving_status = SHUTTLE_INTRANSIT //shouldn't matter but just to be safe
+	on_shuttle_departure(start_location, destination)
+
+	attempt_move(destination)
+
+	moving_status = SHUTTLE_IDLE
+	on_shuttle_arrival(start_location, destination)
+
+	make_sounds(HYPERSPACE_END)
 
 // TODO - Far Future - Would be great if this was driven by process too.
 /datum/shuttle/proc/long_jump(obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
@@ -176,50 +178,58 @@
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	spawn(warmup_time*10)
+	om_after(src, warmup_time*10, PROC_REF(long_jump_warmed_up), start_location, destination, interim, travel_time)
 
-		make_sounds(HYPERSPACE_WARMUP)
-		create_warning_effect(interim) // Really doubt someone is gonna get crushed in the interim area but for completeness's sake we'll make the warning.
-		sleep(5 SECONDS) // so the sound finishes.
+/datum/shuttle/proc/long_jump_warmed_up(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
+	make_sounds(HYPERSPACE_WARMUP)
+	create_warning_effect(interim) // Really doubt someone is gonna get crushed in the interim area but for completeness's sake we'll make the warning.
+	om_after(src, 5 SECONDS, PROC_REF(long_jump_depart), start_location, destination, interim, travel_time) // so the sound finishes.
 
-		if(!post_warmup_checks())
-			cancel_launch(null)
+/datum/shuttle/proc/long_jump_depart(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
+	if(!post_warmup_checks())
+		cancel_launch(null)
 
-		if (moving_status == SHUTTLE_IDLE)
-			make_sounds(HYPERSPACE_END)
-			return	//someone cancelled the launch
-
-		arrive_time = world.time + travel_time*10
-		depart_time = world.time
-
-		moving_status = SHUTTLE_INTRANSIT
-		on_shuttle_departure(start_location, destination)
-
-		if(attempt_move(interim, TRUE))
-			interim.shuttle_arrived()
-
-			if(process_longjump(current_location, destination)) // To hook custom shuttle code in
-				return // It handled it for us (shuttle crash or such)
-
-			var/last_progress_sound = 0
-			var/made_warning = FALSE
-			while (world.time < arrive_time)
-				// Make the shuttle make sounds every four seconds, since the sound file is five seconds.
-				if(last_progress_sound + 4 SECONDS < world.time)
-					make_sounds(HYPERSPACE_PROGRESS)
-					last_progress_sound = world.time
-
-				if(arrive_time - world.time <= 5 SECONDS && !made_warning)
-					made_warning = TRUE
-					create_warning_effect(destination)
-				sleep(5)
-
-			if(!attempt_move(destination))
-				attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
-
-		moving_status = SHUTTLE_IDLE
-		on_shuttle_arrival(start_location, destination)
+	if (moving_status == SHUTTLE_IDLE)
 		make_sounds(HYPERSPACE_END)
+		return	//someone cancelled the launch
+
+	arrive_time = world.time + travel_time*10
+	depart_time = world.time
+
+	moving_status = SHUTTLE_INTRANSIT
+	on_shuttle_departure(start_location, destination)
+
+	if(!attempt_move(interim, TRUE))
+		long_jump_arrived(start_location, destination)
+		return
+	interim.shuttle_arrived()
+
+	if(process_longjump(current_location, destination)) // To hook custom shuttle code in
+		return // It handled it for us (shuttle crash or such)
+
+	long_jump_transit(start_location, destination, 0, FALSE)
+
+/// In transit: every half second until arrival time, the travel sound every four seconds
+/// (the sound file is five) and the landing warning five seconds out.
+/datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, last_progress_sound, made_warning)
+	if(world.time >= arrive_time)
+		if(!attempt_move(destination))
+			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
+		long_jump_arrived(start_location, destination)
+		return
+	if(last_progress_sound + 4 SECONDS < world.time)
+		make_sounds(HYPERSPACE_PROGRESS)
+		last_progress_sound = world.time
+
+	if(arrive_time - world.time <= 5 SECONDS && !made_warning)
+		made_warning = TRUE
+		create_warning_effect(destination)
+	om_after(src, 5, PROC_REF(long_jump_transit), start_location, destination, last_progress_sound, made_warning)
+
+/datum/shuttle/proc/long_jump_arrived(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
+	moving_status = SHUTTLE_IDLE
+	on_shuttle_arrival(start_location, destination)
+	make_sounds(HYPERSPACE_END)
 
 
 //////////////////////////////
@@ -447,9 +457,9 @@
 		return "In transit"
 	return current_location.name
 
-/// Wakes the status displays that show this shuttle's schedule (REACT_KEY_SHUTTLE_SCHEDULE).
+/// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
 	if(src == SSemergency_shuttle?.shuttle)
-		REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_EVAC, 1)
+		om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 	else if(src == SSsupply?.shuttle)
-		REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_SUPPLY, 1)
+		om_changed(SSsupply, CHANGE_SHUTTLE_SCHEDULE)

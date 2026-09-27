@@ -13,7 +13,7 @@
 	layer = LAYER_HUD_BASE
 	plane = PLANE_PLAYER_HUD
 	/// A reference to the object in the slot. Grabs or items, generally, but any datum will do.
-	var/datum/weakref/master_ref = null
+	var/master_ref = null
 	/// A reference to the owner HUD, if any.
 	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
 	var/datum/hud/hud = null // A reference to the owner HUD, if any.
@@ -62,7 +62,7 @@
 	name = "close"
 
 /atom/movable/screen/close/Click()
-	var/obj/master = master_ref?.resolve()
+	var/obj/master = om_resolve(master_ref)
 	if(master)
 		if(istype(master, /obj/item/storage))
 			var/obj/item/storage/S = master
@@ -96,7 +96,7 @@
 	name = "grab"
 
 /atom/movable/screen/grab/Click()
-	var/obj/master = master_ref?.resolve()
+	var/obj/master = om_resolve(master_ref)
 	var/obj/item/grab/G = master
 	G.s_click(src)
 	return 1
@@ -118,7 +118,7 @@
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
-	var/obj/master = master_ref?.resolve()
+	var/obj/master = om_resolve(master_ref)
 	if(master)
 		var/obj/item/I = usr.get_active_hand()
 		if(I)
@@ -237,6 +237,8 @@
 	if(choice != selecting)
 		selecting = choice
 		update_icon()
+		if(user)
+			om_changed(user, CHANGE_MOB_TARGETING)
 
 /atom/movable/screen/zone_sel/update_icon()
 	cut_overlays()
@@ -988,7 +990,7 @@
 	screen_loc = ui_ammo_hud1
 	var/warned = FALSE
 	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
-	var/datum/weakref/our_gun
+	var/our_gun
 
 /atom/movable/screen/ammo/Destroy()
 	. = ..()
@@ -1002,7 +1004,7 @@
 		return TRUE
 	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
-	var/obj/item/gun/gun = our_gun.resolve()
+	var/obj/item/gun/gun = om_resolve(our_gun)
 	if(!gun)
 		return TRUE
 	gun.switch_firemodes(user)
@@ -1055,10 +1057,7 @@
 			F.icon_state = "frame"
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			spawn(20)
-				user.client.screen -= F
-				qdel(F)
-				overlays += empty
+			om_after(src, 2 SECONDS, PROC_REF(end_empty_flash), user, F, empty)
 	else
 		warned = FALSE
 		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")
@@ -1111,3 +1110,8 @@
 
 		LAZYADD(object_overlays, item_overlay)
 		add_overlay(object_overlays)
+
+/atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, image/empty)
+	user.client?.screen -= F
+	qdel(F)
+	overlays += empty

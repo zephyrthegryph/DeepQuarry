@@ -59,44 +59,126 @@
 
 /datum/generated_station_planner/proc/plan(seed, width = 160, height = 160)
 	error_message = null
-	// BYOND numbers cannot preserve every integer above 24 bits or serialize
-	// them without scientific notation. Keep the public seed in its exact range
-	// before it crosses the strict Rust JSON contract.
-	seed = max(1, abs(round(seed || 1)) % 16000000)
-	var/list/errors = list()
-	var/request_json = generated_station_rust_catalog_request(seed, width, height)
-	#ifdef CITESTING
-	rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
-	#endif
-	var/list/request = json_decode(request_json)
-	var/job_id
-	var/list/response
+	seed = generated_station_plan_seed(seed)
+	var/request_json = plan_request(seed, width, height)
+	var/job_id = vg_verdigris_submit_station_layout(request_json)
+	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed)
+	if(!job_id)
+		return plan_failed(null, request_json, seed, "Rust planner did not return a job handle")
+	// Blocking callers (tests, admin tools) wait on the Rust worker thread; the live game uses
+	// plan_async(), which polls on a timer instead.
+	var/status = vg_verdigris_job_poll(job_id)
+	while(status == "PENDING")
+		status = vg_verdigris_job_poll(job_id)
+	if(!plan_ready(state, status))
+		return state["spec"]
+	while(!isnull(plan_fetch_slice(state)))
+		continue
+	return state["spec"]
+
+/// plan() for the live game: the Rust job is polled on a timer and its result read back as lane
+/// work (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked with the spec, or
+/// null (error_message says why).
+/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, datum/callback/on_done)
+	error_message = null
+	seed = generated_station_plan_seed(seed)
+	var/request_json = plan_request(seed, width, height)
+	var/job_id = vg_verdigris_submit_station_layout(request_json)
+	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed, "done" = on_done)
+	if(!job_id)
+		return plan_async_end(state, plan_failed(null, request_json, seed, "Rust planner did not return a job handle"))
+	// The worker owns only immutable Rust data; the game keeps its ticks until the result is ready.
+	om_after(src, world.tick_lag, PROC_REF(plan_poll), state)
+
+/datum/generated_station_planner/proc/plan_poll(list/state)
+	var/status = vg_verdigris_job_poll(state["job"])
+	if(status == "PENDING")
+		om_after(src, world.tick_lag, PROC_REF(plan_poll), state)
+		return
+	if(plan_ready(state, status))
+		om_lane_work(src, PROC_REF(plan_fetch_slice), state)
+
+/// The job finished: TRUE with the header read and the pages ready to fetch; FALSE when it failed
+/// (the failure is handed on).
+/datum/generated_station_planner/proc/plan_ready(list/state, status)
+	if(findtext(status, "ERROR:") == 1)
+		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], copytext(status, 7)))
+		return FALSE
+	if(status == "CANCELLED")
+		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "Rust planning job was cancelled"))
+		return FALSE
 	try
-		job_id = vg_verdigris_submit_station_layout(request_json)
-		if(!job_id)
-			throw EXCEPTION("Rust planner did not return a job handle")
-		while(TRUE)
-			var/status = vg_verdigris_job_poll(job_id)
-			if(status == "PENDING")
-				// The worker owns only immutable Rust data. BYOND remains free to
-				// service ordinary ticks until the serialized result is ready.
-				sleep(0)
-				continue
-			if(findtext(status, "ERROR:") == 1)
-				throw EXCEPTION(copytext(status, 7))
-			if(status == "CANCELLED")
-				throw EXCEPTION("Rust planning job was cancelled")
-			break
-		response = generated_station_fetch_rust_plan(job_id)
-		vg_verdigris_job_finish(job_id)
-		job_id = null
+		state["root"] = json_decode(vg_verdigris_station_layout_section(state["job"], "header", "0", "0"))
 	catch(var/exception/error)
-		if(job_id)
-			vg_verdigris_job_finish(job_id)
-		rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
-		log_world("Generated station Rust planner failed for seed [seed]: [error]")
-		error_message = "[error]"
+		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "[error]"))
+		return FALSE
+	state["section"] = 1
+	state["offset"] = 0
+	state["rows"] = list()
+	return TRUE
+
+/// One page of the finished plan, so no json_decode call monopolizes a tick. Returns the state to
+/// carry on with, or null once the plan is read (and handed on).
+/datum/generated_station_planner/proc/plan_fetch_slice(list/state)
+	var/list/sections = generated_station_plan_sections()
+	var/section = sections[state["section"]]
+	var/page_size = section == "tile_rows" ? 4 : 24
+	var/list/page
+	try
+		page = json_decode(vg_verdigris_station_layout_section(state["job"], section, num2text(state["offset"], 20), num2text(page_size, 20)))
+	catch(var/exception/error)
+		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "[error]"))
 		return null
+	if(length(page))
+		var/list/rows = state["rows"]
+		rows += page
+		state["offset"] += length(page)
+		return state
+	var/list/root = state["root"]
+	root[section] = state["rows"]
+	if(state["section"] < length(sections))
+		state["section"]++
+		state["offset"] = 0
+		state["rows"] = list()
+		return state
+	vg_verdigris_job_finish(state["job"])
+	plan_async_end(state, plan_from_response(root, state["request"], state["seed"]))
+	return null
+
+/datum/generated_station_planner/proc/plan_async_end(list/state, datum/generated_station_spec/spec)
+	state["spec"] = spec
+	var/datum/callback/on_done = state["done"]
+	on_done?.Invoke(spec)
+
+/// The plan's array sections, read a page at a time by plan_fetch_slice().
+/proc/generated_station_plan_sections()
+	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks")
+	return sections
+
+/// BYOND numbers cannot preserve every integer above 24 bits or serialize them without
+/// scientific notation. Keep the public seed in its exact range before it crosses the strict
+/// Rust JSON contract.
+/proc/generated_station_plan_seed(seed)
+	return max(1, abs(round(seed || 1)) % 16000000)
+
+/datum/generated_station_planner/proc/plan_request(seed, width, height)
+	. = generated_station_rust_catalog_request(seed, width, height)
+	#ifdef CITESTING
+	rustg_file_write(., "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
+	#endif
+
+/datum/generated_station_planner/proc/plan_failed(job_id, request_json, seed, message)
+	if(job_id)
+		vg_verdigris_job_finish(job_id)
+	rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
+	log_world("Generated station Rust planner failed for seed [seed]: [message]")
+	error_message = "[message]"
+	return null
+
+/// The spec for a finished Rust plan, or null (error_message says why).
+/datum/generated_station_planner/proc/plan_from_response(list/response, request_json, seed)
+	var/list/request = json_decode(request_json)
+	var/list/errors = list()
 	var/datum/generated_station_spec/spec = generated_station_spec_from_rust_json(response, request["catalog_hash"], errors)
 	if(!spec)
 		log_world("Generated station Rust plan rejected for seed [seed]: [jointext(errors, "; ")]")
@@ -104,23 +186,3 @@
 		return null
 	spec.fixture_type_registry = generated_station_rust_fixture_registry()
 	return spec
-
-/// Pull bounded slices from a completed Rust job so no json_decode call can
-/// monopolize a BYOND tick. Tile rows use smaller pages because they contain
-/// the dense run-length encoded tile plan.
-/proc/generated_station_fetch_rust_plan(job_id)
-	var/list/root = json_decode(vg_verdigris_station_layout_section(job_id, "header", "0", "0"))
-	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks")
-	for(var/section in sections)
-		var/list/rows = list()
-		var/offset = 0
-		var/page_size = section == "tile_rows" ? 4 : 24
-		while(TRUE)
-			var/list/page = json_decode(vg_verdigris_station_layout_section(job_id, section, num2text(offset, 20), num2text(page_size, 20)))
-			if(!length(page))
-				break
-			rows += page
-			offset += length(page)
-			sleep(0)
-		root[section] = rows
-	return root

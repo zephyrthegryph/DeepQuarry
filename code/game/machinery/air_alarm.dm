@@ -22,7 +22,7 @@
 
 //all air alarms in area are connected via freq 1439
 /area
-	var/datum/weakref/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
+	var/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
 	// All lazy: most areas have no air alarm or vents.
 	var/list/air_vent_names
 	var/list/air_scrub_names
@@ -41,20 +41,17 @@
 			checks += AA
 	if(!checks.len)
 		return
-	main_air_alarm = WEAKREF(pick(checks))
-	var/obj/machinery/alarm/new_main = main_air_alarm.resolve()
+	main_air_alarm = om_handle(pick(checks))
+	var/obj/machinery/alarm/new_main = om_resolve(main_air_alarm)
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
-			if(AA.polls)
-				START_MACHINE_PROCESSING(AA)
-			else
-				om_changed(AA, CHANGE_MACHINE_SETTINGS)
+			om_changed(AA, CHANGE_MACHINE_SETTINGS)
 		else
 			AA.invalidate_gas_dependencies()
 		AA.update_icon()
 
 /area/proc/main_air_alarm_is_operating()
-	var/obj/machinery/alarm/AM = main_air_alarm?.resolve()
+	var/obj/machinery/alarm/AM = om_resolve(main_air_alarm)
 	return AM && !(AM.stat & (NOPOWER | BROKEN))
 
 
@@ -91,7 +88,6 @@
 	panel_open = FALSE // If it's been screwdrivered open.
 	var/aidisabled = 0
 	var/shorted = 0
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	circuit = /obj/item/circuitboard/airalarm
 
 	var/mode = AALARM_MODE_SCRUBBING
@@ -166,7 +162,7 @@
 	qdel(wires)
 	wires = null
 	LAZYREMOVE(alarm_area.air_alarms, src)
-	if(alarm_area.main_air_alarm?.resolve() == src)
+	if(om_resolve(alarm_area.main_air_alarm) == src)
 		alarm_area.elect_main_air_alarm(TRUE)
 	alarm_area = null
 	QDEL_NULL(soundloop) // Looping Alarms
@@ -487,7 +483,7 @@
 		return
 
 	// sub light!
-	var/obj/machinery/alarm/MA = alarm_area.main_air_alarm?.resolve()
+	var/obj/machinery/alarm/MA = om_resolve(alarm_area.main_air_alarm)
 	if(MA == src)
 		// I am the main alarm
 		add_overlay(mutable_appearance(icon, "alarm_Mmode"))
@@ -512,7 +508,7 @@
 	switch(icon_level)
 		if(0)
 			icon_state = "alarm_0"
-			if(alarm_area.main_air_alarm?.resolve() == src)
+			if(om_resolve(alarm_area.main_air_alarm) == src)
 				// active controller
 				add_overlay(mutable_appearance(icon, "alarm_ov0"))
 				add_overlay(emissive_appearance(icon, "alarm_ov0"))
@@ -1125,3 +1121,8 @@
 
 #undef MAX_TEMPERATURE
 #undef MIN_TEMPERATURE
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/alarm/arm_wakes()
+	..()
+	register_gas_dependencies()

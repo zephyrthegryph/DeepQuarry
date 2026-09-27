@@ -430,7 +430,7 @@
 	var/datum/om_test_entity/P = entity(made)
 	om_attach(P, /datum/om/behaviour/test/presentation)
 	var/datum/om_test_entity/D = entity(made)
-	om_after(D, 5, /datum/om/behaviour/test/deadline_only)
+	om_deadline(D, 5, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(2)
 	TEST_ASSERT(P.ticks >= 1, "presentation lane starved by the simulation lane")
 	TEST_ASSERT_EQUAL(D.deadlines, 1, "deadline starved by the lanes")
@@ -538,7 +538,7 @@
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/source = entity(made)
 	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 0.5)
-	om_after(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
+	om_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(E.deadlines, 0, "half speed: not yet")
 	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 4)
@@ -603,22 +603,22 @@
 
 /datum/unit_test/om/deadlines_replace_and_cancel/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	om_after(E, 5, /datum/om/behaviour/test/deadline_only)
-	om_after(E, 10, /datum/om/behaviour/test/deadline_only)
+	om_deadline(E, 5, /datum/om/behaviour/test/deadline_only)
+	om_deadline(E, 10, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(0.7)
 	TEST_ASSERT_EQUAL(E.deadlines, 0, "calling after() again replaces the deadline")
 	scheduler_advance(0.5)
 	TEST_ASSERT_EQUAL(E.deadlines, 1, "the replacement fires once")
-	om_after(E, 5, /datum/om/behaviour/test/deadline_only)
+	om_deadline(E, 5, /datum/om/behaviour/test/deadline_only)
 	om_cancel_after(E, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(E.deadlines, 1, "cancelled deadlines never fire")
 	var/datum/om_test_entity/doomed = entity(made)
-	om_after(doomed, 5, /datum/om/behaviour/test/deadline_only)
+	om_deadline(doomed, 5, /datum/om/behaviour/test/deadline_only)
 	qdel(doomed)
 	scheduler_advance(1)
 	TEST_ASSERT_EQUAL(doomed.deadlines, 0, "a deleted entity's deadline is skipped")
-	om_after(E, 200 SECONDS, /datum/om/behaviour/test/deadline_only)
+	om_deadline(E, 200 SECONDS, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(201)
 	TEST_ASSERT_EQUAL(E.deadlines, 2, "deadlines beyond one wheel turn still fire")
 
@@ -631,7 +631,7 @@
 		entities += entity(made)
 	var/ffi_before = __verdigris_ffi_calls
 	for(var/datum/om_test_entity/E as anything in entities)
-		om_after(E, 3, /datum/om/behaviour/test/deadline_only)
+		om_deadline(E, 3, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(0.5)
 	TEST_ASSERT_EQUAL(__verdigris_ffi_calls, ffi_before, "deadlines crossed into Rust")
 	for(var/datum/om_test_entity/E as anything in entities)
@@ -1040,17 +1040,6 @@
 	qdel(target)
 	TEST_ASSERT_EQUAL(T4.state, OM_TASK_CANCELLED, "deleting the target cancels")
 
-/// Regression: waits must have a timeout.
-/datum/unit_test/om/regression_await_needs_timeout
-
-/datum/unit_test/om/regression_await_needs_timeout/run_om(list/made)
-	var/caught = FALSE
-	try
-		om_await(null, null)
-	catch
-		caught = TRUE
-	TEST_ASSERT(caught, "om_await() without a timeout must fail")
-
 // ---------------------------------------------------------------- J: UI
 
 /datum/unit_test/om/ui_bind_coalesces_and_throttles
@@ -1138,3 +1127,41 @@
 	for(var/i in 1 to 4)
 		TEST_ASSERT_EQUAL(B.compiled_intervals[i], before[i], "compiled intervals unchanged")
 		TEST_ASSERT_EQUAL(B.relevance[i], relevance_before[i], "declaration unchanged")
+
+// ---------------------------------------------------------------- declared caches
+
+/datum/om_test_entity/cached
+	var/datum/on_change_cache
+	var/datum/on_event_cache
+	var/datum/on_relation_cache
+
+/datum/om_test_entity/cached/declared_cache_vars()
+	var/static/list/caches = list(
+		"on_change_cache" = CACHE_ON_CHANGE(CHANGE_EXPLICIT),
+		"on_event_cache" = CACHE_ON_EVENT(/datum/om/event/test/sub),
+		"on_relation_cache" = CACHE_ON_RELATION(/datum/om/relation/test_link),
+	)
+	return caches
+
+/// A declared cache is nulled by the core when its rule fires, and only then.
+/datum/unit_test/om/declared_cache_cleared_by_rule
+
+/datum/unit_test/om/declared_cache_cleared_by_rule/run_om(list/made)
+	var/datum/om_test_entity/cached/E = entity(made, /datum/om_test_entity/cached)
+	var/datum/om_test_entity/other = entity(made)
+	om_rec_of(E)
+	E.on_change_cache = other
+	E.on_event_cache = other
+	E.on_relation_cache = other
+	om_changed(E, CHANGE_CONTENTS)
+	TEST_ASSERT(E.on_change_cache == other, "an unrelated channel leaves the cache")
+	om_changed(E, CHANGE_EXPLICIT)
+	TEST_ASSERT_NULL(E.on_change_cache, "the declared channel clears the cache")
+	TEST_ASSERT(E.on_event_cache == other, "a change doesn't clear an event cache")
+	om_emit(E, new /datum/om/event/test/other)
+	TEST_ASSERT(E.on_event_cache == other, "another event leaves the cache")
+	om_emit(E, new /datum/om/event/test/sub)
+	TEST_ASSERT_NULL(E.on_event_cache, "the declared event clears the cache")
+	TEST_ASSERT(E.on_relation_cache == other, "no edge yet")
+	om_link(E, other, /datum/om/relation/test_link)
+	TEST_ASSERT_NULL(E.on_relation_cache, "linking the declared relation clears the cache")

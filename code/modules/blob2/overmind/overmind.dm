@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(overminds)
 
 /mob/observer/blob
 	name = "Blob Overmind"
@@ -36,7 +35,6 @@ GLOBAL_LIST_EMPTY(overminds)
 	if(pre_placed) //we already have a core!
 		placed = 1
 
-	GLOB.overminds += src
 	var/new_name = "[initial(name)] ([rand(1, 999)])"
 	name = new_name
 	real_name = new_name
@@ -56,6 +54,8 @@ GLOBAL_LIST_EMPTY(overminds)
 
 	return ..()
 
+REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
+
 /mob/observer/blob/Destroy()
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
@@ -67,7 +67,6 @@ GLOBAL_LIST_EMPTY(overminds)
 			BM.overmind = null
 			BM.update_icons()
 
-	GLOB.overminds -= src
 	return ..()
 
 /mob/observer/blob/get_status_tab_items()
@@ -150,18 +149,14 @@ GLOBAL_LIST_EMPTY(overminds)
 			custom_emote(VISIBLE_MESSAGE, "[pick(S.speaking.signlang_verb)].")
 
 	for(var/mob/M in listening)
-		spawn()
-			if(M && src)
-				if(get_dist(M, src) <= world.view || (M.stat == DEAD && !forbid_seeing_deadchat))
-					M.hear_say(message_pieces, "conveys", (M.faction == blob_type.faction), src)
+		if(get_dist(M, src) <= world.view || (M.stat == DEAD && !forbid_seeing_deadchat))
+			M.hear_say(message_pieces, "conveys", (M.faction == blob_type.faction), src)
 
 	//Object message delivery
 	for(var/obj/O in listening_obj)
-		spawn(0)
-			if(O && src) //If we still exist, when the spawn processes
-				var/dst = get_dist(get_turf(O),get_turf(src))
-				if(dst <= world.view)
-					O.hear_talk(src, message_pieces, "conveys")
+		var/dst = get_dist(get_turf(O),get_turf(src))
+		if(dst <= world.view)
+			O.hear_talk(src, message_pieces, "conveys")
 
 	log_talk(message, LOG_SAY)
 	return 1

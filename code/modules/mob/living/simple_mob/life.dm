@@ -251,10 +251,10 @@
 /// Organ processing.
 /datum/om/stage/life/guts/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	for(var/obj/item/organ/OR in self.internal_organs)
-		OR.process()
+		OR.periodic_step()
 
 	for(var/obj/item/organ/OR in self.organs)
-		OR.process()
+		OR.periodic_step()
 
 /// Only mobs carrying real organ objects process them (most list organ paths for butchery).
 /datum/om/stage/life/guts/idle(mob/living/simple_mob/self)
@@ -294,7 +294,7 @@
 	update_icon_timer = addtimer(CALLBACK(src, PROC_REF(callback_update_icon)), 0.3 SECONDS, TIMER_STOPPABLE)
 
 	ghostjoin = 0
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 	ghostjoin_icon()
 	return ..(gibbed,deathmessage)
 

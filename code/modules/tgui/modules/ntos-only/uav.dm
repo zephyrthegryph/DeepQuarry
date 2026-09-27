@@ -30,8 +30,8 @@
 	var/list/paired_map = list()
 	var/obj/item/modular_computer/mc_host = tgui_host()
 	if(istype(mc_host))
-		for(var/datum/weakref/wr as anything in mc_host.paired_uavs)
-			var/obj/item/uav/U = wr.resolve()
+		for(var/wr as anything in mc_host.paired_uavs)
+			var/obj/item/uav/U = om_resolve(wr)
 			paired_map.Add(list(list("name" = "[U ? U.nickname : "!!Missing!!"]", "uavref" = "\ref[U]")))
 
 	data["paired_uavs"] = paired_map
@@ -58,12 +58,12 @@
 		if("del_uav")
 			var/refstring = params["del_uav"] //This is a \ref to the UAV itself
 			var/obj/item/modular_computer/mc_host = tgui_host()
-			//This is so we can really scrape up any weakrefs that can't resolve
-			for(var/datum/weakref/wr in mc_host.paired_uavs)
-				if(wr.reference == refstring)
-					if(current_uav?.weak_reference == wr)
+			//Deleted UAVs don't resolve, so match on the \ref the UI sent (\ref[null] for those)
+			for(var/h in mc_host.paired_uavs)
+				if("\ref[om_resolve(h)]" == refstring)
+					if(current_uav && om_handle(current_uav) == h)
 						set_current(null)
-					LAZYREMOVE(mc_host.paired_uavs, wr)
+					LAZYREMOVE(mc_host.paired_uavs, h)
 			return TRUE
 
 		if("view_uav")
@@ -170,7 +170,7 @@
 	user.reset_perspective()
 
 /datum/tgui_module/uav/proc/viewing_uav(mob/user)
-	return (WEAKREF(user) in viewers)
+	return (om_handle(user) in viewers)
 
 /datum/tgui_module/uav/look(mob/user)
 	if(issilicon(user)) //Too complicated for me to want to mess with at the moment
@@ -179,12 +179,12 @@
 	if(!current_uav)
 		return
 	current_uav.add_master(user)
-	LAZYDISTINCTADD(viewers, WEAKREF(user))
+	LAZYDISTINCTADD(viewers, om_handle(user))
 
 /datum/tgui_module/uav/unlook(mob/user)
 	if(current_uav)
 		current_uav.remove_master(user)
-	LAZYREMOVE(viewers, WEAKREF(user))
+	LAZYREMOVE(viewers, om_handle(user))
 
 /datum/tgui_module/uav/tgui_close(mob/user)
 	. = ..()

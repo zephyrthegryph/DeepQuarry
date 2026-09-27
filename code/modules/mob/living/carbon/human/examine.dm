@@ -291,12 +291,7 @@
 			msg += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
 		if(ishuman(user) && !user.stat && Adjacent(user))
 			user.visible_message(span_infoplain(span_bold("[user]") + " checks [src]'s pulse."), span_infoplain("You check [src]'s pulse."))
-		spawn(15)
-			if(isobserver(user) || (Adjacent(user) && !user.stat)) // If you're a corpse then you can't exactly check their pulse, but ghosts can see anything
-				if(pulse == PULSE_NONE)
-					to_chat(user, span_deadsay("[p_They()] [p_have()] no pulse[src.client ? "" : " and [p_their()] soul has departed"]..."))
-				else
-					to_chat(user, span_deadsay("[p_They()] [p_have()] a pulse!"))
+		om_after(src, 15, PROC_REF(pulse_check_result), user)
 
 	if(fire_stacks)
 		msg += "[p_Theyre()] covered in some liquid."
@@ -630,3 +625,11 @@
 				continue
 
 			. += span_notice("[p_They()] [p_have()] \"[writing]\" written on [p_their()] [parse_zone(bodypart)].")
+
+/// The result of a pulse check started from examine, a moment later.
+/mob/living/carbon/human/proc/pulse_check_result(mob/user)
+	if(isobserver(user) || (Adjacent(user) && !user.stat)) // If you're a corpse then you can't exactly check their pulse, but ghosts can see anything
+		if(pulse == PULSE_NONE)
+			to_chat(user, span_deadsay("[p_They()] [p_have()] no pulse[src.client ? "" : " and [p_their()] soul has departed"]..."))
+		else
+			to_chat(user, span_deadsay("[p_They()] [p_have()] a pulse!"))

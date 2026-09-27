@@ -169,6 +169,23 @@ def check_byondapi_deps(allowed: dict[tuple[str, str], str], used: set[tuple[str
     return failures
 
 
+# A domain crate depends on vg-core only: never on byondapi (checked above),
+# the FFI crates, or another domain.
+FORBIDDEN_DEPS = re.compile(r"^\s*(vg-ffi|auxmacros|auxcallback|vg-gas|vg-heat|vg-power)\s*=")
+
+
+def check_crate_deps() -> list[str]:
+    failures: list[str] = []
+    for crate_dir in DOMAIN_CRATE_DIRS:
+        name = crate_dir.name
+        cargo = crate_dir / "Cargo.toml"
+        if cargo.is_file():
+            for line in cargo.read_text(encoding="utf-8", errors="replace").splitlines():
+                if FORBIDDEN_DEPS.match(line):
+                    failures.append(f"verdigris/domains/{name}/Cargo.toml: [crate_dep] {line.strip()}")
+    return failures
+
+
 def main() -> int:
     allowed = load_allowlist()
     used: set[tuple[str, str]] = set()
@@ -202,6 +219,7 @@ def main() -> int:
                 failures.append(f"{rel}:{lineno}: [reexport_shim] {line.strip()}")
 
     failures.extend(check_byondapi_deps(allowed, used))
+    failures.extend(check_crate_deps())
 
     for key in sorted(set(allowed) - used):
         failures.append(

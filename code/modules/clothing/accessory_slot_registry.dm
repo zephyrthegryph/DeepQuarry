@@ -76,7 +76,7 @@
 /datum/accessory_slot_registry
 	/// Assoc list of slot_flag (number) → display name (string).
 	var/list/slot_names = list()
-	/// Assoc list of accessory weakref key → list of /datum/accessory_stat_modifier.
+	/// Assoc list of accessory OM handle key → list of /datum/accessory_stat_modifier.
 	/// Key format: "[accessory]:[clothing]" (uses ref strings for stable keys).
 	var/list/active_modifiers
 

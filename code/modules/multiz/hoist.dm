@@ -196,8 +196,7 @@
 		size = O.w_class
 
 	user.visible_message(span_notice("[user] begins to [movtext] \the [hoistee]!"), span_notice("You begin to [movtext] \the [hoistee]!"), span_notice("You hear the sound of a crank."))
-	if (do_after(user, (1 SECONDS) * size / 4, target = src))
-		move_dir(movedir, 1)
+	om_do_after(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
 
 /obj/structure/hoist/proc/collapse_kit()
 	new /obj/item/hoist_kit(get_turf(src))

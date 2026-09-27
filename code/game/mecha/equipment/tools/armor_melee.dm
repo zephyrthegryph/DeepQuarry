@@ -30,7 +30,6 @@
 		inc_damage *= damage_coeff
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)
-	spawn()
-		do_after_cooldown()
+	start_cooldown()
 	return max(0, inc_damage)
 

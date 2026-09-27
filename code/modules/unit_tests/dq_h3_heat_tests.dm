@@ -108,7 +108,7 @@
 			break
 	TEST_ASSERT(hot, "above it the window overheats")
 	var/before = window.get_integrity()
-	hot.process(1)
+	hot.periodic_step(1)
 	TEST_ASSERT(window.get_integrity() < before, "and takes thermal damage through the pipeline")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit - 50)
 	TEST_ASSERT_NULL(window.GetComponent(/datum/component/overheating), "cooled below it, the stream stops")
@@ -144,7 +144,7 @@
 /datum/unit_test/dq_h3_appliance_energy/Run()
 	dq_h3_cool_floor(test_floor())
 	var/obj/machinery/appliance/cooker/oven/oven = allocate(/obj/machinery/appliance/cooker/oven, test_floor())
-	STOP_MACHINE_PROCESSING(oven)
+	MACHINE_SLEEP(oven)
 	oven.set_heating(TRUE)
 	TEST_ASSERT(!isnull(oven.heat_body), "a heating cooker is a heat body")
 	// Isolate it from the room so every joule stays in the oven and its contents.
@@ -154,18 +154,19 @@
 		TEST_ASSERT(!isnull(CI.container.heat_body), "its containers are coupled to it")
 		things += CI.container
 	// The heat source adds energy.
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	var/start = dq_h3_energy(things)
-	vg_heat_debug_run_frames(5)
+	// Ten 0.5 s world steps: five seconds.
+	vg_world_run_steps(10)
 	TEST_ASSERT(dq_h3_energy(things) - start >= oven.heating_power * 4, "the heat source put at least four seconds of power in")
 	// With the source off, the hot oven heats its contents and no joule is
 	// made or lost: the isolated oven plus contents keep their energy.
 	vg_heat_body_power(oven.heat_body, 0)
 	vg_heat_body_set_temperature(oven.heat_body, oven.optimal_temp)
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	start = dq_h3_energy(things)
 	var/contents_start = dq_h3_energy(things - oven)
-	vg_heat_debug_run_frames(10)
+	vg_world_run_steps(20)
 	var/moved = dq_h3_energy(things - oven) - contents_start
 	var/drift = abs(dq_h3_energy(things) - start)
 	TEST_ASSERT(moved > 0, "the oven heated its contents")
@@ -190,11 +191,11 @@
 	TEST_ASSERT(!isnull(fuelled.heat_body), "burning is a heat source on the object's body")
 	var/integrity = fuelled.get_integrity()
 	var/oxygen = air.get_moles(GAS_O2)
-	burn.process(1)
+	burn.periodic_step(1)
 	TEST_ASSERT(fuelled.get_integrity() < integrity, "a second of burning is an integrity damage stream")
 	TEST_ASSERT(air.get_moles(GAS_O2) < oxygen, "and uses the tile's oxygen")
 	burn.fuel = 1
-	burn.process(1)
+	burn.periodic_step(1)
 	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_FUEL, "it goes out when the fuel runs out")
 	TEST_ASSERT(!(fuelled.resistance_flags & ON_FIRE), "and is no longer on fire")
 
@@ -203,7 +204,7 @@
 	smothered.rule_ignite()
 	burn = smothered.GetComponent(/datum/component/burning)
 	air.set_moles(GAS_O2, 0)
-	burn.process(1)
+	burn.periodic_step(1)
 	air.set_moles(GAS_O2, 20)
 	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_OXYGEN, "it goes out without oxygen")
 
@@ -237,7 +238,7 @@
 	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
-	// Was a fixed vg_heat_debug_run_frames(3): that assumed 3 frames is always
+	// Was a fixed vg_world_run_steps(3): that assumed 3 frames is always
 	// enough for the heat domain to measurably warm the probe, which held only
 	// by accident when this test ran on a floor left warm by a previous test
 	// sharing the same turf. wait_for_condition() is the right replacement for
@@ -249,7 +250,7 @@
 	// of adding 30+ seconds to every run while that's open.
 	var/heated = wait_for_condition(
 		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
-		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_heat_debug_run_frames), 1),
+		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_world_run_steps), 1),
 		20,
 	)
 	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")

@@ -66,8 +66,10 @@
 /obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
 	if(!panel_open || !isturf(loc))
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 5))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 5, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(mob/user)
 	drop_held_container()
 	to_chat(user, span_notice("You disassemble \the [src]."))
 	new /obj/item/stack/material/steel(get_turf(src), 1)
@@ -108,6 +110,7 @@
 	// Begin boiling: the flame is a heat source on the burner's heat body.
 	visible_message(span_notice("\The [src] starts to heat \the [held_container]."))
 	heating = TRUE
+	MACHINE_WAKE(src)
 	if(create_heat_body(TRUE))
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heat_power)
@@ -119,9 +122,10 @@
 	held_container.forceMove(get_turf(src))
 	held_container = null
 
-/obj/machinery/bunsen_burner/process()
+/// Boils its container while heating; otherwise it sleeps until start_boiling().
+/obj/machinery/bunsen_burner/machine_step()
 	if(!heating)
-		return
+		return PROCESS_KILL
 
 	if(held_container && !anchored)
 		drop_held_container()

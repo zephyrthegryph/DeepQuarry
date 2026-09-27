@@ -72,7 +72,6 @@
 				add_overlay(filling)
 
 /obj/structure/medical_stand/Destroy()
-	STOP_PROCESSING(SSobj,src)
 	if(breather)
 		breather.internal = null
 		breather.internals?.icon_state = "internal0"
@@ -119,52 +118,70 @@
 					return
 				if (breather)
 					src.add_fingerprint(user)
-					if(!do_after(user, 3 SECONDS, target) || !can_apply_to_target(target, user))
-						return
-					if(tank)
-						tank.forceMove(src)
-					if (breather.get_equipped_item(SLOT_ID_MASK) == contained)
-						breather.remove_from_mob(contained)
-						contained.forceMove(src)
-					else
-						qdel(contained)
-						contained = new mask_type(src)
-					breather = null
-					src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
-					update_icon()
+					om_do_after(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
 					return
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " begins carefully placing the mask onto [target]."),
 							span_notice("You begin carefully placing the mask onto [target]."))
-				if(!do_after(user, 10 SECONDS, target) || !can_apply_to_target(target, user))
-					return
-				// place mask and add fingerprints
-				user.visible_message(span_notice("\The [user] has placed \the mask on [target]'s mouth."),
-									span_notice("You have placed \the mask on [target]'s mouth."))
-				if(attach_mask(target))
-					src.add_fingerprint(user)
-					update_icon()
-					START_PROCESSING(SSobj,src)
+				om_do_after(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
 				return
 			if("Drip needle")
 				if(attached)
-					if(!do_after(user, 2 SECONDS, target))
-						return
-					visible_message("\The [attached] is taken off \the [src]")
-					attached = null
+					om_do_after(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
 				else if(ishuman(target))
 					user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
 									span_notice("You begin inserting needle into [target]'s vein."))
-					if(!do_after(user, 5 SECONDS, target))
-						user.visible_message(span_notice("\The [user]'s hand slips and pricks \the [target]."),
-									span_notice("Your hand slips and pricks \the [target]."))
-						target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
-						return
-					user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
-									span_notice("You hook \the [target] up to \the [src]."))
-					attached = target
-					START_PROCESSING(SSobj,src)
+					om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_inserted), done_args = list(target, user), on_fail = PROC_REF(needle_slipped), fail_args = list(target, user))
 				update_icon()
 
+/obj/structure/medical_stand/proc/needle_removed()
+	if(!attached)
+		return
+	visible_message("\The [attached] is taken off \the [src]")
+	attached = null
+	update_icon()
+
+/obj/structure/medical_stand/proc/needle_slipped(mob/living/carbon/human/target, mob/user)
+	if(!target || !user)
+		return
+	user.visible_message(span_notice("\The [user]'s hand slips and pricks \the [target]."),
+				span_notice("Your hand slips and pricks \the [target]."))
+	target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
+
+/obj/structure/medical_stand/proc/needle_inserted(mob/living/carbon/human/target, mob/user)
+	if(attached)
+		return
+	user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
+					span_notice("You hook \the [target] up to \the [src]."))
+	attached = target
+	PERIODIC_START(src, PERIODIC_SLOW)
+	update_icon()
+
+/obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
+	if(!can_apply_to_target(target, user))
+		return
+	if(tank)
+		tank.forceMove(src)
+	if (breather.get_equipped_item(SLOT_ID_MASK) == contained)
+		breather.remove_from_mob(contained)
+		contained.forceMove(src)
+	else
+		qdel(contained)
+		contained = new mask_type(src)
+	breather = null
+	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
+	update_icon()
+	return
+/obj/structure/medical_stand/proc/MouseDrop_timed_done2(mob/living/carbon/human/target, mob/user)
+	if(!can_apply_to_target(target, user))
+		return
+	// place mask and add fingerprints
+	user.visible_message(span_notice("\The [user] has placed \the mask on [target]'s mouth."),
+						span_notice("You have placed \the mask on [target]'s mouth."))
+	if(attach_mask(target))
+		src.add_fingerprint(user)
+		update_icon()
+		PERIODIC_START(src, PERIODIC_SLOW)
+	return
 
 /obj/structure/medical_stand/attack_hand(mob/user as mob)
 	var/list/available_options = list()
@@ -189,7 +206,7 @@
 				user.put_in_hands(tank)
 				tank = null
 				valve_opened = FALSE
-				STOP_PROCESSING(SSobj, src)
+				PERIODIC_STOP(src)
 				update_icon()
 				return
 			else if (!is_loosen)
@@ -217,7 +234,7 @@
 					valve_opened = TRUE
 					//playsound(src, 'sound/effects/internals.ogg', 100, 1)
 					update_icon()
-					START_PROCESSING(SSobj,src)
+					PERIODIC_START(src, PERIODIC_SLOW)
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
@@ -357,7 +374,7 @@
 	else
 		. += span_notice("There is no tank.")
 
-/obj/structure/medical_stand/process()
+/obj/structure/medical_stand/periodic_step()
 	//Gas Stuff
 	if(breather)
 		if(!can_apply_to_target(breather))

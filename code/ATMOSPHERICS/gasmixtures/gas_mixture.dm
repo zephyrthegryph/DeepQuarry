@@ -140,8 +140,32 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /proc/read_gas_mixtures(list/mixtures)
 	return vg_read_mixtures(mixtures)
 
-/proc/watch_dirty_gas_mixture(mixture_id, interest_mask = GAS_DEPENDENCY_ALL)
-	return vg_watch_dirty_gas_mixture(mixture_id, interest_mask)
+/**
+ * A gas dependency watch (code/datums/om/native.dm): `mixture_id` changing
+ * in any GAS_DEPENDENCY_* bit of `mask` calls `callback` on the owner as
+ * (watch, mixture_id, change_mask, list/observation, observation_index); the
+ * observation record (from the mixture id on) is described at
+ * vg_drain_dirty_gas_observations().
+ */
+/datum/native_watch/gas
+	var/mixture_id
+	var/mask = GAS_DEPENDENCY_ALL
+
+/datum/native_watch/gas/register()
+	vg_watch_dirty_gas_mixture(mixture_id, handle, mask)
+	return TRUE
+
+/datum/native_watch/gas/unregister()
+	vg_unwatch_dirty_gas_mixture(handle)
+
+/proc/gas_dependency_watch(datum/owner, mixture_id, mask, callback)
+	if(isnull(mixture_id) || !mask)
+		return null
+	var/datum/native_watch/gas/W = new(owner, callback)
+	W.mixture_id = mixture_id
+	W.mask = mask
+	W.register()
+	return W
 
 /datum/gas_mixture/proc/total_moles()
 	return vg_total_moles_hook(src)

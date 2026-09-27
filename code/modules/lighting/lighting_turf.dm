@@ -144,7 +144,7 @@
 	return (IS_DYNAMIC_LIGHTING(src) && IS_DYNAMIC_LIGHTING(A))
 
 /// The turf moved to another area: lights on it follow the new area's power key
-/// (REACT_KEY_AREA_POWER). Paths that move turfs with a bare `area.contents +=` skip this
+/// (KEY_AREA_POWER). Paths that move turfs with a bare `area.contents +=` skip this
 /// until M3's area channel event replaces the key.
 /turf/proc/reactor_area_changed()
 	for(var/obj/machinery/light/L in src)

@@ -47,8 +47,7 @@
 
 /obj/effect/meteor_falling/proc/meteor_impact()
 	var/turf/current = get_turf(src)
-	spawn()
-		explosion(current, -1, 2, 4, 8, 0) //Was previously 2,4,6,10. Way too big.
+	explosion(current, -1, 2, 4, 8, 0) //Was previously 2,4,6,10. Way too big.
 	anim(get_step(current,SOUTHWEST),, 'icons/effects/96x96.dmi',, "explosion")
 	new /obj/structure/meteorite(current)
 
@@ -58,7 +57,7 @@
 			impacted = P
 			break
 	if(impacted)
-		for(var/mob/living/L in GLOB.mob_list)
+		for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if(!istype(L))
 				continue
 			var/turf/mob_turf = get_turf(L)
@@ -96,16 +95,16 @@
 			new /obj/machinery/artifact(src)
 	AddElement(/datum/element/climbable)
 
+/obj/structure/meteorite/proc/break_apart_done(mob/M)
+	M.visible_message(span_warning("[M] breaks apart \the [src]."), span_warning("You break apart \the [src]."))
+	for(var/obj/O in src)
+		O.forceMove(get_turf(src))
+	qdel(src)
+
 /obj/structure/meteorite/attackby(obj/item/I, mob/M)
 	if(istype(I, /obj/item/pickaxe))
 		var/obj/item/pickaxe/P = I
 		M.visible_message(span_warning("[M] starts [P.drill_verb] \the [src]."), span_warning("You start [P.drill_verb] \the [src]."))
 
-		if(!do_after(M, P.digspeed*3, target = src))
-			return
-
-		M.visible_message(span_warning("[M] breaks apart \the [src]."), span_warning("You break apart \the [src]."))
-		for(var/obj/O in src)
-			O.forceMove(get_turf(src))
-		qdel(src)
+		om_do_after(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
 		return

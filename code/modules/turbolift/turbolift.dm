@@ -29,9 +29,7 @@
 	cancel_pending_floors()
 	update_ext_panel_icons()
 	control_panel_interior.audible_message(span_info("This turbolift is responding to a priority call.  Please exit the lift when it stops and make way."), runemessage = "BUZZ")
-	spawn(time)
-		priority_mode = FALSE
-		update_ext_panel_icons()
+	om_after(src, time, PROC_REF(end_priority_mode))
 
 /datum/turbolift/proc/update_fire_mode(new_fire_mode)
 	if(fire_mode == new_fire_mode)
@@ -86,22 +84,20 @@
 /datum/turbolift/proc/open_doors(datum/turbolift_floor/use_floor = current_floor)
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
 		//door.command("open")
-		spawn(0)
-			door.open()
+		door.open()
 	return
 
 /datum/turbolift/proc/close_doors(datum/turbolift_floor/use_floor = current_floor)
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
 		//door.command("close")
-		spawn(0)
-			door.close()
+		door.close()
 	return
 
 #define LIFT_MOVING    1	// Lift will try moving.
 #define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/process()
+/datum/turbolift/periodic_step()
 	if(world.time < next_process)
 		return
 	switch(busy_state)
@@ -213,7 +209,7 @@
 	floor.pending_move(src)
 	LAZYOR(queued_floors, floor)
 	busy_state = LIFT_MOVING
-	START_PROCESSING(SSprocessing, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.
 /datum/turbolift/proc/is_functional()
@@ -222,3 +218,7 @@
 #undef LIFT_MOVING
 #undef LIFT_WAITING_A
 #undef LIFT_WAITING_B
+
+/datum/turbolift/proc/end_priority_mode()
+	priority_mode = FALSE
+	update_ext_panel_icons()

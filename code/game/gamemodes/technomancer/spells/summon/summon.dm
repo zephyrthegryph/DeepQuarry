@@ -17,20 +17,22 @@
 		var/obj/effect/E = new(T)
 		E.icon = 'icons/obj/objects.dmi'
 		E.icon_state = "anom"
-		sleep(5 SECONDS)
-		qdel(E)
-		if(owner) // We might've been dropped.
-			var/mob/living/L = new summoned_mob_type(T)
-			LAZYOR(core.summoned_mobs, L)
-			L.summoned = 1
-			var/image/summon_underlay = image('icons/obj/objects.dmi',"anom")
-			summon_underlay.alpha = 127
-			L.underlays |= summon_underlay
-			on_summon(L)
-			to_chat(user, span_notice("You've successfully teleported \a [L] to you!"))
-			visible_message(span_warning("\A [L] appears from no-where!"))
-			log_and_message_admins("has summoned \a [L] at [T.x],[T.y],[T.z].")
-			user.adjust_instability(instability_cost)
+		om_after(src, 5 SECONDS, PROC_REF(summon_arrives), E, T, user)
+
+/obj/item/spell/summon/proc/summon_arrives(obj/effect/E, turf/T, mob/living/user)
+	qdel(E)
+	if(owner) // We might've been dropped.
+		var/mob/living/L = new summoned_mob_type(T)
+		LAZYOR(core.summoned_mobs, L)
+		L.summoned = 1
+		var/image/summon_underlay = image('icons/obj/objects.dmi',"anom")
+		summon_underlay.alpha = 127
+		L.underlays |= summon_underlay
+		on_summon(L)
+		to_chat(user, span_notice("You've successfully teleported \a [L] to you!"))
+		visible_message(span_warning("\A [L] appears from no-where!"))
+		log_and_message_admins("has summoned \a [L] at [T.x],[T.y],[T.z].")
+		user.adjust_instability(instability_cost)
 
 /obj/item/spell/summon/on_use_cast(mob/living/user)
 	if(length(summon_options))

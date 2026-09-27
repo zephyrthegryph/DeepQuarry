@@ -140,8 +140,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(stage == 3)
 		to_chat(user, "You have to unscrew the case first.")
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src]."))
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
 	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
 	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)
@@ -261,10 +263,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/tmp/emergency_recharge_at = 0
 	var/tmp/emergency_discharge_at = 0
 	var/emergency_discharge_started
-	/// Reactor state: the area power key, the one REACT_AT on next_light_deadline(), and the
-	/// auto-flicker chunk keys and recheck.
-	var/tmp/area_power_token
-	var/tmp/area_power_area_id = 0
+	/// Wake state: the area whose power it watches, the one om_after() timer on
+	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
+	var/tmp/area/area_power_token
 	var/tmp/last_area_power = null
 	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
@@ -1010,22 +1011,35 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 //blob effect
 
-// A light sleeps on its area's power key (REACT_KEY_AREA_POWER), one REACT_AT for its
+// A light sleeps on its area's CHANGE_AREA_POWER channel, one om_after() timer for its
 // earliest deadline (emergency discharge and recharge, the auto-flicker recheck) and, for an
-// auto-flicker light running on its cell, the player chunk keys around it (reactor.md §9).
+// auto-flicker light running on its cell, the player chunk keys around it.
 
 /// Subscribes to the current area's power key (again, if the area changed).
 /obj/machinery/light/proc/subscribe_area_power()
 	var/area/A = get_area(src)
-	var/id = A ? REACT_ID(A) : 0
-	if(id == area_power_area_id && (!isnull(area_power_token) || !id))
+	if(A == area_power_token)
 		return
-	if(!isnull(area_power_token))
-		REACT_CANCEL(src, area_power_token)
+	if(area_power_token)
+		om_unwatch(src, area_power_token, /datum/om/behaviour/sleeper/light)
 		area_power_token = null
-	area_power_area_id = id
-	if(id)
-		area_power_token = REACT_ON_KEY(src, REACT_KEY_AREA_POWER, id, REACT_AREA_POWER_CHANGED)
+	if(A)
+		om_attach(src, /datum/om/behaviour/sleeper/light)
+		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
+		area_power_token = A
+
+/// Area power changes and players moving near a waiting auto-flicker light.
+/datum/om/behaviour/sleeper/light
+	name = "light"
+
+/datum/om/behaviour/sleeper/light/on_wake(obj/machinery/light/L, changes)
+	if(QDELETED(L))
+		return
+	L.area_power_changed()
+	// A player moved near an auto-flicker light that is waiting in the dark.
+	if(L.flicker_chunk_tokens && !L.flicker_check_at)
+		L.auto_flicker_check()
+	L.schedule_light_timer()
 
 /obj/machinery/light/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
@@ -1043,39 +1057,32 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(deadline == light_timer_at && (!isnull(light_timer_token) || !deadline))
 		return
 	if(!isnull(light_timer_token))
-		REACT_CANCEL(src, light_timer_token)
+		om_cancel_timer(src, light_timer_token)
 		light_timer_token = null
 	light_timer_at = deadline
 	if(deadline)
-		light_timer_token = REACT_AT(src, deadline)
+		light_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(light_timer_fired))
 
-/obj/machinery/light/on_react(reason, source, source_kind)
-	. = ..()
+/obj/machinery/light/proc/light_timer_fired()
+	light_timer_token = null
+	light_timer_at = 0
 	if(QDELETED(src))
 		return
-	if(reason & REACT_REASON_KEY)
-		area_power_changed()
-		// A player moved near an auto-flicker light that is waiting in the dark.
-		if(flicker_chunk_tokens && !flicker_check_at)
-			auto_flicker_check()
-	if(reason & REACT_REASON_TIMER)
-		light_timer_token = null
-		light_timer_at = 0
-		if(emergency_discharge_at && world.time >= emergency_discharge_at)
-			continue_emergency_discharge()
-		if(emergency_recharge_at && world.time >= emergency_recharge_at)
-			finish_emergency_recharge()
-		if(flicker_check_at && world.time >= flicker_check_at)
-			flicker_check_at = 0
-			auto_flicker_check()
+	if(emergency_discharge_at && world.time >= emergency_discharge_at)
+		continue_emergency_discharge()
+	if(emergency_recharge_at && world.time >= emergency_recharge_at)
+		finish_emergency_recharge()
+	if(flicker_check_at && world.time >= flicker_check_at)
+		flicker_check_at = 0
+		auto_flicker_check()
 	schedule_light_timer()
 
-/obj/machinery/light/react_sleep_violation()
+/obj/machinery/light/om_sleep_violation()
 	var/deadline = next_light_deadline()
 	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	if(get_area(src) && isnull(area_power_token))
-		return "not subscribed to an area power key"
+		return "not watching its area's power"
 	return null
 
 /// The area's power_change() ran: act only if this light's power actually changed.
@@ -1151,12 +1158,13 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/proc/start_flicker_watch()
 	if(!auto_flicker || flicker_chunk_tokens)
 		return
-	flicker_chunk_tokens = SSreactor.subscribe_player_chunks(src, get_turf(src), 12)
+	om_attach(src, /datum/om/behaviour/sleeper/light)
+	flicker_chunk_tokens = watch_mob_chunks(src, mob_chunks_around(get_turf(src), 12), CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/light)
 	auto_flicker_check()
 
 /obj/machinery/light/proc/stop_flicker_watch()
 	if(flicker_chunk_tokens)
-		flicker_chunk_tokens = SSreactor.unsubscribe_player_chunks(src, flicker_chunk_tokens)
+		flicker_chunk_tokens = unwatch_mob_chunks(src, flicker_chunk_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/light)
 	flicker_check_at = 0
 
 /obj/machinery/light/proc/auto_flicker_check()
@@ -1175,7 +1183,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		flicker_check_at = 0
 	schedule_light_timer()
 
-// Area power reaches lights through REACT_KEY_AREA_POWER (on_react), not the area's scan of
+// Area power reaches lights through CHANGE_AREA_POWER (the light sleeper), not the area's scan of
 // its machines, so this does nothing.
 /obj/machinery/light/power_change()
 	return
@@ -1193,12 +1201,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/proc/explode()
 	var/turf/T = get_turf(src.loc)
-	spawn(0)
-		broken()	// break it first to give a warning
-		sleep(2)
-		explosion(T, 0, 0, 2, 2)
-		sleep(1)
-		qdel(src)
+	broken()	// break it first to give a warning
+	om_after(src, 2, PROC_REF(explode_now), T)
+
+/obj/machinery/light/proc/explode_now(turf/T)
+	explosion(T, 0, 0, 2, 2)
+	om_qdel_after(src, 1)
 
 // the light item
 // can be tube or bulb subtypes
@@ -1724,4 +1732,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/broken/small/Initialize(mapload)
 	. = ..()
+	broken()
+
+/// A power surge blows the light.
+/obj/machinery/light/proc/surge_break()
+	on = 1
 	broken()

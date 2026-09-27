@@ -1,14 +1,27 @@
+// Mob registries (code/datums/registry_declarations.dm). Every mob is in
+// REGISTRY_MOBS while materialized; REGISTRY_LIVING_MOBS / REGISTRY_DEAD_MOBS
+// follow its stat and REGISTRY_PLAYERS its client (Login/Logout). All of them
+// drop a mob by themselves when it is deleted.
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_MOBS)
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_LIVING_MOBS)
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_DEAD_MOBS)
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_PLAYERS)
+
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_ENTOPIC_USERS)
+
+REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
+
+/mob/on_materialize()
+	. = ..()
+	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
+
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
-	SSreactor?.publish_mob_chunk(src)
+	publish_mob_chunk(src)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
 
 	persistent_client?.set_mob(null)
 
-	GLOB.mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.player_list -= src
 	unset_machine()
 	clear_fullscreen()
 	if(client)
@@ -51,11 +64,10 @@
 	if(mind)
 		if(mind.current == src)
 			mind.current = null
-		var/mob/living/original = mind.original_character?.resolve()
+		var/mob/living/original = om_resolve(mind.original_character)
 		if(original && original == src)
 			mind.original_character = null
 
-	GLOB.entopic_users -= src // from mob_planes.dm
 	QDEL_NULL(belly_overlay_tgui) // from belly_overlay_tgui.dm
 
 	. = ..()
@@ -81,11 +93,6 @@
 
 /mob/Initialize(mapload)
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MOB_CREATED, src)
-	GLOB.mob_list += src
-	if(stat == DEAD)
-		GLOB.dead_mob_list += src
-	else
-		GLOB.living_mob_list += src
 	lastarea = get_area(src)
 	if(speak_emote)
 		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
@@ -94,7 +101,7 @@
 	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
-	SSreactor?.publish_mob_chunk(src)
+	publish_mob_chunk(src)
 	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
@@ -194,7 +201,7 @@
 			M.create_chat_message(src, "[runemessage || message]", FALSE, list("emote"), audible = FALSE)
 
 /mob/proc/findname(msg)
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (M.real_name == text("[]", msg))
 			return M
 	return 0
@@ -445,7 +452,7 @@
 			"Quit This Round",list("Quit Round","No"))
 			if(extra_check == "Quit Round")
 				//Update any existing objectives involving this mob.
-				for(var/datum/objective/O in GLOB.all_objectives)
+				for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
 					if(O.target == mind)
 						if(O.owner && O.owner.current)
 							to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
@@ -859,56 +866,16 @@
 /mob/proc/embedded_needs_process()
 	return (LAZYLEN(embedded) > 0)
 
-/mob/proc/yank_out_object()
-	set category = "Object"
-	set name = "Yank out object"
-	set desc = "Remove an embedded item at the cost of bleeding and pain."
-	set src in view(1)
-
-	if(!isliving(usr) || !usr.checkClickCooldown())
-		return
-	usr.setClickCooldown(20)
-
-	if(usr.stat == 1)
-		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
-		return
-
-	if(usr.restrained())
-		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
-		return
-
+/mob/proc/yank_out_done(mob/U, obj/item/selection, self)
 	var/mob/S = src
-	var/mob/U = usr
-	var/list/valid_objects = list()
-	var/self = null
-
-	if(S == U)
-		self = 1 // Removing object from yourself.
-
-	valid_objects = get_visible_implants(0)
-	if(!valid_objects.len)
-		if(self)
-			to_chat(src, span_filter_notice("You have nothing stuck in your body that is large enough to remove."))
-		else
-			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
-		return
-
-	var/obj/item/selection = tgui_input_list(usr, "What do you want to yank out?", "Embedded objects", valid_objects)
-
-	if(self)
-		to_chat(src, span_warning("You attempt to get a good grip on [selection] in your body."))
-	else
-		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
-
-	if(!do_after(U, 3 SECONDS, target = src))
-		return
+	var/list/valid_objects
 	if(!selection || !S || !U)
 		return
 
 	if(self)
 		visible_message(span_boldwarning("[src] rips [selection] out of their body."),span_boldwarning("You rip [selection] out of your body."))
 	else
-		visible_message(span_boldwarning("[usr] rips [selection] out of [src]'s body."),span_boldwarning("[usr] rips [selection] out of your body."))
+		visible_message(span_boldwarning("[U] rips [selection] out of [src]'s body."),span_boldwarning("[U] rips [selection] out of your body."))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
 		remove_verb(src, /mob/proc/yank_out_object)
@@ -952,6 +919,50 @@
 		if(!LAZYLEN(pinned))
 			anchored = FALSE
 	return 1
+
+/mob/proc/yank_out_object()
+	set category = "Object"
+	set name = "Yank out object"
+	set desc = "Remove an embedded item at the cost of bleeding and pain."
+	set src in view(1)
+
+	if(!isliving(usr) || !usr.checkClickCooldown())
+		return
+	usr.setClickCooldown(20)
+
+	if(usr.stat == 1)
+		to_chat(usr, span_filter_notice("You are unconcious and cannot do that!"))
+		return
+
+	if(usr.restrained())
+		to_chat(usr, span_filter_notice("You are restrained and cannot do that!"))
+		return
+
+	var/mob/S = src
+	var/mob/U = usr
+	var/list/valid_objects = list()
+	var/self = null
+
+	if(S == U)
+		self = 1 // Removing object from yourself.
+
+	valid_objects = get_visible_implants(0)
+	if(!valid_objects.len)
+		if(self)
+			to_chat(src, span_filter_notice("You have nothing stuck in your body that is large enough to remove."))
+		else
+			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
+		return
+
+	var/obj/item/selection = tgui_input_list(usr, "What do you want to yank out?", "Embedded objects", valid_objects)
+
+	if(self)
+		to_chat(src, span_warning("You attempt to get a good grip on [selection] in your body."))
+	else
+		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
+
+	om_do_after(U, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(yank_out_done), done_args = list(U, selection, self))
+
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()
@@ -1133,12 +1144,12 @@
 		exploit_addons |= I
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
-		I.exploit_for = WEAKREF(src)
+		I.exploit_for = om_handle(src)
 
 
 /obj/item/Destroy(force, ...)
 	if(exploit_for)
-		var/mob/exploited = exploit_for.resolve()
+		var/mob/exploited = om_resolve(exploit_for)
 		exploited?.exploit_addons -= src
 		exploit_for = null
 	user_vars_remembered = null

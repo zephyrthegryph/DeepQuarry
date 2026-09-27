@@ -90,10 +90,6 @@
 
 // --- Miscellaneous functions ---
 
-// Clone of sleep()
-/proc/delay(time)
-	sleep(time)
-
 // Clone of prob()
 /proc/prob_chance(chance)
 	return prob(chance)

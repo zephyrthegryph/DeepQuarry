@@ -80,24 +80,27 @@
 	return ..()
 
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A)
-	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	do_windup_animation(A, leap_warmup)
-	sleep(leap_warmup) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.
+
+
+/mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
 
 	status_flags |= LEAPING
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	sleep(5)
+	om_after(src, 5, PROC_REF(do_special_attack_2))
+
+/mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
 
 	var/turf/T = get_turf(src)
 
-	. = FALSE
 
 	// Now for the stun.
 	var/mob/living/victim = null
@@ -119,7 +122,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /mob/living/simple_mob/vore/wolf/direwolf/syndicate
 	name = "mercenary commandoggo"
 	desc = "A huge white furred wolfdog, wearing a blood red combat harness. They look ravenously hungry, too..."
@@ -219,23 +222,9 @@
 /mob/living/simple_mob/vore/wolftaur/syndicate/death()
 	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#FFFFFF"
-			else
-				color = "#FF7777"
-			sleep(1)
+	color_sequence(syndimob_warning_flash(delay))
 
-	spawn(delay)
-		// The actual boom.
-		if(src && !exploded)
-			visible_message(span_danger("\The [src]'s body violentl explodes!"))
-			exploded = TRUE
-			new /obj/effect/decal/cleanable/blood/gibs(src.loc)
-			explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-			gib(src)
+	om_after(src, delay, PROC_REF(implant_detonates))
 	return ..()
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/alt1
@@ -310,3 +299,18 @@
 */
 
 ///commented this guy out because i couldn't figure out how to make him do the neat little laser pointer targeting thingy the regular merc sniper does before blastin' - Serdy
+
+/mob/living/simple_mob/vore/wolftaur/syndicate/proc/implant_detonates()
+	// The actual boom.
+	if(src && !exploded)
+		visible_message(span_danger("\The [src]'s body violentl explodes!"))
+		exploded = TRUE
+		new /obj/effect/decal/cleanable/blood/gibs(src.loc)
+		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
+		gib(src)
+
+/// White and pale red, alternating, one colour per decisecond for `steps` deciseconds.
+/proc/syndimob_warning_flash(steps)
+	. = list()
+	for(var/i = 1 to steps)
+		. += (i % 2 == 0) ? "#FFFFFF" : "#FF7777"

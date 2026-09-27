@@ -56,8 +56,12 @@
 		occupant.vr_link.exit_vr()
 	. = ..()
 
-/obj/machinery/vr_sleeper/process()
+/// Watches its occupant (death, power loss) while it has one; empty, it sleeps until someone
+/// gets in.
+/obj/machinery/vr_sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	if(!occupant)
+		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
 		if(occupant)
 			occupant.exit_vr(FALSE)
@@ -218,23 +222,26 @@
 	else
 		visible_message("\The [user] starts putting [M] into \the [src].")
 
-	if(do_after(user, 2 SECONDS, target = src))
-		if(occupant)
-			to_chat(user, span_warning("\The [src] is already occupied."))
-			return
-		M.stop_pulling()
-		if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
-			return
-
-		update_icon()
-
-		if(M.has_brain_worms())
-			to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
-			return
-
-		update_use_power(USE_POWER_ACTIVE)
-		enter_vr()
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 	return
+
+/obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	if(occupant)
+		to_chat(user, span_warning("\The [src] is already occupied."))
+		return
+	M.stop_pulling()
+	if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
+		return
+
+	update_icon()
+
+	if(M.has_brain_worms())
+		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
+		return
+
+	update_use_power(USE_POWER_ACTIVE)
+	enter_vr()
 
 /obj/machinery/vr_sleeper/proc/go_out()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
@@ -298,7 +305,7 @@
 		// Get the desired spawn location to put the body
 		var/S = null
 		var/list/vr_landmarks = list()
-		for(var/obj/effect/landmark/virtual_reality/sloc in GLOB.landmarks_list)
+		for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			vr_landmarks += sloc.name
 
 		S = tgui_input_list(occupant, "Please select a location to spawn your avatar at:", "Spawn location", vr_landmarks)
@@ -312,7 +319,7 @@
 				return 0
 			tf = GLOB.vr_mob_tf_options[k]
 
-		for(var/obj/effect/landmark/virtual_reality/i in GLOB.landmarks_list)
+		for(var/obj/effect/landmark/virtual_reality/i in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(i.name == S)
 				S = i
 				break

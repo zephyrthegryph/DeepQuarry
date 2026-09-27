@@ -405,9 +405,7 @@
 	if(isliving(AM))
 		icon_state = "floor-on"
 		set_light(3,3,"#26c5a9")
-		spawn(5 SECONDS)
-			icon_state = "floor"
-			set_light(0,0,"#ffffff")
+		om_after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
 /turf/simulated/shuttle/plating/airless/carry/attackby(obj/item/C, mob/user) //this is gross
 	if (istype(C, /obj/item/stack/rods))
@@ -449,3 +447,7 @@
 	desc = "It is entirely made of sick, gurgling flesh. It is releasing a sickly odour."
 	icon_state = "bloodfloor_2"
 	icon = 'icons/goonstation/turf/meatland.dmi'
+
+/turf/simulated/floor/flock/proc/crossing_glow_off()
+	icon_state = "floor"
+	set_light(0,0,"#ffffff")

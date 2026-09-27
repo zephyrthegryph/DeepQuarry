@@ -17,10 +17,6 @@
 	var/surface = 2	//surface area in m^2
 	var/icon_temperature = T20C //stop small changes in temperature causing an icon refresh
 	var/stable_temperature_cycles = 0
-	var/sleeping_turf_mixture_id
-	var/sleeping_turf_revision = -1
-	var/sleeping_pipe_mixture_id
-	var/sleeping_pipe_revision = -1
 
 	minimum_temperature_difference = 20
 	thermal_conductivity = OPEN_HEAT_TRANSFER_COEFFICIENT
@@ -57,7 +53,7 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/wake_from_gas()
 	unregister_gas_dependencies()
 	stable_temperature_cycles = 0
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/heat_exchange_actionable()
 	var/datum/gas_mixture/pipe_air = parent?.air
@@ -259,3 +255,8 @@
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/step_has_work()
 	return parent && heat_exchange_actionable()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/arm_wakes()
+	..()
+	register_gas_dependencies()

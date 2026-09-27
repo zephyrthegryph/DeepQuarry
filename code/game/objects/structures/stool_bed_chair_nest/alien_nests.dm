@@ -31,14 +31,17 @@
 					span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin..."),\
 					span_warning("You struggle to break free from the gelatinous resin..."),\
 					span_notice("You hear squelching..."))
-				spawn(NEST_RESIST_TIME)
-					if(user && buckled_mob && BUCKLED(user) == src)
-						buckled_mob.last_special = world.time
-						buckled_mob.pixel_y = 0
-						buckled_mob.old_y = 0
-						unbuckle_mob(buckled_mob)
+				om_after(src, NEST_RESIST_TIME, PROC_REF(struggle_free), user, buckled_mob)
 			src.add_fingerprint(user)
 	return
+
+/// The end of a struggle out of the resin.
+/obj/structure/bed/nest/proc/struggle_free(mob/user, mob/living/buckled_mob)
+	if(BUCKLED(user) == src)
+		buckled_mob.last_special = world.time
+		buckled_mob.pixel_y = 0
+		buckled_mob.old_y = 0
+		unbuckle_mob(buckled_mob)
 
 #undef NEST_RESIST_TIME
 

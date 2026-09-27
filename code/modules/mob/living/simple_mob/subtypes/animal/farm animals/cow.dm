@@ -57,14 +57,7 @@
 		M.visible_message(span_warning("[M] tips over [src]."),span_notice("You tip over [src]."))
 		status_at_least(EFFECT_WEAKENED, 30)
 		icon_state = icon_dead
-		spawn(rand(20,50))
-			if(!stat && M)
-				icon_state = icon_living
-				var/list/responses = list(	"[src] looks at you imploringly.",
-											"[src] looks at you pleadingly",
-											"[src] looks at you with a resigned expression.",
-											"[src] seems resigned to its fate.")
-				to_chat(M, pick(responses))
+		om_after(src, rand(20, 50), PROC_REF(get_up_after_tipping), M)
 	else
 		..()
 
@@ -75,3 +68,12 @@
 
 /datum/decl/mob_organ_names/cow
 	hit_zones = list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "udder")
+
+/mob/living/simple_mob/animal/passive/cow/proc/get_up_after_tipping(mob/M)
+	if(!stat && M)
+		icon_state = icon_living
+		var/list/responses = list(	"[src] looks at you imploringly.",
+									"[src] looks at you pleadingly",
+									"[src] looks at you with a resigned expression.",
+									"[src] seems resigned to its fate.")
+		to_chat(M, pick(responses))

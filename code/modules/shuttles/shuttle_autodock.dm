@@ -138,7 +138,7 @@
 	Please ensure that long_jump() and short_jump() are only called from here. This applies to subtypes as well.
 	Doing so will ensure that multiple jumps cannot be initiated in parallel.
 */
-/datum/shuttle/autodock/process()
+/datum/shuttle/autodock/shuttle_step()
 	switch(process_state)
 		if (WAIT_LAUNCH)
 			if(check_undocked())
@@ -225,8 +225,7 @@
 
 	//whatever we were doing with docking: stop it, then redock
 	force_undock()
-	spawn(1 SECOND)
-		dock()
+	om_after(src, 1 SECOND, PROC_REF(dock))
 
 //returns 1 if the shuttle is getting ready to move, but is not in transit yet
 /datum/shuttle/autodock/proc/is_launching()

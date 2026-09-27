@@ -71,11 +71,11 @@
 		pulse()
 	..(severity)
 
-/obj/machinery/bluespace_denier/HasProximity(turf/T, datum/weakref/WF, oldloc)
+/obj/machinery/bluespace_denier/HasProximity(turf/T, WF, oldloc)
 	if(isnull(WF))
 		return
 
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

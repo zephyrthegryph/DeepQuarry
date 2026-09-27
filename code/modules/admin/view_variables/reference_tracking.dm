@@ -204,4 +204,4 @@
 	return text_ref(src)
 
 /datum/callback/ref_search_details()
-	return "[text_ref(src)] (obj: [object] proc: [delegate] args: [json_encode(arguments)] user: [user?.resolve() || "null"])"
+	return "[text_ref(src)] (obj: [object] proc: [delegate] args: [json_encode(arguments)] user: [om_resolve(user) || "null"])"

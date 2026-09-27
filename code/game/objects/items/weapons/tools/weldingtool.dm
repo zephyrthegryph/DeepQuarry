@@ -52,11 +52,11 @@
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 	if(always_process)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/weldingtool/Destroy()
 	if(welding || always_process)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/weldingtool/get_welder()
@@ -92,13 +92,16 @@
 			to_chat(user, span_warning("You'll need to turn [src] on to patch the damage on [H]'s [S.name]!"))
 			return ITEM_INTERACT_FAILURE
 
-		if(S.robo_repair(15, BRUTE, "some dents", src, user))
-			remove_fuel(1, user)
+		if(S.robo_repair(15, BRUTE, "some dents", src, user, PROC_REF(robo_repair_used)))
 			return ITEM_INTERACT_SUCCESS
 		else
 			return ITEM_INTERACT_FAILURE //Stops you from accidentally harming someone while on help intent.
 
 	return ..()
+
+/// A robotic limb repair with this welder finished.
+/obj/item/weldingtool/proc/robo_repair_used(mob/living/user)
+	remove_fuel(1, user)
 
 /obj/item/weldingtool/attackby(obj/item/W as obj, mob/living/user as mob)
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
@@ -124,7 +127,7 @@
 
 	..()
 
-/obj/item/weldingtool/process()
+/obj/item/weldingtool/periodic_step()
 	if(welding)
 		if(!no_passive_burn)
 			++burned_fuel_for
@@ -281,7 +284,7 @@
 			welding = 1
 			update_icon()
 			if(!always_process)
-				START_PROCESSING(SSobj, src)
+				PERIODIC_START(src, PERIODIC_SLOW)
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -290,7 +293,7 @@
 	//Otherwise
 	else if(!set_welding && welding)
 		if(!always_process)
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 		if(M)
 			to_chat(M, span_notice("You switch \the [src] off."))
 		else if(T)
@@ -348,8 +351,7 @@
 				// Don't cure being nearsighted
 				if(!(H.disabilities & NEARSIGHTED))
 					user.disabilities |= NEARSIGHTED
-					spawn(100)
-						user.disabilities &= ~NEARSIGHTED
+					om_after(user, 10 SECONDS, TYPE_PROC_REF(/mob, cure_temporary_disability), NEARSIGHTED)
 	return
 
 /obj/item/weldingtool/is_hot()
@@ -420,7 +422,7 @@
 	change_icons = 0
 	always_process = TRUE
 
-/obj/item/weldingtool/alien/process()
+/obj/item/weldingtool/alien/periodic_step()
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
@@ -438,7 +440,7 @@
 	always_process = TRUE
 	var/nextrefueltick = 0
 
-/obj/item/weldingtool/experimental/process()
+/obj/item/weldingtool/experimental/periodic_step()
 	..()
 	if(get_fuel() < get_max_fuel() && nextrefueltick < world.time)
 		nextrefueltick = world.time + 10
@@ -486,7 +488,7 @@
 	mounted_pack = null
 	return ..()
 
-/obj/item/weldingtool/tubefed/process()
+/obj/item/weldingtool/tubefed/periodic_step()
 	if(!mounted_pack)
 		return PROCESS_KILL
 	if(loc == mounted_pack)
@@ -669,7 +671,7 @@
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 		equip_mount = loc
 
-/obj/item/weldingtool/electric/mounted/exosuit/process()
+/obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
 	..()
 
 	if(equip_mount && equip_mount.chassis)
@@ -685,7 +687,7 @@
 	desc = "you shouldn't be reading this. Tell a dev!"
 	welding = TRUE
 
-/obj/item/weldingtool/dummy/process()
+/obj/item/weldingtool/dummy/periodic_step()
 	return
 
 /obj/item/weldingtool/dummy/get_fuel()

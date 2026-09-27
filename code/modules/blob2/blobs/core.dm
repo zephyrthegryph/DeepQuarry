@@ -100,7 +100,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
 /obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon() //so it atleast appears
 	point_rate = new_rate
 	controller = new_overmind
@@ -121,7 +121,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind.blob_core = null
 		qdel(overmind)
 	overmind = null
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/structure/blob/core/update_icon()
@@ -134,13 +133,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	add_overlay(blob_overlay)
 	add_overlay("blob_core_overlay")
 
-/obj/structure/blob/core/process()
+/obj/structure/blob/core/periodic_step()
 	set waitfor = FALSE
 	if(QDELETED(src))
 		return
 	if(!overmind)
-		spawn(0)
-			create_overmind()
+		create_overmind()
 	else
 		if(resource_delay <= world.time)
 			resource_delay = world.time + 1 SECOND

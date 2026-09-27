@@ -23,8 +23,7 @@
 /datum/nifsoft/soulcatcher/activate()
 	if((. = ..()))
 		show_settings(nif.human)
-		spawn(0)
-			deactivate()
+		om_after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/soulcatcher/deactivate(force = FALSE)
 	if((. = ..()))
@@ -236,7 +235,7 @@
 	brainmob.container = src
 	brainmob.stat = 0
 	brainmob.status_set(EFFECT_MUTED, 0)
-	GLOB.dead_mob_list -= brainmob
+	registry_leave(REGISTRY_DEAD_MOBS, brainmob)
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
 

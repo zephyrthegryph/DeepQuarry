@@ -13,7 +13,15 @@
 	var/max_signs = 10
 	var/creation_time = 0 //time to create a holosign in deciseconds.
 	var/holosign_type = /obj/structure/holosign/wetsign
-	var/holocreator_busy = FALSE //to prevent placing multiple holo barriers at once
+
+/obj/item/holosign_creator/proc/create_sign(mob/user, turf/T, waited = TRUE)
+	if(waited)
+		if(length(signs) >= max_signs)
+			return
+		if(is_blocked_turf(T, TRUE)) //don't try to sneak dense stuff on our tile during the wait.
+			return
+	var/obj/structure/holosign/H = new holosign_type(T, src)
+	to_chat(user, span_notice("You create \a [H] with [src]."))
 
 /obj/item/holosign_creator/afterattack(atom/target, mob/user, clickchain_flags, list/params)
 	. = ..()
@@ -25,23 +33,15 @@
 		to_chat(user, span_notice("You use [src] to deactivate [H]."))
 		qdel(H)
 	else
-		if(holocreator_busy)
+		if(om_busy(src)) // a sign being projected claims the creator
 			to_chat(user, span_notice("[src] is busy creating a hologram."))
 			return
 		if(length(signs) < max_signs)
 			playsound(src.loc, 'sound/machines/click.ogg', 20, 1)
 			if(creation_time)
-				holocreator_busy = TRUE
-				if(!do_after(user, creation_time, target = target))
-					holocreator_busy = FALSE
-					return
-				holocreator_busy = FALSE
-				if(length(signs) >= max_signs)
-					return
-				if(is_blocked_turf(T, TRUE)) //don't try to sneak dense stuff on our tile during the wait.
-					return
-			H = new holosign_type(get_turf(target), src)
-			to_chat(user, span_notice("You create \a [H] with [src]."))
+				om_do_after(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), busy = src)
+				return
+			create_sign(user, T, FALSE)
 		else
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 

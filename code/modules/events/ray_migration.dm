@@ -34,7 +34,7 @@
 
 	// Check if any landmarks exist!
 	var/list/spawn_locations = list()
-	for(var/obj/effect/landmark/C in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn" && (C.z in affecting_z))
 			spawn_locations.Add(C.loc)
 	if(spawn_locations.len) // Okay we've got landmarks, lets use those!
@@ -90,14 +90,12 @@
 /datum/event/ray_migration/end()
 	. = ..()
 	// Clean up ray that died in space for some reason.
-	spawn(0)
-		for(var/mob/living/simple_mob/SM in spawned_ray)
-			if(SM.stat == DEAD)
-				var/turf/T = get_turf(SM)
-				if(istype(T, /turf/space))
-					if(prob(75))
-						qdel(SM)
-			CHECK_TICK
+	for(var/mob/living/simple_mob/SM in spawned_ray)
+		if(SM.stat == DEAD)
+			var/turf/T = get_turf(SM)
+			if(istype(T, /turf/space))
+				if(prob(75))
+					qdel(SM)
 
 // Overmap version
 /datum/event/ray_migration/overmap/announce()

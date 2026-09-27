@@ -1,18 +1,25 @@
-/obj/machinery/atmospherics/pipe/zpipe/up/verb/ventcrawl_move_up()
-	set name = "Ventcrawl Upwards"
-	set desc = "Climb up through a pipe."
-	set category = "Abilities.General"
-	set src = usr.loc
-	var/obj/machinery/atmospherics/target = check_ventcrawl(GetAbove(loc))
-	if(target) ventcrawl_to(usr, target, UP)
+/// A ventcrawler inside a z-pipe climbs it with the ordinary Move Upwards /
+/// Move Down verbs (mob/zMove() hands them here). Up pipes go up, down pipes down.
+/obj/machinery/atmospherics/pipe/zpipe/proc/ventcrawl_z(mob/living/user, direction)
+	return FALSE
 
-/obj/machinery/atmospherics/pipe/zpipe/down/verb/ventcrawl_move_down()
-	set name = "Ventcrawl Downwards"
-	set desc = "Climb down through a pipe."
-	set category = "Abilities.General"
-	set src = usr.loc
+/obj/machinery/atmospherics/pipe/zpipe/up/ventcrawl_z(mob/living/user, direction)
+	if(direction != UP || user.loc != src)
+		return FALSE
+	var/obj/machinery/atmospherics/target = check_ventcrawl(GetAbove(loc))
+	if(!target)
+		return FALSE
+	ventcrawl_to(user, target, UP)
+	return TRUE
+
+/obj/machinery/atmospherics/pipe/zpipe/down/ventcrawl_z(mob/living/user, direction)
+	if(direction != DOWN || user.loc != src)
+		return FALSE
 	var/obj/machinery/atmospherics/target = check_ventcrawl(GetBelow(loc))
-	if(target) ventcrawl_to(usr, target, DOWN)
+	if(!target)
+		return FALSE
+	ventcrawl_to(user, target, DOWN)
+	return TRUE
 
 /obj/machinery/atmospherics/pipe/zpipe/proc/check_ventcrawl(turf/target)
 	if(!istype(target))

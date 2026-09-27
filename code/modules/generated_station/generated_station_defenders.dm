@@ -5,7 +5,7 @@
 	var/department_id
 	var/squad_id
 	var/turf/home
-	var/datum/weakref/last_contact
+	var/last_contact
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
@@ -31,7 +31,7 @@
 /datum/generated_station_defender_agent/proc/on_damage(datum/source, amount, damage_type, atom/attacker)
 	SIGNAL_HANDLER
 	if(attacker)
-		last_contact = WEAKREF(attacker)
+		last_contact = om_handle(attacker)
 		runtime?.report_contact(src, attacker)
 	if(defender && defender.vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
 		runtime?.retreat_agent(src)
@@ -43,7 +43,7 @@
 /datum/generated_station_defender_agent/proc/apply_order(datum/generated_station_order/order, datum/generated_station_knowledge_report/report)
 	if(!defender || QDELETED(defender) || defender.stat >= DEAD)
 		return
-	var/atom/target = report?.target_ref?.resolve()
+	var/atom/target = om_resolve(report?.target_ref)
 	switch(order.kind)
 		if(GENERATED_STATION_ORDER_INTERCEPT)
 			if(isliving(target))
@@ -111,7 +111,7 @@
 		department_turfs[control.department_id] = get_turf(control)
 	for(var/obj/machinery/generated_station_data_relay/relay in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
 		if(relay.station_id == site.station_spec?.id)
-			relay.defense_runtime_ref = WEAKREF(src)
+			relay.defense_runtime_ref = om_handle(src)
 	spawn_department("security-1", 2)
 	spawn_department("medical-1", 1)
 	spawn_department("engineering-1", 1)
@@ -162,7 +162,7 @@
 	var/datum/generated_station_knowledge_report/report = director.submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
 	if(!report)
 		return null
-	report.target_ref = WEAKREF(contact)
+	report.target_ref = om_handle(contact)
 	director.set_alert(GENERATED_STATION_ALERT_RED, department_id)
 	if(issue_response)
 		var/coordinated = director.ai_can_coordinate()
@@ -219,7 +219,7 @@
 	var/datum/generated_station_knowledge_report/report = director.submit_report(department_id, "patrol-[world.time]", "patrol", "Finite patrol route.", 100, GENERATED_STATION_PATROL_DURATION)
 	if(!report)
 		return FALSE
-	report.target_ref = WEAKREF(destination || department_turfs[department_id])
+	report.target_ref = om_handle(destination || department_turfs[department_id])
 	var/datum/generated_station_order/order = director.issue_order(squad_id, report.id, GENERATED_STATION_ORDER_PATROL, FALSE)
 	if(!order)
 		return FALSE
@@ -270,10 +270,10 @@
 	var/turf/medical = department_turfs["medical-1"] || agent.home
 	agent.defender.ai_brain?.give_destination(medical)
 	agent.defender.ai_brain?.go_wake()
-	addtimer(CALLBACK(src, PROC_REF(heal_and_redeploy), WEAKREF(agent)), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
+	addtimer(CALLBACK(src, PROC_REF(heal_and_redeploy), om_handle(agent)), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
 
-/datum/generated_station_defense_runtime/proc/heal_and_redeploy(datum/weakref/agent_ref)
-	var/datum/generated_station_defender_agent/agent = agent_ref?.resolve()
+/datum/generated_station_defense_runtime/proc/heal_and_redeploy(agent_ref)
+	var/datum/generated_station_defender_agent/agent = om_resolve(agent_ref)
 	if(!agent?.defender || QDELETED(agent.defender))
 		return
 	var/obj/item/stack/medical/medicine
@@ -289,7 +289,7 @@
 	agent.defender.mend(TREAT_BURN_CARE, 30)
 	agent.defender.mend(TREAT_PLATING_REPAIR, 30)
 	agent.defender.mend(TREAT_WIRING_REPAIR, 30)
-	var/atom/contact = agent.last_contact?.resolve()
+	var/atom/contact = om_resolve(agent.last_contact)
 	if(isliving(contact))
 		var/mob/living/living_contact = contact
 		agent.defender.ai_brain?.give_target(living_contact, TRUE)
@@ -309,11 +309,11 @@
 		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
 			agent.defender.ai_brain?.give_destination(get_turf(target))
 			agent.defender.ai_brain?.go_wake()
-	addtimer(CALLBACK(src, PROC_REF(complete_physical_repair), WEAKREF(target), amount, squad_id), 5 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(complete_physical_repair), om_handle(target), amount, squad_id), 5 SECONDS)
 	return TRUE
 
-/datum/generated_station_defense_runtime/proc/complete_physical_repair(datum/weakref/target_ref, amount, squad_id)
-	var/atom/target = target_ref?.resolve()
+/datum/generated_station_defense_runtime/proc/complete_physical_repair(target_ref, amount, squad_id)
+	var/atom/target = om_resolve(target_ref)
 	if(!target || QDELETED(target) || target.get_integrity() >= target.max_integrity)
 		return
 	var/obj/item/stack/material/materials
@@ -340,12 +340,12 @@
 		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
 			agent.defender.ai_brain?.give_destination(get_turf(crate))
 			agent.defender.ai_brain?.go_wake()
-	addtimer(CALLBACK(src, PROC_REF(complete_logistics_delivery), WEAKREF(crate), WEAKREF(destination), squad_id), 5 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(complete_logistics_delivery), om_handle(crate), om_handle(destination), squad_id), 5 SECONDS)
 	return TRUE
 
-/datum/generated_station_defense_runtime/proc/complete_logistics_delivery(datum/weakref/crate_ref, datum/weakref/destination_ref, squad_id)
-	var/obj/structure/closet/crate/crate = crate_ref?.resolve()
-	var/turf/destination = destination_ref?.resolve()
+/datum/generated_station_defense_runtime/proc/complete_logistics_delivery(crate_ref, destination_ref, squad_id)
+	var/obj/structure/closet/crate/crate = om_resolve(crate_ref)
+	var/turf/destination = om_resolve(destination_ref)
 	if(crate && destination && !QDELETED(crate) && !is_blocked_turf(destination))
 		crate.forceMove(destination)
 	for(var/datum/generated_station_defender_agent/agent in agents)

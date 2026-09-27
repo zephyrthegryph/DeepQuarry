@@ -23,8 +23,10 @@
 	if(possible_species && possible_species.len)
 		produce_species = pick(possible_species)
 
-/obj/machinery/vr_sleeper/alien/process()
+/obj/machinery/vr_sleeper/alien/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	if(!occupant)
+		return PROCESS_KILL
 	if(stat & (BROKEN))
 		if(occupant)
 			perform_exit()
@@ -111,7 +113,7 @@
 	if(occupant.stat == DEAD && !occupant.client)
 		return
 
-	if(QDELETED(avatar)) //This REALLY needs to be changed to weakrefs
+	if(QDELETED(avatar)) //This REALLY needs to be changed to an OM handle
 		avatar = null
 
 	if(avatar && !occupant.stat)

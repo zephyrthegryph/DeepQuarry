@@ -31,7 +31,7 @@
 	. = ..()
 	QDEL_NULL(beaker)
 
-/obj/machinery/reagent_refinery/furnace/process()
+/obj/machinery/reagent_refinery/furnace/refinery_step()
 	if(!anchored)
 		return
 

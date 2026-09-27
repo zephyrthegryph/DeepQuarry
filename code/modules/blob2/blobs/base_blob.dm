@@ -138,6 +138,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 		if(distance <= pulse_range)
 			B.pulsed()
 
+/// The second half of expand(): the new blob slides into `T`.
+/obj/structure/blob/proc/slide_into(turf/T, obj/structure/blob/origin, expand_reaction)
+	density = initial(density)
+	forceMove(T)
+	update_icon()
+	if(overmind && expand_reaction)
+		overmind.blob_type.on_expand(origin, src, T, overmind)
+
 /obj/structure/blob/proc/expand(turf/T = null, controller = null, expand_reaction = 1)
 	if(!T)
 		var/list/dirs = GLOB.cardinal.Copy()
@@ -179,12 +187,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 			B.overmind = overmind
 		B.density = TRUE
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
-			sleep(1) // To have the slide animation work.
-			B.density = initial(B.density)
-			B.forceMove(T)
-			B.update_icon()
-			if(B.overmind && expand_reaction)
-				B.overmind.blob_type.on_expand(src, B, T, B.overmind)
+			// A decisecond later, so the slide animation works.
+			om_after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), T, src, expand_reaction)
 			return B
 
 		else

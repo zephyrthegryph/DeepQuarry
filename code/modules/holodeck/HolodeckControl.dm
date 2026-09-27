@@ -198,7 +198,11 @@
 	if (stat != oldstat && active && (stat & NOPOWER))
 		emergencyShutdown()
 
-/obj/machinery/computer/HolodeckControl/process()
+/// Watches its holograms (and draws power for them) while a program runs or holograms exist;
+/// otherwise it sleeps until a program loads (its UI).
+/obj/machinery/computer/HolodeckControl/machine_step()
+	if(!active && !length(holographic_objs) && !length(holographic_mobs))
+		return PROCESS_KILL
 	for(var/item in holographic_objs) // do this first, to make sure people don't take items out when power is down.
 		if(!(get_turf(item) in linkedholodeck))
 			derez(item, 0)
@@ -333,14 +337,7 @@
 	for(var/obj/effect/landmark/L in linkedholodeck)
 		L.delete_me = TRUE
 		if(L.name=="Atmospheric Test Start")
-			spawn(20)
-				var/turf/T = get_turf(L)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(2, 1, T)
-				s.start()
-				if(T)
-					T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
-					T.hotspot_expose(50000,50000,1)
+			om_after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), get_turf(L))
 		if(L.name=="Holocarp Spawn")
 			LAZYADD(holographic_mobs, new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 
@@ -381,3 +378,11 @@
 
 	active = 0
 	update_use_power(USE_POWER_IDLE)
+
+/obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)
+	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
+	s.set_up(2, 1, T)
+	s.start()
+	if(T)
+		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
+		T.hotspot_expose(50000,50000,1)

@@ -94,15 +94,15 @@
 
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	visible_message(span_notice("[src] is unequipped, its health going back to full!"))
 	lasertag_health = lasertag_max_health
 
 /obj/item/clothing/suit/lasertag/equipped()
 	..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/clothing/suit/lasertag/process()
+/obj/item/clothing/suit/lasertag/periodic_step()
 	if(lasertag_health >= lasertag_max_health) //If we're at or above max health(due to admemes), no need to process.
 		return
 	if(!time_to_heal) //We have healing disabled.

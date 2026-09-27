@@ -143,9 +143,10 @@
 	for(var/mob/O in viewers(usr))
 		O.show_message(span_notice("\The [src] rattles and prints out a sheet of paper."), 1)
 
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(print_report), usr, scan_data)
 
-	var/obj/item/paper/P = new(usr.loc)
+/obj/item/autopsy_scanner/proc/print_report(mob/usr_mob, scan_data)
+	var/obj/item/paper/P = new(usr_mob.loc)
 	P.name = "Autopsy Data ([target_name])"
 	P.info = "<tt>[scan_data]</tt>"
 	P.icon_state = "paper_words"

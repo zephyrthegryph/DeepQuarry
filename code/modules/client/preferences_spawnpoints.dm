@@ -49,7 +49,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 
 /datum/spawnpoint/arrivals/New()
 	..()
-	turfs = GLOB.latejoin
+	turfs = REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
 
 /datum/spawnpoint/gateway
 	display_name = "Gateway"
@@ -114,7 +114,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 
 /datum/spawnpoint/vore/New()
 	..()
-	turfs = GLOB.latejoin
+	turfs = REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
 
 
 /datum/spawnpoint/stationgateway

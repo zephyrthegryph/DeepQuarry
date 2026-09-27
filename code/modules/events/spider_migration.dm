@@ -18,7 +18,7 @@
 
 /datum/event/spider_migration/start()
 	if(severity == EVENT_LEVEL_MAJOR)
-		spawn_spider(GLOB.landmarks_list.len)
+		spawn_spider(REGISTRY_COUNT(REGISTRY_LANDMARKS))
 	else if(severity == EVENT_LEVEL_MODERATE)
 		spawn_spider(rand(4, 6)) 			//12 to 30 spider, in small groups
 	else
@@ -27,7 +27,7 @@
 /datum/event/spider_migration/proc/spawn_spider(num_groups, group_size_min=3, group_size_max=5)
 	var/list/spawn_locations = list()
 
-	for(var/obj/effect/landmark/C in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn")
 			spawn_locations.Add(C.loc)
 	spawn_locations = shuffle(spawn_locations)
@@ -41,11 +41,9 @@
 		i++
 
 /datum/event/spider_migration/end()
-	spawn(0)
-		for(var/mob/living/simple_mob/SM in spawned_spider)
-			if(!SM.stat)
-				var/turf/T = get_turf(SM)
-				if(istype(T, /turf/space))
-					if(prob(75))
-						qdel(SM)
-			sleep(1)
+	for(var/mob/living/simple_mob/SM in spawned_spider)
+		if(!SM.stat)
+			var/turf/T = get_turf(SM)
+			if(istype(T, /turf/space))
+				if(prob(75))
+					qdel(SM)

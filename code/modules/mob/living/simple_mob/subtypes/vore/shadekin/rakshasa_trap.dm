@@ -30,13 +30,15 @@
 			span_notice("[user] begins freeing [victim] from \the [src]."),
 			span_notice("You carefully begin to free [victim] from \the [src]."),
 			)
-		if(do_after(user, 5, target = src))
-			user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
-			for(var/A in BUCKLED_MOBS(src))
-				unbuckle_mob(A)
-			anchored = 0
+		om_do_after(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
 	else
 		..()
+
+/obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
+	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
+	for(var/A in BUCKLED_MOBS(src))
+		unbuckle_mob(A)
+	anchored = 0
 
 /obj/structure/gootrap/proc/attack_mob(mob/living/L)
 	//trap the victim in place

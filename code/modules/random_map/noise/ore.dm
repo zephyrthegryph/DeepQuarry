@@ -46,7 +46,6 @@
 			var/turf/simulated/T = locate(tx+j, ty+i, origin_z)
 			if(!istype(T) || !(T.turf_resource_types & TURF_HAS_MINERALS))
 				continue
-			if(!priority_process) sleep(-1)
 			T.resources = list()
 			T.resources[ORE_SAND] = rand(3,5)
 			T.resources[ORE_CARBON] = rand(3,5)

@@ -1,7 +1,6 @@
 #define AGE_MOD_MAX 10 // Define for age_mod sanity check as a define to allow for easy tweaking.
 
 /obj/machinery/portable_atmospherics/hydroponics
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "hydroponics tray"
 	desc = "A tray usually full of fluid for growing plants."
 	icon = 'icons/obj/hydroponics_machines.dmi'
@@ -220,7 +219,7 @@
 	return ..()
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(growth_timer || frozen == 1)
@@ -229,7 +228,7 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	growth_timer = null
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 // Give the seeds time to initialize itself
 /obj/machinery/portable_atmospherics/hydroponics/LateInitialize()
@@ -246,7 +245,7 @@
 	//Snowflakey, maybe move this to the seed datum
 	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
 	lastcycle = world.time
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 	qdel(S)
 
@@ -655,7 +654,7 @@
 		sampled = TRUE
 	check_health()
 	force_update = TRUE
-	process()
+	machine_step()
 	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/wirecutter_act(mob/user, obj/item/tool)
@@ -682,7 +681,7 @@
 	to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
 	frozen = !frozen
 	if(!frozen)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

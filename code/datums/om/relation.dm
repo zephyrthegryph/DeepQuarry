@@ -188,6 +188,8 @@
 /// behaviours that asked for RELATION_ADDED/REMOVED on it, and rebuild every
 /// forwarding path that runs through this entity.
 /proc/om_edge_structure_changed(datum/om/rec/rec, rel_id, bit)
+	if(rec.table.cache_relations)
+		om_cache_clear(rec.owner, rec.table.cache_relations, rel_id)
 	for(var/i in 1 to length(rec.att))
 		var/datum/om/behaviour/B = rec.att[i]
 		if(!(B.related_added_mask & bit))

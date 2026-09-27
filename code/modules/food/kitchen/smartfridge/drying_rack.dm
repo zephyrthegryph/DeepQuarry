@@ -23,7 +23,7 @@
 
 	return 0
 
-/obj/machinery/smartfridge/drying_rack/process()
+/obj/machinery/smartfridge/drying_rack/machine_step()
 	..()
 	if(stat & (BROKEN|NOPOWER))
 		return PROCESS_KILL

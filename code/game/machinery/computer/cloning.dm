@@ -38,7 +38,7 @@
 		qdel(BR)
 	return ..()
 
-/obj/machinery/computer/cloning/process()
+/obj/machinery/computer/cloning/machine_step()
 	if(!autoprocess)
 		return PROCESS_KILL
 	if(!scanner || !pods.len || stat & NOPOWER)
@@ -234,19 +234,13 @@
 			set_scan_temp("Scanner ready.", "good")
 			loading = TRUE
 
-			spawn(20)
-				if(can_brainscan() && scan_mode)
-					scan_mob(scanner_occupant, scan_brain = TRUE)
-				else
-					scan_mob(scanner_occupant)
-				loading = FALSE
-				SStgui.update_uis(src)
+			om_after(src, 2 SECONDS, PROC_REF(delayed_scan), scanner_occupant)
 		if("autoprocess")
 			autoprocess = text2num(params["on"]) > 0
 			if(autoprocess)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			else
-				STOP_MACHINE_PROCESSING(src)
+				MACHINE_SLEEP(src)
 		if("lock")
 			if(isnull(scanner) || !scanner_occupant) //No locking an open scanner.
 				return
@@ -483,3 +477,15 @@
 
 #undef MENU_MAIN
 #undef MENU_RECORDS
+
+/obj/machinery/computer/cloning/proc/delayed_scan(mob/living/carbon/human/scanner_occupant)
+	if(can_brainscan() && scan_mode)
+		scan_mob(scanner_occupant, scan_brain = TRUE)
+	else
+		scan_mob(scanner_occupant)
+	loading = FALSE
+	SStgui.update_uis(src)
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/computer/cloning/step_start_condition()
+	return autoprocess

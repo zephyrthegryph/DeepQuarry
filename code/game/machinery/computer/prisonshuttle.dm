@@ -84,8 +84,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 			to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 			GLOB.prison_shuttle_moving_to_prison = 1
 			GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-			spawn(0)
-				prison_process()
+			prison_process()
 			add_fingerprint(usr)
 			return TRUE
 		if("send_to_station")
@@ -98,8 +97,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 			to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 			GLOB.prison_shuttle_moving_to_station = 1
 			GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-			spawn(0)
-				prison_process()
+			prison_process()
 			add_fingerprint(usr)
 			return TRUE
 
@@ -119,8 +117,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 
 			if (!GLOB.prison_shuttle_moving_to_prison || !GLOB.prison_shuttle_moving_to_station)
 				GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-			spawn(0)
-				prison_process()
+			prison_process()
 			prison_break = 1
 		if(1)
 			prison_break = 0
@@ -137,15 +134,16 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	return
 
 
+/// The prison shuttle in flight: counts down every half second, then arrives.
 /obj/machinery/computer/prison_shuttle/proc/prison_process()
-	while(GLOB.prison_shuttle_time - world.timeofday > 0)
+	if(GLOB.prison_shuttle_time - world.timeofday > 0)
 		var/ticksleft = GLOB.prison_shuttle_time - world.timeofday
 
 		if(ticksleft > 1e5)
 			GLOB.prison_shuttle_time = world.timeofday + 10	// midnight rollover
-
 		GLOB.prison_shuttle_timeleft = (ticksleft / 10)
-		sleep(5)
+		om_after(src, 5, PROC_REF(prison_process))
+		return
 	GLOB.prison_shuttle_moving_to_station = 0
 	GLOB.prison_shuttle_moving_to_prison = 0
 

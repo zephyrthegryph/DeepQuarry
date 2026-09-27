@@ -447,7 +447,7 @@
 /proc/medical_trial_target_choices()
 	return list("trauma", "infection", "respiratory", "neurological", "organ failure")
 
-/proc/medical_trial_qualifying_indications(list/candidates = GLOB.player_list, require_station_crew = TRUE)
+/proc/medical_trial_qualifying_indications(list/candidates = REGISTRY_MEMBERS(REGISTRY_PLAYERS), require_station_crew = TRUE)
 	var/list/available = list()
 	for(var/mob/living/carbon/human/subject in candidates)
 		if(subject.stat == DEAD)
@@ -550,7 +550,7 @@
 /proc/medical_trial_station_availability()
 	var/list/indication_counts = list()
 	var/healthy_count = 0
-	for(var/mob/living/carbon/human/subject in GLOB.player_list)
+	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(subject.stat == DEAD || !subject.mind?.assigned_role)
 			continue
 		for(var/family in subject.contract_medical_indications)

@@ -33,14 +33,13 @@
 
 /datum/shuttle/autodock/ferry/emergency/perform_shuttle_move()
 	if (current_location == landmark_station)	//leaving the station
-		spawn(0)
-			SSemergency_shuttle.departed = TRUE
-			var/estimated_time = round(SSemergency_shuttle.estimate_arrival_time()/60,1)
+		SSemergency_shuttle.departed = TRUE
+		var/estimated_time = round(SSemergency_shuttle.estimate_arrival_time()/60,1)
 
-			if (SSemergency_shuttle.evac)
-				GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.emergency_shuttle_leaving_dock, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"))
-			else
-				GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.shuttle_leaving_dock, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"), new_sound = ANNOUNCER_MSG_SHUTTLE_ENDROUND_RETURNING)
+		if (SSemergency_shuttle.evac)
+			GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.emergency_shuttle_leaving_dock, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"))
+		else
+			GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.shuttle_leaving_dock, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"), new_sound = ANNOUNCER_MSG_SHUTTLE_ENDROUND_RETURNING)
 	..()
 
 /datum/shuttle/autodock/ferry/emergency/can_launch(user)

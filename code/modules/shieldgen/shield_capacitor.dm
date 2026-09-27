@@ -60,12 +60,11 @@
 	src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
 
 	if(anchored)
-		START_MACHINE_PROCESSING(src)
-		spawn(0)
-			for(var/obj/machinery/shield_gen/gen in range(1, src))
-				if(get_dir(src, gen) == src.dir)
-					owned_gen = gen
-					LAZYOR(owned_gen.capacitors, src)
+		MACHINE_WAKE(src)
+		for(var/obj/machinery/shield_gen/gen in range(1, src))
+			if(get_dir(src, gen) == src.dir)
+				owned_gen = gen
+				LAZYOR(owned_gen.capacitors, src)
 	else
 		if(owned_gen && (src in owned_gen.capacitors))
 			LAZYREMOVE(owned_gen.capacitors, src)
@@ -114,7 +113,7 @@
 
 	return data
 
-/obj/machinery/shield_capacitor/process()
+/obj/machinery/shield_capacitor/machine_step()
 	if (!anchored)
 		active = 0
 		return PROCESS_KILL
@@ -131,7 +130,7 @@
 		power_draw = PN.draw_power(power_draw) //what we actually get
 		stored_charge += power_draw
 		if(power_draw <= 0 && stored_charge < max_charge)
-			sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_RATE|REACT_POWERNET_STATE))
+			sleep_until_keys(list(PN, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
 			return PROCESS_KILL
 	else
 		return PROCESS_KILL
@@ -155,12 +154,12 @@
 				return
 			active = !active
 			if(stored_charge < max_charge)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			. = TRUE
 		if("charge_rate")
 			charge_rate = clamp(text2num(params["rate"]), 10000, max_charge_rate)
 			if(stored_charge < max_charge)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()
@@ -175,7 +174,7 @@
 	icon = 'icons/obj/machines/shielding.dmi'
 
 /// Audit: a sleeping capacitor must be full or have nothing to draw from.
-/obj/machinery/shield_capacitor/react_sleep_violation()
+/obj/machinery/shield_capacitor/om_sleep_violation()
 	if(!asleep_on_keys() || !anchored || stored_charge >= max_charge)
 		return null
 	var/turf/T = get_turf(src)
@@ -184,3 +183,8 @@
 	if(PN && PN.avail - PN.load > 0)
 		return "asleep below full charge on a grid with [PN.avail - PN.load] W spare"
 	return null
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shield_capacitor/step_start_condition()
+	return anchored && stored_charge < max_charge

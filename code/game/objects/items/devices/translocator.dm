@@ -274,9 +274,14 @@ This device records all warnings given and teleport events for admin review in c
 				if(!IS_HELPING(L) || (L.ai_brain != null))
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
-					if(!do_after(user, 3 SECONDS, target = L))
-						return
+					om_do_after(user, 3 SECONDS, target = L, receiver = src, on_done = PROC_REF(teleport_now), done_args = list(target, user, ignore_fail_chance))
+					return
+	teleport_now(target, user, ignore_fail_chance)
 
+/// Sends `target` to the chosen beacon (after any struggle).
+/obj/item/perfect_tele/proc/teleport_now(mob/living/target, mob/user, ignore_fail_chance)
+	if(!ready || !destination || !power_source)
+		return
 	//Bzzt.
 	ready = 0
 	power_source.use(charge_cost)
@@ -430,10 +435,12 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 		var/obj/belly/bellychoice = tgui_input_list(user, "Which belly?","Select A Belly", L.vore_organs)
 		if(bellychoice)
 			user.visible_message(span_warning("[user] is trying to stuff \the [src] into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!"),span_notice("You begin putting \the [src] into your [bellychoice.name]!"))
-			if(do_after(user, 5 SECONDS, target = src))
-				user.unEquip(src)
-				forceMove(bellychoice)
-				user.visible_message(span_warning("[user] eats a telebeacon!"),"You eat the the beacon!")
+			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
+
+/obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
+	user.unEquip(src)
+	forceMove(bellychoice)
+	user.visible_message(span_warning("[user] eats a telebeacon!"),"You eat the the beacon!")
 
 // A single-beacon variant for use by miners (or whatever)
 /obj/item/perfect_tele/one_beacon
@@ -485,13 +492,20 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	update_icon()
 	user.visible_message(span_notice("[user] opens \the [src] and starts pumping the handle."), \
 						span_notice("You open \the [src] and start pumping the handle."))
-	while(recharging)
-		if(!do_after(user, 1 SECOND, target = src))
-			break
-		playsound(src,'sound/items/change_drill.ogg',25,1)
-		if(power_source.give(phase_power) < phase_power)
-			break
+	pump_handle(user)
 
+/// One second of pumping the handle per call, until the cell is full or the user stops.
+/obj/item/perfect_tele/frontier/proc/pump_handle(mob/user)
+	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
+
+/obj/item/perfect_tele/frontier/proc/pump_stroke(mob/user)
+	playsound(src,'sound/items/change_drill.ogg',25,1)
+	if(!recharging || power_source.give(phase_power) < phase_power)
+		pump_done()
+		return
+	pump_handle(user)
+
+/obj/item/perfect_tele/frontier/proc/pump_done()
 	recharging = 0
 	update_icon()
 

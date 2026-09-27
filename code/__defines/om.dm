@@ -45,6 +45,8 @@
 #define CHANGE_MOB_CAN_MOVE (1<<17)
 /// Modifiers, instability, diseases: the long-running conditions the upkeep systems follow.
 #define CHANGE_MOB_CONDITIONS (1<<18)
+/// The zone the mob aims at (zone_sel) changed.
+#define CHANGE_MOB_TARGETING (1<<19)
 
 // Item family.
 #define CHANGE_ITEM_LOC (1<<8)
@@ -211,8 +213,6 @@
 #define EVENT_VETO 1
 
 // ---- Tasks (section I). ----
-/// Legacy sleeping procs wait on a task with a mandatory timeout (deciseconds).
-#define AWAIT(task, timeout) om_await(task, timeout)
 #define OM_TASK_RUNNING 0
 #define OM_TASK_DONE 1
 #define OM_TASK_CANCELLED 2
@@ -372,3 +372,82 @@
 #define BORER_HOST(B) OM_REL_TARGET(B, /datum/om/relation/host_of)
 /// The borer infesting `H`, or null.
 #define BORER_OF(H) OM_REL_SOURCE(H, /datum/om/relation/host_of)
+/// The telecomms machine bluespace radio `R` transmits to, or null.
+#define BS_TX_TARGET(R) OM_REL_TARGET(R, /datum/om/relation/bluespace_tx_to)
+/// Every bluespace radio transmitting to telecomms machine `M`.
+#define BS_TX_RADIOS(M) OM_REL_SOURCES(M, /datum/om/relation/bluespace_tx_to)
+/// The telecomms machine bluespace radio `R` receives from, or null.
+#define BS_RX_SOURCE(R) OM_REL_TARGET(R, /datum/om/relation/bluespace_rx_from)
+/// Every bluespace radio receiving from telecomms machine `M`.
+#define BS_RX_RADIOS(M) OM_REL_SOURCES(M, /datum/om/relation/bluespace_rx_from)
+/// The item gripper `G` is wrapping, or null.
+#define GRIPPER_HELD(G) OM_REL_TARGET(G, /datum/om/relation/gripper_holding)
+/// Every mob flying UAV `U`.
+#define UAV_MASTERS(U) OM_REL_SOURCES(U, /datum/om/relation/uav_master)
+/// What holds stasis modifier `S`'s mob in stasis, or null.
+#define STASIS_SOURCE(S) OM_REL_TARGET(S, /datum/om/relation/stasis_held_by)
+
+// ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
+
+/// Starts `E`'s periodic work on pipeline type `P` (idempotent). Wakes it if parked.
+#define PERIODIC_START(E, P) periodic_start(E, P)
+/// Ends `E`'s periodic work: its stage idles and it parks. Does nothing when it isn't running.
+#define PERIODIC_STOP(E) periodic_stop(E)
+/// TRUE while `E` has periodic work on any pipeline.
+#define PERIODIC_RUNNING(E) (!isnull((E).periodic_pipe))
+
+#define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
+#define PERIODIC_SECOND /datum/om/pipeline/periodic/second
+#define PERIODIC_FAST /datum/om/pipeline/periodic/fast
+#define PERIODIC_PLANTS /datum/om/pipeline/periodic/plants
+#define PERIODIC_PROJECTILES /datum/om/pipeline/periodic/continuous/projectiles
+#define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
+#define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects
+#define PERIODIC_TAB_ITEMS /datum/om/pipeline/periodic/continuous/tab_items
+
+// ---------------------------------------------------------------- published facts as change channels
+// What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
+// whatever waits on it om_watch()es those channels with its own behaviour.
+
+/// Machine family: a mode another machine or program may wait on changed (door bolts, power,
+/// electrification, open state; an APC's operating state).
+#define CHANGE_MACHINE_MODE (1<<18)
+/// An area's power channels or light switch changed (area power_change()).
+#define CHANGE_AREA_POWER CHANGE_DATUM_A
+/// A powernet's supply or load moved; cables, warnings or monitor state; machine membership.
+#define CHANGE_POWERNET_RATE CHANGE_DATUM_A
+#define CHANGE_POWERNET_STATE CHANGE_DATUM_B
+#define CHANGE_POWERNET_TOPOLOGY CHANGE_DATUM_C
+/// A pipe network's leaks or topology changed (on the network, or on GLOB.new_pipe_networks for
+/// a change whose network is not known yet).
+#define CHANGE_PIPE_LEAKS CHANGE_DATUM_A
+/// A meteor appeared or went away (on GLOB.meteor_watch).
+#define CHANGE_METEORS CHANGE_DATUM_A
+/// A shuttle's schedule changed (on SSemergency_shuttle for evac, SSsupply for supply).
+#define CHANGE_SHUTTLE_SCHEDULE CHANGE_DATUM_D
+	/// Which schedule a status display shows (shuttle_schedule_source()).
+	#define SHUTTLE_SCHEDULE_EVAC 1
+	#define SHUTTLE_SCHEDULE_SUPPLY 2
+/// A mob entered, left or moved in a chunk (/datum/mob_chunk, code/modules/mob/mob_chunks.dm).
+#define CHANGE_CHUNK_ANY_MOB CHANGE_DATUM_A
+#define CHANGE_CHUNK_PLAYER CHANGE_DATUM_B
+// ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
+/// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
+#define OM_CALLEE_SLEPT "__om_callee_slept"
+#define STEP_NEXT 1
+#define STEP_DONE 2
+#define OM_STEP_REPEAT 3
+#define OM_STEP_FAIL 4
+/// Run this step again after `d` deciseconds.
+#define STEP_REPEAT(d) list(OM_STEP_REPEAT, d)
+/// Cancel the task with `reason` (its on_cancel runs).
+#define STEP_FAIL(reason) list(OM_STEP_FAIL, reason)
+
+// ---- Declared caches (lifecycle.md §4, LC-refs): the invalidation rule each entry of
+// declared_cache_vars() names. The core nulls the var when the rule fires.
+/// Cleared when any of `bits` is raised on the entity (om_changed / OM_CHANGED).
+#define CACHE_ON_CHANGE(bits) list("change", bits)
+/// Cleared when an event of `path` (or a subtype) is emitted on the entity.
+#define CACHE_ON_EVENT(path) list("event", path)
+/// Cleared when an edge of relation `path` is added to or removed from the entity.
+#define CACHE_ON_RELATION(path) list("relation", path)

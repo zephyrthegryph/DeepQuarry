@@ -18,7 +18,7 @@
 	var/power_drained = 0 			// Amount of power drained.
 	var/max_power = 1e9				// Detonation point.
 	var/mode = 0					// 0 = off, 1=clamped (off), 2=operating
-	var/drained_this_tick = 0		// This is unfortunately necessary to ensure we process powersinks BEFORE other machinery such as APCs.
+	var/drained_this_tick = 0		// One drain per step, however many callers ask.
 
 	var/datum/powernet/PN			// Our powernet
 	var/obj/structure/cable/attached		// the attached cable
@@ -27,8 +27,6 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/powersink/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	STOP_PROCESSING_POWER_OBJECT(src)
 	. = ..()
 
 /obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
@@ -47,9 +45,8 @@
 		playsound(src, tool.usesound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 	if(mode == 2)
-		STOP_PROCESSING(SSobj, src)
-		STOP_PROCESSING_POWER_OBJECT(src)
-	anchored = FALSE
+		PERIODIC_STOP(src)
+		anchored = FALSE
 	mode = 0
 	visible_message(span_notice("[user] detaches [src] from the cable!"))
 	set_light(0)
@@ -68,17 +65,14 @@
 			src.visible_message(span_notice("[user] activates [src]!"))
 			mode = 2
 			icon_state = "powersink1"
-			START_PROCESSING(SSobj, src)
-			datum_flags &= ~DF_ISPROCESSING // Have to reset this flag so that PROCESSING_POWER_OBJECT can re-add it. It fails if the flag is already present. - Ater
-			START_PROCESSING_POWER_OBJECT(src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			src.visible_message(span_notice("[user] deactivates [src]!"))
 			mode = 1
 			set_light(0)
 			icon_state = "powersink0"
-			STOP_PROCESSING(SSobj, src)
-			STOP_PROCESSING_POWER_OBJECT(src)
-
+			PERIODIC_STOP(src)
+		
 /obj/item/powersink/pwr_drain()
 	if(!attached)
 		return 0
@@ -114,8 +108,11 @@
 	return 1
 
 
-/obj/item/powersink/process()
+/// Every 2 s while operating: drain the attached powernet (and its APCs), then dissipate.
+/obj/item/powersink/periodic_step()
 	drained_this_tick = 0
+	PN = attached?.get_powernet()
+	pwr_drain()
 	power_drained -= min(dissipation_rate, power_drained)
 	if(power_drained > max_power * 0.95)
 		playsound(src, 'sound/effects/screech.ogg', 100, 1, 1)

@@ -83,13 +83,16 @@
 	if(user == target)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " paints their nails with \the [src]."), span_infoplain("You paint your nails with \the [src]."))
 	else
-		if(do_after(user, 2 SECONDS, target))
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " paints \the [target]'s nails with \the [src]."), span_infoplain("You paint \the [target]'s nails with \the [src]."))
-		else
-			to_chat(user, span_notice("Both you and [target] must stay still!"))
-			return ITEM_INTERACT_FAILURE
+		om_do_after(user, 2 SECONDS, target, src, PROC_REF(paint_done), list(user, target, body_part, polish), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_notice("Both you and [target] must stay still!")))
+		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(polish)
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/nailpolish/proc/paint_done(mob/living/user, mob/living/target, obj/item/organ/external/body_part, datum/nail_polish/polish)
+	if(body_part.nail_polish)
+		return
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " paints \the [target]'s nails with \the [src]."), span_infoplain("You paint \the [target]'s nails with \the [src]."))
+	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
 	nail_polish = polish
@@ -134,13 +137,14 @@
 	if(user == target)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes their nail polish with \the [src]."), span_infoplain("You remove your nail polish with \the [src]."))
 	else
-		if(do_after(user, 2 SECONDS, target))
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [target]'s nail polish with \the [src]."), span_infoplain("You remove \the [target]'s nail polish with \the [src]."))
-		else
-			to_chat(user, span_notice("Both you and [target] must stay still!"))
-			return ITEM_INTERACT_FAILURE
+		om_do_after(user, 2 SECONDS, target, src, PROC_REF(remove_done), list(user, target, body_part), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_notice("Both you and [target] must stay still!")))
+		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(null)
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/nailpolish_remover/proc/remove_done(mob/living/user, mob/living/target, obj/item/organ/external/body_part)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [target]'s nail polish with \the [src]."), span_infoplain("You remove \the [target]'s nail polish with \the [src]."))
+	body_part.set_polish(null)
 
 /datum/nail_polish
 	var/icon = 'icons/obj/nailpolish_vr.dmi'

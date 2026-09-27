@@ -34,15 +34,15 @@
 				SM.fully_heal()
 				SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT) // back at a third of its strength
 				SM.set_stat(CONSCIOUS)
-				GLOB.dead_mob_list -= SM
-				GLOB.living_mob_list += SM
+				registry_leave(REGISTRY_DEAD_MOBS, SM)
+				registry_join(REGISTRY_LIVING_MOBS, SM)
 				SM.update_icon()
 				adjust_instability(15)
 			else if(ishuman(L))
 				var/mob/living/carbon/human/H = L
 
 				if(!H.client && H.mind) //Don't force the dead person to come back if they don't want to.
-					for(var/mob/observer/dead/ghost in GLOB.player_list)
+					for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 						if(ghost.mind == H.mind)
 							ghost.notify_revive("The Technomancer [user.real_name] is trying to revive you. \
 							Re-enter your body if you want to be revived!", 'sound/effects/genetics.ogg', source = user)
@@ -50,17 +50,19 @@
 
 				H.mend(TREAT_TISSUE_REPAIR, 40)
 				H.mend(TREAT_BURN_CARE, 40)
+				om_after(src, 10 SECONDS, PROC_REF(resurrect_finish), H, user)
 
-				sleep(10 SECONDS)
-				if(H.client)
-					L.set_stat(CONSCIOUS) //Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
-					GLOB.dead_mob_list -= H
-					GLOB.living_mob_list += H
-					H.timeofdeath = null
-					visible_message(span_danger("\The [H]'s eyes open!"))
-					to_chat(user, span_notice("It's alive!"))
-					adjust_instability(50)
-					log_and_message_admins("has resurrected [H].")
-				else
-					to_chat(user, span_warning("The body of \the [H] doesn't seem to respond, perhaps you could try again?"))
-					adjust_instability(10)
+/obj/item/spell/resurrect/proc/resurrect_finish(mob/living/carbon/human/H, mob/living/user)
+	var/mob/living/L = H
+	if(H.client)
+		L.set_stat(CONSCIOUS) //Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
+		registry_leave(REGISTRY_DEAD_MOBS, H)
+		registry_join(REGISTRY_LIVING_MOBS, H)
+		H.timeofdeath = null
+		visible_message(span_danger("\The [H]'s eyes open!"))
+		to_chat(user, span_notice("It's alive!"))
+		adjust_instability(50)
+		log_and_message_admins("has resurrected [H].")
+	else
+		to_chat(user, span_warning("The body of \the [H] doesn't seem to respond, perhaps you could try again?"))
+		adjust_instability(10)

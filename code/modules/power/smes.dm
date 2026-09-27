@@ -13,7 +13,6 @@
 //# define SMESMAXOUTPUT 250000 Unused
 
 /obj/machinery/power/smes
-	polls = FALSE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "power storage unit"
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."
@@ -76,10 +75,18 @@
 
 	var/smes_amt = min((amount * SMESRATE), charge)
 	charge -= smes_amt
-	power_sync()
+	if(vg_entity)
+		adjust_charge(-smes_amt)
 	return smes_amt / SMESRATE
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
+
+/// A SMES's own input terminal (rust_architecture.md step 3): its own
+/// entity, on its own region, naming the SMES unit
+/// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) --
+/// unlike the generic terminal, or an APC's own, this is a real network
+/// node in its own right, not a construction anchor for another entity's.
+/obj/machinery/power/terminal/smes_input
 
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
@@ -136,8 +143,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return
 
 /obj/machinery/power/smes/Destroy()
-	if(power_key)
-		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
 	for(var/obj/machinery/power/terminal/T in terminals)
 		T.master = null
 	terminals = null
@@ -147,7 +152,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)
 		var/turf/T = get_step(src, d)
-		for(var/obj/machinery/power/terminal/term in T)
+		for(var/obj/machinery/power/terminal/smes_input/term in T)
 			if(term && term.dir == turn(d, 180) && !term.master)
 				LAZYOR(terminals, term)
 				term.master = src
@@ -167,36 +172,40 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/power_registered()
 	power_sync()
 
-/// Sends settings, charge and terminals to Rust. DM's charge is current (every
-/// power step writes it back), so sending it is always safe.
+/// Sends settings and capacity to Rust (generated accessors,
+/// verdigris/domains/power/src/components.rs). Charge is Rust's own
+/// (`Smes.charge` is conserved, laws drive it) -- DM's absolute writes to
+/// it (drain_power(), the EMP hit) cross as `adjust_charge` deltas, and
+/// power_poll() reads the settled value back.
 /obj/machinery/power/smes/proc/power_sync()
-	if(QDELETED(src))
+	if(QDELETED(src) || !vg_entity)
 		return
-	if(!power_key)
-		power_key = power_key_alloc(src)
-	var/flags = 0
 	var/working = !(stat & BROKEN) && !grid_check
-	if(working && input_attempt && !input_pulsed && !input_cut)
-		flags |= POWER_SMES_INPUT
-	if(working && output_attempt && !output_pulsed && !output_cut)
-		flags |= POWER_SMES_OUTPUT
-	var/list/op = list(POWER_OP_SMES, 0, power_key, flags, capacity, input_level, output_level, charge)
-	for(var/obj/machinery/power/terminal/term as anything in terminals)
-		if(term.power_key)
-			op += term.power_key
-	op[2] = length(op) - 2
-	SSmachines.power_queue(op)
+	set_input_enabled(working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
+	set_output_enabled(working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
+	set_capacity(capacity)
+	set_input_level(input_level)
+	set_output_level(output_level)
+	var/unit_index = (vg_entity - 1) & VG_ENTITY_INDEX_MASK
+	for(var/obj/machinery/power/terminal/smes_input/term as anything in terminals)
+		if(term.vg_entity)
+			term.set_unit(unit_index)
 
-/// A POWER_EV_SMES record at `at`: key, charge, inputting, outputting,
-/// output_used, input_available, display.
-/obj/machinery/power/smes/proc/power_event(list/events, at)
-	power_event_count++
-	charge = events[at + 1]
-	output_used = events[at + 4]
-	input_available = events[at + 5]
-	var/new_inputting = events[at + 2]
-	var/new_outputting = events[at + 3]
+/// Reads back what Rust's SmesOutputPlan/Apply and SmesInputApply did this
+/// step (verdigris/domains/power/src/laws.rs): the settled charge and the
+/// shown input/output state.
+/obj/machinery/power/smes/proc/power_poll()
+	if(!vg_entity)
+		return
+	var/new_charge = get_charge()
+	// Counts polls that saw Rust change something (tests: an idle SMES hears nothing).
+	if(new_charge != charge)
+		power_event_count++
+	charge = new_charge
+	var/new_inputting = input_available > 0 ? (input_available + 0.01 >= target_load ? 2 : 1) : 0
+	var/new_outputting = output_used > 0 ? 2 : (output_attempt ? 1 : 0)
 	if(new_inputting != inputting || new_outputting != outputting || last_disp != chargedisplay())
+		power_event_count++
 		inputting = new_inputting
 		outputting = new_outputting
 		last_disp = chargedisplay()
@@ -280,7 +289,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return
 
 //Will return 1 on failure
-/obj/machinery/power/smes/proc/make_terminal(const/mob/user)
+/// Starts attaching a terminal with `CC` (a timed action). 1 if it could not start.
+/obj/machinery/power/smes/proc/make_terminal(const/mob/user, obj/item/stack/cable_coil/CC)
 	if (user.loc == loc)
 		to_chat(user, span_filter_notice(span_warning("You must not be on the same tile as the [src].")))
 		return 1
@@ -303,17 +313,28 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(check_terminal_exists(tempLoc, user, tempDir))
 		return 1
 	to_chat(user, span_filter_notice(span_notice("You start adding cable to the [src].")))
-	if(do_after(user, 5 SECONDS, target = src))
-		if(check_terminal_exists(tempLoc, user, tempDir))
-			return 1
-		var/obj/machinery/power/terminal/term = new/obj/machinery/power/terminal(tempLoc)
-		term.set_dir(tempDir)
-		term.master = src
-		term.connect_to_network()
-		LAZYOR(terminals, term)
-		power_sync()
-		return 0
-	return 1
+	var/started = om_do_after(user, 5 SECONDS, src, src, PROC_REF(terminal_done), list(user, CC, tempLoc, tempDir), on_fail = PROC_REF(terminal_ended))
+	return istext(started) ? 1 : 0
+
+/obj/machinery/power/smes/proc/terminal_ended()
+	building_terminal = 0
+
+/obj/machinery/power/smes/proc/terminal_done(mob/user, obj/item/stack/cable_coil/CC, turf/tempLoc, tempDir)
+	building_terminal = 0
+	if(check_terminal_exists(tempLoc, user, tempDir) || !CC.use(10))
+		return
+	var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
+	term.set_dir(tempDir)
+	term.master = src
+	term.connect_to_network()
+	LAZYOR(terminals, term)
+	power_sync()
+	user.visible_message(\
+			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
+			span_filter_notice(span_notice("You added cables to the [src].")))
+	stat = 0
+	if(!powernet)
+		connect_to_network()
 
 /obj/machinery/power/smes/proc/check_terminal_exists(turf/location, mob/user, direction)
 	for(var/obj/machinery/power/terminal/term in location)
@@ -378,17 +399,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		to_chat(user, span_filter_notice(span_warning("You need more cables.")))
 		building_terminal = 0
 		return TRUE
-	if (make_terminal(user))
+	if (make_terminal(user, CC))
 		building_terminal = 0
-		return TRUE
-	building_terminal = 0
-	CC.use(10)
-	user.visible_message(\
-			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
-			span_filter_notice(span_notice("You added cables to the [src].")))
-	stat = 0
-	if(!powernet)
-		connect_to_network()
 	return TRUE
 
 /// Any other item, or a cable coil while a terminal is already being built: swallowed
@@ -418,10 +430,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(!missing_integrity)
 		to_chat(user, span_filter_notice("\The [src] is already fully repaired."))
 		return ITEM_INTERACT_BLOCKING
-	if(welder.remove_fuel(0, user) && do_after(user, missing_integrity, target = src))
-		to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
-		repair_damage(missing_integrity)
+	if(welder.remove_fuel(0, user))
+		om_do_after(user, missing_integrity, src, src, PROC_REF(weld_repair_done), list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/proc/weld_repair_done(mob/user)
+	var/missing_integrity = max_integrity - get_integrity()
+	to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
+	repair_damage(missing_integrity)
 
 /obj/machinery/power/smes/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
@@ -444,20 +460,22 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
 	else
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables..."))
-			if(prob(50) && electrocute_mob(user, term.powernet, term))
-				var/datum/effect/effect/system/spark_spread/sparks = new
-				sparks.set_up(5, 1, src)
-				sparks.start()
-				building_terminal = FALSE
-				if(user.has_status(EFFECT_STUNNED))
-					return ITEM_INTERACT_SUCCESS
-			new /obj/item/stack/cable_coil(loc, 10)
-			user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
-			LAZYREMOVE(terminals, term)
-			qdel(term)
+		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
 	building_terminal = FALSE
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/proc/wirecutter_act_tool_done(mob/user, obj/machinery/power/terminal/term)
+	if(prob(50) && electrocute_mob(user, term.powernet, term))
+		var/datum/effect/effect/system/spark_spread/sparks = new
+		sparks.set_up(5, 1, src)
+		sparks.start()
+		building_terminal = FALSE
+		if(user.has_status(EFFECT_STUNNED))
+			return ITEM_INTERACT_SUCCESS
+	new /obj/item/stack/cable_coil(loc, 10)
+	user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
+	LAZYREMOVE(terminals, term)
+	qdel(term)
 
 /obj/machinery/power/smes/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

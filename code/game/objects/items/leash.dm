@@ -4,7 +4,7 @@
 	icon_state = "leash_master"
 
 /atom/movable/screen/alert/leash_dom/Click()
-	var/obj/item/leash/owner = master_ref?.resolve()
+	var/obj/item/leash/owner = om_resolve(master_ref)
 	if(owner)
 		owner.unleash()
 
@@ -14,7 +14,7 @@
 	icon_state = "leash_pet"
 
 /atom/movable/screen/alert/leash_pet/Click()
-	var/obj/item/leash/owner = master_ref?.resolve()
+	var/obj/item/leash/owner = om_resolve(master_ref)
 	if(owner)
 		owner.struggle_leash()
 
@@ -38,7 +38,7 @@
 	source.add_modifier(/datum/modifier/leash)
 	source.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = target)
 	target.RegisterSignal(source, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/item/leash, on_pet_move))
-	START_PROCESSING(SSobj, target)
+	PERIODIC_START(target, PERIODIC_SLOW)
 
 /datum/om/relation/leashed_to/on_unlink(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -47,7 +47,7 @@
 		source.remove_a_modifier_of_type(/datum/modifier/leash)
 	if(istype(target))
 		target.UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
-		STOP_PROCESSING(SSobj, target)
+		PERIODIC_STOP(target)
 		// No pet, no leash: let go of the holder too.
 		var/mob/living/master = LEASH_MASTER(target)
 		if(master)
@@ -89,7 +89,7 @@
 	throwforce = 1
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/leash/process()
+/obj/item/leash/periodic_step()
 	var/mob/living/leash_pet = LEASH_PET(src)
 	var/mob/living/leash_master = LEASH_MASTER(src)
 	if(!leash_pet || !leash_master) //If there is no pet, there is no dom. Loop breaks.
@@ -144,8 +144,10 @@
 
 	C.visible_message(span_danger("\The [user] is attempting to put the leash on \the [C]!"), span_danger("\The [user] tries to put a leash on you"))
 	add_attack_logs(user,C,"Leashed (attempt)")
-	if(!do_after(user, leashtime, C)) //do_mob adds a progress bar, but then we also check to see if they have a collar
-		return ITEM_INTERACT_FAILURE
+	om_do_after(user, leashtime, target = C, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(C, user))
+	return TRUE
+
+/obj/item/leash/proc/attack_timed_done(mob/living/C, mob/living/user)
 	if(tgui_alert(C, "Would you like to be leased by [user]? You can OOC escape to escape", "Become Leashed",list("No","Yes")) != "Yes")
 		return ITEM_INTERACT_FAILURE
 	if(QDELETED(C) || QDELETED(user) || LEASH_OF(C))
@@ -199,9 +201,11 @@
 	apply_tug_mob_to_mob(leash_pet, leash_master, 2)
 
 	//Knock the pet over if they get further behind. Shouldn't happen too often.
-	sleep(0.3 SECONDS) //This way running normally won't just yank the pet to the ground.
-	leash_pet = LEASH_PET(src)
-	leash_master = LEASH_MASTER(src)
+	om_after(src, 0.3 SECONDS, PROC_REF(leash_trip_check)) //This way running normally won't just yank the pet to the ground.
+
+/obj/item/leash/proc/leash_trip_check()
+	var/mob/living/leash_pet = LEASH_PET(src)
+	var/mob/living/leash_master = LEASH_MASTER(src)
 	if(!leash_master || !leash_pet || leash_pet.absorbed) //Just to stop error messages. Break the loop early if something removed the master
 		clear_leash()
 		return
@@ -213,9 +217,11 @@
 		leash_pet.apply_effect(5, STUN, 0)
 
 	//This code is to check if the pet has gotten too far away, and then break the leash.
-	sleep(0.3 SECONDS) //Wait to snap the leash
-	leash_pet = LEASH_PET(src)
-	leash_master = LEASH_MASTER(src)
+	om_after(src, 0.3 SECONDS, PROC_REF(leash_snap_check)) //Wait to snap the leash
+
+/obj/item/leash/proc/leash_snap_check()
+	var/mob/living/leash_pet = LEASH_PET(src)
+	var/mob/living/leash_master = LEASH_MASTER(src)
 	if(!leash_master || !leash_pet || leash_pet.absorbed) //Just to stop error messages
 		clear_leash()
 		return
@@ -285,8 +291,10 @@
 	leash_pet.visible_message(span_danger("\The [leash_pet] is attempting to unhook [leash_pet.p_their()] leash!"), span_danger("You attempt to unhook your leash"))
 	add_attack_logs(leash_master,leash_pet,"Self-unleash (attempt)")
 
-	if(!do_after(leash_pet, 3.5 SECONDS, leash_pet))
-		return
+	om_do_after(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(struggle_leash_timed_done), done_args = list(leash_pet))
+	return TRUE
+
+/obj/item/leash/proc/struggle_leash_timed_done(mob/living/leash_pet)
 
 	to_chat(leash_pet, span_userdanger("You have been released!"))
 	clear_leash()
@@ -299,8 +307,10 @@
 	leash_pet.visible_message(span_danger("\The [leash_master] is attempting to remove the leash on \the [leash_pet]!"), span_danger("\The [leash_master] tries to remove leash from you"))
 	add_attack_logs(leash_master,leash_pet,"Unleashed (attempt)")
 
-	if(!do_after(leash_master, 1.5 SECONDS, leash_pet))
-		return
+	om_do_after(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(unleash_timed_done), done_args = list(leash_pet))
+	return TRUE
+
+/obj/item/leash/proc/unleash_timed_done(mob/living/leash_pet)
 
 	to_chat(leash_pet, span_userdanger("You have been released!"))
 	clear_leash()

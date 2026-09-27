@@ -37,9 +37,7 @@
 		if(imp.reagents.total_volume >= imp.reagents.maximum_volume)
 			to_chat(user, span_warning("\The [src] is full."))
 		else
-			spawn(5)
-				I.reagents.trans_to_obj(imp, 5)
-				to_chat(user, span_notice("You inject 5 units of the solution. The syringe now contains [I.reagents.total_volume] units."))
+			om_after(src, 5, PROC_REF(inject_from), I, user)
 	else if (istype(I, /obj/item/implanter))
 		var/obj/item/implanter/M = I
 		if (M.imp)
@@ -302,3 +300,7 @@
 /obj/item/implantcase/vrlanguage/Initialize(mapload)
 	. = ..()
 	imp = new /obj/item/implant/vrlanguage(src)
+
+/obj/item/implantcase/proc/inject_from(obj/item/reagent_containers/syringe/I, mob/user)
+	I.reagents.trans_to_obj(imp, 5)
+	to_chat(user, span_notice("You inject 5 units of the solution. The syringe now contains [I.reagents.total_volume] units."))

@@ -14,7 +14,10 @@
 	// We must merge ourselves into a zone on next tick.  This will cause a bit of lag on
 	// startup, but it can't really be helped you know?
 	if(SSair && SSair.times_fired == 0)
-		spawn(1)
-			SSair.mark_for_update(get_turf(src))
+		om_after(src, 1, PROC_REF(join_zone))
 		return FALSE
 	return is_zone ? FALSE : TRUE // Anything except zones can pass
+
+/// We must merge ourselves into a zone once the air subsystem runs.
+/obj/effect/zone_divider/proc/join_zone()
+	SSair.mark_for_update(get_turf(src))

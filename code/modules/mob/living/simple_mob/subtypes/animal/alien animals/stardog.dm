@@ -59,12 +59,23 @@
 	remove_verb(src, /mob/living/simple_mob/proc/set_name)
 	remove_verb(src, /mob/living/simple_mob/proc/set_desc)
 
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
+	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
+		to_chat(user, span_warning("\The [that_one] got away..."))
+		to_chat(that_one, span_notice("You got away!"))
+		return
+	var/prev_size = that_one.size_multiplier
+	that_one.resize(RESIZE_TINY, ignore_prefs = TRUE)
+	if(!that_one.attempt_to_scoop(user, ignore_size = TRUE))
+		that_one.resize(prev_size, ignore_prefs = TRUE)
+		return
+
 /mob/living/simple_mob/vore/overmap/stardog/attack_hand(mob/living/user)
 	if(!(user.pickup_pref && user.pickup_active))
 		return ..()
 	var/list/possible_targets = list()
 
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!(player.z in child_om_marker.map_z))
 			continue
 		if(!(isliving(player) && istype(player.loc,/turf/simulated/floor/outdoors/fur) && player.client))
@@ -79,17 +90,9 @@
 	if(!that_one)
 		return ..()
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
-	if(!do_after(user, 3 SECONDS, target = src))
-		return ..()
-	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
-		to_chat(user, span_warning("\The [that_one] got away..."))
-		to_chat(that_one, span_notice("You got away!"))
-		return
-	var/prev_size = that_one.size_multiplier
-	that_one.resize(RESIZE_TINY, ignore_prefs = TRUE)
-	if(!that_one.attempt_to_scoop(user, ignore_size = TRUE))
-		that_one.resize(prev_size, ignore_prefs = TRUE)
-		return ..()
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
+	return TRUE
+
 
 /datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
 	of = /mob/living/simple_mob/vore/overmap/stardog
@@ -254,8 +257,10 @@
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	if(!do_after(src, 20 SECONDS, target = E))
-		return
+	om_do_after(src, 20 SECONDS, target = E, receiver = src, on_done = PROC_REF(eat_space_weather_stardog_done), done_args = list(E, nut, aff, mob, ore, tre, msg, heal, delet))
+	return TRUE
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(obj/effect/overmap/event/E, nut, aff, mob, ore, tre, msg, heal, delet)
 	to_chat(src, span_notice("[msg]"))
 	if(nut || aff)
 		adjust_nutrition(nut)
@@ -285,6 +290,13 @@
 		if(istype(a, /area/redgate/stardog/flesh_abyss) && prob(chance))
 			a.spawn_treasure()
 
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(atom/our_dest)
+	visible_message(span_warning("\The [src] disappears!!!"))
+	stop_pulling()
+	forceMove(get_turf(our_dest))
+	adjust_nutrition(-1000)
+	visible_message(span_warning("\The [src] steps into the area as if from nowhere!"))
+
 /mob/living/simple_mob/vore/overmap/stardog/verb/transition()	//Don't ask how it works. I don't know. I didn't think about it. I just thought it would be cool.
 	set name = "Transition"
 	set desc = "Attempt to go to the location you have arrived at, or return to space!"
@@ -305,7 +317,7 @@
 		if(!our_maps.len)
 			to_chat(src, span_warning("There is nowhere nearby to go to! You need to get closer to somewhere you can transition to before you can transition."))
 			return
-		for(var/obj/effect/landmark/l in GLOB.landmarks_list)
+		for(var/obj/effect/landmark/l in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(l.z in our_maps)
 				if(istype(l,/obj/effect/landmark/stardog))
 					destinations |= l
@@ -319,26 +331,23 @@
 			to_chat(src, span_warning("You decide not to transition."))
 			return
 		to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-		if(!do_after(src, 15 SECONDS, target = src))
-			to_chat(src, span_warning("You were interrupted."))
-			return
-		visible_message(span_warning("\The [src] disappears!!!"))
-		stop_pulling()
-		forceMove(get_turf(our_dest))
-		adjust_nutrition(-1000)
-		visible_message(span_warning("\The [src] steps into the area as if from nowhere!"))
+		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
-		if(!do_after(src, 15 SECONDS, target = src))
-			to_chat(src, span_warning("You were interrupted."))
-			return
+		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
+		return
 
-		visible_message(span_warning("\The [src] disappears!!!"))
-		stop_pulling()
-		forceMove(get_turf(get_overmap_sector(z)))
-		adjust_nutrition(-500)
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
 
+	visible_message(span_warning("\The [src] disappears!!!"))
+	stop_pulling()
+	forceMove(get_turf(get_overmap_sector(z)))
+	adjust_nutrition(-500)
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_failed()
+	to_chat(src, span_warning("You were interrupted."))
+	return
 
 /obj/effect/overmap/visitable/ship/simplemob/stardog
 	icon = 'icons/obj/overmap.dmi'
@@ -466,13 +475,11 @@
 			continue
 		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
 		!L.client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) && !check_rights_for(M.client, R_HOLDER)))
-			spawn(0)
-				M.show_message(undisplayed_message, 2)
+			M.show_message(undisplayed_message, 2)
 		else
-			spawn(0)
-				M.show_message(message, 2)
-				if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-					M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+			M.show_message(message, 2)
+			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
+				M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
 
 /datum/decl/flooring/fur
 	name = "fur"
@@ -818,9 +825,10 @@
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
 	user.visible_message(span_notice("\The [user] reaches out to touch \the [src]..."),span_notice("You reach out to touch \the [src]..."))
-	if(!do_after(user, 10 SECONDS, target = src))
-		user.visible_message(span_warning("\The [user] pulls back from \the [src]."),span_warning("You pull back from \the [src]."))
-		return
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
+	return TRUE
+
+/obj/structure/control_pod/proc/control_control_pod_done(mob/living/user)
 	if(controller)	//got busy while you were waiting, get rekt
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
@@ -833,6 +841,10 @@
 	icon_state = "control_node1"
 	plane = ABOVE_MOB_PLANE
 	set_light(5, 0.75, "#f94bff")
+
+/obj/structure/control_pod/proc/control_control_pod_failed(mob/living/user)
+	user.visible_message(span_warning("\The [user] pulls back from \the [src]."),span_warning("You pull back from \the [src]."))
+	return
 
 /obj/structure/control_pod/proc/eject()
 	to_chat(host, span_warning("You feel your control over \the [host] slip away from you!"))
@@ -847,10 +859,9 @@
 	var/our_y = rand(-5,5) + y
 
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
-	spawn(0)
-		playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
-		controller.throw_at(throwtarg, 10, 1)
-		controller = null
+	playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
+	controller.throw_at(throwtarg, 10, 1)
+	controller = null
 
 /obj/effect/landmark/stardog	//I didn't know how else to decide where the dog will land
 	name = "stardog landing"
@@ -891,15 +902,29 @@
 	. = ..()
 	icon_state = "screen_eye"
 
-/obj/machinery/computer/ship/navigation/verb/emote_beyond(message as message)	//I could have put this into any other file but right here will do
-	set name = "Emote Beyond"
-	set desc = "Emote to those beyond the ship!"
-	set category = "IC.Chat"
-	set src in oview(7)
+/obj/machinery/computer/ship/navigation/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/emote_beyond,
+	)
+	..()
 
-	if(!isliving(usr))
-		return
-	var/mob/living/L = usr
+/// The old Emote Beyond verb: a subtle emote to those outside the ship, from within sight of its helm.
+/datum/interaction/machine_verb/emote_beyond
+	id = "ship_emote_beyond"
+	name = "Emote Beyond"
+	category = INTERACTION_CAT_CONFIGURE
+	requires = list(REQ_PROC(/proc/dq_emote_beyond_in_view, "too far away"), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond
+
+/// The old verb's `set src in oview(7)`.
+/proc/dq_emote_beyond_in_view(mob/actor, atom/target, obj/item/held)
+	return actor && target && get_dist(actor, target) <= 7 && (target in view(7, actor))
+
+/obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
+		return TRUE
+	var/mob/living/L = user
+	var/message
 	if(L.client.prefs.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
@@ -929,13 +954,11 @@
 			continue
 		if(isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
 		!L.client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) && !check_rights_for(M.client, R_HOLDER)))
-			spawn(0)
-				M.show_message(undisplayed_message, 2)
+			M.show_message(undisplayed_message, 2)
 		else
-			spawn(0)
-				M.show_message(message, 2)
-				if(M.read_preference(/datum/preference/toggle/subtle_sounds))
-					M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
+			M.show_message(message, 2)
+			if(M.read_preference(/datum/preference/toggle/subtle_sounds))
+				M << sound('sound/talksounds/subtle_sound.ogg', volume = 50)
 
 /area/redgate/stardog/eyes
 
@@ -1107,8 +1130,7 @@
 	visible_message(span_danger("\The [AM] passes through \the [src]!"))
 	if(throw_through)	//We will throw the target to the south!
 		var/turf/throwtarg = locate(target.x, (target.y - 5), target.z)
-		spawn(0)
-			AM.throw_at(throwtarg, 10, 1)	//reverbfart.ogg
+		AM.throw_at(throwtarg, 10, 1)	//reverbfart.ogg
 
 /obj/effect/dog_teleporter/food_gobbler
 	teleport_sound = 'sound/vore/gulp.ogg'
@@ -1203,22 +1225,22 @@
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source) && !we_process)
-		START_PROCESSING(SSturfs, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		we_process = TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(digest_stuff(source) && !we_process)
-		START_PROCESSING(SSturfs, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		we_process = TRUE
 
-/turf/simulated/floor/water/digestive_enzymes/process()
+/turf/simulated/floor/water/digestive_enzymes/periodic_step()
 	if(!digest_stuff())
 		we_process = FALSE
 		return PROCESS_KILL
 
 /turf/simulated/floor/water/digestive_enzymes/Destroy()
 	if(we_process)
-		STOP_PROCESSING(SSturfs, src)
+		PERIODIC_STOP(src)
 	. = ..()
 
 /turf/simulated/floor/water/digestive_enzymes/proc/can_digest(atom/movable/digest_target)
@@ -1353,15 +1375,17 @@
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/structure/auto_flesh_door/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	update_nearby_tiles()
 	return ..()
 
-/obj/structure/auto_flesh_door/process()
+/// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
+/obj/structure/auto_flesh_door/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	if(countdown <= 0)
 		SwitchState()
 	else
@@ -1419,7 +1443,9 @@
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-opening",src)
-	sleep(8)
+	om_after(src, 8, PROC_REF(open_finish))
+
+/obj/structure/auto_flesh_door/proc/open_finish()
 	density = FALSE
 	set_opacity(0)
 	state = 1
@@ -1435,7 +1461,9 @@
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-closing",src)
-	sleep(8)
+	om_after(src, 8, PROC_REF(close_finish))
+
+/obj/structure/auto_flesh_door/proc/close_finish()
 	density = TRUE
 	set_opacity(1)
 	state = 0

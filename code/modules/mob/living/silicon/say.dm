@@ -97,16 +97,14 @@
 		var/list/o_viewers = in_range["objs"]
 
 		for(var/mob/M in m_viewers)
-			spawn(0)
-				if(M)
-					M.show_message(rendered, 2)
+			if(M)
+				M.show_message(rendered, 2)
 
 		for(var/obj/O in o_viewers)
 			if(O == T)
 				continue
-			spawn(0)
-				if(O)
-					O.see_emote(src, message)
+			if(O)
+				O.see_emote(src, message)
 
 		log_message("(HPAD) [message]", LOG_EMOTE)
 

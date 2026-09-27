@@ -53,7 +53,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
 	. = ..()
-	GLOB.existing_solargrubs += src
 	powermachine = new(src)
 	sparks = new(src)
 	sparks.set_up()
@@ -65,8 +64,9 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	set_light(0)
 	return ..()
 
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
+
 /mob/living/simple_mob/animal/solargrub_larva/Destroy()
-	GLOB.existing_solargrubs -= src
 	QDEL_NULL(powermachine)
 	QDEL_NULL(sparks)
 	QDEL_NULL(machine_effect)
@@ -90,7 +90,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	if(istype(self.loc, /obj/machinery))
 		if(self.machine_effect && SSair.times_fired%30)
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				M << self.machine_effect
 		if(prob(10))
 			self.sparks.start()
@@ -120,14 +120,15 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 /mob/living/simple_mob/animal/solargrub_larva/proc/enter_machine(obj/machinery/M)
 	if(!istype(M))
 		return
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	forceMove(M)
 	powermachine.draining = 2
+	MACHINE_WAKE(powermachine)
 	visible_message(span_warning("\The [src] finds an opening and crawls inside \the [M]."))
 	if(!(M.type in GLOB.grub_machine_overlays))
 		generate_machine_effect(M)
 	machine_effect = image(GLOB.grub_machine_overlays[M.type], M) //Can't do this the reasonable way with an overlay,
-	for(var/mob/L in GLOB.player_list)				//because nearly every machine updates its icon by removing all overlays first
+	for(var/mob/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))				//because nearly every machine updates its icon by removing all overlays first
 		L << machine_effect
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/generate_machine_effect(obj/machinery/M)
@@ -148,8 +149,8 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
 	powermachine.draining = 1
-	spawn(30)
-		if(ai_brain) ai_brain.busy = FALSE
+	MACHINE_WAKE(powermachine)
+	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
 		return
@@ -159,18 +160,21 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	forceMove(vent)
 	playsound(vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
 	vent.visible_message("\The [src] wiggles into \the [vent]!")
-	var/redirect_attempts = 3
-	while(redirect_attempts)
-		var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
-		sleep(travel_time)
-		if(end_vent.welded)
-			end_vent = get_safe_ventcrawl_target(vent)
-			if(!end_vent)
-				forceMove(get_turf(vent))
-				return
-			redirect_attempts--
-			continue
-		break
+	ventcrawl_travel(vent, end_vent, 3)
+
+/// Travel time through the ducts; welded exits redirect up to `redirect_attempts` times.
+/mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_travel(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
+	var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
+	om_after(src, travel_time, PROC_REF(ventcrawl_arrive), vent, end_vent, redirect_attempts)
+
+/mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_arrive(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
+	if(end_vent.welded && redirect_attempts)
+		end_vent = get_safe_ventcrawl_target(vent)
+		if(!end_vent)
+			forceMove(get_turf(vent))
+			return
+		ventcrawl_travel(vent, end_vent, redirect_attempts - 1)
+		return
 	playsound(end_vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
 	forceMove(get_turf(end_vent))
 
@@ -217,9 +221,10 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	grub = null
 	return ..()
 
-/obj/machinery/abstract_grub_machine/process()
+/// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
+/obj/machinery/abstract_grub_machine/machine_step()
 	if(!draining)
-		return
+		return PROCESS_KILL
 	var/area/A = get_area(src)
 	if(!A)
 		return

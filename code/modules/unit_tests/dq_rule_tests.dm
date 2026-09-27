@@ -38,7 +38,7 @@
 
 /// Run a heat frame and deliver its wakes, then let SSreactor step and dispatch.
 /proc/dq_rx_flush()
-	vg_heat_debug_run_frames(1)
+	vg_world_run_steps(1)
 	SSair.dispatch_heat_wakes()
 	react_test_ticks(2)
 

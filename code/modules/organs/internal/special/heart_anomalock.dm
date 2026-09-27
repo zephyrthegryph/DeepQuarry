@@ -88,13 +88,8 @@
 		if(core)
 			balloon_alert(user, "core already in!")
 			return FALSE
-		if(do_after(user, 3 SECONDS, src))
-			user.unEquip(W, TRUE, src)
-			core = W
-			balloon_alert(user, "core_installed")
-			playsound(src, 'sound/machines/click.ogg')
-			update_icon()
-			return TRUE
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(install_core), list(user, W))
+		return TRUE
 
 	if(W.has_tool_quality(IS_SCREWDRIVER))
 		if(!core)
@@ -104,18 +99,29 @@
 			balloon_alert(user, "can't remove core!")
 			return FALSE
 		balloon_alert(user, "removing core...")
-		if(!do_after(user, 3 SECONDS, src))
-			balloon_alert(user, "interrupted!")
-			return
-		balloon_alert(user, "core removed")
-		core.forceMove(drop_location())
-		if(Adjacent(user) && !issilicon(user))
-			user.put_in_hands(core)
-		core = null
-		update_icon()
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(remove_core), list(user), on_fail = TYPE_PROC_REF(/atom, balloon_alert), fail_args = list(user, "interrupted!"))
 		return TRUE
 
 	return ..()
+
+/obj/item/organ/internal/heart/machine/anomalock/proc/install_core(mob/user, obj/item/W)
+	if(core || W.loc != user)
+		return
+	user.unEquip(W, TRUE, src)
+	core = W
+	balloon_alert(user, "core_installed")
+	playsound(src, 'sound/machines/click.ogg')
+	update_icon()
+
+/obj/item/organ/internal/heart/machine/anomalock/proc/remove_core(mob/user)
+	if(!core)
+		return
+	balloon_alert(user, "core removed")
+	core.forceMove(drop_location())
+	if(Adjacent(user) && !issilicon(user))
+		user.put_in_hands(core)
+	core = null
+	update_icon()
 
 /obj/item/organ/internal/heart/machine/anomalock/prebuilt/Initialize(mapload, internal)
 	. = ..()

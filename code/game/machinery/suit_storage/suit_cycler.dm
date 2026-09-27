@@ -173,17 +173,19 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	visible_message(span_notice("[user] starts putting [grabbed.name] into the suit cycler."), 3)
 
-	if(do_after(user, 2 SECONDS, target = src))
-		if(!G || !GRAB_TARGET(G))
-			return TRUE
-		var/mob/M = GRAB_TARGET(G)
-		if(!M.move_into(src, OCCUPANT_SLOT_SUIT_CYCLER))
-			return TRUE
-
-		add_fingerprint(user)
-		qdel(G)
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
 
 	return TRUE
+
+/obj/machinery/suit_cycler/proc/interaction_insert_grab_timed_done(mob/user, obj/item/grab/G)
+	if(!G || !GRAB_TARGET(G))
+		return TRUE
+	var/mob/M = GRAB_TARGET(G)
+	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_CYCLER))
+		return TRUE
+
+	add_fingerprint(user)
+	qdel(G)
 
 /// Fit a helmet, excluding hardsuit (rig) helmets.
 /datum/interaction/machine_item/suit_cycler_insert_helmet
@@ -439,18 +441,14 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			if(!suit || !can_repair)
 				return
 			active = 1
-			spawn(100)
-				repair_suit()
-				finished_job(ui.user)
+			om_after(src, 10 SECONDS, PROC_REF(finish_repair), ui.user)
 			. = TRUE
 
 		if("apply_paintjob")
 			if(!suit && !helmet)
 				return
 			active = 1
-			spawn(100)
-				apply_paintjob()
-				finished_job(ui.user)
+			om_after(src, 10 SECONDS, PROC_REF(finish_paintjob), ui.user)
 			. = TRUE
 
 		if("lock")
@@ -472,25 +470,24 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 			active = 1
 			irradiating = 10
-			START_MACHINE_PROCESSING(src)
-
-			sleep(10)
-
-			if(helmet)
-				if(radiation_level > 2)
-					helmet.wash(CLEAN_TYPE_RADIATION)
-				if(radiation_level > 1)
-					helmet.wash(CLEAN_SCRUB)
-
-			if(suit)
-				if(radiation_level > 2)
-					suit.wash(CLEAN_TYPE_RADIATION)
-				if(radiation_level > 1)
-					suit.wash(CLEAN_SCRUB)
-
+			MACHINE_WAKE(src)
+			om_after(src, 1 SECOND, PROC_REF(uv_wash))
 			. = TRUE
 
-/obj/machinery/suit_cycler/process()
+/obj/machinery/suit_cycler/proc/uv_wash()
+	if(helmet)
+		if(radiation_level > 2)
+			helmet.wash(CLEAN_TYPE_RADIATION)
+		if(radiation_level > 1)
+			helmet.wash(CLEAN_SCRUB)
+
+	if(suit)
+		if(radiation_level > 2)
+			suit.wash(CLEAN_TYPE_RADIATION)
+		if(radiation_level > 1)
+			suit.wash(CLEAN_SCRUB)
+
+/obj/machinery/suit_cycler/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(electrified > 0)
@@ -594,3 +591,11 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	else
 		visible_message("[icon2html(src,viewers(src))]" + span_warning("Unable to apply specified cosmetics with specified species. Please try again with a different species or cosmetic option selected."))
 		return
+
+/obj/machinery/suit_cycler/proc/finish_repair(mob/user)
+	repair_suit()
+	finished_job(user)
+
+/obj/machinery/suit_cycler/proc/finish_paintjob(mob/user)
+	apply_paintjob()
+	finished_job(user)

@@ -208,7 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 	update_transform()
 
@@ -389,14 +389,13 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	QDEL_NULL(spark_system)
 	QDEL_NULL(minihud)
 
-	STOP_PROCESSING(SSobj, src)
 
 	. = ..()
 
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
-/obj/mecha/process()
+/obj/mecha/periodic_step()
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
 	var/static/max_ticks = 16
 	// An empty parked mech has no player-visible cabin simulation to advance.
@@ -559,23 +558,14 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	radio.icon_state = icon_state
 	radio.subspace_transmission = 1
 
-/obj/mecha/proc/do_after_action(delay as num) //This is literally just a sleep disguised as a proc. Fucking bullshit.
-	sleep(delay)
-	if(src)
-		return 1
-	return 0
-
-/obj/mecha/proc/enter_after(delay as num, mob/user as mob, numticks = 5)
-	var/delayfraction = delay/numticks
-
-	var/turf/T = user.loc
-
-	for(var/i = 0, i<numticks, i++)
-		sleep(delayfraction)
-		if(!src || !user || !user.canmove || !(user.loc == T))
-			return 0
-
-	return 1
+/obj/mecha/proc/recalibration_done(T)
+	if(T == src.loc)
+		src.clearInternalDamage(MECHA_INT_CONTROL_LOST)
+		src.occupant_message(span_blue("Recalibration successful."))
+		src.mecha_log_message("Recalibration of coordination system finished with 0 errors.")
+	else
+		src.occupant_message(span_red("Recalibration failed."))
+		src.mecha_log_message("Recalibration of coordination system failed with 1 error.",1)
 
 
 /obj/mecha/proc/check_for_support()
@@ -962,8 +952,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				float_direction = direction
 				start_process(MECHA_PROC_MOVEMENT)
 				src.mecha_log_message(span_warning("Movement control lost. Inertial movement started."))
-		if(do_after_action(get_step_delay()))
-			can_move = 1
+		om_after(src, get_step_delay(), PROC_REF(reset_can_move))
 		return 1
 	return 0
 
@@ -1016,8 +1005,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(istype(O, /obj/effect/portal))	//derpfix
 			src.anchored = 0				// Portals can only move unanchored objects.
 			O.Crossed(src)
-			spawn(0)//countering portal teleport spawn(0), hurr
-				src.anchored = 1
+			om_after(src, 0, TYPE_PROC_REF(/datum, om_set_var), "anchored", 1) //countering the portal's deferred teleport
 		if(O.anchored)
 			obstacle.Bumped(src)
 		else
@@ -1028,16 +1016,17 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return
 
 /obj/mecha/proc/phase()	// Force the mecha to move forward by phasing.
-	set waitfor = FALSE
 	if(can_phase)
 		can_phase = FALSE
 		flick("[initial_icon]-phase", src)
 		forceMove(get_step(src,src.dir))
-		sleep(get_step_delay() * 3)
-		can_phase = TRUE
-		occupant_message("Phazed.")
+		om_after(src, get_step_delay() * 3, PROC_REF(phase_ready))
 		return TRUE	// In the event this is sequenced
 	return FALSE
+
+/obj/mecha/proc/phase_ready()
+	can_phase = TRUE
+	occupant_message("Phazed.")
 
 ///////////////////////////////////
 ////////  Internal damage  ////////
@@ -1530,22 +1519,20 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	if(istype(W, /obj/item/mecha_parts/mecha_equipment))
 		var/obj/item/mecha_parts/mecha_equipment/E = W
-		spawn()
-			if(E.can_attach(src))
-				user.drop_item()
-				E.attach(src)
-				user.visible_message("[user] attaches [W] to [src]", "You attach [W] to [src]")
-			else
-				to_chat(user, "You were unable to attach [W] to [src]")
+		if(E.can_attach(src))
+			user.drop_item()
+			E.attach(src)
+			user.visible_message("[user] attaches [W] to [src]", "You attach [W] to [src]")
+		else
+			to_chat(user, "You were unable to attach [W] to [src]")
 		return
 
 	if(istype(W, /obj/item/mecha_parts/component) && state == MECHA_CELL_OUT)
 		var/obj/item/mecha_parts/component/MC = W
-		spawn()
-			if(MC.attach(src))
-				user.drop_item()
-				MC.forceMove(src)
-				user.visible_message("[user] installs \the [W] in \the [src]", "You install \the [W] in \the [src].")
+		if(MC.attach(src))
+			user.drop_item()
+			MC.forceMove(src)
+			user.visible_message("[user] installs \the [W] in \the [src]", "You install \the [W] in \the [src].")
 		return
 
 	if(istype(W, /obj/item/card/robot))
@@ -1629,18 +1616,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 				else if(C.get_integrity() < C.max_integrity)
 					to_chat(user, span_notice("You start to repair damage to \the [C]."))
-					while(C.get_integrity() < C.max_integrity && NP)
-						if(do_after(user, 1 SECOND, target = src))
-							NP.use(1)
-							C.adjust_integrity(NP.mech_repair)
-
-							if(C.get_integrity() >= C.max_integrity)
-								to_chat(user, span_notice("You finish repairing \the [C]."))
-								break
-
-							else if(NP.amount == 0)
-								to_chat(user, span_warning("Insufficient nanopaste to complete repairs!"))
-								break
+					C.paste_repair_step(user, NP, src)
 			return
 
 		else
@@ -1706,14 +1682,14 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	visible_message(span_notice("[usr] starts to insert a brain into [src.name]"))
 
-	if(enter_after(40,user))
-		if(!occupant)
-			return mmi_moved_inside(mmi_as_oc,user)
-		else
-			to_chat(user, "Occupant detected.")
+	var/started = om_do_after(user, 4 SECONDS, src, src, PROC_REF(mmi_install_done), list(mmi_as_oc, user), IGNORE_HELD_ITEM, GLOBAL_PROC_REF(to_chat), list(user, "You stop attempting to install the brain."))
+	return !istext(started)
+
+/obj/mecha/proc/mmi_install_done(obj/item/mmi/mmi_as_oc, mob/user)
+	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
+		mmi_moved_inside(mmi_as_oc,user)
 	else
-		to_chat(user, "You stop attempting to install the brain.")
-	return 0
+		to_chat(user, "Occupant detected.")
 
 /obj/mecha/proc/mmi_moved_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
 	if(mmi_as_oc && (user in range(1)))
@@ -2030,16 +2006,19 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			GrantActions(occupant, 1)
 	else
 		visible_message(span_infoplain(span_bold("\The [user]") + " starts to climb into [src.name]"))
-		if(enter_after(40, user))
-			if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
-				moved_inside(user)
-				if(ishuman(occupant)) //Aeiou
-					GrantActions(occupant, 1)
-			else if(SLOT_ITEM(src, MECHA_SLOT_PILOT) != user)
-				to_chat(usr, "[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was faster. Try better next time, loser.")
-		else
-			to_chat(user, "You stop entering the exosuit.")
+		om_do_after(user, 4 SECONDS, src, src, PROC_REF(climb_in_done), list(user), IGNORE_HELD_ITEM, GLOBAL_PROC_REF(to_chat), list(user, "You stop entering the exosuit."))
 	return
+
+/obj/mecha/proc/climb_in_done(mob/user)
+	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
+		moved_inside(user)
+		if(ishuman(SLOT_ITEM(src, MECHA_SLOT_PILOT))) //Aeiou
+			GrantActions(SLOT_ITEM(src, MECHA_SLOT_PILOT), 1)
+	else if(SLOT_ITEM(src, MECHA_SLOT_PILOT) != user)
+		to_chat(user, "[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was faster. Try better next time, loser.")
+
+/obj/mecha/proc/reset_can_move()
+	can_move = 1
 
 /obj/mecha/proc/moved_inside(mob/living/carbon/human/H)
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
@@ -2047,7 +2026,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		src.add_fingerprint(H)
 		src.verbs += /obj/mecha/verb/eject
 		src.log_append_to_last("[H] moved in as pilot.")
@@ -2265,8 +2244,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	var/tgui_subview = "main"
 	// Refs kept alive across sub-view interactions so tgui_data can
 	// re-render structured data on update without losing the caller/card.
-	var/datum/weakref/active_id_card_ref
-	var/datum/weakref/active_caller_ref
+	var/active_id_card_ref
+	var/active_caller_ref
 	var/active_attack_target_name = ""
 
 /obj/mecha/tgui_interact(mob/user, datum/tgui/ui)
@@ -2297,7 +2276,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			data["ai_targets"] = targets
 			return data
 		if("access")
-			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
 			var/list/cur = list()
 			for(var/a in operation_req_access)
 				cur += list(list("id" = a, "name" = SSaccess.get_access_desc(a)))
@@ -2471,7 +2450,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		// Attack-AI sub-view
 		if("ai_use_equipment")
 			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
-			var/atom/target = active_caller_ref?.resolve()
+			var/atom/target = om_resolve(active_caller_ref)
 			if(W && (W in equipment))
 				W.action(target)
 			tgui_subview = "main"
@@ -2479,7 +2458,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		// Access sub-view
 		if("access_add")
 			var/a = text2num(params["id"])
-			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
 			if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
 				operation_req_access += a
 			return TRUE
@@ -2494,7 +2473,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return TRUE
 		// Maint sub-view
 		if("maint_req_access")
-			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
 			if(id_card)
 				tgui_subview = "access"
 			return TRUE
@@ -2678,12 +2657,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 // fully-structured TGUI access dialog. The id_card is cached
-// as a weakref so tgui_data can rebuild the available-keycode list each
+// as an OM handle so tgui_data can rebuild the available-keycode list each
 // refresh.
 /obj/mecha/proc/output_access_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
 		return
-	active_id_card_ref = WEAKREF(id_card)
+	active_id_card_ref = om_handle(id_card)
 	tgui_subview = "access"
 	tgui_interact(user)
 	return
@@ -2693,7 +2672,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/output_maintenance_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
 		return
-	active_id_card_ref = WEAKREF(id_card)
+	active_id_card_ref = om_handle(id_card)
 	tgui_subview = "maint"
 	tgui_interact(user)
 	return
@@ -2882,12 +2861,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		var/mob/passenger_occupant = SLOT_ITEM(P, MECHA_SLOT_PILOT)
 
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins opening the hatch on \the [P]..."), span_notice("You begin opening the hatch on \the [P]..."))
-		if (!do_after(user, 4 SECONDS, target = src))
-			return
-
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " opens the hatch on \the [P] and removes [passenger_occupant]!"), span_notice("You open the hatch on \the [P] and remove [passenger_occupant]!"))
-		P.go_out()
-		P.mecha_log_message("[passenger_occupant] was removed.")
+		om_do_after(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
 		return
 	if(href_list["add_req_access"] && add_req_access && top_filter.getObj("id_card"))
 		if(!in_range(src, usr))	return
@@ -2922,15 +2896,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(usr != SLOT_ITEM(src, MECHA_SLOT_PILOT))	return
 		src.occupant_message("Recalibrating coordination system.")
 		src.mecha_log_message("Recalibration of coordination system started.")
-		var/T = src.loc
-		if(do_after_action(100))
-			if(T == src.loc)
-				src.clearInternalDamage(MECHA_INT_CONTROL_LOST)
-				src.occupant_message(span_blue("Recalibration successful."))
-				src.mecha_log_message("Recalibration of coordination system finished with 0 errors.")
-			else
-				src.occupant_message(span_red("Recalibration failed."))
-				src.mecha_log_message("Recalibration of coordination system failed with 1 error.",1)
+		om_after(src, 10 SECONDS, PROC_REF(recalibration_done), src.loc)
 	if(href_list["drop_from_cargo"])
 		var/obj/O = locate(href_list["drop_from_cargo"])
 		if(O && (O in src.cargo))
@@ -3094,7 +3060,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/start_process(process)
 	current_processes |= process
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 
 /////////////

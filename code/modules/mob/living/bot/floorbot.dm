@@ -23,7 +23,7 @@
 	var/floor_build_type = /datum/decl/flooring/tiling // Basic steel floor.
 
 /mob/living/bot/floorbot/update_icons()
-	if(busy)
+	if(om_busy(src))
 		icon_state = "floorbot-c"
 	else if(amount > 0)
 		icon_state = "floorbot[on]"
@@ -197,7 +197,7 @@
 	if(!..())
 		return
 
-	if(busy)
+	if(om_busy(src))
 		return
 
 	if(get_turf(A) != loc)
@@ -205,87 +205,73 @@
 
 	if(emagged && istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
-		busy = 1
-		update_icons()
 		if(F.flooring)
 			visible_message(span_warning("\The [src] begins to tear the floor tile from the floor!"))
-			if(do_after(src, 5 SECONDS, target = A))
-				F.break_tile_to_plating()
-				addTiles(1)
+			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done), list(F))
 		else
 			visible_message(span_danger("\The [src] begins to tear through the floor!"))
-			if(do_after(src, 15 SECONDS, target = A)) // Extra time because this can and will kill.
-				F.ReplaceWithLattice()
-				addTiles(1)
+			bot_work(15 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done2), list(F))
 		target = null
-		busy = 0
-		update_icons()
 	else if(isopenturf(A) || istype(A, /turf/simulated/mineral/floor))
 		var/building = 2
 		if(locate(/obj/structure/lattice, A))
 			building = 1
 		if(amount < building)
 			return
-		busy = 1
-		update_icons()
 		visible_message(span_infoplain(span_bold("\The [src]") + " begins to repair the hole."))
-		if(do_after(src, 5 SECONDS, target = A))
-			if(A && (locate(/obj/structure/lattice, A) && building == 1 || !locate(/obj/structure/lattice, A) && building == 2)) // Make sure that it still needs repairs
-				var/obj/item/I
-				if(building == 1)
-					I = new /obj/item/stack/tile/floor(src)
-				else
-					I = new /obj/item/stack/rods(src)
-				A.attackby(I, src)
+		bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done3), list(A, building))
 		target = null
-		busy = 0
-		update_icons()
 	else if(istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
 		if(F.broken || F.burnt)
-			busy = 1
-			update_icons()
 			visible_message(span_infoplain(span_bold("\The [src]") + " begins to remove the broken floor."))
-			if(do_after(src, 5 SECONDS, target = F))
-				if(F.broken || F.burnt)
-					F.make_plating()
+			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done4), list(F))
 			target = null
-			busy = 0
-			update_icons()
 		else if(!F.flooring && amount)
-			busy = 1
-			update_icons()
 			visible_message(span_infoplain(span_bold("\The [src]") + " begins to improve the floor."))
-			if(do_after(src, 5 SECONDS, target = F))
-				if(!F.flooring)
-					F.set_flooring(get_flooring_data(floor_build_type))
-					addTiles(-1)
+			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done5), list(F))
 			target = null
-			busy = 0
-			update_icons()
 	else if(istype(A, /obj/item/stack/tile/floor) && amount < maxAmount)
 		var/obj/item/stack/tile/floor/T = A
 		visible_message(span_infoplain(span_bold("\The [src]") + " begins to collect tiles."))
-		busy = 1
-		update_icons()
-		if(do_after(src, 2 SECONDS, target = T))
-			if(T)
-				var/eaten = min(maxAmount - amount, T.get_amount())
-				T.use(eaten)
-				addTiles(eaten)
+		bot_work(2 SECONDS, T, PROC_REF(UnarmedAttack_floorbot_done6), list(T))
 		target = null
-		busy = 0
-		update_icons()
 	else if(istype(A, /obj/item/stack/material) && amount + 4 <= maxAmount)
 		var/obj/item/stack/material/M = A
 		if(M.get_material_name() == MAT_STEEL)
 			visible_message(span_infoplain(span_bold("\The [src]") + " begins to make tiles."))
-			busy = 1
-			update_icons()
-			if(do_after(src, 5 SECONDS, target = A))
-				if(M)
-					M.use(1)
-					addTiles(4)
+			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done7), list(M))
+
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done(turf/simulated/floor/F)
+	F.break_tile_to_plating()
+	addTiles(1)
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done2(turf/simulated/floor/F)
+	F.ReplaceWithLattice()
+	addTiles(1)
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done3(atom/A, building)
+	if(A && (locate(/obj/structure/lattice, A) && building == 1 || !locate(/obj/structure/lattice, A) && building == 2)) // Make sure that it still needs repairs
+		var/obj/item/I
+		if(building == 1)
+			I = new /obj/item/stack/tile/floor(src)
+		else
+			I = new /obj/item/stack/rods(src)
+		A.attackby(I, src)
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done4(turf/simulated/floor/F)
+	if(F.broken || F.burnt)
+		F.make_plating()
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done5(turf/simulated/floor/F)
+	if(!F.flooring)
+		F.set_flooring(get_flooring_data(floor_build_type))
+		addTiles(-1)
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done6(obj/item/stack/tile/floor/T)
+	if(T)
+		var/eaten = min(maxAmount - amount, T.get_amount())
+		T.use(eaten)
+		addTiles(eaten)
+/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done7(obj/item/stack/material/M)
+	if(M)
+		M.use(1)
+		addTiles(4)
 
 /mob/living/bot/floorbot/explode()
 	turn_off()

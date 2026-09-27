@@ -30,10 +30,9 @@
 
 	// A disconnected, empty connector has no time-based work. connect() wakes it.
 	if(my_hose || reagents.total_volume)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /datum/component/hose_connector/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	UnregisterSignal(carrier, COMSIG_ATOM_EXAMINE)
 	UnregisterSignal(carrier, COMSIG_MOVABLE_MOVED)
 	UnregisterSignal(carrier, COMSIG_HOSE_FORCEPUMP)
@@ -61,7 +60,7 @@
 /datum/component/hose_connector/proc/connected_reagents()
 	return carrier.reagents
 
-/datum/component/hose_connector/process()
+/datum/component/hose_connector/periodic_step()
 	// Return reagents to source if no hose, lossy to avoid exploits
 	if(!my_hose)
 		if(reagents.total_volume)
@@ -86,7 +85,7 @@
 	SIGNAL_HANDLER
 	if(!my_hose)
 		return
-	process()
+	periodic_step()
 	if(makes_gurgles && prob(5))
 		carrier.visible_message(span_infoplain(span_bold("\The [carrier]") + " gurgles as it pumps fluid."))
 
@@ -109,9 +108,11 @@
 /datum/component/hose_connector/proc/connect(datum/hose/H = null)
 	my_hose = H
 	if(my_hose)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
-/datum/component/hose_connector/proc/setup_hoses(datum/component/hose_connector/target, distancetonode, mob/user)
+/// Connects a hose to `target`, using `distancetonode` of `tubing` when done. An inflation end
+/// is a timed action first (inflation_setup()); either way setup_hoses_finish() connects.
+/datum/component/hose_connector/proc/setup_hoses(datum/component/hose_connector/target, distancetonode, mob/user, obj/item/stack/tubing)
 	if(!target || QDELETED(target))
 		to_chat(user,span_danger("What you were connecting to has stopped existing! Ohno!"))
 		return FALSE
@@ -127,19 +128,17 @@
 		// Also has to be done on finalize, as players would be able to click one then the other, then potentially drop or do other stuff with the hose!
 		var/datum/component/hose_connector/inflation/I = src
 		if(istype(I))
-			if(!I.inflation_setup(user,target))
-				return FALSE
-		else
-			I = target
-			if(istype(I))
-				if(!I.inflation_setup(user,src))
-					return FALSE
-			else // Good going, you broke it
-				to_chat(user,span_notice("You're not sure what happened, but you couldn't connect the hose..."))
-				return FALSE
-	else
-		to_chat(user, span_notice("You connect the [src] to \the [target]."))
+			return I.inflation_setup(user, target, src, target, distancetonode, tubing)
+		I = target
+		if(istype(I))
+			return I.inflation_setup(user, src, src, target, distancetonode, tubing)
+		// Good going, you broke it
+		to_chat(user,span_notice("You're not sure what happened, but you couldn't connect the hose..."))
+		return FALSE
+	to_chat(user, span_notice("You connect the [src] to \the [target]."))
+	return setup_hoses_finish(target, distancetonode, user, tubing)
 
+/datum/component/hose_connector/proc/setup_hoses_finish(datum/component/hose_connector/target, distancetonode, mob/user, obj/item/stack/tubing)
 	// Handle invalid vorebellies, has to be done after inflation_setup()
 	if(!src.connected_reagents())
 		to_chat(user,span_warning("\The [get_carrier()] doesn't seem ready to connect yet."))
@@ -151,6 +150,7 @@
 	// Hose prepared!
 	var/datum/hose/H = new()
 	H.set_hose(src, target, distancetonode, user)
+	tubing?.use(distancetonode)
 	return TRUE
 
 /datum/component/hose_connector/proc/get_pairing()
@@ -163,8 +163,8 @@
 	my_hose = null
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
-	process()
-	STOP_PROCESSING(SSobj, src)
+	periodic_step()
+	PERIODIC_STOP(src)
 
 /datum/component/hose_connector/proc/on_examine(datum/source, mob/user, list/examine_texts)
 	SIGNAL_HANDLER

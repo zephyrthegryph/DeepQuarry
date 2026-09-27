@@ -34,19 +34,19 @@ SUBSYSTEM_DEF(motiontracker)
 	while(length(currentrun))
 		var/key = currentrun[1] // Because using an index into an associative array gets the key at that index... I hate you byond.
 		var/list/data = currentrun[key]
-		var/datum/weakref/AF= data[1]
-		var/datum/weakref/RF= data[2]
+		var/AF= data[1]
+		var/RF= data[2]
 		var/count 			= data[3]
 		var/list/clients 	= data[4]
-		var/turf/At = AF?.resolve()
-		var/turf/Rt = RF?.resolve()
+		var/turf/At = om_resolve(AF)
+		var/turf/Rt = om_resolve(RF)
 		if(Rt && At && count)
 			while(count-- > 0)
 				// Place at root turf offset from signal responder's turf using px offsets. So it will show up over visblocking.
 				var/image/client_only/motion_echo/E = new /image/client_only/motion_echo('icons/effects/effects.dmi', Rt, "motion_echo", OBFUSCATION_LAYER, SOUTH)
 				E.place_from_root(At)
-				for(var/datum/weakref/CW in clients)
-					var/client/C = CW?.resolve()
+				for(var/CW in clients)
+					var/client/C = om_resolve(CW)
 					if(C)
 						E.append_client(C)
 		currentrun.Remove(key)
@@ -74,17 +74,17 @@ SUBSYSTEM_DEF(motiontracker)
 	if(queued_echo_turfs[REF(T)]) // Already echoing
 		return
 	all_pings_round++
-	SEND_SIGNAL(src, COMSIG_MOVABLE_MOTIONTRACKER, WEAKREF(source), T)
+	SEND_SIGNAL(src, COMSIG_MOVABLE_MOTIONTRACKER, om_handle(source), T)
 
 // We get this back from anything that handles the signal, and queues up a turf to draw the echo on
 // The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming
 // everything wants effects drawn, for example the motion tracker item just flicks() and doesn't call this.
-/datum/controller/subsystem/motiontracker/proc/queue_echo(turf/Rt,turf/At,echo_count = 1,datum/weakref/client)
+/datum/controller/subsystem/motiontracker/proc/queue_echo(turf/Rt,turf/At,echo_count = 1,client)
 	if(!Rt || !At || !client)
 		return
 	var/rfe = REF(At)
 	if(!queued_echo_turfs[rfe]) // We only care about the final turf, not the root turf for duping
-		queued_echo_turfs[rfe] = list(WEAKREF(At),WEAKREF(Rt),echo_count,list(client))
+		queued_echo_turfs[rfe] = list(om_handle(At),om_handle(Rt),echo_count,list(client))
 		all_echos_round++
 	else
 		var/list/data = queued_echo_turfs[rfe]

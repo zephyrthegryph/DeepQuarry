@@ -17,10 +17,16 @@
 
 /obj/machinery/power/grid_checker/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 	set_wires(new /datum/wires/grid_checker(src))
 	default_apply_parts()
+
+/// `connect_to_network()` needs `vg_entity` bound, which only happens once
+/// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
+/// docs (`code/modules/power/power.dm`).
+/obj/machinery/power/grid_checker/on_materialize()
+	. = ..()
+	connect_to_network()
 
 /obj/machinery/power/grid_checker/Destroy()
 	qdel(wires)
@@ -101,9 +107,7 @@
 
 	update_icon()
 
-	spawn(rand(4 MINUTES, 10 MINUTES) )
-		if(power_failing) // Check to see if engineering didn't beat us to it.
-			end_power_failure(TRUE)
+	om_after(src, rand(4 MINUTES, 10 MINUTES), PROC_REF(power_failure_times_out))
 
 /obj/machinery/power/grid_checker/proc/end_power_failure(announce = TRUE)
 	if(announce)
@@ -122,3 +126,7 @@
 
 	for(var/obj/machinery/power/smes/smes in powernet.nodes) // These are "upstream"
 		smes.grid_check = FALSE
+
+/obj/machinery/power/grid_checker/proc/power_failure_times_out()
+	if(power_failing) // Check to see if engineering didn't beat us to it.
+		end_power_failure(TRUE)

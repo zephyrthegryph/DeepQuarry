@@ -96,18 +96,18 @@
 			CI.icon = 'icons/obj/grenade.dmi'
 			CI.icon_state = "flashbang1"
 			CI.name = "Flashbang"
-	halitem[WEAKREF(CI)] = WEAKREF(our_human.client)
+	halitem[om_handle(CI)] = om_handle(our_human.client)
 	our_human.client.screen += CI
 	addtimer(CALLBACK(src, PROC_REF(remove_hallucination_item)), rand(10,25) SECONDS, TIMER_DELETE_ME)
 
 /datum/component/hallucinations/proc/remove_hallucination_item()
-	// I can't manage this with /image/client_only due to screenloc, so key-value weakref pair it is! Called on both timer and destroying this component.
+	// I can't manage this with /image/client_only due to screenloc, so key-value OM handle pair it is! Called on both timer and destroying this component.
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/datum/weakref/first = halitem[1]
-	var/obj/itm = first?.resolve()
-	var/datum/weakref/CW = halitem[first]
-	var/client/C = CW?.resolve()
+	var/first = halitem[1]
+	var/obj/itm = om_resolve(first)
+	var/CW = halitem[first]
+	var/client/C = om_resolve(CW)
 	if(C)
 		C.screen -= itm
 	qdel(itm)
@@ -171,7 +171,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Flashes of danger
 	//to_chat(our_human, "Danger Flash")
-	if(halimage?.resolve())
+	if(om_resolve(halimage))
 		return
 
 	var/list/possible_points = list()
@@ -192,7 +192,7 @@
 		if(3)
 			//to_chat(our_human, "C4")
 			CI = new('icons/obj/assemblies.dmi',target,"plastic-explosive2",OBJ_LAYER+0.01)
-	halimage = WEAKREF(CI)
+	halimage = om_handle(CI)
 	CI.append_client(our_human.client)
 	QDEL_IN(CI, rand(1,5) SECONDS) //Only seen for a brief moment.
 
@@ -201,7 +201,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Flashes of danger
 	//to_chat(our_human, "Danger Flash")
-	if(halbody?.resolve())
+	if(om_resolve(halbody))
 		return
 
 	var/list/possible_points = list()
@@ -221,7 +221,7 @@
 			CI = new('icons/mob/alien.dmi',target,"alienother",TURF_LAYER)
 //		if(5)
 //			CI = new('xcomalien.dmi',target,"chryssalid",TURF_LAYER)
-	halbody = WEAKREF(CI)
+	halbody = om_handle(CI)
 	CI.append_client(our_human.client)
 	QDEL_IN(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
 
@@ -256,7 +256,7 @@
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//food
-	if(halbody?.resolve())
+	if(om_resolve(halbody))
 		return
 
 	var/list/possible_points = list()
@@ -289,7 +289,7 @@
 		if(10)
 			CI = new('icons/obj/food.dmi',target,"monkeysdelight",TURF_LAYER)
 
-	halbody = WEAKREF(CI)
+	halbody = om_handle(CI)
 	CI.append_client(our_human.client)
 	QDEL_IN(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
 

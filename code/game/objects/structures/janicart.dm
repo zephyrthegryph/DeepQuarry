@@ -184,10 +184,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 /obj/structure/janitorialcart/wrench_act(mob/user, obj/item/I)
 	if(has_items)
 		return TRUE
-	if(do_after(user, 5 SECONDS, target = src))
-		dismantle(user)
+	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
+/obj/structure/janitorialcart/proc/wrench_act_timed_done(mob/user)
+	dismantle(user)
 
 //New Altclick functionality!
 //Altclick the cart with a mop to stow the mop away

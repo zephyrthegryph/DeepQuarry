@@ -20,11 +20,9 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 #define ASTAR_TRACE_COLOR_REDIRECTED "#7777ff"
 
 /proc/astar_wipe_colors_after(list/turf/turfs, time)
-	set waitfor = FALSE
-	astar_wipe_colors_after_sleeping(turfs, time)
+	om_after(null, time, /proc/astar_wipe_colors_now, turfs)
 
-/proc/astar_wipe_colors_after_sleeping(list/turf/turfs, time)
-	sleep(time)
+/proc/astar_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
 		T.color = null
 		T.maptext = null
@@ -92,7 +90,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 					open.enqueue(considering_node); \
 					node_by_turf[considering] = considering_node; \
 					turfs_got_colored[considering] = TRUE; \
-					considering.color = ASTAR_VISUAL_COLOR_OPEN; \
+					om_after(considering, debug_t, TYPE_PROC_REF(/datum, om_set_var), "color", ASTAR_VISUAL_COLOR_OPEN); \
 					considering.maptext = MAPTEXT("[top.depth + 1], [considering_cost], [considering_score]"); \
 					considering.overlays += get_astar_scan_overlay(DIR); \
 				} \
@@ -138,6 +136,10 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
  * * Node limit is manhattan, so 128 is a lot less than BYOND's get_dist(128).
  */
 /datum/pathfinding/astar
+#ifdef ASTAR_DEBUGGING
+	/// Replay time (deciseconds) of the search visualisation: each step lands this long after the search started.
+	var/debug_t = 0
+#endif
 
 /datum/pathfinding/astar/search()
 	ASSERT(isturf(src.start) && isturf(src.goal) && src.start.z == src.goal.z)
@@ -173,7 +175,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 
 	#ifdef ASTAR_DEBUGGING
 	turfs_got_colored[start] = TRUE
-	start.color = ASTAR_VISUAL_COLOR_OPEN
+	om_after(start, debug_t, TYPE_PROC_REF(/datum, om_set_var), "color", ASTAR_VISUAL_COLOR_OPEN)
 	#endif
 
 	while(length(open.array))
@@ -181,9 +183,9 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 		var/datum/astar_node/top = open.dequeue()
 		current = top.pos
 		#ifdef ASTAR_DEBUGGING
-		top.pos.color = ASTAR_VISUAL_COLOR_CURRENT
+		om_after(top.pos, debug_t, TYPE_PROC_REF(/datum, om_set_var), "color", ASTAR_VISUAL_COLOR_CURRENT)
 		turfs_got_colored[top.pos] = TRUE
-		sleep(GLOB.astar_visualization_delay)
+		debug_t += GLOB.astar_visualization_delay // the replay moves on a step (om_after(), no sleep)
 		#else
 		CHECK_TICK
 		#endif
@@ -195,7 +197,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 			while(top)
 				path_built += top.pos
 				#ifdef ASTAR_DEBUGGING
-				top.pos.color = ASTAR_VISUAL_COLOR_FOUND
+				om_after(top.pos, debug_t, TYPE_PROC_REF(/datum, om_set_var), "color", ASTAR_VISUAL_COLOR_FOUND)
 				turfs_got_colored[top] = TRUE
 				#endif
 				top = top.prev
@@ -205,14 +207,14 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 			while(head < tail)
 				path_built.Swap(head++, tail--)
 			#ifdef ASTAR_DEBUGGING
-			astar_wipe_colors_after(turfs_got_colored, GLOB.astar_visualization_persist)
+			astar_wipe_colors_after(turfs_got_colored, GLOB.astar_visualization_persist + debug_t)
 			#endif
 			return path_built
 
 		// too deep, abort
 		if(top.depth + get_dist(current, goal) > max_depth)
 			#ifdef ASTAR_DEBUGGING
-			top.pos.color = ASTAR_VISUAL_COLOR_OUT_OF_BOUNDS
+			om_after(top.pos, debug_t, TYPE_PROC_REF(/datum, om_set_var), "color", ASTAR_VISUAL_COLOR_OUT_OF_BOUNDS)
 			turfs_got_colored[top.pos] = TRUE
 			#endif
 			continue
@@ -227,18 +229,18 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 		ASTAR_HELL_DEFINE(considering, WEST)
 
 		#ifdef ASTAR_DEBUGGING
-		top.pos.color = ASTAR_VISUAL_COLOR_CLOSED
+		om_after(top.pos, debug_t, TYPE_PROC_REF(/datum, om_set_var), "color", ASTAR_VISUAL_COLOR_CLOSED)
 		turfs_got_colored[top.pos] = TRUE
 		#endif
 
 		if(length(open.array) > ASTAR_SANE_NODE_LIMIT)
 			#ifdef ASTAR_DEBUGGING
-			astar_wipe_colors_after(turfs_got_colored, GLOB.astar_visualization_persist)
+			astar_wipe_colors_after(turfs_got_colored, GLOB.astar_visualization_persist + debug_t)
 			#endif
 			CRASH("A* hit node limit - something went horribly wrong! args: [json_encode(args)]; vars: [json_encode(vars)]")
 
 	#ifdef ASTAR_DEBUGGING
-	astar_wipe_colors_after(turfs_got_colored, GLOB.astar_visualization_persist)
+	astar_wipe_colors_after(turfs_got_colored, GLOB.astar_visualization_persist + debug_t)
 	#endif
 
 #undef ASTAR_HELL_DEFINE

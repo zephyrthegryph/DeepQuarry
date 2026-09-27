@@ -224,17 +224,23 @@
 	symptom_holder.symptoms += chosen
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
-	if(do_after(user, extract_time, target = target))
-		create_culture(user, symptom_holder, target)
-		return TRUE
+	om_do_after(user, extract_time, target = target, receiver = src, on_done = PROC_REF(isolate_symptom_timed_done), done_args = list(user, target, symptom_holder))
+	return TRUE
+
+/obj/item/extrapolator/proc/isolate_symptom_timed_done(mob/living/user, atom/target, datum/disease/advance/symptom_holder)
+	create_culture(user, symptom_holder, target)
+	return TRUE
 
 /obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/disease/advance/target_disease, timer = 10 SECONDS)
 	. = FALSE
 	user.visible_message(span_notice("[user] begins to thoroughly scan [target] with [src]..."), \
 		span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]..."))
-	if(do_after(user, isolate_time, target = target))
-		create_culture(user, target_disease, target)
-		return TRUE
+	om_do_after(user, isolate_time, target = target, receiver = src, on_done = PROC_REF(isolate_disease_timed_done), done_args = list(user, target, target_disease))
+	return TRUE
+
+/obj/item/extrapolator/proc/isolate_disease_timed_done(mob/living/user, atom/target, datum/disease/advance/target_disease)
+	create_culture(user, target_disease, target)
+	return TRUE
 
 /obj/item/extrapolator/proc/create_culture(mob/living/user, datum/disease/advance/disease)
 	. = FALSE

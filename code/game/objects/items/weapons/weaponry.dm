@@ -96,8 +96,7 @@
 		qdel(src)
 
 	// If we miss or hit an obstacle, we still want to delete the net.
-	spawn(10)
-		if(src) qdel(src)
+	om_qdel_after(src, 1 SECOND)
 
 /obj/effect/energy_net
 	name = "energy net"
@@ -118,7 +117,11 @@
 
 /obj/effect/energy_net/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	om_after(src, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
+
+/obj/effect/energy_net/proc/check_empty()
+	if(!has_buckled_mobs())
+		qdel(src)
 
 /obj/effect/energy_net/Destroy()
 	if(has_buckled_mobs())
@@ -126,21 +129,18 @@
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
 
-	STOP_PROCESSING(SSobj, src)
 	return ..()
-
-/obj/effect/energy_net/process()
-	if(!has_buckled_mobs())
-		qdel(src)
 
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	visible_message(span_danger("[user] begins to tear at \the [src]!"))
-	if(do_after(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED))
-		if(!has_buckled_mobs())
-			return
-		visible_message(span_danger("[user] manages to tear \the [src] apart!"))
-		unbuckle_mob(buckled_mob)
+	om_do_after(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_timed_done), done_args = list(buckled_mob, user))
+
+/obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(mob/living/buckled_mob, mob/user)
+	if(!has_buckled_mobs())
+		return
+	visible_message(span_danger("[user] manages to tear \the [src] apart!"))
+	unbuckle_mob(buckled_mob)
 
 /obj/effect/energy_net/post_buckle_mob(mob/living/M)
 	if(BUCKLED(M) == src) //Just BUCKLED(src) someone
@@ -164,7 +164,7 @@
 
 	var/size_increment = 0.01
 
-/obj/effect/energy_net/shrink/process()
+/obj/effect/energy_net/shrink/periodic_step()
 	..()
 	for(var/A in BUCKLED_MOBS(src))
 		if(istype(A, /mob/living))

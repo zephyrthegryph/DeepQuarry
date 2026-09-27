@@ -83,14 +83,14 @@
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel strange as hunger vanishes!"))
 			H.custom_pain("Your hands feel strange!",1)
 
 /obj/item/clothing/gloves/stamina/dropped(mob/user, equipping, slot)
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel hungry!"))
@@ -99,14 +99,15 @@
 
 /obj/item/clothing/gloves/stamina/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/clothing/gloves/stamina/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/clothing/gloves/stamina/process()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
+/obj/item/clothing/gloves/stamina/periodic_step()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
+	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
+		return PROCESS_KILL
 	if(!H || H.isSynthetic() || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
 	H.nutrition = max(H.nutrition + 8, 0)
@@ -136,13 +137,13 @@
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))
 
 /obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	if(H.is_sentient())
 		if(loc == H) // Still inhand.
 			if(flavor_unequip)
@@ -152,10 +153,9 @@
 				to_chat(H, span_info(flavor_drop))
 
 /obj/item/clothing/suit/armor/buffvest/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/clothing/suit/armor/buffvest/process()
+/obj/item/clothing/suit/armor/buffvest/periodic_step()
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)
@@ -199,3 +199,8 @@
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
 //scrap section which is on hold till I get foes
+
+/obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
+	. = ..()
+	if(om_resolve(wearer))
+		PERIODIC_START(src, PERIODIC_SLOW)

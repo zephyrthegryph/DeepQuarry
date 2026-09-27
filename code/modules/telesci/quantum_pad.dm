@@ -191,46 +191,7 @@
 	playsound(src, 'sound/weapons/flash.ogg', 25, 1)
 	teleporting = 1
 
-	spawn(teleport_speed)
-		// We gone
-		if(!src || QDELETED(src))
-			teleporting = 0
-			return
-		// Broken or whatever
-		if(inoperable())
-			to_chat(user, span_warning("[src] is nonfunctional!"))
-			teleporting = 0
-			return
-		// Linked pad or not, we can always re-scatter people
-		if(!can_traverse_gateway())
-			teleporting = 0
-			last_teleport = world.time
-			gateway_scatter(user)
-			return
-		// Nothing to teleport to
-		if(!linked_pad || QDELETED(linked_pad) || linked_pad.inoperable())
-			to_chat(user, span_warning("Linked pad is not responding to ping. Teleport aborted."))
-			teleporting = 0
-			return
-		// Insufficient power
-		if(!use_teleport_power())
-			to_chat(user, span_warning("Power is not sufficient to complete a teleport. Teleport aborted."))
-			teleporting = 0
-			return
-
-		teleporting = 0
-		last_teleport = world.time
-		/* CHOMP remove
-		sparks()
-		linked_pad.sparks()
-		*/
-
-		flick("qpad-beam-out", src)
-		//playsound(src, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
-		flick("qpad-beam-in", linked_pad)
-		//playsound(linked_pad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
-
-		transport_objects(get_turf(linked_pad))
+	om_after(src, teleport_speed, PROC_REF(finish_teleport), user)
 
 /obj/machinery/power/quantumpad/proc/initMappedLink()
 	. = FALSE
@@ -292,3 +253,44 @@
 	injury_kind = INJURY_PIERCE
 	item_state = "analyzer"
 	icon_state = "hacktool"
+
+/obj/machinery/power/quantumpad/proc/finish_teleport(mob/user)
+	// We gone
+	if(!src || QDELETED(src))
+		teleporting = 0
+		return
+	// Broken or whatever
+	if(inoperable())
+		to_chat(user, span_warning("[src] is nonfunctional!"))
+		teleporting = 0
+		return
+	// Linked pad or not, we can always re-scatter people
+	if(!can_traverse_gateway())
+		teleporting = 0
+		last_teleport = world.time
+		gateway_scatter(user)
+		return
+	// Nothing to teleport to
+	if(!linked_pad || QDELETED(linked_pad) || linked_pad.inoperable())
+		to_chat(user, span_warning("Linked pad is not responding to ping. Teleport aborted."))
+		teleporting = 0
+		return
+	// Insufficient power
+	if(!use_teleport_power())
+		to_chat(user, span_warning("Power is not sufficient to complete a teleport. Teleport aborted."))
+		teleporting = 0
+		return
+
+	teleporting = 0
+	last_teleport = world.time
+	/* CHOMP remove
+	sparks()
+	linked_pad.sparks()
+	*/
+
+	flick("qpad-beam-out", src)
+	//playsound(src, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
+	flick("qpad-beam-in", linked_pad)
+	//playsound(linked_pad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
+
+	transport_objects(get_turf(linked_pad))

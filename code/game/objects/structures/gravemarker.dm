@@ -54,29 +54,28 @@
 /obj/structure/gravemarker/screwdriver_act(mob/user, obj/item/W)
 	var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 	if(carving_1)
-		if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0,
-				message_self = "You start carving \the [src.name].",
-				message_others = "[user] starts carving \the [src.name]."))
-			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-			grave_name += carving_1
-			update_icon()
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 	if(carving_2)
-		if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0,
-				message_self = "You start carving \the [src.name].",
-				message_others = "[user] starts carving \the [src.name]."))
-			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-			epitaph += carving_2
-			update_icon()
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
 	return TRUE
 
+/obj/structure/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
+	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	grave_name += carving_1
+	update_icon()
+/obj/structure/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
+	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	epitaph += carving_2
+	update_icon()
+
 /obj/structure/gravemarker/wrench_act(mob/user, obj/item/W)
-	if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0,
-			message_self = "You start taking down \the [src.name].",
-			message_others = "[user] starts taking down \the [src.name]."))
-		user.visible_message("[user] takes down \the [src.name].", "You take down \the [src.name].")
-		dismantle()
+	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0, message_self = "You start taking down \the [src.name].", message_others = "[user] starts taking down \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)
+	user.visible_message("[user] takes down \the [src.name].", "You take down \the [src.name].")
+	dismantle()
 
 /obj/structure/gravemarker/atom_destruction(damage_flag)
 	visible_message(span_danger("\The [src] falls apart!"))

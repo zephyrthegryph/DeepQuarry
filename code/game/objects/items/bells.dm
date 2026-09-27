@@ -93,12 +93,13 @@
 /obj/item/deskbell/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))
 		return TRUE
-	if(do_after(user, 0.5 SECONDS, target = src))
-		to_chat(user, span_notice("You disassemble the desk bell."))
-		new /obj/item/stack/material/steel(get_turf(src), 1)
-		qdel(src)
+	om_do_after(user, 0.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
+/obj/item/deskbell/proc/wrench_act_timed_done(mob/user)
+	to_chat(user, span_notice("You disassemble the desk bell."))
+	new /obj/item/stack/material/steel(get_turf(src), 1)
+	qdel(src)
 
 /obj/item/deskbell/proc/break_bell(mob/user)
 	to_chat(user,span_notice("The ringing abruptly stops as [src]'s ringer gets jammed inside!"))

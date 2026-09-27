@@ -15,7 +15,6 @@
 	RegisterSignal(C, COMSIG_CLICK, PROC_REF(component_ui_interact))
 
 /datum/component/personal_crafting
-	var/busy
 	var/viewing_category = 1 //typical powergamer starting on the Weapons tab
 	var/viewing_subcategory = 1
 	var/list/categories = list(
@@ -209,7 +208,10 @@
 		return  ", missing machinery."
 	return
 
-/datum/component/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices)
+/// Crafts `R`. Returns the text of a failure; for a mob, a timed action that calls `on_built`
+/// on this component with (crafter, recipe, item or failure text) and returns null; for
+/// anything else, the item at once.
+/datum/component/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices, on_built, busy)
 	var/list/surroundings = get_surroundings(a,R.blacklist)
 	// var/send_feedback = 1
 	. = check_requirements(a, R, surroundings)
@@ -225,11 +227,25 @@
 			if(istype(content, R.result))
 				return ", object already present."
 
-	//If we're a mob we'll try a do_after; non mobs will instead instantly construct the item
-	if(ismob(a) && !do_after(a, R.time, target = a))
-		return "."
+	//If we're a mob it's a timed action; non mobs will instead instantly construct the item
+	if(ismob(a))
+		var/started = om_do_after(a, R.time, a, src, PROC_REF(construct_item_now), list(a, R, material_choices, on_built), on_fail = PROC_REF(construct_item_interrupted), fail_args = list(a, R, on_built), busy = busy)
+		return istext(started) ? "." : null
+	return construct_item_now(a, R, material_choices, null)
 
-	surroundings = get_surroundings(a, R.blacklist)
+/datum/component/personal_crafting/proc/construct_item_interrupted(atom/a, datum/crafting_recipe/R, on_built)
+	if(on_built)
+		call(src, on_built)(a, R, ".")
+
+/datum/component/personal_crafting/proc/construct_item_now(atom/a, datum/crafting_recipe/R, list/material_choices, on_built)
+	. = construct_item_checked(a, R, material_choices)
+	if(on_built)
+		call(src, on_built)(a, R, .)
+
+/datum/component/personal_crafting/proc/construct_item_checked(atom/a, datum/crafting_recipe/R, list/material_choices)
+	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
+	var/list/resolved_materials = blueprint?.resolve(material_choices)
+	var/list/surroundings = get_surroundings(a, R.blacklist)
 	. = check_requirements(a, R, surroundings)
 	if(.)
 		return
@@ -444,7 +460,7 @@
 			cur_subcategory = CAT_NONE
 
 	var/list/data = list()
-	data["busy"] = busy
+	data["busy"] = om_busy(src)
 	data["category"] = cur_category
 	data["subcategory"] = cur_subcategory
 	data["display_craftable_only"] = display_craftable_only
@@ -535,9 +551,16 @@
 			. = TRUE
 
 /datum/component/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
-	busy = TRUE
+	if(om_busy(src))
+		return
+	// The crafting's timed action claims this component: busy (om_busy()) until it ends.
+	var/result = construct_item(user, TR, material_choices, PROC_REF(make_finished), src)
 	tgui_interact(user)
-	var/atom/movable/result = construct_item(user, TR, material_choices)
+	if(!isnull(result))
+		make_finished(user, TR, result)
+
+/// The end of do_make(): the item, or the text of why it failed.
+/datum/component/personal_crafting/proc/make_finished(mob/user, datum/crafting_recipe/TR, atom/movable/result)
 	if(!istext(result)) //We made an item and didn't get a fail message
 		if(ismob(user) && isitem(result)) //In case the user is actually possessing a non mob like a machine
 			user.put_in_hands(result)
@@ -547,7 +570,6 @@
 		TR.on_craft_completion(user, result)
 	else
 		to_chat(user, span_warning("Construction failed[result]"))
-	busy = FALSE
 
 /datum/component/personal_crafting/proc/build_recipe_data(datum/crafting_recipe/R)
 	var/list/data = list()

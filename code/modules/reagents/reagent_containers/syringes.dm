@@ -49,10 +49,10 @@
 	LAZYCLEARLIST(targets)
 	return ..()
 
-/obj/item/reagent_containers/syringe/process()
+/obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)
 	if(dirtiness >= 75)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	return 1
 
 /obj/item/reagent_containers/syringe/on_reagent_change()
@@ -92,6 +92,48 @@
 /obj/item/reagent_containers/syringe/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()
 	EXTRAPOLATOR_ACT_ADD_DISEASES(., viruses)
+
+/obj/item/reagent_containers/syringe/proc/draw_blood_stopped()
+	drawing = FALSE
+
+/obj/item/reagent_containers/syringe/proc/draw_blood_done(mob/user, mob/living/carbon/T, amount, from_blood)
+	drawing = FALSE
+	if(from_blood)
+		var/datum/reagent/B = T.take_blood(src, amount)
+		if (B)
+			reagents.adopt_reagent(B)
+			reagents.update_total()
+			on_reagent_change()
+			reagents.handle_reactions()
+	to_chat(user, span_notice("You take a blood sample from [T]."))
+	for(var/mob/O in viewers(4, user))
+		O.show_message(span_notice("[user] takes a blood sample from [T]."), 1)
+	if(!reagents.get_free_space())
+		mode = SYRINGE_INJECT
+		update_icon()
+
+/// One injection cycle into a mob: 5u, then the next after `cycle_time` while any is left.
+/obj/item/reagent_containers/syringe/proc/inject_cycle(mob/user, mob/target, cycle_time, trans, contained)
+	trans += reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
+	update_icon()
+	if(reagents.total_volume)
+		var/list/finish_args = list(user, target, trans, contained)
+		om_do_after(user, cycle_time, target, src, PROC_REF(inject_cycle), list(user, target, cycle_time, trans, contained), on_fail = PROC_REF(inject_finish), fail_args = finish_args)
+		return
+	inject_finish(user, target, trans, contained)
+
+/obj/item/reagent_containers/syringe/proc/inject_finish(mob/user, atom/target, trans, contained)
+	if (reagents.total_volume <= 0 && mode == SYRINGE_INJECT)
+		mode = SYRINGE_DRAW
+		update_icon()
+	if(!user)
+		return
+	if(trans)
+		to_chat(user, span_notice("You inject [trans] units of the solution. The syringe now contains [src.reagents.total_volume] units."))
+		if(ismob(target))
+			add_attack_logs(user,target,"Injected with [src.name] containing [contained], trasferred [trans] units")
+	else
+		to_chat(user, span_notice("The syringe is empty."))
 
 /obj/item/reagent_containers/syringe/afterattack(obj/target, mob/user, proximity)
 	if(!proximity || !target.reagents)
@@ -138,34 +180,20 @@
 						to_chat(user, span_warning("You are already drawing blood from [T.name]."))
 						return
 
-					var/datum/reagent/B
 					drawing = TRUE
 					if(ishuman(T))
 						var/mob/living/carbon/human/H = T
 						if(H.species && !H.should_have_organ(O_HEART))
 							H.reagents.trans_to_obj(src, amount)
-						else
-							if(ismob(H) && H != user)
-								if(!do_after(user, time, target))
-									drawing = FALSE
-									return
-							B = T.take_blood(src, amount)
-							drawing = FALSE
-					else
-						if(!do_after(user, time, target))
-							drawing = FALSE
+							draw_blood_done(user, T, amount, FALSE)
+						else if(H != user)
+							om_do_after(user, time, target, src, PROC_REF(draw_blood_done), list(user, T, amount, TRUE), on_fail = PROC_REF(draw_blood_stopped))
 							return
-						B = T.take_blood(src,amount)
-						drawing = FALSE
-
-					if (B)
-						reagents.adopt_reagent(B)
-						reagents.update_total()
-						on_reagent_change()
-						reagents.handle_reactions()
-					to_chat(user, span_notice("You take a blood sample from [target]."))
-					for(var/mob/O in viewers(4, user))
-						O.show_message(span_notice("[user] takes a blood sample from [target]."), 1)
+						else
+							draw_blood_done(user, T, amount, TRUE)
+					else
+						om_do_after(user, time, target, src, PROC_REF(draw_blood_done), list(user, T, amount, TRUE), on_fail = PROC_REF(draw_blood_stopped))
+						return
 
 			else //if not mob
 				if(!target.reagents.total_volume)
@@ -256,30 +284,13 @@
 
 			//The warmup
 			user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
-			if(!do_after(user, warmup_time, target))
-				return
-
-			var/trans = 0
 			var/contained = reagentlist()
 			if(ismob(target))
-				while(reagents.total_volume)
-					trans += reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
-					update_icon()
-					if(!reagents.total_volume || !do_after(user, cycle_time, target))
-						break
-			else
-				trans += reagents.trans_to_obj(target, amount_per_transfer_from_this)
-
-			if (reagents.total_volume <= 0 && mode == SYRINGE_INJECT)
-				mode = SYRINGE_DRAW
-				update_icon()
-
-			if(trans)
-				to_chat(user, span_notice("You inject [trans] units of the solution. The syringe now contains [src.reagents.total_volume] units."))
-				if(ismob(target))
-					add_attack_logs(user,target,"Injected with [src.name] containing [contained], trasferred [trans] units")
-			else
-				to_chat(user, span_notice("The syringe is empty."))
+				// Then 5u per cycle, each cycle a timed action.
+				om_do_after(user, warmup_time, target, src, PROC_REF(inject_cycle), list(user, target, cycle_time, 0, contained))
+				return
+			var/trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
+			inject_finish(user, target, trans, contained)
 
 // dirty(target,affected) // Removed by Request
 	return
@@ -451,15 +462,10 @@
 			target.ContractDisease(virus)
 
 	if(!used)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
-	src = null
-	var/datum/weakref/limb_ref = WEAKREF(eo)
-	spawn(rand(5 MINUTES,10 MINUTES))
-		var/obj/item/organ/external/found_limb = limb_ref.resolve()
-		if(istype(found_limb))
-			eo.germ_level += INFECTION_LEVEL_ONE+30
+	om_after(eo, rand(5 MINUTES,10 MINUTES), TYPE_PROC_REF(/obj/item/organ/external, syringe_infection))
 
 //Allow for capped syringe mode
 
@@ -515,3 +521,7 @@
 #undef SYRINGE_BROKEN
 
 #undef SYRINGE_CAPPED
+
+/// A dirty syringe's infection takes hold in the limb.
+/obj/item/organ/external/proc/syringe_infection()
+	germ_level += INFECTION_LEVEL_ONE+30

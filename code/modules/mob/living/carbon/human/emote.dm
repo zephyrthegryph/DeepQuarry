@@ -524,11 +524,13 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 						right_leg.fracture()
 			break // Only fall down the first stairs in the turf... If somehow more than one exists
 
-	spawn(7)
-		if(!lying)
-			density = original_density
-		if(added_passtable)
-			pass_flags &= ~PASSTABLE
+	om_after(src, 7, PROC_REF(flip_end), original_density, added_passtable)
+
+/mob/living/carbon/human/proc/flip_end(original_density, added_passtable)
+	if(!lying)
+		density = original_density
+	if(added_passtable)
+		pass_flags &= ~PASSTABLE
 
 /mob/living/carbon/human/verb/toggle_gender_identity_vr()
 	set name = "Set Gender Identity"

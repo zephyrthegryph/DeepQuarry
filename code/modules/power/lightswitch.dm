@@ -107,13 +107,14 @@
 	if(stage != FRAME_UNFASTENED)
 		to_chat(user, stage == FRAME_FASTENED ? "You have to unscrew the case first." : "You have to remove the wires first.")
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-			message_self = "You start deconstructing \the [src].", message_others = "\The [user] begins deconstructing \the [src]."))
-		new /obj/item/stack/material/steel(get_turf(src), 2)
-		user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
-		playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
-		qdel(src)
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start deconstructing \the [src].", message_others = "\The [user] begins deconstructing \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/construction/proc/welder_act_tool_done(mob/user)
+	new /obj/item/stack/material/steel(get_turf(src), 2)
+	user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
+	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
+	qdel(src)
 
 /obj/structure/construction/wirecutter_act(mob/user, obj/item/W)
 	if(stage != FRAME_WIRED)

@@ -23,7 +23,7 @@
 
 /obj/item/integrated_circuit/output/screen/do_work()
 	var/datum/integrated_io/I = inputs[1]
-	if(isweakref(I.data))
+	if(ic_is_ref(I.data))
 		var/datum/d = I.data_as_type(/datum)
 		if(d)
 			stuff_to_display = "[d]"
@@ -151,8 +151,11 @@
 /obj/item/integrated_circuit/output/text_to_speech/advanced/Initialize(mapload)
 	. = ..()
 	my_voice = new (src)
-	GLOB.mob_list -= my_voice // no life() ticks
 	my_voice.name = "TTS Circuit"
+
+/// A text-to-speech circuit's voice is not a mob of the world: no mob registry.
+/mob/living/voice/skips_registry(registry_id)
+	return istype(loc, /obj/item/integrated_circuit) || ..()
 
 /obj/item/integrated_circuit/output/text_to_speech/advanced/do_work()
 	text = get_pin_data(IC_INPUT, 1)

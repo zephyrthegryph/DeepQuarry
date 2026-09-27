@@ -98,6 +98,14 @@
 	name = "Boil"
 	effect = /obj/machinery/alembic/proc/interaction_brew
 
+/obj/machinery/alembic/proc/brew_done(mob/user)
+	bubbling = 0
+	to_chat(user, span_notice("The alembic finishes brewing the potion!"))
+	spawn_potion()
+	potion_reagent = 0
+	base_reagent = 0
+	update_icon()
+
 /obj/machinery/alembic/proc/interaction_brew(mob/user, obj/item/held, datum/interaction/interaction)
 	if(potion_reagent == 0 || base_reagent == 0) //If there is nothing in there
 		to_chat(user, span_warning("The alembic is not yet full!"))
@@ -106,13 +114,7 @@
 		bubbling = 1
 		update_icon()
 		to_chat(user, span_notice("The alembic begins boiling the [potion_reagent] in the [base_reagent]."))
-		sleep(30)
-		bubbling = 0
-		to_chat(user, span_notice("The alembic finishes brewing the potion!"))
-		spawn_potion()
-		potion_reagent = 0
-		base_reagent = 0
-		update_icon()
+		om_after(src, 3 SECONDS, PROC_REF(brew_done), user)
 		return TRUE
 	else if(bubbling)
 		to_chat(user, span_warning("The alembic is already boiling!"))

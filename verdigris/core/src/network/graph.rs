@@ -125,10 +125,7 @@ pub trait NetworkKind:
     }
 }
 
-/// A grid cell index (`grid::GridDims`'s turf index): what
-/// [`NetworkKind::connects`] and [`super::host::NetworkHost`]'s occupancy
-/// index key nodes by.
-pub type CellId = u32;
+use crate::grid::CellId;
 
 pub type NodeId<K> = Handle<Node<K>>;
 pub type EdgeId<K> = Handle<Edge<K>>;

@@ -25,7 +25,7 @@
 
 /mob/living/bot/cleanbot/Destroy()
 	if(target)
-		GLOB.cleanbot_reserved_turfs -= target
+		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 	return ..()
 
 /mob/living/bot/cleanbot/handleIdle()
@@ -82,17 +82,17 @@
 				continue // already checked this one
 			else if(confirmTarget(D))
 				target = D
-				GLOB.cleanbot_reserved_turfs += D
+				registry_join(REGISTRY_CLEANBOT_RESERVED_TURFS, D)
 				return
 
 /mob/living/bot/resetTarget()
-	GLOB.cleanbot_reserved_turfs -= target
+	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 	..()
 
 /mob/living/bot/cleanbot/confirmTarget(obj/effect/decal/cleanable/D)
 	if(!..())
 		return FALSE
-	if(D.loc in GLOB.cleanbot_reserved_turfs)
+	if(D.loc in REGISTRY_MEMBERS(REGISTRY_CLEANBOT_RESERVED_TURFS))
 		return FALSE
 	for(var/T in target_types)
 		if(istype(D, T))
@@ -115,41 +115,12 @@
 	if(D.loc != loc)
 		return
 
-	busy = 1
-	update_icons()
 	var/cleantime = 0
 	if(istype(D, /obj/effect/decal/cleanable))
 		cleantime = istype(D, /obj/effect/decal/cleanable/dirt) ? 10 : 50
 		if(prob(20))
 			automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [D]")
-		if(do_after(src, cleantime * cTimeMult, target = D))
-			var/cleaned_target_id = REF(D)
-			if(istype(loc, /turf/simulated))
-				var/turf/simulated/f = loc
-				f.dirt = 0
-			if(!D)
-				return
-			qdel(D)
-			if(SScontracts)
-				emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
-					"department" = DEPARTMENT_CIVILIAN,
-					"target_id" = cleaned_target_id,
-					"method" = "cleanbot",
-					"cleaned_units" = 1,
-					"detail" = "[src] removed a station contaminant.",
-				), "sanitation-bot:[REF(src)]:[cleaned_target_id]:[world.time]", src)
-				emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
-					"department" = DEPARTMENT_SYNTHETIC,
-					"bot_id" = REF(src),
-					"task_kind" = "sanitation",
-					"target_id" = cleaned_target_id,
-					"successful" = TRUE,
-					"work_units" = 1,
-					"detail" = "[src] completed an autonomous sanitation task.",
-				), "automation:[REF(src)]:sanitation:[world.time]", src)
-			if(D == target)
-				GLOB.cleanbot_reserved_turfs -= target
-				target = null
+		bot_work(cleantime * cTimeMult, D, PROC_REF(UnarmedAttack_cleanbot_done), list(D))
 	else if(D == src)
 		for(var/obj/effect/O in loc)
 			if(istype(O, /obj/effect/decal/cleanable/dirt))
@@ -159,37 +130,65 @@
 		if(cleantime != 0)
 			if(prob(20))
 				automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [loc]")
-			if(do_after(src, cleantime * cTimeMult, target = loc))
-				var/cleaned_turf_id = REF(loc)
-				if(blood)
-					wash(CLEAN_TYPE_BLOOD)
-				if(istype(loc, /turf/simulated))
-					var/turf/simulated/T = loc
-					T.dirt = 0
-				for(var/obj/effect/O in loc)
-					if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
-						qdel(O)
-				if(SScontracts)
-					emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
-						"department" = DEPARTMENT_CIVILIAN,
-						"target_id" = cleaned_turf_id,
-						"method" = "cleanbot",
-						"cleaned_units" = 1,
-						"detail" = "[src] sanitized a station floor.",
-					), "sanitation-bot:[REF(src)]:[cleaned_turf_id]:[world.time]", src)
-					emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
-						"department" = DEPARTMENT_SYNTHETIC,
-						"bot_id" = REF(src),
-						"task_kind" = "sanitation",
-						"target_id" = cleaned_turf_id,
-						"successful" = TRUE,
-						"work_units" = 1,
-						"detail" = "[src] completed an autonomous sanitation task.",
-					), "automation:[REF(src)]:sanitation:[world.time]", src)
+			bot_work(cleantime * cTimeMult, loc, PROC_REF(UnarmedAttack_cleanbot_done2))
 		else
 			handleIdle()
-	busy = 0
-	update_icons()
+
+/mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done(atom/D)
+	var/cleaned_target_id = REF(D)
+	if(istype(loc, /turf/simulated))
+		var/turf/simulated/f = loc
+		f.dirt = 0
+	if(!D)
+		return
+	qdel(D)
+	if(SScontracts)
+		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
+			"department" = DEPARTMENT_CIVILIAN,
+			"target_id" = cleaned_target_id,
+			"method" = "cleanbot",
+			"cleaned_units" = 1,
+			"detail" = "[src] removed a station contaminant.",
+		), "sanitation-bot:[REF(src)]:[cleaned_target_id]:[world.time]", src)
+		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+			"department" = DEPARTMENT_SYNTHETIC,
+			"bot_id" = REF(src),
+			"task_kind" = "sanitation",
+			"target_id" = cleaned_target_id,
+			"successful" = TRUE,
+			"work_units" = 1,
+			"detail" = "[src] completed an autonomous sanitation task.",
+		), "automation:[REF(src)]:sanitation:[world.time]", src)
+	if(D == target)
+		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
+		target = null
+/mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done2()
+	var/cleaned_turf_id = REF(loc)
+	if(blood)
+		wash(CLEAN_TYPE_BLOOD)
+	if(istype(loc, /turf/simulated))
+		var/turf/simulated/T = loc
+		T.dirt = 0
+	for(var/obj/effect/O in loc)
+		if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
+			qdel(O)
+	if(SScontracts)
+		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
+			"department" = DEPARTMENT_CIVILIAN,
+			"target_id" = cleaned_turf_id,
+			"method" = "cleanbot",
+			"cleaned_units" = 1,
+			"detail" = "[src] sanitized a station floor.",
+		), "sanitation-bot:[REF(src)]:[cleaned_turf_id]:[world.time]", src)
+		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+			"department" = DEPARTMENT_SYNTHETIC,
+			"bot_id" = REF(src),
+			"task_kind" = "sanitation",
+			"target_id" = cleaned_turf_id,
+			"successful" = TRUE,
+			"work_units" = 1,
+			"detail" = "[src] completed an autonomous sanitation task.",
+		), "automation:[REF(src)]:sanitation:[world.time]", src)
 
 /mob/living/bot/cleanbot/explode()
 	on = 0
@@ -208,7 +207,7 @@
 	return ..()
 
 /mob/living/bot/cleanbot/update_icons()
-	if(busy)
+	if(om_busy(src))
 		icon_state = "cleanbot-c"
 	else
 		icon_state = "cleanbot[on]"

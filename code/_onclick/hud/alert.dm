@@ -17,7 +17,7 @@
 	var/atom/movable/screen/alert/alert
 	if(LAZYACCESS(alerts, category))
 		alert = alerts[category]
-		var/obj/master = alert.master_ref?.resolve()
+		var/obj/master = om_resolve(alert.master_ref)
 		if(new_master && new_master != master)
 			WARNING("[src] threw alert [category] with new_master [new_master] while already having that alert with master [master]")
 			clear_alert(category)
@@ -40,7 +40,7 @@
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
 		alert.add_overlay(I)
-		alert.master_ref = WEAKREF(new_master)
+		alert.master_ref = om_handle(new_master)
 	else
 		alert.icon_state = "[initial(alert.icon_state)][severity]"
 		alert.severity = severity
@@ -499,7 +499,7 @@ so as to remain in compliance with the most up-to-date laws."
 	if(paramslist["shift"]) // screen objects don't do the normal Click() stuff so we'll cheat
 		to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
 		return
-	var/obj/master = master_ref?.resolve()
+	var/obj/master = om_resolve(master_ref)
 	if(master)
 		return usr.client.Click(master, location, control, params)
 	..() // Pass through to click_vr

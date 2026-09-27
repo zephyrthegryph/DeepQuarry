@@ -138,8 +138,7 @@
 
 /obj/machinery/papershredder/power_change()
 	..()
-	spawn(rand(0,15))
-		update_icon()
+	om_after(src, rand(0,15), TYPE_PROC_REF(/atom, update_icon))
 
 /obj/machinery/papershredder/update_icon()
 	cut_overlays()
@@ -185,9 +184,9 @@
 		return
 	user.visible_message(span_warning("\The [user] holds \the [P] up to \the [src]. It looks like [user.p_theyre()] trying to burn it!"), \
 		span_warning("You hold \the [P] up to \the [src], burning it slowly."))
-	if(!do_after(user, 2 SECONDS, target = src))
-		to_chat(user, span_warning("You must hold \the [P] steady to burn \the [src]."))
-		return
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(burnpaper_done), list(P, user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_warning("You must hold \the [P] steady to burn \the [src].")))
+
+/obj/item/shreddedp/proc/burnpaper_done(obj/item/flame/lighter/P, mob/user)
 	user.visible_message(span_danger("\The [user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap."), \
 		span_danger("You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap."))
 	FireBurn()

@@ -118,7 +118,7 @@
 	var/digestable = TRUE
 	var/item_tf_spawn_allowed = FALSE
 	var/list/ckeys_allowed_itemspawn = null
-	var/datum/weakref/exploit_for //if this obj is an exploit for somebody, this points to them
+	var/exploit_for //if this obj is an exploit for somebody, this points to them
 	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
@@ -172,8 +172,6 @@
 	d_stage_overlay = null
 	d_stage_overlay_key = null
 	exploit_for = null
-	if(item_tf_spawn_allowed)
-		GLOB.item_tf_spawnpoints -= src
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)
@@ -438,6 +436,8 @@
 // This whole things needs to be completely replaced by tg's dropped stuff but we're a long way off from that.
 /obj/item/proc/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(TRUE)
+	if(user)
+		om_changed(user, CHANGE_MOB_HANDS)
 	appearance_flags &= ~NO_CLIENT_COLOR
 	// Remove any item actions we temporary gave out.
 	for(var/datum/action/action_item_has as anything in actions)
@@ -477,6 +477,7 @@
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
+	om_changed(user, CHANGE_MOB_HANDS)
 	// Give out actions our item has to people who equip it.
 	for(var/datum/action/action as anything in actions)
 		give_item_action(action, user, slot)
@@ -1043,15 +1044,17 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 	if(!digestable)
 		to_chat(usr, span_notice("[src] is now protected from digestion."))
 
+REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
+
 /obj/item/proc/item_tf_spawnpoint_set()
 	if(!item_tf_spawn_allowed)
 		item_tf_spawn_allowed = TRUE
-		GLOB.item_tf_spawnpoints += src
+		registry_join(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 /obj/item/proc/item_tf_spawnpoint_used()
 	if(item_tf_spawn_allowed)
 		item_tf_spawn_allowed = FALSE
-		GLOB.item_tf_spawnpoints -= src
+		registry_leave(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 // Ported from TG, used when dropping items on tables/closets.
 /obj/item/proc/do_drop_animation(atom/moving_from)
@@ -1099,6 +1102,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 
 
 // === merged from items_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
+
 /obj/item/proc/inhabit_item(mob/candidate, candidate_name, mob/living/candidate_original_form, is_item_tf = FALSE)
 	//This makes it so that any object in the game can have something put in it like the cursed sword!
 	//This means the proc can also be manually called by admin commands.
@@ -1119,7 +1124,7 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
 	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
 	possessed_voice.Add(new_voice)
-	GLOB.listening_objects |= src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
 	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!
 	src.item_tf_spawnpoint_used() // Item TF spawnpoints

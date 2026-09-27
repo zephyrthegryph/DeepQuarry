@@ -29,11 +29,11 @@
 	UnregisterSignal(SSmotiontracker, COMSIG_MOVABLE_MOTIONTRACKER)
 	. = ..()
 
-/obj/item/motiontracker/proc/handle_motion_tracking(mob/source, datum/weakref/RW, turf/T)
+/obj/item/motiontracker/proc/handle_motion_tracking(mob/source, RW, turf/T)
 	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	var/atom/echo_source = RW?.resolve()
+	var/atom/echo_source = om_resolve(RW)
 	var/atom/scan_pos = src
 	if(!isturf(loc))
 		scan_pos = loc

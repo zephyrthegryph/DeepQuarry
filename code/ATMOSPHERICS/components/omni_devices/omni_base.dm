@@ -91,7 +91,7 @@
 		if(!isnull(id))
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -105,20 +105,22 @@
 /obj/machinery/atmospherics/omni/proc/wake_for_state_change()
 	clear_gas_dependencies()
 	if(use_power && !(stat & (NOPOWER|BROKEN)))
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + "unfastens \the [src]."), \
-			span_notice("You have unfastened \the [src]."), \
-			"You hear a ratchet.")
-		atom_deconstruct()
+	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/omni/proc/wrench_act_tool_done(mob/user)
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + "unfastens \the [src]."), \
+		span_notice("You have unfastened \the [src]."), \
+		"You hear a ratchet.")
+	atom_deconstruct()
 
 /obj/machinery/atmospherics/omni/declare_interactions(list/into)
 	into += list(
@@ -340,3 +342,8 @@
 
 /obj/machinery/atmospherics/omni/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/omni/arm_wakes()
+	..()
+	hibernate_until_gas_changes()

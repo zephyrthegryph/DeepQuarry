@@ -73,7 +73,7 @@
 	var/datum/money_account/account = new
 	account.account_number = 9654321
 	account.owner_name = "Stable Reputation Tester"
-	GLOB.all_money_accounts += account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("stable_reputation_tester")
 	test_mind.initial_account = account
 	var/mob/living/carbon/human/first_body = new(test_turf)
@@ -96,7 +96,7 @@
 	var/personal_key = "[account.account_number]"
 	var/datum/faction_reputation_ledger/personal_ledger = GLOB.station_faction_relations.personal_ledgers[personal_key]
 	GLOB.station_faction_relations.personal_ledgers -= personal_key
-	GLOB.all_money_accounts -= account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(second_body)
 	qdel(first_body)
 	qdel(test_mind)
@@ -110,7 +110,7 @@
 	var/datum/money_account/account = new
 	account.account_number = 9654330
 	account.owner_name = "Agency Tester"
-	GLOB.all_money_accounts += account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("agency_tester")
 	test_mind.initial_account = account
 	var/mob/living/carbon/human/test_agent = new(test_turf)
@@ -152,7 +152,7 @@
 	var/personal_key = "[account.account_number]"
 	GLOB.station_faction_relations.agent_records -= personal_key
 	GLOB.station_faction_relations.personal_ledgers -= personal_key
-	GLOB.all_money_accounts -= account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(record)
 	qdel(test_agent)
 	qdel(test_mind)
@@ -226,7 +226,7 @@
 	var/datum/money_account/account = new
 	account.account_number = 9654360
 	account.owner_name = "Operation Terms Tester"
-	GLOB.all_money_accounts += account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("operation_terms_tester")
 	test_mind.initial_account = account
 	var/mob/living/carbon/human/agent = new(test_turf)
@@ -268,7 +268,7 @@
 	TEST_ASSERT_EQUAL(hostile.operation_grade_for_ratio(0.6), CONTRACT_OUTCOME_MINIMUM, "partial operation did not map to the minimum settlement grade")
 	TEST_ASSERT_EQUAL(hostile.operation_grade_for_ratio(0.8), CONTRACT_OUTCOME_SUCCESSFUL, "substantial operation did not map to the successful settlement grade")
 	TEST_ASSERT_EQUAL(hostile.operation_grade_for_ratio(1), CONTRACT_OUTCOME_EXCEPTIONAL, "complete operation did not map to the exceptional settlement grade")
-	GLOB.all_money_accounts -= account
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(hostile)
 	qdel(ordinary)
 	qdel(registered)

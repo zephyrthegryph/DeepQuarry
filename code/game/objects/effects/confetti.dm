@@ -30,10 +30,9 @@
 		direction = pick(GLOB.cardinal)
 	else
 		direction = pick(GLOB.alldirs)
-	for(var/i=0, i<pick(1,2,3), i++)
-		sleep(5)
-		step(confetti,direction)
-	addtimer(CALLBACK(src, PROC_REF(dec_confetti_sparks)), 20)
+	var/steps = pick(1,2,3)
+	om_drift(confetti, direction, steps, 5)
+	addtimer(CALLBACK(src, PROC_REF(dec_confetti_sparks)), 20 + steps * 5)
 
 /datum/effect/effect/system/confetti_spread/proc/dec_confetti_sparks()
 	src.total_sparks--

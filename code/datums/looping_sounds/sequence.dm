@@ -53,14 +53,14 @@
 	else
 		stop()
 
-// Reactor handlers never sleep, and a sequence step can (Morse plays each letter's sounds
+// Timer callbacks never sleep, and a sequence step can (Morse plays each letter's sounds
 // in turn), so each step runs async and schedules the next when it is done.
 /datum/looping_sound/sequence/sound_loop()
 	if(QDELETED(src) || !running)
 		return
 	INVOKE_ASYNC(src, PROC_REF(sequence_step))
 
-/datum/looping_sound/sequence/react_sleep_violation()
+/datum/looping_sound/sequence/om_sleep_violation()
 	if(stepping)
 		return null
 	return ..()
@@ -71,8 +71,7 @@
 	stepping = FALSE
 	if(QDELETED(src) || !running)
 		return
-	cancel_loop_timer()
-	loop_token = REACT_AT(src, world.time + next_iteration_delay)
+	set_loop_timer(next_iteration_delay)
 
 #define MORSE_DOT	"*" // Yes this is an asterisk but its easier to see on a computer compared to a period.
 #define MORSE_DASH	"-"
@@ -178,16 +177,17 @@
 
 	// So I heard you like sequences...
 	// Play a sequence of sounds while inside the current iteration of the outer sequence.
+	// The dots and dashes are timers on this sound; the next letter waits for all of them.
 	var/list/instructions = morse_alphabet[letter]
+	var/offset = 0
 	for(var/sound in instructions)
-		if(sound == MORSE_DOT)
-			play(dot_soundfile)
-			sleep(dot_delay)
-		else // It's a dash otherwise.
-			play(dash_soundfile)
-			sleep(dash_delay)
-		sleep(spaces_between_sounds)
-	return spaces_between_letters
+		var/file = (sound == MORSE_DOT) ? dot_soundfile : dash_soundfile
+		if(offset)
+			om_after(src, offset, PROC_REF(play), file)
+		else
+			play(file)
+		offset += ((sound == MORSE_DOT) ? dot_delay : dash_delay) + spaces_between_sounds
+	return offset + spaces_between_letters
 
 #undef MORSE_DOT
 #undef MORSE_DASH

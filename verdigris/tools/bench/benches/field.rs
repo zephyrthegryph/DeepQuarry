@@ -45,14 +45,14 @@ fn gas_step(c: &mut Criterion) {
     c.bench_function("field/gas_255_all_active", |b| {
         b.iter(|| {
             w.field.wake_all();
-            pool.install(|| w.field.step(&mut w.cells, &w.geom));
+            pool.install(|| w.field.step(&mut w.cells, &w.geom, None));
         });
     });
     let mut w = world();
     c.bench_function("field/gas_255_one_chunk_active", |b| {
         b.iter(|| {
             w.field.wake_cell(128 * 255 + 128);
-            pool.install(|| w.field.step(&mut w.cells, &w.geom));
+            pool.install(|| w.field.step(&mut w.cells, &w.geom, None));
         });
     });
 }

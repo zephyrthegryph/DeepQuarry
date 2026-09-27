@@ -276,9 +276,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	to_chat(user, span_notice("[pictures_left] photos left."))
 	icon_state = icon_off
 	on = 0
-	spawn(64)
-		icon_state = icon_on
-		on = 1
+	om_after(src, 64, PROC_REF(recharged))
 
 /obj/item/camera/proc/can_capture_turf(turf/T, mob/user)
 	var/viewer = user
@@ -353,3 +351,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 		p.id = id
 
 	return p
+
+/obj/item/camera/proc/recharged()
+	icon_state = icon_on
+	on = 1

@@ -35,7 +35,6 @@
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/Destroy()
-	STOP_PROCESSING(SSobj, src) //so we don't continue turning to ash while gc'd
 	return ..()
 
 /obj/item/reagent_containers/glass/rag/attack_self(mob/user)
@@ -88,13 +87,16 @@
 		var/target_text = trans_dest? "\the [trans_dest]" : "\the [user.loc]"
 		user.visible_message(span_danger("\The [user] begins to wring out [src] over [target_text]."), span_notice("You begin to wring out [src] over [target_text]."))
 
-		if(do_after(user, reagents.total_volume*5, target = src)) //50 for a fully soaked rag
-			if(trans_dest)
-				reagents.trans_to(trans_dest, reagents.total_volume)
-			else
-				reagents.splash(user.loc, reagents.total_volume)
-			user.visible_message(span_danger("\The [user] wrings out [src] over [target_text]."), span_notice("You finish to wringing out [src]."))
-			update_name()
+		//50 for a fully soaked rag
+		om_do_after(user, reagents.total_volume*5, src, src, PROC_REF(wring_done), list(user, trans_dest, target_text))
+
+/obj/item/reagent_containers/glass/rag/proc/wring_done(mob/user, atom/trans_dest, target_text)
+	if(trans_dest)
+		reagents.trans_to(trans_dest, reagents.total_volume)
+	else
+		reagents.splash(user.loc, reagents.total_volume)
+	user.visible_message(span_danger("\The [user] wrings out [src] over [target_text]."), span_notice("You finish to wringing out [src]."))
+	update_name()
 
 /obj/item/reagent_containers/glass/rag/proc/wipe_down(atom/A, mob/user)
 	if(!reagents.total_volume)
@@ -102,9 +104,11 @@
 	else
 		user.visible_message("[user] starts to wipe [A] with [src].")
 		update_name()
-		if(do_after(user, 3 SECONDS, target = src))
-			user.visible_message("[user] finishes wiping [A]!")
-			A.on_rag_wipe(src)
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(wipe_done), list(user, A))
+
+/obj/item/reagent_containers/glass/rag/proc/wipe_done(mob/user, atom/A)
+	user.visible_message("[user] finishes wiping [A]!")
+	A.on_rag_wipe(src)
 
 /obj/item/reagent_containers/glass/rag/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(isliving(target)) //Leaving this as isliving.
@@ -200,7 +204,7 @@
 		qdel(src)
 		return
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	set_light(2, null, "#E38F46")
 	on_fire = 1
 	update_name()
@@ -208,7 +212,7 @@
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	set_light(0)
 	on_fire = 0
 
@@ -221,7 +225,7 @@
 	update_name()
 	update_icon()
 
-/obj/item/reagent_containers/glass/rag/process()
+/obj/item/reagent_containers/glass/rag/periodic_step()
 	if(!can_ignite())
 		visible_message(span_warning("\The [src] burns out."))
 		extinguish()
@@ -236,7 +240,7 @@
 		location.hotspot_expose(700, 5)
 
 	if(burn_time <= 0)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		new /obj/effect/decal/cleanable/ash(location)
 		qdel(src)
 		return

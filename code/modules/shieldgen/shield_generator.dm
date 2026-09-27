@@ -296,14 +296,17 @@
 	upkeep_multiplier = new_upkeep * power_coefficient
 
 
-/obj/machinery/power/shield_generator/process()
+/obj/machinery/power/shield_generator/machine_step()
 	upkeep_power_usage = 0
 	power_usage = 0
 
 	if(offline_for)
 		offline_for = max(0, offline_for - 1)
-	// We're turned off.
+	// We're turned off: nothing left to do once any shutdown cooldown has run out. Starting it
+	// (its UI, set_idle()) wakes it.
 	if(running == SHIELD_OFF)
+		if(!offline_for)
+			return PROCESS_KILL
 		return
 
 	if(target_radius != field_radius && running != SHIELD_RUNNING) // Do not recalculate the field while it's running; that's extremely laggy.
@@ -433,6 +436,7 @@
 			return
 		running = SHIELD_SPINNING_UP
 		spinup_counter = round(spinup_delay / idle_multiplier)
+	MACHINE_WAKE(src)
 	update_icon()
 
 /obj/machinery/power/shield_generator/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
@@ -533,8 +537,7 @@
 			var/old_energy = current_energy
 			shutdown_field()
 			log_and_message_admins("has triggered \the [src]'s emergency shutdown!", ui.user)
-			spawn()
-				empulse(src, old_energy / 60000000, old_energy / 32000000, 1) // If shields are charged at 450 MJ, the EMP will be 7.5, 14.0625. 90 MJ, 1.5, 2.8125
+			empulse(src, old_energy / 60000000, old_energy / 32000000, 1) // If shields are charged at 450 MJ, the EMP will be 7.5, 14.0625. 90 MJ, 1.5, 2.8125
 			old_energy = 0
 
 			return TRUE

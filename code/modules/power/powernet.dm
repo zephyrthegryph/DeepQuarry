@@ -1,18 +1,18 @@
-// A power network as DM sees it: one Rust cable region (M3). The region's
-// topology and ledger live in Rust (verdigris/domains/power); this datum
-// carries the numbers monitors, shocks and machines read, published once per
-// power step, and the machines bound to it.
+// A power network as DM sees it: one Rust cable region (rust_architecture.md
+// step 3). The region's topology and ledger live in Rust
+// (verdigris/domains/power); this datum carries the numbers monitors,
+// shocks and machines read, refreshed by polling `vg_power_region_read`
+// once a power step (there is no event stream any more -- `PowerHost` and
+// its `POWER_EV_REGION` records are gone), and the machines bound to it.
 //
 // Region ids are stable across edits that keep the region (a merge keeps the
 // larger region's id; a split keeps the parent id for one side), so this
-// datum survives those. A retired region's datum is deleted after its
-// machines were rebound.
+// datum survives those. An empty region's datum is dropped by
+// `process_power()`.
 
 /datum/powernet
 	/// Rust region id (0 for a detached test network).
 	var/region_id = 0
-	/// A power key on this region, used for region-wide draws and reads.
-	var/anchor_key = 0
 	/// Power machines bound to this network.
 	var/list/nodes = list()
 
@@ -24,7 +24,7 @@
 	var/viewavail = 0
 	var/viewload = 0
 	var/netexcess = 0   // avail - load at the last step
-	/// Lost supply or overdrawn (Rust brownout event).
+	/// Lost supply or overdrawn (Rust brownout event/poll).
 	var/brownout = FALSE
 
 	var/problem = 0     // non-zero: power monitors show a warning
@@ -45,9 +45,8 @@
 	var/material_pending_heat_elapsed = 0
 	var/last_material_process = 0
 
-/datum/powernet/New(id, key)
+/datum/powernet/New(id)
 	region_id = id
-	anchor_key = key
 	..()
 
 /datum/powernet/Destroy()
@@ -67,49 +66,45 @@
 
 /// The region is gone; its machines were rebound by the same step.
 /datum/powernet/proc/retire()
-	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_TOPOLOGY)
+	om_changed(src, CHANGE_POWERNET_TOPOLOGY)
 	qdel(src)
 
-/datum/powernet/proc/read_info(list/info)
-	avail = info[2]
-	load = info[3]
-	netexcess = info[4]
+/// Polls this region's current numbers from Rust (`process_power()`, once
+/// a power step; also called on facade creation).
+/datum/powernet/proc/refresh()
+	if(!region_id)
+		return
+	var/list/info = vg_power_region_read(region_id)
+	if(!info)
+		return
+	avail = info[1]
+	load = info[2]
+	netexcess = avail - load
 	smooth_view()
-
-/// A POWER_EV_REGION record starting at `at`: region, avail, load,
-/// netexcess (raw, `POWER_REGION_STRIDE`-independent — see power_bridge.dm).
-/datum/powernet/proc/read_step(list/events, at)
-	avail = events[at + 1]
-	load = events[at + 2]
-	netexcess = events[at + 3]
-	smooth_view()
-	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_RATE)
+	var/was_brown = brownout
+	brownout = !!info[3]
+	if(was_brown != brownout)
+		om_changed(src, CHANGE_POWERNET_STATE)
+	om_changed(src, CHANGE_POWERNET_RATE)
 
 /// Eases `viewavail`/`viewload` toward the raw numbers (80/20 per read):
-/// this datum's own display smoothing, not Rust's — the step reports raw
+/// this datum's own display smoothing, not Rust's -- the step reports raw
 /// numbers only (`rust_core.md` §15).
 /datum/powernet/proc/smooth_view()
 	viewavail = round(0.8 * viewavail + 0.2 * avail)
 	viewload = round(0.8 * viewload + 0.2 * load)
 
-/datum/powernet/proc/set_brownout(state)
-	state = !!state
-	if(brownout == state)
-		return
-	brownout = state
-	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_STATE)
-
 /datum/powernet/proc/bind_machine(obj/machinery/power/M)
 	nodes[M] = M
 	material_cache_dirty = TRUE
-	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_TOPOLOGY)
+	om_changed(src, CHANGE_POWERNET_TOPOLOGY)
 
 /datum/powernet/proc/unbind_machine(obj/machinery/power/M)
 	if(QDELETED(src))
 		return
 	nodes -= M
 	material_cache_dirty = TRUE
-	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_TOPOLOGY)
+	om_changed(src, CHANGE_POWERNET_TOPOLOGY)
 
 /// last_surplus() — spare power at the last step.
 /datum/powernet/proc/last_surplus()
@@ -120,30 +115,18 @@
 /datum/powernet/proc/draw_power(amount, atom/consumer)
 	if(amount <= 0)
 		return 0
-	var/key = anchor_key
-	if(istype(consumer, /obj/machinery/power))
-		var/obj/machinery/power/machine = consumer
-		if(machine.power_key && machine.powernet == src)
-			key = machine.power_key
-	else if(istype(consumer, /obj/structure/cable))
-		var/obj/structure/cable/cable = consumer
-		if(cable.power_key)
-			key = cable.power_key
-	var/efficiency = consumer ? (material_graph?.efficiencies?[REF(consumer)] || 1) : 1
+	var/efficiency = consumer ? (material_graph?.efficiencies?[om_handle(consumer)] || 1) : 1
 	var/drawn
 	if(!region_id)
 		// A detached network (tests): its own numbers are the ledger.
 		drawn = between(0, amount / efficiency, avail - load)
-	else if(key)
-		SSmachines.power_flush(TRUE)
-		drawn = vg_power_draw(key, amount / efficiency)
 	else
-		return 0
+		drawn = vg_power_region_draw(region_id, amount / efficiency)
 	load += drawn
 	var/delivered = drawn * efficiency
 	if(consumer && material_graph)
 		LAZYINITLIST(material_consumers)
-		material_consumers[WEAKREF(consumer)] += delivered
+		material_consumers[om_handle(consumer)] += delivered
 	return delivered
 
 /datum/powernet/proc/is_empty()
@@ -157,14 +140,14 @@
 		deltimer(problem_timer)
 	problem_timer = addtimer(CALLBACK(src, PROC_REF(clear_warning)), max(duration_ticks, 1), TIMER_STOPPABLE)
 	if(was_clear)
-		REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_STATE)
+		om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/clear_warning()
 	problem_timer = null
 	var/was_problem = problem
 	problem = material_problem
 	if(was_problem != problem)
-		REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_STATE)
+		om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/set_material_warning(active)
 	active = !!active
@@ -174,7 +157,7 @@
 	var/was_problem = problem
 	problem = material_problem || !!problem_timer
 	if(was_problem != problem)
-		REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_STATE)
+		om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)
 	if(smes_only)
@@ -230,12 +213,11 @@
 
 /datum/powernet/proc/rebuild_material_cache()
 	material_cache_dirty = FALSE
-	if(region_id && anchor_key)
+	if(region_id)
 		release_material_cables()
-		SSmachines.power_flush(TRUE)
-		for(var/key in vg_power_members(anchor_key))
-			var/obj/structure/cable/C = power_key_owner(key)
-			if(istype(C))
+		for(var/entity in vg_power_region_members(region_id))
+			var/obj/structure/cable/C = SSvg.entity_lookup(entity)
+			if(istype(C) && C.power_entity == entity)
 				cables += C
 				C.powernet = src
 	QDEL_NULL(material_graph)
@@ -247,7 +229,7 @@
 	var/list/sources = list()
 	for(var/obj/machinery/power/M as anything in nodes)
 		if(M.power_supply_rate > 0)
-			sources[WEAKREF(M)] = M.power_supply_rate
+			sources[om_handle(M)] = M.power_supply_rate
 	return sources
 
 /// One overlay step: settle heat for the last interval, solve if the flow
@@ -271,7 +253,7 @@
 	for(var/obj/machinery/power/terminal/T in nodes)
 		var/obj/machinery/power/apc/A = T.master
 		if(istype(A))
-			material_consumers[WEAKREF(T)] += A.lastused_total
+			material_consumers[om_handle(T)] += A.channel_load_total()
 	material_pending_heat += material_loss_watts * elapsed_seconds
 	material_pending_heat_elapsed += elapsed_seconds
 	if(material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL)
@@ -282,8 +264,8 @@
 	material_flow_dirty = FALSE
 	material_loss_watts = material_graph.loss_watts
 	material_consumers = null
-	if(material_loss_watts > 0 && anchor_key)
-		load += vg_power_draw(anchor_key, material_loss_watts)
+	if(material_loss_watts > 0 && region_id)
+		load += vg_power_region_draw(region_id, material_loss_watts)
 	set_material_warning(material_loss_watts > max(load * 0.1, 1000))
 
 ////////////////////////////////////////////////

@@ -14,7 +14,6 @@
 	var/camera_name
 	var/camera_network
 	var/state = 0
-	var/busy = 0
 	/*
 				0 = Nothing done to it
 				1 = Wrenched in place
@@ -68,8 +67,10 @@
 /obj/item/camera_assembly/welder_act(mob/user, obj/item/tool)
 	if(state != 1 && state != 2)
 		return FALSE
-	if(!weld(tool, user))
-		return TRUE
+	weld(tool, user, PROC_REF(welded), list(user))
+	return TRUE
+
+/obj/item/camera_assembly/proc/welded(mob/user)
 	if(state == 1)
 		to_chat(user, span_notice("You weld the assembly securely into place."))
 		state = 2
@@ -139,10 +140,14 @@
 	if(!anchored)
 		..()
 
-/obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user)
-	if(busy)
+/// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
+/obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user, on_done, list/done_args)
+	if(om_busy(src)) // a weld in progress claims it
 		return 0
-	busy = 1
-	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [src]..")
-	busy = 0
+	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
+
+
+/obj/item/camera_assembly/proc/weld_finished(on_done, list/done_args)
+	if(on_done)
+		call(src, on_done)(arglist(done_args))

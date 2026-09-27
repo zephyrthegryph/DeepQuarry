@@ -1,4 +1,5 @@
 /obj/machinery/exonet_node
+	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "exonet node"
 	desc = null // Gets written in New()
@@ -90,16 +91,19 @@
 	stat |= EMPED
 	var/duration = (300 * 10)/severity
 	addtimer(CALLBACK(src, PROC_REF(emp_recover)), rand(duration - 20, duration + 20), TIMER_DELETE_ME)
-	update_icon()
+	update_power()
 
 /obj/machinery/exonet_node/proc/emp_recover()
 	stat &= ~EMPED
+	update_power()
 
 // Proc: process()
 // Parameters: None
 // Description: Calls the procs below every tick.
-/obj/machinery/exonet_node/process()
+/// Reconciles on/off with power and damage: every power or break change runs one step.
+/obj/machinery/exonet_node/machine_step()
 	update_power()
+	return PROCESS_KILL
 
 // Proc: attack_hand()
 // Parameters: 1 (user - the person clicking on the machine)
@@ -202,3 +206,8 @@
 	var/timestamp = "[stationdate2text()] [stationtime2text()]"
 	var/msg = "[timestamp] | FROM [origin_address] TO [target_address] | TYPE: [data_type] | CONTENT: [content]"
 	LAZYADD(logs, msg)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/exonet_node/step_start_condition()
+	return TRUE // reconciles on/off with power

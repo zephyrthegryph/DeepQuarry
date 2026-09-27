@@ -167,13 +167,7 @@
 	if(!has_reagents)
 		icon_state = initial(icon_state) +"_locked"
 		playsound(src, 'sound/items/Screwdriver2.ogg', 50, 1)
-		spawn(0) //Otherwise det_time is erroneously set to 0 after this
-			if(istimer(detonator.a_left)) //Make sure description reflects that the timer has been reset
-				var/obj/item/assembly/timer/T = detonator.a_left
-				det_time = 10*T.time
-			if(istimer(detonator.a_right))
-				var/obj/item/assembly/timer/T = detonator.a_right
-				det_time = 10*T.time
+		om_after(src, 0, PROC_REF(sync_det_time)) //Otherwise det_time is erroneously set to 0 after this
 		return
 
 	playsound(src, 'sound/effects/bamf.ogg', 50, 1)
@@ -197,8 +191,7 @@
 		C.throw_mode_off()
 
 	invisibility = INVISIBILITY_MAXIMUM //Why am i doing this?
-	spawn(50)		   //To make sure all reagents can work
-		qdel(src)	   //correctly before deleting the grenade.
+	om_qdel_after(src, 5 SECONDS) //To make sure all reagents can work correctly before deleting the grenade.
 
 
 /obj/item/grenade/chem_grenade/large
@@ -322,3 +315,11 @@
 
 	LAZYADD(beakers, B1)
 	LAZYADD(beakers, B2)
+
+/obj/item/grenade/chem_grenade/proc/sync_det_time()
+	if(istimer(detonator.a_left)) //Make sure description reflects that the timer has been reset
+		var/obj/item/assembly/timer/T = detonator.a_left
+		det_time = 10*T.time
+	if(istimer(detonator.a_right))
+		var/obj/item/assembly/timer/T = detonator.a_right
+		det_time = 10*T.time

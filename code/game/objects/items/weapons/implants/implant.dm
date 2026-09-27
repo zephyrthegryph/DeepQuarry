@@ -47,7 +47,7 @@
 		imp_in = source
 		forceMove(source)
 
-	GLOB.listening_objects |= src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 // Takes place after handle_implant, if that returns TRUE
 /obj/item/implant/proc/post_implant(mob/source)
@@ -81,7 +81,6 @@
 	// The implant site slot's teardown (destroy transaction phase 5, before
 	// Destroy(), OM relations step 2) already cleared part/imp_in and this
 	// implant's entry in the organ's implants list, if it had one.
-	GLOB.listening_objects.Remove(src)
 	return ..()
 
 /obj/item/implant/attackby(obj/item/I, mob/user)
@@ -118,16 +117,15 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	id = rand(1, 1000)
 
 /obj/item/implant/tracking/post_implant(mob/source)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/implant/tracking/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	if(part)
 		part.implants -= src
 	part = imp_in = null
 	return ..()
 
-/obj/item/implant/tracking/process()
+/obj/item/implant/tracking/periodic_step()
 	var/mob/living/implant_mob // Get implant's mob from our host organ
 	if(istype(loc, /obj/item/organ))
 		var/obj/item/organ/O = loc
@@ -139,7 +137,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"
 			malfunction = MALFUNCTION_PERMANENT
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 	return 1
 
 /obj/item/implant/tracking/get_data()
@@ -177,8 +175,7 @@ Implant Specifics:<BR>"}
 		if(4)
 			delay = rand(0.5*60*10,1*60*10)	//from .5 to 1 minutes of free time
 
-	spawn(delay)
-		malfunction--
+	om_after(src, delay, PROC_REF(malfunction_recover))
 
 //////////////////////////////
 //	Death Explosive Implant
@@ -252,6 +249,20 @@ Implant Specifics:<BR>"}
 		activate()
 		qdel(src)
 
+/obj/item/implant/explosive/proc/limb_boom()
+	if(!part)
+		return
+	if (istype(part,/obj/item/organ/external/chest) ||	\
+		istype(part,/obj/item/organ/external/groin) ||	\
+		istype(part,/obj/item/organ/external/head))
+		part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
+		explosion(get_turf(imp_in), -1, -1, 1, 3)
+		qdel(src)
+	else
+		explosion(get_turf(imp_in), -1, -1, 1, 3)
+		part.droplimb(0,DROPLIMB_BLUNT)
+		qdel(src)
+
 /obj/item/implant/explosive/activate()
 	if (malfunction == MALFUNCTION_PERMANENT)
 		return
@@ -266,17 +277,7 @@ Implant Specifics:<BR>"}
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
 					imp_in.visible_message(span_warning("Something beeps inside [imp_in][part ? "'s [part.name]" : ""]!"))
 					playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
-					sleep(25)
-					if (istype(part,/obj/item/organ/external/chest) ||	\
-						istype(part,/obj/item/organ/external/groin) ||	\
-						istype(part,/obj/item/organ/external/head))
-						part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
-						explosion(get_turf(imp_in), -1, -1, 1, 3)
-						qdel(src)
-					else
-						explosion(get_turf(imp_in), -1, -1, 1, 3)
-						part.droplimb(0,DROPLIMB_BLUNT)
-						qdel(src)
+					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, 0, 1, 6)
 				T.gib()
@@ -330,8 +331,7 @@ Implant Specifics:<BR>"}
 						activate()		//50% chance of bye bye
 					else
 						meltdown()		//50% chance of implant disarming
-	spawn (20)
-		malfunction--
+	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/explosive/islegal()
 	return 0
@@ -340,18 +340,7 @@ Implant Specifics:<BR>"}
 	if (ishuman(imp_in) && part)
 		imp_in.visible_message(span_warning("Something beeps inside [imp_in][part ? "'s [part.name]" : ""]!"))
 		playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
-		spawn(25)
-			if (ishuman(imp_in) && part)
-				//No tearing off these parts since it's pretty much killing
-				//and you can't replace groins
-				if (istype(part,/obj/item/organ/external/chest) ||	\
-					istype(part,/obj/item/organ/external/groin) ||	\
-					istype(part,/obj/item/organ/external/head))
-					part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
-				else
-					part.droplimb(0,DROPLIMB_BLUNT)
-			explosion(get_turf(imp_in), -1, -1, 1, 3)
-			qdel(src)
+		om_after(src, 25, PROC_REF(small_boom_goes))
 
 //////////////////////////////
 //	Chemical Implant
@@ -401,8 +390,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if(!src.reagents.total_volume)
 		to_chat(R, "You hear a faint click from your chest.")
 		playsound(R, 'sound/weapons/empty.ogg', 10, 1)
-		spawn(0)
-			qdel(src)
+		om_qdel_after(src, 0)
 	return
 
 /obj/item/implant/chem/emp_act(severity, recursive)
@@ -425,8 +413,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			if(prob(20))
 				activate(5)
 
-	spawn(20)
-		malfunction--
+	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 //////////////////////////////
 //	Loyalty Implant
@@ -526,10 +513,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return dat
 
 /obj/item/implant/death_alarm/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/implant/death_alarm/process()
+/obj/item/implant/death_alarm/periodic_step()
 	if (!implanted) return
 	var/mob/M = imp_in
 
@@ -542,7 +528,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	var/mob/M = imp_in
 	var/area/t = get_area(M)
 	if(!t) // Failsafe
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		return
 	switch (cause)
 		if("death")
@@ -557,7 +543,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 //				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm", "Security")
 //				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm", "Medical")
 			qdel(a)
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
@@ -571,7 +557,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 //			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm", "Security")
 //			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm", "Medical")
 			qdel(a)
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 
 /obj/item/implant/death_alarm/emp_act(severity, recursive)			//for some reason alarms stop going off in case they are emp'd, even without this
 	. = ..()
@@ -585,14 +571,13 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
 			malfunction = MALFUNCTION_PERMANENT
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
-	spawn(20)
-		malfunction--
+	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 //////////////////////////////
 //	Compressed Matter Implant
@@ -861,3 +846,20 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 		new nif_payload(target.nif,laws)
 		to_chat(target, span_notice("((OOC NOTE: Commands that go against server rules should be disregarded and ahelped.))"))
 		to_chat(target, span_notice("((OOC NOTE: If you did not agree to this, you are not compelled to follow the laws.))"))
+
+/// om_after() target: one step of a temporary malfunction wears off.
+/obj/item/implant/proc/malfunction_recover()
+	malfunction--
+
+/obj/item/implant/explosive/proc/small_boom_goes()
+	if (ishuman(imp_in) && part)
+		//No tearing off these parts since it's pretty much killing
+		//and you can't replace groins
+		if (istype(part,/obj/item/organ/external/chest) ||	\
+			istype(part,/obj/item/organ/external/groin) ||	\
+			istype(part,/obj/item/organ/external/head))
+			part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
+		else
+			part.droplimb(0,DROPLIMB_BLUNT)
+	explosion(get_turf(imp_in), -1, -1, 1, 3)
+	qdel(src)

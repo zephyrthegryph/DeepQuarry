@@ -208,7 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		noisy = TRUE
 	return was_on != on
 
-/obj/machinery/telecomms/process()
+/obj/machinery/telecomms/machine_step()
 	if(thermal_timer)
 		deltimer(thermal_timer)
 		thermal_timer = null
@@ -238,12 +238,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/proc/thermal_check_due()
 	thermal_timer = null
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/telecomms/power_change()
 	var/changed = ..()
 	if(changed)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	return changed
 
 /obj/machinery/telecomms/emp_act(severity, recursive)
@@ -253,12 +253,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(prob(100/severity))
 		if(!(stat & EMPED))
 			stat |= EMPED
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
 			var/duration = (300 * 10)/severity
-			spawn(rand(duration - 20, duration + 20)) // Takes a long time for the machines to reboot.
-				stat &= ~EMPED
-				START_MACHINE_PROCESSING(src)
+			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
 
 /obj/machinery/telecomms/proc/checkheat(elapsed_cycles = 1)
 	if(QDELETED(src))
@@ -334,12 +332,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	var/overmap_range_min = 0
 	var/overmap_range_max = 5
 
-	var/list/linked_radios_weakrefs
-
-/obj/machinery/telecomms/receiver/proc/link_radio(obj/item/radio/R)
-	if(!istype(R))
-		return
-	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
+	// Bluespace radios that transmit to this receiver are BS_TX_RADIOS(src).
 
 /obj/machinery/telecomms/receiver/receive_signal(datum/signal/signal)
 	if(!on) // has to be on to receive messages
@@ -366,7 +359,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		var/obj/item/radio/R = signal.data["radio"]
 
 		//Who're you?
-		if(!(WEAKREF(R) in linked_radios_weakrefs))
+		if(!R || BS_TX_TARGET(R) != src)
 			signal.data["reject"] = 1
 			return 0
 
@@ -689,11 +682,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 				log.name = "data packet ([md5(identifier)])"
 
 				if(Compiler && autoruncode)
-					Compiler.Run(signal)	// execute the code
+					if(!Compiler.Run(signal, relay = TRUE))	// execute the code
+						return // the script sleeps: it relays the signal when it is done
 
-			var/can_send = relay_information(signal, /obj/machinery/telecomms/hub)
-			if(!can_send)
-				relay_information(signal, /obj/machinery/telecomms/broadcaster)
+			relay_signal(signal)
+
+/// Sends a processed signal on: to a hub, or straight to the broadcasters.
+/obj/machinery/telecomms/server/proc/relay_signal(datum/signal/signal)
+	var/can_send = relay_information(signal, /obj/machinery/telecomms/hub)
+	if(!can_send)
+		relay_information(signal, /obj/machinery/telecomms/broadcaster)
 
 
 /obj/machinery/telecomms/server/proc/setcode(t)
@@ -759,3 +757,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		return TRUE
 
 	return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)
+
+/obj/machinery/telecomms/proc/emp_recover()
+	stat &= ~EMPED
+	MACHINE_WAKE(src)
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/telecomms/step_start_condition()
+	return on

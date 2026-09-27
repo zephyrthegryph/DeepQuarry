@@ -99,7 +99,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/proc/wake_from_gas()
 	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/power/generator/update_icon()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
@@ -123,7 +123,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 					circ2.temperature_overlay = "circ-[extreme]cold"
 		return 1
 
-/obj/machinery/power/generator/process()
+/obj/machinery/power/generator/machine_step()
 	if(!anchored)
 		stored_energy = 0
 		set_power_supply(0)
@@ -215,7 +215,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 					"You hear a ratchet.")
 	update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
 	if(anchored)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	if(anchored)
 		connect_to_network()
 	else
@@ -294,7 +294,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	..()
 	if(anchored)
 		clear_gas_dependencies()
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon()
 
 
@@ -313,17 +313,23 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		G.power_failure(announce_prob) // If we found a grid checker, then all is well.
 		found_grid_checker = TRUE
 	if(!found_grid_checker) // Otherwise lets break some stuff.
-		spawn(1)
-			GLOB.command_announcement.Announce("Dangerous power spike detected in the power network.  Please check machinery \
-			for electrical damage.",
-			"Critical Power Overload",
-			ANNOUNCER_MSG_POWERSPIKE)
-			var/i = 0
-			var/limit = rand(30, 50)
-			for(var/obj/machinery/power/P in powernet_union)
-				P.overload(src)
-				i++
-				if(i % 5)
-					sleep(1)
-				if(i >= limit)
-					break
+		om_after(src, 1, PROC_REF(announce_power_spike))
+		// The overloads roll through the network a machine a tick, each on the machine's clock.
+		var/i = 0
+		var/limit = rand(30, 50)
+		for(var/obj/machinery/power/P in powernet_union)
+			i++
+			om_after(P, i, TYPE_PROC_REF(/obj/machinery/power, overload), src)
+			if(i >= limit)
+				break
+
+/obj/machinery/power/generator/proc/announce_power_spike()
+	GLOB.command_announcement.Announce("Dangerous power spike detected in the power network.  Please check machinery \
+	for electrical damage.",
+	"Critical Power Overload",
+	ANNOUNCER_MSG_POWERSPIKE)
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/generator/arm_wakes()
+	..()
+	register_gas_dependencies()

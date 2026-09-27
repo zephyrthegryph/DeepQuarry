@@ -9,7 +9,7 @@ ADMIN_VERB(getPlayerStatus, R_FUN, "Report Player Status", "Get information on a
 	var/players = 0
 
 	//Initializing our working list
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!player.client)
 			continue
 		players += 1

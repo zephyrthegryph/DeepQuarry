@@ -33,7 +33,7 @@
 /datum/admins/proc/list_dna()
 	// structured TGUI AdminReport with typed table.
 	var/list/rows = list()
-	for(var/entry in GLOB.mob_list)
+	for(var/entry in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		var/mob/living/carbon/human/subject = entry
 		if(!subject.ckey)
 			continue
@@ -47,7 +47,7 @@
 /datum/admins/proc/list_fingerprints() //kid named fingerprints
 	// structured TGUI AdminReport with typed table.
 	var/list/rows = list()
-	for(var/entry in GLOB.mob_list)
+	for(var/entry in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		var/mob/living/carbon/human/subject = entry
 		if(!subject.ckey)
 			continue
@@ -67,7 +67,7 @@
 
 /datum/admins/proc/output_ai_laws()
 	var/ai_number = 0
-	for(var/mob/living/silicon/S in GLOB.mob_list)
+	for(var/mob/living/silicon/S in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		ai_number++
 		if(isAI(S))
 			to_chat(usr, span_bold("AI [key_name(S, usr)]'s laws:"))

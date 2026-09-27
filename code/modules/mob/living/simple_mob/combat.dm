@@ -1,6 +1,5 @@
 // Does a melee attack.
 /mob/living/simple_mob/proc/attack_target(atom/A)
-	set waitfor = FALSE // For attack animations. Don't want the AI processor to get held up.
 
 	if(!A.Adjacent(src))
 		return ATTACK_FAILED
@@ -10,9 +9,12 @@
 
 	if(melee_attack_delay)
 		melee_pre_animation(A)
-		. = ATTACK_SUCCESSFUL //Shoving this in here as a 'best guess' since this proc is about to sleep and return and we won't be able to know the real value
-		handle_attack_delay(A, melee_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+		handle_attack_delay(A, melee_attack_delay, PROC_REF(attack_target_strike), their_T)
+		return ATTACK_SUCCESSFUL // the real result is known once the telegraph ends
+	return attack_target_strike(A, their_T)
 
+/// The melee attack itself, after any telegraph.
+/mob/living/simple_mob/proc/attack_target_strike(atom/A, turf/their_T)
 	// Cooldown testing is done at click code (for players) and interface code (for AI).
 	// Simplemob Injury
 	if(injury_enrages)
@@ -88,8 +90,6 @@
 
 //The actual top-level ranged attack proc
 /mob/living/simple_mob/proc/shoot_target(atom/A)
-	set waitfor = FALSE
-
 	if(!istype(A) || QDELETED(A))
 		return
 
@@ -104,8 +104,12 @@
 
 	if(ranged_attack_delay)
 		ranged_pre_animation(A)
-		handle_attack_delay(A, ranged_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+		handle_attack_delay(A, ranged_attack_delay, PROC_REF(shoot_target_fire))
+		return TRUE
+	return shoot_target_fire(A)
 
+/// The ranged attack itself, after any telegraph.
+/mob/living/simple_mob/proc/shoot_target_fire(atom/A)
 	if(needs_reload)
 		if(reload_count >= reload_max)
 			try_reload()
@@ -158,16 +162,13 @@
 //		return TRUE
 
 /mob/living/simple_mob/proc/try_reload()
-	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
-	if(do_after(src, reload_time, target = src))
-		if(reload_sound)
-			playsound(src, reload_sound, 70, 1)
-		reload_count = 0
-		. = TRUE
-	else
-		. = FALSE
-	if(ai_brain) ai_brain.busy = FALSE
+	om_do_after(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)
+
+/mob/living/simple_mob/proc/reload_done()
+	if(reload_sound)
+		playsound(src, reload_sound, 70, 1)
+	reload_count = 0
+
 /mob/living/simple_mob/proc/calculate_dispersion()
 	. = projectile_dispersion // Start with the basic var.
 
@@ -219,8 +220,12 @@
 
 	if(special_attack_delay)
 		special_pre_animation(A)
-		handle_attack_delay(A, special_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+		handle_attack_delay(A, special_attack_delay, PROC_REF(special_attack_fire))
+		return TRUE
+	return special_attack_fire(A)
 
+/// The special attack itself, after any telegraph.
+/mob/living/simple_mob/proc/special_attack_fire(atom/A)
 	last_special_attack = world.time
 	if(do_special_attack(A))
 		if(special_attack_charges)
@@ -232,23 +237,56 @@
 	if(special_attack_delay)
 		special_post_animation(A)
 
+/// Missile rack: fires `count` rockets of `rocket_type` at target one second apart
+/// (after a half-second deploy), then retracts with `retract_message` and calls
+/// `then_proc(target)` if given.
+/mob/living/simple_mob/proc/rocket_volley(atom/target, rocket_type, count, retract_message, then_proc)
+	om_after(src, 0.5 SECONDS, PROC_REF(rocket_volley_step), target, rocket_type, count, retract_message, then_proc, 1)
+
+/mob/living/simple_mob/proc/rocket_volley_step(atom/target, rocket_type, count, retract_message, then_proc, i)
+	var/turf/T = get_turf(target)
+	if(T)
+		visible_message(span_warning("\The [src] fires a rocket into the air!"))
+		playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
+		face_atom(T)
+		var/obj/item/projectile/arc/explosive_rocket/rocket = new rocket_type(loc)
+		rocket.old_style_target(T, src)
+		rocket.fire()
+	if(i < count)
+		om_after(src, 1 SECOND, PROC_REF(rocket_volley_step), target, rocket_type, count, retract_message, then_proc, i + 1)
+		return
+	om_after(src, 1 SECOND, PROC_REF(rocket_volley_end), target, retract_message, then_proc)
+
+/mob/living/simple_mob/proc/rocket_volley_end(atom/target, retract_message, then_proc)
+	visible_message(span_warning(retract_message))
+	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	if(then_proc)
+		call(src, then_proc)(target)
+
 // Override this for the actual special attack.
 /mob/living/simple_mob/proc/do_special_attack(atom/A)
 	return FALSE
 
-// Sleeps the proc that called it for the correct amount of time.
+// Waits out an attack telegraph, then calls `then_proc(A, extra)` on src.
 // Also makes sure the AI doesn't do anything stupid in the middle of the delay.
-/mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount)
-	if(ai_brain) ai_brain.busy = TRUE
+/mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount, then_proc, extra)
+	ai_busy_begin()
 	// Click delay modifiers also affect telegraphing time.
 	// This means berserked enemies will leave less time to dodge.
 	var/true_attack_delay = delay_amount * factor(BF_ATTACK_SPEED)
 
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 
-	sleep(true_attack_delay)
+	if(!om_after(src, true_attack_delay, PROC_REF(attack_delay_done), then_proc, list(A, extra)))
+		ai_busy_end()
 
-	if(ai_brain) ai_brain.busy = FALSE
+/mob/living/simple_mob/proc/attack_delay_done(then_proc, list/call_args)
+	ai_busy_end()
+	var/atom/A = call_args[1]
+	if(QDELETED(A))
+		return
+	if(then_proc)
+		call(src, then_proc)(arglist(call_args))
 // Override these four for special custom animations (like the GOLEM).
 /mob/living/simple_mob/proc/melee_pre_animation(atom/A)
 	do_windup_animation(A, melee_attack_delay)

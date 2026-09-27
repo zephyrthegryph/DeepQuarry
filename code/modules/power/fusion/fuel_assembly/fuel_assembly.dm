@@ -15,7 +15,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/fuel_assembly/process()
+/obj/item/fuel_assembly/periodic_step()
 	radiate()
 
 /obj/item/fuel_assembly/proc/radiate()
@@ -36,7 +36,6 @@
 	active = FALSE
 
 /obj/item/fuel_assembly/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 
@@ -56,7 +55,7 @@
 		if(mat_rad)
 			radioactivity = mat_rad
 			desc += " It is warm to the touch."
-			START_PROCESSING(SSobj, src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 		if(mat_lum)
 			set_light(mat_lum, mat_lum, material.icon_colour)
 	else

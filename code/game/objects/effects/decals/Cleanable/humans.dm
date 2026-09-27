@@ -232,16 +232,21 @@
 	INVOKE_ASYNC(src, PROC_REF(streak_async), directions)
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_async(list/directions)
-	var/direction = pick(directions)
-	for (var/i = 0, i < pick(1, 200; 2, 150; 3, 50; 4), i++)
-		sleep(3)
-		if (i > 0)
-			var/obj/effect/decal/cleanable/blood/b = new /obj/effect/decal/cleanable/blood/splatter(src.loc)
-			b.basecolor = src.basecolor
-			b.update_icon()
+	om_after(src, 3, PROC_REF(streak_step), pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4))
 
-		if (step_to(src, get_step(src, direction), 0))
-			break
+/// One streak step every 0.3 s: splatter behind (after the first), slide on.
+/obj/effect/decal/cleanable/blood/gibs/proc/streak_step(direction, i, steps)
+	if (i > 0)
+		streak_splat()
+	if (step_to(src, get_step(src, direction), 0))
+		return
+	if (i + 1 < steps)
+		om_after(src, 3, PROC_REF(streak_step), direction, i + 1, steps)
+
+/obj/effect/decal/cleanable/blood/gibs/proc/streak_splat()
+	var/obj/effect/decal/cleanable/blood/b = new /obj/effect/decal/cleanable/blood/splatter(src.loc)
+	b.basecolor = src.basecolor
+	b.update_icon()
 
 
 /obj/effect/decal/cleanable/mucus

@@ -21,9 +21,7 @@
 	shuttle_tag = "Arrivals"
 
 // The shuttle subsystem owns arrivals automation through always_process. The
-// mapped console is only a debugging/control surface and has no idle work.
-/obj/machinery/computer/shuttle_control/arrivals/process()
-	return PROCESS_KILL
+// mapped console is only a debugging/control surface and has no step work.
 
 // This proc checks if anyone is on the shuttle.
 /datum/shuttle/autodock/ferry/arrivals/proc/check_for_passengers()
@@ -39,7 +37,7 @@
 			return FALSE
 	return TRUE
 
-/datum/shuttle/autodock/ferry/arrivals/process()
+/datum/shuttle/autodock/ferry/arrivals/shuttle_step()
 	if(process_state == IDLE_STATE)
 
 		if(location) // If we're off-station (space).
@@ -47,10 +45,8 @@
 				warmup_time = initial(warmup_time)
 				launch()
 				message_passengers("Arriving at [using_map.station_name] in thirty seconds...")
-				spawn(10 SECONDS)
-					message_passengers("Arriving at [using_map.station_name] in twenty seconds.")
-					spawn(10 SECONDS)
-						message_passengers("Arriving at [using_map.station_name] in ten seconds.  Please buckle up.")
+				om_after(src, 10 SECONDS, PROC_REF(message_passengers), "Arriving at [using_map.station_name] in twenty seconds.")
+				om_after(src, 20 SECONDS, PROC_REF(message_passengers), "Arriving at [using_map.station_name] in ten seconds.  Please buckle up.")
 
 		else // We are at the station.
 			if(!check_for_passengers()) // Don't leave with anyone.

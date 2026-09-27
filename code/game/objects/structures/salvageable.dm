@@ -19,13 +19,15 @@
 	user.visible_message( \
 		span_infoplain(span_bold("\The [user]") + " begins salvaging from \the [src]."), \
 		span_notice("You start salvaging from \the [src]."))
-	if(do_after(user, actual_time, target = src))
-		user.visible_message( \
-			span_notice("\The [user] has salvaged \the [src]."), \
-			span_notice("You salvage \the [src]."))
-		dismantle()
-		qdel(src)
+	om_do_after(user, actual_time, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/salvageable/proc/crowbar_act_timed_done(mob/user)
+	user.visible_message( \
+		span_notice("\The [user] has salvaged \the [src]."), \
+		span_notice("You salvage \the [src]."))
+	dismantle()
+	qdel(src)
 
 //Types themself, use them, but not the parent object
 

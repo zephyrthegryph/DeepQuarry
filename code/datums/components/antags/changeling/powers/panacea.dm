@@ -35,10 +35,18 @@
 		to_chat(src, span_notice("We will heal much faster."))
 
 	//TODO: Replace with a modifier.
-	for(var/i = 0, i<10,i++)
-		if(C)
-			C.mend(TREAT_ANTITOXIN, heal_amount)
-			sleep(10)
+	changeling_panacea_pulse(heal_amount, 10)
+
+	feedback_add_details("changeling_powers","AP")
+	return 1
+
+/// One of panacea's ten antitoxin pulses, a second apart; the germs go after the last.
+/mob/proc/changeling_panacea_pulse(heal_amount, left)
+	var/mob/living/carbon/human/C = src
+	C.mend(TREAT_ANTITOXIN, heal_amount)
+	if(left > 1)
+		om_after(src, 1 SECOND, PROC_REF(changeling_panacea_pulse), heal_amount, left - 1)
+		return
 
 	for(var/obj/item/organ/external/E in C.organs)
 		var/obj/item/organ/external/G = E
@@ -51,6 +59,3 @@
 		if(G.germ_level)
 			var/germ_heal = heal_amount * 100
 			G.germ_level = max(0, G.germ_level - germ_heal)
-
-	feedback_add_details("changeling_powers","AP")
-	return 1

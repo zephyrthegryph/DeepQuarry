@@ -371,10 +371,7 @@
 	if(istype(A,/turf/simulated/shuttle/wall) || istype(A,/turf/simulated/wall) || (ismineralturf(A) && A.density) || istype(A,/obj/mecha) || istype(A,/obj/machinery/door))
 		var/blast_dir = src.dir
 		A.visible_message(span_danger("\The [A] begins to glow!"))
-		spawn(2 SECONDS)
-			var/blastloc = get_step(A, blast_dir)
-			if(blastloc)
-				explosion(blastloc, -1, -1, 2, 3)
+		om_after(A, 2 SECONDS, /proc/delayed_blast_beyond, A, blast_dir)
 	..()
 
 /obj/item/projectile/beam/tungsten/Bump(atom/A, forced=0)
@@ -383,3 +380,9 @@
 		W.shatter()
 		return 0
 	..()
+
+/// A tungsten beam's delayed blast, one step past the wall it struck.
+/proc/delayed_blast_beyond(atom/A, blast_dir)
+	var/blastloc = get_step(A, blast_dir)
+	if(blastloc)
+		explosion(blastloc, -1, -1, 2, 3)

@@ -26,7 +26,7 @@
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	impact_area = get_area(src)
 
 	if(!impact_area)
@@ -52,17 +52,24 @@
 	if(immortal)
 		return
 	countdown.start()
+	om_after(src, lifespan, PROC_REF(lifespan_over))
 
-/obj/effect/anomaly/process(seconds_per_tick)
+/// The anomaly's lifespan ended (its timer): it detonates whether or not anyone is near.
+/obj/effect/anomaly/proc/lifespan_over()
+	if(immortal || QDELETED(src))
+		return
+	if(loc)
+		detonate()
+	qdel(src)
+
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
+/obj/effect/anomaly/periodic_step(seconds_per_tick)
+	if(!mob_near(world.view * 2, TRUE))
+		return sleep_until_mob_near(world.view * 2, TRUE)
 	anomalyEffect(seconds_per_tick)
 	anomalyPulse()
-	if(death_time < world.time && !immortal)
-		if(loc)
-			detonate()
-		qdel(src)
 
 /obj/effect/anomaly/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(countdown)
 	QDEL_NULL(anomaly_core)
 	if(stats)
@@ -114,7 +121,7 @@
 		move_chance = 0
 	if(!stats && add_stats)
 		stats = new /datum/anomaly_stats
-		stats.attached_anomaly = WEAKREF(src)
+		stats.attached_anomaly = om_handle(src)
 		stats.calculate_points()
 		density = TRUE
 	return
@@ -126,12 +133,14 @@
 			return TRUE
 	if(istype(I, /obj/item/anomaly_scanner) && stats)
 		var/obj/item/anomaly_scanner/scanner = I
-		if(!do_after(user, 1 SECOND, src))
-			return
-		scanner.buffered_anomaly = WEAKREF(src)
-		scanner.tgui_interact(user)
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
 		return TRUE
 	return ..()
+
+/obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
+	scanner.buffered_anomaly = om_handle(src)
+	scanner.tgui_interact(user)
+	return TRUE
 
 /obj/effect/anomaly/bullet_act(obj/item/projectile/proj)
 	if(stats && istype(stats.modifier, /datum/anomaly_modifiers/reflective) && prob(stats.severity/1.5))

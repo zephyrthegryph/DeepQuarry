@@ -31,13 +31,12 @@
 	var/light_disabled = 0
 	var/in_use_lights = 0 // TO BE IMPLEMENTED - LIES.
 	var/alarm_on = 0
-	var/busy = 0
 
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
 	var/affected_by_emp_until = 0
-	/// The REACT_AT token for next_camera_deadline(), and the deadline it was set for.
+	/// The om_after() timer for next_camera_deadline(), and the deadline it was set for.
 	var/tmp/camera_timer_token
 	var/tmp/camera_timer_at = 0
 
@@ -82,7 +81,7 @@
 /obj/machinery/camera/Destroy()
 	// cancelCameraAlarm() intentionally respects a cut alarm wire, which is wrong
 	// during destruction: every handler must release source and cached-camera refs.
-	for(var/datum/alarm_handler/handler as anything in SSalarm.all_handlers)
+	for(var/datum/alarm_handler/handler as anything in all_alarm_handlers())
 		handler.release_atom(src)
 	if(isMotion())
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
@@ -96,8 +95,8 @@
 	network = null
 	return ..()
 
-// A camera sleeps on one REACT_AT for its earliest deadline (EMP recovery, the motion alarm
-// delay) and on signals from the mobs it tracks; it never polls (reactor.md §9).
+// A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
+// delay) and on signals from the mobs it tracks; it never polls.
 
 /// The earliest pending deadline (world.time), or 0 for none.
 /obj/machinery/camera/proc/next_camera_deadline()
@@ -115,16 +114,14 @@
 	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
 		return
 	if(!isnull(camera_timer_token))
-		REACT_CANCEL(src, camera_timer_token)
+		om_cancel_timer(src, camera_timer_token)
 		camera_timer_token = null
 	camera_timer_at = deadline
 	if(deadline)
-		camera_timer_token = REACT_AT(src, deadline)
+		om_attach(src, /datum/om/behaviour/sleeper/timed)
+		camera_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
 
-/obj/machinery/camera/on_react(reason, source, source_kind)
-	. = ..()
-	if(!(reason & REACT_REASON_TIMER))
-		return
+/obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_token = null
 	camera_timer_at = 0
 	if((stat & EMPED) && world.time >= affected_by_emp_until)
@@ -135,7 +132,7 @@
 	check_motion_alarm()
 	schedule_camera_timer()
 
-/obj/machinery/camera/react_sleep_violation()
+/obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
 	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
@@ -294,8 +291,11 @@
 	update_coverage()
 	if(!wires.is_all_cut() && !(stat & BROKEN))
 		return ..()
-	if(!weld(tool, user))
+	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
 		return ITEM_INTERACT_BLOCKING
+	return TRUE
+
+/obj/machinery/camera/proc/welded_off(mob/user, obj/item/tool)
 	if(assembly)
 		assembly.forceMove(loc)
 		assembly.anchored = TRUE
@@ -333,7 +333,7 @@
 		if(N)
 			info = N.notehtml
 	to_chat(U, "You hold \a [itemname] up to the camera ...")
-	for(var/mob/living/silicon/ai/O in GLOB.living_mob_list)
+	for(var/mob/living/silicon/ai/O in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(!O.client)
 			continue
 		if(U.name == "Unknown")
@@ -499,13 +499,17 @@
 
 	return null
 
-/obj/machinery/camera/proc/weld(obj/item/tool, mob/user)
-	if(busy)
+/// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
+/obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
+	if(om_busy(src)) // a weld in progress claims it
 		return 0
-	busy = 1
-	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..")
-	busy = 0
+	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
+
+
+/obj/machinery/camera/proc/weld_finished(on_done, list/done_args)
+	if(on_done)
+		call(src, on_done)(arglist(done_args))
 
 /obj/machinery/camera/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))

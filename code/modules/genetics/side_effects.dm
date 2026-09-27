@@ -10,7 +10,7 @@
 
 	S.start(H)
 	addtimer(CALLBACK(H, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 4), 2 SECONDS, TIMER_DELETE_ME)
-	addtimer(CALLBACK(S, TYPE_PROC_REF(/datum/genetics/side_effect, finish), WEAKREF(H)), S.duration, TIMER_DELETE_ME)
+	addtimer(CALLBACK(S, TYPE_PROC_REF(/datum/genetics/side_effect, finish), om_handle(H)), S.duration, TIMER_DELETE_ME)
 	//above is doing: Call S.finish(H) in S.duration
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)
@@ -19,8 +19,8 @@
 	// start the side effect, this should give some cue as to what's happening,
 	// such as gasping. These cues need to be unique among side-effects.
 
-/datum/genetics/side_effect/proc/finish(datum/weakref/WR)
-	var/mob/living/carbon/human/H = WR.resolve()
+/datum/genetics/side_effect/proc/finish(WR)
+	var/mob/living/carbon/human/H = om_resolve(WR)
 	if(!H || !ishuman(H)) return FALSE
 	H.genetic_side_effects -= src
 	if(antidote_reagent && (H.reagents.has_reagent(antidote_reagent)|| H.ingested.has_reagent(antidote_reagent) || H.touching.has_reagent(antidote_reagent)))
@@ -38,9 +38,9 @@
 	..()
 	H.automatic_custom_emote(VISIBLE_MESSAGE, "starts turning very red..", check_stat = TRUE)
 
-/datum/genetics/side_effect/genetic_burn/finish(datum/weakref/WR)
+/datum/genetics/side_effect/genetic_burn/finish(WR)
 	if(..()) return
-	var/mob/living/carbon/human/H = WR.resolve()
+	var/mob/living/carbon/human/H = om_resolve(WR)
 	if(!ishuman(H))
 		return
 	for(var/organ_name in BP_ALL)
@@ -57,9 +57,9 @@
 	..()
 	H.automatic_custom_emote(VISIBLE_MESSAGE, "'s limbs start shivering uncontrollably.", check_stat = TRUE)
 
-/datum/genetics/side_effect/bone_snap/finish(datum/weakref/WR)
+/datum/genetics/side_effect/bone_snap/finish(WR)
 	if(..()) return
-	var/mob/living/carbon/human/H = WR.resolve()
+	var/mob/living/carbon/human/H = om_resolve(WR)
 	var/organ_name = pick(BP_ALL)
 	var/obj/item/organ/external/E = H.get_organ(organ_name)
 	if(!E)
@@ -76,7 +76,7 @@
 	..()
 	H.automatic_custom_emote(VISIBLE_MESSAGE, "has drool running down from [H.p_their()] mouth.", check_stat = TRUE)
 
-/datum/genetics/side_effect/confuse/finish(datum/weakref/WR)
+/datum/genetics/side_effect/confuse/finish(WR)
 	if(..()) return
-	var/mob/living/carbon/human/H = WR.resolve()
+	var/mob/living/carbon/human/H = om_resolve(WR)
 	H.status_at_least(EFFECT_CONFUSED, 100)

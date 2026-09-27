@@ -15,7 +15,8 @@
 #define REACT_CMP_ABOVE 0
 #define REACT_CMP_BELOW 1
 
-// --- Probe domain channels (verdigris/ffi/src/reactor.rs). A channel's reason bit is (1 << id).
+// --- Probe channels (the test Probe component, verdigris/ffi/src/sched.rs). A channel's
+// reason bit is (1 << id).
 #define CH_PROBE_PRESSURE 0
 #define CH_PROBE_TEMPERATURE 1
 #define CH_BIT(ch) (1 << (ch))
@@ -29,78 +30,22 @@
 #define CH_GAS_PLASMA 4
 #define CH_GAS_CARBON_DIOXIDE 5
 
-// --- Rust entity handles: a domain and a cell in one exact number (domain < 16, cell < 2^20).
-// Gas handles are negative: -(gas handle + 1), where the gas handle (< 2^24) is a
-// /datum/gas_mixture's arena_id(): a turf's air names its gas field cell, anything
-// else a main-owned mixture.
-#define REACT_HANDLE(domain, cell) ((domain) * 1048576 + (cell))
-#define REACT_HANDLE_DOMAIN(handle) ((handle) < 0 ? REACT_DOMAIN_GAS : round((handle) / 1048576))
-#define REACT_HANDLE_CELL(handle) ((handle) < 0 ? (-(handle) - 1) : (handle) % 1048576)
+// --- Watch handles: what a watch names, as list(code, cell). `code` is a component kind
+// (VG_KIND_*, cells are vg_entity values) or VG_GAS_HANDLES (cells are gas arena ids).
+#define REACT_HANDLE(code, cell) list(code, cell)
+#define REACT_HANDLE_CODE(handle) ((handle)[1])
+#define REACT_HANDLE_CELL(handle) ((handle)[2])
 /// The watch handle of a gas mixture (a turf's air, a tank, a canister).
-#define REACT_GAS(mixture) (-((mixture).arena_id() + 1))
+#define REACT_GAS(mixture) list(VG_GAS_HANDLES, (mixture).arena_id())
 
 // --- DM-owned key kinds (§4). A key is (kind, id); the id is a registry id, never a string.
 /// Keys used only by the reactor's own tests.
 #define REACT_KEY_TEST 1
-/// An area's power channels changed. Id: the area's REACT_ID.
-#define REACT_KEY_AREA_POWER 2
-/// A door's mode (bolts, emergency access, ...) changed. Id: the door's REACT_ID.
-#define REACT_KEY_DOOR_MODE 3
-/// An APC's own state or its grid supply class changed. Id: the APC's REACT_ID.
-#define REACT_KEY_APC 4
-	#define REACT_APC_STATE 1
-	#define REACT_APC_SUPPLY 2
-/// A powernet changed. Id: the powernet's REACT_ID.
-#define REACT_KEY_POWERNET 5
-	/// Supply or load moved (exact-rate consumers).
-	#define REACT_POWERNET_RATE 1
-	/// Cables, warnings or monitor-visible state.
-	#define REACT_POWERNET_STATE 2
-	/// Machine membership (sleeping APCs).
-	#define REACT_POWERNET_TOPOLOGY 4
-/// A turret's settings or power changed. Id: the turret's REACT_ID.
-#define REACT_KEY_TURRET 6
-/// A disposal unit's state changed. Id: the unit's REACT_ID.
-#define REACT_KEY_DISPOSAL 7
-/// A meteor appeared or went away. Id: always 1.
-#define REACT_KEY_METEORS 8
-/// A mob entered, left or moved in a 16x16 chunk. Id: MOB_CHUNK_NUMERIC_KEY (z < 256).
-/// One key for every mob; the mask says whether the mover was a player.
-#define REACT_KEY_MOB_CHUNK 9
-	/// Any mob (sleeping turrets, calm AI brains). Subscribe with sleep_on_keys().
-	#define REACT_CHUNK_ANY_MOB (1<<0)
-	/// A mob with a client (looping sounds, auto-flicker lights, Q5). Subscribe with
-	/// SSreactor.subscribe_player_chunks().
-	#define REACT_CHUNK_PLAYER (1<<1)
-/// The mask for keys with a single meaning.
-#define REACT_KEY_CHANGED 1
-
 /// Publish key (kind, D's id) only if D was ever given a registry id: a subscriber builds
 /// the key with REACT_ID(D), so a datum without one has no subscribers. Saves the bind call.
 #define REACT_PUBLISH_OWN(D, kind, mask) if((D).reactor_id) { REACT_PUBLISH(kind, (D).reactor_id, mask) }
-/// A pipe network's leaks or topology changed. Id: the network's REACT_ID, or
-/// REACT_ID_GLOBAL for a change whose network is not known yet (new construction).
-#define REACT_KEY_PIPE_NETWORK 21
-/// A shuttle's schedule changed (called, recalled, launching). Id: REACT_SHUTTLE_*.
-#define REACT_KEY_SHUTTLE_SCHEDULE 22
-#define REACT_SHUTTLE_EVAC 1
-#define REACT_SHUTTLE_SUPPLY 2
-/// A machine broke or was fixed (base /obj/machinery/atom_break()/atom_fix()). Id: the machine's REACT_ID.
-#define REACT_KEY_MACHINE_BROKEN 23
-
-/// Key id for global keys (registry ids start at 1, so 0 is never a datum's id).
-#define REACT_ID_GLOBAL 0
-
-// Key masks.
-/// REACT_KEY_AREA_POWER: the area's power_change() ran (channels or light switch).
-#define REACT_AREA_POWER_CHANGED (1<<0)
-/// REACT_KEY_DOOR_MODE parts.
-#define REACT_DOOR_BOLTS (1<<0)
-#define REACT_DOOR_POWER (1<<1)
-#define REACT_DOOR_ELECTRIFIED (1<<2)
-#define REACT_DOOR_OPEN (1<<3)
-/// REACT_KEY_PIPE_NETWORK: leak membership or topology changed.
-#define REACT_PIPE_LEAKS (1<<0)
+// Game keys (areas, doors, powernets, chunks, ...) are object-model keys now: KEY_* and
+// OM_KEY_* in code/__defines/om.dm.
 
 /// Reason classes for the wake metrics (REACT_CLASS_EVERY counts continuous-lane runs,
 /// which call react_every() instead of on_react()).
@@ -143,7 +88,7 @@
 /// `why` says why this cannot be a watch or a timer; the profiler lists it.
 #define REACT_EVERY(D, period, why) SSreactor.every(D, period, why)
 /// DM-owned state under key (kind, id) changed; `mask` says which parts.
-#define REACT_PUBLISH(kind, id, mask) vg_react_publish(kind, id, mask)
+#define REACT_PUBLISH(kind, id, mask) vg_world_publish(kind, id, mask)
 /// Wake when key (kind, id) is published with any bit of `mask`.
 #define REACT_ON_KEY(D, kind, id, mask) SSreactor.on_key(D, kind, id, mask)
 /// Drop one subscription, timer or continuous declaration.
@@ -154,15 +99,15 @@
 // --- Rate models (§5). Rates are per second; the wheel runs in ticks.
 #define REACT_PER_TICK(per_second) ((per_second) * world.tick_lag / 10)
 /// A quantity changing at `per_second` from `v0`, clamped to [lo, hi] (null: unbounded).
-#define RATE_LINEAR(v0, per_second, lo, hi) vg_rate_linear(v0, REACT_PER_TICK(per_second), lo, hi)
+#define RATE_LINEAR(v0, per_second, lo, hi) vg_world_rate_linear(v0, REACT_PER_TICK(per_second), lo, hi)
 /// A quantity relaxing toward `target` with rate constant `k_per_second`.
-#define RATE_RELAX(v0, target, k_per_second) vg_rate_relax(v0, target, REACT_PER_TICK(k_per_second))
+#define RATE_RELAX(v0, target, k_per_second) vg_world_rate_relax(v0, target, REACT_PER_TICK(k_per_second))
 /// A store with named inflow/outflow terms (RATE_SET_TERM).
-#define RATE_SUM(v0, lo, hi) vg_rate_sum(v0, lo, hi)
-#define RATE_READ(model) vg_rate_read(model)
-#define RATE_SET(model, value) vg_rate_set(model, value)
-#define RATE_SET_RATE(model, per_second) vg_rate_set_rate(model, REACT_PER_TICK(per_second))
-#define RATE_SET_TERM(model, term, per_second) vg_rate_set_term(model, term, REACT_PER_TICK(per_second))
-#define RATE_REMOVE(model) vg_rate_remove(model)
+#define RATE_SUM(v0, lo, hi) vg_world_rate_sum(v0, lo, hi)
+#define RATE_READ(model) vg_world_rate_read(model)
+#define RATE_SET(model, value) vg_world_rate_set(model, value)
+#define RATE_SET_RATE(model, per_second) vg_world_rate_set_rate(model, REACT_PER_TICK(per_second))
+#define RATE_SET_TERM(model, term, per_second) vg_world_rate_set_term(model, term, REACT_PER_TICK(per_second))
+#define RATE_REMOVE(model) vg_world_rate_remove(model)
 /// Wake D at the exact tick the model enters `cmp level` (at once if it already holds).
 #define REACT_RATE(D, model, cmp, level) SSreactor.on_rate(D, model, cmp, level)

@@ -238,18 +238,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
 		if((world.time - record.last_notification) < 30 MINUTES)
 			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", new_character.isSynthetic() ? "Science" : "Medical")
-		spawn(0)	//Wait a second for nif to do its thing if there is one
-			if(record.nif_path)
-				var/obj/item/nif/nif
-				if(new_character.nif)
-					nif = new_character.nif
-				else
-					nif = new record.nif_path(new_character,null,record.nif_savedata)
-				spawn(0)	//Wait another second in case we just gave them a new nif
-					if(nif)	//Now restore the software
-						for(var/path in record.nif_software)
-							new path(nif)
-						nif.durability = record.nif_durability
+		if(record.nif_path)
+			om_after(new_character, 0, /proc/resleeve_restore_nif, new_character, record) //Wait a moment for nif to do its thing if there is one
 
 	if(!new_character.dna)
 		CRASH("[new_character] just came out of an autosleever and has no DNA! Species: [new_character.species] as mob: [new_character.type]. NIF Status: [new_character.nif]")
@@ -261,3 +251,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	else
 		spawn_slots --
 		return
+
+/// Restores a resleeved body's backed-up NIF, then (a moment later, once a new NIF is in) its software.
+/proc/resleeve_restore_nif(mob/living/carbon/human/new_character, datum/transhuman/mind_record/record)
+	var/obj/item/nif/nif = new_character.nif
+	if(!nif)
+		nif = new record.nif_path(new_character,null,record.nif_savedata)
+	om_after(nif, 0, /proc/install_nif_software, nif, record.nif_software, record.nif_durability)
+
+/// Installs `software` (NIFsoft types) in the NIF, then restores its durability if given.
+/proc/install_nif_software(obj/item/nif/nif, list/software, durability)
+	for(var/path in software)
+		new path(nif)
+	if(!isnull(durability))
+		nif.durability = durability

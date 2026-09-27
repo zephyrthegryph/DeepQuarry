@@ -128,107 +128,47 @@
 	else
 
 		to_chat(M, span_notice("We begin growing our new equipment..."))
+		changeling_grow_piece(stuff_to_equip, 1, list())
+		return 1
 
-		var/list/grown_items_list = list()
+/// The pieces a changeling grows, in order: key in stuff_to_equip, slot id, slot, name, sound.
+GLOBAL_LIST_INIT(changeling_grown_pieces, list(
+	list("head", SLOT_ID_HEAD, slot_head, "a helmet", 'sound/effects/blobattack.ogg'),
+	list("w_uniform", SLOT_ID_UNIFORM, slot_w_uniform, "a uniform", 'sound/effects/blobattack.ogg'),
+	list("gloves", SLOT_ID_GLOVES, slot_gloves, "some gloves", 'sound/effects/splat.ogg'),
+	list("shoes", SLOT_ID_SHOES, slot_shoes, "shoes", 'sound/effects/splat.ogg'),
+	list("belt", SLOT_ID_BELT, slot_belt, "a belt", 'sound/effects/splat.ogg'),
+	list("glasses", SLOT_ID_EYES, slot_glasses, "some glasses", 'sound/effects/splat.ogg'),
+	list("wear_mask", SLOT_ID_MASK, slot_wear_mask, "a mask", 'sound/effects/splat.ogg'),
+	list("back", SLOT_ID_BACK, slot_back, "a backpack", 'sound/effects/blobattack.ogg'),
+	list("wear_suit", SLOT_ID_SUIT, slot_wear_suit, "an exosuit", 'sound/effects/blobattack.ogg'),
+	list("wear_id", SLOT_ID_ID, slot_wear_id, "an ID card", 'sound/effects/splat.ogg'),
+))
 
-		var/t = stuff_to_equip["head"]
-		if(!M.get_equipped_item(SLOT_ID_HEAD) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_head)
-			grown_items_list.Add("a helmet")
-			playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
+/// Grows the next missing piece from `index` on, one a second, then reports.
+/mob/proc/changeling_grow_piece(list/stuff_to_equip, index, list/grown_items_list)
+	var/mob/living/carbon/human/M = src
+	var/list/pieces = GLOB.changeling_grown_pieces
+	for(var/i in index to length(pieces))
+		var/list/piece = pieces[i]
+		var/t = stuff_to_equip[piece[1]]
+		if(M.get_equipped_item(piece[2]) || !t)
+			continue
+		var/I = new t
+		M.equip_to_slot_or_del(I, piece[3])
+		grown_items_list.Add(piece[4])
+		playsound(src, piece[5], 30, 1)
+		om_after(src, 1 SECOND, PROC_REF(changeling_grow_piece), stuff_to_equip, i + 1, grown_items_list)
+		return
 
-		t = stuff_to_equip["w_uniform"]
-		if(!M.get_equipped_item(SLOT_ID_UNIFORM) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_w_uniform)
-			grown_items_list.Add("a uniform")
-			playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
+	var/feedback = english_list(grown_items_list, nothing_text = "nothing", and_text = " and ", comma_text = ", ", final_comma_text = "" )
 
-		t = stuff_to_equip["gloves"]
-		if(!M.get_equipped_item(SLOT_ID_GLOVES) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_gloves)
-			grown_items_list.Add("some gloves")
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
+	to_chat(M, span_notice("We have grown [feedback]."))
 
-		t = stuff_to_equip["shoes"]
-		if(!M.get_equipped_item(SLOT_ID_SHOES) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_shoes)
-			grown_items_list.Add("shoes")
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		t = stuff_to_equip["belt"]
-		if(!M.get_equipped_item(SLOT_ID_BELT) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_belt)
-			grown_items_list.Add("a belt")
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		t = stuff_to_equip["glasses"]
-		if(!M.get_equipped_item(SLOT_ID_EYES) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_glasses)
-			grown_items_list.Add("some glasses")
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		t = stuff_to_equip["wear_mask"]
-		if(!M.get_equipped_item(SLOT_ID_MASK) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_wear_mask)
-			grown_items_list.Add("a mask")
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		t = stuff_to_equip["back"]
-		if(!M.get_equipped_item(SLOT_ID_BACK) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_back)
-			grown_items_list.Add("a backpack")
-			playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		t = stuff_to_equip["wear_suit"]
-		if(!M.get_equipped_item(SLOT_ID_SUIT) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_wear_suit)
-			grown_items_list.Add("an exosuit")
-			playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		t = stuff_to_equip["wear_id"]
-		if(!M.get_equipped_item(SLOT_ID_ID) && t)
-			var/I = new t
-			M.equip_to_slot_or_del(I, slot_wear_id)
-			grown_items_list.Add("an ID card")
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			success = 1
-			sleep(1 SECOND)
-
-		var/feedback = english_list(grown_items_list, nothing_text = "nothing", and_text = " and ", comma_text = ", ", final_comma_text = "" )
-
-		to_chat(M, span_notice("We have grown [feedback]."))
-
-		if(success)
-			changeling.armor_deployed = 1
-			changeling.chem_charges -= 10
-		return success
+	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	if(length(grown_items_list) && changeling)
+		changeling.armor_deployed = 1
+		changeling.chem_charges -= 10
 
 //This is a generic proc that should be called by other ling weapon procs to equip them.
 /mob/proc/changeling_generic_weapon(weapon_type, make_sound = 1, cost = 20)

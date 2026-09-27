@@ -370,10 +370,10 @@
 /*		if(prob(forcefeedchance) && !ckey)//Forcefeeding code //Only triggers if not player-controlled //This does not currently work
 			L.status_at_least(EFFECT_WEAKENED, 2)
 			update_icon()
-			if(ai_brain) ai_brain.busy = TRUE
+			ai_busy_begin()
 			src.feed_self_to_grabbed(src,L)
 			update_icon()
-			if(ai_brain) ai_brain.busy = FALSE
+			ai_busy_end()
 */
 		if(L.reagents) //Seemingly broken. Would probably be really annoying anyways, so probably for the best that it doesn't work. -Azel
 			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
@@ -488,10 +488,8 @@
 
 /mob/living/simple_mob/animal/synx/proc/handle_mimic()
 	name = pick(voices)
-	spawn(2)
-		src.say(pick(speak))
-	spawn(5)
-		name = realname
+	om_after(src, 2, TYPE_PROC_REF(/mob, say), pick(speak))
+	om_after(src, 5, TYPE_PROC_REF(/datum, om_set_var), "name", realname)
 
 //lo- procs adjusted to mobs.
 

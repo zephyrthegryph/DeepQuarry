@@ -1,5 +1,5 @@
 // C7: vore on slots (doc/rewrite/containment.md §9). Bellies are sealed slots,
-// cycle on SSreactor only while occupied, scale every mode by elapsed time,
+// cycle on an object-model clock only while occupied, scale every mode by elapsed time,
 // check consent through predicates and share their message lists.
 
 /// A pred and a prey on the same floor, with vore set up.
@@ -17,7 +17,7 @@
 			return
 		B.belly_cycle(seconds)
 
-/// An empty belly costs nothing: no reactor work, no owned lists, shared messages.
+/// An empty belly costs nothing: no scheduled work, no owned lists, shared messages.
 /datum/unit_test/dq_vore_empty_belly_costs_nothing
 
 /datum/unit_test/dq_vore_empty_belly_costs_nothing/Run()
@@ -29,11 +29,11 @@
 	for(var/obj/belly/B as anything in pred.vore_organs)
 		TEST_ASSERT_NULL(B.cycle_token, "empty [B] should not cycle")
 		TEST_ASSERT_NULL(B.liquid_timer, "empty [B] should hold no timer")
-		TEST_ASSERT(!B.reactor_id, "empty [B] should hold no reactor state")
+		TEST_ASSERT(!om_deadline_pending(B, /datum/om/behaviour/belly_cycle) && !B.liquid_timer, "empty [B] should hold no scheduled work")
 		TEST_ASSERT(!(B.datum_flags & DF_ISPROCESSING), "empty [B] should not be on a processing subsystem")
 		var/list/owned = B.belly_owned_lists()
 		TEST_ASSERT_EQUAL(length(owned), 0, "empty [B] owns lists: [jointext(owned, ", ")]")
-		TEST_ASSERT_NULL(B.react_sleep_violation(), "empty [B] breaks its sleep rule")
+		TEST_ASSERT_NULL(B.om_sleep_violation(), "empty [B] breaks its sleep rule")
 	var/obj/belly/mine = pred.vore_selected
 	var/obj/belly/theirs = other.vore_selected
 	TEST_ASSERT(mine.digest_messages_prey == theirs.digest_messages_prey, "two default bellies should share one digest message list")
@@ -71,7 +71,7 @@
 	TEST_ASSERT_EQUAL(def?.exposure, SLOT_EXPOSURE_SEALED, "a belly is sealed")
 	TEST_ASSERT(def?.reaches_mobs, "a belly reaches the mobs inside")
 	TEST_ASSERT(B.cycle_token, "an occupied belly should cycle")
-	TEST_ASSERT_NULL(B.react_sleep_violation(), "occupied belly breaks its schedule rule")
+	TEST_ASSERT_NULL(B.om_sleep_violation(), "occupied belly breaks its schedule rule")
 
 	// Struggle: inescapable holds; a sure transfer moves the prey on through the ledger.
 	B.escapable = B_ESCAPABLE_NONE

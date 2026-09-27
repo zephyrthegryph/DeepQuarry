@@ -84,11 +84,12 @@
 	if(!received_message.spam)
 		log_and_message_admins("Broadcast email address used by [usr]. Message title: [received_message.title].")
 
-	spawn(0)
-		for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
-			var/datum/computer_file/data/email_message/new_message = received_message.clone()
-			send_mail(email_account.login, new_message, 1)
-			sleep(2)
+	// One delivery every two deciseconds, on the broadcaster's clock.
+	var/delay = 0
+	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
+		var/datum/computer_file/data/email_message/new_message = received_message.clone()
+		om_after(src, delay, PROC_REF(send_mail), email_account.login, new_message, 1)
+		delay += 2
 
 	return TRUE
 

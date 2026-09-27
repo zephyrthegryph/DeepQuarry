@@ -348,8 +348,10 @@
 		insert_cell(newcell)
 
 /obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
-	if(use_tool(user, I, src, delay = 5 SECONDS, message_self = "You begin tweaking the power control circuits to support a power cell rack."))
-		var/obj/item/newcircuit = new/obj/item/circuitboard/batteryrack(get_turf(user))
-		qdel(src)
-		user.put_in_hands(newcircuit)
+	use_tool(user, I, src, delay = 5 SECONDS, message_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)
+	var/obj/item/newcircuit = new/obj/item/circuitboard/batteryrack(get_turf(user))
+	qdel(src)
+	user.put_in_hands(newcircuit)

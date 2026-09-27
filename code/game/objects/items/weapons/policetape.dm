@@ -346,9 +346,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	lifted = 1
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	spawn(time)
-		lifted = 0
-		reset_plane_and_layer()
+	om_after(src, time, PROC_REF(settle))
 
 // Returns a list of all tape objects connected to src, including itself.
 /obj/item/tape/proc/gettapeline()
@@ -390,3 +388,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 
 	qdel(src) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
 	return
+
+/obj/item/tape/proc/settle()
+	lifted = 0
+	reset_plane_and_layer()

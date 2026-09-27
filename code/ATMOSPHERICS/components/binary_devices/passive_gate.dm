@@ -41,7 +41,7 @@
 	// M2: the base /obj/machinery/Initialize() always schedules new machines
 	// onto SSmachines; this one has no process() at all (its flow law is a
 	// Rust device edge, stepped from SSair, not DM's process() scheduler).
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/passive_gate/Destroy()
 	unregister_radio(src, frequency)
@@ -63,15 +63,14 @@
 		rust_unregister_device()
 		flowing = FALSE
 		return
-	var/mode
+	rust_set_device(1, 2)
 	switch(regulate_mode)
 		if(REGULATE_INPUT)
-			mode = RUST_REGULATE_INPUT
+			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_MOST, target_pressure)
 		if(REGULATE_OUTPUT)
-			mode = RUST_REGULATE_OUTPUT
+			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_FORCED, RUST_SIDE_B, RUST_STOP_AT_LEAST, target_pressure)
 		else
-			mode = RUST_REGULATE_EQUALIZE
-	rust_set_device(1, 2, RUST_DEVICE_LAW_PASSIVE_GATE, mode, target_pressure, set_flow_rate)
+			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_DOWNHILL, RUST_SIDE_A, RUST_STOP_NONE, 0)
 
 /obj/machinery/atmospherics/binary/passive_gate/rust_device_stepped(moles, power_w, target_reached)
 	last_flow_rate = abs(moles)
@@ -156,13 +155,11 @@
 		set_flow_rate = between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume())
 
 	if("status" in signal.data)
-		spawn(2)
-			broadcast_status()
-			return //do not update_icon
+		om_after(src, 2, PROC_REF(broadcast_status))
+		return //do not update_icon
 	update_rust_device()
 
-	spawn(2)
-		broadcast_status()
+	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 
@@ -263,13 +260,15 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	if (use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-			span_notice("You have unfastened \the [src]."), \
-			"You hear ratchet.")
-		atom_deconstruct()
+	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/wrench_act_tool_done(mob/user)
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
+		span_notice("You have unfastened \the [src]."), \
+		"You hear ratchet.")
+	atom_deconstruct()
 
 #undef REGULATE_NONE
 #undef REGULATE_INPUT

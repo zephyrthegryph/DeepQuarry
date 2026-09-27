@@ -93,14 +93,14 @@
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	REACT_PUBLISH_OWN(src, REACT_KEY_DISPOSAL, REACT_KEY_CHANGED)
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	MACHINE_WAKE(src)
 
 /// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
 	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/disposal/proc/gas_wake_condition()
 	if(mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
@@ -113,7 +113,7 @@
 
 /obj/machinery/disposal/proc/wake_from_gas()
 	clear_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/disposal/proc/can_pressurize_from(datum/gas_mixture/environment)
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
@@ -144,6 +144,14 @@
 	id = "disposal_insert"
 	name = "Insert"
 	effect = /obj/machinery/disposal/proc/interaction_disposal_insert
+
+/obj/machinery/disposal/proc/dunk_done(mob/user, mob/GM, obj/item/grab/G)
+	GM.forceMove(src)
+	for (var/mob/C in viewers(src))
+		C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
+	qdel(G)
+
+	add_attack_logs(user,GM,"Disposals dunked")
 
 /obj/machinery/disposal/proc/interaction_disposal_insert(mob/user, obj/item/I, datum/interaction/interaction, drag_dropped = FALSE)
 	wake_for_state_change()
@@ -177,13 +185,7 @@
 			var/mob/GM = GRAB_TARGET(G)
 			for (var/mob/V in viewers(user))
 				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
-			if(do_after(user, 2 SECONDS, target = src))
-				GM.forceMove(src)
-				for (var/mob/C in viewers(src))
-					C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
-				qdel(G)
-
-				add_attack_logs(user,GM,"Disposals dunked")
+			om_do_after(user, 2 SECONDS, src, src, PROC_REF(dunk_done), list(user, GM, G))
 		return TRUE
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
@@ -240,12 +242,14 @@
 		if(length(contents))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit."))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, "You sliced the floorweld off the disposal unit.")
-		atom_deconstruct(TRUE)
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/disposal/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You sliced the floorweld off the disposal unit.")
+	atom_deconstruct(TRUE)
 
 /obj/machinery/disposal/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -366,17 +370,19 @@
 	else
 		target.visible_message(span_danger("[user] starts stuffing [target] into [src]."), span_userdanger("[user] starts stuffing you into [src]!"))
 
-	if(do_after(user, 2 SECONDS, target))
-		if(!loc)
-			return
-		target.forceMove(src)
-		if(user == target)
-			user.visible_message("[user] climbs into [src].", span_notice("You climb into [src]"))
-			log_and_message_admins("climbed into disposals!", user)
-		else
-			target.visible_message(span_danger("[user] stuffs [target] into \the [src]."), span_userdanger("[user] stuffs [target] into \the [src]."))
-			add_attack_logs(user,target,"Disposals dunked")
-		update_icon()
+	om_do_after(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
+
+/obj/machinery/disposal/proc/stuff_mob_done(mob/living/target, mob/living/user)
+	if(!loc)
+		return
+	target.forceMove(src)
+	if(user == target)
+		user.visible_message("[user] climbs into [src].", span_notice("You climb into [src]"))
+		log_and_message_admins("climbed into disposals!", user)
+	else
+		target.visible_message(span_danger("[user] stuffs [target] into \the [src]."), span_userdanger("[user] stuffs [target] into \the [src]."))
+		add_attack_logs(user,target,"Disposals dunked")
+	update_icon()
 
 // attempt to move while inside
 /obj/machinery/disposal/relaymove(mob/user)
@@ -553,7 +559,7 @@
 
 // timed process
 // charge the gas reservoir and perform flush if ready
-/obj/machinery/disposal/process()
+/obj/machinery/disposal/machine_step()
 	if(!air_contents || (stat & BROKEN))			// nothing can happen if broken
 		update_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
@@ -561,16 +567,15 @@
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
 		update_use_power(USE_POWER_IDLE)
 		flush_count = 0
-		sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
+		sleep_until_keys()
 		return
 
 	flush_count++
 	if( flush_count >= flush_every_ticks )
 		if( contents.len )
 			if(mode == DISPOSALMODE_CHARGED)
-				spawn(0)
-					feedback_inc("disposal_auto_flush",1)
-					flush()
+				feedback_inc("disposal_auto_flush",1)
+				flush()
 		flush_count = 0
 
 	if(flush && air_contents.return_pressure() >= SEND_PRESSURE )	// flush can happen even without power
@@ -582,7 +587,7 @@
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
 		if(!flush && !length(contents))
-			sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
+			sleep_until_keys()
 			return
 	else
 		if(!pressurize()) //otherwise charge
@@ -794,9 +799,19 @@
 	return FALSE
 
 /// Audit: a unit sleeping on its own key must be idle and empty.
-/obj/machinery/disposal/react_sleep_violation()
+/obj/machinery/disposal/om_sleep_violation()
 	if(!asleep_on_keys() || (stat & BROKEN))
 		return null
 	if(flush || length(contents))
 		return "asleep with [flush ? "a flush pending" : "contents"]"
 	return null
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/disposal/arm_wakes()
+	..()
+	hibernate_until_intake_changes()
+	sleep_until_keys()
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/disposal/step_start_condition()
+	return mode == 1 || flush || length(contents)

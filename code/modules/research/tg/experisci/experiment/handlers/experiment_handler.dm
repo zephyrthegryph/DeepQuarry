@@ -70,11 +70,9 @@
 	if (!(config_flags & EXPERIMENT_CONFIG_NO_AUTOCONNECT))
 		CONNECT_TO_RND_SERVER_ROUNDSTART(linked_web, parent)
 
-	GLOB.experiment_handlers += src
+	join_registries()
 
-/datum/component/experiment_handler/Destroy(force)
-	. = ..()
-	GLOB.experiment_handlers -= src
+REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 
 /**
  * Hooks on attack to try and run an experiment (When using a handheld handler)
@@ -83,7 +81,7 @@
 	SIGNAL_HANDLER
 	if (!should_run_handheld_experiment(source, target, user))
 		return
-	INVOKE_ASYNC(src, PROC_REF(try_run_handheld_experiment_async), source, target, user)
+	try_run_handheld_experiment_async(source, target, user)
 	return COMPONENT_CANCEL_ATTACK_CHAIN
 
 /**
@@ -114,8 +112,12 @@
 		if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
 			to_chat(user, span_notice("You do not have an experiment selected!"))
 		return
-	if(!(config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION) && !do_after(user, 1 SECOND, target = target))
+	if(!(config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION))
+		om_do_after(user, 1 SECOND, target, src, PROC_REF(run_handheld_experiment), list(source, target, user))
 		return
+	run_handheld_experiment(source, target, user)
+
+/datum/component/experiment_handler/proc/run_handheld_experiment(datum/source, atom/target, mob/user)
 	if(action_experiment(source, target))
 		playsound(user, 'sound/machines/ping.ogg', 25)
 		to_chat(user, span_notice("You scan [target]."))
@@ -168,7 +170,7 @@
  * * message - The message to announce
  */
 /datum/component/experiment_handler/proc/announce_message_to_all(message)
-	for(var/datum/component/experiment_handler/experi_handler as anything in GLOB.experiment_handlers)
+	for(var/datum/component/experiment_handler/experi_handler as anything in REGISTRY_MEMBERS(REGISTRY_EXPERIMENT_HANDLERS))
 		if(experi_handler.linked_web != linked_web)
 			continue
 		var/atom/movable/experi_parent = experi_handler.parent

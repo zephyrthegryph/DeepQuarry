@@ -22,7 +22,10 @@
 	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
 	name = "transport pod"
 
-/obj/machinery/transportpod/process()
+/// Launches once an occupant confirms; until then it sleeps.
+/obj/machinery/transportpod/machine_step()
+	if(!in_transit || !SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
+		return PROCESS_KILL
 	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		if(in_transit)
 			var/locNum = rand(1, 8) //pick a random location
@@ -30,14 +33,17 @@
 			limit_x = xc[locNum]+1
 			limit_y = yc[locNum]+1
 			build()
-			sleep(20) //Give explosion time so the pod itself doesn't go boom
-			src.forceMove(L)
-			playsound(src, pick('sound/effects/Explosion1.ogg', 'sound/effects/Explosion2.ogg', 'sound/effects/Explosion3.ogg', 'sound/effects/Explosion4.ogg'))
 			in_transit = 0
-			sleep(2)
-			go_out()
-			sleep(2)
-			qdel(src)
+			om_after(src, 2 SECONDS, PROC_REF(arrive), L) //Give explosion time so the pod itself doesn't go boom
+
+/obj/machinery/transportpod/proc/arrive(turf/L)
+	src.forceMove(L)
+	playsound(src, pick('sound/effects/Explosion1.ogg', 'sound/effects/Explosion2.ogg', 'sound/effects/Explosion3.ogg', 'sound/effects/Explosion4.ogg'))
+	om_after(src, 2, PROC_REF(arrive_unload))
+
+/obj/machinery/transportpod/proc/arrive_unload()
+	go_out()
+	om_after(src, 2, TYPE_PROC_REF(/datum, om_qdel_self))
 
 /obj/machinery/transportpod/relaymove(mob/user as mob)
 	if(user.stat)
@@ -68,6 +74,7 @@
 	update_icon()
 	if(tgui_alert(O, "Are you sure you're ready to launch?", "Transport Pod", list("Yes", "No")) == "Yes")
 		in_transit = 1
+		MACHINE_WAKE(src)
 		playsound(src, HYPERSPACE_WARMUP)
 	else
 		go_out()

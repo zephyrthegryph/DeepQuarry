@@ -265,8 +265,7 @@
 				to_chat(h_user, "A medium electrical arc sparks as you touch the [src], severely burning your hand!")
 				h_user.injure(INJURY_ELECTRIC, rand(10,25), used_hand, src)
 				h_user.status_at_least(EFFECT_WEAKENED, 5)
-			spawn()
-				empulse(get_turf(src), 1, 2, 3, 4)
+			empulse(get_turf(src), 1, 2, 3, 4)
 
 		if (36 to 60)
 			// Strong overcharge
@@ -279,8 +278,7 @@
 			else
 				to_chat(h_user, "A strong electrical arc sparks between you and [src], knocking you out for a while!")
 				h_user.electrocute_act(rand(35,75), src, def_zone = BP_TORSO)
-			spawn()
-				empulse(get_turf(src), 6, 8, 12, 16)
+			empulse(get_turf(src), 6, 8, 12, 16)
 			apcs_overload(1, 10)
 			ping("Caution. Output regulator malfunction. Uncontrolled discharge detected.")
 
@@ -291,8 +289,7 @@
 			to_chat(h_user, "A massive electrical arc sparks between you and [src]. The last thing you can think about is \"Oh shit...\"")
 			// Remember, we have few gigajoules of electricity here.. Turn them into crispy toast.
 			h_user.electrocute_act(rand(150,195), src, def_zone = BP_TORSO)
-			spawn()
-				empulse(get_turf(src), 32, 64)
+			empulse(get_turf(src), 32, 64)
 			apcs_overload(5, 25)
 			ping("Caution. Output regulator malfunction. Significant uncontrolled discharge detected.")
 
@@ -304,15 +301,7 @@
 				failing = 1
 				update_icon()
 				// 30 - 60 seconds and then BAM!
-				spawn(rand(300,600))
-					if(!failing) // Admin can manually set this var back to 0 to stop overload, for use when griffed.
-						update_icon()
-						ping("Magnetic containment stabilised.")
-						return
-					ping("DANGER! Magnetic containment field failure in 3 ... 2 ... 1 ...")
-					explosion(get_turf(src),1,2,4,8)
-					// Not sure if this is necessary, but just in case the SMES *somehow* survived..
-					qdel(src)
+				om_after(src, rand(300,600), PROC_REF(containment_failure))
 
 	s.start()
 	charge = 0
@@ -454,10 +443,21 @@
 	var/failure_probability = round(charge / capacity * 100)
 	if(failure_probability < 5)
 		failure_probability = 0
-	if(use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, message_self = "You begin to disassemble [src]!"))
-		if(failure_probability && prob(failure_probability))
-			total_system_failure(failure_probability, user)
-			return ITEM_INTERACT_SUCCESS
-		to_chat(user, span_red("You have disassembled the SMES cell!"))
-		dismantle()
+	use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, message_self = "You begin to disassemble [src]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, failure_probability))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/buildable/proc/containment_failure()
+	if(!failing) // Admin can manually set this var back to 0 to stop overload, for use when griffed.
+		update_icon()
+		ping("Magnetic containment stabilised.")
+		return
+	ping("DANGER! Magnetic containment field failure in 3 ... 2 ... 1 ...")
+	explosion(get_turf(src),1,2,4,8)
+	// Not sure if this is necessary, but just in case the SMES *somehow* survived..
+	qdel(src)
+/obj/machinery/power/smes/buildable/proc/crowbar_act_tool_done(mob/user, failure_probability)
+	if(failure_probability && prob(failure_probability))
+		total_system_failure(failure_probability, user)
+		return ITEM_INTERACT_SUCCESS
+	to_chat(user, span_red("You have disassembled the SMES cell!"))
+	dismantle()

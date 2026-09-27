@@ -82,7 +82,7 @@
 	var/list/open_turfs
 	var/spawn_blob_type = /obj/structure/blob/core/random_medium
 	var/number_of_blobs = 1
-	var/list/blobs // A list containing weakrefs to blob cores created. Weakrefs mean this event won't interfere with qdel.
+	var/list/blobs // OM handles of the blob cores created, so this event won't interfere with qdel.
 
 /datum/event2/event/blob/hard_blob
 	spawn_blob_type = /obj/structure/blob/core/random_hard
@@ -106,20 +106,20 @@
 	for(var/i = 1 to number_of_blobs)
 		var/turf/T = DEFAULTPICK(open_turfs, null)
 		var/obj/structure/blob/core/new_blob = new spawn_blob_type(T)
-		LAZYADD(blobs, WEAKREF(new_blob))
+		LAZYADD(blobs, om_handle(new_blob))
 		LAZYREMOVE(open_turfs, T) // So we can't put two cores on the same tile if doing multiblob.
 		log_game("Spawned [new_blob.overmind.blob_type.name] blob at [get_area(new_blob)].")
 
 /datum/event2/event/blob/should_end()
-	for(var/datum/weakref/weakref as anything in blobs)
-		if(weakref.resolve()) // If the weakref is resolvable, that means the blob hasn't been deleted yet.
+	for(var/core_handle as anything in blobs)
+		if(om_resolve(core_handle)) // If the handle resolves, that means the blob hasn't been deleted yet.
 			return FALSE
 	return TRUE // Only end if all blobs die.
 
 // Normally this does nothing, but is useful if aborted by an admin.
 /datum/event2/event/blob/end()
-	for(var/datum/weakref/weakref as anything in blobs)
-		var/obj/structure/blob/core/B = weakref.resolve()
+	for(var/core_handle as anything in blobs)
+		var/obj/structure/blob/core/B = om_resolve(core_handle)
 		if(istype(B))
 			qdel(B)
 	LAZYCLEARLIST(blobs)
@@ -129,8 +129,8 @@
 		var/danger_level = 0
 		var/list/blob_type_names = list()
 		var/multiblob = FALSE
-		for(var/datum/weakref/weakref as anything in blobs)
-			var/obj/structure/blob/core/B = weakref.resolve()
+		for(var/core_handle as anything in blobs)
+			var/obj/structure/blob/core/B = om_resolve(core_handle)
 			if(!istype(B))
 				continue
 			var/datum/blob_type/blob_type = B.overmind.blob_type

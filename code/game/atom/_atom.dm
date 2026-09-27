@@ -130,7 +130,7 @@
 
 // Used to be for the PROXMOVE flag, but that was terrible, so instead it's just here as a stub for
 // all the atoms that still have the proc, but get events other ways.
-/atom/proc/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/atom/proc/HasProximity(turf/T, WF, old_loc)
 	SIGNAL_HANDLER
 	return
 

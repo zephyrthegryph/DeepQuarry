@@ -3,7 +3,6 @@ SUBSYSTEM_DEF(atoms)
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
 		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/alarm,
 		/datum/controller/subsystem/planets,
 		/datum/controller/subsystem/transcore,
 		/datum/controller/subsystem/chemistry,
@@ -79,8 +78,8 @@ SUBSYSTEM_DEF(atoms)
 		atoms_to_return += created_atoms
 		created_atoms = null
 
-	for (var/datum/weakref/queued_deletion in queued_deletions)
-		var/atom/resolved = queued_deletion.resolve()
+	for (var/queued_deletion in queued_deletions)
+		var/atom/resolved = om_resolve(queued_deletion)
 		if(resolved)
 			qdel(resolved)
 
@@ -214,7 +213,7 @@ SUBSYSTEM_DEF(atoms)
 		// Atoms SS has already completed, just kill it now.
 		qdel(target)
 	else
-		queued_deletions += WEAKREF(target)
+		queued_deletions += om_handle(target)
 
 /datum/controller/subsystem/atoms/Shutdown()
 	var/initlog = InitLog()

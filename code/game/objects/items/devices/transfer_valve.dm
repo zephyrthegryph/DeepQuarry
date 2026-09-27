@@ -55,10 +55,10 @@
 		SStgui.update_uis(src) // update all UIs attached to src
 	return
 
-/obj/item/transfer_valve/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/obj/item/transfer_valve/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 	attached_device?.HasProximity(T, WF, old_loc)

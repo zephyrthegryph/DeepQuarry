@@ -9,6 +9,26 @@
 //      types initialize with their preset gas content
 //   5. SSair init — gas singleton metadata reached Rust via auxtools_atmos_init
 
+/// The first simulated floor with air whose area is powered on every channel
+/// (or needs no power). Machines under test must not depend on the map grid:
+/// the test map's APC cells drain over a long run, and an unpowered machine
+/// never reaches the state a test checks.
+/proc/dq_test_powered_floor()
+	for(var/turf/simulated/floor/candidate in world)
+		if(!candidate.air || candidate.blocks_air)
+			continue
+		var/area/A = get_area(candidate)
+		if(A && (!A.requires_power || (A.power_equip && A.power_light && A.power_environ)))
+			return candidate
+	return null
+
+/// Records the gas dependency wakes its watches deliver.
+/datum/dq_gas_dependency_probe
+	var/list/heard
+
+/datum/dq_gas_dependency_probe/proc/on_dependency(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	LAZYADD(heard, mixture_id)
+
 /// Empty both halves of the dependency publication pipeline before a focused
 /// wake assertion. A full-suite run can inherit thousands of observations from
 /// earlier fixtures; bounding an assertion by an arbitrary number of scans then
@@ -1017,7 +1037,7 @@
 	// Try the sealed test-room landmarks first (loaded in RunUnitTests). Force-build
 	// adjacency on the seed in case it wasn't wired yet — the room is a runtime-loaded
 	// z, so setup_allturfs never saw it.
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list
+	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -1039,7 +1059,7 @@
 /proc/dq_atmos_test_find_floor_line(count)
 	dq_atmos_test_restore_walls()
 	var/list/seeds = list()
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list
+	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -2715,15 +2735,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(pair, "no clear floor for reactive disposal test")
 	var/obj/machinery/disposal/D = new(pair[1])
 	D.mode = 2 // DISPOSALMODE_CHARGED is file-local to disposal_machines.dm.
-	D.process()
-	TEST_ASSERT(!(D in SSmachines.processing_machines), \
+	D.machine_step()
+	TEST_ASSERT(!machine_stepping(D), \
 		"stable empty disposal did not enter dependency sleep")
 	D.power_change()
-	TEST_ASSERT(!(D in SSmachines.processing_machines), \
+	TEST_ASSERT(!machine_stepping(D), \
 		"unchanged area power state woke a sleeping disposal")
 	var/obj/item/I = new(pair[1])
 	I.forceMove(D)
-	TEST_ASSERT(D in SSmachines.processing_machines, \
+	TEST_ASSERT(machine_stepping(D), \
 		"disposal contents mutation did not wake the sleeping disposal")
 	qdel(D)
 
@@ -2758,9 +2778,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	T.return_air().set_temperature(T20C)
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	TEST_ASSERT(D.can_pressurize_from(T.return_air()), "test floor has no pumpable atmosphere")
-	STOP_MACHINE_PROCESSING(D)
+	MACHINE_SLEEP(D)
 	D.retry_charge_after_power_restore()
-	TEST_ASSERT(D in SSmachines.processing_machines, "staggered power restoration callback did not wake a pumpable disposal")
+	TEST_ASSERT(machine_stepping(D), "staggered power restoration callback did not wake a pumpable disposal")
 	qdel(D)
 
 
@@ -2803,16 +2823,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
 	var/obj/machinery/airlock_sensor/S = new(T)
-	S.process()
-	TEST_ASSERT(!(S in SSmachines.processing_machines), \
+	S.machine_step()
+	TEST_ASSERT(!machine_stepping(S), \
 		"stable airlock sensor did not enter gas dependency sleep")
 	TEST_ASSERT(om_watch_armed(S), "sleeping airlock sensor did not arm a gas watch")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(S in SSmachines.processing_machines)
+		if(machine_stepping(S))
 			break
-	TEST_ASSERT(S in SSmachines.processing_machines, \
+	TEST_ASSERT(machine_stepping(S), \
 		"pressure mutation did not wake sleeping airlock sensor")
 	qdel(S)
 
@@ -3813,10 +3833,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 /datum/unit_test/dq_air_alarm_skips_unchanged_air/Run()
 	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air)
-			T = candidate
-			break
+	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for event-driven air alarm test")
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
@@ -3826,7 +3843,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	A.alarm_area.main_air_alarm = WEAKREF(A)
+	A.alarm_area.main_air_alarm = om_handle(A)
 	A.stat &= ~(NOPOWER | BROKEN)
 	A.shorted = FALSE
 	A.scan_atmo()
@@ -3876,10 +3893,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_air_alarm_receives_matching_status/Run()
 	var/turf/simulated/floor/T
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air)
-			T = candidate
-			break
+	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for air alarm radio test")
 	var/obj/machinery/alarm/A = new(T)
 	TEST_ASSERT_NOTNULL(A.alarm_area, "air alarm radio test has no area")
@@ -3928,7 +3942,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.update_use_power(USE_POWER_IDLE)
 	V.external_pressure_bound = T.air.return_pressure() + 50
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
-	vg_drain_dirty_gas_mixtures()
+	vg_drain_dirty_gas_observations()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
 	V.register_gas_dependencies()
 	var/vent_wakes = V.gas_dependency_wake_count
@@ -3983,10 +3997,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// subscriber - there is nothing left in DM to hibernate or wake.
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT(!(V in SSmachines.processing_machines), "inactive vent pump should never be a DM process() subscriber")
+	TEST_ASSERT(!machine_stepping(V), "inactive vent pump should never be a DM process() subscriber")
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
 	S.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT(!(S in SSmachines.processing_machines), "inactive vent scrubber should never be a DM process() subscriber")
+	TEST_ASSERT(!machine_stepping(S), "inactive vent scrubber should never be a DM process() subscriber")
 	qdel(V)
 	qdel(S)
 
@@ -3998,7 +4012,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(R.cell, "recharge station did not construct its internal cell")
 	R.cell.charge = R.cell.maxcharge
 	TEST_ASSERT_NULL(SLOT_ITEM(R, OCCUPANT_SLOT_RECHARGE_STATION), "setup: a freshly-constructed recharge station should have no occupant")
-	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "idle full recharge station did not stop timed processing")
+	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "idle full recharge station did not stop timed processing")
 	qdel(R)
 
 /datum/unit_test/dq_shield_diffuser_is_event_driven
@@ -4008,7 +4022,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for shield diffuser test")
 	var/obj/machinery/shield_diffuser/D = new(pair[1])
 	var/obj/effect/shield/S = new(pair[2])
-	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "stable shield diffuser retained timed polling")
+	TEST_ASSERT_EQUAL(D.machine_step(), PROCESS_KILL, "stable shield diffuser retained timed polling")
 	TEST_ASSERT(S.diffused_for > 0, "event-driven shield diffuser did not suppress an adjacent shield")
 	qdel(S)
 	qdel(D)
@@ -4021,12 +4035,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	G.active = FALSE
 	G.anchored = FALSE
 	G.storedpower = 0
-	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "unanchored inactive shieldwall generator retained timed polling")
+	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "unanchored inactive shieldwall generator retained timed polling")
 	G.anchored = TRUE
 	G.storedpower = G.max_stored_power
-	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "full inactive shieldwall generator retained timed polling")
+	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "full inactive shieldwall generator retained timed polling")
 	G.active = TRUE
-	TEST_ASSERT_NOTEQUAL(G.process(), PROCESS_KILL, "active shieldwall generator incorrectly hibernated")
+	TEST_ASSERT_NOTEQUAL(G.machine_step(), PROCESS_KILL, "active shieldwall generator incorrectly hibernated")
 	qdel(G)
 
 /datum/unit_test/dq_idle_circulator_hibernates
@@ -4036,7 +4050,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/binary/circulator/C = new(test_turf)
 	// No machine step at all: the "running" display times out on a timer re-armed per transfer.
 	TEST_ASSERT(!om_attached(C, /datum/om/pipeline/machine), "circulator joined the machine pipeline with no DM work")
-	TEST_ASSERT(!(C in SSmachines.processing_machines), "circulator polls")
+	TEST_ASSERT(!machine_stepping(C), "circulator polls")
 	C.recent_moles_transferred = 1
 	C.last_worldtime_transfer = world.time
 	C.expire_transfer_display()
@@ -4078,9 +4092,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/obj/machinery/shieldgen/G = new(test_turf)
 	G.active = FALSE
-	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "inactive emergency shield generator retained timed polling")
+	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "inactive emergency shield generator retained timed polling")
 	G.shields_up()
-	TEST_ASSERT(G in SSmachines.processing_machines, "raising emergency shields did not wake their generator")
+	TEST_ASSERT(machine_stepping(G), "raising emergency shields did not wake their generator")
 	qdel(G)
 
 /datum/unit_test/dq_idle_motion_camera_hibernates
@@ -4106,7 +4120,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/obj/machinery/power/generator/G = new(test_turf)
 	G.anchored = FALSE
-	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "unanchored thermoelectric generator retained timed polling")
+	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "unanchored thermoelectric generator retained timed polling")
 	qdel(G)
 
 /datum/unit_test/dq_idle_teg_wakes_from_pressure
@@ -4120,15 +4134,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	G.circ1 = first
 	G.circ2 = second
 	G.stat = 0
-	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "idle thermoelectric generator retained timed polling")
+	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "idle thermoelectric generator retained timed polling")
 	TEST_ASSERT(om_watch_armed(G), "idle thermoelectric generator did not subscribe to its circulator gases")
 	first.air1.set_temperature(T20C)
 	first.air1.adjust_moles(/datum/gas/oxygen, 100)
 	for(var/generator_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(G.datum_flags & DF_ISPROCESSING)
+		if(machine_stepping(G))
 			break
-	TEST_ASSERT(G.datum_flags & DF_ISPROCESSING, "circulator pressure change did not wake sleeping generator")
+	TEST_ASSERT(machine_stepping(G), "circulator pressure change did not wake sleeping generator")
 	qdel(G)
 	qdel(first)
 	qdel(second)
@@ -4148,10 +4162,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// alarm rather than harmless drift.
 	T.air.set_temperature(T20C)
 	dq_atmos_test_drain_dependency_queue()
-	vg_drain_dirty_gas_mixtures()
+	vg_drain_dirty_gas_observations()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
-	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "stable closed firedoor retained timed polling")
+	TEST_ASSERT_EQUAL(F.machine_step(), PROCESS_KILL, "stable closed firedoor retained timed polling")
 	TEST_ASSERT(om_watch_armed(F), "closed firedoor did not register gas dependencies")
 	var/firedoor_wakes_before = F.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 10)
@@ -4166,8 +4180,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(!(firedoor_i % 256))
 			stoplag()
 	TEST_ASSERT(F.gas_dependency_wake_count > firedoor_wakes_before, "temperature change did not wake closed firedoor")
-	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "dependency wake left a firedoor polling after evaluating its state")
-	TEST_ASSERT(!(F in SSmachines.processing_machines), "early-woken firedoor did not return to dependency sleep")
+	TEST_ASSERT_EQUAL(F.machine_step(), PROCESS_KILL, "dependency wake left a firedoor polling after evaluating its state")
+	TEST_ASSERT(!machine_stepping(F), "early-woken firedoor did not return to dependency sleep")
 	qdel(F)
 
 /datum/unit_test/dq_unpowered_empty_light_hibernates
@@ -4194,7 +4208,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
 	TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency light did not schedule its discharge timer")
-	TEST_ASSERT(!(L in SSobj.processing), "ordinary emergency light retained SSobj polling")
+	TEST_ASSERT(!PERIODIC_RUNNING(L), "ordinary emergency light retained SSobj polling")
 	qdel(L)
 
 /datum/unit_test/dq_idle_cooker_hibernates
@@ -4208,20 +4222,17 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	O.create_heat_body(TRUE)
 	vg_heat_body_couple(O.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
 	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp)
-	TEST_ASSERT_EQUAL(O.process(), PROCESS_KILL, "stable empty cooker retained timed polling")
+	TEST_ASSERT_EQUAL(O.machine_step(), PROCESS_KILL, "stable empty cooker retained timed polling")
 	TEST_ASSERT_NOTNULL(O.thermostat_watch, "a hibernating cooker waits on a heat watch")
 	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp - 20)
-	TEST_ASSERT_NOTEQUAL(O.process(), PROCESS_KILL, "heating cooker hibernated below its target temperature")
+	TEST_ASSERT_NOTEQUAL(O.machine_step(), PROCESS_KILL, "heating cooker hibernated below its target temperature")
 	qdel(O)
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
 	var/turf/simulated/floor/T
-	for(var/turf/simulated/floor/candidate in world)
-		if(candidate.air && !candidate.blocks_air)
-			T = candidate
-			break
+	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machine hibernation test")
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
 	var/datum/gas_mixture/pipe_air = P.return_air()
@@ -4241,7 +4252,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(M.machine_wake_count > meter_wakes, "meter did not wake after target pressure changed")
 
 	var/obj/machinery/firealarm/F = new(T)
-	var/fire_result = F.process()
+	var/fire_result = F.machine_step()
 	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
 	// Its detector is a heat rule on its body (H3): no polling needed.
 	// dq_rule_test_write() flushes deterministically itself now.
@@ -4414,15 +4425,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	P.set_target_pressure(ONE_ATMOSPHERE)
 	P.rust_register_pipe_topology()
 	P.update_rust_device()
-	TEST_ASSERT(!(P in SSmachines.processing_machines), "powered-off binary pump should never be a DM process() subscriber")
+	TEST_ASSERT(!machine_stepping(P), "powered-off binary pump should never be a DM process() subscriber")
 	P.use_power = USE_POWER_IDLE
 	P.set_on(TRUE)
 	P.update_rust_device()
-	TEST_ASSERT(!(P in SSmachines.processing_machines), "enabling a binary pump must not add DM process() scheduling")
+	TEST_ASSERT(!machine_stepping(P), "enabling a binary pump must not add DM process() scheduling")
 	P.air1.adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 10)
 		SSair.rust_step_pipe_devices()
-	TEST_ASSERT(!(P in SSmachines.processing_machines), "a running binary pump must not add DM process() scheduling")
+	TEST_ASSERT(!machine_stepping(P), "a running binary pump must not add DM process() scheduling")
 	qdel(P)
 
 /datum/unit_test/dq_idle_turret_wakes_for_nearby_mob
@@ -4433,21 +4444,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/porta_turret/turret = new(T)
 	turret.stat = 0
 	turret.enabled = TRUE
-	TEST_ASSERT_EQUAL(turret.process(), PROCESS_KILL, "turret with an empty field of view remained scheduled")
+	TEST_ASSERT_EQUAL(turret.machine_step(), PROCESS_KILL, "turret with an empty field of view remained scheduled")
 	TEST_ASSERT(turret.react_sleep_tokens, "idle turret did not subscribe to nearby mob chunks")
-	SSreactor.trace(turret)
+	om_trace(turret)
 	var/mob/living/arrival = new(get_step(T, NORTH))
-	react_test_ticks(4)
-	TEST_ASSERT(SSreactor.traced_wakes(turret), "idle turret did not wake when a mob appeared nearby")
-	SSreactor.untrace(turret)
+	TEST_ASSERT(om_wait_for_wake(turret), "idle turret did not wake when a mob appeared nearby")
+	om_untrace(turret)
 	qdel(arrival)
 	qdel(turret)
 
 /datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement
 
 /datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement/Run()
-	var/obj/machinery/door/airlock/A = locate() in world
-	TEST_ASSERT_NOTNULL(A, "no mapped airlock for blocked airlock hibernation test")
+	// Its own airlock: a mapped one would leave the map's doors changed for later tests.
+	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	var/turf/T = get_turf(A)
 	A.density = FALSE
 	A.operating = FALSE
@@ -4472,8 +4482,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose
 
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose/Run()
-	var/obj/machinery/door/airlock/A = locate() in world
-	TEST_ASSERT_NOTNULL(A, "no mapped airlock for stale autoclose test")
+	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	A.density = TRUE
 	A.operating = FALSE
 	A.autoclose = TRUE
@@ -4498,11 +4507,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/recharger/R = new(T)
 	R.stat = 0
 	R.anchored = TRUE
-	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "empty recharger remained scheduled")
+	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "empty recharger remained scheduled")
 	var/obj/item/cell/C = new(R)
 	C.charge = C.maxcharge
 	R.charging = C
-	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
+	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning
@@ -4515,15 +4524,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/computer/power_monitor/M = new(T)
 	S.powernet = P
 	M.power_monitor.grid_sensors = list(S)
-	START_MACHINE_PROCESSING(M)
-	M.process()
-	TEST_ASSERT(!(M in SSmachines.processing_machines), "stable power monitor remained scheduled")
+	MACHINE_WAKE(M)
+	M.machine_step()
+	TEST_ASSERT(!machine_stepping(M), "stable power monitor remained scheduled")
 	TEST_ASSERT(M.react_sleep_tokens, "power monitor did not subscribe before sleeping")
-	SSreactor.trace(M)
+	om_trace(M)
 	P.trigger_warning()
-	react_test_ticks(4)
-	TEST_ASSERT(SSreactor.traced_wakes(M), "grid warning did not wake the sleeping power monitor")
-	SSreactor.untrace(M)
+	TEST_ASSERT(om_wait_for_wake(M), "grid warning did not wake the sleeping power monitor")
+	om_untrace(M)
 	qdel(M)
 	qdel(S)
 	qdel(P)
@@ -4531,115 +4539,115 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_auxiliary_machines_hibernate
 
 /datum/unit_test/dq_idle_auxiliary_machines_hibernate/Run()
-	var/turf/simulated/floor/T = locate() in world
+	var/turf/simulated/floor/T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for auxiliary machinery hibernation test")
 	var/obj/machinery/ai_status_display/display = new(T)
-	TEST_ASSERT_EQUAL(display.process(), PROCESS_KILL, "AI status display retained an empty polling loop")
+	TEST_ASSERT_EQUAL(display.machine_step(), PROCESS_KILL, "AI status display retained an empty polling loop")
 	var/obj/machinery/drone_fabricator/drone_fabricator = new(T)
-	TEST_ASSERT_EQUAL(drone_fabricator.process(), PROCESS_KILL, "drone readiness retained a permanent polling loop")
+	TEST_ASSERT_EQUAL(drone_fabricator.machine_step(), PROCESS_KILL, "drone readiness retained a permanent polling loop")
 	var/obj/machinery/airlock_sensor/airlock_sensor = new(T)
 	airlock_sensor.on = FALSE
-	TEST_ASSERT_EQUAL(airlock_sensor.process(), PROCESS_KILL, "disabled airlock sensor did not explicitly terminate processing")
+	TEST_ASSERT_EQUAL(airlock_sensor.machine_step(), PROCESS_KILL, "disabled airlock sensor did not explicitly terminate processing")
 	var/obj/machinery/status_display/supply_display/supply_display = new(T)
-	TEST_ASSERT_EQUAL(supply_display.process(), PROCESS_KILL, "stable supply display remained scheduled")
+	TEST_ASSERT_EQUAL(supply_display.machine_step(), PROCESS_KILL, "stable supply display remained scheduled")
 	var/obj/machinery/media/jukebox/jukebox = new(T)
 	jukebox.playing = FALSE
-	TEST_ASSERT_EQUAL(jukebox.process(), PROCESS_KILL, "silent jukebox remained scheduled")
+	TEST_ASSERT_EQUAL(jukebox.machine_step(), PROCESS_KILL, "silent jukebox remained scheduled")
 	var/obj/machinery/appliance/appliance = new(T)
 	appliance.cooking = FALSE
-	TEST_ASSERT_EQUAL(appliance.process(), PROCESS_KILL, "idle cooking appliance remained scheduled")
+	TEST_ASSERT_EQUAL(appliance.machine_step(), PROCESS_KILL, "idle cooking appliance remained scheduled")
 	var/obj/machinery/appliance/mixer/cereal/mixer = new(T)
 	mixer.cooking = FALSE
-	TEST_ASSERT_EQUAL(mixer.process(), PROCESS_KILL, "idle food mixer remained scheduled")
+	TEST_ASSERT_EQUAL(mixer.machine_step(), PROCESS_KILL, "idle food mixer remained scheduled")
 	var/obj/machinery/cell_charger/charger = new(T)
 	charger.stat = 0
 	charger.anchored = TRUE
-	TEST_ASSERT_EQUAL(charger.process(), PROCESS_KILL, "empty heavy cell charger remained scheduled")
+	TEST_ASSERT_EQUAL(charger.machine_step(), PROCESS_KILL, "empty heavy cell charger remained scheduled")
 	var/obj/machinery/mech_recharger/mech_charger = new(T)
-	TEST_ASSERT_EQUAL(mech_charger.process(), PROCESS_KILL, "empty mech charger remained scheduled")
+	TEST_ASSERT_EQUAL(mech_charger.machine_step(), PROCESS_KILL, "empty mech charger remained scheduled")
 	var/obj/machinery/space_heater/heater = new(T)
 	heater.state = 0
-	TEST_ASSERT_EQUAL(heater.process(), PROCESS_KILL, "switched-off space heater remained scheduled")
+	TEST_ASSERT_EQUAL(heater.machine_step(), PROCESS_KILL, "switched-off space heater remained scheduled")
 	var/obj/machinery/floodlight/floodlight = new(T)
 	floodlight.on = 0
-	TEST_ASSERT_EQUAL(floodlight.process(), PROCESS_KILL, "switched-off floodlight remained scheduled")
+	TEST_ASSERT_EQUAL(floodlight.machine_step(), PROCESS_KILL, "switched-off floodlight remained scheduled")
 	floodlight.cell.charge = floodlight.cell.maxcharge
-	STOP_MACHINE_PROCESSING(floodlight)
+	MACHINE_SLEEP(floodlight)
 	TEST_ASSERT(floodlight.turn_on(), "charged floodlight refused to turn on")
-	TEST_ASSERT(floodlight in SSmachines.processing_machines, "turning on a floodlight did not wake it")
+	TEST_ASSERT(machine_stepping(floodlight), "turning on a floodlight did not wake it")
 	var/obj/machinery/power/emitter/emitter = new(T)
 	emitter.active = FALSE
-	TEST_ASSERT_EQUAL(emitter.process(), PROCESS_KILL, "inactive emitter remained scheduled")
+	TEST_ASSERT_EQUAL(emitter.machine_step(), PROCESS_KILL, "inactive emitter remained scheduled")
 	var/obj/machinery/shieldwallgen/shieldwall_generator = new(T)
 	shieldwall_generator.active = FALSE
 	shieldwall_generator.storedpower = shieldwall_generator.max_stored_power
-	TEST_ASSERT_EQUAL(shieldwall_generator.process(), PROCESS_KILL, "full inactive shieldwall generator remained scheduled")
+	TEST_ASSERT_EQUAL(shieldwall_generator.machine_step(), PROCESS_KILL, "full inactive shieldwall generator remained scheduled")
 	var/obj/machinery/shield_capacitor/shield_capacitor = new(T)
 	shield_capacitor.stored_charge = shield_capacitor.max_charge
-	TEST_ASSERT_EQUAL(shield_capacitor.process(), PROCESS_KILL, "full shield capacitor remained scheduled")
+	TEST_ASSERT_EQUAL(shield_capacitor.machine_step(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
 	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
-	var/shutoff_wake = react_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
+	var/shutoff_wake = om_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
 	TEST_ASSERT(!shutoff_wake, shutoff_wake)
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.stat = 0
-	TEST_ASSERT_EQUAL(sleeper.process(), PROCESS_KILL, "empty sleeper remained scheduled")
+	TEST_ASSERT_EQUAL(sleeper.machine_step(), PROCESS_KILL, "empty sleeper remained scheduled")
 	var/obj/machinery/iv_drip/drip = new(T)
-	TEST_ASSERT_EQUAL(drip.process(), PROCESS_KILL, "detached IV drip remained scheduled")
+	TEST_ASSERT_EQUAL(drip.machine_step(), PROCESS_KILL, "detached IV drip remained scheduled")
 	var/obj/machinery/floor_light/floor_light = new(T)
-	TEST_ASSERT_EQUAL(floor_light.process(), PROCESS_KILL, "stable floor light remained scheduled")
+	TEST_ASSERT_EQUAL(floor_light.machine_step(), PROCESS_KILL, "stable floor light remained scheduled")
 	var/obj/machinery/vending/vendor = new(T)
 	vendor.stat = 0
 	vendor.shut_up = TRUE
 	vendor.seconds_electrified = 0
 	vendor.shoot_inventory = FALSE
-	TEST_ASSERT_EQUAL(vendor.process(), PROCESS_KILL, "silent stable vending machine remained scheduled")
+	TEST_ASSERT_EQUAL(vendor.machine_step(), PROCESS_KILL, "silent stable vending machine remained scheduled")
 	var/obj/machinery/computer/security/security_console = new(T)
-	TEST_ASSERT_EQUAL(security_console.process(), PROCESS_KILL, "passive computer inherited permanent polling")
+	TEST_ASSERT_EQUAL(security_console.machine_step(), PROCESS_KILL, "passive computer inherited permanent polling")
 	var/obj/machinery/computer/cloning/cloning_console = new(T)
 	cloning_console.autoprocess = FALSE
-	TEST_ASSERT_EQUAL(cloning_console.process(), PROCESS_KILL, "cloning console polled with autoprocess disabled")
+	TEST_ASSERT_EQUAL(cloning_console.machine_step(), PROCESS_KILL, "cloning console polled with autoprocess disabled")
 	var/obj/machinery/clonepod/clonepod = new(T)
-	TEST_ASSERT_EQUAL(clonepod.process(), PROCESS_KILL, "empty cloning pod remained scheduled")
+	TEST_ASSERT_EQUAL(clonepod.machine_step(), PROCESS_KILL, "empty cloning pod remained scheduled")
 	var/obj/machinery/computer/ship/helm/helm = new(T)
 	helm.autopilot = FALSE
-	TEST_ASSERT_EQUAL(helm.process(), PROCESS_KILL, "idle ship helm remained scheduled without autopilot")
+	TEST_ASSERT_EQUAL(helm.machine_step(), PROCESS_KILL, "idle ship helm remained scheduled without autopilot")
 	var/obj/machinery/cryopod/cryo = new(T)
-	TEST_ASSERT_EQUAL(cryo.process(), PROCESS_KILL, "empty cryopod remained scheduled")
+	TEST_ASSERT_EQUAL(cryo.machine_step(), PROCESS_KILL, "empty cryopod remained scheduled")
 	var/obj/machinery/atmospherics/unary/cryo_cell/cryo_cell = new(T)
 	cryo_cell.on = FALSE
 	TEST_ASSERT_EQUAL(cryo_cell.machine_step(), PROCESS_KILL, "switched-off cryo cell remained scheduled")
 	var/obj/machinery/power/sensor/power_sensor = new(T)
-	TEST_ASSERT_EQUAL(power_sensor.process(), PROCESS_KILL, "power sensor polled between history samples")
+	TEST_ASSERT_EQUAL(power_sensor.machine_step(), PROCESS_KILL, "power sensor polled between history samples")
 	TEST_ASSERT(power_sensor.record_timer, "power sensor did not schedule its next history sample")
-	STOP_MACHINE_PROCESSING(power_sensor)
+	MACHINE_SLEEP(power_sensor)
 	deltimer(power_sensor.record_timer)
 	power_sensor.record_timer = null
 	power_sensor.wake_for_record()
-	TEST_ASSERT(!(power_sensor in SSmachines.processing_machines), "timer-driven power history sample unnecessarily entered machinery processing")
+	TEST_ASSERT(!machine_stepping(power_sensor), "timer-driven power history sample unnecessarily entered machinery processing")
 	TEST_ASSERT(power_sensor.record_timer, "direct power history sample did not schedule its successor")
 	var/obj/machinery/power/solar_control/solar_controller = new(T)
-	TEST_ASSERT_EQUAL(solar_controller.process(), PROCESS_KILL, "solar controller remained in machinery processing between minute-based solar events")
+	TEST_ASSERT_EQUAL(solar_controller.machine_step(), PROCESS_KILL, "solar controller remained in machinery processing between minute-based solar events")
 	var/obj/machinery/telecomms/telecomms_node = new(T)
-	TEST_ASSERT_EQUAL(telecomms_node.process(), PROCESS_KILL, "idle telecomms node retained a two-second machinery poll")
+	TEST_ASSERT_EQUAL(telecomms_node.machine_step(), PROCESS_KILL, "idle telecomms node retained a two-second machinery poll")
 	TEST_ASSERT(telecomms_node.thermal_timer, "idle telecomms node did not schedule its physical thermal boundary")
 	var/obj/machinery/optable/operating_table = new(T)
-	TEST_ASSERT_EQUAL(operating_table.process(), PROCESS_KILL, "empty operating table remained scheduled")
+	TEST_ASSERT_EQUAL(operating_table.machine_step(), PROCESS_KILL, "empty operating table remained scheduled")
 	var/obj/machinery/computer/aifixer/ai_fixer = new(T)
-	TEST_ASSERT_EQUAL(ai_fixer.process(), PROCESS_KILL, "idle AI fixer remained scheduled")
+	TEST_ASSERT_EQUAL(ai_fixer.machine_step(), PROCESS_KILL, "idle AI fixer remained scheduled")
 	var/obj/machinery/power/breakerbox/breaker = new(T)
-	TEST_ASSERT_EQUAL(breaker.process(), PROCESS_KILL, "breaker box retained a no-op polling loop")
+	TEST_ASSERT_EQUAL(breaker.machine_step(), PROCESS_KILL, "breaker box retained a no-op polling loop")
 	var/obj/machinery/fusion_fuel_injector/injector = new(T)
-	TEST_ASSERT_EQUAL(injector.process(), PROCESS_KILL, "inactive fusion fuel injector remained scheduled")
-	STOP_MACHINE_PROCESSING(injector)
+	TEST_ASSERT_EQUAL(injector.machine_step(), PROCESS_KILL, "inactive fusion fuel injector remained scheduled")
+	MACHINE_SLEEP(injector)
 	injector.cur_assembly = new(injector)
 	injector.BeginInjecting()
-	TEST_ASSERT(injector in SSmachines.processing_machines, "starting a fusion fuel injector did not wake it")
+	TEST_ASSERT(machine_stepping(injector), "starting a fusion fuel injector did not wake it")
 	var/obj/machinery/atmospherics/binary/algae_farm/algae_farm = new(T)
 	algae_farm.update_use_power(USE_POWER_IDLE)
 	TEST_ASSERT_EQUAL(algae_farm.machine_step(), PROCESS_KILL, "inactive algae farm remained scheduled")
 	var/obj/machinery/power/hydromagnetic_trap/magnetic_trap = new(T)
-	TEST_ASSERT_EQUAL(magnetic_trap.process(), PROCESS_KILL, "fieldless hydromagnetic trap remained scheduled")
+	TEST_ASSERT_EQUAL(magnetic_trap.machine_step(), PROCESS_KILL, "fieldless hydromagnetic trap remained scheduled")
 	var/obj/machinery/atmospherics/unary/outlet_injector/outlet = new(T)
 	outlet.update_use_power(USE_POWER_OFF)
 	TEST_ASSERT_EQUAL(outlet.machine_step(), PROCESS_KILL, "switched-off outlet injector remained scheduled")
@@ -4649,14 +4657,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(outlet.machine_wake_count > outlet_wakes, "enabling an outlet injector did not wake it")
 	// M2 (simulation.md §5): the passive gate's flow law is a Rust device
 	// edge stepped every gas tick from SSair, not a DM process() subscriber,
-	// so it is never in SSmachines.processing_machines regardless of state.
+	// so it is machine_stepping(never) regardless of state.
 	var/obj/machinery/atmospherics/binary/passive_gate/gate = new(T)
 	gate.unlocked = FALSE
 	gate.update_rust_device()
-	TEST_ASSERT(!(gate in SSmachines.processing_machines), "closed passive gate should never be a DM process() subscriber")
+	TEST_ASSERT(!machine_stepping(gate), "closed passive gate should never be a DM process() subscriber")
 	gate.unlocked = TRUE
 	gate.update_rust_device()
-	TEST_ASSERT(!(gate in SSmachines.processing_machines), "opening a passive gate must not add DM process() scheduling")
+	TEST_ASSERT(!machine_stepping(gate), "opening a passive gate must not add DM process() scheduling")
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
 	dual_vent.update_use_power(USE_POWER_OFF)
 	TEST_ASSERT_EQUAL(dual_vent.machine_step(), PROCESS_KILL, "switched-off dual-port vent remained scheduled")
@@ -4669,7 +4677,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/disposal_environment = T.return_air()
 	var/datum/gas_mixture/saved_disposal_environment = disposal_environment.copy()
 	disposal_environment.clear()
-	TEST_ASSERT_EQUAL(disposal.process(), PROCESS_KILL, "airless disposal kept retrying pressurization")
+	TEST_ASSERT_EQUAL(disposal.machine_step(), PROCESS_KILL, "airless disposal kept retrying pressurization")
 	TEST_ASSERT(om_watch_armed(disposal), "airless disposal did not subscribe before sleeping")
 	disposal.stat |= NOPOWER
 	disposal_environment.copy_from(saved_disposal_environment)
@@ -4682,7 +4690,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/power/thermoregulator/regulator = new(T)
 	regulator.on = FALSE
 	TEST_ASSERT_EQUAL(regulator.machine_step(), PROCESS_KILL, "switched-off thermoregulator remained scheduled")
-	STOP_MACHINE_PROCESSING(regulator)
+	MACHINE_SLEEP(regulator)
 	regulator.on = TRUE
 	var/regulator_wakes = regulator.machine_wake_count
 	regulator.wake_for_state_change()
@@ -4699,27 +4707,30 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console
-	TEST_ASSERT_EQUAL(operating_console.process(), PROCESS_KILL, "empty operating console remained scheduled")
+	TEST_ASSERT_EQUAL(operating_console.machine_step(), PROCESS_KILL, "empty operating console remained scheduled")
 	var/obj/machinery/pointdefense/point_defense = new(T)
 	point_defense.stat = 0
 	point_defense.active = TRUE
-	TEST_ASSERT_EQUAL(point_defense.process(), PROCESS_KILL, "point defense polled with no meteors")
+	TEST_ASSERT_EQUAL(point_defense.machine_step(), PROCESS_KILL, "point defense polled with no meteors")
 	TEST_ASSERT(point_defense.react_sleep_tokens, "point defense did not subscribe before sleeping")
-	SSreactor.trace(point_defense)
-	REACT_PUBLISH(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED)
-	react_test_ticks(4)
-	TEST_ASSERT(SSreactor.traced_wakes(point_defense), "meteor dependency did not wake point defense")
-	SSreactor.untrace(point_defense)
+	om_trace(point_defense)
+	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
+	for(var/i in 1 to 40)
+		react_test_ticks(1)
+		if(om_traced_count(point_defense))
+			break
+	TEST_ASSERT(om_traced_count(point_defense), "meteor dependency did not wake point defense")
+	om_untrace(point_defense)
 	var/obj/machinery/computer/pod/pod_console = new(T)
 	pod_console.stat = 0
 	pod_console.timing = FALSE
-	TEST_ASSERT_EQUAL(pod_console.process(), PROCESS_KILL, "idle pod console remained scheduled")
+	TEST_ASSERT_EQUAL(pod_console.machine_step(), PROCESS_KILL, "idle pod console remained scheduled")
 	var/obj/machinery/chemical_dispenser/dispenser = new(T)
 	dispenser._recharge_reagents = FALSE
-	TEST_ASSERT_EQUAL(dispenser.process(), PROCESS_KILL, "non-recharging chemical dispenser remained scheduled")
+	TEST_ASSERT_EQUAL(dispenser.machine_step(), PROCESS_KILL, "non-recharging chemical dispenser remained scheduled")
 	var/obj/machinery/atm/atm = new(T)
 	atm.stat = 0
-	TEST_ASSERT_EQUAL(atm.process(), PROCESS_KILL, "idle ATM remained scheduled")
+	TEST_ASSERT_EQUAL(atm.machine_step(), PROCESS_KILL, "idle ATM remained scheduled")
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = new(T)
 	tray.lastcycle = world.time
 	TEST_ASSERT_EQUAL(tray.machine_step(), PROCESS_KILL, "stable hydroponics tray polled between growth cycles")
@@ -4729,56 +4740,56 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(tray.machine_wake_count > tray_wakes, "reagent mutation did not wake hydroponics tray")
 	var/obj/machinery/seed_storage/garden/seed_storage = new(T)
 	seed_storage.seconds_electrified = 0
-	TEST_ASSERT_EQUAL(seed_storage.process(), PROCESS_KILL, "stable seed storage remained scheduled")
+	TEST_ASSERT_EQUAL(seed_storage.machine_step(), PROCESS_KILL, "stable seed storage remained scheduled")
 	var/obj/machinery/beehive/beehive = new(T)
-	TEST_ASSERT_EQUAL(beehive.process(), PROCESS_KILL, "empty beehive remained scheduled")
+	TEST_ASSERT_EQUAL(beehive.machine_step(), PROCESS_KILL, "empty beehive remained scheduled")
 	var/obj/machinery/bluespace_beacon/bluespace_beacon = new(T)
-	TEST_ASSERT_EQUAL(bluespace_beacon.process(), PROCESS_KILL, "stable bluespace beacon remained scheduled")
+	TEST_ASSERT_EQUAL(bluespace_beacon.machine_step(), PROCESS_KILL, "stable bluespace beacon remained scheduled")
 	var/obj/machinery/shipsensors/ship_sensors = new(T)
 	ship_sensors.update_use_power(USE_POWER_OFF)
 	ship_sensors.heat = 0
-	TEST_ASSERT_EQUAL(ship_sensors.process(), PROCESS_KILL, "cold switched-off ship sensors remained scheduled")
+	TEST_ASSERT_EQUAL(ship_sensors.machine_step(), PROCESS_KILL, "cold switched-off ship sensors remained scheduled")
 	ship_sensors.update_use_power(USE_POWER_IDLE)
-	STOP_MACHINE_PROCESSING(ship_sensors)
+	MACHINE_SLEEP(ship_sensors)
 	ship_sensors.toggle()
-	TEST_ASSERT(ship_sensors in SSmachines.processing_machines, "changing ship sensor power state did not wake machinery processing")
+	TEST_ASSERT(machine_stepping(ship_sensors), "changing ship sensor power state did not wake machinery processing")
 	var/obj/machinery/computer/ship/sensors/sensor_console = new(T)
-	TEST_ASSERT_EQUAL(sensor_console.process(), PROCESS_KILL, "passive ship sensor console retained a polling loop")
+	TEST_ASSERT_EQUAL(sensor_console.machine_step(), PROCESS_KILL, "passive ship sensor console retained a polling loop")
 	var/obj/machinery/suit_cycler/suit_cycler = new(T)
 	suit_cycler.active = FALSE
 	suit_cycler.electrified = 0
-	TEST_ASSERT_EQUAL(suit_cycler.process(), PROCESS_KILL, "inactive suit cycler remained scheduled")
+	TEST_ASSERT_EQUAL(suit_cycler.machine_step(), PROCESS_KILL, "inactive suit cycler remained scheduled")
 	suit_cycler.active = TRUE
 	suit_cycler.irradiating = 2
-	STOP_MACHINE_PROCESSING(suit_cycler)
-	START_MACHINE_PROCESSING(suit_cycler)
-	TEST_ASSERT(suit_cycler.process() != PROCESS_KILL, "active UV suit cycle hibernated before completion")
+	MACHINE_SLEEP(suit_cycler)
+	MACHINE_WAKE(suit_cycler)
+	TEST_ASSERT(suit_cycler.machine_step() != PROCESS_KILL, "active UV suit cycle hibernated before completion")
 	var/obj/machinery/field_generator/field_generator = new(T)
 	field_generator.active = FALSE
 	field_generator.Varedit_start = FALSE
-	TEST_ASSERT_EQUAL(field_generator.process(), PROCESS_KILL, "inactive field generator remained scheduled")
-	STOP_MACHINE_PROCESSING(field_generator)
+	TEST_ASSERT_EQUAL(field_generator.machine_step(), PROCESS_KILL, "inactive field generator remained scheduled")
+	MACHINE_SLEEP(field_generator)
 	field_generator.turn_on()
-	TEST_ASSERT(field_generator in SSmachines.processing_machines, "turning on a field generator did not wake machinery processing")
+	TEST_ASSERT(machine_stepping(field_generator), "turning on a field generator did not wake machinery processing")
 	var/obj/machinery/atmospherics/unary/engine/ship_engine = new(T)
-	TEST_ASSERT_EQUAL(ship_engine.process(), PROCESS_KILL, "passive ship engine nozzle retained a polling loop")
+	TEST_ASSERT(!machine_stepping(ship_engine), "passive ship engine nozzle retained a polling loop")
 	var/obj/machinery/power/port_gen/pacman/portable_generator = new(T)
 	portable_generator.active = FALSE
 	var/datum/gas_mixture/generator_environment = T.return_air()
 	var/generator_pressure_ratio = generator_environment ? min(generator_environment.return_pressure() / ONE_ATMOSPHERE, 1) : 0
 	portable_generator.temperature = 20 + (generator_environment ? generator_environment.return_temperature() - T20C : 0) * generator_pressure_ratio
 	portable_generator.overheating = 0
-	TEST_ASSERT_EQUAL(portable_generator.process(), PROCESS_KILL, "cold inactive portable generator remained scheduled")
+	TEST_ASSERT_EQUAL(portable_generator.machine_step(), PROCESS_KILL, "cold inactive portable generator remained scheduled")
 	portable_generator.sheets = 1
-	STOP_MACHINE_PROCESSING(portable_generator)
+	MACHINE_SLEEP(portable_generator)
 	portable_generator.TogglePower()
-	TEST_ASSERT(portable_generator in SSmachines.processing_machines, "starting a portable generator did not wake machinery processing")
+	TEST_ASSERT(machine_stepping(portable_generator), "starting a portable generator did not wake machinery processing")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
 	smartfridge.seconds_electrified = 0
 	smartfridge.shoot_inventory = FALSE
-	TEST_ASSERT_EQUAL(smartfridge.process(), PROCESS_KILL, "stable smartfridge remained scheduled")
+	TEST_ASSERT_EQUAL(smartfridge.machine_step(), PROCESS_KILL, "stable smartfridge remained scheduled")
 	var/obj/machinery/smartfridge/drying_rack/drying_rack = new(T)
-	TEST_ASSERT_EQUAL(drying_rack.process(), PROCESS_KILL, "empty drying rack remained scheduled")
+	TEST_ASSERT_EQUAL(drying_rack.machine_step(), PROCESS_KILL, "empty drying rack remained scheduled")
 	var/turf/conveyor_turf
 	for(var/turf/simulated/floor/candidate in world)
 		var/has_movable = FALSE
@@ -4793,14 +4804,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/conveyor/conveyor = new(conveyor_turf)
 	conveyor.operating = 1
 	conveyor.stat = 0
-	TEST_ASSERT_EQUAL(conveyor.process(), PROCESS_KILL, "running empty conveyor remained scheduled")
-	STOP_MACHINE_PROCESSING(conveyor)
+	TEST_ASSERT_EQUAL(conveyor.machine_step(), PROCESS_KILL, "running empty conveyor remained scheduled")
+	MACHINE_SLEEP(conveyor)
 	var/obj/item/conveyor_load = new(null)
 	conveyor_load.forceMove(conveyor_turf)
-	TEST_ASSERT(conveyor in SSmachines.processing_machines, "running conveyor did not wake when movable cargo entered its turf")
+	TEST_ASSERT(machine_stepping(conveyor), "running conveyor did not wake when movable cargo entered its turf")
 	var/obj/machinery/conveyor_switch/conveyor_switch = new(conveyor_turf)
 	conveyor_switch.operated = FALSE
-	TEST_ASSERT_EQUAL(conveyor_switch.process(), PROCESS_KILL, "stable conveyor switch remained scheduled")
+	TEST_ASSERT_EQUAL(conveyor_switch.machine_step(), PROCESS_KILL, "stable conveyor switch remained scheduled")
 	qdel(display)
 	qdel(drone_fabricator)
 	qdel(airlock_sensor)
@@ -4887,7 +4898,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SM.power = 200
 	var/initial_damage = SM.damage
 
-	SM.process()
+	SM.machine_step()
 
 	var/post_damage = SM.damage
 
@@ -5146,7 +5157,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// station Z, detonates immediately (exploded / grav_pulling). Assert the
 	// observable delamination consequence, not the damage value we just set.
 	SM.damage = SM.explosion_point + 100
-	SM.process()
+	SM.machine_step()
 	TEST_ASSERT(SM.causalitywarn, \
 		"supermatter past explosion_point did not flag causalitywarn — delamination path never fired")
 	TEST_ASSERT(SM.final_countdown || SM.exploded || SM.grav_pulling, \
@@ -5465,7 +5476,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SSair.run_gas_frames(1)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
-	vg_heat_debug_run_frames(2)
+	vg_world_run_steps(2)
 	// The exposure heats the paper's heat body; its ignition rule
 	// (code/datums/rules/declarations.dm) runs on the next heat frame.
 	dq_rx_flush()
@@ -5626,7 +5637,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	P.parent.air.set_volume(P.volume)
 	P.parent.air.multiply(P.volume / environment_volume)
 	P.set_leaking(TRUE)
-	var/datum/weakref/pipe_ref = WEAKREF(P)
+	var/pipe_ref = om_handle(P)
 	TEST_ASSERT_NOTNULL(pipe_ref, "open pipe could not create a weak reference")
 	var/process_result
 	for(var/cycle in 1 to 100)
@@ -7106,28 +7117,28 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_dirty_gas_publication_is_watch_scoped
 
 /datum/unit_test/dq_dirty_gas_publication_is_watch_scoped/Run()
+	dq_atmos_test_drain_dependency_queue()
 	var/datum/gas_mixture/air = new(2500)
+	var/datum/gas_mixture/other = new(2500)
 	var/mixture_id = air.arena_id()
-	vg_drain_dirty_gas_mixtures()
-	air.set_temperature(T20C + 5)
-	var/list/changes = vg_drain_dirty_gas_mixtures()
-	for(var/index in 1 to length(changes) step 2)
-		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture was published to DM")
-	watch_dirty_gas_mixture(mixture_id)
+	var/datum/dq_gas_dependency_probe/probe = new
+	var/datum/dq_gas_dependency_probe/bystander = new
+	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
+	var/datum/native_watch/gas/B = gas_dependency_watch(bystander, other.arena_id(), GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	air.set_temperature(T20C + 10)
-	changes = vg_drain_dirty_gas_mixtures()
-	var/found_watched = FALSE
-	for(var/index in 1 to length(changes) step 2)
-		if(changes[index] == mixture_id)
-			found_watched = TRUE
-			break
-	TEST_ASSERT(found_watched, "watched mixture mutation was not published to DM")
-	vg_unwatch_dirty_gas_mixture(mixture_id)
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(length(probe.heard), 1, "the watch's owner did not hear its mixture change once")
+	TEST_ASSERT_EQUAL(probe.heard?[1], mixture_id, "the watch reported the wrong mixture")
+	TEST_ASSERT(!length(bystander.heard), "a watch on another mixture heard this one")
+	qdel(W)
 	air.set_temperature(T20C + 15)
-	changes = vg_drain_dirty_gas_mixtures()
-	for(var/index in 1 to length(changes) step 2)
-		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture resumed publication after unsubscribe")
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(length(probe.heard), 1, "a cancelled watch still delivered")
+	qdel(B)
 	qdel(air)
+	qdel(other)
 
 /datum/unit_test/dq_dirty_gas_observation_matches_air_alarm
 
@@ -7146,18 +7157,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	air.set_moles(/datum/gas/nitrous_oxide, 0.3)
 	air.set_moles(/datum/gas/volatile_fuel, 0.4)
 	var/mixture_id = air.arena_id()
-	watch_dirty_gas_mixture(mixture_id)
+	var/datum/dq_gas_dependency_probe/probe = new
+	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	vg_drain_dirty_gas_observations()
 	air.adjust_moles(/datum/gas/oxygen, 1)
 	var/list/observation = vg_drain_dirty_gas_observations()
 	TEST_ASSERT_EQUAL(length(observation), GAS_DEPENDENCY_OBSERVATION_STRIDE, "dirty gas observation did not use the documented atomic stride")
-	TEST_ASSERT_EQUAL(observation[1], mixture_id, "dirty gas observation returned the wrong arena mixture")
+	TEST_ASSERT_EQUAL(observation[1], W.handle, "dirty gas observation named the wrong watch")
+	TEST_ASSERT_EQUAL(observation[2], mixture_id, "dirty gas observation returned the wrong arena mixture")
 	TEST_ASSERT(abs(observation[GAS_DEPENDENCY_OBSERVATION_STRIDE] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
 	var/obj/machinery/alarm/alarm = new(test_turf)
 	var/direct_signature = alarm.atmospheric_control_signature(air)
-	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 1)
+	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 2)
 	TEST_ASSERT_EQUAL(observed_signature, direct_signature, "atomic Rust gas observation changed air-alarm threshold semantics")
-	vg_unwatch_dirty_gas_mixture(mixture_id)
+	qdel(W)
 	qdel(alarm)
 	qdel(air)
 
@@ -7213,7 +7226,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes/Run()
 	var/turf/test_turf = locate(1, 1, 1)
 	var/obj/machinery/pda_multicaster/multicaster = new(test_turf)
-	TEST_ASSERT_EQUAL(multicaster.process(), PROCESS_KILL, "stable PDA multicaster kept polling machinery")
+	TEST_ASSERT_EQUAL(multicaster.machine_step(), PROCESS_KILL, "stable PDA multicaster kept polling machinery")
 	multicaster.stat |= EMPED
 	multicaster.update_power()
 	TEST_ASSERT(!multicaster.on, "EMP state did not immediately turn off the multicaster")
@@ -7230,12 +7243,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/mineral/input/input = new(input_turf)
 	var/obj/machinery/mineral/output/output = new(output_turf)
 	var/obj/machinery/mineral/stacking_machine/stacker = new(center)
-	TEST_ASSERT_EQUAL(stacker.process(), PROCESS_KILL, "empty mineral stacker kept polling machinery")
-	STOP_MACHINE_PROCESSING(stacker)
+	TEST_ASSERT_EQUAL(stacker.machine_step(), PROCESS_KILL, "empty mineral stacker kept polling machinery")
+	MACHINE_SLEEP(stacker)
 	var/obj/item/stack/material/steel/sheets = new(center)
 	sheets.forceMove(input_turf)
-	TEST_ASSERT(stacker in SSmachines.processing_machines, "mineral stacker did not wake when an item entered its input tile")
-	stacker.process()
+	TEST_ASSERT(machine_stepping(stacker), "mineral stacker did not wake when an item entered its input tile")
+	stacker.machine_step()
 	TEST_ASSERT(QDELETED(sheets), "woken mineral stacker did not consume its input stack")
 	qdel(stacker)
 	qdel(input)

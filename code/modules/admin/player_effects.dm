@@ -107,7 +107,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				shadekin.ai_brain.mauling = TRUE
 			om_run_frame_now(shadekin, /datum/om/pipeline/life)
 			//Remove when done
-			spawn(10 SECONDS)
+			spawn(10 SECONDS) // S7 keeps: admin verb (allowlist)
 				if(shadekin)
 					shadekin.death()
 
@@ -158,27 +158,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin)) //Homf
 			shadekin.comp.dark_energy = initial(shadekin.comp.dark_energy)
-			//For fun
-			sleep(1 SECOND)
-			shadekin.dir = WEST
-			sleep(1 SECOND)
-			shadekin.dir = EAST
-			sleep(1 SECOND)
-			shadekin.dir = SOUTH
-			sleep(1 SECOND)
-			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
-			sleep(2 SECONDS)
-			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
-			target.transforming = FALSE //Undo cheap hack
-
-			if(myself == "Control") //Put admin in mob
-				shadekin.ckey = target.ckey
-
-			else //Permakin'd
-				to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))
-				target.ghostize()
-				qdel(target)
-				qdel(shadekin)
+			//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
+			shadekin_smite_step(shadekin, target, myself == "Control" ? target.ckey : null, 1)
 
 
 		if("redspace_abduct")
@@ -258,23 +239,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			playsound(target, 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
 
 		if("hot_dog")
-			playsound(target, 'sound/effects/whistle.ogg', 50, 1, get_rand_frequency(), falloff = 5)
-			sleep(2 SECONDS)
-			target.status_at_least(EFFECT_STUNNED, 10)
-			if(!ishuman(target))
-				return
-			var/mob/living/carbon/human/H = target
-			if(H.get_equipped_item(SLOT_ID_HEAD))
-				H.unEquip(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_SUIT))
-				H.unEquip(H.get_equipped_item(SLOT_ID_SUIT))
-			var/obj/item/clothing/suit = new /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog
-			var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
-			H.equip_to_slot_if_possible(suit, slot_wear_suit, 0, 0, 1)
-			H.equip_to_slot_if_possible(hood, slot_head, 0, 0, 1)
-			sleep(5 SECONDS)
-			qdel(suit)
-			qdel(hood)
+			hotdog_smite(target)
 
 		if("mob_tf")
 			var/mob/living/M = target
@@ -760,7 +725,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(where == "To Me")
 				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/Getmob, target)
 			if(where == "To Mob")
-				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target] to:", "Jump to mob", GLOB.mob_list)
+				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target] to:", "Jump to mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
 				target.on_mob_jump()
 				target.forceMove(get_turf(selection))
 				log_admin("[key_name(ui.user)] jumped [target] to [selection]")

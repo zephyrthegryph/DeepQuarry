@@ -96,7 +96,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 
 /datum/tgui_module/ghost_spawn_menu/proc/compile_pod_data()
 	var/list/compiled_pods = list()
-	for(var/atom/movable/spawn_object in GLOB.active_ghost_pods)
+	for(var/atom/movable/spawn_object in REGISTRY_MEMBERS(REGISTRY_GHOST_PODS))
 		var/enabled = TRUE
 		if(istype(spawn_object, /obj/structure/ghost_pod/manual))
 			var/obj/structure/ghost_pod/manual/man = spawn_object
@@ -114,7 +114,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 
 /datum/tgui_module/ghost_spawn_menu/proc/compile_ghost_join_data(mob/user)
 	var/ghost_spawn_exists = FALSE
-	for(var/obj/effect/landmark/L in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(L.name == JOB_GHOSTROLES)
 			ghost_spawn_exists = TRUE
 			break
@@ -177,7 +177,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 /datum/tgui_module/ghost_spawn_menu/proc/get_vr_data(mob/user)
 	var/datum/data/record/record_found = find_general_record("name", user.client.prefs.read_preference(/datum/preference/name/real_name))
 	var/list/vr_landmarks = list()
-	for(var/obj/effect/landmark/virtual_reality/sloc in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		vr_landmarks += list(REF(sloc) = sloc.name)
 
 	return list(
@@ -187,7 +187,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 
 /datum/tgui_module/ghost_spawn_menu/proc/compile_vorespawn_data()
 	var/list/compiled_spawn_data = list()
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!player.client || player.stat)
 			continue
 		var/soulcatcher_active = FALSE

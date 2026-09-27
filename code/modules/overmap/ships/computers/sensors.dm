@@ -135,7 +135,7 @@
 	if(. && !issilicon(ui.user))
 		playsound(src, "terminal_type", 50, 1)
 
-/obj/machinery/computer/ship/sensors/process()
+/obj/machinery/computer/ship/sensors/machine_step()
 	..()
 	refresh_sensor_light()
 	return PROCESS_KILL
@@ -181,10 +181,14 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You start repairing the damage to [src]."))
 	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
-	if(do_after(user, max(5, damage / 5), target = src) && welder.isOn())
-		to_chat(user, span_notice("You finish repairing the damage to [src]."))
-		repair_damage(damage)
+	om_do_after(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/shipsensors/proc/weld_repair_done(mob/user, obj/item/weldingtool/welder)
+	if(!welder.isOn())
+		return
+	to_chat(user, span_notice("You finish repairing the damage to [src]."))
+	repair_damage(max_integrity - get_integrity())
 
 /obj/machinery/shipsensors/proc/in_vacuum()
 	var/turf/T=get_turf(src)
@@ -220,9 +224,9 @@
 	update_use_power(!use_power)
 	update_icon()
 	refresh_linked_consoles()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
-/obj/machinery/shipsensors/process()
+/obj/machinery/shipsensors/machine_step()
 	if(use_power) //can't run in non-vacuum
 		if(!in_vacuum())
 			toggle()
@@ -265,3 +269,13 @@
 /obj/machinery/shipsensors/weak
 	heat_reduction = 0.2
 	desc = "Miniaturized gravity scanner with various other sensors, used to detect irregularities in surrounding space. Can only run in vacuum to protect delicate quantum bluespace elements."
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shipsensors/step_start_condition()
+	return use_power
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/computer/ship/sensors/step_start_condition()
+	return TRUE // its sensor light

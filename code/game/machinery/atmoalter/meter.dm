@@ -1,5 +1,4 @@
 /obj/machinery/meter
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "meter"
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
@@ -52,7 +51,7 @@
 
 /obj/machinery/meter/proc/wake_from_gas()
 	unregister_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/meter/proc/current_pressure_icon_state()
 	return pressure_icon_state(target?.return_air())
@@ -142,11 +141,13 @@
 	return ..()
 
 /obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
-	if(use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
-		new /obj/item/pipe_meter(get_turf(src))
-		qdel(src)
+	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/meter/proc/wrench_act_tool_done(mob/user)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
+	new /obj/item/pipe_meter(get_turf(src))
+	qdel(src)
 
 /obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -178,3 +179,8 @@
 
 /obj/machinery/meter/turf/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
 	return ITEM_INTERACT_BLOCKING
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/meter/arm_wakes()
+	..()
+	register_gas_dependency()

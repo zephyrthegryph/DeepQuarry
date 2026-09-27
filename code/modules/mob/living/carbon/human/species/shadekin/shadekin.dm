@@ -108,10 +108,7 @@
 	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
 	var/datum/component/shadekin/SK = H.get_shadekin_component()
 	if(!special_handling || (SK && SK.no_retreat))
-		spawn(1)
-			for(var/obj/item/W in H)
-				H.drop_from_inventory(W)
-			qdel(H)
+		om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
 	else
 		if(!SK)
 			return
@@ -246,3 +243,9 @@
 	new_copy.total_health = total_health
 
 	return new_copy
+
+/// A species death that leaves only the carried items.
+/mob/living/carbon/human/proc/species_death_vanish()
+	for(var/obj/item/W in src)
+		drop_from_inventory(W)
+	qdel(src)

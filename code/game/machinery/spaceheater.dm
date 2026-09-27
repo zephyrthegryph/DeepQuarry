@@ -161,7 +161,7 @@
 	else
 		state = state ? SHEATER_OFF : SHEATER_STANDBY
 		if(state)
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 		user.visible_message(span_notice("[user] switches [state ? "on" : "off"] the [src]."),span_notice("You switch [state ? "on" : "off"] the [src]."))
 		update_icon()
 	return
@@ -203,7 +203,7 @@
 			// limit to 0-90 degC
 			set_temperature = clamp(text2num(params["newtemp"]), min_temperature, max_temperature)
 			if(state)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			. = TRUE
 
 		if("cellremove")
@@ -227,11 +227,11 @@
 					C.add_fingerprint(ui.user)
 					power_change()
 					if(state)
-						START_MACHINE_PROCESSING(src)
+						MACHINE_WAKE(src)
 					ui.user.visible_message(span_notice("[ui.user] inserts \the [C] into \the [src]."), span_notice("You insert \the [C] into \the [src]."))
 				. = TRUE
 
-/obj/machinery/space_heater/process()
+/obj/machinery/space_heater/machine_step()
 	if(!state)
 		return PROCESS_KILL
 
@@ -274,7 +274,7 @@
 /obj/machinery/space_heater/power_change()
 	. = ..()
 	if(. && state && cell?.charge)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 #undef SHEATER_OFF
 #undef SHEATER_STANDBY
@@ -283,3 +283,8 @@
 #undef DEFAULT_MIN_TEMP
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/space_heater/step_start_condition()
+	return state

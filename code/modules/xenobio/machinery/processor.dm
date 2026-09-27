@@ -11,6 +11,8 @@
 	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
+	/// Recycled bodies per monkey cube pressed.
+	var/monkeys_per_cube = 4
 
 /obj/item/circuitboard/processor
 	name = T_BOARD("slime processor")
@@ -34,8 +36,7 @@
 		to_chat(user, span_warning("The processor is in the process of processing!"))
 		return TRUE
 	if(length(to_be_processed))
-		spawn(1)
-			begin_processing()
+		om_after(src, 1, PROC_REF(begin_processing))
 	else
 		to_chat(user, span_warning("The processor is empty."))
 		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
@@ -80,37 +81,47 @@
 		return // Already doing it.
 	processing = TRUE
 	playsound(src, 'sound/machines/juicer.ogg', 50, 1)
-	for(var/atom/movable/AM in to_be_processed)
-		extract(AM)
-		sleep(1 SECONDS)
+	om_task_start(src, /datum/om/task_def/slime_processing)
 
-	while(monkeys_recycled >= 4)
-		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		monkeys_recycled -= 4
-		sleep(1 SECOND)
+/// The processor at work: one thing a second (a core out of a slime, a body processed, or a
+/// monkey cube pressed from the recycled bodies) until it is empty.
+/datum/om/task_def/slime_processing
+	name = "slime processing"
+	steps = list(/obj/machinery/processor/proc/processing_step = 0)
+	complete_proc = /obj/machinery/processor/proc/processing_done
+	cancel_proc = /obj/machinery/processor/proc/processing_done
 
-	processing = FALSE
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
-
-/obj/machinery/processor/proc/extract(atom/movable/AM)
+/obj/machinery/processor/proc/processing_step(datum/om/task/T)
+	var/atom/movable/AM = LAZYACCESS(to_be_processed, 1)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
-		while(S.cores)
-			var/atom/new_core = new S.coretype(get_turf(src))
+		if(S.cores)
+			new S.coretype(get_turf(src))
 			playsound(src, 'sound/effects/splat.ogg', 50, 1)
 			S.cores--
-			sleep(1 SECOND)
+			return STEP_REPEAT(1 SECOND)
 		LAZYREMOVE(to_be_processed, S)
 		qdel(S)
-
+		return STEP_REPEAT(1 SECOND)
 	if(ishuman(AM))
-		var/mob/living/carbon/human/M = AM
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		LAZYREMOVE(to_be_processed, M)
-		qdel(M)
+		LAZYREMOVE(to_be_processed, AM)
+		qdel(AM)
 		monkeys_recycled++
-		sleep(1 SECOND)
+		return STEP_REPEAT(1 SECOND)
+	if(AM)
+		LAZYREMOVE(to_be_processed, AM)
+		return STEP_REPEAT(0)
+	if(monkeys_recycled >= monkeys_per_cube)
+		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
+		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		monkeys_recycled -= monkeys_per_cube
+		return STEP_REPEAT(1 SECOND)
+	return STEP_DONE
+
+/obj/machinery/processor/proc/processing_done(datum/om/task/T, reason)
+	processing = FALSE
+	playsound(src, 'sound/machines/ding.ogg', 50, 1)
 
 /obj/machinery/processor/proc/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))

@@ -523,10 +523,7 @@ impl SimBuilder {
         if !errors.is_empty() {
             return Err(BuildError::Boot(errors));
         }
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(self.config.threads.max(1))
-            .thread_name(|i| format!("vg-frame-{i}"))
-            .build()?;
+        let pool = crate::pool::Pool::new(self.config.threads, "vg-frame")?;
         let mut tasks = self.apply_tasks;
         tasks.extend(self.tasks);
         tasks.extend(self.watch_tasks);
@@ -547,7 +544,7 @@ impl SimBuilder {
             frames: Vec::new(),
         });
         Ok(Sim {
-            pool: Arc::new(pool),
+            pool,
             world: Some(Box::new(world)),
             done: Arc::new(Latest::new()),
             ports: self.ports,
@@ -570,7 +567,7 @@ impl SimBuilder {
 /// DM thread, and nothing it does on that thread takes a lock.
 pub struct Sim {
     config: SimConfig,
-    pool: Arc<rayon::ThreadPool>,
+    pool: crate::pool::Pool,
     /// `Some` while no frame is running.
     world: Option<Box<World>>,
     done: Arc<Latest<Box<World>>>,
@@ -645,6 +642,34 @@ impl Sim {
         true
     }
 
+    /// Like [`dispatch_frame`](Self::dispatch_frame), but first calls
+    /// `prepare` on the idle world's resources (on the main thread, with
+    /// exclusive access). The driver ([`crate::world::World`]) moves its
+    /// per-frame inputs in and outputs out here, exactly once per
+    /// dispatched frame; nothing is called when no frame is dispatched.
+    pub fn dispatch_frame_with(&mut self, prepare: impl FnOnce(&mut Resources)) -> bool {
+        self.reclaim();
+        if self.world.is_none() || !self.ports.iter().all(|p| p.ready()) {
+            self.metrics.dispatches_skipped += 1;
+            return false;
+        }
+        prepare(&mut self.world.as_mut().expect("checked above").resources);
+        self.dispatch_frame()
+    }
+
+    /// Runs `f` on the world's resources if no frame is running (after
+    /// reclaiming a finished one). `None` while a frame runs.
+    pub fn with_idle_world<R>(&mut self, f: impl FnOnce(&mut Resources) -> R) -> Option<R> {
+        self.reclaim();
+        self.world.as_mut().map(|w| f(&mut w.resources))
+    }
+
+    /// The number the next dispatched frame will carry.
+    #[must_use]
+    pub const fn next_frame(&self) -> u64 {
+        self.next_frame
+    }
+
     /// Takes back a finished world, if any.
     fn reclaim(&mut self) {
         if self.world.is_some() {
@@ -666,6 +691,13 @@ impl Sim {
     #[must_use]
     pub fn frame_running(&self) -> bool {
         self.world.is_none() && !self.done.is_full()
+    }
+
+    /// Host shutdown: waits for the running frame, then stops the frame pool
+    /// and joins its threads.
+    pub fn shutdown(&mut self) {
+        self.wait_for_frame();
+        self.pool.shutdown();
     }
 
     /// Blocks (yielding) until the running frame finishes. For tests,

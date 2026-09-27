@@ -334,19 +334,7 @@
 	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
-	spawn(5 SECONDS)
-		if(holder && holder.my_atom)
-			var/turf/simulated/T = get_turf(holder.my_atom)
-			if(!istype(T))
-				return
-
-			for(var/turf/simulated/target_turf in view(2, T))
-				target_turf.assume_gas(GAS_VOLATILE_FUEL, 33, 1500+T0C)
-				target_turf.assume_gas(GAS_O2, 66, 1500+T0C)
-				spawn(0)
-					target_turf.hotspot_expose(1500+T0C, 400)
-
-			playsound(T, 'sound/effects/phasein.ogg', 75, 1)
+	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_fire, holder.my_atom)
 	..()
 
 
@@ -415,8 +403,7 @@
 	S.attach(location)
 	S.set_up(holder, 120, 0, location)
 	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
-	spawn(0)
-		S.start()
+	S.start()
 	..()
 
 
@@ -451,11 +438,7 @@
 	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
-	spawn(5 SECONDS)
-		if(holder && holder.my_atom)
-			var/turf/T = get_turf(holder.my_atom)
-			if(istype(T))
-				lightning_strike(T)
+	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_lightning, holder.my_atom)
 	..()
 
 
@@ -482,10 +465,7 @@
 	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
-	spawn(5 SECONDS)
-		if(holder && holder.my_atom)
-			empulse(get_turf(holder.my_atom), 2, 4, 7, 10) // As strong as a normal EMP grenade.
-			playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_emp, holder.my_atom)
 	..()
 
 
@@ -901,7 +881,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/slime_extract/green/process()
+/obj/item/slime_extract/green/periodic_step()
 	radiate()
 	..()
 
@@ -924,7 +904,6 @@
 	active = FALSE
 
 /obj/item/slime_extract/green/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /datum/decl/chemical_reaction/instant/slime/green_radpulse
@@ -938,9 +917,8 @@
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	spawn(5 SECONDS)
-		if(!QDELETED(holder.my_atom) && istype(holder.my_atom, /obj/item/slime_extract/green))
-			START_PROCESSING(SSobj, holder.my_atom)
+	if(istype(holder.my_atom, /obj/item/slime_extract/green))
+		om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_start_emitting, holder.my_atom)
 
 
 
@@ -1096,12 +1074,7 @@
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
-	spawn(5 SECONDS)
-		if(holder && holder.my_atom)
-			explosion(get_turf(holder.my_atom), 1 * power, 3 * power, 6 * power)
-
-		if(holder && holder.my_atom) // Explosion may or may not have deleted the extract.
-			qdel(holder.my_atom)
+	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_explode, holder.my_atom, power)
 
 // ********************
 // * Bluespace slimes *
@@ -1671,3 +1644,33 @@
 /datum/decl/chemical_reaction/instant/slime/rainbow_unity/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/unity(get_turf(holder.my_atom))
 	..()
+
+// Delayed extract reactions, five seconds after the extract starts to vibrate, on the
+// extract's clock (a deleted extract never goes off).
+
+/proc/slime_extract_fire(atom/extract)
+	var/turf/simulated/T = get_turf(extract)
+	if(!istype(T))
+		return
+	for(var/turf/simulated/target_turf in view(2, T))
+		target_turf.assume_gas(GAS_VOLATILE_FUEL, 33, 1500+T0C)
+		target_turf.assume_gas(GAS_O2, 66, 1500+T0C)
+		target_turf.hotspot_expose(1500+T0C, 400)
+	playsound(T, 'sound/effects/phasein.ogg', 75, 1)
+
+/proc/slime_extract_lightning(atom/extract)
+	var/turf/T = get_turf(extract)
+	if(istype(T))
+		lightning_strike(T)
+
+/proc/slime_extract_emp(atom/extract)
+	empulse(get_turf(extract), 2, 4, 7, 10) // As strong as a normal EMP grenade.
+	playsound(extract, 'sound/effects/phasein.ogg', 75, 1)
+
+/proc/slime_extract_start_emitting(atom/extract)
+	PERIODIC_START(extract, PERIODIC_SLOW)
+
+/proc/slime_extract_explode(atom/extract, power)
+	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)
+	if(!QDELETED(extract)) // Explosion may or may not have deleted the extract.
+		qdel(extract)

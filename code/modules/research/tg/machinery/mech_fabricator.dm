@@ -258,7 +258,7 @@
 
 	return TRUE
 
-/obj/machinery/mecha_part_fabricator_tg/process()
+/obj/machinery/mecha_part_fabricator_tg/machine_step()
 	var/turf/exit = get_step(src, drop_direction)
 	if(!exit)
 		return
@@ -492,7 +492,7 @@
 					return
 
 				process_queue = TRUE
-				START_PROCESSING(SSfastprocess, src)
+				PERIODIC_START(src, PERIODIC_FAST)
 			return
 
 		if("del_queue_part")
@@ -515,7 +515,7 @@
 				return
 
 			process_queue = TRUE
-			START_PROCESSING(SSfastprocess, src)
+			PERIODIC_START(src, PERIODIC_FAST)
 			return
 
 		if("stop_queue")
@@ -575,3 +575,8 @@
 
 /obj/machinery/mecha_part_fabricator_tg/proc/interaction_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/mecha_part_fabricator_tg/step_start_condition()
+	return process_queue

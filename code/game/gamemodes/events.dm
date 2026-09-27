@@ -3,7 +3,7 @@ GLOBAL_VAR_INIT(eventchance, 10) // Percent chance per 5 minutes.
 GLOBAL_VAR_INIT(hadevent, 0)
 
 /proc/appendicitis()
-	for(var/mob/living/carbon/human/H in shuffle(GLOB.living_mob_list))
+	for(var/mob/living/carbon/human/H in shuffle(REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)))
 		if(H.client && H.appendicitis())
 			break
 
@@ -31,87 +31,16 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		vents -= vent
 		spawncount--
 
-	spawn(rand(5000, 6000)) //Delayed announcements to keep the crew on their toes.
-		GLOB.command_announcement.Announce("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
-
-/proc/high_radiation_event()
-
-/* // Haha, this is way too laggy. I'll keep the prison break though.
-	for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(isNotStationLevel(L.z)) continue
-		L.flicker(50)
-
-	sleep(100)
-*/
-	for(var/mob/living/carbon/human/H in GLOB.living_mob_list)
-		var/turf/T = get_turf(H)
-		if(!T)
-			continue
-		if(isNotStationLevel(T.z))
-			continue
-		if(ishuman(H))
-			H.apply_effect((rand(15,75)),IRRADIATE,0)
-			if (prob(5))
-				H.apply_effect((rand(90,150)),IRRADIATE,0)
-			if (prob(25))
-				if (prob(75))
-					randmutb(H)
-					domutcheck(H,null,MUTCHK_FORCED)
-				else
-					randmutg(H)
-					domutcheck(H,null,MUTCHK_FORCED)
-				H.UpdateAppearance()
-	sleep(100)
-	GLOB.command_announcement.Announce("High levels of radiation detected near \the [station_name()]. Please report to the Med-bay if you feel strange.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_RADIATION)
-
-
-
-//Changing this to affect the main station. Blame Urist. --Pete
-/proc/prison_break() // -- Callagan
-
-
-	var/list/area/areas = list()
-	for(var/area/A in world)
-		if(istype(A, /area/security/prison) || istype(A, /area/security/brig))
-			areas += A
-
-	if(areas && areas.len > 0)
-
-		for(var/area/A in areas)
-			for(var/obj/machinery/light/L in A)
-				L.flicker(10)
-
-		sleep(100)
-
-		for(var/area/A in areas)
-			for (var/obj/machinery/power/apc/temp_apc in A)
-				temp_apc.overload_lighting()
-
-			for (var/obj/structure/closet/secure_closet/brig/temp_closet in A)
-				temp_closet.locked = 0
-				temp_closet.icon_state = "closed_unlocked"
-
-			for (var/obj/machinery/door/airlock/security/temp_airlock in A)
-				spawn(0) temp_airlock.prison_open()
-
-			for (var/obj/machinery/door/airlock/glass_security/temp_glassairlock in A)
-				spawn(0) temp_glassairlock.prison_open()
-
-			for (var/obj/machinery/door_timer/temp_timer in A)
-				temp_timer.timer_duration = 1
-
-		sleep(150)
-		GLOB.command_announcement.Announce("Gr3y.T1d3 virus detected in [station_name()] imprisonment subroutines. Recommend station AI involvement.", "Security Alert")
-	else
-		log_world("ERROR: Could not initate grey-tide. Unable find prison or brig area.")
+	//Delayed announcements to keep the crew on their toes.
+	om_after(null, rand(5000, 6000), /proc/delayed_command_announcement, "Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /proc/carp_migration() // -- Darem
-	for(var/obj/effect/landmark/C in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn")
 			new /mob/living/simple_mob/animal/space/carp(C.loc)
 	//sleep(100)
-	spawn(rand(300, 600)) //Delayed announcements to keep the crew on their toes.
-		GLOB.command_announcement.Announce("Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_NEW_COMMAND_REPORT)
+	//Delayed announcements to keep the crew on their toes.
+	om_after(null, rand(300, 600), /proc/delayed_command_announcement, "Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_NEW_COMMAND_REPORT)
 
 /proc/lightsout(isEvent = 0, lightsoutAmount = 1,lightsoutRange = 25) //leave lightsoutAmount as 0 to break ALL lights
 	if(isEvent)
@@ -122,7 +51,7 @@ GLOBAL_VAR_INIT(hadevent, 0)
 
 		for(var/i=1,i<=lightsoutAmount,i++)
 			var/list/possibleEpicentres = list()
-			for(var/obj/effect/landmark/newEpicentre in GLOB.landmarks_list)
+			for(var/obj/effect/landmark/newEpicentre in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 				if(newEpicentre.name == "lightsout" && !(newEpicentre in epicentreList))
 					possibleEpicentres += newEpicentre
 			if(possibleEpicentres.len)
@@ -151,7 +80,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 */
 
 	//AI laws
-	for(var/mob/living/silicon/ai/M in GLOB.living_mob_list)
+	for(var/mob/living/silicon/ai/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(M.stat != 2 && M.see_in_dark != 0)
 			var/who2 = pick("ALIENS", "BEARS", "CLOWNS", "XENOS", "PETES", "BOMBS", "FETISHES", "WIZARDS", "SYNDICATE AGENTS", "CENTCOM OFFICERS", "SPACE PIRATES", "TRAITORS", "MONKEYS",  "BEES", "CARP", "CRABS", "EELS", "BANDITS", "LIGHTS")
 			var/what2 = pick("BOLTERS", "STAVES", "DICE", "SINGULARITIES", "TOOLBOXES", "NETTLES", "AIRLOCKS", "CLOTHES", "WEAPONS", "MEDKITS", "BOMBS", "CANISTERS", "CHAIRS", "BBQ GRILLS", "ID CARDS", "CAPTAINS")
@@ -170,7 +99,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 			var/allergysev = pick("deathly", "mildly", "severely", "contagiously")
 			var/crew
 			var/list/pos_crew = list()
-			for(var/mob/living/carbon/human/pos in GLOB.player_list)
+			for(var/mob/living/carbon/human/pos in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				pos_crew += pos.real_name
 			if(pos_crew.len)
 				crew = pick(pos_crew)

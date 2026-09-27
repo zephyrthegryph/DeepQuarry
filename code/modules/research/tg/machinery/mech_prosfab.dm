@@ -114,12 +114,14 @@
 		to_chat(user, span_warning("This disk seems to be corrupted!"))
 	else
 		to_chat(user, span_notice("Installing blueprint files for [D.company]..."))
-		if(do_after(user, 5 SECONDS, target = src))
-			var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
-			R.unavailable_to_build = 0
-			to_chat(user, span_notice("Installed [D.company] blueprints!"))
-			qdel(I)
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(limb_disk_done), list(user, D))
 	return TRUE
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/limb_disk_done(mob/user, obj/item/disk/limb/D)
+	var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
+	R.unavailable_to_build = 0
+	to_chat(user, span_notice("Installed [D.company] blueprints!"))
+	qdel(D)
 
 /// Old attackby: upload species modification files from a disk.
 /datum/interaction/machine_item/prosfab_species_disk
@@ -134,11 +136,13 @@
 		to_chat(user, span_warning("This disk seems to be corrupted!"))
 	else
 		to_chat(user, span_notice("Uploading modification files for [D.species]..."))
-		if(do_after(user, 5 SECONDS, target = src))
-			species_types |= D.species
-			to_chat(user, span_notice("Uploaded [D.species] files!"))
-			qdel(I)
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(species_disk_done), list(user, D))
 	return TRUE
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_done(mob/user, obj/item/disk/species/D)
+	species_types |= D.species
+	to_chat(user, span_notice("Uploaded [D.species] files!"))
+	qdel(D)
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/create_new_part(datum/design_techweb/dispensed_design)
 	if(istype(dispensed_design, /datum/design_techweb/prosfab/pros/torso))

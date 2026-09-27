@@ -20,7 +20,6 @@
 	var/list/verified_sale_items
 	/// Monotonic identity for the complete itemized ticket.
 	var/ticket_revision = 1
-	var/manipulating = 0
 
 	var/cash_stored = 0
 	var/obj/item/confirm_item
@@ -60,6 +59,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		/datum/interaction/machine_alt/cash_register_open_box_alt,
 		/datum/interaction/machine_hand/ungated/cash_register_use,
 		/datum/interaction/machine_verb/cash_register_open_box_verb,
+		/datum/interaction/machine_drag/cash_register_drop,
 	)
 	..()
 
@@ -297,11 +297,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/machinery/cash_register/MouseDrop_T(atom/dropping, mob/user)
-	if(!isobj(dropping))
-		return
+/// The old MouseDrop_T: an object dragged on is used on the register.
+/datum/interaction/machine_drag/cash_register_drop
+	id = "cash_register_drop"
+	name = "Put on the register"
+	held_type = /obj
+	effect = /obj/machinery/cash_register/proc/interaction_drop
+
+/obj/machinery/cash_register/proc/interaction_drop(mob/user, obj/dropping, datum/interaction/interaction)
 	if(Adjacent(dropping) && Adjacent(user) && !user.stat)
 		attackby(dropping, user)
+	return TRUE
 
 
 /obj/machinery/cash_register/proc/confirm(obj/item/I)
@@ -597,13 +603,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 
 /obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
-	if(manipulating) return
-	manipulating = 1
-	if(!use_tool(user, W, src, delay = 2 SECONDS, volume = 50, \
-			message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", \
-			message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor."))
-		manipulating = 0
-		return
+	if(om_busy(src)) return
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor.", receiver = src, on_done = PROC_REF(toggle_anchors_tool_done), done_args = list(user), claims = TRUE)
+	return TRUE
+
+/obj/machinery/cash_register/proc/toggle_anchors_tool_done(mob/user)
 	if(!anchored)
 		user.visible_message(span_notice("\The [user] has secured \the [src] to the floor."),
 							span_notice("You have secured \the [src] to the floor."))
@@ -611,7 +615,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		user.visible_message(span_warning("\The [user] has unsecured \the [src] from the floor."),
 							span_notice("You have unsecured \the [src] from the floor."))
 	anchored = !anchored
-	manipulating = 0
 	return
 
 /obj/machinery/cash_register/emag_act(remaining_charges, mob/user)

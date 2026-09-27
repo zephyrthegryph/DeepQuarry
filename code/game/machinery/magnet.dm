@@ -5,6 +5,7 @@
 // This was created for firing ranges, but I suppose this could have other applications - Doohl
 
 /obj/machinery/magnetic_module
+	step_on_power_change = TRUE
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "floor_magnet-f"
 	name = "Electromagnetic Generator"
@@ -115,10 +116,12 @@
 				on = !on
 
 				if(on)
-					spawn()
-						magnetic_process()
+					magnetic_process()
+	MACHINE_WAKE(src)
 
-/obj/machinery/magnetic_module/process()
+/// Clamps its settings and reconciles its power draw and icon: after every command, and on
+/// every power or break change.
+/obj/machinery/magnetic_module/machine_step()
 	if(stat & NOPOWER)
 		on = 0
 
@@ -145,9 +148,8 @@
 	else
 		update_use_power(USE_POWER_OFF)
 
-	// Overload conditions:
-
 	update_icon()
+	return PROCESS_KILL
 
 /obj/machinery/magnetic_module/proc/magnetic_process(called_back) // proc that actually does the pulling
 	if(called_back)
@@ -216,11 +218,13 @@
 	if(path) // check for default path
 		filter_path() // renders rpath
 
-/obj/machinery/magnetic_controller/process()
+/// Autolinks once at Initialize (its one frame) if Initialize found no magnets yet.
+/obj/machinery/magnetic_controller/machine_step()
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
 				LAZYADD(magnets, M)
+	return PROCESS_KILL
 
 /obj/machinery/magnetic_controller/declare_interactions(list/into)
 	into += list(
@@ -297,53 +301,47 @@
 			if("togglemoving")
 				moving = !moving
 				if(moving)
-					spawn() MagnetMove()
+					MagnetMove()
 
 	updateUsrDialog(usr)
 
 /obj/machinery/magnetic_controller/proc/MagnetMove()
 	if(looping) return
+	looping = 1
+	magnet_move_step()
 
-	while(moving && length(rpath) >= 1)
+/// One step of the magnet path: signal the next move, then wait by `speed`.
+/obj/machinery/magnetic_controller/proc/magnet_move_step()
+	if(!moving || length(rpath) < 1 || (stat & (BROKEN|NOPOWER)))
+		looping = 0
+		return
 
-		if(stat & (BROKEN|NOPOWER))
-			break
+	if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
+		pathpos = 1
 
-		looping = 1
+	var/nextmove = uppertext(LAZYACCESS(rpath, pathpos)) // makes it un-case-sensitive
 
-		// Prepare the radio signal
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-		signal.source = src
-		signal.frequency = frequency
-		signal.data["code"] = code
+	if(!(nextmove in list("N","S","E","W","C","R")))
+		// N, S, E, W are directional
+		// C is center
+		// R is random (in magnetic field's bounds)
+		looping = 0
+		return // stop if the character located is invalid
 
-		if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
-			pathpos = 1
+	// Prepare the radio signal
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
+	signal.source = src
+	signal.frequency = frequency
+	signal.data["code"] = code
+	signal.data["command"] = nextmove
 
-		var/nextmove = uppertext(LAZYACCESS(rpath, pathpos)) // makes it un-case-sensitive
+	pathpos++ // increase iterator
 
-		if(!(nextmove in list("N","S","E","W","C","R")))
-			// N, S, E, W are directional
-			// C is center
-			// R is random (in magnetic field's bounds)
-			qdel(signal)
-			break // break the loop if the character located is invalid
+	// Broadcast the signal
+	radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
-		signal.data["command"] = nextmove
-
-		pathpos++ // increase iterator
-
-		// Broadcast the signal
-		spawn()
-			radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
-
-		if(speed == 10)
-			sleep(1)
-		else
-			sleep(12-speed)
-
-	looping = 0
+	om_after(src, speed == 10 ? 1 : 12 - speed, PROC_REF(magnet_move_step))
 
 /obj/machinery/magnetic_controller/proc/filter_path()
 	// Generates the rpath variable using the path string, think of this as "string2list"
@@ -364,3 +362,8 @@
 	if(SSradio)
 		SSradio.remove_object(src, frequency)
 	. = ..()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/magnetic_module/step_start_condition()
+	return TRUE // its power draw

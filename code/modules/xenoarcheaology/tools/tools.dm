@@ -242,13 +242,14 @@
 
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/beacon_locator/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/beacon_locator/process()
+/// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
+/obj/item/beacon_locator/periodic_step()
+	if(!target_radio && !scan_ticks)
+		return PROCESS_KILL
 	if(target_radio)
 		set_dir(get_dir(src,target_radio))
 		switch(get_dist(src,target_radio))
@@ -265,24 +266,22 @@
 			icon_state = "pinonnull"
 			scan_ticks++
 			if(prob(scan_ticks * 10))
-				spawn(0)
-					set background = 1
-					if(datum_flags & DF_ISPROCESSING)
-						//scan radios in the world to try and find one
-						var/turf/T = get_turf(src)
-						var/cur_dist = 999
-						for(var/obj/item/radio/beacon/R in REGISTRY_MEMBERS(REGISTRY_BEACONS))
-							if(R.z == T.z && R.frequency == src.frequency)
-								var/check_dist = get_dist(T,R)
-								if(check_dist < cur_dist)
-									cur_dist = check_dist
-									target_radio = R
+				//scan radios in the world to try and find one
+				var/turf/T = get_turf(src)
+				var/cur_dist = 999
+				for(var/obj/item/radio/beacon/R in REGISTRY_MEMBERS(REGISTRY_BEACONS))
+					if(R.z == T.z && R.frequency == src.frequency)
+						var/check_dist = get_dist(T,R)
+						if(check_dist < cur_dist)
+							cur_dist = check_dist
+							target_radio = R
 
-						scan_ticks = 0
-						if(target_radio)
-							T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] happily.")
-						else
-							T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] sadly.")
+				scan_ticks = 0
+				if(target_radio)
+					PERIODIC_START(src, PERIODIC_SLOW)
+					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] happily.")
+				else
+					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] sadly.")
 		else
 			icon_state = "pinoff"
 
@@ -323,6 +322,7 @@
 		if("reset_tracking")
 			scan_ticks = 1
 			target_radio = null
+			PERIODIC_START(src, PERIODIC_SLOW)
 			return TRUE
 		if("setFrequency")
 			var/new_frequency = (text2num(params["freq"]))

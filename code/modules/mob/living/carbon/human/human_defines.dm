@@ -71,7 +71,7 @@
 
 	var/last_dam = -1	//Used for determining if we need to process all organs or just some or even none.
 
-	var/xylophone = 0 //For the spoooooooky xylophone cooldown
+	var/xylophone = 0 //For the spoooooooky xylophone cooldown: world.time it can play again
 
 	var/hand_blood_color
 

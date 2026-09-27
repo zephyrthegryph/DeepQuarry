@@ -57,11 +57,16 @@
 	//Timer and progress bar
 	if(!user.client && prey.has_status(EFFECT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
 		prey.status_at_least(EFFECT_STUNNED, min(prey.status_units(EFFECT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
-	if(!do_after(user, swallow_time, target = prey, hidden = TRUE))
-		return FALSE // Prey escaped (or user disabled) before timer expired.
+	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
+	var/started = om_do_after(user, swallow_time, prey, null, GLOBAL_PROC_REF(devour_timed_done), list(user, prey, pred, belly, message_range), hidden = TRUE)
+	return !istext(started)
 
-	// If we got this far, nom successful! Announce it and move the prey!
-	return devour_and_move_prey(user, prey, pred, belly, message_range)
+/// A timed devour completed: eat the prey and let go of any grab the user had on it.
+/proc/devour_timed_done(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, message_range)
+	for(var/obj/item/grab/G in GRABBED_BY(prey))
+		if(GRAB_ASSAILANT(G) == user)
+			qdel(G)
+	devour_and_move_prey(user, prey, pred, belly, message_range)
 
 /proc/devour_and_move_prey(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, message_range)
 	var/success_msg = generate_vore_success_message(user, prey, pred, belly)

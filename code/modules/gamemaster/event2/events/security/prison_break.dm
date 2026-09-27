@@ -56,7 +56,7 @@
 
 /datum/event2/meta/prison_break/brig/get_odds_from_trapped_mobs()
 	. = 0
-	for(var/mob/living/L in GLOB.player_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(is_mob_in_relevant_area(L))
 			// Don't count them if they're in security.
 			if(!(L in GLOB.metric.get_people_in_department(DEPARTMENT_SECURITY)))
@@ -91,7 +91,7 @@
 
 /datum/event2/meta/prison_break/xenobio/get_odds_from_trapped_mobs()
 	. = 0
-	for(var/mob/living/simple_mob/slime/xenobio/X in GLOB.living_mob_list)
+	for(var/mob/living/simple_mob/slime/xenobio/X in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(is_mob_in_relevant_area(X))
 			. += 5
 
@@ -107,7 +107,7 @@
 
 /datum/event2/meta/prison_break/virology/get_odds_from_trapped_mobs()
 	. = 0
-	for(var/mob/living/L in GLOB.player_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(is_mob_in_relevant_area(L))
 			// Don't count them if they're in medical.
 			if(!(L in GLOB.metric.get_people_in_department(DEPARTMENT_MEDICAL)))
@@ -200,7 +200,7 @@
 	// Nobody reads the requests consoles so lets use the radio as well.
 	GLOB.global_announcer.autosay(message, my_department, DEPARTMENT_ENGINEERING)
 
-	for(var/mob/living/silicon/ai/A in GLOB.player_list)
+	for(var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		to_chat(A, span_danger("Malicious program detected in the [area_display_name] lighting and airlock control systems by [my_department]. \
 		Disabling the main breaker in the APCs will protect the APC's room from being compromised."))
 
@@ -217,8 +217,7 @@
 
 /datum/event2/event/prison_break/start()
 	for(var/area/A in areas_to_break)
-		spawn(0) // So we don't block the ticker.
-			A.prison_break(TRUE, TRUE, !ignore_blast_doors) // Naming `open_blast_doors` causes mysterious runtimes.
+		A.prison_break(TRUE, TRUE, !ignore_blast_doors) // Naming `open_blast_doors` causes mysterious runtimes.
 
 // There's between 40 seconds and one minute before the whole station knows.
 // If there's a baddie engineer, they can choose to keep their early announcement to themselves and get a minute to exploit it.

@@ -104,7 +104,7 @@
 // Yes? Throw the grenade
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/do_special_attack(atom/A)
 	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(A, G.throw_range, G.throw_speed, src)
@@ -112,7 +112,7 @@
 		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /obj/item/grenade/shooter/energy/homing //This is a horrid idea
 	name = "homing grenade"
 	desc = "A horrifically dangerous rave in a can."

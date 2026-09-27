@@ -1,5 +1,5 @@
 ADMIN_VERB(change_human_appearance_admin, R_FUN, "Change Mob Appearance - Admin", "Allows you to change the mob appearance.", ADMIN_CATEGORY_EVENTS)
-	var/mob/living/carbon/human/target_human = tgui_input_list(user, "Select mob.", "Change Mob Appearance - Admin", GLOB.human_mob_list)
+	var/mob/living/carbon/human/target_human = tgui_input_list(user, "Select mob.", "Change Mob Appearance - Admin", REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if(!target_human)
 		return
 
@@ -8,7 +8,7 @@ ADMIN_VERB(change_human_appearance_admin, R_FUN, "Change Mob Appearance - Admin"
 	feedback_add_details("admin_verb","CHAA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", "Allows the mob to change its appearance.", ADMIN_CATEGORY_EVENTS)
-	var/mob/living/carbon/human/human_target = tgui_input_list(user, "Select mob.", "Change Mob Appearance - Self", GLOB.human_mob_list)
+	var/mob/living/carbon/human/human_target = tgui_input_list(user, "Select mob.", "Change Mob Appearance - Self", REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if(!human_target)
 		return
 
@@ -25,7 +25,7 @@ ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", 
 	feedback_add_details("admin_verb","CMAS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(editappear, R_FUN, "Edit Appearance", "Edit a human's apperance.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/mob/living/carbon/human/target_human = tgui_input_list(user, "Select mob.", "Edit Appearance", GLOB.human_mob_list)
+	var/mob/living/carbon/human/target_human = tgui_input_list(user, "Select mob.", "Edit Appearance", REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
 	if(!ishuman(target_human))
 		to_chat(user, span_warning("You can only do this to humans!"))

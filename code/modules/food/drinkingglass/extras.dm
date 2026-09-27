@@ -97,9 +97,9 @@
 		return
 
 	user.visible_message(span_infoplain(span_bold("[user]") + " starts sipping on [victim] with [src]!"), span_info("You start sipping on [victim] with [src]."))
-	if(!do_after(user, 3 SECONDS, target = victim))
-		return
+	om_do_after(user, 3 SECONDS, victim, src, PROC_REF(sipp_done), list(victim, user, reagent_type))
 
+/obj/item/glass_extra/straw/proc/sipp_done(mob/living/victim, mob/user, reagent_type)
 	user.visible_message(span_infoplain(span_bold("[user]") + " sips some of [victim] with [src]!"), span_info("You take a sip of [victim] with [src]. Yum!"))
 	if(victim.vore_taste)
 		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_taste]!"))

@@ -224,7 +224,7 @@
 	view.add_language(LANGUAGE_EAL)
 	view.set_stat(CONSCIOUS)
 	view.status_set(EFFECT_MUTED, 0)
-	GLOB.dead_mob_list -= view
+	registry_leave(REGISTRY_DEAD_MOBS, view)
 
 /obj/item/mmi/digital/update_occupied_state()
 	return

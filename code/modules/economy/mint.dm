@@ -31,21 +31,29 @@
 		return TRUE
 	else if(M.coin_type)
 		user.visible_message("[user] starts to feed a sheet of [M.default_type] into \the [src].")
-		while(M.amount > 0)
-			icon_state = "coinpress1"
-			if(do_after(user, 2 SECONDS, target = src))
-				M.amount--
-				while(coinsToProduce-- > 0)
-					new M.coin_type(user.loc)
-				src.visible_message(span_notice("\The [src] rattles and dispenses several [M.default_type] coins!"))
-				coinsToProduce = initial(coinsToProduce)
-				if(M.amount == 0)
-					icon_state = "coinpress0"
-					qdel(M)	//clean it up just to be sure
-					src.visible_message(span_notice("\The [src] has run out of usable materials."))
-					break
-			else
-				to_chat(user,span_warning("\The [src] is hand-operated and requires your full attention!"))
-				icon_state = "coinpress0"
-				break
+		press_next(user, M)
 	return TRUE
+
+/// One sheet every 2 seconds (a timed action each) until the stack runs out.
+/obj/machinery/mineral/mint/proc/press_next(mob/user, obj/item/stack/material/M)
+	if(M.amount <= 0)
+		return
+	icon_state = "coinpress1"
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(press_sheet), list(user, M), on_fail = PROC_REF(press_interrupted), fail_args = list(user))
+
+/obj/machinery/mineral/mint/proc/press_interrupted(mob/user)
+	to_chat(user,span_warning("\The [src] is hand-operated and requires your full attention!"))
+	icon_state = "coinpress0"
+
+/obj/machinery/mineral/mint/proc/press_sheet(mob/user, obj/item/stack/material/M)
+	M.amount--
+	while(coinsToProduce-- > 0)
+		new M.coin_type(user.loc)
+	src.visible_message(span_notice("\The [src] rattles and dispenses several [M.default_type] coins!"))
+	coinsToProduce = initial(coinsToProduce)
+	if(M.amount == 0)
+		icon_state = "coinpress0"
+		qdel(M)	//clean it up just to be sure
+		src.visible_message(span_notice("\The [src] has run out of usable materials."))
+		return
+	press_next(user, M)

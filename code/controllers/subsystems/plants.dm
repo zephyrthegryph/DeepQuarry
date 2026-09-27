@@ -1,12 +1,11 @@
-#define PLANT_TICK_TIME 75  // Number of ticks between the plant processor cycling.
-
+/// Seed and gene data. Spreading plants grow on their own lane (PERIODIC_PLANTS, 7.5 s, was this
+/// subsystem's loop), started by add_plant().
 SUBSYSTEM_DEF(plants)
 	name = "Plants"
 	dependencies = list(
 		/datum/controller/subsystem/mapping
 	)
-	priority = FIRE_PRIORITY_PLANTS
-	wait = PLANT_TICK_TIME
+	flags = SS_NO_FIRE
 
 	var/list/product_descs = list()					// Stores generated fruit descs.
 	var/list/seeds = list()							// All seed data stored here.
@@ -19,10 +18,8 @@ SUBSYSTEM_DEF(plants)
 	var/list/gene_masked_list = list()				// Stored gene masked list, rather than recreating it when needed.
 	var/list/plant_gene_datums = list()				// Stored datum versions of the gene masked list.
 
-	// To be clear, the only thing this processes are spreading plants
-	// Hydro trays and growing food normally just chill in SSobj
+	/// Spreading plants that are growing (on PERIODIC_PLANTS).
 	var/list/processing = list()
-	var/list/currentrun = list()
 
 /datum/controller/subsystem/plants/stat_entry(msg)
 	msg = "P:[length(processing)]|S:[length(seeds)]"
@@ -124,29 +121,14 @@ SUBSYSTEM_DEF(plants)
 		seed.set_trait(TRAIT_HIGHKPA_TOLERANCE,200)
 	return seed
 
-/datum/controller/subsystem/plants/fire(resumed = 0)
-	if(!resumed)
-		src.currentrun = processing.Copy()
-
-	// Caching
-	var/list/currentrun = src.currentrun
-
-	while(length(currentrun))
-		var/obj/effect/plant/P = currentrun[length(currentrun)]
-		--currentrun.len
-		if(!P || QDELETED(P))
-			continue
-		P.process()
-
-		if(MC_TICK_CHECK)
-			return
-
 /datum/controller/subsystem/plants/proc/add_plant(obj/effect/plant/plant)
 	if(!QDELETED(plant))
 		processing |= plant
+		PERIODIC_START(plant, PERIODIC_PLANTS)
 
 /datum/controller/subsystem/plants/proc/remove_plant(obj/effect/plant/plant)
 	processing -= plant
+	PERIODIC_STOP(plant)
 
 
 // Debug for testing seed genes.
@@ -158,4 +140,3 @@ ADMIN_VERB(show_plant_genes, R_DEBUG, "Show Plant Genes", "Prints the round's pl
 	for(var/mask in SSplants.gene_tag_masks)
 		to_chat(user, "[mask]: [SSplants.gene_tag_masks[mask]]")
 
-#undef PLANT_TICK_TIME

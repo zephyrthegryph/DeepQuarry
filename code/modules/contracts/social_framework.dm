@@ -118,7 +118,7 @@
 		return FALSE
 	var/list/eligible_players = list()
 	var/lowest_live_count
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((!player.client && !contract_unit_test_mode()) || player.stat == DEAD || department_for_mob(player) != department)
 			continue
 		var/datum/money_account/account = contract_account_for_mob(player)
@@ -164,7 +164,7 @@
 				seen["[account.account_number]"] = TRUE
 				accounts += account
 		return accounts
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!player.client || player.stat == DEAD)
 			continue
 		var/datum/money_account/account = contract_account_for_mob(player)

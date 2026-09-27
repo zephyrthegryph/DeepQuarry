@@ -30,12 +30,12 @@
 
 /obj/structure/girder/Destroy()
 	if(girder_material && girder_material.products_need_process())
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	. = ..()
 
-/obj/structure/girder/process()
+/obj/structure/girder/periodic_step()
 	if(!radiate())
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		return
 
 /obj/structure/girder/proc/radiate()
@@ -63,9 +63,9 @@
 	if(applies_material_colour)
 		color = girder_material.icon_colour
 	if(girder_material.products_need_process()) //Am I radioactive or some other? Process me!
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else if(datum_flags & DF_ISPROCESSING) //If I happened to be radioactive or s.o. previously, and am not now, stop processing.
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 /obj/structure/girder/get_material()
 	return girder_material
@@ -97,7 +97,7 @@
 		return 0
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] [attack_message] the [src]!"))
-	spawn(1) dismantle()
+	om_after(src, 1, PROC_REF(dismantle))
 	return 1
 
 /obj/structure/girder/bullet_act(obj/item/projectile/Proj)
@@ -156,10 +156,7 @@
 /obj/structure/girder/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
-		if(do_after(user, 3 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You slice apart the girder!"))
-			dismantle()
+		om_do_after(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
@@ -180,6 +177,11 @@
 
 	else
 		return ..()
+
+/obj/structure/girder/proc/attackby_timed_done(mob/user)
+	if(!src) return
+	to_chat(user, span_notice("You slice apart the girder!"))
+	dismantle()
 
 // Reaching 0 integrity dismantles the girder back into its material.
 /obj/structure/girder/atom_destruction(damage_flag)
@@ -208,8 +210,12 @@
 
 	to_chat(user, span_notice("You begin adding the plating..."))
 
-	if(!do_after(user, time_to_reinforce, target = src) || !S.use(amount_to_use))
-		return TRUE //once we've gotten this far don't call parent attackby()
+	om_do_after(user, time_to_reinforce, target = src, receiver = src, on_done = PROC_REF(construct_wall_timed_done), done_args = list(S, user, amount_to_use, M, wall_fake))
+	return TRUE
+
+/obj/structure/girder/proc/construct_wall_timed_done(obj/item/stack/material/S, mob/user, amount_to_use, datum/material/M, wall_fake)
+	if(!S.use(amount_to_use))
+		return
 
 	if(anchored)
 		to_chat(user, span_notice("You added the plating!"))
@@ -242,8 +248,12 @@
 		return 0
 
 	to_chat(user, span_notice("Now reinforcing..."))
-	if (!do_after(user, 4 SECONDS, target = src) || !S.use(1))
-		return 1 //don't call parent attackby() past this point
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(reinforce_with_material_timed_done), done_args = list(S, user, M))
+	return TRUE
+
+/obj/structure/girder/proc/reinforce_with_material_timed_done(obj/item/stack/material/S, mob/user, datum/material/M)
+	if(!S.use(1))
+		return
 	to_chat(user, span_notice("You added reinforcement!"))
 
 	reinf_material = M
@@ -292,13 +302,15 @@
 /obj/structure/girder/cult/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
-		if(do_after(user, 3 SECONDS * W.toolspeed, target = src))
-			to_chat(user, span_notice("You slice apart the girder!"))
-		dismantle()
+		om_do_after(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))
 		dismantle()
+
+/obj/structure/girder/cult/proc/attackby_timed_done2(mob/user)
+	to_chat(user, span_notice("You slice apart the girder!"))
+	dismantle()
 
 /obj/structure/girder/resin
 	name = "soft girder"

@@ -66,8 +66,10 @@
 
 		user.visible_message("[user] begins stuffing \the [src] into \the [over_object].", "You begin stuffing \the [src] into \the [over_object].")
 		Bumped(user)
-		if(do_after(user, 2 SECONDS, target = over_object))
-			user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
-			over_object.contain(src)
+		om_do_after(user, 2 SECONDS, target = over_object, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(over_object, user))
 	else
 		return ..()
+
+/mob/living/simple_mob/proc/MouseDrop_timed_done(obj/structure/stasis_cage/over_object, mob/user)
+	user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
+	over_object.contain(src)

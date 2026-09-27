@@ -1,4 +1,5 @@
 /obj/machinery/reagent_refinery
+	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/refinery_machines.dmi'
 	VAR_PROTECTED/default_max_vol = 120
@@ -27,9 +28,48 @@
 /obj/machinery/reagent_refinery/set_dir(newdir)
 	. = ..()
 	update_icon()
+	wake_refinery_line()
 
 /obj/machinery/reagent_refinery/on_reagent_change(changetype)
 	update_icon()
+	wake_refinery_line()
+
+// A refinery line runs on the machine pipeline only while something moves (roadmap S5): a machine
+// steps while its reagents change or it is otherwise busy (refinery_busy()), and sleeps once a
+// step moves nothing -- empty, blocked downstream, or waiting on input. Anything that could let
+// it move again wakes it and its neighbours: reagents arriving or leaving (on_reagent_change()),
+// wrenching, turning, a player's setting (interaction_ran()), power.
+
+/// Wakes this machine and the refinery machines next to it (a change here can unblock them).
+/obj/machinery/reagent_refinery/proc/wake_refinery_line()
+	MACHINE_WAKE(src)
+	for(var/direction in GLOB.cardinal)
+		var/obj/machinery/reagent_refinery/other = locate(/obj/machinery/reagent_refinery) in get_step(get_turf(src), direction)
+		if(other)
+			MACHINE_WAKE(other)
+
+/obj/machinery/reagent_refinery/interaction_ran(mob/actor, datum/interaction/interaction)
+	wake_refinery_line()
+
+/obj/machinery/reagent_refinery/machine_step()
+	if(!anchored)
+		return PROCESS_KILL
+	var/before = reagents ? reagents.total_volume : 0
+	refinery_step()
+	if(QDELETED(src))
+		return PROCESS_KILL
+	if(refinery_busy())
+		return
+	if(!reagents || reagents.total_volume <= 0 || reagents.total_volume == before)
+		return PROCESS_KILL
+
+/// One step of this machine's work (moving, filtering, reacting reagents).
+/obj/machinery/reagent_refinery/proc/refinery_step()
+	return
+
+/// TRUE while the machine has work even though its reagent volume didn't change this step.
+/obj/machinery/reagent_refinery/proc/refinery_busy()
+	return FALSE
 
 /// Splashes reagents all over the floor, called from destroy and dismantle.
 /obj/machinery/reagent_refinery/proc/reagent_flush()
@@ -77,6 +117,7 @@
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", "You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", "You hear a ratchet.")
 	update_neighbours()
 	update_icon()
+	wake_refinery_line()
 	return ITEM_INTERACT_SUCCESS
 
 /// Updates the icons of all neighbour machines, used when connecting.

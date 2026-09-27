@@ -198,7 +198,7 @@ impl WakeLanes {
 //
 // RateModel itself moved to `core::rate` (`rust_architecture.md` §4.10);
 // callers use `vg_core::rate::RateModel` directly (see `use` below and
-// `vg_heat::body`/`vg_ffi::reactor`'s own imports) -- no re-export shim.
+// `vg_ffi::reactor`'s own imports) -- no re-export shim.
 
 /// A rate model, as index plus generation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

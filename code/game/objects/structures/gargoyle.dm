@@ -3,7 +3,7 @@
 	desc = "A very lifelike carving."
 	density = TRUE
 	anchored = TRUE
-	var/datum/weakref/WR_gargoyle
+	var/WR_gargoyle
 	var/initial_sleep
 	var/initial_blind
 	var/initial_is_shifted
@@ -45,7 +45,7 @@
 		adjective = length(comp.adjective) > 0 ? comp.adjective : initial(adjective)
 		if(copytext_char(adjective, -1) != "s")
 			adjective += "s"
-	WR_gargoyle = WEAKREF(H)
+	WR_gargoyle = om_handle(H)
 
 	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
 		density = FALSE
@@ -131,11 +131,10 @@
 
 	can_revert = revert
 
-	START_PROCESSING(SSprocessing, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 /obj/structure/gargoyle/Destroy()
-	STOP_PROCESSING(SSprocessing, src)
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle?.resolve()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)
 		return ..()
 	if(can_revert)
@@ -145,8 +144,8 @@
 	WR_gargoyle = null
 	. = ..()
 
-/obj/structure/gargoyle/process()
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+/obj/structure/gargoyle/periodic_step()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)
 		qdel(src)
 		return
@@ -167,7 +166,7 @@
 	return examine_icon
 
 /obj/structure/gargoyle/get_description_info(list/additional_information)
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(gargoyle)
 		if(isspace(loc) || isopenspace(loc))
 			return
@@ -175,14 +174,14 @@
 
 /obj/structure/gargoyle/examine(mob/user)
 	. = ..()
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(gargoyle && stored_examine)
 		. += "The [identifier] seems to have a bit more to them..."
 		. += stored_examine
 	return
 
 /obj/structure/gargoyle/proc/unpetrify(deal_damage = TRUE, deleting = FALSE)
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)
 		return
 	var/datum/component/gargoyle/comp = gargoyle.GetComponent(/datum/component/gargoyle)
@@ -243,16 +242,14 @@
 	damage(damage)
 
 /obj/structure/gargoyle/attackby(obj/item/W as obj, mob/living/user as mob)
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(W.has_tool_quality(TOOL_WRENCH))
 		if(isspace(loc) || isopenspace(loc))
 			to_chat(user, span_warning("You can't anchor that here!"))
 			anchored = FALSE
 			return ..()
 		var/was_anchored = anchored
-		if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
-			to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
-			anchored = !anchored
+		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
 	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user)
@@ -271,6 +268,10 @@
 	else
 		return ..()
 
+/obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
+	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
+	anchored = !anchored
+
 /obj/structure/gargoyle/set_dir(new_dir)
 	. = ..()
 	if(. && tail_image)
@@ -279,7 +280,7 @@
 		add_overlay(tail_image)
 
 /obj/structure/gargoyle/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)
 		return
 	if(isitem(source) && gargoyle.vore_selected && gargoyle.trash_catching)

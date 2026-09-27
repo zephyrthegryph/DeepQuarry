@@ -1,4 +1,5 @@
 /obj/machinery/auto_cloner
+	step_on_power_change = TRUE
 	name = "mysterious pod"
 	desc = "It's full of a viscous liquid, but appears dark and silent."
 	icon = 'icons/obj/cryogenics.dmi'
@@ -41,7 +42,11 @@
 		/mob/living/simple_mob/animal/goat)
 
 //todo: how the hell is the asteroid permanently powered?
-/obj/machinery/auto_cloner/process()
+/// Grows its mob while powered; unpowered, the half-grown mob breaks down and, once gone, the
+/// cloner sleeps until power returns (a power change runs a step).
+/obj/machinery/auto_cloner/machine_step()
+	if(!last_process)
+		last_process = world.time
 	if(powered(power_channel))
 		if(!previous_power_state)
 			previous_power_state = 1
@@ -81,5 +86,8 @@
 
 		//cloned mob slowly breaks down
 		time_spent_spawning = max(time_spent_spawning + last_process - world.time, 0)
+		if(!time_spent_spawning)
+			last_process = 0
+			return PROCESS_KILL
 
 	last_process = world.time

@@ -39,7 +39,7 @@
 	QDEL_NULL(cell)
 	return ..()
 
-/obj/item/suit_cooling_unit/process()
+/obj/item/suit_cooling_unit/periodic_step()
 	if (!on || !cell)
 		return PROCESS_KILL
 
@@ -113,13 +113,13 @@
 		return
 
 	on = 1
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
 	on = 0
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	update_icon()
 
 /obj/item/suit_cooling_unit/attack_self(mob/user)

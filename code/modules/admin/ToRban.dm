@@ -21,7 +21,7 @@
 	return
 
 /proc/ToRban_update()
-	spawn(0)
+	spawn(0) // S7 keeps: world.Export() is a blocking external call
 		log_world("Downloading updated ToR data...")
 		var/http[] = world.Export("https://check.torproject.org/exit-addresses")
 

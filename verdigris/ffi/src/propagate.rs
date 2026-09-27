@@ -1,17 +1,20 @@
 //! Binds for the propagation users (`simulation.md` §8): radiation shielding
 //! and EMP falloff.
 //!
-//! The radiation insulation layer lives here as process state until M1b folds
-//! it into the frame model; every call is synchronous. Coordinates are DM's
-//! one-based turf coordinates.
-use std::sync::Mutex;
-
+//! The radiation insulation layer is a main-owned global of the world
+//! ([`RadiationLayer`]), not a process static; every call is synchronous.
+//! Coordinates are DM's one-based turf coordinates.
 use byondapi::prelude::*;
-use eyre::{Result, bail};
+use eyre::{Result, bail, eyre};
 use vg_core::grid::GridDims;
 use vg_core::propagate::{RadiationField, emp};
 
-static FIELD: Mutex<Option<RadiationField>> = Mutex::new(None);
+use crate::world::with_world;
+
+/// The radiation transmission field, sized on the first
+/// `radiation_set_cells` (registered in `world::register`).
+#[derive(Default)]
+pub struct RadiationLayer(pub Option<RadiationField>);
 
 fn number(value: &ByondValue) -> Result<f32> {
     Ok(value.get_number()?)
@@ -43,22 +46,23 @@ fn radiation_set_cells(
         bail!("invalid radiation grid plane");
     };
     let values = numbers(&cells)?;
-    let mut guard = FIELD
-        .lock()
-        .map_err(|_| eyre::eyre!("radiation field poisoned"))?;
-    let field = match guard.as_mut() {
-        Some(field) if field.dims() == dims => field,
-        _ => guard.insert(RadiationField::new(dims)),
-    };
-    for cell in values.chunks_exact(4) {
-        let (x, y, z) = (cell[0] as u32, cell[1] as u32, cell[2] as u32);
-        if x == 0 || y == 0 || z == 0 {
-            continue;
+    with_world(|w| {
+        let layer = w.global_mut::<RadiationLayer>().map_err(|e| eyre!("{e}"))?;
+        let field = match layer.0.as_mut() {
+            Some(field) if field.dims() == dims => field,
+            _ => layer.0.insert(RadiationField::new(dims)),
+        };
+        for cell in values.chunks_exact(4) {
+            let (x, y, z) = (cell[0] as u32, cell[1] as u32, cell[2] as u32);
+            if x == 0 || y == 0 || z == 0 {
+                continue;
+            }
+            if let Some(index) = dims.index(x - 1, y - 1, z - 1) {
+                field.set_transmission(index, cell[3]);
+            }
         }
-        if let Some(index) = dims.index(x - 1, y - 1, z - 1) {
-            field.set_transmission(index, cell[3]);
-        }
-    }
+        Ok(())
+    })?;
     Ok(ByondValue::null())
 }
 
@@ -86,13 +90,13 @@ fn radiation_pulse(
             (c(t[0]), c(t[1]), c(t[2]))
         })
         .collect();
-    let guard = FIELD
-        .lock()
-        .map_err(|_| eyre::eyre!("radiation field poisoned"))?;
-    let result = match guard.as_ref() {
-        Some(field) => field.pulse(source, range, threshold, &targets),
-        None => bail!("radiation field used before radiation_set_cells"),
-    };
+    let result = with_world(|w| {
+        let layer = w.global::<RadiationLayer>().map_err(|e| eyre!("{e}"))?;
+        match layer.0.as_ref() {
+            Some(field) => Ok(field.pulse(source, range, threshold, &targets)),
+            None => bail!("radiation field used before radiation_set_cells"),
+        }
+    })?;
     let values: Vec<ByondValue> = result.into_iter().map(ByondValue::from).collect();
     let list = ByondValue::new_list()?;
     list.write_list(&values)?;

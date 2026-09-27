@@ -1,5 +1,5 @@
 //allows right clicking mobs to send an admin PM to their client, forwards the selected mob's client to cmd_admin_pm
-ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_pm_context, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM Mob", mob/M in GLOB.mob_list)
+ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_pm_context, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM Mob", mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!ismob(M) || !M.client)
 		return
 	user.cmd_admin_pm(M.client, null)
@@ -140,7 +140,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 			//AdminPM popup for ApocStation and anybody else who wants to use it. Set it with POPUP_ADMIN_PM in config.txt ~Carn
 			if(CONFIG_GET(flag/popup_admin_pm))
-				spawn()	//so we don't hold the caller proc up
+				spawn()	//so we don't hold the caller proc up // S7 keeps: admin PM popup: tgui_input_text() sleeps (admin verb, prompts)
 					var/sender = src
 					var/sendername = key
 					var/reply = tgui_input_text(recipient, msg,"Admin PM from-[sendername]", "", multiline = TRUE)	//show message and await a reply

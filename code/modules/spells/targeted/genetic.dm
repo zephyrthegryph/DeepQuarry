@@ -20,11 +20,7 @@ code\game\dna\genes\goon_powers.dm
 			target.add_mutation(x)
 		target.disabilities |= disabilities
 		target.update_mutations()	//update target's mutation overlays
-		spawn(duration)
-			for(var/x in mutations)
-				target.remove_mutation(x)
-			target.disabilities &= ~disabilities
-			target.update_mutations()
+		om_after(target, duration, TYPE_PROC_REF(/mob/living, genetic_spell_wears_off), mutations, disabilities)
 	return
 
 /datum/spell/targeted/genetic/blind
@@ -66,3 +62,10 @@ code\game\dna\genes\goon_powers.dm
 	cooldown_min = 300 //25 deciseconds reduction per rank
 
 	hud_state = "wiz_hulk"
+
+/// A genetic spell's mutations and disabilities wear off.
+/mob/living/proc/genetic_spell_wears_off(list/mutations, disabilities)
+	for(var/x in mutations)
+		remove_mutation(x)
+	src.disabilities &= ~disabilities
+	update_mutations()

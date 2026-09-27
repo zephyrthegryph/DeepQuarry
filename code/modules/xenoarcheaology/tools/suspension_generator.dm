@@ -17,7 +17,10 @@
 	cell = new /obj/item/cell/high(src)
 	AddElement(/datum/element/rotatable)
 
-/obj/machinery/suspension_gen/process()
+/// Holds its field (draining its cell) while active; off, it sleeps until activate().
+/obj/machinery/suspension_gen/machine_step()
+	if(!suspension_field)
+		return PROCESS_KILL
 	if(suspension_field)
 		cell.charge -= power_use
 
@@ -189,6 +192,7 @@
 			anom.stats = new /datum/anomaly_stats(anom)
 
 	suspension_field = new(T)
+	MACHINE_WAKE(src)
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)

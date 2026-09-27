@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(active_radio_jammers)
 
 /proc/is_jammed(obj/radio)
 	var/turf/Tr = get_turf(radio)
@@ -9,7 +8,7 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 	if(our_area.no_comms)
 		return TRUE
 
-	for(var/obj/item/radio_jammer/J as anything in GLOB.active_radio_jammers)
+	for(var/obj/item/radio_jammer/J as anything in REGISTRY_MEMBERS(REGISTRY_RADIO_JAMMERS))
 		var/turf/Tj = get_turf(J)
 
 		if(J.on && Tj && Tj.z == Tr.z) //If we're on the same Z, it's worth checking.
@@ -47,23 +46,25 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 /obj/item/radio_jammer/get_cell()
 	return power_source
 
+REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
+
 /obj/item/radio_jammer/proc/turn_off(mob/user)
 	if(user)
 		to_chat(user,span_warning("\The [src] deactivates."))
-	STOP_PROCESSING(SSobj, src)
-	GLOB.active_radio_jammers -= src
+	PERIODIC_STOP(src)
+	registry_leave(REGISTRY_RADIO_JAMMERS, src)
 	on = FALSE
 	update_icon()
 
 /obj/item/radio_jammer/proc/turn_on(mob/user)
 	if(user)
 		to_chat(user,span_notice("\The [src] is now active."))
-	START_PROCESSING(SSobj, src)
-	GLOB.active_radio_jammers += src
+	PERIODIC_START(src, PERIODIC_SLOW)
+	registry_join(REGISTRY_RADIO_JAMMERS, src)
 	on = TRUE
 	update_icon()
 
-/obj/item/radio_jammer/process()
+/obj/item/radio_jammer/periodic_step()
 	if(!power_source || !power_source.check_charge(tick_cost))
 		var/mob/living/notify
 		if(isliving(loc))

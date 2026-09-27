@@ -96,7 +96,6 @@
 
 	var/datum/effect/effect/system/spark_spread/spark_system	//the spark system, used for generating... sparks?
 
-	var/wrenching = FALSE
 	var/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
 	var/timeout = TURRET_POPCOOLDOWN // When a turret pops up, then finds nothing to shoot at, this number decrements until 0, when it pops down.
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
@@ -455,7 +454,7 @@
 		return TRUE
 	if(isLocked(ui.user))
 		return TRUE
-	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
 
 	switch(action)
@@ -484,7 +483,7 @@
 				check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
-	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
 		stat &= ~NOPOWER
 		update_icon()
@@ -533,21 +532,23 @@
 	//If the turret is destroyed, you can remove it with a crowbar to
 	//try and salvage its components
 	to_chat(user, span_notice("You begin prying the metal coverings off."))
-	if(do_after(user, 2 SECONDS, target = src))
-		if(can_salvage && prob(70))
-			to_chat(user, span_notice("You remove the turret and salvage some components."))
-			if(installation)
-				var/obj/item/gun/energy/Gun = new installation(loc)
-				Gun.power_supply.charge = gun_charge
-				Gun.update_icon()
-			if(prob(50))
-				new /obj/item/stack/material/steel(loc, rand(1,4))
-			if(prob(50))
-				new /obj/item/assembly/prox_sensor(loc)
-		else
-			to_chat(user, span_notice("You remove the turret but did not manage to salvage anything."))
-		qdel(src) // qdel
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/porta_turret/proc/crowbar_act_timed_done(mob/user)
+	if(can_salvage && prob(70))
+		to_chat(user, span_notice("You remove the turret and salvage some components."))
+		if(installation)
+			var/obj/item/gun/energy/Gun = new installation(loc)
+			Gun.power_supply.charge = gun_charge
+			Gun.update_icon()
+		if(prob(50))
+			new /obj/item/stack/material/steel(loc, rand(1,4))
+		if(prob(50))
+			new /obj/item/assembly/prox_sensor(loc)
+	else
+		to_chat(user, span_notice("You remove the turret but did not manage to salvage anything."))
+	qdel(src) // qdel
 
 /obj/machinery/porta_turret/wrench_act(mob/user, obj/item/tool)
 	if(stat & BROKEN)
@@ -555,30 +556,28 @@
 	if(enabled || raised)
 		to_chat(user, span_warning("You cannot unsecure an active turret!"))
 		return ITEM_INTERACT_SUCCESS
-	if(wrenching)
+	if(om_busy(src)) // a wrenching job claims the turret
 		to_chat(user, span_warning("Someone is already [anchored ? "un" : ""]securing the turret!"))
 		return ITEM_INTERACT_SUCCESS
 	if(!anchored && isinspace())
 		to_chat(user, span_warning("Cannot secure turrets in space!"))
 		return ITEM_INTERACT_SUCCESS
 
-	wrenching = TRUE
 	//This code handles moving the turret around. After all, it's a portable turret!
-	if(use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, \
-			message_self = "You begin [anchored ? "un" : ""]securing the turret.", \
-			message_others = "[user] begins [anchored ? "un" : ""]securing the turret."))
-		if(!anchored)
-			playsound(src, tool.usesound, 100, 1)
-			anchored = TRUE
-			update_icon()
-			to_chat(user, span_notice("You secure the exterior bolts on the turret."))
-		else
-			playsound(src, tool.usesound, 100, 1)
-			anchored = FALSE
-			to_chat(user, span_notice("You unsecure the exterior bolts on the turret."))
-			update_icon()
-	wrenching = FALSE
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, message_self = "You begin [anchored ? "un" : ""]securing the turret.", message_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/porta_turret/proc/wrench_act_tool_done(mob/user, obj/item/tool)
+	if(!anchored)
+		playsound(src, tool.usesound, 100, 1)
+		anchored = TRUE
+		update_icon()
+		to_chat(user, span_notice("You secure the exterior bolts on the turret."))
+	else
+		playsound(src, tool.usesound, 100, 1)
+		anchored = FALSE
+		to_chat(user, span_notice("You unsecure the exterior bolts on the turret."))
+		update_icon()
 
 /obj/machinery/porta_turret/proc/attempt_retaliate(incoming_damage)
 	if(QDELETED(src) || attacked || !enabled || emagged || incoming_damage < 1) //if the force of impact dealt at least 1 damage, the turret gets pissed off
@@ -674,7 +673,7 @@
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
-	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
 	. = ..()
@@ -694,18 +693,18 @@
 	update_icon()
 	set_processing_speed(FALSE) // Drop back to slow machine processing
 
-/obj/machinery/porta_turret/process()
+/obj/machinery/porta_turret/machine_step()
 	//the main machinery process
 	if(stat & (NOPOWER|BROKEN))
 		//if the turret has no power or is broken, make the turret pop down if it hasn't already
 		popDown()
-		sleep_until_keys(list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED))
+		sleep_until_keys()
 		return PROCESS_KILL
 
 	if(!enabled)
 		//if the turret is off, make it pop down
 		popDown()
-		sleep_until_keys(list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED))
+		sleep_until_keys()
 		return PROCESS_KILL
 
 	var/shot_targets = FALSE
@@ -730,16 +729,10 @@
 	slow_process(shot_targets)
 
 /obj/machinery/porta_turret/proc/reactive_mob_chunk_keys()
-	var/list/keys = list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED)
-	var/range = isnum(world.view) ? world.view : 7
-	var/min_x = max(1, x - range)
-	var/max_x = min(world.maxx, x + range)
-	var/min_y = max(1, y - range)
-	var/max_y = min(world.maxy, y + range)
-	for(var/chunk_x in MOB_CHUNK_COORD(min_x) to MOB_CHUNK_COORD(max_x))
-		for(var/chunk_y in MOB_CHUNK_COORD(min_y) to MOB_CHUNK_COORD(max_y))
-			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), REACT_CHUNK_ANY_MOB)
-	return keys
+	var/list/watches = list()
+	for(var/datum/mob_chunk/C as anything in mob_chunks_around(get_turf(src), isnum(world.view) ? world.view : 7))
+		watches += list(C, CHANGE_CHUNK_ANY_MOB)
+	return watches
 
 /obj/machinery/porta_turret/proc/slow_process(shot_targets)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -764,13 +757,13 @@
 
 	// high gear
 	if(speed_process)
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 		return
 
 	// low gear
-	STOP_PROCESSING(SSfastprocess, src)
-	START_MACHINE_PROCESSING(src)
+	PERIODIC_STOP(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/porta_turret/proc/assess_and_assign(mob/living/L, list/targets, list/secondarytargets)
 	switch(assess_living(L))
@@ -1213,31 +1206,34 @@
 /obj/machinery/porta_turret_construct/welder_act(mob/user, obj/item/tool)
 	switch(build_step)
 		if(2)
-			if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50))
-				if(!src)
-					return ITEM_INTERACT_SUCCESS
-				build_step = 1
-				to_chat(user, "You remove the turret's interior metal armor.")
-				new /obj/item/stack/material/steel(loc, 2)
+			use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 		if(7)
-			if(use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50))
-				if(!src)
-					return ITEM_INTERACT_SUCCESS
-				build_step = 8
-				to_chat(user, span_notice("You weld the turret's armor down."))
-
-				//The final step: create a full turret
-				var/obj/machinery/porta_turret/Turret = new target_type(loc)
-				Turret.name = finish_name
-				Turret.installation = installation
-				Turret.gun_charge = gun_charge
-				Turret.enabled = FALSE
-				Turret.setup()
-
-				qdel(src) // qdel
+			use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 	return NONE
+
+/obj/machinery/porta_turret_construct/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_SUCCESS
+	build_step = 1
+	to_chat(user, "You remove the turret's interior metal armor.")
+	new /obj/item/stack/material/steel(loc, 2)
+/obj/machinery/porta_turret_construct/proc/welder_act_tool_done2(mob/user)
+	if(!src)
+		return ITEM_INTERACT_SUCCESS
+	build_step = 8
+	to_chat(user, span_notice("You weld the turret's armor down."))
+
+	//The final step: create a full turret
+	var/obj/machinery/porta_turret/Turret = new target_type(loc)
+	Turret.name = finish_name
+	Turret.installation = installation
+	Turret.gun_charge = gun_charge
+	Turret.enabled = FALSE
+	Turret.setup()
+
+	qdel(src) // qdel
 
 /obj/machinery/porta_turret_construct/screwdriver_act(mob/user, obj/item/tool)
 	switch(build_step)
@@ -1285,7 +1281,7 @@
 	icon = 'icons/obj/turrets.dmi'
 
 /// Audit: an enabled, powered turret must not sleep with a target in view.
-/obj/machinery/porta_turret/react_sleep_violation()
+/obj/machinery/porta_turret/om_sleep_violation()
 	if(!asleep_on_keys() || (stat & (NOPOWER|BROKEN)) || !enabled || speed_process)
 		return null
 	for(var/mob/living/L in mobs_in_view(world.view, src))
@@ -1361,28 +1357,36 @@
 /obj/machinery/porta_turret/rcd/inoperable()
 	return (stat & (BROKEN|EMPED))
 
-/obj/machinery/porta_turret/rcd/process()
+/// Like the base turret, it sleeps on its settings key while broken or off and on the mob chunks
+/// around it while nothing is in view.
+/obj/machinery/porta_turret/rcd/machine_step()
 	if(stat & BROKEN)
 		popDown()
-		return
+		sleep_until_keys()
+		return PROCESS_KILL
 
 	if(!enabled)
 		popDown()
-		return
+		sleep_until_keys()
+		return PROCESS_KILL
 
 	var/list/targets = list()			//list of primary targets
 	var/list/secondarytargets = list()	//targets that are least important
 
+	var/list/nearby_mobs = mobs_in_xray_view(world.view, src)
+	if(!length(nearby_mobs))
+		popDown()
+		sleep_until_keys(reactive_mob_chunk_keys())
+		return PROCESS_KILL
 
-	for(var/mob/M in mobs_in_xray_view(world.view, src))
+	for(var/mob/M in nearby_mobs)
 		assess_and_assign(M, targets, secondarytargets)
 
 	if(!tryToShootAt(targets))
 		if(!tryToShootAt(secondarytargets)) // if no valid targets, go for secondary targets
 			timeout--
 			if(timeout <= 0)
-				spawn()
-					popDown() // no valid targets, close the cover
+				popDown() // no valid targets, close the cover
 
 /obj/machinery/porta_turret/rcd/update_icon()
 	if(stat & BROKEN) // Turret is dead.
@@ -1409,3 +1413,11 @@
 	spark_system.start()
 	qdel(src)
 
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/porta_turret/arm_wakes()
+	..()
+	sleep_until_keys()
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/porta_turret/step_start_condition()
+	return enabled && !(stat & (NOPOWER|BROKEN))

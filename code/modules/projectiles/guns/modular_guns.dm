@@ -140,14 +140,7 @@
 			to_chat(user, span_notice("[src] already has a power cell."))
 		else
 			user.visible_message("[user] is reloading [src].", span_notice("You start to insert [P] into [src]."))
-			if(do_after(user, 1 SECOND, target = src))
-				user.remove_from_mob(P)
-				power_supply = P
-				P.loc = src
-				user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
-				playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
-				update_icon()
-				update_held_icon()
+			om_do_after(user, 1 SECOND, src, src, PROC_REF(cell_inserted), list(user, P))
 		return
 
 /obj/item/gun/energy/modular/pistol

@@ -12,7 +12,7 @@
 #define LAST_BUILDMODE		10
 
 
-/proc/togglebuildmode(mob/M as mob in GLOB.player_list)
+/proc/togglebuildmode(mob/M as mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	set name = "Toggle Build Mode"
 	set category = "Special Verbs"
 	if(M.client)
@@ -293,7 +293,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					if("number")
 						master.buildmode.valueholder = tgui_input_number(usr,"Enter variable value:" ,"Value", 123)
 					if("mob-reference")
-						master.buildmode.valueholder = tgui_input_list(usr,"Enter variable value:", "Value", GLOB.mob_list)
+						master.buildmode.valueholder = tgui_input_list(usr,"Enter variable value:", "Value", REGISTRY_MEMBERS(REGISTRY_MOBS))
 					if("obj-reference")
 						master.buildmode.valueholder = tgui_input_list(usr,"Enter variable value:", "Value", world)
 					if("turf-reference")
@@ -760,7 +760,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			var/z = c1.z //Eh
 
 			var/i = 0
-			for(var/mob/living/L in GLOB.living_mob_list)
+			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 				if(L.z != z || L.client)
 					continue
 				if(L.x >= low_x && L.x <= hi_x && L.y >= low_y && L.y <= hi_y)

@@ -35,16 +35,15 @@
 
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)
 	wearer = user
+	PERIODIC_START(src, PERIODIC_SLOW) // regenerates and keeps its wearer's upkeep while worn
 	for(var/obj/spellbutton/spell in spells)
 		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
 	..()
@@ -77,7 +76,11 @@
 	energy = min(energy + amount, max_energy)
 	return 1
 
-/obj/item/technomancer_core/process()
+/// Regenerates energy and charges upkeep every 2 s while worn (equipped() starts it); unworn, it sleeps.
+/obj/item/technomancer_core/periodic_step()
+	if(!wearer)
+		canremove = TRUE
+		return PROCESS_KILL
 	var/old_energy = energy
 	regenerate()
 	pay_dues()
@@ -116,10 +119,7 @@
 			var/mob/living/L = A
 			if(L.stat == DEAD)
 				LAZYREMOVE(summoned_mobs, L)
-				spawn(1)
-					L.visible_message(span_infoplain(span_bold("\The [L]") + " begins to fade away..."))
-					animate(L, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
-					QDEL_IN(L, 30)
+				om_after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
@@ -361,3 +361,9 @@
 	instability_modifier = 0.3
 	spell_power_modifier = 0.7
 	universal = TRUE
+
+/// A dead summon fades into nothingness.
+/mob/living/proc/fade_away()
+	visible_message(span_infoplain(span_bold("\The [src]") + " begins to fade away..."))
+	animate(src, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
+	QDEL_IN(src, 30)

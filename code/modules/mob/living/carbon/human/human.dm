@@ -53,7 +53,6 @@
 
 	nutrition = rand(200,400)
 
-	GLOB.human_mob_list |= src
 
 	. = ..()
 
@@ -76,10 +75,15 @@
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 	var/image/img = image('icons/mob/animal.dmi', src, animal)
 	img.override = TRUE
-	add_alt_appearance("animals", img, displayTo = GLOB.alt_farmanimals)
+	add_alt_appearance("animals", img, displayTo = REGISTRY_MEMBERS(REGISTRY_ALT_FARMANIMALS))
+
+REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_HUMANS)
+
+REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
+
+REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /mob/living/carbon/human/Destroy()
-	GLOB.human_mob_list -= src
 	// Each organ's Destroy() removes itself (and qdels its children/internals)
 	// out of src.organs, so iterating the live list skips entries — skipped
 	// organs never run Destroy() and their lingering `owner` ref pins this mob
@@ -92,7 +96,6 @@
 			qdel(o)
 	if(nif)
 		QDEL_NULL(nif)
-	GLOB.alt_farmanimals -= src
 	LAZYCLEARLIST(worn_clothing)
 
 	if(vessel)
@@ -443,15 +446,14 @@
 										R.fields["criminal"] = setcriminal
 										modified = 1
 
-										spawn()
-											BITSET(hud_updateflag, WANTED_HUD)
-											if(ishuman(usr))
-												var/mob/living/carbon/human/U = usr
-												var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
-												hud_system.hud_list(U)
-											if(istype(usr,/mob/living/silicon/robot))
-												var/mob/living/silicon/robot/U = usr
-												U.refresh_hud()
+										BITSET(hud_updateflag, WANTED_HUD)
+										if(ishuman(usr))
+											var/mob/living/carbon/human/U = usr
+											var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
+											hud_system.hud_list(U)
+										if(istype(usr,/mob/living/silicon/robot))
+											var/mob/living/silicon/robot/U = usr
+											U.refresh_hud()
 
 			if(!modified)
 				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
@@ -564,13 +566,12 @@
 									if(GLOB.PDA_Manifest.len)
 										GLOB.PDA_Manifest.Cut()
 
-									spawn()
-										if(ishuman(usr))
-											var/mob/living/carbon/human/U = usr
-											U.refresh_hud()
-										if(istype(usr,/mob/living/silicon/robot))
-											var/mob/living/silicon/robot/U = usr
-											U.refresh_hud()
+									if(ishuman(usr))
+										var/mob/living/carbon/human/U = usr
+										U.refresh_hud()
+									if(istype(usr,/mob/living/silicon/robot))
+										var/mob/living/silicon/robot/U = usr
+										U.refresh_hud()
 
 			if(!modified)
 				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
@@ -876,13 +877,11 @@
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(!src.xylophone)
+	if(world.time >= xylophone)
 		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
 		var/song = pick('sound/effects/xylophone1.ogg','sound/effects/xylophone2.ogg','sound/effects/xylophone3.ogg')
 		playsound(src, song, 50, 1, -1)
-		xylophone = 1
-		spawn(1200)
-			xylophone=0
+		xylophone = world.time + 2 MINUTES
 	return
 
 /mob/living/proc/check_has_mouth()
@@ -978,7 +977,7 @@
 		remove_verb(src, /mob/living/carbon/human/proc/remotesay)
 		return
 	var/list/creatures = list()
-	for(var/mob/living/carbon/h in GLOB.mob_list)
+	for(var/mob/living/carbon/h in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(h == src) // Don't target self
 			continue
 		creatures += h
@@ -993,7 +992,7 @@
 		target.show_message(span_filter_say("[span_blue("You hear a voice that seems to echo around the room: [say]")]"))
 	src.show_message(span_filter_say("[span_blue("You project your mind into [target.real_name]: [say]")]"))
 	log_talk("(TPATH to [key_name(target)]) [say]", LOG_SAY)
-	for(var/mob/observer/dead/G in GLOB.mob_list)
+	for(var/mob/observer/dead/G in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		G.show_message(span_filter_say(span_italics("Telepathic message from " + span_bold("[src]") + " to " + span_bold("[target]") + ": [say]")))
 
 /mob/living/carbon/human/proc/remoteobserve()
@@ -1010,7 +1009,7 @@
 	var/list/mob/creatures = list()
 
 	var/turf/current = get_turf(src) // Needs to be on station or same z to perform telepathy
-	for(var/mob/living/carbon/h in GLOB.mob_list)
+	for(var/mob/living/carbon/h in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		var/turf/temp_turf = get_turf(h)
 		if(!istype(temp_turf,/turf/)) // Nullcheck fix
 			continue
@@ -1062,7 +1061,7 @@
 
 	if(!client || !key) //Don't boot out anyone already in the mob.
 		// A loose brain that hosts this body's character goes home.
-		for (var/obj/item/organ/internal/brain/H in GLOB.all_brain_organs)
+		for (var/obj/item/organ/internal/brain/H in REGISTRY_MEMBERS(REGISTRY_BRAIN_ORGANS))
 			var/datum/component/mind_host/host = get_mind_host(H)
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == identity)
@@ -1238,11 +1237,14 @@
 		return
 
 	to_chat(usr, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
-	if(do_after(usr, 6 SECONDS, src))
-		var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
-		to_chat(usr,message)
-	else
-		to_chat(usr, span_warning("You failed to check the pulse. Try again."))
+	om_do_after(usr, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(check_pulse_human_done), done_args = list(self, usr), on_fail = PROC_REF(check_pulse_human_failed), fail_args = list(self, usr))
+
+/mob/living/carbon/human/proc/check_pulse_human_done(self, mob/usr_mob)
+	var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
+	to_chat(usr_mob,message)
+
+/mob/living/carbon/human/proc/check_pulse_human_failed(self, mob/usr_mob)
+	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
 /mob/living/carbon/human/proc/set_species(new_species)
 
@@ -1581,8 +1583,10 @@
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	if(!do_after(U, 3 SECONDS, target = src))
-		return
+	om_do_after(U, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(relocate_human_done), done_args = list(S, U, self, current_limb))
+	return TRUE
+
+/mob/living/carbon/human/proc/relocate_human_done(mob/S, mob/U, self, obj/item/organ/external/current_limb)
 	if(!current_limb || !S || !U)
 		return
 

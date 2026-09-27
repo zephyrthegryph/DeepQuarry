@@ -68,7 +68,7 @@
 		if(!src.locked)
 			if(src.active==1)
 				src.active = 0
-				STOP_MACHINE_PROCESSING(src)
+				MACHINE_SLEEP(src)
 				balloon_alert_visible("turned off")
 				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
@@ -76,7 +76,7 @@
 			else
 				src.active = 1
 				material_last_charge = world.time
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 				balloon_alert_visible("turned on")
 				src.shot_number = 0
 				src.fire_delay = get_initial_fire_delay()
@@ -90,7 +90,7 @@
 		to_chat(user, span_warning("\The [src] needs to be firmly secured to the floor first."))
 		return 1
 
-/obj/machinery/power/emitter/process()
+/obj/machinery/power/emitter/machine_step()
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(src.state != 2 || (!powernet && active_power_usage))
@@ -182,24 +182,25 @@
 			if(0)
 				to_chat(user, span_warning("\The [src] needs to be wrenched to the floor."))
 			if(1)
-				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-						message_self = "You start to weld [src] to the floor.", message_others = "[user.name] starts to weld [src] to the floor."))
-					if(!src)
-						return
-					state = 2
-					to_chat(user, "You weld [src] to the floor.")
-					connect_to_network()
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src] to the floor.", message_others = "[user.name] starts to weld [src] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
 			if(2)
-				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-						message_self = "You start to cut [src] free from the floor.", message_others = "[user.name] starts to cut [src] free from the floor."))
-					if(!src)
-						return
-					state = 1
-					to_chat(user, "You cut [src] free from the floor.")
-					disconnect_from_network()
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to cut [src] free from the floor.", message_others = "[user.name] starts to cut [src] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/emitter/proc/construction_tool_act_tool_done(mob/user)
+	if(!src)
+		return
+	state = 2
+	to_chat(user, "You weld [src] to the floor.")
+	connect_to_network()
+/obj/machinery/power/emitter/proc/construction_tool_act_tool_done2(mob/user)
+	if(!src)
+		return
+	state = 1
+	to_chat(user, "You cut [src] free from the floor.")
+	disconnect_from_network()
 
 /// Old attackby: repairing with steel sheets. `held_type` shows any material stack; `offered_when`
 /// restricts to steel, so a non-steel stack falls through (to the id/pda and scanner branches, then ..()).
@@ -225,13 +226,15 @@
 		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 		return TRUE
 	to_chat(user, span_notice("You begin repairing \the [src]..."))
-	if(do_after(user, 3 SECONDS, target = src))
-		if(P.use(amt))
-			to_chat(user, span_notice("You have repaired \the [src]."))
-			repair_damage(max_integrity)
-		else
-			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(repair_done), list(user, P, amt))
 	return TRUE
+
+/obj/machinery/power/emitter/proc/repair_done(mob/user, obj/item/stack/material/P, amt)
+	if(P.use(amt))
+		to_chat(user, span_notice("You have repaired \the [src]."))
+		repair_damage(max_integrity)
+	else
+		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 
 /// Old attackby: an ID card or PDA toggles the console lock.
 /datum/interaction/machine_item/emitter_toggle_lock
@@ -394,3 +397,8 @@
 	. = ..()
 	connect_to_network()
 	update_icon()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/emitter/step_start_condition()
+	return active

@@ -56,8 +56,7 @@
 			src.visible_message("[src] pushes [target] out of the way.")
 
 		melee_can_hit = 0
-		if(do_after_action(melee_cooldown))
-			melee_can_hit = 1
+		om_after(src, melee_cooldown, PROC_REF(reset_melee))
 		return
 
 	else
@@ -72,8 +71,7 @@
 					else
 						playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 					melee_can_hit = 0
-					if(do_after_action(melee_cooldown))
-						melee_can_hit = 1
+					om_after(src, melee_cooldown, PROC_REF(reset_melee))
 					break
 	return
 
@@ -123,3 +121,6 @@
 
 /obj/effect/decal/mecha_wreckage/micro
 	icon = 'icons/mecha/micro.dmi'
+
+/obj/mecha/micro/proc/reset_melee()
+	melee_can_hit = 1

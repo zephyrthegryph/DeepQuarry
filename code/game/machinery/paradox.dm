@@ -1,4 +1,5 @@
 /obj/machinery/paradoxrift
+	step_on_power_change = TRUE
 	name = "Paradoxical Rift Generator"
 	idle_power_usage = 2500000
 	use_power = USE_POWER_OFF
@@ -31,9 +32,10 @@
 	chaos_eff = cap_rating
 
 
-/obj/machinery/paradoxrift/process()
+/// Spills loot only while unpowered: every power change runs a step, and powered it sleeps.
+/obj/machinery/paradoxrift/machine_step()
 	if(!(stat & NOPOWER))
-		return
+		return PROCESS_KILL
 	else
 		if(prob(0.5*build_eff))
 			if(prob(3*loot_eff))
@@ -131,3 +133,8 @@
 				prob(25);/mob/living/simple_mob/vore/scel,
 				prob(5);/mob/living/simple_mob/vore/vore_hostile/abyss_lurker
 				)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/paradoxrift/step_start_condition()
+	return stat & NOPOWER

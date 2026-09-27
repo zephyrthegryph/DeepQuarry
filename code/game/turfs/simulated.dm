@@ -63,11 +63,7 @@
 		wet_overlay = null
 	wet_overlay = image('icons/turf/overlays.dmi',src,"snowfloor")
 	add_overlay(wet_overlay)
-	spawn(5 MINUTES)
-		wet = TURFSLIP_DRY
-		if(wet_overlay)
-			cut_overlay(wet_overlay)
-			wet_overlay = null
+	om_after(src, 5 MINUTES, PROC_REF(snow_dries))
 
 /turf/simulated/Initialize(mapload)
 	. = ..()
@@ -189,3 +185,9 @@
 	else
 		verbs += /turf/simulated/proc/climb_wall
 	climbable = !climbable
+
+/turf/simulated/proc/snow_dries()
+	wet = TURFSLIP_DRY
+	if(wet_overlay)
+		cut_overlay(wet_overlay)
+		wet_overlay = null

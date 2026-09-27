@@ -17,8 +17,7 @@
 			apc = locate(/obj/machinery/power/apc) in get_step(H,0)
 		if(!apc)
 			nif.notify("You must be facing an APC to connect to.",TRUE)
-			spawn(0)
-				deactivate()
+			om_after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 		H.visible_message(span_warning("Thin snakelike tendrils grow from [H] and connect to \the [apc]."),span_notice("Thin snakelike tendrils grow from you and connect to \the [apc]."))
@@ -66,8 +65,7 @@
 	if((. = ..()))
 		if(used >= 1500)
 			nif.notify("Heat sinks not safe to operate again yet! Max 75% on activation.",TRUE)
-			spawn(0)
-				deactivate()
+			om_after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 /datum/nifsoft/heatsinks/stat_text()
@@ -137,8 +135,7 @@
 			if(nif.human.resize(new_size/100, uncapped=nif.human.has_large_resize_bounds(), ignore_prefs = TRUE))
 				to_chat(nif.human,span_notice("You set the size to [new_size]%"))
 				nif.human.visible_message(span_warning("Swirling grey mist envelops [nif.human] as they change size!"),span_notice("Swirling streams of nanites wrap around you as you change size!"))
-		spawn(0)
-			deactivate()
+		om_after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/sizechange/deactivate(force = FALSE)
 	if((. = ..()))
@@ -157,22 +154,22 @@
 /datum/nifsoft/worldbend/activate()
 	if((. = ..()))
 		var/list/justme = list(nif.human)
-		for(var/human in GLOB.human_mob_list)
+		for(var/human in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 			if(human == nif.human)
 				continue
 			var/mob/living/carbon/human/H = human
 			H.display_alt_appearance("animals", justme)
-			GLOB.alt_farmanimals += nif.human
+			registry_join(REGISTRY_ALT_FARMANIMALS, nif.human)
 
 /datum/nifsoft/worldbend/deactivate(force = FALSE)
 	if((. = ..()))
 		var/list/justme = list(nif.human)
-		for(var/human in GLOB.human_mob_list)
+		for(var/human in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 			if(human == nif.human)
 				continue
 			var/mob/living/carbon/human/H = human
 			H.hide_alt_appearance("animals", justme)
-			GLOB.alt_farmanimals -= nif.human
+			registry_leave(REGISTRY_ALT_FARMANIMALS, nif.human)
 
 /datum/nifsoft/malware
 	name = "Cool Kidz Toolbar"

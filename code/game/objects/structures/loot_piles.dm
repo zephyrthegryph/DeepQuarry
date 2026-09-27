@@ -25,7 +25,6 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	var/list/icon_states_to_use // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
 
 	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
-	var/busy = FALSE				// Used so you can't spamclick to loot.
 	var/loot_element_path = null
 
 /obj/structure/loot_pile/attack_ai(mob/user)
@@ -37,19 +36,19 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	if(isliving(user))
 		var/mob/living/L = user
 
-		if(busy)
+		if(om_busy(src)) // a search claims the pile
 			to_chat(L, span_warning("\The [src] is already being searched."))
 			return
 
 		L.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
 
 		//Do the searching
-		busy = TRUE
-		if(do_after(user, rand(4 SECONDS,6 SECONDS), target = src))
-			SEND_SIGNAL(src,COMSIG_LOOT_REWARD,L,searchedby, 0)
-		busy = FALSE
+		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)
 	else
 		return ..()
+
+/obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)
+	SEND_SIGNAL(src,COMSIG_LOOT_REWARD,L,searchedby, 0)
 
 /obj/structure/loot_pile/Initialize(mapload)
 	if(icon_states_to_use && length(icon_states_to_use))

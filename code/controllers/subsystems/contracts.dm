@@ -82,7 +82,7 @@ SUBSYSTEM_DEF(contracts)
 	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_CREATED, PROC_REF(on_mob_created))
 	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_DEATH, PROC_REF(on_mob_death))
 	RegisterSignal(SSdcs, COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS, PROC_REF(on_payment_account_status))
-	for(var/mob/living/carbon/human/subject in GLOB.human_mob_list)
+	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		watch_contract_subject(subject)
 	for(var/definition_type as anything in subtypesof(/datum/contract_definition))
 		if(is_abstract(definition_type))
@@ -183,12 +183,12 @@ SUBSYSTEM_DEF(contracts)
 /datum/controller/subsystem/contracts/proc/find_subject_for_record(record_id, subject_name) as /mob/living/carbon/human
 	var/bound_subject_id = security_record_subject_ids["[record_id]"]
 	if(bound_subject_id)
-		for(var/mob/living/carbon/human/bound_subject in GLOB.human_mob_list)
+		for(var/mob/living/carbon/human/bound_subject in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 			if(!QDELETED(bound_subject) && subject_identity(bound_subject)?.id == bound_subject_id)
 				return bound_subject
 		return
 	var/list/candidates = list()
-	for(var/mob/living/carbon/human/subject in GLOB.human_mob_list)
+	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		if(QDELETED(subject) || !subject.mind)
 			continue
 		if(subject_name && subject.real_name == subject_name)

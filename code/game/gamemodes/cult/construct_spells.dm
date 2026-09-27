@@ -516,24 +516,33 @@
 	var/obj/item/projectile/P = new projectile_type(get_turf(user))
 	return P
 
+/// TRUE to fire now. With a pre-shot delay the shot is a timed action that fires on completion.
 /obj/item/spell/construct/projectile/proc/set_up(atom/hit_atom, mob/living/user)
+	if(shot_ready)
+		return TRUE
 	if(!spell_projectile || !pay_energy(energy_cost_per_shot) || !owner)
 		return FALSE
 	if(!pre_shot_delay)
 		return TRUE
-	var/succeeded = FALSE
 
 	var/turf/T = get_turf(hit_atom)
 	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
 
 	T.add_overlay(target_image)
+	var/list/shot = list(hit_atom, user, T, target_image)
+	om_do_after(user, pre_shot_delay, src, src, PROC_REF(delayed_shot), shot + TRUE, on_fail = PROC_REF(delayed_shot), fail_args = shot + FALSE)
+	return FALSE
 
-	if(do_after(user, pre_shot_delay, target = src))
-		succeeded = TRUE
+/obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
-	T.cut_overlay(target_image)
+/obj/item/spell/construct/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, turf/T, image/target_image, fire)
+	T?.cut_overlay(target_image)
 	qdel(target_image)
-	return succeeded
+	if(!fire || !hit_atom || !user)
+		return
+	shot_ready = TRUE
+	on_ranged_cast(hit_atom, user)
+	shot_ready = FALSE
 
 /obj/item/spell/construct/spawner
 	name = "spawner template"
@@ -672,12 +681,16 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		if(do_after(user, windup, target = src))
-			W.visible_message(span_danger("\The [user] [attack_message] \the [W], obliterating it!"))
-			W.dismantle_wall(1)
-		else
-			user.visible_message(span_bold("\The [user]") + " lowers its fist.")
-			return
+		om_do_after(user, windup, src, src, PROC_REF(slam_wall), list(user, W, attack_message), on_fail = PROC_REF(slam_lowered), fail_args = list(user))
+		return
+	qdel(src)
+
+/obj/item/spell/construct/slam/proc/slam_lowered(mob/living/user)
+	user?.visible_message(span_bold("\The [user]") + " lowers its fist.")
+
+/obj/item/spell/construct/slam/proc/slam_wall(mob/living/user, turf/simulated/wall/W, attack_message)
+	W.visible_message(span_danger("\The [user] [attack_message] \the [W], obliterating it!"))
+	W.dismantle_wall(1)
 	qdel(src)
 
 
@@ -892,12 +905,11 @@
 	mob_overlay_state = "blue_electricity_constant"
 
 /datum/modifier/soothe/tick()
-	spawn()
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
-			H.apply_effect(-20, AGONY)
-			if(prob(10))
-				to_chat(H, span_warning("It feels so comforting!"))
+	if(ishuman(holder))
+		var/mob/living/carbon/human/H = holder
+		H.apply_effect(-20, AGONY)
+		if(prob(10))
+			to_chat(H, span_warning("It feels so comforting!"))
 
 ////////////////////////////
 //	Purity Construct - Priest - Spells
@@ -940,43 +952,42 @@
 	mob_overlay_state = "blue_electricity_constant"
 
 /datum/modifier/mend_purity/tick()
-	spawn()
-		if(isliving(holder))
-			var/mob/living/L = holder
-			var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
-			L.mend(TREAT_TISSUE_REPAIR, mend_amount)
-			L.mend(TREAT_PLATING_REPAIR, mend_amount)
-			L.mend(TREAT_BURN_CARE, mend_amount)
-			L.mend(TREAT_WIRING_REPAIR, mend_amount)
+	if(isliving(holder))
+		var/mob/living/L = holder
+		var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
+		L.mend(TREAT_TISSUE_REPAIR, mend_amount)
+		L.mend(TREAT_PLATING_REPAIR, mend_amount)
+		L.mend(TREAT_BURN_CARE, mend_amount)
+		L.mend(TREAT_WIRING_REPAIR, mend_amount)
 
-			if(ishuman(holder))
-				var/mob/living/carbon/human/H = holder
+		if(ishuman(holder))
+			var/mob/living/carbon/human/H = holder
 
-				for(var/obj/item/organ/internal/O in H.internal_organs)
-					if(O.damage > 0)
-						H.mend(TREAT_RESTORATION, 2, O)
-					if(O.damage <= 5 && O.organ_tag == O_EYES)
-						H.sdisabilities &= ~BLIND
+			for(var/obj/item/organ/internal/O in H.internal_organs)
+				if(O.damage > 0)
+					H.mend(TREAT_RESTORATION, 2, O)
+				if(O.damage <= 5 && O.organ_tag == O_EYES)
+					H.sdisabilities &= ~BLIND
 
-				for(var/obj/item/organ/external/O in H.organs)
-					H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)
-					H.mend(TREAT_PLATING_REPAIR, rand(1, 3), O.organ_tag)
-					H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
-					H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
+			for(var/obj/item/organ/external/O in H.organs)
+				H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_PLATING_REPAIR, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
+				H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
 
-				for(var/obj/item/organ/E in H.bad_external_organs)
-					var/obj/item/organ/external/affected = E
-					if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
-						affected.status &= ~ORGAN_BROKEN
+			for(var/obj/item/organ/E in H.bad_external_organs)
+				var/obj/item/organ/external/affected = E
+				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
+					affected.status &= ~ORGAN_BROKEN
 
-					for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
-						affected.remove_wound(W)
+				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+					affected.remove_wound(W)
 
-				H.restore_blood()
-				if(iscultist(H))
-					H.apply_effect(100, AGONY)//it will heal cultists but purity really doesn't like them so causes much pain
-				if(prob(10))
-					to_chat(H, span_danger("It feels as though your body is being torn apart!"))
+			H.restore_blood()
+			if(iscultist(H))
+				H.apply_effect(100, AGONY)//it will heal cultists but purity really doesn't like them so causes much pain
+			if(prob(10))
+				to_chat(H, span_danger("It feels as though your body is being torn apart!"))
 
 /datum/spell/targeted/purity_repair_aura
 	name = "Repair Aura"
@@ -1009,9 +1020,8 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/repair_aura_purity/tick()
-	spawn()
-		for(var/mob/living/simple_mob/construct/T in view(4,holder))
-			T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
-			T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
-			T.mend(TREAT_BURN_CARE, rand(10, 15))
-			T.mend(TREAT_WIRING_REPAIR, rand(10, 15))
+	for(var/mob/living/simple_mob/construct/T in view(4,holder))
+		T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
+		T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
+		T.mend(TREAT_BURN_CARE, rand(10, 15))
+		T.mend(TREAT_WIRING_REPAIR, rand(10, 15))

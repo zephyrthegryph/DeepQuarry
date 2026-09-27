@@ -139,21 +139,30 @@
 
 /datum/protean_power/blobform/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	if(F.is_form(/datum/form/protean_blob))
-		if(!do_after(H, 2 SECONDS, target = H))
-			to_chat(H, span_warning("You must remain still to reshape yourself!"))
-			return
-		if(F.form_control_check())
-			F.set_form(/datum/form/human)
+		om_do_after(H, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_blobform_done), done_args = list(H, F), on_fail = PROC_REF(activate_blobform_failed), fail_args = list(H, F))
 		return
 	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		to_chat(H, span_warning("You can't do this while handcuffed!"))
 		return
 	to_chat(H, span_notice("You begin to disassociate your form."))
-	if(!do_after(H, 2 SECONDS, target = H))
-		to_chat(H, span_warning("You must remain still to blobform!"))
-		return
+	om_do_after(H, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_blobform_done2), done_args = list(H, F), on_fail = PROC_REF(activate_blobform_failed2), fail_args = list(H, F))
+	return TRUE
+
+/datum/protean_power/blobform/proc/activate_blobform_done(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	if(F.form_control_check())
+		F.set_form(/datum/form/human)
+	return
+
+/datum/protean_power/blobform/proc/activate_blobform_failed(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	to_chat(H, span_warning("You must remain still to reshape yourself!"))
+	return
+/datum/protean_power/blobform/proc/activate_blobform_done2(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	if(F.form_control_check())
 		F.set_form(/datum/form/protean_blob)
+
+/datum/protean_power/blobform/proc/activate_blobform_failed2(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	to_chat(H, span_warning("You must remain still to blobform!"))
+	return
 
 /mob/living/carbon/human/proc/nano_blobform()
 	set name = "Toggle Blobform"
@@ -274,21 +283,24 @@
 		return
 	F.set_form(/datum/form/protean_blob)
 	H.active_regen = TRUE
-	if(do_after(H, 5 SECONDS, target = H))
-		var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
-		if(oldlimb)
-			oldlimb.removed()
-			qdel(oldlimb)
-		var/list/limblist = H.species.has_limbs[choice]
-		var/limbpath = limblist["path"]
-		var/obj/item/organ/external/new_eo = new limbpath(H)
-		H.organs_by_name[choice] = new_eo
-		new_eo.robotize(H.synthetic ? H.synthetic.company : null)
-		new_eo.sync_colour_to_human(H)
-		H.regenerate_icons()
-	else
-		refactory.add_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST)
+	om_do_after(H, 5 SECONDS, target = H, receiver = src, on_done = PROC_REF(regrow_limb_reform_limb_done), done_args = list(H, refactory, choice), on_fail = PROC_REF(regrow_limb_reform_limb_failed), fail_args = list(H, refactory, choice))
 	H.active_regen = FALSE
+
+/datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_done(mob/living/carbon/human/H, obj/item/organ/internal/nano/refactory/refactory, choice)
+	var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
+	if(oldlimb)
+		oldlimb.removed()
+		qdel(oldlimb)
+	var/list/limblist = H.species.has_limbs[choice]
+	var/limbpath = limblist["path"]
+	var/obj/item/organ/external/new_eo = new limbpath(H)
+	H.organs_by_name[choice] = new_eo
+	new_eo.robotize(H.synthetic ? H.synthetic.company : null)
+	new_eo.sync_colour_to_human(H)
+	H.regenerate_icons()
+
+/datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_failed(mob/living/carbon/human/H, obj/item/organ/internal/nano/refactory/refactory, choice)
+	refactory.add_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST)
 
 /mob/living/carbon/human/proc/nano_partswap()
 	set name = "Ref - Single Limb"
@@ -302,6 +314,13 @@
 	icon_state = "body"
 	verb_path = /mob/living/carbon/human/proc/nano_regenerate
 
+/datum/protean_power/reform_body/proc/rebuild_done(mob/living/carbon/human/H)
+	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
+	if(!refactory || !refactory.consume_stored_material(MAT_STEEL, refactory.get_stored_material(MAT_STEEL)))
+		return
+	H.fully_heal()
+	log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly.")
+
 /datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	var/input = tgui_alert(H, {"Do you want to rebuild or reassemble yourself?
 	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs as well as repair all damage over a 40s period.
@@ -314,13 +333,7 @@
 			to_chat(H, span_warning("You do not have enough steel stored for this operation."))
 			return
 		to_chat(H, span_notify("You begin to rebuild. You will need to remain still."))
-		if(!do_after(H, 40 SECONDS, target = H))
-			return
-		refactory = H.nano_get_refactory()
-		if(!refactory || !refactory.consume_stored_material(MAT_STEEL, refactory.get_stored_material(MAT_STEEL)))
-			return
-		H.fully_heal()
-		log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly.")
+		om_do_after(H, 40 SECONDS, target = H, receiver = src, on_done = PROC_REF(rebuild_done), done_args = list(H))
 		return
 	var/flavour = tgui_alert(H, "Include Flavourtext?", "Reassembly", list("Yes", "No", "Cancel"))
 	if(!flavour || flavour == "Cancel")
@@ -330,9 +343,13 @@
 		return
 	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
-	if(do_after(H, 4 SECONDS, target = H) && H.client?.prefs)
-		H.client.prefs.vanity_copy_to(H, FALSE, flavour == "Yes", oocnotes == "Yes", TRUE, FALSE)
-		H.visible_message(span_notify("[H] adopts a new form!"), span_danger("You have reassembled."))
+	om_do_after(H, 4 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_reform_body_done3), done_args = list(H, flavour, oocnotes))
+
+/datum/protean_power/reform_body/proc/activate_reform_body_done3(mob/living/carbon/human/H, flavour, oocnotes)
+	if(!(H.client?.prefs))
+		return
+	H.client.prefs.vanity_copy_to(H, FALSE, flavour == "Yes", oocnotes == "Yes", TRUE, FALSE)
+	H.visible_message(span_notify("[H] adopts a new form!"), span_danger("You have reassembled."))
 
 /mob/living/carbon/human/proc/nano_regenerate()
 	set name = "Total Reassembly"
@@ -376,8 +393,10 @@
 		return
 	to_chat(H, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	if(!do_after(H, 4 SECONDS, target = H))
-		return
+	om_do_after(H, 4 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_copy_form_done4), done_args = list(H, victim, input))
+	return TRUE
+
+/datum/protean_power/copy_form/proc/activate_copy_form_done4(mob/living/carbon/human/H, mob/living/carbon/human/victim, input)
 	if(!aggressive_grab_on(H, victim))
 		to_chat(H, span_warning("You lost your grip on [victim]!"))
 		return

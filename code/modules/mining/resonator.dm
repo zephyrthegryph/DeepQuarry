@@ -40,7 +40,7 @@
 		var/fields = 0
 		if(depth == 0)
 			playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
-			new /obj/effect/resonance(T, WEAKREF(creator), burst_time)
+			new /obj/effect/resonance(T, om_handle(creator), burst_time)
 			fields++
 			depth++
 		var/origin_dir = get_cardinal_dir(creator, T)
@@ -48,8 +48,7 @@
 		while(fields < fieldlimit)
 			for(var/i=0, i<=2, i++)
 				if(fields >= fieldlimit)
-					sleep(burst_time)
-					cascading = FALSE
+					om_after(src, burst_time, PROC_REF(end_cascade))
 					return
 				switch(i) //Using a switch statement rather than (-90 + i * 90) to favour going straight ahead
 					if(0)
@@ -63,13 +62,13 @@
 					var/turf/oldT = newT
 					newT = get_step(oldT, dir)
 					if(step == depth)
-						new /obj/effect/resonance(newT, WEAKREF(creator), burst_time)
+						new /obj/effect/resonance(newT, om_handle(creator), burst_time)
 						fields++
 						if(depth > 1 && fields < fieldlimit) //Works until 15 fieldlimit.
 							oldT = newT
 							dir = turn(dir, (i == 2 ? 135 : -135))
 							newT = get_step(oldT, dir)
-							new /obj/effect/resonance(newT, WEAKREF(creator), burst_time)
+							new /obj/effect/resonance(newT, om_handle(creator), burst_time)
 							fields++
 			depth++
 
@@ -77,10 +76,9 @@
 
 	else
 		playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
-		new /obj/effect/resonance(T, WEAKREF(creator), burst_time)
+		new /obj/effect/resonance(T, om_handle(creator), burst_time)
 		fieldsactive++
-		spawn(burst_time)
-			fieldsactive--
+		om_after(src, burst_time, PROC_REF(field_burst))
 
 /obj/item/resonator/attack_self(mob/user)
 	. = ..(user)
@@ -160,3 +158,9 @@
 	. = ..()
 	transform = matrix()*1.5
 	animate(src, transform = matrix()*0.1, alpha = 50, time = 4)
+
+/obj/item/resonator/proc/end_cascade()
+	cascading = FALSE
+
+/obj/item/resonator/proc/field_burst()
+	fieldsactive--

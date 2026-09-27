@@ -75,8 +75,7 @@
 			src.visible_message("[src] pushes [T] out of the way.")
 
 		melee_can_hit = 0
-		if(do_after_action(melee_cooldown))
-			melee_can_hit = 1
+		om_after(src, melee_cooldown, PROC_REF(reset_melee))
 		return
 
 	else
@@ -95,8 +94,7 @@
 
 				melee_can_hit = 0
 
-				if(do_after_action(melee_cooldown))
-					melee_can_hit = 1
+				om_after(src, melee_cooldown, PROC_REF(reset_melee))
 	return
 
 /obj/mecha/combat/moved_inside(mob/living/carbon/human/H as mob)
@@ -130,3 +128,6 @@
 	if(top_filter.get("close"))
 		am = null
 		return
+
+/obj/mecha/combat/proc/reset_melee()
+	melee_can_hit = 1

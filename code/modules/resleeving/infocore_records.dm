@@ -352,7 +352,7 @@
 	//Don't boot out anyone already in the mob.
 	if(!H.client || !H.key)
 		// A loose brain that hosts this body's character goes home.
-		for (var/obj/item/organ/internal/brain/CH in GLOB.all_brain_organs)
+		for (var/obj/item/organ/internal/brain/CH in REGISTRY_MEMBERS(REGISTRY_BRAIN_ORGANS))
 			var/datum/component/mind_host/host = get_mind_host(CH)
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == H.identity)

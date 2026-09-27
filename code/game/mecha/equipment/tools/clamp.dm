@@ -14,6 +14,34 @@
 
 	return
 
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_firedoor(obj/machinery/door/firedoor/FD, unblock)
+	playsound(FD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	if(unblock)
+		FD.blocked = 0
+		FD.update_icon()
+		FD.open(1)
+		FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))
+	else
+		FD.visible_message(span_danger("\The [chassis] forces \the [FD] open!"))
+		FD.open(1)
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_airlock(obj/machinery/door/airlock/AD)
+	if(!chassis?.Adjacent(AD))
+		return
+	AD.welded = FALSE
+	AD.update_icon()
+	playsound(AD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	AD.visible_message(span_danger("\The [chassis] tears \the [AD] open!"))
+	toggle_airlock(AD)
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/toggle_airlock(obj/machinery/door/airlock/AD)
+	if(AD.welded)
+		return
+	if(AD.density)
+		AD.open(1)
+	else
+		AD.close(1)
+
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/action(atom/target)
 	if(!action_checks(target)) return
 	if(!cargo_holder) return
@@ -32,18 +60,10 @@
 					var/obj/machinery/door/firedoor/FD = O
 					if(FD.blocked)
 						FD.visible_message(span_danger("\The [chassis] begins prying on \the [FD]!"))
-						if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 10 SECONDS, target = FD))
-							playsound(FD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-							FD.blocked = 0
-							FD.update_icon()
-							FD.open(1)
-							FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))
+						om_do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 10 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, TRUE), IGNORE_HELD_ITEM)
 					else if(FD.density)
 						FD.visible_message(span_warning("\The [chassis] begins forcing \the [FD] open!"))
-						if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 5 SECONDS, target = FD))
-							playsound(FD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-							FD.visible_message(span_danger("\The [chassis] forces \the [FD] open!"))
-							FD.open(1)
+						om_do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 5 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, FALSE), IGNORE_HELD_ITEM)
 					else
 						FD.visible_message(span_danger("\The [chassis] forces \the [FD] closed!"))
 						FD.close(1)
@@ -54,18 +74,9 @@
 					else if(!AD.operating)
 						if(AD.welded)
 							AD.visible_message(span_warning("\The [chassis] begins prying on \the [AD]!"))
-							if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 15 SECONDS, target = AD) && chassis.Adjacent(AD))
-								AD.welded = FALSE
-								AD.update_icon()
-								playsound(AD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-								AD.visible_message(span_danger("\The [chassis] tears \the [AD] open!"))
-						if(!AD.welded)
-							if(AD.density)
-								spawn(0)
-									AD.open(1)
-							else
-								spawn(0)
-									AD.close(1)
+							om_do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 15 SECONDS, AD, src, PROC_REF(pry_airlock), list(AD), IGNORE_HELD_ITEM)
+						else
+							toggle_airlock(AD)
 				return
 			else
 				occupant_message(span_warning("[target] is firmly secured."))

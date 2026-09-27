@@ -252,7 +252,7 @@
 		if(!check_rights(R_BAN))
 			return
 
-		var/mob/M = locate(href_list["jobban2"]) in GLOB.mob_list
+		var/mob/M = locate(href_list["jobban2"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 		if(!ismob(M))
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob"))
 			return
@@ -720,8 +720,6 @@
 		//so they black out before warping
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
-		if(!M)	return
 
 		M.forceMove(prison_cell)
 		if(ishuman(M))
@@ -775,10 +773,8 @@
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdome1))
-		spawn(50)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 1)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Team 1)")
 
@@ -801,10 +797,8 @@
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdome2))
-		spawn(50)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 2)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Team 2)")
 
@@ -824,10 +818,8 @@
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdomeadmin))
-		spawn(50)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Admin.)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Admin.)")
 
@@ -854,10 +846,8 @@
 			observer.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(observer), slot_shoes)
 		M.status_at_least(EFFECT_PARALYZED, 5)
 		M.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)
 		M.forceMove(pick(GLOB.tdomeobserve))
-		spawn(50)
-			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+		om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Observer.)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Observer.)")
 
@@ -977,7 +967,7 @@
 					to_chat(X, take_msg)
 			to_chat(M, span_filter_pm(span_boldnotice("Your adminhelp is being attended to by [usr.client]. Thanks for your patience!")))
 			if (CONFIG_GET(string/chat_webhook_url))
-				spawn(0)
+				spawn(0) // S7 keeps: admin topic; world.Export() is a blocking external call
 					var/query_string = "type=admintake"
 					query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 					query_string += "&admin=[url_encode(key_name(usr.client))]"

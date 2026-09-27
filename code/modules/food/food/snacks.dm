@@ -253,45 +253,14 @@
 					feed_duration = 5 SECONDS
 
 				user.setClickCooldown(user.get_attack_speed(src))
-				if(!do_after(user, feed_duration, human_eater))
-					return ITEM_INTERACT_FAILURE
-				if(!reagents || (reagents && !reagents.total_volume))
-					return ITEM_INTERACT_FAILURE
-
-				if(swallow_whole && !belly_target)
-					return ITEM_INTERACT_FAILURE			// Just in case we lost belly mid-feed
-
-				if(swallow_whole)
-					add_attack_logs(user, human_eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-					user.visible_message("[user] successfully forces [src] into [human_eater]'s [belly_target].")
-					user.balloon_alert_visible("forces [src] into [human_eater]'s [belly_target]")
-				else
-					add_attack_logs(user, human_eater,"Fed with [src.name] containing [reagentlist(src)]", admin_notify = FALSE)
-					user.visible_message("[user] feeds [human_eater] [src].")
-					user.balloon_alert_visible("feeds [human_eater] [src].")
+				om_do_after(user, feed_duration, human_eater, src, PROC_REF(feed_other_done), list(human_eater, user, swallow_whole, belly_target))
+				return ITEM_INTERACT_SUCCESS
 
 			else
 				balloon_alert(user, "this creature does not seem to have a mouth!")
 				return ITEM_INTERACT_FAILURE
 
-		if(swallow_whole)
-			user.drop_item()
-			forceMove(belly_target)
-			return ITEM_INTERACT_SUCCESS
-		else if(reagents)								//Handle ingestion of the reagent.
-			playsound(eater, eating_sound, rand(10,50), 1)
-			if(reagents.total_volume)
-				var/bite_mod = 1
-				var/mob/living/carbon/human/human_eater = eater
-				if(istype(human_eater))
-					bite_mod = human_eater.species.bite_mod
-				if(reagents.total_volume > bitesize * bite_mod)
-					reagents.trans_to_mob(eater, bitesize * bite_mod, CHEM_INGEST)
-				else
-					reagents.trans_to_mob(eater, reagents.total_volume, CHEM_INGEST)
-				bitecount++
-				On_Consume(eater, user)
-			return TRUE
+		return finish_feeding(eater, user, swallow_whole, belly_target)
 	else if(isliving(eater) && user.stuffing_feeder)
 		var/swallow_whole = user.stuffing_feeder
 		var/obj/belly/belly_target
@@ -309,17 +278,55 @@
 			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
 			var/feed_duration = 3 SECONDS
 			user.setClickCooldown(user.get_attack_speed(src))
-			if(!do_after(user, feed_duration, eater))
-				return
-			if(!belly_target)
-				return
-			add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-			user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].")
-			user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
-			user.drop_item()
-			forceMove(belly_target)
+			om_do_after(user, feed_duration, eater, src, PROC_REF(feed_whole_done), list(eater, user, belly_target))
 			return ITEM_INTERACT_SUCCESS
 
+	return ITEM_INTERACT_FAILURE
+
+/obj/item/reagent_containers/food/snacks/proc/feed_whole_done(mob/living/eater, mob/living/user, obj/belly/belly_target)
+	add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
+	user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].")
+	user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
+	user.drop_item()
+	forceMove(belly_target)
+
+/obj/item/reagent_containers/food/snacks/proc/feed_other_done(mob/living/carbon/human/human_eater, mob/living/user, swallow_whole, obj/belly/belly_target)
+	if(!reagents || (reagents && !reagents.total_volume))
+		return
+
+	if(swallow_whole && !belly_target)
+		return			// Just in case we lost belly mid-feed
+
+	if(swallow_whole)
+		add_attack_logs(user, human_eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
+		user.visible_message("[user] successfully forces [src] into [human_eater]'s [belly_target].")
+		user.balloon_alert_visible("forces [src] into [human_eater]'s [belly_target]")
+	else
+		add_attack_logs(user, human_eater,"Fed with [src.name] containing [reagentlist(src)]", admin_notify = FALSE)
+		user.visible_message("[user] feeds [human_eater] [src].")
+		user.balloon_alert_visible("feeds [human_eater] [src].")
+	finish_feeding(human_eater, user, swallow_whole, belly_target)
+
+/// The bite (or the whole thing) goes in.
+/obj/item/reagent_containers/food/snacks/proc/finish_feeding(mob/living/eater, mob/living/user, swallow_whole, obj/belly/belly_target)
+	if(swallow_whole)
+		user.drop_item()
+		forceMove(belly_target)
+		return ITEM_INTERACT_SUCCESS
+	else if(reagents)								//Handle ingestion of the reagent.
+		playsound(eater, eating_sound, rand(10,50), 1)
+		if(reagents.total_volume)
+			var/bite_mod = 1
+			var/mob/living/carbon/human/human_eater = eater
+			if(istype(human_eater))
+				bite_mod = human_eater.species.bite_mod
+			if(reagents.total_volume > bitesize * bite_mod)
+				reagents.trans_to_mob(eater, bitesize * bite_mod, CHEM_INGEST)
+			else
+				reagents.trans_to_mob(eater, reagents.total_volume, CHEM_INGEST)
+			bitecount++
+			On_Consume(eater, user)
+		return TRUE
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/reagent_containers/food/snacks/examine(mob/user)
@@ -492,10 +499,7 @@
 	bitecount++
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
-	spawn(5)
-		if(!src && !user.client)
-			user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
-			qdel(src)
+	om_after(user, 5, /proc/food_finished_emote, user, om_handle(src))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -1273,13 +1277,7 @@
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/cooltime()
 	if (src.warm)
-		spawn(420 SECONDS)
-			if(!src?.reagents)
-				return
-			src.warm = 0
-			for(var/reagent in heated_reagents)
-				src.reagents.del_reagent(reagent)
-			src.name = initial(name)
+		om_after(src, 420 SECONDS, PROC_REF(cool_down))
 	return
 
 /obj/item/reagent_containers/food/snacks/donkpocket/spicy
@@ -1349,11 +1347,7 @@
 		return
 	has_been_heated = TRUE
 	user.visible_message(span_notice("[user] crushes \the [src] package."), "You crush \the [src] package and feel a comfortable heat build up. Now just to wait for it to be ready.")
-	spawn(200)
-		if(!QDELETED(src))
-			if(src.loc == user)
-				to_chat(user, "You think \the [src] is ready to eat about now.")
-			heat()
+	om_after(src, 20 SECONDS, PROC_REF(self_heated), user)
 
 /obj/item/reagent_containers/food/snacks/brainburger
 	name = "brainburger"
@@ -9375,3 +9369,22 @@
 /obj/item/reagent_containers/food/snacks/acorn/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PEANUTBUTTER, 2) //Just to make it so people can be allergic to it without making a new reagent
+
+/obj/item/reagent_containers/food/snacks/donkpocket/proc/cool_down()
+	if(!src?.reagents)
+		return
+	src.warm = 0
+	for(var/reagent in heated_reagents)
+		src.reagents.del_reagent(reagent)
+	src.name = initial(name)
+
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/self_heated(mob/user)
+	if(!QDELETED(src))
+		if(src.loc == user)
+			to_chat(user, "You think \the [src] is ready to eat about now.")
+		heat()
+
+/// A mindless eater who finished the food asks for more.
+/proc/food_finished_emote(mob/user, food_handle)
+	if(!om_resolve(food_handle) && !user.client)
+		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)

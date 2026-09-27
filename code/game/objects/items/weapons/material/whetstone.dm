@@ -15,16 +15,18 @@
 		var/obj/item/stack/material/M = I
 		if(M.get_amount() >= 5)
 			to_chat(user, "You begin to refine the [src] with [M]...")
-			if(do_after(user, 7 SECONDS, target = src))
-				M.use(5)
-				var/obj/item/SK
-				SK = new /obj/item/material/sharpeningkit(get_turf(user), M.material.name)
-				to_chat(user, "You sharpen and refine the [src] into \a [SK].")
-				qdel(src)
-				if(SK)
-					user.put_in_hands(SK)
+			om_do_after(user, 7 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, M))
 		else
 			to_chat(user, "You need 5 [src] to refine it into a sharpening kit.")
+
+/obj/item/whetstone/proc/attackby_timed_done(mob/user, obj/item/stack/material/M)
+	M.use(5)
+	var/obj/item/SK
+	SK = new /obj/item/material/sharpeningkit(get_turf(user), M.material.name)
+	to_chat(user, "You sharpen and refine the [src] into \a [SK].")
+	qdel(src)
+	if(SK)
+		user.put_in_hands(SK)
 
 /obj/item/material/sharpeningkit
 	name = "sharpening kit"

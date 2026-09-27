@@ -68,19 +68,23 @@
 
 /obj/structure/bed/pillowpile/attack_hand(mob/user)
 	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
-	if(do_after(user, 3 SECONDS, target = src))
-		if(!src) return
-		to_chat(user, span_notice("You dissasembled the large pillow pile!"))
-		new sourcepillow(src.loc)
-		qdel(src)
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+
+/obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
+	if(!src) return
+	to_chat(user, span_notice("You dissasembled the large pillow pile!"))
+	new sourcepillow(src.loc)
+	qdel(src)
 
 /obj/structure/bed/pillowpilefront/attack_hand(mob/user)
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
-	if(do_after(user, 3 SECONDS, target = src))
-		if(!src) return
-		to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))
-		new sourcepillow(src.loc)
-		qdel(src)
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+
+/obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)
+	if(!src) return
+	to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))
+	new sourcepillow(src.loc)
+	qdel(src)
 
 //Colours
 

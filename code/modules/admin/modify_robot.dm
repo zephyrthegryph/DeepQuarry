@@ -1,4 +1,4 @@
-ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modify Robot", "Allows to add or remove modules to/from robots.", ADMIN_CATEGORY_SILICON, mob/living/silicon/robot/target in GLOB.silicon_mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modify Robot", "Allows to add or remove modules to/from robots.", ADMIN_CATEGORY_SILICON, mob/living/silicon/robot/target in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
@@ -121,7 +121,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			if(source)
 				.["source"] += get_module_source(user, spritesheet)
 	var/list/all_robots = list()
-	for(var/mob/living/silicon/robot/R in GLOB.silicon_mob_list)
+	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 		if(!R.loc)
 			continue
 		all_robots += list(list("displayText" = "[R]", "value" = "\ref[R]"))
@@ -535,7 +535,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			return TRUE
 		if("swap_sync")
 			var/mob/living/silicon/ai/our_ai
-			for(var/mob/living/silicon/ai/ai in GLOB.ai_list)
+			for(var/mob/living/silicon/ai/ai in REGISTRY_MEMBERS(REGISTRY_AIS))
 				if(ai.name == selected_ai)
 					our_ai = ai
 					break

@@ -29,12 +29,14 @@
 				LAZYADD(summoned_items, new_item) //we store it in a list to remove later
 
 	if(duration)
-		spawn(duration)
-			for(var/obj/item/to_remove in summoned_items)
-				if(istype(to_remove.loc, /mob))
-					var/mob/M = to_remove.loc
-					M.remove_from_mob(to_remove)
-					qdel(to_remove)
+		om_after(src, duration, PROC_REF(unsummon_items))
+
+/datum/spell/targeted/equip_item/proc/unsummon_items()
+	for(var/obj/item/to_remove in summoned_items)
+		if(istype(to_remove.loc, /mob))
+			var/mob/M = to_remove.loc
+			M.remove_from_mob(to_remove)
+			qdel(to_remove)
 
 /datum/spell/targeted/equip_item/proc/summon_item(newtype)
 	return new newtype

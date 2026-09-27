@@ -55,7 +55,9 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 	GLOB.send_beruang = TRUE
 	consider_trader_load()
 
-	sleep(300 SECONDS)
+	om_after(null, 300 SECONDS, GLOBAL_PROC_REF(close_trader_visit))
+
+/proc/close_trader_visit()
 	GLOB.send_beruang = FALSE // Can no longer join the traders.
 
 GLOBAL_VAR(trader_loaded)

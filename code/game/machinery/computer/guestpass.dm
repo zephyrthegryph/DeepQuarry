@@ -74,13 +74,13 @@
 /// Expiry ticking is world registration (L3): start it when the pass is live.
 /obj/item/card/id/guest/on_materialize()
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/card/id/guest/on_dematerialize()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/card/id/guest/process()
+/obj/item/card/id/guest/periodic_step()
 	if(expired == 0 && world.time >= expiration_time)
 		visible_message(span_warning("\The [src] flashes a few times before turning red."))
 		icon_state = "guest-invalid"

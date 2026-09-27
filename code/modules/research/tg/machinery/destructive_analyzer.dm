@@ -50,7 +50,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	decon_mod = clamp(T, 0, 1)
 
 /obj/machinery/rnd/destructive_analyzer/update_icon()
-	var/current_item = loaded_item?.resolve()
+	var/current_item = om_resolve(loaded_item)
 	if(panel_open)
 		icon_state = "d_analyzer_t"
 	else if(current_item)
@@ -93,7 +93,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	return !panel_open
 
 /obj/machinery/rnd/destructive_analyzer/proc/interaction_load(mob/user, obj/item/O, datum/interaction/interaction)
-	var/current_item = loaded_item?.resolve()
+	var/current_item = om_resolve(loaded_item)
 	if(current_item)
 		to_chat(user, span_notice("There is something already loaded into \the [src]."))
 	else
@@ -119,7 +119,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
 				return TRUE
 		busy = TRUE
-		loaded_item = WEAKREF(O)
+		loaded_item = om_handle(O)
 		user.drop_item()
 		O.forceMove(src)
 		SStgui.update_uis(src)
@@ -207,7 +207,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/list/data = list()
 	data["server_connected"] = !!stored_research
 	data["node_data"] = null
-	var/obj/item/current_item = loaded_item?.resolve()
+	var/obj/item/current_item = om_resolve(loaded_item)
 	if(current_item)
 		data["item_icon"] = icon2base64(getFlatIcon(image(icon = current_item.icon, icon_state = current_item.icon_state), no_anim = TRUE))
 		data["indestructible"] = is_type_in_list(current_item, GLOB.item_deconstruction_blacklist)
@@ -238,7 +238,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		return TRUE
 
 	var/mob/user = usr
-	var/current_item = loaded_item?.resolve()
+	var/current_item = om_resolve(loaded_item)
 	switch(action)
 		if("eject_item")
 			if(busy)
@@ -254,7 +254,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 ///Drops the loaded item where it can and nulls it.
 /obj/machinery/rnd/destructive_analyzer/proc/unload_item()
-	var/obj/item/current_item = loaded_item?.resolve()
+	var/obj/item/current_item = om_resolve(loaded_item)
 	if(!current_item)
 		loaded_item = null
 		return FALSE
@@ -270,7 +270,7 @@ It is used to destroy hand-held objects and advance technological research. Used
  * gain_research_points - Whether deconstructing each individual item should check for research points to boost.
  */
 /obj/machinery/rnd/destructive_analyzer/proc/destroy_item(gain_research_points = FALSE)
-	var/obj/item/current_item = loaded_item?.resolve()
+	var/obj/item/current_item = om_resolve(loaded_item)
 	if(!current_item || QDELETED(src))
 		return FALSE
 	//flick("[base_icon_state]_process", src)
@@ -329,7 +329,7 @@ It is used to destroy hand-held objects and advance technological research. Used
  * id - The techweb ID node that we're meant to unlock if applicable.
  */
 /obj/machinery/rnd/destructive_analyzer/proc/user_try_decon_id(id)
-	var/obj/item/current_item = loaded_item?.resolve()
+	var/obj/item/current_item = om_resolve(loaded_item)
 	if(!istype(current_item))
 		return FALSE
 	if(LAZYLEN(current_item.contents))

@@ -141,21 +141,9 @@
 /mob/living/simple_mob/animal/space/mouse_army/pyro/death()
 	visible_message(span_critical("\The [src]'s tank groans!"))
 	var/delay = rand(1, 3)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#000000"
-			else
-				color = "#FF0000"
-			sleep(1)
+	color_sequence(mouse_warning_flash(delay))
 
-	spawn(rand (1,5))
-		if(!ruptured)
-			visible_message(span_critical("\The [src]'s tank ruptures!"))
-			ruptured = 1
-			adjust_fire_stacks(2)
-			ignite_mob()
+	om_after(src, rand(1, 5), PROC_REF(rupture))
 	return ..()
 
 //Ammo Mouse
@@ -189,21 +177,9 @@
 /mob/living/simple_mob/animal/space/mouse_army/ammo/death()
 	visible_message(span_critical("\The [src]'s body begins to rupture!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
-	spawn(0)
-		// Flash black and red as a warning.
-		for(var/i = 1 to delay)
-			if(i % 2 == 0)
-				color = "#000000"
-			else
-				color = "#FF0000"
-			sleep(1)
+	color_sequence(mouse_warning_flash(delay))
 
-	spawn(rand(1,5))
-		if(src && !exploded)
-			visible_message(span_critical("\The [src]'s body detonates!"))
-			exploded = 1
-			explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-			qdel(src)
+	om_after(src, rand(1, 5), PROC_REF(detonate))
 	return ..()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth
@@ -457,3 +433,23 @@
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/om/task/task, reason)
 	alpha = initial(alpha)
 	uncloak()
+
+/mob/living/simple_mob/animal/space/mouse_army/pyro/proc/rupture()
+	if(!ruptured)
+		visible_message(span_critical("\The [src]'s tank ruptures!"))
+		ruptured = 1
+		adjust_fire_stacks(2)
+		ignite_mob()
+
+/mob/living/simple_mob/animal/space/mouse_army/ammo/proc/detonate()
+	if(src && !exploded)
+		visible_message(span_critical("\The [src]'s body detonates!"))
+		exploded = 1
+		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
+		qdel(src)
+
+/// Red and black, alternating, one colour per decisecond for `steps` deciseconds.
+/proc/mouse_warning_flash(steps)
+	. = list()
+	for(var/i = 1 to steps)
+		. += (i % 2 == 0) ? "#000000" : "#FF0000"

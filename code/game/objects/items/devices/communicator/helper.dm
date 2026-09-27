@@ -140,7 +140,7 @@
 // Weaker than what PDAs appear to do, but as of 7/1/2018 PDA secbot access is nonfunctional
 /obj/item/commcard/proc/get_sec_bot_access()
 	var/sec_bots[0]
-	for(var/mob/living/bot/secbot/S in GLOB.mob_list)
+	for(var/mob/living/bot/secbot/S in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		// Get new bot
 		var/status[0]
 		status[++status.len] = list("tab" = "Name", "val" = sanitize(S.name))
@@ -281,7 +281,7 @@
 				janidata[++janidata.len] = list("field" = apply_text_macros("\proper [C.name]"), "val" = span_yellow("[T.x], [T.y], [using_map.get_zlevel_name(T.z)]"))
 
 	// Cleanbots
-	for(var/mob/living/bot/cleanbot/B in GLOB.living_mob_list)
+	for(var/mob/living/bot/cleanbot/B in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		var/turf/T = get_turf(B)
 		if(isturf(T) )//&& T.z in using_map.get_map_levels(userloc, FALSE))
 			var/textout = ""

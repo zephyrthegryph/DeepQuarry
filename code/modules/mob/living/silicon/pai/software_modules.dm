@@ -290,7 +290,7 @@
 
 /mob/living/silicon/pai/proc/hackloop()
 	var/turf/T = get_turf(src)
-	for(var/mob/living/silicon/ai/AI in GLOB.player_list)
+	for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(T.loc)
 			to_chat(AI, span_bolddanger("Network Alert: Brute-force encryption crack in progress in [T.loc]."))
 		else
@@ -302,20 +302,23 @@
 		cable.machine = null
 		hackdoor = null
 		return
-	while(hackprogress < 1000)
-		if(cable && cable.machine == D && cable.machine == hackdoor && get_dist(src, hackdoor) <= 1)
-			hackprogress = min(hackprogress+rand(1, 20), 1000)
-		else
-			hack_aborted = 1
-			hackprogress = 0
-			hackdoor = null
-			return
-		if(hackprogress >= 1000)
-			hackprogress = 0
-			D.open()
-			cable.machine = null
-			return
-		sleep(10)			// Update every second
+	hack_tick(D)
+
+/// One second of brute-forcing the door.
+/mob/living/silicon/pai/proc/hack_tick(obj/machinery/door/D)
+	if(cable && cable.machine == D && cable.machine == hackdoor && get_dist(src, hackdoor) <= 1)
+		hackprogress = min(hackprogress+rand(1, 20), 1000)
+	else
+		hack_aborted = 1
+		hackprogress = 0
+		hackdoor = null
+		return
+	if(hackprogress >= 1000)
+		hackprogress = 0
+		D.open()
+		cable.machine = null
+		return
+	om_after(src, 1 SECOND, PROC_REF(hack_tick), D)			// Update every second
 
 /datum/pai_software/atmosphere_sensor
 	name = "Atmosphere Sensor"
@@ -456,8 +459,7 @@
 
 		switch(action)
 			if("signal")
-				spawn(0)
-					R.send_signal("ACTIVATE")
+				R.send_signal("ACTIVATE")
 				for(var/mob/O in hearers(1, R.loc))
 					O.show_message("[icon2html(R,O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 			if("freq")

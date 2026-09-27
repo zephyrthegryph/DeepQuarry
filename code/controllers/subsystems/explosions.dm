@@ -247,7 +247,7 @@ SUBSYSTEM_DEF(explosions)
 	// One perceptual event per listener and subsystem slice. Cascading cells no
 	// longer perform two complete player-list scans apiece or layer hundreds of
 	// identical sounds; each player hears the strongest/closest queued blast.
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		var/list/best
 		var/best_score = -INFINITY
 		var/best_distance = INFINITY
@@ -495,7 +495,6 @@ SUBSYSTEM_DEF(explosions)
 	// its next frame) -- only the power side batches.
 	if(!atmos_topology_batch_open)
 		atmos_topology_batch_open = TRUE
-		SSmachines.power_batch_begin()
 		SScontracts?.begin_contract_batch()
 	// waking from sleep, we are absolutely not resuming, and INSTANT feedback to players is required here.
 	if(can_fire) // already awake
@@ -530,7 +529,7 @@ SUBSYSTEM_DEF(explosions)
 	if(atmos_topology_batch_open)
 		atmos_topology_batch_open = FALSE
 		SSair.rust_commit_pending_pipenets()
-		SSmachines.power_batch_end()
+		vg_power_commit()
 		SScontracts?.end_contract_batch()
 	// we've finished. Pause because was have no more work to do.
 	if(!can_fire) // already asleep

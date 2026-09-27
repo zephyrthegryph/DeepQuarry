@@ -15,4 +15,3 @@ GLOBAL_LIST_EMPTY(crafting_recipes) //list of all table craft recipes
 
 GLOBAL_LIST_INIT(uplink_locations, list("PDA", "Headset", "None"))
 
-GLOBAL_LIST_EMPTY(experiment_handlers)

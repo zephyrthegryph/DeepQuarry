@@ -162,8 +162,7 @@
 		if(H)
 			pipe_expel(H, T, 0)
 
-	spawn(2)	// delete pipe after 2 ticks to ensure expel proc finished
-		qdel(src)
+	om_qdel_after(src, 2) // delete pipe after 2 ticks to ensure expel proc finished
 
 // pipe affected by explosion
 // Light damage leaves broken pipe segments in place.
@@ -183,14 +182,17 @@
 	if(!T.is_plating())
 		return ITEM_INTERACT_BLOCKING // prevent interaction with T-scanner revealed pipes
 	add_fingerprint(user)
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing [src]...."))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, "You slice [src]")
-		welded()
-	else
-		to_chat(user, "You must stay still while welding the pipe.")
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing [src]....", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), on_fail = PROC_REF(welder_act_tool_failed), fail_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposalpipe/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You slice [src]")
+	welded()
+
+/obj/structure/disposalpipe/proc/welder_act_tool_failed(mob/user)
+	to_chat(user, "You must stay still while welding the pipe.")
 
 // called when pipe is cut with welder
 /obj/structure/disposalpipe/proc/welded()

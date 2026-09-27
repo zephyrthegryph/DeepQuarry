@@ -29,8 +29,13 @@
 	usage_flags = PROGRAM_ALL
 
 // This is the primary game loop, which handles the logic of being defeated or winning.
-/datum/computer_file/program/game/proc/game_check(mob/user)
-	sleep(5)
+/// Checks for a win or loss half a second from now, then runs `next` (a proc on src): at
+/// once, or a second later when the game just ended.
+/datum/computer_file/program/game/proc/game_check(next)
+	om_after(src, 0.5 SECONDS, PROC_REF(game_evaluate), next)
+
+/datum/computer_file/program/game/proc/game_evaluate(next)
+	var/ended = TRUE
 	if(boss_hp <= 0)
 		heads_up = "You have crushed [boss_name]! Rejoice!"
 		playsound(computer.loc, 'sound/arcade/win.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
@@ -39,7 +44,6 @@
 		if(istype(computer))
 			computer.update_icon()
 		ticket_count += 1
-		sleep(10)
 	else if(player_hp <= 0 || player_mp <= 0)
 		heads_up = "You have been defeated... how will the station survive?"
 		playsound(computer.loc, 'sound/arcade/lose.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
@@ -47,7 +51,17 @@
 		program_icon_state = "arcade_off"
 		if(istype(computer))
 			computer.update_icon()
-		sleep(10)
+	else
+		ended = FALSE
+	if(next)
+		if(ended)
+			om_after(src, 1 SECOND, next)
+		else
+			call(src, next)()
+
+/// A player move resolves a second later: the game check, then the enemy's turn.
+/datum/computer_file/program/game/proc/resolve_player_turn()
+	game_check(PROC_REF(enemy_check))
 
 // This handles the boss "AI".
 /datum/computer_file/program/game/proc/enemy_check(mob/user)
@@ -122,9 +136,7 @@
 			heads_up = "You attack for [attackamt] damage."
 			playsound(computer.loc, 'sound/arcade/hit.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
 			boss_hp -= attackamt
-			sleep(10)
-			game_check()
-			enemy_check()
+			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 			return TRUE
 		if("Heal")
 			var/healamt = 0 //More Spam Prevention.
@@ -140,9 +152,7 @@
 			playsound(computer.loc, 'sound/arcade/heal.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
 			player_hp += healamt
 			player_mp -= healcost
-			sleep(10)
-			game_check()
-			enemy_check()
+			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 			return TRUE
 		if("Recharge_Power")
 			var/rechargeamt = 0 //As above.
@@ -152,9 +162,7 @@
 			heads_up = "You regain [rechargeamt] magic power."
 			playsound(computer.loc, 'sound/arcade/mana.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
 			player_mp += rechargeamt
-			sleep(10)
-			game_check()
-			enemy_check()
+			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 			return TRUE
 		if("Dispense_Tickets")
 			if(!printer)

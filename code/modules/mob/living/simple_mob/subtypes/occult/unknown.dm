@@ -205,34 +205,30 @@
 		if(target.client)
 			to_chat(target, span_critical("You feel as though you are losing your sense of direction! Brace yourself!"))
 		new /obj/effect/temp_visual/pre_confuse(get_turf(target))
-		spawn(5 SECONDS)
-			if(target)
-				target.status_at_least(EFFECT_CONFUSED, 3)
-				if(target.client)
-					to_chat(target, span_critical("You feel confused!"))
-				new /obj/effect/temp_visual/confuse(get_turf(target))
+		om_after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
 
 /mob/living/simple_mob/glitch_boss/proc/bullethell(atom/A)
 	set waitfor = FALSE
 
-	var/sd = dir2angle(dir)
-	var/list/offsets = list(45, 45, 20, 10)
+	bullethell_wave(dir2angle(dir), 1)
 
-	for(var/i = 0, i<4, i++)
-		for(var/j = 0, j <4, j++)
-			var/obj/item/projectile/energy/slow_orb/shot = new(get_turf(src))
-			shot.firer = src
-			shot.fire(sd)
-			sd += 90
-		sd += pick(offsets)
-		sleep(20)
+/// Four waves of four orbs, two seconds apart, each wave rotated a little.
+/mob/living/simple_mob/glitch_boss/proc/bullethell_wave(sd, wave)
+	var/static/list/offsets = list(45, 45, 20, 10)
+	for(var/j = 0, j <4, j++)
+		var/obj/item/projectile/energy/slow_orb/shot = new(get_turf(src))
+		shot.firer = src
+		shot.fire(sd)
+		sd += 90
+	sd += pick(offsets)
+	if(wave < 4)
+		om_after(src, 2 SECONDS, PROC_REF(bullethell_wave), sd, wave + 1)
 
 /mob/living/simple_mob/glitch_boss/proc/speed_up_boost(atom/A)
 	if(base_attack_cooldown == initial(base_attack_cooldown))
 		base_attack_cooldown = 1 SECOND
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
-		spawn(duration)
-			base_attack_cooldown = initial(base_attack_cooldown)
+		om_after(src, duration, TYPE_PROC_REF(/datum, om_set_var), "base_attack_cooldown", initial(base_attack_cooldown))
 
 /mob/living/simple_mob/glitch_boss/do_special_attack(atom/A)
 	. = TRUE
@@ -314,3 +310,10 @@
 #undef GA_BULLETHELL
 #undef GA_LINES
 #undef GA_CONFUSION
+
+/// The glitch boss's confusion lands, five seconds after its warning.
+/mob/living/proc/glitch_confusion()
+	status_at_least(EFFECT_CONFUSED, 3)
+	if(client)
+		to_chat(src, span_critical("You feel confused!"))
+	new /obj/effect/temp_visual/confuse(get_turf(src))

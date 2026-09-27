@@ -10,11 +10,13 @@
 		return
 	if(!updating_cult_vision)
 		updating_cult_vision = 1
-		spawn(CULT_UPDATE_BUFFER)
-			if(old_loc != src.loc)
-				GLOB.cultnet.updateVisibility(old_loc, 0)
-				GLOB.cultnet.updateVisibility(loc, 0)
-			updating_cult_vision = 0
+		om_after(src, CULT_UPDATE_BUFFER, PROC_REF(cult_vision_settle), old_loc)
+
+/mob/living/proc/cult_vision_settle(atom/old_loc)
+	updating_cult_vision = 0
+	if(old_loc != loc)
+		GLOB.cultnet.updateVisibility(old_loc, 0)
+		GLOB.cultnet.updateVisibility(loc, 0)
 
 #undef CULT_UPDATE_BUFFER
 

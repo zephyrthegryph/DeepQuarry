@@ -47,8 +47,10 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 /obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
 	if(!(damaged || (stat & BROKEN)))
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floor_light/proc/welder_act_tool_done(mob/user)
 	if(QDELETED(src))
 		return ITEM_INTERACT_BLOCKING
 	visible_message(span_notice("\The [user] has repaired \the [src]."))
@@ -116,7 +118,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 		update_brightness()
 		return TRUE
 
-/obj/machinery/floor_light/process()
+/obj/machinery/floor_light/machine_step()
 	..()
 	var/need_update
 	if((!anchored || broken()) && on)

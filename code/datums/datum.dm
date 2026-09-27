@@ -48,13 +48,6 @@
 	/// Datum level flags
 	var/tmp/datum_flags = NONE
 
-	/// L1 (doc/rewrite/lifecycle.md §2 phase 5): the subsystem START_PROCESSING
-	/// last recorded us into, or null. The destroy transaction's teardown
-	/// phase stops it automatically -- see dq_lifecycle_teardown().
-	var/tmp/datum/controller/subsystem/lifecycle_processing_subsystem
-
-	/// A weak reference to another datum
-	var/tmp/datum/weakref/weak_reference
 
 	/*
 	* Lazy associative list of currently active cooldowns.
@@ -108,7 +101,6 @@
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	tag = null
-	weak_reference = null //ensure prompt GCing of weakref.
 
 	//clear timers
 	if(_active_timers)

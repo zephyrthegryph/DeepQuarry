@@ -29,6 +29,10 @@
 	SEND_SIGNAL(D, COMSIG_QDELETING, force)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_GUARD, tick)
 
+	// Phase 2 for datums that aren't atoms: leave registries (atoms leave in
+	// their own phase 2, through dematerialize).
+	dq_lifecycle_leave_registries(D)
+
 	if(isatom(D))
 		var/atom/movable/AM = D
 		if(ismovable(AM))
@@ -66,7 +70,7 @@
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 
 	// Phase 5: teardown. Processing (auto-stopped via
-	// lifecycle_processing_subsystem, recorded by START_PROCESSING), screens,
+	// periodic_pipe, set by PERIODIC_START), screens,
 	// clock callbacks (hook point, DQ Medical w6/k1) and grants (hook point).
 	// Timers, reactor, components, signals and tgui are already handled by
 	// /datum/Destroy() itself (phase 7) and are not duplicated here.
@@ -134,23 +138,12 @@
 
 // ---- Phase 5: teardown ----
 
-/// Stops whatever subsystem START_PROCESSING last recorded (see MC.dm),
+/// Ends any periodic work (PERIODIC_START, code/datums/om/periodic.dm),
 /// releases HUD/screen objects from any client they're shown to, and calls
 /// the clock and grants teardown hook points.
 /proc/dq_lifecycle_teardown(datum/D)
-	if(D.lifecycle_processing_subsystem)
-		var/datum/controller/subsystem/SS = D.lifecycle_processing_subsystem
-		D.datum_flags &= ~DF_ISPROCESSING
-		D.lifecycle_processing_subsystem = null
-		// processing/currentrun are declared per-subsystem-subtype, not on
-		// the shared /datum/controller/subsystem base (every subsystem that
-		// processes redeclares its own, the way START_PROCESSING's own
-		// `Processor.processing` expects) -- vars[] reaches them generically
-		// without needing SS's exact concrete type here.
-		var/list/processing = SS.vars["processing"]
-		processing?.Remove(D)
-		var/list/currentrun = SS.vars["currentrun"]
-		currentrun?.Remove(D)
+	if(D.periodic_pipe)
+		periodic_stop(D)
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()
@@ -178,6 +171,9 @@
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
 	if(D.om_rec)
 		om_teardown_rest(D)
+	// OM handles to D stop resolving (object_model_core.md §4.11).
+	if(D.om_hid)
+		om_handle_release(D)
 
 // ---- Phase 6: effects ----
 

@@ -2,12 +2,13 @@
 // (rules.md §4). One binding per object holds its reactor subscriptions and,
 // per rule, whether the condition held at the last look.
 
-/// The object's rule binding, if it has one. Kept on the object itself: the
-/// old registry was keyed by REF(object) text, and REF() alone was 9 s of
-/// boot (171 k calls). The binding lives exactly as long as the object is
-/// materialized (dq_rules_on_dematerialize() deletes it), so it holds its
-/// owner directly: a weakref per binding cost a REF() each (7-9 s of boot).
+/// This object's rule binding. The binding holds its owner by OM handle, so it
+/// is no outside reference to its object (collapse).
 /datum/var/tmp/datum/rule_binding/rule_binding
+
+/datum/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + "rule_binding"
 
 /proc/dq_rule_binding_of(datum/thing)
 	var/datum/rule_binding/binding = thing?.rule_binding
@@ -33,9 +34,8 @@
 /proc/dq_rules_heat_body_created(atom/A)
 	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
 		return
-	var/datum/rule_binding/existing = dq_rule_binding_of(A)
-	if(existing)
-		dq_rx_heat_body_created(A)
+	// Existing bindings' node watches follow the body themselves.
+	if(dq_rule_binding_of(A))
 		return
 	// At rest the object followed its surroundings, unwatched: a rule whose
 	// condition holds now crossed while nothing watched it, so it fires.
@@ -45,8 +45,7 @@
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
-	var/datum/rule_binding/binding = A.rule_binding
-	A.rule_binding = null
+	var/datum/rule_binding/binding = dq_rule_binding_of(A)
 	if(binding)
 		qdel(binding)
 
@@ -66,14 +65,11 @@
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	return binding?.replaces(flag) ? binding : null
 
-/// A DM-owned property of `thing` changed: wake its binding at the next
-/// reactor dispatch if one of its rules reads that key. Key triggers are
-/// type-level: nothing is subscribed per object, the publish site already
-/// holds the binding.
+/// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	if(binding && (key_kind in binding.key_kinds))
-		binding.queue_wake()
+	if(binding?.key_id && (key_kind in binding.key_kinds))
+		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
@@ -86,8 +82,9 @@
 		LAZYSET(binding.nodes, property, .)
 
 /datum/rule_binding
-	/// The owner. The binding is deleted when the owner dematerializes.
-	var/atom/owner
+	var/owner_ref
+	/// The owner, resolved for this call. Not held between calls.
+	var/tmp/atom/owner
 	/// Shared rule list for the owner's type.
 	var/list/rules
 	/// Per rule (same index): TRUE while its condition held at the last look.
@@ -103,16 +100,12 @@
 	var/list/nodes
 	/// Key kinds the owner must publish.
 	var/list/key_kinds
-	/// Kept for diagnostics: key triggers no longer subscribe per object.
+	/// This binding's reactor id: the id of the owner's DM-owned keys.
 	var/key_id
-	/// A key publish is waiting for the next reactor dispatch.
-	var/wake_queued = FALSE
-	/// Heat watches are registered (only while the owner has a heat body:
-	/// at rest it follows its surroundings and cannot cross anything).
-	var/heat_linked = FALSE
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
+	owner_ref = om_handle(owner)
 	src.owner = owner
 	src.rules = rules
 	var/count = length(rules)
@@ -129,8 +122,7 @@
 	for(var/i in 1 to count)
 		if(tokens[i])
 			holding[i] = check(rules[i])
-	if(owner.heat_body)
-		link_heat()
+	src.owner = null
 
 /datum/rule_binding/Destroy()
 	for(var/i in 1 to length(rules))
@@ -139,31 +131,12 @@
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	if(owner?.rule_binding == src)
-		owner.rule_binding = null
+	var/datum/owner_now = om_resolve(owner_ref)
+	if(owner_now?.rule_binding == src)
+		owner_now.rule_binding = null
 	owner = null
+	owner_ref = null
 	return ..()
-
-/// Wakes this binding at the next reactor dispatch (once, however many
-/// publishes arrive before it).
-/datum/rule_binding/proc/queue_wake()
-	if(wake_queued)
-		return
-	wake_queued = TRUE
-	dq_rx_at(src, world.time)
-
-/// The owner has a heat body: register every live rule's heat watches.
-/datum/rule_binding/proc/link_heat()
-	if(heat_linked)
-		return
-	heat_linked = TRUE
-	for(var/i in 1 to length(rules))
-		var/list/rule_tokens = tokens[i]
-		if(!rule_tokens)
-			continue
-		var/list/heat_tokens = watch_heat(rules[i])
-		if(heat_tokens)
-			rule_tokens += heat_tokens
 
 /// Whether a live rule on this binding replaces the RULE_REPLACES_* `flag`.
 /datum/rule_binding/proc/replaces(flag)
@@ -178,40 +151,16 @@
 	for(var/list/rule_tokens in tokens)
 		.++
 
-/// Takes one rule on. Returns its token list (empty until heat watches are
-/// linked), or null if the owner can't have this rule (a threshold level it
-/// doesn't have). Nothing is subscribed per object here: key triggers wake
-/// through dq_rules_publish(), heat triggers are watched from link_heat().
+/// Subscribe one rule's triggers. Returns its token list, or null if the
+/// owner can't have this rule (a threshold level it doesn't have).
 /datum/rule_binding/proc/subscribe(datum/rule/rule)
-	for(var/datum/rule_trigger/trigger as anything in rule.triggers)
-		switch(trigger.kind)
-			if(RULE_TRIGGER_THRESHOLD)
-				if(isnull(trigger.level_for(owner)))
-					return null
-				// The node is DM-only bookkeeping (no Rust call); it is the
-				// handle DM authority writes through to give the object a body.
-				trigger.provider.node_of(owner, TRUE)
-			if(RULE_TRIGGER_BAND)
-				trigger.provider.node_of(owner, TRUE)
-			if(RULE_TRIGGER_DIFFERENCE)
-				trigger.provider.node_of(owner, TRUE)
-				trigger.provider_b.node_of(owner, TRUE)
-			if(RULE_TRIGGER_KEY)
-				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
-					return null
-				LAZYOR(key_kinds, trigger.key_kind)
-	return list()
-
-/// Registers one rule's heat watches (threshold, band, change) on the
-/// owner's heat nodes. Returns their tokens.
-/datum/rule_binding/proc/watch_heat(datum/rule/rule)
 	var/list/out = list()
 	for(var/datum/rule_trigger/trigger as anything in rule.triggers)
 		switch(trigger.kind)
 			if(RULE_TRIGGER_THRESHOLD)
 				var/level = trigger.level_for(owner)
 				if(isnull(level))
-					continue
+					return cancel_all(out)
 				var/handle = trigger.provider.node_of(owner, TRUE)
 				var/above = trigger.fires_above()
 				// Watches fire at >= / <=; a strict comparison watches just past the level.
@@ -226,6 +175,13 @@
 			if(RULE_TRIGGER_DIFFERENCE)
 				out += dq_rx_on_change(src, trigger.provider.node_of(owner, TRUE), trigger.provider.channel)
 				out += dq_rx_on_change(src, trigger.provider_b.node_of(owner, TRUE), trigger.provider_b.channel)
+			if(RULE_TRIGGER_KEY)
+				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
+					return cancel_all(out)
+				if(!key_id)
+					key_id = dq_rx_id(src)
+				out += dq_rx_on_key(src, trigger.key_kind, key_id, 1)
+				LAZYOR(key_kinds, trigger.key_kind)
 	return out
 
 /datum/rule_binding/proc/cancel_all(list/out)
@@ -247,15 +203,16 @@
 /datum/rule_binding/proc/check(datum/rule/rule)
 	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
 
-/// A binding whose owner is gone deletes itself.
+/// Resolve the owner for this call; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
+	owner = om_resolve(owner_ref)
 	if(!owner || QDELETED(owner))
+		owner = null
 		qdel(src)
 		return FALSE
 	return TRUE
 
 /datum/rule_binding/rule_wake(reason, source)
-	wake_queued = FALSE
 	if(!resolve())
 		return
 	evaluate()
@@ -271,6 +228,7 @@
 	if(!resolve())
 		return
 	evaluate_rules()
+	owner = null
 
 /datum/rule_binding/proc/evaluate_rules()
 	for(var/i in 1 to length(rules))

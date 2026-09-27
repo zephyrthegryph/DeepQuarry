@@ -542,16 +542,16 @@
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza/bigslice,
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza/bigslice)
 
+/obj/structure/theonepizza/proc/slice_done(mob/living/user)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " successfully cuts The One Pizza."), span_notice("You successfully cut The One Pizza."))
+	for(var/slicetype in slicelist)
+		new slicetype(src.loc)
+	qdel(src)
+
 /obj/structure/theonepizza/attackby(obj/item/W, mob/living/user)
 	if(istype(W,/obj/item/material/knife))
 		user.visible_message(span_bold("\The [user]") + " starts to slowly cut through The One Pizza.", span_notice("You start to slowly cut through The One Pizza."))
-		if(do_after(user, slicetime, src))
-			if(!src)
-				return		// We got disappeared already
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " successfully cuts The One Pizza."), span_notice("You successfully cut The One Pizza."))
-			for(var/slicetype in slicelist)
-				new slicetype(src.loc)
-			qdel(src)
+		om_do_after(user, slicetime, src, src, PROC_REF(slice_done), list(user))
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice
 	name = "Giant Margherita slice"

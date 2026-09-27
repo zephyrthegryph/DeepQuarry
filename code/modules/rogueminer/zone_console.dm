@@ -117,8 +117,9 @@
 	//Set some kinda scanning var to pause UI input on console
 	GLOB.rm_controller.last_scan = world.time
 	scanning = 1
-	sleep(60)
+	om_after(src, 6 SECONDS, PROC_REF(finish_scan))
 
+/obj/machinery/computer/roguezones/proc/finish_scan()
 	//Break the shuttle temporarily.
 	shuttle_control.shuttle_tag = null
 

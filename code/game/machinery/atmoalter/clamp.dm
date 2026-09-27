@@ -61,7 +61,7 @@
 
 /obj/machinery/clamp/Destroy()
 	if(!open)
-		spawn(-1) open()
+		open()
 	. = ..()
 
 /obj/machinery/clamp/proc/open()
@@ -95,16 +95,18 @@
 
 	if(open && over_object == usr && Adjacent(usr))
 		to_chat(usr, span_notice("You begin to remove \the [src]..."))
-		if (do_after(usr, 3 SECONDS, target = src))
-			to_chat(usr, span_notice("You have removed \the [src]."))
-			var/obj/item/clamp/C = new/obj/item/clamp(src.loc)
-			C.forceMove(usr.loc)
-			if(ishuman(usr))
-				usr.put_in_hands(C)
-			qdel(src)
-			return
+		om_do_after(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(usr))
 	else
 		to_chat(usr, span_warning("You can't remove \the [src] while it's active!"))
+
+/obj/machinery/clamp/proc/MouseDrop_timed_done(mob/usr_mob)
+	to_chat(usr_mob, span_notice("You have removed \the [src]."))
+	var/obj/item/clamp/C = new/obj/item/clamp(src.loc)
+	C.forceMove(usr_mob.loc)
+	if(ishuman(usr_mob))
+		usr_mob.put_in_hands(C)
+	qdel(src)
+	return
 
 /obj/item/clamp
 	name = "stasis clamp"
@@ -119,11 +121,15 @@
 	if (istype(A, /obj/machinery/atmospherics/pipe/simple))
 		to_chat(user, span_notice("You begin to attach \the [src] to \the [A]..."))
 		var/C = locate(/obj/machinery/clamp) in get_turf(A)
-		if (do_after(user, 3 SECONDS, target = src) && !C)
-			if(!user.unEquip(src))
-				return
-			to_chat(user, span_notice("You have attached \the [src] to \the [A]."))
-			new/obj/machinery/clamp(A.loc, A)
-			qdel(src)
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user, C))
 		if(C)
 			to_chat(user, span_notice("\The [C] is already attached to the pipe at this location!"))
+
+/obj/item/clamp/proc/afterattack_timed_done(atom/A, mob/user, C)
+	if(!(!C))
+		return
+	if(!user.unEquip(src))
+		return
+	to_chat(user, span_notice("You have attached \the [src] to \the [A]."))
+	new/obj/machinery/clamp(A.loc, A)
+	qdel(src)

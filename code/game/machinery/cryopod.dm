@@ -349,7 +349,7 @@
 	return 1
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
-/obj/machinery/cryopod/process()
+/obj/machinery/cryopod/machine_step()
 	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(!occupant)
 		return PROCESS_KILL
@@ -481,7 +481,7 @@
 			qdel(B)
 
 	//Update any existing objectives involving this mob.
-	for(var/datum/objective/O in GLOB.all_objectives)
+	for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
 		// We don't want revs to get objectives that aren't for heads of staff. Letting
 		// them win or lose based on cryo is silly so we remove the objective.
 		if(O.target == to_despawn.mind)
@@ -656,36 +656,38 @@
 
 	visible_message("[user] [on_enter_visible_message] [src].", 3)
 
-	if(do_after(user, 2 SECONDS, target = src))
-
-		if(!user || !user.client)
-			return TRUE
-
-		if(occupant)
-			to_chat(user, span_boldnotice("\The [src] is in use."))
-			return TRUE
-
-		user.stop_pulling()
-		if(!user.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
-			return TRUE
-		set_occupant(user)
-		if(isliving(user) && applies_stasis)
-			var/mob/living/L = occupant
-			L.set_stasis(/datum/modifier/stasis/total, src)
-		if(BUCKLED(user) && istype(BUCKLED(user), /obj/structure/bed/chair/wheelchair))
-			var/atom/movable/_tmp_buck_6 = BUCKLED(user)
-			_tmp_buck_6.loc = user.loc
-
-		icon_state = occupied_icon_state
-
-		to_chat(user, span_notice("[on_enter_occupant_message]"))
-		to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
-
-		time_entered = world.time
-
-		add_fingerprint(user)
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
 
 	return TRUE
+
+/obj/machinery/cryopod/proc/interaction_enter_timed_done(mob/user)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	if(!user || !user.client)
+		return TRUE
+
+	if(occupant)
+		to_chat(user, span_boldnotice("\The [src] is in use."))
+		return TRUE
+
+	user.stop_pulling()
+	if(!user.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+		return TRUE
+	set_occupant(user)
+	if(isliving(user) && applies_stasis)
+		var/mob/living/L = user
+		L.set_stasis(/datum/modifier/stasis/total, src)
+	if(BUCKLED(user) && istype(BUCKLED(user), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_6 = BUCKLED(user)
+		_tmp_buck_6.loc = user.loc
+
+	icon_state = occupied_icon_state
+
+	to_chat(user, span_notice("[on_enter_occupant_message]"))
+	to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
+
+	time_entered = world.time
+
+	add_fingerprint(user)
 
 /// Old MouseDrop_T: silent guard clauses (no message), so kept inside the effect.
 /datum/interaction/machine_drag/cryopod_drag_in
@@ -732,7 +734,7 @@
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
 	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(new_occupant)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"
@@ -763,36 +765,39 @@
 		else
 			visible_message("\The [user] starts putting [M] into \the [src].", 3)
 
-		if(do_after(user, 2 SECONDS, target = src))
-			if(occupant)
-				to_chat(user, span_warning("\The [src] is already occupied."))
-				return
-			if(!M.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
-				to_chat(user, span_warning("\The [src] won't take [M]."))
-				return
-		else return
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 
-		icon_state = occupied_icon_state
+/obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
+	icon_state = occupied_icon_state
 
-		to_chat(M, span_notice("[on_enter_occupant_message]"))
-		to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
-		set_occupant(M)
-		time_entered = world.time
-		if(isliving(M) && applies_stasis)
-			var/mob/living/L = M
-			L.set_stasis(/datum/modifier/stasis/total, src)
-		if(BUCKLED(M) && istype(BUCKLED(M), /obj/structure/bed/chair/wheelchair))
-			var/atom/movable/_tmp_buck_7 = BUCKLED(M)
-			_tmp_buck_7.loc = M.loc
+	to_chat(M, span_notice("[on_enter_occupant_message]"))
+	to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
+	set_occupant(M)
+	time_entered = world.time
+	if(isliving(M) && applies_stasis)
+		var/mob/living/L = M
+		L.set_stasis(/datum/modifier/stasis/total, src)
+	if(BUCKLED(M) && istype(BUCKLED(M), /obj/structure/bed/chair/wheelchair))
+		var/atom/movable/_tmp_buck_7 = BUCKLED(M)
+		_tmp_buck_7.loc = M.loc
 
-		// Book keeping!
-		var/turf/location = get_turf(src)
-		log_admin("[key_name_admin(M)] has entered a stasis pod. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)")
-		message_admins(span_notice("[key_name_admin(M)] has entered a stasis pod."))
+	// Book keeping!
+	var/turf/location = get_turf(src)
+	log_admin("[key_name_admin(M)] has entered a stasis pod. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)")
+	message_admins(span_notice("[key_name_admin(M)] has entered a stasis pod."))
 
-		//Despawning occurs when process() is called with an occupant without a client.
-		add_fingerprint(M)
+	//Despawning occurs when process() is called with an occupant without a client.
+	add_fingerprint(M)
 
+/obj/machinery/cryopod/proc/go_in_timed_done(mob/M, mob/user)
+	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
+	if(occupant)
+		to_chat(user, span_warning("\The [src] is already occupied."))
+		return
+	if(!M.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+		to_chat(user, span_warning("\The [src] won't take [M]."))
+		return
+	go_in_finish(M, user)
 
 //Overrides!
 

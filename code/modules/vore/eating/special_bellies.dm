@@ -18,7 +18,7 @@
 		return
 	addtimer(CALLBACK(src, PROC_REF(try_tele), thing), teleport_delay, TIMER_DELETE_ME)
 
-/obj/belly/special/teleporter/process(wait)
+/obj/belly/special/teleporter/periodic_step(wait)
 	if(istype(target))
 		return ..()
 	for(var/atom/movable/AM in contents)

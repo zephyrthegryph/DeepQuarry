@@ -68,12 +68,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	. = ..()
 	blood_image = image(loc = src)
 	blood_image.override = 1
-	for(var/mob/living/silicon/ai/our_ai in GLOB.player_list)
+	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			our_ai.client.images += blood_image
 
 /obj/effect/rune/Destroy()
-	for(var/mob/living/silicon/ai/our_ai in GLOB.player_list)
+	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			our_ai.client.images -= blood_image
 	qdel(blood_image)
@@ -313,6 +313,18 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	return ITEM_INTERACT_SUCCESS
 
 
+/obj/item/book/tome/proc/scribe_done(mob/living/user, chosen_rune, word1, word2, word3)
+	var/area/A = get_area(user)
+	log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
+	var/mob/living/carbon/human/H = user
+	var/obj/effect/rune/R = new /obj/effect/rune(user.loc)
+	to_chat(user, span_notice("You finish drawing the arcane markings of the Geometer."))
+	R.word1 = word1
+	R.word2 = word2
+	R.word3 = word3
+	R.check_icon()
+	R.add_blooddna(H.dna,H)
+
 /obj/item/book/tome/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)
@@ -409,20 +421,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 			V.show_message(span_danger("\The [user] slices open a finger and begins to chant and paint symbols on the floor."), 3, span_danger("You hear chanting."), 2)
 		to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
 		user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
-		if(do_after(user, 5 SECONDS, target = src))
-			var/area/A = get_area(user)
-			log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
-			if(user.get_active_hand() != src)
-				return
-			var/mob/living/carbon/human/H = user
-			var/obj/effect/rune/R = new /obj/effect/rune(user.loc)
-			to_chat(user, span_notice("You finish drawing the arcane markings of the Geometer."))
-			var/list/required = dictionary[chosen_rune]
-			R.word1 = english[required[1]]
-			R.word2 = english[required[2]]
-			R.word3 = english[required[3]]
-			R.check_icon()
-			R.add_blooddna(H.dna,H)
+		var/list/required = dictionary[chosen_rune]
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(scribe_done), list(user, chosen_rune, english[required[1]], english[required[2]], english[required[3]]))
 		return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")

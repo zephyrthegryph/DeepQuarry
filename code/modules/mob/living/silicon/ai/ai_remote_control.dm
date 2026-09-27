@@ -19,7 +19,7 @@
 		return
 
 	var/list/possible = list()
-	for(var/mob/living/silicon/robot/R as anything in GLOB.available_ai_shells)
+	for(var/mob/living/silicon/robot/R as anything in REGISTRY_MEMBERS(REGISTRY_AI_SHELLS))
 		if(R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == src) ) ) // shell restrictions
 			if(istype(R.loc, /obj/machinery/recharge_station))	//Check Rechargers
 				var/obj/machinery/recharge_station/RS = R.loc

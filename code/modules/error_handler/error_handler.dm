@@ -4,6 +4,15 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 #ifdef USE_CUSTOM_ERROR_HANDLER
 #define ERROR_USEFUL_LEN 2
 
+/// A silenced runtime's silence is over: report how many were skipped meanwhile.
+/proc/error_silence_ended(erroruid, list/error_cooldown, list/exception_box)
+	var/exception/E = exception_box[1]
+	var/skipcount = abs(error_cooldown[erroruid]) - 1
+	error_cooldown[erroruid] = 0
+	if(skipcount > 0)
+		SEND_TEXT(world.log, "\[[time_stamp()]] Skipped [skipcount] runtimes in [E.file],[E.line].")
+		GLOB.error_cache.log_error(E, skip_count = skipcount)
+
 /world/Error(exception/E, datum/e_src)
 	GLOB.total_runtimes++
 
@@ -88,14 +97,9 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	if(cooldown > configured_error_cooldown * configured_error_limit)
 		cooldown = -1
 		silencing = TRUE
-		spawn(0)
-			usr = null
-			sleep(configured_error_silence_time)
-			var/skipcount = abs(error_cooldown[erroruid]) - 1
-			error_cooldown[erroruid] = 0
-			if(skipcount > 0)
-				SEND_TEXT(world.log, "\[[time_stamp()]] Skipped [skipcount] runtimes in [E.file],[E.line].")
-				GLOB.error_cache.log_error(E, skip_count = skipcount)
+		// The silence ends by a timer on the global owner; the handler itself never waits.
+		// (Lists pass through om_after() as they are: the exception rides in one.)
+		om_after(null, configured_error_silence_time, /proc/error_silence_ended, erroruid, error_cooldown, list(E))
 
 	error_last_seen[erroruid] = world.time
 	error_cooldown[erroruid] = cooldown

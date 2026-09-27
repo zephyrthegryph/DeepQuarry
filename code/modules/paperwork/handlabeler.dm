@@ -59,8 +59,7 @@
 			to_chat(user, span_warning("How are you going to label that?"))
 			return
 		tray.labelled = label
-		spawn(1)
-			tray.update_icon()
+		om_after(tray, 1, TYPE_PROC_REF(/atom, update_icon))
 
 	user.visible_message( \
 		span_notice("\The [user] labels [A] as [label]."), \

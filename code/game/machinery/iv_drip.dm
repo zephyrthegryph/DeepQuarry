@@ -44,14 +44,14 @@
 	if(attached)
 		visible_message("[attached] is detached from \the [src]")
 		attached = null
-		STOP_MACHINE_PROCESSING(src)
+		MACHINE_SLEEP(src)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] attaches \the [src] to \the [over_object].")
 		attached = over_object
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		update_icon()
 
 
@@ -73,17 +73,18 @@
 /obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
-	if(do_after(user, 1.5 SECONDS, target = src))
-		to_chat(user, span_notice("You dismantle the IV drip."))
-		new /obj/item/stack/rods(loc, 6)
-		if(beaker)
-			beaker.forceMove(get_turf(src))
-			beaker = null
-		qdel(src)
+	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)
+	to_chat(user, span_notice("You dismantle the IV drip."))
+	new /obj/item/stack/rods(loc, 6)
+	if(beaker)
+		beaker.forceMove(get_turf(src))
+		beaker = null
+	qdel(src)
 
-/obj/machinery/iv_drip/process()
+/obj/machinery/iv_drip/machine_step()
 	set background = 1
 	if(!attached)
 		return PROCESS_KILL

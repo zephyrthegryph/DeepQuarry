@@ -19,7 +19,7 @@
 /obj/item/mop_deploy/Initialize(mapload)
 	. = ..()
 	create_reagents(5)
-	START_PROCESSING(SSobj, src)
+	om_after(src, 0, PROC_REF(check_held))
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))
@@ -39,11 +39,13 @@
 	if(istype(A, /turf) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay) || istype(A, /obj/effect/rune))
 		user.visible_message(span_warning("[user] begins to clean \the [get_turf(A)]."))
 
-		if(do_after(user, 4 SECONDS, target = src))
-			var/turf/T = get_turf(A)
-			if(T)
-				T.clean_deploy(src)
-			to_chat(user, span_notice("You have finished mopping!"))
+		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
+
+/obj/item/mop_deploy/proc/afterattack_timed_done(atom/A, mob/user)
+	var/turf/T = get_turf(A)
+	if(T)
+		T.clean_deploy(src)
+	to_chat(user, span_notice("You have finished mopping!"))
 
 /obj/effect/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/mop_deploy) || istype(I, /obj/item/soap))
@@ -51,7 +53,6 @@
 	..()
 
 /obj/item/mop_deploy/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/mop_deploy/attack_self(mob/user)
@@ -59,9 +60,11 @@
 	if(.)
 		return TRUE
 	user.drop_from_inventory(src)
-	spawn(1) if(!QDELETED(src)) qdel(src)
+	om_qdel_after(src, 1)
 
-/obj/item/mop_deploy/process()
+/// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
+/// between hands, never polled.
+/obj/item/mop_deploy/proc/check_held()
 	if(!creator || loc != creator || !creator.item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
@@ -74,4 +77,12 @@
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
-		spawn(1) if(!QDELETED(src)) qdel(src)
+		om_qdel_after(src, 1)
+
+/obj/item/mop_deploy/dropped(mob/user, equipping, slot)
+	. = ..()
+	om_after(src, 0, PROC_REF(check_held))
+
+/obj/item/mop_deploy/equipped(mob/user, slot)
+	. = ..()
+	om_after(src, 0, PROC_REF(check_held))

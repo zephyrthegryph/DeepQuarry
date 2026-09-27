@@ -10,10 +10,8 @@
 	var/active = FALSE				//If the shield is on
 /obj/item/borg/cloak/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/borg/cloak/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/borg/cloak/attack_self(mob/user)
@@ -26,9 +24,9 @@
 	toggle_cloak(user)
 	return
 
-/obj/item/borg/cloak/process()
+/obj/item/borg/cloak/periodic_step()
 	if(!active || !cloak_strength) //We are not active or cloak strength is set to 0
-		return
+		return PROCESS_KILL
 	if(!isliving(src.loc)) //It's not currently in our active modules.
 		active = FALSE
 		if(isrobot(loc.loc)) //The robot
@@ -88,6 +86,8 @@
 		return
 
 	active = !active
+	if(active)
+		PERIODIC_START(src, PERIODIC_SLOW) // draws power while cloaked
 	to_chat(R, span_notice("You [active ? "re" : "de"]activate your personal cloaking device."))
 	update_cloak(R)
 

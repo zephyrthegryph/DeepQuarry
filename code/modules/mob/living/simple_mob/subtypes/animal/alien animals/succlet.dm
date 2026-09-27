@@ -130,8 +130,7 @@
 	if(isbelly(loc))
 		return
 	playsound(src,'sound/voice/succlet_shriek.ogg', 100, 1)
-	spawn(25)
-		qdel(src)
+	om_qdel_after(src, 25)
 
 /mob/living/simple_mob/vore/alienanimals/succlet/attackby(obj/item/O, mob/user)
 	if(istype(O, /obj/item/newspaper) && !ckey && isturf(user.loc))

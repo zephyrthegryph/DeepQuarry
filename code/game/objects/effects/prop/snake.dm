@@ -31,15 +31,20 @@
 		creator = Creator
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
-	set waitfor = FALSE
+	snake_pulse_wait()
 
-	while(pulses_remaining)
-		sleep(pulse_delay)
-		if(on_pulse())
-			pulses_remaining--
-		else
-			break
-	qdel(src)
+/obj/effect/temporary_effect/pulse/snake/proc/snake_pulse_wait()
+	if(pulses_remaining <= 0)
+		qdel(src)
+		return
+	om_after(src, pulse_delay, PROC_REF(snake_pulse))
+
+/obj/effect/temporary_effect/pulse/snake/proc/snake_pulse()
+	if(!on_pulse())
+		qdel(src)
+		return
+	pulses_remaining--
+	snake_pulse_wait()
 
 /obj/effect/temporary_effect/pulse/snake/on_pulse()
 	var/list/possible_turfs = list()
@@ -101,8 +106,7 @@
 	if(T)
 		T.color = "#00ff00"
 
-		spawn(3 SECONDS)
-			T.color = initial(T.color)
+		om_after(T, 3 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "color", initial(T.color))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
 	hunting = locate(/mob/living) in range(7, src)

@@ -209,31 +209,49 @@ REMOVAL
 	var/monkeys_recycled = 0
 	description_info = "Click a monkey or slime to begin processing."
 
+/// Grinds `AM`: one core per timed action for slimes; a monkey is one timed action, then cubes.
 /obj/item/slime_grinder/proc/extract(atom/movable/AM, mob/living/user)
 	processing = TRUE
 	if(istype(AM, /mob/living/simple_mob/slime))
-		var/mob/living/simple_mob/slime/S = AM
-		while(S.cores)
-			playsound(src, 'sound/machines/juicer.ogg', 25, 1)
-			if(do_after(user, 15, target = src))
-				var/atom/new_core = new S.coretype(get_turf(AM))
-				playsound(src, 'sound/effects/splat.ogg', 50, 1)
-				S.cores--
-		qdel(S)
-
+		grind_core(AM, user)
+		return
 	if(istype(AM, /mob/living/carbon/human/monkey))
 		playsound(src, 'sound/machines/juicer.ogg', 25, 1)
-		if(do_after(user, 15, target = src))
-			var/mob/living/carbon/human/M = AM
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
-			qdel(M)
-			monkeys_recycled++
-			sleep(1 SECOND)
-		while(monkeys_recycled >= 4)
-			new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
-			monkeys_recycled -= 4
-			sleep(1 SECOND)
+		om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
+		return
+	processing = FALSE
+
+/obj/item/slime_grinder/proc/grind_core(mob/living/simple_mob/slime/S, mob/living/user)
+	if(!S.cores)
+		qdel(S)
+		processing = FALSE
+		return
+	playsound(src, 'sound/machines/juicer.ogg', 25, 1)
+	om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
+
+/obj/item/slime_grinder/proc/grind_core_done(mob/living/simple_mob/slime/S, mob/living/user)
+	new S.coretype(get_turf(S))
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	S.cores--
+	grind_core(S, user)
+
+/obj/item/slime_grinder/proc/grind_monkey(mob/living/carbon/human/M)
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	qdel(M)
+	monkeys_recycled++
+	om_after(src, 1 SECOND, PROC_REF(make_cubes))
+
+/// One monkey cube a second while four monkeys' worth is recycled.
+/obj/item/slime_grinder/proc/make_cubes()
+	if(monkeys_recycled < 4)
+		processing = FALSE
+		return
+	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	monkeys_recycled -= 4
+	om_after(src, 1 SECOND, PROC_REF(make_cubes))
+
+/obj/item/slime_grinder/proc/grind_ended()
 	processing = FALSE
 
 /obj/item/slime_grinder/proc/can_insert(atom/movable/AM)

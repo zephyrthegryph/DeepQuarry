@@ -1,4 +1,5 @@
 /obj/machinery/food_replicator
+	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
@@ -119,18 +120,7 @@
 
 			visible_message(span_notice("\The [src] begins to shape a nutriment slurry."))
 
-			sleep(print_delay/speed)
-
-			ping()
-			update_use_power(USE_POWER_IDLE)
-			printing = FALSE
-			update_icon()
-
-			if(!src || (stat & (BROKEN|NOPOWER)))
-				return
-
-			if(foodItem)
-				foodItem.forceMove(get_turf(src))
+			om_after(src, print_delay/speed, PROC_REF(print_done), foodItem)
 
 	else
 		to_chat(user, span_warning("There is no food to replicate!"))
@@ -145,8 +135,10 @@
 
 /obj/machinery/food_replicator/proc/interaction_scan(mob/user, obj/item/reagent_containers/food/O, datum/interaction/interaction)
 	balloon_alert(user, "scanning...")
-	if(!do_after(user, 10, src))
-		return TRUE
+	om_do_after(user, 10, target = src, receiver = src, on_done = PROC_REF(interaction_scan_timed_done), done_args = list(O))
+	return TRUE
+
+/obj/machinery/food_replicator/proc/interaction_scan_timed_done(obj/item/reagent_containers/food/O)
 	foodcheck(O)
 	return TRUE
 
@@ -199,15 +191,17 @@
 	if(printing)
 		add_overlay("printing")
 
-/obj/machinery/food_replicator/process()
+/// Reconciles its power draw with its state on every power or break change; printing sets its
+/// own draw while it runs.
+/obj/machinery/food_replicator/machine_step()
 	if(stat & (NOPOWER|BROKEN|EMPED))
 		update_use_power(USE_POWER_OFF)
-		return
+		return PROCESS_KILL
 	if(printing)
 		update_use_power(USE_POWER_ACTIVE)
-		return
-	else
-		use_power = USE_POWER_IDLE
+		return PROCESS_KILL
+	use_power = USE_POWER_IDLE
+	return PROCESS_KILL
 
 /obj/machinery/food_replicator/RefreshParts()
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
@@ -230,6 +224,18 @@
 	remove_beaker()
 	return TRUE
 
+/obj/machinery/food_replicator/proc/print_done(obj/item/reagent_containers/foodItem)
+	ping()
+	update_use_power(USE_POWER_IDLE)
+	printing = FALSE
+	update_icon()
+
+	if(stat & (BROKEN|NOPOWER))
+		return
+
+	if(foodItem)
+		foodItem.forceMove(get_turf(src))
+
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
@@ -244,8 +250,9 @@
 	message_admins("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]")
 	log_game("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 1)
 
-	sleep(6 SECONDS) // GET OUT, GET OUT
+	om_after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
+
+/obj/machinery/food_replicator/proc/self_destruct_boom()
 	stat = BROKEN
 	update_icon()
 	explosion(src, 0, 0, 2)
-	return

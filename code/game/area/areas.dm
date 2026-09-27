@@ -166,8 +166,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				if(E.operating)
 					E.nextstate = FIREDOOR_CLOSED
 				else if(!E.density)
-					spawn(0)
-						E.close()
+					E.close()
 
 // Open all firedoors in the area
 /area/proc/firedoors_open()
@@ -180,8 +179,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				if(E.operating)
 					E.nextstate = FIREDOOR_OPEN
 				else if(E.density)
-					spawn(0)
-						E.open()
+					E.open()
 
 // atmospheric_field_generator (atm_ret_field.dm) was a ZAS-only machine.
 // Without LINDA replacement these procs neutered; the area-level toggle still
@@ -277,7 +275,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 // power, and the base power_change() sends COMSIG_MACHINERY_POWER_LOST or
 // COMSIG_MACHINERY_POWER_RESTORED when it flips.
 /area/proc/power_change()
-	REACT_PUBLISH(REACT_KEY_AREA_POWER, REACT_ID(src), REACT_AREA_POWER_CHANGED)
+	om_changed(src, CHANGE_AREA_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
 		M.power_change()
 	if (fire || eject || party)
@@ -315,7 +313,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			oneoff_environ += amount
 	if(amount)
 		power_loads_changed()
-		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
+		om_changed(src, CHANGE_AREA_POWER)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -333,7 +331,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			static_environ += amount
 	if(amount)
 		power_loads_changed()
-		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
+		om_changed(src, CHANGE_AREA_POWER)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()
@@ -380,7 +378,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	return (actual_static_equip == static_equip && actual_static_light == static_light && actual_static_environ == static_environ)
 
 //////////////////////////////////////////////////////////////////
-GLOBAL_LIST_EMPTY(forced_ambiance_list)
 
 /area/Entered(atom/movable/AM, oldLoc)
 	. = ..()
@@ -422,15 +419,15 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 	var/volume_mod = L.get_preference_volume_channel(VOLUME_CHANNEL_AMBIENCE)
 
 	// If we previously were in an area with force-played ambiance, stop it.
-	if((L in GLOB.forced_ambiance_list) && initial)
+	if((L in REGISTRY_MEMBERS(REGISTRY_FORCED_AMBIANCE)) && initial)
 		L << sound(null, channel = CHANNEL_AMBIENCE_FORCED)
-		GLOB.forced_ambiance_list -= L
+		registry_leave(REGISTRY_FORCED_AMBIANCE, L)
 
 	if(forced_ambience)
-		if(L in GLOB.forced_ambiance_list)
+		if(L in REGISTRY_MEMBERS(REGISTRY_FORCED_AMBIANCE))
 			return
 		if(forced_ambience.len)
-			GLOB.forced_ambiance_list |= L
+			registry_join(REGISTRY_FORCED_AMBIANCE, L)
 			var/sound/chosen_ambiance = pick(forced_ambience)
 			if(!istype(chosen_ambiance))
 				chosen_ambiance = sound(chosen_ambiance, repeat = 1, wait = 0, volume = 25, channel = CHANNEL_AMBIENCE_FORCED)

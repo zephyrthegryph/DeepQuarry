@@ -47,9 +47,10 @@
  * the window to listen for open commands.
  */
 /datum/tgui_say/proc/initialize()
-	set waitfor = FALSE
-	// Sleep to defer initialization to after client constructor
-	sleep(3 SECONDS)
+	// Deferred until after the client constructor: a timer, the constructor never waits.
+	om_after(src, 3 SECONDS, PROC_REF(initialize_window))
+
+/datum/tgui_say/proc/initialize_window()
 	window.initialize(
 			strict_mode = TRUE,
 			fancy = TRUE,

@@ -66,7 +66,7 @@
 // Yes? Throw the grenade
 /mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A)
 	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(A, G.throw_range, G.throw_speed, src)
@@ -74,7 +74,7 @@
 		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 ////////////////////////////////
 //		Merc AI Types
 ////////////////////////////////
@@ -290,8 +290,6 @@
 	. = ..()
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/shoot_target(atom/A)
-	set waitfor = FALSE
-
 	if(!istype(A) || QDELETED(A))
 		return
 
@@ -304,8 +302,12 @@
 	if(ranged_attack_delay)
 		A = get_turf(orig_targ)
 		ranged_pre_animation(A)
-		handle_attack_delay(A, ranged_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+		handle_attack_delay(A, ranged_attack_delay, PROC_REF(sniper_fire), orig_targ)
+		return TRUE
+	return sniper_fire(A, orig_targ)
 
+/// The sniper's shot once the laser sight has held long enough.
+/mob/living/simple_mob/humanoid/merc/ranged/sniper/proc/sniper_fire(atom/A, atom/orig_targ)
 	if(needs_reload)
 		if(reload_count >= reload_max)
 			try_reload()

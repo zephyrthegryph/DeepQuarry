@@ -260,6 +260,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		src.connected = null
 	return
 
+/obj/structure/morgue/crematorium/proc/cremation_done()
+	cremating = 0
+	locked = 0
+	playsound(src, 'sound/machines/ding.ogg', 50, 1)
+
 /obj/structure/morgue/crematorium/proc/cremate(atom/A, mob/user as mob)
 	if(cremating)
 		return //don't let you cremate something twice or w/e
@@ -297,10 +302,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			qdel(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
-		sleep(30)
-		cremating = 0
-		locked = 0
-		playsound(src, 'sound/machines/ding.ogg', 50, 1)
+		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return
 
 
@@ -399,8 +401,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			qdel(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
-		sleep(30)
-		cremating = 0
-		locked = 0
-		playsound(src, 'sound/machines/ding.ogg', 50, 1)
+		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return

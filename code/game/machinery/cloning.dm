@@ -9,7 +9,7 @@
 		return
 
 	var/mob/selected = null
-	for(var/mob/living/M in GLOB.player_list)
+	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		//Dead people only thanks!
 		if((M.stat != 2) || (!M.client))
 			continue
@@ -43,7 +43,7 @@
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
-	VAR_PRIVATE/datum/weakref/weakref_occupant = null
+	VAR_PRIVATE/occupant_handle = null
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	var/locked = 0
@@ -75,7 +75,7 @@
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// pod grows and displays the clone through this, same as before the ledger
 /// tracked the move. Not a target_ref_field slot -- like the DNA scanner and
-/// resleever, this machine already tracked its occupant through a weakref
+/// resleever, this machine already tracked its occupant through an OM handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
 /datum/om/relation/slot/occupant/clonepod
@@ -95,16 +95,16 @@
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		weakref_occupant = null
-		STOP_MACHINE_PROCESSING(src)
+		occupant_handle = null
+		MACHINE_SLEEP(src)
 		return
-	weakref_occupant = WEAKREF(L)
-	START_MACHINE_PROCESSING(src)
+	occupant_handle = om_handle(L)
+	MACHINE_WAKE(src)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return weakref_occupant?.resolve()
+	return om_resolve(occupant_handle)
 
 /obj/machinery/clonepod/attack_ai(mob/user as mob)
 
@@ -133,7 +133,7 @@
 		if(ckey(clonemind.key) != BR.ckey)
 			return 0
 	else
-		for(var/mob/observer/dead/G in GLOB.player_list)
+		for(var/mob/observer/dead/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(G.ckey == BR.ckey)
 				if(G.can_reenter_corpse)
 					break
@@ -197,7 +197,7 @@
 	return 1
 
 //Grow clones to maturity then kick them out.  FREELOADERS
-/obj/machinery/clonepod/process()
+/obj/machinery/clonepod/machine_step()
 	var/mob/living/occupant = get_occupant()
 	if(stat & NOPOWER) //Autoeject if power is lost
 		if(occupant)
@@ -249,6 +249,15 @@
 	return
 
 //Let's unlock this early I guess.  Might be too early, needs tweaking.
+/obj/machinery/clonepod/proc/load_container_done(mob/user, obj/item/W)
+	if(LAZYLEN(containers) >= container_limit)
+		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
+		return
+	user.visible_message("[user] has loaded \the [W] into \the [src].", "You load \the [W] into \the [src].")
+	track_biomass_container(W)
+	user.drop_item()
+	W.forceMove(src)
+
 /obj/machinery/clonepod/attackby(obj/item/W as obj, mob/user as mob)
 	var/mob/living/occupant = get_occupant()
 	if(isnull(occupant))
@@ -269,11 +278,8 @@
 	else if(istype(W,/obj/item/reagent_containers/glass))
 		if(LAZYLEN(containers) >= container_limit)
 			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
-		else if(do_after(user, 1 SECOND, target = src))
-			user.visible_message("[user] has loaded \the [W] into \the [src].", "You load \the [W] into \the [src].")
-			track_biomass_container(W)
-			user.drop_item()
-			W.forceMove(src)
+		else
+			om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
 		return
 	else
 		..()

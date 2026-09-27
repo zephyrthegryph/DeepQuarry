@@ -59,8 +59,7 @@
 		span_info("You smash [src] on [comp], christening a new landable ship named [S.name]"),
 		span_notice("You hear glass shattering"))
 	log_and_message_admins("Created a new shuttle [S.name]. [ADMIN_JMP(comp_turf)]", user)
-	spawn(1 SECOND)
-		playsound(comp_turf, 'sound/voice/Serithi/shuttlehere.ogg', 75, 0)
+	om_after(comp_turf, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), 'sound/voice/Serithi/shuttlehere.ogg', 75, 0)
 	qdel(src)
 
 	return TRUE

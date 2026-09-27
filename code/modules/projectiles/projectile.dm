@@ -1,6 +1,11 @@
 #define MOVES_HITSCAN -1		//Not actually hitscan but close as we get without actual hitscan.
 #define MUZZLE_EFFECT_PIXEL_INCREMENT 17	//How many pixels to move the muzzle flash up so your character doesn't look like they're shitting out lasers.
 
+/// Projectile motion tuning (was on SSprojectiles). Admins may edit these live.
+GLOBAL_VAR_INIT(projectile_max_tick_moves, 10)
+GLOBAL_VAR_INIT(projectile_pixel_speed, 2)
+GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
+
 /obj/item/projectile
 	name = "projectile"
 	icon = 'icons/obj/projectiles.dmi'
@@ -176,8 +181,8 @@
 	var/datum/point/vector/current = trajectory
 	if(!current)
 		var/turf/T = get_turf(src)
-		current = new(T.x, T.y, T.z, pixel_x, pixel_y, isnull(forced_angle)? Angle : forced_angle, SSprojectiles.global_pixel_speed)
-	var/datum/point/vector/v = current.return_vector_after_increments(moves * SSprojectiles.global_iterations_per_move)
+		current = new(T.x, T.y, T.z, pixel_x, pixel_y, isnull(forced_angle)? Angle : forced_angle, GLOB.projectile_pixel_speed)
+	var/datum/point/vector/v = current.return_vector_after_increments(moves * GLOB.projectile_iterations_per_move)
 	return v.return_turf()
 
 /obj/item/projectile/proc/return_pathing_turfs_in_moves(moves, forced_angle)
@@ -216,7 +221,7 @@
 	if(homing)
 		process_homing()
 	var/forcemoved = FALSE
-	for(var/i in 1 to SSprojectiles.global_iterations_per_move)
+	for(var/i in 1 to GLOB.projectile_iterations_per_move)
 		if(QDELETED(src))
 			return
 		trajectory.increment(trajectory_multiplier)
@@ -244,8 +249,8 @@
 		if(can_hit_target(original, permutated))
 			Bump(original)
 	if(!hitscanning && !forcemoved && trajectory)
-		pixel_x = trajectory.return_px() - trajectory.mpx * trajectory_multiplier * SSprojectiles.global_iterations_per_move
-		pixel_y = trajectory.return_py() - trajectory.mpy * trajectory_multiplier * SSprojectiles.global_iterations_per_move
+		pixel_x = trajectory.return_px() - trajectory.mpx * trajectory_multiplier * GLOB.projectile_iterations_per_move
+		pixel_y = trajectory.return_py() - trajectory.mpy * trajectory_multiplier * GLOB.projectile_iterations_per_move
 		animate(src, pixel_x = trajectory.return_px(), pixel_y = trajectory.return_py(), time = 1, flags = ANIMATION_END_NOW)
 	Range()
 
@@ -281,7 +286,7 @@
 	if(prob(50))
 		homing_offset_y = -homing_offset_y
 
-/obj/item/projectile/process()
+/obj/item/projectile/periodic_step()
 	last_process = world.time
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
@@ -293,11 +298,11 @@
 	time_offset = 0
 	var/required_moves = speed > 0? FLOOR(elapsed_time_deciseconds / speed, 1) : MOVES_HITSCAN			//Would be better if a 0 speed made hitscan but everyone hates those so I can't make it a universal system :<
 	if(required_moves == MOVES_HITSCAN)
-		required_moves = SSprojectiles.global_max_tick_moves
+		required_moves = GLOB.projectile_max_tick_moves
 	else
-		if(required_moves > SSprojectiles.global_max_tick_moves)
-			var/overrun = required_moves - SSprojectiles.global_max_tick_moves
-			required_moves = SSprojectiles.global_max_tick_moves
+		if(required_moves > GLOB.projectile_max_tick_moves)
+			var/overrun = required_moves - GLOB.projectile_max_tick_moves
+			required_moves = GLOB.projectile_max_tick_moves
 			time_offset += overrun * speed
 		time_offset += MODULUS(elapsed_time_deciseconds, speed)
 
@@ -368,14 +373,14 @@
 	trajectory_ignore_forcemove = TRUE
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
-	trajectory = new(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, SSprojectiles.global_pixel_speed)
+	trajectory = new(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed)
 	last_projectile_move = world.time
 	permutated = list()
 	originalRange = range
 	fired = TRUE
 	if(hitscan)
 		. = process_hitscan()
-	START_PROCESSING(SSprojectiles, src)
+	PERIODIC_START(src, PERIODIC_PROJECTILES)
 	pixel_move(1, FALSE)	//move it now!
 
 /obj/item/projectile/Moved(atom/old_loc, direction, forced = FALSE)
@@ -481,7 +486,6 @@
 /obj/item/projectile/Destroy()
 	if(hitscan)
 		finalize_hitscan_and_generate_tracers()
-	STOP_PROCESSING(SSprojectiles, src)
 
 	if(impacted_mobs)
 		if(LAZYLEN(impacted_mobs))
@@ -809,8 +813,7 @@
 /obj/item/projectile/proc/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 
 	if(!get_turf(user) && !get_turf(src)) // if both the user of the projectile AND the projectile itself are in nullspace, don't fire, just remove ourselves
-		spawn(1)
-			qdel(src)
+		om_qdel_after(src, 1)
 		return //fire returns nothing, so neither do we need to
 
 	original = target

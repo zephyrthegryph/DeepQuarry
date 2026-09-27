@@ -14,7 +14,7 @@
 	var/points_to_create = 100
 	var/efficiency = 1
 
-	var/datum/weakref/harvested
+	var/harvested
 	var/list/obj/item/research_sample/samples
 
 /obj/machinery/anomaly_harvester/Initialize(mapload)
@@ -32,7 +32,7 @@
 	efficiency = max(1, (efficient/10+1))
 	points_to_create = min(100, (100 - (rating * 5)))
 
-/obj/machinery/anomaly_harvester/process()
+/obj/machinery/anomaly_harvester/machine_step()
 	..()
 	if(stat & (NOPOWER|BROKEN) || !anchored)
 		update_use_power(USE_POWER_OFF)
@@ -53,7 +53,7 @@
 	if(!harvested)
 		return
 
-	var/obj/effect/anomaly/anom = harvested.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(harvested)
 	if(!istype(anom))
 		return
 
@@ -95,29 +95,33 @@
 	if(!anchored)
 		to_chat(user, span_danger("The [src] is not anchored!"))
 		return TRUE
-	if(scanner.buffered_anomaly && do_after(user, 2 SECONDS, src))
-		attach_anomaly(scanner.buffered_anomaly)
+	if(scanner.buffered_anomaly)
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(attach_scanned_anomaly), list(scanner))
 	return TRUE
+
+/obj/machinery/anomaly_harvester/proc/attach_scanned_anomaly(obj/item/anomaly_scanner/scanner)
+	if(scanner.buffered_anomaly)
+		attach_anomaly(scanner.buffered_anomaly)
 
 /obj/machinery/anomaly_harvester/wrench_act(mob/user, obj/item/tool)
 	. = ..()
 	if(. & ITEM_INTERACT_SUCCESS)
 		harvested = null
 
-/obj/machinery/anomaly_harvester/proc/attach_anomaly(datum/weakref/anomaly)
-	var/obj/effect/anomaly/anom = anomaly.resolve()
+/obj/machinery/anomaly_harvester/proc/attach_anomaly(anomaly)
+	var/obj/effect/anomaly/anom = om_resolve(anomaly)
 	if(!istype(anom))
 		return
 
 	var/datum/anomaly_stats/stats = anom.stats
 	if(stats.attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester.resolve()
+		var/obj/machinery/anomaly_harvester/harvester = om_resolve(stats.attached_harvester)
 		if(harvester)
 			harvester.harvested = null
 			harvester.update_icon()
 		stats.attached_harvester = null
 	harvested = anomaly
-	stats.attached_harvester = WEAKREF(src)
+	stats.attached_harvester = om_handle(src)
 	playsound(src, 'sound/machines/boobeebeep.ogg', 75, TRUE)
 	return TRUE
 
@@ -144,7 +148,7 @@
 		add_overlay("harvester_on")
 
 	if(harvested)
-		var/obj/effect/anomaly/anom = harvested.resolve()
+		var/obj/effect/anomaly/anom = om_resolve(harvested)
 		if(!istype(anom))
 			return
 
@@ -177,7 +181,7 @@
 			"ref" = REF(sample)
 		))
 
-	var/obj/effect/anomaly/anom = harvested?.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(harvested)
 	var/list/data = list(
 		"name" = anom,
 		"points" = points,
@@ -203,3 +207,8 @@
 			for(var/obj/item/research_sample/sample in src)
 				sample.forceMove(get_turf(src))
 			return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/anomaly_harvester/step_start_condition()
+	return anchored

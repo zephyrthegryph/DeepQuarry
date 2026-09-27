@@ -106,7 +106,7 @@
 	// Idle traps do not scan their surroundings. Field creation is the dependency
 	// that wakes only traps close enough to use it.
 	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
-		START_MACHINE_PROCESSING(trap)
+		MACHINE_WAKE(trap)
 	catcher = new (locate(src.x+3,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)
@@ -120,7 +120,7 @@
 	catcher.SetSize(7)
 	LAZYADD(particle_catchers, catcher)
 
-/obj/effect/fusion_em_field/process()
+/obj/effect/fusion_em_field/periodic_step()
 	//make sure the field generator is still intact
 	if(!owned_core || QDELETED(owned_core))
 		qdel(src)
@@ -244,8 +244,7 @@
 					var/lost_plasma = (plasma_temperature*percent_unstable)
 					radiation += lost_plasma
 					if(flare)
-						spawn(1)
-							emflare()
+						om_after(src, 1, PROC_REF(emflare))
 					if(fuel_loss)
 						for(var/particle in dormant_reactant_quantities)
 							var/lost_fuel = dormant_reactant_quantities[particle]*percent_unstable
@@ -583,8 +582,7 @@
 		light_min_range = 30
 		light_max_range = 30
 		visible_message(span_danger("\The [src] flares to eye-searing brightness!"))
-		sleep(60)
-		temp_color()
+		om_after(src, 6 SECONDS, PROC_REF(temp_color))
 		//plasma_temperature -= lost_plasma
 		return
 //Rupture() is no longer the end all be all. Fear the magnetic resonance cascade and quantum flux cascade
@@ -602,18 +600,9 @@
 
 	explosion(pick(things_in_range), -1, 5, 5, 5)
 	empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
-	spawn(25)
-		explosion(pick(things_in_range), -1, 5, 5, 5)
-		spawn(25)
-			explosion(pick(things_in_range), -1, 5, 5, 5)
-			spawn(25)
-				explosion(pick(things_in_range), -1, 5, 5, 5)
-				spawn(10)
-					explosion(pick(things_in_range), -1, 5, 5, 5)
-					spawn(10)
-						explosion(pick(things_in_range), -1, 5, 5, 5)
-						spawn(10)
-							explosion(pick(things_in_range), -1, 5, 5, 5)
+	// Six more blasts over ten seconds, on the core's clock: the field is gone by then.
+	for(var/delay in list(25, 50, 75, 85, 95, 105))
+		om_after(owned_core, delay, /proc/fusion_rupture_blast, things_in_range)
 	return
 
 /obj/effect/fusion_em_field/proc/MRC() //spews electromagnetic pulses in an area around the core.
@@ -625,8 +614,7 @@
 	for (var/turf/T in things_in_range)
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
-		spawn(200)
-			empulse(pick(things_in_range), 10, 15)
+		om_after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, things_in_range) // the core's clock: the field is gone by then
 	Destroy()
 	return
 
@@ -687,3 +675,11 @@
 #undef FUSION_ENERGY_PER_K
 #undef FUSION_MAX_ENVIRO_HEAT
 #undef PLASMA_TEMP_RADIATION_DIVISIOR
+
+/// One of a rupture's trailing blasts, somewhere in `things_in_range`.
+/proc/fusion_rupture_blast(list/things_in_range)
+	explosion(pick(things_in_range), -1, 5, 5, 5)
+
+/// One of a resonance cascade's trailing pulses, somewhere in `things_in_range`.
+/proc/fusion_cascade_pulse(list/things_in_range)
+	empulse(pick(things_in_range), 10, 15)

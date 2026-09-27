@@ -27,7 +27,7 @@
 	screenobjs += new /atom/movable/screen/rig/deco2_f
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = WEAKREF(owner_rig)
+		S.master_ref = om_handle(owner_rig)
 	..()
 
 /datum/mini_hud/rig/Destroy()
@@ -36,7 +36,7 @@
 		owner_rig = null
 	return ..()
 
-/datum/mini_hud/rig/process()
+/datum/mini_hud/rig/periodic_step()
 	if(!owner_rig)
 		qdel(src)
 		return
@@ -76,7 +76,7 @@
 	screenobjs += new /atom/movable/screen/mech/deco2_f
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = WEAKREF(owner_mech)
+		S.master_ref = om_handle(owner_mech)
 	..()
 
 /datum/mini_hud/mech/Destroy()
@@ -85,7 +85,7 @@
 		owner_mech = null
 	return ..()
 
-/datum/mini_hud/mech/process()
+/datum/mini_hud/mech/periodic_step()
 	if(!owner_mech)
 		qdel(src)
 		return
@@ -151,7 +151,7 @@
 	var/mob/living/carbon/human/user = usr
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
-	var/obj/item/rig/owner_rig = master_ref?.resolve()
+	var/obj/item/rig/owner_rig = om_resolve(master_ref)
 	if(!owner_rig || user != owner_rig.wearer)
 		return
 	user.toggle_internals()
@@ -203,7 +203,7 @@
 	var/mob/living/carbon/human/user = usr
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
-	var/obj/mecha/owner_mech = master_ref?.resolve()
+	var/obj/mecha/owner_mech = om_resolve(master_ref)
 	if(user != SLOT_ITEM(owner_mech, MECHA_SLOT_PILOT))
 		return
 	owner_mech.toggle_internal_tank()

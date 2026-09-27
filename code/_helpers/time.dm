@@ -115,6 +115,7 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 ///returns the number of ticks slept
 /proc/stoplag(initial_delay)
 	if (!Master || Master.init_stage_completed < INITSTAGE_MAX)
+		// S8 allowlist: stoplag() primitive (the MC-aware yield itself).
 		sleep(world.tick_lag)
 		return 1
 	if (!initial_delay)
@@ -122,6 +123,7 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 // Unit tests are not the normal environemnt. The mc can get absolutely thigh crushed, and sleeping procs running for ages is much more common
 // We don't want spurious hard deletes off this, so let's only sleep for the requested period of time here yeah?
 #ifdef UNIT_TESTS
+	// S8 allowlist: stoplag() primitive (the MC-aware yield itself).
 	sleep(initial_delay)
 	return CEILING(DS2TICKS(initial_delay), 1)
 #else
@@ -129,6 +131,7 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 	var/i = DS2TICKS(initial_delay)
 	do
 		. += CEILING(i * DELTA_CALC, 1)
+		// S8 allowlist: stoplag() primitive (the MC-aware yield itself).
 		sleep(i * world.tick_lag * DELTA_CALC)
 		i *= 2
 	while (TICK_USAGE > min(TICK_LIMIT_TO_RUN, Master.current_ticklimit))

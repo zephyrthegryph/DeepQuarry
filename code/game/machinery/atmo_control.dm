@@ -13,7 +13,6 @@
 #define SENSOR_CH4			(1<<7)
 
 /obj/machinery/air_sensor
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "gsensor1"
 	name = "Gas Sensor"
@@ -109,7 +108,7 @@
 
 /obj/machinery/air_sensor/proc/wake_from_gas()
 	unregister_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/air_sensor/proc/invalidate_gas_dependencies()
 	om_watch_invalidate(src)
@@ -676,7 +675,6 @@
 	var/device_tag
 	var/list/device_info
 	var/automation = 0
-	polls = FALSE // machine pipeline (machine_pipeline.dm, step/fuel_injection)
 	var/cutoff_temperature = 2000
 	var/on_temperature = 1200
 	circuit = /obj/item/circuitboard/air_management/injector_control
@@ -756,7 +754,7 @@
 
 		if("toggle_automation")
 			automation = !automation
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			. = TRUE
 
 		if("toggle_injector")
@@ -803,3 +801,8 @@
 
 /obj/machinery/computer/general_air_control/fuel_injection/step_has_work()
 	return automation && radio_connection
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/air_sensor/arm_wakes()
+	..()
+	register_gas_dependencies()

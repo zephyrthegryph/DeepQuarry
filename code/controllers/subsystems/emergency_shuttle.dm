@@ -93,12 +93,12 @@ SUBSYSTEM_DEF(emergency_shuttle)
 	launch_time = world.time + (seconds * 10)
 	can_fire = TRUE
 	next_fire = world.time + wait
-	REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_EVAC, 1)
+	om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 
 /datum/controller/subsystem/emergency_shuttle/proc/stop_launch_countdown()
 	can_fire = FALSE
 	wait_for_launch = FALSE
-	REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_EVAC, 1)
+	om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 
 //calls the shuttle for an emergency evacuation
 /datum/controller/subsystem/emergency_shuttle/proc/call_evac()

@@ -116,7 +116,6 @@
 				if(istype(victim) && !victim.client && !victim.ai_brain)
 					log_and_message_admins("attempted to eat [key_name_admin(GRAB_TARGET(G))] whilst they were AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", src)
 				if(feed_grabbed_to_self(src, GRAB_TARGET(G)))
-					qdel(G)
 					return TRUE
 				else
 					log_vore("[attacker] attempted to feed [GRAB_TARGET(G)] to [user] ([user.type]) but it failed.")
@@ -131,7 +130,6 @@
 					return FALSE
 
 				if(attacker.feed_self_to_grabbed(attacker, GRAB_TARGET(G)))
-					qdel(G)
 					return TRUE
 				else
 					log_vore("[attacker] attempted to feed [user] to [victim] ([victim ? victim.type : "null"]) but it failed.")
@@ -153,7 +151,6 @@
 					log_and_message_admins("attempted to feed [key_name_admin(GRAB_TARGET(G))] to [key_name_admin(src)] against prey's prefs ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", attacker)
 					return FALSE
 				if(attacker.feed_grabbed_to_other(attacker, GRAB_TARGET(G), src))
-					qdel(G)
 					return TRUE
 				else
 					log_vore("[attacker] attempted to feed [GRAB_TARGET(G)] to [src] ([type]) but it failed.")
@@ -182,12 +179,8 @@
 				return TRUE
 			visible_message(span_warning("[user] is trying to stuff a beacon into [src]'s [B.get_belly_name()]!"),
 				span_warning("[user] is trying to stuff a beacon into you!"))
-			if(do_after(user, 3 SECONDS, target = src))
-				user.drop_item()
-				B.belly_insert(I, user)
-				return TRUE
-			else
-				return TRUE //You don't get to hit someone 'later'
+			om_do_after(user, 3 SECONDS, src, src, PROC_REF(beacon_insert_done), list(user, I, B))
+			return TRUE //You don't get to hit someone 'later'
 
 	// Body writing
 	else if(istype(I, /obj/item/pen))
@@ -218,19 +211,28 @@
 			span_notice("You start writing on [canvas_user]'s [affecting.name]..."))
 
 		// Progress bar for writing on someone for better consent check.
-		if(!do_after(attacker, 3 SECONDS, target = canvas_user, max_distance = 1))
-			to_chat(attacker, span_warning("You stop writing on [canvas_user]."))
-			return TRUE
-
-		add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
-
-		LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
-
-		attacker.visible_message(span_notice("[attacker] finishes writing on [canvas_user]'s [affecting.name]."), \
-			span_notice("You finish writing on [canvas_user]'s [affecting.name]."))
+		om_do_after(attacker, 3 SECONDS, canvas_user, src, PROC_REF(body_writing_done), list(attacker, affecting, message), on_fail = PROC_REF(body_writing_stopped), fail_args = list(attacker), max_distance = 1)
 		return TRUE
 
 	return FALSE
+
+/mob/living/proc/beacon_insert_done(mob/user, obj/item/I, obj/belly/B)
+	if(user.get_active_hand() != I)
+		return
+	user.drop_item()
+	B.belly_insert(I, user)
+
+/mob/living/proc/body_writing_stopped(mob/living/attacker)
+	to_chat(attacker, span_warning("You stop writing on [src]."))
+
+/mob/living/proc/body_writing_done(mob/living/attacker, obj/item/organ/external/affecting, message)
+	var/mob/living/carbon/human/canvas_user = src
+	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
+
+	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
+
+	attacker.visible_message(span_notice("[attacker] finishes writing on [canvas_user]'s [affecting.name]."), \
+		span_notice("You finish writing on [canvas_user]'s [affecting.name]."))
 
 //
 //	Verb for saving vore preferences to save file
@@ -673,7 +675,7 @@
 
 	else if(alerts && alerts["leashed"])
 		var/atom/movable/screen/alert/leash_pet/pet_alert = src.alerts["leashed"]
-		var/obj/item/leash/owner = pet_alert.master_ref?.resolve()
+		var/obj/item/leash/owner = om_resolve(pet_alert.master_ref)
 		if(owner)
 			owner.clear_leash()
 		log_and_message_admins("used the OOC escape button to get out of a leash.", src)
@@ -847,6 +849,17 @@
 /mob/living/proc/get_digestion_efficiency_modifier()
 	return 1
 
+/// Swallows the held item I into the selected belly.
+/mob/living/proc/swallow_trash(obj/item/I)
+	if(get_active_hand() != I || !vore_selected)
+		return
+	drop_item()
+	vore_selected.nom_atom(I)
+	updateVRPanel()
+	log_admin("VORE: [src] used Eat Trash to swallow [I].")
+	I.after_trash_eaten(src)
+	visible_message(span_vwarning(src.vore_selected.belly_format_string(src.vore_selected.trash_eater_in, I, item=I)))
+
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
 	set category = "Abilities.Vore"
@@ -866,14 +879,9 @@
 		return
 
 	if(is_type_in_list(I, GLOB.edible_trash) || adminbus_trash || is_type_in_list(I,GLOB.edible_tech) && isSynthetic()) // adds edible tech for synth
-		if(!I.on_trash_eaten(src)) // shows object's rejection message itself
+		if(!I.on_trash_eaten(src)) // shows object's rejection message itself (or eats it later)
 			return
-		drop_item()
-		vore_selected.nom_atom(I)
-		updateVRPanel()
-		log_admin("VORE: [src] used Eat Trash to swallow [I].")
-		I.after_trash_eaten(src)
-		visible_message(span_vwarning(src.vore_selected.belly_format_string(src.vore_selected.trash_eater_in, I, item=I)))
+		swallow_trash(I)
 		return
 	to_chat(src, span_notice("This snack is too powerful to go down that easily."))
 	return
@@ -891,6 +899,33 @@
 	set desc = "Consume held raw ore, gems and refined minerals. Snack time!"
 
 	handle_eat_minerals()
+
+/mob/living/proc/eat_minerals_interrupted(obj/item/I)
+	to_chat(src, span_notice("You were interrupted while gnawing on [I]!"))
+
+/mob/living/proc/eat_minerals_done(mob/living/feeder, obj/item/I, list/nom)
+	if(feeder != src)
+		to_chat(feeder, span_notice("You feed [I] to [src]."))
+		log_admin("VORE: [feeder] fed [src] [I].")
+	else
+		log_admin("VORE: [src] used Eat Minerals to swallow [I].")
+	//Eat the ore using the vorebelly for the sound then get rid of the ore to prevent infinite nutrition.
+	drop_from_inventory(I, vore_selected) //Never touches the ground - straight to the gut.
+	visible_message("[src] crunches [I] to pieces and swallows it down.",
+		span_notice("[nom["remark"]]"),
+		span_notice("You hear the gnashing of jaws with some ominous grinding and crunching noises, then... Swallowing?"))
+
+	adjust_nutrition(nom["nutrition"])
+	qdel(I)
+
+	var/mob/living/carbon/human/H = src
+	if(nom["WTF"] && istype(H)) //Bites back.
+		H.status_at_least(EFFECT_WEAKENED, 2)
+		H.status_at_least(EFFECT_CONFUSED, nom["WTF"])
+		H.apply_effect(nom["WTF"], STUTTER)
+		H.status_adjust(EFFECT_JITTERY, nom["WTF"])
+		H.status_adjust(EFFECT_DIZZY, nom["WTF"])
+		H.status_at_least(EFFECT_DRUGGED, nom["WTF"])
 
 /mob/living/proc/handle_eat_minerals(obj/item/snack, mob/living/user)
 	var/mob/living/feeder = user ? user : src //Whoever's doing the feeding - us or someone else.
@@ -984,32 +1019,9 @@
 		playsound(src, 'sound/items/eatfood.ogg', rand(10,50), 1)
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
-		if(do_after(feeder, T, target = src, timed_action_flags = IGNORE_USER_LOC_CHANGE)) //Eat on the move, but not multiple things at once.
-			if(feeder != src)
-				to_chat(feeder, span_notice("You feed [I] to [src]."))
-				log_admin("VORE: [feeder] fed [src] [I].")
-			else
-				log_admin("VORE: [src] used Eat Minerals to swallow [I].")
-			//Eat the ore using the vorebelly for the sound then get rid of the ore to prevent infinite nutrition.
-			drop_from_inventory(I, vore_selected) //Never touches the ground - straight to the gut.
-			visible_message("[src] crunches [I] to pieces and swallows it down.",
-				span_notice("[nom["remark"]]"),
-				span_notice("You hear the gnashing of jaws with some ominous grinding and crunching noises, then... Swallowing?"))
-
-			adjust_nutrition(nom["nutrition"])
-			qdel(I)
-
-			if(nom["WTF"] && istype(H)) //Bites back.
-				H.status_at_least(EFFECT_WEAKENED, 2)
-				H.status_at_least(EFFECT_CONFUSED, nom["WTF"])
-				H.apply_effect(nom["WTF"], STUTTER)
-				H.status_adjust(EFFECT_JITTERY, nom["WTF"])
-				H.status_adjust(EFFECT_DIZZY, nom["WTF"])
-				H.status_at_least(EFFECT_DRUGGED, nom["WTF"])
-
-			return TRUE
-		else
-			to_chat(src, span_notice("You were interrupted while gnawing on [I]!"))
+		//Eat on the move, but not multiple things at once.
+		om_do_after(feeder, T, src, src, PROC_REF(eat_minerals_done), list(feeder, I, nom), IGNORE_USER_LOC_CHANGE, PROC_REF(eat_minerals_interrupted), list(I))
+		return TRUE
 
 	else //Not the droids we're looking for.
 		to_chat(src, span_notice("You pause for a moment to examine [I] and realize it's not even worth the energy to chew.")) //If it ain't ore or the type of sheets we can eat, bugger off!

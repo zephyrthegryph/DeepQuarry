@@ -26,7 +26,7 @@
 
 		if(floor.density)
 			if(!isnull(seed.chems[REAGENT_ID_PACID]))
-				spawn(rand(5,25)) floor.ex_act(3)
+				om_after(floor, rand(5,25), TYPE_PROC_REF(/atom, ex_act), 3)
 			continue
 
 		if(!Adjacent(floor) || !floor.Enter(src))
@@ -42,7 +42,13 @@
 		if(neighbor.seed == src.seed)
 			LAZYREMOVE(neighbor.neighbors, T)
 
-/obj/effect/plant/process()
+/// One delayed spread to a random neighbour (process() spaces them a few deciseconds apart).
+/obj/effect/plant/proc/spread_once()
+	if(!length(neighbors))
+		return
+	spread_to(DEFAULTPICK(neighbors, null))
+
+/obj/effect/plant/periodic_step()
 
 	// Something is very wrong, kill ourselves.
 	if(!seed)
@@ -105,14 +111,11 @@
 			//spread to 1-3 adjacent turfs depending on yield trait.
 			var/max_spread = between(1, round(seed.get_trait(TRAIT_YIELD)*3/14), 3)
 
+			var/spread_delay = 0
 			for(var/i in 1 to max_spread)
 				if(prob(spread_chance))
-					sleep(rand(3,5))
-					if(!length(neighbors))
-						break
-					if(QDELETED(src)) // we sleep, might get deleted!
-						return
-					spread_to(DEFAULTPICK(neighbors, null))
+					spread_delay += rand(3,5)
+					om_after(src, spread_delay, PROC_REF(spread_once))
 
 	// We shouldn't have spawned if the controller doesn't exist.
 	check_health()
@@ -127,48 +130,7 @@
 		return
 	var/obj/effect/plant/child = new(get_turf(src),seed,parent)
 
-	spawn(1) // This should do a little bit of animation.
-		if(QDELETED(child))
-			return
-
-		//move out to the destination
-		child.anchored = FALSE
-		child.Move(target_turf)	// Do a normal move, so we can cross and uncross things we need to. Stairs, Open space "falling", etc.
-		child.anchored = TRUE
-		child.update_icon()
-
-		// start: Pitcher plant spawning
-		if((seed.get_trait(TRAIT_POTENCY)) >= 70) //Random event spacevines have 70 potency minimum. Should guarantee this always triggers on spacevines.
-			var/mob/living/pitcher
-			if(!seed.get_trait(TRAIT_CARNIVOROUS) && prob(2)) //Check for canivorous or this could call if prob(10) above fails.
-				pitcher = new /mob/living/simple_mob/vore/pitcher_plant(src.loc)
-				pitcher.nutrition = 0 //With 0 nutrition, vine-spawned pitchers should die after ~10 minutes
-				pitcher.injure(INJURY_TOXIN, 170, source = src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT) //Start it weakened; full strength is excessive when a lot of these are spawning.
-		// end
-
-		//see if anything is there
-		for(var/thing in child.loc)
-			if(thing != child && istype(thing, /obj/effect/plant))
-				var/obj/effect/plant/other = thing
-				if(other.seed != child.seed)
-					other.vine_overrun(child.seed, src) //vine fight
-				qdel(child)
-				return
-			if(istype(thing, /obj/effect/dead_plant))
-				qdel(thing)
-				qdel(child)
-				return
-			if(isliving(thing) && (seed.get_trait(TRAIT_CARNIVOROUS) || (seed.get_trait(TRAIT_SPREAD) >= 2 && prob(round(seed.get_trait(TRAIT_POTENCY))))))
-				entangle(thing)
-				qdel(child)
-				return
-
-		// Update neighboring squares.
-		for(var/obj/effect/plant/neighbor in range(1, child.loc)) //can use the actual final child loc now
-			if(child.seed == neighbor.seed) //neighbors of different seeds will continue to try to overrun each other
-				LAZYREMOVE(neighbor.neighbors, target_turf)
-
-		child.finish_spreading()
+	om_after(src, 1, PROC_REF(spread_child_settles), child, target_turf) // This should do a little bit of animation.
 
 /obj/effect/plant/proc/die_off()
 	// Kill off our plant.
@@ -180,6 +142,49 @@
 		for(var/obj/effect/plant/neighbor in check_turf.contents)
 			LAZYOR(neighbor.neighbors, check_turf)
 			SSplants.add_plant(neighbor)
-	spawn(1) if(src) qdel(src)
+	om_qdel_after(src, 1)
 
 #undef NEIGHBOR_REFRESH_TIME
+
+/obj/effect/plant/proc/spread_child_settles(obj/effect/plant/child, turf/target_turf)
+	if(QDELETED(child))
+		return
+
+	//move out to the destination
+	child.anchored = FALSE
+	child.Move(target_turf)	// Do a normal move, so we can cross and uncross things we need to. Stairs, Open space "falling", etc.
+	child.anchored = TRUE
+	child.update_icon()
+
+	// start: Pitcher plant spawning
+	if((seed.get_trait(TRAIT_POTENCY)) >= 70) //Random event spacevines have 70 potency minimum. Should guarantee this always triggers on spacevines.
+		var/mob/living/pitcher
+		if(!seed.get_trait(TRAIT_CARNIVOROUS) && prob(2)) //Check for canivorous or this could call if prob(10) above fails.
+			pitcher = new /mob/living/simple_mob/vore/pitcher_plant(src.loc)
+			pitcher.nutrition = 0 //With 0 nutrition, vine-spawned pitchers should die after ~10 minutes
+			pitcher.injure(INJURY_TOXIN, 170, source = src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT) //Start it weakened; full strength is excessive when a lot of these are spawning.
+	// end
+
+	//see if anything is there
+	for(var/thing in child.loc)
+		if(thing != child && istype(thing, /obj/effect/plant))
+			var/obj/effect/plant/other = thing
+			if(other.seed != child.seed)
+				other.vine_overrun(child.seed, src) //vine fight
+			qdel(child)
+			return
+		if(istype(thing, /obj/effect/dead_plant))
+			qdel(thing)
+			qdel(child)
+			return
+		if(isliving(thing) && (seed.get_trait(TRAIT_CARNIVOROUS) || (seed.get_trait(TRAIT_SPREAD) >= 2 && prob(round(seed.get_trait(TRAIT_POTENCY))))))
+			entangle(thing)
+			qdel(child)
+			return
+
+	// Update neighboring squares.
+	for(var/obj/effect/plant/neighbor in range(1, child.loc)) //can use the actual final child loc now
+		if(child.seed == neighbor.seed) //neighbors of different seeds will continue to try to overrun each other
+			LAZYREMOVE(neighbor.neighbors, target_turf)
+
+	child.finish_spreading()

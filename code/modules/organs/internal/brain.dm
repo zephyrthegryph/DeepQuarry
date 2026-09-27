@@ -1,4 +1,4 @@
-GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
+REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain
 	name = "brain"
@@ -17,7 +17,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	var/can_assist = TRUE
 	var/defib_timer = -1
 
-/obj/item/organ/internal/brain/process()
+/obj/item/organ/internal/brain/periodic_step()
 	..()
 	if(owner && owner.stat != DEAD) // So there's a lower risk of ticking twice.
 		tick_defib_timer()

@@ -3,7 +3,7 @@
 // is throttled per client and does nothing for clients that don't use it.
 
 /// The atom this client last hovered on the map, when hover tracking is on.
-/client/var/tmp/datum/weakref/hovered_ref
+/client/var/tmp/hovered_ref
 /// world.time before which hover updates are ignored.
 /client/var/tmp/hover_next_update = 0
 
@@ -16,13 +16,13 @@
 	if(istype(hovered, /atom/movable/screen))
 		return
 	hover_next_update = world.time + INPUT_HOVER_THROTTLE
-	hovered_ref = WEAKREF(hovered)
+	hovered_ref = om_handle(hovered)
 	if(screentip || screentips_enabled())
 		update_screentip()
 
 /// The hovered atom if it is still valid and on the mob's z-level, else null.
 /client/proc/hovered_atom()
-	var/atom/hovered = hovered_ref?.resolve()
+	var/atom/hovered = om_resolve(hovered_ref)
 	if(!hovered || QDELETED(hovered) || !mob)
 		return null
 	var/turf/hovered_turf = get_turf(hovered)

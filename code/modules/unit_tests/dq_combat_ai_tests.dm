@@ -67,7 +67,7 @@
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
 	TEST_ASSERT(!(B in SSai.processing), "hibernating brain remained in strategic processing")
-	SSreactor.publish_mob_chunk(M)
+	publish_mob_chunk(M)
 	react_test_ticks(4)
 	TEST_ASSERT(B in SSai.processing, "movement publication did not wake nearby brain")
 // dq_get_behavior(T) must return the same singleton across calls — the
@@ -319,11 +319,12 @@
 /datum/unit_test/dq_combat_ai_stop_active_clears_busy/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// Simulate a blocks_reselection behavior in flight.
-	S.ai_brain.busy = TRUE
+	S.ai_busy_begin()
+	TEST_ASSERT(S.ai_brain.is_busy(), "a hold claims the mob: its brain is busy")
 	S.ai_brain.selection_dirty = FALSE
 	S.ai_brain.active_behavior_type = /datum/ai_behavior/charge_slam
 	S.ai_brain.stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
-	TEST_ASSERT_EQUAL(S.ai_brain.busy, FALSE, "stop_active didn't clear busy")
+	TEST_ASSERT(!S.ai_brain.is_busy(), "stop_active didn't end the busy hold")
 	TEST_ASSERT_EQUAL(S.ai_brain.selection_dirty, TRUE, "stop_active didn't set selection_dirty")
 	TEST_ASSERT_NULL(S.ai_brain.active_behavior_type, "stop_active didn't clear active_behavior_type")
 

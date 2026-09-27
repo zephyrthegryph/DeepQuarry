@@ -146,7 +146,7 @@ fundamental differences
 			mixer_loop.stop(src)
 
 
-/obj/machinery/appliance/mixer/process()
+/obj/machinery/appliance/mixer/machine_step()
 	if(stat || !cooking || !length(cooking_objs))
 		return PROCESS_KILL
 	for(var/i in cooking_objs)

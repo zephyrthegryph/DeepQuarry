@@ -2,7 +2,7 @@
 	if(prob(50))
 		kill()
 		return
-	for(var/mob/living/carbon/human/H in shuffle(GLOB.living_mob_list))
+	for(var/mob/living/carbon/human/H in shuffle(REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)))
 		var/area/A = get_area(H)
 		if(!A)
 			continue

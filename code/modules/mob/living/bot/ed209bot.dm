@@ -20,7 +20,7 @@
 	var/last_shot = 0
 
 /mob/living/bot/secbot/ed209/update_icons()
-	if(on && busy)
+	if(on && om_busy(src))
 		icon_state = "ed209-c"
 	else
 		icon_state = "ed209[on]"

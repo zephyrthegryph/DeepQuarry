@@ -13,7 +13,7 @@
 	var/datum/cinematic/playing = new cinematic_type(watchers, special_callback)
 
 	if(watchers == world)
-		watchers = GLOB.mob_list
+		watchers = REGISTRY_MEMBERS(REGISTRY_MOBS)
 
 	playing.start_cinematic(watchers)
 
@@ -33,7 +33,7 @@
 	/// A list of all clients watching the cinematic
 	var/list/client/watching
 	/// A list of all mobs who have TRAIT_NO_TRANSFORM set while watching the cinematic
-	var/list/datum/weakref/locked = list()
+	var/list/locked = list()
 	/// Whether the cinematic is a global cinematic or not
 	var/is_global = FALSE
 	/// Refernce to the cinematic screen shown to everyohne
@@ -142,19 +142,19 @@
 	for(var/client/viewing_client as anything in watching)
 		remove_watcher(viewing_client)
 
-	for(var/datum/weakref/locked_ref as anything in locked)
+	for(var/locked_ref as anything in locked)
 		unlock_mob(locked_ref)
 
 	qdel(src)
 
 /// Locks a mob, preventing them from moving, being hurt, or acting
 /datum/cinematic/proc/lock_mob(mob/to_lock)
-	locked += WEAKREF(to_lock)
+	locked += om_handle(to_lock)
 	ADD_TRAIT(to_lock, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
 
-/// Unlocks a previously locked weakref
-/datum/cinematic/proc/unlock_mob(datum/weakref/mob_ref)
-	var/mob/locked_mob = mob_ref.resolve()
+/// Unlocks a previously locked mob (by OM handle)
+/datum/cinematic/proc/unlock_mob(mob_ref)
+	var/mob/locked_mob = om_resolve(mob_ref)
 	if(isnull(locked_mob))
 		return
 	REMOVE_TRAIT(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)

@@ -203,9 +203,7 @@
 	var/spin_rotation = (rand(0,359))
 	usr.visible_message(span_warning("\The [usr] spins \the [src]!"),span_notice("You spin \the [src]!"))
 	SpinAnimation(3,10)
-	spawn(30)
-		icon_rotation = spin_rotation
-		update_transform()
+	om_after(src, 3 SECONDS, PROC_REF(finish_spin), spin_rotation)
 
 //Keeping this here for now, I'll ask if I should keep it here.
 /obj/item/broken_bottle
@@ -831,3 +829,7 @@
 /obj/item/reagent_containers/food/drinks/bottle/snaps/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_SNAPS, 100)
+
+/obj/item/reagent_containers/food/drinks/bottle/proc/finish_spin(spin_rotation)
+	icon_rotation = spin_rotation
+	update_transform()

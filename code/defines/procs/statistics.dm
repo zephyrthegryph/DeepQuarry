@@ -1,9 +1,11 @@
+/// The SQL leaf: its query waits on the database, so callers don't wait for it.
 /proc/sql_poll_population()
+	set waitfor = FALSE
 	if(!CONFIG_GET(flag/enable_stat_tracking))
 		return
 	var/admincount = GLOB.admins.len
 	var/playercount = 0
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
 			playercount += 1
 	if(!SSdbcore.IsConnected())
@@ -28,13 +30,12 @@
 	if(!CONFIG_GET(flag/enable_stat_tracking))
 		return
 
+/// Polls the population into the stats database every ten minutes: a timer on the global owner.
 /proc/statistic_cycle()
-	set waitfor = 0
 	if(!CONFIG_GET(flag/enable_stat_tracking))
 		return
-	while(1)
-		sql_poll_population()
-		sleep(6000)
+	sql_poll_population()
+	om_after(null, 10 MINUTES, /proc/statistic_cycle)
 
 //This proc is used for feedback. It is executed at round end.
 /proc/sql_commit_feedback()

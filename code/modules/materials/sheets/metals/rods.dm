@@ -86,19 +86,19 @@
 			else
 				return 1
 
-	else if(!in_use)
+	else if(!om_busy(src))
 		if(get_amount() < 2)
 			to_chat(user, span_warning("You need at least two rods to do this."))
 			return
 		to_chat(user, span_notice("Assembling grille..."))
-		in_use = 1
-		if (!do_after(user, 1 SECOND, target = src))
-			in_use = 0
-			return
-		var/obj/structure/grille/F = new /obj/structure/grille/ ( user.loc )
-		to_chat(user, span_notice("You assemble a grille"))
-		in_use = 0
-		F.add_fingerprint(user)
-		use(2)
+		om_do_after(user, 1 SECOND, src, src, PROC_REF(grille_done), list(user), claims = TRUE)
 	return
+
+/obj/item/stack/rods/proc/grille_done(mob/user)
+	if(get_amount() < 2)
+		return
+	var/obj/structure/grille/F = new /obj/structure/grille/ ( user.loc )
+	to_chat(user, span_notice("You assemble a grille"))
+	F.add_fingerprint(user)
+	use(2)
 */

@@ -68,7 +68,7 @@
 		return 1
 	return 0
 
-/obj/item/rig_module/power_sink/process()
+/obj/item/rig_module/power_sink/periodic_step()
 
 	if(!interfaced_with)
 		return ..()

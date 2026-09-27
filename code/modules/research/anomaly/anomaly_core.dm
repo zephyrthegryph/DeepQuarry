@@ -42,24 +42,24 @@
 		var/obj/item/anomaly_releaser/releaser = W
 		if(releaser.used)
 			return FALSE
-		if(!do_after(user, 3 SECONDS, src))
-			return FALSE
-
-		var/obj/item/assembly/signaler/anomaly/core = src
-		if(!core.anomaly_type)
-			return FALSE
-
-		user.unEquip(core, TRUE, drop_location())
-
-		var/obj/effect/anomaly/anomaly = new core.anomaly_type(get_turf(core))
-		anomaly.stabilize(releaser.will_anchor, releaser.has_core, releaser.gives_stats)
-
-		if(!releaser.infinite)
-			releaser.icon_state = releaser.used_icon_state
-			releaser.used = TRUE
-			releaser.name = "used " + releaser.name
-			qdel(src)
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
+		return TRUE
 	return ..()
+
+/obj/item/assembly/signaler/anomaly/proc/release_done(mob/user, obj/item/anomaly_releaser/releaser)
+	if(!anomaly_type || releaser.used)
+		return
+
+	user.unEquip(src, TRUE, drop_location())
+
+	var/obj/effect/anomaly/anomaly = new anomaly_type(get_turf(src))
+	anomaly.stabilize(releaser.will_anchor, releaser.has_core, releaser.gives_stats)
+
+	if(!releaser.infinite)
+		releaser.icon_state = releaser.used_icon_state
+		releaser.used = TRUE
+		releaser.name = "used " + releaser.name
+		qdel(src)
 
 /obj/item/assembly/signaler/anomaly/flux
 	name = "\improper flux anomaly core"

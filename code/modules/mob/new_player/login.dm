@@ -1,3 +1,5 @@
+REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
+
 /mob/new_player/Login()
 	// Happens sometimes
 	if(QDELETED(src))
@@ -14,8 +16,8 @@
 	loc = null
 	sight |= SEE_TURFS
 
-	GLOB.player_list |= src
-	GLOB.new_player_list += src
+	registry_join(REGISTRY_PLAYERS, src)
+	registry_join(REGISTRY_NEW_PLAYERS, src)
 
 	created_for = ckey
 	client.persistent_client.set_mob(src)

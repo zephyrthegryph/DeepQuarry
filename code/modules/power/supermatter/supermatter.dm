@@ -144,7 +144,6 @@
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
 		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(soundloop)
 	return ..()
 
@@ -189,10 +188,8 @@
 	return round(xgm_total_moles(air) / 23.1, 0.01)
 
 
+/// Starts the delamination: the pull, then the effects after `pull_time` (explode_effects()).
 /obj/machinery/power/supermatter/proc/explode()
-
-	set waitfor = 0
-
 	message_admins("Supermatter exploded at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("SUPERMATTER([x],[y],[z]) Exploded. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()]")
 	anchored = TRUE
@@ -202,7 +199,9 @@
 	if(stationcrystal) // Are we an on-station crystal?
 		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(reset_sm_alarms)), 10 SECONDS, TIMER_STOPPABLE)
 
-	sleep(pull_time)
+	om_after(src, pull_time, PROC_REF(explode_effects))
+
+/obj/machinery/power/supermatter/proc/explode_effects()
 	var/turf/TS = get_turf(src)		// The turf supermatter is on. SM being in a locker, exosuit, or other container shouldn't block it's effects that way.
 	if(!istype(TS))
 		return
@@ -228,7 +227,7 @@
 				strength = DETONATION_RADS * 5
 			)
 
-	for(var/mob/living/mob in GLOB.living_mob_list)
+	for(var/mob/living/mob in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		var/turf/TM = get_turf(mob)
 		if(!TM)
 			continue
@@ -261,19 +260,21 @@
 			S.broken()
 
 	// Effect 4: Medium scale explosion
-	spawn(0)
-		var/explosion_power = min_explosion_power
-		if(power > 0)
-			// 0-100% where 0% is at DETONATION_EXPLODE_MIN_POWER or lower and 100% is at DETONATION_EXPLODE_MAX_POWER or higher
-			var/strength_percentage = between(0, (power - DETONATION_EXPLODE_MIN_POWER) / ((DETONATION_EXPLODE_MAX_POWER - DETONATION_EXPLODE_MIN_POWER) / 100), 100)
-			explosion_power = between(min_explosion_power, (((max_explosion_power - min_explosion_power) * (strength_percentage / 100)) + min_explosion_power), max_explosion_power)
+	var/explosion_power = min_explosion_power
+	if(power > 0)
+		// 0-100% where 0% is at DETONATION_EXPLODE_MIN_POWER or lower and 100% is at DETONATION_EXPLODE_MAX_POWER or higher
+		var/strength_percentage = between(0, (power - DETONATION_EXPLODE_MIN_POWER) / ((DETONATION_EXPLODE_MAX_POWER - DETONATION_EXPLODE_MIN_POWER) / 100), 100)
+		explosion_power = between(min_explosion_power, (((max_explosion_power - min_explosion_power) * (strength_percentage / 100)) + min_explosion_power), max_explosion_power)
 
-		explosion(TS, explosion_power/2, explosion_power, max_explosion_power, explosion_power * 4, 1)
-		delamination_delete = TRUE
-		qdel(src)
-		// Allow the explosion to finish
-		spawn(5)
-			new /obj/item/broken_sm(TS)
+	explosion(TS, explosion_power/2, explosion_power, max_explosion_power, explosion_power * 4, 1)
+	delamination_delete = TRUE
+	// Allow the explosion to finish. The global owner: the crystal is deleted below and the
+	// explosion may replace the turf.
+	om_after(null, 5, /proc/leave_broken_supermatter, TS)
+	qdel(src)
+
+/proc/leave_broken_supermatter(turf/TS)
+	new /obj/item/broken_sm(TS)
 
 //Changes color and luminosity of the light to these values if they were not already set
 /obj/machinery/power/supermatter/proc/shift_light(lum, clr)
@@ -336,7 +337,7 @@
 		//Public alerts
 		if((damage > emergency_point) && !public_alert)
 			GLOB.global_announcer.autosay("WARNING: SUPERMATTER CRYSTAL DELAMINATION IMMINENT!", "Supermatter Monitor")
-			for(var/mob/M in GLOB.player_list) // Rykka adds SM Delam alarm
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS)) // Rykka adds SM Delam alarm
 				if(!isnewplayer(M) && !isdeaf(M)) // Rykka adds SM Delam alarm
 					M << message_sound // Rykka adds SM Delam alarm
 			admin_chat_message(message = "SUPERMATTER DELAMINATING!", color = "#FF2222")
@@ -346,7 +347,7 @@
 			GLOB.global_announcer.autosay(alert_msg, "Supermatter Monitor")
 			public_alert = FALSE
 
-/obj/machinery/power/supermatter/process()
+/obj/machinery/power/supermatter/machine_step()
 
 	var/turf/L = loc
 
@@ -518,8 +519,6 @@
 		add_overlay("causality_field")
 
 /obj/machinery/power/supermatter/proc/countdown()
-	set waitfor = FALSE
-
 	if(!final_countdown)
 		// firealarm machinery deleted; flag the warning state without
 		// triggering the deleted alarm sound loop.
@@ -537,23 +536,23 @@
 
 	var/speaking = "[emergency_alert] The supermatter has reached critical integrity failure. Emergency causality destabilization field has been activated."
 	GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
-	for(var/i in SUPERMATTER_COUNTDOWN_TIME to 0 step -10)
-		if(damage < explosion_point) // Cutting it a bit close there engineers
-			GLOB.global_announcer.autosay("[safe_alert] Failsafe has been disengaged.", "Supermatter Monitor")
-			final_countdown = FALSE
-			update_icon()
-			return
-		else if((i % 50) != 0 && i > 50) // A message once every 5 seconds until the final 5 seconds which count down individualy
-			sleep(10)
-			continue
-		else if(i > 50)
-			speaking = "[DisplayTimeText(i, TRUE)] remain before causality stabilization."
-		else
-			speaking = "[i*0.1]..."
-		GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
-		sleep(10)
+	countdown_tick(SUPERMATTER_COUNTDOWN_TIME)
 
-	explode() // Chompers Edit End
+/// One second of the final countdown (`i` deciseconds left); explodes when it runs out.
+/obj/machinery/power/supermatter/proc/countdown_tick(i)
+	if(i < 0)
+		explode()
+		return
+	if(damage < explosion_point) // Cutting it a bit close there engineers
+		GLOB.global_announcer.autosay("[safe_alert] Failsafe has been disengaged.", "Supermatter Monitor")
+		final_countdown = FALSE
+		update_icon()
+		return
+	// A message once every 5 seconds until the final 5 seconds which count down individualy
+	if((i % 50) == 0 || i <= 50)
+		var/speaking = i > 50 ? "[DisplayTimeText(i, TRUE)] remain before causality stabilization." : "[i*0.1]..."
+		GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
+	om_after(src, 1 SECOND, PROC_REF(countdown_tick), i - 10)
 
 /obj/machinery/power/supermatter/bullet_act(obj/item/projectile/Proj)
 	var/turf/L = loc
@@ -800,3 +799,8 @@
 
 #undef SUPERMATTER_COUNTDOWN_TIME
 #undef SUPERMATTER_ACCENT_SOUND_COOLDOWN
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/supermatter/step_start_condition()
+	return isturf(loc)

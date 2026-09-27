@@ -577,8 +577,7 @@
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 	charges -= 5
 
-	spawn(5)
-		interact()
+	om_after(src, 5, "interact")
 	return
 
 /proc/move_turfs_to_area(list/turf/turfs, area/A)

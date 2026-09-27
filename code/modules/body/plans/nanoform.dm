@@ -277,7 +277,7 @@
 	SIGNAL_HANDLER
 	if(!repaired_on_body() || !is_repair_item(W))
 		return NONE
-	INVOKE_ASYNC(src, PROC_REF(repair_with), W, user, source)
+	repair_with(W, user, source)
 	return COMPONENT_CANCEL_ATTACK_CHAIN
 
 /// Whether `W` is the tool for the current revival step.
@@ -294,7 +294,7 @@
 	return FALSE
 
 /// Advance one revival step with `W`, working on `site` (the control cluster,
-/// or the protean's body when there is no cluster). Sleeps.
+/// or the protean's body when there is no cluster): a timed action, finished by repair_step_done().
 /datum/affliction/core_dormancy/proc/repair_with(obj/item/W, mob/living/user, atom/site)
 	var/mob/living/patient = held_mob
 	if(!patient || !istype(user) || !is_repair_item(W))
@@ -303,34 +303,38 @@
 	switch(step)
 		if(DORMANCY_SEALED)
 			playsound(site, W.usesound, 50, 1)
-			if(!do_after(user, 5 SECONDS, target = site) || QDELETED(src) || revival_step != step)
+		if(DORMANCY_PASTED)
+			var/obj/item/shockpaddles/paddles = W
+			if(!paddles.can_use(user))
 				return
+			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
+			om_do_after(user, 5 SECONDS, site, src, PROC_REF(paddles_charge), list(W, user, site, step))
+			return
+	om_do_after(user, 5 SECONDS, site, src, PROC_REF(repair_step_done), list(W, user, site, step))
+
+/datum/affliction/core_dormancy/proc/paddles_charge(obj/item/W, mob/living/user, atom/site, step)
+	playsound(site, 'sound/machines/defib_charge.ogg', 50, 0)
+	om_do_after(user, 1 SECOND, site, src, PROC_REF(repair_step_done), list(W, user, site, step))
+
+/datum/affliction/core_dormancy/proc/repair_step_done(obj/item/W, mob/living/user, atom/site, step)
+	var/mob/living/patient = held_mob
+	if(!patient || revival_step != step)
+		return
+	switch(step)
+		if(DORMANCY_SEALED)
 			to_chat(user, span_notice("You unscrew the maintenance panel on [site]."))
 			open_panel()
 		if(DORMANCY_OPEN)
-			if(!do_after(user, 5 SECONDS, target = site) || QDELETED(src) || revival_step != step)
-				return
 			if(patient.mend(TREAT_CALIBRATION, 1))
 				playsound(site, 'sound/items/Deconstruct.ogg', 50, 1)
 				to_chat(user, span_notice("You carefully slot [W] into [site]."))
 				qdel(W)
 		if(DORMANCY_PROGRAMMED)
 			var/obj/item/stack/nanopaste/paste = W
-			if(!do_after(user, 5 SECONDS, target = site) || QDELETED(src) || revival_step != step)
-				return
 			if(paste.use(1) && patient.mend(TREAT_PLATING_REPAIR, 1))
 				playsound(site, 'sound/effects/ointment.ogg', 50, 1)
 				to_chat(user, span_notice("You slather the interior confines of [site] with [W]."))
 		if(DORMANCY_PASTED)
-			var/obj/item/shockpaddles/paddles = W
-			if(!paddles.can_use(user))
-				return
-			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
-			if(!do_after(user, 5 SECONDS, target = site))
-				return
-			playsound(site, 'sound/machines/defib_charge.ogg', 50, 0)
-			if(!do_after(user, 1 SECOND, target = site) || QDELETED(src) || revival_step != step)
-				return
 			playsound(site, 'sound/machines/defib_zap.ogg', 50, 1, -1)
 			if(patient.mend(TREAT_DEFIBRILLATION, 1))
 				playsound(site, 'sound/machines/defib_success.ogg', 50, 0)

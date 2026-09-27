@@ -35,11 +35,9 @@
 			if (prob(90))
 				if (M.has_mutation(HULK))
 					damage += 5
-					spawn(0)
-						status_at_least(EFFECT_PARALYZED, 1)
-						step_away(src,M,15)
-						sleep(3)
-						step_away(src,M,15)
+					status_at_least(EFFECT_PARALYZED, 1)
+					step_away(src,M,15)
+					om_after(src, 3, PROC_REF(knocked_away_from), M)
 				playsound(src, "punch", 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
@@ -56,3 +54,7 @@
 					if ((O.client && !( O.blinded )))
 						O.show_message(span_bolddanger(text("[] has attempted to punch []!", M, src)), 1)
 	return
+
+/// The second shove of a hulk punch.
+/mob/living/carbon/alien/proc/knocked_away_from(mob/M)
+	step_away(src, M, 15)

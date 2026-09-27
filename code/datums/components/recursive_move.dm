@@ -13,9 +13,7 @@
 	. = ..()
 	holder = parent
 	RegisterSignal(holder, COMSIG_QDELETING, PROC_REF(on_holder_qdel))
-	spawn(0) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
-		if(!QDELETED(src))
-			setup_parents()
+	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
 /datum/component/recursive_move/InheritComponent(datum/component/recursive_move/C, i_am_original)
 	if(!i_am_original)

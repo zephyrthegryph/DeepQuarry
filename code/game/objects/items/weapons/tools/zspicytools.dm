@@ -23,7 +23,7 @@
 	acti_sound = 'sound/weapons/kenetic_reload.ogg'
 	always_process = TRUE
 
-/obj/item/weldingtool/lasercannon/process()
+/obj/item/weldingtool/lasercannon/periodic_step()
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()

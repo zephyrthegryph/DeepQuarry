@@ -244,8 +244,7 @@
 		var/area/current_area = get_area(src)
 		if((comp.in_dark_respite) || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
 			icon_state = ""
-			spawn(1 SECOND)
-				qdel(src) //Back from whence you came!
+			om_qdel_after(src, 1 SECOND) //Back from whence you came!
 
 			return ..(FALSE, deathmessage)
 
@@ -253,8 +252,7 @@
 		if(!LAZYLEN(GLOB.latejoin_thedark))
 			log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
 			icon_state = ""
-			spawn(1 SECOND)
-				qdel(src) //Back from whence you came!
+			om_qdel_after(src, 1 SECOND) //Back from whence you came!
 
 			return ..(FALSE, deathmessage)
 

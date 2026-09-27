@@ -49,8 +49,9 @@
 		span_notice("You begin logging [src]'s readings with [W]...")
 	)
 	playsound(src, 'sound/items/Deconstruct.ogg', 30, 1)
-	if(!do_after(user, 3 SECONDS, target = src))
-		return
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
+
+/obj/structure/expedition_survey_beacon/proc/log_readings_done(obj/item/W, mob/user)
 	if(scanned)
 		return
 	scanned = TRUE

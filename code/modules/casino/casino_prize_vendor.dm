@@ -236,8 +236,7 @@
 		if(!(stat & NOPOWER))
 			icon_state = initial(icon_state)
 		else
-			spawn(rand(0, 15))
-				icon_state = "[initial(icon_state)]-off"
+			om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var), "icon_state", "[initial(icon_state)]-off")
 
 /obj/machinery/casino_prize_dispenser/declare_interactions(list/into)
 	into += list(
@@ -425,9 +424,5 @@
 	for(var/mob/O in hearers(src, null))
 		O.show_message(span_npc_say(span_name("\The [src]") + " beeps, \"[message]\""),2)
 	return
-
-/obj/machinery/casino_prize_dispenser/process() //Might not need this, but just to be safe for now
-	if(stat & (BROKEN|NOPOWER))
-		return
 
 #undef CASINO_PRIZE

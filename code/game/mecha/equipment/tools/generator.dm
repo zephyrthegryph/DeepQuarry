@@ -24,7 +24,7 @@
 	qdel(fuel)
 	return ..()
 
-/obj/item/mecha_parts/mecha_equipment/generator/process()
+/obj/item/mecha_parts/mecha_equipment/generator/periodic_step()
 	if(!chassis)
 		set_ready_state(TRUE)
 		return PROCESS_KILL
@@ -46,7 +46,7 @@
 	update_equip_info()
 
 /obj/item/mecha_parts/mecha_equipment/generator/detach()
-	STOP_PROCESSING(SSfastprocess, src)
+	PERIODIC_STOP(src)
 	..()
 	return
 
@@ -55,11 +55,11 @@
 	..()
 	if(href_list["toggle"])
 		if(datum_flags & DF_ISPROCESSING)
-			STOP_PROCESSING(SSfastprocess, src)
+			PERIODIC_STOP(src)
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 		else
-			START_PROCESSING(SSfastprocess, src)
+			PERIODIC_START(src, PERIODIC_FAST)
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
 	return
@@ -139,7 +139,7 @@
 	fuel_type = /obj/item/stack/material/uranium
 	var/rad_per_cycle = 0.3
 
-/obj/item/mecha_parts/mecha_equipment/generator/nuclear/process()
+/obj/item/mecha_parts/mecha_equipment/generator/nuclear/periodic_step()
 	if(..())
 		radiation_pulse(
 			src,

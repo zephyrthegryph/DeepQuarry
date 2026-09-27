@@ -58,11 +58,12 @@
 	position_y = 0
 	vector = add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE)
 	vector.vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	SSflight_operations?.register_vessel(src)
 
+REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
+
 /obj/effect/overmap/visitable/ship/Destroy()
-	STOP_PROCESSING(SSprocessing, src)
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
 	if(SSflight_operations && flight_vessel_id)
@@ -71,7 +72,6 @@
 			SSflight_operations.vessels -= flight_vessel_id
 			SSflight_operations.vessel_by_ship -= REF(src)
 			qdel(vessel)
-	GLOB.listening_objects -= src
 	return ..()
 
 /obj/effect/overmap/visitable/ship/relaymove(mob/user, direction, accel_limit)
@@ -90,7 +90,7 @@
 
 	var/life = 0
 
-	for(var/mob/living/L in GLOB.living_mob_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(L.z in map_z) //Things inside things we'll consider shielded, otherwise we'd want to use get_z(L)
 			life++
 
@@ -142,26 +142,26 @@
 		return
 	// If it is now still, stopped moving
 	else if(still)
-		STOP_PROCESSING(SSprocessing, src)
+		PERIODIC_STOP(src)
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz)
 		if(last_sound + sound_cooldown >= world.time)
 			return
 		last_sound = world.time
-		for(var/mob/potential_mob as anything in GLOB.player_list)
+		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/shutdown.ogg')
 
 	// If it started moving
 	else
-		START_PROCESSING(SSprocessing, src)
-		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(SSprocessing.wait), 1) //Down to whatever decimal
+		PERIODIC_START(src, PERIODIC_SECOND)
+		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz, fore_dir)
 		if(last_sound + sound_cooldown >= world.time)
 			return
 		last_sound = world.time
-		for(var/mob/potential_mob as anything in GLOB.player_list)
+		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/startup.ogg')
 
@@ -184,7 +184,7 @@
 /obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
 	return
 
-/obj/effect/overmap/visitable/ship/process(wait)
+/obj/effect/overmap/visitable/ship/periodic_step(wait)
 	adjust_speed(-speed[1], -speed[2])
 	return PROCESS_KILL
 
@@ -256,7 +256,7 @@
 	..()
 	for(var/obj/machinery/computer/ship/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		S.attempt_hook_up(src)
-	for(var/datum/ship_engine/E in GLOB.ship_engines)
+	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
 		if(check_ownership(E.holder))
 			LAZYOR(engines, E)
 
@@ -287,10 +287,12 @@
 		var/obj/belly/bellychoice = tgui_input_list(L, "Which belly?","Select A Belly", L.vore_organs)
 		if(bellychoice)
 			L.visible_message(span_warning("[L] is trying to stuff \the [src] into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!"),span_notice("You begin putting \the [src] into your [bellychoice]!"))
-			if(do_after(L, 5 SECONDS, target = src))
-				forceMove(bellychoice)
-				SSskybox.rebuild_skyboxes(map_z)
-				L.visible_message(span_warning("[L] eats a spaceship! This is totally normal."),"You eat the the spaceship! Yum, metal.")
+			om_do_after(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
+
+/obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
+	forceMove(bellychoice)
+	SSskybox.rebuild_skyboxes(map_z)
+	L.visible_message(span_warning("[L] eats a spaceship! This is totally normal."),"You eat the the spaceship! Yum, metal.")
 
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()
 	. = list()

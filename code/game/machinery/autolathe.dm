@@ -22,7 +22,6 @@
 	///Did we recently shock a mob who medled with the wiring
 	var/shocked = FALSE
 	///Are we currently printing something
-	var/busy = FALSE
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0
 	var/current_producer_department
@@ -83,7 +82,7 @@
 	return ..()
 
 /obj/machinery/autolathe/screwdriver_act(mob/living/user, obj/item/tool)
-	if(busy)
+	if(om_busy(src))
 		return ITEM_INTERACT_BLOCKING
 	. = ..()
 	if(. == ITEM_INTERACT_SUCCESS)
@@ -218,7 +217,7 @@
 
 	data["materialtotal"] = materials.total_amount()
 	data["materialsmax"] = materials.max_amount
-	data["active"] = busy
+	data["active"] = om_busy(src)
 	data["materials"] = materials.tgui_data()
 	data["materialChoices"] = lathe_material_choice_list(materials)
 
@@ -239,7 +238,7 @@
 		atom_say("Unable to print, voltage mismatch in internal wiring.")
 		return
 
-	if(busy)
+	if(om_busy(src))
 		atom_say("The autolathe is busy. Please wait for completion of previous operation.")
 		return
 
@@ -301,9 +300,7 @@
 	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
 	current_producer_account = producer_id?.associated_account_number || 0
 	current_producer_department = department_for_mob(ui.user) || DEPARTMENT_ENGINEERING
-	busy = TRUE
 	icon_state = "autolathe_n"
-	SStgui.update_uis(src)
 	// play this after all checks passed individually for each item.
 	print_sound.start()
 	var/turf/target_location
@@ -314,11 +311,39 @@
 	else
 		target_location = get_turf(src)
 
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, build_count, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target_location, chosen_materials), build_time_per_item)
+	// The print run is a task claiming the lathe: busy (om_busy()) until the last item or a stop.
+	var/datum/om/task/run = om_task_start(src, /datum/om/task_def/lathe_print, null, list("design" = design, "remaining" = build_count, "build_time" = build_time_per_item, "cost_coefficient" = material_cost_coefficient, "charge" = charge_per_item, "materials" = materials_needed, "target" = target_location, "chosen" = chosen_materials))
+	if(!istype(run))
+		print_sound.stop()
+		icon_state = initial(icon_state)
+		return FALSE
+	SStgui.update_uis(src)
 	return TRUE
 
+/// An autolathe print run: one item every `build_time` until `remaining` runs out or a check fails.
+/datum/om/task_def/lathe_print
+	name = "lathe print"
+	claims_actor = TRUE
+	steps = list(/obj/machinery/autolathe/proc/print_step = 0)
+	complete_proc = /obj/machinery/autolathe/proc/print_run_ended
+	cancel_proc = /obj/machinery/autolathe/proc/print_run_ended
+
+/obj/machinery/autolathe/proc/print_step(datum/om/task/T)
+	var/list/P = T.params
+	if(!P["started"])
+		P["started"] = TRUE
+		return STEP_REPEAT(P["build_time"])
+	var/remaining = do_make_item(T.param("design"), P["remaining"], P["build_time"], P["cost_coefficient"], P["charge"], P["materials"], T.param("target"), P["chosen"])
+	if(remaining <= 0)
+		return STEP_DONE
+	P["remaining"] = remaining
+	return STEP_REPEAT(P["build_time"])
+
+/obj/machinery/autolathe/proc/print_run_ended(datum/om/task/T, reason)
+	finalize_build()
+
 /**
- * Callback for start_making, actually makes the item
+ * One step of the print run (print_step()): makes the item, returns how many are left (0: stop)
  * Arguments
  *
  * * datum/design/design - the design we are trying to print
@@ -333,13 +358,11 @@
 	PROTECTED_PROC(TRUE)
 
 	if(items_remaining <= 0) // how
-		finalize_build()
-		return
+		return 0
 
 	if(stat & (NOPOWER|EMPED))
 		atom_say("Unable to continue production, power failure.")
-		finalize_build()
-		return
+		return 0
 
 	if(!use_power_oneoff(charge_per_item)) // provide the wait time until lathe is ready
 		var/area/my_area = get_area(src)
@@ -348,14 +371,12 @@
 			atom_say("Unable to continue production, power grid overload.")
 		else
 			atom_say("Unable to continue production, no APC in area.")
-		finalize_build()
-		return
+		return 0
 
 	var/is_stack = ispath(design.build_path, /obj/item/stack)
 	if(!materials.has_materials(materials_needed, material_cost_coefficient, is_stack ? items_remaining : 1))
 		atom_say("Unable to continue production, missing materials.")
-		finalize_build()
-		return
+		return 0
 	materials.use_materials(materials_needed, material_cost_coefficient, is_stack ? items_remaining : 1)
 
 	var/atom/movable/created
@@ -389,20 +410,15 @@
 	else
 		items_remaining -= 1
 
-	if(items_remaining <= 0)
-		finalize_build()
-		return
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target, chosen_materials), build_time_per_item)
+	return items_remaining
 
 /**
- * Resets the icon state and busy flag
- * Called at the end of do_make_item's timer loop
+ * Resets the icon state when the print run's task ends (print_run_ended())
 */
 /obj/machinery/autolathe/proc/finalize_build()
 	PROTECTED_PROC(TRUE)
 	print_sound.stop()
 	icon_state = initial(icon_state)
-	busy = FALSE
 	current_producer_account = 0
 	current_producer_department = null
 	SStgui.update_uis(src)
@@ -410,7 +426,7 @@
 /obj/machinery/autolathe/MouseDrop(over_object, src_location, over_location)
 	if(isobserver(usr) || !Adjacent(usr))
 		return
-	if(busy)
+	if(om_busy(src))
 		balloon_alert(usr, "printing started!")
 		return
 	var/direction = get_dir(src, over_location)
@@ -428,7 +444,7 @@
 /obj/machinery/autolathe/proc/interaction_reset_drop(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!drop_direction)
 		return TRUE
-	if(busy)
+	if(om_busy(src))
 		balloon_alert(user, "busy printing!")
 		return TRUE
 	balloon_alert(user, "drop direction reset")
@@ -450,7 +466,7 @@
 	if(is_robot_module(O))
 		return TRUE
 
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
 		return TRUE
 
@@ -471,13 +487,11 @@
 	user.visible_message(span_notice("[user] begins to load \the [O] in \the [src]..."),
 		balloon_alert(user, "uploading design..."),
 		span_hear("You hear the chatter of a floppy drive."))
-	busy = TRUE
 
-	if(!do_after(user, 1.5 SECONDS, target = src))
-		busy = FALSE
-		update_static_data_for_all_viewers()
-		balloon_alert(user, "interrupted!")
-		return TRUE
+	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_attackby_timed_done), done_args = list(user, O), on_fail = PROC_REF(interaction_attackby_timed_failed), fail_args = list(user, O), busy = src)
+	return TRUE
+
+/obj/machinery/autolathe/proc/interaction_attackby_timed_done(mob/user, obj/item/O)
 
 	var/list/not_imported
 	var/design_count = 0
@@ -514,8 +528,12 @@
 	if(not_imported)
 		to_chat(user, span_warning("The following design[length(not_imported) > 1 ? "s" : ""] couldn't be imported: [english_list(not_imported)]"))
 
-	busy = FALSE
 	update_static_data_for_all_viewers()
+	return TRUE
+
+/obj/machinery/autolathe/proc/interaction_attackby_timed_failed(mob/user, obj/item/O)
+	update_static_data_for_all_viewers()
+	balloon_alert(user, "interrupted!")
 	return TRUE
 
 /obj/machinery/autolathe/RefreshParts()
@@ -536,5 +554,5 @@
 		add_overlay("[icon_state]_panel")
 	if(stat & NOPOWER)
 		return
-	if(busy)
+	if(om_busy(src))
 		icon_state = "[icon_state]_work"

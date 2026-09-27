@@ -149,8 +149,9 @@ This allows for events that have their announcement happen after the end itself.
 		end()
 	finish()
 
-// Called by the GM processer.
-/datum/event2/event/process()
+// One step of the event's tracks. Nothing schedules event2 events any more (the game master
+// processer is gone), so this is not a poller; whatever revives them must give them a lane.
+/datum/event2/event/proc/advance()
 	// Handle announcement track.
 	if(!announced && should_announce())
 		announced = TRUE

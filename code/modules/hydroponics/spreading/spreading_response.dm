@@ -1,7 +1,7 @@
-/obj/effect/plant/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/obj/effect/plant/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -18,8 +18,7 @@
 	if(!has_buckled_mobs() && !BUCKLED(M) && !M.anchored && (issmall(M) || prob(round(seed.get_trait(TRAIT_POTENCY)/3))))
 		//wait a tick for the Entered() proc that called HasProximity() to finish (and thus the moving animation),
 		//so we don't appear to teleport from two tiles away when moving into a turf adjacent to vines.
-		spawn(1)
-			entangle(M)
+		om_after(src, 1, PROC_REF(entangle), M)
 
 /obj/effect/plant/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

@@ -323,8 +323,10 @@
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
 		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You begin removing \the [attached_lock] from \the [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You begin removing \the [attached_lock] from \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/gun/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
@@ -737,10 +739,14 @@
 
 	mouthshoot = 1
 	M.visible_message(span_red("[user] sticks their gun in their mouth, ready to pull the trigger..."))
-	if(!do_after(user, 4 SECONDS, target = src))
-		M.visible_message(span_blue("[user] decided life was worth living"))
-		mouthshoot = 0
-		return
+	om_do_after(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
+
+/obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
+	M?.visible_message(span_blue("[M] decided life was worth living"))
+	mouthshoot = 0
+
+/obj/item/gun/proc/suicide_trigger(mob/living/carbon/human/M)
+	var/mob/living/user = M
 	var/obj/item/projectile/in_chamber = consume_next_projectile()
 	if (istype(in_chamber))
 		user.visible_message(span_warning("[user] pulls the trigger."))

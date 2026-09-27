@@ -294,17 +294,16 @@
 	. = ..()
 	current_film = new /obj/item/dosimeter_film(src)
 	update_state(current_film.state)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/accessory/dosimeter/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(current_film)
 	return ..()
 
-/obj/item/clothing/accessory/dosimeter/process()
+/obj/item/clothing/accessory/dosimeter/periodic_step()
 	check_holder()
 	if(current_film.state > 1)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 /obj/item/clothing/accessory/dosimeter/attack_hand(mob/user as mob)
 	if(user.get_inactive_hand() == src)
@@ -313,7 +312,7 @@
 			current_film = null
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 			update_state(0)
 			return
 		..()
@@ -332,14 +331,14 @@
 			desc = "This seems like a dosimeter. It has a film inside."
 
 			if(current_film.state < 2)
-				START_PROCESSING(SSobj, src)
+				PERIODIC_START(src, PERIODIC_SLOW)
 		else
 			to_chat(user, span_notice("\The [src] already has a film inside."))
 	else
 		return ..()
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H)
 		if(current_film && (H.radiation >= 25) && (current_film.state == 0))
 			update_state(1)

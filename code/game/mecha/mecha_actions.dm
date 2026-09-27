@@ -345,8 +345,7 @@
 		playsound(src, 'sound/effects/smoke.ogg', 50, 1, -3)
 
 		smoke_ready = 0
-		spawn(smoke_cooldown)
-			smoke_ready = 1
+		om_after(src, smoke_cooldown, TYPE_PROC_REF(/datum, om_set_var), "smoke_ready", 1)
 	return
 
 

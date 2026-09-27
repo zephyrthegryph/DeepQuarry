@@ -20,10 +20,12 @@
 
 // Safely remove malfunction status, fixing hacked APCs and resetting variables.
 /mob/living/silicon/ai/proc/stop_malf()
-	var/mob/living/silicon/ai/user = src
 	// Generic variables
 	malfunctioning = 0
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(stop_malf_finish))
+
+/mob/living/silicon/ai/proc/stop_malf_finish()
+	var/mob/living/silicon/ai/user = src
 	research = null
 	// Fix hacked APCs
 	if(hacked_apcs)
@@ -45,14 +47,13 @@
 			errored = 1
 			log_world("## ERROR malf_process() called on AI without research datum. Report this.")
 			message_admins("ERROR: malf_process() called on AI without research datum. If admin modified one of the AI's vars revert the change and don't modify variables directly, instead use ProcCall or admin panels.")
-			spawn(1200)
-				errored = 0
+			om_after(src, 2 MINUTES, TYPE_PROC_REF(/datum, om_set_var), "errored", 0)
 		return
 	recalc_cpu()
 	if(APU_power || aiRestorePowerRoutine != 0)
-		research.process(1)
+		research.research_tick(1)
 	else
-		research.process(0)
+		research.research_tick(0)
 
 // Recalculates CPU time gain and storage capacities.
 /mob/living/silicon/ai/proc/recalc_cpu()

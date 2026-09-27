@@ -44,8 +44,7 @@
 		if(WIRE_SMES_RCON)
 			if(S.RCon)
 				S.RCon = 0
-				spawn(10)
-					S.RCon = 1
+				om_after(S, 1 SECOND, TYPE_PROC_REF(/datum, om_set_var), "RCon", 1)
 		if(WIRE_SMES_INPUT)
 			S.toggle_input()
 		if(WIRE_SMES_OUTPUT)
@@ -56,6 +55,5 @@
 		if(WIRE_SMES_FAILSAFES)
 			if(S.safeties_enabled)
 				S.safeties_enabled = 0
-				spawn(10)
-					S.safeties_enabled = 1
+				om_after(S, 1 SECOND, TYPE_PROC_REF(/datum, om_set_var), "safeties_enabled", 1)
 	..()

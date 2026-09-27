@@ -56,7 +56,7 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 	Log(message, message_title)
 
 /datum/announcement/proc/Message(message as text, message_title as text, list/zlevels)
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!isnewplayer(M) && !isdeaf(M))
 			to_chat(M, "<h2 class='alert'>[title]</h2>")
 			to_chat(M, span_alert("[message]"))
@@ -91,7 +91,7 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 /datum/announcement/proc/PlaySound(message_sound, list/zlevels)
 	var/preamble_sound = announcer_message_preamble()
 	if(preamble_sound) // Downstreams might disable this
-		for(var/mob/M in GLOB.player_list)
+		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(zlevels && !(M.z in zlevels))
 				continue
 			if(!isnewplayer(M) && !isdeaf(M))
@@ -104,7 +104,7 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 /datum/announcement/proc/internal_postfire_play_sound(message_sound, list/zlevels)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(zlevels && !(M.z in zlevels))
 			continue
 		if(!isnewplayer(M) && !isdeaf(M))

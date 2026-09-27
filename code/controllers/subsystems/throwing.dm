@@ -42,8 +42,8 @@ SUBSYSTEM_DEF(throwing)
 /datum/thrownthing
 	///Defines the atom that has been thrown (Objects and Mobs, mostly.)
 	var/atom/movable/thrownthing
-	///Weakref to the original intended target of the throw, to prevent hardDels
-	var/datum/weakref/initial_target
+	///OM handle to the original intended target of the throw, to prevent hardDels
+	var/initial_target
 	///The turf that the target was on, if it's not a turf itself.
 	var/turf/target_turf
 	///The turf that we were thrown from.
@@ -57,7 +57,7 @@ SUBSYSTEM_DEF(throwing)
 	///Turfs to travel per tick
 	var/speed
 	///If a mob is the one who has thrown the object, then it's moved here. This can be null and must be null checked before trying to use it.
-	var/datum/weakref/thrower
+	var/thrower
 	///A variable that helps in describing objects thrown at an angle, if it should be moved diagonally first or last.
 	var/diagonals_first
 	///Set to TRUE if the throw is exclusively diagonal (45 Degree angle throws for example)
@@ -99,12 +99,12 @@ SUBSYSTEM_DEF(throwing)
 	src.starting_turf = get_turf(thrownthing)
 	src.target_turf = get_turf(target)
 	if(target_turf != target)
-		src.initial_target = WEAKREF(target)
+		src.initial_target = om_handle(target)
 	src.init_dir = init_dir
 	src.maxrange = maxrange
 	src.speed = speed
 	if(thrower)
-		src.thrower = WEAKREF(thrower)
+		src.thrower = om_handle(thrower)
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
@@ -153,7 +153,7 @@ SUBSYSTEM_DEF(throwing)
 
 /// Returns the thrower, or null
 /datum/thrownthing/proc/get_thrower()
-	. = thrower?.resolve()
+	. = om_resolve(thrower)
 	if(isnull(.))
 		thrower = null
 
@@ -225,7 +225,7 @@ SUBSYSTEM_DEF(throwing)
 		return
 	thrownthing.throwing = null
 	if (!hit)
-		var/atom/movable/actual_target = initial_target?.resolve()
+		var/atom/movable/actual_target = om_resolve(initial_target)
 		for (var/thing in get_turf(thrownthing)) //looking for our target on the turf we land on.
 			var/atom/A = thing
 			if (A == actual_target)

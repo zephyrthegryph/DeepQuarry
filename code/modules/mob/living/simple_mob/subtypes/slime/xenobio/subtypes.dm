@@ -176,8 +176,7 @@
 	visible_message(span_critical("\The [src] erupts in an inferno!"))
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
-		spawn(0)
-			target_turf.hotspot_expose(1500+T0C, 400)
+		target_turf.hotspot_expose(1500+T0C, 400)
 	qdel(src)
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/ex_act(severity)
@@ -647,6 +646,10 @@
 		if(src) // Delete ourselves if the explosion didn't do it.
 			qdel(src)
 
+/mob/living/simple_mob/slime/xenobio/oil/proc/suicide_bomb(mob/living/L)
+	log_and_message_admins("has suicide-bombed themselves while trying to kill \the [L].", src)
+	explode()
+
 /mob/living/simple_mob/slime/xenobio/oil/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
@@ -660,10 +663,8 @@
 
 		// Otherwise blow ourselves up.
 		say(pick("Sacrifice...!", "Sssss...", "Boom...!"))
-		if(ai_brain) ai_brain.busy = TRUE
-		sleep(2 SECONDS)
-		log_and_message_admins("has suicide-bombed themselves while trying to kill \the [L].", src)
-		explode()
+		ai_busy_begin()
+		om_after(src, 2 SECONDS, PROC_REF(suicide_bomb), L)
 
 	return ..()
 

@@ -46,7 +46,7 @@ Thus, the two variables affect pump operation are set in New():
 		set_frequency(frequency)
 	// M2: the flow law is a Rust device edge, stepped from SSair every gas
 	// tick; this has no process() at all any more.
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/volume_pump/Destroy()
 	unregister_radio(src, frequency)
@@ -67,7 +67,8 @@ Thus, the two variables affect pump operation are set in New():
 		return
 	var/effective_rate = transfer_rate * material_pump_power(power_rating) / max(power_rating, 1)
 	var/max_output = overclocked ? 0 : VOLUME_PUMP_MAX_OUTPUT_PRESSURE
-	rust_set_device(1, 2, RUST_DEVICE_LAW_VOLUME_PUMP, effective_rate, max_output)
+	rust_set_device(1, 2)
+	rust_set_device_flow(0, RUST_FLOW_VOLUME, effective_rate, RUST_DIR_FORCED, RUST_SIDE_B, max_output > 0 ? RUST_STOP_AT_LEAST : RUST_STOP_NONE, max_output)
 
 /obj/machinery/atmospherics/binary/volume_pump/rust_device_stepped(moles, power_w, target_reached)
 	last_flow_rate = 0
@@ -299,13 +300,15 @@ Thus, the two variables affect pump operation are set in New():
 		to_chat(user, span_warning("You cannot unwrench this [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-			span_notice("You have unfastened \the [src]."), \
-			"You hear ratchet.")
-		atom_deconstruct()
+	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/wrench_act_tool_done(mob/user)
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
+		span_notice("You have unfastened \the [src]."), \
+		"You hear ratchet.")
+	atom_deconstruct()
 
 /obj/machinery/atmospherics/binary/volume_pump/multitool_act(mob/user, obj/item/W)
 	if(!overclocked)

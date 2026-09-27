@@ -16,12 +16,11 @@
 		icon_state = "slime cube active"
 		searching = 1
 		request_player()
-		spawn(60 SECONDS)
-			reset_search()
+		om_after(src, 60 SECONDS, PROC_REF(reset_search))
 
 // Sometime down the road it would be great to make all of these 'ask ghosts if they want to be X' procs into a generic datum.
 /obj/item/slime_cube/proc/request_player()
-	for(var/mob/observer/dead/O in GLOB.player_list)
+	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!O.MayRespawn())
 			continue
 		if(O.client)
@@ -29,7 +28,7 @@
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
-	spawn(0)
+	spawn(0) // S7 keeps: tgui_alert() sleeps (prompts, S10)
 		if(!C)
 			return
 		var/response = tgui_alert(C, "Someone is requesting a soul for a promethean. Would you like to play as one?", "Promethean request", list("Yes", "No", "Never for this round"))
@@ -172,10 +171,13 @@
 
 /obj/item/slime_irradiator/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	set_light(light_range, light_power, light_color)
 
-/obj/item/slime_irradiator/process()
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
+/obj/item/slime_irradiator/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 
 /obj/item/slime_irradiator/proc/radiate()
@@ -197,7 +199,6 @@
 	active = FALSE
 
 /obj/item/slime_irradiator/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 

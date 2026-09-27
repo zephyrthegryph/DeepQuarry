@@ -54,8 +54,7 @@
 				return
 
 			G.wire_locked_out = TRUE
-			spawn(30 SECONDS)
-				G.wire_locked_out = FALSE
+			om_after(G, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "wire_locked_out", FALSE)
 
 		if(WIRE_ELECTRIFY)
 			if(G.wire_locked_out)

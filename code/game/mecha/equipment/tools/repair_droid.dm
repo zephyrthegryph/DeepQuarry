@@ -27,7 +27,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/detach()
 	chassis.cut_overlay(droid_overlay)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	..()
 	return
 
@@ -42,18 +42,18 @@
 		chassis.cut_overlay(droid_overlay)
 		if(datum_flags & DF_ISPROCESSING)
 			droid_overlay = new(src.icon, icon_state = "repair_droid")
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 			src.mecha_log_message("Deactivated.")
 			set_ready_state(TRUE)
 		else
 			droid_overlay = new(src.icon, icon_state = "repair_droid_a")
 			src.mecha_log_message("Activated.")
-			START_PROCESSING(SSobj, src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 		chassis.add_overlay(droid_overlay)
 		send_byjax(SLOT_ITEM(chassis, MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/process()
+/obj/item/mecha_parts/mecha_equipment/repair_droid/periodic_step()
 	if(!chassis)
 		set_ready_state(TRUE)
 		return PROCESS_KILL

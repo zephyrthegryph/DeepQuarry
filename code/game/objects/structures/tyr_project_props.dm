@@ -10,8 +10,10 @@
 	var/descendy
 
 /obj/structure/prop/tyr_elevator/attackby(obj/item/W as obj, mob/user as mob)
-	if (do_after(user, 30, target = src))
-		do_teleport(user, locate(descendx,descendy,src.z), channel = TELEPORT_CHANNEL_QUANTUM)
+	om_do_after(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+
+/obj/structure/prop/tyr_elevator/proc/attackby_timed_done(mob/user)
+	do_teleport(user, locate(descendx,descendy,src.z), channel = TELEPORT_CHANNEL_QUANTUM)
 
 /obj/machinery/door/blast/puzzle/tyrdoor
 	name = "strange door"
@@ -94,139 +96,6 @@
 	icon_state_closed = "ultra_blast_door"
 	max_integrity = 4500
 
-/*
-//Funky Buildings
-/obj/machinery/restoration_cell
-	name = "restoration cell"
-	desc = "A precusor device that generators a healing fluid"
-	icon = 'icons/obj/weather_ruins.dmi'
-	icon_state = "pod_preview"
-	density = TRUE
-	anchored = TRUE
-
-	use_power = USE_POWER_IDLE
-	idle_power_usage = 200
-	active_power_usage = 7500
-	buckle_lying = FALSE
-	buckle_dir = SOUTH
-
-
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/tyr_prop
-	holder = /obj/machinery/restoration_cell
-	slot_id = OCCUPANT_SLOT_TYR_PROP
-	name = "restoration cell"
-
-/obj/machinery/restoration_cell/attackby(obj/item/G as obj, mob/user as mob)
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
-	if(istype(G, /obj/item/grab))
-		var/obj/item/grab/grab = G
-		if(!ismob(GRAB_TARGET(grab)))
-			return
-		if(occupant)
-			to_chat(user,span_warning("\The [src] is already occupied by [occupant]."))
-		if(GRAB_TARGET(grab).has_buckled_mobs())
-			to_chat(user, span_warning("\The [GRAB_TARGET(grab)] has other entities attached to it. Remove them first."))
-			return
-		var/mob/M = GRAB_TARGET(grab)
-		qdel(grab)
-		put_mob(M)
-
-	return
-
-/obj/machinery/restoration_cell/proc/process_occupant()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
-	if(occupant)
-		if(occupant.radiation || occupant.accumulated_rads)
-			occupant.radiation -= 40
-			occupant.accumulated_rads -= 40
-		occupant.mend(TREAT_TISSUE_REPAIR, 8)
-		occupant.mend(TREAT_BURN_CARE, 8)
-		occupant.mend(TREAT_PLATING_REPAIR, 8)
-		occupant.mend(TREAT_WIRING_REPAIR, 8)
-
-/obj/machinery/restoration_cell/proc/go_out()
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
-	if(!(occupant))
-		return
-	//for(var/obj/O in src)
-	//	O.loc = src.loc
-	if(occupant.client)
-		occupant.client.eye = occupant.client.mob
-		occupant.client.perspective = MOB_PERSPECTIVE
-	vis_contents -= occupant
-	occupant.pixel_x = occupant.default_pixel_x
-	occupant.pixel_y = occupant.default_pixel_y
-	unbuckle_mob(occupant, force = TRUE)
-	slot_remove(occupant, get_step(src.loc, SOUTH))
-	update_use_power(USE_POWER_IDLE)
-	return
-
-/obj/machinery/restoration_cell/proc/put_mob(mob/living/carbon/M as mob)
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
-	if(stat & (NOPOWER|BROKEN))
-		to_chat(usr, span_warning("The cryo cell is not functioning."))
-		return
-	if(!istype(M))
-		to_chat(usr, span_danger("The cryo cell cannot handle such a lifeform!"))
-		return
-	if(occupant)
-		to_chat(usr, span_danger("The cryo cell is already occupied!"))
-		return
-	if(M.abiotic())
-		to_chat(usr, span_warning("Subject may not have abiotic items on."))
-		return
-	if(M.client)
-		M.client.perspective = EYE_PERSPECTIVE
-		M.client.eye = src
-	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_TYR_PROP))
-		return
-	occupant = M
-	M.ExtinguishMob()
-	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
-		to_chat(M, span_notice("<b>You feel a warm liquid surround you.</b>"))
-	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
-	vis_contents |= occupant
-	occupant.pixel_y += 19
-	update_use_power(USE_POWER_ACTIVE)
-	add_fingerprint(usr)
-	update_icon()
-	return 1
-
-/obj/machinery/restoration_cell/verb/move_eject()
-	set name = "Eject occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr == SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP))//If the user is inside the tube...
-		if(usr.stat == 2)//and he's not dead....
-			return
-		to_chat(usr, span_notice("Release sequence activated. This will take one minute."))
-		sleep(600)
-		if(!src || !usr || !SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) || (SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) != usr)) //Check if someone's released/replaced/bombed him already
-			return
-		go_out()//and release him from the eternal prison.
-	else
-		if(usr.stat != 0)
-			return
-		go_out()
-	add_fingerprint(usr)
-	return
-
-/obj/machinery/restoration_cell/verb/move_inside()
-	set name = "Move Inside"
-	set category = "Object"
-	set src in oview(1)
-	if(isliving(usr))
-		var/mob/living/L = usr
-		if(L.has_buckled_mobs())
-			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
-			return
-		if(L.stat != CONSCIOUS)
-			return
-		put_mob(L)
-
-*/
 
 //Rocc and stone
 

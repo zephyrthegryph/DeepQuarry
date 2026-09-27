@@ -25,7 +25,7 @@
 		to_chat(src, "You whisper silently, \"[message]\"")
 		to_chat(BORER_HOST(B), "The captive mind of [src] whispers, \"[message]\"")
 
-		for (var/mob/M in GLOB.player_list)
+		for (var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if (isnewplayer(M))
 				continue
 			else if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))

@@ -18,7 +18,6 @@
 	unacidable = TRUE
 	circuit = /obj/item/circuitboard/breakerbox
 	var/on = 0
-	var/busy = 0
 	var/directions = list(1,2,4,8,5,6,9,10)
 	var/RCon_tag = "NO_TAG"
 	var/update_locked = 0
@@ -58,19 +57,26 @@
 		to_chat(user, span_red("System locked. Please try again later."))
 		return
 
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_red("System is busy. Please wait until current operation is finished before changing power settings."))
 		return
 
-	busy = 1
 	to_chat(user, span_green("Updating power settings..."))
-	if(do_after(user, 5 SECONDS, target = src))
-		set_state(!on)
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
+
+/obj/machinery/power/breakerbox/proc/unlock_updates()
+	update_locked = 0
+
+/obj/machinery/power/breakerbox/proc/toggle_done(mob/user, by_hand)
+	set_state(!on)
+	if(by_hand)
+		user.visible_message(\
+		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
+		span_notice("You [on ? "enabled" : "disabled"] the breaker box!"))
+	else
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
-		update_locked = 1
-		spawn(600)
-			update_locked = 0
-	busy = 0
+	update_locked = 1
+	om_after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
 
 /obj/machinery/power/breakerbox/declare_interactions(list/into)
@@ -94,22 +100,13 @@
 	return !update_locked
 
 /obj/machinery/power/breakerbox/proc/breakerbox_not_busy(mob/actor, atom/target, obj/item/held)
-	return !busy
+	return !om_busy(src)
 
 /obj/machinery/power/breakerbox/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	busy = 1
 	for(var/mob/O in viewers(user))
 		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
 
-	if(do_after(user, 5 SECONDS, target = src))
-		set_state(!on)
-		user.visible_message(\
-		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
-		span_notice("You [on ? "enabled" : "disabled"] the breaker box!"))
-		update_locked = 1
-		spawn(600)
-			update_locked = 0
-	busy = 0
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
 	return TRUE
 
 /**
@@ -165,8 +162,5 @@
 	if(!update_locked)
 		set_state(!on)
 		update_locked = 1
-		spawn(600)
-			update_locked = 0
+		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
 
-/obj/machinery/power/breakerbox/process()
-	return PROCESS_KILL

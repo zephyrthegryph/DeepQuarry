@@ -26,7 +26,6 @@
 	heat_proof = 1
 
 	var/blocked = 0
-	var/prying = 0
 	var/lockdown = 0 // When the door has detected a problem, it locks.
 	var/pdiff_alert = 0
 	var/pdiff = 0
@@ -198,21 +197,12 @@
 			// Accountability!
 			LAZYOR(users_to_open, user.name)
 			needs_to_close = !issilicon(user)
-		spawn()
-			open()
+		open()
 	else
-		spawn()
-			close()
+		close()
 
 	if(needs_to_close)
-		spawn(50)
-			alarmed = 0
-			for(var/area/A in areas_added)		//Just in case a fire alarm is turned off while the firedoor is going through an autoclose cycle
-				if(A.firedoors_closed)
-					alarmed = 1
-			if(alarmed)
-				nextstate = FIREDOOR_CLOSED
-				close()
+		om_after(src, 5 SECONDS, PROC_REF(autoclose_check))
 	return TRUE
 
 /obj/machinery/door/firedoor/attack_alien(mob/user) //Familiar, right? Doors.
@@ -221,17 +211,10 @@
 		if(istype(X.species, /datum/species/xenos))
 			if(src.blocked)
 				visible_message(span_alium("\The [user] begins digging into \the [src] internals!"))
-				if(do_after(user, 5 SECONDS, target = src))
-					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-					src.blocked = 0
-					update_icon()
-					open(1)
+				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
 			else if(src.density)
 				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-				if(do_after(user, 2 SECONDS, target = src))
-					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
-					visible_message(span_danger("\The [user] forces \the [src] open!"))
-					open(1)
+				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 			else
 				visible_message(span_danger("\The [user] forces \the [src] closed!"))
 				close(1)
@@ -240,30 +223,39 @@
 			return
 	..()
 
+/obj/machinery/door/firedoor/proc/attack_alien_timed_done()
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	src.blocked = 0
+	update_icon()
+	open(1)
+/obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	open(1)
+
 /obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
 	if(stat & (BROKEN|NOPOWER))
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
-				if(do_after(user, time_to_force, target = src))
-					visible_message(span_danger("\The [user] forces \the [src] open!"))
-					src.blocked = 0
-					open(1)
-				if(user.ai_brain) user.ai_brain.busy = FALSE
+				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else
 				time_to_force = (time_to_force / 2)
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
-				if(do_after(user, time_to_force, target = src))
-					visible_message(span_danger("\The [user] forces \the [src] closed!"))
-					close(1)
-				if(user.ai_brain) user.ai_brain.busy = FALSE
+				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return
 	..()
+
+/obj/machinery/door/firedoor/proc/attack_generic_timed_done(mob/living/user)
+	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	src.blocked = 0
+	open(1)
+/obj/machinery/door/firedoor/proc/attack_generic_timed_done2(mob/living/user)
+	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	close(1)
 
 /obj/machinery/door/firedoor/declare_interactions(list/into)
 	into += list(
@@ -297,36 +289,32 @@
 			if(!F.wielded)
 				return TRUE
 
-		if(prying)
+		if(om_busy(src))
 			to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 			return TRUE
 
-		prying = 1
 		update_icon()
-		if(use_tool(user, C, src, delay = 3 SECONDS, volume = 100,
-				message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!",
-				message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!"))
-			user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
-					"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
-					"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
-			if(density)
-				spawn(0)
-					open(1)
-			else
-				spawn(0)
-					close()
-		prying = 0
+		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 		update_icon()
 		return TRUE
 
 	return FALSE
+
+/obj/machinery/door/firedoor/proc/interaction_use_item_tool_done(mob/user, obj/item/C)
+	user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
+			"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
+			"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
+	if(density)
+		open(1)
+	else
+		close()
 
 /obj/machinery/door/firedoor/welder_act(mob/user, obj/item/tool)
 	if(operating)
 		return TRUE
 	if(get_integrity() < max_integrity)
 		return ..()
-	if(prying)
+	if(om_busy(src))
 		to_chat(user, span_notice("Someone's busy prying that [density ? "open" : "closed"]!"))
 		return TRUE
 	var/obj/item/weldingtool/welder = tool.get_welder()
@@ -354,41 +342,44 @@
 			to_chat(user, span_danger("You must open the maintenance hatch first!"))
 			return TRUE
 		user.visible_message(span_danger("[user] is removing the electronics from \the [src]."), "You start to remove the electronics from [src].")
-		if(do_after(user, 3 SECONDS, target = src) && blocked && density && hatch_open)
-			playsound(src, tool.usesound, 50, TRUE)
-			user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
-			if(stat & BROKEN)
-				new /obj/item/circuitboard/broken(loc)
-			else
-				new /obj/item/circuitboard/airalarm(loc)
-			var/obj/structure/firedoor_assembly/assembly = new(loc)
-			assembly.anchored = TRUE
-			assembly.density = TRUE
-			assembly.wired = TRUE
-			assembly.glass = glass
-			assembly.update_icon()
-			qdel(src)
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user, tool))
 		return TRUE
-	if(prying)
+	if(om_busy(src))
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
-	prying = TRUE
 	update_icon()
-	if(use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100,
-			message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!",
-			message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!") \
-			&& (stat & (BROKEN|NOPOWER) || !density))
-		user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
-		if(density)
-			open(TRUE)
-		else
-			close()
-	prying = FALSE
+	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 	update_icon()
 	return TRUE
 
+/obj/machinery/door/firedoor/proc/crowbar_act_timed_done(mob/user, obj/item/tool)
+	if(!(blocked && density && hatch_open))
+		return
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
+	if(stat & BROKEN)
+		new /obj/item/circuitboard/broken(loc)
+	else
+		new /obj/item/circuitboard/airalarm(loc)
+	var/obj/structure/firedoor_assembly/assembly = new(loc)
+	assembly.anchored = TRUE
+	assembly.density = TRUE
+	assembly.wired = TRUE
+	assembly.glass = glass
+	assembly.update_icon()
+	qdel(src)
+
+/obj/machinery/door/firedoor/proc/crowbar_act_tool_done(mob/user, obj/item/tool)
+	if(!((stat & (BROKEN|NOPOWER) || !density)))
+		return
+	user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
+	if(density)
+		open(TRUE)
+	else
+		close()
+
 // CHECK PRESSURE
-/obj/machinery/door/firedoor/process()
+/obj/machinery/door/firedoor/machine_step()
 	..()
 
 	if(!density)
@@ -439,7 +430,7 @@
 			continue
 		LAZYSET(sleeping_mixture_ids, "turf[index]", mixture_id)
 		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake)
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
 	for(var/key in sleeping_mixture_ids)
@@ -448,7 +439,7 @@
 
 /obj/machinery/door/firedoor/proc/wake_from_air()
 	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
 	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
@@ -492,7 +483,7 @@
 	..()
 	if(density)
 		clear_gas_dependencies()
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/door/firedoor/open(forced = 0)
 	clear_gas_dependencies()
@@ -528,7 +519,7 @@
 	cut_overlays()
 	if(density)
 		icon_state = "door_closed"
-		if(prying)
+		if(om_busy(src))
 			icon_state = "prying_closed"
 		if(hatch_open)
 			add_overlay("hatch")
@@ -544,7 +535,7 @@
 						add_overlay(new/icon(icon,"alert_[ALERT_STATES[i]]", dir=cdir))
 	else
 		icon_state = "door_open"
-		if(prying)
+		if(om_busy(src))
 			icon_state = "prying_open"
 		if(blocked)
 			add_overlay("welded_open")
@@ -645,3 +636,17 @@
 	name = "\improper Emergency Shutter System"
 	desc = "Emergency air-tight shutter, capable of sealing off breached areas. This model fits flush with the walls, and has a panel in the floor for maintenance."
 	icon = 'icons/obj/doors/DoorHazardHidden_steel.dmi'
+
+/// Closes again after a manual open, if the fire alarm is still on.
+/obj/machinery/door/firedoor/proc/autoclose_check()
+	var/alarmed = 0
+	for(var/area/A in areas_added)		//Just in case a fire alarm is turned off while the firedoor is going through an autoclose cycle
+		if(A.firedoors_closed)
+			alarmed = 1
+	if(alarmed)
+		nextstate = FIREDOOR_CLOSED
+		close()
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/door/firedoor/arm_wakes()
+	..()
+	hibernate_until_air_changes()

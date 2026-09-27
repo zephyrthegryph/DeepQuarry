@@ -7,7 +7,7 @@
 	self_recharge = TRUE
 	charge_amount = 150
 
-/obj/item/cell/spike/process()
+/obj/item/cell/spike/periodic_step()
 	..()
 
 	var/turf/Center = get_turf(src)

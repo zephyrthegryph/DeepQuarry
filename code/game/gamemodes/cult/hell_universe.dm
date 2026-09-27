@@ -54,12 +54,14 @@ In short:
 		A.update_icon()
 
 /datum/universal_state/hell/OverlayAndAmbientSet()
-	spawn(0)
-		for(var/datum/lighting_corner/L in world)
-			L.update_lumcount(1, 0, 0)
+	om_after(src, 0, PROC_REF(relight_world))
 
-		for(var/turf/space/T in world)
-			OnTurfChange(T)
+/datum/universal_state/hell/proc/relight_world()
+	for(var/datum/lighting_corner/L in world)
+		L.update_lumcount(1, 0, 0)
+
+	for(var/turf/space/T in world)
+		OnTurfChange(T)
 
 /datum/universal_state/hell/proc/MiscSet()
 	for(var/turf/simulated/floor/T in world)

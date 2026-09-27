@@ -96,14 +96,13 @@
 			max_number = 6
 			dangerstring = "strange entities"
 
-	spawn(0)
-		var/num = rand(min_number,max_number)
-		while(turfs.len > 0 && num > 0)
-			var/turf/simulated/floor/T = pick(turfs)
-			turfs.Remove(T)
-			num--
-			var/spawn_type = pick(spawn_types)
-			new spawn_type(T)
+	var/num = rand(min_number,max_number)
+	while(turfs.len > 0 && num > 0)
+		var/turf/simulated/floor/T = pick(turfs)
+		turfs.Remove(T)
+		num--
+		var/spawn_type = pick(spawn_types)
+		new spawn_type(T)
 
 /datum/event/highdangerinfestation/announce()
 	GLOB.command_announcement.Announce("Bioscans indicate that [dangerstring] have entered [locstring]. Contain them before they start causing damage.", "Alien infestation")

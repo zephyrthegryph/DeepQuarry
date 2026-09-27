@@ -39,13 +39,11 @@
 				for(var/wire_color in colors)
 					detach_assembly(wire_color) //Kick all the signallers off!
 
-			spawn(0)
-				qdel(C)
+			om_qdel_after(C, 0)
 
 		if(WIRE_BADDISARM)
 			C.visible_message("[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*", "[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*")
-			spawn(20)
-				C.explode()
+			om_after(C, 2 SECONDS, TYPE_PROC_REF(/obj/effect/mine, explode))
 
 		if(WIRE_TRAP)
 			C.visible_message("[icon2html(C,viewers(holder))] *click!*", "[icon2html(C,viewers(holder))] *click!*")
@@ -67,8 +65,7 @@
 
 		if(WIRE_EXPLODE_DELAY)
 			C.visible_message("[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*", "[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*")
-			spawn(20)
-				C.explode()
+			om_after(C, 2 SECONDS, TYPE_PROC_REF(/obj/effect/mine, explode))
 
 		if(WIRE_DISARM)
 			C.visible_message("[icon2html(C,viewers(holder))] *ping*", "[icon2html(C,viewers(holder))] *ping*")

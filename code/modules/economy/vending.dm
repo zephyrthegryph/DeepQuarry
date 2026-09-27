@@ -606,7 +606,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 				return FALSE
 			shut_up = !shut_up
 			if(!shut_up)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 
 /obj/machinery/vending/proc/can_buy(datum/stored_item/vending_product/R, mob/user)
 	if(!allowed(user) && !emagged && scan_id)
@@ -650,13 +650,16 @@ GLOBAL_LIST_EMPTY(vending_products)
 			categories &= ~CAT_COIN
 
 	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
-		spawn(0)
-			speak(vend_reply)
-			last_reply = world.time
+		speak(vend_reply)
+		last_reply = world.time
 
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
 	addtimer(CALLBACK(src, PROC_REF(delayed_vend), R, user), vend_delay)
+
+/obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
+	if(R.get_product(get_turf(src)))
+		visible_message(span_infoplain(span_bold("\The [src]") + " clunks as it vends an additional item."))
 
 /obj/machinery/vending/proc/delayed_vend(datum/stored_item/vending_product/R, mob/user)
 	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10))
@@ -670,9 +673,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(has_logs)
 		do_logging(R, user, 1)
 	if(prob(1))
-		sleep(3)
-		if(R.get_product(get_turf(src)))
-			visible_message(span_infoplain(span_bold("\The [src]") + " clunks as it vends an additional item."))
+		om_after(src, 0.3 SECONDS, PROC_REF(bonus_vend), R)
 	playsound(src, "sound/[vending_sound]", 100, 1, 1)
 
 	GLOB.items_sold_shift_roundstat++
@@ -732,7 +733,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 	SStgui.update_uis(src)
 
-/obj/machinery/vending/process()
+/obj/machinery/vending/machine_step()
 	if(stat & (BROKEN|NOPOWER))
 		return PROCESS_KILL
 
@@ -777,8 +778,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		if(!(stat & NOPOWER))
 			icon_state = initial(icon_state)
 		else
-			spawn(rand(0, 15))
-				icon_state = "[initial(icon_state)]-off"
+			om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var), "icon_state", "[initial(icon_state)]-off")
 
 //Oh no we're malfunctioning!  Dump out some product and break.
 /obj/machinery/vending/proc/malfunction()
@@ -816,3 +816,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 	return 1
 
 //Actual machines are in vending_machines.dm
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/vending/step_start_condition()
+	return active && !shut_up && length(slogan_list)

@@ -105,9 +105,12 @@
 
 	current_user = user
 	user.visible_message(span_infoplain(span_bold("[user]") + " begins to draw back the string of [src]."),span_notice("You begin to draw back the string of [src]."))
-	if(do_after(user, 25, target = src))
-		drawn = TRUE
-		user.visible_message(span_infoplain(span_bold("[user]") + "draws the string on [src] back fully!"), span_infoplain("You draw the string on [src] back fully!"))
+	om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
+	update_icon()
+
+/obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)
+	drawn = TRUE
+	user.visible_message(span_infoplain(span_bold("[user]") + "draws the string on [src] back fully!"), span_infoplain("You draw the string on [src] back fully!"))
 	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/attackby(obj/item/W as obj, mob/user)

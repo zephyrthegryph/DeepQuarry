@@ -372,7 +372,7 @@
 
 	combustion = FALSE
 
-/obj/item/projectile/bullet/pistol/cap/process()
+/obj/item/projectile/bullet/pistol/cap/periodic_step()
 	loc = null
 	qdel(src)
 
@@ -424,7 +424,7 @@
 	combustion = FALSE
 	hud_state = "pistol_light"
 
-/obj/item/projectile/bullet/cap/process()
+/obj/item/projectile/bullet/cap/periodic_step()
 	loc = null
 	qdel(src)
 

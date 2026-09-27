@@ -1,6 +1,5 @@
 
 #define isdatum(D)		istype(D, /datum)
-#define isweakref(A)	istype(A, /datum/weakref)
 
 //#define islist(D)		istype(D, /list)	//Built in
 #define isimage(thing) (istype(thing, /image))

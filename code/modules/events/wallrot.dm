@@ -21,18 +21,17 @@
 		GLOB.command_announcement.Announce("Harmful fungi detected on \the [station_name()]. Hull integrity near [center.loc.name] may be compromised.", "Hazardous Biomass", ANNOUNCER_MSG_WALLROT) // Wording
 
 /datum/event/wallrot/start()
-	spawn()
-		if(center)
-			// Make sure at least one piece of wall rots!
-			center.rot()
+	if(center)
+		// Make sure at least one piece of wall rots!
+		center.rot()
 
-			// Have a chance to rot lots of other walls.
-			var/rotcount = 0
-			var/actual_severity = severity * rand(5, 10)
-			for(var/turf/simulated/wall/W in range(5, center)) if(prob(50))
-				W.rot()
-				rotcount++
+		// Have a chance to rot lots of other walls.
+		var/rotcount = 0
+		var/actual_severity = severity * rand(5, 10)
+		for(var/turf/simulated/wall/W in range(5, center)) if(prob(50))
+			W.rot()
+			rotcount++
 
-				// Only rot up to severity walls
-				if(rotcount >= actual_severity)
-					break
+			// Only rot up to severity walls
+			if(rotcount >= actual_severity)
+				break

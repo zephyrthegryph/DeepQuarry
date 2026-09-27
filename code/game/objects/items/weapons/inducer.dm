@@ -137,7 +137,6 @@
 		C = O.get_cell()
 
 	if(C)
-		var/done_any = FALSE
 
 		if(C.charge >= C.maxcharge)
 			to_chat(user, span_notice("[A] is fully charged ([round(C.charge)] / [C.maxcharge])!"))
@@ -153,29 +152,37 @@
 		spark_system.set_up(5, 0, get_turf(A))
 		spark_system.attach(A)
 
-		while(C.charge < C.maxcharge)
-			if(do_after(user, 2 SECONDS, target = user) && cell.charge)
-				done_any = TRUE
-				induce(C, coefficient)
-				spark_system.start()
-				if(O)
-					O.update_icon()
-			else
-				break
-
-		QDEL_NULL(charge_beam)
-		QDEL_NULL(spark_system)
-		if(A)
-			A.filters -= filter
-
-		if(done_any) // Only show a message if we succeeded at least once
-			user.visible_message(span_notice("[user] recharged [A]!"), span_notice("You recharged [A]!"))
-
-		recharging = FALSE
+		recharge_step(user, A, C, O, coefficient, FALSE, charge_beam, filter)
 		return TRUE
 	else //Couldn't find a cell
 		to_chat(user, span_warning("Error unable to interface with device."))
 
+	recharging = FALSE
+
+/// Charges C in 2-second pulses until it is full or the user stops.
+/obj/item/inducer/proc/recharge_step(mob/user, atom/A, obj/item/cell/C, obj/O, coefficient, done_any, datum/beam/charge_beam, filter)
+	if(C.charge < C.maxcharge)
+		om_do_after(user, 2 SECONDS, target = user, receiver = src, on_done = PROC_REF(recharge_pulse), done_args = list(user, A, C, O, coefficient, done_any, charge_beam, filter), on_fail = PROC_REF(recharge_end), fail_args = list(user, A, done_any, charge_beam, filter))
+		return
+	recharge_end(user, A, done_any, charge_beam, filter)
+
+/obj/item/inducer/proc/recharge_pulse(mob/user, atom/A, obj/item/cell/C, obj/O, coefficient, done_any, datum/beam/charge_beam, filter)
+	if(!cell?.charge)
+		recharge_end(user, A, done_any, charge_beam, filter)
+		return
+	induce(C, coefficient)
+	spark_system?.start()
+	if(O)
+		O.update_icon()
+	recharge_step(user, A, C, O, coefficient, TRUE, charge_beam, filter)
+
+/obj/item/inducer/proc/recharge_end(mob/user, atom/A, done_any, datum/beam/charge_beam, filter)
+	qdel(charge_beam)
+	QDEL_NULL(spark_system)
+	if(A)
+		A.filters -= filter
+	if(done_any && user) // Only show a message if we succeeded at least once
+		user.visible_message(span_notice("[user] recharged [A]!"), span_notice("You recharged [A]!"))
 	recharging = FALSE
 
 /obj/item/inducer/attack_self(mob/user)

@@ -40,7 +40,7 @@
 	else
 		icon_state = "[state]"
 
-/obj/machinery/bluespace_beacon/process()
+/obj/machinery/bluespace_beacon/machine_step()
 	if(!Beacon)
 		var/turf/T = src.loc
 		Beacon = new /obj/item/radio/beacon
@@ -56,10 +56,15 @@
 
 /obj/machinery/bluespace_beacon/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/bluespace_beacon/proc/beacon_changed(datum/source)
 	SIGNAL_HANDLER
 	if(source == Beacon && QDELETED(source))
 		Beacon = null
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/bluespace_beacon/step_start_condition()
+	return TRUE // places its beacon

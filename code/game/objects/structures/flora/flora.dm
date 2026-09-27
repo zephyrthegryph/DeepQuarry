@@ -65,12 +65,14 @@
 
 	if(removal_tool && istype(W, removal_tool))
 		to_chat(user, span_warning("You start uprooting \the [src]..."))
-		if(do_after(user, 3 SECONDS, target = src))
-			visible_message(span_notice("\The [user] uproots and discards \the [src]!"))
-			qdel(src)
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return
 
 	..(W, user)
+
+/obj/structure/flora/proc/attackby_timed_done(mob/living/user)
+	visible_message(span_notice("\The [user] uproots and discards \the [src]!"))
+	qdel(src)
 
 /obj/structure/flora/proc/can_harvest(obj/item/I)
 	. = FALSE
@@ -286,26 +288,30 @@
 		to_chat(user, span_notice("[I] is too big to fit inside [src]."))
 		return
 
-	if(do_after(user, 1 SECOND, target = src))
-		user.drop_from_inventory(I, src)
-		I.forceMove(src)
-		stored_item = I
-		src.visible_message("[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] [user] places [I] into [src].")
-		return
-	else
-		to_chat(user, span_notice("You refrain from putting things into the plant pot."))
-		return
+	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user), on_fail = PROC_REF(attackby_timed_failed2), fail_args = list(I, user))
+
+/obj/structure/flora/pottedplant/proc/attackby_timed_done2(obj/item/I, mob/user)
+	user.drop_from_inventory(I, src)
+	I.forceMove(src)
+	stored_item = I
+	src.visible_message("[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] [user] places [I] into [src].")
+	return
+
+/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(obj/item/I, mob/user)
+	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
+	return
 
 /obj/structure/flora/pottedplant/attack_hand(mob/user)
 	if(!stored_item)
 		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
 	else
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
-			stored_item.forceMove(get_turf(src))
-			stored_item = null
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	..()
 
+/obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
+	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
+	stored_item.forceMove(get_turf(src))
+	stored_item = null
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"

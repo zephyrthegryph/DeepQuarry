@@ -42,9 +42,7 @@
 			icon_state = initial(icon_state)
 			entopic.show()
 		else
-			spawn(rand(0, 15))
-				icon_state = "[initial(icon_state)]-off"
-				entopic.hide()
+			om_after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/vending/nifsoft_shop/malfunction()
 	atom_break()
@@ -146,22 +144,11 @@
 			categories &= ~CAT_COIN
 
 	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
-		spawn(0)
-			speak(vend_reply)
-			last_reply = world.time
+		speak(vend_reply)
+		last_reply = world.time
 
 	use_power(vend_power_usage)	//actuators and stuff
-	spawn(vend_delay)
-		R.amount--
-		new R.item_path(H.nif)
-		H.nif.notify("New software installed: [R.item_name]")
-		flick("[icon_state]-vend",entopic.my_image)
-		if(has_logs)
-			do_logging(R, user, 1)
-
-		vend_ready = 1
-		currently_vending = null
-		SStgui.update_uis(src)
+	om_after(src, vend_delay, PROC_REF(finish_nifsoft_vend), R, H, user)
 	return 1
 
 //Can't throw intangible software at people.
@@ -181,3 +168,19 @@
 		categories |= CAT_HIDDEN
 		to_chat(user, "You short out [src]'s access lock & stock restrictions.")
 		return 1
+
+/obj/machinery/vending/nifsoft_shop/proc/lose_power()
+	icon_state = "[initial(icon_state)]-off"
+	entopic.hide()
+
+/obj/machinery/vending/nifsoft_shop/proc/finish_nifsoft_vend(datum/stored_item/vending_product/R, mob/living/carbon/human/H, mob/user)
+	R.amount--
+	new R.item_path(H.nif)
+	H.nif.notify("New software installed: [R.item_name]")
+	flick("[icon_state]-vend",entopic.my_image)
+	if(has_logs)
+		do_logging(R, user, 1)
+
+	vend_ready = 1
+	currently_vending = null
+	SStgui.update_uis(src)

@@ -17,12 +17,21 @@
  *		return
  *
  * `delay` is the unscaled time, exactly what the site used to multiply by
- * `toolspeed`, so timings do not change. Returns TRUE when the tool was used.
+ * `toolspeed`, so timings do not change. Nothing waits: a job with a wait is a timed
+ * action, and what follows the job goes in `on_done` (a proc on `receiver`, called with
+ * `done_args`; on_fail likewise when it is interrupted or the tool gives out):
+ *
+ *	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, receiver = src, on_done = PROC_REF(unwrenched), done_args = list(user))
+ *
+ * Returns FALSE when a check refused the job, TRUE when it was done at once (no wait;
+ * on_done has run), or USE_TOOL_PENDING when the timed action started. `claims`: the target is
+ * exclusive while the job runs (another claiming job on it is refused); `busy`: a datum the job
+ * also claims (om_busy() holds while it runs; see om_do_after()).
  */
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
 
-/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE)
+/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy)
 	if(!actor || !target)
 		return FALSE
 	if(interaction)
@@ -65,20 +74,31 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		else if(self_text)
 			to_chat(actor, span_notice(self_text))
 
-	// 4. The wait.
-	if(time > 0)
-		if(!do_after(actor, time, target = target, extra_checks = extra_checks))
-			return FALSE
-		if(QDELETED(target) || (tool && QDELETED(tool)))
-			return FALSE
-		// The wait may have turned the welder off or emptied it.
-		if(quality && tool_quality_failure(tool, quality, tier))
-			return FALSE
+	// 4. The wait: a timed action (timed_action.dm) that finishes in use_tool_finish().
+	var/list/finish_args = list(actor, tool, target, quality, tier, amount, silent, receiver, on_done, done_args, on_fail, fail_args)
+	if(time <= 0)
+		return use_tool_finish(arglist(finish_args))
+	var/started = om_do_after(actor, time, target, null, GLOBAL_PROC_REF(use_tool_finish), finish_args, 		on_fail = GLOBAL_PROC_REF(use_tool_interrupted), fail_args = list(receiver, on_fail, fail_args), 		check_proc = extra_checks ? GLOBAL_PROC_REF(om_check_callback) : null, check_args = extra_checks ? list(extra_checks) : null, claims = claims, busy = busy)
+	return istext(started) ? FALSE : USE_TOOL_PENDING
 
+/**
+ * The end of a tool job: after the wait, the tool must still do the job (the wait may
+ * have turned the welder off or emptied it), then the resources are used and `on_done`
+ * runs on `receiver` with `done_args` (a /proc/ path is called globally). TRUE if it did.
+ */
+/proc/use_tool_finish(mob/actor, obj/item/tool, atom/target, quality, tier, amount, silent, datum/receiver, on_done, list/done_args, on_fail, list/fail_args)
+	if(QDELETED(target) || (tool && QDELETED(tool)) || (quality && tool_quality_failure(tool, quality, tier)))
+		om_call_ref(receiver, on_fail, fail_args)
+		return FALSE
 	// 5. Resources.
 	if(tool && !tool.tool_use_resources(actor, amount, silent))
+		om_call_ref(receiver, on_fail, fail_args)
 		return FALSE
+	om_call_ref(receiver, on_done, done_args)
 	return TRUE
+
+/proc/use_tool_interrupted(datum/receiver, on_fail, list/fail_args)
+	om_call_ref(receiver, on_fail, fail_args)
 
 /// Why `tool` can't be used as `quality` at `tier`, or null if it can.
 /proc/tool_quality_failure(obj/item/tool, quality, tier = 1)

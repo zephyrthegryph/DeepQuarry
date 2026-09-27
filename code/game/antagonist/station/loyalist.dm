@@ -39,7 +39,7 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 	if(!..())
 		return
 	global_objectives = list()
-	for(var/mob/living/carbon/human/player in GLOB.mob_list)
+	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!player.mind || player.stat==2 || !(SSjob.is_job_in_department(player.mind.assigned_role, DEPARTMENT_COMMAND)))
 			continue
 		var/datum/objective/protect/loyal_obj = new

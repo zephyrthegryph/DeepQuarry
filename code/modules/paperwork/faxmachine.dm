@@ -270,8 +270,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 					sendfax(destination, ui.user)
 
 				if (sendcooldown)
-					spawn(sendcooldown) // cooldown time
-						sendcooldown = 0
+					om_after(src, sendcooldown, TYPE_PROC_REF(/datum, om_set_var), "sendcooldown", 0) // cooldown time
 
 		if("dept")
 			var/lastdestination = destination
@@ -393,24 +392,24 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	if(department == "Unknown")
 		return 0	//You can't send faxes to "Unknown"
 
+	if(!istype(incoming, /obj/item/paper) && !istype(incoming, /obj/item/photo) && !istype(incoming, /obj/item/paper_bundle))
+		return 0
+
 	flick("faxreceive", src)
 	playsound(src, "sound/machines/printer.ogg", 50, 1)
 
-
 	// give the sprite some time to flick
-	sleep(20)
+	om_after(src, 2 SECONDS, PROC_REF(print_received), incoming)
+	return 1
 
+/obj/machinery/photocopier/faxmachine/proc/print_received(obj/item/incoming)
 	if (istype(incoming, /obj/item/paper))
 		copy(incoming)
 	else if (istype(incoming, /obj/item/photo))
 		photocopy(incoming)
 	else if (istype(incoming, /obj/item/paper_bundle))
 		bundlecopy(incoming)
-	else
-		return 0
-
 	use_power(active_power_usage)
-	return 1
 
 /obj/machinery/photocopier/faxmachine/proc/send_admin_fax(mob/sender, destination)
 	if(stat & (BROKEN|NOPOWER))
@@ -448,8 +447,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		message_admins(sender, "[uppertext(destination)] FAX", rcvdcopy, "UNKNOWN")
 
 	sendcooldown = 1800
-	sleep(50)
-	visible_message("[src] beeps, \"Message transmitted successfully.\"")
+	om_after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), "[src] beeps, \"Message transmitted successfully.\"")
 
 // Turns objects into just text.
 /obj/machinery/photocopier/faxmachine/proc/make_summary(obj/item/sent)

@@ -181,6 +181,9 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
+/// Refactory materials cached across the revive (it wipes them), or null.
+/obj/machinery/protean_reconstitutor/var/tmp/list/materials_cache
+
 /obj/machinery/protean_reconstitutor/attack_hand(mob/user as mob)
 	if(!protean_brain || !protean_orchestrator || !protean_refactory || (nanomass_reserve < nanomass_required))
 		//no brain, no orchestrator, and/or not enough goo
@@ -207,125 +210,144 @@
 			playsound(src, clicksound, 50, 1)
 		nanomass_reserve -= nanomass_required
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
-		sleep(base_cook_time)
-		if(QDELETED(src))
+		om_after(src, base_cook_time, PROC_REF(reconstitute_begin))
+	update_icon()
+
+/// Reconstitution step 1: the body is grown after the base cook time.
+/obj/machinery/protean_reconstitutor/proc/reconstitute_begin()
+	if(QDELETED(src))
+		return
+	if(!protean_brain || !protean_orchestrator || !protean_refactory)
+		abort_reconstitution(null, "Essential components removed!")
+		return
+	var/mob/living/carbon/human/protean/P = new /mob/living/carbon/human/protean
+	P.forceMove(src)
+	P.name = "Unfinished Protean"
+	P.real_name = "Unfinished Protean"
+	var/list/organs = list()
+	for(var/organ in P.internal_organs_by_name)
+		organs += organ
+	materials_cache = null
+	if(!length(organs))
+		reconstitute_organs_done(P)
+		return
+	om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, 1)
+
+/// Reconstitution step 2: one organ per per_organ_delay.
+/obj/machinery/protean_reconstitutor/proc/reconstitute_organ(mob/living/carbon/human/protean/P, list/organs, index)
+	if(QDELETED(P))
+		processing_revive = FALSE
+		return
+	var/organ = organs[index]
+	var/obj/item/O = P.internal_organs_by_name[organ]
+	if(istype(O,/obj/item/organ/internal/nano/refactory))
+		src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
+		P.internal_organs_by_name.Remove(O)
+		P.contents.Remove(O)
+		qdel(O)
+		P.internal_organs_by_name.Add(list(O_FACT = protean_refactory))
+		P.internal_organs.Add(protean_refactory)
+		//cache our mats otherwise they get wiped by the revive
+		materials_cache = protean_refactory.materials.Copy()
+		protean_refactory.loc = P
+	if(istype(O,/obj/item/organ/internal/nano/orchestrator))
+		src.visible_message(span_notice("\The [src] chirps, \"Linking nanoswarm to orchestrator...\""))
+		P.internal_organs_by_name.Remove(O)
+		P.internal_organs.Remove(O)
+		P.contents.Remove(O)
+		qdel(O)
+		P.internal_organs_by_name.Add(list(O_ORCH = protean_orchestrator))
+		P.internal_organs.Add(protean_orchestrator)
+		protean_orchestrator.loc = P
+	if(istype(O,/obj/item/organ/internal/mmi_holder/posibrain/nano))
+		src.visible_message(span_notice("\The [src] chirps, \"Synchronizing positronic neural architecture...\""))
+		//on the offchance our client blipped before getting to this step, abort, schloop the organs back into the machine, dissolve the body, and refund the nanos
+		if(!protean_brain.get_occupant()?.client)
+			abort_reconstitution(P, "No positronic neural activity detected!")
 			return
-		if(!protean_brain || !protean_orchestrator || !protean_refactory)
-			abort_reconstitution(null, "Essential components removed!")
+		var/client/posibrain_client = protean_brain.get_occupant().client
+		var/datum/data/record/record_found = find_general_record("name", posibrain_client.prefs.read_preference(/datum/preference/name/real_name))
+		if(!record_found)
+			abort_reconstitution(P, "No crew record matches this neural architecture!")
 			return
-		var/mob/living/carbon/human/protean/P = new /mob/living/carbon/human/protean
-		var/mats_cached
-		var/list/materials_cache
-		P.forceMove(src)
-		P.name = "Unfinished Protean"
-		P.real_name = "Unfinished Protean"
+		var/charjob = record_found.fields["real_rank"]
+		var/obj/item/organ/internal/mmi_holder/posibrain/nano/BR = O
+		BR.stored_mmi = null	//toss the dummy...
+		BR.contents.Cut()
+		BR.stored_mmi = protean_brain	//...and implant the salvaged mmi in its place
+		BR.contents.Add(protean_brain)
+		var/picked_ckey = posibrain_client.ckey
+		var/picked_slot = posibrain_client.prefs.default_slot
+		if(P.dna)
+			P.dna.ResetUIFrom(P)
+			P.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
+			P.sync_organ_dna()
+		P.initialize_vessel()
+
+		if(P.mind)
+			P.mind.loaded_from_ckey = picked_ckey
+			P.mind.loaded_from_slot = picked_slot
+			var/datum/antagonist/antag_data = SSantag_job.get_antag_data(P.mind.special_role)
+			if(antag_data)
+				antag_data.add_antagonist(P.mind)
+				antag_data.place_mob(P)
+			P.mind.assigned_role = charjob
+			P.mind.role_alt_title = SSjob.get_player_alt_title(P, charjob)
+
+		// Languages come with the character's identity when the mind moves in.
+		// migrated language_custom_keys
+		var/list/_posi_lang_custom = posibrain_client.prefs.read_preference(/datum/preference/language_custom_keys)
+		for(var/key in _posi_lang_custom)
+			if(_posi_lang_custom[key])
+				var/datum/language/keylang = GLOB.all_languages[_posi_lang_custom[key]]
+				if(keylang)
+					P.language_keys[key] = keylang
+
+		if(posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language))
+			var/datum/language/def_lang = GLOB.all_languages[posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
+			if(def_lang)
+				P.default_language = def_lang
+
+		SEND_SIGNAL(P, COMSIG_HUMAN_DNA_FINALIZED)
+
+		var/datum/component/mind_host/core_host = get_mind_host(protean_brain)
+		core_host.release_mind(P, "protean reconstitution")
+		protean_brain.loc = BR
+	if(index < length(organs))
+		om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, index + 1)
+		return
+	reconstitute_organs_done(P)
+
+/obj/machinery/protean_reconstitutor/proc/reconstitute_organs_done(mob/living/carbon/human/protean/P)
+	protean_refactory = null
+	protean_brain = null
+	protean_orchestrator = null
+	om_after(src, finalize_time, PROC_REF(reconstitute_finish), P)
+
+/// Reconstitution step 3: revive and release the finished protean.
+/obj/machinery/protean_reconstitutor/proc/reconstitute_finish(mob/living/carbon/human/protean/P)
+	P.revive()
+	P.apply_vore_prefs()
+	//run a little revive, load their prefs, and boot a new NIF on them for the finishing touches and cleanup... (yes, we need to initialize a new NIF, they don't get one from the revive process)
+	//using revive is honestly a bit overkill since it kinda deletes-and-replaces most of the guts anyway (hence the cache and restore of refactory contents; otherwise they get wiped!), but it also ensures the new protean comes out in their "base form" as well as hopefully cleaning up any loose ends in the resurrection process
+	var/obj/item/nif/protean/new_nif = new()
+	new_nif.quick_implant(P)
+	//revive complete, now restore the cached mats (if we had any)
+	if(materials_cache)
+		src.visible_message(span_notice("\The [src] chirps, \"Reindexing archived refactory materials storage.\""))
 		for(var/organ in P.internal_organs_by_name)
-			sleep(per_organ_delay)
-			if(QDELETED(src))
-				return
 			var/obj/item/O = P.internal_organs_by_name[organ]
 			if(istype(O,/obj/item/organ/internal/nano/refactory))
-				src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
-				P.internal_organs_by_name.Remove(O)
-				P.contents.Remove(O)
-				qdel(O)
-				P.internal_organs_by_name.Add(list(O_FACT = protean_refactory))
-				P.internal_organs.Add(protean_refactory)
-				//cache our mats otherwise they get wiped by the revive
-				materials_cache = protean_refactory.materials.Copy()
-				mats_cached = TRUE
-				protean_refactory.loc = P
-			if(istype(O,/obj/item/organ/internal/nano/orchestrator))
-				src.visible_message(span_notice("\The [src] chirps, \"Linking nanoswarm to orchestrator...\""))
-				P.internal_organs_by_name.Remove(O)
-				P.internal_organs.Remove(O)
-				P.contents.Remove(O)
-				qdel(O)
-				P.internal_organs_by_name.Add(list(O_ORCH = protean_orchestrator))
-				P.internal_organs.Add(protean_orchestrator)
-				protean_orchestrator.loc = P
-			if(istype(O,/obj/item/organ/internal/mmi_holder/posibrain/nano))
-				src.visible_message(span_notice("\The [src] chirps, \"Synchronizing positronic neural architecture...\""))
-				//on the offchance our client blipped before getting to this step, abort, schloop the organs back into the machine, dissolve the body, and refund the nanos
-				if(!protean_brain.get_occupant()?.client)
-					abort_reconstitution(P, "No positronic neural activity detected!")
-					return
-				var/client/posibrain_client = protean_brain.get_occupant().client
-				var/datum/data/record/record_found = find_general_record("name", posibrain_client.prefs.read_preference(/datum/preference/name/real_name))
-				if(!record_found)
-					abort_reconstitution(P, "No crew record matches this neural architecture!")
-					return
-				var/charjob = record_found.fields["real_rank"]
-				var/obj/item/organ/internal/mmi_holder/posibrain/nano/BR = O
-				BR.stored_mmi = null	//toss the dummy...
-				BR.contents.Cut()
-				BR.stored_mmi = protean_brain	//...and implant the salvaged mmi in its place
-				BR.contents.Add(protean_brain)
-				var/picked_ckey = posibrain_client.ckey
-				var/picked_slot = posibrain_client.prefs.default_slot
-				if(P.dna)
-					P.dna.ResetUIFrom(P)
-					P.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
-					P.sync_organ_dna()
-				P.initialize_vessel()
-
-				if(P.mind)
-					P.mind.loaded_from_ckey = picked_ckey
-					P.mind.loaded_from_slot = picked_slot
-					var/datum/antagonist/antag_data = SSantag_job.get_antag_data(P.mind.special_role)
-					if(antag_data)
-						antag_data.add_antagonist(P.mind)
-						antag_data.place_mob(P)
-					P.mind.assigned_role = charjob
-					P.mind.role_alt_title = SSjob.get_player_alt_title(P, charjob)
-
-				// Languages come with the character's identity when the mind moves in.
-				// migrated language_custom_keys
-				var/list/_posi_lang_custom = posibrain_client.prefs.read_preference(/datum/preference/language_custom_keys)
-				for(var/key in _posi_lang_custom)
-					if(_posi_lang_custom[key])
-						var/datum/language/keylang = GLOB.all_languages[_posi_lang_custom[key]]
-						if(keylang)
-							P.language_keys[key] = keylang
-
-				if(posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language))
-					var/datum/language/def_lang = GLOB.all_languages[posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
-					if(def_lang)
-						P.default_language = def_lang
-
-				SEND_SIGNAL(P, COMSIG_HUMAN_DNA_FINALIZED)
-
-				var/datum/component/mind_host/core_host = get_mind_host(protean_brain)
-				core_host.release_mind(P, "protean reconstitution")
-				protean_brain.loc = BR
-		protean_refactory = null
-		protean_brain = null
-		protean_orchestrator = null
-		sleep(finalize_time)	//let 'em cook a tiny bit longer
-		P.revive()
-		P.apply_vore_prefs()
-		//run a little revive, load their prefs, and boot a new NIF on them for the finishing touches and cleanup... (yes, we need to initialize a new NIF, they don't get one from the revive process)
-		//using revive is honestly a bit overkill since it kinda deletes-and-replaces most of the guts anyway (hence the cache and restore of refactory contents; otherwise they get wiped!), but it also ensures the new protean comes out in their "base form" as well as hopefully cleaning up any loose ends in the resurrection process
-		var/obj/item/nif/protean/new_nif = new()
-		new_nif.quick_implant(P)
-		//revive complete, now restore the cached mats (if we had any)
-		if(mats_cached == TRUE)
-			src.visible_message(span_notice("\The [src] chirps, \"Reindexing archived refactory materials storage.\""))
-			for(var/organ in P.internal_organs_by_name)
-				var/obj/item/O = P.internal_organs_by_name[organ]
-				if(istype(O,/obj/item/organ/internal/nano/refactory))
-					var/obj/item/organ/internal/nano/refactory/RF = O
-					RF.materials = materials_cache.Copy()
-					materials_cache.Cut()
-					mats_cached = FALSE
-		//finally... drop them in front of the machine
-		src.visible_message(span_notice("\The [src] chirps, \"Protean reconstitution cycle complete!\""))
-		to_chat(P,span_notice("You feel your sense of self expanding, spreading out to inhabit your new \'body\'. You feel... <i><b>ALIVE!</b></i>"))
-		playsound(src, dingsound, 100, 1, -1)	//soup's on!
-		P.forceMove(src.loc)
-		processing_revive = FALSE
-		log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
-		update_icon()
+				var/obj/item/organ/internal/nano/refactory/RF = O
+				RF.materials = materials_cache.Copy()
+				materials_cache = null
+	//finally... drop them in front of the machine
+	src.visible_message(span_notice("\The [src] chirps, \"Protean reconstitution cycle complete!\""))
+	to_chat(P,span_notice("You feel your sense of self expanding, spreading out to inhabit your new \'body\'. You feel... <i><b>ALIVE!</b></i>"))
+	playsound(src, dingsound, 100, 1, -1)	//soup's on!
+	P.forceMove(src.loc)
+	processing_revive = FALSE
+	log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
 	update_icon()
 
 /// Stop a cycle cleanly: salvaged components go back into the tank, the

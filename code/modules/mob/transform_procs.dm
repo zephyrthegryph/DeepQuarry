@@ -18,7 +18,10 @@
 	animation.icon = 'icons/mob/mob.dmi'
 	animation.master = src
 	flick("h2monkey", animation)
-	sleep(48)
+	om_after(src, 48, PROC_REF(monkeyize_1), animation)
+
+
+/mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)
 	//animation = null
 
 	transforming = 0
@@ -76,21 +79,21 @@
 	var/newloc = loc
 	if(move)
 		var/obj/loc_landmark
-		for(var/obj/effect/landmark/start/sloc in GLOB.landmarks_list)
+		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if (sloc.name != JOB_AI)
 				continue
 			if ((locate(/mob/living) in sloc.loc) || (locate(/obj/structure/AIcore) in sloc.loc))
 				continue
 			loc_landmark = sloc
 		if (!loc_landmark)
-			for(var/obj/effect/landmark/tripai in GLOB.landmarks_list)
+			for(var/obj/effect/landmark/tripai in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 				if (tripai.name == "tripai")
 					if((locate(/mob/living) in tripai.loc) || (locate(/obj/structure/AIcore) in tripai.loc))
 						continue
 					loc_landmark = tripai
 		if (!loc_landmark)
 			to_chat(src, "Oh god sorry we can't find an unoccupied AI spawn location, so we're spawning you on top of someone.")
-			for(var/obj/effect/landmark/start/sloc in GLOB.landmarks_list)
+			for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 				if (sloc.name == JOB_AI)
 					loc_landmark = sloc
 
@@ -102,7 +105,7 @@
 
 	if(isliving(src))
 		if(move_player(src, O, "AIized"))
-			O.mind.original_character = WEAKREF(O)
+			O.mind.original_character = om_handle(O)
 	else
 		O.key = key // admin-made AI from an observer: first assignment
 
@@ -139,8 +142,7 @@
 	O.add_ai_verbs()
 
 	O.rename_self("ai",1)
-	spawn(0)	// Mobs still instantly del themselves, thus we need to spawn or O will never be returned
-		qdel(src)
+	om_qdel_after(src, 0)	// Deleting now would end this proc before O is returned
 	return O
 
 //human -> robot
@@ -164,7 +166,7 @@
 
 	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
-			O.mind.original_character = WEAKREF(O)
+			O.mind.original_character = om_handle(O)
 		else if(O.mind.special_role)
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 
@@ -190,8 +192,7 @@
 		O.custom_speech_bubble = B.read_preference(/datum/preference/text/human/custom_speech_bubble)
 
 
-	spawn(0)	// Mobs still instantly del themselves, thus we need to spawn or O will never be returned
-		qdel(src)
+	om_qdel_after(src, 0)	// Deleting now would end this proc before O is returned
 	return O
 
 //human -> alien
@@ -270,8 +271,7 @@
 
 
 	to_chat(new_mob, "You suddenly feel more... animalistic.")
-	spawn()
-		qdel(src)
+	om_qdel_after(src, 0)
 	return
 
 /mob/proc/Animalize(mob/user)

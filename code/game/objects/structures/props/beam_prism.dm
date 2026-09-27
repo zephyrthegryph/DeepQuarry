@@ -84,8 +84,7 @@
 	playsound(src, interaction_sound, 50, 1)
 	if(two_stage)
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
-		spawn(3)
-			animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
+		om_after(src, 3, PROC_REF(rotate_second_stage), rotate_degrees)
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6) //Can't update transform because it will reset the angle.
 
@@ -112,8 +111,7 @@
 	playsound(src, interaction_sound, 50, 1)
 	if(two_stage)
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
-		spawn(3)
-			animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
+		om_after(src, 3, PROC_REF(rotate_second_stage), rotate_degrees)
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6)
 
@@ -216,3 +214,7 @@
 		P.remote_dial = null
 	my_turrets = list()
 	. = ..()
+
+/// The second half of a two-stage turn.
+/obj/structure/prop/prism/proc/rotate_second_stage(rotate_degrees)
+	animate(src, transform = turn(src.transform, rotate_degrees), time = 3)

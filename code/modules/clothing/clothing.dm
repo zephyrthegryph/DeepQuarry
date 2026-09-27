@@ -28,7 +28,7 @@
 	var/update_icon_define_orig = null	// temp storage for original update_icon_define (if it exists)
 	var/update_icon_define_digi = null	// dmi used for the digi sprites
 	var/fit_for_digi = FALSE // flag for if clothing has already been reskinned to digitigrade
-	var/datum/weakref/wearer	//Who the person currently wearing us is.
+	var/wearer	//Who the person currently wearing us is.
 
 //Updates the icons of the mob wearing the clothing item, if any.
 /obj/item/clothing/proc/update_clothing_icon()
@@ -349,7 +349,7 @@
 
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	return ..()
 
 /obj/item/clothing/gloves/dropped(mob/user, equipping, slot)
@@ -842,9 +842,7 @@
 		return
 	if(!istype(macro))
 		to_chat(micro, span_notice("You start to climb out of [src]!"))
-		if(do_after(micro, 5 SECONDS, target = src))
-			to_chat(micro, span_notice("You climb out of [src]!"))
-			micro.forceMove(loc)
+		om_do_after(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
 		return
 
 	var/escape_message_micro = "You start to climb out of [src]!"
@@ -857,11 +855,17 @@
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	if(!do_after(micro, escape_time, target = macro))
-		to_chat(micro, span_danger("You're pinned underfoot!"))
-		to_chat(macro, span_danger("You pin the escapee underfoot!"))
-		return
+	om_do_after(micro, escape_time, macro, src, PROC_REF(micro_escaped_macro), list(micro, macro), on_fail = PROC_REF(micro_pinned), fail_args = list(micro, macro))
 
+/obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
+	to_chat(micro, span_notice("You climb out of [src]!"))
+	micro.forceMove(loc)
+
+/obj/item/clothing/shoes/proc/micro_pinned(mob/living/micro, mob/living/carbon/human/macro)
+	to_chat(micro, span_danger("You're pinned underfoot!"))
+	to_chat(macro, span_danger("You pin the escapee underfoot!"))
+
+/obj/item/clothing/shoes/proc/micro_escaped_macro(mob/living/micro, mob/living/carbon/human/macro)
 	to_chat(micro, span_notice("You manage to escape [src]!"))
 	to_chat(macro, span_danger("Someone has climbed out of your [src]!"))
 	micro.forceMove(macro.loc)
@@ -1330,7 +1334,6 @@
 	. = ..()
 
 /obj/item/clothing/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	if(IC)
 		IC.clothing = null
 		action_circuit = null // Will get deleted by qdel-ing the IC assembly.
@@ -1426,9 +1429,10 @@
 		return
 
 	balloon_alert(user, "picking up hat...")
-	if(!do_after(user, 3 SECONDS, src))
-		return
-	if(QDELETED(src) || !Adjacent(user) || user.incapacitated)
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
+
+/obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)
+	if(!Adjacent(user) || user.incapacitated())
 		return
 	user.place_on_head(src)
 	balloon_alert(user, "picked up hat")
@@ -1509,8 +1513,7 @@
 
 	recent_struggle = 1
 
-	spawn(100)
-		recent_struggle = 0
+	om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "recent_struggle", 0)
 
 	if(ishuman(src.loc)) //Is this on a person?
 		var/mob/living/carbon/human/H = src.loc

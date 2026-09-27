@@ -19,6 +19,26 @@
 
 	return FALSE
 
+/obj/item/tape_roll/proc/tape_eyes_done(mob/living/carbon/human/H, mob/living/user)
+	if(!can_place(H, user))
+		return
+	if(!H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
+		return
+	user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
+	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), slot_glasses, ignore_obstructions = FALSE)
+	H.update_inv_glasses()
+	playsound(src, 'sound/effects/tape.ogg',25)
+
+/obj/item/tape_roll/proc/tape_mouth_done(mob/living/carbon/human/H, mob/living/user)
+	if(!can_place(H, user))
+		return
+	if(!H.organs_by_name[BP_HEAD] || !H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
+		return
+	user.visible_message(span_danger("\The [user] has taped up \the [H]'s mouth!"))
+	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), slot_wear_mask, ignore_obstructions = FALSE)
+	H.update_inv_wear_mask()
+	playsound(src, 'sound/effects/tape.ogg',25)
+
 /obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -44,19 +64,7 @@
 					return ITEM_INTERACT_FAILURE
 				user.visible_message(span_danger("\The [user] begins taping over \the [H]'s eyes!"))
 
-				if(!do_after(user, 3 SECONDS, target = src))
-					return ITEM_INTERACT_FAILURE
-
-				if(!can_place(H, user))
-					return ITEM_INTERACT_FAILURE
-
-				if(!H || !src || !H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
-					return ITEM_INTERACT_FAILURE
-
-				user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
-				H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), slot_glasses, ignore_obstructions = FALSE)
-				H.update_inv_glasses()
-				playsound(src, 'sound/effects/tape.ogg',25)
+				om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_eyes_done), done_args = list(H, user))
 
 			else if(user.zone_sel.selecting == O_MOUTH || user.zone_sel.selecting == BP_HEAD)
 				if(!H.organs_by_name[BP_HEAD])
@@ -73,20 +81,7 @@
 					return ITEM_INTERACT_FAILURE
 				user.visible_message(span_danger("\The [user] begins taping up \the [H]'s mouth!"))
 
-				if(!do_after(user, 3 SECONDS, target = src))
-					return ITEM_INTERACT_FAILURE
-
-				if(!can_place(H, user))
-					return ITEM_INTERACT_FAILURE
-
-				if(!H || !src || !H.organs_by_name[BP_HEAD] || !H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
-					return ITEM_INTERACT_FAILURE
-
-				user.visible_message(span_danger("\The [user] has taped up \the [H]'s mouth!"))
-
-				H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), slot_wear_mask, ignore_obstructions = FALSE)
-				H.update_inv_wear_mask()
-				playsound(src, 'sound/effects/tape.ogg',25)
+				om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_mouth_done), done_args = list(H, user))
 
 			else if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
 				if(!can_place(H, user))

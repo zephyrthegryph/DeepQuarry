@@ -32,7 +32,7 @@
 	if(program)
 		program.receive_signal(signal, receive_method, receive_param)
 		if(program.signal_requires_processing(signal, receive_method, receive_param))
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 
 /obj/machinery/embedded_controller/Topic()
 	. = ..()
@@ -43,15 +43,15 @@
 		return TRUE
 	if(LAZYLEN(valid_actions))
 		if(action in valid_actions)
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			program.receive_user_command(action)
 			return TRUE
 	if(ui.user)
 		add_fingerprint(ui.user)
 
-/obj/machinery/embedded_controller/process()
+/obj/machinery/embedded_controller/machine_step()
 	if(program)
-		program.process()
+		program.periodic_step()
 
 	update_icon()
 	if(!program || !program.memory["processing"])
@@ -59,7 +59,7 @@
 
 /obj/machinery/embedded_controller/power_change()
 	. = ..()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/embedded_controller
 	silicon_use = SILICON_USE_UI

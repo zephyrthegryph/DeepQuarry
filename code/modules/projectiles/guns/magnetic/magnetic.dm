@@ -39,7 +39,8 @@
 	if(ispath(loaded))
 		loaded = new loaded(src)
 
-	START_PROCESSING(SSobj, src)
+	if(capacitor && capacitor.charge < capacitor.max_charge)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -47,7 +48,6 @@
 	update_icon()
 
 /obj/item/gun/magnetic/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(cell)
 	QDEL_NULL(loaded)
 	QDEL_NULL(capacitor)
@@ -56,7 +56,12 @@
 /obj/item/gun/magnetic/get_cell()
 	return cell
 
-/obj/item/gun/magnetic/process()
+/// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled;
+/// firing and swapping parts start it again.
+/obj/item/gun/magnetic/periodic_step()
+	if(!capacitor || (cell ? capacitor.charge >= capacitor.max_charge : !capacitor.charge))
+		update_state()
+		return PROCESS_KILL
 	if(capacitor)
 		if(cell)
 			if(capacitor.charge < capacitor.max_charge && cell.checked_use(power_per_tick))
@@ -161,6 +166,7 @@
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
 			cell = thing
+			PERIODIC_START(src, PERIODIC_SLOW)
 			user.drop_from_inventory(cell, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [cell] into \the [src]."))
@@ -172,6 +178,7 @@
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
 			capacitor = thing
+			PERIODIC_START(src, PERIODIC_SLOW)
 			user.drop_from_inventory(capacitor, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -212,6 +219,7 @@
 		else if(cell && removable_components)
 			removing = cell
 			cell = null
+			PERIODIC_START(src, PERIODIC_SLOW)
 
 		if(removing)
 			removing.forceMove(get_turf(src))
@@ -236,13 +244,11 @@
 
 	use_ammo()
 	capacitor.use(power_cost)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
-		spawn(3) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
-			visible_message(span_danger("\The [src] explodes with the force of the shot!"))
-			explosion(get_turf(src), -1, 0, 2)
-			qdel(src)
+		om_after(src, 3, PROC_REF(unreliable_explode)) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
 
 	return new projectile_type(src)
 
@@ -283,20 +289,7 @@
 				if(MAT_SUPERMATTER)
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod/supermatter
 					visible_message(span_danger("The barrel of \the [src] glows a blinding white!"))
-					spawn(5)
-						visible_message(span_danger("\The [src] begins to rattle, its acceleration chamber collapsing in on itself!"))
-						removable_components = FALSE
-						spawn(15)
-							audible_message(span_critical("\The [src]'s power supply begins to overload as the device crumples!"), runemessage = "VWRRRRRRRR") //Why are you still holding this?
-							playsound(src, 'sound/effects/grillehit.ogg', 10, 1)
-							var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-							var/turf/T = get_turf(src)
-							sparks.set_up(2, 1, T)
-							sparks.start()
-							spawn(15)
-								visible_message(span_critical("\The [src] explodes in a blinding white light!"))
-								explosion(src.loc, -1, 1, 2, 3)
-								qdel(src)
+					om_after(src, 5, PROC_REF(fuelrod_collapse))
 				if("blitz")
 					var/max_range = 6																// -- Polymorph
 					var/banglet = 0
@@ -310,8 +303,7 @@
 						blitzed(get_turf(src), M, max_range, banglet)
 					new/obj/effect/effect/sparks(src.loc)
 					new/obj/effect/effect/smoke/illumination(loc, 5, 30, 30, "#FFFFFF")
-					spawn(2)
-						qdel(src)
+					om_qdel_after(src, 2)
 				if("blitzu")
 					visible_message(span_critical("\The [src] explodes in a blinding white light with a deafening bang!"))
 					explosion(get_turf(src),1,2,4,6)
@@ -321,6 +313,7 @@
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 	use_ammo()
 	capacitor.use(power_cost)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 	if(projectile_type)
 		return new projectile_type(src)
@@ -407,3 +400,29 @@
 #undef ICON_CHARGE
 #undef ICON_READY
 #undef ICON_LOADED
+
+/obj/item/gun/magnetic/proc/unreliable_explode()
+	visible_message(span_danger("\The [src] explodes with the force of the shot!"))
+	explosion(get_turf(src), -1, 0, 2)
+	qdel(src)
+
+/// A supermatter rod's aftermath: the acceleration chamber collapses, the power supply
+/// overloads, and the gun blows.
+/obj/item/gun/magnetic/fuelrod/proc/fuelrod_collapse()
+	visible_message(span_danger("\The [src] begins to rattle, its acceleration chamber collapsing in on itself!"))
+	removable_components = FALSE
+	om_after(src, 15, PROC_REF(fuelrod_overload))
+
+/obj/item/gun/magnetic/fuelrod/proc/fuelrod_overload()
+	audible_message(span_critical("\The [src]'s power supply begins to overload as the device crumples!"), runemessage = "VWRRRRRRRR")
+	playsound(src, 'sound/effects/grillehit.ogg', 10, 1)
+	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
+	var/turf/T = get_turf(src)
+	sparks.set_up(2, 1, T)
+	sparks.start()
+	om_after(src, 15, PROC_REF(fuelrod_blows))
+
+/obj/item/gun/magnetic/fuelrod/proc/fuelrod_blows()
+	visible_message(span_critical("\The [src] explodes in a blinding white light!"))
+	explosion(src.loc, -1, 1, 2, 3)
+	qdel(src)

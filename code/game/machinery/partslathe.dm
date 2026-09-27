@@ -139,7 +139,7 @@
 		to_chat(user, span_warning("\The [src] cannot hold more [S.name]."))
 	return 1
 
-/obj/machinery/partslathe/process()
+/obj/machinery/partslathe/machine_step()
 	..()
 	if(stat)
 		update_icon()
@@ -379,3 +379,8 @@
 
 /datum/category_item/partslathe/proc/build(loc)
 	return new path(loc)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/partslathe/step_start_condition()
+	return busy

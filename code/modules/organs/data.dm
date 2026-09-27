@@ -1,7 +1,7 @@
 // Data written to each organ on creation for appearance and blood, this WAS originally done by sending the full dna datum.
 // However sending the whole dna datum through Clone() is extremely expensive, and a memory leak if its a hardref instead.
 /datum/organ_data
-	VAR_PRIVATE/datum/weakref/species
+	VAR_PRIVATE/species
 	// Species currently uses a cache system, if the species datum deletes, these are used as fallbacks for the last obtained state from the species datum
 	// In the future, transforming species need to be refactored to not need this, as it's the only thing holding it back from proper isolation.
 
@@ -46,12 +46,12 @@
 
 /datum/organ_data/proc/setup_from_species(datum/species/S) // This needs a full rework, but can't be done unless all of transformating species code is refactored
 	SHOULD_NOT_OVERRIDE(TRUE)
-	species = WEAKREF(S)
+	species = om_handle(S)
 
 // All accessed vars need to be cached during read.
 // Get data from species, if this fails use cached data
 #define SETUP_SPECIES_CHECK(p, x) \
-	var/datum/species/SP = species?.resolve(); \
+	var/datum/species/SP = om_resolve(species); \
 	if (SP) { \
 		cached_species_vars[p] = x; \
 	} \

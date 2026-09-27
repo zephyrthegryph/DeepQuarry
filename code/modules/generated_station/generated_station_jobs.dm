@@ -1,10 +1,11 @@
 #define GENERATED_STATION_TICK_BUDGET_NORMAL 40
 #define GENERATED_STATION_TICK_BUDGET_FAST 80
 
-/// Resumable orchestration state for one station materialization. Individual
-/// hot loops call checkpoint(), allowing the proc stack to sleep and resume on
-/// the next tick without exposing a partially built z-level to players. The
-/// normal budget deliberately leaves most of a 25 ms tick to the live game.
+/// Resumable orchestration state for one station materialization: lane work
+/// (om_lane_work(), object_model_core.md §4.11). The materializer's phases run a
+/// slice at a time and return a cursor when checkpoint() says the slice's budget
+/// is spent, so nothing sleeps and a partially built z-level is never exposed to
+/// players. The normal budget deliberately leaves most of a 25 ms tick to the live game.
 /datum/generated_station_materialization_job
 	var/datum/generated_station_materializer/materializer
 	var/datum/flight_plan/flight_plan
@@ -21,6 +22,14 @@
 	var/failed = FALSE
 	var/failure_reason
 	var/datum/generated_station_materialization/materialization
+	/// Runs every phase at once (materialize()), or as lane work (materialize_async()).
+	var/now = TRUE
+	/// The materializer's phases, the one running and where it resumes.
+	var/list/phases
+	var/phase_index = 1
+	var/phase_cursor
+	/// materialize_async(): list(callback) invoked with the materialization (or null) at the end.
+	var/list/on_done_box
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
@@ -37,6 +46,7 @@
 	materializer = null
 	flight_plan = null
 	materialization = null
+	on_done_box = null
 	timer_id = null
 	return ..()
 
@@ -58,33 +68,81 @@
 	if(flight_plan && !QDELETED(flight_plan))
 		flight_plan.generation_stage = phase
 		flight_plan.generation_progress = max(flight_plan.generation_progress, progress)
-	if(force_yield || slice_usage >= tick_budget)
+	if(now)
+		return FALSE
+	if(force_yield || slice_usage >= tick_budget || om_scheduler().out_of_budget())
+		// The phase returns its cursor and carries on in the next slice.
 		yield_count++
-		// A negative sleep has no scheduled wake-up and can suspend generation
-		// forever. Yield through one MC interval, then wait until the controller
-		// has actually advanced so generation resumes in its idle window.
-		var/mc_iteration = Master?.iteration
-		sleep(world.tick_lag)
-		while(Master && Master.iteration == mc_iteration)
-			sleep(world.tick_lag * 0.1)
 		rustg_time_reset(timer_id)
 		last_checkpoint_microseconds = 0
+		return TRUE
+	return FALSE
 
+/// Materializes at once; returns the materialization or null.
 /datum/generated_station_materialization_job/proc/execute(datum/generated_station_spec/spec, z_level, origin_x, origin_y)
+	now = TRUE
+	if(start(spec, z_level, origin_x, origin_y))
+		om_lane_work(src, PROC_REF(run_slice), 1, null, TRUE)
+	return end_run()
+
+/// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
+/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, datum/callback/new_on_done)
+	now = FALSE
+	on_done_box = list(new_on_done)
+	if(!start(spec, z_level, origin_x, origin_y))
+		finish_async()
+		return
+	om_lane_work(src, PROC_REF(run_slice), 1, PROC_REF(finish_async))
+
+/datum/generated_station_materialization_job/proc/start(datum/generated_station_spec/spec, z_level, origin_x, origin_y)
 	started_at = REALTIMEOFDAY
-	checkpoint("Preparing station plan", 22, TRUE)
+	checkpoint("Preparing station plan", 22)
 	// Do not attribute planner/decoder work from the caller's tick to this job.
 	peak_tick_usage = 0
 	rustg_time_reset(timer_id)
 	last_checkpoint_microseconds = 0
-	materialization = materializer.materialize_incremental(spec, z_level, origin_x, origin_y, src)
+	phases = materializer.materialize_phases()
+	if(!materializer.prepare_materialization(spec, z_level, origin_x, origin_y, src))
+		failed = TRUE
+		return FALSE
+	return TRUE
+
+/// One slice: the current phase from its cursor. The next cursor for om_lane_work(), or null
+/// when every phase is done (or one failed).
+/datum/generated_station_materialization_job/proc/run_slice(cursor)
+	if(!now)
+		// A slice's budget counts from its own start, not across the ticks between slices.
+		rustg_time_reset(timer_id)
+		last_checkpoint_microseconds = 0
+	var/phase = phases[phase_index]
+	var/resume = call(materializer, phase)(phase_cursor)
+	if(resume == GENERATED_STATION_PHASE_FAILED)
+		failed = TRUE
+		return null
+	if(!isnull(resume))
+		phase_cursor = resume
+		return phase_index
+	phase_cursor = null
+	phase_index++
+	return phase_index <= length(phases) ? phase_index : null
+
+/datum/generated_station_materialization_job/proc/end_run()
 	finished_at = REALTIMEOFDAY
-	if(!materialization)
+	if(failed || !materializer.result)
 		failed = TRUE
 		failure_reason = materializer.last_failure_details || phase
+		materialization = null
 		return null
+	materialization = materializer.result
 	checkpoint("Station materialization complete", 62)
 	return materialization
+
+/datum/generated_station_materialization_job/proc/finish_async()
+	var/datum/generated_station_materialization/result = end_run()
+	materializer.record_job_telemetry(src)
+	var/datum/callback/callback = on_done_box?[1]
+	qdel(src)
+	callback?.Invoke(result)
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST

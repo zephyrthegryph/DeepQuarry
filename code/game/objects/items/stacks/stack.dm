@@ -28,7 +28,6 @@
 
 	var/pass_color = FALSE // Will the item pass its own color var to the created item? Dyed cloth, wood, etc.
 	var/strict_color_stacking = FALSE // Will the stack merge with other stacks that are different colors? (Dyed cloth, wood, etc)
-	var/is_building = FALSE
 
 	var/custom_handling = FALSE
 	var/beacons = FALSE
@@ -172,7 +171,7 @@
 	var/required = quantity*recipe.req_amount
 	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
 
-	if(is_building)
+	if(om_busy(src))
 		return
 
 	if (!can_use(required))
@@ -192,12 +191,12 @@
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-		is_building = TRUE
-		if (!do_after(user, recipe.time, target = src))
-			is_building = FALSE
-			return
+		om_do_after(user, recipe.time, target = src, receiver = src, on_done = PROC_REF(produce_recipe_done), done_args = list(recipe, user, required, produced), claims = TRUE)
+		return
+	produce_recipe_done(recipe, user, required, produced)
 
-	is_building = FALSE
+/// The build time is over: spend the stack and make the thing.
+/obj/item/stack/proc/produce_recipe_done(datum/stack_recipe/recipe, mob/user, required, produced)
 	if (use(required))
 		var/atom/O
 		if(recipe.use_material)
@@ -419,9 +418,8 @@
 				user.put_in_hands(F)
 				src.add_fingerprint(user)
 				F.add_fingerprint(user)
-				spawn(0)
-					if (src && user.check_current_machine(src))
-						src.interact(user)
+				if (src && user.check_current_machine(src))
+					src.interact(user)
 	else
 		..()
 	return

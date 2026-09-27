@@ -18,18 +18,17 @@
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
 		maskmaster = H
-		START_PROCESSING(SSprocessing, src)
+		PERIODIC_START(src, PERIODIC_SECOND)
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
 	maskmaster = null
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	..()
 
 /obj/item/clothing/mask/synthfacemask/Destroy()
 	maskmaster = null
 	. = ..()
-	STOP_PROCESSING(SSprocessing, src)
 
 /obj/item/clothing/mask/synthfacemask/equip_constraint()
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade")))
@@ -49,7 +48,7 @@
 			icon_state = "synth_facemask"
 	if(istype(H)) H.update_inv_wear_mask()
 
-/obj/item/clothing/mask/synthfacemask/process()
+/obj/item/clothing/mask/synthfacemask/periodic_step()
 	if(maskmaster && lstat != maskmaster.stat)
 		lstat = maskmaster.stat
 		visor_state = "Neutral" //This does nothing at the moment, but it's there incase anyone wants to add more states.

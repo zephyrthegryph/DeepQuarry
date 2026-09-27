@@ -95,10 +95,10 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			holder.holder.list_fingerprints()
 
 		if("prison_warp")
-			for(var/mob/living/carbon/human/H in GLOB.mob_list)
+			for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				var/turf/T = get_turf(H)
 				var/security = 0
-				if((T in using_map.admin_levels) || GLOB.prisonwarped.Find(H))
+				if((T in using_map.admin_levels) || registry_has(REGISTRY_PRISONWARPED, H))
 				//don't warp them if they aren't ready or are already there
 					continue
 				H.status_at_least(EFFECT_PARALYZED, 5)
@@ -122,7 +122,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				else
 					//teleport security person
 					H.forceMove(pick(GLOB.prisonsecuritywarp))
-				GLOB.prisonwarped += H
+				registry_join(REGISTRY_PRISONWARPED, H)
 
 		if("night_shift_set")
 			var/val = tgui_alert(holder, "What do you want to set night shift to? This will override the automatic system until set to automatic again.", "Night Shift", list("On", "Off", "Automatic"))
@@ -232,7 +232,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("ghost_mode")
 			var/list/affected_mobs = list()
 			var/list/affected_areas = list()
-			for(var/mob/M in GLOB.living_mob_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 				if(M.stat == CONSCIOUS && !(M in affected_mobs))
 					affected_mobs |= M
 					switch(rand(1,4))
@@ -257,13 +257,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			for(var/area/AffectedArea in affected_areas)
 				AffectedArea.power_light = 0
 				AffectedArea.power_change()
-				spawn(rand(25,50))
-					AffectedArea.power_light = 1
-					AffectedArea.power_change()
+				om_after(AffectedArea, rand(25,50), GLOBAL_PROC_REF(chilling_wind_relight), AffectedArea)
 
-			sleep(100)
-			for(var/mob/M in affected_mobs)
-				M.show_message(span_notice("The chilling wind suddenly stops..."), 1)
+			om_after(null, 10 SECONDS, GLOBAL_PROC_REF(chilling_wind_stops), affected_mobs.Copy())
 			affected_mobs.Cut()
 			affected_areas.Cut()
 
@@ -393,8 +389,8 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 
 		//buttons that are fun for exactly you and nobody else.
 		if("corgie")
-			for(var/mob/living/carbon/human/H in GLOB.mob_list)
-				spawn(0)
+			for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
+				spawn(0) // S7 keeps: admin verb (allowlist)
 					H.corgize()
 
 		if("monkey")
@@ -403,7 +399,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Monkeyize All Humans"))
 			message_admins("[key_name_admin(holder)] made everyone into monkeys.")
 			log_admin("[key_name_admin(holder)] made everyone into monkeys.")
-			for(var/i in GLOB.mob_list)
+			for(var/i in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				var/mob/living/carbon/human/H = i
 				INVOKE_ASYNC(H, TYPE_PROC_REF(/mob/living/carbon/human, monkeyize))
 
@@ -424,3 +420,11 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	if(holder)
 		log_admin("[key_name(holder)] used secret: [action].")
 #undef HIGHLANDER_DELAY_TEXT
+
+/proc/chilling_wind_relight(area/A)
+	A.power_light = 1
+	A.power_change()
+
+/proc/chilling_wind_stops(list/affected_mobs)
+	for(var/mob/M in affected_mobs)
+		M.show_message(span_notice("The chilling wind suddenly stops..."), 1)

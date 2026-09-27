@@ -1,11 +1,13 @@
 // Machines on an object-model pipeline (doc/rewrite/object_model_core.md §A.10).
 //
-// A machine whose type is listed below runs /datum/om/pipeline/machine instead of SSmachines'
-// polling roster: a power stage (what it does with its power, and its use_power mode) and a
-// present stage (its icon), every MACHINE_PIPELINE_INTERVAL while either has work. Settled, both
-// idle and the machine parks; a channel wakes it (CHANGE_MACHINE_*), raised by the base setters
-// (power_change(), atom_break(), atom_fix()) and by each type's own producers. A type's behaviour
-// is a variant of a base stage, resolved by type depth: power/recharger serves every recharger.
+// Every machine with DM-side periodic work runs /datum/om/pipeline/machine (SSmachines no longer
+// polls anything): a power stage (what it does with its power, and its use_power mode), a step
+// stage (its machine_step(), for machines whose work is started and stopped explicitly) and a
+// present stage (its icon), every MACHINE_PIPELINE_INTERVAL while any has work. Settled, all idle
+// and the machine parks; a channel wakes it (CHANGE_MACHINE_*), raised by the base setters
+// (power_change(), atom_break(), atom_fix()) and by each type's own producers, or MACHINE_WAKE().
+// A type's behaviour is a variant of a base stage, resolved by type depth: power/recharger serves
+// every recharger.
 
 /// One machine frame per SSmachines-equivalent tick.
 #define MACHINE_PIPELINE_INTERVAL (2 SECONDS)
@@ -44,8 +46,132 @@
 		/obj/machinery/computer/general_air_control/fuel_injection,
 		/obj/machinery/portable_atmospherics/hydroponics,
 		/obj/machinery/portable_atmospherics/powered/reagent_distillery,
+		// Every other machine with machine_step() work (roadmap S5: the old SSmachines roster).
+		// Each joins asleep: one frame at Initialize to find out whether it has work, then it
+		// parks until MACHINE_WAKE() (tools/ci/pollers_lint.py checks this list is complete).
+		/obj/machinery/abstract_grub_machine,
+		/obj/machinery/ai_powersupply,
+		/obj/machinery/airlock_sensor,
+		/obj/machinery/anomaly_harvester,
+		/obj/machinery/appliance,
+		/obj/machinery/artifact,
+		/obj/machinery/artifact_analyser,
+		/obj/machinery/artifact_harvester,
+		/obj/machinery/atm,
+		/obj/machinery/auto_cloner,
+		/obj/machinery/beehive,
+		/obj/machinery/bluespace_beacon,
+		/obj/machinery/bomb_tester,
+		/obj/machinery/botany,
+		/obj/machinery/bunsen_burner,
+		/obj/machinery/chemical_dispenser,
+		/obj/machinery/chemical_synthesizer,
+		/obj/machinery/clonepod,
+		/obj/machinery/compressor,
+		/obj/machinery/computer/HolodeckControl,
+		/obj/machinery/computer/aifixer,
+		/obj/machinery/computer/cloning,
+		/obj/machinery/computer/operating,
+		/obj/machinery/computer/pod,
+		/obj/machinery/computer/power_monitor,
+		/obj/machinery/computer/security/telescreen/bodycamera,
+		/obj/machinery/computer/ship/helm,
+		/obj/machinery/computer/ship/sensors,
+		/obj/machinery/conveyor,
+		/obj/machinery/conveyor_switch,
+		/obj/machinery/cryopod,
+		/obj/machinery/disposal,
+		/obj/machinery/dnaforensics,
+		/obj/machinery/door/firedoor,
+		/obj/machinery/door_timer,
+		/obj/machinery/drone_fabricator,
+		/obj/machinery/embedded_controller,
+		/obj/machinery/exonet_node,
+		/obj/machinery/feeder,
+		/obj/machinery/field_generator,
+		/obj/machinery/floodlight,
+		/obj/machinery/floor_light,
+		/obj/machinery/food_replicator,
+		/obj/machinery/fusion_fuel_injector,
+		/obj/machinery/gravity_generator/main,
+		/obj/machinery/hologram/holopad,
+		/obj/machinery/igniter,
+		/obj/machinery/iv_drip,
+		/obj/machinery/magnetic_controller,
+		/obj/machinery/magnetic_module,
+		/obj/machinery/mech_recharger,
+		/obj/machinery/mecha_part_fabricator_tg,
+		/obj/machinery/media/jukebox,
+		/obj/machinery/message_server,
+		/obj/machinery/mineral/processing_unit,
+		/obj/machinery/mineral/stacking_machine,
+		/obj/machinery/mineral/unloading_machine,
+		/obj/machinery/mining/drill,
+		/obj/machinery/ntnet_relay,
+		/obj/machinery/nuclearbomb,
+		/obj/machinery/optable,
+		/obj/machinery/oxygen_pump,
+		/obj/machinery/paradoxrift,
+		/obj/machinery/particle_accelerator/control_box,
+		/obj/machinery/particle_smasher,
+		/obj/machinery/partslathe,
+		/obj/machinery/pda_multicaster,
+		/obj/machinery/pointdefense,
+		/obj/machinery/porta_turret,
+		/obj/machinery/power/debug_items/infinite_cable_powersink,
+		/obj/machinery/power/debug_items/infinite_generator,
+		/obj/machinery/power/emitter,
+		/obj/machinery/power/fusion_core,
+		/obj/machinery/power/generator,
+		/obj/machinery/power/hydromagnetic_trap,
+		/obj/machinery/power/port_gen,
+		/obj/machinery/power/rtg,
+		/obj/machinery/power/sensor,
+		/obj/machinery/power/shield_generator,
+		/obj/machinery/power/singularity_beacon,
+		/obj/machinery/power/solar_control,
+		/obj/machinery/power/supermatter,
+		/obj/machinery/power/supply_beacon,
+		/obj/machinery/power/turbine,
+		/obj/machinery/pump,
+		/obj/machinery/radiocarbon_spectrometer,
+		/obj/machinery/reagent_refinery,
+		/obj/machinery/recharge_station,
+		/obj/machinery/recycling,
+		/obj/machinery/replicator,
+		/obj/machinery/seed_storage,
+		/obj/machinery/shield/malfai,
+		/obj/machinery/shield_capacitor,
+		/obj/machinery/shield_diffuser,
+		/obj/machinery/shield_gen,
+		/obj/machinery/shieldgen,
+		/obj/machinery/shieldwall,
+		/obj/machinery/shieldwallgen,
+		/obj/machinery/shipsensors,
+		/obj/machinery/shower,
+		/obj/machinery/shuttle_sensor,
+		/obj/machinery/sleeper,
+		/obj/machinery/smartfridge,
+		/obj/machinery/space_heater,
+		/obj/machinery/station_map,
+		/obj/machinery/suit_cycler,
+		/obj/machinery/suspension_gen,
+		/obj/machinery/telecomms,
+		/obj/machinery/the_singularitygen,
+		/obj/machinery/transhuman/synthprinter,
+		/obj/machinery/transportpod,
+		/obj/machinery/v_garbosystem,
+		/obj/machinery/vending,
+		/obj/machinery/vitals_monitor,
+		/obj/machinery/vr_sleeper,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
+	/// Machines with machine_step() work that need no frame at Initialize: nothing gives them work
+	/// until a producer's MACHINE_WAKE(), which joins them to the pipeline then. Numerous types
+	/// belong here so an idle one never costs a record (tools/ci/pollers_lint.py reads this list).
+	var/list/lazy = list(
+		/obj/machinery/door/airlock, // a radio command (receive_signal()) is its only step work
+	)
 
 /datum/om/pipeline/machine
 	name = "machine"
@@ -55,6 +181,19 @@
 	stages = list(/datum/om/stage/machine)
 	frame_type = /datum/om/frame/machine
 	wake_all = CHANGE_EXPLICIT
+
+/// Machines start asleep (roadmap S5): joining runs nothing. Every stage starts idle and the machine
+/// parks at its first cadence slot without a frame. Setup it needs at spawn happens once the world
+/// is up (materialize_wakes(): arm its watches, then wake it only if its declared start condition
+/// holds); from then on it runs only when a declared wake fires.
+/datum/om/pipeline/machine/on_start(obj/machinery/M)
+	var/datum/om/frame/S = om_pipe_state(M, src, TRUE)
+	if(!S)
+		return
+	om_pipe_set_all(S, TRUE)
+	S.idle_frames = max(park_after - 1, 0)
+	if(!M.materialize_timer)
+		M.materialize_timer = om_after(M, 0, /obj/machinery/proc/materialize_wakes)
 
 /datum/om/frame/machine
 	facts = list(
@@ -96,6 +235,50 @@
 
 /datum/om/stage/machine/power/idle(obj/machinery/M)
 	return TRUE
+
+/// A machine's explicitly started work: its machine_step() every frame from MACHINE_WAKE() until it
+/// returns PROCESS_KILL or MACHINE_SLEEP() ends it (step_active). This is the old SSmachines roster
+/// contract, kept exact for the machines that moved off it: whatever gives the machine something to
+/// do (a player's toggle, an item entering it, a timer, a gas watch it armed) wakes it, and the
+/// machine says itself when it is done. Channels alone don't restart it, except for a machine that
+/// ended its work with sleep_until_powered() (power and repair bring it back) and a type with
+/// step_on_power_change (any power or break change runs one step to reconcile). Machines whose power
+/// family variant already runs machine_step() on channels (power/step: atmospherics devices,
+/// hydroponics) don't get this stage.
+/datum/om/stage/machine/step
+	name = "step"
+	order = 15
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_SETTINGS | CHANGE_RELATED
+	woken_by = "MACHINE_WAKE(): the machine's own producers; power_change()/atom_fix() after sleep_until_powered(); for a machine asleep on changes, a watched channel or its own settings"
+
+/datum/om/stage/machine/step/applies(obj/machinery/M)
+	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/machine)
+	for(var/datum/om/stage/V as anything in P.variants[/datum/om/stage/machine/power])
+		if(istype(M, V.of))
+			return !istype(V, /datum/om/stage/machine/power/step)
+	return TRUE
+
+/datum/om/stage/machine/step/perform(obj/machinery/M, datum/om/frame/machine/F)
+	if(M.speed_process)
+		return STAGE_IDLE
+	if(!M.step_active)
+		if(!isnull(M.react_sleep_tokens))
+			M.cancel_sleep_keys()
+		else if(!M.step_on_power_change && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN))))
+			return STAGE_IDLE
+		M.step_active = TRUE
+	M.step_waiting_power = FALSE
+	if(M.machine_step() == PROCESS_KILL)
+		M.step_active = FALSE
+	if(!M.step_active)
+		return STAGE_IDLE
+
+/// Idle exactly while it has no started work (or runs on the fast lane instead); a machine waiting
+/// for power is idle only while it has none.
+/datum/om/stage/machine/step/idle(obj/machinery/M)
+	if(M.speed_process)
+		return TRUE
+	return !M.step_active && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN)))
 
 /// The machine's look, after what changed it (CHANGE_MACHINE_OUTPUT). The root just updates.
 /datum/om/stage/machine/present
@@ -257,10 +440,10 @@
 /datum/om/stage/machine/power/alarm/perform(obj/machinery/alarm/M, datum/om/frame/machine/F)
 	if(!M.alarm_area)
 		return STAGE_IDLE
-	var/obj/machinery/alarm/MA = M.alarm_area.main_air_alarm?.resolve()
+	var/obj/machinery/alarm/MA = om_resolve(M.alarm_area.main_air_alarm)
 	if(!MA)
 		M.alarm_area.elect_main_air_alarm()
-		MA = M.alarm_area.main_air_alarm?.resolve() // try again
+		MA = om_resolve(M.alarm_area.main_air_alarm) // try again
 	if(!MA || (M.stat & (NOPOWER|BROKEN)) || M.shorted || MA.shorted)
 		M.register_gas_dependencies()
 		return STAGE_IDLE
@@ -382,13 +565,13 @@
 
 /// The generic stage for a machine whose DM-side work is one machine_step() (machinery.dm): the
 /// body its old process() had, run once per frame while it has work. PROCESS_KILL idles the stage
-/// and the machine parks; it wakes on its channels, on START_MACHINE_PROCESSING() (which raises
+/// and the machine parks; it wakes on its channels, on MACHINE_WAKE() (which raises
 /// CHANGE_EXPLICIT for a polls = FALSE machine, machines.dm), or on a gas watch it armed when it
 /// settled (code/datums/om/watch.dm) -- never on a cadence it doesn't need.
 /datum/om/stage/machine/power/step
 	of = /obj/machinery/atmospherics
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
-	woken_by = "power_change(); atom_break()/atom_fix(); wrenching; settings and topology (START_MACHINE_PROCESSING()); its gas watch"
+	woken_by = "power_change(); atom_break()/atom_fix(); wrenching; settings and topology (MACHINE_WAKE()); its gas watch"
 
 /datum/om/stage/machine/power/step/perform(obj/machinery/M, datum/om/frame/machine/F)
 	M.step_active = M.machine_step() != PROCESS_KILL
@@ -428,7 +611,7 @@
 
 /// Hydroponics trays: a frame per growth cycle while something is growing or soaking in; between
 /// cycles the tray parks on its growth timer (schedule_growth_wake()), and reagent or seed changes
-/// wake it through START_MACHINE_PROCESSING().
+/// wake it through MACHINE_WAKE().
 /datum/om/stage/machine/power/step/hydroponics
 	of = /obj/machinery/portable_atmospherics/hydroponics
 

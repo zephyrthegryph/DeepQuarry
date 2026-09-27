@@ -180,7 +180,7 @@
 	current_value *= 2
 	last_unification = world.time
 
-/datum/stock/process(elapsed_steps = 1)
+/datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)
 		var/datum/borrow/borrow = B
 		if (world.time > borrow.grace_expires)
@@ -218,7 +218,7 @@
 	if (fluctuation_counter >= fluctuation_rate)
 		for (var/E in events)
 			var/datum/stockEvent/EV = E
-			EV.process()
+			EV.event_tick()
 		fluctuation_counter = 0
 		fluctuate()
 

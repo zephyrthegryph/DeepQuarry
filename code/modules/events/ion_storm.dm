@@ -26,13 +26,13 @@
 	GLOB.command_announcement.Announce("It has come to our attention that \the [location_name()] passed through an ion storm.  Please monitor all electronic equipment for malfunctions.", "Anomaly Alert")
 
 /datum/event/ionstorm/start()
-	for (var/mob/living/carbon/human/player in GLOB.player_list)
+	for (var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(	!player.mind || SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
 		LAZYADD(players, player.real_name)
 
 	// Flomph synthetics
-	for(var/mob/living/carbon/S in GLOB.living_mob_list)
+	for(var/mob/living/carbon/S in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if (!S.isSynthetic())
 			continue
 		if(!(S.z in affecting_z))
@@ -46,7 +46,7 @@
 		S.status_adjust(EFFECT_BLURRY, (ionbug - 1))
 
 	// Ionize silicon mobs
-	for (var/mob/living/silicon/ai/target in GLOB.silicon_mob_list)
+	for (var/mob/living/silicon/ai/target in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 		if(!(target.z in affecting_z))
 			continue
 		var/law = target.generate_ion_law()
@@ -69,7 +69,7 @@
 		ionBorgs = FALSE
 
 	if(ionBorgs)	// Making sure an AI hasn't been given an Ion law...
-		for (var/mob/living/silicon/target in GLOB.silicon_mob_list)
+		for (var/mob/living/silicon/target in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 			if(!(target.z in affecting_z) || prob(33))
 				continue
 			if(istype(target,/mob/living/silicon/robot))
@@ -84,7 +84,7 @@
 
 /datum/event/ionstorm/tick()
 	if(botEmagChance)
-		for(var/mob/living/bot/bot in GLOB.mob_list)
+		for(var/mob/living/bot/bot in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if(!(bot.z in affecting_z))
 				continue
 			if(prob(botEmagChance))
@@ -103,7 +103,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 */
 
 	//AI laws
-	for(var/mob/living/silicon/ai/M in GLOB.living_mob_list)
+	for(var/mob/living/silicon/ai/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(M.stat != 2 && M.see_in_dark != 0)
 			var/who2 = pick("ALIENS", "BEARS", "CLOWNS", "XENOS", "PETES", "BOMBS", "FETISHES", "WIZARDS", "MERCENARIES", "CENTCOM OFFICERS", "SPACE PIRATES", "TRAITORS", "MONKEYS",  "BEES", "CARP", "CRABS", "EELS", "BANDITS", "LIGHTS")
 			var/what2 = pick("BOLTERS", "STAVES", "DICE", "SINGULARITIES", "TOOLBOXES", "NETTLES", "AIRLOCKS", "CLOTHES", "WEAPONS", "MEDKITS", "BOMBS", "CANISTERS", "CHAIRS", "BBQ GRILLS", "ID CARDS", "CAPTAINS")
@@ -122,7 +122,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 			var/allergysev = pick("deathly", "mildly", "severely", "contagiously")
 			var/crew
 			var/list/pos_crew = list()
-			for(var/mob/living/carbon/human/pos in GLOB.player_list)
+			for(var/mob/living/carbon/human/pos in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				pos_crew += pos.real_name
 			if(pos_crew.len)
 				crew = pick(pos_crew)
@@ -201,7 +201,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 					M.add_ion_law("THE STATION IS [who2pref] [who2]")
 
 	if(botEmagChance)
-		for(var/obj/machinery/bot/bot in GLOB.mob_list)
+		for(var/obj/machinery/bot/bot in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if(prob(botEmagChance))
 				bot.Emag()
 */

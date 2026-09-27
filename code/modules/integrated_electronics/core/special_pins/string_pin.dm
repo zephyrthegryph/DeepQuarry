@@ -12,7 +12,7 @@
 
 /datum/integrated_io/string/write_data_to_pin(new_data)
 	new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
-	if(isnull(new_data) || istext(new_data))
+	if(isnull(new_data) || (istext(new_data) && !ic_is_ref(new_data)))
 		data = new_data
 		holder.on_data_written()
 

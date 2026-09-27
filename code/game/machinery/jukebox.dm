@@ -44,7 +44,7 @@
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 
-/obj/machinery/media/jukebox/process()
+/obj/machinery/media/jukebox/machine_step()
 	if(!playing)
 		return PROCESS_KILL
 	if(inoperable())
@@ -295,7 +295,7 @@
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	playing = 0
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
 	start_stop_song()
@@ -304,7 +304,7 @@
 	if(!current_track)
 		return
 	playing = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_use_power(USE_POWER_ACTIVE)
 	update_icon()
 	start_stop_song()
@@ -361,11 +361,10 @@
 	return
 /obj/machinery/media/jukebox/ghost/visible_message(message, blind_message, list/exclude_mobs, range, runemessage)
 	return
-/obj/machinery/media/jukebox/ghost/attackby(obj/item/W as obj, mob/user as mob)
+/// Untouchable: no interactions at all (the old attackby/attack_hand returned).
+/obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
 	return
 /obj/machinery/media/jukebox/ghost/attack_ai(mob/user as mob)
-	return
-/obj/machinery/media/jukebox/ghost/attack_hand(mob/user as mob)
 	return
 /obj/machinery/media/jukebox/ghost/update_use_power(new_use_power)
 	return
@@ -471,3 +470,8 @@
 
 /obj/machinery/media/jukebox/casinojukebox/getTracksList()
 	return SSmedia_tracks.casino_tracks
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/media/jukebox/step_start_condition()
+	return playing

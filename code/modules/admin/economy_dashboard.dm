@@ -32,7 +32,7 @@
 	var/personal_zero_balance = 0
 	var/personal_low_balance = 0
 	var/list/personal_balances = list()
-	for(var/datum/money_account/account in GLOB.all_money_accounts)
+	for(var/datum/money_account/account in REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 		account_currency += account.money + account.savings
 		if(!account.is_budget_account)
 			personal_accounts++

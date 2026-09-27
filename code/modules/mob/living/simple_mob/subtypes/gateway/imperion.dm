@@ -92,22 +92,7 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
-
-	for(var/i = 1 to 3)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase1/proc/launch_rockets(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/energy/excavate(get_turf(src))
@@ -231,22 +216,7 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
-
-	for(var/i = 1 to 3)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/proc/launch_rockets(atom/target)
 	if(!target)
@@ -364,10 +334,15 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperionblaster(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	sleep(1.5 SECONDS)
+	om_after(src, 1.5 SECONDS, PROC_REF(launch_rockets_1), target)
+
+
+/mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets_1(atom/target)
 	var/obj/item/projectile/B = new /obj/item/projectile/bullet/imperionspear(get_turf(src))
 	B.launch_projectile(target, BP_TORSO, src)
-	sleep(1.5 SECONDS)
+	om_after(src, 1.5 SECONDS, PROC_REF(launch_rockets_2), target)
+
+/mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets_2(atom/target)
 	var/obj/item/projectile/A = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
 	A.launch_projectile(target, BP_TORSO, src)
 
@@ -378,32 +353,16 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.", PROC_REF(microsingularity_followup))
 
-	for(var/i = 1 to 3)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+/mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_followup(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	if(prob(50))
-		sleep(1.5)
-		var/obj/item/projectile/B = new /obj/item/projectile/bullet/imperionblaster(get_turf(src))
-		B.launch_projectile(target, BP_TORSO, src)
-	else
-		sleep(1.5)
-		var/obj/item/projectile/A = new /obj/item/projectile/bullet/imperionspear(get_turf(src))
-		A.launch_projectile(target, BP_TORSO, src)
+	om_after(src, 1.5, PROC_REF(microsingularity_second), target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear)
+
+/mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_second(atom/target, shot_type)
+	var/obj/item/projectile/B = new shot_type(get_turf(src))
+	B.launch_projectile(target, BP_TORSO, src)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/Initialize(mapload)
 	shields = new /obj/item/shield_projector/rectangle/automatic/imperion(src)

@@ -9,14 +9,14 @@
 // whether to wake" pattern now arms one of the watch flavours below instead, keyed by an
 // arbitrary (entity, watch_id) pair -- no `om_watches` var needed on the watching type,
 // so this works for /obj/machinery, /datum/material_service, pipes, doors, generators,
-// anything with a weak reference.
+// anything with an OM handle.
 //
-// Delivery for a gas-backed watch still rides the low-level Rust dirty-gas-mixture
-// transport (vg_watch_dirty_gas_mixture()/vg_drain_dirty_gas_observations(), the
-// GAS_DEPENDENCY_OBSERVATION_STRIDE flat array); this file owns that transport's only
-// subscriber table now (om_gas_watches_by_mixture) and SSmachines.wake_dirty_gas_subscribers()
-// (code/controllers/subsystems/machines.dm) calls straight into om_watch_dispatch_gas()
-// per dirty mixture instead of walking a generic subscriber list.
+// Delivery for a gas-backed watch rides one native gas watch per mixture (Rust-owned,
+// code/datums/om/native.dm), which carries the union of the interest masks armed on it.
+// SSmachines.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm) fires
+// that native watch per observation; its owner (/datum/om_gas_watch_hub) hands the record to
+// om_watch_dispatch_gas(), which walks this file's per-mixture table
+// (om_gas_watches_by_mixture) instead of a generic subscriber list.
 //
 // Four watch flavours, chosen by which arm proc a caller uses:
 //  - om_watch_arm_bands(): a set of threshold bands (pressure, temperature, or a named
@@ -43,7 +43,7 @@
 // (if any) and then, if `channel` is set, om_changed(entity, channel) -- which is all an
 // OM-pipeline (polls = FALSE) machine needs to reschedule itself. A polling (polls = TRUE)
 // legacy machine instead supplies a wake_callback that does its old wake_gas_subscriber()
-// branch inline (typically STOP watching + START_MACHINE_PROCESSING(src)).
+// branch inline (typically STOP watching + MACHINE_WAKE(src)).
 
 /// One band: a field name, a comparison edge, the threshold value and a hysteresis margin (in
 /// the field's own units) so a value sitting exactly on the edge doesn't chatter.
@@ -72,7 +72,7 @@
 
 /// Per-entity, per-watch_id watch state.
 /datum/om_watch
-	var/datum/weakref/entity_ref
+	var/entity_ref
 	var/watch_id // the key this watch is registered under on its entity (arbitrary string)
 	var/channel // optional CHANGE_MACHINE_*/CHANGE_MOB_* bit: a crossing raises om_changed(entity, channel)
 	var/datum/callback/wake_callback // optional: invoked (no args) on every crossing, before om_changed
@@ -167,7 +167,7 @@
 // ---------------------------------------------------------------- registries
 
 /// Every armed watch, keyed by "[REF(entity)]" -> (watch_id -> /datum/om_watch). Not a var on
-/// the watching type: any datum with a resolvable weak reference can arm a watch.
+/// the watching type: any datum with an OM handle can arm a watch.
 GLOBAL_LIST_EMPTY(om_watch_registry)
 
 /// Reverse index for gas-driven watches: "[mixture_id]" -> list of /datum/om_watch, so
@@ -216,16 +216,21 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 		L -= W
 		if(!length(L))
 			GLOB.om_gas_watches_by_mixture -= key
-			vg_unwatch_dirty_gas_mixture(mixture_id)
+			var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
+			GLOB.om_gas_native_watches -= key
+			qdel(native)
 		else
 			om_watch_republish_mixture(mixture_id)
 	W.mixture_ids = null
 
 /// Recomputes and (re)publishes the aggregate interest mask Rust should watch a mixture for,
 /// from the union of every watch currently armed on it. Cheap: the watch list per mixture is
-/// always small (a handful of nearby machines at most).
+/// always small (a handful of nearby machines at most). One native gas watch per mixture
+/// (code/datums/om/native.dm) carries the aggregate; its wakes fan out through
+/// om_watch_dispatch_gas().
 /proc/om_watch_republish_mixture(mixture_id)
-	var/list/L = GLOB.om_gas_watches_by_mixture["[mixture_id]"]
+	var/key = "[mixture_id]"
+	var/list/L = GLOB.om_gas_watches_by_mixture[key]
 	if(!length(L))
 		return
 	var/aggregate_mask = NONE
@@ -235,10 +240,35 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 				aggregate_mask |= W.gas_field_mask(B.field)
 		else
 			aggregate_mask |= W.interest_mask
-	vg_watch_dirty_gas_mixture(mixture_id, aggregate_mask)
+	var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
+	if(native && !QDELETED(native))
+		if(native.mask == aggregate_mask)
+			return
+		native.unregister()
+		native.mask = aggregate_mask
+		native.register()
+		return
+	native = gas_dependency_watch(om_gas_watch_hub(), mixture_id, aggregate_mask, TYPE_PROC_REF(/datum/om_gas_watch_hub, on_gas))
+	if(native)
+		GLOB.om_gas_native_watches[key] = native
+
+/// "[mixture_id]" -> the one native gas watch carrying that mixture's aggregate interest mask.
+GLOBAL_LIST_EMPTY(om_gas_native_watches)
+
+/// Owner of the per-mixture native gas watches: hands each wake to the OM watches on it.
+/datum/om_gas_watch_hub
+
+/proc/om_gas_watch_hub()
+	var/static/datum/om_gas_watch_hub/hub
+	if(!hub)
+		hub = new
+	return hub
+
+/datum/om_gas_watch_hub/proc/on_gas(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
+	om_watch_dispatch_gas(mixture_id, change_mask, observation, observation_index)
 
 /proc/om_watch_register(datum/om_watch/W)
-	var/key = om_watch_entity_key(W.entity_ref.resolve())
+	var/key = om_watch_entity_key(om_resolve(W.entity_ref))
 	var/list/entity_watches = GLOB.om_watch_registry[key]
 	if(!entity_watches)
 		entity_watches = list()
@@ -255,7 +285,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -273,7 +303,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -293,7 +323,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -313,7 +343,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.mode = OM_WATCH_RAW
 	W.interest_mask = interest_mask
@@ -331,7 +361,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, datum/callback/getter, datum/callback/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL)
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -358,7 +388,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /proc/om_watch_arm_condition(datum/entity, watch_id, list/mixture_ids, interest_mask, datum/callback/condition, channel, datum/callback/wake_callback)
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -442,7 +472,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(!length(L))
 		return
 	for(var/datum/om_watch/W as anything in L.Copy())
-		var/datum/entity = W.entity_ref?.resolve()
+		var/datum/entity = om_resolve(W.entity_ref)
 		SSmachines.current_gas_wake_subscribers++
 		if(!entity)
 			SSmachines.gas_dead_last++

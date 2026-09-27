@@ -43,43 +43,51 @@
 	..()
 
 
-/obj/singularity/energy_ball/process(wait = 20)
+/obj/singularity/energy_ball/periodic_step(wait = 20)
 	set waitfor = FALSE
 	if(!ORBIT_TARGET(src))
 		if (handle_energy())
 			return
 
-		move_the_basket_ball(max(wait - 5, 4 + length(orbiting_balls()) * 1.5))
-
-		playsound(src, 'sound/effects/lightningbolt.ogg', 100, 1, extrarange = 30)
-
-		set_dir(tesla_zap(src, 7, TESLA_DEFAULT_POWER, TRUE, current_jumps = 1))
-
-		for (var/ball in orbiting_balls())
-			var/range = rand(1, CLAMP(length(orbiting_balls()), 3, 7))
-			tesla_zap(ball, range, TESLA_MINI_POWER/7*range, TRUE, current_jumps = 1)
+		// One step per decisecond, then the zap (basket_ball_step()).
+		basket_ball_step(max(wait - 5, 4 + length(orbiting_balls()) * 1.5), dir)
 	else
 		energy = 0 // ensure we dont have miniballs of miniballs
+
+/obj/singularity/energy_ball/proc/zap_after_move()
+	playsound(src, 'sound/effects/lightningbolt.ogg', 100, 1, extrarange = 30)
+
+	set_dir(tesla_zap(src, 7, TESLA_DEFAULT_POWER, TRUE, current_jumps = 1))
+
+	for (var/ball in orbiting_balls())
+		var/range = rand(1, CLAMP(length(orbiting_balls()), 3, 7))
+		tesla_zap(ball, range, TESLA_MINI_POWER/7*range, TRUE, current_jumps = 1)
 
 /obj/singularity/energy_ball/examine(mob/user)
 	. = ..()
 	if(length(orbiting_balls()))
 		. += "The amount of orbiting mini-balls is [length(orbiting_balls())]."
 
-/obj/singularity/energy_ball/proc/move_the_basket_ball(move_amount)
-	//we face the last thing we zapped, so this lets us favor that direction a bit
-	var/move_bias = dir
-	for(var/i in 0 to move_amount)
-		var/move_dir = pick(GLOB.alldirs + move_bias) //ensures large-ball teslas don't just sit around
-		if(target && prob(10))
-			move_dir = get_dir(src,target)
-		var/turf/T = get_step(src, move_dir)
-		if(can_move(T))
-			forceMove(T)
-			set_dir(move_dir)
-			for(var/mob/living/carbon/C in loc)
-				dust_mob(C)
-			sleep(1) // So movement is smooth
+/// One step of the ball's wander (smooth movement: one per decisecond), `left` more to go,
+/// then the zap. `move_bias`: we face the last thing we zapped, so this favours that direction a bit.
+/obj/singularity/energy_ball/proc/basket_ball_step(left, move_bias)
+	var/move_dir = pick(GLOB.alldirs + move_bias) //ensures large-ball teslas don't just sit around
+	if(target && prob(10))
+		move_dir = get_dir(src,target)
+	var/turf/T = get_step(src, move_dir)
+	var/moved = FALSE
+	if(can_move(T))
+		forceMove(T)
+		set_dir(move_dir)
+		for(var/mob/living/carbon/C in loc)
+			dust_mob(C)
+		moved = TRUE
+	if(left <= 0)
+		zap_after_move()
+	else if(moved)
+		om_after(src, 0.1 SECONDS, PROC_REF(basket_ball_step), left - 1, move_bias)
+	else
+		basket_ball_step(left - 1, move_bias)
 
 /obj/singularity/energy_ball/proc/handle_energy()
 	if (energy <= 0)
@@ -94,7 +102,7 @@
 
 		playsound(src, 'sound/effects/lightning_chargeup.ogg', 100, 1, extrarange = 30)
 		//addtimer(CALLBACK(src, PROC_REF(new_mini_ball)), 100)
-		spawn(100) new_mini_ball()
+		om_after(src, 10 SECONDS, PROC_REF(new_mini_ball))
 
 	else if(energy < energy_to_lower && length(orbiting_balls()))
 		energy_to_raise = energy_to_raise / 1.25

@@ -20,14 +20,15 @@
 
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 	last_regen = world.time
 
 /obj/item/gun/launcher/spikethrower/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/item/gun/launcher/spikethrower/process()
+/// Regrows spikes every 2 s while short (firing starts it); full, it sleeps.
+/obj/item/gun/launcher/spikethrower/periodic_step()
+	if(spikes >= max_spikes)
+		return PROCESS_KILL
 	if(spikes < max_spikes && world.time > last_regen + spike_gen_time)
 		spikes++
 		last_regen = world.time
@@ -46,6 +47,7 @@
 /obj/item/gun/launcher/spikethrower/consume_next_projectile()
 	if(spikes < 1) return null
 	spikes--
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return new /obj/item/spike(src)
 
 /*

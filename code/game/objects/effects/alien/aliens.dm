@@ -91,10 +91,9 @@
 
 	linked_node = src
 
-	START_PROCESSING(SSobj, src) // Only the node processes in a subsystem, the rest are process()'d by the node
+	PERIODIC_START(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
 
 /obj/effect/alien/weeds/node/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()
@@ -127,7 +126,7 @@
 	return
 
 // NB: This is not actually called by a processing subsystem, it's called by the node processing
-/obj/effect/alien/weeds/process()
+/obj/effect/alien/weeds/periodic_step()
 	set background = 1
 	var/turf/U = get_turf(src)
 
@@ -153,7 +152,7 @@
 
 		new /obj/effect/alien/weeds(T2, linked_node) // No coloration.
 
-/obj/effect/alien/weeds/node/process()
+/obj/effect/alien/weeds/node/periodic_step()
 	set background = 1
 	. = ..()
 
@@ -169,7 +168,7 @@
 // W.color = W.linked_node.set_color // No coloration.
 
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
-			W.process()
+			W.periodic_step()
 
 /obj/effect/alien/weeds/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(user.get_attack_speed(W))

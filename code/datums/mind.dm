@@ -23,7 +23,7 @@
 	var/key
 	var/name				//replaces mob/var/original_name
 	var/mob/living/current
-	var/datum/weakref/original_character //replaces /mob/living/original
+	var/original_character //replaces /mob/living/original
 	var/active = 0
 
 	var/memory
@@ -464,7 +464,7 @@
 		return 0
 
 /datum/mind/proc/get_ghost(even_if_they_cant_reenter)
-	for(var/mob/observer/dead/G in GLOB.player_list)
+	for(var/mob/observer/dead/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(G.mind == src)
 			if(G.can_reenter_corpse || even_if_they_cant_reenter)
 				return G
@@ -472,7 +472,7 @@
 
 ///Proc that FORCIBLY grabs a client no matter where they are and returns their currently inhabited mob.
 /datum/mind/proc/forcibly_grab_client()
-	for(var/mob/mob_to_grab in GLOB.player_list)
+	for(var/mob/mob_to_grab in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(mob_to_grab.ckey == loaded_from_ckey)
 			return mob_to_grab
 
@@ -488,7 +488,7 @@
 		mind.key = key
 	else
 		mind = new /datum/mind(key)
-		mind.original_character = WEAKREF(src)
+		mind.original_character = om_handle(src)
 		if(SSticker)
 			SSticker.minds += mind
 		else

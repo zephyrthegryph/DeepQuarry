@@ -5,8 +5,8 @@
 	var/engineering_evidence_id
 
 /datum/material_service
-	var/datum/weakref/monitor_tool
-	var/datum/weakref/monitor_user
+	var/monitor_tool
+	var/monitor_user
 	var/monitor_last_input = 0
 	var/monitor_last_output = 0
 	var/monitor_last_moles = 0
@@ -68,8 +68,8 @@
 	SIGNAL_HANDLER
 	if(!user.Adjacent(owner) || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return ITEM_INTERACT_BLOCKING
-	monitor_tool = WEAKREF(tool)
-	monitor_user = WEAKREF(user)
+	monitor_tool = om_handle(tool)
+	monitor_user = om_handle(user)
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
@@ -110,7 +110,10 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	if(!do_after(user, 2 SECONDS, target = owner) || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !stock.use(quantity))
+	om_do_after(user, 2 SECONDS, owner, src, PROC_REF(fit_stock_done), list(stock, user, role, quantity, material_id))
+
+/datum/material_service/proc/fit_stock_done(obj/item/stack/material/stock, mob/user, role, quantity, material_id)
+	if(!can_service(user) || !maintenance_open || stock.loc != user || !stock.use(quantity))
 		return
 	advance()
 	if(QDELETED(owner))
@@ -212,8 +215,8 @@
 /// Only physical observation records an interval. Opening/refreshing a UI does
 /// not advance a test, and changing parts invalidates the in-progress interval.
 /datum/material_service/proc/sample_observation()
-	var/obj/item/multitool/tool = monitor_tool?.resolve()
-	var/mob/living/user = monitor_user?.resolve()
+	var/obj/item/multitool/tool = om_resolve(monitor_tool)
+	var/mob/living/user = om_resolve(monitor_user)
 	if(!tool || !istype(user) || user.incapacitated() || !user.Adjacent(owner) || !user.item_is_in_hands(tool))
 		monitor_tool = null
 		monitor_user = null
@@ -222,7 +225,7 @@
 		monitor_configuration = owner.material_configuration_revision
 		reset_observation()
 	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature)
-	var/datum/gas_mixture/destination = last_delivery_mixture?.resolve()
+	var/datum/gas_mixture/destination = om_resolve(last_delivery_mixture)
 	if(destination)
 		monitor_minimum_pressure = min(monitor_minimum_pressure, destination.return_pressure())
 		monitor_maximum_temperature = max(monitor_maximum_temperature, destination.return_temperature())

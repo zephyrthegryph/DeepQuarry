@@ -77,7 +77,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
 		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
-			START_PROCESSING(SSobj, E)
+			PERIODIC_START(E, PERIODIC_SLOW)
 
 
 
@@ -88,16 +88,16 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
 
 // This only starts normally if there are less than MAX_CHICKENS chickens
-/obj/item/reagent_containers/food/snacks/egg/process()
+/obj/item/reagent_containers/food/snacks/egg/periodic_step()
 	if(isturf(loc))
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
 			new /mob/living/simple_mob/animal/passive/chick(get_turf(src))
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 			qdel(src)
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 
 
@@ -151,7 +151,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 			var/mob/living/simple_mob/animal/passive/chicken/C = new (self.loc)
 			C.ghostjoin = 1
 			C.ghostjoin_icon()
-			GLOB.active_ghost_pods += C
+			registry_join(REGISTRY_GHOST_PODS, C)
 			qdel(self)
 
 // Say Lists

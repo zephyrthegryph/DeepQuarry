@@ -480,7 +480,7 @@
 
 	to_chat(user, span_notice("You feed \the [xenobio_slime] the agent. It may now eventually develop proper sapience."))
 	xenobio_slime.ghostjoin = 1
-	GLOB.active_ghost_pods |= xenobio_slime
+	registry_join(REGISTRY_GHOST_PODS, xenobio_slime)
 	if(!xenobio_slime.vore_active)
 		add_verb(xenobio_slime, /mob/living/simple_mob/proc/animal_nom)
 	xenobio_slime.ghostjoin_icon()

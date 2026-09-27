@@ -202,8 +202,7 @@
 		icon_state = empty_icon
 	if(!cooldown_check())
 		icon_state = "[icon_state]-busy"
-		spawn(activate_cooldown)		//If it's busy then we want to wait a bit to fix the sprite after the cooldown is done.
-			update_icon()
+		om_after(src, activate_cooldown, TYPE_PROC_REF(/atom, update_icon)) //If it's busy then we want to wait a bit to fix the sprite after the cooldown is done.
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(world.time < last_activate + activate_cooldown)

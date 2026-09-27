@@ -74,14 +74,7 @@
 			return
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
-
-		if(!do_after(user, 3 SECONDS, target = src) || !W || !src)
-			return
-
-		var/obj/item/stack/nanopaste/paste = W
-		damage = 0
-		to_chat(user, "You mend the damage to [src] with [W].")
-		paste.use(1)
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
 		return
 
 	else if(istype(W,/obj/item/stack/cable_coil))
@@ -100,14 +93,19 @@
 			return
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		if(!do_after(user, 3 SECONDS, target = src) || !W || !src)
-			return
-
-		damage = 1
-		to_chat(user, "You mend some of damage to [src] with [W], but you will need more advanced tools to fix it completely.")
-		cable.use(5)
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
 		return
 	..()
+
+/obj/item/rig_module/proc/mend_with_paste(mob/user, obj/item/stack/nanopaste/paste)
+	damage = 0
+	to_chat(user, "You mend the damage to [src] with [paste].")
+	paste.use(1)
+
+/obj/item/rig_module/proc/mend_with_cable(mob/user, obj/item/stack/cable_coil/cable)
+	if(damage != 1 && cable.use(5))
+		damage = 1
+		to_chat(user, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
 
 /obj/item/rig_module/Initialize(mapload)
 	. = ..()
@@ -190,12 +188,7 @@
 		return 0
 	active = 1
 
-	spawn(1)
-		if(suit_overlay_active)
-			suit_overlay = suit_overlay_active
-		else
-			suit_overlay = null
-		holder.update_icon()
+	om_after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
@@ -207,13 +200,7 @@
 
 	active = 0
 
-	spawn(1)
-		if(suit_overlay_inactive)
-			suit_overlay = suit_overlay_inactive
-		else
-			suit_overlay = null
-		if(holder)
-			holder.update_icon()
+	om_after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
@@ -224,7 +211,7 @@
 	return
 
 // Called by the hardsuit each rig process tick.
-/obj/item/rig_module/process()
+/obj/item/rig_module/periodic_step()
 	if(active)
 		return active_power_cost
 	else
@@ -348,3 +335,11 @@
 		name = "[charge.display_name] ([charge.charges]C) - Change"
 		return 1
 	return 0
+
+/// The suit overlay follows the module's state, a tick after it changes.
+/obj/item/rig_module/proc/refresh_suit_overlay()
+	if(active)
+		suit_overlay = suit_overlay_active
+	else
+		suit_overlay = suit_overlay_inactive
+	holder?.update_icon()

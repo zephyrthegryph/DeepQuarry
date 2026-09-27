@@ -135,13 +135,11 @@
 
 /obj/item/radio/intercom/attack_ai(mob/user as mob)
 	src.add_fingerprint(user)
-	spawn (0)
-		attack_self(user)
+	attack_self(user)
 
 /obj/item/radio/intercom/attack_hand(mob/user as mob)
 	src.add_fingerprint(user)
-	spawn (0)
-		attack_self(user)
+	attack_self(user)
 
 /obj/item/radio/intercom/attackby(obj/item/W as obj, mob/user as mob)
 	add_fingerprint(user)

@@ -275,11 +275,12 @@
 				inserted_battery.stored_charge = 0
 
 
-/obj/machinery/artifact_harvester/process()
+/// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
+/obj/machinery/artifact_harvester/machine_step()
 	if(harvesting == 0)
-		return
+		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return sleep_until_powered()
 
 	if(harvesting > 0)
 		//charge at 33% consumption rate
@@ -301,7 +302,7 @@
 
 		//do the effect
 		if(inserted_battery.battery_effect)
-			inserted_battery.battery_effect.process()
+			inserted_battery.battery_effect.periodic_step()
 
 			//if the effect works by touch, activate it on anyone viewing the console
 			if(inserted_battery.battery_effect.effect == EFFECT_TOUCH)

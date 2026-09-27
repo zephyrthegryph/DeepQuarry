@@ -573,8 +573,7 @@
 			pulse.icon_state = XENO_CHEM_HEAL
 			pulse.name = XENO_CHEM_HEAL
 			pulse.anchored = TRUE
-			spawn(20)
-				qdel(pulse)
+			om_qdel_after(pulse, 2 SECONDS)
 			to_chat(target, span_notice("As the beam strikes you, your injuries close up!"))
 			M.mend(TREAT_TISSUE_REPAIR, 15)
 			M.mend(TREAT_BURN_CARE, 15)

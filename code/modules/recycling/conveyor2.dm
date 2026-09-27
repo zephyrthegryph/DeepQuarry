@@ -60,7 +60,7 @@
 /obj/machinery/conveyor/proc/on_turf_entered(datum/source, atom/movable/arrived)
 	SIGNAL_HANDLER
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
@@ -113,17 +113,17 @@
 		update_use_power(USE_POWER_OFF)
 		return
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 		update_use_power(USE_POWER_ACTIVE)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 		update_use_power(USE_POWER_ACTIVE)
 
 	// machine process
 	// move items to the target location
-/obj/machinery/conveyor/process()
+/obj/machinery/conveyor/machine_step()
 	if(stat & (BROKEN | NOPOWER))
 		return PROCESS_KILL
 	if(!operating)
@@ -137,19 +137,7 @@
 	if(!length(movable_contents))
 		return PROCESS_KILL
 	affecting = movable_contents
-	spawn(1)	// slight delay to prevent infinite propagation due to map order	//TODO: please no spawn() in process(). It's a very bad idea
-		var/items_moved = 0
-		for(var/atom/movable/A in affecting)
-			if(istype(A,/obj/effect/abstract)) // Flashlight's lights are not physical objects
-				continue
-			if(A.is_incorporeal())
-				continue
-			if(!A.anchored)
-				if(A.loc == src.loc) // prevents the object from being affected if it's not currently here.
-					step(A,movedir)
-					items_moved++
-			if(items_moved >= 10)
-				break
+	om_after(src, 1, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 
 /obj/machinery/conveyor/declare_interactions(list/into)
 	into += list(
@@ -308,7 +296,7 @@
 // timed process
 // if the switch changed, update the linked conveyors
 
-/obj/machinery/conveyor_switch/process()
+/obj/machinery/conveyor_switch/machine_step()
 	if(!operated)
 		return PROCESS_KILL
 	operated = 0
@@ -346,7 +334,7 @@
 		position = 0
 
 	operated = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us
@@ -359,13 +347,15 @@
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, span_notice("You deconstruct the frame."))
-		new /obj/item/stack/material/steel(src.loc, 2)
-		qdel(src)
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/conveyor_switch/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You deconstruct the frame."))
+	new /obj/item/stack/material/steel(src.loc, 2)
+	qdel(src)
 
 /obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
@@ -404,3 +394,21 @@
 	.=..()
 	if(oneway == 1)
 		. += " It appears to only go in one direction."
+
+/obj/machinery/conveyor/proc/move_affecting()
+	var/items_moved = 0
+	for(var/atom/movable/A in affecting)
+		if(istype(A,/obj/effect/abstract)) // Flashlight's lights are not physical objects
+			continue
+		if(A.is_incorporeal())
+			continue
+		if(!A.anchored)
+			if(A.loc == src.loc) // prevents the object from being affected if it's not currently here.
+				step(A,movedir)
+				items_moved++
+		if(items_moved >= 10)
+			break
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/conveyor/step_start_condition()
+	return operating

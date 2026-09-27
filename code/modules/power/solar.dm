@@ -4,7 +4,6 @@
 #define SOLAR_AUTO_START_CONFIG 2 // Will start itself if config allows it (default is no).
 
 GLOBAL_VAR_INIT(solar_gen_rate, 1500)
-GLOBAL_LIST_EMPTY(solars_list)
 
 /obj/machinery/power/solar
 	name = "solar panel"
@@ -40,8 +39,14 @@ GLOBAL_LIST_EMPTY(solars_list)
 		max_integrity *= 2
 		update_integrity(max_integrity)
 	update_icon()
-	connect_to_network()
 	AddElement(/datum/element/climbable)
+
+/// `connect_to_network()` needs `vg_entity` bound, which only happens once
+/// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
+/// docs (`code/modules/power/power.dm`).
+/obj/machinery/power/solar/on_materialize()
+	. = ..()
+	connect_to_network()
 
 /obj/machinery/power/solar/Destroy()
 	unset_control() //remove from control computer
@@ -86,15 +91,16 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
-		var/obj/item/solar_assembly/S = new(loc)
-		S.anchored = TRUE
-		new glass_type(loc, 2)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		user.visible_message(span_notice("[user] takes the glass off the solar panel."))
-		qdel(src)
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
+	var/obj/item/solar_assembly/S = new(loc)
+	S.anchored = TRUE
+	new glass_type(loc, 2)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
+	qdel(src)
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
@@ -346,23 +352,25 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar_control/drain_power()
 	return -1
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
+
 /obj/machinery/power/solar_control/disconnect_from_network()
 	. = ..()
-	GLOB.solars_list.Remove(src)
+	registry_leave(REGISTRY_SOLAR_CONTROLS, src)
 	needs_panel_check = TRUE
 
 /obj/machinery/power/solar_control/connect_to_network(bind_now = TRUE)
 	var/to_return = ..()
 	if(powernet) //if connected and not already in solar_list...
-		GLOB.solars_list |= src //... add it
+		registry_join(REGISTRY_SOLAR_CONTROLS, src) //... add it
 		needs_panel_check = TRUE
 	return to_return
 
 /obj/machinery/power/solar_control/power_network_changed(datum/powernet/old, datum/powernet/network)
 	if(network)
-		GLOB.solars_list |= src
+		registry_join(REGISTRY_SOLAR_CONTROLS, src)
 	else
-		GLOB.solars_list -= src
+		registry_leave(REGISTRY_SOLAR_CONTROLS, src)
 	needs_panel_check = TRUE
 
 //search for unconnected panels and trackers in the computer powernet and connect them
@@ -439,33 +447,35 @@ GLOBAL_LIST_EMPTY(solars_list)
 
 /obj/machinery/power/solar_control/screwdriver_act(mob/user, obj/item/I)
 	playsound(src, I.usesound, 50, 1)
-	if(do_after(user, 2 SECONDS, target = src))
-		if (src.stat & BROKEN)
-			to_chat(user, span_blue("The broken glass falls out."))
-			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-			new /obj/item/material/shard(src.loc)
-			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
-			for(var/obj/C in src)
-				C.loc = src.loc
-			A.circuit = M
-			A.state = 3
-			A.icon_state = "computer_3"
-			A.anchored = TRUE
-			qdel(src)
-		else
-			to_chat(user, span_blue("You disconnect the monitor."))
-			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
-			for(var/obj/C in src)
-				C.loc = src.loc
-			A.circuit = M
-			A.state = 4
-			A.icon_state = "computer_4"
-			A.anchored = TRUE
-			qdel(src)
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(disassemble_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/solar_control/process()
+/obj/machinery/power/solar_control/proc/disassemble_done(mob/user)
+	if (src.stat & BROKEN)
+		to_chat(user, span_blue("The broken glass falls out."))
+		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		new /obj/item/material/shard(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		for(var/obj/C in src)
+			C.loc = src.loc
+		A.circuit = M
+		A.state = 3
+		A.icon_state = "computer_3"
+		A.anchored = TRUE
+		qdel(src)
+	else
+		to_chat(user, span_blue("You disconnect the monitor."))
+		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		for(var/obj/C in src)
+			C.loc = src.loc
+		A.circuit = M
+		A.state = 4
+		A.icon_state = "computer_4"
+		A.anchored = TRUE
+		qdel(src)
+
+/obj/machinery/power/solar_control/machine_step()
 	if(stat & (NOPOWER | BROKEN))
 		return
 
@@ -555,3 +565,8 @@ GLOBAL_LIST_EMPTY(solars_list)
 #undef SOLAR_AUTO_START_NO
 #undef SOLAR_AUTO_START_YES
 #undef SOLAR_AUTO_START_CONFIG
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/solar_control/step_start_condition()
+	return TRUE // connects its trackers

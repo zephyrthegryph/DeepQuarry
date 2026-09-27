@@ -10,15 +10,15 @@
 	deny_respawn = 0
 	var/next_wave = METEOR_DELAY
 
-/datum/game_mode/meteor/process()
+/datum/game_mode/meteor/periodic_step()
 	if(world.time >= next_wave)
 		next_wave = world.time + GLOB.meteor_wave_delay
-		spawn() spawn_meteors(6, GLOB.meteors_normal)
+		spawn_meteors(6, GLOB.meteors_normal)
 
 /datum/game_mode/meteor/declare_completion()
 	var/text
 	var/survivors = 0
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.stat != DEAD)
 			var/turf/location = get_turf(player.loc)
 			if(!location)	continue

@@ -79,10 +79,12 @@
 		user.put_in_hands(S)
 	else
 		to_chat(user, span_notice("You start compacting the snowball."))
-		if(do_after(user, 2 SECONDS, target = src))
-			var/atom/S = new /obj/item/material/snow/snowball/reinforced(user.loc)
-			qdel(src)
-			user.put_in_hands(S)
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+
+/obj/item/material/snow/snowball/proc/attack_self_timed_done(mob/user)
+	var/atom/S = new /obj/item/material/snow/snowball/reinforced(user.loc)
+	qdel(src)
+	user.put_in_hands(S)
 
 /obj/item/material/snow/snowball/reinforced
 	name = "snowball"
@@ -150,8 +152,7 @@
 				target.Move(get_step(target,get_dir(user,target)))
 		if(I_GRAB)
 			var/turf/STurf = get_turf(target)
-			spawn(2)
-				playsound(STurf, 'sound/effects/snap.ogg', 60, 1)
+			om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 60, 1)
 			target.visible_message(span_critical("\The [src] yanks \the [target] towards \the [user]!"))
 			target.throw_at(get_turf(get_step(user,get_dir(user,target))), 2, 1, src)
 

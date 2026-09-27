@@ -333,7 +333,7 @@
 				germ_level = 0
 				status &= ~ORGAN_DEAD
 				damage = 0 //Fix the damage on it as well.
-				START_PROCESSING(SSobj, src) //Dead limbs stop processing, so we restart the process.
+				PERIODIC_START(src, PERIODIC_SLOW) //Dead limbs stop processing, so we restart the process.
 				stage-- //Go back to stage 2
 				return
 	..()
@@ -616,10 +616,9 @@
 					if(children && children.len)
 						var/brute_on_children = brute_third / children.len
 						var/burn_on_children = burn_third / children.len
-						spawn()
-							for(var/obj/item/organ/external/C in children)
-								if(!C.is_stump())
-									C.apply_wound_damage(brute_on_children, burn_on_children, FALSE, FALSE, null, forbidden_limbs, 1) //Splits the damage to each individual 'child', incase multiple exist.
+						for(var/obj/item/organ/external/C in children)
+							if(!C.is_stump())
+								C.apply_wound_damage(brute_on_children, burn_on_children, FALSE, FALSE, null, forbidden_limbs, 1) //Splits the damage to each individual 'child', incase multiple exist.
 					parent.apply_wound_damage(brute_third, burn_third, FALSE, FALSE, null, forbidden_limbs, 1)
 	return update_icon()
 
@@ -652,7 +651,10 @@
 	return result
 
 //Helper proc used by various tools for repairing robot limbs
-/obj/item/organ/external/proc/robo_repair(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user)
+/// Starts repairing this robotic limb with `tool`. TRUE if the repair started; when it
+/// completes, `tool_proc` (if any) is called on the tool with `tool_args` (to use up fuel,
+/// cable, ...).
+/obj/item/organ/external/proc/robo_repair(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user, tool_proc, list/tool_args)
 	if((src.robotic < ORGAN_ROBOT))
 		return 0
 
@@ -684,10 +686,13 @@
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	if(!do_after(user, 1 SECOND, src))
-		to_chat(user, span_warning("You must stand still to do that."))
-		return 0
+	var/started = om_do_after(user, 1 SECOND, src, src, PROC_REF(robo_repair_done), list(repair_amount, damage_type, damage_desc, tool, user, damage_amount, tool_proc, tool_args), on_fail = PROC_REF(robo_repair_failed), fail_args = list(user))
+	return !istext(started)
 
+/obj/item/organ/external/proc/robo_repair_failed(mob/living/user)
+	to_chat(user, span_warning("You must stand still to do that."))
+
+/obj/item/organ/external/proc/robo_repair_done(repair_amount, damage_type, damage_desc, obj/item/tool, mob/living/user, damage_amount, tool_proc, list/tool_args)
 	// Repair by mechanism: plating for structural damage, wiring for scorching.
 	if(owner)
 		if(damage_type == BRUTE || damage_type == "omni")
@@ -709,8 +714,8 @@
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [user.p_their()] [src.name] with [tool]."))
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [owner]'s [src.name] with [tool]."))
-
-	return 1
+	if(tool_proc)
+		call(tool, tool_proc)(arglist(list(user) + (tool_args || list())))
 
 
 /*
@@ -850,7 +855,7 @@ This function completely restores a damaged organ to perfect condition.
 		return 1
 	return 0
 
-/obj/item/organ/external/process()
+/obj/item/organ/external/periodic_step()
 	if(owner)
 
 		// Process wounds, doing healing etc. Only do this every few ticks to save processing power
@@ -1152,13 +1157,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
-	spawn(1)
-		if(istype(victim))
-			victim.UpdateDamageIcon()
-			victim.update_icons_body()
-		else
-			victim.update_icons()
-		dir = 2
+	om_after(victim, 1, /proc/droplimb_refresh_icons, victim)
+	dir = 2
 
 	var/atom/droploc = victim.drop_location()
 	switch(disintegrate)
@@ -1555,8 +1555,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		spark_system.set_up(5, 0, victim)
 		spark_system.attach(owner)
 		spark_system.start()
-		spawn(10)
-			qdel(spark_system)
+		om_qdel_after(spark_system, 1 SECOND)
 		qdel(src)
 
 	victim.refresh_modular_limb_verbs()
@@ -1714,3 +1713,12 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)
+
+/// A tick after a limb comes off, the body's icons catch up.
+/proc/droplimb_refresh_icons(mob/living/victim)
+	if(ishuman(victim))
+		var/mob/living/carbon/human/H = victim
+		H.UpdateDamageIcon()
+		H.update_icons_body()
+	else
+		victim.update_icons()

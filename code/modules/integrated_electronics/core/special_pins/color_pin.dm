@@ -10,7 +10,7 @@
 
 /datum/integrated_io/color/write_data_to_pin(new_data)
 	// Since this is storing the color as a string hex color code, we need to make sure it's actually one.
-	if(isnull(new_data) || istext(new_data))
+	if(isnull(new_data) || (istext(new_data) && !ic_is_ref(new_data)))
 		if(istext(new_data))
 			new_data = uppertext(new_data)
 			if(length(new_data) != 7)						// We can hex if we want to, we can leave your strings behind

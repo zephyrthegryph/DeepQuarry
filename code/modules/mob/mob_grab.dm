@@ -51,7 +51,7 @@
 	hud.icon_state = "reinforce"
 	icon_state = "grabbed"
 	hud.name = "reinforce grab"
-	hud.master_ref = WEAKREF(src)
+	hud.master_ref = om_handle(src)
 
 	adjust_position()
 
@@ -81,7 +81,7 @@
 		else
 			hud.screen_loc = ui_lhand
 
-/obj/item/grab/process()
+/obj/item/grab/periodic_step()
 	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	if(QDELETED(src)) // GC is trying to delete us, we'll kill our processing so we can cleanly GC
 		return PROCESS_KILL

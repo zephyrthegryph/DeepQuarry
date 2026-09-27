@@ -11,7 +11,6 @@
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
 	var/confirm_delay = 20 //(2 seconds)
-	var/busy = 0 //Busy when waiting for authentication or an event request has been sent from this device.
 	var/obj/machinery/keycard_auth/event_source
 	var/mob/event_triggered_by
 	var/mob/event_confirmed_by
@@ -28,28 +27,30 @@
 	return
 
 /obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
-	if(use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]"))
-		to_chat(user, "You remove the faceplate from the [src]")
-		var/obj/structure/frame/A = new /obj/structure/frame(loc)
-		A.circuit = circuit
-		A.frame_type = circuit.board_type
-		circuit = null
-		A.need_circuit = FALSE
-		A.pixel_x = pixel_x
-		A.pixel_y = pixel_y
-		A.set_dir(dir)
-		A.anchored = TRUE
-		for(var/obj/C in src)
-			if(istype(C, /obj/item/circuitboard))
-				C.forceMove(A)
-				continue
-			C.forceMove(loc)
-		A.forensic_data = forensic_data //carry crime data over.
-		A.state = FRAME_WIRED
-		A.update_icon()
-		qdel(src)
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
+	to_chat(user, "You remove the faceplate from the [src]")
+	var/obj/structure/frame/A = new /obj/structure/frame(loc)
+	A.circuit = circuit
+	A.frame_type = circuit.board_type
+	circuit = null
+	A.need_circuit = FALSE
+	A.pixel_x = pixel_x
+	A.pixel_y = pixel_y
+	A.set_dir(dir)
+	A.anchored = TRUE
+	for(var/obj/C in src)
+		if(istype(C, /obj/item/circuitboard))
+			C.forceMove(A)
+			continue
+		C.forceMove(loc)
+	A.forensic_data = forensic_data //carry crime data over.
+	A.state = FRAME_WIRED
+	A.update_icon()
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/keycard_auth/declare_interactions(list/into)
 	into += list(
@@ -101,7 +102,7 @@
 		return TRUE
 	if(!user.IsAdvancedToolUser())
 		return FALSE
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, "This device is busy.")
 		return TRUE
 	tgui_interact(user)
@@ -124,7 +125,7 @@
 	. = ..()
 	if(.)
 		return
-	if(busy)
+	if(om_busy(src))
 		to_chat(usr, "This device is busy.")
 		return TRUE
 	if(usr.stat || stat & (BROKEN|NOPOWER))
@@ -156,10 +157,12 @@
 	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
-		spawn()
-			KA.receive_request(src)
+		KA.receive_request(src)
 
-	sleep(confirm_delay)
+	om_after(src, confirm_delay, PROC_REF(request_window_closed), user)
+
+/// The confirmation window is over: fire the event if someone confirmed it.
+/obj/machinery/keycard_auth/proc/request_window_closed(mob/user)
 	if(confirmed)
 		confirmed = 0
 		trigger_event(user)
@@ -171,16 +174,16 @@
 	if(stat & (BROKEN|NOPOWER))
 		return
 	event_source = source
-	busy = 1
+	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
+	om_release_busy(src, "new request")
 	active = 1
 	icon_state = "auth_on"
+	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
-	sleep(confirm_delay)
-
+/obj/machinery/keycard_auth/proc/receive_window_closed()
 	event_source = null
 	icon_state = "auth_off"
 	active = 0
-	busy = 0
 
 /obj/machinery/keycard_auth/proc/trigger_event(mob/user)
 	switch(event)

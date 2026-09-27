@@ -161,12 +161,22 @@
 				to_chat(user, span_warning("Turbine not connected."))
 				stat |= BROKEN
 
-/obj/machinery/compressor/process()
+/// Starts or stops the compressor; the compressor and its turbine run only while it is started.
+/obj/machinery/compressor/proc/set_starter(value)
+	starter = value
+	if(starter)
+		MACHINE_WAKE(src)
+		if(turbine)
+			MACHINE_WAKE(turbine)
+
+/obj/machinery/compressor/machine_step()
 	if(!turbine)
 		stat = BROKEN
-	if(stat & BROKEN || panel_open)
-		return
+	if(stat & BROKEN)
+		return PROCESS_KILL
 	if(!starter)
+		return PROCESS_KILL
+	if(panel_open)
 		return
 	cut_overlays()
 
@@ -255,12 +265,14 @@
 				to_chat(user, span_warning("Compressor not connected."))
 				stat |= BROKEN
 
-/obj/machinery/power/turbine/process()
+/obj/machinery/power/turbine/machine_step()
 	if(!compressor)
 		stat = BROKEN
-	if((stat & BROKEN) || panel_open)
-		return
+	if(stat & BROKEN)
+		return PROCESS_KILL
 	if(!compressor.starter)
+		return PROCESS_KILL
+	if(panel_open)
 		return
 	cut_overlays()
 
@@ -324,7 +336,7 @@
 		if("start_stop")
 			if(!compressor)
 				return FALSE
-			compressor.starter = !compressor.starter
+			compressor.set_starter(!compressor.starter)
 			return TRUE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -416,11 +428,11 @@
 	switch(action)
 		if("power-on")
 			if(compressor && compressor.turbine)
-				compressor.starter = TRUE
+				compressor.set_starter(TRUE)
 				. = TRUE
 		if("power-off")
 			if(compressor && compressor.turbine)
-				compressor.starter = FALSE
+				compressor.set_starter(FALSE)
 				. = TRUE
 		if("reconnect")
 			locate_machinery()
@@ -429,9 +441,9 @@
 			door_status = !door_status
 			for(var/obj/machinery/door/blast/D in src.doors)
 				if (door_status)
-					spawn(0) D.close()
+					D.close()
 				else
-					spawn(0)D.open()
+					D.open()
 			. = TRUE
 
 #undef COMPFRICTION

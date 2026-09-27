@@ -59,7 +59,7 @@
 		if(charges < 1)
 			updateUsrDialog(usr)
 			return
-		var/mob/M = locate(href_list["traitormob"]) in GLOB.mob_list
+		var/mob/M = locate(href_list["traitormob"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 		if(!istype(M) || M != usr) // bounded locate + self-only: a crafted href must not traitor someone else
 			return
 		if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
@@ -71,7 +71,7 @@
 			if(1)
 				temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
 				updateUsrDialog(usr)
-				spawn(rand(50,200)) selfdestruct()
+				om_after(src, rand(50,200), PROC_REF(selfdestruct))
 				return
 			if(2)
 				return
@@ -87,7 +87,7 @@
 
 /obj/machinery/syndicate_beacon/proc/selfdestruct()
 	selfdestructing = 1
-	spawn() explosion(src.loc, 1, rand(1,3), rand(3,8), 10)
+	explosion(src.loc, 1, rand(1,3), rand(3,8), 10)
 
 ////////////////////////////////////////
 //Singularity beacon
@@ -116,7 +116,7 @@
 			singulo.target = src
 	icon_state = "[icontype]1"
 	active = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	if(user)
 		to_chat(user, span_notice("You activate the beacon."))
 
@@ -179,7 +179,7 @@
 	. = ..()
 
 //stealth direct power usage
-/obj/machinery/power/singularity_beacon/process()
+/obj/machinery/power/singularity_beacon/machine_step()
 	if(!active)
 		return PROCESS_KILL
 	else

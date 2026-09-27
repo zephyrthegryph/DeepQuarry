@@ -373,50 +373,45 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//Main 'say' and 'whisper' message delivery
 	for(var/mob/M in listening)
-		spawn(0) //Using spawns to queue all the messages for AFTER this proc is done, and stop runtimes
+		if(QDELETED(M))
+			continue
 
-			if(M && src) //If we still exist, when the spawn processes
-				// Ghosts don't hear whispers
-				if(whispering && isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
-				(!(client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) || (isbelly(M.loc) && src == M.loc:owner))  && !check_rights_for(M.client, R_HOLDER))))
-					M.show_message(span_game(span_say(span_name(src.name) + " [w_not_heard].")), 2)
-					return
+		// Ghosts don't hear whispers
+		if(whispering && isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
+		(!(client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) || (isbelly(M.loc) && src == M.loc:owner))  && !check_rights_for(M.client, R_HOLDER))))
+			M.show_message(span_game(span_say(span_name(src.name) + " [w_not_heard].")), 2)
+			continue
 
-				var/dst = get_dist(get_turf(M),get_turf(src))
-				var/runechat_enabled = M.client?.prefs?.read_preference(/datum/preference/toggle/runechat_mob)
+		var/dst = get_dist(get_turf(M),get_turf(src))
+		var/runechat_enabled = M.client?.prefs?.read_preference(/datum/preference/toggle/runechat_mob)
 
-				if(dst <= message_range || (M.stat == DEAD && !forbid_seeing_deadchat)) //Inside normal message range, or dead with ears (handled in the view proc)
-					if(M.hear_say(message_pieces, verb, italics, src, speech_sound, sound_vol))
-						if(M.client && !runechat_enabled)
-							var/image/I1 = listening[M] || speech_bubble
-							images_to_clients[I1] |= M.client
-							M << I1
-				if(whispering && !isobserver(M)) //Don't even bother with these unless whispering
-					if(dst > message_range && dst <= w_scramble_range) //Inside whisper scramble range
-						if(M.hear_say(stars_all(message_pieces), verb, italics, src, speech_sound, sound_vol*0.2))
-							if(M.client && !runechat_enabled)
-								var/image/I2 = listening[M] || speech_bubble
-								images_to_clients[I2] |= M.client
-								M << I2
-					if(dst > w_scramble_range && dst <= world.view) //Inside whisper 'visible' range
-						M.show_message(span_game(span_say(span_name(name) + " [w_not_heard].")), 2)
+		if(dst <= message_range || (M.stat == DEAD && !forbid_seeing_deadchat)) //Inside normal message range, or dead with ears (handled in the view proc)
+			if(M.hear_say(message_pieces, verb, italics, src, speech_sound, sound_vol))
+				if(M.client && !runechat_enabled)
+					var/image/I1 = listening[M] || speech_bubble
+					images_to_clients[I1] |= M.client
+					M << I1
+		if(whispering && !isobserver(M)) //Don't even bother with these unless whispering
+			if(dst > message_range && dst <= w_scramble_range) //Inside whisper scramble range
+				if(M.hear_say(stars_all(message_pieces), verb, italics, src, speech_sound, sound_vol*0.2))
+					if(M.client && !runechat_enabled)
+						var/image/I2 = listening[M] || speech_bubble
+						images_to_clients[I2] |= M.client
+						M << I2
+			if(dst > w_scramble_range && dst <= world.view) //Inside whisper 'visible' range
+				M.show_message(span_game(span_say(span_name(name) + " [w_not_heard].")), 2)
 
 	//Object message delivery
 	for(var/obj/O in listening_obj)
-		spawn(0)
-			if(O && src) //If we still exist, when the spawn processes
-				var/dst = get_dist(get_turf(O),get_turf(src))
-				if(dst <= message_range)
-					O.hear_talk(src, message_pieces, verb)
+		if(QDELETED(O))
+			continue
+		var/dst = get_dist(get_turf(O),get_turf(src))
+		if(dst <= message_range)
+			O.hear_talk(src, message_pieces, verb)
 
-	//Remove all those images. At least it's just ONE spawn this time.
-	spawn(30)
-		for(var/image/I as anything in images_to_clients)
-			var/list/clients_from_image = images_to_clients[I]
-			for(var/client/C as anything in clients_from_image)
-				if(C) //Could have disconnected after message sent, before removing bubble.
-					C.images -= I
-			qdel(I)
+	// Remove the speech images later. The global owner: the images must leave the clients'
+	// screens even if the speaker is deleted first.
+	om_after(null, 3 SECONDS, /proc/remove_speech_images, images_to_clients)
 
 	//Log the message to file
 	if(message_mode)
@@ -512,3 +507,12 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 /mob/proc/speech_bubble_appearance()
 	return "normal"
+
+/// Takes speech bubble images off the clients they were shown to, then deletes them.
+/proc/remove_speech_images(list/images_to_clients)
+	for(var/image/I as anything in images_to_clients)
+		var/list/clients_from_image = images_to_clients[I]
+		for(var/client/C as anything in clients_from_image)
+			if(C) //Could have disconnected after message sent, before removing bubble.
+				C.images -= I
+		qdel(I)

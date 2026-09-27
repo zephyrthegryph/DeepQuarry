@@ -14,12 +14,11 @@
 
 	var/canister_color = "yellow"
 	var/can_label = 1
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	/// Cached from the last perform(): TRUE once valve_open is off and neither a reaction nor
 	/// the material vessel is doing anything, mirroring the settle check the old process() made
 	/// right before it called hibernate_until_gas_changes(). Read by
 	/// /datum/om/stage/machine/power/portable_atmospherics/canister/idle() (machine_pipeline.dm).
-	var/om_settled = FALSE
+	var/om_settled = TRUE // until arm_wakes() or a frame says otherwise
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C
@@ -344,13 +343,15 @@ update_flag
 	if(air_contents.return_pressure() > 1 && !destroyed)
 		to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
-		to_chat(user, span_notice("You deconstruct [src]."))
-		new /obj/item/stack/material/steel(loc, 10)
-		if(connected_port)
-			disconnect()
-		qdel(src)
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/portable_atmospherics/canister/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You deconstruct [src]."))
+	new /obj/item/stack/material/steel(loc, 10)
+	if(connected_port)
+		disconnect()
+	qdel(src)
 
 /obj/machinery/portable_atmospherics/canister/tgui_state(mob/user)
 	return GLOB.tgui_physical_state
@@ -438,11 +439,7 @@ update_flag
 					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 					log_open()
 			valve_open = !valve_open
-			if(polls)
-				clear_gas_dependency()
-				START_MACHINE_PROCESSING(src)
-			else
-				om_changed(src, CHANGE_MACHINE_SETTINGS)
+			om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
 		if("eject")
 			if(holding)
@@ -531,3 +528,13 @@ update_flag
 	. = ..()
 	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
 	update_icon()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/canister/arm_wakes()
+	..()
+	om_settled = !valve_open
+	hibernate_until_gas_changes()
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/canister/step_start_condition()
+	return valve_open

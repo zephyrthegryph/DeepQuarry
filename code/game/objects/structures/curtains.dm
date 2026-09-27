@@ -51,11 +51,13 @@
 /obj/structure/curtain/wirecutter_act(mob/user, obj/item/P)
 	playsound(src, P.usesound, 50, 1)
 	to_chat(user, span_notice("You start to cut the shower curtains."))
-	if(do_after(user, 1 SECOND, target = src))
-		to_chat(user, span_notice("You cut the shower curtains."))
-		new /obj/item/stack/material/plastic(loc, 3)
-		qdel(src)
+	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/curtain/proc/wirecutter_act_timed_done(mob/user)
+	to_chat(user, span_notice("You cut the shower curtains."))
+	new /obj/item/stack/material/plastic(loc, 3)
+	qdel(src)
 
 /obj/structure/curtain/black
 	name = "black curtain"

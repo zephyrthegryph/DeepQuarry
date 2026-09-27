@@ -144,26 +144,29 @@
 	return TRUE
 
 
+/// One nanopaste repair a second (a timed action on `site`) until whole or out of paste.
+/obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)
+	if(get_integrity() >= max_integrity)
+		return
+	om_do_after(user, 1 SECOND, site, src, PROC_REF(paste_repair_done), list(user, NP, site))
+
+/obj/item/mecha_parts/component/proc/paste_repair_done(mob/user, obj/item/stack/nanopaste/NP, atom/site)
+	NP.use(1)
+	adjust_integrity(NP.mech_repair)
+	if(get_integrity() >= max_integrity)
+		to_chat(user, span_notice("You finish repairing \the [src]."))
+	else if(NP.amount == 0)
+		to_chat(user, span_warning("Insufficient nanopaste to complete repairs!"))
+	else
+		paste_repair_step(user, NP, site)
+
 /obj/item/mecha_parts/component/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
 
 		if(get_integrity() < max_integrity)
 			to_chat(user, span_notice("You start to repair damage to \the [src]."))
-			while(get_integrity() < max_integrity && NP)
-				if(do_after(user, 1 SECOND, target = src))
-					NP.use(1)
-					adjust_integrity(NP.mech_repair)
-
-					if(get_integrity() >= max_integrity)
-						to_chat(user, span_notice("You finish repairing \the [src]."))
-						break
-
-					else if(NP.amount == 0)
-						to_chat(user, span_warning("Insufficient nanopaste to complete repairs!"))
-						break
-
-
+			paste_repair_step(user, NP, src)
 			return
 
 		else

@@ -123,15 +123,13 @@
 			return TRUE
 
 /obj/machinery/ai_slipper/proc/slip_process()
-	while(cooldown_time - world.timeofday > 0)
-		var/ticksleft = cooldown_time - world.timeofday
-
+	var/ticksleft = cooldown_time - world.timeofday
+	if(ticksleft > 0)
 		if(ticksleft > 1e5)
 			cooldown_time = world.timeofday + 10	// midnight rollover
-
-
 		cooldown_timeleft = (ticksleft / 10)
-		sleep(5)
+		om_after(src, 5, PROC_REF(slip_process))
+		return
 	if(uses <= 0)
 		return
 	if(uses >= 0)

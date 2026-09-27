@@ -86,7 +86,7 @@ ADMIN_VERB(debug_atmospherics, R_DEBUG, "Debug Atmospherics", "Opens the SSair d
 	SSair.tgui_interact(user.mob)
 	feedback_add_details("admin_verb","DBGATMOS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(trace_injury_mitigation, R_DEBUG, "Trace Injury Mitigation", "Toggle a per-hit breakdown of a mob's injury mitigation (armour, shields, factors, species) in your chat and the debug log.", ADMIN_CATEGORY_DEBUG_INVESTIGATE, mob/living/target in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(trace_injury_mitigation, R_DEBUG, "Trace Injury Mitigation", "Toggle a per-hit breakdown of a mob's injury mitigation (armour, shields, factors, species) in your chat and the debug log.", ADMIN_CATEGORY_DEBUG_INVESTIGATE, mob/living/target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!istype(target))
 		return
 	if(user in target.injury_trace)
@@ -98,7 +98,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(trace_injury_mitigation, R_DEBUG, "Trace Injury Miti
 	log_admin("[key_name(user)] toggled injury mitigation tracing on [key_name(target)].")
 	feedback_add_details("admin_verb","TRACEINJ") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make Robot", "Turns the target into a robot.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in GLOB.human_mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make Robot", "Turns the target into a robot.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if(!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")
 		return
@@ -109,7 +109,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make R
 	log_admin("[key_name(user)] has robotized [target_human.key].")
 	addtimer(CALLBACK(target_human, TYPE_PROC_REF(/mob/living/carbon/human, Robotize)), 1 SECOND, TIMER_DELETE_ME)
 
-ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make Simple Animal", "Spawns a new player directly as animal.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target_mob in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make Simple Animal", "Spawns a new player directly as animal.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")
 		return
@@ -129,7 +129,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	var/turf/target_turf = get_turf(user.mob)
 
 	var/list/available = list()
-	for(var/mob/current_client in GLOB.mob_list)
+	for(var/mob/current_client in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(current_client.key && isobserver(current_client))
 			available += current_client
 	var/mob/choice = tgui_input_list(user, "Choose a player to play the pAI", "Spawn pAI", available)
@@ -150,7 +150,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	log_admin("made a pAI with key=[pai.key] at ([target_turf.x],[target_turf.y],[target_turf.z])")
 	feedback_add_details("admin_verb","MPAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make Alien", "Turns the target into an alien.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in GLOB.human_mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make Alien", "Turns the target into an alien.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if(!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")
 		return
@@ -237,7 +237,7 @@ ADMIN_VERB(cmd_display_overlay_log, R_DEBUG, "Display overlay Log", "Display SSo
 	else
 		. = lines.Join("\n")
 
-ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "Grants full access to a human.", ADMIN_CATEGORY_EVENTS, mob/living/carbon/human/H in GLOB.human_mob_list)
+ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "Grants full access to a human.", ADMIN_CATEGORY_EVENTS, mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if (!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")
 		return
@@ -410,7 +410,7 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 	for(var/obj/machinery/field_generator/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(get_area(F), /area/space))
 			F.Varedit_start = 1
-			START_MACHINE_PROCESSING(F)
+			MACHINE_WAKE(F)
 	for(var/obj/machinery/power/grounding_rod/GR in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		GR.anchored = TRUE
 		GR.update_icon()
@@ -452,7 +452,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			// rad_collector and ZAS binary/pump removed; supermatter only.
 			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
-				spawn(50)
+				spawn(50) // S7 keeps: admin verb (allowlist)
 					SM.power = 320
 
 			else if(istype(M,/obj/machinery/power/smes))	//This is the SMES inside the engine room.  We don't need much power.
@@ -486,15 +486,15 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 ADMIN_VERB(cmd_debug_mob_lists, R_DEBUG, "Debug Mob Lists", "For when you just gotta know.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	switch(tgui_input_list(user, "Which list?", "List Choice", list("Players","Admins","Mobs","Living Mobs","Dead Mobs", "Clients")))
 		if("Players")
-			to_chat(user, span_filter_debuglogs(jointext(GLOB.player_list,",")))
+			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_PLAYERS),",")))
 		if("Admins")
 			to_chat(user, span_filter_debuglogs(jointext(GLOB.admins,",")))
 		if("Mobs")
-			to_chat(user, span_filter_debuglogs(jointext(GLOB.mob_list,",")))
+			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_MOBS),",")))
 		if("Living Mobs")
-			to_chat(user, span_filter_debuglogs(jointext(GLOB.living_mob_list,",")))
+			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS),",")))
 		if("Dead Mobs")
-			to_chat(user, span_filter_debuglogs(jointext(GLOB.dead_mob_list,",")))
+			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS),",")))
 		if("Clients")
 			to_chat(user, span_filter_debuglogs(jointext(GLOB.clients,",")))
 
@@ -568,7 +568,7 @@ ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time
 	new_time = new_time.add_hours(new_hour)
 	new_time = new_time.add_minutes(new_minute)
 	planet.current_time = new_time
-	spawn(1)
+	spawn(1) // S7 keeps: admin verb (allowlist)
 		planet.update_sun()
 
 	var/log = "[key_name(user)] changed [planet.name]'s time to [planet.current_time.show_time("hh:mm")]."
@@ -608,7 +608,7 @@ ADMIN_VERB(cmd_reload_robot_sprite_test, R_DEBUG|R_SERVER, "Reload Robot Test Sp
 
 ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-implant mode.", ADMIN_CATEGORY_FUN_ADD_NIF)
 	var/input_NIF
-	var/mob/living/carbon/human/H = tgui_input_list(user, "Pick a mob with a player","Quick NIF", GLOB.player_list)
+	var/mob/living/carbon/human/H = tgui_input_list(user, "Pick a mob with a player","Quick NIF", REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 
 	if(!H)
 		return
@@ -664,7 +664,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
-	var/mob/living/carbon/human/H = tgui_input_list(usr, "Pick a mob with a player","Quick Authentic NIF", GLOB.player_list)
+	var/mob/living/carbon/human/H = tgui_input_list(usr, "Pick a mob with a player","Quick Authentic NIF", REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 
 	if(!H)
 		return

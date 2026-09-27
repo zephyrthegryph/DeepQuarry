@@ -51,7 +51,7 @@
 			return
 		occupant.set_stasis(/datum/modifier/stasis/moderate, src)
 		set_ready_state(FALSE)
-		START_PROCESSING(SSprocessing, src)
+		PERIODIC_START(src, PERIODIC_SECOND)
 		occupant_message(span_notice("[target] successfully loaded into [src]. Life support functions engaged."))
 		chassis.visible_message(span_infoplain("[chassis] loads [target] into [src]."))
 		src.mecha_log_message("[target] loaded. Life support functions engaged.")
@@ -65,7 +65,7 @@
 	src.mecha_log_message("[occupant] ejected. Life support functions disabled.")
 	occupant.set_stasis(null, src)
 	slot_remove(occupant, get_turf(src))
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	set_ready_state(TRUE)
 	return
 
@@ -74,7 +74,7 @@
 	if(occupant)
 		occupant_message(span_infoplain("Unable to detach [src] - equipment occupied."))
 		return
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/get_equip_info()
@@ -290,12 +290,14 @@
 	if(usr!=SLOT_ITEM(src, MECHA_SLOT_PILOT) || usr.stat == 2)
 		return
 	to_chat(usr,span_notice("Release sequence activated. This will take one minute."))
-	sleep(600)
-	if(!src || !usr || !occupant || (occupant != usr)) //Check if someone's released/replaced/bombed him already
+	om_after(src, 1 MINUTE, PROC_REF(release_sequence_done), occupant)
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/release_sequence_done(mob/living/carbon/human/occupant)
+	if(occupant != SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)) //Check if someone's released/replaced/bombed him already
 		return
 	go_out()//and release him from the eternal prison.
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/process()
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/periodic_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_SLEEPER)
 	..()
 	if(!chassis)

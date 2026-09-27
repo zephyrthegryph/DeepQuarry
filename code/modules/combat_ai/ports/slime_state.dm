@@ -148,10 +148,7 @@
 		if(!can_command(speaker))
 			dq_delayed_say(holder, "No...", speaker)
 			return
-		spawn(rand(1 SECOND, 2 SECONDS))
-			if(QDELETED(holder) || holder.stat >= UNCONSCIOUS)
-				return
-			holder.squish()
+		om_after(holder, rand(1 SECOND, 2 SECONDS), /proc/slime_obeys_squish, holder)
 
 	if(findtext(message, "stop") || findtext(message, "halt") || findtext(message, "cease"))
 		if(holder.victim)
@@ -178,3 +175,8 @@
 
 /proc/dq_delayed_say(mob/living/speaker, message, mob/listener)
 	addtimer(CALLBACK(speaker, TYPE_PROC_REF(/mob, say), message), rand(5, 15))
+
+/proc/slime_obeys_squish(mob/living/simple_mob/slime/holder)
+	if(QDELETED(holder) || holder.stat >= UNCONSCIOUS)
+		return
+	holder.squish()

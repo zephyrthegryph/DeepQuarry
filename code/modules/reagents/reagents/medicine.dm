@@ -1213,8 +1213,7 @@
 				if(prob(25))
 					to_chat(M, span_danger("Your pneumatic fluids seize for a moment."))
 				M.status_at_least(EFFECT_STUNNED, 2)
-				spawn(30)
-					M.status_at_least(EFFECT_WEAKENED, 2)
+				om_after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 2)
 		if(dose >= 10 || toxic_load >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
 			M.injure(INJURY_TOXIN, removed * 4, source = src)
 			M.status_adjust(EFFECT_JITTERY, 5)
@@ -2064,7 +2063,7 @@
 			span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")
 		)
 		//wait 30 seconds, growth takes time yo
-		spawn(300)
+		spawn(300) // S7 keeps: alert() sleeps (prompts, S10)
 			//allow it to bug them again now that we've waited
 			M.gender_change_cooldown = 0
 			//check if they want this to happen for pref sake

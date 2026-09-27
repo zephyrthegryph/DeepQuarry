@@ -124,11 +124,13 @@
 	if(uses_integrity)
 		atom_integrity = max_integrity
 
+REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
+
 /turf/Destroy()
 	if (!changing_turf)
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
-	GLOB.cleanbot_reserved_turfs -= src
+	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, src)
 	// ZAS connections.erase_all() removed. Rust owns turf adjacency; the
 	// /turf/open/Destroy unregister drops it.
 	..()
@@ -234,16 +236,18 @@
 		return
 	if(isanimal(user) && O != user)
 		return
-	if (do_after(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), target = O) && !(user.stat))
-		step_towards(O, src)
-		if(ismob(O))
-			animate(O, transform = turn(O.transform, 20), time = 2)
-			sleep(2)
-			animate(O, transform = turn(O.transform, -40), time = 4)
-			sleep(4)
-			animate(O, transform = turn(O.transform, 20), time = 2)
-			sleep(2)
-			O.update_transform()
+	om_do_after(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
+
+/turf/proc/crawl_drag_done(atom/movable/O, mob/user)
+	if(user.stat)
+		return
+	step_towards(O, src)
+	if(ismob(O))
+		// The wiggle is one chained animation; the transform settles once it has played.
+		animate(O, transform = turn(O.transform, 20), time = 2)
+		animate(transform = turn(O.transform, -20), time = 4)
+		animate(transform = O.transform, time = 2)
+		om_after(O, 0.8 SECONDS, TYPE_PROC_REF(/atom/movable, update_transform))
 
 /turf/CanPass(atom/movable/mover, turf/target)
 	if(!target)
@@ -360,8 +364,7 @@
 		return
 
 	if(!get_gravity(source)) //Checked a different codebase for reference. Turns out it's only supposed to happen in no-gravity
-		spawn(2)
-			step(source, turn(source.last_move, 180)) //This makes it float away after hitting a wall in 0G
+		om_after(source, 2, TYPE_PROC_REF(/atom/movable, om_step), turn(source.last_move, 180)) //This makes it float away after hitting a wall in 0G
 	if(isliving(source))
 		var/mob/living/M = source
 		M.turf_collision(src, throwingdatum?.speed)
@@ -396,10 +399,10 @@
 		return FALSE
 
 	vandal.visible_message(span_warning("\The [vandal] begins carving something into \the [src]."))
+	om_do_after(vandal, max(2 SECONDS, length(message)), src, src, PROC_REF(graffiti_done), list(vandal, message, click_parameters))
+	return TRUE
 
-	if(!do_after(vandal, max(2 SECONDS, length(message)), target = src))
-		return FALSE
-
+/turf/proc/graffiti_done(mob/vandal, message, click_parameters)
 	vandal.visible_message(span_danger("\The [vandal] carves some graffiti into \the [src]."))
 	var/obj/effect/decal/writing/graffiti = new(src)
 	graffiti.message = message
@@ -419,8 +422,6 @@
 
 	if(lowertext(message) == "elbereth")
 		to_chat(vandal, span_notice("You feel much safer."))
-
-	return TRUE
 
 // Returns false if stepping into a tile would cause harm (e.g. open space while unable to fly, water tile while a slime, lava, etc).
 /turf/proc/is_safe_to_enter(mob/living/L)

@@ -379,25 +379,31 @@ GLOBAL_PROTECT(surgical_steps)
 
 	if(target == user)
 		to_chat(user, span_critical("You focus on attempting to perform surgery upon yourself."))
-		if(!do_after(user, 3 SECONDS, target = target))
-			return FALSE
+		om_do_after(user, 3 SECONDS, target, src, PROC_REF(choose_surgical_step), list(user, target, zone, cleanliness))
+		return TRUE
+	choose_surgical_step(user, target, zone, cleanliness)
+	return TRUE
 
+/// Picks the step to perform at `zone` (asking when there are several) and runs it.
+/obj/item/proc/choose_surgical_step(mob/living/user, mob/living/carbon/human/target, zone, cleanliness)
+	var/list/available = available_surgical_steps(user, target, zone, src)
+	if(!length(available))
+		return
 	var/datum/surgical_step/step
 	if(length(available) > 1)
 		var/choice = tgui_input_list(user, "Select which surgery step you wish to perform", "Surgery Select", available)
 		if(!choice)
-			return TRUE
+			return
 		step = available[choice]
 	else
 		step = available[available[1]]
 	// Re-validate: the list and the patient may have changed while choosing.
 	if(!step || step.can_use(user, target, zone, src) != TRUE)
-		return TRUE
+		return
 	run_surgical_step(step, user, target, zone, cleanliness)
-	return TRUE
 
-/// Perform `step` with this tool: choose the target, wait, roll, perform or
-/// complicate. Returns TRUE on success.
+/// Perform `step` with this tool: choose the target, then a timed action; on completion roll,
+/// perform or complicate (surgical_step_done() on the patient). FALSE if it did not start.
 /obj/item/proc/run_surgical_step(datum/surgical_step/step, mob/living/user, mob/living/carbon/human/target, zone, cleanliness)
 	var/obj/item/organ/external/part = target.get_organ(zone)
 	var/atom/work_target = part ? step.choose_target(user, target, part, src) : null
@@ -409,38 +415,51 @@ GLOBAL_PROTECT(surgical_steps)
 	step.begin(user, target, part, src, work_target)
 
 	var/chance = step.success_chance(user, target, part, src, cleanliness)
-	var/success = TRUE
 	var/delay = step.duration * (2 - cleanliness / 100) * toolspeed
-	if(!do_after(user, delay, target, target_zone = zone, max_distance = reach))
-		success = FALSE
-		to_chat(user, span_warning("You must remain close to and keep focused on your patient to conduct surgery."))
-		user.balloon_alert(user, "you must remain close to and keep focused on your patient")
-	else if(part && !step.target_still_valid(target, part, work_target))
+	// The patient owns the continuation: the zone lock is released whatever else is gone.
+	var/list/step_args = list(src, step, user, zone, cleanliness, part, work_target, chance)
+	var/started = om_do_after(user, delay, target, target, TYPE_PROC_REF(/mob/living/carbon/human, surgical_step_done), step_args, on_fail = TYPE_PROC_REF(/mob/living/carbon/human, surgical_step_interrupted), fail_args = step_args, target_zone = zone, max_distance = reach)
+	if(istext(started))
 		LAZYREMOVE(target.surgery_zones_in_progress, zone)
 		return FALSE
-	else if(!prob(chance))
-		success = FALSE
+	return TRUE
 
+/mob/living/carbon/human/proc/surgical_step_interrupted(obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
+	if(user)
+		to_chat(user, span_warning("You must remain close to and keep focused on your patient to conduct surgery."))
+		user.balloon_alert(user, "you must remain close to and keep focused on your patient")
+	if(!tool || !user)
+		LAZYREMOVE(surgery_zones_in_progress, zone)
+		update_surgery()
+		return
+	surgical_step_ended(FALSE, tool, step, user, zone, cleanliness, part, work_target, chance)
+
+/mob/living/carbon/human/proc/surgical_step_done(obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
+	if(part && !step.target_still_valid(src, part, work_target))
+		LAZYREMOVE(surgery_zones_in_progress, zone)
+		return
+	surgical_step_ended(prob(chance), tool, step, user, zone, cleanliness, part, work_target, chance)
+
+/mob/living/carbon/human/proc/surgical_step_ended(success, obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
 	if(success)
-		step.perform(user, target, part, src, work_target)
-		step.finish_message(user, target, part, src, work_target)
-		SEND_SIGNAL(src, COMSIG_MATERIAL_SURGERY, target, zone, TRUE)
-		if(user != target && department_for_mob(user) == DEPARTMENT_MEDICAL)
-			charge_mob_for_department_service(target, DEPARTMENT_MEDICAL, 5, "Surgical care: [step.name]", user.real_name)
+		step.perform(user, src, part, tool, work_target)
+		step.finish_message(user, src, part, tool, work_target)
+		SEND_SIGNAL(tool, COMSIG_MATERIAL_SURGERY, src, zone, TRUE)
+		if(user != src && department_for_mob(user) == DEPARTMENT_MEDICAL)
+			charge_mob_for_department_service(src, DEPARTMENT_MEDICAL, 5, "Surgical care: [step.name]", user.real_name)
 	else
-		step.complicate(user, target, part, src, work_target)
-		SEND_SIGNAL(src, COMSIG_MATERIAL_SURGERY, target, zone, FALSE)
+		step.complicate(user, src, part, tool, work_target)
+		SEND_SIGNAL(tool, COMSIG_MATERIAL_SURGERY, src, zone, FALSE)
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	log_game("SURGERY: [key_name(user)] [success ? "completed" : "failed"] [step.name] on [key_name(target)] at [zone] (chance [chance]%, surface [cleanliness])")
+	log_game("SURGERY: [key_name(user)] [success ? "completed" : "failed"] [step.name] on [key_name(src)] at [zone] (chance [chance]%, surface [cleanliness])")
 
 	// A dirty surface seeds the site with germs.
-	part = target.get_organ(zone)
+	part = get_organ(zone)
 	if(part && step.infection_risk && prob(100 - cleanliness))
 		part.adjust_germ_level(rand(10, 20))
 
-	LAZYREMOVE(target.surgery_zones_in_progress, zone)
-	target.update_surgery()
-	return success
+	LAZYREMOVE(surgery_zones_in_progress, zone)
+	update_surgery()
 
 /proc/spread_germs_to_organ(obj/item/organ/external/E, mob/living/carbon/human/user)
 	if(!istype(user) || !istype(E))

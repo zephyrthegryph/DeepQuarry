@@ -113,17 +113,21 @@
 	update_icon()
 	user.visible_message(span_notice("[user] opens \the [src] and starts pumping the handle."), \
 						span_notice("You open \the [src] and start pumping the handle."))
-	while(recharging)
-		if(!do_after(user, 10, src))
-			break
-		playsound(src,'sound/items/change_drill.ogg',25,1)
-		user.hud_used.update_ammo_hud(user, src)
-		if(power_supply.give(phase_power) < phase_power)
-			break
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
+/// One pump every second (a timed action each) until full.
+/obj/item/gun/energy/locked/frontier/proc/pump_cycle(mob/user)
+	playsound(src,'sound/items/change_drill.ogg',25,1)
+	user.hud_used.update_ammo_hud(user, src)
+	if(power_supply.give(phase_power) < phase_power)
+		pump_end(user)
+		return
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+
+/obj/item/gun/energy/locked/frontier/proc/pump_end(mob/user)
 	recharging = 0
 	update_icon()
-	user.hud_used.update_ammo_hud(user, src) // Update one last time once we're finished!
+	user?.hud_used.update_ammo_hud(user, src) // Update one last time once we're finished!
 
 /obj/item/gun/energy/locked/frontier/update_icon()
 	if(recharging)

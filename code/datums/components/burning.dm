@@ -22,7 +22,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	/// Fuel left, J.
 	var/fuel = 0
 	/// The heat watch that puts the fire out when the parent cools.
-	var/cool_watch
+	var/datum/native_watch/heat/cool_watch
 	/// Why the fire went out (BURN_ENDED_*), for tests and examine.
 	var/ended_by
 
@@ -50,7 +50,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 			particle_effect = new(atom_parent, fire_particles)
 	fuel = atom_parent.max_integrity * BURN_ENERGY_PER_INTEGRITY
 	start_heat()
-	START_PROCESSING(SSburning, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 /// The heat source and the cooling watch on the parent's heat body.
 /datum/component/burning/proc/start_heat()
@@ -63,7 +63,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(atom_parent.get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		vg_heat_body_set_temperature(atom_parent.heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	vg_heat_body_power(atom_parent.heat_body, BURN_POWER)
-	cool_watch = heat_watch_threshold(atom_parent, limit, FALSE)
+	cool_watch = heat_watch_threshold(src, atom_parent, limit, FALSE, PROC_REF(on_cooled))
 
 /// Below this the fire goes out.
 /datum/component/burning/proc/burn_out_temperature()
@@ -73,10 +73,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
 /datum/component/burning/proc/stop_heat()
-	if(!isnull(cool_watch))
-		heat_unwatch(cool_watch)
-		cool_watch = null
-	heat_unsubscribe()
+	QDEL_NULL(cool_watch)
 	var/atom/atom_parent = parent
 	if(QDELETED(atom_parent) || isnull(atom_parent.heat_body))
 		return
@@ -85,9 +82,9 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(!istype(movable_parent) || isnull(movable_parent.heat_fire_turf))
 		vg_heat_body_keep(atom_parent.heat_body, FALSE)
 
-/// The parent cooled below the burn-out temperature.
-/datum/component/burning/on_heat_wake(watch, reason, source)
-	if(watch != cool_watch || QDELETED(src))
+/// The parent cooled below the burn-out temperature (cool_watch).
+/datum/component/burning/proc/on_cooled(datum/native_watch/heat/watch, reason, source)
+	if(QDELETED(src))
 		return
 	var/atom/atom_parent = parent
 	if(atom_parent.get_temperature() < burn_out_temperature())
@@ -99,7 +96,6 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	atom_parent.extinguish()
 
 /datum/component/burning/Destroy(force)
-	STOP_PROCESSING(SSburning, src)
 	stop_heat()
 	fire_overlay = null
 	if(particle_effect)
@@ -132,7 +128,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 			atom_parent.cut_overlay(fire_overlay)
 		atom_parent.update_icon()
 
-/datum/component/burning/process(seconds_per_tick)
+/datum/component/burning/periodic_step(seconds_per_tick)
 	var/atom/atom_parent = parent
 	if(QDELETED(atom_parent))
 		return // parent's gone; the component tears down with it
@@ -207,3 +203,6 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(heat_to_gas)
 		air.add_thermal_energy(joules)
 	return TRUE
+
+/datum/component/burning/declared_owned_vars()
+	return list("cool_watch")

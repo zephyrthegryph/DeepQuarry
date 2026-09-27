@@ -53,6 +53,5 @@
 		H.set_species(subspecies)
 
 	if(delete_old_mob)
-		spawn(1)
-			qdel(src)
+		om_qdel_after(src, 1)
 	return M

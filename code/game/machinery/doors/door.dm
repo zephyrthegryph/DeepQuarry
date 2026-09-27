@@ -27,7 +27,7 @@
 	//var/repairing = 0 //VOREstation Edit: We're not using materials anymore
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
-	/// The REACT_AT token for next_door_deadline(), and the deadline it was set for.
+	/// The om_after() timer for next_door_deadline(), and the deadline it was set for.
 	var/tmp/door_timer_token
 	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
@@ -94,32 +94,31 @@
 		las.Trigger(src)
 	*/
 
-// Door deadlines (autoclose here; power and electrification on airlocks) are one REACT_AT on
-// the earliest of them (reactor.md §3), never a process() poll.
+// Door deadlines (autoclose here; power and electrification on airlocks) are one om_after() timer on
+// the earliest of them, never a process() poll.
 
 /// The earliest pending deadline (world.time), or 0 for none. Subtypes add theirs.
 /obj/machinery/door/proc/next_door_deadline()
 	return close_door_at > 0 ? close_door_at : 0
 
-/// Keeps one REACT_AT on next_door_deadline(). Call after changing any deadline.
+/// Keeps one om_after() timer on next_door_deadline(). Call after changing any deadline.
 /obj/machinery/door/proc/schedule_door_timer()
 	var/deadline = next_door_deadline()
 	if(deadline == door_timer_at && (!isnull(door_timer_token) || !deadline))
 		return
 	if(!isnull(door_timer_token))
-		REACT_CANCEL(src, door_timer_token)
+		om_cancel_timer(src, door_timer_token)
 		door_timer_token = null
 	door_timer_at = deadline
 	if(deadline)
-		door_timer_token = REACT_AT(src, deadline)
+		om_attach(src, /datum/om/behaviour/sleeper/timed)
+		door_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(door_timer_fired))
 
-/obj/machinery/door/on_react(reason, source, source_kind)
-	. = ..()
-	if(reason & REACT_REASON_TIMER)
-		door_timer_token = null
-		door_timer_at = 0
-		door_deadlines_due()
-		schedule_door_timer()
+/obj/machinery/door/proc/door_timer_fired()
+	door_timer_token = null
+	door_timer_at = 0
+	door_deadlines_due()
+	schedule_door_timer()
 
 /// Runs every deadline that has passed. Called from the door's timer wake.
 /obj/machinery/door/proc/door_deadlines_due()
@@ -132,7 +131,7 @@
 		else
 			close_door_at = 0
 
-/obj/machinery/door/react_sleep_violation()
+/obj/machinery/door/om_sleep_violation()
 	var/deadline = next_door_deadline()
 	if(!deadline)
 		return null
@@ -374,12 +373,7 @@
 			to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
 			return ITEM_INTERACT_BLOCKING
 
-		if(use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0,
-				message_self = "You start welding the plasteel into place."))
-			to_chat(user, span_notice("You finish reinforcing \the [src]."))
-			heat_proof = TRUE
-			update_icon()
-			reinforcing = 0
+		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 
 	if(get_integrity() < max_integrity)
@@ -388,13 +382,19 @@
 			return ITEM_INTERACT_BLOCKING
 
 		var/repairtime = max_integrity - get_integrity()
-		if(use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0,
-				message_self = "You start to fix dents and repair \the [src]."))
-			to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
-			repair_damage(max_integrity)
-			atom_fix()
+		use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to fix dents and repair \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 	return NONE
+
+/obj/machinery/door/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You finish reinforcing \the [src]."))
+	heat_proof = TRUE
+	update_icon()
+	reinforcing = 0
+/obj/machinery/door/proc/welder_act_tool_done2(mob/user)
+	to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
+	repair_damage(max_integrity)
+	atom_fix()
 
 /obj/machinery/door/proc/try_to_activate_door(mob/user)
 	add_fingerprint(user)

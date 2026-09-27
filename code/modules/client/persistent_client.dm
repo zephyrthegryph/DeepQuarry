@@ -2,7 +2,6 @@
 ///assoc list of ckey -> /datum/persistent_client
 GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 /// A flat list of all persistent clients, for her looping pleasure.
-GLOBAL_LIST_EMPTY_TYPED(persistent_clients, /datum/persistent_client)
 
 /// Tracks information about a client between log in and log outs
 /datum/persistent_client
@@ -39,10 +38,12 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients, /datum/persistent_client)
 	/// World.time this player last died
 	var/time_of_death = 0
 
+REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
+
 /datum/persistent_client/New(ckey)
 	//achievements = new(ckey)
 	GLOB.persistent_clients_by_ckey[ckey] = src
-	GLOB.persistent_clients += src
+	join_registries()
 
 /datum/persistent_client/Destroy(force)
 	SHOULD_CALL_PARENT(FALSE)

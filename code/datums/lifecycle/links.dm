@@ -5,7 +5,7 @@
 //   - REF_OWNED / REF_OWNED_LIST   a child that isn't contained, deleted in phase 4
 //   - REF_PAIR                 two-sided; link_set()/link_clear() keep both sides in sync
 //   - REF_BACKLIST             membership in another object's list, removed automatically
-//   - weak (datum/weakref)     the default for everything else -- resolved on read, never cleaned
+//   - handle (om_handle())     the default for everything else -- resolved on read, never cleaned
 //   - tmp cache                recomputable; scrubbed in phase 8
 //
 // A type declares its kinds by overriding one or more of the four procs
@@ -45,6 +45,14 @@
 /// of) -> that object's list var name. Phase 4 removes `src` from
 /// `owner.vars[list_var]` for each declared entry whose owner var is set.
 /datum/proc/declared_backlist_vars()
+	return null
+
+/// Assoc: our cache var name -> its invalidation rule, CACHE_ON_CHANGE(bits),
+/// CACHE_ON_EVENT(path) or CACHE_ON_RELATION(path) (code/__DEFINES/om.dm). A
+/// cache may hold object references; the object-model core nulls it when the
+/// rule fires (om_cache_scan(), entity.dm), and tools/ci/declared_refs_lint.py
+/// rejects an entry with no rule.
+/datum/proc/declared_cache_vars()
 	return null
 
 /// `D`'s declared_*_vars() results, cached per type on first use (see file

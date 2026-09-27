@@ -45,8 +45,7 @@
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
 		H.status_at_least(EFFECT_BLINDED, 5)
 		H.status_adjust(EFFECT_BLURRY, 10)
-		spawn(1)
-			if(istype(loc, /turf/)) qdel(src)
+		om_after(src, 1, PROC_REF(scatter_if_dropped))
 
 
 /obj/item/ore/phoron
@@ -92,8 +91,7 @@
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
 		H.status_at_least(EFFECT_BLINDED, 10)
 		H.status_adjust(EFFECT_BLURRY, 15)
-		spawn(1)
-			if(istype(loc, /turf/)) qdel(src)
+		om_after(src, 1, PROC_REF(scatter_if_dropped))
 
 /obj/item/ore/lead
 	name = "lead glance"
@@ -227,3 +225,8 @@
 			has_ore = 1
 	if(!has_ore)
 		. += "Nothing. You should contact a developer."
+
+/// Sand thrown in someone's eyes is gone once it lands.
+/obj/item/ore/proc/scatter_if_dropped()
+	if(isturf(loc))
+		qdel(src)

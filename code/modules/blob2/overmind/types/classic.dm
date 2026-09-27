@@ -19,13 +19,12 @@
 	T.visible_message(span_alium("\The [B] shudders at \the [user]'s touch, before disgorging a disgusting ooze."))
 
 	for(var/turf/simulated/floor/F in view(2, T))
-		spawn()
-			var/obj/effect/effect/water/splash = new(T)
-			splash.create_reagents(15)
-			splash.reagents.add_reagent(REAGENT_ID_BLOOD, 10,list("blood_colour" = color))
-			splash.set_color()
+		var/obj/effect/effect/water/splash = new(T)
+		splash.create_reagents(15)
+		splash.reagents.add_reagent(REAGENT_ID_BLOOD, 10,list("blood_colour" = color))
+		splash.set_color()
 
-			splash.set_up(F, 2, 3)
+		splash.set_up(F, 2, 3)
 
 		var/obj/effect/decal/cleanable/chemcoating/blood = locate() in T
 		if(!istype(blood))

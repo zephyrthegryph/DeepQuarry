@@ -15,7 +15,7 @@
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
 	///The entity we currently have captured.
-	var/datum/weakref/captured_entity
+	var/captured_entity
 	var/obj/item/radio/intercom/science/ghost_reporter
 
 /obj/item/ghost_trap/Initialize(mapload)
@@ -23,7 +23,6 @@
 	if(deployed)
 		update_icon()
 	ghost_reporter = new(null)
-	START_PROCESSING(SSobj, src)
 
 	var/static/list/ghost_signals = list(
 		COMSIG_GLOB_GHOST_CAPTURED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_spectral_experiment),
@@ -37,8 +36,7 @@
 		experiment_signals = ghost_signals)
 
 /obj/item/ghost_trap/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	var/mob/our_entity = captured_entity?.resolve()
+	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
@@ -61,7 +59,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src))
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
@@ -80,7 +78,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity)
 			icon_state = "item_captured"
 			return
@@ -93,9 +91,12 @@
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
-/obj/item/ghost_trap/process()
+/// Watches its catch every 2 s while it holds one (catch_ghost() starts it); empty, it sleeps.
+/obj/item/ghost_trap/periodic_step()
+	if(!captured_entity)
+		return PROCESS_KILL
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && our_entity.loc != src)
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
@@ -116,7 +117,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity)
 			to_chat(user, "You are unable to use \the [src]! It beeps that it an entity contained inside!")
 			return
@@ -127,31 +128,34 @@
 			span_danger("You begin deploying \the [src]!")
 			)
 
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has deployed \the [src]."),
-				span_danger("You have deployed \the [src]!")
-				)
-			playsound(src, 'sound/machines/click.ogg', 70, 1)
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 
-			deployed = TRUE
-			user.drop_from_inventory(src)
-			update_icon()
-			anchored = TRUE
-			log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
+/obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
+	user.visible_message(
+		span_danger("[user] has deployed \the [src]."),
+		span_danger("You have deployed \the [src]!")
+		)
+	playsound(src, 'sound/machines/click.ogg', 70, 1)
+
+	deployed = TRUE
+	user.drop_from_inventory(src)
+	update_icon()
+	anchored = TRUE
+	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
 /obj/item/ghost_trap/container_resist(mob/living/escapee)
 	if(!ismob(escapee))
 		return
 	visible_message(span_danger("Lights flicker and buzzers beep from \the [src], alerting that a containment breach is imminent!"))
-	if(do_after(escapee, 2 MINUTES, target = src)) //Escape!
-		REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
-		captured_entity = null
-		escapee.forceMove(get_turf(src))
-		announce_escape(escapee)
-		visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
-		update_icon()
+	om_do_after(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
 
+/obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
+	REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
+	captured_entity = null
+	escapee.forceMove(get_turf(src))
+	announce_escape(escapee)
+	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
+	update_icon()
 
 /obj/item/ghost_trap/attack_hand(mob/user)
 	if(has_buckled_mobs() && can_use(user))
@@ -159,12 +163,7 @@
 			span_notice("[user] begins freeing something from \the [src]."),
 			span_notice("You carefully begin to free something from \the [src]."),
 			)
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
-			for(var/A in BUCKLED_MOBS(src))
-				unbuckle_mob(A)
-			anchored = FALSE
-			deployed = FALSE
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	else if(deployed && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to deactivate \the [src]."),
@@ -172,21 +171,30 @@
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has deactivated \the [src]."),
-				span_notice("You have deactivated \the [src]!")
-				)
-			deployed = FALSE
-			anchored = FALSE
-			update_icon()
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		..()
+
+/obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
+	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
+	for(var/A in BUCKLED_MOBS(src))
+		unbuckle_mob(A)
+	anchored = FALSE
+	deployed = FALSE
+/obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
+	user.visible_message(
+		span_danger("[user] has deactivated \the [src]."),
+		span_notice("You have deactivated \the [src]!")
+		)
+	deployed = FALSE
+	anchored = FALSE
+	update_icon()
 
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
 		return
-	captured_entity = WEAKREF(passing_entity)
+	captured_entity = om_handle(passing_entity)
+	PERIODIC_START(src, PERIODIC_SLOW) // watches for an escape while it holds something
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity
@@ -250,7 +258,7 @@
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
+		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null

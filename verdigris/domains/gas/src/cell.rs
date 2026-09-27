@@ -89,6 +89,9 @@ pub const SETTLED_KELVIN: f32 = 0.5;
 pub const REVISION_KPA: f32 = 0.5;
 pub const REVISION_KELVIN: f32 = 0.5;
 pub const REVISION_MOLES: f32 = 0.05;
+/// Planet cells relax this fraction of the way back to their baseline each
+/// frame.
+const PLANET_RELAX: f32 = 0.25;
 /// Pressure differences below this (kPa) do not add bulk flow to the
 /// stiffness (they still flow).
 const STIFF_PRESSURE: f32 = 1.0;
@@ -131,6 +134,10 @@ pub struct GasCell {
 	pub planet: u8,
 	/// Visible-gas signature (a changed signature is a `VisualChange`).
 	pub vis: u16,
+	/// `vis` as of the last emitted `GasEvent::CellVisualChange`
+	/// (`laws::CellVisualChangeLaw`'s own edge-detection state, since a law
+	/// only sees the current step's value, not the previous one).
+	pub last_vis: u16,
 	/// The dense registry index of the highest-priority reaction the last
 	/// `local` step found ready ([`NO_REACTION`]: none). Set by
 	/// `TurfGas::local`, read by the world to emit
@@ -151,6 +158,7 @@ impl Default for GasCell {
 			flags: 0,
 			planet: 0,
 			vis: 0,
+			last_vis: 0,
 			ready: NO_REACTION,
 		}
 	}
@@ -173,6 +181,21 @@ pub fn temperature_of(moles: &[f32; N], energy: f32, fallback: f32) -> f32 {
 		(energy / c).max(TCMB)
 	} else {
 		fallback
+	}
+}
+
+impl vg_core::thermo::Thermal for GasCell {
+	fn thermal(&self, _volume: f32) -> (f32, f32) {
+		(self.temperature_now(), self.heat_capacity())
+	}
+
+	/// Never cools below TCMB; marks the cell touched like a DM write.
+	fn add_heat(&mut self, joules: f32, volume: f32) {
+		if self.is_immutable() {
+			return;
+		}
+		self.energy = (self.energy + joules).max(self.heat_capacity() * TCMB);
+		self.refresh_in(volume);
 	}
 }
 
@@ -355,7 +378,10 @@ impl FieldKind for TurfGas {
 	fn flux(a: Side<'_, GasCell>, b: Side<'_, GasCell>, dt: f32) -> Amounts<Q> {
 		let (xa, xb) = (a.cell.amounts(), b.cell.amounts());
 		let (op_a, op_b) = (operand(&a, &xa), operand(&b, &xb));
-		let (pa, pb) = (a.cell.pressure_in(a.capacity), b.cell.pressure_in(b.capacity));
+		let (pa, pb) = (
+			a.cell.pressure_in(a.capacity),
+			b.cell.pressure_in(b.capacity),
+		);
 		let bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
 		let diffusion = kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt);
 		bulk + diffusion
@@ -383,8 +409,12 @@ impl FieldKind for TurfGas {
 	}
 
 	fn stiffness(a: Side<'_, GasCell>, b: Side<'_, GasCell>) -> f32 {
-		let diff_rate = kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity);
-		let (pa, pb) = (a.cell.pressure_in(a.capacity), b.cell.pressure_in(b.capacity));
+		let diff_rate =
+			kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity);
+		let (pa, pb) = (
+			a.cell.pressure_in(a.capacity),
+			b.cell.pressure_in(b.capacity),
+		);
 		if (pa - pb).abs() > STIFF_PRESSURE {
 			diff_rate + kernel::pressure_stiffness(BULK_CONDUCTANCE, dp_dn(&a, pa), dp_dn(&b, pb))
 		} else {
@@ -395,6 +425,32 @@ impl FieldKind for TurfGas {
 	fn local(cell: &mut GasCell, _capacity: f32, _dt: f32) -> bool {
 		cell.ready = crate::gate::ready(cell).map_or(NO_REACTION, |i| i as u32);
 		false
+	}
+
+	/// A planet cell relaxes [`PLANET_RELAX`] of the way back to its
+	/// planet's baseline (`crate::planet`) each frame, until within the
+	/// settling bands.
+	fn relax(cell: &mut GasCell, capacity: f32, _dt: f32) -> bool {
+		let Some(base) = crate::planet::baseline(cell.planet) else {
+			return false;
+		};
+		let mut settled = true;
+		for (m, b) in cell.moles.iter_mut().zip(base.moles) {
+			*m += (b - *m) * PLANET_RELAX;
+			if (*m - b).abs() > GAS_MIN_MOLES * 10.0 {
+				settled = false;
+			} else {
+				*m = b;
+			}
+		}
+		cell.energy += (base.energy - cell.energy) * PLANET_RELAX;
+		if (cell.energy - base.energy).abs() > 1.0 {
+			settled = false;
+		} else {
+			cell.energy = base.energy;
+		}
+		cell.refresh_in(capacity.max(1.0));
+		!settled
 	}
 
 	fn quiet(before: &GasCell, after: &GasCell) -> bool {
@@ -428,7 +484,9 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	OXYGEN: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_OXYGEN],
 	PLASMA: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_PLASMA],
 	CARBON_DIOXIDE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
+	COMPOSITION: Vector(22)<Moles> hysteresis 0.05 => |c, o| o.copy_from_slice(&c.moles),
 }}
+const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 
 /// Visible-gas signature: which gases are visible and at which step. The
 /// thresholds are registry data (`gate.rs`); a zero signature is "nothing

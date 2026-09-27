@@ -118,8 +118,8 @@ The 4 queries you can do are:
 
 "IN" (or "FROM", that works too but it's kinda weird to read),
 is the list of objects to work on. This defaults to world if not provided.
-But doing something like "IN GLOB.living_mob_list" is quite handy and can optimize your query.
-All names inside the IN block are global scope, so you can do GLOB.living_mob_list (a global var) easily.
+But doing something like "IN REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)" is quite handy and can optimize your query.
+All names inside the IN block are global scope, so you can do REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS) (a global var) easily.
 You can also run it on a single object. Because SDQL is that convenient even for single operations.
 
 <type> filters out objects of, well, that type easily. "*" is a wildcard and just takes everything in
@@ -129,7 +129,7 @@ And then there's the MAP/WHERE chain.
 These operate on each individual object being ran through the query.
 They're both expressions like IN, but unlike it the expression is scoped *on the object*.
 So if you do "WHERE z == 4", this does "src.z", effectively.
-If you want to access global variables, you can do `GLOB.living_mob_list`.
+If you want to access global variables, you can do `REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)`.
 Same goes for procs.
 
 MAP "changes" the object into the result of the expression.
@@ -264,7 +264,7 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 		span_admin("SDQL query completed: [objs_all] objects selected by path, and [selectors_used ? objs_eligible : objs_all] objects executed on after WHERE filtering/MAPping if applicable."),\
 		span_admin("SDQL combined querys took [DisplayTimeText(end_time_total)] to complete.")) + combined_refs
 
-GLOBAL_LIST_INIT(sdql2_queries, GLOB.sdql2_queries || list())
+REGISTRY_MEMBERSHIP(/datum/SDQL2_query, REGISTRY_SDQL2_QUERIES)
 GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null, "VIEW VARIABLES (all)", null))
 
 /datum/SDQL2_query
@@ -299,7 +299,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	var/obj/effect/statclick/SDQL2_action/action_click
 
 /datum/SDQL2_query/New(list/tree, SU = FALSE, admin_interact = TRUE, _options = SDQL2_OPTIONS_DEFAULT, finished_qdel = FALSE)
-	LAZYADD(GLOB.sdql2_queries, src)
+	join_registries()
 	superuser = SU
 	allow_admin_interact = admin_interact
 	query_tree = tree
@@ -315,7 +315,6 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	obj_count_finished = null
 	select_text = null
 	select_refs = null
-	GLOB.sdql2_queries -= src
 	return ..()
 
 /datum/SDQL2_query/proc/get_query_text()
@@ -1120,7 +1119,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	name = "VIEW VARIABLES"
 
 /obj/effect/statclick/SDQL2_VV_all/Click()
-	usr.client.debug_variables(GLOB.sdql2_queries)
+	usr.client.debug_variables(REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
 
 #undef SDQL_qdel_datum
 

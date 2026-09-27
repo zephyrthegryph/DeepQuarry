@@ -12,10 +12,12 @@
 		return
 	if(!updating)
 		updating = 1
-		spawn(BORG_CAMERA_BUFFER)
-			if(old_loc != src.loc)
-				GLOB.cameranet.updatePortableCamera(src.camera)
-			updating = 0
+		om_after(src, BORG_CAMERA_BUFFER, PROC_REF(camera_moved_settle), old_loc)
+
+/mob/living/silicon/robot/proc/camera_moved_settle(atom/old_loc)
+	updating = 0
+	if(old_loc != loc)
+		GLOB.cameranet.updatePortableCamera(camera)
 
 /mob/living/silicon/ai/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -23,11 +25,13 @@
 		return
 	if(!updating)
 		updating = 1
-		spawn(BORG_CAMERA_BUFFER)
-			if(old_loc != src.loc)
-				GLOB.cameranet.updateVisibility(old_loc, 0)
-				GLOB.cameranet.updateVisibility(loc, 0)
-			updating = 0
+		om_after(src, BORG_CAMERA_BUFFER, PROC_REF(camera_moved_settle), old_loc)
+
+/mob/living/silicon/ai/proc/camera_moved_settle(atom/old_loc)
+	updating = 0
+	if(old_loc != loc)
+		GLOB.cameranet.updateVisibility(old_loc, 0)
+		GLOB.cameranet.updateVisibility(loc, 0)
 
 #undef BORG_CAMERA_BUFFER
 

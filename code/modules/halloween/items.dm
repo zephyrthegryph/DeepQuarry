@@ -48,7 +48,6 @@
 	icon = 'icons/obj/halloween/bowls.dmi'
 	icon_state = "fullcandy"
 
-	var/searching = FALSE
 	var/has_candy = TRUE
 
 	var/list/candy = list(
@@ -82,23 +81,21 @@
 
 /obj/structure/candybowl/attack_hand(mob/user)
 
-	var/thegoods
 
 	if(!has_candy)
 		to_chat(user, span_warning("There is no candy! Someone took too many..."))
 		return
 
-	if(searching)
+	if(om_busy(src))
 		to_chat(user, span_warning("Someone is already looking through \the [src]!"))
 		return
 
-	searching = TRUE
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 
-	if(!do_after(user, 5 SECONDS, src))
-		searching = FALSE
+/obj/structure/candybowl/proc/search_done(mob/user)
+	var/thegoods
+	if(!has_candy)
 		return
-
-	searching = FALSE
 
 	if(LAZYACCESS(treated, user.ckey))
 		var/choice = tgui_alert(user, "You already took one! Take more?", "Take another...", list("Reach in...", "Leave it!"))
@@ -135,7 +132,6 @@
 	desc = "An empty bowl! Someone took too many candies..."
 	icon_state = "nocandy"
 	has_candy = FALSE
-	searching = FALSE
 
 	update_icon()
 
@@ -220,8 +216,9 @@
 	costumes = typesof(/obj/item/storage/box/halloween/)
 
 /obj/structure/boxpile/attack_hand(mob/living/user)
-	if(!do_after(user, 5 SECONDS, src))
-		return
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
+
+/obj/structure/boxpile/proc/rummage_done(mob/living/user)
 	if(!user.ckey)
 		return
 	if(LAZYACCESS(ckeys_that_took, user.ckey))

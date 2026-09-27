@@ -314,19 +314,7 @@
 	return
 
 /obj/machinery/computer/security/proc/close(mob/user)
-	spawn(20)
-		var/using = null
-		if(user.mapobjs)
-			for(var/obj/machinery/computer/security/seccomp in oview(1,user))
-				if(seccomp == src)
-					using = 1
-					break
-			if(using)
-				close(user)
-			else
-				user.clearmap()
-
-		return
+	om_after(src, 2 SECONDS, PROC_REF(close_check), user)
 
 /proc/getr(col)
 	return hex2num(copytext(col, 2,4))
@@ -343,3 +331,17 @@
 		qdel(O)
 
 	mapobjs = null
+
+/obj/machinery/computer/security/proc/close_check(mob/user)
+	var/using = null
+	if(user.mapobjs)
+		for(var/obj/machinery/computer/security/seccomp in oview(1,user))
+			if(seccomp == src)
+				using = 1
+				break
+		if(using)
+			close(user)
+		else
+			user.clearmap()
+
+	return

@@ -74,7 +74,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/Destroy()
 	QDEL_NULL(air_contents)
 
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(src.proxyassembly)
 
 	if(istype(loc, /obj/item/transfer_valve))
@@ -85,7 +84,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank/material_environment_begin_leak()
 	leaking = TRUE
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/item/tank/material_environment_repaired()
@@ -101,7 +100,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	// explosion strength. Drive it by state instead of bypassing it with qdel.
 	update_integrity(0)
 	leaking = TRUE
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	check_status()
 
 /obj/item/tank/equipped() // Note that even grabbing into a hand calls this, so it should be fine as a 'has a player touched this'
@@ -109,7 +108,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	// An attempt at optimization. There are MANY tanks during rounds that will never get touched.
 	// Don't see why any of those would explode spontaneously. So only tanks that players touch get processed.
 	// This could be optimized more, but it's a start!
-	START_PROCESSING(SSobj, src) // This has a built in safety to avoid multi-processing
+	PERIODIC_START(src, PERIODIC_SLOW) // This has a built in safety to avoid multi-processing
 
 /obj/item/tank/examine(mob/user)
 	. = ..()
@@ -159,79 +158,88 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	if(istype(W, /obj/item/assembly_holder))
 		if(wired)
 			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
-			if(do_after(user, 5 SECONDS, target = src))
-				to_chat(user, span_notice("You finish attaching the assembly to \the [src]."))
-				GLOB.bombers += "[key_name(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]"
-				message_admins("[key_name_admin(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]")
-				assemble_bomb(W,user)
-			else
-				to_chat(user, span_notice("You stop attaching the assembly."))
+			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(W, user))
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
+
+/obj/item/tank/proc/attackby_timed_done(obj/item/W, mob/user)
+	to_chat(user, span_notice("You finish attaching the assembly to \the [src]."))
+	GLOB.bombers += "[key_name(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]"
+	message_admins("[key_name_admin(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]")
+	assemble_bomb(W,user)
+
+/obj/item/tank/proc/attackby_timed_failed(obj/item/W, mob/user)
+	to_chat(user, span_notice("You stop attaching the assembly."))
 
 /obj/item/tank/wirecutter_act(mob/user, obj/item/tool)
 	if(wired && src.proxyassembly.assembly)
 
 		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
-		if(do_after(user, 10 SECONDS, target = src))
-			wired = 0
-			cut_overlay("bomb_assembly")
-			to_chat(user, span_notice("You cut the wire and remove the device."))
-
-			var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
-			if(assy.a_left && assy.a_right)
-				assy.dropInto(user.loc)
-				assy.master = null
-				src.proxyassembly.assembly = null
-			else
-				if(!src.proxyassembly.assembly.a_left)
-					assy.a_right.dropInto(user.loc)
-					assy.a_right.holder = null
-					assy.a_right = null
-					src.proxyassembly.assembly = null
-					qdel(assy)
-			cut_overlays()
-			last_gauge_pressure = 0
-			update_gauge()
-
-		else
-			to_chat(user, span_danger("You slip and bump the igniter!"))
-			if(prob(85))
-				src.proxyassembly.receive_signal()
+		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
 
 	else if(wired)
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, span_notice("You quickly clip the wire from the tank."))
-			wired = 0
-			cut_overlay("bomb_assembly")
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
 
 	else
 		to_chat(user, span_notice("There are no wires to cut!"))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/tank/proc/wire_clip_slipped(mob/user)
+	to_chat(user, span_danger("You slip and bump the igniter!"))
+	if(prob(85))
+		src.proxyassembly?.receive_signal()
+
+/obj/item/tank/proc/wirecutter_act_timed_done(mob/user)
+	wired = 0
+	cut_overlay("bomb_assembly")
+	to_chat(user, span_notice("You cut the wire and remove the device."))
+
+	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
+	if(assy.a_left && assy.a_right)
+		assy.dropInto(user.loc)
+		assy.master = null
+		src.proxyassembly.assembly = null
+	else
+		if(!src.proxyassembly.assembly.a_left)
+			assy.a_right.dropInto(user.loc)
+			assy.a_right.holder = null
+			assy.a_right = null
+			src.proxyassembly.assembly = null
+			qdel(assy)
+	cut_overlays()
+	last_gauge_pressure = 0
+	update_gauge()
+/obj/item/tank/proc/wirecutter_act_timed_done2(mob/user)
+	to_chat(user, span_notice("You quickly clip the wire from the tank."))
+	wired = 0
+	cut_overlay("bomb_assembly")
 
 /obj/item/tank/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/WT = tool.get_welder()
 	if(WT?.remove_fuel(1,user))
 		if(!valve_welded)
 			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-			if(do_after(user, 4 SECONDS, target = src))
-				to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
-				src.valve_welded = 1
-				src.leaking = 0
-			else
-				GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
-				message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
-				if(WT.welding)
-					to_chat(user, span_danger("You accidentally rake \the [tool] across \the [src]!"))
-					max_integrity -= rand(20,60)
-					if(get_integrity() > max_integrity)
-						update_integrity(max_integrity)
-					src.air_contents.add_thermal_energy(rand(2000,50000))
+			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user, tool, WT), on_fail = PROC_REF(welder_act_timed_failed), fail_args = list(user, tool, WT))
 			WT.eyecheck(user)
 		else
 			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
 	add_fingerprint(user)
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/tank/proc/welder_act_timed_done(mob/user, obj/item/tool, obj/item/weldingtool/WT)
+	to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
+	src.valve_welded = 1
+	src.leaking = 0
+
+/obj/item/tank/proc/welder_act_timed_failed(mob/user, obj/item/tool, obj/item/weldingtool/WT)
+	GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
+	message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
+	if(WT.welding)
+		to_chat(user, span_danger("You accidentally rake \the [tool] across \the [src]!"))
+		max_integrity -= rand(20,60)
+		if(get_integrity() > max_integrity)
+			update_integrity(max_integrity)
+		src.air_contents.add_thermal_energy(rand(2000,50000))
 
 /obj/item/tank/attack_self(mob/user)
 	. = ..(user)
@@ -365,7 +373,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	return remove_air(moles_needed)
 
-/obj/item/tank/process()
+/obj/item/tank/periodic_step()
 	if(!air_contents)
 		return
 	//Allow for reactions
@@ -566,7 +574,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/atom_destruction(damage_flag)
 	if(damage_flag == FIRE || damage_flag == ACID)
 		return ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /////////////////////////////////
 ///Prewelded tanks
@@ -706,10 +714,10 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		tank.update_icon()
 		tank.cut_overlay("bomb_assembly")
 
-/obj/item/tankassemblyproxy/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/obj/item/tankassemblyproxy/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

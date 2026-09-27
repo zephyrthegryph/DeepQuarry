@@ -12,7 +12,7 @@
 	max_integrity = 200 //The shield can only take so much beating (prevents perma-prisons)
 	var/shield_generate_power = 7500	//how much power we use when regenerating
 	var/shield_idle_power = 1500		//how much power we use when just being sustained.
-	var/datum/weakref/our_owner
+	var/our_owner
 
 /obj/machinery/shield/malfai
 	name = "emergency forcefield"
@@ -22,7 +22,7 @@
 	. = ..()
 	update_integrity(max_integrity/2) // Half health, it's not suposed to resist much.
 
-/obj/machinery/shield/malfai/process()
+/obj/machinery/shield/malfai/machine_step()
 	take_damage(0.5, sound_effect = FALSE) // Slowly lose integrity over time
 
 // A depleted shield dissipates.
@@ -40,7 +40,7 @@
 	opacity = 0
 	density = FALSE
 	update_nearby_tiles()
-	var/obj/machinery/shieldgen/SG = our_owner?.resolve()
+	var/obj/machinery/shieldgen/SG = om_resolve(our_owner)
 	if(SG)
 		LAZYREMOVE(SG.deployed_shields, src)
 	our_owner = null
@@ -69,13 +69,13 @@
 		receive_weapon_hit(W, user)
 
 	set_opacity(1)
-	spawn(20) if(!QDELETED(src)) set_opacity(0)
+	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 	return FALSE
 
 /obj/machinery/shield/bullet_act(obj/item/projectile/Proj)
 	..()
 	set_opacity(1)
-	spawn(20) if(!QDELETED(src)) set_opacity(0)
+	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 
 /obj/machinery/shield/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	//Let everyone know we've been hit!
@@ -86,7 +86,7 @@
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
 	set_opacity(1)
-	spawn(20) if(!QDELETED(src)) set_opacity(0)
+	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 
 	..()
 
@@ -144,7 +144,7 @@
 	if(active) return 0 //If it's already turned on, how did this get called?
 
 	active = TRUE
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_icon()
 
 	create_shields()
@@ -157,7 +157,7 @@
 	if(!active) return 0 //If it's already off, how did this get called?
 
 	active = FALSE
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 	update_icon()
 
 	collapse_shields()
@@ -168,14 +168,14 @@
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
 				LAZYADD(deployed_shields, S)
-				S.our_owner = WEAKREF(src) //So it knows to remove itself from our list when it gets qdel'd
+				S.our_owner = om_handle(src) //So it knows to remove itself from our list when it gets qdel'd
 				use_power(S.shield_generate_power)
 
 /obj/machinery/shieldgen/proc/collapse_shields()
 	for(var/obj/machinery/shield/shield_tile in deployed_shields)
 		qdel(shield_tile)
 
-/obj/machinery/shieldgen/process()
+/obj/machinery/shieldgen/machine_step()
 	if(!active)
 		return PROCESS_KILL
 
@@ -284,13 +284,15 @@
 
 /obj/machinery/shieldgen/proc/interaction_repair(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
 	to_chat(user, span_notice("You begin to replace the wires."))
-	if(do_after(user, 3 SECONDS, target = src))
-		if (coil.use(1))
-			repair_damage(max_integrity)
-			malfunction = 0
-			to_chat(user, span_notice("You repair the [src]!"))
-			update_icon()
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(rewire_done), list(user, coil))
 	return TRUE
+
+/obj/machinery/shieldgen/proc/rewire_done(mob/user, obj/item/stack/cable_coil/coil)
+	if (coil.use(1))
+		repair_damage(max_integrity)
+		malfunction = 0
+		to_chat(user, span_notice("You repair the [src]!"))
+		update_icon()
 
 /datum/interaction/machine_item/shieldgen_toggle_lock
 	id = "shieldgen_toggle_lock"
@@ -365,3 +367,8 @@
 	else
 		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"
 	return
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shieldgen/step_start_condition()
+	return active

@@ -37,7 +37,7 @@ Every framework type lives under `/datum/om/`, because `/datum/event` and
 `/datum/effect` already exist (random events, xenoarchaeology). Procs start
 with `om_`, except the dt helpers (`approach`, `decay`, `chance_over`,
 `move_toward`, `clamp01`), the combinators (`ALL_OF`, `ANY_OF`, `NOT_OF`,
-`SUM_OF`, `CHECK`), `scheduler_advance` and `AWAIT`. `ALL` was already a
+`SUM_OF`, `CHECK`) and `scheduler_advance`. `ALL` was already a
 define, hence `ALL_OF`.
 
 | Concept | Path |
@@ -260,15 +260,15 @@ the entity's run order sees changes raised earlier in the same run.
 A bucketed wheel of `(rec, behaviour id, generation, due)` entries, one
 decisecond per bucket, 1024 buckets. No datum per timer, no signal, no FFI.
 
-- `om_after(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
+- `om_deadline(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
   deciseconds. One deadline per (entity, behaviour, sub-key); calling again
   replaces it. `om_cancel_after(E, B, sub)`, `om_cancel_all_after(E, B)`,
   `om_deadline_pending(E, B, sub)`. The key is `bid + sub * OM_DL_SUB`, so firing
   one decodes it with no search: sub 0 is `on_deadline`, `OM_DL_THROTTLE` a
   `min_interval` wake, `OM_DL_STAGE + n` a pipeline stage's rewake
   (`on_keyed_deadline`).
-- `om_after(E, delay, proc, args...)` (a proc, not a behaviour, as the third argument)
-  is the one-shot call of §4.11, on the same wheel (`timer.dm`).
+- `om_after(E, delay, proc, args...)` is the one-shot call of §4.11, built on
+  `om_deadline` (`timer.dm`).
 - A stale generation or a torn-down entity is skipped when its bucket comes
   round. An entry further out than one wheel turn stays in its bucket until due.
 - Clocked behaviours store the target in local time and re-check at fire. A
@@ -394,6 +394,32 @@ pipeline in `om_diagnostics()`: frames, parks, unparks, missed wakes.
 Cost: one ring dispatch per entity, one bit test per stage, one proc call per awake stage
 plus its `idle()` check. Parked entities cost nothing.
 
+**Periodic lanes and machine steps** (roadmap S3-S5; no processing subsystem is left). A
+datum with periodic work defines `periodic_step(delta)` and is started on a lane with
+`PERIODIC_START(E, lane)` by whatever gives it work; `PROCESS_KILL` or `PERIODIC_STOP(E)` ends
+it and it parks (`code/datums/om/periodic.dm`). The lanes are pipelines on the core runner:
+`PERIODIC_SLOW` (2 s), `PERIODIC_SECOND`, `PERIODIC_FAST` (0.2 s), `PERIODIC_PLANTS` (7.5 s),
+plus declared continuous lanes, each with a `continuous_why` (projectiles, instruments, priority
+status effects, stat tab items). Work that only matters near mobs ends its step with
+`return sleep_until_mob_near(radius)` and wakes on the mob chunks around it.
+
+Machines never start by default. Joining the machine pipeline runs nothing: every stage starts
+idle and the machine parks. Once the world is up, `materialize_wakes()` arms its watches
+(`arm_wakes()`) and wakes it only if its declared `step_start_condition()` holds. After that a
+machine runs only when a declared wake fires: `MACHINE_WAKE(M)` from its own producers, a power
+or break change (`sleep_until_powered()`, `step_on_power_change`), an interaction or UI act
+(`interaction_ran()`), a watch, or a timer. `PROCESS_KILL` or `MACHINE_SLEEP(M)` ends its step
+work. `tools/ci/pollers_lint.py` ratchets `process()` definitions and `START_*PROCESSING` calls.
+
+**Timers and published facts.** A sleeper's timer is `om_after(E, delay, proc)` (§4.11). A
+published fact is a change channel on the entity it belongs to (`CHANGE_AREA_POWER` on an area,
+`CHANGE_POWERNET_*` on a powernet, `CHANGE_MACHINE_MODE`/`SETTINGS` on a machine,
+`CHANGE_METEORS` on `GLOB.meteor_watch`, `CHANGE_CHUNK_*` on a `/datum/mob_chunk`); whatever
+waits on it `om_watch()`es those channels with its own behaviour, usually a
+`/datum/om/behaviour/sleeper` subtype whose `on_wake()` does the work. Machines use
+`sleep_until_keys(list(entity, mask, ...))`, which watches with the machine pipeline itself.
+The missed-wake audit samples sleepers and asks each `om_sleep_violation()`.
+
 ### 4.11 One scheduler: time, sequences and asynchrony
 
 All deferred and multi-step work in gameplay code runs on the OM wheel and is owned by an entity. There is no second scheduler: SStimer, `spawn()`, `do_after` and gameplay `sleep()` go away.
@@ -414,9 +440,8 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
 
 **What stays.**
-- `sleep` and `waitfor = FALSE` remain in the MC, in world/Topic and client procs, in admin and debug verbs, and in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL). Those sit behind their own async wrappers with callbacks.
+- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. `waitfor = FALSE` remains in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL), behind async wrappers with callbacks. Admin prompt waits (tgui_input/alert) stay until S10.
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
-- `AWAIT(task, timeout)` stays only while legacy procs are converted.
 
 **Weak capture.** Object arguments to `om_after` and to tasks are held as OM handles, never as references. When the timer fires, or a task step runs, each handle is resolved first: if any argument has been deleted, the call is dropped (a timer) or fails with the reason `"gone"` (a task). A deferred call can't keep a deleted object alive or run against one.
 
@@ -632,8 +657,14 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   requires fail (re-checked on their channels on actor or target), when an
   `interrupted_by` event reaches the actor, or when either end is deleted.
   `on_complete` / `on_cancel` run once. Nothing polls.
-- `AWAIT(task, timeout)` is for legacy procs that must sleep; the timeout is
-  mandatory and a missing one is an error.
+- **Busy is a claim, not a flag.** A task can also claim what does the work: its actor
+  (`claims_actor`), or a tool, bot or machine (`om_task_claim()`, `om_do_after(..., busy = X)`,
+  `use_tool(..., busy = X)`), on the `busy` relation so a busy worker can still be someone's
+  target. `om_busy(X)` is the query (a running task claims X, as worker or exclusive target);
+  `om_in_use(X)` asks only about target claims. The claim is released on complete, cancel or
+  delete. An ability whose continuation is a timer holds its worker with `om_hold_busy(X, d,
+  on_end)` (a claiming task done at its deadline; `om_release_busy()` ends it early). There
+  are no `busy`/`in_use` vars guarding timed actions.
 - `om_ui_bind(session, target, mask)` is a watch that holds the target at
   `WATCHED`. Changes coalesce into one `session.om_ui_push()` per run, and at
   most one per 0.2 s per session (the rest arrive by deadline). `/datum/tgui`
@@ -652,7 +683,7 @@ Each has a regression test in `dq_om_core_tests.dm`.
 | An odd return value killing a behaviour | return values are ignored |
 | A runtime killing a behaviour or its ring | hooks are caught per slot; the loop resumes at the next entity |
 | Null holder in relation hooks | hooks get both ends as arguments, before `Destroy()` |
-| Waits without timeouts | `AWAIT` needs one; tasks end by deadline |
+| Waits without timeouts | nothing sleeps on a task; tasks end by deadline |
 | Shared mutable per-type config | DEFs are compiled once; per-entity state is on the entity |
 | Subtype events missing handlers | handler tables flatten inheritance |
 | Re-entrant events silently dropped | queued and delivered; veto re-entry is an error |

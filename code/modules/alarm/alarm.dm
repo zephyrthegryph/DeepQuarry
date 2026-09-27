@@ -43,7 +43,8 @@
 	last_camera_area = null
 	return ..()
 
-/datum/alarm/process()
+/// Ages its sources (the handler calls it every 2 s while it is up).
+/datum/alarm/proc/alarm_tick()
 	// Has origin gone missing?
 	if(!origin && !end_time)
 		end_time = world.time + ALARM_RESET_DELAY

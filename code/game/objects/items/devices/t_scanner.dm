@@ -32,15 +32,15 @@
 /obj/item/t_scanner/proc/set_active(active)
 	on = active
 	if(on)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		flicker = 0
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		set_user_client(null)
 	update_icon()
 
 //If reset is set, then assume the client has none of our overlays, otherwise we only send new overlays.
-/obj/item/t_scanner/process()
+/obj/item/t_scanner/periodic_step()
 	if(!on) return
 
 	//handle clients changing

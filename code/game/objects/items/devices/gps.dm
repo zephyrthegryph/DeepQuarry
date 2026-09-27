@@ -56,7 +56,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 	if(holder && tracking)
 		if(!is_in_processing_list)
-			START_PROCESSING(SSobj, src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 			is_in_processing_list = TRUE
 		if(holder.client)
 			if(check_visible_to_holder())
@@ -64,7 +64,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 			else
 				holder.client.screen -= compass
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		is_in_processing_list = FALSE
 		if(holder?.client)
 			holder.client.screen -= compass
@@ -85,7 +85,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	. = ..()
 	update_holder()
 
-/obj/item/gps/process()
+/obj/item/gps/periodic_step()
 	if(!tracking)
 		is_in_processing_list = FALSE
 		return PROCESS_KILL
@@ -94,7 +94,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		update_compass(src, TRUE)
 
 /obj/item/gps/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	is_in_processing_list = FALSE
 	update_holder()
 	QDEL_NULL(compass)
@@ -155,11 +154,11 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	if(tracking)
 		if(!is_in_processing_list)
 			is_in_processing_list = TRUE
-			START_PROCESSING(SSobj, src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 			update_compass(src, TRUE)
 	else
 		is_in_processing_list = FALSE
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		update_compass(src)
 	update_holder()
 	update_icon()
@@ -173,10 +172,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	emped = TRUE
 	update_icon()
 
-	spawn(duration)
-		emped = FALSE
-		update_icon()
-		visible_message("\The [src] appears to be functional again.")
+	om_after(src, duration, PROC_REF(emp_recovered))
 
 /obj/item/gps/update_icon()
 	cut_overlays()
@@ -455,3 +451,8 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	hide_signal = TRUE
 	can_hide_signal = TRUE
 	theme = "syndicate"
+
+/obj/item/gps/proc/emp_recovered()
+	emped = FALSE
+	update_icon()
+	visible_message("\The [src] appears to be functional again.")

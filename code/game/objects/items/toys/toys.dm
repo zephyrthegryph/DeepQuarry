@@ -76,9 +76,7 @@
 		for(var/atom/A in get_turf(hit_atom))
 			src.reagents.touch(A)
 		src.icon_state = "burst"
-		spawn(5)
-			if(src)
-				qdel(src)
+		om_qdel_after(src, 5)
 	return
 
 /obj/item/toy/balloon/update_icon()
@@ -701,7 +699,6 @@
 	anchored = FALSE
 	density = TRUE
 	var/phrase = "I don't want to exist anymore!"
-	var/searching = FALSE
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 
@@ -715,16 +712,8 @@
 /obj/structure/plushie/attack_hand(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
-	if(stored_item && opened && !searching)
-		searching = TRUE
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
-			stored_item.forceMove(get_turf(src))
-			stored_item = null
-			searching = FALSE
-			return
-		else
-			searching = FALSE
+	if(stored_item && opened && !om_busy(src))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
@@ -736,6 +725,12 @@
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
+
+/obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
+	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
+	stored_item.forceMove(get_turf(src))
+	stored_item = null
+	return
 
 /obj/structure/plushie/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/threadneedle) && opened)
@@ -800,7 +795,6 @@
 	w_class = ITEMSIZE_TINY
 	var/last_message = 0
 	var/pokephrase = "Uww!"
-	var/searching = FALSE
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 	var/adjusted_name // Our modified name. Used so people don't do funny business with us!
@@ -836,16 +830,8 @@
 		return TRUE
 	if(special_handling)
 		return
-	if(stored_item && opened && !searching)
-		searching = TRUE
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
-			stored_item.forceMove(get_turf(src))
-			stored_item = null
-			searching = FALSE
-			return
-		else
-			searching = FALSE
+	if(stored_item && opened && !om_busy(src))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
 
 	if(world.time - last_message <= 1 SECOND)
 		return
@@ -863,6 +849,12 @@
 	if(pokephrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		say_phrase()
 	last_message = world.time
+
+/obj/item/toy/plushie/proc/attack_self_timed_done(mob/user)
+	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
+	stored_item.forceMove(get_turf(src))
+	stored_item = null
+	return
 
 /obj/item/toy/plushie/proc/say_phrase()
 	//If we don't prevent impersonation, we just speak like normal!
@@ -2089,11 +2081,11 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(cooldown > world.time) //No, I'm not allowing you to spamclick this to do a search over GLOB.player_list
+	if(cooldown > world.time) //No, I'm not allowing you to spamclick this to do a search over REGISTRY_MEMBERS(REGISTRY_PLAYERS)
 		return
 	var/list/players = list()
 
-	for(var/mob/living/carbon/human/player in GLOB.player_list)
+	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!player.mind || SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
 		players += player.real_name
@@ -2156,11 +2148,7 @@
 	if(cooldown < world.time)
 		cooldown = world.time + 1800 //3 minutes
 		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
-		spawn(5) //gia said so
-			icon_state = "nuketoy"
-			playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
-			VARSET_IN(src, icon_state, "nuketoycool", 135)
-			VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
+		om_after(src, 5, PROC_REF(alarm_sequence)) //gia said so
 	else
 		var/timeleft = (cooldown - world.time)
 		to_chat(user, span_warning("Nothing happens, and") + " '[round(timeleft/10)]' " + span_warning("appears on a small display."))
@@ -2202,18 +2190,21 @@
 /obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		if(do_after(user, 1 SECOND, target = src))
-			if(O.loc != user)
-				to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
-			else
-				user.visible_message(span_notice("You feed \the [O] into \the [src]!"),span_notice("[user] feeds \the [O] into \the [src]!"))
-				user.unEquip(O)
-				O.forceMove(src)
-				stored_minature = O
-		else
-			user.visible_message(span_notice("You stop feeding \the [O] into \the [src]."),span_notice("[user] stops feeding \the [O] into \the [src]!"))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(O, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(O, user), claims = TRUE)
 
 	else ..()
+
+/obj/item/toy/minigibber/proc/attackby_timed_done(obj/O, mob/user)
+	if(O.loc != user)
+		to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
+	else
+		user.visible_message(span_notice("You feed \the [O] into \the [src]!"),span_notice("[user] feeds \the [O] into \the [src]!"))
+		user.unEquip(O)
+		O.forceMove(src)
+		stored_minature = O
+
+/obj/item/toy/minigibber/proc/attackby_timed_failed(obj/O, mob/user)
+	user.visible_message(span_notice("You stop feeding \the [O] into \the [src]."),span_notice("[user] stops feeding \the [O] into \the [src]!"))
 
 /*
  * Toy xeno
@@ -2226,6 +2217,15 @@
 	bubble_icon = "alien"
 	var/cooldown = 0
 
+/obj/item/toy/toy_xeno/proc/hiss()
+	atom_say("Hiss!")
+	var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
+	playsound(get_turf(src), pick(possible_sounds), 50, 1)
+	om_after(src, 45, PROC_REF(hiss_rewound))
+
+/obj/item/toy/toy_xeno/proc/hiss_rewound()
+	icon_state = "[initial(icon_state)]"
+
 /obj/item/toy/toy_xeno/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -2234,13 +2234,7 @@
 		cooldown = (world.time + 50) //5 second cooldown
 		user.visible_message(span_notice("[user] pulls back the string on [src]."))
 		icon_state = "[initial(icon_state)]cool"
-		sleep(5)
-		atom_say("Hiss!")
-		var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
-		playsound(get_turf(src), pick(possible_sounds), 50, 1)
-		spawn(45)
-			if(src)
-				icon_state = "[initial(icon_state)]"
+		om_after(src, 5, PROC_REF(hiss))
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
 		return
@@ -2930,3 +2924,9 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+/obj/item/toy/nuke/proc/alarm_sequence()
+	icon_state = "nuketoy"
+	playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
+	VARSET_IN(src, icon_state, "nuketoycool", 135)
+	VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))

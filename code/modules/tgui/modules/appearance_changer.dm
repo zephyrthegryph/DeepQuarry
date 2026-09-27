@@ -86,9 +86,13 @@
 
 /datum/tgui_module/appearance_changer/proc/jiggle_map()
 	// Fix for weird byond bug, jiggles the map around a little
-	sleep(0.1 SECONDS)
-	cam_screen.screen_loc = "[map_name]:1,1"
-	sleep(0.1 SECONDS)
+	om_after(src, 0.1 SECONDS, PROC_REF(jiggle_map_step), 1)
+
+/datum/tgui_module/appearance_changer/proc/jiggle_map_step(step)
+	if(step == 1)
+		cam_screen.screen_loc = "[map_name]:1,1"
+		om_after(src, 0.1 SECONDS, PROC_REF(jiggle_map_step), 2)
+		return
 	cam_screen.screen_loc = "[map_name]:3:-32,3:-48" // Align for larger icons and scales
 
 /datum/tgui_module/appearance_changer/tgui_close(mob/user)
@@ -121,7 +125,7 @@
 	var/datum/tgui_module/appearance_changer/body_designer/BD = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		BD = src
-		DC = BD.linked_body_design_console?.resolve()
+		DC = om_resolve(BD.linked_body_design_console)
 
 	switch(action)
 		if("race")
@@ -749,7 +753,7 @@
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		var/datum/tgui_module/appearance_changer/body_designer/BD = src
-		DC = BD.linked_body_design_console?.resolve()
+		DC = om_resolve(BD.linked_body_design_console)
 	if(DC)
 		data["is_design_console"] = TRUE
 		data["disk"] = !isnull(DC.disk)
@@ -1120,7 +1124,7 @@
 /datum/tgui_module/appearance_changer/body_designer
 	name ="Appearance Editor (Body Designer)"
 	flags = APPEARANCE_ALL
-	var/datum/weakref/linked_body_design_console = null
+	var/linked_body_design_console = null
 
 /datum/tgui_module/appearance_changer/body_designer/tgui_status(mob/user, datum/tgui_state/state)
 	if(!istype(host,/obj/machinery/computer/transhuman/designer))
@@ -1128,7 +1132,7 @@
 	return ..()
 
 /datum/tgui_module/appearance_changer/body_designer/Destroy()
-	var/obj/machinery/computer/transhuman/designer/DC = linked_body_design_console?.resolve()
+	var/obj/machinery/computer/transhuman/designer/DC = om_resolve(linked_body_design_console)
 	if(DC)
 		DC.selected_record = FALSE
 		DC.designer_gui = null // no hardrefs

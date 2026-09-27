@@ -58,7 +58,7 @@
 	if(L.buckle_mob(src, forced = TRUE))
 		victim = L
 		update_icon()
-		if(ai_brain) ai_brain.busy = TRUE // Don't want the AI to interfere with eatting.
+		ai_busy_begin() // Don't want the AI to interfere with eatting.
 		playsound(src, 'sound/metroid/metroidattach.ogg', 50, 1)
 		victim.visible_message(
 			span_danger("\The [src] latches onto \the [victim]!"),
@@ -76,8 +76,7 @@
 		)
 	victim = null
 	update_icon()
-	spawn(30)
-		if(ai_brain) ai_brain.busy = FALSE // Resume normal operations.
+	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
 
 /mob/living/simple_mob/metroid/juvenile/proc/can_consume(mob/living/L)
 	if(!L || !istype(L))

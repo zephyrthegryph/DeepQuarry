@@ -20,7 +20,7 @@ SUBSYSTEM_DEF(solars)
 /datum/controller/subsystem/solars/fire(resumed)
 	if(!resumed)
 		// Get the list of controllers we need to process
-		current_run = GLOB.solars_list.Copy()
+		current_run = REGISTRY_COPY(REGISTRY_SOLAR_CONTROLS)
 		// Clear secondary process lists so they're fresh for the impending run ahead
 		controller_run.Cut()
 		panel_run.Cut()
@@ -35,14 +35,14 @@ SUBSYSTEM_DEF(solars)
 
 		// Controllers with no network are ignored
 		if(!SC.powernet)
-			GLOB.solars_list.Remove(SC)
+			registry_leave(REGISTRY_SOLAR_CONTROLS, SC)
 			if(MC_TICK_CHECK)
 				return
 			continue
 
 		// Update the controller and prepare each of the solar array lists it needs
 		SC.update()
-		controller_run[REF(SC)] = WEAKREF(SC)
+		controller_run[REF(SC)] = om_handle(SC)
 		panel_run[REF(SC)] = SC.get_connected_panels().Copy()
 		panel_sum[REF(SC)] = 0
 
@@ -54,10 +54,10 @@ SUBSYSTEM_DEF(solars)
 	////////////////////////////////////////////////////////////////////////////////
 	while(length(controller_run))
 		var/conkey = controller_run[length(controller_run)]
-		var/datum/weakref/conref= controller_run[conkey]
+		var/conref= controller_run[conkey]
 
 		// Check if the controller still exists
-		var/obj/machinery/power/solar_control/SC = conref?.resolve()
+		var/obj/machinery/power/solar_control/SC = om_resolve(conref)
 		if(!SC)
 			controller_run -= conkey
 			if(MC_TICK_CHECK)

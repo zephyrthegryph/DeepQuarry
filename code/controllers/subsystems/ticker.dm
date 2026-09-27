@@ -101,10 +101,10 @@ SUBSYSTEM_DEF(ticker)
 			if(isnull(timeLeft))
 				timeLeft = max(0,start_at - world.time)
 				to_chat(world, span_notice("Round starting in [round(timeLeft / 10)] Seconds!"))
-			totalPlayers = LAZYLEN(GLOB.new_player_list)
+			totalPlayers = REGISTRY_COUNT(REGISTRY_NEW_PLAYERS)
 			totalPlayersReady = 0
 			total_admins_ready = 0
-			for(var/mob/new_player/player as anything in GLOB.new_player_list)
+			for(var/mob/new_player/player as anything in REGISTRY_MEMBERS(REGISTRY_NEW_PLAYERS))
 				if(player.ready == PLAYER_READY_TO_PLAY)
 					++totalPlayersReady
 					if(player.client?.holder)
@@ -136,13 +136,14 @@ SUBSYSTEM_DEF(ticker)
 				Master.SetRunLevel(RUNLEVEL_LOBBY)
 
 		if(GAME_STATE_PLAYING)
-			mode.process() // So THIS is where we run mode.process() huh? Okay
-
+			// The mode's own periodic work (latespawn, meteor waves) runs on the slow lane,
+			// started when the round starts (setup()).
 			if(mode.explosion_in_progress)
 				return // wait until explosion is done.
 
 			if(force_ending)
 				current_state = GAME_STATE_FINISHED
+				PERIODIC_STOP(mode)
 				declare_completion(force_ending)
 				Master.SetRunLevel(RUNLEVEL_POSTGAME)
 			else
@@ -159,6 +160,7 @@ SUBSYSTEM_DEF(ticker)
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
 					current_state = GAME_STATE_FINISHED
+					PERIODIC_STOP(mode)
 					Master.SetRunLevel(RUNLEVEL_POSTGAME)
 					INVOKE_ASYNC(src, PROC_REF(declare_completion))
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
@@ -212,17 +214,17 @@ SUBSYSTEM_DEF(ticker)
 			qdel(entry)
 
 	// Place empty AI cores once we know who is playing AI
-	for(var/obj/effect/landmark/start/S in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(S.name != JOB_AI)
 			continue
 		if(locate(/mob/living) in S.loc)
 			continue
-		GLOB.empty_playable_ai_cores += new /obj/structure/AIcore/deactivated(get_turf(S))
+		registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(get_turf(S)))
 
 	// Final init, these things need round to start for their info to be ready
 	for(var/obj/item/paper/dockingcodes/dcp as anything in REGISTRY_MEMBERS(REGISTRY_DOCKING_CODE_PAPERS))
 		dcp.populate_info()
-	for(var/obj/machinery/power/solar_control/SC as anything in GLOB.solars_list)
+	for(var/obj/machinery/power/solar_control/SC as anything in REGISTRY_MEMBERS(REGISTRY_SOLAR_CONTROLS))
 		SC.auto_start()
 
 	log_world("Game start took [(world.timeofday - init_start)/10]s")
@@ -232,6 +234,7 @@ SUBSYSTEM_DEF(ticker)
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
 	current_state = GAME_STATE_PLAYING
+	PERIODIC_START(mode, PERIODIC_SLOW)
 	Master.SetRunLevel(RUNLEVEL_GAME)
 
 	//Holiday Round-start stuff	~Carn
@@ -242,7 +245,7 @@ SUBSYSTEM_DEF(ticker)
 	PostSetup()
 #ifdef BENCHMARK
 	benchmark_rust_mark("ticker: setup done")
-	INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(benchmark_mark_seconds), 14)
+	benchmark_mark_seconds(14)
 #endif
 
 	return TRUE
@@ -260,7 +263,7 @@ SUBSYSTEM_DEF(ticker)
 	// TODO START
 
 	// TODO END
-	for(var/obj/effect/landmark/start/S in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		//Deleting Startpoints but we need the ai point to AI-ize people later
 		if (S.name != "AI")
 			qdel(S)
@@ -356,7 +359,7 @@ SUBSYSTEM_DEF(ticker)
 			return
 
 /datum/controller/subsystem/ticker/proc/create_characters()
-	for(var/mob/new_player/player in GLOB.player_list)
+	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player && player.ready && player.mind?.assigned_role)
 			var/datum/job/J = SSjob.get_job(player.mind.assigned_role)
 
@@ -387,14 +390,14 @@ SUBSYSTEM_DEF(ticker)
 		CHECK_TICK
 
 /datum/controller/subsystem/ticker/proc/collect_minds()
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.mind)
 			minds += player.mind
 		CHECK_TICK
 
 /datum/controller/subsystem/ticker/proc/equip_characters()
 	var/captainless=1
-	for(var/mob/living/carbon/human/player in GLOB.player_list)
+	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player && player.mind && player.mind.assigned_role)
 			if(player.mind.assigned_role == JOB_SITE_MANAGER)
 				captainless=0
@@ -413,7 +416,7 @@ SUBSYSTEM_DEF(ticker)
 		// ition End
 		CHECK_TICK
 	if(captainless)
-		for(var/mob/M in GLOB.player_list)
+		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(!isnewplayer(M))
 				to_chat(M, span_notice("Site Management is not forced on anyone."))
 

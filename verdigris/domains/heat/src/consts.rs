@@ -42,8 +42,7 @@ pub const BODYTEMP_NORMAL: f32 = 310.15;
 /// @dm-define HUMAN_HEAT_CAPACITY
 pub const HUMAN_HEAT_CAPACITY: f32 = 280_000.0;
 /// Lowest temperature a fire exists at, and phoron's ignition point, K
-/// (100 °C). The gas crate's `FIRE_MINIMUM_TEMPERATURE_TO_EXIST` and
-/// `PLASMA_MINIMUM_BURN_TEMPERATURE` must equal it (tested there).
+/// (100 °C).
 /// @dm-define FIRE_MINIMUM_TEMPERATURE_TO_EXIST
 pub const IGNITION_TEMPERATURE: f32 = 373.15;
 
@@ -79,36 +78,13 @@ pub const MAX_BACKLOG_FRAMES: f32 = 2.0;
 pub const BODY_SETTLED_K: f32 = 0.05;
 /// A body whose environment has at least this many times its heat capacity
 /// treats the environment as a reservoir and follows the exact relaxation
-/// solution (the environment's own drift is caught by the hysteresis).
+/// solution (`crate::laws`).
 pub const RELAX_CAPACITY_RATIO: f32 = 100.0;
 /// An analytic body re-anchors when its environment moves this far, K.
 pub const RELAX_HYSTERESIS_K: f32 = 0.25;
 /// Longest an analytic body goes without settling its energy into its
 /// environment, s. Bounds how long exchanged energy is held in the model.
 pub const RELAX_MAX_INTERVAL: f32 = 30.0;
-/// Watched levels a body carries for crossing prediction.
-pub const BODY_LEVELS: usize = 8;
-
-/// Body slots.
-pub const MAX_BODIES: u32 = 1 << 16;
-/// Body handle bits for the generation (index is 16 bits; the handle is
-/// `index | generation << 16`, below 2²⁴ so exact as an f32).
-pub const BODY_GENERATION_BITS: u32 = 8;
-
-/// Watch slots the host allocator hands out (`world.rs`'s own generation-
-/// checked handles, mirroring `MAX_BODIES`/[`BODY_GENERATION_BITS`]).
-/// `slot*2 + domain_bit` must fit the low 16 bits alongside an 8-bit
-/// generation so the packed handle stays below 2²⁴ (exact as an f32).
-pub const MAX_WATCHES: u32 = 1 << 15;
-/// Watch handle generation bits. Was 4 (the DM-facing handle packed the
-/// *sim's own* table generation as `index * 16 + generation & 15`), which
-/// aliased a still-live watch's handle with an unrelated one after only 16
-/// reuses of the same sim table slot -- a stale DM handle could then
-/// silently act on the wrong watch. Watches now get their own host-owned
-/// slot/generation allocation (like bodies), so a handle only repeats after
-/// this many *host* slot reuses, each requiring an explicit `unwatch()` in
-/// between.
-pub const WATCH_GENERATION_BITS: u32 = 8;
 
 #[cfg(test)]
 mod tests {

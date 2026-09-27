@@ -390,15 +390,15 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 
 GLOBAL_LIST_EMPTY(cached_examine_icons)
 /proc/set_cached_examine_icon(atom/A, icon/I, expiry = 12000)
-	GLOB.cached_examine_icons[WEAKREF(A)] = I
+	GLOB.cached_examine_icons[om_handle(A)] = I
 	if(expiry)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(uncache_examine_icon), WEAKREF(A)), expiry, TIMER_UNIQUE)
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(uncache_examine_icon), om_handle(A)), expiry, TIMER_UNIQUE)
 
 /proc/get_cached_examine_icon(atom/A)
-	var/datum/weakref/WR = WEAKREF(A)
+	var/WR = om_handle(A)
 	return GLOB.cached_examine_icons[WR]
 
-/proc/uncache_examine_icon(datum/weakref/WR)
+/proc/uncache_examine_icon(WR)
 	GLOB.cached_examine_icons -= WR
 
 /proc/adjust_brightness(color, value)

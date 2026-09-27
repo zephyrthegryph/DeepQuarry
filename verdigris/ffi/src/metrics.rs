@@ -28,6 +28,27 @@ pub fn snapshot_json() -> String {
             .gauge("jobs.pending")
             .set(crate::jobs::registry().pending() as f64);
     }
+    // The world's scheduler (SSreactor's Rust side), sampled like the rest.
+    let _ = crate::world::with_world(|w| {
+        let r = w.sched_metrics();
+        let (received, merged, delivered, deferred, _) = w.sched_lanes();
+        #[allow(clippy::cast_precision_loss)]
+        for (name, v) in [
+            ("reactor.timers_pending", r.timers_pending as f64),
+            ("reactor.timers_fired", r.timers_fired as f64),
+            ("reactor.crossings_fired", r.crossings_fired as f64),
+            ("reactor.publications", r.publications as f64),
+            ("reactor.models", r.models as f64),
+            ("reactor.subscriptions", w.subscriptions(None) as f64),
+            ("reactor.wakes_received", received as f64),
+            ("reactor.wakes_merged", merged as f64),
+            ("reactor.wakes_delivered", delivered as f64),
+            ("reactor.wakes_deferred", deferred as f64),
+        ] {
+            metrics.gauge(name).set(v);
+        }
+        Ok(())
+    });
     metrics.to_json()
 }
 

@@ -15,7 +15,6 @@
 	var/locked = 1
 	var/emagged = 0
 	var/light_strength = 3
-	var/busy = 0
 	var/obj/item/paicard/paicard = null
 	var/obj/access_scanner = null
 	var/list/req_access = list()
@@ -87,8 +86,8 @@
 	self.status_set(EFFECT_STUNNED, 0)
 	self.status_set(EFFECT_PARALYZED, 0)
 
-	if(self.on && !self.client && !self.busy && !self.paicard)
-		spawn(0)
+	if(self.on && !self.client && !om_busy(self) && !self.paicard)
+		spawn(0) // S7 keeps: handleAI() sleeps (bot AI loop; S8 converts it)
 			self.handleAI()
 
 /datum/om/stage/life/type_post/bot
@@ -166,8 +165,10 @@
 	if(!open || !paicard)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You are attempting to remove the pAI."))
-	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
-		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/bot/proc/crowbar_act_bot_done(mob/user)
 	ejectpai(user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -190,6 +191,16 @@
 
 /mob/living/bot/emag_act(remaining_charges, mob/user)
 	return 0
+
+/// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).
+/mob/living/bot/proc/bot_steps(count, delay, step_proc)
+	if(count <= 0)
+		return
+	om_after(src, delay, PROC_REF(bot_step), count, delay, step_proc)
+
+/mob/living/bot/proc/bot_step(count, delay, step_proc)
+	call(src, step_proc)()
+	bot_steps(count - 1, delay, step_proc)
 
 /mob/living/bot/proc/handleAI()
 	if(ignore_list.len)
@@ -215,9 +226,7 @@
 		else
 			handleRangedTarget()
 		if(!wait_if_pulled || !PULLED_BY(src))
-			for(var/i = 1 to (target_speed + panic_speed_mod))
-				sleep(20 / (target_speed + panic_speed_mod + 1))
-				stepToTarget()
+			bot_steps(target_speed + panic_speed_mod, 20 / (target_speed + panic_speed_mod + 1), PROC_REF(stepToTarget))
 		if(max_frustration && frustration > max_frustration * target_speed)
 			handleFrustrated(1)
 	else
@@ -225,9 +234,7 @@
 		lookForTargets()
 		if(will_patrol && !PULLED_BY(src) && !target)
 			if(patrol_path && patrol_path.len)
-				for(var/i = 1 to (patrol_speed + panic_speed_mod))
-					sleep(20 / (patrol_speed + 1))
-					handlePatrol()
+				bot_steps(patrol_speed + panic_speed_mod, 20 / (patrol_speed + 1), PROC_REF(handlePatrol))
 				if(max_frustration && frustration > max_frustration * patrol_speed)
 					handleFrustrated(0)
 			else
@@ -399,9 +406,20 @@
 	update_canmove()
 	return 1
 
+/// The bot works on `A` for `delay` (a timed action): it is busy -- its task claims it -- until
+/// the work ends, then `on_done`(done_args...) runs and the icon refreshes (also on failure).
+/// Returns the task, or a reason it didn't start.
+/mob/living/bot/proc/bot_work(delay, atom/A, on_done, list/done_args, timed_action_flags = NONE)
+	. = om_do_after(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
+	update_icons()
+
+/mob/living/bot/proc/bot_work_done(on_done, ...)
+	call(src, on_done)(arglist(args.Copy(2)))
+	update_icons()
+
 /mob/living/bot/proc/turn_off()
 	on = 0
-	busy = 0 // If ever stuck... reboot!
+	om_release_busy(src, "turned off") // If ever stuck... reboot!
 	set_light(0)
 	update_icons()
 	update_canmove()

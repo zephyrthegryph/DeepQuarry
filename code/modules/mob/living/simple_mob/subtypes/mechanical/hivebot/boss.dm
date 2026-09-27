@@ -59,7 +59,7 @@
 		G.det_time = grenade_timer
 		G.activate(src)
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/launch_rockets(atom/target)
 	set waitfor = FALSE
 	visible_message(span_warning("\The [src] creates weak looking hivebots!"))
@@ -70,7 +70,7 @@
 		G.det_time = grenade_timer
 		G.activate(src)
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/electric_defense(atom/target)
 	var/turf/T = get_turf(target)
 	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))

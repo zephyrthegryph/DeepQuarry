@@ -45,26 +45,42 @@
 		return
 
 	changeling.isabsorbing = TRUE
-	for(var/stage = 1, stage<=3, stage++)
-		switch(stage)
-			if(1)
-				to_chat(src, span_notice("This creature is compatible. We must hold still..."))
-			if(2)
-				to_chat(src, span_notice("We extend a proboscis."))
-				src.visible_message(span_warning("[src] extends a proboscis!"))
-			if(3)
-				to_chat(src, span_notice("We stab [T] with the proboscis."))
-				src.visible_message(span_danger("[src] stabs [T] with the proboscis!"))
-				to_chat(T, span_danger("You feel a sharp stabbing pain!"))
-				var/obj/item/organ/external/affecting = T.get_organ(src.zone_sel.selecting)
-				T.injure(INJURY_PIERCE, 39, affecting, src)
+	changeling_absorb_stage(T, G, 1)
+	return 1
 
-		feedback_add_details("changeling_powers","A[stage]")
-		if(!do_after(src, 15 SECONDS, T) || G.state != GRAB_KILL)
-			to_chat(src, span_warning("Our absorption of [T] has been interrupted!"))
-			changeling.isabsorbing = FALSE
-			return
+/// One of absorption's three stages: its message, then 15 seconds (a timed action) holding on.
+/mob/living/proc/changeling_absorb_stage(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	switch(stage)
+		if(1)
+			to_chat(src, span_notice("This creature is compatible. We must hold still..."))
+		if(2)
+			to_chat(src, span_notice("We extend a proboscis."))
+			src.visible_message(span_warning("[src] extends a proboscis!"))
+		if(3)
+			to_chat(src, span_notice("We stab [T] with the proboscis."))
+			src.visible_message(span_danger("[src] stabs [T] with the proboscis!"))
+			to_chat(T, span_danger("You feel a sharp stabbing pain!"))
+			var/obj/item/organ/external/affecting = T.get_organ(src.zone_sel.selecting)
+			T.injure(INJURY_PIERCE, 39, affecting, src)
 
+	feedback_add_details("changeling_powers","A[stage]")
+	om_do_after(src, 15 SECONDS, T, src, PROC_REF(changeling_absorb_stage_done), list(T, G, stage), on_fail = PROC_REF(changeling_absorb_interrupted), fail_args = list(T))
+
+/mob/living/proc/changeling_absorb_interrupted(mob/living/carbon/human/T)
+	to_chat(src, span_warning("Our absorption of [T] has been interrupted!"))
+	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	if(changeling)
+		changeling.isabsorbing = FALSE
+
+/mob/living/proc/changeling_absorb_stage_done(mob/living/carbon/human/T, obj/item/grab/G, stage)
+	if(G.state != GRAB_KILL)
+		changeling_absorb_interrupted(T)
+		return
+	if(stage < 3)
+		changeling_absorb_stage(T, G, stage + 1)
+		return
+	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	var/datum/component/antag/changeling/target_changeling = is_changeling(T)
 	to_chat(src, span_notice("We have absorbed [T]!"))
 	add_attack_logs(src,T,"Absorbed (changeling)")
 	visible_message(span_danger("[src] sucks the fluids from [T]!"))

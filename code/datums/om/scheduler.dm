@@ -573,6 +573,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			if(OM_HOOK_TICK)
 				B.tick(E, arg)
 			if(OM_HOOK_WAKE)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+				if(GLOB.om_traced[E])
+					GLOB.om_traced[E]++
+#endif
 				B.on_wake(E, arg)
 			if(OM_HOOK_DEADLINE)
 				B.on_deadline(E)
@@ -826,7 +830,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			rec.att_pend[i] |= bits
 			rec.pend_union |= bits
 			if(!om_deadline_pending(rec.owner, B, OM_DL_THROTTLE))
-				om_after(rec.owner, wait, B, OM_DL_THROTTLE)
+				om_deadline(rec.owner, wait, B, OM_DL_THROTTLE)
 			return TRUE
 		T[k + 1] = t
 	else

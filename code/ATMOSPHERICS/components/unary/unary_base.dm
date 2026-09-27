@@ -50,7 +50,7 @@
 /// gas_dependency_changed()/wake_gas_subscriber() pair used to.
 /obj/machinery/atmospherics/unary/proc/wake_from_gas()
 	unregister_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
 	om_watch_invalidate(src)
@@ -76,7 +76,7 @@
 	rust_unregister_pipe_topology()
 	// om_watch_disarm_all() (called from /obj/machinery/Destroy() below, via ..()) removes
 	// every watch this device holds keyed by its own ref string (code/datums/om/watch.dm) --
-	// no weakref needed, so unlike the old subscribe_gas_dependency() transport this doesn't
+	// no handle needed, so unlike the old subscribe_gas_dependency() transport this doesn't
 	// race qdel() setting gc_destroyed before Destroy() runs.
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
 	var/datum/pipe_network/old_network = network
@@ -103,7 +103,7 @@
 			node = target
 			break
 	if(node)
-		START_MACHINE_PROCESSING(src) // connected: a device with DM work re-evaluates (others don't listen)
+		MACHINE_WAKE(src) // connected: a device with DM work re-evaluates (others don't listen)
 
 	update_icon()
 	update_underlays()
@@ -183,3 +183,8 @@
 
 /obj/machinery/atmospherics/unary/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/unary/arm_wakes()
+	..()
+	register_gas_dependencies()

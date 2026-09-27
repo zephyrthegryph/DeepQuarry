@@ -63,7 +63,6 @@
 /datum/component/personal_crafting/categories # d: edited in place per instance (2 writers)
 /datum/component/reactive_icon_update/triggering_mobs # d: edited in place per instance (1 writers)
 /datum/component/schizophrenia/episode # d: edited in place per instance (21 writers)
-/datum/component/shadekin/shadekin_abilities # d: edited in place per instance (1 writers)
 /datum/computer_file/data/email_account/deleted # d: mailbox state
 /datum/computer_file/data/email_account/inbox # d: mailbox state
 /datum/computer_file/data/email_account/spam # d: mailbox state
@@ -73,8 +72,6 @@
 /datum/controller/master/perf_tick_usage # d: MC singleton, filled every tick
 /datum/controller/subsystem/machines/power_dirty_areas # d: SSmachines singleton (M3 power); one instance
 /datum/controller/subsystem/machines/power_material_cables # d: SSmachines singleton (M3 power); one instance
-/datum/controller/subsystem/machines/power_ops # d: SSmachines singleton (M3 power); one instance
-/datum/controller/subsystem/machines/power_regions # d: SSmachines singleton (M3 power); one instance
 /datum/controller/subsystem/mapping/multiz_levels # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/mapping/z_list # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/rolling_usage # d: one per subsystem; the usage ring buffer is always in use
@@ -92,8 +89,6 @@
 /datum/disease/cures # d: every disease defines its cures
 /datum/dna/SE # d: fixed-size DNA block list, always filled
 /datum/dna/UI # d: fixed-size DNA block list, always filled
-/datum/dna/custom_cold # d: per-mob DNA copy of the custom cold table
-/datum/dna/custom_heat # d: per-mob DNA copy of the custom heat table
 /datum/element/footstep_override/occupied_turfs # d: element singleton; nested per-turf lists edited in place
 /datum/embedded_program/memory # d: every embedded program keeps its state in memory
 /datum/error_viewer/error_cache/errors # d: error viewer state
@@ -252,7 +247,6 @@
 /obj/effect/spider/spiderling/grow_as # c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
 /obj/effect/step_trigger/thrower/affecting # d: live thrower state (generic name, too many ambiguous call sites)
 /obj/item/ammo_magazine/stored_ammo # d: magazines are filled with rounds on creation
-/obj/item/armor # kept: interned per contents in Initialize(); own_armor() before writes
 /obj/item/backup_implanter/imps # d: the implanter's loaded implants, filled in New()
 /obj/item/bedsheet/dream_messages # c: read-only per-subtype constant table (17 subtype overrides); a getter would share it, not worth it on a rare type
 /obj/item/book/bundle/pages # d: a bundle holds pages
@@ -444,10 +438,6 @@
 # Other active areas (listed in memory_lists_audit.md, not edited here).
 /datum/design_techweb/materials # composition rewrite: design materials are being replaced; not edited here
 /datum/dq_containment_listener/events # containment (C1/C4): landed on master unlisted; not edited here
-/datum/dq_rx_nodes/cells # reactive nodes: landed on master unlisted; singleton-like engine state, not edited here
-/datum/dq_rx_nodes/node_watches # reactive nodes: landed on master unlisted; not edited here
-/datum/dq_rx_nodes/values # reactive nodes: landed on master unlisted; not edited here
-/datum/dq_rx_nodes/watches # reactive nodes: landed on master unlisted; not edited here
 /datum/hot_group/spot_list # atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
 /datum/interaction_resolution/available # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
 /datum/interaction_resolution/blocked # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
@@ -470,9 +460,6 @@
 /obj/machinery/power/sensor/history # M3 power (Rust): sensor code rewritten on master; not edited here
 
 # Mobs: few at boot.
-/mob/active_genes # mob: 15 mobs at boot; per-instance state, see audit
-/mob/following_mobs # mob: 15 mobs at boot; per-instance state, see audit
-/mob/grabbed_by # mob: 15 mobs at boot; per-instance state, see audit
 /mob/language_keys # mob: 15 mobs at boot; per-instance state, see audit
 /mob/languages # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/bad_external_organs # mob: 15 mobs at boot; per-instance state, see audit
@@ -486,33 +473,23 @@
 /mob/living/bot/secbot/preparing_arrest_sounds # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/bot/target_path # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/carbon/antibodies # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/carbon/human/all_underwear # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/carbon/human/all_underwear_metadata # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/carbon/human/flavor_texts # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/carbon/human/genetic_side_effects # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/carbon/human/hide_underwear # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/carbon/human/overlays_standing # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/carbon/human/teleporters # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/carbon/worn_clothing # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/custom_cold # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/custom_heat # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/dominated_brain/prey_langs # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/internal_organs # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/internal_organs_by_name # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/modifiers # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/organs # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/organs_by_name # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/additional_law_channels # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/silicon/ai/all_eyes # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/ai/connected_robots # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/ai/multicam_screens # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/ai/network # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/pai/software # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/queued_alarms # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/robot/req_access # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/silicon/robot/robotdecal_on # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/silicon/robot/sprite_extra_customization # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/silicon/robot/vore_light_states # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/silicon_subsystems # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/speech_synthesizer_langs # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/stating_laws # mob: 15 mobs at boot; per-instance state, see audit
@@ -520,15 +497,11 @@
 /mob/living/simple_mob/animal/synx/overlay_colors # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/animal/synx/speak # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/animal/synx/voices # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/simple_mob/armor # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/attacktext # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/construct/construct_spells # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/fleshtaker/base_values # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/friendly # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/simple_mob/friends # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/simple_mob/loot_list # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/mechanical/ward/monitor/seen_mobs # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/simple_mob/myid_access # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/slime/xenobio/slime_mutation # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/speech_sounds # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/vore/aggressive/macrophage/infections # mob: 15 mobs at boot; per-instance state, see audit
@@ -546,12 +519,7 @@
 /mob/living/simple_mob/vore/vampire/skins # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/vore/wolftaur/skins # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/simple_mob/vore/zorgoia/goia_overlays # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/temp_language_sources # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/temp_languages # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/trait_injection_reagents # mob: 15 mobs at boot; per-instance state, see audit
-/mob/logging # mob: 15 mobs at boot; per-instance state, see audit
 /mob/misc_tabs # mob: 15 mobs at boot; per-instance state, see audit
-/mob/mutations # mob: 15 mobs at boot; per-instance state, see audit
 /mob/nutrition_messages # mob: 15 mobs at boot; per-instance state, see audit
 /mob/observer/blob/blob_mobs # mob: 15 mobs at boot; per-instance state, see audit
 /mob/observer/blob/has_langs # mob: 15 mobs at boot; per-instance state, see audit
@@ -569,3 +537,80 @@
 /mob/vore_icon_bellies # mob: 15 mobs at boot; per-instance state, see audit
 /mob/weight_messages # mob: 15 mobs at boot; per-instance state, see audit
 
+# baseline when CI was wired (2026-09-26); convert or give a real reason.
+/datum/component/shadekin/shadekin_granted_abilities # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/life_z_presence/members # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/rec/att # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/rec/att_pend # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/rec/att_ring # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/rec/att_state # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/behaviour_by_type # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/behaviours # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/bundle_by_type # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/bundles # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/checks_cache # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/clock_by_id # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/clocks # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/decl_typecache # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/decls # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/derived # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/derived_by_name # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/effect_by_id # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/effects # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/errors # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/event_handlers # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/event_idx # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/event_types # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/expansions # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/named_checks # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/pipelines # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/relation_by_type # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/relations # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/services # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/slot_groups_by_holder # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/slot_holder_types # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/stage_by_type # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/task_by_name # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/task_by_type # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/tasks # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/registry/type_tables # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/audit_cursor # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/bulk_list # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/derived_queue # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/errors # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/event_queue # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/free_frames # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/lane_share # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/parked # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/rings # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/service_queue # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/stage_calls # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/stage_cost # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/scheduler/stats # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/stage/life/trait/test_counter/runs # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/stage/life/trait/test_sleeper/runs # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/stage/life/trait/test_timer/runs # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/type_table/behaviours # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/type_table/self_effects # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/type_table/self_grants # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/type_table/stages # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/type_table/tasks # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/type_table/ui # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om_test_entity/dts # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om_test_entity/log # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/pipe_test_entity/busy # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/pipe_test_entity/log # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/pipe_test_entity/wakes # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/pipe_test_other/busy # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/pipe_test_other/log # baseline when CI was wired (2026-09-26); convert or give a real reason
+/obj/dq_entry_probe/done # baseline when CI was wired (2026-09-26); convert or give a real reason
+/obj/item/dq_containment_test/hooked/log # baseline when CI was wired (2026-09-26); convert or give a real reason
+/obj/item/dq_entry_probe_item/done # baseline when CI was wired (2026-09-26); convert or give a real reason
+/datum/om/decl/pipeline_machines/lazy # a declaration singleton: one instance
+/datum/om_wake_test_subscriber/wakes # unit-test witness, always filled
+/datum/benchmark_init_stats/by_type  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/child_us  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/phase_self_ms  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/qdel_by_type  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/qdel_child_ms  # benchmark singleton (one per bench run), always filled
+/datum/benchmark_init_stats/qdel_phase_mark_ms  # benchmark singleton (one per bench run), always filled

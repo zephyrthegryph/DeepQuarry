@@ -32,9 +32,11 @@
 	if(!T)
 		to_chat(user, span_notice("You can't open this here!"))
 		return TRUE
-	if(use_tool(user, W, src, delay = delay, quality = quality, volume = 50))
-		disassemble(W, user)
+	use_tool(user, W, src, delay = delay, quality = quality, volume = 50, receiver = src, on_done = PROC_REF(tool_disassemble_tool_done), done_args = list(user, W))
 	return TRUE
+
+/obj/structure/vehiclecage/proc/tool_disassemble_tool_done(mob/user, obj/item/W)
+	disassemble(W, user)
 
 /obj/structure/vehiclecage/wrench_act(mob/user, obj/item/W)
 	user.visible_message(span_notice("[user] begins loosening \the [src]'s bolts."))

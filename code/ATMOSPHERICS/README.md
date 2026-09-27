@@ -71,11 +71,17 @@ routes through a generated `vg_*` proc, so the DM gas API (`return_air`,
   and each region's air datum is bound to its region handle (`vg_bind_handle`).
 
 **SSair.** Each fire runs `vg_gas_tick()`: pin the newest frame, start the next
-on the gas pool (never waiting), and return the frame's events, which
-`process_gas_events()` dispatches: `GAS_EVENT_REACT` (`air.react(turf)`),
-`GAS_EVENT_VISUAL` (`set_visuals()`) and `GAS_EVENT_PRESSURE` (spacewind). A
-frame is 0.5 s of gas. Tests step the field deterministically with
-`SSair.run_gas_frames(n)` (`vg_gas_run_frames`) instead of waiting on the clock.
+on the gas pool (never waiting), and push the frame's notifications as typed
+`GasEvent`s (`verdigris/domains/gas/src/laws.rs`) onto the shared World;
+`vg_drain_events()` dispatches them to `SSvg`'s `on_gas_cell_reaction_ready()`
+(`air.react(turf)`), `on_gas_cell_visual_change()` (`set_visuals()`) and
+`on_gas_pressure_jump()` (spacewind) -- the one typed-event path every other
+domain's events already take (`rust_architecture.md` §4.8), not a bespoke flat
+list DM parses itself. A cell index in an event's payload is a bare number
+(the generic wire is numbers only); `vg_turf_of(cell)` resolves it. A frame is
+0.5 s of gas. Tests step the field deterministically with
+`SSair.run_gas_frames(n)` (`vg_gas_run_frames` + `vg_drain_events()`) instead
+of waiting on the clock.
 
 **Air-block masks are geometry.** A mask change is one geometry command, seen at
 once by DM's adjacency reads (the overlay) and by the next frame. There are no
@@ -92,7 +98,7 @@ commands applied in order.
   volume, total moles, heat capacity and every gas's moles for many mixtures in
   one call (`GAS_READ_*` layout); `get_gases()` is one call too.
 - **Reactions** run in DM. The field's `local` step checks registered reaction
-  requirements per cell and reports `GAS_EVENT_REACT`.
+  requirements per cell and reports `GasEvent::CellReactionReady`.
 - **Watches.** Gas is a reactor domain: `REACT_ON` / `REACT_WHEN` on
   `REACT_GAS(mixture)` (a turf's air or a main-owned mixture) with the
   `CH_GAS_*` channels.

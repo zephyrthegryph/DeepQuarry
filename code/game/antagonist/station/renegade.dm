@@ -100,7 +100,7 @@ GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
 /proc/rightandwrong()
 	to_chat(usr, span_infoplain(span_bold("You summoned guns!")))
 	message_admins("[key_name_admin(usr, 1)] summoned guns!")
-	for(var/mob/living/carbon/human/H in GLOB.player_list)
+	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(H.stat == 2 || !(H.client)) continue
 		if(is_special_character(H)) continue
 		GLOB.renegades.add_antagonist(H.mind)

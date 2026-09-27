@@ -48,16 +48,17 @@
 	return
 
 /* Leaving this until we are really sure we don't need it for reference.
+/obj/mecha/combat/phazon/proc/phase_recharged()
+	can_phase = TRUE
+
 /obj/mecha/combat/phazon/Bump(atom/obstacle)
 	if(phasing && get_charge()>=phasing_energy_drain)
-		spawn()
-			if(can_phase)
-				can_phase = FALSE
-				flick("[initial_icon]-phase", src)
-				src.loc = get_step(src,src.dir)
-				src.use_power(phasing_energy_drain)
-				sleep(step_in*3)
-				can_phase = TRUE
+		if(can_phase)
+			can_phase = FALSE
+			flick("[initial_icon]-phase", src)
+			src.loc = get_step(src,src.dir)
+			src.use_power(phasing_energy_drain)
+			om_after(src, step_in*3, PROC_REF(phase_recharged))
 	else
 		. = ..()
 	return

@@ -265,8 +265,12 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if((dispenser_flags & GD_UNIQUE) && !emagged)
 		unique_dispense_list |= user.ckey
 
-	animate_dispensing() // Blocks here until animation is done
+	animate_dispensing()
+	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
 
+/// The dispensing animation is over: hand the gear out.
+/obj/machinery/gear_dispenser/proc/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
+	dispenser_flags &= ~GD_BUSY
 	var/turf/T = get_turf(src)
 	if(!(S && T)) // in case we got destroyed while we slept
 		return 1
@@ -278,14 +282,17 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
+/// Deciseconds animate_dispensing() takes; dispense() hands the gear out after it.
+/obj/machinery/gear_dispenser/var/dispense_anim_time = 45
+
 /obj/machinery/gear_dispenser/proc/animate_dispensing()
 	flick("[icon_state]-scan",src)
 	visible_message("\The [src] scans its user.", runemessage = "hums")
-	sleep(30)
+	om_after(src, 3 SECONDS, PROC_REF(animate_dispensing_flick))
+
+/obj/machinery/gear_dispenser/proc/animate_dispensing_flick()
 	flick("[icon_state]-dispense",src)
 	dispenser_flags |= GD_BUSY
-	sleep(15)
-	dispenser_flags &= ~GD_BUSY
 
 /obj/machinery/gear_dispenser/emag_act(remaining_charges, mob/user, emag_source)
 	. = ..()
@@ -385,6 +392,9 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	held_gear_disp = S
 
 	animate_dispensing()
+	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
+
+/obj/machinery/gear_dispenser/suit_fancy/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
 	dispenser_flags &= ~GD_BUSY
 
 	if(emagged)
@@ -392,13 +402,19 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
+/obj/machinery/gear_dispenser/suit_fancy/dispense_anim_time = 60.5
+
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing()
 	add_overlay("working")
-	sleep(5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(animate_dispensing_flick))
+
+/obj/machinery/gear_dispenser/suit_fancy/animate_dispensing_flick()
 	add_overlay("fullsuit")
 	door.icon_state = "open"
 	flick("anim_open", door)
-	sleep(10.5)
+	om_after(src, 10.5, PROC_REF(animate_dispensing_lit))
+
+/obj/machinery/gear_dispenser/suit_fancy/proc/animate_dispensing_lit()
 	add_overlay("light2")
 	cut_overlay("working")
 

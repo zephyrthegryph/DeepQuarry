@@ -2,7 +2,7 @@
 
 	if(!opened)
 		if(recharging)
-			var/obj/item/recharging_atom = recharging.resolve()
+			var/obj/item/recharging_atom = om_resolve(recharging)
 			if(istype(recharging_atom) && !QDELETED(recharging_atom) && recharging_atom.loc == src)
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
@@ -19,10 +19,10 @@
 
 	if(istype(W, /obj/item/cell) && !opened)
 		if(recharging)
-			to_chat(user, span_warning("\The [src] already has \a [recharging.resolve()] inserted into its recharging port."))
+			to_chat(user, span_warning("\The [src] already has \a [om_resolve(recharging)] inserted into its recharging port."))
 		else if(user.unEquip(W))
 			W.forceMove(src)
-			recharging = WEAKREF(W)
+			recharging = om_handle(W)
 			recharge_complete = FALSE
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [W] into \the [src]'s recharging port."))
 		return TRUE

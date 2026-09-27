@@ -23,7 +23,7 @@
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_GLOVES) == src)
-			wearer = WEAKREF(H)
+			wearer = om_handle(H)
 			if(H.can_feel_pain())
 				to_chat(H, span_danger("You feel a stabbing sensation in your hands as you slide \the [src] on!"))
 				H.custom_pain("You feel a sharp pain in your hands!",1)
@@ -45,15 +45,16 @@
 
 /obj/item/clothing/gloves/regen/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/clothing/gloves/regen/Destroy()
 	wearer = null
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/clothing/gloves/regen/process()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
+/obj/item/clothing/gloves/regen/periodic_step()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
+	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
+		return PROCESS_KILL
 	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
 		return // Dead people don't have a metabolism.
 
@@ -68,3 +69,8 @@
 		H.nutrition = max(H.nutrition - 10, 0)
 	if(H.mend(TREAT_GENETIC_REPAIR, 0.1))
 		H.nutrition = max(H.nutrition - 20, 0)
+
+/obj/item/clothing/gloves/regen/equipped(mob/user, slot)
+	. = ..()
+	if(om_resolve(wearer))
+		PERIODIC_START(src, PERIODIC_SLOW)

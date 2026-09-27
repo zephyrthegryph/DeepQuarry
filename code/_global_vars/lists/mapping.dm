@@ -37,7 +37,6 @@ GLOBAL_LIST_EMPTY(monkeystart)
 GLOBAL_LIST_EMPTY(wizardstart)
 GLOBAL_LIST_EMPTY(newplayer_start)
 
-GLOBAL_LIST_EMPTY(latejoin)
 GLOBAL_LIST_EMPTY(latejoin_talon)
 GLOBAL_LIST_EMPTY(latejoin_tram)
 GLOBAL_LIST_EMPTY(latejoin_gateway)
@@ -53,7 +52,6 @@ GLOBAL_LIST_EMPTY(tdome2)
 GLOBAL_LIST_EMPTY(tdomeobserve)
 GLOBAL_LIST_EMPTY(tdomeadmin)
 GLOBAL_LIST_EMPTY(prisonsecuritywarp) // Prison security goes to these.
-GLOBAL_LIST_EMPTY(prisonwarped) // List of players already warped.
 GLOBAL_LIST_EMPTY(blobstart)
 GLOBAL_LIST_EMPTY(ninjastart)
 

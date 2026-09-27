@@ -266,31 +266,7 @@
 		if("print")
 			if(!printing)
 				printing = 1
-				spawn(50)
-					printing = null
-					SStgui.update_uis(src)
-
-					var/obj/item/paper/P = new(loc)
-					if(mode)
-						P.name = text("crew manifest ([])", stationtime2text())
-						P.info = {"<h4>Crew Manifest</h4>
-							<br>
-							[GLOB.data_core ? GLOB.data_core.get_manifest(0) : ""]
-						"}
-					else if(modify)
-						P.name = "access report"
-						P.info = {"<h4>Access Report</h4>
-							<u>Prepared By:</u> [scan.registered_name ? scan.registered_name : "Unknown"]<br>
-							<u>For:</u> [modify.registered_name ? modify.registered_name : "Unregistered"]<br>
-							<hr>
-							<u>Assignment:</u> [modify.assignment]<br>
-							<u>Account Number:</u> #[modify.associated_account_number]<br>
-							<u>Blood Type:</u> [modify.blood_type]<br><br>
-							<u>Access:</u><br>
-						"}
-
-						for(var/A in modify.access)
-							P.info += "  [SSaccess.get_access_desc(A)]"
+				om_after(src, 5 SECONDS, PROC_REF(finish_printing))
 				. = TRUE
 
 		if("terminate")
@@ -311,3 +287,29 @@
 
 /obj/machinery/computer/card/centcom/is_centcom()
 	return 1
+
+/obj/machinery/computer/card/proc/finish_printing()
+	printing = null
+	SStgui.update_uis(src)
+
+	var/obj/item/paper/P = new(loc)
+	if(mode)
+		P.name = text("crew manifest ([])", stationtime2text())
+		P.info = {"<h4>Crew Manifest</h4>
+			<br>
+			[GLOB.data_core ? GLOB.data_core.get_manifest(0) : ""]
+		"}
+	else if(modify)
+		P.name = "access report"
+		P.info = {"<h4>Access Report</h4>
+			<u>Prepared By:</u> [scan.registered_name ? scan.registered_name : "Unknown"]<br>
+			<u>For:</u> [modify.registered_name ? modify.registered_name : "Unregistered"]<br>
+			<hr>
+			<u>Assignment:</u> [modify.assignment]<br>
+			<u>Account Number:</u> #[modify.associated_account_number]<br>
+			<u>Blood Type:</u> [modify.blood_type]<br><br>
+			<u>Access:</u><br>
+		"}
+
+		for(var/A in modify.access)
+			P.info += "  [SSaccess.get_access_desc(A)]"

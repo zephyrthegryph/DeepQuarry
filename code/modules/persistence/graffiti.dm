@@ -49,20 +49,27 @@
 		var/_message = tgui_input_text(user, "Enter an additional message to engrave.", "Graffiti", "", MAX_MESSAGE_LEN)
 		if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
 			user.visible_message(span_warning("\The [user] begins carving something into \the [loc]."))
-			if(do_after(user, max(2 SECONDS, length(_message)), target = src) && loc)
-				user.visible_message(span_danger("\The [user] carves some graffiti into \the [loc]."))
-				message = "[message] [_message]"
-				author = user.ckey
-				if(lowertext(message) == "elbereth")
-					to_chat(user, span_notice("You feel much safer."))
+			om_do_after(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
 	else
 		. = ..()
 
+/obj/effect/decal/writing/proc/carve_done(mob/user, _message)
+	if(!loc)
+		return
+	user.visible_message(span_danger("\The [user] carves some graffiti into \the [loc]."))
+	message = "[message] [_message]"
+	author = user.ckey
+	if(lowertext(message) == "elbereth")
+		to_chat(user, span_notice("You feel much safer."))
+
 /obj/effect/decal/writing/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.isOn() || !welder.remove_fuel(0, user) || !do_after(user, 0.5 SECONDS, target = src) || QDELETED(src))
+	if(!welder.isOn() || !welder.remove_fuel(0, user))
 		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 0.5 SECONDS, src, src, PROC_REF(clear_done), list(user, welder))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/effect/decal/writing/proc/clear_done(mob/user, obj/item/weldingtool/welder)
 	playsound(loc, welder.usesound, 50, 1)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " clears away some graffiti."))
 	qdel(src)
-	return ITEM_INTERACT_SUCCESS

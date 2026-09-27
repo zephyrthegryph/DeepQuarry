@@ -1,0 +1,153 @@
+// Mob chunks as object-model entities (roadmap S3: mob chunk keys).
+//
+// A 16x16 chunk that something waits on is a /datum/mob_chunk entity. A mob entering, leaving or
+// moving in it raises its change channels -- CHANGE_CHUNK_ANY_MOB for any mob, CHANGE_CHUNK_PLAYER
+// for a mob with a client -- and whatever sleeps on it om_watch()es those channels with its own
+// behaviour (a turret's machine pipeline, a calm AI brain, a looping sound, an auto-flicker light).
+// A chunk nobody watches has no datum, and mob movement skips the lookup entirely while nothing
+// watches any chunk.
+
+/// Chunk id -> /datum/mob_chunk, for chunks something watches.
+GLOBAL_LIST_EMPTY(mob_chunks)
+/// Live any-mob and player chunk watches. Movement publishes only while these are non-zero; a
+/// watch dropped with its watcher leaves them high, which only costs lookups.
+GLOBAL_VAR_INIT(mob_chunk_watches, 0)
+GLOBAL_VAR_INIT(player_chunk_watches, 0)
+
+/datum/mob_chunk
+	var/id
+
+/// The chunk id for a location, or null off-map.
+/proc/mob_chunk_id(atom/location)
+	var/turf/T = get_turf(location)
+	if(!T)
+		return
+	return MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))
+
+/// The chunk entity for `id`, made on first use.
+/proc/mob_chunk(id)
+	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"]
+	if(!C)
+		C = new
+		C.id = id
+		GLOB.mob_chunks["[id]"] = C
+	return C
+
+/// Raises `bits` on chunk `id` if anything watches it.
+/proc/mob_chunk_changed(id, bits)
+	if(isnull(id))
+		return
+	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"]
+	if(!C)
+		return
+	if(!length(C.om_rec?.watches_in))
+		GLOB.mob_chunks -= "[id]"
+		qdel(C)
+		return
+	om_changed(C, bits)
+
+/// Every chunk within `radius` tiles of `center`.
+/proc/mob_chunks_around(turf/center, radius)
+	. = list()
+	if(!center)
+		return
+	for(var/chunk_x in MOB_CHUNK_COORD(max(center.x - radius, 1)) to MOB_CHUNK_COORD(min(center.x + radius, world.maxx)))
+		for(var/chunk_y in MOB_CHUNK_COORD(max(center.y - radius, 1)) to MOB_CHUNK_COORD(min(center.y + radius, world.maxy)))
+			. += mob_chunk(MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y))
+
+/// `watcher`'s behaviour `B` wakes (CHANGE_RELATED) when `mask` changes on any of `chunks`.
+/// Returns the chunks, for unwatch_mob_chunks().
+/proc/watch_mob_chunks(datum/watcher, list/chunks, mask, B)
+	for(var/datum/mob_chunk/C as anything in chunks)
+		om_watch(watcher, C, mask, B)
+	if(mask & CHANGE_CHUNK_ANY_MOB)
+		GLOB.mob_chunk_watches += length(chunks)
+	if(mask & CHANGE_CHUNK_PLAYER)
+		GLOB.player_chunk_watches += length(chunks)
+	return chunks
+
+/// Drops watches made by watch_mob_chunks(). Returns null, for `chunks = unwatch_mob_chunks(...)`.
+/proc/unwatch_mob_chunks(datum/watcher, list/chunks, mask, B)
+	for(var/datum/mob_chunk/C as anything in chunks)
+		om_unwatch(watcher, C, B)
+	if(mask & CHANGE_CHUNK_ANY_MOB)
+		GLOB.mob_chunk_watches = max(GLOB.mob_chunk_watches - length(chunks), 0)
+	if(mask & CHANGE_CHUNK_PLAYER)
+		GLOB.player_chunk_watches = max(GLOB.player_chunk_watches - length(chunks), 0)
+	return null
+
+/// A mob appeared in or vanished from `location`'s chunk (Initialize, Destroy).
+/proc/publish_mob_chunk(atom/location)
+	if(GLOB.mob_chunk_watches)
+		mob_chunk_changed(mob_chunk_id(location), CHANGE_CHUNK_ANY_MOB)
+
+/// A player is in `T`'s chunk.
+/proc/publish_player_chunk(turf/T)
+	if(T)
+		mob_chunk_changed(mob_chunk_id(T), CHANGE_CHUNK_PLAYER)
+
+/**
+ * /mob/Moved()'s one publish. The new chunk hears CHANGE_CHUNK_ANY_MOB (while anything watches
+ * chunks) plus CHANGE_CHUNK_PLAYER for a player (while anything watches players). The old chunk
+ * hears CHANGE_CHUNK_ANY_MOB only when the step crossed a chunk edge. Callers gate on the two
+ * counters first.
+ */
+/proc/publish_mob_move(atom/old_loc, atom/movable/mover, player)
+	var/bits = GLOB.mob_chunk_watches ? CHANGE_CHUNK_ANY_MOB : 0
+	if(player && GLOB.player_chunk_watches)
+		bits |= CHANGE_CHUNK_PLAYER
+	if(!bits)
+		return
+	var/new_id = mob_chunk_id(mover)
+	mob_chunk_changed(new_id, bits)
+	if(bits & CHANGE_CHUNK_ANY_MOB)
+		var/old_id = mob_chunk_id(old_loc)
+		if(old_id != new_id)
+			mob_chunk_changed(old_id, CHANGE_CHUNK_ANY_MOB)
+
+// ---------------------------------------------------------------- proximity gate
+
+/// Something whose periodic work only matters with mobs (or players) nearby -- a radiation source,
+/// a spawner, a haunting -- ends its step with `return sleep_until_mob_near(radius)` when nobody is
+/// in range: it watches the chunks around it and restarts on its lane when a mob moves into one.
+/datum/om/behaviour/sleeper/proximity
+	name = "proximity gate"
+
+/datum/om/behaviour/sleeper/proximity/on_wake(atom/movable/A, changes)
+	if(QDELETED(A) || !A.proximity_chunks)
+		return
+	A.proximity_chunks = unwatch_mob_chunks(A, A.proximity_chunks, A.proximity_mask, /datum/om/behaviour/sleeper/proximity)
+	PERIODIC_START(A, A.proximity_lane)
+
+/atom/movable/var/tmp/list/proximity_chunks
+/atom/movable/var/tmp/proximity_mask = 0
+/atom/movable/var/tmp/proximity_lane
+
+/// TRUE when a living mob (a player, with `players_only`) is within `radius` tiles.
+/atom/movable/proc/mob_near(radius, players_only = FALSE)
+	var/turf/T = get_turf(src)
+	if(!T)
+		return FALSE
+	for(var/mob/living/L in range(radius, T))
+		if(!players_only || L.client)
+			return TRUE
+	return FALSE
+
+/// Ends this step's periodic work until a mob (a player, with `players_only`) moves within reach of
+/// `radius`. Returns PROCESS_KILL. `lane` is the periodic lane to restart on.
+/atom/movable/proc/sleep_until_mob_near(radius, players_only = FALSE, lane = PERIODIC_SLOW)
+	if(proximity_chunks)
+		proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask, /datum/om/behaviour/sleeper/proximity)
+	var/turf/T = get_turf(src)
+	if(!T)
+		return PROCESS_KILL
+	proximity_mask = players_only ? CHANGE_CHUNK_PLAYER : CHANGE_CHUNK_ANY_MOB
+	proximity_lane = lane
+	om_attach(src, /datum/om/behaviour/sleeper/proximity)
+	proximity_chunks = watch_mob_chunks(src, mob_chunks_around(T, radius), proximity_mask, /datum/om/behaviour/sleeper/proximity)
+	return PROCESS_KILL
+
+/atom/movable/om_sleep_violation()
+	if(proximity_chunks && PERIODIC_RUNNING(src))
+		return "watching for mobs while already running"
+	return ..()

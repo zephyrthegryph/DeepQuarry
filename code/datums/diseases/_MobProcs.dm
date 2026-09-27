@@ -249,7 +249,7 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 	if(isnull(disease))
 		return FALSE
 
-	var/mob/living/carbon/human/H = tgui_input_list(user, "Choose infectee", "Characters", GLOB.human_mob_list)
+	var/mob/living/carbon/human/H = tgui_input_list(user, "Choose infectee", "Characters", REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
 	if(isnull(H))
 		return FALSE

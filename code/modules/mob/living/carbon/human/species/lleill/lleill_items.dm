@@ -31,10 +31,7 @@
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()
-	spawn(600)
-		if(dq_get_cloaked(target))
-			target.uncloak()
-			target.visible_message(span_infoplain(span_bold("\The [target]") + " appears as if from thin air."))
+	om_after(target, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
 
 //Shrinking Glamour (scaling potion)
 
@@ -136,7 +133,7 @@
 		return TRUE
 	if(!homunculus)
 		var/list/targets = list()
-		for(var/mob/living/carbon/human/M in GLOB.mob_list)
+		for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if(M.z != user.z || get_dist(user,M) > 10)
 				continue
 			if(!M.allow_mimicry)
@@ -242,6 +239,19 @@
 	area_name = A.name
 	name = "[area_name] glamour ring"
 
+/obj/structure/glamour_ring/proc/ring_left_alone(mob/living/M)
+	to_chat(M, span_warning("You leave the glamour ring alone."))
+
+/obj/structure/glamour_ring/proc/ring_broken(mob/living/M)
+	var/mob/living/carbon/human/L = connected_mob
+	to_chat(M, span_warning("You have destroyed \the [src]."))
+	src.visible_message(span_infoplain(span_bold("\The [M]") + " has broken apart \the [src]."))
+	if(M != connected_mob && connected_mob)
+		to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
+	if(istype(L) && istype(L.species, /datum/species/lleill))
+		L.teleporters -= src
+	qdel(src)
+
 /obj/structure/glamour_ring/attack_hand(mob/living/M as mob)
 
 	var/mob/living/carbon/human/L = connected_mob
@@ -260,25 +270,22 @@
 
 	if(m_action == "Yes")
 		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))
-		if(!do_after(M, 10 SECONDS, target = src))
-			to_chat(M, span_warning("You leave the glamour ring alone."))
-			return
-		to_chat(M, span_warning("You have destroyed \the [src]."))
-		src.visible_message(span_infoplain(span_bold("\The [M]") + " has broken apart \the [src]."))
-		if(M != connected_mob && connected_mob)
-			to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
-		if(istype(LL))
-			L.teleporters -= src
-		qdel(src)
+		om_do_after(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
+		return
 
 	if(m_action == "Restore Energy")
 		if(LL.ring_cooldown + 10 MINUTES > world.time)
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
-		if(!do_after(M, 10 SECONDS, target = src))
-			to_chat(M, span_warning("You stop drawing energy."))
-			return
-		LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
+		om_do_after(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_glamour_ring_done), done_args = list(M, LL), on_fail = PROC_REF(attack_hand_glamour_ring_failed), fail_args = list(M, LL))
+		return
+
+/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(mob/living/M, datum/species/lleill/LL)
+	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
+
+/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(mob/living/M, datum/species/lleill/LL)
+	to_chat(M, span_warning("You stop drawing energy."))
+	return
 
 //Glamour Helm
 
@@ -443,3 +450,9 @@
 			return
 
 		attack_self(H)
+
+/// The transparent glamour wears off.
+/mob/living/proc/glamour_cloak_expires()
+	if(dq_get_cloaked(src))
+		uncloak()
+		visible_message(span_infoplain(span_bold("\The [src]") + " appears as if from thin air."))

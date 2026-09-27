@@ -115,7 +115,10 @@
 	regen()
 	animate(src, color = "#FF0000", time=1)
 	animate(color = "#FFFFFF", time=4, easing=ELASTIC_EASING)
-	sleep(5)
+	om_after(src, 0.5 SECONDS, PROC_REF(pulse_on), forceLeft, dirs)
+
+/// The rest of a pulse, after its flash.
+/obj/effect/blob/proc/pulse_on(forceLeft, list/dirs)
 	var/pushDir = pick(dirs)
 	var/turf/T = get_step(src, pushDir)
 	var/obj/effect/blob/B = (locate() in T)
@@ -159,13 +162,12 @@
 
 /obj/effect/blob/core/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/blob/core/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/effect/blob/core/process()
+/obj/effect/blob/core/periodic_step()
 	pulse(20, list(NORTH, EAST))
 	pulse(20, list(NORTH, WEST))
 	pulse(20, list(SOUTH, EAST))

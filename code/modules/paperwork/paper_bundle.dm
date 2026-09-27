@@ -82,19 +82,7 @@
 		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
 		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
 
-		spawn(20)
-			if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
-				user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-				"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
-
-				if(user.get_inactive_hand() == src)
-					user.drop_from_inventory(src)
-
-				new /obj/effect/decal/cleanable/ash(src.loc)
-				qdel(src)
-
-			else
-				to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
 
 /obj/item/paper_bundle/examine(mob/user)
 	. = ..()
@@ -250,3 +238,17 @@
 		desc += "\nThere is a photo attached to it."
 	add_overlay(image('icons/obj/bureaucracy.dmi', "clip"))
 	return
+
+/obj/item/paper_bundle/proc/burn_through(mob/user, obj/item/flame/P, class)
+	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
+		user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
+		"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+
+		if(user.get_inactive_hand() == src)
+			user.drop_from_inventory(src)
+
+		new /obj/effect/decal/cleanable/ash(src.loc)
+		qdel(src)
+
+	else
+		to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))

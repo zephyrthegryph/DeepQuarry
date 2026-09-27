@@ -26,24 +26,28 @@
 
 /turf/simulated/floor/outdoors/snow/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/shovel))
-		if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0, message_self = "You begin to remove \the [src] with your [W]."))
-			to_chat(user, span_notice("\The [src] has been dug up, and now lies in a pile nearby."))
-			new /obj/item/stack/material/snow(src, 10)
-			demote()
-		else
-			to_chat(user, span_notice("You decide to not finish removing \the [src]."))
+		use_tool(user, W, src, delay = 4 SECONDS, volume = 0, message_self = "You begin to remove \the [src] with your [W].", receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed), fail_args = list(user))
 	else
 		..()
+
+/turf/simulated/floor/outdoors/snow/proc/attackby_tool_done(mob/user)
+	to_chat(user, span_notice("\The [src] has been dug up, and now lies in a pile nearby."))
+	new /obj/item/stack/material/snow(src, 10)
+	demote()
+
+/turf/simulated/floor/outdoors/snow/proc/attackby_tool_failed(mob/user)
+	to_chat(user, span_notice("You decide to not finish removing \the [src]."))
 
 /turf/simulated/floor/outdoors/snow/attack_hand(mob/user as mob)
 	if(!Adjacent(user))
 		return
 	visible_message("[user] starts scooping up some snow.", "You start scooping up some snow.")
-	if(do_after(user, 1 SECOND, target = src))
-		var/obj/S = new /obj/item/stack/material/snow(user.loc)
-		user.put_in_hands(S)
-		visible_message("[user] scoops up a pile of snow.", "You scoop up a pile of snow.")
-	return
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
+
+/turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)
+	var/obj/S = new /obj/item/stack/material/snow(user.loc)
+	user.put_in_hands(S)
+	visible_message("[user] scoops up a pile of snow.", "You scoop up a pile of snow.")
 
 /turf/simulated/floor/outdoors/ice
 	name = "ice"

@@ -75,7 +75,7 @@
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 
-/obj/machinery/field_generator/process()
+/obj/machinery/field_generator/machine_step()
 	if(Varedit_start == 1)
 		if(active == 0)
 			active = 1
@@ -156,24 +156,21 @@
 				to_chat(user, span_red("The [src.name] needs to be wrenched to the floor."))
 				return
 			if(1)
-				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-						message_self = "You start to weld the [src] to the floor.", message_others = "[user.name] starts to weld the [src.name] to the floor."))
-					if(!src)
-						return
-					state = 2
-					to_chat(user, "You weld the field generator to the floor.")
-				else
-					return
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [src] to the floor.", message_others = "[user.name] starts to weld the [src.name] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
 			if(2)
-				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
-						message_self = "You start to cut the [src] free from the floor.", message_others = "[user.name] starts to cut the [src.name] free from the floor."))
-					if(!src)
-						return
-					state = 1
-					to_chat(user, "You cut the [src] free from the floor.")
-				else
-					return
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to cut the [src] free from the floor.", message_others = "[user.name] starts to cut the [src.name] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/field_generator/proc/construction_tool_act_tool_done(mob/user)
+	if(!src)
+		return
+	state = 2
+	to_chat(user, "You weld the field generator to the floor.")
+/obj/machinery/field_generator/proc/construction_tool_act_tool_done2(mob/user)
+	if(!src)
+		return
+	state = 1
+	to_chat(user, "You cut the [src] free from the floor.")
 
 /obj/machinery/field_generator/wrench_act(mob/user, obj/item/W)
 	return construction_tool_act(user, W, TOOL_WRENCH)
@@ -197,24 +194,31 @@
 
 /obj/machinery/field_generator/proc/turn_off()
 	active = 0
-	spawn(1)
-		src.cleanup()
-		set_light(0)
+	om_after(src, 1, PROC_REF(finish_turn_off))
 	update_icon()
+
+/obj/machinery/field_generator/proc/finish_turn_off()
+	cleanup()
+	set_light(0)
 
 /obj/machinery/field_generator/proc/turn_on()
 	active = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	warming_up = 1
-	spawn(1)
-		while (warming_up<3 && active)
-			sleep(50)
-			warming_up++
-			update_icon()
-			if(warming_up >= 3)
-				start_fields()
-				set_light(light_range_on, light_power_on)
+	om_after(src, 1 + 5 SECONDS, PROC_REF(warm_up_step))
 	update_icon()
+
+/// Warming up: one stage every five seconds, fields up at the third.
+/obj/machinery/field_generator/proc/warm_up_step()
+	if(warming_up >= 3 || !active)
+		return
+	warming_up++
+	update_icon()
+	if(warming_up >= 3)
+		start_fields()
+		set_light(light_range_on, light_power_on)
+		return
+	om_after(src, 5 SECONDS, PROC_REF(warm_up_step))
 
 
 /obj/machinery/field_generator/proc/calc_power()
@@ -269,16 +273,12 @@
 	if(src.state != 2 || !anchored)
 		turn_off()
 		return
-	spawn(1)
-		setup_field(1)
-	spawn(2)
-		setup_field(2)
-	spawn(3)
-		setup_field(4)
-	spawn(4)
-		setup_field(8)
+	om_after(src, 1, PROC_REF(setup_field), 1)
+	om_after(src, 2, PROC_REF(setup_field), 2)
+	om_after(src, 3, PROC_REF(setup_field), 4)
+	om_after(src, 4, PROC_REF(setup_field), 8)
 	src.active = 2
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)
@@ -357,17 +357,16 @@
 	//This is here to help fight the "hurr durr, release singulo cos nobody will notice before the
 	//singulo eats the evidence". It's not fool-proof but better than nothing.
 	//I want to avoid using global variables.
-	spawn(1)
-		var/temp = 1 //stops spam
-		for(var/obj/singularity/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			if(O.last_warning && temp)
-				if((world.time - O.last_warning) > 50) //to stop message-spam
-					temp = 0
-					admin_chat_message(message = "SINGUL/TESLOOSE!", color = "#FF2222")
-					message_admins("A singulo exists and a containment field has failed.")
-					investigate_log("has " + span_red("failed") + " whilst a singulo exists.","singulo")
-					log_game("FIELDGEN([x],[y],[z]) Containment failed while singulo/tesla exists.")
-			O.last_warning = world.time
+	var/temp = 1 //stops spam
+	for(var/obj/singularity/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+		if(O.last_warning && temp)
+			if((world.time - O.last_warning) > 50) //to stop message-spam
+				temp = 0
+				admin_chat_message(message = "SINGUL/TESLOOSE!", color = "#FF2222")
+				message_admins("A singulo exists and a containment field has failed.")
+				investigate_log("has " + span_red("failed") + " whilst a singulo exists.","singulo")
+				log_game("FIELDGEN([x],[y],[z]) Containment failed while singulo/tesla exists.")
+		O.last_warning = world.time
 
 /obj/machinery/field_generator/pre_mapped
 	state = 2 //Start welded.
@@ -377,3 +376,8 @@
 /obj/machinery/field_generator/pre_mapped/Initialize(mapload)
 	. = ..()
 	update_icon()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/field_generator/step_start_condition()
+	return active || Varedit_start

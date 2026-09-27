@@ -1,5 +1,5 @@
 /obj/item/modular_computer
-	var/list/paired_uavs //Weakrefs, don't worry about it!
+	var/list/paired_uavs //OM handles of the paired UAVs
 
 /datum/computer_file/program/uav
 	filename = "rigger"

@@ -22,8 +22,7 @@
 	attempting = 1 //One at a time!!
 	locked = 1
 	eject_wait = 1
-	spawn(30)
-		eject_wait = 0
+	om_after(src, 3 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "eject_wait", 0)
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
 	remove_biomass(CLONE_BIOMASS)
@@ -58,13 +57,14 @@
 	attempting = 0
 	return 1
 
-/obj/machinery/clonepod/transhuman/process()
+/// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
+/obj/machinery/clonepod/transhuman/machine_step()
 	var/mob/living/occupant = get_occupant()
 	if(stat & NOPOWER)
 		if(occupant)
 			locked = 0
 			go_out()
-		return
+		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
 		if(occupant.stat == DEAD)
@@ -104,7 +104,7 @@
 		if(locked)
 			locked = 0
 		update_icon()
-		return
+		return PROCESS_KILL
 
 	return
 
@@ -135,7 +135,7 @@
 	var/busy = 0       //Busy cloning
 	var/body_cost = 15000  //Cost of a cloned body (metal and glass ea.)
 	var/max_res_amount = 30000 //Max the thing can hold
-	var/datum/weakref/current_br
+	var/current_br
 
 	var/broken = 0
 	var/burn_value = 0 //Setting these to 0, if resleeving as organic with unupgraded sleevers gives them no damage, resleeving synths with unupgraded synthfabs should not give them potentially 105 damage.
@@ -190,13 +190,14 @@
 				store_rating = store_rating * rating
 	max_res_amount = store_rating
 
-/obj/machinery/transhuman/synthprinter/process()
+/// Prints while busy with a body; idle, it sleeps until one is queued.
+/obj/machinery/transhuman/synthprinter/machine_step()
 	if(stat & NOPOWER)
 		if(busy)
 			busy = 0
 			current_br = null
 		update_icon()
-		return
+		return PROCESS_KILL
 
 	if(busy > 0 && busy <= 95)
 		busy += 5
@@ -204,10 +205,11 @@
 	if(busy >= 100)
 		make_body()
 
-	return
+	if(!busy)
+		return PROCESS_KILL
 
-/obj/machinery/transhuman/synthprinter/proc/print(datum/weakref/BR)
-	if(!BR?.resolve() || busy)
+/obj/machinery/transhuman/synthprinter/proc/print(BR)
+	if(!om_resolve(BR) || busy)
 		return 0
 
 	if(stored_material[MAT_STEEL] < body_cost || stored_material[MAT_GLASS] < body_cost)
@@ -215,6 +217,7 @@
 
 	current_br = BR
 	busy = 5
+	MACHINE_WAKE(src)
 	update_icon()
 
 	return 1
@@ -222,7 +225,7 @@
 /obj/machinery/transhuman/synthprinter/proc/make_body()
 	//Manage machine-specific stuff
 
-	var/datum/transhuman/body_record/current_project = current_br?.resolve()
+	var/datum/transhuman/body_record/current_project = om_resolve(current_br)
 	if(!current_project)
 		busy = 0
 		current_br = null
@@ -310,7 +313,7 @@
 	var/blur_amount
 	var/confuse_amount
 
-	VAR_PRIVATE/datum/weakref/weakref_occupant = null
+	VAR_PRIVATE/occupant_handle = null
 	var/connected = null
 
 	var/sleevecards = 2
@@ -350,14 +353,14 @@
 /obj/machinery/transhuman/resleever/proc/set_occupant(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!H)
-		weakref_occupant = null
+		occupant_handle = null
 		return
-	weakref_occupant = WEAKREF(H)
+	occupant_handle = om_handle(H)
 
 /obj/machinery/transhuman/resleever/proc/get_occupant()
 	RETURN_TYPE(/mob/living/carbon/human)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return weakref_occupant?.resolve()
+	return om_resolve(occupant_handle)
 
 /obj/machinery/transhuman/resleever/RefreshParts()
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
@@ -480,9 +483,7 @@
 	//Re-supply a NIF if one was backed up with them.
 	if(MR.nif_path)
 		var/obj/item/nif/nif = new MR.nif_path(occupant,null,MR.nif_savedata)
-		spawn(0)			//Delay to not install software before NIF is fully installed
-			for(var/path in MR.nif_software)
-				new path(nif)
+		om_after(nif, 0, /proc/install_nif_software, nif, MR.nif_software) //Delay to not install software before NIF is fully installed
 		nif.durability = MR.nif_durability //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences

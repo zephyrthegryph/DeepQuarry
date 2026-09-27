@@ -64,8 +64,7 @@
 	floor_markings = image('icons/obj/machines/stationmap.dmi', "decal_station_map")
 	floor_markings.dir = src.dir
 
-	spawn(1) //When built from frames, need to allow time for it to set pixel_x and pixel_y
-		update_icon()
+	om_after(src, 1, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 
 /obj/machinery/station_map/declare_interactions(list/into)
 	into += list(
@@ -127,7 +126,7 @@
 			user.client.images |= holomap_datum.station_map
 
 			watching_mob = user
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			watching_mob.AddComponent(/datum/component/recursive_move)
 			RegisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
 			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
@@ -143,7 +142,7 @@
 	return // TODO - Implement for AI ~Leshana
 	// user.station_holomap.toggleHolomap(user, isAI(user))
 
-/obj/machinery/station_map/process()
+/obj/machinery/station_map/machine_step()
 	if((stat & (NOPOWER|BROKEN)) || !anchored)
 		stopWatching()
 	if(!watching_mob)
@@ -160,8 +159,7 @@
 		if(watching_mob.client)
 			animate(holomap_datum.station_map, alpha = 0, time = 5, easing = LINEAR_EASING)
 			var/mob/M = watching_mob
-			spawn(5) //we give it time to fade out
-				M.client.images -= holomap_datum.station_map
+			om_after(M, 5, /proc/remove_client_image, M, holomap_datum.station_map) //we give it time to fade out
 		UnregisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 		//GLOB.dir_set_event.unregister(watching_mob, src)
 		UnregisterSignal(watching_mob, COMSIG_OBSERVER_DESTROYED)
@@ -254,4 +252,3 @@
 	var/id // used for icon_state of the marker on maps
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
-

@@ -25,33 +25,32 @@
 		if(changeling.recursive_enhancement)
 			healing_amount = C.get_endurance()
 			to_chat(src, span_notice("We completely heal ourselves."))
-		spawn(0)
-			C.mend(TREAT_TISSUE_REPAIR, healing_amount)
-			C.mend(TREAT_BONE_REPAIR, healing_amount)
-			C.mend(TREAT_BURN_CARE, healing_amount)
-			C.mend(TREAT_OXYGENATION, healing_amount)
-			C.mend(TREAT_GENETIC_REPAIR, healing_amount)
-			C.mend(TREAT_NEURAL_REPAIR, healing_amount)
-			C.restore_blood()
-			C.species.create_organs(C)
-			C.restore_all_organs()
-			C.blinded = 0
-			C.status_set(EFFECT_BLINDED, 0)
-			C.status_set(EFFECT_BLURRY, 0)
-			C.status_set(EFFECT_DEAFENED, 0)
-			C.ear_damage = 0
+		C.mend(TREAT_TISSUE_REPAIR, healing_amount)
+		C.mend(TREAT_BONE_REPAIR, healing_amount)
+		C.mend(TREAT_BURN_CARE, healing_amount)
+		C.mend(TREAT_OXYGENATION, healing_amount)
+		C.mend(TREAT_GENETIC_REPAIR, healing_amount)
+		C.mend(TREAT_NEURAL_REPAIR, healing_amount)
+		C.restore_blood()
+		C.species.create_organs(C)
+		C.restore_all_organs()
+		C.blinded = 0
+		C.status_set(EFFECT_BLINDED, 0)
+		C.status_set(EFFECT_BLURRY, 0)
+		C.status_set(EFFECT_DEAFENED, 0)
+		C.ear_damage = 0
 
-			// make the icons look correct
-			C.regenerate_icons()
-			C.UpdateAppearance()
+		// make the icons look correct
+		C.regenerate_icons()
+		C.UpdateAppearance()
 
-			// now make it obvious that we're not human (or whatever xeno race they are impersonating)
-			playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
-			var/T = get_turf(src)
-			new /obj/effect/gibspawner/human(T)
-			visible_message(span_warning("With a sickening squish, [src] reforms their whole body, casting their old parts on the floor!"),
-			span_notice("We reform our body.  We are whole once more."),
-			span_warningplain("You hear organic matter ripping and tearing!"))
+		// now make it obvious that we're not human (or whatever xeno race they are impersonating)
+		playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
+		var/T = get_turf(src)
+		new /obj/effect/gibspawner/human(T)
+		visible_message(span_warning("With a sickening squish, [src] reforms their whole body, casting their old parts on the floor!"),
+		span_notice("We reform our body.  We are whole once more."),
+		span_warningplain("You hear organic matter ripping and tearing!"))
 
 	feedback_add_details("changeling_powers","RR")
 	return 1

@@ -25,9 +25,6 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/computer/process()
-	return PROCESS_KILL
-
 /obj/machinery/computer/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)

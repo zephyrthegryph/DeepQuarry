@@ -53,14 +53,13 @@
 	pain_emote_3p = list("squeaks", "squiks")
 
 /mob/living/simple_mob/animal/passive/mouse/Destroy()
-	GLOB.active_ghost_pods -= src
 	return ..()
 
 /mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
 	. = ..()
 	ghostjoin = TRUE
 	ghostjoin_icon()
-	GLOB.active_ghost_pods += src
+	registry_join(REGISTRY_GHOST_PODS, src)
 
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)

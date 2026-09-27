@@ -22,16 +22,15 @@
 
 /obj/item/spell/energy_siphon/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/spell/energy_siphon/Destroy()
 	stop_siphoning()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/spell/energy_siphon/process()
+/// Drains every 2 s while linked (on_ranged_cast() starts it); unlinked, it sleeps.
+/obj/item/spell/energy_siphon/periodic_step()
 	if(!siphoning)
-		return
+		return PROCESS_KILL
 	if(!pay_energy(100))
 		to_chat(owner, span_warning("You can't afford to maintain the siphon link!"))
 		stop_siphoning()
@@ -56,6 +55,7 @@
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
 		siphoning = AM
+		PERIODIC_START(src, PERIODIC_SLOW)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else
@@ -162,15 +162,14 @@
 	if(user && source && user != source)
 		INVOKE_ASYNC(src, PROC_REF(create_lightning_beam), user, source)
 
-/obj/item/spell/energy_siphon/proc/create_lightning_beam(mob/user, atom/source)
-	var/i = 7 // process() takes two seconds to tick, this ensures the appearance of a ongoing beam.
-	while(i)
-		var/obj/item/projectile/beam/lightning/energy_siphon/lightning = new(get_turf(source))
-		lightning.firer = user
-		lightning.old_style_target(user)
-		lightning.fire()
-		i--
-		sleep(3)
+/// Seven bolts 0.3 s apart: process() takes two seconds to tick, this ensures the appearance of a ongoing beam.
+/obj/item/spell/energy_siphon/proc/create_lightning_beam(mob/user, atom/source, left = 7)
+	var/obj/item/projectile/beam/lightning/energy_siphon/lightning = new(get_turf(source))
+	lightning.firer = user
+	lightning.old_style_target(user)
+	lightning.fire()
+	if(left > 1)
+		om_after(src, 0.3 SECONDS, PROC_REF(create_lightning_beam), user, source, left - 1)
 
 /obj/item/projectile/beam/lightning/energy_siphon
 	name = "energy stream"

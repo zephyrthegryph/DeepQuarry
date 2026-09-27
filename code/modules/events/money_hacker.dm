@@ -7,8 +7,8 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /datum/event/money_hacker/setup()
 	end_time = world.time + 6000
-	if(GLOB.all_money_accounts.len)
-		affected_account = pick(GLOB.all_money_accounts)
+	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
+		affected_account = pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 
 		GLOB.account_hack_attempted = 1
 	else

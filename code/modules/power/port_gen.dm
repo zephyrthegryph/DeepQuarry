@@ -38,9 +38,9 @@
 		active = TRUE
 		update_icon()
 		// soundloop.start()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
-/obj/machinery/power/port_gen/process()
+/obj/machinery/power/port_gen/machine_step()
 	if(active && HasFuel() && !IsBroken() && anchored && powernet)
 		set_power_supply(power_gen * power_output)
 		UseFuel()
@@ -104,8 +104,7 @@
 
 	stat |= EMPED
 	if(duration)
-		spawn(duration)
-			stat &= ~EMPED
+		om_after(src, duration, PROC_REF(emp_recover))
 
 /obj/machinery/power/port_gen/proc/explode()
 	explosion(src.loc, -1, 3, 5, -1)
@@ -644,7 +643,7 @@
 		W.move_into(src, CONTAINER_SLOT_INTERNALS)
 	RefreshParts()
 
-/obj/machinery/power/rtg/process()
+/obj/machinery/power/rtg/machine_step()
 	..()
 	add_avail(power_gen)
 	if(panel_open && irradiate)
@@ -964,7 +963,7 @@
 	else
 		icon_state = "reg"
 
-/obj/machinery/power/rtg/reg/process()
+/obj/machinery/power/rtg/reg/machine_step()
 	..()
 	if(length(BUCKLED_MOBS(src)) > 0)
 		for(var/mob/living/L in BUCKLED_MOBS(src))
@@ -1189,3 +1188,15 @@
 	if(istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)) && Proj.damage >= 20)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
+
+/obj/machinery/power/port_gen/proc/emp_recover()
+	stat &= ~EMPED
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/rtg/step_start_condition()
+	return anchored
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/port_gen/step_start_condition()
+	return active

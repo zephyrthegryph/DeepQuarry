@@ -216,7 +216,7 @@
 	delay_by = 0
 	current_chord = 1
 	music_player = user
-	START_PROCESSING(SSinstruments, src)
+	PERIODIC_START(src, PERIODIC_INSTRUMENTS)
 	if(id)
 		sync_play()
 
@@ -256,7 +256,7 @@
 	playing = FALSE
 	if(!debug_mode)
 		compiled_chords = null
-	STOP_PROCESSING(SSinstruments, src)
+	PERIODIC_STOP(src)
 	SEND_SIGNAL(parent, COMSIG_INSTRUMENT_END, finished)
 	terminate_all_sounds(TRUE)
 	hearing_mobs.len = 0
@@ -348,7 +348,7 @@
 /datum/song/proc/set_bpm(bpm)
 	tempo = sanitize_tempo(600 / bpm)
 
-/datum/song/process(wait)
+/datum/song/periodic_step(wait)
 	if(!playing)
 		return PROCESS_KILL
 	// it's expected this ticks at every world.tick_lag. if it lags, do not attempt to catch up.

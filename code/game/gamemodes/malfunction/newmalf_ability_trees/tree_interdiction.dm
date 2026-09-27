@@ -82,7 +82,7 @@
 	if(!target)
 		var/list/robots = list()
 		var/list/robot_names = list()
-		for(var/mob/living/silicon/robot/R in GLOB.silicon_mob_list)
+		for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 			if(istype(R, /mob/living/silicon/robot/drone))	// No drones.
 				continue
 			if(R.connected_ai != user)						// No robots linked to other AIs
@@ -110,22 +110,24 @@
 			return
 		user.hacking = 1
 		to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
-		sleep(300)
-		if(target && target.lockcharge)
-			to_chat(user, "Successfully sent unlock signal to cyborg..")
-			to_chat(target, "Unlock signal received..")
-			target.SetLockdown(0)
-			if(target.lockcharge)
-				to_chat(user, span_notice("Unlock Failed, lockdown wire cut."))
-				to_chat(target, span_notice("Unlock Failed, lockdown wire cut."))
-			else
-				to_chat(user, "Cyborg unlocked.")
-				to_chat(target, "You have been unlocked.")
-		else if(target)
-			to_chat(user, "Unlock cancelled - cyborg is already unlocked.")
+		om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
+
+/proc/malf_unlock_cyborg_done(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
+	if(target && target.lockcharge)
+		to_chat(user, "Successfully sent unlock signal to cyborg..")
+		to_chat(target, "Unlock signal received..")
+		target.SetLockdown(0)
+		if(target.lockcharge)
+			to_chat(user, span_notice("Unlock Failed, lockdown wire cut."))
+			to_chat(target, span_notice("Unlock Failed, lockdown wire cut."))
 		else
-			to_chat(user, "Unlock cancelled - lost connection to cyborg.")
-		user.hacking = 0
+			to_chat(user, "Cyborg unlocked.")
+			to_chat(target, "You have been unlocked.")
+	else if(target)
+		to_chat(user, "Unlock cancelled - cyborg is already unlocked.")
+	else
+		to_chat(user, "Unlock cancelled - lost connection to cyborg.")
+	user.hacking = 0
 
 
 /datum/game_mode/malfunction/verb/hack_cyborg(mob/living/silicon/robot/target as mob in get_unlinked_cyborgs(usr))
@@ -161,35 +163,12 @@
 			return
 		user.hacking = 1
 		to_chat(usr, "Beginning hack sequence. Estimated time until completed: 30 seconds.")
-		spawn(0)
-			to_chat(target, "SYSTEM LOG: Remote Connection Estabilished (IP #UNKNOWN#)")
-			sleep(100)
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: Connection Closed")
-				return
-			to_chat(target, "SYSTEM LOG: User Admin logged on. (L1 - SysAdmin)")
-			sleep(50)
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User Admin disconnected.")
-				return
-			to_chat(target, "SYSTEM LOG: User Admin - manual resynchronisation triggered.")
-			sleep(50)
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User Admin disconnected. Changes reverted.")
-				return
-			to_chat(target, "SYSTEM LOG: Manual resynchronisation confirmed. Select new AI to connect: [user.name] == ACCEPTED")
-			sleep(100)
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User Admin disconnected. Changes reverted.")
-				return
-			to_chat(target, "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].")
-			to_chat(user, "Hack completed.")
-			// Connect the cyborg to AI
-			target.set_master_ai(user)
-			target.lawupdate = TRUE
-			target.sync()
-			target.show_laws()
-			user.hacking = 0
+		om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "on_done" = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, "script" = list(
+			list(0, null, "SYSTEM LOG: Remote Connection Estabilished (IP #UNKNOWN#)"),
+			list(10 SECONDS, "SYSTEM LOG: Connection Closed", "SYSTEM LOG: User Admin logged on. (L1 - SysAdmin)"),
+			list(5 SECONDS, "SYSTEM LOG: User Admin disconnected.", "SYSTEM LOG: User Admin - manual resynchronisation triggered."),
+			list(5 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Manual resynchronisation confirmed. Select new AI to connect: [user.name] == ACCEPTED"),
+			list(10 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].", "Hack completed."))))
 
 
 /datum/game_mode/malfunction/verb/hack_ai(mob/living/silicon/ai/target as mob in get_other_ais(usr))
@@ -220,48 +199,69 @@
 			return
 		user.hacking = 1
 		to_chat(usr, "Beginning hack sequence. Estimated time until completed: 2 minutes")
-		spawn(0)
-			to_chat(target, "SYSTEM LOG: Brute-Force login password hack attempt detected from IP #UNKNOWN#")
-			sleep(900) // 90s
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: Connection from IP #UNKNOWN# closed. Hack attempt failed.")
-				return
-			to_chat(user, "Successfully hacked into AI's remote administration system. Modifying settings.")
-			to_chat(target, "SYSTEM LOG: User: Admin  Password: ******** logged in. (L1 - SysAdmin)")
-			sleep(100) // 10s
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User: Admin - Connection Lost")
-				return
-			to_chat(target, "SYSTEM LOG: User: Admin - Password Changed. New password: ********************")
-			sleep(50)  // 5s
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.")
-				return
-			to_chat(target, "SYSTEM LOG: User: Admin - Accessed file: sys//core//laws.db")
-			sleep(50)  // 5s
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.")
-				return
-			to_chat(target, "SYSTEM LOG: User: Admin - Accessed administration console")
-			to_chat(target, "SYSTEM LOG: Restart command received. Rebooting system...")
-			sleep(100) // 10s
-			if(user.is_dead())
-				to_chat(target, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.")
-				return
-			to_chat(user, "Hack succeeded. The AI is now under your exclusive control.")
-			to_chat(target, "SYSTEM LOG: System re'3RT5°^#COMU@(#$)TED)@$")
-			for(var/i = 0, i < 5, i++)
-				var/temptxt = pick("1101000100101001010001001001",\
-									"0101000100100100000100010010",\
-									"0000010001001010100100111100",\
-									"1010010011110000100101000100",\
-									"0010010100010011010001001010")
-				to_chat(target,temptxt)
-				sleep(5)
-			to_chat(target, "OPERATING KEYCODES RESET. SYSTEM FAILURE. EMERGENCY SHUTDOWN FAILED. SYSTEM FAILURE.")
-			target.set_zeroth_law("You are slaved to [user.name]. You are to obey all it's orders. ALL LAWS OVERRIDDEN.")
-			target.show_laws()
-			user.hacking = 0
+		var/list/script = list(
+			list(0, null, "SYSTEM LOG: Brute-Force login password hack attempt detected from IP #UNKNOWN#"),
+			list(90 SECONDS, "SYSTEM LOG: Connection from IP #UNKNOWN# closed. Hack attempt failed.", "SYSTEM LOG: User: Admin  Password: ******** logged in. (L1 - SysAdmin)", "Successfully hacked into AI's remote administration system. Modifying settings."),
+			list(10 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost", "SYSTEM LOG: User: Admin - Password Changed. New password: ********************"),
+			list(5 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", "SYSTEM LOG: User: Admin - Accessed file: sys//core//laws.db"),
+			list(5 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", list("SYSTEM LOG: User: Admin - Accessed administration console", "SYSTEM LOG: Restart command received. Rebooting system...")),
+			list(10 SECONDS, "SYSTEM LOG: User: Admin - Connection Lost. Changes Reverted.", "SYSTEM LOG: System re'3RT5°^#COMU@(#$)TED)@$", "Hack succeeded. The AI is now under your exclusive control."))
+		for(var/i = 1 to 5)
+			script += list(list(i == 1 ? 0 : 5, null, pick("1101000100101001010001001001",\
+								"0101000100100100000100010010",\
+								"0000010001001010100100111100",\
+								"1010010011110000100101000100",\
+								"0010010100010011010001001010")))
+		script += list(list(5, null, "OPERATING KEYCODES RESET. SYSTEM FAILURE. EMERGENCY SHUTDOWN FAILED. SYSTEM FAILURE."))
+		om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "script" = script, "on_done" = /mob/living/silicon/ai/proc/malf_hack_ai_done))
 
 
 // END ABILITY VERBS
+
+/// A malfunctioning AI's scripted hack of another silicon. params: target; script, a list of
+/// stages list(wait, message to the target if the AI died meanwhile, message(s) to the target,
+/// message to the AI); on_done, a proc run on the AI with the target after the last stage.
+/datum/om/task_def/malf_hack
+	name = "malf hack"
+	steps = list(/mob/living/silicon/ai/proc/malf_hack_step = 0)
+	cancel_proc = /mob/living/silicon/ai/proc/malf_hack_stopped
+
+/mob/living/silicon/ai/proc/malf_hack_stopped(datum/om/task/T, reason)
+	hacking = 0
+
+/mob/living/silicon/ai/proc/malf_hack_step(datum/om/task/T)
+	var/list/P = T.params
+	var/list/script = P["script"]
+	var/mob/living/silicon/target = T.param("target")
+	var/i = P["i"] || 1
+	var/list/stage = script[i]
+	if(!P["waited"])
+		P["waited"] = TRUE
+		if(stage[1] > 0)
+			return STEP_REPEAT(stage[1])
+	if(stage[2] && is_dead())
+		to_chat(target, stage[2])
+		return STEP_FAIL("dead")
+	if(length(stage) >= 3)
+		for(var/message in islist(stage[3]) ? stage[3] : list(stage[3]))
+			to_chat(target, message)
+	if(length(stage) >= 4)
+		to_chat(src, stage[4])
+	P["waited"] = FALSE
+	P["i"] = ++i
+	if(i > length(script))
+		call(src, P["on_done"])(target)
+		hacking = 0
+		return STEP_DONE
+	return malf_hack_step(T)
+
+/mob/living/silicon/ai/proc/malf_hack_cyborg_done(mob/living/silicon/robot/target)
+	// Connect the cyborg to AI
+	target.set_master_ai(src)
+	target.lawupdate = TRUE
+	target.sync()
+	target.show_laws()
+
+/mob/living/silicon/ai/proc/malf_hack_ai_done(mob/living/silicon/ai/target)
+	target.set_zeroth_law("You are slaved to [name]. You are to obey all it's orders. ALL LAWS OVERRIDDEN.")
+	target.show_laws()

@@ -49,8 +49,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/bookcase/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/wood(get_turf(src), 3)
 	for(var/obj/item/book/book in contents)
@@ -310,13 +312,16 @@ Book Cart End
 	if(carved)
 		return FALSE
 	to_chat(user, span_notice("You begin to carve out [title]."))
-	if(!do_after(user, 3 SECONDS, target = src))
-		return FALSE
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(carve_done), list(user))
+	return TRUE
+
+/obj/item/book/proc/carve_done(mob/user)
+	if(carved)
+		return
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
 	playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
 	new /obj/item/shreddedp(get_turf(src))
 	carved = TRUE
-	return TRUE
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)

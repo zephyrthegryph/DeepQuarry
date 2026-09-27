@@ -8,7 +8,7 @@
 	parent_organ = BP_HEAD
 	vital = 1
 
-/obj/item/organ/internal/borer/process()
+/obj/item/organ/internal/borer/periodic_step()
 	if(!owner || !owner.reagents)
 		return
 
@@ -42,8 +42,7 @@
 		B.leave_host()
 		move_player(prev_owner, B, "borer organ removed from [prev_owner]")
 
-	spawn(0)
-		qdel(src)
+	om_qdel_after(src, 0)
 
 //VOX ORGANS.
 /obj/item/organ/internal/stack

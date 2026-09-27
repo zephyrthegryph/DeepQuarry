@@ -125,11 +125,7 @@
 			droppedSomething = 1
 			if(!foundtable && isturf(dropspot))
 				// if no table, presume that the person just shittily dropped the tray on the ground and made a mess everywhere!
-				spawn()
-					for(var/i = 1, i <= rand(1,2), i++)
-						if(I)
-							step(I, pick(NORTH,SOUTH,EAST,WEST))
-							sleep(rand(2,4))
+				I.scatter_steps(rand(1, 2))
 		if ( droppedSomething )
 			if ( foundtable )
 				user.visible_message(span_notice("[user] unloads their service tray."))
@@ -229,20 +225,14 @@
 	switch(choice)
 		if("Paper")
 			flick("doc_printer_mod_ejecting", src)
-			spawn(22)
-				var/turf/T = get_turf(src)
-				T.visible_message(span_notice("\The [src.loc] dispenses a sheet of crisp white paper."))
-				new /obj/item/paper(T)
+			om_after(src, 22, PROC_REF(dispense_paper))
 		if ("Form")
 			var/list/content = print_form(user)
 			if(!content)
 				to_chat(user, span_warning("No form for this category found in central network. Central is advising employees to upload new forms whenever possible."))
 				return
 			flick("doc_printer_mod_printing", src)
-			spawn(22)
-				var/turf/T = get_turf(src)
-				T.visible_message(span_notice("\The [src.loc] dispenses an official form to fill."))
-				new /obj/item/paper(T, content[1], content[2])
+			om_after(src, 22, PROC_REF(dispense_form), content)
 
 /obj/item/form_printer/proc/print_form(mob/user)
 	var/list/paper_forms = list("Empty", "Command", "Security", "Supply", "Science", "Medical", "Engineering", "Service", "Exploration", "Event", "Other", "Mercenary")
@@ -490,10 +480,8 @@
 
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 
 /obj/item/borg/combat/shield/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/borg/combat/shield/attack_self(mob/living/user)
@@ -502,7 +490,11 @@
 		return TRUE
 	set_shield_level()
 
-/obj/item/borg/combat/shield/process()
+/// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
+/// or an overload starts it); otherwise it sleeps.
+/obj/item/borg/combat/shield/periodic_step()
+	if(active && !flash_count)
+		return PROCESS_KILL
 	if(active)
 		if(flash_count && (last_flash + shield_refresh < world.time))
 			flash_count = 0
@@ -520,6 +512,7 @@
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
 	if(active)			//Can't destabilize a shield that's not on
 		flash_count += amount
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 		if(amount > 0)
 			last_flash = world.time
@@ -531,6 +524,7 @@
 	user.visible_message(span_danger("[user]'s shield destabilizes!"), span_danger("Your shield destabilizes!"))
 	user.update_icon()
 	overload_time = world.time
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/borg/combat/shield/verb/set_shield_level()
 	set name = "Set shield level"
@@ -697,3 +691,13 @@
 		span_notice("You hear synthesized audio of clattering plastic with a soft ping."))
 	user.balloon_alert_visible("rolled: [result]", blind_message = "*clatter, ping!*")
 	playsound(user, 'sound/effects/diceroll_robotic.ogg', 75, 0)
+
+/obj/item/form_printer/proc/dispense_paper()
+	var/turf/T = get_turf(src)
+	T.visible_message(span_notice("\The [src.loc] dispenses a sheet of crisp white paper."))
+	new /obj/item/paper(T)
+
+/obj/item/form_printer/proc/dispense_form(list/content)
+	var/turf/T = get_turf(src)
+	T.visible_message(span_notice("\The [src.loc] dispenses an official form to fill."))
+	new /obj/item/paper(T, content[1], content[2])

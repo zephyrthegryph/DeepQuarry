@@ -125,8 +125,7 @@
 	to_chat(user, "Emergency forcefield projection completed.")
 	new/obj/machinery/shield/malfai(T)
 	user.hacking = 1
-	spawn(20)
-		user.hacking = 0
+	om_after(user, 2 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "hacking", 0)
 
 
 /datum/game_mode/malfunction/verb/machine_overload(obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -201,9 +200,11 @@
 
 
 	M.visible_message(span_notice("BZZZZZZZT"))
-	spawn(50)
-		explosion(get_turf(M), round(explosion_intensity/4),round(explosion_intensity/2),round(explosion_intensity),round(explosion_intensity * 2))
-		if(M)
-			qdel(M)
+	om_after(M, 5 SECONDS, TYPE_PROC_REF(/obj/machinery, malf_overload_boom), explosion_intensity)
 
 // END ABILITY VERBS
+
+/// The end of a malfunctioning AI's machine overload.
+/obj/machinery/proc/malf_overload_boom(explosion_intensity)
+	explosion(get_turf(src), round(explosion_intensity/4),round(explosion_intensity/2),round(explosion_intensity),round(explosion_intensity * 2))
+	qdel(src)

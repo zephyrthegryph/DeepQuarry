@@ -46,12 +46,12 @@
 	used = TRUE
 	icon_state = icon_state_opened
 	update_icon()
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_simplemob(mob/M)
 	var/choice
 	var/finalized = FALSE
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 
 	if(needscharger)
 		new /obj/machinery/recharge_station/ghost_pod_recharger(src.loc)
@@ -91,7 +91,7 @@
 	qdel(src)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_morph(mob/M)
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 	var/mob/living/simple_mob/vore/morph/newMorph = new /mob/living/simple_mob/vore/morph(get_turf(src))
 	newMorph.voremob_loaded = TRUE // On-demand belly loading.
 	if(M.mind)
@@ -118,7 +118,7 @@
 		return
 	var/picked_ckey = M.ckey
 	var/picked_slot = M.client.prefs.default_slot
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 
 	var/mob/living/carbon/human/new_character = new(src.loc)
 	if(!new_character)
@@ -161,7 +161,7 @@
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/Initialize(mapload)
 	. = ..()
-	GLOB.active_ghost_pods += src
+	registry_join(REGISTRY_GHOST_PODS, src)
 
 	update_icon()
 
@@ -177,7 +177,6 @@
 	add_overlay(glows)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/Destroy()
-	GLOB.active_ghost_pods -= src
 	. = ..()
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/redgate

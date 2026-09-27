@@ -165,7 +165,7 @@
 	switch(action)
 		if("switchOn")
 			on = 1
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			update_icon()
 		if("switchOff")
 			on = 0
@@ -316,7 +316,7 @@
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	if(on)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	occupant.cozyloop.start() // Cozy Music
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
@@ -328,6 +328,12 @@
 	SStgui.update_uis(src)
 	return 1
 
+/// The occupant's two-minute release sequence finished.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/release_sequence_done(mob/living/carbon/who)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_CRYO) != who) //Check if someone's released/replaced/bombed him already
+		return
+	go_out()//and release him from the eternal prison.
+
 /obj/machinery/atmospherics/unary/cryo_cell/verb/move_eject()
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	set name = "Eject occupant"
@@ -337,10 +343,7 @@
 		if(usr.stat == 2)//and he's not dead....
 			return
 		to_chat(usr, span_notice("Release sequence activated. This will take two minutes."))
-		sleep(1200)
-		if(!src || !usr || !occupant || (occupant != usr)) //Check if someone's released/replaced/bombed him already
-			return
-		go_out()//and release him from the eternal prison.
+		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), usr)
 	else
 		if(usr.stat != 0)
 			return

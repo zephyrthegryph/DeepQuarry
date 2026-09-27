@@ -90,8 +90,7 @@ GLOBAL_DATUM_INIT(unarmed_hardclaws, /datum/unarmed_attack/hardclaws, new)
 		H.put_in_hands(dgun)
 		nif.notify("Weapon deployed!",TRUE)
 		used = TRUE
-		spawn(0)
-			uninstall()
+		om_after(src, 0, PROC_REF(uninstall))
 
 //The gun to go with this implant
 /obj/item/gun/energy/gun/compact/dazzle

@@ -15,8 +15,8 @@
 /datum/board_game/space_battle
 	name = GAME_SPACE_BATTLE
 	table_icon = "gamble_space"
-	var/datum/weakref/player_one
-	var/datum/weakref/player_two
+	var/player_one
+	var/player_two
 	var/list/ship_count_pone
 	var/list/ship_count_ptwo
 	var/list/shots_fired_pone = list()
@@ -58,8 +58,8 @@
 	)
 
 /datum/board_game/space_battle/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/player_one_mob = player_one?.resolve()
-	var/mob/player_two_mob = player_two?.resolve()
+	var/mob/player_one_mob = om_resolve(player_one)
+	var/mob/player_two_mob = om_resolve(player_two)
 
 	var/list/visible_ships = list()
 	if(ui.user == player_one_mob || game_state == GAME_OVER)
@@ -93,25 +93,25 @@
 		if("be_player_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_one?.resolve() == ui.user)
+			if(om_resolve(player_one) == ui.user)
 				player_one = null
 				return TRUE
-			player_one = WEAKREF(ui.user)
+			player_one = om_handle(ui.user)
 			return TRUE
 		if("be_player_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_two?.resolve() == ui.user)
+			if(om_resolve(player_two) == ui.user)
 				player_two = null
 				return TRUE
-			player_two = WEAKREF(ui.user)
+			player_two = om_handle(ui.user)
 			return TRUE
 		if("swap_players")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
-			var/datum/weakref/temp_player = player_one
+			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
 		if("clear_game")
@@ -122,8 +122,8 @@
 		if("prepare_game")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			var/mob/player_one_mob = player_one?.resolve()
-			var/mob/player_two_mob = player_two?.resolve()
+			var/mob/player_one_mob = om_resolve(player_one)
+			var/mob/player_two_mob = om_resolve(player_two)
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 			game_state = GAME_PLACE_SHIPS
@@ -135,8 +135,8 @@
 				return FALSE
 			if(!(ships_have_been_placed == (PLAYER_ONE_PLACED_SHIPS | PLAYER_TWO_PLACED_SHIPS)))
 				return FALSE
-			var/mob/player_one_mob = player_one?.resolve()
-			var/mob/player_two_mob = player_two?.resolve()
+			var/mob/player_one_mob = om_resolve(player_one)
+			var/mob/player_two_mob = om_resolve(player_two)
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 			ship_count_pone = get_alive_ships(1)
@@ -146,25 +146,25 @@
 		if("play_again")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
 			return TRUE
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
-			var/datum/weakref/temp_player = player_one
+			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
 			return TRUE
 		if("place_ship")
 			if(game_state != GAME_PLACE_SHIPS)
 				return FALSE
-			var/mob/player_one_mob = player_one?.resolve()
-			var/mob/player_two_mob = player_two?.resolve()
+			var/mob/player_one_mob = om_resolve(player_one)
+			var/mob/player_two_mob = om_resolve(player_two)
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 
@@ -222,8 +222,8 @@
 		if("remove_ship")
 			if(game_state != GAME_PLACE_SHIPS)
 				return FALSE
-			var/mob/player_one_mob = player_one?.resolve()
-			var/mob/player_two_mob = player_two?.resolve()
+			var/mob/player_one_mob = om_resolve(player_one)
+			var/mob/player_two_mob = om_resolve(player_two)
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 
@@ -253,14 +253,14 @@
 						return TRUE
 			return FALSE
 		if("game_action")
-			if(ui.user == player_one?.resolve() && game_state == GAME_PLAYER_ONE)
+			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
 				if(params["data"]["player"] == 1)
 					return FALSE
 				if(player_actions(params["action"], params["data"], ui.user))
 					if(game_state < GAME_OVER)
 						game_state = GAME_PLAYER_TWO
 					return TRUE
-			if(ui.user == player_two?.resolve() && game_state == GAME_PLAYER_TWO)
+			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
 				if(params["data"]["player"] == 2)
 					return FALSE
 				if(player_actions(params["action"], params["data"], ui.user))

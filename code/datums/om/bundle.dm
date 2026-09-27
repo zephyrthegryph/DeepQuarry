@@ -82,6 +82,14 @@
 	var/service_mask = 0
 	/// Services observing this type.
 	var/list/services
+	/// Declared caches (declared_cache_vars(), read from the first instance by
+	/// om_cache_scan()): the change bits that clear one, and stride-2 rules
+	/// (bits, var) / (event path, var) / (relation id, var).
+	var/cache_scanned = FALSE
+	var/cache_mask = 0
+	var/list/cache_change
+	var/list/cache_events
+	var/list/cache_relations
 
 // ---- Combinators (plain lists; used by checks, effects and derived rows). ----
 

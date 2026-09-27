@@ -64,7 +64,7 @@
 
 	var/obj/L = null
 
-	for(var/obj/effect/landmark/sloc in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(sloc.name != C.data) continue
 		if(locate(/mob/living) in sloc.loc) continue
 		L = sloc
@@ -162,10 +162,9 @@
 	return ..()
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
-	spawn()
-		if(icon_state == "tele1")
-			teleport(M)
-			use_power(5000)
+	if(icon_state == "tele1")
+		teleport(M)
+		use_power(5000)
 	return
 
 /obj/machinery/teleport/hub/proc/teleport(atom/movable/M as mob|obj)
@@ -197,7 +196,7 @@
 		s.set_up(5, 1, src)
 		s.start()
 		accurate = 1
-		spawn(3000)	accurate = 0 //Accurate teleporting for 5 minutes
+		om_after(src, 5 MINUTES, TYPE_PROC_REF(/datum, om_set_var), "accurate", 0) //Accurate teleporting for 5 minutes
 		for(var/mob/B in hearers(src, null))
 			B.show_message(span_notice("Test fire completed."))
 	return

@@ -49,10 +49,7 @@
 		status_set(EFFECT_PARALYZED, 7998)
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
 		src.visible_message(span_notice("\The [src] begins to lay an egg."))
-		spawn(50)
-			new /obj/effect/metroid/egg(loc, src)
-			adjust_nutrition(-500)
-			status_set(EFFECT_PARALYZED, 0)
+		om_after(src, 5 SECONDS, PROC_REF(lay_egg))
 		return
 
 	if(nutrition >= evo_point && !BUCKLED(src) && vore_fullness == 0 && !victim)
@@ -61,8 +58,7 @@
 			return
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
 		status_set(EFFECT_PARALYZED, 7998)
-		sleep(50)
-		expand_troid()
+		om_after(src, 5 SECONDS, PROC_REF(expand_troid))
 
 	if(nutrition >= evo_limit && (BUCKLED(src) || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()
@@ -173,3 +169,8 @@
 
 	else
 		..()
+
+/mob/living/simple_mob/metroid/juvenile/proc/lay_egg()
+	new /obj/effect/metroid/egg(loc, src)
+	adjust_nutrition(-500)
+	status_set(EFFECT_PARALYZED, 0)

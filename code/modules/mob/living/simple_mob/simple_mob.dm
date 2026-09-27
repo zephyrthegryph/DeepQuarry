@@ -434,9 +434,7 @@
 		to_chat(src, "You can sense other creatures by focusing carefully on your surroundings.")
 		sight |= SEE_MOBS
 		hunting_cooldown = world.time
-		spawn(600)
-			to_chat(src, "Your concentration wears off.")
-			sight -= SEE_MOBS
+		om_after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
 	else if(hunting_cooldown + 5 MINUTES > world.time)
 		to_chat(src, "You must wait for a while before using this again.")
 
@@ -660,20 +658,20 @@
 	// ai_log("vr/EatTarget() [M]",2) // AI TEMPORARY REMOVAL
 	// stop_automated_movement = 1 // AI TEMPORARY REMOVAL
 	var/old_target = M
-	if(ai_brain) ai_brain.busy = 1 // AI TEMPORARY EDIT
+	ai_busy_begin() // AI TEMPORARY EDIT
 	. = animal_nom(M)
 	playsound(src, swallowsound, 50, 1)
 	update_icon()
 
 	if(.)
 		// If we succesfully ate them, lose the target
-		if(ai_brain) ai_brain.busy = 0 // lose_target(M) //Unsure what to put here. Replaced with set_AI_busy(1) // AI TEMPORARY EDIT
+		ai_busy_end() // lose_target(M) //Unsure what to put here. Replaced with set_AI_busy(1) // AI TEMPORARY EDIT
 		return old_target
 	else if(old_target == M)
 		// If we didn't but they are still our target, go back to attack.
 		// but don't run the handler immediately, wait until next tick
 		// Otherwise we'll be in a possibly infinate loop
-		if(ai_brain) ai_brain.busy = 0 // AI TEMPORARY EDIT
+		ai_busy_end() // AI TEMPORARY EDIT
 	// stop_automated_movement = 0 // AI TEMPORARY EDIT
 
 // Make sure you don't call ..() on this one, otherwise you duplicate work.
@@ -767,11 +765,11 @@
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
-		if(ai_brain) ai_brain.busy = TRUE
-		spawn()
+		ai_busy_begin()
+		spawn() // S7 keeps: animal_nom() sleeps in do_after() (S8)
 			animal_nom(tmob)
 			update_icon()
-			if(ai_brain) ai_brain.busy = FALSE
+			ai_busy_end()
 		return TRUE
 	return FALSE
 
@@ -926,9 +924,9 @@
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	playsound(src, 'sound/effects/bodyfall1.ogg', 50, 1)
 	pixel_y = default_pixel_y
+	om_after(src, 5, PROC_REF(leap_land), T)
 
-	sleep(5)
-
+/mob/living/simple_mob/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) status_flags &= ~LEAPING
 
 	if(!Adjacent(T))
@@ -1050,3 +1048,6 @@
 	else
 		to_chat(src, span_warning("Your mob does not have a PDA in its ID slot."))
 
+/mob/living/simple_mob/proc/hunting_vision_ends()
+	to_chat(src, "Your concentration wears off.")
+	sight -= SEE_MOBS

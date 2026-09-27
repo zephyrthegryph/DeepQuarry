@@ -26,7 +26,7 @@
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
-	var/list/mob/living/masters
+	// The mobs flying it are UAV_MASTERS(src) (the uav_master relation).
 
 	// So you know which is which
 	var/nickname = "Unnamed UAV"
@@ -59,8 +59,6 @@
 /obj/item/uav/Destroy()
 	QDEL_NULL(cell)
 	QDEL_NULL(ion_trail)
-	LAZYCLEARLIST(masters)
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/item/uav/examine(mob/user)
@@ -99,8 +97,7 @@
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
 				user.visible_message(span_infoplain(span_bold("[user]") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src]."), span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src]."))
-				if(do_after(user, 10 SECONDS, target = src))
-					return toggle_packed(user)
+				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 		// Can toggle power from on and off
 		if("Toggle Power")
 			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
@@ -110,22 +107,19 @@
 			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
 				return toggle_pairing(user)
 
+/obj/item/uav/proc/attack_hand_timed_done(mob/user)
+	return toggle_packed(user)
+
 /obj/item/uav/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
-		LAZYDISTINCTADD(MC.paired_uavs, WEAKREF(src))
+		LAZYDISTINCTADD(MC.paired_uavs, om_handle(src))
 		playsound(src, 'sound/machines/buttonbeep.ogg', 50, 1)
 		visible_message(span_notice("[user] pairs [I] to [nickname]"))
 		toggle_pairing()
 
 	else if(istype(I, /obj/item/cell) && !cell)
-		if(do_after(user, 3 SECONDS, target = src))
-			to_chat(user, span_notice("You insert [I] into [nickname]."))
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			power_down()
-			user.remove_from_mob(I)
-			I.forceMove(src)
-			cell = I
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
 		var/tmp_label = tgui_input_text(user, "Enter a nickname for [src]", "Nickname", nickname, MAX_NAME_LEN)
@@ -138,16 +132,28 @@
 	else
 		return ..()
 
+/obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
+	to_chat(user, span_notice("You insert [I] into [nickname]."))
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	power_down()
+	user.remove_from_mob(I)
+	I.forceMove(src)
+	cell = I
+
 /obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
 	if(!cell)
 		return ITEM_INTERACT_BLOCKING
-	if(do_after(user, 3 SECONDS, target = src) && cell)
-		to_chat(user, span_notice("You remove [cell] from [nickname]."))
-		playsound(src, tool.usesound, 50, 1)
-		power_down()
-		cell.forceMove(get_turf(src))
-		cell = null
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/uav/proc/screwdriver_act_timed_done(mob/user, obj/item/tool)
+	if(!(cell))
+		return
+	to_chat(user, span_notice("You remove [cell] from [nickname]."))
+	playsound(src, tool.usesound, 50, 1)
+	power_down()
+	cell.forceMove(get_turf(src))
+	cell = null
 
 /obj/item/uav/proc/can_transition_to(new_state, mob/user)
 	switch(state) //Current one
@@ -182,14 +188,14 @@
 		if(UAV_PACKED)
 			icon_state = "[initial(icon_state)]_packed"
 
-/obj/item/uav/process()
+/obj/item/uav/periodic_step()
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
 		playsound(src, 'sound/items/drop/metalboots.ogg', 75, 1)
 		power_down()
 		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 
-	if(LAZYLEN(masters))
+	if(length(UAV_MASTERS(src)))
 		no_masters_time = 0
 	else if(no_masters_time++ > 50)
 		power_down()
@@ -247,7 +253,7 @@
 	update_icon()
 	start_hover()
 	set_light_on(TRUE)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	no_masters_time = 0
 	visible_message(span_notice("[nickname] buzzes and lifts into the air."))
 
@@ -259,8 +265,8 @@
 	update_icon()
 	stop_hover()
 	set_light_on(FALSE)
-	LAZYCLEARLIST(masters)
-	STOP_PROCESSING(SSobj, src)
+	clear_masters()
+	PERIODIC_STOP(src)
 	visible_message(span_notice("[nickname] gracefully settles onto the ground."))
 
 //////////////// Helpers
@@ -268,7 +274,7 @@
 	return cell
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
-	if(signal && state == UAV_ON && (WEAKREF(user) in masters))
+	if(signal && state == UAV_ON && (user in UAV_MASTERS(src)))
 		if(next_move <= world.time)
 			next_move = world.time + (1 SECOND/signal)
 			step(src, direction)
@@ -279,10 +285,14 @@
 	return "[nickname] - [get_x(src)],[get_y(src)],[get_z(src)] - I:[get_integrity()]/[max_integrity] - C:[cell ? "[cell.charge]/[cell.maxcharge]" : "Not Installed"]"
 
 /obj/item/uav/proc/add_master(mob/living/M)
-	LAZYDISTINCTADD(masters, WEAKREF(M))
+	om_link(M, src, /datum/om/relation/uav_master)
 
 /obj/item/uav/proc/remove_master(mob/living/M)
-	LAZYREMOVE(masters, WEAKREF(M))
+	om_unlink(M, src, /datum/om/relation/uav_master)
+
+/obj/item/uav/proc/clear_masters()
+	for(var/mob/living/M as anything in UAV_MASTERS(src))
+		remove_master(M)
 
 /obj/item/uav/proc/start_hover()
 	if(!ion_trail.on) //We'll just use this to store if we're floating or not
@@ -306,25 +316,19 @@
 
 /obj/item/uav/hear_talk(mob/M, list/message_pieces, verb)
 	var/name_used = M.GetVoice()
-	for(var/wr_master in masters)
-		var/datum/weakref/wr = wr_master
-		var/mob/master = wr.resolve()
+	for(var/mob/master as anything in UAV_MASTERS(src))
 		var/list/combined = master.combine_message(message_pieces, verb, M)
 		var/message = combined["formatted"]
 		var/rendered = span_game(span_say(span_italics("UAV received: " + span_name("[name_used]") + " [message]")))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/see_emote(mob/living/M, text)
-	for(var/wr_master in masters)
-		var/datum/weakref/wr = wr_master
-		var/mob/master = wr.resolve()
+	for(var/mob/master as anything in UAV_MASTERS(src))
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[text]"))))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/show_message(msg, type, alt, alt_type)
-	for(var/wr_master in masters)
-		var/datum/weakref/wr = wr_master
-		var/mob/master = wr.resolve()
+	for(var/mob/master as anything in UAV_MASTERS(src))
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 

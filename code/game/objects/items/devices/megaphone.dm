@@ -164,9 +164,11 @@
 				s.set_up(2, 1, get_turf(user))
 				s.start()
 				user.visible_message(span_warning("\The [src] sparks violently!"))
-				spawn(30)
-					explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
-					qdel(src)
-					return
+				om_after(src, 3 SECONDS, PROC_REF(overload_boom))
 	else
 		user.audible_message(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, <FONT size=[broadcast_size] face='[broadcast_font]' color='[broadcast_color]'>\"[message]\"</FONT>", runemessage = message)
+
+/obj/item/megaphone/super/proc/overload_boom()
+	explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
+	qdel(src)
+	return

@@ -35,10 +35,7 @@
 			for(var/mob/M in viewers(user, null))
 				if ((M.client && !( M.blinded )))
 					M.show_message(span_blue("[user] baps [name] on the nose with the rolled up [O]."))
-			spawn(0)
-				for(var/i in list(1,2,4,8,4,2,1,2))
-					set_dir(i)
-					sleep(1)
+			dir_sequence(list(1,2,4,8,4,2,1,2))
 	else
 		..()
 
@@ -153,10 +150,7 @@
 
 		if(prob(1))
 			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases their tail"))
-			spawn(0)
-				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-					self.set_dir(i)
-					sleep(1)
+			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //LISA! SQUEEEEEEEEE~
 /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
@@ -210,10 +204,7 @@
 
 		if(prob(1))
 			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases her tail"))
-			spawn(0)
-				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-					self.set_dir(i)
-					sleep(1)
+			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //NARSIAN HAS COME
 /mob/living/simple_mob/animal/passive/dog/corgi/narsian

@@ -8,10 +8,10 @@
 /mob/living/carbon/human/dummy/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/godmode)
-	GLOB.mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.human_mob_list -= src
+
+/// Preview dummies are in no mob registry.
+/mob/living/carbon/human/dummy/skips_registry(registry_id)
+	return TRUE
 
 /mob/living/carbon/human/dummy
 	life_set = LIFE_SET_DELIST
@@ -19,11 +19,6 @@
 /datum/om/stage/life/delist/carbon/human/dummy
 	of = /mob/living/carbon/human/dummy
 
-/datum/om/stage/life/delist/carbon/human/dummy/perform(mob/living/carbon/human/dummy/self, datum/om/frame/life/ctx)
-	GLOB.mob_list -= self
-	GLOB.living_mob_list -= self
-	GLOB.dead_mob_list -= self
-	GLOB.human_mob_list -= self
 
 /mob/living/carbon/human/dummy/mannequin/Initialize(mapload)
 	. = ..()
@@ -57,17 +52,11 @@
 		rig.toggle_seals(src)
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/proc/turntable()
-	set waitfor = FALSE
+	turntable_step(SOUTH)
 
-	while(TRUE)
-		set_dir(SOUTH)
-		sleep(2 SECONDS)
-		set_dir(EAST)
-		sleep(2 SECONDS)
-		set_dir(NORTH)
-		sleep(2 SECONDS)
-		set_dir(WEST)
-		sleep(2 SECONDS)
+/mob/living/carbon/human/dummy/mannequin/autoequip/proc/turntable_step(facing)
+	set_dir(facing)
+	om_after(src, 2 SECONDS, PROC_REF(turntable_step), turn(facing, 90))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'

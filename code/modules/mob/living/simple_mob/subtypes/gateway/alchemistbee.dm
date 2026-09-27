@@ -108,11 +108,11 @@
 			dangerbolt(A)
 
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast(atom/target)
-	set waitfor = FALSE
-
 	Beam(target, icon_state = "sat_beam", time = 1.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] prepares a pouch of vials!"))
-	sleep(0.5 SECONDS)
+	om_after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), target)
+
+/mob/living/simple_mob/vr/alchemistbee/proc/chemblast_throw(atom/target)
 
 	if(prob(25))
 		visible_message(span_warning("\The [src] throws a blue vial!"))
@@ -143,7 +143,9 @@
 /mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt(atom/target)
 	visible_message(span_warning("\The [src] prepares a powerful spell!"))
 	Beam(target, icon_state = "sat_beam", time = 2.0 SECONDS, maxdistance = INFINITY)
-	sleep(1.5 SECONDS)
+	om_after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), target)
+
+/mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt_fire(atom/target)
 	var/obj/item/projectile/A = new /obj/item/projectile/energy/nuclearblast(get_turf(src))
 	A.launch_projectile(target, BP_TORSO, src)
 
@@ -178,8 +180,7 @@
 		S.attach(location)
 		S.set_up(reagents, rand(1, splatter_volume), 0, location)
 		playsound(location, 'sound/effects/slime_squish.ogg', 30, 1, -3)
-		spawn(0)
-			S.start()
+		S.start()
 	..()
 
 /obj/item/projectile/arc/vial/proc/ready_chemicals()

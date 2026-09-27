@@ -227,7 +227,7 @@ GLOBAL_VAR(restart_counter)
 
 	RunUnattendedFunctions()
 
-	spawn(3000)		//so we aren't adding to the round-start lag
+	spawn(3000)		//so we aren't adding to the round-start lag // S7 keeps: world/New (world procs); the ToR ban update is blocking external I/O
 		if(CONFIG_GET(flag/ToRban))
 			ToRban_autoupdate()
 
@@ -352,7 +352,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
 	else if(T == "players")
 		var/n = 0
-		for(var/mob/M in GLOB.player_list)
+		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				n++
 		return n
@@ -438,7 +438,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
 			var/department = 0
 			var/active = 0
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.real_name == name && M.client && M.client.inactivity <= 10 MINUTES)
 					active = 1
 					break
@@ -460,7 +460,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/real_rank = make_list_rank(t.fields["real_rank"])
 
 			var/active = 0
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.real_name == name && M.client && M.client.inactivity <= 10 MINUTES)
 					active = 1
 					break
@@ -473,12 +473,12 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				positions["off"][name] = list(rank,isactive)
 
 		// Synthetics don't have actual records, so we will pull them from here.
-		for(var/mob/living/silicon/ai/ai in GLOB.mob_list)
+		for(var/mob/living/silicon/ai/ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			var/isactive = (ai.client && ai.client.inactivity <= 10 MINUTES) ? "Active" : "Inactive"
 			if(!positions["bot"])
 				positions["bot"] = list()
 			positions["bot"][ai.name] = list("Artificial Intelligence",isactive)
-		for(var/mob/living/silicon/robot/robot in GLOB.mob_list)
+		for(var/mob/living/silicon/robot/robot in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			// No combat/syndicate cyborgs, no drones, and no AI shells.
 			var/isactive = (robot.client && robot.client.inactivity <= 10 MINUTES) ? "Active" : "Inactive"
 			if(robot.shell)
@@ -521,7 +521,6 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				return FALSE
 
 /world/proc/FinishTestRun()
-	set waitfor = FALSE
 	var/list/fail_reasons
 	if(GLOB)
 		if(GLOB.total_runtimes != 0)
@@ -538,8 +537,27 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
 	else
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
-	sleep(0) //yes, 0, this'll let Reboot finish and prevent byond memes
-	qdel(src) //shut it down
+	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
+	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
+	world_next_tick(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(world_finish_test_shutdown)))
+
+/proc/world_finish_test_shutdown()
+	qdel(world) //shut it down
+
+/// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
+/// whose follow-up must run after they return, including after the MC has shut down.
+GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
+
+/proc/world_next_tick(datum/callback/C)
+	GLOB.world_next_tick_callbacks += C
+
+/world/Tick()
+	if(!GLOB || !length(GLOB.world_next_tick_callbacks))
+		return
+	var/list/due = GLOB.world_next_tick_callbacks
+	GLOB.world_next_tick_callbacks = list()
+	for(var/datum/callback/C as anything in due)
+		C.InvokeAsync()
 
 /world/Reboot(reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff
@@ -580,6 +598,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	#endif
 
 /world/Del()
+	// Joins verdigris' frame and job threads before BYOND unloads the DLL.
+	vg_world_shutdown()
 	QDEL_NULL(Tracy)
 	QDEL_NULL(Debugger)
 	. = ..()
@@ -642,7 +662,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		features += "AI allowed"
 
 	var/n = 0
-	for (var/mob/M in GLOB.player_list)
+	for (var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if (M.client)
 			n++
 

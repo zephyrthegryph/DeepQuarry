@@ -60,19 +60,22 @@
 		balloon_alert(user, "\the [E.name] already has a tourniquet!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts cinching \a [src] around [H == user ? "their" : "[H]'s"] [E.name].", "cinching \the [src] around the [E.name].")
-	if(!do_after(user, TOURNIQUET_APPLY_TIME, H))
-		balloon_alert(user, "hold still to cinch the tourniquet!")
-		return ITEM_INTERACT_FAILURE
+	om_do_after(user, TOURNIQUET_APPLY_TIME, H, src, PROC_REF(cinch_done), list(user, H, E), on_fail = PROC_REF(cinch_failed), fail_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/tourniquet/proc/cinch_failed(mob/living/user)
+	balloon_alert(user, "hold still to cinch the tourniquet!")
+
+/obj/item/tourniquet/proc/cinch_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/E)
 	// Re-validate after the delay.
-	if(QDELETED(src) || loc != user || E.owner != H || E.tourniquet || !user.Adjacent(H))
-		return ITEM_INTERACT_FAILURE
+	if(loc != user || E.owner != H || E.tourniquet || !user.Adjacent(H))
+		return
 	user.drop_from_inventory(src)
 	if(!E.apply_tourniquet(src, user))
 		user.put_in_hands(src)
-		return ITEM_INTERACT_FAILURE
+		return
 	user.balloon_alert_visible("[user] cinches \the [src] tight around [H == user ? "their" : "[H]'s"] [E.name].", "cinched \the [src] around the [E.name].")
 	playsound(H, 'sound/effects/tape.ogg', 25)
-	return ITEM_INTERACT_SUCCESS
 
 // --- Limb side ---------------------------------------------------------------------
 
@@ -141,10 +144,11 @@
 		return
 	var/obj/item/organ/external/E = cinched[choice]
 	user.visible_message(span_notice("[user] starts loosening the tourniquet on [src == user ? "their" : "[src]'s"] [E.name]."), span_notice("You start loosening the tourniquet on the [E.name]."))
-	if(!do_after(user, TOURNIQUET_REMOVE_TIME, src))
-		return
+	om_do_after(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
+
+/mob/living/carbon/human/proc/loosen_tourniquet_done(mob/living/user, obj/item/organ/external/E)
 	// Re-validate after the delay.
-	if(QDELETED(E) || E.owner != src || !E.tourniquet || user.incapacitated() || !user.Adjacent(src))
+	if(E.owner != src || !E.tourniquet || user.incapacitated() || !user.Adjacent(src))
 		return
 	var/obj/item/tourniquet/T = E.remove_tourniquet(user)
 	if(T)

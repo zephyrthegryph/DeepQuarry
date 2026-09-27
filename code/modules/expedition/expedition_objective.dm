@@ -439,7 +439,7 @@
 	return state
 
 /datum/expedition_objective/survive/proc/players_present()
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.z == site.z_level)
 			return TRUE
 	return FALSE

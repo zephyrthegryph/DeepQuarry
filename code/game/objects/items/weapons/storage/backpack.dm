@@ -527,28 +527,33 @@
 		H.visible_message(span_infoplain(span_bold("\The [H]") + " starts to pack \the [src]!"), \
 					span_notice("You start to pack \the [src]!"), \
 					span_infoplain("You hear the shuffling of cloth."))
-		if(do_after(H, 5 SECONDS, target = src))
-			H.visible_message(span_infoplain(span_bold("\The [H]") + " finishes packing \the [src]!"), \
-					span_notice("You finish packing \the [src]!"), \
-					span_infoplain("You hear the shuffling of cloth."))
-			dq_set_parachute(src, TRUE)
-		else
-			H.visible_message(span_infoplain(span_bold("\The [src]") + " gives up on packing \the [src]!"), \
-					span_notice("You give up on packing \the [src]!"))
-			return
+		om_do_after(H, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(pack_parachute_timed_done), done_args = list(H), on_fail = PROC_REF(pack_parachute_timed_failed), fail_args = list(H))
 	else			//This unpacks the dq_get_parachute(src)
 		H.visible_message(span_infoplain(span_bold("\The [src]") + " starts to unpack \the [src]!"), \
 					span_notice("You start to unpack \the [src]!"), \
 					span_infoplain("You hear the shuffling of cloth."))
-		if(do_after(H, 25, target = src))
-			H.visible_message(span_infoplain(span_bold("\The [src]") + " finishes unpacking \the [src]!"), \
-					span_notice("You finish unpacking \the [src]!"), \
-					span_infoplain("You hear the shuffling of cloth."))
-			dq_set_parachute(src, FALSE)
-		else
-			H.visible_message(span_infoplain(span_bold("\The [src]") + " decides not to unpack \the [src]!"), \
-					span_notice("You decide not to unpack \the [src]!"))
+		om_do_after(H, 25, target = src, receiver = src, on_done = PROC_REF(pack_parachute_timed_done2), done_args = list(H), on_fail = PROC_REF(pack_parachute_timed_failed2), fail_args = list(H))
 	return
+
+/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_done(mob/living/carbon/human/H)
+	H.visible_message(span_infoplain(span_bold("\The [H]") + " finishes packing \the [src]!"), \
+			span_notice("You finish packing \the [src]!"), \
+			span_infoplain("You hear the shuffling of cloth."))
+	dq_set_parachute(src, TRUE)
+
+/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_failed(mob/living/carbon/human/H)
+	H.visible_message(span_infoplain(span_bold("\The [src]") + " gives up on packing \the [src]!"), \
+			span_notice("You give up on packing \the [src]!"))
+	return
+/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_done2(mob/living/carbon/human/H)
+	H.visible_message(span_infoplain(span_bold("\The [src]") + " finishes unpacking \the [src]!"), \
+			span_notice("You finish unpacking \the [src]!"), \
+			span_infoplain("You hear the shuffling of cloth."))
+	dq_set_parachute(src, FALSE)
+
+/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_failed2(mob/living/carbon/human/H)
+	H.visible_message(span_infoplain(span_bold("\The [src]") + " decides not to unpack \the [src]!"), \
+			span_notice("You decide not to unpack \the [src]!"))
 
 /obj/item/storage/backpack/satchel/ranger
 	name = "ranger satchel"

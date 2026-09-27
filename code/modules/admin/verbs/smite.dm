@@ -1,4 +1,4 @@
-/client/proc/smite(mob/living/carbon/human/target in GLOB.player_list)
+/client/proc/smite(mob/living/carbon/human/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	set name = "Smite"
 	set desc = "Abuse a player with various 'special treatments' from a list."
 	set category = "Fun.Do Not"
@@ -73,7 +73,7 @@
 				shadekin.ai_brain.mauling = TRUE
 			om_run_frame_now(shadekin, /datum/om/pipeline/life)
 			//Remove when done
-			spawn(10 SECONDS)
+			spawn(10 SECONDS) // S7 keeps: admin verb (allowlist)
 				if(shadekin)
 					shadekin.death()
 
@@ -124,27 +124,8 @@
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin)) //Homf
 			shadekin.comp.dark_energy = initial(shadekin.comp.dark_energy)
-			//For fun
-			sleep(1 SECOND)
-			shadekin.dir = WEST
-			sleep(1 SECOND)
-			shadekin.dir = EAST
-			sleep(1 SECOND)
-			shadekin.dir = SOUTH
-			sleep(1 SECOND)
-			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
-			sleep(2 SECONDS)
-			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
-			target.transforming = FALSE //Undo cheap hack
-
-			if(myself == "Control") //Put admin in mob
-				shadekin.ckey = ckey
-
-			else //Permakin'd
-				to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))
-				target.ghostize()
-				qdel(target)
-				qdel(shadekin)
+			//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
+			shadekin_smite_step(shadekin, target, myself == "Control" ? ckey : null, 1)
 
 
 		if(SMITE_REDSPACE_ABDUCT)
@@ -190,21 +171,7 @@
 			playsound(target, 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
 
 		if(SMITE_HOTDOG)
-			playsound(target, 'sound/effects/whistle.ogg', 50, 1, get_rand_frequency(), falloff = 5)
-			sleep(2 SECONDS)
-			target.status_at_least(EFFECT_STUNNED, 10)
-			if(ishuman(target))
-				if(target.get_equipped_item(SLOT_ID_HEAD))
-					target.unEquip(target.get_equipped_item(SLOT_ID_HEAD))
-				if(target.get_equipped_item(SLOT_ID_SUIT))
-					target.unEquip(target.get_equipped_item(SLOT_ID_SUIT))
-				var/obj/item/clothing/suit = new /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog
-				var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
-				target.equip_to_slot_if_possible(suit, slot_wear_suit, 0, 0, 1)
-				target.equip_to_slot_if_possible(hood, slot_head, 0, 0, 1)
-				sleep(5 SECONDS)
-				qdel(suit)
-				qdel(hood)
+			hotdog_smite(target)
 		else
 			return //Injection? Don't print any messages.
 
@@ -268,7 +235,10 @@ GLOBAL_VAR(redspace_abduction_z)
 	target.transforming = TRUE
 	to_chat(target,span_danger("You feel a strange tug, deep inside. You're frozen in momentarily..."))
 	to_chat(user,span_notice("Beginning vis_contents copy to abduction site, player mob is frozen."))
-	sleep(1 SECOND)
+	om_after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), target, user, size_of_square, halfbox)
+
+/// redspace_abduction() a second after the target freezes.
+/proc/redspace_abduction_copy(mob/living/target, client/user, size_of_square, halfbox)
 	//Lower left corner of a working box
 	var/llc_x = max(0,halfbox-target.x) + min(target.x+halfbox, world.maxx) - size_of_square
 	var/llc_y = max(0,halfbox-target.y) + min(target.y+halfbox, world.maxy) - size_of_square
@@ -360,8 +330,60 @@ GLOBAL_VAR(redspace_abduction_z)
 	loader.screen_loc = "NORTH-1, EAST-1"
 	target.client.screen += loader
 
-	spawn(10 SECONDS)
+	spawn(10 SECONDS) // S7 keeps: admin verb (allowlist)
 		if(target)
 			to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
 			if(target.client)
 				target.client.screen -= loader
+
+/// The shadekin smite's show, a step per timer: turn, turn, turn, belch, then phase back in and
+/// either hand the shadekin to `controller_ckey` or take both away.
+/proc/shadekin_smite_step(mob/living/simple_mob/shadekin/shadekin, mob/living/target, controller_ckey, step)
+	if(QDELETED(shadekin))
+		if(target)
+			target.transforming = FALSE
+		return
+	switch(step)
+		if(2)
+			shadekin.dir = WEST
+		if(3)
+			shadekin.dir = EAST
+		if(4)
+			shadekin.dir = SOUTH
+		if(5)
+			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
+		if(6)
+			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
+			if(target)
+				target.transforming = FALSE //Undo cheap hack
+			if(controller_ckey) //Put admin in mob
+				shadekin.ckey = controller_ckey
+			else //Permakin'd
+				if(target)
+					to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))
+					target.ghostize()
+					qdel(target)
+				qdel(shadekin)
+			return
+	om_after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), shadekin, target, controller_ckey, step + 1)
+
+/// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
+/proc/hotdog_smite(mob/living/target)
+	playsound(target, 'sound/effects/whistle.ogg', 50, 1, get_rand_frequency(), falloff = 5)
+	om_after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), target)
+
+/proc/hotdog_smite_dress(mob/living/target)
+	target.status_at_least(EFFECT_STUNNED, 10)
+	if(!ishuman(target))
+		return
+	var/mob/living/carbon/human/H = target
+	if(H.get_equipped_item(SLOT_ID_HEAD))
+		H.unEquip(H.get_equipped_item(SLOT_ID_HEAD))
+	if(H.get_equipped_item(SLOT_ID_SUIT))
+		H.unEquip(H.get_equipped_item(SLOT_ID_SUIT))
+	var/obj/item/clothing/suit = new /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog
+	var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
+	H.equip_to_slot_if_possible(suit, slot_wear_suit, 0, 0, 1)
+	H.equip_to_slot_if_possible(hood, slot_head, 0, 0, 1)
+	om_qdel_after(suit, 5 SECONDS)
+	om_qdel_after(hood, 5 SECONDS)

@@ -11,7 +11,7 @@
 	/// Destination tagging for the mail sorter.
 	var/sortTag = 0
 	/// Who this mail is for and who can open it.
-	var/datum/weakref/recipient_ref
+	var/recipient_ref
 	/// How many goodies this mail contains.
 	var/goodie_count = 1
 	// Goodies which can be given to anyone.
@@ -43,7 +43,6 @@
 	/// Physical offset of stamps on the object. Y direction.
 	var/stamp_offset_y = 2
 	/// If the mail is actively being opened right now
-	var/opening = FALSE
 	/// If the mail has been scanned with a mail scanner
 	var/scanned
 	/// Does it have a colored envelope?
@@ -102,20 +101,25 @@
 		return
 
 	if(!set_content && !sealed)
-		if(!do_after(user, 1.5 SECONDS, target = user))
-			set_content = FALSE
-		user.drop_item()
-		W.forceMove(src)
-		balloon_alert(user, "placed \the [W] into \the [src]")
-		set_content = TRUE
-		description_info = "Click with an empty hand to seal it, or Alt-Click to retrieve the object out."
+		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(W, user))
 		return
 	return
+
+/obj/item/mail/blank/proc/attackby_timed_done(obj/item/W, mob/user)
+	user.drop_item()
+	W.forceMove(src)
+	balloon_alert(user, "placed \the [W] into \the [src]")
+	set_content = TRUE
+	description_info = "Click with an empty hand to seal it, or Alt-Click to retrieve the object out."
+	return
+
+/obj/item/mail/blank/proc/attackby_timed_failed(obj/item/W, mob/user)
+	set_content = FALSE
 
 /obj/item/mail/proc/setRecipient(mob/user)
 	var/list/recipients = list()
 	var/mob/living/recipient_mob
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!SSantag_job.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
@@ -149,14 +153,17 @@
 	if(.)
 		return TRUE
 	if(!sealed)
-		if(!do_after(user, 1.5 SECONDS, target = user))
-			sealed = FALSE
-		sealed = TRUE
-		description_info = "Shift Click to add the sender's name to the envelope, or attack with a pen to set a receiver."
+		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
 		return
-	if(!unwrap(user))
-		return FALSE
-	return after_unwrap(user)
+	return unwrap(user)
+
+/obj/item/mail/blank/proc/attack_self_timed_done()
+	sealed = TRUE
+	description_info = "Shift Click to add the sender's name to the envelope, or attack with a pen to set a receiver."
+	return
+
+/obj/item/mail/blank/proc/attack_self_timed_failed()
+	sealed = FALSE
 
 /obj/item/mail/update_icon()
 	. = ..()
@@ -207,28 +214,26 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!unwrap(user))
-		return FALSE
-	if(special_handling)
-		return FALSE
-	return after_unwrap(user)
+	return unwrap(user)
 
 /obj/item/mail/proc/unwrap(mob/user)
 	if(recipient_ref)
-		var/datum/mind/recipient = recipient_ref.resolve()
+		var/datum/mind/recipient = om_resolve(recipient_ref)
 		if(recipient && recipient.current?.dna.unique_enzymes != user.dna.unique_enzymes)
 			balloon_alert(user, "you can't open somebody's mail! That's <em>illegal</em>")
 			return FALSE
 
-	if(opening)
+	if(om_busy(src)) // opening claims the envelope
 		balloon_alert(user, "already opening that!")
 		return FALSE
 
-	opening = TRUE
-	if(!do_after(user, 1.5 SECONDS, target = user))
-		opening = FALSE
-		return FALSE
-	return TRUE
+	return !istext(om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
+
+/// Opened: out come the contents (special handling keeps them in).
+/obj/item/mail/proc/unwrap_timed_done(mob/user)
+	if(special_handling)
+		return
+	after_unwrap(user)
 
 /obj/item/mail/proc/after_unwrap(mob/user)
 	user.temporarilyRemoveItemFromInventory(src, TRUE)
@@ -250,7 +255,7 @@
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
 	var/current_title = recipient.role_alt_title ? recipient.role_alt_title : recipient.assigned_role
 	name = "[initial(name)] for [recipient.name] ([current_title])"
-	recipient_ref = WEAKREF(recipient)
+	recipient_ref = om_handle(recipient)
 
 	var/datum/job/this_job = SSjob.occupations_by_name[recipient.assigned_role]
 
@@ -295,7 +300,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		if(!chosen)
 			return
 
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		recipients += player
 
 	var/mob/living/chosen_player = tgui_input_list(user, "Choose recipient", "Recipients", recipients, recipients)
@@ -334,7 +339,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 /obj/structure/closet/crate/mail/full/Initialize(mapload)
 	. = ..()
 	var/list/mail_recipients = list()
-	for(var/mob/living/carbon/human/alive in GLOB.player_list)
+	for(var/mob/living/carbon/human/alive in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(alive.stat != DEAD && alive.client && alive.client.inactivity <= 10 MINUTES)
 			mail_recipients += alive
 	for(var/iterator in 1 to storage_capacity)
@@ -425,7 +430,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 
 		var/datum/mind/recipient
 		if(saved.recipient_ref)
-			recipient = saved.recipient_ref.resolve()
+			recipient = om_resolve(saved.recipient_ref)
 
 		if(isnull(recipient) || isnull(recipient.current))
 			return

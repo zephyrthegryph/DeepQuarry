@@ -104,11 +104,11 @@
 	if(prob(75/severity))
 		flash()
 
-/obj/machinery/flasher/portable/HasProximity(turf/T, datum/weakref/WF, oldloc)
+/obj/machinery/flasher/portable/HasProximity(turf/T, WF, oldloc)
 	if(isnull(WF))
 		return
 
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

@@ -37,7 +37,7 @@
 	/// value *= multiplier (a restriction). Null = none.
 	var/multiplier
 	/// What provides it. The support lapses when the source is deleted.
-	var/datum/weakref/source
+	var/source
 	/// Readable source name, for logs and diagnosis.
 	var/source_name
 	/// world.time the support lapses at (0 = until removed).
@@ -53,7 +53,7 @@
 /datum/body_support/proc/is_valid()
 	if(expires_at && world.time >= expires_at)
 		return FALSE
-	if(source && !source.resolve())
+	if(source && !om_resolve(source))
 		return FALSE
 	if(still_valid && !still_valid.Invoke())
 		return FALSE
@@ -90,14 +90,14 @@
 		return null
 	var/datum/body_support/S
 	for(var/datum/body_support/existing as anything in supports)
-		if(existing.factor_id == factor_id && existing.source?.resolve() == source)
+		if(existing.factor_id == factor_id && om_resolve(existing.source) == source)
 			S = existing
 			break
 	var/fresh = !S
 	if(fresh)
 		S = new
 		S.factor_id = factor_id
-		S.source = WEAKREF(source)
+		S.source = om_handle(source)
 		S.source_name = "[source]"
 		LAZYADD(supports, S)
 	var/changed = fresh || S.floor != floor || S.multiplier != multiplier
@@ -114,7 +114,7 @@
 /// Remove every support `source` provides.
 /datum/body/proc/remove_supports(datum/source)
 	for(var/datum/body_support/S as anything in supports?.Copy())
-		if(S.source?.resolve() == source)
+		if(om_resolve(S.source) == source)
 			drop_support(S, "removed")
 
 /datum/body/proc/drop_support(datum/body_support/S, reason)

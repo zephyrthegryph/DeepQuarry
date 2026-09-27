@@ -80,10 +80,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		direction = pick(GLOB.cardinal)
 	else
 		direction = pick(GLOB.alldirs)
-	for(var/i=0, i<pick(1,2,3), i++)
-		sleep(5)
-		step(steam,direction)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), steam), 20)
+	var/steps = pick(1,2,3)
+	om_drift(steam, direction, steps, 5)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), steam), 20 + steps * 5)
 
 /datum/effect/effect/system/steam_spread/start()
 	var/i = 0
@@ -147,14 +146,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		direction = pick(GLOB.cardinal)
 	else
 		direction = pick(GLOB.alldirs)
-	for(var/i=0, i<pick(1,2,3), i++)
-		sleep(5)
-		if(QDELETED(src) || QDELETED(sparks))
-			return
-		step(sparks,direction)
-	if(QDELETED(src))
-		return
-	addtimer(CALLBACK(src, PROC_REF(dec_sparks)), 20)
+	var/steps = pick(1,2,3)
+	om_drift(sparks, direction, steps, 5)
+	addtimer(CALLBACK(src, PROC_REF(dec_sparks)), 20 + steps * 5)
 
 /datum/effect/effect/system/spark_spread/proc/dec_sparks()
 	src.total_sparks--
@@ -281,7 +275,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	color = "#000000"
 	time_to_live = 600
 
-/obj/effect/effect/smoke/bad/burntfood/process()
+/obj/effect/effect/smoke/bad/burntfood/periodic_step()
 	for(var/mob/living/L in get_turf(src))
 		affect(L)
 
@@ -302,11 +296,10 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/strength = 5 // How much damage to do inside each affect()
 
 /obj/effect/effect/smoke/elemental/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
@@ -314,7 +307,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
-/obj/effect/effect/smoke/elemental/process()
+/obj/effect/effect/smoke/elemental/periodic_step()
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
@@ -394,10 +387,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			direction = pick(GLOB.cardinal)
 		else
 			direction = pick(GLOB.alldirs)
-	for(var/i=0, i<pick(0,1,1,1,2,2,2,3), i++)
-		sleep(10)
-		step(smoke,direction)
-	addtimer(CALLBACK(src, PROC_REF(expire_smoke), smoke), smoke.time_to_live*0.75+rand(10,30))
+	var/steps = pick(0,1,1,1,2,2,2,3)
+	om_drift(smoke, direction, steps, 10)
+	addtimer(CALLBACK(src, PROC_REF(expire_smoke), smoke), steps * 10 + smoke.time_to_live*0.75+rand(10,30))
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
 	if(smoke)
@@ -686,10 +678,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			direction = pick(GLOB.cardinal)
 		else
 			direction = pick(GLOB.alldirs)
-	for(var/i=0, i<pick(0,1,1,1,2,2,2,3), i++)
-		sleep(10)
-		step(confetti,direction)
-	addtimer(CALLBACK(src, PROC_REF(expire_confetti), confetti), confetti.time_to_live*0.75+rand(10,30))
+	var/steps = pick(0,1,1,1,2,2,2,3)
+	om_drift(confetti, direction, steps, 10)
+	addtimer(CALLBACK(src, PROC_REF(expire_confetti), confetti), steps * 10 + confetti.time_to_live*0.75+rand(10,30))
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
 	if(confetti)

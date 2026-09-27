@@ -215,9 +215,10 @@
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_reactor_tests.dm"
-#include "dq_reactor_s2_tests.dm"
+#include "dq_om_key_tests.dm"
+#include "dq_om_periodic_tests.dm"
 #include "dq_power_tests.dm"
-#include "dq_reactor_poller_tests.dm"
+#include "dq_om_wake_tests.dm"
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"
 #include "dq_input_tests.dm"
@@ -234,6 +235,9 @@
 #include "dq_om_core_tests.dm"
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"
+#include "dq_om_scheduler_tests.dm"
+#include "dq_refs_tests.dm"
+#include "dq_om_timed_action_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

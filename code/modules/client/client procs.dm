@@ -598,7 +598,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
-	spawn (10) //removing this spawn causes all clients to not get verbs.
+	spawn (10) //removing this spawn causes all clients to not get verbs. // S7 keeps: client procs (asset delivery to the client)
 
 		//load info on what assets the client has
 		src << browse('code/modules/asset_cache/validate_assets.html', "window=asset_cache_browser")

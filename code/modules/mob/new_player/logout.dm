@@ -1,7 +1,7 @@
 /mob/new_player/Logout()
 	ready = 0
 
-	GLOB.new_player_list -= src
+	registry_leave(REGISTRY_NEW_PLAYERS, src)
 	disable_lobby_browser()
 
 	..()

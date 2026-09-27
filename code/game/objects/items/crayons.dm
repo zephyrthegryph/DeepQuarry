@@ -68,31 +68,36 @@
 				if(!drawtype || get_dist(target, user) > 1 || !(user.z == target.z))
 					return
 				to_chat(user, "You start drawing an arrow on the [target.name].")
-		if(instant || do_after(user, 5 SECONDS, target = src))
-			var/list/mouse_control = params2list(click_parameters)
-			var/p_x = 0
-			var/p_y = 0
-			if(mouse_control["icon-x"])
-				p_x = text2num(mouse_control["icon-x"]) - 16
-			if(mouse_control["icon-y"])
-				p_y = text2num(mouse_control["icon-y"]) - 16
-			var/atom/new_graffiti = new /obj/effect/decal/cleanable/crayon(target,colour,shadeColour,drawtype)
-			new_graffiti.pixel_x = p_x
-			new_graffiti.pixel_y = p_y
-			to_chat(user, "You finish drawing.")
-
-			var/msg = "[user.client.key] ([user]) has drawn [drawtype] (with [src]) at [target.x],[target.y],[target.z]."
-			if(CONFIG_GET(flag/log_graffiti))
-				message_admins(msg)
-			log_game(msg) //We will log it anyways.
-
-			target.add_fingerprint(user)		// Adds their fingerprints to the floor the crayon is drawn on.
-			if(uses)
-				uses--
-				if(!uses)
-					to_chat(user, span_warning("You used up your crayon!"))
-					qdel(src)
+		if(instant)
+			draw_done(target, user, drawtype, click_parameters)
+		else
+			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(draw_done), done_args = list(target, user, drawtype, click_parameters))
 	return
+
+/obj/item/pen/crayon/proc/draw_done(atom/target, mob/user, drawtype, click_parameters)
+	var/list/mouse_control = params2list(click_parameters)
+	var/p_x = 0
+	var/p_y = 0
+	if(mouse_control["icon-x"])
+		p_x = text2num(mouse_control["icon-x"]) - 16
+	if(mouse_control["icon-y"])
+		p_y = text2num(mouse_control["icon-y"]) - 16
+	var/atom/new_graffiti = new /obj/effect/decal/cleanable/crayon(target,colour,shadeColour,drawtype)
+	new_graffiti.pixel_x = p_x
+	new_graffiti.pixel_y = p_y
+	to_chat(user, "You finish drawing.")
+
+	var/msg = "[user.client?.key] ([user]) has drawn [drawtype] (with [src]) at [target.x],[target.y],[target.z]."
+	if(CONFIG_GET(flag/log_graffiti))
+		message_admins(msg)
+	log_game(msg) //We will log it anyways.
+
+	target.add_fingerprint(user)		// Adds their fingerprints to the floor the crayon is drawn on.
+	if(uses)
+		uses--
+		if(!uses)
+			to_chat(user, span_warning("You used up your crayon!"))
+			qdel(src)
 
 /obj/item/pen/crayon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user)

@@ -8,7 +8,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	update_canmove()
-	GLOB.dead_mob_list -= src
+	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	var/atom/movable/overlay/animation = null
 	animation = new(loc)
@@ -22,9 +22,8 @@
 	if (!QDELETED(src))
 		ghostize()
 
-	spawn(15)
-		if(animation)	qdel(animation)
-		if(src)			qdel(src)
+	om_qdel_after(animation, 15)
+	om_qdel_after(src, 15)
 
 //This is the proc for turning a mob into ash. Mostly a copy of gib code (above).
 //Originally created for wizard disintegrate. I've removed the virus code since it's irrelevant here.
@@ -45,14 +44,13 @@
 	flick(anim, animation)
 	new remains(loc)
 
-	GLOB.dead_mob_list -= src
+	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	if (!QDELETED(src))
 		ghostize()
 
-	spawn(15)
-		if(animation)	qdel(animation)
-		if(src)			qdel(src)
+	om_qdel_after(animation, 15)
+	om_qdel_after(src, 15)
 
 /mob/proc/ash(anim="dust-m")
 	death(1)
@@ -69,14 +67,13 @@
 
 	flick(anim, animation)
 
-	GLOB.dead_mob_list -= src
+	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	if (!QDELETED(src))
 		ghostize()
 
-	spawn(15)
-		if(animation)	qdel(animation)
-		if(src)			qdel(src)
+	om_qdel_after(animation, 15)
+	om_qdel_after(src, 15)
 
 /mob/proc/death(gibbed,deathmessage="seizes up and falls limp...")
 
@@ -135,8 +132,8 @@
 		if(dead_living.identity)
 			dead_living.identity.time_of_death = world.time
 	if(mind) mind.store_memory("Time of death: [stationtime2text()]", 0)
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list |= src
+	registry_leave(REGISTRY_LIVING_MOBS, src)
+	registry_join(REGISTRY_DEAD_MOBS, src)
 
 	set_respawn_timer()
 	update_icon()

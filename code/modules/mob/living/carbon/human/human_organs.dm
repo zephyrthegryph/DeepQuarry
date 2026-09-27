@@ -42,7 +42,7 @@
 
 	//processing internal organs is pretty cheap, do that first.
 	for(var/obj/item/organ/I in self.internal_organs)
-		I.process()
+		I.periodic_step()
 
 	self.handle_stance()
 	self.handle_grasp()
@@ -58,7 +58,7 @@
 			self.bad_external_organs -= E
 			continue
 		else
-			E.process()
+			E.periodic_step()
 			self.number_wounds += length(E.get_wounds())
 
 			if (!self.lying && !BUCKLED(self) && world.time - self.l_move_time < 15)
@@ -195,8 +195,7 @@
 				spark_system.set_up(5, 0, src)
 				spark_system.attach(src)
 				spark_system.start()
-				spawn(10)
-					qdel(spark_system)
+				om_qdel_after(spark_system, 1 SECOND)
 
 //Handles chem traces
 /mob/living/carbon/human/proc/handle_trace_chems()

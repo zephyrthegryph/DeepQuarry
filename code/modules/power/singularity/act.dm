@@ -45,19 +45,19 @@
 		return 2
 
 /obj/singularity_pull(S, current_size)
-	set waitfor = 0
-
 	if(anchored)
 		return
 
-	sleep(0) //this is needed or multiple items will be thrown sequentially and not simultaneously
 	if(current_size >= STAGE_FOUR)
 		step_towards(src,S)
-		sleep(1)
-		step_towards(src,S)
+		om_after(src, 0.1 SECONDS, PROC_REF(singularity_step), S)
 	else if(current_size > STAGE_ONE)
 		step_towards(src,S)
 	else ..()
+
+/// The second step of a strong singularity pull.
+/obj/proc/singularity_step(atom/S)
+	step_towards(src, S)
 
 /obj/effect/beam/singularity_pull()
 	return

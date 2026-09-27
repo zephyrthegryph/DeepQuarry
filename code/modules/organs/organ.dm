@@ -143,7 +143,7 @@
 	if(robotic < ORGAN_ROBOT)
 		status |= ORGAN_DEAD
 	saturate_damage()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
@@ -157,7 +157,7 @@
 /obj/item/organ/proc/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
 
-/obj/item/organ/process()
+/obj/item/organ/periodic_step()
 
 	if(loc != owner)
 		owner = null
@@ -473,7 +473,7 @@
 		if(affected) affected.internal_organs -= src
 
 		owner.remove_from_mob(src, owner.drop_location())
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		rejecting = null
 
 	if(istype(owner))
@@ -518,7 +518,7 @@
 
 	owner = target
 	loc = owner
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	target.internal_organs |= src
 	affected.internal_organs |= src
 	target.internal_organs_by_name[organ_tag] = src
@@ -582,7 +582,7 @@
 			else
 				damage--
 			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			START_PROCESSING(SSobj, src) //When an organ dies, it stops processing. This restarts it.
+			PERIODIC_START(src, PERIODIC_SLOW) //When an organ dies, it stops processing. This restarts it.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
 			return
@@ -604,16 +604,24 @@
 
 	return FALSE
 
+/// Butchers the organ into meat. With a user it's a timed action (TRUE if it started) that
+/// butchers on completion; without one it happens at once.
 /obj/item/organ/proc/butcher(obj/item/O, mob/living/user, atom/newtarget)
 
 	if(user)
 		to_chat(user, span_danger("You are preparing to butcher \the [src]!"))
 		user.visible_message(span_danger("[user] prepares to butcher \the [src]!"))
-		if(!do_after(user, 10 SECONDS * O.toolspeed, target = src)) //They can queue this up on multiple organs.
-			to_chat(user, span_notice("You reconsider butchering \the [src]..."))
-			user.visible_message(span_notice("[user] reconsiders butchering \the [src]!"))
-			return FALSE
+		//They can queue this up on multiple organs.
+		var/started = om_do_after(user, 10 SECONDS * O.toolspeed, src, src, PROC_REF(butcher_done), list(user, newtarget), on_fail = PROC_REF(butcher_failed), fail_args = list(user))
+		return !istext(started)
+	return butcher_done(null, newtarget)
 
+/obj/item/organ/proc/butcher_failed(mob/living/user)
+	to_chat(user, span_notice("You reconsider butchering \the [src]..."))
+	user.visible_message(span_notice("[user] reconsiders butchering \the [src]!"))
+
+/obj/item/organ/proc/butcher_done(mob/living/user, atom/newtarget)
+	if(user)
 		if(robotic >= ORGAN_ROBOT)
 			user?.visible_message(span_warning("[user] disassembles \the [src]."))
 

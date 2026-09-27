@@ -23,18 +23,18 @@
 /obj/item/assembly/prox_sensor/toggle_secure()
 	secured = !secured
 	if(secured)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
 		scanning = 0
 		timing = 0
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	update_icon()
 	return secured
 
-/obj/item/assembly/prox_sensor/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/obj/item/assembly/prox_sensor/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -51,7 +51,7 @@
 	if(!holder)
 		mainloc.visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
-/obj/item/assembly/prox_sensor/process()
+/obj/item/assembly/prox_sensor/periodic_step()
 	if(scanning)
 		var/turf/mainloc = get_turf(src)
 		for(var/mob/living/A in range(range,mainloc))

@@ -185,8 +185,7 @@
 	if(special_weapon_handling && !callback)
 		return FALSE
 	if(manual_chamber) // Gun Rework
-		if(do_after(user, 0.4 SECONDS, src)) // Gun Rework
-			bolt_handle(user) // Gun Rework
+		om_do_after(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user)) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
@@ -369,8 +368,7 @@
 					to_chat(user, span_warning("You struggle to hold \the [src] steady!"))
 
 	if(recoil)
-		spawn()
-			shake_camera(user, recoil+1, recoil)
+		shake_camera(user, recoil+1, recoil)
 	update_icon()
 
 	if(chambered)
@@ -535,27 +533,35 @@
 	// picked straight off a turf or out of a latent holder.
 	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
-	var/count = 0
-	while(!QDELETED(H) && H.stored_ammo.len && loaded.len < max_shells)
+	feed_round_step(H, user, 0)
+
+/// One round from the handful per reload_time (a timed action each) until full or out.
+/obj/item/gun/projectile/proc/feed_round_step(obj/item/ammo_magazine/handful/H, mob/user, count)
+	if(H.stored_ammo.len && loaded.len < max_shells)
 		var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
-		if(rd.caliber != caliber)
-			break
-		if(!do_after(user, reload_time, src))
-			break
-		// re-validate after the wait; the stack may have shrunk or moved.
-		if(QDELETED(H) || !H.stored_ammo.len || loaded.len >= max_shells)
-			break
-		rd = H.stored_ammo[H.stored_ammo.len]
-		H.stored_ammo -= rd
-		rd.forceMove(src)
-		loaded.Insert(1, rd) //add to the head of the list
-		count++
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		H.update_icon()
-		user.hud_used.update_ammo_hud(user, src)
-	if(count)
+		if(rd.caliber == caliber)
+			om_do_after(user, reload_time, src, src, PROC_REF(feed_round), list(H, user, count), on_fail = PROC_REF(feed_done), fail_args = list(H, user, count))
+			return
+	feed_done(H, user, count)
+
+/obj/item/gun/projectile/proc/feed_round(obj/item/ammo_magazine/handful/H, mob/user, count)
+	// re-validate after the wait; the stack may have shrunk or moved.
+	if(!H.stored_ammo.len || loaded.len >= max_shells)
+		feed_done(H, user, count)
+		return
+	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
+	H.stored_ammo -= rd
+	rd.forceMove(src)
+	loaded.Insert(1, rd) //add to the head of the list
+	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	H.update_icon()
+	user.hud_used.update_ammo_hud(user, src)
+	feed_round_step(H, user, count + 1)
+
+/obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
+	if(count && user)
 		user.visible_message("[user] feeds [count] round\s into [src].", span_notice("You load [count] round\s into [src]."))
-	if(!QDELETED(H) && !H.stored_ammo.len)
+	if(H && !QDELETED(H) && !H.stored_ammo.len)
 		qdel(H)
 	update_icon()
 
@@ -624,20 +630,11 @@
 				if(!CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
 					if(!chambered)
 						if(bolt_open)
-							if(do_after(user, 0.5 SECONDS, src))
-								user.visible_message(span_notice("[user] slides \the [C] into the [src]'s chamber."),span_notice("You slide \the [C] into the [src]'s chamber."))
-								chambered = C
-								user.hud_used.update_ammo_hud(user, src)
-							else
-								return
+							om_do_after(user, 0.5 SECONDS, src, src, PROC_REF(chamber_round), list(user, C, "[user] slides \the [C] into the [src]'s chamber."))
+							return
 						else if(!(CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))))
-							if(do_after(user, 1.5 SECONDS, src))
-								user.visible_message(span_notice("[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again."),span_notice("You slide \the [C] into the [src]'s chamber."))
-
-								chambered = C
-								user.hud_used.update_ammo_hud(user, src)
-							else
-								return
+							om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(chamber_round), list(user, C, "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again."))
+							return
 						else
 							to_chat(user,span_warning("Open the bolt first before chambering a round!"))
 							return
@@ -673,19 +670,40 @@
 			return //incompatible
 
 		to_chat(user, span_notice("You start loading \the [src]."))
-		sleep(1 SECOND)
+		var/list/rounds = list()
 		for(var/obj/item/ammo_casing/ammo in storage.contents)
-			if(caliber != ammo.caliber)
-				continue
+			if(caliber == ammo.caliber)
+				rounds += ammo
+		om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
 
-			load_ammo(ammo, user)
-			user.hud_used.update_ammo_hud(user, src)
+	update_icon()
 
-			if(loaded.len >= max_shells)
-				to_chat(user, span_warning("[src] is full."))
-				break
-			sleep(1 SECOND)
+/// Loads the next matching round from a box, one a second.
+/obj/item/gun/projectile/proc/load_from_storage(mob/user, list/rounds)
+	var/obj/item/ammo_casing/ammo
+	while(length(rounds) && !ammo)
+		ammo = rounds[1]
+		rounds.Cut(1, 2)
+		if(QDELETED(ammo))
+			ammo = null
+	if(!ammo)
+		return
+	load_ammo(ammo, user)
+	user.hud_used.update_ammo_hud(user, src)
+	if(loaded.len >= max_shells)
+		to_chat(user, span_warning("[src] is full."))
+		return
+	om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
 
+/// A round slid into the chamber by hand.
+/obj/item/gun/projectile/proc/chamber_round(mob/user, obj/item/ammo_casing/C, message)
+	if(chambered)
+		return
+	user.visible_message(span_notice(message),span_notice("You slide \the [C] into the [src]'s chamber."))
+	chambered = C
+	user.hud_used.update_ammo_hud(user, src)
+	user.remove_from_mob(C)
+	C.loc = src
 	update_icon()
 
 /obj/item/gun/projectile/special_check(mob/user)

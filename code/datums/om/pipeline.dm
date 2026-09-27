@@ -357,12 +357,12 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		asleep++; \
 		LAZYADD(idled, _i); \
 		result = T.rewake_delay(E); \
-		if(result > 0) { om_after(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
+		if(result > 0) { om_deadline(E, result, src, OM_DL_STAGE - 1 + T.pos); } \
 	} else if(mode & OM_PIPE_MODE_REACTIVE) { \
 		bits[_w] |= _bit; \
 		asleep++; \
 		LAZYADD(idled, _i); \
-		if(busy_retry > 0) { om_after(E, busy_retry, src, OM_DL_STAGE - 1 + T.pos); } \
+		if(busy_retry > 0) { om_deadline(E, busy_retry, src, OM_DL_STAGE - 1 + T.pos); } \
 	}
 
 /// The whole frame loop, parameterised by how a stage is performed.
@@ -500,7 +500,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	if(T.min_interval)
 		var/wait = om_stage_throttle(F, i, T, E.om_rec.sched.now())
 		if(wait > 0)
-			om_after(E, wait, src, OM_DL_STAGE - 1 + T.pos)
+			om_deadline(E, wait, src, OM_DL_STAGE - 1 + T.pos)
 			return 3
 	return 0
 
@@ -890,3 +890,81 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 			GLOB.failed_any_test = TRUE
 #endif
 	on_wake(E, T.wake_mask)
+
+// ---------------------------------------------------------------- sleepers
+
+/// A reactive behaviour for an entity that sleeps between wakes it armed itself: om_watch()es on
+/// other entities' channels (CHANGE_RELATED arrives here) and om_after() timers. Subtypes do the
+/// work in on_wake(). Entities carrying one are sampled by the missed-wake audit, which asks the
+/// entity's om_sleep_violation() whether it sleeps through work.
+/datum/om/behaviour/sleeper
+	abstract_type = /datum/om/behaviour/sleeper
+	wake_on = CHANGE_RELATED
+
+/datum/om/behaviour/sleeper/on_start(datum/E)
+	GLOB.om_sleepers[E] = TRUE
+
+/datum/om/behaviour/sleeper/on_stop(datum/E)
+	GLOB.om_sleepers -= E
+
+/// Entities with a sleeper behaviour attached (the audit's sample space).
+GLOBAL_LIST_EMPTY(om_sleepers)
+
+/// For the audit: null while this entity's sleep holds, else why it should be awake.
+/datum/proc/om_sleep_violation()
+	SHOULD_NOT_SLEEP(TRUE)
+	return null
+
+/// Samples sleepers and asks each whether it sleeps through work. Returns the findings; with
+/// `report`, a test failure in unit tests and a log line on servers.
+/proc/om_sleeper_audit(sample = 64, report = FALSE)
+	var/list/findings = list()
+	var/list/pool = GLOB.om_sleepers
+	var/count = length(pool)
+	if(!count)
+		return findings
+	var/list/candidates = list()
+	if(count <= sample)
+		for(var/datum/D as anything in pool)
+			candidates += D
+	else
+		for(var/i in 1 to sample)
+			candidates += pool[rand(1, count)]
+	for(var/datum/D as anything in candidates)
+		if(!D || QDELETED(D))
+			continue
+		var/violation = D.om_sleep_violation()
+		if(!violation)
+			continue
+		findings += "[D.type]: [violation]"
+		if(!report)
+			continue
+		var/message = "OM_AUDIT: MISSED WAKE [D] ([D.type]) sleeping: [violation]"
+		log_runtime(message)
+#if defined(UNIT_TESTS)
+		if(GLOB.current_test)
+			GLOB.current_test.Fail(message, __FILE__, __LINE__)
+#endif
+	return findings
+
+/// A sleeper that waits only on its own om_after() timers: attached so the audit samples it.
+/datum/om/behaviour/sleeper/timed
+	name = "timed sleeper"
+	wake_on = 0
+
+// ---------------------------------------------------------------- wake tracing (tests)
+
+/// Tests: entity -> behaviour wakes and timer calls delivered to it, + 1 (a traced entity is truthy).
+GLOBAL_LIST_EMPTY(om_traced)
+
+/// Counts behaviour wakes (on_wake) and om_after() calls delivered to `E` from now on.
+/proc/om_trace(datum/E)
+	if(!GLOB.om_traced[E])
+		GLOB.om_traced[E] = 1
+
+/proc/om_traced_count(datum/E)
+	var/n = GLOB.om_traced[E]
+	return n ? n - 1 : 0
+
+/proc/om_untrace(datum/E)
+	GLOB.om_traced -= E

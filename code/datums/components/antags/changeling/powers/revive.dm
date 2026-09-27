@@ -32,8 +32,8 @@
 		return FALSE
 
 	if(src.stat == DEAD)
-		GLOB.dead_mob_list -= src
-		GLOB.living_mob_list += src
+		registry_leave(REGISTRY_DEAD_MOBS, src)
+		registry_join(REGISTRY_LIVING_MOBS, src)
 	var/mob/living/carbon/C = src
 
 	C.tod = null

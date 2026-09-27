@@ -101,7 +101,7 @@
 	var/feedmodmin = 1
 	var/feedmodmax = 2
 
-/obj/item/organ/internal/malignant/parasite/process()
+/obj/item/organ/internal/malignant/parasite/periodic_step()
 	. = ..()
 
 	if(cooldown > 0)
@@ -173,7 +173,7 @@
 	cooldownmin = 15
 	cooldownmax = 25
 
-/obj/item/organ/internal/malignant/tumor/cancer/process()
+/obj/item/organ/internal/malignant/tumor/cancer/periodic_step()
 	. = ..()
 
 	if(cooldown > 0)
@@ -231,7 +231,7 @@
 	cooldownmax = 35
 	supply_conversion_value = 10
 
-/obj/item/organ/internal/malignant/tumor/potato/process()
+/obj/item/organ/internal/malignant/tumor/potato/periodic_step()
 	. = ..()
 
 	if(cooldown > 0)
@@ -275,7 +275,7 @@
 	name = "pinata gland"
 	icon_state = "pinata"
 
-/obj/item/organ/internal/malignant/tumor/pinata/process()
+/obj/item/organ/internal/malignant/tumor/pinata/periodic_step()
 	. = ..()
 
 	if(stage_progress == 0)
@@ -355,7 +355,7 @@
 	cooldownmax = 65
 	supply_conversion_value = 50
 
-/obj/item/organ/internal/malignant/tumor/bluespace/process()
+/obj/item/organ/internal/malignant/tumor/bluespace/periodic_step()
 	. = ..()
 
 	if(cooldown > 0)
@@ -402,7 +402,7 @@
 	cooldownmax = 95
 	supply_conversion_value = 50
 
-/obj/item/organ/internal/malignant/tumor/beerbelly/process()
+/obj/item/organ/internal/malignant/tumor/beerbelly/periodic_step()
 	. = ..()
 
 	if(!owner)
@@ -434,7 +434,7 @@
 	var/thalers = 0
 	supply_conversion_value = 25
 
-/obj/item/organ/internal/malignant/tumor/moneyorgan/process()
+/obj/item/organ/internal/malignant/tumor/moneyorgan/periodic_step()
 	. = ..()
 
 	if(!owner)
@@ -610,7 +610,7 @@
 	growth_trigger = rand(150,200)
 	return ..(mapload, internal, force_location, forcetag)
 
-/obj/item/organ/internal/malignant/engineered/lattice/process()
+/obj/item/organ/internal/malignant/engineered/lattice/periodic_step()
 	. = ..()
 	if(cooldown > 0)
 		cooldown--
@@ -712,7 +712,7 @@
 	var/deg_intensity = 1
 	var/side_effect_multiplier = 1
 
-/obj/item/organ/internal/malignant/engineered/chemorgan/process()
+/obj/item/organ/internal/malignant/engineered/chemorgan/periodic_step()
 	. = ..()
 	if(cooldown > 0)
 		cooldown--

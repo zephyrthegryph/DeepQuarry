@@ -75,11 +75,15 @@
 	EXTRAPOLATOR_ACT_ADD_DISEASES(., base_disease)
 	// Still no idea why extrapolator == src, but I'll leave this for later if I find out.
 	// if(!dry_run && !EXTRAPOLATOR_ACT_CHECK(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL) && extrapolator.create_culture(user, base_disease))
-	if(do_after(user, 2 SECONDS, target = src))
-		user.visible_message(span_danger("[user] stabs [src] with [extrapolator], sucking it up!"), \
-			span_danger("You stab [src] with [extrapolator]'s probe, destroying it!"))
-		death()
-		EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
+	if(dry_run)
+		return
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(extrapolator_act_macrophage_done), done_args = list(user, extrapolator))
+	EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
+
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(mob/living/user, obj/item/extrapolator/extrapolator)
+	user.visible_message(span_danger("[user] stabs [src] with [extrapolator], sucking it up!"), \
+		span_danger("You stab [src] with [extrapolator]'s probe, destroying it!"))
+	death()
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()
 	if(locate(/mob/living/carbon/human) in vore_selected)
@@ -94,13 +98,13 @@
 /*
 /mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A)
 	. = TRUE
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(charge), A), 20, TIMER_STOPPABLE)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return
 	status_flags |= LEAPING
 	flying = TRUE
@@ -119,7 +123,7 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
 		H.ContractDisease(base_disease)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 */
 /mob/living/simple_mob/vore/aggressive/macrophage/death()
 	..()

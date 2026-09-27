@@ -9,7 +9,7 @@
 //!   the predicted tick instead of polling every tick. This is what the
 //!   reactor's `#[auxmacros::bind]`d `vg_rate_*` procs expose to DM
 //!   (`core::reactor::Reactor` holds a `Vec` of these; `vg_ffi::reactor`'s
-//!   binds and `vg_heat::body` import [`RateModel`] from here directly).
+//!   binds import [`RateModel`] from here directly).
 //! - [`RateStore`]: a *bounded reservoir* -- "how much is stored, out of
 //!   how much capacity, converting at this rate between an external flow
 //!   unit (watts) and internal stored units." This is the arithmetic every
@@ -19,17 +19,18 @@
 //!   table calls out: "gas Flow internals, power APC/SMES constants and
 //!   passes, the heat regulator").
 //!
-//! They compose, per §4.10 ("Storage (cells, SMES) is `RateModel::Linear`
-//! between events, and relaxing bodies are `Relax`"): a storage law applies
-//! a step with [`RateStore::discharge_out`]/[`charge_in`](RateStore::charge_in)
-//! as usual for the actual bookkeeping, and whenever the *rate* changes
-//! (a new demand, a config change, ...) it also rebuilds a
-//! `RateModel::Linear::new(store.charge, external_rate * store.rate, now)`
-//! for that store, so the reactor can predict exactly when it will empty
-//! or fill and wake the law then, instead of that law polling every frame.
-//! `RateStore` doesn't do this itself -- it has no notion of "now" or a
-//! reactor to schedule against -- so a law only needs to rebuild the model
-//! on a rate change, not every step.
+//! They are one facility (§4.10: "Storage (cells, SMES) is
+//! `RateModel::Linear` between events, and relaxing bodies are `Relax`"): a
+//! storage law moves charge with [`RateStore::flow`] (or
+//! [`discharge_out`](RateStore::discharge_out)/[`charge_in`](RateStore::charge_in)),
+//! and when it has nothing else to do it sleeps until the store would empty
+//! or fill at the current rate: [`RateStore::next_bound`] solves that
+//! through the store's [`RateStore::model`], and
+//! [`crate::law::LawCtx::schedule_store`] turns it into a timer wake. A law
+//! never polls a store every frame, and nothing hand-integrates charge.
+//!
+//! The reactor's DM-facing rate models (`vg_rate_*`) are the same
+//! [`RateModel`] values, held by `crate::reactor::Reactor`.
 
 // --- Rate models -------------------------------------------------------------
 
@@ -236,6 +237,34 @@ impl RateStore {
         used
     }
 
+    /// Moves `watts` of net flow this step (positive: into the store,
+    /// negative: out of it) and returns the signed watts actually moved:
+    /// [`charge_in`](Self::charge_in) or minus
+    /// [`discharge_out`](Self::discharge_out).
+    pub fn flow(&mut self, watts: f64) -> f64 {
+        if watts >= 0.0 {
+            self.charge_in(watts)
+        } else {
+            -self.discharge_out(-watts)
+        }
+    }
+
+    /// When, after `now`, the store would be full (`external_rate > 0`) or
+    /// empty (`< 0`) if `external_rate` watts kept flowing: the time a
+    /// sleeping storage law must wake at. `None` for no flow or a bound
+    /// it never reaches.
+    #[must_use]
+    pub fn next_bound(&self, external_rate: f64, now: f64) -> Option<f64> {
+        let bound = if external_rate > 0.0 {
+            self.capacity
+        } else if external_rate < 0.0 {
+            0.0
+        } else {
+            return None;
+        };
+        self.model(external_rate, now).crossing(bound, now)
+    }
+
     /// Clamps `charge` into `[0, capacity]` (for external writes: a config
     /// change that lowered capacity, or a direct charge set).
     pub fn clamp(&mut self) {
@@ -258,6 +287,33 @@ impl RateStore {
             max: self.capacity,
         }
     }
+}
+
+/// Gives components that flatten a [`RateStore`] into `charge`, `capacity`
+/// and `rate` fields (`#[vg::component]` holds numbers only) `cell()`,
+/// `set_cell()` and `with_cell()`.
+#[macro_export]
+macro_rules! rate_store {
+    ($($t:ty),*) => {$(
+        impl $t {
+            #[must_use]
+            pub fn cell(&self) -> $crate::rate::RateStore {
+                $crate::rate::RateStore { charge: self.charge, capacity: self.capacity, rate: self.rate }
+            }
+
+            pub fn set_cell(&mut self, cell: $crate::rate::RateStore) {
+                (self.charge, self.capacity, self.rate) = (cell.charge, cell.capacity, cell.rate);
+            }
+
+            /// Runs `f` on the store and writes it back.
+            pub fn with_cell<R>(&mut self, f: impl FnOnce(&mut $crate::rate::RateStore) -> R) -> R {
+                let mut cell = self.cell();
+                let r = f(&mut cell);
+                self.set_cell(cell);
+                r
+            }
+        }
+    )*};
 }
 
 #[cfg(test)]

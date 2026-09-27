@@ -40,7 +40,21 @@
 	If 0, global variables will be reset after Run() finishes.
 */
 	var/persist=1
-	var/paused=0
+/*
+	Var: yield_for
+	Set by the script's sleep() (deciseconds): the run unwinds after the current statement, leaving
+	its continuation in <resume_frames>, and Resume() carries on from there later. Nothing sleeps:
+	the owner runs Resume() as a task step (TCS_Compiler).
+*/
+	var/yield_for
+/*
+	Var: resume_frames
+	A suspended run's continuation, outermost first: list("block", block, next index, scope),
+	list("while", stmt, next iteration) and list("func") (a script function's return handling).
+*/
+	var/list/resume_frames
+	/// Where the frames of the current unwind go (just after the frames still pending from before).
+	var/unwind_at
 
 /*
 	Constructor: New
@@ -87,10 +101,54 @@ Runs each statement in a block of code.
 			CreateGlobalScope()
 		curScope = globalScope
 
+	RunStatements(Block, 1)
+
+	curScope = scopes.Pop()
+
+/// The script's sleep(time): suspends the run after the current statement (see <yield_for>).
+/datum/n_Interpreter/proc/script_sleep(time)
+	yield_for = max(isnum(time) ? time : text2num(time), 0)
+	unwind_at = length(resume_frames) + 1
+
+/// Records one frame of the continuation while a suspended run unwinds (innermost first).
+/datum/n_Interpreter/proc/PushResume(list/frame)
+	LAZYINITLIST(resume_frames)
+	resume_frames.Insert(unwind_at, null)
+	resume_frames[unwind_at] = frame
+
+/// Carries on a suspended run. TRUE when the script finished, FALSE when it sleeps again.
+/datum/n_Interpreter/proc/Resume()
+	yield_for = null
+	while(length(resume_frames))
+		var/list/frame = resume_frames[length(resume_frames)]
+		resume_frames.len--
+		switch(frame[1])
+			if("block")
+				scopes.Push(curScope)
+				curScope = frame[4]
+				RunStatements(frame[2], frame[3])
+				curScope = scopes.Pop()
+			if("while")
+				RunWhile(frame[2], frame[3], frame[3] - 1)
+			if("func")
+				FinishFunction()
+		if(!isnull(yield_for))
+			return FALSE
+	return TRUE
+
+/// TRUE while a run is suspended (its script sleeps).
+/datum/n_Interpreter/proc/IsSuspended()
+	return !isnull(yield_for) || length(resume_frames)
+
+/// Runs `Block`'s statements from `index` in the current scope; a sleep() leaves a "block" frame.
+/datum/n_Interpreter/proc/RunStatements(datum/node/BlockDefinition/Block, index)
 	if(cur_statements < max_statements)
 
-		for(var/datum/node/statement/S in Block.statements)
-			while(paused) sleep(10)
+		for(var/i in index to length(Block.statements))
+			var/datum/node/statement/S = Block.statements[i]
+			if(!isnull(yield_for))
+				PushResume(list("block", Block, i, curScope))
+				return
 
 			cur_statements++
 			if(cur_statements >= max_statements)
@@ -152,10 +210,11 @@ Runs each statement in a block of code.
 				break
 			else
 				RaiseError(new/datum/runtimeError/UnknownInstruction())
+			if(!isnull(yield_for))
+				PushResume(list("block", Block, i + 1, curScope))
+				return
 			if(status)
 				break
-
-	curScope = scopes.Pop()
 
 /*
 Proc: RunFunction
@@ -192,12 +251,12 @@ Runs a function block or a proc with the arguments specified in the script.
 			AssignVariable(def.parameters[i], new/datum/node/expression/value/literal(Eval(val)), S)
 		curFunction=stmt
 		RunBlock(def.block, S)
+		if(!isnull(yield_for))
+			PushResume(list("func")) // the return handling runs when the run resumes
+			return
 		//Handle return value
 		. = returnVal
-		status &= ~RETURNING
-		returnVal=null
-		curFunction=functions.Pop()
-		cur_recursion--
+		FinishFunction()
 	else
 		cur_recursion--
 		var/list/params=new
@@ -223,14 +282,25 @@ Checks a condition and runs either the if block or else block.
 	else if(stmt.else_block)
 		RunBlock(stmt.else_block)
 
+/// A script function's return handling (after its block, or when a suspended run resumes).
+/datum/n_Interpreter/proc/FinishFunction()
+	status &= ~RETURNING
+	returnVal=null
+	curFunction=functions.Pop()
+	cur_recursion--
+
 /*
 Proc: RunWhile
-Runs a while loop.
+Runs a while loop. `finishing`: resuming a run suspended in that iteration, which is accounted
+for before the loop carries on.
 */
-/datum/n_Interpreter/proc/RunWhile(datum/node/statement/WhileLoop/stmt)
-	var/i=1
-	while(Eval(stmt.cond) && Iterate(stmt.block, i++))
-		continue
+/datum/n_Interpreter/proc/RunWhile(datum/node/statement/WhileLoop/stmt, i = 1, finishing = 0)
+	if(!finishing || IterationDone(finishing))
+		while(Eval(stmt.cond) && Iterate(stmt.block, i++))
+			continue
+		if(!isnull(yield_for))
+			PushResume(list("while", stmt, i))
+			return
 	status &= ~BREAKING
 
 /*
@@ -239,6 +309,12 @@ Runs a single iteration of a loop. Returns a value indicating whether or not to 
 */
 /datum/n_Interpreter/proc/Iterate(datum/node/BlockDefinition/block, count)
 	RunBlock(block)
+	if(!isnull(yield_for))
+		return 0
+	return IterationDone(count)
+
+/// The checks after a loop iteration: FALSE ends the loop.
+/datum/n_Interpreter/proc/IterationDone(count)
 	if(max_iterations > 0 && count >= max_iterations)
 		RaiseError(new/datum/runtimeError/IterationLimitReached())
 		return 0

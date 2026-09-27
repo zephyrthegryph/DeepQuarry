@@ -69,19 +69,18 @@
 			vermstring = "mothroaches"
 	// Check if any landmarks exist!
 
-	spawn(0)
-		var/num = rand(min_number,max_number)
-		while(turfs.len > 0 && num > 0)
-			var/turf/simulated/floor/T = pick(turfs)
-			turfs.Remove(T)
-			num--
+	var/num = rand(min_number,max_number)
+	while(turfs.len > 0 && num > 0)
+		var/turf/simulated/floor/T = pick(turfs)
+		turfs.Remove(T)
+		num--
 
-			if(vermin == VERM_SPIDERS)
-				var/obj/effect/spider/spiderling/S = new(T)
-				S.amount_grown = -1
-			else
-				var/spawn_type = pick(spawn_types)
-				new spawn_type(T)
+		if(vermin == VERM_SPIDERS)
+			var/obj/effect/spider/spiderling/S = new(T)
+			S.amount_grown = -1
+		else
+			var/spawn_type = pick(spawn_types)
+			new spawn_type(T)
 
 /datum/event/infestation/proc/get_spawn_area() //adding this so maps can override areas if needed
 	var/spawn_area_type

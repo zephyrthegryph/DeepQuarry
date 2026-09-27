@@ -2,7 +2,7 @@
 /mob/proc/update_Login_details()
 	//Multikey checks and logging
 	if(CONFIG_GET(flag/log_access))
-		for(var/mob/M in GLOB.player_list)
+		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M == src)	continue
 			if( M.key && (M.key != key) )
 				var/matches
@@ -33,7 +33,7 @@
 
 	client.persistent_client.set_mob(src)
 
-	GLOB.player_list |= src
+	registry_join(REGISTRY_PLAYERS, src)
 	lastKnownIP	= client.address
 	computer_id	= client.computer_id
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")

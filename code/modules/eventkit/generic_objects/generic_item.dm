@@ -17,15 +17,23 @@
 	var/icon_off = 0
 	var/icon_on = 0
 
+/// The use after its delay: attack_self() again, past the delay.
+/obj/item/generic_item/proc/delayed_use(mob/user)
+	delay_passed = TRUE
+	attack_self(user)
+	delay_passed = FALSE
+
+/obj/item/generic_item/var/delay_passed = FALSE
+
 /obj/item/generic_item/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
 	if(activatable_hand)
 		if(!on)
-			if(delay_time)
-				if(!do_after(user, delay_time, target = src))
-					return 0
+			if(delay_time && !delay_passed)
+				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
+				return 0
 			on = 1
 			if(icon_on)
 				icon = icon_on
@@ -78,9 +86,9 @@
 			if(sound_activated)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)
-			if(delay_time)
-				if(!do_after(user, delay_time, target = src))
-					return 0
+			if(delay_time && !delay_passed)
+				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
+				return 0
 			on = 0
 			icon_state = icon_state_off
 			if(icon_off)

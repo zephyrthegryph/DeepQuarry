@@ -51,15 +51,13 @@
 		if(alarms.len)
 			icon_screen = "alert:2"
 			playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // Alarm notifications
-			spawn(100) // Wait 10 seconds, then play it again
-				playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // Alarm notifications
+			om_after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/comp_alert_major.ogg', 70, 1) // Wait 10 seconds, then play it again
 		else
 			alarms = GLOB.atmosphere_alarm.minor_alarms()
 			if(alarms.len)
 				icon_screen = "alert:1"
 				playsound(src, 'sound/effects/comp_alert_minor.ogg', 50, 1) // Alarm notifications
-				spawn(100) // Wait 10 seconds, then play it again
-					playsound(src, 'sound/effects/comp_alert_minor.ogg', 50, 1) // Alarm notifications
+				om_after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/comp_alert_minor.ogg', 50, 1) // Wait 10 seconds, then play it again
 			else
 				icon_screen = initial(icon_screen)
 				playsound(src, 'sound/effects/comp_alert_clear.ogg', 50, 1) // Alarm notifications

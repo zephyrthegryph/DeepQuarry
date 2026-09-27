@@ -133,9 +133,9 @@
 	body_parts_covered = HEAD
 	special_handling = TRUE
 
-/obj/item/clothing/head/cakehat/process()
+/obj/item/clothing/head/cakehat/periodic_step()
 	if(!onfire)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		return
 
 	var/turf/location = src.loc
@@ -156,7 +156,7 @@
 		force = 3
 		injury_kind = INJURY_BURN
 		icon_state = "cake1"
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
 		force = null
 		injury_kind = INJURY_BLUNT
@@ -284,7 +284,7 @@
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
 	if(istype(user) && user.get_equipped_item(SLOT_ID_HEAD) == src && user.is_sentient())
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		if(flavor_equip)
 			to_chat(user, flavor_equip)
 
@@ -292,7 +292,7 @@
 	if(equipping || loc == user)
 		return ..()
 	..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	if(user.is_sentient())
 		if(loc == user) // Still inhand.
 			if(flavor_unequip)
@@ -302,10 +302,9 @@
 			to_chat(user, flavor_drop)
 
 /obj/item/clothing/head/psy_crown/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
-/obj/item/clothing/head/psy_crown/process()
+/obj/item/clothing/head/psy_crown/periodic_step()
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)

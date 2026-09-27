@@ -47,20 +47,22 @@
 /obj/structure/disposaloutlet/welder_act(mob/user, obj/item/I)
 	if(mode != OUTLET_UNSCREWED)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal outlet."))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, "You sliced the floorweld off the disposal outlet.")
-		SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK)
-		var/obj/structure/disposalconstruct/C = new(src.loc)
-		transfer_fingerprints_to(C)
-		C.set_dir(dir)
-		C.ptype = 7
-		C.update()
-		C.anchored = TRUE
-		C.density = TRUE
-		qdel(src)
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal outlet.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposaloutlet/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You sliced the floorweld off the disposal outlet.")
+	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK)
+	var/obj/structure/disposalconstruct/C = new(src.loc)
+	transfer_fingerprints_to(C)
+	C.set_dir(dir)
+	C.ptype = 7
+	C.update()
+	C.anchored = TRUE
+	C.density = TRUE
+	qdel(src)
 
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
 	if(mode == OUTLET_SCREWED)

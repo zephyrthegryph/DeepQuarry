@@ -27,11 +27,11 @@
 /hook/roundend/proc/stop_all_media()
 	log_world("Stopping all playing media...")
 	// Stop all music.
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(M && M.client)
 			M.stop_all_music()
-	//  SHITTY HACK TO AVOID RACE CONDITION WITH SERVER REBOOT.
-	sleep(10)  // TODO - Leshana - see if this is needed
+	// The reboot waits out its own round-end delay, so the stop messages reach the clients first.
+	return TRUE
 
 // Update when moving between areas.
 // TODO - While this direct override might technically be faster, probably better code to use observer or hooks ~Leshana

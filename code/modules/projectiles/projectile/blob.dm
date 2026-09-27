@@ -26,8 +26,7 @@
 		S.attach(location)
 		S.set_up(reagents, rand(1, splatter_volume), 0, location)
 		playsound(location, 'sound/effects/slime_squish.ogg', 30, 1, -3)
-		spawn(0)
-			S.start()
+		S.start()
 	..()
 
 /obj/item/projectile/energy/blob/proc/ready_chemicals()

@@ -14,8 +14,10 @@
 		return
 	to_chat(user, "You push on the [src].")
 	var/movedir = user.dir
-	if(do_after(user, 3 SECONDS, src))
-		step(src, movedir)
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(movedir))
+
+/obj/structure/prop/desert_rock/rock/proc/attack_hand_timed_done(movedir)
+	step(src, movedir)
 
 /obj/structure/prop/desert_rock/rock/Initialize(mapload)
 	. = ..()

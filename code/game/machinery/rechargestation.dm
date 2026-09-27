@@ -41,7 +41,7 @@
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0
 
-/obj/machinery/recharge_station/process()
+/obj/machinery/recharge_station/machine_step()
 	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_RECHARGE_STATION)
 	if(stat & (BROKEN))
 		return PROCESS_KILL
@@ -252,7 +252,7 @@
 
 /obj/machinery/recharge_station/RefreshParts()
 	..()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	var/man_rating = 0
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
@@ -331,7 +331,7 @@
 		add_fingerprint(R)
 		if(!R.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 			return
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		update_icon()
 		return 1
 
@@ -344,7 +344,7 @@
 		add_fingerprint(P)
 		if(!P.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 			return
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		update_icon()
 		return 1
 
@@ -354,7 +354,7 @@
 			add_fingerprint(H)
 			if(!H.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 				return
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			update_icon()
 			return 1
 	else
@@ -370,7 +370,7 @@
 /obj/machinery/recharge_station/power_change()
 	. = ..()
 	if(.)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/recharge_station/ghost_pod_recharger
 	name = "drone pod"
@@ -396,3 +396,8 @@
 
 	if(icon_update_tick == 0)
 		build_overlays()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/recharge_station/step_start_condition()
+	return TRUE // tops up its buffer

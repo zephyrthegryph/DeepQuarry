@@ -70,7 +70,7 @@
 		loaded_disk.forceMove(get_turf(src))
 	. = ..()
 
-/obj/machinery/botany/process()
+/obj/machinery/botany/machine_step()
 
 	..()
 	if(!active) return
@@ -390,3 +390,8 @@
 				seed.seed.apply_gene(gene)
 				seed.modified += rand(5,10)
 			return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/botany/step_start_condition()
+	return active

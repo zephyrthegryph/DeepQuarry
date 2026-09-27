@@ -1,5 +1,4 @@
 // LEGACY_RECORD_STRUCTURE(all_waypoints, waypoint)
-GLOBAL_LIST_EMPTY(all_waypoints)
 /datum/computer_file/data/waypoint
 	var/list/fields
 	filetype = "WPT"
@@ -7,11 +6,9 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 /datum/computer_file/data/waypoint/New()
 	..()
 	fields = list()
-	GLOB.all_waypoints.Add(src)
+	join_registries()
 
-/datum/computer_file/data/waypoint/Destroy()
-	. = ..()
-	GLOB.all_waypoints.Remove(src);
+REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 // End LEGACY_RECORD_STRUCTURE(all_waypoints, waypoint)
 
 /obj/machinery/computer/ship/helm
@@ -53,7 +50,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 			R.fields["y"] = S.y
 			LAZYSET(known_sectors, S.name, R)
 
-/obj/machinery/computer/ship/helm/process()
+/obj/machinery/computer/ship/helm/machine_step()
 	..()
 	if(!autopilot || !dx || !dy || autopilot_disabled || !linked || !using_map)
 		return PROCESS_KILL
@@ -265,7 +262,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 			else
 				autopilot = !autopilot
 			if(autopilot)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			. = TRUE
 
 		if("apilot_lock")

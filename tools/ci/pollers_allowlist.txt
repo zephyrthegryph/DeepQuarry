@@ -1,0 +1,4 @@
+# Polling ratchet (tools/ci/pollers_lint.py): <file> <process() defs> <START_*PROCESSING calls>.
+# A file may not exceed its counts; files not listed may have none. Lower it as types migrate:
+# `python tools/ci/pollers_lint.py --update`.
+# Totals: 0 process() definitions, 0 START_PROCESSING/START_MACHINE_PROCESSING calls.

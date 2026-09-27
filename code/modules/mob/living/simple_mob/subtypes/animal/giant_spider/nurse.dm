@@ -44,7 +44,6 @@
 	To lay eggs, click a nearby tile. Laying eggs will deplete a charge."
 
 	var/fed = 0 // Counter for how many egg laying 'charges' the spider has.
-	var/laying_eggs = FALSE	// Only allow one set of eggs to be laid at once.
 	var/egg_inject_chance = 25 // One in four chance to get eggs.
 	var/egg_type = /obj/effect/spider/eggcluster/small
 	var/web_type = /obj/effect/spider/stickyweb/dark
@@ -68,7 +67,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/attack_target(atom/A)
 	if(isturf(A))
 		if(fed && can_lay_eggs)
-			if(!laying_eggs)
+			if(!om_busy(src))
 				return lay_eggs(A)
 		return web_tile(A)
 
@@ -100,14 +99,11 @@
 		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance around \the [AM]."))
 
-	// Get our AI to stay still.
-	if(ai_brain) ai_brain.busy = TRUE
-	if(!do_after(src,5 SECONDS, AM))
-		if(ai_brain) ai_brain.busy = FALSE
-		to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
-		return FALSE
+	// The work claims the spider: its AI stays still.
+	om_do_after(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
+	return TRUE
 
-	if(ai_brain) ai_brain.busy = FALSE
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(atom/movable/AM)
 	if(!AM) // Make sure it didn't get deleted for whatever reason.
 		to_chat(src, span_warning("Whatever you were spinning a web for, its no longer there..."))
 		return FALSE
@@ -146,11 +142,15 @@
 
 	return TRUE
 
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_failed(atom/movable/AM)
+	to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
+	return FALSE
+
 /datum/om/stage/life/special/animal/giant_spider/nurse
 	of = /mob/living/simple_mob/animal/giant_spider/nurse
 
 /datum/om/stage/life/special/animal/giant_spider/nurse/perform(mob/living/simple_mob/animal/giant_spider/nurse/self, datum/om/frame/life/ctx)
-	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
+	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(self) && isturf(self.loc))
 		if(self.fed && self.can_lay_eggs)
 			self.lay_eggs(self.loc)
 		else
@@ -164,36 +164,28 @@
 	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_web, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance.") )
-	ai_brain?.busy = TRUE // Get our AI to stay still.
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/om/task/task)
-	ai_brain?.busy = FALSE
 	var/turf/T = task.target
 	if(!(locate(/obj/effect/spider/stickyweb) in T))
 		new web_type(T)
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/om/task/task, reason)
-	ai_brain?.busy = FALSE
-	laying_eggs = FALSE
 	to_chat(src, span_warning("You need to stay still to finish that on \the [task.target]."))
 
 /// Starts laying a cluster of eggs on `T` (a 5 s task, as web_tile()). TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/lay_eggs(turf/T)
-	if(!istype(T) || !fed || !can_lay_eggs || laying_eggs)
+	if(!istype(T) || !fed || !can_lay_eggs || om_busy(src))
 		return FALSE
 	if(locate(/obj/effect/spider/eggcluster) in T)
 		return FALSE // Already got eggs here.
 	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_eggs, T)))
 		return FALSE
-	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") )
-	ai_brain?.busy = TRUE
-	laying_eggs = TRUE // Stop players from spamming eggs.
+	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") ) // the task claims the spider: no egg spam
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/om/task/task)
-	ai_brain?.busy = FALSE
-	laying_eggs = FALSE
 	var/turf/T = task.target
 	if(locate(/obj/effect/spider/eggcluster) in T)
 		return // Spamclick protection.

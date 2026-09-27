@@ -9,7 +9,10 @@
 	var/active = null
 	var/strength = 50
 
-/obj/effect/map_effect/radiation_emitter/process()
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
+/obj/effect/map_effect/radiation_emitter/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 
@@ -33,11 +36,10 @@
 
 
 /obj/effect/map_effect/radiation_emitter/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/strong

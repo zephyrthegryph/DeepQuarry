@@ -149,7 +149,7 @@
 
 /obj/item/integrated_electronics/debugger/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)
-		data_to_write = WEAKREF(target)
+		data_to_write = ic_ref(target)
 		visible_message(span_notice("[user] slides \a [src]'s over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [target.name] \[Ref\]. The ref scanner is \
 		now off."))
@@ -159,9 +159,9 @@
 	if(io.io_type == DATA_CHANNEL)
 		io.write_data_to_pin(data_to_write)
 		var/data_to_show = data_to_write
-		if(isweakref(data_to_write))
-			var/datum/weakref/w = data_to_write
-			var/atom/A = w.resolve()
+		if(ic_is_ref(data_to_write))
+			var/w = data_to_write
+			var/atom/A = ic_ref_resolve(w)
 			data_to_show = A.name
 		to_chat(user, span_notice("You write '[data_to_write ? data_to_show : "NULL"]' to the '[io]' pin of \the [io.holder]."))
 	else if(io.io_type == PULSE_CHANNEL)
@@ -189,7 +189,7 @@
 			icon_state = "multitool_tracking_fail"
 		else if(accepting_refs)
 			icon_state = "multitool_ref_scan"
-		else if(weakref_wiring)
+		else if(ref_wiring)
 			icon_state = "multitool_no_camera"
 		else
 			icon_state = "multitool"
@@ -246,7 +246,7 @@
 		copier.print_engineering_reading(src, user)
 		return
 	if(accepting_refs && toolmode == MULTITOOL_MODE_INTCIRCUITS && proximity)
-		weakref_wiring = WEAKREF(target)
+		ref_wiring = ic_ref(target)
 		visible_message(span_notice("[user] slides \a [src]'s over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [target.name] \[Ref\]. The ref scanner is \
 		now off."))

@@ -53,8 +53,7 @@
 		if("alert")
 			status_signal.data["picture_state"] = data1
 
-	spawn(0)
-		frequency.post_signal(src, status_signal)
+	frequency.post_signal(src, status_signal)
 
 
 /datum/data/pda/app/signaller
@@ -79,8 +78,7 @@
 
 		switch(action)
 			if("signal")
-				spawn(0)
-					R.send_signal("ACTIVATE")
+				R.send_signal("ACTIVATE")
 			if("freq")
 				var/frequency = unformat_frequency(params["freq"])
 				frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
@@ -282,7 +280,7 @@
 			BucketData[++BucketData.len] = list ("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "volume" = B.reagents.total_volume, "max_volume" = B.reagents.maximum_volume)
 
 	var/CbotData[0]
-	for(var/mob/living/bot/cleanbot/B in GLOB.mob_list)
+	for(var/mob/living/bot/cleanbot/B in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		var/turf/bl = get_turf(B)
 		if(bl)
 			if(bl.z != cl.z)

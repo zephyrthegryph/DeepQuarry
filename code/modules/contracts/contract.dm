@@ -604,7 +604,7 @@
 	return TRUE
 
 /datum/contract/proc/find_mob_by_account(account_number)
-	for(var/mob/living/living_mob in GLOB.player_list)
+	for(var/mob/living/living_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(living_mob.mind?.initial_account?.account_number == account_number)
 			return living_mob
 
@@ -626,7 +626,7 @@
 	if(scope == CONTRACT_SCOPE_PERSONAL && owner_account_number)
 		recipients["[owner_account_number]"] = 1
 		return recipients
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!player.client || player.stat == DEAD)
 			continue
 		if(department && department_for_mob(player) != department)

@@ -100,6 +100,26 @@
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS
 
+/// One sheet every 1.5 seconds (a timed action each) until full or the stack runs out.
+/obj/item/gun/magnetic/matfed/proc/load_sheet_step(mob/user, obj/item/stack/material/M, loaded_any)
+	if(mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M.get_amount())
+		om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(sheet_loaded), list(user, M), on_fail = PROC_REF(sheets_done), fail_args = list(user, M, loaded_any))
+		return
+	sheets_done(user, M, loaded_any)
+
+/obj/item/gun/magnetic/matfed/proc/sheet_loaded(mob/user, obj/item/stack/material/M)
+	mat_storage += SHEET_MATERIAL_AMOUNT
+	playsound(src, 'sound/effects/phasein.ogg', 15, 1)
+	M.use(1)
+	load_sheet_step(user, M, TRUE)
+
+/obj/item/gun/magnetic/matfed/proc/sheets_done(mob/user, obj/item/stack/material/M, loaded_any)
+	loading = FALSE
+	if(loaded_any && user)
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [M]."))
+		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	update_icon()
+
 /obj/item/gun/magnetic/matfed/attackby(obj/item/thing, mob/user)
 	. = ..()
 	update_rating_mod()
@@ -128,12 +148,8 @@
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 			loading = TRUE
-			while(mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && do_after(user,1.5 SECONDS, target = src))
-				mat_storage += SHEET_MATERIAL_AMOUNT
-				playsound(src, 'sound/effects/phasein.ogg', 15, 1)
-				M.use(1)
-				success = TRUE
-			loading = FALSE
+			load_sheet_step(user, M, FALSE)
+			return
 
 		else //ore
 			if(M.material != ammo_material)
@@ -209,7 +225,7 @@
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)
 
-/obj/item/gun/magnetic/matfed/phoronbore/process()
+/obj/item/gun/magnetic/matfed/phoronbore/periodic_step()
 	if(generator_state && !mat_storage)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		soundloop.stop()
@@ -251,23 +267,27 @@
 
 	else if(!generator_state)
 		generator_state = GEN_STARTING
-		var/pull = (!cell || cell.charge < 100) ? rand(1,4) : 0
-		while(pull)
-			playsound(src, 'sound/items/small_motor/motor_pull_attempt.ogg', 100)
-			if(!do_after(user, 2 SECONDS, src))
-				generator_state = GEN_OFF
-				return
-			pull--
-		soundloop.start()
-		time_started = world.time
-		cell?.use(100)
-		audible_message(span_notice("\The [src] starts chugging."),span_notice("A motor noise starts up."), runemessage = "whirr")
-		generator_state = GEN_IDLE
+		pull_cord(user, (!cell || cell.charge < 100) ? rand(1,4) : 0)
 
 	else if(generator_state > GEN_OFF && time_started + 3 SECONDS < world.time)
 		soundloop.stop()
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		generator_state = GEN_OFF
+
+/// Pulls the cord (2 seconds a pull, a timed action each) until the motor starts.
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
+	if(pulls > 0)
+		playsound(src, 'sound/items/small_motor/motor_pull_attempt.ogg', 100)
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
+		return
+	soundloop.start()
+	time_started = world.time
+	cell?.use(100)
+	audible_message(span_notice("\The [src] starts chugging."),span_notice("A motor noise starts up."), runemessage = "whirr")
+	generator_state = GEN_IDLE
+
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_abandoned()
+	generator_state = GEN_OFF
 
 /obj/item/gun/magnetic/matfed/phoronbore/loaded
 	cell = /obj/item/cell/apc

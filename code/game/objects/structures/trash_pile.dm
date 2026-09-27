@@ -6,7 +6,6 @@
 	density = TRUE
 	anchored = TRUE
 
-	var/busy = FALSE				// Used so you can't spamclick to loot.
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
 	var/mob/living/hider		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
@@ -110,7 +109,7 @@
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 
-		if(busy)
+		if(om_busy(src)) // a search claims the pile
 			to_chat(H, span_warning("\The [src] is already being searched."))
 			return
 
@@ -119,19 +118,19 @@
 			to_chat(hider,span_warning("[user] is searching the trash pile you're in!"))
 
 		//Do the searching
-		busy = TRUE
-		if(do_after(user, rand(4 SECONDS,6 SECONDS), target = src))
-			if(hider && prob(50))
-				//If there was a hider, chance to reveal them
-				to_chat(hider,span_danger("You've been discovered!"))
-				hider.forceMove(get_turf(src))
-				hider = null
-				to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
-			else
-				SEND_SIGNAL(src,COMSIG_LOOT_REWARD,user,searchedby, 5)
-		busy = FALSE
+		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 	else
 		return ..()
+
+/obj/structure/trash_pile/proc/attack_hand_timed_done(mob/user)
+	if(hider && prob(50))
+		//If there was a hider, chance to reveal them
+		to_chat(hider,span_danger("You've been discovered!"))
+		hider.forceMove(get_turf(src))
+		hider = null
+		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
+	else
+		SEND_SIGNAL(src,COMSIG_LOOT_REWARD,user,searchedby, 5)
 
 /obj/structure/mob_spawner/mouse_nest
 	name = "trash"

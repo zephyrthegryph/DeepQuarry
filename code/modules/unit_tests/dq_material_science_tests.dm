@@ -78,7 +78,7 @@
 		eligible++
 		TEST_ASSERT(design.material_template, "Ordinary design [design.id] ([design.type]) lost its material blueprint")
 		var/datum/material_template/blueprint = material_template_singleton(design.material_template)
-		var/list/defaults = blueprint.resolve()
+		var/list/defaults = om_resolve(blueprint)
 		TEST_ASSERT(defaults, "Ordinary design [design.id] has unresolvable standard materials")
 		var/list/effective = design.effective_materials(defaults)
 		var/slot_total = 0
@@ -146,7 +146,7 @@
 		var/datum/material_template/slots = material_template_for_application(application)
 		var/slots_total = SHEET_MATERIAL_AMOUNT * 4
 		TEST_ASSERT(length(slots.roles), "Application [application] must define physical parts")
-		var/list/defaults = slots.resolve()
+		var/list/defaults = om_resolve(slots)
 		for(var/role in slots.roles)
 			var/list/variant = defaults.Copy()
 			variant[role] = defaults[role] == MAT_DIAMOND ? MAT_WOOD : MAT_DIAMOND
@@ -501,23 +501,23 @@
 	for(var/subscribed_id in service.mixture_ids)
 		TEST_ASSERT(om_watch_armed(service, "gas[subscribed_id]"), "Material subscriptions must use the coalesced mixture registry")
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
-	SSmaterial_services.unqueue(service)
+	om_cancel_after(service, /datum/om/behaviour/material_service)
 	service.timer = FALSE
 	service.active = FALSE
 	service.last_update = world.time - 10 MINUTES
 	service.environment_changed()
 	TEST_ASSERT_EQUAL(service.last_update, world.time, "A newly changed environment must not be charged for the preceding sleep interval")
-	var/queued_count = length(SSmaterial_services.scheduled)
+	var/first_due = service.next_update
 	for(var/i in 1 to 1000)
 		service.environment_changed(FALSE)
-	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), queued_count, "Repeated gas publications must coalesce into one queued exposure, not allocate timers")
+	TEST_ASSERT(om_deadline_pending(service, /datum/om/behaviour/material_service), "A changed environment must queue exposure work")
+	TEST_ASSERT(service.next_update <= first_due || !first_due, "Repeated gas publications must coalesce into one queued exposure, not push it back")
 	cell.forceMove(destination)
 	service.rebind()
 	var/list/ids = service.mixture_ids.Copy()
-	var/reference = REF(service)
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
-	TEST_ASSERT(!SSmaterial_services.scheduled_indices[reference], "Deleting an assembly must remove its queued exposure work")
+	TEST_ASSERT(!om_deadline_pending(service, /datum/om/behaviour/material_service), "Deleting an assembly must remove its queued exposure work")
 	for(var/id in ids)
 		TEST_ASSERT(!GLOB.om_gas_watches_by_mixture["[id]"], "Deleted assemblies must release mixture subscriptions")
 
@@ -551,32 +551,21 @@
 /datum/unit_test/dq_material_service_due_heap
 
 /datum/unit_test/dq_material_service_due_heap/Run()
-	var/baseline_count = length(SSmaterial_services.scheduled)
+	// Exposure work is one core deadline per service (om_after): scheduling again only ever moves
+	// it earlier, and deleting the assembly cancels it.
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
-	var/obj/item/cell/b = new(run_loc_floor_bottom_left)
-	var/obj/item/cell/c = new(run_loc_floor_bottom_left)
 	var/datum/material_service/a_service = a.material_service
-	var/datum/material_service/b_service = b.material_service
-	var/datum/material_service/c_service = c.material_service
-	for(var/datum/material_service/service in list(a_service, b_service, c_service))
-		SSmaterial_services.unqueue(service)
-		service.timer = FALSE
+	om_cancel_after(a_service, /datum/om/behaviour/material_service)
+	a_service.timer = FALSE
 	a_service.schedule(10 SECONDS)
-	b_service.schedule(5 SECONDS)
-	c_service.schedule(7 SECONDS)
-	var/count = length(SSmaterial_services.scheduled)
-	for(var/index in 2 to count)
-		TEST_ASSERT(SSmaterial_services.scheduled_due[index >> 1] <= SSmaterial_services.scheduled_due[index], "Every exposure heap parent must be due before its children")
+	TEST_ASSERT(om_deadline_pending(a_service, /datum/om/behaviour/material_service), "Scheduling must queue one exposure deadline")
+	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 10 SECONDS, "The deadline is when it was asked for")
+	a_service.schedule(20 SECONDS)
+	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 10 SECONDS, "A later request must not push an earlier deadline back")
 	a_service.schedule(1 SECOND)
-	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), count, "Moving an existing service earlier must not duplicate queue entries")
-	var/a_index = SSmaterial_services.scheduled_indices[REF(a_service)]
-	TEST_ASSERT_EQUAL(SSmaterial_services.scheduled_due[a_index], a_service.next_update, "An accelerated environmental event must update the heap deadline")
-	for(var/index in 2 to count)
-		TEST_ASSERT(SSmaterial_services.scheduled_due[index >> 1] <= SSmaterial_services.scheduled_due[index], "Accelerating an exposure must preserve the heap invariant")
+	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 1 SECOND, "An accelerated environmental event must move the deadline earlier")
 	qdel(a)
-	qdel(b)
-	qdel(c)
-	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), baseline_count, "Deleting queued assemblies must leave no stale heap entries")
+	TEST_ASSERT(!om_deadline_pending(a_service, /datum/om/behaviour/material_service), "Deleting a queued assembly must leave no deadline")
 
 /datum/unit_test/dq_material_corrosion_interval_invariance
 
@@ -635,7 +624,7 @@
 	var/datum/material_service/service = emitter.material_service
 	TEST_ASSERT(service.input_joules > 0 && emitter.material_stored_energy > 0, "A real network draw must charge the emitter reservoir")
 	emitter.last_shot = world.time - 1 MINUTE
-	emitter.process()
+	emitter.machine_step()
 	TEST_ASSERT(emitter.material_beam_joules > 0, "Stored energy must produce a real beam (state=[emitter.state], active=[emitter.active], stat=[emitter.stat], stored=[emitter.material_stored_energy], rating=[emitter.active_power_usage], efficiency=[emitter.emitter_efficiency()], time=[world.time], last=[emitter.last_shot], delay=[emitter.fire_delay])")
 	TEST_ASSERT(abs(service.input_joules - emitter.material_beam_joules - service.loss_joules - emitter.material_stored_energy) < 1, "Input must equal beam energy plus heat plus remaining stored energy")
 	TEST_ASSERT(target.get_integrity() < target.max_integrity, "The accounted beam must physically hit its target")
@@ -857,8 +846,8 @@
 	TEST_ASSERT_EQUAL(length(graph.edges), 1, "Real cable connectivity should produce one reduced edge")
 	var/list/sources = list()
 	var/list/consumers = list()
-	sources[WEAKREF(start)] = 10000
-	consumers[WEAKREF(end)] = 10000
+	sources[om_handle(start)] = 10000
+	consumers[om_handle(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	TEST_ASSERT(graph.loss_watts > 0, "A real loaded ordinary cable must have positive resistance loss")
 	graph.deposit_losses(12000)

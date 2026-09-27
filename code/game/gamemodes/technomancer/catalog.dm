@@ -212,7 +212,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 					budget -= desired.cost
 					to_chat(H, span_notice("You have just bought \a [desired.name]."))
 					var/obj/O = new desired.obj_path(get_turf(H))
-					GLOB.technomancer_belongings.Add(O)
+					registry_join(REGISTRY_TECHNOMANCER_BELONGINGS, O)
 				else
 					to_chat(H, span_danger("You can't afford that!"))
 			return TRUE

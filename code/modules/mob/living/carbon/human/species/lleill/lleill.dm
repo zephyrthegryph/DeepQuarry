@@ -219,10 +219,12 @@
 					ability_icon_given = P.ability_icon_state,
 					arguments = list()
 					)
-	spawn (50)
-		if(H.lleill_display)
-			H.lleill_display.invisibility = INVISIBILITY_NONE
-			H.lleill_display.icon_state = "lleill-4"
+	om_after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
+
+/mob/living/carbon/human/proc/show_lleill_display()
+	if(lleill_display)
+		lleill_display.invisibility = INVISIBILITY_NONE
+		lleill_display.icon_state = "lleill-4"
 
 /datum/species/proc/update_lleill_hud(mob/living/carbon/human/H)
 	var/relative_energy = lleill_energy_max ? ((lleill_energy/lleill_energy_max)*100) : 0

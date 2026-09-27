@@ -11,9 +11,12 @@
 
 /obj/item/stack/material/supermatter/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/stack/material/supermatter/process()
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
+/obj/item/stack/material/supermatter/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 
@@ -35,7 +38,6 @@
 	active = FALSE
 
 /obj/item/stack/material/supermatter/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 

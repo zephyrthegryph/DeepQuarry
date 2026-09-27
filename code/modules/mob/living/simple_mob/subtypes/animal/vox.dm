@@ -62,9 +62,7 @@
 	Q.throw_at(target,10,30)
 	quills--
 
-	spawn(100)
-		to_chat(src, span_warning("You feel a fresh quill slide into place."))
-		quills++
+	om_after(src, 10 SECONDS, PROC_REF(regrow_quill))
 
 /mob/living/simple_mob/vox/armalis/verb/message_mob()
 	set category = "Alien"
@@ -164,3 +162,7 @@
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "amp"
 	item_state = "amp"
+
+/mob/living/simple_mob/vox/armalis/proc/regrow_quill()
+	to_chat(src, span_warning("You feel a fresh quill slide into place."))
+	quills++

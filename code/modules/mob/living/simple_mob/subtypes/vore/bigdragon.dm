@@ -746,7 +746,7 @@ I think I covered everything.
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargestart(atom/A)
 	if(!enraged)
-		if(ai_brain) ai_brain.busy = TRUE
+		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
 	chargetimer = addtimer(CALLBACK(src, PROC_REF(chargeend), A), charge_warmup, TIMER_STOPPABLE)
@@ -755,7 +755,7 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
 	//make sure our target still exists and is on a turf
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return
 	status_flags |= LEAPING
 	flying  = 1		//So we can thunk into things
@@ -782,12 +782,12 @@ I think I covered everything.
 			return // We were blocked.
 	if(target)
 		yeet(target, gentle)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathstart(atom/A)
 	glow_toggle = 1
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	if(!enraged)
-		if(ai_brain) ai_brain.busy = TRUE
+		ai_busy_begin()
 	flames = 1
 	build_icons()
 	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
@@ -796,13 +796,13 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
 	//make sure our target still exists and is on a turf
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
 	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	glow_toggle = 0
 	flames = 0
 	build_icons()
@@ -908,7 +908,7 @@ I think I covered everything.
 		deltimer(chargetimer)
 		chargetimer = null
 	//re-enable the AI
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 //Smack people it warns
 /mob/living/simple_mob/vore/bigdragon/proc/export_style()
 	set name = "Export style string"

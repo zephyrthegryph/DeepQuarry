@@ -144,27 +144,35 @@
 	playsound(src, 'sound/effects/lightning_chargeup.ogg', 100, 1, extrarange = 30)
 
 	// Shock nearby things that aren't ourselves.
-	for(var/i = 1 to 10)
-		energy_ball.adjust_scale(0.5 + (i/10))
-		energy_ball.set_light(i/2, i/2, "#0000FF")
-		for(var/thing in range(3, src))
-			// This is stupid because mechs are stupid and not mobs.
-			if(isliving(thing))
-				var/mob/living/L = thing
+	energy_ball_pulse(1, old_shock_resist)
 
-				if(L == src)
-					continue
-				if(L.stat)
-					continue // Otherwise it can get pretty laggy if there's loads of corpses around.
-				L.inflict_shock_damage(i * 2)
-				if(L && (L.ai_brain != null)) // Some mobs delete themselves when dying.
-					L.ai_brain.react_to_attack(src)
+/// One second of the charging energy ball (10 pulses), then the discharge.
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_pulse(i, old_shock_resist)
+	energy_ball.adjust_scale(0.5 + (i/10))
+	energy_ball.set_light(i/2, i/2, "#0000FF")
+	for(var/thing in range(3, src))
+		// This is stupid because mechs are stupid and not mobs.
+		if(isliving(thing))
+			var/mob/living/L = thing
 
-			else if(istype(thing, /obj/mecha))
-				var/obj/mecha/M = thing
-				M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
+			if(L == src)
+				continue
+			if(L.stat)
+				continue // Otherwise it can get pretty laggy if there's loads of corpses around.
+			L.inflict_shock_damage(i * 2)
+			if(L && (L.ai_brain != null)) // Some mobs delete themselves when dying.
+				L.ai_brain.react_to_attack(src)
 
-		sleep(1 SECOND)
+		else if(istype(thing, /obj/mecha))
+			var/obj/mecha/M = thing
+			M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
+
+	if(i < 10)
+		om_after(src, 1 SECOND, PROC_REF(energy_ball_pulse), i + 1, old_shock_resist)
+		return
+	om_after(src, 1 SECOND, PROC_REF(energy_ball_discharge), old_shock_resist)
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_discharge(old_shock_resist)
 
 	// Shoot a tesla bolt, and flashes people who are looking at the mecha without sufficent eye protection.
 	visible_message(span_warning("\The [energy_ball] explodes in a flash of light, sending a shock everywhere!"))
@@ -182,7 +190,9 @@
 	energy_ball.stop_orbit()
 	qdel(energy_ball)
 
-	sleep(1 SECOND)
+	om_after(src, 1 SECOND, PROC_REF(energy_ball_done), old_shock_resist)
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_done(old_shock_resist)
 	// Resist resistance to old value.
 	shock_resist = old_shock_resist // Not using initial() in case the value gets modified by an admin or something.
 
@@ -195,22 +205,7 @@
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
-	sleep(0.5 SECONDS)
-
-	for(var/i = 1 to 3)
-		if(target) // Might get deleted in the meantime.
-			var/turf/T = get_turf(target)
-			if(T)
-				visible_message(span_warning("\The [src] fires a rocket into the air!"))
-				playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
-				face_atom(T)
-				var/obj/item/projectile/arc/explosive_rocket/rocket = new(loc)
-				rocket.old_style_target(T, src)
-				rocket.fire()
-				sleep(1 SECOND)
-
-	visible_message(span_warning("\The [src] retracts the missile rack."))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
 // Arcing rocket projectile that produces a weak explosion when it lands.
 // Shouldn't punch holes in the floor, but will still hurt.

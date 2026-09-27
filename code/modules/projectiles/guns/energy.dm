@@ -32,7 +32,7 @@
 	. = ..()
 	if(self_recharge)
 		power_supply = new /obj/item/cell/device/weapon(src)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
 		if(cell_type)
 			power_supply = new cell_type(src)
@@ -45,7 +45,7 @@
 
 /obj/item/gun/energy/Destroy()
 	if(self_recharge)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	if(power_supply?.loc == src && !QDELETED(power_supply))
 		qdel(power_supply)
 	power_supply = null
@@ -54,7 +54,7 @@
 /obj/item/gun/energy/get_cell()
 	return power_supply
 
-/obj/item/gun/energy/process()
+/obj/item/gun/energy/periodic_step()
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
 		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
@@ -124,7 +124,7 @@
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
 	if(self_recharge)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
@@ -134,6 +134,18 @@
 		projectile.armor_penetration += round((output_envelope - 1) * 20)
 		projectile.color = "#88ddff"
 	return projectile
+
+/obj/item/gun/energy/proc/cell_inserted(mob/user, obj/item/cell/P)
+	if(power_supply)
+		return
+	user.remove_from_mob(P)
+	power_supply = P
+	P.loc = src
+	user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
+	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	update_icon()
+	update_held_icon()
+	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 
 /obj/item/gun/energy/proc/load_ammo(obj/item/C, mob/user)
 	if(istype(C, /obj/item/cell))
@@ -146,15 +158,7 @@
 				to_chat(user, span_notice("[src] already has a power cell."))
 			else
 				user.visible_message("[user] is reloading [src].", span_notice("You start to insert [P] into [src]."))
-				if(do_after(user, reload_time * P.w_class, target = src))
-					user.remove_from_mob(P)
-					power_supply = P
-					P.loc = src
-					user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
-					playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
-					update_icon()
-					update_held_icon()
-					user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
+				om_do_after(user, reload_time * P.w_class, src, src, PROC_REF(cell_inserted), list(user, P))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
 	return
@@ -244,7 +248,7 @@
 	if(power_supply == null)
 		power_supply = new /obj/item/cell/device/weapon(src)
 	self_recharge = 1
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()

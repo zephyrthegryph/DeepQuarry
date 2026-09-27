@@ -88,6 +88,12 @@
 	cables[3] = dq_power_test_cable(run[3], EAST, WEST)
 	SSmachines.process_power()
 	TEST_ASSERT(left.powernet == right.powernet, "a repaired cable did not merge the networks")
+	// `avail` is a per-step law result (ProducerCredit et al, verdigris/domains/power/src/laws.rs),
+	// not pushed on every write. One blocking world step settles the merged
+	// region's ledger before SSmachines.process_power() re-polls it (a paced
+	// vg_world_tick() does nothing while the previous worker frame runs).
+	vg_world_run_steps(1)
+	SSmachines.process_power()
 	TEST_ASSERT_EQUAL(left.powernet.avail, 1000, "the merged network does not carry the supply")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 600, "a draw on the merged network failed")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 400, "a draw exceeded the supply left")
@@ -106,6 +112,13 @@
 /datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/source)
 	SIGNAL_HANDLER
 	restored_signals++
+
+/// One power step as the game runs it: DM's loads and topology in, one
+/// world step (Rust's laws; SSvg paces it in play), the results polled back.
+/proc/dq_power_test_step()
+	SSmachines.process_power()
+	vg_world_run_steps(1)
+	SSmachines.process_power()
 
 /proc/dq_power_test_apc()
 	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
@@ -128,7 +141,7 @@
 	M.power_change()
 
 	// Cut off, nearly empty, with a load.
-	T.disconnect_from_network()
+	A.disconnect_from_network()
 	A.area.use_power_static(2000, EQUIP)
 	A.operating = TRUE
 	A.chargemode = TRUE
@@ -136,10 +149,14 @@
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
 	A.cell.charge = A.cell.maxcharge * 0.001
+	A.sync_cell_charge()
+	A.set_channels(0, A.equipment)
+	A.set_channels(1, A.lighting)
+	A.set_channels(2, A.environ)
 	A.update()
 	var/drained = FALSE
 	for(var/i in 1 to 20)
-		SSmachines.process_power()
+		dq_power_test_step()
 		if(!A.area.power_equip)
 			drained = TRUE
 			break
@@ -150,24 +167,25 @@
 	var/low = A.cell.charge
 
 	// Supply returns.
-	T.connect_to_network()
+	A.connect_to_network()
 	T.set_power_supply(1000000)
 	var/restored = FALSE
 	for(var/i in 1 to 80)
-		SSmachines.process_power()
+		dq_power_test_step()
 		if(A.area.power_equip && A.charging)
 			restored = TRUE
 			break
 	TEST_ASSERT(restored, "the APC did not restore and charge once supply returned")
 	TEST_ASSERT(!(M.stat & NOPOWER), "the machine did not get its power back")
 	TEST_ASSERT(restored_signals, "the machine never heard COMSIG_MACHINERY_POWER_RESTORED")
-	SSmachines.process_power()
+	dq_power_test_step()
 	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
-	TEST_ASSERT(!(A in SSmachines.processing_machines), "the APC polled during the cycle")
+	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
 	A.area.use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
+	A.sync_cell_charge()
 	A.update()
 	UnregisterSignal(M, list(COMSIG_MACHINERY_POWER_LOST, COMSIG_MACHINERY_POWER_RESTORED))
 	SSmachines.process_power()
@@ -184,6 +202,7 @@
 	T.connect_to_network()
 	T.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge
+	A.sync_cell_charge()
 	A.update()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
@@ -198,16 +217,16 @@
 		S.power_sync()
 	// The monitor view settles geometrically; the APC reaches full charge.
 	for(var/i in 1 to 80)
-		SSmachines.process_power()
+		dq_power_test_step()
 	var/apc_events = A.power_event_count
 	var/smes_events = S?.power_event_count
 	for(var/i in 1 to 10)
-		SSmachines.process_power()
+		dq_power_test_step()
 	TEST_ASSERT_EQUAL(A.power_event_count, apc_events, "a settled APC kept hearing power events")
-	TEST_ASSERT(!(A in SSmachines.processing_machines), "a settled APC is polling")
+	TEST_ASSERT(!machine_stepping(A), "a settled APC is polling")
 	if(S)
 		TEST_ASSERT_EQUAL(S.power_event_count, smes_events, "an idle SMES kept hearing power events")
-		TEST_ASSERT(!(S in SSmachines.processing_machines), "an idle SMES is polling")
+		TEST_ASSERT(!machine_stepping(S), "an idle SMES is polling")
 		S.charge = old_smes[1]
 		S.input_attempt = old_smes[2]
 		S.output_attempt = old_smes[3]
@@ -229,18 +248,18 @@
 	var/obj/machinery/power/sensor/sensor = allocate(/obj/machinery/power/sensor, run[1])
 	var/obj/machinery/power/terminal/source = allocate(/obj/machinery/power/terminal, run[3])
 	source.set_power_supply(5000)
-	SSmachines.process_power()
-	SSmachines.process_power()
+	dq_power_test_step()
+	dq_power_test_step()
 	TEST_ASSERT_NOTNULL(sensor.powernet, "the sensor is not on the network")
 	TEST_ASSERT_EQUAL(sensor.powernet.avail, 5000, "the network does not show its supply")
 	var/list/data = sensor.return_reading_data()
 	TEST_ASSERT_EQUAL(data["total_avail"], sensor.reading_to_text(5000), "the monitor reads the wrong supply")
 	TEST_ASSERT_NULL(data["error"], "the monitor reports no network")
 	sensor.draw_power(1200)
-	SSmachines.process_power()
+	dq_power_test_step()
 	TEST_ASSERT(sensor.powernet.viewload > 0, "the monitor's smoothed load ignores a draw")
 	qdel(cables[2])
-	SSmachines.process_power()
+	dq_power_test_step()
 	TEST_ASSERT(!sensor.powernet || sensor.powernet.avail == 0, "a cut sensor still reads the supply")
 	source.set_power_supply(0)
 	for(var/obj/structure/cable/C as anything in cables)
@@ -248,3 +267,37 @@
 			qdel(C)
 
 #endif
+
+/// Counts the area power key wakes the reactor delivers.
+/datum/dq_power_wake_probe
+	var/wakes = 0
+
+/datum/dq_power_wake_probe/on_react(reason, source, source_kind)
+	if(reason & REACT_REASON_KEY)
+		wakes++
+
+/// Power's wakes reach their subscribers: an area's power change raises its
+/// OM channel.
+/datum/unit_test/dq_power_area_key_wakes_subscriber
+
+/datum/unit_test/dq_power_area_key_wakes_subscriber/Run()
+	var/obj/machinery/power/apc/A = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
+	if(!A)
+		return
+	// Area power is an OM channel (CHANGE_AREA_POWER); whatever watches it (lights,
+	// machines asleep on sleep_until_keys()) is woken by the raise. Count the raise.
+	var/area/area = A.area
+	var/datum/om/rec/rec = om_rec_of(area)
+	var/datum/om/scheduler/sched = rec.sched
+	var/old_listen = area.om_listen
+	area.om_listen |= CHANGE_AREA_POWER
+	sched.test_raises = list()
+	area.power_change()
+	var/raised = 0
+	for(var/list/raise as anything in sched.test_raises)
+		if(raise[1] == area && (raise[2] & CHANGE_AREA_POWER))
+			raised++
+	sched.test_raises = null
+	area.om_listen = old_listen
+	TEST_ASSERT(raised >= 1, "the area's power change did not raise CHANGE_AREA_POWER")

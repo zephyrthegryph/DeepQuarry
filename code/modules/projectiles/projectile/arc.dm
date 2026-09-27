@@ -189,20 +189,18 @@
 	for(var/mob/living/L in T)
 		attack_mob(L)
 
-	spawn()
-		T.visible_message(span_warning("\The [src] covers \the [T] in a corrosive paste!"))
-		for(var/turf/simulated/floor/F in view(2, T))
-			spawn()
-				var/obj/effect/effect/water/splash = new(T)
-				splash.create_reagents(15)
-				splash.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
-				splash.reagents.add_reagent(REAGENT_ID_BLOOD, 10,list("blood_colour" = "#ec4940"))
-				splash.set_color()
+	T.visible_message(span_warning("\The [src] covers \the [T] in a corrosive paste!"))
+	for(var/turf/simulated/floor/F in view(2, T))
+		var/obj/effect/effect/water/splash = new(T)
+		splash.create_reagents(15)
+		splash.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
+		splash.reagents.add_reagent(REAGENT_ID_BLOOD, 10,list("blood_colour" = "#ec4940"))
+		splash.set_color()
 
-				splash.set_up(F, 2, 3)
+		splash.set_up(F, 2, 3)
 
-			var/obj/effect/decal/cleanable/chemcoating/acid = locate() in T
-			if(!istype(acid))
-				acid = new(T)
-				acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
-				acid.update_icon()
+		var/obj/effect/decal/cleanable/chemcoating/acid = locate() in T
+		if(!istype(acid))
+			acid = new(T)
+			acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
+			acid.update_icon()

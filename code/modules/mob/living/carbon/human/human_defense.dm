@@ -587,8 +587,10 @@ emp_act
 		organ_chance = 75
 	user.next_move = world.time + 20
 	user.visible_message(span_danger("\The [user] begins to twist \the [W] around inside [src]'s [chest]!"))
-	if(!do_after(user, 2 SECONDS, target = src))
-		return 0
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(shank_attack_human_done), done_args = list(W, G, user, organ_chance, damage, chest))
+	return TRUE
+
+/mob/living/carbon/human/proc/shank_attack_human_done(obj/item/W, obj/item/grab/G, mob/user, organ_chance, damage, obj/item/organ/external/chest)
 	if(!(G && GRAB_ASSAILANT(G) == user && GRAB_TARGET(G) == src)) //check that we still have a grab
 		return 0
 

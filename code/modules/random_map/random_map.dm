@@ -27,7 +27,7 @@
 	// Storage for the final iteration of the map.
 	var/list/map = list()           // Actual map.
 
-	// If set, all sleep(-1) calls will be skipped.
+	// If set, the map is applied at once instead of as lane work (om_lane_work()).
 	// Test to see if rand_seed() can be used reliably.
 	var/priority_process
 
@@ -60,7 +60,6 @@
 
 	var/start_time = world.timeofday
 	if(!do_not_announce) admin_notice(span_danger("Generating [name]."), R_DEBUG)
-	sleep(-1)
 
 	// Testing needed to see how reliable this is (asynchronous calls, called during worldgen), DM ref is not optimistic
 	if(seed)
@@ -159,14 +158,25 @@
 	origin_z = tz ? tz : 1
 
 /datum/random_map/proc/apply_to_map()
+	apply_cells()
+
+/// Applies the map as lane work: a column a slice, resuming by column (at once with
+/// priority_process, or before the scheduler runs). apply_finished() runs after the last.
+/datum/random_map/proc/apply_cells()
 	if(!origin_x) origin_x = 1
 	if(!origin_y) origin_y = 1
 	if(!origin_z) origin_z = 1
+	om_lane_work(src, PROC_REF(apply_column), 1, PROC_REF(apply_finished), priority_process)
 
-	for(var/x = 1, x <= limit_x, x++)
-		for(var/y = 1, y <= limit_y, y++)
-			if(!priority_process) sleep(-1)
-			apply_to_turf(x,y)
+/// One column of the map. The next column, or null after the last.
+/datum/random_map/proc/apply_column(x)
+	for(var/y = 1, y <= limit_y, y++)
+		apply_to_turf(x, y)
+	return x < limit_x ? x + 1 : null
+
+/// The whole map is applied: subtypes finish up here.
+/datum/random_map/proc/apply_finished()
+	return
 
 /datum/random_map/proc/apply_to_turf(x,y)
 	var/current_cell = get_map_cell(x,y)

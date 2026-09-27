@@ -12,7 +12,7 @@
 	/// The heat source is on.
 	var/tmp/heating = FALSE
 	/// Heat watch that wakes a hibernating cooker when it cools.
-	var/tmp/thermostat_watch
+	var/tmp/datum/native_watch/heat/thermostat_watch
 
 	var/light_x = 0
 	var/light_y = 0
@@ -86,7 +86,7 @@
 	light.pixel_y = light_y
 	add_overlay(light)
 
-/obj/machinery/appliance/cooker/process()
+/obj/machinery/appliance/cooker/machine_step()
 	if (!stat)
 		heat_up()
 	else
@@ -107,7 +107,7 @@
 /obj/machinery/appliance/cooker/power_change()
 	. = ..()
 	if(.)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
 /obj/machinery/appliance/cooker/proc/update_cooking_power()
@@ -172,21 +172,16 @@
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	thermostat_watch = heat_watch_threshold(src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE)
+	thermostat_watch = heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat))
 	return !isnull(thermostat_watch)
 
-/obj/machinery/appliance/cooker/on_heat_wake(watch, reason, source)
-	if(watch != thermostat_watch)
-		return
-	heat_unwatch(thermostat_watch)
-	thermostat_watch = null
-	START_MACHINE_PROCESSING(src)
+/// Cooled below the thermostat band (thermostat_watch): heat again.
+/obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
+	QDEL_NULL(thermostat_watch)
+	MACHINE_WAKE(src)
 
 /obj/machinery/appliance/cooker/Destroy()
-	if(!isnull(thermostat_watch))
-		heat_unwatch(thermostat_watch)
-		thermostat_watch = null
-	heat_unsubscribe()
+	QDEL_NULL(thermostat_watch)
 	return ..()
 
 /// Heat capacity from `resistance` (the old per-process heating step is
@@ -249,3 +244,6 @@
 	if(istype(CI) && CI.combine_target)
 		to_chat(user, span_filter_notice("\The [I] will be used to make a [selected_option]. Output selection is returned to default for future items."))
 		selected_option = null
+
+/obj/machinery/appliance/cooker/declared_owned_vars()
+	return list("thermostat_watch")

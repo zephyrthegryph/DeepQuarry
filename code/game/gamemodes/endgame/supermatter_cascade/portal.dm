@@ -16,13 +16,13 @@
 
 /obj/singularity/narsie/large/exit/Initialize(mapload, ...)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/singularity/narsie/large/exit/update_icon()
 	overlays = 0
 
-/obj/singularity/narsie/large/exit/process()
-	for(var/mob/M in GLOB.player_list)
+/obj/singularity/narsie/large/exit/periodic_step()
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
 			M.see_rift(src)
 	eat()
@@ -67,8 +67,7 @@
 				if (INVISIBILITY_ABSTRACT == AM.invisibility)
 					continue
 
-				spawn (0)
-					AM.singularity_pull(src, src.current_size)
+				AM.singularity_pull(src, src.current_size)
 
 
 /mob

@@ -34,7 +34,7 @@
 
 
 /obj/item/integrated_circuit/reagent/smoke/interact(mob/user)
-	set_pin_data(IC_OUTPUT, 2, WEAKREF(src))
+	set_pin_data(IC_OUTPUT, 2, ic_ref(src))
 	push_data()
 	..()
 
@@ -85,7 +85,7 @@
 	var/transfer_amount = 10
 
 /obj/item/integrated_circuit/reagent/injector/interact(mob/user)
-	set_pin_data(IC_OUTPUT, 2, WEAKREF(src))
+	set_pin_data(IC_OUTPUT, 2, ic_ref(src))
 	push_data()
 	..()
 
@@ -106,9 +106,19 @@
 		transfer_amount = new_amount
 
 
-/obj/item/integrated_circuit/reagent/injector/do_work()
-	set waitfor = 0 // Don't sleep in a proc that is called by a processor without this set, otherwise it'll delay the entire thing
+/// The injection, 3 seconds after do_work() announced it.
+/obj/item/integrated_circuit/reagent/injector/proc/inject_mob(mob/living/L)
+	if(!L.can_inject(null, 0)) // No error message on second check
+		activate_pin(3)
+		return
+	var/contained = reagents.get_reagents()
+	var/trans = reagents.trans_to_mob(L, transfer_amount, CHEM_BLOOD)
+	message_admins("[src] injected \the [L] with [trans]u of [contained].")
+	to_chat(L, span_notice("You feel a tiny prick!"))
+	visible_message(span_warning("[src] injects [L]!"))
+	activate_pin(2)
 
+/obj/item/integrated_circuit/reagent/injector/do_work()
 	// Attempt to fill self from input storage before acting
 	var/input_storage = get_pin_data(IC_INPUT, 3)
 	if(input_storage && istype(input_storage, /obj/item/integrated_circuit/reagent/storage))
@@ -140,15 +150,8 @@
 				return
 			var/turf/T = get_turf(AM)
 			T.visible_message(span_warning("[src] is trying to inject [L]!"))
-			sleep(3 SECONDS)
-			if(!L.can_inject(null, 0)) // No error message on second check
-				activate_pin(3)
-				return
-			var/contained = reagents.get_reagents()
-			var/trans = reagents.trans_to_mob(L, transfer_amount, CHEM_BLOOD)
-			message_admins("[src] injected \the [L] with [trans]u of [contained].")
-			to_chat(AM, span_notice("You feel a tiny prick!"))
-			visible_message(span_warning("[src] injects [L]!"))
+			om_after(src, 3 SECONDS, PROC_REF(inject_mob), L)
+			return
 		else
 			// Use standardized injection compatibility for objects
 			if(!AM.can_be_injected_by(src))
@@ -287,7 +290,7 @@
 
 
 /obj/item/integrated_circuit/reagent/storage/interact(mob/user)
-	set_pin_data(IC_OUTPUT, 2, WEAKREF(src))
+	set_pin_data(IC_OUTPUT, 2, ic_ref(src))
 	push_data()
 	..()
 

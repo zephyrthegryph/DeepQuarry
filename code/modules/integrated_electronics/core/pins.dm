@@ -21,7 +21,7 @@ D [1]/  ||
 /datum/integrated_io
 	var/name = "input/output"
 	var/obj/item/integrated_circuit/holder = null
-	var/datum/weakref/data = null // This is a weakref, to reduce typecasts.  Note that oftentimes numbers and text may also occupy this.
+	var/data = null // A reference is an IC ref (ic_ref(), an OM handle in a text wrapper), to reduce typecasts.  Note that oftentimes numbers and text may also occupy this.
 	var/list/linked // Lazy: most pins are never wired.
 	var/io_type = DATA_CHANNEL
 
@@ -45,15 +45,19 @@ D [1]/  ||
 
 
 /datum/integrated_io/proc/data_as_type(as_type)
-	if(!isweakref(data))
+	if(!ic_is_ref(data))
 		return
-	var/datum/weakref/w = data
-	var/output = w.resolve()
+	var/w = data
+	var/output = ic_ref_resolve(w)
 	return istype(output, as_type) ? output : null
 
 /datum/integrated_io/proc/display_data(input)
 	if(isnull(input))
 		return "(null)" // Empty data means nothing to show.
+
+	if(ic_is_ref(input))
+		var/atom/A = ic_ref_resolve(input)
+		return A ? "(\ref[A] \[Ref\])" : "(null)"
 
 	if(istext(input))
 		return "(\"[input]\")" // Wraps the 'string' in escaped quotes, so that people know it's a 'string'.
@@ -81,12 +85,6 @@ list[](
 		result += ")"
 		return result
 
-	if(isweakref(input))
-		var/datum/weakref/w = input
-		var/atom/A = w.resolve()
-		//return A ? "([A.name] \[Ref\])" : "(null)" // For refs, we want just the name displayed.
-		return A ? "(\ref[A] \[Ref\])" : "(null)"
-
 	return "([input])" // Nothing special needed for numbers or other stuff.
 
 /datum/integrated_io/activate/display_data()
@@ -103,7 +101,7 @@ list[](
 		return
 	if(isnum(data))
 		write_data_to_pin(rand(-10000, 10000))
-	if(istext(data))
+	if(istext(data) && !ic_is_ref(data))
 		write_data_to_pin("ERROR")
 	push_data()
 
@@ -111,8 +109,8 @@ list[](
 	push_data()
 
 /datum/integrated_io/proc/write_data_to_pin(new_data)
-	if(isnull(new_data) || isnum(new_data) || istext(new_data) || isweakref(new_data)) // Anything else is a type we don't want.
-		if(istext(new_data))
+	if(isnull(new_data) || isnum(new_data) || istext(new_data) || ic_is_ref(new_data)) // Anything else is a type we don't want.
+		if(istext(new_data) && !ic_is_ref(new_data))
 			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
 		data = new_data
 		holder.on_data_written()

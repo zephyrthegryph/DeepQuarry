@@ -1,6 +1,6 @@
 GLOBAL_VAR_INIT(global_vantag_hud, 0)
 
-ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/living/dropee in GLOB.mob_list)
+ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/living/dropee in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/confirm = tgui_alert(user, "Make [dropee] drop everything?", "Message", list("Yes", "No"))
 	if(confirm != "Yes")
 		return
@@ -17,7 +17,7 @@ ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTIO
 	message_admins(msg)
 	feedback_add_details("admin_verb","DEVR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", ADMIN_CATEGORY_GAME, mob/target_mob in GLOB.mob_list)
+ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", ADMIN_CATEGORY_GAME, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!length(GLOB.prisonwarp))
 		return
 	if(ismob(target_mob))
@@ -30,14 +30,12 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 		//teleport person to cell
 		target_mob.status_at_least(EFFECT_PARALYZED, 5)
 		target_mob.status_at_least(EFFECT_SLEEPING, 5)
-		sleep(5)	//so they black out before warping
 		target_mob.forceMove(pick(GLOB.prisonwarp))
 		if(ishuman(target_mob))
 			var/mob/living/carbon/human/prisoner = target_mob
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), slot_w_uniform)
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(prisoner), slot_shoes)
-		spawn(50)
-			to_chat(target_mob, span_bolddanger("You have been sent to the prison station!"))
+		om_after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), target_mob, span_bolddanger("You have been sent to the prison station!"))
 		log_admin("[key_name(user)] sent [key_name(target_mob)] to the prison station.")
 		message_admins(span_blue("[key_name_admin(user)] sent [key_name_admin(target_mob)] to the prison station."), 1)
 		feedback_add_details("admin_verb","PRISON") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -122,7 +120,7 @@ ADMIN_VERB(cmd_admin_local_narrate, R_FUN|R_EVENT, "Local Narrate", "Locally nar
 	feedback_add_details("admin_verb","LNR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 
-ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Narrate", "Directly narrate the target.", ADMIN_CATEGORY_FUN_NARRATE, mob/target_mob in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Narrate", "Directly narrate the target.", ADMIN_CATEGORY_FUN_NARRATE, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!target_mob)
 		target_mob = tgui_input_list(user, "Direct narrate to who?", "Active Players", get_mob_with_client_list())
 
@@ -143,7 +141,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	admin_ticket_log(target_mob, msg)
 	feedback_add_details("admin_verb","DIRN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Toggle godmode on the target.", ADMIN_CATEGORY_GAME, mob/target_mob in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Toggle godmode on the target.", ADMIN_CATEGORY_GAME, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(om_has(target_mob, EFFECT_GODMODE))
 		target_mob.RemoveElement(/datum/element/godmode)
 
@@ -237,11 +235,11 @@ Ccomp's first proc.
 
 	var/list/mobs = list()
 	var/list/ghosts = list()
-	if(!LAZYLEN(GLOB.observer_mob_list))
+	if(!REGISTRY_COUNT(REGISTRY_OBSERVERS))
 		if(notify)
 			to_chat(src, "There doesn't appear to be any ghosts for you to select.")
 		return
-	var/list/sortmob = sort_names(GLOB.observer_mob_list)                           // get the mob list.
+	var/list/sortmob = sort_names(REGISTRY_MEMBERS(REGISTRY_OBSERVERS))                           // get the mob list.
 
 	for(var/mob/M in sortmob)
 		var/name = M.name
@@ -441,8 +439,8 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 					return
 
 		if("Arrivals") //Spawn them at a latejoin spawnpoint
-			if(LAZYLEN(GLOB.latejoin))
-				spawnloc = get_turf(pick(GLOB.latejoin))
+			if(REGISTRY_COUNT(REGISTRY_LATEJOIN))
+				spawnloc = get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN)))
 			else if(LAZYLEN(GLOB.latejoin_tram))
 				spawnloc = pick(GLOB.latejoin_tram)
 			else
@@ -570,7 +568,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new /obj/structure/drop_pod(target_turf, new_character)
 		to_chat(new_character, span_boldnotice("Please wait for your arrival."))
 	else if(showy == "Fall")
-		spawn(1)
+		spawn(1) // S7 keeps: admin verb (allowlist)
 			var/initial_x = new_character.pixel_x
 			var/initial_y = new_character.pixel_y
 			new_character.plane = 1
@@ -579,7 +577,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 			new_character.density = FALSE
 			new_character.opacity = FALSE
 			animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 7)
-			spawn(7)
+			spawn(7) // S7 keeps: admin verb (allowlist)
 				new_character.end_fall()
 		to_chat(new_character, span_boldnotice("You have been fully spawned. Enjoy the game."))
 
@@ -589,14 +587,14 @@ ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a cu
 	var/input = tgui_input_text(user, "Please enter anything you want the AI to do. Anything. Serious.", "What?", "", MAX_MESSAGE_LEN)
 	if(!input)
 		return
-	for(var/mob/living/silicon/ai/target_ai in GLOB.mob_list)
+	for(var/mob/living/silicon/ai/target_ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (target_ai.stat == 2)
 			to_chat(user, "Upload failed. No signal is being detected from the AI.")
 		else if (target_ai.see_in_dark == 0)
 			to_chat(user, "Upload failed. Only a faint signal is being detected from the AI, and it is not responding to our requests. It may be low on power.")
 		else
 			target_ai.add_ion_law(input)
-			for(var/mob/living/silicon/ai/found_ai in GLOB.mob_list)
+			for(var/mob/living/silicon/ai/found_ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				to_chat(found_ai, span_warning("... LAWS UPDATED!") + "\n" + input)
 				found_ai.show_laws()
 
@@ -608,7 +606,7 @@ ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a cu
 		GLOB.command_announcement.Announce("Ion storm detected near the [station_name()]. Please check all AI-controlled equipment for errors.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_IONSTORM)
 	feedback_add_details("admin_verb","IONC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_rejuvenate, R_ADMIN|R_FUN|R_MOD, "Rejuvenate", "Fully restores the target mob.", ADMIN_CATEGORY_GAME, mob/living/target_mob in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_rejuvenate, R_ADMIN|R_FUN|R_MOD, "Rejuvenate", "Fully restores the target mob.", ADMIN_CATEGORY_GAME, mob/living/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!target_mob)
 		return
 	if(!istype(target_mob))
@@ -658,7 +656,7 @@ ADMIN_VERB(cmd_admin_list_open_jobs, R_HOLDER, "List free slots", "Show availabl
 			to_chat(user, "[job.title]: [job.total_positions]")
 	feedback_add_details("admin_verb","LFS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_admin_check_contents, R_HOLDER, "Check Contents", "Check the contents of the mob.", ADMIN_CATEGORY_INVESTIGATE, mob/living/living_target in GLOB.mob_list)
+ADMIN_VERB(cmd_admin_check_contents, R_HOLDER, "Check Contents", "Check the contents of the mob.", ADMIN_CATEGORY_INVESTIGATE, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/list/content_list = living_target.get_contents()
 	for(var/target in content_list)
 		to_chat(user, "[target]")
@@ -761,7 +759,7 @@ ADMIN_VERB(toggle_random_events, R_SERVER, "Toggle random events on/off", "Toggl
 		message_admins("Admin [key_name_admin(user)] has disabled random events.")
 	feedback_add_details("admin_verb","TRE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player from the round as if they'd cryo'd.", ADMIN_CATEGORY_GAME, mob/target_mob in GLOB.living_mob_list)
+ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player from the round as if they'd cryo'd.", ADMIN_CATEGORY_GAME, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 	if(!target_mob)
 		return
 
@@ -798,7 +796,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	else if(issilicon(target_mob))
 		if(isAI(target_mob))
 			var/mob/living/silicon/ai/ai = target_mob
-			GLOB.empty_playable_ai_cores += new /obj/structure/AIcore/deactivated(ai.loc)
+			registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(ai.loc))
 			GLOB.global_announcer.autosay("[ai] has been moved to intelligence storage.", "Artificial Intelligence Oversight")
 			ai.clear_client()
 			return
@@ -851,7 +849,7 @@ ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/
 	feedback_add_details("admin_verb","DPA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_droppod_deploy, R_SPAWN, "Drop Pod Deploy", "Drop an existing mob where you are in a drop pod.", ADMIN_CATEGORY_FUN_DROP_POD, object as text)
-	var/mob/living/living_target = tgui_input_list(user, "Select the mob to drop:", "Mob Picker", GLOB.living_mob_list)
+	var/mob/living/living_target = tgui_input_list(user, "Select the mob to drop:", "Mob Picker", REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 	if(!living_target)
 		return
 
@@ -874,7 +872,7 @@ ADMIN_VERB(cmd_admin_droppod_deploy, R_SPAWN, "Drop Pod Deploy", "Drop an existi
 ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Event HUD", "Give everyone the Event HUD.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.global_vantag_hud = !GLOB.global_vantag_hud
 	if(GLOB.global_vantag_hud)
-		for(var/mob/living/living_target in GLOB.living_mob_list)
+		for(var/mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 			if(living_target.ckey)
 				living_target.vantag_hud = TRUE
 				living_target.recalculate_vis()
@@ -979,14 +977,14 @@ ADMIN_VERB(cmd_admin_z_narrate, (R_ADMIN|R_MOD|R_EVENT), "Z Narrate", "Narrates 
 	var/pos_z = get_z(user.mob)
 	if (!pos_z)
 		return
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.z == pos_z)
 			to_chat(M, msg)
 	log_admin("ZNarrate: [key_name(user)] : [msg]")
 	message_admins(span_blue(span_bold(" ZNarrate: [key_name_admin(user)] : [msg]<BR>")), 1)
 	feedback_add_details("admin_verb","GLNA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/Remove Event HUD", "Give a mob the event hud, which shows them other people's event preferences, or remove it from them.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in GLOB.player_list)
+ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/Remove Event HUD", "Give a mob the event hud, which shows them other people's event preferences, or remove it from them.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	if(target.vantag_hud)
 		target.vantag_hud = FALSE
 		target.recalculate_vis()

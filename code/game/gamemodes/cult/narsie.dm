@@ -53,12 +53,9 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 			SetUniversalState(/datum/universal_state/hell)
 		GLOB.narsie_cometh = 1
 
-		spawn(10 SECONDS)
-			if(SSemergency_shuttle)
-				SSemergency_shuttle.call_evac()
-				SSemergency_shuttle.launch_time = 0	// Cannot recall
+		om_after(src, 10 SECONDS, /proc/narsie_call_evac)
 
-/obj/singularity/narsie/process()
+/obj/singularity/narsie/periodic_step()
 	eat()
 
 	if (!target || prob(5))
@@ -109,10 +106,8 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(target && prob(60))
 		movement_dir = get_dir(src,target)
 
-	spawn(0)
-		step(src, movement_dir)
-	spawn(1)
-		step(src, movement_dir)
+	step(src, movement_dir)
+	om_after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), movement_dir)
 	return 1
 
 /obj/singularity/narsie/large/move(force_move = 0)
@@ -126,19 +121,16 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 	if(target && prob(60))
 		movement_dir = get_dir(src,target)
-	spawn(0)
-		step(src, movement_dir)
-		narsiefloor(get_turf(loc))
-		for(var/mob/M in GLOB.player_list)
-			if(M.client)
-				M.see_narsie(src,movement_dir)
-	spawn(10)
-		step(src, movement_dir)
-		narsiefloor(get_turf(loc))
-		for(var/mob/M in GLOB.player_list)
-			if(M.client)
-				M.see_narsie(src,movement_dir)
+	large_step(movement_dir)
+	om_after(src, 1 SECOND, PROC_REF(large_step), movement_dir)
 	return 1
+
+/obj/singularity/narsie/large/proc/large_step(movement_dir)
+	step(src, movement_dir)
+	narsiefloor(get_turf(loc))
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(M.client)
+			M.see_narsie(src,movement_dir)
 
 /obj/singularity/narsie/proc/narsiefloor(turf/T)//leaving "footprints"
 	if(!(istype(T, /turf/simulated/wall/cult)||istype(T, /turf/space)))
@@ -262,8 +254,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 				if (INVISIBILITY_ABSTRACT == AM2.invisibility)
 					continue
 
-				spawn (0)
-					AM2.singularity_pull(src, src.current_size)
+				AM2.singularity_pull(src, src.current_size)
 
 		if (dist <= consume_range && !istype(A, get_base_turf_by_area(A)))
 			var/turf/T2 = A
@@ -284,7 +275,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		acquire(pick(cultists))
 		return
 		//If there was living cultists, it picks one to follow.
-	for(var/mob/living/carbon/human/food in GLOB.living_mob_list)
+	for(var/mob/living/carbon/human/food in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(food.stat)
 			continue
 		var/turf/pos = get_turf(food)
@@ -295,7 +286,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		acquire(pick(cultists))
 		return
 		//no living cultists, pick a living human instead.
-	for(var/mob/observer/dead/ghost in GLOB.player_list)
+	for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!ghost.client)
 			continue
 		var/turf/pos = get_turf(ghost)
@@ -332,7 +323,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	chained = 1
 	move_self = 0
 	icon_state ="narsie-chains"
-	for(var/mob/M in GLOB.mob_list)//removing the client image of nar-sie while it is chained
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))//removing the client image of nar-sie while it is chained
 		if(M.client)
 			M.see_narsie(src)
 
@@ -364,3 +355,9 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 /obj/singularity/narsie/proc/after_animation()
 	move_self = 1
 	icon = initial(icon)
+
+/// Nar-Sie has come: the evacuation shuttle is called and cannot be recalled.
+/proc/narsie_call_evac()
+	if(SSemergency_shuttle)
+		SSemergency_shuttle.call_evac()
+		SSemergency_shuttle.launch_time = 0	// Cannot recall

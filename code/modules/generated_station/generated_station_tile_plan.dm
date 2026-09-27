@@ -68,8 +68,17 @@
 	var/datum/generated_station_materializer/generation_owner
 	var/list/utility_floors_by_owner
 	var/list/utility_floors_by_zone
+	/// Working state of derive_hull_step() and validate_seal_step() between slices.
+	var/tmp/list/hull_openings
+	var/tmp/list/hull_coordinates
+	var/tmp/list/hull_corners
+	var/tmp/list/seal_open
+	var/tmp/list/seal_visited
+	var/tmp/list/seal_queued
+	var/tmp/seal_open_count = 0
 
-/datum/generated_station_tile_plan/New(new_width, new_height, datum/generated_station_materializer/new_generation_owner)
+/// `deferred`: the grid is filled a column at a time by fill_column() (the materializer's phases).
+/datum/generated_station_tile_plan/New(new_width, new_height, datum/generated_station_materializer/new_generation_owner, deferred = FALSE)
 	..()
 	grid_width = new_width
 	grid_height = new_height
@@ -79,11 +88,13 @@
 	utility_floors_by_owner = list()
 	utility_floors_by_zone = list()
 	generation_owner = new_generation_owner
-	for(var/x in 1 to grid_width)
-		for(var/y in 1 to grid_height)
-			tiles[coordinate_key(x, y)] = new /datum/generated_station_tile_intent(x, y)
-			if(!(y % 8))
-				generation_owner?.generation_checkpoint("Compiling tile grid", 27)
+	if(!deferred)
+		for(var/x in 1 to grid_width)
+			fill_column(x)
+
+/datum/generated_station_tile_plan/proc/fill_column(x)
+	for(var/y in 1 to grid_height)
+		tiles[coordinate_key(x, y)] = new /datum/generated_station_tile_intent(x, y)
 
 /datum/generated_station_tile_plan/Destroy()
 	QDEL_LIST_ASSOC_VAL(tiles)
@@ -219,92 +230,99 @@
 
 /// Derives hull from the union of all pressure-bearing floors.
 /datum/generated_station_tile_plan/proc/derive_hull(wall_owner_id = "station-hull")
-	var/list/hull_coordinates = list()
-	var/list/exterior_openings = list()
-	for(var/key in tiles)
-		var/datum/generated_station_tile_intent/door_intent = tiles[key]
-		if(!door_intent.door_type || !ispath(door_intent.door_type, /obj/machinery/door/airlock/generated_station_exterior))
-			continue
-		var/open_x = door_intent.local_x + (door_intent.door_direction == EAST) - (door_intent.door_direction == WEST)
-		var/open_y = door_intent.local_y + (door_intent.door_direction == NORTH) - (door_intent.door_direction == SOUTH)
-		exterior_openings[coordinate_key(open_x, open_y)] = TRUE
-		generation_owner?.generation_checkpoint("Deriving station hull", 29)
-	for(var/key in tiles)
-		var/datum/generated_station_tile_intent/intent = tiles[key]
-		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
-			continue
-		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
-			var/datum/generated_station_tile_intent/neighbor = tile(intent.local_x + offset[1], intent.local_y + offset[2])
-			if(neighbor && exterior_openings[coordinate_key(neighbor.local_x, neighbor.local_y)])
-				continue
-			if(neighbor && neighbor.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
-				hull_coordinates[coordinate_key(neighbor.local_x, neighbor.local_y)] = neighbor
-		generation_owner?.generation_checkpoint("Deriving station hull", 29)
-	for(var/key in hull_coordinates)
-		var/datum/generated_station_tile_intent/intent = hull_coordinates[key]
-		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
+	var/cursor = derive_hull_step(null, wall_owner_id)
+	while(!isnull(cursor))
+		cursor = derive_hull_step(cursor, wall_owner_id)
+	return !length(errors)
+
+/// derive_hull() a slice at a time: `cursor` is list(stage, index) (null to start); returns the
+/// cursor to resume from, or null when the hull is claimed.
+/datum/generated_station_tile_plan/proc/derive_hull_step(list/cursor, wall_owner_id = "station-hull")
+	var/stage = cursor ? cursor[1] : 1
+	var/i = cursor ? cursor[2] : 1
+	if(!cursor)
+		hull_openings = list()
+		hull_coordinates = list()
+		hull_corners = list()
+	var/count = length(tiles)
+	if(stage == 1)
+		for(var/n in i to count)
+			var/datum/generated_station_tile_intent/door_intent = tiles[tiles[n]]
+			if(door_intent.door_type && ispath(door_intent.door_type, /obj/machinery/door/airlock/generated_station_exterior))
+				var/open_x = door_intent.local_x + (door_intent.door_direction == EAST) - (door_intent.door_direction == WEST)
+				var/open_y = door_intent.local_y + (door_intent.door_direction == NORTH) - (door_intent.door_direction == SOUTH)
+				hull_openings[coordinate_key(open_x, open_y)] = TRUE
+			if(n < count && generation_owner?.generation_checkpoint("Deriving station hull", 29))
+				return list(1, n + 1)
+		stage = 2
+		i = 1
+	if(stage == 2)
+		for(var/n in i to count)
+			var/datum/generated_station_tile_intent/intent = tiles[tiles[n]]
+			if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR)
+				for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
+					var/datum/generated_station_tile_intent/neighbor = tile(intent.local_x + offset[1], intent.local_y + offset[2])
+					if(neighbor && hull_openings[coordinate_key(neighbor.local_x, neighbor.local_y)])
+						continue
+					if(neighbor && neighbor.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
+						hull_coordinates[coordinate_key(neighbor.local_x, neighbor.local_y)] = neighbor
+			if(n < count && generation_owner?.generation_checkpoint("Deriving station hull", 29))
+				return list(2, n + 1)
+		for(var/key in hull_coordinates)
+			var/datum/generated_station_tile_intent/intent = hull_coordinates[key]
+			claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
+		stage = 3
+		i = 1
 	// Close convex corners with the one exterior cell shared by their two
 	// perpendicular wall runs. Arbitrarily extending isolated walls creates thick
 	// blocks and buried wall cells; a geometric corner claim is deterministic.
-	var/list/hull_corners = list()
-	for(var/key in tiles)
-		var/datum/generated_station_tile_intent/intent = tiles[key]
-		if(intent.structure_kind != GENERATED_STATION_TILE_EXTERIOR)
-			continue
-		var/north = tile(intent.local_x, intent.local_y + 1)?.structure_kind == GENERATED_STATION_TILE_HULL
-		var/south = tile(intent.local_x, intent.local_y - 1)?.structure_kind == GENERATED_STATION_TILE_HULL
-		var/east = tile(intent.local_x + 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
-		var/west = tile(intent.local_x - 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
-		if((north || south) && (east || west) && (north + south + east + west == 2))
-			hull_corners += intent
-		generation_owner?.generation_checkpoint("Closing station hull corners", 30)
+	for(var/n in i to count)
+		var/datum/generated_station_tile_intent/intent = tiles[tiles[n]]
+		if(intent.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
+			var/north = tile(intent.local_x, intent.local_y + 1)?.structure_kind == GENERATED_STATION_TILE_HULL
+			var/south = tile(intent.local_x, intent.local_y - 1)?.structure_kind == GENERATED_STATION_TILE_HULL
+			var/east = tile(intent.local_x + 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
+			var/west = tile(intent.local_x - 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
+			if((north || south) && (east || west) && (north + south + east + west == 2))
+				hull_corners += intent
+		if(n < count && generation_owner?.generation_checkpoint("Closing station hull corners", 30))
+			return list(3, n + 1)
 	for(var/datum/generated_station_tile_intent/intent in hull_corners)
 		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
-	return !length(errors)
+	hull_openings = null
+	hull_coordinates = null
+	hull_corners = null
+	return null
 
 /// Floods vacuum from the map edge and proves it cannot reach a pressurized floor.
 /datum/generated_station_tile_plan/proc/validate_exterior_seal()
-	var/list/open = list()
-	var/list/visited = list()
-	var/list/queued = list()
-	var/cell_count = grid_width * grid_height
-	while(length(open) < cell_count)
-		open.len = min(length(open) + 512, cell_count)
-		generation_owner?.generation_checkpoint("Allocating pressure-hull work queue", 30, TRUE)
-	while(length(visited) < cell_count)
-		visited.len = min(length(visited) + 512, cell_count)
-		generation_owner?.generation_checkpoint("Allocating pressure-hull visited map", 30, TRUE)
-	while(length(queued) < cell_count)
-		queued.len = min(length(queued) + 512, cell_count)
-		generation_owner?.generation_checkpoint("Allocating pressure-hull queued map", 30, TRUE)
-	var/open_count = 0
-	for(var/x in 1 to grid_width)
-		var/datum/generated_station_tile_intent/south_edge = tile(x, 1)
-		var/datum/generated_station_tile_intent/north_edge = tile(x, grid_height)
-		var/south_key = (south_edge.local_y - 1) * grid_width + south_edge.local_x
-		var/north_key = (north_edge.local_y - 1) * grid_width + north_edge.local_x
-		if(!queued[south_key])
-			queued[south_key] = TRUE
-			open[++open_count] = south_edge
-		if(!queued[north_key])
-			queued[north_key] = TRUE
-			open[++open_count] = north_edge
-	generation_owner?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE)
-	for(var/y in 1 to grid_height)
-		var/datum/generated_station_tile_intent/west_edge = tile(1, y)
-		var/datum/generated_station_tile_intent/east_edge = tile(grid_width, y)
-		var/west_key = (west_edge.local_y - 1) * grid_width + west_edge.local_x
-		var/east_key = (east_edge.local_y - 1) * grid_width + east_edge.local_x
-		if(!queued[west_key])
-			queued[west_key] = TRUE
-			open[++open_count] = west_edge
-		if(!queued[east_key])
-			queued[east_key] = TRUE
-			open[++open_count] = east_edge
-	generation_owner?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE)
-	while(open_count)
-		var/datum/generated_station_tile_intent/current = open[open_count]
-		open[open_count--] = null
+	var/cursor = validate_seal_step(null)
+	while(!isnull(cursor))
+		cursor = validate_seal_step(cursor)
+	return !length(errors)
+
+/// validate_exterior_seal() a slice at a time: the flood's work queue lives on the plan between
+/// slices. Returns TRUE to be called again, or null when the proof is done (errors hold the result).
+/datum/generated_station_tile_plan/proc/validate_seal_step(cursor)
+	if(!cursor)
+		var/cell_count = grid_width * grid_height
+		seal_open = new /list(cell_count)
+		seal_visited = new /list(cell_count)
+		seal_queued = new /list(cell_count)
+		seal_open_count = 0
+		for(var/x in 1 to grid_width)
+			seal_enqueue(tile(x, 1))
+			seal_enqueue(tile(x, grid_height))
+		for(var/y in 1 to grid_height)
+			seal_enqueue(tile(1, y))
+			seal_enqueue(tile(grid_width, y))
+		if(generation_owner?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE))
+			return TRUE
+	var/list/open = seal_open
+	var/list/visited = seal_visited
+	while(seal_open_count)
+		var/datum/generated_station_tile_intent/current = open[seal_open_count]
+		open[seal_open_count--] = null
 		var/key = (current.local_y - 1) * grid_width + current.local_x
 		if(visited[key] || current.structure_kind == GENERATED_STATION_TILE_HULL || (current.door_type && ispath(current.door_type, /obj/machinery/door/airlock/generated_station_exterior)))
 			continue
@@ -316,9 +334,19 @@
 			var/neighbor_x = current.local_x + (direction == EAST) - (direction == WEST)
 			var/neighbor_y = current.local_y + (direction == NORTH) - (direction == SOUTH)
 			var/datum/generated_station_tile_intent/neighbor = tile(neighbor_x, neighbor_y)
-			var/neighbor_key = neighbor && ((neighbor.local_y - 1) * grid_width + neighbor.local_x)
-			if(neighbor && !visited[neighbor_key] && !queued[neighbor_key])
-				queued[neighbor_key] = TRUE
-				open[++open_count] = neighbor
-		generation_owner?.generation_checkpoint("Validating station pressure hull", 30)
-	return !length(errors)
+			if(neighbor && !visited[(neighbor.local_y - 1) * grid_width + neighbor.local_x])
+				seal_enqueue(neighbor)
+		if(seal_open_count && generation_owner?.generation_checkpoint("Validating station pressure hull", 30))
+			return TRUE
+	seal_open = null
+	seal_visited = null
+	seal_queued = null
+	return null
+
+/datum/generated_station_tile_plan/proc/seal_enqueue(datum/generated_station_tile_intent/intent)
+	var/key = (intent.local_y - 1) * grid_width + intent.local_x
+	if(seal_queued[key])
+		return
+	seal_queued[key] = TRUE
+	seal_open[++seal_open_count] = intent
+

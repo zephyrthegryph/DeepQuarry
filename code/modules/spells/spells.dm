@@ -182,6 +182,17 @@
 	var/fire_sound = null
 	var/energy_cost_per_shot = 5
 
+/// A shot after its pre-shot delay: on_ranged_cast() again, past the delay.
+/obj/item/spell/unrestricted/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
+	qdel(target_image)
+	if(!owner)
+		return // We got dropped before the firing occured.
+	shot_ready = TRUE
+	on_ranged_cast(hit_atom, user)
+	shot_ready = FALSE
+
+/obj/item/spell/unrestricted/projectile/var/shot_ready = FALSE
+
 /obj/item/spell/unrestricted/projectile/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(set_up(hit_atom, user))
 		var/obj/item/projectile/new_projectile = make_projectile(spell_projectile, user)
@@ -198,18 +209,18 @@
 	var/obj/item/projectile/P = new projectile_type(get_turf(user))
 	return P
 
+/// TRUE to fire now. With a pre-shot delay it pays, shows the target and fires later (delayed_shot()).
 /obj/item/spell/unrestricted/projectile/proc/set_up(atom/hit_atom, mob/living/user)
+	if(shot_ready)
+		return TRUE
 	if(spell_projectile)
 		if(pay_energy(energy_cost_per_shot))
 			if(pre_shot_delay)
 				var/image/target_image = image(icon = 'icons/obj/spells.dmi', loc = get_turf(hit_atom), icon_state = "target")
 				user << target_image
 				user.status_at_least(EFFECT_STUNNED, pre_shot_delay / 10)
-				sleep(pre_shot_delay)
-				qdel(target_image)
-				if(owner)
-					return TRUE
-				return FALSE // We got dropped before the firing occured.
+				om_after(src, pre_shot_delay, PROC_REF(delayed_shot), hit_atom, user, target_image)
+				return FALSE
 			return TRUE // No delay, no need to check.
 	return FALSE
 

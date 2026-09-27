@@ -371,8 +371,7 @@
 		qdel(P)
 		to_chat(user, span_notice("Format accepted, printing voucher!"))
 		ready = 0
-		spawn(300 SECONDS)
-			ready = 1
+		om_after(src, 300 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "ready", 1)
 		return
 	if(!findtext(P.info,format))
 		to_chat(user, span_notice("Incorrect format!"))

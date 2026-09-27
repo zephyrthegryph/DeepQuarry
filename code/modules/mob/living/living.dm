@@ -32,7 +32,7 @@
 		ai_brain.holder = null
 		ai_brain.UnregisterSignal(src,COMSIG_MOB_STATCHANGE)
 		//legacy faction_friends list cleanup removed — the modern
-		// brain stores relationships as weakrefs in personal[], which
+		// brain stores relationships as OM handles in personal[], which
 		// invalidate automatically when the referenced mob qdels.
 		QDEL_NULL(ai_brain)
 	if(dsoverlay)
@@ -320,8 +320,8 @@
 
 	// remove the character from the list of the dead
 	if(stat == DEAD)
-		GLOB.dead_mob_list -= src
-		GLOB.living_mob_list += src
+		registry_leave(REGISTRY_DEAD_MOBS, src)
+		registry_join(REGISTRY_LIVING_MOBS, src)
 		tod = null
 		timeofdeath = 0
 
@@ -436,9 +436,7 @@
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(override_blindness_check || !(disabilities & BLIND))
 		overlay_fullscreen("flash", type)
-		spawn(25)
-			if(src)
-				clear_fullscreen("flash", 25)
+		om_after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), "flash", 25)
 		return 1
 
 /mob/living/proc/cannot_use_vents()
@@ -809,6 +807,7 @@
 		animate(client, color = null, time = 10)
 
 /mob/living/swap_hand()
+	om_changed(src, CHANGE_MOB_HANDS)
 	src.hand = !( src.hand )
 	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use
@@ -1369,3 +1368,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)
 		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
 		private_notes_window(user)
+
+/// om_after() target: the mob's AI picks up where it paused.
+/mob/living/proc/ai_brain_resume()
+	ai_busy_end()

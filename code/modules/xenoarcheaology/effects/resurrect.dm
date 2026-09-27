@@ -70,42 +70,43 @@
 
 /datum/artifact_effect/resurrect/proc/attempt_revive(mob/living/L = null)
 	var/atom/holder = get_master_holder()
-	spawn()
-		if(isanimal(L))
-			var/mob/living/simple_mob/SM = L
-			SM.fully_heal()
-			SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, null, null, 0, null, INJURE_SILENT)
-			SM.stat = CONSCIOUS
-			GLOB.dead_mob_list -= SM
-			GLOB.living_mob_list += SM
-			SM.update_icon()
-			SM.revive()
-			holder.visible_message(span_alien("\The [SM]'s eyes open in a flash of light!"))
-		else if(ishuman(L))
-			var/mob/living/carbon/human/H = L
+	if(isanimal(L))
+		var/mob/living/simple_mob/SM = L
+		SM.fully_heal()
+		SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, null, null, 0, null, INJURE_SILENT)
+		SM.stat = CONSCIOUS
+		registry_leave(REGISTRY_DEAD_MOBS, SM)
+		registry_join(REGISTRY_LIVING_MOBS, SM)
+		SM.update_icon()
+		SM.revive()
+		holder.visible_message(span_alien("\The [SM]'s eyes open in a flash of light!"))
+	else if(ishuman(L))
+		var/mob/living/carbon/human/H = L
 
-			if(!H.client && H.mind)
-				for(var/mob/observer/dead/ghost in GLOB.player_list)
-					if(ghost.mind == H.mind)
-						to_chat(ghost, span_large(span_interface(span_bold("An artifact is trying to \
-						revive you. Return to your body if you want to be resurrected!") + "\
-						(Verbs -> Ghost -> Re-enter corpse)")))
-						break
+		if(!H.client && H.mind)
+			for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+				if(ghost.mind == H.mind)
+					to_chat(ghost, span_large(span_interface(span_bold("An artifact is trying to \
+					revive you. Return to your body if you want to be resurrected!") + "\
+					(Verbs -> Ghost -> Re-enter corpse)")))
+					break
 
-			H.mend(TREAT_TISSUE_REPAIR, 40)
-			H.mend(TREAT_BURN_CARE, 40)
-			holder.visible_message(span_alien("\The [H]'s body begins to shift and stir, loud, wet cracks emitting from within!"))
+		H.mend(TREAT_TISSUE_REPAIR, 40)
+		H.mend(TREAT_BURN_CARE, 40)
+		holder.visible_message(span_alien("\The [H]'s body begins to shift and stir, loud, wet cracks emitting from within!"))
+		om_after(H, 10 SECONDS, /proc/artifact_revive_wakes, H, holder)
 
-			sleep(10 SECONDS)
-			if(H.client)
-				L.stat = CONSCIOUS
-				GLOB.dead_mob_list -= H
-				GLOB.living_mob_list += H
-				H.timeofdeath = null
+/// Ten seconds after an artifact restarts a body: it wakes if its owner came back to it.
+/proc/artifact_revive_wakes(mob/living/carbon/human/H, atom/holder)
+	if(H.client)
+		H.stat = CONSCIOUS
+		registry_leave(REGISTRY_DEAD_MOBS, H)
+		registry_join(REGISTRY_LIVING_MOBS, H)
+		H.timeofdeath = null
 
-				holder.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))
-			else
-				holder.visible_message(span_alien("\The [H]'s body stays still...Perhaps their mind was not ready to rejoin their body."))
+		holder.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))
+	else
+		holder.visible_message(span_alien("\The [H]'s body stays still...Perhaps their mind was not ready to rejoin their body."))
 
 /datum/artifact_effect/resurrect/DoEffectTouch(mob/user)
 	var/atom/holder = get_master_holder()

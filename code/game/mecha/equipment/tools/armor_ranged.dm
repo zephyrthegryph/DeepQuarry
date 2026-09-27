@@ -26,8 +26,7 @@
 		inc_damage *= src.damage_coeff
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)
-	spawn()
-		do_after_cooldown()
+	start_cooldown()
 	return max(0, inc_damage)
 
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/handle_ranged_contact(obj/A, inc_damage = 0)
@@ -42,8 +41,7 @@
 		inc_damage *= damage_coeff
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)
-	spawn()
-		do_after_cooldown()
+	start_cooldown()
 	return max(0, inc_damage)
 
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/get_equip_info()

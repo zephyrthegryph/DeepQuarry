@@ -14,9 +14,9 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	dupe_mode = COMPONENT_DUPE_UNIQUE // First come first serve
 
 	VAR_PRIVATE/mob/living/carbon/human/our_human = null
-	VAR_PRIVATE/datum/weakref/halimage
-	VAR_PRIVATE/datum/weakref/halbody
-	VAR_PRIVATE/list/halitem = list() // weakref pair of obj-key, client-value
+	VAR_PRIVATE/halimage
+	VAR_PRIVATE/halbody
+	VAR_PRIVATE/list/halitem = list() // OM handle pair of obj-key, client-value
 
 	VAR_PRIVATE/hal_crit = FALSE
 	VAR_PRIVATE/hal_screwyhud = HUD_HALLUCINATION_NONE

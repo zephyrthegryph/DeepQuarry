@@ -72,11 +72,11 @@
 	if(duration > world.time || tick_interval > world.time) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
-				START_PROCESSING(SSfastprocess, src)
+				PERIODIC_START(src, PERIODIC_FAST)
 			if(STATUS_EFFECT_NORMAL_PROCESS)
-				START_PROCESSING(SSprocessing, src)
+				PERIODIC_START(src, PERIODIC_SECOND)
 			if(STATUS_EFFECT_PRIORITY)
-				START_PROCESSING(SSpriority_effects, src)
+				PERIODIC_START(src, PERIODIC_STATUS_EFFECTS)
 
 	update_particles()
 	return TRUE
@@ -84,11 +84,11 @@
 /datum/status_effect/Destroy()
 	switch(processing_speed)
 		if(STATUS_EFFECT_FAST_PROCESS)
-			STOP_PROCESSING(SSfastprocess, src)
+			PERIODIC_STOP(src)
 		if(STATUS_EFFECT_NORMAL_PROCESS)
-			STOP_PROCESSING(SSprocessing, src)
+			PERIODIC_STOP(src)
 		if(STATUS_EFFECT_PRIORITY)
-			STOP_PROCESSING(SSpriority_effects, src)
+			PERIODIC_STOP(src)
 	if(owner)
 		linked_alert = null
 		owner.clear_alert(id)
@@ -111,7 +111,7 @@
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
 // instead of extending / overriding the process() proc.
-/datum/status_effect/process(seconds_per_tick)
+/datum/status_effect/periodic_step(seconds_per_tick)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(QDELETED(owner))
