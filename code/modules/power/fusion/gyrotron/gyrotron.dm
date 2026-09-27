@@ -67,7 +67,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	effect = /obj/machinery/power/emitter/gyrotron/proc/interaction_set_ident
 
 /obj/machinery/power/emitter/gyrotron/proc/interaction_set_ident(mob/user, obj/item/held, datum/interaction/interaction)
-	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Gyrotron", id_tag, MAX_NAME_LEN)
+	var/new_ident = rerun_prompt(user, "k70", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Gyrotron", "default" = id_tag, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+	if(isnull(new_ident))
+		return
 	if(new_ident && user.Adjacent(src))
 		id_tag = new_ident
 	return TRUE

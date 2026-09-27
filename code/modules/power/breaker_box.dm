@@ -122,7 +122,9 @@
 
 /obj/machinery/power/breakerbox/proc/interaction_use(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/newtag = tgui_input_text(user, "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "SMES RCON system", "", MAX_NAME_LEN)
+		var/newtag = rerun_prompt(user, "k125", list("kind" = "text", "message" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_length" = MAX_NAME_LEN), PROC_REF(interaction_use), args)
+		if(isnull(newtag))
+			return
 		if(newtag)
 			RCon_tag = newtag
 			to_chat(user, span_notice("You changed the RCON tag to: [newtag]"))
