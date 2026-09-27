@@ -133,11 +133,8 @@
 	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/select(src))
 	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/charge(src))
 
-/obj/item/rig_module/Destroy()
-	LAZYREMOVE(holder?.installed_modules, src)
-	holder = null
-	QDEL_NULL_LIST(stat_modules)
-	. = ..()
+REF_BACKLIST(/obj/item/rig_module, list("holder" = "installed_modules"))
+REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
 
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)

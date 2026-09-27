@@ -22,6 +22,7 @@
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 
+// LIFECYCLE: an attached accessory is removed from its clothing.
 /obj/item/clothing/accessory/Destroy()
 	on_removed()
 	return ..()
@@ -722,11 +723,6 @@
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 	. = ..()
 	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT) // Makes it so you don't need to change the frequency off of default for it to work.
-
-/obj/item/clothing/accessory/collar/shock/Destroy() //Clean up your toys when you're done.
-	SSradio.remove_object(src, frequency)
-	radio_connection = null //Don't delete this, this is a shared object.
-	return ..()
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)

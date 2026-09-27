@@ -164,11 +164,12 @@
 			var/image/I = images[img]
 			I.color = newcolor
 
+REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
+
+// LIFECYCLE: its HUD images are detached.
 /obj/item/clothing/head/pilot/Destroy()
 	for(var/image/I as anything in raw_images)
 		I.loc = null
-	shuttle_comp = null
-	qdel(pilot_hud)
 	return ..()
 
 /obj/item/clothing/head/pilot/equipped(mob/user,slot)
@@ -201,7 +202,6 @@
 		src.icon_state = initial(icon_state)
 		to_chat(user, "You lower the visor on the pilot helmet.")
 	update_clothing_icon() //so our mob-overlays update
-
 
 //Pilot helmets
 /obj/item/clothing/head/pilot_vr

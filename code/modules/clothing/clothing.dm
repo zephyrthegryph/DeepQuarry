@@ -319,15 +319,8 @@
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-/obj/item/clothing/gloves/Destroy()
-	for(var/mob/living/M in contents)
-		M.forceMove(get_turf(src))
-	if(ring)
-		QDEL_NULL(ring)
-	if(gloves)
-		QDEL_NULL(gloves)
-	wearer = null
-	return ..()
+REF_OWNED(/obj/item/clothing/gloves, list("ring", "gloves"))
+REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 
 /obj/item/clothing/proc/set_clothing_index()
 	return
@@ -1321,14 +1314,14 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
+REF_SPILL_LIST(/obj/item/clothing, "contents")
+
+// LIFECYCLE: its integrated circuit goes with it.
 /obj/item/clothing/Destroy()
 	if(IC)
 		IC.clothing = null
-		action_circuit = null // Will get deleted by qdel-ing the IC assembly.
+		action_circuit = null
 		QDEL_NULL(IC)
-	for(var/mob/living/M in contents)
-		M.forceMove(get_turf(src))
-	wearer = null
 	return ..()
 
 /obj/item/clothing/proc/handle_digitigrade(mob/user)

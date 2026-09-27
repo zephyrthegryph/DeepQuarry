@@ -170,6 +170,7 @@
 	if(!LAZYLEN(active_modifiers))
 		active_modifiers = null
 
+// LIFECYCLE: remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/Destroy()
 	// Revert all remaining modifiers to leave the world consistent.
 	if(LAZYLEN(active_modifiers))
