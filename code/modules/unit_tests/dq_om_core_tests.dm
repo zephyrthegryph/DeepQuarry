@@ -1127,3 +1127,41 @@
 	for(var/i in 1 to 4)
 		TEST_ASSERT_EQUAL(B.compiled_intervals[i], before[i], "compiled intervals unchanged")
 		TEST_ASSERT_EQUAL(B.relevance[i], relevance_before[i], "declaration unchanged")
+
+// ---------------------------------------------------------------- declared caches
+
+/datum/om_test_entity/cached
+	var/datum/on_change_cache
+	var/datum/on_event_cache
+	var/datum/on_relation_cache
+
+/datum/om_test_entity/cached/declared_cache_vars()
+	var/static/list/caches = list(
+		"on_change_cache" = CACHE_ON_CHANGE(CHANGE_EXPLICIT),
+		"on_event_cache" = CACHE_ON_EVENT(/datum/om/event/test/sub),
+		"on_relation_cache" = CACHE_ON_RELATION(/datum/om/relation/test_link),
+	)
+	return caches
+
+/// A declared cache is nulled by the core when its rule fires, and only then.
+/datum/unit_test/om/declared_cache_cleared_by_rule
+
+/datum/unit_test/om/declared_cache_cleared_by_rule/run_om(list/made)
+	var/datum/om_test_entity/cached/E = entity(made, /datum/om_test_entity/cached)
+	var/datum/om_test_entity/other = entity(made)
+	om_rec_of(E)
+	E.on_change_cache = other
+	E.on_event_cache = other
+	E.on_relation_cache = other
+	om_changed(E, CHANGE_CONTENTS)
+	TEST_ASSERT(E.on_change_cache == other, "an unrelated channel leaves the cache")
+	om_changed(E, CHANGE_EXPLICIT)
+	TEST_ASSERT_NULL(E.on_change_cache, "the declared channel clears the cache")
+	TEST_ASSERT(E.on_event_cache == other, "a change doesn't clear an event cache")
+	om_emit(E, new /datum/om/event/test/other)
+	TEST_ASSERT(E.on_event_cache == other, "another event leaves the cache")
+	om_emit(E, new /datum/om/event/test/sub)
+	TEST_ASSERT_NULL(E.on_event_cache, "the declared event clears the cache")
+	TEST_ASSERT(E.on_relation_cache == other, "no edge yet")
+	om_link(E, other, /datum/om/relation/test_link)
+	TEST_ASSERT_NULL(E.on_relation_cache, "linking the declared relation clears the cache")

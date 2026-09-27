@@ -65,6 +65,8 @@
 	var/e = reg.event_idx[event.type]
 	var/list/flags = e ? reg.event_handlers[e] : null
 	var/datum/E = rec.owner
+	if(rec.table.cache_events)
+		om_cache_clear(E, rec.table.cache_events, event.type)
 	if(flags)
 		for(var/i in 1 to length(rec.att))
 			var/datum/om/behaviour/B = rec.att[i]

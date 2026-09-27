@@ -442,3 +442,12 @@
 #define STEP_REPEAT(d) list(OM_STEP_REPEAT, d)
 /// Cancel the task with `reason` (its on_cancel runs).
 #define STEP_FAIL(reason) list(OM_STEP_FAIL, reason)
+
+// ---- Declared caches (lifecycle.md §4, LC-refs): the invalidation rule each entry of
+// declared_cache_vars() names. The core nulls the var when the rule fires.
+/// Cleared when any of `bits` is raised on the entity (om_changed / OM_CHANGED).
+#define CACHE_ON_CHANGE(bits) list("change", bits)
+/// Cleared when an event of `path` (or a subtype) is emitted on the entity.
+#define CACHE_ON_EVENT(path) list("event", path)
+/// Cleared when an edge of relation `path` is added to or removed from the entity.
+#define CACHE_ON_RELATION(path) list("relation", path)

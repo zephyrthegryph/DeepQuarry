@@ -119,7 +119,7 @@ enforces it.
 | `REF_PAIR(var, other_var)` | two-sided. Set and cleared only through `link_set()`/`link_clear()`, and destroying either side nulls the other | sleeper↔console, portals, teleporter, turbolift doors, card_slot holder |
 | `REF_BACKLIST(var, list_var)` | membership in another object's list (assoc or plain), removed automatically | `projector.signs`, aim lists, implant DB |
 | OM handle | a text var holding `om_handle(x)`, resolved with `om_resolve(h)` (null once `x` is deleted). Replaces `/datum/weakref` ([object_model_core.md §4.11](object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony)) | "remember who it was": last attacker, forensics, logs, UI selections, tgui and client refs, saved IDs |
-| declared cache | `declared_cache_vars()` names the var and its invalidation rule (the channel or event that clears it); scrubbed in phase 8 | caches |
+| declared cache | `declared_cache_vars()` maps the var to its invalidation rule: `CACHE_ON_CHANGE(bits)`, `CACHE_ON_EVENT(path)` or `CACHE_ON_RELATION(path)` (`code/__DEFINES/om.dm`). The OM core nulls the var when the rule fires (a raise of those channels, an event of that type, an edge of that relation added or removed); scrubbed in phase 8 | caches |
 
 - **LC-refs.** Every datum-typed instance var or list is exactly one of: a
   relation or slot, an owned child, an OM handle, or a declared cache with an
@@ -128,6 +128,21 @@ enforces it.
   The LC-refs lint (`tools/ci/scheduler_lints.py`) counts undeclared vars and is
   ratcheted to 0. `GLOB` lists of objects become OM registries, which drop
   deleted members.
+- **LC-refs: lists.** The same rule covers what an instance list *holds*. A list
+  var that gets objects as keys or values (`L[obj] = ...`, `L[key] = obj`,
+  `L += obj`, `L |= obj`, `L = list(obj = ...)`) must be declared: an owned-children
+  list (`declared_owned_list_vars()`), the list side of a backlist (named by some
+  `declared_backlist_vars()`), or a declared cache. Otherwise it becomes a relation,
+  a registry, or is keyed by `om_handle()`. `tools/ci/declared_refs_lint.py` finds
+  these writes syntactically (an object is `src`, `usr`, a `new` expression or a
+  name the proc declares object-typed) and ratchets them per file in
+  `tools/ci/object_keyed_lists_allowlist.txt`.
+- **LC-refs: cache rules.** A `declared_cache_vars()` entry without a
+  `CACHE_ON_*` rule fails the lint outright (no ratchet), and the core reports one
+  at runtime when the type first joins the OM (`om_cache_scan()`). The rule is read
+  once per type into its type table; change rules add their bits to the entity's
+  listen mask so the raise reaches the core, which clears the cache before any
+  other dispatch.
 - Medical, body, organs, afflictions, surgery, protean and Life are in the
   sweep like everything else (§7). Their mapping: body `REF_OWNED` from the
   mob; afflictions and the clock schedule `REF_OWNED_LIST`; organs as slot

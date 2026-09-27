@@ -47,6 +47,14 @@
 /datum/proc/declared_backlist_vars()
 	return null
 
+/// Assoc: our cache var name -> its invalidation rule, CACHE_ON_CHANGE(bits),
+/// CACHE_ON_EVENT(path) or CACHE_ON_RELATION(path) (code/__DEFINES/om.dm). A
+/// cache may hold object references; the object-model core nulls it when the
+/// rule fires (om_cache_scan(), entity.dm), and tools/ci/declared_refs_lint.py
+/// rejects an entry with no rule.
+/datum/proc/declared_cache_vars()
+	return null
+
 /// `D`'s declared_*_vars() results, cached per type on first use (see file
 /// header): a type's declarations are proc-local statics, so every instance
 /// of it answers identically, but they can only be *called* on a real,

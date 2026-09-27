@@ -88,9 +88,42 @@
 	rec = new /datum/om/rec(E, om_scheduler())
 	E.om_rec = rec
 	rec.table = om_registry().type_table(E.type)
-	if(rec.table.service_mask)
-		E.om_listen |= rec.table.service_mask
+	if(!rec.table.cache_scanned)
+		om_cache_scan(rec.table, E)
+	if(rec.table.service_mask | rec.table.cache_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask
 	return rec
+
+// ---------------------------------------------------------------- declared caches
+
+/// Reads `E`'s declared_cache_vars() into its type table (every instance of a type
+/// declares the same rules). A cache with no rule is an error.
+/proc/om_cache_scan(datum/om/type_table/T, datum/E)
+	T.cache_scanned = TRUE
+	var/list/decl = E.declared_cache_vars()
+	for(var/name in decl)
+		var/list/rule = decl[name]
+		if(!islist(rule) || length(rule) != 2 || !(name in E.vars))
+			om_scheduler().error("[E.type]: declared cache [name] needs a CACHE_ON_* rule")
+			continue
+		switch(rule[1])
+			if("change")
+				T.cache_mask |= rule[2]
+				LAZYADD(T.cache_change, list(rule[2], name))
+			if("event")
+				LAZYADD(T.cache_events, list(rule[2], name))
+			if("relation")
+				var/datum/om/relation/R = om_registry().relation(rule[2])
+				LAZYADD(T.cache_relations, list(R.id, name))
+			else
+				om_scheduler().error("[E.type]: declared cache [name] has an unknown rule [rule[1]]")
+
+/// Nulls every declared cache on `E` whose rule in `rules` (stride 2: key, var) matches.
+/proc/om_cache_clear(datum/E, list/rules, key, bits)
+	for(var/i in 1 to length(rules) step 2)
+		var/k = rules[i]
+		if(bits ? (k & bits) : (ispath(key) ? ispath(key, k) : k == key))
+			E.vars[rules[i + 1]] = null
 
 // ---------------------------------------------------------------- start / attach
 
@@ -285,7 +318,7 @@
 	for(var/datum/om/task/T as anything in rec.tasks)
 		slow |= T.def.interrupt_on
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -310,6 +343,10 @@
 	if(!rec || rec.torn_down)
 		return
 	var/datum/om/scheduler/sched = rec.sched
+	// A declared cache keyed on these channels is stale now (clearing is idempotent,
+	// so it runs before the repeat and bulk short cuts below).
+	if(rec.table.cache_mask & bits)
+		om_cache_clear(E, rec.table.cache_change, null, bits)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Tests count raises (a status change must raise its channel once, not twice).
 	if(sched.test_raises)
