@@ -46,7 +46,9 @@
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
 			return
 
-		var/_message = tgui_input_text(user, "Enter an additional message to engrave.", "Graffiti", "", MAX_MESSAGE_LEN)
+		var/_message = rerun_prompt(user, "k49", list("kind" = "text", "message" = "Enter an additional message to engrave.", "title" = "Graffiti", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_message))
+			return TRUE
 		if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
 			user.visible_message(span_warning("\The [user] begins carving something into \the [loc]."))
 			om_do_after(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
