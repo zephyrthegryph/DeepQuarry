@@ -20,6 +20,7 @@
 	travel_time = _time
 	one_way = _oneway
 
+// LIFECYCLE: leaves both endpoints' route lists.
 /datum/shuttle_route/Destroy()
 	LAZYREMOVE(start.routes, src)
 	LAZYREMOVE(end.routes, src)
@@ -76,12 +77,7 @@
 		log_mapping("Web shuttle destination '[name]' could not find its landmark '[landmark_tag]'.") // Important error message
 	master = new_master
 
-/datum/shuttle_destination/Destroy()
-	// Snapshot: each route's Destroy() removes it from both endpoints' routes.
-	for(var/datum/shuttle_route/R in LAZYCOPY(routes))
-		qdel(R)
-	master = null
-	return ..()
+REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 
 //	build_destinations()
 
@@ -187,11 +183,7 @@
 	current_destination = get_destination_by_type(starting_destination)
 	build_autopaths()
 
-/datum/shuttle_web_master/Destroy()
-	my_shuttle = null
-	for(var/datum/shuttle_destination/D in destinations)
-		qdel(D)
-	return ..()
+REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 
 /datum/shuttle_web_master/proc/build_destinations()
 	// First, instantiate all the destination subtypes relevant to this datum.

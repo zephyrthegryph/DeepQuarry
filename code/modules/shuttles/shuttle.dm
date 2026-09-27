@@ -72,6 +72,7 @@
 			CRASH("A supply shuttle is already defined.")
 		SSsupply.shuttle = src
 
+// LIFECYCLE: leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/Destroy()
 	current_location = null
 	SSshuttles.shuttles -= src.name
@@ -231,7 +232,6 @@
 	on_shuttle_arrival(start_location, destination)
 	make_sounds(HYPERSPACE_END)
 
-
 //////////////////////////////
 // Forward declarations of public procs. They do nothing because this is not auto-dock.
 
@@ -308,7 +308,6 @@
 	SEND_SIGNAL(src, COMSIG_OBSERVER_SHUTTLE_MOVED, old_location, destination)
 
 	return TRUE
-
 
 //just moves the shuttle from A to B
 //A note to anyone overriding move in a subtype. perform_shuttle_move() must absolutely not, under any circumstances, fail to move the shuttle.

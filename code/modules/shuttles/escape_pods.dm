@@ -35,12 +35,6 @@
 		CRASH("Escape pod \"[name]\" could not find it's controller master! docking_controller_tag=[docking_controller_tag]")
 	controller_master.pod = src
 
-/datum/shuttle/autodock/ferry/escape_pod/Destroy()
-	if(arming_controller)
-		UnregisterSignal(arming_controller, COMSIG_QDELETING)
-	arming_controller = null
-	return ..()
-
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller_deleted(datum/source)
 	SIGNAL_HANDLER
 	arming_controller = null
