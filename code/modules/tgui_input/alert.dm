@@ -80,12 +80,6 @@
 		start_time = world.time
 		QDEL_IN(src, timeout)
 
-/datum/tgui_alert/Destroy(force, ...)
-	SStgui.close_uis(src)
-	state = null
-	buttons?.Cut()
-	. = ..()
-
 /**
  * Waits for a user's response to the tgui_modal's prompt before returning. Returns early if
  * the window was closed by the user.
