@@ -555,7 +555,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		handler_ref = om_handle(our_handler_mob.client)
 
 /datum/ticket/proc/Retitle()
-	var/new_title = tgui_input_text(usr, "Enter a title for the ticket", "Rename Ticket", name)
+	var/new_title = rerun_prompt(usr, "k558", list("kind" = "text", "message" = "Enter a title for the ticket", "title" = "Rename Ticket", "default" = name), PROC_REF(Retitle), args)
+	if(isnull(new_title))
+		return
 	if(new_title)
 		name = new_title
 		//not saying the original name cause it could be a long ass message
@@ -566,7 +568,10 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 //Kick ticket to next level
 /datum/ticket/proc/Escalate()
-	if(tgui_alert(usr, "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.","Escalate",list("Yes","No")) != "Yes")
+	var/_answer_k569 = rerun_prompt(usr, "k569", list("message" = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", "title" = "Escalate", "choices" = list("Yes","No")), PROC_REF(Escalate), args)
+	if(isnull(_answer_k569))
+		return
+	if(_answer_k569 != "Yes")
 		return
 	if (src.initiator == null) // You can't escalate a mentorhelp of someone who's logged out because it won't create the adminhelp properly
 		to_chat(usr, span_mentor_warning("Error: client not found, unable to escalate."))
