@@ -9,7 +9,8 @@
 /datum/var/tmp/datum/rule_binding/rule_binding
 
 /proc/dq_rule_binding_of(datum/thing)
-	return thing?.rule_binding
+	var/datum/rule_binding/binding = thing?.rule_binding
+	return QDELETED(binding) ? null : binding
 
 /// ---- Lifecycle (L2) ----
 /// Subscribes `A`'s rules. /atom/on_materialize() calls it. Types whose rules
@@ -18,7 +19,7 @@
 	var/list/rules = dq_rules_for_type(A.type)
 	if(!rules || (!force && dq_rules_heat_deferred(A.type)))
 		return
-	if(A.rule_binding)
+	if(dq_rule_binding_of(A))
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
@@ -31,7 +32,7 @@
 /proc/dq_rules_heat_body_created(atom/A)
 	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
 		return
-	if(A.rule_binding)
+	if(dq_rule_binding_of(A))
 		dq_rx_heat_body_created(A)
 		return
 	// At rest the object followed its surroundings, unwatched: a rule whose
@@ -43,6 +44,7 @@
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
 	var/datum/rule_binding/binding = A.rule_binding
+	A.rule_binding = null
 	if(binding)
 		qdel(binding)
 
@@ -50,7 +52,7 @@
 /// to destroy the object (take_damage before atom_destruction), so every rule
 /// that the change triggered runs first, in the order the old code ran it.
 /proc/dq_rules_settle(datum/thing)
-	var/datum/rule_binding/binding = thing.rule_binding
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	binding?.evaluate()
 
 /// The live binding of `thing` if one of its rules replaces the legacy path `flag`.
@@ -59,18 +61,18 @@
 /proc/dq_rules_binding_replacing(atom/thing, flag)
 	if(!RULES_REPLACE(thing.type, flag))
 		return null
-	var/datum/rule_binding/binding = thing.rule_binding
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	return binding?.replaces(flag) ? binding : null
 
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
-	var/datum/rule_binding/binding = thing.rule_binding
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	if(binding?.key_id && (key_kind in binding.key_kinds))
 		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
-	var/datum/rule_binding/binding = thing.rule_binding
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	if(!binding)
 		return null
 	. = binding.nodes ? binding.nodes[property] : null
