@@ -90,7 +90,7 @@
 	update_icon()
 	return TRUE
 
-// Useful for testing before actually paying (e.g. before a do_after() ).
+// Useful for testing before actually paying (e.g. before a timed action).
 /obj/item/rcd/proc/can_afford(amount)
 	return stored_matter >= amount
 
