@@ -36,6 +36,11 @@
 /// successor's latent entries), then destroys `original`. Replaces the
 /// `new X(); qdel(src)` pattern (deconstruction debris, item transforms).
 /// Returns the successor, or null if it couldn't be placed.
+///
+/// `path` may instead be a successor the caller already built (and set up
+/// from the original's state: fingerprints, id tags, dir, pixel offsets):
+/// it is then only placed and handed the original's slot and KEEP_WITH
+/// contents, with no constructor args.
 /proc/replace_with(atom/movable/original, path, ...)
 	if(!original || QDELETED(original))
 		return null
@@ -50,6 +55,15 @@
 	// bag): the constructor must not see a half-filled holder. Otherwise in
 	// the original's own loc -- a turf, or a plain container without slots.
 	var/atom/where = (slot_id || !holder || isturf(holder)) ? get_turf(original) : holder
+	if(istype(path, /atom/movable))
+		var/atom/movable/built = path
+		if(QDELETED(built))
+			return null
+		original.lifecycle_successor = built
+		qdel(original)
+		if(slot_id && !QDELETED(holder) && !QDELETED(built))
+			built.move_into(holder, slot_id)
+		return built
 	// arglist() can't be combined with a positional arg in the same call, so
 	// the loc goes into the same list as the rest of the constructor args.
 	var/list/ctor_args = list(where) + args.Copy(3)
