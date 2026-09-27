@@ -282,9 +282,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 		if(!sdog.shipvore)
 			return
 	var/mob/living/L = over
-	var/confirm = tgui_alert(L, "You COULD eat this spaceship...", "Eat spaceship?", list("Eat it!", "No, thanks."))
+	var/confirm = rerun_prompt(L, "k285", list("message" = "You COULD eat this spaceship...", "title" = "Eat spaceship?", "choices" = list("Eat it!", "No, thanks.")), "MouseDrop" /* a built-in proc, which nameof cannot name */, args)
+	if(isnull(confirm))
+		return
 	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = tgui_input_list(L, "Which belly?","Select A Belly", L.vore_organs)
+		var/obj/belly/bellychoice = rerun_prompt(L, "k287", list("kind" = "list", "message" = "Which belly?", "title" = "Select A Belly", "choices" = L.vore_organs), "MouseDrop" /* a built-in proc, which nameof cannot name */, args)
+		if(isnull(bellychoice))
+			return
 		if(bellychoice)
 			L.visible_message(span_warning("[L] is trying to stuff \the [src] into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!"),span_notice("You begin putting \the [src] into your [bellychoice]!"))
 			om_do_after(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))

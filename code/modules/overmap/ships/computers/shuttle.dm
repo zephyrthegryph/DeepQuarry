@@ -49,7 +49,10 @@
 			var/list/possible_d = shuttle.get_possible_destinations()
 			var/D
 			if(possible_d.len)
-				D = tgui_input_list(ui.user, "Choose shuttle destination", "Shuttle Destination", possible_d)
+				var/_answer_k52 = act_prompt(ui.user, action, params, ui, "k52", list("kind" = "list", "message" = "Choose shuttle destination", "title" = "Shuttle Destination", "choices" = possible_d))
+				if(isnull(_answer_k52))
+					return
+				D = _answer_k52
 			else
 				to_chat(ui.user,span_warning("No valid landing sites in range."))
 			possible_d = shuttle.get_possible_destinations()

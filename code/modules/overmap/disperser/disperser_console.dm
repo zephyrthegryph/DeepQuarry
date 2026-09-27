@@ -174,7 +174,9 @@
 			. = TRUE
 
 		if("calibration")
-			var/input = tgui_input_number(ui.user, "0-9", "disperser calibration", 0, 9, 0)
+			var/input = act_prompt(ui.user, action, params, ui, "k177", list("kind" = "number", "message" = "0-9", "title" = "disperser calibration", "default" = 0, "max" = 9, "min" = 0))
+			if(isnull(input))
+				return
 			if(!isnull(input)) //can be zero so we explicitly check for null
 				var/calnum = sanitize_integer(text2num(params["calibration"]), 0, caldigit)//sanitiiiiize
 				calibration[calnum + 1] = sanitize_integer(input, 0, 9, 0)//must add 1 because js indexes from 0
@@ -186,14 +188,18 @@
 			. = TRUE
 
 		if("strength")
-			var/input = tgui_input_number(ui.user, "1-5", "disperser strength", 1, 5, 1)
+			var/input = act_prompt(ui.user, action, params, ui, "k189", list("kind" = "number", "message" = "1-5", "title" = "disperser strength", "default" = 1, "max" = 5, "min" = 1))
+			if(isnull(input))
+				return
 			if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				strength = sanitize_integer(input, 1, 5, 1)
 				middle.update_idle_power_usage(strength * range * 100)
 			. = TRUE
 
 		if("range")
-			var/input = tgui_input_number(ui.user, "1-5", "disperser radius", 1, 5, 1)
+			var/input = act_prompt(ui.user, action, params, ui, "k196", list("kind" = "number", "message" = "1-5", "title" = "disperser radius", "default" = 1, "max" = 5, "min" = 1))
+			if(isnull(input))
+				return
 			if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				range = sanitize_integer(input, 1, 5, 1)
 				middle.update_idle_power_usage(strength * range * 100)
