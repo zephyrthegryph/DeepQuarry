@@ -95,8 +95,17 @@
 		return
 	perform_cast(user, skipcharge)
 
+/// The arguments of the perform_cast() running now, so target questions re-run it. Only set while it runs.
+GLOBAL_LIST_EMPTY(spell_cast_args)
+
+/// Asks a question while choosing targets: every answer re-runs perform_cast(), which asks the same
+/// questions again and gets the answers so far. Null while waiting. Ask everything before charging.
+/datum/spell/proc/cast_prompt(mob/user, key, list/spec)
+	return rerun_prompt(user, key, spec, PROC_REF(perform_cast), GLOB.spell_cast_args)
+
 /// The cast itself, after any cast delay.
 /datum/spell/proc/perform_cast(mob/user, skipcharge)
+	GLOB.spell_cast_args = args.Copy()
 	var/list/targets = choose_targets(user)
 	if(targets && targets.len)
 		invocation(user, targets)

@@ -59,7 +59,11 @@
 							break
 						else
 							if(aspell.can_improve("speed") && aspell.can_improve("power"))
-								switch(tgui_alert(src, "Do you want to upgrade this spell's speed or power?", "Select Upgrade", list("Speed", "Power", "Cancel")))
+								var/upgrade = topic_prompt(H, href_list, "upgrade", list("message" = "Do you want to upgrade this spell's speed or power?", "title" = "Select Upgrade", "choices" = list("Speed", "Power", "Cancel")))
+								if(isnull(upgrade)) // the answer re-runs this link
+									uses++
+									return
+								switch(upgrade)
 									if("Speed")
 										temp = aspell.quicken_spell()
 									if("Power")
