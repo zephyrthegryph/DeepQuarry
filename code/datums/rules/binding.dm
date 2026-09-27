@@ -2,12 +2,14 @@
 // (rules.md §4). One binding per object holds its reactor subscriptions and,
 // per rule, whether the condition held at the last look.
 
-/// REF(object) -> /datum/rule_binding. Keyed by text and holding the owner by
-/// weakref, so a binding is no outside reference to its object (collapse).
-GLOBAL_LIST_EMPTY(dq_rule_bindings)
+/// The object's rule binding, if it has one. Kept on the object itself: the
+/// old registry was keyed by REF(object) text, and REF() alone was 9 s of
+/// boot (171 k calls). The binding holds its owner only by weakref, so the
+/// object still has no outside reference through it (collapse).
+/datum/var/tmp/datum/rule_binding/rule_binding
 
 /proc/dq_rule_binding_of(datum/thing)
-	return GLOB.dq_rule_bindings[REF(thing)]
+	return thing?.rule_binding
 
 /// ---- Lifecycle (L2) ----
 /// Subscribes `A`'s rules. /atom/on_materialize() calls it. Types whose rules
@@ -16,7 +18,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/list/rules = dq_rules_for_type(A.type)
 	if(!rules || (!force && dq_rules_heat_deferred(A.type)))
 		return
-	if(GLOB.dq_rule_bindings[REF(A)])
+	if(A.rule_binding)
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
@@ -29,7 +31,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /proc/dq_rules_heat_body_created(atom/A)
 	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
 		return
-	if(GLOB.dq_rule_bindings[REF(A)])
+	if(A.rule_binding)
 		dq_rx_heat_body_created(A)
 		return
 	// At rest the object followed its surroundings, unwatched: a rule whose
@@ -40,7 +42,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(A)]
+	var/datum/rule_binding/binding = A.rule_binding
 	if(binding)
 		qdel(binding)
 
@@ -48,7 +50,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /// to destroy the object (take_damage before atom_destruction), so every rule
 /// that the change triggered runs first, in the order the old code ran it.
 /proc/dq_rules_settle(datum/thing)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = thing.rule_binding
 	binding?.evaluate()
 
 /// The live binding of `thing` if one of its rules replaces the legacy path `flag`.
@@ -57,18 +59,18 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /proc/dq_rules_binding_replacing(atom/thing, flag)
 	if(!RULES_REPLACE(thing.type, flag))
 		return null
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = thing.rule_binding
 	return binding?.replaces(flag) ? binding : null
 
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = thing.rule_binding
 	if(binding?.key_id && (key_kind in binding.key_kinds))
 		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	var/datum/rule_binding/binding = thing.rule_binding
 	if(!binding)
 		return null
 	. = binding.nodes ? binding.nodes[property] : null
@@ -80,7 +82,6 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/datum/weakref/owner_ref
 	/// The owner, resolved for this call. Not held between calls.
 	var/tmp/atom/owner
-	var/owner_key
 	/// Shared rule list for the owner's type.
 	var/list/rules
 	/// Per rule (same index): TRUE while its condition held at the last look.
@@ -102,7 +103,6 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
 	owner_ref = WEAKREF(owner)
-	owner_key = REF(owner)
 	src.owner = owner
 	src.rules = rules
 	var/count = length(rules)
@@ -111,7 +111,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	tokens = new /list(count)
 	hold_models = new /list(count)
 	hold_tokens = new /list(count)
-	GLOB.dq_rule_bindings[owner_key] = src
+	owner.rule_binding = src
 	for(var/i in 1 to count)
 		tokens[i] = subscribe(rules[i])
 		fired[i] = 0
@@ -128,8 +128,9 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	if(GLOB.dq_rule_bindings[owner_key] == src)
-		GLOB.dq_rule_bindings -= owner_key
+	var/datum/bound_to = owner_ref?.resolve()
+	if(bound_to?.rule_binding == src)
+		bound_to.rule_binding = null
 	owner = null
 	owner_ref = null
 	return ..()

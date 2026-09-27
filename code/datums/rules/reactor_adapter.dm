@@ -133,8 +133,8 @@
 /// `A` just got a heat body: move its node's watches onto it.
 /proc/dq_rx_heat_body_created(atom/A)
 	var/datum/dq_rx_nodes/nodes = dq_rx_nodes()
-	var/node = nodes.by_atom[REF(A)]
-	if(isnull(node))
+	var/node = A.rx_node
+	if(isnull(node) || nodes.atom_of(node) != A)
 		return
 	for(var/token in nodes.node_watches["[node]"])
 		nodes.relink(token)
@@ -150,22 +150,21 @@
 	var/next_watch = 1
 	/// "[node]" -> weakref to its atom.
 	var/list/owners = list()
-	/// REF(atom) -> node, and back.
-	var/list/by_atom = list()
-	var/list/keys = list()
+	// The atom keeps its node id in /datum/var/rx_node (no REF() text keys).
 	/// "[node]" -> its watch tokens.
 	var/list/node_watches = list()
 	/// token -> list(D, node, kind, params, live heat watch, body it is on).
 	var/list/watches = list()
 
+/// The atom's heat node id, if it has one (kept on the atom, not keyed by REF()).
+/datum/var/tmp/rx_node
+
 /datum/dq_rx_nodes/proc/create(atom/A)
-	var/key = REF(A)
-	if(!isnull(by_atom[key]))
-		return by_atom[key]
+	if(!isnull(A.rx_node) && atom_of(A.rx_node) == A)
+		return A.rx_node
 	var/node = next_node++
 	owners["[node]"] = WEAKREF(A)
-	by_atom[key] = node
-	keys["[node]"] = key
+	A.rx_node = node
 	return node
 
 /datum/dq_rx_nodes/proc/atom_of(node)
@@ -190,8 +189,9 @@
 	if(tokens)
 		for(var/token in tokens.Copy())
 			unwatch(token)
-	by_atom -= keys["[node]"]
-	keys -= "[node]"
+	var/atom/A = atom_of(node)
+	if(A?.rx_node == node)
+		A.rx_node = null
 	owners -= "[node]"
 	node_watches -= "[node]"
 
