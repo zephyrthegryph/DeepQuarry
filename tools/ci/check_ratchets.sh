@@ -21,7 +21,7 @@ for lint in \
 	actor_forwarding_lint.py \
 	breakpoint_lint.py \
 	api_lints.py \
-	base_proc_lint.py; do
+	base_proc_lint.py \n	dcs_lints.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")
