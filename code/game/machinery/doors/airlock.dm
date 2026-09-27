@@ -995,7 +995,7 @@ About the new airlock wires panel:
 		visible_message("[hold_open] holds \the [src] open.")
 
 	//if the door is unpowered then it doesn't make sense to hear the woosh of a pneumatic actuator
-	for(var/mob/M as anything in GLOB.player_list)
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!M || !M.client)
 			continue
 		var/old_sounds = M.read_preference(/datum/preference/toggle/old_door_sounds)
@@ -1142,7 +1142,7 @@ About the new airlock wires panel:
 
 	use_power(360)	//360 W seems much more appropriate for an actuator moving an industrial door capable of crushing people
 	has_beeped = 0
-	for(var/mob/M as anything in GLOB.player_list)
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!M || !M.client)
 			continue
 		var/old_sounds = M.read_preference(/datum/preference/toggle/old_door_sounds)

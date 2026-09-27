@@ -101,7 +101,7 @@
 	return ..()
 
 /obj/item/clothing/under/circuitry/equipped(mob/user, slot) // Set wearer var when equiped.
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/under/circuitry/dropped(mob/user, equipping, slot) // Remove wearer var.
@@ -122,7 +122,7 @@
 	return ..()
 
 /obj/item/clothing/gloves/circuitry/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/gloves/circuitry/dropped(mob/user, equipping, slot)
@@ -143,7 +143,7 @@
 	return ..()
 
 /obj/item/clothing/glasses/circuitry/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/glasses/circuitry/dropped(mob/user, equipping, slot)
@@ -164,7 +164,7 @@
 	return ..()
 
 /obj/item/clothing/shoes/circuitry/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/shoes/circuitry/dropped(mob/user, equipping, slot)
@@ -185,7 +185,7 @@
 	return ..()
 
 /obj/item/clothing/head/circuitry/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/head/circuitry/dropped(mob/user, equipping, slot)
@@ -208,7 +208,7 @@
 	return ..()
 
 /obj/item/clothing/ears/circuitry/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/ears/circuitry/dropped(mob/user, equipping, slot)
@@ -229,7 +229,7 @@
 	return ..()
 
 /obj/item/clothing/suit/circuitry/equipped(mob/user, slot)
-	wearer = WEAKREF(user)
+	wearer = om_handle(user)
 	..()
 
 /obj/item/clothing/suit/circuitry/dropped(mob/user, equipping, slot)

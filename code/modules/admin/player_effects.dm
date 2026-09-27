@@ -760,7 +760,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(where == "To Me")
 				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/Getmob, target)
 			if(where == "To Mob")
-				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target] to:", "Jump to mob", GLOB.mob_list)
+				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target] to:", "Jump to mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
 				target.on_mob_jump()
 				target.forceMove(get_turf(selection))
 				log_admin("[key_name(ui.user)] jumped [target] to [selection]")

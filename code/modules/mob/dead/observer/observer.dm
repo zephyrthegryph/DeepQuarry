@@ -87,8 +87,8 @@
 			add_overlay(H.overlays_standing)
 		default_pixel_x = M.default_pixel_x
 		default_pixel_y = M.default_pixel_y
-	if(!T && length(GLOB.latejoin))
-		T = get_turf(pick(GLOB.latejoin))			//Safety in case we cannot find the body's position
+	if(!T && REGISTRY_COUNT(REGISTRY_LATEJOIN))
+		T = get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN)))			//Safety in case we cannot find the body's position
 	if(T)
 		forceMove(T, just_spawned = TRUE)
 	else
@@ -100,7 +100,6 @@
 	real_name = name
 	animate(src, pixel_y = 2, time = 10, loop = -1)
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
-	GLOB.observer_mob_list += src
 	. = ..()
 	visualnet = GLOB.ghostnet
 
@@ -116,7 +115,7 @@
 
 /mob/observer/dead/Topic(href, href_list)
 	if (href_list["track"])
-		var/mob/target = locate(href_list["track"]) in GLOB.mob_list
+		var/mob/target = locate(href_list["track"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 		if(target)
 			ManualFollow(target)
 	if(href_list["reenter"])
@@ -511,6 +510,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		else if(M.loc != .)
 			M.forceMove(., movetime = MOVE_GLIDE_CALC(glide_size, moving_diagonally)) // pass movespeed
 
+REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
+
 /mob/observer/dead/Destroy()
 	if(exonet)
 		exonet.remove_address()
@@ -523,7 +524,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	visualnet.addVisibility(src, src.client)
 	visualnet = null
 	stop_following()
-	GLOB.observer_mob_list -= src
 	for(var/datum/chunk/ghost/ghost_chunks in visibleChunks)
 		ghost_chunks.remove(src)
 	// deal with weird behavior on qdelled ghosts

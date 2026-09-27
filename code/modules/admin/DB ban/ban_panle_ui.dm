@@ -96,7 +96,7 @@
 
 			var/mob/playermob
 
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.ckey == banckey)
 					playermob = M
 					break

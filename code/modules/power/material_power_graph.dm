@@ -26,7 +26,7 @@
 	var/resistance_ms = 0
 	var/list/cable_edges
 	var/list/dirty_edges
-	/// Stable equipment-to-vertex lookup. Resolving every APC weakref through its
+	/// Stable equipment-to-vertex lookup. Resolving every APC handle through its
 	/// turf and cable contents was a sizeable fraction of every powernet tick.
 	var/list/equipment_vertices
 	/// Large station meshes solve away from the BYOND thread. Results carry this
@@ -86,28 +86,28 @@
 				neighbors |= neighbor
 		adjacency[cable] = neighbors
 		if(length(neighbors) != 2 || has_attachment)
-			vertices += WEAKREF(cable)
+			vertices += om_handle(cable)
 			indices[REF(cable)] = length(vertices)
 	if(!length(vertices) && length(cables))
 		var/obj/structure/cable/first = cables[1]
-		vertices += WEAKREF(first)
+		vertices += om_handle(first)
 		indices[REF(first)] = 1
 	var/list/visited = list()
 	for(var/start_index in 1 to length(vertices))
-		var/datum/weakref/start_ref = vertices[start_index]
-		var/obj/structure/cable/start = start_ref.resolve()
+		var/start_ref = vertices[start_index]
+		var/obj/structure/cable/start = om_resolve(start_ref)
 		for(var/obj/structure/cable/neighbor as anything in adjacency[start])
 			var/forward_key = "[REF(start)]>[REF(neighbor)]"
 			if(visited[forward_key])
 				continue
-			var/list/run = list(WEAKREF(start))
+			var/list/run = list(om_handle(start))
 			var/obj/structure/cable/previous = start
 			var/obj/structure/cable/current = neighbor
 			var/end_index
 			while(current)
 				visited["[REF(previous)]>[REF(current)]"] = TRUE
 				visited["[REF(current)]>[REF(previous)]"] = TRUE
-				run += WEAKREF(current)
+				run += om_handle(current)
 				end_index = indices[REF(current)]
 				if(end_index)
 					break
@@ -118,11 +118,11 @@
 			if(end_index && end_index != start_index)
 				var/list/edge = list(start_index, end_index, 1, run, 0, null, FALSE, FALSE)
 				edges += list(edge)
-				for(var/datum/weakref/reference as anything in run)
-					var/list/attached = cable_edges[reference.reference]
+				for(var/reference as anything in run)
+					var/list/attached = cable_edges[reference]
 					if(!attached)
 						attached = list()
-						cable_edges[reference.reference] = attached
+						cable_edges[reference] = attached
 					attached += list(edge)
 	voltages = new /list(length(vertices))
 	refresh_resistance()
@@ -145,8 +145,8 @@
 		var/list/run = edge[MATERIAL_POWER_EDGE_CABLES]
 		var/list/weights = new /list(length(run))
 		for(var/i in 1 to length(run))
-			var/datum/weakref/reference = run[i]
-			var/obj/structure/cable/cable = reference.resolve()
+			var/reference = run[i]
+			var/obj/structure/cable/cable = om_resolve(reference)
 			if(!cable)
 				continue
 			var/length_factor = (i == 1 || i == length(run)) ? 0.5 : 1
@@ -174,7 +174,7 @@
 	LAZYADD(dirty_edges, list(edge))
 
 /datum/material_power_graph/proc/invalidate_cable(obj/structure/cable/cable)
-	for(var/list/edge as anything in cable_edges?[REF(cable)])
+	for(var/list/edge as anything in cable_edges?[om_handle(cable)])
 		queue_resistance_edge(edge)
 
 /// Strip pendant branches once per topology. Their currents are determined by
@@ -341,12 +341,12 @@
 		loss_watts += current * current * edge[MATERIAL_POWER_EDGE_R]
 	efficiencies = list()
 	var/source_potential = 0
-	for(var/datum/weakref/reference as anything in pending_sources)
-		var/index = vertex_for(reference.resolve())
+	for(var/reference as anything in pending_sources)
+		var/index = vertex_for(om_resolve(reference))
 		if(index)
 			source_potential += (voltages[index] || 0) * pending_sources[reference] / pending_total_source
-	for(var/datum/weakref/reference as anything in pending_consumers)
-		var/atom/consumer = reference.resolve()
+	for(var/reference as anything in pending_consumers)
+		var/atom/consumer = om_resolve(reference)
 		var/index = vertex_for(consumer)
 		if(index && consumer)
 			efficiencies[REF(consumer)] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
@@ -366,11 +366,11 @@
 	var/list/injections = new /list(length(vertices))
 	var/total_source = 0
 	var/total_demand = 0
-	for(var/datum/weakref/reference as anything in sources)
-		if(vertex_for(reference.resolve()))
+	for(var/reference as anything in sources)
+		if(vertex_for(om_resolve(reference)))
 			total_source += sources[reference]
-	for(var/datum/weakref/reference as anything in consumers)
-		var/index = vertex_for(reference.resolve())
+	for(var/reference as anything in consumers)
+		var/index = vertex_for(om_resolve(reference))
 		if(index)
 			injections[index] -= consumers[reference] / MATERIAL_SERVICE_NOMINAL_VOLTAGE
 			total_demand += consumers[reference]
@@ -380,8 +380,8 @@
 		loss_watts = 0
 		last_injections = null
 		return
-	for(var/datum/weakref/reference as anything in sources)
-		var/index = vertex_for(reference.resolve())
+	for(var/reference as anything in sources)
+		var/index = vertex_for(om_resolve(reference))
 		if(index)
 			injections[index] += sources[reference] / total_source * total_demand / MATERIAL_SERVICE_NOMINAL_VOLTAGE
 	if(!last_injections || length(last_injections) != length(injections))
@@ -416,14 +416,14 @@
 		last_injections = injections.Copy()
 		next_solve = world.time + MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL
 	var/source_potential = 0
-	for(var/datum/weakref/reference as anything in sources)
-		var/index = vertex_for(reference.resolve())
+	for(var/reference as anything in sources)
+		var/index = vertex_for(om_resolve(reference))
 		if(index)
 			source_potential += (voltages[index] || 0) * sources[reference] / total_source
-	for(var/datum/weakref/reference as anything in consumers)
-		var/index = vertex_for(reference.resolve())
+	for(var/reference as anything in consumers)
+		var/index = vertex_for(om_resolve(reference))
 		if(index)
-			efficiencies[REF(reference.resolve())] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
+			efficiencies[REF(om_resolve(reference))] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
 
 /// Heat exactly the energy debited for cable loss, apportioned by the solved
 /// I^2 R distribution. No thermal energy is minted by an accounting estimate.
@@ -451,14 +451,14 @@
 		var/list/weights = edge[MATERIAL_POWER_EDGE_WEIGHTS]
 		var/total_weight = edge[MATERIAL_POWER_EDGE_R]
 		for(var/i in 1 to length(run))
-			var/datum/weakref/reference = run[i]
-			var/obj/structure/cable/cable = reference.resolve()
+			var/reference = run[i]
+			var/obj/structure/cable/cable = om_resolve(reference)
 			if(!cable)
 				continue
 			cable_current[cable] = max(cable_current[cable] || 0, abs(current))
 			cable_heat[cable] += edge_energy * weights[i] / total_weight
-	for(var/datum/weakref/reference as anything in energized_cables)
-		var/obj/structure/cable/cable = reference.resolve()
+	for(var/reference as anything in energized_cables)
+		var/obj/structure/cable/cable = om_resolve(reference)
 		if(cable && !(cable in cable_current))
 			cable.material_current = 0
 			if(cable.material_service)
@@ -466,7 +466,7 @@
 				cable.material_service.last_output_watts = 0
 	energized_cables = list()
 	for(var/obj/structure/cable/cable as anything in cable_current)
-		energized_cables += WEAKREF(cable)
+		energized_cables += om_handle(cable)
 		cable.material_current = cable_current[cable]
 		var/heat = cable_heat[cable]
 		cable.material_service_event(MATERIAL_EVENT_WORK, 1)

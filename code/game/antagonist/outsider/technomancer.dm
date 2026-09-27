@@ -44,7 +44,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/radio/headset(technomancer_mob), slot_l_ear)
 	var/obj/item/technomancer_core/core = new /obj/item/technomancer_core(technomancer_mob)
 	technomancer_mob.equip_to_slot_or_del(core, slot_back)
-	GLOB.technomancer_belongings.Add(core) // So it can be Tracked.
+	registry_join(REGISTRY_TECHNOMANCER_BELONGINGS, core) // So it can be Tracked.
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/flashlight(technomancer_mob), slot_belt)
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/clothing/shoes/laceup(technomancer_mob), slot_shoes)
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/clothing/head/technomancer/master(technomancer_mob), slot_head)
@@ -63,7 +63,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/radio/headset(technomancer_mob), slot_l_ear)
 	var/obj/item/technomancer_core/core = new /obj/item/technomancer_core(technomancer_mob)
 	technomancer_mob.equip_to_slot_or_del(core, slot_back)
-	GLOB.technomancer_belongings.Add(core) // So it can be Tracked.
+	registry_join(REGISTRY_TECHNOMANCER_BELONGINGS, core) // So it can be Tracked.
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/flashlight(technomancer_mob), slot_belt)
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/clothing/shoes/laceup(technomancer_mob), slot_shoes)
 	technomancer_mob.equip_to_slot_or_del(new /obj/item/clothing/head/technomancer/apprentice(technomancer_mob), slot_head)
@@ -82,7 +82,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 
 /datum/antagonist/technomancer/print_player_summary()
 	..()
-	for(var/obj/item/technomancer_core/core in GLOB.technomancer_belongings)
+	for(var/obj/item/technomancer_core/core in REGISTRY_MEMBERS(REGISTRY_TECHNOMANCER_BELONGINGS))
 		if(core.wearer)
 			continue // Only want abandoned cores.
 		if(!length(core.spells))
@@ -93,7 +93,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 	var/text = print_player_lite(player)
 
 	var/obj/item/technomancer_core/core
-	var/mob/living/original = player.original_character?.resolve()
+	var/mob/living/original = om_resolve(player.original_character)
 	if(original)
 		core = locate() in original
 		if(core)

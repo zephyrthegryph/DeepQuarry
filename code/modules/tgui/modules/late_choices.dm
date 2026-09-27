@@ -86,7 +86,7 @@
 
 			var/active = 0
 			// Only players with the job assigned and AFK for less than 10 minutes count as active
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.mind?.assigned_role == job.title && M.client?.inactivity <= 10 MINUTES)
 					active++
 

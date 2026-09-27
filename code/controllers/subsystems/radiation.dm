@@ -32,8 +32,8 @@ SUBSYSTEM_DEF(radiation)
 	while (processing.len)
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
 
-		var/datum/weakref/source_ref = pulse_information.source_ref
-		var/atom/source = source_ref.resolve()
+		var/source_ref = pulse_information.source_ref
+		var/atom/source = om_resolve(source_ref)
 		if (isnull(source))
 			profile_dropped_sources++
 			processing.Cut(1, 2)
@@ -106,7 +106,7 @@ SUBSYSTEM_DEF(radiation)
 	var/turf/source_turf = get_turf(source)
 	if(source_turf)
 		var/z = source_turf.z
-		for(var/list/registry as anything in list(REGISTRY_MEMBERS(REGISTRY_RAD_COLLECTORS), REGISTRY_MEMBERS(REGISTRY_GEIGER_COUNTERS), GLOB.material_radiovoltaic_items, GLOB.living_mob_list))
+		for(var/list/registry as anything in list(REGISTRY_MEMBERS(REGISTRY_RAD_COLLECTORS), REGISTRY_MEMBERS(REGISTRY_GEIGER_COUNTERS), REGISTRY_MEMBERS(REGISTRY_RADIOVOLTAIC_ITEMS), REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)))
 			for(var/atom/target as anything in registry)
 				var/turf/target_turf = get_turf(target)
 				if(!target_turf || target_turf.z != z)

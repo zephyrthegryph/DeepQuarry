@@ -343,7 +343,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
 	else if(T == "players")
 		var/n = 0
-		for(var/mob/M in GLOB.player_list)
+		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				n++
 		return n
@@ -429,7 +429,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
 			var/department = 0
 			var/active = 0
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.real_name == name && M.client && M.client.inactivity <= 10 MINUTES)
 					active = 1
 					break
@@ -451,7 +451,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/real_rank = make_list_rank(t.fields["real_rank"])
 
 			var/active = 0
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M.real_name == name && M.client && M.client.inactivity <= 10 MINUTES)
 					active = 1
 					break
@@ -464,12 +464,12 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				positions["off"][name] = list(rank,isactive)
 
 		// Synthetics don't have actual records, so we will pull them from here.
-		for(var/mob/living/silicon/ai/ai in GLOB.mob_list)
+		for(var/mob/living/silicon/ai/ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			var/isactive = (ai.client && ai.client.inactivity <= 10 MINUTES) ? "Active" : "Inactive"
 			if(!positions["bot"])
 				positions["bot"] = list()
 			positions["bot"][ai.name] = list("Artificial Intelligence",isactive)
-		for(var/mob/living/silicon/robot/robot in GLOB.mob_list)
+		for(var/mob/living/silicon/robot/robot in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			// No combat/syndicate cyborgs, no drones, and no AI shells.
 			var/isactive = (robot.client && robot.client.inactivity <= 10 MINUTES) ? "Active" : "Inactive"
 			if(robot.shell)
@@ -633,7 +633,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		features += "AI allowed"
 
 	var/n = 0
-	for (var/mob/M in GLOB.player_list)
+	for (var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if (M.client)
 			n++
 

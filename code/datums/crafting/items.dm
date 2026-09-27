@@ -260,7 +260,7 @@
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel a stabbing sensation in your hands as you slide \the [src] on!"))
@@ -268,7 +268,7 @@
 	..()
 
 /obj/item/clothing/gloves/toxinregen/dropped(mob/user, equipping, slot)
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel the hypodermic needles as you slide \the [src] off!"))
@@ -285,7 +285,7 @@
 	return ..()
 
 /obj/item/clothing/gloves/toxinregen/process()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(!H || H.stat == DEAD || H.nutrition <= 10)
 		return
 	H.mend(TREAT_ANTITOXIN, 0.5) // organic tag: synthetic bodies are unaffected

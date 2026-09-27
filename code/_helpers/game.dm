@@ -41,8 +41,8 @@
 
 /** Checks if any living humans are in a given area. */
 /proc/area_is_occupied(area/myarea)
-	// Testing suggests looping over GLOB.human_mob_list is quicker than looping over area contents
-	for(var/mob/living/carbon/human/H in GLOB.human_mob_list)
+	// Testing suggests looping over REGISTRY_MEMBERS(REGISTRY_HUMANS) is quicker than looping over area contents
+	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		if(H.stat >= DEAD) //Conditions for exclusion here, like if disconnected people start blocking it.
 			continue
 		var/area/A = get_area(H)
@@ -232,7 +232,7 @@
 	for (var/mob/M as anything in .)
 		if (!istype(M) || !M.client)
 			. -= M
-	for (var/mob/observer/O in GLOB.player_list)
+	for (var/mob/observer/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		. |= O
 
 /mob/proc/can_hear_radio(list/hearturfs)
@@ -294,10 +294,7 @@
 			hearturfs |= get_turf(thing)
 
 	//A list of every mob with a client
-	for(var/mob in GLOB.player_list)
-		if(!ismob(mob))
-			GLOB.player_list -= mob
-			continue
+	for(var/mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		// Trying to fix some vorestation bug.
 		if(get_turf(mob) in hearturfs)
 			mobs |= mob
@@ -314,7 +311,7 @@
 						mobs |= M
 
 	//For objects below the top level who still want to hear
-	for(var/obj in GLOB.listening_objects)
+	for(var/obj in REGISTRY_MEMBERS(REGISTRY_LISTENING_OBJECTS))
 		if(get_turf(obj) in hearturfs)
 			objs |= obj
 
@@ -423,7 +420,7 @@
 			return get_step(start, EAST)
 
 /proc/get_mob_by_key(key)
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(M.ckey == lowertext(key))
 			return M
 	return null
@@ -435,7 +432,7 @@
 	var/list/candidates = list() //List of candidate KEYS to assume control of the new larva ~Carn
 	var/i = 0
 	while(candidates.len <= 0 && i < 5)
-		for(var/mob/observer/dead/G in GLOB.player_list)
+		for(var/mob/observer/dead/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(((G.client.inactivity/10)/60) <= buffer + i) // the most active players are more likely to become an alien
 				if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))
 					candidates += G.key
@@ -449,7 +446,7 @@
 	var/list/candidates = list() //List of candidate KEYS to assume control of the new larva ~Carn
 	var/i = 0
 	while(candidates.len <= 0 && i < 5)
-		for(var/mob/observer/dead/G in GLOB.player_list)
+		for(var/mob/observer/dead/G in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(G.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_ALIEN) // migrated
 				if(((G.client.inactivity/10)/60) <= ALIEN_SELECT_AFK_BUFFER + i) // the most active players are more likely to become an alien
 					if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))

@@ -64,7 +64,7 @@
 
 	var/obj/L = null
 
-	for(var/obj/effect/landmark/sloc in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(sloc.name != C.data) continue
 		if(locate(/mob/living) in sloc.loc) continue
 		L = sloc

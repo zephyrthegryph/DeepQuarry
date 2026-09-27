@@ -27,13 +27,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	var/overmap_range = 0
 	var/overmap_range_min = 0
 	var/overmap_range_max = 5
-	//Linked bluespace radios
-	var/list/linked_radios_weakrefs
-
-/obj/machinery/telecomms/broadcaster/proc/link_radio(obj/item/radio/R)
-	if(!istype(R))
-		return
-	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
+	// Linked bluespace radios are BS_RX_RADIOS(src) (the bluespace_rx_from relation).
 
 /obj/machinery/telecomms/broadcaster/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 	// Don't broadcast rejected signals
@@ -65,11 +59,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 /obj/machinery/telecomms/broadcaster/receive_information_delayed(datum/signal/signal)
 	signal.data["level"] |= using_map.get_map_levels(listening_level, TRUE, overmap_range)
 
-	var/list/forced_radios
-	for(var/datum/weakref/wr in linked_radios_weakrefs)
-		var/obj/item/radio/R = wr.resolve()
-		if(istype(R))
-			LAZYDISTINCTADD(forced_radios, R)
+	var/list/forced_radios = BS_RX_RADIOS(src)
 
 	/** #### - Normal Broadcast - #### **/
 	if(signal.data["type"] == SIGNAL_NORMAL)
@@ -142,12 +132,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	var/intercept = 0 // if nonzero, broadcasts all messages to syndicate channel
 	var/overmap_range = 0
 
-	var/list/linked_radios_weakrefs
-
-/obj/machinery/telecomms/allinone/proc/link_radio(obj/item/radio/R)
-	if(!istype(R))
-		return
-	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
+	// Linked bluespace radios: BS_TX_RADIOS(src) transmit to it, BS_RX_RADIOS(src) receive from it.
 
 /obj/machinery/telecomms/allinone/receive_signal(datum/signal/signal)
 
@@ -195,11 +180,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	/* ###### Broadcast a message using signal.data ###### */
 	var/datum/radio_frequency/connection = signal.data["connection"]
 
-	var/list/forced_radios
-	for(var/datum/weakref/wr in linked_radios_weakrefs)
-		var/obj/item/radio/R = wr.resolve()
-		if(istype(R))
-			LAZYDISTINCTADD(forced_radios, R)
+	var/list/forced_radios = BS_RX_RADIOS(src) | BS_TX_RADIOS(src)
 
 	Broadcast_Message(
 		signal.data["connection"],
@@ -254,11 +235,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	var/datum/radio_frequency/connection = signal.data["connection"]
 
-	var/list/forced_radios
-	for(var/datum/weakref/wr in linked_radios_weakrefs)
-		var/obj/item/radio/R = wr.resolve()
-		if(istype(R))
-			LAZYDISTINCTADD(forced_radios, R)
+	var/list/forced_radios = BS_RX_RADIOS(src) | BS_TX_RADIOS(src)
 
 	if(connection.frequency in GLOB.antag_frequencies) // if antag broadcast, just
 		Broadcast_Message(signal.data["connection"], signal.data["mob"],

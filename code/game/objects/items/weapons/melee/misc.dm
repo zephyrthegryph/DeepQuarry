@@ -97,7 +97,7 @@
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
 	new_voice.real_name = "cursed sword"
 	LAZYADD(voice_mobs, new_voice)
-	GLOB.listening_objects |= src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 
 /obj/item/melee/rapier

@@ -76,21 +76,21 @@
 	var/newloc = loc
 	if(move)
 		var/obj/loc_landmark
-		for(var/obj/effect/landmark/start/sloc in GLOB.landmarks_list)
+		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if (sloc.name != JOB_AI)
 				continue
 			if ((locate(/mob/living) in sloc.loc) || (locate(/obj/structure/AIcore) in sloc.loc))
 				continue
 			loc_landmark = sloc
 		if (!loc_landmark)
-			for(var/obj/effect/landmark/tripai in GLOB.landmarks_list)
+			for(var/obj/effect/landmark/tripai in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 				if (tripai.name == "tripai")
 					if((locate(/mob/living) in tripai.loc) || (locate(/obj/structure/AIcore) in tripai.loc))
 						continue
 					loc_landmark = tripai
 		if (!loc_landmark)
 			to_chat(src, "Oh god sorry we can't find an unoccupied AI spawn location, so we're spawning you on top of someone.")
-			for(var/obj/effect/landmark/start/sloc in GLOB.landmarks_list)
+			for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 				if (sloc.name == JOB_AI)
 					loc_landmark = sloc
 
@@ -102,7 +102,7 @@
 
 	if(isliving(src))
 		if(move_player(src, O, "AIized"))
-			O.mind.original_character = WEAKREF(O)
+			O.mind.original_character = om_handle(O)
 	else
 		O.key = key // admin-made AI from an observer: first assignment
 
@@ -163,7 +163,7 @@
 
 	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
-			O.mind.original_character = WEAKREF(O)
+			O.mind.original_character = om_handle(O)
 		else if(O.mind.special_role)
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 

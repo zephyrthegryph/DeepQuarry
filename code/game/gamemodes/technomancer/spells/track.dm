@@ -10,7 +10,8 @@
 
 // This stores a ref to all important items that belong to a Technomancer, in case of theft.  Used by the spell below.
 // I feel dirty for adding yet another global list used by one thing, but the only alternative is to loop through world, and yeahhh.
-GLOBAL_LIST_EMPTY(technomancer_belongings)
+
+REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 
 /obj/item/spell/track
 	name = "track"
@@ -34,11 +35,11 @@ GLOBAL_LIST_EMPTY(technomancer_belongings)
 		return
 
 	var/can_track_non_allies = 0
-	var/list/object_choices = GLOB.technomancer_belongings.Copy()
+	var/list/object_choices = REGISTRY_COPY(REGISTRY_TECHNOMANCER_BELONGINGS)
 	if(check_for_scepter())
 		can_track_non_allies = 1
 	var/list/mob_choices = list()
-	for(var/mob/living/L in GLOB.mob_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!is_ally(L) && !can_track_non_allies)
 			continue
 		if(L == user)

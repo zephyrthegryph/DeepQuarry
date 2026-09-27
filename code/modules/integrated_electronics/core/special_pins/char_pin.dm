@@ -9,7 +9,7 @@
 		write_data_to_pin(new_data)
 
 /datum/integrated_io/char/write_data_to_pin(new_data)
-	if(isnull(new_data) || istext(new_data))
+	if(isnull(new_data) || (istext(new_data) && !ic_is_ref(new_data)))
 		if(length(new_data) > 1)
 			return
 		data = new_data

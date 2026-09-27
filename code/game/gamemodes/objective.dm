@@ -1,5 +1,4 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective
 	var/datum/mind/owner = null			//Who owns the objective.
@@ -8,14 +7,15 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	var/target_amount = 0				//If they are focused on a particular number. Steal objectives have their own counter.
 	var/completed = 0					//currently only used for custom objectives.
 
+REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
+
 /datum/objective/New(text)
-	GLOB.all_objectives |= src
+	join_registries()
 	if(text)
 		explanation_text = text
 	..()
 
 /datum/objective/Destroy()
-	GLOB.all_objectives -= src
 	. = ..()
 
 /datum/objective/proc/check_completion()
@@ -226,7 +226,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 		return 0
 	var/area/shuttle = locate(/area/shuttle/escape/centcom)
 	var/list/protected_mobs = list(/mob/living/silicon/ai, /mob/living/silicon/pai)
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.type in protected_mobs)	continue
 		if (player.mind && (player.mind != owner))
 			if(player.stat != DEAD)			//they're not dead!
@@ -248,7 +248,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 		return 0
 	var/area/shuttle = locate(/area/shuttle/escape/centcom)
 	var/protected_mobs[] = list(/mob/living/silicon/ai, /mob/living/silicon/pai, /mob/living/silicon/robot)
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.type in protected_mobs)	continue
 		if (player.mind)
 			if (player.stat != 2)
@@ -263,7 +263,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	if(!SSemergency_shuttle.returned())
 		return 0
 
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player == owner.current)
 			continue
 		if(player.mind)
@@ -322,7 +322,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/survive/check_completion()
 	if(!owner.current || owner.current.stat == DEAD || isbrain(owner.current))
 		return 0		//Brains no longer win survive objectives. --NEO
-	var/mob/living/original = owner.original_character?.resolve()
+	var/mob/living/original = om_resolve(owner.original_character)
 	if(issilicon(owner.current) && (original && (owner.current != original)))
 		return 0
 	return 1
@@ -524,7 +524,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 					if(isAI(M) && M.stat != 2) //See if any AI's are alive inside that card.
 						return 1
 
-			for(var/mob/living/silicon/ai/ai in GLOB.mob_list)
+			for(var/mob/living/silicon/ai/ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				var/turf/T = get_turf(ai)
 				if(istype(T))
 					var/area/check_area = get_area(ai)
@@ -579,11 +579,11 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	if (SSticker)
 		var/n_p = 1 //autowin
 		if (SSticker.current_state == GAME_STATE_SETTING_UP)
-			for(var/mob/new_player/P in GLOB.player_list)
+			for(var/mob/new_player/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(P.client && P.ready && P.mind!=owner)
 					n_p ++
 		else if (SSticker.current_state == GAME_STATE_PLAYING)
-			for(var/mob/living/carbon/human/P in GLOB.player_list)
+			for(var/mob/living/carbon/human/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				var/datum/component/antag/changeling/comp = P.GetComponent(/datum/component/antag/changeling)
 				if(P.client && !(comp) && P.mind!=owner)
 					n_p ++
@@ -834,7 +834,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/cult/sacrifice/find_target()
 	var/list/possible_targets = list()
 	if(!possible_targets.len)
-		for(var/mob/living/carbon/human/player in GLOB.player_list)
+		for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(player.mind && !(player.mind in GLOB.cult))
 				possible_targets += player.mind
 	if(possible_targets.len > 0)

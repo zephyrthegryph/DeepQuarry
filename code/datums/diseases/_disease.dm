@@ -37,9 +37,10 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 	var/list/strain_data
 	var/initial = TRUE
 
+REGISTRY_MEMBERSHIP(/datum/disease, REGISTRY_ACTIVE_DISEASES)
+
 /datum/disease/Destroy()
 	affected_mob = null
-	GLOB.active_diseases.Remove(src)
 	if(global_flag_check(virus_modifiers, PROCESSING))
 		End()
 	return ..()
@@ -51,7 +52,7 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 	var/datum/disease/D = make_copy ? Copy() : src
 	infectee.addDisease(D)
 	D.affected_mob = infectee
-	GLOB.active_diseases += D
+	registry_join(REGISTRY_ACTIVE_DISEASES, D)
 
 	log_admin("[key_name(src)] has contracted the virus \"[D]\"")
 

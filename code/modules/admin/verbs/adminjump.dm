@@ -40,7 +40,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptoturf, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to 
 	tgui_alert_async(user, "Admin jumping disabled")
 
 /// Verb wrapper around do_jumptomob()
-ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Mob", "Jump to the selected mob.", ADMIN_CATEGORY_GAME, mob/M in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Mob", "Jump to the selected mob.", ADMIN_CATEGORY_GAME, mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	user.do_jumptomob(M)
 
 /// Performs the jumps, also called from admin Topic() for JMP links
@@ -50,7 +50,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		return
 
 	if(!M)
-		M = tgui_input_list(usr, "Pick a mob:", "Jump to Mob", GLOB.mob_list)
+		M = tgui_input_list(usr, "Pick a mob:", "Jump to Mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!M)
 		return
 
@@ -92,7 +92,7 @@ ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a p
 		return
 
 	var/list/keys = list()
-	for(var/mob/player_mob in GLOB.player_list)
+	for(var/mob/player_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += player_mob.client
 	var/client/selection = tgui_input_list(user, "Select a key:", "Jump to Key", sortKey(keys))
 	if(!selection)
@@ -107,13 +107,13 @@ ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a p
 	user.mob.forceMove(target_turf)
 	feedback_add_details("admin_verb","JK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(Getmob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Mob",  "Mob to teleport.", ADMIN_CATEGORY_GAME, mob/living/living_mob in GLOB.mob_list)
+ADMIN_VERB_AND_CONTEXT_MENU(Getmob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Mob",  "Mob to teleport.", ADMIN_CATEGORY_GAME, mob/living/living_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
 
 	if(!living_mob)
-		living_mob = tgui_input_list(user, "Pick a mob:", "Get Mob", GLOB.mob_list)
+		living_mob = tgui_input_list(user, "Pick a mob:", "Get Mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!living_mob)
 		return
 	var/msg = "jumped [key_name(living_mob)] to them."
@@ -130,7 +130,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	var/list/keys = list()
-	for(var/mob/curernt_mob in GLOB.player_list)
+	for(var/mob/curernt_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += curernt_mob.client
 	var/client/selection = tgui_input_list(user, "Pick a key:", "Get Key", sortKey(keys))
 	if(!selection)
@@ -159,7 +159,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		var/area/A = tgui_input_list(usr, "Pick an area:", "Send Mob", return_sorted_areas())
 		if(!A)
 			return
-		var/mob/M = tgui_input_list(usr, "Pick a mob:", "Send Mob", GLOB.mob_list)
+		var/mob/M = tgui_input_list(usr, "Pick a mob:", "Send Mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!M)
 			return
 		M.on_mob_jump()

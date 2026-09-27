@@ -16,7 +16,7 @@
 
 /turf/Entered(atom/movable/am, atom/old_loc)
 	. = ..()
-	SEND_SIGNAL(src, COMSIG_OBSERVER_TURF_ENTERED, WEAKREF(am), old_loc)
+	SEND_SIGNAL(src, COMSIG_OBSERVER_TURF_ENTERED, om_handle(am), old_loc)
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()

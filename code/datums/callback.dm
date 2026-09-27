@@ -44,7 +44,7 @@
 	var/datum/object = GLOBAL_PROC
 	var/delegate
 	var/list/arguments
-	var/datum/weakref/user
+	var/user
 
 /datum/callback/New(thingtocall, proctocall, ...)
 	if (thingtocall)
@@ -53,7 +53,7 @@
 	if (length(args) > 2)
 		arguments = args.Copy(3)
 	if(usr)
-		user = WEAKREF(usr)
+		user = om_handle(usr)
 
 /datum/callback/Destroy(force)
 	. = ..()
@@ -74,9 +74,9 @@
 
 /datum/callback/proc/Invoke(...)
 	if(!usr)
-		var/datum/weakref/W = user
+		var/W = user
 		if(W)
-			var/mob/M = W.resolve()
+			var/mob/M = om_resolve(W)
 			if(M)
 				return world.PushUsr(M, src)
 
@@ -98,9 +98,9 @@
 	set waitfor = FALSE
 
 	if(!usr)
-		var/datum/weakref/W = user
+		var/W = user
 		if(W)
-			var/mob/M = W.resolve()
+			var/mob/M = om_resolve(W)
 			if(M)
 				return world.PushUsr(M, src)
 

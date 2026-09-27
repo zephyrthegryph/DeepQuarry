@@ -151,10 +151,10 @@
 				if(!GM.loc == get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 					return
-				var/mob/living/swirlie = swirlie_mob?.resolve()
+				var/mob/living/swirlie = om_resolve(swirlie_mob)
 				if(open && !swirlie)
 					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
-					swirlie_mob = WEAKREF(GM)
+					swirlie_mob = om_handle(GM)
 					if(do_after(user, 3 SECONDS, target = GM))
 						user.visible_message(span_danger("[user] gives [GM.name] a swirlie!"), span_notice("You give [GM.name] a swirlie!"), "You hear a toilet flushing.")
 						if(!GM.internal)

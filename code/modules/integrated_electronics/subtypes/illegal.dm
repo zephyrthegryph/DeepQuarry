@@ -49,7 +49,7 @@
 	else
 		var/list/addresses = list()
 
-		for(var/datum/exonet_protocol/target_exonet in GLOB.all_exonet_connections)
+		for(var/datum/exonet_protocol/target_exonet in REGISTRY_MEMBERS(REGISTRY_EXONET_CONNECTIONS))
 			if(target_exonet.address && istext(target_exonet.address))
 				var/random = rand(200,350)
 				random = random / 10

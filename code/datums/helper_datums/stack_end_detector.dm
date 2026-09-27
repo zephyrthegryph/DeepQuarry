@@ -4,12 +4,19 @@
 
  **/
 /datum/stack_end_detector
-	var/datum/weakref/_WF
+	/// REF() of the canary. Deliberately not an OM handle: a handle keeps its
+	/// target alive, and this has to notice BYOND collecting the canary.
+	var/_canary_ref
+	/// The canary's serial, so a reused ref id never reads as the canary.
+	var/_canary_serial
 	var/datum/stack_canary/_canary
 
 /datum/stack_end_detector/New()
+	var/static/next_serial = 0
 	_canary = new()
-	_WF = WEAKREF(_canary)
+	_canary.serial = ++next_serial
+	_canary_serial = _canary.serial
+	_canary_ref = REF(_canary)
 
 /** Prime the stack overflow detector.
 	Store the return value of this proc call in a proc level var.
@@ -23,10 +30,12 @@
 
 /// Returns true if the stack is still going. Calling before the canary has been primed also returns true
 /datum/stack_end_detector/proc/check()
-	return !!_WF.resolve()
+	var/datum/stack_canary/canary = locate(_canary_ref)
+	return istype(canary) && canary.serial == _canary_serial
 
 /// Stack canary. Will go away if the stack it was primed by is ended by byond for return or stack overflow reasons.
 /datum/stack_canary
+	var/serial = 0
 
 /// empty proc to avoid warnings about unused variables. Call this proc on your canary in the stack it's watching.
 /datum/stack_canary/proc/use_variable()

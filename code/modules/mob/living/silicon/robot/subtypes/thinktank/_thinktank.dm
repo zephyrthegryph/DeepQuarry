@@ -39,7 +39,7 @@
 	var/tmp/recharge_complete =       FALSE
 	var/tmp/recharger_charge_amount = 10 KILOWATTS
 	var/tmp/recharger_tick_cost =     80 KILOWATTS
-	var/datum/weakref/recharging
+	var/recharging
 
 	var/list/stored_atoms
 	var/max_stored_atoms = 1
@@ -80,13 +80,13 @@
 	return types
 
 /mob/living/silicon/robot/platform/Destroy()
-	for(var/datum/weakref/drop_ref in stored_atoms)
-		var/atom/movable/drop_atom = drop_ref.resolve()
+	for(var/drop_ref in stored_atoms)
+		var/atom/movable/drop_atom = om_resolve(drop_ref)
 		if(istype(drop_atom) && !QDELETED(drop_atom) && drop_atom.loc == src)
 			drop_atom.dropInto(loc)
 	stored_atoms = null
 	if(recharging)
-		var/obj/item/recharging_atom = recharging.resolve()
+		var/obj/item/recharging_atom = om_resolve(recharging)
 		if(istype(recharging_atom) && recharging_atom.loc == src)
 			recharging_atom.dropInto(loc)
 		recharging = null
@@ -97,7 +97,7 @@
 	if(distance <= 3)
 
 		if(recharging)
-			var/obj/item/cell/recharging_atom = recharging.resolve()
+			var/obj/item/cell/recharging_atom = om_resolve(recharging)
 			if(istype(recharging_atom) && !QDELETED(recharging_atom))
 				. += "It has \a [recharging_atom] slotted into its recharging port."
 				. += "The cell readout shows [round(recharging_atom.percent(),1)]% charge."
@@ -108,8 +108,8 @@
 
 		if(length(stored_atoms))
 			var/list/atom_names = list()
-			for(var/datum/weakref/stored_ref in stored_atoms)
-				var/atom/movable/AM = stored_ref.resolve()
+			for(var/stored_ref in stored_atoms)
+				var/atom/movable/AM = om_resolve(stored_ref)
 				if(istype(AM))
 					atom_names += "\a [AM]"
 			if(length(atom_names))
@@ -150,7 +150,7 @@
 
 		if(recharging)
 
-			var/obj/item/cell/recharging_atom = recharging.resolve()
+			var/obj/item/cell/recharging_atom = om_resolve(recharging)
 			if(!istype(recharging_atom) || QDELETED(recharging_atom) || recharging_atom.loc != src)
 				recharging = null
 				return

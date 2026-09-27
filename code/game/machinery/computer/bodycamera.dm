@@ -12,8 +12,8 @@
 
 	var/obj/item/radio/bradio = null
 	var/obj/effect/overlay/vis/bpinboard
-	var/datum/weakref/showing
-	var/datum/weakref/the_camera
+	var/showing
+	var/the_camera
 
 	var/enabled = TRUE // on or off
 
@@ -74,8 +74,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 	if(!showing || !the_camera)
 		stop_showing()
 		return
-	var/atom/them = showing.resolve()
-	var/obj/item/clothing/accessory/bodycam/bo_cam = the_camera.resolve()
+	var/atom/them = om_resolve(showing)
+	var/obj/item/clothing/accessory/bodycam/bo_cam = om_resolve(the_camera)
 	var/turf/here = get_turf(them)
 	var/turf/there = get_turf(bo_cam)
 	if(here != there)
@@ -90,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 		return
 	if(!thing || !other_thing)
 		return
-	the_camera = WEAKREF(other_thing)
+	the_camera = om_handle(other_thing)
 	var/tries = 10
 	var/atom/recursive_loc = thing
 	while(--tries)
@@ -98,7 +98,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 		if(!istype(recursive_loc, /atom/movable))
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
-	showing = WEAKREF(thing)
+	showing = om_handle(thing)
 	if(bpinboard)
 		bpinboard.vis_contents = list(thing)
 
@@ -109,7 +109,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 	showing = null
 	the_camera = null
 
-/obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(datum/weakref/thingref)
+/obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(thingref)
 	if(showing == thingref)
 		stop_showing()
 

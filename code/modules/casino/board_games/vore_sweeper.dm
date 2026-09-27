@@ -14,7 +14,7 @@
 	table_icon = "gamble_sweeper"
 	var/grid_size = 8
 	var/mine_count = 10
-	var/datum/weakref/dealer
+	var/dealer
 	var/list/placed_mines
 	var/list/revealed_fields
 	var/list/placed_flags
@@ -35,7 +35,7 @@
 		ui.open()
 
 /datum/board_game/vore_sweeper/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/dealer_mob = dealer?.resolve()
+	var/mob/dealer_mob = om_resolve(dealer)
 
 	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? (placed_mines || list()) : null
 	var/total_tiles = grid_size * grid_size
@@ -60,10 +60,10 @@
 		if("be_dealer")
 			if(game_state == GAME_PLAYING)
 				return FALSE
-			dealer = WEAKREF(ui.user)
+			dealer = om_handle(ui.user)
 			return TRUE
 		if("clear_dealer")
-			var/mob/dealer_mob = dealer?.resolve()
+			var/mob/dealer_mob = om_resolve(dealer)
 			if(!dealer_mob)
 				return FALSE
 			if(dealer_mob == ui.user)
@@ -76,7 +76,7 @@
 				return TRUE
 			return FALSE
 		if("restart_game")
-			var/mob/dealer_mob = dealer?.resolve()
+			var/mob/dealer_mob = om_resolve(dealer)
 			if(game_state < GAME_PLAYING)
 				return FALSE
 			LAZYCLEARLIST(placed_mines)
@@ -97,7 +97,7 @@
 			return FALSE
 
 /datum/board_game/vore_sweeper/proc/player_actions(action, list/params, mob/user)
-	if(user == dealer?.resolve())
+	if(user == om_resolve(dealer))
 		return FALSE
 	if(game_state != GAME_PLAYING)
 		return FALSE
@@ -169,7 +169,7 @@
 	game_state = GAME_WON
 
 /datum/board_game/vore_sweeper/proc/dealer_actions(action, list/params, mob/user)
-	if(user != dealer?.resolve())
+	if(user != om_resolve(dealer))
 		return FALSE
 	if(game_state != GAME_SETUP)
 		return FALSE

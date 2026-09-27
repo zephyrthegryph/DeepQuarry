@@ -41,7 +41,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 
 	world << sound('sound/effects/cascade.ogg')
 
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		M.flash_eyes()
 
 	if(SSemergency_shuttle.can_recall())
@@ -99,7 +99,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 			APC.queue_icon_update()
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()
-	for(var/mob/player in GLOB.player_list)
+	for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		var/datum/mind/M = player.mind
 		if(!M)
 			continue
@@ -136,7 +136,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 		play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic
 
 	// FIXME: Probably a better way
-	for(var/mob/living/M in GLOB.living_mob_list)
+	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		switch(M.z)
 			if(0)	//inside a crate or something
 				var/turf/T = get_turf(M)

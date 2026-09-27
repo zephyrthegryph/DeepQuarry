@@ -10,14 +10,14 @@
 /datum/anomaly_modifiers/proc/get_value()
 	return value
 
-/datum/anomaly_modifiers/proc/on_add(datum/weakref/anomaly)
-	attached_anomaly = anomaly.resolve()
+/datum/anomaly_modifiers/proc/on_add(anomaly)
+	attached_anomaly = om_resolve(anomaly)
 	if(!istype(attached_anomaly))
 		return FALSE
 	return TRUE
 
-/datum/anomaly_modifiers/proc/on_remove(datum/weakref/anomaly)
-	attached_anomaly = anomaly.resolve()
+/datum/anomaly_modifiers/proc/on_remove(anomaly)
+	attached_anomaly = om_resolve(anomaly)
 	if(!istype(attached_anomaly))
 		return FALSE
 	return TRUE
@@ -32,12 +32,12 @@
 	description = "Light wave distortion was detected."
 	value = 1.5
 
-/datum/anomaly_modifiers/invisible/on_add(datum/weakref/anomaly)
+/datum/anomaly_modifiers/invisible/on_add(anomaly)
 	if(!..())
 		return
 	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, cloak)), 2 SECONDS)
 
-/datum/anomaly_modifiers/invisible/on_remove(datum/weakref/anomaly)
+/datum/anomaly_modifiers/invisible/on_remove(anomaly)
 	if(!..())
 		return
 	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, uncloak)), 2 SECONDS)
@@ -47,12 +47,12 @@
 	description = "Anomalous anchoring could not be detected."
 	value = 1.4
 
-/datum/anomaly_modifiers/move/on_add(datum/weakref/anomaly)
+/datum/anomaly_modifiers/move/on_add(anomaly)
 	if(!..())
 		return
 	attached_anomaly.move_chance = ANOMALY_MOVECHANCE
 
-/datum/anomaly_modifiers/move/on_remove(datum/weakref/anomaly)
+/datum/anomaly_modifiers/move/on_remove(anomaly)
 	if(!..())
 		return
 	attached_anomaly.move_chance = 0
@@ -62,7 +62,7 @@
 	description = "Anomalous pulses are more common."
 	value = 0.9
 
-/datum/anomaly_modifiers/fast/on_add(datum/weakref/anomaly)
+/datum/anomaly_modifiers/fast/on_add(anomaly)
 	if(!..())
 		return
 
@@ -70,7 +70,7 @@
 	stats.min_activation = 25 SECONDS
 	stats.max_activation = 45 SECONDS
 
-/datum/anomaly_modifiers/fast/on_remove(datum/weakref/anomaly)
+/datum/anomaly_modifiers/fast/on_remove(anomaly)
 	if(!..())
 		return
 

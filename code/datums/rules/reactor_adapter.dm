@@ -148,7 +148,7 @@
 /datum/dq_rx_nodes
 	var/next_node = 1
 	var/next_watch = 1
-	/// "[node]" -> weakref to its atom.
+	/// "[node]" -> OM handle of its atom.
 	var/list/owners = list()
 	/// REF(atom) -> node, and back.
 	var/list/by_atom = list()
@@ -163,14 +163,14 @@
 	if(!isnull(by_atom[key]))
 		return by_atom[key]
 	var/node = next_node++
-	owners["[node]"] = WEAKREF(A)
+	owners["[node]"] = om_handle(A)
 	by_atom[key] = node
 	keys["[node]"] = key
 	return node
 
 /datum/dq_rx_nodes/proc/atom_of(node)
-	var/datum/weakref/ref = owners["[node]"]
-	var/atom/A = ref?.resolve()
+	var/ref = owners["[node]"]
+	var/atom/A = om_resolve(ref)
 	return (A && !QDELETED(A)) ? A : null
 
 /datum/dq_rx_nodes/proc/value_of(node)

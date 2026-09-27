@@ -9,7 +9,7 @@
 // whether to wake" pattern now arms one of the watch flavours below instead, keyed by an
 // arbitrary (entity, watch_id) pair -- no `om_watches` var needed on the watching type,
 // so this works for /obj/machinery, /datum/material_service, pipes, doors, generators,
-// anything with a weak reference.
+// anything with an OM handle.
 //
 // Delivery for a gas-backed watch still rides the low-level Rust dirty-gas-mixture
 // transport (vg_watch_dirty_gas_mixture()/vg_drain_dirty_gas_observations(), the
@@ -72,7 +72,7 @@
 
 /// Per-entity, per-watch_id watch state.
 /datum/om_watch
-	var/datum/weakref/entity_ref
+	var/entity_ref
 	var/watch_id // the key this watch is registered under on its entity (arbitrary string)
 	var/channel // optional CHANGE_MACHINE_*/CHANGE_MOB_* bit: a crossing raises om_changed(entity, channel)
 	var/datum/callback/wake_callback // optional: invoked (no args) on every crossing, before om_changed
@@ -167,7 +167,7 @@
 // ---------------------------------------------------------------- registries
 
 /// Every armed watch, keyed by "[REF(entity)]" -> (watch_id -> /datum/om_watch). Not a var on
-/// the watching type: any datum with a resolvable weak reference can arm a watch.
+/// the watching type: any datum with an OM handle can arm a watch.
 GLOBAL_LIST_EMPTY(om_watch_registry)
 
 /// Reverse index for gas-driven watches: "[mixture_id]" -> list of /datum/om_watch, so
@@ -238,7 +238,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	vg_watch_dirty_gas_mixture(mixture_id, aggregate_mask)
 
 /proc/om_watch_register(datum/om_watch/W)
-	var/key = om_watch_entity_key(W.entity_ref.resolve())
+	var/key = om_watch_entity_key(om_resolve(W.entity_ref))
 	var/list/entity_watches = GLOB.om_watch_registry[key]
 	if(!entity_watches)
 		entity_watches = list()
@@ -255,7 +255,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -273,7 +273,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -293,7 +293,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -313,7 +313,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(isnull(mixture_id))
 		return null
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.mode = OM_WATCH_RAW
 	W.interest_mask = interest_mask
@@ -331,7 +331,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, datum/callback/getter, datum/callback/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL)
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -358,7 +358,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /proc/om_watch_arm_condition(datum/entity, watch_id, list/mixture_ids, interest_mask, datum/callback/condition, channel, datum/callback/wake_callback)
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
-	W.entity_ref = WEAKREF(entity)
+	W.entity_ref = om_handle(entity)
 	W.watch_id = watch_id
 	W.channel = channel
 	W.wake_callback = wake_callback
@@ -442,7 +442,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	if(!length(L))
 		return
 	for(var/datum/om_watch/W as anything in L.Copy())
-		var/datum/entity = W.entity_ref?.resolve()
+		var/datum/entity = om_resolve(W.entity_ref)
 		SSmachines.current_gas_wake_subscribers++
 		if(!entity)
 			SSmachines.gas_dead_last++

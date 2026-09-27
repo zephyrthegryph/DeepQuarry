@@ -106,11 +106,10 @@
 	if(uses_power && cell_type)
 		cell = new cell_type(src)
 
-	debug_mappers_list = GLOB.mapping_units
-	debug_beacons_list = GLOB.mapping_beacons
+	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
+	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 
 /obj/item/mapping_unit/Destroy()
-	GLOB.mapping_units -= src
 
 	last_run()
 
@@ -177,8 +176,10 @@
 	else
 		hud_datum.apply_to_hud(user.hud_used)
 
+REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
+
 /obj/item/mapping_unit/proc/start_updates()
-	GLOB.mapping_units += src
+	registry_join(REGISTRY_MAPPING_UNITS, src)
 	updating = TRUE
 	START_PROCESSING(SSobj, src)
 	process()
@@ -186,7 +187,7 @@
 
 
 /obj/item/mapping_unit/proc/stop_updates()
-	GLOB.mapping_units -= src
+	registry_leave(REGISTRY_MAPPING_UNITS, src)
 	STOP_PROCESSING(SSobj, src)
 	updating = FALSE
 	if(hud_item)
@@ -288,7 +289,7 @@
 	extras_holder.pixel_y = bgmap.pixel_y = -1*T_y + offset_y
 
 	// Populate other mapper icons
-	for(var/obj/item/mapping_unit/HC as anything in GLOB.mapping_units)
+	for(var/obj/item/mapping_unit/HC as anything in REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS))
 		if(HC.mapper_filter != mapper_filter)
 			continue
 		var/mob_indicator = HOLOMAP_ERROR
@@ -347,7 +348,7 @@
 			extras += mark
 
 	// Marker beacon items
-	for(var/obj/item/holomap_beacon/HB as anything in GLOB.mapping_beacons)
+	for(var/obj/item/holomap_beacon/HB as anything in REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS))
 		if(HB.mapper_filter != mapper_filter)
 			continue
 
@@ -409,11 +410,13 @@
 	var/mapper_filter = HOLOMAP_FILTER_STATIONMAP
 	var/in_list = FALSE
 
+REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
+
 /obj/item/holomap_beacon/Initialize(mapload)
 	. = ..()
 	if(in_list) // mapped in turned on
 		in_list = TRUE
-		GLOB.mapping_beacons += src
+		registry_join(REGISTRY_MAPPING_BEACONS, src)
 		icon_state = initial(icon_state) + (in_list ? "_on" : "")
 
 /obj/item/holomap_beacon/attack_self(mob/user)
@@ -422,16 +425,14 @@
 		return TRUE
 	if(!in_list)
 		in_list = TRUE
-		GLOB.mapping_beacons += src
+		registry_join(REGISTRY_MAPPING_BEACONS, src)
 	else
 		in_list = FALSE
-		GLOB.mapping_beacons -= src
+		registry_leave(REGISTRY_MAPPING_BEACONS, src)
 	icon_state = "[initial(icon_state)][in_list ? "_on" : ""]"
 	to_chat(user,span_notice("The [src] is now [in_list ? "broadcasting" : "disabled"]."))
 
 /obj/item/holomap_beacon/Destroy()
-	if(in_list)
-		GLOB.mapping_beacons -= src
 	return ..()
 
 /obj/item/holomap_beacon/deathsquad

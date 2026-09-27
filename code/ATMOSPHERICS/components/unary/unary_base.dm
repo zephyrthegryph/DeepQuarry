@@ -76,7 +76,7 @@
 	rust_unregister_pipe_topology()
 	// om_watch_disarm_all() (called from /obj/machinery/Destroy() below, via ..()) removes
 	// every watch this device holds keyed by its own ref string (code/datums/om/watch.dm) --
-	// no weakref needed, so unlike the old subscribe_gas_dependency() transport this doesn't
+	// no handle needed, so unlike the old subscribe_gas_dependency() transport this doesn't
 	// race qdel() setting gc_destroyed before Destroy() runs.
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
 	var/datum/pipe_network/old_network = network

@@ -17,7 +17,7 @@
 
 
 /datum/event2/event/appendicitis/start()
-	for(var/mob/living/carbon/human/H in shuffle(GLOB.living_mob_list))
+	for(var/mob/living/carbon/human/H in shuffle(REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)))
 		// Don't do it to SSD people.
 		if(!H.client)
 			continue

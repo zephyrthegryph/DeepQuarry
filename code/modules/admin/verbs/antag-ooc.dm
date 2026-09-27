@@ -36,7 +36,7 @@ ADMIN_VERB(admin_aooc, R_ADMIN|R_MOD|R_EVENT, "Admin AOOC", "Send a message to a
 	// Name shown to other players.  Admins whom are not also antags have their rank displayed.
 	var/player_display = (check_rights_for(src, R_ADMIN|R_MOD|R_EVENT) && !(mob.mind?.special_role)) ? "[display_name]([holder.rank_names()])" : display_name
 
-	for(var/mob/target_mob in GLOB.mob_list)
+	for(var/mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(check_rights_for(target_mob.client, R_ADMIN|R_MOD|R_EVENT)) // Staff can see AOOC unconditionally, and with more details.
 			to_chat(target_mob, span_ooc(span_aooc("[create_text_tag("aooc", "Antag-OOC:", target_mob.client)] <EM>[get_options_bar(src, 0, 1, 1)]([admin_jump_link(src.mob, check_rights_for(target_mob.client, R_HOLDER))]):</EM> " + span_message("[msg]"))))
 			continue

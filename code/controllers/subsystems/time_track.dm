@@ -192,7 +192,7 @@ SUBSYSTEM_DEF(time_track)
 			SSbehaviours.cost,
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,
-			length(GLOB.mob_list),
+			REGISTRY_COUNT(REGISTRY_MOBS),
 			SSai.cost,
 			SStimer.cost,
 			SSdbcore.all_queries_num,

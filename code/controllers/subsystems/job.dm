@@ -272,7 +272,7 @@ SUBSYSTEM_DEF(job)
 			break
 
 /datum/controller/subsystem/job/proc/reset_occupations()
-	for(var/mob/new_player/player in GLOB.player_list)
+	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((player) && (player.mind))
 			player.mind.assigned_role = null
 			player.mind.special_role = null
@@ -351,7 +351,7 @@ SUBSYSTEM_DEF(job)
 				break
 
 	//Get the players who are ready
-	for(var/mob/new_player/player in GLOB.player_list)
+	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.ready && player.mind && !player.mind.assigned_role)
 			unassigned += player
 
@@ -459,7 +459,7 @@ SUBSYSTEM_DEF(job)
 	if(!joined_late)
 		var/obj/spawn_point = null
 		var/list/possible_spawns = list()
-		for(var/obj/effect/landmark/start/sloc in GLOB.landmarks_list)
+		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(sloc.name != rank)	continue
 			if(locate(/mob/living) in sloc.loc)	continue
 			possible_spawns.Add(sloc)
@@ -710,7 +710,7 @@ SUBSYSTEM_DEF(job)
 		var/level4 = 0 //never
 		var/level5 = 0 //banned
 		var/level6 = 0 //account too young
-		for(var/mob/new_player/player in GLOB.player_list)
+		for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(!(player.ready && player.mind && !player.mind.assigned_role))
 				continue //This player is not ready
 			if(jobban_isbanned(player, job.title))
@@ -916,7 +916,7 @@ SUBSYSTEM_DEF(job)
 			var/list/items = list()
 			var/list/item_names = list()
 			var/list/carriers = list()
-			for(var/obj/item/item_spawnpoint in GLOB.item_tf_spawnpoints)
+			for(var/obj/item/item_spawnpoint in REGISTRY_MEMBERS(REGISTRY_ITEM_TF_SPAWNPOINTS))
 				if(LAZYLEN(item_spawnpoint.ckeys_allowed_itemspawn))
 					if(!(spawn_client.ckey in item_spawnpoint.ckeys_allowed_itemspawn))
 						continue
@@ -1045,11 +1045,11 @@ SUBSYSTEM_DEF(job)
 				to_chat(spawn_client, span_warning("Your chosen spawnpoint ([spawnpos.display_name]) is unavailable for your chosen job. Please correct your spawn point choice."))
 				return
 			to_chat(spawn_client, span_filter_warning("Your chosen spawnpoint ([spawnpos.display_name]) is unavailable for your chosen job. Spawning you at the Arrivals shuttle instead."))
-			var/spawning = pick(GLOB.latejoin)
+			var/spawning = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
 			.["turf"] = get_turf(spawning)
 			.["msg"] = "will arrive at the station shortly"
 	else if(!fail_deadly)
-		var/spawning = pick(GLOB.latejoin)
+		var/spawning = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
 		.["turf"] = get_turf(spawning)
 		.["msg"] = "has arrived on the station"
 

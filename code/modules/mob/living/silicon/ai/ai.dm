@@ -33,7 +33,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /proc/AutoUpdateAI(obj/subject)
 	var/is_in_use = 0
 	if (subject!=null)
-		for(var/mob/living/silicon/ai/M as anything in GLOB.ai_list)
+		for(var/mob/living/silicon/ai/M as anything in REGISTRY_MEMBERS(REGISTRY_AIS))
 			if ((M.client && M.check_current_machine(subject)))
 				is_in_use = 1
 				subject.attack_ai(M)
@@ -124,7 +124,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/pickedName = null
 	while(!pickedName)
 		pickedName = pick(GLOB.ai_names)
-		for (var/mob/living/silicon/ai/A in GLOB.mob_list)
+		for (var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if (A.real_name == pickedName && possibleNames.len > 1) //fixing the theoretically possible infinite loop
 				possibleNames -= pickedName
 				pickedName = null
@@ -188,7 +188,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	if(!safety)//Only used by AIize() to successfully spawn an AI.
 		if (!B)//If there is no player/brain inside.
-			GLOB.empty_playable_ai_cores += new/obj/structure/AIcore/deactivated(loc)//New empty terminal.
+			registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
 			return INITIALIZE_HINT_QDEL //Delete AI.
 
 		var/datum/component/mind_host/host = get_mind_host(B)
@@ -197,7 +197,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		on_mob_init()
 
 
-	GLOB.ai_list += src
 	. = ..()
 	init_id(idcard_type)
 
@@ -245,9 +244,10 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	job = JOB_AI
 	setup_icon()
 
+REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
+
 /mob/living/silicon/ai/Destroy()
 	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
-	GLOB.ai_list -= src
 
 	QDEL_NULL(announcement)
 	QDEL_NULL(eyeobj)
@@ -278,7 +278,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 			//Name, Health, Battery, Module, Area, and Status! Everything an AI wants to know about its borgies!
 			. += "[R.name] | S.Integrity: [round(R.vitality() * 100)]% | Cell: [R.cell ? "[R.cell.charge]/[R.cell.maxcharge]" : "Empty"] | \
 			Module: [R.modtype] | Loc: [get_area_name(R, TRUE)] | Status: [robot_status]"
-		. += "AI shell beacons detected: [LAZYLEN(GLOB.available_ai_shells)]" //Count of total AI shells
+		. += "AI shell beacons detected: [REGISTRY_COUNT(REGISTRY_AI_SHELLS)]" //Count of total AI shells
 	else
 		. += "Systems nonfunctional"
 
@@ -492,7 +492,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				to_chat(src, span_notice("Unable to locate the holopad."))
 
 	if (href_list["track"])
-		var/mob/target = locate(href_list["track"]) in GLOB.mob_list
+		var/mob/target = locate(href_list["track"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 
 		if(target && (!ishuman(target) || html_decode(href_list["trackname"]) == target:get_face_name()))
 			ai_actual_track(target)
@@ -501,7 +501,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		return
 
 	if(href_list["trackbot"])
-		var/mob/living/bot/target = locate(href_list["trackbot"]) in GLOB.mob_list
+		var/mob/living/bot/target = locate(href_list["trackbot"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 		if(target)
 			ai_actual_track(target)
 		else
@@ -509,7 +509,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		return
 
 	if(href_list["open"])
-		var/mob/target = locate(href_list["open"]) in GLOB.mob_list
+		var/mob/target = locate(href_list["open"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
 		if(target)
 			open_nearest_door(target)
 
@@ -961,7 +961,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 			var/mob/living/carbon/human/I = impersonated[speaker_name]
 
 			if(!I)
-				for(var/mob/living/carbon/human/M in GLOB.mob_list)
+				for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 					if(M.real_name == speaker_name)
 						I = M
 						impersonated[speaker_name] = I
@@ -1029,12 +1029,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /mob/living/silicon/ai/announcer/Initialize(mapload)
 	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
 	. = ..()
-	GLOB.mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.ai_list -= src
-	GLOB.silicon_mob_list -= src
 	QDEL_NULL(eyeobj)
+
+/// The announcer is in no mob registry.
+/mob/living/silicon/ai/announcer/skips_registry(registry_id)
+	return TRUE
 
 /mob/living/silicon/ai/announcer
 	life_set = LIFE_SET_DELIST
@@ -1043,11 +1042,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	of = /mob/living/silicon/ai/announcer
 
 /datum/om/stage/life/delist/silicon/ai/announcer/perform(mob/living/silicon/ai/announcer/self, datum/om/frame/life/ctx)
-	GLOB.mob_list -= self
-	GLOB.living_mob_list -= self
-	GLOB.dead_mob_list -= self
-	GLOB.ai_list -= self
-	GLOB.silicon_mob_list -= self
 	qdel(ACTIVE_EYE(self))
 
 #undef AI_CHECK_WIRELESS

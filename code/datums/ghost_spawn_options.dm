@@ -1,5 +1,5 @@
 /datum/tgui_module/ghost_spawn_menu/proc/jump_to_pod(mob/observer/dead/user, selected_pod)
-	var/atom/movable/target = locate(selected_pod) in GLOB.active_ghost_pods
+	var/atom/movable/target = locate(selected_pod) in REGISTRY_MEMBERS(REGISTRY_GHOST_PODS)
 	if(!target)
 		to_chat(user, span_warning("Invalid ghost pod selected!"))
 		return
@@ -106,12 +106,12 @@
 	chosen_fabricator.create_drone(user.client)
 
 /datum/tgui_module/ghost_spawn_menu/proc/join_vr(mob/observer/dead/user, landmark)
-	var/S = locate(landmark) in GLOB.landmarks_list
+	var/S = locate(landmark) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 
 	user.fake_enter_vr(S)
 
 /datum/tgui_module/ghost_spawn_menu/proc/soulcatcher_spawn(mob/observer/dead/user, selected_player)
-	var/mob/living/target = locate(selected_player) in GLOB.player_list
+	var/mob/living/target = locate(selected_player) in REGISTRY_MEMBERS(REGISTRY_PLAYERS)
 		//Didn't pick anyone or picked a null
 	if(!target)
 		to_chat(user, span_warning("Invalid player selected!"))
@@ -146,7 +146,7 @@
 	addtimer(CALLBACK(target, TYPE_PROC_REF(/mob/living/carbon/human, nif_soulcatcher_spawn_prompt), user, req_time), 1.5 SECONDS, TIMER_DELETE_ME)
 
 /datum/tgui_module/ghost_spawn_menu/proc/soulcatcher_vore_spawn(mob/observer/dead/user, selected_player)
-	var/mob/living/target = locate(selected_player) in GLOB.player_list
+	var/mob/living/target = locate(selected_player) in REGISTRY_MEMBERS(REGISTRY_PLAYERS)
 	if(!target)
 		to_chat(user, span_warning("Invalid player selected!"))
 		return
@@ -168,7 +168,7 @@
 	addtimer(CALLBACK(target, TYPE_PROC_REF(/mob/living, soulcatcher_spawn_prompt), user, req_time), 1.5 SECONDS, TIMER_DELETE_ME)
 
 /datum/tgui_module/ghost_spawn_menu/proc/vore_belly_spawn(mob/observer/dead/user, selected_player)
-	var/mob/living/target = locate(selected_player) in GLOB.player_list
+	var/mob/living/target = locate(selected_player) in REGISTRY_MEMBERS(REGISTRY_PLAYERS)
 
 	if(!target)
 		to_chat(user, span_warning("Invalid player selected!"))
@@ -256,7 +256,7 @@
 
 /datum/tgui_module/ghost_spawn_menu/proc/get_ghost_role_spawn()
 	var/list/possibleSpawnspots = list()
-	for(var/obj/effect/landmark/L in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(L.name == JOB_GHOSTROLES)
 			possibleSpawnspots += L
 	if(possibleSpawnspots.len)

@@ -22,8 +22,8 @@
 	ai_attack_on_sight = FALSE
 	/// Stalking ramp counter — climbs while a lone edible player lingers.
 	var/dq_eat_attempts = 0
-	/// Weakref to the player the gryphon is currently fixating on.
-	var/datum/weakref/dq_maybe_eating = null
+	/// OM handle of the player the gryphon is currently fixating on.
+	var/dq_maybe_eating = null
 
 /mob/living/simple_mob/vore/gryphon/get_ai_behaviors()
 	var/static/list/L = list(
@@ -111,10 +111,10 @@
 	// crowd that arrived between ticks.
 	var/alone = dq_gryphon_alone_with(brain, G, victim)
 	// New victim resets the counter (legacy: target != maybe_eating).
-	var/mob/old_victim = G.dq_maybe_eating?.resolve()
+	var/mob/old_victim = om_resolve(G.dq_maybe_eating)
 	if(victim != old_victim)
 		G.dq_eat_attempts = 0
-	G.dq_maybe_eating = WEAKREF(victim)
+	G.dq_maybe_eating = om_handle(victim)
 	// Teasing messages at the legacy thresholds.
 	if(G.dq_eat_attempts == 5)
 		to_chat(victim, span_danger("\The [G] licks its beak"))

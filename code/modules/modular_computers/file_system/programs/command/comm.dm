@@ -42,7 +42,7 @@ General message handling stuff
 	message["title"] = message_title
 	message["contents"] = message_text
 
-	for(var/datum/comm_message_listener/l in GLOB.comm_message_listeners)
+	for(var/datum/comm_message_listener/l in REGISTRY_MEMBERS(REGISTRY_COMM_MESSAGE_LISTENERS))
 		l.Add(message)
 
 /datum/comm_message_listener
@@ -51,11 +51,9 @@ General message handling stuff
 /datum/comm_message_listener/New()
 	..()
 	messages = list()
-	GLOB.comm_message_listeners.Add(src)
+	join_registries()
 
-/datum/comm_message_listener/Destroy()
-	GLOB.comm_message_listeners.Remove(src)
-	return ..()
+REGISTRY_MEMBERSHIP(/datum/comm_message_listener, REGISTRY_COMM_MESSAGE_LISTENERS)
 
 /datum/comm_message_listener/proc/Add(list/message)
 	messages[++messages.len] = message

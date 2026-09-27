@@ -47,7 +47,7 @@
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
 
 	// --- Personal relationships. Lazylist. ---
-	var/list/personal = null             // weakref => list("disp", "expires")
+	var/list/personal = null             // OM handle => list("disp", "expires")
 
 	// --- Signal subscriptions ---
 	var/list/subscribed_signals = null   // signal_type => list(behavior_typepath, ...)
@@ -56,7 +56,7 @@
 	var/last_attack_at = 0           // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/turf/home_turf = null        // for guard / return_home behaviors
-	var/datum/weakref/leader_ref = null  // for follow_leader / cooperative AI
+	var/leader_ref = null  // for follow_leader / cooperative AI
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
@@ -111,10 +111,10 @@
 	return holder
 
 /datum/ai_brain/proc/get_leader()
-	return leader_ref?.resolve()
+	return om_resolve(leader_ref)
 
 /datum/ai_brain/proc/set_leader(mob/leader)
-	leader_ref = leader ? WEAKREF(leader) : null
+	leader_ref = leader ? om_handle(leader) : null
 
 // ---------------------------------------------------------------------------
 // SSai-compatible surface.
@@ -395,7 +395,7 @@
 	if(!other || other == holder)
 		return DQ_DISPOSITION_ALLY
 	if(personal)
-		var/ref = WEAKREF(other)
+		var/ref = om_handle(other)
 		var/list/entry = personal[ref]
 		if(entry)
 			if(entry["expires"] && entry["expires"] < world.time)
@@ -424,7 +424,7 @@
 	if(!other)
 		return
 	LAZYINITLIST(personal)
-	personal[WEAKREF(other)] = list(
+	personal[om_handle(other)] = list(
 		"disp" = disposition,
 		"expires" = duration ? world.time + duration : 0,
 		"reason" = reason,

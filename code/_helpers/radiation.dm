@@ -35,7 +35,7 @@
 		return
 
 	var/datum/radiation_pulse_information/pulse_information = new
-	pulse_information.source_ref = WEAKREF(source)
+	pulse_information.source_ref = om_handle(source)
 	pulse_information.max_range = max_range
 	pulse_information.threshold = threshold
 	pulse_information.chance = chance
@@ -48,7 +48,7 @@
 	return TRUE
 
 /datum/radiation_pulse_information
-	var/datum/weakref/source_ref
+	var/source_ref
 	var/max_range
 	var/threshold
 	var/chance

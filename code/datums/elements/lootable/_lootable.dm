@@ -138,8 +138,8 @@
 	var/path = pick_n_take(GLOB.unique_gamma_loot)
 	if(!path) //Tapped out, reallocate?
 		for(var/P in GLOB.allocated_gamma_loot)
-			var/datum/weakref/WF = GLOB.allocated_gamma_loot[P]
-			var/obj/item/I = WF?.resolve()
+			var/WF = GLOB.allocated_gamma_loot[P]
+			var/obj/item/I = om_resolve(WF)
 			if(QDELETED(I) || istype(I.loc,/obj/machinery/computer/cryopod))
 				restore_gamma_loot(P)
 				path = P
@@ -147,7 +147,7 @@
 
 	if(path)
 		var/obj/item/I = new path(source)
-		GLOB.allocated_gamma_loot[path] = WEAKREF(I)
+		GLOB.allocated_gamma_loot[path] = om_handle(I)
 		return I
 
 	return produce_rare_item(source)

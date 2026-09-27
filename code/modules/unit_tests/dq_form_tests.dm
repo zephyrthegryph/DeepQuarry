@@ -91,7 +91,7 @@
 	var/datum/affliction/core_dormancy/D = H.body.find_affliction(/datum/affliction/core_dormancy)
 	TEST_ASSERT_NOTNULL(D, "a destroyed nanoform body should go dormant")
 	TEST_ASSERT(H.stat != DEAD, "a dormant protean is not dead")
-	TEST_ASSERT(H in GLOB.living_mob_list, "a dormant protean stays on the living list")
+	TEST_ASSERT(H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS), "a dormant protean stays on the living list")
 	TEST_ASSERT_EQUAL(H.loc, R, "going dormant should fold the protean into its rig")
 
 	H.mend(TREAT_CALIBRATION, 1)

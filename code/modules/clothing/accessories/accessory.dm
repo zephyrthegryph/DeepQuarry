@@ -37,12 +37,12 @@
 /obj/item/clothing/accessory/proc/get_mob_overlay()
 	if(!istype(loc, /obj/item/clothing))
 		return null
-	// Update wearer weakref before delegating (existing callers expect this side-effect).
+	// Update wearer handle before delegating (existing callers expect this side-effect).
 	if(ishuman(has_suit?.loc))
-		wearer = WEAKREF(has_suit.loc)
+		wearer = om_handle(has_suit.loc)
 	else
 		wearer = null
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(!ishuman(H))
 		return null
 	mob_overlay = GLOB.clothing_appearance_handler.build_mob_overlay(src)

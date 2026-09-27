@@ -14,7 +14,7 @@
 	var/points_to_create = 100
 	var/efficiency = 1
 
-	var/datum/weakref/harvested
+	var/harvested
 	var/list/obj/item/research_sample/samples
 
 /obj/machinery/anomaly_harvester/Initialize(mapload)
@@ -53,7 +53,7 @@
 	if(!harvested)
 		return
 
-	var/obj/effect/anomaly/anom = harvested.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(harvested)
 	if(!istype(anom))
 		return
 
@@ -104,20 +104,20 @@
 	if(. & ITEM_INTERACT_SUCCESS)
 		harvested = null
 
-/obj/machinery/anomaly_harvester/proc/attach_anomaly(datum/weakref/anomaly)
-	var/obj/effect/anomaly/anom = anomaly.resolve()
+/obj/machinery/anomaly_harvester/proc/attach_anomaly(anomaly)
+	var/obj/effect/anomaly/anom = om_resolve(anomaly)
 	if(!istype(anom))
 		return
 
 	var/datum/anomaly_stats/stats = anom.stats
 	if(stats.attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester.resolve()
+		var/obj/machinery/anomaly_harvester/harvester = om_resolve(stats.attached_harvester)
 		if(harvester)
 			harvester.harvested = null
 			harvester.update_icon()
 		stats.attached_harvester = null
 	harvested = anomaly
-	stats.attached_harvester = WEAKREF(src)
+	stats.attached_harvester = om_handle(src)
 	playsound(src, 'sound/machines/boobeebeep.ogg', 75, TRUE)
 	return TRUE
 
@@ -144,7 +144,7 @@
 		add_overlay("harvester_on")
 
 	if(harvested)
-		var/obj/effect/anomaly/anom = harvested.resolve()
+		var/obj/effect/anomaly/anom = om_resolve(harvested)
 		if(!istype(anom))
 			return
 
@@ -177,7 +177,7 @@
 			"ref" = REF(sample)
 		))
 
-	var/obj/effect/anomaly/anom = harvested?.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(harvested)
 	var/list/data = list(
 		"name" = anom,
 		"points" = points,

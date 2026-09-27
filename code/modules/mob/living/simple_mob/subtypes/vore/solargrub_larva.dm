@@ -53,7 +53,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
 	. = ..()
-	GLOB.existing_solargrubs += src
 	powermachine = new(src)
 	sparks = new(src)
 	sparks.set_up()
@@ -65,8 +64,9 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	set_light(0)
 	return ..()
 
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
+
 /mob/living/simple_mob/animal/solargrub_larva/Destroy()
-	GLOB.existing_solargrubs -= src
 	QDEL_NULL(powermachine)
 	QDEL_NULL(sparks)
 	QDEL_NULL(machine_effect)
@@ -90,7 +90,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	if(istype(self.loc, /obj/machinery))
 		if(self.machine_effect && SSair.times_fired%30)
-			for(var/mob/M in GLOB.player_list)
+			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				M << self.machine_effect
 		if(prob(10))
 			self.sparks.start()
@@ -127,7 +127,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	if(!(M.type in GLOB.grub_machine_overlays))
 		generate_machine_effect(M)
 	machine_effect = image(GLOB.grub_machine_overlays[M.type], M) //Can't do this the reasonable way with an overlay,
-	for(var/mob/L in GLOB.player_list)				//because nearly every machine updates its icon by removing all overlays first
+	for(var/mob/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))				//because nearly every machine updates its icon by removing all overlays first
 		L << machine_effect
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/generate_machine_effect(obj/machinery/M)

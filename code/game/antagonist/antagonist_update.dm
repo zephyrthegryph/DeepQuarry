@@ -10,7 +10,7 @@
 		player.current = new mob_path(get_turf(player.current))
 		player.transfer_to(player.current)
 		if(holder) qdel(holder)
-	player.original_character = WEAKREF(player.current)
+	player.original_character = om_handle(player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
 		addtimer(CALLBACK(src, PROC_REF(deferred_set_appearance), player), 3)
 	return player.current
@@ -90,7 +90,7 @@
 	if(SSticker.mode.antag_scaling_coeff)
 
 		var/count = 0
-		for(var/mob/living/M in GLOB.player_list)
+		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				count++
 

@@ -79,7 +79,7 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	var/datum/weakref/buffered_anomaly = null
+	var/buffered_anomaly = null
 
 /obj/item/anomaly_scanner/Destroy()
 	. = ..()
@@ -105,7 +105,7 @@
 
 /obj/item/anomaly_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	var/obj/effect/anomaly/anom = buffered_anomaly?.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(buffered_anomaly)
 
 	if(!istype(anom))
 		return data

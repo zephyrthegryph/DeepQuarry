@@ -35,7 +35,7 @@
 
 	var/datum/announcement/priority/crew_announcement
 
-	var/datum/weakref/ATC
+	var/ATC
 
 	var/list/req_access = list()
 

@@ -57,7 +57,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 	// And for those far away. If the strike happens on a planet, everyone on the planet will hear it.
 	// Otherwise only those on the current z-level will hear it.
 	var/sound = get_sfx("thunder")
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if( (P && (M.z in P.expected_z_levels)) || M.z == T.z)
 			if(M.check_sound_preference(/datum/preference/toggle/weather_sounds))
 				M.playsound_local(get_turf(M), soundin = sound, vol = 70, vary = FALSE, is_global = TRUE)

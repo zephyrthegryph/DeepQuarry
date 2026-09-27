@@ -320,7 +320,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 				return	//took too long
 			newname = sanitizeName(newname, ,allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 
-			for(var/mob/living/M in GLOB.player_list)
+			for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(M == src)
 					continue
 				if(!newname || M.real_name == newname)
@@ -354,7 +354,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /proc/freeborg()
 	var/select = null
 	var/list/borgs = list()
-	for (var/mob/living/silicon/robot/A in GLOB.player_list)
+	for (var/mob/living/silicon/robot/A in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if (A.stat == 2 || A.connected_ai || A.scrambledcodes || istype(A,/mob/living/silicon/robot/drone))
 			continue
 		var/name = "[A.real_name] ([A.modtype] [A.braintype])"
@@ -368,7 +368,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //When a borg is activated, it can choose which AI it wants to be slaved to
 /proc/active_ais()
 	. = list()
-	for(var/mob/living/silicon/ai/A in GLOB.living_mob_list)
+	for(var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(A.stat == DEAD)
 			continue
 		if(A.control_disabled == 1)
@@ -400,7 +400,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Orders mobs by type then by name
 /proc/sort_mobs()
 	var/list/moblist = list()
-	var/list/sortmob = sort_names(GLOB.mob_list)
+	var/list/sortmob = sort_names(REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/list/after_simplemob_minded = list()
 	for(var/mob/observer/eye/M in sortmob)
 		if (!M.client && !M.disconnect_time) // Addition
@@ -979,7 +979,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 /proc/get_mob_with_client_list()
 	var/list/mobs = list()
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (M.client)
 			mobs += M
 	return mobs
@@ -1210,14 +1210,9 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		color = origin.color
 		set_light(origin.light_range, origin.light_power, origin.light_color)
 
-/mob/dview/Initialize(mapload)
-	. = ..()
-	// We don't want to be in any mob lists; we're a dummy not a mob.
-	GLOB.mob_list -= src
-	if(stat == DEAD)
-		GLOB.dead_mob_list -= src
-	else
-		GLOB.living_mob_list -= src
+/// We don't want to be in any mob registry; we're a dummy not a mob.
+/mob/dview/skips_registry(registry_id)
+	return TRUE
 
 /mob/dview/Destroy(force)
 	stack_trace("Attempt to delete the dview_mob: [log_info_line(src)]")

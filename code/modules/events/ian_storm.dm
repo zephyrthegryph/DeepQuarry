@@ -8,7 +8,7 @@
 	om_after(src, 7 SECONDS, /proc/delayed_command_announcement, "Wait. No, that's wrong. The [using_map.facility_type] passed through an IAN storm!.", "Ian Alert")
 
 /datum/event/ianstorm/start()
-	for(var/mob/living/carbon/human/C in GLOB.living_mob_list)
+	for(var/mob/living/carbon/human/C in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		var/turf/T = get_turf(C)
 		if(!T)
 			continue

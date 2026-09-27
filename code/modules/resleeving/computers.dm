@@ -25,8 +25,8 @@
 	var/obj/machinery/transhuman/synthprinter/selected_printer
 	var/obj/machinery/transhuman/resleever/selected_sleever
 
-	var/datum/weakref/current_br
-	var/datum/weakref/current_mr
+	var/current_br
+	var/current_mr
 
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
@@ -99,7 +99,7 @@
 			return
 		user.unEquip(W)
 		W.forceMove(get_turf(src)) // Drop on top of us
-		current_br = WEAKREF(brDisk.stored)
+		current_br = om_handle(brDisk.stored)
 		to_chat(user, span_notice("\The [src] loads the body record from \the [W] before ejecting it."))
 		attack_hand(user)
 		view_b_rec(REF(brDisk.stored))
@@ -212,7 +212,7 @@
 	data["mindrecords"] = mindrecords_list_ui
 
 	data["active_b_rec"] = null
-	var/datum/transhuman/body_record/active_br = current_br?.resolve()
+	var/datum/transhuman/body_record/active_br = om_resolve(current_br)
 	if(active_br)
 		data["active_b_rec"] = list(
 			activerecord = REF(active_br),
@@ -226,7 +226,7 @@
 		)
 
 	data["active_m_rec"] = null
-	var/datum/transhuman/mind_record/active_mr = current_mr?.resolve()
+	var/datum/transhuman/mind_record/active_mr = om_resolve(current_mr)
 	if(active_mr)
 		data["active_m_rec"] = list(
 			activerecord = REF(active_mr),
@@ -273,7 +273,7 @@
 			. = TRUE
 		if("create")
 			. = TRUE
-			var/datum/transhuman/body_record/active_br = current_br?.resolve()
+			var/datum/transhuman/body_record/active_br = om_resolve(current_br)
 			if(istype(active_br))
 				//Tried to grow a synth but no synth pods.
 				if(active_br.synthetic && !spods.len)
@@ -368,7 +368,7 @@
 				set_temp("Error: Data corruption.", "danger")
 				current_br = null
 		if("sleeve")
-			var/datum/transhuman/mind_record/active_mr = current_mr?.resolve()
+			var/datum/transhuman/mind_record/active_mr = om_resolve(current_mr)
 			if(istype(active_mr))
 				. = TRUE
 				if(!sleevers.len)
@@ -470,7 +470,7 @@
 			. = TRUE
 		// Traitgenes edit begin - create a dna injector based off the BR currently selected, to allow normal doctors to reset someone's SEs
 		if("genereset")
-			var/datum/transhuman/body_record/active_br = current_br?.resolve()
+			var/datum/transhuman/body_record/active_br = om_resolve(current_br)
 			if(gene_sequencing)
 				set_temp("Sequencing Record... Please wait.")
 				tgui_modal_clear(src)
@@ -571,7 +571,7 @@
 				can_grow_active = FALSE
 				set_temp("Error: Cannot grow [active_br.mydna.name] due to species complexity.", "danger")
 			// load it!
-			current_br = WEAKREF(active_br)
+			current_br = om_handle(active_br)
 	else
 		set_temp("Error: Record missing.", "danger")
 
@@ -598,7 +598,7 @@
 				can_sleeve_active = FALSE
 				set_temp("Error: Cannot sleeve due to lack of sleever occupant.", "danger")
 			// load it!
-			current_mr = WEAKREF(active_mr)
+			current_mr = om_handle(active_mr)
 	else
 		set_temp("Error: Record missing.", "danger")
 

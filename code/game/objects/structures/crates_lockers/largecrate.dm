@@ -36,7 +36,7 @@
 			if(!AMBLINAL.mind)
 				AMBLINAL.ghostjoin = 1
 				AMBLINAL.ghostjoin_icon()
-				GLOB.active_ghost_pods |= AMBLINAL
+				registry_join(REGISTRY_GHOST_PODS, AMBLINAL)
 	user.visible_message(span_notice("[user] pries \the [src] open."), \
 		span_notice("You pry open \the [src]."), \
 		span_notice("You hear splitting wood."))

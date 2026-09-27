@@ -133,7 +133,7 @@
 		return TRUE
 	if(!homunculus)
 		var/list/targets = list()
-		for(var/mob/living/carbon/human/M in GLOB.mob_list)
+		for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if(M.z != user.z || get_dist(user,M) > 10)
 				continue
 			if(!M.allow_mimicry)

@@ -27,7 +27,7 @@
 	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 	var/obj/machinery/clonepod/connecting //same for cryopod linkage
 	var/obj/machinery/connectable	//Used to connect machinery.
-	var/weakref_wiring //Used to store weak references for integrated circuitry. This is now the Omnitool.
+	var/ref_wiring //An IC ref (ic_ref()) for integrated circuitry. This is now the Omnitool.
 	toolspeed = 1
 	tool_qualities = list(TOOL_MULTITOOL)
 
@@ -54,7 +54,7 @@
 			buffer = null
 			connecting = null
 			connectable = null
-			weakref_wiring = null
+			ref_wiring = null
 			accepting_refs = 0
 			if(toolmode == MULTITOOL_MODE_INTCIRCUITS)
 				accepting_refs = 1

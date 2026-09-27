@@ -2262,8 +2262,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	var/tgui_subview = "main"
 	// Refs kept alive across sub-view interactions so tgui_data can
 	// re-render structured data on update without losing the caller/card.
-	var/datum/weakref/active_id_card_ref
-	var/datum/weakref/active_caller_ref
+	var/active_id_card_ref
+	var/active_caller_ref
 	var/active_attack_target_name = ""
 
 /obj/mecha/tgui_interact(mob/user, datum/tgui/ui)
@@ -2294,7 +2294,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			data["ai_targets"] = targets
 			return data
 		if("access")
-			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
 			var/list/cur = list()
 			for(var/a in operation_req_access)
 				cur += list(list("id" = a, "name" = SSaccess.get_access_desc(a)))
@@ -2468,7 +2468,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		// Attack-AI sub-view
 		if("ai_use_equipment")
 			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
-			var/atom/target = active_caller_ref?.resolve()
+			var/atom/target = om_resolve(active_caller_ref)
 			if(W && (W in equipment))
 				W.action(target)
 			tgui_subview = "main"
@@ -2476,7 +2476,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		// Access sub-view
 		if("access_add")
 			var/a = text2num(params["id"])
-			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
 			if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
 				operation_req_access += a
 			return TRUE
@@ -2491,7 +2491,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return TRUE
 		// Maint sub-view
 		if("maint_req_access")
-			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
 			if(id_card)
 				tgui_subview = "access"
 			return TRUE
@@ -2675,12 +2675,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 
 // fully-structured TGUI access dialog. The id_card is cached
-// as a weakref so tgui_data can rebuild the available-keycode list each
+// as an OM handle so tgui_data can rebuild the available-keycode list each
 // refresh.
 /obj/mecha/proc/output_access_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
 		return
-	active_id_card_ref = WEAKREF(id_card)
+	active_id_card_ref = om_handle(id_card)
 	tgui_subview = "access"
 	tgui_interact(user)
 	return
@@ -2690,7 +2690,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/output_maintenance_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
 		return
-	active_id_card_ref = WEAKREF(id_card)
+	active_id_card_ref = om_handle(id_card)
 	tgui_subview = "maint"
 	tgui_interact(user)
 	return

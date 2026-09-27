@@ -10,7 +10,7 @@
 	obfuscation = new /datum/obfuscation/cult()
 
 /datum/chunk/cult/acquireVisibleTurfs(list/visible)
-	for(var/mob/living/L in GLOB.living_mob_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		for(var/turf/t in L.seen_cult_turfs())
 			visible[t] = t
 

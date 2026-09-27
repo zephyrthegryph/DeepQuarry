@@ -84,10 +84,10 @@ SUBSYSTEM_DEF(statpanels)
 			if(target.stat_tab == "Tickets" && num_fires % default_wait == 0)
 				set_tickets_tab(target)
 
-			if(!length(GLOB.sdql2_queries) && ("SDQL2" in target.panel_tabs))
+			if(!REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && ("SDQL2" in target.panel_tabs))
 				target.stat_panel.send_message("remove_sdql2")
 
-			else if(length(GLOB.sdql2_queries) && (target.stat_tab == "SDQL2" || !("SDQL2" in target.panel_tabs)) && num_fires % default_wait == 0)
+			else if(REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && (target.stat_tab == "SDQL2" || !("SDQL2" in target.panel_tabs)) && num_fires % default_wait == 0)
 				set_SDQL2_tab(target)
 
 		if(target.mob)
@@ -257,7 +257,7 @@ SUBSYSTEM_DEF(statpanels)
 	var/list/sdql2A = list()
 	sdql2A[++sdql2A.len] = list("", "Access Global SDQL2 List", REF(GLOB.sdql2_vv_statobj))
 	var/list/sdql2B = list()
-	for(var/datum/SDQL2_query/query as anything in GLOB.sdql2_queries)
+	for(var/datum/SDQL2_query/query as anything in REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
 		sdql2B = query.generate_stat()
 
 	sdql2A += sdql2B
@@ -347,10 +347,10 @@ SUBSYSTEM_DEF(statpanels)
 		set_tickets_tab(target)
 		return TRUE
 
-	if(!length(GLOB.sdql2_queries) && ("SDQL2" in target.panel_tabs))
+	if(!REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && ("SDQL2" in target.panel_tabs))
 		target.stat_panel.send_message("remove_sdql2")
 
-	else if(length(GLOB.sdql2_queries) && target.stat_tab == "SDQL2")
+	else if(REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && target.stat_tab == "SDQL2")
 		set_SDQL2_tab(target)
 
 /// Stat panel window declaration

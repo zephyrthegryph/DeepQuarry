@@ -10,8 +10,8 @@
 /obj/effect/fake_attacker/process()
 	. = ..()
 	// Passive cleanup
-	for(var/datum/weakref/C in clients)
-		var/client/CW = C?.resolve()
+	for(var/C in clients)
+		var/client/CW = om_resolve(C)
 		if(isnull(CW))
 			clients.Remove(C)
 	if(!clients.len)
@@ -25,8 +25,8 @@
 	var/updatesprite = (dir != newdir)
 	. = ..()
 	if(updatesprite)
-		for(var/datum/weakref/C in clients)
-			var/client/CW = C?.resolve()
+		for(var/C in clients)
+			var/client/CW = om_resolve(C)
 			clear_images_from_client(CW)
 			assign_image_to_client(CW)
 
@@ -65,7 +65,7 @@
 
 /obj/effect/fake_attacker/proc/append_client(client/C)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	clients.Add(WEAKREF(C))
+	clients.Add(om_handle(C))
 	assign_image_to_client(C)
 
 /obj/effect/fake_attacker/proc/assign_image_to_client(client/C)
@@ -80,8 +80,8 @@
 		C.images += I
 
 /obj/effect/fake_attacker/proc/clear_every_clients_images()
-	for(var/datum/weakref/C in clients)
-		clear_images_from_client(C?.resolve())
+	for(var/C in clients)
+		clear_images_from_client(om_resolve(C))
 
 /obj/effect/fake_attacker/proc/clear_images_from_client(client/C)
 	PRIVATE_PROC(TRUE)
@@ -113,7 +113,7 @@
 	if(!clone)
 		// Get a randomized clone from the living mob's list, must be standing
 		var/list/possible_clones = new/list()
-		for(var/mob/living/carbon/human/H in GLOB.living_mob_list)
+		for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 			if(H.stat || H.lying)
 				continue
 			possible_clones += H
@@ -146,7 +146,7 @@
 	return new forced_type(T,src,clone)
 
 /obj/effect/fake_attacker/human
-	VAR_PROTECTED/datum/weakref/target = null
+	VAR_PROTECTED/target = null
 	var/requires_hallucinating = TRUE // Mob will qdel if the target is not hallucinating if this is true
 
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
@@ -165,7 +165,7 @@
 
 /obj/effect/fake_attacker/human/process()
 	// check if valid
-	var/mob/living/M = target?.resolve()
+	var/mob/living/M = om_resolve(target)
 	if(!M)
 		qdel(src)
 		return null
@@ -181,7 +181,7 @@
 	return M
 
 /obj/effect/fake_attacker/human/proc/set_target(mob/M)
-	target = WEAKREF(M)
+	target = om_handle(M)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////

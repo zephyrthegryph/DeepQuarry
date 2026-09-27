@@ -26,13 +26,13 @@
 				return
 			else
 				listening = 1
-				GLOB.listening_objects |= src
+				registry_join(REGISTRY_LISTENING_OBJECTS, src)
 				if(mult_icons)
 					icon_state = "[initial(icon_state)]1"
 				to_chat(user, span_notice("You enable \the [src], translating into [langset.name]."))
 	else	//Turning OFF
 		listening = 0
-		GLOB.listening_objects -= src
+		registry_leave(REGISTRY_LISTENING_OBJECTS, src)
 		langset = null
 		icon_state = "[initial(icon_state)]"
 		to_chat(user, span_notice("You disable \the [src]."))

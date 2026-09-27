@@ -94,7 +94,7 @@ SUBSYSTEM_DEF(profiler)
 		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_regions), "power_objects" = length(SSmachines.powerobjs)),
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
-	subsystems["mobs"] += list("counts" = list("world" = length(GLOB.mob_list), "parked" = om_pipeline_parked_count(/datum/om/pipeline/life), "deaths_pending" = length(SSmobs.death_list)))
+	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = om_pipeline_parked_count(/datum/om/pipeline/life), "deaths_pending" = length(SSmobs.death_list)))
 	subsystems["objects"] += list("counts" = list("processing" = length(SSobj.processing), "current" = length(SSobj.currentrun)))
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()

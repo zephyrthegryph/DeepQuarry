@@ -109,7 +109,7 @@
 		return list()
 
 	var/datum/trackable/TB = new()
-	for(var/mob/living/M in GLOB.mob_list)
+	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(M == src)
 			continue
 		if(M.tracking_status() != TRACKING_POSSIBLE)

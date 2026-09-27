@@ -83,14 +83,14 @@
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel strange as hunger vanishes!"))
 			H.custom_pain("Your hands feel strange!",1)
 
 /obj/item/clothing/gloves/stamina/dropped(mob/user, equipping, slot)
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(H)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel hungry!"))
@@ -106,7 +106,7 @@
 	return ..()
 
 /obj/item/clothing/gloves/stamina/process()
-	var/mob/living/carbon/human/H = wearer?.resolve()
+	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(!H || H.isSynthetic() || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
 	H.nutrition = max(H.nutrition + 8, 0)

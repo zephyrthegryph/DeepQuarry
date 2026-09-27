@@ -3,7 +3,6 @@
 /// follows from a numeric material coefficient, the product geometry, and a
 /// real event such as impact, radiation, heat, surgery, or reagent contact.
 
-GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 
 /datum/material/proc/dq_apply_material_responses(obj/item/item)
 	if(!item)
@@ -28,9 +27,9 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		existing.armor_form = armor_form
 		existing.tool_form = tool_form
 		existing.stored_reactive_energy = min(existing.stored_reactive_energy, reactive_energy_capacity)
-		GLOB.material_radiovoltaic_items -= item
+		registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, item)
 		if(electrical_form && (radiovoltaic_efficiency || scintillation_efficiency))
-			GLOB.material_radiovoltaic_items |= item
+			registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, item)
 	else if(needs_response)
 		item.AddComponent(/datum/component/material_response, src, electrical_form, medical_form, armor_form, tool_form)
 
@@ -48,6 +47,8 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	var/stored_reactive_energy = 0
 	var/scintillation_timer
 
+REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
+
 /datum/component/material_response/Initialize(datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()
 	if(!isitem(parent) || !istype(material))
@@ -64,10 +65,10 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		var/obj/item/item = parent
 		item.create_reagents(material.reagent_porosity)
 	if(electrical_form && (material.radiovoltaic_efficiency > 0 || material.scintillation_efficiency > 0))
-		GLOB.material_radiovoltaic_items += parent
+		registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
 
 /datum/component/material_response/Destroy(force)
-	GLOB.material_radiovoltaic_items -= parent
+	registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
 	if(scintillation_timer)
 		deltimer(scintillation_timer)
 		scintillation_timer = null

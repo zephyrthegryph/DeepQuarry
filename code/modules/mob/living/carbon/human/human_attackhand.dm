@@ -610,10 +610,10 @@
 		visible_message(span_warning("\The [src]'s body convulses a bit."))
 
 		// REVIVE TIME, basically stolen from defib.dm
-		GLOB.dead_mob_list.Remove(src)
-		if((src in GLOB.living_mob_list) || (src in GLOB.dead_mob_list))
+		registry_leave(REGISTRY_DEAD_MOBS, src)
+		if((src in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (src in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
 			WARNING("Mob [src] was cpr revived by [reviver], but already in the living or dead list still!")
-		GLOB.living_mob_list += src
+		registry_join(REGISTRY_LIVING_MOBS, src)
 
 		timeofdeath = 0
 		set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.

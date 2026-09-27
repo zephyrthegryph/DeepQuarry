@@ -15,11 +15,11 @@ outside the allowlist in sec 4.11 ("What stays").
     stoplag          stoplag(                      -> a lane with a budget
     prompts          input( alert( tgui_input_*( tgui_alert(   -> om_prompt
     set_waitfor      set waitfor                   -> nothing
-    weakref          weakref (any case)            -> relations, or OM handles
+    weakref          weakref (any case)            -> relations, or OM handles (0: deleted)
     del              del(                          -> qdel and the lifecycle verbs
     lc_refs          undeclared object-typed instance vars and lists
 
-LC-refs: a var whose declared type is an object reference (tmp and weakref
+LC-refs: a var whose declared type is an object reference (tmp
 included; static/global/const are not instance state) must be named by its
 type's declared_owned_vars(), declared_owned_list_vars(), declared_pair_vars(),
 declared_backlist_vars() or declared_cache_vars() in the same file. Relations

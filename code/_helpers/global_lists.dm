@@ -1,18 +1,7 @@
 //Since it didn't really belong in any other category, I'm putting this here
 //This is for procs to replace all the goddamn 'in world's that are chilling around the code
 
-GLOBAL_LIST_EMPTY(player_list)						//List of all mobs **with clients attached**. Excludes /mob/new_player
-GLOBAL_LIST_EMPTY(mob_list)							//List of all mobs, including clientless
-GLOBAL_LIST_EMPTY(human_mob_list)					//List of all human mobs and sub-types, including clientless
-GLOBAL_LIST_EMPTY(silicon_mob_list)					//List of all silicon mobs, including clientless
-GLOBAL_LIST_EMPTY(ai_list)							//List of all AIs, including clientless
-GLOBAL_LIST_EMPTY(living_mob_list)					//List of all alive mobs, including clientless. Excludes /mob/new_player
-GLOBAL_LIST_EMPTY(dead_mob_list)					//List of all dead mobs, including clientless. Excludes /mob/new_player
-GLOBAL_LIST_EMPTY(observer_mob_list)				//List of all /mob/observer/dead, including clientless.
-GLOBAL_LIST_EMPTY(listening_objects)				//List of all objects which care about receiving messages (communicators, radios, etc)
-GLOBAL_LIST_EMPTY(cleanbot_reserved_turfs)			//List of all turfs currently targeted by some cleanbot
 
-GLOBAL_LIST_EMPTY(landmarks_list)					//list of all landmarks created
 GLOBAL_LIST_EMPTY(event_triggers)					//Associative list of creator_ckey:list(landmark references) for event triggers
 
 
@@ -41,8 +30,6 @@ GLOBAL_LIST_EMPTY(respawn_timers)
 
 // Holomaps
 GLOBAL_LIST_EMPTY(holomap_markers)
-GLOBAL_LIST_EMPTY(mapping_units)
-GLOBAL_LIST_EMPTY(mapping_beacons)
 
 //Preferences stuff
 	//Hairstyles
@@ -435,7 +422,6 @@ GLOBAL_LIST_INIT(reagent_containers_can_be_placed_into, list(
 	),
 ))
 
-GLOBAL_LIST_EMPTY(item_tf_spawnpoints) // Global variable tracking which items are item tf spawnpoints
 
 // Options for transforming into a different mob in virtual reality.
 GLOBAL_LIST_INIT(vr_mob_tf_options, list(
@@ -1194,9 +1180,7 @@ GLOBAL_LIST_INIT(allows_eye_color, list(
 
 
 GLOBAL_LIST_EMPTY(entopic_images)
-GLOBAL_LIST_EMPTY(entopic_users)
 
-GLOBAL_LIST_EMPTY(alt_farmanimals)
 
 GLOBAL_ALIST_INIT(available_recipes, build_kitchen_recipes()) //List of all recipies. THIS MUST COME FIRST before acceptable_items and acceptable_reagents because it is used to build those lists.
 GLOBAL_LIST_INIT(acceptable_items, build_kitchen_items()) // List of the items you can put in
@@ -1662,7 +1646,6 @@ GLOBAL_LIST_EMPTY(everyone_traits_negative)	// Neutral traits available to all s
 GLOBAL_LIST_EMPTY(traits_costs)		// Just path = cost list, saves time in char setup
 GLOBAL_LIST_EMPTY(all_traits)			// All of 'em at once (same instances)
 
-GLOBAL_LIST_EMPTY(active_ghost_pods) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_gatewaystation) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_plainspath) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_fueldepot) //NYI - Used downstream
@@ -2301,7 +2284,6 @@ GLOBAL_LIST_INIT(alt_titles_with_icons, list(
 				JOB_ALT_FIREFIGHTER,
 				JOB_ALT_BARISTA))
 
-GLOBAL_LIST_EMPTY(existing_solargrubs)
 
 /hook/startup/proc/init_vore_datum_ref_lists()
 	var/paths

@@ -13,8 +13,8 @@
 /datum/board_game/four_row
 	name = GAME_FOUR_ROW
 	table_icon = "gamble_four"
-	var/datum/weakref/player_one
-	var/datum/weakref/player_two
+	var/player_one
+	var/player_two
 	var/list/placed_chips_pone
 	var/list/placed_chips_ptwo
 	var/list/winning_tiles
@@ -43,8 +43,8 @@
 	)
 
 /datum/board_game/four_row/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/player_one_mob = player_one?.resolve()
-	var/mob/player_two_mob = player_two?.resolve()
+	var/mob/player_one_mob = om_resolve(player_one)
+	var/mob/player_two_mob = om_resolve(player_two)
 
 	return list(
 		"player_one" = player_one_mob,
@@ -71,31 +71,31 @@
 		if("be_player_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_one?.resolve() == ui.user)
+			if(om_resolve(player_one) == ui.user)
 				player_one = null
 				return TRUE
-			player_one = WEAKREF(ui.user)
+			player_one = om_handle(ui.user)
 			return TRUE
 		if("be_player_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_two?.resolve() == ui.user)
+			if(om_resolve(player_two) == ui.user)
 				player_two = null
 				return TRUE
-			player_two = WEAKREF(ui.user)
+			player_two = om_handle(ui.user)
 			return TRUE
 		if("swap_players")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
-			var/datum/weakref/temp_player = player_one
+			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
 		if("set_color_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_one?.resolve() != ui.user)
+			if(om_resolve(player_one) != ui.user)
 				return FALSE
 			var/new_color = params["color"]
 			if(new_color == player_two_color)
@@ -107,7 +107,7 @@
 		if("set_color_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(player_two?.resolve() != ui.user)
+			if(om_resolve(player_two) != ui.user)
 				return FALSE
 			var/new_color = params["color"]
 			if(new_color == player_one_color)
@@ -133,34 +133,34 @@
 		if("start_game")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			game_state = GAME_PLAYER_ONE
 			return TRUE
 		if("play_again")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
 			return TRUE
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!player_one?.resolve() || !player_two?.resolve())
+			if(!om_resolve(player_one) || !om_resolve(player_two))
 				return FALSE
 			reset()
-			var/datum/weakref/temp_player = player_one
+			var/temp_player = player_one
 			player_one = player_two
 			player_two = temp_player
 			return TRUE
 		if("game_action")
-			if(ui.user == player_one?.resolve() && game_state == GAME_PLAYER_ONE)
+			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
 				if(player_actions(params["action"], params["data"], ui.user))
 					if(game_state < GAME_OVER)
 						game_state = GAME_PLAYER_TWO
 					return TRUE
-			if(ui.user == player_two?.resolve() && game_state == GAME_PLAYER_TWO)
+			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
 				if(player_actions(params["action"], params["data"], ui.user))
 					if(game_state < GAME_OVER)
 						game_state = GAME_PLAYER_ONE

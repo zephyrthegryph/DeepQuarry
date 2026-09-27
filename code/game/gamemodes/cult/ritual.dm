@@ -68,12 +68,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	. = ..()
 	blood_image = image(loc = src)
 	blood_image.override = 1
-	for(var/mob/living/silicon/ai/our_ai in GLOB.player_list)
+	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			our_ai.client.images += blood_image
 
 /obj/effect/rune/Destroy()
-	for(var/mob/living/silicon/ai/our_ai in GLOB.player_list)
+	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			our_ai.client.images -= blood_image
 	qdel(blood_image)

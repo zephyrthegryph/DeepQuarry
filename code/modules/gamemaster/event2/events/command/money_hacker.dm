@@ -10,7 +10,7 @@
 
 	if(!command)
 		return 0
-	return 30 + (command * 20) + (GLOB.all_money_accounts.len * 5)
+	return 30 + (command * 20) + (REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS) * 5)
 
 
 
@@ -20,8 +20,8 @@
 	var/datum/money_account/targeted_account = null
 
 /datum/event2/event/money_hacker/set_up()
-	if(LAZYLEN(GLOB.all_money_accounts))
-		targeted_account = pick(GLOB.all_money_accounts)
+	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
+		targeted_account = pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 
 	if(!targeted_account)
 		log_game("Money hacker event could not find an account to hack. Aborting.")

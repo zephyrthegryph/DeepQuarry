@@ -9,7 +9,7 @@ SUBSYSTEM_DEF(lobby_monitor)
 	var/to_reinitialize = list()
 
 /datum/controller/subsystem/lobby_monitor/fire(resumed)
-	var/list/new_players = GLOB.new_player_list
+	var/list/new_players = REGISTRY_MEMBERS(REGISTRY_NEW_PLAYERS)
 
 	for(var/mob/new_player/player as anything in to_reinitialize)
 		if(!player.client)

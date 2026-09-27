@@ -129,10 +129,10 @@
 	if(!istype(H))
 		return 0
 
-	GLOB.dead_mob_list.Remove(H)
-	if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
+	registry_leave(REGISTRY_DEAD_MOBS, H)
+	if((H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (H in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
 		WARNING("Mob [H] was ring-defibbed but already in the living or dead list still!")
-	GLOB.living_mob_list += H
+	registry_join(REGISTRY_LIVING_MOBS, H)
 
 	H.timeofdeath = 0
 	H.set_stat(UNCONSCIOUS)

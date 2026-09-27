@@ -706,10 +706,10 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		tank.update_icon()
 		tank.cut_overlay("bomb_assembly")
 
-/obj/item/tankassemblyproxy/HasProximity(turf/T, datum/weakref/WF, old_loc)
+/obj/item/tankassemblyproxy/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = WF.resolve()
+	var/atom/movable/AM = om_resolve(WF)
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

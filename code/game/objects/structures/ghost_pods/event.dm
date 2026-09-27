@@ -1,5 +1,5 @@
 /obj/structure/ghost_pod/proc/reset_ghostpod()	//Makes the ghost pod usable again and re-adds it to the active ghost pod list if it is not on it.
-	GLOB.active_ghost_pods |= src
+	registry_join(REGISTRY_GHOST_PODS, src)
 	used = FALSE
 	busy = FALSE
 
@@ -112,7 +112,7 @@
 
 /obj/structure/ghost_pod/ghost_activated/maintpred/redgate/Initialize(mapload)
 	. = ..()
-	GLOB.active_ghost_pods += src
+	registry_join(REGISTRY_GHOST_PODS, src)
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker
 	name = "strange maintenance hole"
@@ -196,7 +196,7 @@
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/Initialize(mapload)
 	. = ..()
-	GLOB.active_ghost_pods += src
+	registry_join(REGISTRY_GHOST_PODS, src)
 
 /// redspace variant
 

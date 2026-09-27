@@ -13,9 +13,12 @@
 		return TRUE
 	return FALSE
 
-/obj/item/gripper/proc/update_ref(datum/weakref/new_ref)
+/obj/item/gripper/proc/update_ref(obj/item/new_item)
 	var/had_item = get_wrapped_item()
-	WR = new_ref
+	if(new_item)
+		om_link(src, new_item, /datum/om/relation/gripper_holding)
+	else if(had_item)
+		om_unlink(src, had_item, /datum/om/relation/gripper_holding)
 	var/holding_item = get_wrapped_item()
 	// Feedback
 	update_icon()
@@ -32,7 +35,7 @@
 	SIGNAL_HANDLER
 	gripper_in_use = TRUE
 
-///Allows use of the gripper (and clears the weakref) after do_after is completed. Clears the weakref if the wrapped item is no longer in our borg's contents (items get moved into the borgs contents when using the gripper)
+///Allows use of the gripper (and lets go of the item) after do_after is completed. Lets go if the wrapped item is no longer in our borg's contents (items get moved into the borgs contents when using the gripper)
 /obj/item/gripper/proc/end_using()
 	SIGNAL_HANDLER
 	gripper_in_use = FALSE
@@ -41,7 +44,7 @@
 		return
 	//Checks two things:
 	//Is our wrapped object currently in our borg still?
-	//AND Is it not a gripper pocket? If not, reset WR.
+	//AND Is it not a gripper pocket? If not, let go of it.
 	if(item_left_gripper(wrapped))
 		update_ref(null)
 
@@ -99,7 +102,7 @@
 				clear_and_select_pocket() //Pick the next open pocket.
 				return
 
-			update_ref(WEAKREF(selected_pocket))
+			update_ref(selected_pocket)
 			return
 
 		current_pocket = selected_pocket
@@ -158,7 +161,7 @@
 
 	if(use_item(target, user, wrapped)) //Already have an item.
 		return
-	update_ref(WEAKREF(wrapped))
+	update_ref(wrapped)
 
 	if(pick_up_item(target, user))
 		return
@@ -198,11 +201,11 @@
 		var/obj/item/reagent_containers/wrapped_container = wrapped
 		if(wrapped_container.reagents?.total_volume != original_amount || (istype(target, /obj/item/reagent_containers)))
 			wrapped.loc = previous_pocket
-			update_ref(WEAKREF(wrapped))
+			update_ref(wrapped)
 			return TRUE
 
 	wrapped.loc = previous_pocket
-	update_ref(WEAKREF(wrapped))
+	update_ref(wrapped)
 	return FALSE
 
 /obj/item/gripper/proc/pick_up_item(atom/target, mob/user)
@@ -234,7 +237,7 @@
 
 	to_chat(user, "You collect \the [I].")
 	current_pocket = selected_pocket
-	update_ref(WEAKREF(I))
+	update_ref(I)
 	return TRUE
 
 /obj/item/gripper/proc/handle_afterattack_special(atom/target, mob/living/user)
@@ -331,7 +334,7 @@
 		if(!LAZYLEN(P.contents))
 			continue
 		var/obj/item/next_item = P.contents[1]
-		update_ref(WEAKREF(next_item))
+		update_ref(next_item)
 		return
 
 /obj/item/gripper/proc/drop_item(mob/user)
@@ -416,7 +419,7 @@
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no
 /obj/item/gripper/proc/get_wrapped_item() //done as a proc so snowflake code can be found later down the line and consolidated.
-	var/obj/item/wrapped = WR?.resolve()
+	var/obj/item/wrapped = GRIPPER_HELD(src)
 	return wrapped
 
 /// Consolidates material stacks by searching our pockets to see if we currently have any stacks. Done in /obj/item/stack/attackby
@@ -447,5 +450,5 @@
 	cell.forceMove(P)
 
 	current_pocket = P
-	update_ref(WEAKREF(cell))
+	update_ref(cell)
 	return TRUE

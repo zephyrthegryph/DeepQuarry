@@ -1423,7 +1423,7 @@
 		return
 
 	last_special = world.time + (5 SECONDS) //don't spam check the global list pls
-	for(var/mob/checkplayer in GLOB.player_list)
+	for(var/mob/checkplayer in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(checkplayer == src)
 			continue
 		if(!checkplayer.client) //no client, no problem

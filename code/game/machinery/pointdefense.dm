@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	var/last_shot = 0
 	var/kill_range = 18
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
-	var/datum/weakref/engaging = null // The meteor we're shooting at
+	var/engaging = null // The meteor we're shooting at
 	var/id_tag = null
 	var/fire_sounds = list('sound/weapons/frigate_turret/frigate_turret_fire1.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire2.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire3.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire4.ogg')
 
@@ -185,8 +185,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 			return FALSE
 	return TRUE
 
-/obj/machinery/pointdefense/proc/Shoot(datum/weakref/target)
-	var/obj/effect/meteor/M = target.resolve()
+/obj/machinery/pointdefense/proc/Shoot(target)
+	var/obj/effect/meteor/M = om_resolve(target)
 	if(!istype(M))
 		engaging = null
 		return
@@ -199,7 +199,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 
 	set_dir(ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH)
 
-/obj/machinery/pointdefense/proc/finish_shot(datum/weakref/target)
+/obj/machinery/pointdefense/proc/finish_shot(target)
 
 	var/obj/machinery/pointdefense_control/PC = get_controller()
 	engaging = null
@@ -207,7 +207,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		PC.targets -= target
 
 	last_shot = world.time
-	var/obj/effect/meteor/M = target.resolve()
+	var/obj/effect/meteor/M = om_resolve(target)
 	if(!istype(M))
 		return
 	//We throw a laser but it doesnt have to hit for meteor to explode
@@ -250,15 +250,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 
 	// Compile list of known targets
 	var/list/existing_targets = list()
-	for(var/datum/weakref/WR in PC.targets)
-		var/obj/effect/meteor/M = WR.resolve()
+	for(var/WR in PC.targets)
+		var/obj/effect/meteor/M = om_resolve(WR)
 		existing_targets += M
 
 	// First, try and acquire new targets
 	var/list/potential_targets = REGISTRY_COPY(REGISTRY_METEORS) - existing_targets
 	for(var/obj/effect/meteor/M in potential_targets)
 		if(targeting_check(M))
-			var/datum/weakref/target = WEAKREF(M)
+			var/target = om_handle(M)
 			PC.targets += target
 			engaging = target
 			Shoot(target)
@@ -267,7 +267,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	// Then, focus fire on existing targets
 	for(var/obj/effect/meteor/M in existing_targets)
 		if(targeting_check(M))
-			var/datum/weakref/target = WEAKREF(M)
+			var/target = om_handle(M)
 			engaging = target
 			Shoot(target)
 			return

@@ -3,8 +3,8 @@
  * and apply it as an overlay of the action button
  */
 /datum/component/action_item_overlay
-	/// Weakref to what item the component uses to apply as an overlay.
-	var/datum/weakref/item_ref
+	/// OM handle to what item the component uses to apply as an overlay.
+	var/item_ref
 	/// Callback that dictates what item the component uses to apply as an overlay.
 	var/datum/callback/item_callback
 
@@ -19,7 +19,7 @@
 		stack_trace("[type] created without a reference item or an item callback - one or the other is required.")
 		return COMPONENT_INCOMPATIBLE
 
-	src.item_ref = WEAKREF(item)
+	src.item_ref = om_handle(item)
 	src.item_callback = item_callback
 
 /datum/component/action_item_overlay/Destroy(force)
@@ -53,7 +53,7 @@
 		item_appearance = null
 		return
 
-	var/atom/movable/muse = item_callback?.Invoke() || item_ref?.resolve()
+	var/atom/movable/muse = item_callback?.Invoke() || om_resolve(item_ref)
 	if(!istype(muse))
 		return
 

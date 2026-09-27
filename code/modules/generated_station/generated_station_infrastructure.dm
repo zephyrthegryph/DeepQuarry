@@ -28,13 +28,13 @@
 	max_integrity = 100
 	var/station_id
 	var/department_id
-	var/datum/weakref/defense_runtime_ref
-	var/datum/weakref/camera_ref
+	var/defense_runtime_ref
+	var/camera_ref
 
 /// Camera software calls this when it positively identifies an intruder.
 /obj/machinery/generated_station_data_relay/proc/report_hostile(atom/contact, confidence = 80)
-	var/datum/generated_station_defense_runtime/runtime = defense_runtime_ref?.resolve()
-	var/obj/machinery/camera/camera = camera_ref?.resolve()
+	var/datum/generated_station_defense_runtime/runtime = om_resolve(defense_runtime_ref)
+	var/obj/machinery/camera/camera = om_resolve(camera_ref)
 	if(!runtime || !camera || QDELETED(camera) || (camera.stat & (BROKEN | NOPOWER)) || !can_see(camera, contact, 7))
 		return null
 	return runtime?.notify_sensor_contact(department_id, contact, "camera relay", confidence)
@@ -116,6 +116,6 @@
 		station_materialization.infrastructure += relay
 		var/obj/machinery/camera/camera = new(camera_placement)
 		camera.set_dir(turn(generated_station_adjacent_wall_direction(camera_placement), 180))
-		relay.camera_ref = WEAKREF(camera)
+		relay.camera_ref = om_handle(camera)
 		station_materialization.infrastructure += camera
 	return TRUE

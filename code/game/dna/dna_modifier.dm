@@ -69,7 +69,7 @@
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
 	var/locked = 0
-	VAR_PRIVATE/datum/weakref/weakref_occupant = null
+	VAR_PRIVATE/occupant_handle = null
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/opened = 0
 	var/damage_coeff
@@ -109,14 +109,14 @@
 /obj/machinery/dna_scannernew/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		weakref_occupant = null
+		occupant_handle = null
 		return
-	weakref_occupant = WEAKREF(L)
+	occupant_handle = om_handle(L)
 
 /obj/machinery/dna_scannernew/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return weakref_occupant?.resolve()
+	return om_resolve(occupant_handle)
 
 /obj/machinery/dna_scannernew/RefreshParts()
 	scan_level = 0
@@ -275,7 +275,7 @@
 		|| locate(/obj/machinery/computer/cloning, get_step(src, WEST)))
 
 		if(!M.client && M.mind)
-			for(var/mob/observer/dead/ghost in GLOB.player_list)
+			for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(ghost.mind == M.mind)
 					to_chat(ghost, span_interface(span_large(span_bold("Your corpse has been placed into a cloning scanner. Return to your body if you want to be resurrected/cloned!") + " (Verbs -> Ghost -> Re-enter corpse)")))
 					break

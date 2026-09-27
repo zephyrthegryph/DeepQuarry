@@ -5,7 +5,7 @@
 //   - REF_OWNED / REF_OWNED_LIST   a child that isn't contained, deleted in phase 4
 //   - REF_PAIR                 two-sided; link_set()/link_clear() keep both sides in sync
 //   - REF_BACKLIST             membership in another object's list, removed automatically
-//   - weak (datum/weakref)     the default for everything else -- resolved on read, never cleaned
+//   - handle (om_handle())     the default for everything else -- resolved on read, never cleaned
 //   - tmp cache                recomputable; scrubbed in phase 8
 //
 // A type declares its kinds by overriding one or more of the four procs

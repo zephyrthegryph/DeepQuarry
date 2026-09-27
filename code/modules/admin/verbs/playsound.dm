@@ -36,7 +36,7 @@ ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all play
 	log_admin("[key_name(user)] played sound [S]")
 	message_admins("[key_name_admin(user)] played sound [S]", 1)
 
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.read_preference(/datum/preference/toggle/play_admin_midis))
 			admin_sound.volume = vol * M.client.admin_music_volume
 			SEND_SOUND(M, admin_sound)
@@ -51,7 +51,7 @@ ADMIN_VERB(play_local_sound, R_SOUNDS, "Play Local Sound", "Plays a sound around
 	feedback_add_details("admin_verb", "Play Local Sound")
 
 ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a sound to a single mob.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
-	var/mob/target_mob = tgui_input_list(user, "Choose a mob to play the sound to. Only they will hear it.", "Play Mob Sound", sortNames(GLOB.player_list))
+	var/mob/target_mob = tgui_input_list(user, "Choose a mob to play the sound to. Only they will hear it.", "Play Mob Sound", sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
 	if(QDELETED(target_mob))
 		return
 	log_admin("[key_name(user)] played a direct mob sound [S] to [target_mob].")
@@ -71,7 +71,7 @@ ADMIN_VERB(play_z_sound, R_SOUNDS, "Play Z Sound", "Plays a sound to a single z-
 
 	log_admin("[key_name(user)] played sound [S] on Z[target_z]")
 	message_admins("[key_name_admin(user)] played sound [S] on Z[target_z]", 1)
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.read_preference(/datum/preference/toggle/play_admin_midis) && M.z == target_z)
 			M << uploaded_sound
 
@@ -176,7 +176,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 
 		return
 	if(web_sound_url || stop_web_sounds)
-		for(var/m in GLOB.player_list)
+		for(var/m in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			var/mob/M = m
 			var/client/C = M.client
 			if(!C)
@@ -216,7 +216,7 @@ ADMIN_VERB(play_web_sound, R_SOUNDS, "Play Internet Sound", "Plays a sound from 
 
 ADMIN_VERB(stop_sounds, R_SOUNDS, "Stop All Playing Sounds", "Stops all playing sounds.", ADMIN_CATEGORY_FUN_SOUNDS)
 	log_and_message_admins("stopped all currently playing sounds.", user)
-	for(var/mob/current_mob in GLOB.player_list)
+	for(var/mob/current_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		SEND_SOUND(current_mob, sound(null))
 		var/client/current_client = current_mob.client
 		current_client?.tgui_panel?.stop_music()

@@ -1,6 +1,5 @@
 // This file holds things required for remote borg control by an AI.
 
-GLOBAL_LIST_EMPTY(available_ai_shells)
 
 /mob/living/silicon/robot
 	var/shell = FALSE
@@ -24,6 +23,8 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 		playsound(src, 'sound/voice/liveagain.ogg', 75, 1)
 	return
 
+REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
+
 /mob/living/silicon/robot/proc/make_shell()
 	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
 	shell = TRUE
@@ -31,7 +32,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 	SetName("[modtype] AI Shell [num2text(ident)]")
 	rbPDA = new /obj/item/pda/ai/shell(src)
 	setup_PDA()
-	GLOB.available_ai_shells |= src
+	registry_join(REGISTRY_AI_SHELLS, src)
 	if(!QDELETED(camera))
 		camera.c_tag = real_name	//update the camera name too
 	notify_ai(ROBOT_NOTIFICATION_AI_SHELL)
@@ -64,7 +65,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 		return
 
 	var/list/possible = list()
-	for(var/mob/living/silicon/robot/R as anything in GLOB.available_ai_shells)
+	for(var/mob/living/silicon/robot/R as anything in REGISTRY_MEMBERS(REGISTRY_AI_SHELLS))
 		if(R != src && R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == AI) ) ) // shell restrictions
 			if(istype(R.loc, /obj/machinery/recharge_station))	//Check Rechargers
 				var/obj/machinery/recharge_station/RS = R.loc
@@ -133,7 +134,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 	remove_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act ) // remove sideloader //
 	undeploy()
 	shell = FALSE
-	GLOB.available_ai_shells -= src
+	registry_leave(REGISTRY_AI_SHELLS, src)
 	if(!QDELETED(camera))
 		camera.c_tag = real_name
 	update_icon()

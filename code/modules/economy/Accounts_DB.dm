@@ -130,8 +130,8 @@
 		data["transactions"] = trx
 
 	var/list/accounts = list()
-	for(var/i in 1 to LAZYLEN(GLOB.all_money_accounts))
-		var/datum/money_account/D = GLOB.all_money_accounts[i]
+	for(var/i in 1 to REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
+		var/datum/money_account/D = REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[i]
 		if(D.offmap)
 			continue
 		accounts.Add(list(list(\
@@ -207,8 +207,8 @@
 
 		if("view_account_detail")
 			var/index = text2num(params["account_index"])
-			if(index && index <= GLOB.all_money_accounts.len)
-				detailed_account_view = GLOB.all_money_accounts[index]
+			if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
+				detailed_account_view = REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index]
 
 		if("view_accounts_list")
 			detailed_account_view = null
@@ -285,8 +285,8 @@
 				<tbody>
 		"}
 
-		for(var/i=1, i <= GLOB.all_money_accounts.len, i++)
-			var/datum/money_account/D = GLOB.all_money_accounts[i]
+		for(var/i=1, i <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS), i++)
+			var/datum/money_account/D = REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[i]
 			text += {"
 					<tr>
 						<td>#[D.account_number]</td>

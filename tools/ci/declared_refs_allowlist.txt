@@ -1,9 +1,9 @@
 # Undeclared object-typed vars (roadmap L2, doc/rewrite/lifecycle.md sec 4).
 # tools/ci/declared_refs_lint.py reads this file: a file may not exceed its
 # count, and files not listed may have none. Declare the var as REF_OWNED/
-# REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or a weakref) and
+# REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2576 vars in 1163 files.
+# Total: 2575 vars in 1163 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -394,7 +394,7 @@ code/game/objects/items/shooting_range.dm 1
 code/game/objects/items/stacks/stack.dm 1
 code/game/objects/items/stacks/tiles/tile_types.dm 1
 code/game/objects/items/toys/toys.dm 3
-code/game/objects/items/uav.dm 3
+code/game/objects/items/uav.dm 2
 code/game/objects/items/weapons/AI_modules.dm 1
 code/game/objects/items/weapons/RCD.dm 2
 code/game/objects/items/weapons/RMS.dm 1

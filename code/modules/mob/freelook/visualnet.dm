@@ -10,11 +10,9 @@
 
 /datum/visualnet/New()
 	..()
-	GLOB.visual_nets += src
+	join_registries()
 
-/datum/visualnet/Destroy()
-	GLOB.visual_nets -= src
-	return ..()
+REGISTRY_MEMBERSHIP(/datum/visualnet, REGISTRY_VISUAL_NETS)
 
 // Checks if a chunk has been Generated in x, y, z.
 /datum/visualnet/proc/chunkGenerated(x, y, z)

@@ -141,7 +141,7 @@
 				continue
 			sendPDAs["[P.name]"] = "\ref[P]"
 		data["possibleRecipients"] = sendPDAs
-	var/mob/living/original = user.mind.original_character?.resolve()
+	var/mob/living/original = om_resolve(user.mind.original_character)
 	data["isMalfAI"] = ((isAI(user) || isrobot(user)) && (user.mind.special_role && (original && original == user)))
 
 	return data
@@ -218,7 +218,7 @@
 				temp = noserver
 		//Hack the Console to get the password
 		if("hack")
-			var/mob/living/original = ui.user.mind.original_character?.resolve()
+			var/mob/living/original = om_resolve(ui.user.mind.original_character)
 			if((isAI(ui.user) || isrobot(ui.user)) && (ui.user.mind.special_role && (original && original == ui.user)))
 				hacking = 1
 				update_icon()

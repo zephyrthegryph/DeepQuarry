@@ -18,7 +18,7 @@
 	var/mob/living/L = null
 	if(exterior_modifier)
 		if(origin)
-			L = origin.resolve()
+			L = om_resolve(origin)
 		else
 			expire()
 			return
@@ -35,7 +35,7 @@
 		var/mob/living/L = null
 
 		if(exterior_modifier)
-			L = origin.resolve()
+			L = om_resolve(origin)
 
 		else
 			L = holder
@@ -56,7 +56,7 @@
 	var/mob/living/L = null
 
 	if(exterior_modifier)
-		L = origin.resolve()
+		L = om_resolve(origin)
 
 	else
 		L = holder
@@ -81,7 +81,7 @@
 	var/mob/living/L = null
 
 	if(exterior_modifier)
-		L = origin.resolve()
+		L = om_resolve(origin)
 
 	else
 		L = holder

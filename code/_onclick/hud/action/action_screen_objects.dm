@@ -16,9 +16,9 @@
 	var/location = SCRN_OBJ_DEFAULT
 	/// A unique bitflag, combined with the name of our linked action this lets us persistently remember any user changes to our position
 	var/id
-	/// A weakref of the last thing we hovered over
+	/// An OM handle of the last thing we hovered over
 	/// God I hate how dragging works
-	var/datum/weakref/last_hovored_ref
+	var/last_hovored_ref
 
 /atom/movable/screen/movable/action_button/Destroy()
 	if(our_hud)
@@ -65,12 +65,12 @@
 	. = ..()
 	if(!can_use(usr))
 		return
-	if(IS_WEAKREF_OF(over_object, last_hovored_ref))
+	if((om_handle(over_object) == last_hovored_ref))
 		return
 
 	var/atom/old_object
 	if(last_hovored_ref)
-		old_object = last_hovored_ref.resolve()
+		old_object = om_resolve(last_hovored_ref)
 	else // If there is no current ref, we assume it was us. We also treat this as our "first go" location.
 		old_object = src
 		var/datum/hud/our_hud = usr.hud_used
@@ -79,7 +79,7 @@
 	if(old_object)
 		old_object.MouseExited(over_location, over_control, params)
 
-	last_hovored_ref = WEAKREF(over_object)
+	last_hovored_ref = om_handle(over_object)
 	over_object?.MouseEntered(over_location, over_control, params)
 
 /atom/movable/screen/movable/action_button/MouseEntered(location, control, params)

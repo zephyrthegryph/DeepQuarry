@@ -111,7 +111,7 @@
 	if(occupant.stat == DEAD && !occupant.client)
 		return
 
-	if(QDELETED(avatar)) //This REALLY needs to be changed to weakrefs
+	if(QDELETED(avatar)) //This REALLY needs to be changed to an OM handle
 		avatar = null
 
 	if(avatar && !occupant.stat)

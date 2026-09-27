@@ -354,7 +354,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	Refresh()
 	var/datum/disease/advance/A = GLOB.archive_diseases[GetDiseaseID()]
 	A.name = new_name
-	for(var/datum/disease/advance/AD in GLOB.active_diseases)
+	for(var/datum/disease/advance/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
 		AD.Refresh()
 
 // Return a unique ID of the disease.
@@ -512,10 +512,10 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		D.AssignName(new_name)
 		D.Finalize()
 
-		for(var/datum/disease/advance/AD in GLOB.active_diseases)
+		for(var/datum/disease/advance/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
 			AD.Refresh()
 
-		H = tgui_input_list(user, "Choose infectee", "Infectees", GLOB.human_mob_list)
+		H = tgui_input_list(user, "Choose infectee", "Infectees", REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
 		if(isnull(H))
 			return FALSE
@@ -545,7 +545,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		A.initial = FALSE
 	infectee.addDisease(A)
 	A.affected_mob = infectee
-	GLOB.active_diseases += A
+	registry_join(REGISTRY_ACTIVE_DISEASES, A)
 
 	log_admin("[key_name(src)] has contracted the virus \"[A]\"")
 

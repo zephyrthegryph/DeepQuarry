@@ -47,7 +47,7 @@
 		imp_in = source
 		forceMove(source)
 
-	GLOB.listening_objects |= src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 // Takes place after handle_implant, if that returns TRUE
 /obj/item/implant/proc/post_implant(mob/source)
@@ -81,7 +81,6 @@
 	// The implant site slot's teardown (destroy transaction phase 5, before
 	// Destroy(), OM relations step 2) already cleared part/imp_in and this
 	// implant's entry in the organ's implants list, if it had one.
-	GLOB.listening_objects.Remove(src)
 	return ..()
 
 /obj/item/implant/attackby(obj/item/I, mob/user)

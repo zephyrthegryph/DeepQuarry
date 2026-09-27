@@ -230,7 +230,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/closed_at
 
 	var/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
-	var/datum/weakref/handler_ref
+	var/handler_ref
 	var/handler = "/Unassigned\\" // The admin handling the ticket
 	var/initiator_ckey
 	var/initiator_key_name
@@ -552,7 +552,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	handler = handler_name
 	if(ismob(user))
 		var/mob/our_handler_mob = user
-		handler_ref = WEAKREF(our_handler_mob.client)
+		handler_ref = om_handle(our_handler_mob.client)
 
 /datum/ticket/proc/Retitle()
 	var/new_title = tgui_input_text(usr, "Enter a title for the ticket", "Rename Ticket", name)
@@ -701,7 +701,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	var/list/forenames = list()
 	var/list/ckeys = list()
 	var/founds = ""
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		var/list/indexing = list(M.real_name, M.name)
 		if(M.mind)
 			indexing += M.mind.name

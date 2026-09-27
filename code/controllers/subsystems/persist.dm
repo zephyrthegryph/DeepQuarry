@@ -24,8 +24,8 @@ SUBSYSTEM_DEF(persist)
 		src.currentrun.Cut()
 		return
 	if(!resumed)
-		src.currentrun = GLOB.human_mob_list.Copy()
-		src.currentrun += GLOB.silicon_mob_list.Copy()
+		src.currentrun = REGISTRY_COPY(REGISTRY_HUMANS)
+		src.currentrun += REGISTRY_COPY(REGISTRY_SILICONS)
 
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun

@@ -235,7 +235,7 @@
 	brainmob.container = src
 	brainmob.stat = 0
 	brainmob.status_set(EFFECT_MUTED, 0)
-	GLOB.dead_mob_list -= brainmob
+	registry_leave(REGISTRY_DEAD_MOBS, brainmob)
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
 

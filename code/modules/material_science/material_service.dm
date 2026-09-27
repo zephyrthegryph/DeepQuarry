@@ -252,7 +252,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		UnregisterSignal(watched_turf, COMSIG_TURF_CHANGE)
 		watched_turf = null
 	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
-	// weakref, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
+	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
 	// to work around here.
 	for(var/id in mixture_ids)
 		om_watch_disarm(src, "gas[id]")

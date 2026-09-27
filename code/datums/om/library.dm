@@ -227,6 +227,40 @@
 		if(M.pullin)
 			M.pullin.icon_state = "pull0"
 
+// ---- Live links that used to be weak-reference vars (migration track 1c) ----
+
+/// A bluespace radio -> the telecomms receiver (or all-in-one) it transmits
+/// to. BS_TX_TARGET(radio) / BS_TX_RADIOS(machine). The receiver only accepts
+/// bluespace signals from its BS_TX_RADIOS.
+/datum/om/relation/bluespace_tx_to
+	name = "bluespace transmitter link"
+	source_single = TRUE
+
+/// A bluespace radio -> the telecomms broadcaster (or all-in-one) it receives
+/// from. BS_RX_SOURCE(radio) / BS_RX_RADIOS(machine): the machine forces its
+/// broadcasts onto those radios.
+/datum/om/relation/bluespace_rx_from
+	name = "bluespace receiver link"
+	source_single = TRUE
+
+/// A cyborg gripper -> the item it is wrapping (held out of one of its pockets).
+/// GRIPPER_HELD(gripper). The item leaving (deleted) lets go of it.
+/datum/om/relation/gripper_holding
+	name = "gripper hold"
+	source_single = TRUE
+	target_single = TRUE
+
+/// A mob -> the UAV it is flying through a UAV control program. UAV_MASTERS(uav)
+/// hear what the UAV hears and can move it.
+/datum/om/relation/uav_master
+	name = "UAV control"
+
+/// A stasis modifier -> what holds the mob in that stasis (a bag, pod or NIF).
+/// STASIS_SOURCE(modifier). Stasis applied without a source (admin) has no edge.
+/datum/om/relation/stasis_held_by
+	name = "stasis source"
+	source_single = TRUE
+
 /// consumer -> power source.
 /datum/om/relation/powered_by
 	name = "power source"

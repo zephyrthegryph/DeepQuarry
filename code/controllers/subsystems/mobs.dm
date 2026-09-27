@@ -17,7 +17,7 @@ SUBSYSTEM_DEF(mobs)
 /datum/controller/subsystem/mobs/stat_entry(msg)
 	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
 	var/list/S = GLOB.om_live_sched?.stat_for(life.id)
-	msg = "P: [length(GLOB.mob_list)] | parked: [om_pipeline_parked_count(/datum/om/pipeline/life)] | [S ? round(S[OM_STAT_MS], 1) : 0]ms | D: [length(death_list)]"
+	msg = "P: [REGISTRY_COUNT(REGISTRY_MOBS)] | parked: [om_pipeline_parked_count(/datum/om/pipeline/life)] | [S ? round(S[OM_STAT_MS], 1) : 0]ms | D: [length(death_list)]"
 	return ..()
 
 /datum/controller/subsystem/mobs/fire(resumed = 0)

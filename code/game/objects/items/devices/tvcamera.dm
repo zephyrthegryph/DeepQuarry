@@ -9,13 +9,12 @@
 	var/channel = "NCS Northern Star News Feed"
 	var/obj/machinery/camera/network/thunder/camera
 	var/obj/item/radio/radio
-	var/datum/weakref/showing
+	var/showing
 	var/showing_name
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/tvcamera/Destroy()
-	GLOB.listening_objects -= src
 	qdel(camera)
 	qdel(radio)
 	camera = null
@@ -30,7 +29,7 @@
 
 /obj/item/tvcamera/Initialize(mapload)
 	. = ..()
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	camera = new(src)
 	camera.c_tag = channel
 	camera.status = FALSE
@@ -88,7 +87,7 @@
 	if(showing)
 		hide_tvs(showing)
 
-	showing = WEAKREF(thing)
+	showing = om_handle(thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
@@ -123,7 +122,7 @@
 	if(!showing)
 		return PROCESS_KILL
 
-	var/atom/A = showing.resolve()
+	var/atom/A = om_resolve(showing)
 	if(!A || QDELETED(A))
 		show_tvs(loc)
 
@@ -164,12 +163,11 @@
 	var/channel = "Default Bodycamera Feed"
 	var/obj/machinery/camera/network/bodycamera/bcamera
 	var/obj/item/radio/bradio
-	var/datum/weakref/showing
+	var/showing
 	var/showing_name
 	special_handling = TRUE
 
 /obj/item/clothing/accessory/bodycam/Destroy()
-	GLOB.listening_objects -= src
 	qdel(bcamera)
 	qdel(bradio)
 	bcamera = null
@@ -183,7 +181,7 @@
 
 /obj/item/clothing/accessory/bodycam/Initialize(mapload)
 	. = ..()
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	bcamera = new(src)
 	bcamera.c_tag = channel
 	bcamera.status = FALSE
@@ -248,7 +246,7 @@
 	if(showing)
 		hide_bodycamera_tvs(showing)
 
-	showing = WEAKREF(thing)
+	showing = om_handle(thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
@@ -273,7 +271,7 @@
 	if(!showing)
 		return PROCESS_KILL
 
-	var/atom/A = showing.resolve()
+	var/atom/A = om_resolve(showing)
 	if(!A || QDELETED(A))
 		show_bodycamera_tvs(loc)
 

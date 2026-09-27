@@ -8,7 +8,7 @@
 	danger_mult = 1.1
 
 	/// Who are we moving towards?
-	var/datum/weakref/pursuit_target
+	var/pursuit_target
 	/// Cooldown for every anomaly pulse
 	COOLDOWN_DECLARE(pulse_cooldown)
 	/// How many seconds between each anomaly pulse
@@ -18,7 +18,7 @@
 
 /obj/effect/anomaly/bioscrambler/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
-	pursuit_target = WEAKREF(find_nearest_target())
+	pursuit_target = om_handle(find_nearest_target())
 
 /obj/effect/anomaly/bioscrambler/Destroy()
 	. = ..()
@@ -45,11 +45,11 @@
 	update_target()
 	if(isnull(pursuit_target))
 		return ..()
-	var/turf/step_turf = get_step(src, get_dir(src, pursuit_target.resolve()))
+	var/turf/step_turf = get_step(src, get_dir(src, om_resolve(pursuit_target)))
 	step_to(src, step_turf)
 
 /obj/effect/anomaly/bioscrambler/proc/update_target()
-	var/mob/living/current_target = pursuit_target?.resolve()
+	var/mob/living/current_target = om_resolve(pursuit_target)
 	if(QDELETED(current_target))
 		pursuit_target = null
 	if(!isnull(pursuit_target) && prob(80))
@@ -63,12 +63,12 @@
 	if(isbelly(new_target.loc) || istype(new_target.loc, /area/crew_quarters))
 		return
 	current_target = new_target
-	pursuit_target = WEAKREF(new_target)
+	pursuit_target = om_handle(new_target)
 
 /obj/effect/anomaly/bioscrambler/proc/find_nearest_target()
 	var/closest_distance = INFINITY
 	var/mob/living/carbon/closest_target = null
-	for(var/mob/living/carbon/target in GLOB.player_list)
+	for(var/mob/living/carbon/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(target.z != z)
 			continue
 		if(om_has(target, EFFECT_GODMODE))

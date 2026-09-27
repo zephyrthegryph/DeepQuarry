@@ -8,7 +8,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	update_canmove()
-	GLOB.dead_mob_list -= src
+	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	var/atom/movable/overlay/animation = null
 	animation = new(loc)
@@ -44,7 +44,7 @@
 	flick(anim, animation)
 	new remains(loc)
 
-	GLOB.dead_mob_list -= src
+	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	if (!QDELETED(src))
 		ghostize()
@@ -67,7 +67,7 @@
 
 	flick(anim, animation)
 
-	GLOB.dead_mob_list -= src
+	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	if (!QDELETED(src))
 		ghostize()
@@ -132,8 +132,8 @@
 		if(dead_living.identity)
 			dead_living.identity.time_of_death = world.time
 	if(mind) mind.store_memory("Time of death: [stationtime2text()]", 0)
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list |= src
+	registry_leave(REGISTRY_LIVING_MOBS, src)
+	registry_join(REGISTRY_DEAD_MOBS, src)
 
 	set_respawn_timer()
 	update_icon()

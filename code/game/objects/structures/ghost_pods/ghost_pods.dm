@@ -48,7 +48,7 @@
 /obj/structure/ghost_pod/proc/create_occupant(mob/M)
 	used = TRUE
 	icon_state = icon_state_opened
-	GLOB.active_ghost_pods -= src
+	registry_leave(REGISTRY_GHOST_PODS, src)
 	if(needscharger)
 		new /obj/machinery/recharge_station/ghost_pod_recharger(src.loc)
 		qdel(src)
@@ -118,8 +118,9 @@
 	create_occupant(user)
 
 
+REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
+
 /obj/structure/ghost_pod/Destroy()
-	GLOB.active_ghost_pods -= src
 	. = ..()
 
 /obj/structure/ghost_pod
@@ -166,7 +167,7 @@
 	create_occupant(user)
 
 /obj/structure/ghost_pod/proc/ghostpod_startup(notify = FALSE)
-	GLOB.active_ghost_pods |= src
+	registry_join(REGISTRY_GHOST_PODS, src)
 	if(notify)
 		trigger()
 

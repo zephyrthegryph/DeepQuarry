@@ -97,7 +97,7 @@
 
 	var/obj/item/radio/radio = null
 	var/obj/effect/overlay/vis/pinboard
-	var/datum/weakref/showing
+	var/showing
 
 	var/enabled = TRUE // on or off
 
@@ -172,7 +172,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 		stop_showing()
 	if(stat & NOPOWER)
 		return
-	showing = WEAKREF(thing)
+	showing = om_handle(thing)
 	if(pinboard)
 		pinboard.vis_contents = list(thing)
 
@@ -182,7 +182,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 		pinboard.vis_contents = null
 	showing = null
 
-/obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(datum/weakref/thingref)
+/obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(thingref)
 	if(showing == thingref)
 		stop_showing()
 

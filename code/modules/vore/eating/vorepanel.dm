@@ -1233,10 +1233,10 @@
 										should_proceed_with_revive = FALSE
 										break
 						if(should_proceed_with_revive)
-							GLOB.dead_mob_list.Remove(H)
-							if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
+							registry_leave(REGISTRY_DEAD_MOBS, H)
+							if((H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (H in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
 								WARNING("Mob [H] was reformed but already in the living or dead list still!")
-							GLOB.living_mob_list += H
+							registry_join(REGISTRY_LIVING_MOBS, H)
 
 							H.timeofdeath = 0
 							H.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
@@ -1324,10 +1324,10 @@
 										should_proceed_with_revive = FALSE
 										break
 						if(should_proceed_with_revive)
-							GLOB.dead_mob_list.Remove(H)
-							if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
+							registry_leave(REGISTRY_DEAD_MOBS, H)
+							if((H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (H in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
 								WARNING("Mob [H] was defibbed but already in the living or dead list still!")
-							GLOB.living_mob_list += H
+							registry_join(REGISTRY_LIVING_MOBS, H)
 
 							H.timeofdeath = 0
 							H.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.

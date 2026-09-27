@@ -58,8 +58,10 @@
 	position_y = 0
 	vector = add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE)
 	vector.vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
-	GLOB.listening_objects += src
+	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	SSflight_operations?.register_vessel(src)
+
+REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 /obj/effect/overmap/visitable/ship/Destroy()
 	STOP_PROCESSING(SSprocessing, src)
@@ -71,7 +73,6 @@
 			SSflight_operations.vessels -= flight_vessel_id
 			SSflight_operations.vessel_by_ship -= REF(src)
 			qdel(vessel)
-	GLOB.listening_objects -= src
 	return ..()
 
 /obj/effect/overmap/visitable/ship/relaymove(mob/user, direction, accel_limit)
@@ -90,7 +91,7 @@
 
 	var/life = 0
 
-	for(var/mob/living/L in GLOB.living_mob_list)
+	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(L.z in map_z) //Things inside things we'll consider shielded, otherwise we'd want to use get_z(L)
 			life++
 
@@ -148,7 +149,7 @@
 		if(last_sound + sound_cooldown >= world.time)
 			return
 		last_sound = world.time
-		for(var/mob/potential_mob as anything in GLOB.player_list)
+		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/shutdown.ogg')
 
@@ -161,7 +162,7 @@
 		if(last_sound + sound_cooldown >= world.time)
 			return
 		last_sound = world.time
-		for(var/mob/potential_mob as anything in GLOB.player_list)
+		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/startup.ogg')
 
@@ -256,7 +257,7 @@
 	..()
 	for(var/obj/machinery/computer/ship/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		S.attempt_hook_up(src)
-	for(var/datum/ship_engine/E in GLOB.ship_engines)
+	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
 		if(check_ownership(E.holder))
 			LAZYOR(engines, E)
 

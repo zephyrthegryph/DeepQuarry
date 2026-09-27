@@ -53,6 +53,11 @@
 	return sched.global_owner
 
 // ---------------------------------------------------------------- handles
+//
+// A slot table: slot id -> the datum's \ref text, plus a generation per slot.
+// The table holds text, never the datum, so a handle doesn't keep its target
+// alive: a datum BYOND collects without qdel() (a dropped species, a stack
+// canary) simply stops resolving, like one that was qdel()ed.
 
 GLOBAL_LIST_EMPTY(om_handle_slots)
 GLOBAL_LIST_EMPTY(om_handle_gens)
@@ -78,7 +83,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 			gens.len++
 			id = length(slots)
 			gens[id] = 0
-		slots[id] = D
+		slots[id] = REF(D)
 		D.om_hid = id
 	return "[id]:[gens[id]]"
 
@@ -95,8 +100,17 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return null
 	if(GLOB.om_handle_gens[id] != text2num(copytext(h, sep + 1)))
 		return null
-	var/datum/D = slots[id]
-	if(!D || QDELETED(D))
+	var/ref = slots[id]
+	if(!ref)
+		return null
+	var/datum/D = locate(ref)
+	if(!isdatum(D) || D.om_hid != id)
+		// Collected without qdel(); a new datum may even have the ref now. Free the slot.
+		slots[id] = null
+		GLOB.om_handle_gens[id]++
+		GLOB.om_handle_free += id
+		return null
+	if(QDELETED(D))
 		return null
 	return D
 
@@ -107,11 +121,23 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return
 	D.om_hid = 0
 	var/list/slots = GLOB.om_handle_slots
-	if(id > length(slots) || slots[id] != D)
+	if(id > length(slots) || slots[id] != REF(D))
 		return
 	slots[id] = null
 	GLOB.om_handle_gens[id]++
 	GLOB.om_handle_free += id
+
+/// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
+/// whether it still resolves.
+/proc/om_is_handle(h)
+	var/static/regex/shape = regex(@"^\d+:\d+$")
+	return istext(h) && shape.Find(h)
+
+/// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).
+/proc/qdel_handle(h)
+	var/datum/D = om_resolve(h)
+	if(D)
+		qdel(D)
 
 // ---------------------------------------------------------------- timers
 

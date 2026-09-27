@@ -1017,7 +1017,7 @@
 	// Try the sealed test-room landmarks first (loaded in RunUnitTests). Force-build
 	// adjacency on the seed in case it wasn't wired yet — the room is a runtime-loaded
 	// z, so setup_allturfs never saw it.
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list
+	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -1039,7 +1039,7 @@
 /proc/dq_atmos_test_find_floor_line(count)
 	dq_atmos_test_restore_walls()
 	var/list/seeds = list()
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list
+	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -3826,7 +3826,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	A.alarm_area.main_air_alarm = WEAKREF(A)
+	A.alarm_area.main_air_alarm = om_handle(A)
 	A.stat &= ~(NOPOWER | BROKEN)
 	A.shorted = FALSE
 	A.scan_atmo()
@@ -5626,7 +5626,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	P.parent.air.set_volume(P.volume)
 	P.parent.air.multiply(P.volume / environment_volume)
 	P.set_leaking(TRUE)
-	var/datum/weakref/pipe_ref = WEAKREF(P)
+	var/pipe_ref = om_handle(P)
 	TEST_ASSERT_NOTNULL(pipe_ref, "open pipe could not create a weak reference")
 	var/process_result
 	for(var/cycle in 1 to 100)

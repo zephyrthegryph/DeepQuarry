@@ -8,7 +8,6 @@
 /atom/movable/riding_datum # relationship: riding setup while buckled
 /obj/item/master # relationship: the item this one is attached to
 /obj/item/my_augment # relationship: the organ this item is an augment of
-/obj/item/exploit_for # relationship: weakref to the mob this exploit targets
 
 # Running behaviour.
 /atom/movable/throwing # running: set only mid-throw
@@ -56,10 +55,8 @@
 /obj/item/clothing/suit/storage/pockets # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/under/rolled_down_icon # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/under/rolled_down_sleeves_icon # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/wearer # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/borg/keyslot # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/borg/myborg # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/radio/bs_tx_weakref # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/event/effect_overlay # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/event/wearer # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/keyslot1 # baseline when CI was wired (2026-09-26); convert or give a real reason

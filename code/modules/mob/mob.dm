@@ -1,3 +1,20 @@
+// Mob registries (code/datums/registry_declarations.dm). Every mob is in
+// REGISTRY_MOBS while materialized; REGISTRY_LIVING_MOBS / REGISTRY_DEAD_MOBS
+// follow its stat and REGISTRY_PLAYERS its client (Login/Logout). All of them
+// drop a mob by themselves when it is deleted.
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_MOBS)
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_LIVING_MOBS)
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_DEAD_MOBS)
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_PLAYERS)
+
+REGISTRY_MEMBERSHIP(/mob, REGISTRY_ENTOPIC_USERS)
+
+REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
+
+/mob/on_materialize()
+	. = ..()
+	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
+
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	SSreactor?.publish_mob_chunk(src)
 	if(client)
@@ -5,10 +22,6 @@
 
 	persistent_client?.set_mob(null)
 
-	GLOB.mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.player_list -= src
 	unset_machine()
 	clear_fullscreen()
 	if(client)
@@ -51,11 +64,10 @@
 	if(mind)
 		if(mind.current == src)
 			mind.current = null
-		var/mob/living/original = mind.original_character?.resolve()
+		var/mob/living/original = om_resolve(mind.original_character)
 		if(original && original == src)
 			mind.original_character = null
 
-	GLOB.entopic_users -= src // from mob_planes.dm
 	QDEL_NULL(belly_overlay_tgui) // from belly_overlay_tgui.dm
 
 	. = ..()
@@ -81,11 +93,6 @@
 
 /mob/Initialize(mapload)
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MOB_CREATED, src)
-	GLOB.mob_list += src
-	if(stat == DEAD)
-		GLOB.dead_mob_list += src
-	else
-		GLOB.living_mob_list += src
 	lastarea = get_area(src)
 	if(speak_emote)
 		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
@@ -194,7 +201,7 @@
 			M.create_chat_message(src, "[runemessage || message]", FALSE, list("emote"), audible = FALSE)
 
 /mob/proc/findname(msg)
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (M.real_name == text("[]", msg))
 			return M
 	return 0
@@ -445,7 +452,7 @@
 			"Quit This Round",list("Quit Round","No"))
 			if(extra_check == "Quit Round")
 				//Update any existing objectives involving this mob.
-				for(var/datum/objective/O in GLOB.all_objectives)
+				for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
 					if(O.target == mind)
 						if(O.owner && O.owner.current)
 							to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
@@ -1133,12 +1140,12 @@
 		exploit_addons |= I
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
-		I.exploit_for = WEAKREF(src)
+		I.exploit_for = om_handle(src)
 
 
 /obj/item/Destroy(force, ...)
 	if(exploit_for)
-		var/mob/exploited = exploit_for.resolve()
+		var/mob/exploited = om_resolve(exploit_for)
 		exploited?.exploit_addons -= src
 		exploit_for = null
 	user_vars_remembered = null

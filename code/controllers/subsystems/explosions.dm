@@ -247,7 +247,7 @@ SUBSYSTEM_DEF(explosions)
 	// One perceptual event per listener and subsystem slice. Cascading cells no
 	// longer perform two complete player-list scans apiece or layer hundreds of
 	// identical sounds; each player hears the strongest/closest queued blast.
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		var/list/best
 		var/best_score = -INFINITY
 		var/best_distance = INFINITY

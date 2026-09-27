@@ -25,7 +25,7 @@
 
 /mob/living/bot/cleanbot/Destroy()
 	if(target)
-		GLOB.cleanbot_reserved_turfs -= target
+		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 	return ..()
 
 /mob/living/bot/cleanbot/handleIdle()
@@ -82,17 +82,17 @@
 				continue // already checked this one
 			else if(confirmTarget(D))
 				target = D
-				GLOB.cleanbot_reserved_turfs += D
+				registry_join(REGISTRY_CLEANBOT_RESERVED_TURFS, D)
 				return
 
 /mob/living/bot/resetTarget()
-	GLOB.cleanbot_reserved_turfs -= target
+	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 	..()
 
 /mob/living/bot/cleanbot/confirmTarget(obj/effect/decal/cleanable/D)
 	if(!..())
 		return FALSE
-	if(D.loc in GLOB.cleanbot_reserved_turfs)
+	if(D.loc in REGISTRY_MEMBERS(REGISTRY_CLEANBOT_RESERVED_TURFS))
 		return FALSE
 	for(var/T in target_types)
 		if(istype(D, T))
@@ -148,7 +148,7 @@
 					"detail" = "[src] completed an autonomous sanitation task.",
 				), "automation:[REF(src)]:sanitation:[world.time]", src)
 			if(D == target)
-				GLOB.cleanbot_reserved_turfs -= target
+				registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 				target = null
 	else if(D == src)
 		for(var/obj/effect/O in loc)

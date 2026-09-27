@@ -265,7 +265,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		if(!comm || !comm.exonet || !comm.exonet.address || comm.exonet.address == src.exonet.address) //Don't add addressless devices, and don't add ourselves.
 			continue
 		LAZYOR(src.known_devices, comm)
-	for(var/mob/observer/dead/O in GLOB.dead_mob_list)
+	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			continue
 		LAZYOR(src.known_devices, O)
@@ -400,7 +400,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 	//Clean up references that might point at us
 	STOP_PROCESSING(SSobj, src)
-	GLOB.listening_objects.Remove(src)
 	QDEL_NULL(camera)
 	QDEL_NULL(exonet)
 

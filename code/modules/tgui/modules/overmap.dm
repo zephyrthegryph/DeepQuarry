@@ -71,7 +71,7 @@
 		map_view_used = FALSE
 
 /datum/tgui_module/ship/proc/viewing_overmap(mob/user)
-	return (WEAKREF(user) in viewers)
+	return (om_handle(user) in viewers)
 
 // Navigation
 /datum/tgui_module/ship/nav

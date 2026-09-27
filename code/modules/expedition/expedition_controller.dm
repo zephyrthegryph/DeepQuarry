@@ -231,7 +231,7 @@ SUBSYSTEM_DEF(expedition)
 		// Presence-driven lifecycle.
 		var/players = players_on_z(site.z_level)
 		if(players > 0)
-			for(var/mob/living/L in GLOB.player_list)
+			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(L.z == site.z_level)
 					site.participants |= L
 			site.last_occupied = world.time
@@ -548,7 +548,7 @@ SUBSYSTEM_DEF(expedition)
 
 /datum/controller/subsystem/expedition/proc/players_on_z(z)
 	var/count = 0
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.z == z)
 			count++
 	return count

@@ -51,7 +51,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/add_mob_for_narration, L) //Recursively calling ourselves until cancelled or a unique name is given.
 			return
 		LAZYADD(holder.entity_names, unique_name)
-		LAZYSET(holder.entity_refs, unique_name, WEAKREF(L))
+		LAZYSET(holder.entity_refs, unique_name, om_handle(L))
 		log_and_message_admins("added [L.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
 	//Covering functionality for turfs and objs. We need static type to access the name var
@@ -64,7 +64,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/add_mob_for_narration, A)
 			return
 		LAZYADD(holder.entity_names, unique_name)
-		LAZYSET(holder.entity_refs, unique_name, WEAKREF(A))
+		LAZYSET(holder.entity_refs, unique_name, om_handle(A))
 		log_and_message_admins("added [A.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
 //Proc for keeping our ref list relevant, deleting mobs that are no longer relevant for our event
@@ -138,8 +138,8 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 
 	//Separate definition for mob/living and /obj due to .say() code allowing us to engage with languages, stuttering etc
 	//We also need this so we can check for .client
-	var/datum/weakref/wref = LAZYACCESS(holder.entity_refs, name)
-	var/selection = wref?.resolve()
+	var/wref = LAZYACCESS(holder.entity_refs, name)
+	var/selection = om_resolve(wref)
 	if(!selection)
 		to_chat(user, span_notice("[name] has invalid reference, deleting"))
 		LAZYREMOVE(holder.entity_names, name)
@@ -235,8 +235,8 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 					tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
 					LAZYADD(tgui_selected_id_multi, params["id_selected"])
 					tgui_selected_id = params["id_selected"]
-					var/datum/weakref/wref = LAZYACCESS(entity_refs, tgui_selected_id)
-					tgui_selected_refs = wref.resolve()
+					var/wref = LAZYACCESS(entity_refs, tgui_selected_id)
+					tgui_selected_refs = om_resolve(wref)
 					if(!tgui_selected_refs)
 						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
 						LAZYREMOVE(entity_names, tgui_selected_id)
@@ -267,8 +267,8 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 				var/message = params["message"] //Sanitizing before speaking it
 				if(tgui_selection_mode)
 					for(var/entity in tgui_selected_id_multi)
-						var/datum/weakref/wref = LAZYACCESS(entity_refs, entity)
-						var/ref = wref.resolve()
+						var/wref = LAZYACCESS(entity_refs, entity)
+						var/ref = om_resolve(wref)
 						if(!ref)
 							to_chat(ui.user, span_notice("[entity] has invalid reference, deleting"))
 							LAZYREMOVE(entity_names, entity)
@@ -284,8 +284,8 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 							var/atom/A = ref
 							narrate_tgui_atom(A, message)
 				else
-					var/datum/weakref/wref = LAZYACCESS(entity_refs, tgui_selected_id)
-					var/ref = wref.resolve()
+					var/wref = LAZYACCESS(entity_refs, tgui_selected_id)
+					var/ref = om_resolve(wref)
 					if(!ref)
 						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
 						LAZYREMOVE(entity_names, tgui_selected_id)

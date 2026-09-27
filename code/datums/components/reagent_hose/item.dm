@@ -17,7 +17,7 @@
 	no_variants = TRUE
 	stacktype = /obj/item/stack/hose
 
-	var/datum/weakref/remembered = null
+	var/remembered = null
 
 /obj/item/stack/hose/Destroy()
 	remembered = null
@@ -36,7 +36,7 @@
 		to_chat(user, span_danger("You must choose which connector this hose will connect to before you can attach the hose to something else."))
 		return
 
-	var/datum/component/hose_connector/REMB = remembered?.resolve()
+	var/datum/component/hose_connector/REMB = om_resolve(remembered)
 	var/list/available_sockets = list()
 	for(var/datum/component/hose_connector/HC in target.GetComponents(/datum/component/hose_connector))
 		if(!HC.get_hose())
@@ -70,7 +70,7 @@
 					remembered = null // Unintuitive if it does not reset state
 
 			else
-				remembered = WEAKREF(AC)
+				remembered = om_handle(AC)
 				to_chat(user, span_notice("You connect one end of tubing to \the [AC]."))
 
 		else
@@ -101,7 +101,7 @@
 							remembered = null // Unintuitive if it does not reset state
 
 				else
-					remembered = WEAKREF(CC)
+					remembered = om_handle(CC)
 					to_chat(user, span_notice("You connect one end of tubing to \the [CC]."))
 
 		return

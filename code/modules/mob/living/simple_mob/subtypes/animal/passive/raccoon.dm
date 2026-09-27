@@ -40,10 +40,9 @@
 	. = ..()
 	ghostjoin = 1
 	ghostjoin_icon()
-	GLOB.active_ghost_pods += src
+	registry_join(REGISTRY_GHOST_PODS, src)
 
 /mob/living/simple_mob/animal/passive/raccoon/Destroy()
-	GLOB.active_ghost_pods -= src
 	. = ..()
 
 /datum/say_list/raccoon

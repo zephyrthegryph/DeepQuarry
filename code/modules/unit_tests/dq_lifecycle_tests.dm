@@ -33,6 +33,9 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	for(var/name in GLOB.vars)
 		if(name == "vars")
 			continue
+		// The OM handle table (om_handle()) is an id allocator, not a registration.
+		if(findtext(name, "om_handle_") == 1)
+			continue
 		if(islist(GLOB.vars[name]))
 			keys["GLOB.[name]"] = list(GLOB, name)
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)

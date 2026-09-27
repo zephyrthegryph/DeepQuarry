@@ -100,16 +100,16 @@
 			for(var/mob/living/L in living_mobs(0)) //add everyone on the tile to the do-not-eat list for a while
 				if(!(LAZYFIND(prey_excludes, L))) // Unless they're already on it, just to avoid fuckery.
 					LAZYSET(prey_excludes, L, world.time)
-					addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), WEAKREF(L)), 5 MINUTES)
+					addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), om_handle(L)), 5 MINUTES)
 	else if(istype(O, /obj/item/healthanalyzer))
 		var/healthpercent = round(vitality() * 100)
 		to_chat(user, span_notice("[src] seems to be [healthpercent]% healthy."))
 	else
 		..()
 
-/mob/living/simple_mob/proc/removeMobFromPreyExcludes(datum/weakref/target)
-	if(isweakref(target))
-		var/mob/living/L = target.resolve()
+/mob/living/simple_mob/proc/removeMobFromPreyExcludes(target)
+	if(om_is_handle(target))
+		var/mob/living/L = om_resolve(target)
 		LAZYREMOVE(prey_excludes, L) // It's fine to remove a null from the list if we couldn't resolve L
 
 /mob/living/simple_mob/proc/nutrition_heal()

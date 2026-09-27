@@ -186,7 +186,7 @@
 	if(!context?["owner_account"] || !get_account(context["owner_account"]))
 		return FALSE
 	var/mob/living/owner
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(contract_account_for_mob(player)?.account_number == context["owner_account"])
 			owner = player
 			break
@@ -230,7 +230,7 @@
 	var/list/candidates = list()
 	var/list/fallback_candidates = list()
 	var/sponsor_faction = pick(REPUTATION_FACTION_CHIMERA, REPUTATION_FACTION_ECLIPSE)
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!player.client || player.stat == DEAD)
 			continue
 		var/datum/money_account/account = medical_trial_account_for_mob(player)
@@ -251,7 +251,7 @@
 	var/list/candidate_accounts = list()
 	if(participant?.clinician_account && participant.clinician_account != excluded_account)
 		candidate_accounts += participant.clinician_account
-	for(var/mob/living/player in GLOB.player_list)
+	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((!player.client && !contract_unit_test_mode()) || player.stat == DEAD || department_for_mob(player) != DEPARTMENT_MEDICAL)
 			continue
 		var/datum/money_account/account = medical_trial_account_for_mob(player)

@@ -291,7 +291,7 @@
 	var/datum/money_account/contributor = new
 	contributor.owner_name = "Suspended contributor"
 	contributor.account_number = 880041
-	GLOB.all_money_accounts += contributor
+	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor)
 	var/datum/contract/deferred_contract = new
 	deferred_contract.title = "Deferred escrow payout test"
 	deferred_contract.funding_mode = CONTRACT_FUNDING_INTERNAL
@@ -313,7 +313,7 @@
 	TEST_ASSERT_EQUAL(deferred_contract.state, CONTRACT_COMPLETED, "retried payout did not complete the contract")
 	TEST_ASSERT_EQUAL(contributor.money, 200, "retried payout did not reach the contributor")
 	TEST_ASSERT_EQUAL(deferred_contract.escrow_balance, 0, "successful retried payout retained escrow")
-	GLOB.all_money_accounts -= contributor
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, contributor)
 	qdel(deferred_contract)
 	qdel(contributor)
 	qdel(funder)
@@ -378,12 +378,12 @@
 	contributor_account.account_number = 876543
 	contributor_account.owner_name = "Contract Contributor"
 	contributor_account.money = 50
-	GLOB.all_money_accounts += contributor_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor_account)
 	var/mob/living/carbon/human/contributor = new(test_turf)
 	var/datum/mind/contributor_mind = new("contract_economy_test")
 	contributor_mind.initial_account = contributor_account
 	contributor_mind.transfer_to(contributor)
-	GLOB.player_list |= contributor
+	registry_join(REGISTRY_PLAYERS, contributor)
 	var/datum/money_account/medical_account = GLOB.department_accounts[DEPARTMENT_MEDICAL]
 	var/station_before = GLOB.station_account.money
 	var/medical_before = medical_account.money
@@ -424,8 +424,8 @@
 	var/datum/faction_reputation_ledger/medical_reputation = GLOB.station_faction_relations.get_department_ledger(DEPARTMENT_MEDICAL)
 	medical_reputation.set_reputation(REPUTATION_FACTION_VEYMED, department_rep_before)
 	contributor.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_VEYMED, personal_rep_before)
-	GLOB.player_list -= contributor
-	GLOB.all_money_accounts -= contributor_account
+	registry_leave(REGISTRY_PLAYERS, contributor)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, contributor_account)
 	qdel(contract)
 	qdel(contributor)
 	qdel(contributor_mind)
@@ -774,7 +774,7 @@
 		var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
 		subject.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 		SScontracts.watch_contract_subject(subject)
-		GLOB.player_list |= subject
+		registry_join(REGISTRY_PLAYERS, subject)
 		subjects += subject
 		minds += mind
 	var/datum/contract_definition/definition = SScontracts.definitions["experimental_medication_study"]
@@ -788,11 +788,11 @@
 	TEST_ASSERT(conditional in SScontracts.offered_contracts, "three-person therapeutic offer was not published")
 	var/mob/living/carbon/human/departing = subjects[1]
 	SEND_SIGNAL(departing, COMSIG_MOB_LOGOUT)
-	GLOB.player_list -= departing
+	registry_leave(REGISTRY_PLAYERS, departing)
 	sleep(1)
 	TEST_ASSERT(QDELETED(conditional) || !(conditional in SScontracts.offered_contracts), "next-tick logout reconciliation retained an offer after the cohort left the player list")
 	for(var/mob/living/carbon/human/subject in subjects)
-		GLOB.player_list -= subject
+		registry_leave(REGISTRY_PLAYERS, subject)
 		qdel(subject)
 	for(var/datum/mind/mind in minds)
 		qdel(mind)
@@ -803,7 +803,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/owner = new
 	owner.account_number = 987654
-	GLOB.all_money_accounts += owner
+	registry_join(REGISTRY_MONEY_ACCOUNTS, owner)
 	var/datum/contract/medical_trial/trial = new
 	trial.department = DEPARTMENT_MEDICAL
 	trial.station_share = 1
@@ -908,7 +908,7 @@
 	var/datum/money_account/fallback_account = new
 	fallback_account.account_number = 987655
 	fallback_account.owner_name = "Fallback Clinician"
-	GLOB.all_money_accounts += fallback_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	var/mob/living/carbon/human/fallback_clinician = new(test_turf)
 	fallback_clinician.real_name = fallback_account.owner_name
 	fallback_clinician.job = JOB_MEDICAL_DOCTOR
@@ -916,15 +916,15 @@
 	fallback_mind.initial_account = fallback_account
 	fallback_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	fallback_mind.transfer_to(fallback_clinician)
-	GLOB.player_list |= fallback_clinician
+	registry_join(REGISTRY_PLAYERS, fallback_clinician)
 	var/datum/medical_trial_participant/fallback_participant = new(SScontracts.subject_identity(corpse).id, list(), FALSE, 123456789)
 	var/datum/contract/medical_trial_personal/fallback_offer = medical_trial_offer_corpse_autopsy(trial, fallback_participant)
 	TEST_ASSERT(fallback_offer, "corpse offer did not fall back from a missing clinician account")
 	TEST_ASSERT_EQUAL(fallback_offer.owner_account_number, fallback_account.account_number, "corpse offer fallback selected the wrong Medical account")
 	qdel(fallback_offer)
 	qdel(fallback_participant)
-	GLOB.player_list -= fallback_clinician
-	GLOB.all_money_accounts -= fallback_account
+	registry_leave(REGISTRY_PLAYERS, fallback_clinician)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	qdel(fallback_clinician)
 	qdel(fallback_mind)
 	qdel(fallback_account)
@@ -991,7 +991,7 @@
 	qdel(subject)
 	qdel(withdrawing_subject)
 	qdel(grace_subject)
-	GLOB.all_money_accounts -= owner
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner)
 	qdel(owner)
 
 /datum/unit_test/dq_medical_contract_machine_integration
@@ -1256,12 +1256,12 @@
 	owner_account.account_number = 830001
 	owner_account.owner_name = "Internal Sales Tester"
 	owner_account.money = 0
-	GLOB.all_money_accounts += owner_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/mob/living/carbon/human/owner = new(test_turf)
 	var/datum/mind/owner_mind = new("linked_personal_contract_test")
 	owner_mind.initial_account = owner_account
 	owner_mind.transfer_to(owner)
-	GLOB.player_list |= owner
+	registry_join(REGISTRY_PLAYERS, owner)
 	owner.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_WORKERS_UNION, REPUTATION_NEUTRAL)
 
 	var/datum/contract/parent = new
@@ -1291,8 +1291,8 @@
 	TEST_ASSERT(!sensitive_definition.is_available(list("owner_account" = owner_account.account_number, "parent_contract_id" = parent.id)), "hostile Syndicate standing did not suppress a sensitive personal offer")
 	qdel(side)
 	qdel(parent)
-	GLOB.player_list -= owner
-	GLOB.all_money_accounts -= owner_account
+	registry_leave(REGISTRY_PLAYERS, owner)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	qdel(owner)
 	qdel(owner_mind)
 	qdel(owner_account)
@@ -1304,12 +1304,12 @@
 	var/datum/money_account/actor_account = new
 	actor_account.account_number = 850001
 	actor_account.owner_name = "Contract Producer Tester"
-	GLOB.all_money_accounts += actor_account
+	registry_join(REGISTRY_MONEY_ACCOUNTS, actor_account)
 	var/mob/living/carbon/human/actor = new(test_turf)
 	var/datum/mind/actor_mind = new("contract_producer_test")
 	actor_mind.initial_account = actor_account
 	actor_mind.transfer_to(actor)
-	GLOB.player_list |= actor
+	registry_join(REGISTRY_PLAYERS, actor)
 
 	var/datum/contract_definition/command_definition = SScontracts.definitions["command_budget_mandate"]
 	var/datum/contract/outcome/command = command_definition.create_contract(list("allocation_target" = 1000, "department_target" = 2, "minimum_allocation" = 500))
@@ -1369,8 +1369,8 @@
 	qdel(general_record)
 	qdel(security_record)
 
-	GLOB.player_list -= actor
-	GLOB.all_money_accounts -= actor_account
+	registry_leave(REGISTRY_PLAYERS, actor)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, actor_account)
 	qdel(actor)
 	qdel(actor_mind)
 	qdel(actor_account)
@@ -1430,7 +1430,7 @@
 	var/datum/money_account/customer = new
 	customer.account_number = 860001
 	customer.owner_name = "Refund Customer"
-	GLOB.all_money_accounts += customer
+	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/old_provider_money = provider.money
 	provider.money = max(provider.money, 500)
 	var/period = SSsupply.service_accounting_period
@@ -1441,7 +1441,7 @@
 	var/datum/money_account/subsidized_customer = new
 	subsidized_customer.account_number = 860002
 	subsidized_customer.owner_name = "Subsidized Customer"
-	GLOB.all_money_accounts += subsidized_customer
+	registry_join(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
 	var/datum/service_invoice/subsidized_invoice = SSsupply.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	SSsupply.settle_service_contract_period(period)
 	TEST_ASSERT_EQUAL(service.state, CONTRACT_ACTIVE, "a refunded invoice or one fabricated high-price customer completed the settled Service contract")
@@ -1452,8 +1452,8 @@
 	provider.total_expenses = provider_total_expenses_before
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
-	GLOB.all_money_accounts -= customer
-	GLOB.all_money_accounts -= subsidized_customer
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
+	registry_leave(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
 	qdel(customer)
 	qdel(subsidized_customer)
 	qdel(service)
@@ -1606,7 +1606,7 @@
 		var/datum/money_account/account = new
 		account.account_number = 870000 + index
 		account.owner_name = "Reassignment Tester [index]"
-		GLOB.all_money_accounts += account
+		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
 		var/mob/living/carbon/human/player = new(run_loc_floor_bottom_left)
 		player.real_name = account.owner_name
@@ -1615,7 +1615,7 @@
 		player_mind.initial_account = account
 		player_mind.transfer_to(player)
 		player.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_WORKERS_UNION, REPUTATION_NEUTRAL)
-		GLOB.player_list |= player
+		registry_join(REGISTRY_PLAYERS, player)
 		players += player
 	var/datum/contract/outcome/parent = new
 	parent.title = "Reassignment parent"
@@ -1642,11 +1642,11 @@
 	qdel(first_offer)
 	qdel(parent)
 	for(var/mob/living/carbon/human/player in players)
-		GLOB.player_list -= player
+		registry_leave(REGISTRY_PLAYERS, player)
 		qdel(player.mind)
 		qdel(player)
 	for(var/datum/money_account/account in accounts)
-		GLOB.all_money_accounts -= account
+		registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 		qdel(account)
 
 /datum/unit_test/dq_contract_negotiated_effects
@@ -2012,7 +2012,7 @@
 		account.account_number = 920000 + index
 		account.owner_name = "Social Tester [index]"
 		account.department_id = index == 1 ? DEPARTMENT_CARGO : (index <= 3 ? DEPARTMENT_RESEARCH : DEPARTMENT_MEDICAL)
-		GLOB.all_money_accounts += account
+		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
 	contract.lock_stakeholder_requirements(accounts)
 	TEST_ASSERT(contract.accept(), "synthetic social contract could not activate")
@@ -2053,7 +2053,7 @@
 	TEST_ASSERT_EQUAL(contract.state, CONTRACT_COMPLETED, "finalized graded contract did not complete")
 	qdel(contract)
 	for(var/datum/money_account/account in accounts)
-		GLOB.all_money_accounts -= account
+		registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 		qdel(account)
 
 /datum/unit_test/dq_contract_paired_facts

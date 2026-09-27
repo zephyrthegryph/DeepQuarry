@@ -1,4 +1,4 @@
-/client/proc/smite(mob/living/carbon/human/target in GLOB.player_list)
+/client/proc/smite(mob/living/carbon/human/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	set name = "Smite"
 	set desc = "Abuse a player with various 'special treatments' from a list."
 	set category = "Fun.Do Not"

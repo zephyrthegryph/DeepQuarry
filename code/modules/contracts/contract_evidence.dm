@@ -4,7 +4,7 @@
 	var/mind_ref
 	var/account_number
 	var/display_name
-	var/datum/weakref/body_ref
+	var/body_ref
 
 /datum/contract_subject_identity/New(_id, mob/living/subject)
 	. = ..()
@@ -18,7 +18,7 @@
 		mind_ref = REF(subject.mind)
 		account_number = subject.mind.initial_account?.account_number
 	display_name = subject.real_name
-	body_ref = WEAKREF(subject)
+	body_ref = om_handle(subject)
 
 /datum/contract_subject_identity/proc/current_mob() as /mob/living
 	if(mind_ref)
@@ -27,7 +27,7 @@
 			return mind.current
 	if(account_number)
 		return SScontracts?.find_mob_by_account(account_number)
-	var/mob/living/body = body_ref?.resolve()
+	var/mob/living/body = om_resolve(body_ref)
 	if(istype(body))
 		return body
 
@@ -86,7 +86,7 @@
 	return identity?.current_mob()
 
 /datum/controller/subsystem/contracts/proc/find_mob_by_account(account_number) as /mob/living
-	for(var/mob/living/subject in GLOB.player_list)
+	for(var/mob/living/subject in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(subject.mind?.initial_account?.account_number == account_number)
 			return subject
 

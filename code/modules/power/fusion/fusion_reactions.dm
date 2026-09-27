@@ -124,7 +124,7 @@ GLOBAL_LIST(fusion_reactions)
 		strength = 500
 	)
 
-	for(var/mob/living/mob in GLOB.living_mob_list)
+	for(var/mob/living/mob in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		var/turf/T = get_turf(mob)
 		if(T && (holder.z == T.z))
 			if(ishuman(mob))

@@ -40,7 +40,7 @@
 
 /datum/modifier/aura/xenoqueenbuff/check_if_valid()
 	.=..()
-	var/atom/A = origin.resolve()
+	var/atom/A = om_resolve(origin)
 	if(istype(A))
 		var/datum/component/xenoqueenbuff/X = A.GetComponent(/datum/component/xenoqueenbuff)
 		if(X)

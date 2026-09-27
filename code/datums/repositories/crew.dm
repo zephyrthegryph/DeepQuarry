@@ -72,7 +72,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 
 /datum/repository/crew/proc/scan()
 	var/list/tracked = list()
-	for(var/mob/living/carbon/human/H in GLOB.mob_list)
+	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(isanimal(H.loc))
 			var/mob/living/simple_mob/tf_holder = H.loc
 			if(tf_holder.tf_mob_holder == H) //Exclude characters that are TFd into other mobs.

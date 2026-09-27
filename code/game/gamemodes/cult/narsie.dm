@@ -128,7 +128,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 /obj/singularity/narsie/large/proc/large_step(movement_dir)
 	step(src, movement_dir)
 	narsiefloor(get_turf(loc))
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
 			M.see_narsie(src,movement_dir)
 
@@ -275,7 +275,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		acquire(pick(cultists))
 		return
 		//If there was living cultists, it picks one to follow.
-	for(var/mob/living/carbon/human/food in GLOB.living_mob_list)
+	for(var/mob/living/carbon/human/food in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		if(food.stat)
 			continue
 		var/turf/pos = get_turf(food)
@@ -286,7 +286,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		acquire(pick(cultists))
 		return
 		//no living cultists, pick a living human instead.
-	for(var/mob/observer/dead/ghost in GLOB.player_list)
+	for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!ghost.client)
 			continue
 		var/turf/pos = get_turf(ghost)
@@ -323,7 +323,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	chained = 1
 	move_self = 0
 	icon_state ="narsie-chains"
-	for(var/mob/M in GLOB.mob_list)//removing the client image of nar-sie while it is chained
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))//removing the client image of nar-sie while it is chained
 		if(M.client)
 			M.see_narsie(src)
 

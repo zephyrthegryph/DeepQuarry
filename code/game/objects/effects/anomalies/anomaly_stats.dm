@@ -10,8 +10,8 @@
 
 	var/datum/anomaly_modifiers/modifier
 
-	var/datum/weakref/attached_anomaly
-	var/datum/weakref/attached_harvester
+	var/attached_anomaly
+	var/attached_harvester
 
 	var/next_activation
 	// Total of points we'll get once the anomaly does a pulse
@@ -46,7 +46,7 @@
 /datum/anomaly_stats/proc/calculate_points()
 	var/total = 15
 
-	var/obj/effect/anomaly/anomaly = attached_anomaly.resolve()
+	var/obj/effect/anomaly/anomaly = om_resolve(attached_anomaly)
 
 	if(!anomaly)
 		return
@@ -80,7 +80,7 @@
 	return
 
 /datum/anomaly_stats/proc/update_severity(lower, upper)
-	var/obj/effect/anomaly/anom = attached_anomaly.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
 	if(!istype(anom))
 		attached_anomaly = null
 		return
@@ -115,7 +115,7 @@
 	return
 
 /datum/anomaly_stats/proc/kill_anomaly(critical)
-	var/obj/effect/anomaly/anom = attached_anomaly.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
 	if(!istype(anom))
 		attached_anomaly = null
 		return
@@ -128,7 +128,7 @@
 	return
 
 /datum/anomaly_stats/proc/update_state(unstable)
-	var/obj/effect/anomaly/anom = attached_anomaly.resolve()
+	var/obj/effect/anomaly/anom = om_resolve(attached_anomaly)
 
 	if(!istype(anom))
 		return
@@ -186,7 +186,7 @@
 			stability = ANOMALY_STABLE
 
 	if(attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = attached_harvester.resolve()
+		var/obj/machinery/anomaly_harvester/harvester = om_resolve(attached_harvester)
 		if(!istype(harvester))
 			return
 

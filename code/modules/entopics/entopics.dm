@@ -72,7 +72,7 @@
 
 	registered = TRUE
 	GLOB.entopic_images += my_image
-	for(var/mob/M as anything in GLOB.entopic_users)
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS))
 		if(M.client)
 			M.client.images += my_image
 
@@ -82,7 +82,7 @@
 
 	registered = FALSE
 	GLOB.entopic_images -= my_image
-	for(var/mob/M as anything in GLOB.entopic_users)
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS))
 		if(M.client)
 			M.client.images -= my_image
 
