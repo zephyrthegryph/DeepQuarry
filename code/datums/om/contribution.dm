@@ -562,6 +562,19 @@
 	var/datum/om/rec/rec = E.om_rec
 	return rec ? om_clock_rate(rec, C.idx) : 1
 
+/// Public: `E`'s local time in clock domain `clock_id`, in deciseconds. Body and medical code
+/// that needs "how much biological time has passed" reads CLOCK_BIO here instead of world.time:
+/// stasis (EFFECT_CLOCK_BIO_INHIBIT) stops it, a multiplier speeds it up. An entity with nothing
+/// modifying the clock reads its scheduler's time. (This is the reading the w6/k1 holder clocks
+/// provided; the rate itself comes from contributions, so holders slow their contents with
+/// relation `source_contributes` rows such as stasis_occupant's.)
+/proc/om_clock_now(datum/E, clock_id)
+	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
+	if(!C)
+		CRASH("om: unknown clock [clock_id]")
+	var/datum/om/rec/rec = E?.om_rec
+	return rec ? om_clock_local(rec, C.idx) : om_scheduler().now()
+
 // ---------------------------------------------------------------- relevance and suspension
 
 /// `observer` makes `E` at least `level` relevant until released or deleted.
