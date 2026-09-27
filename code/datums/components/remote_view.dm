@@ -62,7 +62,7 @@
 		RegisterSignal(remote_view_target, COMSIG_REMOTE_VIEW_CLEAR, PROC_REF(handle_forced_endview))
 	// If the user has already limited their HUD this avoids them having a HUD when they zoom in
 	if(settings.use_zoom_hud && host_mob.hud_used.hud_shown)
-		host_mob.toggle_zoom_hud()
+		toggle_zoom_hud(host_mob)
 	// Set view to size, null is default
 	host_mob.set_viewsize(viewsize)
 
@@ -115,7 +115,7 @@
 	// Reset to default size
 	host_mob.set_viewsize()
 	if(settings.use_zoom_hud && !host_mob.hud_used.hud_shown)
-		host_mob.toggle_zoom_hud()
+		toggle_zoom_hud(host_mob)
 	// Update the mob's vision right away if it still exists
 	if(!QDELETED(host_mob))
 		settings.detatch_from_mob(src, host_mob)

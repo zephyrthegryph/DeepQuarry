@@ -72,7 +72,7 @@
 	var/tmp/material_environment_last_process = 0
 
 /obj/proc/material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, temperature)
-	var/selected_limit = construction_pressure_limit(radius_mm, wall_thickness_mm, temperature)
+	var/selected_limit = construction_pressure_limit(src, radius_mm, wall_thickness_mm, temperature)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/reference_limit = steel?.material_pressure_limit(radius_mm, wall_thickness_mm, T20C)
 	return (!isnull(selected_limit) && reference_limit) ? base_pressure * selected_limit / reference_limit : base_pressure
@@ -168,31 +168,31 @@
 			active = TRUE
 	return active
 
-/obj/proc/process_material_environment_now(datum/gas_mixture/internal, datum/gas_mixture/external, base_pressure, radius_mm, wall_thickness_mm, allow_pressure = TRUE)
+/proc/process_material_environment_now(obj/source, datum/gas_mixture/internal, datum/gas_mixture/external, base_pressure, radius_mm, wall_thickness_mm, allow_pressure = TRUE)
 	var/now = world.time
-	var/elapsed_seconds = material_environment_last_process ? clamp((now - material_environment_last_process) / 10, 0, 30) : 0
-	material_environment_last_process = now
-	return process_material_environment(internal, external, elapsed_seconds, base_pressure, radius_mm, wall_thickness_mm, allow_pressure)
+	var/elapsed_seconds = source.material_environment_last_process ? clamp((now - source.material_environment_last_process) / 10, 0, 30) : 0
+	source.material_environment_last_process = now
+	return source.process_material_environment(internal, external, elapsed_seconds, base_pressure, radius_mm, wall_thickness_mm, allow_pressure)
 
-/obj/proc/process_material_exterior(datum/gas_mixture/environment, elapsed_seconds)
+/proc/process_material_exterior(obj/source, datum/gas_mixture/environment, elapsed_seconds)
 	if(!environment || elapsed_seconds <= 0)
 		return FALSE
-	var/datum/material/exterior = material_for_role(MATERIAL_ROLE_JACKET) || material_for_role(MATERIAL_ROLE_INSULATION) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
+	var/datum/material/exterior = source.material_for_role(MATERIAL_ROLE_JACKET) || source.material_for_role(MATERIAL_ROLE_INSULATION) || source.material_for_role(MATERIAL_ROLE_STRUCTURE) || source.primary_construction_material()
 	if(!exterior)
 		return FALSE
 	var/corrosion = material_gas_corrosion_load(environment) * (100 - exterior.corrosion_resistance) / 100 * elapsed_seconds
 	if(corrosion <= 0)
 		return FALSE
-	material_environment_exterior_integrity = max(0, material_environment_exterior_integrity - corrosion)
-	if(material_environment_exterior_integrity <= 0)
-		if(uses_integrity && max_integrity > 0)
-			take_damage(max_integrity, BURN)
+	source.material_environment_exterior_integrity = max(0, source.material_environment_exterior_integrity - corrosion)
+	if(source.material_environment_exterior_integrity <= 0)
+		if(source.uses_integrity && source.max_integrity > 0)
+			source.take_damage(source.max_integrity, BURN)
 		else
-			qdel(src)
+			qdel(source)
 	return TRUE
 
-/obj/proc/process_material_reagent_liner(datum/reagents/contents, elapsed_seconds = 0)
-	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
+/proc/process_material_reagent_liner(obj/source, datum/reagents/contents, elapsed_seconds = 0)
+	var/datum/material/liner = source.material_for_role(MATERIAL_ROLE_LINER)
 	if(!liner || !contents?.total_volume)
 		return FALSE
 	var/corrosion = 0
@@ -200,10 +200,10 @@
 		corrosion += liner.material_corrosion_rate(reagent.id) * reagent.volume / max(contents.total_volume, 1)
 	if(corrosion <= 0)
 		return FALSE
-	material_environment_liner_integrity = max(0, material_environment_liner_integrity - corrosion * max(elapsed_seconds, 0))
-	if(material_environment_liner_integrity <= 0)
-		material_environment_begin_leak()
-		material_environment_rupture()
+	source.material_environment_liner_integrity = max(0, source.material_environment_liner_integrity - corrosion * max(elapsed_seconds, 0))
+	if(source.material_environment_liner_integrity <= 0)
+		source.material_environment_begin_leak()
+		source.material_environment_rupture()
 	return TRUE
 
 /obj/item/reagent_containers/proc/construction_liner_material()

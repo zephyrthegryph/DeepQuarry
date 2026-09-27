@@ -197,7 +197,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		return TRUE
 	if(special_handling)
 		return FALSE
-	if(active_uplink_check(user))
+	if(active_uplink_check(src, user))
 		return
 
 	tgui_interact(user)

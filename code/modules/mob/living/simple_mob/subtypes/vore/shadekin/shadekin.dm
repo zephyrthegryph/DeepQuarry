@@ -360,7 +360,7 @@
 
 				if(stalker)
 					//Sniff sniff.
-					var/list/humans = human_mobs(world.view)
+					var/list/humans = human_mobs(src, world.view)
 
 					//Can we see the last person we were following?
 					if(henlo_human && !(henlo_human in humans))

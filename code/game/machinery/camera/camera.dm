@@ -465,22 +465,22 @@
 		see = hear(view_range, pos)
 	return see
 
-/atom/proc/auto_turn()
+/proc/auto_turn(atom/source)
 	//Automatically turns based on nearby walls.
 	var/turf/simulated/wall/T = null
 	for(var/i = 1, i <= 8, i += i)
-		T = get_ranged_target_turf(src, i, 1)
+		T = get_ranged_target_turf(source, i, 1)
 		if(istype(T))
 			//If someone knows a better way to do this, let me know. -Giacom
 			switch(i)
 				if(NORTH)
-					src.set_dir(SOUTH)
+					source.set_dir(SOUTH)
 				if(SOUTH)
-					src.set_dir(NORTH)
+					source.set_dir(NORTH)
 				if(WEST)
-					src.set_dir(EAST)
+					source.set_dir(EAST)
 				if(EAST)
-					src.set_dir(WEST)
+					source.set_dir(WEST)
 			break
 
 //Return a working camera that can see a given mob

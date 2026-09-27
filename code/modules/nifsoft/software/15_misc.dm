@@ -158,7 +158,7 @@
 			if(human == nif.human)
 				continue
 			var/mob/living/carbon/human/H = human
-			H.display_alt_appearance("animals", justme)
+			display_alt_appearance(H, "animals", justme)
 			registry_join(REGISTRY_ALT_FARMANIMALS, nif.human)
 
 /datum/nifsoft/worldbend/deactivate(force = FALSE)
@@ -168,7 +168,7 @@
 			if(human == nif.human)
 				continue
 			var/mob/living/carbon/human/H = human
-			H.hide_alt_appearance("animals", justme)
+			hide_alt_appearance(H, "animals", justme)
 			registry_leave(REGISTRY_ALT_FARMANIMALS, nif.human)
 
 /datum/nifsoft/malware

@@ -39,7 +39,7 @@
 	return ..()
 
 /obj/item/can_catalogue(mob/user) // Items must be identified to be scanned.
-	if(!is_identified())
+	if(!is_identified(src))
 		to_chat(user, span_warning("The properties of this object has not been determined. Identify it first."))
 		return FALSE
 	return ..()

@@ -69,7 +69,7 @@
 /atom/proc/on_dematerialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	leave_registries() // L3: code/__defines/registries.dm
+	leave_registries(src) // L3: code/__defines/registries.dm
 	dq_rules_on_dematerialize(src)
 	if(om_rec)
 		om_teardown_rest(src)

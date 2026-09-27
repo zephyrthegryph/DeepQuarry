@@ -669,7 +669,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = 5
 	)
-	propagate_radiation_pulse()
+	propagate_radiation_pulse(src)
 	last_event = world.time
 	active = FALSE
 

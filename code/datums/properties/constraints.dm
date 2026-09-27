@@ -37,16 +37,16 @@
 	var/list/constraint_overrides
 
 /// The spec for constraint `kind` on this type. Called once per type.
-/obj/item/proc/constraint_spec(kind)
+/proc/constraint_spec(obj/item/source, kind)
 	switch(kind)
 		if(CONSTRAINT_HOLD)
-			return hold_constraint()
+			return source.hold_constraint()
 		if(CONSTRAINT_SUIT_STORAGE)
-			return suit_storage_constraint()
+			return source.suit_storage_constraint()
 		if(CONSTRAINT_FIT)
-			return fit_constraint()
+			return source.fit_constraint()
 		if(CONSTRAINT_EQUIP)
-			return equip_constraint()
+			return source.equip_constraint()
 	CRASH("unknown constraint kind [kind]")
 
 /// What this holder takes: a spec of clauses on PRED_TARGET, or null for anything.
@@ -77,7 +77,7 @@
 	var/key = "[kind]|[I.type]"
 	. = cache[key]
 	if(isnull(.))
-		var/list/spec = I.constraint_spec(kind)
+		var/list/spec = constraint_spec(I, kind)
 		. = length(spec) ? dq_predicate_for("constraint:[key]", spec, "[I.type] [kind]") : FALSE
 		cache[key] = .
 	return . || null
@@ -98,15 +98,15 @@
 	LAZYSET(constraint_overrides, kind, P)
 
 /// Go back to the type's declared constraint of `kind`.
-/obj/item/proc/clear_constraint(kind)
-	LAZYREMOVE(constraint_overrides, kind)
+/proc/clear_constraint(obj/item/source, kind)
+	LAZYREMOVE(source.constraint_overrides, kind)
 
 /// The type's declared spec for `kind` with some clauses dropped: those that
 /// constrain PROP_SIZE_CLASS (`drop_size`) and/or a HOLD_ONLY type list
 /// (`drop_types`). For building instance overrides on top of the type.
-/obj/item/proc/declared_spec_without(kind, drop_size, drop_types)
+/proc/declared_spec_without(obj/item/source, kind, drop_size, drop_types)
 	. = list()
-	for(var/list/clause as anything in constraint_spec(kind))
+	for(var/list/clause as anything in constraint_spec(source, kind))
 		if(drop_size && clause[1] == PRED_OP_CMP && clause[3] == PROP_SIZE_CLASS)
 			continue
 		if(drop_types && clause[1] == PRED_OP_BECAUSE)
@@ -119,7 +119,7 @@
 /// `types`: a new HOLD_ONLY list (null keeps the type's). `max_size`: a new
 /// size limit (null keeps the type's).
 /obj/item/proc/restrict_hold(list/types, max_size)
-	var/list/spec = declared_spec_without(CONSTRAINT_HOLD, !isnull(max_size), !isnull(types))
+	var/list/spec = declared_spec_without(src, CONSTRAINT_HOLD, !isnull(max_size), !isnull(types))
 	var/list/key = list("[type]")
 	if(!isnull(types))
 		spec += list(HOLD_ONLY(types))
@@ -132,10 +132,10 @@
 
 /// Use `source`'s constraint of `kind` on this instance too (a rig's chest
 /// piece takes what the rig's suit storage takes). No-op if it has none.
-/obj/item/proc/adopt_constraint(kind, obj/item/source)
+/proc/adopt_constraint(obj/item/owner_atom, kind, obj/item/source)
 	var/datum/predicate/P = dq_constraint(source, kind)
 	if(P)
-		LAZYSET(constraint_overrides, kind, P)
+		LAZYSET(owner_atom.constraint_overrides, kind, P)
 
 /// Refit this item for `bodytypes` (the REQ_FITS_BODYTYPES list form), or
 /// null to fit anyone.

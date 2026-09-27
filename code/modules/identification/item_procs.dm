@@ -8,17 +8,17 @@
 		QDEL_NULL(identity)
 	return ..()
 
-/obj/item/proc/hide_identity() // Mostly for admins to make things secret.
-	if(!identity)
-		identity = new identity_type(src)
+/proc/hide_identity(obj/item/source)
+	if(!source.identity)
+		source.identity = new source.identity_type(source)
 	else
-		identity.unidentify()
+		source.identity.unidentify()
 
 /obj/item/proc/identify(identity_type = IDENTITY_FULL, mob/user)
 	if(identity)
 		identity.identify(identity_type, user)
 
-/obj/item/proc/is_identified(identity_type = IDENTITY_FULL)
-	if(!identity) // No identification datum means nothing to hide.
+/proc/is_identified(obj/item/source, identity_type = IDENTITY_FULL)
+	if(!source.identity) // No identification datum means nothing to hide.
 		return TRUE
-	return identity_type & identity.identified
+	return identity_type & source.identity.identified

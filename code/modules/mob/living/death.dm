@@ -1,5 +1,5 @@
 /mob/living/death(gibbed)
-	clear_fullscreens()
+	clear_fullscreens(src)
 	update_mob_action_buttons()
 	if(ai_brain)
 		ai_brain.go_sleep()

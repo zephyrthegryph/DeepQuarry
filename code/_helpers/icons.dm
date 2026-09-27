@@ -332,21 +332,21 @@
 
 	usr << ftp(this_icon,"[A.name].png")
 
-/mob/proc/AddCamoOverlay(atom/A)//A is the atom which we are using as the overlay.
+/proc/AddCamoOverlay(mob/owner_atom, atom/A)
 	var/icon/opacity_icon = new(A.icon, A.icon_state)//Don't really care for overlays/underlays.
 	//Now we need to culculate overlays+underlays and add them together to form an image for a mask.
-	//var/icon/alpha_mask = getFlatIcon(src)//Accurate but SLOW. Not designed for running each tick. Could have other uses I guess.
-	var/icon/alpha_mask = getIconMask(src)//Which is why I created that proc. Also a little slow since it's blending a bunch of icons together but good enough.
+	//var/icon/alpha_mask = getFlatIcon(owner_atom)//Accurate but SLOW. Not designed for running each tick. Could have other uses I guess.
+	var/icon/alpha_mask = getIconMask(owner_atom)//Which is why I created that proc. Also a little slow since it's blending a bunch of icons together but good enough.
 	opacity_icon.AddAlphaMask(alpha_mask)//Likely the main source of lag for this proc. Probably not designed to run each tick.
 	opacity_icon.ChangeOpacity(0.4)//Front end for MapColors so it's fast. 0.5 means half opacity and looks the best in my opinion.
 	for(var/i=0,i<5,i++)//And now we add it as overlays. It's faster than creating an icon and then merging it.
-		var/image/I = image("icon" = opacity_icon, "icon_state" = A.icon_state, "layer" = layer+0.8)//So it's above other stuff but below weapons and the like.
+		var/image/I = image("icon" = opacity_icon, "icon_state" = A.icon_state, "layer" = owner_atom.layer+0.8)//So it's above other stuff but below weapons and the like.
 		switch(i)//Now to determine offset so the result is somewhat blurred.
 			if(1)	I.pixel_x--
 			if(2)	I.pixel_x++
 			if(3)	I.pixel_y--
 			if(4)	I.pixel_y++
-		overlays += I//And finally add the overlay.
+		owner_atom.overlays += I//And finally add the overlay.
 
 /proc/getHologramIcon(icon/A, safety=1, no_color = FALSE)//If safety is on, a new icon is not created.
 	var/icon/flat_icon = safety ? A : new(A)//Has to be a new icon to not constantly change the same icon.

@@ -208,7 +208,7 @@
 				return TRUE
 			var/atom/before = T.loc
 			var/why = dq_ledger_refusal(T, H, slot)
-			var/moved = (op == "transfer") ? before.slot_transfer(T, H, slot) : T.move_into(H, slot)
+			var/moved = (op == "transfer") ? slot_transfer(before, T, H, slot) : T.move_into(H, slot)
 			if(moved)
 				moves_done++
 			else
@@ -602,7 +602,7 @@
 
 	// Rekeying: renaming red frees its old key and claims the new one.
 	red.name = "renamed key"
-	red.ledger_rekey()
+	ledger_rekey(red)
 	TEST_ASSERT_NULL(ring.slot_lookup("keyed", "red key"), "the old key is gone")
 	TEST_ASSERT_EQUAL(ring.slot_lookup("keyed", "renamed key"), red, "the new key resolves")
 	TEST_ASSERT(red2.move_into(ring), "the freed key can be reused by another thing")

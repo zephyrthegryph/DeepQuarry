@@ -293,10 +293,10 @@ I think I covered everything.
 		var/image/I = image(icon = small_icon, icon_state = small_icon_state, loc = src)
 		I.override = TRUE
 		var/list/L = list(src)
-		src.add_alt_appearance("smallsprite", I, displayTo = L)
+		add_alt_appearance(src, "smallsprite", I, displayTo = L)
 		small = TRUE
 	else
-		src.remove_alt_appearance("smallsprite")
+		remove_alt_appearance(src, "smallsprite")
 		small = FALSE
 
 /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle()

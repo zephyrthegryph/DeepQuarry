@@ -114,7 +114,7 @@
 
 #undef EMOTE_REFRESH_SPAM_COOLDOWN
 
-/mob/proc/format_emote(emoter = null, message = null)
+/proc/format_emote(mob/source, emoter = null, message = null)
 	var/pretext
 	var/subtext
 	var/nametext

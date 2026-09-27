@@ -33,7 +33,7 @@
 		if(resolve_attackby(SM, user, attack_modifier = 0.5)) // Hit them with the weapon.  This won't cause recursive cleaving due to the cleaving variable being set to true.
 			hit_mobs++
 
-	cleave_visual(user, target)
+	cleave_visual(src, user, target)
 
 	if(hit_mobs)
 		to_chat(user, span_danger("You used \the [src] to attack [hit_mobs] other thing\s!"))
@@ -47,6 +47,6 @@
 	..()
 
 // This is purely the visual effect of cleaving.
-/obj/item/proc/cleave_visual(mob/living/user, mob/living/target)
-	var/obj/effect/temporary_effect/cleave_attack/E = new(get_turf(src))
+/proc/cleave_visual(obj/item/source, mob/living/user, mob/living/target)
+	var/obj/effect/temporary_effect/cleave_attack/E = new(get_turf(source))
 	E.dir = get_dir(user, target)

@@ -633,14 +633,14 @@
 	return null
 
 /mob/living/update_canmove()
-	if(!resting && cannot_stand() && can_stand_overridden())
+	if(!resting && cannot_stand(src) && can_stand_overridden())
 		lying = FALSE
 		canmove = TRUE
 	else
 		var/obj/buckled = BUCKLED(src)
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/V = buckled
-			if(is_physically_disabled())
+			if(is_physically_disabled(src))
 				lying = FALSE
 				canmove = TRUE
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
@@ -777,7 +777,7 @@
 			colors_to_blend += M.client_color
 
 	if(!colors_to_blend.len) // Modifiers take priority over passive area blending, to prevent changes on every area entered
-		var/location_grade = get_location_color_tint() // Area or weather!
+		var/location_grade = get_location_color_tint(src) // Area or weather!
 		if(location_grade)
 			colors_to_blend += location_grade
 
@@ -820,7 +820,7 @@
 	// We just swapped hands, so the thing in our inactive hand will notice it's not the focus
 	var/obj/item/I = get_inactive_hand()
 	if(I)
-		I.in_inactive_hand(src)	//This'll do specific things, determined by the item
+		in_inactive_hand(I, src)	//This'll do specific things, determined by the item
 	return
 
 /mob/living/proc/activate_hand(selhand) //0 or "r" or "right" for right hand; 1 or "l" or "left" for left hand.

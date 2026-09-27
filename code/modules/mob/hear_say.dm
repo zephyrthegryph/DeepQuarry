@@ -30,7 +30,7 @@
 			if(SP.speaking.flags & INAUDIBLE)
 				piece = ""
 			else
-				piece = saypiece_scramble(SP)
+				piece = saypiece_scramble(src, SP)
 				if(isliving(speaker))
 					var/mob/living/S = speaker
 					if(istype(S.say_list) && length(S.say_list.speak))
@@ -56,9 +56,9 @@
 		.["formatted"] += "\""
 		.["raw"] = trim(raw_msg)
 
-/mob/proc/saypiece_scramble(datum/multilingual_say_piece/SP)
+/proc/saypiece_scramble(mob/source, datum/multilingual_say_piece/SP)
 	if(SP.speaking)
-		return SP.speaking.scramble(SP.message, languages) // fix for partial understanding
+		return SP.speaking.scramble(SP.message, source.languages) // fix for partial understanding
 	else
 		return stars(SP.message)
 
@@ -95,7 +95,7 @@
 		return FALSE
 
 	if(has_status(EFFECT_SLEEPING) || stat == UNCONSCIOUS)
-		hear_sleep(multilingual_to_message(message_pieces))
+		hear_sleep(src, multilingual_to_message(message_pieces))
 		return FALSE
 
 	if(italics)
@@ -199,7 +199,7 @@
 	var/list/combined = combine_message(message_pieces, verb, speaker, always_stars = hard_to_hear, radio = TRUE)
 	var/message = combined["formatted"]
 	if(has_status(EFFECT_SLEEPING) || stat == UNCONSCIOUS) //If unconscious or sleeping
-		hear_sleep(multilingual_to_message(message_pieces))
+		hear_sleep(src, multilingual_to_message(message_pieces))
 		return
 
 	var/speaker_name = handle_speaker_name(speaker, vname, hard_to_hear)
@@ -270,7 +270,7 @@
 
 	show_message(message, type = speech_type) // Type 1 is visual message
 
-/mob/proc/hear_sleep(message)
+/proc/hear_sleep(mob/source, message)
 	var/heard = ""
 	if(prob(15))
 		var/list/punctuation = list(",", "!", ".", ";", "?")
@@ -286,7 +286,7 @@
 	else
 		heard = span_game(span_say("..." + span_italics("You almost hear someone talking") + "..."))
 
-	to_chat(src, heard)
+	to_chat(source, heard)
 
 /mob/proc/handle_speaker_name(mob/speaker, vname, hard_to_hear)
 	var/speaker_name = "unknown"

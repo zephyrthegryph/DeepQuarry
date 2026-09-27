@@ -188,8 +188,8 @@ Proc for attack log creation, because really why not
 					living += H.held_mob
 	return living
 
-/atom/proc/human_mobs(range = world.view)
-	var/list/viewers = oviewers(src,range)
+/proc/human_mobs(atom/source, range = world.view)
+	var/list/viewers = oviewers(source,range)
 	var/list/humans = list()
 	for(var/mob/living/carbon/human/H in viewers)
 		humans += H

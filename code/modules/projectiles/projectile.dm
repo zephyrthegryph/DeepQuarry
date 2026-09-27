@@ -692,7 +692,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(nodamage || !damage || !istype(target))
 		return 0
 	if(emp_on_hit)
-		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
+		receive_ionic(target, damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 

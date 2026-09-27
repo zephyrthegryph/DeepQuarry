@@ -142,12 +142,12 @@
 	return FALSE
 
 /datum/property_provider/clocked/instance_value(datum/D)
-	return D.is_lifecycle_clocked() ? TRUE : FALSE
+	return is_lifecycle_clocked(D) ? TRUE : FALSE
 
 /// Hook point for DQ Medical's clock framework (K1): whether `src` is
 /// running on a holder-provided clock right now. False for everything until
 /// that track overrides it.
-/datum/proc/is_lifecycle_clocked()
+/proc/is_lifecycle_clocked(datum/source)
 	return FALSE
 
 // ---- Fixed per-type values ----

@@ -29,7 +29,7 @@
 				to_chat(src, span_filter_notice("[span_red("You cannot emote in deadchat (muted).")]"))
 				return
 
-	. = emote_dead(message)
+	. = emote_dead(src, message)
 
 /mob/observer/dead/handle_track(message, verb = "says", mob/speaker = null, speaker_name, hard_to_hear)
 	return "[speaker_name] ([ghost_follow_link(speaker, src)])"

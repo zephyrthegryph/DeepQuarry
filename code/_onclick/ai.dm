@@ -19,7 +19,7 @@
 	if(ismob(A))
 		ai_actual_track(A)
 	else
-		A.move_camera_by_click()
+		move_camera_by_click(A)
 
 
 // AI clicks route through the input router with the AI adapter (adapters.dm):
@@ -74,7 +74,7 @@
 	I have no idea why it was in atoms.dm instead of respective files.
 */
 
-/atom/proc/AIclick_ctrl_shift()
+/proc/AIclick_ctrl_shift(atom/source)
 	return
 
 /atom/proc/AIShiftClick()

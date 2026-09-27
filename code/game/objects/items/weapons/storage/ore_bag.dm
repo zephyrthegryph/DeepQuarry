@@ -98,7 +98,7 @@
 	else
 		W.forceMove(get_turf(src))
 
-	W.on_exit_storage(src)
+	on_exit_storage(W, src)
 	update_icon()
 	return 1
 

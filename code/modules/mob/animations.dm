@@ -35,35 +35,35 @@
 /mob/proc/make_floating(n)
 	if(BUCKLED(src))
 		if(is_floating)
-			stop_floating()
+			stop_floating(src)
 		return
 	floatiness = n
 
 	if(floatiness && !is_floating)
-		start_floating()
+		start_floating(src)
 	else if(!floatiness && is_floating)
-		stop_floating()
+		stop_floating(src)
 
-/mob/proc/start_floating()
+/proc/start_floating(mob/source)
 
-	is_floating = 1
+	source.is_floating = 1
 
 	var/amplitude = 2 //maximum displacement from original position
 	var/period = 36 //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
 
-	var/top = old_y + amplitude
-	var/bottom = old_y - amplitude
+	var/top = source.old_y + amplitude
+	var/bottom = source.old_y - amplitude
 	var/half_period = period / 2
 	var/quarter_period = period / 4
 
-	animate(src, pixel_y = top, time = quarter_period, easing = SINE_EASING | EASE_OUT, loop = -1)		//up
+	animate(source, pixel_y = top, time = quarter_period, easing = SINE_EASING | EASE_OUT, loop = -1)		//up
 	animate(pixel_y = bottom, time = half_period, easing = SINE_EASING, loop = -1)						//down
-	animate(pixel_y = old_y, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
+	animate(pixel_y = source.old_y, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
 
-/mob/proc/stop_floating()
-	animate(src, pixel_y = old_y, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
+/proc/stop_floating(mob/source)
+	animate(source, pixel_y = source.old_y, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
 	//reset the pixel offsets to zero
-	is_floating = 0
+	source.is_floating = 0
 
 /atom/movable/proc/fade_towards(atom/A,time = 2)
 

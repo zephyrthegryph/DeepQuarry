@@ -349,7 +349,7 @@
 				var/choice = tgui_alert(ui.user, "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", "WARNING!", list("No, abort!", "Yes, save."))
 				if(choice != "Yes, save.")
 					return TRUE
-			if(!host.save_vore_prefs())
+			if(!save_vore_prefs(host))
 				tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to save!","Error")
 			else
 				to_chat(ui.user, span_notice(STATION_PREF_NAME + "-specific preferences saved!"))
@@ -369,7 +369,7 @@
 			var/alert = tgui_alert(ui.user, "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.","Confirmation",list("Load","Cancel"))
 			if(alert != "Load")
 				return FALSE
-			if(!host.load_vore_prefs_from_slot())
+			if(!load_vore_prefs_from_slot(host))
 				tgui_alert_async(ui.user, "ERROR: Vore-specific preferences failed to apply!","Error")
 			else
 				to_chat(ui.user,span_notice("Vore-specific preferences applied from active slot!"))

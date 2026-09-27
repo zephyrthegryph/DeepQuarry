@@ -38,7 +38,7 @@
 	. = ..()
 	// L3 (doc/rewrite/lifecycle.md §5): a declared `lifetime` self-arms here
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
-	lifecycle_arm_lifetime()
+	lifecycle_arm_lifetime(src)
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -114,7 +114,7 @@
 	// slot's declared policy said, in the destroy transaction's phase 3
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
 	// Destroy() ever runs. Nothing decides that here any more.
-	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased())
+	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased(src))
 		stack_trace("[type] still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them")
 	if(em_block)
 		cut_overlay(em_block)
@@ -186,7 +186,7 @@
 				. = FALSE
 
 			// Check to make sure if we're multi-tile we can move, if we haven't already failed
-			if(. && !check_multi_tile_move_density_dir(direct, locs))
+			if(. && !check_multi_tile_move_density_dir(src, direct, locs))
 				. = FALSE
 
 			// Definitely moving if you enter this, no failures so far
@@ -328,7 +328,7 @@
 		publish_mob_move(old_loc, src, !!client)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
-		restore_remote_views()
+		restore_remote_views(src)
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
@@ -649,18 +649,18 @@
 
 // Procs to cloak/uncloak
 /atom/movable/proc/cloak()
-	if(!cloak_begin())
+	if(!cloak_begin(src))
 		return FALSE
 	cloak_animation(1 SECOND) // cloak_finish() when it has played
 	return TRUE
 
 /// Cloaking without waiting: marks the atom cloaked and starts the fade. TRUE when it did work.
 /// cloak_finish() completes it after the animation (cloak() sleeps for it; a task doesn't).
-/atom/movable/proc/cloak_begin()
-	if(dq_get_cloaked(src))
+/proc/cloak_begin(atom/movable/source)
+	if(dq_get_cloaked(source))
 		return FALSE
-	dq_set_cloaked(src, TRUE)
-	dq_set_cloaked_selfimage(src, get_cloaked_selfimage())
+	dq_set_cloaked(source, TRUE)
+	dq_set_cloaked_selfimage(source, source.get_cloaked_selfimage())
 	return TRUE
 
 /atom/movable/proc/cloak_finish()
@@ -756,17 +756,17 @@
 	if(em_block == source)
 		em_block = null
 
-/atom/movable/proc/abstract_move(atom/new_loc)
-	var/atom/old_loc = loc
+/proc/abstract_move(atom/movable/source, atom/new_loc)
+	var/atom/old_loc = source.loc
 	var/direction = get_dir(old_loc, new_loc)
-	loc = new_loc
-	Moved(old_loc, direction, TRUE)
+	source.loc = new_loc
+	source.Moved(old_loc, direction, TRUE)
 
 // Helper procs called on entering/exiting a belly. Does nothing by default, override on children for special behavior.
-/atom/movable/proc/enter_belly(obj/belly/B)
+/proc/enter_belly(atom/movable/source, obj/belly/B)
 	return
 
-/atom/movable/proc/exit_belly(obj/belly/B)
+/proc/exit_belly(atom/movable/source, obj/belly/B)
 	return
 
 /atom/movable/proc/set_listening(set_to)

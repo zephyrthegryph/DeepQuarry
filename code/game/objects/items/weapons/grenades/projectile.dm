@@ -17,7 +17,7 @@
 	if(!O)
 		return
 
-	src.launch_many_projectiles(O, spread_range, projectile_types)
+	launch_many_projectiles(src, O, spread_range, projectile_types)
 
 	qdel(src)
 
@@ -50,7 +50,7 @@
 
 
 // This is just fragmentate, but less specific. Don't know how to make either of them less awful, at the moment
-/obj/proc/launch_many_projectiles(turf/T=get_turf(src), spreading_range = 5, list/projectiletypes=list(/obj/item/projectile/bullet/pistol/rubber))
+/proc/launch_many_projectiles(obj/owner_atom, turf/T=get_turf(owner_atom), spreading_range = 5, list/projectiletypes=list(/obj/item/projectile/bullet/pistol/rubber))
 	set waitfor = 0
 	var/list/target_turfs = getcircle(T, spreading_range)
 
@@ -58,7 +58,7 @@
 		var/shot_type = pick(projectiletypes)
 
 		var/obj/item/projectile/P = new shot_type(T)
-		P.shot_from = src.name
+		P.shot_from = owner_atom.name
 
 		P.old_style_target(O)
 		P.fire()
@@ -67,9 +67,9 @@
 		for(var/mob/living/M in T)
 			//lying on a frag grenade while the grenade is on the ground causes you to absorb most of the shrapnel.
 			//you will most likely be dead, but others nearby will be spared the fragments that hit you instead.
-			if(M.lying && isturf(src.loc))
+			if(M.lying && isturf(owner_atom.loc))
 				P.attack_mob(M, 0, 5)
-			else if(!M.lying && src.loc != get_turf(src)) //if it's not on the turf, it must be in the mob!
+			else if(!M.lying && owner_atom.loc != get_turf(owner_atom)) //if it's not on the turf, it must be in the mob!
 				P.attack_mob(M, 0, 25) //you're holding a grenade, dude!
 			else
 				P.attack_mob(M, 0, 75) //otherwise, allow a decent amount of fragments to pass

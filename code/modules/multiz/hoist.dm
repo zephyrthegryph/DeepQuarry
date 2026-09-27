@@ -244,11 +244,11 @@
 	source_hook.forceMove(move_dest)
 	if (!ishoisting)
 		return 1
-	hoistee.hoist_act(move_dest)
+	hoist_act(hoistee, move_dest)
 	return 1
 
-/atom/movable/proc/hoist_act(turf/dest)
-	forceMove(dest)
+/proc/hoist_act(atom/movable/source, turf/dest)
+	source.forceMove(dest)
 	return TRUE
 
 #undef NORMAL_LAYER

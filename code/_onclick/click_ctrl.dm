@@ -72,21 +72,20 @@
  * Unused except for AI
  */
 /mob/proc/CtrlShiftClickOn(atom/A)
-	base_click_ctrl_shift(A)
+	base_click_ctrl_shift(src, A)
 
 /**
  * ### Base proc for ctrl shift click interaction left click.
  *
  * If you wish to add custom `click_ctrl_shift` behavior for a single type, use that proc.
  */
-/mob/proc/base_click_ctrl_shift(atom/target)
-	SHOULD_NOT_OVERRIDE(TRUE)
+/proc/base_click_ctrl_shift(mob/source, atom/target)
 
 	// Check if they've hooked in to prevent src from ctrl clicking anything
 
 	// If it has a signal handler that returns a click action, done.
 
-	target.click_ctrl_shift(src)
+	target.click_ctrl_shift(source)
 	/* //NYI
 	// Proceed with ctrl shift click
 	if(can_perform_action(target, target.interaction_flags_click | SILENT_ADJACENCY))

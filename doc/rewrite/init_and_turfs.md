@@ -246,9 +246,11 @@ the variant loader and map aliases.
   no longer define `DEBUG`; the `dm` target builds without it. `TEST_DEFINES`
   in `tools/build/build.ts` (test and bench builds) and the autowiki build add
   `DEBUG` back, so test runtimes keep file and line. A local debug build of
-  the main .dmb is `tools/build/build.sh -DDEBUG`. Without `DEBUG` the custom
-  `world/Error` handler (`USE_CUSTOM_ERROR_HANDLER`) is off too, since it keys
-  its dedupe on file and line; production uses BYOND's default handler.
+  the main .dmb is `tools/build/build.sh -DDEBUG`. The custom `world/Error`
+  handler (`USE_CUSTOM_ERROR_HANDLER`, `code/_compile_options.dm`) no longer
+  depends on `DEBUG`: without file and line it dedupes on the error text plus
+  the proc name from the exception's desc (`error_uid()`, `error_where()` in
+  `code/modules/error_handler/error_handler.dm`).
   Measured earlier at -56 MB (table above); bench builds keep `DEBUG`, so the
   bench numbers below don't include it.
 - **2, procs off the base types.** 33 procs moved to global procs (or deleted
@@ -265,6 +267,16 @@ the variant loader and map aliases.
   against `tools/ci/base_proc_allowlist.txt`; the ceilings went from
   166/323/132/103/127/588 to 147/313/132/102/127/585. A new rarely used proc
   belongs in a global proc or a helper datum.
+
+  A second pass moved 232 more (global procs taking the former `src` as their
+  first argument; call sites converted). Picked mechanically: one definition
+  and no overrides, never referenced by `PROC_REF`, a path, a string or a
+  macro, no `..()` or verb settings, and at most two call sites (six in admin,
+  debug and logging code). The implicit member accesses in the bodies were
+  rewritten to `source.x` and checked with DreamChecker. Ceilings now
+  125/268/110/81/88/502. Per-proc value differs a lot by type: a proc on
+  `/datum` or `/atom` is ~1 MB, on `/obj` ~0.7 MB, on `/obj/item` ~0.44 MB,
+  but on `/mob` only ~0.08 MB (~3.5 k mob types).
 - **Measured** (bench `boot_profile`, minitest, one boot each, bench build
   with `DEBUG`): private MB at `world/New()` 698.1 before, 666.5 after
   (-31.6); booted 841.3 before, 809.1 after (-32.2).

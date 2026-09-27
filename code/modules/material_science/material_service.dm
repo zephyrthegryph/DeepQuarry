@@ -87,31 +87,31 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /// Observe a pressure boundary using the same admission policy for every tank,
 /// pipe, canister, and machine. Composition and thermal hazards share it too.
-/obj/proc/material_observe_gases(datum/gas_mixture/internal, datum/gas_mixture/external)
-	if(!internal || !has_functional_construction())
-		return material_service
+/proc/material_observe_gases(obj/source, datum/gas_mixture/internal, datum/gas_mixture/external)
+	if(!internal || !source.has_functional_construction())
+		return source.material_service
 	var/internal_temperature = internal.return_temperature()
 	var/external_temperature = external?.return_temperature() || TCMB
-	var/rating = material_service_rating()
+	var/rating = source.material_service_rating()
 	if(rating > 0)
-		var/limit = material_environment_pressure_limit(rating, material_service_radius(), material_service_thickness(), max(internal_temperature, external_temperature))
+		var/limit = source.material_environment_pressure_limit(rating, source.material_service_radius(), source.material_service_thickness(), max(internal_temperature, external_temperature))
 		var/load_ratio = abs(internal.return_pressure() - (external?.return_pressure() || 0)) / max(limit, ONE_ATMOSPHERE)
-		material_service_event(MATERIAL_EVENT_PRESSURE, load_ratio)
+		source.material_service_event(MATERIAL_EVENT_PRESSURE, load_ratio)
 	var/corrosion = material_gas_corrosion_load(internal)
 	if(external)
 		corrosion = max(corrosion, material_gas_corrosion_load(external))
-	material_service_event(MATERIAL_EVENT_CORROSION, corrosion)
-	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
+	source.material_service_event(MATERIAL_EVENT_CORROSION, corrosion)
+	var/datum/material/structure = source.material_for_role(MATERIAL_ROLE_STRUCTURE) || source.primary_construction_material()
 	if(structure)
-		material_service_event(MATERIAL_EVENT_TEMPERATURE, max(internal_temperature, external_temperature) / max(structure.melting_point, 1), max(internal_temperature, external_temperature))
-	return material_service
+		source.material_service_event(MATERIAL_EVENT_TEMPERATURE, max(internal_temperature, external_temperature) / max(structure.melting_point, 1), max(internal_temperature, external_temperature))
+	return source.material_service
 
-/obj/proc/material_service_can_retire(datum/material_service/service)
-	if(!service || material_custom_assembly || service.monitor_tool || service.maintenance_open || service.chemical_rate > 0)
+/proc/material_service_can_retire(obj/source, datum/material_service/service)
+	if(!service || source.material_custom_assembly || service.monitor_tool || service.maintenance_open || service.chemical_rate > 0)
 		return FALSE
-	if(material_environment_leaking || material_environment_fatigue > 0 || material_environment_liner_integrity < 100 || material_environment_exterior_integrity < 100)
+	if(source.material_environment_leaking || source.material_environment_fatigue > 0 || source.material_environment_liner_integrity < 100 || source.material_environment_exterior_integrity < 100)
 		return FALSE
-	var/turf/location = get_turf(src)
+	var/turf/location = get_turf(source)
 	var/datum/gas_mixture/ambient = location?.return_air()
 	var/ambient_temperature = ambient?.return_temperature() || T20C
 	return abs(service.temperature - ambient_temperature) < MATERIAL_THERMAL_RESOLUTION
@@ -524,7 +524,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 			updating = FALSE
 			return
 	if(!length(air_ports))
-		active = owner.process_material_exterior(ambient, elapsed) || active
+		active = process_material_exterior(owner, ambient, elapsed) || active
 	if(QDELETED(owner))
 		updating = FALSE
 		return
@@ -552,7 +552,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	active = sample_observation() || active
 	if(active)
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
-	else if(owner.material_service_can_retire(src))
+	else if(material_service_can_retire(owner, src))
 		qdel(src)
 
 /obj/proc/material_service_conducts_contents()

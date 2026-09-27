@@ -99,25 +99,24 @@
 
 ///Main proc for secondary alt click
 /mob/proc/AltClickSecondaryOn(atom/target)
-	base_click_alt_secondary(target)
+	base_click_alt_secondary(src, target)
 
 /**
  * ### Base proc for alt click interaction right click.
  *
  * If you wish to add custom `click_alt_secondary` behavior for a single type, use that proc.
  */
-/mob/proc/base_click_alt_secondary(atom/target)
-	SHOULD_NOT_OVERRIDE(TRUE)
+/proc/base_click_alt_secondary(mob/source, atom/target)
 
 	//Hook on the mob to intercept the click
 
 	//Hook on the atom to intercept the click
 
 	// If it has a custom click_alt_secondary then do that
-	target.click_alt_secondary(src)
+	click_alt_secondary(target, source)
 	/* //NYI
 	if(can_perform_action(target, target.interaction_flags_click | SILENT_ADJACENCY))
-		target.click_alt_secondary(src)
+		click_alt_secondary(target, src)
 	*/
 
 /**
@@ -127,8 +126,7 @@
  * ### Guard clauses
  * Consider adding `interaction_flags_click` before adding unique guard clauses.
  **/
-/atom/proc/click_alt_secondary(mob/user)
-	SHOULD_CALL_PARENT(FALSE)
+/proc/click_alt_secondary(atom/source, mob/user)
 	return NONE
 
 /**

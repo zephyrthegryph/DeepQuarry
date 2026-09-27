@@ -13,7 +13,7 @@
 	set category = "Changeling"
 	set name = "Fabricate Clothing (10)"
 
-	if(changeling_generic_equip_all_slots(GLOB.changeling_fabricated_clothing, cost = 10))
+	if(changeling_generic_equip_all_slots(src, GLOB.changeling_fabricated_clothing, cost = 10))
 		return 1
 	return 0
 

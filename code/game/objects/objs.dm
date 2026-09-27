@@ -162,15 +162,15 @@
 /obj/proc/see_emote(mob/M as mob, text, emote_type)
 	return
 // Used to mark a turf as containing objects that are dangerous to step onto.
-/obj/proc/register_dangerous_to_step()
-	var/turf/T = get_turf(src)
+/proc/register_dangerous_to_step(obj/source)
+	var/turf/T = get_turf(source)
 	if(T)
-		T.register_dangerous_object(src)
+		T.register_dangerous_object(source)
 
-/obj/proc/unregister_dangerous_to_step()
-	var/turf/T = get_turf(src)
+/proc/unregister_dangerous_to_step(obj/source)
+	var/turf/T = get_turf(source)
 	if(T)
-		T.unregister_dangerous_object(src)
+		T.unregister_dangerous_object(source)
 
 // Test for if stepping on a tile containing this obj is safe to do, used for things like landmines and cliffs.
 /obj/proc/is_safe_to_step(mob/living/L)

@@ -11,7 +11,7 @@
 		input = tgui_input_text(src,"Choose an emote to display.", max_length = MAX_MESSAGE_LEN)
 	else
 		input = message
-	process_normal_emote(m_type, input, input, range)
+	process_normal_emote(src, m_type, input, input, range)
 
 /// This is the custom_emote that you'll want to use if you're forcing something to custom emote with no input from the mob.
 /// By default, we have a visible message, our range is world.view, and we do NOT check the stat.
@@ -19,14 +19,14 @@
 	if(check_stat && (src && stat) || is_paralyzed())
 		return
 	var/input = message
-	process_automatic_emote(m_type, message, input, range)
+	process_automatic_emote(src, m_type, message, input, range)
 
 //The actual meat and potatoes of the emote processing.
-/mob/proc/process_normal_emote(m_type = VISIBLE_MESSAGE, message, input, range = world.view)
+/proc/process_normal_emote(mob/source, m_type = VISIBLE_MESSAGE, message, input, range = world.view)
 	var/list/formatted
 	var/runemessage
 	if(input)
-		formatted = format_emote(src, message)
+		formatted = format_emote(source, source, message)
 		if(!islist(formatted))
 			return
 		message = formatted["pretext"] + formatted["nametext"] + formatted["subtext"]
@@ -36,13 +36,13 @@
 	else
 		return
 
-	log_the_emote(m_type, message, input, range, runemessage)
+	log_the_emote(source, m_type, message, input, range, runemessage)
 
-/mob/proc/process_automatic_emote(m_type = VISIBLE_MESSAGE, message, input, range = world.view)
+/proc/process_automatic_emote(mob/source, m_type = VISIBLE_MESSAGE, message, input, range = world.view)
 	var/list/formatted
 	var/runemessage
 	if(input)
-		formatted = format_emote(src, message)
+		formatted = format_emote(source, source, message)
 		if(!islist(formatted))
 			return
 		message = formatted["pretext"] + formatted["nametext"] + formatted["subtext"]
@@ -52,72 +52,72 @@
 	else
 		return
 
-	build_the_emote(m_type, message, input, range, runemessage)
+	build_the_emote(source, m_type, message, input, range, runemessage)
 
-/mob/proc/log_the_emote(m_type, message, input, range, runemessage)
-	log_message(message, LOG_EMOTE) //Log before we add junk
-	build_the_emote(m_type, message, input, range, runemessage)
+/proc/log_the_emote(mob/source, m_type, message, input, range, runemessage)
+	source.log_message(message, LOG_EMOTE) //Log before we add junk
+	build_the_emote(source, m_type, message, input, range, runemessage)
 
-/mob/proc/build_the_emote(m_type, message, input, range, runemessage)
-	if(client)
-		message = span_emote(span_bold("[src]") + " [input]")
-		if(src.absorbed && isbelly(src.loc))
-			var/obj/belly/B = src.loc
+/proc/build_the_emote(mob/source, m_type, message, input, range, runemessage)
+	if(source.client)
+		message = span_emote(span_bold("[source]") + " [input]")
+		if(source.absorbed && isbelly(source.loc))
+			var/obj/belly/B = source.loc
 			if(B.absorbedrename_enabled)
 				var/formatted_name = B.absorbedrename_name
 				formatted_name = replacetext(formatted_name,"%pred", B.owner)
 				formatted_name = replacetext(formatted_name,"%belly", B.get_belly_name())
-				formatted_name = replacetext(formatted_name,"%prey", name)
+				formatted_name = replacetext(formatted_name,"%prey", source.name)
 				message = span_emote(span_bold("[formatted_name]") + " [input]")
 	else
-		message = span_npc_emote(span_bold("[src]") + " [input]")
+		message = span_npc_emote(span_bold("[source]") + " [input]")
 
 	if(message)
-		send_the_emote(m_type, message, input, range, runemessage)
+		send_the_emote(source, m_type, message, input, range, runemessage)
 
-/mob/proc/send_the_emote(m_type, message, input, range, runemessage)
+/proc/send_the_emote(mob/source, m_type, message, input, range, runemessage)
 
 	message = encode_html_emphasis(message)
-	var/turf/T = get_turf(src)
+	var/turf/T = get_turf(source)
 
 	if(!T) return
 
-	if(client)
-		switch(emote_sound_mode)
+	if(source.client)
+		switch(source.emote_sound_mode)
 			if(EMOTE_SOUND_NO_FREQ)
 				playsound(T, pick(GLOB.emote_sound), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = 0, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 			if(EMOTE_SOUND_VOICE_FREQ)
-				playsound(T, pick(GLOB.emote_sound), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
+				playsound(T, pick(GLOB.emote_sound), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = source.voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 			if(EMOTE_SOUND_VOICE_LIST)
-				playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
+				playsound(T, pick(source.voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = source.voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 
-	var/list/in_range = get_mobs_and_objs_in_view_fast(T,range,2,remote_ghosts = client ? TRUE : FALSE)
+	var/list/in_range = get_mobs_and_objs_in_view_fast(T,range,2,remote_ghosts = source.client ? TRUE : FALSE)
 	var/list/m_viewers = in_range["mobs"]
 	var/list/o_viewers = in_range["objs"]
 
-	for(var/obj/o in contents)
+	for(var/obj/o in source.contents)
 		o_viewers |= o
 
 	for(var/mob/M as anything in m_viewers)
 		if(M)
 			var/final_message = message
 			if(isobserver(M))
-				final_message = span_emote(span_bold("[src]") + " ([ghost_follow_link(src, M)]) [input]")
-			if(src.client && M && !(get_z(src) == get_z(M)))
+				final_message = span_emote(span_bold("[source]") + " ([ghost_follow_link(source, M)]) [input]")
+			if(source.client && M && !(get_z(source) == get_z(M)))
 				final_message = span_multizsay("[final_message]")
 			// If you are in the same tile, right next to, or being held by a person doing an emote, you should be able to see it while blind
-			if(m_type != AUDIBLE_MESSAGE && (src.Adjacent(M) || (istype(src.loc, /obj/item/holder) && src.loc.loc == M)))
+			if(m_type != AUDIBLE_MESSAGE && (source.Adjacent(M) || (istype(source.loc, /obj/item/holder) && source.loc.loc == M)))
 				M.show_message(final_message)
 			else
 				M.show_message(final_message, m_type)
-			M.create_chat_message(src, "[runemessage]", FALSE, list("emote"), (m_type == AUDIBLE_MESSAGE))
+			M.create_chat_message(source, "[runemessage]", FALSE, list("emote"), (m_type == AUDIBLE_MESSAGE))
 
 	for(var/obj/O as anything in o_viewers)
 		if(O)
 			var/final_message = message
-			if(src.client && O && !(get_z(src) == get_z(O)))
+			if(source.client && O && !(get_z(source) == get_z(O)))
 				final_message = span_multizsay("[final_message]")
-			O.see_emote(src, final_message, m_type)
+			O.see_emote(source, final_message, m_type)
 
 /// Conjugates the leading verb of a bare phrase to the third person singular:
 /// "shudder" to "shudders", "wince at their arm" to "winces at their arm",

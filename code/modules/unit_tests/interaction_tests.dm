@@ -46,7 +46,7 @@
 	RegisterSignal(tool, COMSIG_ITEM_TOOL_ACTED, PROC_REF(on_tool_acted))
 	RegisterSignal(tool, COMSIG_TOOL_ATOM_ACTED_PRIMARY(TOOL_WRENCH), PROC_REF(on_quality_acted))
 
-	var/primary_result = target.item_interaction(null, tool, list())
+	var/primary_result = item_interaction(target, null, tool, list())
 	TEST_ASSERT(primary_result & ITEM_INTERACT_SUCCESS, "Primary tool interaction did not report success.")
 	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 1, "The first quality was not attempted exactly once.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "A later quality was not attempted after the first declined.")
@@ -55,7 +55,7 @@
 	TEST_ASSERT_EQUAL(quality_acted_calls, 1, "A successful tool interaction did not emit its quality-specific success signal exactly once.")
 	TEST_ASSERT_EQUAL(last_acted_quality, TOOL_WRENCH, "The generic tool success signal reported the wrong successful quality.")
 
-	var/secondary_result = target.item_interaction_secondary(null, tool, list())
+	var/secondary_result = item_interaction_secondary(target, null, tool, list())
 	TEST_ASSERT(secondary_result & ITEM_INTERACT_BLOCKING, "Secondary tool interaction did not preserve blocking semantics.")
 	TEST_ASSERT_EQUAL(target.secondary_wrench_calls, 1, "Secondary dispatch did not reach its dedicated hook.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "Secondary dispatch incorrectly invoked the primary hook.")

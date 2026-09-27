@@ -261,7 +261,7 @@
 	material_service?.advance()
 	if(QDELETED(src))
 		return 0
-	amount = material_cell_use_cost(amount)
+	amount = material_cell_use_cost(src, amount)
 	amount = clamp(amount, 0, material_discharge_credit)
 	var/efficiency = material_delivery_efficiency(amount)
 	var/used = min(charge * efficiency, amount)

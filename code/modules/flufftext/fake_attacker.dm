@@ -105,9 +105,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hallucination attackers with AI behaviors
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/mob/proc/create_hallucination_attacker(turf/T = null,mob/living/carbon/human/clone = null, forced_type = null)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!client)
+/proc/create_hallucination_attacker(mob/source, turf/T = null,mob/living/carbon/human/clone = null, forced_type = null)
+	if(!source.client)
 		return null
 
 	if(!clone)
@@ -143,7 +142,7 @@
 		var/list/get_types = subtypesof(/obj/effect/fake_attacker/human)
 		forced_type = pick(get_types)
 	// Finally! After a thousand years I'm finally free to conquer EARTH!
-	return new forced_type(T,src,clone)
+	return new forced_type(T,source,clone)
 
 /obj/effect/fake_attacker/human
 	VAR_PROTECTED/target = null

@@ -86,7 +86,7 @@
 	var/list/construction_lines = construction_examine_lines(src, A)
 	if(construction_lines)
 		results += construction_lines
-	results += embedded_info(A)
+	results += embedded_info(src, A)
 
 	var/final_string = span_infoplain("[jointext(results, "<br>")]")
 	if(ismob(A) || client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE) // mob descriptions matter more than others, & it looks weird to have dropdowns outside the box.
@@ -94,11 +94,11 @@
 	to_chat(src, final_string)
 	update_examine_panel(A)
 
-/mob/proc/embedded_info(atom/A)
+/proc/embedded_info(mob/source, atom/A)
 	. = ""
-	if(!(client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE))
+	if(!(source.client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE))
 		return
-	if(!client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
+	if(!source.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
 		return //sorry oldchat
 
 	//do pref check here
@@ -123,7 +123,7 @@
 				title = "🔍 | Flavor Text"
 
 		. += span_details(title, rendered_text)
-	var/is_antagish = antag_check()
+	var/is_antagish = antag_check(source)
 	var/antag_info_temp = A.get_description_antag()
 	if(is_antagish && antag_info_temp)
 		. += span_details("🏴‍☠️ | Antag Information", antag_info_temp)
@@ -134,19 +134,19 @@
 			temp += a + "\n"
 		. += span_details("🛠️ | Interaction Information",temp)
 
-/mob/proc/antag_check()
-	if(mind && (mind.special_role || mind.antag_holder.is_antag())) //We're a /mob and have a mind and antag status.
+/proc/antag_check(mob/source)
+	if(source.mind && (source.mind.special_role || source.mind.antag_holder.is_antag())) //We're a /mob and have a mind and antag status.
 		return TRUE
-	if(isobserver(src)) //We're an observer. We always are able to see stuff antags see.
+	if(isobserver(source)) //We're an observer. We always are able to see stuff antags see.
 		return TRUE
-	var/datum/component/antag/comp = GetComponent(/datum/component/antag)
+	var/datum/component/antag/comp = source.GetComponent(/datum/component/antag)
 	if(comp)
 		return TRUE
 	return FALSE
 
 /mob/proc/update_examine_panel(atom/A)
 	if(client)
-		var/is_antag = antag_check()
+		var/is_antag = antag_check(src)
 		client.update_description_holders(A, is_antag)
 		SSstatpanels.set_examine_tab(client)
 

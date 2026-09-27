@@ -79,11 +79,10 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 			else
 				.[M] = item_matter[mat]
 
-/obj/item/proc/set_custom_materials(list/materials, multiplier = 1)
-	SHOULD_NOT_OVERRIDE(TRUE)
+/proc/set_custom_materials(obj/item/source, list/materials, multiplier = 1)
 
 	if(!LAZYLEN(materials))
-		set_material_mix(null)
+		source.set_material_mix(null)
 		return
 
 	materials = materials.Copy()
@@ -92,7 +91,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 		for(var/x in materials)
 			materials[x] *= multiplier
 
-	set_material_mix(materials)
+	source.set_material_mix(materials)
 
 
 // Builds the datum list above.

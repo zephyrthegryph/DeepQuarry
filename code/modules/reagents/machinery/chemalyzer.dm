@@ -48,7 +48,7 @@
 
 /obj/machinery/chemical_analyzer/proc/scan_done(mob/user, obj/item/held)
 	// First, identify it if it isn't already.
-	if(!held.is_identified(IDENTITY_FULL))
+	if(!is_identified(held, IDENTITY_FULL))
 		var/datum/identification/ID = held.identity
 		if(ID.identification_type == IDENTITY_TYPE_CHEMICAL) // This only solves chemical-based mysteries.
 			held.identify(IDENTITY_FULL, user)

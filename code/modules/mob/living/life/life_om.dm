@@ -176,13 +176,13 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 
 /// Refreshes the player HUD now. Returns FALSE when there is no HUD to refresh.
 /mob/proc/refresh_hud()
-	return hud_available()
+	return hud_available(src)
 
 /// TRUE when this mob has a client HUD that no component has taken over.
-/mob/proc/hud_available()
-	if(!client)
+/proc/hud_available(mob/source)
+	if(!source.client)
 		return FALSE
-	if(SEND_SIGNAL(src,COMSIG_MOB_HANDLE_HUD) & COMSIG_COMPONENT_HANDLED_HUD)
+	if(SEND_SIGNAL(source,COMSIG_MOB_HANDLE_HUD) & COMSIG_COMPONENT_HANDLED_HUD)
 		return FALSE
 	return TRUE
 

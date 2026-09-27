@@ -83,7 +83,7 @@
 			total_volume += R.volume
 	// The holder's heat capacity changed with its contents (H3).
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
-		my_atom.heat_capacity_changed()
+		heat_capacity_changed(my_atom)
 	return
 
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.

@@ -17,7 +17,7 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 								))
 
 /obj/item/proc/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
-	if(!can_gurgle())
+	if(!can_gurgle(src))
 		return FALSE
 
 	if(gurgled && !(gurgled_color == contamination_color))
@@ -38,10 +38,10 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 //			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 		return TRUE
 
-/obj/item/proc/can_gurgle()
-	if(flags & PHORONGUARD)
+/proc/can_gurgle(obj/item/source)
+	if(source.flags & PHORONGUARD)
 		return FALSE
-	else if(unacidable)
+	else if(source.unacidable)
 		return FALSE
 	else
 		return TRUE

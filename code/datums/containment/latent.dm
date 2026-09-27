@@ -399,9 +399,9 @@ GLOBAL_VAR(latent_last_refusal)
 	dq_ledger(src)?.latent_clear()
 
 /// Readable summary of the latent contents, from type data: "3 jumpsuits".
-/atom/proc/latent_names()
+/proc/latent_names(atom/source)
 	. = list()
-	for(var/datum/latent_entry/entry as anything in latent_entries())
+	for(var/datum/latent_entry/entry as anything in source.latent_entries())
 		var/atom/typed = entry.path
 		var/name = initial(typed.name)
 		. += entry.count > 1 ? "[entry.count] [name]\s" : "\a [name]"
@@ -474,10 +474,10 @@ GLOBAL_VAR(latent_last_refusal)
 /// An explosion reaches the contents at `severity`: entries are resolved as
 /// data. Each thing is tried on a sandboxed probe; destroyed ones are removed,
 /// survivors keep their new state. Nothing is created in the world.
-/atom/proc/latent_blast(severity)
-	if(!has_latent())
+/proc/latent_blast(atom/source, severity)
+	if(!source.has_latent())
 		return
-	var/datum/ledger/L = dq_ledger(src)
+	var/datum/ledger/L = dq_ledger(source)
 	if(!L)
 		return
 	for(var/datum/latent_entry/entry as anything in L.latent_list())

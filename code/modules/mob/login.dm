@@ -1,31 +1,31 @@
 //handles setting lastKnownIP and computer_id for use by the ban systems as well as checking for multikeying
-/mob/proc/update_Login_details()
+/proc/update_Login_details(mob/source)
 	//Multikey checks and logging
 	if(CONFIG_GET(flag/log_access))
 		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-			if(M == src)	continue
-			if( M.key && (M.key != key) )
+			if(M == source)	continue
+			if( M.key && (M.key != source.key) )
 				var/matches
 				// IP exemptions for those who are known to live together
 				var/list/ip_whitelist = CONFIG_GET(str_list/ip_whitelist)
-				if (ip_whitelist[key])
-					if (ip_whitelist[key] == ip_whitelist[M.key])
+				if (ip_whitelist[source.key])
+					if (ip_whitelist[source.key] == ip_whitelist[M.key])
 						continue
 				// end
-				if( (M.lastKnownIP == client.address) )
-					matches += "IP ([client.address])"
-				if( (client.connection != "web") && (M.computer_id == client.computer_id) )
+				if( (M.lastKnownIP == source.client.address) )
+					matches += "IP ([source.client.address])"
+				if( (source.client.connection != "web") && (M.computer_id == source.client.computer_id) )
 					if(matches)	matches += " and "
-					matches += "ID ([client.computer_id])"
+					matches += "ID ([source.client.computer_id])"
 					if(!CONFIG_GET(flag/disable_cid_warn_popup))
-						tgui_alert_async(src, "You appear to have logged in with another key this round, which is not permitted. Please contact an administrator if you believe this message to be in error.")
+						tgui_alert_async(source, "You appear to have logged in with another key this round, which is not permitted. Please contact an administrator if you believe this message to be in error.")
 				if(matches)
 					if(M.client)
-						message_admins("[span_red(span_bold("Notice:"))] [span_blue("[key_name_admin(src)] has the same [matches] as [key_name_admin(M)].")]", 1)
-						log_admin_private("Notice: [key_name(src)] has the same [matches] as [key_name(M)].")
+						message_admins("[span_red(span_bold("Notice:"))] [span_blue("[key_name_admin(source)] has the same [matches] as [key_name_admin(M)].")]", 1)
+						log_admin_private("Notice: [key_name(source)] has the same [matches] as [key_name(M)].")
 					else
-						message_admins("[span_red(span_bold("Notice:"))] [span_blue("[key_name_admin(src)] has the same [matches] as [key_name_admin(M)] (no longer logged in). ")]", 1)
-						log_admin_private("Notice: [key_name(src)] has the same [matches] as [key_name(M)] (no longer logged in).")
+						message_admins("[span_red(span_bold("Notice:"))] [span_blue("[key_name_admin(source)] has the same [matches] as [key_name_admin(M)] (no longer logged in). ")]", 1)
+						log_admin_private("Notice: [key_name(source)] has the same [matches] as [key_name(M)] (no longer logged in).")
 
 /mob/Login()
 	if(!client)
@@ -37,7 +37,7 @@
 	lastKnownIP	= client.address
 	computer_id	= client.computer_id
 	log_access("Mob Login: [key_name(src)] was assigned to a [type] ([tag])")
-	update_Login_details()
+	update_Login_details(src)
 	world.update_status()
 
 	client.images = null				//remove the images such as AIs being unable to see runes
@@ -96,7 +96,7 @@
 		for(var/datum/callback/CB as anything in persistent_client.post_login_callbacks)
 			CB.Invoke()
 
-	log_mob_tag("TAG: [tag] NEW OWNER: [key_name(src)]")
+	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")
 	SEND_SIGNAL(src, COMSIG_MOB_CLIENT_LOGIN, client)
 	client.init_verbs()
 

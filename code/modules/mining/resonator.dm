@@ -98,7 +98,7 @@
 
 /obj/item/resonator/afterattack(atom/target, mob/user, proximity_flag)
 	if(proximity_flag)
-		if(!check_allowed_items(target, 1))
+		if(!check_allowed_items(src, target, 1))
 			return
 		CreateResonance(target, user)
 

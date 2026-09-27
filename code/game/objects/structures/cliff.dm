@@ -46,11 +46,11 @@ two tiles on initialization, and which way a cliff is facing may change during m
 
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
-	register_dangerous_to_step()
+	register_dangerous_to_step(src)
 	AddElement(/datum/element/climbable/cliff,CLIFF_CLIMB_DELAY SECONDS)
 
 /obj/structure/cliff/Destroy()
-	unregister_dangerous_to_step()
+	unregister_dangerous_to_step(src)
 	. = ..()
 
 /obj/structure/cliff/Moved(atom/oldloc)

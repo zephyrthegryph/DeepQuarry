@@ -32,32 +32,32 @@
 	else
 		dust()
 
-/mob/proc/see_narsie(obj/singularity/narsie/large/N, dir)
+/proc/see_narsie(mob/source, obj/singularity/narsie/large/N, dir)
 	if(N.chained)
-		if(narsimage)
-			qdel(narsimage)
-			qdel(narglow)
+		if(source.narsimage)
+			qdel(source.narsimage)
+			qdel(source.narglow)
 		return
-	if((N.z == src.z)&&(get_dist(N,src) <= (N.consume_range+10)) && !(N in view(src)))
-		if(!narsimage) //Create narsimage
-			narsimage = image('icons/obj/narsie.dmi',src.loc,"narsie",9,1)
-			narsimage.mouse_opacity = 0
-		if(!narglow) //Create narglow
-			narglow = image('icons/obj/narsie.dmi',narsimage.loc,"glow-narsie",12,1)
-			narglow.mouse_opacity = 0
+	if((N.z == source.z)&&(get_dist(N,source) <= (N.consume_range+10)) && !(N in view(source)))
+		if(!source.narsimage) //Create narsimage
+			source.narsimage = image('icons/obj/narsie.dmi',source.loc,"narsie",9,1)
+			source.narsimage.mouse_opacity = 0
+		if(!source.narglow) //Create narglow
+			source.narglow = image('icons/obj/narsie.dmi',source.narsimage.loc,"glow-narsie",12,1)
+			source.narglow.mouse_opacity = 0
 		//Else if no dir is given, simply send them the image of narsie
-		var/new_x = 32 * (N.x - src.x) + N.pixel_x
-		var/new_y = 32 * (N.y - src.y) + N.pixel_y
-		narsimage.pixel_x = new_x
-		narsimage.pixel_y = new_y
-		narglow.pixel_x = new_x
-		narglow.pixel_y = new_y
-		narsimage.loc = src.loc
-		narglow.loc = src.loc
+		var/new_x = 32 * (N.x - source.x) + N.pixel_x
+		var/new_y = 32 * (N.y - source.y) + N.pixel_y
+		source.narsimage.pixel_x = new_x
+		source.narsimage.pixel_y = new_y
+		source.narglow.pixel_x = new_x
+		source.narglow.pixel_y = new_y
+		source.narsimage.loc = source.loc
+		source.narglow.loc = source.loc
 		//Display the new narsimage to the player
-		src << narsimage
-		src << narglow
+		source << source.narsimage
+		source << source.narglow
 	else
-		if(narsimage)
-			qdel(narsimage)
-			qdel(narglow)
+		if(source.narsimage)
+			qdel(source.narsimage)
+			qdel(source.narglow)

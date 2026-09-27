@@ -152,17 +152,17 @@ GLOBAL_LIST_INIT(mutation_immunities, list(
 
 /// Holds (or releases) the status immunities mutation `mut` grants. Called by add_mutation()
 /// and remove_mutation(); the key is the mutation, so two sources never release each other.
-/mob/proc/update_mutation_immunities(mut)
+/proc/update_mutation_immunities(mob/source, mut)
 	var/list/immunities = GLOB.mutation_immunities["[mut]"]
 	if(!immunities)
 		return
 	var/key = "mutation:[mut]"
-	var/held = has_mutation(mut)
+	var/held = source.has_mutation(mut)
 	for(var/immunity in immunities)
 		if(held)
-			om_hold(src, immunity, src, TRUE, key)
+			om_hold(source, immunity, source, TRUE, key)
 		else
-			om_release(src, immunity, src, key)
+			om_release(source, immunity, source, key)
 
 /// Holds every incapacitation immunity on `M` with `source` as the source.
 /proc/hold_incapacitation_immunity(mob/M, datum/source)

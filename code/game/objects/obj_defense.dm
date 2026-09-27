@@ -15,10 +15,10 @@
 		return
 	// Heat reaches the holder's contents through its slots' paths (C2).
 	if(length(contents))
-		propagate_fire(exposed_temperature, exposed_volume)
+		propagate_fire(src, exposed_temperature, exposed_volume)
 		if(QDELETED(src))
 			return
-	expose_heat(exposed_temperature)
+	expose_heat(src, exposed_temperature)
 	// Generic map machinery remains dormant under nominal room conditions, but
 	// crossing into an actual thermal hazard activates its material assembly so
 	// continued exposure, cooling, diagnostics, and repair use the same model as
@@ -33,7 +33,7 @@
 /obj/ex_act(severity)
 	if(..())
 		return
-	receive_explosion(severity)
+	receive_explosion(src, severity)
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
 /// emp_integrity_factor lose integrity to it.
@@ -48,8 +48,8 @@
 	return custom_fire_overlay
 
 ///called when the obj is destroyed by acid.
-/obj/proc/acid_melt()
-	deconstruct(FALSE)
+/proc/acid_melt(obj/source)
+	source.deconstruct(FALSE)
 
 /// Should be called when the atom is destroyed by fire, comparable to acid_melt() proc
 /obj/proc/burn()
@@ -96,7 +96,7 @@
 	// transaction's phase 3 uses (code/datums/containment/lifecycle.dm),
 	// directly -- deconstruct() isn't itself going through qdel() yet here.
 	if(!disassembled)
-		dq_lifecycle_resolve_contents()
+		dq_lifecycle_resolve_contents(src)
 
 	for(var/obj/item/item in contents)
 		if(item.item_flags & ABSTRACT)
@@ -111,23 +111,23 @@
 /obj/atom_destruction(damage_flag)
 	. = ..()
 	if(damage_flag == ACID)
-		acid_melt()
+		acid_melt(src)
 	else if(damage_flag == FIRE)
 		burn()
 	else
-		spawn_debris()
+		spawn_debris(src)
 		deconstruct(FALSE)
 
 /// This type's debris: path -> amount, or null. A shared list; don't modify it.
-/obj/proc/debris_entries()
-	if(!debris_type)
+/proc/debris_entries(obj/source)
+	if(!source.debris_type)
 		return null
-	return list((debris_type) = debris_amount)
+	return list((source.debris_type) = source.debris_amount)
 
 /// Create the debris entries on the turf. Stacks get their amount.
-/obj/proc/spawn_debris()
-	var/turf/T = get_turf(src)
-	var/list/entries = debris_entries()
+/proc/spawn_debris(obj/source)
+	var/turf/T = get_turf(source)
+	var/list/entries = debris_entries(source)
 	if(!T || !length(entries))
 		return
 	for(var/path in entries)

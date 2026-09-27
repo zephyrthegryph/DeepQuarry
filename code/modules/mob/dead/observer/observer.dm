@@ -542,7 +542,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 /mob/observer/proc/upkeep()
 	// to catch teleports etc which directly set loc
 	update_following()
-	update_spell_masters()
+	update_spell_masters(src)
 
 /mob/proc/check_holy(turf/T)
 	return FALSE

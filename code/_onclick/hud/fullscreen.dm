@@ -38,14 +38,14 @@
 			client.screen -= screen
 		qdel(screen)
 
-/mob/proc/clear_fullscreens()
-	for(var/category in screens)
-		clear_fullscreen(category)
+/proc/clear_fullscreens(mob/source)
+	for(var/category in source.screens)
+		source.clear_fullscreen(category)
 
-/mob/proc/hide_fullscreens()
-	if(client)
-		for(var/category in screens)
-			client.screen -= screens[category]
+/proc/hide_fullscreens(mob/source)
+	if(source.client)
+		for(var/category in source.screens)
+			source.client.screen -= source.screens[category]
 
 /mob/proc/reload_fullscreen()
 	if(client && stat != DEAD) //dead mob do not see any of the fullscreen overlays that he has.

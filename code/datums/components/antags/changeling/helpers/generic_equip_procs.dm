@@ -1,15 +1,15 @@
 //This is a generic proc that should be called by other ling armor procs to equip them.
-/mob/proc/changeling_generic_armor(armor_type, helmet_type, boot_type, chem_cost)
+/proc/changeling_generic_armor(mob/source, armor_type, helmet_type, boot_type, chem_cost)
 
-	if(!ishuman(src))
+	if(!ishuman(source))
 		return 0
 
-	var/mob/living/carbon/human/M = src
+	var/mob/living/carbon/human/M = source
 
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
 		chem_cost = 0
 
-	var/datum/component/antag/changeling/changeling = changeling_power(chem_cost, 1, 100, CONSCIOUS)
+	var/datum/component/antag/changeling/changeling = source.changeling_power(chem_cost, 1, 100, CONSCIOUS)
 
 	if(!changeling)
 		return
@@ -20,11 +20,11 @@
 		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT).name]"),
 		span_warningplain("You hear the organic matter ripping and tearing!"))
 		if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type))
-			remove_from_mob(M.get_equipped_item(SLOT_ID_SUIT))
+			source.remove_from_mob(M.get_equipped_item(SLOT_ID_SUIT))
 		if(istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type))
-			remove_from_mob(M.get_equipped_item(SLOT_ID_HEAD))
+			source.remove_from_mob(M.get_equipped_item(SLOT_ID_HEAD))
 		if(istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
-			remove_from_mob(M.get_equipped_item(SLOT_ID_SHOES))
+			source.remove_from_mob(M.get_equipped_item(SLOT_ID_SHOES))
 		M.update_inv_wear_suit()
 		M.update_inv_head()
 		M.update_hair()
@@ -32,35 +32,35 @@
 		return 1
 
 	if(M.get_equipped_item(SLOT_ID_HEAD) || M.get_equipped_item(SLOT_ID_SUIT)) //Make sure our slots aren't full
-		to_chat(src, span_warning("We require nothing to be on our head, and we cannot wear any external suits, or shoes."))
+		to_chat(source, span_warning("We require nothing to be on our head, and we cannot wear any external suits, or shoes."))
 		return 0
 
-	var/obj/item/clothing/suit/A = new armor_type(src)
-	src.equip_to_slot_or_del(A, slot_wear_suit)
+	var/obj/item/clothing/suit/A = new armor_type(source)
+	source.equip_to_slot_or_del(A, slot_wear_suit)
 
-	var/obj/item/clothing/suit/H = new helmet_type(src)
-	src.equip_to_slot_or_del(H, slot_head)
+	var/obj/item/clothing/suit/H = new helmet_type(source)
+	source.equip_to_slot_or_del(H, slot_head)
 
-	var/obj/item/clothing/shoes/B = new boot_type(src)
-	src.equip_to_slot_or_del(B, slot_shoes)
+	var/obj/item/clothing/shoes/B = new boot_type(source)
+	source.equip_to_slot_or_del(B, slot_shoes)
 
 	changeling.chem_charges -= chem_cost
-	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
+	playsound(source, 'sound/effects/blobattack.ogg', 30, 1)
 	M.update_inv_wear_suit()
 	M.update_inv_head()
 	M.update_hair()
 	M.update_inv_shoes()
 	return 1
 
-/mob/proc/changeling_generic_equip_all_slots(list/stuff_to_equip, cost)
-	var/datum/component/antag/changeling/changeling = changeling_power(cost,1,100,CONSCIOUS)
+/proc/changeling_generic_equip_all_slots(mob/source, list/stuff_to_equip, cost)
+	var/datum/component/antag/changeling/changeling = source.changeling_power(cost,1,100,CONSCIOUS)
 	if(!changeling)
 		return
 
-	if(!ishuman(src))
+	if(!ishuman(source))
 		return 0
 
-	var/mob/living/carbon/human/M = src
+	var/mob/living/carbon/human/M = source
 
 	var/success = 0
 
@@ -109,7 +109,7 @@
 		if(M.get_equipped_item(SLOT_ID_BACK) && stuff_to_equip["back"])
 			if(istype(M.get_equipped_item(SLOT_ID_BACK), stuff_to_equip["back"]))
 				for(var/atom/movable/AM in M.get_equipped_item(SLOT_ID_BACK).contents) //Dump whatever's in the bag before deleting.
-					AM.forceMove(src.loc)
+					AM.forceMove(source.loc)
 				qdel(M.get_equipped_item(SLOT_ID_BACK))
 				success = 1
 
@@ -119,8 +119,8 @@
 				success = 1
 
 		if(success)
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
-			visible_message(span_warning("[src] pulls on their clothes, peeling it off along with parts of their skin attached!"),
+			playsound(source, 'sound/effects/splat.ogg', 30, 1)
+			source.visible_message(span_warning("[source] pulls on their clothes, peeling it off along with parts of their skin attached!"),
 			span_notice("We remove and deform our equipment."))
 		changeling.armor_deployed = 0
 		return success
@@ -128,7 +128,7 @@
 	else
 
 		to_chat(M, span_notice("We begin growing our new equipment..."))
-		changeling_grow_piece(stuff_to_equip, 1, list())
+		source.changeling_grow_piece(stuff_to_equip, 1, list())
 		return 1
 
 /// The pieces a changeling grows, in order: key in stuff_to_equip, slot id, slot, name, sound.

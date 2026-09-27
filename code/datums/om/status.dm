@@ -117,15 +117,15 @@
 	return latest ? max(latest - rec.sched.now(), 0) : 0
 
 /// status_remaining() in seconds, for readouts.
-/datum/proc/status_seconds(id)
-	return status_remaining(id) / (1 SECONDS)
+/proc/status_seconds(datum/source, id)
+	return source.status_remaining(id) / (1 SECONDS)
 
 // ---------------------------------------------------------------- writing
 
 /// "Can't go below": the own dose lasts at least `amount` units from now. Never shortens.
 /datum/proc/status_at_least(id, amount)
 	var/datum/om/effect/status/def = om_status_def(id)
-	amount = status_increase(def, amount)
+	amount = status_increase(src, def, amount)
 	if(amount <= 0)
 		return FALSE
 	if(def.max_units)
@@ -147,7 +147,7 @@
 /datum/proc/status_set(id, amount)
 	var/datum/om/effect/status/def = om_status_def(id)
 	if(amount > 0)
-		if(!status_admit(def, amount))
+		if(!status_admit(src, def, amount))
 			return FALSE
 		if(def.max_units)
 			amount = min(amount, def.max_units)
@@ -165,7 +165,7 @@
 /datum/proc/status_adjust(id, amount)
 	var/datum/om/effect/status/def = om_status_def(id)
 	if(amount > 0)
-		amount = status_increase(def, amount)
+		amount = status_increase(src, def, amount)
 		if(amount <= 0)
 			return FALSE
 	var/datum/om/rec/rec = om_rec_of(src)
@@ -204,21 +204,21 @@
 // ---------------------------------------------------------------- admission and hooks
 
 /// An increase: admitted, then scaled. Returns the units to add, 0 when blocked.
-/datum/proc/status_increase(datum/om/effect/status/def, amount)
-	if(amount <= 0 || !status_admit(def, amount))
+/proc/status_increase(datum/source, datum/om/effect/status/def, amount)
+	if(amount <= 0 || !status_admit(source, def, amount))
 		return 0
 	if(def.scaled)
-		amount = status_scale(def, amount)
-	if(amount > 0 && def.on_increase && (!def.entity_type || istype(src, def.entity_type)))
-		call(src, def.on_increase)()
+		amount = source.status_scale(def, amount)
+	if(amount > 0 && def.on_increase && (!def.entity_type || istype(source, def.entity_type)))
+		call(source, def.on_increase)()
 	return amount
 
 /// Admission of an increase: the immunity, then the status's veto signal.
-/datum/proc/status_admit(datum/om/effect/status/def, amount)
-	var/datum/om/rec/rec = om_rec
+/proc/status_admit(datum/source, datum/om/effect/status/def, amount)
+	var/datum/om/rec/rec = source.om_rec
 	if(def.immunity_idx && rec?.contribs && om_effect_value(rec, om_registry().effects[def.immunity_idx]))
 		return FALSE
-	return !(def.signal && (SEND_SIGNAL(src, def.signal, amount) & COMPONENT_NO_STUN))
+	return !(def.signal && (SEND_SIGNAL(source, def.signal, amount) & COMPONENT_NO_STUN))
 
 /// Units of `def` that wear off per unit of time on this entity.
 /datum/proc/status_rate(datum/om/effect/status/def)

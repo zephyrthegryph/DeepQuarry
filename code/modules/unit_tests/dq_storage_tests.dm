@@ -22,7 +22,7 @@
 /datum/unit_test/dq_storage_limits/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, T)
-	TEST_ASSERT_EQUAL(box.slot_capacity(), box.max_storage_space, "the slot's capacity is max_storage_space")
+	TEST_ASSERT_EQUAL(slot_capacity(box), box.max_storage_space, "the slot's capacity is max_storage_space")
 
 	// Size: a box takes pocket-sized things only (its hold constraint).
 	var/obj/item/big = dq_storage_item(T, ITEMSIZE_NORMAL)

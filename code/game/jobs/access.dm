@@ -4,11 +4,11 @@
 /obj/var/list/req_one_access
 
 /// Swaps req_access and req_one_access for the shared copy with the same contents.
-/obj/proc/intern_access_lists()
-	if(length(req_access) && is_access_id_list(req_access))
-		req_access = string_list(req_access)
-	if(length(req_one_access) && is_access_id_list(req_one_access))
-		req_one_access = string_list(req_one_access)
+/proc/intern_access_lists(obj/source)
+	if(length(source.req_access) && is_access_id_list(source.req_access))
+		source.req_access = string_list(source.req_access)
+	if(length(source.req_one_access) && is_access_id_list(source.req_one_access))
+		source.req_one_access = string_list(source.req_one_access)
 
 /proc/is_access_id_list(list/L)
 	for(var/entry in L)
@@ -111,8 +111,8 @@
 /proc/get_all_job_icons() //For all existing HUD icons
 	return SSjob.occupations_by_name + GLOB.alt_titles_with_icons + list("Prisoner")
 
-/obj/proc/GetJobName() //Used in secHUD icon generation
-	var/obj/item/card/id/I = GetID()
+/proc/GetJobName(obj/source)
+	var/obj/item/card/id/I = source.GetID()
 
 	if(I)
 		if(istype(I,/obj/item/card/id/centcom))

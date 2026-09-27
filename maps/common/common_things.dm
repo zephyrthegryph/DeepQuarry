@@ -253,7 +253,7 @@
 	if(my_mob && my_mob.stat != DEAD)
 		return //No need
 
-	if(LAZYLEN(loc.human_mobs(world.view)))
+	if(LAZYLEN(human_mobs(loc, world.view)))
 		return //I'll wait.
 
 	if(prob(prob_spawn))

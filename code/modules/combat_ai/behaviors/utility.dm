@@ -21,7 +21,7 @@
 	if(!owner)
 		return null
 	// Already holding something? Skip unless we could swap to something better.
-	var/obj/item/current = owner.get_active_held_item()
+	var/obj/item/current = get_active_held_item(owner)
 	var/current_grants = current ? LAZYLEN(current.get_dq_granted_behaviors()) : 0
 
 	var/obj/item/best

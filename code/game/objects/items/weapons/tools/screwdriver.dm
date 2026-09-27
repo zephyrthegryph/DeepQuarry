@@ -62,7 +62,7 @@
 		return ..()
 	if(CLUMSY_HARM_CHANCE(user))
 		M = user
-	return eyestab(M,user)
+	return eyestab(src, M,user)
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_screwdriver
 	name = "Precursor Alpha Object - Hard Light Torgue Tool"

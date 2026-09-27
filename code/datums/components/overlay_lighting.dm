@@ -204,7 +204,7 @@
 	var/atom/movable/light_source = GET_LIGHT_SOURCE
 	dq_affected_dynamic_lights_set(light_source, src, lumcount_range + 1)
 	light_source.vis_contents += visible_mask
-	light_source.update_dynamic_luminosity()
+	update_dynamic_luminosity(light_source)
 	if(directional)
 		current_holder.vis_contents += cone
 
@@ -213,7 +213,7 @@
 	var/atom/movable/light_source = GET_LIGHT_SOURCE
 	dq_affected_dynamic_lights_remove(light_source, src)
 	light_source.vis_contents -= visible_mask
-	light_source.update_dynamic_luminosity()
+	update_dynamic_luminosity(light_source)
 	if(directional)
 		current_holder.vis_contents -= cone
 		directional_atom.moveToNullspace()

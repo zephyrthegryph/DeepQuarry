@@ -141,7 +141,7 @@
 
 	O.add_ai_verbs()
 
-	O.rename_self("ai",1)
+	rename_self(O, "ai",1)
 	om_qdel_after(src, 0)	// Deleting now would end this proc before O is returned
 	return O
 

@@ -6,10 +6,10 @@
 	return
 
 /// Set mob's focus. TODO: Decide if required.
-/mob/proc/set_focus(datum/new_focus)
-	if(focus == new_focus)
+/proc/set_focus(mob/source, datum/new_focus)
+	if(source.focus == new_focus)
 		return
-	focus = new_focus
+	source.focus = new_focus
 
 /// Turns a keys bitfield into text showing all bits set
 /proc/keys2text(keys)

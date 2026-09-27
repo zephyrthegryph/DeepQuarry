@@ -420,7 +420,7 @@
 /// Cloaks over one second: the fade runs as a task (cancelled if the mouse dies or is deleted),
 /// so Life never waits for it.
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/start_cloaking()
-	if(!cloak_begin())
+	if(!cloak_begin(src))
 		return
 	animate(src, alpha = 0, time = 1 SECOND)
 	if(istext(om_task_start(src, /datum/om/task_def/mob_work/cloak, src)))

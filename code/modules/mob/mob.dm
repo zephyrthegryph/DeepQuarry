@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		// Snapshot: spell_master Destroy() removes itself from spell_masters.
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters?.Copy())
 			qdel(spell_master)
-		remove_screen_obj_references()
+		remove_screen_obj_references(src)
 		client.screen = list()
 	if(mind && mind.current == src)
 		spellremove(src)
@@ -75,21 +75,21 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//return QDEL_HINT_HARDDEL_NOW
 
 
-/mob/proc/remove_screen_obj_references()
-	hands = null
-	pullin = null
-	purged = null
-	internals = null
-	i_select = null
-	m_select = null
-	healths = null
-	throw_icon = null
-	pain = null
-	item_use_icon = null
-	gun_move_icon = null
-	gun_setting_icon = null
-	spell_masters = null
-	zone_sel = null
+/proc/remove_screen_obj_references(mob/source)
+	source.hands = null
+	source.pullin = null
+	source.purged = null
+	source.internals = null
+	source.i_select = null
+	source.m_select = null
+	source.healths = null
+	source.throw_icon = null
+	source.pain = null
+	source.item_use_icon = null
+	source.gun_move_icon = null
+	source.gun_setting_icon = null
+	source.spell_masters = null
+	source.zone_sel = null
 
 /mob/Initialize(mapload)
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MOB_CREATED, src)
@@ -98,11 +98,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
 	if(shouldnt_see)
 		shouldnt_see = shared_type_list(type, "shouldnt_see", shouldnt_see)
-	set_focus(src) // Key Handling
+	set_focus(src, src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
 	publish_mob_chunk(src)
-	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
+	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
@@ -226,11 +226,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_paralyzed()
 	return status_units(EFFECT_PARALYZED)
 
-/mob/proc/is_physically_disabled()
-	return incapacitated(INCAPACITATION_DISABLED)
+/proc/is_physically_disabled(mob/source)
+	return source.incapacitated(INCAPACITATION_DISABLED)
 
-/mob/proc/cannot_stand()
-	return incapacitated(INCAPACITATION_KNOCKDOWN)
+/proc/cannot_stand(mob/source)
+	return source.incapacitated(INCAPACITATION_KNOCKDOWN)
 
 /mob/proc/incapacitated(incapacitation_flags = INCAPACITATION_DEFAULT)
 	if((incapacitation_flags & INCAPACITATION_STUNNED) && has_status(EFFECT_STUNNED))
@@ -296,7 +296,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			return TRUE //no setting eye to stupid things like areas or whatever
 	else
 		//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
-		if(restore_remote_views())
+		if(restore_remote_views(src))
 			return TRUE
 		//Reset to common defaults: mob if on turf, otherwise current loc. Fallback to mob if we are in nullspace.
 		if(isturf(loc) || isnull(loc))
@@ -310,22 +310,22 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return TRUE
 
 /// Reapplies remote views based on object type and flags. Returns true if the view was assigned.
-/mob/proc/restore_remote_views()
-	if(!loc) // Nullspace during respawn
+/proc/restore_remote_views(mob/source)
+	if(!source.loc) // Nullspace during respawn
 		return FALSE
-	if(QDELETED(loc) || QDELETED(src)) // location or ourselves is qdeleted, don't restart remote viewing during destroy
+	if(QDELETED(source.loc) || QDELETED(source)) // location or ourselves is qdeleted, don't restart remote viewing during destroy
 		return FALSE
-	if(isturf(loc)) // Cannot be remote if it was a turf, also obj and turf flags overlap so stepping into space triggers remoteview endlessly.
+	if(isturf(source.loc)) // Cannot be remote if it was a turf, also obj and turf flags overlap so stepping into space triggers remoteview endlessly.
 		return FALSE
 	// Check if we actually need to drop our current remote view component, as this is expensive to do, and leads to more difficult to understand error prone logic
-	var/datum/component/remote_view/remote_comp = GetComponent(/datum/component/remote_view)
-	if(remote_comp?.looking_at_target_already(loc))
+	var/datum/component/remote_view/remote_comp = source.GetComponent(/datum/component/remote_view)
+	if(remote_comp?.looking_at_target_already(source.loc))
 		return FALSE
-	if(isitem(loc) || isbelly(loc) || ismecha(loc)) // Requires more careful handling than structures because they are held by mobs
-		AddComponent(/datum/component/remote_view/mob_holding_item, focused_on = loc, viewsize = null, vconfig_path = /datum/remote_view_config/inside_object)
+	if(isitem(source.loc) || isbelly(source.loc) || ismecha(source.loc)) // Requires more careful handling than structures because they are held by mobs
+		source.AddComponent(/datum/component/remote_view/mob_holding_item, focused_on = source.loc, viewsize = null, vconfig_path = /datum/remote_view_config/inside_object)
 		return TRUE
-	if(loc.flags & REMOTEVIEW_ON_ENTER) // Handle atoms that begin a remote view upon entering them.
-		AddComponent(/datum/component/remote_view, focused_on = loc, viewsize = null, vconfig_path = /datum/remote_view_config/inside_object)
+	if(source.loc.flags & REMOTEVIEW_ON_ENTER) // Handle atoms that begin a remote view upon entering them.
+		source.AddComponent(/datum/component/remote_view, focused_on = source.loc, viewsize = null, vconfig_path = /datum/remote_view_config/inside_object)
 		return TRUE
 	return FALSE
 
@@ -383,10 +383,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(msg != null)
 		flavor_text = msg
 
-/mob/proc/warn_flavor_changed()
-	if(flavor_text && flavor_text != "") // don't spam people that don't use it!
-		to_chat(src, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
-		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))
+/proc/warn_flavor_changed(mob/source)
+	if(source.flavor_text && source.flavor_text != "") // don't spam people that don't use it!
+		to_chat(source, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
+		to_chat(source, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[source];flavor_change=1'>Change</a>")))
 
 /mob/proc/print_flavor_text()
 	if (flavor_text && flavor_text != "")
@@ -737,10 +737,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_dead()
 	return stat == DEAD
 
-/mob/proc/is_mechanical()
-	if(mind && (mind.assigned_role == JOB_CYBORG || mind.assigned_role == JOB_AI))
+/proc/is_mechanical(mob/source)
+	if(source.mind && (source.mind.assigned_role == JOB_CYBORG || source.mind.assigned_role == JOB_AI))
 		return 1
-	return istype(src, /mob/living/silicon) || get_species() == "Machine"
+	return istype(source, /mob/living/silicon) || source.get_species() == "Machine"
 
 /mob/proc/is_ready()
 	return client && !!mind
@@ -757,7 +757,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	to_chat(src,message)
 	return 1
 
-/mob/proc/show_viewers(message)
+/proc/show_viewers(mob/source, message)
 	for(var/mob/M in viewers())
 		M.see(message)
 
@@ -766,7 +766,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	. = list()
 
 /// Gets all relevant proc holders for the browser statpenl
-/mob/proc/get_proc_holders()
+/proc/get_proc_holders(mob/source)
 	. = list()
 	//if(mind)
 		//. += get_spells_for_statpanel(mind.spell_list)
@@ -839,22 +839,22 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	update_canmove()
 	return
 
-/mob/proc/AdjustResting(amount)
-	resting = max(resting + amount,0)
-	update_canmove()
+/proc/AdjustResting(mob/source, amount)
+	source.resting = max(source.resting + amount,0)
+	source.update_canmove()
 	return
 
 /mob/proc/AdjustLosebreath(amount)
 	losebreath = CLAMP(losebreath + amount, 0, 25)
 
-/mob/proc/SetLosebreath(amount)
-	losebreath = CLAMP(amount, 0, 25)
+/proc/SetLosebreath(mob/source, amount)
+	source.losebreath = CLAMP(amount, 0, 25)
 
 /mob/proc/get_species()
 	return ""
 
-/mob/proc/flash_weak_pain()
-	flick("weak_pain",pain)
+/proc/flash_weak_pain(mob/source)
+	flick("weak_pain",source.pain)
 
 /mob/proc/get_visible_implants(class = 0)
 	var/list/visible_implants = list()
@@ -1139,12 +1139,12 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_muzzled()
 	return 0
 
-/mob/proc/amend_exploitable(obj/item/I)
+/proc/amend_exploitable(mob/source, obj/item/I)
 	if(istype(I))
-		exploit_addons |= I
+		source.exploit_addons |= I
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
-		exploit_record += exploitmsg
-		I.exploit_for = om_handle(src)
+		source.exploit_record += exploitmsg
+		I.exploit_for = om_handle(source)
 
 
 /obj/item/Destroy(force, ...)
@@ -1205,14 +1205,12 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 // This is for inheritence since /mob/living will serve most cases. If you need ghosts to use this you'll have to implement that yourself.
 /mob/proc/update_client_color()
 	if(client && client.color)
-		animate(client, color = get_location_color_tint(), time = 10)
+		animate(client, color = get_location_color_tint(src), time = 10)
 	return
 
-/mob/proc/get_location_color_tint()
-	PROTECTED_PROC(TRUE)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	var/turf/T = get_turf(src)
-	var/area/A = get_area(src)
+/proc/get_location_color_tint(mob/source)
+	var/turf/T = get_turf(source)
+	var/area/A = get_area(source)
 	if(!T || !A)
 		return null
 	if(T.is_outdoors()) // check weather

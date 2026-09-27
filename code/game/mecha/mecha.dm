@@ -675,7 +675,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /*
 /atom/DblClick(object,location,control,params)
 	var/mob/M = src.mob
-	if(M && M.in_contents_of(/obj/mecha))
+	if(M && in_contents_of(M, /obj/mecha))
 
 		if(mech_click == world.time) return
 		mech_click = world.time

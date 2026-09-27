@@ -121,7 +121,7 @@
 	var/key = holder.slot_holder_key()
 	. = cache[key]
 	if(isnull(.))
-		var/list/defs = holder.slot_relation_overrides()
+		var/list/defs = slot_relation_overrides(holder)
 		if(isnull(defs))
 			defs = om_registry().slot_group_for(key)
 		. = length(defs) ? defs : FALSE
@@ -139,7 +139,7 @@
 /// per-type declaration (a decision that depends on more than the holder's
 /// type or body plan, e.g. an instance flag). Returning null (the default)
 /// means "use the registry's declared groups, keyed by slot_holder_key()".
-/atom/proc/slot_relation_overrides()
+/proc/slot_relation_overrides(atom/source)
 	return null
 
 /// The limit for this holder. Override for per-instance capacities.

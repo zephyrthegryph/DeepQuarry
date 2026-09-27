@@ -10,19 +10,19 @@
 	//this keeps the garbage collector from failing to collect objects being searched for in here
 	SSgarbage.can_fire = FALSE
 
-	_search_references()
+	_search_references(src)
 	//restart the garbage collector
 	SSgarbage.can_fire = TRUE
 	SSgarbage.update_nextfire(reset_time = TRUE)
 
-/datum/proc/_search_references()
-	log_reftracker("Beginning search for references to a [type], looking for [references_to_clear] refs.")
+/proc/_search_references(datum/source)
+	log_reftracker("Beginning search for references to a [source.type], looking for [source.references_to_clear] refs.")
 
 	var/starting_time = world.time
 	//Time to search the whole game for our ref
-	DoSearchVar(GLOB, "GLOB", starting_time) //globals
+	source.DoSearchVar(GLOB, "GLOB", starting_time) //globals
 	log_reftracker("Finished searching globals")
-	if(src.references_to_clear == 0)
+	if(source.references_to_clear == 0)
 		return
 
 	//Yes we do actually need to do this. The searcher refuses to read weird lists
@@ -31,39 +31,39 @@
 	for(var/key in global.vars)
 		global_vars[key] = global.vars[key]
 
-	DoSearchVar(global_vars, "Native Global", starting_time)
+	source.DoSearchVar(global_vars, "Native Global", starting_time)
 	log_reftracker("Finished searching native globals")
-	if(src.references_to_clear == 0)
+	if(source.references_to_clear == 0)
 		return
 
 	for(var/datum/thing in world) //atoms (don't beleive its lies)
-		DoSearchVar(thing, "World -> [thing.type]", starting_time)
-		if(src.references_to_clear == 0)
+		source.DoSearchVar(thing, "World -> [thing.type]", starting_time)
+		if(source.references_to_clear == 0)
 			break
 	log_reftracker("Finished searching atoms")
-	if(src.references_to_clear == 0)
+	if(source.references_to_clear == 0)
 		return
 
 	for(var/datum/thing) //datums
-		DoSearchVar(thing, "Datums -> [thing.type]", starting_time)
-		if(src.references_to_clear == 0)
+		source.DoSearchVar(thing, "Datums -> [thing.type]", starting_time)
+		if(source.references_to_clear == 0)
 			break
 	log_reftracker("Finished searching datums")
-	if(src.references_to_clear == 0)
+	if(source.references_to_clear == 0)
 		return
 
 	//Warning, attempting to search clients like this will cause crashes if done on live. Watch yourself
 #ifndef REFERENCE_DOING_IT_LIVE
 	for(var/client/thing) //clients
-		DoSearchVar(thing, "Clients -> [thing.type]", starting_time)
-		if(src.references_to_clear == 0)
+		source.DoSearchVar(thing, "Clients -> [thing.type]", starting_time)
+		if(source.references_to_clear == 0)
 			break
 	log_reftracker("Finished searching clients")
-	if(src.references_to_clear == 0)
+	if(source.references_to_clear == 0)
 		return
 #endif
 
-	log_reftracker("Completed search for references to a [type].")
+	log_reftracker("Completed search for references to a [source.type].")
 
 /datum/proc/DoSearchVar(potential_container, container_name, search_time, recursion_count, is_special_list)
 	if(recursion_count >= REFSEARCH_RECURSE_LIMIT)

@@ -94,7 +94,7 @@ GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)
 
 /atom/MouseWheel(delta_x,delta_y,location,control,params)
 	if(src)
-		usr.MouseWheelOn(src, delta_x, delta_y, params)
+		MouseWheelOn(usr, src, delta_x, delta_y, params)
 
 /atom/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
 	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)

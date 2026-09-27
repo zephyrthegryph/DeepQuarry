@@ -133,7 +133,7 @@
 				qdel(C, FALSE)
 		dc.Cut()
 
-	_clear_signal_refs()
+	_clear_signal_refs(src)
 	//END: ECS SHIT
 
 	SStgui.close_uis(src)
@@ -151,21 +151,21 @@
 
 ///Only override this if you know what you're doing. You do not know what you're doing
 ///This is a threat
-/datum/proc/_clear_signal_refs()
-	var/list/lookup = _listen_lookup
+/proc/_clear_signal_refs(datum/source)
+	var/list/lookup = source._listen_lookup
 	if(lookup)
 		for(var/sig in lookup)
 			var/list/comps = lookup[sig]
 			if(length(comps))
 				for(var/datum/component/comp as anything in comps)
-					comp.UnregisterSignal(src, sig)
+					comp.UnregisterSignal(source, sig)
 			else
 				var/datum/component/comp = comps
-				comp.UnregisterSignal(src, sig)
-		_listen_lookup = lookup = null
+				comp.UnregisterSignal(source, sig)
+		source._listen_lookup = lookup = null
 
-	for(var/target in _signal_procs)
-		UnregisterSignal(target, _signal_procs[target])
+	for(var/target in source._signal_procs)
+		source.UnregisterSignal(target, source._signal_procs[target])
 
 /**
  * Callback called by a timer to end an associative-list-indexed cooldown.
@@ -212,14 +212,14 @@
 	update_filters()
 
 ///A version of add_filter that takes a list of filters to add rather than being individual, to limit calls to update_filters().
-/datum/proc/add_filters(list/list/filters)
-	LAZYINITLIST(filter_data)
+/proc/add_filters(datum/source, list/list/filters)
+	LAZYINITLIST(source.filter_data)
 	for(var/list/individual_filter as anything in filters)
 		var/list/params = individual_filter["params"]
 		var/list/copied_parameters = params.Copy()
 		copied_parameters["priority"] = individual_filter["priority"]
-		filter_data[individual_filter["name"]] = copied_parameters
-	update_filters()
+		source.filter_data[individual_filter["name"]] = copied_parameters
+	source.update_filters()
 
 /// Reapplies all the filters.
 /datum/proc/update_filters()
@@ -241,16 +241,16 @@
  * * new_params - New parameters of the filter
  * * overwrite - TRUE means we replace the parameter list completely. FALSE means we only replace the things on new_params.
  */
-/datum/proc/modify_filter(name, list/new_params, overwrite = FALSE)
-	var/filter = get_filter(name)
+/proc/modify_filter(datum/source, name, list/new_params, overwrite = FALSE)
+	var/filter = source.get_filter(name)
 	if(!filter)
 		return
 	if(overwrite)
-		filter_data[name] = new_params
+		source.filter_data[name] = new_params
 	else
 		for(var/thing in new_params)
-			filter_data[name][thing] = new_params[thing]
-	update_filters()
+			source.filter_data[name][thing] = new_params[thing]
+	source.update_filters()
 
 /** Update a filter's parameter and animate this change. If the filter doesn't exist we won't do anything.
  * Basically a [datum/proc/modify_filter] call but with animations. Unmodified filter parameters are kept.
@@ -262,14 +262,14 @@
  * * easing - easing arg of the BYOND animate() proc.
  * * loop - loop arg of the BYOND animate() proc.
  */
-/datum/proc/transition_filter(name, list/new_params, time, easing, loop)
-	var/filter = get_filter(name)
+/proc/transition_filter(datum/source, name, list/new_params, time, easing, loop)
+	var/filter = source.get_filter(name)
 	if(!filter)
 		return
 	// This can get injected by the filter procs, we want to support them so bye byeeeee
 	new_params -= "type"
 	animate(filter, new_params, time = time, easing = easing, loop = loop)
-	modify_filter(name, new_params)
+	modify_filter(source, name, new_params)
 
 /** Keeps the steps in the correct order.
 * Arguments:
@@ -288,14 +288,14 @@
  * * ... - a list of each link in the animation chain. Use FilterChainStep(params, duration, easing) for each link
  * Example use:
  * * add_filter("blue_pulse", 1, color_matrix_filter(COLOR_WHITE))
- * * transition_filter_chain(src, "blue_pulse", INDEFINITE,\
+ * * transition_filter_chain(src, src, "blue_pulse", INDEFINITE,\
  * *	FilterChainStep(color_matrix_filter(COLOR_BLUE), 10 SECONDS, CUBIC_EASING),\
  * *	FilterChainStep(color_matrix_filter(COLOR_WHITE), 10 SECONDS, CUBIC_EASING))
  * The above code would edit a color_matrix_filter() to slowly turn blue over 10 seconds before returning back to white 10 seconds after, repeating this chain forever.
  */
-/datum/proc/transition_filter_chain(name, num_loops, ...)
+/proc/transition_filter_chain(datum/source, name, num_loops, ...)
 	var/list/transition_steps = args.Copy(3)
-	var/filter = get_filter(name)
+	var/filter = source.get_filter(name)
 	if(!filter)
 		return
 	var/list/first_step = transition_steps[1]
@@ -305,12 +305,12 @@
 		animate(this_step["params"], time = this_step["duration"], easing = this_step["easing"])
 
 /// Updates the priority of the passed filter key
-/datum/proc/change_filter_priority(name, new_priority)
-	if(!filter_data || !filter_data[name])
+/proc/change_filter_priority(datum/source, name, new_priority)
+	if(!source.filter_data || !source.filter_data[name])
 		return
 
-	filter_data[name]["priority"] = new_priority
-	update_filters()
+	source.filter_data[name]["priority"] = new_priority
+	source.update_filters()
 
 /// Returns the filter associated with the passed key
 /datum/proc/get_filter(name)
@@ -321,8 +321,8 @@
 
 /// Returns the indice in filters of the given filter name.
 /// If it is not found, returns null.
-/datum/proc/get_filter_index(name)
-	return filter_data?.Find(name)
+/proc/get_filter_index(datum/source, name)
+	return source.filter_data?.Find(name)
 
 /// Removes the passed filter, or multiple filters, if supplied with a list.
 /datum/proc/remove_filter(name_or_names)
@@ -341,10 +341,10 @@
 		update_filters()
 	return .
 
-/datum/proc/clear_filters()
-	ASSERT(isatom(src) || isimage(src))
-	var/atom/atom_cast = src // filters only work with images or atoms.
-	filter_data = null
+/proc/clear_filters(datum/source)
+	ASSERT(isatom(source) || isimage(source))
+	var/atom/atom_cast = source // filters only work with images or atoms.
+	source.filter_data = null
 	atom_cast.filters = null
 
 /// Return text from this proc to provide extra context to hard deletes that happen to it

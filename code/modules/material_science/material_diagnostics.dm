@@ -31,13 +31,13 @@
 	RegisterSignal(owner, COMSIG_ATOM_ATTACKBY, PROC_REF(replace_with_stock))
 	RegisterSignal(owner, COMSIG_ATOM_EXAMINE, PROC_REF(examine_service))
 
-/obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
-	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
+/proc/material_diagnostics_tool_act(obj/source, mob/user, obj/item/tool)
+	if(!source.has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return NONE
-	var/datum/material_service/service = material_service_event(MATERIAL_EVENT_MONITORING)
+	var/datum/material_service/service = source.material_service_event(MATERIAL_EVENT_MONITORING)
 	if(!service)
 		return NONE
-	return service.inspect_with_tool(src, user, tool)
+	return service.inspect_with_tool(source, user, tool)
 
 /datum/material_service/proc/unregister_diagnostics()
 	UnregisterSignal(owner, list(COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL), COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY, COMSIG_ATOM_EXAMINE))

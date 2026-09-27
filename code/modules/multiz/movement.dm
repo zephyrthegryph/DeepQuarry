@@ -131,7 +131,7 @@
 				to_chat(src, span_warning("Gravity stops you from moving upward."))
 				return 0
 
-	return zmove_finish(direction, start, destination)
+	return zmove_finish(src, direction, start, destination)
 
 /// A timed z-move (diving, climbing, swimming, flying) completed: move.
 /mob/proc/zmove_timed_done(direction, turf/start, turf/destination, message, needs_flight)
@@ -141,29 +141,29 @@
 			to_chat(src, span_warning("You stopped flying upwards."))
 			return
 	to_chat(src, span_notice(message))
-	if(zmove_finish(direction, start, destination))
+	if(zmove_finish(src, direction, start, destination))
 		to_chat(src, span_notice(direction == UP ? "You move upwards." : "You move down."))
 
 /// The end of a z-move: blockers at the destination, then the move and whatever is pulled along.
-/mob/proc/zmove_finish(direction, turf/start, turf/destination)
+/proc/zmove_finish(mob/source, direction, turf/start, turf/destination)
 	for(var/atom/A in destination)
-		if(!A.CanPass(src, start, 1.5, 0))
-			to_chat(src, span_warning("\The [A] blocks you."))
+		if(!A.CanPass(source, start, 1.5, 0))
+			to_chat(source, span_warning("\The [A] blocks you."))
 			return 0
-	if(!Move(destination))
+	if(!source.Move(destination))
 		return 0
-	if(isliving(src))
+	if(isliving(source))
 		var/list/atom/movable/pulling = list()
-		var/mob/living/L = src
+		var/mob/living/L = source
 		var/atom/movable/L_pulling = PULLING(L)
 		if(L_pulling && !L_pulling.anchored)
 			pulling |= L_pulling
 		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			pulling |= GRAB_TARGET(G)
 		if(direction == UP)
-			src.audible_message(span_notice("[src] moves up."))
+			source.audible_message(span_notice("[source] moves up."))
 		else if(direction == DOWN)
-			src.audible_message(span_notice("[src] moves down."))
+			source.audible_message(span_notice("[source] moves down."))
 		for(var/atom/movable/P in pulling)
 			P.forceMove(destination)
 	return 1
@@ -268,12 +268,12 @@
 // TODO - Leshana Experimental
 
 //Execution by grand piano!
-/atom/movable/proc/get_fall_damage()
+/proc/get_fall_damage(atom/movable/source)
 	return 42
 
 //If atom stands under open space, it can prevent fall, or not
-/atom/proc/can_prevent_fall(atom/movable/mover, turf/coming_from)
-	return (!CanPass(mover, coming_from))
+/proc/can_prevent_fall(atom/source, atom/movable/mover, turf/coming_from)
+	return (!source.CanPass(mover, coming_from))
 
 ////////////////////////////
 
@@ -332,7 +332,7 @@
 		if(LAZYLEN(GRABBED_BY(L))) //If you're grabbed (presumably by someone flying) let's not have you fall. This also allows people to grab onto you while you jump over a railing to prevent you from falling!
 			return
 
-	if(can_fall() && can_fall_to(below))
+	if(can_fall() && can_fall_to(src, below))
 		// We spawn here to let the current move operation complete before we start falling. fall() is normally called from
 		// Entered() which is part of Move(), by spawn()ing we let that complete.  But we want to preserve if we were in client movement
 		// or normal movement so other move behavior can continue.
@@ -391,16 +391,16 @@
 		return species?.can_fall(src)
 
 // Another check that we probably can just merge into can_fall exept for messing up overrides
-/atom/movable/proc/can_fall_to(turf/landing)
+/proc/can_fall_to(atom/movable/source, turf/landing)
 	// Check if there is anything in our turf we are standing on to prevent falling.
-	for(var/obj/O in loc)
-		if(!O.CanFallThru(src, landing))
+	for(var/obj/O in source.loc)
+		if(!O.CanFallThru(source, landing))
 			return FALSE
 	// See if something in turf below prevents us from falling into it.
 	for(var/atom/A in landing)
 		if(ismob(A))
 			continue
-		if(!A.CanPass(src, src.loc, 1, 0))
+		if(!A.CanPass(source, source.loc, 1, 0))
 			return FALSE
 	return TRUE
 

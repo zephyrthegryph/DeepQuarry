@@ -549,8 +549,8 @@
 /mob/proc/Check_Shoegrip()
 	return 0
 
-/mob/proc/mob_get_gravity(turf/T)
-	return get_gravity(src, T)
+/proc/mob_get_gravity(mob/source, turf/T)
+	return source.get_gravity(source, T)
 
 /mob/proc/update_gravity()
 	return

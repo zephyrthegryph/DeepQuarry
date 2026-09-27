@@ -50,10 +50,10 @@
 			. = TRUE
 		if("change_priority")
 			var/new_priority = params["new_priority"]
-			target.change_filter_priority(params["name"], new_priority)
+			change_filter_priority(target, params["name"], new_priority)
 			. = TRUE
 		if("transition_filter_value")
-			target.transition_filter(params["name"], params["new_data"], 4)
+			transition_filter(target, params["name"], params["new_data"], 4)
 			. = TRUE
 		if("modify_filter_value")
 			var/list/old_filter_data = target.filter_data[params["name"]]
@@ -69,7 +69,7 @@
 		if("modify_color_value")
 			var/new_color = tgui_color_picker(usr, "Pick new filter color", "Filteriffic Colors!")
 			if(new_color)
-				target.transition_filter(params["name"], list("color" = new_color), 4)
+				transition_filter(target, params["name"], list("color" = new_color), 4)
 				. = TRUE
 		if("modify_icon_value")
 			var/icon/new_icon = pick_and_customize_icon()

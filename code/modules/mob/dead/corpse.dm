@@ -179,9 +179,9 @@
 		W.registered_name = M.real_name
 		M.equip_to_slot_or_del(W, slot_wear_id)
 	if(src.corpsehelmet)
-		M.equip_voidhelm_to_slot_or_del_with_refit(new src.corpsehelmet(M), slot_head, src.species)
+		equip_voidhelm_to_slot_or_del_with_refit(M, new src.corpsehelmet(M), slot_head, src.species)
 	if(src.corpsesuit)
-		M.equip_voidsuit_to_slot_or_del_with_refit(new src.corpsesuit(M), slot_wear_suit, src.species)
+		equip_voidsuit_to_slot_or_del_with_refit(M, new src.corpsesuit(M), slot_wear_suit, src.species)
 
 /obj/effect/landmark/mobcorpse/proc/generateCorpseName()
 	return name

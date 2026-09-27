@@ -201,7 +201,7 @@
 		new_item.set_economic_provenance(DEPARTMENT_RESEARCH, 15, producer_account)
 		new_item.loc = loc
 		if(mat_efficiency < 1) // No matter out of nowhere
-			new_item.scale_materials(mat_efficiency)
+			scale_materials(new_item, mat_efficiency)
 	return new_item
 
 // 0 amount = 0 means ejecting a full stack; -1 means eject everything

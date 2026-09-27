@@ -98,7 +98,7 @@
 	if(!material) // No point checking for reflection.
 		return ..()
 
-	if(material_reactive_absorb(damage))
+	if(material_reactive_absorb(src, damage))
 		user.visible_message(span_danger("The reactive lattice in [src] flashes and disrupts [attack_text]!"))
 		return TRUE
 

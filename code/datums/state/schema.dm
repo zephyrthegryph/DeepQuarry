@@ -54,7 +54,7 @@
  *   state_variant_baseline()       assoc of var -> value the variant sets, excluded from the delta
  *   state_pre_apply(list/vars, flags)   before vars are written (apply the variant here)
  *   state_post_apply(list/blob, flags)  after vars, contents and components are in place
- *   state_refusal()                a reason text to refuse serialization, or null; call ..()
+ *   state_refusal(src)                a reason text to refuse serialization, or null; call ..()
  *
  * Migrations of renamed or removed types go in GLOB.state_type_migrations
  * ("/old/path" = /new/path, or = null to drop the entry).
@@ -113,7 +113,7 @@ GLOBAL_LIST_INIT(state_type_migrations, list())
 /// A reason this object's state cannot be serialized right now, or null. Call ..().
 /// Running behaviour (timers, processing) does not refuse serialization, since
 /// persistence saves running objects; it blocks collapse (collapse.dm).
-/datum/proc/state_refusal()
+/proc/state_refusal(datum/source)
 	return null
 
 // ---------------------------------------------------------------------------

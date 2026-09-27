@@ -89,7 +89,7 @@
 	var/later = I.get_temperature()
 	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
 	TEST_ASSERT(later > ambient, "the body passed its surroundings ([later] K < [ambient] K)")
-	I.release_heat_body()
+	release_heat_body(I)
 	TEST_ASSERT_NULL(I.heat_body, "release kept the handle")
 	TEST_ASSERT(abs(I.get_temperature() - I.get_ambient_temperature()) < 0.01, "a released item does not read its surroundings")
 

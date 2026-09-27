@@ -2,11 +2,11 @@
 // You place this in your uplinkable item to check if an uplink is active or not.
 // If it is, it will display the uplink menu and return 1, else it'll return false.
 // If it returns true, I recommend closing the item's normal menu
-/obj/item/proc/active_uplink_check(mob/user as mob)
+/proc/active_uplink_check(obj/item/source, mob/user as mob)
 	// Activates the uplink if it's active
-	if(hidden_uplink)
-		if(hidden_uplink.active)
-			hidden_uplink.trigger(user)
+	if(source.hidden_uplink)
+		if(source.hidden_uplink.active)
+			source.hidden_uplink.trigger(user)
 			return TRUE
 	return FALSE
 
@@ -45,7 +45,7 @@
  * 2. Code in the triggers. Use check_trigger for this, I recommend closing the item's menu if it returns true.
  * The var/value is the value that will be compared with the var/target. If they are equal it will activate the menu.
  *
- * 3. If you want the menu to stay until the users locks his uplink, add an active_uplink_check(mob/user as mob) in your interact/attack_hand proc.
+ * 3. If you want the menu to stay until the users locks his uplink, add an active_uplink_check(src, mob/user as mob) in your interact/attack_hand proc.
  * Then check if it's true, if true return. This will stop the normal menu appearing and will instead show the uplink menu.
  */
 

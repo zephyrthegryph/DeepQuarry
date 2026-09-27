@@ -175,7 +175,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 		return FALSE
 
 	for(var/atom/movable/AM as anything in B)
-		if(!AM.can_pathfinding_pass(actor, search))
+		if(!can_pathfinding_pass(AM, actor, search))
 			return FALSE
 	return TRUE
 
@@ -203,5 +203,5 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
  * this is used for JPS because it does not at all play nicely with situations where one direction
  * is blocked and another isn't.
  */
-/atom/movable/proc/can_pathfinding_pass(atom/movable/actor, datum/pathfinding/search)
-	return !density /*|| (pass_flags_self & actor.pass_flags)*/
+/proc/can_pathfinding_pass(atom/movable/source, atom/movable/actor, datum/pathfinding/search)
+	return !source.density /*|| (pass_flags_self & actor.pass_flags)*/

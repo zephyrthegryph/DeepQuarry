@@ -234,7 +234,7 @@
 				return
 			// end
 
-			if(!target.is_injectable_container() && !ismob(target))
+			if(!is_injectable_container(target) && !ismob(target))
 				to_chat(user, span_notice("You cannot directly fill this object."))
 				return
 			if(!target.reagents.get_free_space())

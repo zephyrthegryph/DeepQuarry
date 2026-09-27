@@ -295,7 +295,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 /obj/Initialize(mapload)
 	. = ..()
-	intern_access_lists()
+	intern_access_lists(src)
 	if(micro_target)
 		verbs += /obj/proc/micro_interact
 

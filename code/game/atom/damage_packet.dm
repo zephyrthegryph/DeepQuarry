@@ -266,7 +266,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	// What the shell let through reaches the holder's contents (containment
 	// paths, C2). A holder destroyed above has already spilled them.
 	if(length(contents))
-		propagate_damage(packet)
+		propagate_damage(src, packet)
 
 /atom
 	/// How much of an incoming ionic (EMP) amount becomes burn integrity damage.
@@ -382,10 +382,10 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 /// Explosion: blast from the propagated severity. Explosions deliver it in
 /// type batches (SSexplosions.deliver_blast_batches); objects are destroyed by
 /// integrity, never by a severity ladder.
-/atom/proc/receive_explosion(severity)
-	if(!uses_integrity || (resistance_flags & BOMB_PROOF))
+/proc/receive_explosion(atom/source, severity)
+	if(!source.uses_integrity || (source.resistance_flags & BOMB_PROOF))
 		return 0
-	return deal_damage(DAMAGE_BLAST, max_integrity * explosion_blast_fraction(severity), flags = DAMAGE_PACKET_SILENT)
+	return source.deal_damage(DAMAGE_BLAST, source.max_integrity * explosion_blast_fraction(severity), flags = DAMAGE_PACKET_SILENT)
 
 /// Severity the explosion delivers to this atom's contents, in bulk, in the
 /// same batch epoch; 0 shields them. A destroyed container spills whatever it
@@ -394,8 +394,8 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	return 0
 
 /// An ionic hit (ion rounds): pulse the target at the ladder's severity.
-/atom/proc/receive_ionic(amount)
-	emp_act(emp_severity_for_ionic(amount))
+/proc/receive_ionic(atom/source, amount)
+	source.emp_act(emp_severity_for_ionic(amount))
 
 /// EMP: ionic from the severity, through the shared ladder.
 /atom/proc/receive_emp(severity)
@@ -407,9 +407,9 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	return deal_damage(DAMAGE_SHOCK, amount, null, source, zone = zone, flags = DAMAGE_PACKET_UNARMORED)
 
 /// Blob attack: kinds from the blob type's profile.
-/atom/proc/receive_blob(obj/structure/blob/B, zone = null)
+/proc/receive_blob(atom/source, obj/structure/blob/B, zone = null)
 	var/datum/blob_type/blob = B?.overmind?.blob_type
 	if(!blob)
-		return deal_damage(DAMAGE_BLUNT, rand(30, 40), null, B, zone = zone)
+		return source.deal_damage(DAMAGE_BLUNT, rand(30, 40), null, B, zone = zone)
 	var/datum/damage_packet/packet = damage_packet(B, B.overmind, null, zone, NONE, blob.armor_pen)
-	return receive_split(packet, blob.injury_kind, blob.injury_kinds, rand(blob.damage_lower, blob.damage_upper))
+	return source.receive_split(packet, blob.injury_kind, blob.injury_kinds, rand(blob.damage_lower, blob.damage_upper))

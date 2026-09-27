@@ -43,7 +43,7 @@
 					return 2
 
 	playsound(src, open_sound, 50, 1, -3)
-	slot_empty(CONTAINER_SLOT_INTERIOR, get_turf(src))
+	slot_empty(src, CONTAINER_SLOT_INTERIOR, get_turf(src))
 	src.opened = 1
 
 	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)

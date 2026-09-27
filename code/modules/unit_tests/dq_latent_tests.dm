@@ -212,7 +212,7 @@
 		var/obj/structure/closet/dq_latent_test/latent = allocate(/obj/structure/closet/dq_latent_test, test_floor())
 		var/obj/structure/closet/dq_latent_test/real = allocate(/obj/structure/closet/dq_latent_test, test_floor())
 		var/list/made = real.latent_materialize_all()
-		latent.latent_blast(severity)
+		latent_blast(latent, severity)
 		for(var/obj/item/I as anything in made)
 			I.ex_act(severity)
 		var/list/survivors_real = list()

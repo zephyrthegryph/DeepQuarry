@@ -161,10 +161,10 @@
 /mob/proc/stop_sound_channel(chan)
 	src << sound(null, repeat = 0, wait = 0, channel = chan)
 
-/mob/proc/set_sound_channel_volume(channel, volume)
+/proc/set_sound_channel_volume(mob/source, channel, volume)
 	var/sound/S = sound(null, FALSE, FALSE, channel, volume)
 	S.status = SOUND_UPDATE
-	src << S
+	source << S
 
 /proc/get_rand_frequency()
 	return rand(32000, 55000) //Frequency stuff only works with 45kbps oggs.
