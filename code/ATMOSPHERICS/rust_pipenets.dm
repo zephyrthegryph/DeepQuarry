@@ -1,19 +1,57 @@
 /datum/controller/subsystem/air
-	var/next_rust_pipe_port_id = 1
-	var/list/rust_pipe_ports
-	var/list/rust_pipe_region_networks
-	var/rust_pipe_pending_operations = ""
-	/// M2 (simulation.md §5): device edges by DM id -> owning machine.
-	var/next_rust_device_id = 1
-	var/list/rust_pipe_devices
-	var/rust_device_pending_operations = ""
+	/// Pipe region gas handle -> its /datum/pipe_network wrapper (numeric keys).
+	var/alist/rust_pipe_region_networks = alist()
+	/// Topology changed since the last vg_pipe_commit().
+	var/rust_pipe_topology_dirty = FALSE
+	/// Registered device edges (M2, simulation.md §5), for the step's early out.
+	var/rust_pipe_device_count = 0
+
+/// One physical gas port of a pipe machine: a World entity (its handle is
+/// the port's identity in Rust), found again through SSvg's entity table.
+/datum/pipe_port
+	var/obj/machinery/atmospherics/machine
+	/// The machine's port index (rust_pipe_port_ids).
+	var/index
+	var/handle = 0
+
+/datum/pipe_port/New(obj/machinery/atmospherics/machine, index)
+	..()
+	src.machine = machine
+	src.index = index
+	handle = SSvg.bind_datum(src)
+
+/datum/pipe_port/Destroy()
+	if(handle)
+		SSvg.unbind_datum(src, handle)
+		handle = 0
+	machine = null
+	return ..()
+
+/// The live port behind `handle`, or null.
+/proc/rust_pipe_port_of(handle)
+	var/datum/pipe_port/port = SSvg.entity_lookup(handle)
+	return (istype(port) && port.handle == handle) ? port : null
+
+/// A new port for `machine`'s `index`; returns its handle.
+/proc/rust_new_pipe_port(obj/machinery/atmospherics/machine, index)
+	var/datum/pipe_port/port = new(machine, index)
+	return port.handle
+
+/// Frees the port behind `handle` (after Rust has removed it).
+/proc/rust_free_pipe_port(handle)
+	qdel(rust_pipe_port_of(handle))
+
+/// An entity handle's World slot index (a component's entity-index field).
+/proc/vg_entity_index(handle)
+	return (handle - 1) & VG_ENTITY_INDEX_MASK
 
 /obj/machinery/atmospherics
-	/// Stable IDs for this machine's physical gas ports. Rust owns connectivity.
+	/// This machine's physical gas ports, by index: /datum/pipe_port entity handles. Rust owns connectivity.
 	var/list/rust_pipe_port_ids
 	/// Only components without a pre-existing gas slot (valves/connectors) use this.
 	var/list/datum/gas_mixture/rust_unbound_port_air
-	/// M2: this machine's (one) device edge id, or 0 if it has none
+	/// M2: this machine's (one) device edge, an entity handle bound to this
+	/// machine (SSvg.bind_datum()), or 0 if it has none
 	/// registered. Single-edge devices (pump, volume pump, passive gate,
 	/// vent pump, vent scrubber) use this; a multi-port device (filter,
 	/// mixer) uses `rust_device_ids`/the `_n` procs below instead.
@@ -93,9 +131,7 @@
 	for(var/index = 1 to port_count)
 		if(index <= length(rust_pipe_port_ids) && rust_pipe_port_ids[index])
 			continue
-		var/port_id = SSair.next_rust_pipe_port_id++
-		rust_pipe_port_ids[index] = port_id
-		SSair.rust_pipe_ports["[port_id]"] = list(src, index)
+		rust_pipe_port_ids[index] = rust_new_pipe_port(src, index)
 
 /obj/machinery/atmospherics/proc/rust_register_pipe_topology(commit = TRUE)
 	rust_allocate_pipe_ports()
@@ -162,7 +198,7 @@
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_turf.air.arena_id(), release_turf.air.return_volume())
 		else
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, port_id)
-		SSair?.rust_pipe_ports.Remove("[port_id]")
+		rust_free_pipe_port(port_id)
 	rust_pipe_port_ids = null
 	if(SSair && !SSexplosions?.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
@@ -178,60 +214,73 @@
 		return
 	qdel(network)
 
-/datum/controller/subsystem/air/proc/rust_pipe_operation(opcode, first, second, volume = 0)
-	return "[opcode],[first],[second],[volume];"
-
+/// One topology edit (RUST_PIPE_OP_*), applied to the Rust network now;
+/// rust_commit_pending_pipenets() commits the batch and rebuilds wrappers.
+/// `first`/`second` are port handles (REMOVE_TO_MIXTURE: port, mixture handle).
 /datum/controller/subsystem/air/proc/rust_queue_pipe_operation(opcode, first, second = 0, volume = 0)
-	rust_pipe_pending_operations += rust_pipe_operation(opcode, first, second, volume)
+	rust_pipe_topology_dirty = TRUE
+	switch(opcode)
+		if(RUST_PIPE_OP_UPSERT)
+			vg_pipe_upsert(first, second, volume)
+		if(RUST_PIPE_OP_REMOVE)
+			vg_pipe_remove(first, 0)
+		if(RUST_PIPE_OP_CONNECT)
+			vg_pipe_connect(first, second)
+		if(RUST_PIPE_OP_DISCONNECT)
+			vg_pipe_disconnect(first, second)
+		if(RUST_PIPE_OP_CLEAR)
+			vg_pipe_clear()
+		if(RUST_PIPE_OP_REMOVE_TO_MIXTURE)
+			vg_pipe_remove(first, second)
 
 /datum/controller/subsystem/air/proc/rust_commit_pending_pipenets()
-	if(!length(rust_pipe_pending_operations))
+	if(!rust_pipe_topology_dirty)
 		return
-	var/operations = rust_pipe_pending_operations
-	rust_pipe_pending_operations = ""
-	rust_apply_pipe_topology(operations)
+	rust_pipe_topology_dirty = FALSE
+	rust_apply_pipe_commit()
 
 // ---- M2: device edges (simulation.md §5) ------------------------------
 
-/// One queued device operation. Field meaning depends on `opcode`
-/// (`RUST_DEVICE_OP_*`): `SET`/`SET_TURF` use `f1`/`f2` as the two port ids
-/// (or port id / turf handle); `REMOVE` uses none. A device's flow(s) and
-/// valve gate are not queued here -- `rust_set_device_flow()`/
-/// `rust_set_device_valve()` write straight to a `DeviceFlow`/`DeviceValve`
-/// row through the generated component accessors (`rust_architecture.md`
-/// §8.5 step 6's pipe-device redesign; no op wire).
-/datum/controller/subsystem/air/proc/rust_device_operation(opcode, id, f1 = 0, f2 = 0, f3 = 0, f4 = 0, f5 = 0, f6 = 0, f7 = 0)
-	return "[opcode],[id],[f1],[f2],[f3],[f4],[f5],[f6],[f7];"
+/// One device edge edit (RUST_DEVICE_OP_*), applied to the Rust network now.
+/// `id` is the device's entity handle; SET uses `f1`/`f2` as the two port
+/// handles, SET_TURF `f1` the port and `f2` the turf's gas handle. A device's
+/// flow(s) and valve are rows set through the generated component accessors.
+/datum/controller/subsystem/air/proc/rust_queue_device_operation(opcode, id, f1 = 0, f2 = 0)
+	switch(opcode)
+		if(RUST_DEVICE_OP_SET)
+			vg_pipe_device_set(id, f1, f2)
+		if(RUST_DEVICE_OP_SET_TURF)
+			vg_pipe_device_set_turf(id, f1, f2)
+		if(RUST_DEVICE_OP_REMOVE)
+			vg_pipe_device_remove(id)
 
-/datum/controller/subsystem/air/proc/rust_queue_device_operation(opcode, id, f1 = 0, f2 = 0, f3 = 0, f4 = 0, f5 = 0, f6 = 0, f7 = 0)
-	rust_device_pending_operations += rust_device_operation(opcode, id, f1, f2, f3, f4, f5, f6, f7)
-
+/// Kept for callers that batch device edits: they apply as queued.
 /datum/controller/subsystem/air/proc/rust_commit_pending_devices()
-	if(!length(rust_device_pending_operations))
-		return
-	var/operations = rust_device_pending_operations
-	rust_device_pending_operations = ""
-	for(var/record in splittext(operations, ";"))
-		if(!length(record))
-			continue
-		var/list/fields = splittext(record, ",")
-		var/opcode = text2num(fields[1])
-		var/id = text2num(fields[2])
-		switch(opcode)
-			if(RUST_DEVICE_OP_SET)
-				vg_pipe_device_set(id, text2num(fields[3]), text2num(fields[4]))
-			if(RUST_DEVICE_OP_SET_TURF)
-				vg_pipe_device_set_turf(id, text2num(fields[3]), text2num(fields[4]))
-			if(RUST_DEVICE_OP_REMOVE)
-				vg_pipe_device_remove(id)
+	return
+
+/// A new device edge handle bound to `machine`.
+/proc/rust_new_pipe_device(obj/machinery/atmospherics/machine)
+	SSair.rust_pipe_device_count++
+	return SSvg.bind_datum(machine)
+
+/// Frees a device edge handle (after Rust has removed the edge).
+/proc/rust_free_pipe_device(obj/machinery/atmospherics/machine, id)
+	SSair.rust_pipe_device_count = max(SSair.rust_pipe_device_count - 1, 0)
+	SSvg.unbind_datum(machine, id)
+
+/// Whether `id` is one of this machine's device edges.
+/obj/machinery/atmospherics/proc/rust_owns_device(id)
+	if(id == rust_device_id)
+		return TRUE
+	for(var/slot in rust_device_ids)
+		if(rust_device_ids[slot] == id)
+			return TRUE
+	return FALSE
 
 /// Allocates `src`'s stable device id on first use.
 /obj/machinery/atmospherics/proc/rust_ensure_device_id()
 	if(!rust_device_id)
-		rust_device_id = SSair.next_rust_device_id++
-		if(!SSair.rust_pipe_devices)
-			SSair.rust_pipe_devices = list()
-		SSair.rust_pipe_devices["[rust_device_id]"] = src
+		rust_device_id = rust_new_pipe_device(src)
 	return rust_device_id
 
 /// Registers (or replaces) `machine`'s device edge between its two ports
@@ -275,14 +324,11 @@
 /// bindings generator's free-function accessor for a component with no
 /// `dm` type (`DeviceFlow`, `verdigris/domains/gas/src/kind/device.rs`),
 /// taking the entity number directly instead of a per-type instance.
-/// `vg_pipe_device_index()` is the one bespoke lookup DM still needs: a
-/// pipe device's own entity is never exposed to DM as a `vg_entity` value.
+/// The row names its device by the device entity's slot index.
 /obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
 	if(!rust_device_id)
 		return FALSE
-	var/device_index = vg_pipe_device_index(rust_device_id)
-	if(device_index < 0)
-		return FALSE
+	var/device_index = vg_entity_index(rust_device_id)
 	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
 	return rust_flow_entity != 0
 
@@ -293,9 +339,7 @@
 /obj/machinery/atmospherics/proc/rust_set_device_valve(open)
 	if(!rust_device_id)
 		return FALSE
-	var/device_index = vg_pipe_device_index(rust_device_id)
-	if(device_index < 0)
-		return FALSE
+	var/device_index = vg_entity_index(rust_device_id)
 	rust_valve_entity = vg_bind_device_valve(rust_valve_entity, device_index, open)
 	return rust_valve_entity != 0
 
@@ -309,7 +353,7 @@
 	if(!rust_device_id)
 		return
 	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, rust_device_id)
-	SSair.rust_pipe_devices?.Remove("[rust_device_id]")
+	rust_free_pipe_device(src, rust_device_id)
 	rust_device_id = 0
 	SSair.rust_commit_pending_devices()
 
@@ -324,10 +368,7 @@
 /obj/machinery/atmospherics/proc/rust_ensure_device_id_n(slot)
 	LAZYINITLIST(rust_device_ids)
 	if(!rust_device_ids[slot])
-		rust_device_ids[slot] = SSair.next_rust_device_id++
-		if(!SSair.rust_pipe_devices)
-			SSair.rust_pipe_devices = list()
-		SSair.rust_pipe_devices["[rust_device_ids[slot]]"] = src
+		rust_device_ids[slot] = rust_new_pipe_device(src)
 	return rust_device_ids[slot]
 
 /// `rust_set_device()`'s N-edge counterpart: registers (or replaces)
@@ -347,9 +388,7 @@
 	var/id = rust_device_ids[slot]
 	if(!id)
 		return FALSE
-	var/device_index = vg_pipe_device_index(id)
-	if(device_index < 0)
-		return FALSE
+	var/device_index = vg_entity_index(id)
 	LAZYINITLIST(rust_flow_entities)
 	rust_flow_entities[slot] = vg_bind_device_flow(rust_flow_entities[slot], device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
 	return rust_flow_entities[slot] != 0
@@ -364,8 +403,7 @@
 		return
 	rust_device_ids -= slot
 	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, id)
-	SSair.rust_pipe_devices?.Remove("[id]")
-	SSair.rust_commit_pending_devices()
+	rust_free_pipe_device(src, id)
 
 /// Removes every slot this machine registered (`rust_unregister_pipe_topology()`).
 /obj/machinery/atmospherics/proc/rust_unregister_all_devices_n()
@@ -382,7 +420,7 @@
 /// Runs every device edge's flow law for this tick and dispatches results
 /// (`SSair.fire()`, from `process_pipenets`).
 /datum/controller/subsystem/air/proc/rust_step_pipe_devices()
-	if(!length(rust_pipe_devices))
+	if(!rust_pipe_device_count)
 		return
 	var/dt = wait / 10
 	var/list/result = vg_pipe_step_devices(dt)
@@ -392,16 +430,15 @@
 		var/moles = result[cursor++]
 		var/power_w = result[cursor++]
 		var/target_reached = result[cursor++]
-		var/obj/machinery/atmospherics/device = rust_pipe_devices["[id]"]
-		device?.rust_device_stepped(moles, power_w, target_reached)
+		var/obj/machinery/atmospherics/device = SSvg.entity_lookup(id)
+		if(istype(device) && device.rust_owns_device(id))
+			device.rust_device_stepped(moles, power_w, target_reached)
 
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.
 /datum/controller/subsystem/air/proc/setup_rust_pipenets()
-	rust_pipe_ports = list()
-	rust_pipe_region_networks = list()
-	next_rust_pipe_port_id = 1
-	var/operations = rust_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
+	rust_pipe_region_networks = alist()
+	rust_queue_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
@@ -409,65 +446,43 @@
 			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
 			if(!port_air)
 				continue
-			operations += rust_pipe_operation(RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
+			rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 
-	var/list/seen_edges = list()
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
+			var/first = machine.rust_pipe_port_ids[index]
 			for(var/obj/machinery/atmospherics/neighbor as anything in machine.rust_pipe_port_neighbors(index))
 				if(!neighbor)
 					continue
 				var/neighbor_index = neighbor.rust_pipe_port_index_for_neighbor(machine)
 				if(!neighbor_index || neighbor_index > length(neighbor.rust_pipe_port_ids))
 					continue
-				var/first = machine.rust_pipe_port_ids[index]
 				var/second = neighbor.rust_pipe_port_ids[neighbor_index]
-				var/edge_key = first < second ? "[first]:[second]" : "[second]:[first]"
-				if(seen_edges[edge_key])
-					continue
-				seen_edges[edge_key] = TRUE
-				operations += rust_pipe_operation(RUST_PIPE_OP_CONNECT, first, second)
+				// Each physical edge once: from its lower port handle.
+				if(first < second)
+					rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, first, second)
 		var/list/internal_edges = machine.rust_pipe_internal_edges()
 		for(var/edge_index = 1, edge_index < length(internal_edges), edge_index += 2)
 			var/first_index = internal_edges[edge_index]
 			var/second_index = internal_edges[edge_index + 1]
-			operations += rust_pipe_operation(RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index])
+			rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index])
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 
-	rust_apply_pipe_topology(operations)
+	rust_commit_pending_pipenets()
 
-/// Applies one topology transaction to the Rust pipe network (R7) and rebuilds
-/// the compatibility wrappers of every region whose membership changed. Gas
-/// never passes through DM: the network pools, splits and releases it, and
-/// each region's air datum is bound to the region's gas handle.
-/datum/controller/subsystem/air/proc/rust_apply_pipe_topology(operations)
-	for(var/record in splittext(operations, ";"))
-		if(!length(record))
-			continue
-		var/list/fields = splittext(record, ",")
-		var/opcode = text2num(fields[1])
-		var/first = text2num(fields[2])
-		switch(opcode)
-			if(RUST_PIPE_OP_UPSERT)
-				vg_pipe_upsert(first, text2num(fields[3]), text2num(fields[4]))
-			if(RUST_PIPE_OP_REMOVE)
-				vg_pipe_remove(first, 0)
-			if(RUST_PIPE_OP_CONNECT)
-				vg_pipe_connect(first, text2num(fields[3]))
-			if(RUST_PIPE_OP_DISCONNECT)
-				vg_pipe_disconnect(first, text2num(fields[3]))
-			if(RUST_PIPE_OP_CLEAR)
-				vg_pipe_clear()
-			if(RUST_PIPE_OP_REMOVE_TO_MIXTURE)
-				vg_pipe_remove(first, text2num(fields[3]))
+/// Commits this batch of topology edits to the Rust pipe network (R7) and
+/// rebuilds the compatibility wrappers of every region whose membership
+/// changed. Gas never passes through DM: the network pools, splits and
+/// releases it, and each region's air datum is bound to the region's gas handle.
+/datum/controller/subsystem/air/proc/rust_apply_pipe_commit()
 	var/list/result = vg_pipe_commit()
 	if(!islist(result))
 		CRASH("Rust pipenet topology did not return a region list")
 	var/list/transitions = list()
-	var/list/retired_regions = list()
+	var/alist/retired_regions = alist()
 	var/cursor = 1
 	while(cursor <= length(result))
 		if(length(result) - cursor + 1 < 4)
@@ -481,15 +496,15 @@
 		var/list/prior_regions = result.Copy(cursor, cursor + prior_count)
 		cursor += prior_count
 		for(var/prior_region in prior_regions)
-			retired_regions["[prior_region]"] = TRUE
+			retired_regions[prior_region] = TRUE
 		if(volume < 0)
-			retired_regions["[region]"] = TRUE
+			retired_regions[region] = TRUE
 			continue
 		transitions += list(list("region" = region, "ports" = ports, "volume" = volume))
 
-	for(var/prior_key in retired_regions)
-		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_key]
-		rust_pipe_region_networks.Remove(prior_key)
+	for(var/prior_region in retired_regions)
+		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_region]
+		rust_pipe_region_networks -= prior_region
 		rust_retire_pipe_network(old_network)
 	for(var/list/transition as anything in transitions)
 		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
@@ -538,13 +553,13 @@
 	network.gases = list(region_air)
 	network.volume = volume
 	network.update = FALSE
-	rust_pipe_region_networks["[region]"] = network
+	rust_pipe_region_networks[region] = network
 
 	var/list/obj/machinery/atmospherics/pipe/region_pipes = list()
-	for(var/port_id in ports)
-		var/list/record = rust_pipe_ports["[port_id]"]
-		var/obj/machinery/atmospherics/machine = record?[1]
-		var/index = record?[2]
+	for(var/port_handle in ports)
+		var/datum/pipe_port/port = rust_pipe_port_of(port_handle)
+		var/obj/machinery/atmospherics/machine = port?.machine
+		var/index = port?.index
 		if(!machine)
 			continue
 		if(istype(machine, /obj/machinery/atmospherics/pipe))

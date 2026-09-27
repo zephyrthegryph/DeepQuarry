@@ -267,3 +267,30 @@
 			qdel(C)
 
 #endif
+
+/// Counts the area power key wakes the reactor delivers.
+/datum/dq_power_wake_probe
+	var/wakes = 0
+
+/datum/dq_power_wake_probe/on_react(reason, source, source_kind)
+	if(reason & REACT_REASON_KEY)
+		wakes++
+
+/// Power's wakes reach their subscriber: an area's power change publishes its
+/// key, and the reactor finds the subscriber by its SSvg handle.
+/datum/unit_test/dq_power_area_key_wakes_subscriber
+
+/datum/unit_test/dq_power_area_key_wakes_subscriber/Run()
+	var/obj/machinery/power/apc/A = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
+	if(!A)
+		return
+	var/datum/dq_power_wake_probe/probe = new
+	var/token = REACT_ON_KEY(probe, REACT_KEY_AREA_POWER, REACT_ID(A.area), REACT_AREA_POWER_CHANGED)
+	TEST_ASSERT(token, "the area power key subscription was refused")
+	TEST_ASSERT_EQUAL(SSvg.entity_lookup(probe.reactor_id), probe, "the reactor id is not the subscriber's SSvg handle")
+	A.area.power_change()
+	react_test_ticks(2)
+	TEST_ASSERT(probe.wakes >= 1, "the area's power change did not wake its subscriber")
+	qdel(probe)
+	TEST_ASSERT_EQUAL(probe.reactor_id, 0, "deleting the subscriber kept its reactor id")

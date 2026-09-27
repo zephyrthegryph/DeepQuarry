@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "f4c199701399b1d6"
+#define VERDIGRIS_ABI "7075c501f45c00c6"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1068,21 +1068,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port_a, port_b)
 
-/// The one bespoke bind a `DeviceFlow`/`DeviceValve` row still needs: a
-/// pipe device's own entity is deliberately never exposed to DM as a
-/// `vg_entity` value (this module's own docs), so DM cannot pass it to the
-/// fully generic `vg_bind_device_flow()`/`vg_bind_device_valve()` (the
-/// bindings generator's free-function accessors for a component with no
-/// `dm` type, `tools/build/lib/verdigris_bindings.ts`) without first
-/// resolving device `id` to its raw index this way. Everything else --
-/// creating, updating and removing the row -- DM does directly with those
-/// generated procs plus `vg_entity_unbind()`; there is no other bind here.
-// /proc/vg_pipe_device_index (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_device_index(id)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_index_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id)
-
 // /proc/vg_pipe_device_remove (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_device_remove(id)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_remove_ffi")
@@ -1120,30 +1105,30 @@
 /// Removes a port; its gas share is released, to `mixture_handle` if given
 /// (else discarded -- `RUST_PIPE_OP_REMOVE`/`REMOVE_TO_MIXTURE`).
 // /proc/vg_pipe_remove (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_remove(port_id, mixture_handle)
+/proc/vg_pipe_remove(port, mixture_handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_remove_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(port_id, mixture_handle)
+	return call_ext(__f)(port, mixture_handle)
 
 /// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
 /// through `crate::gas`'s turf accessors (this module's own docs) --
-/// and returns a flat `id, moles, power_w, target_reached` list per device
-/// that moved something or drew power.
+/// and returns a flat `device handle, moles, power_w, target_reached` list
+/// per device that moved something or drew power.
 // /proc/vg_pipe_step_devices (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_step_devices(dt)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_step_devices_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(dt)
 
-/// Adds a port holding the gas from `mixture_handle` (a `datum/gas_mixture`
-/// handle; `0`/invalid: empty), or changes its volume if it already exists.
-/// Mints a fresh entity for a new port. Returns whether it succeeded.
+/// Adds port `port` (its entity handle) holding the gas from
+/// `mixture_handle` (a `datum/gas_mixture` handle; `0`/invalid: empty), or
+/// changes its volume if it already exists. Returns whether it succeeded.
 // /proc/vg_pipe_upsert (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_upsert(port_id, mixture_handle, volume)
+/proc/vg_pipe_upsert(port, mixture_handle, volume)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_upsert_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(port_id, mixture_handle, volume)
+	return call_ext(__f)(port, mixture_handle, volume)
 
 // /proc/poll_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_poll_material_power_graph(handle)

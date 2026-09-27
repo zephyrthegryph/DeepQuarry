@@ -131,16 +131,16 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if((d1 | d2) & DOWN)
 		var/turf/D = GetBelow(T)
 		below = D?.z || 0
-	GLOB.power_cable_by_entity -= "[power_entity]"
+	SSvg.untrack_entity(src, power_entity)
 	power_entity = vg_power_bind_cable(power_entity, list(T.x, T.y, T.z, d1, d2, above, below, power_link_id()))
-	GLOB.power_cable_by_entity["[power_entity]"] = src
+	SSvg.track_entity(src, power_entity)
 
 /obj/structure/cable/proc/power_unregister()
 	if(!power_entity)
 		return
 	vg_power_unbind_node(power_entity)
+	SSvg.untrack_entity(src, power_entity)
 	vg_entity_unbind(power_entity)
-	GLOB.power_cable_by_entity -= "[power_entity]"
 	power_entity = 0
 
 /// Cables with the same non-zero link id connect wherever they are (enders).

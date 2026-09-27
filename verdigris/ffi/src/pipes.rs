@@ -10,19 +10,11 @@
 //! manage their own topology explicitly rather than through
 //! `NetworkKind::connects`'s geometric search (cables' own rule).
 //!
-//! DM's own `code/ATMOSPHERICS/rust_pipenets.dm` keeps its existing proc
-//! surface (port ids, device ids, the pending-operation queue, the
-//! `pipe_network` compatibility wrappers) unchanged: only its three
-//! FFI-facing procs (`rust_apply_pipe_topology`, `rust_commit_pending_
-//! devices`, `rust_step_pipe_devices`) now loop over their own queued
-//! records calling these per-operation binds instead of one batch call, so
-//! none of the ~20 machinery files that call into `rust_pipenets.dm`
-//! change at all.
-//!
-//! Ports and devices are DM's own small integer ids (`rust_pipe_port_ids`/
-//! `rust_device_id`), kept as thread-local maps to the `World` entities
-//! that actually hold them -- DM never sees a `vg_entity` value for a pipe
-//! port or device. A region's DM-facing handle is a compacted slot (not
+//! Ports and devices are World entities: DM mints each one's handle with
+//! `SSvg.bind_datum()` (a `/datum/pipe_port`, or the device's machine) and
+//! passes it here, so this module keeps no id maps of its own; region
+//! results and device reports name ports and devices by those handles.
+//! A region's DM-facing handle is a compacted slot (not
 //! its raw arena bits, which can exceed `MixRef::Pipe`'s
 //! 21-bit address budget), the one piece of bookkeeping this module keeps
 //! that `PipeNet` also needed for the same reason -- not for revision or
@@ -60,47 +52,46 @@ use vg_gas::device::{self, Flow, StepReport};
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::pipes::{PipeGas, Pipes};
 
+use crate::entity;
 use crate::gas::REGION_SLOTS;
-use crate::world::{list, num, whole, with_world};
+use crate::world::{list, num, with_world};
 
 thread_local! {
-    static PORTS: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
-    static DEVICES: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
     /// A removed port's gas goes here if DM named a target mixture
     /// (`RUST_PIPE_OP_REMOVE_TO_MIXTURE`'s replacement), read back when its
     /// `Released` event drains at [`pipe_commit`].
-    static RELEASE_TARGETS: RefCell<HashMap<u32, MixRef>> = RefCell::new(HashMap::new());
+    static RELEASE_TARGETS: RefCell<HashMap<EntityId, MixRef>> = RefCell::new(HashMap::new());
 }
 
-fn port_entity(port_id: u32) -> Option<EntityId> {
-    PORTS.with(|p| p.borrow().get(&port_id).copied())
+/// A port or device handle from DM (an entity `SSvg.bind_datum()` minted).
+fn handle_entity(v: &ByondValue) -> Result<EntityId> {
+    entity::decode(num(v)?)
 }
 
-/// Adds a port holding the gas from `mixture_handle` (a `datum/gas_mixture`
-/// handle; `0`/invalid: empty), or changes its volume if it already exists.
-/// Mints a fresh entity for a new port. Returns whether it succeeded.
+/// Adds port `port` (its entity handle) holding the gas from
+/// `mixture_handle` (a `datum/gas_mixture` handle; `0`/invalid: empty), or
+/// changes its volume if it already exists. Returns whether it succeeded.
 #[auxmacros::bind("/proc/vg_pipe_upsert")]
 fn pipe_upsert(
-    port_id: ByondValue,
+    port: ByondValue,
     mixture_handle: ByondValue,
     volume: ByondValue,
 ) -> Result<ByondValue> {
-    let port_id = whole(&port_id, "port_id")?;
+    let e = handle_entity(&port)?;
     let volume = num(&volume)?;
-    let fresh = port_entity(port_id).is_none();
+    let fresh = with_world(|w| {
+        Ok(w.network::<Pipes>()
+            .map_err(|e| eyre!("{e}"))?
+            .node_of(e)
+            .is_none())
+    })?;
+    // Outside the world borrow: a turf or pipe mixture reads the world.
     let gas = if fresh {
         gas_from_handle(&mixture_handle)
     } else {
         PipeGas::default()
     };
     let ok = with_world(|w| {
-        let e = if let Some(e) = port_entity(port_id) {
-            e
-        } else {
-            let e = w.entities_mut().bind().map_err(|e| eyre!("{e}"))?;
-            PORTS.with(|p| p.borrow_mut().insert(port_id, e));
-            e
-        };
         w.edit_network::<Pipes>(move |host| {
             if host.node_of(e).is_some() {
                 let _ = host.set_node_data(e, volume);
@@ -137,13 +128,10 @@ fn gas_from_handle(handle: &ByondValue) -> PipeGas {
 /// Removes a port; its gas share is released, to `mixture_handle` if given
 /// (else discarded -- `RUST_PIPE_OP_REMOVE`/`REMOVE_TO_MIXTURE`).
 #[auxmacros::bind("/proc/vg_pipe_remove")]
-fn pipe_remove(port_id: ByondValue, mixture_handle: ByondValue) -> Result<ByondValue> {
-    let port_id = whole(&port_id, "port_id")?;
-    let Some(e) = PORTS.with(|p| p.borrow_mut().remove(&port_id)) else {
-        return Ok(false.into());
-    };
+fn pipe_remove(port: ByondValue, mixture_handle: ByondValue) -> Result<ByondValue> {
+    let e = handle_entity(&port)?;
     if let Some(target) = num(&mixture_handle).ok().and_then(MixRef::from_f32) {
-        RELEASE_TARGETS.with(|r| r.borrow_mut().insert(port_id, target));
+        RELEASE_TARGETS.with(|r| r.borrow_mut().insert(e, target));
     }
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| host.unbind_node(e))
@@ -158,10 +146,7 @@ fn pipe_remove(port_id: ByondValue, mixture_handle: ByondValue) -> Result<ByondV
 /// explicitly).
 #[auxmacros::bind("/proc/vg_pipe_connect")]
 fn pipe_connect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
-    let (a, b) = (whole(&port_a, "port_a")?, whole(&port_b, "port_b")?);
-    let (Some(ea), Some(eb)) = (port_entity(a), port_entity(b)) else {
-        return Ok(false.into());
-    };
+    let (ea, eb) = (handle_entity(&port_a)?, handle_entity(&port_b)?);
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| {
             let _ = host.connect_entities(ea, eb);
@@ -174,26 +159,22 @@ fn pipe_connect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
 
 #[auxmacros::bind("/proc/vg_pipe_disconnect")]
 fn pipe_disconnect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
-    let (a, b) = (whole(&port_a, "port_a")?, whole(&port_b, "port_b")?);
-    if let (Some(ea), Some(eb)) = (port_entity(a), port_entity(b)) {
-        with_world(|w| {
-            w.edit_network::<Pipes>(move |host| host.disconnect_entities(ea, eb))
-                .map_err(|e| eyre!("{e}"))?;
-            Ok(())
-        })?;
-    }
+    let (ea, eb) = (handle_entity(&port_a)?, handle_entity(&port_b)?);
+    with_world(|w| {
+        w.edit_network::<Pipes>(move |host| host.disconnect_entities(ea, eb))
+            .map_err(|e| eyre!("{e}"))?;
+        Ok(())
+    })?;
     Ok(ByondValue::null())
 }
 
 /// Drops every port (a map reload).
 #[auxmacros::bind("/proc/vg_pipe_clear")]
 fn pipe_clear() -> Result<ByondValue> {
-    let ports: Vec<EntityId> =
-        PORTS.with(|p| std::mem::take(&mut *p.borrow_mut()).into_values().collect());
     RELEASE_TARGETS.with(|r| r.borrow_mut().clear());
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| {
-            for e in ports {
+            for e in host.node_entities() {
                 host.unbind_node(e);
             }
         })
@@ -224,20 +205,8 @@ fn pipe_commit() -> Result<ByondValue> {
         .map_err(|e| eyre!("{e}"))?;
         let releases = std::mem::take(&mut *releases_cell.lock().expect("not poisoned"));
         for (port_e, _pos, payload) in releases {
-            // The port entity is already unbound; recover its DM id (and
-            // any release target) from the reverse lookup this module
-            // keeps only while the port is live -- `pipe_remove` recorded
-            // the target under the *port id*, not the entity, before
-            // unbinding. `RELEASE_TARGETS` is small (removed-this-batch
-            // ports only) and cleared as it's consumed.
-            let port_id = PORTS.with(|p| {
-                p.borrow()
-                    .iter()
-                    .find(|&(_, &e)| e == port_e)
-                    .map(|(&id, _)| id)
-            });
-            let target =
-                port_id.and_then(|id| RELEASE_TARGETS.with(|r| r.borrow_mut().remove(&id)));
+            // `pipe_remove` recorded any target under the port's entity.
+            let target = RELEASE_TARGETS.with(|r| r.borrow_mut().remove(&port_e));
             if let Some(target) = target {
                 released.push((target, payload));
             }
@@ -259,18 +228,7 @@ fn pipe_commit() -> Result<ByondValue> {
                 continue;
             }
             let vol = region_volume(w, t.region);
-            let ports: Vec<f32> = t
-                .members
-                .iter()
-                .filter_map(|&e| {
-                    PORTS.with(|p| {
-                        p.borrow()
-                            .iter()
-                            .find(|&(_, &pe)| pe == e)
-                            .map(|(&id, _)| id as f32)
-                    })
-                })
-                .collect();
+            let ports: Vec<f32> = t.members.iter().map(|&e| entity::entity_value(e)).collect();
             let priors: Vec<f32> = t
                 .prior
                 .iter()
@@ -327,23 +285,13 @@ fn region_volume(w: &World, raw: u32) -> f32 {
 /// `vg_component_*` accessors every component gets.
 #[auxmacros::bind("/proc/vg_pipe_device_set")]
 fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let (pa, pb) = (whole(&port_a, "port_a")?, whole(&port_b, "port_b")?);
-    let (Some(ea), Some(eb)) = (port_entity(pa), port_entity(pb)) else {
-        return Ok(false.into());
-    };
+    let e = handle_entity(&id)?;
+    let (ea, eb) = (handle_entity(&port_a)?, handle_entity(&port_b)?);
     let ok = with_world(|w| {
-        let old = DEVICES.with(|d| d.borrow().get(&id_n).copied());
-        let e = if let Some(e) = old {
-            e
-        } else {
-            w.entities_mut().bind().map_err(|e| eyre!("{e}"))?
-        };
         w.edit_network::<Pipes>(move |host| {
             let _ = host.bind_device(e, ea, eb, 0, ());
         })
         .map_err(|e| eyre!("{e}"))?;
-        DEVICES.with(|d| d.borrow_mut().insert(id_n, e));
         Ok(true)
     })?;
     Ok(ok.into())
@@ -358,26 +306,16 @@ fn pipe_device_set_turf(
     port_a: ByondValue,
     turf_mixture_handle: ByondValue,
 ) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let pa = whole(&port_a, "port_a")?;
-    let Some(ea) = port_entity(pa) else {
-        return Ok(false.into());
-    };
+    let e = handle_entity(&id)?;
+    let ea = handle_entity(&port_a)?;
     let Some(MixRef::Turf(cell)) = num(&turf_mixture_handle).ok().and_then(MixRef::from_f32) else {
         return Ok(false.into());
     };
     let ok = with_world(|w| {
-        let old = DEVICES.with(|d| d.borrow().get(&id_n).copied());
-        let e = if let Some(e) = old {
-            e
-        } else {
-            w.entities_mut().bind().map_err(|e| eyre!("{e}"))?
-        };
         w.edit_network::<Pipes>(move |host| {
             let _ = host.bind_cell_device(e, ea, cell, 0, ());
         })
         .map_err(|e| eyre!("{e}"))?;
-        DEVICES.with(|d| d.borrow_mut().insert(id_n, e));
         Ok(true)
     })?;
     Ok(ok.into())
@@ -385,35 +323,13 @@ fn pipe_device_set_turf(
 
 #[auxmacros::bind("/proc/vg_pipe_device_remove")]
 fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let Some(e) = DEVICES.with(|d| d.borrow_mut().remove(&id_n)) else {
-        return Ok(false.into());
-    };
+    let e = handle_entity(&id)?;
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| host.unbind_device(e))
             .map_err(|e| eyre!("{e}"))?;
         Ok(true)
     })
     .map(ByondValue::from)
-}
-
-/// The one bespoke bind a `DeviceFlow`/`DeviceValve` row still needs: a
-/// pipe device's own entity is deliberately never exposed to DM as a
-/// `vg_entity` value (this module's own docs), so DM cannot pass it to the
-/// fully generic `vg_bind_device_flow()`/`vg_bind_device_valve()` (the
-/// bindings generator's free-function accessors for a component with no
-/// `dm` type, `tools/build/lib/verdigris_bindings.ts`) without first
-/// resolving device `id` to its raw index this way. Everything else --
-/// creating, updating and removing the row -- DM does directly with those
-/// generated procs plus `vg_entity_unbind()`; there is no other bind here.
-#[auxmacros::bind("/proc/vg_pipe_device_index")]
-fn pipe_device_index(id: ByondValue) -> Result<ByondValue> {
-    let id_n = whole(&id, "id")?;
-    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
-        return Ok(ByondValue::from(-1.0));
-    };
-    #[allow(clippy::cast_precision_loss)]
-    Ok(ByondValue::from(device_e.index() as f32))
 }
 
 /// Every `Flow`/valve-open bound to device entity `device_e`
@@ -444,16 +360,18 @@ fn device_laws(w: &World, device_e: EntityId) -> (Vec<Flow>, bool) {
 /// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
 /// through `crate::gas`'s turf accessors (this module's own docs) --
-/// and returns a flat `id, moles, power_w, target_reached` list per device
-/// that moved something or drew power.
+/// and returns a flat `device handle, moles, power_w, target_reached` list
+/// per device that moved something or drew power.
 #[auxmacros::bind("/proc/vg_pipe_step_devices")]
 fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     let dt = num(&dt)?;
-    let devices: Vec<(u32, EntityId)> =
-        DEVICES.with(|d| d.borrow().iter().map(|(&id, &e)| (id, e)).collect());
     let mut out = Vec::new();
     with_world(|w| {
-        for (id, e) in devices {
+        let devices: Vec<EntityId> = w
+            .network::<Pipes>()
+            .map(|h| h.devices().map(|(_, e)| e).collect())
+            .unwrap_or_default();
+        for e in devices {
             let (flows, valve_open) = device_laws(w, e);
             if flows.is_empty() && !valve_open {
                 continue;
@@ -484,7 +402,7 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
             if let Some(report) = report {
                 if report.moles != 0.0 || report.power_w != 0.0 {
                     out.extend([
-                        id as f32,
+                        entity::entity_value(e),
                         report.moles as f32,
                         report.power_w,
                         if report.target_reached { 1.0 } else { 0.0 },

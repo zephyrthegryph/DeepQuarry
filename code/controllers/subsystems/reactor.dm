@@ -18,13 +18,9 @@ SUBSYSTEM_DEF(reactor)
 	flags = SS_TICKER|SS_NO_INIT|SS_KEEP_TIMING
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
 
-	/// Registry: reactor_id -> subscriber datum.
-	var/list/subscribers = list()
-	/// Ids free for reuse.
-	var/list/free_ids = list()
-	/// Ids released this tick; reusable from the next tick, so a wake already returned for
-	/// an id never reaches the datum that inherits it.
-	var/list/released_ids = list()
+	/// Live subscribers. Their ids are SSvg entity handles (SSvg.bind_datum()), so the
+	/// entity table finds them and a recycled index never inherits a stale wake.
+	var/subscriber_count = 0
 
 	/// Normal plus background wakes delivered per tick (urgent wakes are never limited).
 	var/budget = 2000
@@ -35,10 +31,8 @@ SUBSYSTEM_DEF(reactor)
 	var/step_tick = -1
 	var/previous_step_tick = -1
 
-	/// Continuous lane: token (negative) -> /datum/react_every.
+	/// Continuous lane: every live /datum/react_every (each owner also lists its own).
 	var/list/continuous = list()
-	/// reactor_id -> list of its continuous tokens (only for datums that declared any).
-	var/list/continuous_by_id = list()
 	var/next_continuous_token = 0
 
 	/// Wakes by subscriber type: type -> list(REACT_CLASS_COUNT counts). Bounded by
@@ -72,15 +66,12 @@ SUBSYSTEM_DEF(reactor)
 	var/player_chunk_subscriptions = 0
 
 /datum/controller/subsystem/reactor/stat_entry(msg)
-	msg = "S:[length(subscribers) - length(free_ids) - length(released_ids)] W:[last_wakes] C:[length(continuous)] [round(last_dispatch_ms, 0.01)]ms"
+	msg = "S:[subscriber_count] W:[last_wakes] C:[length(continuous)] [round(last_dispatch_ms, 0.01)]ms"
 	return ..()
 
 /datum/controller/subsystem/reactor/Recover()
-	subscribers = SSreactor.subscribers
-	free_ids = SSreactor.free_ids
-	released_ids = SSreactor.released_ids
+	subscriber_count = SSreactor.subscriber_count
 	continuous = SSreactor.continuous
-	continuous_by_id = SSreactor.continuous_by_id
 	next_continuous_token = SSreactor.next_continuous_token
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
@@ -93,9 +84,6 @@ SUBSYSTEM_DEF(reactor)
 
 /datum/controller/subsystem/reactor/fire(resumed)
 	if(!resumed)
-		if(length(released_ids))
-			free_ids += released_ids
-			released_ids.Cut()
 		var/start = TICK_USAGE_REAL
 		previous_step_tick = step_tick
 		step_tick = tick_of(world.time)
@@ -129,8 +117,8 @@ SUBSYSTEM_DEF(reactor)
 		var/source = wakes[pending_index + 3]
 		var/source_kind = wakes[pending_index + 4]
 		pending_index += REACT_WAKE_STRIDE
-		var/datum/subscriber = id <= length(subscribers) ? subscribers[id] : null
-		if(!subscriber || QDELETED(subscriber))
+		var/datum/subscriber = SSvg.entity_lookup(id)
+		if(!subscriber || subscriber.reactor_id != id || QDELETED(subscriber))
 			continue
 		count_wake(subscriber.type, reason)
 		if(traced && traced[subscriber])
@@ -145,20 +133,13 @@ SUBSYSTEM_DEF(reactor)
 
 // --- Registry ------------------------------------------------------------------------------
 
-/// Gives `D` a registry index (REACT_ID). Idempotent.
+/// Gives `D` its subscriber id (REACT_ID): an SSvg entity handle. Idempotent.
 /datum/controller/subsystem/reactor/proc/assign_id(datum/D)
 	if(D.reactor_id)
 		return D.reactor_id
-	var/id
-	if(length(free_ids))
-		id = free_ids[length(free_ids)]
-		free_ids.len--
-		subscribers[id] = D
-	else
-		subscribers += D
-		id = length(subscribers)
-	D.reactor_id = id
-	return id
+	D.reactor_id = SSvg.bind_datum(D)
+	subscriber_count++
+	return D.reactor_id
 
 /// REACT_CLEAR: drops every subscription, timer, pending wake and continuous declaration of
 /// `D`, and releases its index.
@@ -167,13 +148,12 @@ SUBSYSTEM_DEF(reactor)
 	if(!id)
 		return
 	vg_world_clear(id)
-	var/list/tokens = continuous_by_id["[id]"]
-	if(tokens)
-		for(var/token in tokens)
-			continuous -= "[token]"
-		continuous_by_id -= "[id]"
-	subscribers[id] = null
-	released_ids += id
+	for(var/datum/react_every/entry as anything in D.react_every_entries)
+		entry.cancelled = TRUE
+		continuous -= entry
+	D.react_every_entries = null
+	SSvg.unbind_datum(D, id)
+	subscriber_count = max(subscriber_count - 1, 0)
 	D.reactor_id = 0
 
 // --- Subscriptions -------------------------------------------------------------------------
@@ -216,15 +196,11 @@ SUBSYSTEM_DEF(reactor)
 	if(!isnum(token))
 		return FALSE
 	if(token < 0)
-		var/datum/react_every/entry = continuous["[token]"]
+		var/datum/react_every/entry = continuous_entry(token, D)
 		if(!entry)
 			return FALSE
-		continuous -= "[token]"
-		var/list/tokens = continuous_by_id["[entry.owner_id]"]
-		if(tokens)
-			tokens -= token
-			if(!length(tokens))
-				continuous_by_id -= "[entry.owner_id]"
+		continuous -= entry
+		LAZYREMOVE(entry.owner?.react_every_entries, entry)
 		entry.cancelled = TRUE
 		return TRUE
 	return !!vg_world_cancel(token)
@@ -320,7 +296,6 @@ SUBSYSTEM_DEF(reactor)
 /// One declared continuous process. Few exist, so one datum each is fine.
 /datum/react_every
 	var/datum/owner
-	var/owner_id
 	var/period
 	var/next_run
 	var/last_run
@@ -335,20 +310,29 @@ SUBSYSTEM_DEF(reactor)
 		CRASH("REACT_EVERY needs a justification: why is [D.type] continuous?")
 	var/datum/react_every/entry = new
 	entry.owner = D
-	entry.owner_id = REACT_ID(D)
+	REACT_ID(D)
 	entry.period = max(period, world.tick_lag)
 	entry.last_run = world.time
 	entry.next_run = world.time + entry.period
 	entry.why = why
 	entry.token = --next_continuous_token
-	continuous["[entry.token]"] = entry
-	LAZYADD(continuous_by_id["[entry.owner_id]"], entry.token)
+	continuous += entry
+	LAZYADD(D.react_every_entries, entry)
 	return entry.token
+
+/// The live continuous declaration with `token` (searching `D`'s own first), or null.
+/datum/controller/subsystem/reactor/proc/continuous_entry(token, datum/D)
+	for(var/datum/react_every/entry as anything in D?.react_every_entries)
+		if(entry.token == token && !entry.cancelled)
+			return entry
+	for(var/datum/react_every/entry as anything in continuous)
+		if(entry.token == token && !entry.cancelled)
+			return entry
+	return null
 
 /datum/controller/subsystem/reactor/proc/run_continuous()
 	var/start = TICK_USAGE_REAL
-	for(var/key in continuous.Copy())
-		var/datum/react_every/entry = continuous[key]
+	for(var/datum/react_every/entry as anything in continuous.Copy())
 		if(!entry || entry.cancelled || world.time < entry.next_run)
 			continue
 		var/datum/owner = entry.owner
@@ -416,8 +400,7 @@ SUBSYSTEM_DEF(reactor)
 				named[class_names[i]] = counts[i]
 		by_type["[type]"] = named
 	var/list/declared = list()
-	for(var/key in continuous)
-		var/datum/react_every/entry = continuous[key]
+	for(var/datum/react_every/entry as anything in continuous)
 		var/list/cost = continuous_cost[entry.owner.type]
 		declared += list(list("type" = "[entry.owner.type]", "period_ds" = entry.period, "why" = entry.why, "runs" = cost ? cost[1] : 0, "total_ms" = cost ? cost[2] : 0))
 	var/list/continuous_by_type = list()
@@ -425,7 +408,7 @@ SUBSYSTEM_DEF(reactor)
 		var/list/cost = continuous_cost[type]
 		continuous_by_type["[type]"] = list("runs" = cost[1], "total_ms" = cost[2])
 	return list(
-		"subscribers" = length(subscribers) - length(free_ids) - length(released_ids),
+		"subscribers" = subscriber_count,
 		"total_wakes" = total_wakes,
 		"last_wakes" = last_wakes,
 		"dispatch_ms" = last_dispatch_ms,
@@ -443,15 +426,7 @@ SUBSYSTEM_DEF(reactor)
 /// "type: reason" strings; with `report`, logs them (a runtime under UNIT_TESTS/TESTING).
 /datum/controller/subsystem/reactor/proc/audit(sample = audit_sample, report = FALSE)
 	var/list/findings = list()
-	var/count = length(subscribers)
-	if(!count)
-		return last_audit_findings = findings
-	var/list/candidates = list()
-	if(count <= sample)
-		candidates = subscribers.Copy()
-	else
-		for(var/i in 1 to sample)
-			candidates += subscribers[rand(1, count)]
+	var/list/candidates = subscriber_sample(sample)
 	for(var/datum/D as anything in candidates)
 		if(!D || QDELETED(D))
 			continue
@@ -467,6 +442,26 @@ SUBSYSTEM_DEF(reactor)
 		log_runtime("REACTOR_AUDIT [D.type]: [violation]")
 #endif
 	return last_audit_findings = findings
+
+/// Up to `sample` live subscribers, drawn from SSvg's entity table (all of
+/// them when there are no more than that).
+/datum/controller/subsystem/reactor/proc/subscriber_sample(sample)
+	. = list()
+	var/list/table = SSvg.entities_by_index
+	var/count = length(table)
+	if(!count || sample <= 0)
+		return
+	if(subscriber_count <= sample)
+		for(var/datum/D as anything in table)
+			if(D?.reactor_id && SSvg.entity_lookup(D.reactor_id) == D)
+				. |= D
+		return
+	for(var/i in 1 to sample * 4)
+		var/datum/D = table[rand(1, count)]
+		if(D?.reactor_id && SSvg.entity_lookup(D.reactor_id) == D)
+			. |= D
+			if(length(.) >= sample)
+				return
 
 /// Starts counting on_react() calls for `D` (wake tests).
 /datum/controller/subsystem/reactor/proc/trace(datum/D)
@@ -488,8 +483,10 @@ SUBSYSTEM_DEF(reactor)
 // --- The subscriber side, on every datum ------------------------------------------------------
 
 /datum
-	/// SSreactor registry index (0: never subscribed). The only per-datum reactor state.
+	/// SSreactor subscriber id, an SSvg entity handle (0: never subscribed).
 	var/tmp/reactor_id = 0
+	/// This datum's REACT_EVERY declarations (/datum/react_every).
+	var/tmp/list/react_every_entries
 
 /// A subscription fired. `reason` is REACT_REASON_* class bits OR-ed with channel bits (a
 /// change watch) or the key's mask (a key); merged wakes carry every reason. `source` is the

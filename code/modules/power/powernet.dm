@@ -211,8 +211,8 @@
 	if(region_id)
 		release_material_cables()
 		for(var/entity in vg_power_region_members(region_id))
-			var/obj/structure/cable/C = GLOB.power_cable_by_entity["[entity]"]
-			if(istype(C))
+			var/obj/structure/cable/C = SSvg.entity_lookup(entity)
+			if(istype(C) && C.power_entity == entity)
 				cables += C
 				C.powernet = src
 	QDEL_NULL(material_graph)

@@ -233,6 +233,20 @@ named handler on the atom after checking `atom.vg_entity == handle`. There are
 no per-object callbacks each tick and no pushed display values: a display
 value is a `state` field read when it's shown.
 
+### 8.1 Watches
+
+A watch on Rust state is a native watch (`code/datums/om/native.dm`): the
+owner declares what to watch and the proc to call, and gets back a
+`/datum/native_watch` that is its own handle. The handle is an SSvg entity,
+and Rust reports it as the wake's subscriber, so the domain drain finds the
+watch by handle and calls `call(owner, callback)(watch, ...)`. Owners do not
+compare handles, keep owner maps or override a shared `on_*_wake()` proc.
+Cancel a watch with `qdel()`. Domain subtypes: `/datum/native_watch/heat`
+(thresholds, bands and sets on a heat body or cell, following the target's
+body) and `/datum/native_watch/gas` (a mixture's dependency mask). Ids that
+name DM datums to Rust (reactor subscribers, pipe ports and devices, cable
+nodes) are SSvg entity handles too, found again with `SSvg.entity_lookup()`.
+
 ## 9. Errors and safety
 
 - Panics are caught per FFI call and per command in the apply loop. A failing

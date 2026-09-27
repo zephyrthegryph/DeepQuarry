@@ -179,9 +179,8 @@
 	var/datum/gas_mixture/external_air = owner.port_network_air()
 	if(!external_air)
 		return FALSE
-	rust_external_port_id = SSair.next_rust_pipe_port_id++
+	rust_external_port_id = rust_new_pipe_port(src, 2)
 	rust_external_port_volume = external_air.return_volume()
-	SSair.rust_pipe_ports["[rust_external_port_id]"] = list(src, 2)
 	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, rust_external_port_id, external_air.arena_id(), rust_external_port_volume)
 	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, rust_pipe_port_ids[1], rust_external_port_id)
 	SSair.rust_commit_pending_pipenets()
@@ -201,7 +200,7 @@
 		detached_air.set_volume(max(rust_external_port_volume, 1))
 		connected_device.set_port_network_air(detached_air)
 	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, old_port_id)
-	SSair.rust_pipe_ports.Remove("[old_port_id]")
+	rust_free_pipe_port(old_port_id)
 	rust_external_port_id = null
 	rust_external_port_volume = 0
 	SSair.rust_commit_pending_pipenets()

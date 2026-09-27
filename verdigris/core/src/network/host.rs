@@ -413,6 +413,12 @@ impl<K: NetworkKind> NetworkHost<K> {
         }
     }
 
+    /// Every entity with a node bound.
+    #[must_use]
+    pub fn node_entities(&self) -> Vec<Entity> {
+        self.nodes.keys().copied().collect()
+    }
+
     /// Every bound device as `(device, its entity)`: dense iteration over
     /// the device arena (`rust_architecture.md` §4.5), not a hash lookup
     /// per device.

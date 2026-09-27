@@ -175,12 +175,12 @@
 	var/every = REACT_EVERY(S, 1, "test: clear on destroy")
 	var/id = S.reactor_id
 	TEST_ASSERT_EQUAL(vg_world_subscriptions(id), 3, "subscriptions before qdel")
-	TEST_ASSERT(SSreactor.continuous["[every]"], "continuous declaration missing")
+	TEST_ASSERT(SSreactor.continuous_entry(every), "continuous declaration missing")
 	REACT_PUBLISH(REACT_KEY_TEST, id, 1)
 	qdel(S)
 	TEST_ASSERT_EQUAL(S.reactor_id, 0, "Destroy() did not release the registry index")
 	TEST_ASSERT_EQUAL(vg_world_subscriptions(id), 0, "Destroy() left subscriptions in Rust")
-	TEST_ASSERT(!SSreactor.continuous["[every]"], "Destroy() left a continuous declaration")
+	TEST_ASSERT(!SSreactor.continuous_entry(every), "Destroy() left a continuous declaration")
 	react_test_probe_set(40, 500, 300)
 	react_test_ticks(4)
 	TEST_ASSERT_EQUAL(length(S.wakes), 0, "a destroyed subscriber was woken")
@@ -209,7 +209,7 @@
 	TEST_ASSERT(slow.elapsed >= 4 * world.tick_lag / (1 SECONDS), "slow elapsed [slow.elapsed] s ignores its period")
 	TEST_ASSERT(stopper.accumulated >= 3, "stopper stopped early")
 	var/stopper_runs = length(stopper.every_runs)
-	TEST_ASSERT(!SSreactor.continuous["[stop_token]"], "self-cancel left the declaration")
+	TEST_ASSERT(!SSreactor.continuous_entry(stop_token), "self-cancel left the declaration")
 	react_test_ticks(4)
 	TEST_ASSERT_EQUAL(length(stopper.every_runs), stopper_runs, "ran after cancelling itself")
 	var/declared = FALSE
@@ -348,7 +348,7 @@
 	var/datum/react_test_subscriber/S = allocate(/datum/react_test_subscriber)
 	REACT_ID(S)
 	S.violation = "its input moved while it slept"
-	var/list/findings = SSreactor.audit(length(SSreactor.subscribers))
+	var/list/findings = SSreactor.audit(SSreactor.subscriber_count)
 	var/found = FALSE
 	for(var/finding in findings)
 		if(findtext(finding, "[S.type]"))

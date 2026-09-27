@@ -22,12 +22,6 @@
 // the entity `vg_power_bind_cable` hands back) is the only identity Rust
 // needs.
 
-/// Entity handle -> the cable that placed it (the material power overlay's
-/// only use for this: `vg_power_region_members()` hands back entities,
-/// and only cables need mapping back to an atom -- every other power
-/// machine already knows its own `vg_entity`).
-GLOBAL_LIST_EMPTY(power_cable_by_entity)
-
 /datum/controller/subsystem/machines
 	/// Region id (Rust's raw handle bits + 1) -> its /datum/powernet. An alist:
 	/// the ids are numbers, and a plain list would treat them as positions.
@@ -122,7 +116,6 @@ GLOBAL_LIST_EMPTY(power_cable_by_entity)
 	for(var/id in power_regions)
 		qdel(power_regions[id])
 	power_regions = alist()
-	GLOB.power_cable_by_entity = list()
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))
 		cable.power_unregister()
 		cable.power_register()
