@@ -465,7 +465,7 @@ REF_OWNED(/obj/item/storage, "hud")
 			if(L.status == 0 && LP.uses < LP.max_uses)
 				LP.add_uses(1)
 				amt_inserted++
-				qdel(L)
+				consume(L, user)
 		if(amt_inserted)
 			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
 			return

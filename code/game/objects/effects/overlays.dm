@@ -12,7 +12,7 @@
 
 /obj/effect/overlay/beam/Initialize(mapload)
 	. = ..()
-	QDEL_IN(src, 1 SECOND)
+	expire(1 SECOND)
 
 /obj/effect/overlay/palmtree_r
 	name = "Palm tree"

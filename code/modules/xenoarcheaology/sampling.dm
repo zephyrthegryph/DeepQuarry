@@ -107,7 +107,7 @@
 			to_chat(user, span_warning("\The [I] is full."))
 			return
 		if(num_stored_bags < 10)
-			qdel(I)
+			consume(I, user)
 			num_stored_bags += 1
 			to_chat(user, span_notice("You insert \the [I] into \the [src]."))
 		else

@@ -189,8 +189,7 @@ This device records all warnings given and teleport events for admin review in c
 		if(tb.tele_name in beacons)
 			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
 			LAZYREMOVE(beacons, tb.tele_name)
-			user.unEquip(tb)
-			qdel(tb)
+			consume(tb, user)
 			beacons_left++
 		else
 			to_chat(user,span_notice("\The [tb] doesn't belong to \the [src]."))

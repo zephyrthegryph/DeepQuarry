@@ -29,7 +29,7 @@
 			var/atom/movable/AM = new new_type(get_turf(src))
 			if(istype(AM, /obj/item/gun))
 				to_chat(user, "You have chosen \the [AM]. Say hello to your new friend.")
-		qdel(src)
+		consume(src, user)
 
 /*
  * Sidearm Stun
@@ -54,7 +54,7 @@
 			var/atom/movable/AM = new new_type(get_turf(src))
 			if(istype(AM, /obj/item/gun))
 				to_chat(user, "You have chosen \the [AM]. Say hello to your new friend.")
-		qdel(src)
+		consume(src, user)
 
 /*
  * CentCom Pistol
@@ -81,7 +81,7 @@
 			var/atom/movable/AM = new new_type(get_turf(src))
 			if(istype(AM, /obj/item/gun))
 				to_chat(user, "You have chosen \the [AM]. Say hello to your new friend.")
-		qdel(src)
+		consume(src, user)
 
 
 /*
@@ -110,7 +110,7 @@
 			var/atom/movable/AM = new new_type(get_turf(src))
 			if(istype(AM, /obj/item/gun))
 				to_chat(user, "You have chosen \the [AM]. Say hello to your new best friend.")
-		qdel(src)
+		consume(src, user)
 
 /*
  * Site Manager's Box
@@ -139,7 +139,7 @@
 			var/atom/movable/AM = new new_type(get_turf(src))
 			if(istype(AM, /obj/item/gun))
 				to_chat(user, "You have chosen \the [AM]. Say hello to your new friend.")
-		qdel(src)
+		consume(src, user)
 
 
 /obj/item/gunbox/sec_officer
@@ -163,4 +163,4 @@
 			var/atom/movable/AM = new new_type(get_turf(src))
 			if(istype(AM, /obj/item/gun))
 				to_chat(user, "You have chosen \the [AM]. Say hello to your new friend.")
-		qdel(src)
+		consume(src, user)

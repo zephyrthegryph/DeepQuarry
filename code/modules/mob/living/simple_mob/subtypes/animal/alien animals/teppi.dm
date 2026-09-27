@@ -530,8 +530,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		else
 			user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] casually."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] casually."))
 		adjust_nutrition(yum) //add the nutriment!
-		user.drop_from_inventory(O)
-		qdel(O)
+		consume(O, user)
 		playsound(src, 'sound/items/eatfood.ogg', 75, 1)
 		if(!client && lets_eat(user) && prob(1))
 			visible_message(span_danger("\The [src] scromfs \the [user] along with the food!"))
@@ -563,7 +562,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		name = C.given_name
 		real_name = C.given_name
 		update_icon()
-		qdel(C)
+		consume(C, user)
 		fully_replace_character_name(real_name,C.given_name)
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
 		return
@@ -671,8 +670,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		else if (not_hungy)
 			var/nutrition_cost = 500 + (self.nutrition / 2)
 			self.adjust_nutrition(-nutrition_cost)
-			new /mob/living/simple_mob/vore/alienanimals/teppi(self.loc, self.store_teppi_data(self))
-			qdel(self)
+			replace_with(self, /mob/living/simple_mob/vore/alienanimals/teppi, self.store_teppi_data(self))
 			return
 		else
 			self.visible_message("\The [self] whines pathetically...", runemessage = "whines")

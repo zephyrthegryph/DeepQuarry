@@ -75,7 +75,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 		to_chat(user, "You insert the coordinates into the machine.")
 		to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
 		user.drop_item()
-		qdel(C)
+		consume(C, user)
 
 		if(C.data == "Clown Land")
 			//whoops

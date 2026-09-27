@@ -101,7 +101,7 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 		user.drop_from_inventory(W)
 		metal += pipe_cost
 		to_chat(user, span_notice("You recycle \the [W]."))
-		qdel(W)
+		consume(W, user)
 	return TRUE
 
 /// Load steel stacks into internal storage.

@@ -366,7 +366,7 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 	assembly.wired = TRUE
 	assembly.glass = glass
 	assembly.update_icon()
-	qdel(src)
+	replace_with(src, assembly)
 
 /obj/machinery/door/firedoor/proc/crowbar_act_tool_done(mob/user, obj/item/tool)
 	if(!((stat & (BROKEN|NOPOWER) || !density)))

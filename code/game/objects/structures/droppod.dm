@@ -123,9 +123,8 @@ REF_OWNED(/obj/structure/drop_pod, "air")
 	return TRUE
 
 /obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)
-	new /obj/item/stack/material/plasteel(loc, 10)
 	playsound(user, O.usesound, 50, 1)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/plasteel, 10)
 
 /obj/structure/drop_pod/return_air()
 	return return_air_for_internal_lifeform()

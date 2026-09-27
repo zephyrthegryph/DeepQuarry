@@ -47,8 +47,7 @@
 /obj/structure/noticeboard/proc/dismantle()
 	for(var/thing in notices)
 		remove_paper(thing, skip_icon_update = TRUE)
-	new /obj/item/stack/material/wood(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/wood)
 
 REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 

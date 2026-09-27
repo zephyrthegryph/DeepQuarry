@@ -205,8 +205,7 @@
 	visible_message(span_danger("\The [src] explodes into pieces!"))
 	playsound(src, 'sound/items/smolebuildingdestoryedshort.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/item/stack/material/smolebricks(loc)
-	new /obj/item/stack/material/smolebricks(loc)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/smolebricks)
 	return
 
 //get material from ruins
@@ -234,8 +233,7 @@
 	visible_message(span_danger("\The [src] explodes into pieces!"))
 	playsound(src, 'sound/items/smolebuildingdestoryedshort.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/item/stack/material/smolebricks(loc)
-	new /obj/item/stack/material/smolebricks(loc)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/smolebricks)
 	return
 
 //color buildings

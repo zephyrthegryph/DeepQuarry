@@ -99,6 +99,9 @@
 	faction = FACTION_STATION
 	water_resist = 1 //Harry lives under the sea!
 
+/mob/living/simple_mob/mechanical/hivebot/support/harry
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/hivebot/support/harry/death()
 	..()
 	visible_message(span_warning("Connection... terminated... Sweet Release... obtained."),span_danger("\The [src] blows apart!"))
@@ -106,7 +109,6 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	qdel(src)
 
 
 // === merged from support_vr.dm during hard-fork de-suffix (verified no override-order change) ===

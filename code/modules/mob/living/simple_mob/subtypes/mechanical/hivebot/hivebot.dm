@@ -19,6 +19,9 @@
 	say_list_type = /datum/say_list/hivebot
 
 
+/mob/living/simple_mob/mechanical/hivebot
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/hivebot/death()
 	..()
 	visible_message(span_warning("\The [src] blows apart!"))
@@ -26,7 +29,6 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	qdel(src)
 
 // The hivebot's default projectile.
 /obj/item/projectile/bullet/hivebot

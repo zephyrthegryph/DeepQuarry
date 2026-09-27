@@ -33,5 +33,4 @@
 		return
 	amount_grown = 100
 	if(amount_grown >= 100)
-		new metroid_type(src.loc, src)
-		qdel(src)
+		replace_with(src, metroid_type, src)

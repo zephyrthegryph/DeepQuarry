@@ -73,4 +73,4 @@
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE
 		user.visible_message("[user] disassembles \the [src].")
-		qdel(src)
+		consume(src, user)

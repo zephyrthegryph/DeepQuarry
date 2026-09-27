@@ -285,10 +285,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 			M.death(1)
 			M.ghostize()
-			qdel(M)
+			consume(M)
 
 		for(var/obj/O in contents) //obj instead of obj/item so that bodybags and ashes get destroyed. We dont want tons and tons of ash piling up
-			qdel(O)
+			consume(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
 		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
@@ -381,10 +381,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 			M.death(1)
 			M.ghostize()
-			qdel(M)
+			consume(M)
 
 		for(var/obj/O in contents) //obj instead of obj/item so that bodybags and ashes get destroyed. We dont want tons and tons of ash piling up
-			qdel(O)
+			consume(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
 		om_after(src, 3 SECONDS, PROC_REF(cremation_done))

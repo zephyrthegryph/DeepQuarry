@@ -91,8 +91,7 @@
 				playsound(src, 'sound/effects/tape.ogg',25)
 
 				if(!T.attempt_to_cuff(H, user))
-					user.unEquip(T)
-					qdel(T)
+					consume(T, user)
 			else
 				return ..()
 			return ITEM_INTERACT_SUCCESS
@@ -144,7 +143,7 @@
 	user.put_in_hands(stuck)
 	stuck = null
 	overlays = null
-	qdel(src)
+	consume(src, user)
 
 /obj/item/ducttape/attackby(obj/item/I, mob/user)
 	if(!(istype(src, /obj/item/handcuffs/cable/tape) || istype(src, /obj/item/clothing/mask/muzzle/tape)))
@@ -152,7 +151,7 @@
 	else
 		user.drop_from_inventory(I)
 		I.loc = src
-		qdel(I)
+		consume(I, user)
 		to_chat(user, span_notice("You place \the [I] back into \the [src]."))
 
 /obj/item/ducttape/attack_hand(mob/living/L)

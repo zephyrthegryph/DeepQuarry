@@ -58,5 +58,5 @@ REF_OWNED(/obj/item/spell/flame_tongue, "welder")
 			welder.loc = src
 		else
 			welder = null
-			qdel(src)
+			consume(src, user)
 			return

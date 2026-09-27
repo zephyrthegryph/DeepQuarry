@@ -240,8 +240,7 @@
 					if(G.slot != slot_tie)
 						var/obj/item/existing = mannequin.get_equipped_item(G.slot)
 						if(existing)
-							mannequin.drop_from_inventory(existing)
-							qdel(existing)
+							consume(existing, mannequin)
 					var/metadata = active_gear_list[G.display_name]
 					if(mannequin.equip_to_slot_or_del(G.spawn_item(mannequin, metadata), G.slot))
 						if(G.slot != slot_tie)

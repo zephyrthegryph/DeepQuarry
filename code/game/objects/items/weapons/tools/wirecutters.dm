@@ -53,8 +53,7 @@
 		"You cut \the [C]'s restraints with \the [src]!",\
 		"You hear cable being cut.")
 		var/obj/item/cut = C.get_equipped_item(SLOT_ID_HANDCUFFED)
-		C.drop_from_inventory(cut)
-		qdel(cut)
+		consume(cut, C)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()

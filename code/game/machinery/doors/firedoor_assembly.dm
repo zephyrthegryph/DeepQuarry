@@ -37,7 +37,7 @@
 				new /obj/machinery/door/firedoor/glass(loc)
 			else
 				new /obj/machinery/door/firedoor(loc)
-			qdel(C)
+			consume(C, user)
 			qdel(src)
 		else
 			to_chat(user, span_warning("You must secure \the [src] first!"))
@@ -103,5 +103,4 @@
 	update_icon()
 /obj/structure/firedoor_assembly/proc/welder_act_tool_done2(mob/user)
 	user.visible_message(span_warning("[user] has disassembled \the [src]."), "You have disassembled \the [src].")
-	new /obj/item/stack/material/steel(drop_location(), 2)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 2)

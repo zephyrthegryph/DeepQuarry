@@ -85,7 +85,7 @@
 	A.forceMove(holder_obj)
 	holder_obj.fulton_expand(A, landing)
 	if(uses_left <= 0)
-		qdel(src)
+		consume(src, user)
 
 /obj/effect/extraction_holder/proc/fulton_balloon(state)
 	var/mutable_appearance/balloon = mutable_appearance('icons/obj/fulton_balloon.dmi', state)
@@ -159,8 +159,7 @@
 	om_do_after(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
 
 /obj/item/fulton_core/proc/deploy_done(mob/user)
-	new /obj/structure/extraction_point(get_turf(user))
-	qdel(src)
+	replace_with(src, /obj/structure/extraction_point)
 
 /obj/structure/extraction_point
 	name = "fulton recovery beacon"

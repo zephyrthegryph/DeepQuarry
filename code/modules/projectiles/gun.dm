@@ -245,7 +245,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 
 /obj/item/gun/proc/lock_explosion()
 	explosion(src, 0, 0, 3, 4)
-	QDEL_IN(src, 1)
+	expire(1)
 
 /obj/item/gun/afterattack(atom/A, mob/living/user, adjacent, params)
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person

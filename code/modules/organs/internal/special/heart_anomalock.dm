@@ -40,7 +40,7 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 		UnregisterSignal(owner, COMSIG_ATOM_EMP_ACT)
 		owner.RemoveElement(/datum/element/empprotection)
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
-		QDEL_IN(src, 0)
+		expire(0)
 
 	..(removed)
 

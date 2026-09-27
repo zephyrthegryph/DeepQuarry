@@ -22,8 +22,7 @@
 /obj/item/supply_beacon/proc/attack_self_timed_done(mob/user)
 	var/obj/S = new deploy_path(get_turf(user))
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " deploys \the [S]."))
-	user.unEquip(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/machinery/power/supply_beacon
 	name = "supply beacon"

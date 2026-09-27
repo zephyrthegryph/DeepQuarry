@@ -24,7 +24,7 @@
 	var/obj/item/SK
 	SK = new /obj/item/material/sharpeningkit(get_turf(user), M.material.name)
 	to_chat(user, "You sharpen and refine the [src] into \a [SK].")
-	qdel(src)
+	consume(src, user)
 	if(SK)
 		user.put_in_hands(SK)
 

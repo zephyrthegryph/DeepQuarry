@@ -161,7 +161,7 @@
 	src.persist_item_savefile_save(user, O)
 	user.visible_message(span_notice("\The [user] stores \the [O] in \the [src]."),span_notice("You stored \the [O] in \the [src]."))
 	log_admin("[key_name_admin(user)] stored [O] in the item bank.")
-	qdel(O)
+	consume(O, user)
 	busy_bank = FALSE
 	icon_state = "item_bank"
 

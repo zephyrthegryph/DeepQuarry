@@ -81,4 +81,4 @@
 			uses--
 			if(uses <= 0)
 				to_chat(user, span_danger("\The [src] has ran out of uses, and disintegrates from your hands."))
-				qdel(src)
+				consume(src, user)

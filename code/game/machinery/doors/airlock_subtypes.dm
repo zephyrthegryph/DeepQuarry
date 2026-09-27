@@ -446,8 +446,7 @@
 		W.burn((temperature/4))//Added so that you can't set off a massive chain reaction with a small flame
 	for(var/obj/machinery/door/airlock/phoron/D in range(3,src))
 		D.ignite(temperature/4)
-	new/obj/structure/door_assembly(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/structure/door_assembly)
 
 /obj/machinery/door/airlock/sandstone
 	name = "Sandstone Airlock"

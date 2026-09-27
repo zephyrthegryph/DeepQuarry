@@ -399,7 +399,7 @@ REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 		if("1000 Points") //1000 points
 			var/obj/item/card/mining_point_card/new_card = new(drop_location)
 			new_card.mine_points = 1000
-	qdel(voucher)
+	consume(voucher, redeemer)
 
 /obj/machinery/mineral/equipment_vendor/proc/new_prize(name, path, cost) // Generic proc for adding new entries. Good for abusing for FUN and PROFIT.
 	if(!cost)

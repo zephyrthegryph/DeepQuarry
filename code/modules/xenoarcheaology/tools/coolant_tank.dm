@@ -29,6 +29,6 @@
 		if(cooling_strength > 0)
 			env.add_thermal_energy(-(cooling_strength * COOLING_FACTOR))
 
-	QDEL_IN(src, 10)
+	expire(10)
 
 #undef COOLING_FACTOR

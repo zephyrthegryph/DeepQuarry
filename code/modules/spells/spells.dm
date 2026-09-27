@@ -268,4 +268,4 @@
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
 		L.add_modifier(/datum/modifier/mend_occult, 150)	//No need to change this, it does the job
-	qdel(src)
+	consume(src, user)

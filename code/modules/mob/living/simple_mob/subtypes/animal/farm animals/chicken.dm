@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 			if(!stat && eggsleft < 8)
 				user.visible_message(span_blue("[user] feeds [O] to [name]! It clucks happily."),span_blue("You feed [O] to [name]! It clucks happily."))
 				user.drop_item()
-				qdel(O)
+				consume(O, user)
 				eggsleft += rand(1, 4)
 			else
 				to_chat(user, span_blue("[name] doesn't seem hungry!"))
@@ -87,9 +87,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
-			new /mob/living/simple_mob/animal/passive/chick(get_turf(src))
 			PERIODIC_STOP(src)
-			qdel(src)
+			replace_with(src, /mob/living/simple_mob/animal/passive/chick)
 	else
 		PERIODIC_STOP(src)
 

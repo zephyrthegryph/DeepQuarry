@@ -393,7 +393,7 @@
 	charge = 0
 	explosion(T, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
-	qdel(src)
+	consume(src)
 
 /obj/item/cell/proc/corrupt()
 	charge /= 2

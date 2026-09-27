@@ -126,4 +126,4 @@ GLOBAL_LIST_INIT(mark_spells, list())
 	playsound(old_turf, 'sound/effects/sparks2.ogg', 50, 1)
 
 	adjust_instability(25)
-	qdel(src)
+	consume(src, user)

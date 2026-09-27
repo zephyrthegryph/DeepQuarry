@@ -241,7 +241,7 @@
 			if(OR.can_butcher(src))
 				OR.butcher(src, null, src)	// Butcher it, and add it to our list of things to launch.
 			else
-				qdel(thing)
+				consume(thing)
 			continue
 		thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
 		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.

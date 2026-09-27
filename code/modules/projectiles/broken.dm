@@ -126,7 +126,7 @@
 			material_needs[path] = max(0, material_needs[path] - 1)
 			user.drop_from_inventory(I)
 			to_chat(user, span_notice("You repair some damage on \the [src] with \the [I]."))
-			qdel(I)
+			consume(I, user)
 
 	check_complete_repair(user)
 
@@ -143,4 +143,4 @@
 		my_guntype = new my_guntype(get_turf(src))
 		my_guntype.name = "[pick("salvaged", "repaired", "old")] [initial(my_guntype.name)]"
 		to_chat(user, span_notice("You finish your repairs on \the [my_guntype]."))
-		qdel(src)
+		consume(src, user)

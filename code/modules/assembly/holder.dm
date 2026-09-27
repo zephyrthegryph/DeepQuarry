@@ -157,7 +157,7 @@
 		if(a_right)
 			a_right.holder = null
 			a_right.forceMove(T)
-		qdel(src)
+		consume(src, user)
 
 /obj/item/assembly_holder/proc/process_activation(obj/D, normal = 1)
 	if(!D)

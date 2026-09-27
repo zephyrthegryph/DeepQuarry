@@ -124,7 +124,7 @@
 		to_chat(user, span_notice("You add \the [O] to the bowl."))
 		if(prob(20))
 			fill()
-		qdel(O)
+		consume(O, user)
 
 /obj/structure/candybowl/proc/empty()
 	var/newname = "empty " + initial(name)

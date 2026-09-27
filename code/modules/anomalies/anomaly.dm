@@ -23,7 +23,7 @@
 	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
 	sparks.set_up(3, 1, src)
 	sparks.start()
-	qdel(src)
+	consume(src, user)
 
 /obj/item/anomaly_releaser
 	icon = 'icons/obj/devices/syndie_gadget.dmi'

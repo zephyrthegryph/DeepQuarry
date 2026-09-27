@@ -462,7 +462,7 @@
 	if(.)
 		return TRUE
 	user.drop_from_inventory(src)
-	QDEL_IN(src, 1)
+	expire(1)
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
@@ -479,7 +479,7 @@
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
-		QDEL_IN(src, 1)
+		expire(1)
 
 /obj/item/melee/energy/blade/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(60))

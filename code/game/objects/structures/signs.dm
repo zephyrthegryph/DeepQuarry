@@ -23,7 +23,7 @@
 	S.icon_state = icon_state
 	S.sign_state = icon_state
 	S.original_type = type
-	qdel(src)
+	replace_with(src, S)
 
 /obj/item/sign
 	name = "sign"
@@ -1615,7 +1615,7 @@
 	P.description_info = description_info
 	P.description_fluff = description_fluff
 	P.flagtype = type
-	qdel(src)
+	consume(src, user)
 
 REF_PAIR(/obj/structure/sign/flag, list("linked_flag" = "linked_flag"))
 

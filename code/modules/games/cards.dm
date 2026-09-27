@@ -70,7 +70,7 @@
 		if(H.parentdeck == src)
 			for(var/datum/playingcard/P in H.cards)
 				cards += P
-			qdel(H)
+			consume(H, user)
 			to_chat(user,span_notice("You place your cards on the bottom of \the [src]."))
 			return
 		else
@@ -294,8 +294,7 @@
 			for(var/datum/playingcard/P in cards)
 				H.cards += P
 			H.concealed = src.concealed
-			user.drop_from_inventory(src)
-			qdel(src)
+			consume(src, user)
 			H.update_icon()
 			return
 		else
@@ -402,7 +401,7 @@
 	H.parentdeck = src.parentdeck
 	cards.Cut();
 	user.drop_item()
-	qdel(src)
+	consume(src, user)
 
 	H.update_icon()
 	user.put_in_active_hand(H)

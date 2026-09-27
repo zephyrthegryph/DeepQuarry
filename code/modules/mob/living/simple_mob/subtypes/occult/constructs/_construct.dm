@@ -110,11 +110,13 @@
 		add_glow()
 */
 
+/mob/living/simple_mob/construct
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/construct/death()
 	new /obj/item/ectoplasm (src.loc)
 	..(null,"collapses in a shattered heap.")
 	ghostize()
-	qdel(src)
 
 /mob/living/simple_mob/construct/attack_generic(mob/user)
 	if(istype(user, /mob/living/simple_mob/construct/artificer))

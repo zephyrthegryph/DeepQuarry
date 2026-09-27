@@ -39,7 +39,7 @@
 		gift.add_fingerprint(user)
 	else
 		to_chat(user, span_warning("The gift was empty!"))
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/effect/spresent/relaymove(mob/user as mob)
@@ -112,7 +112,7 @@
 	M.remove_from_mob(src)
 	M.put_in_hands(I)
 	I.add_fingerprint(M)
-	qdel(src)
+	consume(src, M)
 	return
 
 /*
@@ -160,8 +160,7 @@
 	src.add_fingerprint(user)
 
 	if(src.amount <= 0)
-		new /obj/item/c_tube(get_turf(src))
-		qdel(src)
+		replace_with(src, /obj/item/c_tube)
 
 /obj/item/wrapping_paper/examine(mob/user)
 	. = ..()
@@ -372,5 +371,5 @@
 	M.put_in_hands(I)
 	I.add_fingerprint(M)
 
-	qdel(src)
+	consume(src, M)
 	return

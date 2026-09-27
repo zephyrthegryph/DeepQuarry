@@ -603,7 +603,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		imp_in.put_in_hands(scanned)
 	else
 		scanned.loc = t
-	qdel(src)
+	consume(src)
 
 /obj/item/implant/compressed/post_implant(mob/source)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")

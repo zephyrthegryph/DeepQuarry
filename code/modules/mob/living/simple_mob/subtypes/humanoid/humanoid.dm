@@ -25,14 +25,15 @@
 
 	can_be_drop_prey = FALSE
 
+/mob/living/simple_mob/humanoid
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/humanoid/death()
 	..()
 	if(corpse)
 		var/mob/new_corpse = new corpse(src.loc)
 		if(istype(new_corpse))
 			new_corpse.set_low_priority(TRUE)
-	qdel(src)
-	return
 
 /datum/decl/mob_organ_names/humanoid
 	hit_zones = list("head", "torso", "left leg", "right leg", "left arm", "right arm", "left hand", "right hand", "left foot", "right foot") //Same as real people!

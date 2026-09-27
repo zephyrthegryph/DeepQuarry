@@ -411,6 +411,8 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /mob/proc/put_in_hands(obj/item/I)
 	if(!I)
 		return 0
+	if(is_in_hands(I))
+		return 1
 	if(inventory_slot_id(I))
 		remove_from_mob(I)
 		return 0
@@ -418,6 +420,13 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	I.reset_plane_and_layer()
 	has_unequipped(I, FALSE)
 	return 0
+
+/// Whether `I` already sits in one of this mob's hand slots. put_in_hands()
+/// is a no-op for it: a replace_with() successor lands in the original's
+/// hand before the call sites that used to hand it over get there.
+/mob/proc/is_in_hands(obj/item/I)
+	var/slot = inventory_slot_id(I)
+	return slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R
 
 // ---- Removing ----
 
@@ -518,5 +527,4 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 
 /mob/proc/delete_inventory(include_hands)
 	for(var/entry in get_equipped_items())
-		drop_from_inventory(entry)
-		qdel(entry)
+		consume(entry, src)

@@ -27,4 +27,4 @@
 
 	user.put_in_hands(new contraband(user.loc))
 	to_chat(user, span_notice("You unwrap the package."))
-	qdel(src)
+	consume(src, user)

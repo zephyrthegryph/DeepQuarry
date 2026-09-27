@@ -360,9 +360,8 @@ REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myre
 
 		new /obj/item/stack/material/steel(src.loc, 10)
 		new /obj/item/stack/material/plastic(src.loc, 10)
-		new /obj/item/stack/rods(src.loc, 20)
 		dismantled = 1
-		qdel(src)
+		replace_with(src, /obj/item/stack/rods, 20)
 
 /obj/structure/janitorialcart/ex_act(severity)
 	spill(100 / severity)

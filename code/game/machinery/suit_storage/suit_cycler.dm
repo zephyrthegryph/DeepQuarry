@@ -181,7 +181,7 @@ REF_OWNED(/obj/machinery/suit_cycler, "wires")
 		return TRUE
 
 	add_fingerprint(user)
-	qdel(G)
+	consume(G, user)
 
 /// Fit a helmet, excluding hardsuit (rig) helmets.
 /datum/interaction/machine_item/suit_cycler_insert_helmet

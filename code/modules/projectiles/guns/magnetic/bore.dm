@@ -165,7 +165,7 @@ REF_OWNED(/obj/item/gun/magnetic/matfed, "manipulator")
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 
-			qdel(M)
+			consume(M, user)
 			mat_storage += (SHEET_MATERIAL_AMOUNT/2*0.8) //two plasma ores needed per sheet, some inefficiency for not using refined product
 			success = TRUE
 		if(success)

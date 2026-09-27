@@ -144,7 +144,7 @@
 	my_turf = get_turf(src)
 	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
 		return INITIALIZE_HINT_QDEL
-	QDEL_IN(src, persist_time)
+	expire(persist_time)
 /*	for(var/obj/effect/slug_glue/G in my_turf.contents)
 		if(G == src)
 			continue

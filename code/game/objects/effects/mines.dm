@@ -385,7 +385,7 @@ REF_OWNED(/obj/effect/mine, list("trap", "wires"))
 		R.trap.forceMove(R)
 	if(explode_now)
 		R.explode(user)
-	qdel(src)
+	consume(src)
 
 /obj/item/mine/dnascramble
 	name = "radiation mine"

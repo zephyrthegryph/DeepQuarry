@@ -581,7 +581,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 
 			if(!S.seed)
 				to_chat(user, span_filter_notice("The packet seems to be empty. You throw it away."))
-				qdel(O)
+				consume(O, user)
 				return TRUE
 
 			to_chat(user, span_filter_notice("You plant the [S.seed.seed_name] [S.seed.seed_noun]."))
@@ -620,7 +620,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 		weedlevel -= spray.weed_kill_str
 		to_chat(user, span_filter_notice("You spray [src] with [O]."))
 		playsound(src, 'sound/effects/spray3.ogg', 50, 1, -6)
-		qdel(O)
+		consume(O, user)
 		check_health()
 
 	else if(O.force && seed)

@@ -116,12 +116,12 @@
 		user.visible_message(span_danger("\The [user] pulls the trigger, but \the [src] explodes!"), span_danger("The [src] explodes!"))
 		log_and_message_admins("blew themself up with a particle gun.", user)
 		explosion(T, -1, -1, 1, 1)
-		qdel(src)
+		consume(src, user)
 	else //can only possibly happen if you're dumb enough to fire it in an OVER pressure environment, over 150kPa
 		user.visible_message(span_danger("\The [user] pulls the trigger, but \the [src] explodes!"), span_danger("The [src] explodes catastrophically!"))
 		log_and_message_admins("blew their dumb ass up with a particle gun.", user)
 		explosion(T, -1, 1, 2, 2)
-		qdel(src)
+		consume(src, user)
 
 /obj/item/gun/energy/particle/cannon/pressuremalfunction(severity, user, T)
 	..(severity*2, user, T)

@@ -423,8 +423,7 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 		graph.set_state(target, before)
 		return FALSE
 	if(item_type && item_use == CONSTRUCTION_ITEM_DELETE && !QDELETED(held))
-		actor.drop_from_inventory(held)
-		qdel(held)
+		consume(held, actor)
 	give_materials(where)
 	graph.on_traversed(target, actor, src, before, after)
 	return TRUE

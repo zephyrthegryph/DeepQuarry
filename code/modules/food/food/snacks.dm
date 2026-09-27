@@ -140,8 +140,7 @@
 /obj/item/reagent_containers/food/snacks/attack(mob/living/eater, mob/living/user, target_zone, attack_modifier)
 	if(reagents && !reagents.total_volume)
 		balloon_alert(user, "none of \the [src] left!")
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 		return ITEM_INTERACT_FAILURE
 
 	if(package)
@@ -391,8 +390,7 @@
 
 		living_mob.forceMove(src)
 		holder.held_mob = null
-		user.drop_from_inventory(holder)
-		qdel(holder)
+		consume(holder, user)
 
 		food_inserted_micros += living_mob
 
@@ -450,7 +448,7 @@
 						food_inserted_micros -= F
 			on_slice_extra()
 
-			qdel(src)
+			consume(src, user)
 			return
 
 /obj/item/reagent_containers/food/snacks/proc/on_slice_extra()
@@ -968,15 +966,13 @@
 		return
 	to_chat(user, "You crack \the [src] into \the [O].")
 	reagents.trans_to(O, reagents.total_volume)
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/egg/throw_impact(atom/hit_atom)
 	. = ..()
-	new/obj/effect/decal/cleanable/egg_smudge(src.loc)
 	src.reagents.splash(hit_atom, reagents.total_volume)
 	src.visible_message(span_red("[src.name] has been squashed."),span_red("You hear a smack."))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/egg_smudge)
 
 /obj/item/reagent_containers/food/snacks/egg/attackby(obj/item/W, mob/user)
 	if(istype( W, /obj/item/pen/crayon ))
@@ -1567,9 +1563,8 @@
 
 /obj/item/reagent_containers/food/snacks/pie/throw_impact(atom/hit_atom)
 	. = ..()
-	new/obj/effect/decal/cleanable/pie_smudge(src.loc)
 	src.visible_message(span_danger("\The [src.name] splats."),span_danger("You hear a splat."))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/pie_smudge)
 
 /obj/item/reagent_containers/food/snacks/berryclafoutis
 	name = "Berry Clafoutis"
@@ -2068,7 +2063,7 @@
 		V.mind.transfer_to(H)
 		H.set_tf_mob_holder(V.tf_mob_holder)
 		qdel(V)
-	qdel(src)
+	replace_with(src, H)
 	return H
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/Unwrap(mob/user as mob)
@@ -4408,7 +4403,7 @@
 	if(istype(W,/obj/item/material/kitchen/rollingpin))
 		new /obj/item/reagent_containers/food/snacks/sliceable/flatdough(src)
 		to_chat(user, "You flatten the dough.")
-		qdel(src)
+		consume(src, user)
 
 // slicable into 3xdoughslices
 /obj/item/reagent_containers/food/snacks/sliceable/flatdough
@@ -4456,8 +4451,8 @@
 	if(istype(W))// && !istype(src,/obj/item/reagent_containers/food/snacks/cheesewedge))
 		new /obj/item/reagent_containers/food/snacks/cheeseburger(src)
 		to_chat(user, "You make a cheeseburger.")
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 		return
 	else
 		. = ..()
@@ -4467,8 +4462,8 @@
 	if(istype(W))
 		new /obj/item/reagent_containers/food/snacks/cheeseburger(src)
 		to_chat(user, "You make a cheeseburger.")
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 		return
 	else
 		. = ..()
@@ -4585,11 +4580,11 @@
 	if(seed && seed.kitchen_tag && seed.kitchen_tag == PLANT_POTATO && istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 		to_chat(user, span_notice("You cut the potato."))
-		qdel(src)
+		consume(src, user)
 	else if(seed && seed.kitchen_tag && seed.kitchen_tag == PLANT_SUNFLOWERS && istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
 		to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-		qdel(src)
+		consume(src, user)
 	else
 		. = ..()
 
@@ -5030,8 +5025,7 @@
 		return
 	to_chat(user, span_notice("You tear \the [src]'s sac open, pouring it into \the [O]."))
 	reagents.trans_to(O, reagents.total_volume)
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/bagelplain
 	name = "plain bagel"
@@ -5377,7 +5371,7 @@
 		new /obj/item/reagent_containers/food/snacks/rawbacon(src)
 		new /obj/item/reagent_containers/food/snacks/rawbacon(src)
 		to_chat(user, "You slice the cutlet into thin strips of bacon.")
-		qdel(src)
+		consume(src, user)
 	else
 		. = ..()
 
@@ -5720,29 +5714,29 @@
 	if(istype(W,/obj/item/reagent_containers/food/snacks/meatball))
 		result = new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
 		to_chat(user, "You make a burger.")
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 
 	// Bun + cutlet = hamburger
 	else if(istype(W,/obj/item/reagent_containers/food/snacks/cutlet))
 		result = new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
 		to_chat(user, "You make a burger.")
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 
 	// Bun + burgerpatty = beefburger
 	else if(istype(W,/obj/item/reagent_containers/food/snacks/burgerpatty))
 		result = new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
 		to_chat(user, "You make a burger.")
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 
 	// Bun + sausage = hotdog
 	else if(istype(W,/obj/item/reagent_containers/food/snacks/sausage))
 		result = new /obj/item/reagent_containers/food/snacks/hotdog(src)
 		to_chat(user, "You make a hotdog.")
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 
 	// Bun + mouse = mouseburger
 	else if(istype(W,/obj/item/reagent_containers/food/snacks/variable/mob))
@@ -5882,7 +5876,7 @@
 		var/obj/waste = new trash(loc)
 		if (loc == user)
 			user.put_in_hands(waste)
-		qdel(src)
+		consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/chipplate/MouseDrop(mob/user) //Dropping the chip onto the user
 	if(istype(user) && user == usr)
@@ -5937,7 +5931,7 @@
 			returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
 		else
 			returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)
-		qdel(item)
+		consume(item, user)
 		reagents.trans_to(returningitem, bitesize) //Dip to new chip
 		user.put_in_hands(returningitem)
 
@@ -5950,7 +5944,7 @@
 			var/obj/waste = new trash(loc)
 			if (loc == user)
 				user.put_in_hands(waste)
-			qdel(src)
+			consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/dip/salsa
 	name = "salsa dip"
@@ -7939,7 +7933,7 @@
 	if(istype(W,/obj/item/material/kitchen/rollingpin))
 		new /obj/item/reagent_containers/food/snacks/steamrolltealeaf(src)
 		to_chat(user, span_notice("You roll the steamed tea leaf."))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/steamrolltealeaf
 	name = "Rolled steamed tea leaf"
@@ -8568,8 +8562,7 @@
 
 /obj/item/reagent_containers/food/snacks/cube/proc/Expand()
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " expands!"))
-	new food_type(get_turf(src))
-	qdel(src)
+	replace_with(src, food_type)
 
 /obj/item/reagent_containers/food/snacks/cube/on_reagent_change()
 	if(reagents.has_reagent(REAGENT_ID_WATER))

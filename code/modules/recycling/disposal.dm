@@ -234,7 +234,7 @@
 	C.anchored = TRUE
 	C.update()
 
-	qdel(src)
+	replace_with(src, C)
 
 // pipe is deleted
 // ensure if holder is present, it is expelled

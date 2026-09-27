@@ -366,4 +366,4 @@
 /mob/living/proc/fade_away()
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins to fade away..."))
 	animate(src, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
-	QDEL_IN(src, 30)
+	expire(30)

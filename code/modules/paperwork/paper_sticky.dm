@@ -62,7 +62,7 @@
 	to_chat(user, span_notice("You pull \the [paper] off \the [src]."))
 	papers--
 	if(papers <= 0)
-		qdel(src)
+		consume(src, user)
 	else
 		update_icon()
 

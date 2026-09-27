@@ -38,7 +38,7 @@
 		var/obj/item/ore/ore = W
 		stored_ore[ore.material]++
 		user.remove_from_mob(W)
-		qdel(ore)
+		consume(ore, user)
 		return
 
 	if(istype(W, /obj/item/dogborg/sleeper/compactor/supply))

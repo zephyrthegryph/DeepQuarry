@@ -92,7 +92,7 @@
 		reagents.trans_to_mob(user, amount_per_transfer_from_this, CHEM_BLOOD)
 
 	if(!reagents.total_volume) /// Did we use all of it?
-		qdel(src)
+		consume(src, user)
 
 ////// End powder. /////////
 
@@ -199,7 +199,7 @@
 	//VOREstation edit end
 	new loot(user.loc)
 	to_chat(user, "You unwrap the package.")
-	qdel(src)
+	consume(src, user)
 
 /obj/item/miscdisc
 	name = "strange artefact"
@@ -244,4 +244,4 @@
 
 	user.put_in_hands(new contraband(usr.loc))
 	to_chat(user, "You unwrap the package.")
-	qdel(src)
+	consume(src, user)

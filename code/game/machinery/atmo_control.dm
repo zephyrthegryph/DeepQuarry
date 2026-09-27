@@ -134,7 +134,7 @@
 	var/obj/item/pipe_gsensor/gsensor = new /obj/item/pipe_gsensor(loc)
 	gsensor.id_tag = id_tag
 	gsensor.output = output
-	qdel(src)
+	replace_with(src, gsensor)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	return ITEM_INTERACT_SUCCESS
 

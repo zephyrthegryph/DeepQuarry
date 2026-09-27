@@ -27,7 +27,7 @@
 			if(prob(50))
 				for(var/j = 1, j <= rand(1, 3), j++)
 					step(x, pick(NORTH,SOUTH,EAST,WEST))
-	qdel(src)
+	consume(src)
 	return
 
 /obj/item/grenade/spawnergrenade/manhacks

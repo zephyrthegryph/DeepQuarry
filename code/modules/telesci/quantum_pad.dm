@@ -79,7 +79,7 @@
 	"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
 	playsound(src, 'sound/items/rped.ogg', 25, 1)
 	boosted = TRUE
-	qdel(booster)
+	consume(booster, user)
 	return TRUE
 
 /obj/machinery/power/quantumpad/multitool_act(mob/user, obj/item/tool)

@@ -71,7 +71,7 @@
 		update_icon()
 		other.update_icon()
 		if(!other.stored_ammo.len)
-			qdel(other)
+			consume(other, user)
 		return
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
 	return ..()
@@ -88,4 +88,4 @@
 	make_rounds_real()
 	..()
 	if(!QDELETED(src) && !stored_ammo.len && loc == user)
-		qdel(src)
+		consume(src, user)

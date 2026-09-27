@@ -92,14 +92,13 @@
 	playsound(src, "shatter", 70, 1)
 	if(display_message)
 		visible_message("[src] shatters!")
-	new shardtype(loc)
 	if(reinf)
 		new /obj/item/stack/rods(loc)
 	if(is_fulltile())
 		new shardtype(loc) //todo pooling?
 		if(reinf)
 			new /obj/item/stack/rods(loc)
-	qdel(src)
+	replace_with(src, shardtype)
 	return
 
 /obj/structure/window/proc/can_glasspassers_pass()
@@ -262,7 +261,7 @@
 	P.update_integrity(get_integrity())
 	P.state = state
 	P.anchored = anchored
-	qdel(src)
+	replace_with(src, P)
 
 // Tool steps and weld repair: window_construction.dm.
 

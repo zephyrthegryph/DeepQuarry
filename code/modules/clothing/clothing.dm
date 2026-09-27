@@ -237,7 +237,7 @@
 		O.add_fingerprint(user)
 
 	if(istype(src,/obj/item/clothing/ears/offear))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/clothing/ears/update_clothing_icon()
 	if (ismob(src.loc))
@@ -252,12 +252,10 @@
 			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)
-				H.drop_from_inventory(src)
-				qdel(src)
+				consume(src, H)
 			else
 				. = ..()
-				H.drop_from_inventory(O)
-				qdel(O)
+				consume(O, H)
 		else
 			. = ..()
 

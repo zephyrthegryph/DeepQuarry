@@ -15,7 +15,7 @@
 	R.add_fingerprint(user)
 	R.name = src.name
 	R.color = src.color
-	qdel(src)
+	consume(src, user)
 
 /obj/item/wheelchair/motor
 	name = "electric wheelchair"

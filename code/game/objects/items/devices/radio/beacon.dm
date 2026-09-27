@@ -42,5 +42,5 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 		to_chat(user, span_notice("Locked In"))
 		new /obj/machinery/power/singularity_beacon/syndicate( user.loc )
 		playsound(src, 'sound/effects/pop.ogg', 100, 1, 1)
-		qdel(src)
+		consume(src, user)
 	return

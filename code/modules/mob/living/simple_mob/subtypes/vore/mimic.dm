@@ -52,7 +52,7 @@
 /obj/structure/closet/crate/mimic/ex_act(severity)
 	latent_discard()
 	for(var/obj/O in src.contents) // latent-ok: discarded above
-		qdel(O)
+		consume(O)
 	qdel(src)
 	return
 
@@ -61,7 +61,7 @@
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
 		for(var/obj/O in src.contents) // latent-ok: discarded above
-			qdel(O)
+			consume(O)
 	return ..()
 
 /obj/structure/closet/crate/mimic/safe
@@ -139,6 +139,9 @@
 /mob/living/simple_mob/vore/aggressive/mimic/will_show_tooltip()
 	return FALSE
 
+/mob/living/simple_mob/vore/aggressive/mimic
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/aggressive/mimic/death()
 	..()
 	if(real_crate)
@@ -146,7 +149,6 @@
 	else
 		new/obj/structure/closet/crate(loc)
 	real_crate = null
-	qdel(src)
 
 /obj/structure/closet/crate/mimic/airlock
 	name = "Dusty Airlock"
@@ -186,7 +188,7 @@
 /obj/structure/closet/crate/mimic/airlock/ex_act(severity) //Stores Mimic Contents for later
 	latent_discard()
 	for(var/obj/O in src.contents) // latent-ok: discarded above
-		qdel(O)
+		consume(O)
 	qdel(src)
 	return
 
@@ -195,7 +197,7 @@
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		latent_discard()
 		for(var/obj/O in src.contents) // latent-ok: discarded above
-			qdel(O)
+			consume(O)
 	return ..()
 
 /obj/structure/closet/crate/mimic/airlock/safe
@@ -274,7 +276,7 @@
 /obj/structure/closet/crate/mimic/closet/ex_act(severity) //Stores Mimic Contents for later
 	latent_discard()
 	for(var/obj/O in src.contents) // latent-ok: discarded above
-		qdel(O)
+		consume(O)
 	qdel(src)
 	return
 
@@ -283,7 +285,7 @@
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
 		for(var/obj/O in src.contents) // latent-ok: discarded above
-			qdel(O)
+			consume(O)
 	return ..()
 
 /obj/structure/closet/crate/mimic/closet/safe
@@ -317,12 +319,14 @@
 /mob/living/simple_mob/vore/aggressive/mimic/closet/will_show_tooltip()
 	return FALSE
 
+/mob/living/simple_mob/vore/aggressive/mimic/closet
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vore/aggressive/mimic/closet/death()
 	..()
 	if(real_crate)
 		real_crate.forceMove(loc)
 	real_crate = null
-	qdel(src)
 
 //Floor Mimics... Because mimics you have to interact with to activate was not enough...
 
@@ -363,7 +367,7 @@
 		return
 	var/mob/living/simple_mob/vore/aggressive/mimic/floor/new_mimic = new mimic_type(drop_location())
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
-	qdel(src)
+	replace_with(src, new_mimic)
 
 /obj/effect/floormimic/attackby(obj/item/I, mob/living/L)
 	if(mimic_active)

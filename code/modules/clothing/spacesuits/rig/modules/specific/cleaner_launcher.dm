@@ -35,8 +35,7 @@
 		return 0
 
 	to_chat(user, span_boldnotice("You slot \the [input_device] into the suit module."))
-	user.drop_from_inventory(input_device)
-	qdel(input_device)
+	consume(input_device, user)
 	accepted_item.charges++
 	return 1
 

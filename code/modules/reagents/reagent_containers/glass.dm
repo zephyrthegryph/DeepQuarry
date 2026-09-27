@@ -313,10 +313,9 @@
 /obj/item/reagent_containers/glass/bucket/attackby(obj/item/D, mob/user as mob)
 	if(isprox(D))
 		to_chat(user, "You add [D] to [src].")
-		qdel(D)
+		consume(D, user)
 		user.put_in_hands(new /obj/item/bucket_sensor)
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 		return
 	else if(istype(D, /obj/item/stack/material) && D.get_material_name() == MAT_STEEL)
 		var/obj/item/stack/material/M = D
@@ -327,7 +326,7 @@
 			if (user.get_inactive_hand()==src)
 				user.remove_from_mob(src)
 				user.put_in_inactive_hand(B)
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
 	else if(istype(D, /obj/item/mop) || istype(D, /obj/item/soap) || istype(D, /obj/item/reagent_containers/glass/rag))
@@ -343,8 +342,7 @@
 /obj/item/reagent_containers/glass/bucket/wirecutter_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You cut a big hole in \the [src] with \the [tool]. It's kinda useless as a bucket now."))
 	user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/reagent_containers/glass/bucket/update_icon()
@@ -377,8 +375,7 @@
 	else if(istype(D, /obj/item/material/knife/machete/hatchet))
 		to_chat(user, span_notice("You cut a big hole in \the [src] with \the [D].  It's kinda useless as a bucket now."))
 		user.put_in_hands(new /obj/item/clothing/head/helmet/bucket/wood)
-		user.drop_from_inventory(src)
-		qdel(src)
+		consume(src, user)
 		return
 	else if(istype(D, /obj/item/mop))
 		if(reagents.total_volume < 1)

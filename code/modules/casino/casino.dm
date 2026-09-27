@@ -503,8 +503,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	cashmoney.update_icon()
 
 	if(cashmoney.worth <= 0)
-		user.drop_from_inventory(cashmoney)
-		qdel(cashmoney)
+		consume(cashmoney, user)
 
 	lottery_entries++
 	lottery_tickets += "Number.[lottery_entries] [user.name]"
@@ -855,8 +854,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	cashmoney.update_icon()
 
 	if(cashmoney.worth <= 0)
-		user.drop_from_inventory(cashmoney)
-		qdel(cashmoney)
+		consume(cashmoney, user)
 
 	if(buystate == "selfbuy")
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and nullify your collar!"))

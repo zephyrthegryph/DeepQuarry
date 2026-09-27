@@ -465,7 +465,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 		changed = TRUE
 	else if(istype(item, /obj/item/ore/coal))
 		batch.add_surface_layer(MATERIAL_SURFACE_CARBON, 35, "carbon", 3)
-		qdel(item)
+		consume(item, user)
 		changed = TRUE
 	else if(istype(item, /obj/item/analyzer))
 		to_chat(user, span_notice("Composition [json_encode(batch.composition)]; purity [batch.purity]%; conductivity [batch.conductivity]%; hardness [batch.hardness]."))

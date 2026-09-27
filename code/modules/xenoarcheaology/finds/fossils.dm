@@ -38,8 +38,8 @@
 		var/b = new src.type
 		o.contents.Add(a)
 		o.contents.Add(b)
-		qdel(W)
-		qdel(src)
+		consume(W, user)
+		consume(src, user)
 
 /obj/skeleton
 	name = "Incomplete skeleton"
@@ -61,7 +61,7 @@
 		if(!bstate)
 			bnum++
 			src.contents.Add(new/obj/item/fossil/bone)
-			qdel(W)
+			consume(W, user)
 			if(bnum==breq)
 				icon_state = "skel"
 				src.bstate = 1

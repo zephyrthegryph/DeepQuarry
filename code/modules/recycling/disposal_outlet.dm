@@ -63,7 +63,7 @@
 	C.update()
 	C.anchored = TRUE
 	C.density = TRUE
-	qdel(src)
+	replace_with(src, C)
 
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
 	if(mode == OUTLET_SCREWED)

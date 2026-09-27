@@ -107,7 +107,7 @@
 
 	else if(istype(C, /obj/item/plastique))
 		to_chat(user, span_danger("On contacting \the [src], a flash of light envelops \the [C] as it is turned to ash. Oh."))
-		qdel(C)
+		consume(C, user)
 		return TRUE
 	return TRUE
 

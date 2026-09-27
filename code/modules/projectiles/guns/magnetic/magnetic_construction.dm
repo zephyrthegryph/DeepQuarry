@@ -38,7 +38,7 @@
 		M.drop_from_inventory(src)
 	if(put_in_hands)
 		user.put_in_hands(coilgun)
-	qdel(src)
+	replace_with(src, coilgun)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/coilgun_assembly/attackby(obj/item/thing, mob/user)
@@ -61,8 +61,7 @@
 		return
 
 	if(istype(thing, /obj/item/pipe) && construction_stage == 3)
-		user.drop_from_inventory(thing)
-		qdel(thing)
+		consume(thing, user)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " jams \the [thing] into \the [src]."))
 		increment_construction_stage()
 		return
@@ -79,8 +78,7 @@
 
 	if(istype(thing, /obj/item/smes_coil) && construction_stage >= 6 && construction_stage <= 8)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " installs \a [thing] into \the [src]."))
-		user.drop_from_inventory(thing)
-		qdel(thing)
+		consume(thing, user)
 		increment_construction_stage()
 		return
 

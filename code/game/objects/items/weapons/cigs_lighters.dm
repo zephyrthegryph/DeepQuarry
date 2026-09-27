@@ -462,7 +462,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		if(G.reagents)
 			G.reagents.trans_to_obj(src, G.reagents.total_volume)
 		name = "[G.name]-packed [initial(name)]"
-		qdel(G)
+		consume(G, user)
 
 	else if(istype(W, /obj/item/flame/lighter))
 		var/obj/item/flame/lighter/L = W
@@ -556,8 +556,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		src.add_fingerprint(user)
 		if(G.reagents)
 			G.reagents.trans_to_obj(src, G.reagents.total_volume)                                            //adds the reagents from the plant into the paper
-		user.drop_from_inventory(G)
-		qdel(G)
+		consume(G, user)
 
 /obj/item/reagent_containers/rollingpaper/attack_self(mob/living/user)
 	. = ..(user)
@@ -573,7 +572,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		reagents.trans_to_obj(J, reagents.total_volume)
 	user.drop_from_inventory(src)
 	user.put_in_hands(J)
-	qdel(src)
+	consume(src, user)
 
 /////////
 //CHEAP//

@@ -212,7 +212,7 @@
 		if(C.layer_stage == 5)
 			for(var/mob/O in view(src, null))
 				O.show_message(span_warning("It has been done! The Infinity Cake has been assembled!"),1)
-			qdel(W)
+			consume(W, user)
 			stage++
 			desc = desclist[stage]
 			icon_state = "thecake_finished"
@@ -222,7 +222,7 @@
 			to_chat(usr, span_warning("The cake is already done!"))
 		else if(stage == C.layer_stage)
 			to_chat(usr, span_warning("You add another layer to the cake, nice."))
-			qdel(W)
+			consume(W, user)
 			stage++
 			desc = desclist[stage]
 			icon_state = "thecake_stage-[stage]"
@@ -506,7 +506,7 @@
 		var/obj/item/chaoscake_layer/C = W
 		if(C.layer_stage == 8)
 			to_chat(user, span_notice("Finally! The coin on the top, the almighty chaos cake is complete!"))
-			qdel(W)
+			consume(W, user)
 			stage++
 			desc = desclist2[stage]
 			icon_state = "chaoscake-6"
@@ -516,7 +516,7 @@
 			to_chat(user, span_warning("The cake is already done!"))
 		else if(stage == C.layer_stage)
 			to_chat(user, span_notice("You add another layer to the cake, nice."))
-			qdel(W)
+			consume(W, user)
 			stage++
 			desc = desclist2[stage]
 			icon_state = "chaoscake_stage-[stage]"

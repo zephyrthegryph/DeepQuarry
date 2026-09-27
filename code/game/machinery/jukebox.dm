@@ -279,8 +279,7 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 	s.set_up(3, 1, src)
 	s.start()
 
-	new /obj/effect/decal/cleanable/blood/oil(src.loc)
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
 
 /obj/machinery/media/jukebox/emag_act(remaining_charges, mob/user)
 	if(!emagged)

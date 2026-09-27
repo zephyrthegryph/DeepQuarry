@@ -176,8 +176,7 @@
 	if(timer == 2)
 		reveal()
 		if(corpse)
-			new /obj/effect/effect/smoke/chem(corpse.loc)
-			qdel(corpse)
+			replace_with(corpse, /obj/effect/effect/smoke/chem)
 	if(timer == 0)
 		icon_state = "deadringer"
 	return

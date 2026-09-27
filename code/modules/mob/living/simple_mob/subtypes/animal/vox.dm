@@ -34,13 +34,15 @@
 	var/amp = null
 	var/quills = 3
 
+/mob/living/simple_mob/vox/armalis
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/vox/armalis/death(gibbed = FALSE)
 	..(TRUE)
 	var/turf/gloc = get_turf(loc)
 	visible_message(span_bolddanger("[src] shudders violently and explodes!"),span_warning("You feel your body rupture!"))
 	gib()
 	explosion(gloc, -1, -1, 3, 5)
-	qdel(src)
 
 /mob/living/simple_mob/vox/armalis/verb/fire_quill(mob/target as mob in oview())
 

@@ -144,10 +144,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
-	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
 	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, sheets_refunded)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/wirecutter_act(mob/user, obj/item/tool)
@@ -175,7 +174,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		finished_light.cell = cell
 		cell.forceMove(finished_light)
 		cell = null
-	qdel(src)
+	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/small
@@ -736,7 +735,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 
 /obj/machinery/light/flamp/proc/interaction_add_shade(mob/user, obj/item/lampshade/W, datum/interaction/interaction)
 	lamp_shade = 1
-	qdel(W)
+	consume(W, user)
 	update_icon()
 	return TRUE
 
@@ -745,8 +744,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 		return NONE
 	playsound(src, tool.usesound, 75, TRUE)
 	user.visible_message("[user.name] opens [src]'s casing.", "You open [src]'s casing.", "You hear a noise.")
-	new construct_type(loc, src)
-	qdel(src)
+	replace_with(src, construct_type, src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light/multitool_act(mob/user, obj/item/tool)

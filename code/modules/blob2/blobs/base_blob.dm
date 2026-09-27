@@ -227,7 +227,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 		B.overmind = controller
 	B.update_icon()
 	B.set_dir(dir)
-	qdel(src)
+	replace_with(src, B)
 	return B
 
 /obj/structure/blob/attack_generic(mob/user, damage, attack_verb)

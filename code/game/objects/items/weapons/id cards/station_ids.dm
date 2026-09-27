@@ -435,8 +435,7 @@
 		desc = I.desc
 		rank = O.rank
 		to_chat(user, span_notice("You copy the access from \the [I] to \the [src]."))
-		user.drop_from_inventory(I)
-		qdel(I)
+		consume(I, user)
 		accessset = 1
 	..()
 

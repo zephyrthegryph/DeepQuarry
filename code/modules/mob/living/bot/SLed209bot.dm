@@ -224,6 +224,5 @@
 	to_chat(actor, span_notice("You complete the ED-209."))
 	var/turf/where = get_turf(assembly)
 	new /mob/living/bot/secbot/ed209/slime(where, assembly.created_name, assembly.lasercolor)
-	actor.drop_from_inventory(assembly)
-	qdel(assembly)
+	consume(assembly, actor)
 	return TRUE

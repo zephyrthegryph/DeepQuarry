@@ -60,7 +60,7 @@
 		span_notice("You hear glass shattering"))
 	log_and_message_admins("Created a new shuttle [S.name]. [ADMIN_JMP(comp_turf)]", user)
 	om_after(comp_turf, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), 'sound/voice/Serithi/shuttlehere.ogg', 75, 0)
-	qdel(src)
+	consume(src, user)
 
 	return TRUE
 

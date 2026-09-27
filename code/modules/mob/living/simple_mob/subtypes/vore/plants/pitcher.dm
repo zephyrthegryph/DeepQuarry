@@ -214,7 +214,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 			return
 		else
 			meat += NUTRITION_MEAT
-			qdel(O)
+			consume(O, user)
 			return
 	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
 		var/mob/living/carbon/human/H = locate() in vore_selected.contents //Only works for carbons, RIP mice. Should pick the first human the code finds.
@@ -311,14 +311,14 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		return ..()
 	if(istype (O, /obj/machinery/seed_extractor))
 		pit.loc = O.loc //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
-		qdel(src)
+		consume(src, user)
 	if(!(proximity && O.is_open_container()))
 		return
 	to_chat(user, span_notice("You squeeze \the [src], juicing it into \the [O]."))
 	reagents.trans_to(O, reagents.total_volume)
 	user.drop_from_inventory(src)
 	pit.loc = user.loc
-	qdel(src)
+	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/attack_self(mob/user)
 	. = ..(user)
@@ -327,7 +327,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	to_chat(user, span_notice("You plant the fruit."))
 	new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed)
 	GLOB.seed_planted_shift_roundstat++
-	qdel(src)
+	consume(src, user)
 	return
 
 #undef NUTRITION_FRUIT

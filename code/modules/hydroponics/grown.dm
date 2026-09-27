@@ -182,15 +182,14 @@
 					user.put_in_hands(pocell)
 				pocell.maxcharge = src.potency * 200
 				pocell.charge = pocell.maxcharge
-				qdel(src)
+				consume(src, user)
 				return
 
 		if(W.sharp)
 
 			if(seed.kitchen_tag == PLANT_PUMPKIN) // Ugggh these checks are awful.
 				user.show_message(span_notice("You carve a face into [src]!"), 1)
-				new /obj/item/clothing/head/pumpkinhead (user.loc)
-				qdel(src)
+				replace_with(src, /obj/item/clothing/head/pumpkinhead)
 				return
 
 			if(seed.chems)
@@ -210,37 +209,33 @@
 								continue
 							G.attackby(NG, user)
 						to_chat(user, span_filter_notice("You add the newly-formed wood to the stack. It now contains [NG.get_amount()] planks."))
-					qdel(src)
+					consume(src, user)
 					return
 
 				if(seed.kitchen_tag == PLANT_SUNFLOWERS)
 					new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
 					to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-					qdel(src)
+					consume(src, user)
 					return
 
 				if(seed.kitchen_tag == PLANT_POTATO || !isnull(seed.chems[REAGENT_ID_POTATOJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into sticks."))
-					new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
-					qdel(src)
+					replace_with(src, /obj/item/reagent_containers/food/snacks/rawsticks)
 					return
 
 				if(!isnull(seed.chems[REAGENT_ID_CARROTJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into sticks."))
-					new /obj/item/reagent_containers/food/snacks/carrotfries(get_turf(src))
-					qdel(src)
+					replace_with(src, /obj/item/reagent_containers/food/snacks/carrotfries)
 					return
 
 				if(!isnull(seed.chems[REAGENT_ID_PINEAPPLEJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into rings."))
-					new /obj/item/reagent_containers/food/snacks/pineapple_ring(get_turf(src))
-					qdel(src)
+					replace_with(src, /obj/item/reagent_containers/food/snacks/pineapple_ring)
 					return
 
 				if(!isnull(seed.chems[REAGENT_ID_SOYMILK]))
 					to_chat(user, span_filter_notice("You roughly chop up \the [src]."))
-					new /obj/item/reagent_containers/food/snacks/soydope(get_turf(src))
-					qdel(src)
+					replace_with(src, /obj/item/reagent_containers/food/snacks/soydope)
 					return
 
 				if(seed.get_trait(TRAIT_FLESH_COLOUR))
@@ -251,7 +246,7 @@
 						var/obj/item/reagent_containers/food/snacks/fruit_slice/F = new(get_turf(src),seed)
 						if(reagents_to_transfer)
 							reagents.trans_to_obj(F,reagents_to_transfer)
-					qdel(src)
+					consume(src, user)
 					return
 
 	. = ..()
@@ -270,7 +265,7 @@
 			if(user)
 				to_chat(user, span_danger("\The [src] has fallen to bits."))
 				user.drop_from_inventory(src)
-			qdel(src)
+			consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/grown/attack_self(mob/user)
 	. = ..(user)
@@ -286,7 +281,7 @@
 		user.visible_message(span_danger("\The [user] squashes \the [src]!"))
 		seed.thrown_at(src,user)
 		if(!QDELETED(src))
-			qdel(src)
+			consume(src, user)
 		return
 
 	if(seed.kitchen_tag == PLANT_GRASS)
@@ -303,7 +298,7 @@
 					continue
 				NG.attackby(G, user)
 			to_chat(user, "You add the newly-formed grass to the stack. It now contains [G.get_amount()] tiles.")
-		qdel(src)
+		consume(src, user)
 		return
 
 	if(seed.kitchen_tag == PLANT_CARPET)
@@ -317,14 +312,14 @@
 					continue
 				NG.attackby(G, user)
 			to_chat(user, span_filter_notice("You add the newly-formed carpet to the stack. It now contains [G.get_amount()] tiles."))
-		qdel(src)
+		consume(src, user)
 		return
 
 	if(seed.get_trait(TRAIT_SPREAD) > 0)
 		to_chat(user, span_notice("You plant the [src.name]."))
 		new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed)
 		GLOB.seed_planted_shift_roundstat++
-		qdel(src)
+		consume(src, user)
 		return
 
 /obj/item/reagent_containers/food/snacks/grown/pickup(mob/user)

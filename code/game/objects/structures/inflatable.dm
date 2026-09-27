@@ -72,7 +72,7 @@
 	var/obj/structure/inflatable/R = new deploy_path(location)
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/inflatable/proc/deflate()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
@@ -83,14 +83,14 @@
 /obj/structure/inflatable/proc/deflate_finish()
 	var/obj/item/inflatable/R = new /obj/item/inflatable(loc)
 	src.transfer_fingerprints_to(R)
-	qdel(src)
+	replace_with(src, R)
 
 /obj/structure/inflatable/proc/puncture()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
 	visible_message("[src] rapidly deflates!")
 	var/obj/item/inflatable/torn/R = new /obj/item/inflatable/torn(loc)
 	src.transfer_fingerprints_to(R)
-	qdel(src)
+	replace_with(src, R)
 
 /obj/structure/inflatable/verb/hand_deflate()
 	set name = "Deflate"
@@ -210,14 +210,14 @@
 /obj/structure/inflatable/door/deflate_finish()
 	var/obj/item/inflatable/door/R = new /obj/item/inflatable/door(loc)
 	src.transfer_fingerprints_to(R)
-	qdel(src)
+	replace_with(src, R)
 
 /obj/structure/inflatable/door/puncture()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
 	visible_message("[src] rapidly deflates!")
 	var/obj/item/inflatable/door/torn/R = new /obj/item/inflatable/door/torn(loc)
 	src.transfer_fingerprints_to(R)
-	qdel(src)
+	replace_with(src, R)
 
 /obj/item/inflatable/torn
 	name = "torn inflatable wall"

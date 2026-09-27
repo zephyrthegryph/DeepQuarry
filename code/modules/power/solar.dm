@@ -98,10 +98,9 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
 	var/obj/item/solar_assembly/S = new(loc)
 	S.anchored = TRUE
-	new glass_type(loc, 2)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
-	qdel(src)
+	replace_with(src, glass_type, 2)
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
@@ -254,7 +253,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 		if(istype(W, /obj/item/tracker_electronics))
 			tracker = 1
 			user.drop_item()
-			qdel(W)
+			consume(W, user)
 			user.visible_message(span_notice("[user] inserts the electronics into the solar assembly."))
 			return 1
 	..()

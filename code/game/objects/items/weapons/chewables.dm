@@ -317,8 +317,7 @@
 
 		M.forceMove(src)
 		H.held_mob = null
-		user.drop_from_inventory(H)
-		qdel(H)
+		consume(H, user)
 
 		victims += M
 

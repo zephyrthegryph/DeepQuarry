@@ -121,7 +121,7 @@
 		if(open)
 			to_chat(user, span_notice("You repair the bot's systems."))
 			emagged = 0
-			qdel(O)
+			consume(O, user)
 		else
 			to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
 	else if(istype(O, /obj/item/paicard))

@@ -11,7 +11,7 @@
 /obj/item/grenade/concussion/detonate()
 	..()
 	concussion_blast(get_turf(src), blast_radius)
-	qdel(src)
+	consume(src)
 	return
 
 /obj/proc/concussion_blast(atom/target, radius = 5)

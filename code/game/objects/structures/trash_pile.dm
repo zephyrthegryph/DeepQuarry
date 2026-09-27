@@ -37,7 +37,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		user.unEquip(W)
 		W.forceMove(src)
 		restore_gamma_loot(w_type)
-		qdel(W)
+		consume(W, user)
 	else
 		return ..()
 

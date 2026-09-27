@@ -158,7 +158,7 @@
 		var/obj/singularity/energy_ball/orbitingball = center
 		orbitingball.dissipate_strength = length(orbitingball.orbiting_balls()) + 1
 	if(!loc && !QDELETED(src))
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 0)
+		expire(0)
 
 /obj/singularity/energy_ball/proc/dust_mob(mob/living/L)
 	if(!istype(L) || L.is_incorporeal())

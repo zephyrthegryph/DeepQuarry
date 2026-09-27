@@ -286,11 +286,10 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 		..()
 		return
 	var/obj/item/TVAssembly/A = new(user)
-	qdel(S)
+	consume(S, user)
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the infrared sensor to the robot head."))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/TVAssembly
 	name = "\improper TV Camera Assembly"
@@ -308,14 +307,14 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 				var/obj/item/robot_parts/robot_component/camera/CA = W
 				to_chat(user, span_notice("You add the camera module to [src]"))
 				user.drop_item()
-				qdel(CA)
+				consume(CA, user)
 				desc = "This TV camera assembly has a camera module."
 				buildstep++
 		if(1)
 			if(istype(W, /obj/item/taperecorder))
 				var/obj/item/taperecorder/T = W
 				user.drop_item()
-				qdel(T)
+				consume(T, user)
 				buildstep++
 				to_chat(user, span_notice("You add the tape recorder to [src]"))
 		if(2)
@@ -344,8 +343,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 				to_chat(user, span_notice("You encase the assembly in a Ward-Takeshi casing."))
 				var/turf/T = get_turf(src)
 				new /obj/item/tvcamera(T)
-				user.drop_from_inventory(src)
-				qdel(src)
+				consume(src, user)
 				return
 
 	..()

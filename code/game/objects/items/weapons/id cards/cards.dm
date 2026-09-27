@@ -118,7 +118,7 @@
 		user.drop_item()
 		var/obj/item/card/emag_broken/junk = new(user.loc)
 		junk.add_fingerprint(user)
-		qdel(src)
+		consume(src, user)
 
 	return 1
 
@@ -131,7 +131,7 @@
 		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
 		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
 		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
-		qdel(O)
+		consume(O, user)
 
 /obj/item/card/emag/borg
 	uses = 12

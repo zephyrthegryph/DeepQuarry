@@ -39,7 +39,7 @@
 			h_user.drop_from_inventory(SC)
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the [initial_name]s to a bundle of [SC.worth] [initial_name]s."))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/spacecash/update_icon()
 	cut_overlays()

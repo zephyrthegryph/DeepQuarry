@@ -397,13 +397,13 @@
 			return
 		var/mob/M = G?.grab_target()
 		if(put_mob(M))
-			qdel(G)
+			consume(G, user)
 			return //Don't call up else we'll get attack messsages
 	if(istype(W, /obj/item/paicard/sleevecard))
 		var/obj/item/paicard/sleevecard/C = W
 		user.unEquip(C)
 		C.removePersonality()
-		qdel(C)
+		consume(C, user)
 		sleevecards++
 		to_chat(user, span_notice("You store \the [C] in \the [src]."))
 		return

@@ -151,7 +151,6 @@ REF_OWNED(/obj/item/radio/intercom, "circuit")
 		return ITEM_INTERACT_BLOCKING
 	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
 	playsound(src, tool.usesound, 50, TRUE)
-	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
 	frame.frame_type = board.board_type
@@ -163,7 +162,7 @@ REF_OWNED(/obj/item/radio/intercom, "circuit")
 	frame.state = 2
 	frame.update_icon()
 	board.atom_deconstruct(TRUE, src)
-	qdel(src)
+	replace_with(src, /obj/item/stack/cable_coil, 5)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/radio/intercom/receive_range(freq, level)

@@ -74,9 +74,11 @@
 
 REF_OWNED(/mob/living/simple_mob/mechanical/combat_drone, list("ion_trail", "shields"))
 
+/mob/living/simple_mob/mechanical/combat_drone
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/combat_drone/death()
 	..(null,"suddenly breaks apart.")
-	qdel(src)
 
 /mob/living/simple_mob/mechanical/combat_drone/Process_Spacemove(check_drift = 0)
 	return TRUE

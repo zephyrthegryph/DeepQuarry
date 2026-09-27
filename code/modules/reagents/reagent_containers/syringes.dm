@@ -333,8 +333,7 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 		if(target != user && armor_val >= 5 && prob(50+armor_val)) // High armor can deflect syringe stabs
 			for(var/mob/O in viewers(world.view, user))
 				O.show_message(span_bolddanger("[user] tries to stab [target] in \the [hit_area] with [src.name], but the attack is deflected by armor!"), 1)
-			user.remove_from_mob(src)
-			qdel(src)
+			consume(src, user)
 
 			add_attack_logs(user,target,"Syringe harmclick")
 

@@ -19,8 +19,7 @@ In short:
 	if(!T.holy)
 		T.cultify()
 		for(var/obj/machinery/light/L in T.contents)
-			new /obj/structure/cult/pylon(L.loc)
-			qdel(L)
+			replace_with(L, /obj/structure/cult/pylon)
 	return
 
 /datum/universal_state/hell/OnTurfChange(turf/T)

@@ -114,7 +114,7 @@
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
 	robot.module = null
-	qdel(src)
+	consume(src, robot)
 
 REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 

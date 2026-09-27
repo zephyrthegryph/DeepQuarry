@@ -254,8 +254,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 		return TRUE
 	if(RC.can_refill(src))
 		to_chat(user, span_notice("You refill [src] using [RC]."))
-		user.drop_from_inventory(RC)
-		qdel(RC)
+		consume(RC, user)
 		refill_inventory()
 		return TRUE
 	else
@@ -351,8 +350,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 		cashmoney.worth -= currently_vending.price
 
 		if(cashmoney.worth <= 0)
-			user.drop_from_inventory(cashmoney)
-			qdel(cashmoney)
+			consume(cashmoney, user)
 		else
 			cashmoney.update_icon()
 
@@ -633,11 +631,11 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				qdel(coin)
+				consume(coin, user)
 				coin = null
 				categories &= ~CAT_COIN
 		else
-			qdel(coin)
+			consume(coin)
 			coin = null
 			categories &= ~CAT_COIN
 

@@ -263,13 +263,15 @@
 	fragment_amount = 4
 	spread_range = 5
 
+/mob/living/simple_mob/mechanical/mecha/vistor
+	delete_on_death = TRUE
+
 /mob/living/simple_mob/mechanical/mecha/vistor/death()
 	..()
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	qdel(src)
 
 /obj/structure/loot_pile/mecha/phazon/forgotten
 	name = "forgotten wreckage"

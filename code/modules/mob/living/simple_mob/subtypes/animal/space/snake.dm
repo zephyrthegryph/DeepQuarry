@@ -176,7 +176,7 @@
 	if(istype(O, /obj/item/reagent_containers/food/snacks/snakesnack))
 		visible_message(span_notice("[user] feeds \the [O] to [src]."))
 		adjust_nutrition(100) //It's sugar!
-		qdel(O)
+		consume(O, user)
 	else
 		return ..()
 

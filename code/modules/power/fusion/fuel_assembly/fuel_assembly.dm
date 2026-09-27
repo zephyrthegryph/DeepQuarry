@@ -126,7 +126,7 @@
 	if(istype(M))
 		if(M.get_amount() > 5)
 			to_chat(user,span_notice("You add a lead shell to the blitz rod."))
-			qdel(src)
+			consume(src, user)
 			var/obj/item/fuel_assembly/blitz/shielded/rod = new(get_turf(user))
 			user.put_in_hands(rod)
 			return

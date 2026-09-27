@@ -234,7 +234,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		if(item_theft_mode)
 			O.forceMove(src) //note that this does NOT delete anything! ever! or release it manually! entirely so admins can manually collect or do stuff later via moving/ejecting.
 		else
-			qdel(O)
+			consume(O, user)
 
 		jiggle_animation(0.1)
 		if(active_recipe.len == 0)

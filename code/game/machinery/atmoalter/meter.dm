@@ -158,8 +158,7 @@
 
 /obj/machinery/meter/proc/wrench_act_tool_done(mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
-	new /obj/item/pipe_meter(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/item/pipe_meter)
 
 /obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)

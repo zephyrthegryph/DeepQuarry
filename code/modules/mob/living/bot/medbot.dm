@@ -508,11 +508,10 @@
 	else if(istype(src, /obj/item/storage/firstaid/o2))
 		A.skin = "o2"
 
-	qdel(S)
+	consume(S, user)
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the robot arm to the first aid kit."))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/firstaid_arm_assembly
 	name = "first aid/robot arm assembly"
@@ -543,7 +542,7 @@
 			if(0)
 				if(istype(W, /obj/item/healthanalyzer))
 					user.drop_item()
-					qdel(W)
+					consume(W, user)
 					build_step++
 					to_chat(user, span_notice("You add the health sensor to [src]."))
 					name = "First aid/robot arm/health analyzer assembly"
@@ -552,14 +551,13 @@
 			if(1)
 				if(isprox(W))
 					user.drop_item()
-					qdel(W)
+					consume(W, user)
 					to_chat(user, span_notice("You complete the Medibot! Beep boop."))
 					var/turf/T = get_turf(src)
 					var/mob/living/bot/medbot/S = new /mob/living/bot/medbot(T)
 					S.skin = skin
 					S.name = created_name
-					user.drop_from_inventory(src)
-					qdel(src)
+					consume(src, user)
 
 // Undefine these.
 #undef MEDBOT_PANIC_NONE

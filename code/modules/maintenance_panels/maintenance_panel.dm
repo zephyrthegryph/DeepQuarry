@@ -72,8 +72,7 @@
 	playsound(src, pick(list('sound/effects/metalscrape1.ogg','sound/effects/metalscrape2.ogg','sound/effects/metalscrape3.ogg')), 70, 1)
 	if(display_message)
 		visible_message("\the [src] thunks free of the wall!")
-	new glasstype(loc)
-	qdel(src)
+	replace_with(src, glasstype)
 
 
 /obj/structure/window/maintenance_panel/examine(mob/user)

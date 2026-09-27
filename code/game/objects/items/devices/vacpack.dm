@@ -192,7 +192,7 @@
 					if(isbelly(output_atom))
 						var/obj/belly/B = output_atom
 						B.owner_adjust_nutrition(1)
-					qdel(F)
+					consume(F, user)
 					continue
 				if(istype(output_atom,/obj/item/storage/bag/trash))
 					var/obj/item/storage/bag/trash/B = output_atom
@@ -403,4 +403,4 @@
 	blend_mode = BLEND_ADD
 
 /obj/effect/vac_visual/proc/ready(effect_time)
-	QDEL_IN(src, effect_time)
+	expire(effect_time)

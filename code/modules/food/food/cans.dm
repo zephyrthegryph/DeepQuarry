@@ -37,7 +37,7 @@
 				user.gib()
 			else
 				explosion(get_turf(src), -1, -1, -1, 1)
-			qdel(src)
+			consume(src, user)
 
 /obj/item/reagent_containers/food/drinks/cans/periodic_step(seconds_per_tick)
 	if(shaken <= 0)

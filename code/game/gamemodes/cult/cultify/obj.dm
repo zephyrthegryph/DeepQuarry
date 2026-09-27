@@ -51,12 +51,10 @@
 		density = FALSE
 
 /obj/machinery/appliance/cooker/cultify()
-	new /obj/structure/cult/talisman(loc)
-	qdel(src)
+	replace_with(src, /obj/structure/cult/talisman)
 
 /obj/machinery/computer/cultify()
-	new /obj/structure/cult/tome(loc)
-	qdel(src)
+	replace_with(src, /obj/structure/cult/tome)
 
 /obj/machinery/door/airlock/external/cultify()
 	new /obj/structure/simple_door/wood(loc)
@@ -73,8 +71,7 @@
 	qdel(src)
 
 /obj/machinery/light/cultify()
-	new /obj/structure/cult/pylon(loc)
-	qdel(src)
+	replace_with(src, /obj/structure/cult/pylon)
 
 /obj/machinery/mech_sensor/cultify()
 	qdel(src)
@@ -84,8 +81,7 @@
 		src.invisibility = INVISIBILITY_MAXIMUM
 
 /obj/machinery/vending/cultify()
-	new /obj/structure/cult/forge(loc)
-	qdel(src)
+	replace_with(src, /obj/structure/cult/forge)
 
 /obj/structure/bed/chair/cultify()
 	var/obj/structure/bed/chair/wood/wings/I = new(loc)

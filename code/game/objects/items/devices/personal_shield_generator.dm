@@ -467,8 +467,7 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 		modifier_type = /datum/modifier/shield_projection/mining/strong
 		upgraded = TRUE
 		to_chat(user, span_notice("You upgrade the [src] with the [W]!"))
-		user.drop_from_inventory(W)
-		qdel(W)
+		consume(W, user)
 	else
 		..()
 

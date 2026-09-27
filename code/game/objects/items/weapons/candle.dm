@@ -58,10 +58,9 @@
 		return
 	wax--
 	if(!wax)
-		new/obj/item/trash/candle(src.loc)
 		if(istype(src.loc, /mob))
 			src.dropped(src.loc)
-		qdel(src)
+		replace_with(src, /obj/item/trash/candle)
 		return
 	update_icon()
 	if(istype(loc, /turf)) //start a fire if possible

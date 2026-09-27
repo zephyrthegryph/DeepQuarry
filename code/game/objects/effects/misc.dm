@@ -17,7 +17,7 @@
 /obj/effect/temporary_effect/Initialize(mapload)
 	. = ..()
 	if(time_to_die)
-		QDEL_IN(src, time_to_die)
+		expire(time_to_die)
 
 // Shown really briefly when attacking with axes.
 /obj/effect/temporary_effect/cleave_attack
@@ -82,7 +82,7 @@
 	if(!isnull(_color))
 		set_light_color(_color)
 	if(_duration)
-		QDEL_IN(src, _duration)
+		expire(_duration)
 
 /obj/effect/dummy/lighting_obj/moblight
 	name = "mob lighting fx"

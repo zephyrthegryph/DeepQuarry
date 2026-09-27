@@ -699,7 +699,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	if(honk_count >= 3)
 		var/turf/epicenter = get_turf(src)
 		explosion(epicenter, 0, 0, 1, 3)
-		qdel(src)
+		consume(src, user)
 		return
 	else if(cooldown <= world.time)
 		cooldown = (world.time + 2 SECONDS)
@@ -855,7 +855,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 		if(honk_text)
 			audible_message(span_maroon("[honk_text]"))
 		lightning_strike(get_turf(src), 1)
-		qdel(src)
+		consume(src, user)
 	return
 
 /obj/item/grenade/anti_photon/rubberducky/black
@@ -890,7 +890,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 			var/mob/living/U = user
 			U.dust()
 		user.drop_item()
-		qdel(src)
+		consume(src, user)
 	return
 
 /obj/item/bikehorn/rubberducky/viking

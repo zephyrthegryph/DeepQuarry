@@ -39,7 +39,7 @@
 		user.injure(INJURY_BLUNT, 5)
 		if(src && src.imbue!="supply" && src.imbue!="runestun")
 			if(delete)
-				qdel(src)
+				consume(src, user)
 		return
 	else
 		to_chat(user, "You see strange symbols on the paper. Are they supposed to mean something?")
@@ -51,7 +51,7 @@
 		if(imbue == "runestun")
 			user.injure(INJURY_BLUNT, 5)
 			call(/obj/effect/rune/proc/runestun)(M,user)
-			qdel(src)
+			consume(src, user)
 			return ITEM_INTERACT_SUCCESS
 		else
 			..()   ///If its some other talisman, use the generic attack code, is this supposed to work this way?

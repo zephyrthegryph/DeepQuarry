@@ -342,6 +342,5 @@ REF_OWNED_LIST(/obj/machinery/power/smes/batteryrack, "internal_cells")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)
-	var/obj/item/newcircuit = new/obj/item/circuitboard/batteryrack(get_turf(user))
-	qdel(src)
+	var/obj/item/newcircuit = replace_with(src, /obj/item/circuitboard/batteryrack)
 	user.put_in_hands(newcircuit)

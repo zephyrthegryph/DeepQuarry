@@ -96,7 +96,7 @@
 		icon_state = "dark_maw_used"
 		flick("dark_maw_tr", src)
 		visible_message(span_warning("A set of crystals suddenly springs from the ground and shadowy tendrils wrap around nothing before vanishing."))
-		QDEL_IN(src, 3 SECONDS)
+		expire(3 SECONDS)
 	else
 		if(SK)
 			LAZYADD(SK.active_dark_maws, src)

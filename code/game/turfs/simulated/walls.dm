@@ -390,8 +390,7 @@
 		cartridge.remaining -= can_store
 		if(!cartridge.remaining)
 			to_chat(user, span_warning("\The [cartridge] dissolves as it empties of compressed matter."))
-			user.drop_from_inventory(W)
-			qdel(W)
+			consume(W, user)
 		loaded = 1
 	if(istype(W,/obj/item/stack))
 		var/obj/item/stack/S = W

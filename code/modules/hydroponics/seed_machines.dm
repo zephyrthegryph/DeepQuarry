@@ -277,7 +277,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 				genetics = seed.seed
 				degradation = 0
 
-			qdel(seed)
+			consume(seed)
 			seed = null
 			return TRUE
 

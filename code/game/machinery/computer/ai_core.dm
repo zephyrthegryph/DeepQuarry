@@ -133,8 +133,7 @@
 REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 /obj/structure/AIcore/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You deconstruct the frame."))
-	new /obj/item/stack/material/plasteel(loc, 4)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/plasteel, 4)
 
 /obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
 	switch(state)

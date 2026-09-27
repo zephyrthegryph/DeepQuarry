@@ -221,7 +221,7 @@
 		if(!has_paper)
 			to_chat(user, "You feed the debug printer some paper")
 			has_paper = TRUE
-			qdel(I)
+			consume(I, user)
 		else
 			to_chat(user, span_notice("[src] cannot hold more than 1 sheet of paper."))
 
