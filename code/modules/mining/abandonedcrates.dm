@@ -153,7 +153,9 @@ vorestation edit end */
 		return
 
 	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = tgui_input_text(user, "Enter [codelen] digits. All digits must be unique.", "Deca-Code Lock", "", codelen)
+	var/input = rerun_prompt(user, "k156", list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock", "max_length" = codelen), PROC_REF(togglelock), args)
+	if(isnull(input))
+		return
 	if(!Adjacent(user))
 		return
 	if(input == null)

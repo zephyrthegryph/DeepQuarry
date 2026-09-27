@@ -343,7 +343,9 @@
  */
 /obj/machinery/mineral/equipment_vendor/proc/redeem_voucher(obj/item/mining_voucher/voucher, mob/redeemer)
 	to_chat(redeemer, span_notice("You insert your voucher into the machine!"))
-	var/selection = tgui_input_list(redeemer, "Pick your equipment.", "Mining Voucher Redemption", list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points"))
+	var/selection = rerun_prompt(redeemer, "k346", list("kind" = "list", "message" = "Pick your equipment.", "title" = "Mining Voucher Redemption", "choices" = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points")), PROC_REF(redeem_voucher), args)
+	if(isnull(selection))
+		return
 	var/drop_location = drop_location()
 	if(QDELETED(voucher))
 		return
@@ -359,7 +361,10 @@
 	switch(selection)
 
 		if("Kinetic Accelerator + KA Addon") //1250-2100 points worth
-			var/addon_selection = tgui_input_list(redeemer, "Pick your addon", "Mining Voucher Redemption", list("Cooldown", "Range","Holster")) //Just the basics. Nothing too crazy.
+			var/_answer_k362 = rerun_prompt(redeemer, "k362", list("kind" = "list", "message" = "Pick your addon", "title" = "Mining Voucher Redemption", "choices" = list("Cooldown", "Range","Holster")), PROC_REF(redeem_voucher), args)
+			if(isnull(_answer_k362))
+				return
+			var/addon_selection = _answer_k362 //Just the basics. Nothing too crazy.
 			if(QDELETED(voucher))
 				return
 			if(!addon_selection)
@@ -380,7 +385,10 @@
 			new /obj/item/mining_scanner/advanced(drop_location)
 
 		if("Survival Pistol & Machete + Survival Addon") // ~3000-3500 points worth.
-			var/addon_selection = tgui_input_list(redeemer, "Pick your survival addon", "Mining Voucher Redemption", list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens")) //Just the basics. Nothing too crazy.
+			var/_answer_k383 = rerun_prompt(redeemer, "k383", list("kind" = "list", "message" = "Pick your survival addon", "title" = "Mining Voucher Redemption", "choices" = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens")), PROC_REF(redeem_voucher), args)
+			if(isnull(_answer_k383))
+				return
+			var/addon_selection = _answer_k383 //Just the basics. Nothing too crazy.
 			if(QDELETED(voucher))
 				return
 			if(!addon_selection)

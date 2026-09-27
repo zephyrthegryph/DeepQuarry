@@ -124,7 +124,7 @@
 			var/ore = params["ore"]
 			var/new_setting = params["set"]
 			if(new_setting == null)
-				new_setting = tgui_input_list(ui.user, "What setting do you wish to use for processing [ore]]?", "Process Setting", list("Smelting","Compressing","Alloying","Nothing"))
+				new_setting = act_prompt(ui.user, action, params, ui, "setting", list("kind" = "list", "message" = "What setting do you wish to use for processing [ore]?", "title" = "Process Setting", "choices" = list("Smelting","Compressing","Alloying","Nothing")))
 				if(!new_setting)
 					return
 				switch(new_setting)

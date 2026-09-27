@@ -276,7 +276,10 @@
 /obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
 	if(active)
 		return ITEM_INTERACT_BLOCKING
-	var/newtag = text2num(sanitizeSafe(tgui_input_text(user, "Enter new ID number or leave empty to cancel.", "Assign ID number", null, 4, encode = FALSE), 4))
+	var/_answer_k279 = rerun_prompt(user, "k279", list("kind" = "text", "message" = "Enter new ID number or leave empty to cancel.", "title" = "Assign ID number", "max_length" = 4, "encode" = FALSE), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(_answer_k279))
+		return ITEM_INTERACT_BLOCKING
+	var/newtag = text2num(sanitizeSafe(_answer_k279, 4))
 	if(newtag)
 		name = "[initial(name)] #[newtag]"
 		to_chat(user, span_notice("You changed the drill ID to: [newtag]"))
