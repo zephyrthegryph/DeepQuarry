@@ -257,7 +257,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			for(var/area/AffectedArea in affected_areas)
 				AffectedArea.power_light = 0
 				AffectedArea.power_change()
-				spawn(rand(25,50))
+				spawn(rand(25,50)) // S7 keeps: admin verb (allowlist)
 					AffectedArea.power_light = 1
 					AffectedArea.power_change()
 
@@ -394,7 +394,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		//buttons that are fun for exactly you and nobody else.
 		if("corgie")
 			for(var/mob/living/carbon/human/H in GLOB.mob_list)
-				spawn(0)
+				spawn(0) // S7 keeps: admin verb (allowlist)
 					H.corgize()
 
 		if("monkey")

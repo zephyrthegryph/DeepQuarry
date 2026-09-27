@@ -452,7 +452,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			// rad_collector and ZAS binary/pump removed; supermatter only.
 			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
-				spawn(50)
+				spawn(50) // S7 keeps: admin verb (allowlist)
 					SM.power = 320
 
 			else if(istype(M,/obj/machinery/power/smes))	//This is the SMES inside the engine room.  We don't need much power.
@@ -568,7 +568,7 @@ ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time
 	new_time = new_time.add_hours(new_hour)
 	new_time = new_time.add_minutes(new_minute)
 	planet.current_time = new_time
-	spawn(1)
+	spawn(1) // S7 keeps: admin verb (allowlist)
 		planet.update_sun()
 
 	var/log = "[key_name(user)] changed [planet.name]'s time to [planet.current_time.show_time("hh:mm")]."

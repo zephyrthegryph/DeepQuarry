@@ -107,7 +107,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				shadekin.ai_brain.mauling = TRUE
 			om_run_frame_now(shadekin, /datum/om/pipeline/life)
 			//Remove when done
-			spawn(10 SECONDS)
+			spawn(10 SECONDS) // S7 keeps: admin verb (allowlist)
 				if(shadekin)
 					shadekin.death()
 

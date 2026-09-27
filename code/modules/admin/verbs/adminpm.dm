@@ -140,7 +140,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 			//AdminPM popup for ApocStation and anybody else who wants to use it. Set it with POPUP_ADMIN_PM in config.txt ~Carn
 			if(CONFIG_GET(flag/popup_admin_pm))
-				spawn()	//so we don't hold the caller proc up
+				spawn()	//so we don't hold the caller proc up // S7 keeps: admin PM popup: tgui_input_text() sleeps (admin verb, prompts)
 					var/sender = src
 					var/sendername = key
 					var/reply = tgui_input_text(recipient, msg,"Admin PM from-[sendername]", "", multiline = TRUE)	//show message and await a reply

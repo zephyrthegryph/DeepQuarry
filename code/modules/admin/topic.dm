@@ -777,7 +777,7 @@
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
 		M.forceMove(pick(GLOB.tdome1))
-		spawn(50)
+		spawn(50) // S7 keeps: admin verb (allowlist)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 1)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Team 1)")
@@ -803,7 +803,7 @@
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
 		M.forceMove(pick(GLOB.tdome2))
-		spawn(50)
+		spawn(50) // S7 keeps: admin verb (allowlist)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Team 2)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Team 2)")
@@ -826,7 +826,7 @@
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
 		M.forceMove(pick(GLOB.tdomeadmin))
-		spawn(50)
+		spawn(50) // S7 keeps: admin verb (allowlist)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Admin.)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Admin.)")
@@ -856,7 +856,7 @@
 		M.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)
 		M.forceMove(pick(GLOB.tdomeobserve))
-		spawn(50)
+		spawn(50) // S7 keeps: admin verb (allowlist)
 			to_chat(M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
 		log_admin("[key_name(usr)] has sent [key_name(M)] to the thunderdome. (Observer.)")
 		message_admins("[key_name_admin(usr)] has sent [key_name_admin(M)] to the thunderdome. (Observer.)")
@@ -977,7 +977,7 @@
 					to_chat(X, take_msg)
 			to_chat(M, span_filter_pm(span_boldnotice("Your adminhelp is being attended to by [usr.client]. Thanks for your patience!")))
 			if (CONFIG_GET(string/chat_webhook_url))
-				spawn(0)
+				spawn(0) // S7 keeps: admin topic; world.Export() is a blocking external call
 					var/query_string = "type=admintake"
 					query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 					query_string += "&admin=[url_encode(key_name(usr.client))]"
