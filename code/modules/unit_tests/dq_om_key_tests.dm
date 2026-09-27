@@ -28,7 +28,7 @@
 	var/obj/machinery/shield_capacitor/C = allocate(/obj/machinery/shield_capacitor, test_floor())
 	// The keys process() sleeps on when the grid gives it nothing.
 	TEST_ASSERT(C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE)), "capacitor refused to sleep")
-	var/failure = om_wake_test(C, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, set_brownout), TRUE))
+	var/failure = om_wake_test(C, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, test_set_brownout), TRUE))
 	TEST_ASSERT(!failure, failure)
 	// A topology-only change is not the capacitor's input.
 	C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
@@ -129,3 +129,8 @@
 	unwatch_mob_chunks(anyone, any_tokens, CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/test_subscriber)
 
 #endif
+
+/// A brownout as refresh() reports one from Rust, without a Rust region.
+/datum/powernet/proc/test_set_brownout(value)
+	brownout = value
+	om_changed(src, CHANGE_POWERNET_STATE)
