@@ -24,7 +24,3 @@
 		if(owner.status_units(EFFECT_JITTERY) < 50)
 			owner.status_adjust(EFFECT_JITTERY, 65)
 
-/datum/component/nervousness_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

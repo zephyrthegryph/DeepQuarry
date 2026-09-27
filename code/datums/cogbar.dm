@@ -20,7 +20,6 @@
 	/// The icon state
 	var/cogiconstate
 
-
 /datum/cogbar/New(mob/user, cogicon, cogiconstate)
 	src.user = user
 	src.user_client = user.client
@@ -41,19 +40,14 @@
 
 	RegisterSignal(user, COMSIG_QDELETING, PROC_REF(on_user_delete))
 
+REF_OWNED(/datum/cogbar, "blank")
 
+// LIFECYCLE: takes its overlay off the user and its image off the user's client.
 /datum/cogbar/Destroy()
 	if(user)
 		SSvis_overlays.remove_vis_overlay(user, user.managed_vis_overlays)
 		user_client?.images -= blank
-
-	user = null
-	user_client = null
-	cog = null
-	QDEL_NULL(blank)
-
 	return ..()
-
 
 /// Adds the cog to the user, visible by other players
 /datum/cogbar/proc/add_cog_to_user()
@@ -78,7 +72,6 @@
 
 	user_client.images += blank
 
-
 /// Removes the cog from the user
 /datum/cogbar/proc/remove()
 	if(isnull(cog))
@@ -89,12 +82,10 @@
 
 	QDEL_IN(src, COGBAR_ANIMATION_TIME)
 
-
 /// When the user is deleted, remove the cog
 /datum/cogbar/proc/on_user_delete(datum/source)
 	SIGNAL_HANDLER
 
 	qdel(src)
-
 
 #undef COGBAR_ANIMATION_TIME

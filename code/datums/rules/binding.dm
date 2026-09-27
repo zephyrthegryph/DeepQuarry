@@ -124,7 +124,8 @@
 			holding[i] = check(rules[i])
 	src.owner = null
 
-/datum/rule_binding/Destroy()
+/// Phase 1 (unbind): drops its rules and frees its Rust reactor nodes.
+/datum/rule_binding/lifecycle_unbind()
 	for(var/i in 1 to length(rules))
 		drop(i)
 	for(var/property in nodes)
@@ -134,9 +135,6 @@
 	var/datum/owner_now = om_resolve(owner_ref)
 	if(owner_now?.rule_binding == src)
 		owner_now.rule_binding = null
-	owner = null
-	owner_ref = null
-	return ..()
 
 /// Whether a live rule on this binding replaces the RULE_REPLACES_* `flag`.
 /datum/rule_binding/proc/replaces(flag)

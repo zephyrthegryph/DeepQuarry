@@ -30,7 +30,3 @@
 			if(2 to 3)
 				owner.direct_say("[prob(50) ? ";" : ""][pick("SHIT", "PISS", "FUCK", "CUNT", "COCKSUCKER", "MOTHERFUCKER", "TITS")]")
 
-/datum/component/coprolalia_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

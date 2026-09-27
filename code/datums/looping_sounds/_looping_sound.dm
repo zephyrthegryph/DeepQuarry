@@ -69,6 +69,7 @@
 	if(start_immediately)
 		start()
 
+// LIFECYCLE: stops the sound playing on its atoms.
 /datum/looping_sound/Destroy()
 	stop()
 	output_atoms = null

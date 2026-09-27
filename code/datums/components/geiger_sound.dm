@@ -9,15 +9,7 @@
 	if (!isatom(parent))
 		return COMPONENT_INCOMPATIBLE
 
-/datum/component/geiger_sound/Destroy(force)
-	QDEL_NULL(sound)
-
-	if (!isnull(last_parent))
-		UnregisterSignal(last_parent, COMSIG_IN_RANGE_OF_IRRADIATION)
-
-	last_parent = null
-
-	return ..()
+REF_OWNED(/datum/component/geiger_sound, "sound")
 
 /datum/component/geiger_sound/RegisterWithParent()
 	if(!wall_mounted)

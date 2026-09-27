@@ -48,7 +48,6 @@
 	/// Datum level flags
 	var/tmp/datum_flags = NONE
 
-
 	/*
 	* Lazy associative list of currently active cooldowns.
 	*
@@ -56,7 +55,6 @@
 	* add_timer() returns the truthy value of -1 when not stoppable, and else a truthy numeric index
 	*/
 	var/tmp/list/cooldowns
-
 
 	/// List for handling persistent filters.
 	var/tmp/list/filter_data
@@ -97,6 +95,7 @@
  *
  * Returns [QDEL_HINT_QUEUE]
  */
+// LIFECYCLE: the base: timers, reactor, components, signals and tgui.
 /datum/proc/Destroy(force = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)

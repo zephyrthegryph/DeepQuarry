@@ -59,11 +59,7 @@
 		qdel(B)
 	LAZYCLEARLIST(elements)
 
-/datum/beam/Destroy()
-	Reset()
-	target = null
-	origin = null
-	return ..()
+REF_OWNED_LIST(/datum/beam, "elements")
 
 /datum/beam/proc/Draw()
 	if(QDELETED(target) || QDELETED(origin))

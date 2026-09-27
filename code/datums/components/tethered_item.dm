@@ -27,11 +27,9 @@
 	// Link handheld
 	make_handheld()
 
+// LIFECYCLE: the tethered handheld is recalled and the host loses its toggle verb.
 /datum/component/tethered_item/Destroy()
 	var/obj/item/host_item = parent
-	UnregisterSignal(host_item, COMSIG_ITEM_ATTACK_SELF)
-	UnregisterSignal(host_item, COMSIG_ATOM_ATTACKBY)
-	UnregisterSignal(host_item, COMSIG_MOVABLE_MOVED)
 	host_item.verbs -= /obj/item/proc/toggle_tethered_handheld
 	var/obj/item/hand_held = TETHERED_HANDHELD(host_item)
 	if(hand_held)

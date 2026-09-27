@@ -22,6 +22,7 @@
 			return node1
 	return null
 
+// LIFECYCLE: a hose disconnects both ends.
 /datum/hose/Destroy(force)
 	disconnect()
 	. = ..()

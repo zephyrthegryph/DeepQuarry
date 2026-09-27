@@ -17,6 +17,4 @@
 	flavour_texts = newFlavour ? newFlavour.Copy() : null
 	genMods = newGenMods ? newGenMods.Copy() : null
 
-/datum/absorbed_dna/Destroy()
-	. = ..()
-	qdel(dna)
+REF_OWNED(/datum/absorbed_dna, "dna")

@@ -8,13 +8,6 @@
 	. = ..()
 	events = list()
 
-/datum/component/observer_events/Destroy(force)
-	if(events)
-		for(var/list/listeners in events)
-			listeners.Cut()
-		events = null
-	return ..()
-
 /proc/dq_get_listener_list_from_event(atom/a, observer_event)
 	if(!a || QDELING(a))
 		return list()

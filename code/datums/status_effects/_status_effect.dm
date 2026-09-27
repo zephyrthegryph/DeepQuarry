@@ -81,23 +81,15 @@
 	update_particles()
 	return TRUE
 
+REF_OWNED(/datum/status_effect, "particle_effect")
+
+// LIFECYCLE: the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/Destroy()
-	switch(processing_speed)
-		if(STATUS_EFFECT_FAST_PROCESS)
-			PERIODIC_STOP(src)
-		if(STATUS_EFFECT_NORMAL_PROCESS)
-			PERIODIC_STOP(src)
-		if(STATUS_EFFECT_PRIORITY)
-			PERIODIC_STOP(src)
 	if(owner)
 		linked_alert = null
 		owner.clear_alert(id)
 		LAZYREMOVE(owner.status_effects, src)
 		on_remove()
-		UnregisterSignal(owner, COMSIG_LIVING_AHEAL)
-		owner = null
-	if(particle_effect)
-		QDEL_NULL(particle_effect)
 	return ..()
 
 /// Updates the status effect alert's maptext (if possible)

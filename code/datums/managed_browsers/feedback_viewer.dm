@@ -27,6 +27,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 
 	..()
 
+// LIFECYCLE: clears the client's back-reference (clients aren't datums).
 /datum/managed_browser/feedback_viewer/Destroy()
 	if(my_client)
 		my_client.feedback_viewer = null
@@ -113,7 +114,6 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	var/dat = replacetext(text, "\n", "<br>")
 	// structured TGUI AdminReport.
 	dq_admin_report_html(my_client.mob, "[author]'s Feedback", dat, src)
-
 
 /datum/managed_browser/feedback_viewer/Topic(href, href_list[])
 	if(!my_client)

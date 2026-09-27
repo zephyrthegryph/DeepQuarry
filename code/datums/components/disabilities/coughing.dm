@@ -24,7 +24,3 @@
 		owner.drop_item()
 		owner.emote("cough")
 
-/datum/component/coughing_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

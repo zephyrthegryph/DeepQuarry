@@ -38,6 +38,7 @@
 
 	UnregisterSignal(source, COMSIG_QDELETING)
 
+// LIFECYCLE: elements are shared singletons: refuse deletion unless forced, then leave SSdcs.
 /datum/element/Destroy(force)
 	if(!force)
 		return QDEL_HINT_LETMELIVE
