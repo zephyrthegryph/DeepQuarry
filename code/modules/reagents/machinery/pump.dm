@@ -32,9 +32,7 @@
 
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/pump/Destroy()
-	QDEL_NULL(cell)
-	. = ..()
+REF_OWNED(/obj/machinery/pump, "cell")
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
@@ -195,14 +193,12 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-
 /turf/proc/pump_reagents()
 	return
 
 /turf/simulated/floor/lava/pump_reagents(datum/reagents/R, volume)
 	. = ..()
 	R.add_reagent(REAGENT_ID_MINERALIZEDFLUID, round(volume / 2, 0.1))
-
 
 /turf/simulated/floor/water/pump_reagents(datum/reagents/R, volume)
 	. = ..()
@@ -223,7 +219,6 @@
 /turf/simulated/floor/water/deep/pool/pump_reagents(datum/reagents/R, volume)
 	. = ..()
 	R.add_reagent(REAGENT_ID_CHLORINE, round(volume / 10, 0.1))
-
 
 /turf/simulated/mineral/pump_reagents(datum/reagents/R, volume)
 	. = ..()

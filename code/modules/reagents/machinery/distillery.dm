@@ -87,15 +87,7 @@
 	overlay_dumping = image(icon = src.icon, icon_state = "[base_state]-dump")
 	overlay_connected = image(icon = src.icon, icon_state = "[base_state]-connector")
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/Destroy()
-	if(InputBeaker)
-		qdel(InputBeaker)
-		InputBeaker = null
-	if(OutputBeaker)
-		qdel(OutputBeaker)
-		OutputBeaker = null
-
-	. = ..()
+REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list("InputBeaker", "OutputBeaker"))
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/examine(mob/user)
 	. = ..()
@@ -404,7 +396,6 @@
 			return our_port.network.gases[1]
 	. = ..()
 
-
 /obj/machinery/portable_atmospherics/powered/reagent_distillery
 	/// Pinged at the target since it last left it.
 	var/tmp/distillery_pinged = FALSE
@@ -432,7 +423,6 @@
 	. = ..()
 	if(reagents)
 		.[THERMAL_CAPACITY] += reagents.heat_capacity()
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/step_start_condition()
