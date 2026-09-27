@@ -560,7 +560,7 @@
 		return FALSE
 
 	// Convert it to an edible form, yum yum.
-	if(!(robotic >= ORGAN_ROBOT) && user.a_intent == I_HELP && user.zone_sel.selecting == O_MOUTH)
+	if(!(robotic >= ORGAN_ROBOT) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
 		bitten(user)
 		return
 

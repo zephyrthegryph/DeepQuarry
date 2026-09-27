@@ -98,9 +98,6 @@
 	if(occupant == user && !user.stat)
 		go_out()
 
-/obj/machinery/atmospherics/unary/cryo_cell/attack_ghost(mob/user)
-	tgui_interact(user)
-
 /obj/machinery/atmospherics/unary/cryo_cell/attack_hand(mob/user)
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	if(user == occupant)

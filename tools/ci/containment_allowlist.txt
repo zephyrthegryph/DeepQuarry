@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Convert sites to forceMove()
 # or the slot API (code/datums/containment/api.dm) and lower the count;
 # `python tools/ci/containment_lint.py --update` rewrites it.
-# Total: 605 sites in 283 files.
+# Total: 604 sites in 282 files.
 code/_helpers/refinery.dm 1
 code/_helpers/turfs.dm 2
 code/_helpers/unsorted.dm 7
@@ -186,7 +186,6 @@ code/modules/mob/living/bot/medbot.dm 2
 code/modules/mob/living/carbon/alien/diona/diona.dm 1
 code/modules/mob/living/carbon/alien/diona/diona_attacks.dm 1
 code/modules/mob/living/carbon/human/human_defense.dm 2
-code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm 1
 code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm 1
 code/modules/mob/living/living.dm 3
 code/modules/mob/living/living_defense.dm 1

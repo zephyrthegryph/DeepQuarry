@@ -293,7 +293,7 @@ part "tools: istype checks on tool types"
 # checks (a particular subtype, not "any tool of this quality"), or belong to domains
 # converted later (mecha: I5; surgery and medical machines: the body rewrite). They
 # must not grow.
-tool_istype_allowlist='code.modules.surgery.limbs\.dm|code.modules.surgery.operate\.dm|code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
+tool_istype_allowlist='code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
 if $grep -n 'istype\([^,]+,\s*/obj/item/(tool|weldingtool|multitool)\b' "${code_files[@]}" | grep -vE "^($tool_istype_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: an istype() check on a tool type. Use has_tool_quality(TOOL_*), or get_welder()/get_multitool() to read the tool.${NC}"
@@ -312,10 +312,10 @@ part "combat mode: a_intent"
 # Read what a Use does with IS_HELPING/IS_HARMING/IS_DISARMING/IS_GRABBING or
 # use_stance(), and set it with set_combat_mode()/set_use_stance(). `a_intent`
 # survives only as a read-only mirror (code/modules/mob/combat_mode.dm) for
-# files other work owns and has not converted yet: the body rewrite's medical,
-# surgery, organ and species files, and the tool *_act procs I4 is migrating.
+# files other work owns and has not converted yet: the tool *_act procs I4 is
+# migrating.
 # These must not grow; delete an entry once its file is converted.
-a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instruments/resuscitation\.dm|code/modules/surgery/surgery\.dm|code/modules/organs/organ\.dm|code/game/objects/items/weapons/surgery_tools\.dm|code/game/objects/items/devices/scanners/health\.dm|code/modules/reagents/reagent_containers/(hypospray|syringes|blood_pack)\.dm|code/modules/mob/living/carbon/human/species/(species|station/teshari|station/station_special_abilities|station/traits/weaver_objs)\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
+a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
 if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"

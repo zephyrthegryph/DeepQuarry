@@ -23,8 +23,8 @@
 /mob/var/attack_variant = null
 
 /**
- * Read-only mirror of use_stance() for the files the body rewrite owns
- * (medical, surgery, organs, species; list in doc/rewrite/interactions.md §12).
+ * Read-only mirror of use_stance() for the tool *_act procs I4 is migrating
+ * (list in doc/rewrite/interactions.md §12).
  * Only set_combat_mode() and set_attack_variant() write it. Nothing else may read
  * it: the "combat mode: a_intent" lint in tools/ci/check_grep.sh allows it only
  * in those files. It is deleted when they move to use_stance() or the IS_* macros.

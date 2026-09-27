@@ -282,10 +282,11 @@
 /// A welder must be lit and fuelled.
 /datum/surgical_step/treat/repair_plating/tool_quality(obj/item/tool)
 	. = ..()
-	if(. && istype(tool, /obj/item/weldingtool))
-		var/obj/item/weldingtool/welder = tool
-		if(!welder.isOn())
-			return 0
+	if(!. || !tool.has_tool_quality(TOOL_WELDER))
+		return
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(welder && !welder.isOn())
+		return 0
 
 /datum/surgical_step/treat/repair_wiring
 	name = "Repair Robotic Burn"

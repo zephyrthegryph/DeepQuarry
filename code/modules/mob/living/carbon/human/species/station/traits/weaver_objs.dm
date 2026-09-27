@@ -35,7 +35,7 @@
 
 /obj/effect/weaversilk/attack_hand(mob/user as mob)
 	..()
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		to_chat(user,span_warning("You easily tear down [name]."))
 		qdel(src)
 
@@ -82,7 +82,7 @@
 
 /obj/structure/bed/double/weaversilk_nest/attack_hand(mob/user as mob)
 	..()
-	if(user.a_intent == I_HURT && !has_buckled_mobs())
+	if(IS_HARMING(user) && !has_buckled_mobs())
 		to_chat(user,span_warning("You easily tear down [name]."))
 		qdel(src)
 

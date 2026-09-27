@@ -356,7 +356,7 @@ GLOBAL_PROTECT(surgical_steps)
 /obj/item/proc/do_surgery(mob/living/carbon/M, mob/living/user)
 	if(!can_do_surgery(M, user) || !ishuman(M))
 		return FALSE
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		return FALSE
 	var/mob/living/carbon/human/target = M
 	if(user.action_blocked(ACTION_BLOCK_SURGERY))

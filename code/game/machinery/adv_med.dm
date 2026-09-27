@@ -334,9 +334,6 @@
 /obj/machinery/body_scanconsole/proc/findscanner()
 	om_after(src, 5, PROC_REF(findscanner_now))
 
-/obj/machinery/body_scanconsole/attack_ai(user as mob)
-	return attack_hand(user)
-
 /obj/machinery/body_scanconsole/attack_ghost(user as mob)
 	return attack_hand(user)
 

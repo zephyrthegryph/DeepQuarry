@@ -333,8 +333,7 @@
 			return
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
-		if(!backpack.insert_refusal(W, user))
-			backpack.handle_item_insertion(W)
+		backpack.insert_item(W, user)
 	else
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
@@ -672,7 +671,7 @@
 	icon = R.icon
 	icon_state = R.icon_state
 	user.drop_item(R)
-	contents += R
+	R.forceMove(src)
 	assimilated_rig = R
 	slowdown = (initial(R.slowdown) *0.5)
 	offline_slowdown = slowdown

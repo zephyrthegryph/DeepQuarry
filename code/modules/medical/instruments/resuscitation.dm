@@ -21,7 +21,7 @@
 
 /obj/item/bag_valve_mask/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || user.a_intent == I_HURT)
+	if(!istype(H) || IS_HARMING(user))
 		return ..()
 	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
@@ -56,7 +56,7 @@
 
 /obj/item/airway_kit/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || user.a_intent == I_HURT)
+	if(!istype(H) || IS_HARMING(user))
 		return ..()
 	if(target_zone != O_MOUTH && target_zone != BP_HEAD)
 		to_chat(user, span_warning("Aim for [H]'s mouth."))
@@ -91,7 +91,7 @@
 
 /obj/item/decompression_needle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || user.a_intent == I_HURT)
+	if(!istype(H) || IS_HARMING(user))
 		return ..()
 	if(used)
 		to_chat(user, span_warning("\The [src] has already been used."))
