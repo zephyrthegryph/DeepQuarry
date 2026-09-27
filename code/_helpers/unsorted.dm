@@ -307,7 +307,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Generalised helper proc for letting mobs rename themselves. Used to be clname() and ainame()
 //Last modified by Carn
 /mob/proc/rename_self(role, allow_numbers=0)
-	spawn(0)
+	spawn(0) // S7 keeps: tgui_input_text() sleeps (prompts, S10)
 		var/oldname = real_name
 
 		var/time_passed = world.time
@@ -1743,7 +1743,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /proc/admin_chat_message(message = "Debug Message", color = "#FFFFFF", sender)
 	if (!CONFIG_GET(string/chat_webhook_url) || !message)
 		return
-	spawn(0)
+	spawn(0) // S7 keeps: world.Export() is a blocking external call
 		var/query_string = "type=adminalert"
 		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 		query_string += "&msg=[url_encode(message)]"
@@ -1755,7 +1755,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /proc/admin_action_message(admin = "INVALID", user = "INVALID", action = "INVALID", reason = "INVALID", time = "INVALID")
 	if (!CONFIG_GET(string/chat_webhook_url) || !action)
 		return
-	spawn(0)
+	spawn(0) // S7 keeps: world.Export() is a blocking external call
 		var/query_string = "type=adminaction"
 		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 		query_string += "&admin=[url_encode(admin)]"

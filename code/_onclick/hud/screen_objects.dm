@@ -1055,10 +1055,7 @@
 			F.icon_state = "frame"
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			spawn(20)
-				user.client.screen -= F
-				qdel(F)
-				overlays += empty
+			om_after(src, 2 SECONDS, PROC_REF(end_empty_flash), user, F, empty)
 	else
 		warned = FALSE
 		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")
@@ -1111,3 +1108,8 @@
 
 		LAZYADD(object_overlays, item_overlay)
 		add_overlay(object_overlays)
+
+/atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, image/empty)
+	user.client?.screen -= F
+	qdel(F)
+	overlays += empty

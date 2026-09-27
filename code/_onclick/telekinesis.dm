@@ -163,8 +163,7 @@
 	O.icon = 'icons/effects/effects.dmi'
 	O.icon_state = "nothing"
 	flick("empdisable",O)
-	spawn(5)
-		qdel(O)
+	om_qdel_after(O, 5)
 	return
 
 /obj/item/tk_grab/update_icon()

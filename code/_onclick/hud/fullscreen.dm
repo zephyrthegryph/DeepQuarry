@@ -31,12 +31,8 @@
 	LAZYREMOVE(screens, category)
 
 	if(animated)
-		spawn(0)
-			animate(screen, alpha = 0, time = animated)
-			sleep(animated)
-			if(client)
-				client.screen -= screen
-			qdel(screen)
+		animate(screen, alpha = 0, time = animated)
+		om_after(src, animated, PROC_REF(remove_faded_fullscreen), screen)
 	else
 		if(client)
 			client.screen -= screen
@@ -169,3 +165,9 @@
 //Provides whiteness in case you don't see lights so everything is still visible
 /atom/movable/screen/fullscreen/lighting_backdrop/unlit
 	layer = BACKGROUND_LAYER+20
+
+/// A cleared fullscreen overlay leaves the screen once it has faded out.
+/mob/proc/remove_faded_fullscreen(atom/movable/screen/fullscreen/screen)
+	if(client)
+		client.screen -= screen
+	qdel(screen)

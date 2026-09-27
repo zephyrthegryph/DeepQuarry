@@ -353,11 +353,7 @@
 /proc/flick_overlay(image/I, list/show_to, duration, gc_after)
 	for(var/client/C in show_to)
 		C.images += I
-	spawn(duration)
-		if(gc_after)
-			qdel(I)
-		for(var/client/C in show_to)
-			C.images -= I
+	om_after(null, duration, /proc/flick_overlay_end, I, show_to, gc_after) // the global owner: clients own no entity
 
 /proc/flick_overlay_view(image/I, atom/target, duration, gc_after) //wrapper for the above, flicks to everyone who can see the target atom
 	var/list/viewing = list()
@@ -475,9 +471,7 @@
 	for(var/client/C in group)
 		C.screen += O
 	if(delay)
-		spawn(delay)
-			for(var/client/C in group)
-				C.screen -= O
+		om_after(null, delay, /proc/remove_screen_from_group, O, group) // the global owner: clients own no entity
 
 /datum/projectile_data
 	var/src_x
@@ -791,3 +785,13 @@
 
 /proc/remove_image_from_client(image/image, client/remove_from)
 	remove_from?.images -= image
+
+/proc/flick_overlay_end(image/I, list/show_to, gc_after)
+	if(gc_after)
+		qdel(I)
+	for(var/client/C in show_to)
+		C.images -= I
+
+/proc/remove_screen_from_group(atom/movable/O, list/group)
+	for(var/client/C in group)
+		C.screen -= O
