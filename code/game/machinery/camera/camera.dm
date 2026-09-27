@@ -468,13 +468,13 @@ REF_OWNED(/obj/machinery/camera, list("assembly", "wires"))
 			//If someone knows a better way to do this, let me know. -Giacom
 			switch(i)
 				if(NORTH)
-					src.set_dir(SOUTH)
+					set_dir(SOUTH)
 				if(SOUTH)
-					src.set_dir(NORTH)
+					set_dir(NORTH)
 				if(WEST)
-					src.set_dir(EAST)
+					set_dir(EAST)
 				if(EAST)
-					src.set_dir(WEST)
+					set_dir(WEST)
 			break
 
 //Return a working camera that can see a given mob

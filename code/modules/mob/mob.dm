@@ -101,7 +101,7 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
 	publish_mob_chunk(src)
-	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
+	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
@@ -157,9 +157,9 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 	return -1
 
 // used for petrification machines
-/atom/proc/get_ultimate_mob()
+/proc/get_ultimate_mob(atom/source)
 	var/mob/ultimate_mob
-	var/atom/to_check = loc
+	var/atom/to_check = source.loc
 	var/n = 0
 	while (to_check && !isturf(to_check) && n++ < 16)
 		if (ismob(to_check))

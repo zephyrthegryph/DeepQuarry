@@ -36,13 +36,13 @@
 		return 0
 
 	var/obj/item/clothing/suit/A = new armor_type(src)
-	src.equip_to_slot_or_del(A, slot_wear_suit)
+	equip_to_slot_or_del(A, slot_wear_suit)
 
 	var/obj/item/clothing/suit/H = new helmet_type(src)
-	src.equip_to_slot_or_del(H, slot_head)
+	equip_to_slot_or_del(H, slot_head)
 
 	var/obj/item/clothing/shoes/B = new boot_type(src)
-	src.equip_to_slot_or_del(B, slot_shoes)
+	equip_to_slot_or_del(B, slot_shoes)
 
 	changeling.chem_charges -= chem_cost
 	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
@@ -109,7 +109,7 @@
 		if(M.get_equipped_item(SLOT_ID_BACK) && stuff_to_equip["back"])
 			if(istype(M.get_equipped_item(SLOT_ID_BACK), stuff_to_equip["back"]))
 				for(var/atom/movable/AM in M.get_equipped_item(SLOT_ID_BACK).contents) //Dump whatever's in the bag before deleting.
-					AM.forceMove(src.loc)
+					AM.forceMove(loc)
 				M.slot_clear(SLOT_ID_BACK)
 				success = 1
 

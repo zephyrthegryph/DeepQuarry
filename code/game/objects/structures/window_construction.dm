@@ -56,7 +56,7 @@
 	return
 
 /// A welder off help intent hits the window instead of repairing it.
-/obj/structure/window/interaction_tool_act(mob/user, obj/item/tool, quality)
+/obj/structure/window/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
 	if(quality == TOOL_WELDER && !IS_HELPING(user))
 		return NONE
 	return ..()

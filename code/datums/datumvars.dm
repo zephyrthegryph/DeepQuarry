@@ -21,9 +21,6 @@
 			return debug_variable(var_name, list(), 0, src)
 	return debug_variable(var_name, vars[var_name], 0, src)
 
-/datum/proc/can_vv_mark()
-	return TRUE
-
 /**
  * Gets all the dropdown options in the vv menu.
  * When overriding, make sure to call . = ..() first and append to the result, that way parent items are always at the top and child items are further down.

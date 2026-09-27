@@ -618,7 +618,7 @@
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(M)
 
-	src.add_fingerprint(user)
+	add_fingerprint(user)
 	//if(CLUMSY_HARM_CHANCE(user))
 	//	M = user
 		/*

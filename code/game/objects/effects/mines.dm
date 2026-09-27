@@ -480,7 +480,7 @@ REF_OWNED(/obj/effect/mine, list("trap", "wires"))
 	var/turf/O = get_turf(src)
 	if(!O)
 		return
-	launch_many_projectiles(O, spread_range, beam_types)
+	src.launch_many_projectiles(O, spread_range, beam_types)
 	visible_message("\The [src.name] detonates!")
 	qdel(src)
 

@@ -136,10 +136,17 @@ GLOBAL_REAL(Master, /datum/controller/master)
 			//Either init a new SS or if an existing one was found use that
 			for(var/I in subsystem_types)
 				var/ss_idx = existing_subsystems.Find(I)
+#ifdef BENCHMARK
+				var/started = REALTIMEOFDAY
+				var/mb_before = benchmark_early_private_mb()
+#endif
 				if (ss_idx)
 					_subsystems += existing_subsystems[ss_idx]
 				else
 					_subsystems += new I
+#ifdef BENCHMARK
+				benchmark_early_note("new [I]", REALTIMEOFDAY - started, mb_before)
+#endif
 
 	if(!GLOB)
 		new /datum/controller/global_vars

@@ -21,7 +21,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if (!isturf(user.loc) && user.get_ultimate_mob() != target)
+	if (!isturf(user.loc) && get_ultimate_mob(user) != target)
 		to_chat(user, span_warning("The device beeps but does nothing."))
 		return
 	if (linked?.petrify(user, src))

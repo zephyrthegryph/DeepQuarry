@@ -187,7 +187,7 @@
 
 /atom/proc/in_contents_of(container)//can take class or object instance as argument
 	if(ispath(container))
-		if(istype(src.loc, container))
+		if(istype(loc, container))
 			return 1
 	else if(src in container)
 		return 1
@@ -379,8 +379,8 @@
 /atom/proc/checkpass(passflag)
 	return (pass_flags&passflag)
 
-/atom/proc/isinspace()
-	if(istype(get_turf(src), /turf/space))
+/proc/isinspace(atom/source)
+	if(istype(get_turf(source), /turf/space))
 		return 1
 	else
 		return 0

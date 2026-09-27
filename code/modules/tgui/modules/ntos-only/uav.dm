@@ -77,7 +77,7 @@
 					return FALSE
 				else if(!viewing_uav(ui.user))
 					if(!viewers) viewers = list() // List must exist for pass by reference to work
-					start_coordinated_remoteview(ui.user, current_uav, viewers, /datum/remote_view_config/uav_control)
+					start_coordinated_remoteview(src, ui.user, current_uav, viewers, /datum/remote_view_config/uav_control)
 				else
 					ui.user.reset_perspective()
 			return TRUE

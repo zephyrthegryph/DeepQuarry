@@ -103,7 +103,7 @@
 					. = FALSE
 				else if(!viewing_overmap(ui.user) && linked)
 					if(!viewers) viewers = list() // List must exist for pass by reference to work
-					start_coordinated_remoteview(ui.user, linked, viewers)
+					start_coordinated_remoteview(src, ui.user, linked, viewers)
 				else
 					ui.user.reset_perspective()
 			. = TRUE

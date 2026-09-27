@@ -86,7 +86,7 @@
 	var/list/construction_lines = construction_examine_lines(src, A)
 	if(construction_lines)
 		results += construction_lines
-	results += embedded_info(A)
+	results += embedded_info(src, A)
 
 	var/final_string = span_infoplain("[jointext(results, "<br>")]")
 	if(ismob(A) || client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE) // mob descriptions matter more than others, & it looks weird to have dropdowns outside the box.
@@ -94,11 +94,11 @@
 	to_chat(src, final_string)
 	update_examine_panel(A)
 
-/mob/proc/embedded_info(atom/A)
+/proc/embedded_info(mob/source, atom/A)
 	. = ""
-	if(!(client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE))
+	if(!(source.client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE))
 		return
-	if(!client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
+	if(!source.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
 		return //sorry oldchat
 
 	//do pref check here
@@ -123,7 +123,7 @@
 				title = "🔍 | Flavor Text"
 
 		. += span_details(title, rendered_text)
-	var/is_antagish = antag_check()
+	var/is_antagish = source.antag_check()
 	var/antag_info_temp = A.get_description_antag()
 	if(is_antagish && antag_info_temp)
 		. += span_details("🏴‍☠️ | Antag Information", antag_info_temp)

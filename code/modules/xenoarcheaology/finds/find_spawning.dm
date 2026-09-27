@@ -7,16 +7,13 @@
 	item_flags = ABSTRACT
 
 /// Find spawning debug tool. Can be called on any /mob to spawn it at their location.
-/mob/proc/artifact_spawn_debug_tool()
-	set name = "Artifact Debug"
-	set desc = "Spawn an artifact."
-	set category = "Debug"
-	if(!src.loc)
+/proc/artifact_spawn_debug_tool(mob/target)
+	if(!target?.loc)
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
 	var/type_to_spawn = tgui_input_number(usr, "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", "Spawn Artifact", 0)
-	new /obj/item/archaeological_find(src.loc, type_to_spawn)
+	new /obj/item/archaeological_find(target.loc, type_to_spawn)
 
 /obj/item/archaeological_find/Initialize(mapload, new_item_type)
 	. = ..()

@@ -58,7 +58,7 @@
 		var/shot_type = pick(projectiletypes)
 
 		var/obj/item/projectile/P = new shot_type(T)
-		P.shot_from = src.name
+		P.shot_from = name
 
 		P.old_style_target(O)
 		P.fire()
@@ -67,9 +67,9 @@
 		for(var/mob/living/M in T)
 			//lying on a frag grenade while the grenade is on the ground causes you to absorb most of the shrapnel.
 			//you will most likely be dead, but others nearby will be spared the fragments that hit you instead.
-			if(M.lying && isturf(src.loc))
+			if(M.lying && isturf(loc))
 				P.attack_mob(M, 0, 5)
-			else if(!M.lying && src.loc != get_turf(src)) //if it's not on the turf, it must be in the mob!
+			else if(!M.lying && loc != get_turf(src)) //if it's not on the turf, it must be in the mob!
 				P.attack_mob(M, 0, 25) //you're holding a grenade, dude!
 			else
 				P.attack_mob(M, 0, 75) //otherwise, allow a decent amount of fragments to pass

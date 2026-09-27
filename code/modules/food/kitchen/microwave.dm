@@ -355,7 +355,7 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 
 	for(var/item in item_count)
 		var/display_name = item
-		var/plural_name = display_name + plural_s(display_name)
+		var/plural_name = display_name + plural_s(src, display_name)
 		var/ingredient_amt = item_count[item]
 		data.Add(list(list(
 			"name" = capitalize(display_name),

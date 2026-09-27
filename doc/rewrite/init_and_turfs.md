@@ -153,15 +153,143 @@ What the experiments showed:
   Asset Loading fire): `SMART_CACHE_ASSETS` defaulted off. Fixed (on by
   default; it invalidates itself).
 
+The world-load experiments (one boot each, `r3-*`):
+
+| Build | Private MB at `world/New()` |
+|---|---|
+| Southern Cross, as is | 682-703 |
+| Southern Cross, all 3,235 sounds stubbed to 4 bytes (217 MB out of the .rsc) | 698 |
+| minitest, as is | 635-667 |
+| minitest, all 1,982 .dmi stubbed to one 211-byte icon (372 MB out) | 658 |
+| empty world | 4 |
+| synthetic: 20,000 /obj types, 3 vars each (4.4 MB .dmb) | 19 |
+| synthetic: same plus 5 procs each (10.8 MB .dmb) | 35 |
+
+So the ~680 MB is **not** resources (sounds and icons are read from the
+.rsc on demand), **not** the map (minitest's 30 k turfs vs Southern Cross's
+393 k differ by ~40 MB) and **not** DM code we can see: per-global and
+per-subsystem-constructor notes (`early_notes`) show memory already at
+611 MB when global init starts, and those steps take no measurable time.
+It grows over ~10 s while BYOND loads the 47 MB .dmb, before any DM proc
+runs, about 13x the file size (the synthetic worlds expand 3-4x). The type
+count alone does not explain it (20 k synthetic types cost 15 MB). What
+remains is the .dmb's own content: 42 k types' var tables and initial
+values, proc bytecode and the string table. Moving sounds out of the .rsc
+was **not implemented**: it saves nothing. The next step is to bisect the
+.dmb by module (build with large modules' types removed) to find which part
+of the compiled code expands.
+
 Fixes, by size:
 
 | Item | Size | Fix |
 |---|---|---|
-| Compiled world (.dmb + .rsc load) | ~680 MB | Keep sounds out of the .rsc: play them from files served by the asset CDN / `file()` at runtime (224 MB of sources). Prune unused icon states and the `icons/gen` duplicates. Measure with a sound-stripped build first. |
+| Compiled world (.dmb load) | ~680 MB | Not sounds or icons (measured). Bisect the .dmb by module; candidates are type var tables and the string table. |
 | Atoms (map objects, their vars and lists) | ~245 MB | §3.1 type tables (space turfs 92 MB est.), rule bindings as type tables, interned per-type lists (§0.3). |
 | Lighting datums | ~70 MB | §5 option A. |
 | Batched spritesheets at round start | 260 MB | Done (smart cache on). |
 | Appearances, strings | ~15 MB | Not worth a change now: appearances are already shared by BYOND; string interning is automatic in BYOND. |
+
+### 0.5 What the 680 MB at world load is: per-type proc tables
+
+Bisect (2026-09-27, one measurement each):
+
+| Experiment | Private MB |
+|---|---|
+| DQ minitest build, at `world/New()` | 667 |
+| same, plus 1,000 empty procs on `/datum` (`-DBISECT_EXTRA_PROCS`) | **1,653 (+986)** |
+| DQ build with `DEBUG` off (.dmb 48.5 -> 43.1 MB), `no-init` | 528 vs 584 (-56) |
+| synthetic 20 k types, 3,000 procs on their parent | 398 |
+| same 20 k types, no parent procs | 10 |
+| synthetic 20 k types, 400 vars on their parent | 10 (vars are free) |
+| synthetic 2,000 procs with 200-line bodies (57.8 MB .dmb) | 73 (bytecode is ~1.3x) |
+| synthetic 20 k types with icon, icon_state, colour | 12 (compile-time appearances are small) |
+| all sounds stubbed / all .dmi stubbed | unchanged (§0.4) |
+| world/New census (minitest) | 5,742 datums, 35,590 atoms: DM data is not it |
+
+BYOND keeps, for every type, a table entry for **every proc the type has,
+inherited ones included**: about 23.5 bytes per (type, proc) pair on this
+build (1,000 procs x 42,034 types = +986 MB). The 667 MB at world load is
+~28 M such pairs: 42 k types with ~670 inherited procs each on average. It is
+not bytecode, strings, vars, appearances or resources.
+
+Where the pairs come from: 39.7 k type paths in the source, of which 33.6 k
+are leaves and **25.2 k are data-only leaves** (no proc of their own; only var
+overrides): 12.4 k `/datum`, 8.0 k `/obj/item`, 1.3 k `/obj/structure`, 0.9 k
+`/obj/effect`, 0.8 k `/obj/machinery`, 0.6 k `/area`, 0.6 k `/mob`. An
+`/obj/item` type inherits ~1,000 procs (`/datum`, `/atom`, `/atom/movable`,
+`/obj`, `/obj/item`), so each costs ~23 KB just by existing.
+
+Proposed fix (not implemented; for approval):
+
+1. **Collapse data-only leaf types into variants** (the existing
+   `code/datums/variants/` mechanism): one type per family plus a data table,
+   instances created from a variant id. 8 k data-only `/obj/item` leaves at
+   ~23 KB each are ~180 MB; the 12.4 k data-only `/datum` leaves (decls,
+   recipes, designs, reagents, catalog entries; ~150-300 inherited procs each)
+   are ~50-90 MB. Map files reference type paths, so mapped types need a path
+   alias in the map loader (or stay types) until maps are migrated.
+2. **Shrink the procs every type inherits.** Each proc removed from `/datum`
+   saves ~1 MB, from `/atom` ~0.5 MB, from `/obj` or `/obj/item` ~0.2-0.45 MB.
+   Candidates: rarely used hooks and debug/admin procs on `/datum` and `/atom`
+   (vv_*, stat/debug helpers, legacy compatibility shims) moved to global
+   procs or helper datums.
+3. **Ship with DEBUG off** in production (-56 MB, and smaller .dmb); keep it
+   in test and bench builds for line numbers in runtimes.
+
+Order: 3 is a one-line build change; 2 is mechanical per proc and can be
+done incrementally with the count as a ratchet; 1 is the large win and needs
+the variant loader and map aliases.
+
+**Done (2026-09-27): fixes 2 and 3.** (1 is not approved.)
+
+- **3, DEBUG off in production.** `deepquarry.dme` and `code/__defines/misc.dm`
+  no longer define `DEBUG`; the `dm` target builds without it. `TEST_DEFINES`
+  in `tools/build/build.ts` (test and bench builds) and the autowiki build add
+  `DEBUG` back, so test runtimes keep file and line. A local debug build of
+  the main .dmb is `tools/build/build.sh -DDEBUG`. The custom `world/Error`
+  handler (`USE_CUSTOM_ERROR_HANDLER`, `code/_compile_options.dm`) no longer
+  depends on `DEBUG`: without file and line it dedupes on the error text plus
+  the proc name from the exception's desc (`error_uid()`, `error_where()` in
+  `code/modules/error_handler/error_handler.dm`).
+  Measured earlier at -56 MB (table above); bench builds keep `DEBUG`, so the
+  bench numbers below don't include it.
+- **2, procs off the base types.** 33 procs moved to global procs (or deleted
+  where nothing called them): 19 on `/datum` (the 12 `tgui_modal_*` helpers,
+  `typelist`, `IsAbstract`, `can_vv_mark`, `key_down`, `key_up`,
+  `start_coordinated_remoteview`, `dump_harddel_info`), 10 on `/atom`
+  (`Admin_Coordinates_Readable`, `Safe_COORD_Location`, `extra_admin_link`,
+  `extra_ghost_link`, `vv_auto_rename`, `test_telecomms`, `DrawPixelOn`,
+  `laserhit`, `get_ultimate_mob`, `isinspace`), 1 on `/obj`
+  (`analyze_gases`, now `analyze_gases_by(tool, target, user)`) and 3 on
+  `/mob` (`quest_from_above`, `safe_animal`, `artifact_spawn_debug_tool`).
+  `tools/ci/base_proc_lint.py` (in `check_ratchets.sh`) counts procs declared
+  on `/datum`, `/atom`, `/atom/movable`, `/obj`, `/obj/item` and `/mob`
+  against `tools/ci/base_proc_allowlist.txt`; the ceilings went from
+  166/323/132/103/127/588 to 147/313/132/102/127/585. A new rarely used proc
+  belongs in a global proc or a helper datum.
+
+  A second pass kept 17 more as global procs (taking the former `src` first),
+  all admin, debug, logging or text helpers: `plural_s`, `_search_references`,
+  `log_mob_tag`, `log_the_emote`, `format_emote`, `saypiece_scramble`,
+  `describe_power`/`_speed`/`_throwpower`/`_penetration`, `examine_tags`,
+  `embedded_info`, `GetJobName`, `AddCamoOverlay`, `SkinCmd`,
+  `dq_open_languages_panel`, `update_Login_details`. It also deleted the six
+  empty `*_act_secondary` tool stubs: secondary (right-click) tool use runs the
+  declared interactions for that quality whose default action is Alternate
+  (`interaction_tool_act(..., secondary = TRUE)`). Estimated ~11 MB.
+  Gameplay API stays on the type. `base_proc_lint.py` fails a global proc
+  taking a base-type object first whose name or file is in a protected family:
+  containment, lifecycle, OM, components, filters, interactions and clicks,
+  damage, inventory, movement, heat and light, materials, construction,
+  constraints, surgery, combat and attack variants, identification. Existing
+  global API in those families is listed in
+  `base_proc_protected_allowlist.txt`. Ceilings now 145/306/132/100/123/577.
+  Per-proc value differs by type: a proc on `/datum` or `/atom` is ~1 MB, on
+  `/obj` ~0.7 MB, on `/obj/item` ~0.44 MB, on `/mob` only ~0.08 MB (~3.5 k mob
+  types).
+- **Measured** (bench `boot_profile`, minitest, one boot each, bench build
+  with `DEBUG`): private MB at `world/New()` 698.1 before, 666.5 after
+  (-31.6); booted 841.3 before, 809.1 after (-32.2).
 
 ## 1. Boot profile
 

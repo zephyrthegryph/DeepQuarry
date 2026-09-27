@@ -748,3 +748,9 @@
 	metric("probe_allocated_mb_est", count * 184 / 1048576, "MB", "none")
 	metric("probe_private_growth_mb", after - before, "MB", "none")
 	hold = null
+
+// Bisect aid (init_and_turfs.md §0.5): -DBISECT_EXTRA_PROCS adds 1,000 empty
+// procs on /datum, to measure the per-type proc table cost on this codebase.
+#ifdef BISECT_EXTRA_PROCS
+#include "../../../tools/bisect/extra_procs.dm"
+#endif

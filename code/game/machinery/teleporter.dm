@@ -289,9 +289,6 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	range--
 	return
 
-/atom/proc/laserhit(L as obj)
-	return 1
-
 /// A test fire's calibration lapses.
 /obj/machinery/teleport/hub/proc/calibration_lapses()
 	accurate = 0

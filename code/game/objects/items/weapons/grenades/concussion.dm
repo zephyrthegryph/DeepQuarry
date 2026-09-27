@@ -30,14 +30,14 @@
 
 				var/bang_effectiveness = H.species.sound_mod
 
-				if((get_dist(H, T) <= round(radius * 0.3 * bang_effectiveness) || src.loc == H.loc || src.loc == H))
+				if((get_dist(H, T) <= round(radius * 0.3 * bang_effectiveness) || loc == H.loc || loc == H))
 					if(ear_safety > 0)
 						H.status_at_least(EFFECT_CONFUSED, 2)
 					else
 						H.status_at_least(EFFECT_CONFUSED, 8)
 						H.status_at_least(EFFECT_WEAKENED, 1)
 						H.deaf_loop.start() // Ear Ringing/Deafness
-						if ((prob(14) || (H == src.loc && prob(70))))
+						if ((prob(14) || (H == loc && prob(70))))
 							H.set_ear_damage(H.ear_damage + (rand(1, 10)))
 						else
 							H.set_ear_damage(H.ear_damage + (rand(0, 5)))

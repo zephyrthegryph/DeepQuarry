@@ -2159,7 +2159,7 @@
 		if(self.get_equipped_item(SLOT_ID_ID))
 			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
 			if(I)
-				holder.icon_state = "hud[ckey(I.GetJobName())]"
+				holder.icon_state = "hud[ckey(GetJobName(I))]"
 			else
 				holder.icon_state = "hudunknown"
 		else

@@ -38,22 +38,22 @@
 			qdel(narsimage)
 			qdel(narglow)
 		return
-	if((N.z == src.z)&&(get_dist(N,src) <= (N.consume_range+10)) && !(N in view(src)))
+	if((N.z == z)&&(get_dist(N,src) <= (N.consume_range+10)) && !(N in view(src)))
 		if(!narsimage) //Create narsimage
-			narsimage = image('icons/obj/narsie.dmi',src.loc,"narsie",9,1)
+			narsimage = image('icons/obj/narsie.dmi',loc,"narsie",9,1)
 			narsimage.mouse_opacity = 0
 		if(!narglow) //Create narglow
 			narglow = image('icons/obj/narsie.dmi',narsimage.loc,"glow-narsie",12,1)
 			narglow.mouse_opacity = 0
 		//Else if no dir is given, simply send them the image of narsie
-		var/new_x = 32 * (N.x - src.x) + N.pixel_x
-		var/new_y = 32 * (N.y - src.y) + N.pixel_y
+		var/new_x = 32 * (N.x - x) + N.pixel_x
+		var/new_y = 32 * (N.y - y) + N.pixel_y
 		narsimage.pixel_x = new_x
 		narsimage.pixel_y = new_y
 		narglow.pixel_x = new_x
 		narglow.pixel_y = new_y
-		narsimage.loc = src.loc
-		narglow.loc = src.loc
+		narsimage.loc = loc
+		narglow.loc = loc
 		//Display the new narsimage to the player
 		src << narsimage
 		src << narglow

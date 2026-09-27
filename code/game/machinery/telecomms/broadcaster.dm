@@ -699,9 +699,9 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 //Use this to test if an obj can communicate with a Telecommunications Network
 
-/atom/proc/test_telecomms()
-	var/datum/signal/signal = src.telecomms_process()
-	var/pos_z = get_z(src)
+/proc/test_telecomms(atom/source)
+	var/datum/signal/signal = source.telecomms_process()
+	var/pos_z = get_z(source)
 	return ((pos_z in signal.data["level"]) && signal.data["done"])
 
 /atom/proc/telecomms_process(do_sleep = 1)

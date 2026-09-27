@@ -26,7 +26,7 @@
 	var/list/formatted
 	var/runemessage
 	if(input)
-		formatted = format_emote(src, message)
+		formatted = format_emote(src, src, message)
 		if(!islist(formatted))
 			return
 		message = formatted["pretext"] + formatted["nametext"] + formatted["subtext"]
@@ -36,13 +36,13 @@
 	else
 		return
 
-	log_the_emote(m_type, message, input, range, runemessage)
+	log_the_emote(src, m_type, message, input, range, runemessage)
 
 /mob/proc/process_automatic_emote(m_type = VISIBLE_MESSAGE, message, input, range = world.view)
 	var/list/formatted
 	var/runemessage
 	if(input)
-		formatted = format_emote(src, message)
+		formatted = format_emote(src, src, message)
 		if(!islist(formatted))
 			return
 		message = formatted["pretext"] + formatted["nametext"] + formatted["subtext"]
@@ -54,15 +54,15 @@
 
 	build_the_emote(m_type, message, input, range, runemessage)
 
-/mob/proc/log_the_emote(m_type, message, input, range, runemessage)
-	log_message(message, LOG_EMOTE) //Log before we add junk
-	build_the_emote(m_type, message, input, range, runemessage)
+/proc/log_the_emote(mob/source, m_type, message, input, range, runemessage)
+	source.log_message(message, LOG_EMOTE) //Log before we add junk
+	source.build_the_emote(m_type, message, input, range, runemessage)
 
 /mob/proc/build_the_emote(m_type, message, input, range, runemessage)
 	if(client)
 		message = span_emote(span_bold("[src]") + " [input]")
-		if(src.absorbed && isbelly(src.loc))
-			var/obj/belly/B = src.loc
+		if(absorbed && isbelly(loc))
+			var/obj/belly/B = loc
 			if(B.absorbedrename_enabled)
 				var/formatted_name = B.absorbedrename_name
 				formatted_name = replacetext(formatted_name,"%pred", B.owner)
@@ -103,10 +103,10 @@
 			var/final_message = message
 			if(isobserver(M))
 				final_message = span_emote(span_bold("[src]") + " ([ghost_follow_link(src, M)]) [input]")
-			if(src.client && M && !(get_z(src) == get_z(M)))
+			if(client && M && !(get_z(src) == get_z(M)))
 				final_message = span_multizsay("[final_message]")
 			// If you are in the same tile, right next to, or being held by a person doing an emote, you should be able to see it while blind
-			if(m_type != AUDIBLE_MESSAGE && (src.Adjacent(M) || (istype(src.loc, /obj/item/holder) && src.loc.loc == M)))
+			if(m_type != AUDIBLE_MESSAGE && (Adjacent(M) || (istype(loc, /obj/item/holder) && loc.loc == M)))
 				M.show_message(final_message)
 			else
 				M.show_message(final_message, m_type)
@@ -115,7 +115,7 @@
 	for(var/obj/O as anything in o_viewers)
 		if(O)
 			var/final_message = message
-			if(src.client && O && !(get_z(src) == get_z(O)))
+			if(client && O && !(get_z(src) == get_z(O)))
 				final_message = span_multizsay("[final_message]")
 			O.see_emote(src, final_message, m_type)
 
