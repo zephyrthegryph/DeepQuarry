@@ -113,6 +113,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(overmind)
 		update_icon()
 
+// LIFECYCLE: leaves a core chunk; its overmind dies with it.
 /obj/structure/blob/core/Destroy()
 	var/turf/T = get_turf(src)
 	new /obj/item/blobcore_chunk(T, overmind?.blob_type)
@@ -173,7 +174,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(overmind)
 		qdel(overmind)
 
-
 	var/client/C = null
 	if(!new_overmind)
 		Q = new /datum/ghost_query/blob()
@@ -194,8 +194,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind_creation(C)
 	UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
 	QDEL_NULL(Q) //get rid of the query
-
-
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)
 	if(new_overmind)
