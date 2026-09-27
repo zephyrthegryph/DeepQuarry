@@ -890,7 +890,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 				if(O == selection)
 					affected = organ
 
-		affected.implants -= selection
+		LAZYREMOVE(affected.implants, selection)
 		H.shock_stage+=20
 		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
 

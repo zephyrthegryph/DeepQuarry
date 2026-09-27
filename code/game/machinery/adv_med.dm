@@ -269,10 +269,10 @@
 		if(unknown_body)
 			dat += "[capitalize(E.name)]: unknown body present."
 	for(var/obj/item/organ/internal/malignant/M in occupant.internal_organs)
-		var/obj/item/organ/external/parent = occupant.organs_by_name[M.parent_organ]
+		var/obj/item/organ/external/parent = LAZYACCESS(occupant.organs_by_name, M.parent_organ)
 		dat += span_red("Unknown anatomy detected[parent ? " in the [parent.name]" : ""]!")
 	for(var/organ_tag in occupant.species.has_organ)
-		if(!occupant.internal_organs_by_name[organ_tag])
+		if(!LAZYACCESS(occupant.internal_organs_by_name, organ_tag))
 			var/obj/item/organ/O = occupant.species.has_organ[organ_tag]
 			dat += span_red("[capitalize(initial(O.name))]: MISSING")
 	if(occupant.sdisabilities & BLIND)

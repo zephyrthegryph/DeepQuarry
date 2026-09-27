@@ -153,7 +153,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(!istype(parent))
 			return FALSE
 		forceMove(parent)
-		parent.implants += src
+		LAZYADD(parent.implants, src)
 		addtimer(CALLBACK(src, PROC_REF(quick_install), H), 1)
 		return TRUE
 

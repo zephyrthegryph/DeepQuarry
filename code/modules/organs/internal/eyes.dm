@@ -4,7 +4,8 @@
 	gender = PLURAL
 	organ_tag = O_EYES
 	parent_organ = BP_HEAD
-	var/list/eye_colour = list(0,0,0)
+	/// r, g, b; null until update_colour() (black).
+	var/list/eye_colour
 	var/innate_flash_protection = FLASH_PROTECTION_NONE
 
 /obj/item/organ/internal/eyes/robotize()
@@ -39,7 +40,7 @@
 	set category = "IC.Settings"
 	set src in usr
 
-	var/current_color = rgb(eye_colour[1],eye_colour[2],eye_colour[3])
+	var/current_color = eye_rgb()
 	var/new_color = tgui_color_picker(owner, "Pick a new color for your eyes.","Eye Color", current_color)
 	if(new_color && owner)
 		// input() supplies us with a hex color, which we can't use, so we convert it to rbg values.
@@ -62,6 +63,10 @@
 		target.b_eyes = eye_colour[3]
 		target.update_eyes()
 	..()
+
+/// The eye colour as a hex string.
+/obj/item/organ/internal/eyes/proc/eye_rgb()
+	return eye_colour ? rgb(eye_colour[1], eye_colour[2], eye_colour[3]) : rgb(0, 0, 0)
 
 /obj/item/organ/internal/eyes/proc/update_colour()
 	if(!owner)

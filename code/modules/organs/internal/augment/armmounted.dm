@@ -163,15 +163,8 @@
 
 	toolspeed = 0.8
 
-	var/list/integrated_tools = list(
-		/obj/item/tool/screwdriver = null,
-		/obj/item/tool/wrench = null,
-		/obj/item/tool/crowbar = null,
-		/obj/item/tool/wirecutters = null,
-		/obj/item/multitool = null,
-		/obj/item/stack/cable_coil/gray = null,
-		/obj/item/tape_roll = null
-		)
+	/// Tool path -> the tool this augment carries, built in Initialize() from tool_types().
+	var/list/integrated_tools
 
 	var/list/integrated_tools_by_name
 
@@ -179,12 +172,30 @@
 
 	var/list/synths
 
-	var/list/synth_types = list(
-		/datum/matter_synth/wire
+/// The tools this augment carries (constant per type).
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/tool_types()
+	var/static/list/types = list(
+		/obj/item/tool/screwdriver,
+		/obj/item/tool/wrench,
+		/obj/item/tool/crowbar,
+		/obj/item/tool/wirecutters,
+		/obj/item/multitool,
+		/obj/item/stack/cable_coil/gray,
+		/obj/item/tape_roll,
 		)
+	return types
+
+/// Matter synthesizers feeding the augment's stack tools (constant per type).
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/synth_types()
+	var/static/list/types = list(/datum/matter_synth/wire)
+	return types
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
 	. = ..()
+
+	integrated_tools = list()
+	for(var/path in tool_types())
+		integrated_tools[path] = null
 
 	if(integrated_object)
 		integrated_tools[integrated_object_type] = integrated_object
@@ -195,9 +206,10 @@
 
 		integrated_tool_images = list()
 
-		if(synth_types)
+		var/list/synth_paths = synth_types()
+		if(length(synth_paths))
 			synths = list()
-			for(var/datumpath in synth_types)
+			for(var/datumpath in synth_paths)
 				var/datum/matter_synth/MS = new datumpath
 				synths += MS
 
@@ -254,19 +266,21 @@
 	icon_state = "augment_medkit"
 	integrated_object_type = null
 
-	integrated_tools = list(
-		/obj/item/surgical/hemostat = null,
-		/obj/item/surgical/retractor = null,
-		/obj/item/surgical/cautery = null,
-		/obj/item/surgical/surgicaldrill = null,
-		/obj/item/surgical/scalpel = null,
-		/obj/item/surgical/circular_saw = null,
-		/obj/item/surgical/bonegel = null,
-		/obj/item/surgical/FixOVein = null,
-		/obj/item/surgical/bonesetter = null,
-		/obj/item/stack/medical/crude_pack = null
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical/tool_types()
+	var/static/list/types = list(
+		/obj/item/surgical/hemostat,
+		/obj/item/surgical/retractor,
+		/obj/item/surgical/cautery,
+		/obj/item/surgical/surgicaldrill,
+		/obj/item/surgical/scalpel,
+		/obj/item/surgical/circular_saw,
+		/obj/item/surgical/bonegel,
+		/obj/item/surgical/FixOVein,
+		/obj/item/surgical/bonesetter,
+		/obj/item/stack/medical/crude_pack,
 		)
+	return types
 
-	synth_types = list(
-		/datum/matter_synth/bandage
-		)
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical/synth_types()
+	var/static/list/types = list(/datum/matter_synth/bandage)
+	return types

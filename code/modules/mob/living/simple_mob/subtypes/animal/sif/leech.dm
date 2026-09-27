@@ -286,7 +286,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			host_bodypart = H.get_organ(infest_target)
-			host_bodypart.implants |= src
+			LAZYOR(host_bodypart.implants, src)
 
 		return
 	else
@@ -313,7 +313,7 @@
 		return
 
 	if(host_bodypart)
-		host_bodypart.implants -= src
+		LAZYREMOVE(host_bodypart.implants, src)
 		host_bodypart = null
 
 	forceMove(get_turf(host))

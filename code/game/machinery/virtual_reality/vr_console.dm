@@ -162,8 +162,8 @@
 	if(occupant)
 		// This will eject the user from VR
 		// ### Fry the brain? Yes. Maybe.
-		if(prob(15 / ( severity / 4 )) && occupant.species.has_organ[O_BRAIN] && occupant.internal_organs_by_name[O_BRAIN])
-			var/obj/item/organ/O = occupant.internal_organs_by_name[O_BRAIN]
+		if(prob(15 / ( severity / 4 )) && occupant.species.has_organ[O_BRAIN] && LAZYACCESS(occupant.internal_organs_by_name, O_BRAIN))
+			var/obj/item/organ/O = LAZYACCESS(occupant.internal_organs_by_name, O_BRAIN)
 			occupant.injure(INJURY_NEURAL, severity * 2, O, src)
 			visible_message(span_danger("\The [src]'s internal lighting flashes rapidly, before the hatch swings open with a cloud of smoke."))
 			smoke.set_up(severity, 0, src)

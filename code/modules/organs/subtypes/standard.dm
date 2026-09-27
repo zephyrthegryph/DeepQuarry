@@ -373,7 +373,7 @@
 				//And we have them
 				if(eyes)
 					if(has_eye_sprites)
-						eyes_icon.Blend(rgb(eyes.eye_colour[1], eyes.eye_colour[2], eyes.eye_colour[3]), ICON_ADD)
+						eyes_icon.Blend(eyes.eye_rgb(), ICON_ADD)
 				//They're gone!
 				else
 					eyes_icon.Blend(rgb(128,0,0), ICON_ADD)

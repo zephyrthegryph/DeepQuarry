@@ -45,7 +45,7 @@
 	var/list/h_col                     // hair colour
 	var/body_hair                      // Icon blend for body hair if any.
 	var/mob/living/applied_pressure
-	var/list/markings = list()         // Markings (body_markings) to apply to the icon
+	var/list/markings                  // Markings (body_markings) to apply to the icon
 	var/skip_robo_icon = FALSE 			//to force it to use the normal species icon
 	var/digi_prosthetic = FALSE 		//is it a prosthetic that can be digitigrade
 
@@ -53,10 +53,10 @@
 	var/wound_update_accuracy = 1      // how often wounds should be updated, a higher number means less often
 	// Wounds are /datum/affliction/wound located on this limb: see get_wounds() (body/parts/limb.dm).
 	var/obj/item/organ/external/parent // Master-limb.
-	var/list/children = list()         // Sub-limbs.
-	var/list/internal_organs = list()  // Internal organs of this body part
+	var/list/children                  // Sub-limbs.
+	var/list/internal_organs           // Internal organs of this body part
 	var/sabotaged = 0                  // If a prosthetic limb is emagged, it will detonate when it fails.
-	var/list/implants = list()         // Currently implanted objects.
+	var/list/implants                  // Currently implanted objects.
 	var/organ_rel_size = 25            // Relative size of the organ.
 	var/base_miss_chance = 20          // Chance of missing.
 	var/atom/movable/splinted
@@ -87,7 +87,7 @@
 /obj/item/organ/external/Destroy()
 
 	if(parent && parent.children)
-		parent.children -= src
+		LAZYREMOVE(parent.children, src)
 		parent = null
 
 	for(var/datum/affliction/wound/W as anything in get_wounds())
@@ -415,9 +415,7 @@
 	if(parent_organ)
 		parent = owner.organs_by_name[src.parent_organ]
 		if(parent)
-			if(!parent.children)
-				parent.children = list()
-			parent.children.Add(src)
+			LAZYADD(parent.children, src)
 			//Remove all stump wounds since limb is not missing anymore
 			for(var/datum/affliction/wound/lost_limb/W in parent.get_wounds())
 				parent.remove_wound(W)
@@ -738,7 +736,7 @@ This function completely restores a damaged organ to perfect condition.
 		if(istype(implanted_object,/obj/item/implant) || istype(implanted_object,/obj/item/nif)) // We don't want to remove REAL implants. Just shrapnel etc. // NIFs pls
 			continue
 		implanted_object.loc = get_turf(src)
-		implants -= implanted_object
+		LAZYREMOVE(implants, implanted_object)
 	if(!owner.has_embedded_objects())
 		owner.clear_alert("embeddedobject")
 
@@ -765,7 +763,7 @@ This function completely restores a damaged organ to perfect condition.
 	if(children && children.len)
 		for(var/obj/item/organ/external/E in children)
 			E.remove_rejuv()
-	children.Cut()
+	children = null
 	for(var/obj/item/organ/internal/I in internal_organs)
 		I.remove_rejuv()
 	..()
@@ -867,7 +865,7 @@ This function completely restores a damaged organ to perfect condition.
 			for(var/chemID in trace_chemicals)
 				trace_chemicals[chemID] = trace_chemicals[chemID] - 1
 				if(trace_chemicals[chemID] <= 0)
-					trace_chemicals.Remove(chemID)
+					LAZYREMOVE(trace_chemicals, chemID)
 
 		//Infections
 		update_germs()
@@ -1436,7 +1434,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(istype(thing))
 					if(thing.vital)
 						continue
-					internal_organs -= thing
+					LAZYREMOVE(internal_organs, thing)
 					owner.internal_organs_by_name[thing.organ_tag] = null
 					owner.internal_organs_by_name -= thing.organ_tag
 					owner.internal_organs.Remove(thing)
@@ -1488,7 +1486,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		return 0	// Cancelled by a component
 	if(!silent)
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
-	implants += W
+	LAZYADD(implants, W)
 	owner.embedded_flag = 1
 	add_verb(owner, /mob/proc/yank_out_object)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
@@ -1518,7 +1516,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			implant.loc = get_turf(victim.loc)
 		else
 			implant.loc = src
-	implants.Cut()
+	implants = null
 
 	// Attached organs also fly off.
 	if(!ignore_children)
@@ -1535,7 +1533,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 		organ.loc = src
 
 	// Remove parent references
-	parent?.children -= src
+	if(parent)
+		LAZYREMOVE(parent.children, src)
 	parent = null
 
 	release_restraints(victim)
@@ -1581,7 +1580,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/trauma = get_trauma()
 	if(trauma + force < min_broken_damage/5)	//no papercuts moving bones
 		return
-	if(internal_organs.len && prob(trauma + force) && !owner.transforming)
+	if(LAZYLEN(internal_organs) && prob(trauma + force) && !owner.transforming)
 		owner.custom_pain("A piece of bone in your [encased ? encased : name] moves painfully!", 50)
 		var/obj/item/organ/internal/I = pick(internal_organs)
 		if(istype(I))
@@ -1699,7 +1698,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/is_hidden_by_sprite_accessory(clothing_only = FALSE)			// Clothing only will mean the check should only be used in places where we want to hide clothing icon, not organ itself.
 	if(owner && owner.tail_style && owner.tail_style.hide_body_parts && (organ_tag in owner.tail_style.hide_body_parts))
 		return 1
-	if(clothing_only && markings.len)
+	if(clothing_only && LAZYLEN(markings))
 		for(var/M in markings)
 			if(!markings[M]["on"]) //If the marking is off, the organ isn't hidden by it.
 				continue
