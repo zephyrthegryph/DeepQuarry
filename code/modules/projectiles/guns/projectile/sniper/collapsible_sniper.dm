@@ -22,7 +22,7 @@
 /obj/item/gun/projectile/heavysniper/proc/barrel_removed(mob/user)
 	if(user.unEquip(src, force=1))
 		to_chat(user, span_warning("You remove \the [src]'s barrel."))
-		qdel(src)
+		consume(src, user)
 		var/obj/item/barrel = new /obj/item/sniper_rifle_part/barrel(user)
 		var/obj/item/sniper_rifle_part/assembly = new /obj/item/sniper_rifle_part/trigger_group(user)
 		var/obj/item/sniper_rifle_part/stock/stock = new(assembly)
@@ -172,7 +172,7 @@
 				var/mob/living/carbon/human/H = user
 				H.unEquip(src, force=1)
 				H.put_in_any_hand_if_possible(gun) || gun.dropInto(loc)
-			qdel(src)
+			consume(src, user)
 
 /obj/item/gun/projectile/heavysniper/update_icon()
 	if(bolt_open)

@@ -738,7 +738,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/flamp/proc/interaction_add_shade(mob/user, obj/item/lampshade/W, datum/interaction/interaction)
 	lamp_shade = 1
-	qdel(W)
+	consume(W, user)
 	update_icon()
 	return TRUE
 
@@ -747,8 +747,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return NONE
 	playsound(src, tool.usesound, 75, TRUE)
 	user.visible_message("[user.name] opens [src]'s casing.", "You open [src]'s casing.", "You hear a noise.")
-	new construct_type(loc, src)
-	qdel(src)
+	replace_with(src, construct_type, src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light/multitool_act(mob/user, obj/item/tool)

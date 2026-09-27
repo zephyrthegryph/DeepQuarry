@@ -250,8 +250,7 @@
 	if(buildstate == 5)
 		to_chat(user, span_notice("You secure the crossbow's various parts."))
 		playsound(src, tool.usesound, 50, 1)
-		new /obj/item/gun/launcher/crossbow(get_turf(src))
-		qdel(src)
+		replace_with(src, /obj/item/gun/launcher/crossbow)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/crossbowframe/welder_act(mob/user, obj/item/tool)

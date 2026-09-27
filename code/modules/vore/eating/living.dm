@@ -916,7 +916,7 @@
 		span_notice("You hear the gnashing of jaws with some ominous grinding and crunching noises, then... Swallowing?"))
 
 	adjust_nutrition(nom["nutrition"])
-	qdel(I)
+	consume(I, feeder)
 
 	var/mob/living/carbon/human/H = src
 	if(nom["WTF"] && istype(H)) //Bites back.

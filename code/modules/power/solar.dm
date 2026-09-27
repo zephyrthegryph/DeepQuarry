@@ -255,7 +255,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 		if(istype(W, /obj/item/tracker_electronics))
 			tracker = 1
 			user.drop_item()
-			qdel(W)
+			consume(W, user)
 			user.visible_message(span_notice("[user] inserts the electronics into the solar assembly."))
 			return 1
 	..()

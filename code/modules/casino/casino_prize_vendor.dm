@@ -286,8 +286,7 @@
 		cashmoney.worth -= price
 
 		if(cashmoney.worth <= 0)
-			user.drop_from_inventory(cashmoney)
-			qdel(cashmoney)
+			consume(cashmoney, user)
 		else
 			cashmoney.update_icon()
 	return 1

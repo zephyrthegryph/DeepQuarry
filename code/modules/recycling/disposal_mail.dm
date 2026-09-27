@@ -150,7 +150,7 @@
 		else
 			wrapped.loc = get_turf(src)
 
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/item/smallDelivery/attackby(obj/item/W as obj, mob/user as mob)

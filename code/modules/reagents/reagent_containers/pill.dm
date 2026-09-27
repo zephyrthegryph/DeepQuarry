@@ -42,7 +42,7 @@
 			M.drop_from_inventory(src) //icon update
 			if(reagents.total_volume)
 				reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
-			qdel(src)
+			consume(src, user)
 			return ITEM_INTERACT_SUCCESS
 
 	else if(ishuman(M))
@@ -73,7 +73,7 @@
 
 	if(reagents && reagents.total_volume)
 		reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/reagent_containers/pill/afterattack(obj/target, mob/user, proximity)
 	if(!proximity) return
@@ -90,7 +90,7 @@
 		/* for(var/mob/O in viewers(2, user)) // balloon_alert_visible handles this
 			O.show_message(span_warning("[user] puts something in \the [target]."), 1)
 		*/
-		qdel(src)
+		consume(src, user)
 
 	return
 
@@ -103,7 +103,7 @@
 		if(reagents)
 			reagents.trans_to_obj(J, reagents.total_volume)
 		J.get_appearance()
-		qdel(src)
+		consume(src, user)
 
 	if(istype(W, /obj/item/card/id))
 		var/obj/item/reagent_containers/powder/J = new /obj/item/reagent_containers/powder(src.loc)
@@ -113,7 +113,7 @@
 		if(reagents)
 			reagents.trans_to_obj(J, reagents.total_volume)
 		J.get_appearance()
-		qdel(src)
+		consume(src, user)
 
 	return ..()
 

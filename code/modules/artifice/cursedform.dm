@@ -36,8 +36,7 @@
 		user.drop_from_inventory(src)
 
 	cursed_sear(user)
-	new /obj/effect/decal/cleanable/ash(src.loc)
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /obj/item/paper/carbon/cursedform/proc/cursed_sear(mob/user)
 	if(isliving(user))

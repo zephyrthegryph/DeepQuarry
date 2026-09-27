@@ -138,7 +138,7 @@
 	qdel(O)
 	parts -= cost
 	if(!parts && delete_on_empty)
-		qdel(src)
+		consume(src, user)
 // S END
 
 //DEBUG ITEM
@@ -406,7 +406,7 @@
 		O.icon_state = new_icon // Changes the icon without changing the access.
 		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
 		user.visible_message(span_warning(" [user] reprints their ID."))
-		qdel(src)
+		consume(src, user)
 	else if(O.icon_state == new_icon)
 		to_chat(user, span_notice("[O] already has been reprinted."))
 		return
@@ -686,7 +686,7 @@
 		O.desc = new_desc
 		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
 		user.visible_message(span_warning(" [user] reprints their ID."))
-		qdel(src)
+		consume(src, user)
 	else if(O.icon_state == new_icon)
 		to_chat(user, span_notice("[O] already has been reprinted."))
 		return

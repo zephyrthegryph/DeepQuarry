@@ -22,8 +22,7 @@
 	s.set_up(5, 1, get_turf(src))
 	s.start()
 	blink_mob(user)
-	user.unEquip(src)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/bluespace_crystal/proc/blink_mob(mob/living/L)
 	do_teleport(L, get_turf(L), blink_range, asoundin = 'sound/effects/phasein.ogg')

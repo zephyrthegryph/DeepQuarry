@@ -1217,7 +1217,7 @@
 		var/mob/living/L = target
 		L.nutrition += stored_nutrition
 		stored_nutrition = 0
-		qdel(src)
+		consume(src, user)
 		return
 	.=..()
 

@@ -354,8 +354,7 @@
 	if(!src)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You deconstruct the frame."))
-	new /obj/item/stack/material/steel(src.loc, 2)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)

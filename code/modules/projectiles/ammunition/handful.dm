@@ -88,4 +88,4 @@
 	make_rounds_real()
 	..()
 	if(!QDELETED(src) && !stored_ammo.len && loc == user)
-		qdel(src)
+		consume(src, user)

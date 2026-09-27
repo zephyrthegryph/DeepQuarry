@@ -52,7 +52,7 @@
 	var/atom/movable/internal_paper_tmp = internalPaper
 	internal_paper_tmp.forceMove(loc)
 	internalPaper = null
-	qdel(src)
+	consume(src, user)
 	user.put_in_hands(internal_paper_tmp)
 
 /obj/item/paperplane/attackby(obj/item/P, mob/living/carbon/human/user, params)

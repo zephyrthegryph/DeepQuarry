@@ -72,8 +72,7 @@
 /obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(mob/user)
 	drop_held_container()
 	to_chat(user, span_notice("You disassemble \the [src]."))
-	new /obj/item/stack/material/steel(get_turf(src), 1)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 1)
 	return ITEM_INTERACT_SUCCESS
 
 /datum/interaction/machine_hand/bunsen_burner_remove_container

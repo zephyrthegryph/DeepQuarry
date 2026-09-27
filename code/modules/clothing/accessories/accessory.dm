@@ -1019,18 +1019,16 @@
 		return
 	to_chat(user, span_notice("You wire the signaler into the [src]."))
 	user.drop_item()
-	qdel(component)
+	consume(component, user)
 	var/turf/T = get_turf(src)
 	new /obj/item/clothing/accessory/collar/shock/bluespace/modified(T)
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/item/clothing/accessory/collar/shock/bluespace/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src]."))
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 // modified bluespace collar where the size is controlled by the signaller.
@@ -1054,8 +1052,7 @@
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src], the attached signaler disconnects."))
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
-	user.drop_from_inventory(src)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)

@@ -590,14 +590,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		has_electronics = APC_HAS_ELECTRONICS_WIRED
 		reboot()
 		to_chat(user, span_notice("You place the power control board inside the frame."))
-		qdel(W)
+		consume(W, user)
 
 /obj/machinery/power/apc/proc/replace_cover_done(mob/user, obj/item/W)
 	if(!(stat & BROKEN) || cell)
 		return
 	user.visible_message(span_notice("[user.name] has replaced the damaged APC cover with a new one."),\
 		"You replace the damaged APC cover with a new one.")
-	qdel(W)
+	consume(W, user)
 	atom_fix()
 	reboot()
 	if(opened == 2)

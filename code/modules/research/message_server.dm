@@ -197,7 +197,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 /obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
 	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
 	user.drop_item()
-	qdel(O)
+	consume(O, user)
 	to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
 	return TRUE
 

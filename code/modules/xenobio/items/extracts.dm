@@ -29,13 +29,13 @@
 		uses += 2
 		enhanced = TRUE
 		name = initial(name) // To remove the 'inert' part of the name.
-		qdel(O)
+		consume(O, user)
 	else if(istype(O, /obj/item/slimepotion/reinvigoration))
 		to_chat(user, span_notice("You apply the reinvigorator to the slime extract. It rapidly expands, creating a brand new slime!"))
 		playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
 		new slime_type(get_turf(src))
-		qdel(O)
-		qdel(src)
+		consume(O, user)
+		consume(src, user)
 	..()
 
 /obj/item/slime_extract/examine(mob/user)

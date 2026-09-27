@@ -439,7 +439,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 			if(ishuman(SC.loc))
 				var/mob/living/carbon/human/H = SC.loc
 				H.drop_from_inventory(SC)
-			qdel(SC)
+			consume(SC, user)
 		// Save log
 		// Department cash is deposited immediately so the invoice and account
 		// books agree and any same-period refund has authoritative funding.

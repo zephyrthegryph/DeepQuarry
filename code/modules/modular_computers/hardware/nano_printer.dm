@@ -59,7 +59,7 @@
 			return
 
 		to_chat(user, "You insert \the [W] into [src].")
-		qdel(W)
+		consume(W, user)
 		stored_paper++
 	else if(istype(W, /obj/item/paper_bundle))
 		var/obj/item/paper_bundle/B = W
@@ -77,7 +77,7 @@
 				to_chat(user, "The printer has been filled to full capacity.")
 				break
 		if(B.pages.len == 0) //if all its papers have been put into the printer, delete bundle
-			qdel(W)
+			consume(W, user)
 		else if(B.pages.len == 1) //if only one item left, extract item and delete the one-item bundle
 			user.drop_from_inventory(B)
 			user.put_in_hands(B.pages[1])

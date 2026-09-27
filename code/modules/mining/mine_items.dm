@@ -362,8 +362,7 @@
 
 /obj/structure/trailblazer/proc/knock_down_done(mob/user)
 	visible_message("\The [user] knocks down \the [src].")
-	new stack_type(get_turf(src), 1)
-	qdel(src)
+	replace_with(src, stack_type, 1)
 
 /obj/structure/trailblazer/attack_hand(mob/user)
 	if(!istext(om_do_after(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))

@@ -185,7 +185,7 @@
 		flick("photocopier_toner", src)
 		playsound(loc, 'sound/machines/click.ogg', 50, 1)
 		toner += O.toner_amount
-		qdel(O)
+		consume(O, user)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)

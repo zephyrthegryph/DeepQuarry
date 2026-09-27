@@ -85,7 +85,7 @@
 	A.forceMove(holder_obj)
 	holder_obj.fulton_expand(A, landing)
 	if(uses_left <= 0)
-		qdel(src)
+		consume(src, user)
 
 /obj/effect/extraction_holder/proc/fulton_balloon(state)
 	var/mutable_appearance/balloon = mutable_appearance('icons/obj/fulton_balloon.dmi', state)

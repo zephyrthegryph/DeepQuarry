@@ -562,7 +562,7 @@
 	if(count && user)
 		user.visible_message("[user] feeds [count] round\s into [src].", span_notice("You load [count] round\s into [src]."))
 	if(H && !QDELETED(H) && !H.stored_ammo.len)
-		qdel(H)
+		consume(H, user)
 	update_icon()
 
 // Attempts to load A into src, depending on the type of thing being loaded and the load_method.

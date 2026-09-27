@@ -83,7 +83,7 @@
 		to_chat(user, span_notice("You insert the circuit into \the [src]."))
 		user.unEquip(O)
 		metal = min(metal + O.w_class, max_metal)
-		qdel(O)
+		consume(O, user)
 		attack_self(user)
 		return TRUE
 

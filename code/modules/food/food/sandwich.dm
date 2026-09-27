@@ -3,7 +3,7 @@
 	if(istype(W,/obj/item/material/shard) || istype(W,/obj/item/reagent_containers/food/snacks))
 		var/obj/item/reagent_containers/food/snacks/csandwich/S = new(get_turf(src))
 		S.attackby(W,user)
-		qdel(src)
+		consume(src, user)
 	..()
 
 /obj/item/reagent_containers/food/snacks/csandwich

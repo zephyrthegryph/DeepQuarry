@@ -720,23 +720,19 @@
 	if(destructive)
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_HEAD)
-			H.drop_from_inventory(garbage)
-			qdel(garbage)
+			consume(garbage, H)
 
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
 			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_GLOVES)
-			H.drop_from_inventory(garbage)
-			qdel(garbage)
+			consume(garbage, H)
 
 		if(H.get_equipped_item(SLOT_ID_SHOES))
 			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_SHOES)
-			H.drop_from_inventory(garbage)
-			qdel(garbage)
+			consume(garbage, H)
 
 		if(H.get_equipped_item(SLOT_ID_SUIT))
 			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_SUIT)
-			H.drop_from_inventory(garbage)
-			qdel(garbage)
+			consume(garbage, H)
 
 	for(var/piece in list("helmet","gauntlets","chest","boots"))
 		toggle_piece(piece, H, ONLY_DEPLOY)

@@ -68,8 +68,7 @@
 
 		living_mob.forceMove(src)
 		holder.held_mob = null
-		user.drop_from_inventory(holder)
-		qdel(holder)
+		consume(holder, user)
 
 		food_inserted_micros += living_mob
 

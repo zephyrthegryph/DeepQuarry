@@ -69,8 +69,7 @@
 
 /obj/random/fromList/spawn_item()
 	var/type = pickweight(to_spawn)
-	new type(get_turf(src))
-	qdel(src)
+	replace_with(src, type)
 
 /obj/item/clothing/suit/recycling_shirt
 	name = "recycling shirt"

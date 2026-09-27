@@ -262,8 +262,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		return TRUE
 	if(RC.can_refill(src))
 		to_chat(user, span_notice("You refill [src] using [RC]."))
-		user.drop_from_inventory(RC)
-		qdel(RC)
+		consume(RC, user)
 		refill_inventory()
 		return TRUE
 	else
@@ -359,8 +358,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		cashmoney.worth -= currently_vending.price
 
 		if(cashmoney.worth <= 0)
-			user.drop_from_inventory(cashmoney)
-			qdel(cashmoney)
+			consume(cashmoney, user)
 		else
 			cashmoney.update_icon()
 

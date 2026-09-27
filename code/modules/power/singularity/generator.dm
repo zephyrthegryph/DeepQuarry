@@ -51,7 +51,7 @@
 /obj/machinery/the_singularitygen/proc/install_done(mob/user, obj/item/W)
 	user.drop_from_inventory(W)
 	visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [W] onto \the [src]."))
-	qdel(W)
+	consume(W, user)
 	var/turf/T = get_turf(src)
 	var/new_machine = /obj/machinery/particle_smasher
 	new new_machine(T)

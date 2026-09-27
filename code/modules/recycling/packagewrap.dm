@@ -99,8 +99,7 @@
 		to_chat(user, span_blue("The object you are trying to wrap is unsuitable for the sorting machinery!"))
 
 	if (src.amount <= 0 && !isrobot(loc))
-		new /obj/item/c_tube(get_turf(src))
-		qdel(src)
+		replace_with(src, /obj/item/c_tube)
 
 /obj/item/packageWrap/examine(mob/user)
 	. = ..()

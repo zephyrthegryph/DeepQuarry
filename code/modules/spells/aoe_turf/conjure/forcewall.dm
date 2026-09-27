@@ -48,6 +48,5 @@
 	invisibility = INVISIBILITY_ABSTRACT
 
 /obj/effect/forcefield/cultify()
-	new /obj/effect/forcefield/cult(get_turf(src))
-	qdel(src)
+	replace_with(src, /obj/effect/forcefield/cult)
 	return

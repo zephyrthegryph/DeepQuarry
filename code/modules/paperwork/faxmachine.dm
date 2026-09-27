@@ -343,7 +343,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		playsound(loc, 'sound/machines/click.ogg', 50, 1)
 		var/obj/item/toner/T = held
 		toner += T.toner_amount
-		qdel(held)
+		consume(held, user)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)

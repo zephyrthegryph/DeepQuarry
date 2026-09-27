@@ -220,8 +220,7 @@
 	//ensures players always have a few seconds of burn time left when they light their rag
 	if(burn_time <= 5)
 		visible_message(span_warning("\The [src] falls apart!"))
-		new /obj/effect/decal/cleanable/ash(get_turf(src))
-		qdel(src)
+		replace_with(src, /obj/effect/decal/cleanable/ash)
 	update_name()
 	update_icon()
 

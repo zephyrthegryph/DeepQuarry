@@ -390,7 +390,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	template.annihilate_plants(deploy_location)
 	template.load(deploy_location, centered = TRUE)
 	template.update_lighting(deploy_location)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/survivalcapsule/Destroy()
 	template = null // without this, capsules would be one use. per round.
@@ -813,8 +813,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gps/computer/proc/disassemble_done()
-	new /obj/item/gps(loc)
-	qdel(src)
+	replace_with(src, /obj/item/gps)
 
 /obj/item/gps/computer/attack_hand(mob/user)
 	attack_self(user)
@@ -878,8 +877,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 // end
 
 /obj/structure/fans/atom_deconstruct()
-	new buildstacktype(loc,buildstackamount)
-	qdel(src)
+	replace_with(src, buildstacktype, buildstackamount)
 
 /obj/structure/fans/wrench_act(mob/user, obj/item/tool)
 	user.visible_message(span_warning("[user] disassembles [src]."),

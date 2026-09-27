@@ -66,7 +66,7 @@
 		S.dna.real_name = newname
 	if(S.mind)
 		S.mind.name = S.name
-	qdel(src)
+	consume(src, candidate)
 
 
 // More or less functionally identical to the telecrystal tele.
@@ -83,7 +83,7 @@
 /obj/item/slime_crystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	target.visible_message(span_warning("\The [target] has been teleported with \the [src] by \the [user]!"))
 	safe_blink(target, 14)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/slime_crystal/attack_self(mob/user)
 	. = ..(user)
@@ -91,7 +91,7 @@
 		return TRUE
 	user.visible_message(span_warning("\The [user] teleports themselves with \the [src]!"))
 	safe_blink(user, 14)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/slime_crystal/throw_impact(atom/movable/AM)
 	if(!istype(AM))

@@ -147,7 +147,7 @@ log transactions
 
 	to_chat(user, span_info("You insert [held] into [src]."))
 	src.attack_hand(user)
-	qdel(held)
+	consume(held, user)
 	return TRUE
 
 /obj/machinery/atm/screwdriver_act(mob/user, obj/item/tool)
