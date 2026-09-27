@@ -250,10 +250,6 @@
 
 	var/obj/machinery/machine
 
-/obj/item/pai_cable/Destroy()
-		machine = null
-		return ..()
-
 ///////////////////////////////////////Stock Parts /////////////////////////////////
 
 /obj/item/stock_parts
