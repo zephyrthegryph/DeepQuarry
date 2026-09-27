@@ -346,10 +346,8 @@
 
 				// Step the chained mob towards where we were, then clear the
 				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
-				// grab_chain_step wraps the built-in Move() so it can be deferred via
-				// INVOKE_ASYNC (Move itself has no /proc/ decl to reference, and INVOKE_ASYNC
-				// snapshots M so the loop variable can't be clobbered before it runs).
-				INVOKE_ASYNC(M, TYPE_PROC_REF(/mob, grab_chain_step), pre_move_loc, get_dir(M, pre_move_loc), total_delay)
+				// grab_chain_step wraps the built-in Move() (no sleep; called directly).
+				M.grab_chain_step(pre_move_loc, get_dir(M, pre_move_loc), total_delay)
 				addtimer(CALLBACK(M, TYPE_PROC_REF(/mob, clear_other_mobs)), 1 DECISECONDS, TIMER_STOPPABLE)
 				addtimer(CALLBACK(my_mob, TYPE_PROC_REF(/mob, clear_other_mobs)), 1 DECISECONDS, TIMER_STOPPABLE)
 
@@ -369,7 +367,7 @@
 	return Move(n, direct, movetime)
 
 /// Forces this mob to step toward `target` as part of a grab chain. Wraps the
-/// built-in Move() so the step can be deferred via INVOKE_ASYNC; calling Move()
+/// built-in Move() so it can be referenced as a proc; calling Move()
 /// on src still virtual-dispatches to this mob's Move override, exactly like the
 /// old direct `M.Move(...)` call did.
 /mob/proc/grab_chain_step(turf/target, dir, delay)

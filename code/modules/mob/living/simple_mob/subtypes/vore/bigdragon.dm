@@ -678,7 +678,7 @@ I think I covered everything.
 		if(!self.enraged)
 			if(self.vitality() <= 0.5)
 				self.enraged = 1
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), "No more games. COME HERE.")
+				self.say("No more games. COME HERE.")
 		if(self.enraged)
 			if(self.vitality() >= 0.5)
 				self.enraged = 0

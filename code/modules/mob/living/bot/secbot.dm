@@ -52,8 +52,8 @@
 					pull_allowed = TRUE
 			if(!pull_allowed)
 				var/mob/living/L = puller
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, UnarmedAttack), L)
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), "Do not interfere with active law enforcement routines!")
+				self.UnarmedAttack(L)
+				self.say("Do not interfere with active law enforcement routines!")
 				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"
@@ -199,7 +199,7 @@
 		attacker = injury_source.loc // a held weapon
 	if(!attacker || attacker == src || on != TRUE)
 		return
-	INVOKE_ASYNC(src, PROC_REF(react_to_attack), attacker)
+	react_to_attack(attacker)
 
 /mob/living/bot/secbot/attack_generic(mob/attacker)
 	if(attacker)

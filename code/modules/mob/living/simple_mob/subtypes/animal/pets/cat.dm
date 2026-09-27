@@ -76,7 +76,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				self.visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
 
 // Instakills mice.
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
@@ -354,17 +354,17 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 			if (self.friend.stat >= DEAD || self.friend.is_critical())
 				if (prob((self.friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
-					INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, audible_emote), pick("[verb] in distress.", "[verb] anxiously."))
+					self.audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
 			else
 				if (prob(5))
-					INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("nuzzles [self.friend].",
+					self.visible_emote(pick("nuzzles [self.friend].",
 									"brushes against [self.friend].",
 									"rubs against [self.friend].",
 									"purrs."))
 		else if (self.friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, audible_emote), "[verb] anxiously.")
+				self.audible_emote("[verb] anxiously.")
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth/death(gibbed, deathmessage = "teleports away!")

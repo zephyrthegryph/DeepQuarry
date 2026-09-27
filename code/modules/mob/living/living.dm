@@ -1037,7 +1037,7 @@
 	SIGNAL_HANDLER
 	var/mob/owner = user
 	if(owner.client?.prefs)
-		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner)
+		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner) // S10b keeps: ShowChoices opens tgui (asset/window setup)
 
 /**
  * Screen object for vore panel
