@@ -25,10 +25,6 @@
 	for(var/field in signal.diversity_targets)
 		diversity_values[field] = event.value(field)
 
-/datum/contract_opportunity_observation/Destroy()
-	diversity_values = null
-	return ..()
-
 /// One independently required lane in a broker rule. A rule may combine
 /// unrelated systems (for example, production plus real crew sales) without a
 /// bespoke callback or polling loop.
@@ -57,10 +53,7 @@
 	filter = new
 	diversity_targets = list()
 
-/datum/contract_opportunity_signal/Destroy()
-	QDEL_NULL(filter)
-	diversity_targets = null
-	return ..()
+REF_OWNED(/datum/contract_opportunity_signal, "filter")
 
 /datum/contract_opportunity_signal/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -240,10 +233,7 @@
 	context_fields = list()
 	configure()
 
-/datum/contract_opportunity_rule/Destroy()
-	QDEL_LIST(signals)
-	context_fields = null
-	return ..()
+REF_OWNED_LIST(/datum/contract_opportunity_rule, "signals")
 
 /datum/contract_opportunity_rule/proc/configure()
 	return
@@ -335,10 +325,6 @@
 	event_id = event.id
 	offer_key = "opportunity:[rule.id]:[window.bucket]"
 	snapshots = deepCopyList(_snapshots)
-
-/datum/contract_opportunity_history_entry/Destroy()
-	snapshots = null
-	return ..()
 
 /datum/controller/subsystem/contracts/proc/initialize_opportunity_broker()
 	opportunity_rules = list()

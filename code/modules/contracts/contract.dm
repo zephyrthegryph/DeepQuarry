@@ -39,10 +39,6 @@
 	description = _description
 	effects = list()
 
-/datum/contract_clause_option/Destroy()
-	effects = null
-	return ..()
-
 /proc/make_contract_clause_option(id, title, description, station_money = 0, department_money = 0, staff_money = 0, station_rep = 0, department_rep = 0, staff_rep = 0, deadline_change = 0, list/effects) as /datum/contract_clause_option
 	var/datum/contract_clause_option/option = new(id, title, description)
 	option.station_reward_delta = station_money

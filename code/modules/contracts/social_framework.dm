@@ -22,10 +22,6 @@
 	maximum_approved = max(0, _maximum_approved)
 	minimum_contribution = max(0, _minimum_contribution)
 
-/datum/contract_stakeholder_role/Destroy()
-	eligible_departments = null
-	return ..()
-
 /datum/contract_stakeholder_role/proc/account_is_eligible(datum/money_account/account)
 	return account && (!length(eligible_departments) || (account.department_id in eligible_departments))
 

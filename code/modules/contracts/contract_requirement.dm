@@ -32,14 +32,6 @@
 	required_tags = list()
 	numeric_checks = list()
 
-/datum/contract_event_filter/Destroy()
-	exact_values = null
-	allowed_values = null
-	forbidden_values = null
-	required_tags = null
-	numeric_checks = null
-	return ..()
-
 /datum/contract_event_filter/proc/require_value(key, expected)
 	if(!istext(key) || !length(key))
 		return FALSE
@@ -131,11 +123,6 @@
 	required = _required
 	event_types = list()
 
-/datum/contract_requirement/Destroy()
-	contract = null
-	event_types = null
-	return ..()
-
 /datum/contract_requirement/proc/on_contract_activated()
 	return
 
@@ -220,15 +207,7 @@
 	second_fact_times = list()
 	event_types = list(first_event_type, second_event_type)
 
-/datum/contract_requirement/paired_facts/Destroy()
-	QDEL_NULL(first_filter)
-	QDEL_NULL(second_filter)
-	first_facts = null
-	second_facts = null
-	credited_facts = null
-	first_fact_times = null
-	second_fact_times = null
-	return ..()
+REF_OWNED(/datum/contract_requirement/paired_facts, list("first_filter", "second_filter"))
 
 /datum/contract_requirement/paired_facts/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING)
@@ -291,10 +270,7 @@
 	if(event_type)
 		event_types += event_type
 
-/datum/contract_requirement/event_count/Destroy()
-	QDEL_NULL(filter)
-	accepted_unique_values = null
-	return ..()
+REF_OWNED(/datum/contract_requirement/event_count, "filter")
 
 /datum/contract_requirement/event_count/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -608,10 +584,7 @@
 	if(event_type)
 		event_types += event_type
 
-/datum/contract_requirement/snapshot_total/Destroy()
-	QDEL_NULL(filter)
-	entity_values = null
-	return ..()
+REF_OWNED(/datum/contract_requirement/snapshot_total, "filter")
 
 /datum/contract_requirement/snapshot_total/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -676,11 +649,7 @@
 	if(event_type)
 		event_types += event_type
 
-/datum/contract_requirement/fact_portfolio/Destroy()
-	QDEL_NULL(filter)
-	facts = null
-	fact_revisions = null
-	return ..()
+REF_OWNED(/datum/contract_requirement/fact_portfolio, "filter")
 
 /datum/contract_requirement/fact_portfolio/proc/require_value(key, expected)
 	return filter.require_value(key, expected)

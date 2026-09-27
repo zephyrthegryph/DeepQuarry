@@ -55,10 +55,6 @@
 	created_at = world.time
 	payload = _payload ? deepCopyList(_payload) : list()
 
-/datum/contract_evidence/Destroy()
-	payload = null
-	return ..()
-
 /datum/controller/subsystem/contracts/proc/subject_identity(mob/living/subject) as /datum/contract_subject_identity
 	if(!subject)
 		return null

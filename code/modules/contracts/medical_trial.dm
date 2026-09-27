@@ -437,13 +437,6 @@
 	var/mob/living/carbon/human/subject = SScontracts.resolve_subject(subject_id)
 	return istype(subject) ? subject : null
 
-/datum/medical_trial_participant/Destroy()
-	subject_id = null
-	consent_record = null
-	baseline_metrics = null
-	final_metrics = null
-	return ..()
-
 /proc/medical_trial_target_choices()
 	return list("trauma", "infection", "respiratory", "neurological", "organ failure")
 
