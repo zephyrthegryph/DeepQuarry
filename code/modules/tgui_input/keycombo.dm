@@ -23,7 +23,7 @@
 
 	// Client does NOT have tgui_input on: Returns regular input
 	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text
+		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 		if(!input_key)
 			return
 		return input_key[1]

@@ -215,7 +215,10 @@
 	if(E.len == 1)
 		B = pick(E)
 	else
-		B = tgui_input_list(src, "What would you like to examine?", "Examine", E)
+		var/_answer_k218 = rerun_prompt(src, "k218", list("kind" = "list", "message" = "What would you like to examine?", "title" = "Examine", "choices" = E), VERB_REF(mob_examine), args)
+		if(isnull(_answer_k218))
+			return
+		B = _answer_k218
 	if(!B)
 		return
 	if(!isbelly(loc) && !istype(loc, /obj/item/holder) && !isAI(src))

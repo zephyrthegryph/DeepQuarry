@@ -16,7 +16,7 @@
 // — a path or string identifier that get_valid_bitflags resolves to
 // a {name → bit} list. We forward it unchanged.
 /proc/input_bitfield(mob/user, title, bitfield, current_value, width, height, slide_color, allowed_edit_field = ALL)
-	return tgui_input_bitfield(user, title, bitfield, current_value, allowed_edit_field)
+	return tgui_input_bitfield(user, title, bitfield, current_value, allowed_edit_field) // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 
 
 /proc/tgui_input_bitfield(mob/user, title, bitfield_path, current_value, allowed_edit_field = ALL, timeout = 0)

@@ -305,7 +305,9 @@
 		if(2)
 			if(istype(W,/obj/item/surgical/hemostat))
 				if(LAZYLEN(contents))
-					var/obj/item/removing = tgui_input_list(user, "What would you like to remove?", "Extraction", contents, timeout = 20 SECONDS)
+					var/obj/item/removing = rerun_prompt(user, "k308", list("kind" = "list", "message" = "What would you like to remove?", "title" = "Extraction", "choices" = contents, "timeout" = 20 SECONDS), TYPE_PROC_REF(/atom, attackby), args)
+					if(isnull(removing))
+						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
 						user.visible_message(span_danger(span_bold("[user]") + " decides against removing anything from [src]"))
 						return

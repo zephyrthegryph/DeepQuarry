@@ -45,7 +45,9 @@ Controlled by the player_tips subsystem under code/controllers/subsystems/player
 	set desc = "Sends you advice from a list of possibilities. You can choose to request a specific topic."
 	set category = "OOC.Game Settings"
 
-	var/choice = tgui_input_list(src, "What topic would you like to receive advice on?", "Select Topic", list("none","general","gameplay","roleplay","lore","cancel"))
+	var/choice = rerun_prompt(src, "k48", list("kind" = "list", "message" = "What topic would you like to receive advice on?", "title" = "Select Topic", "choices" = list("none","general","gameplay","roleplay","lore","cancel")), VERB_REF(request_automated_advice), args)
+	if(isnull(choice))
+		return
 	if(choice == "cancel")
 		return
 	var/static/datum/player_tips/player_tips = new

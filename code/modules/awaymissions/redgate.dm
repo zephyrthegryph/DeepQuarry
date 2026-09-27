@@ -118,7 +118,9 @@
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
 			else
-				var/mob/living/carbon/human/restricted_human = tgui_input_list(M, "Who do you wish to give access through the redgate?", "Nearby Redgate Inhabitants", nearby_restricted)
+				var/mob/living/carbon/human/restricted_human = rerun_prompt(M, "k121", list("kind" = "list", "message" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = nearby_restricted), TYPE_PROC_REF(/atom, attack_hand), args)
+				if(isnull(restricted_human))
+					return TRUE
 				if(!restricted_human)
 					return
 				restricted_human.redgate_restricted = FALSE

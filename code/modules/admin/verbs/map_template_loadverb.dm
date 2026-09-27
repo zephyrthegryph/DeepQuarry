@@ -57,7 +57,7 @@ ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns 
 			to_chat(user, "Failed to place map")
 
 ADMIN_VERB(map_template_upload, R_SPAWN, "Map Template - Upload", "Uploads the selected map template to the template storage.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/map = input(user, "Choose a Map Template to upload to template storage","Upload Map Template") as null|file
+	var/map = input(user, "Choose a Map Template to upload to template storage","Upload Map Template") as null|file // S10 keeps: file uploads need the BYOND file dialog
 	if(!map)
 		return
 	if(copytext("[map]",-4) != ".dmm")

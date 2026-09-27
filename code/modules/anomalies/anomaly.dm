@@ -144,7 +144,9 @@
 	use_external_power = 1
 
 /obj/item/gun/energy/anomaly/attack_self(mob/user)
-	var/chosen_particle = tgui_input_list(user, "Select particle type", "Particle Selection", ANOMALY_PARTICLE_ALL)
+	var/chosen_particle = rerun_prompt(user, "k147", list("kind" = "list", "message" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL), PROC_REF(attack_self), args)
+	if(isnull(chosen_particle))
+		return TRUE
 	if(!chosen_particle)
 		return
 
@@ -208,7 +210,9 @@
 			choices[capitalize(anom.name)] = type
 			qdel(anom) // only the type is kept; don't leak the sample object
 
-	var/choice = tgui_input_list(user, "Choose an anomaly core.", "Anomaly Core Selection", choices)
+	var/choice = rerun_prompt(user, "k211", list("kind" = "list", "message" = "Choose an anomaly core.", "title" = "Anomaly Core Selection", "choices" = choices), PROC_REF(attack_self), args)
+	if(isnull(choice))
+		return TRUE
 
 	if(choice && !picked)
 		anomaly_type = choices[choice]

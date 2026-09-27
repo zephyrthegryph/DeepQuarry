@@ -98,7 +98,9 @@
 		return
 
 	if(LAZYACCESS(treated, user.ckey))
-		var/choice = tgui_alert(user, "You already took one! Take more?", "Take another...", list("Reach in...", "Leave it!"))
+		var/choice = rerun_prompt(user, "k101", list("message" = "You already took one! Take more?", "title" = "Take another...", "choices" = list("Reach in...", "Leave it!")), PROC_REF(search_done), args)
+		if(isnull(choice))
+			return
 		if(!choice)
 			return
 		if(choice == "Reach in...")

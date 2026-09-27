@@ -96,7 +96,8 @@
 		VENTCRAWL_SMALLITEM_WHITELIST
 		)
 
-/mob/proc/start_ventcrawl()
+/// The pipe to crawl into; picking one of several re-runs `caller_verb` (null meanwhile).
+/mob/proc/start_ventcrawl(caller_verb)
 	var/atom/pipe
 	var/list/pipes = list()
 	for(var/obj/machinery/atmospherics/unary/U in range(1))
@@ -108,7 +109,9 @@
 	if(pipes.len == 1)
 		pipe = pipes[1]
 	else
-		pipe = tgui_input_list(src, "Crawl Through Vent", "Pick a pipe", pipes)
+		pipe = rerun_prompt(src, "pipe", list("kind" = "list", "message" = "Crawl Through Vent", "title" = "Pick a pipe", "choices" = pipes), caller_verb, list())
+		if(!(pipe in pipes))
+			return
 	if(canmove && pipe)
 		return pipe
 

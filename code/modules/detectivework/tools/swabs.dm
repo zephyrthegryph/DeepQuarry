@@ -92,7 +92,10 @@
 	else if(choices.len == 1)
 		choice = choices[1]
 	else
-		choice = tgui_input_list(user, "What kind of evidence are you looking for?","Evidence Collection", choices)
+		var/_answer_k95 = rerun_prompt(user, "k95", list("kind" = "list", "message" = "What kind of evidence are you looking for?", "title" = "Evidence Collection", "choices" = choices), PROC_REF(afterattack), args)
+		if(isnull(_answer_k95))
+			return TRUE
+		choice = _answer_k95
 
 	if(!choice)
 		return
