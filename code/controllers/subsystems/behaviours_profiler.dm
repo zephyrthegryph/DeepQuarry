@@ -1,0 +1,114 @@
+/// OM profiling panel (completion_plan sec 3.6, K2): per-behaviour and per-lane cost
+/// from the scheduler's own counters (run_slot() measures TICK_USAGE per slot and
+/// behaviour; profiled pipeline frames time each stage). Opened by the admin verb
+/// "OM Profiler" (Debug); tgui interface OmProfiler.tsx.
+
+/datum/controller/subsystem/behaviours
+	/// world.time the profiler counters were last cleared (0: since boot).
+	var/profile_reset_time = 0
+
+/datum/controller/subsystem/behaviours/tgui_state(mob/user)
+	return ADMIN_STATE(R_DEBUG)
+
+/datum/controller/subsystem/behaviours/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "OmProfiler", "Object Model Profiler")
+		ui.open()
+
+/datum/controller/subsystem/behaviours/tgui_data(mob/user)
+	var/list/data = list()
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/om/registry/reg = om_registry()
+	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background")
+	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
+	data["elapsed_s"] = round(elapsed, 0.1)
+	data["last_run_ms"] = sched ? round(sched.last_run_ms, 0.001) : 0
+	data["error_count"] = sched ? length(sched.errors) : 0
+	data["behind"] = !last_done
+	var/list/behaviours = list()
+	var/list/lane_ms = new /list(OM_LANE_COUNT)
+	var/list/lane_runs = new /list(OM_LANE_COUNT)
+	var/list/lane_count = new /list(OM_LANE_COUNT)
+	for(var/i in 1 to OM_LANE_COUNT)
+		lane_ms[i] = 0
+		lane_runs[i] = 0
+		lane_count[i] = 0
+	var/shared_bucket = FALSE
+	if(sched && reg)
+		for(var/datum/om/behaviour/B as anything in reg.behaviours)
+			if(!B?.id)
+				continue
+			if(B.id >= OM_MAX_STAT_TYPES)
+				shared_bucket = TRUE
+			var/list/S = (length(sched.stats) >= min(B.id, OM_MAX_STAT_TYPES)) ? sched.stats[min(B.id, OM_MAX_STAT_TYPES)] : null
+			var/ms = S ? S[OM_STAT_MS] : 0
+			var/runs = S ? S[OM_STAT_RUNS] : 0
+			var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
+			lane_ms[lane] += ms
+			lane_runs[lane] += runs
+			lane_count[lane] += 1
+			behaviours += list(list(
+				"name" = B.name || "[B.type]",
+				"type" = "[B.type]",
+				"lane" = lane_names[lane],
+				"runs" = runs,
+				"ms" = round(ms, 0.001),
+				"ms_per_s" = round(ms / elapsed, 0.001),
+				"us_per_run" = runs ? round(ms * 1000 / runs, 0.01) : 0,
+				"call_max_ms" = S ? round(S[OM_STAT_CALL_MAX], 0.001) : 0,
+				"late_max" = S ? S[OM_STAT_LATE_MAX] : 0,
+				"deferrals" = S ? S[OM_STAT_DEFERRALS] : 0,
+				"breaches" = S ? S[OM_STAT_BREACHES] : 0,
+				"errors" = S ? S[OM_STAT_ERRORS] : 0,
+				"wakes" = S ? S[OM_STAT_WAKES] : 0,
+				"parks" = S ? S[OM_STAT_PARKS] : 0,
+			))
+	data["behaviours"] = behaviours
+	data["shared_bucket"] = shared_bucket
+	var/list/lanes = list()
+	for(var/i in 1 to OM_LANE_COUNT)
+		lanes += list(list(
+			"name" = lane_names[i],
+			"share" = sched ? sched.lane_share[i] : 0,
+			"behaviours" = lane_count[i],
+			"runs" = lane_runs[i],
+			"ms" = round(lane_ms[i], 0.001),
+			"ms_per_s" = round(lane_ms[i] / elapsed, 0.001),
+		))
+	data["lanes"] = lanes
+	var/list/stages = list()
+	if(sched)
+		for(var/key in sched.stage_cost)
+			var/calls = sched.stage_calls[key] || 0
+			var/cost = sched.stage_cost[key]
+			stages += list(list(
+				"key" = key,
+				"calls" = calls,
+				"ms" = round(cost, 0.001),
+				"us_per_call" = calls ? round(cost * 1000 / calls, 0.01) : 0,
+			))
+	data["stages"] = stages
+	return data
+
+/datum/controller/subsystem/behaviours/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+	. = ..()
+	if(.)
+		return
+	var/mob/user = ui?.user
+	if(!user || !check_rights_for(user.client, R_DEBUG))
+		return
+	switch(action)
+		if("reset")
+			var/datum/om/scheduler/sched = GLOB.om_live_sched
+			if(sched)
+				sched.stats = list()
+				sched.stage_cost = list()
+				sched.stage_calls = list()
+			profile_reset_time = world.time
+			log_admin("[key_name(user)] reset the OM profiler counters.")
+			return TRUE
+
+ADMIN_VERB(om_profiler, R_DEBUG, "OM Profiler", "Opens the object-model profiler: cost per behaviour, per lane and per pipeline stage.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
+	SSbehaviours.tgui_interact(user.mob)
+	feedback_add_details("admin_verb","OMPROF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
