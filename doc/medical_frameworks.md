@@ -1,5 +1,24 @@
 # Medical frameworks: clocks, ownership, nullspace, exposure
 
+> **Status after the reconciliation (2026-09-27, `rewrite/reconcile`).** The object-model core
+> ([rewrite/object_model_core.md](rewrite/object_model_core.md)) is authoritative where this
+> document overlaps it:
+> - **§1 Holder-provided clocks is superseded.** There is one clock system: OM clock domains
+>   (`CLOCK_BIO`), whose rate comes from `EFFECT_CLOCK_BIO_MULT`/`_INHIBIT` contributions
+>   (holders slow their contents through relation `source_contributes`, e.g. `stasis_occupant`),
+>   clocked deadlines, `om_after()` on the entity's timer clock, and stage rewakes instead of
+>   `life_wake_in()`. `om_clock_now(E, CLOCK_BIO)` is the body-time reading K1 provided.
+>   `PROB_OVER` is `chance_over()`.
+> - **§2 Ownership** landed as O2 and O5, adapted: the part slots are OM relation slots
+>   (`/datum/om/relation/slot/part/*`); implants use the `implant_site` slot; `death()` is the
+>   sealed pipeline and its final hook drives `delete_on_death`; `return_from_death()` swaps the
+>   OM registries.
+> - §3 (nullspace) and §4 (exposure) are not implemented; they remain design input, to be
+>   expressed on OM pipelines, contributions and relations.
+>
+> See [rewrite/reconciliation.md](rewrite/reconciliation.md).
+
+
 Status: design, approved in outline by the user. No gameplay code lands with this document.
 Baseline: `master` at `59ca56beef`. Every `file:line` below is from that tree.
 
@@ -419,6 +438,53 @@ before `code/modules/body/*`.
 
 K1 lands first. K2 to K5 run in parallel after it.
 
+#### 1.11a K1 as built (deviations from 1.3-1.6)
+
+- **Handles are event datums, not numbers.** `schedule()` returns a `/datum/clock_event`. A fired
+  or cancelled event has `clock = null` and drops its target and arg, so a stale handle never
+  cancels anything and keeps nothing alive. This replaces the `(serial * 16) + kind` encoding
+  (32-bit floats run out of exact integers after ~1M events) and the `"[handle]"` string keys.
+  `CLOCK_NO_HANDLE` stays as the "none" value. `cancel()` is O(events on that clock), which is
+  small; `handles_by_target` is gone.
+- **Teardown is one entry point, `clock_teardown(datum)`** (`clock.dm`), not a `/atom/movable`
+  pre-destroy step (J1 is being replaced by framework-owned destruction). A datum tied to any
+  clock (events targeting it, a binding, or a clock it provides) has a lazy `clock_ties`; each
+  clock keeps the reverse index `tied`, so neither side ever holds a deleted one. Teardown
+  cancels the datum's events on every clock, unbinds it, and deletes the clock it provides (its
+  bound contents rebind to the parent with their events). **Integration point:** until the
+  framework-owned destruction lands, the base `/datum/Destroy()` calls it (`if(clock_ties)`);
+  that framework calls `clock_teardown()` instead. No type needs a clock line in its `Destroy()`,
+  so afflictions and components need no `cancel_all(src)` either.
+- **Rebind carries events.** `clock_rebind()` settles at the old clock, then moves each of the
+  object's pending events to the new clock with its remaining clock seconds, instead of dropping
+  them and calling `clock_next_threshold()` again. The same happens when a clock is deleted.
+- **Move hook (J5 not landed).** The clock side is one after-move entry,
+  `/atom/movable/proc/clock_on_moved()`, gated by `clock_move_hooked()`. No before-hook is needed:
+  a clock's reading doesn't depend on location, so settling at the old clock after the move is
+  exact. A provider recomposes its own clock on its new holder clock; descendants under a
+  provider need no call (J5's walk may prune at providers). J5 still has to set
+  `MOVE_HOOK_CLOCK` when a thing binds or makes its clock; until J5 lands nothing calls
+  `clock_on_moved()`, so a moved thing keeps its old clock until rebound by hand.
+- **Providers.** `clock_speed` (null: not a provider) and `own_clock` live on `/atom/movable`
+  (`providers.dm`); `set_clock_speed(null)` stops providing and deletes the clock.
+- **`clocked` var.** `is_clocked()` returns the per-type var `clocked`, which the generated
+  split-invariance test reads with `initial()`.
+- **`life_wake_in` (1.5) landed in K1**, since the core had to prove the body-kind path:
+  `life_wake_in(bits, delay, clock_kind = CLOCK_KIND_WORLD)` keeps one `/datum/life_timed_wake`
+  per kind in the lazy `life_timed_wakes`, replacing `life_timer_id/at/bits`. Body kind uses
+  `life_body_clock()`, which is `provided_clock() || holder_clock()`; K2's
+  `/mob/living/provided_clock()` makes it the body clock. `rewake_delay()` is unchanged (every
+  caller is world kind); K2 converts it to `rewake()`.
+- **Time source.** A clock reads world time through `world_now()`, which walks to its root clock
+  (`world.time` for real clocks). The tests use a private root, `/datum/clock/test`, whose
+  `world_now()` reads a var the test owns, and call `fire_due()` directly, so the arithmetic is
+  checked exactly. Nothing global is shifted; `GLOB.world_clock` is never pinned. One test goes
+  through the real `REACT_AT` path on real time.
+- **Lint.** `tools/ci/check_body_time.py` with `tools/ci/body_time_allowlist.txt`
+  (`rule<TAB>file<TAB>count`, a per-file ratchet; `--update` rewrites it). Rules 1-3 and 5 are
+  ratcheted; rule 4 (`world.time` in `on_settle`/`life_tick`) has no allowlist. Rule 3 scans all
+  of `code/`, comments and strings excluded.
+
 ### 1.12 Tests
 
 - `dq_clock_tests.dm`
@@ -828,6 +894,53 @@ Excluded: `mob.dm:10,90` (list bookkeeping on creation and deletion), `death.dm:
 `human_species.dm:13,25` (death bookkeeping), and `combat_ai/ports/possum.dm:73` (fake death
 ending, not a revive).
 
+#### 2.7a O5 as built (deviations from the plan above)
+
+- **Signature and refusal.** `return_from_death(reason, source, flags)` returns TRUE or a refusal
+  string from `can_return_from_death(flags)`: "not dead", "lethal injuries" (`body.is_lethal()`,
+  the renamed `body.is_dead()`), or `revival_window_refusal()` (human: no brain, brain dead,
+  brain decayed, husked, brain stem, a failed vital organ). The vorepanel's hand-written
+  eligibility is gone (P2-D2). By user decision vore reform never refuses: both reform paths
+  pass `REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL | REVIVE_UNCONSCIOUS`.
+  `REVIVE_RESTORE` (new) calls `restore_for_revival()`, which for humans regrows missing
+  vital organs (brain included), clears brain death, brain decay, husk and brain-stem damage,
+  then heals, so `can_return_from_death()` cannot refuse a dead, undeleted mob. Both reform
+  paths (ghost and MMI) call `H.reform_restore()`: `return_from_death()` with
+  `REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL`, then `rejuvenate()`, so the stored
+  body comes back fully restored. The incremental `reform_treatments` loop and the MMI path's
+  partial mends are deleted; the MMI path still installs the MMI as the brain holder first.
+- **Extra flag `REVIVE_UNCONSCIOUS`.** Defib, CPR, the buzzer ring, vore reform and redspace
+  corruption all landed the patient UNCONSCIOUS; step 4's `set_stat(CONSCIOUS)` would have
+  changed that, so the flag keeps it.
+- **`can_defib = TRUE` is not set on revive.** It is a human flag for brain-stem damage that
+  the window check reads; clearing it on revive would hide an injury the revive didn't fix.
+- **Enforcement at runtime, not just lint.** `/mob/living/set_stat()` refuses DEAD -> alive
+  (with a stack trace) unless `revival_in_progress`, which only `return_from_death()` sets.
+- **`COMSIG_LIVING_REVIVE` is replaced** by `COMSIG_LIVING_REVIVED (source, reason)`; the
+  contracts subsystem listens to the new one. `revive()`/`rejuvenate()` stay as heal
+  routines and revive through `return_from_death("rejuvenated", ..., REVIVE_IGNORE_WINDOW)`.
+- **Not revives, left alone:** `body/plans/machine.dm:57` (UNCONSCIOUS -> CONSCIOUS only),
+  `nanoform.dm complete_revival` (dormancy is never DEAD), `epinephrine_overdose.dm`
+  (usable only while alive), the life-status systems (all skip DEAD mobs). The soulcatcher,
+  NIF soulcatcher and digital-MMI `stat = 0` / `dead_mob_list -=` lines were no-ops on fresh
+  (CONSCIOUS) views and are deleted.
+- **`life_cloak`** only fires on a living holder; its list swap was dead code and is deleted.
+- **Death pipeline** (audit P2-D4, A8): `/mob/proc/death()` is sealed (`SHOULD_NOT_OVERRIDE`)
+  and ordered: guard, `replace_death()`, one `set_stat(DEAD)`, message, `death_links()`,
+  `play_death_sound()`, senses and drops, `COMSIG_MOB_DEATH`, `on_death()`, refresh, win check,
+  `COMSIG_LIVING_DEATH_FINAL`. The ~130 `death()` overrides became `on_death()` (or
+  `replace_death()` for mobs that vanished without dying: bots, cockroaches, broodlings,
+  homunculus, ysbryd, bluespace cat, fake glitch boss, airlock/floor mimics, shadekin
+  retreat, human `species.handle_death()`). Messages moved to the `death_message` var or a
+  `get_death_message()` override. `COMSIG_MOB_DEATH` now fires after the stat transition (it
+  fired before). The targeting and cultnet `death()` overrides are folded into
+  `/mob/living/on_death()`; the AI camera update into the AI's. Simple mobs restore
+  density, eye glow and icon in `on_revived()`; `ghostjoin` is not restored.
+- **Vital predicates** (NEW:VITALS): `is_alive()`, `is_dead()`, `is_critical()`,
+  `is_dying()`, `is_brain_dead()`, `vital_band()` (`VITAL_BAND_*`, `VITALITY_SERIOUS`/`_HURT`).
+  Medical, body, organ and diagnosis `stat ==/!= DEAD` reads are migrated. The robot/brain
+  HUD band tables (P2-D10) and the 46 vitality thresholds outside those folders are not.
+
 ### 2.8 File layout
 
 ```
@@ -920,6 +1033,55 @@ the way.
 - No `/obj/item/organ/proc/removed(` or `replaced(` definitions.
 
 ---
+
+### 2.12 O2 as built (deviations from 2.2-2.3)
+
+Slice O2 landed on `w6/o2`, on top of the ledger joint (J2 `LEDGER_MOVE_FORCED`, J4 keyed slots,
+J6 `on_slotted`/`on_unslotted`, J8 `slot_item`). J1 and J3 did not land; J1 is being replaced by the
+framework destroy transaction (`doc/rewrite/lifecycle.md`). Where the code disagreed with the design,
+the code won:
+
+- **No `body.part_index`.** The mob-side `organs`, `organs_by_name`, `internal_organs` and
+  `internal_organs_by_name` stay as derived caches for O3's readers, and the attach/detach hooks are
+  their only writers (every other writer was converted to a ledger move or deleted). A second index
+  on the body would have duplicated them. `body.part(tag)`/`body.organ(tag)` read the caches;
+  `parts()`/`organs()` walk the ledger. The per-limb `children`, `parent` and `internal_organs`
+  also stay, as structural caches written only by `link_to_holder()`/`unlink_from_holder()`,
+  maintained whether or not the tree has an owner.
+- **The hooks are J6's, not a new ledger hook.** `/obj/item/organ` sets `has_slot_hooks`; its
+  `on_slotted()`/`on_unslotted()` call `on_attached()`/`on_detached()` for the three tree slots.
+  `on_attached()` resolves the owner by walking up the ledger (`resolve_owner()`); `on_detached()`
+  releases from the stored owner.
+- **Loose organs on mobs with no tree.** Simple mobs, larvae and butchery animals have no
+  `parts:root`. An organ in such a mob's `SLOT_ID_BODY` is attached there (owned and cached), so
+  `internal_organs` on those mobs is also hook-maintained.
+- **`removed()`/`replaced()` are kept as the entry points** (about 60 callers; converting them is O3),
+  but their bodies are now one ledger move each: `slot_remove(..., LEDGER_MOVE_FORCED)` to the owner's
+  drop location, and `place_into()` (`dq_ledger_refusal()` + `dq_ledger_commit()`). Organs born inside
+  a mob place themselves (`place_in_body()`). Transplant data capture stays in `replaced()`: capturing
+  it in the hook would allocate a list for every organ on every spawn.
+- **Organ acceptance is lenient.** `parts:organs` accepts any internal organ (surgery, horror
+  modifiers and augments put organs in limbs other than their default `parent_organ`); `parts:child`
+  enforces `parent_organ == holder.organ_tag`; `parts:root` takes only a limb with no `parent_organ`.
+- **Reparent.** A move between two places in the same body (horror's brain shunt) is detach + attach
+  in one `forceMove`. `place_into()` marks it (`GLOB.dq_part_reparenting`) so the detach half neither
+  runs `left_body()` nor counts a vital loss.
+- **Worn equipment.** A hook must not move anything, so gloves, shoes and headgear are dropped by
+  `drop_worn()` for the whole subtree before the sever move, in `external/removed()`.
+- **Destruction (O4 plugs in here).** Part slots declare `SLOT_DROP_DELETE` (embedded and tourniquet
+  `SPILL`), resolved children first. The external `Destroy()` child/organ loops are deleted (the slot
+  policy does it); no new `Destroy()` override was added. `release_subtree(root, destroying)` takes
+  one early branch when the holder is being destroyed (`dq_part_holder_destroying()`, a stub reading
+  `QDELETED(holder)` until the transaction's flag lands): it clears derived state but skips
+  invalidate, `life_wake`, verbs, `left_body()` and the death check. `detach_part()` still calls
+  `remove_affliction()`, which invalidates once per affliction; O4 should give it a quiet path.
+  `organ/Destroy()` still cures afflictions through `owner.body` (2.4's rules are O4's).
+- **Body created in `set_species()`.** A human's first `set_species()` runs before
+  `/mob/living/Initialize()`, so the body (and with it the humanoid slot set) is now built there;
+  `/mob/living/Initialize()` only builds one if none exists.
+- **Not done here:** implants, embedded objects, cavity items, splints and tourniquets still live
+  where they did (O3b/O3c move them into their declared slots); the mind slot (O4); robot MMI slot
+  (O4); the `check_part_moves.py` lint (O6).
 
 ## 3. Nullspace elimination
 
