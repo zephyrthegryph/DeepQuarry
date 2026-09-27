@@ -35,8 +35,10 @@
 	user.drop_item()
 	playsound(src, 'sound/items/package_unwrap.ogg', 50,1)
 	if(gift)
-		user.put_in_active_hand(gift)
-		gift.add_fingerprint(user)
+		var/obj/item/present = gift
+		gift = null // owned while wrapped: unwrapping hands it over before the paper goes
+		user.put_in_active_hand(present)
+		present.add_fingerprint(user)
 	else
 		to_chat(user, span_warning("The gift was empty!"))
 	qdel(src)

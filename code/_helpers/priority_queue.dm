@@ -20,7 +20,10 @@
 	return length(array) == 0
 
 /datum/priority_queue/proc/enqueue(entry)
-	LAZYADD(array, entry)
+	// Indexed append, not +=: an entry may itself be a list (a search node).
+	LAZYINITLIST(array)
+	array.len++
+	array[length(array)] = entry
 	bubble_up(length(array))
 
 /datum/priority_queue/proc/dequeue()

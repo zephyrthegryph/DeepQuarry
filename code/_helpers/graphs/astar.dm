@@ -46,29 +46,18 @@
 
 // Also added 'exclude' turf to avoid travelling over; defaults to null
 
-/datum/graph_astar_node
-	var/datum/position
-	var/datum/graph_astar_node/previous_node
+// Search nodes are plain lists local to one search (LC-refs: no datum holds a position or a
+// parent reference past the search): list(position, parent node, best estimate, estimate,
+// nodes traversed).
+#define ASTAR_GRAPHA_POS 1
+#define ASTAR_GRAPHA_PREV 2
+#define ASTAR_GRAPHA_BEST 3
+#define ASTAR_GRAPHA_EST 4
+#define ASTAR_GRAPHA_DEPTH 5
+#define ASTAR_GRAPHA_NEW(pos, prev, known, cost, depth) list(pos, prev, (cost) + (known), (cost) + (known), depth)
 
-	var/best_estimated_cost
-	var/estimated_cost
-	var/known_cost
-	var/cost
-	var/nodes_traversed
-
-/datum/graph_astar_node/New(_position, _previous_node, _known_cost, _cost, _nodes_traversed)
-	position = _position
-	previous_node = _previous_node
-
-	known_cost = _known_cost
-	cost = _cost
-	estimated_cost = cost + known_cost
-
-	best_estimated_cost = estimated_cost
-	nodes_traversed = _nodes_traversed
-
-/proc/cmp_graph_astar_node(datum/graph_astar_node/a, datum/graph_astar_node/b)
-	return a.estimated_cost - b.estimated_cost
+/proc/cmp_graph_astar_node(list/a, list/b)
+	return a[ASTAR_GRAPHA_EST] - b[ASTAR_GRAPHA_EST]
 
 /proc/graph_astar(start, end, adjacent, dist, max_nodes, max_node_depth = 30, min_target_dist = 0, min_node_dist, id, datum/exclude)
 	var/datum/priority_queue/open = new /datum/priority_queue(/proc/cmp_graph_astar_node)
@@ -79,46 +68,46 @@
 	if(!start)
 		return 0
 
-	open.enqueue(new /datum/graph_astar_node(start, null, 0, call(start, dist)(end), 0))
+	open.enqueue(ASTAR_GRAPHA_NEW(start, null, 0, call(start, dist)(end), 0))
 
 	while(!open.is_empty() && !path)
-		var/datum/graph_astar_node/current = open.dequeue()
-		closed.Add(current.position)
+		var/list/current = open.dequeue()
+		closed.Add(current[ASTAR_GRAPHA_POS])
 
-		if(current.position == end || call(current.position, dist)(end) <= min_target_dist)
-			path = new /list(current.nodes_traversed + 1)
-			path[path.len] = current.position
+		if(current[ASTAR_GRAPHA_POS] == end || call(current[ASTAR_GRAPHA_POS], dist)(end) <= min_target_dist)
+			path = new /list(current[ASTAR_GRAPHA_DEPTH] + 1)
+			path[path.len] = current[ASTAR_GRAPHA_POS]
 			var/index = path.len - 1
 
-			while(current.previous_node)
-				current = current.previous_node
-				path[index--] = current.position
+			while(current[ASTAR_GRAPHA_PREV])
+				current = current[ASTAR_GRAPHA_PREV]
+				path[index--] = current[ASTAR_GRAPHA_POS]
 			break
 
 		if(min_node_dist && max_node_depth)
-			if(call(current.position, min_node_dist)(end) + current.nodes_traversed >= max_node_depth)
+			if(call(current[ASTAR_GRAPHA_POS], min_node_dist)(end) + current[ASTAR_GRAPHA_DEPTH] >= max_node_depth)
 				continue
 
 		if(max_node_depth)
-			if(current.nodes_traversed >= max_node_depth)
+			if(current[ASTAR_GRAPHA_DEPTH] >= max_node_depth)
 				continue
 
-		for(var/datum/datum in call(current.position, adjacent)(id))
+		for(var/datum/datum in call(current[ASTAR_GRAPHA_POS], adjacent)(id))
 			if(datum == exclude)
 				continue
 
-			var/best_estimated_cost = current.estimated_cost + call(current.position, dist)(datum)
+			var/best_estimated_cost = current[ASTAR_GRAPHA_EST] + call(current[ASTAR_GRAPHA_POS], dist)(datum)
 
 			//handle removal of sub-par positions
 			if(datum in path_node_by_position)
-				var/datum/graph_astar_node/target = path_node_by_position[datum]
-				if(target.best_estimated_cost)
-					if(best_estimated_cost + call(datum, dist)(end) < target.best_estimated_cost)
+				var/list/target = path_node_by_position[datum]
+				if(target[ASTAR_GRAPHA_BEST])
+					if(best_estimated_cost + call(datum, dist)(end) < target[ASTAR_GRAPHA_BEST])
 						open.remove_entry(target)
 					else
 						continue
 
-			var/datum/graph_astar_node/next_node = new (datum, current, best_estimated_cost, call(datum, dist)(end), current.nodes_traversed + 1)
+			var/list/next_node = ASTAR_GRAPHA_NEW(datum, current, best_estimated_cost, call(datum, dist)(end), current[ASTAR_GRAPHA_DEPTH] + 1)
 			path_node_by_position[datum] = next_node
 			open.enqueue(next_node)
 
@@ -126,3 +115,10 @@
 				open.remove_index(length(open.array))
 
 	return path
+
+#undef ASTAR_GRAPHA_POS
+#undef ASTAR_GRAPHA_PREV
+#undef ASTAR_GRAPHA_BEST
+#undef ASTAR_GRAPHA_EST
+#undef ASTAR_GRAPHA_DEPTH
+#undef ASTAR_GRAPHA_NEW

@@ -63,6 +63,13 @@
 			AM.dq_lifecycle_resolve_contents()
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
 
+	if(!ismovable(D))
+		// Phase 1 for a datum (or turf/area): the same unbind hook, so it can let go of what it
+		// only borrowed, or unregister from what it owns, before phase 4 deletes its owned children.
+		tick = world.tick_usage
+		D.lifecycle_unbind()
+		dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
+
 	// Phase 4: links. Owned children deleted, pair partners nulled,
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
 	tick = world.tick_usage

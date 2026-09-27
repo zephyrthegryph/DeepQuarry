@@ -67,7 +67,11 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /datum/var/tmp/om_hid = 0
 
 /// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
+/// A turf's handle is its ref text ("[0x...]"): turfs are never deleted and a turf's
+/// ref is its position, so it survives ChangeTurf() (which resets the turf's vars).
 /proc/om_handle(datum/D)
+	if(isturf(D))
+		return REF(D)
 	if(!isdatum(D) || QDELETED(D))
 		return null
 	var/list/slots = GLOB.om_handle_slots
@@ -91,6 +95,9 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /proc/om_resolve(h)
 	if(!istext(h))
 		return null
+	if(text2ascii(h) == 91) // "[": a turf's ref (om_handle())
+		var/turf/T = locate(h)
+		return isturf(T) ? T : null
 	var/sep = findtext(h, ":")
 	if(!sep)
 		return null
@@ -130,7 +137,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
 /// whether it still resolves.
 /proc/om_is_handle(h)
-	var/static/regex/shape = regex(@"^\d+:\d+$")
+	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\])$")
 	return istext(h) && shape.Find(h)
 
 /// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).

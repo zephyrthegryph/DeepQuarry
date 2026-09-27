@@ -24,7 +24,7 @@
 // until they convert (doc §4, §7).
 
 /// Names of `src`'s own (not contained) child object vars: each is QDEL_NULL'd
-/// in phase 4, then (defensively) nulled again in phase 8 if leftover
+/// in phase 4 (a non-datum value -- image, icon, matrix -- is only dropped), then (defensively) nulled again in phase 8 if leftover
 /// Destroy() re-set one. Var names only -- resolved with vars[] at phase time.
 /datum/proc/declared_owned_vars()
 	return null
@@ -90,7 +90,9 @@
 	for(var/var_name in owned)
 		var/datum/child = D.vars[var_name]
 		D.vars[var_name] = null
-		if(child)
+		// A non-datum child (an image, icon, matrix, appearance, sound, regex) is a value the
+		// owner holds alone: dropping the reference releases it. qdel() would hard-del() it.
+		if(isdatum(child))
 			qdel(child)
 	var/list/owned_list = table["owned_list"]
 	for(var/var_name in owned_list)
@@ -99,8 +101,14 @@
 			continue
 		var/list/copy = children.Copy()
 		children.Cut()
-		for(var/datum/child as anything in copy)
-			qdel(child)
+		// An assoc list (key -> child) owns its values; a plain list owns its entries.
+		for(var/entry in copy)
+			if(isdatum(entry))
+				qdel(entry)
+			else if(!isnum(entry))
+				var/datum/child = copy[entry]
+				if(isdatum(child))
+					qdel(child)
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)
 		link_clear(D, our_var)
