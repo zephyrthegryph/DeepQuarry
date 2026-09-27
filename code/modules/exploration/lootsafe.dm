@@ -118,7 +118,9 @@
 		return
 
 	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = tgui_input_text(usr, "Enter [codelen] digits. All digits must be unique.", "Deca-Code Lock", "")
+	var/input = rerun_prompt(usr, "k121", list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock"), PROC_REF(togglelock), args)
+	if(isnull(input))
+		return
 	if(!Adjacent(user))
 		return
 	var/list/sanitised = list()
@@ -220,7 +222,9 @@
 		return
 
 	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = tgui_input_text(usr, "Enter [codelen] digits. All digits must be unique.", "Deca-Code Lock", "")
+	var/input = rerun_prompt(usr, "k223", list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock"), PROC_REF(togglelock), args)
+	if(isnull(input))
+		return
 	if(!Adjacent(user))
 		return
 	var/list/sanitised = list()
