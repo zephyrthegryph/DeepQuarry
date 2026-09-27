@@ -127,7 +127,8 @@
 	organ_tag = O_FACT
 	parent_organ = BP_TORSO
 
-	var/list/materials = list(MAT_STEEL = 0)
+	/// Material name -> stored amount. Lazy: empty until something is stored.
+	var/list/materials
 	var/max_storage = 10000
 	organ_verbs = list(
 		/mob/living/carbon/human/proc/reagent_purge
@@ -144,16 +145,14 @@
 /obj/item/organ/internal/nano/refactory/proc/get_stored_material(material)
 	if(status & ORGAN_DEAD)
 		return 0
-	return materials[material] || 0
+	return LAZYACCESS(materials, material) || 0
 
 /obj/item/organ/internal/nano/refactory/proc/add_stored_material(material,amt)
 	if(status & ORGAN_DEAD)
 		return 0
-	var/increase = min(amt,max(max_storage-materials[material],0))
-	if(isnum(materials[material]))
-		materials[material] += increase
-	else
-		materials[material] = increase
+	var/stored = LAZYACCESS(materials, material)
+	var/increase = min(amt,max(max_storage-stored,0))
+	LAZYSET(materials, material, (isnum(stored) ? stored : 0) + increase)
 	if(increase > 0 && owner)
 		take_in_material(material, increase)
 	return increase
@@ -172,13 +171,13 @@
 	if(status & ORGAN_DEAD)
 		return 0
 
-	var/available = materials[material]
+	var/available = LAZYACCESS(materials, material)
 
 	//Success
 	if(available >= amt)
 		var/new_amt = available-amt
 		if(new_amt == 0)
-			materials -= material
+			LAZYREMOVE(materials, material)
 		else
 			materials[material] = new_amt
 		return amt
@@ -190,12 +189,12 @@
 /obj/item/organ/internal/nano/refactory/proc/consume_stored_material(material, amt)
 	if(status & ORGAN_DEAD || amt <= 0)
 		return 0
-	var/available = materials[material] || 0
+	var/available = LAZYACCESS(materials, material) || 0
 	. = min(available, amt)
 	if(!.)
 		return
 	if(available - . <= 0)
-		materials -= material
+		LAZYREMOVE(materials, material)
 	else
 		materials[material] = available - .
 

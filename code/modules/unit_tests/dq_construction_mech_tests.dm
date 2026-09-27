@@ -54,11 +54,11 @@
 		return tools[edge.tool]
 	var/obj/item/path = edge.item_type
 	if(ispath(path, /obj/item/stack))
-		var/obj/item/stack/existing = locate(path) in T
+		var/obj/item/stack/existing = locate_on(T, path)
 		if(existing && existing.get_amount() >= max(edge.item_amount, 1))
 			return existing
 		return new path(T, max(edge.item_amount, 1))
-	var/obj/item/existing = locate(path) in T
+	var/obj/item/existing = locate_on(T, path)
 	if(existing)
 		return existing
 	return new path(T)
@@ -101,12 +101,12 @@
 			continue
 		if(ispath(key, /obj/item/stack))
 			var/amount = ispath(key, /obj/item/stack/cable_coil) ? 4 : 5
-			var/obj/item/stack/existing = locate(key) in T
+			var/obj/item/stack/existing = locate_on(T, key)
 			if(existing)
 				existing.add(amount)
 			else
 				new key(T, amount)
-		else if(!(locate(key) in T))
+		else if(!(locate_on(T, key)))
 			new key(T)
 
 /// Builds a fresh chassis for `graph_path`, attaches its parts, and returns it (already at the top of the ladder).
@@ -136,7 +136,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "ripley0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate(/obj/mecha/working/ripley) in T, "the finished Ripley spawned")
+	TEST_ASSERT(locate_on(T, /obj/mecha/working/ripley), "the finished Ripley spawned")
 
 /datum/unit_test/dq_construction_mech_gygax_full_build
 
@@ -151,7 +151,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "gygax0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate(/obj/mecha/combat/gygax) in T, "the finished Gygax spawned")
+	TEST_ASSERT(locate_on(T, /obj/mecha/combat/gygax), "the finished Gygax spawned")
 
 /datum/unit_test/dq_construction_mech_pinnace_full_build
 
@@ -166,7 +166,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "pinnace0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate(/obj/mecha/combat/fighter/pinnace) in T, "the finished Pinnace spawned")
+	TEST_ASSERT(locate_on(T, /obj/mecha/combat/fighter/pinnace), "the finished Pinnace spawned")
 
 /datum/unit_test/dq_construction_mech_polecat_full_build
 
@@ -181,7 +181,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "polecat0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate(/obj/mecha/micro/sec/polecat) in T, "the finished Polecat spawned")
+	TEST_ASSERT(locate_on(T, /obj/mecha/micro/sec/polecat), "the finished Polecat spawned")
 
 // ---- Round trips: forward some steps, then the same steps back, same materials and state ----
 

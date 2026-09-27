@@ -16,18 +16,24 @@
 	var/code = 2
 	electric_pack = TRUE
 
-/obj/item/radio/electropack/attack_hand(mob/living/user as mob)
+/obj/item/radio/electropack/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/radio/electropack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(src == user.get_equipped_item(SLOT_ID_BACK))
 		to_chat(user, span_notice("You need help taking this off!"))
-		return
-	..()
+		return TRUE
+	return FALSE
 
-/obj/item/radio/electropack/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/obj/item/radio/electropack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/clothing/head/helmet))
 		if(!b_stat)
 			to_chat(user, span_notice("[src] is not ready to be attached!"))
-			return
+			return TRUE
 		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit( user )
 		A.icon = 'icons/obj/assemblies.dmi'
 
@@ -43,6 +49,8 @@
 
 		user.put_in_hands(A)
 		A.add_fingerprint(user)
+		return TRUE
+	return FALSE
 
 // TGUI migration. The electropack's panel had three
 // controls (power, frequency, code); they all flow through tgui_act now.
@@ -81,7 +89,7 @@
 	return
 
 // TGUI Electropack window; no more browse() panel.
-/obj/item/radio/electropack/attack_self(mob/user, flag1)
+/obj/item/radio/electropack/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
 	if(!ishuman(user))
 		return

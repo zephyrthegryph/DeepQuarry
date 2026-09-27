@@ -14,8 +14,19 @@
 	flags = REMOTEVIEW_ON_ENTER
 	dir = 0
 
+// C11: one slot, accepting anything (a holder in transit carries whatever was
+// flushed into it). Legacy forceMove()s into and out of the holder (move(),
+// the disposal machine's flush, pipe transit) are still accounted for by
+// doMove()'s bookkeeping, so slot_contents() stays correct. Whatever is still
+// riding when the holder is destroyed spills onto its turf.
+/datum/om/relation/slot/disposal_holder
+	holder = /obj/structure/disposalholder
+	slot_id = CONTAINER_SLOT_DISPOSAL
+	name = "contents"
+	drop_policy = SLOT_DROP_SPILL
+	exposure = SLOT_EXPOSURE_SEALED
+
 REF_OWNED(/obj/structure/disposalholder, "gas")
-REF_SPILL_LIST(/obj/structure/disposalholder, "contents")
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	gas = flush_gas// transfer gas resv. into holder object -- let's be explicit about the data this proc consumes, please.
 
@@ -91,7 +102,7 @@ REF_SPILL_LIST(/obj/structure/disposalholder, "contents")
 	if(!T)
 		return null
 	var/fdir = turn(dir, 180)	// flip the movement direction
-	for(var/obj/structure/disposalpipe/P in T)
+	for(var/obj/structure/disposalpipe/P in turf_contents_of_type(T, /obj/structure/disposalpipe))
 		if(fdir & P.dpdir)		// find pipe direction mask that matches flipped dir
 			return P
 	// if no matching pipe, return null

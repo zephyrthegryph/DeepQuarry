@@ -68,6 +68,11 @@
 	var/obj/item/radio/integrated/signal/sradio // AI's signaller
 
 	var/translator_on = 0 // keeps track of the translator module
+	/// Languages the translator module actually granted (as opposed to ones this pai
+	/// already knew) -- only these are removed when the translator toggles off, so
+	/// toggling doesn't strip a language the pai natively knows. See
+	/// /datum/pai_software/translator in software_modules.dm.
+	var/list/translator_added_languages
 
 	var/current_pda_messaging = null
 
@@ -470,7 +475,8 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	card.setEmotion(16)
-	stat = CONSCIOUS
+	if(stat == DEAD)
+		return_from_death("pAI restored", card, REVIVE_IGNORE_WINDOW)
 	addtimer(CALLBACK(src, PROC_REF(restore_delay_end)), 1 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/silicon/pai/proc/restore_delay_end()

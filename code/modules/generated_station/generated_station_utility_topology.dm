@@ -209,7 +209,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 			continue
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor_turf = get_step(pipe, direction)
-			for(var/obj/machinery/atmospherics/pipe/neighbor in neighbor_turf)
+			for(var/obj/machinery/atmospherics/pipe/neighbor in turf_contents_of_type(neighbor_turf, /obj/machinery/atmospherics/pipe))
 				if(neighbor.piping_layer == PIPING_LAYER_SUPPLY && neighbor.parent?.network && neighbor.parent.network != pipe.parent.network)
 					parts += "[generated_station_coordinate(pipe)] [pipe.type] dir=[pipe.dir] net=[REF(pipe.parent.network)] beside [generated_station_coordinate(neighbor)] [neighbor.type] dir=[neighbor.dir] net=[REF(neighbor.parent.network)]"
 	return jointext(parts, "; ")
@@ -579,12 +579,12 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	for(var/module_id in materialization.module_areas)
 		var/area/generated_station/department_area = materialization.module_areas[module_id]
 		var/list/working_lights = list()
-		for(var/obj/machinery/light/light in department_area)
+		for(var/obj/machinery/light/light in area_contents_of_type(department_area, /obj/machinery/light))
 			if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
 				working_lights += light
 		if(!length(working_lights))
 			return FALSE
-		for(var/turf/simulated/floor/floor in department_area)
+		for(var/turf/simulated/floor/floor in area_contents_of_type(department_area, /turf/simulated/floor))
 			var/covered = FALSE
 			for(var/obj/machinery/light/light as anything in working_lights)
 				if(get_dist(floor, light) <= max_distance)

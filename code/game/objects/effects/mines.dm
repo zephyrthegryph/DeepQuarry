@@ -24,7 +24,7 @@
 	if(camo_net)
 		alpha = 50
 
-REF_OWNED(/obj/effect/mine, list("trap", "wires"))
+REF_OWNED(/obj/effect/mine, "trap")
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()

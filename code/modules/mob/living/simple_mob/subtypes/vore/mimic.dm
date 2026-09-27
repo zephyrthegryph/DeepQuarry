@@ -142,7 +142,7 @@
 /mob/living/simple_mob/vore/aggressive/mimic
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/vore/aggressive/mimic/death()
+/mob/living/simple_mob/vore/aggressive/mimic/on_death(gibbed)
 	..()
 	if(real_crate)
 		real_crate.forceMove(loc)
@@ -230,10 +230,12 @@
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/will_show_tooltip()
 	return FALSE
 
-/mob/living/simple_mob/vore/aggressive/mimic/airlock/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
 	real_crate = null
 	qdel(src)
+	return TRUE
 
 
 //Less Terrifying Closet Mimic
@@ -322,7 +324,7 @@
 /mob/living/simple_mob/vore/aggressive/mimic/closet
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/vore/aggressive/mimic/closet/death()
+/mob/living/simple_mob/vore/aggressive/mimic/closet/on_death(gibbed)
 	..()
 	if(real_crate)
 		real_crate.forceMove(loc)
@@ -409,8 +411,10 @@
 	melee_damage_upper = 5
 	base_attack_cooldown = 5
 
-/mob/living/simple_mob/vore/aggressive/mimic/floor/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
 	qdel(src)
+	return TRUE
 
 /obj/effect/floormimic/tile
 	name = "loose floor tiles"

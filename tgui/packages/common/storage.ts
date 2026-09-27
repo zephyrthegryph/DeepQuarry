@@ -9,7 +9,7 @@
 export const IMPL_HUB_STORAGE = 1;
 export const IMPL_IFRAME_INDEXED_DB = 2;
 
-const KEY_NAME = 'chomp'; // CHOMPEdit - CHOMPStation Localstore
+const KEY_NAME = 'chomp'; // Localstore key (kept for compatibility with existing client stores)
 type StorageImplementation =
   | typeof IMPL_HUB_STORAGE
   | typeof IMPL_IFRAME_INDEXED_DB;

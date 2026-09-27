@@ -150,6 +150,12 @@
 /datum/controller/subsystem/proc/PreInit()
 	return
 
+/// Size of this subsystem's processing/work list, for benchmark COUNT metrics
+/// (see code/modules/benchmarks/_benchmark.dm end_window()). -1 means "not
+/// applicable" (the subsystem has no single processing list to report).
+/datum/controller/subsystem/proc/processing_work_items()
+	return -1
+
 ///This is used so the mc knows when the subsystem sleeps. do not override.
 /datum/controller/subsystem/proc/ignite(resumed = FALSE)
 	SHOULD_NOT_OVERRIDE(TRUE)

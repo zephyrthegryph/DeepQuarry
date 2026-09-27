@@ -105,7 +105,7 @@
 	var/list/data = ..()
 
 	var/turf/T = get_turf(linked)
-	var/obj/effect/overmap/visitable/sector/current_sector = locate() in T
+	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
 
 	data["sector"] = current_sector ? current_sector.name : "Deep Space"
 	data["sector_info"] = current_sector ? current_sector.desc : "Not Available"
@@ -174,7 +174,7 @@
 	name = initial(name) + " ([linked.name])"
 	// HELM
 	var/area/overmap/map = locate() in world
-	for(var/obj/effect/overmap/visitable/sector/S in map)
+	for(var/obj/effect/overmap/visitable/sector/S in area_contents_of_type(map, /obj/effect/overmap/visitable/sector))
 		if(S.known)
 			var/datum/computer_file/data/waypoint/R = new()
 			R.fields["name"] = S.name
@@ -200,7 +200,7 @@
 
 	// HELM
 	var/turf/T = get_turf(linked)
-	var/obj/effect/overmap/visitable/sector/current_sector = locate() in T
+	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
 
 	data["sector"] = current_sector ? current_sector.name : "Deep Space"
 	data["sector_info"] = current_sector ? current_sector.desc : "Not Available"

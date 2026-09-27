@@ -541,16 +541,16 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	return TRUE
 
 /// Old verb body, also called directly from the attack_hand "Set the interval" menu option.
-/obj/machinery/wheel_of_fortune/proc/interaction_setinterval(mob/usr)
-	if(usr.incapacitated())
+/obj/machinery/wheel_of_fortune/proc/interaction_setinterval(mob/user)
+	if(user.incapacitated())
 		return
-	if(ishuman(usr) || isrobot(usr))
-		var/new_interval = tgui_input_number(usr, "Put the desired interval (1-1000)", "Set Interval", null, 1000, 1)
+	if(ishuman(user) || isrobot(user))
+		var/new_interval = tgui_input_number(user, "Put the desired interval (1-1000)", "Set Interval", null, 1000, 1)
 		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
-			to_chat(usr, span_notice("Invalid interval."))
+			to_chat(user, span_notice("Invalid interval."))
 			return
 		interval = new_interval
-		to_chat(usr, span_notice("You set the interval to [interval]"))
+		to_chat(user, span_notice("You set the interval to [interval]"))
 	return
 
 //

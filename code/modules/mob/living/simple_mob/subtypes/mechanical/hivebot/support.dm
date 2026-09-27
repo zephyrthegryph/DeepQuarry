@@ -102,7 +102,7 @@
 /mob/living/simple_mob/mechanical/hivebot/support/harry
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/mechanical/hivebot/support/harry/death()
+/mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)
 	..()
 	visible_message(span_warning("Connection... terminated... Sweet Release... obtained."),span_danger("\The [src] blows apart!"))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)

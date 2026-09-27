@@ -223,73 +223,69 @@
 	add_overlay(tailimage)
 	add_overlay(eye_icon_state)
 
-//They phase back to the dark when killed
-/mob/living/simple_mob/shadekin/death(gibbed, deathmessage = "phases to somewhere far away!")
-	var/special_handling = TRUE //varswitch for downstream
-	if(!special_handling)
-		cut_overlays()
-		icon_state = ""
-		flick("tp_out",src)
-		expire(1 SECOND)
-		. = ..(FALSE, deathmessage)
-	else
-		if(comp.respite_activating)
-			return
-		cut_overlays()
-		flick("tp_out",src)
+/mob/living/simple_mob/shadekin
+	death_message = "phases to somewhere far away!"
 
-		var/area/current_area = get_area(src)
-		if((comp.in_dark_respite) || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
-			icon_state = ""
-			om_qdel_after(src, 1 SECOND) //Back from whence you came!
+/// They phase back to the dark when killed: a retreat, not a death, unless there is nowhere to go.
+/mob/living/simple_mob/shadekin/replace_death(gibbed)
+	if(comp.respite_activating)
+		return TRUE
+	var/area/current_area = get_area(src)
+	if(comp.in_dark_respite || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
+		return FALSE
+	if(!LAZYLEN(GLOB.latejoin_thedark))
+		log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
+		return FALSE
 
-			return ..(FALSE, deathmessage)
+	cut_overlays()
+	flick("tp_out",src)
+	visible_message("<b>\The [src.name]</b> [death_message]")
+	comp.respite_activating = TRUE
 
-		if(!LAZYLEN(GLOB.latejoin_thedark))
-			log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
-			icon_state = ""
-			om_qdel_after(src, 1 SECOND) //Back from whence you came!
+	drop_l_hand()
+	drop_r_hand()
 
-			return ..(FALSE, deathmessage)
+	comp.dark_energy = 0
+	comp.in_dark_respite = TRUE
+	invisibility = INVISIBILITY_LEVEL_TWO
 
-		visible_message("<b>\The [src.name]</b> [deathmessage]")
-		comp.respite_activating = TRUE
+	mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
+	mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
+	mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
+	status_at_least(EFFECT_STUNNED, 10)
+	movement_cooldown = 5
+	nutrition = 0
 
-		drop_l_hand()
-		drop_r_hand()
-
-		comp.dark_energy = 0
+	if(istype(src.loc, /obj/belly))
+		//Yay digestion... presumably...
+		var/obj/belly/belly = src.loc
+		add_attack_logs(belly.owner, src, "Digested in [lowertext(belly.name)]")
+		to_chat(belly.owner, span_notice("\The [src.name] suddenly vanishes within your [belly.name]"))
+		forceMove(pick(GLOB.latejoin_thedark))
+		flick("tp_in",src)
+		comp.respite_activating = FALSE
 		comp.in_dark_respite = TRUE
-		invisibility = INVISIBILITY_LEVEL_TWO
+		belly.owner.handle_belly_update()
+		clear_fullscreen("belly")
+		belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		if(hud_used)
+			if(!hud_used.hud_shown)
+				toggle_hud_vis()
+		stop_sound_channel(CHANNEL_PREYLOOP)
 
-		mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
-		mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
-		mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
-		status_at_least(EFFECT_STUNNED, 10)
-		movement_cooldown = 5
-		nutrition = 0
+		addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 10 MINUTES, TIMER_DELETE_ME)
+	else
+		addtimer(CALLBACK(src, PROC_REF(enter_the_dark)), 1 SECOND, TIMER_DELETE_ME)
+		addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 15 MINUTES, TIMER_DELETE_ME)
+	return TRUE
 
-		if(istype(src.loc, /obj/belly))
-			//Yay digestion... presumably...
-			var/obj/belly/belly = src.loc
-			add_attack_logs(belly.owner, src, "Digested in [lowertext(belly.name)]")
-			to_chat(belly.owner, span_notice("\The [src.name] suddenly vanishes within your [belly.name]"))
-			forceMove(pick(GLOB.latejoin_thedark))
-			flick("tp_in",src)
-			comp.respite_activating = FALSE
-			comp.in_dark_respite = TRUE
-			belly.owner.handle_belly_update()
-			clear_fullscreen("belly")
-			belly_overlay_tgui?.hide() // hide TGUI belly overlay
-			if(hud_used)
-				if(!hud_used.hud_shown)
-					toggle_hud_vis()
-			stop_sound_channel(CHANNEL_PREYLOOP)
-
-			addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 10 MINUTES, TIMER_DELETE_ME)
-		else
-			addtimer(CALLBACK(src, PROC_REF(enter_the_dark)), 1 SECOND, TIMER_DELETE_ME)
-			addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 15 MINUTES, TIMER_DELETE_ME)
+/// No retreat left: the kin fades out for good.
+/mob/living/simple_mob/shadekin/on_death(gibbed)
+	. = ..()
+	cut_overlays()
+	icon_state = ""
+	flick("tp_out",src)
+	om_qdel_after(src, 1 SECOND) //Back from whence you came!
 
 /mob/living/simple_mob/shadekin/enter_the_dark()
 	comp.respite_activating = FALSE

@@ -38,10 +38,11 @@ REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-/obj/item/tvcamera/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/tvcamera/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/tvcamera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	user.set_machine(src)
 	show_ui(user)
@@ -185,10 +186,11 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 	bradio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-/obj/item/clothing/accessory/bodycam/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/clothing/accessory/bodycam/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/clothing/accessory/bodycam/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	//user.set_machine(src)
 	show_bodycam_ui(user)
@@ -281,15 +283,17 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 
 //Assembly by roboticist
 
-/obj/item/robot_parts/head/attackby(obj/item/assembly/S, mob/user as mob)
-	if(!istype(S, /obj/item/assembly/infra))
-		..()
-		return
+/obj/item/robot_parts/head/get_interactions()
+	var/static/list/L = list(INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null))
+	return L
+
+/obj/item/robot_parts/head/proc/interaction_item(mob/user, obj/item/assembly/S, datum/interaction/interaction)
 	var/obj/item/TVAssembly/A = new(user)
 	consume(S, user)
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the infrared sensor to the robot head."))
 	consume(src, user)
+	return TRUE
 
 /obj/item/TVAssembly
 	name = "\improper TV Camera Assembly"
@@ -300,7 +304,13 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-/obj/item/TVAssembly/attackby(obj/item/W, mob/user)
+/obj/item/TVAssembly/get_interactions()
+	var/static/list/L = list(INTERACT_ITEM(null, PROC_REF(interaction_item)))
+	return L
+
+/// Old attackby: a construction step machine. Faithfully preserved, including that a
+/// successful buildstep 0/1 match still falls through to ..() afterward (no early return there).
+/obj/item/TVAssembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	switch(buildstep)
 		if(0)
 			if(istype(W, /obj/item/robot_parts/robot_component/camera))
@@ -322,19 +332,18 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 				var/obj/item/stack/cable_coil/C = W
 				if(C.get_amount() < 6)
 					to_chat(user, span_notice("You need six cable coils to wire the devices."))
-					..()
-					return
+					return FALSE
 				C.use(6)
 				buildstep++
 				to_chat(user, span_notice("You wire the assembly"))
 				desc = "This TV camera assembly has wires sticking out"
-				return
+				return TRUE
 		if(3)
 			if(W.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(user, span_notice(" You trim the wires."))
 				buildstep++
 				desc = "This TV camera assembly needs casing."
-				return
+				return TRUE
 		if(4)
 			if(istype(W, /obj/item/stack/material/steel))
 				var/obj/item/stack/material/steel/S = W
@@ -344,6 +353,6 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 				var/turf/T = get_turf(src)
 				new /obj/item/tvcamera(T)
 				consume(src, user)
-				return
+				return TRUE
 
-	..()
+	return FALSE

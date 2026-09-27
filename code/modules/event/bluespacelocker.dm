@@ -35,7 +35,7 @@
 	var/area/picked_area = pick(areas)
 	var/list/obj/structure/closet/valid_lockers = list()
 
-	for(var/obj/structure/closet/closet in picked_area)
+	for(var/obj/structure/closet/closet in area_contents_of_type(picked_area, /obj/structure/closet))
 		if((istype(closet, /obj/structure/closet/crate) && crates) || (istype(closet, /obj/structure/closet/walllocker) && crates))
 			continue
 		if(!closet.can_open() && sealed)

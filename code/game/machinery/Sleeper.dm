@@ -42,8 +42,6 @@ REF_PAIR(/obj/machinery/sleep_console, list("sleeper" = "console"))
 			sleepernew.console = src
 			break
 
-/obj/machinery/sleep_console/attack_ai(mob/user)
-	return attack_hand(user)
 
 /obj/machinery/sleep_console/attack_hand(mob/user)
 	if(..())

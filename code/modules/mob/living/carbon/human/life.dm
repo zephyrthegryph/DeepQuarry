@@ -100,6 +100,10 @@
 	if(self.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		self.status_at_least(EFFECT_SLEEPING, 20)
 
+/// Factor changes (body invalidate, CHANGE_MOB_HEALTH) wake it.
+/datum/om/stage/life/stasis_sleep/idle(mob/living/carbon/human/self)
+	return self.factor(BF_STASIS) <= STASIS_SLEEP_THRESHOLD
+
 /// Falling (prevents people from floating).
 /datum/om/stage/life/fall
 	order = LIFE_PHASE_TAIL + 130
@@ -109,6 +113,14 @@
 
 /datum/om/stage/life/fall/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.fall()
+
+/// Event-driven: moving wakes it. A floor removed from under a standing player is caught by
+/// the rewake.
+/datum/om/stage/life/fall/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/om/stage/life/fall/rewake_delay(mob/living/carbon/human/self)
+	return self.client ? 10 SECONDS : 0
 
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
 /datum/om/stage/life/medical
@@ -325,7 +337,7 @@
 // Additionally, RADIATION_SPEED_COEFFICIENT = 0.1
 
 /// Radiation burns on a random organic limb: skin sloughing from a heavy dose.
-/mob/living/carbon/human/proc/radiation_burn(amount)
+/mob/living/carbon/human/proc/radiation_burn(amount, flags = NONE)
 	var/list/candidates = list()
 	for(var/obj/item/organ/external/E as anything in organs)
 		if(E.robotic < ORGAN_ROBOT && !E.is_stump())
@@ -333,7 +345,7 @@
 	if(!length(candidates))
 		return 0
 	var/obj/item/organ/external/E = pick(candidates)
-	return injure(INJURY_BURN, amount, E.organ_tag, null, 0, /datum/affliction/radiation_burns)
+	return injure(INJURY_BURN, amount, E.organ_tag, null, 0, /datum/affliction/radiation_burns, flags)
 
 /datum/om/stage/life/radiation/carbon/human
 	of = /mob/living/carbon/human
@@ -470,13 +482,13 @@
 			self.accumulated_rads += 300 * RADIATION_SPEED_COEFFICIENT
 
 			if(!self.isSynthetic())
-				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT) //3 burn damage a tick as your body melts.
-				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT) //1.5 cellular damage a tick as your cells mutate and break down.
+				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
+				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
 
 				I = self.internal_organs_by_name[O_EYES]
 				if(I)
 					I.add_autopsy_data("Radiation Burns", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
-					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //3 eye damage a tick as your eyes melt down.
+					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE | INJURE_CONTINUOUS) //3 eye damage a tick as your eyes melt down.
 					self.status_adjust(EFFECT_BLURRY, 10)
 
 				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
@@ -507,7 +519,7 @@
 
 		if(damage)
 			damage *= rad_mod
-			self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning)
+			self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
 			if(!self.isSynthetic() && self.organs.len)
 				var/obj/item/organ/external/O = pick(self.organs)
 				if(istype(O)) O.add_autopsy_data("Radiation Poisoning", damage)
@@ -924,7 +936,36 @@
 /datum/om/stage/life/environment/carbon/human
 	of = /mob/living/carbon/human
 
+/mob/living/carbon/human
+	/// TRUE when the last environment exchange found comfortable air (its idle rule).
+	var/environment_steady = FALSE
+
+/// Idle after an exchange that found comfortable air on a turf (the pressure inside the warning
+/// band, the air within 20 K of the body, the body inside its comfort band). Only the mob's own
+/// state is read, so the air is re-sampled by the rewake; moving and equipment wake it sooner.
+/// Species and traits with their own environment effects stay awake.
+/datum/om/stage/life/environment/carbon/human/idle(mob/living/carbon/human/self)
+	var/static/list/active_environment_species = typecacheof(list(
+		/datum/species/alraune,
+		/datum/species/grey,
+		/datum/species/diona,
+		/datum/species/spider,
+		/datum/species/xenochimera,
+		/datum/species/xenomorph_hybrid,
+		/datum/species/xenos,
+		/datum/species/shapeshifter/promethean/avatar,
+	))
+	if(!self.environment_steady || !isturf(self.loc) || self.alerts?["pressure"])
+		return FALSE
+	if(LAZYLEN(self.species.env_traits) || is_type_in_typecache(self.species, active_environment_species))
+		return FALSE
+	return self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1
+
+/datum/om/stage/life/environment/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return ENVIRONMENT_STEADY_RESAMPLE
+
 /datum/om/stage/life/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
+	self.environment_steady = FALSE
 	if(!environment)
 		return
 
@@ -944,9 +985,9 @@
 
 	if(istype(self.loc, /turf/space)) //No FBPs overheating on space turfs inside mechs or people.
 		//Don't bother if the temperature drop is less than 0.1 anyways. Hopefully BYOND is smart enough to turn this constant expression into a constant
-		if(self.bodytemperature > (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + COSMIC_RADIATION_TEMPERATURE)
+		if(self.bodytemperature > (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + TCMB)
 			//Thermal radiation into space
-			var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - COSMIC_RADIATION_TEMPERATURE)**4)
+			var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - TCMB)**4)
 			var/temperature_loss = heat_loss/HUMAN_HEAT_CAPACITY
 			self.bodytemperature -= temperature_loss
 	else
@@ -962,12 +1003,14 @@
 			if(self.allowtemp)
 				loc_temp = b.bellytemperature
 			else
-				loc_temp = self.species.body_temperature //Should be safe for just about anyone
+				// The predator's body temperature, kept within this prey's comfort: harmless unless they opted into temperature play.
+				loc_temp = clamp(b.get_interior_temperature(), self.species.cold_discomfort_level, self.species.heat_discomfort_level)
 		else
 			loc_temp = environment.return_temperature()
 
 		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.bodytemperature) < 20 && self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
 			self.clear_alert("pressure")
+			self.environment_steady = TRUE
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 
 		//Body temperature adjusts depending on surrounding atmosphere based on your thermal protection (convection)
@@ -1003,7 +1046,7 @@
 			else
 				self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
 			if(self.digestable && b.temperature_damage)
-				self.injure(INJURY_BURN, heat_dam) // High body temperature
+				self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
 		else if(b.bellytemperature <= self.species.cold_discomfort_level)
 			var/cold_dam = 0
 			if(b.bellytemperature <= self.species.cold_level_1)
@@ -1020,7 +1063,7 @@
 			else
 				self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
 			if(self.digestable && b.temperature_damage)
-				self.injure(INJURY_FROSTBITE, cold_dam) // Low body temperature
+				self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
 		else self.clear_alert("temp")
 
 	// +/- 50 degrees from 310.15K is the 'safe' zone, where no damage is dealt.
@@ -1044,7 +1087,7 @@
 				heat_dam = HEAT_DAMAGE_LEVEL_1
 				self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 
-		self.injure(INJURY_BURN, heat_dam) // High body temperature
+		self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
 
 	else if(self.bodytemperature <= self.species.cold_discomfort_level)
 		//Body temperature is too cold.
@@ -1064,7 +1107,7 @@
 				else
 					cold_dam = COLD_DAMAGE_LEVEL_1
 
-			self.injure(INJURY_FROSTBITE, cold_dam) // Low body temperature
+			self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
 
 	else self.clear_alert("temp")
 
@@ -1078,7 +1121,7 @@
 		if(self.stat == DEAD)
 			pressure_damage = pressure_damage/2
 		if(!istype(self.loc, /obj/structure/closet/body_bag/cryobag))
-			self.injure(INJURY_BLUNT, pressure_damage) // Crushing pressure
+			self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Crushing pressure
 		self.throw_alert("pressure", /atom/movable/screen/alert/highpressure, 2)
 	else if(adjusted_pressure >= self.species.warning_high_pressure)
 		self.throw_alert("pressure", /atom/movable/screen/alert/highpressure, 1)
@@ -1092,7 +1135,7 @@
 				var/pressure_damage = LOW_PRESSURE_DAMAGE
 				if(self.stat==DEAD)
 					pressure_damage = pressure_damage/2
-				self.injure(INJURY_BLUNT, pressure_damage) // Decompression: ruptured capillaries and tissue
+				self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Decompression: ruptured capillaries and tissue
 				// Ebullition in the lungs: gas exchange fails even on internals,
 				// less the better the suit holds pressure.
 				var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
@@ -1243,11 +1286,13 @@
 	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 
-	// nutrition decrease
-	// Species controls hunger rate for humans, otherwise use defaults
+	// nutrition decrease, for the biological time since the last one (the stage idles between
+	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
+	var/bio_now = om_clock_now(self, CLOCK_BIO)
+	var/hunger_cycles = self.nutrition_drained_at ? clamp((bio_now - self.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
+	self.nutrition_drained_at = bio_now
 	if(self.nutrition > 0 && self.stat != DEAD)
-		var/nutrition_reduction = DEFAULT_HUNGER_FACTOR
-		nutrition_reduction = self.species.hunger_factor
+		var/nutrition_reduction = self.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
 		// covers the species) raises or lowers nutrition cost.
 		var/species_metabolism = self.species.baseline_factor(BF_METABOLISM)
@@ -1280,6 +1325,24 @@
 		self.handle_trace_chems()
 
 	return
+
+/mob/living/carbon/human
+	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the last nutrition drain.
+	var/nutrition_drained_at = 0
+
+/// Idle with nothing to metabolise and no digestion noises due; reagent changes invalidate the
+/// body (CHANGE_MOB_HEALTH). Hunger is integrated over the idle time on the rewake.
+/datum/om/stage/life/chemicals/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.touching?.total_volume || self.ingested?.total_volume || self.bloodstr?.total_volume)
+		return FALSE
+	if(!self.factor(BF_DARKSIGHT) != !self.chemical_darksight)
+		return FALSE
+	if((self.noisy && self.nutrition < 250) || (self.noisy_full && self.nutrition > 500))
+		return FALSE
+	return TRUE
+
+/datum/om/stage/life/chemicals/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return self.stat == DEAD ? 0 : NUTRITION_RESAMPLE
 
 //DO NOT run the statuses system from this proc: it runs after this one as long as this returns a true value.
 /datum/om/stage/life/status/carbon/human
@@ -1989,9 +2052,13 @@
 /datum/om/stage/life/pulse/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.pulse = compute(self)
 
-/// The pulse this body should show now (updates every 5 life ticks).
+/// Event-driven: the heart, blood, factors, reagents and stat all reach it through the body
+/// (CHANGE_MOB_HEALTH) or set_stat().
+/datum/om/stage/life/pulse/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/// The pulse this body should show now.
 /datum/om/stage/life/pulse/proc/compute(mob/living/carbon/human/self)
-	if(self.life_tick % 5) return self.pulse	//update pulse every 5 life ticks (~1 tick/sec, depending on server load)
 
 	var/temp = PULSE_NORM
 
@@ -2286,6 +2353,13 @@
 	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_DEAD_BIOLOGY
 	of = /mob/living/carbon/human
+
+/// Busy while dead with a defibrillation window still open.
+/datum/om/stage/life/defib_timer/idle(mob/living/carbon/human/self)
+	if(self.stat != DEAD || !self.should_have_organ(O_BRAIN))
+		return TRUE
+	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
+	return !istype(brain) || brain.defib_timer <= 0
 
 /// Brain decay while dead, which closes the defibrillation window.
 /datum/om/stage/life/defib_timer/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)

@@ -155,7 +155,7 @@
 	set_initial_TLV()
 	soundloop = new(list(src), FALSE)
 
-REF_OWNED(/obj/machinery/alarm, list("wires", "soundloop"))
+REF_OWNED(/obj/machinery/alarm, "soundloop")
 
 /// Phase 2: leaves its area's alarm list; the area elects a new main alarm.
 /obj/machinery/alarm/lifecycle_dematerialize()

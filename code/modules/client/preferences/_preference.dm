@@ -306,12 +306,13 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	if(isnull(value))
 		value = preference_entry.create_informed_default_value(src)
 		if(write_preference(preference_entry, value))
-			// Cache wasn't populated by write_preference(_by_type) in this path; return
-			// the freshly-defaulted value. Copy lists so the caller can mutate freely.
-			if(islist(value))
-				var/list/L = value
+			// Return the validated value write_preference() cached: pref_deserialize
+			// may have changed the raw default. Copy lists so the caller can mutate freely.
+			var/stored = value_cache[preference_type]
+			if(islist(stored))
+				var/list/L = stored
 				return L.Copy()
-			return value
+			return stored
 		else
 			CRASH("Couldn't write the default value for [preference_type] (received [value])")
 	value_cache[preference_type] = value
@@ -332,9 +333,8 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	if(save_to_played_slot && (mind.loaded_from_slot != client?.prefs?.default_slot))
 		remembered_default = client?.prefs?.default_slot
 		client?.prefs?.load_character(mind.loaded_from_slot)
+	// write_preference_by_type() caches the deserialized value; don't overwrite it with the raw one.
 	var/success = client?.prefs?.write_preference_by_type(preference_type, preference_value, write_mode)
-	if(success)
-		client?.prefs?.value_cache[preference_type] = preference_value
 	if(remembered_default)
 		client?.prefs?.return_to_character_slot(src, remembered_default)
 	return success
@@ -401,6 +401,11 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	// try/catch keeps batch_depth balanced even if any apply hook or constraint runtimes.
 	// Without it a single runtime mid-cascade strands save_batch_depth > 0 forever — no
 	// further save flush happens for this prefs datum until restart.
+	// cascade_bumped records whether THIS frame incremented constraint_cascade_depth so the
+	// catch below can undo exactly its own increment (try/finally style). The old handler
+	// reset the counter to 0 from the inner frame, and the outer frame then decremented
+	// past it — the depth went negative after any nested runtime.
+	var/cascade_bumped = FALSE
 	try
 		// old_value is the previous cache slot. read_preference returns a Copy() for list
 		// values, so the caller's mutated list (if any) is independent of the cache — the
@@ -438,9 +443,11 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			var/list/constraints = LAZYACCESS(GLOB.preference_constraints_by_trigger, preference.savefile_key)
 			if(constraints)
 				constraint_cascade_depth += 1
+				cascade_bumped = TRUE
 				for(var/datum/preference_constraint/constraint as anything in constraints)
 					constraint.apply(src, preference.savefile_key, old_value, new_value)
 				constraint_cascade_depth -= 1
+				cascade_bumped = FALSE
 		else
 			stack_trace("preference constraint cascade exceeded depth [PREF_CONSTRAINT_MAX_DEPTH] starting from [preference.savefile_key]; likely a constraint cycle")
 
@@ -457,9 +464,15 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			update_preview_icon_lazy()
 	catch(var/exception/e)
 		stack_trace("update_preference runtimed: [e.name] at [e.file]:[e.line] (key=[preference.savefile_key])")
-		// Reset the cascade depth so subsequent unrelated writes work; the batch counter
-		// is decremented by end_update_batch below regardless.
-		constraint_cascade_depth = 0
+		// Undo only this frame's increment (nested frames each unwind their own), then
+		// clamp as a last-resort guard. The batch counter is decremented by
+		// end_update_batch below regardless.
+		if(cascade_bumped)
+			constraint_cascade_depth -= 1
+			cascade_bumped = FALSE
+		if(constraint_cascade_depth < 0)
+			stack_trace("constraint_cascade_depth went negative ([constraint_cascade_depth]) after runtime in [preference.savefile_key]; clamping")
+			constraint_cascade_depth = 0
 
 	end_update_batch()
 

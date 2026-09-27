@@ -28,8 +28,6 @@
 	. = ..()
 	connect_to_network()
 
-REF_OWNED(/obj/machinery/power/grid_checker, "wires")
-
 /obj/machinery/power/grid_checker/update_icon()
 	if(power_failing)
 		icon_state = "gridchecker_off"

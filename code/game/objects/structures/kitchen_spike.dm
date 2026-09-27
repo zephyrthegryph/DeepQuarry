@@ -12,9 +12,23 @@
 	var/meat_type
 	var/victim_name = "corpse"
 
-/obj/structure/kitchenspike/attackby(obj/item/grab/G as obj, mob/user as mob)
+/obj/structure/kitchenspike/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/kitchenspike_item,
+		/datum/interaction/entry_hand/kitchenspike_hand,
+	)
+	..()
+
+/// Old attackby: force a grabbed mob onto the spike.
+/datum/interaction/entry_item/kitchenspike_item
+	id = "kitchenspike_item"
+	name = "Use"
+	held_type = /obj/item/grab
+	effect = /obj/structure/kitchenspike/proc/interaction_item
+
+/obj/structure/kitchenspike/proc/interaction_item(mob/user, obj/item/grab/G, datum/interaction/interaction)
 	if(!istype(G, /obj/item/grab) || !ismob(G?.grab_target()))
-		return
+		return TRUE
 	if(occupied)
 		to_chat(user, span_danger("The spike already has something on it, finish collecting its meat first!"))
 	else
@@ -26,6 +40,7 @@
 			qdel(M)
 		else
 			to_chat(user, span_danger("They are too big for the spike, try something smaller!"))
+	return TRUE
 
 /obj/structure/kitchenspike/proc/spike(mob/living/victim)
 	if(!istype(victim))
@@ -49,9 +64,17 @@
 	meat = 5
 	return 1
 
-/obj/structure/kitchenspike/attack_hand(mob/user as mob)
-	if(..() || !occupied)
-		return
+/// Old attack_hand: carve meat off the spiked corpse.
+/datum/interaction/entry_hand/kitchenspike_hand
+	id = "kitchenspike_hand"
+	name = "Carve"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/kitchenspike/proc/kitchenspike_occupied, null))
+	effect = /obj/structure/kitchenspike/proc/interaction_hand
+
+/obj/structure/kitchenspike/proc/kitchenspike_occupied(mob/actor, atom/target, obj/item/held)
+	return !!occupied
+
+/obj/structure/kitchenspike/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	meat--
 	new meat_type(get_turf(src))
 	if(meat > 1)
@@ -60,3 +83,4 @@
 		to_chat(user, "You remove the last piece of meat from \the [victim_name]!")
 		icon_state = "spike"
 		occupied = 0
+	return TRUE

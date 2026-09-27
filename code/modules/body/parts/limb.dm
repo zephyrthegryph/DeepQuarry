@@ -94,31 +94,74 @@
 	else
 		trauma = amount
 	var/before = get_trauma() + get_burn()
-	if(apply_wound_damage(trauma, burn, sharp, edge, source, projectile = (flags & INJURE_PROJECTILE)))
+	if(flags & INJURE_CONTINUOUS)
+		var/wound_kind = burn ? BURN : (sharp ? (edge ? CUT : PIERCE) : BRUISE)
+		if(accumulate_wound_damage(wound_kind, amount))
+			owner?.UpdateDamageIcon()
+	else if(apply_wound_damage(trauma, burn, sharp, edge, source, projectile = (flags & INJURE_PROJECTILE)))
 		owner?.UpdateDamageIcon()
 	return max(0, get_trauma() + get_burn() - before)
+
+/// Continuous harm (INJURE_CONTINUOUS): `amount` of `wound_kind` (CUT, PIERCE,
+/// BRUISE or BURN) grows this limb's existing wound of that kind, or opens one.
+/// Unlike apply_wound_damage() there is no rounding and none of the per-hit
+/// rolls (organ spill-over, damage cascades, dismemberment), so a rate applied
+/// in ticks of any length lands the same total. Past the limb's capacity the
+/// excess becomes shock, as in apply_wound_damage(). Returns the amount the
+/// wounds took.
+/obj/item/organ/external/proc/accumulate_wound_damage(wound_kind, amount)
+	if(amount <= 0 || (owner && om_has(owner, EFFECT_GODMODE)))
+		return 0
+	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
+	var/inflict = amount
+	if(CONFIG_GET(flag/limbs_can_break) && !is_damageable(amount))
+		inflict = clamp(max_damage * CONFIG_GET(number/organ_health_multiplier) - (get_trauma() + get_burn()), 0, amount)
+		if(owner && amount > inflict)
+			owner.shock_stage += (amount - inflict) * CONFIG_GET(number/organ_damage_spillover_multiplier)
+	if(inflict <= 0)
+		return 0
+	var/synthetic = (robotic >= ORGAN_ROBOT)
+	var/datum/affliction/wound/wound_type = wound_affliction_type(wound_kind, inflict, synthetic)
+	if(!wound_type)
+		return 0
+	var/wanted_damage_type = initial(wound_type.damage_type)
+	var/datum/affliction/wound/target
+	for(var/datum/affliction/wound/W as anything in get_wounds())
+		if(W.internal || W.damage_type != wanted_damage_type || istype(W, /datum/affliction/wound/lost_limb))
+			continue
+		target = W
+		break
+	if(target)
+		target.open_wound(inflict)
+	else
+		add_wound(new wound_type(src, inflict))
+	// Not update_damages(): that also runs the bleed clock down once per call,
+	// which would make the bleed depend on the tick length.
+	recalc_integrity()
+	if(CONFIG_GET(flag/bones_can_break) && !synthetic && get_trauma() > min_broken_damage * CONFIG_GET(number/organ_health_multiplier))
+		fracture()
+	return inflict
 
 
 // --- Part lifecycle -------------------------------------------------------------------
 
-/// The organ left `B`: its located afflictions come with it.
+/// The organ left this body: its located afflictions come with it. Called
+/// only by release_part() (attach.dm), which recomputes the organ's integrity
+/// once its owner is cleared and invalidates the body once per subtree.
 /datum/body/proc/detach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
 		A.location = O
 		LAZYADD(O.detached_afflictions, A)
-	// The organ's own integrity is recomputed by removed() once its owner is
-	// cleared, so it reads the detached list rather than this body's index.
-	on_status_changed()
 
-/// The organ joined this body: adopt what it carries.
+/// The organ joined this body: adopt what it carries. Called only by
+/// adopt_part() (attach.dm), which invalidates the body once per subtree.
 /datum/body/proc/attach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in O.detached_afflictions)
 		add_affliction(A, O)
 		A.last_reroll_band = -1
 	O.detached_afflictions = null
 	O.recalc_integrity() // lesions / wounds moved: one recompute from the index
-	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_ORGANS)
 
 /// Offline tick for afflictions riding a detached organ.
 /obj/item/organ/proc/tick_detached_afflictions()

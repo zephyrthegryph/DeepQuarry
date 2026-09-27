@@ -98,6 +98,10 @@
 		return
 	if(!holder)
 		return
+	// Faction-mates / declared allies don't start a feud over a stray hit
+	// (splash damage, friendly fire, a shove). See should_retaliate_against.
+	if(!should_retaliate_against(attacker))
+		return
 	add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "react_to_attack")
 	// Record in the world model so retaliate_to_attacker.evaluate() can see
 	// who struck us even when they're outside view() range.

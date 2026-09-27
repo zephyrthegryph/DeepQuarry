@@ -95,6 +95,9 @@ REF_OWNED(/datum/ai_brain, "model")
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
+	// Clear the mob's back-reference so nothing keeps calling into a deleted brain.
+	if(holder?.ai_brain == src)
+		holder.ai_brain = null
 	manage_processing(0)
 	return ..()
 
@@ -126,10 +129,14 @@ REF_OWNED(/datum/ai_brain, "model")
 /datum/ai_brain/proc/set_stance(_stance)
 	return
 
-/// Strategic tick. Slow — 2s.
+/// Strategic tick. Slow — 2s in combat, idle_strategic_interval when calm.
 /datum/ai_brain/proc/handle_strategicals()
 	if(QDELETED(holder) || holder.stat >= DEAD)
-		qdel(src)
+		// Never qdel from the subsystem tick: the holder's Destroy (or a
+		// revive via on_stat_change) owns the brain's lifetime. Just stop
+		// ticking; on_stat_change re-arms processing if the mob comes back.
+		dqai_log("[holder] brain: strategic tick on dead/deleted holder, sleeping")
+		manage_processing(0)
 		return
 	if(holder.client && !autopilot)
 		return
@@ -138,20 +145,37 @@ REF_OWNED(/datum/ai_brain, "model")
 	expire_personal()
 	update_primary_threat()
 	selection_dirty = TRUE
-	next_strategic_at = world.time + (primary_threat ? 2 SECONDS : idle_strategic_interval)
-	if(!primary_threat)
+	if(primary_threat)
+		// Combat: the quarter-second tactical loop owns behavior selection.
+		next_strategic_at = world.time + 2 SECONDS
+		sync_fast_processing()
+		return
+	// Calm: this is the ONLY place no-threat behaviors (wander, idle speak,
+	// walk_to_destination, return_home, follow_leader, scavenge, ...) get
+	// selected. The tactical loop is combat-scoped, so running pick_and_run
+	// here keeps idle cost at the strategic cadence rather than per-250ms.
+	var/idle_pending = pick_and_run()
+	if(active_behavior_type)
+		// A tick-driven idle behavior is running: let the fast loop drive it
+		// until it finishes (sync_fast_processing drops us again on DONE).
+		next_strategic_at = world.time + 2 SECONDS
+		sync_fast_processing()
+		return
+	next_strategic_at = world.time + idle_strategic_interval
+	sync_fast_processing()
+	// Only hibernate when nothing idle wants to run and no one-shot walk is
+	// queued. A brain with an idle behavior scoring > 0 (or cooling down
+	// toward one) stays on the slow cadence so it actually gets to act.
+	if(!idle_pending && !destination)
 		hibernate_calm()
 
-/// Tactical tick. Fast — 250ms.
+/// Tactical tick. Fast — 250ms. Runs while a threat exists OR while a
+/// tick-driven behavior (combat or idle) is active; see sync_fast_processing.
 /datum/ai_brain/proc/handle_tactics()
 	if(QDELETED(holder) || holder.stat >= DEAD)
+		manage_processing(0)
 		return
 	if(holder.client && !autopilot)
-		return
-	if(!primary_threat)
-		if(active_behavior_type)
-			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
-		sync_fast_processing()
 		return
 	if(is_busy())
 		return
@@ -168,6 +192,16 @@ REF_OWNED(/datum/ai_brain, "model")
 				stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 			if(DQ_BEHAVIOR_FAILED)
 				stop_active(DQ_BEHAVIOR_STOP_FAILED)
+
+	if(!primary_threat)
+		// Calm: idle selection lives on the strategic cadence (handle_strategicals),
+		// never here — that is what keeps wandering mobs off the 250ms loop.
+		// If the idle behavior just finished, ask for a prompt re-pick on the
+		// next 2s SSai tick instead of waiting out idle_strategic_interval.
+		if(!active_behavior_type)
+			next_strategic_at = 0
+		sync_fast_processing()
+		return
 
 	if(!selection_dirty && active_behavior_type)
 		return
@@ -245,16 +279,20 @@ REF_OWNED(/datum/ai_brain, "model")
 // Behavior selection.
 // ---------------------------------------------------------------------------
 
+/// Evaluates every eligible behavior and runs the winner. Returns TRUE if any
+/// behavior scored > 0 or is merely cooling down toward eligibility (callers
+/// use this to decide whether a calm brain may hibernate), FALSE otherwise.
 /datum/ai_brain/proc/pick_and_run()
 	selection_dirty = FALSE
 	if(!effective_behaviors || !length(effective_behaviors))
-		return
+		return FALSE
 
 	var/best_score = 0
 	var/best_class = -INFINITY
 	var/best_type = null
 	var/atom/best_target = null
 	var/atom/best_source = null
+	var/any_pending = FALSE
 
 	for(var/btype as anything in effective_behaviors)
 		var/source = effective_behaviors[btype]
@@ -266,6 +304,8 @@ REF_OWNED(/datum/ai_brain, "model")
 		if(!B.applicable_to(holder))
 			continue
 		if(!B.is_off_cooldown(src, source))
+			// It wants to run later — don't let the brain hibernate past it.
+			any_pending = TRUE
 			continue
 		var/list/result = B.evaluate(src, source)
 		if(!result)
@@ -273,6 +313,7 @@ REF_OWNED(/datum/ai_brain, "model")
 		var/score = result["score"]
 		if(score <= 0)
 			continue
+		any_pending = TRUE
 		if(B.priority_class > best_class || (B.priority_class == best_class && score > best_score))
 			best_class = B.priority_class
 			best_score = score
@@ -281,7 +322,7 @@ REF_OWNED(/datum/ai_brain, "model")
 			best_source = source
 
 	if(!best_type)
-		return
+		return any_pending
 
 	if(best_type == active_behavior_type && active_behavior_type)
 		// Same behavior, possibly new target. Retargeting in-place is correct
@@ -292,9 +333,10 @@ REF_OWNED(/datum/ai_brain, "model")
 			active_target = best_target
 			if(holder && best_target)
 				holder.face_atom(best_target)
-		return
+		return TRUE
 
 	run_behavior(best_type, best_target, best_source)
+	return TRUE
 
 /datum/ai_brain/proc/run_behavior(btype, atom/target, atom/source)
 	if(active_behavior_type)
@@ -331,9 +373,11 @@ REF_OWNED(/datum/ai_brain, "model")
 	wake_from_chunks()
 	sync_fast_processing()
 
-/// Keeps the quarter-second tactical loop limited to brains with a combat target.
+/// Keeps the quarter-second tactical loop limited to brains that have a combat
+/// target or a tick-driven behavior in flight (an idle walk still needs to step).
+/// Calm brains with nothing active never sit on the fast loop.
 /datum/ai_brain/proc/sync_fast_processing()
-	var/should_process_fast = primary_threat && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
+	var/should_process_fast = (primary_threat || active_behavior_type) && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
 	if(should_process_fast)
 		DQAI_START_FASTPROCESSING(src)
 	else
@@ -344,6 +388,13 @@ REF_OWNED(/datum/ai_brain, "model")
 // ---------------------------------------------------------------------------
 
 /datum/ai_brain/proc/update_primary_threat()
+	// A threat that no longer exists in the world (deleted, or pulled out of
+	// the map into nullspace) gets dropped at once — no grace timer, since
+	// there is nothing to pursue and stale refs would keep behaviors chasing it.
+	if(primary_threat && (QDELETED(primary_threat) || !primary_threat.loc))
+		dqai_log("[holder] brain: dropping vanished threat [primary_threat]")
+		drop_primary_threat()
+		return
 	if(!model || !length(model.visible_hostiles))
 		if(primary_threat)
 			// Mirror legacy ai_holder lose_target_timeout: hold the target for
@@ -356,13 +407,7 @@ REF_OWNED(/datum/ai_brain, "model")
 			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT)
 				return  // Still within the grace period.
 			// Grace period expired — drop the target.
-			lose_threat_at = 0
-			var/old = primary_threat
-			primary_threat = null
-			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
-			if(active_behavior_type)
-				stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
-			sync_fast_processing()
+			drop_primary_threat()
 		return
 	// Target is visible again — reset the grace timer.
 	lose_threat_at = 0
@@ -377,6 +422,36 @@ REF_OWNED(/datum/ai_brain, "model")
 		primary_threat = new_threat
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, new_threat, old)
 		sync_fast_processing()
+
+/// Shared "we no longer have a threat" path: clears the slot, signals, stops
+/// whatever combat behavior was chasing it and leaves the fast loop.
+/datum/ai_brain/proc/drop_primary_threat()
+	lose_threat_at = 0
+	var/old = primary_threat
+	primary_threat = null
+	if(holder)
+		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
+	if(active_behavior_type)
+		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+	sync_fast_processing()
+
+/// TRUE if being struck by `attacker` should make us hostile to them. Same-faction
+/// mobs and table-declared allies don't feud over friendly fire / splash damage;
+/// an explicit personal grudge (already HOSTILE) always counts.
+/datum/ai_brain/proc/should_retaliate_against(mob/attacker)
+	if(!attacker || !holder || attacker == holder)
+		return FALSE
+	if(personal)
+		var/list/entry = personal[om_handle(attacker)]
+		if(entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE)
+			return TRUE
+	if(holder.faction && attacker.faction == holder.faction)
+		dqai_log("[holder] brain: ignoring hit from faction-mate [attacker]")
+		return FALSE
+	if(disposition_to(attacker) >= DQ_DISPOSITION_ALLY)
+		dqai_log("[holder] brain: ignoring hit from ally [attacker]")
+		return FALSE
+	return TRUE
 
 // ---------------------------------------------------------------------------
 // Dispositions.
@@ -487,7 +562,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	if(!model || !holder)
 		return
 	model.record_damage(amount, injury_kind, attacker)
-	if(ismob(attacker) && attacker != holder)
+	if(ismob(attacker) && attacker != holder && should_retaliate_against(attacker))
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
 			var/mob/old = primary_threat

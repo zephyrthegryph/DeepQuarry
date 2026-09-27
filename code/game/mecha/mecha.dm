@@ -318,7 +318,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 // LIFECYCLE: the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
 /obj/mecha/Destroy()
 	src.go_out()
-	for(var/mob/M in src) //Be Extra Sure
+	for(var/mob/M in slot_contents()) //Be Extra Sure
 		M.forceMove(get_turf(src))
 		M.loc.Entered(M)
 		if(M != src?.slot_item(MECHA_SLOT_PILOT))
@@ -744,7 +744,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	. = user.shared_living_tgui_distance(src_object) //allow them to interact with anything they can interact with normally.
 	if(. != STATUS_INTERACTIVE)
 		//Allow interaction with the mecha or anything that is part of the mecha
-		if(src_object == src || (src_object in src))
+		if(src_object == src || (src_object in slot_contents()))
 			return STATUS_INTERACTIVE
 		if(src.Adjacent(src_object))
 			src.occupant_message(span_notice("Interfacing with [src_object]..."))
@@ -1832,7 +1832,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 
 	for(var/turf/T in locs)
-		var/obj/machinery/atmospherics/portables_connector/possible_port = locate() in T
+		var/obj/machinery/atmospherics/portables_connector/possible_port = locate_on(T, /obj/machinery/atmospherics/portables_connector)
 		if(possible_port)
 			if(connect(possible_port))
 				occupant_message(span_notice("\The [name] connects to the port."))
@@ -2291,7 +2291,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			data["maint_can_req_access"] = !!add_req_access
 			data["maint_can_maint_access"] = !!maint_access
 			data["maint_can_set_air"] = (state > 0)
-			data["maint_can_remove_passenger"] = (state > 0) && (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in contents)
+			data["maint_can_remove_passenger"] = (state > 0) && (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in slot_contents())
 			return data
 	// Damage banner.
 	var/list/dam = list()
@@ -3108,24 +3108,52 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
 
-/// Copies the aggregate injury state of one mob onto another (used when an AI is temporarily moved into a mecha shell).
-/// The target is fully healed first, then re-injured with the source's per-category injury load.
+/// Copies one mob's injuries onto another (used when an AI is temporarily
+/// moved into a mecha shell and back). The target is fully healed first, then
+/// each of the source's injuries is re-inflicted as the injury kind that makes
+/// it, at the same part, and the source's oxygen debt is carried over.
 /obj/mecha/proc/mirror_injury_state(mob/living/source_mob, mob/living/target_mob)
-	if(!source_mob || !target_mob)
+	if(!source_mob?.body || !target_mob)
 		return
 	target_mob.fully_heal()
-	var/physical = source_mob.injury_load(INJURY_CATEGORY_PHYSICAL)
-	var/thermal = source_mob.injury_load(INJURY_CATEGORY_THERMAL)
-	var/toxic = source_mob.injury_load(INJURY_CATEGORY_TOXIC)
+	for(var/datum/affliction/A as anything in source_mob.body.afflictions)
+		var/kind = mirrored_injury_kind(A)
+		var/amount = A.load_value()
+		if(!kind || amount <= 0)
+			continue
+		target_mob.injure(kind, amount, A.location?.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	var/oxygen_debt = source_mob.oxygen_debt()
-	if(physical)
-		target_mob.injure(INJURY_BLUNT, physical, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(thermal)
-		target_mob.injure(INJURY_BURN, thermal, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(toxic)
-		target_mob.injure(INJURY_TOXIN, toxic, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	if(oxygen_debt)
 		target_mob.add_oxygen_debt(oxygen_debt, src)
+
+/// The injury kind (INJURY_*) that re-creates affliction `A`, or null when it
+/// is not an injury (a disease, a lesion, a vital-system state).
+/obj/mecha/proc/mirrored_injury_kind(datum/affliction/A)
+	if(!A.injury_category)
+		return null
+	if(istype(A, /datum/affliction/wound))
+		var/datum/affliction/wound/W = A
+		switch(W.damage_type)
+			if(CUT)
+				return INJURY_CUT
+			if(PIERCE)
+				return INJURY_PIERCE
+			if(BURN)
+				return INJURY_BURN
+	switch(A.injury_category)
+		if(INJURY_CATEGORY_PHYSICAL)
+			return INJURY_BLUNT
+		if(INJURY_CATEGORY_THERMAL)
+			return INJURY_BURN
+		if(INJURY_CATEGORY_TOXIC)
+			return INJURY_TOXIN
+		if(INJURY_CATEGORY_GENETIC)
+			return INJURY_CELLULAR
+		if(INJURY_CATEGORY_NEURAL)
+			return INJURY_NEURAL
+		if(INJURY_CATEGORY_PAIN)
+			return INJURY_PAIN
+	return null
 
 /// Icon-state suffix for the melee-mode action button, keyed on the mecha's melee injury kind.
 /obj/mecha/proc/melee_damtype_icon()

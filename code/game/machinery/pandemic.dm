@@ -180,9 +180,6 @@
 		P.name = "Releasing Virus - [D.name]"
 		printing = FALSE
 
-/obj/machinery/computer/pandemic/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/computer/pandemic/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/pandemic_insert_beaker,
@@ -215,9 +212,6 @@
 	update_tgui_static_data(user)
 	icon_state = "pandemic1"
 	return TRUE
-
-/obj/machinery/computer/pandemic/attack_ghost(mob/user)
-	tgui_interact(user)
 
 /obj/machinery/computer/pandemic/screwdriver_act(mob/user, obj/item/tool)
 	eject_beaker()

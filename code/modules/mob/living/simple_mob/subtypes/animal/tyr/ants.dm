@@ -125,7 +125,7 @@
 		exploded = TRUE
 		explosion(src.loc, 0, 3, 0, 0)
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/agate/death()
+/mob/living/simple_mob/animal/tyr/mineral_ants/agate/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s body begins to rupture!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
@@ -344,7 +344,7 @@
 		exploded = TRUE
 		empulse(src, 1, 2, 0, 0)
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/gold/death()
+/mob/living/simple_mob/animal/tyr/mineral_ants/gold/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s body begins to rupture!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))

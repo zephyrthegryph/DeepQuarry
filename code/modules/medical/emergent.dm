@@ -47,7 +47,7 @@
 		reconcile_medical_side_effects()
 
 /mob/living/carbon/human/proc/dq_check_emergent_conditions()
-	if(stat == DEAD)
+	if(is_dead())
 		return
 	for(var/datum/affliction_trigger/organ_integrity/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/organ_integrity"))
 		var/obj/item/organ/O = _dq_resolve_organ_on(src, c.organ)
@@ -133,7 +133,7 @@
 /// at threshold severity is 0, at the cause's `metric_max` (or a
 /// per-cause default) severity is 100.
 /mob/living/carbon/human/proc/dq_check_metric_conditions()
-	if(stat == DEAD)
+	if(is_dead())
 		return
 	for(var/datum/affliction_trigger/metric/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/metric"))
 		var/value = dq_get_metric(c.metric)
@@ -168,7 +168,7 @@
 /// — the encyclopedia links these conditions directly to their causing
 /// reagents.
 /mob/living/carbon/human/proc/dq_check_chem_conditions()
-	if(stat == DEAD || !body)
+	if(is_dead() || !body)
 		return
 	var/static/list/chem_caused_types
 	if(isnull(chem_caused_types))
@@ -310,9 +310,9 @@
 	existing._apply_stage(new_stage)
 
 
-/// The patient's normal core temperature (species), 37°C when unknown.
+/// The patient's normal core temperature (species), BODYTEMP_NORMAL when unknown.
 /mob/living/carbon/human/proc/dq_normal_body_temperature()
-	return species?.body_temperature || T0C + 37
+	return species?.body_temperature || BODYTEMP_NORMAL
 
 /mob/living/carbon/human/proc/dq_get_metric(metric_name)
 	switch(metric_name)
@@ -341,7 +341,7 @@
 /// damage only over minutes of unresolved hypoxia, not seconds.
 #define DQ_ISCHEMIA_HYPOXIA_THRESHOLD 30
 /mob/living/carbon/human/proc/dq_check_ischemic_damage()
-	if(stat == DEAD)
+	if(is_dead())
 		return
 	var/hypoxia = oxygen_debt()
 	if(hypoxia < DQ_ISCHEMIA_HYPOXIA_THRESHOLD)

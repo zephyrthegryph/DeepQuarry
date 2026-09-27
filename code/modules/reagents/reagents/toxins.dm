@@ -321,7 +321,7 @@
 /datum/reagent/toxin/stimm/overdose(mob/living/carbon/M, alient, removed)
 	..()
 	if(prob(10)) // 1 in 10. This thing's made with welder fuel and fertilizer, what do you expect?
-		var/obj/item/organ/internal/heart/ht = M.internal_organs_by_name[O_HEART]
+		var/obj/item/organ/internal/heart/ht = LAZYACCESS(M.internal_organs_by_name, O_HEART)
 		if(ht)
 			M.injure(INJURY_BLUNT, 1, ht, src, flags = INJURE_IGNORE_RESISTANCE)
 			to_chat(M, span_warning("Huh... Is this what a heart attack feels like?"))
@@ -510,8 +510,8 @@
 	..()
 	if(istype(T, /turf/simulated/wall))
 		var/turf/simulated/wall/W = T
-		if(locate(/obj/effect/overlay/wallrot) in W)
-			for(var/obj/effect/overlay/wallrot/E in W)
+		if(locate_on(W, /obj/effect/overlay/wallrot))
+			for(var/obj/effect/overlay/wallrot/E in turf_contents_of_type(W, /obj/effect/overlay/wallrot))
 				qdel(E)
 			W.visible_message(span_notice("The fungi are completely dissolved by the solution!"))
 

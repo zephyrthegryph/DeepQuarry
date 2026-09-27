@@ -17,6 +17,12 @@
 #define CONTAINER_SLOT_STORAGE "storage"
 /// An organ's implant site: keyed by implant type (OM relations step 2).
 #define ORGAN_SLOT_IMPLANTS "implants"
+/// A disposal bin's or in-transit holder's contents (C11).
+#define CONTAINER_SLOT_DISPOSAL "disposal"
+/// A vehicle cage's one vehicle (C11).
+#define CONTAINER_SLOT_VEHICLE_CAGE "vehicle"
+/// A transit tube pod's rider(s) (C11).
+#define CONTAINER_SLOT_TRANSIT_POD "transit_pod"
 
 // ---- Occupant machines (C8, containment.md §10) ----
 /// The sealed occupant slot of a cryopod-family despawner.

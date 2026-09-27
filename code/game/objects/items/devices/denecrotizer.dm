@@ -191,9 +191,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 	target.faction = user.faction
 	target.revivedby = user.name
 	target.revive()
-	target.sight = initial(target.sight)
-	target.see_in_dark = initial(target.see_in_dark)
-	target.see_invisible = initial(target.see_invisible)
 	target.update_icon()
 	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
 	log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
@@ -220,9 +217,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 	var/mob/living/simple_mob/target = task.target
 	var/mob/living/user = task.actor
 	target.revive()
-	target.sight = initial(target.sight)
-	target.see_in_dark = initial(target.see_in_dark)
-	target.see_invisible = initial(target.see_invisible)
 	target.update_icon()
 	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
 	last_used = world.time

@@ -194,6 +194,8 @@ REF_SPILL(/obj/machinery/recharger, "charging")
 	om_changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
 	playsound(src, tool.usesound, 75, TRUE)
+	if(anchored)
+		MACHINE_WAKE(src) // machine_step() slept while unanchored; let it settle power state / resume charging.
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/recharger/proc/interaction_take(mob/user, obj/item/held, datum/interaction/interaction)

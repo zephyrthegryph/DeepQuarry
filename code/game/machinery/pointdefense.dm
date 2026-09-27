@@ -150,6 +150,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	..()
 	if(old_stat != stat)
 		update_icon()
+		if(active && !(stat & (NOPOWER|BROKEN)))
+			MACHINE_WAKE(src)
 
 // Find controller with the same tag on connected z levels (if any)
 /obj/machinery/pointdefense/proc/get_controller()

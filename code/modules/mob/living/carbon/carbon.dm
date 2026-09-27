@@ -12,7 +12,7 @@
 
 	cozyloop = new(list(src), FALSE)
 
-/// Skin germs creep up to the ambient level. Runs every cycle, even while transforming or in
+/// Skin germs creep up to the ambient level, on a rewake. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
 /datum/om/stage/life/germs
 	order = LIFE_PHASE_TAIL + 10
@@ -20,10 +20,29 @@
 	wake_on = CHANGE_MOB_HEALTH
 	of = /mob/living/carbon
 
+/mob/living/carbon
+	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll.
+	var/germs_rolled_at = 0
+
 /datum/om/stage/life/germs/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
-	// Increase germ_level regularly
-	if(self.germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
-		self.germ_level++
+	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
+	// stage idles and comes back on its rewake), so stasis stops the creep too.
+	var/now = om_clock_now(self, CLOCK_BIO)
+	var/cycles = self.germs_rolled_at ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 1, GERM_CATCHUP_CYCLES) : 1
+	self.germs_rolled_at = now
+	if(self.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
+		return
+	var/expected = cycles * 0.3
+	var/gain = round(expected) + (prob((expected - round(expected)) * 100) ? 1 : 0)
+	if(gain)
+		self.germ_level = min(GERM_LEVEL_AMBIENT, self.germ_level + gain)
+
+/// Lazy: germs creep up on the rewake; washing lowers them, and the next roll resumes the creep.
+/datum/om/stage/life/germs/idle(mob/living/carbon/self)
+	return TRUE
+
+/datum/om/stage/life/germs/rewake_delay(mob/living/carbon/self)
+	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
 REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
 
@@ -218,7 +237,7 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
 					status += "weirdly shapen"
 				if(org.dislocated == 1)
 					status += "dislocated"
-				if(org.status & ORGAN_BROKEN)
+				if(org.is_fractured())
 					status += "[can_feel_pain(org) ? "hurting and " : ""]abnormally bent"
 				//infection stuff
 				if(org.status & ORGAN_DEAD)

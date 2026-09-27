@@ -144,7 +144,7 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 
 /obj/structure/ladder/proc/climb_done(mob/M, obj/target_ladder)
 	var/turf/T = get_turf(target_ladder)
-	for(var/atom/A in T)
+	for(var/atom/A in turf_contents_of_type(T, /atom))
 		if(!A.CanPass(M, M.loc, 1.5, 0))
 			to_chat(M, span_notice("\The [A] is blocking \the [src]."))
 			return

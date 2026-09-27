@@ -1123,4 +1123,44 @@
 		if(entry[1] == E && (entry[2] & CHANGE_MOB_STATUS))
 			.++
 
+// --- Human idle rules (w5 human sleep rules, ported onto OM stages) ---------------------------
+
+/// A healthy, placed human's event-driven stages have nothing to do: their idle rules hold, so the
+/// frame skips them until their channels or rewakes. Death opens the defibrillation window, which
+/// keeps its stage awake.
+/datum/unit_test/life_om/human_idle_rules
+
+/datum/unit_test/life_om/human_idle_rules/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	om_run_frame_now(H, /datum/om/pipeline/life)
+	for(var/stage_type in list(/datum/om/stage/life/germs, /datum/om/stage/life/fall, /datum/om/stage/life/pulse, /datum/om/stage/life/pain, /datum/om/stage/life/stasis_sleep, /datum/om/stage/life/defib_timer))
+		var/datum/om/stage/T = om_stage_for(H, stage_type)
+		TEST_ASSERT_NOTNULL(T, "a human's plan has [stage_type]")
+		TEST_ASSERT(T?.idle(H), "[T?.type] should idle on a healthy human")
+	var/datum/om/stage/defib = om_stage_for(H, /datum/om/stage/life/defib_timer)
+	H.death()
+	TEST_ASSERT(!defib.idle(H), "a dead human's brain decays: the defib timer stays awake")
+
+/// Germ creep is charged for the biological time since the last roll, so idling between rolls
+/// loses nothing; stasis (a stopped biology clock) charges nothing.
+/datum/unit_test/life_om/germs_catch_up_on_bio_time
+
+/datum/unit_test/life_om/germs_catch_up_on_bio_time/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/datum/om/stage/life/germs/G = om_stage_for(H, /datum/om/stage/life/germs)
+	var/datum/om/frame/life/F = life_test_pipe(H)
+	H.germ_level = 0
+	H.germs_rolled_at = om_clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE
+	G.perform(H, F)
+	TEST_ASSERT(H.germ_level >= 5 && H.germ_level <= 7, "20 cycles at 30% should give 6 germs, gave [H.germ_level]")
+	var/datum/stasis_source = new
+	om_hold(H, EFFECT_CLOCK_BIO_INHIBIT, stasis_source, 1)
+	var/level = H.germ_level
+	scheduler_advance(LIFE_CYCLE_SECONDS * 20)
+	G.perform(H, F)
+	TEST_ASSERT(H.germ_level - level <= 1, "a stopped biology clock charges at most the one roll, gained [H.germ_level - level]")
+	qdel(stasis_source)
+
 #endif

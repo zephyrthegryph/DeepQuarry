@@ -763,7 +763,7 @@
 /mob/living/simple_mob/animal/synx/ai/pet/holo
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/animal/synx/ai/pet/holo/death()
+/mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
 	visible_message(span_notice("\The [src] fades away!"))
 	var/location = get_turf(src)

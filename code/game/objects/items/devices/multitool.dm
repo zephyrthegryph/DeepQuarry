@@ -33,10 +33,11 @@
 
 	var/uplink = FALSE
 
-/obj/item/multitool/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/multitool/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/multitool/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(uplink)
 		return
 

@@ -80,6 +80,28 @@
 		new plated_tile(src.loc)
 	qdel(src)
 
+/obj/structure/catwalk/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/catwalk_plate,
+	)
+	..()
+
+/// Old attackby: plate the catwalk with a floor tile stack.
+/datum/interaction/entry_item/catwalk_plate
+	id = "catwalk_plate"
+	name = "Plate"
+	held_type = /obj/item/stack/tile/floor
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/catwalk/proc/catwalk_not_plated, null))
+	effect = /obj/structure/catwalk/proc/interaction_plate
+
+/obj/structure/catwalk/proc/catwalk_not_plated(mob/actor, atom/target, obj/item/held)
+	return !plated_tile
+
+/obj/structure/catwalk/proc/interaction_plate(mob/user, obj/item/stack/tile/floor/ST, datum/interaction/interaction)
+	to_chat(user, span_notice("Placing tile..."))
+	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
+	return TRUE
+
 /obj/structure/catwalk/proc/plate_done(mob/user, obj/item/stack/tile/floor/ST)
 	if(plated_tile || !ST.use(1))
 		return
@@ -91,13 +113,6 @@
 		if(istype(ST, tiletype))
 			plating_color = plating_colors[tiletype]
 	update_icon()
-
-/obj/structure/catwalk/attackby(obj/item/C as obj, mob/user as mob)
-	if(istype(C, /obj/item/stack/tile/floor) && !plated_tile)
-		var/obj/item/stack/tile/floor/ST = C
-		to_chat(user, span_notice("Placing tile..."))
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
-		return
 
 /obj/structure/catwalk/welder_act(mob/user, obj/item/C)
 	var/obj/item/weldingtool/WT = C.get_welder()

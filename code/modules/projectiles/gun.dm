@@ -445,7 +445,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 			if(!zoom) //If we're not zoomed, reset our accuracy to our initial accuracy.
 				accuracy = initial(accuracy) //Reset our accuracy
 			last_shot = world.time
-			user.hud_used.update_ammo_hud(user, src)
+			user.hud_used?.update_ammo_hud(user, src)
 			user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
 			if(recoil_mode && iscarbon(user))
@@ -560,7 +560,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 /obj/item/gun/proc/handle_click_empty(mob/user)
 	if (user)
 		user.visible_message("*click click*", span_danger("*click*"))
-		user.hud_used.update_ammo_hud(user, src)
+		user.hud_used?.update_ammo_hud(user, src)
 		// Running dry ends any held-trigger autofire immediately, so a dropped
 		// magazine turns into one click instead of a stream of them.
 		var/mob/living/L = user
@@ -811,7 +811,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
 	new_mode.apply_to(src)
 	to_chat(user, span_notice("\The [src] is now set to [new_mode.name]."))
-	user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD
+	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 
 	return new_mode
 

@@ -119,9 +119,6 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/computer/cloning/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/cloning/attack_hand(mob/user as mob)
 	add_fingerprint(user)
 

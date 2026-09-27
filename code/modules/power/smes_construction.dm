@@ -108,8 +108,6 @@
 	charge = 0
 	should_be_mapped = 1
 
-REF_OWNED(/obj/machinery/power/smes/buildable, "wires")
-
 // LIFECYCLE: RCON consoles rescan without it.
 /obj/machinery/power/smes/buildable/Destroy()
 	for(var/datum/tgui_module/rcon/R in world)

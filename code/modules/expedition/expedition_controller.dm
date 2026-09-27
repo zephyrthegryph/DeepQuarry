@@ -76,6 +76,8 @@ SUBSYSTEM_DEF(expedition)
 	var/list/sites = list()
 	/// Wiped z-levels available for reuse.
 	var/list/free_z = list()
+	/// Running survey-point score earned by completed missions this round.
+	var/survey_points_total = 0
 	/// Z-levels currently being cleared incrementally and unavailable for reuse.
 	var/list/teardown_z = list()
 
@@ -295,7 +297,7 @@ SUBSYSTEM_DEF(expedition)
 	materialization.z_level = z
 	materialization.origin_x = max(1, round((world.maxx - spec.grid_width) / 2))
 	materialization.origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
-	var/area/generated_station/transit/emergency_area = new
+	var/area/generated_station/transit/emergency_area = generated_station_create_area(/area/generated_station/transit)
 	emergency_area.station_id = spec.id
 	emergency_area.department_id = "emergency"
 	emergency_area.name = "[spec.name] Habitable Annex"
@@ -314,8 +316,40 @@ SUBSYSTEM_DEF(expedition)
 	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
 	materialization.entry = new(arrival)
 	materialization.entry.station_id = spec.id
+	generated_station_emergency_utilities(spec, materialization, emergency_area)
 	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
 	return materialization
+
+/// The annex is a real destination, so it gets a minimal self-contained power
+/// and lighting set: one cell-backed APC on the west wall and a wall light on
+/// each side. Everything is owned by the materialization so teardown removes it.
+/proc/generated_station_emergency_utilities(datum/generated_station_spec/spec, datum/generated_station_materialization/materialization, area/generated_station/emergency_area)
+	var/mid_x = round(spec.grid_width / 2)
+	var/mid_y = round(spec.grid_height / 2)
+	var/turf/apc_turf = materialization.world_turf(2, mid_y)
+	if(istype(apc_turf, /turf/simulated/floor))
+		var/obj/machinery/power/apc/APC = new(apc_turf)
+		APC.set_dir(WEST)
+		emergency_area.apc = APC
+		materialization.infrastructure += APC
+		if(APC.terminal)
+			materialization.infrastructure += APC.terminal
+	var/list/light_sockets = list(
+		list(materialization.world_turf(mid_x, spec.grid_height - 1), NORTH, 0, 26),
+		list(materialization.world_turf(mid_x, 2), SOUTH, 0, -26),
+		list(materialization.world_turf(spec.grid_width - 1, mid_y), EAST, 26, 0),
+		list(materialization.world_turf(2, mid_y + 2), WEST, -26, 0),
+	)
+	for(var/list/socket in light_sockets)
+		var/turf/T = socket[1]
+		if(!istype(T, /turf/simulated/floor))
+			continue
+		var/obj/machinery/light/light = new(T)
+		light.set_dir(socket[2])
+		light.pixel_x = socket[3]
+		light.pixel_y = socket[4]
+		materialization.infrastructure += light
+	emergency_area.power_change()
 
 // Generate a site, optionally bound to a mission. Returns the site (or null).
 /datum/controller/subsystem/expedition/proc/generate_site(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null)
@@ -343,6 +377,11 @@ SUBSYSTEM_DEF(expedition)
 	// emergency station instead of returning no destination.
 	for(var/attempt in 1 to 3)
 		var/attempt_seed = ((generation_seed + (attempt - 1) * 104729 - 1) % 16000000) + 1
+		// A failed materialization can leave partial turfs, areas, and atoms on
+		// the z. Every attempt (and the emergency fallback) must start from
+		// vacuum, so wipe before each attempt after the first.
+		if(attempt > 1)
+			wipe_z(z)
 		var/datum/generated_station_planner/planner = new
 		station_spec = planner.plan(attempt_seed)
 		var/planner_error = planner.error_message
@@ -452,6 +491,7 @@ SUBSYSTEM_DEF(expedition)
 
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
 /datum/controller/subsystem/expedition/proc/wipe_z_async(z, datum/callback/on_done)
+	evacuate_mobs_from_z(z)
 	om_lane_work(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
 /datum/controller/subsystem/expedition/proc/wipe_z_slice(list/cursor)
@@ -472,6 +512,7 @@ SUBSYSTEM_DEF(expedition)
 /// annex if needed, the site, its runtime, landing zone and mission. Returns the site.
 /datum/controller/subsystem/expedition/proc/publish_generated_site(datum/expedition_mission/mission, difficulty, datum/shuttle/autodock/overmap/assigned_shuttle, obj/machinery/computer/shuttle_control/explore/origin_console, datum/flight_plan/flight_plan, z, gen_started, t_zalloc, generation_seed, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization, materialization_yields, materialization_elapsed)
 	if(!station_materialization)
+		wipe_z(z)
 		generation_seed = max(1, generation_seed % 16000000)
 		station_spec = generated_station_emergency_spec(generation_seed)
 		station_materialization = generated_station_emergency_materialization(station_spec, z)
@@ -645,9 +686,43 @@ SUBSYSTEM_DEF(expedition)
 	var/datum/expedition_teardown_job/job = new(src, site, reason)
 	job.execute()
 
+// Every mob still on a z that is about to be wiped is either a player (connected
+// or not — a disconnected body still has a ckey/mind and must never be deleted
+// or left floating in the vacuum the wipe produces) or an NPC. Players are moved
+// to a safe turf; NPCs are removed with the rest of the level by wipe_turf().
+/datum/controller/subsystem/expedition/proc/evacuate_mobs_from_z(z, turf/preferred_destination = null)
+	var/turf/destination = preferred_destination
+	if(!destination || destination.z == z || destination.density)
+		destination = null
+		var/list/candidates = list()
+		for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
+			var/turf/T = get_turf(L)
+			if(T && T.z != z && !T.density)
+				candidates += T
+		if(length(candidates))
+			destination = pick(candidates)
+	var/relocated = 0
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(QDELETED(M) || M.z != z)
+			continue
+		var/is_player = M.client || M.ckey || M.mind
+		if(is_player && destination)
+			M.forceMove(destination)
+			to_chat(M, span_danger("The expedition site is being abandoned; you have been pulled back to safety."))
+			relocated++
+		else if(is_player)
+			// No safe destination exists at all; leave the body untouched rather
+			// than delete a player. The wipe below skips it as well.
+			log_world("SSexpedition: no evacuation destination for [M] ([M.ckey]) on z[z]; leaving mob in place.")
+		// NPCs are left to wipe_turf(), which deletes them with the rest of the level.
+	if(relocated)
+		log_world("SSexpedition: evacuated z[z]: [relocated] player mob(s) relocated.")
+
 // Clear every movable off a z and reset it to vacuum for the next generated
-// station. Never deletes a connected player (defensive).
+// station. Never deletes a player mob (connected or not): they are evacuated
+// first by evacuate_mobs_from_z(), and anything still left is skipped (defensive).
 /datum/controller/subsystem/expedition/proc/wipe_z(z)
+	evacuate_mobs_from_z(z)
 	var/area/space/space_area = generated_station_space_area()
 	var/list/turfs = block(locate(1, 1, z), locate(world.maxx, world.maxy, z))
 	for(var/i = 1, i <= length(turfs), i += WIPE_Z_CHUNK)
@@ -671,7 +746,7 @@ SUBSYSTEM_DEF(expedition)
 		for(var/atom/movable/AM in T)
 			if(ismob(AM))
 				var/mob/M = AM
-				if(M.client)
+				if(M.client || M.ckey || M.mind)
 					continue
 			doomed += AM
 		if(!length(doomed))

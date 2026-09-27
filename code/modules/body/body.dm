@@ -23,7 +23,10 @@
 	var/biology = BIOLOGY_ORGANIC
 
 /mob/living/Initialize(mapload)
-	body = new body_type(src)
+	// A human builds its body in set_species(), before this, so its organs
+	// have part slots to attach into.
+	if(!body)
+		body = new body_type(src)
 	return ..()
 
 REF_OWNED(/mob/living, "body")
@@ -346,8 +349,9 @@ REF_OWNED_LIST(/datum/body, "supports")
 	// A cycle the stasis clock paused: afflictions hold still (advance_stasis()).
 	if(stasis_paused)
 		return
-	// Regeneration depends on sleep and nutrition: one snapshot per tick.
-	invalidate(BODY_DIRTY_TREATMENT)
+	// Regeneration depends on sleep and nutrition: one snapshot per tick. Marked directly: this
+	// is the tick's own bookkeeping, not a change that should wake the mob's HEALTH stages again.
+	dirty |= BODY_DIRTY_TREATMENT
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		if(A.body == src)
 			A.tick()
@@ -374,29 +378,32 @@ REF_OWNED_LIST(/datum/body, "supports")
 
 /// Apply death / consciousness from the cached vitals.
 /datum/body/proc/evaluate_status()
-	if(owner.stat == DEAD || om_has(owner, EFFECT_GODMODE))
+	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
 		return
 	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
 		if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
 			REMOVE_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
-	if(is_dead())
+	if(is_lethal())
 		owner.death()
 		return
 	update_consciousness()
 
 /// Death only; no consciousness. Returns TRUE if the mob died.
 /datum/body/proc/check_death()
-	if(owner.stat == DEAD || om_has(owner, EFFECT_GODMODE))
+	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
 		return FALSE
-	if(!is_dead())
+	if(!is_lethal())
 		return FALSE
 	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
 		return FALSE
 	owner.death()
 	return TRUE
 
-/datum/body/proc/is_dead()
+/// Are this body's injuries lethal? A question about damage, not about stat: the mob may still be
+/// alive (death is applied on the next status check) or already dead. Ask the mob's vital-state
+/// predicates (is_dead(), is_dying(), vital_band(); code/modules/body/vital_state.dm) for stat.
+/datum/body/proc/is_lethal()
 	return FALSE
 
 /datum/body/proc/is_unconscious()

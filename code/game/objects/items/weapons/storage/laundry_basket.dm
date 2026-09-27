@@ -49,7 +49,7 @@
 	return
 
 /obj/item/storage/laundry_basket/update_icon()
-	if(contents.len)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
 		icon_state = "laundry-full"
 	else
 		icon_state = "laundry-empty"

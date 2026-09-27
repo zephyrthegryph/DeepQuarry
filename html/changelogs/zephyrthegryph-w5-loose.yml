@@ -1,0 +1,11 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Explosions on a protean's nanosuit cluster now hurt the protean, like any other hit on it."
+  - code_imp: "Every hardsuit's cell is drawn and charged through its power ledger (modules, seals, cooling, movement, power sinks)."
+  - balance: "Total Reassembly rebuilds limbs and cohesion and spends its steel on plating and wiring repair; it no longer cures every other condition."
+  - balance: "Deep oxygen debt makes an unstable heart rhythm deteriorate faster."
+  - balance: "Digesting bellies with suffocation set make their air stale; prey suffocate through their own breathing (internals help)."
+  - balance: "After a successful defibrillation, oxygen debt is repaid faster and the brain stops taking new hypoxic damage for a minute while it is repaid."
+  - refactor: "A broken bone is its fracture condition; setting the bone surgically cures it."
+  - rscadd: "ECG-capable scanners and the vitals monitor show the cardiac rhythm as a vital."

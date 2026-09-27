@@ -33,6 +33,9 @@
 		return FALSE
 	flags |= ATOM_MATERIALIZED
 	on_materialize()
+	// A ledger built while sandboxed skipped the latency sweep; join it now.
+	if(ledger && latent_contents)
+		dq_latency_sweep_register(src)
 	if(ismovable(src))
 		for(var/atom/movable/content as anything in contents)
 			if((content.flags & (ATOM_INITIALIZED|ATOM_MATERIALIZED)) == ATOM_INITIALIZED && !QDELING(content))
@@ -51,6 +54,7 @@
 				content.dematerialize()
 	flags &= ~ATOM_MATERIALIZED
 	on_dematerialize()
+	dq_latency_sweep_unregister(src) // left the live world: no longer a sweep candidate
 	return TRUE
 
 /// World registration. See the top of this file.

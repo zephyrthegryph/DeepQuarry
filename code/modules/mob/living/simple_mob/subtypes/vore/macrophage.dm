@@ -128,7 +128,7 @@
 /mob/living/simple_mob/vore/aggressive/macrophage
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/vore/aggressive/macrophage/death()
+/mob/living/simple_mob/vore/aggressive/macrophage/on_death(gibbed)
 	..()
 	if(isbelly(loc))
 		var/obj/belly/belly = loc

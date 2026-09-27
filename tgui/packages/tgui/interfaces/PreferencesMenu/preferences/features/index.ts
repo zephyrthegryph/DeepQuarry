@@ -20,7 +20,7 @@ for (const key of requireFeature.keys()) {
   }
 }
 
-// CHOMPAdd start for modularity
+// Also collect the features under chompstation/PreferencesMenu.
 const requireAdditions = require.context(
   '../../../chompstation/PreferencesMenu/preferences/features',
   true,
@@ -32,6 +32,5 @@ for (const key of requireAdditions.keys()) {
     features[featureKey] = feature as Feature<unknown>;
   }
 }
-// CHOMPAdd end
 
 export default features;

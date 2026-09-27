@@ -99,21 +99,26 @@
  * return bool - TRUE if a new pooled window is opened, FALSE in all other situations including if a new pooled window didn't open because one already exists.
  */
 /datum/tgui/proc/open(preinitialized = FALSE)
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	var/startup_timer = "tgui-open-[REF(src)]"
 	var/list/startup_profile = list()
 	rustg_time_reset(startup_timer)
 	#endif
 	if(!user?.client)
 		return FALSE
-	if(window && window.status > TGUI_WINDOW_LOADING)
+	// A pre-supplied window that is already READY is only refused when something
+	// else owns it: a pooled shell always belongs to the pool, and a locked window
+	// belongs to whichever UI locked it. An unlocked READY dedicated window
+	// (tooltip, media panel, ...) whose previous UI went away simply registers the
+	// new UI against its live page instead of stranding the page with no owner.
+	if(window && window.status > TGUI_WINDOW_LOADING && (window.pooled || window.locked))
 		return FALSE
 	process_status()
 	if(status < STATUS_UPDATE)
 		return FALSE
 	if(!window)
 		window = SStgui.request_pooled_window(user)
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["pool_acquired_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
 	if(!window)
@@ -130,7 +135,7 @@
 				))
 	else
 		window.send_message("ping")
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["shell_ready_ms"] = rustg_time_milliseconds(startup_timer)
 	send_assets(startup_profile, startup_timer)
 	var/list/startup_payload = get_payload(
@@ -159,7 +164,7 @@
 	return TRUE
 
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	var/assets_started_ms = startup_profile ? rustg_time_milliseconds(startup_timer) : 0
 	var/flush_started_ms = 0
 	#endif
@@ -174,7 +179,7 @@
 		/datum/asset/json/icon_ref_map))
 	for(var/datum/asset/asset in src_object.ui_assets(user))
 		flush_queue |= window.send_asset(asset)
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["assets_queued_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
@@ -192,11 +197,11 @@
 	if(interface_chunks)
 		flush_queue |= SSassets.transport.send_assets(user.client, asset_generation.get_chunk_assets(interface_chunks))
 	if (flush_queue)
-		#ifdef DEBUG
+		#ifdef TGUI_DEV_DIAGNOSTICS
 		flush_started_ms = rustg_time_milliseconds(startup_timer)
 		#endif
 		user.client.browse_queue_flush()
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["assets_flushed_ms"] = rustg_time_milliseconds(startup_timer)
 		startup_profile["asset_delivery_ms"] = startup_profile["assets_flushed_ms"] - assets_started_ms
@@ -229,14 +234,18 @@
 		// the error message properly.
 		window.release_lock()
 		window.close(can_be_suspended, logout)
-		src_object.tgui_close(user)
+		// Either side may already be gone (deleted src_object, deleted mob);
+		// SStgui.on_close must still run so the UI leaves all_uis.
+		if(!QDELETED(src_object))
+			src_object.tgui_close(user)
 		SStgui.on_close(src)
 
-		if(user.client)
+		if(user?.client)
 			terminate_byondui_elements()
 
 	// Unset machine just to be sure.
-	user.unset_machine()
+	if(!QDELETED(user))
+		user.unset_machine()
 
 	state = null
 	if(parent_ui)
@@ -368,9 +377,9 @@
 			"ckey" = user.client.ckey,
 			"address" = user.client.address,
 			"computer_id" = user.client.computer_id,
-			// This fork defines DEBUG in normal builds too, so use the development
-			// cache handshake as the explicit live-profiling switch. A normal server
-			// running production assets therefore pays no browser-profiler overhead.
+			// The development cache handshake is the explicit live-profiling switch
+			// (see client_profiling_enabled()). A normal server running production
+			// assets therefore pays no browser-profiler overhead.
 			"profiling" = client_profiling_enabled() ? TRUE : FALSE,
 		),
 		"user" = list(
@@ -379,14 +388,14 @@
 		),
 	)
 	var/data = custom_data || with_data && src_object.tgui_data(user, src, state)
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["dynamic_data_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
 	if(data)
 		json_data["data"] = data
 	var/static_data = with_static_data && src_object.tgui_static_data(user)
-	#ifdef DEBUG
+	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["static_data_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
@@ -405,9 +414,20 @@
 /datum/tgui/process(force = FALSE)
 	if(closing)
 		return
+	if(QDELETED(src_object) || QDELETED(window))
+		close(can_be_suspended = FALSE)
+		return
+	// A persistent UI on a dedicated window (tooltip, media panel) outlives the
+	// mob it was opened against: follow the client to its current mob rather than
+	// tearing the page down with the dead mob.
+	if(QDELETED(user) && !closeable && !window.pooled)
+		var/mob/current_mob = window.client?.mob
+		if(QDELETED(current_mob) || !SStgui.transfer_ui(src, current_mob))
+			close(can_be_suspended = FALSE)
+			return
 	var/datum/host = src_object.tgui_host(user)
 	// If the object or user died (or something else), abort.
-	if(QDELETED(src_object) || QDELETED(host) || QDELETED(user) || QDELETED(window))
+	if(QDELETED(host) || QDELETED(user))
 		close(can_be_suspended = FALSE)
 		return
 	// Validate ping

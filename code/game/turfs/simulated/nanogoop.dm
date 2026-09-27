@@ -301,12 +301,12 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		digest_synth = FALSE
 		digest_robot = FALSE
 		active = FALSE
-		for(var/obj/structure/railing/overhang/hazard/nanite/R in src)
+		for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
 			R.icon_modifier = "inactive_"
 			R.icon_state = "inactive_railing0"
 		for(var/obj/structure/railing/overhang/hazard/nanite/R in range(src, 1))
 			R.update_icon()
-		for(var/obj/structure/dummystairs/hazardledge/stairs in src)
+		for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 			stairs.icon_state = "stair_hazard"
 			stairs.update_icon()
 		update_icon()
@@ -323,17 +323,17 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	digest_synth = synth
 	digest_robot = robot
 	active = TRUE
-	for(var/obj/structure/railing/overhang/hazard/nanite/R in src)
+	for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
 		R.icon_modifier = "active_"
 		R.icon_state = "active_railing0"
 	for(var/obj/structure/railing/overhang/hazard/nanite/R in range(src, 1))
 		R.update_icon()
-	for(var/obj/structure/dummystairs/hazardledge/stairs in src)
+	for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 		depth = 1
 		movement_cost = 8
 		stairs.icon_state = "stair_hazard_nanite"
 		stairs.update_icon()
-	for(var/atom/AM in src)
+	for(var/atom/AM in turf_contents_of_type(src, /atom))
 		Entered(AM)
 	update_icon()
 

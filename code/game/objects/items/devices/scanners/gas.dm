@@ -26,10 +26,11 @@
 
 	return atmosanalyzer_scan(src, air, user)
 
-/obj/item/analyzer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/analyzer/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/analyzer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if (user.stat)

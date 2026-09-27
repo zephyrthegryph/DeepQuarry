@@ -67,7 +67,7 @@ REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 /mob/living/simple_mob/mechanical/technomancer_golem
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/mechanical/technomancer_golem/death()
+/mob/living/simple_mob/mechanical/technomancer_golem/on_death(gibbed)
 	..()
 	visible_message("\The [src] disintegrates!")
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)

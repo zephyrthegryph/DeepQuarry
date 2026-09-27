@@ -189,7 +189,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		for(var/datum/stored_item/R as anything in product_records)
 			R.forget(thing)
 
-REF_OWNED(/obj/machinery/vending, list("wires", "coin"))
+REF_OWNED(/obj/machinery/vending, "coin")
 REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 
 /obj/machinery/vending/ex_act(severity)
@@ -766,6 +766,9 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	else
 		if(!(stat & NOPOWER))
 			icon_state = initial(icon_state)
+			// machine_step() sleeps on NOPOWER; resume timed work on restore.
+			if(active && (seconds_electrified > 0 || shoot_inventory || (!shut_up && length(slogan_list))))
+				MACHINE_WAKE(src)
 		else
 			om_after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), "[initial(icon_state)]-off")
 

@@ -63,7 +63,7 @@ export const abnormalities: (string | ((occupant: occupant) => string))[][] = [
 
 // Qualitative bands — used for the whole-body damage panel, the per-organ
 // status pill, and the scanner-findings severity tag. The DM side
-// (modular_dq/code/modules/medical/bodyscanner/qualitative.dm) picks one
+// (code/modules/medical/bodyscanner/qualitative.dm) picks one
 // of these tokens; this table maps each to a display label and tgui-core
 // colour name.
 //

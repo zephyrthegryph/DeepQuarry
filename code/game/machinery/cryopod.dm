@@ -72,9 +72,6 @@
 	storage_name = "Travel Oversight Control"
 	allow_items = 1
 
-/obj/machinery/computer/cryopod/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/cryopod/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/cryopod_console_open_ui,
@@ -320,7 +317,7 @@
 	control_computer = null
 
 	var/area/my_area = get_area(src)
-	control_computer = locate(/obj/machinery/computer/cryopod) in my_area
+	control_computer = locate_in_area(my_area, /obj/machinery/computer/cryopod)
 
 	if(!control_computer) //Fallback to old method.
 		control_computer = locate(/obj/machinery/computer/cryopod) in range(6,src)
@@ -619,7 +616,7 @@
 	for(var/obj/item/W in items)
 		W.forceMove(get_turf(src))
 
-	for(var/obj/structure/bed/S in src.contents)
+	for(var/obj/structure/bed/S in slot_contents())
 		S.forceMove(get_turf(src))
 
 	go_out()

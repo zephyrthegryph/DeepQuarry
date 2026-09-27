@@ -17,7 +17,7 @@
 
 /// Deletes whatever a destroyed object left on the scratch turf.
 /datum/unit_test/dq_integrity_pool/proc/clear_debris(turf/T)
-	for(var/atom/movable/AM in T)
+	for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 		if(!(AM in before_contents) && !ismob(AM) && !istype(AM, /obj/effect/landmark))
 			qdel(AM)
 
@@ -202,7 +202,7 @@
 
 	D.take_damage(D.max_integrity)
 	TEST_ASSERT(QDELETED(D), "a door at zero integrity is dismantled")
-	TEST_ASSERT(locate(/obj/item/stack/material) in T, "a dismantled door leaves its material")
+	TEST_ASSERT(locate_on(T, /obj/item/stack/material), "a dismantled door leaves its material")
 	clear_debris(T)
 
 
@@ -294,7 +294,7 @@
 
 	laptop.damage_computer(full, 0, TRUE, FALSE)
 	TEST_ASSERT(QDELETED(laptop), "a laptop at zero integrity breaks apart")
-	TEST_ASSERT(locate(/obj/item/stack/material/steel) in T, "a broken laptop leaves scrap")
+	TEST_ASSERT(locate_on(T, /obj/item/stack/material/steel), "a broken laptop leaves scrap")
 	clear_debris(T)
 
 
@@ -393,7 +393,7 @@
 	TEST_ASSERT_EQUAL(building.get_integrity(), 50, "buildings repair")
 	building.take_damage(50, BRUTE, MELEE, FALSE)
 	TEST_ASSERT(QDELETED(building), "a flattened building is gone")
-	TEST_ASSERT(locate(/obj/structure/smoleruins) in T, "it leaves ruins")
+	TEST_ASSERT(locate_on(T, /obj/structure/smoleruins), "it leaves ruins")
 	clear_debris(T)
 
 

@@ -19,7 +19,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain/periodic_step()
 	..()
-	if(owner && owner.stat != DEAD) // So there's a lower risk of ticking twice.
+	if(owner && owner.is_alive()) // So there's a lower risk of ticking twice.
 		tick_defib_timer()
 
 /// Fraction of max_damage below which a brain still recovers on its own
@@ -37,7 +37,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	if(preserved) // In an MMI/ice box/etc.
 		return
 
-	if(!owner || owner.stat == DEAD)
+	if(!owner || owner.is_dead())
 		defib_timer = max(--defib_timer, 0)
 	else
 		defib_timer = min(++defib_timer, (CONFIG_GET(number/defib_timer) MINUTES) / 2)
@@ -82,7 +82,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	var/mob/living/carbon/human/tmp_owner = owner
 	qdel(src)
 	if(tmp_owner)
-		tmp_owner.internal_organs_by_name[organ_tag] = new replace_path(tmp_owner, 1)
+		new replace_path(tmp_owner, 1) // takes the freed brain slot
 		tmp_owner = null
 
 /obj/item/organ/internal/brain/Initialize(mapload)
@@ -181,8 +181,8 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain/slime/LateInitialize()
 	//Match the core to the Promethean's starting color.
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
 		color = rgb(min(H.r_skin + 40, 255), min(H.g_skin + 40, 255), min(H.b_skin + 40, 255))
 
 /obj/item/organ/internal/brain/slime/proc/reviveBody()
@@ -264,8 +264,8 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/brain/grey/colormatch/LateInitialize()
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
 
 

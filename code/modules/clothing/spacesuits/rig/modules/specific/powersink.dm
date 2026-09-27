@@ -109,7 +109,7 @@
 		drain_complete(H)
 		return
 
-	holder.cell.give(target_drained * CELLRATE)
+	holder.add_power(target_drained, interfaced_with)
 	total_power_drained += target_drained
 
 	return

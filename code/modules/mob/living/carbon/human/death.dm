@@ -23,12 +23,12 @@
 		vr_link.vr_holder = null
 		vr_link = null
 
-	for(var/obj/item/organ/I in internal_organs)
+	for(var/obj/item/organ/I in internal_organs.Copy()) // removed() shrinks the cache
 		I.removed()
 		if(!QDELETED(I) && isturf(I.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
-	for(var/obj/item/organ/external/E in src.organs)
+	for(var/obj/item/organ/external/E in src.organs.Copy())
 		E.droplimb(0,DROPLIMB_EDGE,1)
 
 	for(var/obj/item/I in src)
@@ -51,17 +51,22 @@
 	else
 		..()
 
-/mob/living/carbon/human/death(gibbed)
+/// Species with their own ending (diona nymph split, shadekin retreat) take over here.
+/mob/living/carbon/human/replace_death(gibbed)
+	return species.handle_death(src)
 
-	if(stat == DEAD) return
+/mob/living/carbon/human/get_death_message(gibbed)
+	return species.get_death_message(src)
 
+/mob/living/carbon/human/death_sound_volume()
+	return species.death_volume
+
+/mob/living/carbon/human/on_death(gibbed)
+	. = ..()
 	BITSET(hud_updateflag, HEALTH_HUD)
 	BITSET(hud_updateflag, STATUS_HUD)
 	BITSET(hud_updateflag, LIFE_HUD)
 
-	//Handle species-specific deaths.
-	if(species.handle_death(src))
-		return
 	animate_tail_stop()
 	stop_flying()
 
@@ -111,14 +116,10 @@
 	if(mind)
 		var/area/A = get_area(src)
 		if(!(A?.flag_check(AREA_BLOCK_SUIT_SENSORS)) && isbelly(loc))
-			// SSgame_master.adjust_danger(gibbed ? 40 : 20)  // We don't use SSgame_master yet.
 			if(!isbelly(loc) || !vore_death_privacy)
 				for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_MOBS))
 					if(O.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 						to_chat(O, span_deadsay(span_bold("[src]") + " has died in " + span_bold(strip_improper("[A]")) + ". [ghost_follow_link(src, O)] "))
-
-	if(!gibbed && !isbelly(loc))
-		playsound(src, pick(get_species_sound(get_gendered_sound(src))["death"]), src.species.death_volume, 1, 20, volume_channel = VOLUME_CHANNEL_DEATH_SOUNDS)
 
 	SSmobs.report_death(src)
 
@@ -140,8 +141,6 @@
 		vr_link.vr_holder = null
 		vr_link = null
 		to_chat(src, span_danger("Everything abruptly stops."))
-
-	return ..(gibbed,species.get_death_message(src))
 
 /mob/living/carbon/human/proc/ChangeToHusk()
 	if(has_mutation(HUSK))	return

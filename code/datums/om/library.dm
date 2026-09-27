@@ -66,6 +66,9 @@
 		EFFECT_MOVE_SPEED = list("combine" = COMBINE_MULTIPLY),
 		EFFECT_POWER_DRAW = list("combine" = COMBINE_SUM),
 		EFFECT_HUD_VITALS = list("combine" = COMBINE_ANY),
+		// Source-keyed mob overrides (rewrite/mobsrc, reconciled onto the contribution store).
+		EFFECT_UNPUSHABLE = list("combine" = COMBINE_ANY),
+		EFFECT_ALPHA_MULT = list("combine" = COMBINE_MULTIPLY, "default" = 1),
 		// Grant kinds.
 		GRANT_ABILITY = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_LANGUAGE = list("combine" = COMBINE_SUM_PER_KEY),

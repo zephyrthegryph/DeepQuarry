@@ -323,7 +323,7 @@ REF_OWNED(/obj/item/storage, "hud")
 	var/success = 0
 	var/failure = 0
 
-	for(var/obj/item/I in T)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		if(I.type in rejections) // To limit bag spamming: any given type only complains once
 			continue
 		var/refusal = insert_refusal(I, user)
@@ -396,10 +396,10 @@ REF_OWNED(/obj/item/storage, "hud")
 /obj/item/storage/proc/return_inv()
 	make_contents_real()
 	var/list/L = list()
-	L += src.contents
-	for(var/obj/item/storage/S in src)
+	L += slot_contents(CONTAINER_SLOT_STORAGE)
+	for(var/obj/item/storage/S in slot_contents(CONTAINER_SLOT_STORAGE))
 		L += S.return_inv()
-	for(var/obj/item/gift/G in src)
+	for(var/obj/item/gift/G in slot_contents(CONTAINER_SLOT_STORAGE))
 		L += G.gift
 		if (istype(G.gift, /obj/item/storage))
 			L += G.gift:return_inv()
@@ -697,6 +697,8 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 	GLOB.storage_hud_count--
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""
+		// The screen is gone; the item is no longer pinned by being shown (C10).
+		I.latent_unpin(src)
 	return ..()
 
 /datum/storage_hud/proc/new_backdrop(master, state)
@@ -730,6 +732,13 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 		for(var/obj/item/I as anything in items - samples)
 			I.screen_loc = null
 		items = samples
+	// A shown item is pinned for as long as it's on someone's screen (C10):
+	// materializing it to show it is one thing, but it must not then be
+	// collapsed back out from under a viewer between layout passes.
+	for(var/obj/item/I as anything in shown - items)
+		I.latent_unpin(src)
+	for(var/obj/item/I as anything in items - shown)
+		I.latent_pin(src)
 	shown = items
 	if(storage.storage_slots)
 		boxes_layout(counts)
@@ -977,13 +986,14 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 	if(open)
 		icon_state = open_state
 
-		if(contents.len >= 1)
+		var/list/held = slot_contents(CONTAINER_SLOT_STORAGE)
+		if(length(held) >= 1)
 			var/contained_image = null
-			if(istype(contents[1],  /obj/item/clothing/accessory/ring))
+			if(istype(held[1],  /obj/item/clothing/accessory/ring))
 				contained_image = "ring_trinket"
-			else if(istype(contents[1], /obj/item/coin))
+			else if(istype(held[1], /obj/item/coin))
 				contained_image = "coin_trinket"
-			else if(istype(contents[1], /obj/item/clothing/accessory/medal))
+			else if(istype(held[1], /obj/item/clothing/accessory/medal))
 				contained_image = "medal_trinket"
 			if(contained_image)
 				add_overlay(contained_image)
@@ -1006,6 +1016,7 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 
 /obj/item/storage/trinketbox/examine(mob/user)
 	. = ..()
-	if(open && contents.len)
-		var/display_item = contents[1]
+	var/list/held = slot_contents(CONTAINER_SLOT_STORAGE)
+	if(open && length(held))
+		var/display_item = held[1]
 		. += span_notice("\The [src] contains \the [display_item]!")

@@ -161,7 +161,7 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 		to_chat(user, span_warning("This syringe is broken!"))
 		return
 
-	if(user.a_intent == I_HURT && ismob(target))
+	if(IS_HARMING(user) && ismob(target))
 		if(CLUMSY_HARM_CHANCE(user))
 			target = user
 		syringestab(target, user)
@@ -317,7 +317,7 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 
 		var/mob/living/carbon/human/H = target
 
-		var/target_zone = get_zone_with_miss_chance(check_zone(user.zone_sel.selecting, target))
+		var/target_zone = get_zone_with_miss_chance(user.zone_sel.selecting, target, attacker = user)
 		var/obj/item/organ/external/affecting = H.get_organ(target_zone)
 
 		if (!affecting || affecting.is_stump())
@@ -376,8 +376,9 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 	if(mode == SYRINGE_DRAW && ismob(target)) // No drawing 50 units of blood at once
 		to_chat(user, span_notice("This needle isn't designed for drawing blood."))
 		return
-	if(user.a_intent == "hurt" && ismob(target)) // No instant injecting
+	if(IS_HARMING(user) && ismob(target)) // No instant injecting
 		to_chat(user, span_notice("This syringe is too big to stab someone with it."))
+		return
 	..()
 
 ////////////////////////////////////////////////////////////////////////////////

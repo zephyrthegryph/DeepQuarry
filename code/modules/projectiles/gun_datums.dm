@@ -53,7 +53,7 @@
 	new_mode.apply_to(gun)
 	if(user)
 		to_chat(user, span_notice("\The [gun] is now set to [new_mode.name]."))
-		user.hud_used.update_ammo_hud(user, gun)
+		user.hud_used?.update_ammo_hud(user, gun)
 	return new_mode
 
 /// Description string for examine().

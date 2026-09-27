@@ -24,7 +24,11 @@ SUBSYSTEM_DEF(server_maint)
 	// root cause of "cannot open savefile buffer dummy for write" under --shards.
 	// Only the un-sharded case (the overwhelming majority of runs) still gets the
 	// old wipe-on-boot behavior.
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if (GLOB.dq_test_shard_count <= 1 && fexists("tmp/"))
+#else
+	if (fexists("tmp/"))
+#endif
 		fdel("tmp/")
 	//if (CONFIG_GET(flag/hub))
 		//world.update_hub_visibility(TRUE)
@@ -84,7 +88,11 @@ SUBSYSTEM_DEF(server_maint)
 /datum/controller/subsystem/server_maint/Shutdown()
 	// See the matching guard in Initialize(): a sharded run's worlds share tmp/
 	// with siblings that may still be running.
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if (GLOB.dq_test_shard_count <= 1 && fexists("tmp/"))
+#else
+	if (fexists("tmp/"))
+#endif
 		fdel("tmp/")
 	//kick_clients_in_lobby(span_boldannounce("The round came to an end with you in the lobby."), TRUE) //second parameter ensures only afk clients are kicked
 	var/server = CONFIG_GET(string/server)

@@ -108,13 +108,13 @@
 	var/turf/S = get_step(src, SOUTH)
 	var/turf/E = get_step(src, EAST)
 	var/turf/W = get_step(src, WEST)
-	if(istype(N, /turf/simulated/floor) && !locate(/obj/effect/alien) in N.contents)
+	if(istype(N, /turf/simulated/floor) && !locate_on(N, /obj/effect/alien))
 		add_overlay(weedImageCache[WEED_SOUTH_EDGING])
-	if(istype(S, /turf/simulated/floor) && !locate(/obj/effect/alien) in S.contents)
+	if(istype(S, /turf/simulated/floor) && !locate_on(S, /obj/effect/alien))
 		add_overlay(weedImageCache[WEED_NORTH_EDGING])
-	if(istype(E, /turf/simulated/floor) && !locate(/obj/effect/alien) in E.contents)
+	if(istype(E, /turf/simulated/floor) && !locate_on(E, /obj/effect/alien))
 		add_overlay(weedImageCache[WEED_WEST_EDGING])
-	if(istype(W, /turf/simulated/floor) && !locate(/obj/effect/alien) in W.contents)
+	if(istype(W, /turf/simulated/floor) && !locate_on(W, /obj/effect/alien))
 		add_overlay(weedImageCache[WEED_EAST_EDGING])
 
 /obj/effect/alien/weeds/proc/fullUpdateWeedOverlays()
@@ -142,7 +142,7 @@
 		var/turf/T1 = get_turf(src)
 		var/turf/T2 = get_step(src, dirn)
 
-		if(!istype(T2) || locate(/obj/effect/alien/weeds) in T2 || istype(T2.loc, /area/arrival) || isspace(T2))
+		if(!istype(T2) || locate_on(T2, /obj/effect/alien/weeds) || istype(T2.loc, /area/arrival) || isspace(T2))
 			continue
 
 		if(T1.c_airblock(T2) == BLOCKED)

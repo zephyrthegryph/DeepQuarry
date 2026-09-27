@@ -124,10 +124,23 @@
 	var/obj/item/implant/restrainingbolt/bolt	// The restraining bolt installed into the cyborg.
 	var/datum/tgui_module/robot_ui/robotact
 
+	/// Abilities (code/datums/abilities/ability.dm) every robot grants itself on
+	/// Initialize() and revokes in Destroy() - never gated by death, same as
+	/// the `verb/` declarations they replace weren't.
+	var/static/list/robot_granted_abilities = list(
+		ABILITY_ID_ROBOT_TOGGLE_LIGHTS,
+		ABILITY_ID_ROBOT_PICK_NAME,
+		ABILITY_ID_ROBOT_CUSTOMIZE_APPEARANCE,
+		ABILITY_ID_ROBOT_TOGGLE_GLOWY_STOMACH,
+		ABILITY_ID_ROBOT_SPARK_PLUG,
+		ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY,
+		ABILITY_ID_ROBOT_PURGE_NUTRITION,
+		ABILITY_ID_ROBOT_TOGGLE_DECALS,
+		ABILITY_ID_ROBOT_NOM,
+	)
+
 	var/static/list/robot_verbs_default = list(
-		/mob/living/silicon/robot/proc/sensor_mode,
 		/mob/living/silicon/robot/proc/robot_checklaws,
-		/mob/living/silicon/robot/proc/robot_mount,
 		/mob/living/silicon/robot/proc/take_image,
 		/mob/living/silicon/robot/proc/view_images,
 		/mob/living/silicon/robot/proc/delete_images,
@@ -177,9 +190,13 @@
 	initialize_components()
 	setup_cell()
 
-	// This mob (not a component) is the source: every robot has this
-	// (code/modules/mob/living/silicon/robot/robot_abilities.dm), revoked in Destroy().
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
+	// This mob (not a component) is the source: every robot has these
+	// (code/modules/mob/living/silicon/robot/robot_abilities.dm), revoked in
+	// Destroy(). Unlike robot_verbs_default below, these were never gated by
+	// death (they were plain `verb/` declarations, not in that list), so
+	// they're granted once here rather than in add_robot_verbs()/remove_robot_verbs().
+	for(var/ability_id in robot_granted_abilities)
+		grant_ability(ability_id, src)
 
 	. = ..()
 
@@ -287,7 +304,8 @@
 //Improved /N
 // LIFECYCLE: the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
 /mob/living/silicon/robot/Destroy()
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
+	for(var/ability_id in robot_granted_abilities)
+		revoke_ability(ability_id, src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
 		if(mind)
 			// The MMI lands on the borg's turf (get_turf() sees through any container). The
@@ -323,7 +341,6 @@
 		if(deployed)
 			undeploy()
 		revert_shell() // To get it out of the GLOB list.
-	QDEL_NULL(wires)
 	sprite_datum = null
 	QDEL_NULL(robotact)
 	set_cell(null)
@@ -696,49 +713,6 @@
 		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
 		custom_link = client.prefs.read_preference(/datum/preference/text/human/custom_link) // migrated pref
 
-/mob/living/silicon/robot/verb/namepick()
-	set name = "Pick Name"
-	set category = "Abilities.Settings"
-
-	if(custom_name)
-		to_chat(src, "You can't pick another custom name. [isshell(src) ? "" : "Go ask for a name change."]")
-		return 0
-
-	var/newname = sanitizeSafe(tgui_input_text(src,"You are a robot. Enter a name, or leave blank for the default name.", "Name change","", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-	if (newname)
-		custom_name = newname
-		sprite_name = newname
-
-	updatename()
-
-/mob/living/silicon/robot/verb/extra_customization()
-	set name = "Customize Appearance"
-	set category = "Abilities.Settings"
-	set desc = "Customize your appearance (assuming your chosen sprite allows)."
-
-	if(!sprite_datum || !sprite_datum.has_extra_customization)
-		to_chat(src, span_warning("Your sprite cannot be customized."))
-		return
-
-	sprite_datum.handle_extra_customization(src)
-
-/mob/living/silicon/robot/verb/toggle_glowy_stomach()
-	set category = "Abilities.Settings"
-	set name = "Toggle Glowing Stomach & Accents"
-
-	glowy_enabled = !glowy_enabled
-	if(glowy_enabled)
-		to_chat(src, span_filter_notice("Your stomach will now glow and any naturally glowing accents you have will now appear!"))
-	else
-		to_chat(src, span_filter_notice("Your stomach will no longer glow, and any naturally glowing accents you have will be hidden!"))
-	update_icon()
-
-/mob/living/silicon/robot/verb/spark_plug() //So you can still sparkle on demand without violence.
-	set category = "Abilities.Silicon"
-	set name = "Emit Sparks"
-	to_chat(src, span_filter_notice("You harmlessly spark."))
-	spark_system.start()
-
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
 /mob/living/silicon/robot/verb/alt_mode()
 	set name = "Robot Activate Held Object"
@@ -754,12 +728,6 @@
 	if(module_active)
 		W.attack_self(src)
 	return
-
-/mob/living/silicon/robot/verb/toggle_grabbability() // Grisp the preyborgs with consent (and allows for your borg to still be pet).
-	set category = "Abilities.Silicon"
-	set name = "Toggle Pickup"
-	grabbable = !grabbable
-	to_chat(src, span_filter_notice("You feel [grabbable ? "more" : "less"] grabbable."))
 
 // this function displays jetpack pressure in the stat panel
 // TGPanel
@@ -786,14 +754,6 @@
 		. += "Power Cell Load: [round(used_power_this_tick)]W"
 	else
 		. += "No Cell Inserted!"
-
-// function to toggle VTEC once installed
-/mob/living/silicon/robot/proc/toggle_vtec()
-	set name = "Toggle VTEC"
-	set category = "Abilities.Silicon"
-	vtec_active = !vtec_active
-	hud_used.toggle_vtec_control()
-	to_chat(src, span_filter_notice("VTEC module [vtec_active  ? "enabled" : "disabled"]."))
 
 // update the status screen display
 /mob/living/silicon/robot/get_status_tab_items()
@@ -1124,6 +1084,12 @@
 	modtype = initial(modtype)
 	hands.icon_state = get_hud_module_icon()
 
+	// Basic upgrades (VTEC, ...) mutate the robot directly (verbs added,
+	// vars flipped) rather than living inside the module being reset, so
+	// they need their own undo pass or they'd leave permanent side effects
+	// behind after the reset.
+	robot_upgrade_prototype(/obj/item/borg/upgrade/basic/vtec)?.remove_upgrade(src)
+
 	if(notify)
 		notify_ai(ROBOT_NOTIFICATION_MODULE_RESET, module.name)
 	module.reset_module(src)
@@ -1134,17 +1100,6 @@
 	vore_capacity_ex = list()
 	vore_fullness_ex = list()
 	vore_light_states = list()
-
-/mob/living/silicon/robot/proc/ColorMate()
-	set name = "Recolour Module"
-	set category = "Abilities.Settings"
-	set desc = "Allows to recolour once."
-
-	if(has_recoloured)
-		to_chat(src, "You've already recoloured yourself once. Ask for a module reset for another.")
-		return
-
-	tgui_input_colormatrix(src, "Allows you to recolor yourself", "Robot Recolor", src, ui_state = GLOB.tgui_conscious_state)
 
 /mob/living/silicon/robot/attack_hand(mob/user)
 	if(LAZYLEN(src?.buckled_mob_list()))
@@ -1504,28 +1459,30 @@
 	resolve_sprite_datum()
 	update_icon()
 
-/mob/living/silicon/robot/proc/sensor_mode() //Medical/Security HUD controller for borgs
-	set name = "Toggle Sensor Augmentation"
-	set category = "Abilities.Silicon"
-	set desc = "Augment visual feed with internal sensor overlays."
-	sensor_type = !sensor_type
-	to_chat(src, "You [sensor_type ? "enable" : "disable"] your sensors.")
-	toggle_sensor_mode()
-
 /mob/living/silicon/robot/proc/repick_laws()
 	return
 
 /mob/living/silicon/robot/proc/add_robot_verbs()
 	add_verb(src, robot_verbs_default)
 	add_verb(src, silicon_subsystems)
+	grant_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
+	grant_ability(ABILITY_ID_ROBOT_MOUNT, src)
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
-		add_verb(src, /mob/living/silicon/robot/proc/ColorMate)
+		grant_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
 
 /mob/living/silicon/robot/proc/remove_robot_verbs()
 	remove_verb(src, robot_verbs_default)
 	remove_verb(src, silicon_subsystems)
+	revoke_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
+	revoke_ability(ABILITY_ID_ROBOT_MOUNT, src)
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
-		remove_verb(src, /mob/living/silicon/robot/proc/ColorMate)
+		revoke_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
 
 /mob/living/silicon/robot/binarycheck()
 	if(get_restraining_bolt())
@@ -1740,15 +1697,6 @@
 
 	update_icon()
 
-/mob/living/silicon/robot/verb/robot_nom(mob/living/T in living_mobs_in_view(1))
-	set name = "Robot Nom"
-	set category = "Abilities.Vore"
-	set desc = "Allows you to eat someone."
-
-	if (stat != CONSCIOUS)
-		return
-	return feed_grabbed_to_self(src,T)
-
 /// Riding is provided by the belly component; without it the chassis can't be mounted.
 /mob/living/silicon/robot/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
 	if(forced)
@@ -1784,21 +1732,6 @@
 /mob/living/silicon/robot/MouseDrop_T(mob/living/M, mob/living/user) //Prevention for forced relocation caused by can_buckle. Base proc has no other use.
 	return
 
-/mob/living/silicon/robot/proc/robot_mount(mob/living/M in living_mobs(1))
-	set name = "Robot Mount/Dismount"
-	set category = "Abilities.General"
-	set desc = "Let people ride on you."
-
-	if(LAZYLEN(src?.buckled_mob_list()))
-		for(var/rider in src?.buckled_mob_list())
-			riding_datum?.force_dismount(rider)
-		return
-	if (stat != CONSCIOUS)
-		return
-	if(!can_buckle || !istype(M) || !M.Adjacent(src) || M?.buckled_to())
-		return
-	if(buckle_mob(M))
-		visible_message(span_notice("[M] starts riding [name]!"))
 
 /mob/living/silicon/robot/get_scooped(mob/living/carbon/grabber, self_drop)
 	var/obj/item/holder/H = ..(grabber, self_drop)
@@ -1881,17 +1814,6 @@
 	if(issilicon(user))
 		return TRUE
 	return FALSE
-
-/mob/living/silicon/robot/verb/purge_nutrition()
-	set name = "Purge Nutrition"
-	set category = "Abilities.Vore"
-	set desc = "Allows you to clear out most of your nutrition if needed."
-
-	if (stat != CONSCIOUS || nutrition <= 1000)
-		return
-	nutrition = 1000
-	to_chat(src, span_warning("You have purged most of the nutrition lingering in your systems."))
-	return TRUE
 
 /mob/living/silicon/robot/proc/get_ui_theme()
 	if(emagged)

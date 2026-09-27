@@ -300,17 +300,15 @@
 	return FALSE
 
 /datum/surgical_step/cut_hardsuit/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	if(istype(tool, /obj/item/weldingtool))
-		var/obj/item/weldingtool/welder = tool
-		if(!welder.isOn())
-			return FALSE
+	var/obj/item/weldingtool/welder = tool?.get_welder()
+	if(welder && !welder.isOn())
+		return FALSE
 	return locked_rig(target) ? TRUE : FALSE
 
 /datum/surgical_step/cut_hardsuit/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/rig/rig = locked_rig(target)
-	if(istype(tool, /obj/item/weldingtool))
-		var/obj/item/weldingtool/welder = tool
-		if(!welder.remove_fuel(1, user))
-			return
+	var/obj/item/weldingtool/welder = tool?.get_welder()
+	if(welder && !welder.remove_fuel(1, user))
+		return
 	rig?.cut_suit()
 	log_game("SURGERY: [key_name(user)] cut [key_name(target)] out of [rig]")

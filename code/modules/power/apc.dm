@@ -203,7 +203,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-REF_OWNED(/obj/machinery/power/apc, list("wires", "terminal", "icon_renderer"))
+REF_OWNED(/obj/machinery/power/apc, list("terminal", "icon_renderer"))
 REF_SPILL(/obj/machinery/power/apc, "cell")
 REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 

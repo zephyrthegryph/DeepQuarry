@@ -92,6 +92,12 @@ GLOBAL_LIST_INIT(state_type_migrations, list())
 /datum/proc/state_exclude()
 	return list()
 
+/// List vars whose Initialize() value can vary per instance (a random roll, or
+/// generated from per-instance state). They never take a sampled type baseline,
+/// so they are saved whenever non-empty.
+/datum/proc/state_nondeterministic_list_vars()
+	return list()
+
 /// Upgrades `vars` (a decoded delta written at schema version `from_version`)
 /// to the current state_version, in place. Call ..() first.
 /datum/proc/state_migrate(list/vars, from_version)

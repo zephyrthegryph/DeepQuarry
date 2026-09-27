@@ -18,10 +18,23 @@
 		pinned_target = null
 		density = TRUE
 
-/obj/structure/target_stake/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/target_stake/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/target_stake_item,
+		/datum/interaction/entry_hand/target_stake_hand,
+	)
+	..()
+
+/// Old attackby: put a target on the stake.
+/datum/interaction/entry_item/target_stake_item
+	id = "target_stake_item"
+	name = "Use"
+	effect = /obj/structure/target_stake/proc/interaction_item
+
+/obj/structure/target_stake/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// Putting objects on the stake. Most importantly, targets
 	if(pinned_target)
-		return // get rid of that pinned target first!
+		return TRUE // get rid of that pinned target first!
 
 	if(istype(W, /obj/item/target))
 		density = FALSE
@@ -31,9 +44,15 @@
 		W.layer = ABOVE_JUNK_LAYER
 		pinned_target = W
 		to_chat(user, "You slide the target into the stake.")
-	return
+	return TRUE
 
-/obj/structure/target_stake/attack_hand(mob/user as mob)
+/// Old attack_hand: take pinned targets off.
+/datum/interaction/entry_hand/target_stake_hand
+	id = "target_stake_hand"
+	name = "Use"
+	effect = /obj/structure/target_stake/proc/interaction_hand
+
+/obj/structure/target_stake/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// taking pinned targets off!
 	if(pinned_target)
 		density = TRUE
@@ -50,3 +69,4 @@
 			to_chat(user, "You take the target out of the stake.")
 
 		pinned_target = null
+	return TRUE

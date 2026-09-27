@@ -55,11 +55,11 @@
 	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/bag/trash/update_icon()
-	if(contents.len == 0)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "trashbag0"
-	else if(contents.len < 9)
+	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 9)
 		icon_state = "trashbag1"
-	else if(contents.len < 18)
+	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 18)
 		icon_state = "trashbag2"
 	else icon_state = "trashbag3"
 
@@ -383,9 +383,9 @@
 	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/santabag/update_icon()
-	if(contents.len < 10)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 10)
 		icon_state = "giftbag0"
-	else if(contents.len < 25)
+	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 25)
 		icon_state = "giftbag1"
 	else
 		icon_state = "giftbag2"

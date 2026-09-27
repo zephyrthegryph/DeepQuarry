@@ -226,8 +226,8 @@
 	hidden_uplink = new(src)
 	icon_state = "radio"
 
-/obj/item/radio/uplink/attack_self(mob/user)
-	. = ..(user)
+/obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(hidden_uplink)
@@ -240,8 +240,8 @@
 	. = ..()
 	hidden_uplink = new(src)
 
-/obj/item/multitool/uplink/attack_self(mob/user)
-	. = ..(user)
+/obj/item/multitool/uplink/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(hidden_uplink)

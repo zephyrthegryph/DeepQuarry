@@ -190,7 +190,7 @@
 			if(adj_cast.join_group == src.join_group)
 				var/found
 				for(var/E in join_carefully)
-					found = locate(E) in adj
+					found = locate_on(adj, E)
 					if(found) break
 				if(found)
 					join_flags |= flag      // turn on the bit flag
@@ -198,7 +198,7 @@
 
 		var/always_found
 		for(var/E in join_always)
-			always_found = locate(E) in adj
+			always_found = locate_on(adj, E)
 			if(always_found) break
 		if(always_found)
 			join_flags |= flag      // turn on the bit flag
@@ -331,11 +331,11 @@
 		var/turf/T = get_step(src, direction)
 		var/decided_to_blend = FALSE
 		blend_obj_loop:
-			for(var/obj/O in T)
+			for(var/obj/O in turf_contents_of_type(T, /obj))
 				for(var/b_type in blend_objects)
 					if(istype(O, b_type))
 						decided_to_blend = TRUE
-						for(var/obj/structure/S in T)
+						for(var/obj/structure/S in turf_contents_of_type(T, /obj/structure))
 							if(istype(S, src))
 								decided_to_blend = FALSE
 						for(var/nb_type in noblend_objects)
@@ -375,11 +375,11 @@
 		var/turf/T = get_step(src, direction)
 		var/decided_to_blend = FALSE
 		blend_obj_loop:
-			for(var/obj/O in T)
+			for(var/obj/O in turf_contents_of_type(T, /obj))
 				for(var/b_type in blend_objects)
 					if(istype(O, b_type))
 						decided_to_blend = TRUE
-						for(var/obj/structure/S in T)
+						for(var/obj/structure/S in turf_contents_of_type(T, /obj/structure))
 							if(istype(S, src))
 								decided_to_blend = FALSE
 						for(var/nb_type in noblend_objects)
@@ -439,11 +439,11 @@
 				continue main_direction_loop
 
 			var/decided_to_blend = FALSE
-			for(var/obj/O in W)
+			for(var/obj/O in turf_contents_of_type(W, /obj))
 				for(var/b_type in blend_objects)
 					if(istype(O, b_type))
 						decided_to_blend = TRUE
-						for(var/obj/structure/S in W)
+						for(var/obj/structure/S in turf_contents_of_type(W, /obj/structure))
 							if(istype(S, src))
 								decided_to_blend = FALSE
 						for(var/nb_type in noblend_objects)
@@ -455,7 +455,7 @@
 						dirs |= direction
 						continue main_direction_loop
 
-			for(var/obj/structure/low_wall/WF in W)
+			for(var/obj/structure/low_wall/WF in turf_contents_of_type(W, /obj/structure/low_wall))
 				if(can_join_with_low_wall(WF))
 					dirs |= direction
 					blend_log += "Blending with [WF] at [get_dir(src, WF)] because can join with that low wall"

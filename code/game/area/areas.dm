@@ -100,11 +100,11 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				T.lighting_build_overlay()
 			else
 				T.lighting_clear_overlay()
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 			old_area.Exited(AM, A)
-	for(var/atom/movable/AM in T)
+	for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 		A.Entered(AM, old_area)
-	for(var/obj/machinery/M in T)
+	for(var/obj/machinery/M in turf_contents_of_type(T, /obj/machinery))
 		M.area_changed(old_area, A)
 
 /area/proc/get_contents()
@@ -112,7 +112,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/proc/get_cameras()
 	var/list/cameras = list()
-	for (var/obj/machinery/camera/C in src)
+	for (var/obj/machinery/camera/C in area_contents_of_type(src, /obj/machinery/camera))
 		cameras += C
 	return cameras
 
@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if (danger_level < 1 || danger_level >= 2)
 			firedoors_update()
 
-		for (var/obj/machinery/alarm/AA in src)
+		for (var/obj/machinery/alarm/AA in area_contents_of_type(src, /obj/machinery/alarm))
 			AA.update_icon()
 
 		return 1
@@ -144,15 +144,15 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		firedoors_close()
 		arfgs_activate()
 		if(fire)
-			for(var/obj/machinery/light/L in src)
+			for(var/obj/machinery/light/L in area_contents_of_type(src, /obj/machinery/light))
 				L.set_alert_fire()
 		else if(atmosalm)
-			for(var/obj/machinery/light/L in src)
+			for(var/obj/machinery/light/L in area_contents_of_type(src, /obj/machinery/light))
 				L.set_alert_atmos()
 	else
 		firedoors_open()
 		arfgs_deactivate()
-		for(var/obj/machinery/light/L in src)
+		for(var/obj/machinery/light/L in area_contents_of_type(src, /obj/machinery/light))
 			L.reset_alert()
 
 // Close all firedoors in the area
@@ -338,7 +338,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	static_equip = 0
 	static_light = 0
 	static_environ = 0
-	for(var/obj/machinery/M in src)
+	for(var/obj/machinery/M in area_contents_of_type(src, /obj/machinery))
 		switch(M.power_channel)
 			if(EQUIP)
 				static_equip += M.get_power_usage()
@@ -445,7 +445,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /area/proc/gravitychange(gravitystate = 0)
 	src.has_gravity = gravitystate
 
-	for(var/mob/M in src)
+	for(var/mob/M in area_contents_of_type(src, /mob))
 		if(get_gravity())
 			thunk(M)
 		M.update_floating( M.Check_Dense_Object() )
@@ -483,15 +483,15 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/obj/machinery/power/apc/theAPC = get_apc()
 	if(theAPC && theAPC.operating)
 		if(break_lights)
-			for(var/obj/machinery/power/apc/temp_apc in src)
+			for(var/obj/machinery/power/apc/temp_apc in area_contents_of_type(src, /obj/machinery/power/apc))
 				temp_apc.overload_lighting(70)
 		if(open_doors)
-			for(var/obj/machinery/door/airlock/temp_airlock in src)
+			for(var/obj/machinery/door/airlock/temp_airlock in area_contents_of_type(src, /obj/machinery/door/airlock))
 				temp_airlock.prison_open()
-			for(var/obj/machinery/door/window/temp_windoor in src)
+			for(var/obj/machinery/door/window/temp_windoor in area_contents_of_type(src, /obj/machinery/door/window))
 				temp_windoor.open()
 		if(open_blast_doors)
-			for(var/obj/machinery/door/blast/temp_blast in src)
+			for(var/obj/machinery/door/blast/temp_blast in area_contents_of_type(src, /obj/machinery/door/blast))
 				temp_blast.open()
 
 /area/get_gravity()

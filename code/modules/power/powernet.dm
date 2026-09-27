@@ -272,7 +272,7 @@ REF_OWNED(/datum/powernet, "material_graph")
 
 // return a knot cable (O-X) if one is present in the turf, null otherwise.
 /turf/proc/get_cable_node()
-	for(var/obj/structure/cable/C in src)
+	for(var/obj/structure/cable/C in turf_contents_of_type(src, /obj/structure/cable))
 		if(C.d1 == 0)
 			return C
 	return null

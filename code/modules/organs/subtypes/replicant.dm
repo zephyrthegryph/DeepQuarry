@@ -198,7 +198,11 @@
 	name = "replicant hive lungs"
 	desc = "A pair of rubbery sacs with large portions dedicated to honeycombed nanite filters."
 	description_info = "This organ, when connected properly to the body, will attempt to keep some other organs repaired."
-	var/list/repair_list = list(O_HEART, O_KIDNEYS, O_VOICE, O_GBLADDER, O_PLASMA)
+
+/// Organs these lungs keep repaired (constant).
+/obj/item/organ/internal/lungs/replicant/mending/proc/repair_list()
+	var/static/list/organ_tags = list(O_HEART, O_KIDNEYS, O_VOICE, O_GBLADDER, O_PLASMA)
+	return organ_tags
 
 /obj/item/organ/internal/lungs/replicant/mending/handle_organ_proc_special()
 	if(!owner)
@@ -207,7 +211,7 @@
 	var/modifier = 1 - (0.5 * is_bruised())
 
 	if(istype(owner))
-		for(var/o_tag in repair_list)
+		for(var/o_tag in repair_list())
 			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
 			if(O)
 				owner.mend(TREAT_RESTORATION, 1 * modifier, O)
@@ -219,7 +223,7 @@
 	var/modifier = 1 - (0.5 * is_bruised())
 
 	if(istype(owner))
-		for(var/o_tag in repair_list)
+		for(var/o_tag in repair_list())
 			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
 			if(O)
 				owner.mend(TREAT_RESTORATION, 0.01 * modifier, O) //Very very slow regen, but still cool flavour

@@ -34,8 +34,8 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	desc = "A label on it reads: <i>Activate to have a singularity beacon teleported to your location</i>."
 	beacon = TRUE
 
-/obj/item/radio/beacon/syndicate/attack_self(mob/user)
-	. = ..(user)
+/obj/item/radio/beacon/syndicate/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(user)

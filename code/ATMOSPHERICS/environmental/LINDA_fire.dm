@@ -105,7 +105,7 @@
 
 	var/turf/open/our_turf = loc
 	//on creation we check adjacent turfs for hot spot to start grouping, if surrounding do not have hot spots we create our own
-	for(var/turf/open/to_check as anything in vg_atmos_adjacent_turfs(our_turf))
+	for(var/turf/open/to_check in vg_atmos_adjacent_turfs(our_turf))
 		if(!to_check.active_hotspot)
 			continue
 		var/obj/effect/hotspot/enemy_spot = to_check.active_hotspot

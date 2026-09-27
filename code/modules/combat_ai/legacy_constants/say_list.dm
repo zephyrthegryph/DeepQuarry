@@ -16,7 +16,7 @@
 	var/death_sound_override = null
 	var/datum/looping_sound/mob/on_fire/firesoundloop
 
-// say_list creation moved to modular_dq/code/modules/combat_ai/integration/mob_living.dm
+// say_list creation lives in code/modules/combat_ai/integration/mob_living.dm
 // (DM resolves duplicate /mob/living/Initialize overrides to the last-included,
 // silently dropping earlier ones).
 

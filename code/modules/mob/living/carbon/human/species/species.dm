@@ -478,41 +478,52 @@
 	else
 		H.equip_to_slot_or_del(box, slot_in_backpack)
 
+/// Builds `H`'s part tree from this species' tables, replacing whatever tree
+/// it had. The old tree is deleted through its root (the slot policies delete
+/// it children first; the detach hook clears every cache). The new one is
+/// built parent first: each part is born inside `H` and takes its place in
+/// its parent's slot (code/modules/body/parts/), so no list is written here.
 /datum/species/proc/create_organs(mob/living/carbon/human/H) //Handles creation of mob organs.
 
 	H.mob_size = mob_size
-	for(var/obj/item/organ/organ in H.contents)
-		if((organ in H.organs) || (organ in H.internal_organs))
-			qdel(organ)
+	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
+	if(old_root)
+		qdel(old_root)
+	// Parts left over outside the tree (loose after a refused placement).
+	for(var/obj/item/organ/stray as anything in H.organs?.Copy())
+		qdel(stray)
+	for(var/obj/item/organ/stray as anything in H.internal_organs?.Copy())
+		qdel(stray)
+	H.bad_external_organs?.Cut()
 
-	if(H.organs)					H.organs.Cut()
-	if(H.internal_organs)			H.internal_organs.Cut()
-	if(H.organs_by_name)			H.organs_by_name.Cut()
-	if(H.internal_organs_by_name) 	H.internal_organs_by_name.Cut()
-	if(H.bad_external_organs)		H.bad_external_organs.Cut()
-
-	H.organs = list()
-	H.internal_organs = list()
-	H.organs_by_name = list()
-	H.internal_organs_by_name = list()
-	H.bad_external_organs = list()
-
-	for(var/limb_type in has_limbs)
-		var/list/organ_data = has_limbs[limb_type]
-		var/limb_path = organ_data["path"]
-		var/obj/item/organ/O = new limb_path(H)
-		organ_data["descriptor"] = O.name
-		if(O.parent_organ)
-			organ_data = has_limbs[O.parent_organ]
-			organ_data["has_children"] = organ_data["has_children"]+1
+	// Parent first, whatever order the table lists them in.
+	var/list/pending = has_limbs.Copy()
+	while(length(pending))
+		var/placed = 0
+		for(var/limb_type in pending.Copy())
+			var/list/organ_data = has_limbs[limb_type]
+			var/obj/item/organ/external/limb_path = organ_data["path"]
+			var/parent_tag = initial(limb_path.parent_organ)
+			if(parent_tag && !H.organs_by_name[parent_tag] && (parent_tag in pending))
+				continue
+			pending -= limb_type
+			placed++
+			var/obj/item/organ/O = new limb_path(H)
+			organ_data["descriptor"] = O.name
+			if(O.parent_organ)
+				organ_data = has_limbs[O.parent_organ]
+				if(organ_data)
+					organ_data["has_children"] = organ_data["has_children"]+1
+		if(!placed)
+			log_runtime("PARTS: [name] has_limbs has a parent cycle or a missing parent: [jointext(pending, ", ")]")
+			break
 
 	for(var/organ_tag in has_organ)
 		var/organ_type = has_organ[organ_tag]
-		var/obj/item/organ/O = new organ_type(H,1)
+		var/obj/item/organ/O = new organ_type(H, 1)
 		if(organ_tag != O.organ_tag)
 			WARNING("[O.type] has a default organ tag \"[O.organ_tag]\" that differs from the species' organ tag \"[organ_tag]\". Updating organ_tag to match.")
-			O.organ_tag = organ_tag
-		H.internal_organs_by_name[organ_tag] = O
+			O.set_organ_tag(organ_tag)
 
 	// set butcherable meats from species
 	for(var/obj/item/organ/O in H.organs)
@@ -637,7 +648,7 @@
 //CheckHighDamage returns the damage value of the attack if it meets at least the noted value
 /datum/species/proc/can_shred(mob/living/carbon/human/H, ignore_intent, checkhighdamage = 0)
 
-	if(!ignore_intent && H.a_intent != I_HURT)
+	if(!ignore_intent && !IS_HARMING(H))
 		return 0
 
 	if(H.get_feralness())

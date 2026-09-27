@@ -18,7 +18,7 @@ FAILED=0
 if command -v rg >/dev/null 2>&1; then
 	grep=rg
 	pcre2_support=1
-	if [ ! rg -P '' >/dev/null 2>&1 ] ; then
+	if ! rg -P '' >/dev/null 2>&1 ; then
 		pcre2_support=0
 	fi
 	code_files=(code/**/**.dm)
@@ -223,6 +223,27 @@ if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperatu
 	FAILED=1
 fi;
 
+part "rig cells move through the power ledger"
+# A rig's cell is written only by /obj/item/rig/proc/draw_power() and add_power()
+# (rig.dm); modules, seals, cooling, movement and power sinks call those.
+if $grep -n '\bcell\.(use|give)\(' $(find code/modules/clothing/spacesuits/rig -name '*.dm') code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm | grep -vE 'cell\.use\(units, FALSE\)|cell\.give\(joules \* CELLRATE, FALSE\)'; then
+	echo
+	echo -e "${RED}ERROR: a rig cell is drawn or charged directly. Use the rig's draw_power() / add_power() ledger.${NC}"
+	FAILED=1
+fi;
+
+part "one revive path: return_from_death()"
+# A dead mob comes back only through /mob/living/proc/return_from_death() (body/revival.dm), and
+# dies only through the sealed /mob/proc/death() pipeline (mob/death.dm). No hand-rolled list swaps
+# (registry_leave(REGISTRY_DEAD_MOBS)/registry_join(REGISTRY_LIVING_MOBS) on the OM registries)
+# or time-of-death resets elsewhere; the allowlisted files are creation/deletion bookkeeping.
+if $grep -n '(dead_mob_list\s*-=|dead_mob_list\.Remove\(|living_mob_list\s*(\+=|\|=)|living_mob_list\.Add\(|registry_leave\(REGISTRY_DEAD_MOBS|registry_join\(REGISTRY_LIVING_MOBS|\btimeofdeath\s*=\s*(0|null)\b)' "${code_files[@]}" \
+	| grep -vE '^code/modules/unit_tests/|^code/modules/body/revival\.dm:|^code/modules/mob/death\.dm:|^code/modules/mob/mob\.dm:|^code/_helpers/unsorted\.dm:|^code/modules/mob/living/carbon/human/human_species\.dm:|^code/modules/mob/living/silicon/ai/ai\.dm:|^code/game/objects/items/weapons/autopsy\.dm:' | grep -v 'var/'; then
+	echo
+	echo -e "${RED}ERROR: hand-rolled revive (living/dead list swap or time-of-death reset). Call L.return_from_death(reason, source, flags).${NC}"
+	FAILED=1
+fi;
+
 part "thermal constants: generated, not redefined (H1)"
 # Temperatures, heat capacities and thermal defaults are generated from
 # verdigris/domains/heat/src/consts.rs (`/// @dm-define`) into the bindings. A DM
@@ -236,7 +257,7 @@ fi;
 
 part "thermal constants: no hardcoded body temperatures or human heat capacities (H1)"
 # 310.15 K is BODYTEMP_NORMAL and 280000 J/K is HUMAN_HEAT_CAPACITY. Comments are
-# ignored. emergent.dm's T0C + 37 belongs to the body rewrite (fixes.md B22).
+# ignored.
 if $grep -n '\b(310(\.(15|055|0?5))?|280000|249840)\b' "${code_files[@]}" | sed 's#//.*##' \
 	| grep -E '^[^:]+:[0-9]+:.*\b(310(\.(15|055|0?5))?|280000|249840)\b' | grep -iE 'temp|heat|capacit' \
 	| grep -v '^code/__defines/verdigris/_bindings\.dm'; then
@@ -244,7 +265,7 @@ if $grep -n '\b(310(\.(15|055|0?5))?|280000|249840)\b' "${code_files[@]}" | sed 
 	echo -e "${RED}ERROR: hardcoded body temperature or human heat capacity. Use BODYTEMP_NORMAL / HUMAN_HEAT_CAPACITY (generated from verdigris/domains/heat/src/consts.rs).${NC}"
 	FAILED=1
 fi;
-if $grep -n '^[^/]*(\bT0C[[:space:]]*\+[[:space:]]*37\b|\b37[[:space:]]*\+[[:space:]]*T0C\b)' "${code_files[@]}" | grep -v '^code/modules/medical/emergent\.dm:'; then
+if $grep -n '^[^/]*(\bT0C[[:space:]]*\+[[:space:]]*37\b|\b37[[:space:]]*\+[[:space:]]*T0C\b)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: T0C + 37 is BODYTEMP_NORMAL.${NC}"
 	FAILED=1
@@ -293,7 +314,7 @@ part "tools: istype checks on tool types"
 # checks (a particular subtype, not "any tool of this quality"), or belong to domains
 # converted later (mecha: I5; surgery and medical machines: the body rewrite). They
 # must not grow.
-tool_istype_allowlist='code.modules.surgery.limbs\.dm|code.modules.surgery.operate\.dm|code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
+tool_istype_allowlist='code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
 if $grep -n 'istype\([^,]+,\s*/obj/item/(tool|weldingtool|multitool)\b' "${code_files[@]}" | grep -vE "^($tool_istype_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: an istype() check on a tool type. Use has_tool_quality(TOOL_*), or get_welder()/get_multitool() to read the tool.${NC}"
@@ -312,10 +333,10 @@ part "combat mode: a_intent"
 # Read what a Use does with IS_HELPING/IS_HARMING/IS_DISARMING/IS_GRABBING or
 # use_stance(), and set it with set_combat_mode()/set_use_stance(). `a_intent`
 # survives only as a read-only mirror (code/modules/mob/combat_mode.dm) for
-# files other work owns and has not converted yet: the body rewrite's medical,
-# surgery, organ and species files, and the tool *_act procs I4 is migrating.
+# files other work owns and has not converted yet: the tool *_act procs I4 is
+# migrating.
 # These must not grow; delete an entry once its file is converted.
-a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instruments/resuscitation\.dm|code/modules/surgery/surgery\.dm|code/modules/organs/organ\.dm|code/game/objects/items/weapons/surgery_tools\.dm|code/game/objects/items/devices/scanners/health\.dm|code/modules/reagents/reagent_containers/(hypospray|syringes|blood_pack)\.dm|code/modules/mob/living/carbon/human/species/(species|station/teshari|station/station_special_abilities|station/traits/weaver_objs)\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
+a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
 if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
@@ -454,6 +475,21 @@ part "diagnosis: no four-number readouts"
 if grep -RInE --exclude-dir=node_modules --include='*.dm' --include='*.ts' --include='*.tsx' '\b(bruteLoss|oxyLoss|toxLoss|fireLoss|patient_brute|patient_burn|patient_tox|patient_oxy|physicalLoad|asphyxiaLoad|toxicLoad|thermalLoad|damagePanel|scannerFindings|dq_qualitative_damage_panel|dq_qualitative_scanner_findings|dq_crude_scan_readout|dq_externally_visible_symptom_lines)\b|Damage Specifics|Suffocation/Toxin/Burns/Brute' code tgui/packages/tgui/interfaces; then
 	echo
 	echo -e "${RED}ERROR: a four-number (brute/burn/tox/oxy) readout detected. Render a diagnosis instead: M.diagnose(/datum/diagnostic_profile/...) and its render_chat() / report_data().${NC}"
+	FAILED=1
+fi;
+
+part "diagnosis: automation decides from treatment demand"
+# Automated treatment (medbots, crisis drones, mediguns, cryo, recharge
+# stations, nanopaste, robobags, leeches, the mecha injury mirror, the VV body
+# editor) decides from treatment_demand(profile) / diagnose(profile), never
+# from injury_load() thresholds or per-category heal amounts.
+if grep -RInE --include='*.dm' '\binjury_load\(|\b(heal_threshold|treatment_brute|treatment_fire|treatment_tox|treatment_oxy|brute_heal|burn_heal|tox_heal|oxy_heal|clone_heal|hal_heal|adjustDamage)\b' \
+	code/modules/mob/living/bot code/game/mecha code/game/objects/items/weapons/medigun \
+	code/game/machinery/cryo.dm code/game/machinery/rechargestation.dm \
+	code/game/objects/items/stacks/nanopaste.dm code/game/objects/items/robobag.dm \
+	code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm code/modules/admin/view_variables; then
+	echo
+	echo -e "${RED}ERROR: automated treatment reading injury loads detected. Decide from M.treatment_demand(/datum/diagnostic_profile/...) (demand_urgency(), best_reagent_for_demand()) and heal with mend(TREAT_*).${NC}"
 	FAILED=1
 fi;
 
@@ -778,8 +814,8 @@ if [ "$pcre2_support" -eq 1 ]; then
 		FAILED=1
 	fi;
 else
-	echo -e "${RED}pcre2 not supported, skipping checks requiring pcre2"
-	echo -e "if you want to run these checks install ripgrep with pcre2 support.${NC}"
+	echo -e "${RED}ERROR: ripgrep was built without PCRE2 support, so the PCRE2-only checks (section \"regexes requiring PCRE2\") cannot run. Install a pcre2-capable ripgrep (the bundled tools/install_ripgrep.sh does this) and re-run.${NC}"
+	FAILED=1
 fi;
 
 if [ $FAILED = 0 ]; then

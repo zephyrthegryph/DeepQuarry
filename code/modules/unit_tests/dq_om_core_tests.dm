@@ -532,6 +532,26 @@
 	scheduler_advance(2)
 	TEST_ASSERT(E.ticks > before, "cadence resumes")
 
+/// om_clock_now(): local biological time stops under full inhibition, runs at the
+/// multiplied rate, and settles across rate changes.
+/datum/unit_test/om/clock_now_reads_local_time
+
+/datum/unit_test/om/clock_now_reads_local_time/run_om(list/made)
+	var/datum/om_test_entity/E = entity(made)
+	var/datum/om_test_entity/source = entity(made)
+	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 1)
+	var/start = om_clock_now(E, CLOCK_BIO)
+	scheduler_advance(2)
+	TEST_ASSERT(abs(om_clock_now(E, CLOCK_BIO) - start - 20) < 0.01, "rate 1: 2 s of local time")
+	om_hold(E, EFFECT_CLOCK_BIO_INHIBIT, source, 1)
+	var/frozen = om_clock_now(E, CLOCK_BIO)
+	scheduler_advance(3)
+	TEST_ASSERT(abs(om_clock_now(E, CLOCK_BIO) - frozen) < 0.01, "full inhibition stops local time")
+	om_release(E, EFFECT_CLOCK_BIO_INHIBIT, source)
+	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 2)
+	scheduler_advance(1)
+	TEST_ASSERT(abs(om_clock_now(E, CLOCK_BIO) - frozen - 20) < 0.01, "rate 2: 1 s real is 2 s local")
+
 /datum/unit_test/om/clocked_deadline_tracks_rate
 
 /datum/unit_test/om/clocked_deadline_tracks_rate/run_om(list/made)

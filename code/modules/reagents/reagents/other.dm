@@ -229,7 +229,7 @@
 		var/wound_heal = 5
 		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			if(O.status & ORGAN_BROKEN)
+			if(O.is_fractured())
 				O.mend_fracture()		//Only works if the bone won't rebreak, as usual
 			dq_reagent_close_wounds(O, wound_heal)
 
@@ -557,14 +557,14 @@
 			var/turf/simulated/S = T
 			S.dirt = 0
 		T.wash(CLEAN_SCRUB)
-		for(var/obj/effect/O in T)
+		for(var/obj/effect/O in turf_contents_of_type(T, /obj/effect))
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
 				qdel(O)
 
-		for(var/mob/living/simple_mob/slime/M in T)
+		for(var/mob/living/simple_mob/slime/M in turf_contents_of_type(T, /mob/living/simple_mob/slime))
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
 
-		for(var/mob/living/simple_mob/vore/aggressive/macrophage/virus in T)
+		for(var/mob/living/simple_mob/vore/aggressive/macrophage/virus in turf_contents_of_type(T, /mob/living/simple_mob/vore/aggressive/macrophage))
 			virus.injure(INJURY_TOXIN, rand(5, 10), source = src)
 
 	T.apply_fire_protection() // Apply fire protection
@@ -952,7 +952,7 @@
 		for(var/i=0, i<num, i++)
 			var/spiderling = new spider_type(M.loc, M)
 			if(O)
-				O.implants += spiderling
+				LAZYADD(O.implants, spiderling)
 
 //New reagent definitions/overrides. If some of these get added upstream and cause a conflict later they might need deleting.
 /datum/reagent/toxin/plantbgone/touch_mob(mob/living/L, amount) //Plantbgone override to damage plant mobs. Part of pitcher plants, touch_mob doesn't exist for plantbgone at the time of writing.
@@ -1127,7 +1127,7 @@
 				var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 				for(var/obj/item/implant/backup/BI in backup_implants)
 					BI.forceMove(torso)
-					torso.implants += BI
+					LAZYADD(torso.implants, BI)
 
 /datum/reagent/nif_repair_nanites
 	name = REAGENT_NIFREPAIRNANITES
@@ -1166,7 +1166,7 @@
 
 /datum/reagent/firefighting_foam/touch_turf(turf/T, reac_volume)
 	if(reac_volume >= 1)
-		var/obj/effect/effect/foam/firefighting/F = (locate(/obj/effect/effect/foam/firefighting) in T)
+		var/obj/effect/effect/foam/firefighting/F = (locate_on(T, /obj/effect/effect/foam/firefighting))
 		if(!F)
 			F = new(T)
 		else if(istype(F))

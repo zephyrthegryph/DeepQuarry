@@ -282,7 +282,10 @@ its `EFFECT_CLOCK_<X>_MULT` contributions times one minus the largest
 `EFFECT_CLOCK_<X>_INHIBIT`, clamped to the domain's range. Local time is
 settled before every rate change. The rate scales cadence dt and clocked
 deadlines; a zero rate takes cadence work off the ring.
-`om_clock_rate_of(E, CLOCK_X)` reads it.
+`om_clock_rate_of(E, CLOCK_X)` reads it. `om_clock_now(E, CLOCK_X)` reads the entity's local time in that domain
+(deciseconds); biological code measures elapsed body time with it instead of `world.time`.
+There is one clock system: holders that slow what they hold (freezers, stasis beds) hold
+`EFFECT_CLOCK_<X>_INHIBIT`/`_MULT` on it through relation contributions, not a clock of their own.
 
 ### 4.7 Relevance
 

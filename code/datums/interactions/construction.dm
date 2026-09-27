@@ -276,6 +276,10 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	return TRUE
 
 /// Edges are instances, not registered types: cache the predicate per edge.
+/// Each edge has its own tool and state: key the shared selector by edge id too.
+/datum/interaction/construction/predicate_key()
+	return "[type]:[id]"
+
 /datum/interaction/construction/predicate()
 	if(compiled)
 		return compiled

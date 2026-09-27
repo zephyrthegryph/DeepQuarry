@@ -117,7 +117,7 @@
 	if(!placed)
 		return FALSE
 	var/zone = part.organ_tag
-	if(tgui_alert(user, "Implant 	he [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "Confirm Cavity Implant", list("Implant", "Cancel")) != "Implant")
+	if(tgui_alert(user, "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "Confirm Cavity Implant", list("Implant", "Cancel")) != "Implant")
 		return FALSE
 	// The alert may have waited a long time: check everything again.
 	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))
@@ -153,7 +153,7 @@
 		to_chat(user, span_danger("You feel something give way as you force \the [placed] into place."))
 		target.injure(INJURY_CUT, 10, part, placed, affliction = /datum/affliction/wound/internal_bleeding, flags = INJURE_IGNORE_RESISTANCE)
 		target.custom_pain("You feel something rip in your [part.name]!", 1)
-	part.implants += placed
+	LAZYADD(part.implants, placed)
 	placed.forceMove(part)
 	if(istype(placed, /obj/item/nif))
 		var/obj/item/nif/N = placed

@@ -48,7 +48,7 @@
 		forceMove(destination)
 		return 1
 
-	var/obj/structure/ladder/ladder = locate() in start.contents
+	var/obj/structure/ladder/ladder = locate_on(start, /obj/structure/ladder)
 	if((direction == UP ? ladder?.target_up : ladder?.target_down) && (ladder?.allowed_directions & direction))
 		if(src.may_climb_ladders(ladder))
 			return ladder.climbLadder(src, (direction == UP ? ladder.target_up : ladder.target_down))
@@ -77,8 +77,8 @@
 	var/area/area = get_area(src)
 	if(area.get_gravity() && !can_overcome_gravity())
 		if(direction == UP)
-			var/obj/structure/lattice/lattice = locate() in destination.contents
-			var/obj/structure/catwalk/catwalk = locate() in destination.contents
+			var/obj/structure/lattice/lattice = locate_on(destination, /obj/structure/lattice)
+			var/obj/structure/catwalk/catwalk = locate_on(destination, /obj/structure/catwalk)
 
 			if(lattice)
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
@@ -157,7 +157,7 @@
 
 /// The end of a z-move: blockers at the destination, then the move and whatever is pulled along.
 /mob/proc/zmove_finish(direction, turf/start, turf/destination)
-	for(var/atom/A in destination)
+	for(var/atom/A in turf_contents_of_type(destination, /atom))
 		if(!A.CanPass(src, start, 1.5, 0))
 			to_chat(src, span_warning("\The [A] blocks you."))
 			return 0
@@ -387,7 +387,7 @@
 
 	var/turf/below = GetBelow(src)
 	// zpipe type deleted; only check disposal pipes for now.
-	if(locate(/obj/structure/disposalpipe/up) in below)
+	if(locate_on(below, /obj/structure/disposalpipe/up))
 		return FALSE
 
 /mob/living/can_fall()
@@ -408,7 +408,7 @@
 		if(!O.CanFallThru(src, landing))
 			return FALSE
 	// See if something in turf below prevents us from falling into it.
-	for(var/atom/A in landing)
+	for(var/atom/A in turf_contents_of_type(landing, /atom))
 		if(ismob(A))
 			continue
 		if(!A.CanPass(src, loc, 1, 0))
@@ -481,7 +481,7 @@
 		return landing
 
 	// First hit objects in the turf!
-	for(var/atom/movable/A in landing)
+	for(var/atom/movable/A in turf_contents_of_type(landing, /atom/movable))
 		if(A != src && A.CheckFall(src))
 			return A
 
@@ -716,8 +716,8 @@
 /mob/living/handle_fall(turf/landing)
 	var/mob/living/drop_mob = locate(/mob/living, landing)
 
-	if(locate(/obj/structure/stairs) in landing)
-		for(var/atom/A in landing)
+	if(locate_on(landing, /obj/structure/stairs))
+		for(var/atom/A in turf_contents_of_type(landing, /atom))
 			if(!A.CanPass(src, src.loc))
 				return FALSE
 		Move(landing)
@@ -810,7 +810,7 @@
 	if(LAZYLEN(above_wall.contents) > 30) //We avoid checking the contents if it's too cluttered to avoid issues
 		to_chat(L, span_warning("\The [above_wall] is too cluttered to climb onto!"))
 		return
-	for(var/atom/A in above_wall.contents)
+	for(var/atom/A in turf_contents_of_type(above_wall, /atom))
 		if(A.density)
 			to_chat(L, span_warning("\The [A.name] blocks your way!"))
 			return

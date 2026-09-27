@@ -111,6 +111,17 @@ SUBSYSTEM_DEF(supply)
 		var/funded_amount = department_plan["funded"] || 0
 		if(funded_amount > 0 && transfer_account_funds(GLOB.station_account, budget, funded_amount, "Pay-period department allocation", "Automated budget cycle"))
 			funded_allocations[department] = funded_amount
+			// Settled, delivered funding is the authoritative "aid" figure;
+			// allocation-policy edits only report planned deltas.
+			emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
+				"department" = DEPARTMENT_COMMAND,
+				"source_department" = "Station",
+				"target_department" = department,
+				"target_account" = budget.account_number,
+				"target_is_department" = TRUE,
+				"metrics" = list("amount" = funded_amount, "settled" = 1),
+				"detail" = "Funded [department] with [funded_amount] Thalers at budget cycle [service_accounting_period]",
+			), "budget-allocation-funded:[department]:[service_accounting_period]")
 		else
 			funded_allocations[department] = 0
 	service_accounting_period++
@@ -393,8 +404,8 @@ SUBSYSTEM_DEF(supply)
 		// insolvent, distribute every available Thaler proportionally instead of
 		// allowing player iteration order to decide who gets paid.
 		var/remaining_funds = min(total_due, round(budget.money + budget.savings))
-		var/payroll_funds = remaining_funds
 		var/remaining_due = total_due
+		var/delivered = 0
 		for(var/mob/living/carbon/human/employee as anything in employees)
 			var/due = pay_due[employee]
 			var/pay = remaining_due == due ? remaining_funds : min(due, round(remaining_funds * due / remaining_due))
@@ -402,12 +413,15 @@ SUBSYSTEM_DEF(supply)
 			remaining_funds -= pay
 			if(pay <= 0 || !transfer_account_funds(budget, employee.mind.initial_account, pay, "Department payroll", "Automated payroll"))
 				continue
+			// Only pay that actually landed counts toward coverage; a rejected
+			// transfer (suspended account, etc.) is not delivered payroll.
+			delivered += pay
 			if(pay < due)
 				to_chat(employee, span_warning("Your [department] paycheck was partially funded: [pay] of [due] Thalers was deposited."))
 			else
 				to_chat(employee, span_notice("Your [department] paycheck of [pay] Thalers has been deposited."))
 		budget.last_payroll_due = total_due
-		budget.last_payroll_paid = payroll_funds - remaining_funds
+		budget.last_payroll_paid = delivered
 
 /datum/controller/subsystem/supply/stat_entry(msg)
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]

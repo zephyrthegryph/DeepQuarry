@@ -38,7 +38,7 @@
 			var/turf/T = locate(n,m,z)
 			if (!isturf(T))
 				continue
-			for (var/mob/living/carbon/human/H in T)
+			for (var/mob/living/carbon/human/H in turf_contents_of_type(T, /mob/living/carbon/human))
 				if (H.stat == DEAD)
 					continue
 				var/option = "[H]["[H]" != H.real_name ? " ([H.real_name])" : ""]"

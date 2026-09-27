@@ -40,7 +40,7 @@
 		stop_consumption() // Unbuckle us from our victim.
 	return ..()
 
-//body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
+//body lives in code/modules/combat_ai/ports/slime_mob_overrides.dm where it
 // uses /datum/slime_state instead of the deleted ai_brain. Empty stub here so
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
@@ -111,7 +111,7 @@
 	name = "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
 	real_name = name
 
-//body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
+//body lives in code/modules/combat_ai/ports/slime_mob_overrides.dm where it
 // reads /datum/slime_state instead of the deleted ai_holder.
 /mob/living/simple_mob/slime/xenobio/update_mood()
 	return
@@ -125,8 +125,8 @@
 	drop_vore = allowed
 	throw_vore = allowed
 
-//enrage / relax / pacify bodies moved to
-// modular_dq/.../ports/slime_mob_overrides.dm; they now drive slime_state.
+//enrage / relax / pacify bodies live in
+// code/modules/combat_ai/ports/slime_mob_overrides.dm; they now drive slime_state.
 /mob/living/simple_mob/slime/xenobio/proc/enrage()
 	return
 

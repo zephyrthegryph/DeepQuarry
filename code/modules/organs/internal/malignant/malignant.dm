@@ -54,7 +54,7 @@
 /mob/living/carbon/human/proc/malignant_organ_spawn(type_path)
 	if(!type_path)
 		return FALSE
-	if(stat == DEAD)
+	if(is_dead())
 		return FALSE
 	if(isSynthetic())
 		return FALSE

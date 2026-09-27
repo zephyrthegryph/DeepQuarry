@@ -125,6 +125,21 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	access |= SSaccess.get_all_station_access()
 
 /// Shared baseline area used when generated geometry releases turf ownership.
+/// Creates a generated-station area without letting it claim the global
+/// per-type lookup. /area/New() writes `GLOB.areas_by_type[type] = src`, so every
+/// generated room of one type would otherwise clobber the previous registrant
+/// (including a mapped station area of that type). Whatever was registered before
+/// this instance is restored, and a previously empty slot stays empty.
+/proc/generated_station_create_area(area_type)
+	var/area/previous = GLOB.areas_by_type[area_type]
+	var/area/A = new area_type
+	if(GLOB.areas_by_type[area_type] == A)
+		if(previous)
+			GLOB.areas_by_type[area_type] = previous
+		else
+			GLOB.areas_by_type -= area_type
+	return A
+
 /proc/generated_station_space_area()
 	var/area/space/space_area = GLOB.areas_by_type[/area/space]
 	if(!space_area)
@@ -314,10 +329,10 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	nodes_by_id = list()
 	department_areas = list()
 	module_areas = list()
-	transit_area = new
+	transit_area = generated_station_create_area(/area/generated_station/transit)
 	transit_area.station_id = spec.id
 	transit_area.name = "[spec.name] Transit"
-	maintenance_area = new
+	maintenance_area = generated_station_create_area(/area/generated_station/maintenance)
 	maintenance_area.station_id = spec.id
 	maintenance_area.name = "[spec.name] Maintenance"
 	result = new
@@ -542,7 +557,15 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 					ChangeArea(T, maintenance_area)
 					result.corridor_count++
 				else
-					ChangeArea(T, module_areas[intent.zone_id] || department_areas[intent.owner_id])
+					var/area/generated_station/owner_area = module_areas[intent.zone_id] || department_areas[intent.owner_id]
+					if(!owner_area)
+						// ChangeArea() crashes on a null area. A floor whose planned
+						// owner never received an area still needs a pressurised,
+						// powered home; fold it into shared circulation and record it.
+						owner_area = maintenance_area || transit_area
+						log_world("Generated station [spec.id]: floor [intent.local_x],[intent.local_y] owned by [intent.owner_id]/[intent.zone_id] has no area; assigned to [owner_area].")
+						result.degradation_events += "floor [intent.local_x],[intent.local_y] fell back to [owner_area.name]"
+					ChangeArea(T, owner_area)
 					result.floor_count++
 			if(GENERATED_STATION_TILE_HULL)
 				T = T.ChangeTurf(wall_type, tell_universe = FALSE)
@@ -775,7 +798,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				if(install_emergency_room_access(A))
 					continue
 				var/list/blockers = list()
-				for(var/turf/simulated/floor/blocked_floor in A)
+				for(var/turf/simulated/floor/blocked_floor in area_contents_of_type(A, /turf/simulated/floor))
 					for(var/atom/movable/blocker in blocked_floor)
 						if(blocker.density && !istype(blocker, /obj/machinery/door))
 							blockers += "[blocker.type]@[blocked_floor.x],[blocked_floor.y]"
@@ -794,7 +817,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		if(get_area(furnishing) != A || !furnishing.density || istype(furnishing, /obj/machinery/door))
 			continue
 		var/turf/original = get_turf(furnishing)
-		for(var/turf/simulated/floor/candidate in A)
+		for(var/turf/simulated/floor/candidate in area_contents_of_type(A, /turf/simulated/floor))
 			if(candidate == original || !generated_station_furnishing_access_tile(candidate))
 				continue
 			furnishing.forceMove(candidate)
@@ -808,7 +831,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// it opens a wall between the room and an already-walkable station tile, never
 /// the exterior hull, then installs a tracked department airlock.
 /datum/generated_station_materializer/proc/install_emergency_room_access(area/generated_station/A)
-	for(var/turf/simulated/floor/inside in A)
+	for(var/turf/simulated/floor/inside in area_contents_of_type(A, /turf/simulated/floor))
 		for(var/direction in GLOB.cardinal)
 			var/turf/simulated/wall/wall = get_step(inside, direction)
 			if(!istype(wall))
@@ -839,9 +862,9 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Returns whether a generated furnishing can move here without consuming an
 /// airlock approach, utility fixture, or another blocking object's footprint.
 /datum/generated_station_materializer/proc/generated_station_furnishing_access_tile(turf/simulated/floor/candidate)
-	if(!candidate || candidate.density || locate(/obj/machinery/door) in candidate)
+	if(!candidate || candidate.density || locate_on(candidate, /obj/machinery/door))
 		return FALSE
-	for(var/atom/movable/occupant in candidate)
+	for(var/atom/movable/occupant in turf_contents_of_type(candidate, /atom/movable))
 		if(occupant.density || istype(occupant, /obj/machinery))
 			return FALSE
 	for(var/direction in GLOB.cardinal)
@@ -1134,7 +1157,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	return TRUE
 
 /datum/generated_station_materializer/proc/find_emergency_fixture_turf(area/generated_station/A, list/excluded)
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		generation_checkpoint("Selecting emergency closet position", 55)
 		if((excluded && (T in excluded)) || T.density || locate(/obj/machinery/door) in T)
 			continue
@@ -1160,7 +1183,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// occupying their selected floor cannot cut the room into sealed pockets.
 /proc/generated_station_area_removal_preserves_connectivity(turf/blocked_turf, area/generated_station/A)
 	var/list/available = list()
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(T != blocked_turf && generated_station_architectural_passable(T))
 			available |= T
 	if(length(available) <= 1)
@@ -1181,7 +1204,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /proc/generated_station_area_is_connected(area/generated_station/A)
 	var/list/available = list()
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(generated_station_architectural_passable(T))
 			available |= T
 	if(length(available) <= 1)
@@ -1206,14 +1229,14 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /proc/generated_station_room_area_is_accessible(area/generated_station/A)
 	if(!generated_station_area_is_connected(A))
 		return FALSE
-	for(var/turf/simulated/floor/T in A)
+	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(!generated_station_architectural_passable(T))
 			continue
 		if(locate(/obj/machinery/door) in T)
 			return TRUE
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(T, direction)
-			if(generated_station_architectural_passable(neighbor) && locate(/obj/machinery/door) in neighbor)
+			if(generated_station_architectural_passable(neighbor) && locate_on(neighbor, /obj/machinery/door))
 				return TRUE
 	return FALSE
 
@@ -1230,22 +1253,23 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	return null
 
 /datum/generated_station_materializer/proc/make_department_area(department_id)
+	var/area_type = /area/generated_station
 	switch(department_id)
 		if("command")
-			return new /area/generated_station/command
+			area_type = /area/generated_station/command
 		if("ai")
-			return new /area/generated_station/ai
+			area_type = /area/generated_station/ai
 		if("security")
-			return new /area/generated_station/security
+			area_type = /area/generated_station/security
 		if("medical")
-			return new /area/generated_station/medical
+			area_type = /area/generated_station/medical
 		if("engineering")
-			return new /area/generated_station/engineering
+			area_type = /area/generated_station/engineering
 		if("logistics")
-			return new /area/generated_station/logistics
+			area_type = /area/generated_station/logistics
 		if("docking")
-			return new /area/generated_station/docking
-	return new /area/generated_station
+			area_type = /area/generated_station/docking
+	return generated_station_create_area(area_type)
 
 /datum/generated_station_materializer/proc/fill_exterior()
 	var/area/space/space_area = generated_station_space_area()
@@ -1253,7 +1277,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		for(var/y in 1 to spec.grid_height)
 			var/turf/T = world_turf(x, y)
 			if(T)
-				for(var/atom/movable/occupant in T)
+				for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
 					if(!ismob(occupant))
 						qdel(occupant)
 				T.ChangeTurf(/turf/space, tell_universe = FALSE)
@@ -1384,130 +1408,6 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			if("logistics")
 				airlock.req_access = list(ACCESS_CARGO)
 
-/// Connects departments that share a wall with a short internal doorway. The
-/// abstract graph may legitimately choose this route instead of the concourse.
-/datum/generated_station_materializer/proc/place_department_adjacency_doors()
-	if(spec.primary_corridor_axis == "network")
-		return
-	for(var/datum/generated_station_layout_edge/edge in spec.layout_edges)
-		if(edge.kind != GENERATED_STATION_EDGE_TRANSIT)
-			continue
-		var/datum/generated_station_layout_node/first = nodes_by_id[edge.from_node_id]
-		var/datum/generated_station_layout_node/second = nodes_by_id[edge.to_node_id]
-		if(!first || !second)
-			continue
-		var/turf/first_turf
-		var/turf/second_turf
-		var/door_direction
-		if(first.x + first.width == second.x || second.x + second.width == first.x)
-			var/start_y = max(first.y + 1, second.y + 1)
-			var/end_y = min(first.y + first.height - 2, second.y + second.height - 2)
-			if(start_y <= end_y)
-				var/door_y = spec.grid_width >= 96 ? start_y + round((end_y - start_y) / 4) : round((start_y + end_y) / 2)
-				var/datum/generated_station_layout_node/west = first.x < second.x ? first : second
-				var/datum/generated_station_layout_node/east = west == first ? second : first
-				first_turf = world_turf(west.x + west.width - 1, door_y)
-				second_turf = world_turf(east.x, door_y)
-				door_direction = EAST
-		else if(first.y + first.height == second.y || second.y + second.height == first.y)
-			var/start_x = max(first.x + 1, second.x + 1)
-			var/end_x = min(first.x + first.width - 2, second.x + second.width - 2)
-			if(start_x <= end_x)
-				var/door_x = spec.grid_height >= 96 ? start_x + round((end_x - start_x) / 4) : round((start_x + end_x) / 2)
-				var/datum/generated_station_layout_node/south = first.y < second.y ? first : second
-				var/datum/generated_station_layout_node/north = south == first ? second : first
-				first_turf = world_turf(door_x, south.y + south.height - 1)
-				second_turf = world_turf(door_x, north.y)
-				door_direction = NORTH
-		if(!first_turf || !second_turf)
-			continue
-		first_turf.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-		second_turf.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-		var/datum/generated_station_layout_node/door_node = node_at(first_turf.x - min_x + 1, first_turf.y - min_y + 1)
-		ChangeArea(first_turf, department_areas[door_node.id])
-		var/datum/generated_station_layout_node/approach_node = node_at(second_turf.x - min_x + 1, second_turf.y - min_y + 1)
-		ChangeArea(second_turf, department_areas[approach_node.id])
-		var/obj/machinery/door/airlock/airlock = new(first_turf)
-		airlock.set_dir(door_direction)
-		configure_department_airlock(airlock, department_for_node(door_node))
-		result.doors += airlock
-		result.door_count++
-
-/// Places one entrance in each continuous transit frontage instead of filling
-/// the entire side of a department with doors beside a main concourse.
-/datum/generated_station_materializer/proc/place_interface_doors()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
-		var/datum/generated_station_department_instance/department = department_for_node(node)
-		for(var/outward in GLOB.cardinal)
-			var/list/run = list()
-			var/start = (outward in list(EAST, WEST)) ? node.y + 1 : node.x + 1
-			var/finish = (outward in list(EAST, WEST)) ? node.y + node.height - 2 : node.x + node.width - 2
-			for(var/coordinate in start to finish + 1)
-				var/local_x = outward == WEST ? node.x : outward == EAST ? node.x + node.width - 1 : coordinate
-				var/local_y = outward == SOUTH ? node.y : outward == NORTH ? node.y + node.height - 1 : coordinate
-				var/valid = coordinate <= finish && is_interface_door_candidate(node, local_x, local_y, outward)
-				if(valid)
-					run += list(list(local_x, local_y))
-				else if(length(run))
-					place_interface_door_run(node, department, run, outward)
-					run = list()
-
-/// Fills tiny side branches created where widened routes overlap at a bend.
-/// Department approaches are retained; only wall-bounded geometric fringes are removed.
-/datum/generated_station_materializer/proc/trim_short_transit_stubs()
-	var/list/transit_floors = list()
-	for(var/turf/simulated/floor/T in transit_area)
-		transit_floors[T] = TRUE
-	var/list/to_wall = list()
-	for(var/turf/simulated/floor/start as anything in transit_floors)
-		var/list/neighbors = list()
-		for(var/direction in GLOB.cardinal)
-			var/turf/neighbor = get_step(start, direction)
-			if(transit_floors[neighbor])
-				neighbors += neighbor
-		if(length(neighbors) != 1)
-			continue
-		var/near_entrance = FALSE
-		for(var/obj/machinery/door/door in range(2, start))
-			if(!istype(get_area(door), /area/generated_station/transit))
-				near_entrance = TRUE
-				break
-		if(near_entrance)
-			continue
-		var/list/branch = list(start)
-		var/turf/previous
-		var/turf/current = start
-		while(length(branch) <= 20)
-			var/list/forward = list()
-			for(var/direction in GLOB.cardinal)
-				var/turf/neighbor = get_step(current, direction)
-				if(neighbor != previous && transit_floors[neighbor])
-					forward += neighbor
-			if(length(forward) != 1)
-				if(length(forward) > 1 && current != start)
-					branch -= current
-				break
-			previous = current
-			current = forward[1]
-			branch += current
-		if(length(branch) <= 20)
-			var/keep_from = 0
-			for(var/i in 1 to length(branch))
-				var/turf/branch_turf = branch[i]
-				for(var/obj/machinery/door/door in range(2, branch_turf))
-					if(!istype(get_area(door), /area/generated_station/transit))
-						keep_from = i
-						break
-				if(keep_from)
-					break
-			var/prune_count = keep_from ? keep_from - 1 : length(branch)
-			for(var/i in 1 to prune_count)
-				to_wall |= branch[i]
-	for(var/turf/T as anything in to_wall)
-		T.ChangeTurf(spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
-		ChangeArea(T, transit_area)
-		result.wall_count++
-
 /// Turns unavoidable short route termini into deliberate rest alcoves.
 /datum/generated_station_materializer/proc/furnish_transit_alcoves()
 	var/list/transit_floors = list()
@@ -1534,6 +1434,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/obj/structure/bed/chair/seat = new(T)
 		seat.set_dir(get_dir(T, neighbors[1]))
 		result.register_furnishing(seat)
+
+/// Resolves a world turf to its planned tile intent, or null when the turf is
+/// missing or lies outside the planned grid.
+/datum/generated_station_materializer/proc/exterior_airlock_intent(turf/T)
+	if(!T || !result?.tile_plan)
+		return null
+	return result.tile_plan.tile(T.x - result.origin_x + 1, T.y - result.origin_y + 1)
 
 /// Adds a sealed two-door EVA vestibule instead of placing a naked maintenance hatch in the hull.
 /datum/generated_station_materializer/proc/place_exterior_airlocks()
@@ -1567,17 +1474,40 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		if(!hull_turf)
 			continue
 		var/area/generated_station/A = department_areas[node.id]
+		if(!A)
+			continue
 		var/turf/chamber = get_step(hull_turf, outward)
 		var/turf/outer = get_step(chamber, outward)
-		var/hull_local_x = hull_turf.x - result.origin_x + 1
-		var/hull_local_y = hull_turf.y - result.origin_y + 1
-		var/chamber_local_x = chamber.x - result.origin_x + 1
-		var/chamber_local_y = chamber.y - result.origin_y + 1
-		var/outer_local_x = outer.x - result.origin_x + 1
-		var/outer_local_y = outer.y - result.origin_y + 1
-		var/datum/generated_station_tile_intent/hull_intent = result.tile_plan.tile(hull_local_x, hull_local_y)
-		var/datum/generated_station_tile_intent/chamber_intent = result.tile_plan.tile(chamber_local_x, chamber_local_y)
-		var/datum/generated_station_tile_intent/outer_intent = result.tile_plan.tile(outer_local_x, outer_local_y)
+		if(!chamber || !outer)
+			continue
+		var/datum/generated_station_tile_intent/hull_intent = exterior_airlock_intent(hull_turf)
+		var/datum/generated_station_tile_intent/chamber_intent = exterior_airlock_intent(chamber)
+		var/datum/generated_station_tile_intent/outer_intent = exterior_airlock_intent(outer)
+		// Every tile the vestibule touches must lie inside the planned grid: at
+		// the grid edge tile() returns null and the old code crashed on it.
+		if(!hull_intent || !chamber_intent || !outer_intent)
+			continue
+		// The exterior seal was validated against the plan before this pass. The
+		// vestibule may only consume tiles the plan left as exterior; converting a
+		// planned floor (a neighbouring corridor or room) into hull would breach
+		// that seal or wall a walkway, so re-validate before mutating anything.
+		var/list/side_turfs = list()
+		var/list/side_intents = list()
+		var/sides_valid = TRUE
+		for(var/side in list(turn(outward, 90), turn(outward, -90)))
+			for(var/turf/side_turf in list(get_step(chamber, side), get_step(outer, side)))
+				var/datum/generated_station_tile_intent/side_intent = exterior_airlock_intent(side_turf)
+				if(!side_intent || side_intent.structure_kind == GENERATED_STATION_TILE_FLOOR || side_intent.door_type)
+					sides_valid = FALSE
+					break
+				side_turfs += side_turf
+				side_intents += side_intent
+			if(!sides_valid)
+				break
+		if(!sides_valid || length(side_turfs) != 4)
+			continue
+		if(chamber_intent.structure_kind == GENERATED_STATION_TILE_FLOOR || outer_intent.structure_kind == GENERATED_STATION_TILE_FLOOR)
+			continue
 		for(var/datum/generated_station_tile_intent/floor_intent in list(hull_intent, chamber_intent, outer_intent))
 			floor_intent.owner_id = node.id
 			floor_intent.zone_id = node.id
@@ -1593,16 +1523,14 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		ChangeArea(hull_turf, A)
 		ChangeArea(chamber, A)
 		ChangeArea(outer, A)
-		for(var/side in list(turn(outward, 90), turn(outward, -90)))
-			for(var/turf/side_turf in list(get_step(chamber, side), get_step(outer, side)))
-				var/side_local_x = side_turf.x - result.origin_x + 1
-				var/side_local_y = side_turf.y - result.origin_y + 1
-				var/datum/generated_station_tile_intent/side_intent = result.tile_plan.tile(side_local_x, side_local_y)
-				side_intent.owner_id = "station-structure"
-				side_intent.zone_id = "station-structure"
-				side_intent.structure_kind = GENERATED_STATION_TILE_HULL
-				side_turf.ChangeTurf(spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
-				ChangeArea(side_turf, A)
+		for(var/index in 1 to length(side_turfs))
+			var/turf/side_turf = side_turfs[index]
+			var/datum/generated_station_tile_intent/side_intent = side_intents[index]
+			side_intent.owner_id = "station-structure"
+			side_intent.zone_id = "station-structure"
+			side_intent.structure_kind = GENERATED_STATION_TILE_HULL
+			side_turf.ChangeTurf(spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
+			ChangeArea(side_turf, A)
 		var/obj/machinery/door/airlock/maintenance/inner = new(hull_turf)
 		inner.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 		inner.req_access = list(ACCESS_MAINT_TUNNELS)
@@ -1631,8 +1559,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			break
 	if(!T)
 		var/area/generated_station/docking/docking_area = department_areas[docking.id]
-		for(var/turf/simulated/floor/candidate in docking_area)
-			if(!candidate.density && !(locate(/obj/machinery/door) in candidate))
+		for(var/turf/simulated/floor/candidate in area_contents_of_type(docking_area, /turf/simulated/floor))
+			if(!candidate.density && !(locate_on(candidate, /obj/machinery/door)))
 				T = candidate
 				break
 	if(T)
@@ -1648,4 +1576,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	for(var/node_id in department_areas)
 		var/area/generated_station/A = department_areas[node_id]
 		A.power_change()
-	transit_area.power_change()
+	for(var/module_id in module_areas)
+		var/area/generated_station/room_area = module_areas[module_id]
+		room_area.power_change()
+	transit_area?.power_change()
+	maintenance_area?.power_change()

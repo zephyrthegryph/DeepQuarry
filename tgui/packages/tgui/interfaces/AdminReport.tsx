@@ -1,5 +1,5 @@
 // AdminReport — generic structured TGUI for one-shot admin reports.
-// See modular_dq/code/modules/admin/admin_report_panel.dm for the three
+// See code/modules/admin/admin_report_panel.dm for the three
 // rendering modes (lines / table / body_html). All three may be combined.
 
 import { useBackend } from 'tgui/backend';

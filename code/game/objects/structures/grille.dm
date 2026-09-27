@@ -23,7 +23,20 @@
 /obj/structure/grille/Bumped(atom/user)
 	if(ismob(user)) shock(user, 70)
 
-/obj/structure/grille/attack_hand(mob/user as mob)
+/obj/structure/grille/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/grille_hand,
+		/datum/interaction/entry_item/grille_item,
+	)
+	..()
+
+/// Old attack_hand: kick the grille (and maybe get shocked).
+/datum/interaction/entry_hand/grille_hand
+	id = "grille_hand"
+	name = "Kick"
+	effect = /obj/structure/grille/proc/interaction_hand
+
+/obj/structure/grille/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	user.setClickCooldown(user.get_attack_speed())
 	playsound(src, 'sound/effects/grillehit.ogg', 80, 1)
@@ -38,7 +51,7 @@
 			damage_dealt = 5
 
 	if(shock(user, 70))
-		return
+		return TRUE
 
 	if(user.has_mutation(HULK))
 		damage_dealt += 5
@@ -46,6 +59,7 @@
 		damage_dealt += 1
 
 	attack_generic(user,damage_dealt,attack_message)
+	return TRUE
 
 /obj/structure/grille/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGRILLE))
@@ -89,16 +103,20 @@
 		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, Proj.armor_penetration, Proj.dir)
 		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
 
-/obj/structure/grille/attackby(obj/item/W as obj, mob/user as mob)
-	if(!istype(W))
-		return
+/// Old attackby: place a window, or take a hit (and maybe get shocked).
+/datum/interaction/entry_item/grille_item
+	id = "grille_item"
+	name = "Use"
+	effect = /obj/structure/grille/proc/interaction_item
+
+/obj/structure/grille/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/rcd)) // To stop us from hitting the grille when building windows, because grilles don't let parent handle it properly.
-		return FALSE
+		return TRUE
 	//window placing begin //TODO CONVERT PROPERLY TO MATERIAL DATUM
 	else if(istype(W,/obj/item/stack/material))
 		var/obj/item/stack/material/ST = W
 		if(!ST.material.created_window)
-			return 0
+			return TRUE
 
 		var/dir_to_set = 1
 		if(loc == user.loc)
@@ -117,14 +135,14 @@
 						dir_to_set = 4
 			else
 				to_chat(user, span_notice("You can't reach."))
-				return //Only works for GLOB.cardinal direcitons, diagonals aren't supposed to work like this.
+				return TRUE //Only works for GLOB.cardinal direcitons, diagonals aren't supposed to work like this.
 		for(var/obj/structure/window/WINDOW in loc)
 			if(WINDOW.dir == dir_to_set)
 				to_chat(user, span_notice("There is already a window facing this way there."))
-				return
+				return TRUE
 		to_chat(user, span_notice("You start placing the window."))
 		om_task_start(/datum/om/task/timed/grille_attackby, user, src, list("receiver" = src, "ST" = ST, "dir_to_set" = dir_to_set))
-		return
+		return TRUE
 
 //window placing end
 
@@ -137,8 +155,7 @@
 				receive_weapon_hit(W, user, W.force, INJURY_BURN)
 			if(BRUTE)
 				receive_weapon_hit(W, user, W.force * 0.1)
-	..()
-	return
+	return TRUE
 
 /datum/om/task/timed/grille_attackby
 	duration = 2 SECONDS

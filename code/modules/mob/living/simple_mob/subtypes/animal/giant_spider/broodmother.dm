@@ -71,7 +71,10 @@
 
 	combustion = FALSE
 
-/mob/living/simple_mob/animal/giant_spider/broodmother/death(gibbed, deathmessage="falls over and makes its last twitches as its birthing sack bursts!")
+/mob/living/simple_mob/animal/giant_spider/broodmother
+	death_message = "falls over and makes its last twitches as its birthing sack bursts!"
+
+/mob/living/simple_mob/animal/giant_spider/broodmother/on_death(gibbed)
 	var/count = 0
 	while(count < death_brood)
 		var/broodling_type = pick(possible_death_brood_types)

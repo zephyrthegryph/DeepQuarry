@@ -30,10 +30,11 @@
 	else
 		icon_state = initial(icon_state)
 
-/obj/item/mass_spectrometer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/mass_spectrometer/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/mass_spectrometer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.stat)
 		return
 	if (!user.IsAdvancedToolUser())

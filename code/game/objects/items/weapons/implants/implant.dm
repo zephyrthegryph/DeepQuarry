@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 // LIFECYCLE: leaves its limb's implant list.
 /obj/item/implant/tracking/Destroy()
 	if(part)
-		part.implants -= src
+		LAZYREMOVE(part.implants, src)
 	part = imp_in = null
 	return ..()
 

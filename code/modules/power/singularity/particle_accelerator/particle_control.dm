@@ -26,8 +26,6 @@
 	connected_parts = list()
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
 
-REF_OWNED(/obj/machinery/particle_accelerator/control_box, "wires")
-
 // LIFECYCLE: a running accelerator powers down.
 /obj/machinery/particle_accelerator/control_box/Destroy()
 	if(active)
@@ -185,7 +183,7 @@ REF_OWNED(/obj/machinery/particle_accelerator/control_box, "wires")
 	if(!(T)||!(type))
 		return 0
 
-	var/obj/structure/particle_accelerator/PA = locate(/obj/structure/particle_accelerator) in T
+	var/obj/structure/particle_accelerator/PA = locate_on(T, /obj/structure/particle_accelerator)
 	if(istype(PA, type) && PA.connect_master(src) && PA.report_ready(src))
 		src.connected_parts.Add(PA)
 		return 1

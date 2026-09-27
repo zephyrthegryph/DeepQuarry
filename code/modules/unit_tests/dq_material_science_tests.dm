@@ -78,7 +78,7 @@
 		eligible++
 		TEST_ASSERT(design.material_template, "Ordinary design [design.id] ([design.type]) lost its material blueprint")
 		var/datum/material_template/blueprint = material_template_singleton(design.material_template)
-		var/list/defaults = om_resolve(blueprint)
+		var/list/defaults = blueprint.resolve()
 		TEST_ASSERT(defaults, "Ordinary design [design.id] has unresolvable standard materials")
 		var/list/effective = design.effective_materials(defaults)
 		var/slot_total = 0
@@ -146,7 +146,7 @@
 		var/datum/material_template/slots = material_template_for_application(application)
 		var/slots_total = SHEET_MATERIAL_AMOUNT * 4
 		TEST_ASSERT(length(slots.roles), "Application [application] must define physical parts")
-		var/list/defaults = om_resolve(slots)
+		var/list/defaults = slots.resolve()
 		for(var/role in slots.roles)
 			var/list/variant = defaults.Copy()
 			variant[role] = defaults[role] == MAT_DIAMOND ? MAT_WOOD : MAT_DIAMOND

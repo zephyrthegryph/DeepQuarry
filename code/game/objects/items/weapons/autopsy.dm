@@ -39,7 +39,7 @@
 	return W
 
 /obj/item/autopsy_scanner/proc/add_data(obj/item/organ/external/O)
-	if(!O.autopsy_data.len && !O.trace_chemicals.len) return
+	if(!LAZYLEN(O.autopsy_data) && !LAZYLEN(O.trace_chemicals)) return
 
 	for(var/V in O.autopsy_data)
 		var/datum/autopsy_data/W = O.autopsy_data[V]

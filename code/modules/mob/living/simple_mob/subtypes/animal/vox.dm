@@ -36,9 +36,10 @@
 
 /mob/living/simple_mob/vox/armalis
 	delete_on_death = TRUE
+	death_message = DEATHGASP_NO_MESSAGE
 
-/mob/living/simple_mob/vox/armalis/death(gibbed = FALSE)
-	..(TRUE)
+/mob/living/simple_mob/vox/armalis/on_death(gibbed)
+	. = ..()
 	var/turf/gloc = get_turf(loc)
 	visible_message(span_bolddanger("[src] shudders violently and explodes!"),span_warning("You feel your body rupture!"))
 	gib()

@@ -731,8 +731,13 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 /mob/proc/is_active()
 	return (0 >= stat)
 
+/// Vital-state predicate: is this mob dead (stat)? See code/modules/body/vital_state.dm.
 /mob/proc/is_dead()
 	return stat == DEAD
+
+/// Vital-state predicate: is this mob alive (not DEAD)?
+/mob/proc/is_alive()
+	return stat != DEAD
 
 /mob/proc/is_mechanical()
 	if(mind && (mind.assigned_role == JOB_CYBORG || mind.assigned_role == JOB_AI))
@@ -890,7 +895,7 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 				if(O == selection)
 					affected = organ
 
-		affected.implants -= selection
+		LAZYREMOVE(affected.implants, selection)
 		H.shock_stage+=20
 		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
 

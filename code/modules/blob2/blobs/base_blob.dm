@@ -149,7 +149,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 			var/dirn = pick(dirs)
 			dirs.Remove(dirn)
 			T = get_step(src, dirn)
-			var/obj/structure/blob/B = locate(/obj/structure/blob) in T
+			var/obj/structure/blob/B = locate_on(T, /obj/structure/blob)
 			if(!B || B.faction != faction)	// Allow opposing blobs to fight.
 				break
 			else
@@ -159,7 +159,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 	var/make_blob = TRUE //can we make a blob?
 
-	if(istype(T, /turf/space) && !(locate(/obj/structure/lattice) in T) && prob(80))
+	if(istype(T, /turf/space) && !(locate_on(T, /obj/structure/lattice)) && prob(80))
 		make_blob = FALSE
 		playsound(src, 'sound/effects/splat.ogg', 50, 1) //Let's give some feedback that we DID try to spawn in space, since players are used to it
 
@@ -169,7 +169,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 		make_blob = FALSE
 		T.blob_act(src) //hit the turf if it is
 
-	for(var/atom/A in T)
+	for(var/atom/A in turf_contents_of_type(T, /atom))
 		if(!A.CanPass(src, T)) //is anything in the turf impassable
 			make_blob = FALSE
 		A.blob_act(src) //also hit everything in the turf

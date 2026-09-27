@@ -23,10 +23,15 @@
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
-/obj/item/emergency_beacon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/emergency_beacon/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE("Activate", PROC_REF(interaction_self)),
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM("Disassemble", PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/emergency_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/T = user.loc
 	if(!beacon_active)
 		if(!isturf(T))
@@ -43,6 +48,7 @@
 				om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
 	else
 		to_chat(user,"\The [src] is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
+	return TRUE
 
 /obj/item/emergency_beacon/proc/activate_done(mob/user)
 	if(beacon_active)
@@ -62,15 +68,18 @@
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Personal Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
 
-/obj/item/emergency_beacon/attack_hand(mob/user)
+/// Old attack_hand: block pickup while the beacon is active.
+/obj/item/emergency_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(beacon_active)
 		to_chat(user,span_warning("The beacon is already active and cannot be moved!"))
-		return
+		return TRUE
+	return FALSE
 
-	. = ..()
-
-/obj/item/emergency_beacon/attackby(obj/item/W, mob/user)
+/// Old attackby: wrench it apart once active.
+/obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE
 		user.visible_message("[user] disassembles \the [src].")
 		consume(src, user)
+		return TRUE
+	return FALSE

@@ -91,11 +91,19 @@ REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 		I.add_overlay(radial_plus)
 		LAZYSET(radial_images, "New Beacon", I)
 
-/obj/item/perfect_tele/attack_hand(mob/user)
+/obj/item/perfect_tele/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/perfect_tele/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user)
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 /obj/item/perfect_tele/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	afterattack(M, user)
@@ -119,10 +127,7 @@ REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 		return FALSE
 	return TRUE
 
-/obj/item/perfect_tele/attack_self(mob/user, list/modifiers, radial_menu_anchor = src)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/perfect_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, radial_menu_anchor = src)
 	if(special_handling)
 		return FALSE
 	if(loc_network)
@@ -175,7 +180,7 @@ This device records all warnings given and teleport events for admin review in c
 		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
 
-/obj/item/perfect_tele/attackby(obj/W, mob/user)
+/obj/item/perfect_tele/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !power_source)
 		power_source = W
 		power_source.update_icon() //Why doesn't a cell do this already? :|
@@ -193,9 +198,10 @@ This device records all warnings given and teleport events for admin review in c
 			beacons_left++
 		else
 			to_chat(user,span_notice("\The [tb] doesn't belong to \the [src]."))
-			return
+			return TRUE
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/perfect_tele/proc/teleport_checks(mob/living/target,mob/living/user)
 	//Uhhuh, need that power source
@@ -403,7 +409,14 @@ This device records all warnings given and teleport events for admin review in c
 	var/tele_network = null
 	flags = NOBLUDGEON
 
-/obj/item/perfect_tele_beacon/attack_hand(mob/user)
+/obj/item/perfect_tele_beacon/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
+
+/obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		warned_users |= user.ckey
 		var/choice = tgui_alert(user, {"
@@ -412,8 +425,8 @@ who teleports to this beacon gets teleported into your selected vore-belly. If y
 or don't wish to potentially have a random person teleported into you, it's suggested that you
 not carry this around."}, "OOC Warning", list("Take It","Leave It"))
 		if(choice == "Leave It")
-			return
-	return ..()
+			return TRUE
+	return FALSE
 
 /obj/item/perfect_tele_beacon/stationary
 	name = "stationary translocator beacon"
@@ -424,10 +437,7 @@ not carry this around."}, "OOC Warning", list("Take It","Leave It"))
 
 REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEACONS_PREMADE)
 
-/obj/item/perfect_tele_beacon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/perfect_tele_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return
 	var/mob/living/L = user

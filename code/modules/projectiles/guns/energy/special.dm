@@ -271,7 +271,7 @@
 /obj/item/gun/energy/maghowitzer/proc/pick_random_target(turf/T)
 	var/foundmob = FALSE
 	var/foundmobs = list()
-	for(var/mob/living/L in T.contents)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		foundmob = TRUE
 		foundmobs += L
 	if(foundmob)

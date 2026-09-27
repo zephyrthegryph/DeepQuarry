@@ -36,8 +36,6 @@
 		stat |= BROKEN
 	AddElement(/datum/element/climbable)
 
-REF_OWNED(/obj/machinery/media/jukebox, "wires")
-
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 

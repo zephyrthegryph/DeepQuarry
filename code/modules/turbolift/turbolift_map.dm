@@ -155,7 +155,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 					checking = locate(tx,ty,cz)
 
 				// Clear out contents.
-				for(var/atom/movable/thing in checking.contents)
+				for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
 					if(thing.simulated)
 						qdel(thing)
 
@@ -172,7 +172,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 					if(checking.type != floor_type)
 						checking.ChangeTurf(floor_type)
 						checking = locate(tx,ty,cz)
-					for(var/atom/movable/thing in checking.contents)
+					for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
 						if(thing.simulated)
 							qdel(thing)
 				if(checking.type == floor_type) // Don't build over empty space on lower levels.

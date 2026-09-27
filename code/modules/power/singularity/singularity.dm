@@ -360,15 +360,15 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 	if(A.flag_check(AREA_FORBID_SINGULO)) //No going to dorms
 		return 0
 
-	if ((locate(/obj/machinery/containment_field) in T) || (locate(/obj/machinery/shieldwall) in T))
+	if ((locate_on(T, /obj/machinery/containment_field)) || (locate_on(T, /obj/machinery/shieldwall)))
 		return 0
-	else if (locate(/obj/machinery/field_generator) in T)
-		var/obj/machinery/field_generator/G = locate(/obj/machinery/field_generator) in T
+	else if (locate_on(T, /obj/machinery/field_generator))
+		var/obj/machinery/field_generator/G = locate_on(T, /obj/machinery/field_generator)
 
 		if (G && G.active)
 			return 0
-	else if (locate(/obj/machinery/shieldwallgen) in T)
-		var/obj/machinery/shieldwallgen/S = locate(/obj/machinery/shieldwallgen) in T
+	else if (locate_on(T, /obj/machinery/shieldwallgen))
+		var/obj/machinery/shieldwallgen/S = locate_on(T, /obj/machinery/shieldwallgen)
 
 		if (S && S.active)
 			return 0

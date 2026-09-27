@@ -84,7 +84,7 @@
 	TEST_ASSERT(!QDELETED(bottle), "a kelvin below its melting point it keeps its shape")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, melting + 1)
 	TEST_ASSERT(QDELETED(bottle), "a kelvin above, it melts")
-	for(var/obj/effect/decal/cleanable/molten_item/goo in T)
+	for(var/obj/effect/decal/cleanable/molten_item/goo in turf_contents_of_type(T, /obj/effect/decal/cleanable/molten_item))
 		qdel(goo)
 	// The bottle's release dumped its excess heat into the shared floor;
 	// reset it so the window's own heat body starts at room temperature.

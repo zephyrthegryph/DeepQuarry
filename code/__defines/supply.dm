@@ -1,5 +1,9 @@
 // Supply shuttle status defines
 #define SUP_SHUTTLE_ERROR -1	// Error state
+/// Personal balance below which a station service purchase qualifies for the hardship subsidy.
+#define SERVICE_HARDSHIP_THRESHOLD 100
+/// Hard cap on what the station account will cover per hardship-subsidised purchase.
+#define SERVICE_HARDSHIP_SUBSIDY_CAP 50
 #define SUP_SHUTTLE_DOCKED 0
 #define SUP_SHUTTLE_UNDOCKED 1
 #define SUP_SHUTTLE_DOCKING 2

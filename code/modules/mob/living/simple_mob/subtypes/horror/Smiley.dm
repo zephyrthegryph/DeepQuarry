@@ -27,7 +27,7 @@
 
 	say_list_type = /datum/say_list/Smiley
 
-/mob/living/simple_mob/horror/Smiley/death()
+/mob/living/simple_mob/horror/Smiley/on_death(gibbed)
 	playsound(src, 'sound/h_sounds/lynx.ogg', 50, 1)
 	..()
 

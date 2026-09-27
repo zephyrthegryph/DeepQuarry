@@ -305,9 +305,83 @@ tools/build/build.sh bench --runs=3                           # 1 warm-up + 3 me
 tools/build/build.sh bench --scenario=atmos_large --arg=size=96
 tools/build/build.sh bench --scenario=boot_memory -DCITESTING_FULL_MAP
 tools/build/build.sh bench --scenario=idle --profile          # also dump BYOND proc profiles
-tools/build/build.sh bench-compare                            # latest against previous
+tools/build/build.sh bench --exclusive                        # wait for a quiet machine, time it that way
+tools/build/build.sh bench-baseline                            # store a master baseline for other worktrees
+tools/build/build.sh bench-baseline --ref=<commit>              # ... for a specific commit instead
+tools/build/build.sh bench-compare                            # head vs. this branch's stored master baseline
 tools/build/build.sh bench-report                             # regenerate data/bench/report.html
 ```
+
+### Shared store (agents, worktrees)
+
+`data/` is per-worktree and gitignored, so by default a branch worktree has no
+access to a run from `master` and every worktree must re-run its own control.
+Set `DQ_BENCH_STORE` to a directory that's **outside every worktree** (a
+sibling of your checkouts, not inside one) to turn bench runs, the exclusive
+lock and the DreamDaemon slot directory into shared, machine-wide state that
+every worktree on the machine reads and writes:
+
+```
+export DQ_BENCH_STORE=/e/projects/.dq-bench      # bash / worktree agents
+$env:DQ_BENCH_STORE = 'E:\projects\.dq-bench'     # PowerShell
+```
+
+With it set: `bench` writes runs to `$DQ_BENCH_STORE/runs/` instead of
+`data/bench/runs/`; the exclusive-bench lock lives at
+`$DQ_BENCH_STORE/.dq-bench-exclusive`; and `tools/ci/dd-slot.sh` /
+`dd-slot-exclusive.sh` (the DreamDaemon concurrency limiter agents wrap test
+and bench runs with) look for their slot directories at
+`$(dirname $DQ_BENCH_STORE)/.dq-dd-slot-N` — i.e. `/e/projects/.dq-dd-slot-N`
+for the `DQ_BENCH_STORE` above. Override any one of these individually with
+`DQ_BENCH_EXCLUSIVE_LOCK` / `DQ_DD_SLOT_BASE` if your layout differs. With
+`DQ_BENCH_STORE` unset, everything falls back to the old per-worktree
+`data/bench/runs/` and a `.dq-dd-slot-N` next to that worktree's checkout —
+nothing in the committed tooling hardcodes a path.
+
+**One baseline, shared by every branch.** `bench-baseline` runs the bench for
+`master` (or `--ref=<commit>`) in a disposable temp worktree — exclusively, so
+its TIMING metrics are trustworthy — and stores the result. `bench` and
+`bench-compare` then default to comparing against the stored run for
+`git merge-base HEAD master`, falling back to the nearest master ancestor
+that has one, and both print which baseline commit they used. Re-run
+`bench-baseline` after `master` moves meaningfully; stale baselines still
+compare (you just get a bigger diff to read through, same as `test-baseline`).
+
+### Exclusive runs and load noise
+
+This machine typically runs several agents' builds, tests and benchmarks
+concurrently, and DreamDaemon's tick/wall-clock numbers move 70-140% with
+that load — a benchmark taken next to three other compiles is not comparable
+to one taken alone. Every stored run therefore also records a `load` block:
+how many other `dreamdaemon.exe`/`dm.exe`/`cargo`/`rustc` processes were
+running (averaged over the run) and system CPU%.
+
+Every metric is tagged COUNT or TIMING (see `_benchmark.dm`'s `metric()`
+`metric_class` argument / `count_metric()`): COUNT metrics (FFI calls,
+reactor wakes, subsystem fire/work-item counts, census and list counts, Rust
+heap bytes) reflect the same work regardless of speed, so they always compare
+against the baseline, with a tight threshold. TIMING metrics (tick
+percentages, overruns, TPS, wall-clock windows, RSS) only compare when both
+runs were taken under similar load — both `--exclusive`, or close CPU% and
+process counts — otherwise `bench-compare` reports that row as
+`not comparable (load)` rather than a false regression or a silently missing
+number.
+
+`bench --exclusive` acquires a machine-wide lock (so only one exclusive bench
+runs at a time), waits up to 5 minutes for already-running DreamDaemons to
+drain, then benchmarks; `tools/ci/dd-slot.sh` makes ordinary test/bench runs
+wait while that lock is held, so an exclusive run gets an actually quiet
+machine. The lock self-expires after 20 minutes even if its holder died, so it
+can't starve other agents. `bench-baseline` always benchmarks exclusively for
+this reason — a baseline with noisy TIMING numbers isn't useful to compare
+against.
+
+`tools/ci/dd-slot.sh` also has a priority lane: `DQ_DD_PRIORITY=1 dd-slot.sh
+<command>` can use every DreamDaemon slot, while ordinary (non-priority)
+invocations are capped at `DQ_DD_SLOT_COUNT` minus `DQ_DD_PRIORITY_RESERVED`
+(2 by default), so test/bench-infrastructure work other agents are waiting on
+doesn't queue behind the general pool. Use it for exactly that kind of
+work, not routinely.
 
 Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 
@@ -330,13 +404,18 @@ metric over the measured iterations. The world also reports subsystem
 initialization times and runtimes. With `--profile`, BYOND proc profiles for
 each measurement window go to `data/bench/profiles/<run>/`.
 
-**Comparing.** `bench` compares itself with the previous run on the same map
-automatically; `bench-compare` does it on demand (`--base=`, `--head=`,
-`--threshold=` percent, `--all` to list unchanged metrics,
-`--fail-on-regression` for scripts). A metric changes only when it moves by more
-than both the threshold (5% by default) and twice its run-to-run spread, so
-use `--runs=3` or more for anything you want to trust. Memory is stable enough
-for single runs; tick timings are not.
+**Comparing.** `bench` compares itself against the stored baseline for this
+branch's merge-base with master automatically (see "Shared store" above; it
+falls back to the previous local run, with a warning, if no baseline is
+stored yet). `bench-compare` does the same on demand (`--base=baseline`, the
+default, or `--base=<run>` for anything else; `--head=`, `--threshold=`
+percent, `--all` to list unchanged and not-comparable metrics too,
+`--fail-on-regression` for scripts). A metric changes only when it moves by
+more than both the threshold (5% by default, 1% for COUNT metrics) and twice
+its run-to-run spread, so use `--runs=3` or more for anything you want to
+trust — and remember TIMING metrics also need `loadSimilar()` load
+conditions between the two runs, or they show as `not comparable (load)`
+instead of a change.
 
 **Report.** `data/bench/report.html` is regenerated after every `bench`. It
 shows the latest run against the previous one, a trend line per metric, the
@@ -348,7 +427,8 @@ and implement `Run()`. The helpers are in `_benchmark.dm`:
 
 | Helper | Use |
 |---|---|
-| `metric(name, value, unit, better)` | A compared number; `better` is `"lower"`, `"higher"` or `"none"`. |
+| `metric(name, value, unit, better, metric_class)` | A compared number; `better` is `"lower"`, `"higher"` or `"none"`. `metric_class` is `"timing"` (default) or `"count"` — see "Exclusive runs and load noise" above. |
+| `count_metric(name, value, unit, better)` | Shorthand for `metric(..., metric_class = "count")`: use it for anything load-independent (a call count, a list length, a byte count), not a wall-clock or tick number. |
 | `detail(name, value)` | Context that isn't compared (tables, lists). |
 | `begin_window()` / `end_window(prefix)` | Tick usage, overruns, TPS and per-subsystem cost between the two calls. |
 | `mark(name)` | Process and Rust heap memory at this moment. |

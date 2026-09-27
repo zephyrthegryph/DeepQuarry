@@ -4,7 +4,7 @@
 	desc = "If you see this, something has gone horribly wrong."
 	var/datum/admins/admindatum = null
 
-	var/interactions = null
+	var/admin_fax_links = null
 	var/isCrayon = 0
 	var/origin = null
 	var/mob/sender = null
@@ -23,18 +23,18 @@
 
 /obj/item/paper/admin/proc/generateInteractions()
 	//clear first
-	interactions = null
+	admin_fax_links = null
 
 	//Snapshot is crazy and likes putting each topic hyperlink on a seperate line from any other tags so it's nice and clean.
-	interactions += "<HR><center><font size= \"1\">The fax will transmit everything above this line</font><br>"
-	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];confirm=1'>Send fax</A> "
-	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];penmode=1'>Pen mode: [isCrayon ? "Crayon" : "Pen"]</A> "
-	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];cancel=1'>Cancel fax</A> "
-	interactions += "<BR>"
-	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];toggleheader=1'>Toggle Header</A> "
-	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];togglefooter=1'>Toggle Footer</A> "
-	interactions += "<A href='byond://?src=\ref[src];[HrefToken()];clear=1'>Clear page</A> "
-	interactions += "</center>"
+	admin_fax_links += "<HR><center><font size= \"1\">The fax will transmit everything above this line</font><br>"
+	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];confirm=1'>Send fax</A> "
+	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];penmode=1'>Pen mode: [isCrayon ? "Crayon" : "Pen"]</A> "
+	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];cancel=1'>Cancel fax</A> "
+	admin_fax_links += "<BR>"
+	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];toggleheader=1'>Toggle Header</A> "
+	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];togglefooter=1'>Toggle Footer</A> "
+	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];clear=1'>Clear page</A> "
+	admin_fax_links += "</center>"
 
 /obj/item/paper/admin/proc/generateHeader()
 	var/originhash = md5("[origin]")
@@ -74,7 +74,7 @@
 
 // full TGUI migration. AdminPaper.tsx renders the
 // segment-based body + structured admin controls; tgui_act handles
-// the admin actions. No more byond:// hrefs, no more interactions HTML.
+// the admin actions. No more byond:// hrefs, no more admin_fax_links HTML.
 /obj/item/paper/admin/proc/adminbrowse()
 	generateHeader()
 	generateFooter()

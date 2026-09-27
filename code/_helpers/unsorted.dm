@@ -141,12 +141,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return 0
 
 /proc/DirBlocked(turf/loc,dir)
-	for(var/obj/structure/window/D in loc)
+	for(var/obj/structure/window/D in turf_contents_of_type(loc, /obj/structure/window))
 		if(!D.density)			continue
 		if(D.dir == SOUTHWEST)	return 1
 		if(D.dir == dir)		return 1
 
-	for(var/obj/machinery/door/D in loc)
+	for(var/obj/machinery/door/D in turf_contents_of_type(loc, /obj/machinery/door))
 		if(!D.density)			continue
 		if(istype(D, /obj/machinery/door/window))
 			if((dir & SOUTH) && (D.dir & (EAST|WEST)))		return 1
@@ -155,7 +155,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return 0
 
 /proc/TurfBlockedNonWindow(turf/loc)
-	for(var/obj/O in loc)
+	for(var/obj/O in turf_contents_of_type(loc, /obj))
 		if(O.density && !istype(O, /obj/structure/window))
 			return 1
 	return 0
@@ -584,7 +584,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	while(current != target_turf)
 		if(steps > length) return 0
 		if(current.opacity) return 0
-		for(var/atom/A in current)
+		for(var/atom/A in turf_contents_of_type(current, /atom))
 			if(A.opacity) return 0
 		current = get_step_towards(current, target_turf)
 		steps++
@@ -594,7 +594,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /proc/is_blocked_turf(turf/T)
 	var/cant_pass = 0
 	if(T.density) cant_pass = 1
-	for(var/atom/A in T)
+	for(var/atom/A in turf_contents_of_type(T, /atom))
 		if(A.density)//&&A.anchored
 			cant_pass = 1
 	return cant_pass

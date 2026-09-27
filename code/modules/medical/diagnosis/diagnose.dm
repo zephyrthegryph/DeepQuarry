@@ -33,7 +33,7 @@
 	D.patient_name = owner.name
 	D.fake_death = (owner.status_flags & FAKEDEATH) && !P.sees_fake_death
 
-	if(owner.stat == DEAD || D.fake_death)
+	if(owner.is_dead() || D.fake_death)
 		D.status = DIAG_STATUS_DEAD
 		D.band = DIAG_BAND_CRITICAL
 		D.time_of_death = owner.timeofdeath
@@ -55,7 +55,7 @@
 
 /// Vitals through the contract. A feigned death reads as flatlined.
 /datum/body/proc/diagnose_vitals(datum/diagnosis/D, datum/diagnostic_profile/P)
-	var/flat = D.fake_death || owner.stat == DEAD
+	var/flat = D.fake_death || owner.is_dead()
 	if(P.vitals & VITALS_PULSE)
 		var/rate = heart_rate()
 		if(!isnull(rate))
@@ -72,6 +72,10 @@
 		var/breaths = respiratory_rate()
 		if(!isnull(breaths))
 			D.respiratory_rate = flat ? 0 : round(breaths)
+	if(P.vitals & VITALS_RHYTHM)
+		var/rhythm = heart_rhythm()
+		if(!isnull(rhythm))
+			D.heart_rhythm = flat ? RHYTHM_ASYSTOLE : rhythm
 	if(P.vitals & VITALS_TEMP)
 		D.temperature = round((owner.bodytemperature - T0C + owner.factor(BF_TEMPERATURE)) * 10) / 10
 	if(P.vitals & VITALS_CONSCIOUSNESS)
@@ -148,6 +152,62 @@
 				demand[tag] = band
 	return demand
 
+/// The mob-level entry point for automation: TREAT_* -> DIAG_BAND_* urgency
+/// as `profile` perceives it. Null when nothing is demanded (or no body).
+/mob/living/proc/treatment_demand(profile = null)
+	return body?.treatment_demand(profile)
+
+
+// --- Deciding from demand ------------------------------------------------------
+// Automation (medbots, drones, mediguns, cryo) decides from treatment_demand()
+// alone: which tags are wanted and how urgently. These helpers turn a demand
+// into a decision; nothing here reads injury loads.
+
+/// Each urgency rank weighs this many times the rank below it, so the most
+/// urgent demand dominates a match and lesser demands only break ties.
+#define DIAG_URGENCY_WEIGHT 10
+
+/// The highest urgency rank (0..4, see _dq_band_rank) in `demand` among the
+/// tags in `offered` (a list of TREAT_*, or a TREAT_* -> potency list). Null
+/// `offered` = any tag.
+/proc/demand_urgency(list/demand, list/offered = null)
+	. = 0
+	for(var/tag in demand)
+		if(offered && !(tag in offered))
+			continue
+		var/rank = _dq_band_rank(demand[tag])
+		if(rank > .)
+			. = rank
+
+/// How well a treatment providing `tags` (TREAT_* -> potency) answers
+/// `demand`. The most urgent demanded tag dominates; 0 = no match.
+/proc/treatment_match_score(list/tags, list/demand)
+	. = 0
+	if(!tags || !demand)
+		return
+	for(var/tag in tags)
+		var/rank = _dq_band_rank(demand[tag])
+		if(rank)
+			. += tags[tag] * (DIAG_URGENCY_WEIGHT ** rank)
+
+/// The reagent (id) among `candidates` (reagent ids or /datum/reagent
+/// instances) whose treatment_tags best answer `demand`. Reagents already in
+/// `patient`'s blood are skipped. Null when nothing matches.
+/proc/best_reagent_for_demand(list/demand, list/candidates, mob/living/patient = null)
+	if(!demand || !candidates)
+		return null
+	var/best_score = 0
+	for(var/candidate in candidates)
+		var/datum/reagent/R = istype(candidate, /datum/reagent) ? candidate : SSchemistry.chemical_reagents[candidate]
+		if(!R)
+			continue
+		if(patient?.reagents?.has_reagent(R.id))
+			continue
+		var/score = treatment_match_score(R.treatment_tags, demand)
+		if(score > best_score)
+			best_score = score
+			. = R.id
+
 
 // --- Humanoid ------------------------------------------------------------------
 
@@ -174,7 +234,7 @@
 		if(!(biology_of(E) & P.biology))
 			continue
 		var/list/flags = list()
-		if(E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			flags += E.splinted ? "splinted fracture" : "fracture"
 		if(E.status & ORGAN_BLEEDING)
 			flags += "bleeding"

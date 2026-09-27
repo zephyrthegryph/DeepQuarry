@@ -47,21 +47,37 @@
 /obj/structure/inflatable/blob_act()
 	puncture()
 
-/obj/structure/inflatable/attack_hand(mob/user as mob)
-		add_fingerprint(user)
-		return
+/obj/structure/inflatable/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/inflatable_hand,
+		/datum/interaction/entry_item/inflatable_item,
+	)
+	..()
 
-/obj/structure/inflatable/attackby(obj/item/W as obj, mob/user as mob)
-	if(!istype(W)) return
+/// Old attack_hand: just leaves a fingerprint.
+/datum/interaction/entry_hand/inflatable_hand
+	id = "inflatable_hand"
+	name = "Use"
+	effect = /obj/structure/inflatable/proc/interaction_hand
 
+/obj/structure/inflatable/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	return TRUE
+
+/// Old attackby: puncture with a sharp item, or take a weapon hit.
+/datum/interaction/entry_item/inflatable_item
+	id = "inflatable_item"
+	name = "Use"
+	effect = /obj/structure/inflatable/proc/interaction_item
+
+/obj/structure/inflatable/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (can_puncture(W))
 		visible_message(span_danger("[user] pierces [src] with [W]!"))
 		puncture()
 	if(W.obj_damage_type())
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 		receive_weapon_hit(W, user)
-		..()
-	return
+	return TRUE
 
 /obj/structure/inflatable/click_ctrl()
 	hand_deflate()
@@ -143,8 +159,21 @@
 		if(get_dist(user,src) <= 1) //not remotely though
 			return TryToSwitchState(user)
 
-/obj/structure/inflatable/door/attack_hand(mob/user as mob)
-	return TryToSwitchState(user)
+// The door's Use replaces (doesn't chain to) the base inflatable's fingerprint-only one.
+/obj/structure/inflatable/door/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/inflatable_door_hand,
+	)
+
+/// Old attack_hand: open/close the door.
+/datum/interaction/entry_hand/inflatable_door_hand
+	id = "inflatable_door_hand"
+	name = "Use"
+	effect = /obj/structure/inflatable/door/proc/interaction_door_hand
+
+/obj/structure/inflatable/door/proc/interaction_door_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	TryToSwitchState(user)
+	return TRUE
 
 /obj/structure/inflatable/door/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/effect/beam))

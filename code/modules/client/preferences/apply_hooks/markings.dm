@@ -19,7 +19,7 @@
 		var/obj/item/organ/external/O = target.organs_by_name[N]
 		if(!istype(O))
 			continue
-		O.markings.Cut()
+		O.markings = null
 
 	var/priority = 0
 	var/list/body_markings = preferences.read_preference(/datum/preference/body_markings)
@@ -32,11 +32,12 @@
 			var/obj/item/organ/external/O = target.organs_by_name[BP]
 			if(!istype(O))
 				continue
-			if(islist(O.markings) && islist(body_markings[M]) && islist(body_markings[M][BP]))
-				O.markings[M] = list(
+			if(islist(body_markings[M]) && islist(body_markings[M][BP]))
+				var/list/entry = list(
 					"color" = body_markings[M][BP]["color"],
 					"datum" = mark_datum,
 					"priority" = priority,
 					"on" = body_markings[M][BP]["on"],
 				)
+				LAZYSET(O.markings, M, entry)
 	target.markings_len = priority

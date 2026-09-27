@@ -107,7 +107,7 @@
 
 	var/charge_usage = (temp_adj / max_cooling) * charge_consumption
 	H.bodytemperature -= temp_adj * efficiency
-	holder.cell.use(charge_usage)
+	holder.draw_power(charge_usage / CELLRATE, src, partial = TRUE)
 
 	if(holder.cell.charge <= 0)
 		holder.turn_cooling_off(H, 1)

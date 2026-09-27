@@ -311,6 +311,7 @@ SUBSYSTEM_DEF(tgui)
 	if(window.locked || window.status != TGUI_WINDOW_CLOSED)
 		return
 	window.prewarmed = TRUE
+	window.prewarm_started_at = world.time
 	window.initialize(
 		strict_mode = TRUE,
 		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
@@ -336,6 +337,15 @@ SUBSYSTEM_DEF(tgui)
 			if(!closed_index)
 				closed_index = index
 			continue
+		// A prewarmed shell that never reported `ready` (browser hung, page lost)
+		// would otherwise count toward the reserve forever. Tear it down so the
+		// slot is rebuilt.
+		if(!window.locked && window.prewarmed && window.status == TGUI_WINDOW_LOADING \
+			&& window.prewarm_started_at && world.time - window.prewarm_started_at > TGUI_PREWARM_LOAD_TIMEOUT)
+			log_tgui(client, "Prewarmed shell never became ready after [DisplayTimeText(world.time - window.prewarm_started_at)]; replacing it.", window = window)
+			window.prewarmed = FALSE
+			window.prewarm_started_at = 0
+			window.close(can_be_suspended = FALSE)
 		if(!window.locked && (window.status == TGUI_WINDOW_READY || (window.prewarmed && window.status == TGUI_WINDOW_LOADING)))
 			reserve_count++
 		else if(!window.locked && window.status == TGUI_WINDOW_CLOSED && !closed_index)
@@ -360,14 +370,27 @@ SUBSYSTEM_DEF(tgui)
  */
 /datum/controller/subsystem/tgui/proc/force_close_all_windows(mob/user)
 	log_tgui(user, context = "SStgui/force_close_all_windows")
-	if(user.client)
-		user.client.tgui_windows = list()
-		for(var/i in 1 to TGUI_WINDOW_HARD_LIMIT)
-			var/window_id = TGUI_WINDOW_ID(i)
-			if(winexists(user.client, window_id))
-				winset(user.client, window_id, "alpha=0")
-				winshow(user.client, window_id, FALSE)
-			user << browse(null, "window=[window_id]")
+	var/client/client = user?.client
+	if(!client)
+		return
+	// Only the pooled slots are torn down. Dedicated windows (tgui_say, tgui_shock,
+	// browseroutput, mapwindow.tooltip, rpane.mediapanel, lobby_browser, ...) share
+	// this registry and must stay registered, exactly as reconcile_client_windows does.
+	for(var/i in 1 to TGUI_WINDOW_HARD_LIMIT)
+		var/window_id = TGUI_WINDOW_ID(i)
+		var/datum/tgui_window/window = client.tgui_windows[window_id]
+		if(window)
+			// Drop any UI still attached so it does not keep a dead window around.
+			if(window.locked_by)
+				window.locked_by.close(can_be_suspended = FALSE)
+			window.release_lock()
+			window.status = TGUI_WINDOW_CLOSED
+			window.message_queue = null
+			client.tgui_windows.Remove(window_id)
+		if(winexists(client, window_id))
+			winset(client, window_id, "alpha=0")
+			winshow(client, window_id, FALSE)
+		client << browse(null, "window=[window_id]")
 
 /// DreamSeeker keeps cloned native windows across reconnects and server process
 /// restarts. Hide and close those shells before this client builds a fresh pool,
@@ -614,15 +637,57 @@ SUBSYSTEM_DEF(tgui)
  */
 /datum/controller/subsystem/tgui/proc/on_transfer(mob/source, mob/target)
 	// The old mob had no open UIs.
-	if(length(source?.tgui_open_uis) == 0)
+	if(length(source?.tgui_open_uis) == 0 || QDELETED(target))
 		return FALSE
-	if(isnull(target.tgui_open_uis) || !istype(target.tgui_open_uis, /list))
-		target.tgui_open_uis = list()
 	// Transfer all the UIs.
 	for(var/datum/tgui/ui in source.tgui_open_uis)
-		// Inform the UIs of their new owner.
-		ui.user = target
-		target.tgui_open_uis += ui
+		transfer_ui(ui, target)
 	// Clear the old list.
 	source.tgui_open_uis.Cut()
 	return TRUE
+
+/**
+ * private
+ *
+ * Re-home one UI onto a different mob, keeping both mobs' open-UI lists coherent.
+ *
+ * required ui datum/tgui The UI to move.
+ * required target mob The UI's new user.
+ *
+ * return bool If the UI was transferred.
+ */
+/datum/controller/subsystem/tgui/proc/transfer_ui(datum/tgui/ui, mob/target)
+	if(QDELETED(ui) || ui.closing || QDELETED(target))
+		return FALSE
+	var/mob/source = ui.user
+	if(source == target)
+		return FALSE
+	if(source && islist(source.tgui_open_uis))
+		source.tgui_open_uis -= ui
+	ui.user = target
+	if(!islist(target.tgui_open_uis))
+		target.tgui_open_uis = list()
+	target.tgui_open_uis |= ui
+	return TRUE
+
+/**
+ * public
+ *
+ * Re-home every UI a src_object has open onto the given mob. Used by persistent,
+ * client-scoped UIs (tooltip, media panel) whose window belongs to the client
+ * rather than to any one mob, so they follow the client across mob changes
+ * (lobby -> spawn, ghosting, respawn) instead of being left bound to a dead mob.
+ *
+ * required src_object datum The object whose UIs should follow the client.
+ * required target mob The client's current mob.
+ *
+ * return int The number of UIs transferred.
+ */
+/datum/controller/subsystem/tgui/proc/rehome_uis(datum/src_object, mob/target)
+	var/count = 0
+	if(!LAZYLEN(src_object?.open_tguis) || QDELETED(target))
+		return count
+	for(var/datum/tgui/ui in src_object.open_tguis)
+		if(transfer_ui(ui, target))
+			count++
+	return count

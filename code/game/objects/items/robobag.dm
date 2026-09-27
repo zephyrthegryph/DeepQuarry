@@ -66,7 +66,7 @@
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
 		if(H.isSynthetic())
-			if(!H.injury_load(INJURY_CATEGORY_TOXIC))	// We don't exactly care about the bag being 'used' when containing a synth, unless it's got work.
+			if(!H.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])	// We don't exactly care about the bag being 'used' when containing a synth, unless it's got work.
 				used = FALSE
 			else
 				H.add_modifier(/datum/modifier/fbp_debug/robobag)
@@ -108,7 +108,7 @@
 	stacks = MODIFIER_STACK_FORBID
 
 /datum/modifier/fbp_debug/tick()
-	if(holder.injury_load(INJURY_CATEGORY_TOXIC))
+	if(holder.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])
 		holder.mend(TREAT_SYSTEM_RESTORE, rand(1,5))
 
 /datum/modifier/fbp_debug/can_apply(mob/living/L)
@@ -118,7 +118,7 @@
 
 /datum/modifier/fbp_debug/check_if_valid()
 	..()
-	if(!holder.injury_load(INJURY_CATEGORY_TOXIC))
+	if(!holder.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])
 		src.expire()
 
 /datum/modifier/fbp_debug/robobag/check_if_valid()

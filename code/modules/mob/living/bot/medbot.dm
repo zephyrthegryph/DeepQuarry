@@ -10,8 +10,9 @@
 
 #define MEDBOT_MIN_INJECTION 5
 #define MEDBOT_MAX_INJECTION 15
-#define MEDBOT_MIN_HEAL 0.1
-#define MEDBOT_MAX_HEAL 75
+/// Urgency ranks (_dq_band_rank) the treatment threshold can be set to.
+#define MEDBOT_MIN_URGENCY 1
+#define MEDBOT_MAX_URGENCY 4
 
 /mob/living/bot/medbot
 	name = "Medibot"
@@ -30,13 +31,10 @@
 	//Healing vars
 	var/obj/item/reagent_containers/glass/reagent_glass = null //Can be set to draw from this for reagents.
 	var/injection_amount = 15 //How much reagent do we inject at a time?
-	var/heal_threshold = 10 //Start healing when they have this much damage in a category
+	/// Treat when automated triage reports a demand at least this urgent
+	/// (_dq_band_rank: 1 minor .. 4 critical).
+	var/min_urgency = 1
 	var/use_beaker = 0 //Use reagents in beaker instead of default treatment agents.
-	var/treatment_brute = REAGENT_ID_TRICORDRAZINE
-	var/treatment_oxy = REAGENT_ID_TRICORDRAZINE
-	var/treatment_fire = REAGENT_ID_TRICORDRAZINE
-	var/treatment_tox = REAGENT_ID_TRICORDRAZINE
-	var/treatment_virus = REAGENT_ID_SPACEACILLIN
 	var/treatment_emag = REAGENT_ID_TOXIN
 	var/datum/declare_treatment = 0 //When attempting to treat a patient, should it notify everyone wearing medhuds?
 
@@ -53,10 +51,16 @@
 	name = "\improper Mysterious Medibot"
 	desc = "International Medibot of mystery."
 	skin = "bezerk"
-	treatment_brute		= REAGENT_ID_BICARIDINE
-	treatment_fire		= REAGENT_ID_DERMALINE
-	treatment_oxy		= REAGENT_ID_DEXALIN
-	treatment_tox		= REAGENT_ID_ANTITOXIN
+
+/// Reagent ids the internal synthesizer can make. The medbot injects whichever
+/// best answers the patient's treatment demand.
+/mob/living/bot/medbot/proc/synthesized_reagents()
+	var/static/list/reagents = list(REAGENT_ID_TRICORDRAZINE)
+	return reagents
+
+/mob/living/bot/medbot/mysterious/synthesized_reagents()
+	var/static/list/reagents = list(REAGENT_ID_BICARIDINE, REAGENT_ID_DERMALINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRICORDRAZINE)
+	return reagents
 
 /mob/living/bot/medbot/handleIdle()
 	if(is_tipped) // Don't handle idle things if we're incapacitated!
@@ -178,10 +182,11 @@
 				playsound(src, possible_messages[message], 50, 0)
 
 /mob/living/bot/medbot/proc/UnarmedAttack_medbot_done(mob/living/carbon/human/H, t)
-	if(t == 1)
-		reagent_glass.reagents.trans_to_mob(H, injection_amount, CHEM_BLOOD)
+	if(!emagged && use_beaker && reagent_glass?.reagents.has_reagent(t))
+		reagent_glass.reagents.trans_id_to(H, t, injection_amount)
 	else
 		H.reagents.add_reagent(t, injection_amount)
+	log_game("MEDBOT: [src] injected [key_name(H)] with [injection_amount]u of [t].")
 	visible_message(span_warning("[src] injects [H] with the syringe!"))
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
@@ -237,8 +242,8 @@
 		data["beaker_total"] = reagent_glass.reagents.total_volume
 		data["beaker_max"] = reagent_glass.reagents.maximum_volume
 	data["locked"] = locked
-	data["heal_threshold"] = null
-	data["heal_threshold_max"] = MEDBOT_MAX_HEAL
+	data["min_urgency"] = null
+	data["urgency_bands"] = list(DIAG_BAND_MINOR, DIAG_BAND_MODERATE, DIAG_BAND_SEVERE, DIAG_BAND_CRITICAL)
 	data["injection_amount_min"] = MEDBOT_MIN_INJECTION
 	data["injection_amount"] = null
 	data["injection_amount_max"] = MEDBOT_MAX_INJECTION
@@ -246,7 +251,7 @@
 	data["declare_treatment"] = null
 	data["vocal"] = null
 	if(!locked || issilicon(user))
-		data["heal_threshold"] = heal_threshold
+		data["min_urgency"] = min_urgency
 		data["injection_amount"] = injection_amount
 		data["use_beaker"] = use_beaker
 		data["declare_treatment"] = declare_treatment
@@ -296,8 +301,11 @@
 		return TRUE
 
 	switch(action)
-		if("adj_threshold")
-			heal_threshold = clamp(text2num(params["val"]), MEDBOT_MIN_HEAL, MEDBOT_MAX_HEAL)
+		if("adj_urgency")
+			var/rank = text2num(params["val"])
+			if(isnull(rank))
+				return FALSE
+			min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
 			. = TRUE
 
 		if("adj_inject")
@@ -448,9 +456,6 @@
 	if(!..())
 		return 0
 
-	if(H.isSynthetic()) // Don't treat FBPs
-		return 0
-
 	if(H.stat == DEAD) // He's dead, Jim
 		return 0
 
@@ -460,28 +465,21 @@
 	if(emagged)
 		return treatment_emag
 
-	// If they're injured, we're using a beaker, and they don't have on of the chems in the beaker
-	var/physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
-	var/thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
-	var/toxic = H.injury_load(INJURY_CATEGORY_TOXIC)
-	var/asphyxia = H.oxygen_debt()
-	if(reagent_glass && use_beaker && ((physical >= heal_threshold) || (toxic >= heal_threshold) || (thermal >= heal_threshold) || (asphyxia >= (heal_threshold + 15))))
-		for(var/datum/reagent/R in reagent_glass.reagents.reagent_list)
-			if(!H.reagents.has_reagent(R))
-				return 1
-			continue
+	return choose_treatment(H)
 
-	if((physical >= heal_threshold) && (!H.reagents.has_reagent(treatment_brute)))
-		return treatment_brute //If they're already medicated don't bother!
-
-	if((asphyxia >= (15 + heal_threshold)) && (!H.reagents.has_reagent(treatment_oxy)))
-		return treatment_oxy
-
-	if((thermal >= heal_threshold) && (!H.reagents.has_reagent(treatment_fire)))
-		return treatment_fire
-
-	if((toxic >= heal_threshold) && (!H.reagents.has_reagent(treatment_tox)))
-		return treatment_tox
+/// What to inject into `H`, decided from automated triage alone: the
+/// reagent in the reservoir (the beaker when enabled, then the synthesizer)
+/// whose treatment tags best answer the most urgent treatment demand. Null
+/// when nothing is demanded urgently enough or nothing in the reservoir helps.
+/mob/living/bot/medbot/proc/choose_treatment(mob/living/carbon/human/H)
+	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
+	if(demand_urgency(demand) < min_urgency)
+		return null
+	if(use_beaker && reagent_glass?.reagents.total_volume)
+		. = best_reagent_for_demand(demand, reagent_glass.reagents.reagent_list, H)
+		if(.)
+			return
+	return best_reagent_for_demand(demand, synthesized_reagents(), H)
 
 /* Construction */
 
@@ -570,5 +568,5 @@
 
 #undef MEDBOT_MIN_INJECTION
 #undef MEDBOT_MAX_INJECTION
-#undef MEDBOT_MIN_HEAL
-#undef MEDBOT_MAX_HEAL
+#undef MEDBOT_MIN_URGENCY
+#undef MEDBOT_MAX_URGENCY

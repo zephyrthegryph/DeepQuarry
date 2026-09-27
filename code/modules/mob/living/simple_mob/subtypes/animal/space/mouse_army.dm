@@ -86,7 +86,7 @@
 			playsound(src, 'sound/effects/mouse_squeak.ogg', 35, 1)
 	..()
 
-/mob/living/simple_mob/animal/space/mouse_army/death()
+/mob/living/simple_mob/animal/space/mouse_army/on_death(gibbed)
 	layer = MOB_LAYER
 	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 35, 1)
 	if(client)
@@ -138,7 +138,7 @@
 
 	var/ruptured = 0
 
-/mob/living/simple_mob/animal/space/mouse_army/pyro/death()
+/mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s tank groans!"))
 	var/delay = rand(1, 3)
 	color_sequence(mouse_warning_flash(delay))
@@ -174,7 +174,7 @@
 	var/explosion_delay_upper	= 3 SECONDS	// Upper bound.
 
 
-/mob/living/simple_mob/animal/space/mouse_army/ammo/death()
+/mob/living/simple_mob/animal/space/mouse_army/ammo/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s body begins to rupture!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(mouse_warning_flash(delay))
@@ -220,7 +220,7 @@
 	last_uncloak = world.time
 	if(!dq_get_cloaked(src))
 		return
-	animate(src, alpha = initial(alpha), time = 1 SECOND)
+	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/break_cloak()

@@ -56,7 +56,7 @@
 			return TRUE
 		return L.assess_perp(src, FALSE, FALSE, TRUE, FALSE) <= 3
 
-/mob/living/simple_mob/mechanical/ward/monitor/death()
+/mob/living/simple_mob/mechanical/ward/monitor/on_death(gibbed)
 	if(owner)
 		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
 	..()

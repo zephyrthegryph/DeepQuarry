@@ -18,6 +18,26 @@
 
 #undef BREATH_CYCLE_PERIOD
 
+/// Breathing can't stop, but in steady air a breath changes nothing: the physiology holds the
+/// last breath quality between breaths. Idle while the last breath was full quality from the
+/// turf's air (no internals, no losebreath, not critical, no breath alerts). Moving and
+/// equipment (masks, internals) wake it (CHANGE_MOB_LOC, CHANGE_MOB_EQUIPMENT); air that
+/// changes in place is re-sampled by the rewake.
+/datum/om/stage/life/breathing/carbon/idle(mob/living/carbon/self)
+	if(!self.should_have_organ(O_LUNGS))
+		return TRUE
+	if(self.losebreath || self.failed_last_breath || self.internal || !isturf(self.loc))
+		return FALSE
+	if(self.alerts?["oxy"] || self.alerts?["tox_in_air"] || self.alerts?["methane_in_air"])
+		return FALSE
+	var/datum/physiology/P = self.body?.physiology
+	if(P && P.breath_quality < 1)
+		return FALSE
+	return !self.is_critical()
+
+/datum/om/stage/life/breathing/carbon/rewake_delay(mob/living/carbon/self)
+	return self.should_have_organ(O_LUNGS) ? BREATH_STEADY_RESAMPLE : 0
+
 /// One breath: pick the breath source, exchange gas, exhale.
 /datum/om/stage/life/breathing/carbon/proc/breathe(mob/living/carbon/self)
 	//if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell)) return

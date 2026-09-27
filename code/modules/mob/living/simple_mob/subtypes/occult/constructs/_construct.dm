@@ -112,10 +112,11 @@
 
 /mob/living/simple_mob/construct
 	delete_on_death = TRUE
+	death_message = "collapses in a shattered heap."
 
-/mob/living/simple_mob/construct/death()
+/mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)
-	..(null,"collapses in a shattered heap.")
+	..()
 	ghostize()
 
 /mob/living/simple_mob/construct/attack_generic(mob/user)

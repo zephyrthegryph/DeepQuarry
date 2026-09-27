@@ -135,7 +135,7 @@
 		visible_message("<span class='notice'>\The [src] quickly steals \the [W] into its fluff, it seems to have become a little less shy!</span>!")
 		//friend_list lived on the deleted ai_holder; modern brain
 		// stores friendliness as personal entries via add_personal but the
-		// DQ_DISPOSITION_* defines live in modular_dq/combat_ai/_defines.dm
+		// DQ_DISPOSITION_* defines live in code/modules/combat_ai/_defines.dm
 		// which is included after this file. Use the numeric value 2 (FRIENDLY).
 		ai_brain?.add_personal(user, 2, 0, "fluffball gift")
 

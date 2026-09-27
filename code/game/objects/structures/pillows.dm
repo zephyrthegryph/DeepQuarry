@@ -65,21 +65,43 @@
 /obj/structure/bed/pillowpile/update_icon()
 	return
 
-/obj/structure/bed/pillowpile/attack_hand(mob/user)
+/obj/structure/bed/pillowpile/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/pillowpile_hand,
+	)
+
+/// Old attack_hand: disassemble the pile.
+/datum/interaction/entry_hand/pillowpile_hand
+	id = "pillowpile_hand"
+	name = "Disassemble"
+	effect = /obj/structure/bed/pillowpile/proc/interaction_hand
+
+/obj/structure/bed/pillowpile/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+	return TRUE
 
 /obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
-	if(!src) return
 	to_chat(user, span_notice("You dissasembled the large pillow pile!"))
 	replace_with(src, sourcepillow)
 
-/obj/structure/bed/pillowpilefront/attack_hand(mob/user)
+/obj/structure/bed/pillowpilefront/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/pillowpilefront_hand,
+	)
+
+/// Old attack_hand: disassemble the front piece.
+/datum/interaction/entry_hand/pillowpilefront_hand
+	id = "pillowpilefront_hand"
+	name = "Disassemble"
+	effect = /obj/structure/bed/pillowpilefront/proc/interaction_hand
+
+/obj/structure/bed/pillowpilefront/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+	return TRUE
 
 /obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)
-	if(!src) return
 	to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))
 	replace_with(src, sourcepillow)
 

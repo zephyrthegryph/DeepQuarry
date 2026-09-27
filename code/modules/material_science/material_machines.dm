@@ -104,7 +104,12 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	if(firing || output_stock)
 		to_chat(user, span_warning("The furnace must be idle and its output removed first."))
 		return TRUE
-	user.drop_from_inventory(stock)
+	if(stock.uses_charge)
+		to_chat(user, span_warning("[stock] is drawn from a matter synthesiser and cannot be charged into the furnace as physical stock."))
+		return TRUE
+	if(!user.drop_from_inventory(stock))
+		to_chat(user, span_warning("You cannot let go of [stock]."))
+		return TRUE
 	stock.forceMove(src)
 	LAZYADD(feedstock, stock)
 	visible_message(span_notice("[user] loads [stock] into [src]."))
@@ -121,7 +126,9 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 /obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
 	if(firing || output_stock)
 		return TRUE
-	user.drop_from_inventory(item)
+	if(!user.drop_from_inventory(item))
+		to_chat(user, span_warning("You cannot let go of [item]."))
+		return TRUE
 	item.forceMove(src)
 	LAZYADD(carbon_feed, item)
 	visible_message(span_notice("[user] adds carbon to [src]'s charge."))
@@ -252,8 +259,11 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	for(var/obj/item/stack/material/stock as anything in feedstock)
 		if(QDELETED(stock))
 			continue
-		while(stock && stock.get_amount() && batch.amount < MATERIAL_SCIENCE_MAX_BATCH)
-			material_batch_absorb_sheet(batch, stock)
+		while(stock && !QDELETED(stock) && stock.get_amount() && batch.amount < MATERIAL_SCIENCE_MAX_BATCH)
+			// absorb_sheet refuses stacks with no material / no sheets; without
+			// this break such a stack would spin forever.
+			if(!material_batch_absorb_sheet(batch, stock))
+				break
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
 	feedstock = null
@@ -358,10 +368,16 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 /obj/structure/material_anvil/attackby(obj/item/item, mob/user)
 	if(istype(item, /obj/item/stack/material/processed_alloy))
 		if(stock)
+			to_chat(user, span_warning("There is already stock on [src]."))
 			return
-		user.drop_from_inventory(item)
-		item.forceMove(src)
-		stock = item
+		var/obj/item/stack/material/processed_alloy/incoming = item
+		if(!istype(incoming.material, /datum/material/processed_alloy))
+			to_chat(user, span_warning("[incoming] is not processed stock."))
+			return
+		if(!user.drop_from_inventory(incoming))
+			return
+		incoming.forceMove(src)
+		stock = incoming
 		return
 	if(istype(item, /obj/item/melee/hammer) && stock)
 		var/datum/material_batch/batch = stock.physical_batch().copy_batch()

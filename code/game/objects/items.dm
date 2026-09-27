@@ -177,7 +177,9 @@
 		m.drop_from_inventory(src)
 		m.update_inv_r_hand()
 		m.update_inv_l_hand()
-		src.loc = null
+		// Through doMove(), so the mob's containment ledger sees the exit and its slot
+		// hooks run (a raw loc write left body parts stuck in their slots).
+		moveToNullspace()
 
 	// Handle celaning up our actions list
 	for(var/datum/action/action as anything in actions)
@@ -436,6 +438,14 @@
 	SHOULD_CALL_PARENT(TRUE)
 	if(user)
 		om_changed(user, CHANGE_MOB_HANDS)
+	// Worn/held items stay real for as long as they're worn or held (C10,
+	// containment.md §4.7): a matching equipped() pinned it, and dropping
+	// out of hands or a slot releases that pin. A safe no-op if it was never
+	// pinned this way (an item worn since initial dressing never called
+	// equipped()); over-pinning from a re-equip without a drop in between is
+	// also safe -- it just keeps the item real a while longer, same as
+	// before C10 existed.
+	latent_unpin("equipped")
 	appearance_flags &= ~NO_CLIENT_COLOR
 	// Remove any item actions we temporary gave out.
 	for(var/datum/action/action_item_has as anything in actions)
@@ -476,6 +486,9 @@
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
 	om_changed(user, CHANGE_MOB_HANDS)
+	// Worn or held: pin it real for as long as that's true (C10, unpinned by
+	// the matching dropped()).
+	latent_pin("equipped")
 	// Give out actions our item has to people who equip it.
 	for(var/datum/action/action as anything in actions)
 		give_item_action(action, user, slot)

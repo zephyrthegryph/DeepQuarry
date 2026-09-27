@@ -23,12 +23,26 @@
 	open_sound = 'sound/effects/wooden_closet_open.ogg'
 	close_sound = 'sound/effects/wooden_closet_close.ogg'
 
-/obj/structure/closet/grave/attack_hand(mob/user as mob)
+// Grave's Use and item overrides fully replace closet's (the original overrides never
+// called ..() into it either), so it declares its own interactions.
+/obj/structure/closet/grave/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/grave_hand,
+		/datum/interaction/entry_item/grave_item,
+	)
+
+/// Old attack_hand: climb into the open grave.
+/datum/interaction/entry_hand/grave_hand
+	id = "grave_hand"
+	name = "Use"
+	effect = /obj/structure/closet/grave/proc/interaction_grave_hand
+
+/obj/structure/closet/grave/proc/interaction_grave_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(opened)
 		visible_message(span_notice("[user] starts to climb into \the [src.name]."), \
 						span_notice("You start to lower yourself into \the [src.name]."))
 		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
-	return
+	return TRUE
 
 /obj/structure/closet/grave/proc/attack_hand_timed_done(mob/user)
 	user.forceMove(src.loc)
@@ -69,7 +83,13 @@
 		var/limb_damage = rand(5,25)
 		H.injure(INJURY_BLUNT, limb_damage, null, src)
 
-/obj/structure/closet/grave/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: fill in with a shovel, smooth over/dig out, or drop items in.
+/datum/interaction/entry_item/grave_item
+	id = "grave_item"
+	name = "Use"
+	effect = /obj/structure/closet/grave/proc/interaction_grave_item
+
+/obj/structure/closet/grave/proc/interaction_grave_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(src.opened)
 		if(istype(W, /obj/item/shovel))
 			user.visible_message(span_notice("[user] piles dirt into \the [src.name]."), \
@@ -79,22 +99,22 @@
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			src.MouseDrop_T(G?.grab_target(), user)      //act like they were dragged onto the closet
-			return 0
+			return TRUE
 		if(istype(W,/obj/item/tk_grab))
-			return 0
-		if(istype(W, /obj/item/storage/laundry_basket) && W.contents.len)
+			return TRUE
+		if(istype(W, /obj/item/storage/laundry_basket) && length(W.slot_contents()))
 			var/obj/item/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
-			for(var/obj/item/I in LB.contents)
+			for(var/obj/item/I in LB.slot_contents())
 				LB.remove_from_storage(I, T)
 			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
 									span_notice("You empty \the [LB] into \the [src]."), \
 									span_notice("You hear rustling of clothes."))
-			return
+			return TRUE
 		if(isrobot(user))
-			return
+			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return
+			return TRUE
 		user.drop_item()
 		if(W)
 			W.forceMove(src.loc)
@@ -105,12 +125,13 @@
 										span_notice("You start to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You hear dirt being moved."))
 				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed2), fail_args = list(user))
+				return TRUE
 			else
 				user.visible_message(span_notice("[user] begins to unearth \the [src.name]."), \
 										span_notice("You start to unearth \the [src.name]."), \
 										span_notice("You hear dirt being moved."))
 				use_tool(user, W, src, delay = 4 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done3), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed3), fail_args = list(user))
-	return
+	return TRUE
 
 /obj/structure/closet/grave/proc/attackby_tool_done_coffin(mob/user)
 	user.visible_message(span_notice("[user] pats down the dirt on top of \the [src.name]."), \
@@ -143,8 +164,7 @@
 
 /obj/structure/closet/grave/proc/attackby_tool_failed3(mob/user)
 	user.visible_message(span_notice("[user] stops digging out \the [src.name]."), \
-							span_notice("You stop digging out \the [src.name]."))
-	return
+						span_notice("You stop digging out \the [src.name]."))
 
 /obj/structure/closet/grave/close()
 	..()

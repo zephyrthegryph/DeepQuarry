@@ -47,7 +47,7 @@ SUBSYSTEM_DEF(pathfinder)
 	return run_pathfinding(instance)
 
 //default_ai_pathfinding was a /datum/ai_brain helper. The modern
-// brain has its own wrapper in modular_dq/combat_ai/brain/pathing.dm
+// brain has its own wrapper in code/modules/combat_ai/brain/pathing.dm
 // (`dq_pathfind`). The legacy proc has no remaining callers and is removed.
 
 /datum/controller/subsystem/pathfinder/proc/default_circuit_pathfinding(obj/item/electronic_assembly/assembly, turf/goal, min_dist = 1, max_path = 128, list/access)

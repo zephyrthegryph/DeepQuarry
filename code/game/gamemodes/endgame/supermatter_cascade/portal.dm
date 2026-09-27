@@ -52,7 +52,7 @@
 		if (dist <= consume_range && T.density)
 			T.density = FALSE
 
-		for (var/atom/movable/AM in T.contents)
+		for (var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 			if (AM == src) // This is the snowflake.
 				continue
 

@@ -45,7 +45,9 @@
 /obj/machinery/optable/proc/check_victim()
 	if(locate(/mob/living/carbon/human, src.loc))
 		var/mob/living/carbon/human/M = locate(/mob/living/carbon/human, src.loc)
-		if(M.lying)
+		// `lying` is only recomputed by update_canmove(); a patient just laid
+		// down via take_victim() has resting set but may not be lying yet.
+		if(M.lying || M.resting)
 			victim = M
 			if(M.pulse)
 				if(M.stat)
@@ -74,6 +76,7 @@
 	if(puller)
 		puller.stop_pulling()
 	C.resting = 1
+	C.update_canmove() // Sync `lying` now so check_victim() does not race the next Life() tick.
 	C.forceMove(get_turf(src))
 	for(var/obj/O in src)
 		O.loc = src.loc
@@ -121,7 +124,7 @@
 
 /obj/machinery/optable/proc/check_table(mob/living/carbon/patient, mob/living/user)
 	check_victim()
-	if(victim && get_turf(victim) == get_turf(src) && victim.lying)
+	if(victim && get_turf(victim) == get_turf(src) && (victim.lying || victim.resting))
 		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return 0
 	if(patient?.buckled_to())

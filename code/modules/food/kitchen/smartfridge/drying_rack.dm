@@ -33,6 +33,9 @@
 		return
 	return PROCESS_KILL
 
+/obj/machinery/smartfridge/drying_rack/has_pending_work()
+	return ..() || stored_count()
+
 /obj/machinery/smartfridge/drying_rack/update_icon()
 	var/not_working = stat & (BROKEN|NOPOWER)
 	var/hasItems

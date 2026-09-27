@@ -12,7 +12,7 @@
 /// Type -> amount (stack units, or a count) of the items on `T`.
 /proc/dq_materials_on(turf/T)
 	. = list()
-	for(var/obj/item/thing in T)
+	for(var/obj/item/thing in turf_contents_of_type(T, /obj/item))
 		var/amount = 1
 		if(istype(thing, /obj/item/stack))
 			var/obj/item/stack/stack = thing
@@ -176,8 +176,8 @@
 	wall.tool_interaction(H, crowbar)
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 10 SECONDS, "prying the sheath takes 10 s")
 	TEST_ASSERT(!istype(wall_turf, /turf/simulated/wall), "the wall is gone")
-	TEST_ASSERT(locate(/obj/structure/girder) in wall_turf, "it leaves a girder")
-	for(var/atom/movable/thing in wall_turf)
+	TEST_ASSERT(locate_on(wall_turf, /obj/structure/girder), "it leaves a girder")
+	for(var/atom/movable/thing in turf_contents_of_type(wall_turf, /atom/movable))
 		if(!ismob(thing))
 			qdel(thing)
 	wall_turf.ChangeTurf(old_type)
@@ -209,7 +209,7 @@
 	H.put_in_active_hand(welder)
 	wall.tool_interaction(H, welder)
 	TEST_ASSERT(!istype(wall_turf, /turf/simulated/wall), "the welder cut the wall down")
-	for(var/atom/movable/thing in wall_turf)
+	for(var/atom/movable/thing in turf_contents_of_type(wall_turf, /atom/movable))
 		if(!ismob(thing))
 			qdel(thing)
 	wall_turf.ChangeTurf(old_type)
@@ -274,7 +274,7 @@
 	H.put_in_active_hand(crowbar)
 	floor.tool_interaction(H, crowbar)
 	TEST_ASSERT_EQUAL(graph.state_of(floor), "plating", "the crowbar pries the carpet up")
-	TEST_ASSERT(locate(/obj/item/stack/tile/carpet) in floor, "the carpet comes back as a tile")
+	TEST_ASSERT(locate_on(floor, /obj/item/stack/tile/carpet), "the carpet comes back as a tile")
 	H.drop_from_inventory(crowbar)
 
 	floor.broken = TRUE
@@ -289,7 +289,7 @@
 	TEST_ASSERT(!cut.tool_scaled, "whatever the welder")
 	TEST_ASSERT_EQUAL(cut.tool_amount, 5, "and 5 fuel")
 	H.drop_from_inventory(welder)
-	for(var/obj/item/thing in floor)
+	for(var/obj/item/thing in turf_contents_of_type(floor, /obj/item))
 		qdel(thing)
 	floor.ChangeTurf(old_type)
 
@@ -451,7 +451,7 @@
 	var/turf/where = window.loc
 	window.tool_interaction(H, wrench)
 	TEST_ASSERT(QDELETED(window), "dismantled")
-	var/obj/item/stack/material/glass/reinforced/sheet = locate() in where
+	var/obj/item/stack/material/glass/reinforced/sheet = locate_on(where, /obj/item/stack/material/glass/reinforced)
 	TEST_ASSERT(sheet, "into reinforced glass")
 	TEST_ASSERT_EQUAL(sheet?.get_amount(), 1, "one sheet for a border window")
 

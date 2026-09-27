@@ -880,8 +880,7 @@
 	var/obj/item/organ/internal/breathy = H.internal_organs_by_name[O_LUNGS]
 	if(!breathy)
 		return
-	H.internal_organs -= breathy
-	qdel(breathy)
+	qdel(breathy) // deleting it detaches it
 
 /datum/trait/positive/light_breather
 	name ="Light Breather"

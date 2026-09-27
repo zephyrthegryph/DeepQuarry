@@ -69,6 +69,7 @@
 		mmi = new /obj/item/mmi/digital/robot(src)
 	SetName("inactive [initial(name)]")
 	update_icon()
+	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 
 /// Platforms carry heavier armour plating.
 /mob/living/silicon/robot/platform/get_component_types()
@@ -81,6 +82,7 @@
 
 // LIFECYCLE: stored atoms and the recharging item drop out (stored as handles).
 /mob/living/silicon/robot/platform/Destroy()
+	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 	for(var/drop_ref in stored_atoms)
 		var/atom/movable/drop_atom = om_resolve(drop_ref)
 		if(istype(drop_atom) && !QDELETED(drop_atom) && drop_atom.loc == src)
@@ -126,7 +128,7 @@
 	if(ispath(module, /obj/item/robot_module))
 		module = new module(src)
 
-/mob/living/silicon/robot/platform/module_reset()
+/mob/living/silicon/robot/platform/module_reset(notify = TRUE)
 	return FALSE
 
 /// Solar top-up and the cargo recharging port, through the power ledger.

@@ -53,9 +53,10 @@
 
 /mob/living/simple_mob/mechanical/viscerator
 	delete_on_death = TRUE
+	death_message = "is smashed into pieces!"
 
-/mob/living/simple_mob/mechanical/viscerator/death()
-	..(null,"is smashed into pieces!")
+/mob/living/simple_mob/mechanical/viscerator/on_death(gibbed)
+	..()
 
 // Variant that is always loyal to mercenary antagonists.
 // Used for a special grenade, to ensure they don't attack the wrong thing.

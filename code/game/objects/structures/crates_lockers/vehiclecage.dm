@@ -8,6 +8,17 @@
 	var/my_vehicle_type
 	var/paint_color = "#666666"
 
+// C11: one slot for the caged vehicle. No custom Destroy() overrides the
+// base /atom/movable one, so the default spill policy (not SLOT_DROP_HOLDER)
+// is correct here: disassemble() already moves the vehicle out before
+// qdel(src), so the slot is empty by then, but any other qdel path needs the
+// generic drop-policy pass to actually place the vehicle instead of losing it.
+/datum/om/relation/slot/vehicle_cage
+	holder = /obj/structure/vehiclecage
+	slot_id = CONTAINER_SLOT_VEHICLE_CAGE
+	name = "vehicle"
+	exposure = SLOT_EXPOSURE_INTERNAL
+
 /obj/structure/vehiclecage/examine(mob/user)
 	. = ..()
 	if(my_vehicle)
@@ -23,9 +34,21 @@
 			load_vehicle(I)
 	update_icon()
 
-/obj/structure/vehiclecage/attack_hand(mob/user as mob)
+/obj/structure/vehiclecage/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/vehiclecage_hand,
+	)
+	..()
+
+/// Old attack_hand: a hint that you need a wrench.
+/datum/interaction/entry_hand/vehiclecage_hand
+	id = "vehiclecage_hand"
+	name = "Use"
+	effect = /obj/structure/vehiclecage/proc/interaction_hand
+
+/obj/structure/vehiclecage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You need a wrench to take this apart!"))
-	return
+	return TRUE
 
 /obj/structure/vehiclecage/proc/tool_disassemble(mob/user, obj/item/W, delay, quality)
 	var/turf/T = get_turf(src)
@@ -56,7 +79,7 @@
 	framepaint.color = paint_color
 	add_overlay(framepaint)
 
-	for(var/obj/vehicle/V in src.contents)
+	for(var/obj/vehicle/V in slot_contents(CONTAINER_SLOT_VEHICLE_CAGE))
 		var/image/showcase = new(V)
 		showcase.layer = src.layer - 0.1
 		underlays += showcase
@@ -90,7 +113,7 @@
 	var/turf/T = get_turf(src)
 	new /obj/item/stack/material/steel(src.loc, 5)
 
-	for(var/atom/movable/AM in contents)
+	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_VEHICLE_CAGE))
 		if(AM.simulated)
 			AM.forceMove(T)
 

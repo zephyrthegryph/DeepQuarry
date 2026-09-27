@@ -363,7 +363,8 @@
 	// already resolved into entries the moment its Initialize() first asked
 	// the ledger a question (RefreshParts, typically). The frame's real,
 	// player-installed parts replace them, not add to them.
-	dq_ledger(new_machine)?.latent_clear()
+	var/datum/ledger/new_machine_ledger = dq_ledger(new_machine)
+	new_machine_ledger?.latent_clear()
 
 	// The frame's installed parts are real physical items the player put in;
 	// move_into() keeps the new machine's ledger (roadmap C6) current, so

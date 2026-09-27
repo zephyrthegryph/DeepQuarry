@@ -53,7 +53,7 @@
 		playsound(affected_turf, sound, 100, TRUE)
 	if(show_effect)
 		new /obj/effect/temp_visual/transmute_tile_flash(affected_turf)
-	for(var/obj/object in affected_turf)
+	for(var/obj/object in turf_contents_of_type(affected_turf, /obj))
 		replace_object(object)
 	if(length(random_spawns) && prob(random_spawn_chance))
 		var/random_spawn_picked = pick(random_spawns)

@@ -154,7 +154,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 		if(!istype(parent))
 			return FALSE
 		forceMove(parent)
-		parent.implants += src
+		LAZYADD(parent.implants, src)
 		addtimer(CALLBACK(src, PROC_REF(quick_install), H), 1)
 		return TRUE
 

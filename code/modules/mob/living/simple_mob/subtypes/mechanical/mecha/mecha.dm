@@ -53,8 +53,11 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mecha, "sparks")
 /mob/living/simple_mob/mechanical/mecha
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/mechanical/mecha/death()
-	..(0,"explodes!") // Do everything else first.
+/mob/living/simple_mob/mechanical/mecha
+	death_message = "explodes!"
+
+/mob/living/simple_mob/mechanical/mecha/on_death(gibbed)
+	..() // Do everything else first.
 
 	// Make the exploding more convincing with an actual explosion and some sparks.
 	sparks?.start()

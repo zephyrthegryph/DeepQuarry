@@ -30,9 +30,10 @@
 
 /mob/living/simple_mob/mechanical/ward
 	delete_on_death = TRUE
+	death_message = "is smashed into pieces!"
 
-/mob/living/simple_mob/mechanical/ward/death()
-	..(null,"is smashed into pieces!")
+/mob/living/simple_mob/mechanical/ward/on_death(gibbed)
+	..()
 
 /mob/living/simple_mob/mechanical/ward/IIsAlly(mob/living/L)
 	if(owner == L)

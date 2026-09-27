@@ -96,5 +96,8 @@
 	B.absorbchance = 0
 	B.escapechance = 25
 
-/mob/living/simple_mob/vore/alienanimals/skeleton/death(gibbed, deathmessage = "falls down and stops moving...")
+/mob/living/simple_mob/vore/alienanimals/skeleton
+	death_message = "falls down and stops moving..."
+
+/mob/living/simple_mob/vore/alienanimals/skeleton/on_death(gibbed)
 	. = ..()

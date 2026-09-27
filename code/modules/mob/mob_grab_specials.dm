@@ -58,7 +58,7 @@
 	var/obj/item/organ/external/E = task.E
 	if(E.nonsolid && E.cannot_break) //boneless!
 		to_chat(user, span_warning("You are unable to feel any bones in the [E.name]!"))
-	else if(E.status & ORGAN_BROKEN)
+	else if(E.is_fractured())
 		to_chat(user, span_warning("The [E.encased ? E.encased : "bone in the [E.name]"] moves slightly when you poke it!"))
 		H.custom_pain("Your [E.name] hurts where it's poked.", 40)
 	else

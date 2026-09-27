@@ -231,9 +231,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	brainmob.nif = nif
 	brainmob.soulcatcher = src
 	brainmob.container = src
-	brainmob.stat = 0
 	brainmob.status_set(EFFECT_MUTED, 0)
-	registry_leave(REGISTRY_DEAD_MOBS, brainmob)
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
 

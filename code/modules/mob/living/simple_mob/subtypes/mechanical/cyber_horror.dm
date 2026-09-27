@@ -165,7 +165,7 @@
 	// Now for the stun.
 	var/mob/living/victim = null
 	// So player-controlled cyber horrors only need to click the tile to stun them.
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(L == src)
 			continue
 
@@ -222,14 +222,14 @@
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/cloak()
 	if(dq_get_cloaked(src))
 		return
-	animate(src, alpha = cloaked_alpha, time = 1 SECOND)
+	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/uncloak()
 	last_uncloak = world.time
 	if(!dq_get_cloaked(src))
 		return
-	animate(src, alpha = initial(alpha), time = 1 SECOND)
+	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/proc/can_cloak()

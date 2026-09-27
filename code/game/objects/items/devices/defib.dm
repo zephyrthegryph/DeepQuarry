@@ -59,11 +59,19 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 	else
 		add_overlay("[initial(icon_state)]-nocell")
 
-/obj/item/defib_kit/attack_hand(mob/living/user)
+/obj/item/defib_kit/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM("Load", PROC_REF(interaction_item)),
+	)
+	return L
+
+/// Old attack_hand: let tethered_item swap the paddles into hand before falling through to pickup.
+/obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// See important note in tethered_item.dm
 	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	. = ..()
+	return FALSE
 
 /obj/item/defib_kit/MouseDrop()
 	if(ismob(src.loc))
@@ -75,20 +83,20 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
 
-/obj/item/defib_kit/attackby(obj/item/W, mob/user, params)
+
+/obj/item/defib_kit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(bcell)
 			to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			if(!user.unEquip(W))
-				return
+				return TRUE
 			W.forceMove(src)
 			bcell = W
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
-
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 /obj/item/defib_kit/screwdriver_act(mob/user, obj/item/tool)
 	if(!bcell)
@@ -425,10 +433,14 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 	// Flush synthetic system faults (a no-op on organic parts).
 	H.mend(TREAT_SYSTEM_RESTORE, H.injury_load(INJURY_CATEGORY_TOXIC))
 
+	var/revived = make_alive(H)
+	if(revived != TRUE)
+		make_announcement("buzzes, \"Resuscitation failed - [revived]. Further attempts futile without treatment.\"", "warning")
+		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		return
+
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
-
-	make_alive(H)
 
 	log_and_message_admins("used \a [src] to revive [key_name(H)].")
 
@@ -482,16 +494,12 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 
 	add_attack_logs(user,H,"Shocked using [name]")
 
-/obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M) //This revives the mob
-	registry_leave(REGISTRY_DEAD_MOBS, M)
-	if((M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)) || (M in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)))
-		WARNING("Mob [M] was defibbed but already in the living or dead list still!")
-	registry_join(REGISTRY_LIVING_MOBS, M)
-
-	M.timeofdeath = 0
-	M.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-	M.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-	M.reload_fullscreen()
+/// Revive the patient through return_from_death(). Returns TRUE, or the refusal reason.
+/obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M)
+	M.body?.begin_revival_grace(src)
+	. = M.return_from_death("defibrillated", src, REVIVE_UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
+	if(. != TRUE)
+		return
 
 	M.emote("gasp")
 	M.status_at_least(EFFECT_WEAKENED, rand(10,25))

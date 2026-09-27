@@ -115,7 +115,7 @@
 	icon_expected_width = 96
 	icon_expected_height = 96
 
-/mob/living/simple_mob/animal/space/alien/death()
+/mob/living/simple_mob/animal/space/alien/on_death(gibbed)
 	..()
 	visible_message("[src] lets out a waning guttural screech, green blood bubbling from its maw...")
 	playsound(src, 'sound/voice/hiss6.ogg', 100, 1)

@@ -87,7 +87,7 @@
 	var/turf/T = get_turf(src)
 	var/obj/item/stack/telecrystal/M = new (T,amount_to_spawn)
 
-	var/obj/structure/closet/C = locate() in T
+	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
 	if(C)
 		C.contents += M
 

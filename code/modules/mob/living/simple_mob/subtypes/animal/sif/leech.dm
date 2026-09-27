@@ -1,5 +1,8 @@
 // Small creatures that will embed themselves in unsuspecting victim's bodies, drink their blood, and/or eat their organs. Steals some things from borers.
 
+/// A leech doses its host once a demand is at least this urgent (_dq_band_rank).
+#define LEECH_TREAT_URGENCY 2
+
 /datum/category_item/catalogue/fauna/iceleech
 	name = "Sivian Fauna - River Leech"
 	desc = "Classification: S Hirudinea phorus \
@@ -166,25 +169,27 @@
 			self.chemicals += 2
 
 		if(!self.client && !self.docile)	// Automatic 'AI' to manage damage levels.
-			if(self.host.injury_load(INJURY_CATEGORY_PHYSICAL) >= 30 && self.chemicals > 50)
+			// The leech lives in its host: it senses every affliction (no profile).
+			var/list/demand = self.host.treatment_demand()
+			if(demand_urgency(demand, list(TREAT_TISSUE_REPAIR, TREAT_HEMOSTATIC)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
 				self.host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
 				self.chemicals -= 30
 
-			if(self.host.injury_load(INJURY_CATEGORY_TOXIC) >= 30 && self.chemicals > 50)
+			if(demand_urgency(demand, list(TREAT_ANTITOXIN)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
 				var/randomchem = pickweight(list(REAGENT_ID_TRAMADOL = 7, REAGENT_ID_ANTITOXIN = 15, REAGENT_ID_FROSTOIL = 3))
 				self.host.reagents.add_reagent(randomchem, 5)
 				self.chemicals -= 50
 
-			if(self.host.injury_load(INJURY_CATEGORY_THERMAL) >= 30 && self.chemicals > 50)
+			if(demand_urgency(demand, list(TREAT_BURN_CARE)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
 				self.host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
 				self.host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
 				self.chemicals -= 50
 
-			if(self.host.oxygen_debt() >= 30 && self.chemicals > 50)
+			if(demand_urgency(demand, list(TREAT_OXYGENATION)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
 				self.host.reagents.add_reagent(REAGENT_ID_IRON, 10)
 				self.chemicals -= 40
 
-			if(self.host.injury_load(INJURY_CATEGORY_NEURAL) >= 10 && self.chemicals > 100)
+			if(demand?[TREAT_NEURAL_REPAIR] && self.chemicals > 100)
 				self.host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
 				self.host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
 				self.chemicals -= 100
@@ -295,7 +300,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			host_bodypart = H.get_organ(infest_target)
-			host_bodypart.implants |= src
+			LAZYOR(host_bodypart.implants, src)
 
 		return
 	else
@@ -324,7 +329,7 @@
 		return
 
 	if(host_bodypart)
-		host_bodypart.implants -= src
+		LAZYREMOVE(host_bodypart.implants, src)
 		host_bodypart = null
 
 	forceMove(get_turf(host))
@@ -460,3 +465,5 @@
 
 /datum/decl/mob_organ_names/leech
 	hit_zones = list("mouthparts", "central segment", "tail segment")
+
+#undef LEECH_TREAT_URGENCY

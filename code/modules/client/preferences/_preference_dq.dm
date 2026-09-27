@@ -158,3 +158,18 @@
 	if(isliving(target))
 		apply_to_living(target, value)
 		return
+
+/// Client-writable gate for the raw wire paths (dq_update_preference / dq_pick_color).
+/// A client may only write a pref the auto-renderer is allowed to show it: hidden,
+/// managed-state (NON_CONTEXTUAL: trait budget pool, computed caps) and editor-owned
+/// (MANUALLY_RENDERED: nif_path, gear_list, trait lists…) prefs are written by server
+/// code — editors' handle_action, constraints, spawn/persist hooks — never by a bare
+/// Topic. Mirrors the visibility filter in the character_setup middleware so "what you
+/// can see" and "what you can write" are the same set.
+/datum/preference/proc/is_client_writable(datum/preferences/preferences)
+	if(get_widget(preferences) == PREF_WIDGET_HIDDEN)
+		return FALSE
+	var/cat = get_category(preferences)
+	if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
+		return FALSE
+	return TRUE

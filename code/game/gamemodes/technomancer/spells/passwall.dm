@@ -49,7 +49,7 @@
 
 		if(!checked_turf.density) //If we found a destination (a non-dense turf), then we can stop.
 			var/dense_objs_on_turf = 0
-			for(var/atom/movable/stuff in checked_turf.contents) //Make sure nothing dense is where we want to go, like an airlock or window.
+			for(var/atom/movable/stuff in turf_contents_of_type(checked_turf, /atom/movable)) //Make sure nothing dense is where we want to go, like an airlock or window.
 				if(stuff.density)
 					dense_objs_on_turf = 1
 

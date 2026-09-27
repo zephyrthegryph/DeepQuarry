@@ -186,7 +186,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		if(attacker.is_swinging)
 			return FALSE // already mid-swing — ignore the queued attack click
 		attacker.begin_melee_swing(src, I)
-		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing applies its own hit
+		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing resolves through I.attack() itself
 
 	return I.attack(src, user, user.zone_sel?.selecting || BP_TORSO, attack_modifier)
 
@@ -225,8 +225,13 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(user.use_stance())]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
-	user.setClickCooldown(user.get_attack_speed(src))
-	user.do_attack_animation(M)
+	// A phased melee swing (melee_swing.dm) resolves its hits THROUGH this proc so
+	// every weapon override / log / check above runs exactly once per victim — but
+	// it has already set its own recovery cooldown and played the lunge, so skip the
+	// instant-attack versions of both here.
+	if(!user.melee_swing_resolving)
+		user.setClickCooldown(user.get_attack_speed(src))
+		user.do_attack_animation(M)
 
 	var/hit_zone = M.resolve_item_attack(src, user, target_zone)
 	if(hit_zone)

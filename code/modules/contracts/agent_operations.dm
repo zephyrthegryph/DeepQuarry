@@ -339,7 +339,11 @@
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
 	if(outcome_finalized)
-		return ..()
+		// The outcome is already graded and the rewards already scaled; the only
+		// thing left is the payout. Retry it directly rather than routing through
+		// the base check, which demands every requirement be COMPLETE and would
+		// block a suspended-then-reinstated account's settlement all round.
+		return complete()
 	for(var/datum/contract_requirement/requirement in requirements)
 		if(requirement.required && requirement.state != CONTRACT_REQUIREMENT_COMPLETE)
 			outcome_score = round(current_operation_ratio() * 100, 0.1)

@@ -95,8 +95,9 @@
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost
 	delete_on_death = TRUE
+	death_message = "fades away!"
 
-/mob/living/simple_mob/vore/alienanimals/space_ghost/death(gibbed, deathmessage = "fades away!")
+/mob/living/simple_mob/vore/alienanimals/space_ghost/on_death(gibbed)
 	. = ..()
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
@@ -155,8 +156,9 @@
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
 	delete_on_death = TRUE
+	death_message = "fades away!"
 
-/mob/living/simple_mob/vore/alienanimals/spooky_ghost/death(gibbed, deathmessage = "fades away!")
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/on_death(gibbed)
 	. = ..()
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/apply_melee_effects(atom/A)

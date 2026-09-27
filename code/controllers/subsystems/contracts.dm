@@ -116,7 +116,7 @@ SUBSYSTEM_DEF(contracts)
 	RegisterSignal(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED, PROC_REF(on_medical_issues_changed), override = TRUE)
 	RegisterSignal(subject, COMSIG_AFFLICTION_SEVERITY_CHANGED, PROC_REF(on_affliction_severity_changed), override = TRUE)
 	RegisterSignal(subject, COMSIG_BODY_AFFLICTIONS_CHANGED, PROC_REF(on_body_afflictions_changed), override = TRUE)
-	RegisterSignal(subject, COMSIG_LIVING_REVIVE, PROC_REF(on_medical_subject_revived), override = TRUE)
+	RegisterSignal(subject, COMSIG_LIVING_REVIVED, PROC_REF(on_medical_subject_revived), override = TRUE)
 	RegisterSignal(subject, COMSIG_MOB_LOGIN, PROC_REF(on_medical_subject_availability), override = TRUE)
 	RegisterSignal(subject, COMSIG_MOB_LOGOUT, PROC_REF(on_medical_subject_availability), override = TRUE)
 	RegisterSignal(subject, COMSIG_MOB_MIND_TRANSFERRED_INTO, PROC_REF(on_medical_subject_availability), override = TRUE)
@@ -538,6 +538,7 @@ SUBSYSTEM_DEF(contracts)
 	var/list/rows = list()
 	for(var/datum/contract_requirement/requirement in contract.requirements)
 		rows.Add(list(list(
+			"id" = REF(requirement),
 			"name" = requirement.name,
 			"description" = requirement.description,
 			"state" = requirement.state,

@@ -183,7 +183,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	if(my_doors)
 		var/list/find_doors = my_doors
 		my_doors = list()
-		for(var/obj/machinery/door/airlock/A in my_area)
+		for(var/obj/machinery/door/airlock/A in area_contents_of_type(my_area, /obj/machinery/door/airlock))
 			if(A.id_tag in find_doors)
 				my_doors[find_doors[A.id_tag]] = A
 				find_doors -= A.id_tag
@@ -193,7 +193,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	if(my_sensors)
 		var/list/find_sensors = my_sensors
 		my_sensors = list()
-		for(var/obj/machinery/shuttle_sensor/S in my_area)
+		for(var/obj/machinery/shuttle_sensor/S in area_contents_of_type(my_area, /obj/machinery/shuttle_sensor))
 			if(S.id_tag in find_sensors)
 				my_sensors[find_sensors[S.id_tag]] = S
 				find_sensors -= S.id_tag

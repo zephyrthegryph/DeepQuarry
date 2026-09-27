@@ -232,7 +232,7 @@
 	see_invisible = SEE_INVISIBLE_LIVING
 
 /mob/living/silicon/ai/rejuvenate()
-	..()
+	// Restore the capacitor first: an empty one is lethal to the AI plan, and ..() revives.
 	fully_heal()
 	backup_charge = AI_BACKUP_CAPACITY
-	add_ai_verbs(src)
+	..()

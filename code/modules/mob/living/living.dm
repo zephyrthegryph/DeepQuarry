@@ -73,20 +73,14 @@
 	temp_language_sources = null
 	temp_languages = null
 
-	if(LAZYLEN(organs))
-		organs_by_name.Cut()
-		while(organs.len)
-			var/obj/item/OR = organs[1]
-			organs -= OR
+	// Deleting a part detaches it, and the detach hook empties these caches
+	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
+	for(var/OR in organs?.Copy())
+		if(isdatum(OR))
 			qdel(OR)
-
-	if(LAZYLEN(internal_organs))
-		internal_organs_by_name.Cut()
-		while(internal_organs.len)
-			var/obj/item/OR = internal_organs[1]
-			internal_organs -= OR
-			if(isobj(OR))
-				qdel(OR)
+	for(var/OR in internal_organs?.Copy())
+		if(isdatum(OR))
+			qdel(OR)
 
 	GLOB.cultnet.updateVisibility(src, 0)
 
@@ -258,7 +252,6 @@
 /// Revives a body using the client's preferences if human
 /mob/living/proc/revive()
 	revival_healing_action()
-	SEND_SIGNAL(src, COMSIG_LIVING_REVIVE)
 
 /// Performs the actual healing of Aheal, seperate from revive() because it does not use client prefs. Will not heal everything, and expects to be called through revive() or with a bodyrecord doing a respawn/revive.
 /mob/living/proc/revival_healing_action()
@@ -316,15 +309,11 @@
 	// fix all of our organs
 	restore_all_organs()
 
-	// remove the character from the list of the dead
+	// Everything is healed: a dead mob comes back through the one revive path; a living one wakes.
 	if(stat == DEAD)
-		registry_leave(REGISTRY_DEAD_MOBS, src)
-		registry_join(REGISTRY_LIVING_MOBS, src)
-		tod = null
-		timeofdeath = 0
-
-	// restore us to conciousness
-	set_stat(CONSCIOUS)
+		return_from_death("rejuvenated", src, REVIVE_IGNORE_WINDOW)
+	else
+		set_stat(CONSCIOUS)
 
 	// make the icons look correct
 	regenerate_icons()
@@ -549,7 +538,7 @@
 		if(message)
 			visible_message(span_danger("[src] throws up into the [vomit_goal]!"), span_userdanger("You throw up into the [vomit_goal]!"))
 		if(istype(vomit_goal, /obj/item/reagent_containers/glass/bucket))
-			var/obj/item/organ/internal/stomach/S = organs_by_name[O_STOMACH]
+			var/obj/item/organ/internal/stomach/S = LAZYACCESS(organs_by_name, O_STOMACH)
 			var/obj/item/reagent_containers/glass/bucket/puke_bucket = vomit_goal
 			if(S && S.acidtype)
 				puke_bucket.reagents.add_reagent(S.acidtype, rand(3, 6))
@@ -571,7 +560,7 @@
 	if(!blood && ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(!H.isSynthetic())
-			var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
+			var/obj/item/organ/internal/liver/L = LAZYACCESS(H.internal_organs_by_name, O_LIVER)
 			if(!L || L.is_broken())
 				blood = TRUE
 
@@ -619,12 +608,12 @@
 	for(var/type in obj_list)
 		// check standing on
 		var/turf/T = get_turf(src)
-		var/obj/O = locate(type) in T
+		var/obj/O = locate_on(T, type)
 		if(O)
 			return O
 		// check ahead of us
 		T = get_turf(get_step(T,dir))
-		O = locate(type) in T
+		O = locate_on(T, type)
 		if(O && O.Adjacent(src))
 			return O
 	return null
@@ -964,14 +953,79 @@
 	var/refid = REF(src)
 	. += {"
 		<br>"} + span_small("[VV_HREF_TARGETREF(refid, VV_HK_GIVE_DIRECT_CONTROL, "[ckey || "no ckey"]")] / [VV_HREF_TARGETREF_1V(refid, VV_HK_BASIC_EDIT, "[real_name || "no real name"]", NAMEOF(src, real_name))]") + {"
-		<br>"} + span_small({"
-			PHYSICAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brute' id='brute'>[round(injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]</a>") + {"
-			THERMAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=fire' id='fire'>[round(injury_load(INJURY_CATEGORY_THERMAL), 0.1)]</a>") + {"
-			TOXIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=toxin' id='toxin'>[round(injury_load(INJURY_CATEGORY_TOXIC), 0.1)]</a>") + {"
-			OXYGEN DEBT:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[round(oxygen_debt(), 0.1)]</a>") + {"
-			NEURAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brain' id='brain'>[round(injury_load(INJURY_CATEGORY_NEURAL), 0.1)]</a>") + {"
-			GENETIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=clone' id='clone'>[round(injury_load(INJURY_CATEGORY_GENETIC), 0.1)]</a>") + {"
-		"})
+		<br>"} + span_small("VITALITY: <span id='vitality'>[round(vitality() * 100)]%</span> 			AFFLICTIONS: <span id='afflictions'>[LAZYLEN(body?.afflictions)]</span> 			OXYGEN DEBT: <span id='oxygen_debt'>[round(oxygen_debt(), 0.1)]</span>") + {"
+		<br>"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=injure'>Injure</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=mend'>Mend</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=afflict'>Add affliction</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=cure'>Remove affliction</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=oxygen'>Oxygen debt</a>")
+
+/// The VV body editor: injure with a chosen kind, mend with a chosen tag, add
+/// or remove an affliction, or set oxygen debt. Returns the log line (what was
+/// done), or null when cancelled. Re-validates this mob after every prompt.
+/mob/living/proc/vv_adjust_body(client/C, action)
+	switch(action)
+		if("injure")
+			var/list/kinds = list()
+			for(var/kind in 1 to INJURY_KIND_COUNT)
+				kinds[injury_kind_name(kind)] = kind
+			var/choice = tgui_input_list(C, "Injury kind", "Injure [src]", kinds)
+			if(!choice || QDELETED(src))
+				return null
+			var/amount = tgui_input_number(C, "How much [choice]?", "Injure [src]", 10, min_value = 0, round_value = FALSE)
+			if(!amount || QDELETED(src))
+				return null
+			var/list/zones = list("whole body") + BP_ALL
+			var/zone = tgui_input_list(C, "Where? (systemic kinds ignore this)", "Injure [src]", zones, "whole body")
+			if(!zone || QDELETED(src))
+				return null
+			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
+			return "injured ([choice], [amount] requested, [round(dealt, 0.1)] dealt[zone == "whole body" ? "" : " at [zone]"])"
+		if("mend")
+			var/list/names = dq_treatment_tag_names()
+			var/list/tags = list()
+			for(var/tag in names)
+				tags[names[tag]] = tag
+			var/choice = tgui_input_list(C, "Treatment tag", "Mend [src]", tags)
+			if(!choice || QDELETED(src))
+				return null
+			var/amount = tgui_input_number(C, "How much [choice]?", "Mend [src]", 10, min_value = 0, round_value = FALSE)
+			if(!amount || QDELETED(src))
+				return null
+			var/treated = mend(tags[choice], amount)
+			return "mended ([choice], [amount] requested, [round(treated, 0.1)] treated)"
+		if("afflict")
+			var/affliction_type = tgui_input_list(C, "Affliction", "Afflict [src]", subtypesof(/datum/affliction))
+			if(!affliction_type || QDELETED(src) || !body)
+				return null
+			var/severity = tgui_input_number(C, "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", "Afflict [src]", 30, max_value = AFFLICTION_SEVERITY_TERMINAL, min_value = 0, round_value = FALSE)
+			if(isnull(severity) || QDELETED(src) || !body)
+				return null
+			var/datum/affliction/A = body.afflict(affliction_type, null, severity)
+			if(!A)
+				to_chat(C, span_warning("[affliction_type] can't afflict [src] (wrong body plan or biology, or it needs a location)."), confidential = TRUE)
+				return null
+			return "added affliction [affliction_type] (severity [round(A.severity, 0.1)])"
+		if("cure")
+			var/list/choices = list()
+			for(var/datum/affliction/A as anything in body.afflictions)
+				choices["[A.name][A.location ? " ([A.location.name])" : ""] - severity [round(A.severity, 0.1)] [REF(A)]"] = A
+			if(!length(choices))
+				to_chat(C, span_notice("[src] has no afflictions."), confidential = TRUE)
+				return null
+			var/choice = tgui_input_list(C, "Remove which affliction?", "Cure [src]", choices)
+			var/datum/affliction/A = choices[choice]
+			if(!A || QDELETED(src) || A.owner != src)
+				return null
+			var/removed = "[A.type]"
+			A.cure()
+			return "removed affliction [removed]"
+		if("oxygen")
+			var/amount = tgui_input_number(C, "Oxygen debt to add (negative pays it down)", "Oxygen debt of [src]", 0, min_value = -INFINITY, round_value = FALSE)
+			if(!amount || QDELETED(src))
+				return null
+			if(amount > 0)
+				add_oxygen_debt(amount, "admin [key_name(C)]")
+			else
+				mend(TREAT_OXYGENATION, -amount)
+			return "changed oxygen debt by [amount]"
+	return null
 
 /mob/living/update_gravity(has_gravity)
 	if(!SSticker)

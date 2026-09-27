@@ -26,7 +26,7 @@
 		if(istype(src, /turf/simulated))
 			var/turf/simulated/T = src
 			T.dirt = 0
-		for(var/obj/effect/O in src)
+		for(var/obj/effect/O in turf_contents_of_type(src, /obj/effect))
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
 				qdel(O)
 /*	//Reagent code changed at some point and the below doesn't work.  To be fixed later.
@@ -69,7 +69,7 @@
 				for(var/obj/item/organ/external/organ in host.organs)
 					for(var/obj/item/O in organ.implants)
 						if(O == src)
-							organ.implants -= src
+							LAZYREMOVE(organ.implants, src)
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)

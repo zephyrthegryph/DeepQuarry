@@ -65,6 +65,7 @@
 
 /mob/living/simple_mob/mechanical/corrupt_maint_drone
 	delete_on_death = TRUE
+	death_message = "is smashed into pieces!"
 
-/mob/living/simple_mob/mechanical/corrupt_maint_drone/death()
-	..(null,"is smashed into pieces!")
+/mob/living/simple_mob/mechanical/corrupt_maint_drone/on_death(gibbed)
+	..()

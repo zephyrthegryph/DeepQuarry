@@ -18,7 +18,7 @@ In short:
 /datum/universal_state/hell/DecayTurf(turf/T)
 	if(!T.holy)
 		T.cultify()
-		for(var/obj/machinery/light/L in T.contents)
+		for(var/obj/machinery/light/L in turf_contents_of_type(T, /obj/machinery/light))
 			replace_with(L, /obj/structure/cult/pylon)
 	return
 

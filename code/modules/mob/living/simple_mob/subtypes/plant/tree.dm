@@ -43,9 +43,10 @@
 
 /mob/living/simple_mob/animal/space/tree
 	delete_on_death = TRUE
+	death_message = "is hacked into pieces!"
 
-/mob/living/simple_mob/animal/space/tree/death()
-	..(null,"is hacked into pieces!")
+/mob/living/simple_mob/animal/space/tree/on_death(gibbed)
+	..()
 	playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 	new /obj/item/stack/material/wood(loc)
 

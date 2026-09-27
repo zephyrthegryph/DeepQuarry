@@ -16,7 +16,7 @@
 /mob/observer/blob/proc/createSpecial(price, blobType, nearEquals, needsNode, turf/T)
 	if(!T)
 		T = get_turf(src)
-	var/obj/structure/blob/B = (locate(/obj/structure/blob) in T)
+	var/obj/structure/blob/B = (locate_on(T, /obj/structure/blob))
 
 	if(!B)
 		to_chat(src, span_warning("There is no blob here!"))
@@ -193,7 +193,7 @@
 	for(var/direction in GLOB.cardinal)
 		other_T = get_step(T, direction)
 		if(other_T)
-			B = locate(/obj/structure/blob) in other_T
+			B = locate_on(other_T, /obj/structure/blob)
 			if(B && B.overmind == src)
 				break
 
@@ -241,7 +241,7 @@
 
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(L, direction)
-		var/obj/structure/blob/B = locate(/obj/structure/blob) in T
+		var/obj/structure/blob/B = locate_on(T, /obj/structure/blob)
 		if(B && B.overmind == src)
 			return TRUE
 	return FALSE

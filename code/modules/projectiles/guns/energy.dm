@@ -125,7 +125,7 @@
 		PERIODIC_START(src, PERIODIC_SLOW)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
-		M?.hud_used.update_ammo_hud(M, src)
+		M?.hud_used?.update_ammo_hud(M, src)
 	var/obj/item/projectile/projectile = new projectile_type(src)
 	if(output_envelope > 1)
 		projectile.damage *= output_envelope
@@ -173,7 +173,7 @@
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		update_icon()
 		update_held_icon()
-		user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD
+		user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 	else
 		to_chat(user, span_notice("[src] does not have a power cell."))
 

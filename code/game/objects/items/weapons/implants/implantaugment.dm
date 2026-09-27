@@ -30,17 +30,9 @@
 
 		var/obj/item/organ/external/E = H.get_organ(NewOrgan.parent_organ)
 		to_chat(H, span_notice("You feel a tingling sensation in your [part]."))
-		if(E && !(H.internal_organs_by_name[NewOrgan.organ_tag]))
+		// A ledger move into the limb; the attach hook does the rest.
+		if(E && !(H.internal_organs_by_name[NewOrgan.organ_tag]) && NewOrgan.replaced(H, E))
 			om_after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone."))
-
-			NewOrgan.forceMove(H)
-			NewOrgan.owner = H
-			if(E.internal_organs == null)
-				E.internal_organs = list()
-			E.internal_organs |= NewOrgan
-			H.internal_organs_by_name[NewOrgan.organ_tag] = NewOrgan
-			H.internal_organs |= NewOrgan
-			NewOrgan.handle_organ_mod_special()
 
 			om_qdel_after(src, 1)
 
@@ -71,17 +63,10 @@
 
 		var/obj/item/organ/external/E = setup_augment_slots(H, NewOrgan)
 		to_chat(H, span_notice("You feel a tingling sensation in your [part]."))
-		NewOrgan.forceMove(H)
-		NewOrgan.owner = H
-		if(E && istype(E) && !(H.internal_organs_by_name[NewOrgan.organ_tag]) && NewOrgan.check_verb_compatability())
+		// A ledger move into the limb; the attach hook does the rest. An
+		// incompatible augment is deleted below, which detaches it again.
+		if(istype(E) && !(H.internal_organs_by_name[NewOrgan.organ_tag]) && NewOrgan.replaced(H, E) && NewOrgan.check_verb_compatability())
 			om_after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone."))
-
-			if(E.internal_organs == null)
-				E.internal_organs = list()
-			E.internal_organs |= NewOrgan
-			H.internal_organs_by_name[NewOrgan.organ_tag] = NewOrgan
-			H.internal_organs |= NewOrgan
-			NewOrgan.handle_organ_mod_special()
 
 			om_qdel_after(src, 1)
 

@@ -29,10 +29,11 @@
 	var/max_items = 20
 	flags = NOBLUDGEON
 
-/obj/item/vac_attachment/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/vac_attachment/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/set_input = null
 	if(!om_resolve(output_dest))
 		set_input = "output destination"

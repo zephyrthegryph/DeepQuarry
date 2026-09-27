@@ -22,7 +22,7 @@
 			if(prob(5))
 				affected_mob.injure(INJURY_TOXIN, 1, affliction = /datum/affliction/appendiceal_sepsis, flags = INJURE_SILENT)
 		if(2)
-			var/obj/item/organ/internal/appendix/A = affected_mob.internal_organs_by_name[O_APPENDIX]
+			var/obj/item/organ/internal/appendix/A = LAZYACCESS(affected_mob.internal_organs_by_name, O_APPENDIX)
 			if(A)
 				A.inflamed = TRUE
 			if(prob(3))

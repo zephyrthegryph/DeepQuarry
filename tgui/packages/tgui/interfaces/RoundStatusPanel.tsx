@@ -5,7 +5,7 @@
 // antag-block tree with member rows) and dispatches every action via
 // act() — no embedded byond:// hrefs anywhere. Antag blocks are now
 // fully structured via /datum/antagonist/proc/get_check_antag_data
-// (see modular_dq/code/modules/admin/antag_panel_data.dm).
+// (see code/modules/admin/antag_panel_data.dm).
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';

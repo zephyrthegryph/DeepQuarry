@@ -26,8 +26,6 @@
 		on_connected_techweb()
 	set_wires(new /datum/wires/rnd(src))
 
-REF_OWNED(/obj/machinery/rnd, "wires")
-
 // LIFECYCLE: the techweb logs the disconnection.
 /obj/machinery/rnd/Destroy()
 	if(stored_research)

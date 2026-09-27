@@ -96,6 +96,7 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 	return healthy >= 1 && affected >= 1
 
 /datum/contract/medical_trial/on_accepted(mob/living/user, atom/source)
+	. = ..()
 	var/turf/drop_location = get_turf(source ? source : user)
 	if(!drop_location)
 		return
@@ -204,10 +205,6 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 	var/list/markers = followup_evidence["trial_markers"]
 	if(!islist(markers) || (markers[id] || 0) <= 0)
 		return FALSE
-	participant.baseline_metrics = baseline_evidence["snapshot"]
-	participant.final_metrics = followup_evidence["snapshot"]
-	participant.completed = TRUE
-	participant.faxed = TRUE
 	var/mob/living/current_subject = participant.current_subject()
 	var/identity_term = negotiated_effect("identity", "coded")
 	var/sponsor_subject = identity_term == "identified" ? (current_subject?.real_name || subject_id) : (identity_term == "anonymous" ? "anonymous participant" : "coded participant [copytext(md5("[id]:[subject_id]"), 1, 7)]")
@@ -217,7 +214,7 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 	record_contribution(baseline_evidence["operator_account"], 1, "Produced the authenticated baseline scan")
 	record_contribution(followup_evidence["operator_account"], 1, "Produced the authenticated follow-up scan")
 	record_contribution(contributor_account, 1, "Filed the completed clinical packet")
-	return !!emit_contract_event(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, list(
+	var/accepted = !!emit_contract_event(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, list(
 		"contract_id" = id,
 		"subject_id" = subject_id,
 		"subject_name" = sponsor_subject,
@@ -226,6 +223,14 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 		"department" = DEPARTMENT_MEDICAL,
 		"detail" = detail,
 	), "medical-observation:[id]:[subject_id]", null, null, current_subject)
+	if(!accepted)
+		return FALSE
+	// Only a packet the event pipeline actually accepted closes the participant.
+	participant.baseline_metrics = baseline_evidence["snapshot"]
+	participant.final_metrics = followup_evidence["snapshot"]
+	participant.completed = TRUE
+	participant.faxed = TRUE
+	return TRUE
 
 /datum/contract/medical_trial/ui_details(mob/living/user)
 	var/list/subjects = list()

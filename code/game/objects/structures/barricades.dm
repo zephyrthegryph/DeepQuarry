@@ -32,20 +32,32 @@
 		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
 	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
 
-/obj/structure/barricade/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/barricade/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/barricade_item,
+	)
+	..()
+
+/// Old attackby: repair with a matching material stack, or take a weapon hit.
+/datum/interaction/entry_item/barricade_item
+	id = "barricade_item"
+	name = "Use"
+	effect = /obj/structure/barricade/proc/interaction_item
+
+/obj/structure/barricade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(istype(W, /obj/item/stack))
 		var/obj/item/stack/D = W
 		if(D.get_material_name() != material.name)
-			return //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
+			return TRUE //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
 		if(get_integrity() < max_integrity)
 			if(D.get_amount() < 1)
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
-				return
+				return TRUE
 			visible_message(span_notice("[user] begins to repair \the [src]."))
 			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
-			return
-		return
+			return TRUE
+		return TRUE
 
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
 		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
@@ -56,7 +68,7 @@
 			receive_weapon_hit(W, user, W.force, INJURY_BURN)
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.75)
-	..()
+	return TRUE
 
 /obj/structure/barricade/proc/attackby_timed_done(mob/user, obj/item/stack/D)
 	if(!(get_integrity() < max_integrity))

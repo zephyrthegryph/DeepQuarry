@@ -6,10 +6,14 @@
 	w_class = ITEMSIZE_SMALL
 	var/named
 
-/obj/item/text_to_speech/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/text_to_speech/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_ALT(null, PROC_REF(interaction_alt)),
+	)
+	return L
+
+/obj/item/text_to_speech/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.incapacitated(INCAPACITATION_DISABLED))
 		to_chat(user, "You cannot activate the device in your state.")
 		return
@@ -30,5 +34,7 @@
 		if(ismob(loc))
 			loc.runechat_message("\[TTS Voice\] [message]")
 
-/obj/item/text_to_speech/click_alt(mob/user) // QOL Change
-	attack_self(user)
+/// QOL change: alt-click does the same thing as self-use.
+/obj/item/text_to_speech/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_self(user, held, interaction)
+	return TRUE

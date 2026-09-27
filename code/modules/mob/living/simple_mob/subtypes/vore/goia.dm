@@ -454,7 +454,7 @@
 /mob/living/simple_mob/vore/zorgoia/MouseDrop_T(mob/living/M, mob/living/user)
 	return
 
-/mob/living/simple_mob/vore/zorgoia/death() //are they going to be ok?
+/mob/living/simple_mob/vore/zorgoia/on_death(gibbed) //are they going to be ok?
 	. = ..()
 	cut_overlays()
 

@@ -200,7 +200,7 @@ tuning number. Afflictions are whole-body `load` afflictions in points
 plan's oxygen debt, fed by `add_oxygen_debt()`). Regeneration and repair
 call `mend()`. `vitality()` = `1 - total_load/endurance`.
 
-## 5. Consciousness & death (`/datum/body` + each plan's `recompute_vitals()` / `is_dead()`)
+## 5. Consciousness & death (`/datum/body` + each plan's `recompute_vitals()` / `is_lethal()`)
 
 Invalidation is one bitfield, `body.dirty` (`BODY_DIRTY_*`), set through
 `body.invalidate()`: `VITALS` (the cached vitals), `TREATMENT` (the treatment
@@ -221,7 +221,7 @@ Each Life tick, `body.life_tick()`:
      penalty (`max(0, pain − tolerance)`).
    - `vitality` — the worst of vital-organ and vital-part failure, injury
      afflictions and lost consciousness.
-4. `evaluate_status()`: dead? (`is_dead()` per plan) → `death()`.
+4. `evaluate_status()`: lethal? (`is_lethal()` per plan) → `death()`.
    Unconscious if `consciousness <= 0` → `set_stat(UNCONSCIOUS)` + crit trait.
 
 Afflictions contribute through two declarative vars scaled by severity:
@@ -231,12 +231,25 @@ There are no special-cased thresholds anywhere else.
 A component can veto death and unconsciousness by answering
 `COMSIG_LIVING_BODY_STATUS` with `COMPONENT_BODY_KEEP_ALIVE` (lite godmode).
 
+**Death and revival have one path each.** `/mob/proc/death()` (`code/modules/mob/death.dm`)
+is sealed (`SHOULD_NOT_OVERRIDE`): guard (already dead or deleted: no side effects) →
+`replace_death()` (vanish/split/retreat instead) → one `set_stat(DEAD)` + lists → message,
+`death_links()` (soul links, nests, vore flags), `play_death_sound()`, senses, drops, diseases,
+mind memory → `COMSIG_MOB_DEATH` → subtype `on_death()` → HUD/icon refresh → antag win check →
+`COMSIG_LIVING_DEATH_FINAL`. Subtypes set `death_message` or override `get_death_message()`, never
+`death()`. The way back is `L.return_from_death(reason, source, REVIVE_*)`
+(`code/modules/body/revival.dm`), gated by `can_return_from_death()`; `set_stat()` refuses to
+leave `DEAD` anywhere else, and `check_grep.sh` rejects hand-rolled list swaps.
+
 Queries every other system uses instead of `health`:
 
 | Question | API |
 |---|---|
-| Alive/dead | `stat` (unchanged) |
+| Alive/dead | `L.is_alive()` / `L.is_dead()` (stat) |
 | In crit / unconscious from injury | `L.is_critical()` |
+| Alive but lethally hurt | `L.is_dying()` |
+| One summary band (HUDs, AI flee, bosses, bellies) | `L.vital_band()` → `VITAL_BAND_*` (`code/__defines/vital_state.dm`) |
+| Would these injuries kill? (damage, not stat) | `L.body.is_lethal()` |
 | Fraction of wellness left (HUD, AI flee, phases, belly bars, stat panel) | `L.vitality()` → 0..1 |
 | Endurance (for scaling damage to a mob's toughness) | `L.get_endurance()` (with modifiers) |
 | How hurt by category (medbot, vore payout, analyzers) | `L.injury_load(INJURY_CATEGORY_*)` |
@@ -249,7 +262,7 @@ Queries every other system uses instead of `health`:
 **Brain death** is decided in one place:
 `/obj/item/organ/internal/brain/proc/is_brain_dead()` — the brain is at 100%
 damage or the organ is `ORGAN_DEAD`. Brain death needs a resleeve. The
-humanoid plan's `is_dead()`, the defibrillator (`can_revive()`),
+humanoid plan's `is_lethal()`, the defibrillator (`can_revive()`),
 `check_vital_organs()`, the scanners, the MMI and the brain view all ask it.
 
 **Identity.** `/datum/character_identity` (`code/datums/character_identity.dm`)
@@ -370,8 +383,8 @@ revival. Heart-stopping chems (`potassium_chloride` OD, chlorophoride), heart
 failure's Critical stage, strong electrocution and deep hypoxia all
 `induce_arrhythmia()`. Instant mechanisms reach afflictions through `mend()`;
 afflictions reinterpret them in `receive_tagged_treatment()` (defibrillation
-converts the rhythm) rather than treating severity. Readouts: `cardiac_rhythm_reading()` on the health analyser
-and vitals monitor; symptoms `choking`, `stridor`, `absent_breath_sounds`,
+converts the rhythm) rather than treating severity. Readouts: the `heart_rhythm()` vital (`VITALS_RHYTHM`) on every
+instrument with an ECG (advanced analysers, scanners, vitals monitor); symptoms `choking`, `stridor`, `absent_breath_sounds`,
 `tracheal_deviation`, `absent_pulse`, `rhythm_finding/*`.
 
 Biology declaration: an affliction's `biology` flags say where it can exist; a
@@ -511,14 +524,22 @@ closed airway.
 - Cardiac arrest: `BF_PUMP` from the rhythm.
 - Species and trait resistances: `BF_DEMAND` (0 = needs no oxygen).
 - No mechanism at all (spells, admin, spawn-in injuries, changeling powers,
-  anomalies' magic, belly digestion, mech damage transfer, EMP-sensitive
-  species): `add_oxygen_debt(amount, source)`.
+  anomalies' magic, mech damage transfer, EMP-sensitive species):
+  `add_oxygen_debt(amount, source)`.
+- Belly digestion: the belly's air. `/atom/proc/breath_quality_for(L)` lets the
+  place a mob breathes in spoil its breath; a digesting belly's `digest_oxy`
+  makes its air stale (0 at `BELLY_AIR_STALE_AT`), and `set_breath_quality()`
+  folds that in. Sealed internals and prey that refuse digestion are exempt.
 
 **Consequences.** The debt is mirrored by `tissue_hypoxia`, whose severity is
 the debt (capped at 100; consciousness fails at 50). Past
 `DQ_HYPOXIA_BRAIN_DAMAGE` the physiology grows ischemic lesions on the brain
 through `apply_lesion_damage()` (halved by `BF_STABILIZATION`); death comes
-through `is_brain_dead()`, the body's single decision point. The emergent
+through `is_brain_dead()`, the body's single decision point. Past
+`PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD`, `tissue_hypoxia` also raises
+`BF_CARDIAC_IRRITABILITY` (up to `PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX` at 100),
+which scales how fast `cardiac_arrhythmia` deteriorates (tachycardia's
+progression, VF's decay to asystole). The emergent
 ischemia path (`dq_check_ischemic_damage()`) reads `oxygen_debt()` for the
 other organs.
 
@@ -529,11 +550,21 @@ pump, rescue oxygen, Vox phoron) pays the debt down through
 restoring the rhythm, transfusion) lets the debt repay on its own.
 `fully_heal()` clears it.
 
+**Post-revival grace.** When circulation is restored (a defibrillator
+converting VF, a defibrillator revival: `body.begin_revival_grace(source)`),
+for `PHYSIOLOGY_REVIVAL_GRACE` the debt repays `PHYSIOLOGY_REVIVAL_REPAY_MULT`
+times faster and, while it is being repaid (no shortfall), grows no new
+ischemic lesions. Brain damage done before the revival stays. If delivery fails
+again inside the window, the debt grows and harms the brain as usual. So a
+timely revival doesn't die anyway from the debt it is already paying off.
+
 **Queries** (the contract diagnosis reads; each is null when the plan has no
 such system): `ventilation()` (0..1), `oxygenation()` (SpO2 0–100, including
 `BF_O2_SAT` readout offsets; carbon monoxide doesn't show), `perfusion()`
 (0..1), `oxygen_debt()`, `heart_rate()` (bpm), `blood_pressure()`
-(`list(systolic, diastolic)`), `respiratory_rate()` (breaths/min), and
+(`list(systolic, diastolic)`), `respiratory_rate()` (breaths/min),
+`heart_rhythm()` (`RHYTHM_*`: sinus, post-arrest, tachy, VF, asystole; the
+`VITALS_RHYTHM` diagnosis vital), and
 `add_oxygen_debt(amount, source)`. Mob wrappers `L.oxygen_debt()` (0 when
 null) and `L.add_oxygen_debt()`.
 
@@ -558,6 +589,9 @@ far a limb is open (the limb's `open` var caches it). The site bleeds until
 clamped (`TREAT_HEMOSTATIC`) and gathers germs by the sterility of the
 surface it was opened on until it is closed (`TREAT_BONE_SETTING` closes a
 sawn bone layer, then `TREAT_SURGICAL_CLOSURE` / `TREAT_PANEL_CLOSURE`).
+A fracture is the `untreated_fracture` affliction on the limb: `fracture()`
+afflicts it, `E.is_fractured()` asks for it, and set-bone's
+`TREAT_BONE_SETTING` mends it. There is no broken-bone status flag.
 
 Every healing step is a treatment: a `/datum/surgical_step` names
 `treatments` (TREAT_* -> amount) and a `scope` (the limb, the limb and its

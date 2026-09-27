@@ -25,13 +25,13 @@
 		cell.charge -= power_use
 
 		var/turf/T = get_turf(suspension_field)
-		for(var/mob/living/M in T)
+		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 			M.status_at_least(EFFECT_WEAKENED, 3)
 			cell.charge -= power_use
 			if(prob(5))
 				to_chat(M, span_warning("[pick("You feel tingly","You feel like floating","It is hard to speak","You can barely move")]."))
 
-		for(var/obj/item/I in T)
+		for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 			if(!suspension_field.contents.len)
 				suspension_field.icon_state = "energynet"
 				suspension_field.add_overlay("shield2")
@@ -181,11 +181,11 @@
 	var/turf/T = get_turf(get_step(src,dir))
 	var/collected = 0
 
-	for(var/mob/living/M in T)
+	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.visible_message(span_blue("[icon2html(M,viewers(M))] [M] begins to float in the air!"),"You feel tingly and light, but it is difficult to move.")
 
-	for(var/obj/effect/anomaly/anom in T)
+	for(var/obj/effect/anomaly/anom in turf_contents_of_type(T, /obj/effect/anomaly))
 		anom.immortal = TRUE
 		anom.move_chance = 0
 		if(!anom.stats)
@@ -198,7 +198,7 @@
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
 	update_icon()
 
-	for(var/obj/item/I in T)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		I.loc = suspension_field
 		collected++
 
@@ -216,11 +216,11 @@
 	//drop anything we picked up
 	var/turf/T = get_turf(suspension_field)
 
-	for(var/mob/living/M in T)
+	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 		to_chat(M, span_info("You no longer feel like floating."))
 		M.status_at_least(EFFECT_WEAKENED, 3)
 
-	for(var/obj/effect/anomaly/anom in T)
+	for(var/obj/effect/anomaly/anom in turf_contents_of_type(T, /obj/effect/anomaly))
 		if(anom.stats)
 			var/datum/anomaly_stats/anom_stats = anom.stats
 			if(istype(anom_stats.modifier, /datum/anomaly_modifiers/move))

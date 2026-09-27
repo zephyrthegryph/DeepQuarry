@@ -118,7 +118,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/vore/alienanimals/space_jellyfish/death()
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()
 	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
 

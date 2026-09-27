@@ -61,7 +61,7 @@
 	default_apply_parts()
 	RefreshParts()
 
-REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
+REF_OWNED(/obj/machinery/autolathe, "print_sound")
 
 /obj/machinery/autolathe/examine(mob/user)
 	. = ..()

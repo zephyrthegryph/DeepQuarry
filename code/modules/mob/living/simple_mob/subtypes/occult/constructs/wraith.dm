@@ -83,7 +83,7 @@
 	var/overshoot = TRUE
 
 	// Test if something is at destination.
-	for(var/mob/living/L in destination)
+	for(var/mob/living/L in turf_contents_of_type(destination, /mob/living))
 		if(L == src)
 			continue
 

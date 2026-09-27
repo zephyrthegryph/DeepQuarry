@@ -67,8 +67,6 @@
 		return
 	name = initial(name)
 
-REF_OWNED(/obj/structure/disposalpipe/sortjunction, "wires")
-
 /// Phase 2: leaves the tagger index.
 /obj/structure/disposalpipe/sortjunction/lifecycle_dematerialize()
 	. = ..()
@@ -232,29 +230,29 @@ REF_OWNED(/obj/structure/disposalpipe/sortjunction, "wires")
 	icon_state = "pipe-j2s"
 
 /obj/structure/disposalpipe/sortjunction/bodies/proc/check_for_corpse_or_id(obj/structure/disposalholder/H)
-	for(var/mob/living/L in H)
+	for(var/mob/living/L in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 		if(iscarbon(L)) // only living carbons count not silicons, drones can control their own mailing destination...
 			return CORPSE_SORT_TAG
 
 	// Check for microholders, you can't skip the system this way either!
-	for(var/obj/item/holder/hl in H)
+	for(var/obj/item/holder/hl in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 		if(isliving(hl.held_mob))
 			return CORPSE_SORT_TAG
 
 	// find an ID in items
-	for(var/obj/item/card/id in H)
+	for(var/obj/item/card/id in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 		if(!istype(id,/obj/item/card/id/guest))
 			return CORPSE_SORT_TAG
-	for(var/obj/item/pda/P in H)
+	for(var/obj/item/pda/P in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 		if(!istype(P.id,/obj/item/card/id/guest))
 			return CORPSE_SORT_TAG
 
 	// Check in bags, only one level deep. Need to check for pda again too
-	for(var/obj/item/storage in H)
-		for(var/obj/item/pda/P in storage.contents)
+	for(var/obj/item/storage/bag in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
+		for(var/obj/item/pda/P in bag.slot_contents())
 			if(!istype(P.id,/obj/item/card/id/guest))
 				return CORPSE_SORT_TAG
-		for(var/obj/item/card/id in storage.contents)
+		for(var/obj/item/card/id in bag.slot_contents())
 			if(!istype(id,/obj/item/card/id/guest))
 				return CORPSE_SORT_TAG
 

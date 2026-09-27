@@ -69,7 +69,7 @@
 					to_chat(usr, span_notice("Too many items! Couldn't fully unfold the blanket!"))
 					anti_spam = TRUE
 				continue
-			for(var/obj/O in T)
+			for(var/obj/O in turf_contents_of_type(T, /obj))
 				if(O.density) //Cables & Atmos machinery dont bother us.
 					if(isTableTop && istype(O, /obj/structure/table)) //We expand to the table if the center is a table
 						doWeHaveTable = TRUE

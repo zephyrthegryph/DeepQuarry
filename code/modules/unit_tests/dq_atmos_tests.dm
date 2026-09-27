@@ -1133,7 +1133,7 @@
 					ok = FALSE
 					break
 				var/turf/simulated/floor/nf = nxt
-				if(!nf.air || nf.blocks_air || (locate(/obj/machinery/atmospherics) in nf))
+				if(!nf.air || nf.blocks_air || (locate_on(nf, /obj/machinery/atmospherics)))
 					ok = FALSE
 					break
 				run += nf
@@ -1565,7 +1565,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	TEST_ASSERT_EQUAL(blocks_air_post, 0, "make_floor didn't set blocks_air=0")
 	TEST_ASSERT(has_air, \
-		"make_floor left air=null — neighbors will crash on share. DQEdit in mine_turfs.dm missing?")
+		"make_floor left air=null — neighbors will crash on share. Is the air init in mine_turfs.dm missing?")
 	TEST_ASSERT(moles_ok, "make_floor air mixture is broken")
 	TEST_ASSERT_EQUAL(blocks_air_restored, 1, "make_wall didn't restore blocks_air=1")
 	TEST_ASSERT(air_cleared, "make_wall didn't QDEL_NULL the air mixture")
@@ -5974,7 +5974,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// should consult CanZASPass via /atom/proc/can_atmos_pass — and the closed
 	// door returns !density = FALSE.
 	var/passes = TRUE
-	for(var/obj/checked in A.contents)
+	for(var/obj/checked in turf_contents_of_type(A, /obj))
 		if(!CANATMOSPASS(checked, B, FALSE))
 			passes = FALSE
 			break
@@ -5983,7 +5983,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Open the door (density=FALSE) and confirm gas passes again.
 	D.density = FALSE
 	var/passes_open = TRUE
-	for(var/obj/checked in A.contents)
+	for(var/obj/checked in turf_contents_of_type(A, /obj))
 		if(!CANATMOSPASS(checked, B, FALSE))
 			passes_open = FALSE
 			break

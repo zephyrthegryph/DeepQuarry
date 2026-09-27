@@ -13,11 +13,9 @@
 
 	//MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
-/obj/item/binoculars/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	zoom()
+/obj/item/binoculars/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(zoom)))
+	return L
 
 /obj/item/binoculars/spyglass
 	name = "spyglass"

@@ -722,6 +722,14 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 
 	slow_process(shot_targets)
 
+// Chunk keys are published by mob movement/creation/deletion only
+// (publish_mob_chunk in atoms_movable.dm / mob.dm). A mob that becomes
+// *visible* without moving — a door opening between it and the turret, a
+// wall being deconstructed, an opacity change — does not publish. The turret
+// only re-evaluates once any mob in a subscribed chunk moves, which in practice
+// is the same tick or the next for anything alive; a fully stationary mob
+// behind a door someone else opens is the accepted miss. Publishing on every
+// opacity/door change per chunk was judged too chatty for the reactive tables.
 /obj/machinery/porta_turret/proc/reactive_mob_chunk_keys()
 	var/list/watches = list()
 	for(var/datum/mob_chunk/C as anything in mob_chunks_around(get_turf(src), isnum(world.view) ? world.view : 7))

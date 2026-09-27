@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added a medical and combat balance harness (tools/build/build.sh balance and balance-compare) that measures time to kill, bleed-out, hypoxia, treatment, digestion and stasis numbers without changing them."

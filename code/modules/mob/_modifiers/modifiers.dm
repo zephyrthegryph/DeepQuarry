@@ -215,11 +215,11 @@
 	factors = alist(BF_SLOWDOWN = -1.0, BF_ACCURACY = -50, BF_EVASION = 30, BF_MELEE_DAMAGE = 0.75, BF_SIEMENS = 1.5)
 
 /datum/modifier/underwater_stealth/on_applied()
-	holder.alpha = 50
+	holder.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
 	return
 
 /datum/modifier/underwater_stealth/on_expire()
-	holder.alpha = 255
+	holder.clear_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH)
 	return
 
 /datum/modifier/underwater_stealth/tick()
@@ -230,9 +230,9 @@
 		if(water_floor.depth < 1) //You're not in deep enough water anymore.
 			expire(silent = FALSE)
 		if(water_floor.depth > 1)
-			holder.alpha = 50
+			holder.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
 		else
-			holder.alpha = 65
+			holder.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 65/255)
 	else
 		expire(silent = FALSE)
 

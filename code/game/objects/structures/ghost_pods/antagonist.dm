@@ -31,7 +31,19 @@
 	playsound(src, 'sound/effects/slime_squish.ogg', 50, 1)
 	return ..()
 
-/obj/structure/ghost_pod/automatic/xenomorph_egg/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/ghost_pod/automatic/xenomorph_egg/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/xenomorph_egg_item,
+	)
+	..()
+
+/// Old attackby: hit the egg.
+/datum/interaction/entry_item/xenomorph_egg_item
+	id = "xenomorph_egg_item"
+	name = "Use"
+	effect = /obj/structure/ghost_pod/automatic/xenomorph_egg/proc/interaction_item
+
+/obj/structure/ghost_pod/automatic/xenomorph_egg/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	switch(W.obj_damage_type())
@@ -39,8 +51,7 @@
 			receive_weapon_hit(W, user, W.force * 1.25, INJURY_BURN) //It really doesn't like fire
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.75) //Bit hard to cut
-	..()
-	return
+	return TRUE
 
 /// Eggs burn easily.
 /obj/structure/ghost_pod/automatic/xenomorph_egg/projectile_damage(obj/item/projectile/P, def_zone)

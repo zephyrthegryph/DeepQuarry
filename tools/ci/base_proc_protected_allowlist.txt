@@ -2,6 +2,7 @@
 # protected names or paths, but were written as global API on purpose (before the
 # ratchet). Nothing may be added: API in these families stays on the type.
 available_surgical_steps
+can_be_latent
 can_climb_neighbor_turf
 can_climb_turf
 cmp_om_behaviour_id
@@ -56,10 +57,16 @@ dq_get_viewing_alt_appearances
 dq_get_was_bloodied
 dq_heat_path_ambient
 dq_interaction_reach
+dq_latency_audit_check
+dq_latency_sweep_register
+dq_latency_sweep_unregister
+dq_latent_attempt_collapse
 dq_latent_declare
 dq_latent_line_ok
+dq_latent_pinned
 dq_latent_resolve
 dq_latent_spawn_real
+dq_latent_touch
 dq_ledger
 dq_ledger_commit
 dq_ledger_contribution
@@ -183,6 +190,7 @@ om_clock_changed
 om_clock_compute
 om_clock_entry
 om_clock_local
+om_clock_now
 om_clock_rate
 om_clock_rate_of
 om_clock_reschedule
@@ -229,6 +237,7 @@ om_field_changed
 om_field_channel
 om_fwd_add
 om_grant
+om_grant_sources
 om_grants_from
 om_guarded_call
 om_handle

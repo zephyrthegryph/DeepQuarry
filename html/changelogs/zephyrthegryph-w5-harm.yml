@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Turbo bellies no longer digest harder than normal ones: digestion, heat, cold, pressure and steady radiation harm now land the same total over the same time however often they tick."
+  - bugfix: "Food, lollipops, the biowaste tank's muffin monster and dogborg sleepers put things into bellies properly, so the belly starts digesting them."
+  - rscadd: "Belly contents now feel the predator's body temperature; prey who allow temperature play still feel the belly's set temperature."
+  - code_imp: "Removed the duplicate cosmic background temperature constant (TCMB is the one) and the hardcoded 37 C in the emergent thermal metric."

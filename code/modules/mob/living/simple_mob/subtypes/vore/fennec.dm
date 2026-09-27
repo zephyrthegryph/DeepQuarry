@@ -154,7 +154,7 @@
 	B.digest_messages_prey = list()
 	*/
 
-/mob/living/simple_mob/vore/fennec/huge/death()
+/mob/living/simple_mob/vore/fennec/huge/on_death(gibbed)
 	devourable = TRUE
 	return ..()
 

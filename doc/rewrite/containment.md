@@ -92,6 +92,91 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - Material stacks don't serialize yet (`recipes` has no codec), so sheet storage keeps them real.
 - **Lint.** `tools/ci/containment_lint.py` checks `tools/ci/containment_allowlist.txt`, which holds per-file counts of the legacy sites (681 in 310 files at C1). A file may not gain sites.
 
+## 2a. No raw contents access (C11)
+
+C1 stopped raw *writes* (`loc =`, `contents +=`/`-=`). C11 does the same for raw
+*reads*: `in X.contents` and implicit `in src`/`in loc`/`in T` loops,
+`contents.len`/`length(contents)`, and `locate(...) in` searches. At the start of
+C11 that's about 1,866 sites (318 explicit contents loops, 607 implicit loops,
+184 length checks, 757 `locate() in` searches) across 681 files — most of it in
+code nobody has touched since before the ledger existed.
+
+Two APIs cover every legitimate read:
+
+- **The ledger read API**, for a holder's own contents: `slot_contents()`,
+  `latent_entries()`, `latent_count()`, `latent_materialize_all()`,
+  `get_all_contents()`, `contents_property()`, `contents_has_tag()` and friends
+  (`code/datums/containment/api.dm`, §2). These already exist from C1/C5 — most
+  of the conversion work is switching call sites over to them, not building new
+  API surface.
+- **The spatial API**, for tile queries: "what's on this turf", "find a `T` on
+  this tile", "for each atom of type X here". `locate(TYPE) in loc`/`in turf` and
+  `for(var/T in loc)` on a turf are spatial reads, not holder reads — a turf's
+  contents are the engine's own atom list, not a ledger-tracked holder.
+
+**Where the spatial API lives.** A turf's contents are engine-maintained; BYOND
+updates them on every move, and nothing in this codebase can intercept that (the
+same reason C1's write lint only covers ledger holders, not turfs). So there is
+nothing to gain by backing turf queries with the Rust grid (`vg-core::Grid`)
+today — the source of truth is still BYOND's own turf contents list, and a Rust
+mirror would just be a second thing to keep in sync with the first. The spatial
+API starts DM-side, as one central, typed wrapper over the existing turf
+contents, so call sites stop hand-rolling `locate(TYPE) in loc` and
+`for(var/atom/A in loc)`:
+
+- `turf_contents_of_type(T, type)` returns every atom of `type` (and subtypes) on
+  turf `T`, as a list. Equivalent to `for(var/type/A in T)`, but named, so a lint
+  can find and count call sites instead of every bare loop.
+- `locate_on(T, type)` returns the first atom of `type` on turf `T`, or null.
+  Equivalent to `locate(type) in T`.
+- `turf_each(T, type, callback)` walks matching atoms without allocating a list,
+  for hot paths that only need a side effect per atom (radiation, EMP,
+  explosion falloff) and would otherwise call `turf_contents_of_type()` and
+  throw the list away.
+- `area_contents_of_type(A, type)` and `locate_in_area(A, type)` are the same
+  two shapes one level up: every, or the first, atom of `type` anywhere in
+  area `A`. BYOND iterates an area's atoms directly (`for(x in area)`), the
+  same engine-maintained mechanism as a turf's contents, just wider; this is
+  not a per-turf loop under the hood, so it stays a single centralizing wrapper
+  rather than a `turf_contents_of_type()` call per member turf.
+
+Because every caller goes through these three procs, the *implementation* can
+change later — e.g. to consult a Rust-side spatial index for a specific hot
+query — without touching any of the ~475 call sites again. That's the same
+reason the ledger API was built before C2 through C9 migrated types onto it:
+centralize first, optimize the center later.
+
+**What doesn't move to the spatial API.** A holder's own contents (a closet's
+interior, a bag, a belly, a mob's inventory) are not tile queries — those read
+sites convert to the ledger read API above, not `turf_contents_of_type()`.
+`locate(type) in some_holder.contents` and `in some_holder` (when `some_holder`
+is a slot holder, not a turf) are ledger reads; `locate(type) in loc` and
+`in loc` where `loc` is a turf are spatial reads. Call sites are converted
+according to what the receiver actually is, not by pattern-matching the source
+text.
+
+### As built (C11)
+
+- **Lint.** `tools/ci/spatial_lint.py` checks `tools/ci/spatial_allowlist.txt`
+  (1,866 sites in 681 files at the start of C11). Same ratchet shape as C1's
+  write lint: a file may not exceed its allowlisted count, an unlisted file may
+  have none, and `--update` only lowers counts (never silently raises one). Both
+  lints exempt `code/datums/containment/` itself, since that's the
+  implementation the ratchet is steering everyone else towards. Wired into
+  `.github/workflows/run_linters.yml` alongside the existing containment,
+  latent-contents and state-schema lints.
+- **Conversion is by domain, one commit per domain**, prioritizing the holder
+  types that then qualify for latency (closets, storage, machines, crates,
+  vending, mecha — §4.4's eligibility list) and hot paths (movement, damage and
+  heat propagation, §12). Behaviour must not change: a converted site reads the
+  same set of atoms in the same order it did before, through the new API
+  instead of a raw loop.
+- **Domains explicitly left alone** for this pass, to avoid fighting other
+  in-flight work: I7's interaction conversions (structures/items/mobs/turfs),
+  M2 (`code/ATMOSPHERICS/`), C6 (machine parts), mobmem/mobsrc (mob list vars),
+  traitmem (`code/game/dna`, mutations), and DQ Medical's areas beyond
+  mechanical API renames.
+
 ## 3. Slots
 
 A slot is a relation (`/datum/om/relation/slot`, `object_model_core.md` §7) that
@@ -280,6 +365,198 @@ Rolled out in this order, measuring boot_memory's census at each step:
 | 5 | Pills and pill bottles | ~46 containers per oxygen kit |
 | 6 | Radios, headsets and ID cards (after L2 and L3). Intercoms, uplinks and the prelinked bluespace handsets stay eager (an eager circuit child, an eager hidden uplink, or a one-time roundstart link); PDAs need on_materialize()-time app construction first, not just the flag — their ~14 app datums are built in a var initializer, ahead of `Initialize()` | Encryption keys; agent cards |
 
+### 4.7 Verified storability and the latency policy (C10)
+
+C5 opts a holder type in by hand (`latent_contents = TRUE`) and decides per type,
+by hand, whether it is `latent_safe`. That doesn't scale, and a hand-kept list
+drifts from the code: someone adds a registration to `Initialize()` and nothing
+notices until it ships stale state. C10 replaces the *type* side of that with a
+derived, checked-in fact, and adds the *policy* that decides, per atom, whether
+it should actually be collapsed right now.
+
+**Verified storability.** `latent_safe` stops being asserted by hand for the common
+case. `dq_storability_sandbox` (`code/modules/unit_tests/dq_storability_sandbox.dm`)
+is a CI/unit-test pass, in the same family as `dq_lifecycle_sandbox`
+(`state.md §6`), that for every candidate `/obj/item` and other candidate movable
+type:
+
+1. snapshots global state (`dq_lifecycle_snapshot()`), instantiates the type
+   unmaterialized, and diffs the snapshot — any registry, `GLOB` list, `SSradio`
+   device list, signal registration or timer/processing flag that changed fails it;
+2. `qdel()`s the instance and diffs again, so a leak on delete fails it too;
+3. serializes it (`state_serialize`, `STATE_FULL`), makes a fresh instance,
+   applies the blob, and compares the two serialized blobs — anything that
+   doesn't round-trip fails it.
+
+A type that passes all three is **storable**. `dq_storability_sandbox`'s primary
+job is to stop trusting `latent_safe_types.dm` and start *verifying* it: every
+type the codebase currently declares `latent_safe = TRUE` (by hand, or by
+inheriting a `TRUE` root such as `/obj/item/clothing`) must actually pass the
+sandbox, or the build fails — a type that stops passing (someone added a
+registration, or a var that no longer serializes) is caught the moment it
+happens instead of drifting until a saved blob goes stale.
+
+A second, opt-in mode (`GENERATE_LATENT_SAFE`, `tools/ci/generate_latent_safe.sh`)
+runs the same sandbox over every candidate type and writes
+`code/datums/state/latent_safe_candidates.dm`: the types that pass but are not
+yet declared `latent_safe = TRUE` by hand. That file is a **review queue**, not
+compiled into the build — a maintainer reads the diff and folds entries into
+`latent_safe_types.dm` (or leaves a type out, with a reason) rather than the
+sandbox silently widening what's latent-safe underneath live code. This is the
+first cut of the "derived list" the roadmap calls for; fully replacing
+`latent_safe_types.dm`'s 180-odd hand entries with a checked-in generated file
+that both asserts and is verified is follow-up work once a real sandbox run
+(this branch was written without a BYOND compile in the loop) has actually
+been reviewed against it.
+
+A type can still be excluded for reasons the sandbox can't see — semantics, not
+side effects (an admin fax mid-composition, a reagent that isn't wired up yet).
+`/atom/movable/proc/latent_unsafe_reason()` is that hook: a non-null string opts
+the type out and the sandbox reports it as an opt-out rather than a failure,
+regardless of what the mechanical checks found. New opt-outs should prefer this
+proc over a bare `latent_safe = FALSE`, since it carries the reason in the type
+itself; the existing hand-written `FALSE` declarations in `latent_safe_types.dm`
+are left as they are (each already carries a `//` comment reason) rather than
+mechanically rewritten, to avoid re-deciding ~170 cases without being able to
+compile and check each one.
+
+**Pins, not slot flags.** An earlier draft of this section put `rendered` and
+`interactive` facts on `/datum/slot_def`, so a slot's *kind* decided whether its
+contents could ever be latent. That special-cases every slot and still doesn't
+answer the real question: what an atom needs is not fixed by which slot it's in,
+it's demanded moment to moment by whatever actually needs it real. So C10 uses a
+generic demand model instead:
+
+- **Pins.** Anything that needs `A` to be a real atom takes a pin on it:
+  `A.latent_pin(reason)` / `A.latent_unpin(reason)` (`code/datums/containment/pin.dm`),
+  a reason-keyed refcount so independent holders of the same reason don't stomp
+  each other. `A` stays real while any pin is held, full stop — `can_be_latent()`
+  never has to know why. Explicit pin sources: rendering `A` as its own object in
+  `vis_contents`, a click target (a storage screen's catcher, C4), an open
+  screen or viewer on `A`'s holder, and a component or behaviour that specifically
+  needs a live atom rather than an entry (registered the same place the behaviour
+  itself is: `RegisterComponent`/`Initialize` pins, `Destroy`/removal unpins).
+  A slot may declare *default* pin sources for what it typically holds (a body
+  slot's equip signal registration pins on equip, unpins on unequip) — the rule
+  lives with the consumer, the slot just wires the common case up once.
+- **Implicit pins.** Two sources never need an explicit pin call because they're
+  cheap to compute on demand and always accurate: `state_collapse_blockers()`
+  is non-empty (running behaviour or an outside reference, §4.7 below), and `isturf(A.loc)` (sitting directly on a tile is itself being
+  rendered to everyone nearby — nobody needs to remember to pin it, leaving a
+  turf is nobody's job to unpin either). `dq_latent_pinned(A)` is the single read
+  combining both kinds: any explicit pin, or a non-empty `state_collapse_blockers()`,
+  or `isturf(A.loc)`.
+- **Appearance-only consumers don't pin.** A mob overlay, an inventory HUD icon
+  or a storage screen's icon can be drawn from the entry alone: type plus state
+  blob gives a cached appearance (not built by C10; see "first consumers"), same as any
+  other derived state (`state.md §1`). Clicking such a representation resolves
+  the slot to its entry and materializes on demand, then acts — the icon itself
+  never pinned anything. This means a worn or held item with no other pin *can*
+  collapse while its equipped overlay still draws from the entry; §13's fuzz
+  test exercises exactly that (a pinless worn item collapses and re-materializes
+  without its overlay ever glitching).
+- **First consumers.** C4's storage screen (`storage_hud`) pins/unpins each shown
+  item for as long as anyone has the storage open, wired at `show_to()`/`hide_from()`
+  and every `on_slot_changed()` layout pass. Turf rendering is implicit, as above,
+  so nothing new pins for it. Worn/held overlays sourced straight from entries
+  (skipping a pin) are correct under this model and cheap (about 15 items per
+  player), but are optional follow-up, not required for C10 to land — until then,
+  a worn/held item's own behaviour hooks (equip signals, most clothing) pin it
+  the ordinary way, so nothing regresses.
+
+**Viewers.** Covered by the pin model: `storage_hud`'s pin (above) and an open
+`tgui`/`browse` window on the holder itself (`length(holder.open_tguis)`, checked
+directly in `can_be_latent()` since a tgui window is not per-item) both keep
+contents real for as long as anyone is looking.
+
+**Refs.** Collapse already requires `state_collapse_blockers()` to be empty: no
+collapse blockers, no signal registrations reaching outside the subtree, and
+`refcount()` of everything in the subtree accounted for by loc, contents, ledger
+entries and subtree/element refs (`state.md §1`, `collapse.dm`). This tree has
+no `/datum/weakref` (weakrefs were removed with the OM refs work), so the
+weakref gap C10 closed on master does not exist here and its check was dropped
+during reconciliation.
+
+**Policy.** `can_be_latent(atom/movable/A)` (`code/datums/containment/latency_policy.dm`)
+is the single read that decides whether `A` may be latent right now:
+
+- `A`'s type is storable (`dq_latent_eligible(A.type)`);
+- `A` is not pinned (`dq_latent_pinned(A)`: no explicit pin, an empty
+  `state_collapse_blockers()`, and it is not sitting directly on a turf);
+- nobody has an open `tgui`/`browse` window on `A`'s holder itself;
+- `A` has been idle for at least the holder's configured delay.
+
+**Idle tracking: one seam, not scattered hooks.** `dq_latent_touch(A)`
+(`latency_policy.dm`) is the only place `latent_last_touch` is written, and it
+is called from exactly one place: `note_enter()`, the ledger's own move path
+(`ledger.dm`), which already covers an ordinary move, a slot transaction
+(`move_into()`/`slot_transfer()`, §2) and adoption on `sync()` -- which is what
+a materialized atom's arrival goes through, since `dq_latent_create()` places
+it straight into the holder. Nothing else calls it directly, so "idle" for now
+means "hasn't moved," not "hasn't been interacted with" (an item examined or
+clicked in place without moving keeps no fresher a timer than one nobody has
+looked at — acceptable for now; a viewer or a click still pins it separately,
+above). **This moves onto the joint ledger before/after-move transaction hook
+once DQ Medical and the lead land it** (`medical_frameworks.md`): that hook is
+shared with DQ Medical's holder-provided clocks, which settle time-based state
+before a holder change, on the same SSreactor-aligned design. Swapping this one
+call site onto it is meant to be the whole migration.
+
+**Ordered destruction (planned, not built here).** A ledger-owned pre-destroy
+phase before subtype `Destroy()`, with spill as a real ledger transaction, is
+planned alongside the joint move hook (same coordination). C10 does not build
+it and does not depend on the current `forceMove`-based spill for correctness:
+the sweep only ever calls `latent_collapse()` on atoms it has just checked are
+real and in a slot, and it forgets a holder the moment `QDELETED()` is true
+rather than assuming anything about how that holder's `Destroy()` disposed of
+its contents.
+
+**Sweep and hysteresis.** Materializing stays event-driven — the existing
+triggers (§4.3) plus a viewer arriving. Collapsing is a budgeted, low-priority
+sweep on the `PERIODIC_SLOW` lane (`/datum/latency_sweep/periodic_step()`; it was a
+`REACT_EVERY` before the reconciliation) over a round-robin queue of candidates
+registered by eligible holders; it spends a fixed budget of checks per run and
+collapses whatever passes `can_be_latent()`. An atom just materialized (by any
+trigger, including a failed collapse elsewhere) gets a fresh idle timer before
+the sweep can look at it again, so a busy holder doesn't thrash between
+materialize and collapse on consecutive sweeps.
+
+**Safety.** `CONFIG_GET(flag/latency_policy_enabled)` is the kill switch: off,
+`can_be_latent()` always refuses and the sweep is inert, so behaviour is
+byte-for-byte the old always-real behaviour. Independent of the global switch,
+`/atom/var/latency_policy_disabled` is a per-holder admin toggle (a verb, and the
+holder's own code can set it for a reason). Every collapse and materialize is
+logged to a bounded ring buffer (`GLOB.latency_policy_log`), admin-visible. In
+test and dev builds — gated the same way as the hibernation miss audit
+(`MOB_HIBERNATION_AUDIT` in `AGENTS.md`; here, always on in `UNIT_TESTS`, or the
+`LATENCY_ROUND_TRIP_AUDIT` config flag on a live server) materializing an atom
+that was collapsed compares its state against the blob taken just before
+collapse and fails loudly (`TEST_FAIL` in test builds, a logged error otherwise)
+on any mismatch. A type with elapsed-time behaviour (rot, discharge, slow
+reactions) stays real unless it declares a rate model that can catch up on
+materialize (`state.md`'s "evolving with a closed form" row); it is simply never
+offered to the sweep.
+
+**Rollout.** The sweep (`dq_latency_sweep_register()`) enrolls a holder the
+moment its ledger is built, for any holder with `latent_contents = TRUE` --
+closets, crates, lockers, mapped storage (C4), and now, with C6's machine
+internals landed, every `/obj/machinery`, since `/obj/machinery` itself sets
+`latent_contents = TRUE` for its `CONTAINER_SLOT_INTERNALS` slot (boards and
+parts, `machinery.dm`). That makes vending and smartfridge stock (C9) a
+per-**slot** exclusion rather than a per-holder one, since vending machines
+are machinery too: `can_be_latent()` refuses anything in a holder's
+`CONTAINER_SLOT_STOCK` slot (`stock.dm`'s own), because a vended item with
+unique state lives in `/datum/stored_item.instances`, collapsed and
+materialized through its own bespoke API (`dq_stock_blob()`), not the general
+ledger's `latent_entry`. Machine internals in `CONTAINER_SLOT_INTERNALS` are
+not excluded, so they get the sweep. Folding stock onto the same
+`latent_entry` mechanism, so a vended item's collapse goes through one path
+instead of two, is left as a TODO (`stock.dm`) rather than something this
+pass needed to unify. A future pass should also replace `latent_contents` as
+a type-level opt-in a maintainer sets by hand with automatic qualification
+from `tools/ci/latent_lint.py` (no raw `contents` walk); C10 did not change
+that lint or its allowlist.
+
 ## 5. Machine internals (C6)
 
 - **Parts become tier numbers**: `list(manipulator = 1, capacitor = 2)`. `RefreshParts()` reads the numbers, and real parts are created only on deconstruction or an RPED swap. That's about 3–6 parts on each of ~746 mapped machines.
@@ -363,7 +640,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 **As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/modules/unit_tests/dq_vore_slot_tests.dm`.
 - **Slot.** `/datum/slot_def/belly_interior` (`BELLY_SLOT_INTERIOR`): sealed, `reaches_mobs`, no heat or damage share from outside (the belly's own modes act on its contents). Eating, releasing, transfers, absorbing, egging and in-belly spawning go through `belly_insert()` (`move_into`), `belly_release_to()` (`slot_remove`, falling back to the turf when a full holder refuses) and `slot_transfer()`. The ledger is made on first use.
 - **Scheduling.** SSbellies is deleted. `belly_reschedule()` arms one OM deadline (`/datum/om/behaviour/belly_cycle`, 6 s, 2 s in turbo) when something enters and re-arms it each cycle until the belly empties; an empty belly that makes liquid from nutrition waits on the same deadline for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
-- **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the reactor's elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()`, as before. The body's `injure()` is not linear in the size of a hit (many small hits land more than a few big ones), so turbo digestion still lands more injury than normal digestion over the same time; that is the body's to settle.
+- **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()` as continuous harm (`INJURE_CONTINUOUS`): it grows an existing wound or lesion additively, with no per-hit rounding, thresholds or rolls, so turbo and normal digestion land the same injury over the same time. The belly's interior is the predator's body temperature (`/obj/belly/get_interior_temperature()`); prey who allow temperature play feel `bellytemperature` instead.
 - **Modes as rules.** A mode is trigger (the cycle), condition (its `consent` predicate) and effect (`process_mob()`). The mode datums stay: they do not fit P4's compiled watches, which need channel-backed properties.
 - **Consent.** `/datum/predicate/vore_devour`, `vore_digest`, `vore_absorb`, `vore_heal`, `vore_strip`, `vore_affect_worn`, with reasons. `vore_sanity_checks()` shows the devour reason; a prey who refuses the belly's mode is held, and the predator is told why on entry.
 - **Shared lists.** 43 message lists, the 5 fullness lists, `emote_lists`, `generated_reagents`, both extra autotransfer lists and the vore-spawn whitelist point at one copy per type or the base default (`belly_default_lists()`). They are replaced, never edited; `own_emote_lists()` comes before a keyed emote write. Saves leave out lists still shared, and a load swaps equal lists back to the shared copy. `items_preserved` and `belly_surrounding` are lazy; `autotransfer_queue` was unused and is gone. A default empty belly owns no lists.

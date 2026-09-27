@@ -106,10 +106,11 @@
 
 	new painting_decal(F, painting_dir, painting_colour)
 
-/obj/item/floor_painter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/floor_painter/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/floor_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/choice = tgui_alert(user, "Do you wish to change the decal type, paint direction, or paint colour?", "Modify What?", list("Decal","Direction","Colour","Cancel"))
 	if(choice == "Cancel")
 		return

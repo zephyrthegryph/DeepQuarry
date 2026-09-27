@@ -744,7 +744,7 @@
 		totalvol += volume
 		if(totalvol >= 1)
 			for(var/obj/item/organ/external/O in H.bad_external_organs)
-				if(O.status & ORGAN_BROKEN)
+				if(O.is_fractured())
 					O.mend_fracture()		//Only works if the bone won't rebreak, as usual
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
 					H.status_adjust(EFFECT_WEAKENED, 10)		//Bones being regrown will knock you over
@@ -1326,9 +1326,9 @@
 /datum/reagent/sterilizine/touch_turf(turf/T)
 	..()
 	T.germ_level -= min(volume*200, T.germ_level)
-	for(var/obj/item/I in T.contents)
+	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		dq_set_was_bloodied(I, null)
-	for(var/obj/effect/decal/cleanable/blood/B in T)
+	for(var/obj/effect/decal/cleanable/blood/B in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood))
 		qdel(B)
 
 	if(istype(T, /turf/simulated))

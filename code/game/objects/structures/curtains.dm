@@ -21,10 +21,23 @@
 	else
 		..(P, def_zone)
 
-/obj/structure/curtain/attack_hand(mob/user)
+/obj/structure/curtain/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/curtain_toggle,
+		/datum/interaction/entry_item/curtain_toggle_item,
+	)
+	..()
+
+/// Old attack_hand: open/close the curtain.
+/datum/interaction/entry_hand/curtain_toggle
+	id = "curtain_toggle"
+	name = "Toggle"
+	effect = /obj/structure/curtain/proc/interaction_toggle
+
+/obj/structure/curtain/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	playsound(src, "rustle", 15, 1, -5)
 	toggle()
-	..()
+	return TRUE
 
 /obj/structure/curtain/attack_ai(mob/user)
 	if(!Adjacent(user))
@@ -45,8 +58,11 @@
 		plane = OBJ_PLANE
 		layer = OBJ_LAYER
 
-/obj/structure/curtain/attackby(obj/item/P, mob/user)
-	attack_hand(user)
+/// Old attackby: same as attack_hand.
+/datum/interaction/entry_item/curtain_toggle_item
+	id = "curtain_toggle_item"
+	name = "Toggle"
+	effect = /obj/structure/curtain/proc/interaction_toggle
 
 /obj/structure/curtain/wirecutter_act(mob/user, obj/item/P)
 	playsound(src, P.usesound, 50, 1)

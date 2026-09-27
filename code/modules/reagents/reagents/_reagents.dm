@@ -256,6 +256,22 @@
 		if(!(key in data))
 			stack_trace("[type] ([id]) validate_data(): data is missing required key '[key]'.")
 
+/// Constant per-type tables, shared by every instance of a type. DM builds a
+/// type-level list default per instance, and a holder instantiates one reagent
+/// datum per reagent it contains, so without this each live reagent carries its
+/// own copy. The shared tables are read-only: assign a new list, never edit.
+/datum/reagent/New()
+	var/static/list/shared_by_type = list()
+	var/list/shared = shared_by_type[type]
+	if(!shared)
+		shared = list(treatment_tags, filtered_organs, factors, species_factors)
+		shared_by_type[type] = shared
+	treatment_tags = shared[1]
+	filtered_organs = shared[2]
+	factors = shared[3]
+	species_factors = shared[4]
+	return ..()
+
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)
 	return

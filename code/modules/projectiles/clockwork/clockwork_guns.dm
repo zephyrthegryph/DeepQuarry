@@ -48,7 +48,7 @@
 /obj/item/gun/energy/clockwork/proc/recharge_end(mob/user)
 	recharging = 0
 	update_icon()
-	user?.hud_used.update_ammo_hud(user, src) // Update one last time once we're finished!
+	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
 /obj/item/projectile/bullet/rifle/clockwork
 	fire_sound = 'sound/weapons/clockwork/cwc_rifle_fire.ogg'

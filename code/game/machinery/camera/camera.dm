@@ -78,7 +78,7 @@
 		interned[key] = shared
 	return shared
 
-REF_OWNED(/obj/machinery/camera, list("assembly", "wires"))
+REF_OWNED(/obj/machinery/camera, "assembly")
 
 // LIFECYCLE: alarm handlers release it, motion sensing stops and viewers are kicked out.
 /obj/machinery/camera/Destroy()

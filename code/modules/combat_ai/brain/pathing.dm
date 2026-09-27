@@ -8,6 +8,12 @@
 // Behaviors that want smart movement call brain.smart_step_toward(target).
 // Dumb behaviors keep using step_to() and pay nothing for the pathing infra.
 
+/// Backoff after a failed A*: first retry after MIN, doubling per consecutive
+/// failure up to MAX. Without this an unreachable goal costs one pathfind per
+/// 250ms fast tick for every mob chasing it.
+#define DQ_PATH_BACKOFF_MIN (1 SECOND)
+#define DQ_PATH_BACKOFF_MAX (8 SECONDS)
+
 /datum/ai_brain
 	/// Cached A* path. List of turfs from current position to path_goal.
 	var/list/cached_path = null
@@ -19,6 +25,11 @@
 	/// every tick when chasing a moving target.
 	var/path_recompute_tolerance = 2
 	var/path_navigation_revision = 0
+	/// world.time before which a failed A* toward (roughly) the same goal is
+	/// not retried. Zero when the last pathfind succeeded.
+	var/next_path_attempt_at = 0
+	/// Current failure backoff (deciseconds); grows with consecutive failures.
+	var/path_fail_backoff = 0
 
 /datum/ai_brain/proc/clear_path()
 	cached_path = null
@@ -55,12 +66,24 @@
 	if(!need_recompute && path_navigation_revision != SSai.navigation_revision)
 		need_recompute = TRUE
 	if(need_recompute)
+		// A recent A* to this same goal (same nav revision, goal hasn't
+		// drifted) came back empty: honour the backoff instead of recomputing
+		// on every fast tick. A moved goal or a map change retries at once.
+		if(next_path_attempt_at && world.time < next_path_attempt_at \
+			&& path_goal && get_dist(path_goal, target_turf) <= path_recompute_tolerance \
+			&& path_navigation_revision == SSai.navigation_revision)
+			return FALSE
 		cached_path = dq_pathfind(holder, target_turf, get_to)
 		path_goal = target_turf
 		path_navigation_revision = SSai.navigation_revision
 		failed_steps = 0
 		if(!length(cached_path))
+			path_fail_backoff = path_fail_backoff ? min(path_fail_backoff * 2, DQ_PATH_BACKOFF_MAX) : DQ_PATH_BACKOFF_MIN
+			next_path_attempt_at = world.time + path_fail_backoff
+			dqai_log("[holder] brain: A* to [target_turf] failed, backing off [path_fail_backoff]ds")
 			return FALSE
+		path_fail_backoff = 0
+		next_path_attempt_at = 0
 
 	// Strip any path entries we've already reached (mob moved by other means).
 	while(length(cached_path) && cached_path[1] == get_turf(holder))

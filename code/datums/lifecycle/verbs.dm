@@ -189,25 +189,14 @@
 /// that opt in.
 /mob/living/var/delete_on_death = FALSE
 
-/// Called once the whole death() chain has finished (every subtype's code
-/// after its `..()` included), for every mob that sets delete_on_death
-/// (doc/rewrite/lifecycle.md §5, §7). /mob/proc/death() arms it on a zero
-/// timer rather than calling it inline: a subtype's `..()` returns into
-/// code that still spawns remains or prints messages at the mob's loc, which
-/// must run before the mob goes. Skipped if the mob was revived or deleted
-/// (gibbed) in the meantime.
+/// The sealed death pipeline (/mob/proc/death(), code/modules/mob/death.dm)
+/// calls this as its final hook, after on_death() and every listener, so all
+/// subtype remains and messages are already out (doc/rewrite/lifecycle.md §5,
+/// §7). A no-op unless delete_on_death is set; skipped if the mob was revived
+/// or deleted (gibbed) along the way.
 /mob/living/proc/lifecycle_on_death_finalized()
 	if(delete_on_death && stat == DEAD && !QDELETED(src))
 		qdel(src)
-
-/// The death pipeline's final hook: arms lifecycle_on_death_finalized() when
-/// this mob declares delete_on_death.
-/mob/proc/lifecycle_arm_death_delete()
-	return
-
-/mob/living/lifecycle_arm_death_delete()
-	if(delete_on_death)
-		addtimer(CALLBACK(src, PROC_REF(lifecycle_on_death_finalized)), 0)
 
 // ---- destroy_effects (declared, phase 6) ----
 

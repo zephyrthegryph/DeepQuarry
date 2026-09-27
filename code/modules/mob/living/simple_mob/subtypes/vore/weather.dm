@@ -139,7 +139,7 @@
 /mob/living/simple_mob/vore/boss_jellyfish
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/vore/boss_jellyfish/death()
+/mob/living/simple_mob/vore/boss_jellyfish/on_death(gibbed)
 	..()
 
 /mob/living/simple_mob/vore/boss_jellyfish/load_default_bellies()
@@ -212,7 +212,7 @@
 
 	// Now for the stun.
 	var/mob/living/victim = null
-	for(var/mob/living/L in T) // So player-controlled spiders only need to click the tile to stun them.
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living)) // So player-controlled spiders only need to click the tile to stun them.
 		if(L == src)
 			continue
 

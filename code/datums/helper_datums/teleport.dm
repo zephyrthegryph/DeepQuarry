@@ -148,7 +148,7 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 
 	if(!dense_atoms)
 		var/density_found = FALSE
-		for(var/atom/movable/found_movable in floor_turf)
+		for(var/atom/movable/found_movable in turf_contents_of_type(floor_turf, /atom/movable))
 			if(found_movable.density)
 				density_found = TRUE
 				break

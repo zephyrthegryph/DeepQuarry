@@ -175,6 +175,14 @@
 /obj/machinery/atmospherics/unary/freezer/gas_wake_condition()
 	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature
 
+/obj/machinery/atmospherics/unary/freezer/power_change()
+	var/old_stat = stat
+	..()
+	if(old_stat != stat)
+		// process() hibernates on NOPOWER; a power transition is a dependency change.
+		invalidate_gas_dependencies()
+		update_icon()
+
 //upgrading parts
 /obj/machinery/atmospherics/unary/freezer/RefreshParts()
 	..()

@@ -28,7 +28,7 @@
 /mob/living/simple_mob/humanoid
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/humanoid/death()
+/mob/living/simple_mob/humanoid/on_death(gibbed)
 	..()
 	if(corpse)
 		var/mob/new_corpse = new corpse(src.loc)

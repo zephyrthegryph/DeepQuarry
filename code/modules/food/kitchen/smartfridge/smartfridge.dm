@@ -59,7 +59,7 @@
 		for(var/datum/stored_item/I as anything in item_records)
 			I.forget(thing)
 
-REF_OWNED(/obj/machinery/smartfridge, list("wires", "soundloop"))
+REF_OWNED(/obj/machinery/smartfridge, "soundloop")
 REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 
 // LIFECYCLE: a persistent fridge is forgotten by persistence.
@@ -97,6 +97,13 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 		else
 			soundloop?.start()
 			playing_sound = TRUE
+			// machine_step() sleeps on NOPOWER; resume pending work on restore.
+			if(has_pending_work())
+				MACHINE_WAKE(src)
+
+/// TRUE when process() still has time-dependent work to do once powered.
+/obj/machinery/smartfridge/proc/has_pending_work()
+	return seconds_electrified > 0 || shoot_inventory
 
 // Number of stored products, used to pick the fill-level overlay. Counts the
 // actual item_records contents rather than contents.len, because contents also

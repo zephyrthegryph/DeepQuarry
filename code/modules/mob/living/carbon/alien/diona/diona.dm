@@ -36,7 +36,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	language = LANGUAGE_ROOTLOCAL
 	species_language = LANGUAGE_ROOTLOCAL
 	only_species_language = 1
-	death_msg = "expires with a pitiful chirrup..."
+	death_message = "expires with a pitiful chirrup..."
 	universal_understand = 0
 	universal_speak = 0      // Dionaea do not need to speak to people other than other dionaea.
 

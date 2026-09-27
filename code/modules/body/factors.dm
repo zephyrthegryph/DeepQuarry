@@ -122,6 +122,7 @@
 		list(BF_IMMUNE_SUPPRESSION, "Immune suppression", BF_RULE_ADD, 0, 0, INFINITY, "points", "Suppresses the immune response."),
 		list(BF_O2_CARRIAGE, "Oxygen carriage", BF_RULE_MULT, 1, 0, 2, "percent", "How much oxygen the blood carries."),
 		list(BF_TISSUE_UPTAKE, "Tissue oxygen uptake", BF_RULE_MULT, 1, 0, 2, "percent", "How well the tissues use the oxygen that reaches them."),
+		list(BF_CARDIAC_IRRITABILITY, "Cardiac irritability", BF_RULE_MULT, 1, 0, 10, "percent", "How fast a disordered heart rhythm deteriorates: an unstable rhythm tips into fibrillation and fibrillation fades to a flatline this much sooner."),
 		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
 	)
 	for(var/list/row as anything in rows)
@@ -271,7 +272,7 @@
 /// Per-tick consequences of the current factors: poor motor control drops
 /// held items, blocked hands can't hold anything.
 /datum/body/proc/tick_factor_effects()
-	if(!ishuman(owner) || owner.stat == DEAD)
+	if(!ishuman(owner) || owner.is_dead())
 		return
 	var/mob/living/carbon/human/H = owner
 	var/blocks = factors[BF_ACTION_BLOCKS]

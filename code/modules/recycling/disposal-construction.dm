@@ -230,7 +230,7 @@
 		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
 		return ITEM_INTERACT_BLOCKING
 
-	var/obj/structure/disposalpipe/CP = locate() in T
+	var/obj/structure/disposalpipe/CP = locate_on(T, /obj/structure/disposalpipe)
 
 	if(anchored)
 		anchored = FALSE

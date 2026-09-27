@@ -87,7 +87,7 @@
 			continue
 		if((locate(/obj/item) in T) || (locate(/obj/structure) in T) || (locate(/mob) in T))
 			continue
-		if((locate(/obj/item) in east) || (locate(/obj/structure) in east) || (locate(/mob) in east))
+		if((locate_on(east, /obj/item)) || (locate_on(east, /obj/structure)) || (locate_on(east, /mob)))
 			continue
 		return T
 	return null

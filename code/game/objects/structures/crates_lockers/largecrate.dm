@@ -17,9 +17,21 @@
 		I.forceMove(src)
 	update_icon()
 
-/obj/structure/largecrate/attack_hand(mob/user as mob)
+/obj/structure/largecrate/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/largecrate_hand,
+	)
+	..()
+
+/// Old attack_hand: a hint that you need a crowbar.
+/datum/interaction/entry_hand/largecrate_hand
+	id = "largecrate_hand"
+	name = "Use"
+	effect = /obj/structure/largecrate/proc/interaction_hand
+
+/obj/structure/largecrate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You need a crowbar to pry this open!"))
-	return
+	return TRUE
 
 /obj/structure/largecrate/crowbar_act(mob/user, obj/item/W)
 	var/turf/T = get_turf(src)
@@ -279,12 +291,13 @@
 						/mob/living/simple_mob/vore/otie/red/chubby;0.5)) // add
 	return ..()
 
-/obj/structure/largecrate/animal/otie/attack_hand(mob/living/carbon/human/M as mob)//I just couldn't decide between the icons lmao
+/// Overrides largecrate's interaction_hand(): untape the crate first.
+/obj/structure/largecrate/animal/otie/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//I just couldn't decide between the icons lmao
 	if(taped == 1)
 		playsound(src, 'sound/items/poster_ripped.ogg', 50, 1)
 		icon_state = "otiecrate"
 		taped = 0
-	..()
+	return ..()
 
 /obj/structure/largecrate/animal/catgirl
 	name = "Catgirl Crate"

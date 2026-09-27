@@ -247,7 +247,7 @@
 
 /turf/simulated/wall/proc/burn_away_rot(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)
-	for(var/obj/effect/overlay/wallrot/rot in src)
+	for(var/obj/effect/overlay/wallrot/rot in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
 		qdel(rot)
 	return TRUE
 
@@ -265,7 +265,7 @@
 
 /datum/interaction/wall_light_thermite/applies_to(atom/target)
 	var/turf/simulated/wall/wall = target
-	return istype(wall) && wall.thermite && !(locate(/obj/effect/overlay/wallrot) in wall)
+	return istype(wall) && wall.thermite && !(locate_on(wall, /obj/effect/overlay/wallrot))
 
 /turf/simulated/wall/proc/light_thermite(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)
@@ -285,7 +285,7 @@
 
 /datum/interaction/wall_repair/applies_to(atom/target)
 	var/turf/simulated/wall/wall = target
-	if(!istype(wall) || wall.thermite || (locate(/obj/effect/overlay/wallrot) in wall))
+	if(!istype(wall) || wall.thermite || (locate_on(wall, /obj/effect/overlay/wallrot)))
 		return FALSE
 	return wall.get_integrity() < wall.max_integrity
 

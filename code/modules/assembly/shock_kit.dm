@@ -32,14 +32,15 @@ REF_OWNED(/obj/item/assembly/shock_kit, list("part1", "part2"))
 	add_fingerprint(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/assembly/shock_kit/attack_self(mob/user)
-	. = ..(user)
+/// Overrides assembly's interaction_self(): trigger both shock kit parts instead of opening the UI.
+/obj/item/assembly/shock_kit/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	part1.attack_self(user, status)
 	part2.attack_self(user, status)
 	add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/item/assembly/shock_kit/receive_signal()
 	if(istype(loc, /obj/structure/bed/chair/e_chair))

@@ -57,7 +57,7 @@ Bonus
 		return
 	if(iscarbon(A.affected_mob))
 		var/mob/living/carbon/M = A.affected_mob
-		var/obj/item/organ/internal/eyes/eyes = M.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/eyes = LAZYACCESS(M.internal_organs_by_name, O_EYES)
 		if(!eyes)
 			return
 		switch(A.stage)

@@ -19,8 +19,8 @@
 	// Reference data.
 	var/mob/living/carbon/human/owner	// Current mob owning the organ.
 	var/list/transplant_data			// Transplant match data.
-	var/list/autopsy_data = list()		// Trauma data for forensics.
-	var/list/trace_chemicals = list()	// Traces of chemicals in the organ.
+	var/list/autopsy_data		// Trauma data for forensics.
+	var/list/trace_chemicals	// Traces of chemicals in the organ.
 	var/datum/organ_data/data = new()	// Stores data for appearance and investigation
 
 	// Damage vars.
@@ -33,12 +33,12 @@
 	var/preserved = 0					// If this is 1, prevents organ decay.
 
 	// Language vars. Putting them here in case we decide to do something crazy with sign-or-other-nonverbal languages.
-	var/list/will_assist_languages = list()
-	var/list/datum/language/assists_languages = list()
+	var/list/will_assist_languages
+	var/list/datum/language/assists_languages
 
 	// Organ verb vars.
 	var/list/organ_verbs		// Verbs added by the organ when present in the body.
-	var/list/target_parent_classes = list()	// Is the parent supposed to be organic, robotic, assisted?
+	var/list/target_parent_classes	// Is the parent supposed to be organic, robotic, assisted?
 	var/forgiving_class = TRUE	// Will the organ give its verbs when it isn't a perfect match? I.E., assisted in organic, synthetic in organic.
 
 	var/butcherable = TRUE
@@ -55,7 +55,8 @@
 	if(owner?.body)
 		for(var/datum/affliction/A as anything in owner.body.afflictions_at(src))
 			A.cure()
-	if(owner)           owner = null
+	// `owner` is derived: the detach hook clears it when this leaves its slot
+	// (code/modules/body/parts/attach.dm).
 	if(transplant_data) transplant_data.Cut()
 	if(autopsy_data)    autopsy_data.Cut()
 	if(trace_chemicals) trace_chemicals.Cut()
@@ -73,25 +74,10 @@
 	create_reagents(5)
 
 	if(isliving(loc))
-		src.owner = loc
-		src.w_class = max(src.w_class + mob_size_difference(owner.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.
-		if(internal)
-			if(!LAZYLEN(owner.internal_organs))
-				owner.internal_organs = list()
-			if(!LAZYLEN(owner.internal_organs_by_name))
-				owner.internal_organs_by_name = list()
-
-			owner.internal_organs |= src
-			owner.internal_organs_by_name[organ_tag] = src
-
-		else
-			if(!LAZYLEN(owner.organs))
-				owner.organs = list()
-			if(!LAZYLEN(owner.organs_by_name))
-				owner.organs_by_name = list()
-
-			owner.organs |= src
-			owner.organs_by_name[organ_tag] = src
+		var/mob/living/born_in = loc
+		src.w_class = max(src.w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.
+		// Born inside a mob: take our place in its body (sets `owner`).
+		place_in_body(born_in)
 
 	if(!max_damage)
 		max_damage = min_broken_damage * 2
@@ -105,15 +91,8 @@
 		else
 			log_runtime("[src] at [loc] spawned without a proper DNA.")
 		var/mob/living/carbon/human/H = C
-		if(istype(H))
-			if(internal)
-				var/obj/item/organ/external/E = H.get_organ(parent_organ)
-				if(E)
-					if(E.internal_organs == null)
-						E.internal_organs = list()
-					E.internal_organs |= src
-			if(data)
-				add_blooddna_organ(data)
+		if(istype(H) && data)
+			add_blooddna_organ(data)
 	else
 		data.setup_from_species(GLOB.all_species["Human"])
 
@@ -159,9 +138,6 @@
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
 
 /obj/item/organ/periodic_step()
-
-	if(loc != owner)
-		owner = null
 
 	//dead already, no need for more processing
 	if(status & ORGAN_DEAD)
@@ -219,7 +195,7 @@
 		. += span_bolddanger("The [name] is dead.")
 	if(status & ORGAN_MUTATED)
 		. += span_danger("The [name] is mutated and deformed.")
-	if(status & ORGAN_BROKEN)
+	if(is_fractured())
 		. += span_danger("The [name] is broken.")
 
 	//Descriptors for 'how infected is this organ'
@@ -356,8 +332,13 @@
 /obj/item/organ/proc/is_bruised()
 	return damage >= min_bruised_damage
 
+/// Is this organ's bone fractured? Only limbs have bones to break
+/// (/obj/item/organ/external/is_fractured()).
+/obj/item/organ/proc/is_fractured()
+	return FALSE
+
 /obj/item/organ/proc/is_broken()
-	return (damage >= min_broken_damage || (status & ORGAN_CUT_AWAY) || (status & ORGAN_BROKEN))
+	return (damage >= min_broken_damage || (status & ORGAN_CUT_AWAY) || is_fractured())
 
 //Germs
 /obj/item/organ/proc/handle_antibiotics()
@@ -378,11 +359,11 @@
 
 //Adds autopsy data for used_weapon.
 /obj/item/organ/proc/add_autopsy_data(used_weapon, damage)
-	var/datum/autopsy_data/W = autopsy_data[used_weapon]
+	var/datum/autopsy_data/W = LAZYACCESS(autopsy_data, used_weapon)
 	if(!W)
 		W = new()
 		W.weapon = used_weapon
-		autopsy_data[used_weapon] = W
+		LAZYSET(autopsy_data, used_weapon, W)
 
 	W.hits += 1
 	W.damage += damage
@@ -413,7 +394,6 @@
 
 /obj/item/organ/proc/robotize() //Being used to make robutt hearts, etc
 	robotic = ORGAN_ROBOT
-	src.status &= ~ORGAN_BROKEN
 	src.status &= ~ORGAN_BLEEDING
 	src.status &= ~ORGAN_CUT_AWAY
 	shed_mismatched_afflictions()
@@ -459,50 +439,40 @@
 			if (EMP_HARMLESS)
 				suffer_emp_damage(rand(1,3))
 
+/// Takes this organ out of its body, onto the floor under the owner. A ledger
+/// move out of its slot: the detach hook (code/modules/body/parts/attach.dm)
+/// does the bookkeeping, afflictions travel with it and a vital loss kills.
+/// Forced: removal is a command, not a request. Returns TRUE if it came out.
 /obj/item/organ/proc/removed(mob/living/user)
-	// Afflictions located here travel with the organ and rejoin whichever
-	// body it is implanted into (see /datum/body/proc/attach_part).
-	owner?.body?.detach_part(src)
+	var/mob/living/M = owner
+	if(!M)
+		return FALSE
+	if(user && vital)
+		add_attack_logs(user, M, "Removed vital organ [src.name]")
+	var/atom/holder = loc
+	var/atom/drop = M.drop_location()
+	if(!holder?.slot_remove(src, drop, user, LEDGER_MOVE_FORCED))
+		log_runtime("PARTS: removing [src] ([type]) from [key_name(M)] failed: holder [holder] ([holder?.type]), drop [drop]")
+		return FALSE
+	return TRUE
 
-	if(owner)
-		owner.internal_organs_by_name[organ_tag] = null
-		owner.internal_organs_by_name -= organ_tag
-		owner.internal_organs_by_name -= null
-		owner.internal_organs -= src
+/// Puts this organ into `target`, in `affected` (default: the limb its
+/// parent_organ names). A ledger move into the part slot: the attach hook does
+/// the bookkeeping and the afflictions it carries rejoin the body. Returns
+/// TRUE on success; a refused placement is logged and changes nothing.
+/obj/item/organ/proc/replaced(mob/living/carbon/human/target, obj/item/organ/external/affected)
+	if(!istype(target))
+		return FALSE
+	capture_transplant_data(target)
+	var/obj/item/organ/external/E = affected || target.get_organ(parent_organ)
+	if(!E)
+		log_runtime("PARTS: [src] ([type]) has no [parent_organ] to go into on [key_name(target)]")
+		return FALSE
+	return place_into(E, SLOT_ID_PART_ORGANS)
 
-		var/obj/item/organ/external/affected = owner.get_organ(parent_organ)
-		if(affected) affected.internal_organs -= src
-
-		owner.remove_from_mob(src, owner.drop_location())
-		PERIODIC_START(src, PERIODIC_SLOW)
-		rejecting = null
-
-	if(istype(owner))
-		// VOREstation edit begin - Posibrains don't have blood reagents, so they crash this
-		var/datum/reagent/blood/organ_blood = null
-		if(reagents)
-			organ_blood = locate(/datum/reagent/blood) in reagents.reagent_list
-		// VOREstation edit end
-		if(!organ_blood || !organ_blood.data["blood_DNA"])
-			owner.vessel?.trans_to(src, 5, 1, 1)
-
-		if(owner && vital)
-			if(user)
-				add_attack_logs(user, owner, "Removed vital organ [src.name]")
-			if(owner.stat != DEAD)
-				owner.can_defib = 0
-				owner.death()
-
-	handle_organ_mod_special(TRUE)
-
-	owner = null
-	// Detached: integrity now derives from the afflictions it carries.
-	recalc_integrity()
-
-/obj/item/organ/proc/replaced(mob/living/carbon/human/target,obj/item/organ/external/affected)
-
-	if(!istype(target)) return
-
+/// Records who this organ was transplanted into, from the blood it carries
+/// if any, else from `target`.
+/obj/item/organ/proc/capture_transplant_data(mob/living/carbon/human/target)
 	var/datum/reagent/blood/transplant_blood = null
 	if(reagents)
 		transplant_blood = locate(/datum/reagent/blood) in reagents.reagent_list
@@ -516,17 +486,35 @@
 		transplant_data["blood_type"] = transplant_blood?.data["blood_type"]
 		transplant_data["blood_DNA"] =  transplant_blood?.data["blood_DNA"]
 
-	owner = target
-	loc = owner
-	PERIODIC_STOP(src)
-	target.internal_organs |= src
-	affected.internal_organs |= src
-	target.internal_organs_by_name[organ_tag] = src
+/// Takes the place this organ's tags give it in `M`'s body, which it was just
+/// born inside: an internal organ goes into the limb its parent_organ names.
+/// A mob with no part tree keeps it loose in its interior, where the attach
+/// hook adopts it.
+/obj/item/organ/proc/place_in_body(mob/living/M)
+	var/datum/ledger/L = dq_ledger(M) // syncs: a mob with no part tree adopts us here
+	if(!L?.def_by_id(SLOT_ID_PART_ROOT))
+		return !!L
+	var/obj/item/organ/external/E = LAZYACCESS(M.organs_by_name, parent_organ)
+	if(!E)
+		log_runtime("PARTS: [src] ([type]) born in [key_name(M)] with no [parent_organ] to go into; left loose")
+		return FALSE
+	return place_into(E, SLOT_ID_PART_ORGANS)
 
-	handle_organ_mod_special()
-
-	// Afflictions that travelled with the organ rejoin the new body.
-	target.body?.attach_part(src)
+/// The one attaching move: into `holder`'s `slot_id`. A refusal is logged and
+/// changes nothing. A move between two places in the same body (an organ
+/// shunted from the head to the torso) is a reparent: the detach half keeps
+/// the part's body-side state and doesn't count it as lost (attach.dm).
+/obj/item/organ/proc/place_into(atom/holder, slot_id)
+	var/why = dq_ledger_refusal(src, holder, slot_id)
+	if(why)
+		log_runtime("PARTS: [src] ([type]) refused by [holder] ([holder.type]) [slot_id]: [why]")
+		return FALSE
+	var/reparent = owner && dq_part_destination_owner(holder, slot_id) == owner
+	if(reparent)
+		GLOB.dq_part_reparenting = src
+	. = dq_ledger_commit(src, holder, slot_id)
+	if(reparent)
+		GLOB.dq_part_reparenting = null
 
 /obj/item/organ/proc/bitten(mob/user)
 
@@ -560,7 +548,7 @@
 		return FALSE
 
 	// Convert it to an edible form, yum yum.
-	if(!(robotic >= ORGAN_ROBOT) && user.a_intent == I_HELP && user.zone_sel.selecting == O_MOUTH)
+	if(!(robotic >= ORGAN_ROBOT) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
 		bitten(user)
 		return
 
@@ -694,7 +682,7 @@
 
 // Shared heat output from robotic body parts, used by machine organs that run hot.
 /obj/item/organ/proc/apply_robobody_heat()
-	if(owner && owner.stat != DEAD)
+	if(owner && owner.is_alive())
 		owner.bodytemperature += round(owner.robobody_count * 0.25, 0.1)
 
 /obj/item/organ/proc/check_verb_compatability()		// Used for determining if an organ should give or remove its verbs. I.E., FBP part in a human, no verbs. If true, keep or add.

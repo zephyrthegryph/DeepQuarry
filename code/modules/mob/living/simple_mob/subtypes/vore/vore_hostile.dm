@@ -306,6 +306,6 @@
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/death()
+/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/on_death(gibbed)
 	. = ..()
 

@@ -131,13 +131,21 @@ REF_OWNED(/obj/item/radio/intercom, "circuit")
 	src.add_fingerprint(user)
 	attack_self(user)
 
-/obj/item/radio/intercom/attack_hand(mob/user as mob)
+/obj/item/radio/intercom/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/radio/intercom/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	attack_self(user)
+	return TRUE
 
-/obj/item/radio/intercom/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/radio/intercom/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	add_fingerprint(user)
-	return ..()
+	return FALSE
 
 /obj/item/radio/intercom/screwdriver_act(mob/user, obj/item/tool)
 	wiresexposed = !wiresexposed

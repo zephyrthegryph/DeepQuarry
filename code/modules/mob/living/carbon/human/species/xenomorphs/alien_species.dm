@@ -120,7 +120,7 @@
 	var/datum/gas_mixture/environment = T.return_air()
 	if(!environment) return
 
-	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate(/obj/effect/alien/weeds) in T)
+	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate_on(T, /obj/effect/alien/weeds))
 		if(!regenerate(H))
 			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
 			P.stored_plasma += weeds_plasma_rate
@@ -154,7 +154,7 @@
 
 	//next mend broken bones, approx 10 ticks each
 	for(var/obj/item/organ/external/E in H.bad_external_organs)
-		if (E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			if (prob(mend_prob))
 				if (E.mend_fracture())
 					to_chat(H, span_alien("You feel something mend itself inside your [E.name]."))

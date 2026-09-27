@@ -90,10 +90,15 @@ REF_OWNED(/obj/item/flashlight, "cell")
 		else if(cell.charge > cell.maxcharge*0.75 && cell.charge <= cell.maxcharge)
 			. += "It appears to have a high amount of power remaining."
 
-/obj/item/flashlight/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/flashlight/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/flashlight/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(single_use && on)
 		return FALSE
 	if(special_handling)
@@ -172,20 +177,17 @@ REF_OWNED(/obj/item/flashlight, "cell")
 	else
 		return ..()
 
-/obj/item/flashlight/attack_hand(mob/user as mob)
-	if(user.get_inactive_hand() == src)
-		if(cell)
-			cell.update_icon()
-			user.put_in_hands(cell)
-			cell = null
-			to_chat(user, span_notice("You remove the cell from the [src]."))
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			on = 0
-			update_brightness()
-			return
-		..()
-	else
-		return ..()
+/obj/item/flashlight/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.get_inactive_hand() == src && cell)
+		cell.update_icon()
+		user.put_in_hands(cell)
+		cell = null
+		to_chat(user, span_notice("You remove the cell from the [src]."))
+		playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+		on = 0
+		update_brightness()
+		return TRUE
+	return FALSE
 
 /obj/item/flashlight/MouseDrop(obj/over_object as obj)
 	if(!canremove)
@@ -217,24 +219,23 @@ REF_OWNED(/obj/item/flashlight, "cell")
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 
-/obj/item/flashlight/attackby(obj/item/W, mob/user as mob)
-	if(power_use)
-		if(istype(W, /obj/item/cell))
-			if(istype(W, /obj/item/cell/device))
-				if(!cell)
-					user.drop_item()
-					W.loc = src
-					cell = W
-					to_chat(user, span_notice("You install a cell in \the [src]."))
-					playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-					update_brightness()
-				else
-					to_chat(user, span_notice("\The [src] already has a cell."))
+/obj/item/flashlight/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!power_use)
+		return FALSE
+	if(istype(W, /obj/item/cell))
+		if(istype(W, /obj/item/cell/device))
+			if(!cell)
+				user.drop_item()
+				W.loc = src
+				cell = W
+				to_chat(user, span_notice("You install a cell in \the [src]."))
+				playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+				update_brightness()
 			else
-				to_chat(user, span_notice("\The [src] cannot use that type of cell."))
-
-	else
-		..()
+				to_chat(user, span_notice("\The [src] already has a cell."))
+		else
+			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
+	return TRUE
 
 /obj/item/flashlight/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	. = ..()
@@ -435,8 +436,8 @@ REF_OWNED(/obj/item/flashlight, "cell")
 	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
 
-/obj/item/flashlight/flare/attack_self(mob/user)
-	. = ..(user)
+/obj/item/flashlight/flare/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	// Usual checks
@@ -492,8 +493,8 @@ REF_OWNED(/obj/item/flashlight, "cell")
 	on = FALSE
 	update_brightness()
 
-/obj/item/flashlight/glowstick/attack_self(mob/user)
-	. = ..(user)
+/obj/item/flashlight/glowstick/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(!fuel || on)

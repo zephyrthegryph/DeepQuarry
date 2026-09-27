@@ -157,7 +157,7 @@
 /proc/generated_station_architectural_passable(turf/T)
 	if(!T || T.density || !istype(T, /turf/simulated/floor))
 		return FALSE
-	for(var/atom/movable/occupant in T)
+	for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
 		if(QDELETED(occupant))
 			continue
 		if(occupant.density && !istype(occupant, /obj/machinery/door))
@@ -173,7 +173,7 @@
 		var/turf/neighbor = get_step(T, direction)
 		var/list/occupants = list()
 		if(neighbor)
-			for(var/atom/movable/occupant in neighbor)
+			for(var/atom/movable/occupant in turf_contents_of_type(neighbor, /atom/movable))
 				if(occupant.density || istype(occupant, /obj/machinery/door))
 					occupants += "[occupant.type]"
 		parts += "[dir2text(direction)]=[neighbor?.type || "boundary"] passable=[generated_station_architectural_passable(neighbor)] occupants=[jointext(occupants, ",")]"
@@ -277,7 +277,7 @@
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-wall-mismatch", "Planned structural wall materialized as [planned_turf?.type || "null"].", "[intent.local_x],[intent.local_y]")
 		else if(intent.structure_kind == GENERATED_STATION_TILE_EXTERIOR && !istype(planned_turf, /turf/space))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-exterior-mismatch", "Planned exterior materialized as [planned_turf?.type || "null"].", "[intent.local_x],[intent.local_y]")
-		if(intent.door_type && !(locate(/obj/machinery/door) in planned_turf))
+		if(intent.door_type && !(locate_on(planned_turf, /obj/machinery/door)))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-door-missing", "Declared door socket has no physical door.", "[intent.local_x],[intent.local_y]")
 		if(intent.structure_kind == GENERATED_STATION_TILE_HULL && istype(planned_turf, /turf/simulated/wall))
 			var/wall_neighbors = 0
@@ -286,7 +286,7 @@
 				var/turf/neighbor_turf = get_step(planned_turf, direction)
 				if(istype(neighbor_turf, /turf/simulated/wall))
 					wall_neighbors++
-				else if(locate(/obj/machinery/door) in neighbor_turf)
+				else if(locate_on(neighbor_turf, /obj/machinery/door))
 					door_neighbors++
 			if(!wall_neighbors && !door_neighbors)
 				validation.add(GENERATED_STATION_ISSUE_ERROR, "isolated-wall", "Structural wall is disconnected from every cardinal wall.", "[intent.local_x],[intent.local_y]")
@@ -349,12 +349,12 @@
 					if(!boundary || boundary.owner_id != module.department_node_id)
 						continue
 					var/turf/boundary_turf = world_turf(nx, ny)
-					if(boundary.structure_kind != GENERATED_STATION_TILE_HULL && !(boundary.door_type && locate(/obj/machinery/door) in boundary_turf))
+					if(boundary.structure_kind != GENERATED_STATION_TILE_HULL && !(boundary.door_type && locate_on(boundary_turf, /obj/machinery/door)))
 						validation.add(GENERATED_STATION_ISSUE_ERROR, "room-boundary-open", "Room boundary opens directly into [boundary.zone_id] without a wall or declared door.", module.id)
 
 	for(var/node_id in department_areas)
 		var/area/generated_station/department_area = department_areas[node_id]
-		for(var/turf/T in department_area)
+		for(var/turf/T in area_contents_of_type(department_area, /turf))
 			station_turfs |= T
 	// Authored rooms intentionally receive independent areas so each room can
 	// own its APC, alarms, and environmental controls. They are still part of
@@ -362,7 +362,7 @@
 	// structural/connectivity measurement.
 	for(var/module_id in module_areas)
 		var/area/generated_station/module_area = module_areas[module_id]
-		for(var/turf/T in module_area)
+		for(var/turf/T in area_contents_of_type(module_area, /turf))
 			station_turfs |= T
 	for(var/turf/T in transit_area)
 		station_turfs |= T
@@ -453,7 +453,7 @@
 				for(var/obj/blocker in side_turf)
 					if(blocker.density && !istype(blocker, /obj/machinery/door))
 						validation.add(GENERATED_STATION_ISSUE_ERROR, "blocked-door", "[blocker.type] blocks the approach to [door.type] at [generated_station_coordinate(door)].", generated_station_coordinate(blocker))
-		for(var/atom/movable/occupant in door_turf)
+		for(var/atom/movable/occupant in turf_contents_of_type(door_turf, /atom/movable))
 			if(occupant != door && (occupant.density || istype(occupant, /obj/machinery/power/apc) || istype(occupant, /obj/machinery/alarm)))
 				validation.add(GENERATED_STATION_ISSUE_ERROR, "fixture-on-door", "A fixture or blocking object occupies a door tile.", generated_station_coordinate(occupant))
 
@@ -587,7 +587,7 @@
 					if(!(boundary in station_turfs) || generated_station_architectural_passable(boundary) || istype(boundary, /turf/simulated/wall))
 						continue
 					var/summary = "[generated_station_coordinate(boundary)] [boundary.type]"
-					for(var/atom/movable/occupant in boundary)
+					for(var/atom/movable/occupant in turf_contents_of_type(boundary, /atom/movable))
 						if(occupant.density && !istype(occupant, /obj/machinery/door))
 							summary += " occupied by [occupant.type]"
 					boundary_blockers |= summary
@@ -650,7 +650,7 @@
 						mark = "."
 					else if(istype(T, /turf/space))
 						mark = "~"
-					if(locate(/obj/machinery/door) in T)
+					if(locate_on(T, /obj/machinery/door))
 						mark = "@"
 				if("ownership")
 					if(istype(get_area(T), /area/generated_station/maintenance))
@@ -666,26 +666,26 @@
 							if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
 								mark = "."
 								break
-					if(locate(/obj/machinery/light) in T)
+					if(locate_on(T, /obj/machinery/light))
 						mark = "L"
 				if("content")
 					if(istype(T, /turf/simulated/floor))
 						mark = "."
-					if(locate(/obj/machinery) in T)
+					if(locate_on(T, /obj/machinery))
 						mark = "M"
-					if(locate(/obj/structure/table) in T)
+					if(locate_on(T, /obj/structure/table))
 						mark = "t"
-					if(locate(/obj/structure/closet) in T || locate(/obj/structure/filingcabinet) in T)
+					if(locate_on(T, /obj/structure/closet) || locate_on(T, /obj/structure/filingcabinet))
 						mark = "s"
-					if(locate(/obj/structure/bed) in T)
+					if(locate_on(T, /obj/structure/bed))
 						mark = "b"
-					if(locate(/obj/structure/bed/chair) in T)
+					if(locate_on(T, /obj/structure/bed/chair))
 						mark = "c"
 				if("structure")
 					if(istype(T, /turf/simulated/wall))
 						var/turf/simulated/wall/wall = T
 						mark = length(wall.wall_connections) == 4 ? "W" : "?"
-					else if(locate(/obj/machinery/door) in T)
+					else if(locate_on(T, /obj/machinery/door))
 						mark = "@"
 					else if(istype(T, /turf/simulated/floor))
 						mark = "."
@@ -696,7 +696,7 @@
 						mark = "X"
 					else if(intent?.structure_kind == GENERATED_STATION_TILE_EXTERIOR && !istype(T, /turf/space))
 						mark = "X"
-					else if(intent?.door_type && !(locate(/obj/machinery/door) in T))
+					else if(intent?.door_type && !(locate_on(T, /obj/machinery/door)))
 						mark = "X"
 					else if(intent)
 						mark = "."
@@ -801,17 +801,17 @@
 					mark = "I"
 				else
 					mark = "."
-			if(locate(/obj/structure/bed/chair) in T)
+			if(locate_on(T, /obj/structure/bed/chair))
 				mark = "c"
-			if(locate(/obj/structure/table) in T)
+			if(locate_on(T, /obj/structure/table))
 				mark = "t"
-			if(locate(/obj/structure/closet) in T || locate(/obj/structure/filingcabinet) in T)
+			if(locate_on(T, /obj/structure/closet) || locate_on(T, /obj/structure/filingcabinet))
 				mark = "s"
-			if(locate(/obj/machinery) in T)
+			if(locate_on(T, /obj/machinery))
 				mark = "M"
-			if(locate(/obj/machinery/power/apc) in T)
+			if(locate_on(T, /obj/machinery/power/apc))
 				mark = "A"
-			if(locate(/obj/machinery/door) in T)
+			if(locate_on(T, /obj/machinery/door))
 				mark = "@"
 			if(problem_coordinates["[x],[y],[z_level]"])
 				mark = "!"

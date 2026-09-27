@@ -30,7 +30,20 @@
 
 REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
-/obj/structure/trash_pile/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/trash_pile/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/trash_pile_item,
+		/datum/interaction/entry_hand/trash_pile_search,
+	)
+	..()
+
+/// Old attackby: dropping gamma loot into the pile restores it.
+/datum/interaction/entry_item/trash_pile_item
+	id = "trash_pile_item"
+	name = "Use"
+	effect = /obj/structure/trash_pile/proc/interaction_item
+
+/obj/structure/trash_pile/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/w_type = W.type
 	if(w_type in GLOB.allocated_gamma_loot)
 		to_chat(user,span_notice("You feel \the [W] slip from your hand, and disappear into the trash pile."))
@@ -38,8 +51,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		W.forceMove(src)
 		restore_gamma_loot(w_type)
 		consume(W, user)
-	else
-		return ..()
+	return TRUE
 
 /obj/structure/trash_pile/attack_generic(mob/user)
 	//Simple Animal
@@ -101,14 +113,20 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 	A.visible_message("[host] crawls out of \the [src].")
 	return
 
-/obj/structure/trash_pile/attack_hand(mob/user)
+/// Old attack_hand: search the pile.
+/datum/interaction/entry_hand/trash_pile_search
+	id = "trash_pile_search"
+	name = "Search"
+	effect = /obj/structure/trash_pile/proc/interaction_search
+
+/obj/structure/trash_pile/proc/interaction_search(mob/user, obj/item/held, datum/interaction/interaction)
 	//Human mob
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 
 		if(om_busy(src)) // a search claims the pile
 			to_chat(H, span_warning("\The [src] is already being searched."))
-			return
+			return TRUE
 
 		H.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
 		if(hider)
@@ -116,8 +134,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
 		//Do the searching
 		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
-	else
-		return ..()
+	return TRUE
 
 /obj/structure/trash_pile/proc/attack_hand_timed_done(mob/user)
 	if(hider && prob(50))

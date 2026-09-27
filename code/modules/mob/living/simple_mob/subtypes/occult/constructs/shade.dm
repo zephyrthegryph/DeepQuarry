@@ -41,7 +41,7 @@
 /mob/living/simple_mob/construct/shade
 	delete_on_death = TRUE
 
-/mob/living/simple_mob/construct/shade/death()
+/mob/living/simple_mob/construct/shade/on_death(gibbed)
 	..()
 	for(var/mob/M in viewers(src, null))
 		if((M.client && !( M.blinded )))

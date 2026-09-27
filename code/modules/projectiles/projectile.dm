@@ -679,7 +679,12 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(!isliving(target))
 		return 0 // on_hit only affects living mobs; non-mob targets are handled in bullet_act() implementations.
 	var/mob/living/L = target
-	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, agony, blocked, incendiary, flammability)
+	// taser_effect projectiles already delivered their agony through
+	// stun_effect_act() in /mob/living/bullet_act (the electric path: halloss on
+	// the zone, stutter, blur, COMSIG_STUN_EFFECT_ACT). Passing it again here
+	// double-applied every taser's agony. Subtype overrides that read `agony`
+	// directly (e.g. the disabler's borg power drain) still see the real value.
+	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, taser_effect ? 0 : agony, blocked, incendiary, flammability)
 	if(modifier_type_to_apply)
 		L.add_modifier(modifier_type_to_apply, modifier_duration)
 	return 1

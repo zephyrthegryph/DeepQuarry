@@ -72,10 +72,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/human
 	delete_on_death = TRUE
+	death_message = "let's out a maddening laugh as his body crumbles away."
 
-/mob/living/simple_mob/humanoid/cultist/human/death()
+/mob/living/simple_mob/humanoid/cultist/human/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
-	..(null,"let's out a maddening laugh as his body crumbles away.")
+	..()
 	ghostize()
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt //Teleporting Cultists
@@ -125,7 +126,7 @@
 	var/overshoot = TRUE
 
 	// Test if something is at destination.
-	for(var/mob/living/L in destination)
+	for(var/mob/living/L in turf_contents_of_type(destination, /mob/living))
 		if(L == src)
 			continue
 
@@ -235,10 +236,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/tesh
 	delete_on_death = TRUE
+	death_message = "let's out a shrill chirp as his body turns to dust."
 
-/mob/living/simple_mob/humanoid/cultist/tesh/death()
+/mob/living/simple_mob/humanoid/cultist/tesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
-	..(null,"let's out a shrill chirp as his body turns to dust.")
+	..()
 	ghostize()
 
 ////////////////////////////
@@ -285,10 +287,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/lizard
 	delete_on_death = TRUE
+	death_message = "hisses as he collapses into a pile of bones."
 
-/mob/living/simple_mob/humanoid/cultist/lizard/death()
+/mob/living/simple_mob/humanoid/cultist/lizard/on_death(gibbed)
 	new /obj/effect/decal/remains/unathi (src.loc)
-	..(null,"hisses as he collapses into a pile of bones.")
+	..()
 	ghostize()
 
 ////////////////////////////
@@ -332,11 +335,12 @@
 
 /mob/living/simple_mob/humanoid/cultist/caster
 	delete_on_death = TRUE
+	death_message = "melts into a pile of blood and bones."
 
-/mob/living/simple_mob/humanoid/cultist/caster/death()
+/mob/living/simple_mob/humanoid/cultist/caster/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
-	..(null,"melts into a pile of blood and bones.")
+	..()
 	ghostize()
 
 ////////////////////////////
@@ -380,10 +384,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/initiate
 	delete_on_death = TRUE
+	death_message = "lets out a horrified scream as his body crumbles away."
 
-/mob/living/simple_mob/humanoid/cultist/initiate/death()
+/mob/living/simple_mob/humanoid/cultist/initiate/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
-	..(null,"lets out a horrified scream as his body crumbles away.")
+	..()
 	ghostize()
 
 ////////////////////////////
@@ -425,10 +430,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
 	delete_on_death = TRUE
+	death_message = "burns away into nothing."
 
-/mob/living/simple_mob/humanoid/cultist/castertesh/death()
+/mob/living/simple_mob/humanoid/cultist/castertesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
-	..(null,"burns away into nothing.")
+	..()
 	ghostize()
 
 ////////////////////////////
@@ -492,12 +498,13 @@
 
 /mob/living/simple_mob/humanoid/cultist/elite
 	delete_on_death = TRUE
+	death_message = "shatters into bone and blood like pieces like the now shattered mirror."
 
-/mob/living/simple_mob/humanoid/cultist/elite/death()
+/mob/living/simple_mob/humanoid/cultist/elite/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	new /obj/item/material/shard (src.loc)
-	..(null,"shatters into bone and blood like pieces like the now shattered mirror.")
+	..()
 	playsound(src, 'sound/effects/Glassbr2.ogg', 100, 1)
 	ghostize()
 
@@ -543,10 +550,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/magus
 	delete_on_death = TRUE
+	death_message = "let's out a dark laugh as it collapses into a puddle of blood."
 
-/mob/living/simple_mob/humanoid/cultist/magus/death()
+/mob/living/simple_mob/humanoid/cultist/magus/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
-	..(null,"let's out a dark laugh as it collapses into a puddle of blood.")
+	..()
 	ghostize()
 
 /mob/living/simple_mob/humanoid/cultist/magus/Initialize(mapload)
@@ -602,10 +610,11 @@
 
 /mob/living/simple_mob/humanoid/cultist/hunter
 	delete_on_death = TRUE
+	death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."
 
-/mob/living/simple_mob/humanoid/cultist/hunter/death()
+/mob/living/simple_mob/humanoid/cultist/hunter/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
-	..(null,"laughs as he melts away. His laughs echo through the air even after only a dense red goo remains.")
+	..()
 	ghostize()
 
 

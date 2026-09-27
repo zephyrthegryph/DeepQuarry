@@ -104,14 +104,24 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Description: Checks if the user is made of silicon and returns if they are. If the user is not made of silicon and can use the communicator,
 //              removes the ID from the communicator if it has one, or sends a chat message indicating that the communicator does not have an ID.
 
-/obj/item/communicator/click_alt()
-	if(issilicon(usr))
-		return
+/obj/item/communicator/get_interactions()
+	var/static/list/L = list(
+		INTERACT_ALT("Remove ID", PROC_REF(interaction_alt)),
+		INTERACT_ITEM("Scan ID", PROC_REF(interaction_item)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
+
+/// Old click_alt: eject the loaded ID.
+/obj/item/communicator/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
+		return FALSE
 
 	if(id)
 		remove_id()
 	else
-		to_chat(usr, span_notice("This Communicator does not have an ID in it."))
+		to_chat(user, span_notice("This Communicator does not have an ID in it."))
+	return TRUE
 // Proc: GetAccess()
 // Parameters: None
 // Description: Returns the access level of the communicator's ID, if it has one. If the communicator does not have an ID, the procedure returns the
@@ -293,8 +303,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Parameters: 2 (C - what is used on the communicator. user - the mob that has the communicator)
 // Description: When an ID is swiped on the communicator, the communicator reads the job and checks it against the Owner name, if success, the occupation is added.
 // ITION: If the ID has already been scanned it is instead inserted into the communicator
-/obj/item/communicator/attackby(obj/item/C as obj, mob/user as mob)
-	..()
+/obj/item/communicator/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/card/id))
 		var/obj/item/card/id/idcard = C
 		if(!idcard.registered_name || !idcard.assignment)
@@ -309,22 +318,20 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 			if(id_check(user, 2))
 				to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 				add_overlay("pda-id")
-				return	//Return in case of failed check or when successful.
 		// ITION END
-	return
+		return TRUE
+	return FALSE
 
 // Proc: attack_self()
 // Parameters: 1 (user - the mob that clicked the device in their hand)
 // Description: Makes an exonet datum if one does not exist, allocates an address for it, maintains the lists of all devies, clears the alert icon, and
 //				finally makes NanoUI appear.
-/obj/item/communicator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/communicator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	initialize_exonet(user)
 	alert_called = 0
 	update_icon()
 	tgui_interact(user)
+	return TRUE
 
 // Proc: MouseDrop()
 //Same thing PDAs do

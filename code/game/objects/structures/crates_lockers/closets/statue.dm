@@ -58,10 +58,10 @@
 /obj/structure/closet/statue/dump_contents()
 	latent_materialize_all()
 
-	for(var/obj/O in src)
+	for(var/obj/O in slot_contents())
 		O.forceMove(get_turf(src))
 
-	for(var/mob/living/M in src)
+	for(var/mob/living/M in slot_contents())
 		M.forceMove(loc) // Might be in a belly
 		M.set_sdisabilities(M.sdisabilities & (~MUTE))
 		UnregisterSignal(M, COMSIG_LIVING_INJURE)
@@ -93,22 +93,24 @@
 
 // Reaching 0 integrity shatters the statue, dusting the trapped mob.
 /obj/structure/closet/statue/atom_destruction(damage_flag)
-	for(var/mob/M in src)
+	for(var/mob/M in slot_contents())
 		shatter(M)
 	return ..()
 
 /obj/structure/closet/statue/attack_generic(mob/user, damage, attacktext, environment_smash)
 	if(damage && environment_smash)
-		for(var/mob/M in src)
+		for(var/mob/M in slot_contents())
 			shatter(M)
 
 /obj/structure/closet/statue/explosion_contents_severity(severity)
 	return severity
 
-/obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
+/// Overrides closet's interaction_item(): a statue takes weapon hits instead of storing items.
+/obj/structure/closet/statue/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] strikes [src] with [I]."))
 	receive_weapon_hit(I, user)
+	return TRUE
 
 /obj/structure/closet/statue/MouseDrop_T()
 	return
@@ -116,8 +118,9 @@
 /obj/structure/closet/statue/relaymove()
 	return
 
-/obj/structure/closet/statue/attack_hand()
-	return
+/// Overrides closet's interaction_hand(): a statue doesn't open.
+/obj/structure/closet/statue/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/structure/closet/statue/verb_toggleopen()
 	return

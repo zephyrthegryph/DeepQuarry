@@ -31,11 +31,11 @@ effective or pretty fucking useless.
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/batterer/attack_self(mob/user, flag = 0, emp = 0)
-	. = ..(user)
-	if(.)
-		return TRUE
-	if(!user) 	return
+/obj/item/batterer/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/batterer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(times_used >= max_uses)
 		to_chat(user, span_warning("The mind batterer has been burnt out!"))
 		return

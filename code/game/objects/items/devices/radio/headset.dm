@@ -86,26 +86,29 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 /obj/item/radio/headset/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/radio/headset/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/encryptionkey/))
-		if(keyslot1 && keyslot2)
-			to_chat(user, span_notice("The headset can't hold another key!"))
-			return
+/obj/item/radio/headset/get_interactions()
+	var/static/list/L = list(INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
+	return L
 
-		if(!keyslot1)
-			user.drop_item()
-			W.loc = src
-			keyslot1 = W
+/obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(keyslot1 && keyslot2)
+		to_chat(user, span_notice("The headset can't hold another key!"))
+		return TRUE
 
-		else
-			user.drop_item()
-			W.loc = src
-			keyslot2 = W
+	if(!keyslot1)
+		user.drop_item()
+		W.loc = src
+		keyslot1 = W
 
-		recalculateChannels()
+	else
+		user.drop_item()
+		W.loc = src
+		keyslot2 = W
 
-		return
-	return ..()
+
+	recalculateChannels()
+
+	return TRUE
 
 /obj/item/radio/headset/screwdriver_act(mob/user, obj/item/tool)
 	if(!keyslot1 && !keyslot2)
@@ -712,11 +715,10 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
-	var/static/list/spells = list("/spell/targeted/unrestricted/mend", "/spell/targeted/unrestricted/plasmastun")
+	var/static/list/spells = list(/datum/spell/targeted/unrestricted/mend, /datum/spell/targeted/unrestricted/plasmastun)
 	var/list/remove_spells	//Reference to spells that'll get removed
-	/// Movement delay added while worn (a body factor). Admins may edit it in-round.
+	/// Movement delay added while worn (a body factor, via worn_factors). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
-	var/item_slowdown_reset = 0	//Vars to copy and reset later
 	light_range = 6
 	light_power = 0				//Set this to 0 if you don't want a light
 	light_color = "#ffaaaa"
@@ -743,9 +745,6 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
 				LAZYADD(remove_spells, SP)
-		if(slowdown_to_set != 0)
-			item_slowdown_reset = H.species.item_slowdown_mod
-			H.species.item_slowdown_mod = 0
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
@@ -759,8 +758,6 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 			for(var/datum/spell/SP in remove_spells)
 				H.remove_spell(SP)
 				qdel(SP)
-		if(slowdown_to_set != 0)
-			H.species.item_slowdown_mod = item_slowdown_reset
 
 /obj/item/radio/headset/event/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(!telez)

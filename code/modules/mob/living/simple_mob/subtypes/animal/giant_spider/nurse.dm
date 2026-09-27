@@ -59,7 +59,7 @@
 				eggcount++
 			if(!eggcount)
 				var/obj/effect/spider/eggcluster/eggs = new egg_type(O, src)
-				O.implants += eggs
+				LAZYADD(O.implants, eggs)
 				eggs.faction = faction
 				to_chat(H, span_critical("\The [src] injects something into your [O.name]!") ) // Oh god its laying eggs in me!
 
@@ -178,7 +178,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/lay_eggs(turf/T)
 	if(!istype(T) || !fed || !can_lay_eggs || om_busy(src))
 		return FALSE
-	if(locate(/obj/effect/spider/eggcluster) in T)
+	if(locate_on(T, /obj/effect/spider/eggcluster))
 		return FALSE // Already got eggs here.
 	if(istext(om_task_start(/datum/om/task/mob_work/spider_eggs, src, T)))
 		return FALSE

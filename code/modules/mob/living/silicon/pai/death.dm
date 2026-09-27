@@ -1,5 +1,9 @@
+/mob/living/silicon/pai
+	death_message = "fizzles out and clatters to the floor..."
+
 // Let's make it so that pAIs don't just always cease to be when they die! It would be cool if we could fix them.
-/mob/living/silicon/pai/death(gibbed,deathmessage="fizzles out and clatters to the floor...")
+/mob/living/silicon/pai/on_death(gibbed)
+	. = ..()
 	if(paiDA && card)
 		var/area/t = get_area(src)
 		var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
@@ -10,21 +14,18 @@
 			a.autosay("PAI \"[src]\" has died in [t.name]!", "PAI [src]'s Death Alarm")
 		paiDA = FALSE // no repeats we died already
 		qdel(a)
-//	set_respawn_timer()
 	release_vore_contents()
 	close_up(TRUE)
-	if(card)
-		// Destroyed by injury (not a scripted death): the card takes a beating too.
-		if(!gibbed && vitality() <= 0)
-			card.death_damage()
-		card.cut_overlays()
-		card.setEmotion(16)
-		card.damage_random_component()
-
-		if(gibbed)
-			if(!QDELETED(card)) // Either the pai or card could be deleted first, prevent a loop
-				qdel(card)
-			..(gibbed)
-		else
-			card.add_overlay("pai-dead")
-			..(gibbed,deathmessage)
+	if(!card)
+		return
+	// Destroyed by injury (not a scripted death): the card takes a beating too.
+	if(!gibbed && vitality() <= 0)
+		card.death_damage()
+	card.cut_overlays()
+	card.setEmotion(16)
+	card.damage_random_component()
+	if(gibbed)
+		if(!QDELETED(card)) // Either the pai or card could be deleted first, prevent a loop
+			qdel(card)
+	else
+		card.add_overlay("pai-dead")

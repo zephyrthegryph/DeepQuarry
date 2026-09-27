@@ -570,10 +570,10 @@ REF_OWNED_LIST(/datum/reagents, "reagent_list")
 	if (amount <= 0)
 		return
 	var/list/mobs = list()
-	for (var/mob/M in T)
+	for (var/mob/M in turf_contents_of_type(T, /mob))
 		mobs += M
 	var/list/objs = list()
-	for (var/obj/O in T)
+	for (var/obj/O in turf_contents_of_type(T, /obj))
 		objs += O
 	if (objs.len)
 		var/objportion = (amount * 0.2) / objs.len

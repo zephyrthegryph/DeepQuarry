@@ -167,7 +167,7 @@
 	if(ismovable(thing) && !QDELETED(thing))
 		var/turf/T = get_turf(thing)
 		qdel(thing)
-		for(var/obj/item/stack/rods/R in T)
+		for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 			qdel(R)
 	if(floor)
 		floor.extinguish()
@@ -325,10 +325,14 @@
 	// dq_rx_node_write() flushes deterministically itself now (reactor_adapter.dm).
 	dq_rx_test_advance(0.8 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "under a second above is not enough")
+	// Dispatch each crossing as it is written, so the hold pauses and resumes at the write
+	// rather than whenever SSair next happens to dispatch heat wakes during the sleep.
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 300)
+	dq_rx_flush()
 	dq_rx_test_advance(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "time below the threshold does not count")
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 450)
+	dq_rx_flush()
 	dq_rx_test_advance(0.5 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "about 1.5 seconds in total is not enough")
 	dq_rx_test_advance(1 SECONDS)
@@ -400,10 +404,10 @@
 	TEST_ASSERT(!QDELETED(bottle), "below the melting point it keeps its shape")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point + 10)
 	TEST_ASSERT(QDELETED(bottle), "at the melting point it is replaced")
-	TEST_ASSERT(locate(/obj/effect/decal/cleanable/molten_item) in T, "by a molten mass")
+	TEST_ASSERT(locate_on(T, /obj/effect/decal/cleanable/molten_item), "by a molten mass")
 	TEST_ASSERT_EQUAL(inside.loc, T, "and what was inside drops out")
 	qdel(inside)
-	for(var/obj/effect/decal/cleanable/molten_item/goo in T)
+	for(var/obj/effect/decal/cleanable/molten_item/goo in turf_contents_of_type(T, /obj/effect/decal/cleanable/molten_item))
 		qdel(goo)
 
 // ---- Parity: grille breaking point ----
@@ -439,10 +443,10 @@
 	TEST_ASSERT(binding.holding[break_index], "broken: the rule holds")
 	third.repair_damage(10)
 	TEST_ASSERT(!binding.holding[break_index], "repaired above the breaking point: the rule is re-armed")
-	for(var/obj/item/stack/rods/R in T)
+	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)
 
 /datum/unit_test/dq_rule_grille_parity/proc/count_rods(turf/T)
 	. = 0
-	for(var/obj/item/stack/rods/R in T)
+	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		. += R.get_amount()

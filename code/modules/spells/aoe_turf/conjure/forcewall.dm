@@ -37,8 +37,10 @@
 /obj/effect/forcefield/bullet_act(obj/item/projectile/Proj, def_zone)
 	var/turf/T = get_turf(src.loc)
 	if(T)
-		for(var/mob/M in T)
-			Proj.on_hit(M,M.bullet_act(Proj, def_zone))
+		for(var/mob/M in turf_contents_of_type(T, /mob))
+			// /mob/living/bullet_act already calls Proj.on_hit internally; calling it
+			// again here doubled every stun/agony/modifier effect on the occupant.
+			M.bullet_act(Proj, def_zone)
 	return
 
 /obj/effect/forcefield/mime

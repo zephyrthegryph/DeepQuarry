@@ -275,7 +275,7 @@
 /datum/component/promethean_biology/proc/clean_on_entry(mob/living/carbon/human/H, turf/T)
 	var/gained = 0
 	if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))
-		for(var/obj/O in T)
+		for(var/obj/O in turf_contents_of_type(T, /obj))
 			if(O.wash(CLEAN_SCRUB))
 				gained += rand(5, 15)
 		if(istype(T, /turf/simulated))

@@ -27,8 +27,8 @@
 		var/right = turn(dir, 90)
 		var/turf/L = get_step(src, left)
 		var/turf/R = get_step(src, right)
-		var/obj/item/modular_computer/console/LC = locate() in L
-		var/obj/item/modular_computer/console/RC = locate() in R
+		var/obj/item/modular_computer/console/LC = locate_on(L, /obj/item/modular_computer/console)
+		var/obj/item/modular_computer/console/RC = locate_on(R, /obj/item/modular_computer/console)
 		if(LC && LC.dir == dir && initial(LC.icon_state) == "console")
 			append_string += "_L"
 		if(RC && RC.dir == dir && initial(RC.icon_state) == "console")

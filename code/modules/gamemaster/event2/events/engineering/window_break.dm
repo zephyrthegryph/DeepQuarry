@@ -127,7 +127,7 @@
 		explored_set += current
 
 		var/contains_windows = 0
-		for(var/obj/structure/window/to_add in current.contents)
+		for(var/obj/structure/window/to_add in turf_contents_of_type(current, /obj/structure/window))
 			contains_windows = 1
 			result_set += to_add
 

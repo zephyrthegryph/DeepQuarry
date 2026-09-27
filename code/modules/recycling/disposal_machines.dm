@@ -39,6 +39,17 @@
 	var/power_retry_timer
 	flags = REMOTEVIEW_ON_ENTER
 
+// C11: one slot, accepting anything (any movable dropped, thrown or grabbed
+// into the bin before a flush). Drop policy is left to this type's own
+// Destroy() below, which already calls eject() -- emptying the bin onto the
+// floor -- before ..() reaches the base Destroy()'s generic drop-policy pass.
+/datum/om/relation/slot/disposal_bin
+	holder = /obj/machinery/disposal
+	slot_id = CONTAINER_SLOT_DISPOSAL
+	name = "contents"
+	drop_policy = SLOT_DROP_HOLDER
+	exposure = SLOT_EXPOSURE_INTERNAL
+
 // create a new disposal
 // find the attached trunk (if present) and init gas resvr.
 /obj/machinery/disposal/Initialize(mapload, obj/structure/disposalconstruct/make_from)
@@ -53,7 +64,7 @@
 		qdel(make_from)
 		mode = DISPOSALMODE_OFF
 
-	var/obj/structure/disposalpipe/trunk/trunk = locate() in loc
+	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
 	AddComponent(/datum/component/disposal_system_connection)
 	RegisterSignal(src, COMSIG_DISPOSAL_RECEIVE, PROC_REF(packet_expel))
@@ -96,6 +107,14 @@
 	clear_gas_dependency()
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	MACHINE_WAKE(src)
+
+// The intake subscription is keyed by the mixture of the turf we sit on; after a
+// move it is stale. (A ChangeTurf() underneath us also swaps the mixture with no
+// Moved() and no contents hook — see the matching note in firedoor.dm.)
+/obj/machinery/disposal/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	if(mode == DISPOSALMODE_CHARGING)
+		wake_for_state_change()
 
 /// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
@@ -173,7 +192,7 @@
 	if(istype(I, /obj/item/storage/bag/trash))
 		var/obj/item/storage/bag/trash/T = I
 		to_chat(user, span_blue("You empty the bag."))
-		for(var/obj/item/O in T.contents)
+		for(var/obj/item/O in T.slot_contents())
 			T.remove_from_storage(O,src)
 		T.update_icon()
 		update_icon()
@@ -237,8 +256,8 @@
 
 /obj/machinery/disposal/screwdriver_act(mob/user, obj/item/I)
 	wake_for_state_change()
-	if(mode > DISPOSALMODE_OFF || length(contents))
-		if(length(contents))
+	if(mode > DISPOSALMODE_OFF || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
+		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
 	mode = mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF
@@ -248,8 +267,8 @@
 
 /obj/machinery/disposal/welder_act(mob/user, obj/item/I)
 	wake_for_state_change()
-	if(mode != DISPOSALMODE_EJECTONLY || length(contents))
-		if(length(contents))
+	if(mode != DISPOSALMODE_EJECTONLY || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
+		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
@@ -266,7 +285,7 @@
 
 // Transform into next machine type
 /obj/machinery/disposal/proc/alter_bin_type(mob/user)
-	if(contents.len > 0)
+	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
 		to_chat(user, "Eject the items first!")
 		return
 	// Get what we want to turn into
@@ -327,7 +346,7 @@
 
 	if(!new_disposal_path || (new_disposal_path == type && dir == new_dir))
 		return
-	if(!Adjacent(user) || contents.len > 0)
+	if(!Adjacent(user) || length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
 		return
 	if(mode > DISPOSALMODE_OFF)
 		return
@@ -535,7 +554,7 @@
 	return TRUE
 
 /obj/machinery/disposal/proc/eject()
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(get_turf(src))
 		AM.pipe_eject(0)
 	update_icon()
@@ -558,7 +577,7 @@
 		return
 
 	// 	check for items in disposal - occupied light
-	if(contents.len > 0)
+	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
 		add_overlay("[controls_iconstate]-full")
 
 	// charging and ready light
@@ -574,7 +593,7 @@
 		update_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
 
-	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
+	if(mode != DISPOSALMODE_CHARGING && !flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		update_use_power(USE_POWER_IDLE)
 		flush_count = 0
 		sleep_until_keys()
@@ -582,7 +601,7 @@
 
 	flush_count++
 	if( flush_count >= flush_every_ticks )
-		if( contents.len )
+		if( length(slot_contents(CONTAINER_SLOT_DISPOSAL)) )
 			if(mode == DISPOSALMODE_CHARGED)
 				feedback_inc("disposal_auto_flush",1)
 				flush()
@@ -596,7 +615,7 @@
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
-		if(!flush && !length(contents))
+		if(!flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			sleep_until_keys()
 			return
 	else
@@ -645,18 +664,18 @@
 		return
 	// We don't ever want digestion remains going through disposals, but people understandably thing they're doing right by trashing them
 	// So let's just delete them instead!
-	for(var/obj/item/digestion_remains/bone in src)
+	for(var/obj/item/digestion_remains/bone in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		consume(bone)
 
 	var/list/flushed_items = list()
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		flushed_items += AM
 
 	if(stat_tracking)
 		GLOB.disposals_flush_shift_roundstat++
 
 	if(!SEND_SIGNAL(src, COMSIG_DISPOSAL_FLUSH, flushed_items, air_contents)) //If the signal isnt recieved, we'll just expel immediately.
-		if(length(contents))
+		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
 	air_contents = new(PRESSURE_TANK_VOLUME)	// new empty gas resv. Disposal packet takes ownership of the original one!
@@ -675,7 +694,7 @@
 	. = ..()	// do default setting/reset of stat NOPOWER bit
 	if(.)
 		update_icon()	// update icon
-		if(flush || length(contents))
+		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
 		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()) && !power_retry_timer)
 			// A station-wide restoration otherwise wakes every empty bin in the
@@ -745,7 +764,7 @@
 	C.anchored = TRUE
 	C.density = TRUE
 	//End of "temporary" code
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(T)
 	//..() //*cough
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //unlinks in destroy, too.
@@ -753,7 +772,7 @@
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them
-	for(var/obj/item/flushed_item in src)
+	for(var/obj/item/flushed_item in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		if(istype(flushed_item, /obj/item/storage))
 			var/obj/item/storage/storage_flushed = flushed_item
 			var/list/storage_items = storage_flushed.return_inv()
@@ -811,7 +830,7 @@
 /obj/machinery/disposal/om_sleep_violation()
 	if(!asleep_on_keys() || (stat & BROKEN))
 		return null
-	if(flush || length(contents))
+	if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		return "asleep with [flush ? "a flush pending" : "contents"]"
 	return null
 

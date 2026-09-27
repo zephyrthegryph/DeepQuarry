@@ -182,7 +182,7 @@
 
 	morph_time = world.time + MORPH_COOLDOWN
 
-/mob/living/simple_mob/vore/morph/death(gibbed)
+/mob/living/simple_mob/vore/morph/on_death(gibbed)
 	if(morphed)
 		visible_message(span_warning("[src] twists and dissolves into a pile of flesh!"))
 		restore(TRUE)
@@ -329,7 +329,7 @@
 	name = "[prey_body.name]"
 	to_chat(prey_body, span_notice("You have completely assumed the form of [prey_body]. Your form is now unable to change anymore until you restore control back to them. You can do this by 'ejecting' them from your [prey_body.vore_selected]. This will not actually release them from your body in this state, but instead return control to them, and restore you to your original form."))
 
-/mob/living/simple_mob/vore/morph/dominated_prey/death(gibbed)
+/mob/living/simple_mob/vore/morph/dominated_prey/on_death(gibbed)
 	. = ..()
 	undo_prey_takeover(FALSE)
 

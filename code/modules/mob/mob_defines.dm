@@ -125,6 +125,8 @@
 	var/name_archive //For admin things like possession
 
 	var/timeofdeath = 0.0//Living
+	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
+	var/death_message = "seizes up and falls limp..."
 	var/cpr_time = 1.0//Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL

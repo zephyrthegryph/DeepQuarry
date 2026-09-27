@@ -56,7 +56,7 @@
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(current_loc, direction)
 		if(T)
-			for(var/obj/effect/energy_field/F in T)
+			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
 				F.update_icon()
 
 /obj/effect/energy_field/ex_act(severity)
@@ -145,7 +145,7 @@
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
 		if(T) // Incase we somehow stepped off the map.
-			for(var/obj/effect/energy_field/F in T)
+			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
 				if(update_neightbors)
 					F.update_icon(0)
 				adjacent_shields_dir |= direction
@@ -176,7 +176,7 @@
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
 		if(T) // Incase we somehow stepped off the map.
-			for(var/obj/effect/energy_field/F in T)
+			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
 				if(!(F in affected_shields))
 					F.impact_effect(i, affected_shields) // Spread the effect to them.
 

@@ -38,9 +38,17 @@
 	return
 
 /// Records a scalar measurement. `better` is "lower", "higher" or "none"; it
-/// drives regression detection in `bench-compare`.
-/datum/benchmark/proc/metric(name, value, unit = "", better = "lower")
-	LAZYSET(metrics, name, list("value" = value, "unit" = unit, "better" = better))
+/// drives regression detection in `bench-compare`. `metric_class` is "count"
+/// (load-independent — FFI calls, reactor wakes, subsystem fire/work counts,
+/// atom/list census, memory bytes — compared directly against a baseline) or
+/// "timing" (wall-clock/tick cost — compared only when both runs were taken
+/// under similar machine load; see tools/build/lib/bench.ts loadSimilar()).
+/datum/benchmark/proc/metric(name, value, unit = "", better = "lower", metric_class = "timing")
+	LAZYSET(metrics, name, list("value" = value, "unit" = unit, "better" = better, "class" = metric_class))
+
+/// Shorthand for a load-independent count/size metric.
+/datum/benchmark/proc/count_metric(name, value, unit = "", better = "lower")
+	metric(name, value, unit, better, "count")
 
 /// Records structured context that isn't compared (tables, breakdowns).
 /datum/benchmark/proc/detail(name, value)
@@ -110,19 +118,30 @@
 	metric("[prefix]_overruns", tick["overruns"], "ticks")
 	metric("[prefix]_overrun_ratio", tick["samples"] ? tick["overruns"] / tick["samples"] : 0, "ratio")
 	metric("[prefix]_tps", tick["tps"], "tps", "higher")
-	metric("[prefix]_ffi_calls", __verdigris_ffi_calls - window_start_ffi_calls, "calls")
+	// FFI call counts are load-independent (same work happens regardless of
+	// how fast the machine gets through it), unlike the timings above.
+	count_metric("[prefix]_ffi_calls", __verdigris_ffi_calls - window_start_ffi_calls, "calls")
 	var/list/subsystems = list()
+	var/total_work_items = 0
 	for(var/datum/controller/subsystem/subsystem as anything in window_subsystem_fires)
 		var/fires = subsystem.times_fired - window_subsystem_fires[subsystem]
 		if(!fires)
 			continue
+		var/work_items = subsystem.processing_work_items() // -1 when the subsystem doesn't track one
+		if(work_items >= 0)
+			total_work_items += work_items
 		subsystems[subsystem.name] = list(
 			"fires" = fires,
 			"avg_cost_ms" = subsystem.cost,
 			"estimated_total_ms" = subsystem.cost * fires,
 			"tick_usage" = subsystem.tick_usage,
 			"tick_overrun" = subsystem.tick_overrun,
+			"work_items" = work_items,
 		)
+		count_metric("[prefix]_[subsystem.name]_fires", fires, "fires")
+		if(work_items >= 0)
+			count_metric("[prefix]_[subsystem.name]_work_items", work_items, "items")
+	count_metric("[prefix]_total_work_items", total_work_items, "items")
 	detail("[prefix]_subsystems", subsystems)
 	// SSair's main-thread time over the window (M1b's "Air time"), from the same
 	// estimate as the subsystem details.
@@ -135,9 +154,10 @@
 	metric("[prefix]_machines_ms_per_s", (machines ? machines["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
 	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
 	// Rust world wakes by owner type (cumulative since boot) and this window's wake count.
+	// Wake count is load-independent (it's driven by game events, not wall clock).
 	var/list/world_step = om_world_diagnostics()
 	world_step["window_wakes"] = world_step["total_wakes"] - window_world_wakes
-	metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
+	count_metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
 	detail("[prefix]_world_step", world_step)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
@@ -157,13 +177,16 @@
 		"process" = process,
 		"rust" = rust,
 	))
+	// Process RSS is load-sensitive machine-wide (other processes' pages get
+	// evicted/resident too), but the Rust heap and byte counts below reflect
+	// this world's own allocations, so they're COUNT metrics.
 	if(islist(process) && !isnull(process["private_mb"]))
 		metric("[name]_private_mb", process["private_mb"], "MB")
 	if(!islist(rust))
 		return
 	if(!isnull(rust["alloc.heap.current_bytes"]))
-		metric("[name]_rust_heap_mb", rust["alloc.heap.current_bytes"] / (1024 * 1024), "MB")
-		metric("[name]_rust_heap_peak_mb", rust["alloc.heap.peak_bytes"] / (1024 * 1024), "MB")
+		count_metric("[name]_rust_heap_mb", rust["alloc.heap.current_bytes"] / (1024 * 1024), "MB")
+		count_metric("[name]_rust_heap_peak_mb", rust["alloc.heap.peak_bytes"] / (1024 * 1024), "MB")
 	// Per-domain Rust heap from the allocator tags (alloc.<tag>.current_bytes).
 	for(var/key in rust)
 		if(findtext(key, "alloc.") != 1 || findtext(key, ".current_bytes") != length(key) - 13)
@@ -171,7 +194,7 @@
 		var/tag = copytext(key, 7, length(key) - 13)
 		if(tag == "heap" || tag == "total" || !rust[key])
 			continue
-		metric("[name]_rust_[tag]_mb", rust[key] / (1024 * 1024), "MB")
+		count_metric("[name]_rust_[tag]_mb", rust[key] / (1024 * 1024), "MB")
 
 /// Latest DreamDaemon memory sample written by the runner, or null.
 /proc/benchmark_process_memory()

@@ -57,6 +57,13 @@
 
 	var/datum/wires/wires = null
 
+/// An atom owns its wiring: the destroy transaction's links phase deletes it
+/// (lifecycle.md section 4), so no Destroy() override hand-deletes `wires`.
+/// Salvaged from Codex's main-tree wires-ownership work onto the links framework.
+/atom/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + "wires"
+
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
 	// The only L2 line in this proc; the containment ledger (C1) owns the rest.

@@ -41,6 +41,7 @@
 	var/description = ""
 	/// list of /datum/affliction_trigger_outcome describing each condition this
 	/// cause can spawn. Authored by subtype New().
+	// dm-health: type list</datum/affliction_trigger_outcome>?
 	var/list/produces
 
 
@@ -58,6 +59,12 @@
 /// damage % (so one cause can have Moderate / Severe / Critical
 /// outcomes at different organ-damage levels). `tier` is the book's
 /// label for that bucket.
+// dm-health: param condition_type typepath</datum/affliction>
+// dm-health: param chance num
+// dm-health: param requires_present typepath</datum/affliction>?
+// dm-health: param requires_absent typepath</datum/affliction>?
+// dm-health: param threshold num?
+// dm-health: param tier text?
 /datum/affliction_trigger/proc/declare(condition_type, chance = 100, requires_present = null, requires_absent = null, threshold = null, tier = null)
 	produces += list(new /datum/affliction_trigger_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
 
@@ -65,6 +72,7 @@
 // --- Outcome record -----------------------------------------------------
 
 /datum/affliction_trigger_outcome
+	// dm-health: type typepath</datum/affliction>
 	var/condition_type
 	/// % chance per qualifying event (damage_event causes) or unused for
 	/// gate-style causes where the condition is either present or not.
@@ -124,6 +132,7 @@
 	/// Body region filter. Null = any. Else a list of organ_tags
 	/// (BP_TORSO, BP_HEAD, BP_L_ARM, ...) or one of the named groups
 	/// "limb" / "any_torso" handled by matches().
+	// dm-health: type list<text>?
 	var/list/body_regions
 	/// Minimum single-event damage to qualify.
 	var/min_damage = 1

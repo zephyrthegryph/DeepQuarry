@@ -34,7 +34,7 @@
 
 	say_list_type = /datum/say_list/Steve
 
-/mob/living/simple_mob/horror/Steve/death()
+/mob/living/simple_mob/horror/Steve/on_death(gibbed)
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

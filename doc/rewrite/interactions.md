@@ -84,7 +84,7 @@ Every interaction is a definition, not a proc override. So every interaction can
 - The adapters produce the hands' actions, filtered by `allows_interaction()`: the AI gets tool-less `INTERACTION_TAG_REMOTE` interactions on what it can see (`has_camera_sight()`: its view, or the camera network when in a core; the rule of its tgui state); cyborgs get everything except observer-only (their modules are their held items, so tool interactions come through `resolve_attackby` as for hands); ghosts get only `INTERACTION_TAG_OBSERVER`; telekinesis gets tool-less ones (`interactions_for()`/`try_interaction()` take an `adapter` argument so telekinesis can act for a human). Every non-hand Use tries the resolver first (`use_interaction()`), then the legacy proc.
 - `/atom/var/silicon_use` (a type var; `code/__defines/interactions.dm`) replaces the forwarding overrides: `SILICON_USE_HAND` (the AI's Use is `attack_hand`; `/obj/machinery` sets it), `SILICON_USE_UI` (the AI's Use opens tgui), `ROBOT_USE_HAND` and `ROBOT_USE_HAND_ADJACENT` (a cyborg's empty-gripper Use is `attack_hand`, always or when adjacent). The base `attack_ai` and `attack_robot` read it, so a type's own override still wins. `/obj/machinery/attack_ai` keeps only its gate (a cyborg without a client, or looking through a camera, can't control machines remotely) and calls `..()`. Ghost UI openers are covered by `/obj/attack_ghost`, which opens tgui.
 - Deleted: 79 `attack_ai`, 9 `attack_robot` and 6 `attack_ghost` overrides that only forwarded. Behaviour changes, all small: machines whose own `attack_ai` forwarded now get the machinery gate for remote-viewing or clientless cyborgs; ghosts with inquisitive ghost on also get the examine on those six types, as on every other object; the privacy switch's `attack_hand()` gets its user.
-- Kept, with real behaviour or owned by another track: the digital and shutoff valves and `light/flamp` (an ancestor overrides `attack_ai` differently); the medical, cloning, cryo, resleeving and sleeper consoles and the medical stand (the body track's files). `tools/ci/actor_forwarding_lint.py` (CI: Check Actor Forwarding) forbids new forwarding-only overrides and allowlists these.
+- Kept, with real behaviour: the digital and shutoff valves and `light/flamp` (an ancestor overrides `attack_ai` differently). `tools/ci/actor_forwarding_lint.py` (CI: Check Actor Forwarding) forbids new forwarding-only overrides and allowlists these. The body track's medical, cloning, cryo, resleeving and sleeper consoles, the PanD.E.M.I.C. and the medical stand were converted in wave 5 (tests: `dq_interact_cleanup_tests.dm`).
 - Tests: `code/modules/unit_tests/dq_actor_adapter_tests.dm` (the filter per actor, Use through the resolver per actor, and parity per actor type on converted types: button, fire alarm, privacy switch, airlock, turret control, ladder, closet).
 
 ## 5. Interaction definitions
@@ -111,6 +111,117 @@ Every interaction is a definition, not a proc override. So every interaction can
 | `tags` | For filtering, e.g. `hostile` |
 
 Definitions are shared singletons: a type lists or inherits them, and it costs no memory per instance.
+
+## 5a. Compact form
+
+**Survey.** Sampled the items, clothing, weapons, devices, toys and stacks domains (the bulk of what I7 still had left to convert) plus everything already converted in machinery, structures and the items batches done so far (~50 real conversions). Within `code/game/objects/items/` + `code/modules/clothing/` alone: 143 files with `attack_self`, 52 with `attack_hand`, 113 with `attackby`, 20 with `click_alt` (§1's whole-codebase counts - 500/635/874/88 - are the same shapes at large; the tool-quality-gated slice of `attackby` is smaller than it looks because I4 already moved most tool checks to `*_act`/`use_tool()`, leaving `attackby` mostly for non-tool items).
+
+| Shape | Old pattern | Share (sampled) | Compact macro |
+|---|---|---|---|
+| Plain use | `attack_self`: one call, e.g. open a UI, `zoom()`, `activate()` | Majority of `attack_self` (the assembly and devices batches: 13 of 15 conversions were exactly this) | `INTERACT_USE` |
+| Toggle a state | `attack_self`/`attack_hand`: flip a var, update_icon() | A named case of Plain use - same macro, no separate one needed | `INTERACT_USE` / `INTERACT_HAND` |
+| Use tool X on me | `attackby` gated on `has_tool_quality()` | Small and shrinking (6 of 113 sampled `attackby` bodies) - most of this shape already left `attackby` in I4 | Full form (`tool`/`tool_tier` fields) - not a compact macro; a tool interaction already needs the cost fields the compact shapes deliberately don't carry |
+| Insert item of type X | `attackby` gated on `istype(W, /obj/item/X)` near the top | Dominant `attackby` shape (104 of 113 sampled bodies open on an `istype` check) | `INTERACT_INSERT` |
+| Used with any item (untyped) | `attackby` with no type check, or a multi-branch dispatcher | The rest of `attackby` | `INTERACT_ITEM` |
+| Alt-click toggle/eject | `click_alt`: eject an ID, remove a component, flip a var | Majority of `click_alt` (10 of 20 sampled bodies) | `INTERACT_ALT` |
+| Multi-option menu | `tgui_alert`/`tgui_input_list` to choose which of several things to do (assembly_holder's "which side", chameleon's saved-item swap) | A minority, but recurring | Full form: several interactions (one per option), or one interaction whose effect proc shows the menu |
+| Conditional (anchored, powered, adjacent, state machine) | Guard clauses before the real body | Cuts across every shape above | The compact macros' trailing `requires...` args (P2 `REQ_*` clauses) add these on top of the shape's own requirements; a shape with many/unusual clauses is often clearer in the full form |
+
+**The macros** (`code/__defines/interactions.dm`), each a plain data tuple - no datum subtype, no `declare_interactions()` override:
+
+```dm
+INTERACT_USE(name, effect, requires...)              // old attack_self
+INTERACT_HAND(name, effect, requires...)             // old attack_hand
+INTERACT_ITEM(name, effect, requires...)             // old attackby, untyped
+INTERACT_INSERT(held_type, effect, name, requires...) // old attackby, istype(W, held_type) guard
+INTERACT_ALT(name, effect, requires...)              // old click_alt
+```
+
+`effect` is `PROC_REF(proc_name)` (or a written-out `.proc/proc_name`), pointing at a proc that already exists on the type - no interaction-specific wrapper proc. `name` may be `null`: `INTERACT_USE`/`HAND`/`ITEM`/`ALT` derive one from the proc's own name (`insert_cell` → "Insert cell"); `INTERACT_INSERT` derives "Insert a/an `<held type's name>`" when `held_type` is a single type. `requires` is optional extra P2 clauses (`REQ_*`) on top of what the shape already implies (reach, a free hand, or the typed-item guard).
+
+A type declares its specs from a **getter**, not a plain var:
+
+```dm
+/obj/item/binoculars/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE("Zoom", PROC_REF(zoom)),
+	)
+	return L
+```
+
+Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either.
+
+**Compiling.** `declare_interactions()` (interaction.dm) calls `get_interactions()` and turns each spec into a `/datum/interaction/generic` singleton via `dq_interaction_from_spec()` (`code/datums/interactions/compact.dm`), interned by the spec list's own reference identity, not its printed content: `PROC_REF(x)` is `nameof(.proc/x)`, a bare proc name with no type prefix, so two unrelated types that happen to name their effect proc the same thing (`interaction_self` is a common choice) would collide on a string key. A spec is stable across calls that share it - a `get_interactions()` override returns a `var/static/list`, computed once per *declaring* proc and handed back unchanged by every subtype that inherits it without overriding the getter (the assembly hierarchy's shared `assembly_self` spec) - and distinct for two types that each build their own list, even when the content looks similar (`aicard` and `bodysnatcher` both naming their own `interaction_self`). Generated interactions carry a real `id` (derived from the kind and the effect proc, deduplicated against a collision with an md5 suffix) and plug into `GLOB.interactions_by_type`'s sibling registry the same way, so the resolver, the Menu, examine, screentips and keybinds need no changes to support them - `interaction_candidates()` accepts either a `/datum/interaction` type path (full form) or a live instance (compact form) in the same list.
+
+**The one always-handled shape.** Only `INTERACT_USE`'s effect proc's own return value is ignored: `zoom()` can `return` nothing and the interaction still counts as run. A self-use has nothing left to fall through to once reached - the old `attack_self` chain ended there. This is the `run_effect()` hook on `/datum/interaction` (attempt()'s effect-call step, factored out for this reason); `/datum/interaction/generic` overrides it for `INTERACT_USE` only. Every other compact shape needs its effect's real TRUE/FALSE, same as the legacy handler it replaces: `INTERACT_HAND` falls through to `hand_gate()`/pickup, `INTERACT_ALT` to the default alt-click panel, and `INTERACT_ITEM`/`INTERACT_INSERT` may have sibling candidates competing for one `attackby`. Pointing `INTERACT_HAND`/`ALT` at a proc that doesn't return TRUE is a common mistake to check for in review - it silently turns "did something, then fall through" into "did nothing, ever."
+
+**Before/after, one per shape:**
+
+```dm
+// Plain use - binoculars.dm
+// Before:
+/obj/item/binoculars/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	zoom()
+// After:
+/obj/item/binoculars/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(zoom)))
+	return L
+```
+
+```dm
+// Insert item of type X - advnifrepair.dm (trimmed)
+// Before:
+/obj/item/nifrepairer/attackby(obj/W, mob/user)
+	if(istype(W,/obj/item/stack/nanopaste))
+		var/obj/item/stack/nanopaste/np = W
+		if((supply.get_free_space() >= efficiency) && np.use(1))
+			supply.add_reagent(id = REAGENT_ID_NIFREPAIRNANITES, amount = efficiency)
+			update_icon()
+// After:
+/obj/item/nifrepairer/get_interactions()
+	var/static/list/L = list(INTERACT_INSERT(/obj/item/stack/nanopaste, PROC_REF(interaction_item), "Load"))
+	return L
+
+/obj/item/nifrepairer/proc/interaction_item(mob/user, obj/item/stack/nanopaste/np, datum/interaction/interaction)
+	if((supply.get_free_space() >= efficiency) && np.use(1))
+		supply.add_reagent(id = REAGENT_ID_NIFREPAIRNANITES, amount = efficiency)
+		update_icon()
+	return TRUE
+```
+
+```dm
+// Alt-click eject - communicator.dm (trimmed)
+// Before:
+/obj/item/communicator/click_alt()
+	if(issilicon(usr))
+		return
+	remove_id()
+// After:
+/obj/item/communicator/get_interactions()
+	var/static/list/L = list(INTERACT_ALT("Remove ID", PROC_REF(remove_id_alt)))
+	return L
+
+/obj/item/communicator/proc/remove_id_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
+		return FALSE // Not INTERACT_USE: a real FALSE, so this correctly falls through.
+	remove_id()
+	return TRUE
+```
+
+**Subtyping.** `get_interactions()` is a plain proc override: a subtype's replaces its parent's, it doesn't merge with it. A subtype that wants both its own compact interactions and an ancestor's uses `declare_interactions()` instead - its `..()` chain is the one every full-form interaction already relies on - and builds its own entry directly with `dq_interaction_from_spec()`:
+
+```dm
+/obj/item/assembly/signaler/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
+	..()
+```
+
+A plain `get_interactions()` override is for a type with no compact-declaring ancestor of its own (the common case: most items aren't subtypes of something that also uses the compact form).
+
+**When to reach for the full form instead:** a menu that asks the player which of several things to do, an interaction whose display name or requirement varies with target state (`display_name()`/`applies_to()` overrides), one that needs the tool cost pipeline (`tool`/`duration`), or one two types must NOT share despite an identical-looking spec (interning is opt-out by writing distinct effect procs, even trivially different ones).
 
 ## 6. Where interactions come from
 
@@ -234,20 +345,7 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 **Converted gates.** About 240 reads became `IS_*` checks or `use_stance()` switches in the legacy handlers (routing: attack_hand, attackby, UnarmedAttack, bump swapping, the melee swing divert). About 45 writes became data defaults (`set_use_stance()`, `combat_mode = TRUE`). Two gates compared against `"hurt"`, which never matched `I_HURT`: `floor_light.dm` now smashes in combat mode as intended, and the polymorph (`change.dm`) now turns combat mode on. `whip` read `if(user.a_intent)`, which was always true, and the check is gone. No legacy gate became an interaction requirement: each sits inside a legacy handler, and it moves to an interaction when I7 converts that handler's domain. The Disarm and Grab interactions and the requirement clauses are what those conversions build on.
 
 **Left for other work** (the lint allowlists them; `a_intent` stays as a read-only mirror of `use_stance()` until they convert, then it is deleted):
-- The body rewrite's files. Each gate converts one to one: `a_intent == I_HURT` → `IS_HARMING(user)`, `!= I_HELP` → `!IS_HELPING(user)`, `switch(M.a_intent)` → `switch(M.use_stance())`.
-  - `code/modules/medical/instruments/resuscitation.dm:23,55,89`
-  - `code/modules/surgery/surgery.dm:142`
-  - `code/modules/organs/organ.dm:563`
-  - `code/game/objects/items/weapons/surgery_tools.dm:26`
-  - `code/game/objects/items/devices/scanners/health.dm:36`
-  - `code/modules/reagents/reagent_containers/syringes.dm:103,354` (354 compares against `"hurt"`, which never matches: a latent bug)
-  - `code/modules/reagents/reagent_containers/hypospray.dm:60`
-  - `code/modules/reagents/reagent_containers/blood_pack.dm:126`
-  - `code/modules/mob/living/carbon/human/species/species.dm:624`
-  - `code/modules/mob/living/carbon/human/species/station/teshari.dm:13`
-  - `code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:98`
-  - `code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm:37,84`
-  - `has_a_intent` in `species_hud.dm` still says whether the species draws the combat mode button.
+- The body rewrite's gates (medical instruments, surgery, organs, syringes, hyposprays, blood packs, species) were converted in wave 5: `a_intent == I_HURT` → `IS_HARMING(user)`, `!= I_HELP` → `!IS_HELPING(user)`, `switch(M.a_intent)` → `switch(M.use_stance())`. The lethal-injection syringe's gate compared against `"hurt"` and never matched; it now refuses the stab in combat mode, as its message always said. `has_a_intent` in `species_hud.dm` still says whether the species draws the combat mode button.
 - Tool `*_act` procs, which I4 is migrating: `airlock.dm:797,850`, `windowdoor.dm:238`, `mecha.dm:1459`, `spy_bug.dm:127`, `window.dm:288`, `maintenance_panel.dm:36`, `robot.dm:970,1043`.
 
 ## 13. Migration, one domain at a time (I7)

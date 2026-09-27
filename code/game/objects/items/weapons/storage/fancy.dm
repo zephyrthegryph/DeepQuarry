@@ -29,7 +29,7 @@
 	var/closed_state
 
 /obj/item/storage/fancy/update_icon(itemremoved = 0)
-	var/total_contents = contents.len - itemremoved
+	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE)) - itemremoved
 	icon_state = "[icon_type]box[total_contents]"
 	return
 
@@ -37,12 +37,12 @@
 	. = ..()
 
 	if(Adjacent(user))
-		if(!contents.len)
+		if(!length(slot_contents(CONTAINER_SLOT_STORAGE)))
 			. += "There are no [icon_type]s left in the box."
-		else if(contents.len == 1)
+		else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 1)
 			. += "There is one [icon_type] left in the box."
 		else
-			. += "There are [contents.len] [icon_type]s in the box."
+			. += "There are [length(slot_contents(CONTAINER_SLOT_STORAGE))] [icon_type]s in the box."
 
 /*
  * Egg Box
@@ -75,8 +75,8 @@
 	cut_overlays()
 	if(open)
 		icon_state = open_state
-		if(contents.len >= 1)
-			add_overlay("eggbox[contents.len]")
+		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
+			add_overlay("eggbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
 	else
 		icon_state = closed_state
 
@@ -179,7 +179,7 @@
 /obj/item/storage/fancy/crayons/update_icon()
 	var/mutable_appearance/ma = new(src)
 	ma.cut_overlays()
-	for(var/obj/item/pen/crayon/crayon in contents)
+	for(var/obj/item/pen/crayon/crayon in slot_contents(CONTAINER_SLOT_STORAGE))
 		add_overlay(image('icons/obj/crayons.dmi',crayon.colourName))
 	appearance = ma
 
@@ -222,7 +222,7 @@
 /obj/item/storage/fancy/markers/update_icon()
 	var/mutable_appearance/ma = new(src)
 	ma.cut_overlays()
-	for(var/obj/item/pen/crayon/marker/marker in contents)
+	for(var/obj/item/pen/crayon/marker/marker in slot_contents(CONTAINER_SLOT_STORAGE))
 		ma.add_overlay(image('icons/obj/crayons.dmi',"m"+marker.colourName))
 	appearance = ma
 
@@ -285,7 +285,7 @@
 	create_reagents(15 * storage_slots)//so people can inject cigarettes without opening a packet, now with being able to inject the whole one
 	flags |= OPENCONTAINER
 	if(brand)
-		for(var/obj/item/clothing/mask/smokable/cigarette/C in src)
+		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
 
@@ -293,8 +293,8 @@
 	cut_overlays()
 	if(open)
 		icon_state = open_state
-		if(contents.len >= 1)
-			add_overlay("cig[contents.len]")
+		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
+			add_overlay("cig[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
 	else
 		icon_state = closed_state
 
@@ -302,7 +302,7 @@
 	if(open)
 		return
 	open = TRUE
-	if(contents.len == 0)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
 		update_icon()
@@ -310,7 +310,7 @@
 
 /obj/item/storage/fancy/cigarettes/close(mob/user as mob)
 	open = FALSE
-	if(contents.len == 0)
+	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
 		update_icon()
@@ -320,13 +320,16 @@
 	// Don't try to transfer reagents to lighters
 	if(istype(W, /obj/item/clothing/mask/smokable/cigarette))
 		var/obj/item/clothing/mask/smokable/cigarette/C = W
-		reagents.trans_to_obj(C, (reagents.total_volume/contents.len))
+		reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
 /obj/item/storage/fancy/cigarettes/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user && user.zone_sel.selecting == O_MOUTH)
 		// Find ourselves a cig. Note that we could be full of lighters.
-		var/obj/item/clothing/mask/smokable/cigarette/cig = locate() in src
+		var/obj/item/clothing/mask/smokable/cigarette/cig
+		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
+			cig = C
+			break
 
 		if(cig == null)
 			to_chat(user, span_notice("Looks like the packet is out of cigarettes."))
@@ -342,7 +345,7 @@
 		remove_from_storage(cig, null, user)
 		user.equip_to_slot(cig, slot_wear_mask)
 
-		reagents.maximum_volume = 15 * contents.len
+		reagents.maximum_volume = 15 * length(slot_contents(CONTAINER_SLOT_STORAGE))
 		to_chat(user, span_notice("You take a cigarette out of the pack."))
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
@@ -431,15 +434,15 @@
 /obj/item/storage/fancy/cigar/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	var/obj/item/clothing/mask/smokable/cigarette/cigar/C = W
 	if(!istype(C)) return
-	reagents.trans_to_obj(C, (reagents.total_volume/contents.len))
+	reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
 /obj/item/storage/fancy/cigar/update_icon()
 	cut_overlays()
 	if(open)
 		icon_state = open_state
-		if(contents.len >= 1)
-			add_overlay("[initial(icon_state)][contents.len]")
+		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
+			add_overlay("[initial(icon_state)][length(slot_contents(CONTAINER_SLOT_STORAGE))]")
 	else
 		icon_state = closed_state
 
@@ -540,7 +543,7 @@
 	update_icon()
 
 /obj/item/storage/lockbox/vials/update_icon(itemremoved = 0)
-	var/total_contents = contents.len - itemremoved
+	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE)) - itemremoved
 	icon_state = "vialbox[total_contents]"
 	cut_overlays()
 	if (!broken)
@@ -586,7 +589,7 @@
 	update_icon()
 
 /obj/item/storage/fancy/heartbox/update_icon(itemremoved = 0)
-	if (contents.len == 0)
+	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "heartbox_empty"
 
 

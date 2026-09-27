@@ -192,7 +192,7 @@
 		if(newTurf.density)
 			direction |= wallDir
 
-	for(var/obj/effect/plant/shroom in T.contents)
+	for(var/obj/effect/plant/shroom in turf_contents_of_type(T, /obj/effect/plant))
 		if(shroom == src)
 			continue
 		if(shroom.floor) //special

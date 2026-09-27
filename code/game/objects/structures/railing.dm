@@ -152,7 +152,19 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	update_icon()
 	return
 
-/obj/structure/railing/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/railing/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/railing_item,
+	)
+	..()
+
+/// Old attackby: slam/throw a grabbed mob over the railing, or take a weapon hit.
+/datum/interaction/entry_item/railing_item
+	id = "railing_item"
+	name = "Use"
+	effect = /obj/structure/railing/proc/interaction_item
+
+/obj/structure/railing/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// Handle harm intent grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -161,7 +173,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 			var/obj/occupied = can_climb_turf(src)
 			if(occupied)
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
-				return
+				return TRUE
 			if (G.state < 2)
 				if(IS_HARMING(user))
 					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
@@ -171,7 +183,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 					playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 				else
 					to_chat(user, span_danger("You need a better grip to do that!"))
-					return
+					return TRUE
 			else
 				if (get_turf(M) == get_turf(src))
 					M.forceMove(get_step(src, src.dir))
@@ -180,14 +192,14 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 				M.status_at_least(EFFECT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] throws [M] over \the [src]!"))
 			consume(W, user)
-			return
+			return TRUE
 
 	else
 		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 		receive_weapon_hit(W, user)
 		user.setClickCooldown(user.get_attack_speed(W))
 
-	return ..()
+	return TRUE
 
 /obj/structure/railing/wrench_act(mob/user, obj/item/W)
 	if(anchored)

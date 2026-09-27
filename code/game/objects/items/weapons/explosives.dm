@@ -21,8 +21,6 @@
 	set_wires(new /datum/wires/explosive/c4(src))
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
-REF_OWNED(/obj/item/plastique, "wires")
-
 /obj/item/plastique/attackby(obj/item/I, mob/user)
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
 		wires.Interact(user)

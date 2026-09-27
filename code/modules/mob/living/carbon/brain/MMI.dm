@@ -223,9 +223,7 @@
 //	view.add_language(LANGUAGE_ROBOT_TALK)//No binary without a binary communication device
 	view.add_language(LANGUAGE_GALCOM)
 	view.add_language(LANGUAGE_EAL)
-	view.set_stat(CONSCIOUS)
 	view.status_set(EFFECT_MUTED, 0)
-	registry_leave(REGISTRY_DEAD_MOBS, view)
 
 /obj/item/mmi/digital/update_occupied_state()
 	return
@@ -252,7 +250,10 @@
 /obj/item/mmi/digital/take_identity(mob/living/L, move_mind = TRUE)
 	. = ..()
 	var/mob/living/carbon/brain/view = .
-	view.set_stat(CONSCIOUS)
+	if(view.stat == DEAD) // A synthetic host has no tissue to decay: the view boots alive.
+		view.return_from_death("booted in [src]", src, REVIVE_IGNORE_WINDOW)
+	else
+		view.set_stat(CONSCIOUS)
 
 /obj/item/mmi/digital/attack_self(mob/user)
 	. = ..(user)

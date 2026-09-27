@@ -6,7 +6,6 @@
 
 // Radiation constants.
 // STEFAN_BOLTZMANN_CONSTANT is generated (verdigris/domains/heat/src/consts.rs).
-#define COSMIC_RADIATION_TEMPERATURE 3.15      // K.
 #define AVERAGE_SOLAR_RADIATION      200       // W/m^2. Kind of arbitrary. Really this should depend on the sun position much like solars.
 #define RADIATOR_OPTIMUM_PRESSURE    3771      // kPa at 20 C. This should be higher as gases aren't great conductors until they are dense. Used the critical pressure for air.
 #define GAS_CRITICAL_TEMPERATURE     132.65    // K. The critical point temperature for air.

@@ -153,7 +153,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)
 		var/turf/T = get_step(src, d)
-		for(var/obj/machinery/power/terminal/smes_input/term in T)
+		for(var/obj/machinery/power/terminal/smes_input/term in turf_contents_of_type(T, /obj/machinery/power/terminal/smes_input))
 			if(term && term.dir == turn(d, 180) && !term.master)
 				LAZYOR(terminals, term)
 				term.master = src
@@ -349,7 +349,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 		connect_to_network()
 
 /obj/machinery/power/smes/proc/check_terminal_exists(turf/location, mob/user, direction)
-	for(var/obj/machinery/power/terminal/term in location)
+	for(var/obj/machinery/power/terminal/term in turf_contents_of_type(location, /obj/machinery/power/terminal))
 		if(term.dir == direction)
 			to_chat(user, span_filter_notice(span_notice("There is already a terminal here.")))
 			return 1

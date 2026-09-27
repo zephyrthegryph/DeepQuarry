@@ -43,7 +43,7 @@
 	adjust_scale(1.2)
 	return ..()
 
-/mob/living/simple_mob/animal/giant_spider/carrier/death()
+/mob/living/simple_mob/animal/giant_spider/carrier/on_death(gibbed)
 	visible_message(span_warning("\The [src]'s abdomen splits as it rolls over, spiderlings crawling from the wound.") )
 	om_after(src, 1, PROC_REF(burst_into_spiderlings))
 	return ..()

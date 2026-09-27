@@ -228,7 +228,7 @@
 							if(M.nutrition > 900)	//dead
 								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.")
 
-							var/obj/item/organ/internal/heart/heart = M.internal_organs_by_name[O_HEART]
+							var/obj/item/organ/internal/heart/heart = LAZYACCESS(M.internal_organs_by_name, O_HEART)
 							sound_strength = "hear"
 							sound = "no heartbeat"
 							if(heart)
@@ -261,7 +261,7 @@
 										if(PULSE_THREADY)
 											sound = span_warning("an extremely rapid, thready, irregular heartbeat")
 
-							var/obj/item/organ/internal/lungs/L = M.internal_organs_by_name[O_LUNGS]
+							var/obj/item/organ/internal/lungs/L = LAZYACCESS(M.internal_organs_by_name, O_LUNGS)
 							if(!L || M.losebreath)
 								sound += span_warning(" and no respiration")
 							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
@@ -272,10 +272,10 @@
 						//ORGANS INVENTORY: Appendix, Intestines, Kidneys, Liver, Spleen, Stomach.
 						//Of these, the Intestines, Stomach, Liver, and Kidneys make noise.
 						if(BP_GROIN)
-							var/obj/item/organ/internal/intestine/intestine = M.internal_organs_by_name[O_INTESTINE]
-							var/obj/item/organ/internal/stomach/stomach = M.internal_organs_by_name[O_STOMACH]
-							var/obj/item/organ/internal/kidneys/kidneys = M.internal_organs_by_name[O_KIDNEYS]
-							var/obj/item/organ/internal/liver/liver = M.internal_organs_by_name[O_LIVER]
+							var/obj/item/organ/internal/intestine/intestine = LAZYACCESS(M.internal_organs_by_name, O_INTESTINE)
+							var/obj/item/organ/internal/stomach/stomach = LAZYACCESS(M.internal_organs_by_name, O_STOMACH)
+							var/obj/item/organ/internal/kidneys/kidneys = LAZYACCESS(M.internal_organs_by_name, O_KIDNEYS)
+							var/obj/item/organ/internal/liver/liver = LAZYACCESS(M.internal_organs_by_name, O_LIVER)
 							sound_strength = "hear"
 							sound = span_warning("no gastric sounds,")
 							if(intestine)
@@ -935,7 +935,11 @@
 	icon_state = "collar_size"
 	item_state = "collar_size"
 	overlay_state = "collar_size"
-	var/original_size
+	/// Ratio (target_size / size_multiplier at activation) the collar itself applied.
+	/// Stored as a ratio rather than an absolute snapshot so that restoring only
+	/// undoes the collar's own contribution instead of clobbering whatever other
+	/// size sources (potions, sizeguns, etc.) did to the wearer in the meantime.
+	var/applied_ratio
 	var/last_activated
 	var/target_size = 1
 	on = 1
@@ -981,24 +985,21 @@
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
-		if(H.size_multiplier != target_size)
+		if(applied_ratio == null)
 			if(!(world.time - last_activated > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			last_activated = world.time
-			original_size = H.size_multiplier
+			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			s.set_up(3, 1, M)
 			s.start()
-		else if(H.size_multiplier == target_size)
-			if(original_size == null)
-				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
-				return
+		else
 			last_activated = world.time
-			H.resize(original_size, ignore_prefs = FALSE, allow_stripping = TRUE)
-			original_size = null
+			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
+			applied_ratio = null
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
@@ -1081,24 +1082,21 @@
 		if (target_size < 0.26)
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
-		if(H.size_multiplier != target_size)
+		if(applied_ratio == null)
 			if(!(world.time - last_activated > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			last_activated = world.time
-			original_size = H.size_multiplier
+			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			s.set_up(3, 1, M)
 			s.start()
-		else if(H.size_multiplier == target_size)
-			if(original_size == null)
-				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
-				return
+		else
 			last_activated = world.time
-			H.resize(original_size, ignore_prefs = FALSE, allow_stripping = TRUE)
-			original_size = null
+			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
+			applied_ratio = null
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
@@ -1160,7 +1158,7 @@
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			last_activated = world.time
-			original_size = H.size_multiplier
+			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			currently_shrinking = 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
@@ -1168,12 +1166,12 @@
 			s.set_up(3, 1, M)
 			s.start()
 		else if(currently_shrinking == 1)
-			if(original_size == null)
+			if(applied_ratio == null)
 				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
 				return
 			last_activated = world.time
-			H.resize(original_size, ignore_prefs = FALSE, allow_stripping = TRUE)
-			original_size = null
+			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
+			applied_ratio = null
 			currently_shrinking = 0
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")

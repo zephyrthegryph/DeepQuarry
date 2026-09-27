@@ -64,11 +64,12 @@ REF_BACKLIST(/mob/living/simple_mob/blob/spore, list("factory" = "spores"))
 
 /mob/living/simple_mob/blob/spore
 	delete_on_death = TRUE
+	death_message = "bursts!"
 
-/mob/living/simple_mob/blob/spore/death(gibbed, deathmessage = "bursts!")
+/mob/living/simple_mob/blob/spore/on_death(gibbed)
+	. = ..()
 	if(overmind)
 		overmind.blob_type.on_spore_death(src)
-	..(gibbed, deathmessage)
 
 /mob/living/simple_mob/blob/spore/update_icons()
 	..() // This will cut our overlays.

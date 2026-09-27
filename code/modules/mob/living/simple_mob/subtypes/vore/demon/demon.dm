@@ -121,7 +121,7 @@
 		to_chat(L, span_warning("You feel a tiny prick."))
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
-/mob/living/simple_mob/vore/demon/death()
+/mob/living/simple_mob/vore/demon/on_death(gibbed)
 	laugh()
 	..()
 

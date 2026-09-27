@@ -211,11 +211,11 @@
 		if(S.dirt > 50)
 			self.Vac.afterattack(S, self, 1)
 			return
-	for(var/obj/O in T)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(is_type_in_list(O, GLOB.edible_trash) && !O.anchored)
 			self.Vac.afterattack(T, self, 1)
 			return
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(!L.anchored && L.devourable && L != self && !L?.buckled_to() && L.can_be_drop_prey)
 			self.Vac.afterattack(L, self, 1)
 			return

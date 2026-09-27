@@ -14,7 +14,7 @@
 	our_landmark = locate() in src
 	if(!our_landmark)
 		log_mapping("Looking glass area [name] couldn't find a landmark")
-	for(var/turf/simulated/floor/looking_glass/lgt in src)
+	for(var/turf/simulated/floor/looking_glass/lgt in area_contents_of_type(src, /turf/simulated/floor/looking_glass))
 		LAZYADD(our_turfs, lgt)
 		if(lgt.optional)
 			LAZYADD(our_optional_turfs, lgt)

@@ -3,7 +3,7 @@
 # this file: a file may not exceed its count. Make the list an owned-children
 # list, a backlist, a declared cache with an invalidation rule, a relation or
 # a registry, or key it by OM handle, and lower the count with --update.
-# Total: 602 writes in 144 files.
+# Total: 596 writes in 139 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
@@ -44,8 +44,6 @@ code/game/machinery/machinery.dm 3
 code/game/machinery/partslathe.dm 1
 code/game/mecha/equipment/tools/syringe_gun.dm 1
 code/game/objects/effects/chem/chemsmoke.dm 2
-code/game/objects/effects/decals/Cleanable/humans.dm 1
-code/game/objects/effects/decals/Cleanable/misc.dm 2
 code/game/objects/items/devices/uplink_random_lists.dm 46
 code/game/objects/items/weapons/chewables.dm 1
 code/game/objects/items/weapons/material/kitchen.dm 1
@@ -70,12 +68,12 @@ code/modules/economy/cargo_market.dm 6
 code/modules/economy/trader.dm 1
 code/modules/entopics/alternate_appearance.dm 1
 code/modules/error_handler/error_viewer.dm 1
-code/modules/expedition/expedition_objective.dm 7
+code/modules/expedition/expedition_objective.dm 8
 code/modules/expedition/expedition_site.dm 1
 code/modules/factions/reputation.dm 4
 code/modules/gamemaster/event2/events/everyone/electrical_fault.dm 1
 code/modules/games/cards.dm 4
-code/modules/generated_station/generated_station_defenders.dm 2
+code/modules/generated_station/generated_station_defenders.dm 1
 code/modules/generated_station/generated_station_director.dm 4
 code/modules/generated_station/generated_station_jobs.dm 1
 code/modules/generated_station/generated_station_materializer.dm 5
@@ -100,7 +98,6 @@ code/modules/mob/living/bot/bot.dm 1
 code/modules/mob/living/carbon/human/species/species.dm 3
 code/modules/mob/living/carbon/human/species/station/protean/forms.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm 1
-code/modules/mob/living/organs.dm 1
 code/modules/mob/living/silicon/ai/multicam.dm 1
 code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm 5
 code/modules/mob/living/silicon/robot/robot_modules/station.dm 237
@@ -113,8 +110,6 @@ code/modules/mob/living/simple_mob/subtypes/vore/plants/plants.dm 1
 code/modules/mob/living/simple_mob/taming.dm 1
 code/modules/nifsoft/software/13_soulcatcher.dm 1
 code/modules/organs/internal/augment/armmounted.dm 3
-code/modules/organs/organ.dm 1
-code/modules/organs/organ_external.dm 1
 code/modules/overmap/events/event_handler.dm 1
 code/modules/overmap/overmap_shuttle.dm 1
 code/modules/pda/cart.dm 11

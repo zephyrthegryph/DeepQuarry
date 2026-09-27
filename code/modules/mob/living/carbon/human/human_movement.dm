@@ -52,7 +52,7 @@
 				. += 4
 			else if(E.splinted && E.splinted.loc != E)
 				. += 0.5
-			else if(E.status & ORGAN_BROKEN)
+			else if(E.is_fractured())
 				. += 1.5
 	else
 		. += max(2 * stance_damage, 0) //Handles missing feet/legs
@@ -171,7 +171,7 @@
 
 	if(T.movement_cost && !flying) //If you are flying you are probably not affected by the terrain on the ground.
 		var/turf_move_cost = T.movement_cost
-		if(locate(/obj/structure/catwalk) in T) //catwalks prevent turfs from slowing your
+		if(locate_on(T, /obj/structure/catwalk)) //catwalks prevent turfs from slowing your
 			return 0
 		if(istype(T, /turf/simulated/floor/water))
 			if(species.water_movement)

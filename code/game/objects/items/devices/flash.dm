@@ -261,11 +261,13 @@ REF_OWNED(/obj/item/flash, "power_supply")
 		target.injure(INJURY_BURN, flash_burn * (flash_strength/5), BP_HEAD, src)
 	return TRUE
 
-/obj/item/flash/attack_self(mob/living/carbon/user, flag = 0, emp = 0)
-	. = ..(user)
-	if(.)
-		return TRUE
-	if(!user || !clown_check(user)) 	return
+
+/obj/item/flash/get_interactions()
+	var/static/list/L = list(INTERACT_USE("Flash", PROC_REF(interaction_self)))
+	return L
+
+/obj/item/flash/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+	if(!istype(user) || !clown_check(user)) 	return
 
 	user.setClickCooldown(user.get_attack_speed(src))
 

@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 0 in 0 files. qdel total: 2122 in 912 files.
+# Destroy total: 0 in 0 files. qdel total: 2127 in 914 files.
 [destroy]
 [qdel]
 code/ATMOSPHERICS/_atmospherics_helpers.dm 3
@@ -203,7 +203,7 @@ code/game/machinery/computer/prisonshuttle.dm 2
 code/game/machinery/computer/security.dm 6
 code/game/machinery/computer/skills.dm 3
 code/game/machinery/computer/specops_shuttle.dm 4
-code/game/machinery/cryo.dm 1
+code/game/machinery/cryo.dm 2
 code/game/machinery/cryopod.dm 18
 code/game/machinery/deployable.dm 2
 code/game/machinery/doors/airlock.dm 1
@@ -432,6 +432,7 @@ code/modules/assembly/shock_kit.dm 1
 code/modules/asset_cache/assets/preferences.dm 1
 code/modules/asset_cache/assets/spritesheets/vending.dm 1
 code/modules/autowiki/autowiki.dm 1
+code/modules/balance/_balance_harness.dm 2
 code/modules/benchmarks/_benchmark.dm 2
 code/modules/benchmarks/life_sweep.dm 1
 code/modules/benchmarks/om_dispatch.dm 2
@@ -465,7 +466,7 @@ code/modules/clothing/spacesuits/rig/rig_component_registry.dm 2
 code/modules/clothing/suits/reactive_armour.dm 2
 code/modules/clothing/suits/reactive_armour_dimensional_themes.dm 1
 code/modules/clothing/suits/storage.dm 1
-code/modules/combat_ai/brain/brain.dm 2
+code/modules/combat_ai/brain/brain.dm 1
 code/modules/combat_ai/ports/slime_state.dm 1
 code/modules/contracts/contract.dm 1
 code/modules/contracts/contract_evidence.dm 2
@@ -530,7 +531,7 @@ code/modules/gamemaster/event2/events/security/carp_migration.dm 1
 code/modules/gamemaster/event2/events/security/rogue_drones.dm 1
 code/modules/games/cards.dm 3
 code/modules/generated_station/generated_station_architecture_validation.dm 6
-code/modules/generated_station/generated_station_defenders.dm 2
+code/modules/generated_station/generated_station_defenders.dm 3
 code/modules/generated_station/generated_station_director.dm 2
 code/modules/generated_station/generated_station_fragments.dm 3
 code/modules/generated_station/generated_station_jobs.dm 1
@@ -614,7 +615,8 @@ code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm 1
 code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm 2
 code/modules/mob/living/carbon/human/species/outsider/shadow.dm 1
 code/modules/mob/living/carbon/human/species/shadekin/shadekin.dm 1
-code/modules/mob/living/carbon/human/species/species.dm 3
+code/modules/mob/living/carbon/human/species/species.dm 5
+code/modules/mob/living/carbon/human/species/species_shapeshift.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/forms.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm 1
@@ -728,7 +730,7 @@ code/modules/organs/internal/augment/bio.dm 1
 code/modules/organs/internal/brain.dm 3
 code/modules/organs/internal/malignant/malignant.dm 2
 code/modules/organs/organ.dm 2
-code/modules/organs/organ_external.dm 9
+code/modules/organs/organ_external.dm 8
 code/modules/organs/organ_stump.dm 1
 code/modules/organs/subtypes/diona.dm 3
 code/modules/organs/subtypes/machine.dm 1

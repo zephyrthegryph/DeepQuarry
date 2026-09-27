@@ -227,10 +227,10 @@
 
 	//Atmos effect
 	if(self.bodytemperature < self.minbodytemp)
-		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc)
+		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 	else if(self.bodytemperature > self.maxbodytemp)
-		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc)
+		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else
 		self.clear_alert("temp")
@@ -278,7 +278,11 @@
 /mob/living/simple_mob/
 	var/update_icon_timer
 
-/mob/living/simple_mob/death(gibbed, deathmessage = "dies!")
+/mob/living/simple_mob
+	death_message = "dies!"
+
+/mob/living/simple_mob/on_death(gibbed)
+	. = ..()
 	update_icon()
 	release_vore_contents()
 	density = FALSE //We don't block even if we did before
@@ -296,7 +300,14 @@
 	ghostjoin = 0
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	ghostjoin_icon()
-	return ..(gibbed,deathmessage)
+
+/// Undo what on_death() cleared: a revived creature blocks again, glows again and looks alive.
+/mob/living/simple_mob/on_revived(reason, datum/source)
+	. = ..()
+	density = initial(density)
+	if(has_eye_glow)
+		add_eyes()
+	update_icon()
 
 /mob/living/simple_mob/proc/callback_update_icon()
 	update_icon()

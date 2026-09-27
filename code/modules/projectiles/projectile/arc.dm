@@ -120,7 +120,7 @@ REF_OWNED(/obj/item/projectile/arc, "shadow")
 	injury_kind = INJURY_BURN
 
 /obj/item/projectile/arc/blue_energy/on_impact(turf/T)
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		attack_mob(L) // Everything on the turf it lands gets hit.
 
 // Fragmentation arc shot
@@ -181,7 +181,7 @@ REF_OWNED(/obj/item/projectile/arc, "shadow")
 	arc_height_multiplier = 0.5
 
 /obj/item/projectile/arc/spore/on_impact(turf/T)
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		attack_mob(L)
 
 	T.visible_message(span_warning("\The [src] covers \the [T] in a corrosive paste!"))
@@ -194,7 +194,7 @@ REF_OWNED(/obj/item/projectile/arc, "shadow")
 
 		splash.set_up(F, 2, 3)
 
-		var/obj/effect/decal/cleanable/chemcoating/acid = locate() in T
+		var/obj/effect/decal/cleanable/chemcoating/acid = locate_on(T, /obj/effect/decal/cleanable/chemcoating)
 		if(!istype(acid))
 			acid = new(T)
 			acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)

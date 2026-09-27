@@ -366,11 +366,18 @@
 	if (transfer && src.use(transfer))
 		var/obj/item/stack/newstack = new src.type(loc, transfer)
 		newstack.color = color
+		copy_stack_properties(newstack)
 		if (prob(transfer/orig_amount * 100))
 			transfer_fingerprints_to(newstack)
 			transfer_blooddna_to(newstack)
 		return newstack
 	return null
+
+/// Called by split() on the freshly constructed stack so subtypes whose identity
+/// is per-instance state (a runtime material, a feedstock lot) rather than the
+/// type path can carry it across. `new src.type(...)` alone only copies the type.
+/obj/item/stack/proc/copy_stack_properties(obj/item/stack/newstack)
+	return
 
 /obj/item/stack/proc/get_amount()
 	if(uses_charge)

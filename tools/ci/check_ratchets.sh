@@ -14,6 +14,7 @@ for lint in \
 	lifecycle_lint.py \
 	containment_lint.py \
 	latent_lint.py \
+	spatial_lint.py \
 	registry_lint.py \
 	instance_list_lint.py \
 	state_schema_lint.py \

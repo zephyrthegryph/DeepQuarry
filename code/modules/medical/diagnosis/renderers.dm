@@ -104,6 +104,21 @@
 		lines += span_notice("Responds to: [wanted.Join(", ")].")
 	return lines.Join("<br>")
 
+/// What an ECG readout calls a RHYTHM_*.
+/proc/heart_rhythm_label(rhythm)
+	switch(rhythm)
+		if(RHYTHM_SINUS)
+			return "normal sinus rhythm"
+		if(RHYTHM_POST_ARREST)
+			return "sinus rhythm (post-arrest)"
+		if(RHYTHM_TACHY)
+			return "irregular tachycardia"
+		if(RHYTHM_VFIB)
+			return "ventricular fibrillation - SHOCKABLE"
+		if(RHYTHM_ASYSTOLE)
+			return "asystole - not shockable"
+	return "unknown"
+
 /// One line of vitals, or null when nothing was measured.
 /datum/diagnosis/proc/render_vitals_text()
 	var/list/readings = list()
@@ -115,6 +130,8 @@
 		readings += "SpO2 [oxygenation]%"
 	if(!isnull(respiratory_rate))
 		readings += "RR [respiratory_rate]/min"
+	if(heart_rhythm)
+		readings += "rhythm: [heart_rhythm_label(heart_rhythm)]"
 	if(!isnull(temperature))
 		readings += "T [temperature]&deg;C"
 	if(consciousness)
@@ -149,6 +166,7 @@
 			"bloodPressure" = blood_pressure,
 			"oxygenation" = oxygenation,
 			"respiratoryRate" = respiratory_rate,
+			"heartRhythm" = heart_rhythm,
 			"temperature" = temperature,
 			"consciousness" = consciousness,
 			"bloodPercent" = blood_percent,
@@ -182,7 +200,7 @@
 
 /// Coarse suit-sensor status from vitality and criticality alone.
 /proc/sensor_status(mob/living/L)
-	if(L.stat == DEAD)
+	if(L.is_dead())
 		return DIAG_STATUS_DEAD
 	if(L.is_critical())
 		return DIAG_STATUS_CRITICAL

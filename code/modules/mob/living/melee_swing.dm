@@ -7,8 +7,16 @@
 // a wider arc. Moving (or dropping the weapon, or being incapacitated) cancels the swing.
 //
 // Entry point is /mob/living/attackby in code/_onclick/item_attack.dm, which diverts the
-// instant attack here. The actual hit reuses the normal resolve_item_attack/apply_hit_effect
-// path, so armor, shields, miss chance, hitsound and damage are unchanged.
+// instant attack here. The actual hit is resolved by calling the weapon's own
+// /obj/item/attack() per victim (with melee_swing_resolving set so it skips its instant
+// cooldown/animation), so weapon overrides (baton charge, energy-blade cell drain),
+// incorporeal checks, lastattacker, attack logs, armor, shields, miss chance, hitsound
+// and damage all behave exactly as an instant attack would — once per victim.
+
+/// If a swing's flag is still up this long after its windup should have ended, the
+/// safety timer force-clears it (a runtime between set and clear would otherwise
+/// permanently disable this mob's armed melee).
+#define MELEE_SWING_STUCK_GRACE (3 SECONDS)
 
 // ---------------------------------------------------------------------------
 // Item timing/shape — size-scaled defaults with per-weapon overrides.
@@ -41,6 +49,23 @@
 
 /// TRUE while a windup/swing is in progress; blocks starting another and is read by ClickOn.
 /mob/living/var/is_swinging = FALSE
+/// TRUE while begin_melee_swing is resolving hits through /obj/item/attack(); tells attack()
+/// to skip its own click cooldown + lunge animation (the swing already did both).
+/mob/living/var/melee_swing_resolving = FALSE
+/// Monotonic swing id. The stuck-flag safety timer only clears the swing it was armed for,
+/// so a timer left over from a finished swing can never clobber a newer one.
+/mob/living/var/melee_swing_serial = 0
+
+/// Safety net for is_swinging: fires MELEE_SWING_STUCK_GRACE after the windup should have
+/// resolved. If the flag is still up for the same swing, something between the set and the
+/// clear runtimed — release it (and the resolving flag) rather than wedging the mob forever.
+/mob/living/proc/clear_stuck_swing(serial)
+	if(!is_swinging || serial != melee_swing_serial)
+		return FALSE
+	log_world("[src] ([type]) melee swing #[serial] was still flagged after its windup expired; force-clearing is_swinging")
+	is_swinging = FALSE
+	melee_swing_resolving = FALSE
+	return TRUE
 
 /// The turfs a swing with `weapon` aimed at `target` would strike: the tile toward the
 /// target, plus (for sweeping weapons) the two 45-degree flanking tiles.
@@ -95,6 +120,10 @@
 	// statement between a TRUE flag and its clear is a potential permanent wedge
 	// if it runtimes.
 	is_swinging = TRUE
+	melee_swing_resolving = FALSE
+	var/serial = ++melee_swing_serial
+	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
+	om_after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), serial)
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
@@ -119,10 +148,11 @@
 		return FALSE
 
 	// The swing is committed: clear the gate and start recovery BEFORE resolving
-	// hits. resolve_item_attack/apply_hit_effect run arbitrary downstream code —
-	// a runtime in there used to leave is_swinging stuck TRUE forever, permanently
-	// disabling this mob's armed melee (attackby hard-gates on it with no reset
-	// path). The click cooldown already prevents a double-swing in the gap.
+	// hits. weapon.attack() runs arbitrary downstream code — a runtime in there
+	// used to leave is_swinging stuck TRUE forever, permanently disabling this
+	// mob's armed melee (attackby hard-gates on it with no reset path). The click
+	// cooldown already prevents a double-swing in the gap; clear_stuck_swing is
+	// the last-resort backstop.
 	setClickCooldown(weapon.get_melee_recovery())
 	is_swinging = FALSE
 
@@ -130,13 +160,19 @@
 	do_attack_animation(target)
 	playsound(src, 'sound/weapons/punchmiss.ogg', 40, 1, -1)
 	var/zone = zone_sel?.selecting || BP_TORSO // fall back to chest (clientless mobs have no HUD doll)
+	// Resolve THROUGH the weapon's attack() so per-weapon overrides (stunbaton
+	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and
+	// add_attack_logs all run exactly once per victim. melee_swing_resolving makes
+	// the base attack() skip its instant cooldown/animation — already paid above.
+	melee_swing_resolving = TRUE
 	for(var/turf/T as anything in swing_tiles)
 		for(var/mob/living/victim in T)
 			if(victim == src)
 				continue
-			var/hit_zone = victim.resolve_item_attack(weapon, src, zone)
-			if(hit_zone)
-				weapon.apply_hit_effect(victim, src, hit_zone, 1) // attack_modifier 1; null would zero the damage
+			if(QDELETED(weapon))
+				break // a weapon override consumed/destroyed it mid-sweep
+			weapon.attack(victim, src, zone, 1) // attack_modifier 1; null would zero the damage
+	melee_swing_resolving = FALSE
 
 	return TRUE
 

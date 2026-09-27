@@ -53,34 +53,49 @@
 
 DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbor_type = /obj/structure/low_wall))
 
-/obj/structure/low_wall/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
+/obj/structure/low_wall/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/low_wall_item,
+	)
+	..()
+
+/// Old attackby: build a grille from rods, a window from glass, or drop an item on the wall.
+/// Precision placement (auto_align against the exact click position) isn't available here:
+/// run_interaction_entry() doesn't thread click_parameters through to the effect proc, so a
+/// dropped item is aligned by its center of mass instead of the exact click cell.
+/datum/interaction/entry_item/low_wall_item
+	id = "low_wall_item"
+	name = "Use"
+	effect = /obj/structure/low_wall/proc/interaction_item
+
+/obj/structure/low_wall/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 
 	// Making grilles (only works on Bay ones currently)
 	if(istype(W, /obj/item/stack/rods))
 		handle_rod_use(user, W)
-		return
+		return TRUE
 
 	// Making windows, different per subtype
 	else if(istype(W, /obj/item/stack/material/glass) || istype(W, /obj/item/stack/material/cyborg/glass))
 		handle_glass_use(user, W)
-		return
+		return TRUE
 
 	// Handle placing things
 	if(isrobot(user))
-		return
+		return TRUE
 
 	if(W.loc != user) // This should stop mounted modules ending up outside the module.
-		return
+		return TRUE
 
 	if(can_place_items() && user.unEquip(W, 0, src.loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
-		auto_align(W, click_parameters)
-		return 1
+		auto_align(W, null)
+		return TRUE
 
-	return ..()
+	return TRUE
 
 /obj/structure/low_wall/wrench_act(mob/user, obj/item/W)
-	for(var/obj/structure/S in loc)
+	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
 		if(istype(S, /obj/structure/window))
 			to_chat(user, span_notice("There is still a window on the low wall!"))
 			return TRUE
@@ -97,7 +112,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	dismantle()
 
 /obj/structure/low_wall/proc/can_place_items()
-	for(var/obj/structure/S in loc)
+	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
 		if(S == src)
 			continue
 		if(S.density)
@@ -146,7 +161,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	if(!grille_type)
 		to_chat(user, span_notice("This type of wall frame doesn't support grilles."))
 		return
-	for(var/obj/structure/window/WINDOW in loc)
+	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
 		if(WINDOW.dir == get_dir(src, user))
 			to_chat(user, span_notice("There is a window in the way."))
 			return
@@ -168,7 +183,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	if(!window_type)
 		to_chat(user, span_notice("You can't build that type of window on this type of low wall."))
 		return
-	for(var/obj/structure/window/WINDOW in loc)
+	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
 		if(WINDOW.dir == get_dir(src, user))
 			to_chat(user, span_notice("There is already a window here."))
 			return
@@ -262,10 +277,10 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	if(stacktype)
 		new stacktype(get_turf(src), 3)
 	// If we were violently dismantled
-	for(var/obj/structure/window/W in loc)
+	for(var/obj/structure/window/W in turf_contents_of_type(loc, /obj/structure/window))
 		if(W.anchored)
 			W.shatter()
-	for(var/obj/structure/grille/G in loc)
+	for(var/obj/structure/grille/G in turf_contents_of_type(loc, /obj/structure/grille))
 		if(G.anchored)
 			G.take_damage(G.max_integrity, BRUTE, MELEE) // Smash it apart with the wall.
 	qdel(src)
@@ -331,7 +346,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
 /obj/structure/grille/bay/update_icon()
-	var/on_frame = locate(/obj/structure/low_wall/bay) in loc
+	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
 	cut_overlays()
 	if(destroyed)

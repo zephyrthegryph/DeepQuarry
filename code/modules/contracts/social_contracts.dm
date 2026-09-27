@@ -6,7 +6,9 @@
 	// Roles advertise useful collaborators. Eligible crew join directly and
 	// qualify through attributable work; hard authorization and consent remain
 	// enforced by their source mechanics.
-	return contract.add_stakeholder_role(new /datum/contract_stakeholder_role(id, title, description, departments, 0, maximum))
+	var/datum/contract_stakeholder_role/role = new(id, title, description, departments, 0, maximum)
+	// A refused role is referenced nowhere else and is simply collected.
+	return !!contract.add_stakeholder_role(role)
 
 /proc/configure_social_identity(datum/contract/social/contract, station_rep, department_rep, staff_rep)
 	contract.base_station_reputation_reward = station_rep

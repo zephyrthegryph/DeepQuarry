@@ -67,25 +67,25 @@
 		var/fire_alarm_count = 0
 		var/vent_count = 0
 		var/scrubber_count = 0
-		for(var/obj/machinery/power/apc/room_apc in room_area) apc_count++
-		for(var/obj/machinery/alarm/room_alarm in room_area) air_alarm_count++
-		for(var/obj/machinery/firealarm/room_fire_alarm in room_area) fire_alarm_count++
-		for(var/obj/machinery/atmospherics/unary/vent_pump/room_vent in room_area) vent_count++
-		for(var/obj/machinery/atmospherics/unary/vent_scrubber/room_scrubber in room_area) scrubber_count++
+		for(var/obj/machinery/power/apc/room_apc in area_contents_of_type(room_area, /obj/machinery/power/apc)) apc_count++
+		for(var/obj/machinery/alarm/room_alarm in area_contents_of_type(room_area, /obj/machinery/alarm)) air_alarm_count++
+		for(var/obj/machinery/firealarm/room_fire_alarm in area_contents_of_type(room_area, /obj/machinery/firealarm)) fire_alarm_count++
+		for(var/obj/machinery/atmospherics/unary/vent_pump/room_vent in area_contents_of_type(room_area, /obj/machinery/atmospherics/unary/vent_pump)) vent_count++
+		for(var/obj/machinery/atmospherics/unary/vent_scrubber/room_scrubber in area_contents_of_type(room_area, /obj/machinery/atmospherics/unary/vent_scrubber)) scrubber_count++
 		TEST_ASSERT_EQUAL(apc_count, 1, "Generated room [module.id] does not have exactly one APC")
 		TEST_ASSERT_EQUAL(air_alarm_count, 1, "Generated room [module.id] does not have exactly one air alarm")
 		TEST_ASSERT_EQUAL(fire_alarm_count, 1, "Generated room [module.id] does not have exactly one fire alarm")
 		TEST_ASSERT_EQUAL(vent_count, 1, "Generated room [module.id] does not have exactly one supply vent")
 		TEST_ASSERT_EQUAL(scrubber_count, 1, "Generated room [module.id] does not have exactly one scrubber")
 		var/room_lights = 0
-		for(var/obj/machinery/light/light in room_area)
+		for(var/obj/machinery/light/light in area_contents_of_type(room_area, /obj/machinery/light))
 			room_lights++
 			var/light_wall_direction = generated_station_adjacent_wall_direction(get_turf(light))
 			TEST_ASSERT(light_wall_direction, "Generated room [module.id] has a light not attached to a wall")
 			TEST_ASSERT_EQUAL(light.dir, light_wall_direction, "Generated room [module.id] has a light facing away from its supporting wall")
 			TEST_ASSERT(light.pixel_x || light.pixel_y, "Generated room [module.id] has an unshifted wall light")
 		TEST_ASSERT(room_lights, "Generated room [module.id] has no wall lights")
-		for(var/turf/open/room_turf in room_area)
+		for(var/turf/open/room_turf in area_contents_of_type(room_area, /turf/open))
 			var/local_x = room_turf.x - materialized.origin_x + 1
 			var/local_y = room_turf.y - materialized.origin_y + 1
 			var/datum/generated_station_tile_intent/air_intent = materialized.tile_plan.tile(local_x, local_y)
@@ -99,7 +99,7 @@
 		stoplag(1)
 	for(var/module_id in materialized.module_areas)
 		var/area/generated_station/stable_room_area = materialized.module_areas[module_id]
-		for(var/turf/open/stable_turf in stable_room_area)
+		for(var/turf/open/stable_turf in area_contents_of_type(stable_room_area, /turf/open))
 			TEST_ASSERT(stable_turf.air?.return_pressure() >= 0.85 * ONE_ATMOSPHERE, "Generated room [module_id] lost pressure after atmos publication at [generated_station_coordinate(stable_turf)]")
 	qdel(topology)
 	qdel(builder)

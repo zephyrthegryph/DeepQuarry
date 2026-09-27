@@ -156,7 +156,7 @@
 	// departments can put their authored core farther from the nearest free wall.
 	// Search the complete department before accepting the local fallback so every
 	// planned department deterministically receives its control node.
-	for(var/turf/simulated/floor/T in department_area)
+	for(var/turf/simulated/floor/T in area_contents_of_type(department_area, /turf/simulated/floor))
 		if(T.density || locate(/obj/machinery/door) in T)
 			continue
 		var/blocked = FALSE

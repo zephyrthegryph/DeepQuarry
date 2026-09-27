@@ -158,7 +158,7 @@ REF_OWNED_LIST(/obj/effect/map_effect/portal/master, "portal_lines")
 		var/turf/current_T = get_turf(src)
 		while(current_T)
 			current_T = get_step(current_T, dir_to_search)
-			var/obj/effect/map_effect/portal/line/line = locate() in current_T
+			var/obj/effect/map_effect/portal/line/line = locate_on(current_T, /obj/effect/map_effect/portal/line)
 			if(line)
 				LAZYADD(portal_lines, line)
 				line.my_master = src

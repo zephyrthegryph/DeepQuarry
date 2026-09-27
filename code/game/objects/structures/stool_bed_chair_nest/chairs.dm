@@ -13,13 +13,14 @@
 	. = ..()
 	update_layer()
 
-/obj/structure/bed/chair/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Overrides bed's interaction_item(): also lets a shock kit turn the chair into an e-chair.
+/obj/structure/bed/chair/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = ..()
 	if(!padding_material && istype(W, /obj/item/assembly/shock_kit))
 		var/obj/item/assembly/shock_kit/SK = W
 		if(!SK.status)
 			to_chat(user, span_notice("\The [SK] is not ready to be attached!"))
-			return
+			return TRUE
 		user.drop_item()
 		var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
@@ -28,6 +29,7 @@
 		SK.loc = E
 		SK.master = E
 		replace_with(src, E)
+	return TRUE
 
 /obj/structure/bed/chair/attack_tk(mob/user as mob)
 	if(has_buckled_mobs())
@@ -179,10 +181,11 @@
 /obj/structure/bed/chair/office/update_icon()
 	return
 
-/obj/structure/bed/chair/office/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides chair's interaction_item(): no padding this chair with a stack.
+/obj/structure/bed/chair/office/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack))
-		return
-	..()
+		return TRUE
+	return ..()
 
 /obj/structure/bed/chair/office/wirecutter_act(mob/user, obj/item/W)
 	return TRUE
@@ -247,10 +250,11 @@
 /obj/structure/bed/chair/wood/update_icon()
 	return
 
-/obj/structure/bed/chair/wood/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides chair's interaction_item(): no padding this chair with a stack.
+/obj/structure/bed/chair/wood/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack))
-		return
-	..()
+		return TRUE
+	return ..()
 
 /obj/structure/bed/chair/wood/wirecutter_act(mob/user, obj/item/W)
 	return TRUE

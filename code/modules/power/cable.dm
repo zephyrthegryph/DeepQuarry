@@ -306,7 +306,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(d1 == DOWN || d2 == DOWN)
 		var/turf/turf = GetBelow(src)
 		if(turf)
-			for(var/obj/structure/cable/c in turf)
+			for(var/obj/structure/cable/c in turf_contents_of_type(turf, /obj/structure/cable))
 				if(c.d1 == UP || c.d2 == UP)
 					qdel(c)
 
@@ -601,7 +601,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 			return
 		end_dir = DOWN
 
-	for(var/obj/structure/cable/LC in F)
+	for(var/obj/structure/cable/LC in turf_contents_of_type(F, /obj/structure/cable))
 		if((LC.d1 == dirn && LC.d2 == end_dir ) || ( LC.d2 == dirn && LC.d1 == end_dir))
 			to_chat(user, span_warning("There's already a cable at that position."))
 			return
@@ -671,7 +671,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 			var/fdirn = turn(dirn, 180)		// the opposite direction
 
-			for(var/obj/structure/cable/LC in U)		// check to make sure there's not a cable there already
+			for(var/obj/structure/cable/LC in turf_contents_of_type(U, /obj/structure/cable))		// check to make sure there's not a cable there already
 				if(LC.d1 == fdirn || LC.d2 == fdirn)
 					to_chat(user, "There's already a cable at that position.")
 					return
@@ -688,7 +688,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 			nd1 = dirn
 			nd2 = C.d2
 
-		for(var/obj/structure/cable/LC in T)		// check to make sure there's no matching cable
+
+		for(var/obj/structure/cable/LC in turf_contents_of_type(T, /obj/structure/cable))		// check to make sure there's no matching cable
 			if(LC == C)			// skip the cable we're interacting with
 				continue
 			if((LC.d1 == nd1 && LC.d2 == nd2) || (LC.d1 == nd2 && LC.d2 == nd1) )	// make sure no cable matches either direction

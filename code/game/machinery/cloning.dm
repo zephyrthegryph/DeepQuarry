@@ -107,11 +107,6 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return om_resolve(occupant_handle)
 
-/obj/machinery/clonepod/attack_ai(mob/user as mob)
-
-	add_hiddenprint(user)
-	return attack_hand(user)
-
 /obj/machinery/clonepod/attack_hand(mob/user as mob)
 	var/mob/living/occupant = get_occupant()
 	if((isnull(occupant)) || (stat & NOPOWER))

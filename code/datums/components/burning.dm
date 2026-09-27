@@ -205,4 +205,5 @@ REF_OWNED(/datum/component/burning, "particle_effect")
 	return TRUE
 
 /datum/component/burning/declared_owned_vars()
-	return list("cool_watch")
+	. = ..()
+	. = (. || list()) + "cool_watch"

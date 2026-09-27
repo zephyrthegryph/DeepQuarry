@@ -53,19 +53,19 @@
 	T.set_light(0) // Forcing updates
 
 	// Destroy turf contents.
-	for(var/obj/O in origin)
+	for(var/obj/O in turf_contents_of_type(origin, /obj))
 		if(!O.simulated)
 			continue
 		qdel(O) //crunch
-	for(var/obj/O in T)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(!O.simulated)
 			continue
 		qdel(O) //crunch
 
 	// Hurl the mobs away.
-	for(var/mob/living/M in T)
+	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 		M.throw_at(get_edge_target_turf(T,src.dir),rand(0,3),50)
-	for(var/mob/living/M in origin)
+	for(var/mob/living/M in turf_contents_of_type(origin, /mob/living))
 		M.throw_at(get_edge_target_turf(origin,src.dir),rand(0,3),50)
 
 	// Create a decorative ramp bottom and flatten out our current ramp.

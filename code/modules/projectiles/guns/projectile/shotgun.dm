@@ -56,14 +56,14 @@
 		else
 			chambered.loc = get_turf(src) // Eject casing
 		chambered = null
-		M.hud_used.update_ammo_hud(M, src) // TGMC Ammo HUD Port
+		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	// Load next shell
 	if(loaded.len)
 		var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
 		loaded -= AC // Remove casing from loaded list.
 		chambered = AC
-		M.hud_used.update_ammo_hud(M, src) // TGMC Ammo HUD Port
+		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	if(pump_animation) // This affects all bolt action and shotguns.
 		flick("[pump_animation]", src) // This plays any pumping
@@ -154,7 +154,7 @@
 			burst = 2
 			user.visible_message(span_danger("The shotgun goes off!"), span_danger("The shotgun goes off in your face!"))
 			Fire_userless(user)
-			user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD Port
+			user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD Port
 			burst = burstsetting
 			return
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user)) // SHIT IS STEALTHY EYYYYY

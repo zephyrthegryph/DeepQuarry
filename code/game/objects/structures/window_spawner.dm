@@ -41,11 +41,11 @@
 	var/list/neighbours = list()
 	for (var/dir in GLOB.cardinal)
 		var/turf/T = get_step(src, dir)
-		var/obj/effect/wingrille_spawn/other = locate(/obj/effect/wingrille_spawn) in T
+		var/obj/effect/wingrille_spawn/other = locate_on(T, /obj/effect/wingrille_spawn)
 		if(!other)
 			var/found_connection
-			if(locate(/obj/structure/grille) in T)
-				for(var/obj/structure/window/W in T)
+			if(locate_on(T, /obj/structure/grille))
+				for(var/obj/structure/window/W in turf_contents_of_type(T, /obj/structure/window))
 					if(W.type == win_path && W.dir == get_dir(T,src))
 						found_connection = 1
 						qdel(W)

@@ -97,12 +97,12 @@
 
 	//Pulling and/or ex_act-ing movable atoms in that turf
 	if( prob(pull_chance) )
-		for(var/obj/O in T.contents)
+		for(var/obj/O in turf_contents_of_type(T, /obj))
 			if(O.anchored)
 				O.ex_act(ex_act_force)
 			else
 				step_towards(O,src)
-		for(var/mob/living/M in T.contents)
+		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 			step_towards(M,src)
 
 	//Destroying the turf

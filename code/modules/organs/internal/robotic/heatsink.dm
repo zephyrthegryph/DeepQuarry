@@ -6,7 +6,7 @@
 	organ_tag = O_HEATSINK
 
 /obj/item/organ/internal/robotic/heatsink/handle_organ_proc_special()
-	if(owner && owner.stat != DEAD)
+	if(owner && owner.is_alive())
 
 		var/thermostat = owner.species.body_temperature
 		var/turf/T = get_turf(src)

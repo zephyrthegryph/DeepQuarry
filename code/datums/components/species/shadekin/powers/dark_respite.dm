@@ -97,7 +97,7 @@
 				if(I.damage <= 5 && I.organ_tag == O_EYES)
 					H.set_sdisabilities(H.sdisabilities & (~BLIND))
 			for(var/obj/item/organ/external/O in H.organs)
-				if(O.status & ORGAN_BROKEN)
+				if(O.is_fractured())
 					O.mend_fracture()		//Only works if the bone won't rebreak, as usual
 				for(var/datum/affliction/wound/W in O.get_wounds())
 					if(W.bleeding() || W.internal)

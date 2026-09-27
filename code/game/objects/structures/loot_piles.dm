@@ -31,21 +31,32 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	if(isrobot(user) && Adjacent(user))
 		return attack_hand(user)
 
-/obj/structure/loot_pile/attack_hand(mob/user)
+/obj/structure/loot_pile/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/loot_pile_search,
+	)
+	..()
+
+/// Old attack_hand: search the pile for loot.
+/datum/interaction/entry_hand/loot_pile_search
+	id = "loot_pile_search"
+	name = "Search"
+	effect = /obj/structure/loot_pile/proc/interaction_search
+
+/obj/structure/loot_pile/proc/interaction_search(mob/user, obj/item/held, datum/interaction/interaction)
 	//Human mob
 	if(isliving(user))
 		var/mob/living/L = user
 
 		if(om_busy(src)) // a search claims the pile
 			to_chat(L, span_warning("\The [src] is already being searched."))
-			return
+			return TRUE
 
 		L.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
 
 		//Do the searching
 		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)
-	else
-		return ..()
+	return TRUE
 
 /obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)
 	SEND_SIGNAL(src,COMSIG_LOOT_REWARD,L,searchedby, 0)

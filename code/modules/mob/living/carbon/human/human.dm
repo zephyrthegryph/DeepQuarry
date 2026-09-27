@@ -1319,9 +1319,12 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	//icon_state = lowertext(species.name) //Necessary?
 
 	// Swap the body plan before the organs are built so they attach to the new body.
-	// Before /mob/living/Initialize() there is no body yet; it is built from body_type.
+	// On the first set_species() (before /mob/living/Initialize()) the body is
+	// built here: organs attach into the plan's part slots as they are made.
 	body_type = species.body_plan
-	if(body && body.type != body_type)
+	if(!body)
+		body = new body_type(src)
+	else if(body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		QDEL_NULL(body)
 		body = new body_type(src)
@@ -1401,7 +1404,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return
 
 	var/num_doodles = 0
-	for (var/obj/effect/decal/cleanable/blood/writing/W in T)
+	for (var/obj/effect/decal/cleanable/blood/writing/W in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood/writing))
 		num_doodles++
 	if (num_doodles > 4)
 		to_chat(src, span_warning("There is no space to write on!"))
@@ -1842,7 +1845,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if((limb.status & ORGAN_BROKEN && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
+			if((limb.is_fractured() && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()
@@ -1853,7 +1856,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if(((limb.status & ORGAN_BROKEN) || (limb.status & ORGAN_BLEEDING)) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
+			if((limb.is_fractured() || (limb.status & ORGAN_BLEEDING)) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()

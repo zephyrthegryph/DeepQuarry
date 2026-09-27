@@ -568,6 +568,11 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			var/datum/preference/pref = GLOB.preference_entries_by_key[key]
 			if(!pref)
 				return FALSE
+			// Hidden / managed / editor-owned prefs are not reachable from the raw wire —
+			// see /datum/preference/proc/is_client_writable.
+			if(!pref.is_client_writable(preferences))
+				log_world("dq_update_preference: [ui.user?.ckey] attempted to write non-client-writable pref [key]")
+				return FALSE
 			preferences.update_preference(pref, value)
 			return TRUE
 
@@ -579,6 +584,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			var/key = params["key"]
 			var/datum/preference/pref = GLOB.preference_entries_by_key[key]
 			if(!pref)
+				return FALSE
+			if(!pref.is_client_writable(preferences))
 				return FALSE
 			var/current = preferences.read_preference(pref.type)
 			var/new_color = tgui_color_picker(ui.user, "Pick a color", "Color", current || "#000000")

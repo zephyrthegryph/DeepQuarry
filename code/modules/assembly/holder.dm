@@ -111,11 +111,24 @@
 	if(a_right)
 		a_right.on_found(finder)
 
-/obj/item/assembly_holder/attack_hand()//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
+/obj/item/assembly_holder/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/assembly_holder_hand,
+		/datum/interaction/entry_self/assembly_holder_self,
+	)
+	..()
+
+/// Old attack_hand: notify the parts before falling through (never handled the click itself).
+/datum/interaction/entry_hand/assembly_holder_hand
+	id = "assembly_holder_hand"
+	name = "Use"
+	effect = /obj/item/assembly_holder/proc/interaction_hand
+
+/obj/item/assembly_holder/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
 	if(a_left && a_right)
 		a_left.holder_movement()
 		a_right.holder_movement()
-	..()
+	return FALSE
 
 /obj/item/assembly_holder/screwdriver_act(mob/user, obj/item/tool)
 	if(!a_left || !a_right)
@@ -128,20 +141,23 @@
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/assembly_holder/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: split assembly (unsecured) or use the parts (secured).
+/datum/interaction/entry_self/assembly_holder_self
+	id = "assembly_holder_self"
+	name = "Use"
+	effect = /obj/item/assembly_holder/proc/interaction_self
+
+/obj/item/assembly_holder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(src.secured)
 		if(!a_left || !a_right)
 			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
-			return
+			return TRUE
 		if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
 			switch(tgui_alert(usr, "Which side would you like to use?","Side",list("Left","Right")))
 				if("Left")	a_left.attack_self(user)
 				if("Right")	a_right.attack_self(user)
-			return
+			return TRUE
 		else
 			if(!istype(a_left,/obj/item/assembly/igniter))
 				a_left.attack_self(user)
@@ -150,7 +166,7 @@
 	else
 		var/turf/T = get_turf(src)
 		if(!T)
-			return 0
+			return TRUE
 		if(a_left)
 			a_left.holder = null
 			a_left.forceMove(T)
@@ -158,6 +174,7 @@
 			a_right.holder = null
 			a_right.forceMove(T)
 		consume(src, user)
+	return TRUE
 
 /obj/item/assembly_holder/proc/process_activation(obj/D, normal = 1)
 	if(!D)

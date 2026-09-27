@@ -32,7 +32,12 @@
 	void_shipping_ledger("crate opened")
 
 	var/mob/user = istype(usr, /mob) ? usr : null
-	if(rigged && locate(/obj/item/radio/electropack) in src)
+	var/obj/item/radio/electropack/rig
+	if(rigged)
+		for(var/obj/item/radio/electropack/E in slot_contents())
+			rig = E
+			break
+	if(rigged && rig)
 		if(isliving(user))
 			var/mob/living/L = user
 			if(L.electrocute_act(17, src))
@@ -75,36 +80,38 @@
 /obj/structure/closet/crate/storage_cost_of(atom/movable/thing)
 	return 1
 
-/obj/structure/closet/crate/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides closet's interaction_item(): crates rig with cable/electropack instead of sealing.
+/obj/structure/closet/crate/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(opened)
 		if(isrobot(user))
-			return
+			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return
+			return TRUE
 		if(istype(W, /obj/item/grab)) //VOREstation edit: we don't want to drop grabs into the crate
-			return
+			return TRUE
 		user.drop_item()
 		if(W)
 			W.forceMove(src.loc)
 	else if(istype(W, /obj/item/packageWrap))
-		return
+		return TRUE
 	else if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(rigged)
 			to_chat(user, span_notice("[src] is already rigged!"))
-			return
+			return TRUE
 		if (C.use(1))
 			to_chat(user , span_notice("You rig [src]."))
 			rigged = 1
-			return
+			return TRUE
 	else if(istype(W, /obj/item/radio/electropack))
 		if(rigged)
 			to_chat(user , span_notice("You attach [W] to [src]."))
 			user.drop_item()
 			W.forceMove(src)
-			return
+			return TRUE
 	else
 		return ..()
+	return TRUE
 
 /obj/structure/closet/crate/wirecutter_act(mob/user, obj/item/W)
 	if(rigged)
@@ -182,21 +189,41 @@
 	else
 		to_chat(usr, span_warning("This mob type can't use this verb."))
 
-/obj/structure/closet/crate/secure/attack_hand(mob/user as mob)
+// Secure crate's Use fully replaces closet's (the original override never called ..() into
+// it either), so it declares its own interaction.
+// Secure crate's Use fully replaces closet's (the original override never called ..() into
+// it either), so it swaps out closet_hand for its own interaction, while still inheriting
+// crate_item (whose effect it overrides above, polymorphically).
+/obj/structure/closet/crate/secure/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/secure_crate_hand,
+	)
+	..()
+	into -= /datum/interaction/entry_hand/closet_hand
+
+/// Old attack_hand: toggle the lock, or open/close if unlocked.
+/datum/interaction/entry_hand/secure_crate_hand
+	id = "secure_crate_hand"
+	name = "Use"
+	effect = /obj/structure/closet/crate/secure/proc/interaction_secure_hand
+
+/obj/structure/closet/crate/secure/proc/interaction_secure_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if(locked)
 		src.togglelock(user)
 	else
 		src.toggle(user)
+	return TRUE
 
-/obj/structure/closet/crate/secure/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides crate's interaction_item(): a blade emags it, and it stays locked until unlocked.
+/obj/structure/closet/crate/secure/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(is_type_in_list(W, list(/obj/item/packageWrap, /obj/item/stack/cable_coil, /obj/item/radio/electropack, /obj/item/tool/wirecutters)))
 		return ..()
 	if(istype(W, /obj/item/melee/energy/blade))
 		emag_act(INFINITY, user)
 	if(!opened)
 		src.togglelock(user)
-		return
+		return TRUE
 	return ..()
 
 /obj/structure/closet/crate/secure/emag_act(remaining_charges, mob/user)
@@ -770,7 +797,7 @@
 				qdel(src)
 			if(2 to 4)
 				visible_message(span_boldwarning("The anti-tamper mechanism of [src] causes a small fire!"))
-				for(var/i in 1 to length(contents) + latent_count()) // For every item in the box, we spawn a pile of ash.
+				for(var/i in 1 to length(slot_contents()) + latent_count()) // For every item in the box, we spawn a pile of ash.
 					new /obj/effect/decal/cleanable/ash(src.loc)
 				replace_with(src, /obj/effect/hotspot)
 			if(5)

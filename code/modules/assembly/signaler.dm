@@ -70,15 +70,23 @@
 
 	update_icon()
 
-/obj/item/assembly/signaler/attackby(obj/item/W, mob/user, params)
+/// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven
+/// chain, ..() and all) and builds its own entry directly with dq_interaction_from_spec() -
+/// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
+/obj/item/assembly/signaler/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
+	..()
+
+/// Old attackby: tap two secured signalers together to copy frequency/code.
+/obj/item/assembly/signaler/proc/interaction_transfer(mob/user, obj/item/W, datum/interaction/interaction)
 	if(issignaler(W))
 		var/obj/item/assembly/signaler/signaler2 = W
 		if(secured && signaler2.secured)
 			code = signaler2.code
 			set_frequency(signaler2.frequency)
 			to_chat(user, "You transfer the frequency and code of [signaler2] to [src].")
-	else
-		..()
+		return TRUE
+	return FALSE
 
 /obj/item/assembly/signaler/proc/signal()
 	if(!COOLDOWN_FINISHED(src, next_activate))

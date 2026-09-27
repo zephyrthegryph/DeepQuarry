@@ -41,7 +41,7 @@
 	if(Target)
 		Target.hotspot_expose(1000, 50, 1)
 
-		for(var/mob/living/L in Target)
+		for(var/mob/living/L in turf_contents_of_type(Target, /mob/living))
 			L.adjust_fire_stacks(2)
 			L.ignite_mob()
 

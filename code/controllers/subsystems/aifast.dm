@@ -28,6 +28,9 @@ SUBSYSTEM_DEF(aifast)
 		--currentrun.len
 		if(!A || QDELETED(A) || A.is_busy()) // Doesn't exist or won't exist soon or not doing it this tick
 			continue
+		// Same rule as SSai: a brain whose holder is gone is skipped, never qdel'd here.
+		if(!A.holder || QDELETED(A.holder))
+			continue
 		A.handle_tactics()
 
 		if(MC_TICK_CHECK)

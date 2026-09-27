@@ -32,26 +32,43 @@
 	return
 
 
-/obj/structure/displaycase/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/displaycase/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/displaycase_item,
+		/datum/interaction/entry_hand/displaycase_hand,
+	)
+	..()
+
+/// Old attackby: hit the case with a weapon.
+/datum/interaction/entry_item/displaycase_item
+	id = "displaycase_item"
+	name = "Use"
+	effect = /obj/structure/displaycase/proc/interaction_item
+
+/obj/structure/displaycase/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
 	receive_weapon_hit(W, user)
-	..()
-	return
+	return TRUE
 
-/obj/structure/displaycase/attack_hand(mob/user as mob)
+/// Old attack_hand: take the gun from a shattered case, or kick it.
+/datum/interaction/entry_hand/displaycase_hand
+	id = "displaycase_hand"
+	name = "Use"
+	effect = /obj/structure/displaycase/proc/interaction_hand
+
+/obj/structure/displaycase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (src.destroyed && src.occupied)
 		new /obj/item/gun/energy/captain( src.loc )
 		to_chat(user, span_notice("You deactivate the hover field built into the case."))
 		src.occupied = 0
 		src.add_fingerprint(user)
 		update_icon()
-		return
 	else
 		to_chat(user, span_warning("You kick the display case."))
 		for(var/mob/O in oviewers())
 			if ((O.client && !( O.blinded )))
 				to_chat(O, span_warning("[user] kicks the display case."))
 		take_damage(2, BRUTE, MELEE)
-		return
+	return TRUE

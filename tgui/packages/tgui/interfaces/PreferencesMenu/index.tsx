@@ -1,8 +1,6 @@
 import { useBackend } from 'tgui/backend';
 
-// DQEdit — dispatch the Character window through the new auto-renderer instead of the
-// legacy Bay-prefs window. The legacy CharacterPreferenceWindow remains in the file for
-// reference until the demolition pass removes it.
+// The Character window is dispatched through the auto-renderer (DQCharacterSetup).
 import { DQCharacterSetup } from '../deepquarry/PreferencesMenu/DQCharacterSetup';
 import {
   GamePreferencesSelectedPage,

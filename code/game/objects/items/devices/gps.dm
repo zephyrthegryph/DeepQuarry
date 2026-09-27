@@ -135,8 +135,9 @@ REF_OWNED(/obj/item/gps, "compass")
 			compass.show_waypoint("\ref[gps]")
 	compass.rebuild_overlay_lists(update_compass_icon)
 
-/obj/item/gps/click_alt(mob/user)
+/obj/item/gps/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	toggletracking(user)
+	return TRUE
 
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
@@ -183,10 +184,14 @@ REF_OWNED(/obj/item/gps, "compass")
 	else if(tracking)
 		add_overlay("working")
 
-/obj/item/gps/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/gps/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_ALT(null, PROC_REF(interaction_alt)),
+	)
+	return L
+
+/obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 

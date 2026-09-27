@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Icon, Section, Stack, Tooltip } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-import { gender2icon } from '../deepquarry/shared/gender'; // DQEdit — bay_prefs deleted
+import { gender2icon } from '../deepquarry/shared/gender';
 import { genderToColor } from './constants';
 import { PaiIcon } from './PaiIcon';
 import type { Data, DetailedInvitePAIData } from './types';

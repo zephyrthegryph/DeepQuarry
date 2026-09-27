@@ -27,7 +27,7 @@
 	if(T && reagents)
 		reagents.touch_turf(T, reagents.total_volume)
 		var/mob/M
-		for(var/atom/A in T)
+		for(var/atom/A in turf_contents_of_type(T, /atom))
 			if(!ismob(A) && A.simulated) // Mobs are handled differently
 				reagents.touch(A, reagents.total_volume)
 			else if(ismob(A) && !M)

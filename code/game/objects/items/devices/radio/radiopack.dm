@@ -16,11 +16,15 @@
 	AddComponent(/datum/component/tethered_item, handset_path)
 	. = ..()
 
-/obj/item/bluespaceradio/attack_hand(mob/living/user)
-	// See important note in tethered_item.dm
+/obj/item/bluespaceradio/get_interactions()
+	var/static/list/L = list(INTERACT_HAND(null, PROC_REF(interaction_hand)))
+	return L
+
+/// See important note in tethered_item.dm
+/obj/item/bluespaceradio/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	. = ..()
+	return FALSE
 
 /obj/item/bluespaceradio/MouseDrop()
 	if(ismob(loc))

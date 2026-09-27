@@ -128,10 +128,12 @@
 		chosen_target.vis_enabled -= VIS_EVENT_INVIS
 	chosen_target = null
 
-/mob/living/simple_mob/ysbryd/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/ysbryd/replace_death(gibbed)
 	if(chosen_target)
 		disconnect_target()
 	qdel(src)
+	return TRUE
 
 /datum/om/stage/life/type_pre/simple_mob/ysbryd
 	of = /mob/living/simple_mob/ysbryd

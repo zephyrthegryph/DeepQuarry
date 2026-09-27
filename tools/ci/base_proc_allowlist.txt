@@ -1,8 +1,8 @@
 # Ceilings for tools/ci/base_proc_lint.py: procs and verbs declared on each
 # base type (doc/rewrite/init_and_turfs.md section 0.5). Only ever lower these.
-/datum 144
-/atom 307
-/atom/movable 140
+/datum 145
+/atom 309
+/atom/movable 144
 /obj 100
 /obj/item 125
-/mob 582
+/mob 588

@@ -161,16 +161,28 @@
 	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
 
-/obj/structure/door_assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/door_assembly/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/door_assembly_item,
+	)
+	..()
+
+/// Old attackby: rename with a pen, wire, install electronics, or plate the assembly.
+/datum/interaction/entry_item/door_assembly_item
+	id = "door_assembly_item"
+	name = "Use"
+	effect = /obj/structure/door_assembly/proc/interaction_item
+
+/obj/structure/door_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		rename_door(user)
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/stack/cable_coil) && state == 0 && anchored)
 		var/obj/item/stack/cable_coil/C = W
 		if (C.get_amount() < 1)
 			to_chat(user, span_warning("You need one length of coil to wire the airlock assembly."))
-			return
+			return TRUE
 		user.visible_message("[user] wires the airlock assembly.", "You start to wire the airlock assembly.")
 		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 
@@ -193,15 +205,14 @@
 					// Ugly hack, will suffice for now. Need to fix it upstream as well, may rewrite mineral walls. ~Z
 					if(!(material_name in list(MAT_GOLD, MAT_SILVER, MAT_DIAMOND, MAT_URANIUM, MAT_PHORON, MAT_SANDSTONE)))
 						to_chat(user, "You cannot make an airlock out of that material.")
-						return
+						return TRUE
 					if(S.get_amount() >= 2)
 						playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 						user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
 						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, list("receiver" = src, "S" = S, "material_name" = material_name))
 
-	else
-		..()
 	update_state()
+	return TRUE
 
 /obj/structure/door_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
 	if(!(state == 0 && anchored))

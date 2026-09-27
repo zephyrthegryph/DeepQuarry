@@ -16,6 +16,8 @@
 	var/list/codecs
 	/// var name -> encoded pristine value, for list vars of latent-safe types (null otherwise).
 	var/list/list_baseline
+	/// List vars whose Initialize() result is not a stable per-type baseline.
+	var/list/nondeterministic_list_vars
 
 GLOBAL_LIST_EMPTY(state_schemas)
 
@@ -53,6 +55,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			continue
 		schema.saved_vars += name
 	schema.codecs = D.state_codecs()
+	schema.nondeterministic_list_vars = D.state_nondeterministic_list_vars()
 	GLOB.state_schemas[D.type] = schema
 	return schema
 
@@ -240,13 +243,13 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	probe_ctx.ids = list()
 	var/datum/state_schema/schema = state_schema_for(probe)
 	for(var/name in schema.saved_vars)
-		// These lists can be seeded by a random roll at Initialize():
-		// atom_colours by a flavour colour promoted by /atom/Initialize() (C5),
-		// material_mix by random scrap composition (/obj/item/trash/material).
-		// A baseline sampled from one random instance would swallow every
-		// other instance that rolled the same value, and a restored copy
-		// would then re-roll. Skipping them falls back to "matches if empty".
-		if(name == "atom_colours" || name == "material_mix")
+		// These lists can vary per instance at Initialize(): atom_colours by a
+		// flavour colour promoted by /atom/Initialize() (C5), and whatever a type
+		// declares in state_nondeterministic_list_vars() (random scrap
+		// composition, generated sprite-state tables). A baseline sampled from
+		// one instance would swallow every other instance that matched it, and a
+		// restored copy would then re-roll. Skipping falls back to "matches if empty".
+		if(name == "atom_colours" || (name in schema.nondeterministic_list_vars))
 			continue
 		var/value = probe.vars[name]
 		if(!islist(value))

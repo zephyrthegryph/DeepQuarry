@@ -34,12 +34,12 @@
 
 
 /datum/modifier/ambush/on_applied()
-	holder.alpha = 30
+	holder.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
 	return
 
 // Override this for special effects when it gets removed.
 /datum/modifier/ambush/on_expire()
-	holder.alpha = 255
+	holder.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
 	return
 
 ////////// On-hit
@@ -124,8 +124,8 @@
 
 			for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
 				var/obj/item/organ/external/affected = E
-				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
-					affected.status &= ~ORGAN_BROKEN
+				if(affected.is_fractured())
+					affected.mend_fracture()
 
 				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds()) // Fix IB
 					affected.remove_wound(W)
