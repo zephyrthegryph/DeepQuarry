@@ -83,6 +83,10 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	var/mob/living/M = owner
 	if(!M)
 		return
+	// A move within one body can commit the new slot before the old one lets go:
+	// the part is already adopted again, so this late detach must not undo it.
+	if(!QDELETED(src) && resolve_owner() == M)
+		return
 	if(!M.body)
 		// The body is gone (the mob is mid-deletion): clear what we derived.
 		for(var/obj/item/organ/part as anything in dq_part_subtree(src))

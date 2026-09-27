@@ -172,6 +172,8 @@
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
 /datum/ledger/Destroy()
+	if(holder)
+		dq_latency_sweep_unregister(holder) // the sweep list holds a hard ref
 	if(holder?.ledger == src)
 		holder.ledger = null
 	holder = null

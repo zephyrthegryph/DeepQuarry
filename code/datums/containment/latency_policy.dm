@@ -88,7 +88,9 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 
 /// Logs one collapse or materialize, by type paths rather than live refs (a
 /// collapse's subject is deleted by the time this is useful to read).
-/proc/dq_latency_log(action, type, holder_type)
+/proc/dq_latency_log(action, type, holder_type, atom/holder)
+	if(holder && !(holder.flags & ATOM_MATERIALIZED))
+		return // sandboxed: not a live-world event
 	var/line = "[worldtime2text()] [action] [type] ([holder_type ? "in [holder_type]" : "no holder"])"
 	GLOB.latency_policy_log += line
 	if(length(GLOB.latency_policy_log) > LATENCY_POLICY_LOG_MAX)
@@ -152,6 +154,10 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 GLOBAL_LIST_EMPTY(latency_sweep_holders)
 
 /proc/dq_latency_sweep_register(atom/holder)
+	// A sandboxed (unmaterialized) holder isn't in the live world yet: materialize()
+	// registers it, so Initialize() never touches this global (lifecycle sandbox).
+	if(!(holder.flags & ATOM_MATERIALIZED))
+		return
 	if(holder.latent_contents)
 		GLOB.latency_sweep_holders[holder] = TRUE
 		if(!PERIODIC_RUNNING(GLOB.latency_sweep))

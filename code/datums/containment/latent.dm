@@ -355,7 +355,7 @@ GLOBAL_VAR(latent_last_refusal)
 		var/list/record = entries[thing]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
-		dq_latency_log("materialized", path, holder.type)
+		dq_latency_log("materialized", path, holder.type, holder)
 		if(audit_blob)
 			dq_latency_audit_check(thing, audit_blob)
 			audit_blob = null // one comparison per collapse, not per n

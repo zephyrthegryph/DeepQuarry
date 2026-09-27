@@ -177,7 +177,9 @@
 		m.drop_from_inventory(src)
 		m.update_inv_r_hand()
 		m.update_inv_l_hand()
-		src.loc = null
+		// Through doMove(), so the mob's containment ledger sees the exit and its slot
+		// hooks run (a raw loc write left body parts stuck in their slots).
+		moveToNullspace()
 
 	// Handle celaning up our actions list
 	for(var/datum/action/action as anything in actions)

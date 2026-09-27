@@ -47,9 +47,9 @@ Compile baseline stays at the 4 known errors (`dq_rule_test`,
 
 - **w5 hibernation rules still polling.** Organs, blood, addictions, phobias, NPC, NIF, weight, changeling, shock, medical, heartbeat, thermoregulation, radiation and mutations need producers on their stage's `wake_on` channels before they can `idle()`.
 - **Grants.** Languages, factor grants and the mind-transfer hook still use their pre-OM paths.
-- **Verdigris provenance** (from the Codex snapshot: `tools/build/lib/verdigris_provenance.ts`, `verdigris/verdigris/build.rs`). It stops a stale or mismatched DLL from being reused, but it makes `DQ_PREBUILT_VERDIGRIS=1` refuse a DLL copied without its sidecar, so porting it needs every worktree's copy step updated at the same time.
+- **Verdigris provenance** (Codex's `verdigris_provenance.ts` / `verdigris/verdigris/build.rs`): dropped, not ported (decision 2026-09-27).
 - **dm-health baseline.** `tools/dm-health/baseline.json` was taken on Codex's tree. The first CI run of `dm-health ci-suite` will report differences; regenerate with `--write-baseline`. Its Rust tests pass (201).
-- **Lint gaps found while rebasing ratchets.** `lifecycle_counts_lint.py` strips comments before looking for `// LIFECYCLE:`, so no Destroy can be justified that way. The ceilings raised in this pass are listed in commits `cdaac8cabf` and `1eafbecba3`: 9 admin VV prompts, the expedition objective's undeclared `tracked` list, and qdel counts in cryo, species, shapeshift, the balance harness and the defenders.
+- **Ceilings raised in this pass** are listed in commits `cdaac8cabf` and `1eafbecba3`: 9 admin VV prompts, the expedition objective's undeclared `tracked` list, and qdel counts in cryo, species, shapeshift, the balance harness and the defenders. (`lifecycle_counts_lint.py` now reads `// LIFECYCLE:` justifications from the raw source.)
 - **`code/modules/unit_tests/dq_focus.dm` is not empty** (291 `TEST_FOCUS` lines, already so on `rewrite/om-integration`); `check_misc.sh` rejects that in CI.
 - **Dead generated-station procs** (`fill_exterior`, `carve_departments`, `carve_corridors`, `enclose_corridors`, `is_interface_door_candidate`, `place_interface_door_run`) have no callers.
 
@@ -84,13 +84,15 @@ in them is either ported here, preserved on `codex/main-tree-wip`, or
 deliberately dropped. Nothing has been written there since 02:41, but check
 that no Codex session is still using the main tree before discarding.
 
-## 5. Focused test run (one run, 307 tests over the touched areas)
+## 5. Focused test runs
 
-246 passed, 12 failed, 39 skipped (`data/test-runs/20260927T201445_35b7270bfd.json`).
-Before the run, the test build needed two fixes to tests merged from w5 (vtec
-verb → `grant_ability`, cryo `occupant` → the OM occupant slot). Open failures:
+First run (307 tests over the touched areas): 246 passed, 12 failed. After the
+fixes below, the 12 plus the 5 compact-interaction tests: 17 passed
+(`data/test-runs/20260927T212053_c124ec2075.json`).
 
-- `dq_interaction_domain_snapshot/i7_bulk`, `i7_items_bulk`, `i7_structures_bulk`: the i7 snapshots predate the merged interactions (button item press, assembly, girder construction); regenerate them.
-- `dq_combat_ai_damage_promotes_attacker`, `dq_combat_ai_spatial_sleep_wakes`: probably the review-fixes AI port (the same-faction retaliation rule and the calm-hibernation change); check the test fixtures against the new rules.
-- `dq_part_mob_delete`, `dq_part_reparent_within_body`, `dq_part_species_change`, `dq_revive_restore_regrows_brain` (runtime at `mutations.dm:12`): the O2/O5 part-tree ports.
-- `dq_lifecycle_sandbox` (10 problems), `dq_material_blueprint_covers_catalogue` (furnace board), `dq_material_every_slot_changes_real_physics` (runtime at test line 151).
+- **Parts (O2).** `/obj/item/Destroy()` cleared `loc` with a raw write for items in a mob, so the mob's ledger never saw a deleted root part leave: its owner, caches and the capacity-1 root slot stayed held, and a species change could not place the new tree. It now uses `moveToNullspace()`. A move within one body can commit the new slot before the old one releases; `on_detached()` now ignores a late detach while the part still resolves to the same owner.
+- **Revive.** `mutations -= HUSK` on a null lazy list made `mutations` the number -7; now `remove_mutation()`.
+- **Combat AI.** The damage test used faction-mates, which the ported retaliation rule ignores on purpose; the test now also asserts that. The spatial wake test raced a re-hibernation; the brain counts `chunk_wakes`.
+- **i7 compact interactions.** Every `/datum/interaction/generic` shared one compiled predicate and selector (cached by type), so compact interactions lost their own requirements; construction edges shared one selector too. Predicates are now keyed per id (`predicate_key()`). Generated specs also get their entry base's requirements back (reach; an item's self-use needs it in hand), and generated ids no longer hash a runtime `ef`. The snapshot runner writes `data/test-snapshots/<test>.txt` on a mismatch; the three i7 snapshots were regenerated from it and reviewed.
+- **Latency sweep (C10).** Sandboxed (unmaterialized) holders no longer register or log; `materialize()` registers and `dematerialize()`/ledger destruction unregister (the list held hard refs forever).
+- **Material tests.** The weakref sweep had rewritten `material_template.resolve()` into `om_resolve()` in two tests.

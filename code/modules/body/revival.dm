@@ -69,7 +69,7 @@
 		brain.status &= ~ORGAN_DEAD
 		brain.damage = 0
 		brain.defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2
-	mutations -= HUSK
+	remove_mutation(HUSK)
 	status_flags &= ~DISFIGURED
 	can_defib = TRUE
 	update_icons_body()

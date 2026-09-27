@@ -87,6 +87,11 @@
 		spec += offered_when
 	return spec
 
+/// What the compiled predicates are shared by: one per type, since a type's
+/// requirements are static. Types whose instances differ override it.
+/datum/interaction/proc/predicate_key()
+	return "[type]"
+
 /// The full predicate spec: the selector clauses first, then `requires`.
 /datum/interaction/proc/full_spec()
 	var/list/spec = selector_spec()
@@ -101,7 +106,7 @@
 	var/list/spec = selector_spec()
 	if(!length(spec))
 		return null
-	compiled_selector = dq_predicate_for("interaction_selector:[type]", spec, "interaction [id] selector")
+	compiled_selector = dq_predicate_for("interaction_selector:[predicate_key()]", spec, "interaction [id] selector")
 	return compiled_selector
 
 /// Whether the player meant this interaction: the right tool or item, and its offered_when clauses hold.
@@ -116,7 +121,7 @@
 	var/list/spec = full_spec()
 	if(!length(spec))
 		return null
-	compiled = dq_predicate_for("interaction:[type]", spec, "interaction [id]")
+	compiled = dq_predicate_for("interaction:[predicate_key()]", spec, "interaction [id]")
 	return compiled
 
 /// Whether this interaction is offered on this target at all. Cheap: no reasons, no actor.

@@ -74,14 +74,18 @@ def scan_file(path):
     if "/unit_tests/" in rel:
         return rel, [], []
     with open(path, encoding="utf-8", errors="replace") as handle:
-        lines = code_only(handle.read()).split("\n")
+        source = handle.read()
+    lines = code_only(source).split("\n")
+    # `// LIFECYCLE:` justifications are comments, which code_only() strips, so
+    # read them from the raw source (code_only() keeps line numbering intact).
+    raw_lines = source.split("\n")
     destroys, qdels = [], []
     for no, raw in enumerate(lines, 1):
         text = raw.strip()
         m = DESTROY_OVERRIDE.match(text)
         if m and owner_of(text[: text.index("(")]) not in BASE_DESTROY_OWNERS:
-            reason_here = LIFECYCLE_REASON.search(text)
-            reason_before = no >= 2 and LIFECYCLE_REASON.search(lines[no - 2])
+            reason_here = LIFECYCLE_REASON.search(raw_lines[no - 1])
+            reason_before = no >= 2 and LIFECYCLE_REASON.search(raw_lines[no - 2])
             if not (reason_here or reason_before):
                 destroys.append((rel, no, text[: text.index("(") + 1]))
         if rel not in EXEMPT_FILES and not rel.startswith(EXEMPT_DIRS):

@@ -44,6 +44,11 @@
 	src.behind_gate = behind_gate
 	src.always_handled = always_handled
 
+/// Every generic interaction carries its own requirements: key by id, not type
+/// (a type key made every compact interaction share the first one's predicate).
+/datum/interaction/generic/predicate_key()
+	return "[type]:[id]"
+
 /datum/interaction/generic/run_effect(mob/actor, atom/target, obj/item/held)
 	var/ran = call(target, effect)(actor, held, src)
 	return always_handled ? TRUE : ran
@@ -79,6 +84,14 @@
 	var/category
 	var/default_action = INPUT_ACTION_USE
 	var/always_handled = FALSE
+	// The entry base types' own requirements (entries.dm): a compact spec lists only
+	// what it adds, so an item's self-use still needs it in hand and the rest need reach.
+	var/list/base_requires
+	if(kind == INTERACT_KIND_USE)
+		base_requires = ispath(owner_type, /obj/item) ? list(REQ_TARGET_IN_HAND) : list()
+	else
+		base_requires = list(REQ_INTERACTION_REACH)
+	requires = base_requires + (requires || list())
 	switch(kind)
 		if(INTERACT_KIND_USE)
 			entry = INTERACTION_ENTRY_SELF
@@ -107,10 +120,12 @@
 	// still want the same auto-generated id text (two "interaction_self" procs on
 	// unrelated types); this seed just needs to vary between them, not to be a
 	// lookup key on its own.
-	var/id_seed = "[kind]|[effect_key]|[held_type]|[length(requires)]|\ref[spec]"
-	var/id = "gen_[dq_interaction_slug(kind)]_[dq_interaction_slug(effect_key)]"
-	if(interaction_by_id(id) || cache_has_id(cache, id))
-		id = "[id]_[md5(id_seed)]"
+	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]" // deterministic across builds (a \ref is not)
+	var/base_id = "gen_[dq_interaction_slug(kind)]_[dq_interaction_slug(effect_key)]"
+	var/id = base_id
+	var/attempt = 0
+	while(interaction_by_id(id) || cache_has_id(cache, id))
+		id = "[base_id]_[md5("[id_seed]|[attempt++]")]"
 
 	var/datum/interaction/generic/interaction = new(id, name, category, /* priority */ 0, default_action, requires, effect, entry, held_type, /* offered_when */ null, /* consumes_input */ TRUE, /* behind_gate */ TRUE, always_handled)
 	cache[spec] = interaction

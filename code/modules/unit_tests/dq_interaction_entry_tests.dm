@@ -249,10 +249,14 @@
 		var/atom/target = allocate(type, T)
 		actual += dq_snapshot_lines(target, T, actors)
 		qdel(target)
+	// On a mismatch, write the actual lines out so the snapshot can be reviewed
+	// and regenerated: data/test-snapshots/<test type>.txt.
+	if(length(actual ^ expected))
+		var/file_name = "data/test-snapshots/[replacetext("[type]", "/", "_")].txt"
+		fdel(file_name)
+		text2file(jointext(actual, "\n"), file_name)
 	for(var/line in actual)
 		TEST_ASSERT(line in expected, "new or changed snapshot: [line]")
-	for(var/line in expected)
-		TEST_ASSERT(line in actual, "missing snapshot: [line]")
 	for(var/line in expected)
 		TEST_ASSERT(line in actual, "missing snapshot: [line]")
 

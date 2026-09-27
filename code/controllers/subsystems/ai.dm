@@ -92,6 +92,9 @@ SUBSYSTEM_DEF(ai)
 	manage_processing(0)
 	return TRUE
 
+/// Chunk wakes so far (diagnostics and tests).
+/datum/ai_brain/var/tmp/chunk_wakes = 0
+
 /// Drops the chunk subscriptions without waking (Destroy, or before re-subscribing).
 /datum/ai_brain/proc/cancel_chunk_sleep()
 	if(react_sleep_tokens)
@@ -101,6 +104,7 @@ SUBSYSTEM_DEF(ai)
 /datum/ai_brain/proc/wake_from_chunks()
 	if(!react_sleep_tokens)
 		return
+	chunk_wakes++
 	cancel_chunk_sleep()
 	if(QDELETED(src))
 		return

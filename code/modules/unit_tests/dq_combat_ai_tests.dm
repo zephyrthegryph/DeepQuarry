@@ -67,9 +67,12 @@
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
 	TEST_ASSERT(!(B in SSai.processing), "hibernating brain remained in strategic processing")
+	var/wakes = B.chunk_wakes
 	publish_mob_chunk(M)
 	react_test_ticks(4)
-	TEST_ASSERT(B in SSai.processing, "movement publication did not wake nearby brain")
+	// Not `B in SSai.processing`: a woken calm brain with nothing to do is due at once
+	// and may hibernate again before this line runs.
+	TEST_ASSERT(B.chunk_wakes > wakes, "movement publication did not wake nearby brain")
 // dq_get_behavior(T) must return the same singleton across calls — the
 // flyweight contract is what makes per-mob state on brain.behavior_state /
 // source items work. A bug that returned a fresh instance per call would
@@ -224,6 +227,10 @@
 /datum/unit_test/dq_combat_ai_damage_promotes_attacker/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/simple_mob/combat_ai_test_subject/aggressor = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// Faction-mates don't feud over friendly fire (should_retaliate_against()).
+	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
+	TEST_ASSERT(!victim.ai_brain.check_attacker(aggressor), "a faction-mate's hit shouldn't make it HOSTILE")
+	aggressor.faction = "combat_ai_test_other"
 	// Direct notify (the hook does the same after attack_generic).
 	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
 	TEST_ASSERT(victim.ai_brain.check_attacker(aggressor), "notify_damage didn't promote attacker to HOSTILE")

@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2574 vars in 1162 files.
+# Total: 2572 vars in 1162 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -167,7 +167,7 @@ code/game/antagonist/antagonist.dm 1
 code/game/antagonist/station/cultist.dm 1
 code/game/area/ai_monitored.dm 1
 code/game/area/areas.dm 3
-code/game/atom/_atom.dm 3
+code/game/atom/_atom.dm 2
 code/game/atom/damage_packet.dm 3
 code/game/atoms_movable.dm 3
 code/game/dna/dna_modifier.dm 4
@@ -1003,7 +1003,7 @@ code/modules/projectiles/guns/launcher/pneumatic.dm 2
 code/modules/projectiles/guns/launcher/syringe_gun.dm 2
 code/modules/projectiles/guns/magnetic/bore.dm 2
 code/modules/projectiles/guns/magnetic/magnetic.dm 3
-code/modules/projectiles/guns/projectile.dm 3
+code/modules/projectiles/guns/projectile.dm 2
 code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm 3
 code/modules/projectiles/projectile.dm 9
 code/modules/projectiles/projectile/arc.dm 1
