@@ -176,6 +176,9 @@
 	var/world_previous_step_tick = -1
 	/// lane -> flat list of (watch, reason, source, source_kind) waiting for that lane.
 	var/list/world_q
+	/// lane -> world wakes delivered this pass (run_pass() zeroes it). The OM_WORLD_MIN_PER_PASS
+	/// floor counts against this, so run_pass()'s leftover round doesn't grant a second floor.
+	var/list/world_pass_delivered
 	/// Counters: wakes delivered, dropped (watch or owner gone), last step's wakes and ms.
 	var/world_wakes = 0
 	var/world_dropped = 0
@@ -225,7 +228,9 @@
 	if(!length(Q))
 		return TRUE
 	var/i = 1
-	var/delivered = 0
+	if(!world_pass_delivered)
+		world_pass_delivered = new /list(OM_LANE_COUNT)
+	var/delivered = world_pass_delivered[lane] || 0
 	while(i <= length(Q))
 		var/datum/native_watch/world/W = Q[i]
 		var/list/arguments = list(Q[i + 1], Q[i + 2], Q[i + 3])
@@ -252,12 +257,16 @@
 			W.cancel()
 		// Urgent wakes drain in full, like Rust's urgent lane. The rest yield to the budget, but
 		// only after OM_WORLD_MIN_PER_PASS wakes: a lane whose share is already spent when it
-		// starts (a pass behind on other work) still moves, so its wakes can't starve.
+		// starts (a pass behind on other work) still moves, so its wakes can't starve. The floor
+		// is per lane per pass, not per call: run_pass() calls each lane twice (its share, then
+		// the leftover round).
 		delivered++
 		if(lane != LANE_URGENT && delivered >= OM_WORLD_MIN_PER_PASS && out_of_budget() && i <= length(Q))
 			Q.Cut(1, i)
+			world_pass_delivered[lane] = delivered
 			return FALSE
 	Q.Cut()
+	world_pass_delivered[lane] = delivered
 	return TRUE
 
 /datum/om/scheduler/proc/world_count(type)

@@ -130,6 +130,6 @@
 	return
 
 /// Ends every orbit around this atom.
-/atom/proc/stop_orbiters()
-	for(var/atom/movable/orbiter as anything in src?.orbiter_list())
+/atom/movable/proc/stop_orbiters()
+	for(var/atom/movable/orbiter as anything in orbiter_list())
 		om_unlink(orbiter, src, /datum/om/relation/orbiting)

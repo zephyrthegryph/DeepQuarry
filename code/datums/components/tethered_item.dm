@@ -129,7 +129,8 @@
 
 // Some objects need to communicate the state of the handheld item back to the host
 /datum/component/tethered_item/proc/get_handheld()
-	return parent?.tethered_handheld()
+	var/obj/item/host_item = parent
+	return host_item?.tethered_handheld()
 
 // By default this expects to be worn on your back
 /datum/component/tethered_item/proc/slot_check()

@@ -97,10 +97,18 @@
 
 /// gripper_holding is single on both ends: wrapping a new item lets go of the
 /// old one, and the held item being deleted clears the hold.
+/// A gripper that stays outside a robot (a real one qdels itself there) and has no pockets.
+/obj/item/gripper/dq_test
+	total_pockets = 0
+
+/obj/item/gripper/dq_test/Initialize(mapload)
+	. = ..()
+	return INITIALIZE_HINT_NORMAL
+
 /datum/unit_test/dq_refs_gripper_holding
 
 /datum/unit_test/dq_refs_gripper_holding/Run()
-	var/obj/item/G = allocate(/obj/item/tape_roll) // any holder: the relation doesn't care
+	var/obj/item/gripper/G = allocate(/obj/item/gripper/dq_test) // the accessor is declared on the gripper
 	var/obj/item/A = allocate(/obj/item/tape_roll)
 	var/obj/item/B = allocate(/obj/item/tape_roll)
 	om_link(G, A, /datum/om/relation/gripper_holding)

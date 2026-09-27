@@ -292,6 +292,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/done = TRUE
 
 	// 0. The Rust world step: timers, keys, rate crossings and native watches.
+	if(world_pass_delivered)
+		for(var/lane in 1 to OM_LANE_COUNT)
+			world_pass_delivered[lane] = 0
 	world_step()
 
 	// 1. Deadlines.

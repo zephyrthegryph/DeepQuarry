@@ -4514,6 +4514,30 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
+/// A recharger's REF_SPILL of "charging" drops the item on destroy and the spill
+/// hook refreshes its icon, as the recharger's old Destroy() did.
+/obj/item/cell/dq_spill_probe
+	var/refreshed = FALSE
+
+/obj/item/cell/dq_spill_probe/update_icon()
+	refreshed = TRUE
+	return ..()
+
+/datum/unit_test/dq_recharger_spill_refreshes_icon
+
+/datum/unit_test/dq_recharger_spill_refreshes_icon/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
+	var/obj/machinery/recharger/R = new(T)
+	var/obj/item/cell/dq_spill_probe/C = new(R)
+	R.charging = C
+	C.refreshed = FALSE
+	qdel(R)
+	TEST_ASSERT(!QDELETED(C), "the charging item was deleted with the recharger")
+	TEST_ASSERT_EQUAL(C.loc, T, "the charging item did not spill to the recharger's turf")
+	TEST_ASSERT(C.refreshed, "the spilled item did not refresh its icon")
+	qdel(C)
+
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning
 
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning/Run()
