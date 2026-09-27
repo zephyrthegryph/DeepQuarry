@@ -19,9 +19,14 @@
 		to_chat(src, span_red("You are not fully grown."))
 		return
 
-	// confirm_evolution() handles choices and other specific requirements.
+	// confirm_evolution() handles choices and other specific requirements. A form that asks
+	// the player returns null and calls evolve_into() when they answer.
 	var/new_species = confirm_evolution()
-	if(!new_species || !adult_form )
+	if(new_species)
+		evolve_into(new_species)
+
+/mob/living/carbon/alien/proc/evolve_into(new_species)
+	if(!new_species || !adult_form || stat != CONSCIOUS)
 		return
 
 	var/mob/living/carbon/human/adult = new adult_form(get_turf(src))
@@ -35,12 +40,10 @@
 
 	if(move_player(src, adult, "grew into [adult]"))
 		if (can_namepick_as_adult)
-			var/newname = tgui_input_text(adult, "You have become an adult. Choose a name for yourself.", "Adult Name", null, MAX_NAME_LEN)
-
-			if(!newname)
-				adult.fully_replace_character_name(name, "[src.adult_name] ([instance_num])")
-			else
-				adult.fully_replace_character_name(name, newname)
+			// Until they answer (or if they cancel) they carry the default adult name.
+			var/fallback = "[src.adult_name] ([instance_num])"
+			adult.fully_replace_character_name(name, fallback)
+			om_prompt(adult, adult, list("kind" = "text", "message" = "You have become an adult. Choose a name for yourself.", "title" = "Adult Name", "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/mob/living/carbon/human, adult_name_chosen))
 
 	for (var/obj/item/W in src.contents)
 		src.drop_from_inventory(W)
@@ -57,6 +60,10 @@
 
 /mob/living/carbon/alien/proc/confirm_evolution()
 	return
+
+/mob/living/carbon/human/proc/adult_name_chosen(mob/user, newname, datum/om/prompt/ask)
+	if(newname)
+		fully_replace_character_name(real_name, newname)
 
 /mob/living/carbon/alien/proc/show_evolution_blurb()
 	return

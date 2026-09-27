@@ -340,6 +340,18 @@
 	. = ..()
 
 // This is awful but its literally say code.
+/mob/living/simple_mob/animal/borer/proc/psychic_say_unheard(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_alien("..But nothing heard it.."))
+
+/// The mob a hostless borer's psionic pulse makes speak.
+/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(mob/user, mob/living/speaker, datum/om/prompt/ask)
+	var/message = ask.get("message")
+	if(BORER_HOST(src) || speaker.stat || get_dist(src, speaker) > 7)
+		return
+	log_admin("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
+	message_admins("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
+	speaker.say("[message]")
+
 /mob/living/simple_mob/animal/borer/say(message, datum/language/speaking = null, whispering = 0)
 	var/mob/living/carbon/human/host = BORER_HOST(src)
 	message = sanitize(message)
@@ -375,13 +387,8 @@
 					continue
 				if(!LM.stat)
 					nearby_mobs += LM
-			var/mob/living/speaker
 			if(nearby_mobs.len)
-				speaker = tgui_input_list(src, "Choose a target speaker:", "Target Choice", nearby_mobs)
-			if(speaker)
-				log_admin("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
-				message_admins("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
-				speaker.say("[message]")
+				om_prompt(src, src, list("kind" = "list", "message" = "Choose a target speaker:", "title" = "Target Choice", "choices" = nearby_mobs, "on_cancel" = PROC_REF(psychic_say_unheard), "data" = list("message" = message)), PROC_REF(psychic_speaker_chosen))
 				return
 			to_chat(src, span_alien("..But nothing heard it.."))
 		else

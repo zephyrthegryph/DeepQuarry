@@ -151,17 +151,17 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/choice = tgui_alert(user, "Would you like to change colour or mode?", "Change What?", list("Colour","Mode","Cancel"))
-	if(!choice || choice == "Cancel")
+	om_prompt(src, user, list("message" = "Would you like to change colour or mode?", "title" = "Change What?", "choices" = list("Colour","Mode","Cancel"), "requires" = PROMPT_HELD), PROC_REF(robopen_choice_made))
+
+/obj/item/pen/robopen/proc/robopen_choice_made(mob/user, choice, datum/om/prompt/ask)
+	if(choice == "Cancel")
 		return
 
 	playsound(src, 'sound/effects/pop.ogg', 50, 0)
 
 	switch(choice)
-
 		if("Colour")
-			var/newcolour = tgui_input_list(user, "Which colour would you like to use?", "Color Choice", list("black","blue","red","green","yellow"))
-			if(newcolour) colour = newcolour
+			om_prompt(src, user, list("kind" = "list", "message" = "Which colour would you like to use?", "title" = "Color Choice", "choices" = list("black","blue","red","green","yellow"), "requires" = PROMPT_HELD), PROC_REF(robopen_colour_chosen))
 
 		if("Mode")
 			if (mode == 1)
@@ -170,7 +170,8 @@
 				mode = 1
 			to_chat(user, span_filter_notice("Changed printing mode to '[mode == 2 ? "Rename Paper" : "Write Paper"]'"))
 
-	return
+/obj/item/pen/robopen/proc/robopen_colour_chosen(mob/user, newcolour, datum/om/prompt/ask)
+	colour = newcolour
 
 // Copied over from paper's rename verb
 // see code\modules\paperwork\paper.dm line 62
@@ -178,16 +179,14 @@
 /obj/item/pen/robopen/proc/RenamePaper(mob/user, obj/item/paper/paper)
 	if ( !user || !paper )
 		return
-	var/n_name = sanitizeSafe(tgui_input_text(user, "What would you like to label the paper?", "Paper Labelling", null, 32, encode = FALSE), 32)
-	if ( !user || !paper )
-		return
+	om_prompt(src, user, list("kind" = "text", "message" = "What would you like to label the paper?", "title" = "Paper Labelling", "max_length" = 32, "encode" = FALSE, "target" = paper, "requires" = PROMPT_ADJACENT, "data" = list("paper" = paper)), PROC_REF(paper_label_entered))
 
-	//n_name = copytext(n_name, 1, 32)
-	if(( get_dist(user,paper) <= 1  && user.stat == 0))
-		paper.name = "paper[(n_name ? text("- '[n_name]'") : null)]"
-		paper.last_modified_ckey = user.ckey
+/obj/item/pen/robopen/proc/paper_label_entered(mob/user, n_name, datum/om/prompt/ask)
+	var/obj/item/paper/paper = ask.get("paper")
+	n_name = sanitizeSafe(n_name, 32)
+	paper.name = "paper[(n_name ? text("- '[n_name]'") : null)]"
+	paper.last_modified_ckey = user.ckey
 	add_fingerprint(user)
-	return
 
 //TODO: Add prewritten forms to dispense when you work out a good way to store the strings.
 /obj/item/form_printer
@@ -219,23 +218,42 @@
 	deploy_paper(user)
 
 /obj/item/form_printer/proc/deploy_paper(mob/user)
-	var/choice = tgui_alert(user, "Would you like dispense and empty page or print a form?", "Dispense", list("Paper","Form"))
-	if(!choice || choice == "Cancel")
-		return
+	om_prompt(src, user, list("message" = "Would you like dispense and empty page or print a form?", "title" = "Dispense", "choices" = list("Paper","Form"), "requires" = PROMPT_HELD), PROC_REF(deploy_choice_made))
+
+/obj/item/form_printer/proc/deploy_choice_made(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Paper")
 			flick("doc_printer_mod_ejecting", src)
 			om_after(src, 22, PROC_REF(dispense_paper))
 		if ("Form")
-			var/list/content = print_form(user)
-			if(!content)
-				to_chat(user, span_warning("No form for this category found in central network. Central is advising employees to upload new forms whenever possible."))
-				return
-			flick("doc_printer_mod_printing", src)
-			om_after(src, 22, PROC_REF(dispense_form), content)
+			om_prompt_sequence(src, user, list(
+				list("key" = "department", "kind" = "list", "message" = "What kind of form do you want to print?", "title" = "Department", "choices" = list("Empty", "Command", "Security", "Supply", "Science", "Medical", "Engineering", "Service", "Exploration", "Event", "Other", "Mercenary")),
+				PROC_REF(ask_form),
+			), PROC_REF(form_chosen), list("requires" = PROMPT_HELD))
 
-/obj/item/form_printer/proc/print_form(mob/user)
-	var/list/paper_forms = list("Empty", "Command", "Security", "Supply", "Science", "Medical", "Engineering", "Service", "Exploration", "Event", "Other", "Mercenary")
+/obj/item/form_printer/proc/ask_form(mob/user, datum/om/prompt/ask)
+	var/department = ask.get("department")
+	if(department == "Empty")
+		return null
+	var/list/forms = department_forms(department)
+	if(!length(forms))
+		to_chat(user, span_warning("No form for this category found in central network. Central is advising employees to upload new forms whenever possible."))
+		return PROMPT_STOP
+	return list("key" = "form", "kind" = "list", "message" = "What kind of [lowertext(department)] form do you want to print?", "title" = "Form", "choices" = forms)
+
+/obj/item/form_printer/proc/form_chosen(mob/user, datum/om/prompt/ask)
+	var/list/split
+	if(ask.get("department") == "Empty")
+		split = list("", "Empty form")
+	else
+		split = splittext(ask.get("form"), ": ")
+	if(length(split) < 2)
+		return
+	flick("doc_printer_mod_printing", src)
+	om_after(src, 22, PROC_REF(dispense_form), list(select_form(split[1], split[2]), split[1] + ": " + split[2]))
+
+/// The forms the printer knows for a department.
+/obj/item/form_printer/proc/department_forms(department)
 	var/list/command_paper_forms = list("COM-0002: Dismissal Order", "COM-0003: Job Change Request", "COM-0004: ID Replacement Request", "COM-0005: Access Change Order", "COM-0006: Formal Complaint", "COM-0009: Visitor Permit", "COM-0012: Personnel Request Form", "COM-0013: Employee of the Month Nomination Form")
 	var/list/security_paper_forms = list("SEC-1001: Shift-Start Checklist", "SEC-1002: Patrol Assignment Sheet", "SEC-1003: Incident Report", "SEC-1004: Arrest Report", "SEC-1005: Arrest Warrant", "SEC-1006: Search Warrant", "SEC-1007: Forensics Investigation Report", "SEC-1008: Interrogation Report", "SEC-1009: Witness Statement", "SEC-1010: Armory Inventory", "SEC-1011: Armory Equipment Request", "SEC-1012: Armory Equipment Deployment", "SEC-1013: Weapon Permit", "SEC-1014: Injunction", "SEC-1015: Deputization Waiver")
 	var/list/supply_paper_forms = list("SUP-2001: Delivery of Goods", "SUP-2002: Delivery of Resources", "SUP-2003: Material Stock")
@@ -248,71 +266,30 @@
 	var/list/other_paper_forms = list("OTHR-9001: Emergency Transmission", "OTHR-9032: Ownership Transfer")
 	var/list/mercenary_paper_forms = list("MERC-?071: Mercenary Request")
 
-	var/list/split = list()
-	var/papertype = tgui_input_list(user, "What kind of form do you want to print?", "Department", paper_forms)
-	if(!papertype || papertype == "Cancel")
-		return
-	switch(papertype)
-		if ("Empty")
-			split = list("", "Empty form")
+	switch(department)
 		if("Command")
-			var/command_paper = tgui_input_list(user, "What kind of command form do you want to print?", "Form", command_paper_forms)
-			if(!command_paper || command_paper == "Cancel")
-				return
-			split = splittext(command_paper, ": ")
+			return command_paper_forms
 		if("Security")
-			var/security_paper = tgui_input_list(user, "What kind of security form do you want to print?", "Form", security_paper_forms)
-			if(!security_paper || security_paper == "Cancel")
-				return
-			split = splittext(security_paper, ": ")
+			return security_paper_forms
 		if("Supply")
-			var/supply_paper = tgui_input_list(user, "What kind of supply form do you want to print?", "Form", supply_paper_forms)
-			if(!supply_paper || supply_paper == "Cancel")
-				return
-			split = splittext(supply_paper, ": ")
+			return supply_paper_forms
 		if("Science")
-			var/science_paper = tgui_input_list(user, "What kind of science form do you want to print?", "Form", science_paper_forms)
-			if(!science_paper || science_paper == "Cancel")
-				return
-			split = splittext(science_paper, ": ")
+			return science_paper_forms
 		if("Medical")
-			var/medical_paper = tgui_input_list(user, "What kind of medical form do you want to print?", "Form", medical_paper_forms)
-			if(!medical_paper || medical_paper == "Cancel")
-				return
-			split = splittext(medical_paper, ": ")
+			return medical_paper_forms
 		if("Engineering")
-			var/engineering_paper = tgui_input_list(user, "What kind of engineering form do you want to print?", "Form", engineering_paper_forms)
-			if(!engineering_paper || engineering_paper == "Cancel")
-				return
-			split = splittext(engineering_paper, ": ")
+			return engineering_paper_forms
 		if("Service")
-			var/service_paper = tgui_input_list(user, "What kind of service form do you want to print?", "Form", service_paper_forms)
-			if(!service_paper || service_paper == "Cancel")
-				return
-			split = splittext(service_paper, ": ")
+			return service_paper_forms
 		if("Exploration")
-			var/exploration_paper = tgui_input_list(user, "What kind of exploration form do you want to print?", "Form", exploration_paper_forms)
-			if(!exploration_paper || exploration_paper == "Cancel")
-				return
-			split = splittext(exploration_paper, ": ")
+			return exploration_paper_forms
 		if("Event")
-			var/event_paper = tgui_input_list(user, "What kind of event form do you want to print?", "Form", event_paper_forms)
-			if(!event_paper || event_paper == "Cancel")
-				return
-			split = splittext(event_paper, ": ")
+			return event_paper_forms
 		if("Other")
-			var/other_paper = tgui_input_list(user, "What kind of other form do you want to print?", "Form", other_paper_forms)
-			if(!other_paper || other_paper == "Cancel")
-				return
-			split = splittext(other_paper, ": ")
+			return other_paper_forms
 		if("Mercenary")
-			var/mercenary_paper = tgui_input_list(user, "What kind of mercenary form do you want to print?", "Form", mercenary_paper_forms)
-			if(!mercenary_paper || mercenary_paper == "Cancel")
-				return
-			split = splittext(mercenary_paper, ": ")
-		else
-			return
-	return list(select_form(split[1], split[2]), split[1] + ": " + split[2])
+			return mercenary_paper_forms
+	return null
 
 /obj/item/form_printer/proc/select_form(paperid, name)
 	var/content = ""
@@ -531,9 +508,10 @@
 	set category = "Object"
 	set src in range(0)
 
-	var/N = tgui_input_list(usr, "How much damage should the shield absorb?", "Shield Level", list("5","10","25","50","75","100"))
-	if (N)
-		shield_level = text2num(N)/100
+	om_prompt(src, usr, list("kind" = "list", "message" = "How much damage should the shield absorb?", "title" = "Shield Level", "choices" = list("5","10","25","50","75","100"), "requires" = PROMPT_HELD), PROC_REF(shield_level_chosen))
+
+/obj/item/borg/combat/shield/proc/shield_level_chosen(mob/user, N, datum/om/prompt/ask)
+	shield_level = text2num(N)/100
 
 /obj/item/borg/combat/mobility
 	name = "mobility module"
@@ -681,7 +659,11 @@
 		if("roll d100")
 			sides = 100
 		if("roll a custom die")
-			sides = tgui_input_number(user, "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", "Custom Dice Roll", 6, 1000, 0)
+			om_prompt(src, user, list("kind" = "number", "message" = "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", "title" = "Custom Dice Roll", "default" = 6, "max" = 1000, "min" = 0, "requires" = PROMPT_HELD), PROC_REF(roll_die))
+			return
+	roll_die(user, sides)
+
+/obj/item/robo_dice/proc/roll_die(mob/user, sides, datum/om/prompt/ask)
 	if(sides <= 0)
 		return
 	var/result = rand(1, sides)

@@ -233,8 +233,11 @@
 		return "[booze_options[ourborg.sprite_extra_customization["boozehound"]]]-rest"
 
 /datum/robot_sprite/dogborg/service/booze/handle_extra_customization(mob/living/silicon/robot/ourborg)
-	var/choice = tgui_input_list(ourborg, "Choose your drink!", "Drink Choice", booze_options)
-	if(ourborg && choice && !ourborg.stat)
+	om_prompt(src, ourborg, list("kind" = "list", "message" = "Choose your drink!", "title" = "Drink Choice", "choices" = booze_options, "requires" = PROMPT_CONSCIOUS), PROC_REF(drink_chosen))
+	return 1
+
+/datum/robot_sprite/dogborg/service/booze/proc/drink_chosen(mob/living/silicon/robot/ourborg, choice, datum/om/prompt/ask)
+	if(ourborg.sprite_datum == src)
 		LAZYSET(ourborg.sprite_extra_customization, "boozehound", choice)
 		playsound(ourborg.loc, 'sound/effects/bubbles.ogg', 100, 0, 4)
 		to_chat(ourborg, span_filter_notice("Your tank now displays [choice]. Drink up and enjoy!"))

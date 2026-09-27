@@ -86,9 +86,12 @@
 	if(!possible_targets.len)
 		return ..()
 	user.visible_message(span_warning("\The [user] reaches for something in \the [src]'s fur..."),span_notice("You look through \the [src]'s fur..."))
-	var/mob/living/that_one = tgui_input_list(user, "Select a mob:", "Select a mob to grab!", possible_targets)
-	if(!that_one)
-		return ..()
+	om_prompt(src, user, list("kind" = "list", "message" = "Select a mob:", "title" = "Select a mob to grab!", "choices" = possible_targets, "requires" = PROMPT_ADJACENT), PROC_REF(fur_pick_chosen))
+	return TRUE
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(mob/living/user, mob/living/that_one, datum/om/prompt/ask)
+	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
+		return
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
@@ -326,17 +329,19 @@
 			to_chat(src, span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition."))
 			return
 		//for(var/obj/effect/landmark/stardog/l in destinations)
-		var/obj/effect/overmap/visitable/our_dest = tgui_input_list(src, "Where would you like to try to go?", "Transition", destinations, timeout = 15 SECONDS, strict_modern = TRUE)
-		if(!our_dest)
-			to_chat(src, span_warning("You decide not to transition."))
-			return
-		to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
+		om_prompt(src, src, list("kind" = "list", "message" = "Where would you like to try to go?", "title" = "Transition", "choices" = destinations, "timeout" = 15 SECONDS, "requires" = PROMPT_CONSCIOUS, "on_cancel" = PROC_REF(transition_declined)), PROC_REF(transition_destination_chosen))
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
 		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
 		return
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_declined(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_warning("You decide not to transition."))
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(mob/user, obj/effect/overmap/visitable/our_dest, datum/om/prompt/ask)
+	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
+	om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
 
@@ -449,7 +454,11 @@
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
 	if (!message)
-		message = tgui_input_text(usr, "Type a message to emote.","Emote Beyond", encode = FALSE)
+		om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))
+		return
+	emote_beyond_entered(L, message)
+
+/turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message, datum/om/prompt/ask)
 	message = sanitize_or_reflect(message,L)
 	if (!message)
 		return
@@ -924,12 +933,13 @@
 	if(!isliving(user))
 		return TRUE
 	var/mob/living/L = user
-	var/message
 	if(L.client.prefs.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
-	if (!message)
-		message = tgui_input_text(L, "Type a message to emote.","Emote Beyond", encode = FALSE)
+	om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))
+	return TRUE
+
+/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(mob/living/L, message, datum/om/prompt/ask)
 	message = sanitize_or_reflect(message,L)
 	if (!message)
 		return

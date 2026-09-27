@@ -12,26 +12,26 @@
 
 	if(h_style)
 		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[h_style]
-		var/selected_string
 		if(!(hair_style.flags & HAIR_TIEABLE))
 			to_chat(src, span_warning("Your hair isn't long enough to tie."))
 			return
-		else
-			var/list/datum/sprite_accessory/hair/valid_hairstyles = list()
-			for(var/hair_string in GLOB.hair_styles_list)
-				var/datum/sprite_accessory/hair/test = GLOB.hair_styles_list[hair_string]
-				if(test.flags & HAIR_TIEABLE)
-					valid_hairstyles.Add(hair_string)
-			selected_string = tgui_input_list(src, "Select a new hairstyle", "Your hairstyle", valid_hairstyles)
-		if(incapacitated())
-			to_chat(src, span_warning("You can't mess with your hair right now!"))
-			return
-		else if(selected_string && h_style != selected_string)
-			h_style = selected_string
-			regenerate_icons()
-			visible_message(span_notice("[src] pauses a moment to style their hair."))
-		else
-			to_chat(src, span_notice("You're already using that style."))
+		var/list/datum/sprite_accessory/hair/valid_hairstyles = list()
+		for(var/hair_string in GLOB.hair_styles_list)
+			var/datum/sprite_accessory/hair/test = GLOB.hair_styles_list[hair_string]
+			if(test.flags & HAIR_TIEABLE)
+				valid_hairstyles.Add(hair_string)
+		om_prompt(src, src, list("kind" = "list", "message" = "Select a new hairstyle", "title" = "Your hairstyle", "choices" = valid_hairstyles), PROC_REF(tie_hair_chosen))
+
+/mob/living/carbon/human/proc/tie_hair_chosen(mob/user, selected_string, datum/om/prompt/ask)
+	if(incapacitated())
+		to_chat(src, span_warning("You can't mess with your hair right now!"))
+		return
+	else if(selected_string && h_style != selected_string)
+		h_style = selected_string
+		regenerate_icons()
+		visible_message(span_notice("[src] pauses a moment to style their hair."))
+	else
+		to_chat(src, span_notice("You're already using that style."))
 
 /mob/living/carbon/human/proc/tackle()
 	set category = "Abilities.General"
@@ -51,9 +51,9 @@
 			choices += M
 	choices -= src
 
-	var/mob/living/T = tgui_input_list(src, "Who do you wish to tackle?", "Target Choice", choices)
+	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to tackle?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(tackle_target_chosen))
 
-	if(!T || !src || src.stat) return
+/mob/living/carbon/human/proc/tackle_target_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
 
 	if(!Adjacent(T)) return
 
@@ -85,20 +85,17 @@
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	var/list/targets = list()
-	var/target = null
-	var/text = null
+	om_prompt_sequence(src, src, list(
+		list("key" = "target", "kind" = "list", "message" = "Select a creature!", "title" = "Speak to creature", "choices" = getmobs()),
+		list("key" = "text", "kind" = "text", "message" = "What would you like to say?", "title" = "Speak to creature", "max_length" = MAX_MESSAGE_LEN),
+	), PROC_REF(commune_answered))
 
-	targets += getmobs() //Fill list, prompt user with list
-	target = tgui_input_list(src, "Select a creature!", "Speak to creature", targets)
-
-	if(!target) return
-
-	text = tgui_input_text(src, "What would you like to say?", "Speak to creature", null, MAX_MESSAGE_LEN)
-
-	if(!text) return
-
-	var/mob/M = targets[target]
+/mob/living/carbon/human/proc/commune_answered(mob/user, datum/om/prompt/ask)
+	var/text = ask.get("text")
+	var/list/targets = getmobs()
+	var/mob/M = targets[ask.get("target")]
+	if(!M)
+		return
 
 	if(isobserver(M) || M.stat == DEAD)
 		to_chat(src, span_filter_notice("Not even a [src.species.name] can speak to the dead."))
@@ -119,12 +116,13 @@
 	set desc = "Whisper silently to someone over a distance."
 	set category = "Abilities.General"
 
-	var/msg = tgui_input_text(src, "Message:", "Psychic Whisper", "", MAX_MESSAGE_LEN)
-	if(msg)
-		log_talk("(PWHISPER to [key_name(M)]) [msg]", LOG_WHISPER)
-		to_chat(M, span_filter_say("[span_green("You hear a strange, alien voice in your head... <i>[msg]</i>")]"))
-		to_chat(src, span_filter_say("[span_green("You said: \"[msg]\" to [M]")]"))
-	return
+	om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Psychic Whisper", "max_length" = MAX_MESSAGE_LEN, "data" = list("target" = M)), PROC_REF(psychic_whisper_entered))
+
+/mob/living/carbon/human/proc/psychic_whisper_entered(mob/user, msg, datum/om/prompt/ask)
+	var/mob/M = ask.get("target")
+	log_talk("(PWHISPER to [key_name(M)]) [msg]", LOG_WHISPER)
+	to_chat(M, span_filter_say("[span_green("You hear a strange, alien voice in your head... <i>[msg]</i>")]"))
+	to_chat(src, span_filter_say("[span_green("You said: \"[msg]\" to [M]")]"))
 
 /mob/living/carbon/human/proc/diona_split_nymph()
 	set name = "Split"
@@ -360,8 +358,15 @@
 	var/list/states
 	if(!states)
 		states = params2list(robohead.monitor_styles)
-	var/choice = tgui_input_list(src, "Select a screen icon:", "Screen Icon Choice", states)
-	if(choice)
+	om_prompt(src, src, list("kind" = "list", "message" = "Select a screen icon:", "title" = "Screen Icon Choice", "choices" = states, "requires" = PROMPT_CONSCIOUS, "data" = list("head" = E, "states" = states)), PROC_REF(monitor_state_chosen))
+
+/mob/living/carbon/human/proc/monitor_state_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/organ/external/head/E = ask.get("head")
+	var/list/states = ask.get("states")
+	if(organs_by_name[BP_HEAD] != E)
+		return
+	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
+	if(robohead?.monitor_icon)
 		E.eye_icon_location = robohead.monitor_icon
 		E.eye_icon = states[choice]
 		E.eye_icon_override = TRUE
@@ -451,25 +456,16 @@
 	if(!nearby.len)
 		to_chat(src, span_warning("There is nobody nearby to play games with!"))
 
-	var/partner = tgui_input_list(src, "Choose a game partner:", "Hand games", nearby)
-	if(!partner)
-		return
-	var/choose_game = tgui_alert(src, "Choose a game to play with [partner]?", "Hand games", list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel"))
+	om_prompt_sequence(src, src, list(
+		list("key" = "partner", "kind" = "list", "message" = "Choose a game partner:", "title" = "Hand games", "choices" = nearby),
+		PROC_REF(hand_games_ask_game),
+	), PROC_REF(hand_games_chosen), list("requires" = PROMPT_CONSCIOUS))
 
-	if(!choose_game || (choose_game == "Cancel"))
-		return
+/mob/living/carbon/human/proc/hand_games_ask_game(mob/user, datum/om/prompt/ask)
+	return list("key" = "game", "message" = "Choose a game to play with [ask.get("partner")]?", "title" = "Hand games", "choices" = list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel"), "abort" = "Cancel")
 
-	if(choose_game == "Rock, Paper, Scissors")
-		game_rps(src,partner)
-
-	if(choose_game == "Arm Wrestling")
-		game_armwrestle(src,partner)
-
-	if(choose_game == "Slap Hands")
-		game_slaphands(src,partner)
-
-	if(choose_game == "Thumb Wars")
-		game_thumbwars(src,partner)
+/mob/living/carbon/human/proc/hand_games_chosen(mob/user, datum/om/prompt/ask)
+	hand_game_invite(ask.get("partner"), ask.get("game"))
 
 // Checks to make sure everything is fine to continue playing.
 
@@ -483,73 +479,93 @@
 
 	return 1
 
-///// A simple game of rock paper scissors, each player chooses an option and the choices are declared simultaneously.
+// A hand game runs on player 1 (src). Player 2 is asked to play; then, for the games with a
+// choice, player 1 and player 2 choose in turn. Each answer re-checks hand_games_check().
 
-/mob/living/carbon/human/proc/game_rps(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
-	if(!hand_games_check(player1,player2))
+/mob/living/carbon/human/proc/hand_game_invite(mob/living/carbon/human/player2, game)
+	if(!hand_games_check(src, player2))
 		return
-	to_chat(player1, span_notice("Asking [player2] if they want to play Rock, Paper, Scissors!"))
-	var/playgame = tgui_alert(player2, "[player1] wants to play Rock, Paper, Scissors.", "Rock, Paper, Scissors", list("Play", "Refuse"))
-	if(!playgame || (playgame == "Refuse"))
-		to_chat(player1, span_warning("[player2] declines to play the game."))
+	to_chat(src, span_notice("Asking [player2] if they want to play [game]!"))
+	om_prompt(src, player2, list("message" = "[src] wants to play [game].", "title" = game, "choices" = list("Play", "Refuse"), "on_cancel" = PROC_REF(hand_game_declined), "data" = list("game" = game)), PROC_REF(hand_game_invite_answered))
+
+/mob/living/carbon/human/proc/hand_game_declined(mob/living/carbon/human/player2, datum/om/prompt/ask)
+	to_chat(src, span_warning("[player2] declines to play the game."))
+
+/mob/living/carbon/human/proc/hand_game_invite_answered(mob/living/carbon/human/player2, playgame, datum/om/prompt/ask)
+	if(playgame != "Play")
+		hand_game_declined(player2, ask)
 		return
-	else
-		player1.visible_message(span_notice("[player1] challenges [player2] to Rock, Paper, Scissors!"))
-		to_chat(player2, span_warning("[player1] is deciding."))
-		var/choice1 = tgui_alert(player1, "Choose your attack!", "Rock, Paper, Scissors", list("Rock", "Paper", "Scissors", "Cancel"))
-		if(choice1 == "Cancel")
-			player1.visible_message(span_notice("[player1] chickens out!"))
-		if(!hand_games_check(player1,player2))
+	if(!hand_games_check(src, player2))
+		return
+	var/game = ask.get("game")
+	switch(game)
+		if("Rock, Paper, Scissors")
+			visible_message(span_notice("[src] challenges [player2] to Rock, Paper, Scissors!"))
+			to_chat(player2, span_warning("[src] is deciding."))
+		if("Arm Wrestling")
+			visible_message(span_notice("[src] challenges [player2] to Arm Wrestling!"))
+			to_chat(player2, span_warning("[src] is getting ready."))
+		if("Slap Hands")
+			visible_message(span_notice("[src] challenges [player2] to Slap Hands!"))
+			to_chat(player2, span_warning("[src] is getting ready."))
+		if("Thumb Wars")
+			visible_message(span_notice("[src] challenges [player2] to a thumb war!"))
+			om_do_after(src, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_thumbwars_human_done), done_args = list(src, player2), on_fail = PROC_REF(game_thumbwars_human_failed), fail_args = list(src, player2))
 			return
-		to_chat(player1, span_warning("[player2] is deciding."))
-		var/choice2 = tgui_alert(player2, "Choose your attack!", "Rock, Paper, Scissors", list("Rock", "Paper", "Scissors", "Cancel"))
-		if(choice2 == "Cancel")
-			player2.visible_message(span_notice("[player2] chickens out!"))
-		if(!hand_games_check(player1,player2))
-			return
-		if(choice1 == choice2)
-			player1.visible_message(span_notice("[player1] and [player2] both choose [choice1], it's a draw!"))
-		else
-			player1.visible_message(span_notice("[player1] chooses [choice1]!"))
-			player2.visible_message(span_notice("[player2] chooses [choice2]!"))
+	var/list/spec = hand_game_choice_spec(game)
+	spec["data"] = list("partner" = player2, "game" = game)
+	om_prompt(src, src, spec, PROC_REF(hand_game_first_choice))
+
+/// What each player is asked for their move.
+/mob/living/carbon/human/proc/hand_game_choice_spec(game)
+	switch(game)
+		if("Rock, Paper, Scissors")
+			return list("message" = "Choose your attack!", "title" = game, "choices" = list("Rock", "Paper", "Scissors", "Cancel"))
+		if("Arm Wrestling")
+			return list("kind" = "number", "message" = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", "title" = "Strength", "min" = 1, "max" = 10, "default" = 5)
+		if("Slap Hands")
+			return list("kind" = "number", "message" = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", "title" = "Speed", "min" = 1, "max" = 10, "default" = 5)
+
+/mob/living/carbon/human/proc/hand_game_first_choice(mob/user, choice1, datum/om/prompt/ask)
+	var/mob/living/carbon/human/player2 = ask.get("partner")
+	var/game = ask.get("game")
+	if(choice1 == "Cancel")
+		visible_message(span_notice("[src] chickens out!"))
+	if(!hand_games_check(src, player2))
+		return
+	to_chat(src, span_warning("[player2] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))
+	var/list/spec = hand_game_choice_spec(game)
+	spec["data"] = list("game" = game, "choice1" = choice1)
+	om_prompt(src, player2, spec, PROC_REF(hand_game_second_choice))
+
+/mob/living/carbon/human/proc/hand_game_second_choice(mob/living/carbon/human/player2, choice2, datum/om/prompt/ask)
+	var/choice1 = ask.get("choice1")
+	var/game = ask.get("game")
+	if(choice2 == "Cancel")
+		player2.visible_message(span_notice("[player2] chickens out!"))
+	if(!hand_games_check(src, player2))
+		return
+	switch(game)
+		if("Rock, Paper, Scissors")
+			if(choice1 == choice2)
+				visible_message(span_notice("[src] and [player2] both choose [choice1], it's a draw!"))
+			else
+				visible_message(span_notice("[src] chooses [choice1]!"))
+				player2.visible_message(span_notice("[player2] chooses [choice2]!"))
+		if("Arm Wrestling")
+			// Each player's strength counts for their size.
+			var/score1 = size_multiplier * clamp(choice1, 1, 10)
+			var/score2 = player2.size_multiplier * clamp(choice2, 1, 10)
+			var/competition = pick(score1;src, score2;player2)
+			om_do_after(src, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_armwrestle_human_done), done_args = list(src, player2, competition), on_fail = PROC_REF(game_armwrestle_human_failed), fail_args = list(src, player2, competition))
+		if("Slap Hands")
+			// This one gives the advantage to smaller players.
+			var/score1 = clamp(2.25 - size_multiplier, 0.1, 3) * clamp(choice1, 1, 10)
+			var/score2 = clamp(2.25 - player2.size_multiplier, 0.1, 3) * clamp(choice2, 1, 10)
+			var/competition = pick(score1;src, score2;player2)
+			om_do_after(src, 1 SECOND, target = player2, receiver = src, on_done = PROC_REF(game_slaphands_human_done), done_args = list(src, player2, competition), on_fail = PROC_REF(game_slaphands_human_failed), fail_args = list(src, player2, competition))
 
 /////// Arm wrestling! Each player gets a modifier based on their size and can choose the strength of their character, then a weighted roll is made.
-
-/mob/living/carbon/human/proc/game_armwrestle(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
-	if(!hand_games_check(player1,player2))
-		return
-	to_chat(player1, span_notice("Asking [player2] if they want to play Arm Wrestling!"))
-	var/playgame = tgui_alert(player2, "[player1] wants to play Arm Wrestling.", "Arm Wrestling", list("Play", "Refuse"))
-	if(!playgame || (playgame == "Refuse"))
-		to_chat(player1, span_warning("[player2] declines to play the game."))
-		return
-	else
-		if(!hand_games_check(player1,player2))
-			return
-		player1.visible_message(span_notice("[player1] challenges [player2] to Arm Wrestling!"))
-		var/scale1 = player1.size_multiplier
-		var/scale2 = player2.size_multiplier
-		to_chat(player2, span_warning("[player1] is getting ready."))
-		var/strength1 = tgui_input_number(player1, "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", "Strength")
-		strength1 = clamp(strength1, 1, 10)
-		if(!strength1)
-			player1.visible_message(span_notice("[player1] chickens out!"))
-		if(!hand_games_check(player1,player2))
-			return
-		to_chat(player1, span_warning("[player2] is getting ready."))
-		var/strength2 = tgui_input_number(player2, "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", "Strength")
-		strength2 = clamp(strength2, 1, 10)
-		if(!strength2)
-			player2.visible_message(span_notice("[player2] chickens out!"))
-		if(!hand_games_check(player1,player2))
-			return
-
-		var/score1 = (scale1 * strength1)
-		var/score2 = (scale2 * strength2)
-
-		var/competition = pick(score1;player1, score2;player2)
-		om_do_after(player1, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_armwrestle_human_done), done_args = list(player1, player2, competition), on_fail = PROC_REF(game_armwrestle_human_failed), fail_args = list(player1, player2, competition))
-		return
 
 /mob/living/carbon/human/proc/game_armwrestle_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
 	if(!hand_games_check(player1,player2))
@@ -565,44 +581,6 @@
 
 /////// Slap Hands! Each player gets a modifier based on their size and can choose the reaction time of their character, then a weighted roll is made. This one gives the advantage to smaller players.
 
-/mob/living/carbon/human/proc/game_slaphands(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
-	if(!hand_games_check(player1,player2))
-		return
-	to_chat(player1, span_notice("Asking [player2] if they want to play Slap Hands!"))
-	var/playgame = tgui_alert(player2, "[player1] wants to play Slap Hands.", "Slap Hands", list("Play", "Refuse"))
-	if(!playgame || (playgame == "Refuse"))
-		to_chat(player1, span_warning("[player2] declines to play the game."))
-		return
-	else
-		if(!hand_games_check(player1,player2))
-			return
-		player1.visible_message(span_notice("[player1] challenges [player2] to Slap Hands!"))
-		var/scale1 = (2.25 - player1.size_multiplier)
-		scale1 = clamp(scale1, 0.1, 3)
-		var/scale2 = (2.25 - player2.size_multiplier)
-		scale2 = clamp(scale2, 0.1, 3)
-		to_chat(player2, span_warning("[player1] is getting ready."))
-		var/strength1 = tgui_input_number(player1, "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", "Speed")
-		strength1 = clamp(strength1, 1, 10)
-		if(!strength1)
-			player1.visible_message(span_notice("[player1] chickens out!"))
-		if(!hand_games_check(player1,player2))
-			return
-		to_chat(player1, span_warning("[player2] is getting ready."))
-		var/strength2 = tgui_input_number(player2, "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", "Speed")
-		strength2 = clamp(strength2, 1, 10)
-		if(!strength2)
-			player2.visible_message(span_notice("[player2] chickens out!"))
-		if(!hand_games_check(player1,player2))
-			return
-
-		var/score1 = (scale1 * strength1)
-		var/score2 = (scale2 * strength2)
-
-		var/competition = pick(score1;player1, score2;player2)
-		om_do_after(player1, 1 SECOND, target = player2, receiver = src, on_done = PROC_REF(game_slaphands_human_done), done_args = list(player1, player2, competition), on_fail = PROC_REF(game_slaphands_human_failed), fail_args = list(player1, player2, competition))
-		return
-
 /mob/living/carbon/human/proc/game_slaphands_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2, competition)
 	if(!hand_games_check(player1,player2))
 		return
@@ -617,21 +595,6 @@
 	return 0
 
 ///// Thumb wars! This one is just pure chance to allow people to do just quick RNG.
-
-/mob/living/carbon/human/proc/game_thumbwars(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
-	if(!hand_games_check(player1,player2))
-		return
-	to_chat(player1, span_notice("Asking [player2] if they want to play Thumb Wars!"))
-	var/playgame = tgui_alert(player2, "[player1] wants to play Thumb Wars.", "Thumb Wars", list("Play", "Refuse"))
-	if(!playgame || (playgame == "Refuse"))
-		to_chat(player1, span_warning("[player2] declines to play the game."))
-		return
-	else
-		if(!hand_games_check(player1,player2))
-			return
-		player1.visible_message(span_notice("[player1] challenges [player2] to a thumb war!"))
-		om_do_after(player1, 5 SECONDS, target = player2, receiver = src, on_done = PROC_REF(game_thumbwars_human_done), done_args = list(player1, player2), on_fail = PROC_REF(game_thumbwars_human_failed), fail_args = list(player1, player2))
-		return
 
 /mob/living/carbon/human/proc/game_thumbwars_human_done(mob/living/carbon/human/player1, mob/living/carbon/human/player2)
 	if(!hand_games_check(player1,player2))

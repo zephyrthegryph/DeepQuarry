@@ -933,8 +933,10 @@ I think I covered everything.
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = "Abilities.Settings"
-	var/input_style
-	input_style = sanitizeSafe(tgui_input_text(src,"Paste the style string you exported with Export Style.", "Style loading"))
+	om_prompt(src, src, list("kind" = "text", "message" = "Paste the style string you exported with Export Style.", "title" = "Style loading"), PROC_REF(import_style_entered))
+
+/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(mob/user, input_style, datum/om/prompt/ask)
+	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")
 		if((LAZYLEN(input_style_list) == 12) && (input_style_list[2] in underbelly_styles) && (input_style_list[4] in body_styles) && (input_style_list[6] in ear_styles) && (input_style_list[8] in mane_styles) && (input_style_list[10] in horn_styles) && (input_style_list[12] in ear_styles))

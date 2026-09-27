@@ -36,9 +36,9 @@
 	set category = "Abilities.pAI Commands"
 	set name = "Choose Speech Verbs"
 
-	var/choice = tgui_input_list(src,"What theme would you like to use for your speech verbs?","Theme Choice", GLOB.possible_say_verbs)
-	if(!choice) return
+	om_prompt(src, src, list("kind" = "list", "message" = "What theme would you like to use for your speech verbs?", "title" = "Theme Choice", "choices" = GLOB.possible_say_verbs), PROC_REF(speech_verbs_chosen))
 
+/mob/living/silicon/pai/proc/speech_verbs_chosen(mob/user, choice, datum/om/prompt/ask)
 	var/list/sayverbs = GLOB.possible_say_verbs[choice]
 	speak_statement = sayverbs[1]
 	speak_exclamation = sayverbs[(sayverbs.len>1 ? 2 : sayverbs.len)]
@@ -60,11 +60,11 @@
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = "IC.Settings"
-	var/new_gender_identity = tgui_input_list(src, "Please select a gender Identity:", "Set Gender Identity", list(FEMALE, MALE, NEUTER, PLURAL, HERM))
-	if(!new_gender_identity)
-		return 0
-	gender = new_gender_identity
+	om_prompt(src, src, list("kind" = "list", "message" = "Please select a gender Identity:", "title" = "Set Gender Identity", "choices" = list(FEMALE, MALE, NEUTER, PLURAL, HERM)), PROC_REF(pai_gender_chosen))
 	return 1
+
+/mob/living/silicon/pai/proc/pai_gender_chosen(mob/user, new_gender_identity, datum/om/prompt/ask)
+	gender = new_gender_identity
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"
@@ -90,7 +90,11 @@
 	if(loc != card)
 		to_chat(src, span_warning("Your message won't be visible while unfolded!"))
 	if (!message)
-		message = tgui_input_text(src, "Enter text you would like to show on your screen.","Screen Message", encode = FALSE)
+		om_prompt(src, src, list("kind" = "text", "message" = "Enter text you would like to show on your screen.", "title" = "Screen Message", "encode" = FALSE), PROC_REF(screen_message_entered))
+		return
+	screen_message_entered(src, message)
+
+/mob/living/silicon/pai/proc/screen_message_entered(mob/user, message, datum/om/prompt/ask)
 	message = sanitize_or_reflect(message,src)
 	if (!message)
 		return

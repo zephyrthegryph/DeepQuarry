@@ -377,8 +377,14 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 		return
 
 	if (!custom_sprite)
-		var/new_sprite = tgui_input_list(src, "Select an icon!", "AI", GLOB.ai_icons)
-		if(new_sprite) selected_sprite = new_sprite
+		om_prompt(src, src, list("kind" = "list", "message" = "Select an icon!", "title" = "AI", "choices" = GLOB.ai_icons), PROC_REF(ai_icon_chosen))
+		return
+	update_icon()
+
+/mob/living/silicon/ai/proc/ai_icon_chosen(mob/user, new_sprite, datum/om/prompt/ask)
+	if(stat || aiRestorePowerRoutine || custom_sprite)
+		return
+	selected_sprite = new_sprite
 	update_icon()
 
 /mob/living/silicon/ai/var/message_cooldown = 0
@@ -391,11 +397,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	if(message_cooldown)
 		to_chat(src, span_filter_notice("Please allow one minute to pass between announcements."))
 		return
-	var/input = tgui_input_text(src, "Please write a message to announce to the station crew.", "A.I. Announcement")
-	if(!input)
-		return
+	om_prompt(src, src, list("kind" = "text", "message" = "Please write a message to announce to the station crew.", "title" = "A.I. Announcement"), PROC_REF(ai_announcement_entered))
 
-	if(check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
+/mob/living/silicon/ai/proc/ai_announcement_entered(mob/user, input, datum/om/prompt/ask)
+	if(message_cooldown || check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
 
 	announcement.Announce(input)
@@ -408,11 +413,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	var/confirm = tgui_alert(src, "Are you sure you want to call the shuttle?", "Confirm Shuttle Call", list("Yes", "No"))
+	om_prompt(src, src, list("message" = "Are you sure you want to call the shuttle?", "title" = "Confirm Shuttle Call", "choices" = list("Yes", "No")), PROC_REF(ai_call_shuttle_confirmed))
 
-	if(!confirm)
-		return
-
+/mob/living/silicon/ai/proc/ai_call_shuttle_confirmed(mob/user, confirm, datum/om/prompt/ask)
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
@@ -430,7 +433,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	var/confirm = tgui_alert(src, "Are you sure you want to recall the shuttle?", "Confirm Shuttle Recall", list("Yes", "No"))
+	om_prompt(src, src, list("message" = "Are you sure you want to recall the shuttle?", "title" = "Confirm Shuttle Recall", "choices" = list("Yes", "No")), PROC_REF(ai_recall_shuttle_confirmed))
+
+/mob/living/silicon/ai/proc/ai_recall_shuttle_confirmed(mob/user, confirm, datum/om/prompt/ask)
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
@@ -448,8 +453,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	if(emergency_message_cooldown)
 		to_chat(src, span_warning("Arrays recycling. Please stand by."))
 		return
-	var/input = tgui_input_text(src, "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "To abort, send an empty message.", "", MAX_MESSAGE_LEN)
-	if(!input)
+	om_prompt(src, src, list("kind" = "text", "message" = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "To abort, send an empty message.", "max_length" = MAX_MESSAGE_LEN), PROC_REF(ai_emergency_message_entered))
+
+/mob/living/silicon/ai/proc/ai_emergency_message_entered(mob/user, input, datum/om/prompt/ask)
+	if(emergency_message_cooldown || check_unable(AI_CHECK_WIRELESS))
 		return
 	CentCom_announce(input, src)
 	to_chat(src, span_notice("Message transmitted."))
@@ -630,129 +637,130 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	if(check_unable())
 		return
 
-	var/input
-	var/choice
+	om_prompt(src, src, list("message" = "Would you like to modify your hologram's model, or color?", "title" = "Modify Hologram", "choices" = list("Model","Color","Cancel")), PROC_REF(hologram_change_chosen))
 
-	choice = tgui_alert(src, "Would you like to modify your hologram's model, or color?", "Modify Hologram", list("Model","Color","Cancel"))
-	if(!choice || choice == "Cancel")
+/mob/living/silicon/ai/proc/hologram_change_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(check_unable())
 		return
-
 	switch(choice)
 		if("Color")
-			input = tgui_color_picker(src, "Choose a color:", "Hologram Color", holo_color)
-
-			if(input)
-				holo_color = input
-
+			om_prompt(src, src, list("kind" = "color", "message" = "Choose a color:", "title" = "Hologram Color", "default" = holo_color), PROC_REF(hologram_color_chosen))
 		if("Model")
-			choice = tgui_alert(src, "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?","Hologram Selection",list("Crew Member","Unique","My Character"))
+			om_prompt(src, src, list("message" = "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?", "title" = "Hologram Selection", "choices" = list("Crew Member","Unique","My Character")), PROC_REF(hologram_model_kind_chosen))
 
-			if(!choice)
-				return
+/mob/living/silicon/ai/proc/hologram_color_chosen(mob/user, input, datum/om/prompt/ask)
+	holo_color = input
 
-			switch(choice)
-				if("Crew Member") //A seeable crew member (or a dog)
-					var/list/targets = trackable_mobs()
-					if(targets.len)
-						input = tgui_input_list(src, "Select a crew member:", "Hologram Choice", targets) //The definition of "crew member" is a little loose...
-						//This is torture, I know. If someone knows a better way...
-						if(!input) return
-						var/new_holo = getHologramIcon(getCompoundIcon(targets[input]))
-						qdel(holo_icon)
-						holo_icon = new_holo
+/mob/living/silicon/ai/proc/hologram_model_kind_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(check_unable())
+		return
+	switch(choice)
+		if("Crew Member") //A seeable crew member (or a dog)
+			var/list/targets = trackable_mobs()
+			if(targets.len)
+				om_prompt(src, src, list("kind" = "list", "message" = "Select a crew member:", "title" = "Hologram Choice", "choices" = targets), PROC_REF(hologram_crew_chosen)) //The definition of "crew member" is a little loose...
+			else
+				tgui_alert_async(src, "No suitable records found. Aborting.")
 
-					else
-						tgui_alert_async(src, "No suitable records found. Aborting.")
+		if("My Character") //Loaded character slot
+			if(!client || !client.prefs) return
+			var/mob/living/carbon/human/dummy/dummy = new ()
+			//This doesn't include custom_items because that's ... hard.
+			client.prefs.dress_preview_mob(dummy)
+			om_after(src, 1 SECOND, PROC_REF(hologram_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 
-				if("My Character") //Loaded character slot
-					if(!client || !client.prefs) return
-					var/mob/living/carbon/human/dummy/dummy = new ()
-					//This doesn't include custom_items because that's ... hard.
-					client.prefs.dress_preview_mob(dummy)
-					om_after(src, 1 SECOND, PROC_REF(hologram_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+		else //A premade from the dmi
+			var/icon_list[] = list(
+				"default",
+				"floating face",
+				"singularity",
+				"drone",
+				"carp",
+				"spider",
+				"bear",
+				"fox", // Fox holograms!
+				"fox, alt", // Fox holograms!
+				"syndifox", // Fox holograms!
+				"slime",
+				"ian",
+				"runtime",
+				"poly",
+				"pun pun",
+				"male human",
+				"female human",
+				"male unathi",
+				"female unathi",
+				"male tajaran",
+				"female tajaran",
+				"male tesharii",
+				"female tesharii",
+				"male skrell",
+				"female skrell"
+			)
+			om_prompt(src, src, list("kind" = "list", "message" = "Please select a hologram:", "title" = "Hologram Choice", "choices" = icon_list), PROC_REF(hologram_premade_chosen))
 
-				else //A premade from the dmi
-					var/icon_list[] = list(
-						"default",
-						"floating face",
-						"singularity",
-						"drone",
-						"carp",
-						"spider",
-						"bear",
-						"fox", // Fox holograms!
-						"fox, alt", // Fox holograms!
-						"syndifox", // Fox holograms!
-						"slime",
-						"ian",
-						"runtime",
-						"poly",
-						"pun pun",
-						"male human",
-						"female human",
-						"male unathi",
-						"female unathi",
-						"male tajaran",
-						"female tajaran",
-						"male tesharii",
-						"female tesharii",
-						"male skrell",
-						"female skrell"
-					)
-					input = tgui_input_list(src, "Please select a hologram:", "Hologram Choice", icon_list)
-					if(input)
-						qdel(holo_icon)
-						switch(input)
-							if("default")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
-							if("floating face")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo2"))
-							if("singularity")
-								holo_icon = getHologramIcon(icon('icons/obj/singularity.dmi',"singularity_s1"))
-							if("drone")
-								holo_icon = getHologramIcon(icon('icons/mob/animal.dmi',"drone"))
-							if("carp")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo4"))
-							if("spider")
-								holo_icon = getHologramIcon(icon('icons/mob/animal.dmi',"nurse"))
-							if("bear")
-								holo_icon = getHologramIcon(icon('icons/mob/animal.dmi',"brownbear"))
-							if("slime")
-								holo_icon = getHologramIcon(icon('icons/mob/slimes.dmi',"cerulean adult slime"))
-							if("ian")
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"corgi"))
-							if("runtime")
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"cat"))
-							if("poly")
-								holo_icon = getHologramIcon(icon('icons/mob/birds.dmi',"poly-flap"))
-							if("pun pun")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"punpun"))
-							if("male human")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holohumm"))
-							if("female human")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holohumf"))
-							if("male unathi")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holounam"))
-							if("female unathi")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holounaf"))
-							if("male tajaran")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotajm"))
-							if("female tajaran")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotajf"))
-							if("male tesharii")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotesm"))
-							if("female tesharii")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotesf"))
-							if("male skrell")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holoskrm"))
-							if("female skrell")
-								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holoskrf"))
-							if("fox") // Fox holograms!
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox")) // Fox holograms!
-							if("syndifox") // Fox holograms!
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"syndifox")) // Fox holograms!
-							if("fox, alt") // Fox holograms!
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox2")) // Fox holograms!
+/mob/living/silicon/ai/proc/hologram_crew_chosen(mob/user, input, datum/om/prompt/ask)
+	//This is torture, I know. If someone knows a better way...
+	var/list/targets = trackable_mobs()
+	if(!targets[input])
+		return
+	var/new_holo = getHologramIcon(getCompoundIcon(targets[input]))
+	qdel(holo_icon)
+	holo_icon = new_holo
+
+/mob/living/silicon/ai/proc/hologram_premade_chosen(mob/user, input, datum/om/prompt/ask)
+	qdel(holo_icon)
+	switch(input)
+		if("default")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
+		if("floating face")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo2"))
+		if("singularity")
+			holo_icon = getHologramIcon(icon('icons/obj/singularity.dmi',"singularity_s1"))
+		if("drone")
+			holo_icon = getHologramIcon(icon('icons/mob/animal.dmi',"drone"))
+		if("carp")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo4"))
+		if("spider")
+			holo_icon = getHologramIcon(icon('icons/mob/animal.dmi',"nurse"))
+		if("bear")
+			holo_icon = getHologramIcon(icon('icons/mob/animal.dmi',"brownbear"))
+		if("slime")
+			holo_icon = getHologramIcon(icon('icons/mob/slimes.dmi',"cerulean adult slime"))
+		if("ian")
+			holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"corgi"))
+		if("runtime")
+			holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"cat"))
+		if("poly")
+			holo_icon = getHologramIcon(icon('icons/mob/birds.dmi',"poly-flap"))
+		if("pun pun")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"punpun"))
+		if("male human")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holohumm"))
+		if("female human")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holohumf"))
+		if("male unathi")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holounam"))
+		if("female unathi")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holounaf"))
+		if("male tajaran")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotajm"))
+		if("female tajaran")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotajf"))
+		if("male tesharii")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotesm"))
+		if("female tesharii")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holotesf"))
+		if("male skrell")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holoskrm"))
+		if("female skrell")
+			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holoskrf"))
+		if("fox") // Fox holograms!
+			holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox")) // Fox holograms!
+		if("syndifox") // Fox holograms!
+			holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"syndifox")) // Fox holograms!
+		if("fox, alt") // Fox holograms!
+			holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox2")) // Fox holograms!
 
 //Toggles the luminosity and applies it by re-entereing the camera.
 /mob/living/silicon/ai/proc/toggle_camera_light()
@@ -903,17 +911,21 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 				A = D
 
 		if(istype(A))
-			switch(tgui_alert(src, "Do you want to open \the [A] for [target]?", "Doorknob_v2a.exe", list("Yes", "No")))
-				if("Yes")
-					A.AIShiftClick(src)
-					to_chat(src, span_notice("You open \the [A] for [target]."))
-				else
-					to_chat(src, span_warning("You deny the request."))
+			om_prompt(src, src, list("message" = "Do you want to open \the [A] for [target]?", "title" = "Doorknob_v2a.exe", "choices" = list("Yes", "No"), "data" = list("door" = A, "target" = target)), PROC_REF(open_door_request_answered))
 		else
 			to_chat(src, span_warning("Unable to locate an airlock near [target]."))
 
 	else
 		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
+
+/mob/living/silicon/ai/proc/open_door_request_answered(mob/user, answer, datum/om/prompt/ask)
+	var/obj/machinery/door/airlock/A = ask.get("door")
+	var/mob/living/target = ask.get("target")
+	if(answer == "Yes" && !check_unable(AI_CHECK_WIRELESS))
+		A.AIShiftClick(src)
+		to_chat(src, span_notice("You open \the [A] for [target]."))
+	else
+		to_chat(src, span_warning("You deny the request."))
 
 /mob/living/silicon/ai/ex_act(severity)
 	if(severity == 1.0)

@@ -190,9 +190,7 @@
 			active_mode = text2num(params["mode"])
 			return TRUE
 		if("choose_color")
-			var/chosen_color = tgui_color_picker(ui.user, "Choose a color: ", "[title] colour picking", activecolor)
-			if(chosen_color)
-				activecolor = chosen_color
+			om_prompt(src, ui.user, list("kind" = "color", "message" = "Choose a color: ", "title" = "[title] colour picking", "default" = activecolor), PROC_REF(color_chosen))
 			return TRUE
 		if("paint")
 			if(!do_paint(ui.user, !was_path))
@@ -236,6 +234,10 @@
 		if("set_val")
 			build_val = clamp(text2num(params["buildval"]), -10, 10)
 			return TRUE
+
+/datum/tgui_input_colormatrix/proc/color_chosen(mob/user, chosen_color, datum/om/prompt/ask)
+	activecolor = chosen_color
+	SStgui.update_uis(src)
 
 /datum/tgui_input_colormatrix/proc/set_entry(entry)
 	src.entry = entry

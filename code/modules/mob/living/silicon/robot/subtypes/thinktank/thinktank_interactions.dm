@@ -37,9 +37,11 @@
 	if(client || key || stat == DEAD || !SSticker || !SSticker.mode)
 		return ..()
 
-	var/confirm = tgui_alert(user, "Do you wish to take control of \the [src]?", "Platform Control", list("No", "Yes"))
-	if(confirm != "Yes" || QDELETED(src) || client || key || stat == DEAD || !SSticker || !SSticker.mode)
-		return ..()
+	om_prompt(src, user, list("message" = "Do you wish to take control of \the [src]?", "title" = "Platform Control", "choices" = list("No", "Yes")), PROC_REF(ghost_control_answered))
+
+/mob/living/silicon/robot/platform/proc/ghost_control_answered(mob/observer/dead/user, confirm, datum/om/prompt/ask)
+	if(confirm != "Yes" || !isobserver(user) || client || key || stat == DEAD || !SSticker || !SSticker.mode)
+		return
 
 	if(jobban_isbanned(user, "Robot"))
 		to_chat(user, span_warning("You are banned from synthetic roles and cannot take control of \the [src]."))

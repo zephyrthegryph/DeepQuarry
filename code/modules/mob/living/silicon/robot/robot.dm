@@ -709,8 +709,14 @@
 		to_chat(src, "You can't pick another custom name. [isshell(src) ? "" : "Go ask for a name change."]")
 		return 0
 
-	var/newname = sanitizeSafe(tgui_input_text(src,"You are a robot. Enter a name, or leave blank for the default name.", "Name change","", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-	if (newname)
+	om_prompt(src, src, list("kind" = "text", "message" = "You are a robot. Enter a name, or leave blank for the default name.", "title" = "Name change", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "on_cancel" = PROC_REF(robot_name_cancelled)), PROC_REF(robot_name_entered))
+
+/mob/living/silicon/robot/proc/robot_name_cancelled(mob/user, datum/om/prompt/ask)
+	updatename()
+
+/mob/living/silicon/robot/proc/robot_name_entered(mob/user, newname, datum/om/prompt/ask)
+	newname = sanitizeSafe(newname, MAX_NAME_LEN)
+	if (newname && !custom_name)
 		custom_name = newname
 		sprite_name = newname
 
@@ -1034,8 +1040,12 @@
 	if(!length(removable))
 		to_chat(user, span_filter_notice("There is nothing left to remove."))
 		return FALSE
-	var/choice = tgui_input_list(user, "Which component do you want to pry out?", "Remove Component", removable)
-	if(!choice || QDELETED(src) || !opened || cell || !Adjacent(user) || user.incapacitated())
+	om_prompt(src, user, list("kind" = "list", "message" = "Which component do you want to pry out?", "title" = "Remove Component", "choices" = removable, "requires" = PROMPT_ADJACENT, "data" = list("slots" = removable)), PROC_REF(pry_component_chosen))
+	return TRUE
+
+/mob/living/silicon/robot/proc/pry_component_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/list/removable = ask.get("slots")
+	if(!opened || cell)
 		return FALSE
 	var/datum/robot_component/C = get_component(removable[choice])
 	if(!C || C.installed == ROBOT_PART_MISSING || !C.wrapped)
@@ -1152,7 +1162,8 @@
 		to_chat(src, "You've already recoloured yourself once. Ask for a module reset for another.")
 		return
 
-	tgui_input_colormatrix(src, "Allows you to recolor yourself", "Robot Recolor", src, ui_state = GLOB.tgui_conscious_state)
+	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
+	om_prompt(src, src, list("kind" = "colormatrix", "message" = "Allows you to recolor yourself", "title" = "Robot Recolor", "preview" = src, "ui_state" = GLOB.tgui_conscious_state), null)
 
 /mob/living/silicon/robot/attack_hand(mob/user)
 	if(LAZYLEN(BUCKLED_MOBS(src)))
@@ -1222,20 +1233,22 @@
 
 /mob/living/silicon/robot/proc/grab_vore_interact(mob/living/carbon/human/H)
 	if(is_vore_predator(H) && H.devourable && src.feeding && src.devourable)
-		var/switchy = tgui_alert(H, "Do you wish to eat [src] or feed yourself to them?", "Feed or Eat",list("Nevermind!", "Eat","Feed"))
-		switch(switchy)
-			if("Eat")
-				feed_grabbed_to_self(H, src)
-			if("Feed")
-				H.feed_self_to_grabbed(H, src)
+		om_prompt(src, H, list("message" = "Do you wish to eat [src] or feed yourself to them?", "title" = "Feed or Eat", "choices" = list("Nevermind!", "Eat","Feed"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
 		return
 	if(is_vore_predator(H) && src.devourable)
-		if(tgui_alert(H, "Do you wish to eat [src]?", "Eat?",list("Nevermind!", "Yes!")) == "Yes!")
-			feed_grabbed_to_self(H, src)
+		om_prompt(src, H, list("message" = "Do you wish to eat [src]?", "title" = "Eat?", "choices" = list("Nevermind!", "Eat"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
 		return
 	if(H.devourable && src.feeding)
-		if(tgui_alert(H, "Do you wish to feed yourself to [src]?", "Feed?",list("Nevermind!", "Yes!")) == "Yes!")
-			H.feed_self_to_grabbed(H, src)
+		om_prompt(src, H, list("message" = "Do you wish to feed yourself to [src]?", "title" = "Feed?", "choices" = list("Nevermind!", "Feed"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
+
+/mob/living/silicon/robot/proc/grab_vore_chosen(mob/living/carbon/human/H, switchy, datum/om/prompt/ask)
+	switch(switchy)
+		if("Eat")
+			if(is_vore_predator(H) && devourable)
+				feed_grabbed_to_self(H, src)
+		if("Feed")
+			if(H.devourable && feeding)
+				H.feed_self_to_grabbed(H, src)
 
 //Robots take half damage from basic attacks.
 /mob/living/silicon/robot/attack_generic(mob/user, damage, attack_message)
@@ -1748,10 +1761,13 @@
 		rest_style = "Default"
 		return
 
-	rest_style = tgui_alert(src, "Select resting pose", "Resting Pose", sprite_datum.rest_sprite_options)
-	if(!rest_style)
-		rest_style = "Default"
+	om_prompt(src, src, list("message" = "Select resting pose", "title" = "Resting Pose", "choices" = sprite_datum.rest_sprite_options, "on_cancel" = PROC_REF(rest_style_cancelled)), PROC_REF(rest_style_chosen))
 
+/mob/living/silicon/robot/proc/rest_style_cancelled(mob/user, datum/om/prompt/ask)
+	rest_style_chosen(user, "Default", ask)
+
+/mob/living/silicon/robot/proc/rest_style_chosen(mob/user, choice, datum/om/prompt/ask)
+	rest_style = choice
 	update_icon()
 
 /mob/living/silicon/robot/verb/robot_nom(mob/living/T in living_mobs_in_view(1))

@@ -174,11 +174,13 @@
 	if(!length(detachable_limbs))
 		to_chat(src, span_warning("You have no detachable limbs."))
 		return FALSE
-	var/obj/item/organ/external/E = tgui_input_list(src, "Which limb do you wish to detach?", "Limb Removal", detachable_limbs)
-	if(!check_can_detach_modular_limb(E))
-		return FALSE
-	om_do_after(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
+	om_prompt(src, src, list("kind" = "list", "message" = "Which limb do you wish to detach?", "title" = "Limb Removal", "choices" = detachable_limbs), PROC_REF(detach_limb_chosen))
 	return TRUE
+
+/mob/living/carbon/human/proc/detach_limb_chosen(mob/user, obj/item/organ/external/E, datum/om/prompt/ask)
+	if(!check_can_detach_modular_limb(E))
+		return
+	om_do_after(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
 
 /mob/living/carbon/human/proc/detach_limb_verb_human_done(obj/item/organ/external/E)
 	if(!check_can_detach_modular_limb(E))

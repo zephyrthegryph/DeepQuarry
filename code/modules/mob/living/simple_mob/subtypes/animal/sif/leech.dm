@@ -236,9 +236,12 @@
 			to_chat(user, span_warning("There are no viable hosts within range..."))
 			return
 
-		M = tgui_input_list(src, "Who do we wish to infest?", "Target Choice", choices)
+		om_prompt(src, src, list("kind" = "list", "message" = "Who do we wish to infest?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(infest_target_chosen))
+		return
+	infest_target_chosen(user, M)
 
-	if(!M || !src) return
+/mob/living/simple_mob/animal/sif/leech/proc/infest_target_chosen(mob/living/user, mob/living/carbon/M, datum/om/prompt/ask)
+	if(!M || host) return
 
 	if(!(src.Adjacent(M))) return
 
@@ -260,7 +263,7 @@
 				to_chat(user, span_notice("We cannot get through that host's protective gear."))
 				return
 
-	om_do_after(src, 2, target = target, receiver = src, on_done = PROC_REF(do_infest_leech_done), done_args = list(user, target, M), on_fail = PROC_REF(do_infest_leech_failed), fail_args = list(user, target, M))
+	om_do_after(src, 2, target = M, receiver = src, on_done = PROC_REF(do_infest_leech_done), done_args = list(user, M, M), on_fail = PROC_REF(do_infest_leech_failed), fail_args = list(user, M, M))
 	return TRUE
 
 /mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done(mob/living/user, mob/living/target, mob/living/carbon/M)
@@ -340,14 +343,15 @@
 			to_chat(src, span_warning("There are no viable hosts within range..."))
 			return
 
-		M = tgui_input_list(src, "Who do we wish to inject?", "Target Choice", choices)
+		om_prompt(src, src, list("kind" = "list", "message" = "Who do we wish to inject?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(poison_inject))
+		return
 
 	if(!M || stat)
 		return
 
 	poison_inject(src, M)
 
-/mob/living/simple_mob/animal/sif/leech/proc/poison_inject(mob/living/user, mob/living/carbon/L)
+/mob/living/simple_mob/animal/sif/leech/proc/poison_inject(mob/living/user, mob/living/carbon/L, datum/om/prompt/ask)
 	if(!L || !Adjacent(L) || stat)
 		return
 
@@ -384,7 +388,10 @@
 		return
 
 	if(host)
-		var/chem = tgui_input_list(src, "Select a chemical to produce.", "Chemicals", produceable_chemicals)
+		om_prompt(src, src, list("kind" = "list", "message" = "Select a chemical to produce.", "title" = "Chemicals", "choices" = produceable_chemicals), PROC_REF(meds_chosen))
+
+/mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(mob/user, chem, datum/om/prompt/ask)
+	if(chemicals > 50 && !docile)
 		inject_meds(chem)
 
 /mob/living/simple_mob/animal/sif/leech/proc/inject_meds(chem)
@@ -409,21 +416,22 @@
 			if(O.damage >= O.max_damage)
 				host_internal_organs -= O
 
-		var/target
 		if(client)
-			target = tgui_input_list(src, "Select an organ to feed on.", "Organs", host_internal_organs)
-			if(!target)
-				to_chat(src, span_alien("We decide not to feed."))
-				return
+			om_prompt(src, src, list("kind" = "list", "message" = "Select an organ to feed on.", "title" = "Organs", "choices" = host_internal_organs, "on_cancel" = PROC_REF(feed_declined)), PROC_REF(feed_organ_chosen))
+			return
 
-		if(!target)
-			target = pick(host_internal_organs)
-
-		if(target)
-			bite_organ(target)
+		if(length(host_internal_organs))
+			bite_organ(pick(host_internal_organs))
 
 	else
 		to_chat(src, span_warning("We cannot feed now."))
+
+/mob/living/simple_mob/animal/sif/leech/proc/feed_declined(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_alien("We decide not to feed."))
+
+/mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(mob/user, obj/item/organ/internal/target, datum/om/prompt/ask)
+	if(host && target.owner == host && !docile && world.time >= last_feeding + feeding_delay)
+		bite_organ(target)
 
 /// Feeds on an organ of the host without asking (the leech's own Life): never sleeps.
 /mob/living/simple_mob/animal/sif/leech/proc/feed_on_random_organ()

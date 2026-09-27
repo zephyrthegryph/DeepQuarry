@@ -471,3 +471,5 @@
 #define PROMPT_ALIVE list(/datum/om/check/stat_at_most = UNCONSCIOUS)
 /// The user still holds these admin rights (R_* flags; 0 = any admin rank).
 #define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
+/// Returned by an om_prompt_sequence() step proc: end the sequence here (on_done does not run).
+#define PROMPT_STOP "om_prompt_stop"

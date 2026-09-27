@@ -270,42 +270,58 @@
 				possible_mobs += H
 			else
 				continue
-		var/mob/living/L = tgui_input_list(src, "Select a mob to take over:", "Take Over Prey", possible_mobs)
-		if(!L)
-			return
-		if(!L.allow_mimicry)
-			to_chat(src, span_warning("\The [L] cannot be impersonated!"))
-			return
-		if(tgui_alert(src, "You selected [L] to attempt to take over. Are you sure?", "Take Over Prey",list("No","Yes")) == "Yes")
-			log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
-			if(tgui_alert(L, "\The [src] has elected to attempt to take over your body and control you. Is this something you will allow to happen?", "Allow Morph To Take Over",list("No","Yes")) == "Yes")
-				if(tgui_alert(L, "Are you sure? The only way to undo this on your own is to OOC Escape.", "Allow Morph To Take Over",list("No","Yes")) == "Yes")
-					var/obj/buckled = BUCKLED(src)
-					if(buckled)
-						buckled.unbuckle_mob()
-					if(BUCKLED(L))
-						var/atom/movable/_tmp_buck_28 = BUCKLED(L)
-						_tmp_buck_28.unbuckle_mob()
-					if(LAZYLEN(BUCKLED_MOBS(src)))
-						for(var/buckledmob in BUCKLED_MOBS(src))
-							riding_datum.force_dismount(buckledmob)
-					if(LAZYLEN(BUCKLED_MOBS(L)))
-						for(var/p_buckledmob in BUCKLED_MOBS(L))
-							L.riding_datum.force_dismount(p_buckledmob)
-					var/mob/self_puller = PULLED_BY(src)
-					if(self_puller)
-						self_puller.stop_pulling()
-					var/mob/L_puller = PULLED_BY(L)
-					if(L_puller)
-						L_puller.stop_pulling()
-					stop_pulling()
-					original_mind = ensure_mind()
-					log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
-					new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
-				else
-					to_chat(src, span_warning("\The [L] declined your request for control."))
-			else
-				to_chat(src, span_warning("\The [L] declined your request for control."))
+	om_prompt_sequence(src, src, list(
+		list("key" = "target", "kind" = "list", "message" = "Select a mob to take over:", "title" = "Take Over Prey", "choices" = possible_mobs),
+		PROC_REF(take_over_ask_sure),
+		PROC_REF(take_over_ask_consent),
+		PROC_REF(take_over_ask_consent_again),
+	), PROC_REF(take_over_agreed))
+
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(mob/user, datum/om/prompt/ask)
+	var/mob/living/L = ask.get("target")
+	if(!L.allow_mimicry)
+		to_chat(src, span_warning("\The [L] cannot be impersonated!"))
+		return PROMPT_STOP
+	return list("key" = "sure", "message" = "You selected [L] to attempt to take over. Are you sure?", "title" = "Take Over Prey", "choices" = list("No","Yes"), "confirm" = "Yes")
+
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(mob/user, datum/om/prompt/ask)
+	var/mob/living/L = ask.get("target")
+	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
+	return list("key" = "allow", "user" = L, "requires" = list(), "message" = "\The [src] has elected to attempt to take over your body and control you. Is this something you will allow to happen?", "title" = "Allow Morph To Take Over", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(take_over_declined))
+
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(mob/user, datum/om/prompt/ask)
+	return list("key" = "allow2", "user" = ask.get("target"), "requires" = list(), "message" = "Are you sure? The only way to undo this on your own is to OOC Escape.", "title" = "Allow Morph To Take Over", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(take_over_declined))
+
+/mob/living/simple_mob/vore/morph/proc/take_over_declined(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_warning("\The [ask.get("target")] declined your request for control."))
+
+/mob/living/simple_mob/vore/morph/proc/take_over_agreed(mob/user, datum/om/prompt/ask)
+	var/mob/living/L = ask.get("target")
+	if(morphed || !isbelly(L.loc) || L.loc.loc != src)
+		return
+	var/obj/buckled = BUCKLED(src)
+	if(buckled)
+		buckled.unbuckle_mob()
+	if(BUCKLED(L))
+		var/atom/movable/_tmp_buck_28 = BUCKLED(L)
+		_tmp_buck_28.unbuckle_mob()
+	if(LAZYLEN(BUCKLED_MOBS(src)))
+		for(var/buckledmob in BUCKLED_MOBS(src))
+			riding_datum.force_dismount(buckledmob)
+	if(LAZYLEN(BUCKLED_MOBS(L)))
+		for(var/p_buckledmob in BUCKLED_MOBS(L))
+			L.riding_datum.force_dismount(p_buckledmob)
+	var/mob/self_puller = PULLED_BY(src)
+	if(self_puller)
+		self_puller.stop_pulling()
+	var/mob/L_puller = PULLED_BY(L)
+	if(L_puller)
+		L_puller.stop_pulling()
+	stop_pulling()
+	original_mind = ensure_mind()
+	log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
+	new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
+
 
 /mob/living/simple_mob/vore/morph/dominated_prey
 	name = "subservient node"

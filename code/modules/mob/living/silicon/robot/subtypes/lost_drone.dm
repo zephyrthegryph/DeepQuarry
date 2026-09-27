@@ -44,16 +44,19 @@
 		apply_new_laws()
 
 /mob/living/silicon/robot/malf/lost/randomlaws/repick_laws()
-	while(law_retries)
-		var/confirm = tgui_alert(src, "Do you want to keep your laws or reroll? (For specific laws, feel free to ahelp and we'll see what we can do)", "Confirm laws", list("Keep", "Reroll ([law_retries])"))
-		if(findtext(confirm, regex("Reroll \\(\[0-9\]*\\)", "")))
-			apply_new_laws()
-			to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
-			law_retries --
-		else
-			law_retries = 0
-			break
-	return
+	if(!law_retries)
+		return
+	om_prompt(src, src, list("message" = "Do you want to keep your laws or reroll? (For specific laws, feel free to ahelp and we'll see what we can do)", "title" = "Confirm laws", "choices" = list("Keep", "Reroll ([law_retries])")), PROC_REF(repick_laws_answered))
+
+/// A reroll asks again while retries are left; keeping (or closing the window) ends it.
+/mob/living/silicon/robot/malf/lost/randomlaws/proc/repick_laws_answered(mob/user, confirm, datum/om/prompt/ask)
+	if(!law_retries || copytext(confirm, 1, 7) != "Reroll")
+		law_retries = 0
+		return
+	apply_new_laws()
+	to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
+	law_retries--
+	repick_laws()
 
 // Returns a random ai_laws datum.
 /mob/living/silicon/proc/give_random_lawset()

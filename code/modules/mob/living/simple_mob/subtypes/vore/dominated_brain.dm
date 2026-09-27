@@ -77,16 +77,17 @@
 		dominate_predator()
 		return
 	if(mind == pred_mind && pred_body.prey_controlled)
-		if(tgui_alert(src, "Do you want to wrest control over your body back from \the [prey_name]?", "Regain Control",list("No","Yes")) != "Yes")
-			return
-
-		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
-		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
-
-		om_do_after(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
+		om_prompt(src, src, list("message" = "Do you want to wrest control over your body back from \the [prey_name]?", "title" = "Regain Control", "choices" = list("No","Yes")), PROC_REF(resist_domination_confirmed))
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 		..()
+
+/mob/living/dominated_brain/proc/resist_domination_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes" || mind != pred_mind || !pred_body?.prey_controlled)
+		return
+	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
+	to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
+	om_do_after(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
 
 /mob/living/dominated_brain/proc/process_resist_dominated_brain_done()
 	restore_control()
@@ -98,8 +99,17 @@
 /mob/living/dominated_brain/proc/restore_control(ask = TRUE)
 
 	if(ask && disconnect_time || client && ((client.inactivity / 10) / 60 > 10))
-		if(tgui_alert(src, "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?", "Release Control",list("No","Yes")) != "Yes")
-			return
+		om_prompt(src, src, list("message" = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?", "title" = "Release Control", "choices" = list("No","Yes")), PROC_REF(restore_control_confirmed))
+		return
+	restore_control_now()
+
+/mob/living/dominated_brain/proc/restore_control_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
+		restore_control_now()
+
+/mob/living/dominated_brain/proc/restore_control_now()
+	if(!pred_body)
+		return
 	var/mob/living/prey_goes_here
 
 	if(prey_body && prey_body.loc.loc == pred_body)	//The prey body exists and is here, let's handle the prey!
@@ -206,18 +216,31 @@
 	if(pred.prey_controlled)
 		to_chat(prey, span_warning("\The [pred] is already dominated, and cannot be controlled at this time."))
 		return
-	if(tgui_alert(prey, "You are attempting to take over [pred], are you sure? Ensure that their preferences align with this kind of play.", "Take Over Predator",list("No","Yes")) != "Yes")
-		return
-	to_chat(prey, span_notice("You attempt to exert your control over \the [pred]..."))
-	log_admin("[key_name_admin(prey)] attempted to take over [pred].")
+	// The predator, when it's a player, consents twice.
+	om_prompt_sequence(src, src, list(
+		list("key" = "sure", "message" = "You are attempting to take over [pred], are you sure? Ensure that their preferences align with this kind of play.", "title" = "Take Over Predator", "choices" = list("No","Yes"), "confirm" = "Yes"),
+		PROC_REF(dominate_predator_ask_pred),
+		pred.ckey ? list("key" = "sure2", "user" = pred, "requires" = list(), "message" = "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes") : null,
+	), PROC_REF(dominate_predator_agreed), list("data" = list("pred" = pred)))
+	return TRUE
 
-	if(pred.ckey) //check if body is assigned to another player currently
-		if(tgui_alert(pred, "\The [prey] has elected to attempt to take control of you. Is this something you will allow to happen?", "Allow Prey Domination",list("No","Yes")) != "Yes")
-			to_chat(prey, span_warning("\The [pred] declined your request for control."))
-			return
-		if(tgui_alert(pred, "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", "Allow Prey Domination",list("No","Yes")) != "Yes")
-			return
-	else if(!pred.client && ("original_player" in pred.vars)) //check if the body belonged to a player and give proper log about it while preparing it
+/mob/proc/dominate_predator_ask_pred(mob/user, datum/om/prompt/ask)
+	var/mob/living/pred = ask.get("pred")
+	to_chat(src, span_notice("You attempt to exert your control over \the [pred]..."))
+	log_admin("[key_name_admin(src)] attempted to take over [pred].")
+	if(!pred.ckey) //check if body is assigned to another player currently
+		return null
+	return list("key" = "allow", "user" = pred, "requires" = list(), "message" = "\The [src] has elected to attempt to take control of you. Is this something you will allow to happen?", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(dominate_predator_declined))
+
+/mob/proc/dominate_predator_declined(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_warning("\The [ask.get("pred")] declined your request for control."))
+
+/mob/proc/dominate_predator_agreed(mob/user, datum/om/prompt/ask)
+	var/mob/living/prey = src
+	var/mob/living/pred = ask.get("pred")
+	if(prey.stat == DEAD || prey.prey_controlled || pred.prey_controlled || !pred.allow_mind_transfer)
+		return
+	if(!pred.client && ("original_player" in pred.vars)) //check if the body belonged to a player and give proper log about it while preparing it
 		log_and_message_admins("[key_name_admin(prey)] is taking control over [pred] while they are out of their body.")
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
@@ -301,25 +324,39 @@
 	if(!possible_mobs)
 		to_chat(src, span_warning("There are no valid targets inside of you."))
 		return
-	var/input = tgui_input_list(src, "Select a mob to dominate:", "Dominate Prey", possible_mobs)
-	if(!input)
-		return
-	var/mob/living/M = input
+	om_prompt_sequence(src, src, list(
+		list("key" = "target", "kind" = "list", "message" = "Select a mob to dominate:", "title" = "Dominate Prey", "choices" = possible_mobs),
+		PROC_REF(dominate_prey_ask_sure),
+		PROC_REF(dominate_prey_ask_consent),
+		PROC_REF(dominate_prey_ask_consent_again),
+	), PROC_REF(dominate_prey_agreed), list("data" = list("grab" = G)))
+
+/mob/living/proc/dominate_prey_ask_sure(mob/user, datum/om/prompt/ask)
+	var/mob/living/M = ask.get("target")
 	if(!istype(M))
 		to_chat(src, span_warning("You must have a tighter grip to dominate this creature."))
-		return
+		return PROMPT_STOP
 	if(!M.allow_mind_transfer) //check if the dominated mob pref is enabled
 		to_chat(src, span_warning("[M] is unable to be dominated."))
-		return
-	if(tgui_alert(src, "You selected [M] to attempt to dominate. Are you sure?", "Dominate Prey",list("No","Yes")) != "Yes")
-		return
+		return PROMPT_STOP
+	return list("key" = "sure", "message" = "You selected [M] to attempt to dominate. Are you sure?", "title" = "Dominate Prey", "choices" = list("No","Yes"), "confirm" = "Yes")
+
+/mob/living/proc/dominate_prey_ask_consent(mob/user, datum/om/prompt/ask)
+	var/mob/living/M = ask.get("target")
 	log_admin("[key_name_admin(src)] offered to use dominate prey on [M] ([M.ckey]).")
 	to_chat(src, span_warning("Attempting to dominate and gather \the [M]'s mind..."))
-	if(tgui_alert(M, "\The [src] has elected collect your mind into their own. Is this something you will allow to happen?", "Allow Dominate Prey",list("No","Yes")) != "Yes")
-		to_chat(src, span_warning("\The [M] has declined your Dominate Prey attempt."))
-		return
-	if(tgui_alert(M, "Are you sure? You can only undo this while your body is inside of [src]. (You can resist, or use the resist verb in the abilities tab)", "Allow Dominate Prey",list("No","Yes")) != "Yes")
-		to_chat(src, span_warning("\The [M] has declined your Dominate Prey attempt."))
+	return list("key" = "allow", "user" = M, "requires" = list(), "message" = "\The [src] has elected collect your mind into their own. Is this something you will allow to happen?", "title" = "Allow Dominate Prey", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(dominate_prey_declined))
+
+/mob/living/proc/dominate_prey_ask_consent_again(mob/user, datum/om/prompt/ask)
+	return list("key" = "allow2", "user" = ask.get("target"), "requires" = list(), "message" = "Are you sure? You can only undo this while your body is inside of [src]. (You can resist, or use the resist verb in the abilities tab)", "title" = "Allow Dominate Prey", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(dominate_prey_declined))
+
+/mob/living/proc/dominate_prey_declined(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_warning("\The [ask.get("target")] has declined your Dominate Prey attempt."))
+
+/mob/living/proc/dominate_prey_agreed(mob/user, datum/om/prompt/ask)
+	var/mob/living/M = ask.get("target")
+	var/obj/item/grab/G = ask.get("grab")
+	if(!M.allow_mind_transfer)
 		return
 	to_chat(M, span_warning("You can feel the will of another pulling you away from your body..."))
 	to_chat(src, span_warning("You can feel the will of your prey diminishing as you gather them!"))
@@ -386,41 +423,54 @@
 	if(!possible_mobs)
 		to_chat(src, span_warning("There are no valid targets inside of you."))
 		return
-	var/input = tgui_input_list(src, "Select a mob to give control:", "Give Prey Control", possible_mobs)
-	if(!input)
-		return
-	var/mob/living/prey = input
-	var/mob/living/pred = src
+	om_prompt(src, src, list("kind" = "list", "message" = "Select a mob to give control:", "title" = "Give Prey Control", "choices" = possible_mobs), PROC_REF(lend_prey_control_chosen))
 
+/// Whether we can hand our body to `prey` right now; says why not.
+/mob/living/proc/can_lend_prey_control(mob/living/prey)
+	var/mob/living/pred = src
 	if(prey.stat == DEAD)
 		to_chat(pred, span_warning("You cannot do that to this prey."))
-		return
-
+		return FALSE
 	if(!prey.ckey)
 		to_chat(pred, span_notice("\The [prey] cannot take control."))
-		return
+		return FALSE
 	if(isrobot(pred) && jobban_isbanned(prey, JOB_CYBORG))
 		to_chat(pred, span_warning("Forces beyond your comprehension prevent you from giving [prey] control."))
-		return
+		return FALSE
 	if(prey.prey_controlled)
 		to_chat(pred, span_warning("\The [prey] is already under someone's control and cannot be given control of your body."))
-		return
+		return FALSE
 	if(pred.prey_controlled)
 		to_chat(pred, span_warning("You are already controlling someone's body."))
+		return FALSE
+	return TRUE
+
+/mob/living/proc/lend_prey_control_chosen(mob/user, mob/living/prey, datum/om/prompt/ask)
+	if(!can_lend_prey_control(prey))
 		return
-	if(tgui_alert(pred, "You are attempting to give [prey] control over you, are you sure? Ensure that their preferences align with this kind of play.", "Give Prey Control",list("No","Yes")) != "Yes")
-		return
-	to_chat(pred, span_notice("You attempt to give your control over to \the [prey]..."))
-	log_admin("[key_name_admin(pred)] attempted to give control to [prey].")
-	if(tgui_alert(prey, "\The [pred] has elected to attempt to give you control of them. Is this something you will allow to happen?", "Allow Prey Domination",list("No","Yes")) != "Yes")
-		to_chat(pred, span_warning("\The [prey] declined your request for control."))
-		return
-	if(tgui_alert(prey, "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", "Allow Prey Domination",list("No","Yes")) != "Yes")
+	om_prompt_sequence(src, src, list(
+		list("key" = "sure", "message" = "You are attempting to give [prey] control over you, are you sure? Ensure that their preferences align with this kind of play.", "title" = "Give Prey Control", "choices" = list("No","Yes"), "confirm" = "Yes"),
+		PROC_REF(lend_prey_control_ask_prey),
+		list("key" = "allow2", "user" = prey, "requires" = list(), "message" = "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes"),
+	), PROC_REF(lend_prey_control_agreed), list("data" = list("prey" = prey)))
+
+/mob/living/proc/lend_prey_control_ask_prey(mob/user, datum/om/prompt/ask)
+	var/mob/living/prey = ask.get("prey")
+	to_chat(src, span_notice("You attempt to give your control over to \the [prey]..."))
+	log_admin("[key_name_admin(src)] attempted to give control to [prey].")
+	return list("key" = "allow", "user" = prey, "requires" = list(), "message" = "\The [src] has elected to attempt to give you control of them. Is this something you will allow to happen?", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(lend_prey_control_declined))
+
+/mob/living/proc/lend_prey_control_declined(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_warning("\The [ask.get("prey")] declined your request for control."))
+
+/mob/living/proc/lend_prey_control_agreed(mob/user, datum/om/prompt/ask)
+	var/mob/living/prey = ask.get("prey")
+	var/mob/living/pred = src
+	if(!can_lend_prey_control(prey))
 		return
 	to_chat(pred, span_warning("You diminish your will, reducing it and allowing will of your prey to take over..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you are given control over them!"))
 	om_do_after(pred, 10 SECONDS, target = prey, receiver = src, on_done = PROC_REF(lend_prey_control_living_done), done_args = list(prey, pred), on_fail = PROC_REF(lend_prey_control_living_failed), fail_args = list(prey, pred))
-	return TRUE
 
 /mob/living/proc/lend_prey_control_living_done(mob/living/prey, mob/living/pred)
 

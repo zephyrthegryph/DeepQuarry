@@ -7,7 +7,7 @@
 /mob/living/carbon/alien/diona/confirm_evolution()
 
 	if(!is_alien_whitelisted(src.client, GLOB.all_species[SPECIES_DIONA]))
-		tgui_alert(src, "You are currently not whitelisted to play as a full diona.")
+		tgui_alert_async(src, "You are currently not whitelisted to play as a full diona.")
 		return null
 
 	if(amount_grown < max_grown)

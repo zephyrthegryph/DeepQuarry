@@ -70,20 +70,24 @@
 			count++
 
 		// Check the carrier
-		var/answer = tgui_alert(M, "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", "[P] Check DNA", list("Yes", "No"))
-		if(answer == "Yes")
-			var/turf/T = get_turf(P.loc)
-			for (var/mob/v in viewers(T))
-				v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)
-			var/datum/dna/dna = M.dna
-			to_chat(P, span_infoplain(span_red("<h3>[M]'s UE string : [dna.unique_enzymes]</h3>")))
-			if(dna.unique_enzymes == P.master_dna)
-				to_chat(P, span_infoplain(span_bold("DNA is a match to stored Master DNA.")))
-			else
-				to_chat(P, span_infoplain(span_bold("DNA does not match stored Master DNA.")))
-		else
-			to_chat(P, span_infoplain("[M] does not seem like [M.p_theyre()] going to provide a DNA sample willingly."))
+		om_prompt(src, M, list("message" = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", "title" = "[P] Check DNA", "choices" = list("Yes", "No"), "data" = list("pai" = P)), PROC_REF(dna_sample_answered))
 		return TRUE
+
+/datum/pai_software/directives/proc/dna_sample_answered(mob/living/M, answer, datum/om/prompt/ask)
+	var/mob/living/silicon/pai/P = ask.get("pai")
+	if(answer == "Yes")
+		var/turf/T = get_turf(P.loc)
+		for (var/mob/v in viewers(T))
+			v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)
+		var/datum/dna/dna = M.dna
+		to_chat(P, span_infoplain(span_red("<h3>[M]'s UE string : [dna.unique_enzymes]</h3>")))
+		if(dna.unique_enzymes == P.master_dna)
+			to_chat(P, span_infoplain(span_bold("DNA is a match to stored Master DNA.")))
+		else
+			to_chat(P, span_infoplain(span_bold("DNA does not match stored Master DNA.")))
+	else
+		to_chat(P, span_infoplain("[M] does not seem like [M.p_theyre()] going to provide a DNA sample willingly."))
+	return TRUE
 
 /datum/pai_software/radio_config
 	name = "Radio Configuration"

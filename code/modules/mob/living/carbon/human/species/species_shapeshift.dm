@@ -116,15 +116,20 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 
 	visible_message(span_notice("\The [src]'s form contorts subtly."))
-	if(valid_hairstyles.len)
-		var/new_hair = tgui_input_list(src, "Select a hairstyle.", "Shapeshifter Hair", valid_hairstyles)
-		change_hair(new_hair ? new_hair : "Bald")
-	if(valid_gradstyles.len)
-		var/new_hair = tgui_input_list(src, "Select a hair gradient style.", "Shapeshifter Hair", valid_gradstyles)
-		change_hair_gradient(new_hair ? new_hair : "None")
-	if(valid_facialhairstyles.len)
-		var/new_hair = tgui_input_list(src, "Select a facial hair style.", "Shapeshifter Hair", valid_facialhairstyles)
-		change_facial_hair(new_hair ? new_hair : "Shaved")
+	// A cancel picks none (bald, no gradient, shaved).
+	om_prompt_sequence(src, src, list(
+		valid_hairstyles.len ? list("key" = "hair", "kind" = "list", "message" = "Select a hairstyle.", "title" = "Shapeshifter Hair", "choices" = valid_hairstyles, "optional" = TRUE) : null,
+		valid_gradstyles.len ? list("key" = "gradient", "kind" = "list", "message" = "Select a hair gradient style.", "title" = "Shapeshifter Hair", "choices" = valid_gradstyles, "optional" = TRUE) : null,
+		valid_facialhairstyles.len ? list("key" = "facial", "kind" = "list", "message" = "Select a facial hair style.", "title" = "Shapeshifter Hair", "choices" = valid_facialhairstyles, "optional" = TRUE) : null,
+	), PROC_REF(shapeshifter_hair_chosen), list("requires" = PROMPT_CONSCIOUS, "data" = list("has_hair" = valid_hairstyles.len, "has_gradient" = valid_gradstyles.len, "has_facial" = valid_facialhairstyles.len)))
+
+/mob/living/carbon/human/proc/shapeshifter_hair_chosen(mob/user, datum/om/prompt/ask)
+	if(ask.get("has_hair"))
+		change_hair(ask.get("hair") || "Bald")
+	if(ask.get("has_gradient"))
+		change_hair_gradient(ask.get("gradient") || "None")
+	if(ask.get("has_facial"))
+		change_facial_hair(ask.get("facial") || "Shaved")
 
 /mob/living/carbon/human/proc/shapeshifter_select_gender()
 
@@ -136,17 +141,15 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	last_special = world.time + 50
 
-	var/new_gender = tgui_input_list(src, "Please select a gender.", "Shapeshifter Gender", list(FEMALE, MALE, NEUTER, PLURAL))
-	if(!new_gender)
-		return
+	om_prompt_sequence(src, src, list(
+		list("key" = "gender", "kind" = "list", "message" = "Please select a gender.", "title" = "Shapeshifter Gender", "choices" = list(FEMALE, MALE, NEUTER, PLURAL)),
+		list("key" = "identity", "kind" = "list", "message" = "Please select a gender Identity.", "title" = "Shapeshifter Gender Identity", "choices" = list(FEMALE, MALE, NEUTER, PLURAL, HERM)),
+	), PROC_REF(shapeshifter_gender_chosen), list("requires" = PROMPT_CONSCIOUS))
 
-	var/new_gender_identity = tgui_input_list(src, "Please select a gender Identity.", "Shapeshifter Gender Identity", list(FEMALE, MALE, NEUTER, PLURAL, HERM))
-	if(!new_gender_identity)
-		return
-
+/mob/living/carbon/human/proc/shapeshifter_gender_chosen(mob/user, datum/om/prompt/ask)
 	visible_message(span_notice("\The [src]'s form contorts subtly."))
-	change_gender(new_gender)
-	change_gender_identity(new_gender_identity)
+	change_gender(ask.get("gender"))
+	change_gender_identity(ask.get("identity"))
 
 /mob/living/carbon/human/proc/shapeshifter_select_shape()
 
@@ -158,10 +161,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	last_special = world.time + 50
 
-	var/new_species = null
-	new_species = tgui_input_list(src, "Please select a species to emulate.", "Shapeshifter Body", species.get_valid_shapeshifter_forms(src))
+	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
 
-	if(!new_species || !GLOB.all_species[new_species] || GLOB.wrapped_species_by_ref["\ref[src]"] == new_species)
+/mob/living/carbon/human/proc/shapeshifter_shape_chosen(mob/user, new_species, datum/om/prompt/ask)
+	if(!GLOB.all_species[new_species] || GLOB.wrapped_species_by_ref["\ref[src]"] == new_species || !(new_species in species.get_valid_shapeshifter_forms(src)))
 		return
 	shapeshifter_change_shape(new_species)
 
@@ -185,9 +188,9 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	last_special = world.time + 50
 
-	var/new_skin = tgui_color_picker(src, "Please select a new body color.", "Shapeshifter Colour", rgb(r_skin, g_skin, b_skin))
-	if(!new_skin)
-		return
+	om_prompt(src, src, list("kind" = "color", "message" = "Please select a new body color.", "title" = "Shapeshifter Colour", "default" = rgb(r_skin, g_skin, b_skin), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_colour_chosen))
+
+/mob/living/carbon/human/proc/shapeshifter_colour_chosen(mob/user, new_skin, datum/om/prompt/ask)
 	shapeshifter_set_colour(new_skin)
 
 /mob/living/carbon/human/proc/shapeshifter_set_colour(new_skin)
@@ -215,18 +218,23 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	last_special = world.time + 50
 
-	var/new_hair = tgui_color_picker(src, "Please select a new hair color.", "Hair Colour")
-	if(!new_hair)
-		return
-	shapeshifter_set_hair_color(new_hair)
-	var/new_grad = tgui_color_picker(src, "Please select a new hair gradient color.", "Hair Gradient Colour")
-	if(!new_grad)
-		return
-	shapeshifter_set_grad_color(new_grad)
-	var/new_fhair = tgui_color_picker(src, "Please select a new facial hair color.", "Facial Hair Color")
-	if(!new_fhair)
-		return
-	shapeshifter_set_facial_color(new_fhair)
+	// Each colour applies as soon as it is picked; a cancel stops there.
+	om_prompt_sequence(src, src, list(
+		list("key" = "hair", "kind" = "color", "message" = "Please select a new hair color.", "title" = "Hair Colour"),
+		PROC_REF(shapeshifter_hair_color_step),
+		PROC_REF(shapeshifter_grad_color_step),
+	), PROC_REF(shapeshifter_hair_colors_done), list("requires" = PROMPT_CONSCIOUS))
+
+/mob/living/carbon/human/proc/shapeshifter_hair_color_step(mob/user, datum/om/prompt/ask)
+	shapeshifter_set_hair_color(ask.get("hair"))
+	return list("key" = "grad", "kind" = "color", "message" = "Please select a new hair gradient color.", "title" = "Hair Gradient Colour")
+
+/mob/living/carbon/human/proc/shapeshifter_grad_color_step(mob/user, datum/om/prompt/ask)
+	shapeshifter_set_grad_color(ask.get("grad"))
+	return list("key" = "facial", "kind" = "color", "message" = "Please select a new facial hair color.", "title" = "Facial Hair Color")
+
+/mob/living/carbon/human/proc/shapeshifter_hair_colors_done(mob/user, datum/om/prompt/ask)
+	shapeshifter_set_facial_color(ask.get("facial"))
 
 /mob/living/carbon/human/proc/shapeshifter_set_hair_color(new_hair)
 
@@ -297,10 +305,9 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	last_special = world.time + 50
 
 	var/current_color = rgb(r_eyes,g_eyes,b_eyes)
-	var/new_eyes = tgui_color_picker(src, "Pick a new color for your eyes.","Eye Color", current_color)
-	if(!new_eyes)
-		return
+	om_prompt(src, src, list("kind" = "color", "message" = "Pick a new color for your eyes.", "title" = "Eye Color", "default" = current_color, "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_eye_colour_chosen))
 
+/mob/living/carbon/human/proc/shapeshifter_eye_colour_chosen(mob/user, new_eyes, datum/om/prompt/ask)
 	shapeshifter_set_eye_color(new_eyes)
 
 /mob/living/carbon/human/proc/shapeshifter_set_eye_color(new_eyes)
@@ -326,55 +333,97 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 
 	last_special = world.time + 10
+	shapeshifter_select_accessory("ears")
+
+// Ears, tail and wings share one flow: a style, up to three colours (the second and third only
+// when the first was picked) and an alpha. Each kind's vars are r_<p>, r_<p>2, r_<p>3 and a_<p>.
+/mob/living/carbon/human/proc/shapeshifter_accessory_info(kind)
+	var/static/list/info = list(
+		"ears" = list("prefix" = "ears", "none" = "Normal", "pick" = "Pick some ears!", "noun" = "ear", "title" = "Ear"),
+		"tail" = list("prefix" = "tail", "none" = "Normal", "pick" = "Pick a tail!", "noun" = "tail", "title" = "Tail"),
+		"wings" = list("prefix" = "wing", "none" = "None", "pick" = "Pick some wings!", "noun" = "wing", "title" = "Wing"),
+	)
+	return info[kind]
+
+/mob/living/carbon/human/proc/shapeshifter_accessory_styles(kind)
+	var/list/source
+	switch(kind)
+		if("ears")
+			source = GLOB.ear_styles_list
+		if("tail")
+			source = GLOB.tail_styles_list
+		if("wings")
+			source = GLOB.wing_styles_list
+	return source
+
+/mob/living/carbon/human/proc/shapeshifter_select_accessory(kind)
+	var/list/I = shapeshifter_accessory_info(kind)
+	var/list/source = shapeshifter_accessory_styles(kind)
 	// Construct the list of names allowed for this user.
-	var/list/pretty_ear_styles = list("Normal" = null)
-	for(var/path in GLOB.ear_styles_list)
-		var/datum/sprite_accessory/ears/instance = GLOB.ear_styles_list[path]
+	var/list/pretty_styles = list()
+	pretty_styles[I["none"]] = null
+	for(var/path in source)
+		var/datum/sprite_accessory/instance = source[path]
 		if((!instance.ckeys_allowed) || (ckey in instance.ckeys_allowed))
-			pretty_ear_styles[instance.name] = path
+			pretty_styles[instance.name] = path
+	var/p = I["prefix"]
+	var/noun = I["noun"]
+	var/title = I["title"]
+	om_prompt_sequence(src, src, list(
+		list("key" = "style", "kind" = "list", "message" = I["pick"], "title" = "Character Preference", "choices" = pretty_styles),
+		list("key" = "c1", "kind" = "color", "message" = "Pick primary [noun] color:", "title" = "[title] Color (Pri)", "default" = rgb(vars["r_[p]"], vars["g_[p]"], vars["b_[p]"]), "optional" = TRUE),
+		PROC_REF(shapeshifter_accessory_c2),
+		PROC_REF(shapeshifter_accessory_c3),
+		list("key" = "alpha", "kind" = "number", "message" = "Set [noun] alpha (0-255):", "title" = "[title] Alpha", "default" = vars["a_[p]"], "max" = 255, "min" = 0, "optional" = TRUE),
+	), PROC_REF(shapeshifter_accessory_chosen), list("requires" = PROMPT_CONSCIOUS, "data" = list("kind" = kind, "styles" = pretty_styles)))
 
-	// Present choice to user
-	var/new_ear_style = tgui_input_list(src, "Pick some ears!", "Character Preference", pretty_ear_styles)
-	if(!new_ear_style)
+/mob/living/carbon/human/proc/shapeshifter_accessory_c2(mob/user, datum/om/prompt/ask)
+	if(!ask.get("c1")) //don't bother if they clicked cancel on the primary colour
 		return
+	var/list/I = shapeshifter_accessory_info(ask.get("kind"))
+	var/p = I["prefix"]
+	return list("key" = "c2", "kind" = "color", "message" = "Pick secondary [I["noun"]] color (only applies to some [I["noun"]]s):", "title" = "[I["title"]] Color (sec)", "default" = rgb(vars["r_[p]2"], vars["g_[p]2"], vars["b_[p]2"]), "optional" = TRUE)
 
-	//Set new style
-	ear_style = GLOB.ear_styles_list[pretty_ear_styles[new_ear_style]]
+/mob/living/carbon/human/proc/shapeshifter_accessory_c3(mob/user, datum/om/prompt/ask)
+	if(!ask.get("c1"))
+		return
+	var/list/I = shapeshifter_accessory_info(ask.get("kind"))
+	var/p = I["prefix"]
+	return list("key" = "c3", "kind" = "color", "message" = "Pick tertiary [I["noun"]] color (only applies to some [I["noun"]]s):", "title" = "[I["title"]] Color (ter)", "default" = rgb(vars["r_[p]3"], vars["g_[p]3"], vars["b_[p]3"]), "optional" = TRUE)
 
-	//Allow color picks
-	var/current_pri_color = rgb(r_ears,g_ears,b_ears)
-
-	var/new_pri_color = tgui_color_picker(src, "Pick primary ear color:","Ear Color (Pri)", current_pri_color)
-	if(new_pri_color)
-		var/list/new_color_rgb_list = hex2rgb(new_pri_color)
-		r_ears = new_color_rgb_list[1]
-		g_ears = new_color_rgb_list[2]
-		b_ears = new_color_rgb_list[3]
-
-		//Indented inside positive primary color choice, don't bother if they clicked cancel
-		var/current_sec_color = rgb(r_ears2,g_ears2,b_ears2)
-
-		var/new_sec_color = tgui_color_picker(src, "Pick secondary ear color (only applies to some ears):","Ear Color (sec)", current_sec_color)
-		if(new_sec_color)
-			new_color_rgb_list = hex2rgb(new_sec_color)
-			r_ears2 = new_color_rgb_list[1]
-			g_ears2 = new_color_rgb_list[2]
-			b_ears2 = new_color_rgb_list[3]
-
-		var/current_ter_color = rgb(r_ears3,g_ears3,b_ears3)
-
-		var/new_ter_color = tgui_color_picker(src, "Pick tertiary ear color (only applies to some ears):","Ear Color (sec)", current_ter_color)
-		if(new_ter_color)
-			new_color_rgb_list = hex2rgb(new_sec_color)
-			r_ears3 = new_color_rgb_list[1]
-			g_ears3 = new_color_rgb_list[2]
-			b_ears3 = new_color_rgb_list[3]
-
-	var/new_ear_alpha = tgui_input_number(src, "Set ear alpha (0-255):","Ear Alpha", a_ears,255,0)
-	if(new_ear_alpha)
-		a_ears = new_ear_alpha
-
-	update_hair() //Includes Virgo ears
+/mob/living/carbon/human/proc/shapeshifter_accessory_chosen(mob/user, datum/om/prompt/ask)
+	var/kind = ask.get("kind")
+	var/list/I = shapeshifter_accessory_info(kind)
+	var/list/source = shapeshifter_accessory_styles(kind)
+	var/list/pretty_styles = ask.get("styles")
+	var/datum/sprite_accessory/style = source[pretty_styles[ask.get("style")]]
+	switch(kind)
+		if("ears")
+			ear_style = style
+		if("tail")
+			tail_style = style
+		if("wings")
+			wing_style = style
+	var/p = I["prefix"]
+	var/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
+	for(var/key in suffixes)
+		var/new_color = ask.get(key)
+		if(!new_color)
+			continue
+		var/list/new_color_rgb_list = hex2rgb(new_color)
+		var/suffix = suffixes[key]
+		vars["r_[p][suffix]"] = new_color_rgb_list[1]
+		vars["g_[p][suffix]"] = new_color_rgb_list[2]
+		vars["b_[p][suffix]"] = new_color_rgb_list[3]
+	if(ask.get("alpha"))
+		vars["a_[p]"] = clamp(ask.get("alpha"), 0, 255)
+	switch(kind)
+		if("ears")
+			update_hair() //Includes Virgo ears
+		if("tail")
+			update_tail_showing()
+		if("wings")
+			update_wing_showing()
 
 /mob/living/carbon/human/proc/shapeshifter_select_secondary_ears()
 	set name = "Select Secondary Ears"
@@ -392,24 +441,32 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			pretty_ear_styles[instance.name] = path
 
 	// Handle style pick
-	var/new_ear_style = tgui_input_list(src, "Pick some ears!", "Character Preference", pretty_ear_styles)
-	if(!new_ear_style)
-		return
-	ear_secondary_style = GLOB.ear_styles_list[pretty_ear_styles[new_ear_style]]
+	om_prompt(src, src, list("kind" = "list", "message" = "Pick some ears!", "title" = "Character Preference", "choices" = pretty_ear_styles, "requires" = PROMPT_CONSCIOUS, "data" = list("styles" = pretty_ear_styles)), PROC_REF(shapeshifter_secondary_ears_chosen))
 
-	// Handle color picks
+/// Sets the style, then asks one colour per channel of it (a cancel keeps that channel) and the alpha.
+/mob/living/carbon/human/proc/shapeshifter_secondary_ears_chosen(mob/user, new_ear_style, datum/om/prompt/ask)
+	var/list/pretty_ear_styles = ask.get("styles")
+	ear_secondary_style = GLOB.ear_styles_list[pretty_ear_styles[new_ear_style]]
+	var/list/steps = list()
+	var/list/defaults = list()
 	if(ear_secondary_style)
-		var/list/new_colors = list()
 		for(var/channel in 1 to ear_secondary_style.get_color_channel_count())
 			var/channel_name = GLOB.fancy_sprite_accessory_color_channel_names[channel]
 			var/default = LAZYACCESS(ear_secondary_colors, channel) || "#ffffff"
-			var/new_color = tgui_color_picker(src, "Pick [channel_name]", "Ear Color ([channel_name])", default)
-			new_colors += new_color || default
+			defaults += default
+			steps += list(list("key" = "channel[channel]", "kind" = "color", "message" = "Pick [channel_name]", "title" = "Ear Color ([channel_name])", "default" = default, "optional" = TRUE))
+	steps += list(list("key" = "alpha", "kind" = "number", "message" = "Set ear alpha (0-255):", "title" = "Ear Alpha", "default" = a_ears2, "max" = 255, "min" = 0, "optional" = TRUE))
+	om_prompt_sequence(src, src, steps, PROC_REF(shapeshifter_secondary_ear_colors_chosen), list("requires" = PROMPT_CONSCIOUS, "data" = list("defaults" = defaults)))
 
-	var/new_ear_alpha = tgui_input_number(src, "Set ear alpha (0-255):","Ear Alpha", a_ears2,255,0)
-	if(new_ear_alpha)
-		a_ears2 = new_ear_alpha
-
+/mob/living/carbon/human/proc/shapeshifter_secondary_ear_colors_chosen(mob/user, datum/om/prompt/ask)
+	var/list/defaults = ask.get("defaults")
+	if(length(defaults))
+		var/list/new_colors = list()
+		for(var/channel in 1 to length(defaults))
+			new_colors += ask.get("channel[channel]") || defaults[channel]
+		ear_secondary_colors = new_colors
+	if(ask.get("alpha"))
+		a_ears2 = clamp(ask.get("alpha"), 0, 255)
 	update_hair()
 
 /mob/living/carbon/human/proc/shapeshifter_select_tail()
@@ -420,55 +477,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 
 	last_special = world.time + 10
-	// Construct the list of names allowed for this user.
-	var/list/pretty_tail_styles = list("Normal" = null)
-	for(var/path in GLOB.tail_styles_list)
-		var/datum/sprite_accessory/tail/instance = GLOB.tail_styles_list[path]
-		if((!instance.ckeys_allowed) || (ckey in instance.ckeys_allowed))
-			pretty_tail_styles[instance.name] = path
-
-	// Present choice to user
-	var/new_tail_style = tgui_input_list(src, "Pick a tail!", "Character Preference", pretty_tail_styles)
-	if(!new_tail_style)
-		return
-
-	//Set new style
-	tail_style = GLOB.tail_styles_list[pretty_tail_styles[new_tail_style]]
-
-	//Allow color picks
-	var/current_pri_color = rgb(r_tail,g_tail,b_tail)
-
-	var/new_pri_color = tgui_color_picker(src, "Pick primary tail color:","Tail Color (Pri)", current_pri_color)
-	if(new_pri_color)
-		var/list/new_color_rgb_list = hex2rgb(new_pri_color)
-		r_tail = new_color_rgb_list[1]
-		g_tail = new_color_rgb_list[2]
-		b_tail = new_color_rgb_list[3]
-
-		//Indented inside positive primary color choice, don't bother if they clicked cancel
-		var/current_sec_color = rgb(r_tail2,g_tail2,b_tail2)
-
-		var/new_sec_color = tgui_color_picker(src, "Pick secondary tail color (only applies to some tails):","Tail Color (sec)", current_sec_color)
-		if(new_sec_color)
-			new_color_rgb_list = hex2rgb(new_sec_color)
-			r_tail2 = new_color_rgb_list[1]
-			g_tail2 = new_color_rgb_list[2]
-			b_tail2 = new_color_rgb_list[3]
-
-		var/current_ter_color = rgb(r_tail3,g_tail3,b_tail3)
-
-		var/new_ter_color = tgui_color_picker(src, "Pick tertiary tail color (only applies to some tails):","Tail Color (sec)", current_ter_color)
-		if(new_ter_color)
-			new_color_rgb_list = hex2rgb(new_ter_color)
-			r_tail3 = new_color_rgb_list[1]
-			g_tail3 = new_color_rgb_list[2]
-			b_tail3 = new_color_rgb_list[3]
-
-	var/new_tail_alpha = tgui_input_number(src, "Set tail alpha (0-255):","Tail Alpha", a_tail,255,0)
-	if(new_tail_alpha)
-		a_tail = new_tail_alpha
-
-	update_tail_showing()
+	shapeshifter_select_accessory("tail")
 
 /mob/living/carbon/human/proc/shapeshifter_select_wings()
 	set name = "Select Wings"
@@ -478,55 +487,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 
 	last_special = world.time + 10
-	// Construct the list of names allowed for this user.
-	var/list/pretty_wing_styles = list("None" = null)
-	for(var/path in GLOB.wing_styles_list)
-		var/datum/sprite_accessory/wing/instance = GLOB.wing_styles_list[path]
-		if((!instance.ckeys_allowed) || (ckey in instance.ckeys_allowed))
-			pretty_wing_styles[instance.name] = path
-
-	// Present choice to user
-	var/new_wing_style = tgui_input_list(src, "Pick some wings!", "Character Preference", pretty_wing_styles)
-	if(!new_wing_style)
-		return
-
-	//Set new style
-	wing_style = GLOB.wing_styles_list[pretty_wing_styles[new_wing_style]]
-
-	//Allow color picks
-	var/current_color = rgb(r_wing,g_wing,b_wing)
-
-	var/new_color = tgui_color_picker(src, "Pick wing color:","Wing Color", current_color)
-	if(new_color)
-		var/list/new_color_rgb_list = hex2rgb(new_color)
-		r_wing = new_color_rgb_list[1]
-		g_wing = new_color_rgb_list[2]
-		b_wing = new_color_rgb_list[3]
-
-		//Indented inside positive primary color choice, don't bother if they clicked cancel
-		var/current_sec_color = rgb(r_wing2,g_wing2,b_wing2)
-
-		var/new_sec_color = tgui_color_picker(src, "Pick secondary wing color (only applies to some wings):","Wing Color (sec)", current_sec_color)
-		if(new_sec_color)
-			new_color_rgb_list = hex2rgb(new_sec_color)
-			r_wing2 = new_color_rgb_list[1]
-			g_wing2 = new_color_rgb_list[2]
-			b_wing2 = new_color_rgb_list[3]
-
-		var/current_ter_color = rgb(r_wing3,g_wing3,b_wing3)
-
-		var/new_ter_color = tgui_color_picker(src, "Pick tertiary wing color (only applies to some wings):","Wing Color (sec)", current_ter_color)
-		if(new_ter_color)
-			new_color_rgb_list = hex2rgb(new_ter_color)
-			r_wing3 = new_color_rgb_list[1]
-			g_wing3 = new_color_rgb_list[2]
-			b_wing3 = new_color_rgb_list[3]
-
-	var/new_alpha = tgui_input_number(src, "Set wing alpha (0-255):","Wing Alpha", a_wing,255,0)
-	if(new_alpha)
-		a_wing = new_alpha
-
-	update_wing_showing()
+	shapeshifter_select_accessory("wings")
 
 /mob/living/carbon/human/proc/promethean_select_opaqueness()
 
@@ -563,26 +524,18 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Fully Reform"
 	set desc = "Reload your appearance from whatever character slot you have loaded."
 	set category = "Abilities.Shapeshift"
-	var/mob/living/character = src
-	var/input = tgui_alert(character,{"Do you want to copy the appearance data of your currently loaded save slot?"},"Reformation",list("Reform","Cancel"))
-	if(input == "Cancel" || !input)
-		return
-	else
-		input = tgui_alert(character,{"Include Flavourtext?"},"Reformation",list("Yes","No","Cancel"))
-		if(input == "Cancel" || !input)
-			return
-		var/flavour = 0
-		if(input == "Yes")
-			flavour = 1
-		input = tgui_alert(character,{"Include OOC notes?"},"Reformation",list("Yes","No","Cancel"))
-		if(input == "Cancel" || !input)
-			return
-		var/oocnotes = 0
-		if(input == "Yes")
-			oocnotes = 1
-		to_chat(character, span_notify("You begin to reform. You will need to remain still."))
-		character.visible_message(span_notify("[character] rapidly contorts and shifts!"), span_danger("You begin to reform."))
-		om_do_after(character, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_regenerate_human_done), done_args = list(character, flavour, oocnotes))
+	om_prompt_sequence(src, src, list(
+		list("key" = "reform", "message" = "Do you want to copy the appearance data of your currently loaded save slot?", "title" = "Reformation", "choices" = list("Reform","Cancel"), "confirm" = "Reform"),
+		list("key" = "flavour", "message" = "Include Flavourtext?", "title" = "Reformation", "choices" = list("Yes","No","Cancel"), "abort" = "Cancel"),
+		list("key" = "ooc", "message" = "Include OOC notes?", "title" = "Reformation", "choices" = list("Yes","No","Cancel"), "abort" = "Cancel"),
+	), PROC_REF(shapeshifter_regenerate_answered), list("requires" = PROMPT_CONSCIOUS))
+
+/mob/living/carbon/human/proc/shapeshifter_regenerate_answered(mob/user, datum/om/prompt/ask)
+	var/flavour = ask.get("flavour") == "Yes"
+	var/oocnotes = ask.get("ooc") == "Yes"
+	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
+	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
+	om_do_after(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_regenerate_human_done), done_args = list(src, flavour, oocnotes))
 
 /mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(mob/living/character, flavour, oocnotes)
 	if(character.client.prefs)	//Make sure we didn't d/c
@@ -618,29 +571,37 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 
 	to_chat(character, span_notice("Waiting for other person's consent."))
-	var/consent = tgui_alert(victim, "Allow [src] to copy what you look like?", "Consent", list("Yes", "No"))
+	// The victim is asked; the answer runs on us with the victim as its user.
+	om_prompt(src, victim, list("message" = "Allow [src] to copy what you look like?", "title" = "Consent", "choices" = list("Yes", "No"), "on_cancel" = PROC_REF(copy_body_declined)), PROC_REF(copy_body_consented))
+
+/mob/living/carbon/human/proc/copy_body_declined(mob/living/carbon/human/victim, datum/om/prompt/ask)
+	to_chat(src, span_notice("They declined your request."))
+
+/mob/living/carbon/human/proc/copy_body_consented(mob/living/carbon/human/victim, consent, datum/om/prompt/ask)
 	if (consent != "Yes")
-		to_chat(character, span_notice("They declined your request."))
+		copy_body_declined(victim, ask)
 		return
+	om_prompt(src, src, list("message" = "Copy [victim]'s flavourtext?", "title" = "Copy Form", "choices" = list("Yes","No","Cancel"), "requires" = PROMPT_CONSCIOUS, "data" = list("victim" = victim)), PROC_REF(copy_body_flavour_chosen))
 
-	var/input = tgui_alert(character,{"Copy [victim]'s flavourtext?"},"Copy Form",list("Yes","No","Cancel"))
-	if(input == "Cancel" || !input)
-		return
-	var/flavour = 0
-	if(input == "Yes")
-		flavour = 1
-
-	var/checking = FALSE
-	for(var/obj/item/grab/G in character)
+/// TRUE while we still hold `victim` in at least an aggressive grab.
+/mob/living/carbon/human/proc/copy_body_gripping(mob/living/carbon/human/victim)
+	for(var/obj/item/grab/G in src)
 		if(GRAB_TARGET(G) == victim && G.state >= GRAB_AGGRESSIVE)
-			checking = TRUE
-	if (!checking)
-		to_chat(character, span_warning("You lost your grip on [victim]!"))
+			return TRUE
+	return FALSE
+
+/mob/living/carbon/human/proc/copy_body_flavour_chosen(mob/user, input, datum/om/prompt/ask)
+	if(input == "Cancel")
+		return
+	var/mob/living/carbon/human/victim = ask.get("victim")
+	var/flavour = input == "Yes"
+	if (!copy_body_gripping(victim))
+		to_chat(src, span_warning("You lost your grip on [victim]!"))
 		return
 
-	to_chat(character, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
-	character.visible_message(span_notify("[character] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	om_do_after(character, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
+	to_chat(src, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
+	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
+	om_do_after(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
 
 /mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
 	var/checking = FALSE
@@ -665,21 +626,15 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	last_special = world.time + 50
 
-	if (tgui_alert(src, "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", "Reform", list("Yes","Cancel")) != "Yes")
-		return
+	om_prompt_sequence(src, src, list(
+		list("key" = "sure", "message" = "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", "title" = "Reform", "choices" = list("Yes","Cancel"), "confirm" = "Yes"),
+		list("key" = "flavour", "message" = "Include Flavourtext?", "title" = "Reformation", "choices" = list("Yes","No","Cancel"), "abort" = "Cancel"),
+		list("key" = "ooc", "message" = "Include OOC notes?", "title" = "Reformation", "choices" = list("Yes","No","Cancel"), "abort" = "Cancel"),
+	), PROC_REF(shapeshifter_reassemble_answered), list("requires" = PROMPT_CONSCIOUS))
 
-	var/input = tgui_alert(src,{"Include Flavourtext?"},"Reformation",list("Yes","No","Cancel"))
-	if(input == "Cancel" || !input)
-		return
-	var/flavour = 0
-	if(input == "Yes")
-		flavour = 1
-	input = tgui_alert(src,{"Include OOC notes?"},"Reformation",list("Yes","No","Cancel"))
-	if(input == "Cancel" || !input)
-		return
-	var/oocnotes = 0
-	if(input == "Yes")
-		oocnotes = 1
+/mob/living/carbon/human/proc/shapeshifter_reassemble_answered(mob/user, datum/om/prompt/ask)
+	var/flavour = ask.get("flavour") == "Yes"
+	var/oocnotes = ask.get("ooc") == "Yes"
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
 	om_do_after(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))

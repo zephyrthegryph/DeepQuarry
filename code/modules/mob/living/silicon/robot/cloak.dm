@@ -63,7 +63,9 @@
 	if(!isrobot(R)) //sod off
 		return
 
-	var/N = tgui_input_number(R, "How obscured do you want to be? In %", "Cloak Level", cloak_strength*100, 100, 0)
+	om_prompt(src, R, list("kind" = "number", "message" = "How obscured do you want to be? In %", "title" = "Cloak Level", "default" = cloak_strength*100, "max" = 100, "min" = 0, "requires" = PROMPT_HELD), PROC_REF(cloaking_level_chosen))
+
+/obj/item/borg/cloak/proc/cloaking_level_chosen(mob/living/silicon/robot/R, N, datum/om/prompt/ask)
 	if(!isnull(N) && N >= 0 && N <= 100)
 		cloak_strength = N/100
 		to_chat(R, span_warning("You will now be [N]% obscured when the cloak is active."))

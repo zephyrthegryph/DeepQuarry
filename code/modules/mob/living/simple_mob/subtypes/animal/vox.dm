@@ -69,18 +69,17 @@
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	var/list/targets = list()
-	var/target = null
-	var/text = null
+	om_prompt_sequence(src, src, list(
+		list("key" = "target", "kind" = "list", "message" = "Select a creature!", "title" = "Speak to creature", "choices" = getmobs()),
+		list("key" = "text", "kind" = "text", "message" = "What would you like to say?", "title" = "Speak to creature"),
+	), PROC_REF(message_mob_answered))
 
-	targets += getmobs() //Fill list, prompt user with list
-	target = tgui_input_list(src, "Select a creature!", "Speak to creature", targets)
-	text = tgui_input_text(src, "What would you like to say?", "Speak to creature")
-
-	if (!target || !text)
+/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(mob/user, datum/om/prompt/ask)
+	var/text = ask.get("text")
+	var/list/targets = getmobs()
+	var/mob/M = targets[ask.get("target")]
+	if(!M)
 		return
-
-	var/mob/M = targets[target]
 
 	if(istype(M, /mob/observer/dead) || M.stat == DEAD)
 		to_chat(src, "Not even the armalis can speak to the dead.")
