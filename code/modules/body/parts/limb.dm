@@ -145,24 +145,23 @@
 
 // --- Part lifecycle -------------------------------------------------------------------
 
-/// The organ left `B`: its located afflictions come with it.
+/// The organ left this body: its located afflictions come with it. Called
+/// only by release_part() (attach.dm), which recomputes the organ's integrity
+/// once its owner is cleared and invalidates the body once per subtree.
 /datum/body/proc/detach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
 		A.location = O
 		LAZYADD(O.detached_afflictions, A)
-	// The organ's own integrity is recomputed by removed() once its owner is
-	// cleared, so it reads the detached list rather than this body's index.
-	on_status_changed()
 
-/// The organ joined this body: adopt what it carries.
+/// The organ joined this body: adopt what it carries. Called only by
+/// adopt_part() (attach.dm), which invalidates the body once per subtree.
 /datum/body/proc/attach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in O.detached_afflictions)
 		add_affliction(A, O)
 		A.last_reroll_band = -1
 	O.detached_afflictions = null
 	O.recalc_integrity() // lesions / wounds moved: one recompute from the index
-	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_ORGANS)
 
 /// Offline tick for afflictions riding a detached organ.
 /obj/item/organ/proc/tick_detached_afflictions()

@@ -19,7 +19,7 @@
 /datum/unit_test/dq_body_slot_plans_declare_slots
 
 /datum/unit_test/dq_body_slot_plans_declare_slots/Run()
-	var/humanoid = jointext(list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_SUIT, SLOT_ID_UNIFORM, SLOT_ID_GLOVES, SLOT_ID_SHOES, SLOT_ID_EYES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_ID, SLOT_ID_SUIT_STORAGE, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED, SLOT_ID_BODY), ",")
+	var/humanoid = jointext(list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_SUIT, SLOT_ID_UNIFORM, SLOT_ID_GLOVES, SLOT_ID_SHOES, SLOT_ID_EYES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_ID, SLOT_ID_SUIT_STORAGE, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED, SLOT_ID_PART_ROOT, SLOT_ID_BODY), ",")
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_EQUAL(H.slot_holder_key(), H.body.type, "a mob's slot key should cover its body plan")

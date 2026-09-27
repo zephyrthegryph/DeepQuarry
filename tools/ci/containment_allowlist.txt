@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Convert sites to forceMove()
 # or the slot API (code/datums/containment/api.dm) and lower the count;
 # `python tools/ci/containment_lint.py --update` rewrites it.
-# Total: 604 sites in 282 files.
+# Total: 594 sites in 281 files.
 code/_helpers/refinery.dm 1
 code/_helpers/turfs.dm 2
 code/_helpers/unsorted.dm 7
@@ -69,7 +69,7 @@ code/game/machinery/newscaster.dm 3
 code/game/machinery/nuclear_bomb.dm 3
 code/game/machinery/pandemic.dm 1
 code/game/machinery/partslathe.dm 1
-code/game/machinery/protean_reconstitutor.dm 10
+code/game/machinery/protean_reconstitutor.dm 6
 code/game/machinery/spaceheater.dm 1
 code/game/machinery/telecrystal_storage.dm 1
 code/game/machinery/virtual_reality/ar_console.dm 1
@@ -200,8 +200,7 @@ code/modules/mob/mob_grab_specials.dm 1
 code/modules/mob/new_player/login.dm 1
 code/modules/mob/new_player/new_player.dm 1
 code/modules/organs/internal/malignant/malignant.dm 1
-code/modules/organs/organ.dm 1
-code/modules/organs/organ_external.dm 10
+code/modules/organs/organ_external.dm 5
 code/modules/overmap/overmap_object.dm 1
 code/modules/paperwork/clipboard.dm 5
 code/modules/paperwork/faxmachine.dm 1

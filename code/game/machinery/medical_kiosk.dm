@@ -133,7 +133,7 @@
 		return "<br>" + span_warning("Unable to perform diagnosis on synthetic life forms.")
 
 	var/problems = 0
-	for(var/obj/item/organ/external/E in user)
+	for(var/obj/item/organ/external/E in user.organs)
 		if(E.is_fractured())
 			problems |= BROKEN_BONES
 		if(E.status & (ORGAN_DEAD|ORGAN_DESTROYED))
@@ -148,7 +148,7 @@
 		if(E.germ_level >= INFECTION_LEVEL_ONE) //Do NOT check for the germ_level on the mob, it'll be innacurate.
 			problems |= INFECTION
 
-	for(var/obj/item/organ/internal/I in user)
+	for(var/obj/item/organ/internal/I in user.internal_organs)
 		if(I.is_fractured() || (I.status & (ORGAN_DEAD|ORGAN_DESTROYED)))
 			problems |= SERIOUS_INTERNAL_DAMAGE
 		if(I.status & ORGAN_BLEEDING)

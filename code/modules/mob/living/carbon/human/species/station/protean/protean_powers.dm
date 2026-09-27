@@ -293,8 +293,7 @@
 		qdel(oldlimb)
 	var/list/limblist = H.species.has_limbs[choice]
 	var/limbpath = limblist["path"]
-	var/obj/item/organ/external/new_eo = new limbpath(H)
-	H.organs_by_name[choice] = new_eo
+	var/obj/item/organ/external/new_eo = new limbpath(H) // joins onto its parent limb
 	new_eo.robotize(H.synthetic ? H.synthetic.company : null)
 	new_eo.sync_colour_to_human(H)
 	H.regenerate_icons()

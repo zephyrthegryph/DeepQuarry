@@ -62,34 +62,16 @@
 			butchery_loot.Cut()
 			butchery_loot = null
 
+	// removed() is a ledger move out; the detach hook empties the caches.
 	if(LAZYLEN(organs) && butchery_drops_organs)
-		organs_by_name?.Cut()
-
-		for(var/path in organs)
-			if(ispath(path))
-				var/obj/item/organ/external/neworg = new path(src)
-				neworg.name = "[name] [neworg.name]"
-				neworg.meat_type = meat_type
-
-				if(isanimal(src))
-					var/mob/living/simple_mob/SM = src
-					if(SM.limb_icon)
-						neworg.force_icon = SM.limb_icon
-				organs |= neworg
-				organs -= path
-
-		for(var/obj/item/organ/OR in organs)
+		for(var/obj/item/organ/OR in organs.Copy())
 			OR.removed()
-			organs -= OR
 
 	if(butchery_drops_organs)
 		spawn_butchery_organs()
 	if(LAZYLEN(internal_organs) && butchery_drops_organs)
-		internal_organs_by_name?.Cut()
-
-		for(var/obj/item/organ/OR in internal_organs)
+		for(var/obj/item/organ/OR in internal_organs.Copy())
 			OR.removed()
-			internal_organs -= OR
 
 	if(!ckey)
 		if(issmall(src))

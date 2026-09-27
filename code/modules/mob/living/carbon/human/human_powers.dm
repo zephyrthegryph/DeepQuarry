@@ -172,14 +172,14 @@
 		// Bust it
 		src.death()
 
-		for(var/obj/item/organ/internal/diona/Org in internal_organs) // Remove Nymph organs.
+		for(var/obj/item/organ/internal/diona/Org in internal_organs.Copy()) // Remove Nymph organs. (A copy: deleting one uncaches it.)
 			qdel(Org)
 
 		// Purge the diona verbs.
 		remove_verb(src, /mob/living/carbon/human/proc/diona_split_nymph)
 		remove_verb(src, /mob/living/carbon/human/proc/regenerate)
 
-		for(var/obj/item/organ/external/E in organs) // Just fall apart.
+		for(var/obj/item/organ/external/E in organs.Copy()) // Just fall apart.
 			E.droplimb(TRUE)
 
 	else

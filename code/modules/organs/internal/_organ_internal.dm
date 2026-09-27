@@ -16,22 +16,6 @@
 	if((status & ORGAN_DEAD) && dead_icon)
 		icon_state = dead_icon
 
-/obj/item/organ/internal/Destroy()
-	if(owner)
-		owner.internal_organs -= src
-		owner.internal_organs_by_name -= organ_tag
-		var/obj/item/organ/external/E = owner.organs_by_name[parent_organ]
-		if(istype(E)) LAZYREMOVE(E.internal_organs, src)
-	return ..()
-
-/obj/item/organ/internal/remove_rejuv()
-	if(owner)
-		owner.internal_organs -= src
-		owner.internal_organs_by_name -= organ_tag
-		var/obj/item/organ/external/E = owner.organs_by_name[parent_organ]
-		if(istype(E)) LAZYREMOVE(E.internal_organs, src)
-	..()
-
 /obj/item/organ/internal/robotize()
 	..()
 	name = "prosthetic [initial(name)]"
