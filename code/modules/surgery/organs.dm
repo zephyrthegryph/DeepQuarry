@@ -44,7 +44,7 @@
 	var/list/choices = removable_organs(target, part)
 	if(!length(choices))
 		return null
-	var/choice = tgui_input_list(user, "Which organ do you want to remove?", name, choices)
+	var/choice = tool.surgery_prompt(user, "target", list("kind" = "list", "message" = "Which organ do you want to remove?", "title" = name, "choices" = choices))
 	return choice ? choices[choice] : null
 
 /datum/surgical_step/organ/extract/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
@@ -134,7 +134,7 @@
 		return null
 	if(length(choices) == 1)
 		return choices[choices[1]]
-	var/choice = tgui_input_list(user, "Which organ do you want to reattach?", name, choices)
+	var/choice = tool.surgery_prompt(user, "target", list("kind" = "list", "message" = "Which organ do you want to reattach?", "title" = name, "choices" = choices))
 	return choice ? choices[choice] : null
 
 /datum/surgical_step/organ/reconnect/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
@@ -189,7 +189,7 @@
 	var/datum/component/mind_host/host = get_mind_host(M)
 	host?.release_mind(target, "MMI installed into [target] by [key_name(user)]")
 	log_game("SURGERY: [key_name(user)] installed [M] into [key_name(target)]")
-	INVOKE_ASYNC(target, TYPE_PROC_REF(/mob/living/carbon/human, pick_new_form_name), FALSE)
+	target.pick_new_form_name(FALSE)
 
 /datum/surgical_step/organ/install_nymph
 	name = "Install Nymph"
@@ -240,20 +240,43 @@
 	add_verb(target, /mob/living/carbon/human/proc/diona_split_nymph)
 	add_verb(target, /mob/living/carbon/human/proc/regenerate)
 	log_game("SURGERY: [key_name(user)] installed a nymph into [key_name(target)]")
-	INVOKE_ASYNC(target, TYPE_PROC_REF(/mob/living/carbon/human, pick_new_form_name), TRUE)
+	target.pick_new_form_name(TRUE)
 
 /// Let the new occupant of a synthetic body pick a name. `required`: keep
 /// asking (a bounded number of times) until they do.
-/mob/living/carbon/human/proc/pick_new_form_name(required = FALSE)
-	var/new_name = required ? "" : real_name
-	for(var/attempt in 1 to (required ? 10 : 3))
-		if(QDELETED(src) || !client)
-			return
-		var/try_name = tgui_input_text(src, "Pick a name for your new form!", "New Name", name)
-		var/clean_name = sanitizeName(try_name, allow_numbers = TRUE)
-		if(clean_name && tgui_alert(src, "New name will be '[clean_name]', ok?", "Confirmation", list("Cancel", "Ok")) == "Ok")
-			new_name = clean_name
-			break
+/mob/living/carbon/human/proc/pick_new_form_name(required = FALSE, attempt = 1)
+	if(QDELETED(src) || !client)
+		if(required && !QDELETED(src))
+			new_form_name_chosen(real_name)
+		return
+	om_prompt_sequence(src, src, list(
+		list("key" = "name", "kind" = "text", "message" = "Pick a name for your new form!", "title" = "New Name", "default" = name),
+		TYPE_PROC_REF(/mob/living/carbon/human, confirm_new_form_name),
+	), TYPE_PROC_REF(/mob/living/carbon/human, new_form_name_answered), list("data" = list("required" = required, "attempt" = attempt), "on_cancel" = TYPE_PROC_REF(/mob/living/carbon/human, new_form_name_declined)))
+
+/mob/living/carbon/human/proc/confirm_new_form_name(mob/user, datum/om/prompt/P)
+	var/clean_name = sanitizeName(P.get("name"), allow_numbers = TRUE)
+	if(!clean_name)
+		return PROMPT_STOP
+	return list("key" = "ok", "message" = "New name will be '[clean_name]', ok?", "title" = "Confirmation", "choices" = list("Cancel", "Ok"))
+
+/mob/living/carbon/human/proc/new_form_name_answered(mob/user, datum/om/prompt/P)
+	var/clean_name = sanitizeName(P.get("name"), allow_numbers = TRUE)
+	if(clean_name && P.get("ok") == "Ok")
+		new_form_name_chosen(clean_name)
+		return
+	new_form_name_declined(user, P)
+
+/// Another go, up to the limit; a required name then falls back to the current one.
+/mob/living/carbon/human/proc/new_form_name_declined(mob/user, datum/om/prompt/P)
+	var/required = P.get("required")
+	var/attempt = P.get("attempt") + 1
+	if(attempt <= (required ? 10 : 3))
+		pick_new_form_name(required, attempt)
+	else if(required)
+		new_form_name_chosen(real_name)
+
+/mob/living/carbon/human/proc/new_form_name_chosen(new_name)
 	if(!new_name)
 		return
 	name = sanitizeName(new_name, allow_numbers = TRUE)

@@ -117,7 +117,7 @@
 	if(!placed)
 		return FALSE
 	var/zone = part.organ_tag
-	if(tgui_alert(user, "Implant 	he [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "Confirm Cavity Implant", list("Implant", "Cancel")) != "Implant")
+	if(tool.surgery_prompt(user, "implant", list("message" = "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "title" = "Confirm Cavity Implant", "choices" = list("Implant", "Cancel"))) != "Implant")
 		return FALSE
 	// The alert may have waited a long time: check everything again.
 	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))
@@ -172,8 +172,14 @@
 	..()
 	if(!length(part.implants))
 		return
-	var/atom/movable/removed = tgui_input_list(user, "Which embedded object do you wish to remove?", name, part.implants)
-	if(!removed || !(removed in part.implants))
+	om_prompt(part, user, list("kind" = "list", "message" = "Which embedded object do you wish to remove?", "title" = name, "choices" = part.implants, "requires" = PROMPT_ADJACENT, "target" = target, "data" = list("patient" = target, "tool" = tool, "step" = src)), GLOBAL_PROC_REF(extract_foreign_body_chosen))
+
+/proc/extract_foreign_body_chosen(obj/item/organ/external/part, mob/living/user, atom/movable/removed, datum/om/prompt/P)
+	var/datum/surgical_step/treat/extract_foreign_body/step = P.get("step")
+	step.foreign_body_chosen(user, P.get("patient"), part, P.get("tool"), removed)
+
+/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/movable/removed)
+	if(!removed || !(removed in part.implants) || part.owner != target || user.get_active_hand() != tool)
 		to_chat(user, span_notice("You draw \the [tool] back out of [target]'s [part.name]."))
 		return
 	if(istype(removed, /obj/item/implant))
