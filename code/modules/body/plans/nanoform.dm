@@ -328,7 +328,7 @@
 			if(patient.mend(TREAT_CALIBRATION, 1))
 				playsound(site, 'sound/items/Deconstruct.ogg', 50, 1)
 				to_chat(user, span_notice("You carefully slot [W] into [site]."))
-				qdel(W)
+				consume(W, user)
 		if(DORMANCY_PROGRAMMED)
 			var/obj/item/stack/nanopaste/paste = W
 			if(paste.use(1) && patient.mend(TREAT_PLATING_REPAIR, 1))

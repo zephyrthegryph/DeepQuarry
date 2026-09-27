@@ -549,7 +549,7 @@
 	transfer_blooddna_to(O)
 
 	user.put_in_active_hand(O)
-	qdel(src)
+	consume(src, user)
 
 /obj/item/organ/attack_self(mob/user, callback)
 	. = ..(user)

@@ -250,7 +250,7 @@
 	if(istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 		to_chat(user, span_notice("You cut the mimetic potato."))
-		qdel(src)
+		consume(src, user)
 		return
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
@@ -262,7 +262,7 @@
 				user.put_in_hands(pocell)
 			pocell.maxcharge = 2000 // same as potato
 			pocell.charge = pocell.maxcharge
-			qdel(src)
+			consume(src, user)
 			return
 
 	. = ..()
