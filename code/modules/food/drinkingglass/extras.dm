@@ -34,7 +34,9 @@
 		to_chat(user, span_warning("There's nothing on the glass to remove!"))
 		return
 
-	var/choice = tgui_input_list(user, "What would you like to remove from the glass?", "Removal Choice", extras)
+	var/choice = rerun_prompt(user, "k37", list("kind" = "list", "message" = "What would you like to remove from the glass?", "title" = "Removal Choice", "choices" = extras), TYPE_PROC_REF(/atom, attack_hand), args)
+	if(isnull(choice))
+		return TRUE
 	if(!choice || !(choice in extras))
 		return
 

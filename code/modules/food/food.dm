@@ -27,7 +27,10 @@
 	if(user.stat == DEAD || !(ishuman(user) || isrobot(user)))
 		to_chat(user, span_warning("You can't cook!"))
 		return
-	var/n_name = sanitizeSafe(tgui_input_text(user, "What would you like to name \the [src]? Leave blank to reset.", "Food Naming", initial(name), MAX_NAME_LEN, encode = FALSE))
+	var/_answer_k30 = rerun_prompt(user, "k30", list("kind" = "text", "message" = "What would you like to name \the [src]? Leave blank to reset.", "title" = "Food Naming", "default" = initial(name), "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(handle_name_change), args)
+	if(isnull(_answer_k30))
+		return
+	var/n_name = sanitizeSafe(_answer_k30)
 	if(!n_name)
 		n_name = initial(name)
 

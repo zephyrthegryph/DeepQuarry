@@ -224,7 +224,10 @@
 					var/mob/living/feeder = user
 					swallow_whole = feeder.stuffing_feeder
 				if(swallow_whole)
-					belly_target = tgui_input_list(user, "Choose Belly", "Belly Choice", human_eater.feedable_bellies())
+					var/_answer_k227 = rerun_prompt(user, "k227", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = human_eater.feedable_bellies()), PROC_REF(attack), args)
+					if(isnull(_answer_k227))
+						return TRUE
+					belly_target = _answer_k227
 
 				if(unconcious)
 					to_chat(user, span_warning("You can't feed [human_eater] through \the [blocked] while they are unconcious!"))
@@ -265,7 +268,10 @@
 		var/swallow_whole = user.stuffing_feeder
 		var/obj/belly/belly_target
 		if(swallow_whole)
-			belly_target = tgui_input_list(user, "Choose Belly", "Belly Choice", eater.feedable_bellies())
+			var/_answer_k268 = rerun_prompt(user, "k268", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = eater.feedable_bellies()), PROC_REF(attack), args)
+			if(isnull(_answer_k268))
+				return TRUE
+			belly_target = _answer_k268
 			if(!(eater.feeding))
 				to_chat(user, "You can't feed [eater] a whole [src] as they refuse to be fed whole things!")
 				balloon_alert(user, "they refuse to be fed whole things!")
@@ -394,7 +400,10 @@
 			if (W.w_class >= src.w_class || is_robot_module(W) || istype(W, /obj/item/holder))
 				return
 
-			if(tgui_alert(user,"You can't slice \the [src] here. Would you like to hide \the [W] inside it instead?","No Cutting Surface!",list("Yes","No")) != "Yes")
+			var/_answer_k397 = rerun_prompt(user, "k397", list("message" = "You can't slice \the [src] here. Would you like to hide \the [W] inside it instead?", "title" = "No Cutting Surface!", "choices" = list("Yes","No")), TYPE_PROC_REF(/atom, attackby), args)
+			if(isnull(_answer_k397))
+				return TRUE
+			if(_answer_k397 != "Yes")
 				to_chat(user, span_warning("You cannot slice \the [src] here! You need a table or at least a tray to do it."))
 				balloon_alert(user, "you cannot slice \the [src] here! You need a table or at least a tray to do it.")
 				return
@@ -4326,7 +4335,9 @@
 		if( src.open )
 			return
 
-		var/t = tgui_input_text(user, "Enter what you want to add to the tag:", "Write", "", 30)
+		var/t = rerun_prompt(user, "k4329", list("kind" = "text", "message" = "Enter what you want to add to the tag:", "title" = "Write", "max_length" = 30), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(t))
+			return TRUE
 
 		var/obj/item/pizzabox/boxtotagto = src
 		if( boxes.len > 0 )
