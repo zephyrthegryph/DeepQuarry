@@ -179,6 +179,9 @@ SUBSYSTEM_DEF(ticker)
 /datum/controller/subsystem/ticker/proc/setup()
 	to_chat(world, span_boldannounce("Starting game..."))
 	var/init_start = world.timeofday
+#ifdef BENCHMARK
+	benchmark_rust_mark("ticker: setup start")
+#endif
 
 	CHECK_TICK
 	setup_choose_gamemode()
@@ -237,6 +240,10 @@ SUBSYSTEM_DEF(ticker)
 	// TODO END
 
 	PostSetup()
+#ifdef BENCHMARK
+	benchmark_rust_mark("ticker: setup done")
+	INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(benchmark_mark_seconds), 14)
+#endif
 
 	return TRUE
 

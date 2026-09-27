@@ -42,6 +42,24 @@ GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 /// the first mark whose peak jumps names the stage that set it.
 GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 
+/// Marks once a second for `seconds`, naming the subsystems that fired
+/// since the previous mark and their cost, to place growth after round start.
+/proc/benchmark_mark_seconds(seconds)
+	var/list/fired = list()
+	var/list/cost = list()
+	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
+		fired[S] = S.times_fired
+		cost[S] = S.cost
+	for(var/i in 1 to seconds)
+		sleep(1 SECONDS)
+		var/list/names = list()
+		for(var/datum/controller/subsystem/S as anything in Master.subsystems)
+			var/delta = S.times_fired - fired[S]
+			if(delta > 0)
+				names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
+			fired[S] = S.times_fired
+		benchmark_rust_mark("t+[i]s: [jointext(names, ", ")]")
+
 /proc/benchmark_rust_mark(name)
 	var/list/heap = vg_verdigris_allocator_diagnostics()
 	if(!islist(heap))

@@ -12,7 +12,11 @@
 /datum/config_entry/flag/cache_assets
 	default = TRUE
 
+/// Reuse batched (iconforge) spritesheets across rounds; the cache checks its
+/// own inputs (icon hashes, rust-g and DM versions). Without it every boot
+/// regenerated them after round start, about 260 MB of private memory.
 /datum/config_entry/flag/smart_cache_assets
+	default = TRUE
 
 /datum/config_entry/flag/save_spritesheets
 
