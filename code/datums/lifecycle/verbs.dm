@@ -158,14 +158,45 @@
 /// pattern as slot_def singletons).
 /datum/destroy_effects_data
 	/// Shown with visible_message() at the destroyed atom's last turf, or null.
+	/// "%SRC%" becomes "\The [atom]".
 	var/message
+	/// The message's span class.
+	var/message_class = "warning"
 	/// Played with playsound() at the same turf, or null.
 	var/sound
+	var/sound_volume = 50
 	/// Debris type spawned at the same turf, or null.
 	var/debris_type
-	/// Whether neighbouring atoms get update_icon()/queue_smooth() afterwards.
+	/// Whether atoms on the same turf get update_icon() afterwards.
 	var/update_neighbors = FALSE
+	/// After the atom has left its turf (apply_after()): atoms of this type
+	/// within neighbor_range re-smooth -- structures update_connections() --
+	/// and update_icon(). Walls, grilles, railings, lattices.
+	var/neighbor_type
+	var/neighbor_range = 1
+	/// Whether neighbour structures also re-run update_connections().
+	var/neighbor_reconnect = TRUE
 
+/datum/destroy_effects_data/New(message, message_class, sound, sound_volume, debris_type, neighbor_type, neighbor_range, neighbor_reconnect)
+	if(!isnull(message))
+		src.message = message
+	if(!isnull(message_class))
+		src.message_class = message_class
+	if(!isnull(sound))
+		src.sound = sound
+	if(!isnull(sound_volume))
+		src.sound_volume = sound_volume
+	if(!isnull(debris_type))
+		src.debris_type = debris_type
+	if(!isnull(neighbor_type))
+		src.neighbor_type = neighbor_type
+	if(!isnull(neighbor_range))
+		src.neighbor_range = neighbor_range
+	if(!isnull(neighbor_reconnect))
+		src.neighbor_reconnect = neighbor_reconnect
+
+/// Phase 6, while the atom is still on its turf. Returns the turf, which
+/// apply_after() gets once Destroy() has taken the atom off it.
 /datum/destroy_effects_data/proc/apply(datum/D)
 	if(!isatom(D))
 		return
@@ -174,11 +205,24 @@
 	if(!T)
 		return
 	if(message)
-		T.visible_message(message)
+		T.visible_message("<span class='[message_class]'>[replacetext(message, "%SRC%", "\The [A]")]</span>")
 	if(sound)
-		playsound(T, sound, 50, TRUE)
+		playsound(T, sound, sound_volume, TRUE)
 	if(debris_type)
 		new debris_type(T)
 	if(update_neighbors)
 		for(var/atom/movable/AM in T)
 			AM.update_icon()
+	return T
+
+/// After Destroy(): neighbours that smooth against the atom see it gone.
+/datum/destroy_effects_data/proc/apply_after(datum/D, turf/T)
+	if(!neighbor_type || !T)
+		return
+	for(var/atom/N in range(neighbor_range, T))
+		if(N == D || !istype(N, neighbor_type) || QDELETED(N))
+			continue
+		if(neighbor_reconnect && isstructure(N))
+			var/obj/structure/S = N
+			S.update_connections()
+		N.update_icon()

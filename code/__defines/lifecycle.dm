@@ -31,3 +31,8 @@
 #define REF_PAIR(PATH, PAIRS) ##PATH/declared_pair_vars() { return lifecycle_merge_assoc(..(), PAIRS); }
 /// Back-lists, our var (the owner) -> the owner's list var we sit in: removed in phase 4.
 #define REF_BACKLIST(PATH, LISTS) ##PATH/declared_backlist_vars() { return lifecycle_merge_assoc(..(), LISTS); }
+
+/// Declared destruction effects (phase 6): DATA is a `new /datum/destroy_effects_data(...)`
+/// with named arguments, built once per type. Replaces message/sound/debris/
+/// neighbour-smoothing bodies in Destroy().
+#define DESTROY_EFFECTS(PATH, DATA) ##PATH/destroy_effects() { var/static/datum/destroy_effects_data/data = DATA; return data; }

@@ -83,7 +83,8 @@
 
 	// Phase 6: effects. Declared destroy_effects data (L3).
 	tick = world.tick_usage
-	dq_lifecycle_effects(D)
+	var/datum/destroy_effects_data/effects = D.destroy_effects()
+	var/turf/effects_turf = effects?.apply(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 
 	// Phase 7: leftover Destroy(). Only real domain consequences should
@@ -95,6 +96,12 @@
 
 	if(isnull(D)) // Destroy() hard-deleted itself (rare; some override del()s src)
 		return hint
+
+	// Phase 6's second half: neighbours that smooth against D, now it's gone.
+	if(effects_turf)
+		tick = world.tick_usage
+		effects.apply_after(D, effects_turf)
+		dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 
 	// Phase 8: scrub. Null outbound declared owned/pair vars to break
 	// reference cycles, then hand D to GC. Nothing is parked in nullspace.
@@ -144,6 +151,9 @@
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()
+		// A walk_towards()/walk() loop keeps an internal BYOND reference.
+		if(ismovable(AT))
+			walk(AT, 0)
 	dq_lifecycle_clock_teardown(D)
 	dq_lifecycle_revoke_grants(D)
 
@@ -183,9 +193,7 @@
 
 /proc/dq_lifecycle_effects(datum/D)
 	var/datum/destroy_effects_data/data = D.destroy_effects()
-	if(!data)
-		return
-	data.apply(D)
+	return data?.apply(D)
 
 // ---- Phase 8: scrub ----
 
