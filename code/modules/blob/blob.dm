@@ -164,9 +164,6 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/effect/blob/core/Destroy()
-	return ..()
-
 /obj/effect/blob/core/periodic_step()
 	pulse(20, list(NORTH, EAST))
 	pulse(20, list(NORTH, WEST))
