@@ -32,9 +32,7 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 	special_handling = TRUE
 
-/obj/item/analyzer/plant_analyzer/Destroy()
-	. = ..()
-	QDEL_NULL(last_seed)
+REF_OWNED(/obj/item/analyzer/plant_analyzer, "last_seed")
 
 /obj/item/analyzer/plant_analyzer/attack_self(mob/user)
 	. = ..(user)
