@@ -265,37 +265,41 @@
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	om_task_start(src, /datum/om/task_def/transit_pod, null, list("tube" = om_handle(current_tube), "phase" = "exit", "last_delay" = 0))
+	om_task_start(/datum/om/task/transit_pod, src, null, list("tube_h" = om_handle(current_tube)))
 
 /// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
 /// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.
-/datum/om/task_def/transit_pod
+/datum/om/task/transit_pod
 	name = "transit pod travel"
 	steps = list(/obj/structure/transit_tube_pod/proc/travel_step = 0)
 	complete_proc = /obj/structure/transit_tube_pod/proc/travel_ended
 	cancel_proc = /obj/structure/transit_tube_pod/proc/travel_ended
+	/// The tube the pod is in: a handle, since the pod leaves it (a deleted tube is not a failure).
+	var/tube_h
+	var/phase = "exit"
+	var/last_delay = 0
+	var/next_dir
 
-/obj/structure/transit_tube_pod/proc/travel_ended(datum/om/task/T, reason)
+/obj/structure/transit_tube_pod/proc/travel_ended(datum/om/task/T)
 	density = TRUE
 	moving = 0
 
-/obj/structure/transit_tube_pod/proc/travel_step(datum/om/task/T)
-	var/list/P = T.params
-	switch(P["phase"])
+/obj/structure/transit_tube_pod/proc/travel_step(datum/om/task/transit_pod/T)
+	switch(T.phase)
 		if("exit")
-			var/obj/structure/transit_tube/tube = om_resolve(P["tube"])
+			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h)
 			if(!tube)
-				return travel_coast(P)
+				return travel_coast(T)
 			var/next_dir = tube.get_exit(dir)
 			if(!next_dir)
 				return STEP_DONE
 			var/exit_delay = tube.exit_delay(src, dir)
-			P["last_delay"] += exit_delay
-			P["next_dir"] = next_dir
-			P["phase"] = "leave"
+			T.last_delay += exit_delay
+			T.next_dir = next_dir
+			T.phase = "leave"
 			return STEP_REPEAT(exit_delay)
 		if("leave")
-			var/next_dir = P["next_dir"]
+			var/next_dir = T.next_dir
 			var/turf/next_loc = get_step(loc, next_dir)
 			var/obj/structure/transit_tube/next_tube = null
 			for(var/obj/structure/transit_tube/tube in next_loc)
@@ -305,42 +309,42 @@
 			if(!next_tube)
 				set_dir(next_dir)
 				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
-				return travel_coast(P)
-			P["tube"] = om_handle(next_tube)
-			P["last_delay"] = next_tube.enter_delay(src, next_dir)
-			P["phase"] = "enter"
-			return STEP_REPEAT(P["last_delay"])
+				return travel_coast(T)
+			T.tube_h = om_handle(next_tube)
+			T.last_delay = next_tube.enter_delay(src, next_dir)
+			T.phase = "enter"
+			return STEP_REPEAT(T.last_delay)
 		if("enter")
-			var/obj/structure/transit_tube/tube = om_resolve(P["tube"])
+			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h)
 			if(!tube)
-				return travel_coast(P)
-			set_dir(P["next_dir"])
+				return travel_coast(T)
+			set_dir(T.next_dir)
 			forceMove(tube.loc) // When moving from one tube to another, skip collision and such.
 			density = tube.density
-			if(tube.should_stop_pod(src, P["next_dir"]))
+			if(tube.should_stop_pod(src, T.next_dir))
 				tube.pod_stopped(src, dir)
 				return STEP_DONE
-			P["phase"] = "exit"
+			T.phase = "exit"
 			return travel_step(T)
 		if("coast")
 			if(!istype(loc, /turf/space))
-				P["last_delay"]++
-			if(P["last_delay"] > 10)
+				T.last_delay++
+			if(T.last_delay > 10)
 				return STEP_DONE
 			if(isturf(loc) && Move(get_step(loc, dir)))
-				return STEP_REPEAT(P["last_delay"])
+				return STEP_REPEAT(T.last_delay)
 			return STEP_DONE
 	return STEP_DONE
 
 // If the pod is no longer in a tube, move in a line until stopped or slowed to a halt.
 //  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
 //  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
-/obj/structure/transit_tube_pod/proc/travel_coast(list/P)
+/obj/structure/transit_tube_pod/proc/travel_coast(datum/om/task/transit_pod/T)
 	density = TRUE
-	if(P["last_delay"] > 10)
+	if(T.last_delay > 10)
 		return STEP_DONE
-	P["phase"] = "coast"
-	return STEP_REPEAT(P["last_delay"])
+	T.phase = "coast"
+	return STEP_REPEAT(T.last_delay)
 
 /obj/structure/transit_tube_pod/return_air()
 	return air_contents

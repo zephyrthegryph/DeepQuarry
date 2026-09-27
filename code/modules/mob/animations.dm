@@ -213,20 +213,23 @@
 		return
 	if(istype(BUCKLED(src),/obj/structure/bed/chair/office)) // WEEEE!!!
 		playsound(src, 'sound/effects/roll.ogg', 100, 1)
-	om_task_start(src, /datum/om/task_def/spin, null, list("left" = spintime, "speed" = speed, "dir" = dir))
+	om_task_start(/datum/om/task/spin, src, null, list("left" = spintime, "speed" = speed, "facing" = dir))
 
 /// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.
-/datum/om/task_def/spin
+/datum/om/task/spin
 	name = "spin"
 	steps = list(/mob/proc/spin_step = 0)
+	var/left = 0
+	var/speed = 1
+	var/facing = NORTH
+	var/started = FALSE
 
-/mob/proc/spin_step(datum/om/task/T)
-	var/list/P = T.params
-	var/speed = P["speed"]
-	if(!P["started"])
-		P["started"] = TRUE
-		return P["left"] >= speed ? STEP_REPEAT(speed) : STEP_DONE
-	var/D = P["dir"]
+/mob/proc/spin_step(datum/om/task/spin/T)
+	var/speed = T.speed
+	if(!T.started)
+		T.started = TRUE
+		return T.left >= speed ? STEP_REPEAT(speed) : STEP_DONE
+	var/D = T.facing
 	switch(D)
 		if(NORTH)
 			D = EAST
@@ -236,13 +239,13 @@
 			D = SOUTH
 		if(WEST)
 			D = NORTH
-	P["dir"] = D
+	T.facing = D
 	set_dir(D)
 	if(istype(BUCKLED(src),/obj/structure/bed/chair/office))
 		var/obj/structure/bed/chair/office/O = BUCKLED(src)
 		O.dir = D
 		O.set_dir(D)
-	P["left"] -= speed
-	if(P["left"] < speed)
+	T.left -= speed
+	if(T.left < speed)
 		return STEP_DONE
 	return STEP_REPEAT(speed)

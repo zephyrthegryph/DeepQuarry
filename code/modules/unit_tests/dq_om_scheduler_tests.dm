@@ -36,22 +36,23 @@
 /datum/om_test_entity/proc/task_completed(datum/om/task/T)
 	log += "complete"
 
-/datum/om_test_entity/proc/task_cancelled(datum/om/task/T, reason)
-	log += "cancel:[reason]"
+/datum/om_test_entity/proc/task_cancelled(datum/om/task/T)
+	log += "cancel:[T.reason]"
 
-/datum/om/task_def/test_steps
+/datum/om/task/test_steps
 	name = "test_steps"
 	steps = list(/datum/om_test_entity/proc/step_a = 1 SECONDS, /datum/om_test_entity/proc/step_b = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
 	cancel_proc = /datum/om_test_entity/proc/task_cancelled
+	var/datum/thing
 
-/datum/om/task_def/test_steps_fail
+/datum/om/task/test_steps_fail
 	name = "test_steps_fail"
 	steps = list(/datum/om_test_entity/proc/step_a = 1 SECONDS, /datum/om_test_entity/proc/step_fail = 1 SECONDS, /datum/om_test_entity/proc/step_b = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
 	cancel_proc = /datum/om_test_entity/proc/task_cancelled
 
-/datum/om/task_def/test_steps_done
+/datum/om/task/test_steps_done
 	name = "test_steps_done"
 	steps = list(/datum/om_test_entity/proc/step_done = 1 SECONDS, /datum/om_test_entity/proc/step_a = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
@@ -142,7 +143,7 @@
 
 /datum/unit_test/om/task_step_results/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	var/datum/om/task/T = om_task_start(E, /datum/om/task_def/test_steps)
+	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps, E)
 	TEST_ASSERT(istype(T), "the steps task starts: [T]")
 	scheduler_advance(1.1)
 	TEST_ASSERT_EQUAL(E.log.Join(","), "a", "step a runs after its delay")
@@ -155,18 +156,18 @@
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_DONE, "the task is done")
 
 	E.log.Cut()
-	var/datum/om/task/F = om_task_start(E, /datum/om/task_def/test_steps_fail)
+	var/datum/om/task/F = om_task_start(/datum/om/task/test_steps_fail, E)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(E.log.Join(","), "a,f,cancel:nope", "STEP_FAIL cancels with its reason and later steps never run")
 	TEST_ASSERT_EQUAL(F.reason, "nope", "the reason is kept")
 
 	E.log.Cut()
-	om_task_start(E, /datum/om/task_def/test_steps_done)
+	om_task_start(/datum/om/task/test_steps_done, E)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(E.log.Join(","), "d,complete", "STEP_DONE completes early")
 
 	E.log.Cut()
-	var/datum/om/task/C = om_task_start(E, /datum/om/task_def/test_steps)
+	var/datum/om/task/C = om_task_start(/datum/om/task/test_steps, E)
 	scheduler_advance(0.5)
 	TEST_ASSERT(om_task_cancel(C, "stop"), "cancelling mid-task is safe")
 	scheduler_advance(3)
@@ -174,11 +175,14 @@
 
 	E.log.Cut()
 	var/datum/om_test_entity/thing = entity(made)
-	var/datum/om/task/W = om_task_start(E, /datum/om/task_def/test_steps, null, list("thing" = thing))
-	TEST_ASSERT_EQUAL(W.param("thing"), thing, "a datum param resolves through its handle")
+	var/datum/om/task/W = om_task_start(/datum/om/task/test_steps, E, null, list("thing" = thing))
+	var/datum/om/task/test_steps/WS = W
+	TEST_ASSERT_EQUAL(WS.thing, thing, "a datum param is task state")
 	qdel(thing)
+	TEST_ASSERT_EQUAL(E.log.Join(","), "cancel:gone", "deleting a datum in the task's state cancels it at once")
+	TEST_ASSERT_NULL(WS.thing, "and clears the var, so on_cancel never sees a deleted datum")
 	scheduler_advance(1.5)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "cancel:gone", "a deleted param fails the task with a reason")
+	TEST_ASSERT_EQUAL(E.log.Join(","), "cancel:gone", "no step runs after")
 
 // ---------------------------------------------------------------- prompts
 
@@ -241,7 +245,7 @@
 	sleep(1)
 	return STEP_NEXT
 
-/datum/om/task_def/test_steps_sleepy
+/datum/om/task/test_steps_sleepy
 	name = "test_steps_sleepy"
 	steps = list(/datum/om_test_entity/proc/step_sleepy = 1 SECONDS, /datum/om_test_entity/proc/step_a = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
@@ -263,7 +267,7 @@
 	TEST_ASSERT("after" in E.log, "a timer due with the sleeping one still runs in the same pass")
 
 	E.log.Cut()
-	var/datum/om/task/T = om_task_start(E, /datum/om/task_def/test_steps_sleepy)
+	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps_sleepy, E)
 	scheduler_advance(1.5)
 	GLOB.om_expect_sleep = FALSE
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 2, "the sleeping step is counted")

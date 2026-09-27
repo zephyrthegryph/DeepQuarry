@@ -1159,21 +1159,21 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 // ---------------------------------------------------------------- tasks and services
 
 /datum/om/registry/proc/build_tasks()
-	for(var/path in subtypesof(/datum/om/task_def))
-		var/datum/om/task_def/T = new path
+	for(var/path in subtypesof(/datum/om/task))
+		var/datum/om/task/T = new path
 		if(om_is_abstract(T) || (T.registry_skip && !include_skipped))
 			continue
 		add_task(T, "[path]")
 		task_by_type[path] = T
 	for(var/datum/om/bundle/B as anything in bundles)
 		for(var/name in B.tasks)
-			var/datum/om/task_def/T = parse_task_row(name, B.tasks[name], B)
+			var/datum/om/task/T = parse_task_row(name, B.tasks[name], B)
 			if(T)
 				add_task(T, "[B.type]")
-	for(var/datum/om/task_def/T as anything in tasks)
+	for(var/datum/om/task/T as anything in tasks)
 		T.compile(src)
 
-/datum/om/registry/proc/add_task(datum/om/task_def/T, where)
+/datum/om/registry/proc/add_task(datum/om/task/T, where)
 	if(!T.name)
 		T.name = "[T.type]"
 	if(task_by_name[T.name])
@@ -1182,6 +1182,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	tasks += T
 	task_by_name[T.name] = T
 
+/// A bundle's task row: a task declared as data (its prototype is a plain /datum/om/task).
 /datum/om/registry/proc/parse_task_row(name, row, datum/om/bundle/B)
 	if(!islist(row))
 		error("[B.type] tasks: [name] row must be a list")
@@ -1195,7 +1196,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	if(isnull(L["duration"]))
 		error("[B.type] tasks: [name] needs a duration")
 		return null
-	var/datum/om/task_def/T = new /datum/om/task_def
+	var/datum/om/task/T = new /datum/om/task
 	T.name = name
 	T.duration = L["duration"]
 	T.claims = L["claims"]

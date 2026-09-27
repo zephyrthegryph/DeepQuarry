@@ -423,14 +423,14 @@
 	if(!cloak_begin())
 		return
 	animate(src, alpha = 0, time = 1 SECOND)
-	if(istext(om_task_start(src, /datum/om/task_def/mob_work/cloak, src)))
+	if(istext(om_task_start(/datum/om/task/mob_work/cloak, src, src)))
 		cloak_finish()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/om/task/task)
 	alpha = initial(alpha)
 	cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/om/task/task, reason)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/om/task/task)
 	alpha = initial(alpha)
 	uncloak()
 

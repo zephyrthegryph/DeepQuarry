@@ -197,7 +197,7 @@
 	interpreter.Run()
 	if(interpreter.IsSuspended())
 		// The script called sleep(): the rest runs as task steps.
-		if(istype(om_task_start(src, /datum/om/task_def/ntsl_script, null, list("signal" = signal, "relay" = relay)), /datum/om/task))
+		if(istype(om_task_start(/datum/om/task/ntsl_script, src, null, list("signal" = signal, "relay" = relay)), /datum/om/task))
 			return FALSE
 		script_dropped()
 	apply_signal(signal)
@@ -206,28 +206,30 @@
 /// A telecomms script that called sleep(): each step resumes it after its sleep; once it is done
 /// the signal gets the script's changes and, for a server run, is relayed. The task claims the
 /// compiler; deleting the compiler or the signal drops the rest of the script.
-/datum/om/task_def/ntsl_script
+/datum/om/task/ntsl_script
 	name = "ntsl script"
 	claims_actor = TRUE
 	steps = list(/datum/TCS_Compiler/proc/script_step = 0)
 	cancel_proc = /datum/TCS_Compiler/proc/script_cancelled
+	var/datum/signal/signal
+	var/relay = FALSE
+	var/waited = FALSE
 
-/datum/TCS_Compiler/proc/script_step(datum/om/task/T)
-	var/list/P = T.params
-	if(!P["waited"])
-		P["waited"] = TRUE
+/datum/TCS_Compiler/proc/script_step(datum/om/task/ntsl_script/T)
+	if(!T.waited)
+		T.waited = TRUE
 		return STEP_REPEAT(interpreter.yield_for)
 	if(!interpreter.Resume())
 		return STEP_REPEAT(interpreter.yield_for)
-	var/datum/signal/signal = T.param("signal")
+	var/datum/signal/signal = T.signal
 	if(!signal)
 		return STEP_FAIL("gone")
 	apply_signal(signal)
-	if(P["relay"])
+	if(T.relay)
 		Holder?.relay_signal(signal)
 	return STEP_DONE
 
-/datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T, reason)
+/datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T)
 	script_dropped()
 
 /// Forgets a suspended run.

@@ -79,7 +79,7 @@
 				return null
 	if(rec.tasks)
 		for(var/datum/om/task/T as anything in rec.tasks.Copy())
-			for(var/path in T.def.interrupted_by)
+			for(var/path in T.spec.interrupted_by)
 				if(istype(event, path))
 					om_task_cancel(T, "interrupted")
 					break

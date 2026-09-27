@@ -163,7 +163,7 @@
 			return
 		user.hacking = 1
 		to_chat(usr, "Beginning hack sequence. Estimated time until completed: 30 seconds.")
-		om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "on_done" = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, "script" = list(
+		om_task_start(/datum/om/task/malf_hack, user, target, list("complete_proc" = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, "script" = list(
 			list(0, null, "SYSTEM LOG: Remote Connection Estabilished (IP #UNKNOWN#)"),
 			list(10 SECONDS, "SYSTEM LOG: Connection Closed", "SYSTEM LOG: User Admin logged on. (L1 - SysAdmin)"),
 			list(5 SECONDS, "SYSTEM LOG: User Admin disconnected.", "SYSTEM LOG: User Admin - manual resynchronisation triggered."),
@@ -213,30 +213,32 @@
 								"1010010011110000100101000100",\
 								"0010010100010011010001001010")))
 		script += list(list(5, null, "OPERATING KEYCODES RESET. SYSTEM FAILURE. EMERGENCY SHUTDOWN FAILED. SYSTEM FAILURE."))
-		om_task_start(user, /datum/om/task_def/malf_hack, null, list("target" = target, "script" = script, "on_done" = /mob/living/silicon/ai/proc/malf_hack_ai_done))
+		om_task_start(/datum/om/task/malf_hack, user, target, list("script" = script, "complete_proc" = /mob/living/silicon/ai/proc/malf_hack_ai_done))
 
 
 // END ABILITY VERBS
 
-/// A malfunctioning AI's scripted hack of another silicon. params: target; script, a list of
-/// stages list(wait, message to the target if the AI died meanwhile, message(s) to the target,
-/// message to the AI); on_done, a proc run on the AI with the target after the last stage.
-/datum/om/task_def/malf_hack
+/// A malfunctioning AI's scripted hack of another silicon (the target). script: a list of stages
+/// list(wait, message to the target if the AI died meanwhile, message(s) to the target, message
+/// to the AI). complete_proc runs on the AI with the task after the last stage.
+/datum/om/task/malf_hack
 	name = "malf hack"
 	steps = list(/mob/living/silicon/ai/proc/malf_hack_step = 0)
 	cancel_proc = /mob/living/silicon/ai/proc/malf_hack_stopped
+	var/list/script
+	var/stage_no = 1
+	var/waited = FALSE
 
-/mob/living/silicon/ai/proc/malf_hack_stopped(datum/om/task/T, reason)
+/mob/living/silicon/ai/proc/malf_hack_stopped(datum/om/task/T)
 	hacking = 0
 
-/mob/living/silicon/ai/proc/malf_hack_step(datum/om/task/T)
-	var/list/P = T.params
-	var/list/script = P["script"]
-	var/mob/living/silicon/target = T.param("target")
-	var/i = P["i"] || 1
+/mob/living/silicon/ai/proc/malf_hack_step(datum/om/task/malf_hack/T)
+	var/list/script = T.script
+	var/mob/living/silicon/target = T.target
+	var/i = T.stage_no
 	var/list/stage = script[i]
-	if(!P["waited"])
-		P["waited"] = TRUE
+	if(!T.waited)
+		T.waited = TRUE
 		if(stage[1] > 0)
 			return STEP_REPEAT(stage[1])
 	if(stage[2] && is_dead())
@@ -247,21 +249,22 @@
 			to_chat(target, message)
 	if(length(stage) >= 4)
 		to_chat(src, stage[4])
-	P["waited"] = FALSE
-	P["i"] = ++i
+	T.waited = FALSE
+	T.stage_no = ++i
 	if(i > length(script))
-		call(src, P["on_done"])(target)
 		hacking = 0
 		return STEP_DONE
 	return malf_hack_step(T)
 
-/mob/living/silicon/ai/proc/malf_hack_cyborg_done(mob/living/silicon/robot/target)
+/mob/living/silicon/ai/proc/malf_hack_cyborg_done(datum/om/task/malf_hack/T)
+	var/mob/living/silicon/robot/target = T.target
 	// Connect the cyborg to AI
 	target.set_master_ai(src)
 	target.lawupdate = TRUE
 	target.sync()
 	target.show_laws()
 
-/mob/living/silicon/ai/proc/malf_hack_ai_done(mob/living/silicon/ai/target)
+/mob/living/silicon/ai/proc/malf_hack_ai_done(datum/om/task/malf_hack/T)
+	var/mob/living/silicon/ai/target = T.target
 	target.set_zeroth_law("You are slaved to [name]. You are to obey all it's orders. ALL LAWS OVERRIDDEN.")
 	target.show_laws()

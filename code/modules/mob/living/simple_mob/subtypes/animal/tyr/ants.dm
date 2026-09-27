@@ -305,7 +305,7 @@
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
 	if(nutrition < 75 || !istype(T) || (locate(/obj/effect/ant_structure) in T))
 		return FALSE
-	if(istext(om_task_start(src, /datum/om/task_def/mob_work/ant_build, T)))
+	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
 	return TRUE
@@ -375,7 +375,7 @@
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
 	if(nutrition < 75 || !istype(T) || (locate(/obj/effect/ant_structure) in T))
 		return FALSE
-	if(istext(om_task_start(src, /datum/om/task_def/mob_work/ant_build, T)))
+	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
 	return TRUE
@@ -576,5 +576,5 @@ ANT STRUCTURES
 	adjust_nutrition(-30)
 	new product(T)
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/om/task/task, reason)
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/om/task/task)
 	to_chat(src, span_warning("You need to stay still to build on \the [task.target]."))

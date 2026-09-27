@@ -81,11 +81,11 @@
 		return // Already doing it.
 	processing = TRUE
 	playsound(src, 'sound/machines/juicer.ogg', 50, 1)
-	om_task_start(src, /datum/om/task_def/slime_processing)
+	om_task_start(/datum/om/task/slime_processing, src)
 
 /// The processor at work: one thing a second (a core out of a slime, a body processed, or a
 /// monkey cube pressed from the recycled bodies) until it is empty.
-/datum/om/task_def/slime_processing
+/datum/om/task/slime_processing
 	name = "slime processing"
 	steps = list(/obj/machinery/processor/proc/processing_step = 0)
 	complete_proc = /obj/machinery/processor/proc/processing_done
@@ -119,7 +119,7 @@
 		return STEP_REPEAT(1 SECOND)
 	return STEP_DONE
 
-/obj/machinery/processor/proc/processing_done(datum/om/task/T, reason)
+/obj/machinery/processor/proc/processing_done(datum/om/task/T)
 	processing = FALSE
 	playsound(src, 'sound/machines/ding.ogg', 50, 1)
 

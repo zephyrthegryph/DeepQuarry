@@ -312,7 +312,7 @@
 		target_location = get_turf(src)
 
 	// The print run is a task claiming the lathe: busy (om_busy()) until the last item or a stop.
-	var/datum/om/task/run = om_task_start(src, /datum/om/task_def/lathe_print, null, list("design" = design, "remaining" = build_count, "build_time" = build_time_per_item, "cost_coefficient" = material_cost_coefficient, "charge" = charge_per_item, "materials" = materials_needed, "target" = target_location, "chosen" = chosen_materials))
+	var/datum/om/task/run = om_task_start(/datum/om/task/lathe_print, src, null, list("design" = design, "remaining" = build_count, "build_time" = build_time_per_item, "cost_coefficient" = material_cost_coefficient, "charge" = charge_per_item, "materials" = materials_needed, "drop_turf" = target_location, "chosen" = chosen_materials))
 	if(!istype(run))
 		print_sound.stop()
 		icon_state = initial(icon_state)
@@ -321,25 +321,33 @@
 	return TRUE
 
 /// An autolathe print run: one item every `build_time` until `remaining` runs out or a check fails.
-/datum/om/task_def/lathe_print
+/datum/om/task/lathe_print
 	name = "lathe print"
 	claims_actor = TRUE
 	steps = list(/obj/machinery/autolathe/proc/print_step = 0)
 	complete_proc = /obj/machinery/autolathe/proc/print_run_ended
 	cancel_proc = /obj/machinery/autolathe/proc/print_run_ended
+	var/datum/design_techweb/design
+	var/remaining = 0
+	var/build_time = 0
+	var/cost_coefficient = 1
+	var/charge = 0
+	var/list/materials
+	var/turf/drop_turf
+	var/list/chosen
+	var/started = FALSE
 
-/obj/machinery/autolathe/proc/print_step(datum/om/task/T)
-	var/list/P = T.params
-	if(!P["started"])
-		P["started"] = TRUE
-		return STEP_REPEAT(P["build_time"])
-	var/remaining = do_make_item(T.param("design"), P["remaining"], P["build_time"], P["cost_coefficient"], P["charge"], P["materials"], T.param("target"), P["chosen"])
+/obj/machinery/autolathe/proc/print_step(datum/om/task/lathe_print/T)
+	if(!T.started)
+		T.started = TRUE
+		return STEP_REPEAT(T.build_time)
+	var/remaining = do_make_item(T.design, T.remaining, T.build_time, T.cost_coefficient, T.charge, T.materials, T.drop_turf, T.chosen)
 	if(remaining <= 0)
 		return STEP_DONE
-	P["remaining"] = remaining
-	return STEP_REPEAT(P["build_time"])
+	T.remaining = remaining
+	return STEP_REPEAT(T.build_time)
 
-/obj/machinery/autolathe/proc/print_run_ended(datum/om/task/T, reason)
+/obj/machinery/autolathe/proc/print_run_ended(datum/om/task/T)
 	finalize_build()
 
 /**

@@ -534,5 +534,5 @@
 /// Ends the hold ai_busy_begin() started (a timed action's own claim ends with its task).
 /mob/living/proc/ai_busy_end()
 	var/datum/om/task/T = om_claiming_task(src)
-	if(T?.def.type == /datum/om/task_def/hold)
+	if(istype(T, /datum/om/task/hold))
 		om_task_cancel(T, "done")

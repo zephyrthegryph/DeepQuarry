@@ -316,7 +316,7 @@
 			var/datum/om/derived/D = defs[rec.dv[i]]
 			slow |= D.inputs
 	for(var/datum/om/task/T as anything in rec.tasks)
-		slow |= T.def.interrupt_on
+		slow |= T.interrupt_on
 	rec.slow_mask = slow
 	rec.owner.om_listen = mask | slow | rec.table?.cache_mask
 

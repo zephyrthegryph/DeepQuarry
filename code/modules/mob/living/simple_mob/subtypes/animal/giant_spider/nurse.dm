@@ -161,7 +161,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_tile(turf/T)
 	if(!istype(T) || (locate(/obj/effect/spider/stickyweb) in T))
 		return FALSE
-	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_web, T)))
+	if(istext(om_task_start(/datum/om/task/mob_work/spider_web, src, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance.") )
 	return TRUE
@@ -171,7 +171,7 @@
 	if(!(locate(/obj/effect/spider/stickyweb) in T))
 		new web_type(T)
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/om/task/task, reason)
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/om/task/task)
 	to_chat(src, span_warning("You need to stay still to finish that on \the [task.target]."))
 
 /// Starts laying a cluster of eggs on `T` (a 5 s task, as web_tile()). TRUE when it started.
@@ -180,7 +180,7 @@
 		return FALSE
 	if(locate(/obj/effect/spider/eggcluster) in T)
 		return FALSE // Already got eggs here.
-	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_eggs, T)))
+	if(istext(om_task_start(/datum/om/task/mob_work/spider_eggs, src, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") ) // the task claims the spider: no egg spam
 	return TRUE

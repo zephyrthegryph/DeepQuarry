@@ -24,7 +24,8 @@ included; static/global/const are not instance state) must be named by its
 type's declared_owned_vars(), declared_owned_list_vars(), declared_pair_vars(),
 declared_backlist_vars() or declared_cache_vars() in the same file. Relations
 and slots have no view field, and an OM handle is a text var, so neither is
-an object-typed var at all. Medical, body, organs, surgery and Life are
+an object-typed var at all. Vars of task types (/datum/om/task/...) are task
+state, held by the task_holds relation, and don't count. Medical, body, organs, surgery and Life are
 included (lifecycle.md sec 7).
 
 Usage:
@@ -138,6 +139,10 @@ def lc_ref_sites(rel, raw_text, code_text):
         if mods & UNSAVED_MODS or not under(vtype, REF_ROOTS):
             continue
         if name in declared.get(owner_type, ()):
+            continue
+        # A task's vars are its state: every datum in them is held by the task_holds
+        # relation, which clears the var and cancels the task when the datum is deleted.
+        if owner_type == "/datum/om/task" or owner_type.startswith("/datum/om/task/"):
             continue
         sites.append((rel, no, "%s var/%s %s" % (owner_type, vtype.strip("/"), name)))
     return sites
