@@ -306,6 +306,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
+// LIFECYCLE: leaves the active, closed and resolved ticket lists.
 /datum/ticket/Destroy()
 	RemoveActive()
 	GLOB.tickets.closed_tickets -= src
