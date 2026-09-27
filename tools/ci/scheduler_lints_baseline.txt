@@ -2,7 +2,7 @@
 # tools/ci/scheduler_lints.py fails when a count rises above its line here.
 # Lower a line when a sweep removes sites: `python tools/ci/scheduler_lints.py --update`.
 spawn 39
-addtimer 791
+addtimer 789
 invoke_async 115
 do_after 0
 sleep 70

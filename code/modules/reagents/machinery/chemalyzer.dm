@@ -13,7 +13,6 @@
 	idle_power_usage = 20
 	clicksound = "button"
 	circuit = /obj/item/circuitboard/chemical_analyzer
-	var/analyzing = FALSE
 	var/list/found_reagents
 
 /obj/machinery/chemical_analyzer/Initialize(mapload)
@@ -21,7 +20,7 @@
 	default_apply_parts()
 
 /obj/machinery/chemical_analyzer/update_icon()
-	icon_state = "chem_analyzer[analyzing ? "-working":""]"
+	icon_state = "chem_analyzer[om_busy(src) ? "-working":""]"
 
 /obj/machinery/chemical_analyzer/declare_interactions(list/into)
 	into += list(
@@ -37,16 +36,14 @@
 	effect = /obj/machinery/chemical_analyzer/proc/interaction_scan
 
 /obj/machinery/chemical_analyzer/proc/interaction_scan(mob/user, obj/item/held, datum/interaction/interaction)
-	analyzing = TRUE
 	update_icon()
 	to_chat(user, span_notice("Analyzing \the [held], please stand by..."))
 
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(scan_done), list(user, held), on_fail = PROC_REF(scan_failed), fail_args = list(user))
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(scan_done), list(user, held), on_fail = PROC_REF(scan_failed), fail_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/machinery/chemical_analyzer/proc/scan_failed(mob/user)
 	to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
-	analyzing = FALSE
 	update_icon()
 
 /obj/machinery/chemical_analyzer/proc/scan_done(mob/user, obj/item/held)
@@ -67,7 +64,6 @@
 	else
 		to_chat(user, span_warning("Nothing detected in [held]"))
 
-	analyzing = FALSE
 	update_icon()
 
 /obj/machinery/chemical_analyzer/screwdriver_act(mob/user, obj/item/tool)

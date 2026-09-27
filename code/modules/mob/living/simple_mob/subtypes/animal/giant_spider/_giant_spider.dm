@@ -167,7 +167,7 @@
 // A different type of much weaker bite with different effects for event spawned spiders before becoming hostile
 /mob/living/simple_mob/animal/giant_spider/proc/warning_bite(mob/living/A)
 	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	// Telegraph, since getting bitten suddenly feels bad.
 	do_windup_animation(A, warning_warmup)
 	addtimer(CALLBACK(src, PROC_REF(warning_leap), A), warning_warmup) // For the telegraphing.
@@ -210,6 +210,6 @@
 
 	step_away(src,victim,3)
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /datum/decl/mob_organ_names/spider
 	hit_zones = list("cephalothorax", "abdomen", "left forelegs", "right forelegs", "left hind legs", "right hind legs", "pedipalp", "mouthparts")

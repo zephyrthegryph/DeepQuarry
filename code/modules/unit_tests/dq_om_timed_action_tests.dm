@@ -97,29 +97,61 @@
 	var/datum/om/task/timed/next = om_do_after(other, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("next"), claims = TRUE)
 	TEST_ASSERT(istype(next), "the claim is released on completion: [next]")
 
-/datum/om_test_entity/flagged
-	var/busy = FALSE
+/// "Busy" is a claim, not a flag: a timed action claims the thing doing the work (busy = X);
+/// om_busy(X) holds exactly while the action runs, a second claiming action is refused, and the
+/// claim is released on completion, on cancel and when the action's other end is deleted.
+/datum/unit_test/om/timed_action_busy_claims
 
-/// A flag set before a converted action is owned by it: when the action's
-/// timer is dropped (an argument was deleted), the flag still clears itself,
-/// and a stale expiry never clears a newer hold.
-/datum/unit_test/om/timed_action_flag_owned
-
-/datum/unit_test/om/timed_action_flag_owned/run_om(list/made)
-	var/datum/om_test_entity/flagged/holder = entity(made, /datum/om_test_entity/flagged)
-	var/datum/om_test_entity/arg = entity(made)
-	om_flag_hold(holder, "busy", 2 SECONDS)
-	TEST_ASSERT(holder.busy, "the hold sets the flag")
-	// The continuation that would clear it is dropped with its deleted argument.
-	om_after(holder, 1 SECOND, /datum/om_test_entity/proc/timer_hit, arg)
-	qdel(arg)
+/datum/unit_test/om/timed_action_busy_claims/run_om(list/made)
+	var/list/L = timed_setup(made)
+	var/mob/living/carbon/human/user = L[1]
+	var/obj/item/target = L[2]
+	var/datum/om_test_entity/witness = entity(made)
+	var/obj/item/tool = allocate(/obj/item/tool/wrench, get_turf(user))
+	TEST_ASSERT(!om_busy(tool), "nothing claims the tool yet")
+	var/datum/om/task/timed/T = om_do_after(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("done"), busy = tool)
+	TEST_ASSERT(istype(T), "the claiming action starts: [T]")
+	TEST_ASSERT(om_busy(tool), "the running action claims its tool")
+	TEST_ASSERT_EQUAL(om_claiming_task(tool), T, "om_claiming_task() finds the action")
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human)
+	var/obj/item/other_target = allocate(/obj/item/stack/material/steel, get_turf(other))
+	TEST_ASSERT_EQUAL(om_do_after(other, 1 SECONDS, other_target, witness, /datum/om_test_entity/proc/timer_hit, list("second"), busy = tool), "busy", "a second action on a busy tool is refused")
+	TEST_ASSERT(!om_busy(target), "a busy claim doesn't make the target in use")
 	scheduler_advance(1.5)
-	TEST_ASSERT(holder.busy, "the flag is still held before its expiry")
-	scheduler_advance(1)
-	TEST_ASSERT(!holder.busy, "a dropped continuation doesn't leave the flag set forever")
+	TEST_ASSERT_EQUAL(T.state, OM_TASK_DONE, "the action completes")
+	TEST_ASSERT(!om_busy(tool), "completion releases the claim")
 
-	om_flag_hold(holder, "busy", 1 SECOND)
-	holder.busy = FALSE // the continuation ran and cleared it
-	om_flag_hold(holder, "busy", 5 SECONDS) // a newer action holds it again
+	// Cancel releases it.
+	var/datum/om/task/timed/C = om_do_after(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("cancelled"), busy = tool)
+	TEST_ASSERT(om_busy(tool), "claimed again")
+	user.forceMove(get_step(user, EAST))
+	scheduler_advance(0.2)
+	TEST_ASSERT_EQUAL(C.state, OM_TASK_CANCELLED, "moving cancels")
+	TEST_ASSERT(!om_busy(tool), "cancel releases the claim")
+
+	// Deleting the claimed thing ends the action; deleting the target releases the claim.
+	var/obj/item/doomed = allocate(/obj/item/tool/wrench, get_turf(user))
+	var/datum/om/task/timed/D = om_do_after(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("doomed"), IGNORE_USER_LOC_CHANGE, busy = doomed)
+	qdel(doomed)
+	TEST_ASSERT_EQUAL(D.state, OM_TASK_CANCELLED, "deleting the claimed thing cancels the action")
+	var/datum/om/task/timed/E = om_do_after(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("gone"), IGNORE_USER_LOC_CHANGE, busy = tool)
+	qdel(target)
+	TEST_ASSERT_EQUAL(E.state, OM_TASK_CANCELLED, "deleting the target cancels the action")
+	TEST_ASSERT(!om_busy(tool), "and releases the claim")
+
+/// om_hold_busy(): an action whose continuation is a timer holds its worker busy for a duration; the
+/// hold ends by its deadline, by om_release_busy(), or when the worker is deleted, and runs on_end.
+/datum/unit_test/om/timed_action_hold
+
+/datum/unit_test/om/timed_action_hold/run_om(list/made)
+	var/datum/om_test_entity/holder = entity(made)
+	var/datum/om/task/H = om_hold_busy(holder, 1 SECOND, /datum/om_test_entity/proc/timer_hit)
+	TEST_ASSERT(istype(H), "the hold starts: [H]")
+	TEST_ASSERT(om_busy(holder), "the hold claims its holder")
+	TEST_ASSERT(istext(om_hold_busy(holder, 1 SECOND)), "a second hold is refused while busy")
 	scheduler_advance(1.5)
-	TEST_ASSERT(holder.busy, "a stale expiry doesn't clear a newer hold")
+	TEST_ASSERT(!om_busy(holder), "the hold ends at its deadline")
+	TEST_ASSERT_EQUAL(length(holder.log), 1, "on_end ran once")
+	om_hold_busy(holder, 5 SECONDS)
+	TEST_ASSERT(om_release_busy(holder), "om_release_busy() ends a hold early")
+	TEST_ASSERT(!om_busy(holder), "released")

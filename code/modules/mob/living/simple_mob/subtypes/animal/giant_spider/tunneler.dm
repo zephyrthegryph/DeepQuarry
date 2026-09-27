@@ -78,7 +78,7 @@
 
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/do_special_attack(atom/A)
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
@@ -133,7 +133,7 @@
 	tunnel_surface()
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_surface()
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	emerge()
 
 /// Tunnels toward destination a tile per tunnel_tile_speed, then calls

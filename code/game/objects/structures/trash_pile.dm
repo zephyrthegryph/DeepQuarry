@@ -6,7 +6,6 @@
 	density = TRUE
 	anchored = TRUE
 
-	var/busy = FALSE				// Used so you can't spamclick to loot.
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
 	var/mob/living/hider		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
@@ -110,7 +109,7 @@
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 
-		if(busy)
+		if(om_busy(src)) // a search claims the pile
 			to_chat(H, span_warning("\The [src] is already being searched."))
 			return
 
@@ -119,9 +118,7 @@
 			to_chat(hider,span_warning("[user] is searching the trash pile you're in!"))
 
 		//Do the searching
-		om_flag_hold(src, "busy")
-		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-		busy = FALSE
+		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 	else
 		return ..()
 

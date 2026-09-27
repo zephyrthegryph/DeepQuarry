@@ -81,7 +81,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		var/turf/S = self.loc
 		self.attached = locate(/obj/structure/cable) in S
 		if(self.attached)
-			if(self.ai_brain) self.ai_brain.busy = TRUE
+			if(self.ai_brain) self.ai_busy_begin()
 			if(prob(2))
 				self.visible_message(span_infoplain(span_bold("\The [self]") + " begins to sink power from the net."))
 			if(prob(5))

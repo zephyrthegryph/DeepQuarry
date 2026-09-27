@@ -182,7 +182,6 @@
 
 	var/wielded = 0
 	var/cooldown = 0
-	var/busy = 0
 
 /obj/item/shockpaddles/proc/set_cooldown(delay)
 	cooldown = 1
@@ -208,7 +207,7 @@
 		icon_state = "defibpaddles[wielded]_cooldown"
 
 /obj/item/shockpaddles/proc/can_use(mob/user, mob/M)
-	if(busy)
+	if(om_busy(src))
 		return 0
 	if(!check_charge(chargecost))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
@@ -337,32 +336,20 @@
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
 	if(can_use(user, H))
-		om_flag_hold(src, "busy")
-		update_icon()
-
 		do_revive(H, user)
-
-		busy = FALSE
-		update_icon()
 
 	return ITEM_INTERACT_SUCCESS
 
 //Since harm-intent now skips the delay for deliberate placement, you have to be able to hit them in combat in order to shock people.
 /obj/item/shockpaddles/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(ishuman(target) && can_use(user, target))
-		om_flag_hold(src, "busy")
-		update_icon()
-
 		do_electrocute(target, user, hit_zone)
-
-		busy = 0
-		update_icon()
 
 		return 1
 
 	return ..()
 
-// This proc is used so that we can return out of the revive process while ensuring that busy and update_icon() are handled
+// The revive chain: each timed action claims the paddles (om_busy()) while it runs.
 /obj/item/shockpaddles/proc/do_revive(mob/living/carbon/human/H, mob/user)
 	var/mob/observer/dead/ghost = H.get_ghost()
 	if(ghost)
@@ -370,7 +357,7 @@
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
 	user.visible_message(span_warning("\The [user] begins to place [src] on [H]'s chest."), span_warning("You begin to place [src] on [H]'s chest..."))
-	om_do_after(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user))
+	om_do_after(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
 	return TRUE
 
 /obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
@@ -388,7 +375,7 @@
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_revive_charged), done_args = list(H, user, output_envelope))
+	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_revive_charged), done_args = list(H, user, output_envelope), busy = src)
 
 /obj/item/shockpaddles/proc/do_revive_charged(mob/living/carbon/human/H, mob/user, output_envelope)
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
@@ -461,7 +448,7 @@
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_electrocute_timed_done), done_args = list(H, user, target_zone, output_envelope))
+	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_electrocute_timed_done), done_args = list(H, user, target_zone, output_envelope), busy = src)
 	return TRUE
 
 /obj/item/shockpaddles/proc/do_electrocute_timed_done(mob/living/carbon/human/H, mob/user, target_zone, output_envelope)

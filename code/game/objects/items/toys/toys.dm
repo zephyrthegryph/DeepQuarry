@@ -699,7 +699,6 @@
 	anchored = FALSE
 	density = TRUE
 	var/phrase = "I don't want to exist anymore!"
-	var/searching = FALSE
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 
@@ -713,9 +712,8 @@
 /obj/structure/plushie/attack_hand(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
-	if(stored_item && opened && !searching)
-		searching = TRUE
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
+	if(stored_item && opened && !om_busy(src))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
@@ -732,11 +730,7 @@
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
 	stored_item = null
-	searching = FALSE
 	return
-
-/obj/structure/plushie/proc/attack_hand_timed_failed(mob/user)
-	searching = FALSE
 
 /obj/structure/plushie/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/threadneedle) && opened)
@@ -801,7 +795,6 @@
 	w_class = ITEMSIZE_TINY
 	var/last_message = 0
 	var/pokephrase = "Uww!"
-	var/searching = FALSE
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 	var/adjusted_name // Our modified name. Used so people don't do funny business with us!
@@ -837,9 +830,8 @@
 		return TRUE
 	if(special_handling)
 		return
-	if(stored_item && opened && !searching)
-		searching = TRUE
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
+	if(stored_item && opened && !om_busy(src))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
 
 	if(world.time - last_message <= 1 SECOND)
 		return
@@ -862,11 +854,7 @@
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
 	stored_item = null
-	searching = FALSE
 	return
-
-/obj/item/toy/plushie/proc/attack_self_timed_failed(mob/user)
-	searching = FALSE
 
 /obj/item/toy/plushie/proc/say_phrase()
 	//If we don't prevent impersonation, we just speak like normal!
@@ -2202,7 +2190,7 @@
 /obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(O, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(O, user))
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(O, user), on_fail = PROC_REF(attackby_timed_failed), fail_args = list(O, user), claims = TRUE)
 
 	else ..()
 

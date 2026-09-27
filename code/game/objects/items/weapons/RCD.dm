@@ -19,7 +19,6 @@
 	var/stored_matter = 0
 	var/max_stored_matter = RCD_MAX_CAPACITY
 	var/ranged = FALSE
-	var/busy = FALSE
 	var/allow_concurrent_building = FALSE // If true, allows for multiple RCD builds at the same time.
 	var/mode_index = 1
 	var/list/modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT)
@@ -107,7 +106,7 @@
 
 // Used to call rcd_act() on the atom hit.
 /obj/item/rcd/proc/use_rcd(atom/A, mob/living/user)
-	if(busy && !allow_concurrent_building)
+	if(!allow_concurrent_building && om_busy(src)) // an operation in progress claims the RCD
 		to_chat(user, span_warning("\The [src] is busy finishing its current operation, be patient."))
 		return FALSE
 
@@ -135,19 +134,27 @@
 		if(!isturf(beam_origin.loc))
 			beam_origin = user.loc
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
-	om_flag_hold(src, "busy")
 
 	perform_effect(A, true_delay)
-	om_do_after(user, true_delay, target = A, receiver = src, on_done = PROC_REF(use_rcd_timed_done), done_args = list(A, user, rcd_results, output_envelope))
-
-	// If they moved, kill the beam immediately.
-	qdel(rcd_beam)
-	busy = FALSE
-	cleanup_effect(A)
+	// The beam travels in a list: it ends itself, so it is never a captured argument.
+	var/list/beam_box = list(rcd_beam)
+	var/started = om_do_after(user, true_delay, target = A, receiver = src, on_done = PROC_REF(use_rcd_timed_done), done_args = list(A, user, rcd_results, output_envelope, beam_box), on_fail = PROC_REF(use_rcd_interrupted), fail_args = list(A, beam_box), busy = allow_concurrent_building ? null : src)
+	if(istext(started))
+		use_rcd_interrupted(A, beam_box)
 	return FALSE
 
-/obj/item/rcd/proc/use_rcd_timed_done(atom/A, mob/living/user, list/rcd_results, output_envelope)
-	busy = FALSE
+/// The operation stopped (they moved, or it never started): kill the beam and the effect.
+/obj/item/rcd/proc/use_rcd_interrupted(atom/A, list/beam_box)
+	var/datum/beam/rcd_beam = beam_box?[1]
+	if(!QDELETED(rcd_beam))
+		rcd_beam.End()
+	if(A)
+		cleanup_effect(A)
+
+/obj/item/rcd/proc/use_rcd_timed_done(atom/A, mob/living/user, list/rcd_results, output_envelope, list/beam_box)
+	var/datum/beam/rcd_beam = beam_box?[1]
+	if(!QDELETED(rcd_beam))
+		rcd_beam.End()
 	// Doing another check in case we lost matter during the delay for whatever reason.
 	if(!can_afford(rcd_results[RCD_VALUE_COST] * output_envelope))
 		to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))

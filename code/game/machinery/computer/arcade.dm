@@ -338,7 +338,6 @@
 	icon_state = "arcade1"
 	icon_screen = "orion"
 	circuit = /obj/item/circuitboard/arcade/orion_trail
-	var/busy = 0 //prevent clickspam that allowed people to ~speedrun~ the game.
 	var/engine = 0
 	var/hull = 0
 	var/electronics = 0
@@ -434,10 +433,6 @@
 		usr.unset_machine()
 		// close the TGUI panel instead of a browse() window.
 		SStgui.close_uis(src)
-
-	if(busy)
-		return
-	om_flag_hold(src, "busy")
 
 	if (href_list["continue"]) //Continue your travels
 		if(gameStatus == ORION_STATUS_NORMAL && !event && turns != 7)
@@ -693,7 +688,6 @@
 
 	src.add_fingerprint(usr)
 	src.updateUsrDialog(usr)
-	busy = 0
 	return
 
 

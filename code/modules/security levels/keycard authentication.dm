@@ -11,7 +11,6 @@
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
 	var/confirm_delay = 20 //(2 seconds)
-	var/busy = 0 //Busy when waiting for authentication or an event request has been sent from this device.
 	var/obj/machinery/keycard_auth/event_source
 	var/mob/event_triggered_by
 	var/mob/event_confirmed_by
@@ -103,7 +102,7 @@
 		return TRUE
 	if(!user.IsAdvancedToolUser())
 		return FALSE
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, "This device is busy.")
 		return TRUE
 	tgui_interact(user)
@@ -126,7 +125,7 @@
 	. = ..()
 	if(.)
 		return
-	if(busy)
+	if(om_busy(src))
 		to_chat(usr, "This device is busy.")
 		return TRUE
 	if(usr.stat || stat & (BROKEN|NOPOWER))
@@ -175,16 +174,16 @@
 	if(stat & (BROKEN|NOPOWER))
 		return
 	event_source = source
-	om_flag_hold(src, "busy")
+	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
+	om_release_busy(src, "new request")
 	active = 1
 	icon_state = "auth_on"
-	om_after(src, confirm_delay, PROC_REF(receive_window_closed))
+	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
 	event_source = null
 	icon_state = "auth_off"
 	active = 0
-	busy = 0
 
 /obj/machinery/keycard_auth/proc/trigger_event(mob/user)
 	switch(event)

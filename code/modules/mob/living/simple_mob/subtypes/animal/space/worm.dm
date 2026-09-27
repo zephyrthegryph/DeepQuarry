@@ -218,7 +218,7 @@
 			if(currentlyEating != obstacle)
 				currentlyEating = obstacle
 
-			if(ai_brain) om_flag_hold(ai_brain, "busy")
+			ai_busy_begin()
 			AttemptToEat(obstacle)
 	else
 		currentlyEating = null
@@ -259,7 +259,7 @@
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_finished(success)
 	if(success)
 		currentlyEating = null
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(turf/simulated/wall/W)
 	W.dismantle_wall()

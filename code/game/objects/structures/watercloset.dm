@@ -953,7 +953,6 @@
 	icon_state = "sink"
 	desc = "A sink used for washing one's hands and face."
 	anchored = TRUE
-	var/busy = 0 	//Something's being washed at the moment
 
 /obj/structure/sink/Initialize(mapload)
 	. = ..()
@@ -990,19 +989,17 @@
 	if(!Adjacent(user))
 		return
 
-	if(busy)
+	if(om_busy(src)) // a wash claims the sink
 		to_chat(user, span_warning("Someone's already washing here."))
 		return
 
 	to_chat(user, span_notice("You start washing your hands."))
 	playsound(src, 'sound/effects/sink_long.ogg', 75, 1)
 
-	om_flag_hold(src, "busy")
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/sink/proc/attack_hand_timed_done(mob/user)
-	busy = 0
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -1026,12 +1023,11 @@
 		V.show_message(span_notice("[user] washes their hands using \the [src]."))
 
 /obj/structure/sink/proc/attack_hand_timed_failed(mob/user)
-	busy = 0
 	to_chat(user, span_notice("You stop washing your hands."))
 	return
 
 /obj/structure/sink/attackby(obj/item/O, mob/user)
-	if(busy)
+	if(om_busy(src)) // a wash claims the sink
 		to_chat(user, span_warning("Someone's already washing here."))
 		return
 
@@ -1083,12 +1079,10 @@
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
-	om_flag_hold(src, "busy")
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(O, user, I), on_fail = PROC_REF(attackby_timed_failed4), fail_args = list(O, user, I))
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(O, user, I), on_fail = PROC_REF(attackby_timed_failed4), fail_args = list(O, user, I), claims = TRUE)
 	return TRUE
 
 /obj/structure/sink/proc/attackby_timed_done4(obj/item/O, mob/user, obj/item/I)
-	busy = 0
 
 	O.wash(CLEAN_SCRUB)
 	O.water_act(rand(1,10))
@@ -1097,7 +1091,6 @@
 		span_notice("You wash \a [I] using \the [src]."))
 
 /obj/structure/sink/proc/attackby_timed_failed4(obj/item/O, mob/user, obj/item/I)
-	busy = 0
 	to_chat(user, span_notice("You stop washing \the [I]."))
 	return
 

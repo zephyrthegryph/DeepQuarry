@@ -301,7 +301,7 @@
 	return beaconlist
 
 /mob/living/bot/mulebot/proc/load(atom/movable/C)
-	if(busy || load || get_dist(C, src) > 1 || !isturf(C.loc))
+	if(om_busy(src) || load || get_dist(C, src) > 1 || !isturf(C.loc))
 		return
 
 	for(var/obj/structure/plasticflaps/P in src.loc)//Takes flaps into account
@@ -317,14 +317,14 @@
 	if(istype(crate))
 		crate.close()
 
-	om_flag_hold(src, "busy")
-
+	// Busy while the crate settles onto the bot.
+	if(istext(om_hold_busy(src, 2)))
+		return
 	C.forceMove(loc)
 	om_after(src, 2, PROC_REF(load_finish), C)
 
 /mob/living/bot/mulebot/proc/load_finish(atom/movable/C)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.
-		busy = 0
 		return
 	C.forceMove(src)
 	load = C
@@ -334,13 +334,10 @@
 		C.layer = layer + 0.1
 	add_overlay(C)
 
-	busy = 0
-
 /mob/living/bot/mulebot/proc/unload(dirn = 0)
-	if(!load || busy)
+	if(!load || om_busy(src))
 		return
 
-	om_flag_hold(src, "busy")
 	cut_overlays()
 
 	load.forceMove(loc)
@@ -359,7 +356,6 @@
 		AM.forceMove(loc)
 		AM.layer = initial(AM.layer)
 		AM.pixel_y = initial(AM.pixel_y)
-	busy = 0
 
 #undef MULE_IDLE
 #undef MULE_MOVING

@@ -658,6 +658,14 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   requires fail (re-checked on their channels on actor or target), when an
   `interrupted_by` event reaches the actor, or when either end is deleted.
   `on_complete` / `on_cancel` run once. Nothing polls.
+- **Busy is a claim, not a flag.** A task can also claim what does the work: its actor
+  (`claims_actor`), or a tool, bot or machine (`om_task_claim()`, `om_do_after(..., busy = X)`,
+  `use_tool(..., busy = X)`), on the `busy` relation so a busy worker can still be someone's
+  target. `om_busy(X)` is the query (a running task claims X, as worker or exclusive target);
+  `om_in_use(X)` asks only about target claims. The claim is released on complete, cancel or
+  delete. An ability whose continuation is a timer holds its worker with `om_hold_busy(X, d,
+  on_end)` (a claiming task done at its deadline; `om_release_busy()` ends it early). There
+  are no `busy`/`in_use` vars guarding timed actions.
 - `AWAIT(task, timeout)` is for legacy procs that must sleep; the timeout is
   mandatory and a missing one is an error.
 - `om_ui_bind(session, target, mask)` is a watch that holds the target at

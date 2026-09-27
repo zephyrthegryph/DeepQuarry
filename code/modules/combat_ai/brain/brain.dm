@@ -6,7 +6,7 @@
 // /datum/target_selector singletons. State that can't be class-level lives in
 // the world model (per-tick perception) or behavior_state (per-mob cooldowns).
 //
-// Duck-typed compatible with SSai/SSaifast: exposes `holder`, `busy`,
+// Duck-typed compatible with SSai/SSaifast: exposes `holder`, `is_busy()`,
 // `handle_strategicals()`, `handle_tactics()`, `process_flags`, `set_stance`.
 // SSai sleeps mobs by calling set_stance(STANCE_IDLE) — we accept the call as
 // a no-op since the brain has no stance enum.
@@ -19,7 +19,6 @@
 /datum/ai_brain
 	// --- SSai duck-typed surface ---
 	var/mob/living/holder = null    // SSai reads this. Same name as ai_holder.
-	var/busy = FALSE                // SSai reads this. Set TRUE while a behavior locks reselection.
 	var/process_flags = 0           // bitmask of DQAI_PROCESSING / FASTPROCESSING.
 
 	// --- Configuration ---
@@ -162,7 +161,7 @@
 			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 		sync_fast_processing()
 		return
-	if(busy)
+	if(is_busy())
 		return
 
 	if(active_behavior_type)
@@ -326,10 +325,10 @@
 	active_behavior_type = null
 	active_target = null
 	active_source = null
-	// Defensive: if a behavior's start() runtimed before clearing busy, the
+	// Defensive: if a behavior's start() runtimed before releasing its hold, the
 	// brain would lock up. stop_active is the funnel for every termination,
-	// so always release the lock here regardless of blocks_reselection.
-	busy = FALSE
+	// so always release the hold here regardless of blocks_reselection.
+	holder?.ai_busy_end()
 	// Force the next tick to re-pick rather than wait for the slow tick to
 	// flip selection_dirty.
 	selection_dirty = TRUE
@@ -518,3 +517,22 @@
 	for(var/btype in subscribed_signals[sig_type])
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))
+
+
+/// SSai reads this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
+/// action, or a behavior that blocks reselection (code/datums/om/task.dm, om_busy()).
+/datum/ai_brain/proc/is_busy()
+	return holder ? om_busy(holder) : FALSE
+
+/// An AI mob starts an ability whose later steps are timers: a hold task claims the mob, so its
+/// brain stops choosing, until ai_busy_end() or `cap` runs out. No-op without an AI.
+/mob/living/proc/ai_busy_begin(cap = 1 MINUTE)
+	if(!ai_brain)
+		return
+	return om_hold_busy(src, cap)
+
+/// Ends the hold ai_busy_begin() started (a timed action's own claim ends with its task).
+/mob/living/proc/ai_busy_end()
+	var/datum/om/task/T = om_claiming_task(src)
+	if(T?.def.type == /datum/om/task_def/hold)
+		om_task_cancel(T, "done")

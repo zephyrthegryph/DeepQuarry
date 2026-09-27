@@ -71,7 +71,7 @@
 	if(!L.devourable || !L.allowmobvore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) ai_brain.busy = TRUE
+	ai_busy_begin()
 	visible_message(span_warning("\The [src] suddenly crouches and wiggles its backside...!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 
@@ -84,7 +84,7 @@
 	if(!L)
 		return FALSE
 	if(L.z != z)
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return FALSE
 
 	status_flags |= LEAPING
@@ -98,7 +98,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	if(!L)
 		return FALSE
 	if(Adjacent(L))

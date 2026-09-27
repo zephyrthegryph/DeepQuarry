@@ -38,7 +38,7 @@
 	of = /mob/living/simple_mob/animal/space/bear
 
 /datum/om/stage/life/special/animal/space/bear/perform(mob/living/simple_mob/animal/space/bear/self, datum/om/frame/life/ctx)
-	if(((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
+	if(((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !om_busy(self) && isturf(self.loc))
 		if(self.vitality() <= 0.5) // At half health, and fighting someone currently.
 			self.berserk()
 

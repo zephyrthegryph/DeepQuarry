@@ -143,7 +143,7 @@
 	of = /mob/living/simple_mob/mechanical/mining_drone
 
 /datum/om/stage/life/special/mechanical/mining_drone/perform(mob/living/simple_mob/mechanical/mining_drone/self, datum/om/frame/life/ctx)
-	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc) && (world.time > self.last_search + self.search_cooldown) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
+	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (world.time > self.last_search + self.search_cooldown) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
 		self.last_search = world.time
 
 		for(var/turf/T in view(world.view,self))

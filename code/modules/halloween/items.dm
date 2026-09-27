@@ -48,7 +48,6 @@
 	icon = 'icons/obj/halloween/bowls.dmi'
 	icon_state = "fullcandy"
 
-	var/searching = FALSE
 	var/has_candy = TRUE
 
 	var/list/candy = list(
@@ -87,19 +86,14 @@
 		to_chat(user, span_warning("There is no candy! Someone took too many..."))
 		return
 
-	if(searching)
+	if(om_busy(src))
 		to_chat(user, span_warning("Someone is already looking through \the [src]!"))
 		return
 
-	searching = TRUE
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), on_fail = PROC_REF(search_ended))
-
-/obj/structure/candybowl/proc/search_ended()
-	searching = FALSE
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 
 /obj/structure/candybowl/proc/search_done(mob/user)
 	var/thegoods
-	searching = FALSE
 	if(!has_candy)
 		return
 
@@ -138,7 +132,6 @@
 	desc = "An empty bowl! Someone took too many candies..."
 	icon_state = "nocandy"
 	has_candy = FALSE
-	searching = FALSE
 
 	update_icon()
 
@@ -223,7 +216,7 @@
 	costumes = typesof(/obj/item/storage/box/halloween/)
 
 /obj/structure/boxpile/attack_hand(mob/living/user)
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user))
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
 
 /obj/structure/boxpile/proc/rummage_done(mob/living/user)
 	if(!user.ckey)

@@ -24,12 +24,14 @@
  *	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, receiver = src, on_done = PROC_REF(unwrenched), done_args = list(user))
  *
  * Returns FALSE when a check refused the job, TRUE when it was done at once (no wait;
- * on_done has run), or USE_TOOL_PENDING when the timed action started.
+ * on_done has run), or USE_TOOL_PENDING when the timed action started. `claims`: the target is
+ * exclusive while the job runs (another claiming job on it is refused); `busy`: a datum the job
+ * also claims (om_busy() holds while it runs; see om_do_after()).
  */
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
 
-/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args)
+/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy)
 	if(!actor || !target)
 		return FALSE
 	if(interaction)
@@ -76,7 +78,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	var/list/finish_args = list(actor, tool, target, quality, tier, amount, silent, receiver, on_done, done_args, on_fail, fail_args)
 	if(time <= 0)
 		return use_tool_finish(arglist(finish_args))
-	var/started = om_do_after(actor, time, target, null, GLOBAL_PROC_REF(use_tool_finish), finish_args, 		on_fail = GLOBAL_PROC_REF(use_tool_interrupted), fail_args = list(receiver, on_fail, fail_args), 		check_proc = extra_checks ? GLOBAL_PROC_REF(om_check_callback) : null, check_args = extra_checks ? list(extra_checks) : null)
+	var/started = om_do_after(actor, time, target, null, GLOBAL_PROC_REF(use_tool_finish), finish_args, 		on_fail = GLOBAL_PROC_REF(use_tool_interrupted), fail_args = list(receiver, on_fail, fail_args), 		check_proc = extra_checks ? GLOBAL_PROC_REF(om_check_callback) : null, check_args = extra_checks ? list(extra_checks) : null, claims = claims, busy = busy)
 	return istext(started) ? FALSE : USE_TOOL_PENDING
 
 /**

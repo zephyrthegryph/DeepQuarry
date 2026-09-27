@@ -800,12 +800,12 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	if(client)
 		return ..()
 	var/current_affinity = affinity[T.real_name]
-	om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	T.stop_pulling()
 	if(current_affinity >= 50)
 		var/tumby = vore_selected
 		vore_selected = friend_zone
-		ai_brain.busy = FALSE
+		ai_busy_end()
 		..()
 		vore_selected = tumby
 		return
@@ -814,7 +814,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	else
 		vore_selected.digest_mode = DM_DRAIN
 	..()
-	ai_brain.busy = FALSE
+	ai_busy_end()
 
 
 /mob/living/simple_mob/vore/alienanimals/teppi/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
@@ -822,22 +822,22 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		var/teppi_checks = teppi_checks(user, prey, pred, belly)
 		if(teppi_checks)
 			belly = teppi_checks
-		om_flag_hold(ai_brain, "busy")
+		ai_busy_begin()
 		prey.stop_pulling()
 	..()
 	if(!client)
-		ai_brain.busy = FALSE
+		ai_busy_end()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/begin_instant_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
 	if(!client)
 		var/teppi_checks = teppi_checks(user, prey, pred, belly)
 		if(teppi_checks)
 			belly = teppi_checks
-		om_flag_hold(ai_brain, "busy")
+		ai_busy_begin()
 		prey.stop_pulling()
 	..()
 	if(!client)
-		ai_brain.busy = FALSE
+		ai_busy_end()
 
 ///Retrns the belly we'll be using if we are friends.
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_checks(mob/living/user, mob/living/prey, mob/living/pred)

@@ -101,8 +101,11 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  * FALSE cancels. interaction_key / max_interact_count: at most that many running actions per
  * key (default: the target). max_distance: cancelled beyond it. target_zone: cancelled when the
  * user aims elsewhere. claims: the target is exclusive (a second action on it is refused).
+ * busy: a datum (or list) the action also claims -- the bot, tool or machine doing the work, or
+ * the user. It is busy (om_busy()) until the action ends; if something already claims it the
+ * action is refused with "busy".
  */
-/proc/om_do_after(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE)
+/proc/om_do_after(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE, busy)
 	if(!istype(user) || QDELETED(user))
 		return "gone"
 	if(!isnum(delay))
@@ -138,6 +141,10 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/datum/om/task/timed/T = om_task_start(user, def, (target && target != user) ? target : null, params)
 	if(!istype(T))
 		return T
+	for(var/datum/D as anything in (islist(busy) ? busy : (busy ? list(busy) : null)))
+		if(istext(om_task_claim(T, D)))
+			om_task_cancel(T, "busy")
+			return "busy"
 	T.flags = timed_action_flags
 	T.user_loc_h = om_handle(user.loc)
 	T.target_loc_h = target ? om_handle(target.loc) : null
@@ -299,30 +306,3 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 			call(on_end)(arglist(list(E) + (extra || list())))
 		else
 			call(E, on_end)(arglist(extra || list()))
-
-// ---------------------------------------------------------------- owned flags
-
-/// Token per held flag ("\ref[holder]:[varname]" -> token). Only the latest hold may expire it.
-GLOBAL_LIST_EMPTY(om_flag_tokens)
-GLOBAL_VAR_INIT(om_flag_seq, 0)
-
-/// Sets `holder.vars[varname]` TRUE for a converted action and owns it: if the
-/// action's continuation never runs (its timer was dropped because an argument
-/// was deleted, or the task was cancelled), the flag clears itself after
-/// `max_time`. The normal continuation still clears it as before; a later hold
-/// supersedes this one, so a stale expiry never clears a newer hold.
-/proc/om_flag_hold(datum/holder, varname, max_time = 1 MINUTE)
-	if(!holder)
-		return
-	holder.vars[varname] = TRUE
-	var/token = ++GLOB.om_flag_seq
-	GLOB.om_flag_tokens["\ref[holder]:[varname]"] = token
-	om_after(holder, max_time, /proc/om_flag_expire, holder, varname, token)
-	return token
-
-/proc/om_flag_expire(datum/holder, varname, token)
-	var/key = "\ref[holder]:[varname]"
-	if(GLOB.om_flag_tokens[key] != token)
-		return
-	GLOB.om_flag_tokens -= key
-	holder.vars[varname] = FALSE

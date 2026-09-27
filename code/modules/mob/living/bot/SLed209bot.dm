@@ -24,7 +24,7 @@
 	var/xeno_stun_strength = 6
 
 /mob/living/bot/secbot/ed209/slime/update_icons()
-	if(on && busy)
+	if(on && om_busy(src))
 		icon_state = "sled209-c"
 	else
 		icon_state = "sled209[on]"

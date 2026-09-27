@@ -120,7 +120,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /mob/living/simple_mob/animal/solargrub_larva/proc/enter_machine(obj/machinery/M)
 	if(!istype(M))
 		return
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	forceMove(M)
 	powermachine.draining = 2
 	MACHINE_WAKE(powermachine)

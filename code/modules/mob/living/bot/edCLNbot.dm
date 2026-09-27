@@ -20,7 +20,7 @@
 	var/green_switch = 0
 
 /mob/living/bot/cleanbot/edCLN/update_icons()
-	if(on && busy)
+	if(on && om_busy(src))
 		icon_state = "edCLN"
 	else
 		icon_state = "edCLN[on]"

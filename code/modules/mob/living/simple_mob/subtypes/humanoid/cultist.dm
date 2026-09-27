@@ -88,7 +88,7 @@
 	special_attack_cooldown = 10 SECONDS
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A)
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
@@ -108,14 +108,14 @@
 	icon_state = "bloodout"
 
 	if(handle_jaunt(destination) == FALSE)
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		flick("bloodin",A)
 		icon_state = "bloodin"
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		icon_state = "bloodin"
 		flick("bloodin",A)
 		return FALSE
@@ -134,7 +134,7 @@
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		icon_state = "bloodin"
 		flick("bloodin",A)
 		return TRUE
@@ -147,12 +147,12 @@
 		destination = get_step(destination, dir_to_go)
 
 	if(handle_jaunt(destination) == FALSE)
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		icon_state = "bloodin"
 		flick("bloodin",A)
 		return FALSE
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	icon_state = "bloodin"
 	flick("bloodin",A)
 	return FALSE

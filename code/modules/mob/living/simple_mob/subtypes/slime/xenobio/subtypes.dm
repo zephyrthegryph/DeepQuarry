@@ -663,7 +663,7 @@
 
 		// Otherwise blow ourselves up.
 		say(pick("Sacrifice...!", "Sssss...", "Boom...!"))
-		if(ai_brain) om_flag_hold(ai_brain, "busy")
+		ai_busy_begin()
 		om_after(src, 2 SECONDS, PROC_REF(suicide_bomb), L)
 
 	return ..()

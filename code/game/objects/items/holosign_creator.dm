@@ -13,13 +13,8 @@
 	var/max_signs = 10
 	var/creation_time = 0 //time to create a holosign in deciseconds.
 	var/holosign_type = /obj/structure/holosign/wetsign
-	var/holocreator_busy = FALSE //to prevent placing multiple holo barriers at once
-
-/obj/item/holosign_creator/proc/create_sign_failed()
-	holocreator_busy = FALSE
 
 /obj/item/holosign_creator/proc/create_sign(mob/user, turf/T, waited = TRUE)
-	holocreator_busy = FALSE
 	if(waited)
 		if(length(signs) >= max_signs)
 			return
@@ -38,14 +33,13 @@
 		to_chat(user, span_notice("You use [src] to deactivate [H]."))
 		qdel(H)
 	else
-		if(holocreator_busy)
+		if(om_busy(src)) // a sign being projected claims the creator
 			to_chat(user, span_notice("[src] is busy creating a hologram."))
 			return
 		if(length(signs) < max_signs)
 			playsound(src.loc, 'sound/machines/click.ogg', 20, 1)
 			if(creation_time)
-				om_flag_hold(src, "holocreator_busy")
-				om_do_after(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), on_fail = PROC_REF(create_sign_failed))
+				om_do_after(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), busy = src)
 				return
 			create_sign(user, T, FALSE)
 		else

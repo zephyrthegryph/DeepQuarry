@@ -24,7 +24,6 @@
 	light_color = "#B1FBBFF"
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
-	var/busy = 0
 	var/symbol1 = null
 	var/symbol2 = null
 	var/symbol3 = null
@@ -58,7 +57,7 @@
 		om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var_then), "ispowered", 0, TYPE_PROC_REF(/atom, update_icon))
 
 /obj/machinery/slot_machine/wrench_act(mob/user, obj/item/tool)
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return ITEM_INTERACT_BLOCKING
 	return ..()
@@ -76,7 +75,7 @@
 	effect = /obj/machinery/slot_machine/proc/interaction_attackby
 
 /obj/machinery/slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return TRUE
 
@@ -99,7 +98,7 @@
 		return
 	if (isbroken)
 		return
-	if (busy)
+	if (om_busy(src))
 		to_chat(user,span_notice("The slot machine is currently rolling."))
 		return
 	if(cashmoney.worth < 5)
@@ -114,7 +113,7 @@
 		user.drop_from_inventory(cashmoney)
 		qdel(cashmoney)
 
-	busy = 1
+	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "slotmachine_rolling"
 	playsound(src.loc, 'sound/machines/slotmachine_pull.ogg', 15, 1)
 
@@ -172,7 +171,6 @@
 	light_color = "#B1FBBFF"
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
-	var/busy = 0
 	var/symbol1 = null
 	var/symbol2 = null
 	var/symbol3 = null
@@ -206,7 +204,7 @@
 		om_after(src, rand(0, 15), TYPE_PROC_REF(/datum, om_set_var_then), "ispowered", 0, TYPE_PROC_REF(/atom, update_icon))
 
 /obj/machinery/station_slot_machine/wrench_act(mob/user, obj/item/tool)
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return ITEM_INTERACT_BLOCKING
 	return ..()
@@ -224,7 +222,7 @@
 	effect = /obj/machinery/station_slot_machine/proc/interaction_attackby
 
 /obj/machinery/station_slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return TRUE
 
@@ -247,7 +245,7 @@
 		return
 	if (isbroken)
 		return
-	if (busy)
+	if (om_busy(src))
 		to_chat(user,span_notice("The slot machine is currently rolling."))
 		return
 	if(cashmoney.worth < 5)
@@ -262,7 +260,7 @@
 		user.drop_from_inventory(cashmoney)
 		qdel(cashmoney)
 
-	busy = 1
+	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "ntslotmachine_rolling"
 	playsound(src.loc, 'sound/machines/slotmachine_pull.ogg', 15, 1)
 
@@ -346,7 +344,6 @@
 
 	if(!output) // Is there anything to output? If not, consider it a loss.
 		to_chat(user,"Better luck next time!")
-		busy = FALSE
 		return
 
 	to_chat(user,output) //Output message
@@ -361,7 +358,6 @@
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
-	busy = FALSE
 
 /obj/machinery/slot_machine/proc/pay_out(winnings)
 	spawn_casinochips(winnings, src.loc)
@@ -415,7 +411,6 @@
 
 	if(!output) // Is there anything to output? If not, consider it a loss.
 		to_chat(user,"Better luck next time!")
-		busy = FALSE
 		return
 
 	to_chat(user,output) //Output message
@@ -434,7 +429,6 @@
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
-	busy = FALSE
 
 /obj/machinery/station_slot_machine/proc/pay_out(winnings)
 	spawn_money(winnings, src.loc)

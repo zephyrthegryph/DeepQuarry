@@ -138,9 +138,9 @@
 		if(I_DISARM) // Ranged mob flash, will also confuse borgs rather than stun.
 			tail_flash(A)
 		if(I_GRAB) // Armor-ignoring hit, causes agonizing wounds.
-			if(ai_brain) om_flag_hold(ai_brain, "busy")
+			ai_busy_begin()
 			rending_strike(A)
-			if(ai_brain) ai_brain.busy = FALSE
+			ai_busy_end()
 	set_use_stance(I_HURT)
 	return ..()
 

@@ -364,19 +364,19 @@
 			)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A)
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(chargeend), A), 20)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/proc/chargeend(atom/A)
 	if(stat) //you are dead
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return
 	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.old_style_target(A, src)
 	appendage_attack.launch_projectile(A, BP_TORSO, src)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 //Modifiers
 /datum/modifier/aura/candy_purple //Healz
 	name = "candy_purple"

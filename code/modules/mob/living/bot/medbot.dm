@@ -137,7 +137,7 @@
 	if(!istype(H))
 		return
 
-	if(busy)
+	if(om_busy(src))
 		return
 
 	var/t = confirmTarget(H)
@@ -148,9 +148,7 @@
 	if(declare_treatment)
 		var/area/location = get_area(src)
 		GLOB.global_announcer.autosay("[src] is treating <b>[H]</b> in <b>[location]</b>", "[src]", "Medical")
-	om_flag_hold(src, "busy")
-	update_icons()
-	om_do_after(src, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(UnarmedAttack_medbot_done), done_args = list(H, t))
+	bot_work(3 SECONDS, H, PROC_REF(UnarmedAttack_medbot_done), list(H, t))
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
 		target = null
@@ -179,9 +177,6 @@
 				say(message)
 				playsound(src, possible_messages[message], 50, 0)
 
-	busy = 0
-	update_icons()
-
 /mob/living/bot/medbot/proc/UnarmedAttack_medbot_done(mob/living/carbon/human/H, t)
 	if(t == 1)
 		reagent_glass.reagents.trans_to_mob(H, injection_amount, CHEM_BLOOD)
@@ -203,7 +198,7 @@
 	cut_overlays()
 	if(skin)
 		add_overlay("medskin_[skin]")
-	if(busy)
+	if(om_busy(src))
 		icon_state = "medibots"
 	else
 		icon_state = "medibot[on]"
@@ -335,7 +330,7 @@
 		visible_message(span_warning("[src] buzzes oddly!"))
 		flick("medibot_spark", src)
 		target = null
-		busy = 0
+		om_release_busy(src, "emagged")
 		emagged = 1
 		on = 1
 		update_icons()

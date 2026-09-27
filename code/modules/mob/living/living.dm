@@ -1371,5 +1371,4 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 /// om_after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()
-	if(ai_brain)
-		ai_brain.busy = FALSE
+	ai_busy_end()

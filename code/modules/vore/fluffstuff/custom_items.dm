@@ -1570,11 +1570,7 @@ End */
 	attack_verb = list("fluffed", "fwomped", "fuwa'd", "squirmshed")
 	special_handling = TRUE
 
-/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_ended()
-	searching = FALSE
-
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(mob/user)
-	searching = FALSE
 	if(!stored_item)
 		return
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
@@ -1585,9 +1581,8 @@ End */
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(stored_item && opened && !searching)
-		searching = TRUE
-		om_do_after(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), on_fail = PROC_REF(search_ended))
+	if(stored_item && opened && !om_busy(src))
+		om_do_after(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 		return
 
 	if(world.time - last_message <= 5 SECONDS)

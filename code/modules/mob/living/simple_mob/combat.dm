@@ -162,17 +162,13 @@
 //		return TRUE
 
 /mob/living/simple_mob/proc/try_reload()
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
-	om_do_after(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), on_fail = PROC_REF(reload_stopped))
+	om_do_after(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)
 
 /mob/living/simple_mob/proc/reload_done()
 	if(reload_sound)
 		playsound(src, reload_sound, 70, 1)
 	reload_count = 0
-	if(ai_brain) ai_brain.busy = FALSE
 
-/mob/living/simple_mob/proc/reload_stopped()
-	if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/proc/calculate_dispersion()
 	. = projectile_dispersion // Start with the basic var.
 
@@ -274,7 +270,7 @@
 // Waits out an attack telegraph, then calls `then_proc(A, extra)` on src.
 // Also makes sure the AI doesn't do anything stupid in the middle of the delay.
 /mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount, then_proc, extra)
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	// Click delay modifiers also affect telegraphing time.
 	// This means berserked enemies will leave less time to dodge.
 	var/true_attack_delay = delay_amount * factor(BF_ATTACK_SPEED)
@@ -282,10 +278,10 @@
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 
 	if(!om_after(src, true_attack_delay, PROC_REF(attack_delay_done), then_proc, list(A, extra)))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 
 /mob/living/simple_mob/proc/attack_delay_done(then_proc, list/call_args)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	var/atom/A = call_args[1]
 	if(QDELETED(A))
 		return

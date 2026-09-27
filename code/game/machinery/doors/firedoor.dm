@@ -26,7 +26,6 @@
 	heat_proof = 1
 
 	var/blocked = 0
-	var/prying = 0
 	var/lockdown = 0 // When the door has detected a problem, it locks.
 	var/pdiff_alert = 0
 	var/pdiff = 0
@@ -215,7 +214,7 @@
 				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
 			else if(src.density)
 				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user))
+				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 			else
 				visible_message(span_danger("\The [user] forces \the [src] closed!"))
 				close(1)
@@ -240,15 +239,11 @@
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				if(user.ai_brain) om_flag_hold(user.ai_brain, "busy") // If the mob doesn't have an AI attached, this won't do anything.
-				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user))
-				if(user.ai_brain) user.ai_brain.busy = FALSE
+				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else
 				time_to_force = (time_to_force / 2)
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				if(user.ai_brain) om_flag_hold(user.ai_brain, "busy") // If the mob doesn't have an AI attached, this won't do anything.
-				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user))
-				if(user.ai_brain) user.ai_brain.busy = FALSE
+				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return
@@ -294,14 +289,12 @@
 			if(!F.wielded)
 				return TRUE
 
-		if(prying)
+		if(om_busy(src))
 			to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 			return TRUE
 
-		prying = 1
 		update_icon()
-		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C))
-		prying = 0
+		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 		update_icon()
 		return TRUE
 
@@ -321,7 +314,7 @@
 		return TRUE
 	if(get_integrity() < max_integrity)
 		return ..()
-	if(prying)
+	if(om_busy(src))
 		to_chat(user, span_notice("Someone's busy prying that [density ? "open" : "closed"]!"))
 		return TRUE
 	var/obj/item/weldingtool/welder = tool.get_welder()
@@ -351,13 +344,11 @@
 		user.visible_message(span_danger("[user] is removing the electronics from \the [src]."), "You start to remove the electronics from [src].")
 		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user, tool))
 		return TRUE
-	if(prying)
+	if(om_busy(src))
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
-	prying = TRUE
 	update_icon()
-	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool))
-	prying = FALSE
+	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 	update_icon()
 	return TRUE
 
@@ -528,7 +519,7 @@
 	cut_overlays()
 	if(density)
 		icon_state = "door_closed"
-		if(prying)
+		if(om_busy(src))
 			icon_state = "prying_closed"
 		if(hatch_open)
 			add_overlay("hatch")
@@ -544,7 +535,7 @@
 						add_overlay(new/icon(icon,"alert_[ALERT_STATES[i]]", dir=cdir))
 	else
 		icon_state = "door_open"
-		if(prying)
+		if(om_busy(src))
 			icon_state = "prying_open"
 		if(blocked)
 			add_overlay("welded_open")

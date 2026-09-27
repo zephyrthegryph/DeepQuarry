@@ -80,7 +80,7 @@
 	return ..()
 
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A)
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	do_windup_animation(A, leap_warmup)
 	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.
 
@@ -122,7 +122,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 /mob/living/simple_mob/vore/wolf/direwolf/syndicate
 	name = "mercenary commandoggo"
 	desc = "A huge white furred wolfdog, wearing a blood red combat harness. They look ravenously hungry, too..."

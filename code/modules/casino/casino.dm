@@ -16,7 +16,6 @@
 	throwpass = 1
 	var/item_place = 1 //allows items to be placed on the table, but not on benches.
 
-	var/busy = 0
 
 /obj/structure/casino_table/Initialize(mapload)
 	. = ..()
@@ -54,7 +53,7 @@
 		. += "It doesn't have a ball."
 
 /obj/structure/casino_table/roulette_table/attack_hand(mob/user)
-	if(busy)
+	if(om_busy(src))
 		to_chat(user,span_notice("You cannot spin now! The roulette is already spinning."))
 		return
 	if(!ball)
@@ -62,7 +61,7 @@
 		return
 	visible_message(span_notice("\The [user] spins the roulette and throws [ball.get_ball_desc()] into it."))
 	playsound(src.loc, 'sound/machines/roulette.ogg', 40, 1)
-	busy = 1
+	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	ball.on_spin()
 	icon_state = spin_state
 	var/result = rand(0,36)
@@ -106,7 +105,7 @@
 	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr)))
 		return
 
-	if(busy)
+	if(om_busy(src))
 		to_chat(usr, span_warning("You cannot remove \the [ball] while [src] is spinning!"))
 		return
 
@@ -375,7 +374,6 @@
 
 	req_access = list(300)
 	var/interval = 1
-	var/busy = 0
 	var/public_spin = 0
 	var/lottery_sale = "disabled"
 	var/lottery_price = 100
@@ -402,7 +400,7 @@
 	effect = /obj/machinery/wheel_of_fortune/proc/interaction_use
 
 /obj/machinery/wheel_of_fortune/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if (busy)
+	if (om_busy(src))
 		to_chat(user,span_notice("The wheel of fortune is already spinning!"))
 		return TRUE
 
@@ -431,7 +429,7 @@
 	effect = /obj/machinery/wheel_of_fortune/proc/interaction_id
 
 /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(mob/actor, atom/target, obj/item/held)
-	if (busy)
+	if (om_busy(src))
 		return "the wheel of fortune is already spinning!"
 	if(actor.incapacitated())
 		return FALSE
@@ -500,7 +498,7 @@
 /obj/machinery/wheel_of_fortune/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
 	if(!user.client)
 		return
-	if (busy)
+	if (om_busy(src))
 		to_chat(user,span_notice("The Wheel of Fortune is busy, wait for it to be done to buy a lottery ticket."))
 		return
 	if(cashmoney.worth < lottery_price)
@@ -523,7 +521,7 @@
 	var/result = 0
 
 	if(mode == "not_lottery")
-		busy = 1
+		om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 		icon_state = "wheel_of_fortune_spinning"
 		result = rand(1,interval)
 
@@ -534,7 +532,7 @@
 			visible_message(span_notice("There are no tickets in the system!"))
 			return
 
-		busy = 1
+		om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 		icon_state = "wheel_of_fortune_spinning"
 		result = pick(lottery_tickets)
 
@@ -913,7 +911,6 @@
 
 /obj/structure/casino_table/roulette_table/proc/roulette_stops(result, color)
 	// visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
-	busy = 0
 	icon_state = initial(icon_state)
 
 	if(color=="gold") // Happy celebrations!
@@ -931,5 +928,4 @@
 	confetti_spread.attach(src) //If somehow people start dragging slot machine
 	confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	flick("[icon_state]-winning",src)
-	busy = 0
 	icon_state = "wheel_of_fortune"

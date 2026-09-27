@@ -161,7 +161,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -172,7 +172,7 @@
 /mob/living/simple_mob/vore/scel/proc/lunge_1(mob/living/L)
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
@@ -188,7 +188,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 

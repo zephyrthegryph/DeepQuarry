@@ -96,7 +96,6 @@
 
 	var/datum/effect/effect/system/spark_spread/spark_system	//the spark system, used for generating... sparks?
 
-	var/wrenching = FALSE
 	var/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
 	var/timeout = TURRET_POPCOOLDOWN // When a turret pops up, then finds nothing to shoot at, this number decrements until 0, when it pops down.
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
@@ -557,17 +556,15 @@
 	if(enabled || raised)
 		to_chat(user, span_warning("You cannot unsecure an active turret!"))
 		return ITEM_INTERACT_SUCCESS
-	if(wrenching)
+	if(om_busy(src)) // a wrenching job claims the turret
 		to_chat(user, span_warning("Someone is already [anchored ? "un" : ""]securing the turret!"))
 		return ITEM_INTERACT_SUCCESS
 	if(!anchored && isinspace())
 		to_chat(user, span_warning("Cannot secure turrets in space!"))
 		return ITEM_INTERACT_SUCCESS
 
-	wrenching = TRUE
 	//This code handles moving the turret around. After all, it's a portable turret!
-	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, message_self = "You begin [anchored ? "un" : ""]securing the turret.", message_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
-	wrenching = FALSE
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, message_self = "You begin [anchored ? "un" : ""]securing the turret.", message_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/porta_turret/proc/wrench_act_tool_done(mob/user, obj/item/tool)

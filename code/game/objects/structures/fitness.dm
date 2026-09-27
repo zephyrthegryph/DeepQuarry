@@ -1,7 +1,6 @@
 /obj/structure/fitness
 	icon = 'icons/obj/stationobjs.dmi'
 	anchored = TRUE
-	var/fitness_being_used = 0
 	var/weightloss_power = 1
 
 /obj/structure/fitness/punchingbag
@@ -55,15 +54,14 @@
 	if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
 		return
-	if(fitness_being_used)
+	if(om_busy(src))
 		to_chat(user, span_warning("The weight machine is already in use by somebody else."))
 		return
 	else
-		fitness_being_used = 1
 		playsound(src, 'sound/effects/weightlifter.ogg', 50, 1)
 		user.set_dir(SOUTH)
 		flick("[icon_state]_[weight]", src)
-		om_do_after(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
+		om_do_after(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 
 /obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
 	playsound(src, 'sound/effects/weightdrop.ogg', 25, 1)
@@ -71,11 +69,9 @@
 	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
 	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)
 	to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
-	fitness_being_used = 0
 
 /obj/structure/fitness/weightlifter/proc/attack_hand_timed_failed(mob/living/carbon/human/user)
 	to_chat(user, span_notice("Against your previous judgement, perhaps working out is not for you."))
-	fitness_being_used = 0
 
 /obj/structure/fitness/boxing_ropes
 	name = "ropes"

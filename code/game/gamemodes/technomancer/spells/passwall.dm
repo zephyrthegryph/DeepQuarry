@@ -14,10 +14,9 @@
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_TELE
 	var/maximum_distance = 20 //Measured in tiles.
-	var/busy = 0
 
 /obj/item/spell/passwall/on_melee_cast(atom/hit_atom, mob/user)
-	if(busy)	//Prevent someone from trying to get two uses of the spell from one instance.
+	if(om_busy(src))	//Prevent someone from trying to get two uses of the spell from one instance.
 		return 0
 	if(!allowed_to_teleport())
 		to_chat(user, span_warning("You can't teleport here!"))
@@ -37,7 +36,6 @@
 	var/i = maximum_distance
 
 	visible_message(span_info("[user] rests a hand on \the [hit_atom]."))
-	om_flag_hold(src, "busy")
 
 	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, our_turf)
@@ -59,8 +57,10 @@
 				found_turf = checked_turf
 				break
 
-	// The search takes a second per tile checked.
-	om_after(src, (maximum_distance - i) SECONDS, PROC_REF(passwall_found), user, hit_atom, our_turf, found_turf, total_cost, spark_system)
+	// The search takes a second per tile checked; the spell is busy (a hold claims it) meanwhile.
+	var/search_time = (maximum_distance - i) SECONDS
+	om_hold_busy(src, search_time)
+	om_after(src, search_time, PROC_REF(passwall_found), user, hit_atom, our_turf, found_turf, total_cost, spark_system)
 	return 1
 
 /obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost, datum/effect/effect/system/spark_spread/spark_system)
@@ -77,7 +77,5 @@
 			return 1
 		else
 			to_chat(user, span_warning("You don't have enough energy to phase through these walls!"))
-			busy = 0
 	else
 		to_chat(user, span_info("You weren't able to find an open space to go to."))
-		busy = 0

@@ -28,7 +28,6 @@
 	var/scan_range = 3 // How many tiles away it can scan. Changing this also changes the box size.
 	var/credit_sharing_range = 280 // If another person is within this radius, they will also be credited with a successful scan. Original was 14
 	var/datum/category_item/catalogue/displayed_data = null // Used for viewing a piece of data in the UI.
-	var/busy = FALSE // Set to true when scanning, to stop multiple scans.
 	var/debug = FALSE // If true, can view all catalogue data defined, regardless of unlock status.
 	var/partial_scanned = null // OM handle of the thing that was last scanned if inturrupted. Used to allow for partial scans to be resumed.
 	var/partial_scan_time = 0 // How much to make the next scan shorter.
@@ -66,14 +65,14 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	return ..()
 
 /obj/item/cataloguer/update_icon()
-	if(busy)
+	if(om_busy(src))
 		icon_state = "[initial(icon_state)]_active"
 	else
 		icon_state = initial(icon_state)
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_warning("\The [src] is already scanning something."))
 		return
 
@@ -101,8 +100,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			to_chat(user, span_warning("Scanning new target. Previous scan buffer cleared."))
 
 	// Start the special effects.
-	om_flag_hold(src, "busy")
-	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon_state = "rped_upgrade", time = scan_delay)
 	var/filter = filter(type = "outline", size = 1, color = "#FFFFFF")
 	target.filters += filter
@@ -116,7 +113,12 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	// The delay, and test for if the scan succeeds or not. The effects travel in a list so the
 	// beam (which ends itself) is never a captured argument.
 	var/list/effects = list(scan_beam, filter, box_segments)
-	om_do_after(user, scan_delay, target, src, PROC_REF(scan_succeeded), list(target, user, effects), IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, PROC_REF(scan_failed), list(target, user, effects, world.time), max_distance = scan_range)
+	// The scan claims the cataloguer: busy (om_busy()) until it ends.
+	var/started = om_do_after(user, scan_delay, target, src, PROC_REF(scan_succeeded), list(target, user, effects), IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, PROC_REF(scan_failed), list(target, user, effects, world.time), max_distance = scan_range, busy = src)
+	if(istext(started))
+		scan_cleanup(target, user, effects)
+		return
+	update_icon()
 
 /obj/item/cataloguer/proc/scan_succeeded(atom/target, mob/user, list/effects)
 	if(target.can_catalogue(user))
@@ -139,14 +141,13 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	if(target)
 		partial_scanned = om_handle(target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
+	om_hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
 	om_after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), effects, target ? REF(target) : null, user ? REF(user) : null)
 
 /obj/item/cataloguer/proc/scan_cleanup_late(list/effects, target_ref, user_ref)
 	scan_cleanup(locate(target_ref), locate(user_ref), effects)
 
 /obj/item/cataloguer/proc/scan_cleanup(atom/target, mob/user, list/effects)
-	busy = FALSE
-
 	// Now clean up the effects.
 	update_icon()
 	var/datum/beam/scan_beam = effects[1]
@@ -209,11 +210,13 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 // Gives everything capable of being scanned an outline for a brief moment.
 // Helps to avoid having to click a hundred things in a room for things that have an entry.
 /obj/item/cataloguer/proc/pulse_scan(mob/user)
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_warning("\The [src] is busy doing something else."))
 		return
 
-	om_flag_hold(src, "busy")
+	// Busy (a hold claims it) while the highlights are up.
+	if(istext(om_hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
+		return
 	update_icon()
 	playsound(src, 'sound/machines/beep.ogg', 50)
 
@@ -239,7 +242,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			continue
 		A.filters -= filter
 
-	busy = FALSE
 	update_icon()
 	if(scannable_atoms.len)
 		playsound(src, 'sound/machines/ping.ogg', 50)
@@ -289,8 +291,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	return 1
 
 /obj/item/cataloguer/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/card/id) && !busy)
-		om_flag_hold(src, "busy")
+	if(istype(W, /obj/item/card/id) && !om_busy(src))
 		var/obj/item/card/id/ID = W
 		if(points_stored)
 			var/datum/money_account/account = get_account(ID.associated_account_number)
@@ -299,7 +300,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			to_chat(user, span_notice("You swipe the id over \the [src]."))
 		else
 			to_chat(user, span_notice("\The [src] has no points available."))
-		busy = FALSE
 	return ..()
 
 /obj/item/cataloguer/compact
@@ -323,7 +323,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	toolspeed = 1
 
 /obj/item/cataloguer/compact/update_icon()
-	if(busy)
+	if(om_busy(src))
 		icon_state = "[initial(icon_state)]_s"
 	else
 		icon_state = initial(icon_state)
@@ -335,7 +335,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	set name = "Toggle Cataloguer"
 	set category = "Object"
 
-	if(busy)
+	if(om_busy(src))
 		to_chat(usr, span_warning("\The [src] is currently scanning something."))
 		return
 	deployed = !(deployed)

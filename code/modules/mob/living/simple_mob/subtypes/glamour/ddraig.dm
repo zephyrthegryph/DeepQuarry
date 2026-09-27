@@ -152,7 +152,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -163,7 +163,7 @@
 /mob/living/simple_mob/vore/ddraig/proc/lunge_1(mob/living/L)
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
@@ -179,7 +179,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
@@ -187,7 +187,7 @@
 	glow_toggle = 1
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	flames = 1
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
 	do_windup_animation(A, charge_warmup)
 	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
@@ -196,27 +196,27 @@
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)
 	//make sure our target still exists and is on a turf
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
 	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	glow_toggle = 0
 	flames = 0
 
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam(atom/A)
 	if(!isturf(get_turf(A)))
 		return
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	visible_message(span_warning("\The [src] begins to shimmer with a rainbow hue!"))
 	do_windup_animation(A, tf_warmup)
 	om_after(src, tf_warmup, PROC_REF(tfbeam_1), A)
 
 
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam_1(atom/A)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/mouselaser/ddraig(get_turf(src))
 	src.visible_message(span_danger("\The [src] breathes a beam at \the [A]!"))
 	playsound(src, "sound/weapons/sparkle.ogg", 50, 1)

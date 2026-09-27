@@ -43,7 +43,6 @@
 	/// Physical offset of stamps on the object. Y direction.
 	var/stamp_offset_y = 2
 	/// If the mail is actively being opened right now
-	var/opening = FALSE
 	/// If the mail has been scanned with a mail scanner
 	var/scanned
 	/// Does it have a colored envelope?
@@ -156,9 +155,7 @@
 	if(!sealed)
 		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
 		return
-	if(!unwrap(user))
-		return FALSE
-	return after_unwrap(user)
+	return unwrap(user)
 
 /obj/item/mail/blank/proc/attack_self_timed_done()
 	sealed = TRUE
@@ -217,11 +214,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!unwrap(user))
-		return FALSE
-	if(special_handling)
-		return FALSE
-	return after_unwrap(user)
+	return unwrap(user)
 
 /obj/item/mail/proc/unwrap(mob/user)
 	if(recipient_ref)
@@ -230,20 +223,17 @@
 			balloon_alert(user, "you can't open somebody's mail! That's <em>illegal</em>")
 			return FALSE
 
-	if(opening)
+	if(om_busy(src)) // opening claims the envelope
 		balloon_alert(user, "already opening that!")
 		return FALSE
 
-	opening = TRUE
-	om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(), on_fail = PROC_REF(unwrap_timed_failed), fail_args = list())
-	return TRUE
+	return !istext(om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
 
-/obj/item/mail/proc/unwrap_timed_done()
-	return TRUE
-
-/obj/item/mail/proc/unwrap_timed_failed()
-	opening = FALSE
-	return FALSE
+/// Opened: out come the contents (special handling keeps them in).
+/obj/item/mail/proc/unwrap_timed_done(mob/user)
+	if(special_handling)
+		return
+	after_unwrap(user)
 
 /obj/item/mail/proc/after_unwrap(mob/user)
 	user.temporarilyRemoveItemFromInventory(src, TRUE)

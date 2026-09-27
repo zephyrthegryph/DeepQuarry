@@ -15,7 +15,6 @@
 	var/locked = 1
 	var/emagged = 0
 	var/light_strength = 3
-	var/busy = 0
 	var/obj/item/paicard/paicard = null
 	var/obj/access_scanner = null
 	var/list/req_access = list()
@@ -87,7 +86,7 @@
 	self.status_set(EFFECT_STUNNED, 0)
 	self.status_set(EFFECT_PARALYZED, 0)
 
-	if(self.on && !self.client && !self.busy && !self.paicard)
+	if(self.on && !self.client && !om_busy(self) && !self.paicard)
 		spawn(0) // S7 keeps: handleAI() sleeps (bot AI loop; S8 converts it)
 			self.handleAI()
 
@@ -407,9 +406,20 @@
 	update_canmove()
 	return 1
 
+/// The bot works on `A` for `delay` (a timed action): it is busy -- its task claims it -- until
+/// the work ends, then `on_done`(done_args...) runs and the icon refreshes (also on failure).
+/// Returns the task, or a reason it didn't start.
+/mob/living/bot/proc/bot_work(delay, atom/A, on_done, list/done_args, timed_action_flags = NONE)
+	. = om_do_after(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
+	update_icons()
+
+/mob/living/bot/proc/bot_work_done(on_done, ...)
+	call(src, on_done)(arglist(args.Copy(2)))
+	update_icons()
+
 /mob/living/bot/proc/turn_off()
 	on = 0
-	busy = 0 // If ever stuck... reboot!
+	om_release_busy(src, "turned off") // If ever stuck... reboot!
 	set_light(0)
 	update_icons()
 	update_canmove()

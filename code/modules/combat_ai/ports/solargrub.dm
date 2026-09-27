@@ -60,7 +60,7 @@
 	if(!istype(G))
 		return null
 	// Only worth running while we're stuck draining or AI-locked.
-	if(!G.anchored && !brain.busy)
+	if(!G.anchored && !brain.is_busy())
 		return null
 	return DQAI_RESULT(115, G)
 
@@ -69,7 +69,7 @@
 	if(!istype(G))
 		return DQ_BEHAVIOR_FAILED
 	G.anchored = FALSE
-	brain.busy = FALSE
+	G.ai_busy_end()
 	return DQ_BEHAVIOR_DONE
 
 // ===========================================================================

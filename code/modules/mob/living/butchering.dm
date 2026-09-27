@@ -10,28 +10,22 @@
 
 	var/list/butchery_loot				// Associated list, path = number.
 
-	var/being_butchered = FALSE 		// No multiproccing
 
 // Harvest an animal's delicious byproducts
 /mob/living/proc/harvest(mob/user, obj/item/I)
-	if(meat_type && meat_amount>0 && (stat == DEAD) && !being_butchered)
-		being_butchered = TRUE
+	if(meat_type && meat_amount>0 && (stat == DEAD) && !om_in_use(src))
 		harvest_step(user, I)
 		return
 
-	if(!meat_amount && !being_butchered)
+	if(!meat_amount && !om_in_use(src))
 		handle_butcher(user, I)
 
 /// Carves one cut of meat per timed action until none is left, then butchers.
 /mob/living/proc/harvest_step(mob/user, obj/item/I)
 	if(meat_amount > 0)
-		om_do_after(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), on_fail = PROC_REF(harvest_stop))
+		om_do_after(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), claims = TRUE)
 		return
-	being_butchered = FALSE
 	handle_butcher(user, I)
-
-/mob/living/proc/harvest_stop()
-	being_butchered = FALSE
 
 /mob/living/proc/harvest_cut(mob/user, obj/item/I)
 	var/obj/item/meat = new meat_type(get_turf(src))
@@ -48,16 +42,14 @@
 	return FALSE
 
 /mob/living/proc/handle_butcher(mob/user, obj/item/I)
-	if(being_butchered)
+	if(om_in_use(src))
 		return
 	if(!user)
 		butcher_done(user, I)
 		return
-	being_butchered = TRUE
-	om_do_after(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), on_fail = PROC_REF(harvest_stop))
+	om_do_after(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), claims = TRUE)
 
 /mob/living/proc/butcher_done(mob/user, obj/item/I)
-	being_butchered = FALSE
 	if(LAZYLEN(butchery_loot))
 		if(LAZYLEN(butchery_loot))
 			for(var/path in butchery_loot)

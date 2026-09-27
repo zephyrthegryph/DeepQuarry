@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1224 in 982 files. qdel total: 2918 in 1163 files.
+# Destroy total: 1224 in 982 files. qdel total: 2917 in 1163 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -1354,7 +1354,7 @@ code/game/objects/items/stacks/tickets.dm 1
 code/game/objects/items/surplus_voucher.dm 6
 code/game/objects/items/toys/toys.dm 4
 code/game/objects/items/uav.dm 1
-code/game/objects/items/weapons/RCD.dm 3
+code/game/objects/items/weapons/RCD.dm 2
 code/game/objects/items/weapons/RPD.dm 2
 code/game/objects/items/weapons/RSF.dm 1
 code/game/objects/items/weapons/autopsy.dm 1

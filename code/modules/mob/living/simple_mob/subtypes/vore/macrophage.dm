@@ -98,13 +98,13 @@
 /*
 /mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A)
 	. = TRUE
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(charge), A), 20, TIMER_STOPPABLE)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		if(ai_brain) ai_brain.busy = FALSE
+		ai_busy_end()
 		return
 	status_flags |= LEAPING
 	flying = TRUE
@@ -123,7 +123,7 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
 		H.ContractDisease(base_disease)
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 */
 /mob/living/simple_mob/vore/aggressive/macrophage/death()
 	..()

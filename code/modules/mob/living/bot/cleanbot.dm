@@ -115,14 +115,12 @@
 	if(D.loc != loc)
 		return
 
-	om_flag_hold(src, "busy")
-	update_icons()
 	var/cleantime = 0
 	if(istype(D, /obj/effect/decal/cleanable))
 		cleantime = istype(D, /obj/effect/decal/cleanable/dirt) ? 10 : 50
 		if(prob(20))
 			automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [D]")
-		om_do_after(src, cleantime * cTimeMult, target = D, receiver = src, on_done = PROC_REF(UnarmedAttack_cleanbot_done), done_args = list(D))
+		bot_work(cleantime * cTimeMult, D, PROC_REF(UnarmedAttack_cleanbot_done), list(D))
 	else if(D == src)
 		for(var/obj/effect/O in loc)
 			if(istype(O, /obj/effect/decal/cleanable/dirt))
@@ -132,11 +130,9 @@
 		if(cleantime != 0)
 			if(prob(20))
 				automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [loc]")
-			om_do_after(src, cleantime * cTimeMult, target = loc, receiver = src, on_done = PROC_REF(UnarmedAttack_cleanbot_done2), done_args = list())
+			bot_work(cleantime * cTimeMult, loc, PROC_REF(UnarmedAttack_cleanbot_done2))
 		else
 			handleIdle()
-	busy = 0
-	update_icons()
 
 /mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done(atom/D)
 	var/cleaned_target_id = REF(D)
@@ -211,7 +207,7 @@
 	return ..()
 
 /mob/living/bot/cleanbot/update_icons()
-	if(busy)
+	if(om_busy(src))
 		icon_state = "cleanbot-c"
 	else
 		icon_state = "cleanbot[on]"

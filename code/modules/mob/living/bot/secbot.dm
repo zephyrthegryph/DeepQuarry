@@ -81,7 +81,7 @@
 	endurance = 130
 
 /mob/living/bot/secbot/update_icons()
-	if(on && busy)
+	if(on && om_busy(src))
 		icon_state = "[default_icon_state]-c"
 	else
 		icon_state = "[default_icon_state][on]"
@@ -336,25 +336,21 @@
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
 			playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
 			do_attack_animation(H)
-			om_flag_hold(src, "busy")
+			om_hold_busy(src, 2, PROC_REF(update_icons))
 			update_icons()
-			om_after(src, 2, TYPE_PROC_REF(/datum, om_set_var_then), "busy", FALSE, PROC_REF(update_icons))
 			visible_message(span_warning("\The [H] was prodded by \the [src] with a stun baton!"))
 			insult(H)
 		else
 			playsound(src, 'sound/weapons/handcuffs.ogg', 30, 1, -2)
 			visible_message(span_warning("\The [src] is trying to put handcuffs on \the [H]!"))
-			om_flag_hold(src, "busy")
-			om_do_after(src, 6 SECONDS, target = H, receiver = src, on_done = PROC_REF(UnarmedAttack_secbot_done), done_args = list(H))
-			busy = FALSE
+			bot_work(6 SECONDS, H, PROC_REF(UnarmedAttack_secbot_done), list(H))
 	else if(isliving(M))
 		var/mob/living/L = M
 		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
 		playsound(src, "swing_hit", 50, 1, -1)
-		om_flag_hold(src, "busy")
+		om_hold_busy(src, 2, PROC_REF(update_icons))
 		update_icons()
-		om_after(src, 2, TYPE_PROC_REF(/datum, om_set_var_then), "busy", FALSE, PROC_REF(update_icons))
 		visible_message(span_warning("\The [M] was beaten by \the [src] with a stun baton!"))
 		insult(L)
 

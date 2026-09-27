@@ -20,7 +20,6 @@
 	var/l_code = null
 	var/l_set = 0
 	var/l_setshort = 0
-	var/l_hacking = 0
 	var/emagged = 0
 	var/open = 0
 	w_class = ITEMSIZE_NORMAL
@@ -56,7 +55,7 @@
 /obj/item/storage/secure/screwdriver_act(mob/user, obj/item/tool)
 	if(!locked)
 		return ..()
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/storage/secure/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
@@ -65,12 +64,10 @@
 	user.show_message(span_notice("You [open ? "open" : "close"] the service panel."))
 
 /obj/item/storage/secure/multitool_act(mob/user, obj/item/tool)
-	if(!locked || !open || l_hacking)
+	if(!locked || !open || om_busy(src))
 		return ..()
 	user.show_message(span_notice("Now attempting to reset internal memory, please hold."), 1)
-	l_hacking = TRUE
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(multitool_act_timed_done), done_args = list(user))
-	l_hacking = FALSE
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(multitool_act_timed_done), done_args = list(user), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/storage/secure/proc/multitool_act_timed_done(mob/user)

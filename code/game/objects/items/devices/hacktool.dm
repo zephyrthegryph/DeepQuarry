@@ -1,5 +1,4 @@
 /obj/item/multitool/hacktool
-	var/is_hacking = 0
 	var/max_known_targets
 	var/hackspeed = 1		//time taken to hack: lower is faster
 	var/max_level = 4		//what's the max door security_level we can handle? default is 1, med/eng/atmos are 1.5, sec/sci are 2, command is 3, vault is 5
@@ -67,7 +66,7 @@
 	return 1
 
 /obj/item/multitool/hacktool/proc/attempt_hack(mob/user, atom/target)
-	if(is_hacking)
+	if(om_busy(src))
 		to_chat(user, span_warning("You are already hacking!"))
 		return 0
 	if(!is_type_in_list(target, supported_types))
@@ -78,7 +77,7 @@
 		var/obj/structure/closet/crate/secure/A = target
 		if(A.locked)
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A))
+			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A), claims = TRUE)
 		else
 			return
 
@@ -86,7 +85,7 @@
 		var/obj/structure/closet/secure_closet/A = target
 		if(A.locked)
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A))
+			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A), claims = TRUE)
 		else
 			return
 
@@ -101,19 +100,16 @@
 			known_targets.Swap(1, found)	// Move the last hacked item first
 			return 1
 		to_chat(user, span_notice("You begin hacking \the [D]..."))
-		is_hacking = 1
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
 		// Reduced hack duration to compensate for the reduced functionality, multiplied by door sec level
-		om_do_after(user, (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), target = src, receiver = src, on_done = PROC_REF(hack_airlock_done), done_args = list(user, D), on_fail = PROC_REF(hack_airlock_failed), fail_args = list(user, D))
+		om_do_after(user, (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), target = src, receiver = src, on_done = PROC_REF(hack_airlock_done), done_args = list(user, D), on_fail = PROC_REF(hack_airlock_failed), fail_args = list(user, D), claims = TRUE)
 		return 0 // the hack is under way; the door is handled when it lands
 
 /obj/item/multitool/hacktool/proc/hack_airlock_failed(mob/user, obj/machinery/door/airlock/D)
-	is_hacking = 0
 	to_chat(user, span_warning("Your hacking attempt failed!"))
 
 /// The airlock hack landed: remember the door and act on it as a hacked target.
 /obj/item/multitool/hacktool/proc/hack_airlock_done(mob/user, obj/machinery/door/airlock/D)
-	is_hacking = 0
 	if(!in_hack_mode)
 		hack_airlock_failed(user, D)
 		return

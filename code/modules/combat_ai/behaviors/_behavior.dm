@@ -103,7 +103,7 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	if(ismob(target) || isobj(target) || isturf(target))
 		owner.face_atom(target)
 	if(blocks_reselection)
-		brain.busy = TRUE
+		owner.ai_busy_begin(5 MINUTES)
 	return DQ_BEHAVIOR_CONTINUE
 
 /// Called every fast tick while this behavior is active. Default returns DONE
@@ -113,10 +113,10 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 
 /// Called when the behavior ends (DONE/INTERRUPTED/FAILED/QDEL). Subtypes
 /// should clean up timers, overlays, telegraphs etc here. Always call ..()
-/// — the base clears the busy flag.
+/// — the base ends the busy hold.
 /datum/ai_behavior/proc/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
 	if(blocks_reselection)
-		brain.busy = FALSE
+		brain.get_owner()?.ai_busy_end()
 	if(reason == DQ_BEHAVIOR_STOP_COMPLETED && cooldown)
 		brain.set_cooldown(type, source, cooldown)
 	else if(reason == DQ_BEHAVIOR_STOP_FAILED)

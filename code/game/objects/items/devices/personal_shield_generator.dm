@@ -371,7 +371,6 @@
 	var/obj/item/personal_shield_generator/shield_generator //The generator we are linked to!
 	var/wielded = 0
 	var/cooldown = 0
-	var/busy = 0
 
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
@@ -379,8 +378,6 @@
 	power_supply = shield_generator.bcell
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
-	if(busy)
-		return 0
 	if(!check_charge(charge_cost))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 		return 0

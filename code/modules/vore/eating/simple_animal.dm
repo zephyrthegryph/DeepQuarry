@@ -89,10 +89,10 @@
 			user.status_at_least(EFFECT_WEAKENED, 5) //They get tackled anyway whether they're edible or not.
 			user.visible_message(span_danger("[user] swats [src] with [O] and promptly gets tackled!"))
 			if(will_eat(user))
-				if(ai_brain) om_flag_hold(ai_brain, "busy")
+				ai_busy_begin()
 				animal_nom(user)
 				update_icon()
-				if(ai_brain) ai_brain.busy = FALSE
+				ai_busy_end()
 			//legacy give_target call on attack/feed removed; brain handles auto-targeting.
 		else
 			user.visible_message(span_info("[user] swats [src] with [O]!"))

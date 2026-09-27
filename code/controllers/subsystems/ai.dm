@@ -47,7 +47,7 @@ SUBSYSTEM_DEF(ai)
 	while(length(currentrun))
 		var/datum/ai_brain/A = currentrun[length(currentrun)]
 		--currentrun.len
-		if(!A || QDELETED(A) || A.busy) // Doesn't exist or won't exist soon or not doing it this tick
+		if(!A || QDELETED(A) || A.is_busy()) // Doesn't exist or won't exist soon or not doing it this tick
 			continue
 
 		var/mob/living/L = A.holder

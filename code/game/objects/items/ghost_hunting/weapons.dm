@@ -8,7 +8,6 @@
 	slot_flags = SLOT_BELT
 	var/grab_range = 5 // How many tiles away it can grab. Changing this also changes the box size.
 	/// Stops multiple grabbs if set to TRUE
-	var/busy = FALSE
 	/// The entity we are currently grabbing.
 	var/grabbed_entity
 	/// How far we can move an entity in one go!
@@ -28,7 +27,7 @@
 	return ..()
 
 /obj/item/ghost_catcher/update_icon()
-	if(busy)
+	if(om_busy(src))
 		icon_state = "ghost_beam_active"
 	else
 		icon_state = initial(icon_state)
@@ -56,7 +55,7 @@
 
 	if(isturf(target) && (!target.incorporeal_grab()))
 		var/turf/T = target
-		if(!busy)
+		if(!om_busy(src))
 			for(var/mob/entity in range(1, T)) //We'll let you grab things ON the tile or AROUND the tile you click on.
 				if(entity.incorporeal_grab())
 					target = entity
@@ -92,7 +91,7 @@
 		return
 
 	// Things that invalidate the scan immediately.
-	if(busy)
+	if(om_busy(src))
 		to_chat(user, span_warning("\The [src] is already grabbing an entity!"))
 		return
 
@@ -104,8 +103,6 @@
 		return
 
 	// Start the special effects.
-	om_flag_hold(src, "busy")
-	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon_state = "curse1", time = 60 SECONDS)
 	var/filter = filter(type = "outline", size = 1, color = "#330099")
 	target.filters += filter
@@ -123,24 +120,33 @@
 		target_mob.status_at_least(EFFECT_STUNNED, 3)
 		to_chat(target, span_danger("You feel yourself weakened from the [src]'s beam!"))
 
-	// The delay, and test for if the scan succeeds or not.
-	om_do_after(user, 60 SECONDS, target = target, timed_action_flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, max_distance = grab_range, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user, box_segments))
-	busy = FALSE
-
-	// Now clean up the effects.
+	// The delay, and test for if the scan succeeds or not. The grab claims the catcher
+	// (om_busy()) until it ends; the effects travel in a list (the beam ends itself).
+	var/list/effects = list(scan_beam, filter, box_segments)
+	var/started = om_do_after(user, 60 SECONDS, target = target, timed_action_flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, max_distance = grab_range, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user, effects), on_fail = PROC_REF(grab_ended), fail_args = list(target, user, effects), busy = src)
+	if(istext(started))
+		grab_ended(target, user, effects)
+		return
 	update_icon()
-	QDEL_NULL(scan_beam)
+
+/// The grab is over (broken or done): clean up the effects and start the cooldown.
+/obj/item/ghost_catcher/proc/grab_ended(atom/target, mob/user, list/effects)
+	update_icon()
+	var/datum/beam/scan_beam = effects[1]
+	if(!QDELETED(scan_beam))
+		scan_beam.End()
 	if(target)
-		target.filters -= filter
-	if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
-		delete_box(box_segments, user.client)
+		target.filters -= effects[2]
+	if(user?.client) // If for some reason they logged out mid-scan the box will be gone anyways.
+		delete_box(effects[3], user.client)
 	grabbed_entity = null
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
 
-/obj/item/ghost_catcher/proc/afterattack_timed_done(atom/target, mob/user, list/box_segments)
+/obj/item/ghost_catcher/proc/afterattack_timed_done(atom/target, mob/user, list/effects)
 	to_chat(user, span_warning("With a buzz, \the [src] flashes red, the beam on \the [target] has broken!"))
 	playsound(src, 'sound/machines/buzz-two.ogg', 50)
-	color_box(box_segments, "#330099", 3)
+	color_box(effects[3], "#330099", 3)
+	grab_ended(target, user, effects)
 
 /atom/proc/incorporeal_grab(mob/user)
 	if(is_incorporeal())

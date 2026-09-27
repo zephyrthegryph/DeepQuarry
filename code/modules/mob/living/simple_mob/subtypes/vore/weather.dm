@@ -189,7 +189,7 @@
 			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A), 4 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
-	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	ai_busy_begin()
 	if(!A)
 		return
 
@@ -228,7 +228,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	if(ai_brain) ai_brain.busy = FALSE
+	ai_busy_end()
 	if(chain_number > 0)
 		chain_number -= 1
 		if(prob(50))

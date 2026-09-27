@@ -171,7 +171,7 @@
 	if(!..())
 		return
 
-	if(busy)
+	if(om_busy(src))
 		return
 
 	if(istype(A, /obj/machinery/portable_atmospherics/hydroponics))
@@ -186,29 +186,25 @@
 				update_icons()
 				visible_message(span_notice("[src] starts [T.dead? "removing the plant from" : "harvesting"] \the [A]."))
 
-				om_flag_hold(src, "busy")
-				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T), busy = src)
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
 				visible_message(span_notice("[src] starts watering \the [A]."))
 
-				om_flag_hold(src, "busy")
-				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done2), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done2), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T), busy = src)
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
 				visible_message(span_notice("[src] starts uprooting the weeds in \the [A]."))
 
-				om_flag_hold(src, "busy")
-				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done3), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done3), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T), busy = src)
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
 				visible_message(span_notice("[src] starts fertilizing \the [A]."))
 
-				om_flag_hold(src, "busy")
-				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done4), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done4), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T), busy = src)
 
 	else if(istype(A, /obj/structure/sink))
 		if(!tank || tank.reagents.total_volume >= tank.reagents.maximum_volume)
@@ -217,13 +213,11 @@
 		update_icons()
 		visible_message(span_notice("[src] starts refilling its tank from \the [A]."))
 
-		om_flag_hold(src, "busy")
 		refill_step(A)
 	else if(emagged && ishuman(A))
 		var/action = pick("weed", "water")
 
-		busy = 1
-		om_after(src, 5 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "busy", 0) // Some delay
+		om_hold_busy(src, 5 SECONDS) // Some delay
 		switch(action)
 			if("weed")
 				flick("farmbot_hoe", src)
@@ -240,7 +234,6 @@
 				tank.reagents.splash(A, 100)
 
 /mob/living/bot/farmbot/proc/farm_job_end(obj/machinery/portable_atmospherics/hydroponics/T)
-	busy = 0
 	action = ""
 	update_icons()
 	T?.update_icon()
@@ -248,7 +241,7 @@
 /// One second of refilling from a sink, repeated until the tank is full or interrupted.
 /mob/living/bot/farmbot/proc/refill_step(atom/A)
 	if(tank.reagents.total_volume < tank.reagents.maximum_volume)
-		om_do_after(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end))
+		om_do_after(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end), busy = src)
 		return
 	refill_end()
 
@@ -259,7 +252,6 @@
 	refill_step(A)
 
 /mob/living/bot/farmbot/proc/refill_end()
-	busy = 0
 	action = ""
 	update_icons()
 	visible_message(span_notice("[src] finishes refilling its tank."))

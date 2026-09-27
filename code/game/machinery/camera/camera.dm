@@ -31,7 +31,6 @@
 	var/light_disabled = 0
 	var/in_use_lights = 0 // TO BE IMPLEMENTED - LIES.
 	var/alarm_on = 0
-	var/busy = 0
 
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
@@ -502,19 +501,13 @@
 
 /// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
 /obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
-	if(busy)
+	if(om_busy(src)) // a weld in progress claims it
 		return 0
-	busy = 1
-	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), on_fail = PROC_REF(weld_unbusy))
-	if(!result)
-		busy = 0
+	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
 
-/obj/machinery/camera/proc/weld_unbusy()
-	busy = 0
 
 /obj/machinery/camera/proc/weld_finished(on_done, list/done_args)
-	busy = 0
 	if(on_done)
 		call(src, on_done)(arglist(done_args))
 

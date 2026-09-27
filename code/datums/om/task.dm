@@ -15,6 +15,9 @@
 	var/duration = 0
 	/// Relation type used to claim the target (TRUE: /datum/om/relation/claim). Null: no claim.
 	var/claims
+	/// TRUE: the task also claims its actor. The actor is busy while it runs (om_busy()), and a
+	/// second actor-claiming task is refused.
+	var/claims_actor = FALSE
 	/// Check specs (actor, target).
 	var/list/requires
 	/// Event types that cancel the task when emitted on the actor.
@@ -97,6 +100,8 @@
 	var/reason
 	var/list/extra_requires
 	var/datum/om/edge/claim
+	/// Further claim edges (the actor, a tool, a holder: om_task_claim()), released with the task.
+	var/list/extra_claims
 	/// Index of the next step (steps tasks), 1-based over def.compiled_steps' pairs.
 	var/step_no = 0
 	/// params keys whose datum values are held as OM handles (weak capture).
@@ -158,6 +163,11 @@
 		if(istext(linked))
 			return linked
 		T.claim = linked
+	if(def.claims_actor)
+		var/claimed_actor = om_task_claim(T, actor)
+		if(istext(claimed_actor))
+			om_task_release_claims(T)
+			return claimed_actor
 	var/t = rec.sched.now()
 	var/dur = params?["duration"]
 	if(isnull(dur))
@@ -205,10 +215,7 @@
 
 /proc/om_task_finish(datum/om/task/T)
 	var/datum/om/rec/rec = T.actor?.om_rec
-	if(T.claim)
-		var/datum/om/edge/edge = T.claim
-		T.claim = null
-		om_unlink_edge(edge)
+	om_task_release_claims(T)
 	if(T.om_rec)
 		om_teardown_rest(T)
 	if(!rec)
@@ -330,17 +337,97 @@
 		om_task_cancel(T, "timed out")
 	return T.state == OM_TASK_DONE
 
+/// Drops every claim `T` holds (its target's and the extra ones).
+/proc/om_task_release_claims(datum/om/task/T)
+	if(T.claim)
+		var/datum/om/edge/edge = T.claim
+		T.claim = null
+		om_unlink_edge(edge)
+	if(T.extra_claims)
+		var/list/edges = T.extra_claims
+		T.extra_claims = null
+		for(var/datum/om/edge/edge as anything in edges)
+			om_unlink_edge(edge)
+
+/// `T` also claims `D` (its actor, the tool it works with, the machine or bot it runs): `D` is
+/// busy until `T` completes, is cancelled or either is deleted. Returns the edge, or a text
+/// reason when something else already claims `D`.
+/proc/om_task_claim(datum/om/task/T, datum/D)
+	if(!D || T.state != OM_TASK_RUNNING)
+		return "invalid"
+	if(T.claim?.target == D)
+		return T.claim
+	var/claimed = om_link(T, D, /datum/om/relation/claim/busy)
+	if(istext(claimed))
+		return claimed == "[D] is in use" ? "[D] is busy" : claimed
+	LAZYOR(T.extra_claims, claimed)
+	return claimed
+
+/// The running task that claims `D`, or null. This is what "busy" means: a bot, a tool or a
+/// machine is busy while a task claims it.
+/proc/om_claiming_task(datum/D)
+	var/datum/om/task/T = om_source_of(D, /datum/om/relation/claim/busy)
+	if(istype(T) && T.state == OM_TASK_RUNNING)
+		return T
+	T = om_source_of(D, /datum/om/relation/claim)
+	return (istype(T) && T.state == OM_TASK_RUNNING) ? T : null
+
+/// TRUE while a running task claims `D`: as the thing doing the work (its actor, tool or
+/// machine) or as the exclusive target of someone's work.
+/proc/om_busy(datum/D)
+	return !isnull(om_claiming_task(D))
+
+/// TRUE while a running task claims `D` as its exclusive target (someone is working on it),
+/// whatever `D` itself is doing.
+/proc/om_in_use(datum/D)
+	var/datum/om/task/T = om_source_of(D, /datum/om/relation/claim)
+	return istype(T) && T.state == OM_TASK_RUNNING
+
+/// Cancels the task that claims `D`, if any (it stopped early). TRUE if one was cancelled.
+/proc/om_release_busy(datum/D, reason = "released")
+	var/datum/om/task/T = om_claiming_task(D)
+	return T ? om_task_cancel(T, reason) : FALSE
+
+/// Holds `E` busy for `duration` (an action whose continuation is a timer, not a task step):
+/// a task on `E` claiming it, done at the deadline. `on_end`, a proc on `E`, runs when the hold
+/// ends (done or cancelled). Returns the task, or a reason (already busy).
+/proc/om_hold_busy(datum/E, duration, on_end)
+	return om_task_start(E, /datum/om/task_def/hold, null, list("duration" = max(duration, 0), "on_end" = on_end))
+
+/// See om_hold_busy().
+/datum/om/task_def/hold
+	name = "hold"
+	claims_actor = TRUE
+
+/datum/om/task_def/hold/on_complete(datum/om/task/T)
+	var/on_end = T.params?["on_end"]
+	if(on_end && !QDELETED(T.actor))
+		call(T.actor, on_end)()
+
+/datum/om/task_def/hold/on_cancel(datum/om/task/T, reason)
+	on_complete(T)
+
 /// The claim relation: a target is claimed by at most one task.
 /datum/om/relation/claim
 	name = "claim"
 	target_single = TRUE
 	conflict = OM_REL_REFUSE
 
+/// A task's claim on what does the work (its actor, a tool, a bot or machine): the worker is
+/// busy. Its own relation, so a busy worker can still be the target of someone else's task.
+/datum/om/relation/claim/busy
+	name = "busy"
+
 /datum/om/relation/claim/on_unlink(datum/source, datum/target, datum/om/edge/edge)
 	var/datum/om/task/T = source
-	if(istype(T) && T.state == OM_TASK_RUNNING && T.claim == edge)
+	if(!istype(T) || T.state != OM_TASK_RUNNING)
+		return
+	if(T.claim == edge)
 		T.claim = null
 		om_task_cancel(T, "target gone")
+	else if(edge in T.extra_claims)
+		LAZYREMOVE(T.extra_claims, edge)
+		om_task_cancel(T, "gone")
 
 /// A running task's link to a target it works on without claiming it: deleting the target
 /// cancels the task.
@@ -372,6 +459,7 @@
 	abstract_type = /datum/om/task_def/mob_work
 	duration = 5 SECONDS
 	claims = TRUE
+	claims_actor = TRUE // the worker is busy: its AI stays still, and it can't start a second job
 	requires = list(/datum/om/check/conscious, /datum/om/check/in_range, /datum/om/check/target_exists)
 
 /datum/om/task_def/mob_work/spider_web
