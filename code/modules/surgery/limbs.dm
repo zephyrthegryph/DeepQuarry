@@ -176,7 +176,7 @@
 	target.update_icons_body(FALSE)
 	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] mechanized [key_name(target)] with [L]")
-	qdel(L)
+	consume(L, user)
 
 /datum/surgical_step/limb/mechanize/complicate(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	..(user, target, part, tool, target.get_organ(BP_TORSO))

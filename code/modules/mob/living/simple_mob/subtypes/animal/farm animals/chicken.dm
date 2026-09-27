@@ -93,9 +93,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
-			new /mob/living/simple_mob/animal/passive/chick(get_turf(src))
 			PERIODIC_STOP(src)
-			qdel(src)
+			replace_with(src, /mob/living/simple_mob/animal/passive/chick)
 	else
 		PERIODIC_STOP(src)
 

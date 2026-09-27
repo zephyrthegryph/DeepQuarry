@@ -563,7 +563,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		name = C.given_name
 		real_name = C.given_name
 		update_icon()
-		qdel(C)
+		consume(C, user)
 		fully_replace_character_name(real_name,C.given_name)
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
 		return
