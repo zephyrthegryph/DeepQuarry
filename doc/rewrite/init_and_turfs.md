@@ -189,6 +189,57 @@ Fixes, by size:
 | Batched spritesheets at round start | 260 MB | Done (smart cache on). |
 | Appearances, strings | ~15 MB | Not worth a change now: appearances are already shared by BYOND; string interning is automatic in BYOND. |
 
+### 0.5 What the 680 MB at world load is: per-type proc tables
+
+Bisect (2026-09-27, one measurement each):
+
+| Experiment | Private MB |
+|---|---|
+| DQ minitest build, at `world/New()` | 667 |
+| same, plus 1,000 empty procs on `/datum` (`-DBISECT_EXTRA_PROCS`) | **1,653 (+986)** |
+| DQ build with `DEBUG` off (.dmb 48.5 -> 43.1 MB), `no-init` | 528 vs 584 (-56) |
+| synthetic 20 k types, 3,000 procs on their parent | 398 |
+| same 20 k types, no parent procs | 10 |
+| synthetic 20 k types, 400 vars on their parent | 10 (vars are free) |
+| synthetic 2,000 procs with 200-line bodies (57.8 MB .dmb) | 73 (bytecode is ~1.3x) |
+| synthetic 20 k types with icon, icon_state, colour | 12 (compile-time appearances are small) |
+| all sounds stubbed / all .dmi stubbed | unchanged (§0.4) |
+| world/New census (minitest) | 5,742 datums, 35,590 atoms: DM data is not it |
+
+BYOND keeps, for every type, a table entry for **every proc the type has,
+inherited ones included**: about 23.5 bytes per (type, proc) pair on this
+build (1,000 procs x 42,034 types = +986 MB). The 667 MB at world load is
+~28 M such pairs: 42 k types with ~670 inherited procs each on average. It is
+not bytecode, strings, vars, appearances or resources.
+
+Where the pairs come from: 39.7 k type paths in the source, of which 33.6 k
+are leaves and **25.2 k are data-only leaves** (no proc of their own; only var
+overrides): 12.4 k `/datum`, 8.0 k `/obj/item`, 1.3 k `/obj/structure`, 0.9 k
+`/obj/effect`, 0.8 k `/obj/machinery`, 0.6 k `/area`, 0.6 k `/mob`. An
+`/obj/item` type inherits ~1,000 procs (`/datum`, `/atom`, `/atom/movable`,
+`/obj`, `/obj/item`), so each costs ~23 KB just by existing.
+
+Proposed fix (not implemented; for approval):
+
+1. **Collapse data-only leaf types into variants** (the existing
+   `code/datums/variants/` mechanism): one type per family plus a data table,
+   instances created from a variant id. 8 k data-only `/obj/item` leaves at
+   ~23 KB each are ~180 MB; the 12.4 k data-only `/datum` leaves (decls,
+   recipes, designs, reagents, catalog entries; ~150-300 inherited procs each)
+   are ~50-90 MB. Map files reference type paths, so mapped types need a path
+   alias in the map loader (or stay types) until maps are migrated.
+2. **Shrink the procs every type inherits.** Each proc removed from `/datum`
+   saves ~1 MB, from `/atom` ~0.5 MB, from `/obj` or `/obj/item` ~0.2-0.45 MB.
+   Candidates: rarely used hooks and debug/admin procs on `/datum` and `/atom`
+   (vv_*, stat/debug helpers, legacy compatibility shims) moved to global
+   procs or helper datums.
+3. **Ship with DEBUG off** in production (-56 MB, and smaller .dmb); keep it
+   in test and bench builds for line numbers in runtimes.
+
+Order: 3 is a one-line build change; 2 is mechanical per proc and can be
+done incrementally with the count as a ratchet; 1 is the large win and needs
+the variant loader and map aliases.
+
 ## 1. Boot profile
 
 ### 1.1 Subsystems (clean builds, 3 boots)
