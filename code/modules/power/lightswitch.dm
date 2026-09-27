@@ -111,10 +111,9 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/construction/proc/welder_act_tool_done(mob/user)
-	new /obj/item/stack/material/steel(get_turf(src), 2)
 	user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
 	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/construction/wirecutter_act(mob/user, obj/item/W)
 	if(stage != FRAME_WIRED)

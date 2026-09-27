@@ -71,7 +71,7 @@
 		update_icon()
 		other.update_icon()
 		if(!other.stored_ammo.len)
-			qdel(other)
+			consume(other, user)
 		return
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
 	return ..()

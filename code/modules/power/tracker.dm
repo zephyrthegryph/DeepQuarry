@@ -67,10 +67,9 @@
 	var/obj/item/solar_assembly/S = new(loc)
 	S.tracker = TRUE
 	S.anchored = TRUE
-	new glass_type(loc, 2)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	user.visible_message(span_notice("[user] takes the glass off the tracker."))
-	qdel(src)
+	replace_with(src, glass_type, 2)
 
 // Tracker Electronic
 

@@ -958,10 +958,9 @@
 
 /obj/item/reagent_containers/food/snacks/egg/throw_impact(atom/hit_atom)
 	. = ..()
-	new/obj/effect/decal/cleanable/egg_smudge(src.loc)
 	src.reagents.splash(hit_atom, reagents.total_volume)
 	src.visible_message(span_red("[src.name] has been squashed."),span_red("You hear a smack."))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/egg_smudge)
 
 /obj/item/reagent_containers/food/snacks/egg/attackby(obj/item/W, mob/user)
 	if(istype( W, /obj/item/pen/crayon ))
@@ -1553,9 +1552,8 @@
 
 /obj/item/reagent_containers/food/snacks/pie/throw_impact(atom/hit_atom)
 	. = ..()
-	new/obj/effect/decal/cleanable/pie_smudge(src.loc)
 	src.visible_message(span_danger("\The [src.name] splats."),span_danger("You hear a splat."))
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/pie_smudge)
 
 /obj/item/reagent_containers/food/snacks/berryclafoutis
 	name = "Berry Clafoutis"

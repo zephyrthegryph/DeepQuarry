@@ -161,9 +161,8 @@
 	if(length(components))
 		to_chat(user, "Remove all components from \the [src] before disassembling it.")
 		return ITEM_INTERACT_BLOCKING
-	new /obj/item/stack/material/steel(get_turf(src), steel_sheet_cost)
 	visible_message("\The [src] has been disassembled by [user].")
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, steel_sheet_cost)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/modular_computer/welder_act(mob/user, obj/item/tool)

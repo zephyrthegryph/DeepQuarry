@@ -149,13 +149,13 @@
 				var/obj/item/aliencoin/a = O
 				coinbalance += a.value
 				visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
-				qdel(a)
+				consume(a, user)
 		if("money")
 			if(istype(O, /obj/item/spacecash))
 				var/obj/item/spacecash/w = O
 				for(var/obj/item/spacecash/c in bank)
 					var/loadsamoney = w.worth
-					qdel(w)
+					consume(w, user)
 					c.worth += loadsamoney
 					c.update_icon()
 					loadsamoney = null

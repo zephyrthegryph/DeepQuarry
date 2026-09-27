@@ -70,7 +70,7 @@
 		if(H.parentdeck == src)
 			for(var/datum/playingcard/P in H.cards)
 				cards += P
-			qdel(H)
+			consume(H, user)
 			to_chat(user,span_notice("You place your cards on the bottom of \the [src]."))
 			return
 		else

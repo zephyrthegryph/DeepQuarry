@@ -124,7 +124,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
 				H.drop_from_inventory(SC)
-			qdel(SC)
+			consume(SC, user)
 		else
 			scan_cash(SC, user)
 	else if(istype(O, /obj/item/card/emag))
