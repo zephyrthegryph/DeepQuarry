@@ -7,20 +7,26 @@ GLOBAL_PROTECT(VVckey_edit)
 GLOBAL_LIST_INIT(VVpixelmovement, list("bound_x", "bound_y", "step_x", "step_y", "step_size", "bound_height", "bound_width", "bounds")) //No editing ever.
 GLOBAL_PROTECT(VVpixelmovement)
 
-/client/proc/vv_parse_text(O, new_var)
+/// The vars named in [] in `new_var` to substitute: a list (empty for none), or null while the
+/// flow asks whether to (flow_ask()).
+/client/proc/vv_parse_text(O, new_var, key = "parse")
+	. = list()
 	if(O && findtext(new_var,"\["))
-		var/process_vars = tgui_alert(usr,"\[] detected in string, process as variables?","Process Variables?",list("Yes","No"))
+		var/process_vars = flow_ask(mob, "[key]:parse", list("message" = "\[] detected in string, process as variables?", "title" = "Process Variables?", "choices" = list("Yes","No")))
+		if(isnull(process_vars))
+			return null
 		if(process_vars == "Yes")
 			. = string2listofvars(new_var, O)
 
-/client/proc/vv_subtype_prompt(type)
+/// TRUE to include subtypes, FALSE for the strict type, null when cancelled or still asking.
+/client/proc/vv_subtype_prompt(type, key = "subtypes")
 	if (!ispath(type))
 		return
 	var/list/subtypes = subtypesof(type)
 	if (!subtypes || !subtypes.len)
 		return FALSE
 	if (subtypes?.len)
-		switch(tgui_alert(usr,"Strict object type detection?", "Type detection", list("Strictly this type","This type and subtypes", "Cancel")))
+		switch(flow_ask(mob, "[key]:subtypes", list("message" = "Strict object type detection?", "title" = "Type detection", "choices" = list("Strictly this type","This type and subtypes", "Cancel"))))
 			if("Strictly this type")
 				return FALSE
 			if("This type and subtypes")
@@ -60,40 +66,54 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 		.["[D]([shorttype])[REF(D)]#[i]"] = D
 
-/client/proc/mod_list_add_ass(atom/O) //hehe
-	var/list/L = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT))
+/// The associated value, wrapped as list("value" = ...), or null when cancelled or still asking.
+/client/proc/mod_list_add_ass(atom/O, key = "assoc") //hehe
+	var/list/L = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = key)
 	var/class = L["class"]
 	if (!class)
 		return
 	var/var_value = L["value"]
 
 	if(class == VV_TEXT || class == VV_MESSAGE)
-		var/list/varsvars = vv_parse_text(O, var_value)
+		var/list/varsvars = vv_parse_text(O, var_value, key)
+		if(isnull(varsvars))
+			return
 		for(var/V in varsvars)
 			var_value = replacetext(var_value,"\[[V]]","[O.vars[V]]")
 
-	return var_value
+	return list("value" = var_value)
 
-/client/proc/mod_list_add(list/L, atom/O, original_name, objectvar)
-	var/list/LL = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT))
+/client/proc/mod_list_add(list/L, atom/O, original_name, objectvar, key = "add")
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(mod_list_add), args)
+	var/list/LL = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = "[key]:value")
 	var/class = LL["class"]
 	if (!class)
 		return
 	var/var_value = LL["value"]
 
 	if(class == VV_TEXT || class == VV_MESSAGE)
-		var/list/varsvars = vv_parse_text(O, var_value)
+		var/list/varsvars = vv_parse_text(O, var_value, key)
+		if(isnull(varsvars))
+			return
 		for(var/V in varsvars)
 			var_value = replacetext(var_value,"\[[V]]","[O.vars[V]]")
+
+	var/associate = flow_ask(mob, "[key]:associate", list("message" = "Would you like to associate a value with the list entry?", "choices" = list("Yes","No")))
+	if(isnull(associate))
+		return
+	var/list/assoc
+	if(associate == "Yes")
+		assoc = mod_list_add_ass(O, "[key]:assoc") //hehe
+		if(!assoc)
+			return
 
 	if (O)
 		L = L.Copy()
 
 	L += list(var_value) //var_value could be a list
-
-	switch(tgui_alert(usr,"Would you like to associate a value with the list entry?",,list("Yes","No")))
-		if("Yes")
-			L[var_value] = mod_list_add_ass(O) //hehe
+	if(assoc)
+		L[var_value] = assoc["value"]
 	if (O)
 		if (O.vv_edit_var(objectvar, L) == FALSE)
 			to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
@@ -102,7 +122,9 @@ GLOBAL_PROTECT(VVpixelmovement)
 	log_admin("[key_name(src)] modified [original_name]'s [objectvar]: ADDED=[var_value]")
 	message_admins("[key_name_admin(src)] modified [original_name]'s [objectvar]: ADDED=[var_value]")
 
-/client/proc/mod_list(list/L, atom/O, original_name, objectvar, index, autodetect_class = FALSE)
+/client/proc/mod_list(list/L, atom/O, original_name, objectvar, index, autodetect_class = FALSE, key = "list")
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(mod_list), args)
 	if(!check_rights(R_VAREDIT))
 		return
 	if(!istype(L, /list))
@@ -110,28 +132,28 @@ GLOBAL_PROTECT(VVpixelmovement)
 		return
 
 	if(L.len > 1000)
-		var/confirm = tgui_alert(usr, "The list you're trying to edit is very long, continuing may crash the server.", "Warning", list("Continue", "Abort"))
+		var/confirm = flow_ask(mob, "[key]:long", list("message" = "The list you're trying to edit is very long, continuing may crash the server.", "title" = "Warning", "choices" = list("Continue", "Abort")))
 		if(confirm != "Continue")
 			return
 
 	var/is_normal_list = IS_NORMAL_LIST(L)
 	var/list/names = list()
 	for (var/i in 1 to L.len)
-		var/key = L[i]
+		var/entry_key = L[i]
 		var/value
-		if (is_normal_list && !isnum(key))
-			value = L[key]
+		if (is_normal_list && !isnum(entry_key))
+			value = L[entry_key]
 		if (value == null)
 			value = "null"
-		names["#[i] [key] = [value]"] = i
+		names["#[i] [entry_key] = [value]"] = i
 	if (!index)
-		var/variable = tgui_input_list(usr, "Which var?", "Var", names + "(ADD VAR)" + "(CLEAR NULLS)" + "(CLEAR DUPES)" + "(SHUFFLE)")
+		var/variable = flow_ask(mob, "[key]:var", list("kind" = "list", "message" = "Which var?", "title" = "Var", "choices" = names + "(ADD VAR)" + "(CLEAR NULLS)" + "(CLEAR DUPES)" + "(SHUFFLE)"))
 
 		if(variable == null)
 			return
 
 		if(variable == "(ADD VAR)")
-			mod_list_add(L, O, original_name, objectvar)
+			mod_list_add(L, O, original_name, objectvar, "[key]:add")
 			return
 
 		if(variable == "(CLEAR NULLS)")
@@ -171,8 +193,8 @@ GLOBAL_PROTECT(VVpixelmovement)
 	if (index == null)
 		return
 	var/assoc = 0
-	var/prompt = tgui_alert(usr, "Do you want to edit the key or its assigned value?", "Associated List", list("Key", "Assigned Value", "Cancel"))
-	if (prompt == "Cancel")
+	var/prompt = flow_ask(mob, "[key]:which", list("message" = "Do you want to edit the key or its assigned value?", "title" = "Associated List", "choices" = list("Key", "Assigned Value", "Cancel")))
+	if (isnull(prompt) || prompt == "Cancel")
 		return
 	if (prompt == "Assigned Value")
 		assoc = 1
@@ -223,7 +245,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 		if (default == VV_TEXT)
 			default = VV_MESSAGE
 		class = default
-	var/list/LL = vv_get_value(default_class = default, current_value = original_var, restricted_classes = list(VV_RESTORE_DEFAULT), extra_classes = list(VV_LIST, "DELETE FROM LIST"))
+	var/list/LL = vv_get_value(default_class = default, current_value = original_var, restricted_classes = list(VV_RESTORE_DEFAULT), extra_classes = list(VV_LIST, "DELETE FROM LIST"), key = "[key]:value")
 	class = LL["class"]
 	if (!class)
 		return
@@ -234,7 +256,8 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 	switch(class) //Spits a runtime error if you try to modify an entry in the contents list. Dunno how to fix it, yet.
 		if(VV_LIST)
-			mod_list(variable, O, original_name, objectvar)
+			mod_list(variable, O, original_name, objectvar, key = "[key]>")
+			return
 
 		if("DELETE FROM LIST")
 			L.Cut(index, index+1)
@@ -248,7 +271,9 @@ GLOBAL_PROTECT(VVpixelmovement)
 			return
 
 		if(VV_TEXT)
-			var/list/varsvars = vv_parse_text(O, new_var)
+			var/list/varsvars = vv_parse_text(O, new_var, key)
+			if(isnull(varsvars))
+				return
 			for(var/V in varsvars)
 				new_var = replacetext(new_var,"\[[V]]","[O.vars[V]]")
 
@@ -280,6 +305,8 @@ GLOBAL_PROTECT(VVpixelmovement)
 	return TRUE
 
 /client/proc/modify_variables(atom/O, param_var_name = null, autodetect_class = 0)
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(modify_variables), args)
 	if(!check_rights(R_VAREDIT))
 		return
 
@@ -300,7 +327,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 		names = sortList(names)
 
-		variable = tgui_input_list(usr, "Which var?", "Var", names)
+		variable = flow_ask(mob, "edit:var", list("kind" = "list", "message" = "Which var?", "title" = "Var", "choices" = names))
 		if(!variable)
 			return
 
@@ -340,7 +367,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 			default = VV_MESSAGE
 		class = default
 
-	var/list/value = vv_get_value(class, default, var_value, extra_classes = list(VV_LIST), var_name = variable)
+	var/list/value = vv_get_value(class, default, var_value, extra_classes = list(VV_LIST), var_name = variable, key = "edit:value")
 	class = value["class"]
 
 	if (!class)
@@ -355,16 +382,19 @@ GLOBAL_PROTECT(VVpixelmovement)
 	switch(class)
 		if(VV_LIST)
 			if(!islist(var_value))
-				mod_list(list(), O, original_name, variable)
+				mod_list(list(), O, original_name, variable, key = "edit:newlist")
+				return
 
-			mod_list(var_value, O, original_name, variable)
+			mod_list(var_value, O, original_name, variable, key = "edit:list")
 			return
 
 		if(VV_RESTORE_DEFAULT)
 			var_new = initial(O.vars[variable])
 
 		if(VV_TEXT)
-			var/list/varsvars = vv_parse_text(O, var_new)
+			var/list/varsvars = vv_parse_text(O, var_new, "edit")
+			if(isnull(varsvars))
+				return
 			for(var/V in varsvars)
 				var_new = replacetext(var_new,"\[[V]]","[O.vars[V]]")
 

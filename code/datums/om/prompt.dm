@@ -11,7 +11,9 @@
 //                "checkboxes" (a list of the ticked choices) or "colormatrix" (the ColorMate
 //                window: "preview", "matrix_only", "ui_state") or "typepath" (a typed part of a
 //                path under "root", default /atom; several matches are picked from a list, and
-//                the answer is the path). Default "alert".
+//                the answer is the path) or "bitfield" (flag checkboxes: "bitfield" names the
+//                flag set for get_valid_bitflags(), "default" is the value, "editable" the mask
+//                of flags that may change; the answer is the new value). Default "alert".
 //   "message", "title"
 //   "choices"    alert buttons, list items or checkboxes
 //   "default", "timeout" (deciseconds)
@@ -441,6 +443,13 @@
 			X.om_prompt = P
 			X.tgui_interact(user)
 			return X
+		if("bitfield")
+			if(!length(get_valid_bitflags(S["bitfield"])))
+				return null
+			var/datum/tgui_bitfield_input/om/B = new(user, S["title"] || S["message"] || "Bitfield", get_valid_bitflags(S["bitfield"]), S["default"] || 0, isnull(S["editable"]) ? ALL : S["editable"], timeout)
+			B.om_prompt = P
+			B.tgui_interact(user)
+			return B
 		if("colormatrix")
 			var/preview = S["preview"]
 			if(!ispath(preview) && !isatom(preview))
@@ -613,3 +622,28 @@
 	if(was_path && target)
 		qdel(target)
 	return ..()
+
+/// kind "bitfield": the flag checkboxes. Submit answers the value; cancel or close cancels.
+/datum/tgui_bitfield_input/om
+	var/datum/om/prompt/om_prompt
+
+/datum/tgui_bitfield_input/om/declared_pair_vars()
+	var/static/list/pairs = list("om_prompt" = "ui")
+	return pairs
+
+/datum/tgui_bitfield_input/om/tgui_act(action, list/params, datum/tgui/ui)
+	// Answer before the window closes: closing it means cancel.
+	if(om_prompt && action == "submit")
+		var/datum/om/prompt/P = om_prompt
+		om_prompt = null
+		om_prompt_answer(P, value)
+		SStgui.close_uis(src)
+		return TRUE
+	return ..()
+
+/datum/tgui_bitfield_input/om/tgui_close(mob/user)
+	. = ..()
+	if(om_prompt)
+		om_prompt_closed(om_prompt)
+		om_prompt = null
+	qdel(src)

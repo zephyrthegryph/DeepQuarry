@@ -1366,9 +1366,11 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		if(337.5)
 			return "North-Northwest"
 
-/proc/pick_closest_path(value, list/matches = get_fancy_list_of_atom_types())
+/// Asks for a type (typed filter, then a pick from the matches) inside a prompt flow
+/// (flow_ask()): null until answered. `key` keeps its answers apart.
+/proc/pick_closest_path(value, list/matches = get_fancy_list_of_atom_types(), key = "path")
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
-		value = tgui_input_text(usr, "Enter type to find (blank for all, cancel to cancel)", "Search for type")
+		value = flow_ask(usr, "[key]:filter", list("kind" = "text", "message" = "Enter type to find (blank for all, cancel to cancel)", "title" = "Search for type"))
 		if (isnull(value))
 			return
 	value = trim(value)
@@ -1382,8 +1384,8 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(matches.len==1)
 		chosen = matches[1]
 	else
-		chosen = tgui_input_list(usr, "Select a type", "Pick Type", matches)
-		if(!chosen)
+		chosen = flow_ask(usr, "[key]:pick", list("kind" = "list", "message" = "Select a type", "title" = "Pick Type", "choices" = matches))
+		if(!chosen || !(chosen in matches))
 			return
 	chosen = matches[chosen]
 	return chosen

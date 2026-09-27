@@ -186,9 +186,47 @@ GLOBAL_LIST_EMPTY(om_rerun_answers)
 	var/proc_name = P.get("proc")
 	var/id = "[REF(E)]:[proc_name]"
 	GLOB.om_rerun_answers[id] = answers
+	usr = user // Panel and admin procs read usr, as they did when first run.
 	try
 		call(E, proc_name)(arglist(proc_args))
 	catch(var/exception/e)
 		stack_trace("prompt re-run [proc_name] on [E]: [e]")
 	GLOB.om_rerun_answers -= id
 	SStgui.update_uis(E)
+
+// ---------------------------------------------------------------- prompt flows
+//
+// A flow is an entry proc whose questions are asked deep below it, in helpers shared by many
+// entries (View Variables' value picker, the type picker). The entry starts with
+//	if(!GLOB.prompt_flow)
+//		return prompt_flow(src, PROC_REF(this_proc), args)
+// and every question below it is flow_ask(user, key, spec): null the first time (return), and
+// the answer runs the entry again with the same arguments, where the same flow_ask() returns it.
+// Entries reached inside a running flow just run, so keys must be unique in the whole flow.
+// Everything is asked before anything is done.
+
+/// The running flow: its asker (client or datum), entry proc and arguments. Null outside one.
+GLOBAL_VAR(prompt_flow)
+
+/proc/prompt_flow(asker, entry_proc, list/entry_args, rights = 0)
+	if(GLOB.prompt_flow)
+		return call(asker, entry_proc)(arglist(entry_args))
+	GLOB.prompt_flow = list("asker" = asker, "proc" = entry_proc, "args" = entry_args.Copy(), "rights" = rights)
+	try
+		. = call(asker, entry_proc)(arglist(entry_args))
+	catch(var/exception/e)
+		GLOB.prompt_flow = null
+		throw e
+	GLOB.prompt_flow = null
+
+/// Asks `user` a question of the running flow; null until the answer re-runs the flow.
+/proc/flow_ask(mob/user, key, list/spec)
+	var/list/flow = GLOB.prompt_flow
+	if(!flow)
+		CRASH("flow_ask([key]) outside a prompt flow")
+	var/asker = flow["asker"]
+	if(istype(asker, /client))
+		var/client/C = asker
+		return C.client_prompt(key, spec, flow["proc"], flow["args"], flow["rights"])
+	var/datum/D = asker
+	return D.rerun_prompt(user, key, spec, flow["proc"], flow["args"])

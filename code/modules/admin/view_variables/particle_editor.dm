@@ -125,7 +125,9 @@
 			target = null
 			. = FALSE
 		if("new_type")
-			var/new_type = pick_closest_path(/particles, make_types_fancy(typesof(/particles)))
+			var/list/types = make_types_fancy(typesof(/particles))
+			var/picked = act_prompt(ui.user, action, params, ui, "type", list("kind" = "list", "message" = "Select a type", "title" = "Pick Type", "choices" = types))
+			var/new_type = types[picked]
 			if(!new_type)
 				return FALSE
 			target.particles = new new_type
@@ -169,6 +171,8 @@
 						var_value[3] = var_value[1]
 					var_value = generator(arglist(var_value))
 				if(P_DATA_ICON_ADD)
+					if(!GLOB.prompt_flow) // the icon questions re-run this action
+						return prompt_flow(src, PROC_REF(tgui_act), args)
 					var_value = pick_and_customize_icon(ui.user, pick_only=TRUE)
 					if(!var_value)
 						return FALSE

@@ -1,4 +1,6 @@
 /client/proc/admin_delete(datum/D)
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(admin_delete), args)
 	var/atom/A = D
 	var/coords = ""
 	var/jmp_coords = ""
@@ -12,7 +14,7 @@
 		else
 			jmp_coords = coords = "in nullspace"
 
-	if (tgui_alert(usr, "Are you sure you want to delete:\n[D]\n[coords]?", "Confirmation", list("Yes", "No")) == "Yes")
+	if (flow_ask(mob, "delete", list("message" = "Are you sure you want to delete:\n[D]\n[coords]?", "title" = "Confirmation", "choices" = list("Yes", "No"))) == "Yes")
 		log_admin("[key_name(usr)] deleted [D] [coords]")
 		message_admins("[key_name_admin(usr)] deleted [D] [jmp_coords]")
 		//BLACKBOX_LOG_ADMIN_VERB("Delete")

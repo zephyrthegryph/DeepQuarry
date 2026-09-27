@@ -67,12 +67,14 @@
 			target.add_filter(params["name"], old_filter_data["priority"], new_filter_data)
 			. = TRUE
 		if("modify_color_value")
-			var/new_color = tgui_color_picker(usr, "Pick new filter color", "Filteriffic Colors!")
+			var/new_color = act_prompt(usr, action, params, ui, "color", list("kind" = "color", "message" = "Pick new filter color", "title" = "Filteriffic Colors!"))
 			if(new_color)
 				target.transition_filter(params["name"], list("color" = new_color), 4)
 				. = TRUE
 		if("modify_icon_value")
-			var/icon/new_icon = pick_and_customize_icon()
+			if(!GLOB.prompt_flow) // the icon questions re-run this action
+				return prompt_flow(src, PROC_REF(tgui_act), args)
+			var/icon/new_icon = pick_and_customize_icon(ui.user)
 			if(new_icon)
 				target.filter_data[params["name"]]["icon"] = new_icon
 				target.update_filters()

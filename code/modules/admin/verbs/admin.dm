@@ -2,15 +2,20 @@
 	set name = "Admin teleport"
 	set category = "Admin.Game"
 	set desc = "Teleports an atom to a set of coordinates or to the contents of another atom"
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(admin_teleport), args)
 
-	var/list/value = vv_get_value(VV_ATOM_REFERENCE)
+	var/list/value = vv_get_value(VV_ATOM_REFERENCE, key = "teleport:what")
 	if(!value["class"] || !value["value"])
 		return
 	var/atom/target = value["value"]
 	var/atom/destination
-	switch(alert("Would you like to teleport to a set of a coordinates, or to an atom?",,"coordinates","atom"))
+	switch(flow_ask(mob, "teleport:how", list("message" = "Would you like to teleport to a set of a coordinates, or to an atom?", "choices" = list("coordinates","atom"))))
 		if("coordinates")
-			var/list/inputlist = text2numlist(sanitize(input(usr,"Please input the coordinates, seperated by commas")),",")
+			var/coords_text = flow_ask(mob, "teleport:coords", list("kind" = "text", "message" = "Please input the coordinates, seperated by commas"))
+			if(isnull(coords_text))
+				return
+			var/list/inputlist = text2numlist(sanitize(coords_text),",")
 			var/list/coords = list()
 			for(var/content in inputlist)
 				if(content != null)
@@ -26,8 +31,10 @@
 				tgui_alert_async(src, "Invalid coordinates!")
 				return
 		if("atom")
-			value = vv_get_value(VV_ATOM_REFERENCE)
+			value = vv_get_value(VV_ATOM_REFERENCE, key = "teleport:where")
 			if(!value["class"] || !value["value"])
 				return
 			destination = value["value"]
+	if(!destination)
+		return
 	do_teleport(target, destination, channel = TELEPORT_CHANNEL_QUANTUM)
