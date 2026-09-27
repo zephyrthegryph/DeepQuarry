@@ -71,7 +71,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	if(!istype(src) || !get_turf(src) || !src.ckey)
 		return
 
-	var/new_message = tgui_input_text(src, "Type in your message. It will be displayed to players who hover over the spot where you are right now. If you already have a message somewhere, it will be removed in the process. Please refrain from abusive or deceptive messages, but otherwise, feel free to be creative!", "Env Message", max_length = MAX_MESSAGE_LEN)
+	var/new_message = rerun_prompt(src, "k74", list("kind" = "text", "message" = "Type in your message. It will be displayed to players who hover over the spot where you are right now. If you already have a message somewhere, it will be removed in the process. Please refrain from abusive or deceptive messages, but otherwise, feel free to be creative!", "title" = "Env Message", "max_length" = MAX_MESSAGE_LEN), VERB_REF(create_env_message), args)
+	if(isnull(new_message))
+		return
 
 	if(!new_message)
 		return
@@ -101,7 +103,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	var/obj/effect/env_message/EM = locate(/obj/effect/env_message) in ourturf
 
 	if(EM)
-		var/answer = tgui_alert(src, "Do you want to remove this env message? (Note: Selecting 'Yes' will remove other players' messages on this tyle too. Please don't remove other players' messages for no reason. Use 'Only My Message' to remove yours only.)", "Env Message", list("Yes", "Only My Message", "No"))
+		var/answer = rerun_prompt(src, "k104", list("message" = "Do you want to remove this env message? (Note: Selecting 'Yes' will remove other players' messages on this tyle too. Please don't remove other players' messages for no reason. Use 'Only My Message' to remove yours only.)", "title" = "Env Message", "choices" = list("Yes", "Only My Message", "No")), VERB_REF(remove_env_message), args)
+		if(isnull(answer))
+			return
 		if(answer == "Yes")
 			if(!(src.ckey in EM.message_list) || length(EM.message_list) > 1)
 				log_game("[key_name(src)] deleted an Env Message that contained other players' entries at ([EM.x], [EM.y], [EM.z])")
@@ -109,7 +113,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 		else if(answer == "Only My Message")
 			clear_env_message(src.ckey)
 	else
-		var/answer = tgui_alert(src, "Do you want to remove your env message?", "Env Message", list("Yes", "No"))
+		var/answer = rerun_prompt(src, "k112", list("message" = "Do you want to remove your env message?", "title" = "Env Message", "choices" = list("Yes", "No")), VERB_REF(remove_env_message), args)
+		if(isnull(answer))
+			return
 		if(answer == "Yes")
 			clear_env_message(src.ckey)
 
@@ -129,7 +135,9 @@ ADMIN_VERB(create_gm_message, R_FUN, "Map Message - Create", "Create an ooc mess
 	if(!get_turf(user_mob))
 		return
 
-	var/new_message = tgui_input_text(user, "Type in your message. It will be displayed to players who hover over the spot where you are right now.", "Env Message", "", MAX_MESSAGE_LEN)
+	var/new_message = verb_prompt(user, "k132", list("kind" = "text", "message" = "Type in your message. It will be displayed to players who hover over the spot where you are right now.", "title" = "Env Message", "max_length" = MAX_MESSAGE_LEN), args)
+	if(isnull(new_message))
+		return
 
 	if(!new_message)
 		return
@@ -153,7 +161,9 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 		to_chat(user, span_warning("There are no map or env messages."))
 		return
 
-	var/mob/chosen_message = tgui_input_list(user, "Which message do you want to remove?", "Make contact", all_map_messages)
+	var/mob/chosen_message = verb_prompt(user, "k156", list("kind" = "list", "message" = "Which message do you want to remove?", "title" = "Make contact", "choices" = all_map_messages), args)
+	if(isnull(chosen_message))
+		return
 	if(!chosen_message)
 		return
 
