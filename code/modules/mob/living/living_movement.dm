@@ -204,8 +204,9 @@ default behaviour is:
 		if(AM.Move(T2, t, move_time))
 			Move(T, t, move_time)
 
-		if(ishuman(AM) && AM?.grabbed_by_list())
-			for(var/obj/item/grab/G in AM?.grabbed_by_list())
+		var/mob/living/carbon/human/pushed_human = ishuman(AM) ? AM : null
+		if(pushed_human?.grabbed_by_list())
+			for(var/obj/item/grab/G in pushed_human.grabbed_by_list())
 				step(G?.grab_assailant(), get_dir(G?.grab_assailant(), AM))
 				G.adjust_position()
 		now_pushing = FALSE

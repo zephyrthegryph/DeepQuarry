@@ -297,116 +297,117 @@
 // bans the macros and bare om_relation_of() outside code/datums/om.
 
 /// Was BUCKLED().
-/datum/proc/buckled_to() as /atom/movable
+/mob/proc/buckled_to() as /atom/movable
 	return om_relation_of(src, /datum/om/relation/buckled_to)
 
 /// Was BUCKLED_MOBS().
-/datum/proc/buckled_mob_list() as /list
+/atom/movable/proc/buckled_mob_list() as /list
 	return om_related_to(src, /datum/om/relation/buckled_to)
 
 /// Was PULLING().
-/datum/proc/pulling_target() as /atom/movable
+/mob/proc/pulling_target() as /atom/movable
+	return om_relation_of(src, /datum/om/relation/pulling)
+
+/// A wheelchair pulls too (relaymove()); declared here rather than on /atom/movable.
+/obj/structure/bed/chair/wheelchair/proc/pulling_target() as /atom/movable
 	return om_relation_of(src, /datum/om/relation/pulling)
 
 /// Was PULLED_BY().
-/datum/proc/pulled_by_mob() as /mob/living
+/atom/movable/proc/pulled_by_mob() as /mob/living
 	return om_source_of(src, /datum/om/relation/pulling)
 
 /// Was GRABBED_BY().
-/datum/proc/grabbed_by_list() as /list
+/mob/proc/grabbed_by_list() as /list
 	return om_related_to(src, /datum/om/relation/grabbing)
 
 /// Was EYE_OWNER().
-/datum/proc/eye_owner() as /mob
+/mob/observer/eye/proc/eye_owner() as /mob
 	return om_relation_of(src, /datum/om/relation/eye_of)
 
 /// Was EYES_OF().
-/datum/proc/eyes_list() as /list
+/mob/living/proc/eyes_list() as /list
 	return om_related_to(src, /datum/om/relation/eye_of)
 
 /// Was ACTIVE_EYE().
-/datum/proc/active_eye() as /mob/observer/eye
+/mob/proc/active_eye() as /mob/observer/eye
 	return om_relation_of(src, /datum/om/relation/active_eye)
 
 /// Was GRAB_TARGET().
-/datum/proc/grab_target() as /mob/living
+/obj/item/grab/proc/grab_target() as /mob/living
 	return om_relation_of(src, /datum/om/relation/grabbing)
 
 /// Was ORBIT_TARGET().
-/datum/proc/orbit_target() as /atom/movable
+/atom/movable/proc/orbit_target() as /atom/movable
 	return om_relation_of(src, /datum/om/relation/orbiting)
 
 /// Was ORBITERS().
-/datum/proc/orbiter_list() as /list
+/atom/movable/proc/orbiter_list() as /list
 	return om_related_to(src, /datum/om/relation/orbiting)
 
 /// Was LEASH_PET().
-/datum/proc/leash_pet() as /mob/living
+/obj/item/leash/proc/leash_pet() as /mob/living
 	return om_source_of(src, /datum/om/relation/leashed_to)
 
 /// Was LEASH_MASTER().
-/datum/proc/leash_master() as /mob/living
+/obj/item/leash/proc/leash_master() as /mob/living
 	return om_relation_of(src, /datum/om/relation/leash_held_by)
 
 /// Was LEASH_OF().
-/datum/proc/leash_item() as /obj/item
+/mob/living/proc/leash_item() as /obj/item
 	return om_relation_of(src, /datum/om/relation/leashed_to)
 
 /// Was TETHERED_HANDHELD().
-/datum/proc/tethered_handheld() as /obj/item
+/obj/item/proc/tethered_handheld() as /obj/item
 	return om_source_of(src, /datum/om/relation/tethered_to)
 
 /// Was TETHER_HOST().
-/datum/proc/tether_host() as /obj/item
+/obj/item/proc/tether_host() as /obj/item
 	return om_relation_of(src, /datum/om/relation/tethered_to)
 
 /// Was FOLLOWING().
-/datum/proc/following_target() as /atom/movable
+/mob/observer/proc/following_target() as /atom/movable
 	return om_relation_of(src, /datum/om/relation/following)
 
 /// Was FOLLOWERS().
-/datum/proc/follower_list() as /list
+/mob/proc/follower_list() as /list
 	return om_related_to(src, /datum/om/relation/following)
 
 /// Was BORER_HOST().
-/datum/proc/borer_host() as /mob/living/carbon/human
+/mob/living/simple_mob/animal/borer/proc/borer_host() as /mob/living/carbon/human
 	return om_relation_of(src, /datum/om/relation/host_of)
 
 /// Was BORER_OF().
-/datum/proc/borer_of() as /mob/living/simple_mob/animal/borer
+/mob/living/carbon/human/proc/borer_of() as /mob/living/simple_mob/animal/borer
 	return om_source_of(src, /datum/om/relation/host_of)
 
 /// Was BS_TX_TARGET().
-/datum/proc/bs_tx_target() as /obj/machinery/telecomms
+/obj/item/radio/proc/bs_tx_target() as /obj/machinery/telecomms
 	return om_relation_of(src, /datum/om/relation/bluespace_tx_to)
 
 /// Was BS_TX_RADIOS().
-/datum/proc/bs_tx_radios() as /list
+/obj/machinery/telecomms/proc/bs_tx_radios() as /list
 	return om_related_to(src, /datum/om/relation/bluespace_tx_to)
 
 /// Was BS_RX_SOURCE().
-/datum/proc/bs_rx_source() as /obj/machinery/telecomms
+/obj/item/radio/proc/bs_rx_source() as /obj/machinery/telecomms
 	return om_relation_of(src, /datum/om/relation/bluespace_rx_from)
 
 /// Was BS_RX_RADIOS().
-/datum/proc/bs_rx_radios() as /list
+/obj/machinery/telecomms/proc/bs_rx_radios() as /list
 	return om_related_to(src, /datum/om/relation/bluespace_rx_from)
 
 /// Was GRIPPER_HELD().
-/datum/proc/gripper_held() as /obj/item
+/obj/item/gripper/proc/gripper_held() as /obj/item
 	return om_relation_of(src, /datum/om/relation/gripper_holding)
 
 /// Was UAV_MASTERS().
-/datum/proc/uav_masters() as /list
+/obj/item/uav/proc/uav_masters() as /list
 	return om_related_to(src, /datum/om/relation/uav_master)
 
 /// Was STASIS_SOURCE().
-/datum/proc/stasis_source() as /atom
+/datum/modifier/proc/stasis_source() as /atom
 	return om_relation_of(src, /datum/om/relation/stasis_held_by)
 
 /// The mob holding grab item src (the grab lives in the assailant's hand), or null. Was GRAB_ASSAILANT().
-/datum/proc/grab_assailant() as /mob/living/carbon/human
-	return null
-
-/obj/item/grab/grab_assailant()
+/obj/item/grab/proc/grab_assailant() as /mob/living/carbon/human
 	return ishuman(loc) ? loc : null

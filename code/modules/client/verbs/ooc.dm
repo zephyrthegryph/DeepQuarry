@@ -156,7 +156,8 @@
 		if(viewer.client && viewer.client.prefs?.read_preference(/datum/preference/toggle/show_looc))
 			receivers |= viewer.client
 		else if(isEye(viewer)) // For AI eyes and the like
-			var/mob/owner = viewer?.eye_owner()
+			var/mob/observer/eye/viewer_eye = viewer
+			var/mob/owner = viewer_eye?.eye_owner()
 			if(owner?.client)
 				receivers |= owner.client
 

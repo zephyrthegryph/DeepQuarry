@@ -121,6 +121,9 @@
 /// Phase 3, for declared spill vars (REF_SPILL/REF_SPILL_LIST): each thing
 /// still inside `AM` goes to its drop location. When that location is itself
 /// being destroyed in the same batch, the thing is simply deleted with it.
+/// The spill hook: a thing that lands refreshes its icon, since its sprite may
+/// show the holder's state (a recharger's cell mid-charge), as a hand eject does.
+/// It is the existing update_icon(), not a new base-type proc (base_proc_lint.py).
 /proc/dq_lifecycle_spill_declared(atom/movable/AM)
 	var/list/table = dq_lifecycle_link_table(AM)
 	var/list/spill = table["spill"]
@@ -138,6 +141,7 @@
 			qdel(thing)
 		else
 			thing.forceMove(drop)
+			thing.update_icon()
 	for(var/var_name in spill_list)
 		var/list/things = AM.vars[var_name]
 		if(!islist(things))
@@ -151,6 +155,7 @@
 				qdel(thing)
 			else
 				thing.forceMove(drop)
+				thing.update_icon()
 
 /// Phase 4 (doc/rewrite/lifecycle.md §2): clears every declared relationship
 /// on `D` -- owned children deleted, pair partners nulled on both sides,
