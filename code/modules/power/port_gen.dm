@@ -147,6 +147,7 @@
 	if(anchored)
 		connect_to_network()
 
+// LIFECYCLE: its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/pacman/Destroy()
 	DropFuel()
 	return ..()
@@ -511,10 +512,6 @@
 	anchored = TRUE
 
 //Port Start, RS PR #484
-/obj/machinery/power/port_gen/pacman/super/potato/Destroy()
-	. = ..()
-	cut_overlays() // sanity checks
-	set_light(0)
 
 /obj/machinery/power/port_gen/pacman/super/potato/update_icon()
 	cut_overlays()
@@ -1048,6 +1045,7 @@
 	if(anchored)
 		connect_to_network()
 
+// LIFECYCLE: its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/large_altevian/Destroy()
 	DropFuel()
 	return ..()

@@ -203,37 +203,28 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-/obj/machinery/power/apc/Destroy()
+REF_OWNED(/obj/machinery/power/apc, list("wires", "terminal", "icon_renderer"))
+REF_SPILL(/obj/machinery/power/apc, "cell")
+REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
+
+/// Phase 1 (unbind): the APC's Rust power node goes.
+/obj/machinery/power/apc/lifecycle_unbind()
+	. = ..()
 	if(vg_entity)
 		vg_power_unbind_node(vg_entity)
+
+// LIFECYCLE: its area loses power and its power alarm clears.
+/obj/machinery/power/apc/Destroy()
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
-
 	if(area)
 		area.apc = null
 		area.power_light  = 0
 		area.power_equip  = 0
 		area.power_environ = 0
 		area.power_change()
-
-	qdel(wires)
-	wires = null
-	qdel(terminal)
-	terminal = null
-	if(cell)
-		cell.forceMove(loc)
-		cell = null
-
-	// Malf AI — remove this APC from AI's hacked list.
-	if(hacker && hacker.hacked_apcs && (src in hacker.hacked_apcs))
-		hacker.hacked_apcs -= src
-	hacker = null
-
-	// Release delegate datums.
-	QDEL_NULL(icon_renderer)
-
 	return ..()
 
 /// Something about the APC changed (settings, cell, damage): send it to Rust.
@@ -1047,7 +1038,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	else
 		return 0
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Legacy passthrough procs — kept for external call-site compatibility
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1241,7 +1231,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 // All APC defines are declared in code/__defines/apc.dm and are not #undef'd
 // here because they are shared with apc_icon_renderer.
-
 
 /// Watts channel `index` (0 equipment, 1 lighting, 2 environment) draws now, read from Rust.
 /obj/machinery/power/apc/proc/channel_load(index)

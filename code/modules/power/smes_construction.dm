@@ -94,8 +94,6 @@
 	output_level = output_level_max
 	input_attempt = TRUE
 
-
-
 // END SMES SUBTYPES
 
 // SMES itself
@@ -110,9 +108,10 @@
 	charge = 0
 	should_be_mapped = 1
 
+REF_OWNED(/obj/machinery/power/smes/buildable, "wires")
+
+// LIFECYCLE: RCON consoles rescan without it.
 /obj/machinery/power/smes/buildable/Destroy()
-	qdel(wires)
-	wires = null
 	for(var/datum/tgui_module/rcon/R in world)
 		R.FindDevices()
 	return ..()
@@ -229,7 +228,6 @@
 	if (!istype(h_user))
 		return
 
-
 	// Preparations
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	// Check if user has protected gloves.
@@ -305,8 +303,6 @@
 
 	s.start()
 	charge = 0
-
-
 
 // Proc: apcs_overload()
 // Parameters: 2 (failure_chance - chance to actually break the APC, overload_chance - Chance of breaking lights)

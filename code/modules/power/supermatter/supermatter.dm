@@ -21,7 +21,6 @@
 #define CHARGING_FACTOR 0.05
 #define DAMAGE_RATE_LIMIT 3			//damage rate cap at power = 300, scales linearly with power
 
-
 // Base variants are applied to everyone on the same Z level
 // Range variants are applied on per-range basis: numbers here are on point blank, it scales with the map size (assumes square shaped Z levels)
 #define DETONATION_RADS 40
@@ -131,6 +130,9 @@
 		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
+REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
+
+// LIFECYCLE: an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/Destroy()
 	if(!delamination_delete)
 		log_game("SUPERMATTER([x],[y],[z]) deleted outside its delamination path. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()], QDEL source:[datum_flags]")
@@ -144,7 +146,6 @@
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
 		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
-	QDEL_NULL(soundloop)
 	return ..()
 
 /obj/machinery/power/supermatter/proc/get_status()
@@ -175,7 +176,6 @@
 		return SUPERMATTER_NORMAL
 	return SUPERMATTER_INACTIVE
 
-
 /obj/machinery/power/supermatter/proc/get_epr()
 	var/turf/T = get_turf(src)
 	if(!istype(T))
@@ -186,7 +186,6 @@
 	// group_multiplier was XGM-only (zones contained multiple tiles
 	// scaled by count). LINDA mixtures are per-tile so divide by 1.
 	return round(xgm_total_moles(air) / 23.1, 0.01)
-
 
 /// Starts the delamination: the pull, then the effects after `pull_time` (explode_effects()).
 /obj/machinery/power/supermatter/proc/explode()
@@ -288,7 +287,6 @@
 	integrity = round(100 - integrity * 100)
 	integrity = integrity < 0 ? 0 : integrity
 	return integrity
-
 
 /obj/machinery/power/supermatter/proc/announce_warning()
 	var/integrity = get_integrity()
@@ -629,7 +627,6 @@
 
 	return data
 
-
 /// Old attackby: never called ..(), so the whole thing stays in the effect.
 /datum/interaction/machine_item/supermatter_touch_item
 	id = "supermatter_touch_item"
@@ -650,7 +647,6 @@
 		L.apply_effect(150, IRRADIATE)
 	return TRUE
 
-
 /obj/machinery/power/supermatter/Bumped(atom/AM as mob|obj)
 	if(istype(AM, /obj/effect))
 		return
@@ -664,7 +660,6 @@
 		span_warning("You hear a loud crack as you are washed with a wave of heat."))
 
 	Consume(AM)
-
 
 /obj/machinery/power/supermatter/proc/Consume(mob/living/user)
 	if(istype(user))
@@ -751,7 +746,6 @@
 	last_event = world.time
 	active = FALSE
 
-
 /obj/machinery/power/supermatter/station
 	stationcrystal = TRUE
 
@@ -799,7 +793,6 @@
 
 #undef SUPERMATTER_COUNTDOWN_TIME
 #undef SUPERMATTER_ACCENT_SOUND_COOLDOWN
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/supermatter/step_start_condition()

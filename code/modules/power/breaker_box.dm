@@ -22,6 +22,7 @@
 	var/RCon_tag = "NO_TAG"
 	var/update_locked = 0
 
+// LIFECYCLE: the cables it switched go with it; RCON consoles rescan.
 /obj/machinery/power/breakerbox/Destroy()
 	for(var/obj/structure/cable/C in src.loc)
 		C.breaker_box = null
@@ -77,7 +78,6 @@
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
 	update_locked = 1
 	om_after(src, 60 SECONDS, PROC_REF(unlock_updates))
-
 
 /obj/machinery/power/breakerbox/declare_interactions(list/into)
 	into += list(

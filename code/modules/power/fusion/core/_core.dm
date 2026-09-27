@@ -2,7 +2,6 @@
 	TODO README
 */
 
-
 #define MAX_FIELD_STR 1000
 #define MIN_FIELD_STR 1
 
@@ -48,15 +47,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	. = ..()
 	connect_to_network()
 
-/obj/machinery/power/fusion_core/Destroy()
-	if(material_sample && !QDELETED(material_sample))
-		material_sample.forceMove(get_turf(src))
-	material_sample = null
+REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
+
+/// Phase 2: fusion control consoles drop it.
+/obj/machinery/power/fusion_core/lifecycle_dematerialize()
+	. = ..()
 	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		LAZYREMOVE(FCC.connected_devices, src)
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
-	return ..()
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(stat & BROKEN)
