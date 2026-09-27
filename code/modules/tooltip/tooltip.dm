@@ -16,7 +16,6 @@
 // CSS pointer-events. DM here only pushes the content/data and toggles hide;
 // React owns is-visible (it shows the element after sizing it).
 
-
 /datum/tooltip
 	var/client/owner
 	var/control = "mapwindow.tooltip"
@@ -39,7 +38,6 @@
 	// older atom from hiding a newer tooltip that reused the same browser.
 	var/_revision = 0
 
-
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
@@ -51,7 +49,7 @@
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-
+// LIFECYCLE: closes its tooltip window.
 /datum/tooltip/Destroy(force)
 	if(tooltip_window)
 		tooltip_window.close()
@@ -60,10 +58,8 @@
 	owner = null
 	return ..()
 
-
 /datum/tooltip/tgui_state(mob/user)
 	return GLOB.tgui_always_state
-
 
 /datum/tooltip/tgui_data(mob/user)
 	return list(
@@ -131,7 +127,6 @@
 		hide()
 	return TRUE
 
-
 /datum/tooltip/proc/hide(atom/expected_target)
 	// BYOND can report MouseExited through a different appearance/screen atom
 	// than MouseEntered used. Do not reject dismissal based on object identity;
@@ -153,12 +148,10 @@
 		do_hide(hide_revision)
 	return TRUE
 
-
 /datum/tooltip/proc/on_target_qdel()
 	SIGNAL_HANDLER
 	INVOKE_ASYNC(src, PROC_REF(hide))
 	last_target = null
-
 
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
@@ -173,13 +166,11 @@
 	_visible = FALSE
 	SStgui.update_uis(src)
 
-
 /datum/tooltip/proc/ensure_hidden(hide_revision)
 	if(hide_revision != _revision || _visible)
 		return
 	if(owner)
 		winset(owner, control, "is-visible=false")
-
 
 /datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
@@ -188,7 +179,6 @@
 	if(action == "dismiss")
 		hide()
 		return TRUE
-
 
 //Open a tooltip for user, at a location based on params
 //Theme is a CSS class in Tooltip.tsx, by default this wrapper chooses a CSS class based on the user's UI_style (Midnight, Plasmafire, Retro, etc)
@@ -202,7 +192,6 @@
 	if(!theme)
 		theme = "midnight"
 	user.client.tooltips.show(tip_src, params, title, content, theme)
-
 
 //Arbitrarily close a user's tooltip
 //Includes sanity checks.
