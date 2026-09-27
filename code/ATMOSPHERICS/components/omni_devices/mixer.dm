@@ -108,6 +108,10 @@
 	if(!..())
 		return PROCESS_KILL // off or unpowered: its power and settings channels wake it
 
+	// Ports are rebound to their pipe region's air whenever the topology
+	// commits (the old datum is deleted), so the gas -> concentration list is
+	// rebuilt from the ports' current air every step, never kept across one.
+	rebuild_mixing_inputs()
 	//Figure out the amount of moles to transfer
 	var/transfer_moles = 0
 	for (var/datum/omni_port/P in inputs)

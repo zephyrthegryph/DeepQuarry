@@ -18,9 +18,9 @@
 	power_rating = 3700	//This also doubles as a measure of how powerful the mixer is, in Watts. 3700 W ~ 5 HP
 
 	var/set_flow_rate = ATMOS_DEFAULT_VOLUME_MIXER
-	var/list/mixing_inputs
 
-	//for mapping
+	// Input shares. These are the settings; the air datums they apply to are
+	// rebound whenever the pipe topology commits, so nothing is keyed by them.
 	var/node1_concentration = 0.5
 	var/node2_concentration = 0.5
 
@@ -55,8 +55,12 @@
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 	air3.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 1.5)
 
-	if (!mixing_inputs)
-		mixing_inputs = list(src.air1 = node1_concentration, src.air2 = node2_concentration)
+/// The gas -> share list mix_gas() takes, built from the current port air.
+/obj/machinery/atmospherics/trinary/mixer/proc/mixing_inputs()
+	var/list/inputs = list()
+	inputs[air1] = node1_concentration
+	inputs[air2] = node2_concentration
+	return inputs
 
 /obj/machinery/atmospherics/trinary/mixer/machine_step()
 	..()
@@ -75,12 +79,12 @@
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
-		power_draw = mix_gas(src, mixing_inputs, air3, transfer_moles, power_rating)
+		power_draw = mix_gas(src, mixing_inputs(), air3, transfer_moles, power_rating)
 
-		if(network1 && mixing_inputs[air1])
+		if(network1 && node1_concentration)
 			network1.mark_dirty()
 
-		if(network2 && mixing_inputs[air2])
+		if(network2 && node2_concentration)
 			network2.mark_dirty()
 
 		if(network3)
@@ -103,8 +107,8 @@
 	data["on"] = use_power
 	data["set_pressure"] = round(set_flow_rate)
 	data["max_pressure"] = min(air1.return_volume(), air2.return_volume())
-	data["node1_concentration"] = round(mixing_inputs[air1]*100, 1)
-	data["node2_concentration"] = round(mixing_inputs[air2]*100, 1)
+	data["node1_concentration"] = round(node1_concentration*100, 1)
+	data["node2_concentration"] = round(node2_concentration*100, 1)
 	var/list/node_connects = get_node_connect_dirs()
 	data["node1_dir"] = dir_name(node_connects[1],TRUE)
 	data["node2_dir"] = dir_name(node_connects[2],TRUE)
@@ -130,13 +134,13 @@
 				set_flow_rate = clamp(pressure, 0, min(air1.return_volume(), air2.return_volume()))
 		if("node1")
 			var/value = text2num(params["concentration"])
-			mixing_inputs[air1] = max(0, min(1, value / 100))
-			mixing_inputs[air2] = 1.0 - mixing_inputs[air1]
+			node1_concentration = max(0, min(1, value / 100))
+			node2_concentration = 1.0 - node1_concentration
 			. = TRUE
 		if("node2")
 			var/value = text2num(params["concentration"])
-			mixing_inputs[air2] = max(0, min(1, value / 100))
-			mixing_inputs[air1] = 1.0 - mixing_inputs[air2]
+			node2_concentration = max(0, min(1, value / 100))
+			node1_concentration = 1.0 - node2_concentration
 			. = TRUE
 	update_icon()
 	START_MACHINE_PROCESSING(src) // settings: re-evaluate the mix now
@@ -162,7 +166,7 @@
 	mirrored = TRUE
 
 /obj/machinery/atmospherics/trinary/mixer/proc/mix_transfer_moles()
-	return (set_flow_rate*mixing_inputs[air1]/air1.return_volume())*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.return_volume())*air2.total_moles()
+	return (set_flow_rate*node1_concentration/air1.return_volume())*air1.total_moles() + (set_flow_rate*node2_concentration/air2.return_volume())*air2.total_moles()
 
 /// Nothing to mix: park until the inputs hold enough to move (the same test machine_step()
 /// makes). Power and settings changes wake it through their own channels.
