@@ -260,8 +260,4 @@
 
 	..()
 
-
-/obj/vehicle/bike/Destroy()
-	qdel(ion)
-
-	. = ..()
+REF_OWNED(/obj/vehicle/bike, "ion")
