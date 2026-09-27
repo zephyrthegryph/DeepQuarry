@@ -14,10 +14,10 @@ mod placement;
 mod semantics;
 mod validate;
 use self::fixtures::*;
+pub use self::generate::generate_station_blueprint;
 use self::geometry::*;
 use self::placement::*;
 use self::semantics::*;
-pub use self::generate::generate_station_blueprint;
 pub use self::validate::validate_station_blueprint;
 
 // Generate above the acceptance floor so final semantic pruning (for example,

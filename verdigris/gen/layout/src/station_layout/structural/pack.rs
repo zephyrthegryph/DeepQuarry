@@ -128,9 +128,10 @@ pub(super) fn pack_architectural_department(
                 && x <= hall_max_x
                 && y >= hall_min_y
                 && y <= hall_max_y
-                && plan.get(point) != Space::Public {
-                    plan.set(point, Space::Common(department.id));
-                }
+                && plan.get(point) != Space::Public
+            {
+                plan.set(point, Space::Common(department.id));
+            }
         }
     }
     // Shallow blocks need a two-module circulation band. With one row, the

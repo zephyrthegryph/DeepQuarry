@@ -1,6 +1,9 @@
 use super::*;
 
-pub(super) fn validate_logical_plan(plan: &LogicalPlan, request: &LayoutRequest) -> Result<(), LayoutError> {
+pub(super) fn validate_logical_plan(
+    plan: &LogicalPlan,
+    request: &LayoutRequest,
+) -> Result<(), LayoutError> {
     for department in &request.departments {
         let spaces: BTreeSet<_> = plan
             .points()
@@ -139,7 +142,9 @@ pub(super) fn room_allows_main_corridor_entrance(room_type: &RoomType) -> bool {
 /// Never donate the lobe to a neighboring room. That old repair silently grew
 /// an otherwise valid authored room beyond its content envelope and severed
 /// the exact geometry/program match established by the packer.
-pub(super) fn repair_disconnected_room_ownership(plan: &mut LogicalPlan) -> Result<(), LayoutError> {
+pub(super) fn repair_disconnected_room_ownership(
+    plan: &mut LogicalPlan,
+) -> Result<(), LayoutError> {
     for room in plan.rooms.clone() {
         let room_space = Space::Room {
             department: room.department,

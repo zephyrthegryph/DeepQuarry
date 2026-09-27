@@ -49,6 +49,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use crate::gas::mix::{self, MixRef};
 use byondapi::prelude::*;
 use eyre::{Result, eyre};
 use vg_core::entity::EntityId;
@@ -58,7 +59,6 @@ use vg_core::world::World;
 use vg_gas::device::{self, Flow, StepReport};
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::pipes::{PipeGas, Pipes};
-use crate::gas::mix::{self, MixRef};
 
 use crate::gas::REGION_SLOTS;
 use crate::world::{list, num, whole, with_world};
@@ -80,7 +80,11 @@ fn port_entity(port_id: u32) -> Option<EntityId> {
 /// handle; `0`/invalid: empty), or changes its volume if it already exists.
 /// Mints a fresh entity for a new port. Returns whether it succeeded.
 #[auxmacros::bind("/proc/vg_pipe_upsert")]
-fn pipe_upsert(port_id: ByondValue, mixture_handle: ByondValue, volume: ByondValue) -> Result<ByondValue> {
+fn pipe_upsert(
+    port_id: ByondValue,
+    mixture_handle: ByondValue,
+    volume: ByondValue,
+) -> Result<ByondValue> {
     let port_id = whole(&port_id, "port_id")?;
     let volume = num(&volume)?;
     let fresh = port_entity(port_id).is_none();
@@ -125,7 +129,9 @@ fn gas_from_handle(handle: &ByondValue) -> PipeGas {
     let Some(mix_ref) = num(handle).ok().and_then(MixRef::from_f32) else {
         return PipeGas::default();
     };
-    mix::load(mix_ref).map_or_else(PipeGas::default, |m| PipeGas::from_amounts(&mix::amounts_of(&m), m.get_temperature()))
+    mix::load(mix_ref).map_or_else(PipeGas::default, |m| {
+        PipeGas::from_amounts(&mix::amounts_of(&m), m.get_temperature())
+    })
 }
 
 /// Removes a port; its gas share is released, to `mixture_handle` if given
@@ -140,7 +146,8 @@ fn pipe_remove(port_id: ByondValue, mixture_handle: ByondValue) -> Result<ByondV
         RELEASE_TARGETS.with(|r| r.borrow_mut().insert(port_id, target));
     }
     with_world(|w| {
-        w.edit_network::<Pipes>(move |host| host.unbind_node(e)).map_err(|e| eyre!("{e}"))?;
+        w.edit_network::<Pipes>(move |host| host.unbind_node(e))
+            .map_err(|e| eyre!("{e}"))?;
         Ok(true)
     })
     .map(ByondValue::from)
@@ -170,7 +177,8 @@ fn pipe_disconnect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue>
     let (a, b) = (whole(&port_a, "port_a")?, whole(&port_b, "port_b")?);
     if let (Some(ea), Some(eb)) = (port_entity(a), port_entity(b)) {
         with_world(|w| {
-            w.edit_network::<Pipes>(move |host| host.disconnect_entities(ea, eb)).map_err(|e| eyre!("{e}"))?;
+            w.edit_network::<Pipes>(move |host| host.disconnect_entities(ea, eb))
+                .map_err(|e| eyre!("{e}"))?;
             Ok(())
         })?;
     }
@@ -180,7 +188,8 @@ fn pipe_disconnect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue>
 /// Drops every port (a map reload).
 #[auxmacros::bind("/proc/vg_pipe_clear")]
 fn pipe_clear() -> Result<ByondValue> {
-    let ports: Vec<EntityId> = PORTS.with(|p| std::mem::take(&mut *p.borrow_mut()).into_values().collect());
+    let ports: Vec<EntityId> =
+        PORTS.with(|p| std::mem::take(&mut *p.borrow_mut()).into_values().collect());
     RELEASE_TARGETS.with(|r| r.borrow_mut().clear());
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| {
@@ -203,10 +212,14 @@ fn pipe_commit() -> Result<ByondValue> {
     let mut released: Vec<(MixRef, PipeGas)> = Vec::new();
     let out = with_world(|w| {
         w.commit_network::<Pipes>();
-        let releases_cell: std::sync::Arc<std::sync::Mutex<Vec<(EntityId, u32, PipeGas)>>> = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let releases_cell: std::sync::Arc<std::sync::Mutex<Vec<(EntityId, u32, PipeGas)>>> =
+            std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let releases_out = std::sync::Arc::clone(&releases_cell);
         w.edit_network::<Pipes>(move |host| {
-            releases_out.lock().expect("not poisoned").extend(host.take_released());
+            releases_out
+                .lock()
+                .expect("not poisoned")
+                .extend(host.take_released());
         })
         .map_err(|e| eyre!("{e}"))?;
         let releases = std::mem::take(&mut *releases_cell.lock().expect("not poisoned"));
@@ -217,8 +230,14 @@ fn pipe_commit() -> Result<ByondValue> {
             // the target under the *port id*, not the entity, before
             // unbinding. `RELEASE_TARGETS` is small (removed-this-batch
             // ports only) and cleared as it's consumed.
-            let port_id = PORTS.with(|p| p.borrow().iter().find(|&(_, &e)| e == port_e).map(|(&id, _)| id));
-            let target = port_id.and_then(|id| RELEASE_TARGETS.with(|r| r.borrow_mut().remove(&id)));
+            let port_id = PORTS.with(|p| {
+                p.borrow()
+                    .iter()
+                    .find(|&(_, &e)| e == port_e)
+                    .map(|(&id, _)| id)
+            });
+            let target =
+                port_id.and_then(|id| RELEASE_TARGETS.with(|r| r.borrow_mut().remove(&id)));
             if let Some(target) = target {
                 released.push((target, payload));
             }
@@ -228,7 +247,11 @@ fn pipe_commit() -> Result<ByondValue> {
         for t in transitions {
             let slot = REGION_SLOTS.with(|s| {
                 let mut s = s.borrow_mut();
-                if t.retired { s.retire(t.region) } else { Some(s.slot_for(t.region)) }
+                if t.retired {
+                    s.retire(t.region)
+                } else {
+                    Some(s.slot_for(t.region))
+                }
             });
             let Some(slot) = slot else { continue };
             if t.retired {
@@ -239,9 +262,24 @@ fn pipe_commit() -> Result<ByondValue> {
             let ports: Vec<f32> = t
                 .members
                 .iter()
-                .filter_map(|&e| PORTS.with(|p| p.borrow().iter().find(|&(_, &pe)| pe == e).map(|(&id, _)| id as f32)))
+                .filter_map(|&e| {
+                    PORTS.with(|p| {
+                        p.borrow()
+                            .iter()
+                            .find(|&(_, &pe)| pe == e)
+                            .map(|(&id, _)| id as f32)
+                    })
+                })
                 .collect();
-            let priors: Vec<f32> = t.prior.iter().filter_map(|&raw| REGION_SLOTS.with(|s| s.borrow().raw_slot_of(raw)).map(handle)).collect();
+            let priors: Vec<f32> = t
+                .prior
+                .iter()
+                .filter_map(|&raw| {
+                    REGION_SLOTS
+                        .with(|s| s.borrow().raw_slot_of(raw))
+                        .map(handle)
+                })
+                .collect();
             #[allow(clippy::cast_precision_loss)]
             out.extend([handle(slot), ports.len() as f32, priors.len() as f32, vol]);
             out.extend(ports);
@@ -264,10 +302,20 @@ fn handle(slot: u32) -> f32 {
 }
 
 fn region_volume(w: &World, raw: u32) -> f32 {
-    let Some(r) = RawHandle::from_bits(raw) else { return 0.0 };
+    let Some(r) = RawHandle::from_bits(raw) else {
+        return 0.0;
+    };
     let region = RegionId::<Pipes>::from_raw(r);
     #[allow(clippy::cast_possible_truncation)]
-    w.network::<Pipes>().ok().and_then(|h| h.network().region(region).ok().map(|reg| *reg.summary() as f32)).unwrap_or(0.0)
+    w.network::<Pipes>()
+        .ok()
+        .and_then(|h| {
+            h.network()
+                .region(region)
+                .ok()
+                .map(|reg| *reg.summary() as f32)
+        })
+        .unwrap_or(0.0)
 }
 
 /// Registers (or replaces) a region<->region device edge between two
@@ -286,7 +334,11 @@ fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Re
     };
     let ok = with_world(|w| {
         let old = DEVICES.with(|d| d.borrow().get(&id_n).copied());
-        let e = if let Some(e) = old { e } else { w.entities_mut().bind().map_err(|e| eyre!("{e}"))? };
+        let e = if let Some(e) = old {
+            e
+        } else {
+            w.entities_mut().bind().map_err(|e| eyre!("{e}"))?
+        };
         w.edit_network::<Pipes>(move |host| {
             let _ = host.bind_device(e, ea, eb, 0, ());
         })
@@ -301,7 +353,11 @@ fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Re
 /// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
 /// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
 #[auxmacros::bind("/proc/vg_pipe_device_set_turf")]
-fn pipe_device_set_turf(id: ByondValue, port_a: ByondValue, turf_mixture_handle: ByondValue) -> Result<ByondValue> {
+fn pipe_device_set_turf(
+    id: ByondValue,
+    port_a: ByondValue,
+    turf_mixture_handle: ByondValue,
+) -> Result<ByondValue> {
     let id_n = whole(&id, "id")?;
     let pa = whole(&port_a, "port_a")?;
     let Some(ea) = port_entity(pa) else {
@@ -312,7 +368,11 @@ fn pipe_device_set_turf(id: ByondValue, port_a: ByondValue, turf_mixture_handle:
     };
     let ok = with_world(|w| {
         let old = DEVICES.with(|d| d.borrow().get(&id_n).copied());
-        let e = if let Some(e) = old { e } else { w.entities_mut().bind().map_err(|e| eyre!("{e}"))? };
+        let e = if let Some(e) = old {
+            e
+        } else {
+            w.entities_mut().bind().map_err(|e| eyre!("{e}"))?
+        };
         w.edit_network::<Pipes>(move |host| {
             let _ = host.bind_cell_device(e, ea, cell, 0, ());
         })
@@ -330,7 +390,8 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
         return Ok(false.into());
     };
     with_world(|w| {
-        w.edit_network::<Pipes>(move |host| host.unbind_device(e)).map_err(|e| eyre!("{e}"))?;
+        w.edit_network::<Pipes>(move |host| host.unbind_device(e))
+            .map_err(|e| eyre!("{e}"))?;
         Ok(true)
     })
     .map(ByondValue::from)
@@ -372,7 +433,11 @@ fn device_laws(w: &World, device_e: EntityId) -> (Vec<Flow>, bool) {
         .filter(|row| row.device == index)
         .map(|row| row.flow())
         .collect();
-    let open = w.entities_with::<DeviceValve>().into_iter().filter_map(|e| w.read::<DeviceValve>(e)).any(|v| v.device == index && v.open);
+    let open = w
+        .entities_with::<DeviceValve>()
+        .into_iter()
+        .filter_map(|e| w.read::<DeviceValve>(e))
+        .any(|v| v.device == index && v.open);
     (flows, open)
 }
 
@@ -384,7 +449,8 @@ fn device_laws(w: &World, device_e: EntityId) -> (Vec<Flow>, bool) {
 #[auxmacros::bind("/proc/vg_pipe_step_devices")]
 fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     let dt = num(&dt)?;
-    let devices: Vec<(u32, EntityId)> = DEVICES.with(|d| d.borrow().iter().map(|(&id, &e)| (id, e)).collect());
+    let devices: Vec<(u32, EntityId)> =
+        DEVICES.with(|d| d.borrow().iter().map(|(&id, &e)| (id, e)).collect());
     let mut out = Vec::new();
     with_world(|w| {
         for (id, e) in devices {
@@ -392,20 +458,37 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
             if flows.is_empty() && !valve_open {
                 continue;
             }
-            let Ok(host) = w.network::<Pipes>() else { continue };
-            let Some(dev_id) = host.device_of(e) else { continue };
-            let Ok(dev) = host.network().device(dev_id) else { continue };
+            let Ok(host) = w.network::<Pipes>() else {
+                continue;
+            };
+            let Some(dev_id) = host.device_of(e) else {
+                continue;
+            };
+            let Ok(dev) = host.network().device(dev_id) else {
+                continue;
+            };
             let (ea, eb) = (dev.a, dev.b);
             drop(host);
             let report = match (ea, eb) {
-                (Endpoint::Node(_), Endpoint::Node(_)) => step_region_region(w, e, &flows, valve_open, dt),
-                (Endpoint::Cell(cell), Endpoint::Node(_)) => step_region_turf(w, e, cell, &flows, valve_open, dt, true),
-                (Endpoint::Node(_), Endpoint::Cell(cell)) => step_region_turf(w, e, cell, &flows, valve_open, dt, false),
+                (Endpoint::Node(_), Endpoint::Node(_)) => {
+                    step_region_region(w, e, &flows, valve_open, dt)
+                }
+                (Endpoint::Cell(cell), Endpoint::Node(_)) => {
+                    step_region_turf(w, e, cell, &flows, valve_open, dt, true)
+                }
+                (Endpoint::Node(_), Endpoint::Cell(cell)) => {
+                    step_region_turf(w, e, cell, &flows, valve_open, dt, false)
+                }
                 _ => None,
             };
             if let Some(report) = report {
                 if report.moles != 0.0 || report.power_w != 0.0 {
-                    out.extend([id as f32, report.moles as f32, report.power_w, if report.target_reached { 1.0 } else { 0.0 }]);
+                    out.extend([
+                        id as f32,
+                        report.moles as f32,
+                        report.power_w,
+                        if report.target_reached { 1.0 } else { 0.0 },
+                    ]);
                 }
             }
         }
@@ -416,7 +499,15 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
 /// Runs every flow then the valve gate on `(a, b)` in sequence, folding
 /// into one report: total moles moved (signed a->b), power drawn, and
 /// whether any stop target was reached this tick.
-fn step_all(flows: &[Flow], valve_open: bool, a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64, dt: f32) -> StepReport {
+fn step_all(
+    flows: &[Flow],
+    valve_open: bool,
+    a: &mut PipeGas,
+    vol_a: f64,
+    b: &mut PipeGas,
+    vol_b: f64,
+    dt: f32,
+) -> StepReport {
     let mut total = StepReport::default();
     for flow in flows {
         let r = device::step(flow, a, vol_a, b, vol_b, dt);
@@ -431,13 +522,24 @@ fn step_all(flows: &[Flow], valve_open: bool, a: &mut PipeGas, vol_a: f64, b: &m
     total
 }
 
-fn step_region_region(w: &mut World, device_e: EntityId, flows: &[Flow], valve_open: bool, dt: f32) -> Option<StepReport> {
+fn step_region_region(
+    w: &mut World,
+    device_e: EntityId,
+    flows: &[Flow],
+    valve_open: bool,
+    dt: f32,
+) -> Option<StepReport> {
     let (ra, rb, vol_a, vol_b, mut pa, mut pb) = {
         let host = w.network::<Pipes>().ok()?;
         let dev_id = host.device_of(device_e)?;
         let dev = host.network().device(dev_id).ok()?;
-        let (Endpoint::Node(na), Endpoint::Node(nb)) = (dev.a, dev.b) else { return None };
-        let (Side::Region(ra), Side::Region(rb)) = (host.network().resolve(Endpoint::Node(na)), host.network().resolve(Endpoint::Node(nb))) else {
+        let (Endpoint::Node(na), Endpoint::Node(nb)) = (dev.a, dev.b) else {
+            return None;
+        };
+        let (Side::Region(ra), Side::Region(rb)) = (
+            host.network().resolve(Endpoint::Node(na)),
+            host.network().resolve(Endpoint::Node(nb)),
+        ) else {
             return None;
         };
         if ra == rb {
@@ -445,7 +547,14 @@ fn step_region_region(w: &mut World, device_e: EntityId, flows: &[Flow], valve_o
         }
         let region_a = host.network().region(ra).ok()?;
         let region_b = host.network().region(rb).ok()?;
-        (ra, rb, *region_a.summary(), *region_b.summary(), *region_a.payload(), *region_b.payload())
+        (
+            ra,
+            rb,
+            *region_a.summary(),
+            *region_b.summary(),
+            *region_a.payload(),
+            *region_b.payload(),
+        )
     };
     let report = step_all(flows, valve_open, &mut pa, vol_a, &mut pb, vol_b, dt);
     if report.moles != 0.0 || report.power_w != 0.0 {
@@ -461,13 +570,23 @@ fn step_region_region(w: &mut World, device_e: EntityId, flows: &[Flow], valve_o
     Some(report)
 }
 
-fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, flows: &[Flow], valve_open: bool, dt: f32, cell_is_a: bool) -> Option<StepReport> {
+fn step_region_turf(
+    w: &mut World,
+    device_e: EntityId,
+    cell: u32,
+    flows: &[Flow],
+    valve_open: bool,
+    dt: f32,
+    cell_is_a: bool,
+) -> Option<StepReport> {
     let (region, vol_region, mut region_gas) = {
         let host = w.network::<Pipes>().ok()?;
         let dev_id = host.device_of(device_e)?;
         let dev = host.network().device(dev_id).ok()?;
         let node = if cell_is_a { dev.b } else { dev.a };
-        let Endpoint::Node(node) = node else { return None };
+        let Endpoint::Node(node) = node else {
+            return None;
+        };
         let Side::Region(region) = host.network().resolve(Endpoint::Node(node)) else {
             return None;
         };
@@ -477,9 +596,25 @@ fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, flows: &[Flow]
     let (turf_before, vol_cell) = crate::gas::turf_device_probe(w, cell)?;
     let mut turf_gas = turf_before;
     let report = if cell_is_a {
-        step_all(flows, valve_open, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
+        step_all(
+            flows,
+            valve_open,
+            &mut turf_gas,
+            vol_cell,
+            &mut region_gas,
+            vol_region,
+            dt,
+        )
     } else {
-        step_all(flows, valve_open, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
+        step_all(
+            flows,
+            valve_open,
+            &mut region_gas,
+            vol_region,
+            &mut turf_gas,
+            vol_cell,
+            dt,
+        )
     };
     if report.moles != 0.0 || report.power_w != 0.0 {
         let _ = w.edit_network::<Pipes>(move |host| {

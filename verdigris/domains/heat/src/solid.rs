@@ -26,7 +26,7 @@
 //! - Energy is conserved per step (reservoir inflow is in the ledger); the
 //!   old `to_be_destroyed` write and the 102 K / 300 K sentinels are gone.
 
-use vg_core::field::kernel::{conduction, exchange_stiffness, Operand};
+use vg_core::field::kernel::{Operand, conduction, exchange_stiffness};
 use vg_core::field::{FieldKind, Side};
 use vg_core::owner::{Applied, Domain};
 
@@ -64,11 +64,7 @@ impl SolidCell {
 
     /// The temperature for `capacity` (the cached value for a non-node).
     pub fn temperature_in(&self, capacity: f32) -> f32 {
-        if capacity > 0.0 {
-            self.energy / capacity
-        } else {
-            self.temperature
-        }
+        if capacity > 0.0 { self.energy / capacity } else { self.temperature }
     }
 
     pub const fn has(&self, flag: u8) -> bool {

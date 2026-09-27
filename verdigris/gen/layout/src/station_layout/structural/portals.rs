@@ -146,7 +146,10 @@ pub(super) fn extend_common_halls_to_every_room(plan: &mut LogicalPlan) -> Resul
     Ok(())
 }
 
-pub(super) fn assign_portals(plan: &mut LogicalPlan, request: &LayoutRequest) -> Result<(), LayoutError> {
+pub(super) fn assign_portals(
+    plan: &mut LogicalPlan,
+    request: &LayoutRequest,
+) -> Result<(), LayoutError> {
     let mut used_edges = BTreeSet::new();
     for room in &plan.rooms {
         let room_space = Space::Room {
@@ -597,7 +600,11 @@ pub(super) fn assign_portals(plan: &mut LogicalPlan, request: &LayoutRequest) ->
     Ok(())
 }
 
-pub(super) fn boundary_edges(plan: &LogicalPlan, left: Space, right: Space) -> Vec<(CellPoint, CellPoint)> {
+pub(super) fn boundary_edges(
+    plan: &LogicalPlan,
+    left: Space,
+    right: Space,
+) -> Vec<(CellPoint, CellPoint)> {
     let mut edges = Vec::new();
     for point in plan.points().filter(|point| plan.get(*point) == left) {
         for neighbor in plan

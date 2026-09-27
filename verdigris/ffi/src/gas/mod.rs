@@ -15,7 +15,7 @@ mod parser;
 use std::cell::Cell;
 
 use byondapi::prelude::*;
-use eyre::{bail, eyre, Context, Result};
+use eyre::{Context, Result, bail, eyre};
 use vg_core::field::{FieldConfig, FieldKey, FieldKind, Geom, Side};
 use vg_core::grid::{BlockKind, Dir, Face};
 use vg_core::network::RegionId;
@@ -24,14 +24,14 @@ use vg_core::registry::DomainRegistry;
 use vg_core::slot::RawHandle;
 use vg_core::watch::Cond;
 use vg_core::world::{World, WorldBuilder};
-use vg_gas::cell::{GasCell, GasCmd, TurfGas, Q};
-use vg_gas::gas::constants::CELL_VOLUME;
+use vg_gas::cell::{GasCell, GasCmd, Q, TurfGas};
 use vg_gas::gas;
+use vg_gas::gas::constants::CELL_VOLUME;
+use vg_gas::gate::{Fire, GasType, Requirement};
 use vg_gas::laws::{CellReactionReadyLaw, CellVisualChangeLaw, SpacewindLaw};
 use vg_gas::pipes::{PipeGas, Pipes};
-use vg_gas::gate::{Fire, GasType, Requirement};
 
-use self::mix::{with_mix, MixRef};
+use self::mix::{MixRef, with_mix};
 use crate::world::with_world;
 
 // --- Pipe region slot compaction ----------------------------------------
@@ -113,8 +113,12 @@ const STOP_REACTIONS: u32 = 0b10;
 /// If the reaction itself has a runtime, or `id` names no cached reaction.
 fn react_by_id(id: u64, src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
     REACTION_VALUES.with_borrow(|r| {
-        let reaction = r.get(&id).ok_or_else(|| eyre!("Reaction with invalid id"))?;
-        reaction.call_id(byond_string!("react"), &[src, holder]).wrap_err("calling byond side react in react_by_id")
+        let reaction = r
+            .get(&id)
+            .ok_or_else(|| eyre!("Reaction with invalid id"))?;
+        reaction
+            .call_id(byond_string!("react"), &[src, holder])
+            .wrap_err("calling byond side react in react_by_id")
     })
 }
 
@@ -127,29 +131,67 @@ fn load_reactions() -> Result<()> {
         .read_var_id(byond_string!("gas_reactions"))
         .wrap_err("load_reactions: SSair has no gas_reactions var")?;
     let mut table: Vec<(f32, Requirement)> = Vec::new();
-    for (reaction, _) in gas_reactions.iter().wrap_err("load_reactions: SSair.gas_reactions is not a list")? {
-        let priority = reaction.read_number_id(byond_string!("priority")).map_err(|_| eyre!("Reaction priority must be a number!"))?;
-        let string_id = reaction.read_string_id(byond_string!("id")).map_err(|_| eyre!("Reaction id must be a string!"))?;
+    for (reaction, _) in gas_reactions
+        .iter()
+        .wrap_err("load_reactions: SSair.gas_reactions is not a list")?
+    {
+        let priority = reaction
+            .read_number_id(byond_string!("priority"))
+            .map_err(|_| eyre!("Reaction priority must be a number!"))?;
+        let string_id = reaction
+            .read_string_id(byond_string!("id"))
+            .map_err(|_| eyre!("Reaction id must be a string!"))?;
         let id = {
             use std::hash::{Hash, Hasher};
             let mut state = rustc_hash::FxHasher::default();
             string_id.as_bytes().hash(&mut state);
             state.finish()
         };
-        let Some(reqs) = reaction.read_var_id(byond_string!("min_requirements")).ok().filter(ByondValue::is_list) else {
-            return Err(eyre!("Reaction {string_id} doesn't have a gas requirements list!"));
+        let Some(reqs) = reaction
+            .read_var_id(byond_string!("min_requirements"))
+            .ok()
+            .filter(ByondValue::is_list)
+        else {
+            return Err(eyre!(
+                "Reaction {string_id} doesn't have a gas requirements list!"
+            ));
         };
-        let read = |key: &str| reqs.read_list_index(key).ok().and_then(|v| v.get_number().ok());
+        let read = |key: &str| {
+            reqs.read_list_index(key)
+                .ok()
+                .and_then(|v| v.get_number().ok())
+        };
         let gases = (0..gas::GAS_COUNT)
-            .filter_map(|i| Some((i, reqs.read_list_index(gas::gas_path(i)?).and_then(|v| v.get_number()).ok()?)))
+            .filter_map(|i| {
+                Some((
+                    i,
+                    reqs.read_list_index(gas::gas_path(i)?)
+                        .and_then(|v| v.get_number())
+                        .ok()?,
+                ))
+            })
             .collect();
         if table.iter().any(|(p, _)| *p == priority) {
             let sender = auxcallback::byond_callback_sender();
-            drop(sender.try_send(Box::new(move || Err(eyre!("Duplicate reaction priority {priority}, this reaction will be ignored!")))));
+            drop(sender.try_send(Box::new(move || {
+                Err(eyre!(
+                    "Duplicate reaction priority {priority}, this reaction will be ignored!"
+                ))
+            })));
             continue;
         }
         REACTION_VALUES.with_borrow_mut(|r| r.insert(id, reaction));
-        table.push((priority, Requirement { id, min_temp: read("TEMP"), max_temp: read("MAX_TEMP"), min_energy: read("ENER"), min_fire: read("FIRE_REAGENTS"), gases }));
+        table.push((
+            priority,
+            Requirement {
+                id,
+                min_temp: read("TEMP"),
+                max_temp: read("MAX_TEMP"),
+                min_energy: read("ENER"),
+                min_fire: read("FIRE_REAGENTS"),
+                gases,
+            },
+        ));
     }
     table.sort_by(|a, b| b.0.total_cmp(&a.0));
     vg_gas::gate::install_reactions(table.into_iter().map(|(_, r)| r).collect());
@@ -163,7 +205,8 @@ fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
     let mut gases: Vec<(usize, GasType)> = Vec::new();
     for (_, gas_datum) in data.iter()? {
         let path = gas_datum.read_string_id(byond_string!("id"))?;
-        let idx = gas::gas_id_for_path(&path).ok_or_else(|| eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
+        let idx = gas::gas_id_for_path(&path)
+            .ok_or_else(|| eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         if let Ok(dm_idx) = gas_datum.read_number_id(byond_string!("idx"))
             && dm_idx as usize != idx
@@ -172,13 +215,22 @@ fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
         }
         let specific_heat = gas_datum.read_number_id(byond_string!("specific_heat"))?;
         if specific_heat != vg_gas::cell::SPECIFIC_HEATS[idx] {
-            bail!("{path} has specific_heat {specific_heat} in DM but {} in verdigris cell.rs SPECIFIC_HEATS", vg_gas::cell::SPECIFIC_HEATS[idx]);
+            bail!(
+                "{path} has specific_heat {specific_heat} in DM but {} in verdigris cell.rs SPECIFIC_HEATS",
+                vg_gas::cell::SPECIFIC_HEATS[idx]
+            );
         }
         let number = |var| gas_datum.read_number_id(var);
         let fire = if let Ok(temperature) = number(byond_string!("oxidation_temperature")) {
-            Fire::Oxidizer { temperature, power: number(byond_string!("oxidation_rate"))? }
+            Fire::Oxidizer {
+                temperature,
+                power: number(byond_string!("oxidation_rate"))?,
+            }
         } else if let Ok(temperature) = number(byond_string!("fire_temperature")) {
-            Fire::Fuel { temperature, burn_rate: number(byond_string!("fire_burn_rate"))? }
+            Fire::Fuel {
+                temperature,
+                burn_rate: number(byond_string!("fire_burn_rate"))?,
+            }
         } else {
             Fire::None
         };
@@ -195,7 +247,11 @@ fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
     }
     gases.sort_by_key(|g| g.0);
     if gases.iter().map(|g| g.0).ne(0..gas::GAS_COUNT) {
-        bail!("gas registry must hold every GAS_PATHS entry exactly once ({} of {})", gases.len(), gas::GAS_COUNT);
+        bail!(
+            "gas registry must hold every GAS_PATHS entry exactly once ({} of {})",
+            gases.len(),
+            gas::GAS_COUNT
+        );
     }
     vg_gas::gate::install_gases(gases.into_iter().map(|g| g.1).collect());
     load_reactions()?;
@@ -216,7 +272,9 @@ fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
     for reaction in with_mix(&src, |mix| Ok(mix.all_reactable()))? {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         {
-            ret |= react_by_id(reaction, src, holder)?.get_number().unwrap_or_default() as u32;
+            ret |= react_by_id(reaction, src, holder)?
+                .get_number()
+                .unwrap_or_default() as u32;
         }
         if ret & STOP_REACTIONS != 0 {
             break;
@@ -271,7 +329,10 @@ thread_local! {
 /// Registers turf gas: the field, its watches and its laws
 /// (`crate::world::register`).
 pub(crate) fn register(b: &mut WorldBuilder) -> FieldKey<TurfGas> {
-    let key = b.add_field::<TurfGas>(FieldConfig { dt: FRAME_DT, max_substeps: MAX_SUBSTEPS });
+    let key = b.add_field::<TurfGas>(FieldConfig {
+        dt: FRAME_DT,
+        max_substeps: MAX_SUBSTEPS,
+    });
     b.watch_field(key);
     let _ = b.add_law::<CellReactionReadyLaw>();
     let _ = b.add_law::<CellVisualChangeLaw>();
@@ -287,11 +348,15 @@ pub(crate) fn install(key: FieldKey<TurfGas>) {
 }
 
 pub(crate) fn turf_key() -> Result<FieldKey<TurfGas>> {
-    TURF.with(Cell::get).ok_or_else(|| eyre!("turf gas field not installed"))
+    TURF.with(Cell::get)
+        .ok_or_else(|| eyre!("turf gas field not installed"))
 }
 
 fn geom_of(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Geom {
-    w.sim().port_ref(key.geometry).read(cell).unwrap_or_default()
+    w.sim()
+        .port_ref(key.geometry)
+        .read(cell)
+        .unwrap_or_default()
 }
 
 /// A turf cell's gas and geometry as DM sees them now.
@@ -302,7 +367,8 @@ pub(crate) fn turf_read(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Option<
 
 /// Whether `cell` is inside the grid.
 fn contains(w: &World, cell: u32) -> bool {
-    w.grid().is_ok_and(|g| cell < g.dims().layer_len() * g.dims().max_z())
+    w.grid()
+        .is_ok_and(|g| cell < g.dims().layer_len() * g.dims().max_z())
 }
 
 /// The neighbour across `face` if air crosses it: both cells in the field,
@@ -317,7 +383,10 @@ fn open(w: &World, key: FieldKey<TurfGas>, cell: u32, face: Face) -> Option<u32>
 }
 
 fn open_neighbors(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Vec<u32> {
-    Face::ALL.into_iter().filter_map(|f| open(w, key, cell, f)).collect()
+    Face::ALL
+        .into_iter()
+        .filter_map(|f| open(w, key, cell, f))
+        .collect()
 }
 
 fn set_mask(w: &mut World, cell: u32, mask: Option<u8>) {
@@ -328,11 +397,23 @@ fn set_mask(w: &mut World, cell: u32, mask: Option<u8>) {
 
 /// Puts `value` into `cell` with its geometry (`reservoir`: space and
 /// planets) and air-block mask (`None`: keep the current one).
-fn register_cell(w: &mut World, key: FieldKey<TurfGas>, cell: u32, mut value: GasCell, volume: f32, reservoir: bool, mask: Option<u8>) {
+fn register_cell(
+    w: &mut World,
+    key: FieldKey<TurfGas>,
+    cell: u32,
+    mut value: GasCell,
+    volume: f32,
+    reservoir: bool,
+    mask: Option<u8>,
+) {
     let volume = if volume > 0.0 { volume } else { CELL_VOLUME };
     value.refresh_in(volume);
     let _ = w.sim_mut().port(key.cells).put(cell, value);
-    let geom = Geom { capacity: volume, blocked: Dir::NONE, reservoir };
+    let geom = Geom {
+        capacity: volume,
+        blocked: Dir::NONE,
+        reservoir,
+    };
     if geom_of(w, key, cell) != geom {
         let _ = w.sim_mut().port(key.geometry).put(cell, geom);
     }
@@ -353,9 +434,16 @@ fn unregister_cell(w: &mut World, key: FieldKey<TurfGas>, cell: u32) {
 /// scrubbers): its gas and volume.
 pub(crate) fn turf_device_probe(w: &World, cell: u32) -> Option<(PipeGas, f64)> {
     let (c, g) = turf_read(w, turf_key().ok()?, cell)?;
-    let volume = if g.capacity > 0.0 { g.capacity } else { CELL_VOLUME };
+    let volume = if g.capacity > 0.0 {
+        g.capacity
+    } else {
+        CELL_VOLUME
+    };
     let mix = mix::mixture_of_cell(&c, volume);
-    Some((PipeGas::from_amounts(&mix::amounts_of(&mix), mix.get_temperature()), f64::from(volume)))
+    Some((
+        PipeGas::from_amounts(&mix::amounts_of(&mix), mix.get_temperature()),
+        f64::from(volume),
+    ))
 }
 
 /// Applies a device step's result to turf `cell`: the difference from what
@@ -377,12 +465,20 @@ pub(crate) fn turf_device_apply(w: &mut World, cell: u32, before: &PipeGas, afte
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_set_z_links")]
 fn set_z_links(links: ByondValue) -> Result<ByondValue> {
     // get_list_values, not iter(): iter() indexes the list by each item.
-    let links = links.get_list_values()?.iter().map(|v| v.get_number().unwrap_or(0.0) as u8).collect::<Vec<_>>();
+    let links = links
+        .get_list_values()?
+        .iter()
+        .map(|v| v.get_number().unwrap_or(0.0) as u8)
+        .collect::<Vec<_>>();
     with_world(|w| {
         w.edit_grid(|g| {
             for (z, bits) in (0u32..).zip(links) {
                 let up = (bits & Dir::UP.0 != 0).then_some(z + 1);
-                let down = if bits & Dir::DOWN.0 != 0 { z.checked_sub(1) } else { None };
+                let down = if bits & Dir::DOWN.0 != 0 {
+                    z.checked_sub(1)
+                } else {
+                    None
+                };
                 g.set_z_link(z, up, down);
             }
         })
@@ -396,7 +492,10 @@ fn is_set(value: std::result::Result<f32, byondapi::Error>) -> bool {
 }
 
 fn mask_from_value(mask: &ByondValue) -> Option<u8> {
-    mask.get_number().ok().filter(|&m| m >= 0.0).map(|m| (m as u8) & AIR_BLOCK_ALL)
+    mask.get_number()
+        .ok()
+        .filter(|&m| m >= 0.0)
+        .map(|m| (m as u8) & AIR_BLOCK_ALL)
 }
 
 /// Registers (flag >= 0) or removes (flag < 0) a turf's gas.
@@ -411,10 +510,12 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     if !with_world(|w| Ok(contains(w, cell)))? {
         return Ok(());
     }
-    let unregister = || with_world(|w| {
-        unregister_cell(w, key, cell);
-        Ok(())
-    });
+    let unregister = || {
+        with_world(|w| {
+            unregister_cell(w, key, cell);
+            Ok(())
+        })
+    };
     if flag < 0 || is_set(src.read_number_id(byond_string!("blocks_air"))) {
         return unregister();
     }
@@ -425,7 +526,10 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         return unregister();
     }
     let planet = is_set(src.read_number_id(byond_string!("planetary_atmos")));
-    let planet_key = || src.read_string_id(byond_string!("initial_gas_mix")).unwrap_or_default();
+    let planet_key = || {
+        src.read_string_id(byond_string!("initial_gas_mix"))
+            .unwrap_or_default()
+    };
     let r = MixRef::of(&air)?;
     if r == MixRef::Turf(cell) {
         // Already this turf's cell: the mask and the planet flag can change.
@@ -433,7 +537,11 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
             let (value, geom) = turf_read(w, key, cell).unwrap_or_default();
             if planet != (value.planet > 0) {
                 let mut value = value;
-                value.planet = if planet { vg_gas::planet::planet_id(&planet_key(), value) } else { 0 };
+                value.planet = if planet {
+                    vg_gas::planet::planet_id(&planet_key(), value)
+                } else {
+                    0
+                };
                 register_cell(w, key, cell, value, CELL_VOLUME, planet, mask);
             } else if geom.is_node() {
                 set_mask(w, cell, mask);
@@ -500,7 +608,10 @@ fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
 }
 
 fn turf_list(cells: Vec<u32>) -> Result<ByondValue> {
-    let items = cells.into_iter().map(|c| ByondValue::new_ref(ValueType::Turf, c)).collect::<Vec<_>>();
+    let items = cells
+        .into_iter()
+        .map(|c| ByondValue::new_ref(ValueType::Turf, c))
+        .collect::<Vec<_>>();
     let list = ByondValue::new_list()?;
     list.write_list(&items)?;
     Ok(list)
@@ -516,12 +627,22 @@ fn atmos_adjacent_turfs(turf: ByondValue) -> Result<ByondValue> {
 /// Batched form of `atmos_adjacent_turfs`: a list of lists, one per turf.
 #[auxmacros::bind("/proc/atmos_adjacent_turfs_bulk")]
 fn atmos_adjacent_turfs_bulk(turfs: ByondValue) -> Result<ByondValue> {
-    let cells = turfs.get_list_values()?.iter().map(ByondValue::get_ref).collect::<Result<Vec<_>, _>>()?;
+    let cells = turfs
+        .get_list_values()?
+        .iter()
+        .map(ByondValue::get_ref)
+        .collect::<Result<Vec<_>, _>>()?;
     let lists = with_world(|w| {
         let key = turf_key()?;
-        Ok(cells.iter().map(|&c| open_neighbors(w, key, c)).collect::<Vec<_>>())
+        Ok(cells
+            .iter()
+            .map(|&c| open_neighbors(w, key, c))
+            .collect::<Vec<_>>())
     })?;
-    let out = lists.into_iter().map(turf_list).collect::<Result<Vec<_>>>()?;
+    let out = lists
+        .into_iter()
+        .map(turf_list)
+        .collect::<Result<Vec<_>>>()?;
     let list = ByondValue::new_list()?;
     list.write_list(&out)?;
     Ok(list)
@@ -533,7 +654,10 @@ fn atmos_open_dirs(turf: ByondValue) -> Result<ByondValue> {
     let cell = turf.get_ref()?;
     let bits = with_world(|w| {
         let key = turf_key()?;
-        Ok(Face::ALL.into_iter().filter(|&f| open(w, key, cell, f).is_some()).fold(0u8, |acc, f| acc | f.bit()))
+        Ok(Face::ALL
+            .into_iter()
+            .filter(|&f| open(w, key, cell, f).is_some())
+            .fold(0u8, |acc, f| acc | f.bit()))
     })?;
     Ok(f32::from(bits).into())
 }
@@ -545,7 +669,10 @@ fn atmos_cell_info(turf: ByondValue) -> Result<ByondValue> {
     let info = with_world(|w| {
         let key = turf_key()?;
         let grid = w.grid().map_err(|e| eyre!("{e}"))?;
-        let links = [Face::Up, Face::Down].into_iter().filter(|&f| grid.neighbor(cell, f).is_some()).fold(0u8, |acc, f| acc | f.bit());
+        let links = [Face::Up, Face::Down]
+            .into_iter()
+            .filter(|&f| grid.neighbor(cell, f).is_some())
+            .fold(0u8, |acc, f| acc | f.bit());
         #[allow(clippy::cast_precision_loss)]
         Ok([
             f32::from(u8::from(geom_of(w, key, cell).is_node())),
@@ -607,9 +734,10 @@ fn turf_active_hook(src: ByondValue) -> Result<ByondValue> {
             return Ok(false);
         }
         // Holding air next to vacuum is not settled until it is gone.
-        Ok(open_neighbors(w, key, cell)
-            .into_iter()
-            .any(|nb| turf_read(w, key, nb).is_some_and(|(b, gb)| !TurfGas::settled(side(&a, ga), side(&b, gb)))))
+        Ok(open_neighbors(w, key, cell).into_iter().any(|nb| {
+            turf_read(w, key, nb)
+                .is_some_and(|(b, gb)| !TurfGas::settled(side(&a, ga), side(&b, gb)))
+        }))
     })?;
     Ok(active.into())
 }
@@ -672,7 +800,6 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
     ])
 }
 
-
 // --- Gas handles as a reactor watch domain -----------------------------------
 
 /// Gas as a reactor domain: `REACT_ON` / `REACT_WHEN` on gas handles
@@ -684,7 +811,12 @@ impl DomainRegistry for GasDomain {
         vg_core::channel::channel_infos::<TurfGas>()
     }
 
-    fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> std::result::Result<(u8, WatchId), String> {
+    fn watch(
+        &mut self,
+        sub: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> std::result::Result<(u8, WatchId), String> {
         mix::watch(sub, lane, cond).map_err(|e| e.to_string())
     }
 

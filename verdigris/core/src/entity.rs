@@ -179,7 +179,11 @@ pub enum EntityError {
     /// The entity has a component for that domain, but of a different kind
     /// than the caller expected (a `set_*` generated for one component
     /// called through an atom now holding another).
-    WrongKind { domain: usize, expected: u16, found: u16 },
+    WrongKind {
+        domain: usize,
+        expected: u16,
+        found: u16,
+    },
     /// `domain` is not a valid domain index (past [`MAX_DOMAINS`]).
     BadDomain { domain: usize },
 }
@@ -190,7 +194,9 @@ impl fmt::Display for EntityError {
             Self::Stale => write!(f, "stale entity id"),
             Self::OutOfRange => write!(f, "entity id index out of range"),
             Self::Full => write!(f, "entity table is full"),
-            Self::NoComponent { domain } => write!(f, "entity has no component for domain {domain}"),
+            Self::NoComponent { domain } => {
+                write!(f, "entity has no component for domain {domain}")
+            }
             Self::WrongKind {
                 domain,
                 expected,
@@ -291,7 +297,12 @@ impl EntityTable {
     /// # Errors
     /// [`EntityError::Stale`]/[`OutOfRange`](EntityError::OutOfRange) for a
     /// bad id, [`EntityError::BadDomain`] for `domain >= MAX_DOMAINS`.
-    pub fn attach(&mut self, entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(), EntityError> {
+    pub fn attach(
+        &mut self,
+        entity: EntityId,
+        domain: usize,
+        comp: ComponentRef,
+    ) -> Result<(), EntityError> {
         let slots = self.slot_mut(entity)?.live.as_mut().expect("checked live");
         if !slots.set(domain, Some(comp)) {
             return Err(EntityError::BadDomain { domain });
@@ -303,7 +314,11 @@ impl EntityTable {
     ///
     /// # Errors
     /// As [`attach`](Self::attach).
-    pub fn detach(&mut self, entity: EntityId, domain: usize) -> Result<Option<ComponentRef>, EntityError> {
+    pub fn detach(
+        &mut self,
+        entity: EntityId,
+        domain: usize,
+    ) -> Result<Option<ComponentRef>, EntityError> {
         let slots = self.slot_mut(entity)?.live.as_mut().expect("checked live");
         let previous = slots.get(domain);
         if !slots.set(domain, None) {
@@ -319,9 +334,16 @@ impl EntityTable {
     /// [`EntityError::Stale`]/[`OutOfRange`](EntityError::OutOfRange) for a
     /// bad id, [`EntityError::NoComponent`] if the entity has none for that
     /// domain, [`EntityError::WrongKind`] if it has a different kind.
-    pub fn component(&self, entity: EntityId, domain: usize, expected_kind: u16) -> Result<ComponentRef, EntityError> {
+    pub fn component(
+        &self,
+        entity: EntityId,
+        domain: usize,
+        expected_kind: u16,
+    ) -> Result<ComponentRef, EntityError> {
         let slots = self.slot(entity)?.live.as_ref().expect("checked live");
-        let comp = slots.get(domain).ok_or(EntityError::NoComponent { domain })?;
+        let comp = slots
+            .get(domain)
+            .ok_or(EntityError::NoComponent { domain })?;
         if comp.kind != expected_kind {
             return Err(EntityError::WrongKind {
                 domain,
@@ -418,7 +440,10 @@ mod tests {
         let mut table = EntityTable::new();
         let e = table.bind().unwrap();
         assert!(table.contains(e));
-        assert_eq!(table.component(e, 0, 7), Err(EntityError::NoComponent { domain: 0 }));
+        assert_eq!(
+            table.component(e, 0, 7),
+            Err(EntityError::NoComponent { domain: 0 })
+        );
 
         table.attach(e, 0, ComponentRef::new(7, 42)).unwrap();
         assert_eq!(table.component(e, 0, 7), Ok(ComponentRef::new(7, 42)));
@@ -433,7 +458,10 @@ mod tests {
 
         table.attach(e, 1, ComponentRef::new(3, 1)).unwrap();
         let comps: Vec<_> = table.components(e).unwrap().iter().collect();
-        assert_eq!(comps, vec![(0, ComponentRef::new(7, 42)), (1, ComponentRef::new(3, 1))]);
+        assert_eq!(
+            comps,
+            vec![(0, ComponentRef::new(7, 42)), (1, ComponentRef::new(3, 1))]
+        );
 
         assert_eq!(table.detach(e, 0).unwrap(), Some(ComponentRef::new(7, 42)));
         assert_eq!(table.detach(e, 1).unwrap(), Some(ComponentRef::new(3, 1)));
@@ -455,15 +483,27 @@ mod tests {
         // `a`'s must not come back out early.
         for _ in 0..QUARANTINE {
             let e = table.bind().unwrap();
-            assert_ne!(e.index(), a.index(), "a slot was reused before its quarantine elapsed");
+            assert_ne!(
+                e.index(),
+                a.index(),
+                "a slot was reused before its quarantine elapsed"
+            );
             table.unbind(e).unwrap();
         }
 
         // The queue is now [a, ...QUARANTINE frees...], length QUARANTINE + 1:
         // `a`'s slot is the oldest and is the next one handed out.
         let reused = table.bind().unwrap();
-        assert_eq!(reused.index(), a.index(), "the oldest quarantined slot is reused first");
-        assert_ne!(reused.generation(), a.generation(), "generation still moved on");
+        assert_eq!(
+            reused.index(),
+            a.index(),
+            "the oldest quarantined slot is reused first"
+        );
+        assert_ne!(
+            reused.generation(),
+            a.generation(),
+            "generation still moved on"
+        );
         assert_eq!(table.component(a, 0, 1), Err(EntityError::Stale));
     }
 
@@ -473,9 +513,16 @@ mod tests {
         let e = table.bind().unwrap();
         assert_eq!(
             table.attach(e, MAX_DOMAINS, ComponentRef::new(1, 0)),
-            Err(EntityError::BadDomain { domain: MAX_DOMAINS })
+            Err(EntityError::BadDomain {
+                domain: MAX_DOMAINS
+            })
         );
-        assert_eq!(table.component(e, MAX_DOMAINS, 1), Err(EntityError::NoComponent { domain: MAX_DOMAINS }));
+        assert_eq!(
+            table.component(e, MAX_DOMAINS, 1),
+            Err(EntityError::NoComponent {
+                domain: MAX_DOMAINS
+            })
+        );
     }
 
     #[test]

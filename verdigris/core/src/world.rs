@@ -234,12 +234,17 @@ pub struct ThresholdCrossing {
 }
 
 fn push_crossings(events: &[crate::outbox::Event], out: &mut Vec<ThresholdCrossing>) {
-    out.extend(events.iter().filter(|e| e.kind == EventKind::ThresholdCrossed).map(|e| ThresholdCrossing {
-        watch: e.key,
-        payload: e.extra,
-        entered: e.value > 0.5,
-        generation: e.generation,
-    }));
+    out.extend(
+        events
+            .iter()
+            .filter(|e| e.kind == EventKind::ThresholdCrossed)
+            .map(|e| ThresholdCrossing {
+                watch: e.key,
+                payload: e.extra,
+                entered: e.value > 0.5,
+                generation: e.generation,
+            }),
+    );
 }
 
 /// Per-phase conservation state.
@@ -543,9 +548,20 @@ trait KindDyn: Any {
     fn sync(&mut self, main: &mut Resources, worker: &mut Resources);
     /// At the start of a tick: pin the worker view for main-phase readers
     /// and collect fired watch wakes and `ThresholdSet` crossings.
-    fn begin_tick(&mut self, sim: &mut Sim, main: &mut Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>);
+    fn begin_tick(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        wakes: &mut Vec<Wake>,
+        crossings: &mut Vec<ThresholdCrossing>,
+    );
     /// After the main phase: evaluate main-owned watches.
-    fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>);
+    fn after_main(
+        &mut self,
+        main: &Resources,
+        wakes: &mut Vec<Wake>,
+        crossings: &mut Vec<ThresholdCrossing>,
+    );
     fn channels(&self) -> Vec<ChannelInfo>;
     fn watch(
         &mut self,
@@ -749,7 +765,13 @@ impl<C: Component> KindDyn for KindEntry<C> {
         let wk = worker.get_mut(self.worker);
         main.get_mut(self.main).sync_worker(wk);
     }
-    fn begin_tick(&mut self, sim: &mut Sim, main: &mut Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>) {
+    fn begin_tick(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        wakes: &mut Vec<Wake>,
+        crossings: &mut Vec<ThresholdCrossing>,
+    ) {
         if let Some(key) = self.domain {
             let view = std::sync::Arc::clone(sim.port_ref(key).pinned());
             main.get_mut(self.main).set_view(view);
@@ -758,7 +780,12 @@ impl<C: Component> KindDyn for KindEntry<C> {
             push_crossings(out.events(), crossings);
         }
     }
-    fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>, crossings: &mut Vec<ThresholdCrossing>) {
+    fn after_main(
+        &mut self,
+        main: &Resources,
+        wakes: &mut Vec<Wake>,
+        crossings: &mut Vec<ThresholdCrossing>,
+    ) {
         let Some(w) = &mut self.main_watches else {
             return;
         };
@@ -1404,8 +1431,16 @@ impl WorldBuilder {
                         revision,
                     }
                 }
-                Anchor::Cells { field, name, list, also } => {
-                    let unregistered = LawError::Unregistered { law: L::NAME, what: name };
+                Anchor::Cells {
+                    field,
+                    name,
+                    list,
+                    also,
+                } => {
+                    let unregistered = LawError::Unregistered {
+                        law: L::NAME,
+                        what: name,
+                    };
                     let ids = catalog.field(field).ok_or(unregistered.clone())?;
                     access.read(ids.state);
                     let also = match also {
@@ -1416,7 +1451,11 @@ impl WorldBuilder {
                         }
                         None => None,
                     };
-                    PlanAnchor::Cells { state: ids.state, list, also }
+                    PlanAnchor::Cells {
+                        state: ids.state,
+                        list,
+                        also,
+                    }
                 }
                 Anchor::Global { .. } => PlanAnchor::Global,
             };
@@ -2146,8 +2185,13 @@ impl World {
     /// as any other main-thread read of one (`World::read`'s own limits).
     #[must_use]
     pub fn entities_with<C: Component>(&self) -> Vec<EntityId> {
-        let Some(k) = self.kind_of::<C>() else { return Vec::new() };
-        let Some(entry) = self.kinds[usize::from(k)].as_any().downcast_ref::<KindEntry<C>>() else {
+        let Some(k) = self.kind_of::<C>() else {
+            return Vec::new();
+        };
+        let Some(entry) = self.kinds[usize::from(k)]
+            .as_any()
+            .downcast_ref::<KindEntry<C>>()
+        else {
             return Vec::new();
         };
         self.main.get(entry.main).rows.entities().collect()
@@ -2248,7 +2292,12 @@ impl World {
     ///
     /// # Errors
     /// An unknown kind or a stale watch.
-    pub fn add_watch_entry(&mut self, kind: KindId, id: WatchId, entry: SetEntry) -> Result<(), WorldError> {
+    pub fn add_watch_entry(
+        &mut self,
+        kind: KindId,
+        id: WatchId,
+        entry: SetEntry,
+    ) -> Result<(), WorldError> {
         self.kind(kind)?;
         self.kinds[usize::from(kind)].add_entry(&mut self.sim, id, entry)
     }
@@ -2257,7 +2306,12 @@ impl World {
     ///
     /// # Errors
     /// An unknown kind or a stale watch.
-    pub fn remove_watch_entry(&mut self, kind: KindId, id: WatchId, payload: u32) -> Result<(), WorldError> {
+    pub fn remove_watch_entry(
+        &mut self,
+        kind: KindId,
+        id: WatchId,
+        payload: u32,
+    ) -> Result<(), WorldError> {
         self.kind(kind)?;
         self.kinds[usize::from(kind)].remove_entry(&mut self.sim, id, payload)
     }
@@ -2311,8 +2365,16 @@ impl World {
     ///
     /// # Errors
     /// The field is not watched, or the watch is stale.
-    pub fn add_field_watch_entry<K: FieldKind>(&mut self, id: WatchId, entry: SetEntry) -> Result<(), WorldError> {
-        let w = self.field_watches.iter().find(|w| w.field() == TypeId::of::<K>()).ok_or(WorldError::NoKind(0))?;
+    pub fn add_field_watch_entry<K: FieldKind>(
+        &mut self,
+        id: WatchId,
+        entry: SetEntry,
+    ) -> Result<(), WorldError> {
+        let w = self
+            .field_watches
+            .iter()
+            .find(|w| w.field() == TypeId::of::<K>())
+            .ok_or(WorldError::NoKind(0))?;
         Ok(w.add_entry(&mut self.sim, id, entry)?)
     }
 
@@ -2320,8 +2382,16 @@ impl World {
     ///
     /// # Errors
     /// The field is not watched, or the watch is stale.
-    pub fn remove_field_watch_entry<K: FieldKind>(&mut self, id: WatchId, payload: u32) -> Result<(), WorldError> {
-        let w = self.field_watches.iter().find(|w| w.field() == TypeId::of::<K>()).ok_or(WorldError::NoKind(0))?;
+    pub fn remove_field_watch_entry<K: FieldKind>(
+        &mut self,
+        id: WatchId,
+        payload: u32,
+    ) -> Result<(), WorldError> {
+        let w = self
+            .field_watches
+            .iter()
+            .find(|w| w.field() == TypeId::of::<K>())
+            .ok_or(WorldError::NoKind(0))?;
         Ok(w.remove_entry(&mut self.sim, id, payload)?)
     }
 
@@ -2386,7 +2456,11 @@ impl World {
     /// Every wake of field `K`'s cell watches fired since the last drain
     /// (`source`: the cell).
     pub fn drain_field_wakes<K: FieldKind>(&mut self, out: &mut Vec<Wake>) {
-        if let Some(i) = self.field_watches.iter().position(|w| w.field() == TypeId::of::<K>()) {
+        if let Some(i) = self
+            .field_watches
+            .iter()
+            .position(|w| w.field() == TypeId::of::<K>())
+        {
             out.append(&mut self.field_wakes[i]);
         }
     }
@@ -2564,11 +2638,16 @@ impl World {
     /// # Errors
     /// Unregistered.
     pub fn set_global<T: Any + Send + Sync>(&mut self, value: T) -> Result<(), WorldError> {
-        let &(id, phase) = self.globals.get(&TypeId::of::<T>()).ok_or(WorldError::NoKind(0))?;
+        let &(id, phase) = self
+            .globals
+            .get(&TypeId::of::<T>())
+            .ok_or(WorldError::NoKind(0))?;
         let res = Res::<T>::from_id(id);
         match phase {
             Phase::Main => *self.main.get_mut(res) = value,
-            Phase::Worker => self.pending_globals.push(Box::new(move |r: &mut Resources| *r.get_mut(res) = value)),
+            Phase::Worker => self
+                .pending_globals
+                .push(Box::new(move |r: &mut Resources| *r.get_mut(res) = value)),
         }
         Ok(())
     }

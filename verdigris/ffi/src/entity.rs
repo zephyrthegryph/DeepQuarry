@@ -55,7 +55,8 @@ pub fn bind_or_reuse(existing: f32) -> Result<EntityId> {
 /// # Errors
 /// As [`vg_core::entity::EntityTable::attach`].
 pub fn attach(entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(), EntityError> {
-    with_world(|w| Ok(w.entities_mut().attach(entity, domain, comp))).unwrap_or(Err(EntityError::Stale))
+    with_world(|w| Ok(w.entities_mut().attach(entity, domain, comp)))
+        .unwrap_or(Err(EntityError::Stale))
 }
 
 /// Frees an entity a domain minted for itself (a node DM still names by a
@@ -80,7 +81,9 @@ pub fn release(entity: EntityId) {
 /// `kind`.
 #[must_use]
 pub fn component_of(entity: EntityId, domain: usize, kind: u16) -> Option<ComponentRef> {
-    with_world(|w| Ok(w.entities().component(entity, domain, kind).ok())).ok().flatten()
+    with_world(|w| Ok(w.entities().component(entity, domain, kind).ok()))
+        .ok()
+        .flatten()
 }
 
 /// The `f32` DM should store in `vg_entity` (the raw id plus one; see
@@ -98,7 +101,11 @@ pub fn entity_value(id: EntityId) -> f32 {
 /// message: bad handle, stale, no such component, or wrong kind.
 pub fn resolve(entity_v: f32, domain: usize, kind: u16) -> Result<ComponentRef> {
     let id = decode(entity_v)?;
-    with_world(|w| w.entities().component(id, domain, kind).map_err(|e| eyre!("{e}")))
+    with_world(|w| {
+        w.entities()
+            .component(id, domain, kind)
+            .map_err(|e| eyre!("{e}"))
+    })
 }
 
 fn num(v: &ByondValue) -> Result<f32> {
@@ -121,9 +128,19 @@ fn entity_unbind(entity: ByondValue) -> Result<ByondValue> {
     for (domain, comp) in slots.iter() {
         #[allow(clippy::cast_possible_truncation)]
         registry::with_domain(domain as u32, |handler| handler.detach(comp));
-        with_world(|w| w.entities_mut().detach(id, domain).map(|_| ()).map_err(|e| eyre!("{e}")))?;
+        with_world(|w| {
+            w.entities_mut()
+                .detach(id, domain)
+                .map(|_| ())
+                .map_err(|e| eyre!("{e}"))
+        })?;
     }
-    with_world(|w| w.entities_mut().unbind(id).map(|_| ()).map_err(|e| eyre!("{e}")))?;
+    with_world(|w| {
+        w.entities_mut()
+            .unbind(id)
+            .map(|_| ())
+            .map_err(|e| eyre!("{e}"))
+    })?;
     Ok(ByondValue::null())
 }
 
@@ -150,8 +167,15 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
         #[allow(clippy::cast_possible_truncation)]
         let described = registry::with_domain(domain as u32, |handler| handler.describe(comp));
         if let Some(fields) = described {
-            let fields: Vec<String> = fields.into_iter().map(|(k, val)| format!("{k}={val}")).collect();
-            parts.push(format!("domain {domain} kind {}: {}", comp.kind, fields.join(", ")));
+            let fields: Vec<String> = fields
+                .into_iter()
+                .map(|(k, val)| format!("{k}={val}"))
+                .collect();
+            parts.push(format!(
+                "domain {domain} kind {}: {}",
+                comp.kind,
+                fields.join(", ")
+            ));
         }
     }
     Ok(ByondValue::new_str(parts.join("; "))?)
@@ -191,7 +215,9 @@ fn entity_is_valid(entity: ByondValue, domain: ByondValue, kind: ByondValue) -> 
     let valid = decode(v).is_ok_and(|id| {
         #[allow(clippy::cast_possible_truncation)]
         let code = vg_core::world::kind_code(domain as u8, kind);
-        let world = with_world(|w| Ok(w.kind_by_code(code).map(|k| w.has(id, k)))).ok().flatten();
+        let world = with_world(|w| Ok(w.kind_by_code(code).map(|k| w.has(id, k))))
+            .ok()
+            .flatten();
         world.unwrap_or_else(|| resolve(entity_value(id), domain, kind).is_ok())
     });
     Ok(yes(valid))

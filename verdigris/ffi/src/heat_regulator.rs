@@ -23,8 +23,8 @@
 use byondapi::prelude::*;
 use eyre::Result;
 use vg_core::thermo::ThermalBody;
-use vg_core::units::{HeatCapacity, Kelvin};
 use vg_core::thermo::{Regulator, RegulatorMode};
+use vg_core::units::{HeatCapacity, Kelvin};
 
 /// `RegulatorMode` as DM sends it.
 /// @dm-define REGULATOR_MODE_HEAT

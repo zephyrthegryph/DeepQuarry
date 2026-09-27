@@ -219,7 +219,11 @@ impl<T: Copy + Default + PartialEq> ChunkedLayer<T> {
         let Some((z, chunk, _)) = self.locate(index) else {
             return 0;
         };
-        self.revisions.get(z).and_then(|l| l.get(chunk)).copied().unwrap_or(0)
+        self.revisions
+            .get(z)
+            .and_then(|l| l.get(chunk))
+            .copied()
+            .unwrap_or(0)
     }
 
     fn touch(&mut self, z: usize, chunk: usize) {
@@ -501,7 +505,11 @@ impl Grid {
                 continue;
             }
             let (x, y, z) = self.dims.coords(at)?;
-            let link = self.z_links.get(z as usize).copied().unwrap_or((None, None));
+            let link = self
+                .z_links
+                .get(z as usize)
+                .copied()
+                .unwrap_or((None, None));
             let target = if up { link.0 } else { link.1 }?;
             at = self.dims.index(x, y, target)?;
         }
@@ -525,7 +533,11 @@ impl Grid {
             return self.dims.neighbor(index, face);
         }
         let (x, y, z) = self.dims.coords(index)?;
-        let link = self.z_links.get(z as usize).copied().unwrap_or((None, None));
+        let link = self
+            .z_links
+            .get(z as usize)
+            .copied()
+            .unwrap_or((None, None));
         let target = if face == Face::Up { link.0 } else { link.1 }?;
         self.dims.index(x, y, target)
     }
@@ -598,7 +610,10 @@ mod tests {
 
     #[test]
     fn dir_math_matches_byond() {
-        assert_eq!(Dir::NORTH.union(Dir::EAST).reverse(), Dir::SOUTH.union(Dir::WEST));
+        assert_eq!(
+            Dir::NORTH.union(Dir::EAST).reverse(),
+            Dir::SOUTH.union(Dir::WEST)
+        );
         assert_eq!(Dir::UP.reverse(), Dir::DOWN);
         assert!(Dir::NORTH.union(Dir::EAST).is_diagonal());
         assert!(!Dir::NORTH.is_diagonal());
@@ -610,17 +625,32 @@ mod tests {
         let mut grid = Grid::new(GridDims::new(4, 4, 3).unwrap());
         let dims = grid.dims();
         let at = dims.index(1, 1, 0).unwrap();
-        assert_eq!(grid.step(at, Dir::NORTH.union(Dir::EAST)), dims.index(2, 2, 0));
-        assert_eq!(grid.step(at, Dir::UP), dims.index(1, 1, 1), "no links: numeric neighbour");
+        assert_eq!(
+            grid.step(at, Dir::NORTH.union(Dir::EAST)),
+            dims.index(2, 2, 0)
+        );
+        assert_eq!(
+            grid.step(at, Dir::UP),
+            dims.index(1, 1, 1),
+            "no links: numeric neighbour"
+        );
         grid.set_z_link(0, Some(2), None);
-        assert_eq!(grid.step(at, Dir::UP), dims.index(1, 1, 2), "follows the link");
+        assert_eq!(
+            grid.step(at, Dir::UP),
+            dims.index(1, 1, 2),
+            "follows the link"
+        );
         assert_eq!(grid.step(at, Dir::DOWN), None, "unlinked");
         let before = grid.revision();
         grid.set_blocked(BlockKind::Air, at, Dir::ALL);
         assert!(grid.revision() > before);
         assert!(grid.blocked_revision(BlockKind::Air, at) > 0);
         let snapshot = grid.clone();
-        assert_eq!(snapshot.blocked(BlockKind::Air, at), Dir::ALL, "clones share chunks");
+        assert_eq!(
+            snapshot.blocked(BlockKind::Air, at),
+            Dir::ALL,
+            "clones share chunks"
+        );
     }
 
     #[test]

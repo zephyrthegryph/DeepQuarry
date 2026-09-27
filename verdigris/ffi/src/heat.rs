@@ -30,7 +30,9 @@ use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
 use vg_heat::components::gas_kind;
 use vg_heat::laws::{BodyBodyExchange, RegulatorHeatPump, SolidBodyExchange};
-use vg_heat::{BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat};
+use vg_heat::{
+    BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat,
+};
 
 use crate::entity;
 use crate::world::{list, num, whole, with_world};
@@ -108,7 +110,10 @@ pub fn register(b: &mut WorldBuilder) -> FieldKey<SolidHeat> {
     let _ = b.add_law::<SolidBodyExchange>();
     let _ = b.add_law::<BodyBodyExchange>();
     let _ = b.add_law::<RegulatorHeatPump>();
-    b.add_global(vg_core::component::Ownership::Worker, vg_heat::laws::MixtureProbes::default());
+    b.add_global(
+        vg_core::component::Ownership::Worker,
+        vg_heat::laws::MixtureProbes::default(),
+    );
     let _ = b.add_law::<vg_heat::laws::BodyMixtureExchange>();
     let _ = b.add_law::<vg_heat::mob::MobHeatFlux>();
     field
@@ -121,7 +126,9 @@ pub fn install_field(field: FieldKey<SolidHeat>) {
 }
 
 fn field() -> Result<FieldKey<SolidHeat>> {
-    FIELD.with(Cell::get).ok_or_else(|| eyre!("heat field not installed"))
+    FIELD
+        .with(Cell::get)
+        .ok_or_else(|| eyre!("heat field not installed"))
 }
 
 // ------------------------------------------------------------------ turfs
@@ -135,7 +142,16 @@ fn cell_kind_flags(kind: i32) -> Result<(bool, u8)> {
     })
 }
 
-fn set_turf(field: FieldKey<SolidHeat>, cell: u32, kind: i32, capacity: f32, conductivity: f32, emissivity: f32, temperature: f32, air: bool) -> Result<bool> {
+fn set_turf(
+    field: FieldKey<SolidHeat>,
+    cell: u32,
+    kind: i32,
+    capacity: f32,
+    conductivity: f32,
+    emissivity: f32,
+    temperature: f32,
+    air: bool,
+) -> Result<bool> {
     let (reservoir, mut f) = cell_kind_flags(kind)?;
     if air {
         f |= flags::AIR;
@@ -152,12 +168,18 @@ fn set_turf(field: FieldKey<SolidHeat>, cell: u32, kind: i32, capacity: f32, con
         });
     }
     with_world(|w| {
-        let old = w.sim_mut().port(field.geometry).read(cell).unwrap_or_default();
+        let old = w
+            .sim_mut()
+            .port(field.geometry)
+            .read(cell)
+            .unwrap_or_default();
         let geom = Geom {
             capacity,
             // A solid deck separates z-levels: cross-z heat needs an
             // explicit conductor (unchanged from the pre-port field).
-            blocked: Dir::NONE.with(vg_core::grid::Face::Up).with(vg_core::grid::Face::Down),
+            blocked: Dir::NONE
+                .with(vg_core::grid::Face::Up)
+                .with(vg_core::grid::Face::Down),
             reservoir,
         };
         if old != geom {
@@ -165,15 +187,38 @@ fn set_turf(field: FieldKey<SolidHeat>, cell: u32, kind: i32, capacity: f32, con
         }
         if old.is_node() && !old.reservoir && !reservoir {
             let current = w.sim_mut().port(field.cells).read(cell).unwrap_or_default();
-            if current.conductivity != conductivity || current.emissivity != emissivity || current.flags != f {
-                let _ = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Props { conductivity, emissivity, flags: f });
+            if current.conductivity != conductivity
+                || current.emissivity != emissivity
+                || current.flags != f
+            {
+                let _ = w.sim_mut().port(field.cells).submit(
+                    cell,
+                    vg_heat::SolidCmd::Props {
+                        conductivity,
+                        emissivity,
+                        flags: f,
+                    },
+                );
             }
             if (old.capacity - capacity).abs() > 0.0 {
-                let _ = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Rescale { from: old.capacity, to: capacity });
+                let _ = w.sim_mut().port(field.cells).submit(
+                    cell,
+                    vg_heat::SolidCmd::Rescale {
+                        from: old.capacity,
+                        to: capacity,
+                    },
+                );
             }
         } else {
-            let t = if kind == HEAT_CELL_SPACE { vg_heat::consts::TCMB } else { temperature.max(vg_heat::consts::TCMB) };
-            let _ = w.sim_mut().port(field.cells).put(cell, SolidCell::at(capacity, t, conductivity.max(0.0), emissivity, f));
+            let t = if kind == HEAT_CELL_SPACE {
+                vg_heat::consts::TCMB
+            } else {
+                temperature.max(vg_heat::consts::TCMB)
+            };
+            let _ = w.sim_mut().port(field.cells).put(
+                cell,
+                SolidCell::at(capacity, t, conductivity.max(0.0), emissivity, f),
+            );
         }
         wake_cell_couplings(w, cell);
         Ok(true)
@@ -181,20 +226,44 @@ fn set_turf(field: FieldKey<SolidHeat>, cell: u32, kind: i32, capacity: f32, con
 }
 
 fn clear_turf(w: &mut vg_core::world::World, field: FieldKey<SolidHeat>, cell: u32) {
-    let old = w.sim_mut().port(field.geometry).read(cell).unwrap_or_default();
+    let old = w
+        .sim_mut()
+        .port(field.geometry)
+        .read(cell)
+        .unwrap_or_default();
     if old != Geom::default() {
         let _ = w.sim_mut().port(field.geometry).put(cell, Geom::default());
-        let _ = w.sim_mut().port(field.cells).put(cell, SolidCell::default());
+        let _ = w
+            .sim_mut()
+            .port(field.cells)
+            .put(cell, SolidCell::default());
     }
     wake_cell_couplings(w, cell);
 }
 
 #[auxmacros::bind("/turf/proc/heat_set_turf")]
-fn heat_set_turf(turf: ByondValue, kind: ByondValue, capacity: ByondValue, conductivity: ByondValue, emissivity: ByondValue, temperature: ByondValue, air: ByondValue) -> Result<ByondValue> {
+fn heat_set_turf(
+    turf: ByondValue,
+    kind: ByondValue,
+    capacity: ByondValue,
+    conductivity: ByondValue,
+    emissivity: ByondValue,
+    temperature: ByondValue,
+    air: ByondValue,
+) -> Result<ByondValue> {
     let cell = turf.get_ref()?;
     let field = field()?;
     #[allow(clippy::cast_possible_truncation)]
-    let ok = set_turf(field, cell, num(&kind)? as i32, num(&capacity)?, num(&conductivity)?, num(&emissivity)?, num(&temperature)?, air.is_true())?;
+    let ok = set_turf(
+        field,
+        cell,
+        num(&kind)? as i32,
+        num(&capacity)?,
+        num(&conductivity)?,
+        num(&emissivity)?,
+        num(&temperature)?,
+        air.is_true(),
+    )?;
     Ok(ok.into())
 }
 
@@ -207,7 +276,16 @@ fn heat_set_turfs_bulk(records: ByondValue) -> Result<ByondValue> {
         let Ok(cell) = r[0].get_ref() else { continue };
         #[allow(clippy::cast_possible_truncation)]
         let kind = num(&r[1])? as i32;
-        if set_turf(field, cell, kind, num(&r[2])?, num(&r[3])?, num(&r[4])?, num(&r[5])?, r[6].is_true())? {
+        if set_turf(
+            field,
+            cell,
+            kind,
+            num(&r[2])?,
+            num(&r[3])?,
+            num(&r[4])?,
+            num(&r[5])?,
+            r[6].is_true(),
+        )? {
             set += 1;
         }
     }
@@ -239,9 +317,14 @@ fn heat_turf_temperature(turf: ByondValue) -> Result<ByondValue> {
         let Some(c) = w.sim_mut().port(field.cells).read(cell) else {
             return Ok(None);
         };
-        Ok(Some(if g.reservoir { c.temperature } else { c.temperature_in(g.capacity) }))
+        Ok(Some(if g.reservoir {
+            c.temperature
+        } else {
+            c.temperature_in(g.capacity)
+        }))
     })?;
-    Ok(t.filter(|t| t.is_finite()).map_or_else(ByondValue::null, ByondValue::from))
+    Ok(t.filter(|t| t.is_finite())
+        .map_or_else(ByondValue::null, ByondValue::from))
 }
 
 #[auxmacros::bind("/turf/proc/heat_add_turf")]
@@ -256,7 +339,11 @@ fn heat_add_turf(turf: ByondValue, joules: ByondValue) -> Result<ByondValue> {
         if !g.is_node() || g.reservoir || !joules.is_finite() {
             return Ok(false);
         }
-        let ok = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Add(joules)).is_ok();
+        let ok = w
+            .sim_mut()
+            .port(field.cells)
+            .submit(cell, vg_heat::SolidCmd::Add(joules))
+            .is_ok();
         wake_cell_couplings(w, cell);
         Ok(ok)
     })?;
@@ -275,7 +362,17 @@ fn heat_set_turf_temperature(turf: ByondValue, temperature: ByondValue) -> Resul
         if !g.is_node() || !t.is_finite() {
             return Ok(false);
         }
-        let ok = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Set { temperature: t, capacity: g.capacity }).is_ok();
+        let ok = w
+            .sim_mut()
+            .port(field.cells)
+            .submit(
+                cell,
+                vg_heat::SolidCmd::Set {
+                    temperature: t,
+                    capacity: g.capacity,
+                },
+            )
+            .is_ok();
         wake_cell_couplings(w, cell);
         Ok(ok)
     })?;
@@ -293,7 +390,8 @@ fn heat_turf_properties(turf: ByondValue) -> Result<ByondValue> {
         let Some(c) = w.sim_mut().port(field.cells).read(cell) else {
             return Ok(None);
         };
-        Ok(g.is_node().then_some((g.capacity, c.conductivity, c.emissivity)))
+        Ok(g.is_node()
+            .then_some((g.capacity, c.conductivity, c.emissivity)))
     })?;
     let Some((c, k, e)) = props else {
         return Ok(ByondValue::null());
@@ -305,7 +403,8 @@ fn heat_turf_properties(turf: ByondValue) -> Result<ByondValue> {
 
 fn coupling_kind_for(target_kind: i32) -> Result<i32> {
     match target_kind {
-        HEAT_TARGET_NONE | HEAT_TARGET_SOLID | HEAT_TARGET_TURF_AIR | HEAT_TARGET_MIXTURE | HEAT_TARGET_BODY => Ok(target_kind),
+        HEAT_TARGET_NONE | HEAT_TARGET_SOLID | HEAT_TARGET_TURF_AIR | HEAT_TARGET_MIXTURE
+        | HEAT_TARGET_BODY => Ok(target_kind),
         other => bail!("bad heat target kind {other}"),
     }
 }
@@ -347,8 +446,12 @@ fn track_body_coupling(other: u32, coupling: vg_core::entity::EntityId) {
 
 /// Wakes every `SolidCoupling` targeting `cell` (an external turf write).
 fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
-    let Some(kind) = w.kind_of::<SolidCoupling>() else { return };
-    let targets = CELL_COUPLINGS.with(|c| c.borrow().get(&cell).cloned()).unwrap_or_default();
+    let Some(kind) = w.kind_of::<SolidCoupling>() else {
+        return;
+    };
+    let targets = CELL_COUPLINGS
+        .with(|c| c.borrow().get(&cell).cloned())
+        .unwrap_or_default();
     for e in targets {
         let _ = w.wake_row(e, kind);
     }
@@ -377,8 +480,12 @@ fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
             let _ = w.wake_row(e, k);
         }
     }
-    let Some(body_kind) = w.kind_of::<BodyCoupling>() else { return };
-    let others = BODY_AS_OTHER.with(|c| c.borrow().get(&body).cloned()).unwrap_or_default();
+    let Some(body_kind) = w.kind_of::<BodyCoupling>() else {
+        return;
+    };
+    let others = BODY_AS_OTHER
+        .with(|c| c.borrow().get(&body).cloned())
+        .unwrap_or_default();
     for e in others {
         let _ = w.wake_row(e, body_kind);
     }
@@ -397,12 +504,19 @@ fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
 /// environment. The coupling's own law re-enters relax mode on its own
 /// next run if the body (now freshly woken, see [`wake_body_couplings`])
 /// is still eligible.
-fn settle_body_if_relaxing(w: &mut vg_core::world::World, e: vg_core::entity::EntityId, body: &mut HeatBody) -> Result<()> {
+fn settle_body_if_relaxing(
+    w: &mut vg_core::world::World,
+    e: vg_core::entity::EntityId,
+    body: &mut HeatBody,
+) -> Result<()> {
     if !body.relax {
         return Ok(());
     }
     let now = w.now();
-    let Some(&(kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()).as_ref() else {
+    let Some(&(kind, coupling_e)) = COUPLINGS
+        .with(|c| c.borrow().get(&(e.index(), 0)).copied())
+        .as_ref()
+    else {
         // No slot-0 coupling to deposit into (it was detached without
         // going through `heat_body_couple`/`release`, which both settle
         // and drop it themselves): just leave the model's anchor value as
@@ -418,7 +532,10 @@ fn settle_body_if_relaxing(w: &mut vg_core::world::World, e: vg_core::entity::En
                 return Ok(());
             };
             let field = field()?;
-            let (Some(g), Some(mut cell)) = (w.sim_mut().port(field.geometry).read(coupling.cell), w.sim_mut().port(field.cells).read(coupling.cell)) else {
+            let (Some(g), Some(mut cell)) = (
+                w.sim_mut().port(field.geometry).read(coupling.cell),
+                w.sim_mut().port(field.cells).read(coupling.cell),
+            ) else {
                 body.relax = false;
                 return Ok(());
             };
@@ -470,7 +587,13 @@ fn settle_body_if_relaxing(w: &mut vg_core::world::World, e: vg_core::entity::En
 /// Sets (body, slot)'s coupling, replacing any previous one. `target_kind`
 /// is `HEAT_TARGET_*`; `target_ref` a turf (solid/turf air), a mixture id,
 /// or another body's `vg_entity` handle.
-fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, target_ref: &ByondValue, conductance: f32) -> Result<()> {
+fn set_coupling(
+    body_e: vg_core::entity::EntityId,
+    slot: u8,
+    target_kind: i32,
+    target_ref: &ByondValue,
+    conductance: f32,
+) -> Result<()> {
     let target_kind = coupling_kind_for(target_kind)?;
     let body_i = body_e.index();
     with_world(|w| {
@@ -479,7 +602,17 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
             HEAT_TARGET_NONE => {}
             HEAT_TARGET_SOLID => {
                 let cell = target_ref.get_ref()?;
-                let e = w.bind_value(None, SolidCoupling { body: body_i, cell, conductance: conductance.into(), slot }).map_err(|e| eyre!("{e}"))?;
+                let e = w
+                    .bind_value(
+                        None,
+                        SolidCoupling {
+                            body: body_i,
+                            cell,
+                            conductance: conductance.into(),
+                            slot,
+                        },
+                    )
+                    .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (0, e)));
                 track_coupling_owner(e, body_e);
                 track_cell_coupling(cell, e);
@@ -487,7 +620,16 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
             HEAT_TARGET_TURF_AIR => {
                 let cell = target_ref.get_ref()?;
                 let e = w
-                    .bind_value(None, GasCoupling { body: body_i, kind: gas_kind::TURF, target: cell, conductance: conductance.into(), slot })
+                    .bind_value(
+                        None,
+                        GasCoupling {
+                            body: body_i,
+                            kind: gas_kind::TURF,
+                            target: cell,
+                            conductance: conductance.into(),
+                            slot,
+                        },
+                    )
                     .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
                 track_coupling_owner(e, body_e);
@@ -496,7 +638,16 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                 let target = num(target_ref)? as u32;
                 let e = w
-                    .bind_value(None, GasCoupling { body: body_i, kind: gas_kind::MIXTURE, target, conductance: conductance.into(), slot })
+                    .bind_value(
+                        None,
+                        GasCoupling {
+                            body: body_i,
+                            kind: gas_kind::MIXTURE,
+                            target,
+                            conductance: conductance.into(),
+                            slot,
+                        },
+                    )
                     .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
                 track_coupling_owner(e, body_e);
@@ -504,7 +655,15 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
             HEAT_TARGET_BODY => {
                 let other = entity::decode(num(target_ref)?)?;
                 let e = w
-                    .bind_value(None, BodyCoupling { body: body_i, other: other.index(), conductance: conductance.into(), slot })
+                    .bind_value(
+                        None,
+                        BodyCoupling {
+                            body: body_i,
+                            other: other.index(),
+                            conductance: conductance.into(),
+                            slot,
+                        },
+                    )
                     .map_err(|e| eyre!("{e}"))?;
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (2, e)));
                 track_coupling_owner(e, body_e);
@@ -520,7 +679,14 @@ fn set_coupling(body_e: vg_core::entity::EntityId, slot: u8, target_kind: i32, t
 /// (`HEAT_TARGET_*`, target, conductance), and whether DM keeps it. Returns
 /// the entity handle, or null on failure.
 #[auxmacros::bind("/proc/heat_body_create")]
-fn heat_body_create(capacity: ByondValue, temperature: ByondValue, target_kind: ByondValue, target_ref: ByondValue, conductance: ByondValue, keep: ByondValue) -> Result<ByondValue> {
+fn heat_body_create(
+    capacity: ByondValue,
+    temperature: ByondValue,
+    target_kind: ByondValue,
+    target_ref: ByondValue,
+    conductance: ByondValue,
+    keep: ByondValue,
+) -> Result<ByondValue> {
     let capacity = f64::from(num(&capacity)?);
     if !(capacity.is_finite() && capacity > 0.0) {
         return Ok(ByondValue::null());
@@ -545,12 +711,16 @@ fn body(h: &ByondValue) -> Result<Option<vg_core::entity::EntityId>> {
     if v == 0.0 {
         return Ok(None);
     }
-    Ok(entity::decode(v).ok().filter(|&e| with_world(|w| Ok(w.read::<HeatBody>(e).is_some())).unwrap_or(false)))
+    Ok(entity::decode(v)
+        .ok()
+        .filter(|&e| with_world(|w| Ok(w.read::<HeatBody>(e).is_some())).unwrap_or(false)))
 }
 
 #[auxmacros::bind("/proc/heat_body_temperature")]
 fn heat_body_temperature(h: ByondValue) -> Result<ByondValue> {
-    let Some(e) = body(&h)? else { return Ok(ByondValue::null()) };
+    let Some(e) = body(&h)? else {
+        return Ok(ByondValue::null());
+    };
     let t = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| b.temperature())))?;
     Ok(t.map_or_else(ByondValue::null, |t| ByondValue::from(t as f32)))
 }
@@ -558,7 +728,9 @@ fn heat_body_temperature(h: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/heat_body_add")]
 fn heat_body_add(h: ByondValue, joules: ByondValue) -> Result<ByondValue> {
     let joules = f64::from(num(&joules)?);
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -574,8 +746,16 @@ fn heat_body_add(h: ByondValue, joules: ByondValue) -> Result<ByondValue> {
 }
 
 #[auxmacros::bind("/proc/heat_body_couple")]
-fn heat_body_couple(h: ByondValue, slot: ByondValue, target_kind: ByondValue, target_ref: ByondValue, conductance: ByondValue) -> Result<ByondValue> {
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+fn heat_body_couple(
+    h: ByondValue,
+    slot: ByondValue,
+    target_kind: ByondValue,
+    target_ref: ByondValue,
+    conductance: ByondValue,
+) -> Result<ByondValue> {
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let slot = num(&slot)?.clamp(0.0, 1.0) as u8;
     #[allow(clippy::cast_possible_truncation)]
@@ -587,7 +767,9 @@ fn heat_body_couple(h: ByondValue, slot: ByondValue, target_kind: ByondValue, ta
 #[auxmacros::bind("/proc/heat_body_power")]
 fn heat_body_power(h: ByondValue, watts: ByondValue) -> Result<ByondValue> {
     let watts = f64::from(num(&watts)?);
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -604,7 +786,9 @@ fn heat_body_power(h: ByondValue, watts: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/heat_body_capacity")]
 fn heat_body_capacity(h: ByondValue, capacity: ByondValue) -> Result<ByondValue> {
     let capacity = f64::from(num(&capacity)?);
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -624,9 +808,15 @@ fn heat_body_capacity(h: ByondValue, capacity: ByondValue) -> Result<ByondValue>
 }
 
 #[auxmacros::bind("/proc/heat_body_phase")]
-fn heat_body_phase(h: ByondValue, temperature: ByondValue, latent: ByondValue) -> Result<ByondValue> {
+fn heat_body_phase(
+    h: ByondValue,
+    temperature: ByondValue,
+    latent: ByondValue,
+) -> Result<ByondValue> {
     let (t, l) = (f64::from(num(&temperature)?), f64::from(num(&latent)?));
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -635,7 +825,11 @@ fn heat_body_phase(h: ByondValue, temperature: ByondValue, latent: ByondValue) -
         let temp = b.temperature();
         b.phase_temperature = t;
         b.phase_latent = l;
-        b.energy = f64::from(vg_core::thermo::phase_energy(temp as f32, b.capacity as f32, b.phase()));
+        b.energy = f64::from(vg_core::thermo::phase_energy(
+            temp as f32,
+            b.capacity as f32,
+            b.phase(),
+        ));
         let ok = w.put(e, b).is_ok();
         wake_body_couplings(w, e.index());
         Ok(ok)
@@ -646,7 +840,9 @@ fn heat_body_phase(h: ByondValue, temperature: ByondValue, latent: ByondValue) -
 #[auxmacros::bind("/proc/heat_body_set_temperature")]
 fn heat_body_set_temperature(h: ByondValue, temperature: ByondValue) -> Result<ByondValue> {
     let t = f64::from(num(&temperature)?.max(vg_heat::consts::TCMB));
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -655,7 +851,11 @@ fn heat_body_set_temperature(h: ByondValue, temperature: ByondValue) -> Result<B
         // was doing, so this clears `relax` outright instead of settling
         // first (settling would just be overwritten immediately after).
         b.relax = false;
-        b.energy = f64::from(vg_core::thermo::phase_energy(t as f32, b.capacity as f32, b.phase()));
+        b.energy = f64::from(vg_core::thermo::phase_energy(
+            t as f32,
+            b.capacity as f32,
+            b.phase(),
+        ));
         let ok = w.put(e, b).is_ok();
         wake_body_couplings(w, e.index());
         Ok(ok)
@@ -666,9 +866,19 @@ fn heat_body_set_temperature(h: ByondValue, temperature: ByondValue) -> Result<B
 #[auxmacros::bind("/proc/heat_body_keep")]
 fn heat_body_keep(h: ByondValue, keep: ByondValue) -> Result<ByondValue> {
     let keep = keep.is_true();
-    let Some(e) = body(&h)? else { return Ok(false.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(false.into());
+    };
     let ok = with_world(|w| {
-        let ok = w.set(e, kind_of(w, "HeatBody")?, field_id::<HeatBody>("keep")?, None, if keep { 1.0 } else { 0.0 }).is_ok();
+        let ok = w
+            .set(
+                e,
+                kind_of(w, "HeatBody")?,
+                field_id::<HeatBody>("keep")?,
+                None,
+                if keep { 1.0 } else { 0.0 },
+            )
+            .is_ok();
         wake_body_couplings(w, e.index());
         Ok(ok)
     })?;
@@ -703,17 +913,30 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
         return Ok(());
     };
     settle_body_if_relaxing(w, e, &mut b)?;
-    let Some(&(kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()).as_ref() else {
+    let Some(&(kind, coupling_e)) = COUPLINGS
+        .with(|c| c.borrow().get(&(e.index(), 0)).copied())
+        .as_ref()
+    else {
         return Ok(());
     };
     match kind {
         0 => {
             if let Some(coupling) = w.read::<SolidCoupling>(coupling_e) {
                 let field = field()?;
-                if let (Some(g), Some(cell)) = (w.sim_mut().port(field.geometry).read(coupling.cell), w.sim_mut().port(field.cells).read(coupling.cell)) {
-                    let baseline_t = if g.reservoir { cell.temperature } else { cell.temperature_in(g.capacity) };
+                if let (Some(g), Some(cell)) = (
+                    w.sim_mut().port(field.geometry).read(coupling.cell),
+                    w.sim_mut().port(field.cells).read(coupling.cell),
+                ) {
+                    let baseline_t = if g.reservoir {
+                        cell.temperature
+                    } else {
+                        cell.temperature_in(g.capacity)
+                    };
                     #[allow(clippy::cast_possible_truncation)]
-                    let baseline = f64::from(vg_core::thermo::phase_energy(baseline_t, b.capacity as f32, b.phase()).max(0.0));
+                    let baseline = f64::from(
+                        vg_core::thermo::phase_energy(baseline_t, b.capacity as f32, b.phase())
+                            .max(0.0),
+                    );
                     let excess = b.energy - baseline;
                     if excess != 0.0 && !g.reservoir {
                         #[allow(clippy::cast_possible_truncation)]
@@ -728,9 +951,14 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
         }
         1 => {
             if let Some(coupling) = w.read::<GasCoupling>(coupling_e) {
-                if let Some(t) = (coupling.kind == gas_kind::TURF).then(|| turf_gas_temperature(w, coupling.target)).flatten() {
+                if let Some(t) = (coupling.kind == gas_kind::TURF)
+                    .then(|| turf_gas_temperature(w, coupling.target))
+                    .flatten()
+                {
                     #[allow(clippy::cast_possible_truncation)]
-                    let baseline = f64::from(vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0));
+                    let baseline = f64::from(
+                        vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0),
+                    );
                     turf_gas_heat(w, coupling.target, b.energy - baseline);
                 }
             }
@@ -740,7 +968,14 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
                 let other_e = vg_core::entity::EntityId::from_bits(coupling.other).unwrap_or(e);
                 if let Some(mut other) = w.read::<HeatBody>(other_e) {
                     #[allow(clippy::cast_possible_truncation)]
-                    let baseline = f64::from(vg_core::thermo::phase_energy(other.temperature() as f32, b.capacity as f32, b.phase()).max(0.0));
+                    let baseline = f64::from(
+                        vg_core::thermo::phase_energy(
+                            other.temperature() as f32,
+                            b.capacity as f32,
+                            b.phase(),
+                        )
+                        .max(0.0),
+                    );
                     let excess = b.energy - baseline;
                     if excess != 0.0 {
                         other.energy += excess;
@@ -756,7 +991,9 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
 
 #[auxmacros::bind("/proc/heat_body_flow")]
 fn heat_body_flow(h: ByondValue) -> Result<ByondValue> {
-    let Some(e) = body(&h)? else { return Ok(0.0f32.into()) };
+    let Some(e) = body(&h)? else {
+        return Ok(0.0f32.into());
+    };
     let flow = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| b.flow)))?;
     Ok(ByondValue::from(flow.unwrap_or(0.0) as f32))
 }
@@ -774,8 +1011,14 @@ fn drain_settled_bodies(w: &mut vg_core::world::World) {
     let settled: Vec<vg_core::entity::EntityId> = w
         .events()
         .decoded::<vg_heat::laws::HeatEvent>()
-        .filter_map(|(entity_v, e)| matches!(e, vg_heat::laws::HeatEvent::Settled).then(|| entity::decode(entity_v).ok()).flatten())
-        .filter_map(|coupling_e| COUPLING_BODY.with(|c| c.borrow().get(&coupling_e.index()).copied()))
+        .filter_map(|(entity_v, e)| {
+            matches!(e, vg_heat::laws::HeatEvent::Settled)
+                .then(|| entity::decode(entity_v).ok())
+                .flatten()
+        })
+        .filter_map(|coupling_e| {
+            COUPLING_BODY.with(|c| c.borrow().get(&coupling_e.index()).copied())
+        })
         .collect();
     for body_e in settled {
         if w.read::<HeatBody>(body_e).is_none() {
@@ -826,7 +1069,10 @@ fn watch_id(index: &ByondValue, generation: &ByondValue) -> Result<WatchId> {
     })
 }
 
-fn channel_of(chans: &[vg_core::channel::ChannelInfo], name: &str) -> Result<vg_core::channel::ChannelId> {
+fn channel_of(
+    chans: &[vg_core::channel::ChannelInfo],
+    name: &str,
+) -> Result<vg_core::channel::ChannelId> {
     #[allow(clippy::cast_possible_truncation)]
     chans
         .iter()
@@ -836,7 +1082,15 @@ fn channel_of(chans: &[vg_core::channel::ChannelInfo], name: &str) -> Result<vg_
 }
 
 #[auxmacros::bind("/proc/heat_watch")]
-fn heat_watch(on_body: ByondValue, target_ref: ByondValue, subscriber: ByondValue, lane: ByondValue, kind: ByondValue, level: ByondValue, both: ByondValue) -> Result<ByondValue> {
+fn heat_watch(
+    on_body: ByondValue,
+    target_ref: ByondValue,
+    subscriber: ByondValue,
+    lane: ByondValue,
+    kind: ByondValue,
+    level: ByondValue,
+    both: ByondValue,
+) -> Result<ByondValue> {
     let on_body = on_body.is_true();
     let both = both.is_true();
     #[allow(clippy::cast_possible_truncation)]
@@ -859,19 +1113,28 @@ fn heat_watch(on_body: ByondValue, target_ref: ByondValue, subscriber: ByondValu
             let ch = channel_of(&chans, "temperature")?;
             let cell = e.index();
             let cond = watch_cond(kind, &level, both, ch, vg_core::channel::Unit::Kelvin, cell)?;
-            w.watch(kind_id, subscriber, lane, &cond).map_err(|e| eyre!("{e}"))
+            w.watch(kind_id, subscriber, lane, &cond)
+                .map_err(|e| eyre!("{e}"))
         } else {
             let cell = target_ref.get_ref()?;
             let ch = vg_heat::solid::solid_ch::TEMPERATURE;
             let cond = watch_cond(kind, &level, both, ch, vg_core::channel::Unit::Kelvin, cell)?;
-            w.watch_cells::<SolidHeat>(subscriber, lane, &cond).map_err(|e| eyre!("{e}"))
+            w.watch_cells::<SolidHeat>(subscriber, lane, &cond)
+                .map_err(|e| eyre!("{e}"))
         }
     })?;
     #[allow(clippy::cast_precision_loss)]
     list([id.index as f32, id.generation as f32])
 }
 
-fn watch_cond(kind: i32, level: &ByondValue, both: bool, ch: vg_core::channel::ChannelId, unit: vg_core::channel::Unit, cell: u32) -> Result<Cond> {
+fn watch_cond(
+    kind: i32,
+    level: &ByondValue,
+    both: bool,
+    ch: vg_core::channel::ChannelId,
+    unit: vg_core::channel::Unit,
+    cell: u32,
+) -> Result<Cond> {
     let k = |v: f32| vg_core::channel::Quantity::new(v, unit);
     Ok(match kind {
         HEAT_WATCH_ABOVE => {
@@ -894,7 +1157,13 @@ fn watch_cond(kind: i32, level: &ByondValue, both: bool, ch: vg_core::channel::C
             for v in &values {
                 levels.push(num(v)?);
             }
-            Cond::Band { cell, ch, unit, levels, hysteresis: None }
+            Cond::Band {
+                cell,
+                ch,
+                unit,
+                levels,
+                hysteresis: None,
+            }
         }
         HEAT_WATCH_SET => Cond::ThresholdSet { cell, ch },
         other => bail!("bad heat watch kind {other}"),
@@ -902,19 +1171,36 @@ fn watch_cond(kind: i32, level: &ByondValue, both: bool, ch: vg_core::channel::C
 }
 
 #[auxmacros::bind("/proc/heat_watch_set_add")]
-fn heat_watch_set_add(on_body: ByondValue, index: ByondValue, watch_generation: ByondValue, payload: ByondValue, generation: ByondValue, cmp: ByondValue, limit: ByondValue, both: ByondValue) -> Result<ByondValue> {
+fn heat_watch_set_add(
+    on_body: ByondValue,
+    index: ByondValue,
+    watch_generation: ByondValue,
+    payload: ByondValue,
+    generation: ByondValue,
+    cmp: ByondValue,
+    limit: ByondValue,
+    both: ByondValue,
+) -> Result<ByondValue> {
     let id = watch_id(&index, &watch_generation)?;
     let on_body = on_body.is_true();
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let (payload, generation) = (num(&payload)? as u32, num(&generation)? as u32);
-    let cmp = if num(&cmp)? as i32 == HEAT_WATCH_BELOW { Cmp::Below } else { Cmp::Above };
+    let cmp = if num(&cmp)? as i32 == HEAT_WATCH_BELOW {
+        Cmp::Below
+    } else {
+        Cmp::Above
+    };
     let entry = SetEntry {
         payload,
         generation,
         cmp,
         limit: vg_core::channel::Quantity::new(num(&limit)?, vg_core::channel::Unit::Kelvin),
         hysteresis: None,
-        edge: if both.is_true() { Edge::Both } else { Edge::Enter },
+        edge: if both.is_true() {
+            Edge::Both
+        } else {
+            Edge::Enter
+        },
     };
     with_world(|w| {
         if on_body {
@@ -928,7 +1214,12 @@ fn heat_watch_set_add(on_body: ByondValue, index: ByondValue, watch_generation: 
 }
 
 #[auxmacros::bind("/proc/heat_watch_set_remove")]
-fn heat_watch_set_remove(on_body: ByondValue, index: ByondValue, watch_generation: ByondValue, payload: ByondValue) -> Result<ByondValue> {
+fn heat_watch_set_remove(
+    on_body: ByondValue,
+    index: ByondValue,
+    watch_generation: ByondValue,
+    payload: ByondValue,
+) -> Result<ByondValue> {
     let id = watch_id(&index, &watch_generation)?;
     let on_body = on_body.is_true();
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -946,7 +1237,11 @@ fn heat_watch_set_remove(on_body: ByondValue, index: ByondValue, watch_generatio
 }
 
 #[auxmacros::bind("/proc/heat_unwatch")]
-fn heat_unwatch(on_body: ByondValue, index: ByondValue, watch_generation: ByondValue) -> Result<ByondValue> {
+fn heat_unwatch(
+    on_body: ByondValue,
+    index: ByondValue,
+    watch_generation: ByondValue,
+) -> Result<ByondValue> {
     let id = watch_id(&index, &watch_generation)?;
     let on_body = on_body.is_true();
     with_world(|w| {
@@ -981,7 +1276,12 @@ fn heat_take_wakes() -> Result<ByondValue> {
         w.drain_field_wakes::<SolidHeat>(&mut wakes);
         flat.push(wakes.len() as f32);
         for wk in wakes {
-            flat.extend_from_slice(&[wk.subscriber as f32, wk.watch.index as f32, wk.reason as f32, (wk.source & 0x00ff_ffff) as f32]);
+            flat.extend_from_slice(&[
+                wk.subscriber as f32,
+                wk.watch.index as f32,
+                wk.reason as f32,
+                (wk.source & 0x00ff_ffff) as f32,
+            ]);
         }
         // `ThresholdSet` crossings: watch_index, payload, entered,
         // payload_generation -- matching the pre-port wire format exactly.
@@ -994,7 +1294,12 @@ fn heat_take_wakes() -> Result<ByondValue> {
         // index alone, not the full (index, generation) handle DM otherwise
         // holds for `heat_unwatch`/`heat_watch_set_add`/`remove`.
         for c in w.drain_threshold_crossings() {
-            flat.extend_from_slice(&[c.watch as f32, c.payload as f32, if c.entered { 1.0 } else { 0.0 }, c.generation as f32]);
+            flat.extend_from_slice(&[
+                c.watch as f32,
+                c.payload as f32,
+                if c.entered { 1.0 } else { 0.0 },
+                c.generation as f32,
+            ]);
         }
         drain_settled_bodies(w);
         Ok(())
@@ -1012,7 +1317,6 @@ fn heat_take_wakes() -> Result<ByondValue> {
 fn heat_tick(_seconds: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::from(1.0f32))
 }
-
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
 /// default emissivity, seconds per heat frame, normal body temperature,
@@ -1053,7 +1357,9 @@ fn turf_gas_temperature(w: &vg_core::world::World, cell: u32) -> Option<f32> {
 
 /// Adds `joules` to a turf's gas (a released body's excess), as a command.
 fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
-    let Ok(key) = crate::gas::turf_key() else { return };
+    let Ok(key) = crate::gas::turf_key() else {
+        return;
+    };
     let mut d = [0.0f32; vg_gas::cell::Q];
     #[allow(clippy::cast_possible_truncation)]
     {
@@ -1069,7 +1375,12 @@ fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
 /// world borrow.
 pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
     let targets: Vec<u32> = with_world(|w| {
-        Ok(w.entities_with::<GasCoupling>().into_iter().filter_map(|e| w.read::<GasCoupling>(e)).filter(|c| c.kind == gas_kind::MIXTURE).map(|c| c.target).collect())
+        Ok(w.entities_with::<GasCoupling>()
+            .into_iter()
+            .filter_map(|e| w.read::<GasCoupling>(e))
+            .filter(|c| c.kind == gas_kind::MIXTURE)
+            .map(|c| c.target)
+            .collect())
     })
     .unwrap_or_default();
     let mut probes: Vec<(u32, f32, f32, bool)> = targets
@@ -1111,8 +1422,27 @@ mod tests {
         tank.set_temperature(280.0);
         let r = MixRef::Main(mix::alloc(tank).unwrap());
         with_world(|w| {
-            let body = w.bind_value(None, HeatBody { capacity: 1_000.0, energy: 1_000.0 * 400.0, ..Default::default() }).map_err(|e| eyre!("{e}"))?;
-            w.bind_value(None, GasCoupling { body: body.index(), kind: gas_kind::MIXTURE, target: r.id(), conductance: 5.0, slot: 1 }).map_err(|e| eyre!("{e}"))?;
+            let body = w
+                .bind_value(
+                    None,
+                    HeatBody {
+                        capacity: 1_000.0,
+                        energy: 1_000.0 * 400.0,
+                        ..Default::default()
+                    },
+                )
+                .map_err(|e| eyre!("{e}"))?;
+            w.bind_value(
+                None,
+                GasCoupling {
+                    body: body.index(),
+                    kind: gas_kind::MIXTURE,
+                    target: r.id(),
+                    conductance: 5.0,
+                    slot: 1,
+                },
+            )
+            .map_err(|e| eyre!("{e}"))?;
             Ok(())
         })
         .unwrap();

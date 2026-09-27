@@ -24,10 +24,10 @@ use crate::arena::{Arena, ArenaError};
 use crate::command::{CommandBuffer, Op, Seq, Sequenced};
 use crate::cow::{ChunkLayout, CowStore};
 use crate::frame::{Res, TaskCtx};
-use crate::slot::Handle;
 use crate::mailbox::Latest;
 use crate::outbox::{Outbox, OutboxSlot, TakeResult};
 use crate::overlay::{CellMap, Overlay};
+use crate::slot::Handle;
 
 /// A simulation domain: the value type of one cell and the commands DM can
 /// send it. The physics lives in frame tasks; this trait only fixes how a
@@ -57,13 +57,18 @@ pub trait Domain: 'static {
 }
 
 /// Adds `sign * (conserved quantities of value)` into `into`.
-pub(crate) fn add_conserved<D: Domain>(into: &mut Vec<(&'static str, f64)>, value: &D::Value, sign: f64) {
-    D::conserved(value, &mut |name, amount| {
-        match into.iter_mut().find(|(n, _)| *n == name) {
+pub(crate) fn add_conserved<D: Domain>(
+    into: &mut Vec<(&'static str, f64)>,
+    value: &D::Value,
+    sign: f64,
+) {
+    D::conserved(
+        value,
+        &mut |name, amount| match into.iter_mut().find(|(n, _)| *n == name) {
             Some((_, v)) => *v += sign * amount,
             None => into.push((name, sign * amount)),
-        }
-    });
+        },
+    );
 }
 
 /// The operation type queued for domain `D`.

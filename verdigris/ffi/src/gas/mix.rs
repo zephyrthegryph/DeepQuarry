@@ -569,7 +569,10 @@ pub fn watch(sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)> 
 /// their mirror is refreshed from DM's own view at each drain) and primes
 /// it with the current values, so a write right after registering fires.
 fn watch_mirrored(sub: Subscriber, lane: Lane, cond: &Cond, ids: Vec<u32>) -> Result<WatchId> {
-    let loaded: Vec<(u32, Option<Mixture>)> = ids.iter().map(|&h| (h, MixRef::from_id(h).and_then(load))).collect();
+    let loaded: Vec<(u32, Option<Mixture>)> = ids
+        .iter()
+        .map(|&h| (h, MixRef::from_id(h).and_then(load)))
+        .collect();
     let (id, primed) = with_mixes(|m| {
         let id = m.port.watch(sub, lane, cond).map_err(|e| eyre!("{e:?}"))?;
         for (h, mix) in loaded {
@@ -629,8 +632,17 @@ fn take_wakes() -> Vec<Wake> {
         })
         .collect();
     // Turf cells change on the worker: refresh their mirrors from DM's view.
-    let turfs: Vec<u32> = with_mixes(|m| m.watched.keys().copied().filter(|&h| h >= TURF_BASE).collect());
-    let fresh: Vec<(u32, GasCell)> = turfs.into_iter().filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?)))).collect();
+    let turfs: Vec<u32> = with_mixes(|m| {
+        m.watched
+            .keys()
+            .copied()
+            .filter(|&h| h >= TURF_BASE)
+            .collect()
+    });
+    let fresh: Vec<(u32, GasCell)> = turfs
+        .into_iter()
+        .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
+        .collect();
     with_mixes(|m| {
         for (h, c) in fresh {
             m.probes.set(h, c);
@@ -805,7 +817,10 @@ mod tests {
         with_world(|_| Ok(())).unwrap();
         let slot = alloc(tank(10.0)).unwrap();
         let r = MixRef::Main(slot);
-        let cond = Cond::Changed { cell: r.id(), mask: gas_ch::PRESSURE.bit() };
+        let cond = Cond::Changed {
+            cell: r.id(),
+            mask: gas_ch::PRESSURE.bit(),
+        };
         watch(5, Lane::Urgent, &cond).unwrap();
         let mut out = Vec::new();
         reactor_wakes(&mut out);

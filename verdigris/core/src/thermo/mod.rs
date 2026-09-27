@@ -253,7 +253,14 @@ pub fn phase_energy(temperature: f32, capacity: f32, phase: Phase) -> f32 {
 /// [`crate::rate::RateModel::Relax`] with `k = g/c`.
 #[must_use]
 #[allow(clippy::cast_possible_truncation)]
-pub fn relax_toward(t0: f32, ambient: f32, power: f32, conductance: f32, capacity: f32, elapsed: f32) -> f32 {
+pub fn relax_toward(
+    t0: f32,
+    ambient: f32,
+    power: f32,
+    conductance: f32,
+    capacity: f32,
+    elapsed: f32,
+) -> f32 {
     if conductance <= 0.0 || capacity <= 0.0 {
         return t0;
     }
@@ -281,7 +288,10 @@ pub trait Thermal {
 mod tests {
     #[test]
     fn phase_plateau_maps_energy_both_ways() {
-        let p = Phase { temperature: 300.0, latent: 1_000.0 };
+        let p = Phase {
+            temperature: 300.0,
+            latent: 1_000.0,
+        };
         assert_eq!(phase_temperature(100.0 * 299.0, 100.0, p), 299.0);
         assert_eq!(phase_temperature(100.0 * 300.0 + 500.0, 100.0, p), 300.0);
         assert_eq!(phase_temperature(100.0 * 301.0 + 1_000.0, 100.0, p), 301.0);

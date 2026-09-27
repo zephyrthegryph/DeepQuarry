@@ -27,10 +27,7 @@ fn field<C: Component>(name: &str) -> u16 {
 
 #[test]
 fn a_smes_shares_storage_per_terminal_across_two_regions() {
-    let mut b = WorldBuilder::new(WorldConfig {
-        check_conservation: true,
-        ..WorldConfig::default()
-    });
+    let mut b = WorldBuilder::new(WorldConfig { check_conservation: true, ..WorldConfig::default() });
     let apc = b.add_component::<Apc>();
     let producer = b.add_component::<Producer>();
     let smes = b.add_component::<Smes>();
@@ -59,9 +56,8 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
         })
         .unwrap();
 
-    let apc_e = world
-        .bind(None, apc, &[(field::<Apc>("static_load"), Some(0), 100.0), (field::<Apc>("capacity"), None, 1_000_000.0)])
-        .unwrap();
+    let apc_e =
+        world.bind(None, apc, &[(field::<Apc>("static_load"), Some(0), 100.0), (field::<Apc>("capacity"), None, 1_000_000.0)]).unwrap();
     world.adjust(apc_e, apc, field::<Apc>("charge"), 0, 1_000_000.0).unwrap();
     world
         .edit_network::<Cables>(move |host| {
@@ -120,10 +116,7 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
     assert!((discharged - expected).abs() < 1e-6, "discharged {discharged}, expected {expected}");
 
     let violations = world.violations();
-    assert!(
-        violations.is_empty(),
-        "power_apc_charge/power_smes_charge conservation held across the two-region SMES split: {violations:?}"
-    );
+    assert!(violations.is_empty(), "power_apc_charge/power_smes_charge conservation held across the two-region SMES split: {violations:?}");
 
     // The producer and APC entities stay in region A; the two SMES
     // terminals never share a region with each other or with region A.
@@ -131,4 +124,31 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
     assert_eq!(region_of(producer_e), region_of(apc_e));
     assert_eq!(region_of(producer_e), region_of(unit_e));
     assert_ne!(region_of(producer_e), region_of(in_e));
+}
+
+#[test]
+fn an_isolated_apc_with_a_load_sheds_when_its_cell_runs_out() {
+    let mut b = WorldBuilder::new(WorldConfig::default());
+    let apc = b.add_component::<Apc>();
+    b.add_network::<Cables>(Ownership::Main);
+    let _ = b.add_law::<PowerReset>();
+    let _ = b.add_law::<ApcTick>().after::<PowerReset>();
+    let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
+    let mut world = b.build().expect("builds");
+    let apc_e =
+        world.bind(None, apc, &[(field::<Apc>("static_load"), Some(0), 2000.0), (field::<Apc>("capacity"), None, 10_000.0)]).unwrap();
+    world.adjust(apc_e, apc, field::<Apc>("charge"), 0, 10.0).unwrap();
+    world
+        .edit_network::<Cables>(move |host| {
+            host.bind_node(apc_e, 1, NODE_MACHINE, PowerNode::Machine).unwrap();
+        })
+        .unwrap();
+    world.step_blocking();
+    world.edit_network::<Cables>(move |host| host.unbind_node(apc_e)).unwrap();
+    let equip = field::<Apc>("channels");
+    for _ in 0..20 {
+        world.step_blocking();
+    }
+    let v = world.get(apc_e, apc, equip, 0).unwrap();
+    assert!(v < 2.0, "equipment still on: {v}, charge {}", world.get(apc_e, apc, field::<Apc>("charge"), 0).unwrap());
 }

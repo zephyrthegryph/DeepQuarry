@@ -36,10 +36,10 @@ use eyre::{Result, bail, eyre};
 use vg_core::component::FieldId;
 use vg_core::conservation::Tolerance;
 use vg_core::entity::{ComponentRef, EntityId, WORLD_DOMAIN};
+use vg_core::grid::GridDims;
 use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
 use vg_core::registry::{DomainRegistry, world_kind_domain};
 use vg_core::units::Seconds;
-use vg_core::grid::GridDims;
 use vg_core::watch::Cond;
 use vg_core::world::{KindId, World, WorldBuilder, WorldConfig};
 
@@ -104,7 +104,10 @@ fn register(b: &mut WorldBuilder) -> Fields {
     use vg_core::component::Ownership;
     use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
     use vg_power::kind::Cables;
-    use vg_power::laws::{ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInputApply, SmesInputPlan, SmesOutputApply, SmesOutputPlan};
+    use vg_power::laws::{
+        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInputApply, SmesInputPlan,
+        SmesOutputApply, SmesOutputPlan,
+    };
     b.add_component::<Producer>();
     b.add_component::<Apc>();
     b.add_component::<Smes>();
@@ -116,7 +119,10 @@ fn register(b: &mut WorldBuilder) -> Fields {
     let _ = b.add_law::<ProducerCredit>().after::<PowerReset>();
     let _ = b.add_law::<SmesOutputPlan>().after::<PowerReset>();
     let _ = b.add_law::<SmesInputPlan>().after::<PowerReset>();
-    let _ = b.add_law::<ApcTick>().after::<ProducerCredit>().after::<SmesOutputPlan>();
+    let _ = b
+        .add_law::<ApcTick>()
+        .after::<ProducerCredit>()
+        .after::<SmesOutputPlan>();
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
     let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
     let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
@@ -131,7 +137,10 @@ fn register(b: &mut WorldBuilder) -> Fields {
     b.conserve("pipe_moles", Tolerance::default());
     b.conserve("pipe_energy", Tolerance::default());
 
-    Fields { heat: heat_field, turf_gas }
+    Fields {
+        heat: heat_field,
+        turf_gas,
+    }
 }
 
 fn build() -> Result<World> {
@@ -164,7 +173,10 @@ fn build() -> Result<World> {
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
     }
     // Gas handles (turf cells, main and pipe mixtures) as a watch port.
-    registry::register_domain(world_kind_domain(crate::sched::GAS_HANDLES), Box::new(crate::gas::GasDomain));
+    registry::register_domain(
+        world_kind_domain(crate::sched::GAS_HANDLES),
+        Box::new(crate::gas::GasDomain),
+    );
     Ok(world)
 }
 
@@ -231,28 +243,63 @@ struct WorldKind {
 }
 
 /// `cond` with every cell rewritten by `f`.
-pub(crate) fn map_cells(cond: &Cond, f: &dyn Fn(u32) -> Result<u32, String>) -> Result<Cond, String> {
+pub(crate) fn map_cells(
+    cond: &Cond,
+    f: &dyn Fn(u32) -> Result<u32, String>,
+) -> Result<Cond, String> {
     Ok(match cond {
-        Cond::Changed { cell, mask } => Cond::Changed { cell: f(*cell)?, mask: *mask },
-        Cond::Threshold { cell, level } => Cond::Threshold { cell: f(*cell)?, level: *level },
-        Cond::Band { cell, ch, unit, levels, hysteresis } => Cond::Band {
+        Cond::Changed { cell, mask } => Cond::Changed {
+            cell: f(*cell)?,
+            mask: *mask,
+        },
+        Cond::Threshold { cell, level } => Cond::Threshold {
+            cell: f(*cell)?,
+            level: *level,
+        },
+        Cond::Band {
+            cell,
+            ch,
+            unit,
+            levels,
+            hysteresis,
+        } => Cond::Band {
             cell: f(*cell)?,
             ch: *ch,
             unit: *unit,
             levels: levels.clone(),
             hysteresis: *hysteresis,
         },
-        Cond::Difference { a, b, level, abs } => Cond::Difference { a: f(*a)?, b: f(*b)?, level: *level, abs: *abs },
-        Cond::ThresholdSet { cell, ch } => Cond::ThresholdSet { cell: f(*cell)?, ch: *ch },
-        Cond::Any(children) => Cond::Any(children.iter().map(|c| map_cells(c, f)).collect::<Result<_, _>>()?),
-        Cond::All(children) => Cond::All(children.iter().map(|c| map_cells(c, f)).collect::<Result<_, _>>()?),
+        Cond::Difference { a, b, level, abs } => Cond::Difference {
+            a: f(*a)?,
+            b: f(*b)?,
+            level: *level,
+            abs: *abs,
+        },
+        Cond::ThresholdSet { cell, ch } => Cond::ThresholdSet {
+            cell: f(*cell)?,
+            ch: *ch,
+        },
+        Cond::Any(children) => Cond::Any(
+            children
+                .iter()
+                .map(|c| map_cells(c, f))
+                .collect::<Result<_, _>>()?,
+        ),
+        Cond::All(children) => Cond::All(
+            children
+                .iter()
+                .map(|c| map_cells(c, f))
+                .collect::<Result<_, _>>()?,
+        ),
     })
 }
 
 /// A `vg_entity` value's slot index (the row the world's stores use).
 #[allow(clippy::cast_precision_loss)]
 fn entity_row(cell: u32) -> Result<u32, String> {
-    entity::decode(cell as f32).map(EntityId::index).map_err(|e| e.to_string())
+    entity::decode(cell as f32)
+        .map(EntityId::index)
+        .map_err(|e| e.to_string())
 }
 
 impl DomainRegistry for WorldKind {
@@ -283,7 +330,10 @@ impl DomainRegistry for WorldKind {
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             out.extend(wakes.into_iter().filter_map(|wk| {
                 let e = w.entities().at(wk.source)?;
-                Some(Wake { source: entity::entity_value(e) as u32, ..wk })
+                Some(Wake {
+                    source: entity::entity_value(e) as u32,
+                    ..wk
+                })
             }));
             Ok(())
         });
@@ -538,7 +588,12 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
     let max_z = whole(&max_z, "max_z")?.max(1);
     let dims = GridDims::new(max_x, max_y, z_capacity(max_z))
         .ok_or_else(|| eyre!("grid {max_x}x{max_y}x{max_z} does not fit a u32 index"))?;
-    let placeholder = WORLD.with_borrow(|w| w.as_ref().is_none_or(|w| w.grid().is_ok_and(|g| g.dims() == GridDims::new(2, 2, 2).expect("fits"))));
+    let placeholder = WORLD.with_borrow(|w| {
+        w.as_ref().is_none_or(|w| {
+            w.grid()
+                .is_ok_and(|g| g.dims() == GridDims::new(2, 2, 2).expect("fits"))
+        })
+    });
     if placeholder {
         PENDING_DIMS.with(|d| d.set(dims));
         reset()?;

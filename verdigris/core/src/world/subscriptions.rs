@@ -122,10 +122,17 @@ impl World {
     ///
     /// # Errors
     /// The entity table is full.
-    pub fn sched_at(&mut self, sub: Subscriber, lane: Lane, at: Tick) -> Result<EntityId, WorldError> {
+    pub fn sched_at(
+        &mut self,
+        sub: Subscriber,
+        lane: Lane,
+        at: Tick,
+    ) -> Result<EntityId, WorldError> {
         let e = self.record(sub, Subscription::Key(0))?;
         let id = self.subs.reactor.at(sub, lane, at, e.index());
-        self.subs.records.insert(e.index(), (e, sub, Subscription::Timer(id)));
+        self.subs
+            .records
+            .insert(e.index(), (e, sub, Subscription::Timer(id)));
         Ok(e)
     }
 
@@ -133,7 +140,13 @@ impl World {
     ///
     /// # Errors
     /// The entity table is full.
-    pub fn sched_on_key(&mut self, sub: Subscriber, key: u64, mask: u32, lane: Lane) -> Result<EntityId, WorldError> {
+    pub fn sched_on_key(
+        &mut self,
+        sub: Subscriber,
+        key: u64,
+        mask: u32,
+        lane: Lane,
+    ) -> Result<EntityId, WorldError> {
         self.subs.reactor.subscribe_key(sub, key, mask, lane);
         self.record(sub, Subscription::Key(key))
     }
@@ -148,7 +161,13 @@ impl World {
     ///
     /// # Errors
     /// The entity table is full.
-    pub fn sched_watch(&mut self, sub: Subscriber, code: u32, port: u8, id: WatchId) -> Result<EntityId, WorldError> {
+    pub fn sched_watch(
+        &mut self,
+        sub: Subscriber,
+        code: u32,
+        port: u8,
+        id: WatchId,
+    ) -> Result<EntityId, WorldError> {
         self.record(sub, Subscription::Watch { code, port, id })
     }
 
@@ -178,7 +197,8 @@ impl World {
 
     /// Changes a model; `false` for a stale one.
     pub fn rate_update(&mut self, e: EntityId, change: impl FnOnce(&mut RateModel)) -> bool {
-        self.model_of(e).is_some_and(|id| self.subs.reactor.update_model(id, change))
+        self.model_of(e)
+            .is_some_and(|id| self.subs.reactor.update_model(id, change))
     }
 
     /// Wakes `sub` whenever the model enters `cmp level`, at the exact
@@ -186,15 +206,28 @@ impl World {
     ///
     /// # Errors
     /// A stale model or a non-finite level (`NoKind(0)`), or a full table.
-    pub fn rate_watch(&mut self, e: EntityId, sub: Subscriber, lane: Lane, cmp: Cmp, level: f64) -> Result<EntityId, WorldError> {
+    pub fn rate_watch(
+        &mut self,
+        e: EntityId,
+        sub: Subscriber,
+        lane: Lane,
+        cmp: Cmp,
+        level: f64,
+    ) -> Result<EntityId, WorldError> {
         let model = self.model_of(e).ok_or(WorldError::NoKind(0))?;
-        let token = self.subs.reactor.watch_model(model, sub, lane, cmp, level).ok_or(WorldError::NoKind(0))?;
+        let token = self
+            .subs
+            .reactor
+            .watch_model(model, sub, lane, cmp, level)
+            .ok_or(WorldError::NoKind(0))?;
         self.record(sub, Subscription::Rate { model, token })
     }
 
     /// Removes a model and its watches; `false` if it was stale.
     pub fn rate_remove(&mut self, e: EntityId) -> bool {
-        let Some(id) = self.model_of(e) else { return false };
+        let Some(id) = self.model_of(e) else {
+            return false;
+        };
         let watches: Vec<EntityId> = self
             .subs
             .records
@@ -263,7 +296,12 @@ impl World {
     /// normal/background wakes (urgent ones always), each with the source
     /// DM knows: a timer's or rate wake's subscription/model entity, a
     /// key's id, a watch's cell.
-    pub fn sched_step(&mut self, now: Tick, budget: usize, watch_wakes: &[Wake]) -> Vec<(Wake, Option<EntityId>)> {
+    pub fn sched_step(
+        &mut self,
+        now: Tick,
+        budget: usize,
+        watch_wakes: &[Wake],
+    ) -> Vec<(Wake, Option<EntityId>)> {
         self.subs.reactor.tick(now);
         let mut fired = std::mem::take(&mut self.subs.fired);
         self.subs.reactor.take_fired_timers(&mut fired);

@@ -239,7 +239,10 @@ pub(super) fn authored_fragment_composition(
     result
 }
 
-pub(super) fn fragment_feature_point(origin: Point, feature: &FragmentFeatureWire) -> Option<Point> {
+pub(super) fn fragment_feature_point(
+    origin: Point,
+    feature: &FragmentFeatureWire,
+) -> Option<Point> {
     let x = i32::from(origin.x) + i32::from(feature.dx) - 1;
     let y = i32::from(origin.y) + i32::from(feature.dy) - 1;
     (x >= 0 && y >= 0 && x <= i32::from(u16::MAX) && y <= i32::from(u16::MAX)).then_some(Point {

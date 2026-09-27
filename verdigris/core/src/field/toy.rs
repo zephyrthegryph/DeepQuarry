@@ -39,7 +39,14 @@ impl HeatCell {
 /// The toy cell as a coupling partner (a stand-in gas in domain tests).
 impl crate::thermo::Thermal for HeatCell {
     fn thermal(&self, capacity: f32) -> (f32, f32) {
-        (if capacity > 0.0 { self.energy / capacity } else { self.temperature }, capacity)
+        (
+            if capacity > 0.0 {
+                self.energy / capacity
+            } else {
+                self.temperature
+            },
+            capacity,
+        )
     }
 
     fn add_heat(&mut self, joules: f32, capacity: f32) {

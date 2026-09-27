@@ -84,11 +84,7 @@ impl NetworkKind for Cables {
             (PowerNode::Cable(a), PowerNode::Cable(b)) => {
                 let has = |c: &crate::Cable, d: u8| c.d1 == d || c.d2 == d;
                 // Same turf: a shared end (two knots share 0); else a reach.
-                if ca == cb {
-                    has(b, a.d1) || has(b, a.d2)
-                } else {
-                    a.reach.iter().any(|&(t, need)| t == cb && has(b, need))
-                }
+                if ca == cb { has(b, a.d1) || has(b, a.d2) } else { a.reach.iter().any(|&(t, need)| t == cb && has(b, need)) }
             }
             (PowerNode::Cable(c), PowerNode::Machine) | (PowerNode::Machine, PowerNode::Cable(c)) => ca == cb && c.d1 == 0,
             (PowerNode::Machine, PowerNode::Machine) => false,

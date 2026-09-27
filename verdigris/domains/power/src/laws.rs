@@ -8,7 +8,7 @@
 
 use vg_core::vg;
 
-use crate::components::{setting, Apc, Producer, Smes, SmesInputTerminal};
+use crate::components::{Apc, Producer, Smes, SmesInputTerminal, setting};
 
 /// Power's events: about a region, not a component, so domain events
 /// (the DM generator dispatches them to global handlers).
@@ -142,20 +142,12 @@ fn update_channels(apc: &mut Apc) {
 
 /// What a SMES offers its output region this step.
 pub fn smes_offer(smes: &Smes) -> f64 {
-    if smes.output_enabled && smes.charge > 0.0 {
-        (smes.charge / smes.rate).min(smes.output_level).max(0.0)
-    } else {
-        0.0
-    }
+    if smes.output_enabled && smes.charge > 0.0 { (smes.charge / smes.rate).min(smes.output_level).max(0.0) } else { 0.0 }
 }
 
 /// What a SMES asks of its input region this step.
 pub fn smes_ask(smes: &Smes) -> f64 {
-    if smes.input_enabled {
-        ((smes.capacity - smes.charge) / smes.rate).clamp(0.0, smes.input_level)
-    } else {
-        0.0
-    }
+    if smes.input_enabled { ((smes.capacity - smes.charge) / smes.rate).clamp(0.0, smes.input_level) } else { 0.0 }
 }
 
 /// A region browns out when it has no supply at all, or its planned
@@ -246,10 +238,16 @@ vg_core::law! {
     /// The channel autoset ladder and charge mode, per APC, every tick
     /// ([`apc_tick`]), drawing against its region's `avail` (now including
     /// every producer and SMES output offer this step).
-    pub ApcTick("power_apc_tick"): () => (Apc, InRegion<Cables>), |ctx, _dt| {
+    pub ApcTick("power_apc_tick"): () => (Apc, Option<InRegion<Cables>>), |ctx, _dt| {
         let (apc, region) = &mut ctx.writes;
         let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
-        let (discharged, charged) = apc_tick(apc, demand, region.payload.avail, &mut region.payload.load);
+        // No network: nothing available, and the load has nowhere to land.
+        let mut spare_load = 0.0;
+        let (avail, load) = match region {
+            Some(r) => (r.payload.avail, &mut r.payload.load),
+            None => (0.0, &mut spare_load),
+        };
+        let (discharged, charged) = apc_tick(apc, demand, avail, load);
         // Watts (`RateStore`'s API) to the cell's own units, as the field moved.
         let (rate, alarm) = (apc.rate, apc.alarm);
         ctx.ledger().source("power_apc_charge", charged * rate);

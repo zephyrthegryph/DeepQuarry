@@ -121,7 +121,8 @@ fn yes(b: bool) -> ByondValue {
 }
 
 fn channels(code: u32) -> Result<Vec<ChannelInfo>> {
-    registry::with_domain(world_kind_domain(code), |d| d.channels()).ok_or_else(|| eyre!("code {code} has no watch port"))
+    registry::with_domain(world_kind_domain(code), |d| d.channels())
+        .ok_or_else(|| eyre!("code {code} has no watch port"))
 }
 
 fn channel(chans: &[ChannelInfo], v: &ByondValue) -> Result<ChannelId> {
@@ -137,7 +138,14 @@ fn hysteresis(v: &ByondValue) -> Result<Option<f32>> {
     Ok((h >= 0.0).then_some(h))
 }
 
-fn level(code: u32, ch: &ByondValue, cmp_v: &ByondValue, value: &ByondValue, h: &ByondValue, both: bool) -> Result<Level> {
+fn level(
+    code: u32,
+    ch: &ByondValue,
+    cmp_v: &ByondValue,
+    value: &ByondValue,
+    h: &ByondValue,
+    both: bool,
+) -> Result<Level> {
     let chans = channels(code)?;
     let ch = channel(&chans, ch)?;
     Ok(Level {
@@ -157,14 +165,21 @@ fn unwatch(what: Subscription) {
 
 /// Registers `cond` on `code`'s watch port (outside the world borrow: a
 /// port may reach the world itself) and records it as a subscription.
-fn watch(code: &ByondValue, sub: &ByondValue, lane_v: &ByondValue, cond: &Cond) -> Result<ByondValue> {
+fn watch(
+    code: &ByondValue,
+    sub: &ByondValue,
+    lane_v: &ByondValue,
+    cond: &Cond,
+) -> Result<ByondValue> {
     let code = whole(code, "code")?;
     let sub = subscriber(sub)?;
     let lane = lane(lane_v)?;
     let (port, id) = registry::with_domain(world_kind_domain(code), |d| d.watch(sub, lane, cond))
         .ok_or_else(|| eyre!("code {code} has no watch port"))?
         .map_err(|e| eyre!("{e}"))?;
-    Ok(token(with_world(|w| w.sched_watch(sub, code, port, id).map_err(|e| eyre!("{e}")))?))
+    Ok(token(with_world(|w| {
+        w.sched_watch(sub, code, port, id).map_err(|e| eyre!("{e}"))
+    })?))
 }
 
 fn subscription(v: &ByondValue) -> Option<EntityId> {
@@ -204,11 +219,19 @@ fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
         #[allow(clippy::cast_precision_loss)]
         let (source, kind) = match e {
             Some(e) => (entity_value(e), 0.0),
-            None if w.reason & reason::KEY != 0 && w.source > 0x00FF_FFFF => ((w.source & 0x00FF_FFFF) as f32, (w.source >> 24) as f32),
+            None if w.reason & reason::KEY != 0 && w.source > 0x00FF_FFFF => {
+                ((w.source & 0x00FF_FFFF) as f32, (w.source >> 24) as f32)
+            }
             None => (w.source as f32, 0.0),
         };
         #[allow(clippy::cast_precision_loss)]
-        flat.extend_from_slice(&[w.subscriber as f32, f32::from(w.lane as u8), w.reason as f32, source, kind]);
+        flat.extend_from_slice(&[
+            w.subscriber as f32,
+            f32::from(w.lane as u8),
+            w.reason as f32,
+            source,
+            kind,
+        ]);
     }
     list(flat)
 }
@@ -224,13 +247,21 @@ fn world_at(sub: ByondValue, lane_v: ByondValue, tick: ByondValue) -> Result<Byo
     }
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let t = t.max(0.0).ceil() as Tick;
-    Ok(token(with_world(|w| w.sched_at(sub, lane, t).map_err(|e| eyre!("{e}")))?))
+    Ok(token(with_world(|w| {
+        w.sched_at(sub, lane, t).map_err(|e| eyre!("{e}"))
+    })?))
 }
 
 /// `REACT_ON_KEY`: wakes `subscriber` when key (`kind`, `id`) is published
 /// with any bit of `mask`. Returns the token.
 #[auxmacros::bind("/proc/world_on_key")]
-fn world_on_key(sub: ByondValue, kind: ByondValue, id: ByondValue, mask: ByondValue, lane_v: ByondValue) -> Result<ByondValue> {
+fn world_on_key(
+    sub: ByondValue,
+    kind: ByondValue,
+    id: ByondValue,
+    mask: ByondValue,
+    lane_v: ByondValue,
+) -> Result<ByondValue> {
     let sub = subscriber(&sub)?;
     let key = key(&kind, &id)?;
     let mask = whole(&mask, "mask")? & REASON_DETAIL;
@@ -238,7 +269,10 @@ fn world_on_key(sub: ByondValue, kind: ByondValue, id: ByondValue, mask: ByondVa
         bail!("key mask must be non-zero (below REACT_REASON_CONDITION)");
     }
     let lane = lane(&lane_v)?;
-    Ok(token(with_world(|w| w.sched_on_key(sub, key, mask, lane).map_err(|e| eyre!("{e}")))?))
+    Ok(token(with_world(|w| {
+        w.sched_on_key(sub, key, mask, lane)
+            .map_err(|e| eyre!("{e}"))
+    })?))
 }
 
 /// `REACT_PUBLISH`: DM-owned state under key (`kind`, `id`) changed. Merged
@@ -322,15 +356,34 @@ fn world_sched_stats() -> Result<ByondValue> {
 /// `REACT_ON`: wakes when any channel in `mask` of `cell` moves past its
 /// hysteresis. Returns the token.
 #[auxmacros::bind("/proc/world_watch_changed")]
-fn world_watch_changed(code: ByondValue, sub: ByondValue, lane: ByondValue, cell: ByondValue, mask: ByondValue) -> Result<ByondValue> {
-    let cond = Cond::Changed { cell: whole(&cell, "cell")?, mask: whole(&mask, "mask")? };
+fn world_watch_changed(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    cell: ByondValue,
+    mask: ByondValue,
+) -> Result<ByondValue> {
+    let cond = Cond::Changed {
+        cell: whole(&cell, "cell")?,
+        mask: whole(&mask, "mask")?,
+    };
     watch(&code, &sub, &lane, &cond)
 }
 
 /// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
 /// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
 #[auxmacros::bind("/proc/world_watch_threshold")]
-fn world_watch_threshold(code: ByondValue, sub: ByondValue, lane: ByondValue, cell: ByondValue, ch: ByondValue, cmp: ByondValue, value: ByondValue, hysteresis: ByondValue, both_edges: ByondValue) -> Result<ByondValue> {
+fn world_watch_threshold(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    cell: ByondValue,
+    ch: ByondValue,
+    cmp: ByondValue,
+    value: ByondValue,
+    hysteresis: ByondValue,
+    both_edges: ByondValue,
+) -> Result<ByondValue> {
     let c = whole(&code, "code")?;
     let cond = Cond::Threshold {
         cell: whole(&cell, "cell")?,
@@ -342,10 +395,22 @@ fn world_watch_threshold(code: ByondValue, sub: ByondValue, lane: ByondValue, ce
 /// `REACT_WHEN` band: wakes when `cell`'s channel `ch` moves into a
 /// different band of the increasing `levels` list (and once at registration).
 #[auxmacros::bind("/proc/world_watch_band")]
-fn world_watch_band(code: ByondValue, sub: ByondValue, lane: ByondValue, cell: ByondValue, ch: ByondValue, levels: ByondValue, hysteresis: ByondValue) -> Result<ByondValue> {
+fn world_watch_band(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    cell: ByondValue,
+    ch: ByondValue,
+    levels: ByondValue,
+    hysteresis: ByondValue,
+) -> Result<ByondValue> {
     let chans = channels(whole(&code, "code")?)?;
     let ch_id = channel(&chans, &ch)?;
-    let levels = levels.get_list_values()?.iter().map(|v| Ok(v.get_number()?)).collect::<Result<Vec<f32>>>()?;
+    let levels = levels
+        .get_list_values()?
+        .iter()
+        .map(|v| Ok(v.get_number()?))
+        .collect::<Result<Vec<f32>>>()?;
     let cond = Cond::Band {
         cell: whole(&cell, "cell")?,
         ch: ch_id,
@@ -359,7 +424,18 @@ fn world_watch_band(code: ByondValue, sub: ByondValue, lane: ByondValue, cell: B
 /// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
 #[auxmacros::bind("/proc/world_watch_difference")]
-fn world_watch_difference(code: ByondValue, sub: ByondValue, lane: ByondValue, a: ByondValue, b: ByondValue, ch: ByondValue, cmp: ByondValue, value: ByondValue, hysteresis: ByondValue, abs: ByondValue) -> Result<ByondValue> {
+fn world_watch_difference(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    a: ByondValue,
+    b: ByondValue,
+    ch: ByondValue,
+    cmp: ByondValue,
+    value: ByondValue,
+    hysteresis: ByondValue,
+    abs: ByondValue,
+) -> Result<ByondValue> {
     let c = whole(&code, "code")?;
     let cond = Cond::Difference {
         a: whole(&a, "cell a")?,
@@ -388,10 +464,21 @@ fn bound(v: &ByondValue, default: f64) -> f64 {
 /// A linear model starting at `v0` now, changing by `rate` per tick,
 /// clamped to [`min`, `max`] (null for unbounded). Returns the model id.
 #[auxmacros::bind("/proc/world_rate_linear")]
-fn world_rate_linear(v0: ByondValue, rate: ByondValue, min: ByondValue, max: ByondValue) -> Result<ByondValue> {
+fn world_rate_linear(
+    v0: ByondValue,
+    rate: ByondValue,
+    min: ByondValue,
+    max: ByondValue,
+) -> Result<ByondValue> {
     let (v0, rate) = (f64::from(num(&v0)?), f64::from(num(&rate)?));
     let (min, max) = (bound(&min, f64::NEG_INFINITY), bound(&max, f64::INFINITY));
-    add_model(|t0| RateModel::Linear { v0, rate, t0, min, max })
+    add_model(|t0| RateModel::Linear {
+        v0,
+        rate,
+        t0,
+        min,
+        max,
+    })
 }
 
 /// A model relaxing from `v0` toward `target` at `k` per tick
@@ -413,10 +500,19 @@ fn world_rate_relax(v0: ByondValue, target: ByondValue, k: ByondValue) -> Result
 fn world_rate_sum(v0: ByondValue, min: ByondValue, max: ByondValue) -> Result<ByondValue> {
     let v0 = f64::from(num(&v0)?);
     let (min, max) = (bound(&min, f64::NEG_INFINITY), bound(&max, f64::INFINITY));
-    add_model(|t0| RateModel::Sum { v0, t0, terms: Vec::new(), min, max })
+    add_model(|t0| RateModel::Sum {
+        v0,
+        t0,
+        terms: Vec::new(),
+        min,
+        max,
+    })
 }
 
-fn update(model: &ByondValue, change: impl FnOnce(&mut RateModel) -> Result<()>) -> Result<ByondValue> {
+fn update(
+    model: &ByondValue,
+    change: impl FnOnce(&mut RateModel) -> Result<()>,
+) -> Result<ByondValue> {
     let e = subscription(model).ok_or_else(|| eyre!("bad rate model {model:?}"))?;
     let mut result = Ok(());
     if !with_world(|w| Ok(w.rate_update(e, |m| result = change(m))))? {
@@ -432,7 +528,9 @@ fn world_rate_set(model: ByondValue, value: ByondValue) -> Result<ByondValue> {
     let value = f64::from(num(&value)?);
     update(&model, |m| {
         match m {
-            RateModel::Linear { v0, .. } | RateModel::Relax { v0, .. } | RateModel::Sum { v0, .. } => *v0 = value,
+            RateModel::Linear { v0, .. }
+            | RateModel::Relax { v0, .. }
+            | RateModel::Sum { v0, .. } => *v0 = value,
         }
         Ok(())
     })
@@ -446,7 +544,9 @@ fn world_rate_set_rate(model: ByondValue, rate: ByondValue) -> Result<ByondValue
         match m {
             RateModel::Linear { rate, .. } => *rate = r,
             RateModel::Relax { target, .. } => *target = r,
-            RateModel::Sum { .. } => bail!("a sum model's rate is its terms; use vg_world_rate_set_term"),
+            RateModel::Sum { .. } => {
+                bail!("a sum model's rate is its terms; use vg_world_rate_set_term")
+            }
         }
         Ok(())
     })
@@ -454,7 +554,11 @@ fn world_rate_set_rate(model: ByondValue, rate: ByondValue) -> Result<ByondValue
 
 /// Sets (or, with rate 0, removes) term `term` of a sum model.
 #[auxmacros::bind("/proc/world_rate_set_term")]
-fn world_rate_set_term(model: ByondValue, term: ByondValue, rate: ByondValue) -> Result<ByondValue> {
+fn world_rate_set_term(
+    model: ByondValue,
+    term: ByondValue,
+    rate: ByondValue,
+) -> Result<ByondValue> {
     let term = whole(&term, "term")?;
     let r = f64::from(num(&rate)?);
     update(&model, |m| {
@@ -482,11 +586,20 @@ fn world_rate_read(model: ByondValue) -> Result<ByondValue> {
 /// level`, 1 below), at the exact predicted crossing tick; at once if it
 /// already holds. Returns the token.
 #[auxmacros::bind("/proc/world_rate_watch")]
-fn world_rate_watch(model: ByondValue, sub: ByondValue, lane_v: ByondValue, cmp_v: ByondValue, level: ByondValue) -> Result<ByondValue> {
+fn world_rate_watch(
+    model: ByondValue,
+    sub: ByondValue,
+    lane_v: ByondValue,
+    cmp_v: ByondValue,
+    level: ByondValue,
+) -> Result<ByondValue> {
     let e = subscription(&model).ok_or_else(|| eyre!("bad rate model {model:?}"))?;
     let (sub, lane, cmp) = (subscriber(&sub)?, lane(&lane_v)?, cmp(&cmp_v)?);
     let level = f64::from(num(&level)?);
-    let t = with_world(|w| w.rate_watch(e, sub, lane, cmp, level).map_err(|_| eyre!("stale rate model or bad level")))?;
+    let t = with_world(|w| {
+        w.rate_watch(e, sub, lane, cmp, level)
+            .map_err(|_| eyre!("stale rate model or bad level"))
+    })?;
     Ok(token(t))
 }
 
@@ -513,9 +626,20 @@ mod tests {
         tank.set_moles(0, 10.0);
         tank.set_temperature(293.15);
         let r = MixRef::Main(mix::alloc(tank.clone()).unwrap());
-        let cond = Cond::Changed { cell: r.id(), mask: gas_ch::PRESSURE.bit() };
-        let (port, id) = registry::with_domain(world_kind_domain(GAS_HANDLES), |d| d.watch(7, Lane::Urgent, &cond)).unwrap().unwrap();
-        with_world(|w| w.sched_watch(7, GAS_HANDLES, port, id).map_err(|e| eyre!("{e}"))).unwrap();
+        let cond = Cond::Changed {
+            cell: r.id(),
+            mask: gas_ch::PRESSURE.bit(),
+        };
+        let (port, id) = registry::with_domain(world_kind_domain(GAS_HANDLES), |d| {
+            d.watch(7, Lane::Urgent, &cond)
+        })
+        .unwrap()
+        .unwrap();
+        with_world(|w| {
+            w.sched_watch(7, GAS_HANDLES, port, id)
+                .map_err(|e| eyre!("{e}"))
+        })
+        .unwrap();
         let step = |now| {
             let mut wakes = Vec::new();
             registry::for_each(|_, d| d.take_wakes(&mut wakes));

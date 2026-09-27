@@ -70,7 +70,11 @@ pub(super) fn cells_connected(points: &BTreeSet<CellPoint>, width: u16, height: 
     points.is_empty() || connected_components(points, width, height).len() == 1
 }
 
-pub(super) fn point_components(points: &BTreeSet<Point>, width: u16, height: u16) -> Vec<BTreeSet<Point>> {
+pub(super) fn point_components(
+    points: &BTreeSet<Point>,
+    width: u16,
+    height: u16,
+) -> Vec<BTreeSet<Point>> {
     let mut remaining = points.clone();
     let mut components = Vec::new();
     while let Some(seed) = remaining.first().copied() {

@@ -419,8 +419,18 @@ impl<K: FieldKind> FieldState<K> {
             self.layout.locate(index).map(|(c, _)| c)
         };
         let vertical = |face: Face| match grid {
-            Some(g) => g.neighbor(origin, face).and_then(|i| self.layout.locate(i).map(|(c, _)| c)),
-            None => at(Some(x), Some(y), if face == Face::Up { z.checked_add(1) } else { z.checked_sub(1) }),
+            Some(g) => g
+                .neighbor(origin, face)
+                .and_then(|i| self.layout.locate(i).map(|(c, _)| c)),
+            None => at(
+                Some(x),
+                Some(y),
+                if face == Face::Up {
+                    z.checked_add(1)
+                } else {
+                    z.checked_sub(1)
+                },
+            ),
         };
         Face::ALL.map(|face| match face {
             Face::North => at(Some(x), y.checked_add(CHUNK_EDGE), Some(z)),
@@ -436,7 +446,12 @@ impl<K: FieldKind> FieldState<K> {
     ///
     /// # Panics
     /// If the stores' layouts do not match this field's.
-    pub fn step(&mut self, cells: &mut CowStore<K::Value>, geom: &CowStore<Geom>, grid: Option<&Grid>) {
+    pub fn step(
+        &mut self,
+        cells: &mut CowStore<K::Value>,
+        geom: &CowStore<Geom>,
+        grid: Option<&Grid>,
+    ) {
         assert_eq!(cells.layout(), self.layout, "cells layout mismatch");
         assert_eq!(geom.layout(), self.layout, "geometry layout mismatch");
         if let Some(g) = grid {
@@ -697,12 +712,7 @@ impl<K: FieldKind> FieldState<K> {
         }
     }
 
-    fn chunk_stiffness(
-        &self,
-        chunk: usize,
-        cells: &CowStore<K::Value>,
-        geom: &Geo<'_>,
-    ) -> f32 {
+    fn chunk_stiffness(&self, chunk: usize, cells: &CowStore<K::Value>, geom: &Geo<'_>) -> f32 {
         let mut max = 0.0f32;
         self.for_live_edges(chunk, geom, |_, _, a, ga, b, gb| {
             let s = cells
@@ -859,7 +869,8 @@ pub fn add_field<K: FieldKind>(
         let geom = ctx.read(g);
         let mut dom = ctx.write(c);
         let grid = grid.map(|r| ctx.read(r));
-        ctx.write(state).step(&mut dom.store, &geom.store, grid.as_deref());
+        ctx.write(state)
+            .step(&mut dom.store, &geom.store, grid.as_deref());
     })
     .reads(g.id())
     .writes(c.id())

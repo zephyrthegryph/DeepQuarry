@@ -22,7 +22,6 @@ fn gas_idx_from_value(value: &ByondValue) -> Result<gas::GasIDX> {
     gas::gas_idx_from_value(raw)
 }
 
-
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
 /// datum's own slot is freed.
@@ -984,5 +983,12 @@ fn filter_transfer_multi(
 
 /// The gases whose registry `flags` include `flag`.
 fn gases_with_flag(flag: u32) -> Vec<usize> {
-    vg_gas::gate::with(|g| g.gases.iter().enumerate().filter(|(_, gas)| gas.flags & flag != 0).map(|(i, _)| i).collect())
+    vg_gas::gate::with(|g| {
+        g.gases
+            .iter()
+            .enumerate()
+            .filter(|(_, gas)| gas.flags & flag != 0)
+            .map(|(i, _)| i)
+            .collect()
+    })
 }

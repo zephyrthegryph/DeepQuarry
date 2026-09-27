@@ -190,7 +190,11 @@ pub(super) fn try_place_zone_at(
     zone: &ActivityZone,
     anchor: Point,
     turns: usize,
-) -> Option<(Vec<AuthoredCompositionPlacement>, BTreeSet<Point>, BTreeSet<Point>)> {
+) -> Option<(
+    Vec<AuthoredCompositionPlacement>,
+    BTreeSet<Point>,
+    BTreeSet<Point>,
+)> {
     let mut placements = Vec::with_capacity(zone.fixtures.len());
     let mut local = BTreeSet::new();
     let mut trial_blocking = blocking.clone();
@@ -266,7 +270,12 @@ pub(super) fn try_place_zone_at(
         placement.facing = facing;
         trial_access.insert(access);
     }
-    if !room_walkable_connected(env.tiles, &trial_blocking, env.layout.width, env.layout.height) {
+    if !room_walkable_connected(
+        env.tiles,
+        &trial_blocking,
+        env.layout.width,
+        env.layout.height,
+    ) {
         return None;
     }
     Some((placements, trial_blocking, trial_access))

@@ -18,8 +18,8 @@ use self::plan::*;
 use self::portals::*;
 use self::raster::*;
 use self::shapes::*;
-use self::validate::*;
 pub use self::validate::validate_station_structure;
+use self::validate::*;
 
 // A logical cell contains its walkable interior followed by one structural
 // boundary tile. Main and local corridors deliberately share this compact

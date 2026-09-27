@@ -653,7 +653,10 @@ pub(super) fn prune_orphaned_seats_after_wall_layout(
     }
 }
 
-pub(super) fn orient_seats_toward_supports(rooms: &[RoomBlueprint], fixtures: &mut [FixturePlacement]) {
+pub(super) fn orient_seats_toward_supports(
+    rooms: &[RoomBlueprint],
+    fixtures: &mut [FixturePlacement],
+) {
     let snapshot = fixtures.to_vec();
     for seat in fixtures.iter_mut().filter(|fixture| {
         fixture.fixture_id.contains("chair")

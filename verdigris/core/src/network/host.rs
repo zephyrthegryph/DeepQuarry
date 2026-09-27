@@ -94,7 +94,11 @@ pub struct NetworkHost<K: NetworkKind> {
 
 /// One side of a device as [`NetworkHost::device_pair`] returns it: the
 /// region, its summary and its payload.
-pub type DeviceEnd<K> = (RegionId<K>, <K as NetworkKind>::Summary, <K as NetworkKind>::Payload);
+pub type DeviceEnd<K> = (
+    RegionId<K>,
+    <K as NetworkKind>::Summary,
+    <K as NetworkKind>::Payload,
+);
 
 /// A region as DM sees it after a commit: rebuild the wrapper keyed by
 /// `region` (a region handle, exact as an `f32`).
@@ -153,14 +157,21 @@ impl<K: NetworkKind> NetworkHost<K> {
     /// The revision of `region` (0: never changed through this host).
     #[must_use]
     pub fn region_revision(&self, region: RegionId<K>) -> u64 {
-        self.region_rev.get(region.index() as usize).copied().unwrap_or(0)
+        self.region_rev
+            .get(region.index() as usize)
+            .copied()
+            .unwrap_or(0)
     }
 
     /// The revision of device `d`, including both sides' regions: a device
     /// law sleeps while this stays what it last saw.
     #[must_use]
     pub fn device_revision(&self, d: DeviceId<K>) -> u64 {
-        let own = self.device_rev.get(d.index() as usize).copied().unwrap_or(0);
+        let own = self
+            .device_rev
+            .get(d.index() as usize)
+            .copied()
+            .unwrap_or(0);
         let Ok(dev) = self.net.device(d) else {
             return own;
         };
@@ -202,14 +213,24 @@ impl<K: NetworkKind> NetworkHost<K> {
     ///
     /// # Errors
     /// [`NetError`] if the underlying arena is full.
-    pub fn bind_node(&mut self, entity: Entity, cell: CellId, kind: u16, data: K::Node) -> Result<NodeId<K>, NetError> {
+    pub fn bind_node(
+        &mut self,
+        entity: Entity,
+        cell: CellId,
+        kind: u16,
+        data: K::Node,
+    ) -> Result<NodeId<K>, NetError> {
         if self.nodes.contains_key(&entity) {
             self.unbind_node(entity);
         }
         let group = K::link_group(&data);
-        let node = self
-            .net
-            .add_node(cell, kind, encode_entity(entity), data, K::Payload::default())?;
+        let node = self.net.add_node(
+            cell,
+            kind,
+            encode_entity(entity),
+            data,
+            K::Payload::default(),
+        )?;
         self.nodes.insert(entity, node);
         self.by_index.insert(entity.index(), node);
         self.occupants.entry(cell).or_default().push(entity);
@@ -245,12 +266,7 @@ impl<K: NetworkKind> NetworkHost<K> {
     }
 
     fn connect_new_node(&mut self, entity: Entity, node: NodeId<K>, cell: CellId) {
-        let my_data = self
-            .net
-            .node(node)
-            .expect("just added")
-            .data
-            .clone();
+        let my_data = self.net.node(node).expect("just added").data.clone();
         let mut peers: Vec<NodeId<K>> = Vec::new();
         for other_entity in self.candidate_entities(entity, &my_data, cell) {
             let Some(&other_node) = self.nodes.get(&other_entity) else {
@@ -278,7 +294,10 @@ impl<K: NetworkKind> NetworkHost<K> {
     /// # Errors
     /// [`NetError::NoEdge`] if either entity has no node here.
     pub fn connect_entities(&mut self, a: Entity, b: Entity) -> Result<(), NetError> {
-        let (&na, &nb) = (self.nodes.get(&a).ok_or(NetError::NoEdge)?, self.nodes.get(&b).ok_or(NetError::NoEdge)?);
+        let (&na, &nb) = (
+            self.nodes.get(&a).ok_or(NetError::NoEdge)?,
+            self.nodes.get(&b).ok_or(NetError::NoEdge)?,
+        );
         self.net.connect(na, nb)?;
         Ok(())
     }
@@ -341,7 +360,14 @@ impl<K: NetworkKind> NetworkHost<K> {
     ///
     /// # Errors
     /// [`NetError`] for a node not bound here, or a full arena.
-    pub fn bind_device(&mut self, entity: Entity, a: Entity, b: Entity, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
+    pub fn bind_device(
+        &mut self,
+        entity: Entity,
+        a: Entity,
+        b: Entity,
+        kind: u16,
+        data: K::Device,
+    ) -> Result<DeviceId<K>, NetError> {
         let ea = self.node_of(a).map_or(Endpoint::Detached, Endpoint::Node);
         let eb = self.node_of(b).map_or(Endpoint::Detached, Endpoint::Node);
         self.add_device(entity, ea, eb, kind, data)
@@ -352,14 +378,30 @@ impl<K: NetworkKind> NetworkHost<K> {
     ///
     /// # Errors
     /// [`NetError`] for a full arena.
-    pub fn bind_cell_device(&mut self, entity: Entity, a: Entity, cell: u32, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
+    pub fn bind_cell_device(
+        &mut self,
+        entity: Entity,
+        a: Entity,
+        cell: u32,
+        kind: u16,
+        data: K::Device,
+    ) -> Result<DeviceId<K>, NetError> {
         let ea = self.node_of(a).map_or(Endpoint::Detached, Endpoint::Node);
         self.add_device(entity, ea, Endpoint::Cell(cell), kind, data)
     }
 
-    fn add_device(&mut self, entity: Entity, a: Endpoint<K>, b: Endpoint<K>, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
+    fn add_device(
+        &mut self,
+        entity: Entity,
+        a: Endpoint<K>,
+        b: Endpoint<K>,
+        kind: u16,
+        data: K::Device,
+    ) -> Result<DeviceId<K>, NetError> {
         self.unbind_device(entity);
-        let d = self.net.add_device(a, b, kind, encode_entity(entity), data)?;
+        let d = self
+            .net
+            .add_device(a, b, kind, encode_entity(entity), data)?;
         self.devices.insert(entity, d);
         self.bump_device(d);
         Ok(d)
@@ -394,7 +436,9 @@ impl<K: NetworkKind> NetworkHost<K> {
         let events = self.net.commit();
         for ev in &events {
             match ev {
-                RegionEvent::Created { region } | RegionEvent::Changed { region } | RegionEvent::Retired { region } => {
+                RegionEvent::Created { region }
+                | RegionEvent::Changed { region }
+                | RegionEvent::Retired { region } => {
                     self.bump_region(*region);
                 }
                 RegionEvent::Merged { into, from } => {
@@ -426,7 +470,9 @@ impl<K: NetworkKind> NetworkHost<K> {
         let mut retired: Vec<RawHandle> = Vec::new();
         for ev in events {
             match ev {
-                RegionEvent::Created { region } | RegionEvent::Changed { region } => touched.push(region.raw()),
+                RegionEvent::Created { region } | RegionEvent::Changed { region } => {
+                    touched.push(region.raw())
+                }
                 RegionEvent::Merged { into, from } => {
                     touched.push(into.raw());
                     prior.entry(into.raw()).or_default().push(from.raw().bits());
@@ -481,7 +527,10 @@ impl<K: NetworkKind> NetworkHost<K> {
 
     #[must_use]
     pub fn payload(&self, region: RegionId<K>) -> Option<&K::Payload> {
-        self.net.region(region).ok().map(super::graph::Region::payload)
+        self.net
+            .region(region)
+            .ok()
+            .map(super::graph::Region::payload)
     }
 
     /// Mutable access to a region's payload -- the kind's own law reads and
@@ -501,7 +550,11 @@ impl<K: NetworkKind> NetworkHost<K> {
     ///
     /// # Errors
     /// [`NetError`] for a stale or unknown region.
-    pub fn set_payload(&mut self, region: RegionId<K>, payload: K::Payload) -> Result<bool, NetError> {
+    pub fn set_payload(
+        &mut self,
+        region: RegionId<K>,
+        payload: K::Payload,
+    ) -> Result<bool, NetError> {
         let slot = self.net.payload_mut(region)?;
         if *slot == payload {
             return Ok(false);
@@ -688,7 +741,11 @@ mod tests {
         host.bind_node(b, 9_999, 0, 7).unwrap();
         host.bind_node(unrelated, 2, 0, 42).unwrap();
         host.commit();
-        assert_eq!(host.region_of(a), host.region_of(b), "same link id, far apart cells");
+        assert_eq!(
+            host.region_of(a),
+            host.region_of(b),
+            "same link id, far apart cells"
+        );
         assert_ne!(host.region_of(a), host.region_of(unrelated));
     }
 
@@ -704,7 +761,11 @@ mod tests {
         host.bind_node(a, 5, 0, ()).unwrap();
         host.bind_node(b, 6, 0, ()).unwrap();
         host.commit();
-        assert_eq!(host.region_of(a), host.region_of(b), "adjacent cells connect");
+        assert_eq!(
+            host.region_of(a),
+            host.region_of(b),
+            "adjacent cells connect"
+        );
     }
 
     #[test]
@@ -737,15 +798,28 @@ mod tests {
         let released: f64 = events
             .iter()
             .filter_map(|e| match e {
-                RegionEvent::Released { key, payload, .. } if decode_key(*key) == Some(b) => Some(*payload),
+                RegionEvent::Released { key, payload, .. } if decode_key(*key) == Some(b) => {
+                    Some(*payload)
+                }
                 _ => None,
             })
             .sum();
-        assert!((released - 10.0).abs() < 1e-9, "b's third share released, got {released}");
-        assert_ne!(host.region_of(a), host.region_of(c), "removing the middle node splits the line");
-        let total: f64 =
-            *host.payload(host.region_of(a).unwrap()).unwrap() + *host.payload(host.region_of(c).unwrap()).unwrap() + released;
-        assert!((total - 30.0).abs() < 1e-9, "conserved across the split: {total}");
+        assert!(
+            (released - 10.0).abs() < 1e-9,
+            "b's third share released, got {released}"
+        );
+        assert_ne!(
+            host.region_of(a),
+            host.region_of(c),
+            "removing the middle node splits the line"
+        );
+        let total: f64 = *host.payload(host.region_of(a).unwrap()).unwrap()
+            + *host.payload(host.region_of(c).unwrap()).unwrap()
+            + released;
+        assert!(
+            (total - 30.0).abs() < 1e-9,
+            "conserved across the split: {total}"
+        );
     }
 
     #[test]
@@ -782,6 +856,10 @@ mod tests {
         let c = entity(2);
         host.bind_node(c, 1, 0, ()).unwrap();
         host.commit();
-        assert_ne!(host.region_of(c), host.region_of(a), "cell 1's old occupant (a) is gone");
+        assert_ne!(
+            host.region_of(c),
+            host.region_of(a),
+            "cell 1's old occupant (a) is gone"
+        );
     }
 }

@@ -95,19 +95,20 @@ impl Parse for ComponentArgs {
                 "computed" => {
                     let content;
                     syn::bracketed!(content in input);
-                    let list: syn::punctuated::Punctuated<(Ident, Option<LitStr>), Token![,]> = content.parse_terminated(
-                        |i: ParseStream| {
-                            let name: Ident = i.parse()?;
-                            let unit = if i.peek(Token![:]) {
-                                i.parse::<Token![:]>()?;
-                                Some(i.parse()?)
-                            } else {
-                                None
-                            };
-                            Ok((name, unit))
-                        },
-                        Token![,],
-                    )?;
+                    let list: syn::punctuated::Punctuated<(Ident, Option<LitStr>), Token![,]> =
+                        content.parse_terminated(
+                            |i: ParseStream| {
+                                let name: Ident = i.parse()?;
+                                let unit = if i.peek(Token![:]) {
+                                    i.parse::<Token![:]>()?;
+                                    Some(i.parse()?)
+                                } else {
+                                    None
+                                };
+                                Ok((name, unit))
+                            },
+                            Token![,],
+                        )?;
                     computed = list.into_iter().collect();
                 }
                 "links" => {

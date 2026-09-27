@@ -358,6 +358,28 @@ impl<K: NetworkKind> Query for InRegion<K> {
     }
 }
 
+/// [`InRegion`] that does not skip the item: `None` when the entity has no
+/// node (or no region) on network `K`, so the law still runs for it.
+impl<K: NetworkKind> Query for Option<InRegion<K>> {
+    type State = ResourceId;
+
+    fn init(init: &mut QueryInit<'_>, write: bool) -> Result<ResourceId, LawError> {
+        host_id::<K>(init, write)
+    }
+
+    fn fetch(state: &ResourceId, frame: &FrameData<'_>, at: At) -> Option<Self> {
+        Some(InRegion::<K>::fetch(state, frame, at))
+    }
+}
+
+impl<K: NetworkKind> WriteQuery for Option<InRegion<K>> {
+    fn write(self, state: &ResourceId, frame: &mut FrameData<'_>, at: At) {
+        if let Some(r) = self {
+            r.write(state, frame, at);
+        }
+    }
+}
+
 impl<K: NetworkKind> WriteQuery for InRegion<K> {
     fn write(self, state: &ResourceId, frame: &mut FrameData<'_>, _at: At) {
         let _ = frame

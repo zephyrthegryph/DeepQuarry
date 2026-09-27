@@ -15,9 +15,9 @@
 
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
+use vg_core::grid::Dir;
 use vg_core::network::RegionId;
 use vg_core::slot::RawHandle;
-use vg_core::grid::Dir;
 use vg_power::kind::{Cables, PowerNode};
 use vg_power::{Cable, PowerLedger};
 
@@ -43,10 +43,19 @@ const fn pos(x: u32, y: u32, z: u32) -> u32 {
 /// z (0: none), as DM's `GetAbove`/`GetBelow` report them.
 fn step(p: u32, dir: u8, up: u32, down: u32) -> Option<u32> {
     let d = Dir(dir);
-    let (x, y, mut z) = (i64::from(p & XY_MASK), i64::from((p >> XY_BITS) & XY_MASK), p >> (2 * XY_BITS));
-    let x = x + i64::from(d.contains(vg_core::grid::Face::East)) - i64::from(d.contains(vg_core::grid::Face::West));
-    let y = y + i64::from(d.contains(vg_core::grid::Face::North)) - i64::from(d.contains(vg_core::grid::Face::South));
-    for (face, to) in [(vg_core::grid::Face::Up, up), (vg_core::grid::Face::Down, down)] {
+    let (x, y, mut z) = (
+        i64::from(p & XY_MASK),
+        i64::from((p >> XY_BITS) & XY_MASK),
+        p >> (2 * XY_BITS),
+    );
+    let x = x + i64::from(d.contains(vg_core::grid::Face::East))
+        - i64::from(d.contains(vg_core::grid::Face::West));
+    let y = y + i64::from(d.contains(vg_core::grid::Face::North))
+        - i64::from(d.contains(vg_core::grid::Face::South));
+    for (face, to) in [
+        (vg_core::grid::Face::Up, up),
+        (vg_core::grid::Face::Down, down),
+    ] {
         if d.contains(face) {
             if to == 0 {
                 return None;
@@ -119,7 +128,12 @@ fn power_bind_cable(entity: ByondValue, shape: ByondValue) -> Result<ByondValue>
 /// the matching component) -- unlike a cable, a machine terminal is never
 /// topology-only.
 #[auxmacros::bind("/proc/vg_power_bind_machine")]
-fn power_bind_machine(entity: ByondValue, x: ByondValue, y: ByondValue, z: ByondValue) -> Result<ByondValue> {
+fn power_bind_machine(
+    entity: ByondValue,
+    x: ByondValue,
+    y: ByondValue,
+    z: ByondValue,
+) -> Result<ByondValue> {
     let e = entity::decode(num(&entity)?)?;
     let p = cell(&x, &y, &z)?;
     with_world(|w| {

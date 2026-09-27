@@ -4,7 +4,9 @@ pub(super) fn build_logical_plan(request: &LayoutRequest) -> Result<LogicalPlan,
     build_architectural_plan(request)
 }
 
-pub(super) fn build_architectural_plan(request: &LayoutRequest) -> Result<LogicalPlan, LayoutError> {
+pub(super) fn build_architectural_plan(
+    request: &LayoutRequest,
+) -> Result<LogicalPlan, LayoutError> {
     let canvas_width = (request.settings.width - 3) / PITCH;
     let canvas_height = (request.settings.height - 3) / PITCH;
     let available_side = canvas_width.min(canvas_height);
@@ -765,7 +767,9 @@ pub(super) fn connect_service_pockets(plan: &mut LogicalPlan) -> Result<(), Layo
     }
 }
 
-pub(super) fn ensure_maintenance_component_portals(plan: &mut LogicalPlan) -> Result<(), LayoutError> {
+pub(super) fn ensure_maintenance_component_portals(
+    plan: &mut LogicalPlan,
+) -> Result<(), LayoutError> {
     let maintenance = plan
         .points()
         .filter(|point| plan.get(*point) == Space::Maintenance)

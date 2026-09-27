@@ -16,18 +16,18 @@
 //! [`BODY_SETTLED_K`] of its environment emits [`HeatEvent::Settled`]; the
 //! FFI layer releases it.
 
-use vg_core::field::law::{Cell, Coupled};
 use vg_core::field::FieldKind;
+use vg_core::field::law::{Cell, Coupled};
 use vg_core::law::{LawCtx, Settle};
 use vg_core::query::{Foreign, Foreign2};
 use vg_core::rate::RateModel;
-use vg_core::thermo::{pair_exchange_at_rate_f32, pair_exchange_f32, phase_energy, Thermal, ThermalBody};
+use vg_core::thermo::{Thermal, ThermalBody, pair_exchange_at_rate_f32, pair_exchange_f32, phase_energy};
 use vg_core::units::{HeatCapacity, Kelvin, Seconds};
 use vg_core::vg;
 
 use crate::components::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling};
 use crate::consts::{BODY_SETTLED_K, GAS_COUPLING, GAS_COUPLING_MIN_K, RELAX_CAPACITY_RATIO, RELAX_HYSTERESIS_K, RELAX_MAX_INTERVAL, TCMB};
-use crate::solid::{flags, SolidHeat};
+use crate::solid::{SolidHeat, flags};
 
 /// Heat's domain events (`rust_architecture.md` §4.8).
 #[vg::events(domain = heat)]
@@ -48,19 +48,11 @@ pub fn add_body_energy(body: &mut HeatBody, joules: f64) {
 }
 
 fn relax_target(ambient: f64, power: f64, conductance: f64) -> f64 {
-    if conductance > 0.0 {
-        ambient + power / conductance
-    } else {
-        ambient
-    }
+    if conductance > 0.0 { ambient + power / conductance } else { ambient }
 }
 
 fn relax_rate(conductance: f64, capacity: f64) -> f64 {
-    if capacity > 0.0 {
-        conductance / capacity
-    } else {
-        0.0
-    }
+    if capacity > 0.0 { conductance / capacity } else { 0.0 }
 }
 
 /// No sustained power, and DM lets it go.
@@ -106,11 +98,7 @@ fn anchor_relax(body: &mut HeatBody, ambient: f64, conductance: f64, now: f64) -
     }
     let gap = (body.temperature() - relax_target(ambient, body.power, conductance)).abs();
     let settled = f64::from(BODY_SETTLED_K) * 0.5;
-    if gap > settled {
-        due.min(now + (gap / settled).ln() / k)
-    } else {
-        now
-    }
+    if gap > settled { due.min(now + (gap / settled).ln() / k) } else { now }
 }
 
 /// A body's exchange partner.
@@ -148,11 +136,7 @@ where
         if !self.reservoir {
             self.value.add_heat(joules as f32, self.capacity);
         }
-        if self.reservoir || !K::Value::IN_HEAT_TOTAL {
-            joules
-        } else {
-            0.0
-        }
+        if self.reservoir || !K::Value::IN_HEAT_TOTAL { joules } else { 0.0 }
     }
 }
 

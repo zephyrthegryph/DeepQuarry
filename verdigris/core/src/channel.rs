@@ -303,8 +303,12 @@ impl std::error::Error for ChannelError {}
 /// A channel name: `UPPER_SNAKE` (a `channels!` table) or `lower_snake` (a
 /// component's field names, `#[vg::component]`).
 fn upper_snake(name: &str) -> bool {
-    let upper = name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_');
-    let lower = name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+    let upper = name
+        .chars()
+        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_');
+    let lower = name
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
     name.starts_with(|c: char| c.is_ascii_alphabetic()) && (upper || lower)
 }
 

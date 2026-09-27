@@ -13,10 +13,7 @@ use vg_heat::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling, Sol
 const DT: f32 = 1.0;
 
 fn builder() -> WorldBuilder {
-    WorldBuilder::new(WorldConfig {
-        check_conservation: true,
-        ..WorldConfig::default()
-    })
+    WorldBuilder::new(WorldConfig { check_conservation: true, ..WorldConfig::default() })
 }
 
 #[test]
@@ -32,45 +29,11 @@ fn a_body_relaxes_toward_a_solid_cell_and_conserves_heat_energy() {
     let _ = grid;
 
     // Cell 0: an ordinary solid turf at 400 K, capacity 10,000 J/K.
-    world
-        .sim_mut()
-        .port(field.geometry)
-        .put(
-            0,
-            Geom {
-                capacity: 10_000.0,
-                blocked: vg_core::grid::Dir::NONE,
-                reservoir: false,
-            },
-        )
-        .unwrap();
-    world
-        .sim_mut()
-        .port(field.cells)
-        .put(0, vg_heat::SolidCell::at(10_000.0, 400.0, 0.05, 0.9, 0))
-        .unwrap();
+    world.sim_mut().port(field.geometry).put(0, Geom { capacity: 10_000.0, blocked: vg_core::grid::Dir::NONE, reservoir: false }).unwrap();
+    world.sim_mut().port(field.cells).put(0, vg_heat::SolidCell::at(10_000.0, 400.0, 0.05, 0.9, 0)).unwrap();
 
-    let body_e = world
-        .bind_value(
-            None,
-            HeatBody {
-                capacity: 10.0,
-                energy: 10.0 * 300.0,
-                ..Default::default()
-            },
-        )
-        .unwrap();
-    let _ = world
-        .bind_value(
-            None,
-            SolidCoupling {
-                body: body_e.index(),
-                cell: 0,
-                conductance: 5.0,
-                slot: 0,
-            },
-        )
-        .unwrap();
+    let body_e = world.bind_value(None, HeatBody { capacity: 10.0, energy: 10.0 * 300.0, ..Default::default() }).unwrap();
+    let _ = world.bind_value(None, SolidCoupling { body: body_e.index(), cell: 0, conductance: 5.0, slot: 0 }).unwrap();
     let _ = coupling;
 
     for _ in 0..2_000 {
@@ -97,37 +60,9 @@ fn two_bodies_exchange_and_conserve_energy() {
     let mut world = b.build().expect("builds");
     let _ = (a, coupling);
 
-    let a_e = world
-        .bind_value(
-            None,
-            HeatBody {
-                capacity: 10.0,
-                energy: 10.0 * 400.0,
-                ..Default::default()
-            },
-        )
-        .unwrap();
-    let b_e = world
-        .bind_value(
-            None,
-            HeatBody {
-                capacity: 20.0,
-                energy: 20.0 * 300.0,
-                ..Default::default()
-            },
-        )
-        .unwrap();
-    let _ = world
-        .bind_value(
-            None,
-            BodyCoupling {
-                body: a_e.index(),
-                other: b_e.index(),
-                conductance: 2.0,
-                slot: 0,
-            },
-        )
-        .unwrap();
+    let a_e = world.bind_value(None, HeatBody { capacity: 10.0, energy: 10.0 * 400.0, ..Default::default() }).unwrap();
+    let b_e = world.bind_value(None, HeatBody { capacity: 20.0, energy: 20.0 * 300.0, ..Default::default() }).unwrap();
+    let _ = world.bind_value(None, BodyCoupling { body: a_e.index(), other: b_e.index(), conductance: 2.0, slot: 0 }).unwrap();
 
     let before: f64 = {
         let a: HeatBody = world.read(a_e).unwrap();
@@ -159,26 +94,8 @@ fn a_regulator_heats_the_controlled_body_toward_its_target() {
     let mut world = b.build().expect("builds");
     let _ = (controlled, other);
 
-    let cold_e = world
-        .bind_value(
-            None,
-            HeatBody {
-                capacity: 100.0,
-                energy: 100.0 * 280.0,
-                ..Default::default()
-            },
-        )
-        .unwrap();
-    let hot_e = world
-        .bind_value(
-            None,
-            HeatBody {
-                capacity: 1.0e6,
-                energy: 1.0e6 * 293.15,
-                ..Default::default()
-            },
-        )
-        .unwrap();
+    let cold_e = world.bind_value(None, HeatBody { capacity: 100.0, energy: 100.0 * 280.0, ..Default::default() }).unwrap();
+    let hot_e = world.bind_value(None, HeatBody { capacity: 1.0e6, energy: 1.0e6 * 293.15, ..Default::default() }).unwrap();
     let _ = world
         .bind_value(
             None,

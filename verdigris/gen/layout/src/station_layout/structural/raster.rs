@@ -1,6 +1,9 @@
 use super::*;
 
-pub(super) fn rasterize(request: &LayoutRequest, plan: &LogicalPlan) -> Result<StationLayout, LayoutError> {
+pub(super) fn rasterize(
+    request: &LayoutRequest,
+    plan: &LogicalPlan,
+) -> Result<StationLayout, LayoutError> {
     let mut tiles = vec![
         TileCell::default();
         usize::from(request.settings.width) * usize::from(request.settings.height)

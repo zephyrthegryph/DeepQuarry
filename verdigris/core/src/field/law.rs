@@ -154,7 +154,12 @@ impl<F: FieldKind, G: FieldKind> Query for Coupled<F, G> {
     type State = (FieldIds, FieldIds);
 
     fn anchor() -> Option<Anchor> {
-        Some(Anchor::Cells { field: TypeId::of::<F>(), name: F::NAME, list: list_cells::<F>, also: Some((TypeId::of::<G>(), list_cells::<G>)) })
+        Some(Anchor::Cells {
+            field: TypeId::of::<F>(),
+            name: F::NAME,
+            list: list_cells::<F>,
+            also: Some((TypeId::of::<G>(), list_cells::<G>)),
+        })
     }
 
     fn init(init: &mut QueryInit<'_>, write: bool) -> Result<Self::State, LawError> {
@@ -162,7 +167,10 @@ impl<F: FieldKind, G: FieldKind> Query for Coupled<F, G> {
     }
 
     fn fetch(state: &Self::State, frame: &FrameData<'_>, at: At) -> Option<Self> {
-        Some(Self(Cell::fetch(&state.0, frame, at)?, Cell::fetch(&state.1, frame, at)?))
+        Some(Self(
+            Cell::fetch(&state.0, frame, at)?,
+            Cell::fetch(&state.1, frame, at)?,
+        ))
     }
 }
 
@@ -224,7 +232,15 @@ impl<K: FieldKind> Query for Neighbors<K> {
         let mut out: [Option<(u32, Cell<K>)>; 6] = std::array::from_fn(|_| None);
         for (i, face) in crate::grid::Face::ALL.into_iter().enumerate() {
             if let Some(nb) = grid.open_neighbor(K::BLOCK, at.index, face) {
-                out[i] = Cell::<K>::fetch(&state.field, frame, At { index: nb, entity: None }).map(|c| (nb, c));
+                out[i] = Cell::<K>::fetch(
+                    &state.field,
+                    frame,
+                    At {
+                        index: nb,
+                        entity: None,
+                    },
+                )
+                .map(|c| (nb, c));
             }
         }
         Some(Self(out))
