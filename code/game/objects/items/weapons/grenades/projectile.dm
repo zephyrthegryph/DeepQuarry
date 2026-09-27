@@ -19,7 +19,7 @@
 
 	src.launch_many_projectiles(O, spread_range, projectile_types)
 
-	qdel(src)
+	consume(src)
 
 
 

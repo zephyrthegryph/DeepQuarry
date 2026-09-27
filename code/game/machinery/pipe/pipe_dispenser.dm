@@ -179,7 +179,7 @@
 		return TRUE
 
 	to_chat(user, span_notice("You shove [pipe] back in [src]."))
-	qdel(pipe)
+	consume(pipe, user)
 	return TRUE
 
 // adding a pipe dispensers that spawn unhooked from the ground

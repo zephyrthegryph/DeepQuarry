@@ -102,7 +102,7 @@
 			target.ex_act(1)
 	if(target)
 		target.cut_overlay(image_overlay)
-	qdel(src)
+	consume(src)
 
 /obj/item/plastique/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -146,7 +146,7 @@
 	if((T.z in using_map.station_levels) || (T.z in using_map.admin_levels))
 		target.visible_message(span_danger("\The [src] lets out a loud beep as safeties trigger, before imploding and falling apart."))
 		target.cut_overlay(image_overlay)
-		qdel(src)
+		consume(src)
 		return 0
 	else
 		return ..()

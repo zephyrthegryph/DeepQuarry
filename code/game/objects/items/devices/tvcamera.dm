@@ -318,14 +318,14 @@
 				var/obj/item/robot_parts/robot_component/camera/CA = W
 				to_chat(user, span_notice("You add the camera module to [src]"))
 				user.drop_item()
-				qdel(CA)
+				consume(CA, user)
 				desc = "This TV camera assembly has a camera module."
 				buildstep++
 		if(1)
 			if(istype(W, /obj/item/taperecorder))
 				var/obj/item/taperecorder/T = W
 				user.drop_item()
-				qdel(T)
+				consume(T, user)
 				buildstep++
 				to_chat(user, span_notice("You add the tape recorder to [src]"))
 		if(2)

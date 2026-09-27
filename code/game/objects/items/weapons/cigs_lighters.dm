@@ -462,7 +462,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		if(G.reagents)
 			G.reagents.trans_to_obj(src, G.reagents.total_volume)
 		name = "[G.name]-packed [initial(name)]"
-		qdel(G)
+		consume(G, user)
 
 	else if(istype(W, /obj/item/flame/lighter))
 		var/obj/item/flame/lighter/L = W

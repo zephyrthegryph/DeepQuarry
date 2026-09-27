@@ -240,7 +240,7 @@
 		return
 	put_in(grabbed)
 	src.add_fingerprint(user)
-	qdel(G)
+	consume(G, user)
 	return
 
 // Traitgenes Deconstructable dna scanner

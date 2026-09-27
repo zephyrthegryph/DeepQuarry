@@ -348,10 +348,9 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You deconstruct [src]."))
-	new /obj/item/stack/material/steel(loc, 10)
 	if(connected_port)
 		disconnect()
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel, 10)
 
 /obj/machinery/portable_atmospherics/canister/tgui_state(mob/user)
 	return GLOB.tgui_physical_state

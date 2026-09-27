@@ -207,7 +207,7 @@
 		if(M.has_buckled_mobs())
 			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
 			return
-		qdel(grab)
+		consume(grab, user)
 		put_mob(M)
 
 	return

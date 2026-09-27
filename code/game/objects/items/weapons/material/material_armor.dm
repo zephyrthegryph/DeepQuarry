@@ -314,7 +314,7 @@
 		user.drop_from_inventory(second_plate)
 		var/obj/item/clothing/suit/armor/material/makeshift/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
-		qdel(second_plate)
+		consume(second_plate, user)
 		consume(src, user)
 	else
 		..()
@@ -334,7 +334,7 @@
 		user.drop_from_inventory(second_plate)
 		var/obj/item/clothing/accessory/material/makeshift/heavy/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
-		qdel(second_plate)
+		consume(second_plate, user)
 		consume(src, user)
 		return
 

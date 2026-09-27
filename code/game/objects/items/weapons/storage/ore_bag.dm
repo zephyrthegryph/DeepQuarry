@@ -69,7 +69,7 @@
 		stored_ore[ore.material]++
 		current_capacity++
 		user.remove_from_mob(W)
-		qdel(ore)
+		consume(ore, user)
 
 /obj/item/ore_bag/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	//If we attack a turf, we try to scoop up all the ore from the turf first.

@@ -169,10 +169,9 @@
 
 /obj/structure/reflector/proc/attackby_timed_done(mob/user)
 	user.visible_message(span_notice("[user] dismantles [src]."), span_notice("You dismantle [src]..."))
-	new framebuildstacktype(drop_location(), framebuildstackamount)
 	if(buildstackamount)
 		new buildstacktype(drop_location(), buildstackamount)
-	qdel(src)
+	replace_with(src, framebuildstacktype, framebuildstackamount)
 /obj/structure/reflector/proc/attackby_timed_done2(mob/user, obj/item/weldingtool/I)
 	if(!I.remove_fuel(1,user))
 		to_chat(user, span_warning("You require fuel to weld the [src]!"))

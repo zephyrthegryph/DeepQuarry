@@ -132,11 +132,10 @@
 
 /obj/item/camerabug/bullet_act()
 	visible_message("The [src] lens shatters!")
-	new brokentype(get_turf(src))
 	if(linkedmonitor)
 		linkedmonitor.unpair(src)
 	linkedmonitor = null
-	qdel(src)
+	replace_with(src, brokentype)
 
 /obj/item/camerabug/Destroy()
 	if(linkedmonitor)

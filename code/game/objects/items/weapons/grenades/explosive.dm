@@ -23,7 +23,7 @@
 	if(explosion_size)
 		on_explosion(O)
 	src.fragmentate(O, num_fragments, spread_range, fragment_types)
-	qdel(src)
+	consume(src)
 
 /obj/item/grenade/explosive/proc/on_explosion(turf/O)
 	if(explosion_size)

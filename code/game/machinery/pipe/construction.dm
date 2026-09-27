@@ -276,10 +276,9 @@ Buildable meters
 	if(!pipe)
 		to_chat(user, span_warning("You need to fasten it to a pipe!"))
 		return TRUE
-	new /obj/machinery/meter(loc, piping_layer)
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You fasten the meter to the pipe."))
-	qdel(src)
+	replace_with(src, /obj/machinery/meter, piping_layer)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pipe_meter/dropped(mob/user, equipping, slot)

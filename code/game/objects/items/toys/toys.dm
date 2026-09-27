@@ -247,10 +247,9 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	new /obj/effect/decal/cleanable/ash(src.loc)
 	src.visible_message(span_warning("The [src.name] explodes!"),span_warning("You hear a snap!"))
 	playsound(src, 'sound/effects/snap.ogg', 50, 1)
-	qdel(src)
+	replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /obj/item/toy/snappop/Crossed(atom/movable/H as mob|obj)
 	if(H.is_incorporeal())
@@ -263,10 +262,9 @@
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(2, 0, src)
 			s.start()
-			new /obj/effect/decal/cleanable/ash(src.loc)
 			src.visible_message(span_warning("The [src.name] explodes!"),span_warning("You hear a snap!"))
 			playsound(src, 'sound/effects/snap.ogg', 50, 1)
-			qdel(src)
+			replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /*
  * Bosun's whistle
