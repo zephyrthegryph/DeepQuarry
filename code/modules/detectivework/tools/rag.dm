@@ -34,9 +34,6 @@
 	. = ..()
 	update_name()
 
-/obj/item/reagent_containers/glass/rag/Destroy()
-	return ..()
-
 /obj/item/reagent_containers/glass/rag/attack_self(mob/user)
 	. = ..(user)
 	if(.)
