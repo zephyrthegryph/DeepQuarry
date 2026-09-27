@@ -117,10 +117,6 @@
 	QDEL_NULL(src.source_hook)
 	return ..()
 
-/obj/effect/hoist_hook/Destroy()
-	source_hoist = null
-	return ..()
-
 /obj/structure/hoist/proc/check_consistency()
 	if (!hoistee)
 		return
