@@ -548,6 +548,7 @@
 	. = ..()
 	update_state(0)
 
+// LIFECYCLE: an active crystal finishes its step.
 /obj/item/clothing/accessory/collar/khcrystal/Destroy() //Waitwaitwait
 	if(state == 1)
 		periodic_step() //Nownownow

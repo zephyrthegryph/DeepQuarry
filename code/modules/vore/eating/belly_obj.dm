@@ -73,7 +73,6 @@
 	var/absorbedrename_enabled = FALSE		// If absorbed prey are renamed.
 	var/absorbedrename_name = "%pred's %belly"	// What absorbed prey are renamed to.
 
-
 	var/vore_sprite_flags = DM_FLAG_VORESPRITE_BELLY
 	var/tmp/static/list/vore_sprite_flag_list= list(
 		"Normal Belly Sprite" = DM_FLAG_VORESPRITE_BELLY,
@@ -289,13 +288,12 @@
 	create_reagents(300)	// So we can have some liquids in bellies
 	AddElement(/datum/element/empprotection, EMP_PROTECT_ALL)
 
+REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
+
+// LIFECYCLE: ghosts inside are let out.
 /obj/belly/Destroy()
-	cycle_token = null
-	liquid_timer = null
-	owner?.vore_organs?.Remove(src)
-	owner = null
 	for(var/mob/observer/G in src)
-		G.forceMove(get_turf(src)) //ported from CHOMPStation PR#7132
+		G.forceMove(get_turf(src))
 	return ..()
 
 /obj/belly/Moved(atom/old_loc)
@@ -572,7 +570,6 @@
 		var/mob/living/ML = M
 		if(ML.stat)
 			ML.status_set(EFFECT_SLEEPING, min(ML.status_units(EFFECT_SLEEPING),20))
-
 
 	//Determines privacy
 	var/privacy_range = world.view
@@ -851,7 +848,6 @@
 	owner.absorb_langs()
 
 ////////////////////////////////////////////////////////////////////////
-
 
 //Digest a single item
 //Receives a return value from digest_act that's how much nutrition
