@@ -66,7 +66,7 @@
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
-		QDEL_IN(src, timeout)
+		om_qdel_after(src, timeout)
 
 /datum/tgui_input_keycombo/Destroy(force)
 	SStgui.close_uis(src)

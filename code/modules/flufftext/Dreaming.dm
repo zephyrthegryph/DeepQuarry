@@ -82,7 +82,7 @@
 		var/next_wait = rand(10, 30)
 		if(current_dream.sleep_until_finished)
 			status_adjust(EFFECT_SLEEPING, next_wait)
-		addtimer(CALLBACK(src, PROC_REF(dream_sequence), dream_fragments, current_dream), next_wait)
+		om_after(src, next_wait, PROC_REF(dream_sequence), dream_fragments, current_dream)
 	else
 		REMOVE_TRAIT(src, TRAIT_DREAMING, DREAMING_SOURCE)
 		current_dream.OnDreamEnd(src)

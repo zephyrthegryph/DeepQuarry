@@ -70,7 +70,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 /datum/component/material_response/Destroy(force)
 	registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
 	if(scintillation_timer)
-		deltimer(scintillation_timer)
+		om_cancel_timer(src, scintillation_timer)
 		scintillation_timer = null
 	return ..()
 
@@ -134,7 +134,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	if(material.shape_recovery_rate > 0 && ambient_temperature() >= material.shape_recovery_temperature)
 		var/obj/item/item = parent
-		addtimer(CALLBACK(item, TYPE_PROC_REF(/atom, repair_damage), max(1, round(material.shape_recovery_rate))), 1 SECOND)
+		om_after(item, 1 SECOND, TYPE_PROC_REF(/atom, repair_damage), max(1, round(material.shape_recovery_rate)))
 
 /datum/component/material_response/proc/on_pre_emp(datum/source, severity)
 	SIGNAL_HANDLER
@@ -177,8 +177,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		var/obj/item/item = parent
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
 		if(scintillation_timer)
-			deltimer(scintillation_timer)
-		scintillation_timer = addtimer(CALLBACK(src, PROC_REF(end_scintillation)), 5 SECONDS, TIMER_STOPPABLE)
+			om_cancel_timer(src, scintillation_timer)
+		scintillation_timer = om_after(src, 5 SECONDS, PROC_REF(end_scintillation))
 
 /datum/component/material_response/proc/end_scintillation()
 	scintillation_timer = null

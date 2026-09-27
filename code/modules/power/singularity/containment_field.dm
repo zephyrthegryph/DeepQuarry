@@ -18,7 +18,7 @@
 	var/obj/machinery/field_generator/FG1 = null
 	var/obj/machinery/field_generator/FG2 = null
 	var/list/shockdirs
-	var/hasShocked = 0 //Used to add a delay between shocks. In some cases this used to crash servers by spawning hundreds of sparks every second.
+	COOLDOWN_DECLARE(hasShocked) //Used to add a delay between shocks. In some cases this used to crash servers by spawning hundreds of sparks every second.
 
 /obj/machinery/containment_field/Initialize(mapload)
 	. = ..()
@@ -89,20 +89,19 @@
 	return 0
 
 /obj/machinery/containment_field/shock(mob/living/user as mob)
-	if(hasShocked)
+	if(!COOLDOWN_FINISHED(src, hasShocked))
 		return 0
 	if(!FG1 || !FG2)
 		qdel(src)
 		return 0
 	if(isliving(user))
-		hasShocked = 1
+		COOLDOWN_START(src, hasShocked, 2 SECONDS)
 		var/shock_damage = min(rand(30,40),rand(30,40))
 		user.electrocute_act(shock_damage, src, 1, BP_TORSO)
 
 		var/atom/target = get_edge_target_turf(user, get_dir(src, get_step_away(user, src)))
 		user.throw_at(target, 200, 4)
 
-		VARSET_IN(src, hasShocked, FALSE, 2 SECONDS)
 
 /obj/machinery/containment_field/proc/set_master(master1,master2)
 	if(!master1 || !master2)

@@ -14,14 +14,14 @@
 
 /datum/stockMarket/Destroy()
 	if(process_timer)
-		deltimer(process_timer)
+		om_cancel_timer(src, process_timer)
 		process_timer = null
 	return ..()
 
 /datum/stockMarket/proc/schedule_process()
 	if(QDELETED(src) || process_timer)
 		return
-	process_timer = addtimer(CALLBACK(src, PROC_REF(market_tick)), 10 SECONDS, TIMER_STOPPABLE)
+	process_timer = om_after(src, 10 SECONDS, PROC_REF(market_tick))
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))

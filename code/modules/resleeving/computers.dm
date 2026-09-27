@@ -490,7 +490,7 @@
 				I.buf.types = DNA2_BUF_SE
 				I.has_radiation = FALSE // SAFE!
 				atom_say("Beginning injector synthesis.")
-				addtimer(CALLBACK(src, PROC_REF(dispense_injector), I), 10 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 10 SECONDS, PROC_REF(dispense_injector), I)
 			current_br = null
 			. = TRUE
 		if("cleartemp")

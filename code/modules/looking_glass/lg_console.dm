@@ -14,7 +14,7 @@
 	var/current_program = "Off"
 	var/area/looking_glass/my_area
 	var/last_gravity_change = 0
-	var/ready = TRUE
+	COOLDOWN_DECLARE(ready)
 	var/immersion = FALSE
 
 	var/lg_id = "change_me"
@@ -84,7 +84,7 @@
 
 	switch(action)
 		if("program")
-			if(ready)
+			if(COOLDOWN_FINISHED(src, ready))
 				var/prog = params["program"]
 				if(prog == "Off")
 					current_program = "Off"
@@ -117,8 +117,7 @@
 	return
 
 /obj/machinery/computer/looking_glass/proc/load_program(prog_name)
-	ready = FALSE
-	VARSET_IN(src, ready, TRUE, 10 SECONDS)
+	COOLDOWN_START(src, ready, 10 SECONDS)
 
 	if(prog_name in supported_programs)
 		my_area?.begin_program(supported_programs[prog_name])
@@ -126,8 +125,7 @@
 		my_area?.begin_program(secret_programs[prog_name])
 
 /obj/machinery/computer/looking_glass/proc/unload_program()
-	ready = FALSE
-	VARSET_IN(src, ready, TRUE, 10 SECONDS)
+	COOLDOWN_START(src, ready, 10 SECONDS)
 
 	my_area?.end_program()
 

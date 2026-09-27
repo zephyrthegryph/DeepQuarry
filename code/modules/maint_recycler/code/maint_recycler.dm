@@ -302,7 +302,7 @@
 	playsound(src,pick(angry_sounds),80)
 	set_screen_state("screen_mad",30)
 
-	addtimer(CALLBACK(src, PROC_REF(shoot_at), user), 0.3 SECONDS)
+	om_after(src, 0.3 SECONDS, PROC_REF(shoot_at), user)
 
 
 	credit_user(user,-10) //get fucked
@@ -312,7 +312,7 @@
 	door_moving = TRUE
 	flick("door closing",hatch)
 	playsound(src, 'code/modules/maint_recycler/sfx/hatchclose.ogg', 40, 1)
-	addtimer(CALLBACK(src, PROC_REF(door_finished_moving), FALSE), 1 SECOND)
+	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), FALSE)
 
 
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
@@ -320,7 +320,7 @@
 	door_moving = TRUE
 	flick("door opening",hatch)
 	playsound(src, 'code/modules/maint_recycler/sfx/hatchopen.ogg', 40, 1)
-	addtimer(CALLBACK(src, PROC_REF(door_finished_moving), TRUE), 1 SECOND)
+	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), TRUE)
 
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
@@ -335,7 +335,7 @@
 /obj/machinery/maint_recycler/proc/shoot_at(mob/victim, burst = 3)
 	if(victim == null) return
 	for(var/i = 1 to burst)
-		addtimer(CALLBACK(src, PROC_REF(shoot), victim), (0.3 * i SECONDS))
+		om_after(src, (0.3 * i SECONDS), PROC_REF(shoot), victim)
 
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
 	var/projectile = /obj/item/projectile/beam/stun
@@ -351,7 +351,7 @@
 	if(inserted_item)
 		if(!door_open)
 			open_door(user)
-			addtimer(CALLBACK(src, PROC_REF(eject_item_act), user), 1 SECOND)
+			om_after(src, 1 SECOND, PROC_REF(eject_item_act), user)
 		else
 			eject_item_act(user)
 
@@ -368,7 +368,7 @@
 	if(inserted_item)
 		if(door_open)
 			close_door(user)
-			addtimer(CALLBACK(src, PROC_REF(recycle_act), user), 1 SECOND)
+			om_after(src, 1 SECOND, PROC_REF(recycle_act), user)
 		else
 			recycle_act(user)
 
@@ -379,7 +379,7 @@
 	door_locked = TRUE
 	playsound(src, 'code/modules/maint_recycler/sfx/recycle_act.ogg', 50)
 	set_screen_state("screen_recycle",20)
-	addtimer(CALLBACK(src, PROC_REF(post_recycle), user), 2 SECONDS)
+	om_after(src, 2 SECONDS, PROC_REF(post_recycle), user)
 
 
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
@@ -566,7 +566,7 @@ UTILITY PROCS
 /obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return
 	monitor_screen.icon_state = state
-	addtimer(CALLBACK(src, PROC_REF(reset_screen_state)), duration)
+	om_after(src, duration, PROC_REF(reset_screen_state))
 
 
 

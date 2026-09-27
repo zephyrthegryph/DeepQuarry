@@ -49,7 +49,7 @@
 		data["character_preferences"] = compile_character_preferences(user)
 
 	data["active_slot"] = default_slot
-	data["saved_notification"] = saved_notification
+	data["saved_notification"] = !COOLDOWN_FINISHED(src, saved_notification)
 
 	// preview assets ship in ui_data so they reach React via the
 	// normal polling channel (send_update — ui_data only) instead of via
@@ -103,8 +103,7 @@
 		if("save")
 			save_character()
 			save_preferences()
-			saved_notification = TRUE
-			VARSET_IN(src, saved_notification, FALSE, 1 SECONDS)
+			COOLDOWN_START(src, saved_notification, 1 SECONDS)
 			return TRUE
 		if("reload")
 			load_preferences(TRUE)

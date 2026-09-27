@@ -212,7 +212,7 @@
 	if(target)
 		for(var/i in 1 to 5)
 			step_away(D, target, bolt_distance)
-	addtimer(CALLBACK(D, TYPE_PROC_REF(/atom/movable, uncloak)), cloak_duration)
+	om_after(D, cloak_duration, TYPE_PROC_REF(/atom/movable, uncloak))
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

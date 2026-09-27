@@ -211,7 +211,7 @@
 	if(cooldown_until > world.time)
 		recheck_delay = recheck_delay ? min(recheck_delay, cooldown_until - world.time) : cooldown_until - world.time
 	if(recheck_delay)
-		addtimer(CALLBACK(src, PROC_REF(reconcile_offer_board), "Candidate timer"), recheck_delay)
+		om_after(src, recheck_delay, PROC_REF(reconcile_offer_board), "Candidate timer")
 	return null
 
 /datum/controller/subsystem/contracts/proc/try_materialize_candidate(datum/contract_offer_candidate/candidate) as /datum/contract

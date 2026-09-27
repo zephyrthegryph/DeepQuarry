@@ -69,7 +69,7 @@
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
-		QDEL_IN(src, timeout)
+		om_qdel_after(src, timeout)
 
 /datum/tgui_checkbox_input/Destroy(force)
 	SStgui.close_uis(src)

@@ -70,7 +70,7 @@
 
 		for(var/obj/machinery/door/airlock/door in area.contents)
 			if(can_break_door(door))
-				addtimer(CALLBACK(src, PROC_REF(break_door), door), 1) // Emagging proc is actually a blocking proc and that's bad for the ticker.
+				om_after(src, 1, PROC_REF(break_door), door) // Emagging proc is actually a blocking proc and that's bad for the ticker.
 				door.visible_message(span_danger("\The [door]'s panel sparks!"))
 				playsound(door, "sparks", 50, 1)
 				log_game("Airlock Failure event has broken \the [door] airlock in [area].")

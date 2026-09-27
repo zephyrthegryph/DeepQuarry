@@ -628,7 +628,7 @@
 
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
 	var/list/inside_emotes
-	var/recent_squish = 0
+	COOLDOWN_DECLARE(recent_squish)
 
 /obj/item/clothing/shoes/fit_constraint()
 	var/list/bodytypes = list("exclude",SPECIES_TESHARI, SPECIES_VOX)
@@ -720,9 +720,8 @@
 	update_icon()
 
 /obj/item/clothing/shoes/proc/handle_movement(turf/walking, running, mob/living/carbon/human/pred)
-	if(!recent_squish && istype(pred))
-		recent_squish = 1
-		VARSET_IN(src, recent_squish, FALSE, 4 SECONDS) // Reset the recent squish timer
+	if(COOLDOWN_FINISHED(src, recent_squish) && istype(pred))
+		COOLDOWN_START(src, recent_squish, 4 SECONDS)
 		for(var/mob/living/M in contents)
 			if(pred.step_mechanics_pref && M.step_mechanics_pref)
 				src.handle_inshoe_stepping(pred, M)

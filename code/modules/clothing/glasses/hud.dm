@@ -98,6 +98,10 @@
 		. += "\n " + span_notice("The HUD indicator reads OFF.")
 
 
+/// om_after() target: the AR screen comes back after an EMP.
+/obj/item/clothing/glasses/omnihud/proc/reconnect_tgar(datum/tgui_module/screen)
+	tgarscreen = screen
+
 /obj/item/clothing/glasses/omnihud/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
@@ -106,7 +110,8 @@
 		SStgui.close_uis(src)
 	var/disconnect_tgar = tgarscreen
 	tgarscreen = null
-	VARSET_IN(src, tgarscreen, disconnect_tgar, 20 SECONDS)
+	if(disconnect_tgar)
+		om_after(src, 20 SECONDS, PROC_REF(reconnect_tgar), disconnect_tgar)
 
 	//extra fun for non-sci variants; a small chance flip the state to the dumb 3d glasses when EMP'd
 	if(icon_state == "glasses" || icon_state == "sun")

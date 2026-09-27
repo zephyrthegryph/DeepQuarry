@@ -125,7 +125,7 @@
 	if(!frequency)
 		return
 	if(!SSradio)
-		addtimer(CALLBACK(src, PROC_REF(radio_checkup), new_frequency), 2 SECONDS)
+		om_after(src, 2 SECONDS, PROC_REF(radio_checkup), new_frequency)
 		return
 	set_radio(new_frequency)
 

@@ -92,7 +92,7 @@
 	if(!(count--))
 		active = FALSE
 		return
-	addtimer(CALLBACK(src, PROC_REF(move)), 1, TIMER_DELETE_ME)
+	om_after(src, 1, PROC_REF(move))
 
 
 // find the turf which should contain the next pipe

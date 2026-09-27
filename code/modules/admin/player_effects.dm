@@ -283,7 +283,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(!target.ckey)
 				return
 			target.overlay_fullscreen("scrolls", /atom/movable/screen/fullscreen/scrolls, 1)
-			addtimer(CALLBACK(target, TYPE_PROC_REF(/mob, clear_fullscreen), "scrolls"), 20 SECONDS)
+			om_after(target, 20 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), "scrolls")
 
 		if("wet_floors")
 			var/chem

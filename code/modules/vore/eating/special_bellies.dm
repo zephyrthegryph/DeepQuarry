@@ -16,7 +16,7 @@
 	if(teleport_delay <= 0) //just try to teleport immediately.
 		try_tele(thing)
 		return
-	addtimer(CALLBACK(src, PROC_REF(try_tele), thing), teleport_delay, TIMER_DELETE_ME)
+	om_after(src, teleport_delay, PROC_REF(try_tele), thing)
 
 /obj/belly/special/teleporter/periodic_step(wait)
 	if(istype(target))

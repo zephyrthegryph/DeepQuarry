@@ -186,7 +186,7 @@
 	if(!QDELING(src) && !holds_charge)
 		// Put it on a delay because moving item from slot to hand
 		// calls dropped().
-		addtimer(CALLBACK(src, PROC_REF(empty_if_not_held)), 2)
+		om_after(src, 2, PROC_REF(empty_if_not_held))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/empty_if_not_held()
 	if(!ismob(loc) && !istype(loc, /obj/item/integrated_circuit))
@@ -209,8 +209,8 @@
 
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
-	deltimer(recharge_timerid)
-	recharge_timerid = addtimer(CALLBACK(src, PROC_REF(reload)), recharge_time * carried, TIMER_STOPPABLE)
+	om_cancel_timer(src, recharge_timerid)
+	recharge_timerid = om_after(src, recharge_time * carried, PROC_REF(reload))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)

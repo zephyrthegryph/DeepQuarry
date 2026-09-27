@@ -107,7 +107,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make R
 		return
 
 	log_admin("[key_name(user)] has robotized [target_human.key].")
-	addtimer(CALLBACK(target_human, TYPE_PROC_REF(/mob/living/carbon/human, Robotize)), 1 SECOND, TIMER_DELETE_ME)
+	om_after(target_human, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, Robotize))
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make Simple Animal", "Spawns a new player directly as animal.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!SSticker)
@@ -123,7 +123,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make 
 		return
 
 	log_admin("[key_name(user)] has animalized [target_mob.key].")
-	addtimer(CALLBACK(target_mob, TYPE_PROC_REF(/mob, Animalize)), 1 SECOND, TIMER_DELETE_ME)
+	om_after(target_mob, 1 SECOND, TYPE_PROC_REF(/mob, Animalize))
 
 ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a pAI!", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/turf/target_turf = get_turf(user.mob)
@@ -159,7 +159,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make A
 		return
 
 	log_admin("[key_name(user)] has alienized [target_human.key].")
-	addtimer(CALLBACK(target_human, TYPE_PROC_REF(/mob/living/carbon/human, Alienize)), 1 SECOND, TIMER_DELETE_ME)
+	om_after(target_human, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, Alienize))
 	feedback_add_details("admin_verb","MKAL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(user)] made [key_name(target_human)] into an alien.")
 	message_admins(span_notice("[key_name_admin(user)] made [key_name(target_human)] into an alien."))

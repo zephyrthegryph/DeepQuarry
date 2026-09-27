@@ -32,7 +32,7 @@
 	post_purchase_handling(item)
 
 /datum/maint_recycler_vendor_entry/proc/spawn_with_delay(loc)
-	addtimer(CALLBACK(src, PROC_REF(spawn_at),loc), 0.5 SECONDS)
+	om_after(src, 0.5 SECONDS, PROC_REF(spawn_at), loc)
 
 
 /datum/maint_recycler_vendor_entry/proc/post_purchase_handling(obj/bought)

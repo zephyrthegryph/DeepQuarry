@@ -37,7 +37,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 
 /datum/component/hallucinations/proc/make_timer()
 	PROTECTED_PROC(TRUE)
-	addtimer(CALLBACK(src, PROC_REF(trigger)), ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), TIMER_DELETE_ME)
+	om_after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 
 /datum/component/hallucinations/proc/get_fakecrit()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -105,7 +105,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /datum/component/hallucinations/xenochimera/make_timer()
 	var/datum/component/xenochimera/XC = our_human.GetComponent(/datum/component/xenochimera)
 	var/F = XC ? (XC.feral / 10) : 1
-	addtimer(CALLBACK(src, PROC_REF(trigger)), ((rand(20,50) SECONDS) / F), TIMER_DELETE_ME)
+	om_after(src, ((rand(20,50) SECONDS) / F), PROC_REF(trigger))
 
 /datum/component/hallucinations/xenochimera/trigger()
 	if(QDELETED(our_human))
@@ -119,7 +119,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 		qdel(src)
 		return
 	handle_hallucinating()
-	QDEL_IN(src,rand(3,9)SECONDS)
+	om_qdel_after(src, rand(3,9)SECONDS)
 
 /datum/component/hallucinations/xenochimera/handle_hallucinating()
 	var/halpick = rand(1,100)

@@ -105,7 +105,7 @@
 
 	// We're probably going to get more than one update (design) at a time, so batch
 	// them together.
-	addtimer(CALLBACK(src, PROC_REF(update_menu_tech)), 2 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
+	om_after_replace(src, 2 SECONDS, PROC_REF(update_menu_tech))
 
 /obj/machinery/mecha_part_fabricator_tg/RefreshParts()
 	. = ..()
@@ -544,7 +544,7 @@
 /obj/machinery/mecha_part_fabricator_tg/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)
 	// var/datum/material/M = id_inserted // Not used atm.
 	add_overlay("fab-load-metal")
-	addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, cut_overlay), "fab-load-metal"), 1 SECONDS)
+	om_after(src, 1 SECONDS, TYPE_PROC_REF(/atom, cut_overlay), "fab-load-metal")
 
 /obj/machinery/mecha_part_fabricator_tg/update_icon()
 	if(panel_open)

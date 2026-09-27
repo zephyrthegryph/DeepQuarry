@@ -168,7 +168,7 @@
 	if(strategic_online && department_connected[source_department_id])
 		propagate_report(report)
 	if(report.expires_at)
-		addtimer(CALLBACK(src, PROC_REF(expire_report), report.id, report.expires_at), lifetime)
+		om_after(src, lifetime, PROC_REF(expire_report), report.id, report.expires_at)
 	return report
 
 /datum/generated_station_director/proc/propagate_report(datum/generated_station_knowledge_report/report)

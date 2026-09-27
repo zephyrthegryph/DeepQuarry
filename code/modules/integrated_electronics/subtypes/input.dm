@@ -441,7 +441,7 @@
 	. = ..()
 	set_pin_data(IC_INPUT, 1, frequency)
 	set_pin_data(IC_INPUT, 2, code)
-	addtimer(CALLBACK(src, PROC_REF(set_frequency), frequency), 40)
+	om_after(src, 40, PROC_REF(set_frequency), frequency)
 
 /obj/item/integrated_circuit/input/signaler/Destroy()
 	if(SSradio)

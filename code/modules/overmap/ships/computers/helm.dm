@@ -98,7 +98,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		ui = new(user, src, "OvermapHelm", "[linked.name] Helm Control") // 565, 545
 		ui.open()
-		addtimer(CALLBACK(src, PROC_REF(update_map)), 0.1 SECONDS)
+		om_after(src, 0.1 SECONDS, PROC_REF(update_map))
 
 /obj/machinery/computer/ship/helm/proc/update_map()
 	linked.update_screen()

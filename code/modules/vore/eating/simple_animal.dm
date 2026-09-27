@@ -59,7 +59,7 @@
 		var/confirm = tgui_alert(user, "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", "Enabling [name]'s Digestion", list("Enable", "Cancel"))
 		if(confirm == "Enable")
 			vore_selected.digest_mode = DM_DIGEST
-			addtimer(VARSET_CALLBACK(vore_selected, digest_mode, vore_default_mode), 20 MINUTES)
+			om_after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), vore_default_mode)
 	else
 		var/confirm = tgui_alert(user, "This mob is currently set to process all stomach contents. Do you want to disable this?", "Disabling [name]'s Digestion", list("Disable", "Cancel"))
 		if(confirm == "Disable")
@@ -100,7 +100,7 @@
 			for(var/mob/living/L in living_mobs(0)) //add everyone on the tile to the do-not-eat list for a while
 				if(!(LAZYFIND(prey_excludes, L))) // Unless they're already on it, just to avoid fuckery.
 					LAZYSET(prey_excludes, L, world.time)
-					addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), om_handle(L)), 5 MINUTES)
+					om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(L))
 	else if(istype(O, /obj/item/healthanalyzer))
 		var/healthpercent = round(vitality() * 100)
 		to_chat(user, span_notice("[src] seems to be [healthpercent]% healthy."))

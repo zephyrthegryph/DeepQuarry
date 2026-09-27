@@ -20,7 +20,7 @@
 	if(!speaker || !speaker.client || speaker == src)
 		return
 	var/message = multilingual_to_message(message_pieces)
-	addtimer(CALLBACK(src, PROC_REF(dq_poppy_check_keywords), message), rand(1 SECOND, 3 SECONDS))
+	om_after(src, rand(1 SECOND, 3 SECONDS), PROC_REF(dq_poppy_check_keywords), message)
 
 /mob/living/simple_mob/animal/passive/opossum/poppy/proc/dq_poppy_check_keywords(message)
 	if(client || stat != CONSCIOUS)

@@ -190,7 +190,7 @@
 
 	ready = FALSE
 	update_icon()
-	addtimer(CALLBACK(src, PROC_REF(ready)), cooldown_time)
+	om_after(src, cooldown_time, PROC_REF(ready))
 	if(mate_too && mate)
 		mate.cooldown(mate_too = FALSE) //No infinite recursion pls
 

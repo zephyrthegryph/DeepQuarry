@@ -16,7 +16,7 @@
 			return INITIALIZE_HINT_QDEL
 		setup_repair_needs()
 
-	addtimer(CALLBACK(src, PROC_REF(validate_gun_type)), 30 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 30 SECONDS, PROC_REF(validate_gun_type))
 
 /obj/item/broken_gun/proc/validate_gun_type()
 	if(!my_guntype)

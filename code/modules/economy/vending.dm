@@ -655,7 +655,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
-	addtimer(CALLBACK(src, PROC_REF(delayed_vend), R, user), vend_delay)
+	om_after(src, vend_delay, PROC_REF(delayed_vend), R, user)
 
 /obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
 	if(R.get_product(get_turf(src)))

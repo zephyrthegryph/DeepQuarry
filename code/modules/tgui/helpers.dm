@@ -7,7 +7,7 @@
 			return null
 
 		partial_packets = list("chunks" = new /list(total),
-								"timeout" = addtimer(CALLBACK(src, PROC_REF(clear_oversized_payload)), 10 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
+								"timeout" = om_after_replace(src, 10 SECONDS, PROC_REF(clear_oversized_payload))
 								)
 
 	if(!partial_packets)
@@ -17,14 +17,14 @@
 
 	if(id != total)
 		if(id > 1)
-			partial_packets["timeout"] = addtimer(CALLBACK(src, PROC_REF(clear_oversized_payload)), 10 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
+			partial_packets["timeout"] = om_after_replace(src, 10 SECONDS, PROC_REF(clear_oversized_payload))
 		return null
 
 	var/assembled_payload = ""
 	for(var/received_packet in partial_packets["chunks"])
 		assembled_payload += received_packet
 
-	deltimer(partial_packets["timeout"])
+	om_cancel_timer(src, partial_packets["timeout"])
 	partial_packets = null
 	if (!rustg_json_is_valid(assembled_payload))
 		log_tgui(usr, "Error: Invalid JSON")

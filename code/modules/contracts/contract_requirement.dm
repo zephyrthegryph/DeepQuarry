@@ -387,7 +387,7 @@
 	for(var/entity_key in pending_timers)
 		var/timer_id = pending_timers[entity_key]
 		if(timer_id)
-			deltimer(timer_id)
+			om_cancel_timer(src, timer_id)
 	if(pending_timers)
 		pending_timers.Cut()
 	if(pending_tokens)
@@ -409,7 +409,7 @@
 	if(!filter.matches(event, contract) || !contract_evidence_compare(event.value(numeric_field), comparator, threshold))
 		var/timer_id = pending_timers[entity_key]
 		if(timer_id)
-			deltimer(timer_id)
+			om_cancel_timer(src, timer_id)
 		pending_timers -= entity_key
 		pending_tokens -= entity_key
 		return FALSE
@@ -417,7 +417,7 @@
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
-	pending_timers[entity_key] = addtimer(CALLBACK(src, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail")), duration, TIMER_STOPPABLE)
+	pending_timers[entity_key] = om_after(src, duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
 	return TRUE
 
 /datum/contract_requirement/sustained_event/proc/complete_duration(entity_key, token, contributor_account, detail)
@@ -488,7 +488,7 @@
 	for(var/key in pending_timers)
 		var/timer_id = pending_timers[key]
 		if(timer_id)
-			deltimer(timer_id)
+			om_cancel_timer(src, timer_id)
 	if(pending_timers)
 		pending_timers.Cut()
 	if(pending_tokens)
@@ -508,7 +508,7 @@
 			var/stage_key = "[entity_value]:[stage_index]"
 			var/timer_id = pending_timers[stage_key]
 			if(timer_id)
-				deltimer(timer_id)
+				om_cancel_timer(src, timer_id)
 				pending_timers -= stage_key
 				pending_tokens -= stage_key
 				pending_stage_indices -= stage_key
@@ -525,7 +525,7 @@
 	if(!qualifies)
 		var/timer_id = pending_timers[stage_key]
 		if(timer_id)
-			deltimer(timer_id)
+			om_cancel_timer(src, timer_id)
 			pending_timers -= stage_key
 			pending_tokens -= stage_key
 			pending_stage_indices -= stage_key
@@ -536,7 +536,7 @@
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	pending_timers[stage_key] = addtimer(CALLBACK(src, PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail")), max(1, stage["duration"]), TIMER_STOPPABLE)
+	pending_timers[stage_key] = om_after(src, max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
 	changed = TRUE
 	return changed
 
@@ -549,7 +549,7 @@
 			continue
 		var/timer_id = pending_timers[other_key]
 		if(other_key != stage_key && timer_id)
-			deltimer(timer_id)
+			om_cancel_timer(src, timer_id)
 		pending_tokens -= other_key
 		pending_timers -= other_key
 		pending_stage_indices -= other_key

@@ -27,9 +27,7 @@
 	var/want_mind_save = preferences.read_preference(/datum/preference/toggle/human/mind_scan)
 	var/resleeve_lock_pref = preferences.read_preference(/datum/preference/toggle/human/resleeve_lock)
 
-	// addtimer instead of spawn(5 SECONDS) — addtimer participates in the
-	// SS scheduler (cancellable, profilable, survives MC stalls correctly).
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_dq_body_backup_after_spawn), target, preferences, want_body_save, want_mind_save, resleeve_lock_pref), 5 SECONDS)
+	om_after(target, 5 SECONDS, GLOBAL_PROC_REF(_dq_body_backup_after_spawn), target, preferences, want_body_save, want_mind_save, resleeve_lock_pref)
 
 /proc/_dq_body_backup_after_spawn(mob/living/carbon/human/target, datum/preferences/preferences, want_body_save, want_mind_save, resleeve_lock_pref)
 	if(QDELETED(target) || QDELETED(preferences))

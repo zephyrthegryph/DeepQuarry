@@ -80,7 +80,7 @@
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
-		QDEL_IN(src, timeout)
+		om_qdel_after(src, timeout)
 	/// Checks for empty numbers - bank accounts, etc.
 	if(max_value == 0)
 		src.min_value = 0

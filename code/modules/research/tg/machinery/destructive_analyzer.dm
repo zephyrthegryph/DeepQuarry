@@ -125,7 +125,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
 		flick("d_analyzer_la", src)
-		addtimer(CALLBACK(src, PROC_REF(analyze_finish)), 1 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 1 SECONDS, PROC_REF(analyze_finish))
 	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/analyze_finish()
@@ -169,7 +169,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	// Feedback
 	playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
 	rped_recycler_ready = FALSE
-	addtimer(CALLBACK(src, PROC_REF(rped_ready)), 5 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 5 SECONDS, PROC_REF(rped_ready))
 	to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
 	return TRUE
 
@@ -275,7 +275,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		return FALSE
 	//flick("[base_icon_state]_process", src)
 	busy = TRUE
-	addtimer(CALLBACK(src, PROC_REF(reset_busy)), 2.4 SECONDS)
+	om_after(src, 2.4 SECONDS, PROC_REF(reset_busy))
 	use_power(active_power_usage)
 	// Destroy items inside
 	var/list/destructing = list()

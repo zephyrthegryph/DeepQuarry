@@ -9,8 +9,8 @@
 	var/datum/genetics/side_effect/S = new tp
 
 	S.start(H)
-	addtimer(CALLBACK(H, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 4), 2 SECONDS, TIMER_DELETE_ME)
-	addtimer(CALLBACK(S, TYPE_PROC_REF(/datum/genetics/side_effect, finish), om_handle(H)), S.duration, TIMER_DELETE_ME)
+	om_after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 4)
+	om_after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, finish), om_handle(H))
 	//above is doing: Call S.finish(H) in S.duration
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)

@@ -422,5 +422,6 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		call(proc_ref)(arglist(call_args))
 	else if(length(call_args))
 		// A type proc: the first argument is the datum it runs on.
-		var/datum/target = call_args[1]
-		call(target, proc_ref)(arglist(call_args.Copy(2)))
+		var/target = call_args[1]
+		if(target) // a client that has disconnected is null
+			call(target, proc_ref)(arglist(call_args.Copy(2)))

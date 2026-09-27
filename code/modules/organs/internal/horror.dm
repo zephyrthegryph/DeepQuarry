@@ -84,7 +84,7 @@
 			entering_vent = TRUE
 			mouse_opacity = 0 //No clicky
 			fade_towards(entry_vent,45)
-			QDEL_IN(src, 45)
+			expire(45)
 		else if(!entering_vent)
 			escaping_attempts += 1
 			if(escaping_attempts >= 5)

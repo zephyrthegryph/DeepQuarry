@@ -97,7 +97,7 @@
 		to_chat(user, "<span class='notice'>You activate \the [src].</span>")
 		working = TRUE
 		flags ^= OPENCONTAINER
-	addtimer(CALLBACK(src, PROC_REF(internal_reagent_seperate),force_canister,force_bottle), 10 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 10 SECONDS, PROC_REF(internal_reagent_seperate), force_canister, force_bottle)
 
 /obj/machinery/smart_centrifuge/proc/internal_reagent_seperate(force_canister,force_bottle)
 	if(reagents.reagent_list.len <= 0)
@@ -130,7 +130,7 @@
 		CD.pixel_x = rand(-7, 7) // random position
 		CD.pixel_y = rand(-7, 7)
 		break
-	addtimer(CALLBACK(src, PROC_REF(internal_reagent_seperate),force_canister,force_bottle), 1 SECOND, TIMER_DELETE_ME)
+	om_after(src, 1 SECOND, PROC_REF(internal_reagent_seperate), force_canister, force_bottle)
 
 /// Old MouseDrop_T: only trolley tanks are handled; anything else, or a failed guard, falls through to ..().
 /datum/interaction/machine_drag/centrifuge_drain_tank

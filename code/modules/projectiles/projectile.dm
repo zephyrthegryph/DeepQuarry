@@ -551,7 +551,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
 		beam_components.beam_components += thing
-	QDEL_IN(beam_components, duration)
+	om_qdel_after(beam_components, duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
 //If direct target is true it's the originally clicked target.

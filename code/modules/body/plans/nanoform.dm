@@ -238,7 +238,7 @@
 
 /datum/affliction/core_dormancy/proc/release()
 	if(reboot_timer)
-		deltimer(reboot_timer)
+		om_cancel_timer(src, reboot_timer)
 		reboot_timer = null
 	if(!held_mob)
 		return
@@ -381,14 +381,14 @@
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		reboot_timer = addtimer(CALLBACK(src, PROC_REF(complete_revival)), DORMANCY_REBOOT_TIME, TIMER_STOPPABLE)
+		reboot_timer = om_after(src, DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
 	return 1
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,
 /// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
 	if(reboot_timer)
-		deltimer(reboot_timer)
+		om_cancel_timer(src, reboot_timer)
 		reboot_timer = null
 	var/mob/living/patient = owner
 	var/datum/body/humanoid/nanoform/B = body

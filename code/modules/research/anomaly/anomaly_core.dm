@@ -205,7 +205,7 @@
 	if(!length(possible_targets))
 		return
 	var/turf/target = pick(possible_targets)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(lightning_strike), target), 1 SECONDS)
+	om_after(src, 1 SECONDS, GLOBAL_PROC_REF(lightning_strike), target)
 
 /obj/item/assembly/signaler/anomaly/dust
 	name = "\improper dust anomaly core"
@@ -231,11 +231,11 @@
 		if(prob(15))
 			person.status_at_least(EFFECT_STUNNED, 2)
 			to_chat(person, span_danger(pick("You have a coughing fit!", "You can't stop coughing!")))
-			addtimer(CALLBACK(src, PROC_REF(extraCough), person), 3 SECONDS)
+			om_after(src, 3 SECONDS, PROC_REF(extraCough), person)
 
 /obj/item/assembly/signaler/anomaly/dust/proc/extraCough(mob/living/coughing)
 	coughing.emote("cough")
-	addtimer(CALLBACK(coughing, TYPE_PROC_REF(/mob, emote), "cough"), 3 SECONDS)
+	om_after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), "cough")
 /*
 /obj/item/assembly/signaler/anomaly/ectoplasm
 	name = "\improper ectoplasm anomaly core"

@@ -154,7 +154,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return FALSE
 		forceMove(parent)
 		parent.implants += src
-		addtimer(CALLBACK(src, PROC_REF(quick_install), H), 1)
+		om_after(src, 1, PROC_REF(quick_install), H)
 		return TRUE
 
 	return FALSE

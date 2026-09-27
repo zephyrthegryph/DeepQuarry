@@ -205,7 +205,7 @@
 		Disabling the main breaker in the APCs will protect the APC's room from being compromised."))
 
 	var/time_to_flicker = start_delay - 10 SECONDS
-	addtimer(CALLBACK(src, PROC_REF(flicker_area)), time_to_flicker)
+	om_after(src, time_to_flicker, PROC_REF(flicker_area))
 
 
 /datum/event2/event/prison_break/proc/flicker_area()

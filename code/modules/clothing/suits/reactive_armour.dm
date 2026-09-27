@@ -39,7 +39,7 @@
 	///Whether the armor will try to react to hits (is it on)
 	var/active = FALSE
 	///This will be true for 30 seconds after an EMP, it makes the reaction effect dangerous to the user.
-	var/bad_effect = FALSE
+	COOLDOWN_DECLARE(bad_effect)
 	///Message sent when the armor is emp'd. It is not the message for when the emp effect goes off.
 	var/emp_message = span_warning("The reactive armor has been emp'd! Damn, now it's REALLY gonna not do much!")
 	///Message sent when the armor is still on cooldown, but activates.
@@ -70,7 +70,7 @@
 	if(world.time < reactivearmor_cooldown)
 		cooldown_activation(user)
 		return FALSE
-	if(bad_effect)
+	if(!COOLDOWN_FINISHED(src, bad_effect))
 		return emp_activation(user, damage_source, attack_text, damage)
 	else
 		return reactive_activation(user, damage_source, attack_text, damage)
@@ -88,11 +88,10 @@
 
 /obj/item/clothing/suit/armor/reactive/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || bad_effect || !active)
+	if (. & EMP_PROTECT_SELF || !COOLDOWN_FINISHED(src, bad_effect) || !active)
 		return
 	visible_message(emp_message)
-	bad_effect = TRUE
-	addtimer(VARSET_CALLBACK(src, bad_effect, FALSE), 30 SECONDS)
+	COOLDOWN_START(src, bad_effect, 30 SECONDS)
 
 /obj/item/clothing/suit/armor/reactive/teleport
 	name = "reactive teleport armor"
@@ -344,7 +343,7 @@
 	shock_turf_windup(owner.loc)
 
 /obj/item/clothing/suit/armor/reactive/weather/proc/shock_turf_windup(turf/target)
-	addtimer(CALLBACK(GLOBAL_PROC_REF(lightning_strike), target), 1 SECOND)
+	om_after(src, 1 SECOND, GLOBAL_PROC_REF(lightning_strike), target)
 
 /obj/item/clothing/suit/armor/reactive/stealth
 	name = "reactive stealth armor"
@@ -377,10 +376,10 @@
 	owner.alpha = 0
 	in_stealth = TRUE
 	owner.visible_message(span_danger("[owner] is hit by [attack_text] in the chest!"))
-	addtimer(CALLBACK(src, PROC_REF(end_stealth), owner), stealth_time)
+	om_after(src, stealth_time, PROC_REF(end_stealth), owner)
 	decoy.say("*sidestep")
-	addtimer(CALLBACK(src, PROC_REF(destroy_illusion), decoy), stealth_time)
-	QDEL_IN(decoy, stealth_time)
+	om_after(src, stealth_time, PROC_REF(destroy_illusion), decoy)
+	decoy.expire(stealth_time)
 	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
 	return TRUE
 
@@ -392,7 +391,7 @@
 	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
 	sparks.set_up(3, 3, illusion)
 	sparks.start()
-	QDEL_IN(illusion, animation_time)
+	illusion.expire(animation_time)
 
 /obj/item/clothing/suit/armor/reactive/stealth/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	if(!isliving(hitby))
@@ -400,6 +399,6 @@
 	var/mob/living/attacker = hitby
 	owner.visible_message(span_danger("[src] activates, cloaking the wrong person!"))
 	attacker.alpha = 0
-	addtimer(VARSET_CALLBACK(attacker, alpha, initial(attacker.alpha)), 4 SECONDS)
+	om_after(attacker, 4 SECONDS, TYPE_PROC_REF(/atom, om_restore_alpha), initial(attacker.alpha))
 	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
 	return FALSE

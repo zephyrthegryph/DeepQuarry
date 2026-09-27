@@ -79,7 +79,7 @@
 
 /obj/machinery/disposal/Destroy()
 	if(power_retry_timer)
-		deltimer(power_retry_timer)
+		om_cancel_timer(src, power_retry_timer)
 		power_retry_timer = null
 	clear_gas_dependency()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
@@ -625,7 +625,7 @@
 	flushing = TRUE
 	flush_animation()
 	//Bit of a nasty way to do this. But sleep()s are nastier.
-	addtimer(CALLBACK(src, PROC_REF(flush_startup)), 1 SECOND)
+	om_after(src, 1 SECOND, PROC_REF(flush_startup))
 
 /obj/machinery/disposal/proc/flush_animation()
 	PROTECTED_PROC(TRUE)
@@ -636,7 +636,7 @@
 	if(last_sound < world.time + 1)
 		playsound(src, 'sound/machines/disposalflush.ogg', 50, 0, 0)
 		last_sound = world.time
-	addtimer(CALLBACK(src, PROC_REF(flush_complete)), 0.5 SECONDS) // wait for animation to finish
+	om_after(src, 0.5 SECONDS, PROC_REF(flush_complete)) // wait for animation to finish
 
 /obj/machinery/disposal/proc/flush_complete()
 	PROTECTED_PROC(TRUE)
@@ -680,7 +680,7 @@
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			power_retry_timer = addtimer(CALLBACK(src, PROC_REF(retry_charge_after_power_restore)), rand(1 SECOND, 30 SECONDS), TIMER_STOPPABLE)
+			power_retry_timer = om_after(src, rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
 	power_retry_timer = null

@@ -263,10 +263,10 @@
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	if(deadline_timer)
-		deltimer(deadline_timer)
+		om_cancel_timer(src, deadline_timer)
 		deadline_timer = null
 	if(offer_timer)
-		deltimer(offer_timer)
+		om_cancel_timer(src, offer_timer)
 		offer_timer = null
 	SScontracts?.unregister_contract(src)
 	for(var/datum/contract_requirement/requirement in requirements)
@@ -303,7 +303,7 @@
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
 	offer_expires_at = world.time + duration
-	offer_timer = addtimer(CALLBACK(src, PROC_REF(expire_offer)), duration, TIMER_STOPPABLE)
+	offer_timer = om_after(src, duration, PROC_REF(expire_offer))
 	return TRUE
 
 /datum/contract/proc/expire_offer()
@@ -464,7 +464,7 @@
 	negotiation_locked = TRUE
 	var/old_state = state
 	if(offer_timer)
-		deltimer(offer_timer)
+		om_cancel_timer(src, offer_timer)
 		offer_timer = null
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
@@ -473,7 +473,7 @@
 	if(deadline_duration > 0)
 		deadline = world.time + deadline_duration
 	if(deadline > world.time)
-		deadline_timer = addtimer(CALLBACK(src, PROC_REF(check_deadline)), deadline - world.time, TIMER_STOPPABLE)
+		deadline_timer = om_after(src, deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
 	for(var/datum/contract_requirement/requirement in requirements)
@@ -507,7 +507,7 @@
 	var/old_state = state
 	state = CONTRACT_GRACE
 	grace_until = world.time + deadline_grace_duration
-	deadline_timer = addtimer(CALLBACK(src, PROC_REF(check_deadline)), deadline_grace_duration, TIMER_STOPPABLE)
+	deadline_timer = om_after(src, deadline_grace_duration, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")
 	SScontracts?.notify_contract(src, "Contract [id] entered its evidence grace period.")
@@ -570,7 +570,7 @@
 		// turn an otherwise successful contract into a deadline failure while it
 		// waits for the account-status signal that retries payment.
 		if(deadline_timer)
-			deltimer(deadline_timer)
+			om_cancel_timer(src, deadline_timer)
 			deadline_timer = null
 		deadline = 0
 		grace_until = 0
@@ -680,10 +680,10 @@
 	if(old_state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	if(deadline_timer)
-		deltimer(deadline_timer)
+		om_cancel_timer(src, deadline_timer)
 		deadline_timer = null
 	if(offer_timer)
-		deltimer(offer_timer)
+		om_cancel_timer(src, offer_timer)
 		offer_timer = null
 	offer_expires_at = 0
 	grace_until = 0

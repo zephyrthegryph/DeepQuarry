@@ -13,7 +13,7 @@
 /obj/structure/droppod_door/Initialize(mapload, autoopen)
 	. = ..()
 	if(autoopen)
-		addtimer(CALLBACK(src, PROC_REF(deploy)), 10 SECONDS)
+		om_after(src, 10 SECONDS, PROC_REF(deploy))
 
 /obj/structure/droppod_door/attack_ai(mob/user)
 	if(!user.Adjacent(src))
@@ -27,7 +27,7 @@
 	if(deploying) return
 	deploying = TRUE
 	to_chat(user, span_danger("You prime the explosive bolts. Better get clear!"))
-	addtimer(CALLBACK(src, PROC_REF(deploy)), 3 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 3 SECONDS, PROC_REF(deploy))
 
 /obj/structure/droppod_door/proc/deploy()
 	if(deployed)

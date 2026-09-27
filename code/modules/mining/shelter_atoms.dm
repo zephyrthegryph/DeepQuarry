@@ -325,7 +325,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(fade_time > 0)
 		for(var/image/I in preview_render)
 			animate(I, alpha = 0, fade_time)
-		addtimer(CALLBACK(src, PROC_REF(delete_preview_render), user, preview_render), fade_time, TIMER_DELETE_ME)
+		om_after(src, fade_time, PROC_REF(delete_preview_render), user, preview_render)
 	else
 		delete_preview_render(user, preview_render)
 
@@ -366,7 +366,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	smoke.set_up(10, 0, deploy_location)
 	smoke.start()
 
-	addtimer(CALLBACK(src, PROC_REF(deploy_step_two), user), 4 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 4 SECONDS, PROC_REF(deploy_step_two), user)
 
 // Second step: Load shelter template at location
 /obj/item/survivalcapsule/proc/deploy_step_two(mob/user)
@@ -425,7 +425,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 			loc.visible_message(span_warning("\The [src] is too close to the edge of this map to deploy!"))
 			return
 		if(!can_deploy(get_turf(src), GetAbove(deploy_location)))
-			addtimer(CALLBACK(src, PROC_REF(remove_preview), user, preview_render), 1 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 1 SECONDS, PROC_REF(remove_preview), user, preview_render)
 			return
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
 		remove_preview(user, preview_render, 0)
@@ -439,7 +439,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 			user.drop_from_inventory(src)
 			used = TRUE
 
-			addtimer(CALLBACK(src, PROC_REF(deploy_step_one), user), 5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 5 SECONDS, PROC_REF(deploy_step_one), user)
 		remove_preview(user, preview_render, 0)
 
 /obj/item/survivalcapsule/luxury

@@ -212,7 +212,7 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/Destroy()
 	if(growth_timer)
-		deltimer(growth_timer)
+		om_cancel_timer(src, growth_timer)
 		growth_timer = null
 	QDEL_NULL(temp_chem_holder)
 	seed = null
@@ -224,7 +224,7 @@
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(growth_timer || frozen == 1)
 		return
-	growth_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_growth)), max(1, lastcycle + cycledelay - world.time), TIMER_STOPPABLE)
+	growth_timer = om_after(src, max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	growth_timer = null

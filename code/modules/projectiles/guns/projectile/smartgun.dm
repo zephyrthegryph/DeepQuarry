@@ -76,7 +76,7 @@
 			icon_state = "[initial(icon_state)]_closed"
 			playsound(src, 'sound/weapons/smartgunclose.ogg', 75, 0)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
-		addtimer(CALLBACK(src, PROC_REF(toggle_real_state)), 2 SECONDS, TIMER_UNIQUE)
+		om_after_unique(src, 2 SECONDS, PROC_REF(toggle_real_state))
 
 /obj/item/gun/projectile/smartgun/proc/toggle_real_state()
 	cycling = FALSE
