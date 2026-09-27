@@ -53,15 +53,9 @@
 	scan_range = 7
 	debug = TRUE
 
-
 REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /obj/item/cataloguer/Initialize(mapload)
-	return ..()
-
-/obj/item/cataloguer/Destroy()
-	displayed_data = null
-	partial_scanned = null
 	return ..()
 
 /obj/item/cataloguer/update_icon()
@@ -201,9 +195,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 					other_cataloguer.adjust_points(points_gained)
 			to_chat(user, span_notice("Shared discovery with [contributers.len] other contributer\s."))
 
-
-
-
 /obj/item/cataloguer/click_alt(mob/user)
 	pulse_scan(user)
 
@@ -248,7 +239,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	else
 		playsound(src, 'sound/machines/buzz-two.ogg', 50)
 	to_chat(user, span_notice("\The [src] found [scannable_atoms.len] object\s that can be scanned."))
-
 
 // Negative points are bad.
 /obj/item/cataloguer/proc/adjust_points(amount)
