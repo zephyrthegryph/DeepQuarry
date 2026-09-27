@@ -216,7 +216,6 @@ SUBSYSTEM_DEF(throwing)
 		A = get_area(AM.loc)
 
 /datum/thrownthing/proc/finalize(hit = FALSE, t_target=null)
-	set waitfor = FALSE
 	//done throwing, either because it hit something or it finished moving
 	if(QDELETED(thrownthing))
 		return

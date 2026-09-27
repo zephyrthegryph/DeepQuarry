@@ -180,7 +180,7 @@
 	if(!istype(G) || !isliving(target))
 		return DQ_BEHAVIOR_FAILED
 	// special_attack_target() sets last_special_attack and runs do_special_attack
-	// (the leap, which is async via `set waitfor = FALSE` and toggles ai_brain.busy
+	// (the leap, which runs on timers and toggles ai_brain.busy
 	// itself). We just kick it off.
 	G.special_attack_target(target)
 	brain.last_attack_at = world.time

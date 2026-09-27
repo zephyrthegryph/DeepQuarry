@@ -1,5 +1,5 @@
 /proc/db_log_insert(mob/log_target, message, type, color)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: SQL leaf (dialog log insert)
 	if(!ismob(log_target))
 		return
 	if(!SSdbcore.IsConnected())

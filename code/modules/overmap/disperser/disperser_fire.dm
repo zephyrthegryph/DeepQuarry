@@ -79,13 +79,11 @@
 		GLOB.overmap_event_handler.update_hazards(T)
 
 /obj/machinery/computer/ship/disperser/proc/handle_beam(turf/start, direction)
-	set waitfor = FALSE
 	start.Beam(get_target_turf(start, direction), "bsa_beam", time = 50, maxdistance = world.maxx)
 	if(front)
 		front.layer = initial(front.layer)
 
 /obj/machinery/computer/ship/disperser/proc/handle_overbeam()
-	set waitfor = FALSE
 	linked.Beam(get_step(linked, overmapdir), "bsa_beam", time = 150, maxdistance = world.maxx)
 
 /obj/machinery/computer/ship/disperser/proc/get_target_turf(turf/start, direction)

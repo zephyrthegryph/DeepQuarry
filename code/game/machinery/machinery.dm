@@ -224,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// until a channel (power_change(), settings, MACHINE_WAKE()) or a gas watch wakes it.
 /// Anything else keeps it running every MACHINE_PIPELINE_INTERVAL.
 /obj/machinery/proc/machine_step()
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: core dispatch hook: guards the machine pipeline against an override that still sleeps
 	return PROCESS_KILL
 
 /// Once, when a machine on the machine pipeline materializes and the world is up (a zero-delay

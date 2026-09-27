@@ -74,9 +74,6 @@ REF_OWNED(/datum/artifact_effect, "active_effect")
 		ToggleActivate(TRUE, TRUE)
 
 /datum/artifact_effect/proc/ToggleActivate(reveal_toggle = TRUE, spawn_toggle = FALSE)
-	//so that other stuff happens first
-	set waitfor = FALSE
-
 	var/atom/target = get_master_holder()
 
 	if(world.time - last_activation > 1 SECOND)

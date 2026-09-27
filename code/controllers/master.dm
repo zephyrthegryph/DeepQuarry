@@ -267,7 +267,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 /datum/controller/master/proc/check_and_perform_fast_update()
 	PRIVATE_PROC(TRUE)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: MC code
 
 	if(!overview_fast_update)
 		return
@@ -348,7 +348,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 // Please don't stuff random bullshit here,
 // Make a subsystem, give it the SS_NO_FIRE flag, and do your work in its Initialize()
 /datum/controller/master/Initialize(delay, init_sss, tgs_prime)
-	set waitfor = 0
+	set waitfor = 0 // S10b keeps: MC code
 
 	if(delay)
 		sleep(delay)
@@ -595,7 +595,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 // Starts the mc, and sticks around to restart it if the loop ever ends.
 /datum/controller/master/proc/StartProcessing(delay)
-	set waitfor = 0
+	set waitfor = 0 // S10b keeps: MC code
 	if(delay)
 		sleep(delay)
 	testing("Master starting processing")

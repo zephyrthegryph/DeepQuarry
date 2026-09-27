@@ -845,7 +845,6 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	return FALSE
 
 /obj/machinery/porta_turret/proc/popUp()	//pops the turret up
-	set waitfor = FALSE
 
 	if(disabled)
 		return
@@ -874,7 +873,6 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	timeout = TURRET_POPCOOLDOWN
 
 /obj/machinery/porta_turret/proc/popDown()	//pops the turret down
-	set waitfor = FALSE
 
 	set_processing_speed(FALSE)
 	timeout = TURRET_POPCOOLDOWN

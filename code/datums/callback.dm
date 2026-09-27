@@ -56,7 +56,7 @@
 		user = om_handle(usr)
 
 /world/proc/ImmediateInvokeAsync(thingtocall, proctocall, ...)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: INVOKE_ASYNC primitive (goes with the last INVOKE_ASYNC caller)
 
 	if (!thingtocall)
 		return
@@ -91,7 +91,7 @@
 
 //copy and pasted because fuck proc overhead
 /datum/callback/proc/InvokeAsync(...)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: InvokeAsync primitive (goes with the last async caller)
 
 	if(!usr)
 		var/W = user

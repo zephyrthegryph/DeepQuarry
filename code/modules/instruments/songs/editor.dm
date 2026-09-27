@@ -191,7 +191,6 @@
  * Parses a song the user has input into lines and stores them.
  */
 /datum/song/proc/ParseSong(mob/user, new_song)
-	set waitfor = FALSE
 	//split into lines
 	lines = islist(new_song) ? new_song : splittext(new_song, "\n")
 	if(lines.len)

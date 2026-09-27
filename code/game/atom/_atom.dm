@@ -109,7 +109,6 @@
 		return null
 
 /atom/proc/Bumped(AM as mob|obj)
-	set waitfor = FALSE
 
 	SEND_SIGNAL(src, COMSIG_ATOM_BUMPED, AM)
 

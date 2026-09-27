@@ -83,7 +83,6 @@
 	return ..()
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/proc/spawn_brood(atom/A)
-	set waitfor = FALSE
 
 	var/count = 0
 	while(count < brood_per_spawn)
@@ -96,7 +95,6 @@
 	visible_message(span_danger("\The [src] releases brood from its birthing sack!"))
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/proc/launch_brood(atom/A)
-	set waitfor = FALSE
 
 	var/count = 0
 	while(count < brood_per_launch)

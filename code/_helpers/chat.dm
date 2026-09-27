@@ -45,7 +45,7 @@ it will be sent to all connected chats.
  * admin_only - Determines if this communication can only be sent to admin only channels.
  */
 /proc/send2chat(datum/tgs_message_content/message, channel_tag, admin_only = FALSE)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: TGS chat bridge (blocking topic to TGS)
 	if(channel_tag == null || !world.TgsAvailable())
 		return
 
@@ -71,7 +71,7 @@ it will be sent to all connected chats.
  * message - The message to send.
  */
 /proc/send2adminchat(category, message, embed_links = FALSE)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: TGS chat bridge (blocking topic to TGS)
 
 	category = strip_improper(category)
 	message = strip_improper(message)

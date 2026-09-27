@@ -1493,10 +1493,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}				//Stomachs
 	. += new /atom/movable/screen/plane_master{plane = PLANE_AUGMENTED}				//Augmented reality
 	. += new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}			//Soulcatcher
-/proc/CallAsync(datum/source, proctype, list/arguments)
-	set waitfor = FALSE
-	return call(source, proctype)(arglist(arguments))
-
 /proc/describeThis(datum/D)
 	if(istype(D))
 		var/msg = "[D.type] - [D]"

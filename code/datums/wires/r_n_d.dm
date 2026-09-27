@@ -26,7 +26,6 @@
 	return status
 
 /datum/wires/rnd/on_pulse(wire)
-	set waitfor = FALSE
 	var/obj/machinery/rnd/R = holder
 	switch(wire)
 		if(WIRE_HACK)
