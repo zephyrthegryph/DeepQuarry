@@ -59,6 +59,7 @@ Pipelines + Other Objects -> Pipe network
 /// place for every atmos type; neighbours that are being destroyed too are
 /// skipped (their own unbind drops the edge).
 /obj/machinery/atmospherics/lifecycle_unbind()
+	. = ..()
 	rust_unregister_pipe_topology()
 	for(var/obj/machinery/atmospherics/neighbour in get_neighbor_nodes_for_init())
 		if(!QDELETED(neighbour))
