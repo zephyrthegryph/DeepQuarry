@@ -221,6 +221,10 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// Calls a stored proc: a global proc with the arguments, or a type proc on `E`.
 /proc/om_invoke(datum/E, proc_ref, list/call_args)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	if(E && GLOB.om_traced[E])
+		GLOB.om_traced[E]++
+#endif
 	if(copytext("[proc_ref]", 1, 7) == "/proc/")
 		return call(proc_ref)(arglist(call_args || list()))
 	return call(E, proc_ref)(arglist(call_args || list()))

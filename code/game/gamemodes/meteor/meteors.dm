@@ -1,3 +1,6 @@
+/// Raises CHANGE_METEORS when a meteor appears or goes away (point defense watches it).
+GLOBAL_DATUM_INIT(meteor_watch, /datum, new)
+
 GLOBAL_VAR_INIT(meteor_wave_delay, 625) //minimum wait between waves in tenths of seconds
 //set to at least 100 unless you want evarr ruining every round
 
@@ -137,7 +140,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/Initialize(mapload)
 	. = ..()
 	z_original = z
-	OM_KEY_PUBLISH(KEY_METEORS, 1, KEY_CHANGED)
+	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
 	SpinAnimation()
 
 /obj/effect/meteor/Move()
@@ -157,7 +160,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
 /obj/effect/meteor/Destroy()
 	walk(src,FALSE) //this cancels the walk_towards() proc
-	OM_KEY_PUBLISH(KEY_METEORS, 1, KEY_CHANGED)
+	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
 	return ..()
 
 /obj/effect/meteor/Bump(atom/A)

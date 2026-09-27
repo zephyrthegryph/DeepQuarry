@@ -1,11 +1,24 @@
 
 /// Tells the automatic shutoff valves that border `network` about a leak or split there
-/// (Q14): it publishes the network's KEY_PIPE_NETWORK key, which only
-/// that network's valves subscribe to. With no network (a change whose network is not
-/// known yet, such as new construction) the global key wakes every valve. Publications
-/// merge per tick, so a bulk blast needs no batching of its own.
+/// (Q14): it raises the network's CHANGE_PIPE_LEAKS, which only that
+/// network's valves watch. With no network (a change whose network is not known yet, such as
+/// new construction) GLOB.new_pipe_networks wakes every valve. Wakes merge per drain, so a bulk
+/// blast needs no batching of its own.
 /proc/wake_automatic_shutoff_valves(datum/pipe_network/network)
-	OM_KEY_PUBLISH(KEY_PIPE_NETWORK, network ? OM_KEY_ID(network) : KEY_ID_GLOBAL, KEY_PIPE_LEAKS)
+	om_changed(network || GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS)
+
+/// Raises CHANGE_PIPE_LEAKS for changes whose network is not known yet (new construction).
+GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
+
+/// Leaks on a bordering network (or new construction anywhere).
+/datum/om/behaviour/sleeper/shutoff_valve
+	name = "shutoff valve"
+
+/datum/om/behaviour/sleeper/shutoff_valve/on_wake(obj/machinery/atmospherics/valve/shutoff/V, changes)
+	if(QDELETED(V))
+		return
+	V.subscribe_network_keys()
+	V.check_leaks()
 
 /obj/machinery/atmospherics/valve/shutoff
 	icon = 'icons/atmos/clamp.dmi'
@@ -16,13 +29,11 @@
 	desc = "An automatic valve with control circuitry and pipe integrity sensor, capable of automatically isolating damaged segments of the pipe network."
 	var/close_on_leaks = TRUE	// If false it will be always open
 	level = 1
-	/// KEY_PIPE_NETWORK subscriptions: the global key, and one per bordering network
-	/// with the network ids they were made for.
+	/// CHANGE_PIPE_LEAKS watches: TRUE once it watches GLOB.new_pipe_networks, and the network
+	/// watched on each side.
 	var/tmp/global_leak_token
-	var/tmp/network1_token
-	var/tmp/network1_id = 0
-	var/tmp/network2_token
-	var/tmp/network2_id = 0
+	var/tmp/datum/pipe_network/network1_token
+	var/tmp/datum/pipe_network/network2_token
 
 /obj/machinery/atmospherics/valve/shutoff/update_icon()
 	icon_state = "vclamp[open]"
@@ -37,7 +48,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	. = ..()
 	open()
 	hide(1)
-	global_leak_token = OM_KEY_ON(src, KEY_PIPE_NETWORK, KEY_ID_GLOBAL, KEY_PIPE_LEAKS)
+	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
+	om_watch(src, GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
+	global_leak_token = TRUE
 	subscribe_network_keys()
 
 /obj/machinery/atmospherics/valve/shutoff/Destroy()
@@ -87,18 +100,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 
 /// Subscribes to the keys of the networks on each side (again, if they changed).
 /obj/machinery/atmospherics/valve/shutoff/proc/subscribe_network_keys()
-	var/id1 = network_node1 ? OM_KEY_ID(network_node1) : 0
-	var/id2 = network_node2 ? OM_KEY_ID(network_node2) : 0
-	if(id1 != network1_id)
-		if(!isnull(network1_token))
-			OM_KEY_OFF(src, network1_token)
-		network1_id = id1
-		network1_token = id1 ? OM_KEY_ON(src, KEY_PIPE_NETWORK, id1, KEY_PIPE_LEAKS) : null
-	if(id2 != network2_id)
-		if(!isnull(network2_token))
-			OM_KEY_OFF(src, network2_token)
-		network2_id = id2
-		network2_token = id2 ? OM_KEY_ON(src, KEY_PIPE_NETWORK, id2, KEY_PIPE_LEAKS) : null
+	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
+	if(network_node1 != network1_token)
+		if(network1_token && network1_token != network_node2)
+			om_unwatch(src, network1_token, /datum/om/behaviour/sleeper/shutoff_valve)
+		network1_token = network_node1
+		if(network1_token)
+			om_watch(src, network1_token, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
+	if(network_node2 != network2_token)
+		if(network2_token && network2_token != network_node1)
+			om_unwatch(src, network2_token, /datum/om/behaviour/sleeper/shutoff_valve)
+		network2_token = network_node2
+		if(network2_token)
+			om_watch(src, network2_token, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
 
 // A network change re-subscribes and re-checks: the new network may already leak.
 /obj/machinery/atmospherics/valve/shutoff/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
@@ -117,21 +131,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	if(QDELETED(src) || isnull(global_leak_token))
 		return // Not initialized yet: Initialize() subscribes.
 	subscribe_network_keys()
-	// Check on the next dispatch, once the rebuild that moved us has finished.
-	OM_WAKE_AT(src, world.time)
+	// Check on the next timer pass, once the rebuild that moved us has finished.
+	om_after(src, 0, PROC_REF(recheck_leaks))
 
-/obj/machinery/atmospherics/valve/shutoff/om_woken(reason)
-	. = ..()
+/obj/machinery/atmospherics/valve/shutoff/proc/recheck_leaks()
 	subscribe_network_keys()
 	check_leaks()
 
 /obj/machinery/atmospherics/valve/shutoff/om_sleep_violation()
-	var/id1 = network_node1?.om_key_id || 0
-	var/id2 = network_node2?.om_key_id || 0
-	if((network_node1 && (isnull(network1_token) || id1 != network1_id)) || (network_node2 && (isnull(network2_token) || id2 != network2_id)))
-		return "not subscribed to its networks' keys"
+	if(network_node1 != network1_token || network_node2 != network2_token)
+		return "not watching its networks' leaks"
 	if(isnull(global_leak_token))
-		return "not subscribed to the global leak key"
+		return "not watching new pipe networks"
 	if(close_on_leaks && !open && network_node1 && network_node2 && node1 && node2 && !length(network_node1.leaks) && !length(network_node2.leaks))
 		return "closed with no leak on either side"
 	return null

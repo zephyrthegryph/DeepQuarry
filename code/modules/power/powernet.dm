@@ -67,7 +67,7 @@
 
 /// The region is gone; its machines were rebound by the same step.
 /datum/powernet/proc/retire()
-	OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_TOPOLOGY)
+	om_changed(src, CHANGE_POWERNET_TOPOLOGY)
 	qdel(src)
 
 /datum/powernet/proc/read_info(list/info)
@@ -83,7 +83,7 @@
 	load = events[at + 2]
 	netexcess = events[at + 3]
 	smooth_view()
-	OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_RATE)
+	om_changed(src, CHANGE_POWERNET_RATE)
 
 /// Eases `viewavail`/`viewload` toward the raw numbers (80/20 per read):
 /// this datum's own display smoothing, not Rust's — the step reports raw
@@ -97,19 +97,19 @@
 	if(brownout == state)
 		return
 	brownout = state
-	OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_STATE)
+	om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/bind_machine(obj/machinery/power/M)
 	nodes[M] = M
 	material_cache_dirty = TRUE
-	OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_TOPOLOGY)
+	om_changed(src, CHANGE_POWERNET_TOPOLOGY)
 
 /datum/powernet/proc/unbind_machine(obj/machinery/power/M)
 	if(QDELETED(src))
 		return
 	nodes -= M
 	material_cache_dirty = TRUE
-	OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_TOPOLOGY)
+	om_changed(src, CHANGE_POWERNET_TOPOLOGY)
 
 /// last_surplus() — spare power at the last step.
 /datum/powernet/proc/last_surplus()
@@ -157,14 +157,14 @@
 		deltimer(problem_timer)
 	problem_timer = addtimer(CALLBACK(src, PROC_REF(clear_warning)), max(duration_ticks, 1), TIMER_STOPPABLE)
 	if(was_clear)
-		OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_STATE)
+		om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/clear_warning()
 	problem_timer = null
 	var/was_problem = problem
 	problem = material_problem
 	if(was_problem != problem)
-		OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_STATE)
+		om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/set_material_warning(active)
 	active = !!active
@@ -174,7 +174,7 @@
 	var/was_problem = problem
 	problem = material_problem || !!problem_timer
 	if(was_problem != problem)
-		OM_KEY_PUBLISH_OWN(src, KEY_POWERNET, KEY_POWERNET_STATE)
+		om_changed(src, CHANGE_POWERNET_STATE)
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)
 	if(smes_only)

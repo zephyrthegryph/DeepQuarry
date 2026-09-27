@@ -20,6 +20,8 @@
 		)
 	pixel_y = 8
 	var/mob/living/held_mob
+	/// The om_after() timer id of a pending cleanup_check(), or 0.
+	var/tmp/cleanup_timer = 0
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
@@ -30,7 +32,7 @@
 		return INITIALIZE_HINT_QDEL
 	held.forceMove(src)
 	if(isturf(loc) || isbelly(loc))
-		OM_WAKE_AT(src, world.time)
+		schedule_cleanup_check()
 
 /mob/living/get_status_tab_items()
 	. = ..()
@@ -90,13 +92,13 @@
 		held_mob.vis_flags = original_vis_flags
 		held_mob = null
 		invisibility = INVISIBILITY_ABSTRACT
-		OM_WAKE_AT(src, world.time) // check (and clean up) once the move is over
+		schedule_cleanup_check() // once the move is over
 	..()
 
 /obj/item/holder/Moved(atom/old_loc)
 	. = ..()
 	if(isturf(loc) || isbelly(loc))
-		OM_WAKE_AT(src, world.time)
+		schedule_cleanup_check()
 
 /// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
 /obj/item/holder/Destroy()
@@ -111,14 +113,14 @@
 
 /// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
 /// right after the move that did it (Exited(), Moved()), never polled.
-/obj/item/holder/om_woken(reason)
+/obj/item/holder/proc/schedule_cleanup_check()
+	if(!cleanup_timer)
+		cleanup_timer = om_after(src, 0, PROC_REF(cleanup_check))
+
+/obj/item/holder/proc/cleanup_check()
+	cleanup_timer = 0
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
 		qdel(src)
-
-/obj/item/holder/om_sleep_violation()
-	if((held_mob?.loc != src || isturf(loc) || isbelly(loc)) && !om_wake_pending(src))
-		return "empty or dropped but not cleaning up"
-	return null
 
 /// Releases the mob from inside the holder. Calls forceMove() which calls Exited(). Then does cleanup for the client's eye location.
 /obj/item/holder/proc/dump_mob()

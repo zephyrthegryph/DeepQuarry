@@ -184,3 +184,9 @@
 		if(initial(def.abstract_type) == P)
 			continue
 		.["[initial(def.name)]"] = list("parked" = om_pipeline_parked_count(P))
+
+
+
+/// A timer target that restarts periodic work on the slow lane (om_after(src, delay, /datum/proc/periodic_resume)).
+/datum/proc/periodic_resume()
+	PERIODIC_START(src, PERIODIC_SLOW)

@@ -10,7 +10,7 @@
 // cycle) only while something is inside it (or its owner previews it):
 // belly_reschedule() starts it when the first thing enters and cancels it when the
 // last one leaves. An empty belly that makes liquid from nutrition sleeps on an
-// OM_WAKE_AT timer for its next batch instead. An empty, idle belly holds no
+// om_after() timer for its next batch instead. An empty, idle belly holds no
 // scheduler state and runs no code.
 //
 // Rates. Every mode's effect is a rate per BELLY_BASELINE_TICK scaled by the
@@ -24,7 +24,7 @@
 	/// The period the clock runs at, and when it last ran a cycle.
 	var/tmp/cycle_period
 	var/tmp/cycle_last = 0
-	/// TRUE while an OM_WAKE_AT is armed for the next liquid batch of an empty, generating belly.
+	/// The om_after() timer id armed for the next liquid batch of an empty, generating belly.
 	var/tmp/liquid_timer
 
 /// An occupied belly's digestion cycle: a deadline re-armed every cycle_period.
@@ -70,7 +70,7 @@
 		return
 	if(belly_occupied())
 		if(liquid_timer)
-			OM_WAKE_CANCEL(src)
+			om_cancel_timer(src, liquid_timer)
 			liquid_timer = null
 		var/period = belly_cycle_period()
 		if(!cycle_token || cycle_period != period)
@@ -88,9 +88,10 @@
 	if(belly_generates_liquid())
 		if(!liquid_timer)
 			var/cycles_left = max(gen_time + 1 - gen_interval, 1)
-			liquid_timer = OM_WAKE_AT(src, world.time + cycles_left * belly_cycle_period())
+			om_attach(src, /datum/om/behaviour/sleeper/timed)
+			liquid_timer = om_after(src, cycles_left * belly_cycle_period(), PROC_REF(liquid_batch_due))
 	else if(liquid_timer)
-		OM_WAKE_CANCEL(src)
+		om_cancel_timer(src, liquid_timer)
 		liquid_timer = null
 
 /// Occupied: one digestion cycle for the real time since the last one, then the next is armed.
@@ -105,8 +106,8 @@
 		belly_reschedule()
 
 /// Empty and generating: the next liquid batch is due.
-/obj/belly/om_woken(reason)
-	if(!(reason & OM_WOKEN_TIMER) || !liquid_timer)
+/obj/belly/proc/liquid_batch_due()
+	if(!liquid_timer)
 		return
 	liquid_timer = null
 	if(belly_occupied())

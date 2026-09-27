@@ -207,7 +207,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
-	OM_KEY_PUBLISH_OWN(src, KEY_APC, KEY_APC_STATE)
+	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 
 	if(area)
@@ -237,7 +237,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /// Something about the APC changed (settings, cell, damage): send it to Rust.
 /obj/machinery/power/apc/proc/wake_for_power_dependency()
-	OM_KEY_PUBLISH_OWN(src, KEY_APC, KEY_APC_STATE)
+	om_changed(src, CHANGE_MACHINE_MODE)
 	power_sync()
 
 /// The APC is not a network node: its terminal is.

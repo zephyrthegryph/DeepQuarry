@@ -321,8 +321,8 @@
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
 	// One publish; it returns before any turf lookup while nothing is subscribed (Q12).
-	if(GLOB.om_mob_chunk_subscriptions || (client && GLOB.om_player_chunk_subscriptions))
-		om_publish_mob_move(old_loc, src, !!client)
+	if(GLOB.mob_chunk_watches || (client && GLOB.player_chunk_watches))
+		publish_mob_move(old_loc, src, !!client)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()

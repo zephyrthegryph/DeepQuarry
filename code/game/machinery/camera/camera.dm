@@ -37,7 +37,7 @@
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
 	var/affected_by_emp_until = 0
-	/// The OM_WAKE_AT timer for next_camera_deadline(), and the deadline it was set for.
+	/// The om_after() timer for next_camera_deadline(), and the deadline it was set for.
 	var/tmp/camera_timer_token
 	var/tmp/camera_timer_at = 0
 
@@ -96,7 +96,7 @@
 	network = null
 	return ..()
 
-// A camera sleeps on one OM_WAKE_AT for its earliest deadline (EMP recovery, the motion alarm
+// A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
 // delay) and on signals from the mobs it tracks; it never polls.
 
 /// The earliest pending deadline (world.time), or 0 for none.
@@ -115,16 +115,14 @@
 	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
 		return
 	if(!isnull(camera_timer_token))
-		OM_WAKE_CANCEL(src)
+		om_cancel_timer(src, camera_timer_token)
 		camera_timer_token = null
 	camera_timer_at = deadline
 	if(deadline)
-		camera_timer_token = OM_WAKE_AT(src, deadline)
+		om_attach(src, /datum/om/behaviour/sleeper/timed)
+		camera_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
 
-/obj/machinery/camera/om_woken(reason)
-	. = ..()
-	if(!(reason & OM_WOKEN_TIMER))
-		return
+/obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_token = null
 	camera_timer_at = 0
 	if((stat & EMPED) && world.time >= affected_by_emp_until)

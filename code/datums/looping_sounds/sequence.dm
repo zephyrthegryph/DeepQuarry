@@ -53,7 +53,7 @@
 	else
 		stop()
 
-// Reactor handlers never sleep, and a sequence step can (Morse plays each letter's sounds
+// Timer callbacks never sleep, and a sequence step can (Morse plays each letter's sounds
 // in turn), so each step runs async and schedules the next when it is done.
 /datum/looping_sound/sequence/sound_loop()
 	if(QDELETED(src) || !running)
@@ -71,8 +71,7 @@
 	stepping = FALSE
 	if(QDELETED(src) || !running)
 		return
-	cancel_loop_timer()
-	loop_token = OM_WAKE_AT(src, world.time + next_iteration_delay)
+	set_loop_timer(next_iteration_delay)
 
 #define MORSE_DOT	"*" // Yes this is an asterisk but its easier to see on a computer compared to a period.
 #define MORSE_DASH	"-"

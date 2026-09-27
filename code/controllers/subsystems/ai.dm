@@ -68,28 +68,31 @@ SUBSYSTEM_DEF(ai)
 		if(MC_TICK_CHECK)
 			return
 
-// --- Calm-brain hibernation on mob-chunk keys (reactor.md §9, S2) ---------------------------------
+// --- Calm-brain hibernation on mob chunks (code/modules/mob/mob_chunks.dm) ---------------------------
+
+/// A mob moved in a chunk a calm brain watches.
+/datum/om/behaviour/sleeper/ai_brain
+	name = "calm AI brain"
+
+/datum/om/behaviour/sleeper/ai_brain/on_wake(datum/ai_brain/B, changes)
+	B.wake_from_chunks()
 
 /// A calm brain stops strategic processing until a mob moves in a chunk within its vision
-/// (KEY_MOB_CHUNK). FALSE if it has a threat, a behavior or a player.
+/// (CHANGE_CHUNK_ANY_MOB). FALSE if it has a threat, a behavior or a player.
 /datum/ai_brain/proc/hibernate_calm()
 	var/turf/T = get_turf(holder)
 	if(!T || primary_threat || active_behavior_type || holder.client)
 		return FALSE
 	cancel_chunk_sleep()
-	var/list/keys = list()
-	for(var/cx in MOB_CHUNK_COORD(max(T.x - vision_range, 1)) to MOB_CHUNK_COORD(T.x + vision_range))
-		for(var/cy in MOB_CHUNK_COORD(max(T.y - vision_range, 1)) to MOB_CHUNK_COORD(T.y + vision_range))
-			keys += list(KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy), KEY_CHUNK_ANY_MOB)
-	react_sleep_tokens = om_sleep_on_keys(src, keys)
+	om_attach(src, /datum/om/behaviour/sleeper/ai_brain)
+	react_sleep_tokens = watch_mob_chunks(src, mob_chunks_around(T, vision_range), CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/ai_brain)
 	manage_processing(0)
 	return TRUE
 
 /// Drops the chunk subscriptions without waking (Destroy, or before re-subscribing).
 /datum/ai_brain/proc/cancel_chunk_sleep()
 	if(react_sleep_tokens)
-		om_cancel_keys(src, react_sleep_tokens)
-		react_sleep_tokens = null
+		react_sleep_tokens = unwatch_mob_chunks(src, react_sleep_tokens, CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/ai_brain)
 
 /// Wakes a hibernating brain now. No-op unless it sleeps on chunk keys.
 /datum/ai_brain/proc/wake_from_chunks()
@@ -100,10 +103,6 @@ SUBSYSTEM_DEF(ai)
 		return
 	next_strategic_at = 0
 	manage_processing(DQAI_PROCESSING)
-
-/datum/ai_brain/om_woken(reason)
-	if(reason & OM_WOKEN_KEY)
-		wake_from_chunks()
 
 /// Asleep with a threat in hand: it should be awake.
 /datum/ai_brain/om_sleep_violation()

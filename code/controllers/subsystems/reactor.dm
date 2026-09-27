@@ -221,7 +221,7 @@ SUBSYSTEM_DEF(reactor)
 	return !!vg_react_cancel(token)
 
 // Sleeping on keys and mob/player chunk keys moved to object-model keys
-// (code/datums/om/wakes.dm: om_sleep_on_keys(), om_subscribe_player_chunks()).
+// (om_watch on change channels; code/modules/mob/mob_chunks.dm for mob chunks).
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 

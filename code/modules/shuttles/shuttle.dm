@@ -450,6 +450,6 @@
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
 	if(src == SSemergency_shuttle?.shuttle)
-		OM_KEY_PUBLISH(KEY_SHUTTLE_SCHEDULE, KEY_SHUTTLE_EVAC, 1)
+		om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 	else if(src == SSsupply?.shuttle)
-		OM_KEY_PUBLISH(KEY_SHUTTLE_SCHEDULE, KEY_SHUTTLE_SUPPLY, 1)
+		om_changed(SSsupply, CHANGE_SHUTTLE_SCHEDULE)

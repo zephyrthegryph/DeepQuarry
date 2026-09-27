@@ -24,8 +24,8 @@
 #define LOOPING_SOUND_DORMANT_RECHECK (10 SECONDS)
 
 /**
- * A looping sound runs on object-model wakes (Q5): each loop is an OM_WAKE_AT timer, and a
- * loop nobody can hear parks on the player chunk keys (KEY_MOB_CHUNK, KEY_CHUNK_PLAYER) around it until a player
+ * A looping sound runs on object-model wakes (Q5): each loop is an om_after() timer, and a
+ * loop nobody can hear parks on the player chunk keys (/datum/mob_chunk, CHANGE_CHUNK_PLAYER) around it until a player
  * moves into range (with a slow recheck timer).
  */
 /datum/looping_sound
@@ -50,7 +50,7 @@
 	var/started
 	/// TRUE from start() until stop(): the loop is waiting to start, looping or dormant.
 	var/tmp/running = FALSE
-	/// The pending OM_WAKE_AT: the next loop, the start delay or the dormant recheck.
+	/// The pending om_after() timer id: the next loop, the start delay or the dormant recheck.
 	var/tmp/loop_token
 	/// world.time of the first loop, so max_loops counts from the real start.
 	var/tmp/loop_starttime
@@ -108,17 +108,30 @@
 
 /datum/looping_sound/proc/cancel_loop_timer()
 	if(!isnull(loop_token))
-		OM_WAKE_CANCEL(src)
+		om_cancel_timer(src, loop_token)
 		loop_token = null
 
-/datum/looping_sound/om_woken(reason)
+/// Arms the loop's one timer (the next loop, the start delay or the dormant recheck).
+/datum/looping_sound/proc/set_loop_timer(delay)
+	cancel_loop_timer()
+	loop_token = om_after(src, delay, PROC_REF(loop_timer_fired))
+
+/datum/looping_sound/proc/loop_timer_fired()
+	loop_token = null
 	if(!running)
 		return
 	if(dormant_chunk_tokens)
-		wake_from_dormancy(reason & OM_WOKEN_TIMER)
-	else if(reason & OM_WOKEN_TIMER)
-		loop_token = null
+		wake_from_dormancy(TRUE)
+	else
 		sound_loop()
+
+/// A player moved near a dormant loop (its chunk watches).
+/datum/om/behaviour/sleeper/looping_sound
+	name = "looping sound"
+
+/datum/om/behaviour/sleeper/looping_sound/on_wake(datum/looping_sound/L, changes)
+	if(L.running && L.dormant_chunk_tokens)
+		L.wake_from_dormancy(FALSE)
 
 /datum/looping_sound/om_sleep_violation()
 	if(running && isnull(loop_token) && !dormant_chunk_tokens)
@@ -142,8 +155,7 @@
 		var/soundfile = get_sound(loop_starttime)
 		if(soundfile)
 			play(soundfile)
-	cancel_loop_timer()
-	loop_token = OM_WAKE_AT(src, world.time + mid_length)
+	set_loop_timer(mid_length)
 
 /// TRUE if a player could hear this loop from any of its output atoms.
 /datum/looping_sound/proc/has_listener()
@@ -166,16 +178,16 @@
 		if(!source_turf || seen[source_turf])
 			continue
 		seen[source_turf] = TRUE
-		tokens += om_subscribe_player_chunks(src, source_turf, max_distance)
-	dormant_chunk_tokens = tokens
-	loop_token = OM_WAKE_AT(src, world.time + LOOPING_SOUND_DORMANT_RECHECK)
+		tokens |= mob_chunks_around(source_turf, max_distance)
+	om_attach(src, /datum/om/behaviour/sleeper/looping_sound)
+	dormant_chunk_tokens = watch_mob_chunks(src, tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/looping_sound)
+	set_loop_timer(LOOPING_SOUND_DORMANT_RECHECK)
 
 /// Drops the chunk keys. TRUE if the loop was dormant.
 /datum/looping_sound/proc/leave_dormancy()
 	if(isnull(dormant_chunk_tokens))
 		return FALSE
-	om_unsubscribe_player_chunks(src, dormant_chunk_tokens)
-	dormant_chunk_tokens = null
+	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/looping_sound)
 	return TRUE
 
 /// A player moved nearby, or the recheck fired. A chunk wake with still nobody in range
@@ -217,8 +229,7 @@
 	if(start_sound)
 		play(start_sound)
 		start_wait = start_length
-	cancel_loop_timer()
-	loop_token = OM_WAKE_AT(src, world.time + start_wait)
+	set_loop_timer(start_wait)
 
 /datum/looping_sound/proc/on_stop()
 	if(end_sound)

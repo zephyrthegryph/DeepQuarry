@@ -1,5 +1,5 @@
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
-	om_publish_mob_chunk(src)
+	publish_mob_chunk(src)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
 
@@ -94,7 +94,7 @@
 	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
-	om_publish_mob_chunk(src)
+	publish_mob_chunk(src)
 	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 

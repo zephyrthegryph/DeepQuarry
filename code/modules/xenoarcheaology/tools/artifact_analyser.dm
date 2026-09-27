@@ -117,21 +117,19 @@
 				else
 					scan_in_progress = 1
 					scan_completion_time = world.time + scan_duration
-					OM_WAKE_AT(src, scan_completion_time + 1)
+					om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
 					atom_say("Scanning begun.")
 			return TRUE
 
-/// A scan finishes on its timer (OM_WAKE_AT at the completion time), not by polling.
-/obj/machinery/artifact_analyser/om_woken(reason)
-	. = ..()
-	if(reason & OM_WOKEN_TIMER)
-		MACHINE_WAKE(src)
+/// A scan finishes on its timer (om_after() at the completion time), not by polling.
+/obj/machinery/artifact_analyser/proc/scan_timer_fired()
+	MACHINE_WAKE(src)
 
 /obj/machinery/artifact_analyser/machine_step()
 	if(!scan_in_progress)
 		return PROCESS_KILL
 	if(world.time <= scan_completion_time)
-		OM_WAKE_AT(src, scan_completion_time + 1)
+		om_after(src, scan_completion_time + 1 - world.time, PROC_REF(scan_timer_fired))
 		return PROCESS_KILL
 	if(scan_in_progress && world.time > scan_completion_time)
 		scan_in_progress = 0
