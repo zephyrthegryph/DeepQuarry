@@ -102,11 +102,15 @@ SUBSYSTEM_DEF(expedition)
 		var/datum/expedition_mission/preview = new mission_type()
 		choices[preview.name] = mission_type
 		qdel(preview)
-	var/choice = tgui_input_list(user, "Select an expedition contract", "Flight Operations", choices)
+	var/choice = rerun_prompt(user, "k105", list("kind" = "list", "message" = "Select an expedition contract", "title" = "Flight Operations", "choices" = choices), PROC_REF(plot_for_vessel), args)
+	if(isnull(choice))
+		return
 	if(!choice || !CanInteract(user, GLOB.tgui_default_state))
 		return null
 	var/list/threat_bands = expedition_threat_bands()
-	var/threat_band = tgui_input_list(user, "Select a threat band", "Flight Operations", threat_bands)
+	var/threat_band = rerun_prompt(user, "k109", list("kind" = "list", "message" = "Select a threat band", "title" = "Flight Operations", "choices" = threat_bands), PROC_REF(plot_for_vessel), args)
+	if(isnull(threat_band))
+		return
 	if(!threat_band || !CanInteract(user, GLOB.tgui_default_state))
 		return null
 	var/difficulty = threat_bands[threat_band]
