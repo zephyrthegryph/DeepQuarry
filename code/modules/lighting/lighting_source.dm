@@ -36,7 +36,6 @@
 	/// whether we are to be added to SSlighting's sources_queue list for an update
 	var/needs_update = LIGHTING_NO_UPDATE
 
-
 /datum/light_source/New(atom/owner, atom/top)
 	source_atom = owner // Set our new owner.
 	LAZYADD(source_atom.light_sources, src)
@@ -55,6 +54,7 @@
 
 	update()
 
+// LIFECYCLE: lighting engine: the source removes its light from the corners it lit.
 /datum/light_source/Destroy(force)
 	remove_lum()
 	if (source_atom)
@@ -81,7 +81,6 @@
 		SSlighting.sources_queue += src; 	\
 	if (needs_update < level)				\
 		needs_update = level;				\
-
 
 // This proc will cause the light source to update the top atom, and add itself to the update queue.
 /datum/light_source/proc/update(atom/new_top_atom)
