@@ -265,7 +265,7 @@
 	for(var/turf/boundary in list(src, other))
 		for(var/obj/machinery/door/firedoor/firelock in boundary)
 			if(!firelock.density && !firelock.blocked)
-				INVOKE_ASYNC(firelock, TYPE_PROC_REF(/obj/machinery/door/firedoor, close))
+				firelock.close()
 
 /// Rust katmos hook: called during explosive depressurization; /tg rips up floor tiles
 /// under strong decompression. No-op stub (see note above). `sum` is the summed transfer.

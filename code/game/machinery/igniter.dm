@@ -150,7 +150,7 @@
 
 	for(var/obj/machinery/sparker/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			INVOKE_ASYNC(M, TYPE_PROC_REF(/obj/machinery/sparker, ignite))
+			M.ignite()
 
 	for(var/obj/machinery/igniter/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
