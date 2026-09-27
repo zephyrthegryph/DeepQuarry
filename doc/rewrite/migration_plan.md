@@ -92,6 +92,20 @@ Phases run in order; tracks inside a phase run in parallel, one agent per track,
 
 **Gate 3 (final):** merge to master; full suite, hard-delete run and benchmark; then the user's manual playtest.
 
+### Phase 4: boot and bulk-destroy speed
+Design and measurements: [init_and_turfs.md](init_and_turfs.md). Southern Cross boots in about 121 s (Atoms 67 s, Atmospherics 36 s, Lighting 7 s); a devastation-7 blast in the Brig costs about 14 s of main-thread work, and most explosion boots on the full map die of Rust address-space exhaustion.
+
+| Track | Work | Saves | Estimate |
+|---|---|---|---|
+| 4a | Quick fixes that need no rewrite: `setup_rust_pipenets` list join; asset, holomap and wiki caches (and the shared `should_refresh` static); contract damage reported once per explosion epoch | ~33 s boot, ~5 s per big blast | 3–5 h |
+| 4b | Rust boot memory peak (1.85 GB) down, so large explosions stop running out of address space | correctness | 4–8 h |
+| 4c | Type tables and lazy `Initialize()`: no-state turfs skip it, turf facts and appearances from tables, batched smoothing; the `Initialize` ratchet lint | ~30 s boot | 14–20 h |
+| 4d | Chunked materialize: bulk registries, per-type rule bindings without `REF`, one Rust bind per chunk (with LC-refs part 1) | ~11 s boot | 10–14 h |
+| 4e | Batched destroy across a doomed set, per-set domain hooks and per-turf effects (after the lifecycle sweep, 2b) | ~1 s per big blast on top of 4a | 8–12 h |
+| 4f | Lighting as a Rust core field, DM applying dirty overlays in batches (after 0b and 4b) | ~7 s boot, ~1 s per blast | 16–24 h |
+
+4a can run any time; 4c and 4d are the bulk of the boot win and bring Southern Cross to roughly 35–45 s.
+
 ## 4. Totals
 
 | | Agent hours | Wall clock with the parallelism above |

@@ -85,7 +85,6 @@
 	var/owner_ref
 	/// The owner, resolved for this call. Not held between calls.
 	var/tmp/atom/owner
-	var/owner_key
 	/// Shared rule list for the owner's type.
 	var/list/rules
 	/// Per rule (same index): TRUE while its condition held at the last look.
@@ -107,7 +106,6 @@
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
 	owner_ref = om_handle(owner)
-	owner_key = REF(owner)
 	src.owner = owner
 	src.rules = rules
 	var/count = length(rules)
@@ -133,7 +131,7 @@
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	var/datum/owner_now = locate(owner_key)
+	var/datum/owner_now = om_resolve(owner_ref)
 	if(owner_now?.rule_binding == src)
 		owner_now.rule_binding = null
 	owner = null

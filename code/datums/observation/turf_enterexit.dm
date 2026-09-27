@@ -16,7 +16,11 @@
 
 /turf/Entered(atom/movable/am, atom/old_loc)
 	. = ..()
-	SEND_SIGNAL(src, COMSIG_OBSERVER_TURF_ENTERED, om_handle(am), old_loc)
+	// Only build the handle when something listens: test and bench builds
+	// evaluate signal arguments eagerly (SIGNAL_ARG_CHECKS), and every mapped
+	// object entering its turf at init made one.
+	if(_listen_lookup?[COMSIG_OBSERVER_TURF_ENTERED])
+		SEND_SIGNAL(src, COMSIG_OBSERVER_TURF_ENTERED, om_handle(am), old_loc)
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()

@@ -579,7 +579,15 @@
 	return source?.uses_integrity && source.z && (source.z in using_map.station_levels) && (isstructure(source) || ismachinery(source))
 
 /proc/contract_report_station_damage(atom/source, amount)
-	if(!SScontracts || !contract_atom_is_station_infrastructure(source) || !isnum(amount) || amount < 25)
+	if(!SScontracts || !isnum(amount) || amount <= 0)
+		return
+	// Inside a bulk batch (an explosion epoch) hits accumulate per atom and
+	// publish once when the batch ends (damage_batch.dm).
+	if(SScontracts.contract_batch_depth > 0)
+		if(contract_atom_is_station_infrastructure(source))
+			SScontracts.queue_damage_report(source, amount)
+		return
+	if(amount < CONTRACT_INFRASTRUCTURE_DAMAGE_MINIMUM || !contract_atom_is_station_infrastructure(source))
 		return
 	var/revision = SScontracts.next_infrastructure_revision(source)
 	var/current_damage = max(0, source.max_integrity - source.get_integrity())

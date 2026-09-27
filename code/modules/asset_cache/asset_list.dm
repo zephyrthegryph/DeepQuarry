@@ -4,6 +4,72 @@
 //all of our asset datums, used for referring to these later
 GLOBAL_LIST_EMPTY(asset_datums)
 
+/// The identity of this build for the cross-round asset cache: the commit,
+/// the compiler, and a hash of every compiled .dmb and .rsc in the working
+/// directory (code and resources). A cache written by another build is stale.
+/proc/asset_cache_build_key()
+	var/static/key
+	if(!isnull(key))
+		return key
+	var/list/parts = list("[GLOB.revdata?.commit]", "[DM_VERSION].[DM_BUILD]")
+	var/list/files = sortList(flist("./"))
+	for(var/file in files)
+		var/extension = lowertext(copytext(file, -4))
+		if(extension != ".dmb" && extension != ".rsc")
+			continue
+		if(findtext(file, ".dyn.rsc"))
+			continue // runtime resources change during the round
+		parts += "[file]=[rustg_hash_file(RUSTG_HASH_XXH64, file)]"
+	key = parts.Join("|")
+	return key
+
+/// Wipes the cross-round asset cache once per boot if it was written by a
+/// different build (asset_cache_build_key()), and stamps it with this one.
+/proc/asset_cache_validate()
+	var/static/validated = FALSE
+	if(validated)
+		return
+	validated = TRUE
+	var/stamp_file = "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/build_key.txt"
+	var/key = asset_cache_build_key()
+	if(fexists(stamp_file) && rustg_file_read(stamp_file) == key)
+		return
+	fdel("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/")
+	rustg_file_write(key, stamp_file)
+
+/// name -> md5 of compiled-in asset files, kept across boots of one build
+/// (the cache directory is wiped when the build changes).
+GLOBAL_LIST(asset_known_hashes)
+GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
+
+/proc/asset_cache_known_hash(name)
+	if(!CONFIG_GET(flag/cache_assets))
+		return null
+	if(isnull(GLOB.asset_known_hashes))
+		asset_cache_validate()
+		GLOB.asset_known_hashes = list()
+		var/path = "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/hashes.json"
+		if(fexists(path))
+			var/list/loaded = json_decode(rustg_file_read(path))
+			if(islist(loaded))
+				GLOB.asset_known_hashes = loaded
+	return GLOB.asset_known_hashes[name]
+
+/proc/asset_cache_remember_hash(name, hash)
+	if(!CONFIG_GET(flag/cache_assets) || isnull(GLOB.asset_known_hashes))
+		return
+	if(GLOB.asset_known_hashes[name] == hash)
+		return
+	GLOB.asset_known_hashes[name] = hash
+	GLOB.asset_known_hashes_dirty = TRUE
+
+/// Writes the hash table if it changed (SSassets init end).
+/proc/asset_cache_save_hashes()
+	if(!GLOB.asset_known_hashes_dirty)
+		return
+	GLOB.asset_known_hashes_dirty = FALSE
+	rustg_file_write(json_encode(GLOB.asset_known_hashes), "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/hashes.json")
+
 //get an assetdatum or make a new one
 //does NOT ensure it's filled, if you want that use get_asset_datum()
 /proc/load_asset_datum(type)
@@ -171,6 +237,9 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	var/resize = 1
 	/// If this asset should CRASH or ignore when duplicate sprite keys are added
 	var/duplicates_allowed = FALSE
+	/// Whether this sheet must be generated rather than read from the
+	/// cross-round cache (null until should_refresh() first decides).
+	var/cache_refresh_needed
 
 /datum/asset/spritesheet/proc/should_load_immediately()
 #ifdef DO_NOT_DEFER_ASSETS
@@ -183,14 +252,14 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	if (..())
 		return TRUE
 
-	// Static so that the result is the same, even when the files are created, for this run
-	var/static/should_refresh = null
+	// Decided once per sheet, so the answer stays the same for this run even
+	// after the sheet writes its cache files. (It was one static shared by
+	// every spritesheet: the first sheet's check decided for all of them.)
+	if (isnull(cache_refresh_needed))
+		asset_cache_validate()
+		cache_refresh_needed = !fexists("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name].css")
 
-	if (isnull(should_refresh))
-		// `fexists` seems to always fail on static-time
-		should_refresh = !fexists("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name].css")
-
-	return should_refresh
+	return cache_refresh_needed
 
 /datum/asset/spritesheet/unregister()
 	SSassets.transport.unregister_asset("spritesheet_[name].css")
@@ -656,6 +725,14 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	)
 
 /datum/asset/json/register()
+	// Cacheable json (static per build) is kept in the cross-round cache.
+	if(cross_round_cachable && CONFIG_GET(flag/cache_assets))
+		asset_cache_validate()
+		var/cached = "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/json.[name].json"
+		if(!fexists(cached))
+			rustg_file_write(json_encode(generate()), cached)
+		SSassets.transport.register_asset("[name].json", fcopy_rsc(cached))
+		return
 	var/filename = "data/[name].json"
 	fdel(filename)
 	rustg_file_write(json_encode(generate()), filename)

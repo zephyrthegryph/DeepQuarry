@@ -25,11 +25,11 @@ ASSET_CDN_WEBROOT data/asset-store/
 ## if you want to test this locally, you simpily run the `localhost-asset-webroot-server.py` python3 script to host assets stored in `data/asset-store/` via http://localhost:58715/
 ASSET_CDN_URL http://localhost:58715/
 
-## Assets can opt-in to caching their results into `cache/`.
-## The cache is assumed to be cleared by TGS recompiling, which deletes `cache/`.
-## This should be disabled on development,
-## but enabled on production (the default).
-#CACHE_ASSETS
+## Assets can opt-in to caching their results into `data/spritesheets/legacy_cache/`.
+## The cache is stamped with the build (commit, compiler and a hash of the
+## compiled .dmb and .rsc) and wiped when the build changes, so it is safe on
+## development as well as production. On by default.
+CACHE_ASSETS
 
 ## Enables 'smart' asset caching, for assets that support it.
 ## This is a type of asset cache that automatically invalidates itself based on inputs to the asset generation.

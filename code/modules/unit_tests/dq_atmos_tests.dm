@@ -7543,3 +7543,30 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/om_watch/filter_watch = om_watch_lookup(F, "gas")
 	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, filter_wakes + 1, "enough input to filter did not wake the filter exactly once 		(stat [F.stat], use_power [F.use_power], condition [F.gas_wake_condition()], watched [json_encode(filter_watch?.mixture_ids)], air1 [F.air1.arena_id()])")
 	qdel(F)
+
+/// A pipe topology commit rebinds a device's port air and deletes the old
+/// datum. Mixers and filters must use the current air, never a list keyed by
+/// the old datum ("no gas mixture behind handle" in total_moles_hook).
+/datum/unit_test/dq_atmos_mixers_follow_rebound_port_air
+
+/datum/unit_test/dq_atmos_mixers_follow_rebound_port_air/Run()
+	var/obj/machinery/atmospherics/trinary/mixer/mixer = allocate(/obj/machinery/atmospherics/trinary/mixer)
+	var/datum/gas_mixture/old_air = mixer.air1
+	var/datum/gas_mixture/new_air = new(ATMOS_DEFAULT_VOLUME_MIXER)
+	new_air.adjust_gas(GAS_ID_OXYGEN, 10)
+	mixer.rust_bind_pipe_port(1, null, new_air)
+	TEST_ASSERT(QDELETED(old_air), "rebinding did not delete the old port air")
+	var/list/inputs = mixer.mixing_inputs()
+	TEST_ASSERT(inputs[new_air] == mixer.node1_concentration, "the mixer's inputs are not keyed by its current air")
+	TEST_ASSERT(!(old_air in inputs), "the mixer still lists its deleted port air")
+	TEST_ASSERT(mixer.mix_transfer_moles() > 0, "the mixer lost its input share after a rebind")
+
+	var/obj/machinery/atmospherics/omni/mixer/omni = allocate(/obj/machinery/atmospherics/omni/mixer)
+	var/datum/omni_port/port = omni.ports[1]
+	var/datum/gas_mixture/omni_old = port.air
+	var/datum/gas_mixture/omni_new = new(200)
+	omni.rust_bind_pipe_port(1, null, omni_new)
+	omni.rebuild_mixing_inputs()
+	for(var/datum/gas_mixture/air in omni.mixing_inputs)
+		TEST_ASSERT(!QDELETED(air), "the omni mixer lists a deleted port air")
+	TEST_ASSERT(QDELETED(omni_old), "rebinding did not delete the omni port's old air")

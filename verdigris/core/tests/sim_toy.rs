@@ -677,3 +677,31 @@ fn rate_models_schedule_crossings_on_the_wheel() {
     }
     assert_eq!(fired_at, Some(1040));
 }
+
+#[test]
+fn write_direct_is_seen_at_once_and_refused_with_writes_in_flight() {
+    let (builder, keys) = toy_builder(config(1), false);
+    let mut sim = builder.build().unwrap();
+    // Nothing in flight: the write lands in the live store and is pinned.
+    let wrote = sim.write_direct(keys.heat, |store| {
+        for i in 0..CELLS {
+            store.set(i, Heat { energy: 2.0 });
+        }
+    });
+    assert!(wrote.is_some());
+    assert_eq!(sim.port(keys.heat).read(7), Some(Heat { energy: 2.0 }));
+    assert_eq!(sim.port(keys.heat).overlay_len(), 0);
+    assert_eq!(sim.port(keys.heat).queued(), 0);
+    // A queued command is in flight: refused, nothing written.
+    sim.port(keys.heat).submit(3, HeatCmd::Add(1.0)).unwrap();
+    assert!(sim.write_direct(keys.heat, |store| store.set(3, Heat::default())).is_none());
+    assert_eq!(sim.port(keys.heat).read(3), Some(Heat { energy: 3.0 }));
+    // After a frame applies it, direct writes work again and a frame keeps them.
+    sim.settle();
+    assert!(sim.write_direct(keys.heat, |store| store.set(4, Heat { energy: 9.0 })).is_some());
+    sim.dispatch_frame();
+    sim.wait_for_frame();
+    sim.begin_tick();
+    assert_eq!(sim.port(keys.heat).read(4), Some(Heat { energy: 9.0 }));
+    assert_eq!(sim.port(keys.heat).read(3), Some(Heat { energy: 3.0 }));
+}

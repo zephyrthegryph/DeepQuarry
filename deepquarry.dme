@@ -2589,6 +2589,7 @@
 #include "code\modules\contracts\contract.dm"
 #include "code\modules\contracts\contract_offer.dm"
 #include "code\modules\contracts\contract_evidence.dm"
+#include "code\modules\contracts\damage_batch.dm"
 #include "code\modules\contracts\contract_admin.dm"
 #include "code\modules\economy\Accounts_DB.dm"
 #include "code\modules\economy\ATM.dm"

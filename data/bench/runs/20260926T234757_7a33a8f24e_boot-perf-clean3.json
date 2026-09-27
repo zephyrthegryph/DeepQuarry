@@ -1,0 +1,26 @@
+{
+ "id": "20260926T234757_7a33a8f24e_boot-perf-clean3",
+ "timestamp": "2026-09-26T23:47:57.187Z",
+ "commit": "7a33a8f24e",
+ "branch": "rewrite/boot-perf",
+ "dirty_files": 7,
+ "host": "DESKTOP-OQOKGJ0",
+ "platform": "win32",
+ "kind": "bench",
+ "label": "boot-perf-clean3",
+ "map": "unknown",
+ "defines": [
+  "CITESTING_FULL_MAP"
+ ],
+ "scenarios_requested": [
+  "explosion_dense"
+ ],
+ "args": [],
+ "iterations": [],
+ "summary": {},
+ "failures": [
+  "iteration 1: the world wrote no benchmark results",
+  "iteration 2: the world wrote no benchmark results",
+  "iteration 3: the world wrote no benchmark results"
+ ]
+}

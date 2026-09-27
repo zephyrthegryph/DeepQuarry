@@ -29,16 +29,25 @@
 	wait_fires(SSair, 10)
 	mark("booted")
 	record_atmos_arena("booted")
+	benchmark_rust_mark("boot_memory settled")
+	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	var/list/census = benchmark_census(param("top", 40))
 	metric("instances_total", census["total"], "instances")
 	for(var/root in census["by_root"])
 		metric("instances_[root]", census["by_root"][root], "instances")
 	detail("census_top_types", census["top_types"])
-	var/list/var_lists = benchmark_var_lists(param("list_top", 60))
-	metric("var_lists_total", var_lists["total"], "lists")
-	metric("var_lists_empty", var_lists["empty"], "lists")
-	metric("var_list_entries", var_lists["entries"], "entries")
-	detail("var_lists_top", var_lists["top"])
+	// The full list walk visits every var of every datum; off unless asked
+	// (--arg=var_lists=1), the sampled type estimate below covers it.
+	if(param("var_lists", 0))
+		var/list/var_lists = benchmark_var_lists(param("list_top", 60))
+		metric("var_lists_total", var_lists["total"], "lists")
+		metric("var_lists_empty", var_lists["empty"], "lists")
+		metric("var_list_entries", var_lists["entries"], "entries")
+		detail("var_lists_top", var_lists["top"])
+	if(param("type_memory", 1))
+		var/list/type_memory = benchmark_type_memory(param("memory_top", 20))
+		metric("dm_estimated_mb", type_memory["total_est_mb"], "MB")
+		detail("type_memory_top", type_memory["top"])
 	var/list/types = benchmark_type_counts()
 	for(var/kind in types)
 		metric("types_[kind]", types[kind], "types")
@@ -610,3 +619,141 @@
 	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
 	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
 	detail("radiation_diagnostics", SSradiation.performance_diagnostics())
+
+/// Where the memory outside DM objects goes (init_and_turfs.md §0.4). Counts
+/// unique appearances (atoms' own and their overlay/underlay entries), icons,
+/// images and mutable appearances.
+/datum/benchmark/memory_breakdown
+	id = "memory_breakdown"
+	description = "Appearance counts and staged private-memory drops"
+
+/datum/benchmark/memory_breakdown/proc/private_mb()
+	var/list/process = benchmark_process_memory()
+	return islist(process) ? process["private_mb"] : 0
+
+/// Waits for the external sampler and BYOND's collector, then records.
+/datum/benchmark/memory_breakdown/proc/stage(name)
+	wait_seconds(param("settle", 8))
+	var/mb = private_mb()
+	metric("private_mb_[name]", mb, "MB")
+	return mb
+
+/datum/benchmark/memory_breakdown/Run()
+	wait_for_assets()
+	wait_fires(SSair, 5)
+	var/base = stage("booted")
+	var/list/own = list()
+	var/list/overlay = list()
+	var/atoms = 0
+	var/overlay_refs = 0
+	for(var/atom/A in world)
+		atoms++
+		own[ref(A.appearance)] = TRUE
+		for(var/entry in A.overlays)
+			overlay_refs++
+			overlay[ref(entry)] = TRUE
+		for(var/entry in A.underlays)
+			overlay_refs++
+			overlay[ref(entry)] = TRUE
+		CHECK_TICK
+	metric("atoms", atoms, "atoms", "none")
+	metric("unique_atom_appearances", length(own), "appearances", "none")
+	metric("overlay_underlay_refs", overlay_refs, "refs", "none")
+	metric("unique_overlay_appearances", length(overlay), "appearances", "none")
+	own = null
+	overlay = null
+	var/icons = 0
+	for(var/icon/I)
+		icons++
+		CHECK_TICK
+	var/images = 0
+	for(var/image/I)
+		images++
+		CHECK_TICK
+	var/mutables = 0
+	for(var/mutable_appearance/M)
+		mutables++
+		CHECK_TICK
+	metric("icon_objects", icons, "icons", "none")
+	metric("image_objects", images, "images", "none")
+	metric("mutable_appearances", mutables, "objects", "none")
+	global_sizes()
+	pool_probe()
+
+	// Freeing things and watching private memory does not work: BYOND keeps
+	// freed memory in its own pools (clearing every overlay and all
+	// lighting moved private memory by +5 MB each). The growth through boot
+	// is measured instead, from the per-subsystem marks (boot_profile).
+
+/// Deep size of each GLOB var: list entries and datums reachable through
+/// lists and datum list vars, each counted once across all globals, in
+/// descending order. Private memory before world/New is mostly these.
+/datum/benchmark/memory_breakdown/proc/global_sizes(top = 40)
+	var/list/seen = list()
+	var/list/sizes = list()
+	for(var/name in GLOB.vars)
+		var/value = GLOB.vars[name]
+		if(!islist(value) && !istype(value, /datum))
+			continue
+		var/list/counts = list(0, 0)
+		var/list/stack = list(value)
+		while(length(stack))
+			var/thing = stack[length(stack)]
+			stack.len--
+			var/key = ref(thing)
+			if(seen[key])
+				continue
+			seen[key] = TRUE
+			if(islist(thing))
+				var/list/L = thing
+				counts[1] += length(L)
+				for(var/entry in L)
+					if(islist(entry) || (istype(entry, /datum) && !isatom(entry)))
+						stack += list(entry)
+					if(!isnum(entry) && !isnull(entry))
+						var/assoc = L[entry]
+						if(islist(assoc) || (istype(assoc, /datum) && !isatom(assoc)))
+							stack += list(assoc)
+			else if(istype(thing, /datum) && !isatom(thing))
+				var/datum/D = thing
+				counts[2]++
+				for(var/var_name in D.vars)
+					var/v = D.vars[var_name]
+					if(islist(v) && var_name != "vars")
+						stack += list(v)
+			CHECK_TICK
+		if(counts[1] + counts[2] > 1000)
+			sizes[name] = counts[1] * 12 + counts[2] * 64
+			sizes["[name]:detail"] = "[counts[1]] entries, [counts[2]] datums"
+	var/list/order = list()
+	for(var/name in sizes)
+		if(!findtext(name, ":detail"))
+			order[name] = sizes[name]
+	order = sortTim(order, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	var/list/out = list()
+	var/total = 0
+	for(var/name in order)
+		total += order[name]
+		if(length(out) < top)
+			out[name] = "[round(order[name] / 1048576, 0.1)] MB est ([sizes["[name]:detail"]])"
+	metric("globals_est_mb", total / 1048576, "MB", "none")
+	detail("globals_top", out)
+
+/// How much of private memory is free space inside BYOND's own pools:
+/// allocates `count` lists of 20 numbers (about 180 bytes each, ~180 MB for a
+/// million) and records how much private memory grew. Growth well under the
+/// allocation means the pools already held that much free, reusable memory
+/// (BYOND never returns freed memory to the OS, so private memory is a
+/// high-water mark, not what is live).
+/datum/benchmark/memory_breakdown/proc/pool_probe()
+	var/count = param("probe_lists", 1000000)
+	var/before = stage("probe_before")
+	var/list/hold = new /list(count)
+	for(var/i in 1 to count)
+		hold[i] = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
+		if(!(i % 50000))
+			CHECK_TICK
+	var/after = stage("probe_after")
+	metric("probe_allocated_mb_est", count * 184 / 1048576, "MB", "none")
+	metric("probe_private_growth_mb", after - before, "MB", "none")
+	hold = null

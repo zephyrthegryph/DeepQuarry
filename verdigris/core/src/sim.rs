@@ -172,6 +172,8 @@ trait PortDyn: Any {
     fn backlog(&self) -> u64;
     fn view_age(&self) -> u32;
     fn overlay_len(&self) -> usize;
+    fn name(&self) -> &'static str;
+    fn memory(&self) -> crate::owner::PortMemory;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn as_any(&self) -> &dyn Any;
 }
@@ -195,7 +197,8 @@ impl<D: Domain> PortDyn for MainPort<D> {
         let batch = batch
             .downcast_ref::<Vec<crate::command::Sequenced<crate::owner::DomainOp<D>>>>()
             .expect("recorded batch type mismatch");
-        res.get_mut(self.state_res()).enqueue(batch.clone());
+        res.get_mut(self.state_res())
+            .enqueue(crate::command::Batch::from_vec(batch.clone()));
     }
     fn backlog(&self) -> u64 {
         MainPort::backlog(self)
@@ -205,6 +208,12 @@ impl<D: Domain> PortDyn for MainPort<D> {
     }
     fn overlay_len(&self) -> usize {
         MainPort::overlay_len(self)
+    }
+    fn name(&self) -> &'static str {
+        D::NAME
+    }
+    fn memory(&self) -> crate::owner::PortMemory {
+        MainPort::memory(self)
     }
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
@@ -770,6 +779,42 @@ impl Sim {
     #[must_use]
     pub const fn metrics(&self) -> &SimMetrics {
         &self.metrics
+    }
+
+    /// Writes straight into domain `key`'s live store, bypassing commands and
+    /// the overlay: for bulk registration (a map load) where queueing one
+    /// command and one overlay entry per cell would hold the whole batch
+    /// twice until the next frame. Runs only while no frame is running and
+    /// DM has nothing in flight for the domain; returns `None` (and does not
+    /// call `f`) otherwise, and the caller falls back to commands. The
+    /// written chunks differ from the last frame's, so the field wakes them.
+    ///
+    /// # Panics
+    /// If `key` is from another `Sim`.
+    pub fn write_direct<D: Domain, R>(
+        &mut self,
+        key: DomainKey<D>,
+        f: impl FnOnce(&mut crate::cow::CowStore<D::Value>) -> R,
+    ) -> Option<R> {
+        self.reclaim();
+        let world = self.world.as_mut()?;
+        let port: &mut MainPort<D> = self.ports[key.index]
+            .as_any_mut()
+            .downcast_mut()
+            .expect("domain key from another Sim");
+        let state = world.resources.get_mut(key.state);
+        if !port.quiescent(state) {
+            return None;
+        }
+        let result = f(&mut state.store);
+        port.repin(state);
+        Some(result)
+    }
+
+    /// Heap bytes each domain's port holds, by domain name.
+    #[must_use]
+    pub fn memory(&self) -> Vec<(&'static str, crate::owner::PortMemory)> {
+        self.ports.iter().map(|p| (p.name(), p.memory())).collect()
     }
 
     #[must_use]

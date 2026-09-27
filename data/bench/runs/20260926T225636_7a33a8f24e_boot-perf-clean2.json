@@ -1,0 +1,8658 @@
+{
+ "id": "20260926T225636_7a33a8f24e_boot-perf-clean2",
+ "timestamp": "2026-09-26T22:56:36.853Z",
+ "commit": "7a33a8f24e",
+ "branch": "rewrite/boot-perf",
+ "dirty_files": 7,
+ "host": "DESKTOP-OQOKGJ0",
+ "platform": "win32",
+ "kind": "bench",
+ "label": "boot-perf-clean2",
+ "map": "Southern Cross",
+ "defines": [
+  "CITESTING_FULL_MAP"
+ ],
+ "scenarios_requested": [
+  "boot_profile",
+  "explosion_dense"
+ ],
+ "args": [],
+ "iterations": [
+  {
+   "byond_version": "516.1687",
+   "map": "Southern Cross",
+   "world": {
+    "maxx": 256,
+    "maxy": 256,
+    "maxz": 6,
+    "fps": 40
+   },
+   "init_seconds": 112.088,
+   "subsystem_init_ms": {
+    "Access": 2,
+    "Assets": 3257,
+    "Atmospherics": 37390,
+    "Atoms": 59213,
+    "Chemistry": 12,
+    "Circuit": 49,
+    "Contracts": 5,
+    "Early Assets": 475,
+    "Flight Operations": 14,
+    "HoloMiniMaps": 1827,
+    "Instruments": 16,
+    "Job": 2,
+    "Lighting": 6666,
+    "Machines": 47,
+    "Mapping": 318,
+    "Media Tracks": 2,
+    "nerdle": 7,
+    "Persistence": 54,
+    "Plants": 16,
+    "Points of Interest": 1,
+    "Profiler": 1,
+    "Properties": 2,
+    "Radio": 53,
+    "Research": 153,
+    "Robot Sprites": 13,
+    "Server Tasks": 2,
+    "Shuttles": 346,
+    "Supply": 13,
+    "Wiki": 1817,
+    "Xenoarch": 104
+   },
+   "total_runtimes": 44,
+   "scenarios": {
+    "boot_profile": {
+     "id": "boot_profile",
+     "description": "Per-subsystem init time; per-type Initialize/materialize/LateInitialize cost (deep profile)",
+     "status": "passed",
+     "duration_seconds": 0.375,
+     "runtimes": 0,
+     "metrics": {
+      "init_seconds": {
+       "value": 112.088,
+       "unit": "s",
+       "better": "lower"
+      },
+      "init_ms_Access": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Assets": {
+       "value": 3257,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Atmospherics": {
+       "value": 37390,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Atoms": {
+       "value": 59213,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Chemistry": {
+       "value": 12,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Circuit": {
+       "value": 49,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Contracts": {
+       "value": 5,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Early Assets": {
+       "value": 475,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Flight Operations": {
+       "value": 14,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_HoloMiniMaps": {
+       "value": 1827,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Instruments": {
+       "value": 16,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Job": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Lighting": {
+       "value": 6666,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Machines": {
+       "value": 47,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Mapping": {
+       "value": 318,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Media Tracks": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_nerdle": {
+       "value": 7,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Persistence": {
+       "value": 54,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Plants": {
+       "value": 16,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Points of Interest": {
+       "value": 1,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Profiler": {
+       "value": 1,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Properties": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Radio": {
+       "value": 53,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Research": {
+       "value": 153,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Robot Sprites": {
+       "value": 13,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Server Tasks": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Shuttles": {
+       "value": 346,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Supply": {
+       "value": 13,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Wiki": {
+       "value": 1817,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Xenoarch": {
+       "value": 104,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "booted_ffi_calls": {
+       "value": 281584,
+       "unit": "calls",
+       "better": "lower"
+      },
+      "world_turfs": {
+       "value": 393216,
+       "unit": "turfs",
+       "better": "none"
+      },
+      "world_movables": {
+       "value": 94486,
+       "unit": "atoms",
+       "better": "none"
+      },
+      "lighting_objects": {
+       "value": 29904,
+       "unit": "datums",
+       "better": "none"
+      },
+      "lighting_corners": {
+       "value": 47197,
+       "unit": "datums",
+       "better": "none"
+      },
+      "lighting_sources": {
+       "value": 15893,
+       "unit": "datums",
+       "better": "none"
+      }
+     },
+     "details": {
+      "lighting_counts": {
+       "objects": 29904,
+       "corners": 47197,
+       "sources": 15893
+      },
+      "init_types_note": "build without -DBENCHMARK_DEEP_PROFILE: no per-type table"
+     },
+     "phases": []
+    },
+    "explosion_dense": {
+     "id": "explosion_dense",
+     "description": "Devastation-7 explosion on the most furnished station block (bench_devastation; bench_x/y/z override the site)",
+     "status": "passed",
+     "duration_seconds": 37.9437,
+     "runtimes": 34,
+     "metrics": {
+      "before_explosion_private_mb": {
+       "value": 2248.4,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_heap_mb": {
+       "value": 667.578,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_heap_peak_mb": {
+       "value": 1841.82,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_untagged_mb": {
+       "value": 667.578,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "explosion_seconds": {
+       "value": 17.4438,
+       "unit": "s",
+       "better": "none"
+      },
+      "explosion_tick_avg": {
+       "value": 78.5556,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_p95": {
+       "value": 122,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_p99": {
+       "value": 224,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_max": {
+       "value": 1221.44,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_overruns": {
+       "value": 50,
+       "unit": "ticks",
+       "better": "lower"
+      },
+      "explosion_overrun_ratio": {
+       "value": 0.0763359,
+       "unit": "ratio",
+       "better": "lower"
+      },
+      "explosion_tps": {
+       "value": 37.5862,
+       "unit": "tps",
+       "better": "higher"
+      },
+      "explosion_ffi_calls": {
+       "value": 38874,
+       "unit": "calls",
+       "better": "lower"
+      },
+      "explosion_air_ms": {
+       "value": 522.752,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_air_ms_per_s": {
+       "value": 29.9679,
+       "unit": "ms/s",
+       "better": "lower"
+      },
+      "explosion_machines_ms_per_s": {
+       "value": 13.1826,
+       "unit": "ms/s",
+       "better": "lower"
+      },
+      "explosion_ffi_calls_per_s": {
+       "value": 2228.53,
+       "unit": "calls/s",
+       "better": "lower"
+      },
+      "explosion_reactor_wakes": {
+       "value": 1764,
+       "unit": "wakes",
+       "better": "lower"
+      },
+      "after_explosion_private_mb": {
+       "value": 2249.7,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_heap_mb": {
+       "value": 625.81,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_heap_peak_mb": {
+       "value": 1841.82,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_untagged_mb": {
+       "value": 625.81,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "explosion_resolve_wall_ms": {
+       "value": 15968.8,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_lighting_settle_wall_ms": {
+       "value": 0,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_prepare_ms": {
+       "value": 60.4508,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_turf_resolve_ms": {
+       "value": 640.485,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_atom_collect_ms": {
+       "value": 32.7907,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_atom_resolve_ms": {
+       "value": 7289.15,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_turfs_resolved": {
+       "value": 1926,
+       "unit": "turfs",
+       "better": "none"
+      },
+      "explosion_atoms_resolved": {
+       "value": 4011,
+       "unit": "atoms",
+       "better": "none"
+      },
+      "explosion_qdels": {
+       "value": 9853,
+       "unit": "qdels",
+       "better": "none"
+      }
+     },
+     "details": {
+      "site": {
+       "x": 128,
+       "y": 178,
+       "z": 2,
+       "area": "The Security - Brig",
+       "block_turfs": 841,
+       "block_walls": 169,
+       "block_movables": 1485,
+       "block_objs": 1485,
+       "block_machines": 621
+      },
+      "explosion_subsystems": {
+       "AI": {
+        "fires": 9,
+        "avg_cost_ms": 0.209741,
+        "estimated_total_ms": 1.88767,
+        "tick_usage": 0.838963,
+        "tick_overrun": 0
+       },
+       "AI (Fast)": {
+        "fires": 65,
+        "avg_cost_ms": 0.00589042,
+        "estimated_total_ms": 0.382878,
+        "tick_usage": 0.0235617,
+        "tick_overrun": 0
+       },
+       "Alarm": {
+        "fires": 9,
+        "avg_cost_ms": 0.166766,
+        "estimated_total_ms": 1.5009,
+        "tick_usage": 0.667066,
+        "tick_overrun": 0
+       },
+       "Asset Loading": {
+        "fires": 7,
+        "avg_cost_ms": 31.1057,
+        "estimated_total_ms": 217.74,
+        "tick_usage": 124.423,
+        "tick_overrun": 889.8
+       },
+       "Atmospherics": {
+        "fires": 31,
+        "avg_cost_ms": 16.863,
+        "estimated_total_ms": 522.752,
+        "tick_usage": 67.4519,
+        "tick_overrun": 63.031
+       },
+       "Behaviours": {
+        "fires": 654,
+        "avg_cost_ms": 0.0981423,
+        "estimated_total_ms": 64.1851,
+        "tick_usage": 0.392569,
+        "tick_overrun": 0
+       },
+       "Burning": {
+        "fires": 16,
+        "avg_cost_ms": 0.00928781,
+        "estimated_total_ms": 0.148605,
+        "tick_usage": 0.0371513,
+        "tick_overrun": 0
+       },
+       "Character Setup": {
+        "fires": 16,
+        "avg_cost_ms": 0.0050681,
+        "estimated_total_ms": 0.0810896,
+        "tick_usage": 0.0202724,
+        "tick_overrun": 0
+       },
+       "Chat": {
+        "fires": 638,
+        "avg_cost_ms": 0.00540849,
+        "estimated_total_ms": 3.45062,
+        "tick_usage": 0.021634,
+        "tick_overrun": 0
+       },
+       "Database": {
+        "fires": 65,
+        "avg_cost_ms": 0.0138314,
+        "estimated_total_ms": 0.899038,
+        "tick_usage": 0.0553254,
+        "tick_overrun": 0
+       },
+       "Datum Component System": {
+        "fires": 16,
+        "avg_cost_ms": 0.0126776,
+        "estimated_total_ms": 0.202841,
+        "tick_usage": 0.0507103,
+        "tick_overrun": 0
+       },
+       "Events": {
+        "fires": 8,
+        "avg_cost_ms": 0.0372093,
+        "estimated_total_ms": 0.297674,
+        "tick_usage": 0.148837,
+        "tick_overrun": 0
+       },
+       "Expedition": {
+        "fires": 9,
+        "avg_cost_ms": 0.00692798,
+        "estimated_total_ms": 0.0623518,
+        "tick_usage": 0.0277119,
+        "tick_overrun": 0
+       },
+       "Explosions": {
+        "fires": 4,
+        "avg_cost_ms": 1303.54,
+        "estimated_total_ms": 5214.15,
+        "tick_usage": 5214.15,
+        "tick_overrun": 2.98159
+       },
+       "Fast Processing": {
+        "fires": 81,
+        "avg_cost_ms": 0.0156591,
+        "estimated_total_ms": 1.26838,
+        "tick_usage": 0.0626362,
+        "tick_overrun": 0
+       },
+       "Flight Operations": {
+        "fires": 16,
+        "avg_cost_ms": 0.0967624,
+        "estimated_total_ms": 1.5482,
+        "tick_usage": 0.38705,
+        "tick_overrun": 0
+       },
+       "Garbage": {
+        "fires": 8,
+        "avg_cost_ms": 7.66667,
+        "estimated_total_ms": 61.3333,
+        "tick_usage": 30.6667,
+        "tick_overrun": 0
+       },
+       "Input": {
+        "fires": 655,
+        "avg_cost_ms": 0.0068454,
+        "estimated_total_ms": 4.48374,
+        "tick_usage": 0.0273816,
+        "tick_overrun": 0
+       },
+       "Instruments": {
+        "fires": 307,
+        "avg_cost_ms": 0.0135962,
+        "estimated_total_ms": 4.17404,
+        "tick_usage": 0.0543849,
+        "tick_overrun": 0
+       },
+       "Lighting": {
+        "fires": 342,
+        "avg_cost_ms": 0.00954537,
+        "estimated_total_ms": 3.26452,
+        "tick_usage": 0.0381815,
+        "tick_overrun": 0
+       },
+       "Lobby Art": {
+        "fires": 8,
+        "avg_cost_ms": 0.00882886,
+        "estimated_total_ms": 0.0706309,
+        "tick_usage": 0.0353154,
+        "tick_overrun": 0
+       },
+       "Loot Icon Generation": {
+        "fires": 32,
+        "avg_cost_ms": 0.00497659,
+        "estimated_total_ms": 0.159251,
+        "tick_usage": 0.0199064,
+        "tick_overrun": 0
+       },
+       "Machines": {
+        "fires": 8,
+        "avg_cost_ms": 28.7443,
+        "estimated_total_ms": 229.955,
+        "tick_usage": 114.977,
+        "tick_overrun": 5.78744
+       },
+       "Material exposure": {
+        "fires": 16,
+        "avg_cost_ms": 16.7872,
+        "estimated_total_ms": 268.596,
+        "tick_usage": 67.149,
+        "tick_overrun": 0.190321
+       },
+       "Mobs": {
+        "fires": 8,
+        "avg_cost_ms": 0.0056372,
+        "estimated_total_ms": 0.0450976,
+        "tick_usage": 0.0225488,
+        "tick_overrun": 0
+       },
+       "Motion Tracker": {
+        "fires": 16,
+        "avg_cost_ms": 0.00891229,
+        "estimated_total_ms": 0.142597,
+        "tick_usage": 0.0356492,
+        "tick_overrun": 0
+       },
+       "Obj Tab Items": {
+        "fires": 163,
+        "avg_cost_ms": 0.00851802,
+        "estimated_total_ms": 1.38844,
+        "tick_usage": 0.0340721,
+        "tick_overrun": 0
+       },
+       "Objects": {
+        "fires": 9,
+        "avg_cost_ms": 0.322126,
+        "estimated_total_ms": 2.89913,
+        "tick_usage": 1.2885,
+        "tick_overrun": 0
+       },
+       "Pai": {
+        "fires": 4,
+        "avg_cost_ms": 0.00962181,
+        "estimated_total_ms": 0.0384872,
+        "tick_usage": 0.0384872,
+        "tick_overrun": 0
+       },
+       "Ping": {
+        "fires": 4,
+        "avg_cost_ms": 0.00642829,
+        "estimated_total_ms": 0.0257132,
+        "tick_usage": 0.0257132,
+        "tick_overrun": 0
+       },
+       "Planets": {
+        "fires": 8,
+        "avg_cost_ms": 0.0065243,
+        "estimated_total_ms": 0.0521944,
+        "tick_usage": 0.0260972,
+        "tick_overrun": 0
+       },
+       "Plants": {
+        "fires": 2,
+        "avg_cost_ms": 0.00710052,
+        "estimated_total_ms": 0.014201,
+        "tick_usage": 0.0284021,
+        "tick_overrun": 0
+       },
+       "Points of Interest": {
+        "fires": 16,
+        "avg_cost_ms": 0.00616713,
+        "estimated_total_ms": 0.0986741,
+        "tick_usage": 0.0246685,
+        "tick_overrun": 0
+       },
+       "Priority Status Effects": {
+        "fires": 319,
+        "avg_cost_ms": 0.00740645,
+        "estimated_total_ms": 2.36266,
+        "tick_usage": 0.0296258,
+        "tick_overrun": 0
+       },
+       "Processing": {
+        "fires": 16,
+        "avg_cost_ms": 0.00631535,
+        "estimated_total_ms": 0.101046,
+        "tick_usage": 0.0252614,
+        "tick_overrun": 0
+       },
+       "Projectiles": {
+        "fires": 638,
+        "avg_cost_ms": 0.00906494,
+        "estimated_total_ms": 5.78343,
+        "tick_usage": 0.0362597,
+        "tick_overrun": 0
+       },
+       "Radiation": {
+        "fires": 33,
+        "avg_cost_ms": 0.127883,
+        "estimated_total_ms": 4.22014,
+        "tick_usage": 0.511532,
+        "tick_overrun": 0
+       },
+       "Reactor": {
+        "fires": 640,
+        "avg_cost_ms": 1.03604,
+        "estimated_total_ms": 663.065,
+        "tick_usage": 4.14415,
+        "tick_overrun": 3.91919
+       },
+       "Reflectors": {
+        "fires": 32,
+        "avg_cost_ms": 0.0063944,
+        "estimated_total_ms": 0.204621,
+        "tick_usage": 0.0255776,
+        "tick_overrun": 0
+       },
+       "Research": {
+        "fires": 16,
+        "avg_cost_ms": 0.0360382,
+        "estimated_total_ms": 0.576611,
+        "tick_usage": 0.144153,
+        "tick_overrun": 0
+       },
+       "Runechat": {
+        "fires": 638,
+        "avg_cost_ms": 0.0156659,
+        "estimated_total_ms": 9.99482,
+        "tick_usage": 0.0626634,
+        "tick_overrun": 0
+       },
+       "Server Tasks": {
+        "fires": 28,
+        "avg_cost_ms": 0.0159942,
+        "estimated_total_ms": 0.447838,
+        "tick_usage": 0.0639768,
+        "tick_overrun": 0
+       },
+       "Shuttle Star Movement": {
+        "fires": 163,
+        "avg_cost_ms": 0.00594721,
+        "estimated_total_ms": 0.969395,
+        "tick_usage": 0.0237888,
+        "tick_overrun": 0
+       },
+       "Shuttles": {
+        "fires": 8,
+        "avg_cost_ms": 0.159608,
+        "estimated_total_ms": 1.27686,
+        "tick_usage": 0.638432,
+        "tick_overrun": 0
+       },
+       "Speech Controller": {
+        "fires": 655,
+        "avg_cost_ms": 0.00806202,
+        "estimated_total_ms": 5.28062,
+        "tick_usage": 0.0322481,
+        "tick_overrun": 0
+       },
+       "Stat Panels": {
+        "fires": 41,
+        "avg_cost_ms": 0.163868,
+        "estimated_total_ms": 6.71859,
+        "tick_usage": 0.655472,
+        "tick_overrun": 0
+       },
+       "Supply": {
+        "fires": 1,
+        "avg_cost_ms": 0.00994418,
+        "estimated_total_ms": 0.00994418,
+        "tick_usage": 0.0397767,
+        "tick_overrun": 0
+       },
+       "tgui": {
+        "fires": 18,
+        "avg_cost_ms": 0.00562806,
+        "estimated_total_ms": 0.101305,
+        "tick_usage": 0.0225122,
+        "tick_overrun": 0
+       },
+       "Throwing": {
+        "fires": 637,
+        "avg_cost_ms": 0.00646107,
+        "estimated_total_ms": 4.1157,
+        "tick_usage": 0.0258443,
+        "tick_overrun": 0
+       },
+       "Ticker": {
+        "fires": 8,
+        "avg_cost_ms": 0.0386077,
+        "estimated_total_ms": 0.308862,
+        "tick_usage": 0.154431,
+        "tick_overrun": 0
+       },
+       "Time Tracking": {
+        "fires": 2,
+        "avg_cost_ms": 0.268199,
+        "estimated_total_ms": 0.536398,
+        "tick_usage": 1.0728,
+        "tick_overrun": 0
+       },
+       "Timer": {
+        "fires": 648,
+        "avg_cost_ms": 0.015883,
+        "estimated_total_ms": 10.2922,
+        "tick_usage": 0.063532,
+        "tick_overrun": 0
+       },
+       "Transfer": {
+        "fires": 17,
+        "avg_cost_ms": 0.00897851,
+        "estimated_total_ms": 0.152635,
+        "tick_usage": 0.035914,
+        "tick_overrun": 0
+       },
+       "Turf Processing": {
+        "fires": 8,
+        "avg_cost_ms": 0.0583846,
+        "estimated_total_ms": 0.467077,
+        "tick_usage": 0.233538,
+        "tick_overrun": 0
+       },
+       "Verb Manager": {
+        "fires": 655,
+        "avg_cost_ms": 0.00885229,
+        "estimated_total_ms": 5.79825,
+        "tick_usage": 0.0354092,
+        "tick_overrun": 0
+       },
+       "Verdigris Bindings": {
+        "fires": 2,
+        "avg_cost_ms": 0.756523,
+        "estimated_total_ms": 1.51305,
+        "tick_usage": 3.02609,
+        "tick_overrun": 0
+       },
+       "Vote": {
+        "fires": 16,
+        "avg_cost_ms": 0.0050567,
+        "estimated_total_ms": 0.0809072,
+        "tick_usage": 0.0202268,
+        "tick_overrun": 0
+       }
+      },
+      "explosion_reactor": {
+       "subscribers": 24055,
+       "total_wakes": 5369,
+       "last_wakes": 3,
+       "dispatch_ms": 0.3629,
+       "continuous_ms": 0.0018,
+       "wakes_by_type": {
+        "/datum/looping_sound/tcomms": {
+         "timer": 195
+        },
+        "/datum/looping_sound/geiger/wall": {
+         "timer": 50
+        },
+        "/datum/looping_sound/supermatter": {
+         "timer": 5
+        },
+        "/obj/machinery/atmospherics/valve/shutoff": {
+         "timer": 34,
+         "key": 34
+        },
+        "/datum/looping_sound/fridge": {
+         "timer": 90
+        },
+        "/datum/looping_sound/generator": {
+         "timer": 85
+        },
+        "/obj/machinery/light/small": {
+         "timer": 5,
+         "key": 427
+        },
+        "/obj/machinery/light": {
+         "timer": 47,
+         "key": 1636
+        },
+        "/obj/machinery/light/spot": {
+         "key": 33
+        },
+        "/obj/machinery/light/floortube": {
+         "key": 4
+        },
+        "/datum/rule_binding": {
+         "key": 2719
+        },
+        "/obj/machinery/door/airlock/external": {
+         "timer": 7
+        },
+        "/datum/looping_sound/alarm/decompression_alarm": {
+         "timer": 16
+        }
+       },
+       "continuous_declared": [],
+       "continuous_by_type": [],
+       "rust": {
+        "timers_pending": 112,
+        "timers_fired": 567,
+        "crossings_fired": 0,
+        "publications": 3351,
+        "models": 0,
+        "keys": 22459,
+        "subscriptions": 77936,
+        "wakes_received": 5420,
+        "wakes_merged": 51,
+        "wakes_delivered": 5369,
+        "wakes_deferred": 0,
+        "watch_wakes": 0,
+        "backlog_urgent": 0,
+        "backlog_normal": 0,
+        "backlog_background": 0,
+        "step_us": 167.6
+       },
+       "window_wakes": 1764
+      },
+      "explosion_outliers": [
+       {
+        "world_time": 457,
+        "usage": 157.285,
+        "overrun": 57.2848,
+        "top_subsystem": "Behaviours",
+        "top_usage": 147.176,
+        "maptick": 0.0274353,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0220003
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0303998
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0311995
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0531998
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.4824
+         },
+         {
+          "name": "Behaviours",
+          "usage": 147.176
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 8.4892
+         }
+        ]
+       },
+       {
+        "world_time": 458.75,
+        "usage": 120.421,
+        "overrun": 20.4212,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 74.7808,
+        "maptick": 0.0256195,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0375999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0476
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.046
+         },
+         {
+          "name": "Timer",
+          "usage": 0.1068
+         },
+         {
+          "name": "Reactor",
+          "usage": 11.8112
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.3272
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0691996
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0223999
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0372
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0279999
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0404005
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0263996
+         },
+         {
+          "name": "Explosions",
+          "usage": 29.7032
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 74.7808
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.3372
+         }
+        ]
+       },
+       {
+        "world_time": 464,
+        "usage": 150.768,
+        "overrun": 50.7676,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 94.7812,
+        "maptick": 0.030098,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.026
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0308
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0308
+         },
+         {
+          "name": "Timer",
+          "usage": 14.7296
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.9648
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.749599
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0599995
+         },
+         {
+          "name": "Chat",
+          "usage": 0.020401
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.037199
+         },
+         {
+          "name": "Lighting",
+          "usage": 3.5728
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0312004
+         },
+         {
+          "name": "Explosions",
+          "usage": 32.1596
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 94.7812
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.57359
+         }
+        ]
+       },
+       {
+        "world_time": 467,
+        "usage": 776.673,
+        "overrun": 676.673,
+        "top_subsystem": "Explosions",
+        "top_usage": 768.64,
+        "maptick": 0.0320587,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0412
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0328
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0308
+         },
+         {
+          "name": "Timer",
+          "usage": 0.066
+         },
+         {
+          "name": "Reactor",
+          "usage": 4.9328
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.3248
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0664001
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0232
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0380001
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.04
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0303998
+         },
+         {
+          "name": "Explosions",
+          "usage": 768.64
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.40723
+         }
+        ]
+       },
+       {
+        "world_time": 474.5,
+        "usage": 209.514,
+        "overrun": 109.514,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 134.064,
+        "maptick": 0.0199661,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0324
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0352
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0312001
+         },
+         {
+          "name": "Timer",
+          "usage": 0.582
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.8032
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.4264
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0599999
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0212002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0379996
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0344
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.026
+         },
+         {
+          "name": "Stat Panels",
+          "usage": 0.6716
+         },
+         {
+          "name": "Explosions",
+          "usage": 68.8616
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 134.064
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.82721
+         }
+        ]
+       },
+       {
+        "world_time": 474.75,
+        "usage": 102.707,
+        "overrun": 2.7068,
+        "top_subsystem": "Explosions",
+        "top_usage": 44.5504,
+        "maptick": 0.0196915,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0275999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0304
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0279999
+         },
+         {
+          "name": "Timer",
+          "usage": 1.4696
+         },
+         {
+          "name": "Reactor",
+          "usage": 14.8232
+         },
+         {
+          "name": "Behaviours",
+          "usage": 2.0012
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0711994
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0240002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.039999
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0303993
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0380001
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0287991
+         },
+         {
+          "name": "Explosions",
+          "usage": 79.9272
+         },
+         {
+          "name": "Instruments",
+          "usage": 0.135597
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 4.03161
+         }
+        ]
+       },
+       {
+        "world_time": 476.75,
+        "usage": 160.454,
+        "overrun": 60.4536,
+        "top_subsystem": "Behaviours",
+        "top_usage": 150.553,
+        "maptick": 0.0243759,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0320001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0352
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0336001
+         },
+         {
+          "name": "Timer",
+          "usage": 1.8136
+         },
+         {
+          "name": "Reactor",
+          "usage": 5.986
+         },
+         {
+          "name": "Behaviours",
+          "usage": 150.553
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.00038
+         }
+        ]
+       },
+       {
+        "world_time": 477,
+        "usage": 149.103,
+        "overrun": 49.1028,
+        "top_subsystem": "Behaviours",
+        "top_usage": 144.878,
+        "maptick": 0.0245285,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0244
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0308
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0275999
+         },
+         {
+          "name": "Timer",
+          "usage": 1.9236
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.748
+         },
+         {
+          "name": "Behaviours",
+          "usage": 144.878
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.47041
+         }
+        ]
+       },
+       {
+        "world_time": 478.25,
+        "usage": 168.594,
+        "overrun": 68.594,
+        "top_subsystem": "Explosions",
+        "top_usage": 163.371,
+        "maptick": 0.0258408,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0320001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0372
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0344
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0696
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.6968
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.4688
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0588002
+         },
+         {
+          "name": "Chat",
+          "usage": 0.02
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0344
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0296001
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0391998
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0240002
+         },
+         {
+          "name": "Database",
+          "usage": 0.0516
+         },
+         {
+          "name": "Explosions",
+          "usage": 163.371
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.62639
+         }
+        ]
+       },
+       {
+        "world_time": 479.75,
+        "usage": 101.206,
+        "overrun": 1.206,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 48.5936,
+        "maptick": 0.0246277,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0307999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0419998
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0332003
+         },
+         {
+          "name": "Timer",
+          "usage": 2.092
+         },
+         {
+          "name": "Reactor",
+          "usage": 4.8744
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.704
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0596008
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0240002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0424004
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0324001
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0360003
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0255995
+         },
+         {
+          "name": "Explosions",
+          "usage": 32.0976
+         },
+         {
+          "name": "Material exposure",
+          "usage": 4.6224
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 48.5936
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 6.896
+         }
+        ]
+       },
+       {
+        "world_time": 484.25,
+        "usage": 111.578,
+        "overrun": 11.5784,
+        "top_subsystem": "Explosions",
+        "top_usage": 80.6876,
+        "maptick": 0.0257187,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0195999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0264001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0228
+         },
+         {
+          "name": "Timer",
+          "usage": 3.8444
+         },
+         {
+          "name": "Reactor",
+          "usage": 2.8988
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.3236
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0480003
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0171995
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0247993
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0183992
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0300007
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0191994
+         },
+         {
+          "name": "Explosions",
+          "usage": 100.554
+         },
+         {
+          "name": "Expedition",
+          "usage": 0.0296001
+         },
+         {
+          "name": "Transfer",
+          "usage": 0.0440006
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0296001
+         },
+         {
+          "name": "Shuttle Star Movement",
+          "usage": 0.0223999
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.6056
+         }
+        ]
+       },
+       {
+        "world_time": 485,
+        "usage": 105.258,
+        "overrun": 5.2584,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 63.5136,
+        "maptick": 0.026329,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0256
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0312001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0288
+         },
+         {
+          "name": "Timer",
+          "usage": 0.7968
+         },
+         {
+          "name": "Reactor",
+          "usage": 3.942
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.998
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0623999
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0212002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0355997
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0363998
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0247993
+         },
+         {
+          "name": "Explosions",
+          "usage": 31.7444
+         },
+         {
+          "name": "Objects",
+          "usage": 1.022
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 63.5136
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.9756
+         }
+        ]
+       },
+       {
+        "world_time": 495.5,
+        "usage": 100.73,
+        "overrun": 0.729599,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 81.9748,
+        "maptick": 0.0265465,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0251999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0283995
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0299997
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0628004
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.8252
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.3108
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0752001
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0212002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0331993
+         },
+         {
+          "name": "Lighting",
+          "usage": 7.0224
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0300007
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 81.9748
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 10.2904
+         }
+        ]
+       },
+       {
+        "world_time": 496.75,
+        "usage": 245.165,
+        "overrun": 145.165,
+        "top_subsystem": "Behaviours",
+        "top_usage": 219.332,
+        "maptick": 0.0264969,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0319999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0368
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0332
+         },
+         {
+          "name": "Timer",
+          "usage": 11.8376
+         },
+         {
+          "name": "Reactor",
+          "usage": 11.8232
+         },
+         {
+          "name": "Behaviours",
+          "usage": 219.332
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.06999
+         }
+        ]
+       },
+       {
+        "world_time": 497,
+        "usage": 201.324,
+        "overrun": 101.324,
+        "top_subsystem": "Behaviours",
+        "top_usage": 169.515,
+        "maptick": 0.027504,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0228
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0304
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0280001
+         },
+         {
+          "name": "Timer",
+          "usage": 9.286
+         },
+         {
+          "name": "Reactor",
+          "usage": 20.6692
+         },
+         {
+          "name": "Behaviours",
+          "usage": 169.515
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.77238
+         }
+        ]
+       },
+       {
+        "world_time": 500.75,
+        "usage": 127.615,
+        "overrun": 27.6152,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 55.786,
+        "maptick": 0.0440292,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0319999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.034
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0336
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0680001
+         },
+         {
+          "name": "Reactor",
+          "usage": 11.6092
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.9888
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0668001
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0223999
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0419998
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0332003
+         },
+         {
+          "name": "Lighting",
+          "usage": 2.892
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0303993
+         },
+         {
+          "name": "Database",
+          "usage": 0.0556011
+         },
+         {
+          "name": "Machines",
+          "usage": 29.316
+         },
+         {
+          "name": "Explosions",
+          "usage": 23.6004
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 55.786
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.00479
+         }
+        ]
+       },
+       {
+        "world_time": 506,
+        "usage": 139.978,
+        "overrun": 39.978,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 83.2244,
+        "maptick": 0.024971,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0312001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0427999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0432
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0688
+         },
+         {
+          "name": "Reactor",
+          "usage": 5.3856
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.402
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0664005
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0232
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0455999
+         },
+         {
+          "name": "Lighting",
+          "usage": 7.242
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0384007
+         },
+         {
+          "name": "Explosions",
+          "usage": 40.0384
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 83.2244
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.326
+         }
+        ]
+       },
+       {
+        "world_time": 511.25,
+        "usage": 105.321,
+        "overrun": 5.3212,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 44.6364,
+        "maptick": 0.0299606,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0291996
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.2192
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0376005
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0599995
+         },
+         {
+          "name": "Reactor",
+          "usage": 8.2224
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.332001
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0655994
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0212002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0347996
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0284004
+         },
+         {
+          "name": "Lighting",
+          "usage": 5.8996
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0328007
+         },
+         {
+          "name": "Explosions",
+          "usage": 19.3896
+         },
+         {
+          "name": "Fast Processing",
+          "usage": 0.0475998
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0264015
+         },
+         {
+          "name": "Material exposure",
+          "usage": 15.6052
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 44.6364
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 10.6332
+         }
+        ]
+       },
+       {
+        "world_time": 516.75,
+        "usage": 240.881,
+        "overrun": 140.881,
+        "top_subsystem": "Behaviours",
+        "top_usage": 226.212,
+        "maptick": 0.0229855,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.028
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0652
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0283999
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0644
+         },
+         {
+          "name": "Reactor",
+          "usage": 12.1848
+         },
+         {
+          "name": "Behaviours",
+          "usage": 226.212
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.29759
+         }
+        ]
+       },
+       {
+        "world_time": 517,
+        "usage": 224.055,
+        "overrun": 124.055,
+        "top_subsystem": "Behaviours",
+        "top_usage": 220.07,
+        "maptick": 0.0229111,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0248
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0355999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0320001
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0636001
+         },
+         {
+          "name": "Reactor",
+          "usage": 2.2164
+         },
+         {
+          "name": "Behaviours",
+          "usage": 220.07
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.61279
+         }
+        ]
+       }
+      ],
+      "explosion_worst_tick": {
+       "world_time": 456,
+       "usage": 1221.44,
+       "overrun": 1121.44,
+       "top_subsystem": "Explosions",
+       "top_usage": 1211.69,
+       "maptick": 0.0291367,
+       "breakdown": [
+        {
+         "name": "Input",
+         "usage": 0.0247998
+        },
+        {
+         "name": "Verb Manager",
+         "usage": 0.0331998
+        },
+        {
+         "name": "Speech Controller",
+         "usage": 0.0275998
+        },
+        {
+         "name": "Timer",
+         "usage": 0.0591998
+        },
+        {
+         "name": "Reactor",
+         "usage": 3.1524
+        },
+        {
+         "name": "Behaviours",
+         "usage": 0.342
+        },
+        {
+         "name": "Runechat",
+         "usage": 0.0604
+        },
+        {
+         "name": "Chat",
+         "usage": 0.0223999
+        },
+        {
+         "name": "Projectiles",
+         "usage": 0.0348005
+        },
+        {
+         "name": "Lighting",
+         "usage": 0.0360003
+        },
+        {
+         "name": "Throwing",
+         "usage": 0.0276003
+        },
+        {
+         "name": "Explosions",
+         "usage": 1211.69
+        },
+        {
+         "name": "BYOND / pre-MC / external",
+         "usage": 5.92798
+        }
+       ]
+      },
+      "explosion_epoch": {
+       "phase": "idle",
+       "pending": 0,
+       "prepared": 0,
+       "current": 0,
+       "signals": 0,
+       "epoch_submissions": 10,
+       "epoch_prepare_ms": 60.4508,
+       "epoch_resolve_ms": 640.485,
+       "epoch_turfs_prepared": 1942,
+       "epoch_turfs_resolved": 1926,
+       "epoch_visuals": 27,
+       "epoch_atoms_resolved": 4011,
+       "epoch_atoms_deduplicated": 2,
+       "epoch_blast_batches": 627,
+       "epoch_atom_collect_ms": 32.7907,
+       "epoch_atom_resolve_ms": 7289.15,
+       "deferred_turf_updates": 0,
+       "deferred_appearance_updates": 0,
+       "last_epoch_wall_ms": 15956.2,
+       "topology_batch_open": 0
+      },
+      "lighting_fires": 343,
+      "destroy_types_by_count": [
+       {
+        "type": "/datum/contract_event",
+        "qdels": 2251,
+        "inclusive_ms": 118.41
+       },
+       {
+        "type": "/datum/contract_opportunity_observation",
+        "qdels": 2191,
+        "inclusive_ms": 98.53
+       },
+       {
+        "type": "/datum/timedevent",
+        "qdels": 938,
+        "inclusive_ms": 38.45
+       },
+       {
+        "type": "/datum/material_service",
+        "qdels": 773,
+        "inclusive_ms": 81.66
+       },
+       {
+        "type": "/datum/gas_mixture",
+        "qdels": 757,
+        "inclusive_ms": 0.29
+       },
+       {
+        "type": "/datum/lighting_corner",
+        "qdels": 398,
+        "inclusive_ms": 16.99
+       },
+       {
+        "type": "/datum/weakref",
+        "qdels": 397,
+        "inclusive_ms": 90.68
+       },
+       {
+        "type": "/datum/gas_mixture/turf",
+        "qdels": 356,
+        "inclusive_ms": 13.48
+       },
+       {
+        "type": "/obj/effect/effect/sparks",
+        "qdels": 315,
+        "inclusive_ms": 54.01
+       },
+       {
+        "type": "/datum/state_context",
+        "qdels": 131,
+        "inclusive_ms": 9
+       },
+       {
+        "type": "/turf/simulated/wall",
+        "qdels": 120,
+        "inclusive_ms": 20.09
+       },
+       {
+        "type": "/turf/simulated/floor/tiled",
+        "qdels": 104,
+        "inclusive_ms": 14.8
+       },
+       {
+        "type": "/datum/ledger",
+        "qdels": 90,
+        "inclusive_ms": 4.17
+       },
+       {
+        "type": "/obj/effect/expl_particles",
+        "qdels": 82,
+        "inclusive_ms": 20.53
+       },
+       {
+        "type": "/datum/light_source",
+        "qdels": 79,
+        "inclusive_ms": 9.14
+       },
+       {
+        "type": "/datum/latent_entry",
+        "qdels": 59,
+        "inclusive_ms": 4.12
+       },
+       {
+        "type": "/image",
+        "qdels": 53,
+        "inclusive_ms": 2.39
+       },
+       {
+        "type": "/datum/effect/effect/system/spark_spread",
+        "qdels": 47,
+        "inclusive_ms": 1.82
+       },
+       {
+        "type": "/obj/effect/effect/smoke",
+        "qdels": 34,
+        "inclusive_ms": 4.56
+       },
+       {
+        "type": "/obj/item/storage/internal",
+        "qdels": 32,
+        "inclusive_ms": 18.13
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/dark",
+        "qdels": 30,
+        "inclusive_ms": 4.43
+       },
+       {
+        "type": "/datum/rule_binding",
+        "qdels": 30,
+        "inclusive_ms": 5.62
+       },
+       {
+        "type": "/turf/simulated/floor/plating",
+        "qdels": 23,
+        "inclusive_ms": 3.16
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/supply",
+        "qdels": 22,
+        "inclusive_ms": 7.41
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers",
+        "qdels": 22,
+        "inclusive_ms": 7.84
+       },
+       {
+        "type": "/obj/structure/cable/green",
+        "qdels": 21,
+        "inclusive_ms": 5.55
+       },
+       {
+        "type": "/datum/component/overlay_lighting",
+        "qdels": 19,
+        "inclusive_ms": 9.78
+       },
+       {
+        "type": "/obj/effect/overlay/light_visible",
+        "qdels": 19,
+        "inclusive_ms": 1.91
+       },
+       {
+        "type": "/obj/effect/abstract/directional_lighting",
+        "qdels": 19,
+        "inclusive_ms": 3.94
+       },
+       {
+        "type": "/obj/effect/abstract/light_spot",
+        "qdels": 19,
+        "inclusive_ms": 1.94
+       },
+       {
+        "type": "/obj/effect/overlay/light_cone",
+        "qdels": 19,
+        "inclusive_ms": 1.72
+       },
+       {
+        "type": "/obj/structure/window/reinforced",
+        "qdels": 16,
+        "inclusive_ms": 6.84
+       },
+       {
+        "type": "/obj/item/grenade/flashbang",
+        "qdels": 14,
+        "inclusive_ms": 2.07
+       },
+       {
+        "type": "/obj/item/projectile/bullet/shotgun/beanbag",
+        "qdels": 13,
+        "inclusive_ms": 1.3
+       },
+       {
+        "type": "/obj/item/ammo_casing/a12g/beanbag",
+        "qdels": 12,
+        "inclusive_ms": 2.7
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/blue_clip",
+        "qdels": 12,
+        "inclusive_ms": 2.65
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/red_long",
+        "qdels": 10,
+        "inclusive_ms": 1.15
+       },
+       {
+        "type": "/datum/reagents",
+        "qdels": 9,
+        "inclusive_ms": 0.44
+       },
+       {
+        "type": "/datum/pipeline",
+        "qdels": 8,
+        "inclusive_ms": 0.45
+       },
+       {
+        "type": "/datum/pipe_network",
+        "qdels": 8,
+        "inclusive_ms": 0.47
+       }
+      ],
+      "destroy_types_by_inclusive_ms": [
+       {
+        "type": "/datum/contract_event",
+        "qdels": 2251,
+        "inclusive_ms": 118.41
+       },
+       {
+        "type": "/datum/contract_opportunity_observation",
+        "qdels": 2191,
+        "inclusive_ms": 98.53
+       },
+       {
+        "type": "/datum/weakref",
+        "qdels": 397,
+        "inclusive_ms": 90.68
+       },
+       {
+        "type": "/datum/material_service",
+        "qdels": 773,
+        "inclusive_ms": 81.66
+       },
+       {
+        "type": "/obj/effect/effect/sparks",
+        "qdels": 315,
+        "inclusive_ms": 54.01
+       },
+       {
+        "type": "/datum/timedevent",
+        "qdels": 938,
+        "inclusive_ms": 38.45
+       },
+       {
+        "type": "/obj/effect/expl_particles",
+        "qdels": 82,
+        "inclusive_ms": 20.53
+       },
+       {
+        "type": "/turf/simulated/wall",
+        "qdels": 120,
+        "inclusive_ms": 20.09
+       },
+       {
+        "type": "/obj/item/storage/internal",
+        "qdels": 32,
+        "inclusive_ms": 18.13
+       },
+       {
+        "type": "/datum/lighting_corner",
+        "qdels": 398,
+        "inclusive_ms": 16.99
+       },
+       {
+        "type": "/turf/simulated/floor/tiled",
+        "qdels": 104,
+        "inclusive_ms": 14.8
+       },
+       {
+        "type": "/datum/gas_mixture/turf",
+        "qdels": 356,
+        "inclusive_ms": 13.48
+       },
+       {
+        "type": "/datum/component/overlay_lighting",
+        "qdels": 19,
+        "inclusive_ms": 9.78
+       },
+       {
+        "type": "/datum/light_source",
+        "qdels": 79,
+        "inclusive_ms": 9.14
+       },
+       {
+        "type": "/datum/state_context",
+        "qdels": 131,
+        "inclusive_ms": 9
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers",
+        "qdels": 22,
+        "inclusive_ms": 7.84
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/supply",
+        "qdels": 22,
+        "inclusive_ms": 7.41
+       },
+       {
+        "type": "/obj/structure/window/reinforced",
+        "qdels": 16,
+        "inclusive_ms": 6.84
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/forensics/red",
+        "qdels": 3,
+        "inclusive_ms": 6.53
+       },
+       {
+        "type": "/datum/rule_binding",
+        "qdels": 30,
+        "inclusive_ms": 5.62
+       },
+       {
+        "type": "/obj/structure/cable/green",
+        "qdels": 21,
+        "inclusive_ms": 5.55
+       },
+       {
+        "type": "/obj/machinery/door/firedoor/border_only",
+        "qdels": 5,
+        "inclusive_ms": 5.39
+       },
+       {
+        "type": "/obj/structure/window/reinforced/polarized",
+        "qdels": 8,
+        "inclusive_ms": 5.32
+       },
+       {
+        "type": "/obj/item/storage/box/flashbangs",
+        "qdels": 2,
+        "inclusive_ms": 4.62
+       },
+       {
+        "type": "/obj/effect/effect/smoke",
+        "qdels": 34,
+        "inclusive_ms": 4.56
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/dark",
+        "qdels": 30,
+        "inclusive_ms": 4.43
+       },
+       {
+        "type": "/obj/item/clothing/head/helmet/warden/hat",
+        "qdels": 2,
+        "inclusive_ms": 4.36
+       },
+       {
+        "type": "/datum/ledger",
+        "qdels": 90,
+        "inclusive_ms": 4.17
+       },
+       {
+        "type": "/datum/latent_entry",
+        "qdels": 59,
+        "inclusive_ms": 4.12
+       },
+       {
+        "type": "/obj/effect/abstract/directional_lighting",
+        "qdels": 19,
+        "inclusive_ms": 3.94
+       },
+       {
+        "type": "/obj/item/storage/box/holobadge",
+        "qdels": 2,
+        "inclusive_ms": 3.63
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/vest/wardencoat/alt",
+        "qdels": 2,
+        "inclusive_ms": 3.55
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/forensics/blue",
+        "qdels": 3,
+        "inclusive_ms": 3.41
+       },
+       {
+        "type": "/obj/item/ammo_magazine/m12gdrumjack/beanbag",
+        "qdels": 3,
+        "inclusive_ms": 3.19
+       },
+       {
+        "type": "/turf/simulated/floor/plating",
+        "qdels": 23,
+        "inclusive_ms": 3.16
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/vest/wardencoat",
+        "qdels": 2,
+        "inclusive_ms": 3.07
+       },
+       {
+        "type": "/obj/machinery/firealarm",
+        "qdels": 2,
+        "inclusive_ms": 2.72
+       },
+       {
+        "type": "/obj/item/ammo_casing/a12g/beanbag",
+        "qdels": 12,
+        "inclusive_ms": 2.7
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/blue_clip",
+        "qdels": 12,
+        "inclusive_ms": 2.65
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/hooded/wintercoat/security",
+        "qdels": 2,
+        "inclusive_ms": 2.44
+       }
+      ]
+     },
+     "phases": [
+      {
+       "name": "before_explosion",
+       "world_time": 363,
+       "realtime": 829466,
+       "process": {
+        "t": 167.041,
+        "private_mb": 2248.4,
+        "working_set_mb": 2118.8,
+        "cpu_seconds": 185.42
+       },
+       "rust": {
+        "alloc.core.current_bytes": 0,
+        "alloc.core.peak_bytes": 0,
+        "alloc.devices.current_bytes": 0,
+        "alloc.devices.peak_bytes": 0,
+        "alloc.ffi.current_bytes": 0,
+        "alloc.ffi.peak_bytes": 0,
+        "alloc.gas.current_bytes": 0,
+        "alloc.gas.peak_bytes": 0,
+        "alloc.heap.current_bytes": 700007000,
+        "alloc.heap.peak_bytes": 1931290000,
+        "alloc.heat.current_bytes": 0,
+        "alloc.heat.peak_bytes": 0,
+        "alloc.layout.current_bytes": 0,
+        "alloc.layout.peak_bytes": 0,
+        "alloc.power.current_bytes": 0,
+        "alloc.power.peak_bytes": 0,
+        "alloc.total.current_bytes": 700007000,
+        "alloc.untagged.current_bytes": 700007000,
+        "alloc.untagged.peak_bytes": 1931290000,
+        "jobs.pending": 0,
+        "reactor.backlog.background": 0,
+        "reactor.backlog.normal": 0,
+        "reactor.backlog.urgent": 0,
+        "reactor.crossings_fired": 0,
+        "reactor.keys": 22400,
+        "reactor.models": 0,
+        "reactor.publications": 1880,
+        "reactor.step_us": 166.9,
+        "reactor.subscriptions": 77665,
+        "reactor.timers_fired": 321,
+        "reactor.timers_pending": 98,
+        "reactor.wakes_deferred": 0,
+        "reactor.wakes_delivered": 3605,
+        "reactor.wakes_merged": 34,
+        "reactor.wakes_received": 3639,
+        "reactor.watch_wakes": 0
+       }
+      },
+      {
+       "name": "after_explosion",
+       "world_time": 527,
+       "realtime": 829641,
+       "process": {
+        "t": 184.368,
+        "private_mb": 2249.7,
+        "working_set_mb": 2122.8,
+        "cpu_seconds": 224.89
+       },
+       "rust": {
+        "alloc.core.current_bytes": 0,
+        "alloc.core.peak_bytes": 0,
+        "alloc.devices.current_bytes": 0,
+        "alloc.devices.peak_bytes": 0,
+        "alloc.ffi.current_bytes": 0,
+        "alloc.ffi.peak_bytes": 0,
+        "alloc.gas.current_bytes": 0,
+        "alloc.gas.peak_bytes": 0,
+        "alloc.heap.current_bytes": 656209000,
+        "alloc.heap.peak_bytes": 1931290000,
+        "alloc.heat.current_bytes": 0,
+        "alloc.heat.peak_bytes": 0,
+        "alloc.layout.current_bytes": 0,
+        "alloc.layout.peak_bytes": 0,
+        "alloc.power.current_bytes": 0,
+        "alloc.power.peak_bytes": 0,
+        "alloc.total.current_bytes": 656209000,
+        "alloc.untagged.current_bytes": 656209000,
+        "alloc.untagged.peak_bytes": 1931290000,
+        "jobs.pending": 0,
+        "reactor.backlog.background": 0,
+        "reactor.backlog.normal": 0,
+        "reactor.backlog.urgent": 0,
+        "reactor.crossings_fired": 0,
+        "reactor.keys": 22459,
+        "reactor.models": 0,
+        "reactor.publications": 3351,
+        "reactor.step_us": 167.6,
+        "reactor.subscriptions": 77936,
+        "reactor.timers_fired": 567,
+        "reactor.timers_pending": 112,
+        "reactor.wakes_deferred": 0,
+        "reactor.wakes_delivered": 5369,
+        "reactor.wakes_merged": 51,
+        "reactor.wakes_received": 5420,
+        "reactor.watch_wakes": 0
+       }
+      }
+     ]
+    }
+   },
+   "iteration": 2,
+   "warmup": false,
+   "process": {
+    "samples": 197,
+    "peak_private_mb": 3762.6,
+    "final_private_mb": 74.7,
+    "peak_working_set_mb": 3564.6,
+    "cpu_seconds": 242.03,
+    "wall_seconds": 200.413
+   },
+   "process_samples": [
+    {
+     "t": 0.474,
+     "private_mb": 34.1,
+     "working_set_mb": 27.9,
+     "cpu_seconds": 0.34
+    },
+    {
+     "t": 1.498,
+     "private_mb": 34.1,
+     "working_set_mb": 47.3,
+     "cpu_seconds": 1.41
+    },
+    {
+     "t": 2.515,
+     "private_mb": 40.2,
+     "working_set_mb": 53.6,
+     "cpu_seconds": 2.2
+    },
+    {
+     "t": 3.535,
+     "private_mb": 63.9,
+     "working_set_mb": 78.5,
+     "cpu_seconds": 2.92
+    },
+    {
+     "t": 4.539,
+     "private_mb": 172.8,
+     "working_set_mb": 185.9,
+     "cpu_seconds": 3.67
+    },
+    {
+     "t": 5.587,
+     "private_mb": 175.7,
+     "working_set_mb": 188.8,
+     "cpu_seconds": 4.31
+    },
+    {
+     "t": 6.598,
+     "private_mb": 177.9,
+     "working_set_mb": 191,
+     "cpu_seconds": 5.03
+    },
+    {
+     "t": 7.611,
+     "private_mb": 205,
+     "working_set_mb": 218,
+     "cpu_seconds": 5.83
+    },
+    {
+     "t": 8.619,
+     "private_mb": 243.4,
+     "working_set_mb": 256.3,
+     "cpu_seconds": 6.5
+    },
+    {
+     "t": 9.717,
+     "private_mb": 283.3,
+     "working_set_mb": 296.2,
+     "cpu_seconds": 7.23
+    },
+    {
+     "t": 10.674,
+     "private_mb": 320.6,
+     "working_set_mb": 333.4,
+     "cpu_seconds": 7.97
+    },
+    {
+     "t": 11.684,
+     "private_mb": 372.3,
+     "working_set_mb": 385.1,
+     "cpu_seconds": 8.89
+    },
+    {
+     "t": 12.7,
+     "private_mb": 433,
+     "working_set_mb": 445.6,
+     "cpu_seconds": 9.89
+    },
+    {
+     "t": 13.722,
+     "private_mb": 487.4,
+     "working_set_mb": 500,
+     "cpu_seconds": 10.88
+    },
+    {
+     "t": 14.743,
+     "private_mb": 540.7,
+     "working_set_mb": 553.1,
+     "cpu_seconds": 11.86
+    },
+    {
+     "t": 15.757,
+     "private_mb": 594.8,
+     "working_set_mb": 607.1,
+     "cpu_seconds": 12.86
+    },
+    {
+     "t": 16.769,
+     "private_mb": 649.7,
+     "working_set_mb": 661.9,
+     "cpu_seconds": 13.86
+    },
+    {
+     "t": 17.782,
+     "private_mb": 681.8,
+     "working_set_mb": 695.9,
+     "cpu_seconds": 14.81
+    },
+    {
+     "t": 18.797,
+     "private_mb": 708.7,
+     "working_set_mb": 722.8,
+     "cpu_seconds": 15.75
+    },
+    {
+     "t": 19.812,
+     "private_mb": 731.6,
+     "working_set_mb": 745.2,
+     "cpu_seconds": 16.66
+    },
+    {
+     "t": 20.824,
+     "private_mb": 738.8,
+     "working_set_mb": 752.5,
+     "cpu_seconds": 17.64
+    },
+    {
+     "t": 21.838,
+     "private_mb": 739,
+     "working_set_mb": 752.7,
+     "cpu_seconds": 17.77
+    },
+    {
+     "t": 22.848,
+     "private_mb": 741.6,
+     "working_set_mb": 755.4,
+     "cpu_seconds": 18.69
+    },
+    {
+     "t": 23.858,
+     "private_mb": 761.5,
+     "working_set_mb": 775.2,
+     "cpu_seconds": 19.64
+    },
+    {
+     "t": 24.88,
+     "private_mb": 767.6,
+     "working_set_mb": 781.1,
+     "cpu_seconds": 20.64
+    },
+    {
+     "t": 25.9,
+     "private_mb": 770.5,
+     "working_set_mb": 784.1,
+     "cpu_seconds": 21.58
+    },
+    {
+     "t": 26.982,
+     "private_mb": 774.7,
+     "working_set_mb": 788,
+     "cpu_seconds": 22.22
+    },
+    {
+     "t": 27.979,
+     "private_mb": 779.3,
+     "working_set_mb": 792.6,
+     "cpu_seconds": 23.19
+    },
+    {
+     "t": 29.007,
+     "private_mb": 785.8,
+     "working_set_mb": 799.1,
+     "cpu_seconds": 24.16
+    },
+    {
+     "t": 30.016,
+     "private_mb": 798,
+     "working_set_mb": 810.5,
+     "cpu_seconds": 25.16
+    },
+    {
+     "t": 31.029,
+     "private_mb": 799.4,
+     "working_set_mb": 812,
+     "cpu_seconds": 26.16
+    },
+    {
+     "t": 32.043,
+     "private_mb": 817.4,
+     "working_set_mb": 829.7,
+     "cpu_seconds": 27.17
+    },
+    {
+     "t": 33.057,
+     "private_mb": 817.6,
+     "working_set_mb": 830,
+     "cpu_seconds": 28.17
+    },
+    {
+     "t": 34.079,
+     "private_mb": 817.6,
+     "working_set_mb": 830.1,
+     "cpu_seconds": 29.16
+    },
+    {
+     "t": 35.09,
+     "private_mb": 820.7,
+     "working_set_mb": 833.2,
+     "cpu_seconds": 30.17
+    },
+    {
+     "t": 36.104,
+     "private_mb": 826.4,
+     "working_set_mb": 837.7,
+     "cpu_seconds": 31.19
+    },
+    {
+     "t": 37.115,
+     "private_mb": 834.2,
+     "working_set_mb": 845.3,
+     "cpu_seconds": 32.19
+    },
+    {
+     "t": 38.125,
+     "private_mb": 838.3,
+     "working_set_mb": 849.4,
+     "cpu_seconds": 33.19
+    },
+    {
+     "t": 39.142,
+     "private_mb": 845.2,
+     "working_set_mb": 856.3,
+     "cpu_seconds": 34.17
+    },
+    {
+     "t": 40.152,
+     "private_mb": 850,
+     "working_set_mb": 860.7,
+     "cpu_seconds": 35.14
+    },
+    {
+     "t": 41.165,
+     "private_mb": 853.1,
+     "working_set_mb": 863.9,
+     "cpu_seconds": 36.13
+    },
+    {
+     "t": 42.181,
+     "private_mb": 859.4,
+     "working_set_mb": 870.3,
+     "cpu_seconds": 37.09
+    },
+    {
+     "t": 43.202,
+     "private_mb": 863.3,
+     "working_set_mb": 874.1,
+     "cpu_seconds": 38.06
+    },
+    {
+     "t": 44.221,
+     "private_mb": 868.8,
+     "working_set_mb": 879.6,
+     "cpu_seconds": 39.05
+    },
+    {
+     "t": 45.232,
+     "private_mb": 875.2,
+     "working_set_mb": 885.9,
+     "cpu_seconds": 40.05
+    },
+    {
+     "t": 46.249,
+     "private_mb": 878.5,
+     "working_set_mb": 889.3,
+     "cpu_seconds": 41.03
+    },
+    {
+     "t": 47.263,
+     "private_mb": 881.1,
+     "working_set_mb": 891.9,
+     "cpu_seconds": 42.03
+    },
+    {
+     "t": 48.273,
+     "private_mb": 888.8,
+     "working_set_mb": 899.2,
+     "cpu_seconds": 43.02
+    },
+    {
+     "t": 49.295,
+     "private_mb": 892.2,
+     "working_set_mb": 902.7,
+     "cpu_seconds": 44.02
+    },
+    {
+     "t": 50.305,
+     "private_mb": 896.6,
+     "working_set_mb": 907,
+     "cpu_seconds": 45.03
+    },
+    {
+     "t": 51.327,
+     "private_mb": 905.7,
+     "working_set_mb": 914,
+     "cpu_seconds": 46.02
+    },
+    {
+     "t": 52.343,
+     "private_mb": 909.9,
+     "working_set_mb": 917.9,
+     "cpu_seconds": 47
+    },
+    {
+     "t": 53.351,
+     "private_mb": 916.9,
+     "working_set_mb": 925,
+     "cpu_seconds": 47.95
+    },
+    {
+     "t": 54.369,
+     "private_mb": 920.8,
+     "working_set_mb": 929,
+     "cpu_seconds": 48.92
+    },
+    {
+     "t": 55.387,
+     "private_mb": 924,
+     "working_set_mb": 932.2,
+     "cpu_seconds": 49.89
+    },
+    {
+     "t": 56.403,
+     "private_mb": 927.5,
+     "working_set_mb": 935.3,
+     "cpu_seconds": 50.91
+    },
+    {
+     "t": 57.417,
+     "private_mb": 930.6,
+     "working_set_mb": 938.5,
+     "cpu_seconds": 51.91
+    },
+    {
+     "t": 58.433,
+     "private_mb": 933.7,
+     "working_set_mb": 941.6,
+     "cpu_seconds": 52.91
+    },
+    {
+     "t": 59.443,
+     "private_mb": 937.1,
+     "working_set_mb": 944.3,
+     "cpu_seconds": 53.91
+    },
+    {
+     "t": 60.458,
+     "private_mb": 938.8,
+     "working_set_mb": 946.4,
+     "cpu_seconds": 54.89
+    },
+    {
+     "t": 61.473,
+     "private_mb": 941.1,
+     "working_set_mb": 948.9,
+     "cpu_seconds": 55.92
+    },
+    {
+     "t": 62.491,
+     "private_mb": 944.4,
+     "working_set_mb": 952.2,
+     "cpu_seconds": 56.92
+    },
+    {
+     "t": 63.497,
+     "private_mb": 950.2,
+     "working_set_mb": 956.4,
+     "cpu_seconds": 57.89
+    },
+    {
+     "t": 64.509,
+     "private_mb": 952.8,
+     "working_set_mb": 959.8,
+     "cpu_seconds": 58.83
+    },
+    {
+     "t": 65.52,
+     "private_mb": 955.9,
+     "working_set_mb": 962.8,
+     "cpu_seconds": 59.81
+    },
+    {
+     "t": 66.539,
+     "private_mb": 958.3,
+     "working_set_mb": 965.4,
+     "cpu_seconds": 60.8
+    },
+    {
+     "t": 67.558,
+     "private_mb": 960.4,
+     "working_set_mb": 967.7,
+     "cpu_seconds": 61.77
+    },
+    {
+     "t": 68.573,
+     "private_mb": 963,
+     "working_set_mb": 970.4,
+     "cpu_seconds": 62.77
+    },
+    {
+     "t": 69.588,
+     "private_mb": 970.8,
+     "working_set_mb": 974,
+     "cpu_seconds": 63.72
+    },
+    {
+     "t": 70.598,
+     "private_mb": 974.1,
+     "working_set_mb": 977.4,
+     "cpu_seconds": 64.67
+    },
+    {
+     "t": 71.605,
+     "private_mb": 978.1,
+     "working_set_mb": 981.5,
+     "cpu_seconds": 65.66
+    },
+    {
+     "t": 72.615,
+     "private_mb": 982.1,
+     "working_set_mb": 985.9,
+     "cpu_seconds": 66.63
+    },
+    {
+     "t": 73.627,
+     "private_mb": 985.6,
+     "working_set_mb": 989.3,
+     "cpu_seconds": 67.61
+    },
+    {
+     "t": 74.637,
+     "private_mb": 988.5,
+     "working_set_mb": 993,
+     "cpu_seconds": 68.63
+    },
+    {
+     "t": 75.657,
+     "private_mb": 991.7,
+     "working_set_mb": 996.3,
+     "cpu_seconds": 69.64
+    },
+    {
+     "t": 76.672,
+     "private_mb": 996,
+     "working_set_mb": 1000.7,
+     "cpu_seconds": 70.59
+    },
+    {
+     "t": 77.689,
+     "private_mb": 1000.6,
+     "working_set_mb": 1005,
+     "cpu_seconds": 71.48
+    },
+    {
+     "t": 78.701,
+     "private_mb": 1003.2,
+     "working_set_mb": 1007.7,
+     "cpu_seconds": 72.2
+    },
+    {
+     "t": 79.723,
+     "private_mb": 1008.7,
+     "working_set_mb": 1013.2,
+     "cpu_seconds": 72.94
+    },
+    {
+     "t": 80.733,
+     "private_mb": 1011.7,
+     "working_set_mb": 1016.1,
+     "cpu_seconds": 73.77
+    },
+    {
+     "t": 81.749,
+     "private_mb": 1014.3,
+     "working_set_mb": 1018.6,
+     "cpu_seconds": 74.58
+    },
+    {
+     "t": 82.769,
+     "private_mb": 1014.7,
+     "working_set_mb": 1019,
+     "cpu_seconds": 75.22
+    },
+    {
+     "t": 83.792,
+     "private_mb": 1015.3,
+     "working_set_mb": 1019.6,
+     "cpu_seconds": 75.88
+    },
+    {
+     "t": 84.805,
+     "private_mb": 1018.5,
+     "working_set_mb": 1022.8,
+     "cpu_seconds": 76.77
+    },
+    {
+     "t": 85.82,
+     "private_mb": 1023.8,
+     "working_set_mb": 1028.1,
+     "cpu_seconds": 77.75
+    },
+    {
+     "t": 86.828,
+     "private_mb": 1063.8,
+     "working_set_mb": 1062.4,
+     "cpu_seconds": 78.73
+    },
+    {
+     "t": 87.835,
+     "private_mb": 1101.2,
+     "working_set_mb": 1096,
+     "cpu_seconds": 79.75
+    },
+    {
+     "t": 88.854,
+     "private_mb": 1169.9,
+     "working_set_mb": 1145.8,
+     "cpu_seconds": 80.72
+    },
+    {
+     "t": 89.863,
+     "private_mb": 1231.3,
+     "working_set_mb": 1224.1,
+     "cpu_seconds": 81.67
+    },
+    {
+     "t": 90.876,
+     "private_mb": 1283.8,
+     "working_set_mb": 1243.8,
+     "cpu_seconds": 82.64
+    },
+    {
+     "t": 91.89,
+     "private_mb": 1305.3,
+     "working_set_mb": 1255.3,
+     "cpu_seconds": 83.64
+    },
+    {
+     "t": 92.908,
+     "private_mb": 1305.3,
+     "working_set_mb": 1255.3,
+     "cpu_seconds": 84.64
+    },
+    {
+     "t": 93.919,
+     "private_mb": 1306.1,
+     "working_set_mb": 1256.3,
+     "cpu_seconds": 85.66
+    },
+    {
+     "t": 94.932,
+     "private_mb": 1306.9,
+     "working_set_mb": 1257,
+     "cpu_seconds": 86.66
+    },
+    {
+     "t": 95.953,
+     "private_mb": 1307.6,
+     "working_set_mb": 1257.7,
+     "cpu_seconds": 87.66
+    },
+    {
+     "t": 96.967,
+     "private_mb": 1308.3,
+     "working_set_mb": 1258.4,
+     "cpu_seconds": 88.66
+    },
+    {
+     "t": 97.981,
+     "private_mb": 1309,
+     "working_set_mb": 1259.1,
+     "cpu_seconds": 89.66
+    },
+    {
+     "t": 99.001,
+     "private_mb": 1309.5,
+     "working_set_mb": 1259.5,
+     "cpu_seconds": 90.66
+    },
+    {
+     "t": 100.018,
+     "private_mb": 1309.9,
+     "working_set_mb": 1259.8,
+     "cpu_seconds": 91.67
+    },
+    {
+     "t": 101.03,
+     "private_mb": 1310.1,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 92.66
+    },
+    {
+     "t": 102.048,
+     "private_mb": 1310,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 93.48
+    },
+    {
+     "t": 103.066,
+     "private_mb": 1310,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 94.48
+    },
+    {
+     "t": 104.077,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 95.39
+    },
+    {
+     "t": 105.152,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 96.03
+    },
+    {
+     "t": 106.13,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 96.7
+    },
+    {
+     "t": 107.143,
+     "private_mb": 1310.9,
+     "working_set_mb": 1260.9,
+     "cpu_seconds": 97.66
+    },
+    {
+     "t": 108.153,
+     "private_mb": 1310.9,
+     "working_set_mb": 1260.9,
+     "cpu_seconds": 98.52
+    },
+    {
+     "t": 109.173,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 99.52
+    },
+    {
+     "t": 110.184,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 100.47
+    },
+    {
+     "t": 111.199,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 101.45
+    },
+    {
+     "t": 112.214,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 102.45
+    },
+    {
+     "t": 113.223,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 103.44
+    },
+    {
+     "t": 114.251,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 104.3
+    },
+    {
+     "t": 115.261,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 105.02
+    },
+    {
+     "t": 116.277,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 105.59
+    },
+    {
+     "t": 117.289,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 106.36
+    },
+    {
+     "t": 118.304,
+     "private_mb": 1311.2,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 107.13
+    },
+    {
+     "t": 119.318,
+     "private_mb": 1311.5,
+     "working_set_mb": 1261.3,
+     "cpu_seconds": 107.81
+    },
+    {
+     "t": 120.357,
+     "private_mb": 1311.5,
+     "working_set_mb": 1261.3,
+     "cpu_seconds": 108.53
+    },
+    {
+     "t": 121.361,
+     "private_mb": 1311.5,
+     "working_set_mb": 1261.3,
+     "cpu_seconds": 109.13
+    },
+    {
+     "t": 122.375,
+     "private_mb": 1311.5,
+     "working_set_mb": 1261.3,
+     "cpu_seconds": 109.86
+    },
+    {
+     "t": 123.388,
+     "private_mb": 1315.9,
+     "working_set_mb": 1265.8,
+     "cpu_seconds": 110.59
+    },
+    {
+     "t": 124.403,
+     "private_mb": 1338.1,
+     "working_set_mb": 1287.2,
+     "cpu_seconds": 111.53
+    },
+    {
+     "t": 125.411,
+     "private_mb": 1342,
+     "working_set_mb": 1291,
+     "cpu_seconds": 112.53
+    },
+    {
+     "t": 126.421,
+     "private_mb": 1349.7,
+     "working_set_mb": 1298.6,
+     "cpu_seconds": 113.53
+    },
+    {
+     "t": 127.438,
+     "private_mb": 1354.5,
+     "working_set_mb": 1303.2,
+     "cpu_seconds": 114.48
+    },
+    {
+     "t": 128.448,
+     "private_mb": 1359,
+     "working_set_mb": 1307.6,
+     "cpu_seconds": 115.48
+    },
+    {
+     "t": 129.457,
+     "private_mb": 1377.2,
+     "working_set_mb": 1325.5,
+     "cpu_seconds": 116.48
+    },
+    {
+     "t": 130.468,
+     "private_mb": 1391.5,
+     "working_set_mb": 1339.5,
+     "cpu_seconds": 117.44
+    },
+    {
+     "t": 131.492,
+     "private_mb": 1402,
+     "working_set_mb": 1349.9,
+     "cpu_seconds": 118.34
+    },
+    {
+     "t": 132.507,
+     "private_mb": 1402,
+     "working_set_mb": 1350,
+     "cpu_seconds": 118.81
+    },
+    {
+     "t": 133.519,
+     "private_mb": 1408.1,
+     "working_set_mb": 1355.4,
+     "cpu_seconds": 119.55
+    },
+    {
+     "t": 134.541,
+     "private_mb": 1416.3,
+     "working_set_mb": 1362.6,
+     "cpu_seconds": 120.31
+    },
+    {
+     "t": 135.577,
+     "private_mb": 1514.7,
+     "working_set_mb": 1459.4,
+     "cpu_seconds": 120.92
+    },
+    {
+     "t": 136.578,
+     "private_mb": 1911.6,
+     "working_set_mb": 1750.3,
+     "cpu_seconds": 124.16
+    },
+    {
+     "t": 137.64,
+     "private_mb": 2556.2,
+     "working_set_mb": 2361.4,
+     "cpu_seconds": 127.36
+    },
+    {
+     "t": 138.709,
+     "private_mb": 2663.1,
+     "working_set_mb": 2474.5,
+     "cpu_seconds": 129.81
+    },
+    {
+     "t": 139.687,
+     "private_mb": 2632.1,
+     "working_set_mb": 2389.3,
+     "cpu_seconds": 131.61
+    },
+    {
+     "t": 140.698,
+     "private_mb": 2946.7,
+     "working_set_mb": 2737,
+     "cpu_seconds": 133.69
+    },
+    {
+     "t": 141.712,
+     "private_mb": 2936.3,
+     "working_set_mb": 2739.5,
+     "cpu_seconds": 135.33
+    },
+    {
+     "t": 142.74,
+     "private_mb": 2697.7,
+     "working_set_mb": 2472.1,
+     "cpu_seconds": 137.02
+    },
+    {
+     "t": 143.741,
+     "private_mb": 3183.4,
+     "working_set_mb": 2988.5,
+     "cpu_seconds": 139.06
+    },
+    {
+     "t": 144.753,
+     "private_mb": 3113.7,
+     "working_set_mb": 2922.8,
+     "cpu_seconds": 140.94
+    },
+    {
+     "t": 145.758,
+     "private_mb": 3131.3,
+     "working_set_mb": 2929,
+     "cpu_seconds": 142.84
+    },
+    {
+     "t": 146.775,
+     "private_mb": 3279.7,
+     "working_set_mb": 3090.5,
+     "cpu_seconds": 144.98
+    },
+    {
+     "t": 147.786,
+     "private_mb": 2995.7,
+     "working_set_mb": 2751.9,
+     "cpu_seconds": 146.58
+    },
+    {
+     "t": 148.798,
+     "private_mb": 3294.1,
+     "working_set_mb": 3100.8,
+     "cpu_seconds": 148.97
+    },
+    {
+     "t": 149.805,
+     "private_mb": 3433.7,
+     "working_set_mb": 3233.3,
+     "cpu_seconds": 150.42
+    },
+    {
+     "t": 150.818,
+     "private_mb": 3629.5,
+     "working_set_mb": 3431.6,
+     "cpu_seconds": 152.98
+    },
+    {
+     "t": 151.827,
+     "private_mb": 3559.4,
+     "working_set_mb": 3363,
+     "cpu_seconds": 154.11
+    },
+    {
+     "t": 152.838,
+     "private_mb": 3676.8,
+     "working_set_mb": 3480.2,
+     "cpu_seconds": 156.64
+    },
+    {
+     "t": 153.864,
+     "private_mb": 3503.8,
+     "working_set_mb": 3218.1,
+     "cpu_seconds": 158.67
+    },
+    {
+     "t": 154.875,
+     "private_mb": 3762.6,
+     "working_set_mb": 3564.6,
+     "cpu_seconds": 161.22
+    },
+    {
+     "t": 155.887,
+     "private_mb": 3640.3,
+     "working_set_mb": 3437.2,
+     "cpu_seconds": 162.67
+    },
+    {
+     "t": 156.901,
+     "private_mb": 3619.2,
+     "working_set_mb": 3458.6,
+     "cpu_seconds": 165.38
+    },
+    {
+     "t": 157.913,
+     "private_mb": 3519.8,
+     "working_set_mb": 3435,
+     "cpu_seconds": 167.72
+    },
+    {
+     "t": 158.929,
+     "private_mb": 3493.9,
+     "working_set_mb": 3418.9,
+     "cpu_seconds": 169.66
+    },
+    {
+     "t": 159.943,
+     "private_mb": 3472.7,
+     "working_set_mb": 3422.4,
+     "cpu_seconds": 172.06
+    },
+    {
+     "t": 160.956,
+     "private_mb": 3478,
+     "working_set_mb": 3422.8,
+     "cpu_seconds": 173.91
+    },
+    {
+     "t": 161.972,
+     "private_mb": 3478,
+     "working_set_mb": 3426.3,
+     "cpu_seconds": 175.58
+    },
+    {
+     "t": 162.987,
+     "private_mb": 2836,
+     "working_set_mb": 2780.4,
+     "cpu_seconds": 177.08
+    },
+    {
+     "t": 164,
+     "private_mb": 2365.6,
+     "working_set_mb": 2260.2,
+     "cpu_seconds": 178.75
+    },
+    {
+     "t": 165.013,
+     "private_mb": 2240.5,
+     "working_set_mb": 2110.9,
+     "cpu_seconds": 180.88
+    },
+    {
+     "t": 166.029,
+     "private_mb": 2250.7,
+     "working_set_mb": 2118.3,
+     "cpu_seconds": 183.31
+    },
+    {
+     "t": 167.041,
+     "private_mb": 2248.4,
+     "working_set_mb": 2118.8,
+     "cpu_seconds": 185.42
+    },
+    {
+     "t": 168.054,
+     "private_mb": 2252.7,
+     "working_set_mb": 2119.2,
+     "cpu_seconds": 187.91
+    },
+    {
+     "t": 169.083,
+     "private_mb": 2252.8,
+     "working_set_mb": 2119.3,
+     "cpu_seconds": 190.33
+    },
+    {
+     "t": 170.1,
+     "private_mb": 2249.1,
+     "working_set_mb": 2119.1,
+     "cpu_seconds": 192.81
+    },
+    {
+     "t": 171.118,
+     "private_mb": 2252.7,
+     "working_set_mb": 2119.4,
+     "cpu_seconds": 194.94
+    },
+    {
+     "t": 172.132,
+     "private_mb": 2252.8,
+     "working_set_mb": 2119.5,
+     "cpu_seconds": 197.28
+    },
+    {
+     "t": 173.142,
+     "private_mb": 2252.9,
+     "working_set_mb": 2121.3,
+     "cpu_seconds": 199.67
+    },
+    {
+     "t": 174.18,
+     "private_mb": 2249.4,
+     "working_set_mb": 2121.3,
+     "cpu_seconds": 202.22
+    },
+    {
+     "t": 175.192,
+     "private_mb": 2252.9,
+     "working_set_mb": 2121.5,
+     "cpu_seconds": 204.97
+    },
+    {
+     "t": 176.204,
+     "private_mb": 2253.2,
+     "working_set_mb": 2121.7,
+     "cpu_seconds": 207.36
+    },
+    {
+     "t": 177.233,
+     "private_mb": 2249.8,
+     "working_set_mb": 2120.2,
+     "cpu_seconds": 209.53
+    },
+    {
+     "t": 178.239,
+     "private_mb": 2252.8,
+     "working_set_mb": 2120,
+     "cpu_seconds": 211.59
+    },
+    {
+     "t": 179.257,
+     "private_mb": 2253,
+     "working_set_mb": 2120.2,
+     "cpu_seconds": 213.69
+    },
+    {
+     "t": 180.302,
+     "private_mb": 2249.6,
+     "working_set_mb": 2120.4,
+     "cpu_seconds": 216
+    },
+    {
+     "t": 181.313,
+     "private_mb": 2253,
+     "working_set_mb": 2120.8,
+     "cpu_seconds": 218.42
+    },
+    {
+     "t": 182.324,
+     "private_mb": 2253.1,
+     "working_set_mb": 2122.7,
+     "cpu_seconds": 220.73
+    },
+    {
+     "t": 183.353,
+     "private_mb": 2253.1,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 222.97
+    },
+    {
+     "t": 184.368,
+     "private_mb": 2249.7,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 224.89
+    },
+    {
+     "t": 185.382,
+     "private_mb": 2253.2,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 226.5
+    },
+    {
+     "t": 186.393,
+     "private_mb": 2249.7,
+     "working_set_mb": 2121.1,
+     "cpu_seconds": 228.08
+    },
+    {
+     "t": 187.404,
+     "private_mb": 2248,
+     "working_set_mb": 2121.1,
+     "cpu_seconds": 230.22
+    },
+    {
+     "t": 188.417,
+     "private_mb": 2246.3,
+     "working_set_mb": 2121.1,
+     "cpu_seconds": 231.97
+    },
+    {
+     "t": 189.431,
+     "private_mb": 2246.3,
+     "working_set_mb": 2121.1,
+     "cpu_seconds": 233.53
+    },
+    {
+     "t": 190.446,
+     "private_mb": 2247.3,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 234.47
+    },
+    {
+     "t": 191.455,
+     "private_mb": 2247.3,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 235.44
+    },
+    {
+     "t": 192.465,
+     "private_mb": 2247.3,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 236.41
+    },
+    {
+     "t": 193.479,
+     "private_mb": 2247.3,
+     "working_set_mb": 2122.8,
+     "cpu_seconds": 237.39
+    },
+    {
+     "t": 194.49,
+     "private_mb": 1888.7,
+     "working_set_mb": 1873.1,
+     "cpu_seconds": 238.3
+    },
+    {
+     "t": 195.502,
+     "private_mb": 1694.2,
+     "working_set_mb": 1680.9,
+     "cpu_seconds": 239.22
+    },
+    {
+     "t": 196.522,
+     "private_mb": 1410.4,
+     "working_set_mb": 1394.4,
+     "cpu_seconds": 240.23
+    },
+    {
+     "t": 197.537,
+     "private_mb": 1111.3,
+     "working_set_mb": 1055.5,
+     "cpu_seconds": 241.23
+    },
+    {
+     "t": 198.55,
+     "private_mb": 74.7,
+     "working_set_mb": 82.3,
+     "cpu_seconds": 242.03
+    },
+    {
+     "t": 199.576,
+     "private_mb": 74.7,
+     "working_set_mb": 82.3,
+     "cpu_seconds": 242.03
+    }
+   ],
+   "profiles": []
+  },
+  {
+   "byond_version": "516.1687",
+   "map": "Southern Cross",
+   "world": {
+    "maxx": 256,
+    "maxy": 256,
+    "maxz": 6,
+    "fps": 40
+   },
+   "init_seconds": 104.819,
+   "subsystem_init_ms": {
+    "Access": 2,
+    "Assets": 2583,
+    "Atmospherics": 35357,
+    "Atoms": 51084,
+    "Chemistry": 11,
+    "Circuit": 42,
+    "Contracts": 4,
+    "Early Assets": 368,
+    "Flight Operations": 14,
+    "HoloMiniMaps": 5512,
+    "Instruments": 12,
+    "Job": 4,
+    "Lighting": 6077,
+    "Machines": 59,
+    "Mapping": 289,
+    "Media Tracks": 1,
+    "nerdle": 4,
+    "Persistence": 82,
+    "Plants": 12,
+    "Points of Interest": 2,
+    "Profiler": 1,
+    "Properties": 2,
+    "Radio": 47,
+    "Research": 149,
+    "Robot Sprites": 10,
+    "Server Tasks": 1,
+    "Shuttles": 320,
+    "Supply": 11,
+    "Wiki": 2417,
+    "Xenoarch": 119
+   },
+   "total_runtimes": 44,
+   "scenarios": {
+    "boot_profile": {
+     "id": "boot_profile",
+     "description": "Per-subsystem init time; per-type Initialize/materialize/LateInitialize cost (deep profile)",
+     "status": "passed",
+     "duration_seconds": 0.26875,
+     "runtimes": 0,
+     "metrics": {
+      "init_seconds": {
+       "value": 104.819,
+       "unit": "s",
+       "better": "lower"
+      },
+      "init_ms_Access": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Assets": {
+       "value": 2583,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Atmospherics": {
+       "value": 35357,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Atoms": {
+       "value": 51084,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Chemistry": {
+       "value": 11,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Circuit": {
+       "value": 42,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Contracts": {
+       "value": 4,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Early Assets": {
+       "value": 368,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Flight Operations": {
+       "value": 14,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_HoloMiniMaps": {
+       "value": 5512,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Instruments": {
+       "value": 12,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Job": {
+       "value": 4,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Lighting": {
+       "value": 6077,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Machines": {
+       "value": 59,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Mapping": {
+       "value": 289,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Media Tracks": {
+       "value": 1,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_nerdle": {
+       "value": 4,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Persistence": {
+       "value": 82,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Plants": {
+       "value": 12,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Points of Interest": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Profiler": {
+       "value": 1,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Properties": {
+       "value": 2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Radio": {
+       "value": 47,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Research": {
+       "value": 149,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Robot Sprites": {
+       "value": 10,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Server Tasks": {
+       "value": 1,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Shuttles": {
+       "value": 320,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Supply": {
+       "value": 11,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Wiki": {
+       "value": 2417,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "init_ms_Xenoarch": {
+       "value": 119,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "booted_ffi_calls": {
+       "value": 281365,
+       "unit": "calls",
+       "better": "lower"
+      },
+      "world_turfs": {
+       "value": 393216,
+       "unit": "turfs",
+       "better": "none"
+      },
+      "world_movables": {
+       "value": 94472,
+       "unit": "atoms",
+       "better": "none"
+      },
+      "lighting_objects": {
+       "value": 29904,
+       "unit": "datums",
+       "better": "none"
+      },
+      "lighting_corners": {
+       "value": 47197,
+       "unit": "datums",
+       "better": "none"
+      },
+      "lighting_sources": {
+       "value": 15892,
+       "unit": "datums",
+       "better": "none"
+      }
+     },
+     "details": {
+      "lighting_counts": {
+       "objects": 29904,
+       "corners": 47197,
+       "sources": 15892
+      },
+      "init_types_note": "build without -DBENCHMARK_DEEP_PROFILE: no per-type table"
+     },
+     "phases": []
+    },
+    "explosion_dense": {
+     "id": "explosion_dense",
+     "description": "Devastation-7 explosion on the most furnished station block (bench_devastation; bench_x/y/z override the site)",
+     "status": "passed",
+     "duration_seconds": 36.8563,
+     "runtimes": 34,
+     "metrics": {
+      "before_explosion_private_mb": {
+       "value": 2276.2,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_heap_mb": {
+       "value": 686.131,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_heap_peak_mb": {
+       "value": 1850.83,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_untagged_mb": {
+       "value": 686.128,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "explosion_seconds": {
+       "value": 17.1562,
+       "unit": "s",
+       "better": "none"
+      },
+      "explosion_tick_avg": {
+       "value": 77.0113,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_p95": {
+       "value": 117,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_p99": {
+       "value": 169,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_max": {
+       "value": 816.858,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_overruns": {
+       "value": 50,
+       "unit": "ticks",
+       "better": "lower"
+      },
+      "explosion_overrun_ratio": {
+       "value": 0.0764526,
+       "unit": "ratio",
+       "better": "lower"
+      },
+      "explosion_tps": {
+       "value": 38.1592,
+       "unit": "tps",
+       "better": "higher"
+      },
+      "explosion_ffi_calls": {
+       "value": 39620,
+       "unit": "calls",
+       "better": "lower"
+      },
+      "explosion_air_ms": {
+       "value": 479.658,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_air_ms_per_s": {
+       "value": 27.9582,
+       "unit": "ms/s",
+       "better": "lower"
+      },
+      "explosion_machines_ms_per_s": {
+       "value": 14.43,
+       "unit": "ms/s",
+       "better": "lower"
+      },
+      "explosion_ffi_calls_per_s": {
+       "value": 2309.36,
+       "unit": "calls/s",
+       "better": "lower"
+      },
+      "explosion_reactor_wakes": {
+       "value": 1755,
+       "unit": "wakes",
+       "better": "lower"
+      },
+      "after_explosion_private_mb": {
+       "value": 2277.6,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_heap_mb": {
+       "value": 625.609,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_heap_peak_mb": {
+       "value": 1850.83,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_untagged_mb": {
+       "value": 625.577,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "explosion_resolve_wall_ms": {
+       "value": 15768.8,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_lighting_settle_wall_ms": {
+       "value": 12.5,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_prepare_ms": {
+       "value": 60.5699,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_turf_resolve_ms": {
+       "value": 615.61,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_atom_collect_ms": {
+       "value": 31.4071,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_atom_resolve_ms": {
+       "value": 7160.69,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_turfs_resolved": {
+       "value": 1926,
+       "unit": "turfs",
+       "better": "none"
+      },
+      "explosion_atoms_resolved": {
+       "value": 3982,
+       "unit": "atoms",
+       "better": "none"
+      },
+      "explosion_qdels": {
+       "value": 9844,
+       "unit": "qdels",
+       "better": "none"
+      }
+     },
+     "details": {
+      "site": {
+       "x": 128,
+       "y": 178,
+       "z": 2,
+       "area": "The Security - Brig",
+       "block_turfs": 841,
+       "block_walls": 169,
+       "block_movables": 1486,
+       "block_objs": 1486,
+       "block_machines": 621
+      },
+      "explosion_subsystems": {
+       "AI": {
+        "fires": 8,
+        "avg_cost_ms": 0.225181,
+        "estimated_total_ms": 1.80145,
+        "tick_usage": 0.900726,
+        "tick_overrun": 0
+       },
+       "AI (Fast)": {
+        "fires": 65,
+        "avg_cost_ms": 0.00584173,
+        "estimated_total_ms": 0.379712,
+        "tick_usage": 0.0233669,
+        "tick_overrun": 0
+       },
+       "Alarm": {
+        "fires": 8,
+        "avg_cost_ms": 0.115741,
+        "estimated_total_ms": 0.925925,
+        "tick_usage": 0.462963,
+        "tick_overrun": 0
+       },
+       "Asset Loading": {
+        "fires": 7,
+        "avg_cost_ms": 24.9702,
+        "estimated_total_ms": 174.791,
+        "tick_usage": 99.8807,
+        "tick_overrun": 705.181
+       },
+       "Atmospherics": {
+        "fires": 31,
+        "avg_cost_ms": 15.4729,
+        "estimated_total_ms": 479.658,
+        "tick_usage": 61.8914,
+        "tick_overrun": 48.8451
+       },
+       "Behaviours": {
+        "fires": 650,
+        "avg_cost_ms": 0.134514,
+        "estimated_total_ms": 87.4342,
+        "tick_usage": 0.538056,
+        "tick_overrun": 0
+       },
+       "Burning": {
+        "fires": 16,
+        "avg_cost_ms": 0.00908099,
+        "estimated_total_ms": 0.145296,
+        "tick_usage": 0.0363239,
+        "tick_overrun": 0
+       },
+       "Character Setup": {
+        "fires": 16,
+        "avg_cost_ms": 0.00507285,
+        "estimated_total_ms": 0.0811657,
+        "tick_usage": 0.0202914,
+        "tick_overrun": 0
+       },
+       "Chat": {
+        "fires": 634,
+        "avg_cost_ms": 0.00497917,
+        "estimated_total_ms": 3.15679,
+        "tick_usage": 0.0199167,
+        "tick_overrun": 0
+       },
+       "Database": {
+        "fires": 66,
+        "avg_cost_ms": 0.0131908,
+        "estimated_total_ms": 0.870593,
+        "tick_usage": 0.0527632,
+        "tick_overrun": 0
+       },
+       "Datum Component System": {
+        "fires": 16,
+        "avg_cost_ms": 0.0102298,
+        "estimated_total_ms": 0.163677,
+        "tick_usage": 0.0409193,
+        "tick_overrun": 0
+       },
+       "Events": {
+        "fires": 8,
+        "avg_cost_ms": 0.0306298,
+        "estimated_total_ms": 0.245038,
+        "tick_usage": 0.122519,
+        "tick_overrun": 0
+       },
+       "Expedition": {
+        "fires": 8,
+        "avg_cost_ms": 0.00826985,
+        "estimated_total_ms": 0.0661588,
+        "tick_usage": 0.0330794,
+        "tick_overrun": 0
+       },
+       "Explosions": {
+        "fires": 4,
+        "avg_cost_ms": 1266.86,
+        "estimated_total_ms": 5067.44,
+        "tick_usage": 5067.44,
+        "tick_overrun": 3.61329
+       },
+       "Fast Processing": {
+        "fires": 82,
+        "avg_cost_ms": 0.00741505,
+        "estimated_total_ms": 0.608034,
+        "tick_usage": 0.0296602,
+        "tick_overrun": 0
+       },
+       "Flight Operations": {
+        "fires": 17,
+        "avg_cost_ms": 0.108613,
+        "estimated_total_ms": 1.84642,
+        "tick_usage": 0.434453,
+        "tick_overrun": 0
+       },
+       "Garbage": {
+        "fires": 8,
+        "avg_cost_ms": 7.43915,
+        "estimated_total_ms": 59.5132,
+        "tick_usage": 29.7566,
+        "tick_overrun": 0
+       },
+       "Input": {
+        "fires": 654,
+        "avg_cost_ms": 0.00740776,
+        "estimated_total_ms": 4.84467,
+        "tick_usage": 0.029631,
+        "tick_overrun": 0
+       },
+       "Instruments": {
+        "fires": 304,
+        "avg_cost_ms": 0.009272,
+        "estimated_total_ms": 2.81869,
+        "tick_usage": 0.037088,
+        "tick_overrun": 0
+       },
+       "Lighting": {
+        "fires": 337,
+        "avg_cost_ms": 0.00841321,
+        "estimated_total_ms": 2.83525,
+        "tick_usage": 0.0336528,
+        "tick_overrun": 0
+       },
+       "Lobby Art": {
+        "fires": 8,
+        "avg_cost_ms": 0.00851579,
+        "estimated_total_ms": 0.0681263,
+        "tick_usage": 0.0340632,
+        "tick_overrun": 0
+       },
+       "Loot Icon Generation": {
+        "fires": 33,
+        "avg_cost_ms": 0.0054543,
+        "estimated_total_ms": 0.179992,
+        "tick_usage": 0.0218172,
+        "tick_overrun": 0
+       },
+       "Machines": {
+        "fires": 8,
+        "avg_cost_ms": 30.9455,
+        "estimated_total_ms": 247.564,
+        "tick_usage": 123.782,
+        "tick_overrun": 4.38619
+       },
+       "Material exposure": {
+        "fires": 16,
+        "avg_cost_ms": 17.0092,
+        "estimated_total_ms": 272.148,
+        "tick_usage": 68.0369,
+        "tick_overrun": 0
+       },
+       "Mobs": {
+        "fires": 8,
+        "avg_cost_ms": 0.0682419,
+        "estimated_total_ms": 0.545935,
+        "tick_usage": 0.272968,
+        "tick_overrun": 0
+       },
+       "Motion Tracker": {
+        "fires": 16,
+        "avg_cost_ms": 0.00772319,
+        "estimated_total_ms": 0.123571,
+        "tick_usage": 0.0308928,
+        "tick_overrun": 0
+       },
+       "Obj Tab Items": {
+        "fires": 164,
+        "avg_cost_ms": 0.00552844,
+        "estimated_total_ms": 0.906665,
+        "tick_usage": 0.0221138,
+        "tick_overrun": 0
+       },
+       "Objects": {
+        "fires": 8,
+        "avg_cost_ms": 0.483182,
+        "estimated_total_ms": 3.86546,
+        "tick_usage": 1.93273,
+        "tick_overrun": 0
+       },
+       "Pai": {
+        "fires": 4,
+        "avg_cost_ms": 0.00918144,
+        "estimated_total_ms": 0.0367258,
+        "tick_usage": 0.0367258,
+        "tick_overrun": 0
+       },
+       "Ping": {
+        "fires": 4,
+        "avg_cost_ms": 0.00694621,
+        "estimated_total_ms": 0.0277848,
+        "tick_usage": 0.0277848,
+        "tick_overrun": 0
+       },
+       "Planets": {
+        "fires": 8,
+        "avg_cost_ms": 0.00774167,
+        "estimated_total_ms": 0.0619334,
+        "tick_usage": 0.0309667,
+        "tick_overrun": 0
+       },
+       "Plants": {
+        "fires": 2,
+        "avg_cost_ms": 0.00806397,
+        "estimated_total_ms": 0.0161279,
+        "tick_usage": 0.0322559,
+        "tick_overrun": 0
+       },
+       "Points of Interest": {
+        "fires": 16,
+        "avg_cost_ms": 0.00616336,
+        "estimated_total_ms": 0.0986138,
+        "tick_usage": 0.0246535,
+        "tick_overrun": 0
+       },
+       "Priority Status Effects": {
+        "fires": 319,
+        "avg_cost_ms": 0.00553417,
+        "estimated_total_ms": 1.7654,
+        "tick_usage": 0.0221367,
+        "tick_overrun": 0
+       },
+       "Processing": {
+        "fires": 16,
+        "avg_cost_ms": 0.00685813,
+        "estimated_total_ms": 0.10973,
+        "tick_usage": 0.0274325,
+        "tick_overrun": 0
+       },
+       "Projectiles": {
+        "fires": 634,
+        "avg_cost_ms": 0.00802909,
+        "estimated_total_ms": 5.09044,
+        "tick_usage": 0.0321164,
+        "tick_overrun": 0
+       },
+       "Radiation": {
+        "fires": 33,
+        "avg_cost_ms": 0.115861,
+        "estimated_total_ms": 3.82343,
+        "tick_usage": 0.463445,
+        "tick_overrun": 0
+       },
+       "Reactor": {
+        "fires": 627,
+        "avg_cost_ms": 0.261881,
+        "estimated_total_ms": 164.199,
+        "tick_usage": 1.04752,
+        "tick_overrun": 0
+       },
+       "Reflectors": {
+        "fires": 33,
+        "avg_cost_ms": 0.00559393,
+        "estimated_total_ms": 0.1846,
+        "tick_usage": 0.0223757,
+        "tick_overrun": 0
+       },
+       "Research": {
+        "fires": 16,
+        "avg_cost_ms": 0.0305953,
+        "estimated_total_ms": 0.489525,
+        "tick_usage": 0.122381,
+        "tick_overrun": 0
+       },
+       "Runechat": {
+        "fires": 634,
+        "avg_cost_ms": 0.0148374,
+        "estimated_total_ms": 9.40689,
+        "tick_usage": 0.0593495,
+        "tick_overrun": 0
+       },
+       "Server Tasks": {
+        "fires": 27,
+        "avg_cost_ms": 0.0128282,
+        "estimated_total_ms": 0.346363,
+        "tick_usage": 0.051313,
+        "tick_overrun": 0
+       },
+       "Shuttle Star Movement": {
+        "fires": 164,
+        "avg_cost_ms": 0.00675948,
+        "estimated_total_ms": 1.10856,
+        "tick_usage": 0.0270379,
+        "tick_overrun": 0
+       },
+       "Shuttles": {
+        "fires": 8,
+        "avg_cost_ms": 0.14699,
+        "estimated_total_ms": 1.17592,
+        "tick_usage": 0.587962,
+        "tick_overrun": 0
+       },
+       "Speech Controller": {
+        "fires": 654,
+        "avg_cost_ms": 0.00750536,
+        "estimated_total_ms": 4.9085,
+        "tick_usage": 0.0300214,
+        "tick_overrun": 0
+       },
+       "Stat Panels": {
+        "fires": 41,
+        "avg_cost_ms": 0.25137,
+        "estimated_total_ms": 10.3062,
+        "tick_usage": 1.00548,
+        "tick_overrun": 0
+       },
+       "Supply": {
+        "fires": 1,
+        "avg_cost_ms": 0.00960525,
+        "estimated_total_ms": 0.00960525,
+        "tick_usage": 0.038421,
+        "tick_overrun": 0
+       },
+       "tgui": {
+        "fires": 18,
+        "avg_cost_ms": 0.00605455,
+        "estimated_total_ms": 0.108982,
+        "tick_usage": 0.0242182,
+        "tick_overrun": 0
+       },
+       "Throwing": {
+        "fires": 632,
+        "avg_cost_ms": 0.0053072,
+        "estimated_total_ms": 3.35415,
+        "tick_usage": 0.0212288,
+        "tick_overrun": 0
+       },
+       "Ticker": {
+        "fires": 9,
+        "avg_cost_ms": 0.0377753,
+        "estimated_total_ms": 0.339978,
+        "tick_usage": 0.151101,
+        "tick_overrun": 0
+       },
+       "Time Tracking": {
+        "fires": 2,
+        "avg_cost_ms": 0.255217,
+        "estimated_total_ms": 0.510435,
+        "tick_usage": 1.02087,
+        "tick_overrun": 0
+       },
+       "Timer": {
+        "fires": 651,
+        "avg_cost_ms": 0.0251971,
+        "estimated_total_ms": 16.4033,
+        "tick_usage": 0.100788,
+        "tick_overrun": 0
+       },
+       "Transfer": {
+        "fires": 17,
+        "avg_cost_ms": 0.00916102,
+        "estimated_total_ms": 0.155737,
+        "tick_usage": 0.0366441,
+        "tick_overrun": 0
+       },
+       "Turf Processing": {
+        "fires": 8,
+        "avg_cost_ms": 0.105971,
+        "estimated_total_ms": 0.847769,
+        "tick_usage": 0.423885,
+        "tick_overrun": 0
+       },
+       "Verb Manager": {
+        "fires": 654,
+        "avg_cost_ms": 0.00884504,
+        "estimated_total_ms": 5.78466,
+        "tick_usage": 0.0353802,
+        "tick_overrun": 0
+       },
+       "Verdigris Bindings": {
+        "fires": 2,
+        "avg_cost_ms": 0.532539,
+        "estimated_total_ms": 1.06508,
+        "tick_usage": 2.13016,
+        "tick_overrun": 0
+       },
+       "Vote": {
+        "fires": 16,
+        "avg_cost_ms": 0.00483868,
+        "estimated_total_ms": 0.0774189,
+        "tick_usage": 0.0193547,
+        "tick_overrun": 0
+       }
+      },
+      "explosion_reactor": {
+       "subscribers": 24054,
+       "total_wakes": 5311,
+       "last_wakes": 0,
+       "dispatch_ms": 0.2675,
+       "continuous_ms": 0.00269997,
+       "wakes_by_type": {
+        "/datum/looping_sound/tcomms": {
+         "timer": 195
+        },
+        "/datum/looping_sound/geiger/wall": {
+         "timer": 50
+        },
+        "/datum/looping_sound/supermatter": {
+         "timer": 5
+        },
+        "/obj/machinery/atmospherics/valve/shutoff": {
+         "timer": 33,
+         "key": 33
+        },
+        "/datum/looping_sound/fridge": {
+         "timer": 90
+        },
+        "/datum/looping_sound/generator": {
+         "timer": 85
+        },
+        "/obj/machinery/light/small": {
+         "timer": 4,
+         "key": 414
+        },
+        "/obj/machinery/light": {
+         "timer": 44,
+         "key": 1608
+        },
+        "/obj/machinery/light/spot": {
+         "key": 29
+        },
+        "/obj/machinery/light/floortube": {
+         "key": 4
+        },
+        "/datum/rule_binding": {
+         "key": 2719
+        },
+        "/datum/looping_sound/alarm/decompression_alarm": {
+         "timer": 15
+        }
+       },
+       "continuous_declared": [],
+       "continuous_by_type": [],
+       "rust": {
+        "timers_pending": 115,
+        "timers_fired": 554,
+        "crossings_fired": 0,
+        "publications": 3338,
+        "models": 0,
+        "keys": 22457,
+        "subscriptions": 77859,
+        "wakes_received": 5361,
+        "wakes_merged": 50,
+        "wakes_delivered": 5311,
+        "wakes_deferred": 0,
+        "watch_wakes": 0,
+        "backlog_urgent": 0,
+        "backlog_normal": 0,
+        "backlog_background": 0,
+        "step_us": 182.8
+       },
+       "window_wakes": 1755
+      },
+      "explosion_outliers": [
+       {
+        "world_time": 442.75,
+        "usage": 546.132,
+        "overrun": 446.132,
+        "top_subsystem": "Explosions",
+        "top_usage": 534.414,
+        "maptick": 0.0332489,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0316
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0332
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.03
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0635999
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.768
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.536
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0535998
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0195999
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0308001
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0223999
+         },
+         {
+          "name": "Lighting",
+          "usage": 7.7592
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0316
+         },
+         {
+          "name": "Explosions",
+          "usage": 534.414
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.33844
+         }
+        ]
+       },
+       {
+        "world_time": 450.75,
+        "usage": 141.198,
+        "overrun": 41.198,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 98.3992,
+        "maptick": 0.0241394,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0268
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.036
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0312001
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0652
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.346
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.3084
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0576
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0204
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0316
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0232
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0344
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0252004
+         },
+         {
+          "name": "Explosions",
+          "usage": 38.0744
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 98.3992
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.7184
+         }
+        ]
+       },
+       {
+        "world_time": 454.25,
+        "usage": 250.422,
+        "overrun": 150.422,
+        "top_subsystem": "Explosions",
+        "top_usage": 214.304,
+        "maptick": 0.0301361,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0276
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.03
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0287998
+         },
+         {
+          "name": "Timer",
+          "usage": 0.7916
+         },
+         {
+          "name": "Reactor",
+          "usage": 4.4148
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.354
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0576
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0236006
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0312004
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0276003
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0356007
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.026
+         },
+         {
+          "name": "Explosions",
+          "usage": 240.451
+         },
+         {
+          "name": "Fast Processing",
+          "usage": 0.0424004
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0247993
+         },
+         {
+          "name": "Shuttle Star Movement",
+          "usage": 0.0195999
+         },
+         {
+          "name": "AI (Fast)",
+          "usage": 0.0203972
+         },
+         {
+          "name": "Motion Tracker",
+          "usage": 0.0267982
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.98799
+         }
+        ]
+       },
+       {
+        "world_time": 456.75,
+        "usage": 169.734,
+        "overrun": 69.7344,
+        "top_subsystem": "Behaviours",
+        "top_usage": 164.868,
+        "maptick": 0.0292816,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0247999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0296
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0276
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0652
+         },
+         {
+          "name": "Reactor",
+          "usage": 2.8808
+         },
+         {
+          "name": "Behaviours",
+          "usage": 164.868
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.83841
+         }
+        ]
+       },
+       {
+        "world_time": 457,
+        "usage": 154.709,
+        "overrun": 54.7088,
+        "top_subsystem": "Behaviours",
+        "top_usage": 148.592,
+        "maptick": 0.0275879,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0272
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0391999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0364001
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0644
+         },
+         {
+          "name": "Reactor",
+          "usage": 3.5272
+         },
+         {
+          "name": "Behaviours",
+          "usage": 148.592
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.42241
+         }
+        ]
+       },
+       {
+        "world_time": 461.25,
+        "usage": 136.716,
+        "overrun": 36.7156,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 92.9384,
+        "maptick": 0.0266953,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0288
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0331999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0283999
+         },
+         {
+          "name": "Timer",
+          "usage": 8.2144
+         },
+         {
+          "name": "Reactor",
+          "usage": 19.1316
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.328001
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0683994
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0328007
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0428009
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0319996
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0372009
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0264015
+         },
+         {
+          "name": "tgui",
+          "usage": 0.0231991
+         },
+         {
+          "name": "Explosions",
+          "usage": 12.048
+         },
+         {
+          "name": "Transfer",
+          "usage": 0.046402
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0307999
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 92.9384
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.6248
+         }
+        ]
+       },
+       {
+        "world_time": 461.75,
+        "usage": 110.81,
+        "overrun": 10.8096,
+        "top_subsystem": "Reactor",
+        "top_usage": 94.1948,
+        "maptick": 0.0270004,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.026
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0328
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0275999
+         },
+         {
+          "name": "Timer",
+          "usage": 14.8272
+         },
+         {
+          "name": "Reactor",
+          "usage": 94.1948
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.7012
+         }
+        ]
+       },
+       {
+        "world_time": 462,
+        "usage": 117.462,
+        "overrun": 17.4624,
+        "top_subsystem": "Explosions",
+        "top_usage": 53.7896,
+        "maptick": 0.0284958,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0272
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0428002
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0307999
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0636001
+         },
+         {
+          "name": "Reactor",
+          "usage": 3.5916
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.3508
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0768003
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0247993
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0383997
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0268002
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0372
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0264006
+         },
+         {
+          "name": "Explosions",
+          "usage": 106.454
+         },
+         {
+          "name": "AI (Fast)",
+          "usage": 0.0372009
+         },
+         {
+          "name": "Instruments",
+          "usage": 0.0395966
+         },
+         {
+          "name": "Reflectors",
+          "usage": 0.026001
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 6.56841
+         }
+        ]
+       },
+       {
+        "world_time": 462.75,
+        "usage": 107.211,
+        "overrun": 7.2108,
+        "top_subsystem": "Explosions",
+        "top_usage": 45.9012,
+        "maptick": 0.0293198,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0288
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0344
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0296
+         },
+         {
+          "name": "Timer",
+          "usage": 0.8436
+         },
+         {
+          "name": "Reactor",
+          "usage": 34.7756
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.8036
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0639992
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0223999
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0340004
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0335999
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0240021
+         },
+         {
+          "name": "Explosions",
+          "usage": 67.7596
+         },
+         {
+          "name": "Ticker",
+          "usage": 0.110001
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.6476
+         }
+        ]
+       },
+       {
+        "world_time": 463.25,
+        "usage": 162.755,
+        "overrun": 62.7552,
+        "top_subsystem": "Reactor",
+        "top_usage": 160.156,
+        "maptick": 0.0297012,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.03
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0416
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0372
+         },
+         {
+          "name": "Timer",
+          "usage": 0.6452
+         },
+         {
+          "name": "Reactor",
+          "usage": 160.156
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.84521
+         }
+        ]
+       },
+       {
+        "world_time": 463.75,
+        "usage": 106.27,
+        "overrun": 6.2704,
+        "top_subsystem": "Reactor",
+        "top_usage": 101.962,
+        "maptick": 0.0307541,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0339999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.04
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0396
+         },
+         {
+          "name": "Timer",
+          "usage": 1.8672
+         },
+         {
+          "name": "Reactor",
+          "usage": 101.962
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.3272
+         }
+        ]
+       },
+       {
+        "world_time": 466.5,
+        "usage": 117.832,
+        "overrun": 17.8324,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 58.6204,
+        "maptick": 0.0539093,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0268002
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0311995
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0284004
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0648003
+         },
+         {
+          "name": "Reactor",
+          "usage": 5.39
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.322399
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0688
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0228004
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0368004
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0287991
+         },
+         {
+          "name": "Lighting",
+          "usage": 4.2924
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0312004
+         },
+         {
+          "name": "Explosions",
+          "usage": 36.4632
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 58.6204
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 12.4044
+         }
+        ]
+       },
+       {
+        "world_time": 471.75,
+        "usage": 141.765,
+        "overrun": 41.7648,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 83.2844,
+        "maptick": 0.0329437,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0272
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.038
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0339999
+         },
+         {
+          "name": "Timer",
+          "usage": 2.234
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.7612
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.314
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0548
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0183997
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0352001
+         },
+         {
+          "name": "Lighting",
+          "usage": 6.4048
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0279999
+         },
+         {
+          "name": "Machines",
+          "usage": 20.6144
+         },
+         {
+          "name": "Explosions",
+          "usage": 24.9952
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 83.2844
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.9212
+         }
+        ]
+       },
+       {
+        "world_time": 472,
+        "usage": 103.033,
+        "overrun": 3.0332,
+        "top_subsystem": "Lighting",
+        "top_usage": 95.1252,
+        "maptick": 0.0333633,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0308
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0332
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0288
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0680001
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.7692
+         },
+         {
+          "name": "Behaviours",
+          "usage": 3.5872
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0679998
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0240002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0339999
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0284004
+         },
+         {
+          "name": "Lighting",
+          "usage": 95.1252
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.2364
+         }
+        ]
+       },
+       {
+        "world_time": 476.75,
+        "usage": 169.65,
+        "overrun": 69.65,
+        "top_subsystem": "Behaviours",
+        "top_usage": 165.473,
+        "maptick": 0.0292511,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0316
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0420001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0424
+         },
+         {
+          "name": "Timer",
+          "usage": 0.8244
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.1884
+         },
+         {
+          "name": "Behaviours",
+          "usage": 165.473
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.04799
+         }
+        ]
+       },
+       {
+        "world_time": 477,
+        "usage": 133.815,
+        "overrun": 33.8148,
+        "top_subsystem": "Behaviours",
+        "top_usage": 128.512,
+        "maptick": 0.0288734,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0236
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0288
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.028
+         },
+         {
+          "name": "Timer",
+          "usage": 2.1788
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.5984
+         },
+         {
+          "name": "Behaviours",
+          "usage": 128.512
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.44521
+         }
+        ]
+       },
+       {
+        "world_time": 482.25,
+        "usage": 123.582,
+        "overrun": 23.5824,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 86.5252,
+        "maptick": 0.0299377,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0336
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0383999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0328
+         },
+         {
+          "name": "Timer",
+          "usage": 6.9376
+         },
+         {
+          "name": "Reactor",
+          "usage": 2.688
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.3216
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0639992
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0256004
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0384007
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0284004
+         },
+         {
+          "name": "Lighting",
+          "usage": 4.6584
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0339985
+         },
+         {
+          "name": "Explosions",
+          "usage": 18.506
+         },
+         {
+          "name": "Fast Processing",
+          "usage": 0.0396004
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0267982
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 86.5252
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.58399
+         }
+        ]
+       },
+       {
+        "world_time": 487.5,
+        "usage": 107.133,
+        "overrun": 7.1328,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 43.9656,
+        "maptick": 0.0308304,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0288
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0352
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0316
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0652
+         },
+         {
+          "name": "Reactor",
+          "usage": 8.8616
+         },
+         {
+          "name": "Behaviours",
+          "usage": 2.4192
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0812006
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0240002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0396004
+         },
+         {
+          "name": "Lighting",
+          "usage": 7.0752
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0368004
+         },
+         {
+          "name": "Database",
+          "usage": 0.0643997
+         },
+         {
+          "name": "Explosions",
+          "usage": 41.31
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 43.9656
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.09439
+         }
+        ]
+       },
+       {
+        "world_time": 496.75,
+        "usage": 130.11,
+        "overrun": 30.1096,
+        "top_subsystem": "Behaviours",
+        "top_usage": 125.886,
+        "maptick": 0.0275345,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0272
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0344001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0287999
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0655999
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.8884
+         },
+         {
+          "name": "Behaviours",
+          "usage": 125.886
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.1796
+         }
+        ]
+       },
+       {
+        "world_time": 497,
+        "usage": 128.984,
+        "overrun": 28.9844,
+        "top_subsystem": "Behaviours",
+        "top_usage": 125.96,
+        "maptick": 0.0279331,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.024
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0352
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0288
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0660001
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.3368
+         },
+         {
+          "name": "Behaviours",
+          "usage": 125.96
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.5332
+         }
+        ]
+       }
+      ],
+      "explosion_worst_tick": {
+       "world_time": 433,
+       "usage": 816.858,
+       "overrun": 716.858,
+       "top_subsystem": "Explosions",
+       "top_usage": 802.329,
+       "maptick": 0.0348129,
+       "breakdown": [
+        {
+         "name": "Input",
+         "usage": 0.0224
+        },
+        {
+         "name": "Verb Manager",
+         "usage": 0.0356001
+        },
+        {
+         "name": "Speech Controller",
+         "usage": 0.0292001
+        },
+        {
+         "name": "Timer",
+         "usage": 0.0512
+        },
+        {
+         "name": "Reactor",
+         "usage": 0.8404
+        },
+        {
+         "name": "Behaviours",
+         "usage": 2.0272
+        },
+        {
+         "name": "Runechat",
+         "usage": 0.066
+        },
+        {
+         "name": "Chat",
+         "usage": 0.0215998
+        },
+        {
+         "name": "Projectiles",
+         "usage": 0.0364003
+        },
+        {
+         "name": "Lighting",
+         "usage": 9.0136
+        },
+        {
+         "name": "Throwing",
+         "usage": 0.0288
+        },
+        {
+         "name": "Explosions",
+         "usage": 802.329
+        },
+        {
+         "name": "BYOND / pre-MC / external",
+         "usage": 2.35638
+        }
+       ]
+      },
+      "explosion_epoch": {
+       "phase": "idle",
+       "pending": 0,
+       "prepared": 0,
+       "current": 0,
+       "signals": 0,
+       "epoch_submissions": 10,
+       "epoch_prepare_ms": 60.5699,
+       "epoch_resolve_ms": 615.61,
+       "epoch_turfs_prepared": 1942,
+       "epoch_turfs_resolved": 1926,
+       "epoch_visuals": 28,
+       "epoch_atoms_resolved": 3982,
+       "epoch_atoms_deduplicated": 0,
+       "epoch_blast_batches": 636,
+       "epoch_atom_collect_ms": 31.4071,
+       "epoch_atom_resolve_ms": 7160.69,
+       "deferred_turf_updates": 0,
+       "deferred_appearance_updates": 0,
+       "last_epoch_wall_ms": 15756.2,
+       "topology_batch_open": 0
+      },
+      "lighting_fires": 338,
+      "destroy_types_by_count": [
+       {
+        "type": "/datum/contract_event",
+        "qdels": 2249,
+        "inclusive_ms": 123.04
+       },
+       {
+        "type": "/datum/contract_opportunity_observation",
+        "qdels": 2190,
+        "inclusive_ms": 99.82
+       },
+       {
+        "type": "/datum/timedevent",
+        "qdels": 973,
+        "inclusive_ms": 39.67
+       },
+       {
+        "type": "/datum/material_service",
+        "qdels": 773,
+        "inclusive_ms": 77.53
+       },
+       {
+        "type": "/datum/gas_mixture",
+        "qdels": 726,
+        "inclusive_ms": 0.25
+       },
+       {
+        "type": "/datum/lighting_corner",
+        "qdels": 409,
+        "inclusive_ms": 14.32
+       },
+       {
+        "type": "/datum/weakref",
+        "qdels": 395,
+        "inclusive_ms": 85.7
+       },
+       {
+        "type": "/datum/gas_mixture/turf",
+        "qdels": 350,
+        "inclusive_ms": 13.11
+       },
+       {
+        "type": "/obj/effect/effect/sparks",
+        "qdels": 315,
+        "inclusive_ms": 51.63
+       },
+       {
+        "type": "/datum/state_context",
+        "qdels": 131,
+        "inclusive_ms": 5.04
+       },
+       {
+        "type": "/turf/simulated/wall",
+        "qdels": 103,
+        "inclusive_ms": 16
+       },
+       {
+        "type": "/turf/simulated/floor/tiled",
+        "qdels": 101,
+        "inclusive_ms": 13.95
+       },
+       {
+        "type": "/datum/ledger",
+        "qdels": 90,
+        "inclusive_ms": 3.1
+       },
+       {
+        "type": "/obj/effect/expl_particles",
+        "qdels": 80,
+        "inclusive_ms": 18.23
+       },
+       {
+        "type": "/datum/light_source",
+        "qdels": 79,
+        "inclusive_ms": 8.42
+       },
+       {
+        "type": "/datum/latent_entry",
+        "qdels": 59,
+        "inclusive_ms": 2.31
+       },
+       {
+        "type": "/image",
+        "qdels": 56,
+        "inclusive_ms": 2.22
+       },
+       {
+        "type": "/datum/effect/effect/system/spark_spread",
+        "qdels": 47,
+        "inclusive_ms": 1.82
+       },
+       {
+        "type": "/obj/effect/effect/smoke",
+        "qdels": 42,
+        "inclusive_ms": 6.45
+       },
+       {
+        "type": "/obj/item/storage/internal",
+        "qdels": 32,
+        "inclusive_ms": 6.07
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/dark",
+        "qdels": 30,
+        "inclusive_ms": 4.83
+       },
+       {
+        "type": "/datum/rule_binding",
+        "qdels": 30,
+        "inclusive_ms": 9.85
+       },
+       {
+        "type": "/turf/simulated/floor/plating",
+        "qdels": 22,
+        "inclusive_ms": 3.14
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/supply",
+        "qdels": 22,
+        "inclusive_ms": 7.48
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers",
+        "qdels": 22,
+        "inclusive_ms": 7.11
+       },
+       {
+        "type": "/obj/structure/cable/green",
+        "qdels": 21,
+        "inclusive_ms": 5.68
+       },
+       {
+        "type": "/datum/component/overlay_lighting",
+        "qdels": 19,
+        "inclusive_ms": 8.66
+       },
+       {
+        "type": "/obj/effect/overlay/light_visible",
+        "qdels": 19,
+        "inclusive_ms": 1.72
+       },
+       {
+        "type": "/obj/effect/abstract/directional_lighting",
+        "qdels": 19,
+        "inclusive_ms": 3.48
+       },
+       {
+        "type": "/obj/effect/abstract/light_spot",
+        "qdels": 19,
+        "inclusive_ms": 1.74
+       },
+       {
+        "type": "/obj/effect/overlay/light_cone",
+        "qdels": 19,
+        "inclusive_ms": 1.63
+       },
+       {
+        "type": "/obj/structure/window/reinforced",
+        "qdels": 16,
+        "inclusive_ms": 5.93
+       },
+       {
+        "type": "/obj/item/grenade/flashbang",
+        "qdels": 14,
+        "inclusive_ms": 2.18
+       },
+       {
+        "type": "/obj/item/projectile/bullet/shotgun/beanbag",
+        "qdels": 13,
+        "inclusive_ms": 1.41
+       },
+       {
+        "type": "/obj/item/ammo_casing/a12g/beanbag",
+        "qdels": 12,
+        "inclusive_ms": 2.7
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/blue_clip",
+        "qdels": 12,
+        "inclusive_ms": 1.55
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/red_long",
+        "qdels": 10,
+        "inclusive_ms": 1.48
+       },
+       {
+        "type": "/datum/reagents",
+        "qdels": 9,
+        "inclusive_ms": 0.5
+       },
+       {
+        "type": "/obj/structure/window/reinforced/polarized",
+        "qdels": 8,
+        "inclusive_ms": 5.17
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/steel_grid",
+        "qdels": 7,
+        "inclusive_ms": 1
+       }
+      ],
+      "destroy_types_by_inclusive_ms": [
+       {
+        "type": "/datum/contract_event",
+        "qdels": 2249,
+        "inclusive_ms": 123.04
+       },
+       {
+        "type": "/datum/contract_opportunity_observation",
+        "qdels": 2190,
+        "inclusive_ms": 99.82
+       },
+       {
+        "type": "/datum/weakref",
+        "qdels": 395,
+        "inclusive_ms": 85.7
+       },
+       {
+        "type": "/datum/material_service",
+        "qdels": 773,
+        "inclusive_ms": 77.53
+       },
+       {
+        "type": "/obj/effect/effect/sparks",
+        "qdels": 315,
+        "inclusive_ms": 51.63
+       },
+       {
+        "type": "/datum/timedevent",
+        "qdels": 973,
+        "inclusive_ms": 39.67
+       },
+       {
+        "type": "/obj/effect/expl_particles",
+        "qdels": 80,
+        "inclusive_ms": 18.23
+       },
+       {
+        "type": "/turf/simulated/wall",
+        "qdels": 103,
+        "inclusive_ms": 16
+       },
+       {
+        "type": "/datum/lighting_corner",
+        "qdels": 409,
+        "inclusive_ms": 14.32
+       },
+       {
+        "type": "/turf/simulated/floor/tiled",
+        "qdels": 101,
+        "inclusive_ms": 13.95
+       },
+       {
+        "type": "/datum/gas_mixture/turf",
+        "qdels": 350,
+        "inclusive_ms": 13.11
+       },
+       {
+        "type": "/datum/rule_binding",
+        "qdels": 30,
+        "inclusive_ms": 9.85
+       },
+       {
+        "type": "/datum/component/overlay_lighting",
+        "qdels": 19,
+        "inclusive_ms": 8.66
+       },
+       {
+        "type": "/datum/light_source",
+        "qdels": 79,
+        "inclusive_ms": 8.42
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/supply",
+        "qdels": 22,
+        "inclusive_ms": 7.48
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers",
+        "qdels": 22,
+        "inclusive_ms": 7.11
+       },
+       {
+        "type": "/obj/effect/effect/smoke",
+        "qdels": 42,
+        "inclusive_ms": 6.45
+       },
+       {
+        "type": "/obj/structure/table/glass",
+        "qdels": 2,
+        "inclusive_ms": 6.41
+       },
+       {
+        "type": "/obj/item/storage/internal",
+        "qdels": 32,
+        "inclusive_ms": 6.07
+       },
+       {
+        "type": "/obj/structure/window/reinforced",
+        "qdels": 16,
+        "inclusive_ms": 5.93
+       },
+       {
+        "type": "/obj/structure/cable/green",
+        "qdels": 21,
+        "inclusive_ms": 5.68
+       },
+       {
+        "type": "/obj/machinery/door/firedoor/border_only",
+        "qdels": 5,
+        "inclusive_ms": 5.36
+       },
+       {
+        "type": "/obj/structure/window/reinforced/polarized",
+        "qdels": 8,
+        "inclusive_ms": 5.17
+       },
+       {
+        "type": "/datum/state_context",
+        "qdels": 131,
+        "inclusive_ms": 5.04
+       },
+       {
+        "type": "/obj/item/storage/box/flashbangs",
+        "qdels": 2,
+        "inclusive_ms": 4.87
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/dark",
+        "qdels": 30,
+        "inclusive_ms": 4.83
+       },
+       {
+        "type": "/obj/item/storage/box/holobadge",
+        "qdels": 2,
+        "inclusive_ms": 3.54
+       },
+       {
+        "type": "/obj/effect/abstract/directional_lighting",
+        "qdels": 19,
+        "inclusive_ms": 3.48
+       },
+       {
+        "type": "/obj/item/ammo_magazine/m12gdrumjack/beanbag",
+        "qdels": 3,
+        "inclusive_ms": 3.22
+       },
+       {
+        "type": "/turf/simulated/floor/plating",
+        "qdels": 22,
+        "inclusive_ms": 3.14
+       },
+       {
+        "type": "/datum/ledger",
+        "qdels": 90,
+        "inclusive_ms": 3.1
+       },
+       {
+        "type": "/obj/machinery/firealarm",
+        "qdels": 2,
+        "inclusive_ms": 3.07
+       },
+       {
+        "type": "/obj/item/ammo_casing/a12g/beanbag",
+        "qdels": 12,
+        "inclusive_ms": 2.7
+       },
+       {
+        "type": "/datum/latent_entry",
+        "qdels": 59,
+        "inclusive_ms": 2.31
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/hooded/wintercoat/security",
+        "qdels": 2,
+        "inclusive_ms": 2.28
+       },
+       {
+        "type": "/image",
+        "qdels": 56,
+        "inclusive_ms": 2.22
+       },
+       {
+        "type": "/obj/item/grenade/flashbang",
+        "qdels": 14,
+        "inclusive_ms": 2.18
+       },
+       {
+        "type": "/obj/structure/reagent_dispensers/fueltank",
+        "qdels": 3,
+        "inclusive_ms": 2.14
+       },
+       {
+        "type": "/obj/machinery/door/airlock/security",
+        "qdels": 2,
+        "inclusive_ms": 1.98
+       },
+       {
+        "type": "/datum/effect/effect/system/spark_spread",
+        "qdels": 47,
+        "inclusive_ms": 1.82
+       }
+      ]
+     },
+     "phases": [
+      {
+       "name": "before_explosion",
+       "world_time": 339.5,
+       "realtime": 831320,
+       "process": {
+        "t": 151.763,
+        "private_mb": 2276.2,
+        "working_set_mb": 2127.3,
+        "cpu_seconds": 170.53
+       },
+       "rust": {
+        "alloc.core.current_bytes": 0,
+        "alloc.core.peak_bytes": 0,
+        "alloc.devices.current_bytes": 0,
+        "alloc.devices.peak_bytes": 0,
+        "alloc.ffi.current_bytes": 0,
+        "alloc.ffi.peak_bytes": 0,
+        "alloc.gas.current_bytes": 0,
+        "alloc.gas.peak_bytes": 0,
+        "alloc.heap.current_bytes": 719460000,
+        "alloc.heap.peak_bytes": 1940740000,
+        "alloc.heat.current_bytes": 0,
+        "alloc.heat.peak_bytes": 0,
+        "alloc.layout.current_bytes": 0,
+        "alloc.layout.peak_bytes": 0,
+        "alloc.power.current_bytes": 0,
+        "alloc.power.peak_bytes": 0,
+        "alloc.total.current_bytes": 719457000,
+        "alloc.untagged.current_bytes": 719457000,
+        "alloc.untagged.peak_bytes": 1940740000,
+        "jobs.pending": 0,
+        "reactor.backlog.background": 0,
+        "reactor.backlog.normal": 0,
+        "reactor.backlog.urgent": 0,
+        "reactor.crossings_fired": 0,
+        "reactor.keys": 22316,
+        "reactor.models": 0,
+        "reactor.publications": 1868,
+        "reactor.step_us": 221.2,
+        "reactor.subscriptions": 77581,
+        "reactor.timers_fired": 314,
+        "reactor.timers_pending": 98,
+        "reactor.wakes_deferred": 0,
+        "reactor.wakes_delivered": 3556,
+        "reactor.wakes_merged": 34,
+        "reactor.wakes_received": 3590,
+        "reactor.watch_wakes": 0
+       }
+      },
+      {
+       "name": "after_explosion",
+       "world_time": 503.25,
+       "realtime": 831491,
+       "process": {
+        "t": 169.04,
+        "private_mb": 2277.6,
+        "working_set_mb": 2134.3,
+        "cpu_seconds": 210.7
+       },
+       "rust": {
+        "alloc.core.current_bytes": 0,
+        "alloc.core.peak_bytes": 0,
+        "alloc.devices.current_bytes": 0,
+        "alloc.devices.peak_bytes": 0,
+        "alloc.ffi.current_bytes": 0,
+        "alloc.ffi.peak_bytes": 0,
+        "alloc.gas.current_bytes": 0,
+        "alloc.gas.peak_bytes": 0,
+        "alloc.heap.current_bytes": 655998000,
+        "alloc.heap.peak_bytes": 1940740000,
+        "alloc.heat.current_bytes": 0,
+        "alloc.heat.peak_bytes": 0,
+        "alloc.layout.current_bytes": 0,
+        "alloc.layout.peak_bytes": 0,
+        "alloc.power.current_bytes": 0,
+        "alloc.power.peak_bytes": 0,
+        "alloc.total.current_bytes": 655966000,
+        "alloc.untagged.current_bytes": 655966000,
+        "alloc.untagged.peak_bytes": 1940740000,
+        "jobs.pending": 0,
+        "reactor.backlog.background": 0,
+        "reactor.backlog.normal": 0,
+        "reactor.backlog.urgent": 0,
+        "reactor.crossings_fired": 0,
+        "reactor.keys": 22457,
+        "reactor.models": 0,
+        "reactor.publications": 3338,
+        "reactor.step_us": 182.8,
+        "reactor.subscriptions": 77859,
+        "reactor.timers_fired": 554,
+        "reactor.timers_pending": 115,
+        "reactor.wakes_deferred": 0,
+        "reactor.wakes_delivered": 5311,
+        "reactor.wakes_merged": 50,
+        "reactor.wakes_received": 5361,
+        "reactor.watch_wakes": 0
+       }
+      }
+     ]
+    }
+   },
+   "iteration": 3,
+   "warmup": false,
+   "process": {
+    "samples": 182,
+    "peak_private_mb": 3509.6,
+    "final_private_mb": 78.9,
+    "peak_working_set_mb": 3313.4,
+    "cpu_seconds": 228.52,
+    "wall_seconds": 185.328
+   },
+   "process_samples": [
+    {
+     "t": 0.503,
+     "private_mb": 34.3,
+     "working_set_mb": 28.1,
+     "cpu_seconds": 0.28
+    },
+    {
+     "t": 1.524,
+     "private_mb": 34.3,
+     "working_set_mb": 48.2,
+     "cpu_seconds": 1.41
+    },
+    {
+     "t": 2.547,
+     "private_mb": 55.5,
+     "working_set_mb": 69.6,
+     "cpu_seconds": 2.42
+    },
+    {
+     "t": 3.554,
+     "private_mb": 173.2,
+     "working_set_mb": 186.3,
+     "cpu_seconds": 3.41
+    },
+    {
+     "t": 4.568,
+     "private_mb": 177.3,
+     "working_set_mb": 190.4,
+     "cpu_seconds": 4.42
+    },
+    {
+     "t": 5.581,
+     "private_mb": 226.8,
+     "working_set_mb": 239.8,
+     "cpu_seconds": 5.36
+    },
+    {
+     "t": 6.594,
+     "private_mb": 295.1,
+     "working_set_mb": 307.9,
+     "cpu_seconds": 6.36
+    },
+    {
+     "t": 7.608,
+     "private_mb": 359.9,
+     "working_set_mb": 372.7,
+     "cpu_seconds": 7.34
+    },
+    {
+     "t": 8.616,
+     "private_mb": 425.7,
+     "working_set_mb": 438.3,
+     "cpu_seconds": 8.34
+    },
+    {
+     "t": 9.627,
+     "private_mb": 492.3,
+     "working_set_mb": 504.8,
+     "cpu_seconds": 9.34
+    },
+    {
+     "t": 10.638,
+     "private_mb": 553.4,
+     "working_set_mb": 565.8,
+     "cpu_seconds": 10.28
+    },
+    {
+     "t": 11.653,
+     "private_mb": 625.4,
+     "working_set_mb": 637.6,
+     "cpu_seconds": 11.28
+    },
+    {
+     "t": 12.665,
+     "private_mb": 681.7,
+     "working_set_mb": 695.8,
+     "cpu_seconds": 12.22
+    },
+    {
+     "t": 13.677,
+     "private_mb": 708,
+     "working_set_mb": 722.2,
+     "cpu_seconds": 13.19
+    },
+    {
+     "t": 14.693,
+     "private_mb": 737.9,
+     "working_set_mb": 751.6,
+     "cpu_seconds": 14.17
+    },
+    {
+     "t": 15.713,
+     "private_mb": 738,
+     "working_set_mb": 751.8,
+     "cpu_seconds": 14.7
+    },
+    {
+     "t": 16.726,
+     "private_mb": 739.6,
+     "working_set_mb": 753.5,
+     "cpu_seconds": 15.22
+    },
+    {
+     "t": 17.737,
+     "private_mb": 760.7,
+     "working_set_mb": 774.5,
+     "cpu_seconds": 16.22
+    },
+    {
+     "t": 18.751,
+     "private_mb": 768.4,
+     "working_set_mb": 782.1,
+     "cpu_seconds": 17.22
+    },
+    {
+     "t": 19.759,
+     "private_mb": 774,
+     "working_set_mb": 787.5,
+     "cpu_seconds": 18.17
+    },
+    {
+     "t": 20.781,
+     "private_mb": 779.9,
+     "working_set_mb": 793.3,
+     "cpu_seconds": 19.16
+    },
+    {
+     "t": 21.795,
+     "private_mb": 788,
+     "working_set_mb": 800.9,
+     "cpu_seconds": 20.09
+    },
+    {
+     "t": 22.817,
+     "private_mb": 797.6,
+     "working_set_mb": 810.5,
+     "cpu_seconds": 21.09
+    },
+    {
+     "t": 23.831,
+     "private_mb": 818.4,
+     "working_set_mb": 830.8,
+     "cpu_seconds": 22.09
+    },
+    {
+     "t": 24.843,
+     "private_mb": 817.1,
+     "working_set_mb": 829.7,
+     "cpu_seconds": 23.05
+    },
+    {
+     "t": 25.856,
+     "private_mb": 817.2,
+     "working_set_mb": 829.8,
+     "cpu_seconds": 24.06
+    },
+    {
+     "t": 26.872,
+     "private_mb": 819.3,
+     "working_set_mb": 832,
+     "cpu_seconds": 25.03
+    },
+    {
+     "t": 27.886,
+     "private_mb": 824.5,
+     "working_set_mb": 836.1,
+     "cpu_seconds": 26.02
+    },
+    {
+     "t": 28.906,
+     "private_mb": 832.8,
+     "working_set_mb": 844.3,
+     "cpu_seconds": 27
+    },
+    {
+     "t": 29.912,
+     "private_mb": 837.3,
+     "working_set_mb": 848.8,
+     "cpu_seconds": 27.97
+    },
+    {
+     "t": 30.923,
+     "private_mb": 844.5,
+     "working_set_mb": 855.9,
+     "cpu_seconds": 28.98
+    },
+    {
+     "t": 31.932,
+     "private_mb": 852.2,
+     "working_set_mb": 863.1,
+     "cpu_seconds": 29.98
+    },
+    {
+     "t": 32.944,
+     "private_mb": 857.9,
+     "working_set_mb": 869,
+     "cpu_seconds": 30.98
+    },
+    {
+     "t": 33.956,
+     "private_mb": 864.2,
+     "working_set_mb": 875.2,
+     "cpu_seconds": 31.97
+    },
+    {
+     "t": 34.967,
+     "private_mb": 873.2,
+     "working_set_mb": 884.1,
+     "cpu_seconds": 32.97
+    },
+    {
+     "t": 35.975,
+     "private_mb": 875.5,
+     "working_set_mb": 886.4,
+     "cpu_seconds": 33.94
+    },
+    {
+     "t": 36.99,
+     "private_mb": 879.9,
+     "working_set_mb": 890.7,
+     "cpu_seconds": 34.91
+    },
+    {
+     "t": 38.006,
+     "private_mb": 883.9,
+     "working_set_mb": 894.9,
+     "cpu_seconds": 35.91
+    },
+    {
+     "t": 39.017,
+     "private_mb": 890.1,
+     "working_set_mb": 900.9,
+     "cpu_seconds": 36.88
+    },
+    {
+     "t": 40.034,
+     "private_mb": 894.9,
+     "working_set_mb": 905.7,
+     "cpu_seconds": 37.81
+    },
+    {
+     "t": 41.041,
+     "private_mb": 904.4,
+     "working_set_mb": 913.1,
+     "cpu_seconds": 38.77
+    },
+    {
+     "t": 42.055,
+     "private_mb": 909.7,
+     "working_set_mb": 918.3,
+     "cpu_seconds": 39.78
+    },
+    {
+     "t": 43.066,
+     "private_mb": 917.9,
+     "working_set_mb": 926.5,
+     "cpu_seconds": 40.78
+    },
+    {
+     "t": 44.077,
+     "private_mb": 921.4,
+     "working_set_mb": 930.1,
+     "cpu_seconds": 41.75
+    },
+    {
+     "t": 45.094,
+     "private_mb": 924.5,
+     "working_set_mb": 933.2,
+     "cpu_seconds": 42.72
+    },
+    {
+     "t": 46.12,
+     "private_mb": 927.5,
+     "working_set_mb": 935.9,
+     "cpu_seconds": 43.66
+    },
+    {
+     "t": 47.135,
+     "private_mb": 930,
+     "working_set_mb": 938.4,
+     "cpu_seconds": 44.48
+    },
+    {
+     "t": 48.143,
+     "private_mb": 933.6,
+     "working_set_mb": 942,
+     "cpu_seconds": 45.41
+    },
+    {
+     "t": 49.16,
+     "private_mb": 937,
+     "working_set_mb": 944.6,
+     "cpu_seconds": 46.41
+    },
+    {
+     "t": 50.173,
+     "private_mb": 939.2,
+     "working_set_mb": 947.2,
+     "cpu_seconds": 47.41
+    },
+    {
+     "t": 51.185,
+     "private_mb": 941.5,
+     "working_set_mb": 949.6,
+     "cpu_seconds": 48.41
+    },
+    {
+     "t": 52.2,
+     "private_mb": 947.1,
+     "working_set_mb": 953.2,
+     "cpu_seconds": 49.34
+    },
+    {
+     "t": 53.206,
+     "private_mb": 950.6,
+     "working_set_mb": 957.4,
+     "cpu_seconds": 50.33
+    },
+    {
+     "t": 54.224,
+     "private_mb": 954.2,
+     "working_set_mb": 961.2,
+     "cpu_seconds": 51.34
+    },
+    {
+     "t": 55.234,
+     "private_mb": 957,
+     "working_set_mb": 964.3,
+     "cpu_seconds": 52.36
+    },
+    {
+     "t": 56.242,
+     "private_mb": 959.7,
+     "working_set_mb": 967.2,
+     "cpu_seconds": 53.34
+    },
+    {
+     "t": 57.249,
+     "private_mb": 966.9,
+     "working_set_mb": 970.4,
+     "cpu_seconds": 54.34
+    },
+    {
+     "t": 58.26,
+     "private_mb": 971.7,
+     "working_set_mb": 975.2,
+     "cpu_seconds": 55.33
+    },
+    {
+     "t": 59.27,
+     "private_mb": 976.6,
+     "working_set_mb": 980.2,
+     "cpu_seconds": 56.31
+    },
+    {
+     "t": 60.289,
+     "private_mb": 981,
+     "working_set_mb": 985.3,
+     "cpu_seconds": 57.33
+    },
+    {
+     "t": 61.3,
+     "private_mb": 985.2,
+     "working_set_mb": 989.4,
+     "cpu_seconds": 58.33
+    },
+    {
+     "t": 62.314,
+     "private_mb": 988.2,
+     "working_set_mb": 993.1,
+     "cpu_seconds": 59.3
+    },
+    {
+     "t": 63.326,
+     "private_mb": 991.3,
+     "working_set_mb": 996.4,
+     "cpu_seconds": 60.28
+    },
+    {
+     "t": 64.343,
+     "private_mb": 996,
+     "working_set_mb": 1001,
+     "cpu_seconds": 61.27
+    },
+    {
+     "t": 65.367,
+     "private_mb": 1001.4,
+     "working_set_mb": 1006.2,
+     "cpu_seconds": 62.25
+    },
+    {
+     "t": 66.376,
+     "private_mb": 1008.7,
+     "working_set_mb": 1013.3,
+     "cpu_seconds": 63.2
+    },
+    {
+     "t": 67.387,
+     "private_mb": 1013.8,
+     "working_set_mb": 1018.4,
+     "cpu_seconds": 64.16
+    },
+    {
+     "t": 68.523,
+     "private_mb": 1014.3,
+     "working_set_mb": 1018.8,
+     "cpu_seconds": 65.06
+    },
+    {
+     "t": 69.471,
+     "private_mb": 1014.7,
+     "working_set_mb": 1019.3,
+     "cpu_seconds": 65.41
+    },
+    {
+     "t": 70.479,
+     "private_mb": 1015.2,
+     "working_set_mb": 1019.7,
+     "cpu_seconds": 66.03
+    },
+    {
+     "t": 71.497,
+     "private_mb": 1022.2,
+     "working_set_mb": 1026.7,
+     "cpu_seconds": 66.59
+    },
+    {
+     "t": 73.518,
+     "private_mb": 1018.1,
+     "working_set_mb": 1022.7,
+     "cpu_seconds": 66.59
+    },
+    {
+     "t": 73.539,
+     "private_mb": 1018.1,
+     "working_set_mb": 1022.7,
+     "cpu_seconds": 66.69
+    },
+    {
+     "t": 74.551,
+     "private_mb": 1018.5,
+     "working_set_mb": 1023,
+     "cpu_seconds": 66.8
+    },
+    {
+     "t": 75.574,
+     "private_mb": 1018.5,
+     "working_set_mb": 1023,
+     "cpu_seconds": 67.45
+    },
+    {
+     "t": 76.587,
+     "private_mb": 1029.9,
+     "working_set_mb": 1034.1,
+     "cpu_seconds": 68.27
+    },
+    {
+     "t": 77.68,
+     "private_mb": 1066.1,
+     "working_set_mb": 1064.4,
+     "cpu_seconds": 69.05
+    },
+    {
+     "t": 78.652,
+     "private_mb": 1100.5,
+     "working_set_mb": 1094,
+     "cpu_seconds": 69.88
+    },
+    {
+     "t": 79.779,
+     "private_mb": 1157.2,
+     "working_set_mb": 1139.6,
+     "cpu_seconds": 70.7
+    },
+    {
+     "t": 80.824,
+     "private_mb": 1169.2,
+     "working_set_mb": 1156.5,
+     "cpu_seconds": 71.61
+    },
+    {
+     "t": 81.788,
+     "private_mb": 1282.7,
+     "working_set_mb": 1231.9,
+     "cpu_seconds": 72.47
+    },
+    {
+     "t": 82.803,
+     "private_mb": 1283.9,
+     "working_set_mb": 1250.5,
+     "cpu_seconds": 73.42
+    },
+    {
+     "t": 83.802,
+     "private_mb": 1304.5,
+     "working_set_mb": 1254.7,
+     "cpu_seconds": 74.09
+    },
+    {
+     "t": 84.832,
+     "private_mb": 1304.5,
+     "working_set_mb": 1254.7,
+     "cpu_seconds": 75.09
+    },
+    {
+     "t": 85.841,
+     "private_mb": 1306.2,
+     "working_set_mb": 1256.3,
+     "cpu_seconds": 76
+    },
+    {
+     "t": 86.854,
+     "private_mb": 1306.8,
+     "working_set_mb": 1256.8,
+     "cpu_seconds": 76.88
+    },
+    {
+     "t": 87.953,
+     "private_mb": 1307.1,
+     "working_set_mb": 1257.2,
+     "cpu_seconds": 77.59
+    },
+    {
+     "t": 88.908,
+     "private_mb": 1307.9,
+     "working_set_mb": 1258,
+     "cpu_seconds": 78.55
+    },
+    {
+     "t": 89.92,
+     "private_mb": 1308.7,
+     "working_set_mb": 1258.6,
+     "cpu_seconds": 79.47
+    },
+    {
+     "t": 90.926,
+     "private_mb": 1309.1,
+     "working_set_mb": 1259.1,
+     "cpu_seconds": 80.42
+    },
+    {
+     "t": 91.94,
+     "private_mb": 1309.6,
+     "working_set_mb": 1259.5,
+     "cpu_seconds": 81.39
+    },
+    {
+     "t": 92.95,
+     "private_mb": 1310,
+     "working_set_mb": 1259.9,
+     "cpu_seconds": 82.39
+    },
+    {
+     "t": 93.965,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 83.36
+    },
+    {
+     "t": 94.994,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 84.36
+    },
+    {
+     "t": 96.004,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 85.31
+    },
+    {
+     "t": 97.023,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.1,
+     "cpu_seconds": 86.33
+    },
+    {
+     "t": 98.044,
+     "private_mb": 1310.2,
+     "working_set_mb": 1260.2,
+     "cpu_seconds": 87.31
+    },
+    {
+     "t": 99.057,
+     "private_mb": 1310.4,
+     "working_set_mb": 1260.4,
+     "cpu_seconds": 88.27
+    },
+    {
+     "t": 100.071,
+     "private_mb": 1310.4,
+     "working_set_mb": 1260.4,
+     "cpu_seconds": 89.22
+    },
+    {
+     "t": 101.08,
+     "private_mb": 1310.7,
+     "working_set_mb": 1260.5,
+     "cpu_seconds": 90.17
+    },
+    {
+     "t": 102.093,
+     "private_mb": 1310.7,
+     "working_set_mb": 1260.5,
+     "cpu_seconds": 91.17
+    },
+    {
+     "t": 103.103,
+     "private_mb": 1311.5,
+     "working_set_mb": 1261.4,
+     "cpu_seconds": 92.17
+    },
+    {
+     "t": 104.115,
+     "private_mb": 1311.8,
+     "working_set_mb": 1261.7,
+     "cpu_seconds": 93.13
+    },
+    {
+     "t": 105.13,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 94.08
+    },
+    {
+     "t": 106.138,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 95
+    },
+    {
+     "t": 107.146,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 95.92
+    },
+    {
+     "t": 108.155,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 96.92
+    },
+    {
+     "t": 109.168,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 97.89
+    },
+    {
+     "t": 110.202,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 98.91
+    },
+    {
+     "t": 111.225,
+     "private_mb": 1312.1,
+     "working_set_mb": 1262,
+     "cpu_seconds": 99.83
+    },
+    {
+     "t": 112.236,
+     "private_mb": 1330.5,
+     "working_set_mb": 1279.9,
+     "cpu_seconds": 100.8
+    },
+    {
+     "t": 113.249,
+     "private_mb": 1336.7,
+     "working_set_mb": 1285.9,
+     "cpu_seconds": 101.73
+    },
+    {
+     "t": 114.265,
+     "private_mb": 1347.2,
+     "working_set_mb": 1296.1,
+     "cpu_seconds": 102.7
+    },
+    {
+     "t": 115.274,
+     "private_mb": 1352.2,
+     "working_set_mb": 1300.9,
+     "cpu_seconds": 103.7
+    },
+    {
+     "t": 116.289,
+     "private_mb": 1357.4,
+     "working_set_mb": 1306,
+     "cpu_seconds": 104.66
+    },
+    {
+     "t": 117.301,
+     "private_mb": 1376.6,
+     "working_set_mb": 1325,
+     "cpu_seconds": 105.59
+    },
+    {
+     "t": 118.318,
+     "private_mb": 1391.7,
+     "working_set_mb": 1339.6,
+     "cpu_seconds": 106.58
+    },
+    {
+     "t": 119.331,
+     "private_mb": 1401.7,
+     "working_set_mb": 1349.5,
+     "cpu_seconds": 107.47
+    },
+    {
+     "t": 120.341,
+     "private_mb": 1401.7,
+     "working_set_mb": 1349.7,
+     "cpu_seconds": 108.13
+    },
+    {
+     "t": 121.353,
+     "private_mb": 1414.7,
+     "working_set_mb": 1361.1,
+     "cpu_seconds": 108.98
+    },
+    {
+     "t": 122.366,
+     "private_mb": 2077.3,
+     "working_set_mb": 1922.4,
+     "cpu_seconds": 111.16
+    },
+    {
+     "t": 123.375,
+     "private_mb": 2650.9,
+     "working_set_mb": 2474.2,
+     "cpu_seconds": 114.58
+    },
+    {
+     "t": 124.39,
+     "private_mb": 2814.1,
+     "working_set_mb": 2611.4,
+     "cpu_seconds": 116.8
+    },
+    {
+     "t": 125.399,
+     "private_mb": 2591.7,
+     "working_set_mb": 2366.4,
+     "cpu_seconds": 118.63
+    },
+    {
+     "t": 126.412,
+     "private_mb": 3214.9,
+     "working_set_mb": 3020.5,
+     "cpu_seconds": 120.8
+    },
+    {
+     "t": 127.431,
+     "private_mb": 2964.1,
+     "working_set_mb": 2782,
+     "cpu_seconds": 122.89
+    },
+    {
+     "t": 128.447,
+     "private_mb": 3207.6,
+     "working_set_mb": 3018.1,
+     "cpu_seconds": 124.44
+    },
+    {
+     "t": 129.459,
+     "private_mb": 2597.6,
+     "working_set_mb": 2349.6,
+     "cpu_seconds": 125.92
+    },
+    {
+     "t": 130.471,
+     "private_mb": 3288.2,
+     "working_set_mb": 3084.9,
+     "cpu_seconds": 127.75
+    },
+    {
+     "t": 131.486,
+     "private_mb": 3030.6,
+     "working_set_mb": 2844.9,
+     "cpu_seconds": 129.75
+    },
+    {
+     "t": 132.505,
+     "private_mb": 3319,
+     "working_set_mb": 3122.8,
+     "cpu_seconds": 131.63
+    },
+    {
+     "t": 133.526,
+     "private_mb": 2672,
+     "working_set_mb": 2450.1,
+     "cpu_seconds": 133.27
+    },
+    {
+     "t": 134.542,
+     "private_mb": 3427.7,
+     "working_set_mb": 3228.3,
+     "cpu_seconds": 135.34
+    },
+    {
+     "t": 135.558,
+     "private_mb": 3186.6,
+     "working_set_mb": 2997.2,
+     "cpu_seconds": 137.16
+    },
+    {
+     "t": 136.57,
+     "private_mb": 3509.6,
+     "working_set_mb": 3313.4,
+     "cpu_seconds": 138.92
+    },
+    {
+     "t": 137.577,
+     "private_mb": 3363.8,
+     "working_set_mb": 3172.4,
+     "cpu_seconds": 140.66
+    },
+    {
+     "t": 138.593,
+     "private_mb": 3116,
+     "working_set_mb": 2919.3,
+     "cpu_seconds": 142.28
+    },
+    {
+     "t": 139.607,
+     "private_mb": 2827,
+     "working_set_mb": 2739.8,
+     "cpu_seconds": 144.55
+    },
+    {
+     "t": 140.616,
+     "private_mb": 3046.5,
+     "working_set_mb": 2918.6,
+     "cpu_seconds": 146.95
+    },
+    {
+     "t": 141.622,
+     "private_mb": 3213.2,
+     "working_set_mb": 3085.1,
+     "cpu_seconds": 149.45
+    },
+    {
+     "t": 142.635,
+     "private_mb": 3269.5,
+     "working_set_mb": 3141.2,
+     "cpu_seconds": 151.75
+    },
+    {
+     "t": 143.649,
+     "private_mb": 3344.3,
+     "working_set_mb": 3214.1,
+     "cpu_seconds": 154.33
+    },
+    {
+     "t": 144.663,
+     "private_mb": 3357.7,
+     "working_set_mb": 3233.9,
+     "cpu_seconds": 156.72
+    },
+    {
+     "t": 145.681,
+     "private_mb": 3332.7,
+     "working_set_mb": 3254.1,
+     "cpu_seconds": 158.44
+    },
+    {
+     "t": 146.696,
+     "private_mb": 3334.1,
+     "working_set_mb": 3256.2,
+     "cpu_seconds": 160.59
+    },
+    {
+     "t": 147.713,
+     "private_mb": 3343.9,
+     "working_set_mb": 3258.5,
+     "cpu_seconds": 162.73
+    },
+    {
+     "t": 148.73,
+     "private_mb": 2304.2,
+     "working_set_mb": 2277.3,
+     "cpu_seconds": 164.09
+    },
+    {
+     "t": 149.738,
+     "private_mb": 2257.2,
+     "working_set_mb": 2125.8,
+     "cpu_seconds": 166.13
+    },
+    {
+     "t": 150.747,
+     "private_mb": 2272.6,
+     "working_set_mb": 2126.6,
+     "cpu_seconds": 168.33
+    },
+    {
+     "t": 151.763,
+     "private_mb": 2276.2,
+     "working_set_mb": 2127.3,
+     "cpu_seconds": 170.53
+    },
+    {
+     "t": 152.777,
+     "private_mb": 2274,
+     "working_set_mb": 2129.1,
+     "cpu_seconds": 173
+    },
+    {
+     "t": 153.789,
+     "private_mb": 2278.3,
+     "working_set_mb": 2129.6,
+     "cpu_seconds": 176.02
+    },
+    {
+     "t": 154.807,
+     "private_mb": 2276,
+     "working_set_mb": 2129.8,
+     "cpu_seconds": 178.33
+    },
+    {
+     "t": 155.817,
+     "private_mb": 2276.4,
+     "working_set_mb": 2131.8,
+     "cpu_seconds": 180.34
+    },
+    {
+     "t": 156.833,
+     "private_mb": 2280.3,
+     "working_set_mb": 2132,
+     "cpu_seconds": 182.73
+    },
+    {
+     "t": 157.842,
+     "private_mb": 2280.5,
+     "working_set_mb": 2132.2,
+     "cpu_seconds": 185.52
+    },
+    {
+     "t": 158.849,
+     "private_mb": 2277,
+     "working_set_mb": 2132.3,
+     "cpu_seconds": 188.31
+    },
+    {
+     "t": 159.867,
+     "private_mb": 2276.7,
+     "working_set_mb": 2132.4,
+     "cpu_seconds": 191.03
+    },
+    {
+     "t": 160.886,
+     "private_mb": 2280.6,
+     "working_set_mb": 2132.9,
+     "cpu_seconds": 193.22
+    },
+    {
+     "t": 161.902,
+     "private_mb": 2277.1,
+     "working_set_mb": 2132.1,
+     "cpu_seconds": 195.92
+    },
+    {
+     "t": 162.92,
+     "private_mb": 2280.7,
+     "working_set_mb": 2131.4,
+     "cpu_seconds": 198.22
+    },
+    {
+     "t": 163.938,
+     "private_mb": 2277.4,
+     "working_set_mb": 2131.5,
+     "cpu_seconds": 200.31
+    },
+    {
+     "t": 165.1,
+     "private_mb": 2281,
+     "working_set_mb": 2131.9,
+     "cpu_seconds": 202.66
+    },
+    {
+     "t": 165.987,
+     "private_mb": 2277.5,
+     "working_set_mb": 2132,
+     "cpu_seconds": 205.05
+    },
+    {
+     "t": 167.009,
+     "private_mb": 2281,
+     "working_set_mb": 2132.2,
+     "cpu_seconds": 207.08
+    },
+    {
+     "t": 168.018,
+     "private_mb": 2277.6,
+     "working_set_mb": 2132.3,
+     "cpu_seconds": 209
+    },
+    {
+     "t": 169.04,
+     "private_mb": 2277.6,
+     "working_set_mb": 2134.3,
+     "cpu_seconds": 210.7
+    },
+    {
+     "t": 170.048,
+     "private_mb": 2281.1,
+     "working_set_mb": 2134.3,
+     "cpu_seconds": 212.47
+    },
+    {
+     "t": 171.062,
+     "private_mb": 2281.1,
+     "working_set_mb": 2134.4,
+     "cpu_seconds": 214.17
+    },
+    {
+     "t": 172.079,
+     "private_mb": 2277.6,
+     "working_set_mb": 2132.6,
+     "cpu_seconds": 215.92
+    },
+    {
+     "t": 173.093,
+     "private_mb": 2275.9,
+     "working_set_mb": 2132.6,
+     "cpu_seconds": 217.66
+    },
+    {
+     "t": 174.112,
+     "private_mb": 2275.9,
+     "working_set_mb": 2132.6,
+     "cpu_seconds": 219.11
+    },
+    {
+     "t": 175.175,
+     "private_mb": 2276.9,
+     "working_set_mb": 2134.1,
+     "cpu_seconds": 220
+    },
+    {
+     "t": 176.192,
+     "private_mb": 2276.9,
+     "working_set_mb": 2134.1,
+     "cpu_seconds": 220.88
+    },
+    {
+     "t": 177.204,
+     "private_mb": 2276.9,
+     "working_set_mb": 2134.1,
+     "cpu_seconds": 221.7
+    },
+    {
+     "t": 178.222,
+     "private_mb": 2276.9,
+     "working_set_mb": 2134.1,
+     "cpu_seconds": 222.64
+    },
+    {
+     "t": 179.239,
+     "private_mb": 2276.9,
+     "working_set_mb": 2134.1,
+     "cpu_seconds": 223.63
+    },
+    {
+     "t": 180.253,
+     "private_mb": 2036.9,
+     "working_set_mb": 2019.2,
+     "cpu_seconds": 224.56
+    },
+    {
+     "t": 181.263,
+     "private_mb": 1719.9,
+     "working_set_mb": 1703.6,
+     "cpu_seconds": 225.55
+    },
+    {
+     "t": 182.271,
+     "private_mb": 1437.5,
+     "working_set_mb": 1419.6,
+     "cpu_seconds": 226.55
+    },
+    {
+     "t": 183.286,
+     "private_mb": 1161.5,
+     "working_set_mb": 1127.7,
+     "cpu_seconds": 227.56
+    },
+    {
+     "t": 184.299,
+     "private_mb": 78.9,
+     "working_set_mb": 86.6,
+     "cpu_seconds": 228.52
+    }
+   ],
+   "profiles": []
+  }
+ ],
+ "summary": {
+  "process": {
+   "peak_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 3636.1,
+    "mean": 3636.1,
+    "min": 3509.6,
+    "max": 3762.6,
+    "stdev": 178.89801564019652,
+    "values": [
+     3762.6,
+     3509.6
+    ]
+   },
+   "final_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 76.80000000000001,
+    "mean": 76.80000000000001,
+    "min": 74.7,
+    "max": 78.9,
+    "stdev": 2.9698484809835013,
+    "values": [
+     74.7,
+     78.9
+    ]
+   },
+   "cpu_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 2,
+    "median": 235.275,
+    "mean": 235.275,
+    "min": 228.52,
+    "max": 242.03,
+    "stdev": 9.553012613830251,
+    "values": [
+     242.03,
+     228.52
+    ]
+   },
+   "wall_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 2,
+    "median": 192.8705,
+    "mean": 192.8705,
+    "min": 185.328,
+    "max": 200.413,
+    "stdev": 10.666705794199075,
+    "values": [
+     200.413,
+     185.328
+    ]
+   },
+   "init_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 2,
+    "median": 108.45349999999999,
+    "mean": 108.45349999999999,
+    "min": 104.819,
+    "max": 112.088,
+    "stdev": 5.139959192445008,
+    "values": [
+     112.088,
+     104.819
+    ]
+   },
+   "runtimes": {
+    "unit": "runtimes",
+    "better": "lower",
+    "n": 2,
+    "median": 44,
+    "mean": 44,
+    "min": 44,
+    "max": 44,
+    "stdev": 0,
+    "values": [
+     44,
+     44
+    ]
+   }
+  },
+  "boot_profile": {
+   "init_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 2,
+    "median": 108.45349999999999,
+    "mean": 108.45349999999999,
+    "min": 104.819,
+    "max": 112.088,
+    "stdev": 5.139959192445008,
+    "values": [
+     112.088,
+     104.819
+    ]
+   },
+   "init_ms_Access": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 2,
+    "mean": 2,
+    "min": 2,
+    "max": 2,
+    "stdev": 0,
+    "values": [
+     2,
+     2
+    ]
+   },
+   "init_ms_Assets": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 2920,
+    "mean": 2920,
+    "min": 2583,
+    "max": 3257,
+    "stdev": 476.589970519733,
+    "values": [
+     3257,
+     2583
+    ]
+   },
+   "init_ms_Atmospherics": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 36373.5,
+    "mean": 36373.5,
+    "min": 35357,
+    "max": 37390,
+    "stdev": 1437.548086152251,
+    "values": [
+     37390,
+     35357
+    ]
+   },
+   "init_ms_Atoms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 55148.5,
+    "mean": 55148.5,
+    "min": 51084,
+    "max": 59213,
+    "stdev": 5748.071024265445,
+    "values": [
+     59213,
+     51084
+    ]
+   },
+   "init_ms_Chemistry": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 11.5,
+    "mean": 11.5,
+    "min": 11,
+    "max": 12,
+    "stdev": 0.7071067811865476,
+    "values": [
+     12,
+     11
+    ]
+   },
+   "init_ms_Circuit": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 45.5,
+    "mean": 45.5,
+    "min": 42,
+    "max": 49,
+    "stdev": 4.949747468305833,
+    "values": [
+     49,
+     42
+    ]
+   },
+   "init_ms_Contracts": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 4.5,
+    "mean": 4.5,
+    "min": 4,
+    "max": 5,
+    "stdev": 0.7071067811865476,
+    "values": [
+     5,
+     4
+    ]
+   },
+   "init_ms_Early Assets": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 421.5,
+    "mean": 421.5,
+    "min": 368,
+    "max": 475,
+    "stdev": 75.66042558696059,
+    "values": [
+     475,
+     368
+    ]
+   },
+   "init_ms_Flight Operations": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 14,
+    "mean": 14,
+    "min": 14,
+    "max": 14,
+    "stdev": 0,
+    "values": [
+     14,
+     14
+    ]
+   },
+   "init_ms_HoloMiniMaps": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 3669.5,
+    "mean": 3669.5,
+    "min": 1827,
+    "max": 5512,
+    "stdev": 2605.6884886724274,
+    "values": [
+     1827,
+     5512
+    ]
+   },
+   "init_ms_Instruments": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 14,
+    "mean": 14,
+    "min": 12,
+    "max": 16,
+    "stdev": 2.8284271247461903,
+    "values": [
+     16,
+     12
+    ]
+   },
+   "init_ms_Job": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 3,
+    "mean": 3,
+    "min": 2,
+    "max": 4,
+    "stdev": 1.4142135623730951,
+    "values": [
+     2,
+     4
+    ]
+   },
+   "init_ms_Lighting": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 6371.5,
+    "mean": 6371.5,
+    "min": 6077,
+    "max": 6666,
+    "stdev": 416.4858941188765,
+    "values": [
+     6666,
+     6077
+    ]
+   },
+   "init_ms_Machines": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 53,
+    "mean": 53,
+    "min": 47,
+    "max": 59,
+    "stdev": 8.48528137423857,
+    "values": [
+     47,
+     59
+    ]
+   },
+   "init_ms_Mapping": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 303.5,
+    "mean": 303.5,
+    "min": 289,
+    "max": 318,
+    "stdev": 20.506096654409877,
+    "values": [
+     318,
+     289
+    ]
+   },
+   "init_ms_Media Tracks": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 1.5,
+    "mean": 1.5,
+    "min": 1,
+    "max": 2,
+    "stdev": 0.7071067811865476,
+    "values": [
+     2,
+     1
+    ]
+   },
+   "init_ms_nerdle": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 5.5,
+    "mean": 5.5,
+    "min": 4,
+    "max": 7,
+    "stdev": 2.1213203435596424,
+    "values": [
+     7,
+     4
+    ]
+   },
+   "init_ms_Persistence": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 68,
+    "mean": 68,
+    "min": 54,
+    "max": 82,
+    "stdev": 19.79898987322333,
+    "values": [
+     54,
+     82
+    ]
+   },
+   "init_ms_Plants": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 14,
+    "mean": 14,
+    "min": 12,
+    "max": 16,
+    "stdev": 2.8284271247461903,
+    "values": [
+     16,
+     12
+    ]
+   },
+   "init_ms_Points of Interest": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 1.5,
+    "mean": 1.5,
+    "min": 1,
+    "max": 2,
+    "stdev": 0.7071067811865476,
+    "values": [
+     1,
+     2
+    ]
+   },
+   "init_ms_Profiler": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 1,
+    "mean": 1,
+    "min": 1,
+    "max": 1,
+    "stdev": 0,
+    "values": [
+     1,
+     1
+    ]
+   },
+   "init_ms_Properties": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 2,
+    "mean": 2,
+    "min": 2,
+    "max": 2,
+    "stdev": 0,
+    "values": [
+     2,
+     2
+    ]
+   },
+   "init_ms_Radio": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 50,
+    "mean": 50,
+    "min": 47,
+    "max": 53,
+    "stdev": 4.242640687119285,
+    "values": [
+     53,
+     47
+    ]
+   },
+   "init_ms_Research": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 151,
+    "mean": 151,
+    "min": 149,
+    "max": 153,
+    "stdev": 2.8284271247461903,
+    "values": [
+     153,
+     149
+    ]
+   },
+   "init_ms_Robot Sprites": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 11.5,
+    "mean": 11.5,
+    "min": 10,
+    "max": 13,
+    "stdev": 2.1213203435596424,
+    "values": [
+     13,
+     10
+    ]
+   },
+   "init_ms_Server Tasks": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 1.5,
+    "mean": 1.5,
+    "min": 1,
+    "max": 2,
+    "stdev": 0.7071067811865476,
+    "values": [
+     2,
+     1
+    ]
+   },
+   "init_ms_Shuttles": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 333,
+    "mean": 333,
+    "min": 320,
+    "max": 346,
+    "stdev": 18.384776310850235,
+    "values": [
+     346,
+     320
+    ]
+   },
+   "init_ms_Supply": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 12,
+    "mean": 12,
+    "min": 11,
+    "max": 13,
+    "stdev": 1.4142135623730951,
+    "values": [
+     13,
+     11
+    ]
+   },
+   "init_ms_Wiki": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 2117,
+    "mean": 2117,
+    "min": 1817,
+    "max": 2417,
+    "stdev": 424.26406871192853,
+    "values": [
+     1817,
+     2417
+    ]
+   },
+   "init_ms_Xenoarch": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 111.5,
+    "mean": 111.5,
+    "min": 104,
+    "max": 119,
+    "stdev": 10.606601717798213,
+    "values": [
+     104,
+     119
+    ]
+   },
+   "booted_ffi_calls": {
+    "unit": "calls",
+    "better": "lower",
+    "n": 2,
+    "median": 281474.5,
+    "mean": 281474.5,
+    "min": 281365,
+    "max": 281584,
+    "stdev": 154.8563850798539,
+    "values": [
+     281584,
+     281365
+    ]
+   },
+   "world_turfs": {
+    "unit": "turfs",
+    "better": "none",
+    "n": 2,
+    "median": 393216,
+    "mean": 393216,
+    "min": 393216,
+    "max": 393216,
+    "stdev": 0,
+    "values": [
+     393216,
+     393216
+    ]
+   },
+   "world_movables": {
+    "unit": "atoms",
+    "better": "none",
+    "n": 2,
+    "median": 94479,
+    "mean": 94479,
+    "min": 94472,
+    "max": 94486,
+    "stdev": 9.899494936611665,
+    "values": [
+     94486,
+     94472
+    ]
+   },
+   "lighting_objects": {
+    "unit": "datums",
+    "better": "none",
+    "n": 2,
+    "median": 29904,
+    "mean": 29904,
+    "min": 29904,
+    "max": 29904,
+    "stdev": 0,
+    "values": [
+     29904,
+     29904
+    ]
+   },
+   "lighting_corners": {
+    "unit": "datums",
+    "better": "none",
+    "n": 2,
+    "median": 47197,
+    "mean": 47197,
+    "min": 47197,
+    "max": 47197,
+    "stdev": 0,
+    "values": [
+     47197,
+     47197
+    ]
+   },
+   "lighting_sources": {
+    "unit": "datums",
+    "better": "none",
+    "n": 2,
+    "median": 15892.5,
+    "mean": 15892.5,
+    "min": 15892,
+    "max": 15893,
+    "stdev": 0.7071067811865476,
+    "values": [
+     15893,
+     15892
+    ]
+   }
+  },
+  "explosion_dense": {
+   "before_explosion_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 2262.3,
+    "mean": 2262.3,
+    "min": 2248.4,
+    "max": 2276.2,
+    "stdev": 19.65756851698583,
+    "values": [
+     2248.4,
+     2276.2
+    ]
+   },
+   "before_explosion_rust_heap_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 676.8544999999999,
+    "mean": 676.8544999999999,
+    "min": 667.578,
+    "max": 686.131,
+    "stdev": 13.118952111354014,
+    "values": [
+     667.578,
+     686.131
+    ]
+   },
+   "before_explosion_rust_heap_peak_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 1846.3249999999998,
+    "mean": 1846.3249999999998,
+    "min": 1841.82,
+    "max": 1850.83,
+    "stdev": 6.371032098490787,
+    "values": [
+     1841.82,
+     1850.83
+    ]
+   },
+   "before_explosion_rust_untagged_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 676.8530000000001,
+    "mean": 676.8530000000001,
+    "min": 667.578,
+    "max": 686.128,
+    "stdev": 13.116830791010505,
+    "values": [
+     667.578,
+     686.128
+    ]
+   },
+   "explosion_seconds": {
+    "unit": "s",
+    "better": "none",
+    "n": 2,
+    "median": 17.299999999999997,
+    "mean": 17.299999999999997,
+    "min": 17.1562,
+    "max": 17.4438,
+    "stdev": 0.2033639102692519,
+    "values": [
+     17.4438,
+     17.1562
+    ]
+   },
+   "explosion_tick_avg": {
+    "unit": "%",
+    "better": "lower",
+    "n": 2,
+    "median": 77.78345,
+    "mean": 77.78345,
+    "min": 77.0113,
+    "max": 78.5556,
+    "stdev": 1.0919850021863802,
+    "values": [
+     78.5556,
+     77.0113
+    ]
+   },
+   "explosion_tick_p95": {
+    "unit": "%",
+    "better": "lower",
+    "n": 2,
+    "median": 119.5,
+    "mean": 119.5,
+    "min": 117,
+    "max": 122,
+    "stdev": 3.5355339059327378,
+    "values": [
+     122,
+     117
+    ]
+   },
+   "explosion_tick_p99": {
+    "unit": "%",
+    "better": "lower",
+    "n": 2,
+    "median": 196.5,
+    "mean": 196.5,
+    "min": 169,
+    "max": 224,
+    "stdev": 38.890872965260115,
+    "values": [
+     224,
+     169
+    ]
+   },
+   "explosion_tick_max": {
+    "unit": "%",
+    "better": "lower",
+    "n": 2,
+    "median": 1019.149,
+    "mean": 1019.149,
+    "min": 816.858,
+    "max": 1221.44,
+    "stdev": 286.08267574601587,
+    "values": [
+     1221.44,
+     816.858
+    ]
+   },
+   "explosion_overruns": {
+    "unit": "ticks",
+    "better": "lower",
+    "n": 2,
+    "median": 50,
+    "mean": 50,
+    "min": 50,
+    "max": 50,
+    "stdev": 0,
+    "values": [
+     50,
+     50
+    ]
+   },
+   "explosion_overrun_ratio": {
+    "unit": "ratio",
+    "better": "lower",
+    "n": 2,
+    "median": 0.07639425,
+    "mean": 0.07639425,
+    "min": 0.0763359,
+    "max": 0.0764526,
+    "stdev": 0.00008251936136446823,
+    "values": [
+     0.0763359,
+     0.0764526
+    ]
+   },
+   "explosion_tps": {
+    "unit": "tps",
+    "better": "higher",
+    "n": 2,
+    "median": 37.872699999999995,
+    "mean": 37.872699999999995,
+    "min": 37.5862,
+    "max": 38.1592,
+    "stdev": 0.405172185619892,
+    "values": [
+     37.5862,
+     38.1592
+    ]
+   },
+   "explosion_ffi_calls": {
+    "unit": "calls",
+    "better": "lower",
+    "n": 2,
+    "median": 39247,
+    "mean": 39247,
+    "min": 38874,
+    "max": 39620,
+    "stdev": 527.5016587651645,
+    "values": [
+     38874,
+     39620
+    ]
+   },
+   "explosion_air_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 501.205,
+    "mean": 501.205,
+    "min": 479.658,
+    "max": 522.752,
+    "stdev": 30.472059628453035,
+    "values": [
+     522.752,
+     479.658
+    ]
+   },
+   "explosion_air_ms_per_s": {
+    "unit": "ms/s",
+    "better": "lower",
+    "n": 2,
+    "median": 28.963050000000003,
+    "mean": 28.963050000000003,
+    "min": 27.9582,
+    "max": 29.9679,
+    "stdev": 1.4210724981506038,
+    "values": [
+     29.9679,
+     27.9582
+    ]
+   },
+   "explosion_machines_ms_per_s": {
+    "unit": "ms/s",
+    "better": "lower",
+    "n": 2,
+    "median": 13.8063,
+    "mean": 13.8063,
+    "min": 13.1826,
+    "max": 14.43,
+    "stdev": 0.8820449988520986,
+    "values": [
+     13.1826,
+     14.43
+    ]
+   },
+   "explosion_ffi_calls_per_s": {
+    "unit": "calls/s",
+    "better": "lower",
+    "n": 2,
+    "median": 2268.945,
+    "mean": 2268.945,
+    "min": 2228.53,
+    "max": 2309.36,
+    "stdev": 57.155441123308584,
+    "values": [
+     2228.53,
+     2309.36
+    ]
+   },
+   "explosion_reactor_wakes": {
+    "unit": "wakes",
+    "better": "lower",
+    "n": 2,
+    "median": 1759.5,
+    "mean": 1759.5,
+    "min": 1755,
+    "max": 1764,
+    "stdev": 6.363961030678928,
+    "values": [
+     1764,
+     1755
+    ]
+   },
+   "after_explosion_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 2263.6499999999996,
+    "mean": 2263.6499999999996,
+    "min": 2249.7,
+    "max": 2277.6,
+    "stdev": 19.72827919510474,
+    "values": [
+     2249.7,
+     2277.6
+    ]
+   },
+   "after_explosion_rust_heap_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 625.7094999999999,
+    "mean": 625.7094999999999,
+    "min": 625.609,
+    "max": 625.81,
+    "stdev": 0.1421284630184311,
+    "values": [
+     625.81,
+     625.609
+    ]
+   },
+   "after_explosion_rust_heap_peak_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 1846.3249999999998,
+    "mean": 1846.3249999999998,
+    "min": 1841.82,
+    "max": 1850.83,
+    "stdev": 6.371032098490787,
+    "values": [
+     1841.82,
+     1850.83
+    ]
+   },
+   "after_explosion_rust_untagged_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 2,
+    "median": 625.6935,
+    "mean": 625.6935,
+    "min": 625.577,
+    "max": 625.81,
+    "stdev": 0.16475588001642827,
+    "values": [
+     625.81,
+     625.577
+    ]
+   },
+   "explosion_resolve_wall_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 15868.8,
+    "mean": 15868.8,
+    "min": 15768.8,
+    "max": 15968.8,
+    "stdev": 141.4213562373095,
+    "values": [
+     15968.8,
+     15768.8
+    ]
+   },
+   "explosion_lighting_settle_wall_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 6.25,
+    "mean": 6.25,
+    "min": 0,
+    "max": 12.5,
+    "stdev": 8.838834764831844,
+    "values": [
+     0,
+     12.5
+    ]
+   },
+   "explosion_prepare_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 60.51035,
+    "mean": 60.51035,
+    "min": 60.4508,
+    "max": 60.5699,
+    "stdev": 0.08421641763931498,
+    "values": [
+     60.4508,
+     60.5699
+    ]
+   },
+   "explosion_turf_resolve_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 628.0475,
+    "mean": 628.0475,
+    "min": 615.61,
+    "max": 640.485,
+    "stdev": 17.58928118201537,
+    "values": [
+     640.485,
+     615.61
+    ]
+   },
+   "explosion_atom_collect_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 32.0989,
+    "mean": 32.0989,
+    "min": 31.4071,
+    "max": 32.7907,
+    "stdev": 0.978352942449708,
+    "values": [
+     32.7907,
+     31.4071
+    ]
+   },
+   "explosion_atom_resolve_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 2,
+    "median": 7224.92,
+    "mean": 7224.92,
+    "min": 7160.69,
+    "max": 7289.15,
+    "stdev": 90.83493711122392,
+    "values": [
+     7289.15,
+     7160.69
+    ]
+   },
+   "explosion_turfs_resolved": {
+    "unit": "turfs",
+    "better": "none",
+    "n": 2,
+    "median": 1926,
+    "mean": 1926,
+    "min": 1926,
+    "max": 1926,
+    "stdev": 0,
+    "values": [
+     1926,
+     1926
+    ]
+   },
+   "explosion_atoms_resolved": {
+    "unit": "atoms",
+    "better": "none",
+    "n": 2,
+    "median": 3996.5,
+    "mean": 3996.5,
+    "min": 3982,
+    "max": 4011,
+    "stdev": 20.506096654409877,
+    "values": [
+     4011,
+     3982
+    ]
+   },
+   "explosion_qdels": {
+    "unit": "qdels",
+    "better": "none",
+    "n": 2,
+    "median": 9848.5,
+    "mean": 9848.5,
+    "min": 9844,
+    "max": 9853,
+    "stdev": 6.363961030678928,
+    "values": [
+     9853,
+     9844
+    ]
+   }
+  }
+ },
+ "failures": [
+  "iteration 1: the world wrote no benchmark results"
+ ]
+}

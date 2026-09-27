@@ -23,13 +23,69 @@
 					/*|| istype(tile, /turf/simulated/shuttle/floor)*/ \
 					|| (locate(/obj/structure/catwalk) in tile))
 
+/// Where rendered holomaps are kept between boots.
+#define HOLOMAP_CACHE_DIRECTORY "data/holomaps/cache"
+
+/// The identity of what the holomaps are rendered from: the build (the maps
+/// are compiled into the .dmb, see asset_cache_build_key()) and the loaded
+/// map's size and station levels. Rendered holomaps with another key are stale.
+/datum/controller/subsystem/holomaps/proc/holomap_cache_key()
+	return md5("[asset_cache_build_key()]|[world.maxx]x[world.maxy]x[world.maxz]|[json_encode(using_map.station_levels)]|[json_encode(using_map.holomap_smoosh)]")
+
+/// Loads the holomaps rendered by an earlier boot of the same build and map.
+/// Returns FALSE (and loads nothing) if there is no matching cache.
+/datum/controller/subsystem/holomaps/proc/load_cached_holomaps(key)
+	var/index_file = "[HOLOMAP_CACHE_DIRECTORY]/index.json"
+	if(!fexists(index_file))
+		return FALSE
+	var/list/index
+	try
+		index = json_decode(rustg_file_read(index_file))
+	catch
+		return FALSE
+	if(!islist(index) || index["key"] != key || index["maxz"] != world.maxz)
+		return FALSE
+	var/list/base = list()
+	base.len = world.maxz
+	for(var/z in 1 to world.maxz)
+		var/path = "[HOLOMAP_CACHE_DIRECTORY]/base_[z].dmi"
+		if(!fexists(path))
+			return FALSE
+		base[z] = icon(file(path))
+	var/list/extra = list()
+	for(var/extra_key in index["extra"])
+		var/path = "[HOLOMAP_CACHE_DIRECTORY]/extra_[extra_key].dmi"
+		if(!fexists(path))
+			return FALSE
+		extra[extra_key] = icon(file(path))
+	holoMiniMaps = base
+	extraMiniMaps = extra
+	return TRUE
+
+/// Saves the rendered holomaps for the next boot of the same build and map.
+/datum/controller/subsystem/holomaps/proc/save_cached_holomaps(key)
+	fdel("[HOLOMAP_CACHE_DIRECTORY]/")
+	for(var/z in 1 to length(holoMiniMaps))
+		fcopy(holoMiniMaps[z], "[HOLOMAP_CACHE_DIRECTORY]/base_[z].dmi")
+	var/list/extra_keys = list()
+	for(var/extra_key in extraMiniMaps)
+		fcopy(extraMiniMaps[extra_key], "[HOLOMAP_CACHE_DIRECTORY]/extra_[extra_key].dmi")
+		extra_keys += extra_key
+	rustg_file_write(json_encode(list("key" = key, "maxz" = world.maxz, "extra" = extra_keys)), "[HOLOMAP_CACHE_DIRECTORY]/index.json")
+
 /// Generates all the holo minimaps, initializing it all nicely, probably.
+/// Boots of the same build and map reuse the maps rendered by the last one.
 /datum/controller/subsystem/holomaps/proc/generateHoloMinimaps()
 	var/start_time = world.timeofday
 
 	// Starting over if we're running midround (it runs real fast, so that's possible)
 	holoMiniMaps.Cut()
 	extraMiniMaps.Cut()
+
+	var/cache_key = holomap_cache_key()
+	if(load_cached_holomaps(cache_key))
+		finish_holomaps(start_time)
+		return
 
 	// Build the base map for each z level
 	for (var/z = 1 to world.maxz)
@@ -44,6 +100,10 @@
 		for(var/smoosh_list in using_map.holomap_smoosh)
 			smooshTetherHolomaps(smoosh_list)
 
+	save_cached_holomaps(cache_key)
+	finish_holomaps(start_time)
+
+/datum/controller/subsystem/holomaps/proc/finish_holomaps(start_time)
 	holomaps_initialized = TRUE
 	admin_notice(span_notice("Holomaps initialized in [round(0.1*(world.timeofday-start_time),0.1)] seconds."), R_DEBUG)
 
@@ -201,3 +261,4 @@
 #undef HOLOMAP_PNG_BACKGROUND
 #undef HOLOMAP_PNG_BASE
 #undef HOLOMAP_PNG_AREAS
+#undef HOLOMAP_CACHE_DIRECTORY

@@ -381,42 +381,56 @@
 		if(!window)
 			window = new(window_key, bucket, rule)
 			opportunity_windows[window_key] = window
-		window.prune(rule)
+		// A batch (damage_batch.dm) prunes each window once and evaluates it
+		// once, when the batch ends, with its last event.
+		var/batching = contract_batch_depth > 0
+		if(!batching || !pruned_opportunity_windows?[window_key])
+			window.prune(rule)
+			if(batching)
+				LAZYSET(pruned_opportunity_windows, window_key, TRUE)
 		var/changed = FALSE
 		for(var/datum/contract_opportunity_signal/signal in rule.signals)
 			if(signal.event_type == event.event_type && window.revise(signal, event))
 				changed = TRUE
 		if(!changed)
 			continue
-		var/list/signal_snapshots = rule.snapshots(window)
-		if(window.latched)
-			if(rule.should_reset(signal_snapshots))
-				window.latched = FALSE
-				withdraw_unaccepted_opportunity(rule, window, "The originating incident resolved before acceptance.")
-			else
-				opportunities_suppressed++
-				continue
-		if(!rule.is_ready(signal_snapshots))
+		if(batching)
+			LAZYSET(pending_opportunity_windows, window_key, event)
 			continue
-		var/cooldown_until = opportunity_cooldowns[window_key] || 0
-		if(cooldown_until > world.time)
-			opportunities_suppressed++
-			continue
-		if(!rule.trigger(src, window, event, signal_snapshots))
-			// Avoid retrying a definition with exhausted demand on every event.
-			opportunity_cooldowns[window_key] = world.time + 2 MINUTES
-			opportunities_suppressed++
-			continue
-		window.latched = TRUE
-		opportunity_cooldowns[window_key] = world.time + rule.cooldown
-		opportunities_triggered++
-		var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
-		opportunity_history += history_entry
-		if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
-			var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
-			opportunity_history.Cut(1, 2)
-			qdel(expired)
+		evaluate_opportunity_window(rule, window, window_key, event)
 	return TRUE
+
+/// Snapshots `window` and queues, withdraws or suppresses its offer. `event`
+/// is the fact that last revised it.
+/datum/controller/subsystem/contracts/proc/evaluate_opportunity_window(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, window_key, datum/contract_event/event)
+	var/list/signal_snapshots = rule.snapshots(window)
+	if(window.latched)
+		if(rule.should_reset(signal_snapshots))
+			window.latched = FALSE
+			withdraw_unaccepted_opportunity(rule, window, "The originating incident resolved before acceptance.")
+		else
+			opportunities_suppressed++
+			return
+	if(!rule.is_ready(signal_snapshots))
+		return
+	var/cooldown_until = opportunity_cooldowns[window_key] || 0
+	if(cooldown_until > world.time)
+		opportunities_suppressed++
+		return
+	if(!rule.trigger(src, window, event, signal_snapshots))
+		// Avoid retrying a definition with exhausted demand on every event.
+		opportunity_cooldowns[window_key] = world.time + 2 MINUTES
+		opportunities_suppressed++
+		return
+	window.latched = TRUE
+	opportunity_cooldowns[window_key] = world.time + rule.cooldown
+	opportunities_triggered++
+	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
+	opportunity_history += history_entry
+	if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
+		var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
+		opportunity_history.Cut(1, 2)
+		qdel(expired)
 
 /datum/controller/subsystem/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)
 	var/offer_key = "opportunity:[rule.id]:[window.bucket]"

@@ -507,7 +507,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			break
 		catch(var/exception/e)
 			// i is already past the entity that raised: the loop resumes at the next.
-			error("[B.name] tick: [e] ([e.file]:[e.line])")
+			// i is past the entity that raised; name it, so a runtime says which thing failed.
+			var/datum/failed = (i > 1 && i - 1 <= length(L)) ? L[i - 1] : null
+			error("[B.name] tick ([failed?.type]): [e] ([e.file]:[e.line])")
 			stat_inc(B.id, OM_STAT_ERRORS)
 	R.cur_i = i
 	calls = n_calls

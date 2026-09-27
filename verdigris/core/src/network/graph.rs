@@ -372,6 +372,16 @@ impl<K: NetworkKind> Default for Network<K> {
 }
 
 impl<K: NetworkKind> Network<K> {
+    /// Bytes reserved by the node, edge, region and device arenas (their
+    /// slots; per-node heap such as adjacency lists is not counted).
+    #[must_use]
+    pub fn reserved_bytes(&self) -> usize {
+        self.nodes.reserved_bytes()
+            + self.edges.reserved_bytes()
+            + self.regions.reserved_bytes()
+            + self.devices.reserved_bytes()
+    }
+
     #[must_use]
     pub fn new() -> Self {
         Self {

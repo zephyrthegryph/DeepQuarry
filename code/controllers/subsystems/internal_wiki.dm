@@ -42,6 +42,9 @@ SUBSYSTEM_DEF(internal_wiki)
 	VAR_PRIVATE/list/searchcache_genes = list()
 
 	VAR_PRIVATE/list/spoiler_entries = list()
+	/// Wiki categories whose pages are built (WIKI_CATEGORY_* -> TRUE).
+	/// Each category is built on its first read, not at boot.
+	VAR_PRIVATE/list/built_categories = list()
 
 	VAR_PRIVATE/max_donation = 100000
 	VAR_PRIVATE/min_donation = 50000
@@ -55,15 +58,8 @@ SUBSYSTEM_DEF(internal_wiki)
 	return ..()
 
 /datum/controller/subsystem/internal_wiki/Initialize()
-	init_ore_data()
-	init_material_data()
-	init_particle_smasher_data()
-	init_reagent_data()
-	init_seed_data()
-	init_virus_data()
-	init_kitchen_data()
-	init_lore_data()
-	init_gene_data()
+	// Pages are built per category on first read (ensure_category()): the
+	// data is static per build and most rounds never open most categories.
 	// Donation gag
 	donation_goal = rand(min_donation,max_donation)
 	donation_goal = round(donation_goal,1)
@@ -115,6 +111,43 @@ SUBSYSTEM_DEF(internal_wiki)
 	return highest
 
 
+#define WIKI_CATEGORY_ORE "ore"
+#define WIKI_CATEGORY_MATERIAL "material"
+#define WIKI_CATEGORY_SMASHER "smasher"
+#define WIKI_CATEGORY_REAGENT "reagent"
+#define WIKI_CATEGORY_SEED "seed"
+#define WIKI_CATEGORY_VIRUS "virus"
+#define WIKI_CATEGORY_KITCHEN "kitchen"
+#define WIKI_CATEGORY_LORE "lore"
+#define WIKI_CATEGORY_GENE "gene"
+
+/// Builds a category's pages the first time anything reads it.
+/datum/controller/subsystem/internal_wiki/proc/ensure_category(category)
+	SHOULD_NOT_OVERRIDE(TRUE)
+	PRIVATE_PROC(TRUE)
+	if(built_categories[category])
+		return
+	built_categories[category] = TRUE
+	switch(category)
+		if(WIKI_CATEGORY_ORE)
+			init_ore_data()
+		if(WIKI_CATEGORY_MATERIAL)
+			init_material_data()
+		if(WIKI_CATEGORY_SMASHER)
+			init_particle_smasher_data()
+		if(WIKI_CATEGORY_REAGENT)
+			init_reagent_data()
+		if(WIKI_CATEGORY_SEED)
+			init_seed_data()
+		if(WIKI_CATEGORY_VIRUS)
+			init_virus_data()
+		if(WIKI_CATEGORY_KITCHEN)
+			init_kitchen_data()
+		if(WIKI_CATEGORY_LORE)
+			init_lore_data()
+		if(WIKI_CATEGORY_GENE)
+			init_gene_data()
+
 ///////////////////////////////////////////////////////////////////////////////////
 // Accessors for safely talking with the subsystem
 ///////////////////////////////////////////////////////////////////////////////////
@@ -122,42 +155,52 @@ SUBSYSTEM_DEF(internal_wiki)
 /datum/controller/subsystem/internal_wiki/proc/get_page_food(search)
 	RETURN_TYPE(/datum/internal_wiki/page/food)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_KITCHEN)
 	return foodrecipe[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_drink(search)
 	RETURN_TYPE(/datum/internal_wiki/page/drink)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_REAGENT)
 	return drinkreact[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_chem(search)
 	RETURN_TYPE(/datum/internal_wiki/page/chemical)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_REAGENT)
 	return chemreact[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_seed(search)
 	RETURN_TYPE(/datum/internal_wiki/page/seed)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_SEED)
 	return botseeds[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_virus(search)
 	RETURN_TYPE(/datum/internal_wiki/page/virus)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_VIRUS)
 	return viruses[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_gene(search)
 	RETURN_TYPE(/datum/internal_wiki/page/gene)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_GENE)
 	return genes[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_catalog(search)
 	RETURN_TYPE(/datum/internal_wiki/page/catalog)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_LORE)
 	return catalogs[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_material(search)
 	RETURN_TYPE(/datum/internal_wiki/page/material)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_MATERIAL)
 	return materials[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_particle(search)
 	RETURN_TYPE(/datum/internal_wiki/page/smasher)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_SMASHER)
 	return smashers[search]
 /datum/controller/subsystem/internal_wiki/proc/get_page_ore(search)
 	RETURN_TYPE(/datum/internal_wiki/page/ore)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_ORE)
 	return ores[search]
 // Search lists
 /datum/controller/subsystem/internal_wiki/proc/get_appliances()
@@ -167,34 +210,42 @@ SUBSYSTEM_DEF(internal_wiki)
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_food(appliance)
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_KITCHEN)
 	return searchcache_foodrecipe[appliance] || list()
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_drink()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_REAGENT)
 	return searchcache_drinkreact
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_chem()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_REAGENT)
 	return searchcache_chemreact
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_seed()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_SEED)
 	return searchcache_botseeds
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_viruses()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_VIRUS)
 	return searchcache_viruses
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_genes()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_GENE)
 	return searchcache_genes
 /datum/controller/subsystem/internal_wiki/proc/get_catalogs()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_LORE)
 	return catalog_list
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_catalog(section)
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_LORE)
 	var/list/known_entries = list()
 	var/list/section_data = searchcache_catalogs[section] || list()
 	for(var/PG in section_data)
@@ -206,14 +257,17 @@ SUBSYSTEM_DEF(internal_wiki)
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_material()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_MATERIAL)
 	return searchcache_material
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_particle()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_SMASHER)
 	return searchcache_smasher
 /datum/controller/subsystem/internal_wiki/proc/get_searchcache_ore()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	ensure_category(WIKI_CATEGORY_ORE)
 	return searchcache_ore
 // Donating
 /datum/controller/subsystem/internal_wiki/proc/get_donor_value(key)
@@ -1600,3 +1654,13 @@ SUBSYSTEM_DEF(internal_wiki)
 		for(var/PL in produces)
 			body += "-[PL]<br>"
 	return body
+
+#undef WIKI_CATEGORY_ORE
+#undef WIKI_CATEGORY_MATERIAL
+#undef WIKI_CATEGORY_SMASHER
+#undef WIKI_CATEGORY_REAGENT
+#undef WIKI_CATEGORY_SEED
+#undef WIKI_CATEGORY_VIRUS
+#undef WIKI_CATEGORY_KITCHEN
+#undef WIKI_CATEGORY_LORE
+#undef WIKI_CATEGORY_GENE

@@ -2,6 +2,8 @@
 /datum/asset/json/icon_ref_map
 	name = "icon_ref_map"
 	early = TRUE
+	// Resource refs are fixed by the compiled .rsc: static per build.
+	cross_round_cachable = TRUE
 
 /datum/asset/json/icon_ref_map/generate()
 	var/list/data = list() //"icons/obj/drinks.dmi" => "[0xc000020]"

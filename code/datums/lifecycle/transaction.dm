@@ -106,6 +106,9 @@
 /// itself is already measured in qdel().
 /proc/dq_lifecycle_time(datum/qdel_item/trash, id, start_tick)
 	trash.phase_ms[id] += TICK_USAGE_TO_MS(start_tick)
+	#ifdef BENCHMARK_DEEP_PROFILE
+	benchmark_qdel_phase(id, TICK_USAGE_TO_MS(start_tick))
+	#endif
 
 // ---- Phase 1: unbind (hook point) ----
 

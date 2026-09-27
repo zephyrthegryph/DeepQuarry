@@ -28,8 +28,14 @@ SUBSYSTEM_DEF(asset_loading)
 	// We just emptied the queue
 	if(last_queue_len && !length(generate_queue) && !assets_generating)
 		last_queue_len = 0
+#ifdef BENCHMARK
+		benchmark_rust_mark("asset loading: queue done")
+#endif
 		// Clean up cached icons, freeing memory.
 		rustg_iconforge_cleanup()
+#ifdef BENCHMARK
+		benchmark_rust_mark("asset loading: iconforge cleaned")
+#endif
 
 /datum/controller/subsystem/asset_loading/proc/queue_asset(datum/asset/queue)
 #ifdef DO_NOT_DEFER_ASSETS

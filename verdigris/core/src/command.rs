@@ -34,11 +34,110 @@ pub struct Sequenced<O> {
     pub op: O,
 }
 
+/// Commands per [`Batch`] chunk. A queue grows by whole chunks of this
+/// many commands, so it never asks the allocator for one large block: in
+/// DreamDaemon's 32-bit address space a doubling `Vec` of big commands
+/// (a gas `Put` is 144 bytes) failed for want of 9 MB of contiguous space.
+pub const BATCH_CHUNK: usize = 1024;
+
+/// A run of commands in sequence order, stored as fixed-size chunks.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Batch<O> {
+    chunks: Vec<Vec<Sequenced<O>>>,
+    len: usize,
+}
+
+impl<O> Default for Batch<O> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<O> Batch<O> {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            chunks: Vec::new(),
+            len: 0,
+        }
+    }
+
+    /// A batch holding `commands`, in order.
+    #[must_use]
+    pub fn from_vec(commands: Vec<Sequenced<O>>) -> Self {
+        let mut batch = Self::new();
+        for c in commands {
+            batch.push(c);
+        }
+        batch
+    }
+
+    pub fn push(&mut self, command: Sequenced<O>) {
+        match self.chunks.last_mut() {
+            Some(chunk) if chunk.len() < BATCH_CHUNK => chunk.push(command),
+            _ => {
+                let mut chunk = Vec::with_capacity(BATCH_CHUNK);
+                chunk.push(command);
+                self.chunks.push(chunk);
+            }
+        }
+        self.len += 1;
+    }
+
+    /// Moves every command of `other` to the end of this batch.
+    pub fn append(&mut self, other: &mut Self) {
+        self.len += other.len;
+        other.len = 0;
+        self.chunks.append(&mut other.chunks);
+    }
+
+    #[must_use]
+    pub fn last(&self) -> Option<&Sequenced<O>> {
+        self.chunks.last().and_then(|c| c.last())
+    }
+
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// The commands, in order.
+    pub fn iter(&self) -> impl Iterator<Item = &Sequenced<O>> {
+        self.chunks.iter().flatten()
+    }
+
+    /// Takes every command out, in order, leaving the batch empty.
+    pub fn drain(&mut self) -> impl Iterator<Item = Sequenced<O>> {
+        self.len = 0;
+        std::mem::take(&mut self.chunks).into_iter().flatten()
+    }
+
+    /// Heap bytes the batch holds (chunk capacities).
+    #[must_use]
+    pub fn capacity_bytes(&self) -> usize {
+        self.chunks.iter().map(Vec::capacity).sum::<usize>() * size_of::<Sequenced<O>>()
+            + self.chunks.capacity() * size_of::<Vec<Sequenced<O>>>()
+    }
+}
+
+impl<O: Clone> Batch<O> {
+    /// The commands as one `Vec` (the flight recorder's format).
+    #[must_use]
+    pub fn to_vec(&self) -> Vec<Sequenced<O>> {
+        self.iter().cloned().collect()
+    }
+}
+
 /// The main-thread side of an owner's command queue.
 #[derive(Debug)]
 pub struct CommandBuffer<O> {
     next: u64,
-    pending: Vec<Sequenced<O>>,
+    pending: Batch<O>,
 }
 
 impl<O> Default for CommandBuffer<O> {
@@ -52,7 +151,7 @@ impl<O> CommandBuffer<O> {
     pub const fn new() -> Self {
         Self {
             next: 1,
-            pending: Vec::new(),
+            pending: Batch::new(),
         }
     }
 
@@ -86,20 +185,24 @@ impl<O> CommandBuffer<O> {
 
     /// Commands queued since the last [`take`](Self::take).
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.pending.len()
     }
 
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.pending.is_empty()
     }
 
-    /// Swaps the queue out, leaving an empty one with the same capacity
-    /// class (so steady-state submission does not reallocate).
-    pub fn take(&mut self) -> Vec<Sequenced<O>> {
-        let capacity = self.pending.len();
-        std::mem::replace(&mut self.pending, Vec::with_capacity(capacity))
+    /// Heap bytes the queue holds (its capacity, not just its length).
+    #[must_use]
+    pub fn capacity_bytes(&self) -> usize {
+        self.pending.capacity_bytes()
+    }
+
+    /// Swaps the queue out, leaving an empty one.
+    pub fn take(&mut self) -> Batch<O> {
+        std::mem::take(&mut self.pending)
     }
 }
 
@@ -116,7 +219,33 @@ mod tests {
         let batch = buf.take();
         assert!(buf.is_empty());
         assert_eq!(batch.iter().map(|c| c.seq.0).collect::<Vec<_>>(), [1, 2]);
+        assert_eq!(batch.len(), 2);
         assert_eq!(buf.issue(), Seq(3));
         assert_eq!(buf.last_issued(), Seq(3));
+    }
+
+    #[test]
+    fn batches_grow_by_chunks_and_keep_order() {
+        let mut buf = CommandBuffer::<Op<u8, u8>>::new();
+        let n = BATCH_CHUNK * 2 + 5;
+        for i in 0..n {
+            buf.push(u32::try_from(i).unwrap(), Op::Take);
+        }
+        let mut batch = buf.take();
+        assert_eq!(batch.len(), n);
+        assert_eq!(batch.chunks.len(), 3);
+        assert!(batch.chunks.iter().all(|c| c.capacity() == BATCH_CHUNK));
+        let mut more = Batch::from_vec(vec![Sequenced {
+            seq: Seq(9999),
+            target: 0,
+            op: Op::Put(1),
+        }]);
+        batch.append(&mut more);
+        assert!(more.is_empty());
+        let seqs: Vec<u64> = batch.drain().map(|c| c.seq.0).collect();
+        assert_eq!(seqs.len(), n + 1);
+        assert!(seqs[..n].windows(2).all(|w| w[0] + 1 == w[1]));
+        assert_eq!(seqs[n], 9999);
+        assert!(batch.is_empty());
     }
 }

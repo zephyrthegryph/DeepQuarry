@@ -64,7 +64,13 @@ SUBSYSTEM_DEF(atoms)
 			//I hate that we need this
 			if(QDELETED(A))
 				continue
+			#ifdef BENCHMARK_DEEP_PROFILE
+			var/bench_depth = benchmark_init_frame_begin()
+			#endif
 			A.LateInitialize()
+			#ifdef BENCHMARK_DEEP_PROFILE
+			benchmark_late_frame_end(bench_depth, A.type)
+			#endif
 		testing("Late initialized [length(late_loaders)] atoms")
 		late_loaders.Cut()
 
