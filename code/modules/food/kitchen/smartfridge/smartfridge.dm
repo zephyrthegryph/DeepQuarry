@@ -408,3 +408,8 @@
 		item_records = attached.item_records
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/smartfridge/step_start_condition()
+	return !(stat & (BROKEN|NOPOWER)) // its hum

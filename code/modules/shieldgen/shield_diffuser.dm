@@ -110,3 +110,8 @@
 	. += "It is [enabled ? "enabled" : "disabled"]."
 	if(alarm)
 		. += "A red LED labeled \"Proximity Alarm\" is blinking on the control panel."
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shield_diffuser/step_start_condition()
+	return enabled

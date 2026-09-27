@@ -314,3 +314,8 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/binary/dp_vent_pump/arm_wakes()
+	..()
+	hibernate_until_gas_changes()

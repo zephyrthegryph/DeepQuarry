@@ -29,7 +29,6 @@
 /obj/item/clothing/mask/synthfacemask/Destroy()
 	maskmaster = null
 	. = ..()
-	PERIODIC_STOP(src)
 
 /obj/item/clothing/mask/synthfacemask/equip_constraint()
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade")))

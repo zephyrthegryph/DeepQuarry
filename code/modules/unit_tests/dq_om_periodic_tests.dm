@@ -121,36 +121,37 @@
 	M.speed_process = FALSE
 	PERIODIC_STOP(M)
 
-/// om keys and timers: a subscriber wakes on a publish sharing a mask bit and not otherwise;
-/// a timer fires once; unsubscribing drops the key.
+/// Change channels and timers for sleepers: a watcher wakes on a watched channel and not on
+/// another; unwatching stops it; an om_after() timer fires once.
 /datum/unit_test/dq_om_keys_and_timers
+
+/datum/proc/dq_om_test_timer_hit()
+	return
 
 /datum/unit_test/dq_om_keys_and_timers/Run()
 	var/datum/om_wake_test_subscriber/S = allocate(/datum/om_wake_test_subscriber)
-	var/token = OM_KEY_ON(S, KEY_METEORS, 77, 2)
-	TEST_ASSERT(token, "subscribing returned no token")
-	om_woken_trace(S)
-	OM_KEY_PUBLISH(KEY_METEORS, 77, 1)
+	var/datum/source = allocate(/datum)
+	om_test_watch(S, source, CHANGE_DATUM_B)
+	om_trace(S)
+	om_changed(source, CHANGE_DATUM_A)
 	react_test_ticks(4)
-	TEST_ASSERT_EQUAL(om_woken_traced_count(S), 0, "a publish with no shared mask bit woke the subscriber")
-	OM_KEY_PUBLISH(KEY_METEORS, 77, 2)
-	TEST_ASSERT(om_wait_for_wake(S), "a matching publish did not wake the subscriber")
-	TEST_ASSERT((S.wakes[length(S.wakes)] & OM_WOKEN_KEY), "a key wake did not say it was a key")
-	OM_KEY_OFF(S, token)
-	TEST_ASSERT(!GLOB.om_keys["[KEY_METEORS]:77"], "the last unsubscribe left the key behind")
-	var/before = om_woken_traced_count(S)
-	OM_KEY_PUBLISH(KEY_METEORS, 77, 2)
+	TEST_ASSERT_EQUAL(om_traced_count(S), 0, "a change on an unwatched channel woke the watcher")
+	om_changed(source, CHANGE_DATUM_B)
+	TEST_ASSERT(om_wait_for_wake(S), "a watched channel did not wake the watcher")
+	TEST_ASSERT((S.wakes[length(S.wakes)] & CHANGE_RELATED), "a watch wake did not arrive as CHANGE_RELATED")
+	om_unwatch(S, source, /datum/om/behaviour/sleeper/test_subscriber)
+	var/before = om_traced_count(S)
+	om_changed(source, CHANGE_DATUM_B)
 	react_test_ticks(4)
-	TEST_ASSERT_EQUAL(om_woken_traced_count(S), before, "an unsubscribed datum woke")
+	TEST_ASSERT_EQUAL(om_traced_count(S), before, "an unwatched datum woke")
 
-	OM_WAKE_AT(S, world.time + 1)
-	TEST_ASSERT(om_wake_pending(S), "the timer is not pending")
+	var/id = om_after(S, 1, /datum/proc/dq_om_test_timer_hit)
+	TEST_ASSERT(om_timer_pending(S, id), "the timer is not pending")
 	TEST_ASSERT(om_wait_for_wake(S, before), "the timer did not fire")
 	react_test_ticks(8)
-	TEST_ASSERT(om_woken_traced_count(S) == before + 1, "the timer did not fire exactly once")
-	TEST_ASSERT((S.wakes[length(S.wakes)] & OM_WOKEN_TIMER), "a timer wake did not say it was a timer")
-	TEST_ASSERT(!om_wake_pending(S), "a fired timer is still pending")
-	om_woken_untrace(S)
+	TEST_ASSERT(om_traced_count(S) == before + 1, "the timer did not fire exactly once")
+	TEST_ASSERT(!om_timer_pending(S, id), "a fired timer is still pending")
+	om_untrace(S)
 
 #endif
 
@@ -231,6 +232,7 @@
 	igniter.on = TRUE
 	igniter.stat |= NOPOWER
 	MACHINE_WAKE(igniter)
+	igniter.om_rec.sched.run_pass(1e9)
 	om_run_frame_now(igniter, P)
 	TEST_ASSERT(!igniter.step_active && igniter.step_waiting_power, "an unpowered igniter did not wait for power")
 	TEST_ASSERT(stage.idle(igniter), "an unpowered waiting machine is not idle")
@@ -276,7 +278,7 @@
 	for(var/datum/om/stage/T as anything in missed)
 		names |= "[T.type]"
 	TEST_ASSERT(!length(missed), "the pipeline audit found missed wakes: [jointext(names, ", ")]")
-	var/list/woken = om_woken_audit(100000, FALSE)
+	var/list/woken = om_sleeper_audit(100000, FALSE)
 	TEST_ASSERT(!length(woken), "the timer/key audit found sleepers with work: [jointext(woken, "; ")]")
 
 /// Tanning racks and modular computers sleep when idle and wake on their producer.
@@ -367,5 +369,88 @@
 	var/datum/om/pipeline/periodic/P = om_registry().behaviour(PERIODIC_PLANTS)
 	TEST_ASSERT_EQUAL(P.every, 7.5 SECONDS, "the plant lane lost the old SSplants cadence")
 	PERIODIC_STOP(probe)
+
+#endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// A machine type on the machine pipeline from Initialize, like the mapped ones.
+/obj/machinery/dq_step_probe/mapped
+
+/obj/machinery/dq_step_probe/mapped/started
+	var/start_now = TRUE
+
+/obj/machinery/dq_step_probe/mapped/started/step_start_condition()
+	return start_now
+
+/datum/om/decl/dq_test_step_probe
+	of = /obj/machinery/dq_step_probe/mapped
+	behaviours = list(/datum/om/pipeline/machine)
+
+/// Machines never start by default: a freshly materialized machine with no work is never stepped
+/// and parks; one whose declared start condition holds is woken once the world is up.
+/datum/unit_test/dq_om_fresh_machine_never_steps
+
+/datum/unit_test/dq_om_fresh_machine_never_steps/Run()
+	var/obj/machinery/dq_step_probe/mapped/idle = allocate(/obj/machinery/dq_step_probe/mapped, test_floor())
+	idle.work = 5
+	var/obj/machinery/dq_step_probe/mapped/started/busy = allocate(/obj/machinery/dq_step_probe/mapped/started, test_floor())
+	busy.work = 5
+	TEST_ASSERT(om_attached(idle, /datum/om/pipeline/machine), "a decl-listed machine did not join the pipeline")
+	for(var/i in 1 to 40)
+		react_test_ticks(1)
+		if(busy.steps)
+			break
+	react_test_ticks(MACHINE_PIPELINE_INTERVAL * 3 / world.tick_lag)
+	TEST_ASSERT_EQUAL(idle.steps, 0, "a fresh machine with no work was stepped")
+	TEST_ASSERT(om_pipe_parked(idle, /datum/om/pipeline/machine), "a fresh machine with no work did not park")
+	TEST_ASSERT(busy.steps > 0, "a machine whose start condition holds was not woken")
+
+#endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// Started items and effects run only when they can act: idle ones say so, radiation sources
+/// sleep with nobody near and wake when a mob comes, timed ones sleep on one timer.
+/datum/unit_test/dq_om_items_run_only_when_they_can_act
+
+/datum/unit_test/dq_om_items_run_only_when_they_can_act/Run()
+	var/turf/T = locate(world.maxx - 2, world.maxy - 2, test_floor().z)
+	// Proximity gate: a uranium coin with nobody near sleeps on the chunks around it.
+	for(var/mob/living/L in range(world.view, T))
+		TEST_FAIL("the test corner is not empty") // the gate needs an empty neighbourhood
+		return
+	var/obj/item/coin/uranium/coin = allocate(/obj/item/coin/uranium, T)
+	TEST_ASSERT_EQUAL(coin.periodic_step(20), PROCESS_KILL, "a radiation source with nobody near kept stepping")
+	TEST_ASSERT(length(coin.proximity_chunks), "a sleeping radiation source watches no chunks")
+	PERIODIC_STOP(coin)
+	var/mob/living/visitor = allocate(/mob/living, locate(1, 1, T.z))
+	visitor.forceMove(get_step(T, WEST))
+	for(var/i in 1 to 40)
+		react_test_ticks(1)
+		if(coin.periodic_pipe)
+			break
+	TEST_ASSERT(coin.periodic_pipe == PERIODIC_SLOW, "a mob coming near did not wake the radiation source")
+	TEST_ASSERT(!coin.proximity_chunks, "a woken radiation source kept its chunk watches")
+	qdel(visitor)
+
+	// Start and stop conditions.
+	var/obj/item/chainsaw/saw = allocate(/obj/item/chainsaw, test_floor())
+	TEST_ASSERT(!saw.periodic_pipe, "a chainsaw that is off runs")
+	TEST_ASSERT_EQUAL(saw.periodic_step(20), PROCESS_KILL, "a chainsaw that is off kept stepping")
+	var/obj/item/gun/launcher/spikethrower/spikes = allocate(/obj/item/gun/launcher/spikethrower, test_floor())
+	TEST_ASSERT(!spikes.periodic_pipe, "a full spikethrower runs")
+	var/obj/item/ghost_trap/trap = allocate(/obj/item/ghost_trap, test_floor())
+	TEST_ASSERT(!trap.periodic_pipe, "an empty ghost trap runs")
+	var/obj/effect/map_effect/interval/effect = allocate(/obj/effect/map_effect/interval, T)
+	effect.always_run = FALSE
+	TEST_ASSERT_EQUAL(effect.periodic_step(20), PROCESS_KILL, "an interval effect with nobody near kept stepping")
+
+	// One timer instead of a countdown.
+	var/obj/structure/timer_door/door = allocate(/obj/structure/timer_door, test_floor())
+	TEST_ASSERT(!door.periodic_pipe, "a timer door polls")
+	var/obj/effect/spider/eggcluster/eggs = allocate(/obj/effect/spider/eggcluster, test_floor())
+	TEST_ASSERT(!eggs.periodic_pipe, "an egg cluster polls its growth")
+	TEST_ASSERT(length(eggs.om_rec?.timers), "an egg cluster has no hatch timer")
 
 #endif

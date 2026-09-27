@@ -151,7 +151,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/Destroy()
-	PERIODIC_STOP(src)
 	master = null
 	return ..()
 

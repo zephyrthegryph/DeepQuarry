@@ -231,3 +231,8 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	if(grinder)
 		grinder.attack_hand(user)
 	return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/v_garbosystem/step_start_condition()
+	return operating

@@ -486,7 +486,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/Destroy()
 	if(hitscan)
 		finalize_hitscan_and_generate_tracers()
-	PERIODIC_STOP(src)
 
 	if(impacted_mobs)
 		if(LAZYLEN(impacted_mobs))

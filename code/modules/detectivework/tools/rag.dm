@@ -35,7 +35,6 @@
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/Destroy()
-	PERIODIC_STOP(src) //so we don't continue turning to ash while gc'd
 	return ..()
 
 /obj/item/reagent_containers/glass/rag/attack_self(mob/user)

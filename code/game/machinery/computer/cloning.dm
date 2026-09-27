@@ -483,3 +483,8 @@
 
 #undef MENU_MAIN
 #undef MENU_RECORDS
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/computer/cloning/step_start_condition()
+	return autoprocess

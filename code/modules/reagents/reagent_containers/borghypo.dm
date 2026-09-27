@@ -70,6 +70,7 @@
 	var/amount_to_add = min(amount, reagent_volumes[reagent_id])
 	target_reagents.add_reagent(reagent_id, amount_to_add)
 	reagent_volumes[reagent_id] -= amount_to_add
+	PERIODIC_START(src, PERIODIC_SLOW) // refill what was used
 	return BORGHYPO_STATUS_SUCCESS
 
 /// Attempts to add one reagent or multiple reagents, depending on if this hypo is currently set to dispense a recipe, (see `is_dispensing_recipe`.) Returns its success (or error) status at doing so.
@@ -104,13 +105,20 @@
 		var/datum/reagent/hypo_reagent = SSchemistry.chemical_reagents[T]
 		LAZYADD(reagent_names, hypo_reagent.name)
 
-	PERIODIC_START(src, PERIODIC_SLOW)
-
 /obj/item/reagent_containers/borghypo/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/reagent_containers/borghypo/periodic_step() //Every [recharge_time] seconds, recharge some reagents for the cyborg+
+/// Every [recharge_time] steps, recharges some reagents from its cyborg while any is short (a
+/// dose starts it); full, it sleeps.
+/obj/item/reagent_containers/borghypo/periodic_step()
+	var/short = FALSE
+	for(var/T in reagent_ids)
+		if(reagent_volumes[T] < volume)
+			short = TRUE
+			break
+	if(!short)
+		charge_tick = 0
+		return PROCESS_KILL
 	if(++charge_tick < recharge_time)
 		return 0
 	charge_tick = 0

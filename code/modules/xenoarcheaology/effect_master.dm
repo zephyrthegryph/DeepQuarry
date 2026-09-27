@@ -146,7 +146,6 @@
 		my_effects -= AE
 		qdel(AE)
 
-	PERIODIC_STOP(src)
 
 	. = ..()
 

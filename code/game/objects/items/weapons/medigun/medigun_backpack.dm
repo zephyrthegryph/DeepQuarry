@@ -240,7 +240,6 @@
 	update_icon()
 
 /obj/item/medigun_backpack/Destroy()
-	PERIODIC_STOP(src)
 	QDEL_NULL(bcell)
 	QDEL_NULL(smodule)
 	QDEL_NULL(smanipulator)

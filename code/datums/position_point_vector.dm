@@ -197,7 +197,6 @@
 	var/paused = FALSE
 
 /datum/point/vector/processed/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /datum/point/vector/processed/proc/start()

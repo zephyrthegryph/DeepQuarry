@@ -471,3 +471,8 @@
 
 /obj/machinery/media/jukebox/casinojukebox/getTracksList()
 	return SSmedia_tracks.casino_tracks
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/media/jukebox/step_start_condition()
+	return playing

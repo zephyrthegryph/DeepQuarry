@@ -31,7 +31,6 @@
 
 /obj/structure/prop/nest/Destroy()
 	den_mobs = null
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/structure/prop/nest/attack_hand(mob/living/user) // Used to tell the player that this isn't useful for anything.
@@ -39,7 +38,10 @@
 	if(user && prob(disturbance_spawn_chance))
 		spawn_creature(get_turf(src))
 
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/prop/nest/periodic_step()
+	if(!mob_near(world.view * 2, TRUE))
+		return sleep_until_mob_near(world.view * 2, TRUE)
 	update_creatures()
 	if(world.time > last_spawn + spawn_delay)
 		spawn_creature(get_turf(src))

@@ -45,14 +45,15 @@
 	if(!found_target) //meaning if the statue didn't find a valid target
 		return INITIALIZE_HINT_QDEL
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 
-/obj/structure/closet/statue/periodic_step()
-	timer--
-	if (timer <= 0)
-		dump_contents()
-		PERIODIC_STOP(src)
-		qdel(src)
+/// The petrification wears off (its timer): the statue frees whoever is inside.
+/obj/structure/closet/statue/proc/release()
+	if(QDELETED(src))
+		return
+	timer = 0
+	dump_contents()
+	qdel(src)
 
 /obj/structure/closet/statue/dump_contents()
 	latent_materialize_all()

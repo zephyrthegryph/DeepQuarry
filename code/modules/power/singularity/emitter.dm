@@ -394,3 +394,8 @@
 	. = ..()
 	connect_to_network()
 	update_icon()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/emitter/step_start_condition()
+	return active

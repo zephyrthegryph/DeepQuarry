@@ -402,7 +402,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	node = null
 
 	//Clean up references that might point at us
-	PERIODIC_STOP(src)
 	GLOB.listening_objects.Remove(src)
 	QDEL_NULL(camera)
 	QDEL_NULL(exonet)

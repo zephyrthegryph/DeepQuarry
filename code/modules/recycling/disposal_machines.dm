@@ -93,7 +93,7 @@
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	OM_KEY_PUBLISH_OWN(src, KEY_DISPOSAL, KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	MACHINE_WAKE(src)
 
 /// Wakes only once a charging disposal can actually draw air from its turf.
@@ -561,7 +561,7 @@
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
 		update_use_power(USE_POWER_IDLE)
 		flush_count = 0
-		sleep_until_keys(list(KEY_DISPOSAL, OM_KEY_ID(src), KEY_CHANGED))
+		sleep_until_keys()
 		return
 
 	flush_count++
@@ -582,7 +582,7 @@
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
 		if(!flush && !length(contents))
-			sleep_until_keys(list(KEY_DISPOSAL, OM_KEY_ID(src), KEY_CHANGED))
+			sleep_until_keys()
 			return
 	else
 		if(!pressurize()) //otherwise charge
@@ -800,3 +800,13 @@
 	if(flush || length(contents))
 		return "asleep with [flush ? "a flush pending" : "contents"]"
 	return null
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/disposal/arm_wakes()
+	..()
+	hibernate_until_intake_changes()
+	sleep_until_keys()
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/disposal/step_start_condition()
+	return mode == 1 || flush || length(contents)

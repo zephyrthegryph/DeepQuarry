@@ -16,7 +16,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 	update_icon()
 
 /obj/structure/blob/node/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/structure/blob/node/update_icon()

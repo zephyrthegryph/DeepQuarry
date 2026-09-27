@@ -167,3 +167,8 @@
 /obj/machinery/floodlight/starts_on/Initialize(mapload)
 	. = ..()
 	turn_on()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/floodlight/step_start_condition()
+	return on

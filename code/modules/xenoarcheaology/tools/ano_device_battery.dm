@@ -65,10 +65,8 @@
 
 /obj/item/anodevice/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/anodevice/Destroy()
-	PERIODIC_STOP(src)
 	inserted_battery = null
 	archived_loc = null
 	last_user_touched = null
@@ -142,6 +140,7 @@
 		if("startup")
 			if(inserted_battery && inserted_battery.battery_effect && (inserted_battery.stored_charge > 0))
 				activated = TRUE
+				PERIODIC_START(src, PERIODIC_SLOW)
 				visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
 				if(!inserted_battery.battery_effect.activated)
 					inserted_battery.battery_effect.ToggleActivate(1)
@@ -161,7 +160,10 @@
 			shutdown_emission()
 			return TRUE
 
+/// Runs its battery effect every 2 s while activated (its "startup" starts it); off, it sleeps.
 /obj/item/anodevice/periodic_step()
+	if(!activated)
+		return PROCESS_KILL
 	if(activated)
 		if(inserted_battery && inserted_battery.battery_effect && (inserted_battery.stored_charge > 0) )
 			//make sure the effect is active

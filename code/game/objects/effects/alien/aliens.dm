@@ -94,7 +94,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
 
 /obj/effect/alien/weeds/node/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()

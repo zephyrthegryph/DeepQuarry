@@ -490,10 +490,8 @@
 
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/borg/combat/shield/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/borg/combat/shield/attack_self(mob/living/user)
@@ -502,7 +500,11 @@
 		return TRUE
 	set_shield_level()
 
+/// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
+/// or an overload starts it); otherwise it sleeps.
 /obj/item/borg/combat/shield/periodic_step()
+	if(active && !flash_count)
+		return PROCESS_KILL
 	if(active)
 		if(flash_count && (last_flash + shield_refresh < world.time))
 			flash_count = 0
@@ -520,6 +522,7 @@
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
 	if(active)			//Can't destabilize a shield that's not on
 		flash_count += amount
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 		if(amount > 0)
 			last_flash = world.time
@@ -531,6 +534,7 @@
 	user.visible_message(span_danger("[user]'s shield destabilizes!"), span_danger("Your shield destabilizes!"))
 	user.update_icon()
 	overload_time = world.time
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/borg/combat/shield/verb/set_shield_level()
 	set name = "Set shield level"

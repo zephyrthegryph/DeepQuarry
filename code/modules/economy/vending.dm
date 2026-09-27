@@ -816,3 +816,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 	return 1
 
 //Actual machines are in vending_machines.dm
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/vending/step_start_condition()
+	return active && !shut_up && length(slogan_list)

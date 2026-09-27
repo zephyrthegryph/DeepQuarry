@@ -240,7 +240,6 @@
 
 /obj/item/kinetic_crusher/machete/gauntlets/Destroy()
 	. = ..()
-	PERIODIC_STOP(src)
 
 /obj/item/kinetic_crusher/machete/gauntlets/attack_self(mob/user)
 	. = ..(user)

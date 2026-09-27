@@ -30,7 +30,6 @@
 	setup_blobtype(parentblob)
 
 /obj/item/blobcore_chunk/Destroy()
-	PERIODIC_STOP(src)
 
 	blob_type = null
 

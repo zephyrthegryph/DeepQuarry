@@ -106,7 +106,6 @@
 
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
-	PERIODIC_START(src, PERIODIC_SLOW)
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(moved_event))
 	if(always_on)
@@ -117,7 +116,6 @@
 
 /obj/item/shield_projector/Destroy()
 	destroy_shields()
-	PERIODIC_STOP(src)
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	return ..()
 
@@ -161,6 +159,7 @@
 	. = ..()
 	if(new_value < old_value)
 		last_damaged_time = world.time
+		PERIODIC_START(src, PERIODIC_SLOW) // regenerates after its delay
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
 				playsound(src, 'sound/machines/defib_success.ogg', 75, 0)
@@ -226,7 +225,10 @@
 
 	on ? create_shields() : destroy_shields() // Harmless if called when in the wrong state.
 
+/// Regenerates every 2 s while damaged (damage starts it); whole, it sleeps.
 /obj/item/shield_projector/periodic_step()
+	if(get_integrity() >= max_integrity && (active || !always_on))
+		return PROCESS_KILL
 	if(get_integrity() < max_integrity && ( (last_damaged_time + shield_regen_delay) < world.time) )
 		adjust_health(shield_regen_amount)
 		if(always_on && !active) // Make shields as soon as possible if this is set.

@@ -51,7 +51,6 @@
 	update_brightness()
 
 /obj/item/flashlight/Destroy()
-	PERIODIC_STOP(src)
 	QDEL_NULL(cell)
 	return ..()
 

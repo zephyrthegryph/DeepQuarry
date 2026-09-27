@@ -59,7 +59,6 @@
 	return dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
 
 /turf/simulated/wall/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /turf/simulated/wall/examine_icon()

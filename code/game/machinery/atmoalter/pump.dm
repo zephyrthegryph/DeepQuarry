@@ -352,3 +352,8 @@
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
 	return on && anchored && !(stat & (NOPOWER|BROKEN))
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/powered/pump/step_start_condition()
+	return on

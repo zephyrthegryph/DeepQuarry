@@ -801,3 +801,8 @@
 
 /obj/machinery/computer/general_air_control/fuel_injection/step_has_work()
 	return automation && radio_connection
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/air_sensor/arm_wakes()
+	..()
+	register_gas_dependencies()

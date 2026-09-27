@@ -33,7 +33,6 @@
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 /datum/component/hose_connector/Destroy()
-	PERIODIC_STOP(src)
 	UnregisterSignal(carrier, COMSIG_ATOM_EXAMINE)
 	UnregisterSignal(carrier, COMSIG_MOVABLE_MOVED)
 	UnregisterSignal(carrier, COMSIG_HOSE_FORCEPUMP)

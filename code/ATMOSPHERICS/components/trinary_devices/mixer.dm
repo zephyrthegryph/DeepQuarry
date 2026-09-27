@@ -178,3 +178,8 @@
 
 /obj/machinery/atmospherics/trinary/mixer/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/trinary/mixer/arm_wakes()
+	..()
+	hibernate_until_input_changes()

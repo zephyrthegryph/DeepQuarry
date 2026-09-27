@@ -121,7 +121,6 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/implant/tracking/Destroy()
-	PERIODIC_STOP(src)
 	if(part)
 		part.implants -= src
 	part = imp_in = null
@@ -526,7 +525,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return dat
 
 /obj/item/implant/death_alarm/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/implant/death_alarm/periodic_step()

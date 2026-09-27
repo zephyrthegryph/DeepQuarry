@@ -121,7 +121,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind.blob_core = null
 		qdel(overmind)
 	overmind = null
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/structure/blob/core/update_icon()

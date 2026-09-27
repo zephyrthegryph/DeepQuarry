@@ -365,3 +365,8 @@
 	else
 		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"
 	return
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shieldgen/step_start_condition()
+	return active

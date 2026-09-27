@@ -1,4 +1,4 @@
-// Key wake tests (code/datums/om/wakes.dm): machines sleeping on object-model keys and SSai's
+// Change-channel wake tests: machines sleeping on watched channels and SSai's
 // chunk hibernation. Held steady, each must stay asleep; after its input changes, it must
 // wake. Each also checks om_sleep_violation() while asleep.
 
@@ -27,16 +27,16 @@
 	var/datum/powernet/P = new
 	var/obj/machinery/shield_capacitor/C = allocate(/obj/machinery/shield_capacitor, test_floor())
 	// The keys process() sleeps on when the grid gives it nothing.
-	TEST_ASSERT(C.sleep_until_keys(list(KEY_POWERNET, OM_KEY_ID(P), KEY_POWERNET_RATE|KEY_POWERNET_STATE)), "capacitor refused to sleep")
+	TEST_ASSERT(C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE)), "capacitor refused to sleep")
 	var/failure = om_wake_test(C, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, set_brownout), TRUE))
 	TEST_ASSERT(!failure, failure)
 	// A topology-only change is not the capacitor's input.
-	C.sleep_until_keys(list(KEY_POWERNET, OM_KEY_ID(P), KEY_POWERNET_RATE|KEY_POWERNET_STATE))
-	om_woken_trace(C)
-	OM_KEY_PUBLISH(KEY_POWERNET, OM_KEY_ID(P), KEY_POWERNET_TOPOLOGY)
+	C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
+	om_trace(C)
+	om_changed(P, CHANGE_POWERNET_TOPOLOGY)
 	react_test_ticks(4)
-	TEST_ASSERT(!om_woken_traced_count(C), "a topology change woke a rate subscriber")
-	om_woken_untrace(C)
+	TEST_ASSERT(!om_traced_count(C), "a topology change woke a rate subscriber")
+	om_untrace(C)
 	qdel(P)
 
 /datum/unit_test/dq_om_keys_wake_turret
@@ -64,7 +64,7 @@
 	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")
 	TEST_ASSERT_NULL(PD.om_sleep_violation(), "an idle point defense reported a violation")
 	// The meteor key is what /obj/effect/meteor publishes on Initialize and Destroy.
-	var/failure = om_wake_test(PD, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_key_publish), KEY_METEORS, 1, KEY_CHANGED))
+	var/failure = om_wake_test(PD, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_changed), GLOB.meteor_watch, CHANGE_METEORS))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_disposal
@@ -112,18 +112,20 @@
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/datum/players = allocate(/datum/om_wake_test_subscriber)
 	var/datum/anyone = allocate(/datum/om_wake_test_subscriber)
-	var/list/player_tokens = om_subscribe_player_chunks(players, T, 0)
-	var/list/any_tokens = om_sleep_on_keys(anyone, list(KEY_MOB_CHUNK, om_mob_chunk_id(T), KEY_CHUNK_ANY_MOB))
+	om_attach(players, /datum/om/behaviour/sleeper/test_subscriber)
+	om_attach(anyone, /datum/om/behaviour/sleeper/test_subscriber)
+	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
+	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/test_subscriber)
 	var/mob/living/npc = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
-	om_woken_trace(players)
-	om_woken_trace(anyone)
+	om_trace(players)
+	om_trace(anyone)
 	react_test_ticks(4)
 	npc.forceMove(T)
 	TEST_ASSERT(om_wait_for_wake(anyone), "a mob moving into the chunk did not wake an any-mob subscriber")
-	TEST_ASSERT(!om_woken_traced_count(players), "a mob without a client woke a player-chunk subscriber")
-	om_woken_untrace(players)
-	om_woken_untrace(anyone)
-	om_unsubscribe_player_chunks(players, player_tokens)
-	om_cancel_keys(anyone, any_tokens)
+	TEST_ASSERT(!om_traced_count(players), "a mob without a client woke a player-chunk subscriber")
+	om_untrace(players)
+	om_untrace(anyone)
+	unwatch_mob_chunks(players, player_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
+	unwatch_mob_chunks(anyone, any_tokens, CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/test_subscriber)
 
 #endif

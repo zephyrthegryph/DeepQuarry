@@ -265,7 +265,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		batch_state = processed.batch_template.copy_for_amount(amount)
 
 /obj/item/stack/material/processed_alloy/Destroy()
-	PERIODIC_STOP(src)
 	QDEL_NULL(batch_state)
 	return ..()
 

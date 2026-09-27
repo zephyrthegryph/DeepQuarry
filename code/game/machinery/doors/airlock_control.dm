@@ -446,3 +446,8 @@
 /obj/machinery/access_button/airlock_exterior
 	frequency = AIRLOCK_FREQ
 	command = "cycle_exterior"
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/airlock_sensor/arm_wakes()
+	..()
+	register_gas_dependencies()

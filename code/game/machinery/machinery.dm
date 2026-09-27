@@ -138,9 +138,11 @@ Class Procs:
 	/// TRUE while machine_step() has work: set by MACHINE_WAKE(), cleared when machine_step()
 	/// returns PROCESS_KILL or by MACHINE_SLEEP(). The step stage idles while it is FALSE
 	/// (machine_pipeline.dm).
-	var/tmp/step_active = TRUE
+	var/tmp/step_active = FALSE
 	/// Set by sleep_until_powered(): power_change()/atom_fix() restart the step work.
 	var/tmp/step_waiting_power = FALSE
+	/// The pending materialize_wakes() timer, or 0.
+	var/tmp/materialize_timer = 0
 	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
 	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
 	var/step_on_power_change = FALSE
@@ -188,7 +190,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/Destroy()
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
-	PERIODIC_STOP(src)
 	// Constructed machinery owns its installed board. Clear the typed reference
 	// immediately when destruction starts; otherwise the board spends an extra GC
 	// generation retained by an already-deleting machine (and reference tracking
@@ -226,6 +227,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	set waitfor = FALSE
 	return PROCESS_KILL
 
+/// Once, when a machine on the machine pipeline materializes and the world is up (a zero-delay
+/// om_after() from joining): arm the watches that will wake it (arm_wakes()), then wake it if its
+/// declared start condition holds. Nothing else runs a machine at spawn.
+/obj/machinery/proc/materialize_wakes()
+	materialize_timer = 0
+	if(QDELETED(src))
+		return
+	arm_wakes()
+	if(step_start_condition())
+		MACHINE_WAKE(src)
+
+/// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
+/obj/machinery/proc/arm_wakes()
+	return
+
+/// The declared start condition: TRUE when a freshly materialized machine has work right away
+/// (mapped on, holding fuel, timing). Default FALSE: machines start asleep.
+/obj/machinery/proc/step_start_condition()
+	return FALSE
+
 /// A machine in fast mode (speed_process) runs its machine_step() on the fast periodic pipeline.
 /obj/machinery/periodic_step(delta)
 	return machine_step()
@@ -238,10 +259,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	M.machine_wake_count++
 	M.step_active = TRUE
 	M.step_waiting_power = FALSE
-	if(om_attached(M, /datum/om/pipeline/machine))
-		om_wake(M, /datum/om/pipeline/machine)
-	else
+	if(!om_attached(M, /datum/om/pipeline/machine))
 		om_attach(M, /datum/om/pipeline/machine)
+		// Joined asleep (on_start); this wake is the reason it joined, so it is awake now.
+		var/datum/om/frame/S = om_pipe_state(M, /datum/om/pipeline/machine)
+		if(S)
+			om_pipe_set_all(S, FALSE)
+			S.idle_frames = 0
+	om_wake(M, /datum/om/pipeline/machine)
 
 /// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
 /proc/machine_sleep(obj/machinery/M)
@@ -677,7 +702,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	stat |= BROKEN
 	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	SEND_SIGNAL(src, COMSIG_MACHINERY_BROKEN, damage_flag)
-	OM_KEY_PUBLISH_OWN(src, KEY_MACHINE_BROKEN, KEY_CHANGED)
 	update_icon()
 	return TRUE
 
@@ -688,39 +712,45 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return FALSE
 	stat &= ~BROKEN
 	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
-	OM_KEY_PUBLISH_OWN(src, KEY_MACHINE_BROKEN, KEY_CHANGED)
 	update_icon()
 	return TRUE
 
-// --- Sleeping on keys (object-model keys, code/datums/om/wakes.dm) ------------------------------
+// --- Sleeping until something changes (om_watch on change channels) ------------------------------
 
 /obj/machinery
-	/// While asleep on keys: the (token, kind) pairs from om_sleep_on_keys().
+	/// While asleep on changes: the flat (entity, channel mask) pairs it watches. The machine's
+	/// own settings (CHANGE_MACHINE_SETTINGS), power and repair also wake it.
 	var/tmp/list/react_sleep_tokens
 
 /**
- * Stops polling until any key in `keys` (a flat list of (kind, id, mask) triples) is published.
- * Replaces any keys the machine already slept on. The wake arrives through om_woken() at the
- * next wake drain, so a publication after this call (even in the same tick) is never missed.
+ * Ends the machine's step work until one of `watches` (a flat list of entity, channel mask
+ * pairs; empty for "only my own settings or power") changes. The wake arrives at the machine
+ * pipeline's step stage as CHANGE_RELATED, which restarts the work.
  */
-/obj/machinery/proc/sleep_until_keys(list/keys)
+/obj/machinery/proc/sleep_until_keys(list/watches = list())
 	cancel_sleep_keys()
-	if(QDELETED(src) || !length(keys))
+	if(QDELETED(src))
 		return FALSE
-	react_sleep_tokens = om_sleep_on_keys(src, keys)
+	if(!om_attached(src, /datum/om/pipeline/machine))
+		om_attach(src, /datum/om/pipeline/machine)
+	react_sleep_tokens = watches.Copy()
+	for(var/i = 1; i <= length(watches); i += 2)
+		om_watch(src, watches[i], watches[i + 1], /datum/om/pipeline/machine)
+		if(istype(watches[i], /datum/mob_chunk))
+			GLOB.mob_chunk_watches++
 	MACHINE_SLEEP(src)
 	return TRUE
 
 /obj/machinery/proc/cancel_sleep_keys()
-	if(react_sleep_tokens)
-		om_cancel_keys(src, react_sleep_tokens)
-		react_sleep_tokens = null
+	if(isnull(react_sleep_tokens))
+		return
+	var/list/watches = react_sleep_tokens
+	react_sleep_tokens = null
+	for(var/i = 1; i <= length(watches); i += 2)
+		om_unwatch(src, watches[i], /datum/om/pipeline/machine)
+		if(istype(watches[i], /datum/mob_chunk))
+			GLOB.mob_chunk_watches = max(GLOB.mob_chunk_watches - 1, 0)
 
-/// TRUE while the machine sleeps on keys and has no step work.
+/// TRUE while the machine sleeps on changes and has no step work.
 /obj/machinery/proc/asleep_on_keys()
-	return react_sleep_tokens && !step_active
-
-/obj/machinery/om_woken(reason)
-	if((reason & OM_WOKEN_KEY) && react_sleep_tokens)
-		cancel_sleep_keys()
-		MACHINE_WAKE(src)
+	return !isnull(react_sleep_tokens) && !step_active

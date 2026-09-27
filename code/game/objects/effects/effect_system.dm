@@ -306,7 +306,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)

@@ -15,11 +15,9 @@
 
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/deadringer/Destroy() //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/deadringer/dropped(mob/user, equipping, slot)
@@ -44,6 +42,7 @@
 			bruteloss_prev = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 			fireloss_prev = H.injury_load(INJURY_CATEGORY_THERMAL)
 			activated = 1
+			PERIODIC_START(src, PERIODIC_SLOW)
 			return
 		else
 			to_chat(H, span_blue("You press a small button on [src]'s side. It buzzes a little."))
@@ -154,7 +153,10 @@
 
 
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/// Watches its holder while armed and counts its cooldown; idle, it sleeps.
 /obj/item/deadringer/periodic_step()
+	if(!activated && !timer)
+		return PROCESS_KILL
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc

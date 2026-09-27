@@ -297,7 +297,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/accessory/dosimeter/Destroy()
-	PERIODIC_STOP(src)
 	QDEL_NULL(current_film)
 	return ..()
 

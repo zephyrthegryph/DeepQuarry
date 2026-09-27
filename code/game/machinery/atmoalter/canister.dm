@@ -18,7 +18,7 @@
 	/// the material vessel is doing anything, mirroring the settle check the old process() made
 	/// right before it called hibernate_until_gas_changes(). Read by
 	/// /datum/om/stage/machine/power/portable_atmospherics/canister/idle() (machine_pipeline.dm).
-	var/om_settled = FALSE
+	var/om_settled = TRUE // until arm_wakes() or a frame says otherwise
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C
@@ -526,3 +526,13 @@ update_flag
 	. = ..()
 	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
 	update_icon()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/canister/arm_wakes()
+	..()
+	om_settled = !valve_open
+	hibernate_until_gas_changes()
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/canister/step_start_condition()
+	return valve_open

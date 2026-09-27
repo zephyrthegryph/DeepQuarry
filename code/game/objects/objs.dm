@@ -58,7 +58,6 @@
 
 /obj/Destroy()
 	QDEL_NULL(material_service)
-	PERIODIC_STOP(src)
 
 	// I really am an idiot why did I make it this way
 	if(micro_target)

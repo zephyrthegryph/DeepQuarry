@@ -1121,3 +1121,8 @@
 
 #undef MAX_TEMPERATURE
 #undef MIN_TEMPERATURE
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/alarm/arm_wakes()
+	..()
+	register_gas_dependencies()

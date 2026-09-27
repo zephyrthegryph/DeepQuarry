@@ -1357,11 +1357,13 @@
 	update_icon()
 
 /obj/structure/auto_flesh_door/Destroy()
-	PERIODIC_STOP(src)
 	update_nearby_tiles()
 	return ..()
 
+/// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
 /obj/structure/auto_flesh_door/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	if(countdown <= 0)
 		SwitchState()
 	else

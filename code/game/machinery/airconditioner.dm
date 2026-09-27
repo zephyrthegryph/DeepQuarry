@@ -344,3 +344,8 @@
 
 /obj/machinery/power/thermoregulator/step_has_work()
 	return gas_wake_condition()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/thermoregulator/arm_wakes()
+	..()
+	hibernate_until_temperature_changes()

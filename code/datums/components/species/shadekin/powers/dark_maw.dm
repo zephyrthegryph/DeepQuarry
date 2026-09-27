@@ -109,7 +109,6 @@
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/Destroy()
-	PERIODIC_STOP(src)
 	if(owner)
 		if(has_signal)
 			UnregisterSignal(owner, COMSIG_QDELETING)

@@ -433,3 +433,8 @@
 	. = ..()
 	if(reagents)
 		.[THERMAL_CAPACITY] += reagents.heat_capacity()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/step_start_condition()
+	return on

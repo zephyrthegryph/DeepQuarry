@@ -369,3 +369,8 @@
 	if(SSradio)
 		SSradio.remove_object(src, frequency)
 	. = ..()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/magnetic_module/step_start_condition()
+	return TRUE // its power draw

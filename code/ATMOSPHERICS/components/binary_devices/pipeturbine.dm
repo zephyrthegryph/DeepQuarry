@@ -273,3 +273,9 @@
 	return turbine && anchored && !(stat & BROKEN) && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY
 
 #undef TURBINE_MIN_KIN_ENERGY
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/pipeturbine/arm_wakes()
+	..()
+	if(air_in && air_out)
+		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))

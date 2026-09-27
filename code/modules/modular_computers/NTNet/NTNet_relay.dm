@@ -140,3 +140,8 @@
 
 /obj/machinery/ntnet_relay
 	maintenance_flags = MACHINE_MAINT_STANDARD
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/ntnet_relay/step_start_condition()
+	return TRUE // sets its power draw

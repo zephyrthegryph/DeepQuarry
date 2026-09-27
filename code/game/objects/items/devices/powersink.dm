@@ -27,7 +27,6 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/powersink/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)

@@ -99,7 +99,6 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	atom_parent.extinguish()
 
 /datum/component/burning/Destroy(force)
-	PERIODIC_STOP(src)
 	stop_heat()
 	fire_overlay = null
 	if(particle_effect)

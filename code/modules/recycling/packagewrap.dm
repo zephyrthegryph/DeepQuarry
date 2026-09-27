@@ -53,6 +53,7 @@
 		O.add_fingerprint(user)
 		src.add_fingerprint(user)
 		src.amount -= 1
+		wrap_used()
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
 		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
 		"You hear someone taping paper around a small object.")
@@ -70,6 +71,7 @@
 		P.wrapped = O
 		O.loc = P
 		src.amount -= 3
+		wrap_used()
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
 		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
 		"You hear someone taping paper around a large object.")
@@ -87,6 +89,7 @@
 		O.sealed = 1
 		O.loc = P
 		src.amount -= 3
+		wrap_used()
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
 		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
 		"You hear someone taping paper around a large object.")
@@ -113,13 +116,15 @@
 
 /obj/item/packageWrap/borg/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/packageWrap/borg/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Refills one sheet per 12 s while short (wrap_used() starts it); full, it sleeps.
 /obj/item/packageWrap/borg/periodic_step()
+	if(amount >= initial(amount))
+		recharge_ticker = 0
+		return PROCESS_KILL
 	if(recharge_ticker < 5)
 		recharge_ticker ++
 		return
@@ -127,3 +132,10 @@
 	recharge_ticker = 0
 	if(amount < initial(amount))
 		amount++
+
+/// Called when wrap is used up. A borg dispenser refills over time from here.
+/obj/item/packageWrap/proc/wrap_used()
+	return
+
+/obj/item/packageWrap/borg/wrap_used()
+	PERIODIC_START(src, PERIODIC_SLOW)

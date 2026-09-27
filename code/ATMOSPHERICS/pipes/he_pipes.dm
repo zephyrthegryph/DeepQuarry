@@ -259,3 +259,8 @@
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/step_has_work()
 	return parent && heat_exchange_actionable()
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/arm_wakes()
+	..()
+	register_gas_dependencies()

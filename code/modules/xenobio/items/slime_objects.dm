@@ -175,7 +175,10 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	set_light(light_range, light_power, light_color)
 
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/slime_irradiator/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 
 /obj/item/slime_irradiator/proc/radiate()
@@ -197,7 +200,6 @@
 	active = FALSE
 
 /obj/item/slime_irradiator/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 

@@ -438,7 +438,6 @@
 /obj/machinery/shower/Destroy()
 	QDEL_NULL(soundloop)
 	QDEL_NULL(reagents)
-	MACHINE_SLEEP(src)
 	return ..()
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)

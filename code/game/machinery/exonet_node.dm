@@ -206,3 +206,8 @@
 	var/timestamp = "[stationdate2text()] [stationtime2text()]"
 	var/msg = "[timestamp] | FROM [origin_address] TO [target_address] | TYPE: [data_type] | CONTENT: [content]"
 	LAZYADD(logs, msg)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/exonet_node/step_start_condition()
+	return TRUE // reconciles on/off with power

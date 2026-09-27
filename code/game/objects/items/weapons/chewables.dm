@@ -52,7 +52,6 @@
 
 /obj/item/clothing/mask/chewable/Destroy()
 	. = ..()
-	PERIODIC_STOP(src)
 
 /obj/item/clothing/mask/chewable/proc/chew()
 	chewtime--

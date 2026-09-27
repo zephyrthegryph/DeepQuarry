@@ -81,20 +81,22 @@
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 	. = ..()
 	get_light_and_color(parent)
 
 /obj/effect/spider/eggcluster/Destroy()
-	PERIODIC_STOP(src)
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
 		O.implants -= src
 
 	return ..()
 
-/obj/effect/spider/eggcluster/periodic_step()
-	amount_grown += rand(0,2)
+/// Hatches (its growth timer).
+/obj/effect/spider/eggcluster/proc/hatch()
+	if(QDELETED(src))
+		return
+	amount_grown = 100
 	if(amount_grown >= 100)
 		var/num = rand(spiders_min, spiders_max)
 		var/obj/item/organ/external/O = null
@@ -158,7 +160,6 @@
 
 /obj/effect/spider/spiderling/Destroy()
 	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/spider/spiderling/Bump(atom/user)
@@ -354,3 +355,12 @@
 			/mob/living/simple_mob/animal/giant_spider/frost/space, /mob/living/simple_mob/animal/giant_spider/electric/space, /mob/living/simple_mob/animal/giant_spider/lurker/space,
 			/mob/living/simple_mob/animal/giant_spider/pepper/space, /mob/living/simple_mob/animal/giant_spider/thermic/space, /mob/living/simple_mob/animal/giant_spider/tunneler/space,
 			/mob/living/simple_mob/animal/giant_spider/webslinger/space)
+
+/// Steps (one per 2 s) a growth of rand(0, 2) a step takes to reach 100: the old growth loop's
+/// hatch time, drawn once so the egg sleeps on a single timer until it hatches.
+/proc/egg_hatch_steps()
+	var/grown = 0
+	. = 0
+	while(grown < 100)
+		grown += rand(0, 2)
+		.++

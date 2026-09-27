@@ -389,7 +389,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	QDEL_NULL(spark_system)
 	QDEL_NULL(minihud)
 
-	PERIODIC_STOP(src)
 
 	. = ..()
 

@@ -33,10 +33,12 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/decal/cleanable/greenglow/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/effect/decal/cleanable/greenglow/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 

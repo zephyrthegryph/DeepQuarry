@@ -147,7 +147,6 @@
 	QDEL_NULL(power_system)
 
 	installed_modules = null
-	PERIODIC_STOP(src)
 	qdel(wires)
 	wires = null
 	qdel(spark_system)

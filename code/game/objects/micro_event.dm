@@ -79,19 +79,14 @@
 
 /obj/structure/timer_door/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
-
 	start_time = world.time
+	om_after(src, time_til_open, /datum/proc/qdel_self)
 
 /obj/structure/timer_door/Destroy()
-	PERIODIC_STOP(src)
 	visible_message(span_danger("\The [src] opens up!"))
 	playsound(src, 'sound/effects/bang.ogg', 75, 1)
 	return ..()
 
-/obj/structure/timer_door/periodic_step()
-	if(start_time + time_til_open < world.time)
-		qdel(src)
 
 /obj/structure/timer_door/ten
 	time_til_open = 10 MINUTES

@@ -25,14 +25,16 @@
 	. = ..()
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 
 /obj/effect/metroid/egg/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
-/obj/effect/metroid/egg/periodic_step()
-	amount_grown += rand(0,2)
+/// Hatches (its growth timer).
+/obj/effect/metroid/egg/proc/hatch()
+	if(QDELETED(src))
+		return
+	amount_grown = 100
 	if(amount_grown >= 100)
 		new metroid_type(src.loc, src)
 		qdel(src)

@@ -377,3 +377,8 @@
 /obj/machinery/field_generator/pre_mapped/Initialize(mapload)
 	. = ..()
 	update_icon()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/field_generator/step_start_condition()
+	return active || Varedit_start

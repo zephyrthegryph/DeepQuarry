@@ -203,3 +203,8 @@
 			for(var/obj/item/research_sample/sample in src)
 				sample.forceMove(get_turf(src))
 			return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/anomaly_harvester/step_start_condition()
+	return anchored

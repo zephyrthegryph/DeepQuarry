@@ -91,7 +91,6 @@
 		aiming_at = null
 	owner = null
 	aiming_with = null
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/aiming_overlay/proc/update_aiming_deferred()

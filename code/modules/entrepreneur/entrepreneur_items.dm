@@ -340,9 +340,10 @@
 /obj/item/entrepreneur/emf/Initialize(mapload)
 	. = ..()
 	emf = rand(1,100)
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/entrepreneur/emf/periodic_step()
+	if(!ismob(loc))
+		return PROCESS_KILL
 	search_for_ghosts()
 
 /obj/item/entrepreneur/emf/attack_self(mob/user)
@@ -594,3 +595,8 @@
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "stylist"
 	starts_with = list(/obj/item/makeover, /obj/item/lipstick/random, /obj/item/nailpolish,  /obj/item/nailpolish_remover, /obj/item/haircomb, /obj/item/clothing/head/hairnet, /obj/item/ticket_printer/train)
+
+/// Senses while carried (picking it up starts it); set down, it sleeps.
+/obj/item/entrepreneur/emf/equipped(mob/user, slot)
+	. = ..()
+	PERIODIC_START(src, PERIODIC_SLOW)

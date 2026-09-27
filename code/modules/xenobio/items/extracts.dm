@@ -924,7 +924,6 @@
 	active = FALSE
 
 /obj/item/slime_extract/green/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /datum/decl/chemical_reaction/instant/slime/green_radpulse

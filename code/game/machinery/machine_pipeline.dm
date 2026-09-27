@@ -182,6 +182,19 @@
 	frame_type = /datum/om/frame/machine
 	wake_all = CHANGE_EXPLICIT
 
+/// Machines start asleep (roadmap S5): joining runs nothing. Every stage starts idle and the machine
+/// parks at its first cadence slot without a frame. Setup it needs at spawn happens once the world
+/// is up (materialize_wakes(): arm its watches, then wake it only if its declared start condition
+/// holds); from then on it runs only when a declared wake fires.
+/datum/om/pipeline/machine/on_start(obj/machinery/M)
+	var/datum/om/frame/S = om_pipe_state(M, src, TRUE)
+	if(!S)
+		return
+	om_pipe_set_all(S, TRUE)
+	S.idle_frames = max(park_after - 1, 0)
+	if(!M.materialize_timer)
+		M.materialize_timer = om_after(M, 0, /obj/machinery/proc/materialize_wakes)
+
 /datum/om/frame/machine
 	facts = list(
 		"powered" = list(/datum/om/frame/machine/proc/fact_powered, CHANGE_MACHINE_POWER),
@@ -235,8 +248,8 @@
 /datum/om/stage/machine/step
 	name = "step"
 	order = 15
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN
-	woken_by = "MACHINE_WAKE(): the machine's own producers (what used to start machine processing); power_change()/atom_fix() after sleep_until_powered()"
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_SETTINGS | CHANGE_RELATED
+	woken_by = "MACHINE_WAKE(): the machine's own producers; power_change()/atom_fix() after sleep_until_powered(); for a machine asleep on changes, a watched channel or its own settings"
 
 /datum/om/stage/machine/step/applies(obj/machinery/M)
 	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/machine)
@@ -249,7 +262,9 @@
 	if(M.speed_process)
 		return STAGE_IDLE
 	if(!M.step_active)
-		if(!M.step_on_power_change && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN))))
+		if(!isnull(M.react_sleep_tokens))
+			M.cancel_sleep_keys()
+		else if(!M.step_on_power_change && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN))))
 			return STAGE_IDLE
 		M.step_active = TRUE
 	M.step_waiting_power = FALSE

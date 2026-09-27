@@ -144,7 +144,6 @@
 	PERIODIC_START(src, PERIODIC_SECOND)
 
 /datum/component/overheating/Destroy(force)
-	PERIODIC_STOP(src)
 	return ..()
 
 /datum/component/overheating/periodic_step(seconds_per_tick)

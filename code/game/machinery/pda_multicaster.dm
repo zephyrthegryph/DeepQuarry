@@ -136,3 +136,8 @@
 /obj/machinery/pda_multicaster/proc/emp_recover()
 	stat &= ~EMPED
 	update_power()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/pda_multicaster/step_start_condition()
+	return TRUE // sets its power draw

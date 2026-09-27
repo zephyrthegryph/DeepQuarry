@@ -227,3 +227,8 @@
 			"You hear a ratchet.")
 		atom_deconstruct()
 	return ITEM_INTERACT_SUCCESS
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/atmospherics/portables_connector/arm_wakes()
+	..()
+	hibernate_until_device_changes()

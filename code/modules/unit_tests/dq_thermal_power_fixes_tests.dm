@@ -78,13 +78,13 @@
 	valve.subscribe_network_keys()
 
 	// Held steady, and with a change on another network, the valve sleeps; its own network wakes it.
-	om_woken_trace(valve)
+	om_trace(valve)
 	react_test_ticks(4)
-	var/before = om_woken_traced_count(valve)
+	var/before = om_traced_count(valve)
 	wake_automatic_shutoff_valves(theirs)
 	react_test_ticks(4)
-	TEST_ASSERT_EQUAL(om_woken_traced_count(valve), before, "a change on another network woke the valve")
-	om_woken_untrace(valve)
+	TEST_ASSERT_EQUAL(om_traced_count(valve), before, "a change on another network woke the valve")
+	om_untrace(valve)
 	var/failure = om_wake_test(valve, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
 	TEST_ASSERT(!failure, failure)
 

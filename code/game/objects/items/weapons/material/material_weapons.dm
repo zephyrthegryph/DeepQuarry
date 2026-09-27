@@ -78,7 +78,6 @@
 		update_force()
 
 /obj/item/material/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/material/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)

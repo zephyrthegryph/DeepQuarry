@@ -1066,3 +1066,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	add_language(LANGUAGE_ENOCHIAN,		1)
 	add_language(LANGUAGE_DRUDAKAR,		1)
 	add_language(LANGUAGE_TAVAN,		1)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/ai_powersupply/step_start_condition()
+	return TRUE // made when an AI needs power

@@ -43,7 +43,6 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/structure/simple_door/Destroy()
-	PERIODIC_STOP(src)
 	update_nearby_tiles()
 	return ..()
 
@@ -266,7 +265,10 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/structure/simple_door/uranium/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 
 /obj/structure/simple_door/uranium/proc/radiate()

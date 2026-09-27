@@ -102,7 +102,10 @@
 	last_activation = world.time
 	return 0
 
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/cult/pylon/periodic_step()
+	if(!mob_near(world.view, TRUE))
+		return sleep_until_mob_near(world.view, TRUE)
 	if(!isbroken && (last_activation + activation_cooldown < world.time) && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
 

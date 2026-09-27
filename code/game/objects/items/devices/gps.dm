@@ -94,7 +94,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		update_compass(src, TRUE)
 
 /obj/item/gps/Destroy()
-	PERIODIC_STOP(src)
 	is_in_processing_list = FALSE
 	update_holder()
 	QDEL_NULL(compass)

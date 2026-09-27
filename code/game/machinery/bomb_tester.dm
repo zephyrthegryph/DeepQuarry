@@ -393,3 +393,8 @@
 #undef MODE_SINGLE
 #undef MODE_DOUBLE
 #undef MODE_CANISTER
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/bomb_tester/step_start_condition()
+	return simulating

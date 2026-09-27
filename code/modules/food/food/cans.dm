@@ -45,7 +45,6 @@
 	shaken -= seconds_per_tick
 
 /obj/item/reagent_containers/food/drinks/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 //DRINKS

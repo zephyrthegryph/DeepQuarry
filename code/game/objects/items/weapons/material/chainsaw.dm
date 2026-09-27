@@ -17,11 +17,9 @@
 	reagents = R
 	R.my_atom = src
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	PERIODIC_START(src, PERIODIC_SLOW)
 	. = ..()
 
 /obj/item/chainsaw/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/chainsaw/proc/turnOn(mob/user as mob)
@@ -43,6 +41,7 @@
 			edge = TRUE
 			sharp = TRUE
 			on = 1
+			PERIODIC_START(src, PERIODIC_SLOW) // burns fuel while running
 			update_icon()
 		else
 			to_chat(user, "You fumble with the string.")
@@ -99,8 +98,10 @@
 		else
 			to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
 
+/// Burns fuel every 2 s while running (turnOn() starts it); off, it sleeps.
 /obj/item/chainsaw/periodic_step()
-	if(!on) return
+	if(!on)
+		return PROCESS_KILL
 
 	if(on)
 		if(get_fuel() > 0)

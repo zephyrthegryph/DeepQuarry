@@ -134,7 +134,6 @@
 	PERIODIC_START(src, PERIODIC_SECOND)
 
 /obj/structure/gargoyle/Destroy()
-	PERIODIC_STOP(src)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle?.resolve()
 	if(!gargoyle)
 		return ..()

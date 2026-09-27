@@ -133,3 +133,8 @@
 				prob(25);/mob/living/simple_mob/vore/scel,
 				prob(5);/mob/living/simple_mob/vore/vore_hostile/abyss_lurker
 				)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/paradoxrift/step_start_condition()
+	return stat & NOPOWER

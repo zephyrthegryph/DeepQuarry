@@ -63,3 +63,8 @@
 	if(source == Beacon && QDELETED(source))
 		Beacon = null
 	MACHINE_WAKE(src)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/bluespace_beacon/step_start_condition()
+	return TRUE // places its beacon

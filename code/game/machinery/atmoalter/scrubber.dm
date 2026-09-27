@@ -284,3 +284,8 @@
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/step_has_work()
 	return on && anchored && !(stat & (NOPOWER|BROKEN))
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/portable_atmospherics/powered/scrubber/step_start_condition()
+	return on

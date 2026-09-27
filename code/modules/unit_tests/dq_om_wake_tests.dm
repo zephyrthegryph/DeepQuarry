@@ -1,20 +1,20 @@
-// S3 wake tests (code/datums/om/wakes.dm): every sleeper on object-model timers and keys wakes
+// S3 wake tests: every sleeper on om_after() timers and om_watch()ed change channels wakes
 // when its input changes and stays asleep while the input is held steady, and its
 // om_sleep_violation() holds while it sleeps.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /**
- * The wake test for any om_woken() sleeper: with its input held steady `D` must stay asleep,
+ * The wake test for any sleeper (a sleeper behaviour, om_after() timers): with its input held steady `D` must stay asleep,
  * and after `change` runs it must wake within `ticks`. Returns null on success or the failure.
  */
 /proc/om_wake_test(datum/D, datum/callback/change, ticks = 4)
-	om_woken_trace(D)
+	om_trace(D)
 	react_test_ticks(ticks)
-	var/before = om_woken_traced_count(D)
+	var/before = om_traced_count(D)
 	react_test_ticks(ticks)
-	if(om_woken_traced_count(D) != before)
-		om_woken_untrace(D)
+	if(om_traced_count(D) != before)
+		om_untrace(D)
 		return "[D.type] woke while its input held steady"
 	change.Invoke()
 	// Wakes ride the scheduler's lanes and deadline share: under a busy test world give them a
@@ -22,10 +22,10 @@
 	var/after = before
 	for(var/i in 1 to ticks * 10)
 		react_test_ticks(1)
-		after = om_woken_traced_count(D)
+		after = om_traced_count(D)
 		if(after != before)
 			break
-	om_woken_untrace(D)
+	om_untrace(D)
 	if(after == before)
 		return "[D.type] did not wake after its input changed"
 	return null
@@ -35,18 +35,26 @@
 /proc/om_wait_for_wake(datum/D, count = 0, max_ticks = 40)
 	for(var/i in 1 to max_ticks)
 		react_test_ticks(1)
-		if(om_woken_traced_count(D) > count)
+		if(om_traced_count(D) > count)
 			return TRUE
 	return FALSE
 
-/// Records every wake reason.
+/// Records every wake (the channels it arrived with).
 /datum/om_wake_test_subscriber
 	var/list/wakes = list()
 
-/datum/om_wake_test_subscriber/om_woken(reason)
-	wakes += reason
+/datum/om/behaviour/sleeper/test_subscriber
+	name = "test subscriber"
 
-/// Deadline wakes: a door's autoclose, power and electrification deadlines share one OM_WAKE_AT.
+/datum/om/behaviour/sleeper/test_subscriber/on_wake(datum/om_wake_test_subscriber/S, changes)
+	S.wakes += changes
+
+/// Makes `S` watch `mask` on `target`.
+/proc/om_test_watch(datum/om_wake_test_subscriber/S, datum/target, mask)
+	om_attach(S, /datum/om/behaviour/sleeper/test_subscriber)
+	om_watch(S, target, mask, /datum/om/behaviour/sleeper/test_subscriber)
+
+/// Deadline wakes: a door's autoclose, power and electrification deadlines share one om_after() timer.
 /datum/unit_test/dq_om_wake_airlock_deadlines
 
 /datum/unit_test/dq_om_wake_airlock_deadlines/Run()
@@ -81,13 +89,13 @@
 	TEST_ASSERT_NOTNULL(A.om_sleep_violation(), "the audit missed a deadline without a timer")
 	A.close_door_at = 0
 
-/// Bolts and power publish KEY_DOOR_MODE for whoever watches the door.
+/// Bolts and power raise CHANGE_MACHINE_MODE for whoever watches the door.
 /datum/unit_test/dq_om_wake_airlock_mode_key
 
 /datum/unit_test/dq_om_wake_airlock_mode_key/Run()
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
 	var/datum/om_wake_test_subscriber/watcher = allocate(/datum/om_wake_test_subscriber)
-	OM_KEY_ON(watcher, KEY_DOOR_MODE, OM_KEY_ID(A), KEY_DOOR_BOLTS)
+	om_test_watch(watcher, A, CHANGE_MACHINE_MODE)
 	var/failure = om_wake_test(watcher, CALLBACK(A, TYPE_PROC_REF(/obj/machinery/door/airlock, lock), TRUE))
 	TEST_ASSERT(!failure, failure)
 
@@ -183,14 +191,14 @@
 	S = new
 	S.data["command"] = "shuttle"
 	D.receive_signal(S)
-	TEST_ASSERT_EQUAL(D.shuttle_key_id, KEY_SHUTTLE_EVAC, "shuttle mode is not watching the evac shuttle")
+	TEST_ASSERT_EQUAL(D.shuttle_key_id, SHUTTLE_SCHEDULE_EVAC, "shuttle mode is not watching the evac shuttle")
 	TEST_ASSERT_NULL(D.om_sleep_violation(), "a shuttle display's audit failed")
 	if(isnull(D.refresh_token)) // No evac under way: only the key wakes it.
 		var/failure = om_wake_test(D, CALLBACK(src, PROC_REF(publish_evac)))
 		TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_wake_status_display/proc/publish_evac()
-	OM_KEY_PUBLISH(KEY_SHUTTLE_SCHEDULE, KEY_SHUTTLE_EVAC, 1)
+	om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 
 /datum/looping_sound/dq_test
 	mid_sounds = list('sound/machines/button.ogg' = 1)
@@ -212,9 +220,9 @@
 		qdel(loop)
 		return // A player is in range on this map; dormancy cannot be tested here.
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a loop nobody can hear did not go dormant")
-	TEST_ASSERT(GLOB.om_player_chunk_subscriptions > 0, "a dormant loop left no chunk subscriptions")
+	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a dormant loop left no chunk subscriptions")
 	TEST_ASSERT_NULL(loop.om_sleep_violation(), "a dormant loop's audit failed")
-	var/failure = om_wake_test(loop, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_publish_player_chunk), T))
+	var/failure = om_wake_test(loop, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
@@ -227,20 +235,21 @@
 /datum/unit_test/dq_om_wake_player_chunk_keys/Run()
 	var/turf/T = test_floor()
 	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
-	var/list/tokens = om_subscribe_player_chunks(players, T, 0)
-	TEST_ASSERT(length(tokens), "subscribe_player_chunks returned no tokens")
-	TEST_ASSERT(GLOB.om_player_chunk_subscriptions > 0, "a player chunk subscription was not counted")
-	om_woken_trace(players)
+	om_attach(players, /datum/om/behaviour/sleeper/test_subscriber)
+	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
+	TEST_ASSERT(length(tokens), "watch_mob_chunks returned no chunks")
+	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a player chunk subscription was not counted")
+	om_trace(players)
 	react_test_ticks(4)
-	var/before = om_woken_traced_count(players)
+	var/before = om_traced_count(players)
 	var/mob/living/npc = allocate(/mob/living, T)
 	npc.Move(get_step(T, NORTH))
 	react_test_ticks(4)
-	TEST_ASSERT_EQUAL(om_woken_traced_count(players), before, "a mob without a client woke a player chunk subscriber")
-	om_woken_untrace(players)
-	var/failure = om_wake_test(players, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_publish_player_chunk), T))
+	TEST_ASSERT_EQUAL(om_traced_count(players), before, "a mob without a client woke a player chunk subscriber")
+	om_untrace(players)
+	var/failure = om_wake_test(players, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
-	om_unsubscribe_player_chunks(players, tokens)
+	unwatch_mob_chunks(players, tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
 	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "no wake recorded")
 
 #endif

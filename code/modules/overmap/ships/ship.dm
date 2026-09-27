@@ -62,7 +62,6 @@
 	SSflight_operations?.register_vessel(src)
 
 /obj/effect/overmap/visitable/ship/Destroy()
-	PERIODIC_STOP(src)
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
 	if(SSflight_operations && flight_vessel_id)

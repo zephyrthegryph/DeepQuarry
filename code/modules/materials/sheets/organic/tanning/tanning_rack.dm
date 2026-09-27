@@ -11,7 +11,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
 
 /obj/structure/tanning_rack/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.

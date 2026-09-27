@@ -200,13 +200,12 @@
 
 /obj/effect/effect/foam/firefighting/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
+
+/obj/effect/effect/foam/firefighting/proc/dissolve()
+	flick("[icon_state]-disolve", src)
+	QDEL_IN(src, 5)
 
 /obj/effect/effect/foam/firefighting/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
-/obj/effect/effect/foam/firefighting/periodic_step()
-	if(lifetime-- <= 0)
-		flick("[icon_state]-disolve", src)
-		QDEL_IN(src, 5)

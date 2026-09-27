@@ -404,3 +404,8 @@
 	.=..()
 	if(oneway == 1)
 		. += " It appears to only go in one direction."
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/conveyor/step_start_condition()
+	return operating

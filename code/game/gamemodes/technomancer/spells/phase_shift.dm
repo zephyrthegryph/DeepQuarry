@@ -34,10 +34,12 @@
 /obj/effect/phase_shift/Destroy()
 	for(var/atom/movable/AM in contents) //Eject everything out.
 		AM.forceMove(get_turf(src))
-	PERIODIC_STOP(src)
 	return ..()
 
+/// Wears on whoever hides inside every 2 s; empty, it sleeps.
 /obj/effect/phase_shift/periodic_step()
+	if(!(locate(/mob/living) in contents))
+		return PROCESS_KILL
 	for(var/mob/living/L in contents)
 		L.adjust_instability(2)
 

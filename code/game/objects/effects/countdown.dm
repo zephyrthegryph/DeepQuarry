@@ -71,7 +71,6 @@
 
 /obj/effect/countdown/Destroy()
 	attached_to = null
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/effect/countdown/singularity_pull(atom/singularity, current_size)

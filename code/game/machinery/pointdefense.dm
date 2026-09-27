@@ -225,14 +225,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(!active)
-		sleep_until_keys(list(KEY_METEORS, 1, KEY_CHANGED))
+		sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
 		return PROCESS_KILL
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
 
 	if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		sleep_until_keys(list(KEY_METEORS, 1, KEY_CHANGED))
+		sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
 		return PROCESS_KILL
 	find_and_shoot()
 
@@ -327,3 +327,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		return "asleep with [LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))] meteors about"
 	return null
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/pointdefense/arm_wakes()
+	..()
+	sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/pointdefense/step_start_condition()
+	return active && LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))

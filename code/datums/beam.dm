@@ -161,7 +161,6 @@
 	return ..()
 
 /obj/effect/ebeam/reactive/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/ebeam/reactive/on_drawn()

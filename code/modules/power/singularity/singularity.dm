@@ -43,7 +43,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 			break
 
 /obj/singularity/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/singularity/attack_hand(mob/user as mob)

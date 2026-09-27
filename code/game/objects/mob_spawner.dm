@@ -28,7 +28,6 @@
 	last_spawn = world.time + rand(0,spawn_delay)
 
 /obj/structure/mob_spawner/Destroy()
-	PERIODIC_STOP(src)
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))
 			var/mob/living/L = spawned
@@ -39,7 +38,10 @@
 	LAZYCLEARLIST(spawned_mobs)
 	return ..()
 
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()
+	if(!mob_near(world.view * 2, TRUE))
+		return sleep_until_mob_near(world.view * 2, TRUE)
 	if(!can_spawn())
 		return
 	var/chosen_mob = choose_spawn()

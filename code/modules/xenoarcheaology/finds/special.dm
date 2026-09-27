@@ -14,7 +14,6 @@
 			break
 
 /obj/item/reagent_containers/glass/replenishing/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/reagent_containers/glass/replenishing/periodic_step()
@@ -28,13 +27,15 @@
 
 /obj/item/clothing/mask/gas/poltergeist/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/mask/gas/poltergeist/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
+/// (hearing or being put on starts it); otherwise it sleeps.
 /obj/item/clothing/mask/gas/poltergeist/periodic_step()
+	if(!length(heard_talk) || !isliving(src.loc))
+		return PROCESS_KILL
 	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
 		M.say(DEFAULTPICK(heard_talk, null))
@@ -44,6 +45,8 @@
 	if(length(heard_talk) > max_stored_messages)
 		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
 	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
+	if(isliving(loc))
+		PERIODIC_START(src, PERIODIC_SLOW)
 	if(isliving(src.loc) && world.time - last_twitch > 50)
 		last_twitch = world.time
 
@@ -67,10 +70,12 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/vampiric/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/item/vampiric/periodic_step()
+	if(!mob_near(world.view, TRUE))
+		return sleep_until_mob_near(world.view, TRUE)
 	//see if we've identified anyone nearby
 	if(world.time - last_bloodcall > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
@@ -160,10 +165,12 @@
 	loc_last_process = src.loc
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Crawls toward its target turf every 2 s; arrived, it sleeps.
 /obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
+	if(!target_turf)
+		return PROCESS_KILL
 	if(target_turf && src.loc != target_turf)
 		step_towards(src,target_turf)
 		if(src.loc == loc_last_process)
@@ -194,10 +201,12 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/shadow_wight/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/effect/shadow_wight/periodic_step()
+	if(!mob_near(world.view, TRUE))
+		return sleep_until_mob_near(world.view, TRUE)
 	if(src.loc)
 		src.loc = get_turf(pick(orange(1,src)))
 		var/mob/living/carbon/M = locate() in src.loc
@@ -227,3 +236,8 @@
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)
 	to_chat(obstacle, span_red("You feel a chill run down your spine!"))
+
+/obj/item/clothing/mask/gas/poltergeist/equipped(mob/user, slot)
+	. = ..()
+	if(length(heard_talk))
+		PERIODIC_START(src, PERIODIC_SLOW)

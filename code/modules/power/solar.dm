@@ -555,3 +555,8 @@ GLOBAL_LIST_EMPTY(solars_list)
 #undef SOLAR_AUTO_START_NO
 #undef SOLAR_AUTO_START_YES
 #undef SOLAR_AUTO_START_CONFIG
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/solar_control/step_start_condition()
+	return TRUE // connects its trackers

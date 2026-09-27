@@ -455,7 +455,7 @@
 		return TRUE
 	if(isLocked(ui.user))
 		return TRUE
-	OM_KEY_PUBLISH_OWN(src, KEY_TURRET, KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
 
 	switch(action)
@@ -484,7 +484,7 @@
 				check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
-	OM_KEY_PUBLISH_OWN(src, KEY_TURRET, KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
 		stat &= ~NOPOWER
 		update_icon()
@@ -674,7 +674,7 @@
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
-	OM_KEY_PUBLISH_OWN(src, KEY_TURRET, KEY_CHANGED)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
 	. = ..()
@@ -699,13 +699,13 @@
 	if(stat & (NOPOWER|BROKEN))
 		//if the turret has no power or is broken, make the turret pop down if it hasn't already
 		popDown()
-		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
+		sleep_until_keys()
 		return PROCESS_KILL
 
 	if(!enabled)
 		//if the turret is off, make it pop down
 		popDown()
-		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
+		sleep_until_keys()
 		return PROCESS_KILL
 
 	var/shot_targets = FALSE
@@ -730,16 +730,10 @@
 	slow_process(shot_targets)
 
 /obj/machinery/porta_turret/proc/reactive_mob_chunk_keys()
-	var/list/keys = list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED)
-	var/range = isnum(world.view) ? world.view : 7
-	var/min_x = max(1, x - range)
-	var/max_x = min(world.maxx, x + range)
-	var/min_y = max(1, y - range)
-	var/max_y = min(world.maxy, y + range)
-	for(var/chunk_x in MOB_CHUNK_COORD(min_x) to MOB_CHUNK_COORD(max_x))
-		for(var/chunk_y in MOB_CHUNK_COORD(min_y) to MOB_CHUNK_COORD(max_y))
-			keys += list(KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), KEY_CHUNK_ANY_MOB)
-	return keys
+	var/list/watches = list()
+	for(var/datum/mob_chunk/C as anything in mob_chunks_around(get_turf(src), isnum(world.view) ? world.view : 7))
+		watches += list(C, CHANGE_CHUNK_ANY_MOB)
+	return watches
 
 /obj/machinery/porta_turret/proc/slow_process(shot_targets)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -1366,12 +1360,12 @@
 /obj/machinery/porta_turret/rcd/machine_step()
 	if(stat & BROKEN)
 		popDown()
-		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
+		sleep_until_keys()
 		return PROCESS_KILL
 
 	if(!enabled)
 		popDown()
-		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
+		sleep_until_keys()
 		return PROCESS_KILL
 
 	var/list/targets = list()			//list of primary targets
@@ -1418,3 +1412,11 @@
 	spark_system.start()
 	qdel(src)
 
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/porta_turret/arm_wakes()
+	..()
+	sleep_until_keys()
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/porta_turret/step_start_condition()
+	return enabled && !(stat & (NOPOWER|BROKEN))

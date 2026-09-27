@@ -510,3 +510,8 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
 /obj/item/disk/nuclear/touch_map_edge()
 	qdel(src)
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/nuclearbomb/step_start_condition()
+	return timing

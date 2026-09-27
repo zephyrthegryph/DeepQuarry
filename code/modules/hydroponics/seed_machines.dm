@@ -390,3 +390,8 @@
 				seed.seed.apply_gene(gene)
 				seed.modified += rand(5,10)
 			return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/botany/step_start_condition()
+	return active

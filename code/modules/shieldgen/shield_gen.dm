@@ -360,3 +360,8 @@
 // === merged from shield_gen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_gen
 	icon = 'icons/obj/machines/shielding.dmi'
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shield_gen/step_start_condition()
+	return active

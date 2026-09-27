@@ -65,3 +65,13 @@
 	. = ..()
 	. += span_filter_notice("Dummy load is using [num2text(active_power_usage, 20)] W")
 	. += span_filter_notice("Powered: [powered() ? "YES" : "NO"]")
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/debug_items/infinite_generator/step_start_condition()
+	return TRUE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/debug_items/infinite_cable_powersink/step_start_condition()
+	return TRUE

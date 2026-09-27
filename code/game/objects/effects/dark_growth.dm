@@ -114,7 +114,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/structure/prop/dark_node/Destroy()
-	PERIODIC_STOP(src)
 	for(var/obj/effect/dark/dark_tile in children_effects)
 		dark_tile.unlinked()
 	return ..()

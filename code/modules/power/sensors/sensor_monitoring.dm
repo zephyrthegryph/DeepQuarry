@@ -32,7 +32,7 @@
 	if(length(dependencies))
 		var/list/keys = list()
 		for(var/datum/powernet/PN as anything in dependencies)
-			keys += list(KEY_POWERNET, OM_KEY_ID(PN), KEY_POWERNET_STATE)
+			keys += list(PN, CHANGE_POWERNET_STATE)
 		sleep_until_keys(keys)
 		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
@@ -86,3 +86,8 @@
 	if(check_warnings() != alerting)
 		return "asleep with a stale alert ([alerting] vs [check_warnings()])"
 	return null
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/computer/power_monitor/step_start_condition()
+	return TRUE // arms its grid watches

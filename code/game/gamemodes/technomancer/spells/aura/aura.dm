@@ -13,7 +13,6 @@
 	log_and_message_admins("has started casting [src].")
 
 /obj/item/spell/aura/Destroy()
-	PERIODIC_STOP(src)
 	log_and_message_admins("has stopped maintaining [src].")
 	return ..()
 

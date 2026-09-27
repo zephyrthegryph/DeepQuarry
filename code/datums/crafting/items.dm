@@ -277,15 +277,22 @@
 
 /obj/item/clothing/gloves/toxinregen/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/gloves/toxinregen/Destroy()
 	wearer = null
-	PERIODIC_STOP(src)
 	return ..()
 
+/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/toxinregen/periodic_step()
+	var/mob/living/carbon/human/worn_by = wearer?.resolve()
+	if(!worn_by || worn_by.get_equipped_item(SLOT_ID_GLOVES) != src)
+		return PROCESS_KILL
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!H || H.stat == DEAD || H.nutrition <= 10)
 		return
 	H.mend(TREAT_ANTITOXIN, 0.5) // organic tag: synthetic bodies are unaffected
+
+/obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
+	. = ..()
+	if(wearer?.resolve())
+		PERIODIC_START(src, PERIODIC_SLOW)

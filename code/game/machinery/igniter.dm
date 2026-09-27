@@ -166,3 +166,8 @@
 
 	icon_state = "launcherbtt"
 	active = FALSE
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/igniter/step_start_condition()
+	return on

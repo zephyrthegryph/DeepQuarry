@@ -348,3 +348,13 @@
 	if(istype(mover, /obj/item/projectile))
 		return prob(10)
 	return !density
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shieldwallgen/step_start_condition()
+	return active
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shieldwall/step_start_condition()
+	return needs_power

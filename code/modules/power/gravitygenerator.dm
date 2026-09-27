@@ -497,3 +497,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 #undef GRAV_NEEDS_WELDING
 #undef GRAV_NEEDS_PLASTEEL
 #undef GRAV_NEEDS_WRENCH
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/gravity_generator/main/step_start_condition()
+	return charging_state != 0 // POWER_IDLE (undefined past this file end)

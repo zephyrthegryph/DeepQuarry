@@ -99,13 +99,15 @@
 
 /obj/item/clothing/gloves/stamina/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/gloves/stamina/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
+/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/stamina/periodic_step()
+	var/mob/living/carbon/human/worn_by = wearer?.resolve()
+	if(!worn_by || worn_by.get_equipped_item(SLOT_ID_GLOVES) != src)
+		return PROCESS_KILL
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!H || H.isSynthetic() || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
@@ -152,7 +154,6 @@
 				to_chat(H, span_info(flavor_drop))
 
 /obj/item/clothing/suit/armor/buffvest/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/clothing/suit/armor/buffvest/periodic_step()
@@ -199,3 +200,8 @@
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
 //scrap section which is on hold till I get foes
+
+/obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
+	. = ..()
+	if(wearer?.resolve())
+		PERIODIC_START(src, PERIODIC_SLOW)

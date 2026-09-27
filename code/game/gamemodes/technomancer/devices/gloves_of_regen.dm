@@ -45,14 +45,16 @@
 
 /obj/item/clothing/gloves/regen/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/gloves/regen/Destroy()
 	wearer = null
-	PERIODIC_STOP(src)
 	return ..()
 
+/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/regen/periodic_step()
+	var/mob/living/carbon/human/worn_by = wearer?.resolve()
+	if(!worn_by || worn_by.get_equipped_item(SLOT_ID_GLOVES) != src)
+		return PROCESS_KILL
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
 		return // Dead people don't have a metabolism.
@@ -68,3 +70,8 @@
 		H.nutrition = max(H.nutrition - 10, 0)
 	if(H.mend(TREAT_GENETIC_REPAIR, 0.1))
 		H.nutrition = max(H.nutrition - 20, 0)
+
+/obj/item/clothing/gloves/regen/equipped(mob/user, slot)
+	. = ..()
+	if(wearer?.resolve())
+		PERIODIC_START(src, PERIODIC_SLOW)

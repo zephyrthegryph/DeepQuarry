@@ -28,7 +28,6 @@
 	log_and_message_admins("has casted [src].")
 
 /obj/item/spell/radiance/Destroy()
-	PERIODIC_STOP(src)
 	log_and_message_admins("has stopped maintaining [src].")
 	return ..()
 

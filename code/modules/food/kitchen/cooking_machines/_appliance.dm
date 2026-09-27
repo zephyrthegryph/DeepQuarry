@@ -893,3 +893,8 @@
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
 	food_safety = !food_safety
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/appliance/step_start_condition()
+	return cooking

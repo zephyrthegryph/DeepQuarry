@@ -104,10 +104,12 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/coin/uranium/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/coin/uranium/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 

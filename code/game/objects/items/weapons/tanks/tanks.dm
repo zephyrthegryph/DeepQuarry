@@ -74,7 +74,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/Destroy()
 	QDEL_NULL(air_contents)
 
-	PERIODIC_STOP(src)
 	QDEL_NULL(src.proxyassembly)
 
 	if(istype(loc, /obj/item/transfer_valve))

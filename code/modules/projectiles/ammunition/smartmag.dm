@@ -31,7 +31,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/ammo_magazine/smart/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/ammo_magazine/smart/periodic_step()

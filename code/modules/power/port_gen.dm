@@ -1189,3 +1189,13 @@
 	if(istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)) && Proj.damage >= 20)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/rtg/step_start_condition()
+	return anchored
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/port_gen/step_start_condition()
+	return active

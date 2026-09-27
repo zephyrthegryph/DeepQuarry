@@ -21,7 +21,6 @@
 
 /obj/item/pinpointer/Destroy()
 	active = 0
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/pinpointer/attack_self(mob/user)

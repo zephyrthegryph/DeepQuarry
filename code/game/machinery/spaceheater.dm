@@ -283,3 +283,8 @@
 #undef DEFAULT_MIN_TEMP
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/space_heater/step_start_condition()
+	return state

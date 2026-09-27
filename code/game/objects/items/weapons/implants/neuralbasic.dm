@@ -23,7 +23,6 @@
 	if(my_brain)
 		if(my_brain.owner)
 			to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
-	PERIODIC_STOP(src)
 	my_brain = null
 	return ..()
 

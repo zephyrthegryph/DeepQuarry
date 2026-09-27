@@ -35,7 +35,10 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/poi/pascalb/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 
@@ -58,7 +61,6 @@
 	active = FALSE
 
 /obj/item/poi/pascalb/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/poi/pascalb/deadly //For testing purposes, mainly.
@@ -126,7 +128,10 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
+/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/poi/brokenoldreactor/periodic_step()
+	if(!mob_near(world.view))
+		return sleep_until_mob_near(world.view)
 	radiate()
 	..()
 
@@ -150,7 +155,6 @@
 
 /obj/item/poi/brokenoldreactor/Destroy()
 	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
-	PERIODIC_STOP(src)
 	return ..()
 
 /datum/category_item/catalogue/information/objects/growthcanister

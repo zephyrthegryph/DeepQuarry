@@ -35,16 +35,15 @@
 
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
-	PERIODIC_STOP(src)
 	return ..()
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)
 	wearer = user
+	PERIODIC_START(src, PERIODIC_SLOW) // regenerates and keeps its wearer's upkeep while worn
 	for(var/obj/spellbutton/spell in spells)
 		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
 	..()
@@ -77,7 +76,11 @@
 	energy = min(energy + amount, max_energy)
 	return 1
 
+/// Regenerates energy and charges upkeep every 2 s while worn (equipped() starts it); unworn, it sleeps.
 /obj/item/technomancer_core/periodic_step()
+	if(!wearer)
+		canremove = TRUE
+		return PROCESS_KILL
 	var/old_energy = energy
 	regenerate()
 	pay_dues()

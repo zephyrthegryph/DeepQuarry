@@ -645,3 +645,8 @@
 	name = "\improper Emergency Shutter System"
 	desc = "Emergency air-tight shutter, capable of sealing off breached areas. This model fits flush with the walls, and has a panel in the floor for maintenance."
 	icon = 'icons/obj/doors/DoorHazardHidden_steel.dmi'
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/door/firedoor/arm_wakes()
+	..()
+	hibernate_until_air_changes()

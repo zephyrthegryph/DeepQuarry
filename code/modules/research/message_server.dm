@@ -473,3 +473,8 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 
 #undef MESSAGE_SERVER_SPAM_REJECT
 #undef MESSAGE_SERVER_DEFAULT_SPAM_LIMIT
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/message_server/step_start_condition()
+	return active // its hum

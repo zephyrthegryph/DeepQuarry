@@ -302,7 +302,6 @@
 			to_chat(user, flavor_drop)
 
 /obj/item/clothing/head/psy_crown/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/clothing/head/psy_crown/periodic_step()

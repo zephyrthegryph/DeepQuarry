@@ -815,3 +815,8 @@
 	station_utilities = builder.build(station_spec, station_materialization)
 	qdel(builder)
 	return !!station_utilities
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/generator/generated_station/step_start_condition()
+	return !(stat & BROKEN)

@@ -37,7 +37,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/decal/cleanable/blood/reagent/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/decal/cleanable/blood/reagent/update_icon()

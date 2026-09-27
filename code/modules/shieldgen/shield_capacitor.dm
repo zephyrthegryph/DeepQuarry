@@ -131,7 +131,7 @@
 		power_draw = PN.draw_power(power_draw) //what we actually get
 		stored_charge += power_draw
 		if(power_draw <= 0 && stored_charge < max_charge)
-			sleep_until_keys(list(KEY_POWERNET, OM_KEY_ID(PN), KEY_POWERNET_RATE|KEY_POWERNET_STATE))
+			sleep_until_keys(list(PN, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
 			return PROCESS_KILL
 	else
 		return PROCESS_KILL
@@ -184,3 +184,8 @@
 	if(PN && PN.avail - PN.load > 0)
 		return "asleep below full charge on a grid with [PN.avail - PN.load] W spare"
 	return null
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/shield_capacitor/step_start_condition()
+	return anchored && stored_charge < max_charge

@@ -72,7 +72,6 @@
 				add_overlay(filling)
 
 /obj/structure/medical_stand/Destroy()
-	PERIODIC_STOP(src)
 	if(breather)
 		breather.internal = null
 		breather.internals?.icon_state = "internal0"

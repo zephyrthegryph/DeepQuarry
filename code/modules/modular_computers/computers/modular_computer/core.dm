@@ -80,7 +80,6 @@
 
 /obj/item/modular_computer/Destroy()
 	kill_program(1)
-	PERIODIC_STOP(src)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)

@@ -160,7 +160,6 @@
 	set_dir(get_dir(src,targeting_mob))
 
 /obj/effect/fake_attacker/human/Destroy()
-	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/effect/fake_attacker/human/periodic_step()

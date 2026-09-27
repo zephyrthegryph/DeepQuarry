@@ -36,7 +36,6 @@
 	active = FALSE
 
 /obj/item/fuel_assembly/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 

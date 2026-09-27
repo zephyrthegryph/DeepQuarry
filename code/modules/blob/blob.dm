@@ -162,7 +162,6 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/blob/core/Destroy()
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/blob/core/periodic_step()

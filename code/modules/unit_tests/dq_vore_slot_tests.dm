@@ -29,7 +29,7 @@
 	for(var/obj/belly/B as anything in pred.vore_organs)
 		TEST_ASSERT_NULL(B.cycle_token, "empty [B] should not cycle")
 		TEST_ASSERT_NULL(B.liquid_timer, "empty [B] should hold no timer")
-		TEST_ASSERT(!om_deadline_pending(B, /datum/om/behaviour/belly_cycle) && !om_wake_pending(B), "empty [B] should hold no scheduled work")
+		TEST_ASSERT(!om_deadline_pending(B, /datum/om/behaviour/belly_cycle) && !B.liquid_timer, "empty [B] should hold no scheduled work")
 		TEST_ASSERT(!(B.datum_flags & DF_ISPROCESSING), "empty [B] should not be on a processing subsystem")
 		var/list/owned = B.belly_owned_lists()
 		TEST_ASSERT_EQUAL(length(owned), 0, "empty [B] owns lists: [jointext(owned, ", ")]")

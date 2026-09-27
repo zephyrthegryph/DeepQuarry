@@ -60,7 +60,6 @@
 	QDEL_NULL(cell)
 	QDEL_NULL(ion_trail)
 	LAZYCLEARLIST(masters)
-	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/uav/examine(mob/user)

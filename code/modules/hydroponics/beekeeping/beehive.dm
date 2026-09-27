@@ -438,3 +438,8 @@
 	if(processing)
 		return ITEM_INTERACT_BLOCKING
 	return ..()
+
+
+/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/beehive/step_start_condition()
+	return bee_count

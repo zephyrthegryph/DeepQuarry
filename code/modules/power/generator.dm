@@ -327,3 +327,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 					sleep(1)
 				if(i >= limit)
 					break
+
+/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
+/obj/machinery/power/generator/arm_wakes()
+	..()
+	register_gas_dependencies()
