@@ -205,11 +205,6 @@
 	var/turf/open/event_center
 	var/list/turf/open/event_turfs
 
-/datum/benchmark/major_events/Destroy()
-	event_center = null
-	event_turfs = null
-	return ..()
-
 /datum/benchmark/major_events/Run()
 	wait_for_assets()
 	var/list/events = splittext(param("events", "large_explosion,supermatter,mass_fire,decompression"), ",")
@@ -273,10 +268,6 @@
 	description = "Expedition station generation and release (bench_cycles, default 1)"
 	var/datum/expedition_site/generated_site
 	var/generation_done = FALSE
-
-/datum/benchmark/generation/Destroy()
-	generated_site = null
-	return ..()
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
