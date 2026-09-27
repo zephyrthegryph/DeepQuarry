@@ -22,10 +22,7 @@
 
 	candymaker_loop = new(list(src), FALSE)
 
-/obj/machinery/appliance/mixer/candy/Destroy()
-	. = ..()
-
-	QDEL_NULL(candymaker_loop)
+REF_OWNED(/obj/machinery/appliance/mixer/candy, "candymaker_loop")
 
 /obj/machinery/appliance/mixer/candy/update_icon()
 	. = ..()
@@ -42,7 +39,6 @@
 /obj/machinery/appliance/mixer/candy/change_product_appearance(obj/item/reagent_containers/food/snacks/product)
 	food_color = get_random_colour(1)
 	. = ..()
-
 
 /obj/machinery/appliance/mixer/candy/attackby(obj/item/O as obj, mob/user as mob)
 	if(default_part_replacement(user, O))
