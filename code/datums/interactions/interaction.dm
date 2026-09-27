@@ -32,6 +32,8 @@
 	/// Higher wins when several interactions answer the same action.
 	var/priority = 0
 	/// INPUT_ACTION_USE or INPUT_ACTION_ALTERNATE when it answers that action, else null (Menu and category keys only).
+	/// attempt()'s result while its cost is paid (INTERACTION_TRY_PENDING until cost_paid() reports).
+	var/tmp/attempt_result
 	var/default_action
 	/// The predicate spec (REQ_* clauses, code/__defines/predicates.dm). `tool` adds its clause in front.
 	var/list/requires
@@ -156,10 +158,18 @@
 /**
  * Pays the cost through the tool pipeline (use_tool(), tools.dm): quality and
  * tier, fuel or charge, the sound, the scaled wait and the resources. Returns
- * FALSE if a check failed or the wait was interrupted.
+ * FALSE if a check failed, TRUE if paid at once, or USE_TOOL_PENDING when the wait
+ * is a timed action: the rest of the interaction then runs in cost_paid(), which an
+ * override that waits must name as its on_done.
  */
 /datum/interaction/proc/pay_cost(mob/actor, atom/target, obj/item/held)
-	return use_tool(actor, tool ? held : null, target, src)
+	return use_tool(actor, tool ? held : null, target, src, receiver = src, on_done = PROC_REF(cost_paid), done_args = list(actor, target, held))
+
+/// The cost is paid: the rest of attempt() (re-check, effect, feedback).
+/datum/interaction/proc/cost_paid(mob/actor, atom/target, obj/item/held)
+	var/result = finish_attempt(actor, target, held)
+	if(attempt_result == INTERACTION_TRY_PENDING)
+		attempt_result = result
 
 /**
  * Runs the interaction: checks the requirements, pays the cost, checks again
@@ -181,9 +191,27 @@
 	if(reason)
 		tell_blocked(actor, target, reason)
 		return INTERACTION_TRY_BLOCKED
-	if(!pay_cost(actor, target, held) || QDELETED(target))
+	// cost_paid() reports here when the cost is paid at once; a timed cost reports later.
+	var/saved = attempt_result
+	attempt_result = INTERACTION_TRY_PENDING
+	var/paid = pay_cost(actor, target, held)
+	var/result = attempt_result
+	attempt_result = saved
+	if(!paid)
 		return (duration > 0 || tool) ? INTERACTION_TRY_BLOCKED : null
-	reason = why_not(actor, target, held)
+	if(paid == USE_TOOL_PENDING)
+		return INTERACTION_TRY_RAN // the input is used; the effect follows the wait
+	if(result != INTERACTION_TRY_PENDING)
+		return result
+	// A pay_cost() override that paid without the tool pipeline.
+	return finish_attempt(actor, target, held)
+
+/// After the cost: check again (the wait may have changed things), run the effect, send
+/// the feedback. The same outcomes as attempt().
+/datum/interaction/proc/finish_attempt(mob/actor, atom/target, obj/item/held)
+	if(QDELETED(target))
+		return (duration > 0 || tool) ? INTERACTION_TRY_BLOCKED : null
+	var/reason = why_not(actor, target, held)
 	if(reason)
 		tell_blocked(actor, target, reason)
 		return INTERACTION_TRY_BLOCKED

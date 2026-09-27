@@ -19,6 +19,11 @@
 /// Re-check channels for a timed action: everything that can break one, on the user or the target.
 #define TIMED_ACTION_CHANNELS (CHANGE_MOB_LOC | CHANGE_MOB_HANDS | CHANGE_MOB_STAT | CHANGE_MOB_STATUS | CHANGE_MOB_TARGETING | CHANGE_ITEM_LOC | CHANGE_EXPLICIT)
 
+#ifdef UNIT_TESTS
+/// Unit tests that drive gameplay procs synchronously set this: every timed action completes at once.
+GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
+#endif
+
 /datum/om/task_def/timed_action
 	name = "timed_action"
 	task_type = /datum/om/task/timed
@@ -102,6 +107,10 @@
 		return "gone"
 	if(!isnum(delay))
 		CRASH("om_do_after was passed a non-number delay: [delay || "null"].")
+#ifdef UNIT_TESTS
+	if(GLOB.timed_actions_instant)
+		delay = 0
+#endif
 	if(target && !isatom(target))
 		CRASH("om_do_after was given a non-atom target! [target]")
 	var/list/done = om_capture_args(done_args)
@@ -214,6 +223,20 @@
 /datum/om/task_def/timed_action/claiming
 	name = "timed_action_claiming"
 	claims = TRUE
+
+/// Calls `proc_ref` on `receiver` with `call_args` (a /proc/ path is called globally). No-op without a proc.
+/proc/om_call_ref(datum/receiver, proc_ref, list/call_args)
+	if(!proc_ref)
+		return
+	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+		return call(proc_ref)(arglist(call_args || list()))
+	if(!receiver)
+		return
+	return call(receiver, proc_ref)(arglist(call_args || list()))
+
+/// A timed action's check_proc for a legacy /datum/callback extra check.
+/proc/om_check_callback(datum/callback/C)
+	return C.Invoke()
 
 /// Running timed actions of `user` (on `target`, when given).
 /proc/om_timed_actions(mob/user, atom/target)

@@ -45,6 +45,22 @@
 	..()
 	to_chat(user, span_notice("We discreetly shape our finger back to a less suspicious form."))
 
+/// The pulse lands, 0.6 s after the spark.
+/obj/item/finger_lockpick/proc/pulse_door(obj/machinery/door/door, mob/living/user)
+	//More typechecks, because windoors can't be locked.  Fun.
+	if(istype(door,/obj/machinery/door/airlock))
+		var/obj/machinery/door/airlock/airlock = door
+
+		if(airlock.locked) //Check if we're bolted.
+			airlock.unlock()
+			to_chat(user, span_notice("We've unlocked \the [airlock].  Another pulse is requried to open it."))
+		else	//We're not bolted, so open the door already.
+			airlock.open()
+			to_chat(user, span_notice("We've opened \the [airlock]."))
+	else
+		door.open() //If we're a windoor, open the windoor.
+		to_chat(user, span_notice("We've opened \the [door]."))
+
 /obj/item/finger_lockpick/afterattack(atom/target, mob/living/user, proximity)
 	if(!target)
 		return
@@ -65,20 +81,7 @@
 
 		if(door.density && door.operable())
 			door.do_animate("spark")
-			sleep(6)
-			//More typechecks, because windoors can't be locked.  Fun.
-			if(istype(target,/obj/machinery/door/airlock))
-				var/obj/machinery/door/airlock/airlock = target
-
-				if(airlock.locked) //Check if we're bolted.
-					airlock.unlock()
-					to_chat(user, span_notice("We've unlocked \the [airlock].  Another pulse is requried to open it."))
-				else	//We're not bolted, so open the door already.
-					airlock.open()
-					to_chat(user, span_notice("We've opened \the [airlock]."))
-			else
-				door.open() //If we're a windoor, open the windoor.
-				to_chat(user, span_notice("We've opened \the [door]."))
+			om_after(src, 0.6 SECONDS, PROC_REF(pulse_door), door, user)
 		else //Probably broken or no power.
 			to_chat(user, span_warning("The door does not respond to the pulse."))
 		door.add_fingerprint(user)

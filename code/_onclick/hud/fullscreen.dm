@@ -23,6 +23,12 @@
 
 	return screen
 
+/// The end of an animated clear_fullscreen().
+/mob/proc/remove_fullscreen_screen(atom/movable/screen/fullscreen/screen)
+	if(client)
+		client.screen -= screen
+	qdel(screen)
+
 /mob/proc/clear_fullscreen(category, animated = 10)
 	var/atom/movable/screen/fullscreen/screen = LAZYACCESS(screens, category)
 	if(!screen)
@@ -31,12 +37,8 @@
 	LAZYREMOVE(screens, category)
 
 	if(animated)
-		spawn(0)
-			animate(screen, alpha = 0, time = animated)
-			sleep(animated)
-			if(client)
-				client.screen -= screen
-			qdel(screen)
+		animate(screen, alpha = 0, time = animated)
+		om_after(src, animated, PROC_REF(remove_fullscreen_screen), screen)
 	else
 		if(client)
 			client.screen -= screen

@@ -116,12 +116,15 @@
 /obj/machinery/atmospherics/tvalve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	update_icon(1)
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
+	return TRUE
+
+/// The switch, a second after the wheel is turned.
+/obj/machinery/atmospherics/tvalve/proc/finish_toggle()
 	if(state)
 		go_straight()
 	else
 		go_to_side()
-	return TRUE
 
 // M2 (simulation.md §5): same as valve — a three-way valve's flow law is
 // pure topology (which pair of ports the region merge connects), so

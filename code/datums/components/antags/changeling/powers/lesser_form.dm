@@ -81,7 +81,13 @@
 	animation.icon = 'icons/mob/mob.dmi'
 	animation.master = src
 	flick("monkey2h", animation)
-	sleep(48)
+	om_after(src, 4.8 SECONDS, PROC_REF(changeling_lesser_transform_finish), animation, chosen_dna, implants)
+	return 1
+
+/// The transformation, once its animation has played.
+/mob/proc/changeling_lesser_transform_finish(atom/movable/overlay/animation, datum/dna/chosen_dna, list/implants)
+	var/mob/living/carbon/C = src
+	var/datum/component/antag/changeling/changeling = is_changeling(src)
 	qdel(animation)
 
 	for(var/obj/item/W in src)

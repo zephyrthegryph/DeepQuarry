@@ -77,16 +77,21 @@
 
 	user.visible_message(span_warning("[user] starts climbing onto \the [climbed_thing]!"))
 	LAZYADDASSOCLIST(current_climbers, climbed_thing, user)
+	om_do_after(user, (issmall(user) ? delay_time * 0.6 : delay_time), user, src, PROC_REF(climb_done), list(climbed_thing, user), on_fail = PROC_REF(climb_ended), fail_args = list(climbed_thing, user))
 
-	if(do_after(user,(issmall(user) ? delay_time * 0.6 : delay_time), target = user))
-		if(can_climb(climbed_thing, user, post_climb_check=1))
-			climb_to(climbed_thing, user)
-			if(get_turf(user) == get_turf(climbed_thing))
-				user.visible_message(span_warning("[user] climbs onto \the [climbed_thing]!"))
-			else
-				user.visible_message(span_warning("[user] climbed over \the [climbed_thing]!"))
+/datum/element/climbable/proc/climb_ended(obj/climbed_thing, mob/living/user)
+	if(climbed_thing)
+		LAZYREMOVEASSOC(current_climbers, climbed_thing, user)
+
+/datum/element/climbable/proc/climb_done(obj/climbed_thing, mob/living/user)
+	if(can_climb(climbed_thing, user, post_climb_check=1))
+		climb_to(climbed_thing, user)
+		if(get_turf(user) == get_turf(climbed_thing))
+			user.visible_message(span_warning("[user] climbs onto \the [climbed_thing]!"))
 		else
-			to_chat(user, span_warning("You fail to climb onto \the [climbed_thing]."))
+			user.visible_message(span_warning("[user] climbed over \the [climbed_thing]!"))
+	else
+		to_chat(user, span_warning("You fail to climb onto \the [climbed_thing]."))
 	LAZYREMOVEASSOC(current_climbers, climbed_thing, user)
 
 /// Resolve the climb by moving the mob to its final destination.

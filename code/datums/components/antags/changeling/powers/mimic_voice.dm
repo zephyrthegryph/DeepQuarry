@@ -32,10 +32,15 @@
 	to_chat(src, span_notice("Use this power again to return to our original voice and reproduce chemicals again."))
 
 	feedback_add_details("changeling_powers","MV")
+	changeling_mimic_drain()
 
-	spawn(0)
-		while(src && src.mind && changeling && changeling.mimicing)
-			changeling.chem_charges = max(changeling.chem_charges - 1, 0)
-			sleep(40)
-		if(src && src.mind && changeling)
-			changeling.mimicing = ""
+/// Mimicry costs a chemical every 4 seconds while it lasts.
+/mob/proc/changeling_mimic_drain()
+	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	if(!src.mind || !changeling)
+		return
+	if(!changeling.mimicing)
+		changeling.mimicing = ""
+		return
+	changeling.chem_charges = max(changeling.chem_charges - 1, 0)
+	om_after(src, 4 SECONDS, PROC_REF(changeling_mimic_drain))

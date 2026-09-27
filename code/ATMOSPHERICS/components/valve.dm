@@ -112,12 +112,15 @@
 /obj/machinery/atmospherics/valve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	update_icon(1)
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
+	return TRUE
+
+/// The switch, a second after the wheel is turned.
+/obj/machinery/atmospherics/valve/proc/finish_toggle()
 	if(open)
 		close()
 	else
 		open()
-	return TRUE
 
 // M2 (simulation.md §5): a valve's "flow law" is pure topology (M1b's region
 // merge on connect, split on disconnect already equalizes the instant the

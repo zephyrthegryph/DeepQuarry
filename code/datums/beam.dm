@@ -35,17 +35,21 @@
 
 /datum/beam/proc/Start()
 	Draw()
-	while(!finished && origin && target && world.time < endtime && get_dist(origin,target)<max_distance && origin.z == target.z)
-		var/origin_turf = get_turf(origin)
-		var/target_turf = get_turf(target)
-		if(!static_beam && (origin_turf != origin_oldloc || target_turf != target_oldloc))
-			origin_oldloc = origin_turf //so we don't keep checking against their initial positions, leading to endless Reset()+Draw() calls
-			target_oldloc = target_turf
-			Reset()
-			Draw()
-		sleep(sleep_time)
+	om_after(src, sleep_time, PROC_REF(beam_tick))
 
-	qdel(src)
+/// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
+/datum/beam/proc/beam_tick()
+	if(finished || !origin || !target || world.time >= endtime || get_dist(origin,target) >= max_distance || origin.z != target.z)
+		qdel(src)
+		return
+	var/origin_turf = get_turf(origin)
+	var/target_turf = get_turf(target)
+	if(!static_beam && (origin_turf != origin_oldloc || target_turf != target_oldloc))
+		origin_oldloc = origin_turf //so we don't keep checking against their initial positions, leading to endless Reset()+Draw() calls
+		target_oldloc = target_turf
+		Reset()
+		Draw()
+	om_after(src, sleep_time, PROC_REF(beam_tick))
 
 /datum/beam/proc/End()
 	finished = TRUE
@@ -196,6 +200,5 @@
 
 /atom/proc/Beam(atom/BeamTarget, icon_state="b_beam", icon='icons/effects/beam.dmi', time=50, maxdistance=10, beam_type=/obj/effect/ebeam, beam_sleep_time=3, beam_color = null)
 	var/datum/beam/newbeam = new(src,BeamTarget,icon,icon_state,time,maxdistance,beam_type,beam_sleep_time,beam_color)
-	spawn(0)
-		newbeam.Start()
+	newbeam.Start()
 	return newbeam

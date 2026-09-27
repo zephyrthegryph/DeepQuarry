@@ -43,7 +43,9 @@
 	. = ..()
 
 // Succ command center
-/datum/component/hose_connector/inflation/proc/inflation_setup(mob/user,datum/component/hose_connector/other)
+/// Chooses where the hose goes into the owner, then (a timed action) connects it and calls
+/// origin.setup_hoses_finish(target, distancetonode, user, tubing).
+/datum/component/hose_connector/inflation/proc/inflation_setup(mob/user,datum/component/hose_connector/other, datum/component/hose_connector/origin, datum/component/hose_connector/target, distancetonode, obj/item/stack/tubing)
 	if(!other || QDELETED(other))
 		to_chat(user,span_danger("You couldn't connect the hose, as the connection stopped existing! Ohno!"))
 		return FALSE
@@ -78,18 +80,19 @@
 	// Display action
 	name = "[human_owner]'s [feedback]"
 	user.visible_message("\The [user] starts to connect the hose to \the [human_owner]'s [feedback]...")
-	if(!do_after(user, 7 SECONDS, target = human_owner))
-		to_chat(user,span_warning("You couldn't connect the hose!"))
-		return FALSE
+	var/started = om_do_after(user, 7 SECONDS, human_owner, src, PROC_REF(inflation_connected), list(user, other, origin, target, distancetonode, tubing, feedback), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_warning("You couldn't connect the hose!")))
+	return !istext(started)
+
+/datum/component/hose_connector/inflation/proc/inflation_connected(mob/user, datum/component/hose_connector/other, datum/component/hose_connector/origin, datum/component/hose_connector/target, distancetonode, obj/item/stack/tubing, feedback)
 	if(other.get_hose() || get_hose()) // SHouldn't be connected to anything yet!
 		to_chat(user,span_warning("You couldn't connect the hose, another hose is already connected!"))
-		return FALSE
+		return
 	if(connection_mode == CHEM_BLOOD) //OWCH!
 		human_owner.injure(INJURY_PIERCE, 10, BP_TORSO, src)
 		if(human_owner.can_pain_emote) // Doing this probably doesn't feel too good
 			human_owner.emote("pain")
 	to_chat(user, span_notice("You connect the hose to \the [human_owner]'s [feedback]..."))
-	return TRUE
+	origin.setup_hoses_finish(target, distancetonode, user, tubing)
 
 /datum/component/hose_connector/inflation/connected_reagents()
 	if(!human_owner)
