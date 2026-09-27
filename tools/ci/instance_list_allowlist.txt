@@ -151,8 +151,7 @@
 /datum/property_registry/contributors # d: registry singleton, filled at init
 /datum/radio_frequency/devices # d: frequencies exist because devices joined them
 /datum/random_map/map # d: the generated map grid
-/datum/react_test_subscriber/every_runs # d: unit-test fixture; a handful of instances per test run
-/datum/react_test_subscriber/wakes # d: unit-test fixture; a handful of instances per test run
+/datum/world_test_subscriber/wakes # d: unit-test fixture; a handful of instances per test run
 /datum/reagent/drugs/high_message_list # kept: interned by contents in New() (intern_list); read-only
 /datum/reagent/drugs/sober_message_list # kept: interned by contents in New() (intern_list); read-only
 /datum/robot_sprite/belly_capacity_list # d: tested for truth (!belly_capacity_list), so an empty list and null behave differently
@@ -614,3 +613,5 @@
 /datum/benchmark_init_stats/qdel_by_type  # benchmark singleton (one per bench run), always filled
 /datum/benchmark_init_stats/qdel_child_ms  # benchmark singleton (one per bench run), always filled
 /datum/benchmark_init_stats/qdel_phase_mark_ms  # benchmark singleton (one per bench run), always filled
+/datum/om/registry/fields_by_type # d: registry singleton, filled per entity type on first use
+/datum/om/scheduler/world_wakes_by_type # d: one live scheduler (plus test ones); counted on every world wake

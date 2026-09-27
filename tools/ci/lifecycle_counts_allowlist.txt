@@ -157,7 +157,7 @@ code/datums/proximity_monitor/proximity_monitor.dm 1
 code/datums/repositories/decls.dm 1
 code/datums/riding.dm 1
 code/datums/rules/binding.dm 1
-code/datums/rules/reactor_adapter.dm 1
+code/datums/rules/world_adapter.dm 1
 code/datums/soul_link.dm 1
 code/datums/state/serializer.dm 1
 code/datums/status_effects/_status_effect.dm 2
@@ -1120,7 +1120,7 @@ code/datums/repositories/ammomaterial.dm 1
 code/datums/repositories/crew.dm 1
 code/datums/rules/binding.dm 6
 code/datums/rules/declarations.dm 2
-code/datums/rules/reactor_adapter.dm 3
+code/datums/rules/world_adapter.dm 3
 code/datums/state/collapse.dm 2
 code/datums/state/schema.dm 4
 code/datums/state/serializer.dm 4

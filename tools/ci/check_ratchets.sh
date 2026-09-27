@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Ratcheted rewrite lints (doc/rewrite/roadmap.md, Guardrails). Each fails when a
 # count rises above its ceiling or allowlist. Runs every lint, then reports.
+# doc/rewrite/object_model_core.md sec 16 ("One way to do X") maps each banned
+# alternative to the lint here that counts it.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"

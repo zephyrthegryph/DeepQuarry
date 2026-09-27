@@ -13,9 +13,10 @@
 // watch) or the key's mask (a key); wakes of one watch in one tick are merged
 // by Rust. `source` is the first reason's source: the cell, the key id (with
 // `source_kind` its kind), or the rate model. Read the current state; never
-// count wakes. Cancel with qdel(watch). A watch holds its owner weakly, so an
-// owner that forgets to cancel costs one dropped wake; owners that keep
-// watches (rule bindings) qdel them in Destroy().
+// count wakes. Cancel with qdel(watch) (or watch.cancel()). A watch holds its
+// owner weakly, so an owner that forgets to cancel costs one dropped wake (the
+// watch is cancelled then); owners that keep watches (rule bindings) delete
+// them in Destroy(). A fired one-shot cancels itself.
 //
 //   om_world_at(owner, time, proc, lane)              one-shot, first tick at or after `time`
 //   om_world_on_key(owner, kind, id, mask, proc, lane) a DM-owned key (om_world_publish())
@@ -117,7 +118,7 @@
 			else
 				CRASH("om_world_when: unknown condition [condition[1]]")
 	catch(var/exception/e)
-		qdel(W)
+		W.cancel()
 		throw e
 	return W
 
@@ -225,7 +226,7 @@
 		var/datum/owner = om_resolve(W.owner_ref)
 		if(!owner)
 			world_dropped++
-			qdel(W)
+			W.cancel()
 			continue
 		world_wakes++
 		world_count(owner.type)
@@ -237,8 +238,8 @@
 			W.fire(arguments)
 		catch(var/exception/e)
 			error("world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
-		if(W.one_shot && !QDELETED(W))
-			qdel(W)
+		if(W.one_shot)
+			W.cancel()
 		if(out_of_budget() && i <= length(Q))
 			Q.Cut(1, i)
 			return FALSE

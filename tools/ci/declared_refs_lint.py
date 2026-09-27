@@ -210,6 +210,11 @@ def scan_file(path):
             continue
         if name in declared.get(cur_type, ()):
             continue
+        # A task's vars are its state: every datum in them is held by the task_holds relation,
+        # which clears the var and cancels the task when the datum is deleted (the same rule as
+        # scheduler_lints.py's lc_refs).
+        if cur_type == "/datum/om/task" or cur_type.startswith("/datum/om/task/"):
+            continue
         sites.append((rel, no, "%s var/%s/%s" % (cur_type, vtype.strip("/"), name)))
     return rel, sites, cache_errors, objlist_candidates(rel, raw_lines, objlist_ok)
 

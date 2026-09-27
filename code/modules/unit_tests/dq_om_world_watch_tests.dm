@@ -84,7 +84,7 @@
 	TEST_ASSERT(wake[1] & WORLD_REASON_TIMER, "reason [wake[1]] lacks WORLD_REASON_TIMER")
 	TEST_ASSERT(wake[4] >= deadline_tick, "fired at tick [wake[4]], before its tick [deadline_tick]")
 	TEST_ASSERT(wake[5] < deadline_tick, "fired at tick [wake[4]], not the first step at or after [deadline_tick] (previous step [wake[5]])")
-	TEST_ASSERT(QDELETED(W), "a fired timer did not release its watch")
+	TEST_ASSERT(!W.handle, "a fired timer did not release its watch")
 	TEST_ASSERT_EQUAL(vg_world_subscriptions(handle), 0, "a fired timer kept its subscription")
 	// A deadline already past fires at the next step.
 	om_world_at(S, world.time - 5 SECONDS, WORLD_TEST_WAKE)
@@ -161,7 +161,7 @@
 	om_world_publish(WORLD_KEY_TEST, key_id, 1)
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(length(S.wakes), 0, "a deleted owner was woken")
-	TEST_ASSERT(QDELETED(W), "a watch whose owner is gone was kept")
+	TEST_ASSERT(!W.handle, "a watch whose owner is gone was kept")
 	TEST_ASSERT_EQUAL(vg_world_subscriptions(handle), 0, "a dropped watch left its subscription in Rust")
 
 /// Wakes run on their watch's lane: urgent ones ignore the budget, the rest spread over ticks.

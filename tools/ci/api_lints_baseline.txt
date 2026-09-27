@@ -8,5 +8,7 @@ vars_write 74
 timer_cooldown 3
 accessor_macros 0
 field_write 0
+raw_world_bind 0
+string_keys 0
 reactor_api 0
 raw_relation 0

@@ -58,9 +58,8 @@
 		qdel(token)
 
 /proc/dq_rx_clear(datum/rule_binding/D)
-	for(var/datum/native_watch/W as anything in D.world_watches)
-		if(!QDELETED(W))
-			qdel(W)
+	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
+		dq_rx_cancel(D, W)
 	D.world_watches = null
 
 /proc/dq_rx_rate_linear(v0, per_second, lo, hi)

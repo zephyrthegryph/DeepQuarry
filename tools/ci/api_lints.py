@@ -24,6 +24,9 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
     field_write      a direct write to a declared field (fields.dm) outside its setter and
                      Initialize()/New(): om_set() or the OM_SETTER() setter raises its channel
                      (tools/ci/field_write_lint.py has the rules)
+    raw_world_bind   a vg_world_* subscription or step bind outside code/datums/om/world_watch.dm:
+                     subscribe with om_world_at/on_key/on_change/when/on_rate (sec 4.8)
+    string_keys      a string passed to om_world_publish()/om_world_on_key(): keys are numbers
     reactor_api      SSreactor, on_react(), react_every() or a REACT_* macro: Rust
                      wakes are world watches on the OM scheduler (om_world_*, sec 4.8)
 
@@ -142,6 +145,8 @@ CHECKS = [
                                 r"|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS"
                                 r"|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\(")),
     ("field_write", field_write_lint.check),
+    ("raw_world_bind", outside("code/datums/om/world_watch.dm", r"(?<![\w/])vg_world_(?:at|on_key|watch_\w+|rate_watch|step|clear|cancel)\s*\(")),
+    ("string_keys", pattern(r"\bom_world_(?:publish|on_key)\([^)\n]*\"")),
     ("reactor_api", pattern(r"\b(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)\b")),
     ("raw_relation", outside("code/datums/om/", r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(")),
 ]
