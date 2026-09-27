@@ -47,6 +47,17 @@
 /datum/proc/declared_backlist_vars()
 	return null
 
+/// Names of `src`'s vars holding one inserted thing (a beaker, a card, a
+/// charging cell) that goes back to the room when src is destroyed: phase 3
+/// moves it to src's drop location if it is still inside src. The one-thing
+/// SPILL slot, for holders that have no ledger slots.
+/datum/proc/declared_spill_vars()
+	return null
+
+/// Names of `src`'s list vars whose members spill the same way.
+/datum/proc/declared_spill_list_vars()
+	return null
+
 /// Assoc: our cache var name -> its invalidation rule, CACHE_ON_CHANGE(bits),
 /// CACHE_ON_EVENT(path) or CACHE_ON_RELATION(path) (code/__DEFINES/om.dm). A
 /// cache may hold object references; the object-model core nulls it when the
@@ -72,9 +83,44 @@
 			"owned_list" = D.declared_owned_list_vars(),
 			"pair" = D.declared_pair_vars(),
 			"backlist" = D.declared_backlist_vars(),
+			"spill" = D.declared_spill_vars(),
+			"spill_list" = D.declared_spill_list_vars(),
 		)
 		cache[key] = table
 	return table
+
+/// Phase 3, for declared spill vars (REF_SPILL/REF_SPILL_LIST): each thing
+/// still inside `AM` goes to its drop location. When that location is itself
+/// being destroyed in the same batch, the thing is simply deleted with it.
+/proc/dq_lifecycle_spill_declared(atom/movable/AM)
+	var/list/table = dq_lifecycle_link_table(AM)
+	var/list/spill = table["spill"]
+	var/list/spill_list = table["spill_list"]
+	if(!spill && !spill_list)
+		return
+	var/atom/drop = AM.drop_location()
+	var/doomed = !drop || QDELETED(drop)
+	for(var/var_name in spill)
+		var/atom/movable/thing = AM.vars[var_name]
+		if(!ismovable(thing) || thing.loc != AM || QDELETED(thing))
+			continue
+		AM.vars[var_name] = null
+		if(doomed)
+			qdel(thing)
+		else
+			thing.forceMove(drop)
+	for(var/var_name in spill_list)
+		var/list/things = AM.vars[var_name]
+		if(!islist(things))
+			continue
+		for(var/atom/movable/thing in things.Copy())
+			if(thing.loc != AM || QDELETED(thing))
+				continue
+			things -= thing
+			if(doomed)
+				qdel(thing)
+			else
+				thing.forceMove(drop)
 
 /// Phase 4 (doc/rewrite/lifecycle.md §2): clears every declared relationship
 /// on `D` -- owned children deleted, pair partners nulled on both sides,

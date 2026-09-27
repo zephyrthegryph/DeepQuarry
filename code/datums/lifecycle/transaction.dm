@@ -64,6 +64,7 @@
 			// that falls out of ordinary qdel() recursion with no extra work).
 			tick = world.tick_usage
 			AM.dq_lifecycle_resolve_contents()
+			dq_lifecycle_spill_declared(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
 
 	// Phase 4: links. Owned children deleted, pair partners nulled,
