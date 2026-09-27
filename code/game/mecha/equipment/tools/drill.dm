@@ -50,7 +50,7 @@
 						for(var/obj/item/ore/ore in range(chassis,1))
 							if(get_dir(chassis,ore)&chassis.dir)
 								ore_box.stored_ore[ore.material]++
-								qdel(ore)
+								consume(ore)
 			else if(isliving(target))
 				drill_mob(target, SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 				return 1

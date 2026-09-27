@@ -120,7 +120,7 @@
 		stored_ore[ore.material]++
 		current_capacity++
 		current_pickup++
-		qdel(ore)
+		consume(ore)
 		success = 1
 	if(!silent) //Let's do a single check and then do more instead of a bunch at once.
 		if(success && !failure && !max_pickup_reached) //Picked stuff up, did not reach capacity, did not reach max_pickup.

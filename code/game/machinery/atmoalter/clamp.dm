@@ -105,7 +105,7 @@
 	C.forceMove(usr_mob.loc)
 	if(ishuman(usr_mob))
 		usr_mob.put_in_hands(C)
-	qdel(src)
+	replace_with(src, C)
 	return
 
 /obj/item/clamp

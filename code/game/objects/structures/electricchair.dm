@@ -19,7 +19,7 @@
 		part.loc = loc
 		part.master = null
 		part = null
-	qdel(src)
+	replace_with(src, C)
 	return TRUE
 
 /obj/structure/bed/chair/e_chair/verb/toggle()

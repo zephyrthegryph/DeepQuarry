@@ -261,7 +261,7 @@
 			GS.faction = faction
 			if(stunted)
 				addtimer(CALLBACK(GS, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling)), 2)
-			qdel(src)
+			replace_with(src, GS)
 
 /obj/effect/spider/spiderling/stunted
 	stunted = TRUE
@@ -309,7 +309,7 @@
 	visible_message(span_cult("[src] stops squirming."))
 	var/obj/effect/decal/cleanable/tendril_remains/remains = new /obj/effect/decal/cleanable/tendril_remains(src.loc)
 	remains.color = color
-	qdel(src)
+	replace_with(src, remains)
 
 /obj/effect/decal/cleanable/tendril_remains
 	name = "tendril remains"

@@ -261,7 +261,7 @@
 	P.update_integrity(get_integrity())
 	P.state = state
 	P.anchored = anchored
-	qdel(src)
+	replace_with(src, P)
 
 // Tool steps and weld repair: window_construction.dm.
 

@@ -306,5 +306,5 @@ Buildable meters
 	air_sensor.output = output
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You fasten the meter to the pipe."))
-	qdel(src)
+	replace_with(src, air_sensor)
 	return ITEM_INTERACT_SUCCESS

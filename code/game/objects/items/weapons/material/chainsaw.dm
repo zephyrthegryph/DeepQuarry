@@ -83,8 +83,7 @@
 			W.shatter()
 		else if(istype(A,/obj/structure/grille))
 			new /obj/structure/grille/broken(A.loc)
-			new /obj/item/stack/rods(A.loc)
-			qdel(A)
+			replace_with(A, /obj/item/stack/rods)
 		else if(istype(A,/obj/effect/plant))
 			var/obj/effect/plant/P = A
 			qdel(P) //Plant isn't surviving that. At all

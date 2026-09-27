@@ -23,7 +23,7 @@
 	S.icon_state = icon_state
 	S.sign_state = icon_state
 	S.original_type = type
-	qdel(src)
+	replace_with(src, S)
 
 
 /obj/item/sign

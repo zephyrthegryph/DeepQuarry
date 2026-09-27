@@ -27,7 +27,7 @@
 		E.part = SK
 		SK.loc = E
 		SK.master = E
-		qdel(src)
+		replace_with(src, E)
 
 /obj/structure/bed/chair/attack_tk(mob/user as mob)
 	if(has_buckled_mobs())
