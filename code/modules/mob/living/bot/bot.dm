@@ -77,8 +77,7 @@
 	self.status_set(EFFECT_PARALYZED, 0)
 
 	if(self.on && !self.client && !om_busy(self) && !self.paicard)
-		spawn(0) // S7 keeps: handleAI() sleeps (bot AI loop; S8 converts it)
-			self.handleAI()
+		self.handleAI() // no longer sleeps: bot actions are om_do_after tasks
 
 /datum/om/stage/life/type_post/bot
 	of = /mob/living/bot

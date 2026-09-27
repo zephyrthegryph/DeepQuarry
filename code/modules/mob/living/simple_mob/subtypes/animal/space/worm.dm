@@ -214,12 +214,7 @@
 
 /mob/living/simple_mob/animal/space/space_worm/head/Bump(atom/obstacle)
 	if(open_maw && !stat && obstacle != previous)
-		spawn(1) // S7 keeps: AttemptToEat() sleeps in do_after() (S8)
-			if(currentlyEating != obstacle)
-				currentlyEating = obstacle
-
-			ai_busy_begin()
-			AttemptToEat(obstacle)
+		om_after(src, 1, PROC_REF(bump_eat), obstacle) // a tick later, after the bump settles
 	else
 		currentlyEating = null
 		. = ..(obstacle)
@@ -240,6 +235,13 @@
 		color = next.color
 
 	return
+
+/// Bump()'s deferred half: starts eating what the maw ran into.
+/mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)
+	if(currentlyEating != obstacle)
+		currentlyEating = obstacle
+	ai_busy_begin()
+	AttemptToEat(obstacle)
 
 /// Starts eating `target`; eat_finished() reports the outcome.
 /mob/living/simple_mob/animal/space/space_worm/proc/AttemptToEat(atom/target)
