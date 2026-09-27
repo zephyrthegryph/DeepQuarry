@@ -548,7 +548,7 @@
 			var/obj/item/holder/H = O
 			if(H.held_mob)
 				qdel(H.held_mob)
-		qdel(O)
+		consume(O)
 	src.reagents.clear_reagents()
 	ffuu.reagents.add_reagent(REAGENT_ID_CARBON, amount)
 	ffuu.reagents.add_reagent(REAGENT_ID_TOXIN, amount/10)

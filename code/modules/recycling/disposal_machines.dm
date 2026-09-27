@@ -636,7 +636,7 @@
 	// We don't ever want digestion remains going through disposals, but people understandably thing they're doing right by trashing them
 	// So let's just delete them instead!
 	for(var/obj/item/digestion_remains/bone in src)
-		qdel(bone)
+		consume(bone)
 
 	var/list/flushed_items = list()
 	for(var/atom/movable/AM in src)

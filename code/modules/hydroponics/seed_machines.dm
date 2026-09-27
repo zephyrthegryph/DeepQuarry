@@ -282,7 +282,7 @@
 				genetics = seed.seed
 				degradation = 0
 
-			qdel(seed)
+			consume(seed)
 			seed = null
 			return TRUE
 

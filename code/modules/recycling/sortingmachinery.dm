@@ -78,4 +78,4 @@
 	C.update()
 	C.anchored = TRUE
 	C.density = TRUE
-	qdel(src)
+	replace_with(src, C)

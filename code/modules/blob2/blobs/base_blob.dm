@@ -231,7 +231,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 		B.overmind = controller
 	B.update_icon()
 	B.set_dir(dir)
-	qdel(src)
+	replace_with(src, B)
 	return B
 
 /obj/structure/blob/attack_generic(mob/user, damage, attack_verb)

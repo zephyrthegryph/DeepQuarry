@@ -46,7 +46,7 @@
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
 	A.update_icon()
-	qdel(src)
+	replace_with(src, A)
 	return 1
 
 //
@@ -140,7 +140,7 @@
 		newmachine.pixel_x = pixel_x
 		newmachine.pixel_y = pixel_y
 		transfer_fingerprints_to(newmachine)
-		qdel(src)
+		replace_with(src, newmachine)
 		return ITEM_INTERACT_SUCCESS
 	user.update_examine_panel(src)
 	playsound(src, W.usesound, 75, 1)

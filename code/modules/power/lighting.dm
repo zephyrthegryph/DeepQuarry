@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		finished_light.cell = cell
 		cell.forceMove(finished_light)
 		cell = null
-	qdel(src)
+	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/small

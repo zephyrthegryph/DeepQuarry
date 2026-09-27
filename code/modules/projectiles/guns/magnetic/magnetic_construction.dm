@@ -38,7 +38,7 @@
 		M.drop_from_inventory(src)
 	if(put_in_hands)
 		user.put_in_hands(coilgun)
-	qdel(src)
+	replace_with(src, coilgun)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/coilgun_assembly/attackby(obj/item/thing, mob/user)

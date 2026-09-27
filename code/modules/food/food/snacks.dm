@@ -2053,7 +2053,7 @@
 		V.mind.transfer_to(H)
 		H.tf_mob_holder = V.tf_mob_holder
 		qdel(V)
-	qdel(src)
+	replace_with(src, H)
 	return H
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/Unwrap(mob/user as mob)

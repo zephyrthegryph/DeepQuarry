@@ -639,11 +639,11 @@ GLOBAL_LIST_EMPTY(vending_products)
 				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				qdel(coin)
+				consume(coin, user)
 				coin = null
 				categories &= ~CAT_COIN
 		else
-			qdel(coin)
+			consume(coin)
 			coin = null
 			categories &= ~CAT_COIN
 
