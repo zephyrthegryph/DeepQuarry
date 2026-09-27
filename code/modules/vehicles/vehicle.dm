@@ -54,10 +54,7 @@
 //	..()
 // //spawn the cell you want in each vehicle // Commented out in favour of initialize.
 
-/obj/vehicle/Destroy()
-	QDEL_NULL(riding_datum)
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 
 //BUCKLE HOOKS
 
@@ -338,7 +335,6 @@
 
 	return 1
 
-
 /obj/vehicle/proc/unload(mob/user, direction)
 	if(!load)
 		return
@@ -387,7 +383,6 @@
 	load = null
 
 	return 1
-
 
 //-------------------------------------------------------
 // Stat update procs
