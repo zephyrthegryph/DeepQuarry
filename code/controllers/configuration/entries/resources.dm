@@ -6,7 +6,11 @@
 
 /datum/config_entry/string/asset_cdn_url
 
+/// Cache generated spritesheets across rounds. The cache is stamped with the
+/// build (asset_cache_build_key()) and wiped when the build changes, so it is
+/// safe on development servers too.
 /datum/config_entry/flag/cache_assets
+	default = TRUE
 
 /datum/config_entry/flag/smart_cache_assets
 
