@@ -11,10 +11,6 @@
 	var/controller_lock = 0			//whether or not the gun is locked by the primar controller, 0 or 1, at 1 it is locked and does not allow
 	var/exploding = 0
 
-/obj/item/dnalockingchip/Destroy(force, ...)
-	LAZYCLEARLIST(stored_dna)
-	. = ..()
-
 /obj/item/gun/proc/get_dna(mob/user)
 	var/mob/living/M = user
 	if(!istype(M) || !M.dna)
