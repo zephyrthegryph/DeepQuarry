@@ -379,79 +379,73 @@
 #undef BENCHMARK_PROCESS_FILE
 
 /// Estimated DM memory per type: instances, vars changed from their compiled
-/// value (sampled on the first `sample` instances of each type), the lists
-/// those instances hold in vars and their entries, and an estimate of bytes.
-/// BYOND has no memory profiler, so the estimate is a model: 48 bytes per
-/// datum (96 per atom), 12 per changed var, 32 per list and 12 per entry
-/// (24 for an associative one). Built-in lists are skipped except overlays
-/// and underlays, which are counted as entries (appearance references).
-/proc/benchmark_type_memory(top = 20, sample = 50)
-	var/static/list/skip = list("vars" = TRUE, "contents" = TRUE, "verbs" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "locs" = TRUE, "filters" = TRUE, "screen" = TRUE, "images" = TRUE, "group" = TRUE, "client_images" = TRUE, "transform" = TRUE, "type" = TRUE, "parent_type" = TRUE)
-	// type -> list(count, sampled, changed_vars_sampled, lists, entries, assoc_entries, top var name -> list entries)
+/// value, lists held in vars and their entries, and an estimate of bytes.
+/// Vars are walked on up to `sample` instances per type and scaled by the
+/// type's count (a full walk of every var of every datum outlives the bench
+/// watchdog). BYOND has no memory profiler, so the estimate is a model: 48
+/// bytes per datum (96 per atom), 12 per changed var, 32 per list and 12 per
+/// entry (24 for an associative one). Built-in lists are skipped.
+/proc/benchmark_type_memory(top = 20, sample = 200)
+	var/static/list/skip = list("vars" = TRUE, "contents" = TRUE, "overlays" = TRUE, "underlays" = TRUE, "verbs" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "locs" = TRUE, "filters" = TRUE, "screen" = TRUE, "images" = TRUE, "group" = TRUE, "client_images" = TRUE, "transform" = TRUE, "type" = TRUE, "parent_type" = TRUE)
+	// type -> list(count, sampled, changed vars, lists, entries, assoc entries, var name -> entries)
 	var/list/rows = list()
-	var/list/seen_lists = list()
-	var/list/holders = list()
 	for(var/datum/thing)
-		holders += thing
-	for(var/atom/thing in world)
-		holders += thing
-	for(var/datum/thing as anything in holders)
-		var/list/row = rows[thing.type]
-		if(!row)
-			row = list(0, 0, 0, 0, 0, 0, list())
-			rows[thing.type] = row
-		row[1]++
-		var/sampling = row[2] < sample
-		if(sampling)
-			row[2]++
-		for(var/name in thing.vars)
-			if(skip[name])
-				continue
-			var/value = thing.vars[name]
-			if(sampling && value != initial(thing.vars[name]))
-				row[3]++
-			if(!islist(value))
-				continue
-			var/list/L = value
-			var/key = ref(L)
-			if(seen_lists[key])
-				continue
-			seen_lists[key] = TRUE
-			var/len = length(L)
-			row[4]++
-			row[5] += len
-			if(len && !isnum(L[1]) && !isnull(L[L[1]]))
-				row[6] += len
-			var/list/by_var = row[7]
-			by_var[name] += len + 1
+		benchmark_type_memory_visit(thing, rows, skip, sample)
 		CHECK_TICK
-	holders.Cut()
-	seen_lists.Cut()
+	for(var/atom/thing in world)
+		benchmark_type_memory_visit(thing, rows, skip, sample)
+		CHECK_TICK
 	var/list/estimates = list()
+	var/total = 0
 	for(var/path in rows)
 		var/list/row = rows[path]
-		var/changed_per = row[2] ? row[3] / row[2] : 0
+		var/scale = row[2] ? row[1] / row[2] : 0
 		var/header = ispath(path, /atom) ? 96 : 48
-		estimates[path] = row[1] * (header + 12 * changed_per) + row[4] * 32 + row[5] * 12 + row[6] * 12
+		var/bytes = row[1] * header + scale * (row[3] * 12 + row[4] * 32 + row[5] * 12 + row[6] * 12)
+		estimates[path] = bytes
+		total += bytes
 	estimates = sortTim(estimates, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 	var/list/out = list()
-	var/total = 0
-	for(var/path in estimates)
-		total += estimates[path]
 	for(var/path in estimates)
 		if(length(out) >= top)
 			break
 		var/list/row = rows[path]
-		var/list/by_var = row[7]
-		by_var = sortTim(by_var.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		var/scale = row[2] ? row[1] / row[2] : 0
+		var/list/by_var = sortTim(row[7], GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 		if(length(by_var) > 3)
 			by_var.Cut(4)
 		out["[path]"] = list(
 			"instances" = row[1],
 			"changed_vars" = round(row[2] ? row[3] / row[2] : 0, 0.1),
-			"lists" = row[4],
-			"list_entries" = row[5],
+			"lists" = round(row[4] * scale),
+			"list_entries" = round(row[5] * scale),
 			"est_mb" = round(estimates[path] / 1048576, 0.01),
 			"top_list_vars" = by_var,
 		)
 	return list("total_est_mb" = round(total / 1048576, 0.1), "top" = out)
+
+/proc/benchmark_type_memory_visit(datum/thing, list/rows, list/skip, sample)
+	var/list/row = rows[thing.type]
+	if(!row)
+		row = list(0, 0, 0, 0, 0, 0, list())
+		rows[thing.type] = row
+	row[1]++
+	if(row[2] >= sample)
+		return
+	row[2]++
+	var/list/by_var = row[7]
+	for(var/name in thing.vars)
+		if(skip[name])
+			continue
+		var/value = thing.vars[name]
+		if(value != initial(thing.vars[name]))
+			row[3]++
+		if(!islist(value))
+			continue
+		var/list/L = value
+		var/len = length(L)
+		row[4]++
+		row[5] += len
+		if(len && !isnum(L[1]) && !isnull(L[L[1]]))
+			row[6] += len
+		by_var[name] += len + 1

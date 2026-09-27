@@ -52,6 +52,65 @@ Rust heap peaks at **1.85 GB during boot** (current 0.63 GB afterwards).
 on the live map, independent of speed: the first thing a round with a big
 bomb can hit. It is item 0 in §6.
 
+### 0.2 Memory after the fixes (2026-09-27, `rewrite/boot-perf` 042983e910)
+
+Runs `final-boot`, `final-explosion`, `final-memory` (and `s2-*` for step 2
+alone), Southern Cross, 3 boots and 3 explosions each.
+
+| | Before (7a33a8f24e) | After |
+|---|---|---|
+| Rust heap peak during boot | 1,850 MB | **226 MB** |
+| Rust heap steady after boot | 630–690 MB | **65–100 MB** |
+| DreamDaemon private after boot | 2,240–2,280 MB | 1,280–1,590 MB |
+| DreamDaemon peak private (whole run) | 3,510–3,760 MB | 1,820–2,090 MB |
+| `explosion_dense` survived | 6 of 21 | **6 of 6** |
+
+What held the Rust peak (boot marks, `rust_memory_marks` detail): turf
+registration queued one command and one overlay copy of every cell (gas
+63 + 72 MB, heat 18 + 20 MB, geometry 11 + 48 MB), and the first field frames
+stepped every 16x16 chunk of the grid, space included, so the heat cell store
+alone was 320 MB and the gas store 128 MB. The allocation failures were
+single large blocks (a doubling `Vec` of 144-byte gas commands) in a
+fragmented 32-bit address space. Fixed by: direct bulk writes into the live
+stores (`Sim::write_direct`), no stored value for empty space reservoirs,
+field steps that only list chunks with nodes, and fixed 1024-entry chunks for
+command batches, the overlay and the main mixture slab.
+
+What the Rust heap holds now (70 MB): gas cells 12 MB, heat cells 8 MB,
+geometry 6 MB, main mixtures 7 MB, pipes 4 MB, masks 4 MB, the rest is
+reactor, entity and small stores. The 226 MB peak is the first frames'
+copy-on-write snapshots right after SSair init; it is transient.
+
+### 0.3 DM memory census (boot_memory, sampled)
+
+809,798 instances: 393,216 turfs, 85,819 objs, 321,633 datums. The per-type
+model (`benchmark_type_memory()`: 48 B per datum, 96 per atom, 12 per changed
+var, 32 per list, 12 per entry) accounts for **~230 MB**; the other ~1.1 GB of
+the 1.33 GB private is outside datums (appearances, the icon and resource
+cache, strings, BYOND itself) and needs its own measurement before the 1 GB
+target can be planned in full.
+
+| # | Type | Instances | Changed vars | Lists / entries | Est. MB | Fix |
+|---|---|---|---|---|---|---|
+| 1 | `/turf/space` | 310,652 | 18 | 0 | 92 | Type table (§3.1): no `Initialize()`, cached appearance; changed vars go to ~2 |
+| 2 | `/datum/rule_binding` | 21,759 | 11 | 169 k / 780 k | 18 | Per-type binding tables, per-instance state in one flat list (§3.3) |
+| 3 | `/datum/light_source` | 15,889 | 15 | 16 k / 417 k | 13 | Lighting as a core field (§5); `effect_str` leaves DM |
+| 4 | `/datum/lighting_corner` | 47,225 | 10 | 29 k / 52 k | 9 | Core field (§5) |
+| 5 | `/datum/weakref` | 65,255 | 1 | 0 | 4 | OM handles replace weakrefs (LC-refs) |
+| 6 | `/turf/simulated/wall/r_wall` | 4,916 | 25 | 10 k / 98 k | 3 | Intern `damage_overlays` and `wall_connections` per type/state |
+| 7 | `/datum/om/rec` | 6,787 | 11 | 36 k / 64 k | 3 | Lazy lists on the rec |
+| 8 | `/datum/gas_mixture/turf` | 47,205 | 1 | 0 | 3 | The handle is the turf cell: create the datum on first `return_air()` |
+| 9 | `/datum/lighting_object` | 29,904 | 2 | 0 | 2 | Core field (§5) |
+| 10 | `/turf/simulated/floor/reinforced/airless` | 9,844 | 10 | 393 | 2 | Type table |
+| 11 | `/turf/simulated/floor/tiled` | 5,795 | 16 | 4 k / 7 k | 2 | Type table; decals interned |
+| 12–13 | supply / scrubber pipes | 6,917 | 25 | 14 k / 35 k | 3.4 | Intern `atom_colours`; one number instead of `rust_pipe_port_ids` for one-port pipes |
+| 14 | `/obj/structure/window/reinforced` | 6,705 | 14 | 0 | 2 | Type table |
+| 15 | `/datum/state_schema` | 554 | 3 | 1 k / 134 k | 2 | Per type already; fine |
+| 16–17 | transit space | 11,072 | 14 | 0 | 2.8 | Type table (as space) |
+| 18 | `/turf/simulated/wall` | 1,922 | 22 | 4 k / 38 k | 1 | As r_wall |
+| 19 | `/turf/unsimulated/floor` | 6,548 | 7 | 622 | 1 | Type table |
+| 20 | `/obj/structure/cable/green` | 3,121 | 17 | 3 k / 12 k | 1 | Intern `atom_colours` |
+
 ## 1. Boot profile
 
 ### 1.1 Subsystems (clean builds, 3 boots)
