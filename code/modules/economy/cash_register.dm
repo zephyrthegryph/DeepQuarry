@@ -60,6 +60,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		/datum/interaction/machine_alt/cash_register_open_box_alt,
 		/datum/interaction/machine_hand/ungated/cash_register_use,
 		/datum/interaction/machine_verb/cash_register_open_box_verb,
+		/datum/interaction/machine_drag/cash_register_drop,
 	)
 	..()
 
@@ -297,11 +298,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/machinery/cash_register/MouseDrop_T(atom/dropping, mob/user)
-	if(!isobj(dropping))
-		return
+/// The old MouseDrop_T: an object dragged on is used on the register.
+/datum/interaction/machine_drag/cash_register_drop
+	id = "cash_register_drop"
+	name = "Put on the register"
+	held_type = /obj
+	effect = /obj/machinery/cash_register/proc/interaction_drop
+
+/obj/machinery/cash_register/proc/interaction_drop(mob/user, obj/dropping, datum/interaction/interaction)
 	if(Adjacent(dropping) && Adjacent(user) && !user.stat)
 		attackby(dropping, user)
+	return TRUE
 
 
 /obj/machinery/cash_register/proc/confirm(obj/item/I)

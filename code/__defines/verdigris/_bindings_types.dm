@@ -709,8 +709,8 @@
 /atom/movable/vg_heat_mob/var/tmp/init_metabolic_watts = 0.0
 /atom/movable/vg_heat_mob/var/tmp/init_coolant = FALSE
 /atom/movable/vg_heat_mob/var/tmp/init_insulation = 0.0
-/atom/movable/vg_heat_mob/var/tmp/init_ambient = 310.15
-/atom/movable/vg_heat_mob/var/tmp/init_setpoint = 310.15
+/atom/movable/vg_heat_mob/var/tmp/init_ambient = BODYTEMP_NORMAL
+/atom/movable/vg_heat_mob/var/tmp/init_setpoint = BODYTEMP_NORMAL
 /atom/movable/vg_heat_mob/var/tmp/init_sweat_capacity_w = 0.0
 /atom/movable/vg_heat_mob/var/tmp/init_shiver_capacity_w = 0.0
 /atom/movable/vg_heat_mob/var/tmp/init_time_scale = 1.0

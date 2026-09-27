@@ -18,6 +18,9 @@
 	if(istype(loc,/obj/mecha))
 		var/obj/mecha/mech = loc
 		return mech.relaymove(src,direction)
+	if(isliving(src) && istype(loc, /obj/machinery/atmospherics/pipe/zpipe))
+		var/obj/machinery/atmospherics/pipe/zpipe/pipe = loc
+		return pipe.ventcrawl_z(src, direction)
 
 	var/swim_modifier = 1
 	var/climb_modifier = 1

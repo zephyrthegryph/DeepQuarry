@@ -135,7 +135,7 @@
 					data["areas"] += list(list(
 						A.area.name,
 						cell_charge,
-						DisplayPower(A.lastused_total),
+						DisplayPower(A.channel_load_total()),
 						A.charging,
 						A.equipment,
 						A.lighting,
@@ -214,7 +214,7 @@
 				out += "<td>[round(A.cell.percent())]% - [chg[A.charging+1]]"
 			else
 				out += "<td>NO CELL"
-			var/load = A.lastused_total // Load.
+			var/load = A.channel_load_total() // Load.
 			total_apc_load += load
 			load = reading_to_text(load)
 			out += "<td>[load]"
@@ -264,7 +264,7 @@
 			APC_entry["y"] = A.y
 			APC_entry["z"] = A.z
 			// Other info
-			APC_entry["total_load"] = reading_to_text(A.lastused_total)
+			APC_entry["total_load"] = reading_to_text(A.channel_load_total())
 			// Hopefully removes those goddamn \improper s which are screwing up the UI
 			var/N = A.area.name
 			if(findtext(N, "\improper"))
@@ -273,7 +273,7 @@
 			// Add data into main list of APC data.
 			APC_data += list(APC_entry)
 			// Add load of this APC to total APC load calculation
-			total_apc_load += A.lastused_total
+			total_apc_load += A.channel_load_total()
 	data["apc_data"] = APC_data
 	data["total_avail"] = reading_to_text(max(powernet.avail, 0))
 	data["total_used_apc"] = reading_to_text(max(total_apc_load, 0))

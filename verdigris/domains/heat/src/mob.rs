@@ -33,7 +33,7 @@
 use vg_core::law::Settle;
 use vg_core::vg;
 
-use crate::consts::TCMB;
+use crate::consts::{BODYTEMP_NORMAL, TCMB};
 
 /// Independent external heat flux slots (DM's `set_external_watts(source,
 /// watts)`): reagents, cryo, bellies, items, afflictions can each hold one
@@ -46,7 +46,7 @@ pub struct MobHeat {
     /// J/K.
     #[vg(config, unit = "J/K", range = 0.0001..=1000000000.0, default = 1.0, on_invalid = clamp)]
     pub capacity: f64,
-    #[vg(state, unit = "K", range = 0.0..=1000000.0, default = 310.15, on_invalid = clamp)]
+    #[vg(state, unit = "K", range = 0.0..=1000000.0, default = BODYTEMP_NORMAL, on_invalid = clamp)]
     pub temperature: f64,
     /// W; zero on a body with `coolant` set.
     #[vg(config, unit = "W", range = -1000000.0..=1000000.0, default = 0.0, on_invalid = clamp)]
@@ -61,10 +61,10 @@ pub struct MobHeat {
     #[vg(config, unit = "W/K", range = 0.0..=1000000.0, default = 0.0, on_invalid = clamp)]
     pub insulation: f64,
     /// K; DM pushes this from the body's local environment.
-    #[vg(config, unit = "K", range = 0.0..=1000000.0, default = 310.15, on_invalid = clamp)]
+    #[vg(config, unit = "K", range = 0.0..=1000000.0, default = BODYTEMP_NORMAL, on_invalid = clamp)]
     pub ambient: f64,
     /// K; thermoregulation's target.
-    #[vg(config, unit = "K", range = 0.0..=1000000.0, default = 310.15, on_invalid = clamp)]
+    #[vg(config, unit = "K", range = 0.0..=1000000.0, default = BODYTEMP_NORMAL, on_invalid = clamp)]
     pub setpoint: f64,
     /// Max active cooling effort, W.
     #[vg(config, unit = "W", range = 0.0..=1000000.0, default = 0.0, on_invalid = clamp)]

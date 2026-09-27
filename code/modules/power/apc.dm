@@ -119,13 +119,7 @@
 	var/charging    = 0
 	var/chargemode  = 1
 	var/chargecount = 0
-	var/autoflag    = 0
 	var/longtermpower = 10
-	var/lastused_light    = 0
-	var/lastused_equip    = 0
-	var/lastused_environ  = 0
-	var/lastused_charging = 0
-	var/lastused_total    = 0
 	var/main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 	/// Monotonic revision for correction-aware contract power telemetry.
 	var/contract_power_revision = 0
@@ -299,12 +293,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	environ = new_environ
 	charging = new_charging
 	main_status = new_status
-	autoflag = get_autoflag()
-	lastused_equip = get_static_load(0) + get_oneoff(0)
-	lastused_light = get_static_load(1) + get_oneoff(1)
-	lastused_environ = get_static_load(2) + get_oneoff(2)
-	lastused_charging = 0
-	lastused_total = lastused_equip + lastused_light + lastused_environ
 	var/alarm = !!get_alarm()
 	// Counts polls that saw Rust change something (tests: a settled APC hears nothing).
 	if(shown_changed || charge_changed || alarm != power_alarm_raised)
@@ -818,8 +806,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		"powerCellStatus" = cell ? cell.percent() : 0,
 		"chargeMode"      = chargemode,
 		"chargingStatus"  = charging,
-		"totalLoad"       = round(lastused_total),
-		"totalCharging"   = round(lastused_charging),
+		"totalLoad"       = round(channel_load_total()),
+		"totalCharging"   = 0,
 		"failTime"        = failure_until > world.time ? CEILING((failure_until - world.time) / 10, 1) : 0,
 		"gridCheck"       = grid_check,
 		"coverLocked"     = coverlocked,
@@ -830,7 +818,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		"powerChannels" = list(
 			list(
 				"title"       = "Equipment",
-				"powerLoad"   = lastused_equip,
+				"powerLoad"   = channel_load(0),
 				"status"      = equipment,
 				"topicParams" = list(
 					"auto" = list("eqp" = 3),
@@ -840,7 +828,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			),
 			list(
 				"title"       = "Lighting",
-				"powerLoad"   = round(lastused_light),
+				"powerLoad"   = round(channel_load(1)),
 				"status"      = lighting,
 				"topicParams" = list(
 					"auto" = list("lgt" = 3),
@@ -850,7 +838,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			),
 			list(
 				"title"       = "Environment",
-				"powerLoad"   = round(lastused_environ),
+				"powerLoad"   = round(channel_load(2)),
 				"status"      = environ,
 				"topicParams" = list(
 					"auto" = list("env" = 3),
@@ -863,7 +851,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	return data
 
 /obj/machinery/power/apc/proc/report()
-	return "[area.name] : [equipment]/[lighting]/[environ] ([lastused_equip+lastused_light+lastused_environ]) : [cell ? cell.percent() : "N/C"] ([charging])"
+	return "[area.name] : [equipment]/[lighting]/[environ] ([channel_load_total()]) : [cell ? cell.percent() : "N/C"] ([charging])"
 
 // update() — send settings to Rust and push channel state to the area.
 /obj/machinery/power/apc/proc/update()
@@ -900,7 +888,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			"metrics" = list(
 				"powered_channels" = powered_channels,
 				"cell_percent" = cell ? cell.percent() : 0,
-				"load" = lastused_total,
+				"load" = channel_load_total(),
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
 		), "power-service:[REF(src)]:[contract_power_revision]", src)
@@ -921,7 +909,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(user.lying)
 		to_chat(user, span_warning("You must stand to use [src]!"))
 		return 0
-	autoflag = 5
 	if(istype(user, /mob/living/silicon))
 		var/permit = 0
 		var/mob/living/silicon/ai/AI = user
@@ -1180,13 +1167,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		set_channels(2, environ)
 	charging = 0
 	chargecount = 0
-	autoflag = 0
 	longtermpower = 10
-	lastused_light = 0
-	lastused_equip = 0
-	lastused_environ = 0
-	lastused_charging = 0
-	lastused_total = 0
 	main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 
 	// Breaker off; chargemode in default state; all channels on auto.
@@ -1275,3 +1256,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 // All APC defines are declared in code/__defines/apc.dm and are not #undef'd
 // here because they are shared with apc_icon_renderer.
 
+
+/// Watts channel `index` (0 equipment, 1 lighting, 2 environment) draws now, read from Rust.
+/obj/machinery/power/apc/proc/channel_load(index)
+	return vg_entity ? get_static_load(index) + get_oneoff(index) : 0
+
+/// Watts all three channels draw now.
+/obj/machinery/power/apc/proc/channel_load_total()
+	return channel_load(0) + channel_load(1) + channel_load(2)

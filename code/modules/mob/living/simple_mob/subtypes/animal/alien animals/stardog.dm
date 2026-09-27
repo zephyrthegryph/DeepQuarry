@@ -891,15 +891,29 @@
 	. = ..()
 	icon_state = "screen_eye"
 
-/obj/machinery/computer/ship/navigation/verb/emote_beyond(message as message)	//I could have put this into any other file but right here will do
-	set name = "Emote Beyond"
-	set desc = "Emote to those beyond the ship!"
-	set category = "IC.Chat"
-	set src in oview(7)
+/obj/machinery/computer/ship/navigation/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/emote_beyond,
+	)
+	..()
 
-	if(!isliving(usr))
-		return
-	var/mob/living/L = usr
+/// The old Emote Beyond verb: a subtle emote to those outside the ship, from within sight of its helm.
+/datum/interaction/machine_verb/emote_beyond
+	id = "ship_emote_beyond"
+	name = "Emote Beyond"
+	category = INTERACTION_CAT_CONFIGURE
+	requires = list(REQ_PROC(/proc/dq_emote_beyond_in_view, "too far away"), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond
+
+/// The old verb's `set src in oview(7)`.
+/proc/dq_emote_beyond_in_view(mob/actor, atom/target, obj/item/held)
+	return actor && target && get_dist(actor, target) <= 7 && (target in view(7, actor))
+
+/obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
+		return TRUE
+	var/mob/living/L = user
+	var/message
 	if(L.client.prefs.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return

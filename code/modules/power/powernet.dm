@@ -248,7 +248,7 @@
 	for(var/obj/machinery/power/terminal/T in nodes)
 		var/obj/machinery/power/apc/A = T.master
 		if(istype(A))
-			material_consumers[WEAKREF(T)] += A.lastused_total
+			material_consumers[WEAKREF(T)] += A.channel_load_total()
 	material_pending_heat += material_loss_watts * elapsed_seconds
 	material_pending_heat_elapsed += elapsed_seconds
 	if(material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL)

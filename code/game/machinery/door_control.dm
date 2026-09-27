@@ -177,25 +177,10 @@
 	desc = "A stuffed and mounted bear. Quite a statement piece, but holds a curious glare."
 	density = 1
 
-/obj/machinery/button/remote/blast_door/bear/attack_hand(mob/user as mob) //code to stop bear ever reverting to standard button sprites
-	if(..())
-		return
-
-	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN))
-		return
-
-	if(!allowed(user) && (wires_num & 1))
-		to_chat(user, span_warning("Access Denied"))
-		flick("doorctrl-denied",src)
-		return
-
-	use_power(5)
+/// Toggles like any remote button but keeps the bear's sprite.
+/obj/machinery/button/remote/blast_door/bear/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	icon_state = "stuffedbear"
-	desiredstate = !desiredstate
-	trigger(user)
-	spawn(15)
-		update_icon()
 
 /obj/machinery/button/remote/blast_door/bear/update_icon()
 	if(stat & NOPOWER)
@@ -322,11 +307,11 @@
 	name = "single use button"
 	var/has_been_pressed = FALSE
 
-/obj/machinery/button/remote/blast_door/single_use/attack_hand(mob/user as mob)
+/obj/machinery/button/remote/blast_door/single_use/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_been_pressed)
 		to_chat(user,span_notice("Nothing happens."))
-		return
-	. = ..()
+		return TRUE
+	return ..()
 
 /obj/machinery/button/remote/blast_door/single_use/trigger()
 	has_been_pressed = TRUE
@@ -339,11 +324,13 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "slab1-off"
 	use_power = USE_POWER_OFF
+	/// The sprite once pressed.
+	var/pressed_state = "slab1"
 
-/obj/machinery/button/remote/blast_door/single_use/slab/attack_hand(mob/user as mob)
+/obj/machinery/button/remote/blast_door/single_use/slab/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
 	to_chat(user,span_notice("You hear a heavy mechanism open somewhere in the distance."))
-	icon_state = "slab1"
+	icon_state = pressed_state
 
 /obj/machinery/button/remote/blast_door/single_use/slab/update_icon()
 	return
@@ -351,31 +338,19 @@
 /obj/machinery/button/remote/blast_door/single_use/slab/slab1
 	name = "Button Slab 1"
 	icon_state = "slab1-off"
-
-/obj/machinery/button/remote/blast_door/single_use/slab/slab1/attack_hand(mob/user as mob)
-	. = ..()
-	icon_state = "slab1"
+	pressed_state = "slab1"
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab2
 	name = "Button Slab 2"
 	icon_state = "slab2-off"
-
-/obj/machinery/button/remote/blast_door/single_use/slab/slab2/attack_hand(mob/user as mob)
-	. = ..()
-	icon_state = "slab2"
+	pressed_state = "slab2"
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab3
 	name = "Button Slab 3"
 	icon_state = "slab3-off"
-
-/obj/machinery/button/remote/blast_door/single_use/slab/slab3/attack_hand(mob/user as mob)
-	. = ..()
-	icon_state = "slab3"
+	pressed_state = "slab3"
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab4
 	name = "Button Slab 4"
 	icon_state = "slab4-off"
-
-/obj/machinery/button/remote/blast_door/single_use/slab/slab4/attack_hand(mob/user as mob)
-	. = ..()
-	icon_state = "slab4"
+	pressed_state = "slab4"
