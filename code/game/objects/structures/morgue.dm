@@ -130,11 +130,8 @@ REF_OWNED(/obj/structure/morgue, "connected")
 	anchored = TRUE
 	throwpass = 1
 
-/obj/structure/m_tray/Destroy()
-	if(connected && connected.connected == src)
-		connected.connected = null
-	connected = null
-	return ..()
+REF_PAIR(/obj/structure/m_tray, list("connected" = "connected"))
+REF_PAIR(/obj/structure/morgue, list("connected" = "connected"))
 
 /obj/structure/m_tray
 	silicon_use = ROBOT_USE_HAND_ADJACENT

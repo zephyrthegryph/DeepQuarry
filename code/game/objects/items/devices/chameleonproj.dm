@@ -156,6 +156,7 @@
 		step(src, direction)
 	return
 
+// LIFECYCLE: the projector's disguise is disrupted.
 /obj/effect/dummy/chameleon/Destroy()
 	master.disrupt(0)
 	. = ..()

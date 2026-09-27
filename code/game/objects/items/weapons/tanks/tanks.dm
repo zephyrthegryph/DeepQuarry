@@ -70,15 +70,13 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	src.air_contents.set_temperature(T20C)
 	update_gauge()
 
+REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
+
+// LIFECYCLE: a tank in a transfer valve leaves the valve.
 /obj/item/tank/Destroy()
-	QDEL_NULL(air_contents)
-
-	QDEL_NULL(src.proxyassembly)
-
 	if(istype(loc, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TTV = loc
 		TTV.remove_tank(src)
-
 	. = ..()
 
 /obj/item/tank/material_environment_begin_leak()

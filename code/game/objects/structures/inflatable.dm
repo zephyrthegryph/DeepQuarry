@@ -40,14 +40,9 @@
 
 	max_integrity = 50
 
-
 /obj/structure/inflatable/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
-
-/obj/structure/inflatable/Destroy()
-	update_nearby_tiles()
-	return ..()
 
 /obj/structure/inflatable/blob_act()
 	puncture()

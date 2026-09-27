@@ -133,6 +133,7 @@
 
 	PERIODIC_START(src, PERIODIC_SECOND)
 
+// LIFECYCLE: the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/Destroy()
 	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)

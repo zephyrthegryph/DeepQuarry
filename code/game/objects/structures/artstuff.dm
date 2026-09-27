@@ -29,7 +29,6 @@
 	else
 		return ..()
 
-
 //Stick to the easel like glue
 /obj/structure/easel/Move()
 	var/turf/T = get_turf(src)
@@ -404,8 +403,8 @@
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -30 : 30)
 		pixel_y = (dir & 3)? (dir ==1 ? -30 : 30) : 0
 
-/obj/structure/sign/painting/Destroy()
-	. = ..()
+/// Phase 2: leaves the persistent painting frames.
+/obj/structure/sign/painting/lifecycle_dematerialize()
 	SSpersistence.painting_frames -= src
 
 /obj/structure/sign/painting/attackby(obj/item/I, mob/user, params)
@@ -627,9 +626,6 @@
 		if(!choice)
 			return 0
 		admin_lateload_painting(1, paintings[choice])
-
-
-
 
 /obj/structure/sign/painting/proc/save_persistent()
 	if(!persistence_id || !current_canvas || current_canvas.no_save)

@@ -111,6 +111,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/post_implant(mob/source)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
+// LIFECYCLE: leaves its limb's implant list.
 /obj/item/implant/tracking/Destroy()
 	if(part)
 		part.implants -= src

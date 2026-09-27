@@ -1,6 +1,7 @@
 /obj/item/bork_medigun/linked
 	var/obj/item/medigun_backpack/medigun_base_unit
 
+// LIFECYCLE: the base unit's icon and wearer update.
 /obj/item/bork_medigun/linked/Destroy()
 	if(medigun_base_unit)
 		var/obj/item/bork_medigun/medigun = medigun_base_unit.get_medigun()
@@ -150,7 +151,6 @@
 		return
 
 	om_do_after(user, 1 SECOND, target = user, timed_action_flags = IGNORE_USER_LOC_CHANGE, hidden = TRUE, receiver = src, on_done = PROC_REF(process_medigun_timed_done), done_args = list(H, user, filter, ishealing))
-
 
 /obj/item/bork_medigun/linked/proc/process_medigun_timed_done(mob/living/carbon/human/H, mob/user, filter, ishealing)
 	var/washealing = ishealing // Did we heal last cycle

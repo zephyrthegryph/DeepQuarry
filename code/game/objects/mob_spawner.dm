@@ -27,6 +27,7 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	last_spawn = world.time + rand(0,spawn_delay)
 
+// LIFECYCLE: its spawned mobs lose their nest.
 /obj/structure/mob_spawner/Destroy()
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))
@@ -119,7 +120,6 @@
 			return 0
 	return 1
 
-
 /*
 This code is based on the mob spawner and the proximity sensor, the idea is to lazy load mobs to avoid having the server use mobs when they arent needed.
 It also makes it so a ghost wont know where all the goodies/mobs are.
@@ -172,11 +172,9 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
 		LAZYADD(mobs_in_range, AM)
 
-
 /obj/structure/mob_spawner/scanner/proc/CheckProximity(atom/movable/AM,turf/new_loc)
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
 		LAZYREMOVE(mobs_in_range, AM)
-
 
 /obj/structure/mob_spawner/scanner/periodic_step()
 	if(!can_spawn())

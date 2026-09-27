@@ -54,6 +54,7 @@
 
 	fullUpdateWeedOverlays()
 
+// LIFECYCLE: neighbouring weeds redraw their overlays without it.
 /obj/effect/alien/weeds/Destroy()
 	var/turf/T = get_turf(src)
 	// To not mess up the overlay updates.

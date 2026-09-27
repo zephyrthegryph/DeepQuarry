@@ -8,7 +8,6 @@
  * Step 7: Screwdriver the door to complete
  */
 
-
 /obj/structure/windoor_assembly
 	name = "windoor assembly"
 	icon = 'icons/obj/doors/windoor.dmi'
@@ -46,11 +45,6 @@
 
 	update_nearby_tiles(need_rebuild=1)
 	AddElement(/datum/element/rotatable)
-
-/obj/structure/windoor_assembly/Destroy()
-	density = FALSE
-	update_nearby_tiles()
-	. = ..()
 
 /obj/structure/windoor_assembly/update_icon()
 	icon_state = "[facing]_[secure]windoor_assembly[state]"

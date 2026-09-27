@@ -53,6 +53,7 @@
 	build_path = /obj/item/radio/intercom
 	board_type = new /datum/frame/frame_types/intercom
 
+// LIFECYCLE: an installed board leaves its intercom's circuit slot.
 /obj/item/circuitboard/intercom/Destroy()
 	if(istype(loc, /obj/item/radio/intercom))
 		var/obj/item/radio/intercom/my_machine = loc
@@ -263,7 +264,6 @@
 							/obj/item/stock_parts/capacitor = 1,		//for the JUICE
 							/obj/item/stack/cable_coil = 10)
 
-
 /obj/item/circuitboard/injector_maker
 	name = T_BOARD("Ready-to-Use Medicine 3000")
 	build_path = /obj/machinery/injector_maker
@@ -410,7 +410,6 @@
 							/obj/item/stock_parts/motor = 1,
 							/obj/item/stock_parts/manipulator = 2,
 							/obj/item/stock_parts/console_screen = 1)
-
 
 /obj/item/circuitboard/microwave/advanced
 	name = T_BOARD("deluxe microwave")

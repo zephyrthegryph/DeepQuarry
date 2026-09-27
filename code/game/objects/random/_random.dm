@@ -6,14 +6,12 @@
 	var/spawn_nothing_percentage = 0 // this variable determines the likelyhood that this random object will not spawn anything
 	var/drop_get_turf = TRUE
 
-
 /obj/random/Initialize(mapload)
 	. = INITIALIZE_HINT_QDEL
 	..()
 	if (prob(spawn_nothing_percentage))
 		return
 	try_spawn_item()
-
 
 /obj/random/proc/try_spawn_item()
 	var/atom/result = spawn_item()
@@ -120,12 +118,12 @@ GLOBAL_LIST_EMPTY(multi_point_spawns)
 		GLOB.multi_point_spawns[id] = spawnpoints
 	spawnpoints[src] = weight
 
-/obj/random_multi/Destroy()
+/// Phase 2: leaves its multi-point spawn group.
+/obj/random_multi/lifecycle_dematerialize()
 	var/list/spawnpoints = GLOB.multi_point_spawns[id]
 	spawnpoints -= src
 	if(!length(spawnpoints))
 		GLOB.multi_point_spawns -= id
-	. = ..()
 
 /obj/random_multi/proc/generate_items()
 	return

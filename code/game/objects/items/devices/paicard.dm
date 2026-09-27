@@ -53,13 +53,12 @@
 	. = ..()
 	setEmotion(16)
 
+REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
+
+// LIFECYCLE: the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).
 /obj/item/paicard/Destroy()
-	//Will stop people throwing friend pAIs into the singularity so they can respawn
-	if(!QDELETED(pai)) // Either the pai or card could be deleted first, prevent a loop
+	if(!QDELETED(pai))
 		pai.death(0)
-	QDEL_NULL(radio)
-	QDEL_NULL(multitool)
-	QDEL_NULL(signaler)
 	return ..()
 
 /obj/item/paicard/attack_ghost(mob/user)

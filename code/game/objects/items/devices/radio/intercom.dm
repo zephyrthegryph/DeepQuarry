@@ -29,13 +29,7 @@
 	SIGNAL_HANDLER
 	update_icon()
 
-/obj/item/radio/intercom/Destroy()
-	var/area/A = get_area(src)
-	if(A)
-		UnregisterSignal(A, COMSIG_OBSERVER_APC)
-	if(circuit)
-		QDEL_NULL(circuit)
-	return ..()
+REF_OWNED(/obj/item/radio/intercom, "circuit")
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"

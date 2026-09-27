@@ -13,10 +13,7 @@
 	IC = new(src)
 	IC.implant = src
 
-/obj/item/implant/integrated_circuit/Destroy()
-	IC.implant = null
-	qdel(IC)
-	. = ..()
+REF_OWNED(/obj/item/implant/integrated_circuit, "IC")
 
 /obj/item/implant/integrated_circuit/get_data()
 	var/dat = {"

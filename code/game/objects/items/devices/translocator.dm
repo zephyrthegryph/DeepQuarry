@@ -50,13 +50,13 @@
 
 	rebuild_radial_images()
 
+REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
+
+// LIFECYCLE: its beacons forget it.
 /obj/item/perfect_tele/Destroy()
-	// Must clear the beacon's backpointer or we won't GC. Someday maybe do something nicer even.
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
 		B.tele_hand = null
 	LAZYCLEARLIST(beacons)
-	QDEL_NULL(power_source)
-	QDEL_NULL(spk)
 	return ..()
 
 /obj/item/perfect_tele/update_icon()

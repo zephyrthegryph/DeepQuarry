@@ -49,9 +49,9 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	register_dangerous_to_step()
 	AddElement(/datum/element/climbable/cliff,CLIFF_CLIMB_DELAY SECONDS)
 
-/obj/structure/cliff/Destroy()
+/// Phase 2: leaves the dangerous-to-step index.
+/obj/structure/cliff/lifecycle_dematerialize()
 	unregister_dangerous_to_step()
-	. = ..()
 
 /obj/structure/cliff/Moved(atom/oldloc)
 	. = ..()
@@ -143,7 +143,6 @@ two tiles on initialization, and which way a cliff is facing may change during m
 			final.layer = src.layer - 0.2
 			GLOB.cliff_icon_cache[cache_string] = final
 			add_overlay(final)
-
 
 // Movement-related code.
 

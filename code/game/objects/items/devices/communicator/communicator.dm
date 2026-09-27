@@ -98,9 +98,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	//This is a pretty terrible way of doing this.
 	addtimer(CALLBACK(src, PROC_REF(register_to_holder)), 5 SECONDS)
 
-
-
-
 // ITION START: Ayo communicator are better than PDAs /obj/item/communicator
 // Proc: AltClick()
 // Parameters: None
@@ -178,7 +175,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 			return 1
 	return 0
 
-
 // ITION END
 
 // Proc: register_to_holder()
@@ -193,7 +189,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		if(ismob(S.loc))
 			register_device(S.loc.name)
 			initialize_exonet(S.loc)
-
 
 // Proc: initialize_exonet()
 // Parameters: 1 (user - the person the communicator belongs to)
@@ -341,7 +336,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		return attack_self(M)
 	return
 
-
 // Proc: attack_ghost()
 // Parameters: 1 (user - the ghost clicking on the device)
 // Description: Recreates the known_devices list, so that the ghost looking at the device can see themselves, then calls ..() so that NanoUI appears.
@@ -381,36 +375,18 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
+REF_OWNED(/obj/item/communicator, list("camera", "exonet", "cam_screen", "cam_background"))
+REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
+
+// LIFECYCLE: its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/Destroy()
-	// ITION START ID handling
 	if (src.id)
 		src.id.forceMove(get_turf(src.loc))
-	else
-		QDEL_NULL(src.id)
-	// ITION END
-	// Snapshot: qdel pulls the voice out of contents mid-iteration.
 	for(var/mob/living/voice/voice in contents.Copy())
 		LAZYREMOVE(voice_mobs, voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
 	close_connection(reason = "Connection timed out")
-
-	//Clean up all references we might have to others
-	LAZYCLEARLIST(communicating)
-	LAZYCLEARLIST(voice_requests)
-	LAZYCLEARLIST(voice_invites)
-	node = null
-
-	//Clean up references that might point at us
-	registry_leave(REGISTRY_LISTENING_OBJECTS, src)
-	QDEL_NULL(camera)
-	QDEL_NULL(exonet)
-
-	last_camera_turf = null
-	QDEL_NULL(cam_screen)
-	QDEL_LIST(cam_plane_masters)
-	QDEL_NULL(cam_background)
-
 	return ..()
 
 // Proc: update_icon()

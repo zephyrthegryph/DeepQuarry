@@ -27,6 +27,7 @@
 		src.pixel_y = rand(0, 4)
 	create_reagents(scoop_volume)
 
+// LIFECYCLE: micros on the utensil drop off.
 /obj/item/material/kitchen/utensil/Destroy()
 	if(food_inserted_micros)
 		for(var/mob/M in food_inserted_micros)

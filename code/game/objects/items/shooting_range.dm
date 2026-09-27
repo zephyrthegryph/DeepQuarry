@@ -15,6 +15,7 @@
 			to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
 	return ..()
 
+// LIFECYCLE: the stake it was pinned to forgets it and blocks again.
 /obj/item/target/Destroy()
 	// if a target is deleted and associated with a stake, force stake to forget
 	for(var/obj/structure/target_stake/T in view(3,src))
@@ -36,15 +37,12 @@
 	// a stake's density to 0 meaning it can't be pushed anymore. Instead of pushing
 	// the stake now, we have to push the target.
 
-
-
 /obj/item/target/welder_act(mob/user, obj/item/W)
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
 		cut_overlays()
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
 	return TRUE
-
 
 /obj/item/target/attack_hand(mob/user as mob)
 	// taking pinned targets off!
@@ -92,7 +90,6 @@
 	if(istype(Proj, /obj/item/projectile/bullet))
 		decaltype = 2
 
-
 	virtualIcon = new(icon, icon_state)
 
 	if( virtualIcon.GetPixel(p_x, p_y) ) // if the located pixel isn't blank (null)
@@ -119,7 +116,6 @@
 			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
 				bmark.icon_state = "scorch"
 				bmark.set_dir(pick(NORTH,SOUTH,EAST,WEST)) // random scorch design
-
 
 			else
 				bmark.icon_state = "light_scorch"
@@ -149,7 +145,6 @@
 		return
 
 	return PROJECTILE_CONTINUE // the bullet/projectile goes through the target!
-
 
 // Small memory holder entity for transparent bullet holes
 /datum/bullethole

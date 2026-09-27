@@ -227,7 +227,6 @@
 /obj/effect/decal/cleanable/blood/gibs/core
 	random_icon_states = list("gibmid1", "gibmid2", "gibmid3")
 
-
 /obj/effect/decal/cleanable/blood/gibs/proc/streak(list/directions)
 	INVOKE_ASYNC(src, PROC_REF(streak_async), directions)
 
@@ -248,7 +247,6 @@
 	b.basecolor = src.basecolor
 	b.update_icon()
 
-
 /obj/effect/decal/cleanable/mucus
 	name = "mucus"
 	desc = "Disgusting mucus."
@@ -267,10 +265,6 @@
 /obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
 	. = ..()
 	viruses |= new /datum/disease/advance/random(rand(3, 6), 9, 4, infected = src)
-
-/obj/effect/decal/cleanable/mucus/mapped/Destroy()
-	viruses.Cut()
-	return ..()
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())

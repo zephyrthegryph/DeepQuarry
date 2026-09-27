@@ -61,12 +61,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	var/portal_distance_x = 0 // How far the portal is from the left edge, in tiles.
 	var/portal_distance_y = 0 // How far the portal is from the top edge.
 
-/obj/effect/map_effect/portal/Destroy()
-	vis_contents = null
-	if(counterpart)
-		counterpart.counterpart = null // Disconnect our counterpart from us
-		counterpart = null // Now disconnect us from them.
-	return ..()
+REF_PAIR(/obj/effect/map_effect/portal, list("counterpart" = "counterpart"))
 
 // Called when something touches the portal, and usually teleports them to the other side.
 /obj/effect/map_effect/portal/Crossed(atom/movable/AM)
@@ -77,7 +72,6 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 		return
 
 	go_through_portal(AM)
-
 
 /obj/effect/map_effect/portal/proc/go_through_portal(atom/movable/AM)
 	// TODO: Find a way to fake the glide or something.
@@ -135,7 +129,6 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	portal_distance_x = lowest_x - focused_T.x
 	portal_distance_y = lowest_y - focused_T.y
 
-
 // Portal masters manage everything else involving portals.
 // This is the base type. Use `/side_a` or `/side_b` with matching IDs for actual portals.
 /obj/effect/map_effect/portal/master
@@ -156,10 +149,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	make_visuals()
 	apply_offset()
 
-/obj/effect/map_effect/portal/master/Destroy()
-	for(var/thing in portal_lines)
-		qdel(thing)
-	return ..()
+REF_OWNED_LIST(/obj/effect/map_effect/portal/master, "portal_lines")
 
 /obj/effect/map_effect/portal/master/proc/find_lines()
 	var/list/dirs_to_search = list( turn(dir, 90), turn(dir, -90) )
@@ -303,7 +293,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 
 	return new /datum/position(their_focus.x + relative_x, their_focus.y + relative_y, our_focus.z)
 
-
 /obj/effect/map_effect/portal/master/side_a
 	name = "portal master A"
 	icon_state = "portal_side_a"
@@ -314,8 +303,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	icon_state = "portal_side_b"
 //	color = "#FF0000"
 
-
-
 // Portal lines extend out from the sides of portal masters,
 // They let portals be longer than 1x1.
 // Both sides MUST be the same length, meaning if side A is 1x3, side B must also be 1x3.
@@ -323,11 +310,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	name = "portal line"
 	var/obj/effect/map_effect/portal/master/my_master = null
 
-/obj/effect/map_effect/portal/line/Destroy()
-	if(my_master)
-		LAZYREMOVE(my_master.portal_lines, src)
-		my_master = null
-	return ..()
+REF_BACKLIST(/obj/effect/map_effect/portal/line, list("my_master" = "portal_lines"))
 
 /obj/effect/map_effect/portal/line/side_a
 	name = "portal line A"

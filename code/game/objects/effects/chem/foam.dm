@@ -148,11 +148,6 @@
 	. = ..()
 	update_nearby_tiles(1)
 
-/obj/structure/foamedmetal/Destroy()
-	density = FALSE
-	update_nearby_tiles(1)
-	return ..()
-
 /obj/structure/foamedmetal/update_icon()
 	if(metal == 1)
 		icon_state = "metalfoam"

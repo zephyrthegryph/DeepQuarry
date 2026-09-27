@@ -20,6 +20,7 @@
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
 
+// LIFECYCLE: an installed board leaves its machine's circuit slot.
 /obj/item/circuitboard/Destroy()
 	// Explosions can destroy an installed board before their containing machine.
 	// Sever the owner's typed reference immediately so the board never waits in

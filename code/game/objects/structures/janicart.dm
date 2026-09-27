@@ -110,12 +110,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	LAZYCLEARLIST(tgui_icons)
 	SStgui.update_uis(src)
 
+REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myreplacer", "mybucket"))
+
+// LIFECYCLE: drops its cached tgui icons.
 /obj/structure/janitorialcart/Destroy()
-	QDEL_NULL(mybag)
-	QDEL_NULL(mymop)
-	QDEL_NULL(myspray)
-	QDEL_NULL(myreplacer)
-	QDEL_NULL(mybucket)
 	clearTguiIcons()
 	return ..()
 
@@ -202,7 +200,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 		var/obj/item/reagent_containers/C = I
 		C.afterattack(mybucket, user, 1)
 		update_icon()
-
 
 /obj/structure/janitorialcart/attack_hand(mob/user)
 	tgui_interact(user)
@@ -356,8 +353,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	update_icon()
 	clearTguiIcons()
 
-
-
 /obj/structure/janitorialcart/proc/dismantle(mob/user = null)
 	if (!dismantled)
 		if (has_items)
@@ -368,7 +363,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 		new /obj/item/stack/rods(src.loc, 20)
 		dismantled = 1
 		qdel(src)
-
 
 /obj/structure/janitorialcart/ex_act(severity)
 	spill(100 / severity)

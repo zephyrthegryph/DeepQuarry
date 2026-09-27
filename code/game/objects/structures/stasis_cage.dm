@@ -49,6 +49,7 @@
 	underlays.Cut()
 	desc = initial(desc)
 
+// LIFECYCLE: the caged creature is released.
 /obj/structure/stasis_cage/Destroy()
 	release()
 

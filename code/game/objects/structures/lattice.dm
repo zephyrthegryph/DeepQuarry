@@ -27,6 +27,7 @@
 			L = locate(/obj/structure/lattice, get_step(src, dir))
 			L.updateOverlays()
 
+// LIFECYCLE: neighbour lattices redraw and what it held up falls.
 /obj/structure/lattice/Destroy()
 	for (var/dir in GLOB.cardinal)
 		var/obj/structure/lattice/L

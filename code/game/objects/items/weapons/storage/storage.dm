@@ -152,16 +152,16 @@
 
 	calibrate_size()
 
+REF_OWNED(/obj/item/storage, "hud")
+
+// LIFECYCLE: closes on everyone looking into it and leaves its wearer.
 /obj/item/storage/Destroy()
 	close_all()
 	for(var/mob/M as anything in is_seeing?.Copy())
 		hide_from(M)
-	QDEL_NULL(hud)
-
 	if(ismob(loc))
 		var/mob/M = loc
 		M.remove_from_mob(src)
-
 	. = ..()
 
 /obj/item/storage/pickup(mob/user)
@@ -689,15 +689,14 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	GLOB.storage_hud_count++
 	layout()
 
+REF_OWNED(/datum/storage_hud, "closer")
+REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
+
+// LIFECYCLE: shown items lose their count text; the global hud count drops.
 /datum/storage_hud/Destroy()
 	GLOB.storage_hud_count--
-	QDEL_LIST(catchers)
-	QDEL_LIST(backdrop)
-	QDEL_NULL(closer)
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""
-	shown = null
-	storage = null
 	return ..()
 
 /datum/storage_hud/proc/new_backdrop(master, state)

@@ -40,10 +40,10 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 		delete_me = TRUE
 	log_admin("[M.ckey] has created a [isNarrate ? "Narrtion" : "Notification"] landmark trigger at [coordinates]")
 
-/obj/effect/landmark/event_trigger/Destroy()
+/// Phase 2: leaves its creator's event trigger list.
+/obj/effect/landmark/event_trigger/lifecycle_dematerialize()
 	if(GLOB.event_triggers[creator_ckey])
 		GLOB.event_triggers[creator_ckey] -= src
-	. = ..()
 
 /obj/effect/landmark/event_trigger/Crossed(atom/movable/AM)
 	if(!isliving(AM))
@@ -81,7 +81,6 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	else
 		return L
 
-
 /obj/effect/landmark/event_trigger/auto_narrate
 	var/message
 	var/isPersonal_orVis_orAud = 0	//0 for personal, 1 for vis, 2 for aud
@@ -104,10 +103,6 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 		var/range = tgui_input_number(M, "Give narration range! Input value over 10 to use world.view", "Range",default = 11, min_value = 0)
 		if(range <= 10)
 			message_range = range
-
-
-
-
 
 /obj/effect/landmark/event_trigger/auto_narrate/Crossed(atom/movable/AM)
 	. = ..()	//Checks if AM is mob/living and notifies admin(s)
