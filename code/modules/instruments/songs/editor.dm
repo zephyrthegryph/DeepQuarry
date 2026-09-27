@@ -68,7 +68,7 @@
 		//SETTINGS
 		if("play_music")
 			if(!playing)
-				INVOKE_ASYNC(src, PROC_REF(start_playing), user)
+				start_playing(user)
 			else
 				stop_playing()
 			return TRUE

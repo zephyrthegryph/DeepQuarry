@@ -11,7 +11,7 @@
 	if(isliving(AM) && isturf(loc) && AM != src)
 		var/mob/living/AMV = AM
 		if(AMV?.buckled_to() != src && (((AMV.has_status(EFFECT_CONFUSED) || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
-			INVOKE_ASYNC(src,TYPE_PROC_REF(/atom/movable, stumble_into), AMV)
+			stumble_into(AMV)
 	..()
 
 /mob/living/stumble_into(mob/living/M)

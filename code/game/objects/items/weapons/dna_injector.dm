@@ -113,7 +113,7 @@
 
 	if (user)
 		user.drop_from_inventory(src)
-	INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src)
+	qdel(src)
 	return uses
 
 /obj/item/dnainjector/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

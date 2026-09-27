@@ -465,7 +465,7 @@
 				"files" = asset_generation.chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
-		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))
+		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden)) // S10b keeps: winget round-trip
 	// Pass message to UI that requested the lock
 	if(locked && locked_by)
 		var/prevent_default = locked_by.on_message(type, payload, href_list)

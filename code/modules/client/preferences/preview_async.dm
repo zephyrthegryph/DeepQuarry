@@ -321,7 +321,7 @@
 		var/job_id = rustg_iconforge_generate_async(DQ_PREVIEW_JOB_DIR, sheet_name, json_encode(list("preview" = sprites[dir_key])), FALSE, FALSE, TRUE)
 		jobs[dir_key] = list(job_id, sheet_name)
 	dq_preview_jobs_in_flight++
-	INVOKE_ASYNC(src, PROC_REF(dq_poll_preview_jobs), generation, jobs, ready, scale_x, scale_y, !!client)
+	INVOKE_ASYNC(src, PROC_REF(dq_poll_preview_jobs), generation, jobs, ready, scale_x, scale_y, !!client) // S10b keeps: polls rust-g preview jobs (blocking external I/O)
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.

@@ -77,7 +77,7 @@
 	monitor_configuration = owner.material_configuration_revision
 	reset_observation()
 	schedule(0)
-	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user)
+	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // S10b keeps: tgui_interact may block on asset/window setup
 	return ITEM_INTERACT_SUCCESS
 
 /datum/material_service/proc/open_service_cover(datum/source, mob/user, obj/item/tool)
@@ -93,7 +93,7 @@
 	SIGNAL_HANDLER
 	if(!maintenance_open || !istype(item, /obj/item/stack/material))
 		return NONE
-	INVOKE_ASYNC(src, PROC_REF(fit_stock), item, user)
+	INVOKE_ASYNC(src, PROC_REF(fit_stock), item, user) // S10b keeps: callee prompts (tgui_input_list)
 	return COMPONENT_CANCEL_ATTACK_CHAIN
 
 /datum/material_service/proc/fit_stock(obj/item/stack/material/stock, mob/user)
