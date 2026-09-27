@@ -129,7 +129,7 @@
 			F.reagents.add_reagent(REAGENT_ID_WATER, 1, safety = 1)
 
 /datum/effect/effect/system/foam_spread/start()
-	INVOKE_ASYNC(src, PROC_REF(do_start))
+	do_start()
 
 // wall formed by metal foams, dense and opaque, but easy to break
 

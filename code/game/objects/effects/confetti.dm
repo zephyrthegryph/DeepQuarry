@@ -42,4 +42,4 @@
 	for(i=0, i<src.number, i++)
 		if(src.total_sparks > 20)
 			return
-		INVOKE_ASYNC(src, PROC_REF(emit_one_confetti_spark))
+		emit_one_confetti_spark()

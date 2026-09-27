@@ -228,7 +228,7 @@
 	random_icon_states = list("gibmid1", "gibmid2", "gibmid3")
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak(list/directions)
-	INVOKE_ASYNC(src, PROC_REF(streak_async), directions)
+	streak_async(directions)
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_async(list/directions)
 	om_after(src, 3, PROC_REF(streak_step), pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4))
