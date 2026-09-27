@@ -243,9 +243,6 @@
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()
 
-/obj/item/beacon_locator/Destroy()
-	. = ..()
-
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/periodic_step()
 	if(!target_radio && !scan_ticks)
