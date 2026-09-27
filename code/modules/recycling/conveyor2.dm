@@ -163,7 +163,9 @@
 /obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = tgui_input_text(user, "What id would you like to give this conveyor?", "Multitool-Conveyor interface", id, MAX_MESSAGE_LEN)
+	var/input = rerun_prompt(user, "k166", list("kind" = "text", "message" = "What id would you like to give this conveyor?", "title" = "Multitool-Conveyor interface", "default" = id, "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(input))
+		return ITEM_INTERACT_BLOCKING
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
@@ -360,7 +362,9 @@
 /obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = tgui_input_text(user, "What id would you like to give this conveyor switch?", "Multitool-Conveyor interface", id, MAX_MESSAGE_LEN)
+	var/input = rerun_prompt(user, "k363", list("kind" = "text", "message" = "What id would you like to give this conveyor switch?", "title" = "Multitool-Conveyor interface", "default" = id, "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(input))
+		return ITEM_INTERACT_BLOCKING
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

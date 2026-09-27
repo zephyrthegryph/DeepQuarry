@@ -67,7 +67,9 @@
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
 	if(mode == OUTLET_SCREWED)
 		return ITEM_INTERACT_BLOCKING
-	var/new_range = tgui_input_number(user, "Input a new ejection distance", "Set ejection strength", 3, 5, 1, round_value = TRUE)
+	var/new_range = rerun_prompt(user, "k70", list("kind" = "number", "message" = "Input a new ejection distance", "title" = "Set ejection strength", "default" = 3, "max" = 5, "min" = 1, "round" = TRUE), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(new_range))
+		return ITEM_INTERACT_BLOCKING
 	eject_range = new_range
 	to_chat(user, span_notice("You set the range on the [src] to [new_range] tiles."))
 	return ITEM_INTERACT_SUCCESS

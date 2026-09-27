@@ -40,9 +40,15 @@
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		switch(tgui_alert(user, "What would you like to alter?","Select Alteration",list("Title","Description","Cancel")))
+		var/_answer_k43 = rerun_prompt(user, "k43", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_answer_k43))
+			return TRUE
+		switch(_answer_k43)
 			if("Title")
-				var/str = sanitizeSafe(tgui_input_text(user,"Label text?","Set label","", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+				var/_answer_k45 = rerun_prompt(user, "k45", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(_answer_k45))
+					return TRUE
+				var/str = sanitizeSafe(_answer_k45, MAX_NAME_LEN)
 				if(!str || !length(str))
 					to_chat(user, span_warning(" Invalid text."))
 					return
@@ -57,7 +63,9 @@
 				else
 					nameset = 1
 			if("Description")
-				var/str = tgui_input_text(user,"Label text?","Set label","", MAX_MESSAGE_LEN)
+				var/str = rerun_prompt(user, "k60", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(str))
+					return TRUE
 				if(!str || !length(str))
 					to_chat(user, span_red("Invalid text."))
 					return
@@ -171,9 +179,15 @@
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		switch(tgui_alert(user, "What would you like to alter?","Select Alteration",list("Title","Description","Cancel")))
+		var/_answer_k174 = rerun_prompt(user, "k174", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_answer_k174))
+			return TRUE
+		switch(_answer_k174)
 			if("Title")
-				var/str = sanitizeSafe(tgui_input_text(user,"Label text?","Set label","", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+				var/_answer_k176 = rerun_prompt(user, "k176", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(_answer_k176))
+					return TRUE
+				var/str = sanitizeSafe(_answer_k176, MAX_NAME_LEN)
 				if(!str || !length(str))
 					to_chat(user, span_warning(" Invalid text."))
 					return
@@ -189,7 +203,9 @@
 					nameset = 1
 
 			if("Description")
-				var/str = tgui_input_text(user,"Label text?","Set label","", MAX_MESSAGE_LEN)
+				var/str = rerun_prompt(user, "k192", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				if(isnull(str))
+					return TRUE
 				if(!str || !length(str))
 					to_chat(user, span_red("Invalid text."))
 					return
