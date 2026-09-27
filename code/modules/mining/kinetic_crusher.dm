@@ -62,9 +62,6 @@
 	. = ..()
 	AddElement(/datum/element/conflict_checking, CONFLICT_ELEMENT_CRUSHER)
 
-/obj/item/kinetic_crusher/Destroy()
-	return ..()
-
 /obj/item/kinetic_crusher/emag_act()
 	. = ..()
 	if(emagged)
@@ -238,9 +235,6 @@
 	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/kinetic_crusher/machete/gauntlets/Destroy()
-	. = ..()
-
 /obj/item/kinetic_crusher/machete/gauntlets/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -335,8 +329,6 @@
 	// gimmick mode
 	thrown_bonus = 60 // 135 but you drop your knife because you threw it
 
-
-
 //destablizing force
 /obj/item/projectile/destabilizer
 	name = "destabilizing force"
@@ -346,10 +338,6 @@
 	range = 6
 	accuracy = INFINITY	// NO.
 	var/obj/item/kinetic_crusher/hammer_synced
-
-/obj/item/projectile/destabilizer/Destroy()
-	hammer_synced = null
-	return ..()
 
 /obj/item/projectile/destabilizer/on_impact(atom/A)
 	if(ismineralturf(A))
