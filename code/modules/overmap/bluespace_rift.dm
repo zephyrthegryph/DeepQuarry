@@ -14,12 +14,7 @@
 	if(new_partner)
 		pair(new_partner)
 
-/obj/effect/overmap/bluespace_rift/Destroy()
-	if(partner)
-		if(partner.partner == src)
-			partner.partner = null
-		partner = null
-	return ..()
+REF_PAIR(/obj/effect/overmap/bluespace_rift, list("partner" = "partner"))
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))

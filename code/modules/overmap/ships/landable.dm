@@ -9,11 +9,6 @@
 	var/status = SHIP_STATUS_LANDED
 	icon_state = "shuttle_nosprite"
 
-/obj/effect/overmap/visitable/ship/landable/Destroy()
-	UnregisterSignal(SSshuttles.shuttles[shuttle], COMSIG_OBSERVER_SHUTTLE_PRE_MOVE)
-	UnregisterSignal(SSshuttles.shuttles[shuttle], COMSIG_OBSERVER_SHUTTLE_MOVED)
-	return ..()
-
 /obj/effect/overmap/visitable/ship/landable/can_burn()
 	if(status != SHIP_STATUS_OVERMAP)
 		return 0
@@ -75,7 +70,6 @@
 	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_MOVED, PROC_REF(on_shuttle_jump))
 	on_landing(landmark, shuttle_datum.current_location) // We "land" at round start to properly place ourselves on the overmap.
 
-
 //
 // Center Landmark
 //
@@ -93,6 +87,7 @@
 	. = ..()
 	base_turf = world.turf
 
+// LIFECYCLE: its ship forgets its landmark.
 /obj/effect/shuttle_landmark/ship/Destroy()
 	var/obj/effect/overmap/visitable/ship/landable/ship = get_overmap_sector(z)
 	if(istype(ship) && ship.landmark == src)
@@ -126,11 +121,7 @@
 	RegisterSignal(master, COMSIG_OBSERVER_DESTROYED, /datum/proc/qdel_self)
 	. = ..()
 
-/obj/effect/shuttle_landmark/visiting_shuttle/Destroy()
-	UnregisterSignal(core_landmark, COMSIG_OBSERVER_DESTROYED)
-	LAZYREMOVE(core_landmark.visitors, src)
-	core_landmark = null
-	. = ..()
+REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark" = "visitors"))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/is_valid(datum/shuttle/shuttle)
 	. = ..()

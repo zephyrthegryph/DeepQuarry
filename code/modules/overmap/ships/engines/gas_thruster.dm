@@ -89,10 +89,7 @@
 				atom_break()
 			break
 
-/obj/machinery/atmospherics/unary/engine/Destroy()
-	QDEL_NULL(controller)
-	update_nearby_tiles()
-	. = ..()
+REF_OWNED(/obj/machinery/atmospherics/unary/engine, "controller")
 
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()
