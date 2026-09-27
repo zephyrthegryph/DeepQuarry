@@ -2,7 +2,6 @@
 #define RECYCLER_FORBIDDEN 2
 #define RECYCLER_EVIL 3 //no scugs, cats, etc
 
-
 /obj/machinery/maint_recycler //fresh outta 2288 baby
 	name = "\improper Decrepit Machine"
 
@@ -38,13 +37,10 @@
 	var/item_offset_y = 0
 	var/item_overlay_scale = 0.4
 
-
 	var/obj/item/inserted_item
 
 	var/list/hostile_towards //we remember mean people. do NOT recycle scugs. list of user keys
 	var/list/granted_points //assoc list. key to points given
-
-
 
 	var/is_on = FALSE
 	var/light_range_on = 2
@@ -105,7 +101,6 @@
 		/obj/item/perfect_tele
 	) //an active list of things that'll make the machine mad at you. Will refuse service, make an annoucement over sec comms (akin to the tipped medibot over med comms), and blast with a stun or two. no recycling scugs. Think of this as a super high priority no-touchy list.
 
-
 	var/static/list/success_sounds = list(
 		'code/modules/maint_recycler/sfx/voice/thankyou/reduce-reuse-recycle.ogg',
 		'code/modules/maint_recycler/sfx/voice/thankyou/thankyouforkeepingclean.ogg',
@@ -122,27 +117,11 @@
 	/// * Rectifier distort @ 39
 	/// filter curve EQ w/ telephone preset
 
-
-
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-/obj/machinery/maint_recycler/Destroy()
-	if(inserted_item)
-		inserted_item.forceMove(get_turf(src))
-		inserted_item = null
-
-	if(hatch)
-		QDEL_NULL(hatch)
-
-	if(monitor_screen)
-		QDEL_NULL(monitor_screen)
-
-	if(item_overlay)
-		QDEL_NULL(item_overlay)
-
-	. = ..()
-
+REF_SPILL(/obj/machinery/maint_recycler, "inserted_item")
+REF_OWNED(/obj/machinery/maint_recycler, list("hatch", "monitor_screen", "item_overlay"))
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
@@ -254,8 +233,6 @@
 	update_icon()
 	return FALSE
 
-
-
 /obj/machinery/maint_recycler/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
 	if(!isitem(source) || istype(source, /obj/item/projectile)) //no mob throwing.
@@ -304,7 +281,6 @@
 
 	addtimer(CALLBACK(src, PROC_REF(shoot_at), user), 0.3 SECONDS)
 
-
 	credit_user(user,-10) //get fucked
 
 /obj/machinery/maint_recycler/proc/close_door(mob/user)
@@ -314,14 +290,12 @@
 	playsound(src, 'code/modules/maint_recycler/sfx/hatchclose.ogg', 40, 1)
 	addtimer(CALLBACK(src, PROC_REF(door_finished_moving), FALSE), 1 SECOND)
 
-
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
 	if(door_open || door_locked) return
 	door_moving = TRUE
 	flick("door opening",hatch)
 	playsound(src, 'code/modules/maint_recycler/sfx/hatchopen.ogg', 40, 1)
 	addtimer(CALLBACK(src, PROC_REF(door_finished_moving), TRUE), 1 SECOND)
-
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
 	door_moving = FALSE
@@ -330,7 +304,6 @@
 		hatch.icon_state = "door open"
 	else
 		hatch.icon_state = "door closed"
-
 
 /obj/machinery/maint_recycler/proc/shoot_at(mob/victim, burst = 3)
 	if(victim == null) return
@@ -355,14 +328,12 @@
 		else
 			eject_item_act(user)
 
-
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
 	inserted_item.forceMove(get_turf(src))
 	visible_message(span_warning("[src] ejects \the [inserted_item] from its recycling chamber!"))
 	inserted_item.throw_at(get_step(src,SOUTH),5,1,src)
 	inserted_item = null;
 	update_icon()
-
 
 /obj/machinery/maint_recycler/proc/start_recycling(mob/user)
 	if(inserted_item)
@@ -381,7 +352,6 @@
 	set_screen_state("screen_recycle",20)
 	addtimer(CALLBACK(src, PROC_REF(post_recycle), user), 2 SECONDS)
 
-
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
@@ -395,7 +365,6 @@
 	door_locked = FALSE
 	open_door(user)
 	update_icon()
-
 
 /obj/machinery/maint_recycler/update_icon()
 	if(inserted_item != null)
@@ -460,7 +429,6 @@ TGUI PROCS
 	data["itemIcon"] = "'data:image/png;base64,[icon2base64(display)]'"
 	return data
 
-
 /obj/machinery/maint_recycler/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/simple/maint_recycler)
@@ -494,7 +462,6 @@ TGUI PROCS
 	if(LAZYLEN(open_tguis) > 0) return
 	set_on_state(FALSE)
 
-
 /*
 UTILITY PROCS
 */
@@ -507,7 +474,6 @@ UTILITY PROCS
 		LAZYADDASSOC(granted_points, user.key, amount)
 	else
 		LAZYSET(granted_points, user.key, amount)
-
 
 /obj/machinery/maint_recycler/proc/user_balance(mob/user)
 	return user.client?.prefs?.read_preference(/datum/preference/numeric/recycler_points)
@@ -568,8 +534,6 @@ UTILITY PROCS
 	monitor_screen.icon_state = state
 	addtimer(CALLBACK(src, PROC_REF(reset_screen_state)), duration)
 
-
-
 /obj/machinery/maint_recycler/proc/reset_screen_state()
 	if(!is_on)
 		monitor_screen.icon_state = "screen_off"
@@ -587,7 +551,6 @@ UTILITY PROCS
 		playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
 		set_light(0)
 		monitor_screen.icon_state = "screen_off"
-
 
 #undef RECYCLER_ALLOWED
 #undef RECYCLER_FORBIDDEN
